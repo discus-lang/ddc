@@ -210,6 +210,12 @@ typeOfPrimStore jj
         PrimStoreCreate
          -> tNat `tFunPE` tVoid
 
+        PrimStoreCheck
+         -> tNat `tFunPE` tBool
+
+        PrimStoreRecover
+         -> tNat `tFunPE` tVoid
+
         PrimStoreAlloc
          -> tNat `tFunPE` tAddr
 

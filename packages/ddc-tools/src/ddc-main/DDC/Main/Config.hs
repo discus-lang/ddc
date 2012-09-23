@@ -98,6 +98,10 @@ data Config
         , configWithLite        :: [FilePath]
         , configWithSalt        :: [FilePath]
 
+          -- Runtime -------------------
+          -- | Default size of heap for compiled program.
+        , configRuntimeHeapSize :: Integer
+
           -- Debugging -----------------
           -- | Dump intermediate representations.
         , configDump            :: Bool }
@@ -121,6 +125,9 @@ defaultConfig
         , configOptLevelSalt    = OptLevel0
         , configWithLite        = []
         , configWithSalt        = []
+
+          -- Runtime ------------------
+        , configRuntimeHeapSize = 65536
 
           -- Debugging ----------------
         , configDump            = False }

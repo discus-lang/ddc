@@ -239,7 +239,14 @@ data PrimStore
         --     Calling it twice in the same program is undefined.
         | PrimStoreCreate
 
+        -- | Check whether there is this many bytes on the heap.
+        | PrimStoreCheck
+
+        -- | Force a GC to recover this many bytes.
+        | PrimStoreRecover
+
         -- | Allocate some space on the heap.
+        --   There must be enough space available, else undefined.
         | PrimStoreAlloc
 
         -- Addr operations ------------
@@ -286,6 +293,8 @@ instance Pretty PrimStore where
         PrimStoreShiftNat       -> text "shiftNat#"
 
         PrimStoreCreate         -> text "create#"
+        PrimStoreCheck          -> text "check#"
+        PrimStoreRecover        -> text "recover#"
         PrimStoreAlloc          -> text "alloc#"
 
         PrimStoreRead           -> text "read#"
@@ -309,6 +318,8 @@ readPrimStore str
         "shiftNat#"             -> Just PrimStoreShiftNat
 
         "create#"               -> Just PrimStoreCreate
+        "check#"                -> Just PrimStoreCheck
+        "recover#"              -> Just PrimStoreRecover
         "alloc#"                -> Just PrimStoreAlloc
 
         "read#"                 -> Just PrimStoreRead

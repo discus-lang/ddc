@@ -45,6 +45,9 @@ data Config
         , configSimplLite       :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
         , configSimplSalt       :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
 
+          -- | Runtime system configuration.
+        , configRuntime                 :: Salt.Config
+
           -- | The builder to use for the target architecture
         , configBuilder                 :: Builder
 
@@ -135,20 +138,15 @@ stageLiteToSalt config source pipesSalt
      [ PipeCoreOutput           (dump config source "dump.lite-normalized.dcl")
      , PipeCoreReCheck          fragmentLite
        [ PipeCoreAsLite 
-         [ PipeLiteToSalt       (buildSpec $ configBuilder config) runConfig
+         [ PipeLiteToSalt       (buildSpec $ configBuilder config) 
+                                (configRuntime config)
            [ PipeCoreOutput     (dump config source "dump.lite-to-salt.dce")
            , PipeCoreSimplify fragmentSalt 0 normalizeSalt
              [ PipeCoreCheck    fragmentSalt
                ( PipeCoreOutput (dump config source "dump.salt-normalized.dce")
                : pipesSalt)]]]]]
 
- where  -- Set the default runtime system parameters.
-        -- TODO: We should be able to set this from the command line.
-        runConfig
-         = Salt.Config
-         { Salt.configHeapSize   = 1000 }
-
-        normalizeLite
+ where  normalizeLite
          = S.anormalize
                 (makeNamifier Lite.freshT)      
                 (makeNamifier Lite.freshX)

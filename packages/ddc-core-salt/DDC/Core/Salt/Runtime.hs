@@ -42,7 +42,9 @@ import Data.Map                 (Map)
 -- | Runtime system configuration
 data Config
         = Config
-        { configHeapSize        :: Integer }
+        { -- | Used a fixed-size heap of this many bytes.
+          configHeapSize        :: Integer 
+        }
 
 
 -- | Kind signatures for runtime types that we use when converting to Salt.

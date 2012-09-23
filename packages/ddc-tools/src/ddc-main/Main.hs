@@ -16,7 +16,8 @@ import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Source
 import DDC.Build.Builder
 import System.Environment
-import qualified DDC.Driver.Stage       as D
+import qualified DDC.Driver.Stage       as Driver
+import qualified DDC.Core.Salt.Runtime  as Runtime
 
 
 main
@@ -87,20 +88,25 @@ run config
 
 
 -- | Get the compile driver from the config.
-getDriverConfig :: Config -> IO D.Config
+getDriverConfig :: Config -> IO Driver.Config
 getDriverConfig config
  = do   Just builder    <- determineDefaultBuilder (defaultBuilderConfig config)
         simplLite       <- getSimplLiteOfConfig config builder
         simplSalt       <- getSimplSaltOfConfig config builder
 
-        return  $ D.Config
-                { D.configDump                  = configDump config
-                , D.configSimplLite             = simplLite
-                , D.configSimplSalt             = simplSalt
-                , D.configBuilder               = builder
-                , D.configSuppressCoreImports   = False
-                , D.configSuppressHashImports   = False
-                , D.configOutputFile            = configOutputFile config
-                , D.configOutputDir             = configOutputDir  config }
+        return  $ Driver.Config
+                { Driver.configDump                     = configDump config
+                , Driver.configSimplLite                = simplLite
+                , Driver.configSimplSalt                = simplSalt
+
+                , Driver.configRuntime               
+                        = Runtime.Config
+                        { Runtime.configHeapSize        = configRuntimeHeapSize config }
+
+                , Driver.configBuilder                  = builder
+                , Driver.configSuppressCoreImports      = False
+                , Driver.configSuppressHashImports      = False
+                , Driver.configOutputFile               = configOutputFile config
+                , Driver.configOutputDir                = configOutputDir  config }
 
 

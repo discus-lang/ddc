@@ -38,6 +38,7 @@ import Data.Set                         (Set)
 import qualified DDC.Core.Salt.Name     as Salt
 import qualified DDC.Core.Lite.Name     as Lite
 import qualified DDC.Core.Simplifier    as S
+import qualified DDC.Core.Salt.Runtime  as Runtime
 import qualified DDC.Driver.Stage       as D
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
@@ -152,6 +153,12 @@ getDriverConfigOfState state
         return 
          $ D.Config
          { D.configDump                  = Set.member Dump (stateModes state)
+
+         -- TODO: be able to set this from command-line option
+         , D.configRuntime
+                = Runtime.Config
+                { Runtime.configHeapSize = 65536 }
+
          , D.configOutputFile            = stateOutputFile state
          , D.configOutputDir             = stateOutputDir  state
          , D.configSimplLite             = stateSimplLite  state

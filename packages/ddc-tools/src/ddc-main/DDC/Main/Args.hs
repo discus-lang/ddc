@@ -5,7 +5,7 @@ module DDC.Main.Args
         , help)
 where
 import DDC.Main.Config
-
+import Data.Char
 
 -- | Parse command line arguments.
 parseArgs :: [String] -> Config -> IO Config
@@ -63,6 +63,12 @@ parseArgs args config
         $ config { configOptLevelLite   = OptLevel1
                  , configOptLevelSalt   = OptLevel1 }
 
+        -- Runtime ------------------------------
+        | "-run-heap" : bytes : rest    <- args
+        , all isDigit bytes
+        = parseArgs rest
+        $ config  { configRuntimeHeapSize = read bytes }
+
         -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
         = parseArgs rest
@@ -115,6 +121,9 @@ help    = unlines
         , " Optimisation:"
         , "       -O0                  No optimisations.             (default)"
         , "  -O,  -O1                  Do standard optimisations."
+        , ""
+        , " Runtime for compiled program:"
+        , "       -run-heap   <bytes>  Size of fixed heap            (65536)"
         , ""
         , " Conversion:"
         , "       -to-salt    <file>   Convert a module to Disciple Core Salt."

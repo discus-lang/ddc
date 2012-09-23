@@ -64,15 +64,24 @@ convModuleM mm@(C.ModuleCore{})
         let isMainModule 
                 = C.moduleName mm == C.ModuleName ["Main"]
 
-        let vHeapTop    = Var (NameGlobal "DDC.Runtime.heapTop")  (tAddr platform)
+        -- Holds the pointer to the current top of the heap.
+        --  This is the byte _after_ the last byte used by an object.
+        let vHeapTop    = Var (NameGlobal "DDC.Runtime.heapTop") (tAddr platform)
+
+        -- Holds the pointer to the maximum heap.
+        --  This is the byte _after_ the last byte avaiable in the heap.
+        let vHeapMax    = Var (NameGlobal "DDC.Runtime.heapMax") (tAddr platform)
+
         let rtsGlobals
                 | isMainModule
-                = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr platform) 0)) ]
+                = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr platform) 0))
+                  , GlobalStatic   vHeapMax (StaticLit (LitInt (tAddr platform) 0)) ]
 
                 | otherwise
-                = [ GlobalExternal vHeapTop ]
-        ---------------------------------------------------------------
+                = [ GlobalExternal vHeapTop 
+                  , GlobalExternal vHeapMax ]
 
+        ---------------------------------------------------------------
         functionsAndMD          <- mapM (uncurry (convSuperM kenv tenv)) bxs
         let (functions, mdecls) =  unzip functionsAndMD
         

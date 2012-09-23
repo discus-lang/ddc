@@ -19,16 +19,12 @@ import qualified Data.Sequence  as Seq
 
 -- Prim call ------------------------------------------------------------------
 -- | Convert a primitive call to LLVM.
---
---   TODO: store heap mode in platform spec.
---         Be able to malloc new object, or use bump pointer.
---
 convPrimCallM 
         :: Show a 
         => Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
-        -> MDSuper
+        -> MDSuper              -- ^ Metadata for the enclosing super
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.Prim               -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
@@ -92,13 +88,37 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
         A.PrimStore A.PrimStoreCreate
          | Just [xBytes']         <- mconvAtoms pp kenv tenv xs
          -> do  vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
+                vMax    <- newUniqueNamedVar "max"  (tAddr pp)
                 let vTopPtr = Var (NameGlobal "DDC.Runtime.heapTop") (TPointer (tAddr pp))
+                let vMaxPtr = Var (NameGlobal "DDC.Runtime.heapMax") (TPointer (tAddr pp))
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ICall (Just vAddr) CallTypeStd
                                 (tAddr pp) (NameGlobal "malloc") 
-                                [xBytes'] [] 
-                        , IStore (XVar vTopPtr) (XVar vAddr) ]
+                                [xBytes'] []                         
+
+                        -- Store the top-of-heap pointer
+                        , IStore (XVar vTopPtr) (XVar vAddr)
+
+                        -- Store the maximum heap pointer 
+                        , IOp    vMax OpAdd     (XVar vAddr) xBytes'
+                        , IStore (XVar vMaxPtr) (XVar vMax) ]
+
+
+        A.PrimStore A.PrimStoreCheck
+         | Just [xBytes']         <- mconvAtoms pp kenv tenv xs
+         , Just vDst@(Var nDst _) <- mdst
+         -> do  let vTop    = Var (bumpName nDst "top") (tAddr pp)
+                let vMin    = Var (bumpName nDst "min") (tAddr pp)
+                let vMax    = Var (bumpName nDst "max") (tAddr pp)
+                let vTopPtr = Var (NameGlobal "DDC.Runtime.heapTop") (TPointer (tAddr pp))
+                let vMaxPtr = Var (NameGlobal "DDC.Runtime.heapMax") (TPointer (tAddr pp))
+                return  $ Seq.fromList
+                        $ map annotNil
+                        [ ILoad vTop (XVar vTopPtr)
+                        , IOp   vMin OpAdd (XVar vTop) xBytes'
+                        , ILoad vMax (XVar vMaxPtr)
+                        , IICmp vDst ICondUlt (XVar vMin) (XVar vMax) ]
 
         A.PrimStore A.PrimStoreAlloc
          | Just vDst@(Var nDst _) <- mdst

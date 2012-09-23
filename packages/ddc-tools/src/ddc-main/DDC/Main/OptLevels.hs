@@ -125,7 +125,7 @@ opt1_salt config builder
         --  depending on the pointer width of the target architecture.
         let inlineModulePaths
                 =  [ configLibraryPath config 
-                        </> "salt/runtime" </> show targetWidth </> "Object.dce"]
+                        </> "salt/runtime" ++ show targetWidth </> "Object.dce"]
                 ++ configWithSalt config
 
         -- Load all the modues that we're using for inliner templates.
