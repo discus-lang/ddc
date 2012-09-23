@@ -32,8 +32,12 @@ create way allFiles filePath
         mainRunStdout    = buildDir  </> "Main.run.stdout"
         mainRunStderr    = buildDir  </> "Main.run.stderr"
 
-        mainErrorCheck   = sourceDir </> "Main.error.check"
-        shouldSucceed    = not $ Set.member mainErrorCheck allFiles
+        mainErrorCheck    = sourceDir </> "Main.error.check"
+        compShouldSucceed = not $ Set.member mainErrorCheck allFiles
+
+        -- If this exists then expect the execuable to fail at runtime.
+        mainRunErrorCheck = sourceDir </> "Main.runerror.check"
+        runShouldSucceed  = not $ Set.member mainRunErrorCheck allFiles
 
         mainStdoutCheck  = sourceDir </> "Main.stdout.check"
         mainStdoutDiff   = buildDir  </> "Main.run.stdout.diff"
@@ -53,7 +57,7 @@ create way allFiles filePath
                          $ CompileDC.Spec
                                 filePath (wayOptsComp way) fragment 
                                 buildDir mainCompStdout mainCompStderr
-                                (Just mainBin) shouldSucceed
+                                (Just mainBin) compShouldSucceed
 
         -- run the binary
         run              = jobOfSpec (JobId testName (wayName way))
@@ -61,7 +65,7 @@ create way allFiles filePath
                                 filePath 
                                 mainBin []
                                 mainRunStdout mainRunStderr
-                                True
+                                runShouldSucceed
 
         -- diff errors produced by the compilation
         diffError        = jobOfSpec (JobId testName (wayName way))
@@ -85,9 +89,9 @@ create way allFiles filePath
          then Nothing
          else Just $ Chain 
                 $  [compile]
-                ++ (if shouldSucceed    then [run]        else [diffError])
-                ++ (if shouldDiffStdout then [diffStdout] else [])
-                ++ (if shouldDiffStderr then [diffStderr] else [])
+                ++ (if compShouldSucceed  then [run]        else [diffError])
+                ++ (if shouldDiffStdout   then [diffStdout] else [])
+                ++ (if shouldDiffStderr   then [diffStderr] else [])
 
  | otherwise    = Nothing
 
