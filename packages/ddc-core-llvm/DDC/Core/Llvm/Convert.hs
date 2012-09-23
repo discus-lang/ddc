@@ -171,7 +171,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
 
         -- Convert function body to basic blocks.
         label   <- newUniqueLabel "entry"
-        blocks  <- convBodyM kenv' tenv' mdsup Nothing Seq.empty label Seq.empty xBody
+        blocks  <- convBodyM BodyTop kenv' tenv' mdsup Seq.empty label Seq.empty xBody
 
         -- Build the function.
         return  $ ( Function
@@ -197,26 +197,32 @@ nameOfParam bb
 
 
 -- Body -----------------------------------------------------------------------
+data BodyContext
+        = BodyTop
+        | BodyNest Var Label
+
 -- | Convert a function body to LLVM blocks.
 convBodyM 
-        :: KindEnv A.Name
+        :: BodyContext          -- ^ Context of this conversion.
+        -> KindEnv A.Name
         -> TypeEnv A.Name
         -> MDSuper
-        -> Maybe (Var, Label)   -- ^ Assign result to this var (TODO: hacks)
         -> Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq AnnotInstr       -- ^ Instrs in current block.
         -> C.Exp () A.Name      -- ^ Expression being converted.
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
-convBodyM kenv tenv mdsup mDst blocks label instrs xx
+convBodyM context kenv tenv mdsup blocks label instrs xx
  = do   pp      <- gets llvmStatePlatform
         case xx of
 
          -- Control transfer instructions -----------------
          -- Void return applied to a literal void constructor.
+         --   We must be at the top-level of the function.
          C.XApp{}
-          |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          |  BodyTop                            <- context
+          ,  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _, C.XCon _ dc]           <- xs
           ,  Just A.NameVoid                    <- C.takeNameOfDaCon dc
@@ -225,10 +231,11 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                                (instrs |> (annotNil $ IReturn Nothing))
 
          -- Void return applied to some other expression.
-         -- We still have to eval the expression, 
-         --  but it returns no value.
+         --   We still have to eval the expression, but it returns no value.
+         --   We must be at the top-level of the function.
          C.XApp{}
-          |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          |  BodyTop                            <- context
+          ,  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x2]                    <- xs
           ,  isVoidT t
@@ -238,8 +245,10 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                                  (instrs >< (instrs2 |> (annotNil $ IReturn Nothing)))
 
          -- Return a value.
+         --   We must be at the top-level of the function.
          C.XApp{}
-          |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          |  BodyTop                            <- context
+          ,  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x]                     <- xs
           -> do let t'  =  convType pp kenv t
@@ -250,6 +259,7 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                                   (instrs >< (is |> (annotNil $ IReturn (Just (XVar vDst)))))
 
          -- Fail and abort the program.
+         --   Allow this inside an expression as well as from the top level.
          C.XApp{}
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail   <- p
@@ -266,6 +276,7 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
 
          -- Calls -----------------------------------------
          -- Tailcall a function.
+         --   We must be at the top-level of the function.
          C.XApp{}
           |  Just (A.NamePrim p, args)         <- takeXPrimApps xx
           ,  A.PrimCall (A.PrimCallTail arity) <- p
@@ -303,7 +314,7 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                 let n'          = A.sanitizeName n
                 let t'          = convType pp kenv t
                 let vDst        = Var (NameLocal n') t'
-                alts'@(_:_)     <- mapM (convAltM kenv tenv mdsup (Just (vDst, label2))) alts
+                alts'@(_:_)     <- mapM (convAltM (BodyNest vDst label2) kenv tenv mdsup) alts
 
                 -- Determine what default alternative to use for the instruction. 
                 (lDefault, blocksDefault)
@@ -324,7 +335,7 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                 let blocks'     = blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
                 let tenv'       = Env.extend b tenv
-                convBodyM kenv tenv' mdsup Nothing blocks' label2 Seq.empty x2
+                convBodyM context kenv tenv' mdsup blocks' label2 Seq.empty x2
 
 
          -- Variable assignment from an expression.
@@ -335,13 +346,13 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                 let t'    = convType pp kenv t
                 let dst   = Var (NameLocal n') t'
                 instrs'   <- convExpM pp kenv tenv mdsup dst x1
-                convBodyM kenv tenv' mdsup mDst blocks label (instrs >< instrs') x2
+                convBodyM context kenv tenv' mdsup blocks label (instrs >< instrs') x2
 
          -- A statement that provides no value statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
           -> do instrs'   <- convStmtM pp kenv tenv mdsup x1
-                convBodyM kenv tenv mdsup mDst blocks label (instrs >< instrs') x2
+                convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Variable assignment from an unsed binder.
          -- We need to invent a dummy binder as LLVM needs some name for it.
@@ -351,17 +362,17 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
           -> do let t'    =  convType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
                 instrs'   <- convExpM pp kenv tenv mdsup dst x1
-                convBodyM kenv tenv mdsup mDst blocks label (instrs >< instrs') x2
+                convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Letregions ------------------------------------
          C.XLet _ (C.LLetRegions b _) x2
           -> do let kenv' = Env.extends b kenv
-                convBodyM kenv' tenv mdsup mDst blocks label instrs x2
+                convBodyM context kenv' tenv mdsup blocks label instrs x2
 
          -- Case ------------------------------------------
          C.XCase _ x1 alts
           | Just x1'@(Var{})    <- takeLocalV pp kenv tenv x1
-          -> do alts'@(_:_)     <- mapM (convAltM kenv tenv mdsup mDst) alts
+          -> do alts'@(_:_)     <- mapM (convAltM context kenv tenv mdsup) alts
 
                 -- Determine what default alternative to use for the instruction. 
                 (lDefault, blocksDefault)
@@ -382,10 +393,10 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
                 return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
          C.XCast _ _ x
-          -> convBodyM kenv tenv mdsup mDst blocks label instrs x
+          -> convBodyM context kenv tenv mdsup blocks label instrs x
 
          _ 
-          | Just (vDst, label') <- mDst
+          | BodyNest vDst label' <- context
           -> do instrs'  <- convExpM pp kenv tenv mdsup vDst xx
                 return  $ blocks >< Seq.singleton (Block label 
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
@@ -394,7 +405,7 @@ convBodyM kenv tenv mdsup mDst blocks label instrs xx
           -> die $ "invalid body statement " ++ show xx
  
 
--- Stmt -----------------------------------------------------------------------
+ -- Stmt -----------------------------------------------------------------------
 -- | Convert a Core statement to LLVM instructions.
 convStmtM 
         :: Platform
@@ -426,69 +437,6 @@ convStmtM pp kenv tenv mdsup xx
 
         _ -> die $ "invalid statement" ++ show xx
 
-
--- Alt ------------------------------------------------------------------------
--- | Holds the result of converting an alternative.
-data AltResult 
-        = AltDefault        Label (Seq Block)
-        | AltCase       Lit Label (Seq Block)
-
-
--- | Convert a case alternative to LLVM.
---
---   This only works for zero-arity constructors.
---   The client should extrac the fields of algebraic data objects manually.
-convAltM 
-        :: KindEnv  A.Name
-        -> TypeEnv  A.Name
-        -> MDSuper
-        -> Maybe (Var, Label)
-        -> C.Alt () A.Name      -- ^ Alternative to convert.
-        -> LlvmM AltResult
-
-convAltM kenv tenv mdsup mDst aa
- = do   pp      <- gets llvmStatePlatform
-        case aa of
-         C.AAlt C.PDefault x
-          -> do label   <- newUniqueLabel "default"
-                blocks  <- convBodyM kenv tenv mdsup mDst Seq.empty label Seq.empty x
-                return  $  AltDefault label blocks
-
-         C.AAlt (C.PData dc []) x
-          | Just n      <- C.takeNameOfDaCon dc
-          , Just lit    <- convPatName pp n
-          -> do label   <- newUniqueLabel "alt"
-                blocks  <- convBodyM kenv tenv mdsup mDst Seq.empty label Seq.empty x
-                return  $  AltCase lit label blocks
-
-         _ -> die "invalid alternative"
-
-
--- | Convert a constructor name from a pattern to a LLVM literal.
-convPatName :: Platform -> A.Name -> Maybe Lit
-convPatName pp name
- = case name of
-        A.NameBool True   -> Just $ LitInt (TInt 1) 1
-        A.NameBool False  -> Just $ LitInt (TInt 1) 0
-        A.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        A.NameInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
-        A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
-        _                 -> Nothing
-
-
--- | Take the blocks from an `AltResult`.
-altResultBlocks :: AltResult -> Seq Block
-altResultBlocks aa
- = case aa of
-        AltDefault _ blocks     -> blocks
-        AltCase _ _  blocks     -> blocks
-
-
--- | Take the `Lit` and `Label` from an `AltResult`
-takeAltCase :: AltResult -> Maybe (Lit, Label)
-takeAltCase (AltCase lit label _)       = Just (lit, label)
-takeAltCase _                           = Nothing
 
 
 -- Exp ------------------------------------------------------------------------
@@ -553,4 +501,71 @@ convExpM pp kenv tenv mdsup vDst xx
          -> convExpM pp kenv tenv mdsup vDst x
 
         _ -> die $ "invalid expression " ++ show xx
+
+
+
+
+-- Alt ------------------------------------------------------------------------
+-- | Holds the result of converting an alternative.
+data AltResult 
+        = AltDefault        Label (Seq Block)
+        | AltCase       Lit Label (Seq Block)
+
+
+-- | Convert a case alternative to LLVM.
+--
+--   This only works for zero-arity constructors.
+--   The client should extrac the fields of algebraic data objects manually.
+convAltM 
+        :: BodyContext
+        -> KindEnv  A.Name
+        -> TypeEnv  A.Name
+        -> MDSuper
+        -> C.Alt () A.Name      -- ^ Alternative to convert.
+        -> LlvmM AltResult
+
+convAltM context kenv tenv mdsup aa
+ = do   pp      <- gets llvmStatePlatform
+        case aa of
+         C.AAlt C.PDefault x
+          -> do label   <- newUniqueLabel "default"
+                blocks  <- convBodyM context kenv tenv mdsup Seq.empty label Seq.empty x
+                return  $  AltDefault label blocks
+
+         C.AAlt (C.PData dc []) x
+          | Just n      <- C.takeNameOfDaCon dc
+          , Just lit    <- convPatName pp n
+          -> do label   <- newUniqueLabel "alt"
+                blocks  <- convBodyM context kenv tenv mdsup Seq.empty label Seq.empty x
+                return  $  AltCase lit label blocks
+
+         _ -> die "invalid alternative"
+
+
+-- | Convert a constructor name from a pattern to a LLVM literal.
+convPatName :: Platform -> A.Name -> Maybe Lit
+convPatName pp name
+ = case name of
+        A.NameBool True   -> Just $ LitInt (TInt 1) 1
+        A.NameBool False  -> Just $ LitInt (TInt 1) 0
+        A.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+        _                 -> Nothing
+
+
+-- | Take the blocks from an `AltResult`.
+altResultBlocks :: AltResult -> Seq Block
+altResultBlocks aa
+ = case aa of
+        AltDefault _ blocks     -> blocks
+        AltCase _ _  blocks     -> blocks
+
+
+-- | Take the `Lit` and `Label` from an `AltResult`
+takeAltCase :: AltResult -> Maybe (Lit, Label)
+takeAltCase (AltCase lit label _)       = Just (lit, label)
+takeAltCase _                           = Nothing
+
 
