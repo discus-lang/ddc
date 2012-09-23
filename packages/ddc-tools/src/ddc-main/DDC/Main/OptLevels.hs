@@ -105,13 +105,10 @@ opt1_lite config _builder
                         (makeNamifier Lite.freshX)
 
         return  $ (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules inlineModules)
-        
-                -- TODO: want to do a fixpoint.
-                <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-                <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-                <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-                <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
+                           $ lookupTemplateFromModules inlineModules)        
+                <> S.Fix 5 (S.beta 
+                                <> S.bubble      <> S.flatten 
+                                <> normalizeLite <> S.forward)
 
 
 -- | Level 1 optimiser for Core Salt code.
@@ -151,12 +148,9 @@ opt1_salt config builder
         
         return  $ (S.Trans $ S.Inline 
                            $ lookupTemplateFromModules inlineModules)
-
-                -- hrm. Want a fixpoint here.
-                <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-                <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-                <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-                <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
+                <> S.Fix 5 (S.beta 
+                                <> S.bubble      <> S.flatten 
+                                <> normalizeSalt <> S.forward)
 
 
 
