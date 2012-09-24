@@ -38,7 +38,6 @@ instance Pretty MDecl where
                     <> text "metadata" <> space
                     <> ppr m
 
-
 data MRef = MRef Int 
             deriving (Show, Eq)
 
@@ -101,4 +100,4 @@ tbaaRoot :: String -> Metadata
 tbaaRoot n = Tbaa $ MDNode [ OpMDString (MDString n)
                            , OpNull
                            , OpBool     True ]
-                           
+

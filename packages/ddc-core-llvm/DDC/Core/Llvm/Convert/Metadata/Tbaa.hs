@@ -77,14 +77,14 @@ deriveMD nTop xx
         (constwits, diswits) = partitionWits $ collectWitsB xx
         arel                 = constructARel   diswits
         domain               = constructANodes regs constwits
-        mdDAG                = transOrientation' (domain, arel)
+        mdDAG                = transOrientation' $ UG (domain, arel)
         mdTrees              = partitionDAG mdDAG    
     in  foldM (buildMDTree nTop) (MDSuper emptyDict []) mdTrees
 
 
 buildMDTree :: String -> MDSuper -> Tree ANode ->  LlvmM MDSuper
 buildMDTree nTop sup tree
- = let tree' = rootTree ARoot tree
+ = let tree' = anchor ARoot tree
    in  bfBuild nTop tree' Nothing sup ARoot
 
 bfBuild :: String -> Tree ANode -> Maybe MRef -> MDSuper -> ANode -> LlvmM MDSuper
@@ -138,7 +138,7 @@ annot kenv mdsup xs ins
 data ANode  = ANode { regionU :: RegBound
                    , isConst :: Bool }
             | ARoot
-                   deriving (Show, Eq)
+              deriving (Show, Eq)
 
 
 -- | Make nodes from regions
