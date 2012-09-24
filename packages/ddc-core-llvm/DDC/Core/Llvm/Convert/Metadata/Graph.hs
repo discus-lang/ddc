@@ -16,9 +16,7 @@ module DDC.Core.Llvm.Convert.Metadata.Graph
        , partitionDAG
 
        , Tree(..)
-       , sources, anchor 
-
-       , partitionings, isTree)
+       , sources, anchor )
 where
 
 import Data.List          hiding (partition)
