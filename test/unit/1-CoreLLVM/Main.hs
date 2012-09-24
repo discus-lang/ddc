@@ -1,13 +1,20 @@
-{-# LANGUAGE TupleSections, FlexibleInstances #-}
-module QCGraph where
+{-# LANGUAGE TupleSections, FlexibleInstances, TemplateHaskell #-}
+module Main where
 
 import Data.List
 import Data.Maybe
 import Control.Applicative
 
 import Test.QuickCheck
+import Test.QuickCheck.All
 import DDC.Core.Llvm.Convert.Metadata.Graph
 
+
+main = $(quickCheckAll)
+
+-- Unacceptable performance for anything bigger than 5 =(
+magicLimit = 5
+rootStart  = 42
 
 instance Arbitrary (UG Int) where
   arbitrary = sized $ \s -> 
@@ -16,10 +23,6 @@ instance Arbitrary (UG Int) where
     in  UG . (dom,) . curry . flip elem 
           <$> nub . filter (uncurry (/=)) 
           <$> listOf (lexicoOrder <$> tupleOf domG domG)
-
--- Unacceptable performance for anything bigger than 5 =(
-magicLimit = 3
-rootStart  = 42
 
 tupleOf :: Gen a -> Gen b -> Gen (a,b)
 tupleOf a b = (,) <$> a <*> b 

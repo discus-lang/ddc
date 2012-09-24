@@ -16,7 +16,9 @@ module DDC.Core.Llvm.Convert.Metadata.Graph
        , partitionDAG
 
        , Tree(..)
-       , sources, anchor )
+       , sources, anchor 
+
+       , massage, unmassage, partitionings, isTree)
 where
 
 import Data.List          hiding (partition)
@@ -24,7 +26,6 @@ import Data.Ord
 import Data.Tuple
 import Data.Maybe
 import Control.Monad
-import Control.Applicative
 import Control.Arrow
 
 
@@ -86,9 +87,6 @@ instance Show a => Show (DAG a) where
 
 -- | Find the transitive orientation of an undirected graph if one exists
 --    using exponential-time bruteforce.
---
---    TODO to optimise the current tree representation of metadata in LLVM,
---    we give priority to orientations that are already a tree
 --    TODO implement O(n) algorithm
 --
 transOrientation :: Eq a => UG a -> Maybe (DAG a)
@@ -176,10 +174,10 @@ type Partitioning a = [SubList a]
 -- | Massage the partitioning to fit LLVM metadata trees
 --      by putting fully connected nodes in their own trees.
 --      TODO: it's better to rank the partitionings on their connectivity
---            and pick the one with the closest to the original.
+--            and pick the one closest to the original.
 massage :: Eq a => DAG a -> ([a], Dom a)
 massage (DAG (d,g))
-  = let connecteds  = filter (\x -> all (liftA2 (||) (g x) (flip g x)) (d \\ [x])) d
+  = let connecteds  = filter (\x -> all (g x) (d \\ [x])) d
     in  (connecteds, d \\ connecteds)
 
 -- | Unmassage the connected nodes back in.
