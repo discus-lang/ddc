@@ -48,6 +48,7 @@ keywords
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
         , ("forget",     KA KForget)
+        , ("type",       KA KType)
         , ("weakeff",    KA KWeakEff)
         , ("weakclo",    KA KWeakClo)
         , ("with",       KA KWith)

@@ -44,15 +44,19 @@ pModule
             ,   return []]
 
         -- imports { SIG;+ }
-        tImports
+        tImportKindsTypes
          <- P.choice
             [do pTok KImports
                 pTok KBraceBra
-                specs    <- P.sepEndBy1 pImportTypeSpec (pTok KSemiColon)
+                importKinds     <- P.sepEndBy pImportKindSpec (pTok KSemiColon)
+                importTypes     <- P.sepEndBy pImportTypeSpec (pTok KSemiColon)
                 pTok KBraceKet
-                return specs
+                return (importKinds, importTypes)
 
-            ,   return []]
+            ,   return ([], [])]
+
+        let (tImportKinds, tImportTypes)
+                = tImportKindsTypes
 
         pTok KWith
 
@@ -69,8 +73,8 @@ pModule
                 { moduleName            = name
                 , moduleExportKinds     = Map.empty
                 , moduleExportTypes     = Map.fromList tExports
-                , moduleImportKinds     = Map.empty
-                , moduleImportTypes     = Map.fromList tImports
+                , moduleImportKinds     = Map.fromList tImportKinds
+                , moduleImportTypes     = Map.fromList tImportTypes
                 , moduleBody            = body }
 
 
@@ -81,6 +85,30 @@ pTypeSig
         pTok KColonColon
         t       <- pType
         return  (var, t)
+
+
+-- | Parse the type signature of an imported variable.
+pImportKindSpec 
+        :: (Ord n, Pretty n) 
+        => Parser n (n, (QualName n, Kind n))
+
+pImportKindSpec 
+ =   pTok KType
+ >>  P.choice
+ [      -- Import with an explicit external name.
+        -- Module.varExternal with varLocal
+   do   qn      <- pQualName
+        pTok KWith
+        n       <- pName
+        pTok KColonColon
+        k       <- pType
+        return  (n, (qn, k))
+
+ , do   n       <- pName
+        pTok KColonColon
+        k       <- pType
+        return  (n, (QualName (ModuleName []) n, k))
+ ]        
 
 
 -- | Parse the type signature of an imported variable.

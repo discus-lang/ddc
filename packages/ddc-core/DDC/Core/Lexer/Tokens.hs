@@ -170,6 +170,7 @@ data TokAtom
         | KWithRegion
         | KCase
         | KOf
+        | KType
         | KWeakEff
         | KWeakClo
         | KPurify
@@ -267,10 +268,11 @@ describeTokAtom' ta
         KLazy                   -> (Keyword, "lazy")
         KLetRec                 -> (Keyword, "letrec")
         KLetRegions             -> (Keyword, "letregions")
-        KLetRegion             -> (Keyword, "letregion")
+        KLetRegion              -> (Keyword, "letregion")
         KWithRegion             -> (Keyword, "withregion")
         KCase                   -> (Keyword, "case")
         KOf                     -> (Keyword, "of")
+        KType                   -> (Keyword, "type")
         KWeakEff                -> (Keyword, "weakeff")
         KWeakClo                -> (Keyword, "weakclo")
         KPurify                 -> (Keyword, "purify")
