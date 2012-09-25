@@ -228,10 +228,10 @@ instance Ord Type where
 instance Hashable Bound where
  hash bb
   = case bb of
-	UVar   v	-> hashInt 1 + hash v
-	UMore  v _	-> hashInt 2 + hash v
-	UIndex ix	-> hashInt 3 + hash ix
-	UClass cid	-> hashInt 4 + hash cid
+	UVar   v	-> hash (1 :: Int) + hash v
+	UMore  v _	-> hash (2 :: Int) + hash v
+	UIndex ix	-> hash (3 :: Int) + hash ix
+	UClass cid	-> hash (4 :: Int) + hash cid
 
 
 instance Ord Bound where

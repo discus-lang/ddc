@@ -9,10 +9,9 @@ import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Var
 import Control.Monad
-import Data.Hashable
 import Data.MaybeUtil
-import Data.HashTable			(HashTable)
-import qualified Data.HashTable		as Hash
+import Data.HashTable.IO		(LinearHashTable)
+import qualified Data.HashTable.IO	as Hash
 import qualified Data.Map		as Map
 
 
@@ -21,22 +20,22 @@ import qualified Data.Map		as Map
 data Table
 	= Table 
 	{ -- | Equality contraints to inline.
-	  tableEq	:: HashTable Var Type
+	  tableEq	:: LinearHashTable Var Type
 	
 	  -- | More-than constraints to inline.
-	, tableMore	:: HashTable Var Type
+	, tableMore	:: LinearHashTable Var Type
 
 	  -- | Table of constraint vars that we cannot inline because the left is a wanted
 	  --   variable. We keep this information separate, instead of folding it into the 
 	  --   above tables, so we can pass those directly to the type substitutor later.
-	, tableBlocked	:: HashTable Var () }
+	, tableBlocked	:: LinearHashTable Var () }
 
 
 -- | Provided a constraint variable is not in the noSub table, then remember that 
 --   we want to inline it, otherwise drop it on the floor.
 insertConstraint
 	:: Table
-	-> (Table -> HashTable Var Type)
+	-> (Table -> LinearHashTable Var Type)
 	-> Var -> Type
 	-> IO ()
 
@@ -77,10 +76,7 @@ collect :: UseMap
 
 collect usage cc
  = do	-- create the initial tabe.
-	table	<- liftM3 Table 
-			(Hash.new (==) hash)
-			(Hash.new (==) hash)
-			(Hash.new (==) hash)
+	table	<- liftM3 Table Hash.new Hash.new Hash.new
 
 	-- collect inlinable constraints from the tree.
 	collectTree usage table cc

@@ -37,10 +37,10 @@ instance Hashable DataFormat where
  {-# INLINE hash #-}
  hash fmt 
   = case fmt of
-	Boxed			-> hashInt 1
-	BoxedBits bits		-> hashInt 2 + hash bits
-	Unboxed			-> hashInt 3
-	UnboxedBits bits	-> hashInt 4 + hash bits
+	Boxed			-> hash (1 :: Int)
+	BoxedBits bits		-> hash (2 :: Int) + hash bits
+	Unboxed			-> hash (3 :: Int)
+	UnboxedBits bits	-> hash (4 :: Int) + hash bits
 	
 
 -- | Check whether this data format corresponds to an unboxed value

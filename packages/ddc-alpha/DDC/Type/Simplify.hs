@@ -13,9 +13,10 @@ import DDC.Type.Exp
 import DDC.Type.Pretty
 import DDC.Type.Simplify.Usage
 import System.IO.Unsafe
-import qualified Data.HashTable	as Hash
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
+import Data.HashTable.IO                (LinearHashTable)
+import qualified Data.HashTable.IO      as Hash
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 import Control.Monad
 import Data.Maybe
 

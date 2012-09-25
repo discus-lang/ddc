@@ -10,7 +10,7 @@ import DDC.Solve.Location
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import qualified Data.HashTable		as Hash
+import qualified Data.HashTable.IO      as Hash
 import Util
 
 stage		= "DDC.Constraint.Simplify"

@@ -21,4 +21,4 @@ instance Ix ClassId where
  rangeSize (ClassId a, ClassId b)		= rangeSize (a, b)
  
 instance Hashable ClassId where
- hash 	(ClassId cid)				= hashInt cid
+ hash 	(ClassId cid)				= hash cid

@@ -10,10 +10,10 @@ import DDC.Type.Exp
 import DDC.Var
 import DDC.Main.Error
 import Control.Monad
-import Data.HashTable
-import Data.Set			(Set)
-import qualified Data.Set	as Set
-import qualified Data.HashTable	as Hash
+import Data.HashTable.IO                (LinearHashTable)
+import Data.Set                         (Set)
+import qualified Data.Set               as Set
+import qualified Data.HashTable.IO      as Hash
 
 stage	= "DDC.Type.Operators.SubHash"
 
@@ -21,7 +21,7 @@ stage	= "DDC.Type.Operators.SubHash"
 --   Recursive substutions cause 'panic'.
 --   TODO: finsih for UMore, TForall and TConstrain 
 subHashVT_noLoops
-	:: HashTable Var Type
+	:: LinearHashTable Var Type
 	-> Type
 	-> IO Type
 
@@ -29,7 +29,7 @@ subHashVT_noLoops table tt
 	= subVT table Set.empty tt
 
 	
-subVT 	:: HashTable Var Type
+subVT 	:: LinearHashTable Var Type
 	-> Set Var
 	-> Type
 	-> IO Type

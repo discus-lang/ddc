@@ -40,7 +40,7 @@ import qualified DDC.Desugar.Projections.ProjTable as D
 import qualified DDC.Desugar.Transform		as D
 import qualified Data.Map			as Map
 import qualified Data.Set			as Set
-import qualified Data.HashTable			as Hash
+import qualified Data.HashTable.IO		as Hash
 
 -- Elaborate ---------------------------------------------------------------------------------------
 -- | Elaborate type information.

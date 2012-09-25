@@ -21,12 +21,12 @@ import Control.Monad
 import Data.Monoid
 import Data.Maybe
 import Data.Hashable
-import Data.HashTable		(HashTable)
-import Data.Map			(Map)
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
-import qualified Data.Foldable	as Seq
-import qualified Data.HashTable	as Hash
+import Data.HashTable.IO                (LinearHashTable)
+import Data.Map                         (Map)
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
+import qualified Data.Foldable          as Seq
+import qualified Data.HashTable.IO      as Hash
 
 stage	= "DDC.Constraint.Simplify.Usage"
 
@@ -70,13 +70,13 @@ instance Pretty Usage PMode where
 -- | Maps type vars to how many times each sort of usage appears.
 data UseMap
 	= UseMap 
-	{ useTable	:: HashTable Var (Map Usage Int) }
+	{ useTable	:: LinearHashTable Var (Map Usage Int) }
 
 
 -- | Empty usage map
 emptyUsage :: IO UseMap 
 emptyUsage 
- = do	table	<- Hash.new (==) hash
+ = do	table	<- Hash.new
 	return	$ UseMap table
 	
 
@@ -89,7 +89,7 @@ addUsage used@(UseMap mp) usage (TVar _ (UVar v))
 		$  Hash.lookup mp v
 	
 	-- update the table with the new usage information.
-	Hash.update mp v
+	Hash.insert mp v
 		$ Map.unionWith (+) val
 		$ Map.singleton usage 1
 

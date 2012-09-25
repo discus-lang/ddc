@@ -18,12 +18,11 @@ import DDC.Type.Collect
 import DDC.Type.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Data.Hashable
-import Data.HashTable		(HashTable)
+import Data.HashTable.IO	(LinearHashTable)
 import Data.Map			(Map)
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
-import qualified Data.HashTable	as Hash
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
+import qualified Data.HashTable.IO      as Hash
 import Control.Monad
 import Data.Maybe
 
@@ -76,13 +75,13 @@ instance Pretty Usage PMode where
 -- | Maps type vars to how many times each sort of usage appears.
 data UseMap
 	= UseMap 
-	{ useTable	:: HashTable Bound (Kind, Map Usage Int) }
+	{ useTable	:: LinearHashTable Bound (Kind, Map Usage Int) }
 
 
 -- | Empty usage map
 emptyUsage :: IO UseMap 
 emptyUsage 
- = do	table	<- Hash.new (==) hash
+ = do	table	<- Hash.new
 	return	$ UseMap table
 	
 
@@ -94,7 +93,7 @@ addUsage (UseMap mp) usage u kind
 			$  Hash.lookup mp u
 	
 	-- update the table with the new usage information.
-	Hash.update mp u
+	Hash.insert mp u
 		(k, Map.unionWith (+) val (Map.singleton usage 1))
 
 	return ()

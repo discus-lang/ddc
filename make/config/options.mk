@@ -113,4 +113,6 @@ DDC_PACKAGES	:= \
 	-package haskeline \
 	-package haskell-src-exts \
 	-package wl-pprint \
-	-package transformers 
+	-package transformers \
+        -package hashable \
+        -package hashtables
