@@ -141,11 +141,19 @@ convertQualNameM (QualName mn n)
 
 
 -- Exp -------------------------------------------------------------------------
+-- | The context we're converting the expression in.
+--     We keep track of this during conversion to ensure we don't produce
+--     code outside the Salt language fragment. For example, in Salt we can only
+--     have value variables, types and witnesses as function arguments, not general
+--     expressions.
 data ExpContext
-        = ExpTop        -- ^ At the top-level of a function.
+        = ExpTop        -- ^ At the top-level of the module.
+        | ExpFun        -- ^ At the top-level of a function.
+        | ExpBody       -- ^ In the body of a function.
         | ExpBind       -- ^ In the right of a let-binding.
         | ExpArg        -- ^ In a function argument.
-        deriving Show
+        deriving (Show, Eq, Ord)
+
 
 -- | Convert the body of a supercombinator to Salt.
 convertExpX 
@@ -162,6 +170,7 @@ convertExpX ctx pp defs kenv tenv xx
  = let downArgX     = convertExpX     ExpArg pp defs kenv tenv
        downCtorAppX = convertCtorAppX pp defs kenv tenv
    in case xx of
+
         XVar _ UIx{}
          -> throw $ ErrorMalformed 
          $  "convertBodyX: can't convert program with anonymous value binders."
@@ -176,10 +185,11 @@ convertExpX ctx pp defs kenv tenv xx
                 xx'     <- convertCtor pp defs kenv tenv a' u
                 return  xx'
 
-        -- Keep region and data type lambdas, 
-        -- but ditch the others.
+
+        -- Type abstractions can only appear at the top-level of a function.
+        --   Keep region and data type lambdas, but ditch the others.
         XLAM a b x
-         | ExpTop       <- ctx
+         | ExpFun       <- ctx
          ,   (isRegionKind $ typeOfBind b)
           || (isDataKind   $ typeOfBind b)
          -> do  let a'    =  annotTail a
@@ -190,15 +200,17 @@ convertExpX ctx pp defs kenv tenv xx
 
                 return $ XLAM a' b' x'
 
-         | ExpTop       <- ctx
+         | ExpFun       <- ctx
          -> do  let kenv'       = Env.extend b kenv
                 convertExpX ctx pp defs kenv' tenv x
 
          | otherwise
          -> error $ "convertBodyX: can't convert XLAM in " ++ show ctx
 
+
+        -- Value abstractions can only appear at the top-level of a fucntion.
         XLam a b x
-         | ExpTop       <- ctx
+         | ExpFun       <- ctx
          -> let tenv'   = Env.extend b tenv
             in case universeFromType1 kenv (typeOfBind b) of
                 Just UniverseData    
@@ -217,6 +229,7 @@ convertExpX ctx pp defs kenv tenv xx
                             $ "Invalid universe for XLam binder: " ++ show b
          | otherwise
          -> error $ "convertBodyX: can't convert XLam in " ++ show ctx
+
 
         -- Data constructor applications.
         XApp a xa xb
@@ -242,7 +255,10 @@ convertExpX ctx pp defs kenv tenv xx
                 xsArgs' <- mapM downArgX xsArgs
                 return  $ makeXApps a' x1' xsArgs'
 
+
+        -- let-expressions.
         XLet a lts x2
+         | ctx <= ExpBind
          -> do  -- Convert the bindings.
                 lts'            <- convertLetsX pp defs kenv tenv lts
 
@@ -250,9 +266,13 @@ convertExpX ctx pp defs kenv tenv xx
                 let (bs1, bs0)  = bindsOfLets lts
                 let kenv'       = Env.extends bs1 kenv
                 let tenv'       = Env.extends bs0 tenv
-                x2'             <- convertExpX ctx pp defs kenv' tenv' x2
+                x2'             <- convertExpX ExpBody pp defs kenv' tenv' x2
 
                 return $ XLet (annotTail a) lts' x2'
+
+        XLet{}
+         -> throw $ ErrorNotNormalized ("cannot convert let-expression")
+
 
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
@@ -264,8 +284,9 @@ convertExpX ctx pp defs kenv tenv xx
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon (TyConBound (UPrim nType _) _)  <- tScrut
          , L.NamePrimTyCon _                    <- nType
-         -> do  xScrut' <- convertExpX ctx pp defs kenv tenv xScrut
-                alts'   <- mapM (convertAlt ctx pp defs kenv tenv a' uScrut tScrut) alts
+         -> do  xScrut' <- convertExpX ExpArg pp defs kenv tenv xScrut
+                alts'   <- mapM (convertAlt (min ctx ExpBody) pp defs kenv tenv a' uScrut tScrut) 
+                                alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
@@ -273,9 +294,10 @@ convertExpX ctx pp defs kenv tenv xx
         XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon (TyConBound (UPrim nType _) _) : _ <- takeTApps tScrut
          , L.NameDataTyCon _                       <- nType
-         -> do  x'      <- convertExpX   ctx pp defs kenv tenv xScrut
+         -> do  x'      <- convertExpX ExpArg pp defs kenv tenv xScrut
                 tX'     <- convertT kenv tX
-                alts'   <- mapM (convertAlt ctx pp defs kenv tenv a' uScrut tScrut) alts
+                alts'   <- mapM (convertAlt (min ctx ExpBody) pp defs kenv tenv a' uScrut tScrut) 
+                                alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
@@ -291,17 +313,32 @@ convertExpX ctx pp defs kenv tenv xx
                 return  $ XCase a' (S.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
-        XCase{}         -> throw $ ErrorNotNormalized ("cannot convert case expression")
+        XCase{} 
+         -> throw $ ErrorNotNormalized ("cannot convert case expression")
 
-        XCast _ _ x     -> convertExpX ctx pp defs kenv tenv x
 
-        -- Pass region parameters, 
-        -- as well data data type parameters to primops.
+        -- Casts.
+        XCast _ _ x
+         -> convertExpX (min ctx ExpBody) pp defs kenv tenv x
+
+
+        -- Types can only appear as the arguments in function applications.
         XType t
+         |  ExpArg      <- ctx
          -> liftM XType (convertT kenv t)
 
+         | otherwise 
+         -> throw $ ErrorNotNormalized ("type expresison not used as argument to function")
+
+
+        -- Witnesses can only appear as the arguments to function applications.
         XWitness w      
+         | ExpArg       <- ctx
          -> liftM XWitness (convertWitnessX kenv w)
+
+         | otherwise
+         -> throw $ ErrorNotNormalized ("witness expression not used as argument to function")
+
 
 
 -------------------------------------------------------------------------------
@@ -321,7 +358,7 @@ convertLetsX pp defs kenv tenv lts
          -> do  let tenv'       = Env.extends (map fst bxs) tenv
                 let (bs, xs)    = unzip bxs
                 bs'             <- mapM (convertB kenv) bs
-                xs'             <- mapM (convertExpX ExpTop pp defs kenv tenv') xs
+                xs'             <- mapM (convertExpX ExpFun pp defs kenv tenv') xs
                 return  $ LRec $ zip bs' xs'
 
         LLet LetStrict b x1
