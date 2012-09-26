@@ -89,7 +89,7 @@ convertM pp runConfig defs kenv tenv mm
         -- Convert the body of the module to Salt.
         let ntsImports  = [(BName n t) | (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
         let tenv'       = Env.extends ntsImports tenv
-        x1              <- convertBodyX pp defs kenv tenv' $ moduleBody mm
+        x1              <- convertExpX ExpTop pp defs kenv tenv' $ moduleBody mm
 
         -- Converting the body will also expand out code to construct,
         -- the place-holder '()' inside the top-level lets.
@@ -141,18 +141,27 @@ convertQualNameM (QualName mn n)
 
 
 -- Exp -------------------------------------------------------------------------
+data ExpContext
+        = ExpTop        -- ^ At the top-level of a function.
+        | ExpBind       -- ^ In the right of a let-binding.
+        | ExpArg        -- ^ In a function argument.
+        deriving Show
+
 -- | Convert the body of a supercombinator to Salt.
-convertBodyX 
+convertExpX 
         :: Show a 
-        => Platform                     -- ^ Platform specification.
+        => ExpContext                   -- ^ What context we're converting in.
+        -> Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type definitions.
         -> KindEnv L.Name               -- ^ Kind environment.
         -> TypeEnv L.Name               -- ^ Type environment.
         -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
-convertBodyX pp defs kenv tenv xx
- = case xx of
+convertExpX ctx pp defs kenv tenv xx
+ = let downAtomX    = convertAtomX    pp defs kenv tenv
+       downCtorAppX = convertCtorAppX pp defs kenv tenv
+   in case xx of
         XVar _ UIx{}
          -> throw $ ErrorMalformed 
          $  "convertBodyX: can't convert program with anonymous value binders."
@@ -170,41 +179,68 @@ convertBodyX pp defs kenv tenv xx
         -- Keep region and data type lambdas, 
         -- but ditch the others.
         XLAM a b x
-         |   (isRegionKind $ typeOfBind b)
+         | ExpTop       <- ctx
+         ,   (isRegionKind $ typeOfBind b)
           || (isDataKind   $ typeOfBind b)
          -> do  let a'    =  annotTail a
                 b'        <- convertB kenv b
 
                 let kenv' =  Env.extend b kenv
-                x'        <- convertBodyX pp defs kenv' tenv x
+                x'        <- convertExpX ctx pp defs kenv' tenv x
 
                 return $ XLAM a' b' x'
 
-         | otherwise
+         | ExpTop       <- ctx
          -> do  let kenv'       = Env.extend b kenv
-                convertBodyX pp defs kenv' tenv x
+                convertExpX ctx pp defs kenv' tenv x
 
+         | otherwise
+         -> error $ "convertBodyX: can't convert XLAM in " ++ show ctx
 
         XLam a b x
+         | ExpTop       <- ctx
          -> let tenv'   = Env.extend b tenv
             in case universeFromType1 kenv (typeOfBind b) of
                 Just UniverseData    
                  -> liftM3 XLam 
                         (return $ annotTail a) 
                         (convertB kenv b) 
-                        (convertBodyX pp defs kenv tenv' x)
+                        (convertExpX ctx pp defs kenv tenv' x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
                         (convertB kenv b)
-                        (convertBodyX pp defs kenv tenv' x)
+                        (convertExpX ctx pp defs kenv tenv' x)
 
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
+         | otherwise
+         -> error $ "convertBodyX: can't convert XLam in " ++ show ctx
 
-        XApp{}
-         ->     convertSimpleX pp defs kenv tenv xx
+        -- Data constructor applications.
+        XApp a xa xb
+         | (x1, xsArgs)           <- takeXApps' xa xb
+         , XCon _ dc <- x1
+         -> downCtorAppX a dc xsArgs
+
+        -- Primitive operations.
+        XApp a xa xb
+         | (x1, xsArgs)          <- takeXApps' xa xb
+         , XVar _ UPrim{}        <- x1
+         -> do  x1'     <- downAtomX x1
+                xsArgs' <- mapM downAtomX xsArgs
+
+                return $ makeXApps (annotTail a) x1' xsArgs'
+
+        -- Function application.
+        -- TODO: This only works for full application. 
+        --       At least check for the other cases.
+        XApp (AnTEC _t _ _ a') xa xb
+         | (x1, xsArgs) <- takeXApps' xa xb
+         -> do  x1'     <- downAtomX x1
+                xsArgs' <- mapM downAtomX xsArgs
+                return  $ makeXApps a' x1' xsArgs'
 
         XLet a lts x2
          -> do  -- Convert the bindings.
@@ -214,7 +250,7 @@ convertBodyX pp defs kenv tenv xx
                 let (bs1, bs0)  = bindsOfLets lts
                 let kenv'       = Env.extends bs1 kenv
                 let tenv'       = Env.extends bs0 tenv
-                x2'             <- convertBodyX pp defs kenv' tenv' x2
+                x2'             <- convertExpX ctx pp defs kenv' tenv' x2
 
                 return $ XLet (annotTail a) lts' x2'
 
@@ -228,8 +264,8 @@ convertBodyX pp defs kenv tenv xx
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon (TyConBound (UPrim nType _) _)  <- tScrut
          , L.NamePrimTyCon _                    <- nType
-         -> do  xScrut' <- convertSimpleX pp defs kenv tenv xScrut
-                alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut tScrut) alts
+         -> do  xScrut' <- convertExpX ctx pp defs kenv tenv xScrut
+                alts'   <- mapM (convertAlt ctx pp defs kenv tenv a' uScrut tScrut) alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
@@ -237,9 +273,9 @@ convertBodyX pp defs kenv tenv xx
         XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon (TyConBound (UPrim nType _) _) : _ <- takeTApps tScrut
          , L.NameDataTyCon _                       <- nType
-         -> do  x'      <- convertSimpleX   pp defs kenv tenv xScrut
+         -> do  x'      <- convertExpX   ctx pp defs kenv tenv xScrut
                 tX'     <- convertT kenv tX
-                alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut tScrut) alts
+                alts'   <- mapM (convertAlt ctx pp defs kenv tenv a' uScrut tScrut) alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
@@ -256,7 +292,7 @@ convertBodyX pp defs kenv tenv xx
                         $ alts' ++ asDefault
 
         XCase{}         -> throw $ ErrorNotNormalized ("cannot convert case expression")
-        XCast _ _ x     -> convertBodyX pp defs kenv tenv x
+        XCast _ _ x     -> convertExpX ctx pp defs kenv tenv x
 
         XType _         -> throw $ ErrorMistyped xx
         XWitness{}      -> throw $ ErrorMistyped xx
@@ -279,13 +315,13 @@ convertLetsX pp defs kenv tenv lts
          -> do  let tenv'       = Env.extends (map fst bxs) tenv
                 let (bs, xs)    = unzip bxs
                 bs'             <- mapM (convertB kenv) bs
-                xs'             <- mapM (convertBodyX pp defs kenv tenv') xs
+                xs'             <- mapM (convertExpX ExpTop pp defs kenv tenv') xs
                 return  $ LRec $ zip bs' xs'
 
         LLet LetStrict b x1
          -> do  let tenv'       = Env.extend b tenv
                 b'              <- convertB       kenv b
-                x1'             <- convertSimpleX pp defs kenv tenv' x1
+                x1'             <- convertExpX ExpBind pp defs kenv tenv' x1
                 return  $ LLet LetStrict b' x1'
 
         LLet LetLazy{} _ _
@@ -299,60 +335,6 @@ convertLetsX pp defs kenv tenv lts
   
         LWithRegion{}
          ->     throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
-
-
--------------------------------------------------------------------------------
--- | Convert the right of an internal let-binding.
---   The right of the binding must be straight-line code, 
---   and cannot contain case-expressions, or construct new functions.
---  
-convertSimpleX
-        :: Show a 
-        => Platform                     -- ^ Platform specification.
-        -> DataDefs L.Name              -- ^ Data type definitions.
-        -> KindEnv L.Name               -- ^ Kind environment.
-        -> TypeEnv L.Name               -- ^ Type environment.
-        -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
-        -> ConvertM a (Exp a S.Name)
-
-convertSimpleX pp defs kenv tenv xx
- = let downAtomX    = convertAtomX    pp defs kenv tenv
-       downCtorAppX = convertCtorAppX pp defs kenv tenv
-   in  case xx of
-
-        XType{}         
-         -> throw $ ErrorMalformed 
-         $ "convertRValueX: XType should not appear as the right of a let-binding"
-
-        XWitness{}
-         -> throw $ ErrorMalformed 
-         $ "convertRValueX: XWithess should not appear as the right of a let-binding"
-
-        -- Data constructors.
-        XApp a xa xb
-         | (x1, xsArgs)           <- takeXApps' xa xb
-         , XCon _ dc <- x1
-         -> downCtorAppX a dc xsArgs
-
-        -- Primitive operations.
-        XApp a xa xb
-         | (x1, xsArgs)          <- takeXApps' xa xb
-         , XVar _ UPrim{}        <- x1
-         -> do  x1'     <- downAtomX x1
-                xsArgs' <- mapM downAtomX xsArgs
-
-                return $ makeXApps (annotTail a) x1' xsArgs'
-
-        -- Function application
-        -- TODO: This only works for full application. 
-        --       At least check for the other cases.
-        XApp (AnTEC _t _ _ a') xa xb
-         | (x1, xsArgs) <- takeXApps' xa xb
-         -> do  x1'     <- downAtomX x1
-                xsArgs' <- mapM downAtomX xsArgs
-                return  $ makeXApps a' x1' xsArgs'
-
-        _ -> downAtomX xx
 
 
 -------------------------------------------------------------------------------
@@ -508,7 +490,8 @@ convertCtorAppX _ _ _ _ _ _nCtor _xsArgs
 -- | Convert a Lite alternative to Salt.
 convertAlt 
         :: Show a
-        => Platform                     -- ^ Platform specification.
+        => ExpContext
+        -> Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type declarations.
         -> KindEnv L.Name               -- ^ Kind environment.
         -> TypeEnv L.Name               -- ^ Type environment.
@@ -518,10 +501,10 @@ convertAlt
         -> Alt (AnTEC a L.Name) L.Name  -- ^ Alternative to convert.
         -> ConvertM a (Alt a S.Name)
 
-convertAlt pp defs kenv tenv a uScrut tScrut alt
+convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
  = case alt of
         AAlt PDefault x
-         -> do  x'      <- convertBodyX pp defs kenv tenv x
+         -> do  x'      <- convertExpX ctx pp defs kenv tenv x
                 return  $ AAlt PDefault x'
 
         -- Match against literal unboxed values.
@@ -534,7 +517,7 @@ convertAlt pp defs kenv tenv a uScrut tScrut alt
                 _               -> False
 
          -> do  dc'     <- convertDC kenv dc
-                xBody1  <- convertBodyX pp defs kenv tenv x
+                xBody1  <- convertExpX ctx pp defs kenv tenv x
                 return  $ AAlt (PData dc' []) xBody1
 
         -- TODO: Handle matching unit constructors.
@@ -556,7 +539,7 @@ convertAlt pp defs kenv tenv a uScrut tScrut alt
                 bsFields'       <- mapM (convertB kenv) bsFields
 
                 -- Convert the right of the alternative.
-                xBody1          <- convertBodyX pp defs kenv tenv' x
+                xBody1          <- convertExpX ctx pp defs kenv tenv' x
 
                 -- Add let bindings to unpack the constructor.
                 tScrut'         <- convertT kenv tScrut
