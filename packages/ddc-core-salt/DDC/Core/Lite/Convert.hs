@@ -159,7 +159,7 @@ convertExpX
         -> ConvertM a (Exp a S.Name)
 
 convertExpX ctx pp defs kenv tenv xx
- = let downAtomX    = convertAtomX    pp defs kenv tenv
+ = let downArgX     = convertExpX     ExpArg pp defs kenv tenv
        downCtorAppX = convertCtorAppX pp defs kenv tenv
    in case xx of
         XVar _ UIx{}
@@ -228,8 +228,8 @@ convertExpX ctx pp defs kenv tenv xx
         XApp a xa xb
          | (x1, xsArgs)          <- takeXApps' xa xb
          , XVar _ UPrim{}        <- x1
-         -> do  x1'     <- downAtomX x1
-                xsArgs' <- mapM downAtomX xsArgs
+         -> do  x1'     <- downArgX x1
+                xsArgs' <- mapM downArgX xsArgs
 
                 return $ makeXApps (annotTail a) x1' xsArgs'
 
@@ -238,8 +238,8 @@ convertExpX ctx pp defs kenv tenv xx
         --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps' xa xb
-         -> do  x1'     <- downAtomX x1
-                xsArgs' <- mapM downAtomX xsArgs
+         -> do  x1'     <- downArgX x1
+                xsArgs' <- mapM downArgX xsArgs
                 return  $ makeXApps a' x1' xsArgs'
 
         XLet a lts x2
@@ -292,10 +292,16 @@ convertExpX ctx pp defs kenv tenv xx
                         $ alts' ++ asDefault
 
         XCase{}         -> throw $ ErrorNotNormalized ("cannot convert case expression")
+
         XCast _ _ x     -> convertExpX ctx pp defs kenv tenv x
 
-        XType _         -> throw $ ErrorMistyped xx
-        XWitness{}      -> throw $ ErrorMistyped xx
+        -- Pass region parameters, 
+        -- as well data data type parameters to primops.
+        XType t
+         -> liftM XType (convertT kenv t)
+
+        XWitness w      
+         -> liftM XWitness (convertWitnessX kenv w)
 
 
 -------------------------------------------------------------------------------
@@ -335,42 +341,6 @@ convertLetsX pp defs kenv tenv lts
   
         LWithRegion{}
          ->     throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
-
-
--------------------------------------------------------------------------------
--- | Convert an atom to Salt.
-convertAtomX
-        :: Show a 
-        => Platform                     -- ^ Platform specification.
-        -> DataDefs L.Name              -- ^ Data type definitions.
-        -> KindEnv L.Name               -- ^ Kind environment.
-        -> TypeEnv L.Name               -- ^ Type environment.
-        -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
-        -> ConvertM a (Exp a S.Name)
-
-convertAtomX pp defs kenv tenv xx
- = case xx of
-        XVar _ UIx{}    -> throw $ ErrorMalformed     "Found anonymous binder"
-        XApp{}          -> throw $ ErrorNotNormalized "Found XApp in atom position"
-        XLAM{}          -> throw $ ErrorNotNormalized "Found XLAM in atom position"
-        XLam{}          -> throw $ ErrorNotNormalized "Found XLam in atom position"
-        XLet{}          -> throw $ ErrorNotNormalized "Found XLet in atom position"
-        XCase{}         -> throw $ ErrorNotNormalized "Found XCase in atom position"
-
-        XVar a u        
-         -> do  u'  <- convertU u
-                return $ XVar (annotTail a) u'
-
-        XCon a dc       -> convertCtorAppX pp defs kenv tenv a dc []
-
-        XCast _ _ x     -> convertAtomX    pp defs kenv tenv x
-
-        -- Pass region parameters, as well data data type parameters to primops.
-        XType t
-         -> do  t'      <- convertT kenv t
-                return  $ XType t'
-
-        XWitness w      -> liftM XWitness (convertWitnessX kenv w)
 
 
 -------------------------------------------------------------------------------
@@ -473,7 +443,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                                 Nothing  -> return Nothing
                                 Just a'  -> liftM Just $ convertT kenv (annotType a')
 
-                xsArgs'         <- mapM (convertAtomX pp defs kenv tenv) xsArgs
+                xsArgs'         <- mapM (convertExpX ExpArg pp defs kenv tenv) xsArgs
                 tsArgs'         <- mapM makeFieldType xsArgs
                 constructData pp kenv tenv a
                                 dataDef ctorDef
