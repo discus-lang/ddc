@@ -22,6 +22,7 @@ import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
+import DDC.Core.Transform.Elaborate
 import DDC.Type.Env                     (Env)
 import Control.Monad.State.Strict
 import qualified DDC.Base.Pretty	as P
@@ -83,6 +84,7 @@ applyTransform profile kenv tenv spec mm
         Inline getDef    -> return $ inline getDef mm
         Rewrite rules    -> return $ rewriteModule rules mm
         DeadCode         -> return $ deadCodeModule profile kenv tenv mm
+        Elaborate        -> return $ elaborateModule mm
 
 
 -- Expressions ----------------------------------------------------------------
@@ -216,5 +218,6 @@ applyTransformX profile kenv tenv spec xx
         Bubble            -> res $ bubbleX Env.empty xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewrite rules xx
+        Elaborate{}       -> res $ elaborate [] xx
  where
     res x = return $ resultSimple (show $ ppr spec) x

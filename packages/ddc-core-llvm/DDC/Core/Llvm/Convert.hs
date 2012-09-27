@@ -17,17 +17,19 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Predicates
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Name     as A
+import qualified DDC.Core.Module        as C
+import qualified DDC.Core.Exp           as C
+import qualified DDC.Type.Env           as Env
+import qualified DDC.Core.Simplifier    as Simp
+
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
 import Data.Maybe
 import Data.Sequence                    (Seq, (<|), (|>), (><))
 import Data.Map                         (Map)
-import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Module        as C
-import qualified DDC.Core.Exp           as C
-import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
@@ -37,9 +39,12 @@ import qualified Data.Foldable          as Seq
 -- | Convert a module to LLVM.
 convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
- = let  prims           = primDeclsMap platform
-        state           = llvmStateInit platform prims
-   in   clean $ evalState (convModuleM mm) state
+ = let  prims = primDeclsMap platform
+        state = llvmStateInit platform prims
+        mm'   = evalState (Simp.applyTransform A.profile Env.empty Env.empty 
+                                               Simp.Elaborate mm) 
+                          state
+   in   clean $ evalState (convModuleM mm') state
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module
@@ -82,8 +87,7 @@ convModuleM mm@(C.ModuleCore{})
                   , GlobalExternal vHeapMax ]
 
         ---------------------------------------------------------------
-        functionsAndMD          <- mapM (uncurry (convSuperM kenv tenv)) bxs
-        let (functions, mdecls) =  unzip functionsAndMD
+        (functions, mdecls) <- liftM unzip $ mapM (uncurry (convSuperM kenv tenv)) bxs
         
         return  $ Module 
                 { modComments   = []

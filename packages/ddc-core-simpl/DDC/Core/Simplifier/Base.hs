@@ -78,6 +78,9 @@ data Transform s a n
         | Rewrite
                 { transRules       :: [(String,RewriteRule a n)] }
 
+        -- | Elaborate on implicit witnesses
+        | Elaborate
+
 
 -- | The result of a transform
 data TransformResult r
@@ -140,6 +143,7 @@ instance Pretty (Transform s a n) where
         Inline{}        -> text "Inline"
         Namify{}        -> text "Namify"
         Rewrite{}       -> text "Rewrite"
+        Elaborate       -> text "Elaborate"
 
 
 instance Pretty (TransformResult r) where

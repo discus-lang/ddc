@@ -87,6 +87,7 @@ parseTransform namK namT rules templates modules ((KCon name):rest)
         "Namify"        -> ret (Namify namK namT)
         "Rewrite"       -> ret (Rewrite rules)
         "Inline"        -> parseInline rest
+        "Elaborate"     -> ret Elaborate
         _               -> Nothing
  where
   ret t = Just (t, rest)

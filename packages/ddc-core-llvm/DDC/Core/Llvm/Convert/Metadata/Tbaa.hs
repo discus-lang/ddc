@@ -142,7 +142,7 @@ data ANode  = ANode { regionU :: RegBound
 
 
 -- | Make nodes from regions
-constructANodes :: [RegBound] -> [WitTypedBound] -> [ANode]
+constructANodes :: [RegBound] -> [WitType] -> [ANode]
 constructANodes regs constwits
  = let isConstR r = or $ map (flip isConstWFor r) constwits
        mkANode r  = ANode r (isConstR r)
@@ -155,7 +155,7 @@ constructANodes regs constwits
 --      * symmetry is made explicit
 --      note that `alias` is non-transitive.
 --
-constructARel :: [WitTypedBound] -> Rel ANode
+constructARel :: [WitType] -> Rel ANode
 constructARel diswits = alias
   where alias n1 n2
           | n1 == n2  = False
@@ -163,33 +163,32 @@ constructARel diswits = alias
 
 
 -- Collecting bounds ----------------------------------------------------------
-type RegBound      = Bound A.Name
-type WitBound      = Bound A.Name
-type WitTypedBound = (WitBound, Type A.Name)
+type RegBound  = Bound A.Name
+type WitType   = Type A.Name
 
-isConstW :: WitTypedBound -> Bool
-isConstW (_,t)  = isConstWitType t
+isConstW :: WitType -> Bool
+isConstW t  = isConstWitType t
 
-isConstWFor :: WitTypedBound -> RegBound -> Bool
-isConstWFor (_, t) r
+isConstWFor :: WitType -> RegBound -> Bool
+isConstWFor t r
   | _ : args <- takeTApps t
   = and [isConstWitType t, elem (TVar r) args]
   | otherwise = False
 
-isDistinctW :: WitTypedBound-> Bool
-isDistinctW (_,tw) 
+isDistinctW :: WitType-> Bool
+isDistinctW tw 
   | tc : _ <- takeTApps tw = isDistinctWitType tc
   | otherwise              = False
 
-isDistinctWFor :: WitTypedBound -> (RegBound, RegBound) -> Bool
-isDistinctWFor (_, t) (r1,r2)
+isDistinctWFor :: WitType -> (RegBound, RegBound) -> Bool
+isDistinctWFor t (r1,r2)
   | tc : args <- takeTApps t
   = and [isDistinctWitType tc, (TVar r1) `elem` args, (TVar r2) `elem` args]
   | otherwise = False
 
 
 -- | Divide a set of witnesses to a set of Const wits and a set of Distinct wits
-partitionWits :: [WitTypedBound] -> ([WitTypedBound], [WitTypedBound])
+partitionWits :: [WitType] -> ([WitType], [WitType])
 partitionWits ws
   = partition isConstW
   $ filter    (liftA2 (||) isConstW isDistinctW) ws
@@ -213,13 +212,11 @@ collectRegsB cc
    in  catMaybes bindRegs   
    
 -- | Collect witness bindings together with their types (for convinience)
-collectWitsB :: (BindStruct c) => c A.Name -> [(WitBound, Type A.Name)]
+collectWitsB :: (BindStruct c) => c A.Name -> [WitType]
 collectWitsB cc
- = let isBindWit  b 
-         = case b of
-                BName n t | isWitnessType t -> Just (UName n, t)
-                _                           -> Nothing
-       
+ = let isBindWit b
+        = let t = typeOfBind b
+          in  if isWitnessType t then Just t else Nothing                     
        bindWits  = map (isBindWit) $ snd (collectBinds cc)
    in  catMaybes bindWits
 
