@@ -12,8 +12,8 @@ import DDC.Core.Llvm.Convert.Metadata.Graph
 
 main = $(quickCheckAll)
 
--- Unacceptable performance for anything bigger than 5 =(
-magicLimit = 5
+-- Too slow for anything more than 6
+magicLimit = 6
 rootStart  = 42
 
 instance Arbitrary (UG Int) where
@@ -32,7 +32,12 @@ lexicoOrder (a , b) | a < b     = (a , b)
                     | otherwise = (b , a) 
 
 
--- R+ must: smallest set that contains R and is transitive
+-- For sampling purposes
+samp_not_comprability_graph :: UG Int -> Bool
+samp_not_comprability_graph = isJust . transOrientation
+
+
+-- Transitive closure must be smallest set that contains R and is transitive
 --    TODO: find fast way to check "smallest" part
 prop_trans_closure_correct :: UG Int -> Bool
 prop_trans_closure_correct (UG (d, r))
@@ -44,12 +49,6 @@ prop_trans_closure_correct (UG (d, r))
         transitive s = transitiveR d $ fromList s
     in     clo `superset` r'
         && transitive clo
-
-
--- There must always be a transitive orientation if we allow adding edges
---    since the worst case is a complete graph.
-prop_orientation_total :: UG Int -> Bool
-prop_orientation_total = isJust . transOrientation . minimumCompletion
 
 
 -- The alias trees generated in the end must not imply some two things

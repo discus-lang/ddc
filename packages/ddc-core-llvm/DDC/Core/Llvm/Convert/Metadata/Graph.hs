@@ -10,15 +10,12 @@ module DDC.Core.Llvm.Convert.Metadata.Graph
 
        , UG(..)
        , DAG(..)
-       , transReduction
+       , orientation
        , transOrientation,    transOrientation'
-       , minimumCompletion
        , partitionDAG
 
        , Tree(..)
-       , sources, anchor 
-
-       , massage, unmassage, partitionings, isTree)
+       , sources, anchor )
 where
 
 import Data.List          hiding (partition)
@@ -67,13 +64,6 @@ transClosure dom r = fromList $ step dom $ toList dom r
                               $ nub (es ++ [(a, d) | (a, b) <- es, (c, d) <- es, b == c])
 
 
--- | Find the transitive reduction of a finite binary relation
-transReduction :: Eq a => Dom a -> Rel a -> Rel a
-transReduction dom rel 
-  = let composeR' = composeR dom
-    in  rel `differenceR` (rel `composeR'` transClosure dom rel)
-
-
 -- Graphs ---------------------------------------------------------------------
 newtype UG  a = UG (Dom a, Rel a)
 newtype DAG a = DAG (Dom a, Rel a)
@@ -83,6 +73,11 @@ instance Show a => Show (UG a) where
 
 instance Show a => Show (DAG a) where
   show (DAG (d,r)) = "DAG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
+
+
+-- | Give a random orientation of an undirected graph
+orientation :: Eq a => UG a -> DAG a
+orientation (UG (d,g)) = DAG (d,g)
 
 
 -- | Find the transitive orientation of an undirected graph if one exists
@@ -106,32 +101,8 @@ transOrientation (UG (d,g))
 
 -- | Find the best transitive orientation possible, adding edges if necessary
 transOrientation' :: (Show a, Eq a) => UG a -> DAG a
-transOrientation' = fromJust . transOrientation . minimumCompletion
-
-
--- | Compute the minimum comparability completion of an undirected graph
---    (i.e. the minimum set of added edges to make the graph
---     transitively orientable)
---    using exponential-time bruteforce (this is NP hard).
---    probably DP-able
---
-minimumCompletion :: (Show a, Eq a) => UG a -> UG a
-minimumCompletion (UG (d,g))
- = let 
-       -- Let U be the set of all possible fill edges. For all subsets
-       --   S of U, add S to G and see if the result is trans-orientable.
-       u           = toList d $ allR `differenceR` g
-       combo k     = filter ((k==) . length) $ subsequences u
-       choices     = concatMap combo [0..length u]
-       choose c    = g `unionR` fromList c
-
-       -- There always exists a comparability completion for an undirected graph
-       --   in the worst case it's the complete version of the graph.
-       --   the result is minimum thanks to how `subsequences` and
-       --   list comprehensions work.
-   in  fromMaybe (error "minimumCompletion: no completion found!") 
-                $ liftM UG 
-                $ find (isJust . transOrientation . UG) $ map ((d,) . choose) choices
+transOrientation' g
+  = fromMaybe (orientation g) (transOrientation g)
 
 
 -- Trees ----------------------------------------------------------------------

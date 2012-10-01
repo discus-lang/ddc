@@ -1,6 +1,4 @@
-=== prop_trans_closure_correct on test/unit/1-CoreLLVM/war-std/Main.hs:37 ===
+=== prop_trans_closure_correct on test/unit/1-CoreLLVM/war-std/Main.hs:42 ===
 +++ OK, passed 100 tests.
-=== prop_orientation_total on test/unit/1-CoreLLVM/war-std/Main.hs:51 ===
-+++ OK, passed 100 tests.
-=== prop_alias_safety on test/unit/1-CoreLLVM/war-std/Main.hs:57 ===
+=== prop_alias_safety on test/unit/1-CoreLLVM/war-std/Main.hs:56 ===
 +++ OK, passed 100 tests.
