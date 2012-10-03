@@ -1,0 +1,118 @@
+% Disciple Core Expressions
+%
+
+metavar termvar, x      ::=
+indexvar n, m           ::= 
+
+grammar
+
+%% Expressions.
+t :: 't_'       ::=
+  | x                                                           :: :: Var
+  {{ com Expression variables.            }}
+
+  | D t1 .. tn                                                  :: :: Con
+  {{ com Data constructor application.    }}
+
+  | /\ X : K . t                                                :: :: LAM
+  {{ com Spec abstraction.                }}
+
+  | t [ T ]                                                     :: :: APPT      
+  {{ com Type   application.              }}
+
+  | t < W >                                                     :: :: APPW      
+  {{ com Witness application.             }}
+
+  | \  x : T . t                                                :: :: Lam
+  {{ com Value abstraction.               }}
+
+  | t1 t2                                                       :: :: App
+  {{ com Value application.               }}
+
+  | lets in t2                                                  :: :: Let       
+  {{ com Let-binding.                     }}  
+
+  | case t of { alt1 .. altn }                                  :: :: Case      
+  {{ com Case matching.                   }}
+
+  | cast cst in t                                               :: :: Cast      
+  {{ com Casts.                           }}
+
+
+%% Let-bindings.
+lets :: 'lets_' ::=
+  | let letmode letbind                                         :: :: Let       
+  {{ com Non-recursive let-binding.       }}
+
+  | letrec    { letbind1 .. letbindn }                          :: :: LetRec    
+  {{ com Recursive let-binding.           }}
+
+  | letregions T1 .. Tn with { witbind1 .. witbindm }           :: :: LetRegion
+  {{ com Bind local region variables and witness to their properties. }}
+
+  | withregion X                                                :: :: WithRegion
+  {{ com Holds a region handle during evaluation. }}
+
+
+%% Single let-binding.
+letbind :: 'letbind_' ::=
+  | x : T = t1                                                  :: :: LetBind   
+  {{ com Let-binding.                     }}
+
+
+%% Witness bindings.
+witbind :: 'witbind_' ::=
+  | x : T                                                       :: :: WitBind
+  {{ com Witness binding.                 }}
+
+
+%% Case alternatives.
+alt :: 'alt_'   ::=
+  | _          -> t                                             :: :: Default
+  {{ com Default alternative.            }}
+
+  | D x1 .. xn -> t                                             :: :: Match
+  {{ com Match a data constructor.       }}
+
+
+%% Casts.
+cst :: 'cst_' ::=
+  | weakeff T                                                   :: :: WeakEff
+  {{ com Weaken the effect of an expression. }}
+
+  | weakclo { t1 .. tn }                                        :: :: WeakClo
+  {{ com Weaken the closure of an expression. }}
+
+  | purify W                                                    :: :: Purify
+  {{ com Purify the effect of an expression. }}
+
+  | forget W                                                    :: :: Forget
+  {{ com Forget the closure of an expression. }}
+
+
+%% Witnesses.
+W :: 'W_' ::=
+  | x                                                           :: :: Var
+  {{ com Witness variable.              }}
+
+  | B                                                           :: :: Con
+  {{ com Witness constructor.           }}
+
+  | W1 W2                                                       :: :: AppW
+  {{ com Witness Witness application.   }}
+
+  | W1 T2                                                       :: :: AppT
+  {{ com Witness Type application.      }}
+
+  | W1 & W2                                                     :: :: Join
+  {{ com Witness joining.               }}
+
+
+%% Witness constructors.
+B :: 'B_' ::=
+  | pure                                                        :: :: Pure
+  | empty                                                       :: :: Empty
+  | use                                                         :: :: Use
+  | read                                                        :: :: Read
+  | alloc                                                       :: :: Alloc
+
