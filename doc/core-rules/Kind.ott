@@ -1,0 +1,14 @@
+% Disciple Core Kinds.
+% 
+
+grammar
+
+K :: 'K_' ::=
+  | *                   ::      :: Val          % The kind of value types.
+  | %                   ::      :: Rgn          % The kind of region types.
+  | !                   ::      :: Eff          % The kind of effect types.
+  | $                   ::      :: Clo          % The kind of closure types.
+  | @                   ::      :: Wit          % The kind of witnesses.
+  | K1 ~> K2            ::      :: Fun          % The function kind.
+
+  | ( K )               ::      :: Paren        % Allow kinds to be wrapped in parens.

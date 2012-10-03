@@ -1,0 +1,166 @@
+% Disciple Core Types.
+%
+
+metavar typevar, X      ::= 
+
+
+%% Type expressions.
+grammar
+T :: 'T_'       ::=
+  | X                   ::      :: Var          {{ com Type variables.                          }}
+  | C                   ::      :: Con          {{ com Type constructors.                       }}
+  | [ X : K ] . T       ::      :: Forall       {{ com Universal quantification.                }}
+  | T1 T2               ::      :: App          {{ com Type application.                        }}
+  | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
+
+  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
+  | { T1 / X } T2       :: M    :: Sub          {{ com Substitution of types in types.          }}
+
+
+%% Type constructors.
+C :: 'C_'       ::=
+  | Unit                ::      :: Unit         % The unit type constructor.
+  | ->                  ::      :: Fun          % The function type constructor.
+
+  | !0                  ::      :: ZeroEff      % The least effect (pure)
+  | Read                ::      :: Read         % Read from a region.
+  | Write               ::      :: Write        % Write to a region.
+  | Alloc               ::      :: Alloc        % Allocate into a region.
+
+  | $0                  ::      :: ZeroClo      % The least closure (empty)
+  | Use                 ::      :: Use          % Use some region in a closure.
+  | DeepUse             ::      :: DeepUse      % Use all regions from a type in a closure.
+
+  | =>                  ::      :: Impl         % Witness implication.
+  | Pure                ::      :: Pure         % Purity of some effect.
+  | Empty               ::      :: Empty        % Emptiness of some closure.
+  | Const               ::      :: Const        % Constancy of a region.
+  | Mutable             ::      :: Mutable      % Mutability of a region.
+  | Distinct            ::      :: Distinct     % Distinctness of two regions.
+  | Disjoint            ::      :: Disjoint     % Disjointness of two effects.
+
+
+%% Kind environments.
+KiEnv :: 'KiEnv_'       ::=
+  | KE                  ::      :: Var          % A kind environment variable.
+  | empty               ::      :: Empty        % An empty kind environment.
+  | KiEnv , X : K       ::      :: Extend       % A kind environment with a new binding.
+
+
+terminals :: 'terminals_' ::=
+  | C                   ::      :: Con
+  | in                  ::      :: In
+  | =>                  ::      :: Impl
+
+
+
+defns
+JSort   :: '' ::=
+
+ %% Type variables in kind environments.
+ defn
+ X : K in KiEnv                                 ::      :: KindEnvIn    :: '' by
+
+        ------------------                      :: In
+        X : K in KE, X : K
+
+        X : K in KE
+        --------------------                    :: Next
+        X : K in KE, X' : K'
+
+
+ %% Kinds of types
+ defn
+ KiEnv |- T : K                                 ::      :: Kind         :: '' by
+
+        % Functional things.
+        % These come from the ambient System-F2 calculus.
+
+         X : K in KE
+        --------------                          :: KiVar
+         KE |- X  : K
+
+         KE, X : K |- T : *
+        ----------------------------------      :: KiForall
+         KE        |- [ X : K ] . T  :  *    
+
+         KE |- T1    : K11 ~> K12
+         KE |- T2    : K11
+        ----------------------------------      :: KiApp
+         KE |- T1 T2 : K12
+
+
+        % Sums.
+        % Only effect and closure types can be collected into a sum.
+
+         KE |- T1      : !
+         KE |- T2      : !
+        -------------------                     :: KiSumEff
+         KE |- T1 + T2 : !
+
+         KE |- T1      : $
+         KE |- T2      : $
+        -------------------                     :: KiSumClo
+         KE |- T1 + T2 : $
+
+        --------------                          :: KiZeroEff
+         KE |- !0 : !
+
+        --------------                          :: KiZeroClo
+         KE |- $0 : $
+
+
+        % Baked in type constructors.
+        % These have special meaning in the core language.
+
+        ---------------------                   :: KiUnit
+         KE |- Unit    : *
+
+        -------------------------------------   :: KiFun
+         KE |- ->      : * ~> ! ~> $ ~> * ~> *
+
+        -------------------------               :: KiRead
+         KE |- Read    : % ~> !
+
+        -------------------------               :: KiWrite
+         KE |- Write   : % ~> !
+
+        -------------------------               :: KiAlloc
+         KE |- Alloc   : % ~> !
+
+        -------------------------               :: KiUse
+         KE |- Use     : % ~> !
+
+        -------------------------               :: KiDeepUse
+         KE |- DeepUse : % ~> !
+
+
+         KE |- T1 : @
+         KE |- T2 : @
+        ------------------------------          :: KiImplWit
+         KE |- T1 => T2 : @ 
+
+         KE |- T1 : @
+         KE |- T2 : *
+        ------------------------------          :: KiImplVal
+         KE |- T1 => T2 : *
+
+
+        ------------------------                :: KiPure
+         KE |- Pure     : ! ~> @
+
+        ------------------------                :: KiEmpty
+         KE |- Empty    : $ ~> @
+
+        ------------------------                :: KiConst
+         KE |- Const    : % ~> @
+
+        ------------------------                :: KiMutable
+         KE |- Mutable  : % ~> @
+
+        ------------------------------          :: KiDistinct
+         KE |- Distinct : % ~> % ~> @
+
+        ------------------------------          :: KiDisjoint
+         KE |- Disjoint : % ~> % ~> @
+
