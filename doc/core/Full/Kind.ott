@@ -1,59 +1,68 @@
-% Disciple Core Kinds.
-% 
+
+
+% Sorts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Sorts classify kinds.
 
 grammar
-
-%% Sort expressions.
 S :: 'S_' ::=
-  | @@                  ::      :: Prop         % The sort of witness kinds.
-  | **                  ::      :: Comp         % The sort of computation kinds.
+  | @@                  ::      :: Prop         {{ com The sort of witness kinds.               }}
+  | **                  ::      :: Comp         {{ com The sort of computation kinds.           }}
 
 
-%% Kind expressions.
+% Kinds %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Kinds classify typess.
+
+grammar
 K :: 'K_' ::=
-  | *                   ::      :: Val          % The kind of value types.
-  | %                   ::      :: Rgn          % The kind of region types.
-  | !                   ::      :: Eff          % The kind of effect types.
-  | $                   ::      :: Clo          % The kind of closure types.
-  | @                   ::      :: Wit          % The kind of witnesses.
-  | K1 ~> K2            ::      :: Fun          % The function kind.
+  | *                   ::      :: Val          {{ com The kind of value types.                 }}
+  | %                   ::      :: Rgn          {{ com The kind of region types.                }}
+  | !                   ::      :: Eff          {{ com The kind of effect types.                }}
+  | $                   ::      :: Clo          {{ com The kind of closure types.               }}
+  | @                   ::      :: Wit          {{ com The kind of witnesses.                   }}
+  | K1 ~> K2            ::      :: Fun          {{ com The function kind.                       }}
 
-  | ( K )               ::      :: Paren        % Allow kinds to be wrapped in parens.
+  | ( K )               ::      :: Paren        {{ com Allow kinds to be wrapped in parens.     }}
 
 
-%% Kind environments.
+% Kind environments.
+metavar typevar, X      ::= 
+
+grammar
 KiEnv :: 'KiEnv_'       ::=
-  | KE                  ::      :: Var          % A kind environment variable.
-  | empty               ::      :: Empty        % An empty kind environment.
-  | KiEnv , X : K       ::      :: Extend       % A kind environment with a new binding.
+  | KE                  ::      :: Var          {{ com A kind environment variable.             }}
+  | empty               ::      :: Empty        {{ com An empty kind environment.               }}
+  | KiEnv , X : K       ::      :: Extend       {{ com A kind environment with a new binding.   }}
 
 
-%% Type variables in kind environments.
+%% Bind in Kind Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 defns
-JKindEnv :: ''  ::=
+JInKiEnv :: ''          ::=
  defn
- X : K in KiEnv                 ::      :: KindEnvIn    :: '' by
+ X : K in KiEnv         :: :: InKiEnv   :: '' by
 
-        ------------------      :: KindEnvIn
+        ------------------      :: InKiEnvNil
         X : K in KE, X : K
 
         X : K in KE
-        --------------------    :: KindEnvNext
+        --------------------    :: InKiEnvCons
         X : K in KE, X' : K'
 
 
-%% Sorts of kinds.
+%% Sorts of Kinds %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 defns
-JSort   :: ''   ::=
+JSoJudge   :: ''        ::=
   defn
-  K : S                         ::      :: Sort         :: '' by  
+  K : S                 ::  :: SoJudge  :: '' by  
+
 
         ---------               :: SoVal
          * : **
 
 %       ---------               :: SoRgn
 %        % : **
-% TODO: how do we escape this?
+% TODO: how do we escape the percent sign?
 
         ---------               :: SoEff
          ! : **
@@ -67,3 +76,4 @@ JSort   :: ''   ::=
              K2 : S1
         -----------------       :: SoFun
          K1 ~> K2 : S1
+

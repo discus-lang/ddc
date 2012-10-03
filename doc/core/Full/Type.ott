@@ -1,84 +1,40 @@
-% Disciple Core Types.
-%
-
-metavar typevar, X      ::= 
 
 
-%% Type expressions.
+% Type constructors %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 grammar
-T :: 'T_'       ::=
-  | X                   ::      :: Var          {{ com Type variables.                          }}
-  | C                   ::      :: Con          {{ com Type constructors.                       }}
-  | [ X : K ] . T       ::      :: Forall       {{ com Universal quantification.                }}
-  | T1 T2               ::      :: App          {{ com Type application.                        }}
-  | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
-
-  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
-  | { T1 / X } T2       :: M    :: Sub
-  | makeClo clo         :: M    :: MakeClo
-
-
-%% Type constructors.
 C :: 'C_'       ::=
-  % Witness type constructors.
-  | =>                  ::      :: Impl         % Witness implication.
-  | Pure                ::      :: Pure         % Purity of some effect.
-  | Empty               ::      :: Empty        % Emptiness  of some closure.
-  | Global              ::      :: Global       % Globalness of some region.
-  | DeepGlobal          ::      :: DeepGlobal   % Globalness of material regions in some type.
-  | Const               ::      :: Const        % Constancy  of a region.
-  | DeepConst           ::      :: DeepConst    % Constancy  of material regions in some type.
-  | Mutable             ::      :: Mutable      % Mutability of a region.
-  | DeepMutable         ::      :: DeepMutable  % Mutability of material regions in some type.
-  | Distinct            ::      :: Distinct     % Distinctness of two regions.
-  | Lazy                ::      :: Lazy         % Laziness of some region.
-  | HeadLazy            ::      :: HeadLazy     % Laziness of the primary region in some type.
-  | Manifest            ::      :: Manifest     % Manifestness of some region (not lazy).
-  | Disjoint            ::      :: Disjoint     % Disjointness of two effects.
 
   % Computation type constructors.
-  | ->                  ::      :: Fun          % The function type constructor.
-  | Unit                ::      :: Unit         % The unit type constructor.
+  | ->                  ::      :: Fun          {{ com The function type constructor.           }}
+  | Unit                ::      :: Unit         {{ com The unit type constructor.               }}
 
-  | !0                  ::      :: ZeroEff      % The least effect (pure)
-  | Read                ::      :: Read         % Read from a region.
-  | HeadRead            ::      :: HeadRead     % Read     from the primary region of some type.
-  | DeepRead            ::      :: DeepRead     % Read     from material regions in some type.
-  | Write               ::      :: Write        % Write      to a region.
-  | DeepWrite           ::      :: DeepWrite    % Write      to material regions in some type.
-  | Alloc               ::      :: Alloc        % Allocate into a region.
-  | DeepAlloc           ::      :: DeepAlloc    % Allocate into material region sin some type.
+  | Read                ::      :: Read         {{ com Read from a region.                      }}
+  | HeadRead            ::      :: HeadRead     {{ com Read from the primary region of a type.  }}
+  | DeepRead            ::      :: DeepRead     {{ com Read from material regions in a type.    }}
+  | Write               ::      :: Write        {{ com Write to a region.                       }}
+  | DeepWrite           ::      :: DeepWrite    {{ com Write to material regions in a type.     }}
+  | Alloc               ::      :: Alloc        {{ com Allocate into a region.                  }}
+  | DeepAlloc           ::      :: DeepAlloc    {{ com Allocate into material region in a type  }}
 
-  | $0                  ::      :: ZeroClo      % The least closure (empty)
-  | Use                 ::      :: Use          % Use some region in a closure.
-  | DeepUse             ::      :: DeepUse      % Use all regions from a type in a closure.
+  | Use                 ::      :: Use          {{ com Use some region in a closure.            }}
+  | DeepUse             ::      :: DeepUse      {{ com Use all regions from a type in a closure }}
 
-
-%% Type environments.
-TyEnv :: 'TyEnv_'       ::=
-  | TE                  ::      :: Var          % A type environment variable.
-  | empty               ::      :: Empty        % An empty type environment.
-  | TyEnv , x : T       ::      :: Extend       % A type environment with a new binding.
-
-
-
-eff :: 'eff_'   ::=
-  | X                   ::      :: Var          {{ com Type variables.                          }}
-  | C                   ::      :: Con          {{ com Type constructors.                       }}
-  | T1 T2               ::      :: App          {{ com Type application.                        }}
-  | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
-  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
-  | { T1 / X } T2       :: M    :: Sub
-
-clo  :: 'clo_'  ::=
-  | nil                 ::      :: Nil          {{ com Empty tagged closure.                    }}
-  | clo , cloval x T    ::      :: Val          {{ com }}
-  | clo , clorgn X      ::      :: Rgn
-  | clo , clocon C      ::      :: Con
-  | { T / X } clo       :: M    :: Sub
-  | cutT X clo          :: M    :: CutT
-  | cutX x clo          :: M    :: CutX
-  | clo1 + clo2         :: M    :: Sum
+  % Witness type constructors.
+  | =>                  ::      :: Impl         {{ com Witness implication.                     }}
+  | Pure                ::      :: Pure         {{ com Purity of some effect.                   }}
+  | Empty               ::      :: Empty        {{ com Emptiness  of some closure.              }}
+  | Global              ::      :: Global       {{ com Globalness of some region.               }}
+  | DeepGlobal          ::      :: DeepGlobal   {{ com Globalness of material regions in a type }}
+  | Const               ::      :: Const        {{ com Constancy  of a region.                  }}
+  | DeepConst           ::      :: DeepConst    {{ com Constancy  of material regions in a type }}
+  | Mutable             ::      :: Mutable      {{ com Mutability of a region.                  }}
+  | DeepMutable         ::      :: DeepMutable  {{ com Mutability of material regions in a type }}
+  | Distinct            ::      :: Distinct     {{ com Distinctness of two regions.             }}
+  | Lazy                ::      :: Lazy         {{ com Laziness of some region.                 }}
+  | HeadLazy            ::      :: HeadLazy     {{ com Laziness of the primary region in a type }}
+  | Manifest            ::      :: Manifest     {{ com Manifestness of some region (not lazy).  }}
+  | Disjoint            ::      :: Disjoint     {{ com Disjointness of two effects.             }}
 
 
 terminals :: 'terminals_' ::=
@@ -86,69 +42,147 @@ terminals :: 'terminals_' ::=
   | ->                  ::      :: Fun          {{ tex \to }}
 
 
+% Types %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+T :: 'T_'       ::=
+  | X                   ::      :: Var          {{ com Type variables.                          }}
+  | C                   ::      :: Con          {{ com Type constructors.                       }}
+  | [ X : K ] . T       ::      :: Forall       {{ com Universal quantification.                }}
+  | T1 T2               ::      :: App          {{ com Type application.                        }}
+  | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
+  | !0                  ::      :: ZeroEff      {{ com The least effect (pure)                  }}
+  | $0                  ::      :: ZeroClo      {{ com The least closure (empty)                }}
+
+  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
+  | { T1 / X } T2       :: M    :: Sub          {{ com Type / Type substitution.                }}
+  | makeClo clo         :: M    :: MakeClo      {{ com Convert from a tagged closure.           }}
+
+
+% Effect types are a subset of general types.
+grammar
+eff :: 'eff_'   ::=
+  | X                   ::      :: Var          {{ com Type variables.                          }}
+  | C                   ::      :: Con          {{ com Type constructors.                       }}
+  | T1 T2               ::      :: App          {{ com Type application.                        }}
+  | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
+  | !0                  ::      :: ZeroEff      {{ com The lease effect (pure)                  }}
+  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
+  | { T1 / X } T2       :: M    :: Sub          {{ com Type / Type substitution.                }}
+
 subrules
   eff <:: T
 
 
-%% Type variables in kind environments.
-defns
-JTyEnv :: ''  ::=
- defn
- x : T in TyEnv                 ::      :: TyEnvIn    :: '' by
+% Tagged closures
+% These are used as an intermediate form when defining the typing rules.
+grammar
+clo  :: 'clo_'  ::=
+  | nil                 ::      :: Nil  
+  {{ com Empty tagged closure.                                                  }}
 
-        ------------------      :: TyEnvIn
+  | clo , cloval x T    ::      :: Val          
+  {{ com A closure term due to a free value variable with the given type.       }} 
+
+  | clo , clorgn X      ::      :: Rgn
+  {{ com A closure term due to a free region variable.                          }}
+
+  | clo , clocon C      ::      :: Con
+  {{ com A closure term due to a region constructor.                            }}
+
+  | { T / X } clo       :: M    :: Sub
+  {{ com Substitute a type into a tagged closure.                               }}
+
+  | cutT X clo          :: M    :: CutT
+  | cutX x clo          :: M    :: CutX
+  | clo1 + clo2         :: M    :: Sum
+
+
+% Type environments.
+metavar termvar, x      ::= 
+
+grammar
+TyEnv :: 'TyEnv_'       ::=
+  | TE                  ::      :: Var          {{ com A type environment variable.             }}
+  | empty               ::      :: Empty        {{ com An empty type environment.               }}
+  | TyEnv , x : T       ::      :: Extend       {{ com A type environment with a new binding.   }}
+
+
+%% Bind in Type Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JInTyEnv :: ''  ::=
+ defn
+ x : T in TyEnv         ::      :: InTyEnv    :: '' by
+
+        ------------------      :: InTyEnvNil
         x : T in TE, x : T
 
         x : T in TE
-        --------------------    :: TyEnvNext
+        --------------------    :: InTyEnvCons
         x : T in TE, x' : T'
 
 
-%% Kinds of types
-defns
-JKind   :: '' ::=
- defn
- KiEnv |- T : K                                 ::      :: Kind         :: '' by
+%% Kinds of Types %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        % Functional things.
-        % These come from the ambient System-F2 calculus.
+defns
+JKiJudge   :: '' ::=
+ defn
+ KiEnv |- T : K         ::      :: KiJudge      :: '' by
+ 
+  % Functional things.
+  % These come from the ambient System-F2 calculus.
+
+    % Type Variables.
 
          X : K in KE
         --------------                          :: KiVar
          KE |- X  : K
 
-         KE, X : K |- T : *
-        ----------------------------------      :: KiForall
-         KE        |- [ X : K ] . T  :  *    
+
+    % Forall quantifiers.
+    %   We need to allow the result to have any kind, instead of restricting
+    %   it to just '*' to admit the types of witness constructors like 'read'.
+
+         KE, X : K1 |- T : K2
+        -------------------------------------   :: KiForall
+         KE         |- [ X : K1 ] . T  :  K2 
+
+
+    % Type/Type application.
 
          KE |- T1    : K11 ~> K12
          KE |- T2    : K11
-        ----------------------------------      :: KiApp
+        ---------------------------             :: KiApp
          KE |- T1 T2 : K12
 
 
-        % Sums.
-        % Only effect and closure types can be collected into a sum.
+  % Sums.
+  % Only effect and closure types can be collected into a sum.
 
-         KE |- T1      : !
-         KE |- T2      : !
-        -------------------                     :: KiSumEff
-         KE |- T1 + T2 : !
+         KE |- T1       : !
+         KE |- T2       : !
+        --------------------                    :: KiSumEff
+         KE |- T1 + T2  : !
 
-         KE |- T1      : $
-         KE |- T2      : $
-        -------------------                     :: KiSumClo
-         KE |- T1 + T2 : $
+         KE |- T1       : $
+         KE |- T2       : $
+        --------------------                    :: KiSumClo
+         KE |- T1 + T2  : $
 
-        --------------                          :: KiZeroEff
-         KE |- !0 : !
+        --------------------                    :: KiZeroEff
+         KE |- !0       : !
 
-        --------------                          :: KiZeroClo
-         KE |- $0 : $
+        --------------------                    :: KiZeroClo
+         KE |- $0       : $
 
 
-        % Baked in type constructors.
-        % These have special meaning in the core language.
+  % Baked in type constructors.
+  % These have special meaning in the core language.
+
+    % Witness implication can produce another witness or a value type.
+    %   It would be ok to allow the result to have any kind, 
+    %   but I can't think of an example of why we would want to.
 
          KE |- T1 : @
          KE |- T2 : @
@@ -160,76 +194,82 @@ JKind   :: '' ::=
         ------------------------------          :: KiImplVal
          KE |- T1 => T2 : *
 
-        --------------------------------        :: KiPure
+
+   % Kinds of type constructors.
+
+        -------------------------------------   :: KiFun
+         KE |- ->      : * ~> ! ~> $ ~> * ~> *
+
+        ---------------------------------       :: KiUnit
+         KE |- Unit             : *
+
+
+        ---------------------------------       :: KiRead
+         KE |- Read             : % ~> !
+
+        ---------------------------------       :: KiHeadRead
+         KE |- HeadRead         : * ~> !
+
+        ---------------------------------       :: KiDeepRead
+         KE |- DeepRead         : * ~> !
+
+        ---------------------------------       :: KiWrite
+         KE |- Write            : % ~> !
+
+        ---------------------------------       :: KiDeepWrite
+         KE |- DeepWrite        : * ~> !
+
+        ---------------------------------       :: KiAlloc
+         KE |- Alloc            : % ~> !
+
+        ---------------------------------       :: KiDeepAlloc
+         KE |- DeepAlloc        : * ~> !
+
+
+        ---------------------------------       :: KiUse
+         KE |- Use              : % ~> $
+
+        ---------------------------------       :: KiDeepUse
+         KE |- DeepUse          : * ~> $
+
+
+        ---------------------------------       :: KiPure
          KE |- Pure             : ! ~> @
 
-        --------------------------------        :: KiEmpty
+        ---------------------------------       :: KiEmpty
          KE |- Empty            : $ ~> @
 
-        --------------------------------        :: KiGlobal
+        ---------------------------------       :: KiGlobal
          KE |- Global           : $ ~> @
 
-        --------------------------------        :: KiDeepGlobal
+        ---------------------------------       :: KiDeepGlobal
          KE |- DeepGlobal       : * ~> @
 
-        --------------------------------        :: KiConst
+        ---------------------------------       :: KiConst
          KE |- Const            : % ~> @
 
-        --------------------------------        :: KiDeepConst
+        ---------------------------------       :: KiDeepConst
          KE |- DeepConst        : * ~> @
 
-        --------------------------------        :: KiMutable
+        ---------------------------------       :: KiMutable
          KE |- Mutable          : % ~> @
 
-        --------------------------------        :: KiDeepMutable
+        ---------------------------------       :: KiDeepMutable
          KE |- DeepMutable      : * ~> @
 
-        --------------------------------        :: KiDistinct
+        ---------------------------------       :: KiDistinct
          KE |- Distinct    : % ~> % ~> @
 
-        --------------------------------        :: KiLazy
+        ---------------------------------       :: KiLazy
          KE |- Lazy             : % ~> @
 
-        --------------------------------        :: KiHeadLazy
+        ---------------------------------       :: KiHeadLazy
          KE |- HeadLazy         : * ~> @
 
-        --------------------------------        :: KiManifest
+        ---------------------------------       :: KiManifest
          KE |- Manifest         : % ~> @
 
         ---------------------------------       :: KiDisjoint
          KE |- Disjoint    : % ~> % ~> @
 
-
-        -------------------------------------   :: KiFun
-         KE |- ->      : * ~> ! ~> $ ~> * ~> *
-
-        --------------------------------        :: KiUnit
-         KE |- Unit             : *
-
-        --------------------------------        :: KiRead
-         KE |- Read             : % ~> !
-
-        --------------------------------        :: KiHeadRead
-         KE |- HeadRead         : * ~> !
-
-        --------------------------------        :: KiDeepRead
-         KE |- DeepRead         : * ~> !
-
-        --------------------------------        :: KiWrite
-         KE |- Write            : % ~> !
-
-        --------------------------------        :: KiDeepWrite
-         KE |- DeepWrite        : * ~> !
-
-        --------------------------------        :: KiAlloc
-         KE |- Alloc            : % ~> !
-
-        --------------------------------        :: KiDeepAlloc
-         KE |- DeepAlloc        : * ~> !
-
-        --------------------------------        :: KiUse
-         KE |- Use              : % ~> $
-
-        --------------------------------        :: KiDeepUse
-         KE |- DeepUse          : * ~> $
 
