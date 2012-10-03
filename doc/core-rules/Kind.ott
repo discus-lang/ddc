@@ -21,28 +21,49 @@ K :: 'K_' ::=
   | ( K )               ::      :: Paren        % Allow kinds to be wrapped in parens.
 
 
+%% Kind environments.
+KiEnv :: 'KiEnv_'       ::=
+  | KE                  ::      :: Var          % A kind environment variable.
+  | empty               ::      :: Empty        % An empty kind environment.
+  | KiEnv , X : K       ::      :: Extend       % A kind environment with a new binding.
+
+
+%% Type variables in kind environments.
+defns
+JKindEnv :: ''  ::=
+ defn
+ X : K in KiEnv                 ::      :: KindEnvIn    :: '' by
+
+        ------------------      :: KindEnvIn
+        X : K in KE, X : K
+
+        X : K in KE
+        --------------------    :: KindEnvNext
+        X : K in KE, X' : K'
+
+
+%% Sorts of kinds.
 defns
 JSort   :: ''   ::=
-
   defn
-  K :s S                ::      :: Sort         :: '' by  
+  K : S                         ::      :: Sort         :: '' by  
 
         ---------               :: SoVal
-         * :s **
+         * : **
 
 %       ---------               :: SoRgn
-%        % :s **
+%        % : **
 % TODO: how do we escape this?
 
         ---------               :: SoEff
-         ! :s **
+         ! : **
 
         ---------               :: SoClo
-         $ :s **
+         $ : **
 
         ---------               :: SoWit
-         @ :s @@
+         @ : @@
 
-             K2 :s S1
+             K2 : S1
         -----------------       :: SoFun
-         K1 ~> K2 :s S1
+         K1 ~> K2 : S1

@@ -190,7 +190,7 @@ checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
                 (\z -> XApp z x1' (XType t2))
                 (substituteT b11 t2 t12)
                 (substituteT b11 t2 effs1)
-                (clos1 `Set.union` t2_clo)
+                (clos1 `Set.union` t2_clo)              -- TODO: why no substituteT here?
 
           | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
          _              -> throw $ ErrorAppNotFun   xx t1 t2

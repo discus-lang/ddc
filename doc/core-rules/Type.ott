@@ -14,7 +14,8 @@ T :: 'T_'       ::=
   | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
 
   | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
-  | { T1 / X } T2       :: M    :: Sub          {{ com Substitution of types in types.          }}
+  | { T1 / X } T2       :: M    :: Sub
+  | makeClo clo         :: M    :: MakeClo
 
 
 %% Type constructors.
@@ -53,34 +54,59 @@ C :: 'C_'       ::=
   | DeepUse             ::      :: DeepUse      % Use all regions from a type in a closure.
 
 
-%% Kind environments.
-KiEnv :: 'KiEnv_'       ::=
-  | KE                  ::      :: Var          % A kind environment variable.
-  | empty               ::      :: Empty        % An empty kind environment.
-  | KiEnv , X : K       ::      :: Extend       % A kind environment with a new binding.
+%% Type environments.
+TyEnv :: 'TyEnv_'       ::=
+  | TE                  ::      :: Var          % A type environment variable.
+  | empty               ::      :: Empty        % An empty type environment.
+  | TyEnv , x : T       ::      :: Extend       % A type environment with a new binding.
+
+
+
+eff :: 'eff_'   ::=
+  | X                   ::      :: Var          {{ com Type variables.                          }}
+  | C                   ::      :: Con          {{ com Type constructors.                       }}
+  | T1 T2               ::      :: App          {{ com Type application.                        }}
+  | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
+  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
+  | { T1 / X } T2       :: M    :: Sub
+
+clo  :: 'clo_'  ::=
+  | nil                 ::      :: Nil          {{ com Empty tagged closure.                    }}
+  | clo , cloval x T    ::      :: Val          {{ com }}
+  | clo , clorgn X      ::      :: Rgn
+  | clo , clocon C      ::      :: Con
+  | { T / X } clo       :: M    :: Sub
+  | cutT X clo          :: M    :: CutT
+  | cutX x clo          :: M    :: CutX
+  | clo1 + clo2         :: M    :: Sum
 
 
 terminals :: 'terminals_' ::=
   | =>                  ::      :: Impl
-  | ->                  ::      :: Fun
+  | ->                  ::      :: Fun          {{ tex \to }}
 
 
+subrules
+  eff <:: T
+
+
+%% Type variables in kind environments.
+defns
+JTyEnv :: ''  ::=
+ defn
+ x : T in TyEnv                 ::      :: TyEnvIn    :: '' by
+
+        ------------------      :: TyEnvIn
+        x : T in TE, x : T
+
+        x : T in TE
+        --------------------    :: TyEnvNext
+        x : T in TE, x' : T'
+
+
+%% Kinds of types
 defns
 JKind   :: '' ::=
-
- %% Type variables in kind environments.
- defn
- X : K in KiEnv                                 ::      :: KindEnvIn    :: '' by
-
-        ------------------                      :: In
-        X : K in KE, X : K
-
-        X : K in KE
-        --------------------                    :: Next
-        X : K in KE, X' : K'
-
-
- %% Kinds of types
  defn
  KiEnv |- T : K                                 ::      :: Kind         :: '' by
 

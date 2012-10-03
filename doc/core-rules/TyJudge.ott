@@ -1,0 +1,112 @@
+
+grammar
+
+
+% Types of Expressions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+defns
+JTyJudge :: '' ::=
+
+  defn
+  KiEnv | TyEnv |- t : T1 ; eff ; clo   :: :: TyJudge :: '' by
+
+                       x : T in TE
+        -------------------------------------------                                     :: TyVar
+         KE | TE |- x  : T  ; !0  ; nil, cloval x T
+
+
+         KE, X : K | TE |- t              : T          ; !0     ; clo
+        -------------------------------------------------------------------------       :: TyLAM
+         KE        | TE |- /\ X : K . t   : [X : K]. T ; !0     ; cutT X clo
+
+
+         KE | TE |- t1      : [ X : K11 ]. T12  ; eff           ; clo
+              KE |- T2      : K11
+        -------------------------------------------------------------------------       :: TyAPP
+         KE | TE |- t1 [T2] : {T2 / X} T12      ; {T2 / X} eff  ; {T2 / X} clo
+% TODO: Implelementaton is probably wrong as it doesn't substitute into closure.
+
+
+         KE | TE, x : T |- t2        : T2                             ; eff ; clo
+        --------------------------------------------------------------------------------- :: TyLam
+         KE | TE |- \ x : T1 . t2 : (((->) T1) eff (makeClo clo)) T2 ; !0 ; cutX x clo
+
+
+         KE | TE |- t1      : ((((->) T11) eff3) T3) T12        ; eff1  ; clo1   
+         KE | TE |- t2      : T11                               ; eff2  ; clo2
+        ------------------------------------------------------------------------------  :: TyApp
+         KE | TE |- t1 t2   : T12               ; eff1 + eff2 + eff3    ; clo1 + clo2
+
+
+         KE | TE |- t1      : (=>) T11 T12      ; eff                   ; clo
+              KE |- W2      : T11
+        -------------------------------------------------------------------------       :: TySat
+         KE | TE |- t1 <W2> : T12               ; eff                   ; clo
+
+
+
+% Types of Witnesses %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+defns
+JWiJudge :: '' ::=
+
+  defn
+  KiEnv |- W : T1                       :: :: WiJudge :: '' by
+
+    % Look up a witness variable from the environment.
+
+          x : T in TE
+        ---------------                                                                 :: WiVar
+          KE |- x : T
+
+
+    % Witness/Witness application.
+
+          KE |- W1      : (=>) T11 T12
+          KE |- W2      : T11
+        -------------------------------                                                 :: WiAppW
+          KE |- W1 W2   : T12
+
+
+    % Witness/Type application.
+
+          KE |- W1      : [X : K11]. T12
+          KE |- T2      : K11
+        -------------------------------                                                 :: WiAppT
+          KE |- W1 [T2] : {T2 / X} T12
+
+
+    %% Types of witness constructors
+    %%   The following rules encode logical statements about how the
+    %%   region, effect and closure information interacts.
+
+    % The bottom / zero effect is pure.
+
+        -------------------------------                                                 :: WiPure
+          KE |- pure    : Pure  !0
+
+
+    % The bottom / zero closure is empty.
+
+        -------------------------------                                                 :: WiEmpty
+          KE |- empty   : Empty $0
+
+
+    % If a region is global then we can safely forget about any uses of that
+    % region in a closure.
+
+        -----------------------------------------------------                           :: WiUse
+          KE |- use     : [X : %]. Global X => Empty (Use X)
+
+
+    % If a region is constant then we can treat any read effects from that
+    % region as being pure.
+
+        -----------------------------------------------------                           :: WiRead
+          KE |- read    : [X : %]. Const  X => Pure  (Read X)                   
+
+
+    % If a region is constant then we can treat any allocation effects into
+    % that region as being pure.
+
+        -----------------------------------------------------                           :: WiAlloc
+          KE |- alloc   : [X : %]. Const  X => Pure  (Alloc X)                   
+

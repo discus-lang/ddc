@@ -41,16 +41,16 @@ t :: 't_'       ::=
 
 %% Let-bindings.
 lets :: 'lets_' ::=
-  | let letmode letbind                                         :: :: Let       
+  | let letmode letbind                                         :: :: LetsLet       
   {{ com Non-recursive let-binding.       }}
 
-  | letrec    { letbind1 .. letbindn }                          :: :: LetRec    
+  | letrec    { letbind1 .. letbindn }                          :: :: LetsRec    
   {{ com Recursive let-binding.           }}
 
-  | letregions T1 .. Tn with { witbind1 .. witbindm }           :: :: LetRegion
+  | letregions T1 .. Tn with { witbind1 .. witbindm }           :: :: LetsLetRegion
   {{ com Bind local region variables and witness to their properties. }}
 
-  | withregion X                                                :: :: WithRegion
+  | withregion X                                                :: :: LetsWithRegion
   {{ com Holds a region handle during evaluation. }}
 
 
@@ -99,10 +99,10 @@ W :: 'W_' ::=
   {{ com Witness constructor.           }}
 
   | W1 W2                                                       :: :: AppW
-  {{ com Witness Witness application.   }}
+  {{ com Witness / Witness application. }}
 
-  | W1 T2                                                       :: :: AppT
-  {{ com Witness Type application.      }}
+  | W1 [ T2 ]                                                   :: :: AppT
+  {{ com Witness / Type application.    }}
 
   | W1 & W2                                                     :: :: Join
   {{ com Witness joining.               }}
