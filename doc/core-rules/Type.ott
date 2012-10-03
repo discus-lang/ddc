@@ -19,25 +19,38 @@ T :: 'T_'       ::=
 
 %% Type constructors.
 C :: 'C_'       ::=
-  | Unit                ::      :: Unit         % The unit type constructor.
+  % Witness type constructors.
+  | =>                  ::      :: Impl         % Witness implication.
+  | Pure                ::      :: Pure         % Purity of some effect.
+  | Empty               ::      :: Empty        % Emptiness  of some closure.
+  | Global              ::      :: Global       % Globalness of some region.
+  | DeepGlobal          ::      :: DeepGlobal   % Globalness of material regions in some type.
+  | Const               ::      :: Const        % Constancy  of a region.
+  | DeepConst           ::      :: DeepConst    % Constancy  of material regions in some type.
+  | Mutable             ::      :: Mutable      % Mutability of a region.
+  | DeepMutable         ::      :: DeepMutable  % Mutability of material regions in some type.
+  | Distinct            ::      :: Distinct     % Distinctness of two regions.
+  | Lazy                ::      :: Lazy         % Laziness of some region.
+  | HeadLazy            ::      :: HeadLazy     % Laziness of the primary region in some type.
+  | Manifest            ::      :: Manifest     % Manifestness of some region (not lazy).
+  | Disjoint            ::      :: Disjoint     % Disjointness of two effects.
+
+  % Computation type constructors.
   | ->                  ::      :: Fun          % The function type constructor.
+  | Unit                ::      :: Unit         % The unit type constructor.
 
   | !0                  ::      :: ZeroEff      % The least effect (pure)
   | Read                ::      :: Read         % Read from a region.
-  | Write               ::      :: Write        % Write to a region.
+  | HeadRead            ::      :: HeadRead     % Read     from the primary region of some type.
+  | DeepRead            ::      :: DeepRead     % Read     from material regions in some type.
+  | Write               ::      :: Write        % Write      to a region.
+  | DeepWrite           ::      :: DeepWrite    % Write      to material regions in some type.
   | Alloc               ::      :: Alloc        % Allocate into a region.
+  | DeepAlloc           ::      :: DeepAlloc    % Allocate into material region sin some type.
 
   | $0                  ::      :: ZeroClo      % The least closure (empty)
   | Use                 ::      :: Use          % Use some region in a closure.
   | DeepUse             ::      :: DeepUse      % Use all regions from a type in a closure.
-
-  | =>                  ::      :: Impl         % Witness implication.
-  | Pure                ::      :: Pure         % Purity of some effect.
-  | Empty               ::      :: Empty        % Emptiness of some closure.
-  | Const               ::      :: Const        % Constancy of a region.
-  | Mutable             ::      :: Mutable      % Mutability of a region.
-  | Distinct            ::      :: Distinct     % Distinctness of two regions.
-  | Disjoint            ::      :: Disjoint     % Disjointness of two effects.
 
 
 %% Kind environments.
@@ -48,14 +61,12 @@ KiEnv :: 'KiEnv_'       ::=
 
 
 terminals :: 'terminals_' ::=
-  | C                   ::      :: Con
-  | in                  ::      :: In
   | =>                  ::      :: Impl
-
+  | ->                  ::      :: Fun
 
 
 defns
-JSort   :: '' ::=
+JKind   :: '' ::=
 
  %% Type variables in kind environments.
  defn
@@ -113,28 +124,6 @@ JSort   :: '' ::=
         % Baked in type constructors.
         % These have special meaning in the core language.
 
-        ---------------------                   :: KiUnit
-         KE |- Unit    : *
-
-        -------------------------------------   :: KiFun
-         KE |- ->      : * ~> ! ~> $ ~> * ~> *
-
-        -------------------------               :: KiRead
-         KE |- Read    : % ~> !
-
-        -------------------------               :: KiWrite
-         KE |- Write   : % ~> !
-
-        -------------------------               :: KiAlloc
-         KE |- Alloc   : % ~> !
-
-        -------------------------               :: KiUse
-         KE |- Use     : % ~> !
-
-        -------------------------               :: KiDeepUse
-         KE |- DeepUse : % ~> !
-
-
          KE |- T1 : @
          KE |- T2 : @
         ------------------------------          :: KiImplWit
@@ -145,22 +134,76 @@ JSort   :: '' ::=
         ------------------------------          :: KiImplVal
          KE |- T1 => T2 : *
 
+        --------------------------------        :: KiPure
+         KE |- Pure             : ! ~> @
 
-        ------------------------                :: KiPure
-         KE |- Pure     : ! ~> @
+        --------------------------------        :: KiEmpty
+         KE |- Empty            : $ ~> @
 
-        ------------------------                :: KiEmpty
-         KE |- Empty    : $ ~> @
+        --------------------------------        :: KiGlobal
+         KE |- Global           : $ ~> @
 
-        ------------------------                :: KiConst
-         KE |- Const    : % ~> @
+        --------------------------------        :: KiDeepGlobal
+         KE |- DeepGlobal       : * ~> @
 
-        ------------------------                :: KiMutable
-         KE |- Mutable  : % ~> @
+        --------------------------------        :: KiConst
+         KE |- Const            : % ~> @
 
-        ------------------------------          :: KiDistinct
-         KE |- Distinct : % ~> % ~> @
+        --------------------------------        :: KiDeepConst
+         KE |- DeepConst        : * ~> @
 
-        ------------------------------          :: KiDisjoint
-         KE |- Disjoint : % ~> % ~> @
+        --------------------------------        :: KiMutable
+         KE |- Mutable          : % ~> @
+
+        --------------------------------        :: KiDeepMutable
+         KE |- DeepMutable      : * ~> @
+
+        --------------------------------        :: KiDistinct
+         KE |- Distinct    : % ~> % ~> @
+
+        --------------------------------        :: KiLazy
+         KE |- Lazy             : % ~> @
+
+        --------------------------------        :: KiHeadLazy
+         KE |- HeadLazy         : * ~> @
+
+        --------------------------------        :: KiManifest
+         KE |- Manifest         : % ~> @
+
+        ---------------------------------       :: KiDisjoint
+         KE |- Disjoint    : % ~> % ~> @
+
+
+        -------------------------------------   :: KiFun
+         KE |- ->      : * ~> ! ~> $ ~> * ~> *
+
+        --------------------------------        :: KiUnit
+         KE |- Unit             : *
+
+        --------------------------------        :: KiRead
+         KE |- Read             : % ~> !
+
+        --------------------------------        :: KiHeadRead
+         KE |- HeadRead         : * ~> !
+
+        --------------------------------        :: KiDeepRead
+         KE |- DeepRead         : * ~> !
+
+        --------------------------------        :: KiWrite
+         KE |- Write            : % ~> !
+
+        --------------------------------        :: KiDeepWrite
+         KE |- DeepWrite        : * ~> !
+
+        --------------------------------        :: KiAlloc
+         KE |- Alloc            : % ~> !
+
+        --------------------------------        :: KiDeepAlloc
+         KE |- DeepAlloc        : * ~> !
+
+        --------------------------------        :: KiUse
+         KE |- Use              : % ~> $
+
+        --------------------------------        :: KiDeepUse
+         KE |- DeepUse          : * ~> $
 

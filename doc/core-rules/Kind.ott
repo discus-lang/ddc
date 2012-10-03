@@ -3,6 +3,13 @@
 
 grammar
 
+%% Sort expressions.
+S :: 'S_' ::=
+  | @@                  ::      :: Prop         % The sort of witness kinds.
+  | **                  ::      :: Comp         % The sort of computation kinds.
+
+
+%% Kind expressions.
 K :: 'K_' ::=
   | *                   ::      :: Val          % The kind of value types.
   | %                   ::      :: Rgn          % The kind of region types.
@@ -12,3 +19,30 @@ K :: 'K_' ::=
   | K1 ~> K2            ::      :: Fun          % The function kind.
 
   | ( K )               ::      :: Paren        % Allow kinds to be wrapped in parens.
+
+
+defns
+JSort   :: ''   ::=
+
+  defn
+  K :s S                ::      :: Sort         :: '' by  
+
+        ---------               :: SoVal
+         * :s **
+
+%       ---------               :: SoRgn
+%        % :s **
+% TODO: how do we escape this?
+
+        ---------               :: SoEff
+         ! :s **
+
+        ---------               :: SoClo
+         $ :s **
+
+        ---------               :: SoWit
+         @ :s @@
+
+             K2 :s S1
+        -----------------       :: SoFun
+         K1 ~> K2 :s S1
