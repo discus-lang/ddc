@@ -1,0 +1,139 @@
+
+
+metavar termvar, a, x, l ::= 
+
+grammar
+
+% -- Kinds --------------------------------------------------------------------
+K :: 'K_' ::=
+  | *                   ::      :: Star
+  | K1 ~> K2            ::      :: Fun
+
+
+% -- Types --------------------------------------------------------------------
+T :: 'T_' ::=
+  | a                   ::      :: Var
+  | C                   ::      :: Con
+  | [ a : K ] . T       ::      :: Forall
+  | T1 T2               ::      :: App
+
+
+% -- Terms --------------------------------------------------------------------
+t :: 't_' ::=
+  | x                   ::      :: Var
+  | l                   ::      :: Loc
+  | unit                ::      :: Unit
+
+  | /\ a : K . t        ::      :: LAM
+  | t [ T ]             ::      :: APP
+
+  | \  x : T . t        ::      :: Lam
+  | t1 t2               ::      :: App
+
+  | op1 t1              ::      :: Op1
+  | op2 t1 t2           ::      :: Op2
+
+  | ( t )               :: S    :: Paren
+  | { t / x } t'        :: M    :: Sub_t
+  | { T / x } t'        :: M    :: Sub_T
+
+
+% -- Operators
+op1 :: 'op1_' ::=
+  | newRef              ::      :: OpNewRef
+  | readRef             ::      :: OpReadRef
+
+
+op2 :: 'op2_' ::=
+  | writeRef            ::      :: OpWriteRef
+
+% -- Values
+v :: 'v_' ::=
+  | /\ a : K . t        ::      :: LAM
+  | \  x : T . t        ::      :: Lam
+
+% -- Heaps
+H :: 'H_' ::=
+  | nil                 ::      :: Empty
+  | H , l :- v          ::      :: Bind
+
+terminals :: 'terminals_' ::=
+  | /\                  ::      :: Lambda
+  | \                   ::      :: lambda
+  | -->                 ::      :: step
+  | unit                ::      :: unit
+
+
+subrules
+  v <:: t
+
+
+% -- Defns --------------------------------------------------------------------
+defns
+Jstep :: '' ::=
+
+ defn
+ H has l1 :- v1         ::      :: has :: '' by
+
+        ---------------------------                             :: HasLoc
+          H, l1 :- v1 has l1 :- v1
+
+          H           has l1 :- v1
+        ---------------------------                             :: HasWeak
+          H, l2 :- v2 has l1 :- v1
+
+
+ defn
+ H1 ; t1 --> H2 ; t2    ::      :: step :: '' by
+
+
+        %%% Type applications %%%
+
+          H ; t1      --> H' ; t1'
+        --------------------------------                        :: EsAPP
+          H ; t1 [T2] --> H' ; t1' [T2]
+
+        ----------------------------------------------------    :: EsLAMAPP
+          H ; (/\ a : K11 . t12) [T2] --> H ; {T2 / a} t12
+
+
+        %%% Value applications %%%
+
+          H ; t1   --> H' ; t1'
+        --------------------------                              :: EsApp1
+          H ; t1 t --> H' ; t1' t
+
+          H ; t2   --> H' ; t2'
+        --------------------------                              :: EsApp2
+          H ; v t2 --> H' ; v t2'
+
+        ------------------------------------------------        :: EsLamApp
+          H ; (\ x : T11 . t12) v2 --> H ; {v2 / x} t12
+
+
+        %%% Operator applications %%%
+
+          H ; t1        --> H' ; t1'
+        ---------------------------------                       :: EsOp1Arg1
+          H ; op1 t1    --> H' ; op1 t1'
+
+        ----------------------------------------------          :: EsOp1NewRef
+          H ; newRef  v1 --> H, l :- v1 ; l
+
+                H has l1 :- v1
+        ----------------------------                            :: EsOp1ReadRef
+          H ; readRef l1 --> H ; v1
+
+
+          H ; t1             --> H' ; t1'
+        ------------------------------------                    :: EsOp2Arg1
+          H ; op2 t1 t2      --> H' ; op2 t1' t2
+
+          H ; t2             --> H' ; t2'
+        -------------------------------------                   :: EsOp2Arg2
+          H ; op2 t1 t2      --> H' ; op2 t1 t2'
+
+               H has l1 :- v1
+        ----------------------------------------------          :: EsOp2WriteRef
+          H ; writeRef l1 v2 --> H', l1 :- v2 ; unit
+
