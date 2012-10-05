@@ -6,16 +6,18 @@ where
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Type.Compounds
-import Control.Arrow
 import Control.Monad
+import Control.Arrow
+import Data.Maybe
+import Data.List
 
 
-elaborateModule :: Module a n -> Module a n
+elaborateModule :: Eq n => Module a n -> Module a n
 elaborateModule mm = mm { moduleBody = elaborate [] $ moduleBody mm }
 
 
 class Elaborate (c :: * -> *) where
-  elaborate :: [Bound n] -> c n -> c n
+  elaborate :: Eq n => [Bound n] -> c n -> c n
 
 
 instance Elaborate (Exp a) where
@@ -48,7 +50,7 @@ instance Elaborate (Alt a) where
   elaborate us (AAlt p x) = AAlt p (elaborate us x) 
 
 
-elaborateLets :: [Bound n] -> Lets a n -> ([Bound n], Lets a n)
+elaborateLets :: Eq n => [Bound n] -> Lets a n -> ([Bound n], Lets a n)
 elaborateLets us lts 
   = let down = elaborate us 
     in  case lts of
@@ -57,11 +59,19 @@ elaborateLets us lts
 
           LLetRegions brs bws
             |  Just urs <- takeSubstBoundsOfBinds brs
-            -> let bws'          = (map mkWit $ liftM2 (,) us  urs)
-                                ++ (map mkWit $ zip urs $ tail urs)
-                   mkWit (u1,u2) = BNone $ tDistinct 2 [TVar u1, TVar u2]
-               in  (us ++ urs, LLetRegions brs $ bws ++ bws')
+            -> let mutableRegions = catMaybes $ map (takeMutableRegion . typeOfBind) bws
+                   consts         = map constWit $ urs \\ mutableRegions
+
+                   distincts      = map disWit $  liftM2 (,) us   urs
+                                               ++ zip        urs (tail urs)
+
+               in  (us ++ urs, LLetRegions brs $ bws ++ distincts ++ consts )
+                  where constWit u     = BNone $ tConst (TVar u)
+                        disWit (u1,u2) = BNone $ tDistinct 2 [TVar u1, TVar u2]
+                        takeMutableRegion tt
+                          = case takeTyConApps tt of
+                                Just (TyConWitness TwConMutable, [TVar u]) -> Just u
+                                _                                          -> Nothing
 
           _          -> (us, lts)
-
 
