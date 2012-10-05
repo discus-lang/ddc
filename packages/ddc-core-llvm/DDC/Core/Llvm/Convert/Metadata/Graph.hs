@@ -9,10 +9,10 @@ module DDC.Core.Llvm.Convert.Metadata.Graph
        , transClosure
 
        , UG(..)
-       , DAG(..)
-       , orientation
-       , transOrientation,    transOrientation'
-       , partitionDAG
+       , DG(..)
+       , transClosureDG, orientation
+       , transOrientation,    minOrientation
+       , partitionDG
 
        , Tree(..)
        , sources, anchor )
@@ -23,7 +23,6 @@ import Data.Ord
 import Data.Tuple
 import Data.Maybe
 import Control.Monad
-import Control.Arrow
 
 
 -- Binary relations -----------------------------------------------------------
@@ -36,6 +35,9 @@ toList dom r = [ (x, y) | x <- dom, y <- dom, r x y ]
 
 fromList :: Eq a => [(a, a)] -> Rel a
 fromList s = \x y -> (x,y) `elem` s
+
+size :: Dom a -> Rel a -> Int
+size d r = length $ toList d r
 
 allR :: Eq a => Rel a
 allR = (/=)
@@ -63,31 +65,38 @@ transClosure dom r = fromList $ step dom $ toList dom r
           step (_:xs) es = step xs 
                               $ nub (es ++ [(a, d) | (a, b) <- es, (c, d) <- es, b == c])
 
+transCloSize :: (Eq a) => Dom a -> Rel a -> Int
+transCloSize d r = size d $ transClosure d r
+
 
 -- Graphs ---------------------------------------------------------------------
 newtype UG  a = UG (Dom a, Rel a)
-newtype DAG a = DAG (Dom a, Rel a)
+newtype DG  a = DG (Dom a, Rel a)
 
 instance Show a => Show (UG a) where
   show (UG (d,r)) = "UG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
 
-instance Show a => Show (DAG a) where
-  show (DAG (d,r)) = "DAG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
+instance Show a => Show (DG a) where
+  show (DG (d,r)) = "DG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
 
 
 -- | Give a random orientation of an undirected graph
-orientation :: Eq a => UG a -> DAG a
-orientation (UG (d,g)) = DAG (d,g)
+orientation :: Eq a => UG a -> DG a
+orientation (UG (d,g)) = DG (d,g)
+
+transClosureDG :: (Eq a) => DG a -> DG a
+transClosureDG (DG (d,g)) = DG (d, transClosure d g)
 
 
 -- | Find the transitive orientation of an undirected graph if one exists
---    using exponential-time bruteforce.
---    TODO implement O(n) algorithm
+--    TODO implement linear time algorithm (this is the whole point of
+--         finding the transitive orientation before bruteforcing for
+--         the minimum orientation!)
 --
-transOrientation :: Eq a => UG a -> Maybe (DAG a)
+transOrientation :: Eq a => UG a -> Maybe (DG a)
 transOrientation (UG (d,g))
  = case toList d g of
-        [] -> Just (DAG (d,g))
+        [] -> Just (DG (d,g))
         edges 
           -> let  -- Treat G as a directed graph. For all subsets S of A (set of arcs),
                   --   reverse the direction of all arcs in S and check if the result
@@ -96,13 +105,25 @@ transOrientation (UG (d,g))
                   choices      = concatMap combo [1..length d]
                   choose c     = g `differenceR` fromList c
                                    `unionR`      fromList (map swap c)
-              in  liftM DAG $ liftM (d,) $ find (transitiveR d) $ map choose choices
+              in  liftM DG $ liftM (d,) $ find (transitiveR d) $ map choose choices
 
 
--- | Find the best transitive orientation possible, adding edges if necessary
-transOrientation' :: (Show a, Eq a) => UG a -> DAG a
-transOrientation' g
-  = fromMaybe (orientation g) (transOrientation g)
+-- | Find the orientation with the smallest transitive closure
+minOrientation :: (Show a, Eq a) => UG a -> DG a
+minOrientation ug = fromMaybe (minOrientation' ug) (transOrientation ug)
+
+minOrientation' :: (Show a, Eq a) => UG a -> DG a
+minOrientation' (UG (d, g))
+ = case toList d g of
+        [] -> DG (d,g)
+        edges 
+          -> let  combo k   = filter ((k==) . length) $ subsequences edges
+                  choices   = concatMap combo [1..length d]
+                  choose c  = g `differenceR` fromList c
+                                `unionR`      fromList (map swap c)
+                  minTransClo = head $ sortBy (comparing $ transCloSize d) 
+                                     $ map choose choices
+              in  DG (d, minTransClo)
 
 
 -- Trees ----------------------------------------------------------------------
@@ -123,37 +144,35 @@ sources :: Eq a => a -> Tree a -> [a]
 sources x (Tree (d, r)) = [y | y <- d, r y x]
 
 
--- | Partition a DAG into the minimum set of (directed) trees
---      once again with bruteforce (this is also NP hard).
---      There always exists a partition, in the worst case 
---      all nodes are disjoint
-partitionDAG :: Eq a => DAG a -> [Tree a]
-partitionDAG dag@(DAG (_,g))
- = let edgesFor nodes  = [ (x,y) | x <- nodes, y <- nodes, g x y ]    
-       mkGraph  nodes  = (nodes, fromList $ edgesFor nodes)
-   in map Tree $ fromMaybe (error "partitionDAG: no partition found!") 
+-- | Partition a DG into the minimum set of (directed) trees
+--    rank the partitionings by the number of partitions for now
+--   
+partitionDG :: Eq a => DG a -> [Tree a]
+partitionDG (DG (d,g))
+ = let mkGraph  g' nodes = (nodes, fromList [ (x,y) | x <- nodes, y <- nodes, g' x y ])
+--       clo               = transClosure d g
+   in map Tree $ fromMaybe (error "partitionDG: no partition found!") 
                $ find (all $ uncurry isTree) 
-               $ map (map mkGraph) 
-               $ sortBy (comparing length)
-               $ uncurry unmassage
-               $ second partitionings 
-               $ massage dag
+               $ map (map (mkGraph g)) 
+               $ sortBy (comparing (aliasingAmount g))
+               $ partitionings d
+
 
 type SubList a   = [a]
 type Partitioning a = [SubList a]
 
--- | Massage the partitioning to fit LLVM metadata trees
---      by putting fully connected nodes in their own trees.
---      TODO: it's better to rank the partitionings on their connectivity
---            and pick the one closest to the original.
-massage :: Eq a => DAG a -> ([a], Dom a)
-massage (DAG (d,g))
-  = let connecteds  = filter (\x -> all (g x) (d \\ [x])) d
-    in  (connecteds, d \\ connecteds)
+-- | Calculate the aliasing induced by a set of trees
+--      this includes aliasing within each of the trees
+--      and aliasing among trees
+--   TODO - come up with a more efficient to compute measure
+--
+aliasingAmount :: Eq a => Rel a -> Partitioning a -> Int
+aliasingAmount g p
+ = (outerAliasing $ map length p) + (sum $ map innerAliasing p)
+    where innerAliasing t = length $ toList t $ transClosure t g
+          outerAliasing (l:ls) = l * (sum ls) + outerAliasing ls
+          outerAliasing []     = 0
 
--- | Unmassage the connected nodes back in.
-unmassage :: [a] -> [Partitioning a] -> [Partitioning a]
-unmassage connecteds = map (connecteds:)
 
 -- | Generate all possible partitions of a list
 --    by nondeterministically decide which sublist to add an element to.

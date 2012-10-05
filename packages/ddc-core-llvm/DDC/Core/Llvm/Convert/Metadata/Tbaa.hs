@@ -77,8 +77,8 @@ deriveMD nTop xx
         (constwits, diswits) = partitionWits $ collectWitsB xx
         arel                 = constructARel   diswits
         domain               = constructANodes regs constwits
-        mdDAG                = transOrientation' $ UG (domain, arel)
-        mdTrees              = partitionDAG mdDAG    
+        mdDG                 = minOrientation $ UG (domain, arel)
+        mdTrees              = partitionDG mdDG
     in  foldM (buildMDTree nTop) (MDSuper emptyDict []) mdTrees
 
 
