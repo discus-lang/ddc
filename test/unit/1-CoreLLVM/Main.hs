@@ -13,7 +13,7 @@ import DDC.Core.Llvm.Convert.Metadata.Graph
 main = $(quickCheckAll)
 
 -- Too slow for anything more than 6
-magicLimit = 6
+magicLimit = 4
 rootStart  = 42
 
 instance Arbitrary (UG Int) where
@@ -32,7 +32,7 @@ lexicoOrder (a , b) | a < b     = (a , b)
                     | otherwise = (b , a) 
 
 
--- For sampling purposes
+-- Give an example of a non-comparability graph
 samp_not_comprability_graph :: UG Int -> Bool
 samp_not_comprability_graph = isJust . transOrientation
 
@@ -59,15 +59,16 @@ prop_alias_safety g@(UG (d, aliasDDC))
                  , aliasDDC x y
                  , not $ aliasLLVM x y ]
     where trees = snd $ mapAccumL (\r t -> (r+1, anchor r t)) rootStart 
-                      $ partitionDAG $ transOrientation' g
-          ascendants :: Int -> Tree Int -> [Int]
+                      $ partitionDG $ minOrientation g
           ascendants x (Tree (ns, t))
             = let clo = transClosure ns t
               in  filter (clo x) ns
-          descendants :: Int -> Tree Int -> [Int]
           descendants x t@(Tree (ns, _))  
             = [ y | y <- ns, x `elem` ascendants y t ]
-          aliasLLVM x y 
-            =    isNothing (find (\(Tree (ns,t)) -> x `elem` ns && y `elem` ns) trees)
-              || any (\t -> y `elem` ((ascendants x t) ++ (descendants x t))) trees
+          -- Two things alias when they are either in different trees
+          --    or are descendant/ascendant of each other in the same tree
+          diffTree x y = isNothing (find (\(Tree (ns,t)) -> x `elem` ns && y `elem` ns) trees)
+          ascdesc  x y = any (\t -> y `elem` (ascendants x t ++ descendants x t)) trees
+          aliasLLVM x y = diffTree x y || ascdesc x y
+
 

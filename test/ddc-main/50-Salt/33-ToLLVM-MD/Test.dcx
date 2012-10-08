@@ -1,0 +1,90 @@
+:set +Indent +SuppressImports
+:set builder x86_64-darwin
+
+
+-- Include elaborated witnesses in metadata tree
+:set lang Lite
+:to-llvm..
+module Test with letrec
+
+bar (_ : Unit) : Unit
+ = letregion r1 in
+   letregions r2 r3 with { w1 : Distinct r1 r2 } in ();;
+
+
+-- Observable optimisations: GVN
+-- Feed the output of this test to `opt -S -tbaa -basicaa -gvn -o - <test.ll>`
+--
+-- PROBLEM: since only load/stores can be annotated (and not function calls),
+--    we have to inline addInt manually here.
+--
+:set lang Salt
+:to-llvm..
+module Test with letrec {
+
+x_plus_y_square 
+    [rx ry rz : %]                          -- Takes three regions
+    <w1 : Distinct rx rz>                   -- Two witnesses
+    <w2 : Distinct ry rz>
+    (x : Ptr# rx Int#)                      -- Three value arguments
+    (y : Ptr# ry Int#)                      -- of type pointer to int
+    (z : Ptr# rz Int#)
+    : Int#
+ = do { xval1 = peek# [rx] [Int#] x 0#;     -- Compute (x + y)
+        yval1 = peek# [ry] [Int#] y 0#;
+        a     = add# [Int#] xval1 yval1;        
+        poke# [rz] [Int#] z 0# a;           -- Modify z        
+        xval2 = peek# [rx] [Int#] x 0#;     -- Compute (x + y) again
+        yval2 = peek# [ry] [Int#] y 0#;
+        b     = add# [Int#] xval2 yval2;        
+        mul# [Int#] a b;                    -- Result is (x + y)^2
+      };
+};;
+
+-- Observable optimisations: GVN - constprop behaviour
+:set lang Salt
+:to-llvm..
+module Constprop with letrec {
+  nothing [rx : %]
+      (x : Ptr# rx Int#)
+      : Int#
+    = 42i#;
+
+  three_x_plus_one [rx : %]
+      <w : Const rx>
+      (x : Ptr# rx Int#)
+      : Int#
+    = do { a = peek# [rx] [Int#] x 0#;
+           b = add# [Int#] a 1i#;
+           nothing [rx] x;
+           c = peek# [rx] [Int#] x 0#;
+           d = mul# [Int#] c 2i#;
+           add# [Int#] b d;
+         };
+};;
+
+-- Observarble optimisations: LICM
+:set lang Salt
+:to-llvm..
+module Licm with letrec {
+go  [ra rx ry : %]
+    <w : Distinct3 ra rx ry>
+    (a : Ptr# ra Nat#) (x : Ptr# rx Nat#) (y : Ptr# ry Nat#) (i : Nat#)
+    : Nat#
+  = case i of {
+      42# -> i;      
+      _    -> 
+        do { yval     = peek# [ry] [Nat#] y 0#;
+             yplustwo = add# [Nat#] yval 2#;
+
+             poke# [rx] [Nat#] x 0# yplustwo;
+
+             poke# [ra] [Nat#] a i i;
+
+             nexti    = add# [Nat#] i 1#;
+             go [ra] [rx] [ry] <w> a x y nexti;
+           };
+    };
+};;
+
+
