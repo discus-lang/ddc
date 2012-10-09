@@ -19,6 +19,7 @@ import DDC.Llvm.Exp
 import DDC.Llvm.Metadata
 import DDC.Base.Pretty
 import Data.Sequence            (Seq)
+import Data.List
 import qualified Data.Foldable  as Seq
 
 
@@ -101,6 +102,9 @@ data Instr
         --   set-instructions before passing it to the LLVM compiler.
         | ISet          Var     Exp
 
+        -- Phi nodes --------------------------------------
+        | IPhi          Var     [(Exp, Label)]
+
 
         -- Terminator Instructions ------------------------
         -- | Return a result.
@@ -169,6 +173,20 @@ instance Pretty Instr where
          -> hsep [ fill 12 (ppr $ nameOfVar dst)
                  , equals
                  , ppr val ]
+
+        -- Phi nodes --------------------------------------
+        IPhi vDst expLabels
+         -> padVar vDst
+                <+> equals
+                <+> text "phi"
+                <+> ppr (typeOfVar vDst)
+                <+> hcat
+                     (intersperse (comma <> space)
+                        [ brackets
+                                (   pprPlainX xSrc
+                                <>  comma
+                                <+> text "%" <> ppr label)
+                        | (xSrc, label)         <- expLabels ])
 
         -- Terminator Instructions ------------------------
         IReturn Nothing         

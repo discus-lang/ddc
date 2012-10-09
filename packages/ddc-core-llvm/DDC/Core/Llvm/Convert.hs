@@ -23,7 +23,6 @@ import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Simplifier    as Simp
-
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
@@ -328,10 +327,14 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                 -- Convert all the alternatives.
                 --  We set 'BodyNest' so the alternative code jumps to 'label2' to 
                 --  continue evaluation of x2.
-                let n'          = A.sanitizeName n
                 let t'          = convType pp kenv t
-                let vDst        = Var (NameLocal n') t'
-                alts'@(_:_)     <- mapM (convAltM (BodyNest vDst label2) kenv tenv mdsup) alts
+                (vDsts, alts'@(_:_))
+                         <- liftM unzip 
+                         $  mapM (\alt -> do
+                                vDst'   <- newUniqueNamedVar "alt" t'
+                                alt'    <- convAltM (BodyNest vDst' label2) kenv tenv mdsup alt
+                                return (vDst', alt'))
+                         $  alts
 
                 -- Determine what default alternative to use for the instruction. 
                 (lDefault, blocksDefault)
@@ -351,9 +354,20 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
                 let blocks'     = blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
+                -- Use a Phi instruction to join the results from each alternative.
+                let n'          = A.sanitizeName n
+                let vDst        = Var (NameLocal n') t'
+                let iPhi        = annotNil
+                                $ IPhi vDst [ (XVar vDstAlt, labelOfAltResult alt')
+                                            | vDstAlt   <- vDsts
+                                            | alt'      <- alts' ]
+
                 -- Continue converting 'x2', the body of the let-expression.
                 let tenv'       = Env.extend b tenv
-                convBodyM context kenv tenv' mdsup blocks' label2 Seq.empty x2
+                convBodyM context kenv tenv' mdsup 
+                        blocks' label2 
+                        (Seq.singleton iPhi) 
+                        x2
 
          -- Variable assignment from an expression.
          C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) x1) x2
@@ -516,6 +530,14 @@ convExpM context pp kenv tenv mdsup xx
 data AltResult 
         = AltDefault        Label (Seq Block)
         | AltCase       Lit Label (Seq Block)
+
+
+-- | Get the label of an `AltResult`.
+labelOfAltResult :: AltResult -> Label
+labelOfAltResult aa
+ = case aa of
+        AltDefault l _          -> l
+        AltCase    _ l _        -> l
 
 
 -- | Convert a case alternative to LLVM.

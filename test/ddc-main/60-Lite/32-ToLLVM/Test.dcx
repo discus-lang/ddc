@@ -24,6 +24,26 @@ thing [r1 : %] (z : Unit) { Alloc r1 | Use r1 } : Unit
         ();;
 
 
+-- Join points.
+:to-llvm..
+module Test 
+imports { 
+        addNat  :: [r1 r2 r3 : %]
+                . Nat r1 
+                -(!0 | Use r3)> Nat r2 
+                -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+}
+with letrec
+thing   [r1 : %] 
+        (b : Bool#) { Read r1 + Alloc r1 | Use r1 } 
+        : Nat r1
+ = let  x       = case b of
+                        True#  -> N# [r1] 5#
+                        False# -> N# [r1] 6#
+   in   addNat [:r1 r1 r1:] x (N# [r1] 1#);;
+
+
+
 -- BROKEN: CAF binder.
 --module Test with letrec
 --thing [r1 : %] : Unit

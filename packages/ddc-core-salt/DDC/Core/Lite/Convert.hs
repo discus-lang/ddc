@@ -271,7 +271,7 @@ convertExpX ctx pp defs kenv tenv xx
                 return $ XLet (annotTail a) lts' x2'
 
         XLet{}
-         -> throw $ ErrorNotNormalized ("cannot convert let-expression")
+         -> throw $ ErrorNotNormalized ("let-expression")
 
 
         -- Match against literal unboxed values.
@@ -314,7 +314,7 @@ convertExpX ctx pp defs kenv tenv xx
                         $ alts' ++ asDefault
 
         XCase{} 
-         -> throw $ ErrorNotNormalized ("cannot convert case expression")
+         -> throw $ ErrorNotNormalized ("case expression")
 
 
         -- Casts.
@@ -324,20 +324,14 @@ convertExpX ctx pp defs kenv tenv xx
 
         -- Types can only appear as the arguments in function applications.
         XType t
-         |  ExpArg      <- ctx
-         -> liftM XType (convertT kenv t)
-
-         | otherwise 
-         -> throw $ ErrorNotNormalized ("type expresison not used as argument to function")
+         | ExpArg <- ctx  -> liftM XType (convertT kenv t)
+         | otherwise      -> throw $ ErrorNotNormalized ("type expresison")
 
 
         -- Witnesses can only appear as the arguments to function applications.
         XWitness w      
-         | ExpArg       <- ctx
-         -> liftM XWitness (convertWitnessX kenv w)
-
-         | otherwise
-         -> throw $ ErrorNotNormalized ("witness expression not used as argument to function")
+         | ExpArg <- ctx  -> liftM XWitness (convertWitnessX kenv w)
+         | otherwise      -> throw $ ErrorNotNormalized ("witness expression")
 
 
 
