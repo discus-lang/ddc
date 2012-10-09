@@ -96,9 +96,11 @@ allocBoxed
         (tag : Tag#) (arity : Nat#) : Ptr# r Obj
  = do   
         -- Multiple arity by 8 bytes-per-pointer to get size of payload.
-        bytesPayload    = shl# [Nat#] arity 3#
+        bytesPayload    = shl# [Nat#] arity (size2# [Addr#])
+        bytesObj        = add# [Nat#] (size# [Word32#])
+                         (add# [Nat#] (size# [Word32#])
+                                       bytesPayload)
 
-        bytesObj        = add# [Nat#] 8# bytesPayload
         case check# bytesObj of
          True#  -> allocBoxed_ok [r] tag arity bytesObj
          False# -> fail# [Ptr# r Obj]
@@ -127,7 +129,8 @@ getFieldOfBoxed
         (obj : Ptr# r1 Obj) (index : Nat#) 
         : a
  =      read# [a]  (takePtr# [r1] [Obj] obj)
-                   (add# [Nat#] 8# (shl# [Nat#] index 3#))
+                   (add# [Nat#] 8#
+                                (shl# [Nat#] index (size2# [Addr#])))
 
 
 -- | Set one of the pointers from a boxed data object.
@@ -137,7 +140,8 @@ setFieldOfBoxed
         (val : a) 
         : Void#
  =      write# [a] (takePtr# [r1] [Obj] obj)
-                   (add# [Nat#] 8# (shl# [Nat#] index 3#))
+                   (add# [Nat#] 8# 
+                                (shl# [Nat#] index (size2# [Addr#])))
                    val
 
 
@@ -160,7 +164,11 @@ allocMixed
         (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
  = do   
         bytesPtrs       = shl# [Nat#] arity 3#
-        bytesObj        = add# [Nat#] 16# (add# [Nat#] bytesPtrs bytesRaw)
+        bytesObj        = add# [Nat#] (size# [Word32#])
+                         (add# [Nat#] (size# [Word32#])
+                         (add# [Nat#] (size# [Word64#])
+                         (add# [Nat#] bytesPtrs bytesRaw)))
+
         case check# bytesObj of
          True#  -> allocMixed_ok [r] tag arity bytesObj
          False# -> fail# [Ptr# r Obj]
@@ -177,9 +185,9 @@ allocMixed_ok
         write# [Word32#] addr 0# header
 
         arity32         = truncate# [Word32#] [Nat#] arity
-        write# [Word32#] addr 12# arity32
+        write# [Word32#] addr 4# arity32
 
-        bytesObj32      = promote# [Word64#] [Nat#] bytesObj
+        bytesObj32      = promote#  [Word64#] [Nat#] bytesObj
         write# [Word64#] addr 8# bytesObj32
 
         makePtr# [r] [Obj] addr
@@ -188,7 +196,9 @@ allocMixed_ok
 -- | Get one of the pointers from a mixed data object.
 fieldOfMixed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
  = do   
-        offset          = add# [Nat#] 16# (shl# [Nat#] index 2#)
+        offset          = add# [Nat#] 16# 
+                         (shl# [Nat#] index (size2# [Addr#]))
+
         plusPtr# [r] [Obj] obj offset
       
 
@@ -214,7 +224,10 @@ allocRaw
         [r : %] 
         (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
-        bytesObj        = add# [Nat#] 8# bytesPayload
+        bytesObj        = add# [Nat#] (size# [Word32#])
+                         (add# [Nat#] (size# [Word32#])
+                                      bytesPayload)
+
         case check# bytesObj of
          True#  -> allocRaw [r] tag bytesObj
          False# -> fail# [Ptr# r Obj]

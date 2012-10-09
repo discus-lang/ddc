@@ -85,6 +85,49 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
                         $ annotNil
                         $ ISet vDst (XLit (LitInt (tNat pp) (platformNatBytes pp)))
 
+
+        A.PrimStore A.PrimStoreSize 
+         | [C.XType t]          <- xs
+         , Just vDst            <- mdst
+         -> let t'      = convType pp kenv t
+                size    = case t' of
+                            TPointer _           -> platformAddrBytes pp   
+                            TInt bits
+                             | bits `mod` 8 == 0 -> bits `div` 8
+                            _                    -> sorry
+
+                -- Bool# is only 1 bit long.
+                -- Don't return a result for types that don't divide into 8 bits evenly.
+                sorry           = dieDoc $ vcat
+                                [ text "  Invalid type applied to size#."]
+
+            in return   $ Seq.singleton
+                        $ annotNil
+                        $ ISet vDst (XLit (LitInt (tNat pp) size))
+
+
+        A.PrimStore A.PrimStoreSize2
+         | [C.XType t]          <- xs
+         , Just vDst            <- mdst
+         -> let t'      = convType pp kenv t
+                size    = case t' of
+                            TPointer _           -> platformAddrBytes pp   
+                            TInt bits   
+                             | bits `mod` 8 == 0 -> bits `div` 8
+                            _                    -> sorry
+
+                size2   = truncate $ (log (fromIntegral size) / log 2 :: Double)
+
+                -- Bool# is only 1 bit long.
+                -- Don't return a result for types that don't divide into 8 bits evenly.
+                sorry           = dieDoc $ vcat
+                                [ text "  Invalid type applied to size2#."]
+
+            in return   $ Seq.singleton
+                        $ annotNil
+                        $ ISet vDst (XLit (LitInt (tNat pp) size2))
+
+
         A.PrimStore A.PrimStoreCreate
          | Just [xBytes']         <- mconvAtoms pp kenv tenv xs
          -> do  vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
@@ -252,8 +295,9 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
                         $ ICall mdst CallTypeStd tResult'
                                 name' xs' []
 
-        _ -> die $ "Invalid prim call." ++ show (p, xs)
-
+        _ -> die $ unlines
+                [ "Invalid prim call."
+                , show (p, xs) ]
 
 
 bumpName :: Name -> String -> Name

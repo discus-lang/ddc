@@ -92,7 +92,7 @@ allocBoxed
         (tag : Tag#) (arity : Nat#) : Ptr# r Obj
  = do   
         -- multiply arity by 4 bytes-per-pointer to get size of payload.
-        bytesPayload    = shl# [Nat#] arity 2#
+        bytesPayload    = shl# [Nat#] arity (size2# [Ptr# r Obj])
         
         bytesObj        = add# [Nat#] 8# bytesPayload
         case check# bytesObj of

@@ -207,6 +207,12 @@ typeOfPrimStore jj
         PrimStoreShiftNat       
          -> tVoid `tFunPE` tNat
 
+        PrimStoreSize 
+         -> tForall kData $ \_ -> tNat
+
+        PrimStoreSize2
+         -> tForall kData $ \_ -> tNat
+
         PrimStoreCreate
          -> tNat `tFunPE` tVoid
 

@@ -1,0 +1,46 @@
+:set +Indent +SuppressImports
+:set builder x86_64-darwin
+:set lang Salt
+
+
+-- Check that the size prims are available
+:type size#
+:type size2#
+
+
+-- Get the size of prim types.
+:to-llvm..
+module Test with letrec
+ nat (_ : Unit) : Nat#
+  = size# [Nat#]
+
+ int (_ : Unit) : Nat#
+  = size# [Int#]
+
+ word16 (_ : Unit) : Nat#
+  = size# [Word16#]
+
+ tag (_ : Unit) : Nat#
+  = size# [Tag#];;
+
+
+-- Get the log2 size of prim types.
+:to-llvm..
+module Test with letrec
+ nat (_ : Unit) : Nat#
+  = size2# [Nat#]
+
+ int (_ : Unit) : Nat#
+  = size2# [Int#]
+
+ word8  (_ : Unit) : Nat#
+  = size2# [Word8#]
+
+ word16 (_ : Unit) : Nat#
+  = size2# [Word16#]
+
+ ptr [r : %] (_ : Unit) : Nat#
+  = size2# [Ptr# r Word16#]
+
+ tag (_ : Unit) : Nat#
+  = size2# [Tag#];;

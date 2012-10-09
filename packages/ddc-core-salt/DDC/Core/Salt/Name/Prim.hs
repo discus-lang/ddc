@@ -233,6 +233,12 @@ data PrimStore
         -- | Log2 of number of bytes used by a Nat#
         | PrimStoreShiftNat
 
+        -- | Number of bytes needed to store a value of a primitive type.
+        | PrimStoreSize
+
+        -- | Log2 of number of bytes need to store a value of a primitive type.
+        | PrimStoreSize2
+
         -- Allocation -----------------
         -- | Create a heap of the given size.
         --     This must be called before alloc# below, and has global side effect. 
@@ -291,7 +297,8 @@ instance Pretty PrimStore where
   = case p of        
         PrimStoreBytesNat       -> text "bytesNat#"
         PrimStoreShiftNat       -> text "shiftNat#"
-
+        PrimStoreSize           -> text "size#"
+        PrimStoreSize2          -> text "size2#"        
         PrimStoreCreate         -> text "create#"
         PrimStoreCheck          -> text "check#"
         PrimStoreRecover        -> text "recover#"
@@ -316,6 +323,8 @@ readPrimStore str
  = case str of
         "bytesNat#"             -> Just PrimStoreBytesNat
         "shiftNat#"             -> Just PrimStoreShiftNat
+        "size#"                 -> Just PrimStoreSize
+        "size2#"                -> Just PrimStoreSize2
 
         "create#"               -> Just PrimStoreCreate
         "check#"                -> Just PrimStoreCheck
