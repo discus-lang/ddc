@@ -128,7 +128,7 @@ defaultConfig
 defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigRuntime  = configLibraryPath config </> "salt" }
+        { builderConfigRuntime  = configLibraryPath config }
 
 
 -- | Get the Lite specific stuff from the config.

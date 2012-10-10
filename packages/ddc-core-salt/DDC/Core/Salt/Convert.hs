@@ -39,7 +39,12 @@ convModuleM :: Show a => Module a Name -> ConvertM a Doc
 convModuleM mm@(ModuleCore{})
         | ([LRec bxs], _) <- splitXLets $ moduleBody mm
         = do    supers' <- mapM (uncurry convSuperM) bxs
-                return  $ vcat supers'
+                return  $ vcat 
+                        -- $ [ text "#include \"Runtime.h\""
+                        --   , text "#include \"Primitive.h\"" 
+                        --   , empty ]
+                        --   ++ 
+                          supers'
 
         | otherwise
         = throw $ ErrorNoTopLevelLetrec mm

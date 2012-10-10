@@ -37,11 +37,11 @@ salt-runtime_o   = \
         $(patsubst %.dce,%.o,$(salt-runtime_dce)) \
         $(patsubst %.c,%.o,$(salt-runtime_c))
 
-code/salt/libddc-runtime.a : $(salt-runtime_o)
+code/libddc-runtime.a : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@ar r $@ $^
 
-code/salt/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
+code/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
 
@@ -53,8 +53,8 @@ code/salt/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
-		code/salt/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),code/salt/libddc-runtime.$(SHARED_SUFFIX),)
+		code/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),code/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system

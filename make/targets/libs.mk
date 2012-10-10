@@ -22,7 +22,7 @@ library/Prelude.di library/Graphics.di : bin/ddc-alpha $(libs_ds)
 .PHONY : cleanLibrary
 cleanLibrary :
 	@echo "* Cleaning library"
-	@find library \
+	@find library code \
 		    	-name "*.o" \
 		-o	-name "*.dep" \
 		-o	-name "*.so" \

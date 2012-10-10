@@ -150,5 +150,5 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 
 %.o : %.dce bin/ddci-core
 	@echo "* Compiling $<"
-	@bin/ddci-core -compile $<
+	@bin/ddc -c $<
 

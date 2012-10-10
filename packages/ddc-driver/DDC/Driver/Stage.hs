@@ -200,9 +200,9 @@ stageCompileSalt
         -> FilePath             -- ^ Path of original source file.
                                 --   Build products are placed into the same dir.
         -> Bool                 -- ^ Should we link this into an executable
-        -> PipeSalt (AnTEC () Salt.Name)
+        -> PipeCore (AnTEC () Salt.Name) Salt.Name
 
-stageCompileSalt config _source filePath shouldLinkExe
+stageCompileSalt config source filePath shouldLinkExe
  = let  -- Decide where to place the build products.
         outputDir      = fromMaybe (takeDirectory filePath) (configOutputDir config)
         outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
@@ -211,14 +211,22 @@ stageCompileSalt config _source filePath shouldLinkExe
         exePathDefault = outputDirBase
         exePath        = fromMaybe exePathDefault (configOutputFile config)
    in   -- Make the pipeline for the final compilation.
-        PipeSaltCompile
-                (configBuilder config)
-                cPath
-                oPath
-                (if shouldLinkExe 
-                        then Just exePath 
-                        else Nothing)
-
+        PipeCoreSimplify fragmentSalt 0
+                (configSimplSalt config 
+                        <> S.anormalize (makeNamifier Salt.freshT) 
+                                        (makeNamifier Salt.freshX))
+           [ PipeCoreOutput       (dump config source "dump.salt-simplified.dce")
+           , PipeCoreCheck        fragmentSalt
+             [ PipeCoreAsSalt
+               [ PipeSaltTransfer
+                 [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
+                 , PipeSaltCompile
+                        (configBuilder config)
+                        cPath
+                        oPath
+                        (if shouldLinkExe 
+                                then Just exePath 
+                                else Nothing) ]]]]
 
 -------------------------------------------------------------------------------
 -- | Convert Salt to LLVM.

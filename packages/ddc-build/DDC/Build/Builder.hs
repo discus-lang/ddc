@@ -119,9 +119,11 @@ builder_X8632_Darwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
-                $  "gcc -O3 -m32"
+                $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " "    ++ cFile
                 ++ " -o " ++ oFile
+                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
+                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -160,9 +162,11 @@ builder_X8664_Darwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
-                $  "gcc -O3 -m64"
+                $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " "    ++ cFile
                 ++ " -o " ++ oFile
+                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
+                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -199,7 +203,7 @@ builder_X8632_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
-                $  "gcc -O3 -m32"
+                $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " "    ++ cFile
                 ++ " -o " ++ oFile
 
@@ -238,7 +242,7 @@ builder_X8664_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
-                $  "gcc -O3 -m64"
+                $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " "    ++ cFile
                 ++ " -o " ++ oFile
 
@@ -277,7 +281,7 @@ builder_PPC32_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
-                $  "gcc -O3 -m32"
+                $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " "    ++ cFile
                 ++ " -o " ++ oFile
 
@@ -315,7 +319,7 @@ builder_X8632_Cygwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
-                $  "gcc -O3 -m32"
+                $  "gcc-4 -Werror -std=c99 -O3 -m32"
                 ++ " "    ++ cFile
                 ++ " -o " ++ oFile
 

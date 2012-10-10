@@ -26,6 +26,9 @@ typedef int     bool_t;
 //   Big enough to represent the number of allocatable bytes.
 typedef size_t   nat_t;
 
+// Define int_t to make things look consistent.
+typedef int      int_t;
+
 // Generic address type.
 //   #ifdef because Cygwin already defines it.
 #ifndef __addr_t_defined

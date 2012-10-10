@@ -50,8 +50,7 @@ cmdCompile config filePath
 
                 ViaC
                  -> [ stageSaltOpt      config source
-                    [ PipeCoreAsSalt
-                    [ stageCompileSalt  config source filePath False ]]]
+                    [ stageCompileSalt  config source filePath False ]]
 
         -- Print any errors that arose during compilation.
         errs    <- make

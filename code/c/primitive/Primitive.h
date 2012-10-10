@@ -9,7 +9,7 @@
 #define _DDC_Primitive
 
 #include <stdio.h>
-#include "Disciple.h"
+#include "Runtime.h"
 
 // Show an integer.
 //   TODO: This should be defined in an external module.

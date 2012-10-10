@@ -153,6 +153,7 @@ getDriverConfigOfState state
         return 
          $ D.Config
          { D.configDump                  = Set.member Dump (stateModes state)
+         , D.configViaBackend            = D.ViaLLVM
 
          -- TODO: be able to set this from command-line option
          , D.configRuntime
