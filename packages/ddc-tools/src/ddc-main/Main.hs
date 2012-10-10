@@ -98,6 +98,7 @@ getDriverConfig config
                 { Driver.configDump                     = configDump config
                 , Driver.configSimplLite                = simplLite
                 , Driver.configSimplSalt                = simplSalt
+                , Driver.configViaBackend               = configViaBackend config
 
                 , Driver.configRuntime               
                         = Runtime.Config

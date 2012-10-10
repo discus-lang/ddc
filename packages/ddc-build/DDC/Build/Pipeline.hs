@@ -40,6 +40,7 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
+import qualified DDC.Core.Salt.Convert          as Salt
 import qualified DDC.Core.Salt.Convert.Transfer as Salt
 import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
@@ -300,6 +301,14 @@ data PipeSalt a where
                 -> [PipeLlvm]
                 -> PipeSalt a
 
+        -- Compile the module via C source code.
+        PipeSaltCompile
+                :: Builder              -- ^ Builder to use.
+                -> FilePath             -- ^ Intermediate C file.
+                -> FilePath             -- ^ Object file.
+                -> Maybe FilePath       -- ^ Link into this exe file
+                -> PipeSalt a
+
 deriving instance Show a => Show (PipeSalt a)
 
 
@@ -346,6 +355,27 @@ pipeSalt mm pp
                             $ C.reannotate (const ()) mm
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
+
+        PipeSaltCompile builder cPath oPath mExePath
+         -> case Salt.convertModule mm of
+             Left errs
+              -> error $ show errs
+
+             Right cDoc
+              -> do let cSrc        = renderIndent cDoc
+                    writeFile cPath cSrc
+
+                    -- Compile C source file into .o file.
+                    buildCC  builder cPath oPath
+
+                    -- Link .o file into an executable if we were asked for one.      
+                    (case mExePath of
+                      Nothing -> return ()
+                      Just exePath
+                       -> do buildLdExe builder oPath exePath
+                             return ())
+
+                    return []
 
 
 -- PipeLlvmModule -------------------------------------------------------------

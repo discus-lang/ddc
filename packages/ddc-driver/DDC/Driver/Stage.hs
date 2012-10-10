@@ -2,7 +2,8 @@
 --     A compiler 'stage' is a set of standard transformations that we apply
 --     to all modules their particular language.
 module DDC.Driver.Stage
-        ( Config (..)
+        ( Config        (..)
+        , ViaBackend    (..)
 
           -- * Lite stages. 
         , stageLiteLoad
@@ -13,6 +14,7 @@ module DDC.Driver.Stage
         , stageSaltOpt
         , stageSaltToC
         , stageSaltToLLVM
+        , stageCompileSalt
 
           -- * LLvm stages.
         , stageCompileLLVM)
@@ -45,6 +47,9 @@ data Config
         , configSimplLite       :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
         , configSimplSalt       :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
 
+          -- | Backend code generator to use.
+        , configViaBackend              :: ViaBackend
+
           -- | Runtime system configuration.
         , configRuntime                 :: Salt.Config
 
@@ -63,6 +68,15 @@ data Config
           -- | Override directory for build products.
         , configOutputDir               :: Maybe FilePath
         }
+
+
+data ViaBackend
+        -- | Compile via the C backend.
+        = ViaC
+
+        -- | Compile via the LLVM backend.
+        | ViaLLVM
+        deriving Show
 
 
 -------------------------------------------------------------------------------
@@ -177,6 +191,33 @@ stageSaltToC config source sink
          , PipeSaltPrint  
                 (not $ configSuppressHashImports config)
                 sink]]]]
+
+
+-------------------------------------------------------------------------------
+-- | Compile Salt via C code.
+stageCompileSalt
+        :: Config -> Source
+        -> FilePath             -- ^ Path of original source file.
+                                --   Build products are placed into the same dir.
+        -> Bool                 -- ^ Should we link this into an executable
+        -> PipeSalt (AnTEC () Salt.Name)
+
+stageCompileSalt config _source filePath shouldLinkExe
+ = let  -- Decide where to place the build products.
+        outputDir      = fromMaybe (takeDirectory filePath) (configOutputDir config)
+        outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
+        cPath          = outputDirBase ++ ".ddc.c"
+        oPath          = outputDirBase ++ ".o"
+        exePathDefault = outputDirBase
+        exePath        = fromMaybe exePathDefault (configOutputFile config)
+   in   -- Make the pipeline for the final compilation.
+        PipeSaltCompile
+                (configBuilder config)
+                cPath
+                oPath
+                (if shouldLinkExe 
+                        then Just exePath 
+                        else Nothing)
 
 
 -------------------------------------------------------------------------------

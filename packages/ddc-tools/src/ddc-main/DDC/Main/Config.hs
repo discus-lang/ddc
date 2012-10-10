@@ -1,10 +1,10 @@
 
 -- | Define the command line configuation arguments.
 module DDC.Main.Config
-        ( Mode       (..)
-        , OptLevel   (..)
-        , ViaBackend (..)
-        , Config     (..)
+        ( Mode         (..)
+        , OptLevel     (..)
+        , D.ViaBackend (..)
+        , Config       (..)
 
         , defaultConfig
         , defaultBuilderConfig
@@ -17,6 +17,7 @@ import DDC.Build.Language
 import DDC.Build.Builder
 import DDC.Driver.Bundle
 import System.FilePath
+import qualified DDC.Driver.Stage       as D
 import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
 
@@ -61,15 +62,6 @@ data OptLevel
         deriving Show
 
 
-data ViaBackend
-        -- | Compile via the C backend.
-        = ViaC
-
-        -- | Compile via the LLVM backend.
-        | ViaLLVM
-        deriving Show
-
-
 -- | DDC config.
 data Config
         = Config
@@ -87,7 +79,7 @@ data Config
         , configOutputDir       :: Maybe FilePath 
 
           -- | What backend to use for compilation
-        , configViaBackend      :: ViaBackend
+        , configViaBackend      :: D.ViaBackend
 
           -- Optimisation -------------
           -- | What optimisation levels to use
@@ -118,7 +110,7 @@ defaultConfig
         , configLibraryPath     = "code"
         , configOutputFile      = Nothing
         , configOutputDir       = Nothing
-        , configViaBackend      = ViaLLVM
+        , configViaBackend      = D.ViaLLVM
 
           -- Optimisation -------------
         , configOptLevelLite    = OptLevel0

@@ -35,6 +35,10 @@ data Builder
           --   Gives the widths of pointers and primitive numeric types.
         , buildSpec     :: Llvm.Platform
 
+          -- | Invoke the C compiler.
+          --   to compile a .c file into a .o file.
+        , buildCC       :: FilePath -> FilePath -> IO ()
+
           -- | Invoke the LLVM compiler
           --   to compile a .ll file into a .s file.
         , buildLlc      :: FilePath -> FilePath -> IO ()
@@ -112,6 +116,13 @@ builder_X8632_Darwin config
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"
+                $  "gcc -O3 -m32"
+                ++ " "    ++ cFile
+                ++ " -o " ++ oFile
+
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
@@ -146,6 +157,13 @@ builder_X8664_Darwin config
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"
+                $  "gcc -O3 -m64"
+                ++ " "    ++ cFile
+                ++ " -o " ++ oFile
+
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
@@ -177,6 +195,13 @@ builder_X8632_Linux config
                 $ "llc -O3 -march=x86 -relocation-model=pic" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
+
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"
+                $  "gcc -O3 -m32"
+                ++ " "    ++ cFile
+                ++ " -o " ++ oFile
 
         , buildAs
                 = \sFile oFile
@@ -210,6 +235,13 @@ builder_X8664_Linux config
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"
+                $  "gcc -O3 -m64"
+                ++ " "    ++ cFile
+                ++ " -o " ++ oFile
+
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler" 
@@ -242,6 +274,13 @@ builder_PPC32_Linux config
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"
+                $  "gcc -O3 -m32"
+                ++ " "    ++ cFile
+                ++ " -o " ++ oFile
+
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
@@ -272,6 +311,13 @@ builder_X8632_Cygwin config
                 -> doCmd "LLVM compiler" $ "llc -O3 -march=x86 " 
                 ++ (normalise llFile)
                 ++ " -o " ++ (normalise sFile)
+
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"
+                $  "gcc -O3 -m32"
+                ++ " "    ++ cFile
+                ++ " -o " ++ oFile
 
         , buildAs
                 = \sFile oFile
