@@ -55,6 +55,10 @@ convModuleM mm@(ModuleCore{})
 convTypeM :: Type Name -> ConvertM a Doc
 convTypeM tt
  = case tt of
+        TVar{} 
+         -> return $ text "Obj*"
+
+
         TCon{}
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
          , Just doc     <- convPrimTyCon tc
