@@ -20,12 +20,14 @@ import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Predicates
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
-
 import Control.Monad (ap)
+import qualified DDC.Type.Env           as Env
+
 
 -- | Convert a Disciple Core Salt module to C-source text.
 convertModule 
@@ -43,7 +45,8 @@ convertModule addIncludes mm
 convModuleM :: Show a => Bool -> Module a Name -> ConvertM a Doc
 convModuleM addIncludes mm@(ModuleCore{})
         | ([LRec bxs], _) <- splitXLets $ moduleBody mm
-        = do    supers' <- mapM (uncurry convSuperM) bxs
+        = do    supers' <- mapM (uncurry (convSuperM Env.empty Env.empty)) bxs
+
                 return  $ vcat 
                         $ (if addIncludes then
                              [ text "#include \"Runtime.h\""
@@ -58,11 +61,16 @@ convModuleM addIncludes mm@(ModuleCore{})
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to C source text.
-convTypeM :: Type Name -> ConvertM a Doc
-convTypeM tt
+convTypeM :: KindEnv Name -> Type Name -> ConvertM a Doc
+convTypeM kenv tt
  = case tt of
-        TVar{} 
-         -> return $ text "Obj*"
+        TVar u
+         -> case Env.lookup u kenv of
+             Nothing            -> error $ "Type variable not in kind environment." ++ show u
+             Just k
+              | isDataKind k    -> return $ text "Obj*"
+              | otherwise       -> error "Invalid type variable."
+
 
         TCon{}
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
@@ -74,27 +82,42 @@ convTypeM tt
 
         TApp{}
          | Just (NamePrimTyCon PrimTyConPtr, [_, t2])    <- takePrimTyConApps tt
-         -> do  t2'     <- convTypeM t2
+         -> do  t2'     <- convTypeM kenv t2
                 return  $ t2' <> text "*"
 
-        TForall _ t
-          -> convTypeM t
+        TForall b t
+          -> convTypeM (Env.extend b kenv) t
 
         _ -> throw $ ErrorTypeInvalid tt
 
 
 -- Super definition -----------------------------------------------------------
 -- | Convert a super to C source text.
-convSuperM :: Show a => Bind Name -> Exp a Name -> ConvertM a Doc
-convSuperM b x
- | BName (NameVar nTop) tTop       <- b
- , Just (bsParam, xBody) <- takeXLams (stripXLAMs x)
- ,  (_, tResult)         <- takeTFunArgResult $ eraseTForalls tTop
- = do    
-        let nTop'       =  text $ sanitizeName nTop
-        bsParam'        <- mapM convBind $ filter keepBind bsParam
-        tResult'        <- convTypeM $ eraseWitArg tResult
-        xBody'          <- convBodyM xBody
+convSuperM 
+        :: Show a 
+        => KindEnv Name 
+        -> TypeEnv Name
+        -> Bind Name 
+        -> Exp a Name 
+        -> ConvertM a Doc
+
+convSuperM     kenv0 tenv0 bTop xx
+ = convSuperM' kenv0 tenv0 bTop [] xx
+
+convSuperM' kenv tenv bTop bsParam xx
+ | XLAM _ b x   <- xx
+ = convSuperM' (Env.extend b kenv) tenv bTop bsParam x
+
+ | XLam _ b x   <- xx
+ = convSuperM' kenv (Env.extend b tenv) bTop (bsParam ++ [b]) x
+
+ | BName (NameVar nTop) tTop <- bTop
+ = do   
+        let nTop'        = text $ sanitizeName nTop
+        let (_, tResult) = takeTFunArgResult $ eraseTForalls tTop 
+        bsParam'        <- mapM (convBind kenv tenv) $ filter keepBind bsParam
+        tResult'        <- convTypeM kenv $ eraseWitArg tResult
+        xBody'          <- convBodyM kenv tenv xx
 
         return  $ vcat
                 [ tResult'
@@ -104,9 +127,9 @@ convSuperM b x
                          <> indent 8 (xBody' <> semi) <> line
                          <> rbrace
                          <> line ]
-
+        
  | otherwise    
- = throw $ ErrorFunctionInvalid x
+ = throw $ ErrorFunctionInvalid xx
 
 
 -- | Remove witness arguments from the return type
@@ -132,26 +155,16 @@ keepBind bb
          
         BNone{} -> False         
         _       -> True
-         
-         
--- | Strip any XLAM abstractions from the front of this expression.
---   Type lambdas don't make it into the C code.
-stripXLAMs :: Exp a Name -> Exp a Name
-stripXLAMs xx
- = case xx of
-        XLAM _ _ x      -> stripXLAMs x
-        XLam a b x      -> XLam a b (stripXLAMs x)
-        _               -> xx
 
 
 -- | Convert a function parameter binding to C source text.
-convBind :: Bind Name -> ConvertM a Doc
-convBind b
+convBind :: KindEnv Name -> TypeEnv Name -> Bind Name -> ConvertM a Doc
+convBind kenv _tenv b
  = case b of 
    
         -- Named variables binders.
         BName (NameVar str) t
-         -> do   t'      <- convTypeM t
+         -> do   t'      <- convTypeM kenv t
                  return  $ t' <+> (text $ sanitizeName str)
                  
         _       -> throw $ ErrorParameterInvalid b
@@ -159,22 +172,28 @@ convBind b
 
 -- Super body -----------------------------------------------------------------
 -- | Convert a super body to C source text.
-convBodyM :: Show a => Exp a Name -> ConvertM a Doc
-convBodyM xx
+convBodyM 
+        :: Show a 
+        => KindEnv Name
+        -> TypeEnv Name
+        -> Exp a Name
+        -> ConvertM a Doc
+
+convBodyM kenv tenv xx
  = case xx of
 
         -- End of function body must explicitly pass control.
         XApp{}
          -> case takeXPrimApps xx of
              Just (NamePrim p, xs)
-              | isControlPrim p -> convPrimCallM p xs
+              | isControlPrim p -> convPrimCallM kenv tenv p xs
              _                  -> throw $ ErrorBodyMustPassControl xx
 
         -- Variable assignment.
         XLet _ (LLet LetStrict (BName (NameVar n) t) x1) x2
-         -> do  t'      <- convTypeM   t
-                x1'     <- convRValueM x1
-                x2'     <- convBodyM   x2
+         -> do  t'      <- convTypeM   kenv t
+                x1'     <- convRValueM kenv tenv x1
+                x2'     <- convBodyM   kenv tenv x2
                 let n'  = text $ sanitizeName n
 
                 return  $ vcat
@@ -185,8 +204,8 @@ convBodyM xx
         -- These are only permitted to return Void#.
         XLet _ (LLet LetStrict (BNone t) x1) x2
          | isVoidT t
-         -> do  x1'     <- convStmtM x1
-                x2'     <- convBodyM x2
+         -> do  x1'     <- convStmtM kenv tenv x1
+                x2'     <- convBodyM kenv tenv x2
 
                 return  $ vcat
                         [ x1' <> semi
@@ -197,7 +216,7 @@ convBodyM xx
 
         -- Throw out letregion expressions.
         XLet _ (LLetRegions _ _) x
-         -> convBodyM x
+         -> convBodyM kenv tenv x
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
@@ -207,9 +226,9 @@ convBodyM xx
          , Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
          -> do  
-                x'      <- convRValueM x
-                x1'     <- convBodyM   x1
-                xFail'  <- convBodyM   xFail
+                x'      <- convRValueM kenv tenv x
+                x1'     <- convBodyM   kenv tenv x1
+                xFail'  <- convBodyM   kenv tenv xFail
 
                 return  $ vcat
                         [ text "if"
@@ -223,9 +242,9 @@ convBodyM xx
                   , AAlt (PData dc2 []) x2 ]
          | Just (NameBool True)  <- takeNameOfDaCon dc1
          , Just (NameBool False) <- takeNameOfDaCon dc2
-         -> do  x'      <- convRValueM x
-                x1'     <- convBodyM   x1
-                x2'     <- convBodyM   x2
+         -> do  x'      <- convRValueM kenv tenv x
+                x1'     <- convBodyM   kenv tenv x1
+                x2'     <- convBodyM   kenv tenv x2
 
                 return  $ vcat
                         [ text "if" <> parens x'
@@ -235,8 +254,8 @@ convBodyM xx
         -- Case-expression.
         --   In the general case we use the C-switch statement.
         XCase _ x alts
-         -> do  x'      <- convRValueM x
-                alts'   <- mapM convAltM alts
+         -> do  x'      <- convRValueM kenv tenv x
+                alts'   <- mapM (convAltM kenv tenv) alts
 
                 return  $ vcat
                         [ text "switch" <+> parens x'
@@ -267,18 +286,24 @@ isFailX _ = False
 
 -- Alt ------------------------------------------------------------------------
 -- | Convert a case alternative to C source text.
-convAltM :: Show a => Alt a Name -> ConvertM a Doc
-convAltM aa
+convAltM 
+        :: Show a 
+        => KindEnv Name
+        -> TypeEnv Name
+        -> Alt a Name 
+        -> ConvertM a Doc
+
+convAltM kenv tenv aa
  = case aa of
         AAlt PDefault x1 
-         -> do  x1'     <- convBodyM x1
+         -> do  x1'     <- convBodyM kenv tenv x1
                 return  $ text "default:" <+> x1' <> semi
 
 
         AAlt (PData dc []) x1
          | Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
-         -> do  x1'     <- convBodyM x1
+         -> do  x1'     <- convBodyM kenv tenv x1
                 return  $ vcat
                         [ text "case" <+> n' <> colon
                         , lbrace <> indent 5 (x1' <> semi)
@@ -309,8 +334,14 @@ convDaConName nn
 
 -- RValue ---------------------------------------------------------------------
 -- | Convert an r-value to C source text.
-convRValueM :: Show a => Exp a Name -> ConvertM a Doc
-convRValueM xx
+convRValueM 
+        :: Show a 
+        => KindEnv Name 
+        -> TypeEnv Name 
+        -> Exp a Name 
+        -> ConvertM a Doc
+
+convRValueM kenv tenv xx
  = case xx of
 
         -- Plain variable.
@@ -332,7 +363,7 @@ convRValueM xx
         -- Primop application.
         XApp{}
          |  Just (NamePrim p, args)        <- takeXPrimApps xx
-         -> convPrimCallM p args
+         -> convPrimCallM kenv tenv p args
 
         -- Super application.
         XApp{}
@@ -342,12 +373,12 @@ convRValueM xx
 
                 -- Ditch region and witness arguments
                 let args_val = filter (and . ap [not . isXType, not . isXWitness] . return) args
-                args_val'    <- mapM convRValueM args_val
+                args_val'    <- mapM (convRValueM kenv tenv) args_val
                 return  $ text nTop' <> parenss args_val'
 
         -- Type argument.
         XType t
-         -> do  t'      <- convTypeM t
+         -> do  t'      <- convTypeM kenv t
                 return  $ t'
 
         _ -> throw $ ErrorRValueInvalid xx
@@ -355,13 +386,19 @@ convRValueM xx
 
 -- Stmt -----------------------------------------------------------------------
 -- | Convert an effectful statement to C source text.
-convStmtM :: Show a => Exp a Name -> ConvertM a Doc
-convStmtM xx
+convStmtM 
+        :: Show a 
+        => KindEnv Name
+        -> TypeEnv Name 
+        -> Exp a Name 
+        -> ConvertM a Doc
+
+convStmtM kenv tenv xx
  = case xx of
         -- Primop application.
         XApp{}
-          |  Just (NamePrim p, xs)           <- takeXPrimApps xx
-          -> convPrimCallM p xs
+          |  Just (NamePrim p, xs) <- takeXPrimApps xx
+          -> convPrimCallM kenv tenv p xs
 
         -- Super application.
         XApp{}
@@ -369,7 +406,7 @@ convStmtM xx
          ,  NameVar nTop <- n
          -> do  let nTop'       = sanitizeName nTop
                 let args_val    = filter keepArgX args
-                args_val'       <- mapM convRValueM args_val
+                args_val'       <- mapM (convRValueM kenv tenv) args_val
                 return  $ text nTop' <+> parenss args_val'
 
         _ -> throw $ ErrorStmtInvalid xx
@@ -377,16 +414,22 @@ convStmtM xx
 
 -- PrimCalls ------------------------------------------------------------------
 -- | Convert a call to a primitive operator to C source text.
-convPrimCallM :: Show a => Prim -> [Exp a Name] -> ConvertM a Doc
-convPrimCallM p xs
+convPrimCallM 
+        :: Show a 
+        => KindEnv Name
+        -> TypeEnv Name
+        -> Prim 
+        -> [Exp a Name] -> ConvertM a Doc
+
+convPrimCallM kenv tenv p xs
  = case p of
 
         -- Binary arithmetic primops.
         PrimOp op
          | [XType _t, x1, x2]   <- xs
          , Just op'             <- convPrimOp2 op
-         -> do  x1'     <- convRValueM x1
-                x2'     <- convRValueM x2
+         -> do  x1'     <- convRValueM kenv tenv x1
+                x2'     <- convRValueM kenv tenv x2
                 return  $ parens (x1' <+> op' <+> x2')
 
 
@@ -394,22 +437,22 @@ convPrimCallM p xs
         -- TODO: check for valid promotion
         PrimCast PrimCastPromote
          | [XType tTo, XType _tFrom, x1] <- xs
-         -> do  tTo'    <- convTypeM   tTo
-                x1'     <- convRValueM x1
+         -> do  tTo'    <- convTypeM   kenv tTo
+                x1'     <- convRValueM kenv tenv x1
                 return  $  parens tTo' <> parens x1'
 
         -- TODO: check for valid truncate
         PrimCast PrimCastTruncate
          | [XType tTo, XType _tFrom, x1] <- xs
-         -> do  tTo'    <- convTypeM   tTo
-                x1'     <- convRValueM x1
+         -> do  tTo'    <- convTypeM   kenv tTo
+                x1'     <- convRValueM kenv tenv x1
                 return  $  parens tTo' <> parens x1'
 
 
         -- Control primops.
         PrimControl PrimControlReturn
          | [XType _t, x1]       <- xs
-         -> do  x1'     <- convRValueM x1
+         -> do  x1'     <- convRValueM kenv tenv x1
                 return  $ text "return" <+> x1'
 
         PrimControl PrimControlFail
@@ -420,14 +463,16 @@ convPrimCallM p xs
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM convRValueM $ filter keepArgX xs
+                xs'     <- mapM (convRValueM kenv tenv)
+                        $  filter keepArgX xs
                 return  $ op' <> parenss xs'
 
 
         -- External primops.
         PrimExternal op 
          -> do  let op' = convPrimExternal op
-                xs'     <- mapM convRValueM $ filter keepArgX xs
+                xs'     <- mapM (convRValueM kenv tenv) 
+                        $  filter keepArgX xs
                 return  $ op' <> parenss xs'
 
         _ -> throw $ ErrorPrimCallInvalid p xs
