@@ -28,23 +28,29 @@ import DDC.Type.Check.Monad             (throw, result)
 import Control.Monad (ap)
 
 -- | Convert a Disciple Core Salt module to C-source text.
-convertModule :: Show a => Module a Name -> Either (Error a) Doc
-convertModule mm
- = result $ convModuleM mm
+convertModule 
+        :: Show a 
+        => Bool                 -- ^ Whether to include top-level include macros.
+        -> Module a Name        -- ^ Module to convert.
+        -> Either (Error a) Doc
+
+convertModule addIncludes mm
+ = result $ convModuleM addIncludes mm
 
 
 -- Module ---------------------------------------------------------------------
 -- | Convert a Salt module to C source text.
-convModuleM :: Show a => Module a Name -> ConvertM a Doc
-convModuleM mm@(ModuleCore{})
+convModuleM :: Show a => Bool -> Module a Name -> ConvertM a Doc
+convModuleM addIncludes mm@(ModuleCore{})
         | ([LRec bxs], _) <- splitXLets $ moduleBody mm
         = do    supers' <- mapM (uncurry convSuperM) bxs
                 return  $ vcat 
-                        -- $ [ text "#include \"Runtime.h\""
-                        --   , text "#include \"Primitive.h\"" 
-                        --   , empty ]
-                        --   ++ 
-                          supers'
+                        $ (if addIncludes then
+                             [ text "#include \"Runtime.h\""
+                             , text "#include \"Primitive.h\"" 
+                             , empty ]
+                           else [])
+                        ++ supers'
 
         | otherwise
         = throw $ ErrorNoTopLevelLetrec mm
@@ -57,7 +63,6 @@ convTypeM tt
  = case tt of
         TVar{} 
          -> return $ text "Obj*"
-
 
         TCon{}
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt

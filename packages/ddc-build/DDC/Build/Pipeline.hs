@@ -334,20 +334,11 @@ pipeSalt mm pp
                 Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
 
         PipeSaltPrint withPrelude sink
-         -> case Salt.convertModule mm of
+         -> case Salt.convertModule withPrelude mm of
                 Left  err 
                  -> return $ [ErrorSaltConvert err]
 
                 Right doc 
-                 | withPrelude
-                 -> do  let doc' = vcat
-                                [ text "#include <Disciple.h>"
-                                , text "#include <Primitive.h>" 
-                                , line 
-                                , doc ]
-                        pipeSink (renderIndent doc') sink
-
-                 | otherwise
                  -> pipeSink (renderIndent doc)  sink
 
         PipeSaltToLlvm platform more
@@ -357,7 +348,7 @@ pipeSalt mm pp
                 return  $ concat results
 
         PipeSaltCompile builder cPath oPath mExePath
-         -> case Salt.convertModule mm of
+         -> case Salt.convertModule True mm of
              Left errs
               -> error $ show errs
 
