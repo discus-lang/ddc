@@ -1,3 +1,4 @@
+#pragma once
 
 // TODO: This only works for 32-bit objects. 
 //       The 64-bit bit objects have a different layout.
@@ -10,8 +11,6 @@
 //   needing to link against external code. Primops that are implemented with
 //   manifest object code should be imported separately.
 //   
-#ifndef _DDC_Runtime
-#define _DDC_Runtime
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -215,20 +214,6 @@ uint8_t  _format (Obj* obj)
 }
 
 
-// Read from a field of an Object.
-//   We use an explicit macro to make it easier to see what is happening in
-//   the generated code.
-#define _read(type,addr,offset)         (*((type *)(addr + offset)))
-
-// Write to a field of an Object.
-//   We use an explicit macro to make it easier to see what is happening in
-//   the generated code.
-#define _write(type,addr,offset,val)    ((*((type *)(addr + offset))) = val)
-
-// Pointer to address conversions.
-#define _makePtr(type,addr)             ((type *)addr)
-#define _takePtr(type,ptr)              ((addr_t)ptr)
-
 
 // -- Error Handling ----------------------------------------------------------
 // Fail ungracefully.
@@ -246,7 +231,3 @@ static inline
 addr_t  _alloc (size_t size)
 {       return (addr_t)malloc(size);
 }
-
-
-#endif
-

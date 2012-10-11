@@ -343,7 +343,7 @@ convRValueM xx
                 -- Ditch region and witness arguments
                 let args_val = filter (and . ap [not . isXType, not . isXWitness] . return) args
                 args_val'    <- mapM convRValueM args_val
-                return  $ text nTop' <+> parenss args_val'
+                return  $ text nTop' <> parenss args_val'
 
         -- Type argument.
         XType t
@@ -421,14 +421,14 @@ convPrimCallM p xs
         PrimStore op
          -> do  let op'  = convPrimStore op
                 xs'     <- mapM convRValueM $ filter keepArgX xs
-                return  $ op' <+> parenss xs'
+                return  $ op' <> parenss xs'
 
 
         -- External primops.
         PrimExternal op 
          -> do  let op' = convPrimExternal op
                 xs'     <- mapM convRValueM $ filter keepArgX xs
-                return  $ op' <+> parenss xs'
+                return  $ op' <> parenss xs'
 
         _ -> throw $ ErrorPrimCallInvalid p xs
 
