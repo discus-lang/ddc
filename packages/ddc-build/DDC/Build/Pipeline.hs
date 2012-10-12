@@ -303,10 +303,10 @@ data PipeSalt a where
 
         -- Compile the module via C source code.
         PipeSaltCompile
-                :: Builder              -- ^ Builder to use.
-                -> FilePath             -- ^ Intermediate C file.
-                -> FilePath             -- ^ Object file.
-                -> Maybe FilePath       -- ^ Link into this exe file
+                :: Builder              --  Builder to use.
+                -> FilePath             --  Intermediate C file.
+                -> FilePath             --  Object file.
+                -> Maybe FilePath       --  Link into this exe file
                 -> PipeSalt a
 
 deriving instance Show a => Show (PipeSalt a)
