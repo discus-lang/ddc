@@ -29,12 +29,13 @@ metavar typevar, X      ::=
 
 grammar
 KiEnv :: 'KiEnv_'       ::=
-  | KE                  ::      :: Var          {{ com A kind environment variable.             }}
-  | empty               ::      :: Empty        {{ com An empty kind environment.               }}
-  | KiEnv , X : K       ::      :: Extend       {{ com A kind environment with a new binding.   }}
+  | KE                           :: :: Var       {{ com A kind environment variable.             }}
+  | empty                        :: :: Empty     {{ com An empty kind environment.               }}
+  | KiEnv , X : K                :: :: Extend    {{ com A kind environment with a new binding.   }}
+  | KiEnv , </ Xi : Ki // i />   :: :: Extends   {{ com A Kind environment with several new bindings }}
 
 
-%% Bind in Kind Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Type Bind in Kind Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defns
 JInKiEnv :: ''          ::=
@@ -47,6 +48,29 @@ JInKiEnv :: ''          ::=
         X : K in KE
         --------------------    :: InKiEnvCons
         X : K in KE, X' : K'
+
+
+%% TyVar not in Kind Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns 
+JNotInKiEnv :: ''       ::=
+ defn
+ X notin KiEnv          :: :: NotInKiEnv :: '' by
+
+        ---------------         :: NotInKiEnvNil
+         X notin empty
+
+         X1 notin KE
+        ---------------------   :: NotInKiEnvCons
+         X1 notin KE , X2 : K
+
+
+%% TyVar not free in type %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JNotFreeIn :: ''        ::=
+ defn
+ X notfreein T          :: :: NotFreeInType :: '' by
 
 
 %% Sorts of Kinds %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

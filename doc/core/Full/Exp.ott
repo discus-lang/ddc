@@ -1,7 +1,7 @@
 % Disciple Core Expressions
 %
 
-indexvar n, m           ::= 
+indexvar i, j, n, m       ::= 
 
 grammar
 
@@ -46,7 +46,7 @@ lets :: 'lets_' ::=
   | letrec    { letbind1 .. letbindn }                          :: :: LetsRec    
   {{ com Recursive let-binding.           }}
 
-  | letregions T1 .. Tn with { witbind1 .. witbindm }           :: :: LetsLetRegion
+  | letregion X with </ xj : Tj // j />             :: :: LetsLetRegion
   {{ com Bind local region variables and witness to their properties. }}
 
   | withregion X                                                :: :: LetsWithRegion
@@ -60,7 +60,7 @@ letbind :: 'letbind_' ::=
 
 
 %% Witness bindings.
-witbind :: 'witbind_' ::=
+wbind :: 'witbind_' ::=
   | x : T                                                       :: :: WitBind
   {{ com Witness binding.                 }}
 

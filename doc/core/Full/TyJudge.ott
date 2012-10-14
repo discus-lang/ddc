@@ -8,39 +8,108 @@ JTyJudge :: '' ::=
   defn
   KiEnv | TyEnv |- t : T1 ; eff ; clo   :: :: TyJudge :: '' by
 
+
+    % Value and witness variables.
+
                        x : T in TE
-        -------------------------------------------                                     :: TyVar
+        -------------------------------------------                                       :: TyVar
          KE | TE |- x  : T  ; !0  ; nil, cloval x T
 
 
+    % Type abstraction.
+
          KE, X : K | TE |- t              : T          ; !0     ; clo
-        -------------------------------------------------------------------------       :: TyLAM
+        -------------------------------------------------------------------------         :: TyLAM
          KE        | TE |- /\ X : K . t   : [X : K]. T ; !0     ; cutT X clo
 
 
-         KE | TE |- t1      : [ X : K11 ]. T12  ; eff           ; clo
-              KE |- T2      : K11
-        -------------------------------------------------------------------------       :: TyAPP
-         KE | TE |- t1 [T2] : {T2 / X} T12      ; {T2 / X} eff  ; {T2 / X} clo
-% TODO: Implelementaton is probably wrong as it doesn't substitute into closure.
-
+    % Value abstraction.
+    %   TODO: this is only true when we abstract over a type of data kind.
 
          KE | TE, x : T |- t2        : T2                             ; eff ; clo
         --------------------------------------------------------------------------------- :: TyLam
          KE | TE |- \ x : T1 . t2 : (((->) T1) eff (makeClo clo)) T2 ; !0 ; cutX x clo
 
 
-         KE | TE |- t1      : ((((->) T11) eff3) T3) T12        ; eff1  ; clo1   
-         KE | TE |- t2      : T11                               ; eff2  ; clo2
-        ------------------------------------------------------------------------------  :: TyApp
-         KE | TE |- t1 t2   : T12               ; eff1 + eff2 + eff3    ; clo1 + clo2
+    % Value/Type application.
+    %   TODO: The implelementaton is probably wrong as it doesn't substitute into closure.
 
+         KE | TE |- t1      : [ X : K11 ]. T12  ; eff           ; clo
+              KE |- T2      : K11
+        -------------------------------------------------------------------------         :: TyAPP
+         KE | TE |- t1 [T2] : {T2 / X} T12      ; {T2 / X} eff  ; {T2 / X} clo
+
+
+    % Value/Witness application.
 
          KE | TE |- t1      : (=>) T11 T12      ; eff                   ; clo
          KE | TE |- W2      : T11
-        -------------------------------------------------------------------------       :: TySat
+        -------------------------------------------------------------------------         :: TySat
          KE | TE |- t1 <W2> : T12               ; eff                   ; clo
 
+
+    % Value/Value application.
+
+         KE | TE |- t1      : ((((->) T11) eff3) T3) T12        ; eff1  ; clo1   
+         KE | TE |- t2      : T11                               ; eff2  ; clo2
+        ------------------------------------------------------------------------------    :: TyApp
+         KE | TE |- t1 t2   : T12               ; eff1 + eff2 + eff3    ; clo1 + clo2
+
+
+    % Letregions introduces a new region variable, and the witnesses to its properties.
+    %   TODO: how do we write a list-comprehension that gives a premise for each j?
+    %   TODO: can we split the conclusion over multiple lines?
+
+         X notin KE
+         KE | X |- </ xj : Tj // j /> wis_wf
+         KE, X : % | TE, </ xj : Tj // j /> |- t2 : T2 ; eff2 ; clo2
+         KE |- T2 : * 
+         X notfreein T2
+        ----------------------------------------------------------------------------------------------------------  :: TyLetRegion
+         KE | TE |- letregion X with </ xj : Tj // j /> in t2 : T2 ; eff2 - Read X - Write X - Alloc X ; cutT X clo2
+
+
+% Well formed witnesses %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+defns 
+JWisWF :: '' ::=
+
+  defn
+  KiEnv | X |- TyEnv  wis_wf                     :: :: WisWF :: '' by
+
+    % An empty witness list is well formed.
+ 
+        -----------------------                                                 :: WiWfEmpty
+        KE | X |- empty  wis_wf
+
+
+    % If we have a Mutable X witness, there can't be a conflicting Const X
+
+        KE | X |- TE wis_wf
+        Const X notin TE
+        -----------------------------------                                     :: WiWfMutable
+        KE | X |- TE, x : Mutable X  wis_wf
+
+
+    % If we have a Const X witness, there can't be a conflicting Mutable X
+
+        KE | X |- TE wis_wf
+        Mutable X notin TE
+        -----------------------------------                                     :: WiWfConst
+        KE | X |- TE, x : Const X    wis_wf
+
+
+    % If we have a Distinct witness between the new region and an existing one,
+    % then the existing one must be in the kind environment.
+
+        X2 : % in    KE
+        X1     notin KE 
+        ------------------------------------------                              :: WiDistinct1
+        KE | X1 |- TE, x : Distinct X1 X2  wis_wf
+
+        X2 : % in    KE
+        X1     notin KE 
+        ------------------------------------------                              :: WiDistinct2
+        KE | X1 |- TE, x : Distinct X2 X1  wis_wf
 
 
 % Types of Witnesses %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

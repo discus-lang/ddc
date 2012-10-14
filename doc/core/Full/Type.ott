@@ -55,7 +55,8 @@ T :: 'T_'       ::=
   | $0                  ::      :: ZeroClo      {{ com The least closure (empty)                }}
 
   | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
-  | { T1 / X } T2       :: M    :: Sub          {{ com Type / Type substitution.                }}
+  | { T1 / X } T2       :: M    :: Subst        {{ com Type / Type substitution.                }}
+  | T1 - T2             :: M    :: Sub          {{ com Subtract elements from a sum.            }}
   | makeClo clo         :: M    :: MakeClo      {{ com Convert from a tagged closure.           }}
 
 
@@ -102,11 +103,13 @@ clo  :: 'clo_'  ::=
 metavar termvar, x      ::= 
 
 grammar
-TyEnv :: 'TyEnv_'       ::=
-  | TE                  ::      :: Var          {{ com A type environment variable.             }}
-  | empty               ::      :: Empty        {{ com An empty type environment.               }}
-  | TyEnv , x : T       ::      :: Extend       {{ com A type environment with a new binding.   }}
-
+TyEnv :: 'TyEnv_'               ::=
+  | TE                          ::   :: Var       {{ com A type environment variable.               }}
+  | empty                       ::   :: Empty     {{ com An empty type environment.                 }}
+  | TyEnv , x : T               ::   :: Extend    {{ com A type environment with a new binding.     }}
+  | TyEnv , </ xi : Ti // i />  ::   :: Extends   {{ com A type environment with some new bindings. }}
+  | x : T                       :: S :: Bind      {{ com A single binding.                          }}
+  | </ xi : Ti // i />          :: S :: Binds     {{ com Several bindings.                          }}
 
 %% Bind in Type Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -121,6 +124,20 @@ JInTyEnv :: ''  ::=
         x : T in TE
         --------------------    :: InTyEnvCons
         x : T in TE, x' : T'
+
+
+%% Type not in Type Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JTyNotInTyEnv :: '' ::=
+ defn
+ T notin TyEnv          ::      :: TyNotInTyEnv :: '' by
+
+        --------------          :: TyNotInTyEnvNil
+        T notin empty
+
+        --------------------    :: TyNotInTyEnvCons
+        T1 notin TE, x : T2
 
 
 %% Kinds of Types %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
