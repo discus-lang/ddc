@@ -37,7 +37,7 @@ JTyJudge :: '' ::=
 
 
          KE | TE |- t1      : (=>) T11 T12      ; eff                   ; clo
-              KE |- W2      : T11
+         KE | TE |- W2      : T11
         -------------------------------------------------------------------------       :: TySat
          KE | TE |- t1 <W2> : T12               ; eff                   ; clo
 
@@ -48,29 +48,29 @@ defns
 JWiJudge :: '' ::=
 
   defn
-  KiEnv |- W : T1                       :: :: WiJudge :: '' by
+  KiEnv | TyEnv |- W : T1                       :: :: WiJudge :: '' by
 
     % Look up a witness variable from the environment.
 
           x : T in TE
-        ---------------                                                                 :: WiVar
-          KE |- x : T
+        -----------------                                                               :: WiVar
+        KE | TE |- x : T
 
 
     % Witness/Witness application.
 
-          KE |- W1      : (=>) T11 T12
-          KE |- W2      : T11
-        -------------------------------                                                 :: WiAppW
-          KE |- W1 W2   : T12
+          KE | TE |- W1      : (=>) T11 T12
+          KE | TE |- W2      : T11
+        -------------------------------------                                           :: WiAppW
+          KE | TE |- W1 W2   : T12
 
 
     % Witness/Type application.
 
-          KE |- W1      : [X : K11]. T12
-          KE |- T2      : K11
-        -------------------------------                                                 :: WiAppT
-          KE |- W1 [T2] : {T2 / X} T12
+         KE | TE |- W1      : [X : K11]. T12
+              KE |- T2      : K11
+        --------------------------------------                                          :: WiAppT
+         KE | TE |- W1 [T2] : {T2 / X} T12
 
 
     %% Types of witness constructors
@@ -79,33 +79,33 @@ JWiJudge :: '' ::=
 
     % The bottom / zero effect is pure.
 
-        -------------------------------                                                 :: WiPure
-          KE |- pure    : Pure  !0
+        ---------------------------------                                               :: WiPure
+         KE | TE |- pure    : Pure  !0
 
 
     % The bottom / zero closure is empty.
 
         -------------------------------                                                 :: WiEmpty
-          KE |- empty   : Empty $0
+         KE | TE |- empty   : Empty $0
 
 
     % If a region is global then we can safely forget about any uses of that
     % region in a closure.
 
-        -----------------------------------------------------                           :: WiUse
-          KE |- use     : [X : %]. Global X => Empty (Use X)
+        --------------------------------------------------------                        :: WiUse
+         KE | TE |- use     : [X : %]. Global X => Empty (Use X)
 
 
     % If a region is constant then we can treat any read effects from that
     % region as being pure.
 
-        -----------------------------------------------------                           :: WiRead
-          KE |- read    : [X : %]. Const  X => Pure  (Read X)                   
+        ----------------------------------------------------------                      :: WiRead
+         KE | TE |- read    : [X : %]. Const  X => Pure  (Read X)                   
 
 
     % If a region is constant then we can treat any allocation effects into
     % that region as being pure.
 
-        -----------------------------------------------------                           :: WiAlloc
-          KE |- alloc   : [X : %]. Const  X => Pure  (Alloc X)                   
+        ------------------------------------------------------------                    :: WiAlloc
+         KE | TE |- alloc   : [X : %]. Const  X => Pure  (Alloc X)                   
 

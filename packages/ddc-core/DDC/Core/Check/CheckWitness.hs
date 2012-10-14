@@ -100,7 +100,7 @@ checkWitnessM _config _kenv tenv (WVar u)
 checkWitnessM _config _kenv _tenv (WCon wc)
  = return $ typeOfWiCon wc
   
--- value-type application
+-- witness-type application
 checkWitnessM config kenv tenv ww@(WApp w1 (WType t2))
  = do   t1      <- checkWitnessM  config kenv tenv w1
         k2      <- checkTypeM     config kenv t2

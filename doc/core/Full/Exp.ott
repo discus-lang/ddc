@@ -1,7 +1,6 @@
 % Disciple Core Expressions
 %
 
-metavar termvar, x      ::=
 indexvar n, m           ::= 
 
 grammar
