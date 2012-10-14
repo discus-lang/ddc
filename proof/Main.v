@@ -28,3 +28,6 @@ Require Import DDC.Language.SystemF2Data.
 
 (* System-F2 with algebraic data types and a mutable store. *)
 Require Import DDC.Language.SystemF2Store.
+
+(* System-F2 with region and effect types *)
+Require Import DDC.Language.SystemF2Effect.
