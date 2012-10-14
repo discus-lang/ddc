@@ -54,5 +54,3 @@ Inductive TYPE (kn: nat) (rn: nat) (te: list ty)
    -> TYPE kn rn te (XApp x1 x2) t12 
            (RAdd w1 (RAdd w2 w3))
            (RAdd s1 (RAdd s2 s3)).
-
- | X

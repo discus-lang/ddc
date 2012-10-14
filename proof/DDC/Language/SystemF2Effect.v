@@ -4,8 +4,14 @@
 (* Kinds and kind environemnts. *)
 Require Export DDC.Language.SystemF2Effect.Ki.
 
+(* Type constructors. *)
+Require Export DDC.Language.SystemF2Effect.TyCon.
+
 (* Type expressions, and functions that operate on them *)
-Require Export DDC.Language.SystemF2Effect.TyBase.
+Require Export DDC.Language.SystemF2Effect.TyExp.
 
 (* Well formedness of type expressions. *)
 Require Export DDC.Language.SystemF2Effect.TyWfT.
+
+(* Lifting of indices in type expressions. *)
+Require Export DDC.Language.SystemF2Effect.TyLift.

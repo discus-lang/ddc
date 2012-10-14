@@ -1,6 +1,6 @@
 
 Require Export DDC.Language.SystemF2Effect.Ki.
-Require Export DDC.Language.SystemF2Effect.TyBase.
+Require Export DDC.Language.SystemF2Effect.TyExp.
 
 
 (********************************************************************)
@@ -16,9 +16,9 @@ Inductive wfT (kn: nat) : ty -> Prop :=
    ,  wfT kn (TCon n)
 
  | WfT_TForall
-   :  forall t
+   :  forall k t
    ,  wfT (S kn) t
-   -> wfT kn (TForall t)
+   -> wfT kn (TForall k t)
 
  | WfT_TApp
    :  forall t1 t2
@@ -148,6 +148,4 @@ Proof.
     eapply IHts. auto.
      auto.
 Qed.
-
-
 
