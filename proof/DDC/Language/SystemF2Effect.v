@@ -19,8 +19,14 @@ Require Export DDC.Language.SystemF2Effect.TyLift.
 (* Substitution of types in types. *)
 Require Export DDC.Language.SystemF2Effect.TySubst.
 
+(* All of the types modules. *)
+Require Export DDC.Language.SystemF2Effect.Ty.
+
+(* Type environments. *)
+Require Export DDC.Language.SystemF2Effect.TyEnv.
+
 (* Kinds of Types. *)
 Require Export DDC.Language.SystemF2Effect.KiJudge.
 
 (* Value expressions. *)
-Require Export DDC.Language.SystemF2Effect.VaExp.
+Require Export DDC.Language.SystemF2Effect.VaExpBase.

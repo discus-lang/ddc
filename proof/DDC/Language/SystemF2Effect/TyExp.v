@@ -15,10 +15,6 @@ Inductive ty  : Type :=
 Hint Constructors ty.
 
 
-(* Type environments *)
-Definition tyenv := list ty.
-
-
 (* Baked-in Value Types *)
 Definition tFun   t1 eff t2     := TApp (TApp (TApp (TCon TyConFun) t1) eff) t2.
 Definition tUnit                := TCon TyConUnit.

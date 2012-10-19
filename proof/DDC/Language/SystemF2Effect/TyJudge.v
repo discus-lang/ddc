@@ -1,7 +1,7 @@
 
 Require Import DDC.Language.SystemF2Effect.KiJudge.
 Require Import DDC.Language.SystemF2Effect.TySubst.
-Require Import DDC.Language.SystemF2Effect.VaExp.
+Require Import DDC.Language.SystemF2Effect.VaExpBase.
 
 
 (* Store Environment holds the types of locations. *)
@@ -170,4 +170,5 @@ Proof.
   subst.
   inverts IHx. auto.
 Qed.
+
 
