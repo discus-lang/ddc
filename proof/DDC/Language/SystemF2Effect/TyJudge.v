@@ -1,8 +1,9 @@
 
 Require Import DDC.Language.SystemF2Effect.KiJudge.
 Require Import DDC.Language.SystemF2Effect.TySubst.
+Require Import DDC.Language.SystemF2Effect.TyEnv.
 Require Import DDC.Language.SystemF2Effect.VaExpBase.
-
+Require Import DDC.Language.SystemF2Effect.VaExpWfX.
 
 (* Store Environment holds the types of locations. *)
 Definition stenv := list ty.
@@ -22,7 +23,8 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
 
   | TvLam
     :  forall ke te se t1 t2 x2 e2
-    ,  TYPEX ke (te :> t1) se x2 t2 e2
+    ,  KIND ke t1 KData
+    -> TYPEX ke (te :> t1) se x2 t2 e2
     -> TYPEV ke te se (VLam t1 x2) (tFun t1 e2 t2)
 
   | TvLAM
@@ -53,7 +55,8 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
 
   | TxLet
     :  forall ke te se t1 x1 t2 x2 e1 e2
-    ,  TYPEX ke te         se x1 t1 e1
+    ,  KIND  ke t1 KData
+    -> TYPEX ke te         se x1 t1 e1
     -> TYPEX ke (te :> t1) se x2 t2 e2
     -> TYPEX ke te         se (XLet t1 x1 x2) t2 (TSum e1 e2)
 
@@ -131,7 +134,7 @@ Proof.
   intros; try (solve [inverts_type; try congruence]).
 
  Case "VLam".
-  inverts_type. spec IHx H7 H6. burn.
+  inverts_type. spec IHx H8 H9. burn.
 
  Case "VLAM".
   inverts_type. spec IHx H7 H6. burn.
@@ -144,8 +147,8 @@ Proof.
 
  Case "XLet".
   inverts_type.
-  spec IHx1 H9 H8.
-  spec IHx2 H10 H11. 
+  spec IHx1 H10 H12.
+  spec IHx2 H11 H13. 
   rip.
 
  Case "XApp".
@@ -170,5 +173,22 @@ Proof.
   subst.
   inverts IHx. auto.
 Qed.
+
+
+(********************************************************************)
+(* A well typed expression is well formed *)
+Theorem type_wfX
+ :  forall ke te se x t e
+ ,  TYPEX ke te se x t e
+ -> wfX (length ke) (length te) (length se) x.
+Proof.
+ intros. gen ke te se t e.
+ induction x using exp_mutind with 
+  (PV := fun v => forall ke te se t1
+      ,  TYPEV ke te se v t1
+      -> wfV (length ke) (length te) (length se) v)
+  ; intros; inverts_type; burn.
+Qed.
+Hint Resolve type_wfX.
 
 

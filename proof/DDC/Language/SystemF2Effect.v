@@ -30,3 +30,6 @@ Require Export DDC.Language.SystemF2Effect.KiJudge.
 
 (* Value expressions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpBase.
+
+(* Well-formedness of expessions. *)
+Require Export DDC.Language.SystemF2Effect.VaExpWfX.
