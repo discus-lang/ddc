@@ -15,6 +15,11 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
     ,  get i te = Some t
     -> TYPEV ke te se (VVar i) t 
 
+  | TvLoc 
+    :  forall ke te se i t
+    ,  get i se  = Some t
+    -> TYPEV ke te se (VLoc i) t
+
   | TvLam
     :  forall ke te se t1 t2 x2 e2
     ,  TYPEX ke (te :> t1) se x2 t2 e2
@@ -89,3 +94,80 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
 
 Hint Constructors TYPEV.
 Hint Constructors TYPEX.
+
+
+(* Invert all hypothesis that are compound typing statements. *)
+Ltac inverts_type :=
+ repeat 
+  (match goal with 
+   | [ H: TYPEV _ _ _ (VVar  _)     _       |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VLoc  _)     _       |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VLam  _ _)   _       |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VLAM  _ _)   _       |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VAPP  _ _)   _       |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VConst _)    _       |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XVal  _)     _ _     |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XLet  _ _ _) _ _     |- _ ] => inverts H 
+   | [ H: TYPEX _ _ _ (XApp  _ _)   _ _     |- _ ] => inverts H 
+   | [ H: TYPEX _ _ _ (XOp1  _ _)   _ _     |- _ ] => inverts H 
+   | [ H: TYPEX _ _ _ (XOp2  _ _ _) _ _     |- _ ] => inverts H 
+   end).
+
+
+(********************************************************************)
+(* Uniqueness of typing *)
+Lemma type_unique
+ :  forall ke te se x t1 e1 t2 e2
+ ,  TYPEX ke te se x t1 e1
+ -> TYPEX ke te se x t2 e2
+ -> t1 = t2 /\ e1 = e2.
+Proof.
+ intros. gen ke te se t1 e1 t2 e2.
+ induction x using exp_mutind with 
+  (PV := fun v1 => forall ke te se t1 t1'
+      ,  TYPEV ke te se v1 t1
+      -> TYPEV ke te se v1 t1'
+      -> t1 = t1');
+  intros; try (solve [inverts_type; try congruence]).
+
+ Case "VLam".
+  inverts_type. spec IHx H7 H6. burn.
+
+ Case "VLAM".
+  inverts_type. spec IHx H7 H6. burn.
+
+ Case "VAPP". 
+  inverts_type. spec IHx H6 H5. congruence.
+
+ Case "XVal".
+  inverts_type. spec IHx H5 H4. burn.
+
+ Case "XLet".
+  inverts_type.
+  spec IHx1 H9 H8.
+  spec IHx2 H10 H11. 
+  rip.
+
+ Case "XApp".
+  inverts_type.
+  spec IHx  H6 H5.
+  spec IHx0 H9 H10.
+  subst.
+  inverts IHx. auto.
+
+ Case "XOp1".
+  inverts_type; auto.
+  rip.
+  spec IHx H9 H10. burn.
+  spec IHx H8 H4.
+  inverts IHx. auto.
+
+ Case "XOp2".
+  inverts_type; auto.
+  rip.
+  spec IHx H6 H5.
+  spec IHx0 H9 H10.
+  subst.
+  inverts IHx. auto.
+Qed.
+

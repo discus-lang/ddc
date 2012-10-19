@@ -23,13 +23,14 @@ Inductive op1 : Type :=
 Hint Constructors op1.
 
 Inductive op2 : Type := 
-  | OWrite  : ty -> op2.
+  | OWrite  : op2.
 Hint Constructors op2.
 
 
 (* Values *)
 Inductive val : Type := 
   | VVar    : nat   -> val
+  | VLoc    : nat   -> val
   | VLam    : ty    -> exp -> val
   | VLAM    : ki    -> exp -> val
   | VAPP    : val   -> ty  -> val
@@ -52,6 +53,7 @@ Lemma exp_mutind : forall
     (PX : exp -> Prop)
     (PV : val -> Prop)
  ,  (forall n,                                     PV (VVar n))
+ -> (forall l,                                     PV (VLoc l))
  -> (forall t x,        PX x                    -> PV (VLam t x))
  -> (forall k x,        PX x                    -> PV (VLAM k x))
  -> (forall v  t,       PV v                    -> PV (VAPP v  t))
@@ -64,7 +66,7 @@ Lemma exp_mutind : forall
  ->  forall x, PX x.
 Proof. 
  intros PX PV.
- intros hVar hLam hLAM hAPP hConst hVal hLet hApp hOp1 hOp2.
+ intros hVar hLoc hLam hLAM hAPP hConst hVal hLet hApp hOp1 hOp2.
  refine (fix  IHX x : PX x := _
          with IHV v : PV v := _
          for  IHX).
@@ -80,6 +82,7 @@ Proof.
  (* values *)
  case v; intros.
  apply hVar.
+ apply hLoc.
  apply hLam. apply IHX.
  apply hLAM. apply IHX.
  apply hAPP. apply IHV.
