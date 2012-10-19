@@ -32,12 +32,6 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
     ,  TYPEX (ke :> k1) te se x2 t2 (TBot KEffect)
     -> TYPEV ke te se (VLAM k1 x2) (TForall k1 t2)
 
-  | TvAPP
-    :  forall ke te se v1 k11 t12 t2
-    ,  TYPEV ke te se v1 (TForall k11 t12)
-    -> KIND  ke t2 k11
-    -> TYPEV ke te se (VAPP v1 t2) (substTT 0 t2 t12)
-
   | TvConstNat
     :  forall ke te se n
     ,  TYPEV ke te se (VConst (CNat n))  tNat
@@ -66,34 +60,40 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
     -> TYPEV ke te se v2 t11
     -> TYPEX ke te se (XApp v1 v2) t12 e1
 
-  (* Unary Operators *)
-  | TxOpSucc
-    :  forall ke te se v1
-    ,  TYPEV ke te se v1 tNat
-    -> TYPEX ke te se (XOp1 OSucc v1) tNat (TBot KEffect)
+  | TvAPP
+    :  forall ke te se v1 k11 t12 t2
+    ,  TYPEV ke te se v1 (TForall k11 t12)
+    -> KIND  ke t2 k11
+    -> TYPEX ke te se (XAPP v1 t2) (substTT 0 t2 t12) (TBot KEffect)
 
-  | TxOpPred
-    :  forall ke te se v1
-    ,  TYPEV ke te se v1 tNat
-    -> TYPEX ke te se (XOp1 OPred v1) tNat (TBot KEffect)
-
+  (* Store Operators *)
   | TxOpAlloc 
     : forall ke te se r1 v2 t2
     ,  KIND  ke r1 KRegion
     -> TYPEV ke te se v2 t2
-    -> TYPEX ke te se (XOp1 (OAlloc r1) v2) (tRef r1 t2) (tAlloc r1)
+    -> TYPEX ke te se (XAlloc r1 v2) (tRef r1 t2) (tAlloc r1)
 
   | TxOpRead
     :  forall ke te se v1 r1 t2
     ,  TYPEV ke te se v1 (tRef r1 t2)
-    -> TYPEX ke te se (XOp1 ORead v1)   t2      (tRead r1)
+    -> TYPEX ke te se (XRead v1)   t2      (tRead r1)
 
-  (* Binary Operators *)
   | TxOpWrite
     :  forall ke te se v1 v2 r1 t2
     ,  TYPEV ke te se v1 (tRef r1 t2)
     -> TYPEV ke te se v2 t2
-    -> TYPEX ke te se (XOp2 OWrite v1 v2) tUnit (tWrite r1).
+    -> TYPEX ke te se (XWrite v1 v2) tUnit (tWrite r1)
+
+  (* Primtive Operators *)
+  | TxOpSucc
+    :  forall ke te se v1
+    ,  TYPEV ke te se v1 tNat
+    -> TYPEX ke te se (XOp1 OSucc v1)   tNat (TBot KEffect)
+
+  | TxOpIsZero
+    :  forall ke te se v1
+    ,  TYPEV ke te se v1 tNat
+    -> TYPEX ke te se (XOp1 OIsZero v1) tBool (TBot KEffect).
 
 Hint Constructors TYPEV.
 Hint Constructors TYPEX.
@@ -103,17 +103,19 @@ Hint Constructors TYPEX.
 Ltac inverts_type :=
  repeat 
   (match goal with 
-   | [ H: TYPEV _ _ _ (VVar  _)     _       |- _ ] => inverts H
-   | [ H: TYPEV _ _ _ (VLoc  _)     _       |- _ ] => inverts H
-   | [ H: TYPEV _ _ _ (VLam  _ _)   _       |- _ ] => inverts H
-   | [ H: TYPEV _ _ _ (VLAM  _ _)   _       |- _ ] => inverts H
-   | [ H: TYPEV _ _ _ (VAPP  _ _)   _       |- _ ] => inverts H
-   | [ H: TYPEV _ _ _ (VConst _)    _       |- _ ] => inverts H
-   | [ H: TYPEX _ _ _ (XVal  _)     _ _     |- _ ] => inverts H
-   | [ H: TYPEX _ _ _ (XLet  _ _ _) _ _     |- _ ] => inverts H 
-   | [ H: TYPEX _ _ _ (XApp  _ _)   _ _     |- _ ] => inverts H 
-   | [ H: TYPEX _ _ _ (XOp1  _ _)   _ _     |- _ ] => inverts H 
-   | [ H: TYPEX _ _ _ (XOp2  _ _ _) _ _     |- _ ] => inverts H 
+   | [ H: TYPEV _ _ _ (VVar   _)     _      |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VLoc   _)     _      |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VLam   _ _)   _      |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VLAM   _ _)   _      |- _ ] => inverts H
+   | [ H: TYPEV _ _ _ (VConst _)     _      |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XVal   _)     _ _    |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XLet   _ _ _) _ _    |- _ ] => inverts H 
+   | [ H: TYPEX _ _ _ (XApp   _ _)   _ _    |- _ ] => inverts H 
+   | [ H: TYPEX _ _ _ (XAPP   _ _)   _ _    |- _ ] => inverts H 
+   | [ H: TYPEX _ _ _ (XAlloc _ _)   _ _    |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XRead  _)     _ _    |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XWrite _ _)   _ _    |- _ ] => inverts H
+   | [ H: TYPEX _ _ _ (XOp1   _ _)   _ _    |- _ ] => inverts H 
    end).
 
 
@@ -139,9 +141,6 @@ Proof.
  Case "VLAM".
   inverts_type. spec IHx H7 H6. burn.
 
- Case "VAPP". 
-  inverts_type. spec IHx H6 H5. congruence.
-
  Case "XVal".
   inverts_type. spec IHx H5 H4. burn.
 
@@ -158,20 +157,30 @@ Proof.
   subst.
   inverts IHx. auto.
 
- Case "XOp1".
-  inverts_type; auto.
-  rip.
-  spec IHx H9 H10. burn.
-  spec IHx H8 H4.
+ Case "VAPP". 
+  inverts_type.
+  spec IHx H6 H5.
+  inverts IHx.
+  auto.
+
+ Case "XAlloc".
+  inverts_type.
+  burn.
+
+ Case "XRead".
+  inverts_type.
+  spec IHx H5 H4.
   inverts IHx. auto.
 
- Case "XOp2".
-  inverts_type; auto.
-  rip.
-  spec IHx H6 H5.
+ Case "XWrite".
+  inverts_type.
+  spec IHx  H6 H5.
   spec IHx0 H9 H10.
-  subst.
+  subst. 
   inverts IHx. auto.
+
+ Case "XOp1".
+  inverts_type; auto.
 Qed.
 
 
@@ -190,5 +199,4 @@ Proof.
   ; intros; inverts_type; burn.
 Qed.
 Hint Resolve type_wfX.
-
 

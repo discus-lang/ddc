@@ -33,3 +33,7 @@ Require Export DDC.Language.SystemF2Effect.VaExpBase.
 
 (* Well-formedness of expessions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpWfX.
+
+(* Type judgemnets *)
+Require Export DDC.Language.SystemF2Effect.TyJudge.
+

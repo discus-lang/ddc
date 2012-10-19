@@ -24,11 +24,6 @@ Inductive wfV (kn tn sn: nat) : val -> Prop :=
    ,  wfX (S kn) tn sn x
    -> wfV kn tn sn (VLAM k1 x)
 
- | WfV_VAPP
-   :  forall x1 t2
-   ,  wfV kn tn sn x1 -> wfT kn t2
-   -> wfV kn tn sn (VAPP x1 t2)
-
  | WfV_VConst
    :  forall c
    ,  wfV kn tn sn (VConst c)
@@ -52,16 +47,32 @@ with   wfX (kn tn sn: nat) : exp -> Prop :=
    ,  wfV kn tn sn v1 -> wfV kn tn sn v2
    -> wfX kn tn sn (XApp v1 v2)
 
+ | WfX_VAPP
+   :  forall x1 t2
+   ,  wfV kn tn sn x1 -> wfT kn t2
+   -> wfX kn tn sn (XAPP x1 t2)
+
+ | WfX_XAlloc
+   :  forall t1 v1
+   ,  wfT kn t1
+   -> wfV kn tn sn v1
+   -> wfX kn tn sn (XAlloc t1 v1)
+
+ | WfX_XRead
+   :  forall v1
+   ,  wfV kn tn sn v1
+   -> wfX kn tn sn (XRead v1)
+
+ | WfX_XWrite
+   :  forall v1 v2
+   ,  wfV kn tn sn v1
+   -> wfV kn tn sn v2
+   -> wfX kn tn sn (XWrite v1 v2)
+
  | WfX_XOp1
    :  forall op1 v1
    ,  wfV kn tn sn v1
-   -> wfX kn tn sn (XOp1 op1 v1)           (* need to check that type in op1 is wf *)
-
- | WfX_XOp2
-   :  forall op2 v1 v2
-   ,  wfV kn tn sn v1
-   -> wfV kn tn sn v2
-   -> wfX kn tn sn (XOp2 op2 v1 v2).
+   -> wfX kn tn sn (XOp1 op1 v1).
 
 Hint Constructors wfX.
 Hint Constructors wfV.
