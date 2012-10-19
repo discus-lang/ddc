@@ -6,6 +6,7 @@ Require Export DDC.Language.SystemF2Effect.TyExp.
 (* Constants *)
 Inductive const : Type := 
   | CLoc    : nat      -> const
+  | CUnit   : nat      -> const
   | CNat    : nat      -> const
   | CBool   : bool     -> const.
 Hint Constructors const.
@@ -16,12 +17,15 @@ Inductive op1 : Type :=
   | OSucc   : op1
   | OPred   : op1
   | OIsZero : op1
+
+  | OAlloc  : ty -> op1
   | ORead   : op1.
 Hint Constructors op1.
 
 Inductive op2 : Type := 
-  | OWrite  : op2.
+  | OWrite  : ty -> op2.
 Hint Constructors op2.
+
 
 (* Values *)
 Inductive val : Type := 

@@ -54,10 +54,21 @@ T :: 'T_'       ::=
   | !0                  ::      :: ZeroEff      {{ com The least effect (pure)                  }}
   | $0                  ::      :: ZeroClo      {{ com The least closure (empty)                }}
 
-  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
-  | { T1 / X } T2       :: M    :: Subst        {{ com Type / Type substitution.                }}
-  | T1 - T2             :: M    :: Sub          {{ com Subtract elements from a sum.            }}
-  | makeClo clo         :: M    :: MakeClo      {{ com Convert from a tagged closure.           }}
+  | ( T )               :: S    :: Paren        
+  {{ com Allow types to be wrapped in parens.   }}
+  {{ icho [[t]] }}
+
+  | { T1 / X } T2       :: M    :: Subst        
+  {{ com Type / Type substitution.              }}
+  {{ icho (tsubst_t [[T1]] [[X]] [[T2]])        }}
+
+  | T1 - T2             :: M    :: Sub          
+  {{ com Subtract elements from a sum.          }}
+  {{ icho (tminus_t [[T1]] [[T2]])              }}
+
+  | makeClo clo         :: M    :: MakeClo      
+  {{ com Convert from a tagged closure.         }}
+  {{ icho (tmakeClo [[clo]])                    }}
 
 
 % Effect types are a subset of general types.
@@ -68,8 +79,14 @@ eff :: 'eff_'   ::=
   | T1 T2               ::      :: App          {{ com Type application.                        }}
   | T1 + T2             ::      :: Sum          {{ com Type summation.                          }}
   | !0                  ::      :: ZeroEff      {{ com The lease effect (pure)                  }}
-  | ( T )               :: S    :: Paren        {{ com Allow types to be wrapped in parens.     }}
-  | { T1 / X } T2       :: M    :: Sub          {{ com Type / Type substitution.                }}
+
+  | ( T )               :: S    :: Paren        
+  {{ com Allow types to be wrapped in parens.   }}
+  {{ icho [[t]]                                 }}
+
+  | { T1 / X } T2       :: M    :: Sub          
+  {{ com Type / Type substitution.              }}
+  {{ icho (tsubst_t [[T1]] [[X]] [[T2]])        }}
 
 subrules
   eff <:: T
@@ -86,17 +103,23 @@ clo  :: 'clo_'  ::=
   {{ com A closure term due to a free value variable with the given type.       }} 
 
   | clo , clorgn X      ::      :: Rgn
-  {{ com A closure term due to a free region variable.                          }}
+  {{ com A closure term due to a free region variable.  }}
 
   | clo , clocon C      ::      :: Con
-  {{ com A closure term due to a region constructor.                            }}
+  {{ com A closure term due to a region constructor.    }}
 
   | { T / X } clo       :: M    :: Sub
-  {{ com Substitute a type into a tagged closure.                               }}
+  {{ com Substitute a type into a tagged closure.       }}
+  {{ icho (tsubst_t [[T]] [[X]] [[clo]])                }}
 
   | cutT X clo          :: M    :: CutT
+  {{ icho (tcut_t   [[X]] [[clo]])                      }}
+
   | cutX x clo          :: M    :: CutX
+  {{ icho (tcut_x   [[X]] [[clo]])                      }}
+
   | clo1 + clo2         :: M    :: Sum
+  {{ icho (tplus     [[clo1]] [[clo2]])                 }}
 
 
 % Type environments.
@@ -108,8 +131,14 @@ TyEnv :: 'TyEnv_'               ::=
   | empty                       ::   :: Empty     {{ com An empty type environment.                 }}
   | TyEnv , x : T               ::   :: Extend    {{ com A type environment with a new binding.     }}
   | TyEnv , </ xi : Ti // i />  ::   :: Extends   {{ com A type environment with some new bindings. }}
-  | x : T                       :: S :: Bind      {{ com A single binding.                          }}
-  | </ xi : Ti // i />          :: S :: Binds     {{ com Several bindings.                          }}
+
+  | x : T                       :: S :: Bind      
+  {{ com A single binding.                      }}
+  {{ icho undefined                             }}
+
+  | </ xi : Ti // i />          :: S :: Binds    
+  {{ com Several bindings.                      }}
+  {{ icho undefined                             }}
 
 %% Bind in Type Environment %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

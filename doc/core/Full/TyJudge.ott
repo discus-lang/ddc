@@ -26,6 +26,7 @@ JTyJudge :: '' ::=
     % Value abstraction.
     %   TODO: this is only true when we abstract over a type of data kind.
 
+         KE |- T1 : *
          KE | TE, x : T |- t2        : T2                             ; eff ; clo
         --------------------------------------------------------------------------------- :: TyLam
          KE | TE |- \ x : T1 . t2 : (((->) T1) eff (makeClo clo)) T2 ; !0 ; cutX x clo
