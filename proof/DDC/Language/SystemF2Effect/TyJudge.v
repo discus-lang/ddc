@@ -29,8 +29,8 @@ Inductive TYPEV : kienv -> tyenv -> stenv -> val -> ty -> Prop :=
 
   | TvLAM
     :  forall ke te se k1 t2 x2
-    ,  TYPEX (ke :> k1) te se x2 t2 (TBot KEffect)
-    -> TYPEV ke te se (VLAM k1 x2) (TForall k1 t2)
+    ,  TYPEX (ke :> k1) (liftTE 0 te) (liftTE 0 se) x2 t2 (TBot KEffect)
+    -> TYPEV ke         te            se            (VLAM k1 x2) (TForall k1 t2)
 
   | TvConstNat
     :  forall ke te se n
@@ -196,7 +196,15 @@ Proof.
   (PV := fun v => forall ke te se t1
       ,  TYPEV ke te se v t1
       -> wfV (length ke) (length te) (length se) v)
-  ; intros; inverts_type; burn.
+  ; intros; inverts_type; try burn.
+
+ Case "VLAM".
+  eapply WfV_VLAM.
+  apply IHx in H6.
+  rrwrite (length (ke :> k) = S (length ke)) in H6.
+  rewrite <- length_liftTE in H6.
+  rewrite <- length_liftTE in H6.
+  auto.
 Qed.
 Hint Resolve type_wfX.
 

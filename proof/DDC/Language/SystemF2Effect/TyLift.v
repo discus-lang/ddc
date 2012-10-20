@@ -1,6 +1,6 @@
 
-Require Export DDC.Language.SystemF2Effect.TyExp.
-Require Export DDC.Language.SystemF2Effect.TyWfT.
+Require Import DDC.Language.SystemF2Effect.TyExp.
+Require Import DDC.Language.SystemF2Effect.TyWfT.
 
 
 (*******************************************************************)

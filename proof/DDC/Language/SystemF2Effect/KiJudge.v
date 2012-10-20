@@ -1,6 +1,7 @@
 
-Require Export DDC.Language.SystemF2Effect.TyExp.
+Require Export DDC.Language.SystemF2Effect.TyLift.
 Require Export DDC.Language.SystemF2Effect.TyWfT.
+Require Export DDC.Language.SystemF2Effect.TyExp.
 
 
 (* Only types of effect and closure kinds can be used in sums. *)
@@ -111,4 +112,35 @@ Proof.
   eapply kind_wfT. eauto.
 Qed.
 Hint Resolve kind_empty_is_closed.
+
+
+(********************************************************************)
+(* Weakening kind environments. *)
+Lemma kind_kienv_insert
+ :  forall ke ix t k1 k2
+ ,  KIND ke t k1
+ -> KIND (insert ix k2 ke) (liftTT 1 ix t) k1.
+Proof.
+ intros. gen ix ke k1.
+ induction t; intros; simpl; inverts_kind; eauto.
+
+ Case "TVar".
+  lift_cases; intros; nnat; auto.
+
+ Case "TForall".
+  apply KIForall.
+  rewrite insert_rewind. auto.
+Qed.
+
+
+Lemma kind_kienv_weaken
+ :  forall ke t k1 k2
+ ,  KIND  ke         t             k1
+ -> KIND (ke :> k2) (liftTT 1 0 t) k1.
+Proof.
+ intros.
+ assert (ke :> k2 = insert 0 k2 ke). simpl.
+   destruct ke; auto.
+ rewrite H0. apply kind_kienv_insert. auto.
+Qed.
 

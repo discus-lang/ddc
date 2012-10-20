@@ -22,11 +22,14 @@ Require Export DDC.Language.SystemF2Effect.TySubst.
 (* All of the types modules. *)
 Require Export DDC.Language.SystemF2Effect.Ty.
 
-(* Type environments. *)
-Require Export DDC.Language.SystemF2Effect.TyEnv.
-
 (* Kinds of Types. *)
 Require Export DDC.Language.SystemF2Effect.KiJudge.
+
+(* Substitution of types in types preserves kinding *)
+Require Export DDC.Language.SystemF2Effect.SubstTypeType.
+
+(* Type environments. *)
+Require Export DDC.Language.SystemF2Effect.TyEnv.
 
 (* Value expressions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpBase.
@@ -37,6 +40,9 @@ Require Export DDC.Language.SystemF2Effect.VaExpLift.
 (* Well-formedness of expessions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpWfX.
 
-(* Type judgemnets *)
+(* Substitution of types and values into exprssions. *)
+Require Export DDC.Language.SystemF2Effect.VaExpSubst.
+
+(* Type judgements *)
 Require Export DDC.Language.SystemF2Effect.TyJudge.
 

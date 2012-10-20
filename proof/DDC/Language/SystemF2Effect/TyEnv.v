@@ -1,7 +1,8 @@
 
-Require Export DDC.Language.SystemF2Effect.TyExp.
-Require Export DDC.Language.SystemF2Effect.TyLift.
-Require Export DDC.Language.SystemF2Effect.TySubst.
+Require Import DDC.Language.SystemF2Effect.TySubst.
+Require Import DDC.Language.SystemF2Effect.TyLift.
+Require Import DDC.Language.SystemF2Effect.TyWfT.
+Require Import DDC.Language.SystemF2Effect.TyExp.
 
 
 (* Type Enviroments *)

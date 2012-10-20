@@ -1,6 +1,7 @@
 
-Require Export DDC.Language.SystemF2Effect.TyExp.
-Require Export DDC.Language.SystemF2Effect.TyLift.
+Require Import DDC.Language.SystemF2Effect.TyLift.
+Require Import DDC.Language.SystemF2Effect.TyWfT.
+Require Import DDC.Language.SystemF2Effect.TyExp.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 
@@ -46,6 +47,15 @@ Proof.
  rw (d = d + 0). eauto.
 Qed.
 Hint Resolve substTT_closedT_id.
+
+
+(* Substituting into TBot is still TBot. *)
+Lemma substTT_TBot
+ : forall d t2 k
+ , substTT d t2 (TBot k) = TBot k.
+Proof. burn. Qed.
+Hint Resolve substTT_TBot.
+Hint Rewrite substTT_TBot : global.
 
 
 (********************************************************************)
