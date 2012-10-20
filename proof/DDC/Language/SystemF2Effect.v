@@ -31,6 +31,9 @@ Require Export DDC.Language.SystemF2Effect.KiJudge.
 (* Value expressions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpBase.
 
+(* Lifting of type and expression indices in expressions. *)
+Require Export DDC.Language.SystemF2Effect.VaExpLift.
+
 (* Well-formedness of expessions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpWfX.
 
