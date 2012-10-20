@@ -40,9 +40,11 @@ Require Export DDC.Language.SystemF2Effect.VaExpLift.
 (* Well-formedness of expessions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpWfX.
 
-(* Substitution of types and values into exprssions. *)
+(* Substitution of types and values into expressions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpSubst.
 
 (* Type judgements *)
 Require Export DDC.Language.SystemF2Effect.TyJudge.
 
+(* Substitution of types into expressions *)
+Require Export DDC.Language.SystemF2Effect.SubstTypeExp.
