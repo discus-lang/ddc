@@ -40,6 +40,9 @@ Require Export DDC.Language.SystemF2Effect.VaExpLift.
 (* Well-formedness of expessions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpWfX.
 
+(* Lifting of type and value indices in expressions. *)
+Require Export DDC.Language.SystemF2Effect.VaExpLift.
+
 (* Substitution of types and values into expressions. *)
 Require Export DDC.Language.SystemF2Effect.VaExpSubst.
 

@@ -307,3 +307,74 @@ Proof.
  eapply type_kienv_insert; auto.
 Qed.
 
+
+(********************************************************************)
+(* Weakening Type Env in Type Judgement.
+   We can insert a new type into the type environment, provided we
+   lift existing references to types higher in the stack across
+   the new one. *)
+Lemma type_tyenv_insert
+ :  forall ke te se ix x t1 e1 t2
+ ,  TYPEX ke te se x t1 e1
+ -> TYPEX ke (insert ix t2 te) se (liftXX 1 ix x) t1 e1.
+Proof.
+ intros. gen ix ke se te t1 e1 t2.
+ induction x using exp_mutind with 
+  (PV := fun v => forall ix ke se te t1 t2
+      ,  TYPEV ke te se v t1 
+      -> TYPEV ke (insert ix t2 te) se (liftXV 1 ix v) t1)
+  ; intros; inverts_type; simpl; eauto.
+
+ Case "VVar".
+  nnat; lift_cases; burn.
+
+ Case "VLam".
+  apply TvLam; eauto.
+  rewrite insert_rewind. auto.
+
+ Case "VLAM".
+  apply TvLAM.
+  assert ( liftTE 0 (insert ix t2 te)
+         = insert ix (liftTT 1 0 t2) (liftTE 0 te)).
+   unfold liftTE. rewrite map_insert. auto.
+   burn.
+
+ Case "XLet".
+  apply TxLet; eauto. 
+  rewrite insert_rewind. eauto.
+Qed. 
+
+
+(* We can push a new type onto the environment stack provided
+   we lift references to existing types across the new one. *)
+Lemma type_tyenv_weaken1
+ :  forall ke te se x t1 e1 t2
+ ,  TYPEX ke te se x t1 e1
+ -> TYPEX ke (te :> t2) se (liftXX 1 0 x) t1 e1.
+Proof.
+ intros.
+ assert (te :> t2 = insert 0 t2 te) as HI.
+  simpl. destruct te; auto.
+ rewrite HI.
+ apply type_tyenv_insert. auto.
+Qed.
+
+
+(* We can several new types onto the environment stack provided
+   we lift referenes to existing types across the new one. *)
+Lemma type_tyenv_weaken_append
+ :  forall ke te te' se x t1 e1
+ ,  TYPEX ke te se x t1 e1
+ -> TYPEX ke (te >< te') se (liftXX (length te') 0 x) t1 e1.
+Proof.
+ intros.
+ induction te'; simpl.
+  burn.
+
+  rrwrite (S (length te') = length te' + 1).
+  rrwrite (length te' + 1 = 1 + length te').
+  rewrite <- liftXX_plus.
+  eapply type_tyenv_weaken1.
+  burn.
+Qed.
+

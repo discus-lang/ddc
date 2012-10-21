@@ -49,7 +49,7 @@ Fixpoint liftXV (n: nat) (d: nat) (vv: val) {struct vv} : val :=
  with   liftXX (n: nat) (d: nat) (xx: exp) {struct xx} : exp :=
   match xx with 
   | XVal v       => XVal   (liftXV n d v)
-  | XLet t x1 x2 => XLet t (liftXX n d x1) (liftXX n d x2)
+  | XLet t x1 x2 => XLet t (liftXX n d x1) (liftXX n (S d) x2)
   | XApp v1 v2   => XApp   (liftXV n d v1) (liftXV n d v2)
   | XAPP v1 t2   => XAPP   (liftXV n d v1) t2
 
@@ -119,7 +119,7 @@ Hint Rewrite liftXX_succ : global.
 
 
 (* We can collapse two consecutive lifting expressions by lifting 
-   just onces by the sum of the places, provided the lifting
+   just once by the sum of the places, provided the lifting
    occurs at depth zero. *) 
 Lemma liftXX_plus 
  : forall n m x 
