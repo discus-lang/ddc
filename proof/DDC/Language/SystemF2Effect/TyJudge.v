@@ -4,6 +4,8 @@ Require Import DDC.Language.SystemF2Effect.TySubst.
 Require Import DDC.Language.SystemF2Effect.TyEnv.
 Require Import DDC.Language.SystemF2Effect.VaExpBase.
 Require Import DDC.Language.SystemF2Effect.VaExpWfX.
+Require Import DDC.Language.SystemF2Effect.VaExpLift.
+
 
 (* Store Environment holds the types of locations. *)
 Definition stenv := list ty.
@@ -207,4 +209,101 @@ Proof.
   auto.
 Qed.
 Hint Resolve type_wfX.
+
+
+(********************************************************************)
+(* Weakening Kind Env in Type Judgement. *)
+Lemma type_kienv_insert
+ :  forall ix ke te se x1 t1 e1 k2
+ ,  TYPEX ke te se x1 t1 e1
+ -> TYPEX (insert ix k2 ke) (liftTE ix te)   (liftTE ix se) 
+          (liftTX ix x1)    (liftTT 1 ix t1) (liftTT 1 ix e1).
+Proof.
+ intros. gen ix ke te se t1 e1 k2.
+ induction x1 using exp_mutind with 
+  (PV := fun v => forall ix ke te se k2 t3
+               ,  TYPEV ke te se v t3
+               -> TYPEV (insert ix k2 ke) (liftTE ix te)   (liftTE ix se)
+                        (liftTV ix v)     (liftTT 1 ix t3))
+  ; intros; inverts_type; simpl; eauto.
+
+ Case "VVar".
+  apply TvVar; auto.
+  apply get_map; auto.
+
+ Case "VLoc".
+  eapply TvLoc; eauto.
+  apply get_map; auto.
+
+ Case "VLam".
+  apply TvLam.
+   apply kind_kienv_insert. auto.
+   rrwrite ( liftTE ix te :> liftTT 1 ix t
+           = liftTE ix (te :> t)).
+   burn.
+
+ Case "VLAM".
+  eapply TvLAM. 
+  rewrite insert_rewind. 
+  rewrite (liftTE_liftTE 0 ix).
+  rewrite (liftTE_liftTE 0 ix).
+  rrwrite (TBot KEffect = liftTT 1 (S ix) (TBot KEffect)).
+  burn.
+
+ Case "XLet".
+  apply TxLet.
+   auto using kind_kienv_insert.
+   eauto.
+   rrwrite ( liftTE ix te :> liftTT 1 ix t
+           = liftTE ix (te :> t)).
+   burn.
+
+ Case "XApp".
+  eapply TxApp.
+   eapply IHx1 in H5. simpl in H5. eauto.
+   eapply IHx0 in H8. eauto.
+
+ Case "XAPP".
+  rewrite (liftTT_substTT' 0 ix). 
+  simpl.
+  eapply TvAPP.
+  eapply (IHx1 ix) in H5. simpl in H5. eauto.
+  auto using kind_kienv_insert.
+
+ Case "XAlloc".
+  eapply TxOpAlloc; eauto using kind_kienv_insert.
+
+ Case "XRead".
+  eapply TxOpRead.
+  rrwrite ( tRef (liftTT 1 ix r1) (liftTT 1 ix t1)
+          = liftTT 1 ix (tRef r1 t1)).
+  eauto.
+
+ Case "XWrite".
+  eapply TxOpWrite.
+  eapply IHx1 in H5. simpl in H5. eauto.
+  eapply IHx0 in H8. eauto.
+
+ Case "XSucc".
+  eapply TxOpSucc.
+  eapply IHx1 in H7. eauto.
+
+ Case "XIsZero".
+  eapply TxOpIsZero.
+  eapply IHx1 in H7. eauto.
+Qed.
+
+
+Lemma type_kienv_weaken1
+ :  forall ke te se x1 t1 e1 k2
+ ,  TYPEX ke te se x1 t1 e1
+ -> TYPEX (ke :> k2)    (liftTE 0 te)   (liftTE 0 se) 
+          (liftTX 0 x1) (liftTT 1 0 t1) (liftTT 1 0 e1).
+Proof.
+ intros.
+ assert (ke :> k2 = insert 0 k2 ke) as HI.
+  simpl. destruct ke; auto.
+ rewrite HI.
+ eapply type_kienv_insert; auto.
+Qed.
 
