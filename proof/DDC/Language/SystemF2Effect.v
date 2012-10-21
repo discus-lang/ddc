@@ -49,5 +49,9 @@ Require Export DDC.Language.SystemF2Effect.VaExpSubst.
 (* Type judgements *)
 Require Export DDC.Language.SystemF2Effect.TyJudge.
 
-(* Substitution of types into expressions *)
+(* Substitution of types into expressions. *)
 Require Export DDC.Language.SystemF2Effect.SubstTypeExp.
+
+(* Substitution of values into expressions preserves typing. *)
+Require Export DDC.Language.SystemF2Effect.SubstValExp.
+

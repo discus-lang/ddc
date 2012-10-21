@@ -308,6 +308,20 @@ Proof.
 Qed.
 
 
+Lemma typev_kienv_weaken1
+ :  forall ke te se v1 t1 k2
+ ,  TYPEV  ke te se v1 t1
+ -> TYPEV (ke :> k2)    (liftTE 0 te) (liftTE 0 se)
+          (liftTV 0 v1) (liftTT 1 0 t1).
+Proof.
+ intros.
+ have (TYPEX ke te se (XVal v1) t1 (TBot KEffect)) as HX.
+ eapply type_kienv_weaken1 in HX.
+ simpl in HX.
+ inverts HX. eauto.
+Qed.
+
+
 (********************************************************************)
 (* Weakening Type Env in Type Judgement.
    We can insert a new type into the type environment, provided we
@@ -357,6 +371,22 @@ Proof.
   simpl. destruct te; auto.
  rewrite HI.
  apply type_tyenv_insert. auto.
+Qed.
+
+
+(* We can push a new type into the enviroment of a type-of-value 
+   judgement provided we lift references to existing types across
+   the new one *)
+Lemma typev_tyenv_weaken1
+ :  forall ke te se v t1 t2
+ ,  TYPEV ke te se v t1
+ -> TYPEV ke (te :> t2) se (liftXV 1 0 v) t1.
+Proof.
+ intros.
+ have (TYPEX ke te se (XVal v) t1 (TBot KEffect)) as HX.
+ eapply type_tyenv_weaken1 in HX.
+ simpl in HX.
+ inverts HX. eauto.
 Qed.
 
 
