@@ -28,34 +28,40 @@ import DDC.Base.Pretty
 -- Exp ------------------------------------------------------------------------
 data Exp 
         -- | Use of a variable.
-        = XVar Var
+        = XVar   Var
 
         -- | A literal.
-        | XLit Lit
+        | XLit   Lit
+
+        -- | An undefined value.
+        | XUndef Type
         deriving (Eq, Show)  
 
 
 instance Pretty Exp where
  ppr xx
   = case xx of
-        XVar v  -> ppr v
-        XLit l  -> ppr l
+        XVar v   -> ppr v
+        XLit l   -> ppr l
+        XUndef _ -> text "undef"
 
 
 -- | Pretty print an expression without its type.
 pprPlainX :: Exp -> Doc
 pprPlainX xx
  = case xx of
-        XVar v  -> ppr $ nameOfVar v
-        XLit l  -> pprPlainL l
+        XVar v   -> ppr $ nameOfVar v
+        XLit l   -> pprPlainL l
+        XUndef _ -> text "undef"
 
 
 -- | Take the type of an expression.
 typeOfExp :: Exp -> Type 
 typeOfExp xx
  = case xx of
-        XVar var        -> typeOfVar var
-        XLit lit        -> typeOfLit lit
+        XVar   var      -> typeOfVar var
+        XLit   lit      -> typeOfLit lit
+        XUndef t        -> t
 
 
 -- Var ------------------------------------------------------------------------

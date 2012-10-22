@@ -3,7 +3,7 @@
 module DDC.Core.Llvm.Convert
         (convertModule)
 where
-import DDC.Llvm.Transform.Clean
+-- import DDC.Llvm.Transform.Clean
 import DDC.Llvm.Module
 import DDC.Llvm.Function
 import DDC.Llvm.Instr
@@ -43,7 +43,7 @@ convertModule platform mm@(C.ModuleCore{})
         mm'   = evalState (Simp.applyTransform A.profile Env.empty Env.empty 
                                                Simp.Elaborate mm) 
                           state
-   in   clean $ evalState (convModuleM mm') state
+   in   evalState (convModuleM mm') state
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module
@@ -276,14 +276,19 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail   <- p
           ,  [C.XType _tResult]                <- xs
-          -> let iFail  = ICall Nothing CallTypeStd 
-                                 TVoid 
-                                 (NameGlobal "abort")
-                                 [] []
+          -> let iFail  = ICall Nothing CallTypeStd TVoid (NameGlobal "abort") [] []
 
-             in  return  $   blocks 
-                         |>  Block label 
-                                   (instrs |> annotNil iFail |> (annotNil $ IUnreachable))
+                 iSet   = case context of
+                                BodyTop         -> INop
+                                BodyNest vDst _ -> ISet vDst (XUndef (typeOfVar vDst))
+
+                 block  = Block label
+                        $ instrs |> annotNil iSet
+                                 |> annotNil iFail 
+                                 |> annotNil IUnreachable
+
+
+             in  return  $   blocks |> block
 
 
          -- Calls -----------------------------------------
@@ -316,57 +321,25 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
          -- Assignment ------------------------------------
          -- Variable assigment from a case-expression.
-         C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t)
-                                     (C.XCase _ x11 alts))
-                  x2
-          |  Just x11'@Var{}    <- takeLocalV pp kenv tenv x11
+         C.XLet _ (C.LLet C.LetStrict b@(C.BName _ t) (C.XCase _ xScrut alts)) x2
           -> do 
-                -- Label to jump to that continues evaluting 'x2' above.
-                label2          <- newUniqueLabel "cont"
+                let t'  =  convType pp kenv t
 
-                -- Convert all the alternatives.
-                --  We set 'BodyNest' so the alternative code jumps to 'label2' to 
-                --  continue evaluation of x2.
-                let t'          = convType pp kenv t
-                (vDsts, alts'@(_:_))
-                         <- liftM unzip 
-                         $  mapM (\alt -> do
-                                vDst'   <- newUniqueNamedVar "alt" t'
-                                alt'    <- convAltM (BodyNest vDst' label2) kenv tenv mdsup alt
-                                return (vDst', alt'))
-                         $  alts
+                -- Label to jump to continue evaluating 'x1'
+                lCont   <- newUniqueLabel "cont"
+                vCont   <- newUniqueVar   t'
 
-                -- Determine what default alternative to use for the instruction. 
-                (lDefault, blocksDefault)
-                 <- case last alts' of
-                        AltDefault l bs -> return (l, bs)
-                        AltCase _  l bs -> return (l, bs)
 
-                -- Alts that aren't the default.
-                let altsTable   = init alts'
+                -- TODO: use nested context if nessesary
+                let context'    = BodyNest vCont lCont
+                blocksCase      <- convCaseM context' pp kenv tenv mdsup 
+                                        label instrs xScrut alts
 
-                -- Build the jump table of non-default alts.
-                let table       = mapMaybe takeAltCase altsTable
-                let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
-
-                let switchBlock = Block label
-                                $ instrs |> (annotNil $ ISwitch (XVar x11') lDefault table)
-
-                let blocks'     = blocks >< (switchBlock <| (blocksTable >< blocksDefault))
-
-                -- Use a Phi instruction to join the results from each alternative.
-                let n'          = A.sanitizeName n
-                let vDst        = Var (NameLocal n') t'
-                let iPhi        = annotNil
-                                $ IPhi vDst [ (XVar vDstAlt, labelOfAltResult alt')
-                                            | vDstAlt   <- vDsts
-                                            | alt'      <- alts' ]
-
-                -- Continue converting 'x2', the body of the let-expression.
                 let tenv'       = Env.extend b tenv
-                convBodyM context kenv tenv' mdsup 
-                        blocks' label2 
-                        (Seq.singleton iPhi) 
+                convBodyM context kenv tenv' mdsup
+                        (blocks >< blocksCase) 
+                        lCont
+                        Seq.empty       -- set result if in double nested context
                         x2
 
          -- Variable assignment from an expression.
@@ -401,28 +374,13 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                 convBodyM context kenv' tenv mdsup blocks label instrs x2
 
          -- Case ------------------------------------------
-         C.XCase _ x1 alts
-          | Just x1'@(Var{})    <- takeLocalV pp kenv tenv x1
-          -> do alts'@(_:_)     <- mapM (convAltM context kenv tenv mdsup) alts
+         C.XCase _ xScrut alts
+          -> do blocks' <- convCaseM context pp kenv tenv mdsup 
+                                label instrs xScrut alts
 
-                -- Determine what default alternative to use for the instruction. 
-                (lDefault, blocksDefault)
-                 <- case last alts' of
-                        AltDefault l bs -> return (l, bs)
-                        AltCase _  l bs -> return (l, bs)
+                return  $ blocks >< blocks'
 
-                -- Alts that aren't the default.
-                let altsTable   = init alts'
-
-                -- Build the jump table of non-default alts.
-                let table       = mapMaybe takeAltCase altsTable
-                let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
-
-                let switchBlock = Block label
-                                $ instrs |> (annotNil $ ISwitch (XVar x1') lDefault table)
-
-                return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
-
+        -- Cast -------------------------------------------
          C.XCast _ _ x
           -> convBodyM context kenv tenv mdsup blocks label instrs x
 
@@ -523,6 +481,106 @@ convExpM context pp kenv tenv mdsup xx
          -> convExpM context pp kenv tenv mdsup x
 
         _ -> die $ "invalid expression " ++ show xx
+
+
+-- Case -----------------------------------------------------------------------
+convCaseM 
+        :: BodyContext
+        -> Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
+        -> MDSuper
+        -> Label                -- label of current block
+        -> Seq AnnotInstr       -- intrs to prepend to initial block.
+        -> C.Exp () A.Name
+        -> [C.Alt () A.Name]
+        -> LlvmM (Seq Block)
+
+convCaseM context pp kenv tenv mdsup label instrs xScrut alts 
+ | Just vScrut'@Var{}   <- takeLocalV pp kenv tenv xScrut
+ = do   
+        -- Convert all the alternatives.
+        -- If we're in a nested context we'll also get a block to join the 
+        -- results of each alternative.
+        (alts', blocksJoin)
+                <- convAlts context pp kenv tenv mdsup alts
+
+        -- Build the switch ---------------
+        -- Determine what default alternative to use for the instruction. 
+        (lDefault, blocksDefault)
+         <- case last alts' of
+                AltDefault l bs -> return (l, bs)
+                AltCase _  l bs -> return (l, bs)
+
+        -- Alts that aren't the default.
+        let altsTable   = init alts'
+
+        -- Build the jump table of non-default alts.
+        let table       = mapMaybe takeAltCase altsTable
+        let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
+
+        let switchBlock 
+                =  Block label
+                $  instrs 
+                |> (annotNil $ ISwitch (XVar vScrut') lDefault table)
+
+        return  $  switchBlock 
+                <| (blocksTable >< blocksDefault >< blocksJoin)
+
+convCaseM _ _ _ _ _ _ _ _ _
+        = error "convCaseM: sorry"
+
+
+-- Alts -----------------------------------------------------------------------
+convAlts 
+        :: BodyContext
+        -> Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
+        -> MDSuper
+        -> [C.Alt () A.Name]
+        -> LlvmM ([AltResult], Seq Block)
+
+-- Alternatives are at top level.
+convAlts BodyTop 
+         _pp kenv tenv mdsup alts
+ = do   
+        alts'   <- mapM (convAltM BodyTop kenv tenv mdsup) alts
+        return  (alts', Seq.empty)
+
+
+-- If we're doing a branch inside a let-binding we need to add a join
+-- point to collect the results from each altenative before continuing
+-- on to evaluate the rest.
+convAlts (BodyNest vDst lCont)
+         _pp kenv tenv mdsup alts
+ = do
+        let tDst'       = typeOfVar vDst
+
+        -- Label of the block that does the join.
+        lJoin   <- newUniqueLabel "join"
+
+        -- Convert all the alternatives,
+        -- assiging their results into separate vars.
+        (vDstAlts, alts'@(_:_))
+                <- liftM unzip 
+                $  mapM (\alt -> do
+                        vDst'   <- newUniqueNamedVar "alt" tDst'
+                        alt'    <- convAltM (BodyNest vDst' lJoin) kenv tenv mdsup alt
+                        return (vDst', alt'))
+                $  alts
+
+
+        -- A Block to join the result from each alternative.
+        let blockJoin   
+                = Block lJoin
+                $ Seq.fromList $ map annotNil
+                [ IPhi vDst  [ (XVar vDstAlt, labelOfAltResult alt')
+                             | vDstAlt   <- vDstAlts
+                             | alt'      <- alts' ]
+                , IBranch lCont ]
+
+        return (alts', Seq.singleton blockJoin)
 
 
 -- Alt ------------------------------------------------------------------------

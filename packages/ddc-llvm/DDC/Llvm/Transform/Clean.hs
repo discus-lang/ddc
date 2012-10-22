@@ -73,7 +73,8 @@ cleanInstrs binds acc (ins@(AnnotInstr (i,annots)) : instrs)
 
     in case i of
         IComment{}              -> next binds (ins                                          : acc)        
-        ISet v x                -> next (Map.insert v x binds)                              acc        -- TODO: do occ check
+        ISet v x                -> next (Map.insert v x binds)                                acc        -- TODO: do occ check
+        INop                    -> next binds                                                 acc
         IPhi v xls              -> next binds ((reAnnot $ IPhi v [(sub x, l) | (x, l) <- xls]) : acc)
         IReturn Nothing         -> next binds (ins                                          : acc)
         IReturn (Just x)        -> next binds ((reAnnot $ IReturn (Just (sub x)))           : acc)

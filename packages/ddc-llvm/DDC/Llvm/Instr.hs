@@ -97,10 +97,15 @@ data Instr
         = IComment      [String]
 
         -- | Set meta instruction v1 = value.
-        --   Note: This is a useful instruction to have, but the LLVM compiler
-        --   doesn't accept it directly. Use the Clean transform to inline all
-        --   set-instructions before passing it to the LLVM compiler.
+        --   This isn't accepted by the real LLVM compiler.
+        --   ISet instructions are erased by the 'Clean' transform.
         | ISet          Var     Exp
+
+        -- | No operation.
+        --   This isn't accepted by the real LLVM compiler.
+        --   INop instructions are erased by the 'Clean' transform.
+        | INop
+
 
         -- Phi nodes --------------------------------------
         | IPhi          Var     [(Exp, Label)]
@@ -173,6 +178,9 @@ instance Pretty Instr where
          -> hsep [ fill 12 (ppr $ nameOfVar dst)
                  , equals
                  , ppr val ]
+
+        INop 
+         -> text "nop"
 
         -- Phi nodes --------------------------------------
         IPhi vDst expLabels
