@@ -78,14 +78,6 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
                                 , text "   to type: " <> ppr tDst ]
 
         -- Store primops --------------
-        A.PrimStore A.PrimStoreBytesNat
-         | [_]                  <- xs
-         , Just vDst            <- mdst
-         -> return      $ Seq.singleton 
-                        $ annotNil
-                        $ ISet vDst (XLit (LitInt (tNat pp) (platformNatBytes pp)))
-
-
         A.PrimStore A.PrimStoreSize 
          | [C.XType t]          <- xs
          , Just vDst            <- mdst

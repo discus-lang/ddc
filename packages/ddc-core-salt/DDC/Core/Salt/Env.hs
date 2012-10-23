@@ -201,12 +201,6 @@ typeOfPrimControl pc
 typeOfPrimStore :: PrimStore -> Type Name
 typeOfPrimStore jj
  = case jj of
-        PrimStoreBytesNat
-         -> tVoid `tFunPE` tNat
-
-        PrimStoreShiftNat       
-         -> tVoid `tFunPE` tNat
-
         PrimStoreSize 
          -> tForall kData $ \_ -> tNat
 

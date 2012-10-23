@@ -227,14 +227,8 @@ readPrimControl str
 -- | A projection of some other object.
 data PrimStore
         -- Constants ------------------
-        -- | Number of bytes used by a Nat#
-        = PrimStoreBytesNat
-
-        -- | Log2 of number of bytes used by a Nat#
-        | PrimStoreShiftNat
-
         -- | Number of bytes needed to store a value of a primitive type.
-        | PrimStoreSize
+        = PrimStoreSize
 
         -- | Log2 of number of bytes need to store a value of a primitive type.
         | PrimStoreSize2
@@ -295,8 +289,6 @@ data PrimStore
 instance Pretty PrimStore where
  ppr p
   = case p of        
-        PrimStoreBytesNat       -> text "bytesNat#"
-        PrimStoreShiftNat       -> text "shiftNat#"
         PrimStoreSize           -> text "size#"
         PrimStoreSize2          -> text "size2#"        
         PrimStoreCreate         -> text "create#"
@@ -321,8 +313,6 @@ instance Pretty PrimStore where
 readPrimStore :: String -> Maybe PrimStore
 readPrimStore str
  = case str of
-        "bytesNat#"             -> Just PrimStoreBytesNat
-        "shiftNat#"             -> Just PrimStoreShiftNat
         "size#"                 -> Just PrimStoreSize
         "size2#"                -> Just PrimStoreSize2
 
