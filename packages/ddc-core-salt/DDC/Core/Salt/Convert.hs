@@ -44,19 +44,39 @@ convertModule addIncludes mm
 -- | Convert a Salt module to C source text.
 convModuleM :: Show a => Bool -> Module a Name -> ConvertM a Doc
 convModuleM addIncludes mm@(ModuleCore{})
-        | ([LRec bxs], _) <- splitXLets $ moduleBody mm
-        = do    supers' <- mapM (uncurry (convSuperM Env.empty Env.empty)) bxs
+ | ([LRec bxs], _) <- splitXLets $ moduleBody mm
+ = do   
+        -- Top-level includes ---------------------------------------
+        let cIncludes
+                | addIncludes
+                = vcat  [ text "#include \"Runtime.h\""
+                        , text "#include \"Primitive.h\"" ]
 
-                return  $ vcat 
-                        $ (if addIncludes then
-                             [ text "#include \"Runtime.h\""
-                             , text "#include \"Primitive.h\"" 
-                             , empty ]
-                           else [])
-                        ++ supers'
+                | otherwise = empty
 
-        | otherwise
-        = throw $ ErrorNoTopLevelLetrec mm
+        -- RTS def --------------------------------------------------
+        -- If this is the main module then we need to declare
+        -- the global RTS state.
+        let cGlobals
+                | isMainModule mm
+                = vcat [ text "addr_t _DDC_Runtime_heapTop = 0;"
+                       , text "addr_t _DDC_Runtime_heapMax = 0;" ]
+
+                | otherwise
+                = vcat [ text "extern addr_t _DDC_Runtime_heapTop;"
+                       , text "extern addr_t _DDC_Runtime_heapMax;" ]
+
+        -- Super-combinator definitions.
+        cSupers <- mapM (uncurry (convSuperM Env.empty Env.empty)) bxs
+
+        -- Pase everything together
+        return  $ vcat
+                [ cIncludes,    empty
+                , cGlobals,     empty
+                , vcat cSupers, empty ]
+
+ | otherwise
+ = throw $ ErrorNoTopLevelLetrec mm
 
 
 -- Type -----------------------------------------------------------------------
