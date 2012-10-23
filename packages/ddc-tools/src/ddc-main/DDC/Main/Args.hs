@@ -40,7 +40,7 @@ parseArgs args config
 
         | "-fvia-c" : rest      <- args
         = parseArgs rest
-        $ config { configViaBackend = ViaC }         -- TODO: Enable C backend when it works again
+        $ config { configViaBackend = ViaLLVM }         -- TODO: Enable C backend when it works again
 
         | "-fvia-llvm" : rest   <- args
         = parseArgs rest
