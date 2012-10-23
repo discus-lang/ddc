@@ -120,7 +120,7 @@ builder_X8632_Darwin config
                 = \cFile oFile
                 -> doCmd "C compiler"
                 $  "gcc -Werror -std=c99 -O3 -m32"
-                ++ " "    ++ cFile
+                ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
                 ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
                 ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
@@ -163,7 +163,7 @@ builder_X8664_Darwin config
                 = \cFile oFile
                 -> doCmd "C compiler"
                 $  "gcc -Werror -std=c99 -O3 -m64"
-                ++ " "    ++ cFile
+                ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
                 ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
                 ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
@@ -204,7 +204,7 @@ builder_X8632_Linux config
                 = \cFile oFile
                 -> doCmd "C compiler"
                 $  "gcc -Werror -std=c99 -O3 -m32"
-                ++ " "    ++ cFile
+                ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
 
         , buildAs
@@ -243,7 +243,7 @@ builder_X8664_Linux config
                 = \cFile oFile
                 -> doCmd "C compiler"
                 $  "gcc -Werror -std=c99 -O3 -m64"
-                ++ " "    ++ cFile
+                ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
 
         , buildAs
@@ -282,7 +282,7 @@ builder_PPC32_Linux config
                 = \cFile oFile
                 -> doCmd "C compiler"
                 $  "gcc -Werror -std=c99 -O3 -m32"
-                ++ " "    ++ cFile
+                ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
 
         , buildAs
@@ -320,7 +320,7 @@ builder_X8632_Cygwin config
                 = \cFile oFile
                 -> doCmd "C compiler"
                 $  "gcc-4 -Werror -std=c99 -O3 -m32"
-                ++ " "    ++ cFile
+                ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
 
         , buildAs
