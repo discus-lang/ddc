@@ -38,7 +38,7 @@ typedef uint8_t* addr_t;
 typedef uint32_t tag_t;
 
 // A UTF8 string.
-typedef char*    string_t;
+typedef char     string_t;
 
 
 // -- Object Format -----------------------------------------------------------
@@ -223,11 +223,3 @@ void _fail(void)
 {       abort();
 }
 
-
-// -- Storage Management ------------------------------------------------------
-// Alloc some space on the heap.
-//   TODO: We're just calling malloc until the GC works again.
-static inline 
-addr_t  _alloc (size_t size)
-{       return (addr_t)malloc(size);
-}

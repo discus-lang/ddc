@@ -7,7 +7,30 @@
 #include <stdio.h>
 #include "Runtime.h"
 
+
 // Store Primops --------------------------------------------------------------
+extern addr_t _DDC_Runtime_heapTop;
+extern addr_t _DDC_Runtime_heapMax;
+
+
+// Create the initial store.
+static inline
+void    _CREATE (nat_t bytes)
+{
+        _DDC_Runtime_heapTop    = malloc (bytes);
+        _DDC_Runtime_heapMax    = _DDC_Runtime_heapTop + bytes;        
+}
+
+// Allocate some space in the store
+static inline 
+addr_t _ALLOC (nat_t bytes) 
+{       
+        addr_t obj              = _DDC_Runtime_heapTop;
+        _DDC_Runtime_heapTop    = _DDC_Runtime_heapTop + bytes;
+        return obj;
+}       
+
+// Get the size of a type.
 #define _SIZE(type)                     sizeof(type)
 
 // Read from a field of an Object.
@@ -30,28 +53,7 @@
 
 
 // Other primitives -----------------------------------------------------------
-// Show an integer.
-//   TODO: This should be defined in an external module.
-static inline
-string_t _showInt (int_t i)
-{       string_t str = malloc(32);
-        snprintf(str, 32, "%d", i);
-        return str;
-}
+extern string_t* showInt  (int i);
+extern void      putStr   (string_t* str);
+extern void      putStrLn (string_t* str);
 
-
-// Print a string to stdout.
-//   TODO: This should really be imported via the FFI.
-static inline
-void _putStr (string_t str)
-{       fputs(str, stdout);
-}
-
-
-// Print a string to stdout, with a newline.
-//   TODO: This should really be imported via the FFI.
-static inline
-void _putStrLn (string_t str)
-{       fputs(str,  stdout);
-        fputs("\n", stdout);
-}
