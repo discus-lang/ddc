@@ -3,7 +3,7 @@
 module DDC.Core.Llvm.Convert
         (convertModule)
 where
--- import DDC.Llvm.Transform.Clean
+import DDC.Llvm.Transform.Clean
 import DDC.Llvm.Module
 import DDC.Llvm.Function
 import DDC.Llvm.Instr
@@ -43,7 +43,7 @@ convertModule platform mm@(C.ModuleCore{})
         mm'   = evalState (Simp.applyTransform A.profile Env.empty Env.empty 
                                                Simp.Elaborate mm) 
                           state
-   in   evalState (convModuleM mm') state
+   in   clean $ evalState (convModuleM mm') state
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module
@@ -321,16 +321,19 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
          -- Assignment ------------------------------------
          -- Variable assigment from a case-expression.
-         C.XLet _ (C.LLet C.LetStrict b@(C.BName _ t) (C.XCase _ xScrut alts)) x2
+         C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) 
+                                        (C.XCase _ xScrut alts)) 
+                  x2
           -> do 
-                let t'  =  convType pp kenv t
+                let t'    = convType pp kenv t
+
+                -- Assign result of case to this variable.
+                let n'    = A.sanitizeName n
+                let vCont = Var (NameLocal n') t'
 
                 -- Label to jump to continue evaluating 'x1'
                 lCont   <- newUniqueLabel "cont"
-                vCont   <- newUniqueVar   t'
 
-
-                -- TODO: use nested context if nessesary
                 let context'    = BodyNest vCont lCont
                 blocksCase      <- convCaseM context' pp kenv tenv mdsup 
                                         label instrs xScrut alts
@@ -339,7 +342,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                 convBodyM context kenv tenv' mdsup
                         (blocks >< blocksCase) 
                         lCont
-                        Seq.empty       -- set result if in double nested context
+                        Seq.empty
                         x2
 
          -- Variable assignment from an expression.
@@ -558,7 +561,7 @@ convAlts (BodyNest vDst lCont)
         let tDst'       = typeOfVar vDst
 
         -- Label of the block that does the join.
-        lJoin   <- newUniqueLabel "join"
+        lJoin           <- newUniqueLabel "join"
 
         -- Convert all the alternatives,
         -- assiging their results into separate vars.
@@ -570,14 +573,16 @@ convAlts (BodyNest vDst lCont)
                         return (vDst', alt'))
                 $  alts
 
-
-        -- A Block to join the result from each alternative.
+        -- A block to join the result from each alternative.
+        --  Trying to keep track of which block a variable is defined in is 
+        --  too hard when we have nested join points. 
+        --  Instead, we set the label here to 'unknown' and fix this up in the
+        --  Clean transform.
         let blockJoin   
                 = Block lJoin
                 $ Seq.fromList $ map annotNil
-                [ IPhi vDst  [ (XVar vDstAlt, labelOfAltResult alt')
-                             | vDstAlt   <- vDstAlts
-                             | alt'      <- alts' ]
+                [ IPhi vDst  [ (XVar vDstAlt, Label "unknown")
+                             | vDstAlt   <- vDstAlts ]
                 , IBranch lCont ]
 
         return (alts', Seq.singleton blockJoin)
@@ -588,14 +593,6 @@ convAlts (BodyNest vDst lCont)
 data AltResult 
         = AltDefault        Label (Seq Block)
         | AltCase       Lit Label (Seq Block)
-
-
--- | Get the label of an `AltResult`.
-labelOfAltResult :: AltResult -> Label
-labelOfAltResult aa
- = case aa of
-        AltDefault l _          -> l
-        AltCase    _ l _        -> l
 
 
 -- | Convert a case alternative to LLVM.

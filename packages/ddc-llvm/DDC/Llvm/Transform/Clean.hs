@@ -14,53 +14,67 @@ import qualified Data.Map       as Map
 import qualified Data.Foldable  as Seq
 import qualified Data.Sequence  as Seq
 
+
 class Clean a where
  clean     :: a -> a
- clean  = cleanWith Map.empty
+ clean          = cleanWith Map.empty
 
  cleanWith :: Map Var Exp -> a -> a
 
 
 instance Clean Module where
  cleanWith binds mm
-  = mm  { modFuncs      = map (cleanWith binds) $ modFuncs mm }
+  = mm  { modFuncs      
+                = map (cleanWith binds)
+                $ modFuncs mm }
 
 
 instance Clean Function where
  cleanWith binds fun
-  = fun { funBlocks     = cleanBlocks binds [] $ funBlocks fun }
+  = fun { funBlocks     
+                = cleanBlocks binds Map.empty [] 
+                $ funBlocks fun }
 
 
 -- | Clean set instructions in some blocks.
 cleanBlocks 
-        :: Map Var Exp 
-        -> [Block] -> [Block] -> [Block]
+        :: Map Var Exp          -- ^ Map of variables to their values.
+        -> Map Var Label        -- ^ Map of variables to the label 
+                                --    of the block they were defined in.
+        -> [Block] 
+        -> [Block] 
+        -> [Block]
 
-cleanBlocks _binds acc []
+cleanBlocks _binds _defs acc []
         = reverse acc
 
-cleanBlocks binds acc (Block label instrs : bs) 
- = let  (binds', instrs2) 
-                = cleanInstrs binds [] 
+cleanBlocks binds defs acc (Block label instrs : bs) 
+ = let  (binds', defs', instrs2) 
+                = cleanInstrs label binds defs [] 
                 $ Seq.toList instrs
 
         instrs' = Seq.fromList instrs2
         block'  = Block label instrs'
 
-   in   cleanBlocks binds' (block' : acc) bs
+   in   cleanBlocks binds' defs' (block' : acc) bs
 
 
 -- | Clean set instructions in some instructions.
 cleanInstrs 
-        :: Map Var Exp 
-        -> [AnnotInstr] -> [AnnotInstr] -> (Map Var Exp, [AnnotInstr])
+        :: Label                -- ^ Label of the current block.
+        -> Map Var Exp          -- ^ Map of variables to their values.
+        -> Map Var Label        -- ^ Map of variables to the label
+                                --    of the block they were defined in.
+        -> [AnnotInstr] 
+        -> [AnnotInstr] 
+        -> (Map Var Exp, Map Var Label, [AnnotInstr])
 
-cleanInstrs binds acc []
-        = (binds, reverse acc)
+cleanInstrs _blockLabel binds defs acc []
+        = (binds, defs, reverse acc)
 
-cleanInstrs binds acc (ins@(AnnotInstr (i,annots)) : instrs)
-  = let next binds' acc' 
-                = cleanInstrs binds' acc' instrs
+cleanInstrs blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
+  = let next binds' defs' acc' 
+                = cleanInstrs blockLabel binds' defs' acc' instrs
         
         reAnnot i' = annotWith i' annots
 
@@ -72,22 +86,96 @@ cleanInstrs binds acc (ins@(AnnotInstr (i,annots)) : instrs)
                 _ -> xx
 
     in case i of
-        IComment{}              -> next binds (ins                                          : acc)        
-        ISet v x                -> next (Map.insert v x binds)                                acc        -- TODO: do occ check
-        INop                    -> next binds                                                 acc
-        IPhi v xls              -> next binds ((reAnnot $ IPhi v [(sub x, l) | (x, l) <- xls]) : acc)
-        IReturn Nothing         -> next binds (ins                                          : acc)
-        IReturn (Just x)        -> next binds ((reAnnot $ IReturn (Just (sub x)))           : acc)
-        IBranch{}               -> next binds (ins                                          : acc)
-        IBranchIf x l1 l2       -> next binds ((reAnnot $ IBranchIf (sub x) l1 l2)          : acc)
-        ISwitch x def alts      -> next binds ((reAnnot $ ISwitch   (sub x) def alts)       : acc)
-        IUnreachable            -> next binds (ins                                          : acc)
-        IOp    v op x1 x2       -> next binds ((reAnnot $ IOp   v op (sub x1) (sub x2))     : acc)
-        IConv  v c x            -> next binds ((reAnnot $ IConv v c (sub x))                : acc)
-        ILoad  v x              -> next binds ((reAnnot $ ILoad v   (sub x))                : acc)
-        IStore x1 x2            -> next binds ((reAnnot $ IStore    (sub x1) (sub x2))      : acc)
-        IICmp  v c x1 x2        -> next binds ((reAnnot $ IICmp v c (sub x1) (sub x2))      : acc)
-        IFCmp  v c x1 x2        -> next binds ((reAnnot $ IFCmp v c (sub x1) (sub x2))      : acc)
-        ICall  mv ct t n xs ats -> next binds ((reAnnot $ ICall mv ct t n (map sub xs) ats) : acc)
+        IComment{}              
+         -> next binds defs (ins : acc)        
+
+        -- The LLVM compiler doesn't support ISet instructions,                 -- TODO: do occ check
+        --  so we inline them into their use sites.
+        ISet v x                
+         -> let binds'  = Map.insert v x binds
+            in  next binds' defs acc
+
+        -- The LLVM compiler doesn't support INop instructions,
+        --  so we drop them out.         
+        INop
+         -> next binds defs acc
+
+        -- At phi nodes, drop out joins of the 'undef' value.
+        --  The converter adds these in rigtht before calling 'abort',
+        --  so we can never arrive from one of those blocks.
+        -- We also need to replace any 'unknown' labels with the
+        --  label of the block each variable was defined in.
+        IPhi v xls
+         -> let 
+                -- Don't merge undef expressions in phi nodes.
+                keepPair (XUndef _)  = False
+                keepPair _           = True
+
+                -- Lookup the lable of the block a variable was defined in.
+                getLabel x
+                 |  XVar v'      <- x
+                 ,  Just l       <- Map.lookup v' defs
+                 = l
+
+                 | otherwise    
+                 = error $ unlines
+                         [ "DDC.LLVM.Transform.Clean.cleanInstrs"
+                         , "  Can't find join label for " ++ show x ]
+
+                i'      = IPhi v [(sub x, getLabel x) 
+                                        | (x, _) <- xls 
+                                        , keepPair (sub x) ]
+
+                defs'   = Map.insert v blockLabel defs
+            in  next binds defs' $ (reAnnot i') : acc
+
+
+        IReturn Nothing
+         -> next binds defs $ ins                                       : acc
+
+        IReturn (Just x)
+         -> next binds defs $ (reAnnot $ IReturn (Just (sub x)))        : acc
+
+        IBranch{}
+         -> next binds defs $ ins                                       : acc
+
+        IBranchIf x l1 l2
+         -> next binds defs $ (reAnnot $ IBranchIf (sub x) l1 l2)       : acc
+
+        ISwitch x def alts
+         -> next binds defs $ (reAnnot $ ISwitch   (sub x) def alts)    : acc
+
+        IUnreachable
+         -> next binds defs $ ins                                       : acc
+
+        IOp    v op x1 x2
+         |  defs'        <- Map.insert v blockLabel defs
+         -> next binds defs' $ (reAnnot $ IOp   v op (sub x1) (sub x2))  : acc
+
+        IConv  v c x
+         |  defs'        <- Map.insert v blockLabel defs
+         -> next binds defs' $ (reAnnot $ IConv v c (sub x))             : acc
+
+        ILoad  v x
+         |  defs'        <- Map.insert v blockLabel defs
+         -> next binds defs' $ (reAnnot $ ILoad v   (sub x))             : acc
+
+        IStore x1 x2
+         -> next binds defs  $ (reAnnot $ IStore    (sub x1) (sub x2))   : acc
+
+        IICmp  v c x1 x2
+         |  defs'        <- Map.insert v blockLabel defs
+         -> next binds defs' $ (reAnnot $ IICmp v c (sub x1) (sub x2))   : acc
+
+        IFCmp  v c x1 x2
+         |  defs'        <- Map.insert v blockLabel defs
+         -> next binds defs' $ (reAnnot $ IFCmp v c (sub x1) (sub x2))   : acc
+
+        ICall  (Just v) ct t n xs ats
+         |  defs'        <- Map.insert v blockLabel defs
+         -> next binds defs' $ (reAnnot $ ICall (Just v) ct t n (map sub xs) ats) : acc
+
+        ICall  Nothing ct t n xs ats
+         -> next binds defs  $ (reAnnot $ ICall Nothing  ct t n (map sub xs) ats) : acc
 
 
