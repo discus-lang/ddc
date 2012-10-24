@@ -84,11 +84,11 @@ convModuleM mm@(C.ModuleCore{})
 
         -- Holds the pointer to the current top of the heap.
         --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop    = Var (NameGlobal "DDC.Runtime.heapTop") (tAddr platform)
+        let vHeapTop    = Var (NameGlobal "_DDC_Runtime_heapTop") (tAddr platform)
 
         -- Holds the pointer to the maximum heap.
         --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax    = Var (NameGlobal "DDC.Runtime.heapMax") (tAddr platform)
+        let vHeapMax    = Var (NameGlobal "_DDC_Runtime_heapMax") (tAddr platform)
 
         let rtsGlobals
                 | isMainModule
