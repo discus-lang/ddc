@@ -8,9 +8,13 @@ ok
 --      packs a RawSmall Object.
 Obj* boxInt (int_t i)
 {
-        Obj* x0          = allocRawSmall(0, 8);
-        Obj* x1          = payloadOfRawSmall(x0);
-        int_t* x2        = _CASTPTR(int_t, Obj, x1);
+        Obj* x0 = 0;
+        Obj* x1 = 0;
+        int_t* x2 = 0;
+
+        x0           = allocRawSmall(0, 8);
+        x1           = payloadOfRawSmall(x0);
+        x2           = _CASTPTR(int_t, Obj, x1);
         _POKE(int_t, x2, 0, i);
         return x0;
 }
@@ -21,11 +25,16 @@ Obj* boxInt (int_t i)
 --      unpacks a RawSmall Object.
 int_t unboxInt (Obj* x)
 {
-        tag_t x0         = getTag(x);
+        tag_t x0 = 0;
+        Obj* x1 = 0;
+        int_t* x2 = 0;
+        int_t i = 0;
+
+        x0           = getTag(x);
         if (x0 != 0) _fail();
-        Obj* x1          = payloadOfRawSmall(x);
-        int_t* x2        = _CASTPTR(int_t, Obj, x1);
-        int_t i          = _PEEK(int_t, x2, 0);
+        x1           = payloadOfRawSmall(x);
+        x2           = _CASTPTR(int_t, Obj, x1);
+        i            = _PEEK(int_t, x2, 0);
         return i;
 }
 
@@ -34,20 +43,33 @@ int_t unboxInt (Obj* x)
 -- Boxed addition
 Obj* addInt (Obj* x, Obj* y)
 {
-        tag_t x1         = getTag(x);
+        tag_t x1 = 0;
+        Obj* x2 = 0;
+        int_t* x3 = 0;
+        int_t i1 = 0;
+        tag_t x4 = 0;
+        Obj* x5 = 0;
+        int_t* x6 = 0;
+        int_t i2 = 0;
+        int_t x0 = 0;
+        Obj* x7 = 0;
+        Obj* x8 = 0;
+        int_t* x9 = 0;
+
+        x1           = getTag(x);
         if (x1 != 0) _fail();
-        Obj* x2          = payloadOfRawSmall(x);
-        int_t* x3        = _CASTPTR(int_t, Obj, x2);
-        int_t i1         = _PEEK(int_t, x3, 0);
-        tag_t x4         = getTag(y);
+        x2           = payloadOfRawSmall(x);
+        x3           = _CASTPTR(int_t, Obj, x2);
+        i1           = _PEEK(int_t, x3, 0);
+        x4           = getTag(y);
         if (x4 != 0) _fail();
-        Obj* x5          = payloadOfRawSmall(y);
-        int_t* x6        = _CASTPTR(int_t, Obj, x5);
-        int_t i2         = _PEEK(int_t, x6, 0);
-        int_t x0         = (i1 + i2);
-        Obj* x7          = allocRawSmall(0, 8);
-        Obj* x8          = payloadOfRawSmall(x7);
-        int_t* x9        = _CASTPTR(int_t, Obj, x8);
+        x5           = payloadOfRawSmall(y);
+        x6           = _CASTPTR(int_t, Obj, x5);
+        i2           = _PEEK(int_t, x6, 0);
+        x0           = (i1 + i2);
+        x7           = allocRawSmall(0, 8);
+        x8           = payloadOfRawSmall(x7);
+        x9           = _CASTPTR(int_t, Obj, x8);
         _POKE(int_t, x9, 0, x0);
         return x7;
 }
@@ -58,11 +80,16 @@ Obj* addInt (Obj* x, Obj* y)
 --      packs a Boxed objet.
 Obj* singleton (Obj* x)
 {
-        Obj* x1          = allocBoxed(0, 1);
-        Obj* x2          = allocBoxed(0, 0);
+        Obj* x1 = 0;
+        Obj* x2 = 0;
+        Obj* x0 = 0;
+        Obj* x3 = 0;
+
+        x1           = allocBoxed(0, 1);
+        x2           = allocBoxed(0, 0);
         setFieldOfBoxed (x1, 0, x2);
-        Obj* x0          = x1;
-        Obj* x3          = allocBoxed(1, 2);
+        x0           = x1;
+        x3           = allocBoxed(1, 2);
         setFieldOfBoxed (x3, 0, x);
         setFieldOfBoxed (x3, 1, x0);
         return x3;

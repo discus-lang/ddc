@@ -18,6 +18,8 @@ Fragment violation when converting Salt module to C code.
 -- Ok: Function finishes with a return statement.
 int_t foo (int_t x)
 {
+        
+
         return x;
 }
 
@@ -26,7 +28,9 @@ int_t foo (int_t x)
 -- Ok: Statements in function.
 int_t foo (int_t x)
 {
-        int_t y          = (x + x);
+        int_t y = 0;
+
+        y            = (x + x);
         return y;
 }
 
@@ -35,7 +39,9 @@ int_t foo (int_t x)
 -- Ok: Function explicitly fails.
 int_t foo (int_t x)
 {
-        int_t y          = (x + x);
+        int_t y = 0;
+
+        y            = (x + x);
         _fail();
 }
 
@@ -44,7 +50,9 @@ int_t foo (int_t x)
 -- Ok: assignment between variables.
 int_t foo (int_t x)
 {
-        int_t y          = x;
+        int_t y = 0;
+
+        y            = x;
         return y;
 }
 
@@ -53,7 +61,9 @@ int_t foo (int_t x)
 -- Ok: assignment from a literal.
 nat_t foo (nat_t x)
 {
-        nat_t y          = 5;
+        nat_t y = 0;
+
+        y            = 5;
         return y;
 }
 
