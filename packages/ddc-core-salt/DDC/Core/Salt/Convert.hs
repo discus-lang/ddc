@@ -282,11 +282,19 @@ convBlockM context kenv tenv xx
          | ContextTop      <- context
          -> case takeXPrimApps xx of
                 Just (NamePrim p, xs)
-                 | isControlPrim p
+                 |  isControlPrim p
                  -> convPrimCallM kenv tenv p xs
 
                 _ -> throw $ ErrorBodyMustPassControl xx
-        
+
+         -- If we're in a nested context but the primop we're 
+         -- calling doesn't return, and doesn't return a value,
+         -- then we can't assign it to the result var.
+         | ContextNest{}         <- context
+         , Just (NamePrim p, xs) <- takeXPrimApps xx
+         , isControlPrim p
+         -> convPrimCallM kenv tenv p xs
+
          -- In a nested context we assign the result value to the 
          -- provided variable.
          | ContextNest n t  <- context
@@ -348,7 +356,7 @@ convBlockM context kenv tenv xx
                 return  $ vcat
                         [ text "if"
                                 <+> parens (x' <+> text "!=" <+> n')
-                                <+> xFail' <> semi
+                                <+> text "else" <+> xFail' <> semi
                         , x1' ]
 
         -- Case-expression.
@@ -364,6 +372,7 @@ convBlockM context kenv tenv xx
                 return  $ vcat
                         [ text "if" <> parens x'
                         , lbrace <> indent 7 x1' <> semi <> line <> rbrace
+                        , text "else"
                         , lbrace <> indent 7 x2' <> semi <> line <> rbrace ]
 
         -- Case-expression.
