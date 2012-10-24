@@ -356,8 +356,11 @@ convAltM kenv tenv aa
  = case aa of
         AAlt PDefault x1 
          -> do  x1'     <- convBodyM kenv tenv x1
-                return  $ text "default:" <+> x1' <> semi
-
+                return  $ vcat
+                        [ text "default:" 
+                        , lbrace <> indent 5 (x1' <> semi)
+                                 <> line
+                                 <> rbrace]
 
         AAlt (PData dc []) x1
          | Just n       <- takeNameOfDaCon dc
