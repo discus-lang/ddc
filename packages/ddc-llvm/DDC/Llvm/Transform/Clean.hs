@@ -122,7 +122,7 @@ cleanInstrs blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
                          [ "DDC.LLVM.Transform.Clean.cleanInstrs"
                          , "  Can't find join label for " ++ show x ]
 
-                i'      = IPhi v [(sub x, getLabel x) 
+                i'      = IPhi v [(sub x, getLabel (sub x)) 
                                         | (x, _) <- xls 
                                         , keepPair (sub x) ]
 

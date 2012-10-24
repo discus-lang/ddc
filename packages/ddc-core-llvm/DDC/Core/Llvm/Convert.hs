@@ -3,7 +3,6 @@
 module DDC.Core.Llvm.Convert
         (convertModule)
 where
-import DDC.Llvm.Transform.Clean
 import DDC.Llvm.Module
 import DDC.Llvm.Function
 import DDC.Llvm.Instr
@@ -23,6 +22,7 @@ import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Simplifier    as Simp
+import qualified DDC.Llvm.Transform.Clean as Clean
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
@@ -38,12 +38,26 @@ import qualified Data.Foldable          as Seq
 -- | Convert a module to LLVM.
 convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
- = let  prims = primDeclsMap platform
-        state = llvmStateInit platform prims
-        mm'   = evalState (Simp.applyTransform A.profile Env.empty Env.empty 
-                                               Simp.Elaborate mm) 
+ = let  
+        prims   = primDeclsMap platform
+        state   = llvmStateInit platform prims
+
+        -- Add extra Const and Distinct witnesses where possible.
+        --  This helps us produce better LLVM metat data.
+        mmElab   = evalState (Simp.applyTransform A.profile Env.empty Env.empty 
+                                        Simp.Elaborate mm) 
                           state
-   in   clean $ evalState (convModuleM mm') state
+
+        -- Convert to LLVM.
+        --  The result contains ISet and INop meta instructions that need to be 
+        --  cleaned out. We also need to fixup the labels in IPhi instructions.
+        mmRaw    = evalState (convModuleM mmElab) state
+
+        -- Clean out the ISet and INop meta instructions, and fixup IPhis.
+        --  This gives us code that the LLVM compiler will accept directly.
+        mmClean  = Clean.clean mmRaw
+
+   in   mmClean
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module
