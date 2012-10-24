@@ -21,12 +21,13 @@ import DDC.Core.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Env                     (KindEnv, TypeEnv)
-import DDC.Core.Module
+import DDC.Core.Module                  as C
 import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
 import Control.Monad (ap)
 import qualified DDC.Type.Env           as Env
+import qualified Data.Map               as Map
 
 
 -- | Convert a Disciple Core Salt module to C-source text.
@@ -46,7 +47,7 @@ convModuleM :: Show a => Bool -> Module a Name -> ConvertM a Doc
 convModuleM withPrelude mm@(ModuleCore{})
  | ([LRec bxs], _) <- splitXLets $ moduleBody mm
  = do   
-        -- Top-level includes ---------------------------------------
+        -- Top-level includes ---------
         let cIncludes
                 | not withPrelude
                 = []
@@ -56,7 +57,13 @@ convModuleM withPrelude mm@(ModuleCore{})
                   , text "#include \"Primitive.h\""
                   , empty ]
 
-        -- RTS def --------------------------------------------------
+        -- Import external symbols ----
+        let nts = Map.elems $ C.moduleImportTypes mm
+        docs    <- mapM (uncurry $ convFunctionType Env.empty) nts
+        let cExterns
+                =  [ text "extern " <> doc <> semi | doc <- docs ]
+
+        -- RTS def --------------------
         -- If this is the main module then we need to declare
         -- the global RTS state.
         let cGlobals
@@ -77,7 +84,11 @@ convModuleM withPrelude mm@(ModuleCore{})
         cSupers <- mapM (uncurry (convSuperM Env.empty Env.empty)) bxs
 
         -- Pase everything together
-        return  $ vcat $ cIncludes ++ cGlobals ++ cSupers
+        return  $  vcat 
+                $  cIncludes 
+                ++ cExterns
+                ++ cGlobals 
+                ++ cSupers
 
  | otherwise
  = throw $ ErrorNoTopLevelLetrec mm
@@ -85,6 +96,7 @@ convModuleM withPrelude mm@(ModuleCore{})
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to C source text.
+--   This only handles non-function types.
 convTypeM :: KindEnv Name -> Type Name -> ConvertM a Doc
 convTypeM kenv tt
  = case tt of
@@ -101,11 +113,11 @@ convTypeM kenv tt
          , Just doc     <- convPrimTyCon tc
          -> return doc
 
-         | TCon (TyConBound (UPrim NameObjTyCon _) _)            <- tt
+         | TCon (TyConBound (UPrim NameObjTyCon _) _)   <- tt
          -> return  $ text "Obj"
 
         TApp{}
-         | Just (NamePrimTyCon PrimTyConPtr, [_, t2])    <- takePrimTyConApps tt
+         | Just (NamePrimTyCon PrimTyConPtr, [_, t2])   <- takePrimTyConApps tt
          -> do  t2'     <- convTypeM kenv t2
                 return  $ t2' <> text "*"
 
@@ -113,6 +125,30 @@ convTypeM kenv tt
           -> convTypeM (Env.extend b kenv) t
 
         _ -> throw $ ErrorTypeInvalid tt
+
+
+-- | Convert a Salt function type to a C source prototype.
+convFunctionType 
+        :: KindEnv  Name
+        -> QualName Name        -- ^ Function name.
+        -> Type     Name        -- ^ Function type.
+        -> ConvertM a Doc
+
+convFunctionType kenv nFunc tFunc
+ | TForall b t' <- tFunc
+ = convFunctionType (Env.extend b kenv) nFunc t'
+
+ | otherwise
+ = do   -- TODO: print the qualifier when we start using them.
+        let QualName _ n = nFunc        
+        let nFun'        = text $ sanitizeName (renderPlain $ ppr n)
+
+        let (tsArgs, tResult) = takeTFunArgResult tFunc
+
+        tsArgs'          <- mapM (convTypeM kenv) tsArgs
+        tResult'         <- convTypeM kenv tResult
+
+        return $ tResult' <+> nFun' <+> parenss tsArgs'
 
 
 -- Super definition -----------------------------------------------------------
@@ -129,12 +165,17 @@ convSuperM     kenv0 tenv0 bTop xx
  = convSuperM' kenv0 tenv0 bTop [] xx
 
 convSuperM' kenv tenv bTop bsParam xx
+ -- Enter into type abstractions,
+ --  adding the bound name to the environment.
  | XLAM _ b x   <- xx
  = convSuperM' (Env.extend b kenv) tenv bTop bsParam x
 
+ -- Enter into value abstractions,
+ --  remembering that we're now in a function that has this parameter.
  | XLam _ b x   <- xx
  = convSuperM' kenv (Env.extend b tenv) bTop (bsParam ++ [b]) x
 
+ -- Convert the function body.
  | BName (NameVar nTop) tTop <- bTop
  = do   
         let nTop'        = text $ sanitizeName nTop
@@ -164,6 +205,7 @@ eraseWitArg tt
         TApp _ t2
          | Just (NamePrimTyCon PrimTyConPtr, _) <- takePrimTyConApps tt -> tt
          | otherwise -> eraseWitArg t2
+
         -- Pass through all other types
         _ -> tt
 
@@ -225,7 +267,7 @@ convBodyM kenv tenv xx
                         , x2' ]
 
         -- Non-binding statement.
-        -- These are only permitted to return Void#.
+        --  We just drop any returned value on the floor.
         XLet _ (LLet LetStrict (BNone _) x1) x2
          -> do  x1'     <- convStmtM kenv tenv x1
                 x2'     <- convBodyM kenv tenv x2
@@ -283,6 +325,7 @@ convBodyM kenv tenv xx
                         , rbrace ]
 
         _ -> throw $ ErrorBodyInvalid xx
+
 
 -- | Check whether this primop passes control.
 isControlPrim :: Prim -> Bool
