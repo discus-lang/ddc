@@ -17,7 +17,6 @@ import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
 import DDC.Core.Compounds
-import DDC.Core.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Env                     (KindEnv, TypeEnv)
@@ -25,7 +24,6 @@ import DDC.Core.Module                  as C
 import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
-import Control.Monad (ap)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
 
@@ -428,10 +426,11 @@ convRValueM kenv tenv xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
 
-                -- Ditch region and witness arguments
-                let args_val = filter (and . ap [not . isXType, not . isXWitness] . return) args
-                args_val'    <- mapM (convRValueM kenv tenv) args_val
-                return  $ text nTop' <> parenss args_val'
+                -- Ditch type and witness arguments
+                args'   <- mapM (convRValueM kenv tenv) 
+                        $  filter keepFunArgX args
+
+                return  $ text nTop' <> parenss args'
 
         -- Type argument.
         XType t
@@ -439,6 +438,15 @@ convRValueM kenv tenv xx
                 return  $ t'
 
         _ -> throw $ ErrorRValueInvalid xx
+
+
+-- | We don't need to pass types and witnesses to top-level supers.
+keepFunArgX :: Exp a n -> Bool
+keepFunArgX xx
+ = case xx of
+        XType{}         -> False
+        XWitness{}      -> False
+        _               -> True
 
 
 -- Stmt -----------------------------------------------------------------------
@@ -462,9 +470,11 @@ convStmtM kenv tenv xx
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop'       = sanitizeName nTop
-                let args_val    = filter keepArgX args
-                args_val'       <- mapM (convRValueM kenv tenv) args_val
-                return  $ text nTop' <+> parenss args_val'
+
+                args'           <- mapM (convRValueM kenv tenv)
+                                $  filter keepFunArgX args
+
+                return  $ text nTop' <+> parenss args'
 
         _ -> throw $ ErrorStmtInvalid xx
 
