@@ -29,6 +29,7 @@ void    _CREATE (nat_t bytes)
         _DDC_Runtime_heapMax    = _DDC_Runtime_heapTop + bytes;        
 }
 
+
 // Allocate some space in the store
 static inline 
 addr_t _ALLOC (nat_t bytes) 
@@ -37,6 +38,16 @@ addr_t _ALLOC (nat_t bytes)
         _DDC_Runtime_heapTop    = _DDC_Runtime_heapTop + bytes;
         return obj;
 }       
+
+
+// Check whether there is enough space on the heap to allocate 
+//  an object of the given size in bytes.
+static inline
+bool_t  _CHECK (nat_t bytes)
+{
+        return (_DDC_Runtime_heapTop + bytes < _DDC_Runtime_heapMax);
+}
+
 
 // Get the size of a type.
 #define _SIZE(type)                     sizeof(type)
