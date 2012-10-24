@@ -16,6 +16,7 @@ where
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
+import DDC.Core.Collect
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -26,6 +27,8 @@ import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
+import Control.Monad
+import Data.Maybe
 
 
 -- | Convert a Disciple Core Salt module to C-source text.
@@ -180,10 +183,20 @@ convSuperM' kenv tenv bTop bsParam xx
  -- Convert the function body.
  | BName (NameVar nTop) tTop <- bTop
  = do   
+
+        -- Convert the function name.
         let nTop'        = text $ sanitizeName nTop
         let (_, tResult) = takeTFunArgResult $ eraseTForalls tTop 
+
+        -- Convert function parameters.
         bsParam'        <- mapM (convBind kenv tenv) $ filter keepBind bsParam
-        tResult'        <- convTypeM kenv $ eraseWitArg tResult
+
+        -- Convert result type.
+        tResult'        <- convTypeM kenv  $ eraseWitArg tResult
+
+        -- Emit variable definitions for all the value binders in the code.
+        let (_, bsVal)  = collectBinds xx
+        dsVal           <- liftM catMaybes $ mapM (makeVarDecl kenv) bsVal
 
         -- Convert the body of the function.
         --  We pass in ContextTop to say we're at the top-level
@@ -192,16 +205,33 @@ convSuperM' kenv tenv bTop bsParam xx
         xBody'          <- convBlockM ContextTop kenv tenv xx
 
         return  $ vcat
-                [ tResult'
+                [ tResult'                        -- Function header.
                          <+> nTop'
                          <+> parenss bsParam'
-                , lbrace <> line
-                         <> indent 8 (xBody' <> semi) <> line
-                         <> rbrace
-                         <> line ]
+                , lbrace
+                ,       indent 8 $ vcat dsVal     -- Variable declarations.
+                ,       empty
+                ,       indent 8 (xBody' <> semi) -- Function body.
+                ,       rbrace
+                , empty]
         
  | otherwise    
  = throw $ ErrorFunctionInvalid xx
+
+
+-- | Make a variable declaration for this binder.
+makeVarDecl :: KindEnv Name -> Bind Name -> ConvertM a (Maybe Doc)
+makeVarDecl kenv bb
+ = case bb of
+        BNone{} 
+         -> return Nothing
+
+        BName (NameVar n) t
+         -> do  t'      <- convTypeM kenv t
+                let n'  = text $ sanitizeName n
+                return  $ Just (t' <+> n' <+> equals <+> text "0" <> semi)
+
+        _ -> throw $ ErrorParameterInvalid bb
 
 
 -- | Remove witness arguments from the return type
@@ -297,12 +327,11 @@ convBlockM context kenv tenv xx
 
          -- In a nested context we assign the result value to the 
          -- provided variable.
-         | ContextNest n t  <- context
-         -> do  t'      <- convTypeM   kenv t
-                xx'     <- convRValueM kenv tenv xx
+         | ContextNest n _  <- context
+         -> do  xx'     <- convRValueM kenv tenv xx
                 let n'  = text $ sanitizeName $ renderPlain $ ppr n
                 return  $ vcat 
-                       [ fill 16 (t' <+> n') <+> equals <+> xx' <> semi ]
+                       [ fill 12 n' <+> equals <+> xx' <> semi ]
 
         -- Binding from a case-expression.
         -- TODO: handle assignment to none binder.
@@ -317,14 +346,13 @@ convBlockM context kenv tenv xx
                         , x2' ]
 
         -- Variable assignment from an r-value.
-        XLet _ (LLet LetStrict (BName (NameVar n) t) x1) x2
-         -> do  t'      <- convTypeM   kenv t
-                x1'     <- convRValueM kenv tenv x1
+        XLet _ (LLet LetStrict (BName (NameVar n) _) x1) x2
+         -> do  x1'     <- convRValueM kenv tenv x1
                 x2'     <- convBlockM  context kenv tenv x2
                 let n'  = text $ sanitizeName n
 
                 return  $ vcat
-                        [ fill 16 (t' <+> n') <+> equals <+> x1' <> semi
+                        [ fill 12 n' <+> equals <+> x1' <> semi
                         , x2' ]
 
         -- Non-binding statement.
