@@ -1,6 +1,6 @@
 -- Check for fragment violations.
 -- The errors come from the Salt -> C or Salt -> LLVM conversion.
-:set +Indent
+:set +SuppressImports
 :set lang Salt
 
 

@@ -36,44 +36,48 @@ convertModule
         -> Module a Name        -- ^ Module to convert.
         -> Either (Error a) Doc
 
-convertModule addIncludes mm
- = result $ convModuleM addIncludes mm
+convertModule withPrelude mm
+ = result $ convModuleM withPrelude mm
 
 
 -- Module ---------------------------------------------------------------------
 -- | Convert a Salt module to C source text.
 convModuleM :: Show a => Bool -> Module a Name -> ConvertM a Doc
-convModuleM addIncludes mm@(ModuleCore{})
+convModuleM withPrelude mm@(ModuleCore{})
  | ([LRec bxs], _) <- splitXLets $ moduleBody mm
  = do   
         -- Top-level includes ---------------------------------------
         let cIncludes
-                | addIncludes
-                = vcat  [ text "#include \"Runtime.h\""
-                        , text "#include \"Primitive.h\"" ]
+                | not withPrelude
+                = []
 
-                | otherwise = empty
+                | otherwise
+                = [ text "#include \"Runtime.h\""
+                  , text "#include \"Primitive.h\""
+                  , empty ]
 
         -- RTS def --------------------------------------------------
         -- If this is the main module then we need to declare
         -- the global RTS state.
         let cGlobals
+                | not withPrelude
+                = []
+
                 | isMainModule mm
-                = vcat [ text "addr_t _DDC_Runtime_heapTop = 0;"
-                       , text "addr_t _DDC_Runtime_heapMax = 0;" ]
+                = [ text "addr_t _DDC_Runtime_heapTop = 0;"
+                  , text "addr_t _DDC_Runtime_heapMax = 0;"
+                  , empty ]
 
                 | otherwise
-                = vcat [ text "extern addr_t _DDC_Runtime_heapTop;"
-                       , text "extern addr_t _DDC_Runtime_heapMax;" ]
+                = [ text "extern addr_t _DDC_Runtime_heapTop;"
+                  , text "extern addr_t _DDC_Runtime_heapMax;"
+                  , empty ]
 
         -- Super-combinator definitions.
         cSupers <- mapM (uncurry (convSuperM Env.empty Env.empty)) bxs
 
         -- Pase everything together
-        return  $ vcat
-                [ cIncludes,    empty
-                , cGlobals,     empty
-                , vcat cSupers, empty ]
+        return  $ vcat $ cIncludes ++ cGlobals ++ cSupers
 
  | otherwise
  = throw $ ErrorNoTopLevelLetrec mm
