@@ -384,7 +384,7 @@ convBlockM context kenv tenv xx
                 return  $ vcat
                         [ text "if"
                                 <+> parens (x' <+> text "!=" <+> n')
-                                <+> text "else" <+> xFail' <> semi
+                                <+> xFail' <> semi
                         , x1' ]
 
         -- Case-expression.
