@@ -184,7 +184,12 @@ convSuperM' kenv tenv bTop bsParam xx
         let (_, tResult) = takeTFunArgResult $ eraseTForalls tTop 
         bsParam'        <- mapM (convBind kenv tenv) $ filter keepBind bsParam
         tResult'        <- convTypeM kenv $ eraseWitArg tResult
-        xBody'          <- convBodyM kenv tenv xx
+
+        -- Convert the body of the function.
+        --  We pass in ContextTop to say we're at the top-level
+        --  of the function, so the block must explicitly pass
+        --  control in the final statement.
+        xBody'          <- convBlockM ContextTop kenv tenv xx
 
         return  $ vcat
                 [ tResult'
@@ -238,30 +243,76 @@ convBind kenv _tenv b
         _       -> throw $ ErrorParameterInvalid b
 
 
--- Super body -----------------------------------------------------------------
--- | Convert a super body to C source text.
-convBodyM 
-        :: Show a 
-        => KindEnv Name
+-- Blocks ---------------------------------------------------------------------
+-- | What context we're doing this conversion in.
+data Context
+        -- | Conversion at the top-level of a function.
+        --   The expresison being converted must eventually pass control.
+        = ContextTop
+
+        -- | In a nested context, like in the right of a let-binding.
+        --   The expression should produce a value that we assign to this
+        --   variable.
+        | ContextNest Name (Type Name)          -- TODO change this to a BIND 
+                                                -- to handle nothing binders.
+        deriving Show
+
+
+-- | Convert an expression to a block of statements.
+--
+--   If this expression defines a top-level function then the block
+--     must end with a control transfer primop like return# or tailcall#.
+--    
+--   The `Context` tells us what do do when we get to the end of the block.
+--
+convBlockM 
+        :: Show a
+        => Context
+        -> KindEnv Name
         -> TypeEnv Name
         -> Exp a Name
         -> ConvertM a Doc
 
-convBodyM kenv tenv xx
+convBlockM context kenv tenv xx
  = case xx of
 
-        -- End of function body must explicitly pass control.
         XApp{}
+         -- If we're at the top-level of a function body then the 
+         -- last statement must explicitly pass control.
+         | ContextTop      <- context
          -> case takeXPrimApps xx of
-             Just (NamePrim p, xs)
-              | isControlPrim p -> convPrimCallM kenv tenv p xs
-             _                  -> throw $ ErrorBodyMustPassControl xx
+                Just (NamePrim p, xs)
+                 | isControlPrim p
+                 -> convPrimCallM kenv tenv p xs
 
-        -- Variable assignment.
+                _ -> throw $ ErrorBodyMustPassControl xx
+        
+         -- In a nested context we assign the result value to the 
+         -- provided variable.
+         | ContextNest n t  <- context
+         -> do  t'      <- convTypeM   kenv t
+                xx'     <- convRValueM kenv tenv xx
+                let n'  = text $ sanitizeName $ renderPlain $ ppr n
+                return  $ vcat 
+                       [ fill 16 (t' <+> n') <+> equals <+> xx' <> semi ]
+
+        -- Binding from a case-expression.
+        -- TODO: handle assignment to none binder.
+        XLet _ (LLet LetStrict b@(BName n t) x1@XCase{}) x2
+         -> do  x1'     <- convBlockM (ContextNest n t) kenv tenv x1
+
+                let tenv' = Env.extend b tenv 
+                x2'     <- convBlockM context         kenv tenv' x2
+
+                return  $ vcat
+                        [ x1' <> semi
+                        , x2' ]
+
+        -- Variable assignment from an r-value.
         XLet _ (LLet LetStrict (BName (NameVar n) t) x1) x2
          -> do  t'      <- convTypeM   kenv t
                 x1'     <- convRValueM kenv tenv x1
-                x2'     <- convBodyM   kenv tenv x2
+                x2'     <- convBlockM  context kenv tenv x2
                 let n'  = text $ sanitizeName n
 
                 return  $ vcat
@@ -271,8 +322,8 @@ convBodyM kenv tenv xx
         -- Non-binding statement.
         --  We just drop any returned value on the floor.
         XLet _ (LLet LetStrict (BNone _) x1) x2
-         -> do  x1'     <- convStmtM kenv tenv x1
-                x2'     <- convBodyM kenv tenv x2
+         -> do  x1'     <- convStmtM  context kenv tenv x1
+                x2'     <- convBlockM context kenv tenv x2
 
                 return  $ vcat
                         [ x1' <> semi
@@ -280,7 +331,7 @@ convBodyM kenv tenv xx
 
         -- Throw out letregion expressions.
         XLet _ (LLetRegions _ _) x
-         -> convBodyM kenv tenv x
+         -> convBlockM context kenv tenv x
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
@@ -291,8 +342,8 @@ convBodyM kenv tenv xx
          , Just n'      <- convDaConName n
          -> do  
                 x'      <- convRValueM kenv tenv x
-                x1'     <- convBodyM   kenv tenv x1
-                xFail'  <- convBodyM   kenv tenv xFail
+                x1'     <- convBlockM  context kenv tenv x1
+                xFail'  <- convBlockM  context kenv tenv xFail
 
                 return  $ vcat
                         [ text "if"
@@ -307,8 +358,8 @@ convBodyM kenv tenv xx
          | Just (NameBool True)  <- takeNameOfDaCon dc1
          , Just (NameBool False) <- takeNameOfDaCon dc2
          -> do  x'      <- convRValueM kenv tenv x
-                x1'     <- convBodyM   kenv tenv x1
-                x2'     <- convBodyM   kenv tenv x2
+                x1'     <- convBlockM context kenv tenv x1
+                x2'     <- convBlockM context kenv tenv x2
 
                 return  $ vcat
                         [ text "if" <> parens x'
@@ -319,7 +370,7 @@ convBodyM kenv tenv xx
         --   In the general case we use the C-switch statement.
         XCase _ x alts
          -> do  x'      <- convRValueM kenv tenv x
-                alts'   <- mapM (convAltM kenv tenv) alts
+                alts'   <- mapM (convAltM context kenv tenv) alts
 
                 return  $ vcat
                         [ text "switch" <+> parens x'
@@ -347,15 +398,16 @@ isFailX _ = False
 -- | Convert a case alternative to C source text.
 convAltM 
         :: Show a 
-        => KindEnv Name
+        => Context
+        -> KindEnv Name
         -> TypeEnv Name
         -> Alt a Name 
         -> ConvertM a Doc
 
-convAltM kenv tenv aa
+convAltM context kenv tenv aa
  = case aa of
         AAlt PDefault x1 
-         -> do  x1'     <- convBodyM kenv tenv x1
+         -> do  x1'     <- convBlockM context kenv tenv x1
                 return  $ vcat
                         [ text "default:" 
                         , lbrace <> indent 5 (x1' <> semi)
@@ -365,7 +417,7 @@ convAltM kenv tenv aa
         AAlt (PData dc []) x1
          | Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
-         -> do  x1'     <- convBodyM kenv tenv x1
+         -> do  x1'     <- convBlockM context kenv tenv x1
                 return  $ vcat
                         [ text "case" <+> n' <> colon
                         , lbrace <> indent 5 (x1' <> semi)
@@ -392,6 +444,37 @@ convDaConName nn
         NameTag i       -> Just $ integer i
 
         _               -> Nothing
+
+
+-- Stmt -----------------------------------------------------------------------
+-- | Convert an effectful statement to C source text.
+convStmtM 
+        :: Show a 
+        => Context
+        -> KindEnv Name
+        -> TypeEnv Name 
+        -> Exp a Name 
+        -> ConvertM a Doc
+
+convStmtM _context kenv tenv xx
+ = case xx of
+        -- Primop application.
+        XApp{}
+          |  Just (NamePrim p, xs) <- takeXPrimApps xx
+          -> convPrimCallM kenv tenv p xs
+
+        -- Super application.
+        XApp{}
+         |  Just (XVar _ (UName n), args)  <- takeXApps xx
+         ,  NameVar nTop <- n
+         -> do  let nTop'       = sanitizeName nTop
+
+                args'           <- mapM (convRValueM kenv tenv)
+                                $  filter keepFunArgX args
+
+                return  $ text nTop' <+> parenss args'
+
+        _ -> throw $ ErrorStmtInvalid xx
 
 
 -- RValue ---------------------------------------------------------------------
@@ -454,36 +537,6 @@ keepFunArgX xx
         XType{}         -> False
         XWitness{}      -> False
         _               -> True
-
-
--- Stmt -----------------------------------------------------------------------
--- | Convert an effectful statement to C source text.
-convStmtM 
-        :: Show a 
-        => KindEnv Name
-        -> TypeEnv Name 
-        -> Exp a Name 
-        -> ConvertM a Doc
-
-convStmtM kenv tenv xx
- = case xx of
-        -- Primop application.
-        XApp{}
-          |  Just (NamePrim p, xs) <- takeXPrimApps xx
-          -> convPrimCallM kenv tenv p xs
-
-        -- Super application.
-        XApp{}
-         |  Just (XVar _ (UName n), args)  <- takeXApps xx
-         ,  NameVar nTop <- n
-         -> do  let nTop'       = sanitizeName nTop
-
-                args'           <- mapM (convRValueM kenv tenv)
-                                $  filter keepFunArgX args
-
-                return  $ text nTop' <+> parenss args'
-
-        _ -> throw $ ErrorStmtInvalid xx
 
 
 -- PrimCalls ------------------------------------------------------------------
