@@ -47,9 +47,9 @@ totalwar : allWithConfig
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
-		+compway std \
-		+compway opt  -O \
-		+compway llvm -O -fvia-llvm
+		+compway viac  -fvia-c \
+		+compway llvm  -fvia-llvm \
+		+compway llvmo -fvia-llvm -O
 	@echo
 
 
@@ -63,9 +63,9 @@ batchwar : allWithConfig
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
-		+compway std \
-		+compway opt -O \
-		+compway llvm -O -fvia-llvm
+		+compway viac  -fvia-c \
+		+compway llvm  -fvia-llvm \
+		+compway llvmo -fvia-llvm -O
 	@echo
 
 

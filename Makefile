@@ -18,11 +18,10 @@
 #
 #   (Running just the quickcheck and regression tests)
 #	war		-- run the minimal testing required before pushing patches (interactive)
-#	cwar		-- C backend only version of the 'war' target, (interactive)
 #	llvmwar		-- llvm backend only version of the 'war' target, (interactive)
-#       logwar          -- same as above, logging failures to war.failed  (non-interative)
 #       totalwar        -- run tests in all possible ways                 (slow, interactive)
-#       totallogwar     -- same as above, logging failures to war.failed  (slow, non-interative)
+#       logwar          -- same as above, logging failures to war.failed  (non-interative)
+#       batchwar        -- run all tests in all ways                      (slow, non-interactive)
 #
 #   (Running code quality tools)
 #	hlint		-- run hlint
