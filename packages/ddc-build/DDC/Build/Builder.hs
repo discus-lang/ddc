@@ -245,8 +245,8 @@ builder_X8632_Linux config
 builder_X8664_Linux config
  =      Builder
         { builderName   = "x86_64-linux"
-        , buildHost     = Platform ArchX86_32 OsLinux
-        , buildTarget   = Platform ArchX86_32 OsLinux
+        , buildHost     = Platform ArchX86_64 OsLinux
+        , buildTarget   = Platform ArchX86_64 OsLinux
         , buildSpec     = Llvm.platform64
 
         , buildLlc    
