@@ -74,7 +74,8 @@ batchwar : allWithConfig
 cleanWar :
 	@echo "* Cleaning war"
 	@find test \
-			-name "*.dump-*"  \
+			-name "*.dump-*" \
+                -o      -name "dump.*" \
 		-o	-name "*.graph-*.dot" \
 		-o	-name "*.hi"    \
 		-o	-name "build.mk" \
