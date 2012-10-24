@@ -14,6 +14,7 @@ module DDC.Type.Env
         , extend,       extends
         , setPrimFun,   isPrim
         , fromList
+        , fromTypeMap
         , union
         , member,       memberBind
         , lookup,       lookupName
@@ -98,6 +99,12 @@ isPrim env n
 fromList :: Ord n => [Bind n] -> Env n
 fromList bs
         = foldr extend empty bs
+
+
+-- | Convert a map of names to types to a environment.
+fromTypeMap :: Map n (Type n) -> Env n
+fromTypeMap m
+        = empty { envMap = m}
 
 
 -- | Combine two environments.

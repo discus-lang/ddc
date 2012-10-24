@@ -86,7 +86,9 @@ convModuleM withPrelude mm@(ModuleCore{})
                   , empty ]
 
         -- Super-combinator definitions.
-        cSupers <- mapM (uncurry (convSuperM Env.empty Env.empty)) bxs
+        let kenv = Env.fromTypeMap $ Map.map snd $ moduleImportKinds mm
+        let tenv = Env.fromTypeMap $ Map.map snd $ moduleImportTypes mm
+        cSupers <- mapM (uncurry (convSuperM kenv tenv)) bxs
 
         -- Pase everything together
         return  $  vcat 
@@ -107,10 +109,14 @@ convTypeM kenv tt
  = case tt of
         TVar u
          -> case Env.lookup u kenv of
-             Nothing            -> error $ "Type variable not in kind environment." ++ show u
+             Nothing            
+              -> error $ "convertTypeM Type variable not in kind environment." ++ show u
+
              Just k
-              | isDataKind k    -> return $ text "Obj*"
-              | otherwise       -> error "Invalid type variable."
+              | isDataKind k -> return $ text "Obj*"
+              | otherwise    
+              -> error $  "convertTypeM: Invalid type variable." 
+                       ++ show (u, Env.envMap kenv)
 
         TCon{}
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
@@ -365,9 +371,11 @@ convBlockM context kenv tenv xx
                         [ x1' <> semi
                         , x2' ]
 
-        -- Throw out letregion expressions.
-        XLet _ (LLetRegions _ _) x
-         -> convBlockM context kenv tenv x
+        -- Ditch letregions.
+        XLet _ (LLetRegions bs ws) x
+         -> let kenv'   = Env.extends bs kenv
+                tenv'   = Env.extends ws tenv
+            in  convBlockM context kenv' tenv' x
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
@@ -413,6 +421,10 @@ convBlockM context kenv tenv xx
                         [ text "switch" <+> parens x'
                         , lbrace <> indent 1 (vcat alts')
                         , rbrace ]
+
+        -- Ditch casts.
+        XCast _ _ x
+         -> convBlockM context kenv tenv x
 
         _ -> throw $ ErrorBodyInvalid xx
 
@@ -493,7 +505,7 @@ convStmtM
         -> Exp a Name 
         -> ConvertM a Doc
 
-convStmtM _context kenv tenv xx
+convStmtM context kenv tenv xx
  = case xx of
         -- Primop application.
         XApp{}
@@ -510,6 +522,10 @@ convStmtM _context kenv tenv xx
                                 $  filter keepFunArgX args
 
                 return  $ text nTop' <+> parenss args'
+
+        -- Ditch casts.
+        XCast _ _ x
+         -> convStmtM context kenv tenv x
 
         _ -> throw $ ErrorStmtInvalid xx
 
@@ -563,6 +579,10 @@ convRValueM kenv tenv xx
         XType t
          -> do  t'      <- convTypeM kenv t
                 return  $ t'
+
+        -- Ditch casts.
+        XCast _ _ x
+         -> convRValueM kenv tenv x
 
         _ -> throw $ ErrorRValueInvalid xx
 
@@ -627,8 +647,8 @@ convPrimCallM kenv tenv p xs
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM (convRValueM kenv tenv)
-                        $  filter keepArgX xs
+                xs'     <- mapM (convRValueM kenv tenv) 
+                        $  filter (keepArgX kenv) xs
                 return  $ op' <> parenss xs'
 
 
@@ -636,18 +656,21 @@ convPrimCallM kenv tenv p xs
         PrimExternal op 
          -> do  let op' = convPrimExternal op
                 xs'     <- mapM (convRValueM kenv tenv) 
-                        $  filter keepArgX xs
+                        $  filter (keepArgX kenv) xs
                 return  $ op' <> parenss xs'
 
         _ -> throw $ ErrorPrimCallInvalid p xs
 
 
 -- | Throw away region arguments.
-keepArgX :: Exp a n -> Bool
-keepArgX xx
+keepArgX :: KindEnv Name -> Exp a Name -> Bool
+keepArgX kenv xx
  = case xx of
-        XType (TVar _)  -> False
-        _               -> True
+        XType (TVar u)
+         |  Just k       <- Env.lookup u kenv
+         -> isDataKind k 
+
+        _ -> True
 
 
 parenss :: [Doc] -> Doc

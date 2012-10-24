@@ -50,28 +50,55 @@ bool_t  _CHECK (nat_t bytes)
 
 
 // Get the size of a type.
-#define _SIZE(type)                     sizeof(type)
+#define _SIZE(type) \
+        sizeof(type)
+
+
+// Get the log2 of the size of a type.
+#define _SIZE2(type) \
+         (sizeof(unsigned int) * 8 - __builtin_clz (sizeof(type)))
+
 
 // Read from a field of an Object.
 //   We use an explicit macro to make it easier to see what is happening in
 //   the generated code.
-#define _READ(type,addr,offset)         (*((type *)(addr + offset)))
+#define _READ(type,addr,offset) \
+        (*((type *)(addr + offset)))
+
 
 // Write to a field of an Object.
 //   We use an explicit macro to make it easier to see what is happening in
 //   the generated code.
-#define _WRITE(type,addr,offset,val)    ((*((type *)(addr + offset))) = val)
+#define _WRITE(type,addr,offset,val) \
+        ((*((type *)(addr + offset))) = val)
+
+
+// Add two addresses.
+#define _PLUSADDR(addr,offset) \
+        (addr + offset)
+
 
 // Read from a pointer plus an offset in bytes.
-#define _PEEK(type,ptr,offset)          (*(type *)(((uint8_t *) ptr) + offset))
+#define _PEEK(type,ptr,offset) \
+        (*(type *)(((uint8_t *) ptr) + offset))
+
 
 // Write to a pointer plus an offset in bytes.
-#define _POKE(type,ptr,offset,val)      (*((type *)( ((uint8_t*)ptr) + offset)) = val)
+#define _POKE(type,ptr,offset,val) \
+        (*((type *)( ((uint8_t*)ptr) + offset)) = val)
+
 
 // Pointer to address conversions.
-#define _MAKEPTR(type,addr)             ((type *)addr)
-#define _TAKEPTR(type,ptr)              ((addr_t)ptr)
-#define _CASTPTR(dstType,srcType,ptr)   ((dstType*)ptr)
+#define _MAKEPTR(type,addr) \
+        ((type *)addr)
+
+
+#define _TAKEPTR(type,ptr) \
+        ((addr_t)ptr)
+
+
+#define _CASTPTR(dstType,srcType,ptr) \
+        ((dstType*)ptr)
 
 
 // Other primitives -----------------------------------------------------------
@@ -80,3 +107,4 @@ extern string_t* showInt  (int   i);
 extern string_t* showNat  (nat_t i);
 extern void      putStr   (string_t* str);
 extern void      putStrLn (string_t* str);
+
