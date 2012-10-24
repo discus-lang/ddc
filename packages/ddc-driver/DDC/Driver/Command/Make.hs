@@ -30,22 +30,27 @@ cmdMake config filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageLiteLoad     config source
                 [ stageLiteOpt      config source  
-                [ stageLiteToSalt   config source 
-                [ stageSaltOpt      config source
-                [ stageSaltToLLVM   config source 
-                [ stageCompileLLVM  config source filePath True ]]]]]
+                [ stageLiteToSalt   config source pipesSalt ]]
 
                 -- Make a Core Salt module.
                 | isSuffixOf ".dce" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  fragmentSalt 
-                [ stageSaltOpt      config source
-                [ stageSaltToLLVM   config source 
-                [ stageCompileLLVM  config source filePath True ]]]
+                $ PipeTextLoadCore  fragmentSalt pipesSalt
 
                 -- Unrecognised.
                 | otherwise
                 = error $ "Don't know how to make " ++ filePath
+
+            pipesSalt
+             = case configViaBackend config of
+                ViaLLVM
+                 -> [ stageSaltOpt      config source
+                    [ stageSaltToLLVM   config source 
+                    [ stageCompileLLVM  config source filePath False ]]]
+
+                ViaC
+                 -> [ stageSaltOpt      config source
+                    [ stageCompileSalt  config source filePath False ]]
 
         -- Print any errors that arose during compilation.
         errs    <- make
