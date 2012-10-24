@@ -46,11 +46,11 @@ cmdMake config filePath
                 ViaLLVM
                  -> [ stageSaltOpt      config source
                     [ stageSaltToLLVM   config source 
-                    [ stageCompileLLVM  config source filePath False ]]]
+                    [ stageCompileLLVM  config source filePath True ]]]
 
                 ViaC
                  -> [ stageSaltOpt      config source
-                    [ stageCompileSalt  config source filePath False ]]
+                    [ stageCompileSalt  config source filePath True ]]
 
         -- Print any errors that arose during compilation.
         errs    <- make

@@ -64,11 +64,3 @@ Error loading module
   During fragment compliance check.
     Unsupported feature: PartialPrims
 
-
--- Error: cannot discard non-void return value.
-Fragment violation when converting Salt module to C code.
-  Cannot discard non-void return value.
-  
-  with: let _ : Int# = x in
-        return# [Int#] x
-

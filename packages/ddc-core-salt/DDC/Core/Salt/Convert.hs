@@ -226,17 +226,13 @@ convBodyM kenv tenv xx
 
         -- Non-binding statement.
         -- These are only permitted to return Void#.
-        XLet _ (LLet LetStrict (BNone t) x1) x2
-         | isVoidT t
+        XLet _ (LLet LetStrict (BNone _) x1) x2
          -> do  x1'     <- convStmtM kenv tenv x1
                 x2'     <- convBodyM kenv tenv x2
 
                 return  $ vcat
                         [ x1' <> semi
                         , x2' ]
-
-         |  otherwise
-         -> throw $ ErrorStmtNoDiscard xx
 
         -- Throw out letregion expressions.
         XLet _ (LLetRegions _ _) x
@@ -296,13 +292,7 @@ isControlPrim pp
         _               -> False
 
 
--- | Check whether this is the Void# type.
-isVoidT :: Type Name -> Bool
-isVoidT (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid) _) _)) = True
-isVoidT _ = False
-
-
--- | Check whether this an applicatin of the fail# primop.
+-- | Check whether this an application of the fail# primop.
 isFailX  :: Exp a Name -> Bool
 isFailX (XApp _ (XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) _) = True
 isFailX _ = False
