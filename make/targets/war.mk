@@ -45,10 +45,11 @@ totalwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
 	@bin/war test \
                 -j $(THREADS) \
-                -results        war.results \
-                -results-failed war.failed \
-		+compway viac  -fvia-c \
-		+compway llvm  -fvia-llvm \
+                -results        war.results  \
+                -results-failed war.failed   \
+		+compway viac  -fvia-c       \
+                +compway viaco -fvia-c    -O \
+		+compway llvm  -fvia-llvm    \
 		+compway llvmo -fvia-llvm -O
 	@echo
 
@@ -61,10 +62,11 @@ batchwar : allWithConfig
 	@bin/war test \
                 -batch \
                 -j $(THREADS) \
-                -results        war.results \
-                -results-failed war.failed \
-		+compway viac  -fvia-c \
-		+compway llvm  -fvia-llvm \
+                -results        war.results  \
+                -results-failed war.failed   \
+		+compway viac  -fvia-c       \
+                +compway viaco -fvia-c    -O \
+		+compway llvm  -fvia-llvm    \
 		+compway llvmo -fvia-llvm -O
 	@echo
 
