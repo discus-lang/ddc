@@ -55,7 +55,7 @@ addr_t _ALLOC (nat_t bytes)
 #define _PEEK(type,ptr,offset)          (*(type *)(((uint8_t *) ptr) + offset))
 
 // Write to a pointer plus an offset in bytes.
-#define _POKE(type,ptr,offset,val)      (*((type *)( ((uint8_t*)addr) + offset)) = val)
+#define _POKE(type,ptr,offset,val)      (*((type *)( ((uint8_t*)ptr) + offset)) = val)
 
 // Pointer to address conversions.
 #define _MAKEPTR(type,addr)             ((type *)addr)
