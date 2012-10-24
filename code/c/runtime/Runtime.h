@@ -213,13 +213,3 @@ uint8_t  _format (Obj* obj)
 {       return (uint8_t)(obj ->tagFormat & 0x0f);
 }
 
-
-
-// -- Error Handling ----------------------------------------------------------
-// Fail ungracefully.
-//   Called when we find an internal runtime error.
-static inline 
-void _fail(void)
-{       abort();
-}
-

@@ -1,7 +1,7 @@
 
 module Main 
 imports {
-        showInt   :: [r : %]. Nat# -> Ptr# r String#;
+        showNat   :: [r : %]. Nat# -> Ptr# r String#;
         putStrLn  :: [r : %]. Ptr# r String# -> Void#;
 }
 with letrec
@@ -119,7 +119,7 @@ dumpNats
         Cons x xs
          -> case x of
              N# x2
-              -> do  putStrLn [r2] (showInt [r2] x2)
+              -> do  putStrLn [r2] (showNat [r2] x2)
                      dumpNats [:r1 r2:] xs
 
 
