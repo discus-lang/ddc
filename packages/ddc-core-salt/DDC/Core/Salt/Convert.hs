@@ -28,7 +28,7 @@ import DDC.Type.Check.Monad             (throw, result)
 import Control.Monad (ap)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
-import Debug.Trace
+
 
 -- | Convert a Disciple Core Salt module to C-source text.
 convertModule 
@@ -139,8 +139,7 @@ convFunctionType kenv nFunc tFunc
  = convFunctionType (Env.extend b kenv) nFunc t'
 
  | otherwise
- = trace (renderPlain $ ppr tFunc) $ 
-   do   -- TODO: print the qualifier when we start using them.
+ = do   -- TODO: print the qualifier when we start using them.
         let QualName _ n = nFunc        
         let nFun'        = text $ sanitizeName (renderPlain $ ppr n)
 
