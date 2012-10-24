@@ -7,7 +7,8 @@ module DDC.Build.Builder
         , determineDefaultBuilder)
 where
 import DDC.Build.Platform
-import System.FilePath
+import DDC.Base.Pretty                          hiding ((</>))
+import System.FilePath                         
 import System.Exit
 import System.Cmd
 import qualified DDC.Core.Salt.Platform         as Llvm
@@ -50,9 +51,25 @@ data Builder
           -- | Link an executable.
         , buildLdExe    :: FilePath -> FilePath -> IO () }
 
+
 instance Show Builder where
  show builder
         = "Builder " ++ show (builderName builder)
+
+
+instance Pretty Builder where
+ ppr builder
+        = vcat
+        [ text "Builder Name : " <> text (builderName builder) 
+        , empty
+        , text "Host Platform"
+        , indent 1 $ ppr $ buildHost builder 
+        , empty
+        , text "Target Platform"
+        , indent 1 $ ppr $ buildTarget builder
+        , empty
+        , text "LLVM Target Spec"
+        , indent 1 $ ppr $ buildSpec builder ]
 
 
 -- builders -------------------------------------------------------------------

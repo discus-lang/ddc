@@ -95,6 +95,10 @@ parseArgs args config
         = parseArgs rest
         $ config { configMode   = ModeAST file }
 
+        | "-print-builder" : rest <- args
+        = parseArgs rest
+        $ config { configMode   = ModePrintBuilder }        
+
         | otherwise
         = error $ "Cannot parse arguments " ++ show args
 
@@ -104,35 +108,36 @@ help    = unlines
         [ "The Disciplined Disciple Compiler, version 0.3.0"
         , ""
         , " General:"
-        , "       -help                Display this help."
+        , "       -help                  Display this help."
         , ""
         , " Compilation:"
-        , "       -make       <file>   Compile a module into an executable file."
-        , "  -c,  -compile    <file>   Compile a module into an object file."
+        , "       -make         <file>   Compile a module into an executable file."
+        , "  -c,  -compile      <file>   Compile a module into an object file."
         , ""
-        , "       -library    <dir>    Path to the base library code (./code)"
+        , "       -library      <dir>    Path to the base library code (./code)"
         , ""
-        , "       -fvia-llvm           Compile via the LLVM backend  (default)"
-        , "       -fvia-c              Compile via the C backend."
+        , "       -fvia-llvm             Compile via the LLVM backend  (default)"
+        , "       -fvia-c                Compile via the C backend."
         , ""
-        , "  -o,  -output     <file>   Redirect output to this file."
-        , "       -output-dir <dir>    Redirect output to this directory."
+        , "  -o,  -output       <file>   Redirect output to this file."
+        , "       -output-dir   <dir>    Redirect output to this directory."
         , ""
         , " Optimisation:"
-        , "       -O0                  No optimisations.             (default)"
-        , "  -O,  -O1                  Do standard optimisations."
+        , "       -O0                    No optimisations.             (default)"
+        , "  -O,  -O1                    Do standard optimisations."
         , ""
         , " Runtime for compiled program:"
-        , "       -run-heap   <bytes>  Size of fixed heap            (65536)"
+        , "       -run-heap     <bytes>  Size of fixed heap            (65536)"
         , ""
         , " Conversion:"
-        , "       -to-salt    <file>   Convert a module to Disciple Core Salt."
-        , "       -to-c       <file>   Convert a module to C code."
-        , "       -to-llvm    <file>   Convert a module to LLVM code."
+        , "       -to-salt      <file>   Convert a module to Disciple Core Salt."
+        , "       -to-c         <file>   Convert a module to C code."
+        , "       -to-llvm      <file>   Convert a module to LLVM code."
         , ""
         , " Debugging:"
-        , "       -dump                Dump intermediate representations."
-        , "       -load       <file>   Parse and type-check a module."
-        , "       -ast        <file>   Pretty print the AST of a module."
+        , "       -dump                  Dump intermediate representations."
+        , "       -load         <file>   Parse and type-check a module."
+        , "       -ast          <file>   Pretty print the AST of a module."
+        , "       -print-builder         Print external builder info for this platform."
         , "" ]
 

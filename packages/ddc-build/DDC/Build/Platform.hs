@@ -12,6 +12,7 @@ module DDC.Build.Platform
         , determineHostArch
         , determineHostOs)
 where
+import DDC.Base.Pretty
 import System.Process
 import System.Exit
 import Data.List
@@ -24,6 +25,12 @@ data Platform
         , platformOs    :: Os }
         deriving (Eq, Show)
 
+instance Pretty Platform where
+ ppr platform
+  = vcat
+  [ text "Processor Architecture : " <> ppr (platformArch platform)
+  , text "Operating System       : " <> ppr (platformOs   platform) ]
+
 
 -- | Processor Architecture.
 data Arch
@@ -33,6 +40,14 @@ data Arch
         | ArchPPC_64
         deriving (Eq, Show)
 
+instance Pretty Arch where
+ ppr arch
+  = case arch of
+        ArchX86_32      -> text "x86 32-bit"
+        ArchX86_64      -> text "x86 64-bit"
+        ArchPPC_32      -> text "PPC 32-bit"
+        ArchPPC_64      -> text "PPC 64-bit"
+
 
 -- | Operating System.
 data Os
@@ -40,6 +55,13 @@ data Os
         | OsLinux
         | OsCygwin
         deriving (Eq, Show)
+
+instance Pretty Os where
+ ppr os
+  = case os of
+        OsDarwin        -> text "Darwin"
+        OsLinux         -> text "Linux"
+        OsCygwin        -> text "Cygwin"
 
 
 -- | Get the width of a pointer on the architecture, in bits.

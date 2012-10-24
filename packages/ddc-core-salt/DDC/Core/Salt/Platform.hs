@@ -4,7 +4,7 @@ module DDC.Core.Salt.Platform
         , platform32
         , platform64)
 where
-
+import DDC.Base.Pretty
 
 -- | Enough information about the platform to generate code for it.
 --   We need to know the pointer size, and alignment constraints
@@ -26,6 +26,24 @@ data Platform
           -- Minimum size of a heap object.
         , platformObjBytes      :: Integer }
         deriving Show
+
+instance Pretty Platform where
+ ppr pp
+  = vcat
+        [ text "Address Width       (bytes) : "
+                <> text (show $ platformAddrBytes  pp)
+
+        , text "Tag Word Width      (bytes) : " 
+                <> text (show $ platformTagBytes   pp)
+
+        , text "Nat Word Width      (bytes) : " 
+                <> text (show $ platformNatBytes   pp)
+
+        , text "Function Alignment  (bytes) : " 
+                <> text (show $ platformAlignBytes pp)
+
+        , text "Minimum Object Size (bytes) : " 
+                <> text (show $ platformObjBytes   pp) ]
 
 
 -- | 32-bit platform.

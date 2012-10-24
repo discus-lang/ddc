@@ -15,6 +15,7 @@ import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Source
 import DDC.Build.Builder
+import DDC.Base.Pretty
 import System.Environment
 import qualified DDC.Driver.Stage       as Driver
 import qualified DDC.Core.Salt.Runtime  as Runtime
@@ -85,6 +86,11 @@ run config
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
                 cmdToLlvm dconfig bundle (SourceFile filePath) str
+
+        -- Print the external builder info for this platform.
+        ModePrintBuilder
+         -> do  dconfig         <- getDriverConfig config
+                putStrLn $ renderIndent $ ppr (Driver.configBuilder dconfig)
 
 
 -- | Get the compile driver from the config.

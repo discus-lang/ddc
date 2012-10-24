@@ -50,6 +50,9 @@ data Mode
 
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
+
+        -- | Print the builder info for this platform.
+        | ModePrintBuilder
         deriving (Eq, Show)
 
 
