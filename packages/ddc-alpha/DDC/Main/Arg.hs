@@ -44,6 +44,7 @@ data Arg
 	| Profile			-- ^ Profile generated C files.
 	| ProfileRuntime		-- ^ Link against profiled runtime.
 	| ViaLLVM			-- ^ Use the LLVM backend.
+        | ViaC                          -- ^ Use the C backend.
 
 	-- linker	
 	| Link				-- ^ Perform linking.

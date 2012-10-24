@@ -111,6 +111,7 @@ options	=
 						"Add dirs to the import path."
 	, OBlank
 	, OFlag		ViaLLVM			["-fvia-llvm"]			"Compile via LLVM."
+        , OFlag         ViaC                    ["-fvia-c"]                     "Compile via C."
 	, OBlank
 	, OFlag		NoImplicitPrelude	["-no-implicit-prelude"]	
 						"Don't implicitly import Prelude."
