@@ -28,7 +28,7 @@ import DDC.Type.Check.Monad             (throw, result)
 import Control.Monad (ap)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
-
+import Debug.Trace
 
 -- | Convert a Disciple Core Salt module to C-source text.
 convertModule 
@@ -107,7 +107,6 @@ convTypeM kenv tt
               | isDataKind k    -> return $ text "Obj*"
               | otherwise       -> error "Invalid type variable."
 
-
         TCon{}
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
          , Just doc     <- convPrimTyCon tc
@@ -115,6 +114,7 @@ convTypeM kenv tt
 
          | TCon (TyConBound (UPrim NameObjTyCon _) _)   <- tt
          -> return  $ text "Obj"
+
 
         TApp{}
          | Just (NamePrimTyCon PrimTyConPtr, [_, t2])   <- takePrimTyConApps tt
@@ -139,7 +139,8 @@ convFunctionType kenv nFunc tFunc
  = convFunctionType (Env.extend b kenv) nFunc t'
 
  | otherwise
- = do   -- TODO: print the qualifier when we start using them.
+ = trace (renderPlain $ ppr tFunc) $ 
+   do   -- TODO: print the qualifier when we start using them.
         let QualName _ n = nFunc        
         let nFun'        = text $ sanitizeName (renderPlain $ ppr n)
 

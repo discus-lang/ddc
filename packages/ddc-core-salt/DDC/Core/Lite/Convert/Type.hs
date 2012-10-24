@@ -81,7 +81,8 @@ convertT' isPrimType kenv tt
         TCon tc 
          -> convertTyCon tc
 
-        -- Strip off foralls, as the Salt fragment doesn't care about quantifiers.
+        -- Strip off effect and closure quantifiers.
+        -- The Salt fragment doesn't care about these.
         TForall b t     
          |   isRegionKind (typeOfBind b)
           || isDataKind   (typeOfBind b)
@@ -103,15 +104,22 @@ convertT' isPrimType kenv tt
          |  Just (tc@(TyConWitness _), args) <- takeTyConApps tt
          -> liftM2 tApps (convertTyCon tc) (mapM down args)
          
+         -- Convert pointers to primitive values.
+         |  Just (tcPtr, [tR, tArg])         <- takeTyConApps tt
+         ,  TyConBound (UPrim (L.NamePrimTyCon O.PrimTyConPtr) _) _ <- tcPtr
+         -> do  tR'     <- down tR
+                tArg'   <- down tArg
+                return  $ O.tPtr tR' tArg'
+
          -- Boxed data values are represented in generic form.
-         |  Just (_, args) <- takeTyConApps tt
-         -> do r <- down $ head args                                                    -- TODO: don't use 'head' function
-               return $ O.tPtr r O.tObj
+         |  Just (_, tR : _args) <- takeTyConApps tt
+         -> do  tR'     <- down tR
+                return $ O.tPtr tR' O.tObj
          
          | otherwise
          -> throw $ ErrorMalformed "Bad type-type application."
 
-        -- We shouldn't find any TSums.
+        -- We shouldn't find any TSums in the type of data.
         TSum{}          
          | isBot tt     -> throw $ ErrorBotAnnot
          | otherwise    -> throw $ ErrorUnexpectedSum
