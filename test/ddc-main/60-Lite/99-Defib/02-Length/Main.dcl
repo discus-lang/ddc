@@ -1,7 +1,7 @@
 
 module Main 
 imports {
-        showInt   :: [r : %]. Nat# -> Ptr# r String#;
+        showNat   :: [r : %]. Nat# -> Ptr# r String#;
         putStrLn  :: [r : %]. Ptr# r String# -> Void#;
 }
 with letrec
@@ -68,6 +68,6 @@ main    [r : %]
         xs      = replicate [:r2 r2:] [Nat r2] (N# [r2] 23#) (N# [r2] 100#)
         case length [:r2 r2:] [Nat r2] xs of
          N# n 
-          -> do putStrLn [r2] (showInt [r2] n)
+          -> do putStrLn [r2] (showNat [r2] n)
                 0i#
 
