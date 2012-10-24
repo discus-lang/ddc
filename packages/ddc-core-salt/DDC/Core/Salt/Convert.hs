@@ -202,7 +202,8 @@ convSuperM' kenv tenv bTop bsParam xx
 
         -- Emit variable definitions for all the value binders in the code.
         let (_, bsVal)  = collectBinds xx
-        dsVal           <- liftM catMaybes $ mapM (makeVarDecl kenv) bsVal
+        dsVal           <- liftM catMaybes $ mapM (makeVarDecl kenv) 
+                        $  filter keepBind bsVal
 
         -- Convert the body of the function.
         --  We pass in ContextTop to say we're at the top-level
@@ -670,7 +671,8 @@ keepArgX kenv xx
          |  Just k       <- Env.lookup u kenv
          -> isDataKind k 
 
-        _ -> True
+        XWitness{}       -> False
+        _                -> True
 
 
 parenss :: [Doc] -> Doc

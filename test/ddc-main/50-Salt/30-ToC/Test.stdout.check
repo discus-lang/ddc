@@ -4,34 +4,50 @@ ok
 ok
 Obj* addInt (Obj* x, Obj* y)
 {
-        int_t _sym_xZPm  = unboxInt(x);
-        int_t _sym_yZPm  = unboxInt(y);
-        int_t r          = (_sym_xZPm + _sym_yZPm);
-        Obj* z           = boxInt(r);
+        int_t _sym_xZPm = 0;
+        int_t _sym_yZPm = 0;
+        int_t r = 0;
+        Obj* z = 0;
+
+        _sym_xZPm    = unboxInt(x);
+        _sym_yZPm    = unboxInt(y);
+        r            = (_sym_xZPm + _sym_yZPm);
+        z            = boxInt(r);
         return z;
 }
 
 Obj* boxInt (int_t x)
 {
-        Obj* obj         = allocRaw(0, 4);
-        addr_t addr      = _TAKEPTR(Obj, obj);
+        Obj* obj = 0;
+        addr_t addr = 0;
+
+        obj          = allocRaw(0, 4);
+        addr         = _TAKEPTR(Obj, obj);
         _WRITE(int_t, addr, 8, x);
         return obj;
 }
 
 int_t unboxInt (Obj* obj)
 {
-        addr_t addr      = _TAKEPTR(Obj, obj);
-        int_t x          = _READ(int_t, addr, 8);
+        addr_t addr = 0;
+        int_t x = 0;
+
+        addr         = _TAKEPTR(Obj, obj);
+        x            = _READ(int_t, addr, 8);
         return x;
 }
 
 int_t main (nat_t argc, addr_t argv)
 {
-        Obj* x           = boxInt(5);
-        Obj* x2          = addInt(x, x);
-        int_t x0         = unboxInt(x2);
-        string_t str     = _showInt(x0);
+        Obj* x = 0;
+        Obj* x2 = 0;
+        int_t x0 = 0;
+        string_t str = 0;
+
+        x            = boxInt(5);
+        x2           = addInt(x, x);
+        x0           = unboxInt(x2);
+        str          = _showInt(x0);
         _putStrLn(str);
         return 0;
 }
@@ -42,35 +58,52 @@ ok
 ok
 Obj* addDistinct (Obj* x, Obj* y)
 {
-        int_t _sym_xZPm  = unboxInt(x);
-        int_t _sym_yZPm  = unboxInt(y);
-        int_t r          = (_sym_xZPm + _sym_yZPm);
-        Obj* z           = boxInt(r);
+        int_t _sym_xZPm = 0;
+        int_t _sym_yZPm = 0;
+        int_t r = 0;
+        Obj* z = 0;
+
+        _sym_xZPm    = unboxInt(x);
+        _sym_yZPm    = unboxInt(y);
+        r            = (_sym_xZPm + _sym_yZPm);
+        z            = boxInt(r);
         return z;
 }
 
 Obj* boxInt (int_t x)
 {
-        Obj* obj         = allocRaw(0, 4);
-        addr_t addr      = _TAKEPTR(Obj, obj);
+        Obj* obj = 0;
+        addr_t addr = 0;
+
+        obj          = allocRaw(0, 4);
+        addr         = _TAKEPTR(Obj, obj);
         _WRITE(int_t, addr, 8, x);
         return obj;
 }
 
 int_t unboxInt (Obj* obj)
 {
-        addr_t addr      = _TAKEPTR(Obj, obj);
-        int_t x          = _READ(int_t, addr, 8);
+        addr_t addr = 0;
+        int_t x = 0;
+
+        addr         = _TAKEPTR(Obj, obj);
+        x            = _READ(int_t, addr, 8);
         return x;
 }
 
 int_t main (nat_t argc, addr_t argv)
 {
-        Obj* x1          = boxInt(5);
-        Obj* x2          = boxInt(7);
-        Obj* ret         = addDistinct(x1, x2);
-        int_t x0         = unboxInt(ret);
-        string_t str     = _showInt(x0);
+        Obj* x1 = 0;
+        Obj* x2 = 0;
+        Obj* ret = 0;
+        int_t x0 = 0;
+        string_t str = 0;
+
+        x1           = boxInt(5);
+        x2           = boxInt(7);
+        ret          = addDistinct(x1, x2);
+        x0           = unboxInt(ret);
+        str          = _showInt(x0);
         _putStrLn(str);
         return 0;
 }
