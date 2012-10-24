@@ -1,7 +1,7 @@
 
 -- Convert a Core Salt module into raw C code.
 :set lang Salt
-:set +Indent
+:set +Indent +SuppressImports
 :to-c..
 module Main 
 imports {
@@ -44,7 +44,7 @@ main (argc : Nat#) (argv : Addr#) : Int#
 
 -- Discarding witness declaration and application when converting to C
 :set lang Salt
-:set +Indent
+:set +Indent +SuppressImports
 :to-c..
 module Main 
 imports {

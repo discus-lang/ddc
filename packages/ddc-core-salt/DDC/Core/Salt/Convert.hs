@@ -59,6 +59,10 @@ convModuleM withPrelude mm@(ModuleCore{})
         let nts = Map.elems $ C.moduleImportTypes mm
         docs    <- mapM (uncurry $ convFunctionType Env.empty) nts
         let cExterns
+                |  not withPrelude
+                = []
+
+                | otherwise
                 =  [ text "extern " <> doc <> semi | doc <- docs ]
 
         -- RTS def --------------------

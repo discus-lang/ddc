@@ -60,11 +60,11 @@ Obj* singleton (Obj* x)
 {
         Obj* x1          = allocBoxed(0, 1);
         Obj* x2          = allocBoxed(0, 0);
-        setFieldOfBoxed (Obj*, x1, 0, x2);
+        setFieldOfBoxed (x1, 0, x2);
         Obj* x0          = x1;
         Obj* x3          = allocBoxed(1, 2);
-        setFieldOfBoxed (Obj*, x3, 0, x);
-        setFieldOfBoxed (Obj*, x3, 1, x0);
+        setFieldOfBoxed (x3, 0, x);
+        setFieldOfBoxed (x3, 1, x0);
         return x3;
 }
 
