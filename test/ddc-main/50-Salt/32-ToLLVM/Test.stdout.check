@@ -10,8 +10,8 @@ size2# :: [^ : *].Nat#
 
 -- Get the size of prim types.
 %s.Obj = type <{i64}>
-@DDC.Runtime.heapTop = external global  i64
-@DDC.Runtime.heapMax = external global  i64
+@_DDC_Runtime_heapTop = external global  i64
+@_DDC_Runtime_heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
@@ -46,8 +46,8 @@ l7.entry:
 
 -- Get the log2 size of prim types.
 %s.Obj = type <{i64}>
-@DDC.Runtime.heapTop = external global  i64
-@DDC.Runtime.heapMax = external global  i64
+@_DDC_Runtime_heapTop = external global  i64
+@_DDC_Runtime_heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
