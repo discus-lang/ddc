@@ -223,6 +223,9 @@ builder_X8632_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
+                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
+                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+
 
         , buildAs
                 = \sFile oFile
@@ -262,6 +265,9 @@ builder_X8664_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
+                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
+                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+
 
         , buildAs
                 = \sFile oFile
@@ -301,6 +307,8 @@ builder_PPC32_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
+                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
+                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -339,6 +347,8 @@ builder_X8632_Cygwin config
                 $  "gcc-4 -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
+                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
+                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
