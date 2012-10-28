@@ -642,7 +642,7 @@ convPrimCallM kenv tenv p xs
 
         PrimControl PrimControlFail
          | [XType _t]           <- xs
-         -> do  return  $ text "_fail()"
+         -> do  return  $ text "_FAIL()"
 
 
         -- Store primops.

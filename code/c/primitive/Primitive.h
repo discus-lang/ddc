@@ -11,7 +11,7 @@
 // Fail ungracefully.
 //   Called when we find an internal runtime error.
 static inline 
-void _fail(void)
+void _FAIL(void)
 {       abort();
 }
 
