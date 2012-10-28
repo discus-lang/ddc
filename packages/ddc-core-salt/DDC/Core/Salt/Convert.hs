@@ -152,7 +152,7 @@ convFunctionType kenv nFunc tFunc
  | otherwise
  = do   -- TODO: print the qualifier when we start using them.
         let QualName _ n = nFunc        
-        let nFun'        = text $ sanitizeName (renderPlain $ ppr n)
+        let nFun'        = text $ sanitizeGlobal (renderPlain $ ppr n)
 
         let (tsArgs, tResult) = takeTFunArgResult tFunc
 
@@ -191,7 +191,7 @@ convSuperM' kenv tenv bTop bsParam xx
  = do   
 
         -- Convert the function name.
-        let nTop'        = text $ sanitizeName nTop
+        let nTop'        = text $ sanitizeGlobal nTop
         let (_, tResult) = takeTFunArgResult $ eraseTForalls tTop 
 
         -- Convert function parameters.
@@ -235,7 +235,7 @@ makeVarDecl kenv bb
 
         BName (NameVar n) t
          -> do  t'      <- convTypeM kenv t
-                let n'  = text $ sanitizeName n
+                let n'  = text $ sanitizeLocal n
                 return  $ Just (t' <+> n' <+> equals <+> text "0" <> semi)
 
         _ -> throw $ ErrorParameterInvalid bb
@@ -275,7 +275,7 @@ convBind kenv _tenv b
         -- Named variables binders.
         BName (NameVar str) t
          -> do   t'      <- convTypeM kenv t
-                 return  $ t' <+> (text $ sanitizeName str)
+                 return  $ t' <+> (text $ sanitizeLocal str)
                  
         _       -> throw $ ErrorParameterInvalid b
 
@@ -336,7 +336,7 @@ convBlockM context kenv tenv xx
          -- provided variable.
          | ContextNest n _  <- context
          -> do  xx'     <- convRValueM kenv tenv xx
-                let n'  = text $ sanitizeName $ renderPlain $ ppr n
+                let n'  = text $ sanitizeLocal (renderPlain $ ppr n)
                 return  $ vcat 
                        [ fill 12 n' <+> equals <+> xx' <> semi ]
 
@@ -356,7 +356,7 @@ convBlockM context kenv tenv xx
         XLet _ (LLet LetStrict (BName (NameVar n) _) x1) x2
          -> do  x1'     <- convRValueM kenv tenv x1
                 x2'     <- convBlockM  context kenv tenv x2
-                let n'  = text $ sanitizeName n
+                let n'  = text $ sanitizeLocal n
 
                 return  $ vcat
                         [ fill 12 n' <+> equals <+> x1' <> semi
@@ -517,7 +517,7 @@ convStmtM context kenv tenv xx
         XApp{}
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
-         -> do  let nTop'       = sanitizeName nTop
+         -> do  let nTop'       = sanitizeGlobal nTop
 
                 args'           <- mapM (convRValueM kenv tenv)
                                 $  filter keepFunArgX args
@@ -546,7 +546,7 @@ convRValueM kenv tenv xx
         -- Plain variable.
         XVar _ (UName n)
          | NameVar str  <- n
-         -> return $ text $ sanitizeName str
+         -> return $ text $ sanitizeLocal str
 
         -- Literals
         XCon _ dc
@@ -568,7 +568,7 @@ convRValueM kenv tenv xx
         XApp{}
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
-         -> do  let nTop' = sanitizeName nTop
+         -> do  let nTop' = sanitizeGlobal nTop
 
                 -- Ditch type and witness arguments
                 args'   <- mapM (convRValueM kenv tenv) 

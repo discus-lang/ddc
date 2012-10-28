@@ -157,7 +157,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
 
         -- Sanitise the super name so we can use it as a symbol
         -- in the object code.
-        let nTop'       = A.sanitizeName nTop
+        let nTop'       = A.sanitizeGlobal nTop
 
         -- Add parameters to environments.                                      -- TODO: this scoping isn't right.
         let bfsParam'    = eraseWitBinds bfsParam

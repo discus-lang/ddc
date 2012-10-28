@@ -2,53 +2,53 @@
 -- Convert a Core Salt module into raw C code.
 ok
 ok
-Obj* addInt (Obj* x, Obj* y)
+Obj* addInt (Obj* _x, Obj* _y)
 {
-        int_t _sym_xZPm = 0;
-        int_t _sym_yZPm = 0;
-        int_t r = 0;
-        Obj* z = 0;
+        int_t __sym_xZPm = 0;
+        int_t __sym_yZPm = 0;
+        int_t _r = 0;
+        Obj* _z = 0;
 
-        _sym_xZPm    = unboxInt(x);
-        _sym_yZPm    = unboxInt(y);
-        r            = (_sym_xZPm + _sym_yZPm);
-        z            = boxInt(r);
-        return z;
+        __sym_xZPm   = unboxInt(_x);
+        __sym_yZPm   = unboxInt(_y);
+        _r           = (__sym_xZPm + __sym_yZPm);
+        _z           = boxInt(_r);
+        return _z;
 }
 
-Obj* boxInt (int_t x)
+Obj* boxInt (int_t _x)
 {
-        Obj* obj = 0;
-        addr_t addr = 0;
+        Obj* _obj = 0;
+        addr_t _addr = 0;
 
-        obj          = allocRaw(0, 4);
-        addr         = _TAKEPTR(Obj, obj);
-        _WRITE(int_t, addr, 8, x);
-        return obj;
+        _obj         = allocRaw(0, 4);
+        _addr        = _TAKEPTR(Obj, _obj);
+        _WRITE(int_t, _addr, 8, _x);
+        return _obj;
 }
 
-int_t unboxInt (Obj* obj)
+int_t unboxInt (Obj* _obj)
 {
-        addr_t addr = 0;
-        int_t x = 0;
+        addr_t _addr = 0;
+        int_t _x = 0;
 
-        addr         = _TAKEPTR(Obj, obj);
-        x            = _READ(int_t, addr, 8);
-        return x;
+        _addr        = _TAKEPTR(Obj, _obj);
+        _x           = _READ(int_t, _addr, 8);
+        return _x;
 }
 
-int_t main (nat_t argc, addr_t argv)
+int_t main (nat_t _argc, addr_t _argv)
 {
-        Obj* x = 0;
-        Obj* x2 = 0;
-        int_t x0 = 0;
-        string_t str = 0;
+        Obj* _x = 0;
+        Obj* _x2 = 0;
+        int_t _x0 = 0;
+        string_t _str = 0;
 
-        x            = boxInt(5);
-        x2           = addInt(x, x);
-        x0           = unboxInt(x2);
-        str          = _showInt(x0);
-        _putStrLn(str);
+        _x           = boxInt(5);
+        _x2          = addInt(_x, _x);
+        _x0          = unboxInt(_x2);
+        _str         = _showInt(_x0);
+        _putStrLn(_str);
         return 0;
 }
 
@@ -56,55 +56,55 @@ int_t main (nat_t argc, addr_t argv)
 -- Discarding witness declaration and application when converting to C
 ok
 ok
-Obj* addDistinct (Obj* x, Obj* y)
+Obj* addDistinct (Obj* _x, Obj* _y)
 {
-        int_t _sym_xZPm = 0;
-        int_t _sym_yZPm = 0;
-        int_t r = 0;
-        Obj* z = 0;
+        int_t __sym_xZPm = 0;
+        int_t __sym_yZPm = 0;
+        int_t _r = 0;
+        Obj* _z = 0;
 
-        _sym_xZPm    = unboxInt(x);
-        _sym_yZPm    = unboxInt(y);
-        r            = (_sym_xZPm + _sym_yZPm);
-        z            = boxInt(r);
-        return z;
+        __sym_xZPm   = unboxInt(_x);
+        __sym_yZPm   = unboxInt(_y);
+        _r           = (__sym_xZPm + __sym_yZPm);
+        _z           = boxInt(_r);
+        return _z;
 }
 
-Obj* boxInt (int_t x)
+Obj* boxInt (int_t _x)
 {
-        Obj* obj = 0;
-        addr_t addr = 0;
+        Obj* _obj = 0;
+        addr_t _addr = 0;
 
-        obj          = allocRaw(0, 4);
-        addr         = _TAKEPTR(Obj, obj);
-        _WRITE(int_t, addr, 8, x);
-        return obj;
+        _obj         = allocRaw(0, 4);
+        _addr        = _TAKEPTR(Obj, _obj);
+        _WRITE(int_t, _addr, 8, _x);
+        return _obj;
 }
 
-int_t unboxInt (Obj* obj)
+int_t unboxInt (Obj* _obj)
 {
-        addr_t addr = 0;
-        int_t x = 0;
+        addr_t _addr = 0;
+        int_t _x = 0;
 
-        addr         = _TAKEPTR(Obj, obj);
-        x            = _READ(int_t, addr, 8);
-        return x;
+        _addr        = _TAKEPTR(Obj, _obj);
+        _x           = _READ(int_t, _addr, 8);
+        return _x;
 }
 
-int_t main (nat_t argc, addr_t argv)
+int_t main (nat_t _argc, addr_t _argv)
 {
-        Obj* x1 = 0;
-        Obj* x2 = 0;
-        Obj* ret = 0;
-        int_t x0 = 0;
-        string_t str = 0;
+        Obj* _x1 = 0;
+        Obj* _x2 = 0;
+        Obj* _ret = 0;
+        int_t _x0 = 0;
+        string_t _str = 0;
 
-        x1           = boxInt(5);
-        x2           = boxInt(7);
-        ret          = addDistinct(x1, x2);
-        x0           = unboxInt(ret);
-        str          = _showInt(x0);
-        _putStrLn(str);
+        _x1          = boxInt(5);
+        _x2          = boxInt(7);
+        _ret         = addDistinct(_x1, _x2);
+        _x0          = unboxInt(_ret);
+        _str         = _showInt(_x0);
+        _putStrLn(_str);
         return 0;
 }
 

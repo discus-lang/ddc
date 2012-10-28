@@ -6,92 +6,92 @@ ok
 
 -- Integer boxing,
 --      packs a RawSmall Object.
-Obj* boxInt (int_t i)
+Obj* boxInt (int_t _i)
 {
-        Obj* x0 = 0;
-        Obj* x1 = 0;
-        int_t* x2 = 0;
+        Obj* _x0 = 0;
+        Obj* _x1 = 0;
+        int_t* _x2 = 0;
 
-        x0           = allocRawSmall(0, 8);
-        x1           = payloadOfRawSmall(x0);
-        x2           = _CASTPTR(int_t, Obj, x1);
-        _POKE(int_t, x2, 0, i);
-        return x0;
+        _x0          = allocRawSmall(0, 8);
+        _x1          = payloadOfRawSmall(_x0);
+        _x2          = _CASTPTR(int_t, Obj, _x1);
+        _POKE(int_t, _x2, 0, _i);
+        return _x0;
 }
 
 
 
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
-int_t unboxInt (Obj* x)
+int_t unboxInt (Obj* _x)
 {
-        tag_t x0 = 0;
-        Obj* x1 = 0;
-        int_t* x2 = 0;
-        int_t i = 0;
+        tag_t _x0 = 0;
+        Obj* _x1 = 0;
+        int_t* _x2 = 0;
+        int_t _i = 0;
 
-        x0           = getTag(x);
-        if (x0 != 0) _fail();
-        x1           = payloadOfRawSmall(x);
-        x2           = _CASTPTR(int_t, Obj, x1);
-        i            = _PEEK(int_t, x2, 0);
-        return i;
+        _x0          = getTag(_x);
+        if (_x0 != 0) _FAIL();
+        _x1          = payloadOfRawSmall(_x);
+        _x2          = _CASTPTR(int_t, Obj, _x1);
+        _i           = _PEEK(int_t, _x2, 0);
+        return _i;
 }
 
 
 
 -- Boxed addition
-Obj* addInt (Obj* x, Obj* y)
+Obj* addInt (Obj* _x, Obj* _y)
 {
-        tag_t x1 = 0;
-        Obj* x2 = 0;
-        int_t* x3 = 0;
-        int_t i1 = 0;
-        tag_t x4 = 0;
-        Obj* x5 = 0;
-        int_t* x6 = 0;
-        int_t i2 = 0;
-        int_t x0 = 0;
-        Obj* x7 = 0;
-        Obj* x8 = 0;
-        int_t* x9 = 0;
+        tag_t _x1 = 0;
+        Obj* _x2 = 0;
+        int_t* _x3 = 0;
+        int_t _i1 = 0;
+        tag_t _x4 = 0;
+        Obj* _x5 = 0;
+        int_t* _x6 = 0;
+        int_t _i2 = 0;
+        int_t _x0 = 0;
+        Obj* _x7 = 0;
+        Obj* _x8 = 0;
+        int_t* _x9 = 0;
 
-        x1           = getTag(x);
-        if (x1 != 0) _fail();
-        x2           = payloadOfRawSmall(x);
-        x3           = _CASTPTR(int_t, Obj, x2);
-        i1           = _PEEK(int_t, x3, 0);
-        x4           = getTag(y);
-        if (x4 != 0) _fail();
-        x5           = payloadOfRawSmall(y);
-        x6           = _CASTPTR(int_t, Obj, x5);
-        i2           = _PEEK(int_t, x6, 0);
-        x0           = (i1 + i2);
-        x7           = allocRawSmall(0, 8);
-        x8           = payloadOfRawSmall(x7);
-        x9           = _CASTPTR(int_t, Obj, x8);
-        _POKE(int_t, x9, 0, x0);
-        return x7;
+        _x1          = getTag(_x);
+        if (_x1 != 0) _FAIL();
+        _x2          = payloadOfRawSmall(_x);
+        _x3          = _CASTPTR(int_t, Obj, _x2);
+        _i1          = _PEEK(int_t, _x3, 0);
+        _x4          = getTag(_y);
+        if (_x4 != 0) _FAIL();
+        _x5          = payloadOfRawSmall(_y);
+        _x6          = _CASTPTR(int_t, Obj, _x5);
+        _i2          = _PEEK(int_t, _x6, 0);
+        _x0          = (_i1 + _i2);
+        _x7          = allocRawSmall(0, 8);
+        _x8          = payloadOfRawSmall(_x7);
+        _x9          = _CASTPTR(int_t, Obj, _x8);
+        _POKE(int_t, _x9, 0, _x0);
+        return _x7;
 }
 
 
 
 -- Construct a singleton list,
 --      packs a Boxed objet.
-Obj* singleton (Obj* x)
+Obj* singleton (Obj* _x)
 {
-        Obj* x1 = 0;
-        Obj* x2 = 0;
-        Obj* x0 = 0;
-        Obj* x3 = 0;
+        Obj* _x1 = 0;
+        Obj* _x2 = 0;
+        Obj* _x0 = 0;
+        Obj* _x3 = 0;
 
-        x1           = allocBoxed(0, 1);
-        x2           = allocBoxed(0, 0);
-        setFieldOfBoxed (x1, 0, x2);
-        x0           = x1;
-        x3           = allocBoxed(1, 2);
-        setFieldOfBoxed (x3, 0, x);
-        setFieldOfBoxed (x3, 1, x0);
-        return x3;
+        _x1          = allocBoxed(0, 1);
+        _x2          = allocBoxed(0, 0);
+        setFieldOfBoxed (_x1, 0, _x2);
+        _x0          = _x1;
+        _x3          = allocBoxed(1, 2);
+        setFieldOfBoxed (_x3, 0, _x);
+        setFieldOfBoxed (_x3, 1, _x0);
+        return _x3;
 }
 

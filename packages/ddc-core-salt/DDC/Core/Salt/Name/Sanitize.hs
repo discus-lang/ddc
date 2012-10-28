@@ -1,6 +1,8 @@
 
 module DDC.Core.Salt.Name.Sanitize
-        (sanitizeName)
+        ( sanitizeName
+        , sanitizeGlobal
+        , sanitizeLocal)
 where
 import Data.Maybe
 
@@ -9,13 +11,25 @@ import Data.Maybe
 --   symbol. Names containing symbols are prefixed with '_sym_' and a symbol
 --   like '&' is replaced by 'ZAt'. Literal 'Z's in a symbolic name are
 --   doubled.
---
 sanitizeName :: String -> String
 sanitizeName str
  = let  hasSymbols      = any isJust $ map convertSymbol str
    in   if hasSymbols
          then "_sym_" ++ concatMap rewriteChar str
          else str
+
+
+-- | Like 'sanitizeGlobal' but indicate that the name is going to be visible
+--   globally.
+sanitizeGlobal :: String -> String
+sanitizeGlobal = sanitizeName
+
+
+-- | Like 'sanitizeName' but at an extra '_' prefix so funciton-local names
+--   don't shadow local ones.
+sanitizeLocal  :: String -> String
+sanitizeLocal str
+ = "_" ++ sanitizeGlobal str
 
 
 -- | Get the encoded version of a character.

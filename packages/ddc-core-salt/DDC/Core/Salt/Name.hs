@@ -4,6 +4,8 @@
 module DDC.Core.Salt.Name
         ( Name            (..), readName
         , sanitizeName
+        , sanitizeGlobal
+        , sanitizeLocal
         , module DDC.Core.Salt.Name.Prim
         , module DDC.Core.Salt.Name.Lit)
 where

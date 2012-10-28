@@ -126,7 +126,7 @@ importedFunctionDeclOfType pp kenv linkage (C.QualName _ (NameVar n)) tt        
  = let  (tsArgs, tResult)         = convSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
-             { declName           = A.sanitizeName  n
+             { declName           = A.sanitizeGlobal n
              , declLinkage        = linkage
              , declCallConv       = CC_Ccc
              , declReturnType     = tResult
