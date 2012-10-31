@@ -88,6 +88,16 @@ bool_t  _CHECK (nat_t bytes)
         (*((type *)( ((uint8_t*)ptr) + offset)) = val)
 
 
+// Add an offset in bytes to a pointer.
+#define _PLUSPTR(type,ptr,offset) \
+        ((type *)( ((uint8_t *)ptr) + offset))
+
+
+// Subtract an offset in bytes from a pointer.
+#define _MINUSPTR(type,ptr,offset) \
+        ((type *)( ((uint8_t *)ptr) - offset))
+
+
 // Pointer to address conversions.
 #define _MAKEPTR(type,addr) \
         ((type *)addr)
