@@ -76,7 +76,6 @@ convModuleM mm@(C.ModuleCore{})
                   | (n, t)   <- Map.elems $ C.moduleImportTypes mm ]
 
         -- Add RTS def -------------------------------------------------
-        -- TODO: Split this into separate function.
         -- If this is the main module then we need to declare
         -- the global RTS state.
         let isMainModule 
@@ -159,7 +158,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
         -- in the object code.
         let nTop'       = A.sanitizeGlobal nTop
 
-        -- Add parameters to environments.                                      -- TODO: this scoping isn't right.
+        -- Add parameters to environments.
         let bfsParam'    = eraseWitBinds bfsParam
         let bsParamType  = [b | (True,  b) <- bfsParam']
         let bsParamValue = [b | (False, b) <- bfsParam']

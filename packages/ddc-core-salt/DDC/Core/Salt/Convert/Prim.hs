@@ -1,4 +1,5 @@
 
+-- | Pretty printers for primitive type and operator names.
 module DDC.Core.Salt.Convert.Prim
         ( convPrimTyCon
         , convPrimOp2

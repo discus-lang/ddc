@@ -26,7 +26,6 @@ readLitInteger str@(c:cs)
         
 
 -- | Read an integer with an explicit format specifier like @1234i#@.
---- TODO hande negative literals.
 readLitPrimNat :: String -> Maybe Integer
 readLitPrimNat str1
         | (ds, str2)    <- span isDigit str1

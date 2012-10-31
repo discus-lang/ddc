@@ -1,4 +1,5 @@
 
+-- | Adding code to initialise the runtime system.
 module DDC.Core.Salt.Convert.Init
         (initRuntime)
 where
