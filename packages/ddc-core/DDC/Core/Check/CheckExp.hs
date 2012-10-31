@@ -173,6 +173,14 @@ checkExpM' _config _kenv _tenv xx@(XCon a dc)
 
 -- application ------------------------------------
 -- value-type application.
+--
+-- Note: We don't need to substitute into the effect of x1 (effs1)
+--       because the body of a type abstraction is required to be pure.
+-- 
+--       We don't need to substitute into the closure either, because
+--       the bound type variable is not visible outside the abstraction.
+--       thus we can't be sharing objects that have it in its type.
+--
 checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
  = do   (x1', t1, effs1, clos1) <- checkExpM  config kenv tenv x1
 
@@ -189,8 +197,8 @@ checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
           -> returnX a
                 (\z -> XApp z x1' (XType t2))
                 (substituteT b11 t2 t12)
-                (substituteT b11 t2 effs1)
-                (clos1 `Set.union` t2_clo)              -- TODO: why no substituteT here?
+                effs1   
+                (clos1 `Set.union` t2_clo)
 
           | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
          _              -> throw $ ErrorAppNotFun   xx t1 t2
