@@ -9,12 +9,12 @@ ok
 Obj* boxInt (int_t _i)
 {
         Obj* _x0 = 0;
-        Obj* _x1 = 0;
+        uint8_t* _x1 = 0;
         int_t* _x2 = 0;
 
         _x0          = allocRawSmall(0, 8);
         _x1          = payloadOfRawSmall(_x0);
-        _x2          = _CASTPTR(int_t, Obj, _x1);
+        _x2          = _CASTPTR(int_t, uint8_t, _x1);
         _POKE(int_t, _x2, 0, _i);
         return _x0;
 }
@@ -26,14 +26,14 @@ Obj* boxInt (int_t _i)
 int_t unboxInt (Obj* _x)
 {
         tag_t _x0 = 0;
-        Obj* _x1 = 0;
+        uint8_t* _x1 = 0;
         int_t* _x2 = 0;
         int_t _i = 0;
 
         _x0          = getTag(_x);
         if (_x0 != 0) _FAIL();
         _x1          = payloadOfRawSmall(_x);
-        _x2          = _CASTPTR(int_t, Obj, _x1);
+        _x2          = _CASTPTR(int_t, uint8_t, _x1);
         _i           = _PEEK(int_t, _x2, 0);
         return _i;
 }
@@ -44,32 +44,32 @@ int_t unboxInt (Obj* _x)
 Obj* addInt (Obj* _x, Obj* _y)
 {
         tag_t _x1 = 0;
-        Obj* _x2 = 0;
+        uint8_t* _x2 = 0;
         int_t* _x3 = 0;
         int_t _i1 = 0;
         tag_t _x4 = 0;
-        Obj* _x5 = 0;
+        uint8_t* _x5 = 0;
         int_t* _x6 = 0;
         int_t _i2 = 0;
         int_t _x0 = 0;
         Obj* _x7 = 0;
-        Obj* _x8 = 0;
+        uint8_t* _x8 = 0;
         int_t* _x9 = 0;
 
         _x1          = getTag(_x);
         if (_x1 != 0) _FAIL();
         _x2          = payloadOfRawSmall(_x);
-        _x3          = _CASTPTR(int_t, Obj, _x2);
+        _x3          = _CASTPTR(int_t, uint8_t, _x2);
         _i1          = _PEEK(int_t, _x3, 0);
         _x4          = getTag(_y);
         if (_x4 != 0) _FAIL();
         _x5          = payloadOfRawSmall(_y);
-        _x6          = _CASTPTR(int_t, Obj, _x5);
+        _x6          = _CASTPTR(int_t, uint8_t, _x5);
         _i2          = _PEEK(int_t, _x6, 0);
         _x0          = (_i1 + _i2);
         _x7          = allocRawSmall(0, 8);
         _x8          = payloadOfRawSmall(_x7);
-        _x9          = _CASTPTR(int_t, Obj, _x8);
+        _x9          = _CASTPTR(int_t, uint8_t, _x8);
         _POKE(int_t, _x9, 0, _x0);
         return _x7;
 }

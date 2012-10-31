@@ -22,8 +22,8 @@ module DDC.Core.Salt.Runtime
         , xCreate
         , xRead
         , xWrite
-        , xPeekObj
-        , xPokeObj
+        , xPeekBuffer
+        , xPokeBuffer
         , xFail
         , xReturn)
 where
@@ -184,7 +184,7 @@ xPayloadOfRawSmall a tR x2
 utPayloadOfRawSmall :: (Bound Name, Type Name)
 utPayloadOfRawSmall
  =      ( UName (NameVar "payloadOfRawSmall")
-        , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) (tPtr r tObj)))
+        , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) (tPtr r (tWord 8))))
 
 
 -- Primops --------------------------------------------------------------------
@@ -226,10 +226,10 @@ uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
                  (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
 
 
--- | Peek a value from an object pointer plus offset
-xPeekObj :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xPeekObj a r t xPtr offset
- = let castedPtr = xCast a r t tObj xPtr
+-- | Peek a value from a buffer pointer plus offset
+xPeekBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xPeekBuffer a r t xPtr offset
+ = let castedPtr = xCast a r t (tWord 8) xPtr
    in  XApp a (XApp a (XApp a (XApp a (XVar a uPeek) 
                                       (XType r)) 
                               (XType t)) 
@@ -241,10 +241,10 @@ uPeek = UPrim (NamePrim $ PrimStore $ PrimStorePeek)
               (typeOfPrimStore PrimStorePeek)
               
 
--- | Poke a value from an object pointer plus offset
-xPokeObj :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
-xPokeObj a r t xPtr offset xVal
- = let castedPtr = xCast a r t tObj xPtr
+-- | Poke a value from a buffer pointer plus offset
+xPokeBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+xPokeBuffer a r t xPtr offset xVal
+ = let castedPtr = xCast a r t (tWord 8) xPtr
    in  XApp a (XApp a (XApp a (XApp a (XApp a (XVar a uPoke) 
                                               (XType r)) 
                                       (XType t)) 

@@ -186,10 +186,9 @@ fieldOfMixed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
         plusPtr# [r] [Obj] obj offset
       
 
-
 -- | Get the address of the raw data payload from a mixed object.
-payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
- =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 16#)
+payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
+ =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 16#
 
 
 -- Raw ------------------------------------------------------------------------
@@ -230,8 +229,8 @@ allocRaw_ok
 
 
 -- | Get the payload data from a raw object.
-payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
- =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 8#)
+payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
+ =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 8#
 
 
 -- RawSmall -------------------------------------------------------------------
@@ -272,6 +271,5 @@ allocRawSmall_ok
 
 
 -- | Get the payload data from a raw small object.
-payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
- =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 4#)
-
+payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
+ =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 4#
