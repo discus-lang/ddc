@@ -26,16 +26,15 @@ docs-alpha :
 
 docs-core :
 	@haddock -w -h -o doc/haddock-core \
-					--optghc=-ipackages/ddc-base \
-								--optghc=-ipackages/ddc-build \
-					--optghc=-ipackages/ddc-core \
-								--optghc=-ipackages/ddc-core-eval \
-								--optghc=-ipackages/ddc-core-llvm \
-								--optghc=-ipackages/ddc-core-salt \
-								--optghc=-ipackages/ddc-core-simpl \
-								--optghc=-ipackages/ddc-core-llvm \
-								--optghc=-ipackages/ddc-type \
-					--optghc=-ipackages/ddci-core \
+                        --optghc=-ipackages/ddc-base \
+                        --optghc=-ipackages/ddc-build \
+                        --optghc=-ipackages/ddc-core \
+			--optghc=-ipackages/ddc-core-eval \
+			--optghc=-ipackages/ddc-core-llvm \
+			--optghc=-ipackages/ddc-core-salt \
+			--optghc=-ipackages/ddc-core-simpl \
+                        --optghc=-ipackages/ddc-driver \
+                        --optghc=-ipackages/ddci-core \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(ddci-core_src_hs_all)
 
@@ -46,22 +45,21 @@ docs-hoogle	:
 	@$(MAKE) docs-hoogle-core
 
 docs-hoogle-alpha :
-	@haddock --hoogle -w -o doc/hoogle --optghc=-ipackages/ddc-alpha \
-								$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
+	@haddock --hoogle -w -o doc/hoogle 
+                        --optghc=-ipackages/ddc-alpha \
+			$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-main_src_hs_all))
 
 docs-hoogle-core :
 	@haddock --hoogle -w -o doc/hoogle-core \
-					--optghc=-ipackages/ddc-base \
-								--optghc=-ipackages/ddc-build \
-					--optghc=-ipackages/ddc-core \
-								--optghc=-ipackages/ddc-core-eval \
-								--optghc=-ipackages/ddc-core-llvm \
-								--optghc=-ipackages/ddc-core-salt \
-								--optghc=-ipackages/ddc-core-simpl \
-								--optghc=-ipackages/ddc-core-llvm \
-								--optghc=-ipackages/ddc-type \
-					--optghc=-ipackages/ddci-core \
+                        --optghc=-ipackages/ddc-base \
+                        --optghc=-ipackages/ddc-build \
+                        --optghc=-ipackages/ddc-core \
+			--optghc=-ipackages/ddc-core-eval \
+			--optghc=-ipackages/ddc-core-llvm \
+			--optghc=-ipackages/ddc-core-salt \
+			--optghc=-ipackages/ddc-core-simpl \
+                        --optghc=-ipackages/ddc-driver \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(ddci-core_src_hs_all)
