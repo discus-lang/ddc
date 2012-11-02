@@ -33,11 +33,6 @@ packages/ddc-core/%.o : packages/ddc-core/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-core
 
-packages/ddc-llvm/%.o : packages/ddc-llvm/%.hs
-	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-llvm
-
 packages/ddc-core-simpl/%.o : packages/ddc-core-simpl/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -67,7 +62,7 @@ packages/ddc-core-llvm/%.o : packages/ddc-core-llvm/%.hs
                       -ipackages/ddc-core \
                       -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-salt \
-                      -ipackages/ddc-llvm -ipackages/ddc-core-llvm
+                      -ipackages/ddc-core-llvm
 
 packages/ddc-build/%.o : packages/ddc-build/%.hs
 	@echo "* Compiling $<"
@@ -77,7 +72,7 @@ packages/ddc-build/%.o : packages/ddc-build/%.hs
                       -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
 		      -ipackages/ddc-core-salt \
-		      -ipackages/ddc-llvm -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-build
 
 packages/ddc-driver/%.o : packages/ddc-driver/%.hs
@@ -88,7 +83,7 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
                       -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
 		      -ipackages/ddc-core-salt \
-		      -ipackages/ddc-llvm -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver
 
@@ -100,7 +95,7 @@ packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
                       -ipackages/ddc-core-simpl \
                       -ipackages/ddc-core-eval \
                       -ipackages/ddc-core-salt \
-                      -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
+                      -ipackages/ddc-core-llvm \
                       -ipackages/ddc-build \
                       -ipackages/ddc-tools/src/ddc-check
 
@@ -112,7 +107,7 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
                       -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
                       -ipackages/ddc-core-salt \
-                      -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
+                      -ipackages/ddc-core-llvm \
                       -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
                       -ipackages/ddc-tools/src/ddci-core
@@ -125,7 +120,7 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
                       -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
 		      -ipackages/ddc-core-salt \
-		      -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
+		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-tools/src/ddc-main

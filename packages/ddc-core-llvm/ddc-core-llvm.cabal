@@ -34,6 +34,15 @@ Library
         DDC.Core.Llvm.LlvmM
         DDC.Core.Llvm.Platform
                   
+        DDC.Llvm.Transform.Clean
+        DDC.Llvm.Attr
+        DDC.Llvm.Exp
+        DDC.Llvm.Function
+        DDC.Llvm.Instr
+        DDC.Llvm.Module
+        DDC.Llvm.Prim
+        DDC.Llvm.Type
+
   GHC-options:
         -Werror
         -Wall

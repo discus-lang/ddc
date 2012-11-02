@@ -7,7 +7,6 @@ ddc-main_packages = \
         packages/ddc-core-simpl/DDC \
         packages/ddc-core-eval/DDC \
         packages/ddc-core-salt/DDC \
-        packages/ddc-llvm/DDC \
         packages/ddc-core-llvm/DDC \
         packages/ddc-build/DDC \
         packages/ddc-driver/DDC \
