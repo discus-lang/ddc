@@ -23,12 +23,15 @@ where
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Runtime
 import DDC.Core.Salt.Name
+import DDC.Core.Salt.Env
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Predicates
 import DDC.Core.Compounds
+import DDC.Type.Compounds
 import DDC.Core.Check           (AnTEC(..))
-import Data.Set                 (Set)
-import qualified Data.Set       as Set
+import Data.Map                 (Map)
+import qualified Data.Map       as Map
 
 
 transferModule 
@@ -50,7 +53,7 @@ transLet :: (Bind Name, Exp (AnTEC a Name) Name)
          -> (Bind Name, Exp (AnTEC a Name) Name)
 
 transLet (BName n t, x)
- = let  tails   = Set.singleton n
+ = let  tails   = Map.singleton n t
         x'      = transSuper tails x
    in   (BName n t, x')
 
@@ -60,7 +63,7 @@ transLet tup
 
 -- Super ----------------------------------------------------------------------
 transSuper 
-        :: Set Name 
+        :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
         -> Exp (AnTEC a Name) Name 
         -> Exp (AnTEC a Name) Name
 
@@ -77,17 +80,32 @@ transSuper tails xx
         XLam  a b x     -> XLam  a b $ down x
 
         -- Tail-call a supercombinator.
-        -- BROKEN: need to handle region args out the front.
-{-
-         XApp{}
-         | xv@(XVar a (UName n tF)) : args <- takeXApps xx
-         , Set.member n tails
-         , (tsArgs, tResult)  <- takeTFunArgResult tF
-         -> let arity   = length args
+        --   The super must have its arguments in standard order,
+        --   being type arguments, then witness arguments, then value arguments.
+        --   We need this so we can split off just the value arguments and 
+        --   pass them to the appropriate tailcallN# primitive.
+        XApp{}
+         | Just (xv@(XVar a (UName n)), args) <- takeXApps xx
+         , Just tF                  <- Map.lookup n tails
+
+         -- Split off args and check they are in standard order.
+         , (xsArgsType, xsArgsMore) <- span isXType    args
+         , (xsArgsWit,  xsArgsVal)  <- span isXWitness xsArgsMore
+         , not $ any isXType    xsArgsVal
+         , not $ any isXWitness xsArgsVal
+
+         -- Get the types of the value parameters.
+         , (tsArgs,    tResult)     <- takeTFunArgResult $ eraseTForalls tF
+         , tsValArgs                <- drop (length xsArgsWit) tsArgs
+
+         -> let arity   = length xsArgsVal
                 p       = PrimCallTail arity
                 u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
-            in  makeXApps a (XVar a u) (map XType (tsArgs ++ [tResult]) ++ (xv : args))
--}
+            in  makeXApps a (XVar a u) 
+                        $  (map XType (tsValArgs ++ [tResult])) 
+                        ++ [makeXApps a xv (xsArgsType ++ xsArgsWit)] 
+                        ++ xsArgsVal
+
         -- Return the result of this application.
         XApp  a x1 x2   
          -> let x1'     = transX tails x1
@@ -119,7 +137,7 @@ addReturnX a t xx
 
 
 -- Let ------------------------------------------------------------------------
-transL  :: Set Name 
+transL  :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
         -> Lets (AnTEC a Name) Name
         -> Lets (AnTEC a Name) Name
 
@@ -132,7 +150,7 @@ transL tails lts
 
 
 -- Alt ------------------------------------------------------------------------
-transA  :: Set Name
+transA  :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
         -> Alt (AnTEC a Name) Name
         -> Alt (AnTEC a Name) Name
 
@@ -142,7 +160,7 @@ transA tails aa
 
 
 -- Exp ------------------------------------------------------------------------
-transX  :: Set Name 
+transX  :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
         -> Exp (AnTEC a Name) Name 
         -> Exp (AnTEC a Name) Name 
 

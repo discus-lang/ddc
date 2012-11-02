@@ -308,12 +308,13 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- Tailcall a function.
          --   We must be at the top-level of the function.
          C.XApp{}
-          |  Just (A.NamePrim p, args)         <- takeXPrimApps xx
-          ,  A.PrimCall (A.PrimCallTail arity) <- p
-          ,  _tsArgs                           <- take arity args
-          ,  C.XType tResult : xFun : xsArgs   <- drop arity args
-          ,  Just (Var nFun _)                 <- takeGlobalV pp kenv tenv xFun
-          ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp kenv tenv) xsArgs
+          |  Just (A.NamePrim p, args)             <- takeXPrimApps xx
+          ,  A.PrimCall (A.PrimCallTail arity)     <- p
+          ,  _tsArgs                               <- take arity args
+          ,  C.XType tResult : xFunTys : xsArgs    <- drop arity args
+          ,  Just (xFun, _xsTys)        <- takeXApps xFunTys
+          ,  Just (Var nFun _)          <- takeGlobalV pp kenv tenv xFun
+          ,  Just xsArgs'               <- sequence $ map (mconvAtom pp kenv tenv) xsArgs
           -> if isVoidT tResult
               -- Tailcalled function returns void.
               then do return $ blocks

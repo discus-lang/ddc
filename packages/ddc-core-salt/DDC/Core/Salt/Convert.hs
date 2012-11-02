@@ -319,7 +319,7 @@ convBlockM context kenv tenv xx
          | ContextTop      <- context
          -> case takeXPrimApps xx of
                 Just (NamePrim p, xs)
-                 |  isControlPrim p
+                 |  isControlPrim p || isCallPrim p
                  -> convPrimCallM kenv tenv p xs
 
                 _ -> throw $ ErrorBodyMustPassControl xx
@@ -329,7 +329,7 @@ convBlockM context kenv tenv xx
          -- then we can't assign it to the result var.
          | ContextNest{}         <- context
          , Just (NamePrim p, xs) <- takeXPrimApps xx
-         , isControlPrim p
+         , isControlPrim p || isCallPrim p
          -> convPrimCallM kenv tenv p xs
 
          -- In a nested context we assign the result value to the 
@@ -430,11 +430,19 @@ convBlockM context kenv tenv xx
         _ -> throw $ ErrorBodyInvalid xx
 
 
--- | Check whether this primop passes control.
+-- | Check whether this primop passes control (and does not return).
 isControlPrim :: Prim -> Bool
 isControlPrim pp
  = case pp of
-        PrimControl _   -> True
+        PrimControl{}   -> True
+        _               -> False
+
+
+-- | Check whether this primop passes control (and returns).
+isCallPrim :: Prim -> Bool
+isCallPrim pp
+ = case pp of
+        PrimCall{}      -> True
         _               -> False
 
 
@@ -643,6 +651,21 @@ convPrimCallM kenv tenv p xs
         PrimControl PrimControlFail
          | [XType _t]           <- xs
          -> do  return  $ text "_FAIL()"
+
+
+        -- Call primops.
+        -- ISSUE #261: Implement tailcalls in the C backend.
+        --   This doesn't actually do a tailcall.
+        --   For straight tail-recursion we need to overwrite the parameters
+        --   with the new arguments and jump back to the start of the function.
+        PrimCall (PrimCallTail arity)
+         | xFunTys : xsArgs     <- drop (arity + 1) xs
+         , Just (xFun, _)       <- takeXApps xFunTys
+         , XVar _ (UName n)     <- xFun
+         , NameVar nTop         <- n
+         -> do  let nFun'       = text $ sanitizeGlobal nTop
+                xsArgs'         <- mapM (convRValueM kenv tenv) xsArgs
+                return  $  nFun' <> parenss xsArgs'
 
 
         -- Store primops.
