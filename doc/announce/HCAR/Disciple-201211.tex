@@ -1,0 +1,27 @@
+% Disciple-BD.tex
+\begin{hcarentry}[section]{Disciple}
+\report{Ben Lippmeier}%11/11
+\status{experimental, active development}
+\participants{Tran Ma, Amos Robinson, Erik de Castro Lopo}
+\makeheader
+
+Disciple Core is an explicitly typed language based on System-F2, intended as an intermediate representation for a compiler. In addition to the polymorphism of System-F2 it supports region, effect and closure typing. Evaluation order is left-to-right call-by-value by default, but explicit lazy evaluation is also supported. The language includes a capability system to track whether objects are mutable or constant, and to ensure that computations that perform visible side effects are not suspended with lazy evaluation.
+
+The Disciplined Disciple Compiler (DDC) is being rewritten to use the redesigned Disciple Core language. This new DDC is at a stage where it will parse and type-check core programs, and compile first-order functions over lists to executables via C or LLVM backends. There is also an interpreter that supports the full language.
+
+\WhatsNew
+
+\begin{itemize}
+\item Tran Ma has extended the core language with witnesses of Distinctness, which encode the fact that two regions of memory cannot alias at runtime. This information is used during program transformation in DDC, as well as being converted to LLVM aliasing metadata. Aliasing metadata allows the LLVM compiler to perform alias dependent follow-on optimisations, such as Global Value Numbering (GVN).
+
+\item Amos Robinson has added a rewrite rule system which understands the Disciple effect typing mechanism. Rewrite rules can be given constraints that ensure they only fire when particular expressions have non-interfering effects. This enables rewrite rule based transformations such as build/fold fusion to work in the presence of (non-interfering) effects.
+
+\item Ben Lippmeier has been working on the compiler framework and code generators. DDC now supports cross module inlining and a few basic code transformations like let-floating. All code that constructs heap objects is written directly in our lowest-level intermediate language, Disciple Salt (a bit like Cmm). This language is a fragment of the full Disciple Core language, so we can use the same AST right up until final code generation, either via C or LLVM. All runtime system code is written directly in Disciple Salt, and then inlined into user-written programs during compilation.
+\end{itemize}
+
+\FuturePlans
+We are currently fixing bugs in preparation for a release at the end of November.
+
+\FurtherReading
+  \url{http://disciple.ouroborus.net}
+\end{hcarentry}

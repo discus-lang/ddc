@@ -1,0 +1,16 @@
+% Disciple-BD.tex
+\begin{hcarentry}[section]{Disciple}
+\report{Ben Lippmeier}%11/11
+\status{experimental, active development}
+\participants{Erik de Castro Lopo}
+\makeheader
+
+Disciple is a dialect of Haskell that uses strict evaluation as the default and supports destructive update of arbitrary data.  Many Haskell programs are also Disciple programs, or will run with minor changes. In addition, Disciple includes region, effect, and closure typing, and this extra information provides a handle on the operational behaviour of code that is not available in other languages. Our target applications are the ones that you always find yourself writing C programs for, because existing functional languages are too slow, use too much memory, or do not let you update the data that you need to.
+
+Our compiler (DDC) is still in the ``research prototype'' stage, meaning that it will compile programs if you are nice to it, but expect compiler panics and missing features. You will get panics due to ungraceful handling of errors in the source code, but valid programs should compile ok. The test suite includes a few thousand-line graphical demos, like a ray-tracer and an n-body collision simulation, so it is definitely hackable.
+
+Over the last six months we continued working towards mechanising the metatheory of the DDC core language in Coq. We've finished Progress and Preservation for System-F2 with mutable algebraic data, and are now looking into proving contextual equivalence of rewrites in the presence of effects. Based on this experience, we've also started on an interpreter for a cleaned up version of the DDC core language. We've taken the advice of previous paper reviewers and removed dependent kinds, moving witness expressions down to level 0 next to value expressions. In the resulting language, types classify both witness and value expressions, and kinds classify types. We're also removing more-than constraints on effect and closure variables, along with dangerous type variables (which never really worked). All over, it's being pruned back to the parts we understand properly, and the removal of dependent kinds will make mechanising the metatheory easier. Writing an interpreter for the core language also gets us a parser for it, which we will need for performing cross module inlining in the compiler proper.
+
+\FurtherReading
+  \url{http://disciple.ouroborus.net}
+\end{hcarentry}
