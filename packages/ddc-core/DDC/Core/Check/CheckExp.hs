@@ -15,6 +15,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
 import DDC.Core.Check.Error
+import DDC.Core.Check.CheckDaCon
 import DDC.Core.Check.CheckWitness
 import DDC.Core.Check.TaggedClosure
 import DDC.Type.Transform.SubstituteT
@@ -138,32 +139,16 @@ checkExpM' _config _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' _config _kenv _tenv xx@(XCon a dc)
+checkExpM' config _kenv _tenv xx@(XCon a dc)
  = do   
-        -- TODO: Check that algebraic constructors have data type declarations.
-        --       The following code doesn't work because literal constructors
-        --       like '23' are not in the type environment. We need to use their
-        --       attached types to lookup the data type declaration.
-
-        -- TODO: Check that constructors have non-bot type annotations.
-
-        --(case daConName dc of
-        --  DaConUnit      -> return ()
-        --  DaConNamed n
-        --   | daConIsAlgebraic dc
-        --   -> case Map.lookup n (dataDefsCtors $ configDataDefs config) of
-        --         Nothing -> throw $ ErrorUndefinedCtor xx
-        --         _       -> return ()
-
-        --   | otherwise   -> return ())
-
         -- All data constructors need to have valid type annotations.
         when (isBot $ daConType dc)
          $ throw $ ErrorUndefinedCtor xx
-        
+
+        -- Check that the constructor is in the data type declarations.
+        checkDaConM config xx dc
 
         let tResult     = typeOfDaCon dc
-
         returnX a
                 (\z -> XCon z dc)
                 tResult
@@ -1062,4 +1047,3 @@ checkLetBindOfTypeM xx config kenv _tenv tRight b
         | otherwise
         = do    k       <- checkTypeM config kenv (typeOfBind b)
                 return (b, k)
-
