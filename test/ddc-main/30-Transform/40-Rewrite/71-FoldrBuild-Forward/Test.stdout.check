@@ -194,10 +194,9 @@ ok
         Namify: No information
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr} in
 let num : Int R0# = 10 [R0#] () in
 let v7 : [t0 : *].[t1 t2 t3 : !].[t4 t5 t6 : $].(Int R0# -(t1 | t4)> t0 -(t2 | t5)> t0) -(!0 | Use R0#)> (Unit -(t3 | t6)> t0) -(Read R0# + Alloc R0# + t1 + t2 + t3 | Use R0# + t4)> t0 = count' num in
-weakclo {build; compose; double; even; foldr; v7} in
+weakclo {double; even; v7} in
 let v33 : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(v30 v31 : Int R0#).
         let v32 : Int R0# = even v30 in

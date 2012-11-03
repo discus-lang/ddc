@@ -16,7 +16,7 @@ import Data.Monoid
 
 data Support n
         = Support
-        { -- | Type constructors used in the expressoin.
+        { -- | Type constructors used in the expression.
           supportTyCon          :: Set (Bound n)
 
           -- | Free spec variables in an expression.

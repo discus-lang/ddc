@@ -114,7 +114,7 @@ letrec {
     = /\(r : %).
        \(w : Const r).\(_ : Int#).
       weakeff [Read r + Alloc r] in
-      weakclo {[r]; boxInt; unboxInt} in
+      weakclo {[r]} in
       let x : Int r
             = (let ^ : Int# = 1i# in
                let ^ : Int r = boxInt [r] ^0 in

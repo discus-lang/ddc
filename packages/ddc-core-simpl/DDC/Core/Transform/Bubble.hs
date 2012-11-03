@@ -4,7 +4,6 @@
 --   enclosing let. This way the functions still have the same effect and
 --   closure, but the casts don't get in the way of subsequent transforms.
 --
---   TODO: also merge duplicate effect and closure weakenings.
 module DDC.Core.Transform.Bubble
         ( bubbleModule
         , bubbleX)
@@ -13,10 +12,11 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Collect
 import DDC.Core.Collect.Support
-import DDC.Core.Compounds
 import DDC.Core.Transform.LiftX
+import DDC.Core.Compounds
 import DDC.Type.Compounds
-import DDC.Type.Env                             (TypeEnv)
+import DDC.Type.Predicates
+import DDC.Type.Env                             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
 import qualified Data.Set                       as Set
@@ -26,29 +26,41 @@ import Data.List
 
 -- | Bubble casts outwards in a `Module`.
 bubbleModule 
-        :: Ord n 
+        :: Ord n
         => Module a n -> Module a n
 
 bubbleModule mm@ModuleCore{}
- = let tenv     = moduleTypeEnv mm
-   in  mm { moduleBody = bubbleX tenv (moduleBody mm) }
+ = let  kenv    = moduleKindEnv mm
+        tenv    = moduleTypeEnv mm
+   in   mm { moduleBody = bubbleX kenv tenv (moduleBody mm) }
 
 
 -- | Bubble casts outwards in an `Exp`.
-bubbleX :: Ord n => TypeEnv n -> Exp a n -> Exp a n
-bubbleX tenv x
- = let  (cs, x')        = bubble tenv x
+bubbleX :: Ord n
+        => KindEnv n -> TypeEnv n -> Exp a n -> Exp a n
+bubbleX kenv tenv x
+ = let  
+        -- Bubble the expression, yielding any casts that floated out
+        -- to top-level.
+        (cs, x')        = bubble kenv tenv x
         Just a          = takeAnnotOfExp x'
-   in   dropAllCasts tenv a cs x'
+
+        -- Reattach top-level casts.
+   in   dropAllCasts kenv tenv a cs x'
 
 
--- | Bubble casts outwards.
+-------------------------------------------------------------------------------
+-- | Bubble casts outwards in some thing.
 class Bubble (c :: * -> * -> *) where
- bubble :: Ord n => TypeEnv n -> c a n -> ([FvsCast a n], c a n)
+ bubble :: Ord n
+        => KindEnv n
+        -> TypeEnv n
+        -> c a n 
+        -> ([FvsCast a n], c a n)
 
 
 instance Bubble Exp where
- bubble tenv xx
+ bubble kenv tenv xx
   = case xx of
         XVar{}  -> ([], xx)
         XCon{}  -> ([], xx)
@@ -57,37 +69,45 @@ instance Bubble Exp where
         -- function type depends on the effect and closure of the body.
         -- The cast could also reference the bound variable.
         XLAM a b x
-         -> let (cs, x')        = bubble tenv x
-            in  ([], XLAM a b (dropAllCasts tenv a cs x'))
+         -> let kenv'           = Env.extend b kenv
+                (cs, x')        = bubble kenv' tenv x
+            in  ([], XLAM a b (dropAllCasts kenv' tenv a cs x'))
 
         XLam a b x
          -> let tenv'           = Env.extend b tenv
-                (cs, x')        = bubble tenv' x
-            in  ([], XLam a b (dropAllCasts tenv a cs x'))
+                (cs, x')        = bubble kenv tenv' x
+            in  ([], XLam a b (dropAllCasts kenv tenv' a cs x'))
 
+        -- Decend into applications.
         XApp a x1 x2
-         -> let (cs1, x1')      = bubble tenv x1
-                (cs2, x2')      = bubble tenv x2
+         -> let (cs1, x1')      = bubble kenv tenv x1
+                (cs2, x2')      = bubble kenv tenv x2
             in  (cs1 ++ cs2, XApp a x1' x2')
 
+        -- After decending into let-expressions, make sure to drop
+        -- any casts that mention variables bound here.
         XLet a lts x2
-         -> let (cs1, lts')     = bubble tenv lts
+         -> let (cs1, lts')     = bubble kenv tenv lts
                 (bs1, bs0)      = bindsOfLets lts
+                kenv'           = Env.extends bs1 kenv
                 tenv'           = Env.extends bs0 tenv
-                (cs2, x2')      = bubble tenv' x2
-                (cs2', x2'')    = dropCasts tenv a bs1 bs0 cs2 x2'
+                (cs2, x2')      = bubble kenv' tenv' x2
+                (cs2', x2'')    = dropCasts kenv' tenv' a bs1 bs0 cs2 x2'
             in  ( cs1 ++ cs2'
                 , XLet a lts' x2'')
 
+        -- Decent into case-expressions.
+        --  Casts that depend on bound variables are dropped 
+        --  in the corresponding alternatives.
         XCase a x alts
-         -> let (cs, x')        = bubble tenv x
-                (css, alts')    = unzip $ map (bubble tenv) alts
+         -> let (cs, x')        = bubble kenv tenv x
+                (css, alts')    = unzip $ map (bubble kenv tenv) alts
             in  ( cs ++ concat css
                 , XCase a x' alts')
 
         -- Strip of cast and pass it up.
         XCast _ c x
-         -> let (cs, x')        = bubble tenv x
+         -> let (cs, x')        = bubble kenv tenv x
                 fvsT            = freeT Env.empty c
                 fvsX            = freeX Env.empty c
                 fc              = FvsCast c fvsT fvsX
@@ -98,15 +118,15 @@ instance Bubble Exp where
 
 
 instance Bubble Lets where
- bubble tenv lts
+ bubble kenv tenv lts
   = case lts of
 
         -- Drop casts that mention the bound variable here, 
         -- but we can float the others further outwards.
         LLet m b x
-         -> let (cs, x')        = bubble tenv x
+         -> let (cs, x')        = bubble kenv tenv x
                 Just a          = takeAnnotOfExp x'
-                (cs', xc')      = dropCasts tenv a [] [b] cs x'
+                (cs', xc')      = dropCasts kenv tenv a [] [b] cs x'
             in  (cs', LLet m b xc')
 
         -- TODO: Bubble casts out of recursive lets.
@@ -115,9 +135,9 @@ instance Bubble Lets where
                 tenv'           = Env.extends bs tenv
 
                 bubbleRec (b, x)
-                 = let  (cs, x') = bubble tenv' x
+                 = let  (cs, x') = bubble kenv tenv' x
                         Just a   = takeAnnotOfExp x'
-                   in   (b, dropAllCasts tenv a cs x')
+                   in   (b, dropAllCasts kenv tenv' a cs x')
 
                 bxs'            = map bubbleRec bxs
 
@@ -131,18 +151,18 @@ instance Bubble Alt where
 
  -- Default patterns don't bind variables, 
  -- so there is no problem floating casts outwards.
- bubble tenv (AAlt PDefault x)
-  = let (cs, x') = bubble tenv x
+ bubble kenv tenv (AAlt PDefault x)
+  = let (cs, x') = bubble kenv tenv x
     in  (cs, AAlt PDefault x')
 
  -- Drop casts before we leave the alt because they could contain
  -- variables bound by the pattern.
- bubble tenv (AAlt p x)
+ bubble kenv tenv (AAlt p x)
   = let bs              = bindsOfPat p
         Just a          = takeAnnotOfExp x'
         tenv'           = Env.extends bs tenv
-        (cs, x')        = bubble tenv' x
-        (csUp, xcHere)  = dropCasts tenv a [] bs cs x'
+        (cs, x')        = bubble kenv tenv' x
+        (csUp, xcHere)  = dropCasts kenv tenv' a [] bs cs x'
     in  (csUp, AAlt p xcHere)
 
 
@@ -152,8 +172,8 @@ instance Bubble Alt where
 --   so that we don't have to keep recomputing them.
 data FvsCast a n
         = FvsCast (Cast a n)
-                  (Set (Bound n))
-                  (Set (Bound n))
+                  (Set (Bound n))       -- Free level-1 variables.
+                  (Set (Bound n))       -- Free level-0 variables.
 
 instance Ord n => MapBoundX (FvsCast a) n where
  mapBoundAtDepthX f d (FvsCast c fvs1 fvs0)
@@ -165,21 +185,24 @@ instance Ord n => MapBoundX (FvsCast a) n where
 
 
 packFvsCasts 
-        :: Ord n 
-        => TypeEnv n
-        -> a 
-        -> [FvsCast a n] -> [Cast a n]
+        :: Ord n
+        => KindEnv n -> TypeEnv n
+        -> a -> [FvsCast a n] -> [Cast a n]
 
-packFvsCasts tenv a fvsCasts
-        = packCasts tenv a [ c | FvsCast c _ _ <- fvsCasts ]
+packFvsCasts kenv tenv a fvsCasts
+        = packCasts kenv tenv a [ c | FvsCast c _ _ <- fvsCasts ]
 
 
 -- | Pack down casts by combining multiple 'weakclo' and 'weakeff' casts
 --   together. We pack casts just before we drop them, so that the resulting
 --   code is easier to read.
-packCasts :: Ord n => TypeEnv n -> a -> [Cast a n] -> [Cast a n]
-packCasts tenv a vs
- = let  collect weakEffs weakClos others cc
+packCasts :: Ord n
+          => KindEnv n -> TypeEnv n -> a -> [Cast a n] -> [Cast a n]
+packCasts kenv tenv a vs
+ = let  
+        -- Sort casts into weakeff, weakclo and any others.
+        -- We'll collect the weakeff and weakclo casts together.
+        collect weakEffs weakClos others cc
          = case cc of
             []                        
              -> (reverse weakEffs, reverse weakClos, reverse others)
@@ -197,21 +220,29 @@ packCasts tenv a vs
         (effs, xsClos, csOthers) 
                 = collect [] [] [] vs
 
+        xsClos_packed
+                = packWeakenClosureXs kenv tenv a xsClos
+
    in   (if null effs 
                 then []
                 else [CastWeakenEffect  (TSum $ Sum.fromList kEffect effs)])
-     ++ (if null xsClos
+     ++ (if null xsClos_packed
                 then []
-                else [CastWeakenClosure (packWeakenClosureXs tenv a xsClos)])
+                else [CastWeakenClosure xsClos_packed])
      ++ csOthers
 
 
 -- | Pack the expressions given to a `WeakenClosure` to just the ones that we
 --   care about. We only need region variables, and value variables with 
 --   open types.
-packWeakenClosureXs :: Ord n => TypeEnv n -> a -> [Exp a n] -> [Exp a n]
-packWeakenClosureXs tenv a xx
- = let  eat fvsSp fvsDa []
+packWeakenClosureXs 
+        :: Ord n
+        => KindEnv n -> TypeEnv n 
+        -> a -> [Exp a n] -> [Exp a n]
+
+packWeakenClosureXs kenv tenv a xx
+ = let  
+        eat fvsSp fvsDa []
          = (fvsSp, fvsDa)
 
         eat fvsSp fvsDa (x : xs)
@@ -223,33 +254,46 @@ packWeakenClosureXs tenv a xx
         (vsSp, vsDa)      = eat Set.empty Set.empty xx
 
    in   [XType (TVar u) | u <- Set.toList vsSp]
-     ++ [XVar a u       | u <- Set.toList vsDa, keepBound tenv u]
+     ++ [XVar a u       | u <- Set.toList vsDa, keepBound kenv tenv u]
 
 
--- | When packing vars given to a closure weakening,
---   we only need to keep the ones with open types.
---   Cars with closed types don't have any closure.
-keepBound :: Ord n => TypeEnv n -> Bound n -> Bool
-keepBound tenv u
-        | Just t       <- Env.lookup u tenv
-        , Set.null (freeT Env.empty t)
+-- | When packing vars given to a closure weakening, we only need to keep
+--   vars that have open types or contain region handles.
+keepBound :: Ord n => KindEnv n -> TypeEnv n -> Bound n -> Bool
+keepBound _kenv tenv u
+        | Just t        <- Env.lookup u tenv
+        , sup           <- support Env.empty Env.empty t
+        , Set.null (supportSpVar sup)
+        , all (not . isRegionHandle) $ Set.toList $ supportTyCon sup
         = False
 
         | otherwise
         = True 
 
 
+-- | Treat primitive constructors with region kind as region handles.
+--   Region handles are only really a part of the 'Disciple Core Eval' 
+--   language, but they're easy to check for even if the name type 'n'
+--   hasn't been revealed.
+isRegionHandle :: Bound n -> Bool
+isRegionHandle u
+ = case u of
+        UPrim _ k       -> isRegionKind k
+        _               -> False
+
+
 -- Dropping -------------------------------------------------------------------
 -- | Wrap the provided expression with these casts.
 dropAllCasts 
-        :: Ord n 
-        => TypeEnv n
+        :: Ord n
+        => KindEnv n
+        -> TypeEnv n
         -> a 
         -> [FvsCast a n] -> Exp a n 
         -> Exp a n
 
-dropAllCasts tenv a cs x
- = let  cs'     = packFvsCasts tenv a cs
+dropAllCasts kenv tenv a cs x
+ = let  cs'     = packFvsCasts kenv tenv a cs
    in   foldr (XCast a) x cs'
 
 
@@ -259,7 +303,7 @@ dropAllCasts tenv a cs x
 --   seprately so we can keep bubbling them up the tree.
 dropCasts 
         :: Ord n
-        => TypeEnv n
+        => KindEnv n -> TypeEnv n
         -> a 
         -> [Bind n]             -- ^ Level-1 binders.
         -> [Bind n]             -- ^ Level-0 binders.
@@ -267,10 +311,10 @@ dropCasts
         -> Exp a n 
         -> ([FvsCast a n], Exp a n)
 
-dropCasts tenv a  bs1 bs0 cs x
+dropCasts kenv tenv a bs1 bs0 cs x
  = let  (csHere1, cs1)    = partition (fvsCastUsesBinds1 bs1) cs
         (csHere0, csUp)   = partition (fvsCastUsesBinds0 bs0) cs1
-        csHere            = packFvsCasts tenv a $ csHere1 ++ csHere0
+        csHere            = packFvsCasts kenv tenv a $ csHere1 ++ csHere0
    in   ( map (lowerX 1) csUp
         , foldr (XCast a) x csHere)
 

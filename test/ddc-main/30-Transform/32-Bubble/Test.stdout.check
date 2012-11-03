@@ -9,7 +9,15 @@ weakclo {x} in
 addInt [R0#] [R0#] [R0#] (2 [R0#] ()) (3 [R0#] ())
 
 
--- Float cast out of inner let-binding.
+-- Float cast out of inner let-binding, 
+letregion r in
+let y : Int r = 6 [r] () in
+weakclo {y} in
+let x : Int r = 5 [r] () in
+addInt [r] [r] [R0#] (2 [r] ()) (3 [r] ())
+
+
+-- Float cast out of inner let-binding, preserving region handles.
 let y : Int R0# = 6 [R0#] () in
 weakclo {y} in
 let x : Int R0# = 5 [R0#] () in
@@ -21,3 +29,11 @@ let ^ : Int R0# = 6 [R0#] () in
 weakclo {^0} in
 let ^ : Int R0# = 5 [R0#] () in
 addInt [R0#] [R0#] [R0#] (2 [R0#] ()) (3 [R0#] ())
+
+
+-- Arguments to weakclo that don't have any free variables should be eliminated.
+let id : [r : %].Int r -> Int r
+      = /\(r : %).
+         \(x : Int r). x in
+()
+

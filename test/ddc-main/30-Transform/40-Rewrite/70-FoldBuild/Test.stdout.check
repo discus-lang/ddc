@@ -96,7 +96,6 @@ ok
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; foldrAndBuild} in
 countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 
@@ -200,7 +199,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; even; foldr; foldrAndBuild; plus} in
+weakclo {even; plus} in
 countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
          (\(^ ^ : Int R0#).
@@ -291,7 +290,6 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; foldrAndBuild} in
 countZ (100 [R0#] ()) [List R1# (Int R0#)] [Read R0# + Alloc R0#] [Alloc R1#] [Alloc R1#] [Use R0#] [Use R0#] [$0]
     (compose [Int R0#] [Int R0#] [List R1# (Int R0#) -(Alloc R1# | Use R0#)> List R1# (Int R0#)] [!0] [Read R0# + Alloc R0#] [$0] [Use R0#]
          (Cons [R1#] [Int R0#]) double)
