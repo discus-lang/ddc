@@ -47,25 +47,23 @@ checkModuleM
 
 checkModuleM config kenv tenv mm@ModuleCore{}
  = do   
-        -- Check the sigs for exported things.
-        mapM_ (checkTypeM config kenv) $ Map.elems $ moduleExportKinds mm
-        mapM_ (checkTypeM config kenv) $ Map.elems $ moduleExportTypes mm
-
         -- Convert the imported kind and type map to a list of binds.
         let bksImport  = [BName n k |  (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
         let btsImport  = [BName n t |  (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
 
         -- Check the imported kinds and types.
+        --  The imported types are in scope in both imported and exported signatures.
         mapM_ (checkTypeM config kenv) $ map typeOfBind bksImport
-        mapM_ (checkTypeM config kenv) $ map typeOfBind btsImport
+        let kenv' = Env.union kenv $ Env.fromList bksImport
 
+        mapM_ (checkTypeM config kenv') $ map typeOfBind btsImport
+        let tenv' = Env.union tenv $ Env.fromList btsImport
 
-        -- Build the compound environments.
-        -- These contain primitive types as well as the imported ones.
-        let kenv'        = Env.union kenv $ Env.fromList bksImport
-        let tenv'        = Env.union tenv $ Env.fromList btsImport
+        -- Check the sigs for exported things.
+        mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportKinds mm
+        mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportTypes mm
                 
-        -- Check our let bindings (with the dummy expression on the end)
+        -- Check our let bindings.
         (x', _, _effs, _) <- checkExpM config kenv' tenv' (moduleBody mm)
 
         -- TODO: check that types of bindings match types of exports.
