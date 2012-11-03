@@ -16,6 +16,7 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Predicates
+import DDC.Base.Pretty                  hiding (align)
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
@@ -408,9 +409,10 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
           |  otherwise
-          -> die $ "invalid body statement " ++ show xx
+          -> die $   renderIndent
+                 $   text "Invalid body statement " 
+                 <$> ppr xx
  
-
 -- Exp ------------------------------------------------------------------------
 -- | What context we're doing this conversion in.
 data ExpContext

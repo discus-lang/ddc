@@ -198,7 +198,7 @@ data KiCon
 -- | Witness type constructors.
 data TwCon
         -- Witness implication.
-        = TwConImpl             -- :: '(=>) :: * ~> *'
+        = TwConImpl             -- :: '(=>) :: @ ~> *'
 
         -- | Purity of some effect.
         | TwConPure             -- :: ! ~> @

@@ -148,7 +148,7 @@ l9.default:
         %_v15.ptr    = inttoptr i64 %_v14.addr2 to i64*
         store i64 %i, i64* %_v15.ptr,    !tbaa !3
         %nexti       = add i64 %i, 1
-        %_v16        = call i64 @go (i64* %a, i64* %x, i64* %y, i64 %nexti) 
+        %_v16        = tail call i64 @go (i64* %a, i64* %x, i64* %y, i64 %nexti) 
         ret i64 %_v16
 }
 

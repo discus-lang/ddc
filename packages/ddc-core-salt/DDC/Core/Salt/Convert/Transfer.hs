@@ -95,8 +95,7 @@ transSuper tails xx
          , not $ any isXWitness xsArgsVal
 
          -- Get the types of the value parameters.
-         , (tsArgs,    tResult)     <- takeTFunArgResult $ eraseTForalls tF
-         , tsValArgs                <- drop (length xsArgsWit) tsArgs
+         , (_, tsValArgs, tResult)  <- takeTFunWitArgResult $ eraseTForalls tF
 
          -> let arity   = length xsArgsVal
                 p       = PrimCallTail arity

@@ -34,10 +34,19 @@ module DDC.Type.Compounds
 
           -- * Function type construction
         , kFun
-        , kFuns,        takeKFun
-        , takeKFuns,    takeKFuns',     takeResultKind
-        , tFun,         takeTFun,       takeTFunArgResult
+        , kFuns
+        , takeKFun
+
+        , takeKFuns
+        , takeKFuns'
+        , takeResultKind
+
+        , tFun
         , tFunPE
+        , takeTFun
+        , takeTFunArgResult
+        , takeTFunWitArgResult
+
         , arityOfType
         , tImpl
 
@@ -378,8 +387,8 @@ takeTFun tt
         _ -> Nothing
 
 
--- | Destruct the type of a value function, returning just the argument
---   and result types.
+-- | Destruct the type of a function,
+--   returning just the argument and result types.
 takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
@@ -388,6 +397,20 @@ takeTFunArgResult tt
              in  (t1 : tsMore, tResult)
 
         _ -> ([], tt)
+
+-- | Destruct the type of a function,
+--   returning the witness argument, value argument and result types.
+--   The function type must have the witness implications before 
+--   the value arguments, eg  @T1 => T2 -> T3 -> T4 -> T5@.
+takeTFunWitArgResult :: Type n -> ([Type n], [Type n], Type n)
+takeTFunWitArgResult tt
+ = case tt of
+        TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
+         ->  let (twsMore, tvsMore, tResult) = takeTFunWitArgResult t2
+             in  (t1 : twsMore, tvsMore, tResult)
+
+        _ -> let (tvsMore, tResult)          = takeTFunArgResult tt
+             in  ([], tvsMore, tResult)
 
 
 -- | Determine the arity of an expression by looking at its type.
