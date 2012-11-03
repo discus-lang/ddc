@@ -17,12 +17,11 @@ import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
 import DDC.Core.Collect
+import DDC.Core.Predicates
 import DDC.Core.Compounds
-import DDC.Type.Compounds
-import DDC.Type.Predicates
-import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Core.Module                  as C
 import DDC.Core.Exp
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
 import qualified DDC.Type.Env           as Env

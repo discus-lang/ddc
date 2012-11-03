@@ -4,13 +4,11 @@ module DDC.Core.Pretty
         ( module DDC.Type.Pretty
         , module DDC.Base.Pretty)
 where
-import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Predicates
+import DDC.Core.Module
+import DDC.Core.Exp
 import DDC.Type.Pretty
-import DDC.Type.Compounds
-import DDC.Type.Predicates
 import DDC.Base.Pretty
 import Data.List
 import qualified Data.Map       as Map

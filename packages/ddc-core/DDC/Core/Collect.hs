@@ -1,10 +1,8 @@
 
 -- | Collecting sets of variables and constructors.
 module DDC.Core.Collect
-        ( freeT
-        , freeX
-        , collectBound
-        , collectBinds)
+        ( module DDC.Type.Collect
+        , freeX)
 where
 import DDC.Type.Collect
 import DDC.Type.Compounds

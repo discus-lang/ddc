@@ -1,8 +1,10 @@
 
 -- | Simple predicates on core expressions.
 module DDC.Core.Predicates
-        ( -- * Atoms
-          isXVar,  isXCon
+        ( module DDC.Type.Predicates
+
+          -- * Atoms
+        , isXVar,  isXCon
         , isAtomW, isAtomX
 
           -- * Lambdas

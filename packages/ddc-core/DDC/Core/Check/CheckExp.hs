@@ -11,9 +11,9 @@ module DDC.Core.Check.CheckExp
 where
 import DDC.Core.Predicates
 import DDC.Core.Compounds
-import DDC.Core.Exp
-import DDC.Core.Pretty
 import DDC.Core.Collect
+import DDC.Core.Pretty
+import DDC.Core.Exp
 import DDC.Core.Check.Error
 import DDC.Core.Check.CheckDaCon
 import DDC.Core.Check.CheckWitness
@@ -26,12 +26,9 @@ import DDC.Type.Transform.LowerT
 import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Type.Universe
-import DDC.Type.Compounds
-import DDC.Type.Predicates
 import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
-import DDC.Base.Pretty                  ()
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T

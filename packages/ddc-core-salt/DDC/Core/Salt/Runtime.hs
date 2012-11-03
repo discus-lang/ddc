@@ -33,7 +33,6 @@ import DDC.Core.Salt.Env
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.Compounds
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 

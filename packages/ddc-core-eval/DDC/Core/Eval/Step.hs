@@ -18,10 +18,9 @@ import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
 import DDC.Core.Fragment.Profile
-import DDC.Core.Compounds
 import DDC.Core.Predicates
+import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Type.Compounds
 import qualified Data.Set               as Set
 
 

@@ -1,8 +1,10 @@
 
 -- | Utilities for constructing and destructing compound expressions.
 module DDC.Core.Compounds 
-        ( -- * Lets
-          bindsOfLets
+        ( module DDC.Type.Compounds
+
+          -- * Lets
+        , bindsOfLets
         , specBindsOfLets
         , valwitBindsOfLets
 
@@ -44,8 +46,8 @@ module DDC.Core.Compounds
         , wApp,  wApps
         , takeWApps,  takePrimWiConApps)
 where
+import DDC.Type.Compounds
 import DDC.Core.Exp
-
 
 -- Lets -----------------------------------------------------------------------
 -- | Take the binds of a `Lets`.

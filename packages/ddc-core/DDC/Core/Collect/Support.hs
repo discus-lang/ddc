@@ -6,7 +6,6 @@ where
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Collect.FreeT
-import DDC.Type.Compounds
 import Data.Set                 (Set)
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env

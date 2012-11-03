@@ -14,8 +14,6 @@ import DDC.Core.Module
 import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
-import DDC.Type.Compounds
-import DDC.Type.Predicates
 import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)

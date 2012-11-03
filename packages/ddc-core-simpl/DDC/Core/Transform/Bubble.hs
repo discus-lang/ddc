@@ -8,14 +8,13 @@ module DDC.Core.Transform.Bubble
         ( bubbleModule
         , bubbleX)
 where
-import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Core.Collect
 import DDC.Core.Collect.Support
 import DDC.Core.Transform.LiftX
+import DDC.Core.Predicates
 import DDC.Core.Compounds
-import DDC.Type.Compounds
-import DDC.Type.Predicates
+import DDC.Core.Module
+import DDC.Core.Exp
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
