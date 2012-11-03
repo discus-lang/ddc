@@ -1,0 +1,57 @@
+
+:set +Indent
+:set trans Snip
+
+-- Identity function
+:trun (\(x : Unit). x) ()
+
+
+-- Identify function with indices.
+:trun (\(^ : Unit). ^0) ()
+
+
+-- Primitive operator.
+:trun addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ())
+
+
+-- Nested applications
+:trun.. 
+addInt [:R0# R1# R2#:] 
+       (1 [R0#] ()) 
+       (addInt [:R1# R1# R1#:] 
+               (2 [R1#] ()) 
+               (addInt [:R3# R3# R1#:] 
+                       (3 [R3#] ()) 
+                       (4 [R3#] ())));;
+
+-- Type abstraction
+:trun (/\(t:*).\(x:t).x) [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
+
+
+-- Primitive in case exp
+:trun..
+(\(u:Unit). 
+case 1 [R0#] u of {
+    0 -> 1 [R0#] u;
+    _ -> addInt [:R0# R0# R0#:] (2 [R0#] u) (3 [R0#] u)
+}) ();;
+
+
+-- Letrec
+:trun..
+letrec {
+ fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
+        0       -> 1 [r] ();
+        _       -> mulInt [:r r r:] n
+                      (fac [r] (subInt [:r r r:] n
+                                       (1 [r] ())));
+     }
+} in fac [R1#] (5 [R1#] ());;
+
+
+-- Snip out discriminants of case expressions
+:trun..
+case (\(x : Int R0#). x) (5 [R0#] ()) of {
+        _       -> ()
+};;

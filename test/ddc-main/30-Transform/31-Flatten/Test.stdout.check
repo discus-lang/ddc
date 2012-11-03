@@ -1,25 +1,24 @@
+
+-- Flatten --------------------------------------------------------------------
 ok
 ok
 
+module Main with
+letrec {
+  foo : [r : %].Int r -(Alloc r | Use r)> Unit
+    = /\(r : %).
+       \(x : Int r).
+      let ^ : Int r = 10 [r] () in
+      let _ : Unit = () in
+      let x0 : Int r = ^0 in
+      let ^ : Unit = () in
+      ^0
+}
 
--- Identity function
-let ^
-      = \(x : Unit). x in
-^0 ()
 
-
--- Identify function with indices.
-let ^
-      = \(^ : Unit). ^0 in
-^0 ()
-
-
--- Primitive
-let ^ = 1 [R0#] () in
-let ^ = 2 [R0#] () in
-addInt [R0#] [R0#] [R0#] ^1 ^0
-3
-
+-- A-Normalisation ------------------------------------------------------------
+-- These tests use a combination of snipping and flattening.
+ok
 
 -- Nested applications
 let ^ = 1 [R0#] () in
@@ -39,38 +38,6 @@ let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 1 in
 let ^ = ^0 [R0#] ^1 in
 addInt [R0#] [R1#] [R2#] ^0 x
 3
-
-
--- Type abstraction
-let ^
-      = /\(t : *).
-         \(x : t). x in
-let ^
-      = Nil [R0#] [Int R0#] () in
-^1 [List R0# (Int R0#)] ^0
-
-
--- Primitive in case exp
-let ^
-      = \(u : Unit).
-        let ^ = 1 [R0#] u in
-        case ^0 of {
-          0  
-           -> 1 [R0#] u;
-          _ 
-           -> let ^ = 2 [R0#] u in
-              let ^ = 3 [R0#] u in
-              addInt [R0#] [R0#] [R0#] ^1 ^0
-        } in
-^0 ()
-5
-
-
--- Anonymous binders
-let ^ : Int R0# = 5 [R0#] () in
-let ^ = 3 [R0#] () in
-addInt [R0#] [R0#] [R0#] ^1 ^0
-8
 
 
 -- Arity

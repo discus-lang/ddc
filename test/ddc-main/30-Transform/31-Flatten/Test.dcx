@@ -1,6 +1,7 @@
 
+-- Flatten --------------------------------------------------------------------
+:set +Indent
 :set trans Flatten
-:set
 
 :load..
 module Main with
@@ -14,3 +15,74 @@ foo : [r : %]. Int r -(Alloc r | Use r)> Unit
    let ^ : Unit = ()
    in ^0
 };;
+
+
+-- A-Normalisation ------------------------------------------------------------
+-- These tests use a combination of snipping and flattening.
+:set trans Snip <> Flatten
+
+-- Nested applications
+:trun.. 
+addInt [:R0# R1# R2#:] 
+       (1 [R0#] ()) 
+       (addInt [:R1# R1# R1#:] 
+               (2 [R1#] ()) 
+               (addInt [:R3# R3# R1#:] 
+                       (3 [R3#] ()) 
+                       (4 [R3#] ())));;
+
+
+-- Lets in args (inner x must be anonymized)
+:trun..
+let x = (2 [R1#] ()) in
+addInt [:R0# R1# R2#:]
+    (let x = () in
+     let ^ = 1 in
+     ^0 [R0#] x)
+    x;;
+
+
+-- Arity
+:trun..
+let cmp = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
+    let f' = f in \(x:Int R0#). f' (g x) in
+let up = \(n : Int R0#). addInt [:R0# R0# R0#:] n (1 [R0#] ()) in
+cmp up up (1 [R0#] ());;
+
+
+-- Arity anon
+:trun..
+let ^ = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
+    let ^ = f in \(^:Int R0#). ^1 (g ^0) in
+let ^ = \(^ : Int R0#). addInt [:R0# R0# R0#:] ^0 (1 [R0#] ()) in
+^1 ^0 ^0 (1 [R0#] ());;
+
+
+-- Letrec
+:trun..
+letrec {
+ fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
+        0       -> 1 [r] ();
+        _       -> mulInt [:r r r:] n
+                      (fac [r] (subInt [:r r r:] n
+                                       (1 [r] ())));
+     }
+} in fac [R1#] (5 [R1#] ());;
+
+
+-- Snip out discriminants of case expressions
+:trans..
+case (\(x : Int R0#). x) (5 [R0#] ()) of {
+        _       -> ()
+};;
+
+
+-- Anonymous witnesses
+:trans..
+let useWit = \(^ : Const R0#). \(^ : Int R0#).
+    addInt [:R0# R0# R0#:] ^0 ^0
+in
+\(^ : Const R0#). \(^ : Int R0#).
+   useWit <^1> (addInt [:R0# R0# R0#:] (1 [R0#] ()) ^0)
+;;
