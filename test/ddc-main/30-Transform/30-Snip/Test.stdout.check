@@ -94,3 +94,15 @@ case ^0 of {
    -> ()
 }
 ()
+
+
+-- Over-application
+let id : [a : *].a -> a
+      = /\(a : *).
+         \(x : a). x in
+let add : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+      = \(x y : Int R0#). addInt [R0#] [R0#] [R0#] x y in
+let ^ = 2 [R0#] () in
+let ^ = 3 [R0#] () in
+id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add ^1 ^0
+5
