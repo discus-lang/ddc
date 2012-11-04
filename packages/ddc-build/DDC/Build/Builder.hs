@@ -52,6 +52,25 @@ data Builder
         , buildLdExe    :: FilePath -> FilePath -> IO () }
 
 
+-- | The result of a build command.
+--
+--   We use these so that the called doesn't need to worry about
+--   interpreting numeric exit codes. 
+data BuilderResult
+        -- | Build command completed successfully.
+        = BuilderSuccess
+
+        -- | Build command was cancelled or killed by the user.
+        --   eg by Control-C on the console.
+        | BuilderCanceled     
+
+        -- | Build command failed. 
+        --   There is probably something wrong with the generated file.
+        --   Unrecognised exit codes also result in this BuilderResult.
+        | BuilderFailed
+        deriving (Show, Eq)
+
+
 instance Show Builder where
  show builder
         = "Builder " ++ show (builderName builder)
@@ -129,6 +148,7 @@ builder_X8632_Darwin config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
+                        [(2, BuilderCanceled)]
                 $ "llc -O3 -march=x86 -relocation-model=pic -disable-cfi" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
@@ -136,6 +156,7 @@ builder_X8632_Darwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
+                        [(2, BuilderCanceled)]
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
@@ -145,6 +166,7 @@ builder_X8632_Darwin config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
+                        [(2, BuilderCanceled)]
                 $  "as -arch i386"  
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
@@ -152,6 +174,7 @@ builder_X8632_Darwin config
         , buildLdExe
                 = \oFile binFile
                 -> doCmd "linker"
+                        [(2, BuilderCanceled)]
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
@@ -172,6 +195,7 @@ builder_X8664_Darwin config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
+                        [(2, BuilderCanceled)]
                 $ "llc -O3 -march=x86-64 -relocation-model=pic -disable-cfi" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
@@ -179,6 +203,7 @@ builder_X8664_Darwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
+                        [(2, BuilderCanceled)]
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
@@ -188,6 +213,7 @@ builder_X8664_Darwin config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
+                        [(2, BuilderCanceled)]
                 $  "as -arch x86_64"  
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
@@ -195,6 +221,7 @@ builder_X8664_Darwin config
         , buildLdExe  
                 = \oFile binFile
                 -> doCmd "linker"
+                        [(2, BuilderCanceled)]
                 $  "gcc -m64" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
@@ -213,6 +240,7 @@ builder_X8632_Linux config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
+                        [(2, BuilderCanceled)]
                 $ "llc -O3 -march=x86 -relocation-model=pic" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
@@ -220,6 +248,7 @@ builder_X8632_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
+                        [(2, BuilderCanceled)]
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
@@ -230,6 +259,7 @@ builder_X8632_Linux config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
+                        [(2, BuilderCanceled)]
                 $  "as --32"  
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
@@ -237,6 +267,7 @@ builder_X8632_Linux config
         , buildLdExe  
                 = \oFile binFile
                 -> doCmd "linker"
+                        [(2, BuilderCanceled)]
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
@@ -255,6 +286,7 @@ builder_X8664_Linux config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler" 
+                        [(2, BuilderCanceled)]
                 $ "llc -O3 -march=x86-64 -relocation-model=pic" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
@@ -262,6 +294,7 @@ builder_X8664_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
+                        [(2, BuilderCanceled)]
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
@@ -272,6 +305,7 @@ builder_X8664_Linux config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler" 
+                        [(2, BuilderCanceled)]
                 $  "as --64"  
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
@@ -279,6 +313,7 @@ builder_X8664_Linux config
         , buildLdExe  
                 = \oFile binFile
                 -> doCmd "linker" 
+                        [(2, BuilderCanceled)]
                 $  "gcc -m64" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
@@ -297,6 +332,7 @@ builder_PPC32_Linux config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
+                        [(2, BuilderCanceled)]
                 $ "llc -O3 -march=ppc32 -relocation-model=pic" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
@@ -304,6 +340,7 @@ builder_PPC32_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
+                        [(2, BuilderCanceled)]
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
@@ -313,6 +350,7 @@ builder_PPC32_Linux config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"
+                        [(2, BuilderCanceled)]
                 $  "as"
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
@@ -320,6 +358,7 @@ builder_PPC32_Linux config
         , buildLdExe  
                 = \oFile binFile
                 -> doCmd "linker"
+                        [(2, BuilderCanceled)]
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
@@ -337,13 +376,16 @@ builder_X8632_Cygwin config
 
         , buildLlc    
                 = \llFile sFile
-                -> doCmd "LLVM compiler" $ "llc -O3 -march=x86 " 
+                -> doCmd "LLVM compiler" 
+                        [(2, BuilderCanceled)]
+                $ "llc -O3 -march=x86 " 
                 ++ (normalise llFile)
                 ++ " -o " ++ (normalise sFile)
 
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"
+                        [(2, BuilderCanceled)]
                 $  "gcc-4 -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
@@ -352,7 +394,9 @@ builder_X8632_Cygwin config
 
         , buildAs
                 = \sFile oFile
-                -> doCmd "assembler" $  "as --32"  
+                -> doCmd "assembler" 
+                        [(2, BuilderCanceled)]
+                $  "as --32"  
                 ++ " -o " ++ (normalise oFile)
                 ++ " "    ++ (normalise sFile)
 
@@ -360,7 +404,9 @@ builder_X8632_Cygwin config
 	-- is a symlink, which Windows doesn't really support.
         , buildLdExe  
                 = \oFile binFile
-                -> doCmd "linker" $  "gcc-4 -m32" 
+                -> doCmd "linker" 
+                        [(2, BuilderCanceled)]
+                $  "gcc-4 -m32" 
                 ++ " -o " ++ (normalise binFile)
                 ++ " "    ++ (normalise oFile)
                 ++ " "    ++ (normalise $ builderConfigRuntime config </> "libddc-runtime.a")
@@ -369,14 +415,29 @@ builder_X8632_Cygwin config
 
 -- Utils ----------------------------------------------------------------------
 -- | Run a system command, and if it fails quit the program.
-doCmd :: String -> String -> IO ()
-doCmd thing cmd
+doCmd   :: String                       -- ^ Description of tool being invoked.
+        -> [(Int, BuilderResult)]       -- ^ How to interpret exit codes.
+        -> String                       -- ^ System command to run.
+        -> IO ()
+
+doCmd thing exitCodeMeanings cmd
  = do   code <- system cmd
         case code of
-         ExitSuccess    -> return ()
-         ExitFailure _  
-          -> error
+         ExitSuccess    
+          -> return ()
+
+         ExitFailure c
+          |  Just meaning        <- lookup c exitCodeMeanings
+          -> case meaning of
+                BuilderSuccess  -> return ()
+                BuilderCanceled -> exitWith $ ExitFailure 2
+                BuilderFailed   -> die c
+
+          | otherwise           -> die c
+
+ where  die c   = error
                 $ unlines
                 [ "System command failed when invoking external " ++ thing ++ "."
-                , " Command was: " ++ cmd ]
+                , " Command was: " ++ cmd
+                , " Exit code:   " ++ show c ]
 
