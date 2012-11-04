@@ -19,3 +19,12 @@ thing [r1 : %] (b : Bool r1) : Int r1
                         True  -> N# [r1] 5#
                         False -> N# [r1] 6#
    in   addInt [:r1 r1 r1:] x (N# [r1] 1#);;
+
+
+-- Foo isn't defined.
+:load..
+module Test with letrec
+thing [r1 : %] (b : Int r1) : Int r1
+ = case b of
+        Foo     -> N# [r1] 5#;;
+
