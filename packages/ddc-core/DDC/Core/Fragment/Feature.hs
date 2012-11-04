@@ -18,7 +18,8 @@ data Feature
         | GeneralApplication
 
         -- | Nested function bindings.
-        --   The output of the lambda-lifter should not contain nested functions.
+        --   The output of the lambda-lifter should not contain nested
+        --   functions.
         | NestedFunctions
 
         -- | Lazy let-bindings.
@@ -27,12 +28,18 @@ data Feature
         | LazyBindings
 
         -- | Debruijn binders
-        --   Most backends will want to use real names, instead of indexed binders.
+        --   Most backends will want to use real names, instead of indexed
+        --   binders.
         | DebruijnBinders
 
-        -- | Allow data and witness vars without binding occurrences if they are annotated
-        --   directly with their types.
+        -- | Allow data and witness vars without binding occurrences if
+        --   they are annotated directly with their types.
         | UnboundLevel0Vars
+
+        -- | Can instantiate non-primitive functions with unboxed types.
+        --   Our backends can't handle this, because boxed and unboxed
+        --   objects have representations in the backends.
+        | UnboxedInstantiation
 
         -- Sanity -----------------------------------------
         -- | Allow name shadowing.

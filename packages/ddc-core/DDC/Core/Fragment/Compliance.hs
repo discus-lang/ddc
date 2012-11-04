@@ -8,9 +8,9 @@ where
 import DDC.Core.Fragment.Feature
 import DDC.Core.Fragment.Profile
 import DDC.Core.Fragment.Error
+import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.Compounds
 import Control.Monad
 import Data.Maybe
 import DDC.Type.Env             (Env)
@@ -23,6 +23,7 @@ import qualified Data.Map       as Map
 complies 
         :: forall n c. (Ord n, Show n, Complies c)
         => Profile n -> c n -> Maybe (Error n)
+
 complies profile thing
  = compliesWithEnvs profile
     (profilePrimKinds profile)
@@ -78,6 +79,7 @@ instance Show a => Complies (Exp a) where
   = let has f   = f $ profileFeatures profile
         ok      = return (Set.empty, Set.empty)
     in case xx of
+
         -- variables ----------------------------
         XVar _ u@(UName n)
          |  not $ Env.member u tenv
@@ -125,7 +127,12 @@ instance Show a => Complies (Exp a) where
                 return (tUsed, vUsed')
        
         -- application --------------------------
-        XApp _ x1 XType{}
+        XApp _ x1 (XType t2)
+         | profileTypeIsUnboxed profile t2
+         , Nothing      <- takeXPrimApps xx
+         -> throw $ ErrorUnsupported UnboxedInstantiation
+
+         | otherwise
          -> do  checkFunction profile x1
                 compliesX     profile kenv tenv (addArg context) x1
 

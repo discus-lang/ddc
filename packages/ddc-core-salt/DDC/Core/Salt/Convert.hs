@@ -102,7 +102,9 @@ convModuleM withPrelude mm@(ModuleCore{})
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to C source text.
---   This only handles non-function types.
+--   This is used to convert the types of function parameters and locally
+--   defined variables. It only handles non-function types, as we don't
+--   directly support higher-order functions or partial application in Salt.
 convTypeM :: KindEnv Name -> Type Name -> ConvertM a Doc
 convTypeM kenv tt
  = case tt of
@@ -134,7 +136,7 @@ convTypeM kenv tt
         TForall b t
           -> convTypeM (Env.extend b kenv) t
 
-        _ -> throw $ ErrorTypeInvalid tt
+        _ -> throw $ ErrorLocalTypeInvalid tt
 
 
 -- | Convert a Salt function type to a C source prototype.

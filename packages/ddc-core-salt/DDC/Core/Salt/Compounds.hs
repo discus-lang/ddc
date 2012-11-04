@@ -7,7 +7,8 @@ module DDC.Core.Salt.Compounds
         , tWord, xWord
         , tTag,  xTag
         , tObj
-        , tAddr, tPtr
+        , tAddr
+        , tPtr,  takeTPtr
         , tString)
 where
 import DDC.Core.Salt.Name
@@ -39,6 +40,14 @@ tPtr r t = TApp (TApp (TCon tcPtr) r) t
  where  tcPtr   = TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) kPtr) kPtr
         kPtr    = kRegion `kFun` kData `kFun` kData
 
+takeTPtr :: Type Name -> Maybe (Region Name, Type Name)
+takeTPtr tt
+ = case tt of
+        TApp (TApp (TCon tc) r) t
+         | TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _) _  <- tc
+         -> Just (r, t)
+
+        _ -> Nothing
 
 -- Expressions ----------------------------------------------------------------
 xBool :: a -> Bool   -> Exp a Name

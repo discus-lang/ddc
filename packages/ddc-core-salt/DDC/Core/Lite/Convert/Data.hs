@@ -34,7 +34,7 @@ constructData
         -> DataCtor L.Name              -- ^ Constructor definition of object.
         -> Type   O.Name                -- ^ Prime region variable.
         -> [Exp a O.Name]               -- ^ Field values.
-        -> [Maybe (Type O.Name)]        -- ^ Field types.
+        -> [Maybe (Type  O.Name)]       -- ^ Field types.
         -> ConvertM a (Exp a O.Name)
 
 constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs 
@@ -44,8 +44,13 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
         let xsFields            = drop (length $ dataTypeParamKinds dataDef) xsArgs
+
+        -- Get the regions each of the objects are in.
         let Just tsFields       = sequence 
                                 $ drop (length $ dataTypeParamKinds dataDef) tsArgs
+
+--        let Just trsFields      = sequence
+--                                $ map (liftM fst . O.takeTPtr) tsFields
 
         -- Allocate the object.
         let arity       = length tsFields
@@ -58,10 +63,10 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         let lsFields    
                 = [ LLet LetStrict (BNone O.tVoid)
                          (O.xSetFieldOfBoxed a 
-                         rPrime tField xObject' ix (liftX 1 xField))
+                         rPrime trField xObject' ix (liftX 1 xField))
                   | ix            <- [0..]
                   | xField        <- xsFields
-                  | tField        <- tsFields ]
+                  | trField       <- tsFields ]
 
         return  $ XLet a (LLet LetStrict bObject xAlloc)
                 $ foldr (XLet a) xObject' lsFields
@@ -131,6 +136,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
 
  | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
  = do   
+
         -- Bind pattern variables to each of the fields.
         let lsFields      
                 = catMaybes

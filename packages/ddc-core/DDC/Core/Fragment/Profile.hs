@@ -14,6 +14,7 @@ where
 import DDC.Core.Check
 import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
+import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 
@@ -31,7 +32,11 @@ data Profile n
           -- | Primitive operations
         , profilePrimDataDefs           :: DataDefs n
         , profilePrimKinds              :: Env n
-        , profilePrimTypes              :: Env n  }
+        , profilePrimTypes              :: Env n
+
+          -- | Determine whether a type is an unboxed type.
+          --   Some language fragments limit how these can be used.
+        , profileTypeIsUnboxed          :: Type n -> Bool }
 
 
 -- | A language profile with no features
@@ -42,7 +47,8 @@ zeroProfile
         , profileFeatures               = zeroFeatures
         , profilePrimDataDefs           = emptyDataDefs
         , profilePrimKinds              = Env.empty
-        , profilePrimTypes              = Env.empty }
+        , profilePrimTypes              = Env.empty
+        , profileTypeIsUnboxed          = const False }
 
 
 -- | A flattened set of features, for easy lookup.
@@ -55,6 +61,7 @@ data Features
         , featuresLazyBindings          :: Bool
         , featuresDebruijnBinders       :: Bool
         , featuresUnboundLevel0Vars     :: Bool
+        , featuresUnboxedInstantiation  :: Bool
         , featuresNameShadowing         :: Bool
         , featuresUnusedBindings        :: Bool
         , featuresUnusedMatches         :: Bool
@@ -72,6 +79,7 @@ zeroFeatures
         , featuresLazyBindings          = False
         , featuresDebruijnBinders       = False
         , featuresUnboundLevel0Vars     = False
+        , featuresUnboxedInstantiation  = False
         , featuresNameShadowing         = False
         , featuresUnusedBindings        = False
         , featuresUnusedMatches         = False }
@@ -81,16 +89,17 @@ zeroFeatures
 setFeature :: Feature -> Bool -> Features -> Features
 setFeature feature val features
  = case feature of
-        ClosureTerms            -> features { featuresClosureTerms        = val }
-        PartialPrims            -> features { featuresPartialPrims        = val }
-        GeneralApplication      -> features { featuresGeneralApplication  = val }
-        NestedFunctions         -> features { featuresNestedFunctions     = val }
-        LazyBindings            -> features { featuresLazyBindings        = val }
-        DebruijnBinders         -> features { featuresDebruijnBinders     = val }
-        UnboundLevel0Vars       -> features { featuresUnboundLevel0Vars   = val }
-        NameShadowing           -> features { featuresNameShadowing       = val }
-        UnusedBindings          -> features { featuresUnusedBindings      = val }
-        UnusedMatches           -> features { featuresUnusedMatches       = val }
+        ClosureTerms            -> features { featuresClosureTerms         = val }
+        PartialPrims            -> features { featuresPartialPrims         = val }
+        GeneralApplication      -> features { featuresGeneralApplication   = val }
+        NestedFunctions         -> features { featuresNestedFunctions      = val }
+        LazyBindings            -> features { featuresLazyBindings         = val }
+        DebruijnBinders         -> features { featuresDebruijnBinders      = val }
+        UnboundLevel0Vars       -> features { featuresUnboundLevel0Vars    = val }
+        UnboxedInstantiation    -> features { featuresUnboxedInstantiation = val }
+        NameShadowing           -> features { featuresNameShadowing        = val }
+        UnusedBindings          -> features { featuresUnusedBindings       = val }
+        UnusedMatches           -> features { featuresUnusedMatches        = val }
 
 
 -- | Convert a langage profile to a type checker configuration.

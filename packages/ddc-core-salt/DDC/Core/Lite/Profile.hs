@@ -16,11 +16,15 @@ import DDC.Data.Token
 profile :: Profile Name 
 profile
         = Profile
-        { profileName           = "Lite"
-        , profileFeatures       = features
-        , profilePrimDataDefs   = primDataDefs
-        , profilePrimKinds      = primKindEnv
-        , profilePrimTypes      = primTypeEnv }
+        { profileName                   = "Lite"
+        , profileFeatures               = features
+        , profilePrimDataDefs           = primDataDefs
+        , profilePrimKinds              = primKindEnv
+        , profilePrimTypes              = primTypeEnv
+
+          -- As we allow unboxed instantiation,
+          -- this isn't needed by the compliance check.
+        , profileTypeIsUnboxed          = const False }
 
 
 features :: Features
@@ -33,6 +37,12 @@ features
         , featuresLazyBindings          = True
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
+
+          -- We allow unboxed instantiation in Lite, though all all
+          -- polymorphic functions applied to unboxed types will need
+          -- to be specialised before Salt will accept the code.
+        , featuresUnboxedInstantiation  = True
+
         , featuresNameShadowing         = False
         , featuresUnusedBindings        = True          -- TODO: need to fix compliance checker to enable this
                                                         -- type vars are not being marked as used.

@@ -48,7 +48,8 @@ data PrimTyCon
         | PrimTyConPtr
 
         -- | @String#@ String of UTF8 characters.
-        --   TODO: These are primitive until we can define our own types.
+        -- 
+        --   These are primitive until we can define our own unboxed types.
         | PrimTyConString 
         deriving (Eq, Ord, Show)
 

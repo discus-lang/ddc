@@ -59,4 +59,3 @@ module Main with letrec
 foo (x : Int#) : Int#
  = let y        = add#
    in  return# [Int#] x;;
-

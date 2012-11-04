@@ -114,7 +114,7 @@ utAllocBoxed
 xGetFieldOfBoxed 
         :: a 
         -> Type Name    -- ^ Prime region var of object.
-        -> Type Name    -- ^ Type of field object.
+        -> Type Name    -- ^ Type of field object
         -> Exp a Name   -- ^ Object to update.
         -> Integer      -- ^ Field index.
         -> Exp a Name
@@ -129,14 +129,17 @@ utGetFieldOfBoxed :: (Bound Name, Type Name)
 utGetFieldOfBoxed 
  =      ( UName (NameVar "getFieldOfBoxed")
         , tForalls [kRegion, kData]
-                $ \[r1, t2] -> tPtr r1 tObj `tFunPE`  tNat `tFunPE` t2)
+                $ \[r1, t2] 
+                -> tPtr r1 tObj
+                        `tFunPE` tNat 
+                        `tFunPE` t2)
 
 
 -- | Set a field in a Boxed Object.
 xSetFieldOfBoxed 
         :: a 
         -> Type Name    -- ^ Prime region var of object.
-        -> Type Name    -- ^ Type of field object.
+        -> Type Name    -- ^ Region of field object.
         -> Exp a Name   -- ^ Object to update.
         -> Integer      -- ^ Field index.
         -> Exp a Name   -- ^ New field value.
@@ -153,7 +156,8 @@ utSetFieldOfBoxed :: (Bound Name, Type Name)
 utSetFieldOfBoxed 
  =      ( UName (NameVar "setFieldOfBoxed")
         , tForalls [kRegion, kData]
-                $ \[r1, t2] -> tPtr r1 tObj 
+                $ \[r1, t2] 
+                -> tPtr r1 tObj 
                         `tFunPE` tNat 
                         `tFunPE` t2
                         `tFunPE` tVoid)

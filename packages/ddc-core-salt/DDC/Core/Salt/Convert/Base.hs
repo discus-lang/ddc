@@ -25,8 +25,8 @@ data Error a
         = ErrorNoTopLevelLetrec
         { errorModule   :: Module a Name }
 
-        -- | An invalid type.
-        | ErrorTypeInvalid 
+        -- | A local variable has an invalid type.
+        | ErrorLocalTypeInvalid 
         { errorType     :: Type Name }
 
         -- | An invalid function definition.
@@ -77,10 +77,10 @@ instance (Show a, Pretty a) => Pretty (Error a) where
 --                 , text "with:"                         <> align (ppr mm) ]
                 -- TODO: need pretty printer for modules.
 
-        ErrorTypeInvalid xx
-         -> vcat [ text "Invalid type definition."
+        ErrorLocalTypeInvalid xx
+         -> vcat [ text "Invalid type for local variable."
                  , empty
-                 , text "with:"                                 <+> align (text $ show xx) ]
+                 , text "with:"                                 <+> align (ppr xx) ]
 
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."

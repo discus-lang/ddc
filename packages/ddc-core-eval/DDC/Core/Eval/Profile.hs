@@ -16,7 +16,8 @@ evalProfile
         , profileFeatures               = evalFeatures
         , profilePrimDataDefs           = primDataDefs
         , profilePrimKinds              = primKindEnv
-        , profilePrimTypes              = primTypeEnv }
+        , profilePrimTypes              = primTypeEnv 
+        , profileTypeIsUnboxed          = const False }
 
 
 evalFeatures :: Features
@@ -29,6 +30,7 @@ evalFeatures
         , featuresLazyBindings          = True
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
+        , featuresUnboxedInstantiation  = True
         , featuresNameShadowing         = True
         , featuresUnusedBindings        = True
         , featuresUnusedMatches         = True }

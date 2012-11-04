@@ -32,3 +32,16 @@ Error loading module
 Error loading module
   During fragment compliance check.
     Unsupported feature: PartialPrims
+
+
+-- Error: partial application not supported in Salt.
+Fragment violation when converting Salt module to C code.
+  Invalid type for local variable.
+  
+  with: Nat# -> Nat#
+
+
+-- Error: cannot instantiate a type variable at an unboxed type.
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: UnboxedInstantiation

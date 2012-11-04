@@ -73,4 +73,3 @@ nat_t foo (nat_t _x)
 Error loading module
   During fragment compliance check.
     Unsupported feature: PartialPrims
-
