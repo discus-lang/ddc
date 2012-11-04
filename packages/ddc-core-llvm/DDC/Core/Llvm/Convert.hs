@@ -197,12 +197,13 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
                                 then External
                                 else Internal
 
-                  -- Using fast calls for non-exported functions enables the
-                  -- LLVM tailcall optimisation. We can't enable this for exported
-                  -- functions as well because we don't distinguish between DDC
-                  -- generated functions and functions from the C libararies in 
-                  -- our import specifications. We need a proper FFI system so that
-                  -- we can get tailcalls for exported functions as well.
+                  -- ISSUE #266: Tailcall optimisation doesn't work for exported functions.
+                  --   Using fast calls for non-exported functions enables the
+                  --   LLVM tailcall optimisation. We can't enable this for exported
+                  --   functions as well because we don't distinguish between DDC
+                  --   generated functions and functions from the C libararies in 
+                  --   our import specifications. We need a proper FFI system so that
+                  --   we can get tailcalls for exported functions as well.
                 , declCallConv           
                         = if Set.member nTop nsExports
                                 then CC_Ccc
