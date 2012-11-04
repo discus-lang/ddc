@@ -14,8 +14,8 @@ When checking expression.
 
 -- Error: discriminant type is not a data type.
 When checking expression.
-  Discriminant of case expression is not algebraic data.
-       Discriminant type: Unit -> Unit
+  Scrutinee of case expression is not algebraic data.
+       Scrutinee type: Unit -> Unit
   
   with: case \(x : Unit). x of {
           _ 
@@ -118,11 +118,11 @@ When checking expression.
 
 -- Error: pattern and discriminant types don't match.
 When checking expression.
-  Cannot instantiate constructor type with discriminant type args.
+  Cannot instantiate constructor type with scrutinee type args.
    Either the constructor has an invalid type,
-   or the type of the discriminant does not match the type of the pattern.
-        Constructor type: List R0# (Int R0#)
-       Discriminant type: Unit
+   or the type of the scrutinee does not match the type of the pattern.
+          Scrutinee type: List R0# (Int R0#)
+        Constructor type: Unit
   
   with: case xx1 of {
           ()  
@@ -132,8 +132,8 @@ When checking expression.
 
 -- Error: pattern and discriminant types don't match.
 When checking expression.
-  Discriminant type does not match result of pattern type.
-       Discriminant type: Int R0#
+  Scrutinee type does not match result of pattern type.
+          Scrutinee type: Int R0#
             Pattern type: [^ : *].Unit -(Alloc R0# | $0)> List R0# ^0
   
   with: case xx of {

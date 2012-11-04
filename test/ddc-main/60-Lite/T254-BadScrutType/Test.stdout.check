@@ -1,0 +1,10 @@
+
+-- #254: Bad error message in function with bools.
+--  The light language doesn't have a True constructor, only True#.
+--  We weren't checking for undefined constructors, and this was
+--  giving a confusing error message.
+--
+ok
+Error loading module
+  When checking expression.
+    Undefined data constructor: True

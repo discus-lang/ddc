@@ -1,0 +1,21 @@
+
+-- #254: Bad error message in function with bools.
+--  The light language doesn't have a True constructor, only True#.
+--  We weren't checking for undefined constructors, and this was
+--  giving a confusing error message.
+--
+:set lang Lite
+:load..
+module Test 
+imports { 
+        addNat  :: [r1 r2 r3 : %]
+                . Nat r1 
+                -(!0 | Use r3)> Nat r2 
+                -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+}
+with letrec
+thing [r1 : %] (b : Bool r1) : Int r1
+ = let  x       = case b of
+                        True  -> N# [r1] 5#
+                        False -> N# [r1] 6#
+   in   addInt [:r1 r1 r1:] x (N# [r1] 1#);;

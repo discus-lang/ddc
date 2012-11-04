@@ -238,15 +238,15 @@ data Error a n
 
         -- Case Expressions -------------------------------
         -- | A case-expression where the discriminant type is not algebraic.
-        | ErrorCaseDiscrimNotAlgebraic
+        | ErrorCaseScrutineeNotAlgebraic
         { errorChecking         :: Exp a n
-        , errorTypeDiscrim      :: Type n }
+        , errorTypeScrutinee    :: Type n }
 
-        -- | A case-expression where the discriminant type is not in our set
+        -- | A case-expression where the scrutinee type is not in our set
         --   of data type declarations.
-        | ErrorCaseDiscrimTypeUndeclared
+        | ErrorCaseScrutineeTypeUndeclared
         { errorChecking         :: Exp a n 
-        , errorTypeDiscrim      :: Type n }
+        , errorTypeScrutinee    :: Type n }
 
         -- | A case-expression with no alternatives.
         | ErrorCaseNoAlternatives
@@ -276,17 +276,17 @@ data Error a n
         , errorPatternFields    :: Int }
 
         -- | A case-expression where the pattern types could not be instantiated
-        --   with the arguments of the discriminant type.
+        --   with the arguments of the scrutinee type.
         | ErrorCaseCannotInstantiate
         { errorChecking         :: Exp a n
-        , errorTypeCtor         :: Type n
-        , errorTypeDiscrim      :: Type n }
+        , errorTypeScrutinee    :: Type n 
+        , errorTypeCtor         :: Type n }
 
-        -- | A case-expression where the type of the discriminant does not match
+        -- | A case-expression where the type of the scrutinee does not match
         --   the type of the pattern.
-        | ErrorCaseDiscrimTypeMismatch
+        | ErrorCaseScrutineeTypeMismatch
         { errorChecking         :: Exp a n
-        , errorTypeDiscrim      :: Type n
+        , errorTypeScrutinee    :: Type n
         , errorTypePattern      :: Type n }
 
         -- | A case-expression where the annotation on a pattern variable binder

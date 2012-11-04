@@ -474,13 +474,13 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
                  -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
                            , ts )
 
-                _ -> throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
+                _ -> throw $ ErrorCaseScrutineeNotAlgebraic xx tDiscrim
 
         -- Get the mode of the data type, 
         --   this tells us how many constructors there are.
         mode    
          <- case mmode of
-             Nothing -> throw $ ErrorCaseDiscrimTypeUndeclared xx tDiscrim
+             Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared xx tDiscrim
              Just m  -> return m
 
         -- Check the alternatives.
@@ -854,6 +854,16 @@ checkAltM _xx config kenv tenv _tDiscrim _tsArgs (AAlt PDefault xBody)
 
 checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData dc bsArg) xBody)
  = do   
+        let Just aCase  = takeAnnotOfExp xx
+
+        -- If the data constructor isn't defined then the spread 
+        --  transform won't have given it a proper type.
+        --  Note that we can't simply check whether the constructor is in the
+        --  environment because literals like 42# never are.
+        (if isBot (daConType dc)
+                then throw $ ErrorUndefinedCtor $ XCon aCase dc
+                else return ())
+
         -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
         -- If the ctor type doesn't instantiate then it won't have enough foralls 
@@ -873,7 +883,7 @@ checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData dc bsArg) xBody)
         --  If it doesn't then the constructor in the pattern probably isn't for
         --  the discriminant type.
         when (not $ equivT tDiscrim tResult)
-         $ throw $ ErrorCaseDiscrimTypeMismatch xx tDiscrim tResult
+         $ throw $ ErrorCaseScrutineeTypeMismatch xx tDiscrim tResult
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.

@@ -274,15 +274,15 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
 
 
         -- Case Expressions -------------------------------
-        ErrorCaseDiscrimNotAlgebraic xx tDiscrim
-         -> vcat [ text "Discriminant of case expression is not algebraic data."
-                 , text "     Discriminant type: "      <> ppr tDiscrim
+        ErrorCaseScrutineeNotAlgebraic xx tScrutinee
+         -> vcat [ text "Scrutinee of case expression is not algebraic data."
+                 , text "     Scrutinee type: "         <> ppr tScrutinee
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
         
-        ErrorCaseDiscrimTypeUndeclared xx tDiscrim
-         -> vcat [ text "Type of discriminant does not have a data declaration."
-                 , text "     Discriminant type: "      <> ppr tDiscrim
+        ErrorCaseScrutineeTypeUndeclared xx tScrutinee
+         -> vcat [ text "Type of scrutinee does not have a data declaration."
+                 , text "     Scrutinee type: "         <> ppr tScrutinee
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -318,18 +318,18 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseCannotInstantiate xx tCtor tDiscrim
-         -> vcat [ text "Cannot instantiate constructor type with discriminant type args."
+        ErrorCaseCannotInstantiate xx tScrutinee tCtor
+         -> vcat [ text "Cannot instantiate constructor type with scrutinee type args."
                  , text " Either the constructor has an invalid type,"
-                 , text " or the type of the discriminant does not match the type of the pattern."
+                 , text " or the type of the scrutinee does not match the type of the pattern."
+                 , text "        Scrutinee type: "      <> ppr tScrutinee
                  , text "      Constructor type: "      <> ppr tCtor
-                 , text "     Discriminant type: "      <> ppr tDiscrim
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseDiscrimTypeMismatch xx tDiscrim tPattern
-         -> vcat [ text "Discriminant type does not match result of pattern type."
-                 , text "     Discriminant type: "      <> ppr tDiscrim
+        ErrorCaseScrutineeTypeMismatch xx tScrutinee tPattern
+         -> vcat [ text "Scrutinee type does not match result of pattern type."
+                 , text "        Scrutinee type: "      <> ppr tScrutinee
                  , text "          Pattern type: "      <> ppr tPattern
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
