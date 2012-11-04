@@ -1,0 +1,40 @@
+ok
+
+-- #258: Give a civilised error message that CAFs are not supported.
+
+-- Only lambdas can appear in letrecs anyway.
+Error loading module
+  When checking expression.
+    Letrec can only bind lambda abstractions.
+          This is not one: ()
+    
+    with: letrec {
+            five : Unit = ()
+          } in
+          ()
+
+
+-- We allow CAFs in the Lite and Salt languages,
+-- but we can't convert them to object code yet.
+ok
+module Test with
+let unit : Unit = ()
+
+module Test with
+let unit : Ptr# rT Obj = allocBoxed [rT] TAG0# 0#
+
+Fragment violation when converting Salt module to C code.
+  Module does not have a top-level letrec.
+  
+
+
+module Test with
+let five : Nat# = 5#
+
+module Test with
+let five : Nat# = 5#
+
+Fragment violation when converting Salt module to C code.
+  Module does not have a top-level letrec.
+  
+

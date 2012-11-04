@@ -8,3 +8,10 @@ ok
 Error loading module
   When checking expression.
     Undefined data constructor: True
+
+
+-- Foo isn't defined.
+Error loading module
+  When checking expression.
+    Undefined data constructor: Foo
+

@@ -1,0 +1,38 @@
+:set lang Lite
+
+-- #258: Give a civilised error message that CAFs are not supported.
+
+-- Only lambdas can appear in letrecs anyway.
+:load..
+module Test with letrec
+five : Unit = ();;
+
+
+-- We allow CAFs in the Lite and Salt languages,
+-- but we can't convert them to object code yet.
+:set +SuppressImports
+:load..
+module Test with
+let unit : Unit = ();;
+
+:to-salt..
+module Test with
+let unit : Unit = ();;
+
+:to-c..
+module Test with
+let unit : Unit = ();;
+
+
+:load..
+module Test with 
+let five : Nat# = 5#;;
+
+:to-salt..
+module Test with 
+let five : Nat# = 5#;;
+
+:to-c..
+module Test with 
+let five : Nat# = 5#;;
+
