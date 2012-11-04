@@ -664,7 +664,7 @@ convPrimCallM kenv tenv p xs
          , NameVar nTop         <- n
          -> do  let nFun'       = text $ sanitizeGlobal nTop
                 xsArgs'         <- mapM (convRValueM kenv tenv) xsArgs
-                return  $  nFun' <> parenss xsArgs'
+                return  $  text "return" <+> nFun' <> parenss xsArgs'
 
 
         -- Store primops.
