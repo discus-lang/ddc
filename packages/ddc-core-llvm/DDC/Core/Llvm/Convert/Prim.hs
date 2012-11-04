@@ -128,7 +128,7 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
                 let vMaxPtr = Var (NameGlobal "_DDC_Runtime_heapMax") (TPointer (tAddr pp))
                 return  $ Seq.fromList
                         $ map annotNil
-                        [ ICall (Just vAddr) CallTypeStd
+                        [ ICall (Just vAddr) CallTypeStd Nothing
                                 (tAddr pp) (NameGlobal "malloc") 
                                 [xBytes'] []                         
 
@@ -284,8 +284,8 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
          ,  tResult'     <- convType pp kenv tResult
          ,  Just name'   <- convPrimExtern prim tPrim
          -> return      $ Seq.singleton $ annotNil
-                        $ ICall mdst CallTypeStd tResult'
-                                name' xs' []
+                        $ ICall mdst CallTypeStd Nothing 
+                                tResult' name' xs' []
 
         _ -> die $ unlines
                 [ "Invalid prim call."

@@ -1,8 +1,9 @@
 
--- | Inline `ISet` meta-instructions.
+-- | Inline `ISet` meta-instructions, drop `INop` meta-instructions,
+--   fill in labels on `IPhi` instructions, and propagate calling
+--   conventions from declarations to call sites. This should all be
+--   part of the LLVM language itself, but it isn't.
 --
---   It is helpful to be able to emit these during code generation,
---   but the LLVM compiler doesn't accept them directly.
 module DDC.Llvm.Transform.Clean
         (Clean(..))
 where
@@ -16,52 +17,54 @@ import qualified Data.Sequence  as Seq
 
 
 class Clean a where
- clean     :: a -> a
- clean          = cleanWith Map.empty
+ clean     :: Module -> a -> a
+ clean mm  = cleanWith mm Map.empty
 
- cleanWith :: Map Var Exp -> a -> a
+ cleanWith :: Module -> Map Var Exp -> a -> a
 
 
 instance Clean Module where
- cleanWith binds mm
+ cleanWith _ binds mm
   = mm  { modFuncs      
-                = map (cleanWith binds)
+                = map (cleanWith mm binds)
                 $ modFuncs mm }
 
 
 instance Clean Function where
- cleanWith binds fun
+ cleanWith mm binds fun
   = fun { funBlocks     
-                = cleanBlocks binds Map.empty [] 
+                = cleanBlocks mm binds Map.empty [] 
                 $ funBlocks fun }
 
 
 -- | Clean set instructions in some blocks.
 cleanBlocks 
-        :: Map Var Exp          -- ^ Map of variables to their values.
+        :: Module
+        -> Map Var Exp          -- ^ Map of variables to their values.
         -> Map Var Label        -- ^ Map of variables to the label 
                                 --    of the block they were defined in.
         -> [Block] 
         -> [Block] 
         -> [Block]
 
-cleanBlocks _binds _defs acc []
+cleanBlocks _mm _binds _defs acc []
         = reverse acc
 
-cleanBlocks binds defs acc (Block label instrs : bs) 
+cleanBlocks mm binds defs acc (Block label instrs : bs) 
  = let  (binds', defs', instrs2) 
-                = cleanInstrs label binds defs [] 
+                = cleanInstrs mm label binds defs [] 
                 $ Seq.toList instrs
 
         instrs' = Seq.fromList instrs2
         block'  = Block label instrs'
 
-   in   cleanBlocks binds' defs' (block' : acc) bs
+   in   cleanBlocks mm binds' defs' (block' : acc) bs
 
 
 -- | Clean set instructions in some instructions.
 cleanInstrs 
-        :: Label                -- ^ Label of the current block.
+        :: Module
+        -> Label                -- ^ Label of the current block.
         -> Map Var Exp          -- ^ Map of variables to their values.
         -> Map Var Label        -- ^ Map of variables to the label
                                 --    of the block they were defined in.
@@ -69,12 +72,12 @@ cleanInstrs
         -> [AnnotInstr] 
         -> (Map Var Exp, Map Var Label, [AnnotInstr])
 
-cleanInstrs _blockLabel binds defs acc []
+cleanInstrs _mm _blockLabel binds defs acc []
         = (binds, defs, reverse acc)
 
-cleanInstrs blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
+cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
   = let next binds' defs' acc' 
-                = cleanInstrs blockLabel binds' defs' acc' instrs
+                = cleanInstrs mm blockLabel binds' defs' acc' instrs
         
         reAnnot i' = annotWith i' annots
 
@@ -171,11 +174,33 @@ cleanInstrs blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
          |  defs'        <- Map.insert v blockLabel defs
          -> next binds defs' $ (reAnnot $ IFCmp v c (sub x1) (sub x2))   : acc
 
-        ICall  (Just v) ct t n xs ats
+        ICall  (Just v) ct mcc t n xs ats
          |  defs'        <- Map.insert v blockLabel defs
-         -> next binds defs' $ (reAnnot $ ICall (Just v) ct t n (map sub xs) ats) : acc
+         -> let NameGlobal str  = n
+                Just cc2        = lookupCallConv str mm
+                cc'             = mergeCallConvs mcc cc2
+                
+            in  next binds defs' 
+                        $ (reAnnot $ ICall (Just v) ct (Just cc') t n (map sub xs) ats) 
+                        : acc
 
-        ICall  Nothing ct t n xs ats
-         -> next binds defs  $ (reAnnot $ ICall Nothing  ct t n (map sub xs) ats) : acc
+        ICall  Nothing ct mcc t n xs ats
+         -> let NameGlobal str  = n
+                Just cc2        = lookupCallConv str mm
+                cc'             = mergeCallConvs mcc cc2
+            in  next binds defs 
+                        $ (reAnnot $ ICall Nothing  ct (Just cc') t n (map sub xs) ats) 
+                        : acc
 
+
+-- | If there is a calling convention attached directly to an ICall
+--   instruction then it must match any we get from the environment.
+mergeCallConvs :: Maybe CallConv -> CallConv -> CallConv
+mergeCallConvs mc cc
+ = case mc of
+        Nothing         -> cc
+        Just cc'        
+         | cc == cc'    -> cc
+         | otherwise    
+         -> error "DDC.LLVM.Transform.Clean: not overriding exising calling convention."
 

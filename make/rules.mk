@@ -146,7 +146,7 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 	@gcc $(GCC_FLAGS) -c $< -o $@ 
 
 
-%.o : %.dce bin/ddci-core
+%.o : %.dce bin/ddc
 	@echo "* Compiling $<"
 	@bin/ddc -c $<
 

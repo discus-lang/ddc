@@ -158,7 +158,8 @@ data Instr
 
         -- | Call a function. 
         --   Only NoReturn, NoUnwind and ReadNone attributes are valid.
-        | ICall         (Maybe Var) CallType Type Name [Exp] [FuncAttr]
+        | ICall         (Maybe Var) CallType (Maybe CallConv)
+                        Type Name [Exp] [FuncAttr]
         deriving (Show, Eq)
 
 
@@ -270,7 +271,7 @@ instance Pretty Instr where
                 <+> pprPlainX x1 <> comma
                 <+> pprPlainX x2
 
-        ICall mdst callType tResult name xsArgs attrs
+        ICall mdst callType callConv tResult name xsArgs attrs
          -> let call'
                  = case callType of
                         CallTypeTail    -> text "tail call"
@@ -282,6 +283,9 @@ instance Pretty Instr where
 
             in dst' 
                 <> hsep  [ call'
+                         , case callConv of
+                                Nothing -> empty
+                                Just cc -> ppr cc
                          , ppr tResult
                          , ppr name
                          , encloseSep lparen rparen (comma <> space) (map ppr xsArgs)

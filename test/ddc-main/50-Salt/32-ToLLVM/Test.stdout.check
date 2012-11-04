@@ -15,25 +15,25 @@ size2# :: [^ : *].Nat#
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal ccc i64 @nat() align 8  
+define internal fastcc i64 @nat() align 8  
 {
 l1.entry:
         ret i64 8
 }
 
-define internal ccc i64 @int() align 8  
+define internal fastcc i64 @int() align 8  
 {
 l3.entry:
         ret i64 8
 }
 
-define internal ccc i64 @word16() align 8  
+define internal fastcc i64 @word16() align 8  
 {
 l5.entry:
         ret i64 2
 }
 
-define internal ccc i64 @tag() align 8  
+define internal fastcc i64 @tag() align 8  
 {
 l7.entry:
         ret i64 4
@@ -51,37 +51,37 @@ l7.entry:
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal ccc i64 @nat() align 8  
+define internal fastcc i64 @nat() align 8  
 {
 l1.entry:
         ret i64 3
 }
 
-define internal ccc i64 @int() align 8  
+define internal fastcc i64 @int() align 8  
 {
 l3.entry:
         ret i64 3
 }
 
-define internal ccc i64 @word8() align 8  
+define internal fastcc i64 @word8() align 8  
 {
 l5.entry:
         ret i64 0
 }
 
-define internal ccc i64 @word16() align 8  
+define internal fastcc i64 @word16() align 8  
 {
 l7.entry:
         ret i64 1
 }
 
-define internal ccc i64 @ptr() align 8  
+define internal fastcc i64 @ptr() align 8  
 {
 l12.entry:
         ret i64 3
 }
 
-define internal ccc i64 @tag() align 8  
+define internal fastcc i64 @tag() align 8  
 {
 l14.entry:
         ret i64 2

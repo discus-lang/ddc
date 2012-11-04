@@ -16,10 +16,10 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define internal ccc %s.Obj* @bar() align 8  
+define internal fastcc %s.Obj* @bar() align 8  
 {
 l6.entry:
-        %_v7         = call %s.Obj* @allocBoxed (i32 0, i64 0) 
+        %_v7         = call ccc %s.Obj* @allocBoxed (i32 0, i64 0) 
         ret %s.Obj* %_v7
 }
 
@@ -44,7 +44,7 @@ ok
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal ccc i64 @x_plus_y_square(i64*  %x, i64*  %y, i64*  %z) align 8  
+define internal fastcc i64 @x_plus_y_square(i64*  %x, i64*  %y, i64*  %z) align 8  
 {
 l6.entry:
         %xval1.addr1 = ptrtoint i64* %x to i64
@@ -88,13 +88,13 @@ ok
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal ccc i64 @nothing(i64*  %x) align 8  
+define internal fastcc i64 @nothing(i64*  %x) align 8  
 {
 l4.entry:
         ret i64 42
 }
 
-define internal ccc i64 @three_x_plus_one(i64*  %x) align 8  
+define internal fastcc i64 @three_x_plus_one(i64*  %x) align 8  
 {
 l9.entry:
         %a.addr1     = ptrtoint i64* %x to i64
@@ -102,7 +102,7 @@ l9.entry:
         %a.ptr       = inttoptr i64 %a.addr2 to i64*
         %a           = load i64* %a.ptr,    !tbaa !8
         %b           = add i64 %a, 1
-        %_v10.dummy  = call i64 @nothing (i64* %x) 
+        %_v10.dummy  = call fastcc i64 @nothing (i64* %x) 
         %c.addr1     = ptrtoint i64* %x to i64
         %c.addr2     = add i64 %c.addr1, 0
         %c.ptr       = inttoptr i64 %c.addr2 to i64*
@@ -127,7 +127,7 @@ ok
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal ccc i64 @go(i64*  %a, i64*  %x, i64*  %y, i64  %i) align 8  
+define internal fastcc i64 @go(i64*  %a, i64*  %x, i64*  %y, i64  %i) align 8  
 {
 l6.entry:
         switch i64 %i, label %l9.default [ i64 42,label %l7.alt ]
@@ -148,7 +148,7 @@ l9.default:
         %_v15.ptr    = inttoptr i64 %_v14.addr2 to i64*
         store i64 %i, i64* %_v15.ptr,    !tbaa !3
         %nexti       = add i64 %i, 1
-        %_v16        = tail call i64 @go (i64* %a, i64* %x, i64* %y, i64 %nexti) 
+        %_v16        = tail call fastcc i64 @go (i64* %a, i64* %x, i64* %y, i64 %nexti) 
         ret i64 %_v16
 }
 

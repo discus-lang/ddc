@@ -13,6 +13,7 @@ imports {
 } 
 with letrec
 
+
 boxInt [r : %] (x : Int#) : Ptr# r Obj
  = do   obj     = allocRawSmall [r] TAG0# 4#
         addr    = takePtr# [r] [Obj] obj
@@ -28,8 +29,10 @@ unboxInt [r : %] (obj : Ptr# r Obj) : Int#
 addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
  = boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 
+
 subInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
  = boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+
 
 mulInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
  = boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))

@@ -58,7 +58,7 @@ convertModule platform mm@(C.ModuleCore{})
 
         -- Clean out the ISet and INop meta instructions, and fixup IPhis.
         --  This gives us code that the LLVM compiler will accept directly.
-        mmClean  = Clean.clean mmRaw
+        mmClean  = Clean.clean mmRaw mmRaw
 
    in   mmClean
 
@@ -114,7 +114,7 @@ convModuleM mm@(C.ModuleCore{})
                 { modComments   = []
                 , modAliases    = [aObj platform]
                 , modGlobals    = rtsGlobals
-                , modFwdDecls   = primDecls platform ++ importDecls
+                , modFwdDecls   = primDecls platform ++ importDecls 
                 , modFuncs      = functions 
                 , modMDecls     = concat mdecls }
 
@@ -189,11 +189,24 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
                 = FunctionDecl 
                 { declName               = nTop'
 
+                  -- Set internal linkage for non-exported functions so that they
+                  -- they won't conflict with functions of the same name that
+                  -- might be defined in other modules.
                 , declLinkage
                         = if Set.member nTop nsExports
                                 then External
                                 else Internal
-                , declCallConv           = CC_Ccc
+
+                  -- Using fast calls for non-exported functions enables the
+                  -- LLVM tailcall optimisation. We can't enable this for exported
+                  -- functions as well because we don't distinguish between DDC
+                  -- generated functions and functions from the C libararies in 
+                  -- our import specifications. We need a proper FFI system so that
+                  -- we can get tailcalls for exported functions as well.
+                , declCallConv           
+                        = if Set.member nTop nsExports
+                                then CC_Ccc
+                                else CC_Fastcc
 
                 , declReturnType         = tResult
                 , declParamListType      = FixedArgs
@@ -305,7 +318,8 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail   <- p
           ,  [C.XType _tResult]                <- xs
-          -> let iFail  = ICall Nothing CallTypeStd TVoid (NameGlobal "abort") [] []
+          -> let iFail  = ICall Nothing CallTypeStd Nothing 
+                                TVoid (NameGlobal "abort") [] []
 
                  iSet   = case context of
                                 BodyTop         -> INop
@@ -335,7 +349,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
               -- Tailcalled function returns void.
               then do return $ blocks
                         |> (Block label $ instrs
-                           |> (annotNil $ ICall Nothing CallTypeTail
+                           |> (annotNil $ ICall Nothing CallTypeTail Nothing
                                                (convType pp kenv tResult) nFun xsArgs' [])
                            |> (annotNil $ IReturn Nothing))
 
@@ -344,7 +358,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                       vDst            <- newUniqueVar tResult'
                       return  $ blocks
                        |> (Block label $ instrs
-                          |> (annotNil $ ICall (Just vDst) CallTypeTail 
+                          |> (annotNil $ ICall (Just vDst) CallTypeTail Nothing
                                    (convType pp kenv tResult) nFun xsArgs' [])
                           |> (annotNil $ IReturn (Just (XVar vDst))))
 
@@ -508,8 +522,8 @@ convExpM context pp kenv tenv mdsup xx
          , Just tSuper           <- Env.lookup u tenv
          -> let (_, tResult)    = convSuperType pp kenv tSuper
             in  return $ Seq.singleton $ annotNil
-                       $ ICall (varOfExpContext context) CallTypeStd 
-                           tResult nFun xsArgs_value' []
+                       $ ICall  (varOfExpContext context) CallTypeStd Nothing
+                                tResult nFun xsArgs_value' []
 
         C.XCast _ _ x
          -> convExpM context pp kenv tenv mdsup x

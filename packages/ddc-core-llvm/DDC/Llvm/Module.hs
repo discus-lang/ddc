@@ -2,6 +2,8 @@
 module DDC.Llvm.Module
         ( -- * Modules
           Module    (..)
+        , lookupCallConv
+
         , Global    (..)
         , typeOfGlobal
         , varOfGlobal
@@ -14,6 +16,8 @@ import DDC.Llvm.Function
 import DDC.Llvm.Exp
 import DDC.Llvm.Metadata
 import DDC.Base.Pretty
+import Data.List
+import Control.Monad
 
 
 -- Module ---------------------------------------------------------------------
@@ -53,6 +57,16 @@ instance Pretty Module where
   <$$> line
   <$$> empty
   <$$> (vcat    $ map ppr mdecls)
+
+
+-- | Lookup the calling convention for this function,
+--   using the forward declarations as well as the function definitions.
+lookupCallConv :: String -> Module -> Maybe CallConv
+lookupCallConv name mm
+        = liftM declCallConv
+        $ find isFunctionDecl $ modFwdDecls mm ++ (map funDecl $ modFuncs mm)
+        where isFunctionDecl decl
+                = declName decl == name
 
 
 -- Global ---------------------------------------------------------------------
