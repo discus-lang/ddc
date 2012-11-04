@@ -1,7 +1,11 @@
 
 -- | Construct a list of 1M elements.
 --   With a small fixed sized heap this will run out of space.
-module Main with letrec
+module Main 
+exports {
+        main      :: [r : %]. Nat# -(!0 | Use r)> Ptr# r String# -(Read r + Alloc r | Use r)> Int#;
+}
+with letrec
 
 -- | Subtract two natural numbers.
 subNat [r1 r2 r3 : %] 

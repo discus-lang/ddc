@@ -30,7 +30,9 @@ import Control.Monad
 import Data.Maybe
 import Data.Sequence                    (Seq, (<|), (|>), (><))
 import Data.Map                         (Map)
+import Data.Set                         (Set)
 import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
 
@@ -70,6 +72,10 @@ convModuleM mm@(C.ModuleCore{})
         let kenv        = C.moduleKindEnv mm
         let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
 
+        -- Names of exported functions.
+        --   We use a different linkage for exported functions.
+        let nsExports   = Set.fromList $ Map.keys $ C.moduleExportTypes mm
+
         -- Forward declarations for imported functions.
         let Just importDecls 
                 = sequence
@@ -100,7 +106,9 @@ convModuleM mm@(C.ModuleCore{})
                   , GlobalExternal vHeapMax ]
 
         ---------------------------------------------------------------
-        (functions, mdecls) <- liftM unzip $ mapM (uncurry (convSuperM kenv tenv)) bxs
+        (functions, mdecls)
+                <- liftM unzip 
+                $ mapM (uncurry (convSuperM nsExports kenv tenv)) bxs
         
         return  $ Module 
                 { modComments   = []
@@ -144,20 +152,21 @@ primDecls pp
 -- | Convert a top-level supercombinator to a LLVM function.
 --   Region variables are completely stripped out.
 convSuperM 
-        :: KindEnv A.Name
+        :: Set A.Name           -- ^ Names exported from this module.
+        -> KindEnv A.Name
         -> TypeEnv A.Name
         -> C.Bind  A.Name       -- ^ Bind of the top-level super.
         -> C.Exp () A.Name      -- ^ Super body.
         -> LlvmM (Function, [MDecl])
 
-convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
+convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
  | Just (bfsParam, xBody)  <- takeXLamFlags x
  = do   
         platform         <- gets llvmStatePlatform
 
         -- Sanitise the super name so we can use it as a symbol
         -- in the object code.
-        let nTop'       = A.sanitizeGlobal nTop
+        let nTop'       = A.sanitizeGlobal strTop
 
         -- Add parameters to environments.
         let bfsParam'    = eraseWitBinds bfsParam
@@ -179,8 +188,13 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
         let decl 
                 = FunctionDecl 
                 { declName               = nTop'
-                , declLinkage            = External
+
+                , declLinkage
+                        = if Set.member nTop nsExports
+                                then External
+                                else Internal
                 , declCallConv           = CC_Ccc
+
                 , declReturnType         = tResult
                 , declParamListType      = FixedArgs
                 , declParams             = [Param t [] | t <- tsParam]
@@ -200,7 +214,8 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
                   , decls mdsup )
                   
 
-convSuperM _ _ _ _      = die "invalid super"
+convSuperM _ _ _ _ _
+        = die "invalid super"
 
 
 -- | Take the string name to use for a function parameter.

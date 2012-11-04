@@ -1,5 +1,8 @@
 
 module Main 
+exports {
+        main      :: [r1 : %]. Nat# -> Ptr# r1 String# -> Int#;
+}
 imports {
         showInt   :: [r : %].Int# -> Ptr# r String#;
         putStrLn  :: [r : %].Ptr# r String# -> Void#;

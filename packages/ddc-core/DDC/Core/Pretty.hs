@@ -24,13 +24,27 @@ instance Pretty ModuleName where
 instance (Pretty n, Eq n) => Pretty (Module a n) where
  ppr ModuleCore 
         { moduleName            = name
-        , moduleExportKinds     = _exportKinds
-        , moduleExportTypes     = _exportTypes
+        , moduleExportKinds     = exportKinds
+        , moduleExportTypes     = exportTypes
         , moduleImportKinds     = importKinds
         , moduleImportTypes     = importTypes
         , moduleBody            = body }
   = let 
         (lts, _)         = splitXLets body
+
+        docsExportKinds
+         | Map.null exportKinds        = empty
+         | otherwise  
+         = nest 8 $ line 
+         <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
+                  | (n, t)      <- Map.toList exportKinds ]
+
+        docsExportTypes  
+         | Map.null exportTypes        = empty
+         | otherwise
+         = nest 8 $ line
+         <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
+                  | (n, t)      <- Map.toList exportTypes ]
 
         docsImportKinds
          | Map.null importKinds        = empty
@@ -47,7 +61,16 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
                   | (n, (_, t)) <- Map.toList importTypes ]
 
     in  text "module" <+> ppr name 
-         <+> (if Map.null importTypes 
+         <+> (if Map.null exportKinds && Map.null exportTypes
+                then empty
+                else line
+                        <> text "exports" <+> lbrace
+                        <> docsExportKinds
+                        <> docsExportTypes
+                        <> line 
+                        <> rbrace <> space)
+
+         <>  (if Map.null importKinds && Map.null importTypes
                 then empty
                 else line 
                         <> text "imports" <+> lbrace 

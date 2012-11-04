@@ -17,7 +17,7 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define external ccc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
+define internal ccc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
 {
 l8.entry:
         %x1          = call i32 @getTag (%s.Obj* %x) 
@@ -77,7 +77,7 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define external ccc %s.Obj* @thing(%s.Obj*  %z) align 8  
+define internal ccc %s.Obj* @thing(%s.Obj*  %z) align 8  
 {
 l4.entry:
         %x0          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
@@ -111,7 +111,7 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define external ccc %s.Obj* @thing(i1  %b) align 8  
+define internal ccc %s.Obj* @thing(i1  %b) align 8  
 {
 l4.entry:
         switch i1 %b, label %l13.alt [ i1 1,label %l8.alt ]

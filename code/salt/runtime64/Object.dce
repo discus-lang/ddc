@@ -65,7 +65,25 @@
 --   that can load them typically suffer a penalty, so it is good to align heap
 --   objects anyway.
 --
-module Object with letrec
+module Object 
+exports {
+        getTag            :: [r : %]. Ptr# r Obj -> Tag#;
+
+        allocBoxed        :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
+        getFieldOfBoxed   :: [r : %]. [a : *]. Ptr# r Obj -> Nat# -> a;
+        setFieldOfBoxed   :: [r : %]. [a : *]. Ptr# r Obj -> Nat# -> a -> Void#;
+
+        allocMixed        :: [r : %]. Tag# -> Nat# -> Nat# -> Ptr# r Obj;
+        fieldOfMixed      :: [r : %]. Ptr# r Obj -> Nat# -> Ptr# r Obj;
+        payloadOfMixed    :: [r : %]. Ptr# r Obj -> Ptr# r Word8#;
+
+        allocRaw          :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
+        payloadOfRaw      :: [r : %]. Ptr# r Obj -> Ptr# r Word8#;
+
+        allocRawSmall     :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
+        payloadOfRawSmall :: [r : %]. Ptr# r Obj -> Ptr# r Word8#;
+}
+with letrec
 
 -- | Get the constructor tag of an object.
 getTag [r : %] (obj : Ptr# r Obj) : Tag#

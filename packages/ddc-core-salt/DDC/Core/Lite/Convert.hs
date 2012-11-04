@@ -77,7 +77,14 @@ convertM
 
 convertM pp runConfig defs kenv tenv mm
   = do  
-        -- Collect up signatures of imported functions.
+        -- Convert signatures of exported functions.
+        tsExports'
+                <- liftM Map.fromList
+                $  mapM convertExportM 
+                $  Map.toList 
+                $  moduleExportTypes mm
+
+        -- Convert signatures of imported functions.
         tsImports'
                 <- liftM Map.fromList
                 $  mapM convertImportM  
@@ -100,10 +107,15 @@ convertM pp runConfig defs kenv tenv mm
         let mm_salt 
                 = ModuleCore
                 { moduleName           = moduleName mm
+
+                  -- None of the types imported by Lite modules are relevant
+                  -- to the Salt language.
                 , moduleExportKinds    = Map.empty
-                , moduleExportTypes    = Map.empty
+                , moduleExportTypes    = tsExports'
+
                 , moduleImportKinds    = S.runtimeImportKinds
                 , moduleImportTypes    = Map.union S.runtimeImportTypes tsImports'
+
                 , moduleBody           = x2 }
 
         -- If this is the 'Main' module then add code to initialise the 
@@ -114,7 +126,18 @@ convertM pp runConfig defs kenv tenv mm
                         Just mm'  -> return mm'
 
         return $ mm_init
-                
+
+
+-- | Convert an export spec.
+convertExportM
+        :: (L.Name, Type L.Name)                
+        -> ConvertM a (S.Name, Type S.Name)
+
+convertExportM (n, t)
+ = do   n'      <- convertBindNameM n
+        t'      <- convertT Env.empty t
+        return  (n', t')
+
 
 -- | Convert an import spec.
 convertImportM

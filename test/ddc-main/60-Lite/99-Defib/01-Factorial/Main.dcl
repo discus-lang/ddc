@@ -1,5 +1,8 @@
 
-module Main 
+module Main
+exports {
+        main      :: [r : %]. Nat# -(!0 | Use r)> Ptr# r String# -(Read r + Alloc r | Use r)> Int#;
+}
 imports {
         showInt   :: [r : %]. Int# -> Ptr# r String#;
         putStrLn  :: [r : %]. Ptr# r String# -> Void#;
