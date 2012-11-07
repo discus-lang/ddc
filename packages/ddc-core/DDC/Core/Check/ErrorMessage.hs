@@ -9,7 +9,8 @@ import DDC.Type.Compounds
 import DDC.Type.Universe
 
 
-instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
+instance (Show a, Pretty n, Show n, Eq n) 
+       => Pretty (Error a n) where
  ppr err
   = case err of
         ErrorType err'  -> ppr err'
@@ -84,11 +85,14 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , text "  is already in the environment."
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamNotPure xx eff
-         -> vcat [ text "Impure type abstraction"
-                 , text "           has effect: "       <> ppr eff
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
+        ErrorLamNotPure xx spec eff
+         -> let universe' = if spec then text "spec"
+                                    else text "witness"
+            in vcat 
+                [ text "Impure" <+> universe' <+> text "abstraction"
+                , text "           has effect: "       <> ppr eff
+                , empty
+                , text "with: "                        <> align (ppr xx) ]
                  
         
         ErrorLamBindNotData xx t1 k1

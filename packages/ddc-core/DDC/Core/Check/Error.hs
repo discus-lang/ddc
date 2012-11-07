@@ -75,6 +75,7 @@ data Error a n
         -- | A type or witness abstraction where the body has a visible side effect.
         | ErrorLamNotPure
         { errorChecking         :: Exp a n
+        , errorSpecOrWit        :: Bool
         , errorEffect           :: Effect n }
 
         -- | A value function where the parameter does not have data kind.

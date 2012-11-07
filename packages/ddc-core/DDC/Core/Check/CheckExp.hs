@@ -238,7 +238,7 @@ checkExpM' config kenv tenv xx@(XLAM a b1 x2)
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure xx (TSum e2)
+         $ throw $ ErrorLamNotPure xx True (TSum e2)
 
         -- The body of a spec abstraction must have data kind.
         when (not $ isDataKind k2)
@@ -256,22 +256,38 @@ checkExpM' config kenv tenv xx@(XLAM a b1 x2)
                 c2_cut
          
 
--- function abstractions ------------------------
+-- function abstraction -------------------------
 checkExpM' config kenv tenv xx@(XLam a b1 x2)
- = do   let t1               =  typeOfBind b1
-        k1                   <- checkTypeM config kenv t1
+ = do   
+        -- Check the type of the binder.
+        let t1  =  typeOfBind b1
+        k1      <- checkTypeM config kenv t1
 
         -- Check the body.
         let tenv'            =  Env.extend b1 tenv
         (x2', t2, e2, c2)    <- checkExpM  config kenv tenv' x2   
-        k2                   <- checkTypeM config kenv t2
+
+        -- The typing rules guarantee that the checked type of an 
+        -- expression is well kinded, but we need to check it again
+        -- to find out what that kind is.
+        k2      <- checkTypeM config kenv t2
 
         -- The form of the function constructor depends on what universe the 
         -- binder is in.
         case universeFromType2 k1 of
+
+         -- This is a data abstraction.
          Just UniverseData
-          |  not $ isDataKind k1     -> throw $ ErrorLamBindNotData xx t1 k1
-          |  not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
+
+          -- The body of a data abstraction must accept data.
+          |  not $ isDataKind k1
+          -> throw $ ErrorLamBindNotData xx t1 k1
+
+          -- The body of a data abstraction must produce data.
+          |  not $ isDataKind k2
+          -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
+
+          -- Looks good.
           |  otherwise
           -> let 
                  -- Cut closure terms due to locally bound value vars.
@@ -281,11 +297,13 @@ checkExpM' config kenv tenv xx@(XLam a b1 x2)
                          $ Set.toList c2
 
                  -- Trim the closure before we annotate the returned function
-                 -- type with it. 
-                 --  This should always succeed because trimClosure only returns
-                 --  Nothing if the closure is miskinded, and we've already
-                 --  allready checked that.
+                 -- type with it. This should always succeed because trimClosure
+                 -- only returns Nothing if the closure is miskinded, and we've
+                 -- already already checked that.
                  Just c2_captured
+
+                  -- If we're suppressing closures then just drop them on the
+                  -- floor. The consumer of this core program doesn't care.
                   | configSuppressClosures config
                   = Just $ tBot kClosure
 
@@ -298,15 +316,24 @@ checkExpM' config kenv tenv xx@(XLam a b1 x2)
                         (Sum.empty kEffect)
                         c2_cut
 
+         -- This is a witness abstraction.
          Just UniverseWitness
-          | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
-          | not $ isDataKind k2      -> throw $ ErrorLamBodyNotData xx b1 t2 k2
+
+          -- The body of a witness abstraction must be pure.
+          | e2 /= Sum.empty kEffect  
+          -> throw $ ErrorLamNotPure  xx False (TSum e2)
+
+          -- The body of a witness abstraction must produce data.
+          | not $ isDataKind k2      
+          -> throw $ ErrorLamBodyNotData xx b1 t2 k2
+
+          -- Looks good.
           | otherwise                
-          -> returnX a
-                (\z -> XLam z b1 x2')
-                (tImpl t1 t2)
-                (Sum.empty kEffect)
-                c2
+          ->    returnX a
+                        (\z -> XLam z b1 x2')
+                        (tImpl t1 t2)
+                        (Sum.empty kEffect)
+                        c2
 
          _ -> throw $ ErrorMalformedType xx k1
 
