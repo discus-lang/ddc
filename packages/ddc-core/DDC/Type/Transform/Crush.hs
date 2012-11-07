@@ -81,10 +81,12 @@ crushEffect tt
 
              _ -> tt
 
-         -- TODO: we're hijacking crushEffect to work on witnesses as well.
-         --       we should split this into another function.
          -- Deep Global
          -- See Note: Crushing with higher kinded type vars.
+         --
+         -- NOTE: We're hijacking crushEffect to work on witnesses as well.
+         --       It would be better to split this into another function.
+         --
          | Just (TyConWitness TwConDeepGlobal, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
              Just (TyConBound _ k, ts)

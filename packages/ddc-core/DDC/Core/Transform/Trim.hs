@@ -3,7 +3,7 @@
 --   that can affect the closure of the body. 
 --
 module DDC.Core.Transform.Trim
-        ( trimClosures, trimX )
+        ( trimX, trimClosures )
 where
 import DDC.Core.Collect()
 import DDC.Type.Collect

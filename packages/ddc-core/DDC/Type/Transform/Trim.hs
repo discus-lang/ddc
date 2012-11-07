@@ -18,12 +18,14 @@ import qualified Data.Set       as Set
 --
 --   This is like `crushEffect`, but for closures instead of effects.
 --
---   For example, trimming @Int r2 -(Read r1 | Use r1)> Int r2@ yields just @Use r1@. 
+--   For example, trimming @DeepUse (Int r2 -(Read r1 | Use r1)> Int r2)@ yields
+--   just @Use r1@. 
 --   Only @r1@ might contain an actual store object that is reachable from a function
 --   closure with such a type.
 --
 --   This function assumes the closure is well-kinded, and may return `Nothing` if
 --   this is not the case.
+--
 trimClosure 
         :: Ord n
         => Closure n 

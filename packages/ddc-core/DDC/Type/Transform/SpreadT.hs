@@ -3,7 +3,7 @@ module DDC.Type.Transform.SpreadT
         (SpreadT(..))
 where
 import DDC.Type.Exp
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (TypeEnv)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as T
 
@@ -15,7 +15,7 @@ class SpreadT (c :: * -> *) where
  --   language, their types are closed, and we don't want to keep having to
  --   look them up from the environment.
  spreadT :: forall n. Ord n 
-         => Env n -> c n -> c n
+         => TypeEnv n -> c n -> c n
         
 
 instance SpreadT Type where

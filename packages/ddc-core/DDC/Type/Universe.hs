@@ -1,5 +1,4 @@
 
--- | Universes of the Disciple Core language.
 module DDC.Type.Universe
         ( Universe(..)
         , universeFromType3
