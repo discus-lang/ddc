@@ -8,13 +8,15 @@ module DDC.Core.Compounds
         , takeAnnotOfExp
 
           -- * Lambdas
-        , makeXLAMs, takeXLAMs
-        , makeXLams, takeXLams
+        , xLAMs
+        , xLams
         , makeXLamFlags
+        , takeXLAMs
+        , takeXLams
         , takeXLamFlags
 
           -- * Applications
-        , makeXApps
+        , xApps
         , takeXApps
         , takeXApps1
         , takeXAppsAsList
@@ -22,11 +24,11 @@ module DDC.Core.Compounds
         , takeXPrimApps
 
           -- * Lets
+        , xLets
+        , splitXLets 
         , bindsOfLets
         , specBindsOfLets
         , valwitBindsOfLets
-        , makeXLets
-        , splitXLets 
 
           -- * Patterns
         , bindsOfPat
@@ -34,15 +36,15 @@ module DDC.Core.Compounds
           -- * Alternatives
         , takeCtorNameOfAlt
 
-          -- * Types
-        , takeXType
-
           -- * Witnesses
+        , wApp
+        , wApps
         , takeXWitness
-        , makeWApp
-        , makeWApps
         , takeWAppsAsList
         , takePrimWiConApps
+
+          -- * Types
+        , takeXType
 
           -- * Units
         , xUnit)
@@ -71,9 +73,15 @@ takeAnnotOfExp xx
 
 -- Lambdas ---------------------------------------------------------------------
 -- | Make some nested type lambdas.
-makeXLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
-makeXLAMs a bs x
+xLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
+xLAMs a bs x
         = foldr (XLAM a) x (reverse bs)
+
+
+-- | Make some nested value or witness lambdas.
+xLams :: a -> [Bind n] -> Exp a n -> Exp a n
+xLams a bs x
+        = foldr (XLam a) x (reverse bs)
 
 
 -- | Split type lambdas from the front of an expression,
@@ -85,12 +93,6 @@ takeXLAMs xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
-
-
--- | Make some nested value or witness lambda.
-makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
-makeXLams a bs x
-        = foldr (XLam a) x (reverse bs)
 
 
 -- | Split nested value or witness lambdas from the front of an expression,
@@ -130,8 +132,8 @@ takeXLamFlags xx
 
 -- Applications ---------------------------------------------------------------
 -- | Build sequence of value applications.
-makeXApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
-makeXApps a t1 ts     = foldl (XApp a) t1 ts
+xApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
+xApps a t1 ts     = foldl (XApp a) t1 ts
 
 
 -- | Flatten an application into the function part and its arguments.
@@ -184,6 +186,22 @@ takeXConApps xx
 
 
 -- Lets -----------------------------------------------------------------------
+-- | Wrap some let-bindings around an expression.
+xLets :: a -> [Lets a n] -> Exp a n -> Exp a n
+xLets a lts x
+ = foldr (XLet a) x lts
+
+
+-- | Split let-bindings from the front of an expression, if any.
+splitXLets :: Exp a n -> ([Lets a n], Exp a n)
+splitXLets xx
+ = case xx of
+        XLet _ lts x 
+         -> let (lts', x')      = splitXLets x
+            in  (lts : lts', x')
+
+        _ -> ([], xx)
+
 -- | Take the binds of a `Lets`.
 --
 --   The level-1 and level-0 binders are returned separately.
@@ -216,23 +234,6 @@ valwitBindsOfLets ll
         LWithRegion{}    -> []
 
 
--- | Wrap some let-bindings around an expression.
-makeXLets :: a -> [Lets a n] -> Exp a n -> Exp a n
-makeXLets a lts x
- = foldr (XLet a) x lts
-
-
--- | Split let-bindings from the front of an expression, if any.
-splitXLets :: Exp a n -> ([Lets a n], Exp a n)
-splitXLets xx
- = case xx of
-        XLet _ lts x 
-         -> let (lts', x')      = splitXLets x
-            in  (lts : lts', x')
-
-        _ -> ([], xx)
-
-
 -- Alternatives ---------------------------------------------------------------
 -- | Take the constructor name of an alternative, if there is one.
 takeCtorNameOfAlt :: Alt a n -> Maybe n
@@ -251,32 +252,23 @@ bindsOfPat pp
         PData _ bs        -> bs
 
 
--- Types ----------------------------------------------------------------------
--- | Take the type from an `XType` argument, if any.
-takeXType :: Exp a n -> Maybe (Type n)
-takeXType xx
- = case xx of
-        XType t -> Just t
-        _       -> Nothing
-
-
 -- Witnesses ------------------------------------------------------------------
+-- | Construct a witness application
+wApp :: Witness n -> Witness n -> Witness n
+wApp = WApp
+
+
+-- | Construct a sequence of witness applications
+wApps :: Witness n -> [Witness n] -> Witness n
+wApps = foldl wApp
+
+
 -- | Take the witness from an `XWitness` argument, if any.
 takeXWitness :: Exp a n -> Maybe (Witness n)
 takeXWitness xx
  = case xx of
         XWitness t -> Just t
         _          -> Nothing
-
-
--- | Construct a witness application
-makeWApp :: Witness n -> Witness n -> Witness n
-makeWApp = WApp
-
-
--- | Construct a sequence of witness applications
-makeWApps :: Witness n -> [Witness n] -> Witness n
-makeWApps = foldl makeWApp
 
 
 -- | Flatten an application into the function parts and arguments, if any.
@@ -297,6 +289,15 @@ takePrimWiConApps ww
         WCon wc : args | WiConBound (UPrim n _) _ <- wc
           -> Just (n, args)
         _ -> Nothing
+
+
+-- Types ----------------------------------------------------------------------
+-- | Take the type from an `XType` argument, if any.
+takeXType :: Exp a n -> Maybe (Type n)
+takeXType xx
+ = case xx of
+        XType t -> Just t
+        _       -> Nothing
 
 
 -- Units -----------------------------------------------------------------------

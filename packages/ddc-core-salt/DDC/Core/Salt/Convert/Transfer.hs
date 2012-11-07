@@ -99,9 +99,9 @@ transSuper tails xx
          -> let arity   = length xsArgsVal
                 p       = PrimCallTail arity
                 u       = UPrim (NamePrimOp (PrimCall p)) (typeOfPrimCall p)
-            in  makeXApps a (XVar a u) 
+            in  xApps a (XVar a u) 
                         $  (map XType (tsValArgs ++ [tResult])) 
-                        ++ [makeXApps a xv (xsArgsType ++ xsArgsWit)] 
+                        ++ [xApps a xv (xsArgsType ++ xsArgsWit)] 
                         ++ xsArgsVal
 
         -- Return the result of this application.

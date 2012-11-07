@@ -185,7 +185,7 @@ rewrite rules x0
                     else do
                         tell [LogUnfold name]
                         e'' <- down e' ws'
-                        return $ X.makeXLets a lets' e''
+                        return $ X.xLets a lets' e''
                _ -> do
                         e' <- down e (RE.extendLets l ws)
                         return $ XLet a l e'
@@ -388,7 +388,7 @@ rewriteX
                 rhs3        = L.liftX (length lets) rhs2
 
             in  checkConstrs bas3 constrs
-                $ X.makeXLets anno lets
+                $ X.xLets anno lets
                 $ weakeff bas3
                 $ weakclo bas3
                 $ S.substituteXArgs bas3 rhs3

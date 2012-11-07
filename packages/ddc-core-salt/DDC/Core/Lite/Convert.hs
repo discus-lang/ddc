@@ -101,7 +101,7 @@ convertM pp runConfig defs kenv tenv mm
         -- We don't want that, so just replace that code with a fresh unit.
         let Just a      = takeAnnotOfExp x1
         let (lts', _)   = splitXLets x1
-        let x2          = makeXLets a lts' (xUnit a)
+        let x2          = xLets a lts' (xUnit a)
 
         -- Build the output module.
         let mm_salt 
@@ -265,7 +265,7 @@ convertExpX ctx pp defs kenv tenv xx
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downArgX xsArgs
 
-                return $ makeXApps (annotTail a) x1' xsArgs'
+                return $ xApps (annotTail a) x1' xsArgs'
 
         -- Function application.
         -- TODO: This only works for full application. 
@@ -274,7 +274,7 @@ convertExpX ctx pp defs kenv tenv xx
          | (x1, xsArgs) <- takeXApps1 xa xb
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downArgX xsArgs
-                return  $ makeXApps a' x1' xsArgs'
+                return  $ xApps a' x1' xsArgs'
 
 
         -- let-expressions.

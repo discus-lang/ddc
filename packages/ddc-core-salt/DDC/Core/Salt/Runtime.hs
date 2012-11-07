@@ -86,7 +86,7 @@ ukTop
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
 xGetTag a tR x2 
- = makeXApps a (XVar a $ fst utGetTag)
+ = xApps a (XVar a $ fst utGetTag)
         [ XType tR, x2 ]
 
 utGetTag :: (Bound Name, Type Name)
@@ -99,7 +99,7 @@ utGetTag
 -- | Allocate a Boxed object.
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
- = makeXApps a (XVar a $ fst utAllocBoxed)
+ = xApps a (XVar a $ fst utAllocBoxed)
         [ XType tR
         , XCon a (mkDaConAlg (NameLitTag tag) tTag)
         , x2]
@@ -120,7 +120,7 @@ xGetFieldOfBoxed
         -> Exp a Name
 
 xGetFieldOfBoxed a trPrime tField x2 offset
- = makeXApps a (XVar a $ fst utGetFieldOfBoxed) 
+ = xApps a (XVar a $ fst utGetFieldOfBoxed) 
         [ XType trPrime, XType tField
         , x2
         , xNat a offset ]
@@ -146,7 +146,7 @@ xSetFieldOfBoxed
         -> Exp a Name
 
 xSetFieldOfBoxed a trPrime tField x2 offset val
- = makeXApps a (XVar a $ fst utSetFieldOfBoxed) 
+ = xApps a (XVar a $ fst utSetFieldOfBoxed) 
         [ XType trPrime, XType tField
         , x2
         , xNat a offset
@@ -167,7 +167,7 @@ utSetFieldOfBoxed
 -- | Allocate a RawSmall object.
 xAllocRawSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocRawSmall a tR tag x2
- = makeXApps a (XVar a $ fst utAllocRawSmall)
+ = xApps a (XVar a $ fst utAllocRawSmall)
         [ XType tR
         , xTag a tag
         , x2]
@@ -181,7 +181,7 @@ utAllocRawSmall
 -- | Get the payload of a RawSmall object.
 xPayloadOfRawSmall :: a -> Type Name -> Exp a Name -> Exp a Name
 xPayloadOfRawSmall a tR x2 
- = makeXApps a (XVar a $ fst utPayloadOfRawSmall) 
+ = xApps a (XVar a $ fst utPayloadOfRawSmall) 
         [XType tR, x2]
  
 utPayloadOfRawSmall :: (Bound Name, Type Name)

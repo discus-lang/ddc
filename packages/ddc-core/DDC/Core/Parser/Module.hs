@@ -55,7 +55,7 @@ pModule
 
         -- The body of the module consists of the top-level bindings wrapped
         -- around a unit constructor place-holder.
-        let body = makeXLets () lts (xUnit ())
+        let body = xLets () lts (xUnit ())
 
         -- TODO: make having duplicate names in the imports 
         --       or exports list a parse error, so we never build a bad map. 

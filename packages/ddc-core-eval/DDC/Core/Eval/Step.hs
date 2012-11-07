@@ -133,7 +133,7 @@ step store xx
                 stepArg i acc (ax:axs)
                  = case force store ax of
                     StepProgress store' x' 
-                     -> Right (store', makeXApps () x1 (reverse acc ++ (x' : axs)))
+                     -> Right (store', xApps () x1 (reverse acc ++ (x' : axs)))
 
                     StepDone
                      -> case stepArg (i + 1) (ax : acc) axs of
@@ -181,7 +181,7 @@ step store xx
            in case stepArg wnfs xsArgs of
                 Left err        -> err
                 Right (store2, xsArgs')
-                 -> StepProgress store2 (makeXApps () x1 xsArgs')
+                 -> StepProgress store2 (xApps () x1 xsArgs')
 
 
 -- (EvAppSubst)
@@ -212,7 +212,7 @@ step store xx
                               $ makeXLamFlags () bsLeftover xBody
 
           in  StepProgress store 
-                $ wrapCasts casts (makeXApps () xResult argsLeftover)
+                $ wrapCasts casts (xApps () xResult argsLeftover)
 
 
 -- (EvApp1 / EvApp2)
