@@ -23,7 +23,8 @@ GHC_LANGUAGE	:= \
 	-XRankNTypes \
 	-XNoMonomorphismRestriction \
         -XStandaloneDeriving \
-        -XDeriveDataTypeable
+        -XDeriveDataTypeable \
+        -XViewPatterns
 
 
 # -- Warnings -----------------------------------------------------------------

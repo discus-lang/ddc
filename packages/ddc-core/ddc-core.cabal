@@ -132,4 +132,5 @@ Library
         StandaloneDeriving
         DoAndIfThenElse
         DeriveDataTypeable
+        ViewPatterns
 
