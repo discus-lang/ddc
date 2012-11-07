@@ -306,8 +306,8 @@ data Error a n
 
 
         -- Casts ------------------------------------------
-        -- | A maxeff-cast where the type provided does not have effect kind.
-        | ErrorMaxeffNotEff
+        -- | A weakeff-cast where the type provided does not have effect kind.
+        | ErrorWeakEffNotEff
         { errorChecking         :: Exp a n
         , errorEffect           :: Effect n
         , errorKind             :: Kind n }

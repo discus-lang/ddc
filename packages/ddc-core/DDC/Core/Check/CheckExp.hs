@@ -602,7 +602,7 @@ checkExpM' config kenv tenv xx@(XCast a (CastWeakenEffect eff) x1)
         -- Check the effect term.
         kEff    <- checkTypeM config kenv eff
         when (not $ isEffectKind kEff)
-         $ throw $ ErrorMaxeffNotEff xx eff kEff
+         $ throw $ ErrorWeakEffNotEff xx eff kEff
 
         -- Check the body.
         (x1', t1, effs, clo)    <- checkExpM config kenv tenv x1

@@ -354,8 +354,8 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Casts ------------------------------------------
-        ErrorMaxeffNotEff xx eff k
-         -> vcat [ text "Type provided for a 'maxeff' does not have effect kind."
+        ErrorWeakEffNotEff xx eff k
+         -> vcat [ text "Type provided for a 'weakeff' does not have effect kind."
                  , text "           Type: "             <> ppr eff
                  , text "       has kind: "             <> ppr k
                  , empty
