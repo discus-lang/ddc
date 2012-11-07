@@ -8,7 +8,6 @@ module DDC.Core.Lite.Compounds
         , tList)
 where
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Exp
 import DDC.Type.Compounds
 
@@ -34,7 +33,7 @@ tNatU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData) kData)
 
 -- | A Literal Nat# data constructor.
 dcNatU :: Integer -> DaCon Name
-dcNatU i = mkDaConAlg (NameNat i) tNatU
+dcNatU i = mkDaConAlg (NameLitNat i) tNatU
 
 
 -- | A literal Nat#

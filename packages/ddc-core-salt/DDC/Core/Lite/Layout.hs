@@ -14,7 +14,6 @@ module DDC.Core.Lite.Layout
         , isFixedSizePrimTyCon)
 where
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Platform
 import DDC.Type.DataDef
 import DDC.Type.Exp

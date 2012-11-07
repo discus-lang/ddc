@@ -6,8 +6,6 @@ module DDC.Core.Lite.Env
 where
 import DDC.Core.Lite.Compounds
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimOp
 import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Type.Exp
@@ -33,8 +31,8 @@ primDataDefs
         -- Bool#
         [ DataDef (NamePrimTyCon PrimTyConBool) 
                 [] 
-                (Just   [ (NameBool True,  []) 
-                        , (NameBool False, []) ])
+                (Just   [ (NameLitBool True,  []) 
+                        , (NameLitBool False, []) ])
 
         -- Nat#
         , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
@@ -219,12 +217,12 @@ typeOfPrimName dc
          -> Just $ typeOfPrimArith p
 
         -- Unboxed Literals
-        NameBool _      -> Just $ tBoolU
-        NameNat  _      -> Just $ tNatU
-        NameInt  _      -> Just $ tIntU
-        NameWord _ bits -> Just $ tWordU bits
+        NameLitBool _      -> Just $ tBoolU
+        NameLitNat  _      -> Just $ tNatU
+        NameLitInt  _      -> Just $ tIntU
+        NameLitWord _ bits -> Just $ tWordU bits
 
-        _               -> Nothing
+        _                  -> Nothing
 
 
 -- | Take the type of a primitive arithmetic operator.

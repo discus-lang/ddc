@@ -24,6 +24,7 @@ module DDC.Core.Lite
         , PrimTyCon     (..)
         , PrimDaCon     (..)
         , PrimArith     (..)
+        , PrimCast      (..)
         , readName
 
           -- * Lexers
@@ -34,5 +35,3 @@ where
 import DDC.Core.Lite.Name
 import DDC.Core.Lite.Profile
 import DDC.Core.Lite.Convert
-import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimOp

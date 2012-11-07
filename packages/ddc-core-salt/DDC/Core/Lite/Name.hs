@@ -1,8 +1,19 @@
 
 module DDC.Core.Lite.Name
         ( Name          (..) 
+
+        -- * Baked in Algebraic Data Types
         , DataTyCon     (..)
         , PrimDaCon     (..)
+
+        -- * Primitive Type Constructors
+        , PrimTyCon     (..)
+
+        -- * Primitive Operators
+        , PrimArith     (..)
+        , PrimCast      (..)
+
+        -- * Name Parsing
         , readName)
 where
 import DDC.Core.Salt.Name.PrimTyCon
@@ -24,27 +35,29 @@ data Name
         -- | Baked in data type constructors.
         | NameDataTyCon DataTyCon
 
-        -- | A primitive type constructor.
-        | NamePrimTyCon PrimTyCon
-
         -- | A primitive data constructor.
         | NamePrimDaCon PrimDaCon
 
-        -- | A primitive arithmetic operator.
+        -- | A primitive type constructor.
+        | NamePrimTyCon PrimTyCon
+
+        -- | Primitive arithmetic, logic, comparison and bit-wise operators.
         | NamePrimArith PrimArith
 
+        -- | Primitive casting between numeric types.
+        | NamePrimCast  PrimCast
+
         -- | An Unboxed boolean literal
-        | NameBool      Bool
+        | NameLitBool   Bool
 
         -- | An unboxed natural literal.
-        | NameNat       Integer
+        | NameLitNat    Integer
 
         -- | An unboxed integer literal.
-        | NameInt       Integer
+        | NameLitInt    Integer
 
         -- | An unboxed word literal
-        | NameWord      Integer Int
-
+        | NameLitWord   Integer Int
         deriving (Eq, Ord, Show, Typeable)
 
 
@@ -57,11 +70,12 @@ instance Pretty Name where
         NamePrimTyCon tc        -> ppr tc
         NamePrimDaCon dc        -> ppr dc
         NamePrimArith op        -> ppr op
-        NameBool True           -> text "True#"
-        NameBool False          -> text "False#"
-        NameNat  i              -> integer i <> text "#"
-        NameInt  i              -> integer i <> text "i" <> text "#"
-        NameWord i bits         -> integer i <> text "w" <> int bits <> text "#"
+        NamePrimCast  op        -> ppr op
+        NameLitBool True        -> text "True#"
+        NameLitBool False       -> text "False#"
+        NameLitNat  i           -> integer i <> text "#"
+        NameLitInt  i           -> integer i <> text "i" <> text "#"
+        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -80,27 +94,30 @@ readName str
         | Just p        <- readPrimArith str
         = Just $ NamePrimArith p
 
+        -- PrimCast
+        | Just p        <- readPrimCast  str
+        = Just $ NamePrimCast p
+
         -- Literal unit value.
         | str == "()"
         = Just $ NamePrimDaCon PrimDaConUnit
 
         -- Literal Bools
-        | str == "True#"  = Just $ NameBool True
-        | str == "False#" = Just $ NameBool False
+        | str == "True#"  = Just $ NameLitBool True
+        | str == "False#" = Just $ NameLitBool False
 
         -- Literal Nat
         | Just val <- readLitPrimNat str
-        = Just $ NameNat  val
+        = Just $ NameLitNat  val
 
         -- Literal Ints
         | Just val <- readLitPrimInt str
-        = Just $ NameInt  val
+        = Just $ NameLitInt  val
 
         -- Literal Words
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
-        = Just $ NameWord val bits
-
+        = Just $ NameLitWord val bits
 
         -- Constructors.
         | c : _         <- str
@@ -156,7 +173,7 @@ readDataTyCon str
 -- PrimDaCon ------------------------------------------------------------------
 -- | Baked-in data constructors.
 data PrimDaCon
-        = PrimDaConUnit         -- ^ Unit   data constructor (@()@).
+        = PrimDaConUnit         -- ^ Unit   data constructor @()@.
         | PrimDaConBoolU        -- ^ @B#@   data constructor.
         | PrimDaConNatU         -- ^ @N#@   data constructor.
         | PrimDaConIntU         -- ^ @I#@   data constructor.

@@ -431,6 +431,7 @@ convertWiConX kenv wicon
 
 
 -------------------------------------------------------------------------------
+-- | Convert a data constructor application to Salt.
 convertCtorAppX 
         :: Show a
         => Platform                     -- ^ Platform specification.
@@ -445,20 +446,20 @@ convertCtorAppX
 convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
 
         -- Pass through unboxed literals.
-        | Just (L.NameBool b)   <- takeNameOfDaCon dc
-        , []                    <- xsArgs
+        | Just (L.NameLitBool b)        <- takeNameOfDaCon dc
+        , []                            <- xsArgs
         = return $ S.xBool a b
 
-        | Just (L.NameNat i)    <- takeNameOfDaCon dc
-        , []                    <- xsArgs
+        | Just (L.NameLitNat i)         <- takeNameOfDaCon dc
+        , []                            <- xsArgs
         = return $ S.xNat  a i
 
-        | Just (L.NameInt i)    <- takeNameOfDaCon dc
-        , []                    <- xsArgs
+        | Just (L.NameLitInt i)         <- takeNameOfDaCon dc
+        , []                            <- xsArgs
         = return $ S.xInt  a i
 
-        | Just (L.NameWord i bits) <- takeNameOfDaCon dc
-        , []                       <- xsArgs
+        | Just (L.NameLitWord i bits)   <- takeNameOfDaCon dc
+        , []                            <- xsArgs
         = return $ S.xWord a i bits
 
         -- Handle the unit constructor.
@@ -533,9 +534,9 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
         AAlt (PData dc []) x
          | Just nCtor           <- takeNameOfDaCon dc
          , case nCtor of
-                L.NameInt{}     -> True
-                L.NameWord{}    -> True
-                L.NameBool{}    -> True
+                L.NameLitInt{}  -> True
+                L.NameLitWord{} -> True
+                L.NameLitBool{} -> True
                 _               -> False
 
          -> do  dc'     <- convertDC kenv dc
@@ -594,10 +595,10 @@ convertCtor pp defs kenv tenv a dc
  | Just n       <- takeNameOfDaCon dc
  = case n of
         -- Literal values.
-        L.NameBool v            -> return $ S.xBool a v
-        L.NameNat  i            -> return $ S.xNat  a i
-        L.NameInt  i            -> return $ S.xInt  a i
-        L.NameWord i bits       -> return $ S.xWord a i bits
+        L.NameLitBool v         -> return $ S.xBool a v
+        L.NameLitNat  i         -> return $ S.xNat  a i
+        L.NameLitInt  i         -> return $ S.xInt  a i
+        L.NameLitWord i bits    -> return $ S.xWord a i bits
 
         -- A Zero-arity data constructor.
         nCtor
