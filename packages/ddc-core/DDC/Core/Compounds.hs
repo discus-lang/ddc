@@ -2,38 +2,34 @@
 -- | Utilities for constructing and destructing compound expressions.
 module DDC.Core.Compounds 
         ( module DDC.Type.Compounds
+        , module DDC.Core.DaCon
+
+          -- * Annotations
+        , takeAnnotOfExp
+
+          -- * Lambdas
+        , makeXLAMs, takeXLAMs
+        , makeXLams, takeXLams
+        , makeXLamFlags
+        , takeXLamFlags
+
+          -- * Applications
+        , makeXApps
+        , takeXApps
+        , takeXApps1
+        , takeXAppsAsList
+        , takeXConApps
+        , takeXPrimApps
 
           -- * Lets
         , bindsOfLets
         , specBindsOfLets
         , valwitBindsOfLets
+        , makeXLets
+        , splitXLets 
 
           -- * Patterns
         , bindsOfPat
-
-          -- * Annotations
-        , takeAnnotOfExp
-
-          -- * Units
-        , xUnit
-
-          -- * Lambdas
-        , makeXLAMs, takeXLAMs
-        , makeXLams, takeXLams
-        , takeXLamFlags
-        , makeXLamFlags
-
-          -- * Applications
-        , makeXApps
-        , takeXApps
-        , takeXApps'
-        , takeXConApps
-        , takeXPrimApps
-        , takeXAppsAsList
-
-          -- * Lets
-        , makeXLets
-        , splitXLets 
 
           -- * Alternatives
         , takeCtorNameOfAlt
@@ -43,50 +39,17 @@ module DDC.Core.Compounds
 
           -- * Witnesses
         , takeXWitness
-        , wApp,  wApps
-        , takeWApps,  takePrimWiConApps)
+        , makeWApp
+        , makeWApps
+        , takeWAppsAsList
+        , takePrimWiConApps
+
+          -- * Units
+        , xUnit)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
-
--- Lets -----------------------------------------------------------------------
--- | Take the binds of a `Lets`.
-bindsOfLets :: Lets a n -> ([Bind n], [Bind n])
-bindsOfLets ll
- = case ll of
-        LLet _ b _         -> ([],  [b])
-        LRec bxs           -> ([],  map fst bxs)
-        LLetRegions bs bbs -> (bs, bbs)
-        LWithRegion{}      -> ([],  [])
-
-
--- | Like `bindsOfLets` but only take the type binders.
-specBindsOfLets :: Lets a n -> [Bind n]
-specBindsOfLets ll
- = case ll of
-        LLet _ _ _       -> []
-        LRec _           -> []
-        LLetRegions bs _ -> bs
-        LWithRegion{}    -> []
-
-
--- | Like `bindsOfLets` but only take the value and witness binders.
-valwitBindsOfLets :: Lets a n -> [Bind n]
-valwitBindsOfLets ll
- = case ll of
-        LLet _ b _       -> [b]
-        LRec bxs         -> map fst bxs
-        LLetRegions _ bs -> bs
-        LWithRegion{}    -> []
-
-
--- | Take the binds of a `Pat`.
-bindsOfPat :: Pat n -> [Bind n]
-bindsOfPat pp
- = case pp of
-        PDefault          -> []
-        PData _ bs        -> bs
-
+import DDC.Core.DaCon
 
 -- Annotations ----------------------------------------------------------------
 -- | Take the outermost annotation from an expression,
@@ -106,19 +69,14 @@ takeAnnotOfExp xx
         XWitness{}      -> Nothing
 
 
--- Units -----------------------------------------------------------------------
-xUnit   :: a -> Exp a n
-xUnit a = XCon a dcUnit
-
-
 -- Lambdas ---------------------------------------------------------------------
--- | Make some nested type lambda abstractions.
+-- | Make some nested type lambdas.
 makeXLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLAMs a bs x
         = foldr (XLAM a) x (reverse bs)
 
 
--- | Split nested value and witness lambdas from the front of an expression,
+-- | Split type lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
 takeXLAMs :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLAMs xx
@@ -128,7 +86,8 @@ takeXLAMs xx
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
 
--- | Make some nested value or witness lambda abstractions.
+
+-- | Make some nested value or witness lambda.
 makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLams a bs x
         = foldr (XLam a) x (reverse bs)
@@ -139,19 +98,6 @@ makeXLams a bs x
 takeXLams :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLams xx
  = let  go bs (XLam _ b x) = go (b:bs) x
-        go bs x            = (reverse bs, x)
-   in   case go [] xx of
-         ([], _)        -> Nothing
-         (bs, body)     -> Just (bs, body)
-
-
--- | Split nested lambdas from the front of an expression, 
---   with a flag indicating whether the lambda was a level-1 (True), 
---   or level-0 (False) binder.
-takeXLamFlags :: Exp a n -> Maybe ([(Bool, Bind n)], Exp a n)
-takeXLamFlags xx
- = let  go bs (XLAM _ b x) = go ((True,  b):bs) x
-        go bs (XLam _ b x) = go ((False, b):bs) x
         go bs x            = (reverse bs, x)
    in   case go [] xx of
          ([], _)        -> Nothing
@@ -169,14 +115,28 @@ makeXLamFlags a fbs x
                 x fbs
 
 
+-- | Split nested lambdas from the front of an expression, 
+--   with a flag indicating whether the lambda was a level-1 (True), 
+--   or level-0 (False) binder.
+takeXLamFlags :: Exp a n -> Maybe ([(Bool, Bind n)], Exp a n)
+takeXLamFlags xx
+ = let  go bs (XLAM _ b x) = go ((True,  b):bs) x
+        go bs (XLam _ b x) = go ((False, b):bs) x
+        go bs x            = (reverse bs, x)
+   in   case go [] xx of
+         ([], _)        -> Nothing
+         (bs, body)     -> Just (bs, body)
+
+
 -- Applications ---------------------------------------------------------------
--- | Build sequence of type applications.
+-- | Build sequence of value applications.
 makeXApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
 makeXApps a t1 ts     = foldl (XApp a) t1 ts
 
 
 -- | Flatten an application into the function part and its arguments.
---   If there is no outer application then `Nothing`.
+--
+--   Returns `Nothing` if there is no outer application.
 takeXApps :: Exp a n -> Maybe (Exp a n, [Exp a n])
 takeXApps xx
  = case takeXAppsAsList xx of
@@ -185,13 +145,21 @@ takeXApps xx
 
 
 -- | Flatten an application into the function part and its arguments.
---   As opposed to takeXApps, this version takes the components
---   of the outer-most `XApp`, and therefore cannot fail.
-takeXApps' :: Exp a n -> Exp a n -> (Exp a n, [Exp a n])
-takeXApps' x1 x2
+--
+--   This is like `takeXApps` above, except we know there is at least one argument.
+takeXApps1 :: Exp a n -> Exp a n -> (Exp a n, [Exp a n])
+takeXApps1 x1 x2
  = case takeXApps x1 of
         Nothing          -> (x1,  [x2])
         Just (x11, x12s) -> (x11, x12s ++ [x2])
+
+
+-- | Flatten an application into the function parts and arguments, if any.
+takeXAppsAsList  :: Exp a n -> [Exp a n]
+takeXAppsAsList xx
+ = case xx of
+        XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
+        _               -> [xx]
 
 
 -- | Flatten an application of a primop into the variable
@@ -215,19 +183,44 @@ takeXConApps xx
         _               -> Nothing
 
 
--- | Flatten an application into the function parts and arguments, if any.
-takeXAppsAsList  :: Exp a n -> [Exp a n]
-takeXAppsAsList xx
- = case xx of
-        XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
-        _               -> [xx]
-
-
 -- Lets -----------------------------------------------------------------------
+-- | Take the binds of a `Lets`.
+--
+--   The level-1 and level-0 binders are returned separately.
+bindsOfLets :: Lets a n -> ([Bind n], [Bind n])
+bindsOfLets ll
+ = case ll of
+        LLet _ b _         -> ([],  [b])
+        LRec bxs           -> ([],  map fst bxs)
+        LLetRegions bs bbs -> (bs, bbs)
+        LWithRegion{}      -> ([],  [])
+
+
+-- | Like `bindsOfLets` but only take the spec (level-1) binders.
+specBindsOfLets :: Lets a n -> [Bind n]
+specBindsOfLets ll
+ = case ll of
+        LLet _ _ _       -> []
+        LRec _           -> []
+        LLetRegions bs _ -> bs
+        LWithRegion{}    -> []
+
+
+-- | Like `bindsOfLets` but only take the value and witness (level-0) binders.
+valwitBindsOfLets :: Lets a n -> [Bind n]
+valwitBindsOfLets ll
+ = case ll of
+        LLet _ b _       -> [b]
+        LRec bxs         -> map fst bxs
+        LLetRegions _ bs -> bs
+        LWithRegion{}    -> []
+
+
 -- | Wrap some let-bindings around an expression.
 makeXLets :: a -> [Lets a n] -> Exp a n -> Exp a n
 makeXLets a lts x
  = foldr (XLet a) x lts
+
 
 -- | Split let-bindings from the front of an expression, if any.
 splitXLets :: Exp a n -> ([Lets a n], Exp a n)
@@ -248,6 +241,16 @@ takeCtorNameOfAlt aa
         AAlt (PData dc _) _     -> takeNameOfDaCon dc
         _                       -> Nothing
 
+
+-- Patterns -------------------------------------------------------------------
+-- | Take the binds of a `Pat`.
+bindsOfPat :: Pat n -> [Bind n]
+bindsOfPat pp
+ = case pp of
+        PDefault          -> []
+        PData _ bs        -> bs
+
+
 -- Types ----------------------------------------------------------------------
 -- | Take the type from an `XType` argument, if any.
 takeXType :: Exp a n -> Maybe (Type n)
@@ -265,26 +268,39 @@ takeXWitness xx
         XWitness t -> Just t
         _          -> Nothing
 
+
 -- | Construct a witness application
-wApp :: Witness n -> Witness n -> Witness n
-wApp = WApp
+makeWApp :: Witness n -> Witness n -> Witness n
+makeWApp = WApp
+
 
 -- | Construct a sequence of witness applications
-wApps :: Witness n -> [Witness n] -> Witness n
-wApps = foldl wApp
+makeWApps :: Witness n -> [Witness n] -> Witness n
+makeWApps = foldl makeWApp
 
 
-takeWApps :: Witness n -> [Witness n]
-takeWApps ww
+-- | Flatten an application into the function parts and arguments, if any.
+takeWAppsAsList :: Witness n -> [Witness n]
+takeWAppsAsList ww
  = case ww of
-        WApp w1 w2 -> takeWApps w1 ++ [w2]
+        WApp w1 w2 -> takeWAppsAsList w1 ++ [w2]
         _          -> [ww]
- 
-         
+
+
+-- | Flatten an application of a witness into the witness constructor
+--   name and its arguments.
+--
+--   Returns nothing if there is no witness constructor in head position.
 takePrimWiConApps :: Witness n -> Maybe (n, [Witness n])
 takePrimWiConApps ww
- = case takeWApps ww of
+ = case takeWAppsAsList ww of
         WCon wc : args | WiConBound (UPrim n _) _ <- wc
           -> Just (n, args)
         _ -> Nothing
-        
+
+
+-- Units -----------------------------------------------------------------------
+-- | Construct a value of unit type.
+xUnit   :: a -> Exp a n
+xUnit a = XCon a dcUnit
+

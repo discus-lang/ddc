@@ -13,6 +13,7 @@ module DDC.Core.Salt.Compounds
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Exp
+import DDC.Core.DaCon
 import DDC.Type.Compounds
 
 

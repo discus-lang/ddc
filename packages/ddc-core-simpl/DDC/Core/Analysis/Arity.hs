@@ -2,12 +2,13 @@
 -- | Slurp out arities of functions, 
 --   and infer arities for primitives based on their types.
 module DDC.Core.Analysis.Arity
-        ( Arities       (..)
+        ( -- * Arities map
+          Arities
         , emptyArities
         , extendsArities
         , getArity
 
-          -- * Slurp
+          -- * Analysis
         , aritiesOfModule
         , arityOfLets
         , arityOfExp

@@ -14,6 +14,7 @@ import DDC.Core.Eval.Store
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import DDC.Core.Exp
+import DDC.Core.DaCon
 import qualified DDC.Core.Eval.Store   as Store
 
 -------------------------------------------------------------------------------

@@ -21,6 +21,7 @@ import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
+import qualified DDC.Core.DaCon         as C
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Simplifier    as Simp
 import qualified DDC.Llvm.Transform.Clean as Clean

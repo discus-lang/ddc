@@ -2,11 +2,11 @@
 -- | Abstract syntax for the Disciple core language.
 module DDC.Core.Exp 
         ( module DDC.Type.Exp
-        , module DDC.Core.DaCon
 
           -- * Computation expressions
         , Exp     (..)
         , DaCon   (..)
+        , DaConName(..)
         , Cast    (..)
         , Lets    (..)
         , LetMode (..)
@@ -24,11 +24,8 @@ import DDC.Type.Sum             ()
 
 
 -- Values ---------------------------------------------------------------------
--- | Well-typed expressions live in the Data universe, and their types always
---   have kind '*'. 
--- 
---   Expressions do something useful at runtime, and might diverge or cause
---   side effects.
+-- | Well-typed expressions produce `Data` values when evaluated, 
+--   and their types aways have kind '*' (Data)
 data Exp a n
         -- | Value variable   or primitive operation.
         = XVar  a  (Bound n)
@@ -63,22 +60,23 @@ data Exp a n
 
 deriving instance Eq n => Eq (DaCon n)
 
+
 -- | Type casts.
 data Cast a n
         -- | Weaken the effect of an expression.
         --   The given effect is added to the effect
-        --   of the casted expression.
+        --   of the body.
         = CastWeakenEffect  (Effect n)
         
         -- | Weaken the closure of an expression.
         --   The closures of these expressions are added to the closure
-        --   of the casted expression.
+        --   of the body.
         | CastWeakenClosure [Exp a n]
 
-        -- | Purify the effect of an expression.
+        -- | Purify the effect (action) of an expression.
         | CastPurify (Witness n)
 
-        -- | Hide sharing of the closure of an expression.
+        -- | Forget about the closure (sharing) of an expression.
         | CastForget (Witness n)
         deriving (Eq, Show)
 
@@ -177,31 +175,31 @@ data WbCon
         | WbConEmpty
 
         -- | Convert a capability guaranteeing that a region is in the global
-        --   heap into a witness that a closure using this region is empty.
+        --   heap, into a witness that a closure using this region is empty.
         --   This lets us rely on the garbage collector to reclaim objects
         --   in the region. It is needed when we suspend the evaluation of 
         --   expressions that have a region in their closure, because the
         --   type of the returned thunk may not reveal that it references
         --   objects in that region.
         -- 
-        --  @use      :: [r: %]. Global r => Empty (Use r)@
+        --  @use      :: [r : %]. Global r => Empty (Use r)@
         | WbConUse      
 
-        -- | Convert a capability guaranteeing the constancy of a region into
+        -- | Convert a capability guaranteeing the constancy of a region, into
         --   a witness that a read from that region is pure.
         --   This lets us suspend applications that read constant objects,
         --   because it doesn't matter if the read is delayed, we'll always
         --   get the same result.
         --
-        --   @read     :: [r: %]. Const r  => Pure (Read r)@
+        --   @read     :: [r : %]. Const r  => Pure (Read r)@
         | WbConRead     
 
-        -- | Convert a capability guaranteeing the constancy of a region into
+        -- | Convert a capability guaranteeing the constancy of a region, into
         --   a witness that allocation into that region is pure.
         --   This lets us increase the sharing of constant objects,
         --   because we can't tell constant objects of the same value apart.
         -- 
-        --  @alloc    :: [r: %]. Const r  => Pure (Alloc r)@
+        --  @alloc    :: [r : %]. Const r  => Pure (Alloc r)@
         | WbConAlloc
         deriving (Eq, Show)
 

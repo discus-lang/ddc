@@ -1,5 +1,5 @@
 
--- | Type checker for the Disciple core language.
+-- | Type checker for the Disciple Core language.
 module DDC.Core.Check
         ( -- * Configuration
           Config(..)

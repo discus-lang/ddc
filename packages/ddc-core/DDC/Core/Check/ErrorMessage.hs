@@ -9,7 +9,7 @@ import DDC.Type.Compounds
 import DDC.Type.Universe
 
 
-instance (Show a, Pretty n, Show n, Eq n) 
+instance (Show n, Eq n, Pretty n) 
        => Pretty (Error a n) where
  ppr err
   = case err of

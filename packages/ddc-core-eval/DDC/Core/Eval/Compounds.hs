@@ -38,8 +38,9 @@ module DDC.Core.Eval.Compounds
 where
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
+import DDC.Core.Compounds       (makeWApps)
 import DDC.Core.Exp
-import DDC.Core.Compounds (wApps)
+import DDC.Core.DaCon
 
 
 -- Type -----------------------------------------------------------------------
@@ -76,7 +77,7 @@ wManifest   :: Region Name -> Witness Name
 wManifest r = WApp (WCon wcManifest) (WType r)
 
 wDistinct     :: Int -> [Region Name] -> Witness Name
-wDistinct n rs = wApps (WCon (wcDistinct n)) (map WType rs)
+wDistinct n rs  = makeWApps (WCon (wcDistinct n)) (map WType rs)
 
 -- Just the Constructors
 wcGlobal   :: WiCon Name
@@ -110,7 +111,6 @@ isCapConW ww
  = case ww of
         WCon WiConBound{}       -> True
         _                       -> False
-
 
 
 -- Exp ------------------------------------------------------------------------
@@ -214,6 +214,7 @@ tcInt = TyConBound (UPrim (NamePrimCon PrimTyConInt) kInt) kInt
 -- | Make an integer data constructor.
 dcInt :: Integer -> DaCon Name
 dcInt i = mkDaConAlg (NameInt i) (TCon tcInt)
+
 
 -- | Take an integer literal from an data constructor.
 takeIntDC :: DaCon Name -> Maybe Integer

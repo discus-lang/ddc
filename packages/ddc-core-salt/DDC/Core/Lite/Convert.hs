@@ -254,13 +254,13 @@ convertExpX ctx pp defs kenv tenv xx
 
         -- Data constructor applications.
         XApp a xa xb
-         | (x1, xsArgs)           <- takeXApps' xa xb
+         | (x1, xsArgs)         <- takeXApps1 xa xb
          , XCon _ dc <- x1
          -> downCtorAppX a dc xsArgs
 
         -- Primitive operations.
         XApp a xa xb
-         | (x1, xsArgs)          <- takeXApps' xa xb
+         | (x1, xsArgs)          <- takeXApps1 xa xb
          , XVar _ UPrim{}        <- x1
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downArgX xsArgs
@@ -271,7 +271,7 @@ convertExpX ctx pp defs kenv tenv xx
         -- TODO: This only works for full application. 
         --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') xa xb
-         | (x1, xsArgs) <- takeXApps' xa xb
+         | (x1, xsArgs) <- takeXApps1 xa xb
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downArgX xsArgs
                 return  $ makeXApps a' x1' xsArgs'

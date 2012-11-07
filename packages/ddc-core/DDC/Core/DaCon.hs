@@ -1,6 +1,4 @@
 
-
--- | Data constructors.
 module DDC.Core.DaCon 
         ( DaCon         (..)
         , DaConName     (..)
@@ -22,6 +20,7 @@ data DaCon n
           daConName             :: DaConName n
 
           -- | Type of the data constructor.
+          --   The type must be closed.
         , daConType             :: Type n
 
           -- | Algebraic constructors can be deconstructed with case-expressions,

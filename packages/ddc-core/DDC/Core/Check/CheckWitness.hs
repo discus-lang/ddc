@@ -34,11 +34,19 @@ type CheckM a n   = G.CheckM (Error a n)
 
 
 -- Config ---------------------------------------------------------------------
--- | Static config info for the type checker.
+-- | Static configuration for the type checker.
 --   These fields don't change as we decend into the tree.
 data Config n
         = Config
-        { configDataDefs                :: DataDefs n 
+        { -- | Data type definitions.
+          configDataDefs                :: DataDefs n 
+
+          -- | Suppress all closure information, 
+          --   annotating all functions with an empty closure.
+          --   
+          --   This is used when checking the Disciple Core Salt fragment,
+          --   as transforms in this language don't use the closure
+          --   information.
         , configSuppressClosures        :: Bool }
 
 
