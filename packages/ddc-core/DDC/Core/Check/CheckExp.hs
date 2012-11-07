@@ -40,6 +40,8 @@ import Data.Typeable
 
 
 -- Annot ----------------------------------------------------------------------
+-- | The type checker adds this annotation to every node in the AST, 
+--   giving its type, effect and closure.
 data AnTEC a n
         = AnTEC
         { annotType     :: Type    n

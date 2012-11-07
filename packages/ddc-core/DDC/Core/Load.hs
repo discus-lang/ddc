@@ -1,12 +1,14 @@
 
--- | Parsing and type checking of core language constructs.
+-- | \"Loading\" refers to the combination of parsing and type checking.
+--   This is the easiest way to turn source tokens into a type-checked 
+--   abstract syntax tree.
 module DDC.Core.Load
         ( C.AnTEC (..)
         , Error (..)
         , loadModule
+        , loadExp
         , loadType
-        , loadWitness
-        , loadExp)
+        , loadWitness)
 where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
@@ -25,7 +27,7 @@ import qualified DDC.Base.Parser                as BP
 import Data.Map (Map)
 
 
--- | Things that can go wrong when loading.
+-- | Things that can go wrong when loading a core thing.
 data Error n
         = ErrorParser     BP.ParseError
         | ErrorCheckType  (T.Error n)      
@@ -59,9 +61,9 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 -- | Parse and type check a core module.
 loadModule 
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n
-        -> String 
-        -> [Token (Tok n)] 
+        => Profile n            -- ^ Language fragment profile.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) (Module (C.AnTEC () n) n)
 
 loadModule profile sourceName toks'
@@ -91,76 +93,17 @@ loadModule profile sourceName toks'
                 Nothing   -> Right mm
 
 
--- Type -----------------------------------------------------------------------
--- | Parse and check a type
---   returning it along with its kind.
-loadType
-        :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n
-        -> String 
-        -> [Token (Tok n)] 
-        -> Either (Error n) 
-                  (Type n, Kind n)
-
-loadType profile sourceName toks'
- = goParse toks'
- where  defs    = profilePrimDataDefs profile
-        kenv    = profilePrimKinds    profile
-
-        -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeTok sourceName C.pType toks of
-                Left err  -> Left (ErrorParser err)
-                Right t   -> goCheckType (spreadT kenv t)
-
-        -- Check the kind of the type.
-        goCheckType t
-         = case T.checkType defs kenv t of
-                Left err  -> Left (ErrorCheckType err)
-                Right k   -> Right (t, k)
-        
-
-
--- Witness --------------------------------------------------------------------
--- | Parse and check a witness
---   returning it along with its type.
-loadWitness
-        :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n
-        -> String 
-        -> [Token (Tok n)] 
-        -> Either (Error n) 
-                  (Witness n, Type n)
-
-loadWitness profile sourceName toks'
- = goParse toks'
- where  -- Type checker config, kind and type environments.
-        config  = C.configOfProfile  profile
-        kenv    = profilePrimKinds profile
-        tenv    = profilePrimTypes profile
-
-        -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeTok sourceName C.pWitness toks of
-                Left err  -> Left (ErrorParser err)
-                Right t   -> goCheckType (spreadX kenv tenv t)
-
-        -- Check the kind of the type.
-        goCheckType w
-         = case C.checkWitness config kenv tenv w of
-                Left err  -> Left (ErrorCheckExp err)
-                Right k   -> Right (w, k)
-
-
 -- Exp ------------------------------------------------------------------------
 -- | Parse and check an expression
 --   returning it along with its spec, effect and closure
 loadExp
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n
-	-> Map ModuleName (Module (C.AnTEC () n) n)
-        -> String 
-        -> [Token (Tok n)] 
+        => Profile n            -- ^ Language fragment profile.
+        -> Map ModuleName (Module (C.AnTEC () n) n)
+                                -- ^ Other modules currently in scope.
+                                --   We add their exports to the environment.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
                   (Exp (C.AnTEC () n) n)
 
@@ -189,4 +132,65 @@ loadExp profile modules sourceName toks'
          = case I.compliesWithEnvs profile kenv tenv x of
                 Just err  -> Left (ErrorCompliance err)
                 Nothing   -> Right x
+
+
+-- Type -----------------------------------------------------------------------
+-- | Parse and check a type,
+--   returning it along with its kind.
+loadType
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Profile n            -- ^ Language fragment profile.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> [Token (Tok n)]      -- ^ Source tokens.
+        -> Either (Error n) 
+                  (Type n, Kind n)
+
+loadType profile sourceName toks'
+ = goParse toks'
+ where  defs    = profilePrimDataDefs profile
+        kenv    = profilePrimKinds    profile
+
+        -- Parse the tokens.
+        goParse toks                
+         = case BP.runTokenParser describeTok sourceName C.pType toks of
+                Left err  -> Left (ErrorParser err)
+                Right t   -> goCheckType (spreadT kenv t)
+
+        -- Check the kind of the type.
+        goCheckType t
+         = case T.checkType defs kenv t of
+                Left err  -> Left (ErrorCheckType err)
+                Right k   -> Right (t, k)
+        
+
+
+-- Witness --------------------------------------------------------------------
+-- | Parse and check a witness,
+--   returning it along with its type.
+loadWitness
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Profile n            -- ^ Language fragment profile.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> [Token (Tok n)]      -- ^ Source tokens.
+        -> Either (Error n) 
+                  (Witness n, Type n)
+
+loadWitness profile sourceName toks'
+ = goParse toks'
+ where  -- Type checker config, kind and type environments.
+        config  = C.configOfProfile  profile
+        kenv    = profilePrimKinds profile
+        tenv    = profilePrimTypes profile
+
+        -- Parse the tokens.
+        goParse toks                
+         = case BP.runTokenParser describeTok sourceName C.pWitness toks of
+                Left err  -> Left (ErrorParser err)
+                Right t   -> goCheckType (spreadX kenv tenv t)
+
+        -- Check the kind of the type.
+        goCheckType w
+         = case C.checkWitness config kenv tenv w of
+                Left err  -> Left (ErrorCheckExp err)
+                Right k   -> Right (w, k)
 
