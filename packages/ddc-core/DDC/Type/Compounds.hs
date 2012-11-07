@@ -1,6 +1,6 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
-        ( -- * Binds
+        (  -- * Binds
           takeNameOfBind
         , typeOfBind
         , replaceTypeOfBind
@@ -14,41 +14,49 @@ module DDC.Type.Compounds
         , takeNameOfBound
         , boundMatchesBind
         , namedBoundMatchesBind
-        , takeSubstBoundOfBind,         takeSubstBoundsOfBinds
+        , takeSubstBoundOfBind
+        , takeSubstBoundsOfBinds
 
-          -- * Type structure
-        , tIx
+          -- * Kinds
+        , kFun
+        , kFuns
+        , takeKFun
+        , takeKFuns
+        , takeKFuns'
+        , takeResultKind
+
+         -- * Quantifiers
+        , tForall
+        , tForalls,      takeTForalls,  eraseTForalls
+
+          -- * Sums
+        , tBot
+        , tSum
+
+          -- * Applications
         , tApp,          ($:)
         , tApps,         takeTApps
         , takeTyConApps
         , takePrimTyConApps
         , takeDataTyConApps
         , takePrimeRegion
-        , tForall
-        , tForalls,      takeTForalls,  eraseTForalls
-        , tBot
-        , tSum
 
-          -- * The unit data type.
-        , tUnit
-
-          -- * Function type construction
-        , kFun
-        , kFuns
-        , takeKFun
-
-        , takeKFuns
-        , takeKFuns'
-        , takeResultKind
-
+          -- * Functions
         , tFun
         , tFunPE
         , takeTFun
         , takeTFunArgResult
         , takeTFunWitArgResult
-
         , arityOfType
+
+          -- * Implications
         , tImpl
+
+          -- * Units
+        , tUnit
+
+          -- * Variables
+        , tIx
 
           -- * Sort construction
         , sComp, sProp
@@ -61,10 +69,10 @@ module DDC.Type.Compounds
         , tWrite,       tDeepWrite
         , tAlloc,       tDeepAlloc
 
-          -- * Closure type constructors.
+          -- * Closure type constructors
         , tUse,         tDeepUse
 
-          -- * Witness type constructors.
+          -- * Witness type constructors
         , tPure
         , tEmpty
         , tGlobal,      tDeepGlobal

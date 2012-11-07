@@ -3,6 +3,7 @@
 --
 --   If a binder would capture a variable then it is anonymized
 --   to deBruijn form.
+--
 module DDC.Core.Transform.SubstituteTX
         ( SubstituteTX(..)
         , substituteTX

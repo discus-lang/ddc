@@ -1,16 +1,15 @@
 
 -- | Trim the expressions passed to @weakclo@ casts to just those terms
 --   that can affect the closure of the body. 
+--
 module DDC.Core.Transform.Trim
         ( trimClosures, trimX )
 where
-
 import DDC.Core.Collect()
 import DDC.Type.Collect
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Core.Transform.Reannotate
-
 import Data.List (nubBy)
 
 

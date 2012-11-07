@@ -3,6 +3,7 @@
 -- 
 --   The functions in this module do not check for language fragment compliance.
 --   This needs to be done separately via "DDC.Core.Fragment".
+--
 module DDC.Core.Check
         ( -- * Configuration
           Config(..)

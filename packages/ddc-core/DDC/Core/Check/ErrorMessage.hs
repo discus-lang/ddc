@@ -1,4 +1,3 @@
-{-# OPTIONS_HADDOCK hide #-}
 -- | Errors produced when checking core expressions.
 module DDC.Core.Check.ErrorMessage
         (Error(..))

@@ -1,4 +1,3 @@
-
 -- | Collecting sets of variables and constructors.
 module DDC.Core.Collect.Free
         (freeX)

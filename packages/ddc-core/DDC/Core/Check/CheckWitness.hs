@@ -1,4 +1,3 @@
-
 -- | Type checker for witness expressions.
 module DDC.Core.Check.CheckWitness
         ( Config(..)

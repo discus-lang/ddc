@@ -1,4 +1,3 @@
-
 -- | Type checker for the Disciple Core language.
 module DDC.Core.Check.CheckExp
         ( Config (..)
