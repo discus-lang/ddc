@@ -1,6 +1,21 @@
 
 module DDC.Core.Transform.Rename
-        (Rename (..))
+        ( Rename(..)
+
+        -- * Substitution states
+        , Sub(..)
+
+        -- * Binding stacks
+        , BindStack(..)
+        , pushBind
+        , pushBinds
+        , substBound
+
+        -- * Rewriting binding occurences
+        , bind1, bind1s, bind0, bind0s
+
+        -- * Rewriting bound occurences
+        , use1,  use0)
 where
 import DDC.Core.Exp
 import DDC.Type.Transform.Rename

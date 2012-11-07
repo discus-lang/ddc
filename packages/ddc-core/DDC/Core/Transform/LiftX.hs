@@ -1,11 +1,11 @@
 
--- | Lift level-0 deBruijn indices in expressions.
+-- | Lifting and lowering level-0 deBruijn indices in core things.
 -- 
 --   Level-0 indices are used for both value and witness variables.
 module DDC.Core.Transform.LiftX
-        ( MapBoundX(..)
-        , liftX,        liftAtDepthX
-        , lowerX,       lowerAtDepthX)
+        ( liftX,        liftAtDepthX
+        , lowerX,       lowerAtDepthX
+        , MapBoundX(..))
 where
 import DDC.Core.Exp
 
@@ -64,8 +64,9 @@ lowerX n xx  = lowerAtDepthX n 0 xx
 
 -- MapBoundX ------------------------------------------------------------------
 class MapBoundX (c :: * -> *) n where
- -- | Lift indices that are at least the given depth by some number
- --   of levels.
+ -- | Apply a function to all bound variables in the program.
+ --   The function is passed the current binding depth.
+ --   This is used to defined both `liftX` and `lowerX`.
  mapBoundAtDepthX
         :: (Int -> Bound n -> Bound n)  -- ^ Number of levels to lift.
         -> Int                          -- ^ Current binding depth.

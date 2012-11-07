@@ -6,7 +6,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 
 
--- | Rewrite the annotation in a thing.
+-- | Apply the given function to every annotation in a core thing.
 class Reannotate c where
  reannotate :: (a -> b) -> c a n -> c b n
 

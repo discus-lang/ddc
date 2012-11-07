@@ -1,6 +1,4 @@
 
--- | Spread type annotations from binders and the environment into bound
---   occurrences of variables and constructors.
 module DDC.Core.Transform.SpreadX
         (SpreadX(..))
 where

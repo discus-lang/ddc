@@ -2,13 +2,20 @@
 -- | Renaming of variable binders to anonymous form to avoid capture.
 module DDC.Type.Transform.Rename
         ( Rename(..)
+
+        -- * Substitution states
         , Sub(..)
+
+        -- * Binding stacks
         , BindStack(..)
         , pushBind
         , pushBinds
         , substBound
 
+        -- * Rewriting binding occurences
         , bind1, bind1s, bind0, bind0s
+
+        -- * Rewriting bound occurences
         , use1,  use0)
 where
 import DDC.Type.Compounds
@@ -19,6 +26,43 @@ import qualified DDC.Type.Sum           as Sum
 import qualified Data.Set               as Set
 
 
+-------------------------------------------------------------------------------
+class Rename (c :: * -> *) where
+ -- | Rewrite names in some thing to anonymous form if they conflict with
+--    any names in the `Sub` state. We use this to avoid variable capture
+--    during substitution.
+ renameWith :: Ord n => Sub n -> c n -> c n 
+
+
+instance Rename Bind where
+ renameWith sub bb
+  = replaceTypeOfBind  (renameWith sub (typeOfBind bb))  bb
+
+
+instance Rename Type where
+ renameWith sub tt 
+  = let down    = renameWith 
+    in case tt of
+        TVar u          -> TVar (use1 sub u)
+        TCon{}          -> tt
+
+        TForall b t
+         -> let (sub1, b')      = bind1 sub b
+                t'              = down  sub1 t
+            in  TForall b' t'
+
+        TApp t1 t2      -> TApp (down sub t1) (down sub t2)
+        TSum ts         -> TSum (down sub ts)
+
+
+instance Rename TypeSum where
+ renameWith sub ts
+        = Sum.fromList (Sum.kindOfSum ts)
+        $ map (renameWith sub)
+        $ Sum.toList ts
+
+
+-------------------------------------------------------------------------------
 -- | Substitution state.
 --   Keeps track of the binders in the environment that have been rewrittten
 --   to avoid variable capture or spec binder shadowing.
@@ -154,6 +198,8 @@ bind1 sub b
  = let  (stackT', b')     = pushBind (subConflict1 sub) (subStack1 sub) b
    in   (sub { subStack1  = stackT' }, b')
 
+
+-- | Push some level-1 binders on the rewrite stack.
 bind1s :: Ord n => Sub n -> [Bind n] -> (Sub n, [Bind n])
 bind1s = mapAccumL bind1
 
@@ -174,7 +220,7 @@ bind0s :: Ord n => Sub n -> [Bind n] -> (Sub n, [Bind n])
 bind0s = mapAccumL bind0
 
 
--- | Rewrite a use of a level-1 binder if need be.
+-- | Rewrite the use of a level-1 binder if need be.
 use1 :: Ord n => Sub n -> Bound n -> Bound n
 use1 sub u
         | UName _               <- u
@@ -196,38 +242,4 @@ use0 sub u
 
         | otherwise
         = u
-
--------------------------------------------------------------------------------
-class Rename (c :: * -> *) where
- -- | Rename names in some thing to anonymous form if they conflict with
---    any names in the `Sub` state.
- renameWith :: Ord n => Sub n -> c n -> c n 
-
-
-instance Rename Bind where
- renameWith sub bb
-  = replaceTypeOfBind  (renameWith sub (typeOfBind bb))  bb
-
-
-instance Rename Type where
- renameWith sub tt 
-  = let down    = renameWith 
-    in case tt of
-        TVar u          -> TVar (use1 sub u)
-        TCon{}          -> tt
-
-        TForall b t
-         -> let (sub1, b')      = bind1 sub b
-                t'              = down  sub1 t
-            in  TForall b' t'
-
-        TApp t1 t2      -> TApp (down sub t1) (down sub t2)
-        TSum ts         -> TSum (down sub ts)
-
-
-instance Rename TypeSum where
- renameWith sub ts
-        = Sum.fromList (Sum.kindOfSum ts)
-        $ map (renameWith sub)
-        $ Sum.toList ts
 

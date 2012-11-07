@@ -1,3 +1,6 @@
+
+-- | Trim the expressions passed to @weakclo@ casts to just those terms
+--   that can affect the closure of the body. 
 module DDC.Core.Transform.Trim
         ( trimClosures, trimX )
 where
@@ -11,7 +14,7 @@ import DDC.Core.Transform.Reannotate
 import Data.List (nubBy)
 
 
--- | Trim the expressions of a weaken closure (XCast CastWeakenClosure)
+-- | Trim the expressions of a weaken closure @(XCast CastWeakenClosure)@
 --   into only the free variables.
 --
 --   For example,
@@ -29,9 +32,10 @@ trimClosures a xs
  where  nub' = nubBy (\x y -> reannotate (const ()) x == reannotate (const ()) y)
 
 
--- | Trim an expression if it is a weakclo cast. 
---   Does not recurse! If you want to recursively trim closures,
---   use `transformUpX' (const trimX)`.
+-- | Trim an expression if it is a @weakclo@ cast. 
+--
+--   Non-recursive version. If you want to recursively trim closures,
+--   use @transformUpX' (const trimX)@.
 trimX   :: (Ord n)
         => Exp a n
         -> Exp a n

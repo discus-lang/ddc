@@ -12,14 +12,13 @@ import DDC.Core.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.Rename
 import DDC.Core.Transform.LiftX
-import DDC.Type.Transform.Rename
 import DDC.Type.Compounds
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 
 
--- | Wrapper for `substituteWithW` that determines the set of free names in the
+-- | Wrapper for `substituteWithWX` that determines the set of free names in the
 --   type being substituted, and starts with an empty binder stack.
 substituteWX 
         :: (Ord n, SubstituteWX c) 
@@ -53,7 +52,7 @@ substituteWX b wArg xx
  | otherwise    = xx
  
 
--- | Wrapper for `substituteW` to substitute multiple things.
+-- | Wrapper for `substituteWithWX` to substitute multiple things.
 substituteWXs 
         :: (Ord n, SubstituteWX c) 
         => [(Bind n, Witness n)] -> c n -> c n
@@ -61,12 +60,8 @@ substituteWXs bts x
         = foldr (uncurry substituteWX) x bts
 
 
+-------------------------------------------------------------------------------
 class SubstituteWX (c :: * -> *) where
-
- -- | Substitute a witness into some thing.
- --   In the target, if we find a named binder that would capture a free variable
- --   in the type to substitute, then we rewrite that binder to anonymous form,
- --   avoiding the capture.
  substituteWithWX
         :: forall n. Ord n
         => Witness n -> Sub n -> c n -> c n

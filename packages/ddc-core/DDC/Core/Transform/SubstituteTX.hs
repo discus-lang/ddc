@@ -4,10 +4,10 @@
 --   If a binder would capture a variable then it is anonymized
 --   to deBruijn form.
 module DDC.Core.Transform.SubstituteTX
-        ( substituteTX
+        ( SubstituteTX(..)
+        , substituteTX
         , substituteTXs
-        , substituteBoundTX
-        , SubstituteTX(..))
+        , substituteBoundTX)
 where
 import DDC.Core.Collect
 import DDC.Core.Exp
