@@ -1,9 +1,14 @@
 
--- | The Lite fragment of Disciple Core.
+-- | Disciple Core Lite.
 --
---   This fragment has the polymorphism of System-F, along with real data types.
+--   This is a desugared version of Disciple Core that has all the polymorphism
+--   of System-F2 along with algebraic data types. It does not yet support
+--   user-defined data types, but has Units, Ints, Pairs and Lists baked in.
 --
---   It does not support user-defined data types, yet, but has Units, Ints, Pairs and Lists baked in. 
+--   Lite exposes arithmetic primops like @add#@ and @or#@, but no store or
+--   control primops. Code written in Lite cannot corrupt the heap, assuming
+--   the implementation of the Salt primitives it uses (and compiler) is
+--   correct.
 --
 module DDC.Core.Lite
         ( -- * Language profile
