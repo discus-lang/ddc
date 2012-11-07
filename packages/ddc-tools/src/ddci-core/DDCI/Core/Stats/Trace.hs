@@ -67,7 +67,7 @@ expOfSBind :: SBind -> Exp () Name
 expOfSBind sbind
  = case sbind of
         SObj dcTag lsArgs
-         -> makeXApps () (XCon () dcTag) (map expOfLoc lsArgs)
+         -> xApps () (XCon () dcTag) (map expOfLoc lsArgs)
 
         SLams fbs x
          -> makeXLamFlags () fbs x
