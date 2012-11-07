@@ -11,7 +11,7 @@ where
 import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Exp
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 
 
@@ -29,10 +29,10 @@ data Profile n
         , profilePrimDataDefs           :: DataDefs n
 
           -- | Kinds of primitive types.
-        , profilePrimKinds              :: Env n
+        , profilePrimKinds              :: KindEnv n
 
           -- | Types of primitive operators.
-        , profilePrimTypes              :: Env n
+        , profilePrimTypes              :: TypeEnv n
 
           -- | Check whether a type is an unboxed type.
           --   Some fragments limit how these can be used.

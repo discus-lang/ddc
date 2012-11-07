@@ -80,7 +80,7 @@ loadModule profile sourceName toks'
 
         -- Check that the module is type sound.
         goCheckType mm
-         = case C.checkModule config kenv tenv mm of
+         = case C.checkModule config mm of
                 Left err  -> Left (ErrorCheckExp err)
                 Right mm' -> goCheckCompliance mm'
 

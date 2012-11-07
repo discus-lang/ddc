@@ -26,13 +26,16 @@ import qualified Data.Map       as Map
 checkModule
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
-        -> KindEnv n            -- ^ Starting kind environment.
-        -> TypeEnv n            -- ^ Starting type environment.
         -> Module a n           -- ^ Module to check.
         -> Either (Error a n) (Module (AnTEC a n) n)
 
-checkModule config kenv tenv xx 
- = result $ checkModuleM config kenv tenv xx
+checkModule config xx 
+        = result 
+        $ checkModuleM 
+                config 
+                (configPrimKinds config)
+                (configPrimTypes config)
+                xx
 
 
 -- checkModule ----------------------------------------------------------------
@@ -84,7 +87,7 @@ checkTypeM :: (Ord n, Show n, Pretty n)
            -> CheckM a n (Kind n)
 
 checkTypeM config kenv tt
- = case T.checkType (configDataDefs config) kenv tt of
+ = case T.checkType (configPrimDataDefs config) kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

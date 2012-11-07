@@ -238,7 +238,7 @@ data Error a n
 
 
         -- Case Expressions -------------------------------
-        -- | A case-expression where the discriminant type is not algebraic.
+        -- | A case-expression where the scrutinee type is not algebraic.
         | ErrorCaseScrutineeNotAlgebraic
         { errorChecking         :: Exp a n
         , errorTypeScrutinee    :: Type n }

@@ -200,11 +200,9 @@ pipeCore mm pp
 
         PipeCoreCheck fragment pipes
          -> let profile         = fragmentProfile fragment
-                primKindEnv     = C.profilePrimKinds      profile
-                primTypeEnv     = C.profilePrimTypes      profile
 
                 goCheck mm1
-                 = case C.checkModule (C.configOfProfile profile) primKindEnv primTypeEnv mm1 of
+                 = case C.checkModule (C.configOfProfile profile) mm1 of
                         Left err  -> return [ErrorLint err]
                         Right mm2  -> goComplies mm2
 

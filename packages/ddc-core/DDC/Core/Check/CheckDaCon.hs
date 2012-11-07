@@ -31,7 +31,7 @@ checkDaConM config xx dc
  | DaConNamed nCtor <- daConName dc
  , daConIsAlgebraic dc
  = let  tResult = snd $ takeTFunArgResult $ eraseTForalls $ typeOfDaCon dc
-        defs    = configDataDefs config
+        defs    = configPrimDataDefs config
    in   case liftM fst $ takeTyConApps tResult of
          Just (TyConBound u _)
            | Just nType         <- takeNameOfBound u

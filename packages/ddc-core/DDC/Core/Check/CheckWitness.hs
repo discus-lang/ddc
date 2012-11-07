@@ -40,12 +40,18 @@ type CheckM a n   = G.CheckM (Error a n)
 --   These fields don't change as we decend into the tree.
 --
 --   The starting configuration should be converted from the profile that
---   defines the langauge fragment you are checking. 
+--   defines the language fragment you are checking. 
 --   See "DDC.Core.Fragment" and use `configOfProfile` below.
 data Config n
         = Config
         { -- | Data type definitions.
-          configDataDefs                :: DataDefs n 
+          configPrimDataDefs            :: DataDefs n 
+
+          -- | Kinds of primitive types.
+        , configPrimKinds               :: KindEnv n
+
+          -- | Types of primitive operators.
+        , configPrimTypes               :: TypeEnv n
 
           -- | Suppress all closure information, 
           --   annotating all functions with an empty closure.
@@ -60,8 +66,9 @@ data Config n
 configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
         = Config
-        { configDataDefs      
-                = F.profilePrimDataDefs profile
+        { configPrimDataDefs    = F.profilePrimDataDefs profile
+        , configPrimKinds       = F.profilePrimKinds profile
+        , configPrimTypes       = F.profilePrimTypes profile
 
         , configSuppressClosures      
                 = not   $ F.featuresClosureTerms
@@ -78,6 +85,10 @@ configOfProfile profile
 --
 --   The returned expression has types attached to all variable occurrences, 
 --   so you can call `typeOfWitness` on any open subterm.
+--
+--   The kinds and types of primitives are added to the environments 
+--   automatically, you don't need to supply these as part of the 
+--   starting environments.
 --
 checkWitness
         :: (Ord n, Show n, Pretty n)
@@ -201,7 +212,7 @@ checkTypeM
         -> CheckM a n (Kind n)
 
 checkTypeM config kenv tt
- = case T.checkType (configDataDefs config) kenv tt of
+ = case T.checkType (configPrimDataDefs config) kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

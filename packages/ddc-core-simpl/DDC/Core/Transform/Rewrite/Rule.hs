@@ -242,7 +242,7 @@ check defs kenv tenv xx onError
 
 -- | Typecheck a constraint or return an error
 checkConstraint defs kenv xx onError
- = case T.checkType (C.configDataDefs defs) kenv xx of
+ = case T.checkType (C.configPrimDataDefs defs) kenv xx of
    Left _err -> Left $ onError xx
    Right rhs ->
         if   T.isWitnessType xx

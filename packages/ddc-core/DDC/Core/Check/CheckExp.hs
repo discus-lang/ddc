@@ -27,7 +27,7 @@ import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Sum                     as Sum
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (Env, KindEnv, TypeEnv)
 import DDC.Type.Check.Monad             (result, throw)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
@@ -62,11 +62,16 @@ instance Pretty (AnTEC a n) where
 --
 --   The returned expression has types attached to all variable occurrences, 
 --   so you can call `typeOfExp` on any open subterm.
+--
+--   The kinds and types of primitives are added to the environments 
+--   automatically, you don't need to supply these as part of the 
+--   starting environments.
+--
 checkExp 
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
-        -> Env n                -- ^ Starting Kind environment.
-        -> Env n                -- ^ Strating Type environment.
+        -> KindEnv n            -- ^ Starting Kind environment.
+        -> TypeEnv n            -- ^ Strating Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n)
                   ( Exp (AnTEC a n) n
@@ -76,7 +81,11 @@ checkExp
 
 checkExp config kenv tenv xx 
  = result
- $ do   (xx', t, effs, clos) <- checkExpM config kenv tenv xx
+ $ do   (xx', t, effs, clos) 
+                <- checkExpM config 
+                        (Env.union kenv (configPrimKinds config))
+                        (Env.union tenv (configPrimTypes config))
+                        xx
         return  ( xx'
                 , t
                 , TSum effs
@@ -87,8 +96,8 @@ checkExp config kenv tenv xx
 typeOfExp 
         :: (Ord n, Pretty n, Show n)
         => Config n             -- ^ Static configuration.
-        -> Env n                -- ^ Starting Kind environment
-        -> Env n                -- ^ Starting Type environment.
+        -> KindEnv n            -- ^ Starting Kind environment
+        -> TypeEnv n            -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n) (Type n)
 typeOfExp config kenv tenv xx 
@@ -493,12 +502,12 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
 
                  | TyConBound (UName nTyCon) k <- tc
                  , takeResultKind k == kData
-                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+                 -> return ( lookupModeOfDataType nTyCon (configPrimDataDefs config)
                            , ts )
                       
                  | TyConBound (UPrim nTyCon _) k <- tc
                  , takeResultKind k == kData
-                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+                 -> return ( lookupModeOfDataType nTyCon (configPrimDataDefs config)
                            , ts )
 
                 _ -> throw $ ErrorCaseScrutineeNotAlgebraic xx tDiscrim
@@ -1047,7 +1056,7 @@ checkTypeM :: (Ord n, Show n, Pretty n)
            -> CheckM a n (Kind n)
 
 checkTypeM config kenv tt
- = case T.checkType (configDataDefs config) kenv tt of
+ = case T.checkType (configPrimDataDefs config) kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 
