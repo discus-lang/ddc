@@ -31,8 +31,8 @@ primDataDefs
         [ DataDef
                 (NamePrimTyCon PrimTyConBool)
                 []
-                (Just   [ (NameBool True,  [])
-                        , (NameBool False, []) ])
+                (Just   [ (NameLitBool True,  [])
+                        , (NameLitBool False, []) ])
         -- Nat
         , DataDef (NamePrimTyCon PrimTyConNat) [] Nothing
 
@@ -100,14 +100,14 @@ primTypeEnv = Env.setPrimFun typeOfName Env.empty
 typeOfName :: Name -> Maybe (Type Name)
 typeOfName nn
  = case nn of
-        NamePrimOp p    -> Just $ typeOfPrim p
-        NameVoid        -> Just $ tVoid
-        NameBool _      -> Just $ tBool
-        NameNat  _      -> Just $ tNat
-        NameInt  _      -> Just $ tInt
-        NameWord _ bits -> Just $ tWord bits
-        NameTag  _      -> Just $ tTag
-        _               -> Nothing
+        NamePrimOp p       -> Just $ typeOfPrim p
+        NameLitVoid        -> Just $ tVoid
+        NameLitBool _      -> Just $ tBool
+        NameLitNat  _      -> Just $ tNat
+        NameLitInt  _      -> Just $ tInt
+        NameLitWord _ bits -> Just $ tWord bits
+        NameLitTag  _      -> Just $ tTag
+        _                  -> Nothing
 
 
 -- | Take the type of a primitive.

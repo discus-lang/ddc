@@ -42,11 +42,11 @@ mconvAtom pp kenv tenv xx
          | C.DaConNamed n <- C.daConName dc
          , t              <- C.daConType dc
          -> case n of
-                A.NameNat  nat   -> Just $ XLit (LitInt (convType pp kenv t) nat)
-                A.NameInt  val   -> Just $ XLit (LitInt (convType pp kenv t) val)
-                A.NameWord val _ -> Just $ XLit (LitInt (convType pp kenv t) val)
-                A.NameTag  tag   -> Just $ XLit (LitInt (convType pp kenv t) tag)
-                _                -> Nothing
+                A.NameLitNat  nat   -> Just $ XLit (LitInt (convType pp kenv t) nat)
+                A.NameLitInt  val   -> Just $ XLit (LitInt (convType pp kenv t) val)
+                A.NameLitWord val _ -> Just $ XLit (LitInt (convType pp kenv t) val)
+                A.NameLitTag  tag   -> Just $ XLit (LitInt (convType pp kenv t) tag)
+                _                   -> Nothing
 
         _ -> Nothing
 

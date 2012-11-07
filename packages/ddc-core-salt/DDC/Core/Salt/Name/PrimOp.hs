@@ -18,7 +18,7 @@ import Data.List
 -- PrimOp ---------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
 data    PrimOp
-        -- | Arithmetic and bitwise-operators.
+        -- | Arithmetic, logic, comparison and bit-wise operators.
         = PrimArith     PrimArith
 
         -- | Casting between numeric types.
@@ -48,33 +48,37 @@ instance Pretty PrimOp where
 -- PrimArith ------------------------------------------------------------------
 -- | Primitive arithmetic, logic, and comparison opretors.
 --   We expect the backend/machine to be able to implement these directly.
+--
+--   For the Shift Right operator, the type that it is used at determines
+--   whether it is an arithmetic (with sign-extension) or logical
+--   (no sign-extension) shift.
 data PrimArith
         -- numeric
-        = PrimArithNeg
-        | PrimArithAdd
-        | PrimArithSub
-        | PrimArithMul
-        | PrimArithDiv
-        | PrimArithRem
+        = PrimArithNeg  -- ^ Negation
+        | PrimArithAdd  -- ^ Addition
+        | PrimArithSub  -- ^ Subtraction
+        | PrimArithMul  -- ^ Multiplication
+        | PrimArithDiv  -- ^ Division
+        | PrimArithRem  -- ^ Remainder
 
         -- comparison
-        | PrimArithEq
-        | PrimArithNeq
-        | PrimArithGt
-        | PrimArithGe
-        | PrimArithLt
-        | PrimArithLe
+        | PrimArithEq   -- ^ Equality
+        | PrimArithNeq  -- ^ Negated Equality
+        | PrimArithGt   -- ^ Greater Than
+        | PrimArithGe   -- ^ Greater Than or Equal
+        | PrimArithLt   -- ^ Less Than
+        | PrimArithLe   -- ^ Less Than or Equal
 
         -- boolean
-        | PrimArithAnd
-        | PrimArithOr
+        | PrimArithAnd  -- ^ Boolean And
+        | PrimArithOr   -- ^ Boolean Or
 
         -- bitwise
-        | PrimArithShl
-        | PrimArithShr
-        | PrimArithBAnd
-        | PrimArithBOr
-        | PrimArithBXOr
+        | PrimArithShl  -- ^ Shift Left
+        | PrimArithShr  -- ^ Shift Right
+        | PrimArithBAnd -- ^ Bit-wise And
+        | PrimArithBOr  -- ^ Bit-wise Or
+        | PrimArithBXOr -- ^ Bit-wise eXclusive Or
         deriving (Eq, Ord, Show)
 
 
@@ -119,8 +123,13 @@ primArithNames
 
 -- PrimCast -------------------------------------------------------------------
 -- | Primitive cast between two types.
+--
+--   The exact set of available casts is determined by the target platform.
+--   For example, you can only promote a @Nat\#@ to a @Word32\#@ on a 32-bit system.
+--   On a 64-bit system the @Nat\#@ type is 64-bits wide, so casting it to a
+--   @Word32\#@ would be a truncation.
 data PrimCast
-        -- | Promote a value to one of a larger or similar size, 
+        -- | Promote a value to one of similar or larger size,
         --   without loss of precision.
         = PrimCastPromote
 
@@ -146,7 +155,7 @@ readPrimCast str
 
 
 -- PrimStore --------------------------------------------------------------------
--- | A projection of some other object.
+-- | Raw access to the store.
 data PrimStore
         -- Constants ------------------
         -- | Number of bytes needed to store a value of a primitive type.
@@ -157,14 +166,15 @@ data PrimStore
 
         -- Allocation -----------------
         -- | Create a heap of the given size.
-        --     This must be called before alloc# below, and has global side effect. 
+        --     This must be called before @alloc#@ below, and has global side effect. 
         --     Calling it twice in the same program is undefined.
         | PrimStoreCreate
 
-        -- | Check whether there is this many bytes on the heap.
+        -- | Check whether there are at least this many bytes still available
+        --   on the heap.
         | PrimStoreCheck
 
-        -- | Force a GC to recover this many bytes.
+        -- | Force a garbage collection to recover at least this many bytes.
         | PrimStoreRecover
 
         -- | Allocate some space on the heap.
@@ -172,16 +182,16 @@ data PrimStore
         | PrimStoreAlloc
 
         -- Addr operations ------------
-        -- | Read a value from the store at a given address and offset.
+        -- | Read a value from the store at the given address and offset.
         | PrimStoreRead
 
         -- | Write a value to the store at the given address and offset.
         | PrimStoreWrite
 
-        -- | Add an offset to an address.
+        -- | Add an offset in bytes to an address.
         | PrimStorePlusAddr
 
-        -- | Subtract an offset from an address.
+        -- | Subtract an offset in bytes from an address.
         | PrimStoreMinusAddr
 
         -- Ptr operations -------------
@@ -191,10 +201,10 @@ data PrimStore
         -- | Write a value to a pointer plus the given offset.
         | PrimStorePoke
 
-        -- | Add an offset to a pointer.
+        -- | Add an offset in bytes to a pointer.
         | PrimStorePlusPtr
 
-        -- | Subtract an offset from a pointer.
+        -- | Subtract an offset in bytes from a pointer.
         | PrimStoreMinusPtr
 
         -- | Convert an raw address to a pointer.

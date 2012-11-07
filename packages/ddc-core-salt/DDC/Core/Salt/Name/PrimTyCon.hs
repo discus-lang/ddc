@@ -18,28 +18,31 @@ data PrimTyCon
         | PrimTyConBool
 
         -- | @Nat#@ natural numbers.
-        --   Big enough to count every addressable byte in the system.
+        --   Big enough to count every addressable byte in the store.
         | PrimTyConNat
 
         -- | @Int#@ signed integers.
         | PrimTyConInt
 
-        -- | @WordN#@ machine words of the given length.
+        -- | @WordN#@ machine words of the given width.
         | PrimTyConWord   Int
 
-        -- | @FloatN#@ floating point numbers of the given length.
+        -- | @FloatN#@ floating point numbers of the given width.
         | PrimTyConFloat  Int
 
-        -- | @Tag#@ data type tags.
+        -- | @Tag#@ data constructor tags.
         | PrimTyConTag
 
-        -- | @Addr#@ machine addresses.
+        -- | @Addr#@ raw machine addresses. Unlike pointers below,
+        --   a raw @Addr#@ is not need to refer to memory owned 
+        --   by the current process.
         | PrimTyConAddr
 
-        -- | @Ptr#@ store pointers.
+        -- | @Ptr#@ should point to a well-formed object owned by the
+        --   current process.
         | PrimTyConPtr
 
-        -- | @String#@ String of UTF8 characters.
+        -- | @String#@ of UTF8 characters.
         -- 
         --   These are primitive until we can define our own unboxed types.
         | PrimTyConString 

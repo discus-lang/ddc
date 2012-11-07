@@ -203,9 +203,9 @@ convertBoundNameM nn
  = case nn of
         L.NameVar str           -> return $ O.NameVar str
         L.NamePrimArith op      -> return $ O.NamePrimOp (O.PrimArith op)
-        L.NameBool val          -> return $ O.NameBool val
-        L.NameNat  val          -> return $ O.NameNat  val
-        L.NameInt  val          -> return $ O.NameInt  val
-        L.NameWord val bits     -> return $ O.NameWord val bits
+        L.NameBool val       -> return $ O.NameLitBool val
+        L.NameNat  val       -> return $ O.NameLitNat  val
+        L.NameInt  val       -> return $ O.NameLitInt  val
+        L.NameWord val bits  -> return $ O.NameLitWord val bits
         _                       -> error $ "toSaltX: convertBoundName"
 

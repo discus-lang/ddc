@@ -280,7 +280,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _, C.XCon _ dc]           <- xs
-          ,  Just A.NameVoid                    <- C.takeNameOfDaCon dc
+          ,  Just A.NameLitVoid                 <- C.takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
                                (instrs |> (annotNil $ IReturn Nothing))
@@ -494,15 +494,15 @@ convExpM context pp kenv tenv mdsup xx
          | Just n               <- C.takeNameOfDaCon dc
          , ExpAssign vDst       <- context
          -> case n of
-                A.NameNat i
+                A.NameLitNat i
                  -> return $ Seq.singleton $ annotNil
                            $ ISet vDst (XLit (LitInt (tNat pp) i))
 
-                A.NameInt  i
+                A.NameLitInt  i
                  -> return $ Seq.singleton $ annotNil
                            $ ISet vDst (XLit (LitInt (tInt pp) i))
 
-                A.NameWord w bits
+                A.NameLitWord w bits
                  -> return $ Seq.singleton $ annotNil
                            $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
@@ -675,13 +675,13 @@ convAltM context kenv tenv mdsup aa
 convPatName :: Platform -> A.Name -> Maybe Lit
 convPatName pp name
  = case name of
-        A.NameBool True   -> Just $ LitInt (TInt 1) 1
-        A.NameBool False  -> Just $ LitInt (TInt 1) 0
-        A.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        A.NameInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
-        A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
-        _                 -> Nothing
+        A.NameLitBool True   -> Just $ LitInt (TInt 1) 1
+        A.NameLitBool False  -> Just $ LitInt (TInt 1) 0
+        A.NameLitNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameLitInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameLitWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        A.NameLitTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+        _                    -> Nothing
 
 
 -- | Take the blocks from an `AltResult`.

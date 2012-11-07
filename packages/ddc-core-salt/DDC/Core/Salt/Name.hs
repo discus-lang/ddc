@@ -1,14 +1,26 @@
 
 -- | Names used in the Disciple Core Salt language profile.
---   These map directly onto names used in the C output language.
 module DDC.Core.Salt.Name
-        ( Name            (..), readName
+        ( Name          (..)
+
+          -- * Primitive Type Constructors
+        , PrimTyCon     (..)
+
+          -- * Primitive Operators
+        , PrimOp        (..)
+        , PrimArith     (..)
+        , PrimCast      (..)
+        , PrimStore     (..)
+        , PrimCall      (..)
+        , PrimControl   (..)
+
+          -- * Name Parsing
+        , readName
+
+          -- * Name Sanitisation
         , sanitizeName
         , sanitizeGlobal
-        , sanitizeLocal
-        , module DDC.Core.Salt.Name.PrimTyCon
-        , module DDC.Core.Salt.Name.PrimOp
-        , module DDC.Core.Salt.Name.Lit)
+        , sanitizeLocal)
 where
 import DDC.Core.Salt.Name.Sanitize
 import DDC.Core.Salt.Name.PrimTyCon
@@ -22,56 +34,56 @@ import Data.List
 
 -- | Names of things used in Disciple Core Salt.
 data Name
-        -- | A type or value variable
+        -- | A type or value variable.
         = NameVar       String
 
-        -- | We still need a constructor-like name for modules.
+        -- | Constructor names.
         | NameCon       String
 
-        -- | The object type constructor.
+        -- | The abstract heap object type constructor.
         | NameObjTyCon
 
-        -- | A type primitive constructor.
+        -- | A primitive type constructor.
         | NamePrimTyCon PrimTyCon
 
         -- | A primitive operator.
         | NamePrimOp    PrimOp
 
         -- | The void literal.
-        | NameVoid
+        | NameLitVoid
 
         -- | A boolean literal.
-        | NameBool      Bool
+        | NameLitBool   Bool
 
         -- | A natural number literal.
-        | NameNat       Integer
+        | NameLitNat    Integer
 
         -- | An integer number literal.
-        | NameInt       Integer
-
-        -- | A WordN literal, of the given width.
-        | NameWord      Integer Int
+        | NameLitInt    Integer
 
         -- | A constructor tag literal.
-        | NameTag       Integer
+        | NameLitTag    Integer
+
+        -- | A @WordN#@ literal, of the given width.
+        | NameLitWord   Integer Int
         deriving (Eq, Ord, Show, Typeable)
 
 
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  n        -> text n
-        NameCon  n        -> text n
-        NameObjTyCon      -> text "Obj"
-        NamePrimTyCon tc  -> ppr tc
-        NamePrimOp p      -> ppr p
-        NameVoid          -> text "V#"
-        NameNat  i        -> integer i  <> text "#"
-        NameInt  i        -> integer i  <> text "i#"
-        NameTag  i        -> text "TAG" <> integer i <> text "#"
-        NameBool True     -> text "True#"
-        NameBool False    -> text "False#"
-        NameWord i bits   -> integer i <> text "w" <> int bits <> text "#"
+        NameVar  n              -> text n
+        NameCon  n              -> text n
+        NameObjTyCon            -> text "Obj"
+        NamePrimTyCon tc        -> ppr tc
+        NamePrimOp p            -> ppr p
+        NameLitVoid             -> text "V#"
+        NameLitBool True        -> text "True#"
+        NameLitBool False       -> text "False#"
+        NameLitNat  i           -> integer i  <> text "#"
+        NameLitInt  i           -> integer i  <> text "i#"
+        NameLitTag  i           -> text "TAG" <> integer i <> text "#"
+        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -106,30 +118,31 @@ readName str
         = Just $ NamePrimOp $ PrimStore p
 
         -- Literal void
-        | str == "V#" = Just $ NameVoid
+        | str == "V#" 
+        = Just $ NameLitVoid
 
         -- Literal Nats
         | Just val <- readLitPrimNat str
-        = Just $ NameNat  val
+        = Just $ NameLitNat  val
 
         -- Literal Ints
         | Just val <- readLitPrimInt str
-        = Just $ NameInt  val
+        = Just $ NameLitInt  val
 
         -- Literal Tags
         | Just rest     <- stripPrefix "TAG" str
         , (ds, "#")     <- span isDigit rest
-        = Just $ NameTag (read ds)
+        = Just $ NameLitTag (read ds)
 
         -- Literal Bools
-        | str == "True#"  = Just $ NameBool True
-        | str == "False#" = Just $ NameBool False
+        | str == "True#"  = Just $ NameLitBool True
+        | str == "False#" = Just $ NameLitBool False
 
 
         -- Literal Words
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
-        = Just $ NameWord val bits
+        = Just $ NameLitWord val bits
 
         -- Constructors.
         | c : _         <- str

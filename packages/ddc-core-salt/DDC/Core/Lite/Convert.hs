@@ -555,7 +555,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let dcTag       = mkDaConAlg (S.NameTag iTag) S.tTag
+                let dcTag       = mkDaConAlg (S.NameLitTag iTag) S.tTag
 
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertB kenv) bsFields

@@ -401,8 +401,8 @@ convBlockM context kenv tenv xx
         --   Prettier printing for if-then-else.
         XCase _ x [ AAlt (PData dc1 []) x1
                   , AAlt (PData dc2 []) x2 ]
-         | Just (NameBool True)  <- takeNameOfDaCon dc1
-         , Just (NameBool False) <- takeNameOfDaCon dc2
+         | Just (NameLitBool True)  <- takeNameOfDaCon dc1
+         , Just (NameLitBool False) <- takeNameOfDaCon dc2
          -> do  x'      <- convRValueM kenv tenv x
                 x1'     <- convBlockM context kenv tenv x1
                 x2'     <- convBlockM context kenv tenv x2
@@ -489,20 +489,20 @@ convAltM context kenv tenv aa
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
  = case nn of
-        NameBool True   -> Just $ int 1
-        NameBool False  -> Just $ int 0
+        NameLitBool True   -> Just $ int 1
+        NameLitBool False  -> Just $ int 0
 
-        NameNat  i      -> Just $ integer i
+        NameLitNat  i      -> Just $ integer i
 
-        NameInt  i      -> Just $ integer i
+        NameLitInt  i      -> Just $ integer i
 
-        NameWord i bits
+        NameLitWord i bits
          |  elem bits [8, 16, 32, 64]
          -> Just $ integer i
 
-        NameTag i       -> Just $ integer i
+        NameLitTag i       -> Just $ integer i
 
-        _               -> Nothing
+        _                  -> Nothing
 
 
 -- Stmt -----------------------------------------------------------------------
@@ -561,11 +561,11 @@ convRValueM kenv tenv xx
         XCon _ dc
          | DaConNamed n         <- daConName dc
          -> case n of
-                NameNat  i      -> return $ integer i
-                NameInt  i      -> return $ integer i
-                NameWord i _    -> return $ integer i
-                NameTag  i      -> return $ integer i
-                NameVoid        -> return $ text "void"
+                NameLitNat  i   -> return $ integer i
+                NameLitInt  i   -> return $ integer i
+                NameLitWord i _ -> return $ integer i
+                NameLitTag  i   -> return $ integer i
+                NameLitVoid     -> return $ text "void"
                 _               -> throw $ ErrorRValueInvalid xx
 
         -- Primop application.

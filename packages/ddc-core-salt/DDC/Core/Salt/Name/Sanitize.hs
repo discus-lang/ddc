@@ -8,9 +8,9 @@ import Data.Maybe
 
 
 -- | Rewrite the symbols in a name to make it safe to export as an external
---   symbol. Names containing symbols are prefixed with '_sym_' and a symbol
---   like '&' is replaced by 'ZAt'. Literal 'Z's in a symbolic name are
---   doubled.
+--   symbol. For example, a names containing a '&' is prefixed with '_sym_'
+--   and the '&' replzced by 'ZAn'. Literal 'Z's in a symbolic name are doubled
+--   to 'ZZ'.
 sanitizeName :: String -> String
 sanitizeName str
  = let  hasSymbols      = any isJust $ map convertSymbol str
@@ -25,8 +25,9 @@ sanitizeGlobal :: String -> String
 sanitizeGlobal = sanitizeName
 
 
--- | Like 'sanitizeName' but at an extra '_' prefix so funciton-local names
---   don't shadow local ones.
+-- | Like 'sanitizeName' but at add an extra '_' prefix.
+--   This is used for function-local names so that they do not conflict 
+--   with globally-visible ones.
 sanitizeLocal  :: String -> String
 sanitizeLocal str
  = "_" ++ sanitizeGlobal str
