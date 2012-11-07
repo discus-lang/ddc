@@ -13,20 +13,24 @@ Bug-reports:    disciple@ouroborus.net
 Synopsis:       Disciple Core language common utilities.    
 Description:
         This package re-exports the main external dependencies of 
-        the Disciplined Disciple Compiler project.
+        the Disciplined Disciple Compiler project, and provides some
+        common utilities.
 
 Library
   Build-Depends: 
-        base            == 4.5.*,
-        transformers    == 0.2.*,
-        containers      == 0.4.*,
+        base            == 4.6.*,
+        transformers    == 0.3.*,
+        containers      == 0.5.*,
         wl-pprint       == 1.1.*,
         parsec          == 3.1.*
 
   Exposed-modules:
-        DDC.Base.Lexer
         DDC.Base.Parser
         DDC.Base.Pretty
+
+        DDC.Data.Canned
+        DDC.Data.SourcePos
+        DDC.Data.Token
         
   GHC-options:
         -Werror

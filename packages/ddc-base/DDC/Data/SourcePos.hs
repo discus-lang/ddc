@@ -5,7 +5,7 @@ where
 import DDC.Base.Pretty
 
 
--- | A position in the source file.        
+-- | A position in a source file.        
 --
 --   If there is no file path then we assume that the input has been read
 --   from an interactive session and display ''<interactive>'' when pretty printing.
