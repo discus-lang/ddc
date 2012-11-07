@@ -76,7 +76,11 @@ instance SpreadX DaCon where
 
             in  case Env.lookup u tenv of
                  Just t' -> dc { daConType = t' }
-                 Nothing -> dc -- error $ "spreadX: data constructor is not in type environment."
+
+                 -- Primitive constructors won't be in the type environment.
+                 --  But we leave it to checkExp to worry about whether a constructor
+                 --  is primitive or simply undefined.
+                 Nothing -> dc
 
 
 instance SpreadX (Cast a) where
@@ -159,6 +163,7 @@ instance SpreadX WiCon where
                     in  WiConBound (UPrim n t') t'
 
         _                -> wc
+
 
 instance SpreadX Bind where
  spreadX kenv _tenv bb

@@ -76,15 +76,17 @@ applyOffside mm@(m : ms) (LexemeStartBlock n : ts)
         | n > m
         = newCBra ts : applyOffside (n : m : ms) ts 
 
-        -- new context starts less than the current one
+        -- new context starts less than the current one.
+        --   This should never happen, 
+        --     provided addStarts works.
         | tNext : _    <- dropNewLinesLexeme ts
-        = error $ "DDC.Core.Lexer.Tokens.Offside: layout error on " ++ show tNext
+        = error $ "DDC.Core.Lexer.Tokens.Offside: layout error on " ++ show tNext ++ "."
 
         -- new context cannot be less indented than outer one
-        -- This case should never happen.
-        --      There is no lexeme to start a new context at the end of the file
+        --   This should never happen,
+        --      as there is no lexeme to start a new context at the end of the file
         | []            <- dropNewLinesLexeme ts
-        = error "DDC.Core.Lexer.Tokens.Offside: Tried to open a new context at the end of the file."
+        = error "DDC.Core.Lexer.Tokens.Offside: tried to start new context at end of file."
 
         -- an empty block
         | otherwise
@@ -101,6 +103,10 @@ applyOffside mm (LexemeToken t@Token { tokenTok = KA KBraceKet } : ts)
         -- nup
         | _tNext : _     <- dropNewLinesLexeme ts
         = error "DDC.Core.Lexer.Tokens.Offside: no brace match"
+
+        -- ISSUE #272: Better error message for non-matching braces.
+        --      Can we trigger the above error in a test?
+        --      If so we need a better message for it.
 
 
 -- push contexts for explicit open braces
@@ -213,6 +219,7 @@ isBlockStart Token { tokenTok = tok }
 -- | Test whether this wrapper token matches.
 isToken :: Eq n => Token (Tok n) -> Tok n -> Bool
 isToken (Token tok _) tok2 = tok == tok2
+
 
 -- | Test whether this wrapper token matches.
 isKNToken :: Eq n => Token (Tok n) -> Bool

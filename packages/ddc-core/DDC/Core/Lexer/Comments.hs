@@ -24,6 +24,9 @@ dropComments (t@(Token tok _) : xs)
 
 
 -- | Drop block comments form a token stream.
+---
+-- ISSUE #271: Better error message for unterminated comment blocks.
+--
 dropCommentBlock 
         :: Eq n
         => [Token (Tok n)] 

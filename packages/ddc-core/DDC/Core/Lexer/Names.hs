@@ -3,24 +3,24 @@ module DDC.Core.Lexer.Names
         ( -- * Keywords
           keywords
 
-          -- * Builtin constructors.
+          -- * Builtin constructors
         , readTwConBuiltin
         , readTcConBuiltin
         , readWbConBuiltin
 
-          -- * Variable names.
+          -- * Variable names
         , isVarName
         , isVarStart
         , isVarBody
         , readVar
 
-          -- * Construct names.
+          -- * Constructor names
         , isConName
         , isConStart
         , isConBody
         , readCon
 
-          -- * Literal names.
+          -- * Literal names
         , isLitName
         , isLitStart
         , isLitBody)
@@ -194,6 +194,7 @@ readCon ss
 
 
 -- Literal names --------------------------------------------------------------
+-- | String is the name of a literal.
 isLitName :: String -> Bool
 isLitName str
  = case str of

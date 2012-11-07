@@ -6,6 +6,7 @@ import DDC.Core.Fragment.Feature
 import DDC.Core.Exp
 import DDC.Core.Pretty
 
+
 -- | Language fragment compliance violations.
 data Error n
         -- | Found an unsupported language feature.

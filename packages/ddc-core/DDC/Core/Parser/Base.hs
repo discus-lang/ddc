@@ -33,8 +33,10 @@ pWbCon  = P.pTokMaybe f
 
 
 -- | Parse a module name.                               
--- TODO: handle hierarchical names.
---       reject hashes on end of name.
+--   
+---  ISSUE #273: Handle hierarchical module names.
+--      Accept hierachical names, and reject hashes at the end of a name.
+--      Hashes can be at the end of constructor name, but not module names.
 pModuleName :: Pretty n => Parser n ModuleName
 pModuleName = P.pTokMaybe f
  where  f (KN (KCon n)) = Just $ ModuleName [renderPlain $ ppr n]

@@ -1,8 +1,6 @@
 
 -- | Lift deBruijn indices in witnesses.
---   TODO: What is using this LiftW instead of LiftX?
---         they are at the same binding level.
---         If splitting them is just an optimistaion we should merge the modules.
+--
 module DDC.Core.Transform.LiftW
         (LiftW(..))
 where

@@ -5,6 +5,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 
+
 -- | Rewrite the annotation in a thing.
 class Reannotate c where
  reannotate :: (a -> b) -> c a n -> c b n

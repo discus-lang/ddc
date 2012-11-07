@@ -1,5 +1,5 @@
 module DDC.Core.Transform.Trim
---        ( trimClosures, trimX )
+        ( trimClosures, trimX )
 where
 
 import DDC.Core.Collect()
@@ -10,12 +10,14 @@ import DDC.Core.Transform.Reannotate
 
 import Data.List (nubBy)
 
+
 -- | Trim the expressions of a weaken closure (XCast CastWeakenClosure)
 --   into only the free variables.
 --
 --   For example,
---    trimClosures [build (\k z. something k), else]
---  = [build, something, else]
+--    @trimClosures [build (\k z. something k), else]
+--       = [build, something, else]
+--    @
 trimClosures
         :: (Ord n)
         => a
@@ -24,8 +26,7 @@ trimClosures
 
 trimClosures a xs
  = nub' $ concatMap (freeExp a empty empty) xs
- where
-  nub' = nubBy (\x y -> reannotate (const ()) x == reannotate (const ()) y)
+ where  nub' = nubBy (\x y -> reannotate (const ()) x == reannotate (const ()) y)
 
 
 -- | Trim an expression if it is a weakclo cast. 
@@ -44,6 +45,7 @@ trimX x
 -- freeExp --------------------------------------------------------------------
 -- | Collect all the free variables, but return them all as expressions:
 --   eg
+--   @
 --     freeExp 
 --       (let i = 5 [R0#] () in
 --        updateInt [:R0# R1#:] <w> i ...)
@@ -54,7 +56,7 @@ trimX x
 --       , XType (TCon R0#)
 --       , XType (TCon R1#)
 --       , XWitness w ]
---
+--   @
 freeExp :: (BindStruct c, Ord n) 
         => a
         -> Env n

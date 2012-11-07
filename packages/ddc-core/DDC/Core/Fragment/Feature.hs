@@ -3,6 +3,7 @@ module DDC.Core.Fragment.Feature
         (Feature(..))
 where
 
+
 -- | Language feature supported by a fragment.
 data Feature
         -- Type system features ---------------------------

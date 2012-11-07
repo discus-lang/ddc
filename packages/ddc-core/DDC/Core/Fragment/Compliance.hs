@@ -81,7 +81,6 @@ instance Show a => Complies (Module a) where
         compliesX profile kenv tenv' context (moduleBody mm)
 
 
--- TODO: check types of binders.
 -- We'll mark type vars that only appear in types of binders as unused.
 instance Show a => Complies (Exp a) where
  compliesX profile kenv tenv context xx
@@ -126,7 +125,7 @@ instance Show a => Complies (Exp a) where
                 return (tUsed', vUsed)
 
         -- value and witness abstraction --------
-        -- TODO: check for nested functions
+        -- ISSUE #270: Compliance check for nested functions
         XLam _ b x
          -> do  (tUsed, vUsed)  <- compliesX profile 
                                         kenv (Env.extend b tenv)

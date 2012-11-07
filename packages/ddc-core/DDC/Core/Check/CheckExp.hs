@@ -497,8 +497,9 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
                  | TyConSpec TcConUnit         <- tc
                  -> return ( Just (DataModeSmall [])
                            , [] )
-                                -- TODO: the DataModeSmall should hold DaCons instead of
-                                --       names, as we don't have a name for Unit.
+                        -- ISSUE #269: Refactor DataModeSmall to hold DaCons instead of names.
+                        --  The DataModeSmall should hold DaCons instead of
+                        --  names, as we don't have a name for Unit.
 
                  | TyConBound (UName nTyCon) k <- tc
                  , takeResultKind k == kData
@@ -973,7 +974,14 @@ mergeAnnot xx tAnnot tActual
 
 -------------------------------------------------------------------------------
 -- | Check the set of witness bindings bound in a letregion for conflicts.
-checkWitnessBindsM :: (Show n, Ord n) => Env n -> Exp a n -> [Bound n] -> [Bind n] -> CheckM a n ()
+checkWitnessBindsM 
+        :: (Show n, Ord n) 
+        => KindEnv n 
+        -> Exp a n 
+        -> [Bound n] 
+        -> [Bind n] 
+        -> CheckM a n ()
+
 checkWitnessBindsM kenv xx nRegions bsWits
  = mapM_ (checkWitnessBindM kenv xx nRegions bsWits) bsWits
 
