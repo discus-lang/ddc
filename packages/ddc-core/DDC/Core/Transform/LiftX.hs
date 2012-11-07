@@ -97,23 +97,14 @@ instance MapBoundX (Exp a) n where
 
          
 instance MapBoundX Witness n where
- mapBoundAtDepthX f d w
+ mapBoundAtDepthX f d ww
   = let down = mapBoundAtDepthX f d
-    in case w of
-        WVar b
-         -> WVar (down b)
-	
-	WCon _
-	 -> w
-	
-	WApp a b
-	 -> WApp (down a) (down b)
-	
-	WJoin a b
-	 -> WJoin (down a) (down b)
-	
-	WType _
-	 -> w
+    in case ww of
+        WVar u         -> WVar  (down u)
+	WCon _         -> ww
+	WApp  w1 w2    -> WApp  (down w1) (down w2)
+	WJoin w1 w2    -> WJoin (down w1) (down w2)
+	WType _        -> ww
 
 
 instance MapBoundX (Cast a) n where
