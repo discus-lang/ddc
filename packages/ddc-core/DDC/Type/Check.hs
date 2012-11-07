@@ -13,7 +13,8 @@ module DDC.Type.Check
         , Error(..))
 where
 import DDC.Type.DataDef
-import DDC.Type.Check.CheckError
+import DDC.Type.Check.Error
+import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -23,7 +24,7 @@ import Data.List
 import Control.Monad
 import DDC.Type.Check.Monad             (throw, result)
 import DDC.Type.Pretty                  ()
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv)
 import qualified DDC.Type.Sum           as TS
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
@@ -38,7 +39,7 @@ type CheckM n   = G.CheckM (Error n)
 -- | Check a type in the given environment, returning an error or its kind.
 checkType  :: (Ord n, Show n, Pretty n) 
            => DataDefs n 
-           -> Env n 
+           -> KindEnv n 
            -> Type n 
            -> Either (Error n) (Kind n)
 
@@ -66,7 +67,7 @@ kindOfType defs tt
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
         => DataDefs n
-        -> Env n
+        -> KindEnv n
         -> Type n 
         -> CheckM n (Kind n)
 

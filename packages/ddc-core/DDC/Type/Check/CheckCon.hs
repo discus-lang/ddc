@@ -24,8 +24,8 @@ takeKindOfTyCon tt
 
 -- | Take the superkind of an atomic kind constructor.
 --
---   * Yields `Nothing` for the kind function (~>) as it doesn't have a sort
---     without being fully applied.
+--   Yields `Nothing` for the kind function (~>) as it doesn't have a sort
+--   without being fully applied.
 takeSortOfKiCon :: KiCon -> Maybe (Sort n)
 takeSortOfKiCon kc
  = case kc of

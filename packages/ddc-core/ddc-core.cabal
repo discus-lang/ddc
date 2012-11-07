@@ -57,7 +57,6 @@ Library
         DDC.Core.Predicates
         DDC.Core.Pretty
 
-        DDC.Type.Check.Monad
         DDC.Type.Collect.FreeT
         DDC.Type.Transform.Crush
         DDC.Type.Transform.Instantiate
@@ -107,8 +106,10 @@ Library
         DDC.Core.Parser.Type
         DDC.Core.Parser.Witness
 
+        DDC.Type.Check.Monad
         DDC.Type.Check.CheckCon
-        DDC.Type.Check.CheckError
+        DDC.Type.Check.Error
+        DDC.Type.Check.ErrorMessage
                   
   GHC-options:
         -Werror
