@@ -2,20 +2,29 @@
 -- | Utilities for working with `TypeSum`s.
 --
 module DDC.Type.Sum 
-        ( empty
+        ( -- * Constructors
+          empty
         , singleton
-        , elem
-        , insert
-        , delete
         , union
         , unions
-        , difference
+        , insert
+
+          -- * Conversion
+        , toList
+        , fromList
+
+          -- * Projection
         , kindOfSum
-        , toList, fromList
-        , hashTyCon, hashTyConRange
-        , unhashTyCon
-        , takeSumArrayElem
-        , makeSumArrayElem)
+        , elem
+
+          -- * Deletion
+        , delete
+        , difference
+
+          -- * Hashing
+        , hashTyCon
+        , hashTyConRange
+        , unhashTyCon)
 where
 import DDC.Type.Exp
 import Data.Array

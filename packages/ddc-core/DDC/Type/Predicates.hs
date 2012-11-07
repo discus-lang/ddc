@@ -136,18 +136,23 @@ isWitnessType tt
 	_			 -> False
 	
 
+-- | Check whether this is the type of a @Const@ witness.
 isConstWitType :: Eq n => Type n -> Bool
 isConstWitType tt
  = case takeTyConApps tt of
         Just (TyConWitness TwConConst, _) -> True
         _                                 -> False
 
+
+-- | Check whether this is the type of a @Mutable@ witness.
 isMutableWitType :: Eq n => Type n -> Bool
 isMutableWitType tt
  = case takeTyConApps tt of
         Just (TyConWitness TwConMutable, _) -> True
         _                                   -> False
 
+
+-- | Check whether this is the type of a @Distinct@ witness.
 isDistinctWitType :: Eq n => Type n -> Bool
 isDistinctWitType tt
  = case takeTyConApps tt of

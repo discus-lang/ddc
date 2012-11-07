@@ -127,9 +127,10 @@ type Subst n = Map.Map n (Type n)
 
 
 -- | Try to find a simple substitution between two types.
--- Ignoring complicated effect sums.
--- Eg given template "a -> b" and target "Int -> Float", returns substitution:
---	{ a |-> Int, b |-> Float }
+--   Ignoring complicated effect sums.
+--   Eg given template @a -> b@ and target @Int -> Float@,
+--   returns substitution:
+--	@{ a |-> Int, b |-> Float }@
 --
 matchT  :: (Ord n, Show n)
 	=> VarSet n	-- ^ only attempt to match these names
@@ -137,6 +138,7 @@ matchT  :: (Ord n, Show n)
 	-> Type n	-- ^ template
 	-> Type n	-- ^ target
 	-> Maybe (Subst n)
+
 matchT vs subst t1 t2
         = matchT' [] [] t1 t2 vs subst
 
@@ -219,6 +221,7 @@ matchT' stack1 stack2 t1 t2 vs subst
 	-- If template is in variable set, push the target into substitution
 	-- But we might need to rename bound variables...
 	(TVar (UName n), _)
+
 	-- TODO rewrite binders from t2 to t1 in t2'
 	 | Set.member n vs
 	 , Nothing <- Map.lookup n subst
