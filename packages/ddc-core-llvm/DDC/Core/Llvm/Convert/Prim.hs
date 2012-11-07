@@ -8,7 +8,6 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
-import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Sequence            (Seq)
@@ -31,7 +30,7 @@ convPrimCallM
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq AnnotInstr)
 
-convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
+convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
  = case p of
         -- Binary operations ----------
         A.PrimOp op
@@ -277,16 +276,6 @@ convPrimCallM pp kenv tenv mdsup mdst p tPrim xs
          ->     return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvBitcast xPtr'
 
-        -- External Primops -----------
-        A.PrimExternal prim
-         |  Just xs'     <- sequence $ map (mconvAtom pp kenv tenv) xs
-         ,  (_, tResult) <- takeTFunArgResult tPrim
-         ,  tResult'     <- convType pp kenv tResult
-         ,  Just name'   <- convPrimExtern prim tPrim
-         -> return      $ Seq.singleton $ annotNil
-                        $ ICall mdst CallTypeStd Nothing 
-                                tResult' name' xs' []
-
         _ -> die $ unlines
                 [ "Invalid prim call."
                 , show (p, xs) ]
@@ -447,20 +436,4 @@ convPrimFCond op t
         _               -> Nothing
 
  | otherwise            =  Nothing
-
-
--- Extern ---------------------------------------------------------------------
--- | Get the symbol name of an external primitive.
-convPrimExtern :: A.PrimExternal -> C.Type A.Name -> Maybe Name
-convPrimExtern p _t
- = case p of
-        A.PrimExternalShowInt
-         -> Just $ NameGlobal "showInt"
-
-        A.PrimExternalPutStr
-         -> Just $ NameGlobal "putStr"
-
-        A.PrimExternalPutStrLn
-         -> Just $ NameGlobal "putStrLn"
-
 

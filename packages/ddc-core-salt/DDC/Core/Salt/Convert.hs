@@ -676,14 +676,6 @@ convPrimCallM kenv tenv p xs
                         $  filter (keepArgX kenv) xs
                 return  $ op' <> parenss xs'
 
-
-        -- External primops.
-        PrimExternal op 
-         -> do  let op' = convPrimExternal op
-                xs'     <- mapM (convRValueM kenv tenv) 
-                        $  filter (keepArgX kenv) xs
-                return  $ op' <> parenss xs'
-
         _ -> throw $ ErrorPrimCallInvalid p xs
 
 

@@ -28,7 +28,6 @@ module DDC.Core.Salt
         , PrimCall      (..)
         , PrimControl   (..)
         , PrimStore     (..)
-        , PrimExternal  (..)
         , PrimOp        (..)
         , readName
 

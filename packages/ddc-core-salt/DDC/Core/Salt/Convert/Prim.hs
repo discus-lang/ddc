@@ -3,8 +3,7 @@
 module DDC.Core.Salt.Convert.Prim
         ( convPrimTyCon
         , convPrimOp2
-        , convPrimStore
-        , convPrimExternal)
+        , convPrimStore)
 where
 import DDC.Core.Salt.Name
 import DDC.Base.Pretty
@@ -79,14 +78,3 @@ convPrimStore pp
         PrimStoreMakePtr        -> text "_MAKEPTR"
         PrimStoreTakePtr        -> text "_TAKEPTR"
         PrimStoreCastPtr        -> text "_CASTPTR"
-
-
--- | Convert an external primop name to C source text.
-convPrimExternal :: PrimExternal -> Doc
-convPrimExternal pp
- = case pp of
-        PrimExternalShowInt     -> text "_showInt"
-        PrimExternalPutStr      -> text "_putStr"
-        PrimExternalPutStrLn    -> text "_putStrLn"
-
-

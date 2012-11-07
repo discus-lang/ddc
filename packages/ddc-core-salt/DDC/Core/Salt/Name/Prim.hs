@@ -8,7 +8,6 @@ module DDC.Core.Salt.Name.Prim
         , PrimCall      (..),   readPrimCall
         , PrimControl   (..),   readPrimControl
         , PrimStore     (..),   readPrimStore
-        , PrimExternal  (..),   readPrimExternal
         , PrimOp        (..),   readPrimOp)
 where
 import DDC.Base.Pretty
@@ -118,10 +117,6 @@ data    Prim
 
         -- | Store access.
         | PrimStore     PrimStore
-
-        -- | External things that should really be imported with an FFI.
-        --   We'll remove these when we get the FFI working.
-        | PrimExternal  PrimExternal
         deriving (Eq, Ord, Show)
 
 
@@ -133,7 +128,6 @@ instance Pretty Prim where
         PrimCall     c  -> ppr c
         PrimControl  c  -> ppr c
         PrimStore    p  -> ppr p
-        PrimExternal p  -> ppr p
 
 
 -- PrimCast -------------------------------------------------------------------
@@ -336,40 +330,6 @@ readPrimStore str
         "castPtr#"              -> Just PrimStoreCastPtr
 
         _                       -> Nothing
-
-
--- PrimExternal ---------------------------------------------------------------
--- | String funtions.
---   We're treating these as primops until we get the FFI working.
-data PrimExternal
-        = PrimExternalShowInt
-        | PrimExternalPutStr
-        | PrimExternalPutStrLn
-        deriving (Eq, Ord, Show)
-
-
-instance Pretty PrimExternal where
- ppr ps
-  = case ps of
-        PrimExternalShowInt     -> text "showInt#"
-        PrimExternalPutStr      -> text "putStr#"
-        PrimExternalPutStrLn    -> text "putStrLn#"
-
-
-readPrimExternal :: String -> Maybe PrimExternal
-readPrimExternal str
-        -- showIntN#
-        | str == "showInt#"
-        = Just $ PrimExternalShowInt
-
-        | str == "putStr#"      
-        = Just $ PrimExternalPutStr
-
-        | str == "putStrLn#"    
-        = Just $ PrimExternalPutStrLn
-
-        | otherwise
-        = Nothing
 
 
 -- PrimOp ---------------------------------------------------------------------

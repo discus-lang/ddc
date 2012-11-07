@@ -42,15 +42,16 @@ int_t main (nat_t _argc, addr_t _argv)
         Obj* _x = 0;
         Obj* _x2 = 0;
         int_t _x0 = 0;
-        string_t _str = 0;
+        string_t* _str = 0;
 
         _x           = boxInt(5);
         _x2          = addInt(_x, _x);
         _x0          = unboxInt(_x2);
-        _str         = _showInt(_x0);
-        _putStrLn(_str);
+        _str         = showInt(_x0);
+        putStrLn (_str);
         return 0;
 }
+
 
 
 -- Discarding witness declaration and application when converting to C
@@ -97,14 +98,14 @@ int_t main (nat_t _argc, addr_t _argv)
         Obj* _x2 = 0;
         Obj* _ret = 0;
         int_t _x0 = 0;
-        string_t _str = 0;
+        string_t* _str = 0;
 
         _x1          = boxInt(5);
         _x2          = boxInt(7);
         _ret         = addDistinct(_x1, _x2);
         _x0          = unboxInt(_ret);
-        _str         = _showInt(_x0);
-        _putStrLn(_str);
+        _str         = showInt(_x0);
+        putStrLn (_str);
         return 0;
 }
 

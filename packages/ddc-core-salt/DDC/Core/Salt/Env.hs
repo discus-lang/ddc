@@ -119,7 +119,6 @@ typeOfPrim pp
         PrimCall     pc -> typeOfPrimCall     pc
         PrimControl  pc -> typeOfPrimControl  pc
         PrimStore    ps -> typeOfPrimStore    ps
-        PrimExternal ps -> typeOfPrimExternal ps
 
 
 -- PrimOps --------------------------------------------------------------------
@@ -251,14 +250,4 @@ typeOfPrimStore jj
 
         PrimStoreCastPtr
          -> tForalls [kRegion, kData, kData] $ \[r,t1,t2] -> tPtr r t2 `tFunPE` tPtr r t1
-
-
-
--- PrimExternal --------------------------------------------------------------
-typeOfPrimExternal :: PrimExternal -> Type Name
-typeOfPrimExternal ps
- = case ps of
-        PrimExternalPutStr        -> tString   `tFunPE` tVoid
-        PrimExternalPutStrLn      -> tString   `tFunPE` tVoid
-        PrimExternalShowInt       -> tInt      `tFunPE` tString
 

@@ -103,10 +103,6 @@ readName str
         | Just p        <- readPrimStore str
         = Just $ NamePrim $ PrimStore p
 
-        -- PrimExternal
-        | Just p        <- readPrimExternal str
-        = Just $ NamePrim $ PrimExternal p
-
         -- Literal void
         | str == "V#" = Just $ NameVoid
 
