@@ -13,14 +13,13 @@ import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Fragment.Profile
 import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Collect
+import DDC.Core.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
-import DDC.Type.Compounds
 import Control.Monad
 import DDC.Core.Eval.Store              (Store)
 import qualified DDC.Core.Eval.Store    as Store
@@ -46,14 +45,19 @@ cmdStep state source str
          = return ()
 
         -- Expression is well-typed.
-        goStore (Just (x, tX, effX, cloX))
-         = let  -- The evaluator doesn't accept any annotations
+        goStore (Just x)
+         = let  Just annot = takeAnnotOfExp x
+
+                -- The evaluator doesn't accept any annotations
                 x'      = reannotate (const ()) x
 
                 -- Create the initial store.
                 store   = startingStoreForExp x'
 
-           in   goStep store x' tX effX cloX
+           in   goStep store x' 
+                        (annotType    annot)
+                        (annotEffect  annot)
+                        (annotClosure annot)
 
         goStep store x tX effX cloX
          = do   _       <- forcePrint state store x tX effX cloX
@@ -80,9 +84,11 @@ cmdEval state source str
 
 -- | Evaluate an already parsed and type-checked expression.
 --   Exported so transforms can test with it.
-evalExp :: State -> (Exp a Name, Type Name, Effect Name, Closure Name) -> IO ()
-evalExp state (x, tX, effX, cloX)
- = do   -- The evaluator doesn't want any annotations
+evalExp :: State -> Exp (AnTEC a Name) Name -> IO ()
+evalExp state x
+ = do   
+
+        -- The evaluator doesn't want any annotations
         let x'    = reannotate (const ()) x
 
         -- Create the initial store.
@@ -100,6 +106,11 @@ evalExp state (x, tX, effX, cloX)
 	goStep store x'
 
     where
+        Just annot  = takeAnnotOfExp x
+        tX          = annotType annot
+        effX        = annotEffect annot
+        cloX        = annotClosure annot
+
 	goStep store x0
 	 = do
 	    mResult <- forcePrint state store x0 tX effX cloX

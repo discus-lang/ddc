@@ -81,7 +81,7 @@ parseAdd fragment@(Fragment profile _ _ _ _ _ _ _ _) modules str
                     Left err    -> Left  $ renderIndent $ ppr err
                     Right rule' -> Right $ SetAdd name rule'
  where
-        config   = configOfProfile	profile
+        config   = C.configOfProfile	profile
 	kinds	 = profilePrimKinds	profile
 	types	 = profilePrimTypes	profile
 
