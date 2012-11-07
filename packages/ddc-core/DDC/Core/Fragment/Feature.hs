@@ -3,23 +3,23 @@ module DDC.Core.Fragment.Feature
         (Feature(..))
 where
 
--- | Language Features
+-- | Language feature supported by a fragment.
 data Feature
         -- Type system features ---------------------------
-        -- | Produce and require Use and DeepUse terms in closures.
+        -- | Produce and require @Use@ and @DeepUse@ terms in closures.
         = ClosureTerms 
 
         -- General features -------------------------------
-        -- | Accept partially applied primops.
-        --   Runtime systems usually can't handle this.
+        -- | Partially applied primitive operators.
         | PartialPrims
 
-        -- | Allow function application between non-variables.
+        -- | Function application where the thing being applied
+        --   is not a variable.
+        --   Most backend languages (like LLVM) don't support this.
         | GeneralApplication
 
         -- | Nested function bindings.
-        --   The output of the lambda-lifter should not contain nested
-        --   functions.
+        --   The output of the lambda-lifter should not contain these.
         | NestedFunctions
 
         -- | Lazy let-bindings.
@@ -27,18 +27,19 @@ data Feature
         --   suspensions.
         | LazyBindings
 
-        -- | Debruijn binders
+        -- | Debruijn binders.
         --   Most backends will want to use real names, instead of indexed
         --   binders.
         | DebruijnBinders
 
         -- | Allow data and witness vars without binding occurrences if
-        --   they are annotated directly with their types.
+        --   they are annotated directly with their types. This lets
+        --   us work with open terms.
         | UnboundLevel0Vars
 
-        -- | Can instantiate non-primitive functions with unboxed types.
-        --   Our backends can't handle this, because boxed and unboxed
-        --   objects have representations in the backends.
+        -- | Allow non-primitive functions to be instantiated at unboxed types.
+        --   Our existing backends can't handle this, because boxed and unboxed
+        --   objects have different representations.
         | UnboxedInstantiation
 
         -- Sanity -----------------------------------------

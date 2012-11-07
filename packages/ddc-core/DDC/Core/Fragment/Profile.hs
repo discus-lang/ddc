@@ -1,17 +1,13 @@
 
--- | A language profile determines what features a program can use.
+-- | A fragment profile determines what features a program can use.
 module DDC.Core.Fragment.Profile
         ( Profile (..)
         , zeroProfile
 
         , Features(..)
         , zeroFeatures
-        , setFeature
-
-        -- * Making type checker profiles.
-        , configOfProfile )
+        , setFeature)
 where
-import DDC.Core.Check
 import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Exp
@@ -19,8 +15,8 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 
 
--- | The profile holds the types of primitives, 
---   and a set of language features.
+-- | The fragment profile describes the language features and 
+--   primitive operators available in the language.
 data Profile n
         = Profile
         { -- | The name of this profile.
@@ -29,17 +25,23 @@ data Profile n
           -- | Permitted language features.
         , profileFeatures               :: Features
 
-          -- | Primitive operations
+          -- | Primitive data type declarations.
         , profilePrimDataDefs           :: DataDefs n
+
+          -- | Kinds of primitive types.
         , profilePrimKinds              :: Env n
+
+          -- | Types of primitive operators.
         , profilePrimTypes              :: Env n
 
-          -- | Determine whether a type is an unboxed type.
-          --   Some language fragments limit how these can be used.
+          -- | Check whether a type is an unboxed type.
+          --   Some fragments limit how these can be used.
         , profileTypeIsUnboxed          :: Type n -> Bool }
 
 
--- | A language profile with no features
+-- | A language profile with no features or primitive operators.
+--
+--   This provides a simple first-order language.
 zeroProfile :: Profile n
 zeroProfile
         = Profile
@@ -100,17 +102,5 @@ setFeature feature val features
         NameShadowing           -> features { featuresNameShadowing        = val }
         UnusedBindings          -> features { featuresUnusedBindings       = val }
         UnusedMatches           -> features { featuresUnusedMatches        = val }
-
-
--- | Convert a langage profile to a type checker configuration.
-configOfProfile :: Profile n -> Config n
-configOfProfile profile
-        = Config
-        { configDataDefs      
-                = profilePrimDataDefs profile
-
-        , configSuppressClosures      
-                = not   $ featuresClosureTerms
-                        $ profileFeatures profile }
 
 

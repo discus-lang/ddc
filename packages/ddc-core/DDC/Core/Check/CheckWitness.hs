@@ -2,6 +2,7 @@
 -- | Type checker for witness expressions.
 module DDC.Core.Check.CheckWitness
         ( Config(..)
+        , configOfProfile
 
         , checkWitness
         , typeOfWitness
@@ -20,12 +21,13 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.Sum                     as Sum
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Check.Monad             (result, throw)
 import DDC.Base.Pretty                  ()
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
+import qualified DDC.Core.Fragment      as F
 
 
 -- | Type checker monad. 
@@ -36,6 +38,10 @@ type CheckM a n   = G.CheckM (Error a n)
 -- Config ---------------------------------------------------------------------
 -- | Static configuration for the type checker.
 --   These fields don't change as we decend into the tree.
+--
+--   The starting configuration should be converted from the profile that
+--   defines the langauge fragment you are checking. 
+--   See "DDC.Core.Fragment" and use `configOfProfile` below.
 data Config n
         = Config
         { -- | Data type definitions.
@@ -48,6 +54,18 @@ data Config n
           --   as transforms in this language don't use the closure
           --   information.
         , configSuppressClosures        :: Bool }
+
+
+-- | Convert a langage profile to a type checker configuration.
+configOfProfile :: F.Profile n -> Config n
+configOfProfile profile
+        = Config
+        { configDataDefs      
+                = F.profilePrimDataDefs profile
+
+        , configSuppressClosures      
+                = not   $ F.featuresClosureTerms
+                        $ F.profileFeatures profile }
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -63,9 +81,9 @@ data Config n
 --
 checkWitness
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static config.
-        -> Env n                -- ^ Kind Environment.
-        -> Env n                -- ^ Type Environment.
+        => Config n             -- ^ Static configuration.
+        -> KindEnv n            -- ^ Starting Kind Environment.
+        -> TypeEnv n            -- ^ Strating Type Environment.
         -> Witness n            -- ^ Witness to check.
         -> Either (Error a n) (Type n)
 
@@ -95,8 +113,8 @@ typeOfWitness config ww
 checkWitnessM 
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Data type definitions.
-        -> Env n                -- ^ Kind environment.
-        -> Env n                -- ^ Type environment.
+        -> KindEnv n            -- ^ Kind environment.
+        -> TypeEnv n            -- ^ Type environment.
         -> Witness n            -- ^ Witness to check.
         -> CheckM a n (Type n)
 
@@ -178,7 +196,7 @@ typeOfWbCon wb
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
         => Config n 
-        -> Env n 
+        -> KindEnv n 
         -> Type n 
         -> CheckM a n (Kind n)
 

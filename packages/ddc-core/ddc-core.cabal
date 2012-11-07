@@ -32,10 +32,6 @@ Library
         ddc-base        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Fragment.Compliance
-        DDC.Core.Fragment.Error
-        DDC.Core.Fragment.Feature
-        DDC.Core.Fragment.Profile
         DDC.Core.Lexer.Comments
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Offside
@@ -57,6 +53,7 @@ Library
         DDC.Core.Compounds
         DDC.Core.DaCon
         DDC.Core.Exp
+        DDC.Core.Fragment
         DDC.Core.Lexer
         DDC.Core.Load
         DDC.Core.Module
@@ -99,6 +96,11 @@ Library
 
         DDC.Core.Collect.Support
         DDC.Core.Collect.Free
+
+        DDC.Core.Fragment.Compliance
+        DDC.Core.Fragment.Error
+        DDC.Core.Fragment.Feature
+        DDC.Core.Fragment.Profile
 
         DDC.Type.Check.CheckCon
         DDC.Type.Check.CheckError

@@ -16,7 +16,7 @@ import DDC.Type.Transform.SpreadT
 import DDC.Core.Module
 import DDC.Base.Pretty
 import DDC.Data.Token
-import qualified DDC.Core.Fragment.Compliance   as I
+import qualified DDC.Core.Fragment              as I
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
@@ -68,7 +68,7 @@ loadModule profile sourceName toks'
  = goParse toks'
  where  
         -- Type checker config kind and type environments.
-        config  = configOfProfile  profile
+        config  = C.configOfProfile  profile
         kenv    = profilePrimKinds profile
         tenv    = profilePrimTypes profile
 
@@ -135,7 +135,7 @@ loadWitness
 loadWitness profile sourceName toks'
  = goParse toks'
  where  -- Type checker config, kind and type environments.
-        config  = configOfProfile  profile
+        config  = C.configOfProfile  profile
         kenv    = profilePrimKinds profile
         tenv    = profilePrimTypes profile
 
@@ -168,7 +168,7 @@ loadExp profile modules sourceName toks'
  = goParse toks'
  where  
         -- Type checker profile, kind and type environments.
-        config  = configOfProfile  profile
+        config  = C.configOfProfile  profile
         kenv    = modulesExportKinds modules $ profilePrimKinds profile
         tenv    = modulesExportTypes modules $ profilePrimTypes profile
 

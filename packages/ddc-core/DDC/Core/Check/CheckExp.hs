@@ -64,9 +64,9 @@ instance Pretty (AnTEC a n) where
 --   so you can call `typeOfExp` on any open subterm.
 checkExp 
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static config.
-        -> Env n                -- ^ Kind environment.
-        -> Env n                -- ^ Type environment.
+        => Config n             -- ^ Static configuration.
+        -> Env n                -- ^ Starting Kind environment.
+        -> Env n                -- ^ Strating Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n)
                   ( Exp (AnTEC a n) n
@@ -86,9 +86,9 @@ checkExp config kenv tenv xx
 -- | Like `checkExp`, but only return the value type of an expression.
 typeOfExp 
         :: (Ord n, Pretty n, Show n)
-        => Config n             -- ^ Static config.
-        -> Env n                -- ^ Kind environment
-        -> Env n                -- ^ Type environment.
+        => Config n             -- ^ Static configuration.
+        -> Env n                -- ^ Starting Kind environment
+        -> Env n                -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n) (Type n)
 typeOfExp config kenv tenv xx 

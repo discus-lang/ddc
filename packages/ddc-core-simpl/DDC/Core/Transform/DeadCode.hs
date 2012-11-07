@@ -4,7 +4,7 @@ module DDC.Core.Transform.DeadCode
 where
 import DDC.Base.Pretty
 import DDC.Core.Analysis.Usage
-import DDC.Core.Check.CheckExp
+import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Core.Fragment.Profile

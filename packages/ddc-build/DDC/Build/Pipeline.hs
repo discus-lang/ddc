@@ -29,7 +29,6 @@ module DDC.Build.Pipeline
 where
 import DDC.Build.Language
 import DDC.Build.Builder
-import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import DDC.Data.Canned
@@ -37,6 +36,7 @@ import DDC.Core.Check                           (AnTEC)
 import qualified DDC.Core.Fragment.Compliance   as C
 import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
@@ -200,11 +200,11 @@ pipeCore mm pp
 
         PipeCoreCheck fragment pipes
          -> let profile         = fragmentProfile fragment
-                primKindEnv     = profilePrimKinds      profile
-                primTypeEnv     = profilePrimTypes      profile
+                primKindEnv     = C.profilePrimKinds      profile
+                primTypeEnv     = C.profilePrimTypes      profile
 
                 goCheck mm1
-                 = case C.checkModule (configOfProfile profile) primKindEnv primTypeEnv mm1 of
+                 = case C.checkModule (C.configOfProfile profile) primKindEnv primTypeEnv mm1 of
                         Left err  -> return [ErrorLint err]
                         Right mm2  -> goComplies mm2
 
@@ -221,8 +221,8 @@ pipeCore mm pp
 
         PipeCoreSimplify fragment nameZero simpl pipes
          -> let profile         = fragmentProfile fragment
-                primKindEnv     = profilePrimKinds      profile
-                primTypeEnv     = profilePrimTypes      profile
+                primKindEnv     = C.profilePrimKinds      profile
+                primTypeEnv     = C.profilePrimTypes      profile
 
                 mm'		= flip S.evalState nameZero
 				$ applySimplifier profile primKindEnv primTypeEnv simpl mm 
@@ -262,9 +262,9 @@ pipeLite mm pp
 
         PipeLiteToSalt platform runConfig pipes
          -> case Lite.toSalt platform runConfig 
-                        (profilePrimDataDefs Lite.profile) 
-                        (profilePrimKinds    Lite.profile)
-                        (profilePrimTypes    Lite.profile)
+                        (C.profilePrimDataDefs Lite.profile) 
+                        (C.profilePrimKinds    Lite.profile)
+                        (C.profilePrimTypes    Lite.profile)
                         mm 
             of  Left  err       -> return [ErrorLiteConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes

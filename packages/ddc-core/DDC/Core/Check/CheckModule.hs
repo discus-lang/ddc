@@ -9,7 +9,7 @@ import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
 import DDC.Type.Compounds
 import DDC.Base.Pretty
-import DDC.Type.Env             (Env)
+import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Type.Check.Monad     (result, throw)
 import qualified DDC.Type.Check as T
 import qualified DDC.Type.Env   as Env
@@ -25,9 +25,9 @@ import qualified Data.Map       as Map
 --   If it's bad, you get a description of the error.
 checkModule
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static config.
-        -> Env n                -- ^ Primitive kind environment.
-        -> Env n                -- ^ Primitive type environment.
+        => Config n             -- ^ Static configuration.
+        -> KindEnv n            -- ^ Starting kind environment.
+        -> TypeEnv n            -- ^ Starting type environment.
         -> Module a n           -- ^ Module to check.
         -> Either (Error a n) (Module (AnTEC a n) n)
 
@@ -39,9 +39,9 @@ checkModule config kenv tenv xx
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM 
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static config.
-        -> Env n                -- ^ Primitive kind environment.
-        -> Env n                -- ^ Primitive type environment.
+        => Config n             -- ^ Static configuration.
+        -> KindEnv n            -- ^ Starting kind environment.
+        -> TypeEnv n            -- ^ Starting type environment.
         -> Module a n           -- ^ Module to check.
         -> CheckM a n (Module (AnTEC a n) n)
 
@@ -79,7 +79,7 @@ checkModuleM config kenv tenv mm@ModuleCore{}
 -- | Check a type in the exp checking monad.
 checkTypeM :: (Ord n, Show n, Pretty n) 
            => Config n 
-           -> Env n 
+           -> KindEnv n 
            -> Type n 
            -> CheckM a n (Kind n)
 
