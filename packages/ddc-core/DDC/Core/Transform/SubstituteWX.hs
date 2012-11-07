@@ -11,7 +11,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.Rename
-import DDC.Core.Transform.LiftW
+import DDC.Core.Transform.LiftX
 import DDC.Type.Transform.Rename
 import DDC.Type.Compounds
 import Data.Maybe
@@ -178,6 +178,6 @@ substW wArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
         Left  u'                -> Left u'
         Right n  
-         | not $ subShadow0 sub -> Right (liftW n wArg)
+         | not $ subShadow0 sub -> Right (liftX n wArg)
          | otherwise            -> Left  u
 

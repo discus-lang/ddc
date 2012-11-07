@@ -1,5 +1,7 @@
 
--- | Lift deBruijn indices in expressions.
+-- | Lift level-0 deBruijn indices in expressions.
+-- 
+--   Level-0 indices are used for both value and witness variables.
 module DDC.Core.Transform.LiftX
         ( MapBoundX(..)
         , liftX,        liftAtDepthX
@@ -95,6 +97,14 @@ instance MapBoundX (Exp a) n where
         XType{}         -> xx
         XWitness w	-> XWitness (down w)
 
+
+instance MapBoundX LetMode n where
+ mapBoundAtDepthX f d m
+  = case m of
+        LetStrict        -> m
+        LetLazy Nothing  -> m
+        LetLazy (Just w) -> LetLazy (Just $ mapBoundAtDepthX f d w)
+
          
 instance MapBoundX Witness n where
  mapBoundAtDepthX f d ww
@@ -144,9 +154,11 @@ mapBoundAtDepthXLets f d lts
  = case lts of
         LLet m b x
          -> let inc = countBAnons [b]
+                m'  = mapBoundAtDepthX f d m
+
 		-- non-recursive binding: do not increase x's depth
                 x'  = mapBoundAtDepthX f d x
-            in  (LLet m b x', inc)
+            in  (LLet m' b x', inc)
 
         LRec bs
          -> let inc = countBAnons (map fst bs)

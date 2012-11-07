@@ -35,7 +35,6 @@ Library
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Tokens
 
-        DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.Reannotate
         DDC.Core.Transform.Rename
