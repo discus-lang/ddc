@@ -10,17 +10,33 @@ module DDC.Type.Env
         ( Env(..)
         , KindEnv
         , TypeEnv
+
+        -- * Construction
         , empty
-        , extend,       extends
-        , setPrimFun,   isPrim
+        , extend
+        , extends
+        , union
+
+        -- * Conversion
         , fromList
         , fromTypeMap
-        , union
-        , member,       memberBind
-        , lookup,       lookupName
+
+        -- * Projetions 
         , depth
-        , lift
-        , wrapTForalls)
+        , member
+        , memberBind
+        , lookup
+        , lookupName
+
+        -- * Primitives
+        , setPrimFun
+        , isPrim
+
+        -- * Lifting
+        , wrapTForalls
+
+        -- * Wrapping
+        , lift)
 where
 import DDC.Type.Exp
 import DDC.Type.Transform.LiftT
@@ -158,8 +174,13 @@ depth env       = envStackLength env
 
 
 -- | Lift all free deBruijn indices in the environment by the given number of steps.
---   TODO: Delay this, only lift when we extract the final type.
---         will also need to update the 'member' function.
+---
+--  ISSUE #276: Delay lifting of indices in type environments.
+--      The 'lift' function on type environments applies to every member of
+--      the environment. We'd get better complexity by recording how many
+--      levels all types should be lifted by, and only applying the real lift
+--      function when the type is finally extracted.
+--
 lift  :: Ord n => Int -> Env n -> Env n
 lift n env
         = Env
