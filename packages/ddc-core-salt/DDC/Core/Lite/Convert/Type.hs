@@ -202,7 +202,7 @@ convertBoundNameM :: L.Name -> ConvertM a O.Name
 convertBoundNameM nn
  = case nn of
         L.NameVar str           -> return $ O.NameVar str
-        L.NamePrimOp op         -> return $ O.NamePrim (O.PrimOp op)
+        L.NamePrimArith op      -> return $ O.NamePrimOp (O.PrimArith op)
         L.NameBool val          -> return $ O.NameBool val
         L.NameNat  val          -> return $ O.NameNat  val
         L.NameInt  val          -> return $ O.NameInt  val

@@ -33,7 +33,7 @@ data Name
         | NamePrimTyCon PrimTyCon
 
         -- | A primitive operator.
-        | NamePrim      Prim
+        | NamePrimOp    PrimOp
 
         -- | The void literal.
         | NameVoid
@@ -62,7 +62,7 @@ instance Pretty Name where
         NameCon  n        -> text n
         NameObjTyCon      -> text "Obj"
         NamePrimTyCon tc  -> ppr tc
-        NamePrim p        -> ppr p
+        NamePrimOp p      -> ppr p
         NameVoid          -> text "V#"
         NameNat  i        -> integer i  <> text "#"
         NameInt  i        -> integer i  <> text "i#"
@@ -83,25 +83,25 @@ readName str
         | Just p        <- readPrimTyCon str
         = Just $ NamePrimTyCon p
 
-        -- PrimOp
-        | Just p        <- readPrimOp str
-        = Just $ NamePrim $ PrimOp p
+        -- PrimArith
+        | Just p        <- readPrimArith str
+        = Just $ NamePrimOp $ PrimArith p
 
         -- PrimCast
         | Just p        <- readPrimCast str
-        = Just $ NamePrim $ PrimCast p
+        = Just $ NamePrimOp $ PrimCast p
 
         -- PrimCall
         | Just p        <- readPrimCall str
-        = Just $ NamePrim $ PrimCall p
+        = Just $ NamePrimOp $ PrimCall p
 
         -- PrimControl
         | Just p        <- readPrimControl str
-        = Just $ NamePrim $ PrimControl p
+        = Just $ NamePrimOp $ PrimControl p
 
         -- PrimStore
         | Just p        <- readPrimStore str
-        = Just $ NamePrim $ PrimStore p
+        = Just $ NamePrimOp $ PrimStore p
 
         -- Literal void
         | str == "V#" = Just $ NameVoid

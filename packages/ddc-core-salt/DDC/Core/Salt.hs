@@ -23,12 +23,12 @@ module DDC.Core.Salt
           -- * Names of variables and constructors
         , Name          (..)
         , PrimTyCon     (..)
-        , Prim          (..)
+        , PrimOp        (..)
         , PrimCast      (..)
         , PrimCall      (..)
         , PrimControl   (..)
         , PrimStore     (..)
-        , PrimOp        (..)
+        , PrimArith     (..)
         , readName
 
           -- * Lexers

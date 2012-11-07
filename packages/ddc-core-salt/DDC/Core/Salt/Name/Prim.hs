@@ -3,12 +3,12 @@
 module DDC.Core.Salt.Name.Prim
         ( PrimTyCon     (..),   readPrimTyCon
 
-        , Prim          (..)
+        , PrimOp        (..)
         , PrimCast      (..),   readPrimCast
         , PrimCall      (..),   readPrimCall
         , PrimControl   (..),   readPrimControl
         , PrimStore     (..),   readPrimStore
-        , PrimOp        (..),   readPrimOp)
+        , PrimArith     (..),   readPrimArith)
 where
 import DDC.Base.Pretty
 import Data.Char
@@ -100,34 +100,34 @@ readPrimTyCon str
         = Nothing
 
 
--- Prim -----------------------------------------------------------------------
+-- PrimOp ---------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
-data    Prim
+data    PrimOp
         -- | Arithmetic and bitwise-operators.
-        = PrimOp        PrimOp
+        = PrimArith     PrimArith
 
         -- | Casting between numeric types.
         | PrimCast      PrimCast
 
-        -- | Funtion calls.
+        -- | Raw store access.
+        | PrimStore     PrimStore
+
+        -- | Special function calling conventions.
         | PrimCall      PrimCall
 
-        -- | Control flow.
+        -- | Non-functional control flow.
         | PrimControl   PrimControl
-
-        -- | Store access.
-        | PrimStore     PrimStore
         deriving (Eq, Ord, Show)
 
 
-instance Pretty Prim where
+instance Pretty PrimOp where
  ppr pp
   = case pp of
-        PrimOp       op -> ppr op
+        PrimArith    op -> ppr op
         PrimCast     c  -> ppr c
+        PrimStore    p  -> ppr p
         PrimCall     c  -> ppr c
         PrimControl  c  -> ppr c
-        PrimStore    p  -> ppr p
 
 
 -- PrimCast -------------------------------------------------------------------
@@ -332,73 +332,73 @@ readPrimStore str
         _                       -> Nothing
 
 
--- PrimOp ---------------------------------------------------------------------
--- | Primitive numeric, comparison or logic operators.
+-- PrimArith ------------------------------------------------------------------
+-- | Primitive arithmetic, logic, or comparison opretors.
 --   We expect the backend/machine to be able to implement these directly.
-data PrimOp
+data PrimArith
         -- arithmetic
-        = PrimOpNeg
-        | PrimOpAdd
-        | PrimOpSub
-        | PrimOpMul
-        | PrimOpDiv
-        | PrimOpRem
+        = PrimArithNeg
+        | PrimArithAdd
+        | PrimArithSub
+        | PrimArithMul
+        | PrimArithDiv
+        | PrimArithRem
 
         -- comparison
-        | PrimOpEq
-        | PrimOpNeq
-        | PrimOpGt
-        | PrimOpGe
-        | PrimOpLt
-        | PrimOpLe
+        | PrimArithEq
+        | PrimArithNeq
+        | PrimArithGt
+        | PrimArithGe
+        | PrimArithLt
+        | PrimArithLe
 
         -- boolean
-        | PrimOpAnd
-        | PrimOpOr
+        | PrimArithAnd
+        | PrimArithOr
 
         -- bitwise
-        | PrimOpShl
-        | PrimOpShr
-        | PrimOpBAnd
-        | PrimOpBOr
-        | PrimOpBXOr
+        | PrimArithShl
+        | PrimArithShr
+        | PrimArithBAnd
+        | PrimArithBOr
+        | PrimArithBXOr
         deriving (Eq, Ord, Show)
 
 
-instance Pretty PrimOp where
+instance Pretty PrimArith where
  ppr op
-  = let Just (_, n) = find (\(p, _) -> op == p) primOpNames
+  = let Just (_, n) = find (\(p, _) -> op == p) primArithNames
     in  (text n)
 
 
 -- | Read a primitive operator.
-readPrimOp :: String -> Maybe PrimOp
-readPrimOp str
-  =  case find (\(_, n) -> str == n) primOpNames of
+readPrimArith :: String -> Maybe PrimArith
+readPrimArith str
+  =  case find (\(_, n) -> str == n) primArithNames of
         Just (p, _)     -> Just p
         _               -> Nothing
 
 
 -- | Names of primitve operators.
-primOpNames :: [(PrimOp, String)]
-primOpNames
- =      [ (PrimOpNeg,           "neg#")
-        , (PrimOpAdd,           "add#")
-        , (PrimOpSub,           "sub#")
-        , (PrimOpMul,           "mul#")
-        , (PrimOpDiv,           "div#")
-        , (PrimOpRem,           "rem#")
-        , (PrimOpEq ,           "eq#" )
-        , (PrimOpNeq,           "neq#")
-        , (PrimOpGt ,           "gt#" )
-        , (PrimOpGe ,           "ge#" )
-        , (PrimOpLt ,           "lt#" )
-        , (PrimOpLe ,           "le#" )
-        , (PrimOpAnd,           "and#")
-        , (PrimOpOr ,           "or#" ) 
-        , (PrimOpShl,           "shl#")
-        , (PrimOpShr,           "shr#")
-        , (PrimOpBAnd,          "band#")
-        , (PrimOpBOr,           "bor#")
-        , (PrimOpBXOr,          "bxor#") ]
+primArithNames :: [(PrimArith, String)]
+primArithNames
+ =      [ (PrimArithNeg,        "neg#")
+        , (PrimArithAdd,        "add#")
+        , (PrimArithSub,        "sub#")
+        , (PrimArithMul,        "mul#")
+        , (PrimArithDiv,        "div#")
+        , (PrimArithRem,        "rem#")
+        , (PrimArithEq ,        "eq#" )
+        , (PrimArithNeq,        "neq#")
+        , (PrimArithGt ,        "gt#" )
+        , (PrimArithGe ,        "ge#" )
+        , (PrimArithLt ,        "lt#" )
+        , (PrimArithLe ,        "le#" )
+        , (PrimArithAnd,        "and#")
+        , (PrimArithOr ,        "or#" ) 
+        , (PrimArithShl,        "shl#")
+        , (PrimArithShr,        "shr#")
+        , (PrimArithBAnd,       "band#")
+        , (PrimArithBOr,        "bor#")
+        , (PrimArithBXOr,       "bxor#") ]
 

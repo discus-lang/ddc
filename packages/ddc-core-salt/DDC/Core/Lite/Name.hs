@@ -29,8 +29,8 @@ data Name
         -- | A primitive data constructor.
         | NamePrimDaCon PrimDaCon
 
-        -- | A primitive operator.
-        | NamePrimOp    PrimOp
+        -- | A primitive arithmetic operator.
+        | NamePrimArith PrimArith
 
         -- | An Unboxed boolean literal
         | NameBool      Bool
@@ -55,7 +55,7 @@ instance Pretty Name where
         NameDataTyCon dc        -> ppr dc
         NamePrimTyCon tc        -> ppr tc
         NamePrimDaCon dc        -> ppr dc
-        NamePrimOp op           -> ppr op
+        NamePrimArith op        -> ppr op
         NameBool True           -> text "True#"
         NameBool False          -> text "False#"
         NameNat  i              -> integer i <> text "#"
@@ -75,9 +75,9 @@ readName str
         |  Just name    <- readPrimDaCon str
         =  Just $ NamePrimDaCon name
 
-        -- PrimOp
-        | Just p        <- readPrimOp str
-        = Just $ NamePrimOp p
+        -- PrimArith
+        | Just p        <- readPrimArith str
+        = Just $ NamePrimArith p
 
         -- Literal unit value.
         | str == "()"

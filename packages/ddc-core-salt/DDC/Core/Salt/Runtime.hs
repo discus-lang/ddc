@@ -198,7 +198,7 @@ xCreate a bytes
                  (xNat  a bytes) 
 
 uCreate :: Bound Name
-uCreate = UPrim (NamePrim $ PrimStore $ PrimStoreCreate)
+uCreate = UPrim (NamePrimOp $ PrimStore $ PrimStoreCreate)
                 (tNat `tFunPE` tVoid)
 
 
@@ -211,7 +211,7 @@ xRead a tField xAddr offset
                  (xNat a offset)
 
 uRead   :: Bound Name
-uRead   = UPrim (NamePrim $ PrimStore $ PrimStoreRead)
+uRead   = UPrim (NamePrimOp $ PrimStore $ PrimStoreRead)
                 (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t)
 
 
@@ -225,7 +225,7 @@ xWrite a tField xAddr offset xVal
                   xVal
 
 uWrite   :: Bound Name
-uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
+uWrite   = UPrim (NamePrimOp $ PrimStore $ PrimStoreWrite)
                  (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
 
 
@@ -240,7 +240,7 @@ xPeekBuffer a r t xPtr offset
               (xNat a offset)
 
 uPeek :: Bound Name
-uPeek = UPrim (NamePrim $ PrimStore $ PrimStorePeek)
+uPeek = UPrim (NamePrimOp $ PrimStore $ PrimStorePeek)
               (typeOfPrimStore PrimStorePeek)
               
 
@@ -256,7 +256,7 @@ xPokeBuffer a r t xPtr offset xVal
               xVal
 
 uPoke :: Bound Name
-uPoke = UPrim (NamePrim $ PrimStore $ PrimStorePoke)
+uPoke = UPrim (NamePrimOp $ PrimStore $ PrimStorePoke)
               (typeOfPrimStore PrimStorePoke)
 
 
@@ -270,7 +270,7 @@ xCast a r toType fromType xPtr
               xPtr           
                       
 uCast :: Bound Name
-uCast = UPrim (NamePrim $ PrimStore $ PrimStoreCastPtr)
+uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
               (typeOfPrimStore PrimStoreCastPtr)
               
                              
@@ -278,7 +278,7 @@ uCast = UPrim (NamePrim $ PrimStore $ PrimStoreCastPtr)
 xFail   :: a -> Type Name -> Exp a Name
 xFail a t       
  = XApp a (XVar a uFail) (XType t)
- where  uFail   = UPrim (NamePrim (PrimControl PrimControlFail)) tFail
+ where  uFail   = UPrim (NamePrimOp (PrimControl PrimControlFail)) tFail
         tFail   = TForall (BAnon kData) (TVar $ UIx 0)
 
 
@@ -286,7 +286,7 @@ xFail a t
 --   like  (return# [Int32#] x)
 xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
 xReturn a t x
- = XApp a (XApp a (XVar a (UPrim (NamePrim (PrimControl PrimControlReturn))
+ = XApp a (XApp a (XVar a (UPrim (NamePrimOp (PrimControl PrimControlReturn))
                           (tForall kData $ \t1 -> t1 `tFunPE` t1)))
                 (XType t))
            x

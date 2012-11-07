@@ -98,7 +98,7 @@ transSuper tails xx
 
          -> let arity   = length xsArgsVal
                 p       = PrimCallTail arity
-                u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
+                u       = UPrim (NamePrimOp (PrimCall p)) (typeOfPrimCall p)
             in  makeXApps a (XVar a u) 
                         $  (map XType (tsValArgs ++ [tResult])) 
                         ++ [makeXApps a xv (xsArgsType ++ xsArgsWit)] 
@@ -125,8 +125,8 @@ addReturnX a t xx
 
         -- If there is already a control transfer primitive here then
         -- don't add another one.
-        | Just (NamePrim p, _)  <- takeXPrimApps xx
-        , PrimControl{}         <- p
+        | Just (NamePrimOp p, _)  <- takeXPrimApps xx
+        , PrimControl{}           <- p
         = xx
 
         -- Wrap the final expression in a return primitive.

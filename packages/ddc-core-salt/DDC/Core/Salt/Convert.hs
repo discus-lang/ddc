@@ -319,7 +319,7 @@ convBlockM context kenv tenv xx
          -- last statement must explicitly pass control.
          | ContextTop      <- context
          -> case takeXPrimApps xx of
-                Just (NamePrim p, xs)
+                Just (NamePrimOp p, xs)
                  |  isControlPrim p || isCallPrim p
                  -> convPrimCallM kenv tenv p xs
 
@@ -329,7 +329,7 @@ convBlockM context kenv tenv xx
          -- calling doesn't return, and doesn't return a value,
          -- then we can't assign it to the result var.
          | ContextNest{}         <- context
-         , Just (NamePrim p, xs) <- takeXPrimApps xx
+         , Just (NamePrimOp p, xs) <- takeXPrimApps xx
          , isControlPrim p || isCallPrim p
          -> convPrimCallM kenv tenv p xs
 
@@ -432,7 +432,7 @@ convBlockM context kenv tenv xx
 
 
 -- | Check whether this primop passes control (and does not return).
-isControlPrim :: Prim -> Bool
+isControlPrim :: PrimOp -> Bool
 isControlPrim pp
  = case pp of
         PrimControl{}   -> True
@@ -440,7 +440,7 @@ isControlPrim pp
 
 
 -- | Check whether this primop passes control (and returns).
-isCallPrim :: Prim -> Bool
+isCallPrim :: PrimOp -> Bool
 isCallPrim pp
  = case pp of
         PrimCall{}      -> True
@@ -449,7 +449,7 @@ isCallPrim pp
 
 -- | Check whether this an application of the fail# primop.
 isFailX  :: Exp a Name -> Bool
-isFailX (XApp _ (XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) _) = True
+isFailX (XApp _ (XVar _ (UPrim (NamePrimOp (PrimControl PrimControlFail)) _)) _) = True
 isFailX _ = False
 
 
@@ -519,7 +519,7 @@ convStmtM context kenv tenv xx
  = case xx of
         -- Primop application.
         XApp{}
-          |  Just (NamePrim p, xs) <- takeXPrimApps xx
+          |  Just (NamePrimOp p, xs) <- takeXPrimApps xx
           -> convPrimCallM kenv tenv p xs
 
         -- Super application.
@@ -570,7 +570,7 @@ convRValueM kenv tenv xx
 
         -- Primop application.
         XApp{}
-         |  Just (NamePrim p, args)        <- takeXPrimApps xx
+         |  Just (NamePrimOp p, args)      <- takeXPrimApps xx
          -> convPrimCallM kenv tenv p args
 
         -- Super application.
@@ -612,16 +612,16 @@ convPrimCallM
         :: Show a 
         => KindEnv Name
         -> TypeEnv Name
-        -> Prim 
+        -> PrimOp
         -> [Exp a Name] -> ConvertM a Doc
 
 convPrimCallM kenv tenv p xs
  = case p of
 
         -- Binary arithmetic primops.
-        PrimOp op
+        PrimArith op
          | [XType _t, x1, x2]   <- xs
-         , Just op'             <- convPrimOp2 op
+         , Just op'             <- convPrimArith2 op
          -> do  x1'     <- convRValueM kenv tenv x1
                 x2'     <- convRValueM kenv tenv x2
                 return  $ parens (x1' <+> op' <+> x2')

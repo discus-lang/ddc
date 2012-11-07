@@ -2,7 +2,7 @@
 -- | Pretty printers for primitive type and operator names.
 module DDC.Core.Salt.Convert.Prim
         ( convPrimTyCon
-        , convPrimOp2
+        , convPrimArith2
         , convPrimStore)
 where
 import DDC.Core.Salt.Name
@@ -26,35 +26,35 @@ convPrimTyCon tc
 
 
 -- | Convert an binary arithmetic primop name to C source text.
-convPrimOp2 :: PrimOp -> Maybe Doc
-convPrimOp2 pp
+convPrimArith2 :: PrimArith -> Maybe Doc
+convPrimArith2 pp
  = case pp of
         -- arithmetic   
-        PrimOpNeg               -> Just $ text "-"
-        PrimOpAdd               -> Just $ text "+"
-        PrimOpSub               -> Just $ text "-"
-        PrimOpMul               -> Just $ text "*"
-        PrimOpDiv               -> Just $ text "/"
-        PrimOpRem               -> Just $ text "%"
+        PrimArithNeg            -> Just $ text "-"
+        PrimArithAdd            -> Just $ text "+"
+        PrimArithSub            -> Just $ text "-"
+        PrimArithMul            -> Just $ text "*"
+        PrimArithDiv            -> Just $ text "/"
+        PrimArithRem            -> Just $ text "%"
 
         -- comparison
-        PrimOpEq                -> Just $ text "=="
-        PrimOpNeq               -> Just $ text "!="
-        PrimOpGt                -> Just $ text ">"
-        PrimOpGe                -> Just $ text ">="
-        PrimOpLt                -> Just $ text "<"
-        PrimOpLe                -> Just $ text "<="
+        PrimArithEq             -> Just $ text "=="
+        PrimArithNeq            -> Just $ text "!="
+        PrimArithGt             -> Just $ text ">"
+        PrimArithGe             -> Just $ text ">="
+        PrimArithLt             -> Just $ text "<"
+        PrimArithLe             -> Just $ text "<="
 
         -- boolean
-        PrimOpAnd               -> Just $ text "&&"
-        PrimOpOr                -> Just $ text "||"
+        PrimArithAnd            -> Just $ text "&&"
+        PrimArithOr             -> Just $ text "||"
 
         -- bitwise
-        PrimOpShl               -> Just $ text "<<"
-        PrimOpShr               -> Just $ text ">>"
-        PrimOpBAnd              -> Just $ text "&"
-        PrimOpBOr               -> Just $ text "|"
-        PrimOpBXOr              -> Just $ text "^"
+        PrimArithShl            -> Just $ text "<<"
+        PrimArithShr            -> Just $ text ">>"
+        PrimArithBAnd           -> Just $ text "&"
+        PrimArithBOr            -> Just $ text "|"
+        PrimArithBXOr           -> Just $ text "^"
 
 
 -- | Convert a store primop name to C source text.

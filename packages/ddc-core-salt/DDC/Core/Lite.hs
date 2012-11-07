@@ -23,7 +23,7 @@ module DDC.Core.Lite
         , DataTyCon     (..)
         , PrimTyCon     (..)
         , PrimDaCon     (..)
-        , PrimOp        (..)
+        , PrimArith     (..)
         , readName
 
           -- * Lexers

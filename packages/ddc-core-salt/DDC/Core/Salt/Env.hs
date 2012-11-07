@@ -100,7 +100,7 @@ primTypeEnv = Env.setPrimFun typeOfName Env.empty
 typeOfName :: Name -> Maybe (Type Name)
 typeOfName nn
  = case nn of
-        NamePrim p      -> Just $ typeOfPrim p
+        NamePrimOp p    -> Just $ typeOfPrim p
         NameVoid        -> Just $ tVoid
         NameBool _      -> Just $ tBool
         NameNat  _      -> Just $ tNat
@@ -111,10 +111,10 @@ typeOfName nn
 
 
 -- | Take the type of a primitive.
-typeOfPrim :: Prim -> Type Name
+typeOfPrim :: PrimOp -> Type Name
 typeOfPrim pp
  = case pp of
-        PrimOp       op -> typeOfPrimOp       op
+        PrimArith    op -> typeOfPrimArith    op
         PrimCast     cc -> typeOfPrimCast     cc
         PrimCall     pc -> typeOfPrimCall     pc
         PrimControl  pc -> typeOfPrimControl  pc
@@ -123,35 +123,35 @@ typeOfPrim pp
 
 -- PrimOps --------------------------------------------------------------------
 -- | Take the type of a primitive operator.
-typeOfPrimOp :: PrimOp -> Type Name
-typeOfPrimOp op
+typeOfPrimArith :: PrimArith -> Type Name
+typeOfPrimArith op
  = case op of
-        -- Arithmetic
-        PrimOpNeg       -> tForall kData $ \t -> t `tFunPE` t
-        PrimOpAdd       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpSub       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpMul       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpDiv       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpRem       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        -- Numeric
+        PrimArithNeg    -> tForall kData $ \t -> t `tFunPE` t
+        PrimArithAdd    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithSub    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithMul    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithDiv    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithRem    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 
         -- Comparison
-        PrimOpEq        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimOpNeq       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimOpGt        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimOpLt        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimOpLe        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimOpGe        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithEq     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithNeq    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithGt     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithLt     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithLe     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithGe     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
 
         -- Boolean
-        PrimOpAnd       -> tBool `tFunPE` tBool `tFunPE` tBool
-        PrimOpOr        -> tBool `tFunPE` tBool `tFunPE` tBool
+        PrimArithAnd    -> tBool `tFunPE` tBool `tFunPE` tBool
+        PrimArithOr     -> tBool `tFunPE` tBool `tFunPE` tBool
 
         -- Bitwise
-        PrimOpShl       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpShr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpBAnd      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpBOr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpBXOr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithShl    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithShr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithBAnd   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithBOr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithBXOr   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 
 
 -- PrimCast -------------------------------------------------------------------

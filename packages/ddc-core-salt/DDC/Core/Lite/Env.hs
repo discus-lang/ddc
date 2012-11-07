@@ -212,9 +212,9 @@ typeOfPrimName dc
                                         (tSum kClosure [tDeepUse tA])
                  $ tList tR tA
 
-        -- Primitive operators
-        NamePrimOp p
-         -> Just $ typeOfPrimOp p
+        -- Primitive arithmetic operators
+        NamePrimArith p
+         -> Just $ typeOfPrimArith p
 
         -- Unboxed Literals
         NameBool _      -> Just $ tBoolU
@@ -225,34 +225,34 @@ typeOfPrimName dc
         _               -> Nothing
 
 
--- | Take the type of a primitive operator.
-typeOfPrimOp :: PrimOp -> Type Name
-typeOfPrimOp op
+-- | Take the type of a primitive arithmetic operator.
+typeOfPrimArith :: PrimArith -> Type Name
+typeOfPrimArith op
  = case op of
-        -- Arithmetic
-        PrimOpNeg       -> tForall kData $ \t -> t `tFunPE` t
-        PrimOpAdd       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpSub       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpMul       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpDiv       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpRem       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        -- Numeric
+        PrimArithNeg    -> tForall kData $ \t -> t `tFunPE` t
+        PrimArithAdd    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithSub    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithMul    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithDiv    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithRem    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 
         -- Comparison
-        PrimOpEq        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
-        PrimOpNeq       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
-        PrimOpGt        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
-        PrimOpLt        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
-        PrimOpLe        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
-        PrimOpGe        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimArithEq     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimArithNeq    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimArithGt     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimArithLt     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimArithLe     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimArithGe     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
 
         -- Boolean
-        PrimOpAnd       -> tBoolU `tFunPE` tBoolU `tFunPE` tBoolU
-        PrimOpOr        -> tBoolU `tFunPE` tBoolU `tFunPE` tBoolU
+        PrimArithAnd    -> tBoolU `tFunPE` tBoolU `tFunPE` tBoolU
+        PrimArithOr     -> tBoolU `tFunPE` tBoolU `tFunPE` tBoolU
 
         -- Bitwise
-        PrimOpShl       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpShr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpBAnd      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpBOr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpBXOr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithShl    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithShr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithBAnd   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithBOr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithBXOr   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 

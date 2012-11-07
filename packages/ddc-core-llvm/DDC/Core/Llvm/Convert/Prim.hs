@@ -25,7 +25,7 @@ convPrimCallM
         -> TypeEnv A.Name
         -> MDSuper              -- ^ Metadata for the enclosing super
         -> Maybe Var            -- ^ Assign result to this var.
-        -> A.Prim               -- ^ Prim to call.
+        -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq AnnotInstr)
@@ -33,12 +33,12 @@ convPrimCallM
 convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
  = case p of
         -- Binary operations ----------
-        A.PrimOp op
+        A.PrimArith op
          | C.XType t : args     <- xs
          , Just [x1', x2']      <- mconvAtoms pp kenv tenv args
          , Just dst             <- mdst
          -> let result
-                 | Just op'     <- convPrimOp2 op t
+                 | Just op'     <- convPrimArith2 op t
                  = IOp dst op' x1' x2'
 
                  | Just icond'  <- convPrimICond op t
@@ -290,52 +290,51 @@ bumpName nn s
 
 -- Op -------------------------------------------------------------------------
 -- | Convert a binary primop from Core Sea to LLVM form.
-convPrimOp2 :: A.PrimOp -> C.Type A.Name -> Maybe Op
-convPrimOp2 op t
+convPrimArith2 :: A.PrimArith -> C.Type A.Name -> Maybe Op
+convPrimArith2 op t
  = case op of
-        A.PrimOpAdd     
+        A.PrimArithAdd     
          | isIntegralT t                -> Just OpAdd
          | isFloatingT t                -> Just OpFAdd 
 
-        A.PrimOpSub      
+        A.PrimArithSub      
          | isIntegralT t                -> Just OpSub
          | isFloatingT t                -> Just OpFSub
 
-        A.PrimOpMul 
+        A.PrimArithMul 
          | isIntegralT t                -> Just OpMul
          | isFloatingT t                -> Just OpFMul
 
-        A.PrimOpDiv
+        A.PrimArithDiv
          | isIntegralT t, isUnsignedT t -> Just OpUDiv
          | isIntegralT t, isSignedT t   -> Just OpSDiv
          | isFloatingT t                -> Just OpFDiv
 
-        A.PrimOpRem
+        A.PrimArithRem
          | isIntegralT t, isUnsignedT t -> Just OpURem
          | isIntegralT t, isSignedT t   -> Just OpSRem
          | isFloatingT t                -> Just OpFRem
 
-        A.PrimOpShl
+        A.PrimArithShl
          | isIntegralT t                -> Just OpShl
 
-        A.PrimOpShr
+        A.PrimArithShr
          | isIntegralT t, isUnsignedT t -> Just OpLShr
          | isIntegralT t, isSignedT t   -> Just OpAShr
 
-        A.PrimOpBAnd
+        A.PrimArithBAnd
          | isIntegralT t                -> Just OpAnd
 
-        A.PrimOpBOr
+        A.PrimArithBOr
          | isIntegralT t                -> Just OpOr
 
-        A.PrimOpBXOr
+        A.PrimArithBXOr
          | isIntegralT t                -> Just OpXor
 
         _                               -> Nothing
 
 
 -- Cast -----------------------------------------------------------------------
-
 -- | Convert a primitive promotion to LLVM.
 convPrimPromote 
         :: Platform 
@@ -407,32 +406,32 @@ convPrimTruncate pp kenv tDst vDst tSrc xSrc
 
 -- Cond -----------------------------------------------------------------------
 -- | Convert an integer comparison from Core Sea to LLVM form.
-convPrimICond :: A.PrimOp -> C.Type A.Name -> Maybe ICond
+convPrimICond :: A.PrimArith -> C.Type A.Name -> Maybe ICond
 convPrimICond op t
  | isIntegralT t
  = case op of
-        A.PrimOpEq      -> Just ICondEq
-        A.PrimOpNeq     -> Just ICondNe
-        A.PrimOpGt      -> Just ICondUgt
-        A.PrimOpGe      -> Just ICondUge
-        A.PrimOpLt      -> Just ICondUlt
-        A.PrimOpLe      -> Just ICondUle
+        A.PrimArithEq   -> Just ICondEq
+        A.PrimArithNeq  -> Just ICondNe
+        A.PrimArithGt   -> Just ICondUgt
+        A.PrimArithGe   -> Just ICondUge
+        A.PrimArithLt   -> Just ICondUlt
+        A.PrimArithLe   -> Just ICondUle
         _               -> Nothing
 
  | otherwise            =  Nothing
 
 
 -- | Convert a floating point comparison from Core Sea to LLVM form.
-convPrimFCond :: A.PrimOp -> C.Type A.Name -> Maybe FCond
+convPrimFCond :: A.PrimArith -> C.Type A.Name -> Maybe FCond
 convPrimFCond op t
  | isIntegralT t
  = case op of
-        A.PrimOpEq      -> Just FCondOeq
-        A.PrimOpNeq     -> Just FCondOne
-        A.PrimOpGt      -> Just FCondOgt
-        A.PrimOpGe      -> Just FCondOge
-        A.PrimOpLt      -> Just FCondOlt
-        A.PrimOpLe      -> Just FCondOle
+        A.PrimArithEq   -> Just FCondOeq
+        A.PrimArithNeq  -> Just FCondOne
+        A.PrimArithGt   -> Just FCondOgt
+        A.PrimArithGe   -> Just FCondOge
+        A.PrimArithLt   -> Just FCondOlt
+        A.PrimArithLe   -> Just FCondOle
         _               -> Nothing
 
  | otherwise            =  Nothing

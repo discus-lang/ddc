@@ -277,7 +277,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          --   We must be at the top-level of the function.
          C.XApp{}
           |  BodyTop                            <- context
-          ,  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _, C.XCon _ dc]           <- xs
           ,  Just A.NameVoid                    <- C.takeNameOfDaCon dc
@@ -290,7 +290,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          --   We must be at the top-level of the function.
          C.XApp{}
           |  BodyTop                            <- context
-          ,  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x2]                    <- xs
           ,  isVoidT t
@@ -303,7 +303,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          --   We must be at the top-level of the function.
          C.XApp{}
           |  BodyTop                            <- context
-          ,  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x]                     <- xs
           -> do let t'  =  convType pp kenv t
@@ -316,7 +316,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- Fail and abort the program.
          --   Allow this inside an expression as well as from the top level.
          C.XApp{}
-          |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
+          |  Just (A.NamePrimOp p, xs)         <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail   <- p
           ,  [C.XType _tResult]                <- xs
           -> let iFail  = ICall Nothing CallTypeStd Nothing 
@@ -339,7 +339,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- Tailcall a function.
          --   We must be at the top-level of the function.
          C.XApp{}
-          |  Just (A.NamePrim p, args)             <- takeXPrimApps xx
+          |  Just (A.NamePrimOp p, args)           <- takeXPrimApps xx
           ,  A.PrimCall (A.PrimCallTail arity)     <- p
           ,  _tsArgs                               <- take arity args
           ,  C.XType tResult : xFunTys : xsArgs    <- drop arity args
@@ -510,7 +510,7 @@ convExpM context pp kenv tenv mdsup xx
 
         C.XApp{}
          -- Call to primop.
-         | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
+         | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
          -> convPrimCallM pp kenv tenv mdsup
                         (varOfExpContext context)
                         p tPrim args
