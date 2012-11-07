@@ -6,7 +6,8 @@ module DDC.Core.Lite.Env
 where
 import DDC.Core.Lite.Compounds
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Name.Prim
+import DDC.Core.Salt.Name.PrimTyCon
+import DDC.Core.Salt.Name.PrimOp
 import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Type.Exp
@@ -89,7 +90,8 @@ primDataDefs
                 (NameDataTyCon DataTyConList)
                 [kRegion, kData]
                 (Just   [ (NamePrimDaCon PrimDaConNil,  [tUnit]) 
-                        , (NamePrimDaCon PrimDaConCons, [tIx kData 0, tList (tIx kRegion 1) (tIx kData 0)])])
+                        , (NamePrimDaCon PrimDaConCons, 
+                                [tIx kData 0, tList (tIx kRegion 1) (tIx kData 0)])])
         ]
 
 

@@ -8,7 +8,7 @@ module DDC.Core.Lite.Compounds
         , tList)
 where
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Name.Prim
+import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Exp
 import DDC.Type.Compounds
 

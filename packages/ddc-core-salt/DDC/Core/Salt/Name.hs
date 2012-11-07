@@ -6,11 +6,13 @@ module DDC.Core.Salt.Name
         , sanitizeName
         , sanitizeGlobal
         , sanitizeLocal
-        , module DDC.Core.Salt.Name.Prim
+        , module DDC.Core.Salt.Name.PrimTyCon
+        , module DDC.Core.Salt.Name.PrimOp
         , module DDC.Core.Salt.Name.Lit)
 where
 import DDC.Core.Salt.Name.Sanitize
-import DDC.Core.Salt.Name.Prim
+import DDC.Core.Salt.Name.PrimTyCon
+import DDC.Core.Salt.Name.PrimOp
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Data.Typeable

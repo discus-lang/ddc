@@ -79,6 +79,7 @@ readLitPrimWordOfBits str1
         = Nothing
 
 
+-- | Read a binary string as a number.
 readBinary :: (Num a, Read a) => String -> a
 readBinary digits
         = foldl' (\ acc b -> if b then 2 * acc + 1 else 2 * acc) 0
