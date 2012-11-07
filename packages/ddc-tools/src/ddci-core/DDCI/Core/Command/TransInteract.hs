@@ -11,6 +11,8 @@ import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
+import DDC.Core.Compounds
+import DDC.Core.Check
 import DDC.Base.Pretty
 import qualified Data.Map               as Map
 import qualified DDC.Core.Transform.Inline.Templates	as I
@@ -33,10 +35,15 @@ cmdTransInteract state source str
          = do   return state
 
         -- Expression is well-typed.
-        goStore mkNamT mkNamX zero profile modules rules
-		(Just (x, t1, eff1, clo1))
-         = do   let hist   = TransHistory
-			     { historyExp	    = (x, t1, eff1, clo1)
+        goStore mkNamT mkNamX zero profile modules rules (Just xx)
+         = do   
+                let Just annot  = takeAnnotOfExp xx
+                let t1          = annotType annot
+                let eff1        = annotEffect annot
+                let clo1        = annotClosure annot
+
+                let hist   = TransHistory
+			     { historyExp	    = (xx, t1, eff1, clo1)
 			     , historySteps	    = []
 			     , historyMakeNamifierT = mkNamT
 			     , historyMakeNamifierX = mkNamX
@@ -92,7 +99,7 @@ cmdTransInteractLoop state str
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
 		x_trans <- applyTransAndCheck state profile kenv tenv
-			    zero tr' (x', t, e, c)
+			    zero tr' x'
 
 		case x_trans of
 		    Nothing -> return state

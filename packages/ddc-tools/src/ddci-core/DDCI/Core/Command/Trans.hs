@@ -11,14 +11,14 @@ import DDCI.Core.State
 import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier
 import DDC.Core.Check
 import DDC.Core.Exp
-import DDC.Type.Compounds
+import DDC.Core.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty
-import DDC.Core.Transform.Reannotate
 import DDC.Type.Env                             as Env
 import qualified Control.Monad.State.Strict     as S
 import qualified DDC.Core.Eval.Name             as Eval
@@ -42,12 +42,11 @@ cmdTrans state source str
          = do   return ()
 
         -- Expression is well-typed.
-        goStore profile modules zero simpl (Just (x, t1, eff1, clo1))
+        goStore profile modules zero simpl (Just x)
          = do   let kenv    = modulesExportKinds modules (profilePrimKinds profile)
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
-                tr <- applyTransAndCheck state profile kenv tenv 
-                                zero simpl (x, t1, eff1, clo1)
+                tr <- applyTransAndCheck state profile kenv tenv zero simpl x
 		case tr of
 		  Nothing -> return ()
 		  Just x' -> outDocLn state $ ppr x'
@@ -72,20 +71,19 @@ cmdTransEval state source str
  = do   result  <- cmdParseCheckExp fragmentEval modules False source str 
         case result of
          Nothing         -> return ()
-         Just stuff@(_x, t1, eff1, clo1)
+         Just xx
           -> do let kenv    = modulesExportKinds modules (profilePrimKinds profile)
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
                 -- Apply the current transform.
-                tr      <- applyTransAndCheck state profile kenv tenv
-                                zero simpl stuff
+                tr      <- applyTransAndCheck state profile kenv tenv zero simpl xx
+
                 case tr of
                  Nothing -> return ()
                  Just x'
                      -- Evaluate the transformed expression.
                   -> do outDocLn state $ ppr x'
-                        let x'' = reannotate (const ()) x'
-                        evalExp state (x'', t1, eff1, clo1)
+                        evalExp state x'
                         return ()
 
  | otherwise
@@ -109,17 +107,22 @@ applyTransAndCheck
         -> Env n                        -- Kind Environment.
         -> Env n                        -- Type Environment.
         -> s
-        -> Simplifier s a n
-        -> (Exp a n, Type n, Effect n, Closure n) 
-        -> IO (Maybe (Exp a n))
+        -> Simplifier s (AnTEC a n) n
+        -> Exp (AnTEC a n) n
+        -> IO (Maybe (Exp (AnTEC () n) n))
 
-applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
+applyTransAndCheck state profile kenv tenv zero simpl xx
  = do
+        let Just annot  = takeAnnotOfExp xx
+        let t1          = annotType    annot
+        let eff1        = annotEffect  annot
+        let clo1        = annotClosure annot
+
          -- Apply the simplifier.
-        let tx = flip S.evalState zero
-               $ applySimplifierX profile kenv tenv simpl x
+        let tx          = flip S.evalState zero
+                        $ applySimplifierX profile kenv tenv simpl xx
 	
-	let x' = result tx
+	let x'          = reannotate (const ()) $ result tx
 
 	when (Set.member TraceTrans $ stateModes state)
 	 $ case (resultInfo tx) of
@@ -128,11 +131,11 @@ applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
 
         -- Check that the simplifier perserved the type of the expression.
         case checkExp (configOfProfile profile) kenv tenv x' of
-          Right (_, t2, eff2, clo2)
+          Right (x2, t2, eff2, clo2)
            |  equivT t1 t2
            ,  subsumesT kEffect  eff1 eff2
            ,  subsumesT kClosure clo1 clo2
-           -> do return (Just x')
+           -> do return (Just x2)
 
            | otherwise
            -> do putStrLn $ renderIndent $ vcat

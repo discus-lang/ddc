@@ -46,21 +46,16 @@ cmdStep state source str
 
         -- Expression is well-typed.
         goStore (Just x)
-         = let  Just annot = takeAnnotOfExp x
-
-                -- The evaluator doesn't accept any annotations
-                x'      = reannotate (const ()) x
+         = let  -- The evaluator doesn't accept any annotations
+                x_stripped = reannotate (const ()) x
 
                 -- Create the initial store.
-                store   = startingStoreForExp x'
+                store      = startingStoreForExp x_stripped
 
-           in   goStep store x' 
-                        (annotType    annot)
-                        (annotEffect  annot)
-                        (annotClosure annot)
+           in   goStep store x
 
-        goStep store x tX effX cloX
-         = do   _       <- forcePrint state store x tX effX cloX
+        goStep store x
+         = do   _       <- forcePrint state store x
                 return ()
 
 
@@ -84,39 +79,35 @@ cmdEval state source str
 
 -- | Evaluate an already parsed and type-checked expression.
 --   Exported so transforms can test with it.
-evalExp :: State -> Exp (AnTEC a Name) Name -> IO ()
-evalExp state x
+evalExp :: State -> Exp (AnTEC () Name) Name -> IO ()
+evalExp state x0
  = do   
-
         -- The evaluator doesn't want any annotations
-        let x'    = reannotate (const ()) x
+        let x0_stripped = reannotate (const ()) x0
 
         -- Create the initial store.
-	let store = startingStoreForExp x'
+	let store = startingStoreForExp x0_stripped
 
 	-- Print starting expression.
 	when (Set.member TraceEval  $ stateModes state)
-	 $ outDocLn state (text "* STEP: " <> ppr x')
+	 $ outDocLn state (text "* STEP: " <> ppr x0_stripped)
 
 	-- Print starting store.
 	when (Set.member TraceStore $ stateModes state)
 	 $ do   putStrLn $ renderIndent $ ppr store
 		outStr   state "\n"
 
-	goStep store x'
+	goStep store x0
 
     where
-        Just annot  = takeAnnotOfExp x
-        tX          = annotType annot
-        effX        = annotEffect annot
-        cloX        = annotClosure annot
+	goStep store x
+	 = do mResult <- forcePrint state store x
+	      case mResult of
+	       Nothing            
+                -> return ()
 
-	goStep store x0
-	 = do
-	    mResult <- forcePrint state store x0 tX effX cloX
-	    case mResult of
-	      Nothing           -> return ()
-	      Just (store', x0') -> goStep store' x0'
+	       Just (store', x') 
+                -> goStep store' x'
  
 
 -- | Create a starting store for the given expression.
@@ -151,22 +142,29 @@ startingStoreForExp xx
 forcePrint 
         :: State
         -> Store 
-        -> Exp ()  Name 
-        -> Type    Name
-        -> Effect  Name
-        -> Closure Name
-        -> IO (Maybe (Store, Exp () Name))
+        -> Exp (AnTEC a Name) Name 
+        -> IO (Maybe (Store, Exp (AnTEC () Name) Name))
 
-forcePrint state store x tX effX cloX
- = case force store x of
-        StepProgress store' x'
+forcePrint state store x
+ = let  
+        -- Get the type, effect and closure of the original expression.
+        Just annot  = takeAnnotOfExp x
+        tX          = annotType annot
+        effX        = annotEffect annot
+        cloX        = annotClosure annot
+
+        -- The evaluator doesn't want any type annotations on the expresison.
+        x_stripped = reannotate (const ()) x
+
+   in case force store x_stripped of
+        StepProgress store' x_stripped'
          -> case checkExp (configOfProfile $ fragmentProfile fragmentEval) 
-                        primKindEnv primTypeEnv x' of
+                        primKindEnv primTypeEnv x_stripped' of
              Left err
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)
-                     $ do outDocLn state $ text "* STEP: " <> ppr x'
+                     $ do outDocLn state $ text "* STEP: " <> ppr x_stripped'
 
                     -- Print intermediate store
                     when (Set.member TraceStore $ stateModes state)
@@ -180,7 +178,7 @@ forcePrint state store x tX effX cloX
 
                     return $ Nothing
                       
-             Right (_, tX', effX', cloX')
+             Right (x', tX', effX', cloX')
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)
@@ -195,22 +193,37 @@ forcePrint state store x tX effX cloX
                     -- and that the effect and closure are no greater.
                     let deathT = not $ equivT    tX tX'
                     let deathE = not $ subsumesT kEffect  effX effX'
-                    let deathC = not $ subsumesT kClosure cloX cloX'
-                    let death  = deathT || deathE || deathC
 
-                    when deathT
+--                    let deathC = not $ subsumesT kClosure cloX cloX'
+                    let death  = deathT || deathE -- deathC
+
+                    -- TODO: locations don't reveal closure information.
+
+                    when death
                      $ putStrLn $ renderIndent
-                     $ vcat [ text "* OFF THE RAILS!"
-                            , ppr tX
-                            , ppr tX' ]
-                
+                     $ vcat [ empty
+                            , text "* OFF THE RAILS! ************************"
+                            , text "Starting expression:" 
+                            , indent 4 $ ppr x
+                            , empty
+                            , text "Has type:",    indent 4 $ ppr tX
+                            , text "Has efect:",   indent 4 $ ppr effX
+                            , text "Has closure:", indent 4 $ ppr cloX
+                            , empty
+                            , text "Reduced expression:"
+                            , indent 4 $ ppr x'
+                            , empty
+                            , text "Has type:",    indent 4 $ ppr tX'
+                            , text "Has effect:",  indent 4 $ ppr effX'
+                            , text "Has closure:", indent 4 $ ppr cloX' ]
+
                     if death 
                      then return Nothing
                      else return $ Just (store', x')
     
         StepDone
          -> do  -- Load the final expression back from the store to display.
-                outDocLn state $ ppr $ traceStore store x
+                outDocLn state $ ppr $ traceStore store x_stripped
                 return Nothing
         
         StepStuck

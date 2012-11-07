@@ -20,7 +20,7 @@ case x of {
 
 -- Error: type supplied to weakeff does not have effect kind
 When checking expression.
-  Type provided for a 'maxeff' does not have effect kind.
+  Type provided for a 'weakeff' does not have effect kind.
              Type: r1
          has kind: %
   

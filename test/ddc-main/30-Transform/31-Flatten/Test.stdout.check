@@ -21,12 +21,12 @@ letrec {
 ok
 
 -- Nested applications
-let ^ = 1 [R0#] () in
-let ^ = 2 [R1#] () in
-let ^ = 3 [R3#] () in
-let ^ = 4 [R3#] () in
-let ^ = addInt [R3#] [R3#] [R1#] ^1 ^0 in
-let ^ = addInt [R1#] [R1#] [R1#] ^3 ^0 in
+let ^ : Int R0# = 1 [R0#] () in
+let ^ : Int R1# = 2 [R1#] () in
+let ^ : Int R3# = 3 [R3#] () in
+let ^ : Int R3# = 4 [R3#] () in
+let ^ : Int R1# = addInt [R3#] [R3#] [R1#] ^1 ^0 in
+let ^ : Int R1# = addInt [R1#] [R1#] [R1#] ^3 ^0 in
 addInt [R0#] [R1#] [R2#] ^5 ^0
 10
 
@@ -35,7 +35,7 @@ addInt [R0#] [R1#] [R2#] ^5 ^0
 let x : Int R1# = 2 [R1#] () in
 let ^ : Unit = () in
 let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 1 in
-let ^ = ^0 [R0#] ^1 in
+let ^ : Int R0# = ^0 [R0#] ^1 in
 addInt [R0#] [R1#] [R2#] ^0 x
 3
 
@@ -45,13 +45,13 @@ let cmp : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Rea
       = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
         let f' : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in
         \(x : Int R0#).
-        let ^ = g x in
+        let ^ : Int R0# = g x in
         f' ^0 in
 let up : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(n : Int R0#).
-        let ^ = 1 [R0#] () in
+        let ^ : Int R0# = 1 [R0#] () in
         addInt [R0#] [R0#] [R0#] n ^0 in
-let ^ = 1 [R0#] () in
+let ^ : Int R0# = 1 [R0#] () in
 cmp up up ^0
 3
 
@@ -61,13 +61,13 @@ let ^ : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read 
       = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
         let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in
         \(^ : Int R0#).
-        let ^ = g ^0 in
+        let ^ : Int R0# = g ^0 in
         ^2 ^0 in
 let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(^ : Int R0#).
-        let ^ = 1 [R0#] () in
+        let ^ : Int R0# = 1 [R0#] () in
         addInt [R0#] [R0#] [R0#] ^1 ^0 in
-let ^ = 1 [R0#] () in
+let ^ : Int R0# = 1 [R0#] () in
 ^2 ^1 ^1 ^0
 3
 
@@ -81,22 +81,22 @@ letrec {
         0  
          -> 1 [r] ();
         _ 
-         -> let ^ = 1 [r] () in
-            let ^ = subInt [r] [r] [r] n ^0 in
-            let ^ = fac [r] ^0 in
+         -> let ^ : Int r = 1 [r] () in
+            let ^ : Int r = subInt [r] [r] [r] n ^0 in
+            let ^ : Int r = fac [r] ^0 in
             mulInt [r] [r] [r] n ^0
       }
 } in
-let ^ = 5 [R1#] () in
+let ^ : Int R1# = 5 [R1#] () in
 fac [R1#] ^0
 120
 
 
 -- Snip out discriminants of case expressions
-let ^
+let ^ : Int R0# -> Int R0#
       = \(x : Int R0#). x in
-let ^ = 5 [R0#] () in
-let ^ = ^1 ^0 in
+let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int R0# = ^1 ^0 in
 case ^0 of {
   _ 
    -> ()
@@ -107,6 +107,6 @@ case ^0 of {
 let useWit : Const R0# => Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(^ : Const R0#).\(^ : Int R0#). addInt [R0#] [R0#] [R0#] ^0 ^0 in
 \(^ : Const R0#).\(^ : Int R0#).
-let ^ = 1 [R0#] () in
-let ^ = addInt [R0#] [R0#] [R0#] ^0 ^1 in
+let ^ : Int R0# = 1 [R0#] () in
+let ^ : Int R0# = addInt [R0#] [R0#] [R0#] ^0 ^1 in
 useWit <^3> ^0

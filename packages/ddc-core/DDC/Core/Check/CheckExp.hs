@@ -54,6 +54,7 @@ instance Pretty (AnTEC a n) where
  ppr _ = text "AnTEC"        
 
 
+
 -- Wrappers -------------------------------------------------------------------
 -- | Type check an expression. 
 --
