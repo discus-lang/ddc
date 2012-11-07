@@ -2,7 +2,7 @@
 -- | Reference lexer for core langauge parser. Slow but Simple.
 --
 --   The lexers here all use 'String' in place of a real name type.
---   After applying these functions to your program text, we need
+--   After applying these functions to the program text, we need
 --   to use `renameTok` tok convert the strings in `TokNamed` tokens
 --   into the name type specific to the langauge fragment to be parsed.
 --
@@ -25,7 +25,15 @@ import Data.Char
 
 -- Module ---------------------------------------------------------------------
 -- | Lex a module and apply the offside rule.
-lexModuleWithOffside :: String -> Int -> String -> [Token (Tok String)]
+--
+--   Automatically drop comments from the token stream along the way.
+--
+lexModuleWithOffside 
+        :: FilePath     -- ^ Path to source file, for error messages.
+        -> Int          -- ^ Starting line number.
+        -> String       -- ^ String containing program text.
+        -> [Token (Tok String)]
+
 lexModuleWithOffside sourceName lineStart str
         = applyOffside []
         $ addStarts
@@ -38,7 +46,11 @@ lexModuleWithOffside sourceName lineStart str
 --
 --   Automatically drop comments from the token stream along the way.
 --
-lexExp :: String -> Int -> String -> [Token (Tok String)]
+lexExp  :: FilePath     -- ^ Path to source file, for error messages.
+        -> Int          -- ^ Starting line number.
+        -> String       -- ^ String containing program text.
+        -> [Token (Tok String)]
+
 lexExp sourceName lineStart str
         = dropNewLines
         $ dropComments

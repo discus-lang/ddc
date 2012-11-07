@@ -32,10 +32,9 @@ Library
         ddc-base        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Lexer.Comments
         DDC.Core.Lexer.Names
-        DDC.Core.Lexer.Offside
         DDC.Core.Lexer.Tokens
+
         DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.Reannotate
@@ -44,6 +43,7 @@ Library
         DDC.Core.Transform.SubstituteWX
         DDC.Core.Transform.SubstituteXX
         DDC.Core.Transform.Trim
+
         DDC.Core.Check
         DDC.Core.Collect
         DDC.Core.Compounds
@@ -97,6 +97,9 @@ Library
         DDC.Core.Fragment.Error
         DDC.Core.Fragment.Feature
         DDC.Core.Fragment.Profile
+
+        DDC.Core.Lexer.Comments
+        DDC.Core.Lexer.Offside
 
         DDC.Core.Parser.Base
         DDC.Core.Parser.Exp
