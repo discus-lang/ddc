@@ -10,9 +10,9 @@ module DDC.Core.Transform.SubstituteWX
 where
 import DDC.Core.Exp
 import DDC.Core.Collect
-import DDC.Core.Rewrite
+import DDC.Core.Transform.Rename
 import DDC.Core.Transform.LiftW
-import DDC.Type.Rewrite
+import DDC.Type.Transform.Rename
 import DDC.Type.Compounds
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
@@ -75,7 +75,7 @@ class SubstituteWX (c :: * -> *) where
 instance SubstituteWX (Exp a) where 
  substituteWithWX wArg sub xx
   = let down    = substituteWithWX wArg
-        into    = rewriteWith
+        into    = renameWith
     in case xx of
         XVar a u        -> XVar a u
         XCon{}          -> xx
@@ -146,7 +146,7 @@ instance SubstituteWX (Alt a) where
 instance SubstituteWX (Cast a) where
  substituteWithWX wArg sub cc
   = let down    = substituteWithWX wArg
-        into    = rewriteWith
+        into    = renameWith
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
         CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
@@ -157,7 +157,7 @@ instance SubstituteWX (Cast a) where
 instance SubstituteWX Witness where
  substituteWithWX wArg sub ww
   = let down    = substituteWithWX wArg
-        into    = rewriteWith
+        into    = renameWith
     in case ww of
         WVar u
          -> case substW wArg sub u of

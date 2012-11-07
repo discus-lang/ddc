@@ -17,7 +17,7 @@ import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Type.Transform.SubstituteT
-import DDC.Type.Rewrite
+import DDC.Type.Transform.Rename
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
@@ -100,7 +100,7 @@ class SubstituteXX (c :: * -> * -> *) where
 instance SubstituteXX Exp where 
  substituteWithXX xArg sub xx
   = let down    = substituteWithXX xArg
-        into    = rewriteWith
+        into    = renameWith
     in case xx of
         XVar a u
          -> case substX xArg sub u of
@@ -165,7 +165,7 @@ instance SubstituteXX Alt where
 instance SubstituteXX Cast where
  substituteWithXX xArg sub cc
   = let down = substituteWithXX xArg
-        into = rewriteWith
+        into = renameWith
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
         CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)

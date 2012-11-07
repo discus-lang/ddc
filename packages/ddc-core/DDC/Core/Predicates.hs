@@ -5,7 +5,7 @@ module DDC.Core.Predicates
 
           -- * Atoms
         , isXVar,  isXCon
-        , isAtomW, isAtomX
+        , isAtomX, isAtomW
 
           -- * Lambdas
         , isXLAM, isXLam
@@ -42,15 +42,6 @@ isXCon xx
         _       -> False
 
 
--- | Check whether a witness is a `WVar` or `WCon`.
-isAtomW :: Witness n -> Bool
-isAtomW ww
- = case ww of
-        WVar{}          -> True
-        WCon{}          -> True
-        _               -> False
-
-
 -- | Check whether an expression is a `XVar` or an `XCon`, 
 --   or some type or witness atom.
 isAtomX :: Exp a n -> Bool
@@ -60,6 +51,15 @@ isAtomX xx
         XCon{}          -> True
         XType t         -> isAtomT t
         XWitness w      -> isAtomW w
+        _               -> False
+
+
+-- | Check whether a witness is a `WVar` or `WCon`.
+isAtomW :: Witness n -> Bool
+isAtomW ww
+ = case ww of
+        WVar{}          -> True
+        WCon{}          -> True
         _               -> False
 
 

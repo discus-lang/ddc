@@ -13,7 +13,7 @@ import DDC.Core.Collect
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
-import DDC.Type.Rewrite
+import DDC.Type.Transform.Rename
 import Data.Maybe
 import qualified Data.Set               as Set
 import qualified DDC.Type.Env           as Env

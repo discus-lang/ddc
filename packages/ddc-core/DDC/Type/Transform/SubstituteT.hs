@@ -16,7 +16,7 @@ import DDC.Type.Compounds
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
-import DDC.Type.Rewrite
+import DDC.Type.Transform.Rename
 import DDC.Type.Exp
 import Data.Maybe
 import qualified DDC.Type.Sum   as Sum

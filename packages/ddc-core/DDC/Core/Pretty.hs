@@ -1,5 +1,5 @@
 
--- | Pretty printing for core modules and expressions.
+-- | Provides pretty printing for core modules and expressions.
 module DDC.Core.Pretty 
         ( module DDC.Type.Pretty
         , module DDC.Base.Pretty)

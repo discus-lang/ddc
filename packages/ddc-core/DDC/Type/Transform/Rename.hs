@@ -1,7 +1,7 @@
 
--- | Rewriting of variable binders to anonymous form to avoid capture.
-module DDC.Type.Rewrite
-        ( Rewrite(..)
+-- | Renaming of variable binders to anonymous form to avoid capture.
+module DDC.Type.Transform.Rename
+        ( Rename(..)
         , Sub(..)
         , BindStack(..)
         , pushBind
@@ -161,7 +161,7 @@ bind1s = mapAccumL bind1
 -- | Push a level-0 binder on the rewrite stack.
 bind0 :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
 bind0 sub b 
- = let  b1                  = rewriteWith sub b
+ = let  b1                  = renameWith sub b
         (stackX', b2)       = pushBind (subConflict0 sub) (subStack0 sub) b1
    in   ( sub { subStack0   = stackX'
               , subShadow0  =  subShadow0 sub 
@@ -198,20 +198,20 @@ use0 sub u
         = u
 
 -------------------------------------------------------------------------------
-class Rewrite (c :: * -> *) where
- -- | Rewrite names in some thing to anonymous form if they conflict with
+class Rename (c :: * -> *) where
+ -- | Rename names in some thing to anonymous form if they conflict with
 --    any names in the `Sub` state.
- rewriteWith :: Ord n => Sub n -> c n -> c n 
+ renameWith :: Ord n => Sub n -> c n -> c n 
 
 
-instance Rewrite Bind where
- rewriteWith sub bb
-  = replaceTypeOfBind  (rewriteWith sub (typeOfBind bb))  bb
+instance Rename Bind where
+ renameWith sub bb
+  = replaceTypeOfBind  (renameWith sub (typeOfBind bb))  bb
 
 
-instance Rewrite Type where
- rewriteWith sub tt 
-  = let down    = rewriteWith 
+instance Rename Type where
+ renameWith sub tt 
+  = let down    = renameWith 
     in case tt of
         TVar u          -> TVar (use1 sub u)
         TCon{}          -> tt
@@ -225,9 +225,9 @@ instance Rewrite Type where
         TSum ts         -> TSum (down sub ts)
 
 
-instance Rewrite TypeSum where
- rewriteWith sub ts
+instance Rename TypeSum where
+ renameWith sub ts
         = Sum.fromList (Sum.kindOfSum ts)
-        $ map (rewriteWith sub)
+        $ map (renameWith sub)
         $ Sum.toList ts
 
