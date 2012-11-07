@@ -38,6 +38,7 @@ Library
         DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.Reannotate
+        DDC.Core.Transform.Rename
         DDC.Core.Transform.SpreadX
         DDC.Core.Transform.SubstituteTX
         DDC.Core.Transform.SubstituteWX
@@ -56,7 +57,6 @@ Library
         DDC.Core.Parser
         DDC.Core.Predicates
         DDC.Core.Pretty
-        DDC.Core.Rewrite
 
         DDC.Type.Check.Monad
         DDC.Type.Collect.FreeT
@@ -64,6 +64,7 @@ Library
         DDC.Type.Transform.Instantiate
         DDC.Type.Transform.LiftT
         DDC.Type.Transform.LowerT
+        DDC.Type.Transform.Rename
         DDC.Type.Transform.SpreadT
         DDC.Type.Transform.SubstituteT
         DDC.Type.Transform.Trim
@@ -76,7 +77,6 @@ Library
         DDC.Type.Exp
         DDC.Type.Predicates
         DDC.Type.Pretty
-        DDC.Type.Rewrite
         DDC.Type.Subsumes
         DDC.Type.Sum
         DDC.Type.Universe
