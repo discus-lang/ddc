@@ -1,9 +1,7 @@
 
 -- | Parser for type expressions.
 module DDC.Core.Parser.Type
-        ( module DDC.Base.Parser
-        , Parser
-        , pType, pTypeAtom, pTypeApp
+        ( pType, pTypeAtom, pTypeApp
         , pBinder
         , pIndex
         , pTok, pTokAs)
@@ -17,7 +15,7 @@ import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Sum           as TS
 
 
--- | Top level parser for types.
+-- | Parse a type.
 pType   :: Ord n => Parser n (Type n)
 pType   = pTypeSum
  <?> "a type"

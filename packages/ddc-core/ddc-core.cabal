@@ -36,10 +36,6 @@ Library
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Offside
         DDC.Core.Lexer.Tokens
-        DDC.Core.Parser.Base
-        DDC.Core.Parser.Param
-        DDC.Core.Parser.Type
-        DDC.Core.Parser.Witness
         DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.Reannotate
@@ -101,6 +97,13 @@ Library
         DDC.Core.Fragment.Error
         DDC.Core.Fragment.Feature
         DDC.Core.Fragment.Profile
+
+        DDC.Core.Parser.Base
+        DDC.Core.Parser.Exp
+        DDC.Core.Parser.Module
+        DDC.Core.Parser.Param
+        DDC.Core.Parser.Type
+        DDC.Core.Parser.Witness
 
         DDC.Type.Check.CheckCon
         DDC.Type.Check.CheckError

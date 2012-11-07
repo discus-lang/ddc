@@ -1,5 +1,11 @@
 
 -- | Reference lexer for core langauge parser. Slow but Simple.
+--
+--   The lexers here all use 'String' in place of a real name type.
+--   After applying these functions to your program text, we need
+--   to use `renameTok` tok convert the strings in `TokNamed` tokens
+--   into the name type specific to the langauge fragment to be parsed.
+--
 module DDC.Core.Lexer
         ( module DDC.Core.Lexer.Tokens
         , module DDC.Core.Lexer.Names

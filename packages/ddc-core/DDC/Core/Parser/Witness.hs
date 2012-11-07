@@ -7,6 +7,7 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
+import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
  
@@ -16,7 +17,7 @@ pWitness :: Ord n  => Parser n (Witness n)
 pWitness = pWitnessJoin
 
 
--- Witness Joining
+-- | Parse a witness join.
 pWitnessJoin :: Ord n => Parser n (Witness n)
 pWitnessJoin 
    -- WITNESS  or  WITNESS & WITNESS
@@ -29,7 +30,7 @@ pWitnessJoin
          , do   return w1 ]
 
 
--- Applications
+-- | Parse a witness application.
 pWitnessApp :: Ord n => Parser n (Witness n)
 pWitnessApp 
   = do  (x:xs)  <- P.many1 pWitnessArg
@@ -38,7 +39,7 @@ pWitnessApp
  <?> "a witness expression or application"
 
 
--- Function argument
+-- | Parse a witness argument.
 pWitnessArg :: Ord n => Parser n (Witness n)
 pWitnessArg 
  = P.choice
@@ -52,7 +53,7 @@ pWitnessArg
  , do   pWitnessAtom ]
 
 
--- Atomics
+-- | Parse a variable, constructor or parenthesised witness.
 pWitnessAtom :: Ord n => Parser n (Witness n)
 pWitnessAtom 
  = P.choice

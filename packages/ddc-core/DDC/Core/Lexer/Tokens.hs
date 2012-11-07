@@ -1,15 +1,19 @@
 
 module DDC.Core.Lexer.Tokens
-        ( Tok      (..)
-        , describeTok
+        ( -- * Tokens
+          Tok      (..)
         , renameTok
+        , describeTok
 
+          -- * Meta Tokens
         , TokMeta  (..)
         , describeTokMeta
 
+          -- * Atomic Tokens
         , TokAtom  (..)
         , describeTokAtom
 
+          -- * Named Tokens
         , TokNamed (..)
         , describeTokNamed)
 where
@@ -45,28 +49,21 @@ describeTokenFamily tf
 -- Tok ------------------------------------------------------------------------
 -- | Tokens accepted by the core language parser.
 data Tok n
-        -- Some junk symbol that isn't part of the language.
+        -- | Some junk symbol that isn't part of the language.
         = KJunk String
 
-        -- A meta-token
+        -- | Meta tokens contain out-of-band information that is eliminated
+        --   before parsing proper.
         | KM    !TokMeta
 
-        -- An atomic token.
+        -- | Atomic tokens are keywords, punctuation and baked-in 
+        --   constructor names.
         | KA    !TokAtom 
 
-        -- A named token.
+        -- | A named token that is specific to the language fragment 
+        --   (maybe it's a primop), or a user defined name.
         | KN    !(TokNamed n)
         deriving (Eq, Show)
-
-
--- | Describe a token for parser error messages.
-describeTok :: Pretty n => Tok n -> String
-describeTok kk
- = case kk of
-        KJunk c         -> "character " ++ show c
-        KM tm           -> describeTokMeta  tm
-        KA ta           -> describeTokAtom  ta
-        KN tn           -> describeTokNamed tn
 
 
 -- | Apply a function to all the names in a `Tok`.
@@ -84,8 +81,19 @@ renameTok f kk
         KN t    -> liftM KN $ renameTokNamed f t
 
 
+-- | Describe a token for parser error messages.
+describeTok :: Pretty n => Tok n -> String
+describeTok kk
+ = case kk of
+        KJunk c         -> "character " ++ show c
+        KM tm           -> describeTokMeta  tm
+        KA ta           -> describeTokAtom  ta
+        KN tn           -> describeTokNamed tn
+
+
 -- TokMeta --------------------------------------------------------------------
--- | Meta tokens that get eliminated before parsing.
+-- | Meta tokens contain out-of-band information that is 
+--   eliminated before parsing proper.
 data TokMeta
         = KNewLine
         | KCommentLineStart
@@ -104,7 +112,9 @@ describeTokMeta tm
 
 
 -- TokAtom --------------------------------------------------------------------
--- | Atomic tokens, that don't contain user-defined names.
+-- | Atomic tokens are keywords, punctuation and baked-in constructor names.
+--   They don't contain user-defined names or primops specific to the 
+--   language fragment.
 data TokAtom
         -- parens
         = KRoundBra

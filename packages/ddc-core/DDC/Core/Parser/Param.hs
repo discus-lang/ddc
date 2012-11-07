@@ -1,13 +1,13 @@
 
 module DDC.Core.Parser.Param
-        ( Parser
-        , ParamSpec     (..)
+        ( ParamSpec     (..)
         , funTypeOfParams
         , expOfParams
         , pBindParamSpec)
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Type
+import DDC.Core.Parser.Base             (Parser)
 import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
