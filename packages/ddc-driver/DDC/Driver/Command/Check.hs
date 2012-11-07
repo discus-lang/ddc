@@ -24,6 +24,7 @@ import DDC.Core.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Pretty
+import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Type.Equiv
@@ -188,8 +189,16 @@ cmdShowType bundle mode source ss
         goResult Nothing
          = return ()
 
-        goResult (Just (x, t, eff, clo))
-         = case mode of
+        goResult (Just x)
+         = let  -- This will always succeed because a well typed expression
+                -- is never a naked type or witness, and only those don't
+                -- have annotations.
+                Just annot      = takeAnnotOfExp x
+
+                t               = annotType annot
+                eff             = annotEffect annot
+                clo             = annotClosure annot
+           in case mode of
                 ShowTypeAll
                  -> do  outDocLn $ ppr x
                         outDocLn $ text ":*:" <+> ppr t
@@ -217,7 +226,7 @@ cmdExpRecon bundle source ss
         goResult Nothing
          = return ()
 
-        goResult (Just (x, _, _, _))
+        goResult (Just x)
          = outDocLn $ ppr x
 
 
@@ -294,8 +303,7 @@ cmdParseCheckExp
         -> Bool                 -- ^ Allow partial application of primitives.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
-        -> IO (Maybe ( Exp (AnTEC () n) n
-                     , Type n, Effect n, Closure n))
+        -> IO (Maybe ( Exp (AnTEC () n) n))
 
 cmdParseCheckExp frag modules permitPartialPrims source str
  = goLoad (fragmentLexExp frag (nameOfSource source) (lineStartOfSource source) str)
@@ -320,11 +328,11 @@ cmdParseCheckExp frag modules permitPartialPrims source str
                -> goCheckFragment result
 
         -- Do fragment specific checks.
-        goCheckFragment (x, t, e, c)
+        goCheckFragment x
          = case fragmentCheckExp frag' x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
                         return Nothing
 
              Nothing  
-              -> do     return (Just (x, t, e, c))
+              -> do     return (Just x)

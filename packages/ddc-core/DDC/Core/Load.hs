@@ -162,7 +162,7 @@ loadExp
         -> String 
         -> [Token (Tok n)] 
         -> Either (Error n) 
-                  (Exp (C.AnTEC () n) n, Type n, Effect n, Closure n)   -- TODO: don't need to return TEC separately
+                  (Exp (C.AnTEC () n) n)
 
 loadExp profile modules sourceName toks'
  = goParse toks'
@@ -182,11 +182,11 @@ loadExp profile modules sourceName toks'
         goCheckType x
          = case C.checkExp config kenv tenv x of
                 Left err            -> Left  (ErrorCheckExp err)
-                Right (x', t, e, c) -> goCheckCompliance x' t e c
+                Right (x', _, _, _) -> goCheckCompliance x'
 
         -- Check that the module compiles with the language fragment.
-        goCheckCompliance x t e c
+        goCheckCompliance x 
          = case I.compliesWithEnvs profile kenv tenv x of
                 Just err  -> Left (ErrorCompliance err)
-                Nothing   -> Right (x, t, e, c)
+                Nothing   -> Right x
 

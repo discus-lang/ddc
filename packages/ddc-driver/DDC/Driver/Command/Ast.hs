@@ -42,7 +42,7 @@ cmdAstExp bundle source str
          = return ()
 
         -- Expression is well-typed.
-        goShow (Just (x, _tX, _effX, _cloX))
+        goShow (Just x)
          = let p = pretty x in
 	   putStrLn p
 	 
