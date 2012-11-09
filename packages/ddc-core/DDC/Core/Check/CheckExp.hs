@@ -27,7 +27,7 @@ import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env, KindEnv, TypeEnv)
-import DDC.Type.Check.Monad             (result, throw)
+import DDC.Control.Monad.Check          (throw, result)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T

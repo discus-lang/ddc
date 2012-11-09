@@ -20,13 +20,12 @@ Description:
 
 Library
   Build-Depends: 
-        base            == 4.5.*,
-        containers      == 0.4.*,
+        base            == 4.6.*,
+        containers      == 0.5.*,
         array           == 0.4.*,
-        transformers    == 0.2.*,
-        mtl             == 2.0.*,
+        transformers    == 0.3.*,
+        mtl             == 2.1.*,
         ddc-base        == 0.3.0.*,
-        ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*
 
   Exposed-modules:

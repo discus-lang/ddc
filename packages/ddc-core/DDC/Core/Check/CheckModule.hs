@@ -10,7 +10,7 @@ import DDC.Core.Check.Error
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
-import DDC.Type.Check.Monad     (result, throw)
+import DDC.Control.Monad.Check  (result, throw)
 import qualified DDC.Type.Check as T
 import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map

@@ -5,9 +5,9 @@ module DDC.Core.Lite.Convert.Base
 where
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import DDC.Core.Check                   (AnTEC(..))
-import qualified DDC.Type.Check.Monad   as G
-import qualified DDC.Core.Lite.Name     as L
+import DDC.Core.Check                           (AnTEC(..))
+import qualified DDC.Core.Lite.Name             as L
+import qualified DDC.Control.Monad.Check        as G
 
 
 -- | Conversion Monad

@@ -14,19 +14,19 @@ where
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
-import DDC.Core.Check.ErrorMessage      ()
+import DDC.Core.Check.ErrorMessage              ()
 import DDC.Type.DataDef
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
 import DDC.Type.Universe
-import DDC.Type.Sum                     as Sum
-import DDC.Type.Env                     (KindEnv, TypeEnv)
-import DDC.Type.Check.Monad             (result, throw)
-import DDC.Base.Pretty                  ()
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.Check         as T
-import qualified DDC.Type.Check.Monad   as G
-import qualified DDC.Core.Fragment      as F
+import DDC.Type.Sum                             as Sum
+import DDC.Type.Env                             (KindEnv, TypeEnv)
+import DDC.Control.Monad.Check                  (throw, result)
+import DDC.Base.Pretty                          ()
+import qualified DDC.Control.Monad.Check        as G
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Type.Check                 as T
+import qualified DDC.Core.Fragment              as F
 
 
 -- | Type checker monad. 

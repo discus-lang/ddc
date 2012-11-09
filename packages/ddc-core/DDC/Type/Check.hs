@@ -22,13 +22,13 @@ import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
 import Control.Monad
-import DDC.Type.Check.Monad             (throw, result)
-import DDC.Type.Pretty                  ()
-import DDC.Type.Env                     (KindEnv)
-import qualified DDC.Type.Sum           as TS
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.Check.Monad   as G
-import qualified Data.Map               as Map
+import DDC.Type.Pretty                   ()
+import DDC.Type.Env                      (KindEnv)
+import DDC.Control.Monad.Check           (throw, result)
+import qualified DDC.Control.Monad.Check as G
+import qualified DDC.Type.Sum            as TS
+import qualified DDC.Type.Env            as Env
+import qualified Data.Map                as Map
 
 
 -- | The type checker monad.

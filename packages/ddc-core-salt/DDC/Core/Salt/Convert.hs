@@ -19,13 +19,13 @@ import DDC.Core.Salt.Name
 import DDC.Core.Collect
 import DDC.Core.Predicates
 import DDC.Core.Compounds
-import DDC.Core.Module                  as C
+import DDC.Core.Module                          as C
 import DDC.Core.Exp
-import DDC.Type.Env                     (KindEnv, TypeEnv)
+import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
-import DDC.Type.Check.Monad             (throw, result)
-import qualified DDC.Type.Env           as Env
-import qualified Data.Map               as Map
+import DDC.Control.Monad.Check                  (throw, result)
+import qualified DDC.Type.Env                   as Env
+import qualified Data.Map                       as Map
 import Control.Monad
 import Data.Maybe
 

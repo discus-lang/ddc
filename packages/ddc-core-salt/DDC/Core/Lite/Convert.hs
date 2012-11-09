@@ -16,7 +16,7 @@ import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Type.Universe
 import DDC.Type.DataDef
-import DDC.Type.Check.Monad              (throw, result)
+import DDC.Control.Monad.Check           (throw, result)
 import DDC.Core.Check                    (AnTEC(..))
 import DDC.Type.Env                      (KindEnv, TypeEnv)
 import qualified DDC.Core.Lite.Name      as L

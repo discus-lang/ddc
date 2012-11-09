@@ -28,6 +28,8 @@ Library
         DDC.Base.Parser
         DDC.Base.Pretty
 
+        DDC.Control.Monad.Check
+
         DDC.Data.Canned
         DDC.Data.SourcePos
         DDC.Data.Token

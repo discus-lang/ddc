@@ -6,9 +6,9 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.CheckWitness
 import DDC.Core.DaCon
 import DDC.Core.Exp
-import DDC.Type.Check.Monad     (throw)
 import DDC.Type.Compounds
 import DDC.Type.DataDef
+import DDC.Control.Monad.Check  (throw)
 import Control.Monad
 import Prelude                  as L
 import qualified Data.Map       as Map

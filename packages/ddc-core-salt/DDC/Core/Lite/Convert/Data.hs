@@ -12,7 +12,7 @@ import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.DataDef
-import DDC.Type.Check.Monad              (throw)
+import DDC.Control.Monad.Check           (throw)
 import qualified DDC.Core.Lite.Layout    as L
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as O

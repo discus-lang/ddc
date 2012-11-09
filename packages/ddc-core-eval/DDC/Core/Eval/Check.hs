@@ -10,12 +10,13 @@ import DDC.Core.Compounds
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Maybe
-import DDC.Type.Check.Monad             (throw, result)
-import Data.Set                         (Set)
-import qualified DDC.Type.Check.Monad   as G
-import qualified Data.Set               as Set
+import Data.Set                                 (Set)
+import DDC.Control.Monad.Check                  (throw, result)
+import qualified DDC.Control.Monad.Check        as G
+import qualified Data.Set                       as Set
 
 type CheckM a x = G.CheckM (Error a) x
+
 
 -- | Check for conflicting store capabilities in the program.
 checkCapsX :: Exp a Name -> Maybe (Error a)
