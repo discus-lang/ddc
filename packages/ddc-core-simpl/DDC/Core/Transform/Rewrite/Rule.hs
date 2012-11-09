@@ -11,9 +11,9 @@ import DDC.Base.Pretty
 import DDC.Core.Pretty                          ()
 import DDC.Type.Pretty                          ()
 import DDC.Core.Transform.Rewrite.Error
-import DDC.Core.Collect.Support
+import DDC.Core.Collect
 import qualified DDC.Core.Analysis.Usage        as U
-import qualified DDC.Core.Check.CheckExp        as C
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.Check                 as T

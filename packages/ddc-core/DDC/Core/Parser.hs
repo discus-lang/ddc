@@ -7,15 +7,33 @@ module DDC.Core.Parser
 
           -- * Expressions
         , pExp
+        , pExpApp
         , pExpAtom
 
           -- * Types
         , pType
+        , pTypeApp
         , pTypeAtom
 
           -- * Witnesses
         , pWitness
-        , pWitnessAtom)
+        , pWitnessApp
+        , pWitnessAtom
+
+          -- * Constructors
+        , pCon
+        , pLit
+
+          -- * Variables
+        , pBinder
+        , pIndex
+        , pVar
+        , pName
+
+          -- * Raw Tokens
+        , pTok
+        , pTokAs)
+
 where
 import DDC.Core.Parser.Base
 import DDC.Core.Parser.Witness

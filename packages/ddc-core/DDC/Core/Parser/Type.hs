@@ -1,10 +1,13 @@
 
 -- | Parser for type expressions.
 module DDC.Core.Parser.Type
-        ( pType, pTypeAtom, pTypeApp
+        ( pType
+        , pTypeAtom
+        , pTypeApp
         , pBinder
         , pIndex
-        , pTok, pTokAs)
+        , pTok
+        , pTokAs)
 where
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens   

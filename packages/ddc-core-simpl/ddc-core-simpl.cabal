@@ -15,16 +15,18 @@ Description:    Disciple Core language simplifying code transformations.
 
 Library
   Build-Depends: 
-        base            == 4.5.*,
-        containers      == 0.4.*,
-        array           >= 0.3   && < 0.5,
-        transformers    == 0.2.*,
-        mtl             == 2.0.*,
+        base            == 4.6.*,
+        containers      == 0.5.*,
+        array           == 0.4.*,
+        transformers    == 0.3.*,
+        mtl             == 2.1.*,
         ddc-base        == 0.3.0.*,
-        ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Core.Analysis.Arity
+        DDC.Core.Analysis.Usage
+        DDC.Core.Simplifier.Recipe
         DDC.Core.Transform.Rewrite.Disjoint
         DDC.Core.Transform.Rewrite.Env
         DDC.Core.Transform.Rewrite.Error
@@ -33,20 +35,28 @@ Library
         DDC.Core.Transform.Rewrite.Rule
         DDC.Core.Transform.AnonymizeX
         DDC.Core.Transform.Beta
+        DDC.Core.Transform.Bubble
+        DDC.Core.Transform.DeadCode
+        DDC.Core.Transform.Elaborate
         DDC.Core.Transform.Flatten
+        DDC.Core.Transform.Forward
+        DDC.Core.Transform.Inline
         DDC.Core.Transform.Namify
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Snip
         DDC.Core.Transform.TransformX
         DDC.Core.Simplifier
-        DDC.Core.Simplifier.Recipie
+
+        DDC.Type.Transform.Alpha
         DDC.Type.Transform.AnonymizeT
-        DDC.Type.Transform.Rename
 
   Other-modules:
         DDC.Core.Simplifier.Apply
         DDC.Core.Simplifier.Base
         DDC.Core.Simplifier.Parser
+
+        DDC.Core.Transform.Inline.Templates
+
 
   GHC-options:
         -Werror
@@ -64,3 +74,5 @@ Library
         FlexibleContexts
         FlexibleInstances
         RankNTypes
+        ExistentialQuantification
+        DeriveDataTypeable

@@ -2,6 +2,7 @@
 -- | Core language parser.
 module DDC.Core.Parser.Exp
         ( pExp
+        , pExpApp
         , pExpAtom
         , pLets
         , pType

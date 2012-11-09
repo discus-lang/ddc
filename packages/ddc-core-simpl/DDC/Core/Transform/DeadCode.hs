@@ -7,7 +7,7 @@ import DDC.Core.Analysis.Usage
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Type.Env
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate

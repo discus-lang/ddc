@@ -10,7 +10,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Snip

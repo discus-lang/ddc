@@ -1,10 +1,11 @@
 module DDC.Core.Transform.Rewrite.Error
-        (Error(..), Side(..))
+        ( Error (..)
+        , Side  (..))
 where
 import DDC.Core.Exp
-import DDC.Core.Check.ErrorMessage()
+import DDC.Core.Check                   ()
 import DDC.Type.Pretty
-import qualified DDC.Core.Check.Error as C
+import qualified DDC.Core.Check         as C
 
 
 -- | What can go wrong when checking a rewrite rule.

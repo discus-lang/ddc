@@ -1,6 +1,7 @@
 
 module DDC.Core.Parser.Witness
         ( pWitness
+        , pWitnessApp
         , pWitnessAtom) 
 where
 import DDC.Core.Parser.Type
