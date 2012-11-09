@@ -191,7 +191,8 @@ typeOfPrimName nn
 
 -- | Take the arity of a primitive name.
 ---
--- TODO: determine this from the type.
+--   We could take this from the type of the primitive instead, 
+--   but doing it this way is easy enough.
 arityOfName :: Name -> Maybe Int
 arityOfName n
  = case n of

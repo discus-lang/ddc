@@ -6,6 +6,7 @@
 --   evaluator will have an asymptotic complexity much worse than if they were
 --   compiled. This evaluator is intended for experimenting with the language
 --   semantics, and not running actual programs.
+--
 module DDC.Core.Eval
         ( evalProfile
         , StepResult    (..)

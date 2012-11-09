@@ -59,4 +59,4 @@ Library
         ScopedTypeVariables
         StandaloneDeriving
         DoAndIfThenElse
-        
+        DeriveDataTypeable

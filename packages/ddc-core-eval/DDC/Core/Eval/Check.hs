@@ -1,4 +1,5 @@
 
+-- | Check for conflicting store capabilities in the initial program.
 module DDC.Core.Eval.Check 
         ( checkCapsX
         , Error(..))
@@ -15,7 +16,10 @@ import DDC.Control.Monad.Check                  (throw, result)
 import qualified DDC.Control.Monad.Check        as G
 import qualified Data.Set                       as Set
 
-type CheckM a x = G.CheckM (Error a) x
+
+-- | Capability Checking monad.
+type CheckM a x 
+        = G.CheckM (Error a) x
 
 
 -- | Check for conflicting store capabilities in the program.
@@ -29,6 +33,7 @@ checkCapsX xx
 
 
 -- CapSet --------------------------------------------------------------------
+-- | Set of used capabilities.
 data CapSet 
         = CapSet
         { capsGlobal    :: Set Rgn 
@@ -38,6 +43,7 @@ data CapSet
         , capsLazy      :: Set Rgn
         , capsManifest  :: Set Rgn }
         deriving Show
+
 
 -- | An empty capability set
 emptyCapSet :: CapSet
@@ -74,6 +80,8 @@ mustInsertCap ww caps
  | otherwise
  = error "mustInsertCap: not a capability"
 
+
+-- | Take a region name from a witness argument.
 takeNameRgn :: Witness Name -> Maybe Rgn
 takeNameRgn (WType (TCon (TyConBound (UPrim (NameRgn r) _) _))) = Just r
 takeNameRgn _                                                   = Nothing

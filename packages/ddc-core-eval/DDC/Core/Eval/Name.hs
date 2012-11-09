@@ -249,6 +249,7 @@ readName str@(c:rest)
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
+--
 lexModuleString :: String -> Int -> String -> [Token (Tok Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
@@ -261,6 +262,7 @@ lexModuleString sourceName lineStart str
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
+--
 lexExpString :: String -> Int -> String -> [Token (Tok Name)]
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str

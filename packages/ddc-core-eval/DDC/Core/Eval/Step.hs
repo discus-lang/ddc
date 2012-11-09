@@ -17,10 +17,10 @@ import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
-import DDC.Core.Fragment.Profile
 import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Exp
+import qualified DDC.Core.Fragment      as C
 import qualified Data.Set               as Set
 
 
@@ -41,7 +41,7 @@ data StepResult
         | StepStuck
 
         -- | Expression is stuck, and we know for sure it's mistyped.
-        | StepStuckMistyped (Error () Name)
+        | StepMistyped  (Error () Name)
         deriving (Show)
 
 
@@ -94,10 +94,10 @@ step store xx
  , isLambdaX xp
  = case typeOfExp 
                 (configOfProfile  evalProfile) 
-                (profilePrimKinds evalProfile)
-                (profilePrimTypes evalProfile)
+                (C.profilePrimKinds evalProfile)
+                (C.profilePrimTypes evalProfile)
                 xp 
-   of   Left err -> StepStuckMistyped err
+   of   Left err -> StepMistyped err
         Right t   
          -> let Just (bs, xBody) = takeXLamFlags xp
                 (store', l)      = allocBind (Rgn 0) t (SLams bs xBody) store
@@ -252,11 +252,11 @@ step store (XLet _ (LLet (LetLazy _w) b x1) x2)
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
  = case typeOfExp (configOfProfile  evalProfile)
-                  (profilePrimKinds evalProfile)
-                  (profilePrimTypes evalProfile)
+                  (C.profilePrimKinds evalProfile)
+                  (C.profilePrimTypes evalProfile)
                   x1 
    of
-        Left err -> StepStuckMistyped err
+        Left err -> StepMistyped err
         Right t1
          -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
                 x1'           = xLoc l t1
@@ -482,6 +482,7 @@ isValue store xx
 --   These are all the values, and locations that point to thunks.
 --
 --   Weak values can be progressed with `force`, but not `step`.
+--
 isWeakValue :: Store -> Exp a Name -> Bool
 isWeakValue store xx
         = isSomeValue True store xx

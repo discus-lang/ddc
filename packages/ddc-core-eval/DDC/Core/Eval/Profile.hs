@@ -3,7 +3,7 @@
 module DDC.Core.Eval.Profile
         (evalProfile)
 where
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 
@@ -20,6 +20,7 @@ evalProfile
         , profileTypeIsUnboxed          = const False }
 
 
+-- | Language features used by the eval fragment.
 evalFeatures :: Features
 evalFeatures 
         = Features

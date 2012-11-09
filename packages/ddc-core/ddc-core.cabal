@@ -107,7 +107,6 @@ Library
 
         DDC.Type.Collect.FreeT
 
-        DDC.Type.Check.Monad
         DDC.Type.Check.CheckCon
         DDC.Type.Check.Error
         DDC.Type.Check.ErrorMessage
