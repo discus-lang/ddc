@@ -11,7 +11,7 @@ import DDC.Core.Exp
 import DDC.Type.Collect
 import DDC.Type.Compounds
 import Control.Monad
-import DDC.Type.Env             (Env)
+import DDC.Type.Env             (Env, KindEnv, TypeEnv)
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 import Control.Monad.State.Strict
@@ -49,9 +49,9 @@ makeNamifier new env
 -- | Namify a thing, 
 --   not reusing names already in the program.
 namifyUnique
-        :: (Ord n, Show n, Namify c, BindStruct c)
-        => (Env n -> Namifier s n)
-        -> (Env n -> Namifier s n)
+        :: (Ord n, Namify c, BindStruct c)
+        => (KindEnv n -> Namifier s n)  -- ^ Make a namifier for level-1 names.
+        -> (TypeEnv n -> Namifier s n)  -- ^ Make a namifier for level-0 names.
         -> c n
         -> State s (c n)
 
@@ -65,7 +65,7 @@ namifyUnique mkNamK mkNamT xx
 -- Namify ---------------------------------------------------------------------
 class Namify (c :: * -> *) where
  -- | Rewrite anonymous binders to named binders in a thing.
- namify :: (Ord n, Show n)
+ namify :: Ord n
         => Namifier s n         -- ^ Namifier for type names (level-1)
         -> Namifier s n         -- ^ Namifier for exp names (level-0)
         -> c n                  -- ^ Rewrite binders in this thing.
@@ -135,7 +135,7 @@ instance Namify (Exp a) where
                 return $ XLam a b' x'
 
         XApp  a x1 x2   
-         -> liftM3 XApp     (return a) (down x1)  (down x2)
+         ->     liftM3 XApp     (return a) (down x1)  (down x2)
 
         XLet  a (LLet mode b x1) x2
          -> do  mode'           <- down mode
@@ -197,10 +197,9 @@ instance Namify (Cast a) where
 
 
 -- | Rewrite level-1 anonymous binders.
-rewriteT :: Show n
-        => Namifier s n
-        -> Bound n
-        -> State s (Bound n)
+rewriteT :: Namifier s n
+         -> Bound n
+         -> State s (Bound n)
 
 rewriteT tnam u
  = case u of
@@ -213,11 +212,11 @@ rewriteT tnam u
 
 
 -- | Rewrite level-0 anonymous binders.
-rewriteX :: (Show n, Ord n)
-        => Namifier s n
-        -> Namifier s n
-        -> Bound n
-        -> State s (Bound n)
+rewriteX :: Ord n
+         => Namifier s n
+         -> Namifier s n
+         -> Bound n
+         -> State s (Bound n)
 
 rewriteX _tnam xnam u
  = case u of
@@ -235,7 +234,7 @@ rewriteX _tnam xnam u
 
 -- | Push a level-0 binder on the stack.
 --   When we do this we also rewrite any indices in its type annotation.
-pushX   :: (Ord n, Show n)
+pushX   :: Ord n
         => Namifier s n
         -> Namifier s n
         -> Bind n
@@ -249,7 +248,7 @@ pushX tnam xnam b
 
 -- | Push some level-0 binders on the stack.
 --   When we do this we also rewrite their type annotations.
-pushXs   :: (Ord n, Show n)
+pushXs  :: Ord n
         => Namifier s n
         -> Namifier s n
         -> [Bind n]
@@ -278,9 +277,9 @@ pushTs  :: Ord n
         -> State s (Namifier s n, [Bind n])
 pushTs  tnam [] = return (tnam, [])
 pushTs  tnam (b:bs)
- = do (tnam1, b')  <- pushT  tnam  b
-      (tnam2, bs') <- pushTs tnam1 bs
-      return (tnam2, b' : bs')
+ = do   (tnam1, b')  <- pushT  tnam  b
+        (tnam2, bs') <- pushTs tnam1 bs
+        return (tnam2, b' : bs')
         
 
 -- | Rewrite an anonymous binder and push it on the stack.
@@ -294,8 +293,8 @@ push nam b
         BAnon t
          -> do  n       <- namifierNew nam (namifierEnv nam) b
                 let b'  = BName n t
-                return  ( nam   { namifierStack = b' : namifierStack nam 
-                                , namifierEnv   = Env.extend b (namifierEnv nam) }
+                return  ( nam { namifierStack = b' : namifierStack nam 
+                              , namifierEnv   = Env.extend b (namifierEnv nam) }
                         , b' )
-        _ ->    return  ( nam   { namifierEnv   = Env.extend b (namifierEnv nam) }
+        _ ->    return  ( nam { namifierEnv   = Env.extend b (namifierEnv nam) }
                         , b)
