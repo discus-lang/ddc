@@ -2,7 +2,8 @@
 -- | Rewrite all binders to anonymous deBruijn form.
 module DDC.Core.Transform.AnonymizeX
         ( anonymizeX
-        , AnonymizeX(..))
+        , AnonymizeX(..)
+        , pushAnonymizeBindX)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -129,12 +130,12 @@ instance AnonymizeX Bind where
 
 
 -- Push ----------------------------------------------------------------------
--- Push a binding occurrence of a type variable on the stack, 
---  returning the anonyized binding occurrence and the new stack.
+-- | Push a binding occurrence of a level-0 on the stack, 
+--   returning the anonyized binding occurrence and the new stack.
 pushAnonymizeBindX 
         :: Ord n 
-        => [Bind n]     -- ^ Stack for Spec binders (kind environment)
-        -> [Bind n]     -- ^ Stack for Value and Witness binders (type environment)
+        => [Bind n]     -- ^ Stack for Spec binders (level-1)
+        -> [Bind n]     -- ^ Stack for Value and Witness binders (level-0)
         -> Bind n 
         -> ([Bind n], Bind n)
 
@@ -150,13 +151,13 @@ pushAnonymizeBindX kstack tstack b
    in   (tstack', BAnon t')
 
 
--- Push a binding occurrence on the stack, 
---  returning the anonyized binding occurrence and the new stack.
--- Used in the definition of `anonymize`.
+-- | Push a binding occurrence on the stack, 
+--   returning the anonyized binding occurrence and the new stack.
+--  Used in the definition of `anonymize`.
 pushAnonymizeBindXs 
         :: Ord n 
-        => [Bind n]     -- ^ Stack for Spec binders (kind environment)
-        -> [Bind n]     -- ^ Stack for Value and Witness binders (type environment)
+        => [Bind n]     -- ^ Stack for Spec binders (level-1)
+        -> [Bind n]     -- ^ Stack for Value and Witness binders (level-0)
         -> [Bind n] 
         -> ([Bind n], [Bind n])
 
