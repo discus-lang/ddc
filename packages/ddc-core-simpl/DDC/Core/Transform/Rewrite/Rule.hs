@@ -162,53 +162,71 @@ checkRewriteRule
               (RewriteRule (C.AnTEC a n) n)
 
 checkRewriteRule config kenv tenv
-    (RewriteRule bs cs lhs hole rhs _ _ _)
- = do   let (kenv',tenv',bs')  = extendBinds bs kenv tenv
-        let cs'                = map (S.spreadT kenv') cs
+        (RewriteRule bs cs lhs hole rhs _ _ _)
+ = do   
+        -- Extend the environments with variables bound by the rule.
+        let (kenv', tenv', bs')  = extendBinds bs kenv tenv
+        let cs'                  = map (S.spreadT kenv') cs
 
         -- Check that all constraints are valid types.
         mapM_ (\c -> checkConstraint config kenv' c ErrorBadConstraint) cs'
 
         -- Typecheck, spread and annotate with type information
-        (lhs',_,_,_)    <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
+        (lhs', _, _, _)
+                <- check config kenv' tenv' lhs 
+                        (ErrorTypeCheck Lhs)
 
         -- If the extra left part is there, typecheck and annotate it
         hole' <- case hole of
-                 Just h  -> do
-                    (h',_,_,_) <- check config kenv' tenv' h (ErrorTypeCheck Lhs)
-                    return $ Just h'
-                 Nothing -> return Nothing
+                Just h  
+                 -> do  (h',_,_,_)  <- check config kenv' tenv' h 
+                                        (ErrorTypeCheck Lhs)
+                        return $ Just h'
 
-        -- Build application from lhs and the hole so we can check its type against rhs
-        let lhs_full = maybe lhs
-                       (XApp undefined lhs)
-                       hole
+                Nothing -> return Nothing
 
-        (_   ,tl,el,cl) <- check config kenv' tenv' lhs_full (ErrorTypeCheck Lhs)
+        -- Build application from lhs and the hole so we can check its
+        -- type against rhs
+        let lhs_full = maybe lhs (XApp undefined lhs) hole
 
-        (rhs',tr,er,cr) <- check config kenv' tenv' rhs      (ErrorTypeCheck Rhs)
+        -- Check the full left hand side
+        (_   , tl, el, cl)
+                <- check config kenv' tenv' lhs_full
+                        (ErrorTypeCheck Lhs)
 
-        let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
+        -- Check the full right hand side
+        (rhs', tr, er, cr)
+                <- check config kenv' tenv' rhs 
+                        (ErrorTypeCheck Rhs)
+
 
         -- Check that types are equivalent, or error
+        let err = ErrorTypeConflict (tl, el, cl) (tr, er, cr)
         equiv tl tr err
 
-        -- Error if right's effect is bigger, or add a weaken cast if necessary
-        e <- makeEffectWeakening  T.kEffect el er err
-        c <- makeClosureWeakening bs lhs_full rhs
+        -- of the right, and add a weakeff cast if nessesary.
+        eff_weak        <- makeEffectWeakening  T.kEffect el er err
 
-        -- Make sure all binders are in left-hand side
+        -- Check that the closure of the left is smaller than that
+        -- of the right, and add a weakclo cast if nessesary.
+        clo_weak        <- makeClosureWeakening bs lhs_full rhs
+
+        -- Check that all the bound variables are mentioned
+        -- in the left-hand side.
         checkUnmentionedBinders bs' lhs_full
 
-        -- No BAnons allowed
+        -- No BAnons allowed.
+        --  We don't handle deBruijn binders.
         checkAnonymousBinders bs'
 
-        -- No lets or lambdas in left-hand side
+        -- No lets or lambdas in left-hand side.
+        --  We can't match against these.
         checkValidPattern lhs_full
 
-        -- Count how many times each binder is used in rhs
-        bs'' <- countBinderUsage bs' rhs
+        -- Count how many times each binder is used in the right-hand side.
+        bs''    <- countBinderUsage bs' rhs
 
+        -- Get the free variables of the rule.
         let binds     = Set.fromList
                       $ Maybe.catMaybes
                       $ map (T.takeSubstBoundOfBind . snd) bs
@@ -217,13 +235,11 @@ checkRewriteRule config kenv tenv
                       $ (C.freeX T.empty lhs_full `Set.union` C.freeX T.empty rhs)
                       `Set.difference` binds
 
-        let rule      = RewriteRule 
-                                bs'' cs' 
-                                lhs' hole' rhs'
-                                e c
-                                freeVars
-
-        return  rule
+        return  $ RewriteRule 
+                        bs'' cs' 
+                        lhs' hole' rhs'
+                        eff_weak clo_weak
+                        freeVars
 
 
 -- | Extend kind and type environments with a rule's binders.
@@ -232,9 +248,9 @@ checkRewriteRule config kenv tenv
 extendBinds 
         :: Ord n 
         => [(BindMode, Bind n)] 
-        -> T.Env n 
-        -> T.Env n 
-        -> (T.Env n, T.Env n, [(BindMode, Bind n)])
+        -> T.KindEnv n 
+        -> T.TypeEnv n 
+        -> (T.KindEnv n, T.TypeEnv n, [(BindMode, Bind n)])
 
 extendBinds binds kenv tenv
  = go binds kenv tenv []
