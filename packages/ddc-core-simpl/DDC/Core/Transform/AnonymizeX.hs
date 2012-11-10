@@ -1,4 +1,5 @@
 
+-- | Rewrite all binders to anonymous deBruijn form.
 module DDC.Core.Transform.AnonymizeX
         ( anonymizeX
         , AnonymizeX(..))
@@ -11,7 +12,7 @@ import Control.Monad
 import Data.List
 
 
--- | Rewrite all binders in a thing to be of anonymous form.
+-- | Rewrite all binders in a thing to anonymous form.
 anonymizeX :: (Ord n, AnonymizeX c) => c n -> c n
 anonymizeX xx
         = anonymizeWithX [] [] xx
@@ -40,13 +41,9 @@ instance AnonymizeX (Exp a) where
  anonymizeWithX kstack tstack xx
   = let down = anonymizeWithX kstack tstack
     in case xx of
-        -- The types on prims and cons are guaranteed to be closed,
-        -- so there is no need to erase them.
         XVar _ UPrim{}  -> xx
         XCon{}          -> xx      
 
-        -- Erase types on variables because they might
-        -- have free variables.
         XVar a u@(UName{})       
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
          -> XVar a (UIx ix)
@@ -129,6 +126,7 @@ instance AnonymizeX Bind where
  anonymizeWithX kstack _tstack bb
   = let t'      = anonymizeWithT kstack $ typeOfBind bb
     in  replaceTypeOfBind t' bb 
+
 
 -- Push ----------------------------------------------------------------------
 -- Push a binding occurrence of a type variable on the stack, 

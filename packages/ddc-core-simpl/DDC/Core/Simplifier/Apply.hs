@@ -227,7 +227,7 @@ applyTransformX profile kenv tenv spec xx
         Inline  getDef    -> res    $ inline getDef xx
         Beta              -> return $ betaReduce False xx
         BetaLets          -> return $ betaReduce True  xx
-        DeadCode          -> return $ deadCode profile kenv tenv xx
+        DeadCode          -> return $ deadCodeX  profile kenv tenv xx
         Forward           -> return $ forwardX xx
         Bubble            -> res    $ bubbleX kenv tenv xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res

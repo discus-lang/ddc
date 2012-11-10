@@ -1,23 +1,31 @@
+
+-- | Erase contained let-bindings that have no uses.
+--
+--   Contained bindings are ones that do not perform effects that are
+--   visible to anything in the calling context. This includes allocation
+--   and read effects, but not writes or any globally visible effects.
+--
 module DDC.Core.Transform.DeadCode
-    ( deadCode
-    , deadCodeModule )
+        ( DeadCodeInfo  (..)
+        , deadCodeModule
+        , deadCodeX)
 where
-import DDC.Base.Pretty
 import DDC.Core.Analysis.Usage
-import DDC.Core.Check
-import DDC.Core.Exp
-import DDC.Type.Env
-import DDC.Core.Fragment
-import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.TransformX
-import qualified Data.Map       as Map
-import qualified Data.Set       as Set
-import Control.Monad.Writer	(Writer, runWriter, tell)
-import Data.Monoid		(Monoid, mempty, mappend)
-import Data.Typeable		(Typeable)
-import qualified DDC.Core.Collect			as C
+import DDC.Core.Fragment
+import DDC.Core.Check
+import DDC.Core.Module
+import DDC.Core.Exp
+import DDC.Type.Env
+import DDC.Base.Pretty
+import Data.Typeable
+import Control.Monad.Writer                     (Writer, runWriter, tell)
+import Data.Monoid                              (Monoid, mempty, mappend)
+import qualified Data.Map                               as Map
+import qualified Data.Set                               as Set
+import qualified DDC.Core.Collect                       as C
 import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Core.Transform.Trim               	as Trim
 import qualified DDC.Type.Compounds			as T
@@ -25,112 +33,156 @@ import qualified DDC.Type.Env				as T
 import qualified DDC.Type.Sum				as TS
 import qualified DDC.Type.Transform.Crush		as T
 
+
+-------------------------------------------------------------------------------
+-- | A summary of what the dead-code transform did.
+data DeadCodeInfo
+    = DeadCodeInfo
+    { -- | How many let-bindings we erased.
+      infoBindingsErased  :: Int }
+    deriving Typeable
+
+
+instance Pretty DeadCodeInfo where
+ ppr (DeadCodeInfo remo)
+  =  text "DeadCode:"
+  <$> indent 4 (vcat
+      [ text "Removed:        " <> int remo])
+
+
+instance Monoid DeadCodeInfo where
+ mempty = DeadCodeInfo 0
+
+ mappend (DeadCodeInfo r1) (DeadCodeInfo r2)
+        = DeadCodeInfo (r1 + r2)
+
+
+-------------------------------------------------------------------------------
+-- | Erase pure let-bindings in a module that have no uses.
 deadCodeModule
 	:: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n
-	-> Env n		-- ^ Kind env
-	-> Env n		-- ^ Type env
+	=> Profile n           -- ^ Profile of the language we're in
+	-> KindEnv n           -- ^ Kind environment
+	-> TypeEnv n           -- ^ Type environment
 	-> Module a n
 	-> Module a n
-deadCodeModule profile kenv tenv mm
- = mm { moduleBody = result $ deadCode profile kenv tenv $ moduleBody mm }
 
-deadCode
+deadCodeModule profile kenv tenv mm
+ = mm { moduleBody      = result 
+                        $ deadCodeX profile kenv tenv 
+                        $ moduleBody mm }
+
+
+-- | Erase pure let-bindings in an expression that have no uses.
+deadCodeX
 	:: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n
-	-> Env n		-- ^ Kind env
-	-> Env n		-- ^ Type env
+	=> Profile n           -- ^ Profile of the language we're in
+	-> KindEnv n           -- ^ Kind environment
+	-> TypeEnv n           -- ^ Type environment
 	-> Exp a n
 	-> TransformResult (Exp a n)
-deadCode profile kenv tenv xx
- = let (xx',info)
-           = transformTypeUsage profile kenv tenv
-	     (transformUpMX deadCodeTrans kenv tenv)
-	     xx
+
+deadCodeX profile kenv tenv xx
+ = let  
+        (xx', info)
+                = transformTypeUsage profile kenv tenv
+	               (transformUpMX deadCodeTrans kenv tenv)
+                       xx
+
+        progress (DeadCodeInfo r) 
+                = r > 0
+
    in TransformResult
-	{ result	 = xx'
+        { result	 = xx'
         , resultAgain    = progress info
-	, resultProgress = progress info
-	, resultInfo     = TransformInfo info }
- where
-  progress (DeadCodeInfo r) = r > 0
+        , resultProgress = progress info
+        , resultInfo     = TransformInfo info }
 
 
+-- The dead-code transform proper needs to have every expression annotated
+-- with its type an effect, as well the variable usage map.
+--
+-- We generate these annotations here then pass the result off to
+-- deadCodeTrans to actually erase dead bindings.
+--
 transformTypeUsage profile kenv tenv trans xx
  = case checkExp (configOfProfile profile) kenv tenv xx of
-    Right (xx1,_,_,_) ->
-     let xx2            = usageX xx1
-         (x', info)     = runWriter (trans xx2)
-         x''            = reannotate (\(_, AnTEC { annotTail = a}) -> a) x'
-     in  (x'', info)
+        Right (xx1, _, _,_) 
+         -> let xx2        = usageX xx1
+                (x', info) = runWriter (trans xx2)
+                x''        = reannotate (\(_, AnTEC { annotTail = a }) -> a) x'
+            in  (x'', info)
 
-     -- TODO: There was an error typechecking
-    Left err ->
-     error ("Unable to typecheck in DeadCode(!?)"
-	++ "\n"
-	++ renderIndent (ppr err))
-
+        Left err 
+         -> error $  renderIndent
+         $  vcat [ text "DDC.Core.Transform.DeadCode: core type error"
+                 , ppr err ]
 
 
-type Annot a n = (UsedMap n, AnTEC a n)
+-------------------------------------------------------------------------------
+-- | Annotations used by the dead-code trasnform.
+type Annot a n 
+        = (UsedMap n, AnTEC a n)
 
 
+-- | Apply the dead-code transform to an annotated expression.
 deadCodeTrans
 	:: (Show a, Show n, Ord n, Pretty n)
-	=> Env n
-	-> Env n
+	=> KindEnv n
+	-> TypeEnv n
 	-> Exp (Annot a n) n
-	-> Writer DeadCodeInfo (Exp (Annot a n) n)
+	-> Writer DeadCodeInfo 
+                 (Exp (Annot a n) n)
+
 deadCodeTrans _ _ xx
  = case xx of
-    XLet a@(UsedMap um, antec) (LLet _mode b x1) x2
-     | isUnused b um
-     , isDead   $ annotEffect antec
-     -> do
-	-- We still need to substitute value into casts
-	let x2' = transformUpX' Trim.trimX $ S.substituteXX b x1 x2
-	tell mempty{infoRemoved = 1}
-	return
-	  $ XCast a (CastWeakenEffect $ T.crushEffect $ annotEffect antec)
-	  $ XCast a (weakClo a x1)
-	  $ x2'
+        XLet a@(usedMap, antec) (LLet _mode b x1) x2
+         | isUnusedBind b usedMap
+         , isContainedEffect $ annotEffect antec
+         -> do      
+                -- We still need to substitute value into casts
+                let x2' = transformUpX' Trim.trimX $ S.substituteXX b x1 x2
 
-    _ -> return xx
+                -- Record that we've erased a binding.
+                tell mempty {infoBindingsErased = 1}
+
+                -- 
+                return $ XCast a (weakEff antec)
+                       $ XCast a (weakClo a x1)
+                       $ x2'
+
+        _ -> return xx
 
  where
-    weakClo a x1 = CastWeakenClosure
-                 $ Trim.trimClosures a
-                 ( (map (XType . TVar)
-                  $ Set.toList
-                  $ C.freeT T.empty x1)
+        weakEff antec
+         = CastWeakenEffect
+         $ T.crushEffect
+         $ annotEffect antec
+
+        weakClo a x1 
+         = CastWeakenClosure
+         $ Trim.trimClosures a
+                (  (map (XType . TVar)
+                        $ Set.toList
+                        $ C.freeT T.empty x1)
                 ++ (map (XVar a)
-                  $ Set.toList
-                  $ C.freeX T.empty x1) )
-
-    sumList (TSum ts) = TS.toList ts
-    sumList tt	      = [tt]
+                        $ Set.toList
+                          $ C.freeX T.empty x1))
 
 
-    isUnused (BName n _) um
-     = case Map.lookup n um of
-	Just useds -> filterUsedInCasts useds == []
-	Nothing	   -> True
+-- | Check whether this binder has no uses, 
+--   not including weakclo casts, beause we'll substitute the bound
+--   expression directly into those.
+isUnusedBind :: Ord n => Bind n -> UsedMap n -> Bool
+isUnusedBind bb (UsedMap um)
+ = case bb of
+        BName n _
+         -> case Map.lookup n um of
+                Just useds -> filterUsedInCasts useds == []
+        	Nothing	   -> True
 
-    isUnused (BNone _) _ = True
-    isUnused _	   _     = False
-
-    isDead eff = all ok (map T.takeTApps $ sumList $ T.crushEffect eff)
-    ok (c:_args)
-     = case c of
-	TCon (TyConSpec TcConAlloc)	-> True
-	TCon (TyConSpec TcConDeepAlloc) -> True
-	TCon (TyConSpec TcConRead)      -> True
-	TCon (TyConSpec TcConHeadRead)  -> True
-	TCon (TyConSpec TcConDeepRead)  -> True
-	-- writes are bad, variables are bad
-	_				-> False
-
-    ok [] = False
+        BNone _ -> True
+        _       -> False
 
 
 filterUsedInCasts :: [Used] -> [Used]
@@ -139,23 +191,27 @@ filterUsedInCasts = filter notCast
         notCast _               = True
 
 
--- | Summary
-data DeadCodeInfo
-    = DeadCodeInfo
-    { infoRemoved  :: Int }
-    deriving Typeable
+-- | A contained effect is one that is not visible to anything else
+--   in the context. This is allocation and read effects, which are
+--   not visible from outside the computation performing the effect. 
+isContainedEffect :: Ord n => Effect n -> Bool
+isContainedEffect eff 
+ = all contained
+        $ map T.takeTApps 
+        $ sumList 
+        $ T.crushEffect eff
+ where
+        contained (c : _args)
+         = case c of
+                TCon (TyConSpec TcConAlloc)	-> True
+        	TCon (TyConSpec TcConDeepAlloc) -> True
+        	TCon (TyConSpec TcConRead)      -> True
+                TCon (TyConSpec TcConHeadRead)  -> True
+                TCon (TyConSpec TcConDeepRead)  -> True
+        	_				-> False
 
+        contained [] = False
 
-instance Pretty DeadCodeInfo where
- ppr (DeadCodeInfo remo)
-  =  text "DeadCode:"
-  <$> indent 4 (vcat
-      [ text "Removed:        "	<> int remo])
-
-
-instance Monoid DeadCodeInfo where
- mempty = DeadCodeInfo 0
- mappend (DeadCodeInfo r1)
-	 (DeadCodeInfo r2)
-  = DeadCodeInfo (r1+r2)
+        sumList (TSum ts) = TS.toList ts
+        sumList tt            = [tt]
 

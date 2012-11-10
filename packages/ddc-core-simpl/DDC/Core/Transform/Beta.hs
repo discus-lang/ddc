@@ -1,6 +1,9 @@
 
+-- | Beta-reduce applications of a explicit lambda abstractions 
+--   to variables and values.
 module DDC.Core.Transform.Beta
-        (betaReduce)
+        ( BetaReduceInfo(..)
+        , betaReduce)
 where
 import DDC.Base.Pretty
 import DDC.Core.Collect
@@ -10,22 +13,68 @@ import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
-import Control.Monad.Writer	(Writer, runWriter, tell)
-import Data.Monoid		(Monoid, mempty, mappend)
-import Data.Typeable		(Typeable)
+import Control.Monad.Writer	        (Writer, runWriter, tell)
+import Data.Monoid		        (Monoid, mempty, mappend)
+import Data.Typeable		        (Typeable)
+import DDC.Type.Env                     (Env)
 import DDC.Type.Compounds
-import DDC.Type.Env             (Env)
-import qualified DDC.Type.Env    as Env
-import qualified Data.Set       as Set
+import qualified DDC.Type.Env           as Env
+import qualified Data.Set               as Set
 
 
+-------------------------------------------------------------------------------
+-- | A summary of what the beta reduction transform did.
+data BetaReduceInfo
+        = BetaReduceInfo
+        { -- | Number of type applications reduced.
+          infoTypes             :: Int
+
+          -- | Number of witness applications reduced.
+        , infoWits              :: Int
+
+          -- | Number of value applications reduced.
+        , infoValues            :: Int
+
+          -- | Number of redexes let-bound.
+        , infoValuesLetted      :: Int
+
+          -- | Number of applications that we couldn't reduce.
+        , infoValuesSkipped     :: Int }
+        deriving Typeable
+
+
+instance Pretty BetaReduceInfo where
+ ppr (BetaReduceInfo ty wit val lets skip)
+  =  text "Beta reduction:"
+  <$> indent 4 (vcat
+      [ text "Types:          " <> int ty
+      , text "Witnesses:      " <> int wit
+      , text "Values:         " <> int val
+      , text "Values letted:  " <> int lets
+      , text "Values skipped: " <> int skip ])
+
+
+instance Monoid BetaReduceInfo where
+ mempty = BetaReduceInfo 0 0 0 0 0
+ mappend (BetaReduceInfo ty1 wit1 val1 lets1 skip1)
+         (BetaReduceInfo ty2 wit2 val2 lets2 skip2)
+  = (BetaReduceInfo 
+                (ty1   + ty2)   (wit1  + wit2) (val1 + val2)
+                (lets1 + lets2) (skip1 + skip2))
+
+
+-------------------------------------------------------------------------------
 -- | Beta-reduce applications of a explicit lambda abstractions 
 --   to variables and values.
+--
+--   If the flag is set then if we find a lambda abstraction that is applied
+--   to a redex then let-bind the redex and substitute the new variable
+--   instead.
 betaReduce  
         :: forall (c :: * -> * -> *) a n 
         .  (Ord n, TransformUpMX (Writer BetaReduceInfo) c)
-        => Bool		-- ^ If true, turn any betas we can't substitute into lets.
-	-> c a n 
+        => Bool         -- ^ Let-bind redexes.
+        -> c a n 
         -> TransformResult (c a n)
 betaReduce lets x
  = let (x', info) = runWriter
@@ -47,18 +96,19 @@ betaReduce lets x
 -- | Do a single beta reduction for this application.
 --
 --    To avoid duplicating work, we only reduce value applications when the
---     the argument is not a redex.
+--    the argument is not a redex.
 --
 --    If needed, we also insert 'weakclo' to ensure the result has the same
 --    closure as the original expression.
 --    
 betaReduce1
         :: Ord n
-        => Bool	-- ^ If true, turn any betas we can't substitute into lets.
+        => Bool	        -- ^ Let-bind redexes.
         -> Env n
         -> Env n
         -> Exp a n
         -> Writer BetaReduceInfo (Exp a n)
+
 betaReduce1 lets kenv tenv xx
  = let  ret info x = tell info >> return x
    in case xx of
@@ -69,7 +119,7 @@ betaReduce1 lets kenv tenv xx
             in  ret mempty { infoTypes = 1}
                  $ if usesBind || Set.null fvs2
                     then substituteTX b11 t2 x12
-                     else XCast a (CastWeakenClosure [XType t2])
+                    else XCast a (CastWeakenClosure [XType t2])
                         $ substituteTX b11 t2 x12
 
         XApp a (XLam _ b11 x12) (XWitness w2)
@@ -110,6 +160,7 @@ betaReduce1 lets kenv tenv xx
 --   We allow variables, abstractions, type and witness applications.
 --   Duplicating these expressions is guaranteed not to duplicate work
 --   at runtime,
+--
 canBetaSubstX :: Exp a n -> Bool
 canBetaSubstX xx
  = case xx of
@@ -125,33 +176,4 @@ canBetaSubstX xx
          -> canBetaSubstX x1 
 
         _       -> False
-
-
--- | A summary of what the beta reduction performed
-data BetaReduceInfo
-        = BetaReduceInfo
-        { infoTypes             :: Int
-        , infoWits		:: Int
-        , infoValues	        :: Int
-	, infoValuesLetted	:: Int
-        , infoValuesSkipped     :: Int }
-        deriving Typeable
-
-
-instance Pretty BetaReduceInfo where
- ppr (BetaReduceInfo ty wit val lets skip)
-  =  text "Beta reduction:"
-  <$> indent 4 (vcat
-      [ text "Types:          "	<> int ty
-      , text "Witnesses:      "	<> int wit
-      , text "Values:         "	<> int val
-      , text "Values letted:  " <> int lets
-      , text "Values skipped: " <> int skip ])
-
-
-instance Monoid BetaReduceInfo where
- mempty = BetaReduceInfo 0 0 0 0 0
- mappend (BetaReduceInfo ty1 wit1 val1 lets1 skip1)
-	 (BetaReduceInfo ty2 wit2 val2 lets2 skip2)
-  = (BetaReduceInfo (ty1+ty2) (wit1+wit2) (val1+val2) (lets1+lets2) (skip1+skip2))
 
