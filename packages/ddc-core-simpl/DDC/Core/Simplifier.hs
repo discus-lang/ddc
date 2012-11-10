@@ -5,23 +5,17 @@ module DDC.Core.Simplifier
 
           -- * Transform Specifications
         , Transform(..)
+        , InlinerTemplates
+        , NamedRewriteRules
 
           -- * Transform Results
         , TransformResult(..)
         , TransformInfo(..)
         , resultDone
 
-          -- * Parsing
-        , ModuleName    (..)
-        , InlinerTemplates
-        , parseSimplifier
-
           -- * Application
         , applySimplifier
-        , applySimplifierX
-        , applyTransform
-        , applyTransformX)
+        , applySimplifierX)
 where
 import DDC.Core.Simplifier.Apply
 import DDC.Core.Simplifier.Base
-import DDC.Core.Simplifier.Parser

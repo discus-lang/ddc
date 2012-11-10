@@ -11,6 +11,7 @@ import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
+import DDC.Core.Simplifier.Parser
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Char
@@ -58,12 +59,15 @@ cmdSet state cmd
  , Bundle frag modules _ _ rules <- stateBundle state
  , Fragment _ _ _ _ _ _ mkNamT mkNamX zero <- frag
  = do   case parseSimplifier 
-                mkNamT mkNamX 
-                (Map.assocs rules) 
-		-- Collect all definitions from modules
-                (I.lookupTemplateFromModules $ Map.elems modules)
-		-- Module-specific templates
-		(map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules)
+                (SimplifierDetails
+                        mkNamT mkNamX 
+                        (Map.assocs rules) 
+        
+        		-- Collect all definitions from modules
+                        (I.lookupTemplateFromModules $ Map.elems modules)
+
+        		-- Module-specific templates
+        		(map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules))
                 (concat $ intersperse " " rest) of
          Just simpl
           -> do chatStrLn state "ok"

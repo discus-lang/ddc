@@ -27,6 +27,7 @@ Library
         DDC.Core.Analysis.Arity
         DDC.Core.Analysis.Usage
         DDC.Core.Simplifier.Recipe
+        DDC.Core.Simplifier.Parser
         DDC.Core.Transform.Rewrite.Disjoint
         DDC.Core.Transform.Rewrite.Env
         DDC.Core.Transform.Rewrite.Error
@@ -53,7 +54,6 @@ Library
   Other-modules:
         DDC.Core.Simplifier.Apply
         DDC.Core.Simplifier.Base
-        DDC.Core.Simplifier.Parser
 
         DDC.Core.Transform.Inline.Templates
 

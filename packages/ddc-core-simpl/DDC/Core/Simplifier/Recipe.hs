@@ -8,8 +8,10 @@ module DDC.Core.Simplifier.Recipe
         , flatten
         , beta
         , betaLets
+        , deadCode
         , forward
         , bubble
+        , elaborate
 
           -- * Compound recipies
         , anormalize
@@ -19,8 +21,6 @@ import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
 import DDC.Type.Env
 import Data.Monoid
-
-import DDC.Core.Transform.Rewrite.Rule (RewriteRule)
 
 
 -- Atomic ---------------------------------------------------------------------
@@ -56,7 +56,12 @@ betaLets :: Simplifier s a n
 betaLets = Trans BetaLets
 
 
--- | Carry function bindings forward into their use sites.
+-- | Remove unused, pure let bindings.
+deadCode  :: Simplifier s a n
+deadCode = Trans DeadCode
+
+
+-- | Float single-use bindings forward into their use sites.
 forward  :: Simplifier s a n
 forward  = Trans Forward
 
@@ -66,11 +71,19 @@ bubble   :: Simplifier s a n
 bubble   = Trans Bubble
 
 
+-- | Elaborate possible Const and Distinct witnesses that aren't
+--   otherwise in the program.
+elaborate :: Simplifier s a n
+elaborate = Trans Elaborate
+
+
 -- Compound -------------------------------------------------------------------
 -- | Conversion to administrative normal-form.
 anormalize 
-        :: (Env n -> Namifier s n)
-        -> (Env n -> Namifier s n)
+        :: (KindEnv n -> Namifier s n) 
+                -- ^ Make a namifier to create fresh level-1 names.
+        -> (TypeEnv n -> Namifier s n) 
+                -- ^ Make a namifier to create fresh level-0 names.
         -> Simplifier s a n
 
 anormalize namK namT
@@ -81,10 +94,11 @@ anormalize namK namT
 
 -- | Intersperse rewrites and beta reduction
 rewriteSimp
-        :: [(String,RewriteRule a n)]
+        :: Int                          -- ^ Maximum number of iterations.
+        -> NamedRewriteRules a n        -- ^ Rewrite rules to apply.
 	-> Simplifier s a n
 
-rewriteSimp rules
+rewriteSimp maxIters rules
  = let  rewrite = Trans $ Rewrite rules
-   in   Fix 20 (rewrite <> bubble <> betaLets)
+   in   Fix maxIters (rewrite <> bubble <> betaLets)
 

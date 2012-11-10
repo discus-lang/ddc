@@ -1,14 +1,15 @@
 
 module DDC.Core.Simplifier.Parser
-        ( ModuleName(..)
-        , InlinerTemplates
+        ( -- * Details
+          SimplifierDetails     (..)
+
+          -- * Parsing
         , parseSimplifier)
 where
 import DDC.Base.Pretty
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Simplifier.Base
-import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Type.Env
 import Data.Char
@@ -17,29 +18,44 @@ import Prelude
 import qualified Prelude			as P
 
 
--- | The inliner templates for the given module.
-type InlinerTemplates a n 
-        = (n -> Maybe (Exp a n))
+-------------------------------------------------------------------------------
+-- | Auxilliary information that may be used by a simplifier.
+data SimplifierDetails s a n
+        = SimplifierDetails
+        { -- | Create a namifier to make fresh type (level-1) 
+          --   names that don't conflict with any already in this environment.
+          simplifierMkNamifierT         :: Env n -> Namifier s n
+
+          -- | Create a namifier to make fresh value or witness (level-0) 
+          --   names that don't conflict with any already in this environment.
+        , simplifierMkNamifierX         :: Env n -> Namifier s n
+
+          -- | Rewrite rules along with their names.
+        , simplifierRules               :: NamedRewriteRules a n
+
+          -- | Inliner templates from the current module
+        , simplifierLocalTemplates      :: InlinerTemplates a n
+
+          -- | Inliner templates from imported moodules
+        , simplifierImportedTemplates   :: [(ModuleName, InlinerTemplates a n)] }
 
 
+-------------------------------------------------------------------------------
 -- | Parse a simplifier specification.
 --
---   The resulting simplifier specification captures auxilliary information
---   such as the list of rewrite rules, and inliner templates. Therefore, 
---   we need to supply all the possible auxilliary info when parsing
---   the simplifier specification.
+--   The resulting simplifier captures auxilliary information such as the list
+--   of rewrite rules, and inliner templates. Therefore, we need to supply all
+--   the possible auxilliary info up-front as a `SimplifierDetails`.
 --
 parseSimplifier 
 	:: (Eq n, Show n, Pretty n)
-        => (Env n -> Namifier s n)              -- ^ Namifier for type variables.
-        -> (Env n -> Namifier s n)              -- ^ Namifier for exp variables.
-        -> [(String, RewriteRule a n)]          -- ^ Rewrite rule set.
-        -> InlinerTemplates a n                 -- ^ Inliner templates for the current module.
-        -> [(ModuleName, InlinerTemplates a n)] -- ^ Inliner templates from other modules.
-        -> String 
+        => SimplifierDetails s a n      -- ^ Simplifer Details
+        -> String                       -- ^ Simplifier specification string.
         -> Maybe (Simplifier s a n)
 
-parseSimplifier namK namT rules templates module_templates str
+parseSimplifier 
+        (SimplifierDetails namK namT rules templates module_templates)
+        str
  = let toks = (lexSimplifier str) 
    in  case parse toks of
        Just (t,[]) -> Just t
@@ -65,7 +81,7 @@ parseSimplifier namK namT rules templates module_templates str
 	parse1 (KVar name : rest)
          = case name of
                 "anormalize"    -> Just (R.anormalize namK namT, rest)
-                "rewriteSimp"	-> Just (R.rewriteSimp rules, rest)
+                "rewriteSimp"	-> Just (R.rewriteSimp 20 rules, rest)
                 _               -> Nothing
 
         parse1 toks@(KCon{} : _)

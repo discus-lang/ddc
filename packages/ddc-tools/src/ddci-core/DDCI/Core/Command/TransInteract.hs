@@ -1,5 +1,3 @@
-{-# OPTIONS -Werror #-}
-
 module DDCI.Core.Command.TransInteract
         ( cmdTransInteract
 	, cmdTransInteractLoop)
@@ -10,7 +8,7 @@ import DDCI.Core.State
 import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
-import DDC.Core.Simplifier
+import DDC.Core.Simplifier.Parser
 import DDC.Core.Compounds
 import DDC.Core.Check
 import DDC.Base.Pretty
@@ -81,12 +79,15 @@ cmdTransInteractLoop state str
 
     _	    -> do
  	let tr = parseSimplifier 
-		    mkNamT mkNamX
-		    (Map.assocs rules) 
-		    -- Collect all definitions from modules
-		    (I.lookupTemplateFromModules $ Map.elems modules)
-		    -- Module-specific templates
-		    (map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules)
+		    (SimplifierDetails
+                        mkNamT mkNamX
+        		(Map.assocs rules) 
+
+                        -- Collect all definitions from modules
+                        (I.lookupTemplateFromModules $ Map.elems modules)
+
+                        -- Module-specific templates
+                        (map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules))
 		    str
 
 	let x' = case steps of

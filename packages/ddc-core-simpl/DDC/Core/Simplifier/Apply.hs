@@ -23,7 +23,7 @@ import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Elaborate
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Control.Monad.State.Strict
 import qualified DDC.Base.Pretty	as P
 import Data.Typeable (Typeable)
@@ -32,14 +32,14 @@ import Data.Typeable (Typeable)
 -- Modules --------------------------------------------------------------------
 -- | Apply a simplifier to a module.
 --
---   The state monad holds a fresh name generator.
+--   The state monad can be used by `Namifier` functions to generate fresh names.
 applySimplifier 
         :: (Show a, Ord n, Show n, Pretty n) 
 	=> Profile n		-- ^ Profile of language we're working in
-	-> Env n		-- ^ Kind environment
-	-> Env n		-- ^ Type environment
-        -> Simplifier s a n     -- ^ Simplifier to apply.
-        -> Module a n           -- ^ Module to simplify.
+	-> KindEnv n		-- ^ Kind environment
+	-> TypeEnv n		-- ^ Type environment
+        -> Simplifier s a n     -- ^ Simplifier to apply
+        -> Module a n           -- ^ Module to simplify
         -> State s (Module a n)
 
 applySimplifier profile kenv tenv spec mm
@@ -51,9 +51,10 @@ applySimplifier profile kenv tenv spec mm
         Trans t1
          -> applyTransform profile kenv tenv t1 mm
 	
-	-- finish fix: applyTransform should really return a TransformResult
+	-- TODO: finish fix: applyTransform should really return a TransformResult
 	Fix 0 _
 	 -> return mm
+
 	Fix n s
 	 -> do	mm' <- applySimplifier profile kenv tenv s mm
 		applySimplifier profile kenv tenv (Fix (n-1) s) mm'
@@ -63,8 +64,8 @@ applySimplifier profile kenv tenv spec mm
 applyTransform
         :: (Show a, Ord n, Show n, Pretty n)
 	=> Profile n		-- ^ Profile of language we're working in
-	-> Env n		-- ^ Kind environment
-	-> Env n		-- ^ Type environment
+	-> KindEnv n		-- ^ Kind environment
+	-> TypeEnv n		-- ^ Type environment
         -> Transform s a n      -- ^ Transform to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
@@ -89,14 +90,15 @@ applyTransform profile kenv tenv spec mm
 -- Expressions ----------------------------------------------------------------
 -- | Apply a simplifier to an expression.
 --
---   The state monad holds a fresh name generator.
+--   The state monad can be used by `Namifier` functions to generate fresh names.
+--
 applySimplifierX 
         :: (Show a, Show n, Ord n, Pretty n)
 	=> Profile n		-- ^ Profile of language we're working in
-	-> Env n		-- ^ Kind environment
-	-> Env n		-- ^ Type environment
-        -> Simplifier s a n     -- ^ Simplifier to apply.
-        -> Exp a n              -- ^ Exp to simplify.
+	-> KindEnv n		-- ^ Kind environment
+	-> TypeEnv n		-- ^ Type environment
+        -> Simplifier s a n     -- ^ Simplifier to apply
+        -> Exp a n              -- ^ Expression to simplify
         -> State s (TransformResult (Exp a n))
 
 applySimplifierX profile kenv tenv spec xx
@@ -139,8 +141,8 @@ applySimplifierX profile kenv tenv spec xx
 applyFixpointX
         :: (Show a, Show n, Ord n, Pretty n)
 	=> Profile n		-- ^ Profile of language we're working in
-	-> Env n		-- ^ Kind environment
-	-> Env n		-- ^ Type environment
+	-> KindEnv n		-- ^ Kind environment
+	-> TypeEnv n		-- ^ Type environment
         -> Int			-- ^ Maximum number of times to apply
 	-> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
@@ -205,8 +207,8 @@ instance Pretty FixInfo where
 applyTransformX 
         :: (Show a, Show n, Ord n, Pretty n)
 	=> Profile n		-- ^ Profile of language we're working in
-	-> Env n		-- ^ Kind environment
-	-> Env n		-- ^ Type environment
+	-> KindEnv n		-- ^ Kind environment
+	-> TypeEnv n		-- ^ Type environment
         -> Transform s a n      -- ^ Transform to apply.
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (TransformResult (Exp a n))

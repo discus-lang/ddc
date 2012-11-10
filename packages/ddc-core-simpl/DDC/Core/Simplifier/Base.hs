@@ -5,6 +5,8 @@ module DDC.Core.Simplifier.Base
 
           -- * Transform Specifications
         , Transform(..)
+        , InlinerTemplates
+        , NamedRewriteRules
 
           -- * Transform Results
         , TransformResult(..)
@@ -31,8 +33,9 @@ data Simplifier s a n
         -- | Apply two simplifiers in sequence.
         | Seq   (Simplifier s a n) (Simplifier s a n)
 
-        -- | Apply a transform until it stops progressing,
-        --   or bail out after a maximum number of applications.
+        -- | Keep applying a transform until it reports that further
+        --   applications won't be helpful, bailing out after a maximum number
+        --   of applications.
 	| Fix	Int		   (Simplifier s a n)
 
 
@@ -52,7 +55,6 @@ instance Pretty (Simplifier s a n) where
 
         Trans t1
          -> ppr t1
-
 
 
 -- Transform ------------------------------------------------------------------
@@ -77,7 +79,7 @@ data Transform s a n
         --   arguments that are redexes.
         | BetaLets
 
-        -- | Remove unused, pure let bindings
+        -- | Remove unused, pure let bindings.
         | DeadCode
 
         -- | Float single-use bindings forward into their use sites.
@@ -86,28 +88,41 @@ data Transform s a n
         -- | Float casts outwards.
         | Bubble
 
-        -- | Elaborate on implicit witnesses
+        -- | Elaborate possible Const and Distinct witnesses that aren't
+        --   otherwise in the program.
         | Elaborate
 
         -- | Inline definitions into their use sites.
         | Inline
                 { -- | Get the unfolding for a named variable.
-                  transInlineDef   :: n -> Maybe (Exp a n) }
+                  transInlineDef   :: InlinerTemplates a n }
 
         -- | Apply general rule-based rewrites.
         | Rewrite
                 { -- | List of rewrite rules along with their names.
-                  transRules       :: [(String, RewriteRule a n)] }
+                  transRules       :: NamedRewriteRules a n }
 
         -- | Rewrite anonymous binders to fresh named binders.
         | Namify
                 { -- | Create a namifier to make fresh type (level-1) 
-                  --   names that don't conflict with any already in this environment.
+                  --   names that don't conflict with any already in this
+                  --   environment.
                   transMkNamifierT :: Env n -> Namifier s n
 
                   -- | Create a namifier to make fresh value or witness (level-0) 
-                  --   names that don't conflict with any already in this environment.
+                  --   names that don't conflict with any already in this
+                  --   environment.
                 , transMkNamifierX :: Env n -> Namifier s n }
+
+
+-- | Function to get the inliner template (unfolding) for the given name.
+type InlinerTemplates a n 
+        = (n -> Maybe (Exp a n))
+
+-- | Rewrite rules along with their names.
+type NamedRewriteRules a n
+        = [(String, RewriteRule a n)]
+
 
 instance Pretty (Transform s a n) where
  ppr ss
@@ -137,8 +152,8 @@ data TransformResult r
           -- | Whether this transform made any progess.
           --   
           --   If `False` then the result program must be the same as the
-          --   input program, and a simplifer fixpoint won't apply this transform
-          --   again to the result program.
+          --   input program, and a simplifer fixpoint won't apply this
+          --   transform again to the result program.
         , resultProgress :: Bool
 
           -- | Whether it might help to run the same transform again.
@@ -180,7 +195,6 @@ instance Pretty (TransformResult r) where
 --  
 --   We'll say we made progress, but set `resultAgain` to False
 --   so to stop any simplifier fixpoints.
---
 resultDone :: String -> r -> TransformResult r
 resultDone name r 
         = TransformResult r True False
