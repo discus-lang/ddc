@@ -232,5 +232,5 @@ applyTransformX profile kenv tenv spec xx
         Bubble            -> res    $ bubbleX kenv tenv xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewrite rules xx
-        Elaborate{}       -> res    $ elaborate [] xx
+        Elaborate{}       -> res    $ elaborateX xx
     
