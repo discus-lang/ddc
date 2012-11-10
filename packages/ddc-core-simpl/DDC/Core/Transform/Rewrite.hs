@@ -1,7 +1,9 @@
+
+-- | Apply rewrite rules.
 module DDC.Core.Transform.Rewrite
         ( RewriteRule(..)
-        , rewrite
-        , rewriteModule )
+        , rewriteModule
+        , rewriteX)
 where
 import DDC.Base.Pretty
 import DDC.Core.Exp
@@ -32,16 +34,16 @@ data RewriteInfo
         = RewriteInfo [RewriteLog]
         deriving Typeable
 
+data RewriteLog
+        = LogRewrite String
+        | LogUnfold  String
+        deriving Typeable
+
+
 instance Pretty RewriteInfo where
  ppr (RewriteInfo rules) 
         =   text "Rules fired:"
         <$> indent 4 (vcat $ map ppr rules)
-
-
-data RewriteLog
-    = LogRewrite String
-    | LogUnfold  String
-    deriving Typeable
 
 
 instance Pretty RewriteLog where
@@ -60,16 +62,17 @@ rewriteModule
         -> Module a n
 
 rewriteModule rules mm
- = mm { moduleBody = result $ rewrite rules $ moduleBody mm }
+ = mm { moduleBody = result $ rewriteX rules $ moduleBody mm }
 
 
 -- | Perform rewrites top-down, repeatedly.
-rewrite :: (Show a, Show n, Ord n, Pretty n) 
+rewriteX 
+        :: (Show a, Show n, Ord n, Pretty n) 
         => [(String, RewriteRule a n)]          -- ^ Rules with their names.
         -> Exp a n 
         -> TransformResult (Exp a n)
 
-rewrite rules x0
+rewriteX rules x0
  = let  (x,info) = runWriter $ down x0 RE.empty
    in   TransformResult
          { result               = x
@@ -236,7 +239,7 @@ rewrite rules x0
          = return $ mkApps f args
 
         rewrites' ((n,r):rs) f args ws
-         = case rewriteX r f args ws of
+         = case rewriteWithX r f args ws of
                 Nothing -> rewrites' rs f args ws
                 Just x  -> tell [LogRewrite n] >> go x [] ws
 
@@ -357,14 +360,14 @@ rewriteSubst
 
 -- | Perform rewrite rule on expression if a valid substitution exists,
 --   and constraints are satisfied.
-rewriteX
+rewriteWithX
         :: (Show n, Show a, Ord n, Pretty n)
         => RewriteRule a n
         -> Exp a n
         -> [(Exp a n,a)]
         -> RE.RewriteEnv a n
         -> Maybe (Exp a n)
-rewriteX
+rewriteWithX
     rule@(RewriteRule
             { ruleBinds         = binds
             , ruleConstraints   = constrs

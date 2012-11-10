@@ -1,11 +1,15 @@
 -- | Constructing and checking whether rewrite rules are valid
 module DDC.Core.Transform.Rewrite.Rule 
         ( RewriteRule   (..)
+
+          -- * Binding modes
         , BindMode      (..)
         , isBMKind
         , isBMType
-        , checkRewriteRule
-        , mkRewriteRule)
+
+          -- * Construction
+        , mkRewriteRule
+        , checkRewriteRule)
 where
 import DDC.Core.Exp
 import DDC.Base.Pretty
@@ -31,12 +35,13 @@ import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
 import qualified DDC.Type.Env                   as Env
 
--- | A rewrite rule.
+
+-- | A rewrite rule. For example:
 --
---   RULE [r1 r2 r3 : %] (x : Int r1).
---      addInt  [:r1 r2 r3:] x (0 [r2] ()
---    = copyInt [:r1 r3:]    x
---
+--   @ RULE [r1 r2 r3 : %] (x : Int r1)
+--      . addInt  [:r1 r2 r3:] x (0 [r2] ()
+--      = copyInt [:r1 r3:]    x
+--   @
 data RewriteRule a n
         = RewriteRule
         { -- | Variables bound by the rule.
@@ -51,7 +56,7 @@ data RewriteRule a n
         , ruleLeft        :: Exp a n            
 
           -- | Extra part of left-hand side,
-          --   but allow this bit to be out-of-context
+          --   but allow this bit to be out-of-context.
         , ruleLeftHole    :: Maybe (Exp a n)    
 
           -- | Right-hand side of the rule.
@@ -74,36 +79,6 @@ data RewriteRule a n
         } deriving (Eq, Show)
 
 
--- | Binding level for the binders in a rewrite rule.
-data BindMode 
-        = BMKind 
-        | BMType Int -- ^ number of usages
-        deriving (Eq, Show)
-
-
-isBMKind :: BindMode -> Bool
-isBMKind BMKind         = True
-isBMKind _              = False
-
-
-isBMType :: BindMode -> Bool
-isBMType (BMType _)     = True
-isBMType _              = False
-
-
--- | Construct a rewrite rule, do not check if it's valid
-mkRewriteRule
-        :: Ord n
-        => [(BindMode,Bind n)]  -- ^ Binders
-        -> [Type n]             -- ^ Constraints
-        -> Exp a n              -- ^ Left-hand side
-        -> Maybe (Exp a n)      -- ^ Extra part of left, can be out of context
-        -> Exp a n              -- ^ Right-hand side (replacement)
-        -> RewriteRule a n
-
-mkRewriteRule  bs cs lhs hole rhs
- = RewriteRule bs cs lhs hole rhs Nothing [] []
-
 
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
  ppr (RewriteRule bs cs lhs hole rhs _ _ _)
@@ -125,7 +100,47 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
          = text ""
 
 
--- | Take a rule, make sure it's valid and fill in type, closure and effect information.
+-- BindMode -------------------------------------------------------------------
+-- | Binding level for the binders in a rewrite rule.
+data BindMode 
+        = BMKind 
+        | BMType Int -- ^ number of usages
+        deriving (Eq, Show)
+
+
+-- | Check if a `BindMode` is a `BMKind`.
+isBMKind :: BindMode -> Bool
+isBMKind BMKind         = True
+isBMKind _              = False
+
+
+-- | Check if a `BindMode` is a `BMType`.
+isBMType :: BindMode -> Bool
+isBMType (BMType _)     = True
+isBMType _              = False
+
+
+-- Make -----------------------------------------------------------------------
+-- | Construct a rewrite rule, but do not check if it's valid.
+--
+--   You then need to apply 'checkRewriteRule' to check it.
+--
+mkRewriteRule
+        :: Ord n
+        => [(BindMode,Bind n)]  -- ^ Variables bound by the rule.
+        -> [Type n]             -- ^ Extra constraints on the rule.
+        -> Exp a n              -- ^ Left-hand side of the rule.
+        -> Maybe (Exp a n)      -- ^ Extra part of left, can be out of context.
+        -> Exp a n              -- ^ Right-hand side (replacement)
+        -> RewriteRule a n
+
+mkRewriteRule  bs cs lhs hole rhs
+ = RewriteRule bs cs lhs hole rhs Nothing [] []
+
+
+-- Check ----------------------------------------------------------------------
+-- | Take a rule, make sure it's valid and fill in type, closure and effect
+--   information.
 --
 --   The left-hand side of rule can't have any binders (lambdas, lets etc).
 --
@@ -135,7 +150,7 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 --   Both sides must have the same types, but the right can have fewer effects
 --   and smaller closure.
 --
---   Anonymous binders aren't allowed (for no real reason other than laziness)
+--   We don't handle anonymous binders on either the left or right.
 --
 checkRewriteRule
     :: (Ord n, Show n, Pretty n)        

@@ -231,6 +231,6 @@ applyTransformX profile kenv tenv spec xx
         Forward           -> return $ forwardX xx
         Bubble            -> res    $ bubbleX kenv tenv xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
-        Rewrite rules     -> return $ rewrite rules xx
+        Rewrite rules     -> return $ rewriteX rules xx
         Elaborate{}       -> res    $ elaborateX xx
     
