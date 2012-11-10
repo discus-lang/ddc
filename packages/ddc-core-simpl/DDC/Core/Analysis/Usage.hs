@@ -173,7 +173,7 @@ usageX' xx
 
         XCast a c x1
          |  (used1, x1')   <- usageX' x1
-         ,  (used2, c')    <- usageC c
+         ,  (used2, c')    <- usageCast c
          ,  used'          <- plusUsedMap used1 used2
          -> ( used'
             , XCast (used', a) c' x1')
@@ -212,10 +212,11 @@ usageLets lts
 
 -- | Annotate binding occurrences of named value variables with 
 --  usage information.
-usageC  :: Ord n
+usageCast  
+        :: Ord n
         => Cast a n
         -> (UsedMap n, Cast (UsedMap n, a) n)
-usageC cc
+usageCast cc
  = case cc of
         CastWeakenEffect eff    
          -> (empty, CastWeakenEffect eff)

@@ -134,7 +134,6 @@ parseTransform namK namT rules templates modules ((KCon name):rest)
   parseInlineArgs (KMinus : KVar except : rest') f
     = parseInlineArgs rest'
 	(\lname ->
-	    -- TODO This is really stupid, need some way to create names
 	    if   (show $ ppr lname) == except
 	    then Nothing
 	    else f lname)

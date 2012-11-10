@@ -3,7 +3,6 @@
 module DDC.Core.Simplifier.Apply
         ( applySimplifier
         , applyTransform
-
         , applySimplifierX
         , applyTransformX)
 where
@@ -24,15 +23,20 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Elaborate
 import DDC.Type.Env                     (KindEnv, TypeEnv)
+import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
 import qualified DDC.Base.Pretty	as P
-import Data.Typeable (Typeable)
 
 
 -- Modules --------------------------------------------------------------------
 -- | Apply a simplifier to a module.
 --
 --   The state monad can be used by `Namifier` functions to generate fresh names.
+---
+--   ISSUE #277: Make 'applySimplifier' return a TransformResult
+--      Applying a simplifier to an expression yields a TransformResult
+--      with the transform log, and we should get one for a module as well.
+--
 applySimplifier 
         :: (Show a, Ord n, Show n, Pretty n) 
 	=> Profile n		-- ^ Profile of language we're working in
@@ -51,13 +55,12 @@ applySimplifier profile kenv tenv spec mm
         Trans t1
          -> applyTransform profile kenv tenv t1 mm
 	
-	-- TODO: finish fix: applyTransform should really return a TransformResult
 	Fix 0 _
 	 -> return mm
 
 	Fix n s
 	 -> do	mm' <- applySimplifier profile kenv tenv s mm
-		applySimplifier profile kenv tenv (Fix (n-1) s) mm'
+		applySimplifier profile kenv tenv (Fix (n - 1) s) mm'
 
 
 -- | Apply a transform to a module.
@@ -116,22 +119,22 @@ applySimplifierX profile kenv tenv spec xx
                 let progress = resultProgress tx || resultProgress tx'
 
 		return TransformResult
-		    { result   	     = result tx'
-                    , resultAgain    = again
-		    , resultProgress = progress
-		    , resultInfo     = TransformInfo info }
+                        { result         = result tx'
+                        , resultAgain    = again
+                        , resultProgress = progress
+                        , resultInfo     = TransformInfo info }
 
 	Fix i s
-	 -> do	tx <- applyFixpointX profile kenv tenv i s xx
+	 -> do	tx      <- applyFixpointX profile kenv tenv i s xx
 		let info =
 			case resultInfo tx of
 			TransformInfo info1 -> FixInfo i info1
 		
 		return TransformResult
-		    { result   	     = result tx
-                    , resultAgain    = resultAgain    tx
-		    , resultProgress = resultProgress tx
-		    , resultInfo     = TransformInfo info }
+                        { result         = result tx
+                        , resultAgain    = resultAgain    tx
+                        , resultProgress = resultProgress tx
+                        , resultInfo     = TransformInfo info }
 		
         Trans t1
          -> applyTransformX profile kenv tenv t1 xx
@@ -153,28 +156,29 @@ applyFixpointX profile kenv tenv i' s xx'
  where
   simp = applySimplifierX profile kenv tenv s
 
-  go 0 xx progress = do
-    tx <- simp xx
-    return tx { resultProgress = progress }
+  go 0 xx progress 
+   = do tx <- simp xx
+        return tx { resultProgress = progress }
 
-  go i xx progress = do
-    tx <- simp xx
-    case resultAgain tx of
-	False 
-         -> return tx { resultProgress = progress }
+  go i xx progress 
+   = do tx      <- simp xx
+        case resultAgain tx of
+	 False 
+          ->    return tx { resultProgress = progress }
 
-	True  
-         -> do
-	    tx' <- go (i-1) (result tx) True
-	    let info =
-		    case (resultInfo tx, resultInfo tx') of
-		    (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
-	    
-	    return TransformResult
-		{ result   	 = result tx'
-                , resultAgain    = resultProgress tx'
-		, resultProgress = resultProgress tx'
-		, resultInfo     = TransformInfo info }
+	 True  
+          -> do tx'        <- go (i-1) (result tx) True
+
+	        let info 
+                     = case (resultInfo tx, resultInfo tx') of
+	                (TransformInfo i1, TransformInfo i2) 
+                          -> SeqInfo i1 i2
+
+	        return TransformResult
+                        { result   	 = result tx'
+                        , resultAgain    = resultProgress tx'
+                        , resultProgress = resultProgress tx'
+                        , resultInfo     = TransformInfo info }
 
 
 -- | Result of applying two simplifiers in sequence.
@@ -214,7 +218,8 @@ applyTransformX
         -> State s (TransformResult (Exp a n))
 
 applyTransformX profile kenv tenv spec xx
- = case spec of
+ = let  res x = return $ resultDone (show $ ppr spec) x
+   in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
         Snip              -> res    $ snip xx
@@ -228,5 +233,4 @@ applyTransformX profile kenv tenv spec xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewrite rules xx
         Elaborate{}       -> res    $ elaborate [] xx
- where
-    res x = return $ resultDone (show $ ppr spec) x
+    
