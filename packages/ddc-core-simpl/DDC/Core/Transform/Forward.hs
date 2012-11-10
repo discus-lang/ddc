@@ -1,6 +1,8 @@
 
+-- | Float let-bindings with a single use forward into their use-sites.
 module DDC.Core.Transform.Forward
-        ( forwardModule
+        ( ForwardInfo   (..)
+        , forwardModule
         , forwardX)
 where
 import DDC.Base.Pretty
@@ -10,15 +12,44 @@ import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Predicates
 import Data.Map                 (Map)
-import qualified Data.Map       as Map
-import Control.Monad		(liftM, liftM2)
+import Control.Monad
 import Control.Monad.Writer	(Writer, runWriter, tell)
 import Data.Monoid		(Monoid, mempty, mappend)
-import Data.Typeable		(Typeable)
+import Data.Typeable
+import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX	as S
 
+-------------------------------------------------------------------------------
+-- | Summary of number of bindings floated.
+data ForwardInfo
+        = ForwardInfo
+        { -- | Number of trivial @v1 = v2@ bindings inlined.
+          infoSubsts   :: Int
+
+          -- | Number of bindings floated forwards.
+        , infoBindings :: Int }
+        deriving Typeable
+
+
+instance Pretty ForwardInfo where
+ ppr (ForwardInfo substs bindings)
+  =  text "Forward:"
+  <$> indent 4 (vcat
+      [ text "Substitutions:  " <> int substs
+      , text "Bindings:       " <> int bindings ])
+
+
+instance Monoid ForwardInfo where
+ mempty = ForwardInfo 0 0
+ mappend (ForwardInfo s1 b1)(ForwardInfo s2 b2)
+        = ForwardInfo (s1 + s2) (b1 + b2)
+
+
+-------------------------------------------------------------------------------
+-- | Float let-bindings in a module with a single use forward into
+--   their use sites.
 forwardModule 
-        :: (Show n, Ord n)
+        :: Ord n
         => Module a n -> Module a n
 
 forwardModule mm
@@ -28,31 +59,35 @@ forwardModule mm
         $ usageModule mm
 
 
-forwardX :: (Show n, Ord n)
+-- | Float let-bindings in an expression with a single use forward into
+--   their use-sites.
+forwardX :: Ord n
          => Exp a n -> TransformResult (Exp a n)
+
 forwardX xx
- = let (x',info) = runWriter
+ = let  (x',info) = runWriter
 		 $ forwardWith Map.empty
 		 $ usageX xx
+
+        progress (ForwardInfo s _) 
+                = s > 0
+
    in  TransformResult
-	{ result	 = x'
-	, resultProgress = progress info
+        { result	 = x'
+        , resultProgress = progress info
         , resultAgain    = False
-	, resultInfo	 = TransformInfo info }
- where
-  progress (ForwardInfo s _) = s > 0
+        , resultInfo	 = TransformInfo info }
 
 
+-------------------------------------------------------------------------------
 class Forward (c :: * -> * -> *) where
  -- | Carry bindings forward and downward into their use-sites.
  forwardWith 
-        ::  (Show n, Ord n)
+        :: Ord n
         => Map n (Exp a n)
         -> c (UsedMap n, a) n
         -> Writer ForwardInfo (c a n)
 
--- TODO: want a nicer way of transforming the body of a module.
---       the body type changes. Just write this boilerplate once.
 instance Forward Module where
  forwardWith bindings 
         (ModuleCore
@@ -96,17 +131,22 @@ instance Forward Exp where
          , Just usage     <- Map.lookup n um
          , [UsedFunction] <- filterUsedInCasts usage
 	 -> do
+                -- Record that we've moved this binding.
                 tell mempty { infoBindings = 1 }
+
                 x1'           <- down x1
+
                 forwardWith (Map.insert n x1' bindings) x2
 
-	-- Always forward atomic bindings (variables, constructors)
+	-- Always float atomic bindings (variables, constructors)
         XLet _ (LLet _mode b x1) x2
 	 | isAtomX x1
-	 -> do
-	    tell mempty { infoBindings = 1 }
-	    -- Slow, but handles anonymous binders and shadowing
-	    down $ S.substituteXX b x1 x2
+	 -> do 
+                -- Record that we've moved this binding.
+                tell mempty { infoBindings = 1 }
+
+                -- Slow, but handles anonymous binders and shadowing
+                down $ S.substituteXX b x1 x2
 
         XLet (_, a') lts x     
          -> liftM2 (XLet a') (down lts) (down x)
@@ -138,10 +178,14 @@ instance Forward Lets where
   = let down    = forwardWith bindings
     in case lts of
         LLet mode b x   -> liftM (LLet mode b) (down x)
-        LRec bxs        -> liftM LRec
-		(mapM (\(b,x) -> do
-			x' <- down x
-			return (b, x')) bxs)
+
+        LRec bxs        
+         -> liftM LRec
+         $  mapM (\(b,x) 
+                    -> do x' <- down x
+			  return (b, x')) 
+            bxs
+
         LLetRegions b bs -> return $ LLetRegions b bs
         LWithRegion b    -> return $ LWithRegion b
 
@@ -149,29 +193,4 @@ instance Forward Lets where
 instance Forward Alt where
  forwardWith bindings (AAlt p x)
   = liftM (AAlt p) (forwardWith bindings x)
-
-
-
--- | Summary of number forwards performed
-data ForwardInfo
-    = ForwardInfo
-    { infoSubsts   :: Int
-    , infoBindings :: Int }
-    deriving Typeable
-
-
-instance Pretty ForwardInfo where
- ppr (ForwardInfo substs bindings)
-  =  text "Forward:"
-  <$> indent 4 (vcat
-      [ text "Substitutions:  "	<> int substs
-      , text "Bindings:       "	<> int bindings ])
-
-
-instance Monoid ForwardInfo where
- mempty = ForwardInfo 0 0
- mappend
-    (ForwardInfo s1 b1)
-    (ForwardInfo s2 b2)
-  =  ForwardInfo (s1+s2) (b1+b2)
 

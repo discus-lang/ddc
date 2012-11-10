@@ -1,8 +1,7 @@
 
 -- | Flattening nested let and case expressions.
 module DDC.Core.Transform.Flatten
-        ( flatten
-        , flatten1)
+        (flatten)
 where
 import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.AnonymizeX
@@ -16,10 +15,7 @@ import Data.Functor.Identity
 -- | Flatten binding structure in a thing.
 --
 --   Flattens nested let-expressions, 
---   and single alternative let-case expressions
---
---   * Does not change the order of evaluation.
---   * Weakly improving, will not make code worse.
+--   and single alternative let-case expressions. 
 --
 flatten :: Ord n 
         => (TransformUpMX Identity c)
@@ -28,8 +24,6 @@ flatten = transformUpX' flatten1
 
 
 -- | Flatten a single nested let-expression.
----
---   TODO: make this work on lazy lets as well.
 flatten1
         :: Ord n
         => Exp a n
