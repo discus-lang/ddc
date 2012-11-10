@@ -152,9 +152,11 @@ makeLets arities f0 args@((_,annot):_)
         go i _arf [] acc
          = mkApps i 0 acc
 
+        -- ISSUE #278: Snip transform doesn't handle over-applications.
+        -- 
         -- f is fully applied and we have arguments left to add:
         --	create let for intermediate result
-        -- TODO: this produces the wrong debruijn indices.
+        -- BROKEN: this produces the wrong debruijn indices.
         -- go i arf ((x, a) : xs) acc 
         --  |  length acc > arf
         --  =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
