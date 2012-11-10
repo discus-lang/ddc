@@ -8,7 +8,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
-import DDC.Type.Env             (Env)
+import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Functor.Identity
 import Control.Monad
 import qualified DDC.Type.Env   as Env
@@ -18,10 +18,10 @@ import qualified DDC.Type.Env   as Env
 transformUpX
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformUpMX Identity c)
-        => (Env n -> Env n -> Exp a n -> Exp a n)       
+        => (KindEnv n -> TypeEnv n -> Exp a n -> Exp a n)       
                         -- ^ The worker function is given the current kind and type environments.
-        -> Env n        -- ^ Initial kind environment.
-        -> Env n        -- ^ Initial type environment.
+        -> KindEnv n    -- ^ Initial kind environment.
+        -> TypeEnv n    -- ^ Initial type environment.
         -> c a n        -- ^ Transform this thing.
         -> c a n
 
@@ -51,11 +51,11 @@ class TransformUpMX m (c :: * -> * -> *) where
  -- | Bottom-up monadic rewrite of all core expressions in a thing.
  transformUpMX
         :: Ord n
-        => (Env n -> Env n -> Exp a n -> m (Exp a n))
+        => (KindEnv n -> TypeEnv n -> Exp a n -> m (Exp a n))
                         -- ^ The worker function is given the current
                         --      kind and type environments.
-        -> Env n        -- ^ Initial kind environment.
-        -> Env n        -- ^ Initial type environment.
+        -> KindEnv n    -- ^ Initial kind environment.
+        -> TypeEnv n    -- ^ Initial type environment.
         -> c a n        -- ^ Transform this thing.
         -> m (c a n)
 
@@ -135,3 +135,4 @@ instance Monad m => TransformUpMX m Alt where
         AAlt PDefault x
          ->     liftM2  AAlt (return PDefault)
                         (transformUpMX f kenv tenv x) 
+
