@@ -33,10 +33,11 @@ forwardX :: (Show n, Ord n)
 forwardX xx
  = let (x',info) = runWriter
 		 $ forwardWith Map.empty
-		 $ snd $ usageX xx
+		 $ usageX xx
    in  TransformResult
 	{ result	 = x'
 	, resultProgress = progress info
+        , resultAgain    = False
 	, resultInfo	 = TransformInfo info }
  where
   progress (ForwardInfo s _) = s > 0
@@ -95,9 +96,9 @@ instance Forward Exp where
          , Just usage     <- Map.lookup n um
          , [UsedFunction] <- filterUsedInCasts usage
 	 -> do
-	    tell mempty { infoBindings = 1 }
-	    x1'           <- down x1
-            forwardWith (Map.insert n x1' bindings) x2
+                tell mempty { infoBindings = 1 }
+                x1'           <- down x1
+                forwardWith (Map.insert n x1' bindings) x2
 
 	-- Always forward atomic bindings (variables, constructors)
         XLet _ (LLet _mode b x1) x2
@@ -114,6 +115,12 @@ instance Forward Exp where
         XCast a c x     -> liftM2   (XCast (snd a)) (down c) (down x)
         XType t         -> return $ XType t
         XWitness w      -> return $ XWitness w
+
+
+filterUsedInCasts :: [Used] -> [Used]
+filterUsedInCasts = filter notCast
+ where  notCast UsedInCast      = False
+        notCast _               = True
 
 
 instance Forward Cast where

@@ -1,8 +1,9 @@
 -- | Constructing and checking whether rewrite rules are valid
 module DDC.Core.Transform.Rewrite.Rule 
         ( RewriteRule   (..)
-        , BindMode     (..)
-        , isBMKind, isBMType
+        , BindMode      (..)
+        , isBMKind
+        , isBMType
         , checkRewriteRule
         , mkRewriteRule)
 where
@@ -12,6 +13,8 @@ import DDC.Core.Pretty                          ()
 import DDC.Type.Pretty                          ()
 import DDC.Core.Transform.Rewrite.Error
 import DDC.Core.Collect
+import DDC.Core.Compounds
+import Control.Monad
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C
@@ -27,7 +30,6 @@ import qualified Data.Map                       as Map
 import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
 import qualified DDC.Type.Env                   as Env
-
 
 -- | A rewrite rule.
 --
@@ -365,7 +367,8 @@ countBinderUsage
         -> Either (Error a n) [(BindMode, Bind n)]
 
 countBinderUsage bs x
- = let  (U.UsedMap um, _)    = U.usageX x
+ = let  Just (U.UsedMap um)
+                = liftM fst $ takeAnnotOfExp $ U.usageX x
 
         get (BMType _, BName n t)
          = (BMType

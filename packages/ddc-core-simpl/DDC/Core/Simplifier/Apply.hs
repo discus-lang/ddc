@@ -110,9 +110,13 @@ applySimplifierX profile kenv tenv spec xx
 			case (resultInfo tx, resultInfo tx') of
 			(TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 		
+                let again    = resultAgain    tx || resultAgain    tx'
+                let progress = resultProgress tx || resultProgress tx'
+
 		return TransformResult
 		    { result   	     = result tx'
-		    , resultProgress = resultProgress tx || resultProgress tx'
+                    , resultAgain    = again
+		    , resultProgress = progress
 		    , resultInfo     = TransformInfo info }
 
 	Fix i s
@@ -123,6 +127,7 @@ applySimplifierX profile kenv tenv spec xx
 		
 		return TransformResult
 		    { result   	     = result tx
+                    , resultAgain    = resultAgain    tx
 		    , resultProgress = resultProgress tx
 		    , resultInfo     = TransformInfo info }
 		
@@ -152,10 +157,12 @@ applyFixpointX profile kenv tenv i' s xx'
 
   go i xx progress = do
     tx <- simp xx
-    case resultProgress tx of
-	False ->
-	    return tx { resultProgress = progress }
-	True  -> do
+    case resultAgain tx of
+	False 
+         -> return tx { resultProgress = progress }
+
+	True  
+         -> do
 	    tx' <- go (i-1) (result tx) True
 	    let info =
 		    case (resultInfo tx, resultInfo tx') of
@@ -163,6 +170,7 @@ applyFixpointX profile kenv tenv i' s xx'
 	    
 	    return TransformResult
 		{ result   	 = result tx'
+                , resultAgain    = resultProgress tx'
 		, resultProgress = resultProgress tx'
 		, resultInfo     = TransformInfo info }
 
@@ -219,4 +227,4 @@ applyTransformX profile kenv tenv spec xx
         Rewrite rules     -> return $ rewrite rules xx
         Elaborate{}       -> res    $ elaborate [] xx
  where
-    res x = return $ resultSimple (show $ ppr spec) x
+    res x = return $ resultDone (show $ ppr spec) x

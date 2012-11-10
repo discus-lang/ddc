@@ -31,13 +31,16 @@ betaReduce lets x
  = let (x', info) = runWriter
 		  $ transformUpMX (betaReduce1 lets) Env.empty Env.empty x
 
-        -- Check if any actual work was performed
-       progress (BetaReduceInfo ty wit val lets' _)
-         = (ty + wit + val + lets') > 0
+       -- Check if any actual work was performed
+       progress 
+        = case info of
+                BetaReduceInfo ty wit val lets' _
+                 -> (ty + wit + val + lets') > 0
 
    in  TransformResult
 	{ result   	 = x'
-	, resultProgress = progress info
+        , resultAgain    = progress
+	, resultProgress = progress
 	, resultInfo	 = TransformInfo info }
 
 

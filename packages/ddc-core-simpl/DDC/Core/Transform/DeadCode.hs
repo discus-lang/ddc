@@ -48,7 +48,8 @@ deadCode profile kenv tenv xx
 	     (transformUpMX deadCodeTrans kenv tenv)
 	     xx
    in TransformResult
-	{ result	     = xx'
+	{ result	 = xx'
+        , resultAgain    = progress info
 	, resultProgress = progress info
 	, resultInfo     = TransformInfo info }
  where
@@ -58,9 +59,9 @@ deadCode profile kenv tenv xx
 transformTypeUsage profile kenv tenv trans xx
  = case checkExp (configOfProfile profile) kenv tenv xx of
     Right (xx1,_,_,_) ->
-     let (_,xx2)    = usageX xx1
-         (x', info) = runWriter (trans xx2)
-         x''	    = reannotate (\(_, AnTEC { annotTail = a}) -> a) x'
+     let xx2            = usageX xx1
+         (x', info)     = runWriter (trans xx2)
+         x''            = reannotate (\(_, AnTEC { annotTail = a}) -> a) x'
      in  (x'', info)
 
      -- TODO: There was an error typechecking
@@ -131,6 +132,11 @@ deadCodeTrans _ _ xx
 
     ok [] = False
 
+
+filterUsedInCasts :: [Used] -> [Used]
+filterUsedInCasts = filter notCast
+ where  notCast UsedInCast      = False
+        notCast _               = True
 
 
 -- | Summary

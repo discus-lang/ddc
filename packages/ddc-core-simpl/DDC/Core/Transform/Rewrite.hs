@@ -73,6 +73,7 @@ rewrite rules x0
  = let  (x,info) = runWriter $ down x0 RE.empty
    in   TransformResult
          { result               = x
+         , resultAgain          = isProgress info
          , resultProgress       = isProgress info
          , resultInfo           = TransformInfo (RewriteInfo info) }
  where

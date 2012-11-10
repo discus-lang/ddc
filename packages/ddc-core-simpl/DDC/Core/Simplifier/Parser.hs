@@ -1,6 +1,8 @@
 
 module DDC.Core.Simplifier.Parser
-        (parseSimplifier)
+        ( ModuleName(..)
+        , InlinerTemplates
+        , parseSimplifier)
 where
 import DDC.Base.Pretty
 import DDC.Core.Transform.Namify
@@ -14,16 +16,26 @@ import qualified DDC.Core.Simplifier.Recipe	as R
 import Prelude
 import qualified Prelude			as P
 
-type ModuleTemplate a n = (ModuleName, (n -> Maybe (Exp a n)))
+
+-- | The inliner templates for the given module.
+type InlinerTemplates a n 
+        = (n -> Maybe (Exp a n))
+
 
 -- | Parse a simplifier specification.
+--
+--   The resulting simplifier specification captures auxilliary information
+--   such as the list of rewrite rules, and inliner templates. Therefore, 
+--   we need to supply all the possible auxilliary info when parsing
+--   the simplifier specification.
+--
 parseSimplifier 
 	:: (Eq n, Show n, Pretty n)
-        => (Env n -> Namifier s n)      -- ^ Namifier for type variables.
-        -> (Env n -> Namifier s n)      -- ^ Namifier for exp variables.
-        -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
-        -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
-        -> [ModuleTemplate a n]		-- ^ Module-specific inliner templates.
+        => (Env n -> Namifier s n)              -- ^ Namifier for type variables.
+        -> (Env n -> Namifier s n)              -- ^ Namifier for exp variables.
+        -> [(String, RewriteRule a n)]          -- ^ Rewrite rule set.
+        -> InlinerTemplates a n                 -- ^ Inliner templates for the current module.
+        -> [(ModuleName, InlinerTemplates a n)] -- ^ Inliner templates from other modules.
         -> String 
         -> Maybe (Simplifier s a n)
 
@@ -65,11 +77,11 @@ parseSimplifier namK namT rules templates module_templates str
 
 parseTransform 
 	:: (Eq n, Show n, Pretty n)
-        => (Env n -> Namifier s n)      -- ^ Namifier for type variables.
-        -> (Env n -> Namifier s n)      -- ^ Namifier for exp  variables.
-        -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
-        -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
-        -> [ModuleTemplate a n]		-- ^ Module-specific inliner templates.
+        => (Env n -> Namifier s n)              -- ^ Namifier for type variables.
+        -> (Env n -> Namifier s n)              -- ^ Namifier for exp  variables.
+        -> [(String, RewriteRule a n)]          -- ^ Rewrite rule set.
+        -> InlinerTemplates a n                 -- ^ Inliner templates for the current module.
+        -> [(ModuleName, InlinerTemplates a n)]	-- ^ Inliner templates from other modules.
         -> [Tok]
         -> Maybe (Transform s a n, [Tok])
 

@@ -29,9 +29,9 @@ import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
 import Data.Monoid
 import Data.Maybe
+import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
-import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt

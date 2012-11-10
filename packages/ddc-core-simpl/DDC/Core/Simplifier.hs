@@ -1,16 +1,20 @@
 
 module DDC.Core.Simplifier
-        ( -- * Description
+        ( -- * Simplifier Specifications
           Simplifier(..)
+
+          -- * Transform Specifications
         , Transform(..)
-        , TransformInfo(..)
+
+          -- * Transform Results
         , TransformResult(..)
+        , TransformInfo(..)
+        , resultDone
 
           -- * Parsing
+        , ModuleName    (..)
+        , InlinerTemplates
         , parseSimplifier
-
-          -- * Baked-in recipies
-        , anormalize
 
           -- * Application
         , applySimplifier
@@ -21,4 +25,3 @@ where
 import DDC.Core.Simplifier.Apply
 import DDC.Core.Simplifier.Base
 import DDC.Core.Simplifier.Parser
-import DDC.Core.Simplifier.Recipe
