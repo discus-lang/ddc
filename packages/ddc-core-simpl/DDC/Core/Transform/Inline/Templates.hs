@@ -9,13 +9,14 @@ import DDC.Core.Transform.AnonymizeX
 import Data.List
 
 
-
--------------------------------------------------------------------------------
--- TODO: Rubbish function to load inliner templates from some modules.
---       It just does a linear search, which won't be good enough in the long-term.
+-- | Lookup an inliner template from a list of modules.
+---
+--   This just does a linear search through all the modules.
 lookupTemplateFromModules 
         :: (Eq n, Ord n)
-        => [Module a n] -> n -> Maybe (Exp a n)
+        => [Module a n] 
+        -> n 
+        -> Maybe (Exp a n)
 
 lookupTemplateFromModules [] _  = Nothing
 lookupTemplateFromModules (m:ms) n
@@ -35,5 +36,4 @@ lookupTemplateFromModule mm n
 
         | otherwise
         = Nothing
-
 
