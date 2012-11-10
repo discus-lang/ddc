@@ -11,13 +11,14 @@ module DDC.Core.Transform.Rewrite.Rule
         , mkRewriteRule
         , checkRewriteRule)
 where
-import DDC.Core.Exp
-import DDC.Base.Pretty
-import DDC.Core.Pretty                          ()
-import DDC.Type.Pretty                          ()
 import DDC.Core.Transform.Rewrite.Error
+import DDC.Core.Exp
+import DDC.Core.Pretty                          ()
 import DDC.Core.Collect
 import DDC.Core.Compounds
+import DDC.Type.Pretty                          ()
+import DDC.Type.Env                             (KindEnv, TypeEnv)
+import DDC.Base.Pretty
 import Control.Monad
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
@@ -166,50 +167,49 @@ checkRewriteRule config kenv tenv
  = do   
         -- Extend the environments with variables bound by the rule.
         let (kenv', tenv', bs')  = extendBinds bs kenv tenv
-        let cs'                  = map (S.spreadT kenv') cs
+        let csSpread             = map (S.spreadT kenv') cs
 
         -- Check that all constraints are valid types.
-        mapM_ (\c -> checkConstraint config kenv' c ErrorBadConstraint) cs'
+        mapM_ (checkConstraint config kenv') csSpread
 
         -- Typecheck, spread and annotate with type information
         (lhs', _, _, _)
-                <- check config kenv' tenv' lhs 
-                        (ErrorTypeCheck Lhs)
+                <- checkExp config kenv' tenv' Lhs lhs 
 
-        -- If the extra left part is there, typecheck and annotate it
+        -- If the extra left part is there, typecheck and annotate it.
         hole' <- case hole of
-                Just h  
-                 -> do  (h',_,_,_)  <- check config kenv' tenv' h 
-                                        (ErrorTypeCheck Lhs)
-                        return $ Just h'
+                  Just h  
+                   -> do  (h',_,_,_)  <- checkExp config kenv' tenv' Lhs h 
+                          return $ Just h'
 
-                Nothing -> return Nothing
+                  Nothing -> return Nothing
 
         -- Build application from lhs and the hole so we can check its
         -- type against rhs
         let lhs_full = maybe lhs (XApp undefined lhs) hole
 
-        -- Check the full left hand side
-        (_   , tl, el, cl)
-                <- check config kenv' tenv' lhs_full
-                        (ErrorTypeCheck Lhs)
+        -- Check the full left hand side.
+        (_   , tLeft, effLeft, cloLeft)                                 -- TODO: lhs result not used
+                <- checkExp config kenv' tenv' Lhs lhs_full
 
-        -- Check the full right hand side
-        (rhs', tr, er, cr)
-                <- check config kenv' tenv' rhs 
-                        (ErrorTypeCheck Rhs)
+        -- Check the full right hand side.
+        (rhs', tRight, effRight, cloRight)
+                <- checkExp config kenv' tenv' Rhs rhs 
 
+        -- Check that types of both sides are equivalent.
+        let err = ErrorTypeConflict 
+                        (tLeft,  effLeft,  cloLeft) 
+                        (tRight, effRight, cloRight)
 
-        -- Check that types are equivalent, or error
-        let err = ErrorTypeConflict (tl, el, cl) (tr, er, cr)
-        equiv tl tr err
+        checkEquiv tLeft tRight err
 
-        -- of the right, and add a weakeff cast if nessesary.
-        eff_weak        <- makeEffectWeakening  T.kEffect el er err
+        -- Check the effect of the right is smaller than that 
+        -- of the left, and add a weakeff cast if nessesary
+        effWeak        <- makeEffectWeakening  T.kEffect effLeft effRight err
 
-        -- Check that the closure of the left is smaller than that
-        -- of the right, and add a weakclo cast if nessesary.
-        clo_weak        <- makeClosureWeakening bs lhs_full rhs
+        -- Check that the closure of the right is smaller than that
+        -- of the left, and add a weakclo cast if nessesary.
+        cloWeak        <- makeClosureWeakening bs lhs_full rhs         -- TODO: not rhs'
 
         -- Check that all the bound variables are mentioned
         -- in the left-hand side.
@@ -236,9 +236,9 @@ checkRewriteRule config kenv tenv
                       `Set.difference` binds
 
         return  $ RewriteRule 
-                        bs'' cs' 
+                        bs'' csSpread
                         lhs' hole' rhs'
-                        eff_weak clo_weak
+                        effWeak cloWeak
                         freeVars
 
 
@@ -248,50 +248,65 @@ checkRewriteRule config kenv tenv
 extendBinds 
         :: Ord n 
         => [(BindMode, Bind n)] 
-        -> T.KindEnv n 
-        -> T.TypeEnv n 
+        -> KindEnv n -> TypeEnv n 
         -> (T.KindEnv n, T.TypeEnv n, [(BindMode, Bind n)])
 
 extendBinds binds kenv tenv
  = go binds kenv tenv []
  where
-   go []          k t acc
-     = (k,t,acc)
-   go ((bm,b):bs) k t acc
-     = let b'      = S.spreadX k t b
-           (k',t') = case bm of
-                     BMKind   -> (T.extend b' k, t)
-                     BMType _ -> (k, T.extend b' t)
-       in  go bs k' t' (acc ++ [(bm,b')])
+        go []          k t acc
+         = (k,t,acc)
+
+        go ((bm,b):bs) k t acc
+         = let  b'      = S.spreadX k t b
+                (k',t') = case bm of
+                             BMKind   -> (T.extend b' k, t)
+                             BMType _ -> (k, T.extend b' t)
+
+           in  go bs k' t' (acc ++ [(bm,b')])
 
 
--- | Typecheck an expression or return an error
-check defs kenv tenv xx onError
- = let xx' = S.spreadX kenv tenv xx in
-   case C.checkExp defs kenv tenv xx' of
-   Left err -> Left $ onError xx' err
-   Right rhs -> return rhs
+-- | Type check the expression on one side of the rule.
+checkExp 
+        :: (Ord n, Show n, Pretty n)
+        => C.Config n 
+        -> KindEnv n    -- ^ Kind environment of expression.
+        -> TypeEnv n    -- ^ Type environment of expression.
+        -> Side         -- ^ Side that the expression appears on for errors.
+        -> Exp a n      -- ^ Expression to check.
+        -> Either (Error a n) 
+                  (Exp (C.AnTEC a n) n, Type n, Effect n, Closure n)
+
+checkExp defs kenv tenv side xx
+ = let xx' = S.spreadX kenv tenv xx 
+   in  case C.checkExp defs kenv tenv xx' of
+        Left err  -> Left $ ErrorTypeCheck side xx' err
+        Right rhs -> return rhs
 
 
--- | Typecheck a constraint or return an error
-checkConstraint defs kenv xx onError
- = case T.checkType (C.configPrimDataDefs defs) kenv xx of
-   Left _err -> Left $ onError xx
-   Right rhs ->
-        if   T.isWitnessType xx
-        then return rhs
-        else Left $ onError xx
+-- | Type check a constraint no the rule.
+checkConstraint
+        :: (Ord n, Show n, Pretty n)
+        => C.Config n
+        -> KindEnv n    -- ^ Kind environment of the constraint.
+        -> Type n       -- ^ The constraint type to check.
+        -> Either (Error a n) (Kind n)
+
+checkConstraint defs kenv tt
+ = case T.checkType (C.configPrimDataDefs defs) kenv tt of
+        Left _err               -> Left $ ErrorBadConstraint tt
+        Right k
+         | T.isWitnessType tt   -> return k
+         | otherwise            -> Left $ ErrorBadConstraint tt
 
 
 -- | Check equivalence of types or error
-equiv l r _ 
- | T.equivT l r
- = return ()
-
-equiv _ _ onError
- = Left onError
+checkEquiv l r onError
+        | T.equivT l r  = return ()
+        | otherwise     = Left onError
 
 
+-- Weaken ---------------------------------------------------------------------
 -- | Make the effect weakening for a rule.
 --   This contains the effects that are caused by the left of the rule
 --   but not the right. 
@@ -340,6 +355,7 @@ makeClosureWeakening _bs lhs rhs
                 | u <- Set.toList $ spLeft `Set.difference` spRight ]
 
 
+-- Structural Checks ----------------------------------------------------------
 checkUnmentionedBinders
     :: (Ord n, Show n)
     => [(BindMode, Bind n)]
