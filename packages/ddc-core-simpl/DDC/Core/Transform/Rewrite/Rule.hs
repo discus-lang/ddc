@@ -189,7 +189,7 @@ checkRewriteRule config kenv tenv
         let lhs_full = maybe lhs (XApp undefined lhs) hole
 
         -- Check the full left hand side.
-        (_   , tLeft, effLeft, cloLeft)                                 -- TODO: lhs result not used
+        (_   , tLeft, effLeft, cloLeft)                                         -- TODO: lhs result not used
                 <- checkExp config kenv' tenv' Lhs lhs_full
 
         -- Check the full right hand side.
@@ -209,7 +209,7 @@ checkRewriteRule config kenv tenv
 
         -- Check that the closure of the right is smaller than that
         -- of the left, and add a weakclo cast if nessesary.
-        cloWeak        <- makeClosureWeakening bs lhs_full rhs         -- TODO: not rhs'
+        cloWeak        <- makeClosureWeakening lhs_full rhs                  -- TODO: not rhs'
 
         -- Check that all the bound variables are mentioned
         -- in the left-hand side.
@@ -284,7 +284,7 @@ checkExp defs kenv tenv side xx
         Right rhs -> return rhs
 
 
--- | Type check a constraint no the rule.
+-- | Type check a constraint on the rule.
 checkConstraint
         :: (Ord n, Show n, Pretty n)
         => C.Config n
@@ -301,7 +301,7 @@ checkConstraint defs kenv tt
 
 
 -- | Check equivalence of types or error
-checkEquiv l r onError
+checkEquiv l r onError                                                          -- TODO: typesig
         | T.equivT l r  = return ()
         | otherwise     = Left onError
 
@@ -311,29 +311,46 @@ checkEquiv l r onError
 --   This contains the effects that are caused by the left of the rule
 --   but not the right. 
 --   If the right has more effects than the left then return an error.
+--
+makeEffectWeakening
+        :: (Ord n, Show n)
+        => Kind n       -- ^ Should be the effect kind.
+        -> Effect n     -- ^ Effect of the left of the rule.
+        -> Effect n     -- ^ Effect of the right of the rule.
+        -> Error a n    -- ^ Error to report if the right is bigger.
+        -> Either (Error a n) (Maybe (Type n))
 
-makeEffectWeakening _ l r _ 
- | T.equivT l r
- = return Nothing
+makeEffectWeakening k effLeft effRight onError
+        -- When the effect of the left matches that of the right
+        -- then we don't have to do anything else.
+        | T.equivT effLeft effRight
+        = return Nothing
 
-makeEffectWeakening k l r _ 
- | T.subsumesT k l r
- = return $ Just l
+        -- When the effect of the right is smaller than that of
+        -- the left then we need to wrap it in an effect weaking
+        -- so the rewritten expression retains its original effect.
+        | T.subsumesT k effLeft effRight
+        = return $ Just effLeft
 
-makeEffectWeakening _ _ _ onError
- = Left onError
+        -- When the effect of the right is more than that of the left
+        -- then this is an error. The rewritten expression can't have
+        -- can't have more effects than the source.
+        | otherwise
+        = Left onError
 
 
 -- | Make the closure weakening for a rule.
 --   This contains a closure term for all variables that are present
 --   in the left of a rule but not in the right.
+--
 makeClosureWeakening 
         :: (Ord n, Pretty n)
-        => [(BindMode, Bind n)]
-        -> Exp a n -> Exp a n 
-        -> Either (Error a n) [Exp (C.AnTEC a n) n]
+        => Exp a n      -- ^ Expression on the left of the rule.
+        -> Exp a n      -- ^ Expression on the right of the rule.
+        -> Either (Error a n) 
+                  [Exp (C.AnTEC a n) n]
 
-makeClosureWeakening _bs lhs rhs
+makeClosureWeakening lhs rhs
  = let  supportLeft  = support Env.empty Env.empty lhs
         daLeft  = supportDaVar supportLeft
         wiLeft  = supportWiVar supportLeft
@@ -344,8 +361,14 @@ makeClosureWeakening _bs lhs rhs
         wiRight = supportWiVar supportRight
         spRight = supportSpVar supportRight
 
+        -- The variables below are just going into a closure weakening,
+        -- so we don't need to attach their real types. Follow-on transforms
+        -- can get these straight from the environment.
+        Just a  = takeAnnotOfExp lhs
+        a'      = C.AnTEC (tBot kData) (tBot kEffect) (tBot kClosure) a
+
    in   Right 
-         $  [XVar (error "weakClo annot") u 
+         $  [XVar a' u 
                 | u <- Set.toList $ daLeft `Set.difference` daRight ]
 
          ++ [XWitness (WVar u)
@@ -356,35 +379,41 @@ makeClosureWeakening _bs lhs rhs
 
 
 -- Structural Checks ----------------------------------------------------------
+-- | Check for rule variables that have no uses.
 checkUnmentionedBinders
-    :: (Ord n, Show n)
-    => [(BindMode, Bind n)]
-    -> Exp a n
-    -> Either (Error a n) ()
+        :: (Ord n, Show n)
+        => [(BindMode, Bind n)]
+        -> Exp a n
+        -> Either (Error a n) ()
 
 checkUnmentionedBinders bs expr
- = let used  = C.freeX T.empty expr `Set.union` C.freeT T.empty expr
+ = let  used  = C.freeX T.empty expr `Set.union` C.freeT T.empty expr
 
-       binds = Set.fromList
-             $ Maybe.catMaybes
-             $ map (T.takeSubstBoundOfBind . snd) bs
+        binds = Set.fromList
+              $ Maybe.catMaybes
+              $ map (T.takeSubstBoundOfBind . snd) bs
 
-   in if   binds `Set.isSubsetOf` used
-      then return ()
-      else Left ErrorVarUnmentioned
+   in   if binds `Set.isSubsetOf` used
+         then return ()
+         else Left ErrorVarUnmentioned
 
 
-checkAnonymousBinders :: [(BindMode, Bind n)] -> Either (Error a n) ()
+-- | Check for anonymous binders in the rule. We don't handle these.
+checkAnonymousBinders 
+        :: [(BindMode, Bind n)] 
+        -> Either (Error a n) ()
+
 checkAnonymousBinders bs
-        | (b:_) <- filter anony $ map snd bs
+        | (b:_) <- filter T.isBAnon $ map snd bs
         = Left $ ErrorAnonymousBinder b
 
         | otherwise
         = return ()
-        where   anony (BAnon _) = True
-                anony _         = False
 
 
+-- | Check whether the form of the left-hand side of the rule is valid
+--   we can only match against nested applications, and not general
+--   expressions containing let-bindings and the like.
 checkValidPattern :: Exp a n -> Either (Error a n) ()
 checkValidPattern expr
  = go expr
@@ -406,7 +435,7 @@ checkValidPattern expr
         go_t (TSum _)           = return ()
 
 
--- | Count how many times each binder is used in rhs
+-- | Count how many times each binder is used in right-hand side.
 countBinderUsage 
         :: Ord n 
         => [(BindMode, Bind n)] 
