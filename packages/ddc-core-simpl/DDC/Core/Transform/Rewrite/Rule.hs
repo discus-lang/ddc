@@ -1,6 +1,7 @@
 -- | Constructing and checking whether rewrite rules are valid
 module DDC.Core.Transform.Rewrite.Rule 
         ( RewriteRule   (..)
+        , NamedRewriteRule
 
           -- * Binding modes
         , BindMode      (..)
@@ -79,6 +80,9 @@ data RewriteRule a n
         , ruleFreeVars    :: [Bound n]          
         } deriving (Eq, Show)
 
+
+type NamedRewriteRule a n
+        = (String, RewriteRule a n)
 
 
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where

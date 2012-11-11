@@ -14,7 +14,7 @@ import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint    as RD
 import qualified DDC.Core.Transform.Rewrite.Env         as RE
 import qualified DDC.Core.Transform.Rewrite.Match       as RM
-import           DDC.Core.Transform.Rewrite.Rule        (RewriteRule(..), BindMode(..), isBMType)
+import           DDC.Core.Transform.Rewrite.Rule
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Transform.SubstituteT         as S
 import qualified DDC.Core.Transform.Trim                as Trim
@@ -23,9 +23,10 @@ import qualified DDC.Type.Compounds                     as T
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import Control.Monad
 import Control.Monad.Writer (tell, runWriter)
-import Data.List            (partition)
-import Data.Typeable        (Typeable)
+import Data.List
+import Data.Typeable
 
 
 -- Log ------------------------------------------------------------------------
@@ -57,8 +58,8 @@ isProgress = not . null
 -- | Apply rewrite rules to a module.
 rewriteModule
         :: (Show a, Show n, Ord n, Pretty n)
-        => [(String, RewriteRule a n)]          -- ^ Rules with their names.
-        -> Module a n
+        => [NamedRewriteRule a n]       -- ^ Rewrite rule database.
+        -> Module a n                   -- ^ Rewrite in this module.
         -> Module a n
 
 rewriteModule rules mm
@@ -68,180 +69,184 @@ rewriteModule rules mm
 -- | Perform rewrites top-down, repeatedly.
 rewriteX 
         :: (Show a, Show n, Ord n, Pretty n) 
-        => [(String, RewriteRule a n)]          -- ^ Rules with their names.
-        -> Exp a n 
+        => [NamedRewriteRule a n]       -- ^ Rewrite rules database.
+        -> Exp a n                      -- ^ Rewrite in this expression.
         -> TransformResult (Exp a n)
 
 rewriteX rules x0
- = let  (x,info) = runWriter $ down x0 RE.empty
+ = let  (x,info) = runWriter $ down RE.empty x0 
    in   TransformResult
          { result               = x
          , resultAgain          = isProgress info
          , resultProgress       = isProgress info
          , resultInfo           = TransformInfo (RewriteInfo info) }
  where
-        down x ws 
-         = go x [] ws
+        down env x  
+         = go env x []
 
-        go (XApp a f arg) args ws 
-         = do   arg' <- down arg ws
-                go f ((arg',a):args) ws
+        -- TODO this should find the "most specific".
+        -- ben suggested that size of substitution map might be good indicator
+        -- (smaller is better)
+        rewrites env f args
+         = rewrites' rules env f args
 
-        go x@XVar{}   args ws 
-         = rewrites x args ws
+        rewrites' [] _ f args
+         = return $ X.makeXAppsWithAnnots f args
 
-        go x@XCon{}   args ws 
-         = rewrites x args ws
+        rewrites' ((n,r):rs) env f args
+         = case rewriteWithX r f args env of
+                Nothing -> rewrites' rs env f args
+                Just x  -> tell [LogRewrite n] >> go env x []
 
-        go (XLAM a b e) args ws 
-         = do   e' <- down e (RE.lift b ws)
-                rewrites (XLAM a b e') args ws
 
-        go (XLam a b e) args ws 
-         = do   e' <- down e (RE.extend b ws)
-                rewrites (XLam a b e') args ws
+        go env (XApp a f arg) args
+         = do   arg' <- down env arg
+                go env f ((arg',a):args)
 
-        go (XLet a l@(LRec _) e) args ws        
-         = do   let ws' = RE.extendLets l ws
-                l'      <- goLets l ws'
-                e'      <- down e ws'
-                rewrites (XLet a l' e') args ws'
+        go env x@XVar{}   args 
+         =      rewrites env x args
 
-        go (XLet a l e)     args ws 
-         = do   l'      <- goLets l ws
-                dh      <- goDefHoles a l' e ws
-                rewrites dh args ws
+        go env x@XCon{}   args 
+         =      rewrites env x args
 
-        go (XCase a e alts) args ws 
-         = do   e'      <- down e ws
-                alts'   <- mapM (goAlts ws) alts
-                rewrites (XCase a e' alts') args ws
+        go env (XLAM a b e) args
+         = do   e' <- down (RE.lift b env) e 
+                rewrites env (XLAM a b e') args
 
-        go (XCast a c e)    args ws
-         = do   e'      <- down e ws
-                rewrites (XCast a c e') args ws
+        go env (XLam a b e) args
+         = do   e' <- down (RE.extend b env) e 
+                rewrites env (XLam a b e') args
 
-        go x@(XType{})      args ws 
-         = rewrites x args ws
+        go env (XLet a l@(LRec _) e) args
+         = do   let env' = RE.extendLets l env
+                l'      <- goLets l env'
+                e'      <- down env' e 
+                rewrites env' (XLet a l' e') args
 
-        go x@(XWitness{})   args ws 
-         = rewrites x args ws
+        go env (XLet a l e)     args
+         = do   l'      <- goLets l env
+                dh      <- goDefHoles rules a l' e env down
+                rewrites env dh args 
 
-        -- If definitions match the holes of any rules,
-        -- clean it up and record it for later.
-        -- Eg with this rule,
-        --   RULE unbox {box s} = s
-        --
-        -- this expression:
-        --   let x = box (some expensive op)
-        --   in  ...
-        --
-        -- will be transformed to
-        --   let ^ = some expensive op
-        --       x = box ^0
-        --   in ...
-        --
-        goDefHoles a l@(LLet LetStrict let_bind def) e ws
-         = let subs = checkHoles def ws
-           in case subs of
-               (((sub, []), name, RewriteRule { ruleBinds = bs, ruleLeft = hole }):_) ->
-                    -- only get value-level bindings
-                let bs'        = map snd $ filter (isBMType.fst) bs
-                    bas'       = lookups bs' sub
+        go env (XCase a e alts) args
+         = do   e'      <- down env e
+                alts'   <- mapM (goAlts env) alts
+                rewrites env (XCase a e' alts') args
 
-                    -- check if it looks like something has already been unfolded
-                    isUIx x = case x of 
-                              XVar _ (UIx _)     -> True
-                              XVar _ (UPrim _ _) -> True
-                              _                  -> False
-                    already_done= all isUIx $ map snd bas'
+        go env (XCast a c e)    args
+         = do   e'      <- down env e
+                rewrites env (XCast a c e') args
 
-                    -- find kind-values and sub those in as well
-                    bsK'       = map snd $ filter ((==BMKind).fst) bs
-                    basK       = lookups bsK' sub
+        go env x@(XType{})      args
+         =      rewrites env x args
 
-                    basK'      = concatMap (\(b,x) -> case X.takeXType x of
-                                                      Just t -> [(b,t)]
-                                                      Nothing-> []) basK
+        go env x@(XWitness{})   args
+         =      rewrites env x args
 
-                    -- surround whole expression with anon lets from sub
-                    values     = map     (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v)) (reverse bas')
-                    -- replace 'def' with LHS-HOLE[sub => ^n]
-                    anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
-                    lets       = map (\(b,v) -> LLet LetStrict b v) values
-
-                    def'       = S.substituteXArgs basK
-                               $ S.substituteXArgs anons hole
-
-                    let_bind'  = S.substituteTs basK' let_bind
-                    lets'      = lets ++ [LLet LetStrict let_bind' def']
-                    -- lift e by (length bas)
-                    depth      = case let_bind of
-                                 BAnon _ -> 1 
-                                 _       -> 0
-                    e'         = L.liftAtDepthX (length bas') depth e
-                    -- SAVE in wit env
-                    ws'        = foldl (flip RE.extendLets) ws lets'
-                in  if already_done
-                    then do
-                        e'' <- down e (RE.extendLets l ws)
-                        return $ XLet a l e''
-                    else do
-                        tell [LogUnfold name]
-                        e'' <- down e' ws'
-                        return $ X.xLets a lets' e''
-               _ -> do
-                        e' <- down e (RE.extendLets l ws)
-                        return $ XLet a l e'
-
-        goDefHoles a l e ws 
-         = do   e' <- down e (RE.extendLets l ws)
-                return $ XLet a l e'
-
-        -- Match a let-definition against the holes in all the rules
-        checkHoles def ws
-         = let  rules'   = Maybe.catMaybes $ map holeRule rules
-                (f,args) = X.takeXAppsWithAnnots def
-                -- TODO most specific?
-           in  Maybe.catMaybes
-                $ map (\(name,r) -> fmap (\s -> (s,name,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
-                    rules'
-
-        holeRule (name, rule@RewriteRule { ruleLeftHole     = Just hole })
-         = Just ( name
-                , rule { ruleLeft     = hole
-                       , ruleLeftHole = Nothing })
-
-        holeRule _ = Nothing
 
         goLets (LLet lm b e) ws 
-         = do   e' <- down e ws
+         = do   e' <- down ws e 
                 return $ LLet lm b e'
 
         goLets (LRec bs) ws 
-         = do   bs' <- mapM (flip down ws . snd) bs
+         = do   bs'     <- mapM (down ws) $ map snd bs
                 return $ LRec $ zip (map fst bs) bs'
 
         goLets l _ 
          = return $ l
 
         goAlts ws (AAlt p e) 
-         = do   e' <- down e ws
+         = do   e' <- down ws e 
                 return $ AAlt p e'
 
-        -- TODO this should find the "most specific".
-        -- ben suggested that size of substitution map might be good indicator
-        -- (smaller is better)
-        rewrites f args ws 
-         = rewrites' rules f args ws
 
-        rewrites' [] f args _
-         = return $ X.makeXAppsWithAnnots f args
+-- If definitions match the holes of any rules,
+-- clean it up and record it for later.
+-- Eg with this rule,
+--   RULE unbox {box s} = s
+--
+-- this expression:
+--   let x = box (some expensive op)
+--   in  ...
+--
+-- will be transformed to
+--   let ^ = some expensive op
+--       x = box ^0
+--   in ...
+--
+goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
+ = let subs = checkHoles rules def ws
+   in case subs of
+       (((sub, []), name, RewriteRule { ruleBinds = bs, ruleLeft = hole }):_) ->
+            -- only get value-level bindings
+        let bs'        = map snd $ filter (isBMType.fst) bs
+            bas'       = lookups bs' sub
 
-        rewrites' ((n,r):rs) f args ws
-         = case rewriteWithX r f args ws of
-                Nothing -> rewrites' rs f args ws
-                Just x  -> tell [LogRewrite n] >> go x [] ws
+            -- check if it looks like something has already been unfolded
+            isUIx x = case x of 
+                      XVar _ (UIx _)     -> True
+                      XVar _ (UPrim _ _) -> True
+                      _                  -> False
+            already_done= all isUIx $ map snd bas'
+
+            -- find kind-values and sub those in as well
+            bsK'       = map snd $ filter ((==BMKind).fst) bs
+            basK       = lookups bsK' sub
+
+            basK'      = concatMap (\(b,x) -> case X.takeXType x of
+                                              Just t -> [(b,t)]
+                                              Nothing-> []) basK
+
+            -- surround whole expression with anon lets from sub
+            values     = map     (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v)) (reverse bas')
+            -- replace 'def' with LHS-HOLE[sub => ^n]
+            anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
+            lets       = map (\(b,v) -> LLet LetStrict b v) values
+
+            def'       = S.substituteXArgs basK
+                       $ S.substituteXArgs anons hole
+
+            let_bind'  = S.substituteTs basK' let_bind
+            lets'      = lets ++ [LLet LetStrict let_bind' def']
+            -- lift e by (length bas)
+            depth      = case let_bind of
+                         BAnon _ -> 1 
+                         _       -> 0
+            e'         = L.liftAtDepthX (length bas') depth e
+            -- SAVE in wit env
+            ws'        = foldl (flip RE.extendLets) ws lets'
+        in  if already_done
+            then do
+                e'' <- down (RE.extendLets l ws) e
+                return $ XLet a l e''
+            else do
+                tell [LogUnfold name]
+                e'' <- down ws' e'
+                return $ X.xLets a lets' e''
+       _ -> do
+                e' <- down (RE.extendLets l ws) e
+                return $ XLet a l e'
+
+goDefHoles _rules a l e ws down
+ = do   e' <- down (RE.extendLets l ws) e
+        return $ XLet a l e'
+
+
+-- Match a let-definition against the holes in all the rules
+checkHoles rules def ws
+ = let  rules'   = Maybe.catMaybes $ map holeRule rules
+        (f,args) = X.takeXAppsWithAnnots def
+        -- TODO most specific?
+   in  Maybe.catMaybes
+        $ map (\(name,r) -> fmap (\s -> (s,name,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
+            rules'
+
+holeRule (name, rule@RewriteRule { ruleLeftHole     = Just hole })
+ = Just ( name
+        , rule { ruleLeft     = hole
+               , ruleLeftHole = Nothing })
+
+holeRule _ = Nothing
 
 
 -- | Attempt to find a rewrite substitution to match expression against rule.
@@ -283,37 +288,35 @@ rewriteSubst
         , ruleLeftHole  = Nothing
         , ruleFreeVars  = free}
     f args env sub
- = do   -- First check if any of the free variables have been re-bound: instafail
-        checkFreeVars
+ = do   
+        -- Check that none of the free variables have been rebound.
+        when (any (flip RE.hasDef env) free)
+         $ Nothing
 
-        l:ls   <- return $ X.takeXAppsAsList lhs
-        sub'     <- RM.match sub vs l f
-        go sub' ls args
- where
-        checkFreeVars
-         | any (flip RE.hasDef env) free
-         = Nothing
+        -- Get names of all the variables bound by the rule.
+        --  This should always match because checked rules are guaranteed not to
+        --  have `BAnon` or `BNone` binders.
+        let Just vs 
+                = liftM Set.fromList
+                $ sequence 
+                $ map T.takeNameOfBind
+                $ map snd binds
 
-         | otherwise
-         = return ()
-
-        bs = map snd binds
-        vs = Set.fromList $ map nm bs
-
-        -- Get name from a Bind. We disallow BAnon and BNone earlier, so this is safe.
-        nm (BName name _) = name
-        nm _              = error "Impossible! No anonymous binders in rewrite rules, please"
+        l:ls    <- return $ X.takeXAppsAsList lhs
+        sub'    <- RM.match sub vs l f
 
         -- Match each left-hand rule against the arguments
-        go m [] rest
-         = do   return $ (m, rest)
+        let go m [] rest
+             = do return $ (m, rest)
 
-        go m (l:ls) ((r,_):rs)
-         = do   m' <- RM.match m vs l r
-                go m' ls rs
+            go m (l':ls') ((r,_):rs)
+             = do m' <- RM.match m vs l' r
+                  go m' ls' rs
 
-        go _ _ _ 
-         = Nothing
+            go _ _ _ 
+             = Nothing
+
+        go sub' ls args
 
 
 -- Find substitution for rules with a 'hole'.
