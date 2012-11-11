@@ -18,6 +18,7 @@ import qualified DDC.Core.Transform.Rewrite.Rule as R
 	addInt [:r1 r2 r1:] x (0 [r2] ()) =
 	x
 -}
+-- | Parse a rewrite rule.
 pRule	:: Ord n => Parser n (R.RewriteRule () n)
 pRule
  = do	bs	 <- pRuleBinders
@@ -28,6 +29,7 @@ pRule
 
 	return $ R.mkRewriteRule bs cs lhs hole rhs
 
+
 pRuleBinders :: Ord n => Parser n [(R.BindMode,Bind n)]
 pRuleBinders
  = P.choice
@@ -36,6 +38,7 @@ pRuleBinders
 	return $ concat bs
  , return []
  ]
+
 
 pRuleCsLhs :: Ord n => Parser n ([Type n], Exp () n)
 pRuleCsLhs
@@ -50,6 +53,7 @@ pRuleCsLhs
 	return ([],lhs)
  ]
 
+
 pRuleHole :: Ord n => Parser n (Maybe (Exp () n))
 pRuleHole
  = P.optionMaybe
@@ -57,6 +61,7 @@ pRuleHole
 	e <- pExp
 	pTok KBraceKet
 	return e
+
 
 -- | Parse rewrite binders
 --
