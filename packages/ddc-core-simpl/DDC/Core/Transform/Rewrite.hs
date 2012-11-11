@@ -291,7 +291,7 @@ rewriteSubst
         go sub' ls args
  where
         checkFreeVars
-         | any (flip RE.isDef env) free
+         | any (flip RE.hasDef env) free
          = Nothing
 
          | otherwise

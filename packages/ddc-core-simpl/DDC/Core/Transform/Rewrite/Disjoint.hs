@@ -1,198 +1,203 @@
 -- | Check whether two effects are non-interfering
 module DDC.Core.Transform.Rewrite.Disjoint
-    ( checkDisjoint
-    , checkDistinct )
+        ( checkDisjoint
+        , checkDistinct )
 where
-
 import DDC.Core.Exp
+import DDC.Type.Predicates
+import DDC.Type.Compounds
 import qualified DDC.Core.Transform.Rewrite.Env	as RE
-import qualified DDC.Type.Compounds		as T
-import qualified DDC.Type.Exp			as T
-import qualified DDC.Type.Sum			as TS
+import qualified DDC.Type.Sum			as Sum
 import qualified DDC.Type.Transform.Crush	as TC
 
--- | Check whether two effects are non-interfering.
+
+-- | Check whether a disjointness property is true in the given
+--   rewrite environment.
+--
+--   Disjointness means that two effects do not interfere.
+--
 --   Context is important because if two regions are known to be
 --   distinct, reading from one and writing to another is valid.
 --   If they have different names they may not be distinct.
 --
---   Reads are safe:
---	Disjoint (Read r1) (Read r2)
---	Disjoint (Read r1) (DeepRead a)
+--   All read effects are disjoint with other reads.
 --
---   Allocations are always safe:
---      Disjoint (Alloc r) (_)
+-- > Disjoint (Read r1) (Read r2)
+-- > Disjoint (Read r1) (DeepRead a)
 --
---   Writes are only safe if the same region is not read or written:
---	        Distinct r1 r2
---	-----------------------------
---	Disjoint (Read r1) (Write r2)
+--   Allocation effects are disjoint with everything.
 --
---	        Distinct r1 r2
---	------------------------------
---	Disjoint (Write r1) (Write r2)
+-- > Disjoint (Alloc r) (_)
 --
---   But DeepWrite etc can't mix with anything except Alloc,
---   because we don't even know what regions it is.
+--   Atomic reads and write effects are disjoint if they are to distinct regions.
 --
---   It is commutative:
---     Disjoint f g
---     ------------
---     Disjoint g f
+-- >         Distinct r1 r2
+-- > -----------------------------
+-- > Disjoint (Read r1) (Write r2)
+-- 
+--   @DeepWrite@ effects are only disjoint with allocation effects, because
+--   we don't know what regions it will write to.
 --
---   Effect sums are OK if all their elements are disjoint:
---     Disjoint f1 g /\ Disjoint f2 g
---     -----------------------------
---           Disjoint (f1+f2) g
+--   An effect sum is disjoint from some other effect if all its components are.
+--
+-- > Disjoint f1 g /\ Disjoint f2 g
+-- > -----------------------------
+-- >      Disjoint (f1 + f2) g
+--
+--   Disjointness is commutative.
+--
+-- > Disjoint f g
+-- > ------------
+-- > Disjoint g f
+--  
+--   Example:
 --   
---
---   checkDisjoint
---	(Disjoint (Read r1 + Read r2) (Write r3))
---	[Distinct r1 r3, Distinct r2 r3]
---   = True
+-- >  checkDisjoint
+-- >	(Disjoint (Read r1 + Read r2) (Write r3))
+-- >	[Distinct r1 r3, Distinct r2 r3]
+-- >  = True
 --
 checkDisjoint
-    :: (Eq n, Ord n, Show n)
-    => Type n			-- ^ Target, eg "Disjoint f g"
-    -> RE.RewriteEnv a n	-- ^ Environment: distinctness map
-    -> Bool
+        :: (Ord n, Show n)
+        => Type n               -- ^ Type of property we want
+                                --   eg @Disjoint f g@
+        -> RE.RewriteEnv a n	-- ^ Environment we're rewriting in.
+        -> Bool
+
 checkDisjoint c env
- -- It's of the form "Disjoint f g"
- | [TCon (TyConWitness TwConDisjoint), fs, gs]
-		<- T.takeTApps c
- = let
-      fs'	=  map T.takeTApps $ sumList $ TC.crushEffect fs
-      gs'	=  map T.takeTApps $ sumList $ TC.crushEffect gs
-   in and [ disjoint f g && disjoint g f | f <- fs', g <- gs' ]
+        -- The type must have the form "Disjoint f g"
+        | [TCon (TyConWitness TwConDisjoint), fs, gs] <- takeTApps c
+        = and [ areDisjoint env g f 
+                | f <- sumList $ TC.crushEffect fs
+                , g <- sumList $ TC.crushEffect gs ]
 
- | otherwise
- = False
- where
-    sumList (TSum ts) = TS.toList ts
-    sumList tt	      = [tt]
+        | otherwise
+        = False
+        where   sumList (TSum ts) = Sum.toList ts
+                sumList tt        = [tt]
 
-    -- Anything goes with allocations
-    disjoint _ (TCon (TyConSpec TcConAlloc) : _)
-     = True
-    disjoint _ (TCon (TyConSpec TcConDeepAlloc) : _)
-     = True
 
-    -- Check a variable. Since we have no idea what it may end up being,
-    -- assume the worst. It can only work if the right-hand is an Alloc
-    disjoint (TVar _ : _) _
-     = False
+-- | Check whether two atomic effects are disjoint.
+areDisjoint 
+        :: (Ord n, Show n)
+        => RE.RewriteEnv a n
+        -> Effect n
+        -> Effect n
+        -> Bool
 
-    -- Check a builtin effect. If it's a read or alloc, assume rhs is OK
-    -- (other direction will be checked later).
-    -- If it's a write, check which regions and if it overlaps with rhs.
-    disjoint (TCon (TyConSpec fcon) : fargs) (TCon (TyConSpec gcon) : gargs)
-     = case fcon of
-       TcConRead	-> True
-       TcConHeadRead	-> True
-       TcConDeepRead	-> True
-       TcConWrite	-> disjointWrite fargs gcon gargs
-       -- A deep write can only work if the rhs is alloc, and we already know it's not
-       TcConDeepWrite	-> False
-       TcConAlloc	-> True
-       TcConDeepAlloc	-> True
-       _		-> False
+areDisjoint env t1 t2
+        -- Allocations are disjoint with everything.
+        |   isSomeAllocEffect t1
+         || isSomeAllocEffect t2
+        = True 
 
-    -- It can't (shouldn't?) be anything else...
-    disjoint _ _
-     = False
+        -- All the read effects are disjoint with each other.
+        | isSomeReadEffect t1
+        , isSomeReadEffect t2
+        = True
 
-    disjointWrite fargs gcon gargs
-     = case gcon of
-       -- The only two that might possibly work are writing or reading to a distinct region
-       TcConWrite	-> distinct fargs gargs
-       TcConRead	-> distinct fargs gargs
-       -- Likewise, writing combined with head or deep reads can't work
-       _		-> False
+        -- Combinations of reads and writes are disjoint
+        -- if the regions are distinct.
+        | TApp _ tR1            <- t1
+        , TApp _ tR2            <- t2
+        ,   (isReadEffect  t1 && isWriteEffect t2)
+         || (isWriteEffect t1 && isReadEffect  t2)
+         || (isWriteEffect t1 && isWriteEffect t2)
+        = areDistinct env tR1 tR2
 
-    distinct fargs gargs
-     | [farg]  <- fargs
-     , [garg]  <- gargs
-     , Just fb <- boundOf farg
-     , Just gb <- boundOf garg
-     = areDistinct env fb gb
-     | otherwise
-     = False
+        -- All other effects are assumed to be interfering.
+        | otherwise                     = False
 
-    boundOf (TVar b)
-     = Just b
-    boundOf (TCon (TyConBound b _))
-     = Just b
-    boundOf _
-     = Nothing
 
+-- Distinct -------------------------------------------------------------------
+-- | Check whether a distintness property is true in the given 
+--   rewrite environment.
+--
+--   Distinctness means that two regions do not alias.
+--
 checkDistinct
-    :: (Eq n, Ord n, Show n)
-    => Type n			-- ^ Target, eg "Distinct r q"
-    -> RE.RewriteEnv a n	-- ^ Environment: distinctness map
+    :: Ord n
+    => Type n			-- ^ Type of the property we want,
+                                --   eg @Distinct r1 r2@
+    -> RE.RewriteEnv a n	-- ^ Environment we're rewriting in.
     -> Bool
+
 checkDistinct c env
- -- It's of the form "Distinct r q"
- | (TCon (TyConWitness (TwConDistinct n)) : args)
-		<- T.takeTApps c
+        -- It's of the form "Distinct r q"
+        | (TCon (TyConWitness (TwConDistinct _)) : args)
+        	<- takeTApps c
+        = all (uncurry $ areDistinct env) (combinations args)
 
- , args'	<- concatMap bound $ take n args
- = all (uncurry $ areDistinct env) (combs args')
+        | otherwise
+        = False
 
- | otherwise
- = False
+        where   combinations [] = []
+                combinations (x:xs) = repeat x `zip` xs ++ combinations xs
 
- where
-  combs [] = []
-  combs (x:xs) = repeat x `zip` xs ++ combs xs
 
-  bound (TVar b)		= [b]
-  bound (TCon (TyConBound b _)) = [b]
-  bound _			= []
-
--- | Check if two regions are definitely distinct.
--- We might not know, eg if they're bound in lambdas, so err on false
+-- | Check if two regions are distinct.
 areDistinct
-    :: (Eq n, Ord n, Show n)
-    => RE.RewriteEnv a n
-    -> Bound n -> Bound n
-    -> Bool
-areDistinct env p q
- -- If they are the same, they can't possibly be different
- | p == q
- = False
+        :: Ord n
+        => RE.RewriteEnv a n
+        -> Type n -> Type n -> Bool
 
- -- Check witness map for "Distinct p q" and vice versa
- | witDistinct
- = True
+areDistinct env t1 t2
+        | Just u1   <- takeBound t1
+        , Just u2   <- takeBound t2
+        = areDistinctBound env u1 u2
 
- -- If they're both named primitives (eg R0#, R1#)
- -- we can just check name-equality, since can't be bound in lambdas
- -- Or if they're both bound in letregions, we can check by name
- -- (and we know names are different because that's an insta-fail)
- | concrete p && concrete q
- = True
+        | otherwise
+        = False
+        where   takeBound (TVar u)                = Just u
+                takeBound (TCon (TyConBound u _)) = Just u
+                takeBound _                       = Nothing
 
- -- Otherwise... we don't really know.
- | otherwise
- = False
- where
-    -- | Check if region is 'concrete' - either global (R0#) or letregion
-    concrete r
-     = case r of
-       UPrim _ _ -> True
-       _	 -> RE.containsRegion r env
 
-    witDistinct
-      =  any check $ RE.getWitnesses env
+-- | Check whether two regions are distinct.
+--   This version takes `Bounds` so we don't need to worry about
+--   region constructors like R0# directly.
+areDistinctBound 
+        :: Ord n
+        => RE.RewriteEnv a n
+        -> Bound n -> Bound n -> Bool
 
-    check w
-     | (T.TCon (T.TyConWitness (T.TwConDistinct _)) : args) <- T.takeTApps w
-     = rgn p `elem` args && rgn q `elem` args
-     | otherwise
-     = False
+areDistinctBound env p q
+        -- If they are the same, they can't possibly be different
+        | p == q
+        = False
 
-    rgn b
-     = case b of
-       UPrim _ t -> T.TCon (T.TyConBound b t)
-       _	 -> T.TVar b
+        -- If they're both named primitives (eg R0#, R1#)
+        -- we can just check name-equality, since can't be bound in lambdas
+        -- Or if they're both bound in letregions, we can check by name
+        -- (and we know names are different because that's an insta-fail)
+        | concrete p && concrete q
+        = True
+
+        -- Check witness map for "Distinct p q" and vice versa
+        | any check $ RE.getWitnesses env
+        = True
+
+        -- Otherwise not.
+        | otherwise
+        = False
+
+        where   -- Check if region is 'concrete' either a region handle (R0#) 
+                -- or bound by a letregion in a higher scope.
+                concrete r
+                 = case r of
+                        UPrim _ _ -> True
+                        _	  -> RE.containsRegion r env
+
+                check w
+                 | (TCon (TyConWitness (TwConDistinct _)) : args)
+                        <- takeTApps w
+                 = rgn p `elem` args && rgn q `elem` args
+
+                 | otherwise
+                 = False
+
+                rgn b
+                 = case b of
+                    UPrim _ t   -> TCon (TyConBound b t)
+                    _	        -> TVar b
 

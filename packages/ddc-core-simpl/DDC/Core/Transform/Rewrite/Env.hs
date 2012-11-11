@@ -8,7 +8,7 @@ module DDC.Core.Transform.Rewrite.Env
         , getWitnesses
         , insertDef
         , getDef
-        , isDef
+        , hasDef
         , lift
         , liftValue)
 where
@@ -163,10 +163,10 @@ insertDef b def env
         extend' []	= [[(b,def)]]
 
 
-isDef   :: (Ord n, L.MapBoundX (Exp a) n)
+hasDef  :: (Ord n, L.MapBoundX (Exp a) n)
         => Bound n -> RewriteEnv a n -> Bool
 
-isDef b env
+hasDef b env
  = isJust $ getDef' b env
 
 

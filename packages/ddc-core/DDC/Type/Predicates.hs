@@ -7,6 +7,7 @@ module DDC.Type.Predicates
         , isBName
 
           -- * Atoms
+        , isTVar
         , isBot
         , isAtomT
 
@@ -20,9 +21,17 @@ module DDC.Type.Predicates
           -- * Data Types
         , isAlgDataType
         , isWitnessType
-	    , isConstWitType
+        , isConstWitType
         , isMutableWitType
-	    , isDistinctWitType)
+        , isDistinctWitType
+
+          -- * Effect Types
+        , isReadEffect
+        , isWriteEffect
+        , isAllocEffect
+        , isSomeReadEffect
+        , isSomeWriteEffect
+        , isSomeAllocEffect)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -50,6 +59,13 @@ isBName bb
 
 
 -- Atoms ----------------------------------------------------------------------
+-- | Check whether a type is a `TVar`
+isTVar :: Type n -> Bool
+isTVar tt
+ = case tt of
+        TVar{}          -> True
+        _               -> False
+
 -- | Test if some type is an empty TSum
 isBot :: Type n -> Bool
 isBot tt
@@ -159,3 +175,71 @@ isDistinctWitType tt
         Just (TyConWitness (TwConDistinct _), _) -> True
         _                                        -> False
 	
+
+-- Effects --------------------------------------------------------------------
+-- | Check whether this is an atomic read effect.
+isReadEffect :: Effect n -> Bool
+isReadEffect eff
+ = case eff of
+        TApp (TCon (TyConSpec TcConRead)) _     -> True
+        _                                       -> False
+
+
+-- | Check whether this is an atomic write effect.
+isWriteEffect :: Effect n -> Bool
+isWriteEffect eff
+ = case eff of
+        TApp (TCon (TyConSpec TcConWrite)) _    -> True
+        _                                       -> False
+
+
+-- | Check whether this is an atomic alloc effect.
+isAllocEffect :: Effect n -> Bool
+isAllocEffect eff
+ = case eff of
+        TApp (TCon (TyConSpec TcConAlloc)) _    -> True
+        _                                       -> False
+
+
+-- | Check whether an effect is some sort of read effect.
+--   Matches @Read@ @HeadRead@ and @DeepRead@.
+isSomeReadEffect :: Effect n -> Bool
+isSomeReadEffect tt
+ = case tt of
+        TApp (TCon (TyConSpec con)) _
+         -> case con of
+                TcConRead       -> True
+                TcConHeadRead   -> True
+                TcConDeepRead   -> True
+                _               -> False
+
+        _                       -> False
+
+
+-- | Check whether an effect is some sort of allocation effect.
+--   Matches @Alloc@ and @DeepAlloc@
+isSomeWriteEffect :: Effect n -> Bool
+isSomeWriteEffect tt
+ = case tt of
+        TApp (TCon (TyConSpec con)) _
+         -> case con of
+                TcConWrite      -> True
+                TcConDeepWrite  -> True
+                _               -> False
+
+        _                       -> False
+
+
+-- | Check whether an effect is some sort of allocation effect.
+--   Matches @Alloc@ and @DeepAlloc@
+isSomeAllocEffect :: Effect n -> Bool
+isSomeAllocEffect tt
+ = case tt of
+        TApp (TCon (TyConSpec con)) _
+         -> case con of
+                TcConAlloc      -> True
+                TcConDeepAlloc  -> True
+                _               -> False
+
+        _                       -> False
+

@@ -183,9 +183,9 @@ matchT' stack1 stack2 t1 t2 vs subst
         
 
         -- ISSUE #279: Rewrite rule type matcher doesn't handle type sums
-        --  Unifying two arbitrary sums is probably too hard, but we could handle
-        --  simple specific cases, like matching a single variable against a sum,
-        --  or when the two sums share the same components.
+        --   Unifying two arbitrary sums is probably too hard, but we could handle
+        --   simple specific cases, like matching a single variable against a sum,
+        --   or when the two sums share the same components.
         --
         --  Also fix the other TODOs in this function.
         (TSum _,        TSum _)
