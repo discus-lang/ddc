@@ -12,7 +12,7 @@ import qualified DDC.Core.Check         as C
 data Error a n
         -- | Error typechecking one of the expressions
         = ErrorTypeCheck
-        { errorSide         :: Side -- ^ left-hand side or right
+        { errorSide         :: Side     -- ^ left-hand side or right
         , errorExp          :: Exp a n
         , errorCheckError   :: C.Error a n }
 
@@ -29,7 +29,8 @@ data Error a n
         | ErrorNotFirstOrder
         { errorExp          :: Exp a n }
 
-        -- | All variables must be mentioned in left-hand side, otherwise they won't get bound.
+        -- | All variables must be mentioned in left-hand side,
+        --   otherwise they won't get bound.
         | ErrorVarUnmentioned
 
         -- | I don't want to deal with anonymous variables.

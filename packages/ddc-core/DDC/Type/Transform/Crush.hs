@@ -1,10 +1,38 @@
 module DDC.Type.Transform.Crush
-        (crushEffect)
+        ( crushSomeT
+        , crushEffect )
 where
 import DDC.Type.Predicates
 import DDC.Type.Compounds
+import DDC.Type.Transform.Trim
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
+import Data.Maybe
+
+
+-- | Crush compound effects and closure terms.
+--   We check for a crushable term before calling crushT because that function
+--   will recursively crush the components. 
+--   As equivT is already recursive, we don't want a doubly-recursive function
+--   that tries to re-crush the same non-crushable type over and over.
+--
+crushSomeT :: Ord n => Type n -> Type n
+crushSomeT tt
+ = case tt of
+        (TApp (TCon tc) _)
+         -> case tc of
+                TyConSpec    TcConDeepRead   -> crushEffect tt
+                TyConSpec    TcConDeepWrite  -> crushEffect tt
+                TyConSpec    TcConDeepAlloc  -> crushEffect tt
+
+                -- If a closure is miskinded then 'trimClosure' 
+                -- can return Nothing, so we just leave the term untrimmed.
+                TyConSpec    TcConDeepUse    -> fromMaybe tt (trimClosure tt)
+
+                TyConWitness TwConDeepGlobal -> crushEffect tt
+                _                            -> tt
+
+        _ -> tt
 
 
 -- | Crush compound effect terms into their components.
