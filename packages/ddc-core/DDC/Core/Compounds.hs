@@ -17,9 +17,11 @@ module DDC.Core.Compounds
 
           -- * Applications
         , xApps
+        , makeXAppsWithAnnots
         , takeXApps
         , takeXApps1
         , takeXAppsAsList
+        , takeXAppsWithAnnots
         , takeXConApps
         , takeXPrimApps
 
@@ -136,6 +138,16 @@ xApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
 xApps a t1 ts     = foldl (XApp a) t1 ts
 
 
+-- | Build sequence of applications.
+--   Similar to `xApps` but also takes list of annotations for 
+--   the `XApp` constructors.
+makeXAppsWithAnnots :: Exp a n -> [(Exp a n, a)] -> Exp a n
+makeXAppsWithAnnots f xas
+ = case xas of
+        []              -> f
+        (arg,a ) : as   -> makeXAppsWithAnnots (XApp a f arg) as
+
+
 -- | Flatten an application into the function part and its arguments.
 --
 --   Returns `Nothing` if there is no outer application.
@@ -162,6 +174,18 @@ takeXAppsAsList xx
  = case xx of
         XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
         _               -> [xx]
+
+
+-- | Destruct sequence of applications.
+--   Similar to `takeXAppsAsList` but also keeps annotations for later.
+takeXAppsWithAnnots :: Exp a n -> (Exp a n, [(Exp a n, a)])
+takeXAppsWithAnnots xx
+ = case xx of
+        XApp a f arg
+         -> let (f', args') = takeXAppsWithAnnots f
+            in  (f', args' ++ [(arg,a)])
+
+        _ -> (xx, [])
 
 
 -- | Flatten an application of a primop into the variable

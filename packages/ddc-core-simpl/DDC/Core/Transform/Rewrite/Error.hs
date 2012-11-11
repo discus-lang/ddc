@@ -12,7 +12,8 @@ import qualified DDC.Core.Check         as C
 data Error a n
         -- | Error typechecking one of the expressions
         = ErrorTypeCheck
-        { errorSide         :: Side     -- ^ left-hand side or right
+        { -- | What side of the rule the error was on.
+          errorSide         :: Side
         , errorExp          :: Exp a n
         , errorCheckError   :: C.Error a n }
 

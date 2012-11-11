@@ -201,7 +201,7 @@ rewriteX rules x0
         -- Match a let-definition against the holes in all the rules
         checkHoles def ws
          = let  rules'   = Maybe.catMaybes $ map holeRule rules
-                (f,args) = takeApps def
+                (f,args) = X.takeXAppsWithAnnots def
                 -- TODO most specific?
            in  Maybe.catMaybes
                 $ map (\(name,r) -> fmap (\s -> (s,name,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
@@ -236,7 +236,7 @@ rewriteX rules x0
          = rewrites' rules f args ws
 
         rewrites' [] f args _
-         = return $ mkApps f args
+         = return $ X.makeXAppsWithAnnots f args
 
         rewrites' ((n,r):rs) f args ws
          = case rewriteWithX r f args ws of
@@ -334,7 +334,7 @@ rewriteSubst
       Just (sub',((XVar _ b, _):as)) -> 
         -- Check if hole variable is bound to a value
         case RE.getDef b ws of
-        Just d' -> let (fd,ad) = takeApps d' in
+        Just d' -> let (fd,ad) = X.takeXAppsWithAnnots d' in
                    -- Merge the outer substitution with one for the hole
                    case rewriteSubst rule_hole fd ad ws sub' of
                    Just (subd,asd) -> Just (subd,asd ++ as)
@@ -380,7 +380,7 @@ rewriteWithX
         -- Check constraints, perform substitution and add weakens if necessary
         s        <- subst m
         -- Add the remaining arguments that weren't matched by rule
-        return   $  mkApps s rest
+        return   $  X.makeXAppsWithAnnots s rest
  where
     bs = map snd binds
 
@@ -463,24 +463,4 @@ lookupX (_,tys) b@(BName n _)
 
 lookupX _ _ = Nothing
 
-
--- | Build sequence of applications.
---   Similar to makeXApps but also takes list of annotations for XApp
-mkApps :: Exp a n -> [(Exp a n, a)] -> Exp a n
-mkApps f []
- = f
-
-mkApps f ((arg,a):as)
- = mkApps (XApp a f arg) as
-
-
--- | Destruct sequence of applications.
---   Similar to takeXApps but also keeps annotations for later
-takeApps :: Exp a n -> (Exp a n, [(Exp a n, a)])
-takeApps (XApp a f arg)
- = let (f', args') = takeApps f
-   in  (f', args' ++ [(arg,a)])
-
-takeApps x
- = (x, [])
 

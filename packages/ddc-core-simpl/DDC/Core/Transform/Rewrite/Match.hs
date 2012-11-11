@@ -101,8 +101,8 @@ eqCast lc rc
          = case c of
                 CastWeakenEffect  eff -> CastWeakenEffect  $ T.anonymizeT eff
                 CastWeakenClosure clo -> CastWeakenClosure $ map cleanX clo
-                CastPurify	      wit -> CastPurify wit
-                CastForget	      wit -> CastForget wit
+                CastPurify        wit -> CastPurify wit
+                CastForget        wit -> CastForget wit
 
         cleanX 
          = T.anonymizeX . T.reannotate (const ())

@@ -60,12 +60,12 @@ import qualified DDC.Type.Transform.Crush	as TC
 checkDisjoint
         :: (Ord n, Show n)
         => Type n               -- ^ Type of property we want
-                                --   eg @Disjoint f g@
+                                --   eg @Disjoint e1 e2@
         -> RE.RewriteEnv a n	-- ^ Environment we're rewriting in.
         -> Bool
 
 checkDisjoint c env
-        -- The type must have the form "Disjoint f g"
+        -- The type must have the form "Disjoint e1 e2"
         | [TCon (TyConWitness TwConDisjoint), fs, gs] <- takeTApps c
         = and [ areDisjoint env g f 
                 | f <- sumList $ TC.crushEffect fs
