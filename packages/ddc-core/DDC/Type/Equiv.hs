@@ -24,12 +24,12 @@ import qualified Data.Set       as Set
 --     bound variables match the binders. If this is not the case then you get
 --     an indeterminate result.
 --
-equivT  :: (Ord n, Show n) => Type n -> Type n -> Bool
+equivT  :: Ord n => Type n -> Type n -> Bool
 equivT t1 t2
         = equivT' [] [] t1 t2
 
 
-equivT' :: (Ord n, Show n)
+equivT' :: Ord n
         => [Bind n]
         -> [Bind n]
         -> Type n   -> Type n
@@ -103,7 +103,7 @@ equivT' stack1 stack2 t1 t2
 --   even though they pretty print the same. This will only happen due to 
 --   a compiler bugs, but is very confusing when it does, so we check for
 --   this case explicitly.
-checkBounds :: (Eq n, Show n) => Bound n -> Bound n -> a -> a
+checkBounds :: Eq n => Bound n -> Bound n -> a -> a
 checkBounds u1 u2 x
  = case (u1, u2) of
         (UName n2, UPrim n1 _)
@@ -116,9 +116,7 @@ checkBounds u1 u2 x
  where
   die   = error $ unlines
         [ "DDC.Type.Equiv"
-        , "  Found a primitive and non-primitive bound variable with the same name."
-        , "  u1 = " ++ show u1
-        , "  u2 = " ++ show u2 ]
+        , "  Found a primitive and non-primitive bound variable with the same name."]
 
 
 
@@ -132,7 +130,7 @@ type Subst n = Map.Map n (Type n)
 --   returns substitution:
 --	@{ a |-> Int, b |-> Float }@
 --
-matchT  :: (Ord n, Show n)
+matchT  :: Ord n
 	=> VarSet n	-- ^ only attempt to match these names
 	-> Subst n	-- ^ already matched (or @Map.empty@)
 	-> Type n	-- ^ template
@@ -143,7 +141,7 @@ matchT vs subst t1 t2
         = matchT' [] [] t1 t2 vs subst
 
 
-matchT' :: (Ord n, Show n)
+matchT' :: Ord n
         => [Bind n]
         -> [Bind n]
         -> Type n   -> Type n
@@ -248,7 +246,7 @@ unpackSumT tt			 = tt
 --   As equivT is already recursive, we don't want a doubly-recursive function
 --   that tries to re-crush the same non-crushable type over and over.
 --
-crushSomeT :: (Ord n) => Type n -> Type n
+crushSomeT :: Ord n => Type n -> Type n
 crushSomeT tt
  = case tt of
         (TApp (TCon tc) _)

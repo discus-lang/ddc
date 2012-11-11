@@ -189,7 +189,7 @@ checkRewriteRule config kenv tenv
         let lhs_full = maybe lhs (XApp undefined lhs) hole
 
         -- Check the full left hand side.
-        (_   , tLeft, effLeft, cloLeft)                                         -- TODO: lhs result not used
+        (lhs_full', tLeft, effLeft, cloLeft)
                 <- checkExp config kenv' tenv' Lhs lhs_full
 
         -- Check the full right hand side.
@@ -209,11 +209,11 @@ checkRewriteRule config kenv tenv
 
         -- Check that the closure of the right is smaller than that
         -- of the left, and add a weakclo cast if nessesary.
-        cloWeak        <- makeClosureWeakening lhs_full rhs                  -- TODO: not rhs'
+        cloWeak        <- makeClosureWeakening lhs_full' rhs'
 
         -- Check that all the bound variables are mentioned
         -- in the left-hand side.
-        checkUnmentionedBinders bs' lhs_full
+        checkUnmentionedBinders bs' lhs_full'
 
         -- No BAnons allowed.
         --  We don't handle deBruijn binders.
@@ -232,7 +232,8 @@ checkRewriteRule config kenv tenv
                       $ map (T.takeSubstBoundOfBind . snd) bs
 
         let freeVars  = Set.toList
-                      $ (C.freeX T.empty lhs_full `Set.union` C.freeX T.empty rhs)
+                      $ (C.freeX T.empty lhs_full' 
+                         `Set.union` C.freeX T.empty rhs)
                       `Set.difference` binds
 
         return  $ RewriteRule 
@@ -301,9 +302,16 @@ checkConstraint defs kenv tt
 
 
 -- | Check equivalence of types or error
-checkEquiv l r onError                                                          -- TODO: typesig
-        | T.equivT l r  = return ()
-        | otherwise     = Left onError
+checkEquiv
+        :: Ord n
+        => Type n       -- ^ Type of left of rule.
+        -> Type n       -- ^ Type of right of rule.
+        -> Error a n    -- ^ Error to report if the types don't match.
+        -> Either (Error a n) ()
+
+checkEquiv tLeft tRight err
+        | T.equivT tLeft tRight  = return ()
+        | otherwise              = Left err
 
 
 -- Weaken ---------------------------------------------------------------------
@@ -345,8 +353,8 @@ makeEffectWeakening k effLeft effRight onError
 --
 makeClosureWeakening 
         :: (Ord n, Pretty n)
-        => Exp a n      -- ^ Expression on the left of the rule.
-        -> Exp a n      -- ^ Expression on the right of the rule.
+        => Exp (C.AnTEC a n) n      -- ^ Expression on the left of the rule.
+        -> Exp (C.AnTEC a n) n      -- ^ Expression on the right of the rule.
         -> Either (Error a n) 
                   [Exp (C.AnTEC a n) n]
 
@@ -361,14 +369,10 @@ makeClosureWeakening lhs rhs
         wiRight = supportWiVar supportRight
         spRight = supportSpVar supportRight
 
-        -- The variables below are just going into a closure weakening,
-        -- so we don't need to attach their real types. Follow-on transforms
-        -- can get these straight from the environment.
         Just a  = takeAnnotOfExp lhs
-        a'      = C.AnTEC (tBot kData) (tBot kEffect) (tBot kClosure) a
 
    in   Right 
-         $  [XVar a' u 
+         $  [XVar a u 
                 | u <- Set.toList $ daLeft `Set.difference` daRight ]
 
          ++ [XWitness (WVar u)
@@ -383,7 +387,7 @@ makeClosureWeakening lhs rhs
 checkUnmentionedBinders
         :: (Ord n, Show n)
         => [(BindMode, Bind n)]
-        -> Exp a n
+        -> Exp (C.AnTEC a n) n
         -> Either (Error a n) ()
 
 checkUnmentionedBinders bs expr
