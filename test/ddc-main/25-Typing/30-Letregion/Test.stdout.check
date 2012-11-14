@@ -148,3 +148,11 @@ letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
 :!: !0
 :$: $0
 
+-- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
+When checking expression.
+  Witness type is not for bound regions.
+        letregion binds: r2 r3
+    but witness type is: w : Distinct3 r1 r2 r3
+  
+  with: letregions r2 r3 with {w : Distinct3 r1 r2 r3} in
+        ()

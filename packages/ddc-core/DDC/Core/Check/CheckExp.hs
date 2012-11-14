@@ -1017,7 +1017,7 @@ checkWitnessBindM kenv xx uRegions bsWit bWit
             -- constructor or variable.
             _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
             
-       isBound t
+       inEnv t
         = case t of
             TVar u'                | Env.member u' kenv -> True
             TCon (TyConBound u' _) | Env.member u' kenv -> True
@@ -1047,15 +1047,15 @@ checkWitnessBindM kenv xx uRegions bsWit bWit
          -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
          
+        (takeTyConApps -> Just (TyConWitness (TwConDistinct 2), [t1, t2]))
+         | inEnv t1  -> checkWitnessArg t2
+         | inEnv t2  -> checkWitnessArg t1
+         | t1 /= t2  -> mapM_ checkWitnessArg [t1, t2]
+         | otherwise -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+
         (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
-         | ts /= (nub ts) -> throw $ ErrorLetRegionWitnessInvalid xx bWit         
+          -> mapM_ checkWitnessArg ts
 
-         | notBounds <- filter (not . isBound) ts
-         , not $ null notBounds
-         -> mapM_ checkWitnessArg notBounds
-
-         | otherwise      -> throw $ ErrorLetRegionWitnessFree    xx bWit
-         
         _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
 
 

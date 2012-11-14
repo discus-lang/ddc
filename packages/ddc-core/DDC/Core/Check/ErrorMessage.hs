@@ -217,7 +217,7 @@ instance (Show n, Eq n, Pretty n)
 
         ErrorLetRegionsWitnessOther xx bs1 b2
          -> vcat [ text "Witness type is not for bound regions."
-                 , text "      letregion binds: "       <> (hcat $ map ppr bs1)
+                 , text "      letregion binds: "       <> (hsep $ map ppr bs1)
                  , text "  but witness type is: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
