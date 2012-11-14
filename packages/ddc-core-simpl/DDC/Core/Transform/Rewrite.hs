@@ -8,6 +8,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Exp
 import DDC.Core.Module
+import Data.Map                                         (Map)
 import DDC.Core.Simplifier.Base (TransformResult(..), TransformInfo(..))
 import qualified DDC.Core.Compounds                     as X
 import qualified DDC.Core.Transform.AnonymizeX          as A
@@ -20,9 +21,9 @@ import qualified DDC.Type.Transform.SubstituteT         as S
 import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Core.Transform.LiftX               as L
 import qualified DDC.Type.Compounds                     as T
-import qualified Data.Map as Map
-import qualified Data.Maybe as Maybe
-import qualified Data.Set as Set
+import qualified Data.Map                               as Map
+import qualified Data.Maybe                             as Maybe
+import qualified Data.Set                               as Set
 import Control.Monad
 import Control.Monad.Writer (tell, runWriter)
 import Data.List
@@ -84,21 +85,26 @@ rewriteX rules x0
         down env x  
          = go env x []
 
-        -- TODO this should find the "most specific".
-        -- ben suggested that size of substitution map might be good indicator
-        -- (smaller is better)
+        -- ISSUE #280:  Rewrites should be done with the most specific rule.
+        --   The rewrite engine should apply the most specific rule, instead
+        --   of the first one that it finds that matches. If not, then we
+        --   should give some warning about overlapping rules.
+        -- 
+        -- Look for rules in the list that match the given expression,
+        -- and apply the first one that matches.
         rewrites env f args
          = rewrites' rules env f args
 
         rewrites' [] _ f args
          = return $ X.makeXAppsWithAnnots f args
 
-        rewrites' ((n,r):rs) env f args
-         = case rewriteWithX r f args env of
+        rewrites' ((n, rule) : rs) env f args
+         = case rewriteWithX rule env f args of
                 Nothing -> rewrites' rs env f args
                 Just x  -> tell [LogRewrite n] >> go env x []
 
-
+        -- Decend into the expression, looking for applications that we 
+        -- might be able to apply rewrites to.
         go env (XApp a f arg) args
          = do   arg' <- down env arg
                 go env f ((arg',a):args)
@@ -151,6 +157,7 @@ rewriteX rules x0
         goLets (LRec bs) ws 
          = do   bs'     <- mapM (down ws) $ map snd bs
                 return $ LRec $ zip (map fst bs) bs'
+
 
         goLets l _ 
          = return $ l
@@ -247,6 +254,109 @@ holeRule (name, rule@RewriteRule { ruleLeftHole     = Just hole })
                , ruleLeftHole = Nothing })
 
 holeRule _ = Nothing
+
+
+-------------------------------------------------------------------------------
+-- | Perform rewrite rule on expression if a valid substitution exists,
+--   and constraints are satisfied.
+rewriteWithX
+        :: (Show n, Show a, Ord n, Pretty n)
+        => RewriteRule a n
+        -> RE.RewriteEnv a n
+        -> Exp a n
+        -> [(Exp a n, a)]
+        -> Maybe (Exp a n)
+
+rewriteWithX
+    rule@(RewriteRule
+            { ruleBinds         = binds
+            , ruleConstraints   = constrs
+            , ruleRight         = rhs
+            , ruleWeakEff       = eff
+            , ruleWeakClo       = clo })
+    env f args 
+ = do   
+        -- Try to find a substitution for the left of the rule.
+        (m, rest) <- rewriteSubst rule f args env RM.emptySubstInfo
+
+        -- Check constraints, perform substitution and add weakens if necessary.
+        s         <- subst m
+
+        -- Add the remaining arguments that weren't matched by rule
+        return   $  X.makeXAppsWithAnnots s rest
+ where
+    bs = map snd binds
+
+    -- TODO the annotations here will be rubbish because they are from the rule's source location
+    subst m
+     =      let bas2        = lookups bs m
+                rhs2        = A.anonymizeX rhs
+                (bas3,lets) = wrapLets anno binds bas2
+                rhs3        = L.liftX (length lets) rhs2
+
+            in  checkConstrs bas3 constrs
+                $ X.xLets anno lets
+                $ weakeff bas3
+                $ weakclo bas3
+                $ S.substituteXArgs bas3 rhs3
+
+    -- Dummy annotation for the casts
+    anno = case args of
+           (_,a):_ -> a
+           _       -> undefined
+
+    weakeff bas x
+     = case eff of
+       Nothing  -> x
+       Just e   -> XCast anno
+                   (CastWeakenEffect $ substT bas e)
+                   x
+
+    weakclo bas x
+     = case clo of
+       []       -> x
+       _        -> XCast anno 
+                   (CastWeakenClosure
+                   $ Trim.trimClosures anno
+                   $ map (S.substituteXArgs bas) clo)
+                   x
+
+    checkConstrs _ [] x = Just x
+    checkConstrs bas (c:cs) x = do
+        let c' = substT bas c
+        if RE.containsWitness c' env || RD.checkDisjoint c' env || RD.checkDistinct c' env
+            then checkConstrs bas cs x
+            else Nothing
+    
+
+wrapLets  
+        :: Ord n 
+        => a 
+        -> [(BindMode, Bind n)]         -- ^ Variables bound by the rule.
+        -> [(Bind n,   Exp a n)]        -- ^ Substitution for the left of the rule.
+        -> ( [(Bind n, Exp a n)]
+           , [Lets a n])
+
+wrapLets a binds bas 
+ = let  isMkLet (_, (BMType i, _)) = i /= 1
+        isMkLet _                   = False
+
+        (as, bs'') = partition isMkLet (bas `zip` binds)
+        as'     = map fst as
+        bs'     = map fst bs''
+
+        anons   = zipWith (\(b,_) i -> (b, XVar a (UIx i))) as' [0..]
+        values  = map     (\(b,v) ->   (BAnon (substT bs' $ T.typeOfBind b), v)) (reverse as')
+        lets    = map (\(b,v) -> LLet LetStrict b v) values
+
+   in   (bs' ++ anons, lets)
+
+
+substT :: Ord n => [(Bind n, Exp a n)] -> Type n -> Type n
+substT bas x 
+ = let  sub     = [(b, t) | (b, XType t) <- bas ] 
+   in   S.substituteTs sub x
+
 
 
 -- | Attempt to find a rewrite substitution to match expression against rule.
@@ -361,99 +471,15 @@ rewriteSubst
               , ruleLeftHole    = Nothing }
 
 
--- | Perform rewrite rule on expression if a valid substitution exists,
---   and constraints are satisfied.
-rewriteWithX
-        :: (Show n, Show a, Ord n, Pretty n)
-        => RewriteRule a n
-        -> Exp a n
-        -> [(Exp a n,a)]
-        -> RE.RewriteEnv a n
-        -> Maybe (Exp a n)
-rewriteWithX
-    rule@(RewriteRule
-            { ruleBinds         = binds
-            , ruleConstraints   = constrs
-            , ruleRight         = rhs
-            , ruleWeakEff       = eff
-            , ruleWeakClo       = clo })
-    f args ws
- = do   -- Find a substitution
-        (m,rest) <- rewriteSubst rule f args ws RM.emptySubstInfo
-        -- Check constraints, perform substitution and add weakens if necessary
-        s        <- subst m
-        -- Add the remaining arguments that weren't matched by rule
-        return   $  X.makeXAppsWithAnnots s rest
- where
-    bs = map snd binds
-
-    -- TODO the annotations here will be rubbish because they are from the rule's source location
-    subst m
-     =      let bas2        = lookups bs m
-                rhs2        = A.anonymizeX rhs
-                (bas3,lets) = wrapLets bas2
-                rhs3        = L.liftX (length lets) rhs2
-
-            in  checkConstrs bas3 constrs
-                $ X.xLets anno lets
-                $ weakeff bas3
-                $ weakclo bas3
-                $ S.substituteXArgs bas3 rhs3
-
-    wrapLets bas
-     =  let (as,bs'') = partition isMkLet (bas `zip` binds)
-            as'     = map fst as
-            bs'     = map fst bs''
-
-            anons   = zipWith (\(b,_) i -> (b, XVar anno (UIx i))) as' [0..]
-            values  = map     (\(b,v) ->   (BAnon (substT bs' $ T.typeOfBind b), v)) (reverse as')
-            lets    = map (\(b,v) -> LLet LetStrict b v) values
-
-        in  (bs'++anons, lets)
-
-    isMkLet (_,(BMType i,_)) = i /= 1
-    isMkLet _                = False
-
-    -- Dummy annotation for the casts
-    anno = case args of
-           (_,a):_ -> a
-           _       -> undefined
-
-    weakeff bas x
-     = case eff of
-       Nothing  -> x
-       Just e   -> XCast anno
-                   (CastWeakenEffect $ substT bas e)
-                   x
-
-    weakclo bas x
-     = case clo of
-       []       -> x
-       _        -> XCast anno 
-                   (CastWeakenClosure
-                   $ Trim.trimClosures anno
-                   $ map (S.substituteXArgs bas) clo)
-                   x
-
-    checkConstrs _ [] x = Just x
-    checkConstrs bas (c:cs) x = do
-        let c' = substT bas c
-        if RE.containsWitness c' ws || RD.checkDisjoint c' ws || RD.checkDistinct c' ws
-            then checkConstrs bas cs x
-            else Nothing
-    
-    substT bas x = S.substituteTs (Maybe.catMaybes $ map lookupT bas) x
-
-    lookupT (b,XType t) = Just (b,t)
-    lookupT _ = Nothing
-
-
+lookups :: Ord n
+        => [Bind n]
+        -> (Map n (Exp a n), Map n (Type n))
+        -> [(Bind n, Exp a n)]
 
 lookups bs m
- =  let bas  = Maybe.catMaybes $ map (lookupX m) bs
-        bas' = map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
-    in  bas'
-
+ = let  bas  = Maybe.catMaybes $ map (lookupX m) bs
+   in   map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
+   
 
 
 lookupX (xs,_) b@(BName n _)
