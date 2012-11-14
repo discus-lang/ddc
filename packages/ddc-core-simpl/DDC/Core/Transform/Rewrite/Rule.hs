@@ -5,8 +5,8 @@ module DDC.Core.Transform.Rewrite.Rule
 
           -- * Binding modes
         , BindMode      (..)
-        , isBMKind
-        , isBMType
+        , isBMSpec
+        , isBMValue
 
           -- * Construction
         , mkRewriteRule
@@ -88,14 +88,14 @@ type NamedRewriteRule a n
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
  ppr (RewriteRule bs cs lhs hole rhs _ _ _)
   = pprBinders bs <> pprConstrs cs <> ppr lhs <> pprHole <> text " = " <> ppr rhs
-  where pprBinders []          = text ""
-        pprBinders bs'         = foldl1 (<>) (map pprBinder bs') <> text ". "
+  where pprBinders []            = text ""
+        pprBinders bs'           = foldl1 (<>) (map pprBinder bs') <> text ". "
 
-        pprBinder (BMKind,b)   = text "[" <> ppr b <> text "] "
-        pprBinder (BMType _,b) = text "(" <> ppr b <> text ") "
+        pprBinder (BMSpec, b)    = text "[" <> ppr b <> text "] "
+        pprBinder (BMValue _, b) = text "(" <> ppr b <> text ") "
       
-        pprConstrs []          = text ""
-        pprConstrs (c:cs')     = ppr c <> text " => " <> pprConstrs cs'
+        pprConstrs []            = text ""
+        pprConstrs (c:cs')       = ppr c <> text " => " <> pprConstrs cs'
 
         pprHole
          | Just h <- hole
@@ -108,21 +108,24 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 -- BindMode -------------------------------------------------------------------
 -- | Binding level for the binders in a rewrite rule.
 data BindMode 
-        = BMKind 
-        | BMType Int -- ^ number of usages
+        -- | Level-1 binder (specs)
+        = BMSpec 
+
+        -- | Level-0 binder (data values and witnesses)
+        | BMValue Int -- ^ number of usages
         deriving (Eq, Show)
 
 
--- | Check if a `BindMode` is a `BMKind`.
-isBMKind :: BindMode -> Bool
-isBMKind BMKind         = True
-isBMKind _              = False
+-- | Check if a `BindMode` is a `BMSpec`.
+isBMSpec :: BindMode -> Bool
+isBMSpec BMSpec         = True
+isBMSpec _              = False
 
 
--- | Check if a `BindMode` is a `BMType`.
-isBMType :: BindMode -> Bool
-isBMType (BMType _)     = True
-isBMType _              = False
+-- | Check if a `BindMode` is a `BMValue`.
+isBMValue :: BindMode -> Bool
+isBMValue (BMValue _)   = True
+isBMValue _             = False
 
 
 -- Make -----------------------------------------------------------------------
@@ -265,8 +268,8 @@ extendBinds binds kenv tenv
         go ((bm,b):bs) k t acc
          = let  b'      = S.spreadX k t b
                 (k',t') = case bm of
-                             BMKind   -> (T.extend b' k, t)
-                             BMType _ -> (k, T.extend b' t)
+                             BMSpec    -> (T.extend b' k, t)
+                             BMValue _ -> (k, T.extend b' t)
 
            in  go bs k' t' (acc ++ [(bm,b')])
 
@@ -454,8 +457,8 @@ countBinderUsage bs x
  = let  Just (U.UsedMap um)
                 = liftM fst $ takeAnnotOfExp $ U.usageX x
 
-        get (BMType _, BName n t)
-         = (BMType
+        get (BMValue _, BName n t)
+         = (BMValue
                 $ length
                 $ Maybe.fromMaybe []
                 $ Map.lookup n um

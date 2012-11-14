@@ -186,7 +186,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
         <- checkHoles rules def ws
 
  = let  -- only get value-level bindings
-        bs'     = map snd $ filter (isBMType.fst) bs
+        bs'     = map snd $ filter (isBMValue . fst) bs
         bas'    = lookupFromSubst bs' sub
 
         -- check if it looks like something has already been unfolded
@@ -199,7 +199,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
                 = all isUIx $ map snd bas'
 
         -- find kind-values and sub those in as well
-        bsK'    = map snd $ filter ((== BMKind) . fst) bs
+        bsK'    = map snd $ filter ((== BMSpec) . fst) bs
         basK    = lookupFromSubst bsK' sub
 
         basK'   = concatMap (\(b,x) -> case X.takeXType x of
@@ -345,7 +345,7 @@ wrapLets
            , [Lets a n])
 
 wrapLets a binds bas 
- = let  isMkLet (_, (BMType i, _)) = i /= 1
+ = let  isMkLet (_, (BMValue i, _)) = i /= 1
         isMkLet _                   = False
 
         (as, bs'') = partition isMkLet (bas `zip` binds)

@@ -72,8 +72,8 @@ pRuleHole
 pBinders :: Ord n => Parser n [(R.BindMode, Bind n)]
 pBinders
  = P.choice
- [ pBindersBetween R.BMKind     (pTok KSquareBra) (pTok KSquareKet)
- , pBindersBetween (R.BMType 0) (pTok KRoundBra) (pTok KRoundKet)
+ [ pBindersBetween R.BMSpec      (pTok KSquareBra) (pTok KSquareKet)
+ , pBindersBetween (R.BMValue 0) (pTok KRoundBra)  (pTok KRoundKet)
  ]
 
 
