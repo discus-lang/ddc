@@ -22,8 +22,8 @@ import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Core.Transform.LiftX               as L
 import qualified DDC.Type.Compounds                     as T
 import qualified Data.Map                               as Map
-import qualified Data.Maybe                             as Maybe
 import qualified Data.Set                               as Set
+import Data.Maybe
 import Control.Monad
 import Control.Monad.Writer (tell, runWriter)
 import Data.List
@@ -249,13 +249,25 @@ goDefHoles _rules a l e ws down
 
 
 -- Match a let-definition against the holes in all the rules
+checkHoles 
+        :: (Show n, Show a, Ord n, Pretty n)
+        => [NamedRewriteRule a n]
+        -> Exp a n
+        -> RE.RewriteEnv a n
+        -> [ ( (RM.SubstInfo a n, [(Exp a n, a)])
+               , String
+               , RewriteRule a n) ]
+
 checkHoles rules def ws
- = let  rules'   = Maybe.catMaybes $ map holeRule rules
+ = let  rules'   = catMaybes $ map holeRule rules
         (f,args) = X.takeXAppsWithAnnots def
+
         -- TODO most specific?
-   in  Maybe.catMaybes
-        $ map (\(name,r) -> fmap (\s -> (s,name,r)) $ matchWithRule r ws f args RM.emptySubstInfo)
-            rules'
+   in   catMaybes
+         $ map (\(name,r) -> fmap (\s -> (s,name,r)) 
+                          $ matchWithRule r ws f args RM.emptySubstInfo)
+           rules'
+
 
 holeRule (name, rule@RewriteRule { ruleLeftHole     = Just hole })
  = Just ( name
@@ -319,22 +331,32 @@ checkConstrs env bas (c:cs) x = do
             else Nothing
 
 
-weakeff a bas eff x
- = case eff of
-    Nothing  -> x
-    Just e   -> XCast a
-                   (CastWeakenEffect $ substT bas e)
-                   x
+weakeff :: Ord n
+        => a
+        -> [(Bind n, Exp a n)]
+        -> Maybe (Effect n)
+        -> Exp a n
+        -> Exp a n
 
+weakeff _ _ Nothing x = x
+weakeff a bas (Just e) x
+        = XCast a
+                (CastWeakenEffect $ substT bas e)
+                x
 
+weakclo :: Ord n
+        => a 
+        -> [(Bind n, Exp a n)] 
+        -> [Exp a n] 
+        -> Exp a n 
+        -> Exp a n
+
+weakclo _ _ [] x      = x
 weakclo a bas clo x
- = case clo of
-    []       -> x
-    _        -> XCast a 
-                   (CastWeakenClosure
-                   $ Trim.trimClosures a
-                   $ map (S.substituteXArgs bas) clo)
-                   x
+        = XCast a (CastWeakenClosure
+                    $ Trim.trimClosures a
+                    $ map (S.substituteXArgs bas) clo)
+                x
 
 wrapLets
         :: Ord n 
@@ -490,14 +512,19 @@ matchWithRule
 
 -------------------------------------------------------------------------------
 -- | Lookup a binding from a rewrite rule substitution.
+--
+--   TODO: this is wrong.
+--         Level 1 and Level 0 binders can have the same names, 
+--         but this code doesn't distinguish between them.
+--
 lookupFromSubst :: Ord n
         => [Bind n]
         -> (Map n (Exp a n), Map n (Type n))
         -> [(Bind n, Exp a n)]
 
 lookupFromSubst bs m
- = let  bas  = Maybe.catMaybes $ map (lookupX m) bs
-   in   map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
+ = let  bas  = catMaybes $ map (lookupX m) bs
+   in   map (\(b, a) -> (A.anonymizeX b, A.anonymizeX a)) bas
    
  where  lookupX (xs,_) b@(BName n _)
          | Just x <- Map.lookup n xs
