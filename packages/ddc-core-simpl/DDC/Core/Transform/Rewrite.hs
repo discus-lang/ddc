@@ -187,7 +187,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
 
  = let  -- only get value-level bindings
         bs'     = map snd $ filter (isBMType.fst) bs
-        bas'    = lookups bs' sub
+        bas'    = lookupFromSubst bs' sub
 
         -- check if it looks like something has already been unfolded
         isUIx x = case x of 
@@ -200,7 +200,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
 
         -- find kind-values and sub those in as well
         bsK'    = map snd $ filter ((== BMKind) . fst) bs
-        basK    = lookups bsK' sub
+        basK    = lookupFromSubst bsK' sub
 
         basK'   = concatMap (\(b,x) -> case X.takeXType x of
                                              Just t -> [(b,t)]
@@ -296,7 +296,7 @@ rewriteWithX rule env f args
                            (_, a') : _  -> a'
                            _            -> undefined
 
-        let bas2        = lookups bs m
+        let bas2        = lookupFromSubst bs m
         let rhs2        = A.anonymizeX rhs
         let (bas3,lets) = wrapLets a binds bas2
         let rhs3        = L.liftX (length lets) rhs2
@@ -488,25 +488,24 @@ matchWithRule
         = Nothing
 
 
-lookups :: Ord n
+-------------------------------------------------------------------------------
+-- | Lookup a binding from a rewrite rule substitution.
+lookupFromSubst :: Ord n
         => [Bind n]
         -> (Map n (Exp a n), Map n (Type n))
         -> [(Bind n, Exp a n)]
 
-lookups bs m
+lookupFromSubst bs m
  = let  bas  = Maybe.catMaybes $ map (lookupX m) bs
    in   map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
    
+ where  lookupX (xs,_) b@(BName n _)
+         | Just x <- Map.lookup n xs
+         = Just (b, x)
 
+        lookupX (_,tys) b@(BName n _)
+         | Just t <- Map.lookup n tys
+         = Just (b, XType t)
 
-lookupX (xs,_) b@(BName n _)
- | Just x <- Map.lookup n xs
- = Just (b,x)
-
-lookupX (_,tys) b@(BName n _)
- | Just t <- Map.lookup n tys
- = Just (b,XType t)
-
-lookupX _ _ = Nothing
-
+        lookupX _ _ = Nothing
 
