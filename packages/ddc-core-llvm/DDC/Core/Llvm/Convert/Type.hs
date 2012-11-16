@@ -2,8 +2,8 @@
 -- | Convert Salt types to LLVM types.
 module DDC.Core.Llvm.Convert.Type
         ( -- * Type conversion.
-          convType
-        , convSuperType
+          convertType
+        , convertSuperType
         , importedFunctionDeclOfType
 
           -- * Builtin Types
@@ -29,7 +29,7 @@ import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Core.Salt                    as A
-import qualified DDC.Core.Salt.Name     as A
+import DDC.Core.Salt.Name               as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
@@ -37,13 +37,8 @@ import qualified DDC.Type.Env           as Env
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to an LlvmType.
-convType 
-        :: Platform             -- TODO: rename to convValType
-        -> KindEnv Name         -- to contrast with convSuperType
-        -> C.Type Name          -- ^ Type to convert.
-        -> Type
-
-convType pp kenv tt
+convertType :: Platform -> KindEnv Name -> C.Type Name -> Type
+convertType pp kenv tt
  = case tt of
         -- A polymorphic type,
         -- represented as a generic boxed object.
@@ -62,11 +57,11 @@ convType pp kenv tt
         C.TApp{}
          | Just (NamePrimTyCon PrimTyConPtr, [_r, t2]) 
                 <- takePrimTyConApps tt
-         -> TPointer (convType pp kenv t2)
+         -> TPointer (convertType pp kenv t2)
 
         -- Function types become pointers to functions.
         C.TApp{}
-         |  (tsArgs, tResult)    <- convSuperType pp kenv tt
+         |  (tsArgs, tResult)    <- convertSuperType pp kenv tt
          -> TPointer $ TFunction 
          $  FunctionDecl
              { declName          = "dummy.function.name"
@@ -79,35 +74,36 @@ convType pp kenv tt
         
         C.TForall b t
          -> let kenv'   = Env.extend b kenv
-            in  convType pp kenv' t
+            in  convertType pp kenv' t
           
         _ -> die ("Invalid Type " ++ show tt)
         
 
 -- Super Type -----------------------------------------------------------------
 -- | Split the parameter and result types from a supercombinator type and
---   and convert them to LLVM form. We can't split the type first and just
---   call 'convType' above as we need to decend into any quantifiers that
---   wrap the body type.
-convSuperType 
+--   and convert them to LLVM form. 
+--
+--   We can't split the type first and just call 'convertType' above as we need
+--   to decend into any quantifiers that wrap the body type.
+convertSuperType 
         :: Platform
         -> KindEnv Name
         -> C.Type  Name
         -> ([Type], Type)
 
-convSuperType pp kenv tt
+convertSuperType pp kenv tt
  = let tt' = eraseWitTApps tt
    in  case tt' of
             C.TApp{}
              |  (tsArgs, tResult)    <- takeTFunArgResult tt'
              ,  not $ null tsArgs
-             -> let tsArgs'  = map (convType pp kenv) tsArgs
-                    tResult' = convType pp kenv tResult
+             -> let tsArgs'  = map (convertType pp kenv) tsArgs
+                    tResult' = convertType pp kenv tResult
                 in  (tsArgs', tResult')
 
             C.TForall b t
              -> let kenv' = Env.extend b kenv
-                in  convSuperType pp kenv' t
+                in  convertSuperType pp kenv' t
 
             _ -> die ("Invalid super type" ++ show tt')
 
@@ -122,8 +118,8 @@ importedFunctionDeclOfType
         -> C.Type Name 
         -> Maybe FunctionDecl
 
-importedFunctionDeclOfType pp kenv linkage (C.QualName _ (NameVar n)) tt                -- TODO: handle module qualifiers
- = let  (tsArgs, tResult)         = convSuperType pp kenv tt
+importedFunctionDeclOfType pp kenv linkage (C.QualName _ (NameVar n)) tt
+ = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
              { declName           = A.sanitizeGlobal n

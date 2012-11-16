@@ -27,6 +27,7 @@ Library
         DDC.Core.Salt.Platform
         DDC.Core.Salt.Compounds
         DDC.Core.Salt.Runtime
+        DDC.Core.Salt.Name
         DDC.Core.Salt.Env
         DDC.Core.Salt
 
@@ -52,7 +53,6 @@ Library
         DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Name.Sanitize
         DDC.Core.Salt.Convert
-        DDC.Core.Salt.Name
         DDC.Core.Salt.Profile
 
                   

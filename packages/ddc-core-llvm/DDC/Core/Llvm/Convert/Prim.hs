@@ -80,7 +80,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
         A.PrimStore A.PrimStoreSize 
          | [C.XType t]          <- xs
          , Just vDst            <- mdst
-         -> let t'      = convType pp kenv t
+         -> let t'      = convertType pp kenv t
                 size    = case t' of
                             TPointer _           -> platformAddrBytes pp   
                             TInt bits
@@ -100,7 +100,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
         A.PrimStore A.PrimStoreSize2
          | [C.XType t]          <- xs
          , Just vDst            <- mdst
-         -> let t'      = convType pp kenv t
+         -> let t'      = convertType pp kenv t
                 size    = case t' of
                             TPointer _           -> platformAddrBytes pp   
                             TInt bits   
@@ -204,7 +204,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
          | C.XType _r : C.XType tDst : args     <- xs
          , Just [xPtr', xOffset']       <- mconvAtoms pp kenv tenv args
          , Just vDst@(Var nDst _)       <- mdst
-         , tDst'                        <- convType   pp kenv tDst
+         , tDst'                        <- convertType   pp kenv tDst
          -> let vAddr1   = Var (bumpName nDst "addr1") (tAddr pp)
                 vAddr2   = Var (bumpName nDst "addr2") (tAddr pp)
                 vPtr     = Var (bumpName nDst "ptr")   (tPtr tDst')
@@ -219,7 +219,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
         A.PrimStore A.PrimStorePoke
          | C.XType _r : C.XType tDst : args     <- xs
          , Just [xPtr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args
-         , tDst'                         <- convType   pp kenv tDst
+         , tDst'                         <- convertType   pp kenv tDst
          -> do  vAddr1  <- newUniqueNamedVar "addr1" (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2" (tAddr pp)
                 vPtr    <- newUniqueNamedVar "ptr"   (tPtr tDst')
@@ -344,8 +344,8 @@ convPrimPromote
         -> Maybe Instr
 
 convPrimPromote pp kenv tDst vDst tSrc xSrc
- = let  tDst'   = convType pp kenv tDst
-        tSrc'   = convType pp kenv tSrc
+ = let  tDst'   = convertType pp kenv tDst
+        tSrc'   = convertType pp kenv tSrc
    in case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers
@@ -382,8 +382,8 @@ convPrimTruncate
         -> Maybe Instr
 
 convPrimTruncate pp kenv tDst vDst tSrc xSrc
- = let  tDst'   = convType pp kenv tDst
-        tSrc'   = convType pp kenv tSrc
+ = let  tDst'   = convertType pp kenv tDst
+        tSrc'   = convertType pp kenv tSrc
    in case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers

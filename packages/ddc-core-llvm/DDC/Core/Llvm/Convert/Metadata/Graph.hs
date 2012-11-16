@@ -3,7 +3,7 @@
 --  WARNING: everything in here is REALLY SLOW
 --
 module DDC.Core.Llvm.Convert.Metadata.Graph
-       ( Rel(..)
+       ( Rel
        , fromList, toList
        , allR, differenceR, unionR, composeR, transitiveR
        , transClosure

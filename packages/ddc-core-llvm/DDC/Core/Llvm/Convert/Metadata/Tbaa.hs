@@ -4,7 +4,6 @@ module DDC.Core.Llvm.Convert.Metadata.Tbaa
        , annot 
        , lookup, lookups )
 where
-
 import DDC.Llvm.Metadata
 import DDC.Core.Llvm.LlvmM
 import DDC.Type.Exp
@@ -12,21 +11,21 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Collect
 import DDC.Core.Exp
-import DDC.Base.Pretty              hiding (empty)
-import DDC.Type.Env                 (KindEnv)
+import DDC.Base.Pretty                  hiding (empty)
+import DDC.Type.Env                     (KindEnv)
 import DDC.Core.Llvm.Convert.Metadata.Graph
-import qualified DDC.Type.Env       as Env
-import qualified DDC.Core.Salt.Name as A
-import qualified DDC.Llvm.Instr     as V
+import qualified DDC.Type.Env           as Env
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Llvm.Instr         as V
 
-import Prelude                      hiding (lookup)
+import Prelude                          hiding (lookup)
 import Control.Applicative
 import Control.Monad
 import Data.Maybe
-import Data.Map                     (Map)
-import Data.List                    hiding (lookup)
-import qualified Data.Map           as Map
-import qualified Data.Set           as Set
+import Data.Map                         (Map)
+import Data.List                        hiding (lookup)
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 
 
 -- Metadata management --------------------------------------------------------

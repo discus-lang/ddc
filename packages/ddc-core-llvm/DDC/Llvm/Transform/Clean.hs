@@ -9,7 +9,7 @@ module DDC.Llvm.Transform.Clean
 where
 import DDC.Llvm.Module
 import DDC.Llvm.Function
-import DDC.Llvm.Instr
+import DDC.Llvm.Instr           hiding (blockLabel)
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import qualified Data.Foldable  as Seq

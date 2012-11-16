@@ -1,4 +1,3 @@
-{-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-matches #-}
 module DDC.Core.Llvm.Convert.Atom
         ( mconvAtom
         , mconvAtoms
@@ -34,7 +33,7 @@ mconvAtom pp kenv tenv xx
         C.XVar _ u@(C.UName (A.NameVar n))
          |  Just t      <- Env.lookup u tenv
          -> let n'      = A.sanitizeName n
-                t'      = convType pp kenv t
+                t'      = convertType pp kenv t
             in  Just $ XVar (Var (NameLocal n') t')
 
         -- Literals. 
@@ -42,10 +41,10 @@ mconvAtom pp kenv tenv xx
          | C.DaConNamed n <- C.daConName dc
          , t              <- C.daConType dc
          -> case n of
-                A.NameLitNat  nat   -> Just $ XLit (LitInt (convType pp kenv t) nat)
-                A.NameLitInt  val   -> Just $ XLit (LitInt (convType pp kenv t) val)
-                A.NameLitWord val _ -> Just $ XLit (LitInt (convType pp kenv t) val)
-                A.NameLitTag  tag   -> Just $ XLit (LitInt (convType pp kenv t) tag)
+                A.NameLitNat  nat   -> Just $ XLit (LitInt (convertType pp kenv t) nat)
+                A.NameLitInt  val   -> Just $ XLit (LitInt (convertType pp kenv t) val)
+                A.NameLitWord val _ -> Just $ XLit (LitInt (convertType pp kenv t) val)
+                A.NameLitTag  tag   -> Just $ XLit (LitInt (convertType pp kenv t) tag)
                 _                   -> Nothing
 
         _ -> Nothing
@@ -76,7 +75,7 @@ takeLocalV pp kenv tenv xx
  = case xx of
         C.XVar _ u@(C.UName (A.NameVar str))
           |  Just t       <- Env.lookup u tenv
-          -> Just $ Var (NameLocal str) (convType pp kenv t)
+          -> Just $ Var (NameLocal str) (convertType pp kenv t)
         _ -> Nothing
 
 
@@ -92,6 +91,6 @@ takeGlobalV pp kenv tenv xx
  = case xx of
         C.XVar _ u@(C.UName (A.NameVar str))
           |  Just t      <- Env.lookup u tenv
-          -> Just $ Var (NameGlobal str) (convType pp kenv t)
+          -> Just $ Var (NameGlobal str) (convertType pp kenv t)
         _ -> Nothing
 

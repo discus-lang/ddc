@@ -10,38 +10,42 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple LLVM language binding.
-Description:    Disciple LLVM language binding.
+Synopsis:       Disciple Core LLVM code generator.
+Description:    Disciple Core LLVM code generator.
 
 Library
   Build-Depends: 
-        base            == 4.5.*,
-        containers      == 0.4.*,
+        base            == 4.6.*,
+        containers      == 0.5.*,
         array           == 0.4.*,
-        transformers    == 0.2.*,
-        mtl             == 2.0.*,
+        transformers    == 0.3.*,
+        mtl             == 2.1.*,
         ddc-base        == 0.3.0.*,
-        ddc-llvm        == 0.3.0.*,
-        ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*,
-        ddc-core-salt    == 0.3.0.*
+        ddc-core-simpl  == 0.3.0.*,
+        ddc-core-salt   == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Llvm.Convert.Atom
-        DDC.Core.Llvm.Convert.Prim
-        DDC.Core.Llvm.Convert.Type
+        DDC.Core.Llvm.Convert.Metadata.Graph
+        DDC.Core.Llvm.Convert.Metadata.Tbaa
         DDC.Core.Llvm.Convert
-        DDC.Core.Llvm.LlvmM
-        DDC.Core.Llvm.Platform
                   
         DDC.Llvm.Transform.Clean
         DDC.Llvm.Attr
         DDC.Llvm.Exp
         DDC.Llvm.Function
         DDC.Llvm.Instr
+        DDC.Llvm.Metadata
         DDC.Llvm.Module
         DDC.Llvm.Prim
         DDC.Llvm.Type
+
+  Other-modules:
+        DDC.Core.Llvm.Convert.Atom
+        DDC.Core.Llvm.Convert.Erase
+        DDC.Core.Llvm.Convert.Prim
+        DDC.Core.Llvm.Convert.Type
+        DDC.Core.Llvm.LlvmM
 
   GHC-options:
         -Werror
@@ -56,4 +60,7 @@ Library
         ScopedTypeVariables
         StandaloneDeriving
         PatternGuards
+        ParallelListComp
+        FlexibleContexts
+
         

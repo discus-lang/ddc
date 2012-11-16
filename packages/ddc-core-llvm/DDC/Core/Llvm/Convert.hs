@@ -1,7 +1,8 @@
 
--- | Conversion of Disciple Core-Sea to LLVM.
 module DDC.Core.Llvm.Convert
-        (convertModule)
+        ( convertModule
+        , convertType
+        , convertSuperType)
 where
 import DDC.Llvm.Module
 import DDC.Llvm.Function
@@ -39,7 +40,11 @@ import qualified Data.Foldable          as Seq
 
 
 -- Module ---------------------------------------------------------------------
--- | Convert a module to LLVM.
+-- | Convert a Salt module to LLVM.
+-- 
+--   If anything goes wrong in the convertion then this function will
+--   just call `error`.
+--
 convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
  = let  
@@ -181,7 +186,7 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
-                        = convSuperType platform kenv tSuper
+                        = convertSuperType platform kenv tSuper
   
         -- Make parameter binders.
         let align       = AlignBytes (platformAlignBytes platform)
@@ -308,7 +313,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x]                     <- xs
-          -> do let t'  =  convType pp kenv t
+          -> do let t'  =  convertType pp kenv t
                 vDst    <- newUniqueVar t'
                 is      <- convExpM (ExpAssign vDst) pp kenv tenv mdsup x
                 return  $   blocks 
@@ -353,16 +358,16 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
               then do return $ blocks
                         |> (Block label $ instrs
                            |> (annotNil $ ICall Nothing CallTypeTail Nothing
-                                               (convType pp kenv tResult) nFun xsArgs' [])
+                                               (convertType pp kenv tResult) nFun xsArgs' [])
                            |> (annotNil $ IReturn Nothing))
 
               -- Tailcalled function returns an actual value.
-              else do let tResult'    = convType pp kenv tResult
+              else do let tResult'    = convertType pp kenv tResult
                       vDst            <- newUniqueVar tResult'
                       return  $ blocks
                        |> (Block label $ instrs
                           |> (annotNil $ ICall (Just vDst) CallTypeTail Nothing
-                                   (convType pp kenv tResult) nFun xsArgs' [])
+                                   (convertType pp kenv tResult) nFun xsArgs' [])
                           |> (annotNil $ IReturn (Just (XVar vDst))))
 
 
@@ -372,7 +377,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                                         (C.XCase _ xScrut alts)) 
                   x2
           -> do 
-                let t'    = convType pp kenv t
+                let t'    = convertType pp kenv t
 
                 -- Assign result of case to this variable.
                 let n'    = A.sanitizeName n
@@ -397,7 +402,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           -> do let tenv' = Env.extend b tenv
                 let n'    = A.sanitizeName n
 
-                let t'    = convType pp kenv t
+                let t'    = convertType pp kenv t
                 let dst   = Var (NameLocal n') t'
                 instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
                 convBodyM context kenv tenv' mdsup blocks label (instrs >< instrs') x2
@@ -413,7 +418,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          --  TODO: do an initial pass to add binders,
          --        so we don't need to handle this separately.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
-          -> do let t'    =  convType pp kenv t
+          -> do let t'    =  convertType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
                 instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
                 convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
@@ -488,7 +493,7 @@ convExpM context pp kenv tenv mdsup xx
          | Just t               <- Env.lookup u tenv
          , ExpAssign vDst       <- context
          -> do  let n'  = A.sanitizeName n
-                let t'  = convType pp kenv t
+                let t'  = convertType pp kenv t
                 return  $ Seq.singleton $ annotNil
                         $ ISet vDst (XVar (Var (NameLocal n') t'))
         
@@ -523,7 +528,7 @@ convExpM context pp kenv tenv mdsup xx
          , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
                                  $  eraseTypeWitArgs xsArgs
          , Just tSuper           <- Env.lookup u tenv
-         -> let (_, tResult)    = convSuperType pp kenv tSuper
+         -> let (_, tResult)    = convertSuperType pp kenv tSuper
             in  return $ Seq.singleton $ annotNil
                        $ ICall  (varOfExpContext context) CallTypeStd Nothing
                                 tResult nFun xsArgs_value' []
