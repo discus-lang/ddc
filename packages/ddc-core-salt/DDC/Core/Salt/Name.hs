@@ -138,7 +138,6 @@ readName str
         | str == "True#"  = Just $ NameLitBool True
         | str == "False#" = Just $ NameLitBool False
 
-
         -- Literal Words
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]

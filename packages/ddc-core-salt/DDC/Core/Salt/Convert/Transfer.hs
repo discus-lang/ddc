@@ -1,5 +1,5 @@
 
--- | Add controll transfer primops to function bodies.
+-- | Add control transfer primops to function bodies.
 --   For example:
 --
 --   @

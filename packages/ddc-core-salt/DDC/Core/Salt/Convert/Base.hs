@@ -72,10 +72,7 @@ instance (Show a, Pretty a) => Pretty (Error a) where
  ppr err
   = case err of
         ErrorNoTopLevelLetrec _mm
-         -> vcat [ text "Module does not have a top-level letrec."
-                 , empty ]
---                 , text "with:"                         <> align (ppr mm) ]
-                -- TODO: need pretty printer for modules.
+         -> vcat [ text "Module does not have a top-level letrec." ]
 
         ErrorLocalTypeInvalid xx
          -> vcat [ text "Invalid type for local variable."
@@ -127,3 +124,4 @@ instance (Show a, Pretty a) => Pretty (Error a) where
          -> vcat [ text "Invalid primCall."
                  , text "   primitive: "                        <+> align (ppr p)
                  , text "        args:  "                       <+> align (ppr xs) ]
+

@@ -111,7 +111,8 @@ convTypeM kenv tt
         TVar u
          -> case Env.lookup u kenv of
              Nothing            
-              -> error $ "convertTypeM Type variable not in kind environment." ++ show u
+              -> error $ "convertTypeM Type variable not in kind environment." 
+                       ++ show u
 
              Just k
               | isDataKind k -> return $ text "Obj*"
@@ -151,7 +152,7 @@ convFunctionType kenv nFunc tFunc
  = convFunctionType (Env.extend b kenv) nFunc t'
 
  | otherwise
- = do   -- TODO: print the qualifier when we start using them.
+ = do   -- Qualifiers aren't supported yet.
         let QualName _ n = nFunc        
         let nFun'        = text $ sanitizeGlobal (renderPlain $ ppr n)
 
@@ -291,8 +292,7 @@ data Context
         -- | In a nested context, like in the right of a let-binding.
         --   The expression should produce a value that we assign to this
         --   variable.
-        | ContextNest Name (Type Name)          -- TODO change this to a BIND 
-                                                -- to handle nothing binders.
+        | ContextNest Name (Type Name)          
         deriving Show
 
 
@@ -341,8 +341,11 @@ convBlockM context kenv tenv xx
                 return  $ vcat 
                        [ fill 12 n' <+> equals <+> xx' <> semi ]
 
+        -- ISSUE #251: Fix nested case expressions that assign to nothing binders
+        --   Change the Name field of ContextNext to a Bind so we can use
+        --   the BNone form.
+        --
         -- Binding from a case-expression.
-        -- TODO: handle assignment to none binder.
         XLet _ (LLet LetStrict b@(BName n t) x1@XCase{}) x2
          -> do  x1'     <- convBlockM (ContextNest n t) kenv tenv x1
 
@@ -449,7 +452,8 @@ isCallPrim pp
 
 -- | Check whether this an application of the fail# primop.
 isFailX  :: Exp a Name -> Bool
-isFailX (XApp _ (XVar _ (UPrim (NamePrimOp (PrimControl PrimControlFail)) _)) _) = True
+isFailX (XApp _ (XVar _ (UPrim (NamePrimOp (PrimControl PrimControlFail)) _)) _)
+          = True
 isFailX _ = False
 
 
@@ -627,15 +631,16 @@ convPrimCallM kenv tenv p xs
                 return  $ parens (x1' <+> op' <+> x2')
 
 
+        -- ISSUE #287: Check for valid promotion and truncation in
+        --   to-C conversion
+
         -- Cast primops.
-        -- TODO: check for valid promotion
         PrimCast PrimCastPromote
          | [XType tTo, XType _tFrom, x1] <- xs
          -> do  tTo'    <- convTypeM   kenv tTo
                 x1'     <- convRValueM kenv tenv x1
                 return  $  parens tTo' <> parens x1'
 
-        -- TODO: check for valid truncate
         PrimCast PrimCastTruncate
          | [XType tTo, XType _tFrom, x1] <- xs
          -> do  tTo'    <- convTypeM   kenv tTo

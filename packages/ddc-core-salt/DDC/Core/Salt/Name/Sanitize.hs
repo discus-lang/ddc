@@ -71,4 +71,3 @@ convertSymbol c
         '`'     -> Just "Bt"
         _       -> Nothing
 
-

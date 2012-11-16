@@ -69,3 +69,4 @@ platform64
         , platformNatBytes      = 8
         , platformAlignBytes    = 8
         , platformObjBytes      = 8 }
+
