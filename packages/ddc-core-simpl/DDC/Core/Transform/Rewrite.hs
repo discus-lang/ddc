@@ -302,61 +302,68 @@ rewriteWithX rule env f args
         (m, rest)       <- matchWithRule rule env f args RM.emptySubstInfo
 
         -- Check constraints, perform substitution and add weakens if necessary.
-        let bs = map snd binds
-
         let a           = case args of
                            (_, a') : _  -> a'
-                           _            -> undefined
+                           _            -> error "rewriteWithX: no annotation"
 
+        let bs          = map snd binds
         let bas2        = lookupFromSubst bs m
         let rhs2        = A.anonymizeX rhs
         let (bas3,lets) = wrapLets a binds bas2
         let rhs3        = L.liftX (length lets) rhs2
 
-        s       <- checkConstrs env bas3 constrs
-                $  X.xLets a lets
-                $  weakeff a bas3 eff
-                $  weakclo a bas3 clo
+        -- Substitute bindings into the effect of the right of the rule.
+        let eff'        = liftM (substT bas3) eff
+
+        -- Substitute bindings into the closure of the right of the rule.
+        let clo'        = Trim.trimClosures a
+                        $ map (S.substituteXArgs bas3) clo
+
+        -- Substitute bindings into rule constraints and
+        -- check that they are all satisfied by the environment.
+        let constrs'    = map (substT bas3) constrs
+        when (not $ all (satisfiedContraint env) constrs')
+                $ Nothing
+
+        -- Build the rewritten expression.
+        let x'  =  X.xLets a lets
+                $  weakeff a eff'
+                $  weakclo a clo'
                 $  S.substituteXArgs bas3 rhs3
 
-        -- Add the remaining arguments that weren't matched by rule
-        return   $  X.makeXAppsWithAnnots s rest
+        -- Add the remaining arguments from the original expression
+        -- that weren't matched by rule
+        return   $  X.makeXAppsWithAnnots x' rest
 
 
-checkConstrs _   _ [] x = Just x
-checkConstrs env bas (c:cs) x = do
-        let c' = substT bas c
-        if RE.containsWitness c' env || RD.checkDisjoint c' env || RD.checkDistinct c' env
-            then checkConstrs env bas cs x
-            else Nothing
+-- | Check whether we can satisfy this constraint using witnesses
+--   in the rewrite nevironment.
+satisfiedContraint :: (Ord n, Show n) => RE.RewriteEnv a n -> Type n -> Bool
+satisfiedContraint env c
+        =  RE.containsWitness c env
+        || RD.checkDisjoint   c env
+        || RD.checkDistinct   c env
 
 
-weakeff :: Ord n
-        => a
-        -> [(Bind n, Exp a n)]
-        -> Maybe (Effect n)
-        -> Exp a n
-        -> Exp a n
+-- | Wrap an expression in an effect weakning.
+weakeff :: Ord n 
+        => a -> Maybe (Effect n) 
+        -> Exp a n -> Exp a n
 
-weakeff _ _ Nothing x = x
-weakeff a bas (Just e) x
-        = XCast a
-                (CastWeakenEffect $ substT bas e)
-                x
+weakeff a meff x
+ = maybe x (\e -> XCast a (CastWeakenEffect e) x) meff
 
-weakclo :: Ord n
-        => a 
-        -> [(Bind n, Exp a n)] 
-        -> [Exp a n] 
-        -> Exp a n 
-        -> Exp a n
 
-weakclo _ _ [] x      = x
-weakclo a bas clo x
-        = XCast a (CastWeakenClosure
-                    $ Trim.trimClosures a
-                    $ map (S.substituteXArgs bas) clo)
-                x
+-- | Wrap an expression in a closure weakening.
+weakclo :: Ord n 
+        => a -> [Exp a n] 
+        -> Exp a n -> Exp a n
+
+weakclo a clos x
+ = case clos of
+        []      -> x
+        _       -> XCast a (CastWeakenClosure clos) x
+
 
 wrapLets
         :: Ord n 
