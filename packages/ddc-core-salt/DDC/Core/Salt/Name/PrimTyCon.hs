@@ -34,7 +34,7 @@ data PrimTyCon
         | PrimTyConTag
 
         -- | @Addr#@ raw machine addresses. Unlike pointers below,
-        --   a raw @Addr#@ is not need to refer to memory owned 
+        --   a raw @Addr#@ need not to refer to memory owned 
         --   by the current process.
         | PrimTyConAddr
 

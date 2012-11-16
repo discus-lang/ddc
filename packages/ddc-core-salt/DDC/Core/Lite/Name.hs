@@ -47,7 +47,7 @@ data Name
         -- | Primitive casting between numeric types.
         | NamePrimCast  PrimCast
 
-        -- | An Unboxed boolean literal
+        -- | An unboxed boolean literal
         | NameLitBool   Bool
 
         -- | An unboxed natural literal.

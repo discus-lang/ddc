@@ -2,7 +2,7 @@
 -- | Conversion of Disciple Lite to Disciple Salt.
 --
 module DDC.Core.Lite.Convert
-        ( toSalt
+        ( saltOfLiteModule
         , Error(..))
 where
 import DDC.Core.Lite.Convert.Data
@@ -31,7 +31,7 @@ import Data.Maybe
 
 -- | Convert a Disciple Core Lite module to Disciple Core Salt.
 --
---   Case expressions on alrebraic data values are converted into ones that just
+--   Case expressions on algebraic data values are converted into ones that just
 --   check the tag, while data constructors are unfolded into explicit allocation
 --   and field initialization primops. 
 --
@@ -39,19 +39,15 @@ import Data.Maybe
 --      well typed,
 --      fully named with no deBruijn indices,
 --      have all functions defined at top-level,
---      have type annotations on every bound variable and constructor
---      a-normalised
+--      have type annotations on every bound variable and constructor,
+--      be a-normalised. 
 --      If not then `Error`.
 --
 --   The output code contains:
 --      debruijn indices.
---       these which need to be eliminated before it will pass the Salt fragment checks.
+--       These then need to be eliminated before it will pass the Salt fragment checks.
 --
---   TODO: Add the alternatives that force and follow lazy thunks and indirections.
---   TODO: Expand partial and over-applications into code that explicitly builds
---         and applies thunks.
---
-toSalt
+saltOfLiteModule
         :: Show a
         => Platform                             -- ^ Platform specification.
         -> S.Config                             -- ^ Runtime configuration.
@@ -60,7 +56,8 @@ toSalt
         -> TypeEnv L.Name                       -- ^ Type environment.
         -> Module (AnTEC a L.Name) L.Name       -- ^ Lite module to convert.
         -> Either (Error a) (Module a S.Name)   -- ^ Salt module.
-toSalt platform runConfig defs kenv tenv mm
+
+saltOfLiteModule platform runConfig defs kenv tenv mm
  = result $ convertM platform runConfig defs kenv tenv mm
 
 

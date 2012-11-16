@@ -14,20 +14,22 @@ module DDC.Core.Lite
         ( -- * Language profile
           profile
 
-          -- * Conversion to the Disciple Core Salt.
-        , toSalt
+          -- * Conversion
+        , saltOfLiteModule
         , Error         (..)
 
-          -- * Names of variables and constructors.
+          -- * Names
         , Name          (..)
         , DataTyCon     (..)
         , PrimTyCon     (..)
         , PrimDaCon     (..)
         , PrimArith     (..)
         , PrimCast      (..)
+
+          -- * Name Parsing
         , readName
 
-          -- * Lexers
+          -- * Program Lexing
         , lexModuleString
         , lexExpString)
 

@@ -19,7 +19,7 @@ data Error a
         -- | The 'Main' module has no 'main' function.
         = ErrorMainHasNoMain
 
-        -- | Found unexpected AST node, like LWithRegion.
+        -- | Found unexpected AST node, like `LWithRegion`.
         | ErrorMalformed String
 
         -- | The program is definately not well typed.
@@ -28,7 +28,7 @@ data Error a
         -- | The program wasn't in a-normal form.
         | ErrorNotNormalized String
 
-        -- | The program has bottom type annotations.
+        -- | The program has bottom (missing) type annotations.
         | ErrorBotAnnot
 
         -- | Found an unexpected type sum.

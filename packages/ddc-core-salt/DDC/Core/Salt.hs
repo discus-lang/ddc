@@ -33,7 +33,7 @@ module DDC.Core.Salt
           -- * Name parsing
         , readName
 
-          -- * Name lexing
+          -- * Program lexing
         , lexModuleString
         , lexExpString)
 

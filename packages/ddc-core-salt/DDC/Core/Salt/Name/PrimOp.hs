@@ -129,7 +129,7 @@ primArithNames
 --   On a 64-bit system the @Nat\#@ type is 64-bits wide, so casting it to a
 --   @Word32\#@ would be a truncation.
 data PrimCast
-        -- | Promote a value to one of similar or larger size,
+        -- | Promote a value to one of similar or larger width,
         --   without loss of precision.
         = PrimCastPromote
 

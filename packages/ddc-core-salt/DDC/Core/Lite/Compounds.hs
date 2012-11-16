@@ -22,6 +22,7 @@ tBool r1
         kBool   = kFun kRegion kData
 
 
+-- | Unboxed `Bool#` type constructor.
 tBoolU :: Type Name
 tBoolU  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
 
@@ -51,6 +52,7 @@ tNat r1
 
 
 -- Ints -----------------------------------------------------------------------
+-- | Unboxed `Int#` type constructor.
 tIntU ::  Type Name
 tIntU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
 
@@ -64,6 +66,7 @@ tInt r1
 
 
 -- Words ----------------------------------------------------------------------
+-- | Unboxed `WordN#` type constructor of the given width.
 tWordU :: Int -> Type Name
 tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
 

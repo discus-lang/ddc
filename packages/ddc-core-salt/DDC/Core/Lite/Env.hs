@@ -14,14 +14,24 @@ import qualified DDC.Type.Env   as Env
 
 
 -- DataDefs -------------------------------------------------------------------
--- | Data type definitions for:
+-- | Data type definitions 
 --
--- @  Type   Constructors
---  ----   ------------
---  Unit   ()
---  Int    0 1 2 3 ...
---  List   Nil Cons
--- @
+-- >  Type                         Constructors
+-- >  ----                ------------------------------
+-- >  Bool#               True# False#
+-- >  Nat#                0# 1# 2# ...
+-- >  Int#                ... -2i# -1i# 0i# 1i# 2i# ...
+-- >  Tag#                (none, convert from Nat#)
+-- >  Word{8,16,32,64}#   42w8# 123w64# ...
+-- >  Float{32,64}#       (none, convert from Int#)
+-- >
+-- >  Unit                ()
+-- >  Bool                B#
+-- >  Nat                 N#
+-- >  Int                 I#
+-- >  Pair                Pr
+-- >  List                Nil  Cons
+-- 
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
@@ -154,6 +164,7 @@ kindOfPrimName nn
 
 
 -- Types ----------------------------------------------------------------------
+-- | Type environment containing types of primitive operators.
 primTypeEnv :: Env Name
 primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 

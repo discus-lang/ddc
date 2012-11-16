@@ -23,8 +23,8 @@ import Control.Monad
 -- | Enumerates the heap object formats that can be used to store
 --   algebraic data.
 --
---   The layout of these is defined in the ObjectNN.dce file of the runtime 
---   system, where NN is the word size of the machine.
+--   The layout of these is defined in the @ObjectNN.dce@ file of the runtime 
+--   system, where @NN@ is the word size of the machine.
 data HeapObject
         = HeapObjectBoxed
         | HeapObjectMixed
@@ -33,7 +33,7 @@ data HeapObject
         deriving (Eq, Show)
 
 
--- | Decide which heap object to use to represent a data contructor.
+-- | Decide which heap object to use to represent a data constructor.
 heapObjectOfDataCtor :: DataCtor Name -> Maybe HeapObject
 heapObjectOfDataCtor ctor
 
@@ -61,7 +61,8 @@ heapObjectOfDataCtor ctor
 --   The payload holds all the fields, but does not include
 --   header information such as the constructor tag.
 --
-payloadSizeOfDataCtor :: Platform -> DataCtor Name -> Maybe Integer     -- TODO: insert padding for misaligned fields.
+--   This doesn't add any padding for misaligned fields.
+payloadSizeOfDataCtor :: Platform -> DataCtor Name -> Maybe Integer
 payloadSizeOfDataCtor platform ctor
         = liftM sum
         $ sequence
@@ -72,10 +73,12 @@ payloadSizeOfDataCtor platform ctor
 -- | Given a constructor definition,
 --   get the offset of each field in the payload of a heap object.
 --
---   We don't know the offset from the start of the overall object, 
---   because the size of the header is only known by the runtime system.
+--   We don't know the absolute offset from the beginning of the heap 
+--   object, because the size of the header is only known by the runtime 
+--   system.
 --
-fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]  -- TODO: insert padding for misaligned fields. 
+--   This doesn't add any padding for misaligned fields.
+fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]
 fieldOffsetsOfDataCtor platform ctor
         = liftM (init . scanl (+) 0)
         $ sequence 

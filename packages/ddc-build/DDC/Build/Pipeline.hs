@@ -259,7 +259,7 @@ pipeLite mm pp
          -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeLiteToSalt platform runConfig pipes
-         -> case Lite.toSalt platform runConfig 
+         -> case Lite.saltOfLiteModule platform runConfig 
                         (C.profilePrimDataDefs Lite.profile) 
                         (C.profilePrimKinds    Lite.profile)
                         (C.profilePrimTypes    Lite.profile)
@@ -332,7 +332,7 @@ pipeSalt mm pp
                 Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
 
         PipeSaltPrint withPrelude sink
-         -> case Salt.convertModule withPrelude mm of
+         -> case Salt.seaOfSaltModule withPrelude mm of
                 Left  err 
                  -> return $ [ErrorSaltConvert err]
 
@@ -346,7 +346,7 @@ pipeSalt mm pp
                 return  $ concat results
 
         PipeSaltCompile builder cPath oPath mExePath
-         -> case Salt.convertModule True mm of
+         -> case Salt.seaOfSaltModule True mm of
              Left errs
               -> error $ show errs
 

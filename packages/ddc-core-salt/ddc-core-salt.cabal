@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core translation to C
-Description:    Disciple Core translation to C
+Synopsis:       Disciple Core translation to C-like intermediate representations.
+Description:    Disciple Core translation to C-like intermediate representations.
 
 Library
   Build-Depends: 
@@ -24,23 +24,22 @@ Library
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Salt
         DDC.Core.Salt.Platform
         DDC.Core.Salt.Compounds
         DDC.Core.Salt.Runtime
         DDC.Core.Salt.Env
+        DDC.Core.Salt
 
-
+        DDC.Core.Lite.Compounds
+        DDC.Core.Lite.Layout
+        DDC.Core.Lite.Env
         DDC.Core.Lite
 
   Other-modules:
         DDC.Core.Lite.Convert.Base
         DDC.Core.Lite.Convert.Data
         DDC.Core.Lite.Convert.Type
-        DDC.Core.Lite.Compounds
         DDC.Core.Lite.Convert
-        DDC.Core.Lite.Env
-        DDC.Core.Lite.Layout
         DDC.Core.Lite.Name
         DDC.Core.Lite.Profile
 
