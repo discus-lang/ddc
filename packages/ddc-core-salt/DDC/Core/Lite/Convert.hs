@@ -45,7 +45,8 @@ import Data.Maybe
 --
 --   The output code contains:
 --      debruijn indices.
---       These then need to be eliminated before it will pass the Salt fragment checks.
+--       These then need to be eliminated before it will pass the Salt fragment
+--       checks.
 --
 saltOfLiteModule
         :: Show a
@@ -264,9 +265,11 @@ convertExpX ctx pp defs kenv tenv xx
 
                 return $ xApps (annotTail a) x1' xsArgs'
 
+        -- ISSUE #283: Lite to Salt transform doesn't check for partial application
+        --    This only works for full application. 
+        --    At least check for the other cases.
+        --
         -- Function application.
-        -- TODO: This only works for full application. 
-        --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          -> do  x1'     <- downArgX x1
@@ -292,13 +295,13 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorNotNormalized ("let-expression")
 
 
+        -- ISSUE #284: Reject case matches against float literals.
+        --   Case expressions should turn into 'switch' in the C and LLVM
+        --   backends, and float can't be made into a jump table.
+        --   Just reject case matches on floats in Salt.
+        --
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
-        --
-        --  TODO: We can't branch against float literals.
-        --        Matches against float literals should be desugared into if-then-else chains.
-        --        Same for string literals.
-        --
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon (TyConBound (UPrim nType _) _)  <- tScrut
          , L.NamePrimTyCon _                    <- nType
@@ -435,7 +438,7 @@ convertCtorAppX
         -> DataDefs L.Name              -- ^ Data type definitions.
         -> KindEnv L.Name               -- ^ Kind environment.
         -> TypeEnv L.Name               -- ^ Type environment.
-        -> AnTEC a L.Name               -- ^ Annotation from deconstructed application node.
+        -> AnTEC a L.Name               -- ^ Annot from deconstructed app node.
         -> DaCon L.Name                 -- ^ Data constructor being applied.
         -> [Exp (AnTEC a L.Name) L.Name]
         -> ConvertM a (Exp a S.Name)
@@ -460,7 +463,6 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
         = return $ S.xWord a i bits
 
         -- Handle the unit constructor.
-        -- TODO: use a shared object instead of allocating one.
         | DaConUnit      <- daConName dc
         = do    return  $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
 
@@ -540,7 +542,8 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 xBody1  <- convertExpX ctx pp defs kenv tenv x
                 return  $ AAlt (PData dc' []) xBody1
 
-        -- TODO: Handle matching unit constructors.
+        -- ISSUE #285: Allow maching against unit literals
+        -- .. missing case here ..
 
         -- Match against algebraic data with a finite number
         -- of data constructors.
@@ -564,7 +567,8 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 -- Add let bindings to unpack the constructor.
                 tScrut'         <- convertT kenv tScrut
                 let Just trPrime = takePrimeRegion tScrut'
-                xBody2           <- destructData pp a uScrut' ctorDef trPrime bsFields' xBody1
+                xBody2           <- destructData pp a uScrut' ctorDef trPrime
+                                                 bsFields' xBody1
                 return  $ AAlt (PData dcTag []) xBody2
 
         AAlt{}          
@@ -584,8 +588,6 @@ convertCtor
         -> ConvertM a (Exp a S.Name)
 
 convertCtor pp defs kenv tenv a dc
-
- -- TODO: Use a shared unit constructor instead of allocating a new one.
  | DaConUnit    <- daConName dc
  =      return $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
 
@@ -600,7 +602,8 @@ convertCtor pp defs kenv tenv a dc
         -- A Zero-arity data constructor.
         nCtor
          | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
-         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) 
+                                $ dataDefsTypes defs
          -> do  -- Put zero-arity data constructors in the top-level region.
                 let rPrime      = S.rTop
                 constructData pp kenv tenv a dataDef ctorDef rPrime [] []
@@ -609,3 +612,4 @@ convertCtor pp defs kenv tenv a dc
 
  | otherwise
  = throw $ ErrorMalformed "convertCtor: invalid constructor"
+

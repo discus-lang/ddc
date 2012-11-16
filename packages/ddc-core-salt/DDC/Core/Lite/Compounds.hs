@@ -68,7 +68,8 @@ tInt r1
 -- Words ----------------------------------------------------------------------
 -- | Unboxed `WordN#` type constructor of the given width.
 tWordU :: Int -> Type Name
-tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
+tWordU bits 
+ = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
 
 
 -- Pairs ----------------------------------------------------------------------

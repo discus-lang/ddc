@@ -19,6 +19,7 @@ import DDC.Type.DataDef
 import DDC.Type.Exp
 import Control.Monad
 
+
 -- HeapObject -----------------------------------------------------------------
 -- | Enumerates the heap object formats that can be used to store
 --   algebraic data.
@@ -101,7 +102,7 @@ fieldSizeOfType platform tt
         -- We're not supporting polymorphic fields yet.
         TForall{}       -> Nothing
 
-        -- TODO: pass through applications of pointers.
+        -- Assume any non-unboxed thing is represented by a pointer.
         TApp{}          -> Just $ platformAddrBytes platform
 
         -- We shouldn't find any TSums, because field types always have
@@ -158,7 +159,7 @@ isUnboxedType tt
 
         TForall{}       -> Just False
 
-        -- TODO: handle application of pointer constructor.
+        -- ISSUE #286: Application of pointer constructor is treated as a boxed type.
         TApp{}          -> Just False
 
         TSum{}          -> Nothing

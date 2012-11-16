@@ -50,9 +50,10 @@ convertPrimT = convertT' True Env.empty
 --   We don't know what the primary region of the returned value is,
 --   so fill in its region varible with a hole '_'. 
 --
---   TODO: Convert data type quantifiers into region quantifiers instead,
---   and pass around the correct head region: 
+---  Instead of using type variables of kind *, we could convert these into
+--   region quantifiers and pass the head region instead:
 --       @head :: [r1 r2 : %]. Ptr# r1 Obj -> Ptr# r2 Obj@
+--   I'm not sure which is better.
 --
 convertT' 
         :: Bool                 -- ^ Whether this is the type of a primop.

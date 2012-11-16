@@ -44,8 +44,7 @@ features
         , featuresUnboxedInstantiation  = True
 
         , featuresNameShadowing         = False
-        , featuresUnusedBindings        = True          -- TODO: need to fix compliance checker to enable this
-                                                        -- type vars are not being marked as used.
+        , featuresUnusedBindings        = True
         , featuresUnusedMatches         = False }
 
 

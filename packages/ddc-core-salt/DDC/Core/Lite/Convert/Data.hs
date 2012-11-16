@@ -49,9 +49,6 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         let Just tsFields       = sequence 
                                 $ drop (length $ dataTypeParamKinds dataDef) tsArgs
 
---        let Just trsFields      = sequence
---                                $ map (liftM fst . O.takeTPtr) tsFields
-
         -- Allocate the object.
         let arity       = length tsFields
         let bObject     = BAnon (O.tPtr rPrime O.tObj)
@@ -100,7 +97,8 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         let xObject'    = XVar a $ UIx 1
         let xPayload'   = XVar a $ UIx 0
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
-                                (O.xPokeBuffer a rPrime tField xPayload' offset (liftX 2 xField))
+                                (O.xPokeBuffer a rPrime tField xPayload'
+                                                 offset (liftX 2 xField))
                                 | tField        <- tsFields
                                 | offset        <- offsets
                                 | xField        <- xsFields]
@@ -143,7 +141,8 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
                 $ [ if isBNone bField
                         then Nothing
                         else Just $ LLet LetStrict bField 
-                                        (O.xGetFieldOfBoxed a trPrime tField (XVar a uScrut) ix)
+                                    (O.xGetFieldOfBoxed a trPrime tField
+                                                       (XVar a uScrut) ix)
                   | bField        <- bsFields
                   | tField        <- map typeOfBind bsFields
                   | ix            <- [0..] ]
@@ -164,7 +163,8 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
                 $ [ if isBNone bField
                      then Nothing 
                      else Just $ LLet LetStrict bField 
-                                     (O.xPeekBuffer a trPrime tField (XVar a uPayload) offset) 
+                                     (O.xPeekBuffer a trPrime tField 
+                                                 (XVar a uPayload) offset) 
                   | bField        <- bsFields
                   | tField        <- map typeOfBind bsFields
                   | offset        <- offsets ]
