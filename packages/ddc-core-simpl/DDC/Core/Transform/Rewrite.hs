@@ -181,9 +181,9 @@ rewriteX rules x0
 --       x = box ^0
 --   in ...
 --
-goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
+goDefHoles rules a l@(LLet LetStrict let_bind def) e env down
  | (((sub, []), name, RewriteRule { ruleBinds = bs, ruleLeft = hole }):_)
-        <- checkHoles rules def ws
+        <- checkHoles rules def env
 
  = let  -- only get value-level bindings
         bs'     = map snd $ filter (isBMValue . fst) bs
@@ -207,7 +207,8 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
                                              Nothing-> []) basK
 
         -- surround whole expression with anon lets from sub
-        values  = map     (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v)) (reverse bas')
+        values  = map   (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v))
+                        (reverse bas')
 
         -- replace 'def' with LHS-HOLE[sub => ^n]
         anons   = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
@@ -219,7 +220,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
         let_bind'  = S.substituteTs basK' let_bind
         lets'      = lets ++ [LLet LetStrict let_bind' def']
 
-            -- lift e by (length bas)
+        -- lift e by (length bas)
         depth   = case let_bind of
                      BAnon _ -> 1 
                      _       -> 0
@@ -227,24 +228,24 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e ws down
         e'      = L.liftAtDepthX (length bas') depth e
 
         -- SAVE in wit env
-        ws'     = foldl (flip RE.extendLets) ws lets'
+        env'     = foldl (flip RE.extendLets) env lets'
 
    in  if already_done
             then do
-                e'' <- down (RE.extendLets l ws) e
+                e'' <- down (RE.extendLets l env) e
                 return $ XLet a l e''
 
             else do
                 tell [LogUnfold name]
-                e'' <- down ws' e'
+                e'' <- down env' e'
                 return $ X.xLets a lets' e''
 
  | otherwise
- = do   e' <- down (RE.extendLets l ws) e
+ = do   e' <- down (RE.extendLets l env) e
         return $ XLet a l e'
 
-goDefHoles _rules a l e ws down
- = do   e' <- down (RE.extendLets l ws) e
+goDefHoles _rules a l e env down
+ = do   e' <- down (RE.extendLets l env) e
         return $ XLet a l e'
 
 
@@ -262,7 +263,6 @@ checkHoles rules def ws
  = let  rules'   = catMaybes $ map holeRule rules
         (f,args) = X.takeXAppsWithAnnots def
 
-        -- TODO most specific?
    in   catMaybes
          $ map (\(name,r) -> fmap (\s -> (s,name,r)) 
                           $ matchWithRule r ws f args RM.emptySubstInfo)
@@ -382,17 +382,18 @@ wrapLets a binds bas
         bs'     = map fst bs''
 
         anons   = zipWith (\(b,_) i -> (b, XVar a (UIx i))) as' [0..]
-        values  = map     (\(b,v) ->   (BAnon (substT bs' $ T.typeOfBind b), v)) (reverse as')
+        values  = map     (\(b,v) ->   (BAnon (substT bs' $ T.typeOfBind b), v)) 
+                          (reverse as')
         lets    = map (\(b,v) -> LLet LetStrict b v) values
 
    in   (bs' ++ anons, lets)
 
 
+-- | Substitute type bindings into a type.
 substT :: Ord n => [(Bind n, Exp a n)] -> Type n -> Type n
 substT bas x 
  = let  sub     = [(b, t) | (b, XType t) <- bas ] 
    in   S.substituteTs sub x
-
 
 
 -------------------------------------------------------------------------------
@@ -520,10 +521,13 @@ matchWithRule
 -------------------------------------------------------------------------------
 -- | Lookup a binding from a rewrite rule substitution.
 --
---   TODO: this is wrong.
---         Level 1 and Level 0 binders can have the same names, 
---         but this code doesn't distinguish between them.
+--   ISSUE #282: Rewrite rule lookup code doesn't distinguish between name levels
+--    The lookupFromSubst function tries to lookup the same name from a map
+--    of level-1 names as well as level-0 names, but the same textual name
+--    can be used at both levels.
 --
+--    Eg: RULE [x : %] (x : Int x). ...
+-- 
 lookupFromSubst :: Ord n
         => [Bind n]
         -> (Map n (Exp a n), Map n (Type n))
