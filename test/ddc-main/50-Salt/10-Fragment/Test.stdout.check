@@ -12,7 +12,6 @@ When checking expression.
 -- Error: Module does not have a top-level letrec.
 Fragment violation when converting Salt module to C code.
   Module does not have a top-level letrec.
-  
 
 
 -- Ok: Function finishes with a return statement.

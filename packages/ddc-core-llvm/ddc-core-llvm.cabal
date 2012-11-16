@@ -26,8 +26,8 @@ Library
         ddc-core-salt   == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Llvm.Convert.Metadata.Graph
-        DDC.Core.Llvm.Convert.Metadata.Tbaa
+        DDC.Core.Llvm.Metadata.Graph
+        DDC.Core.Llvm.Metadata.Tbaa
         DDC.Core.Llvm.Convert
                   
         DDC.Llvm.Transform.Clean

@@ -2,22 +2,24 @@
 -- Manipulate graphs for metadata generation
 --  WARNING: everything in here is REALLY SLOW
 --
-module DDC.Core.Llvm.Convert.Metadata.Graph
-       ( Rel
+module DDC.Core.Llvm.Metadata.Graph
+       ( -- * Binary Relations
+         Rel
        , fromList, toList
        , allR, differenceR, unionR, composeR, transitiveR
        , transClosure
 
+         -- * Graphs
        , UG(..)
        , DG(..)
        , transClosureDG, orientation
        , transOrientation,    minOrientation
        , partitionDG
 
+         -- * Trees
        , Tree(..)
        , sources, anchor )
 where
-
 import Data.List          hiding (partition)
 import Data.Ord
 import Data.Tuple
@@ -26,31 +28,48 @@ import Control.Monad
 
 
 -- Binary relations -----------------------------------------------------------
+-- | A binary relation.
 type Rel a = a -> a -> Bool
 type Dom a = [a]
 
 
+-- | Convert a relation.
 toList :: Dom a -> Rel a -> [(a, a)]
 toList dom r = [ (x, y) | x <- dom, y <- dom, r x y ]
 
+
+-- | Convert a list to a relation.
 fromList :: Eq a => [(a, a)] -> Rel a
 fromList s = \x y -> (x,y) `elem` s
 
+
+-- | Get the size of a a relation.
 size :: Dom a -> Rel a -> Int
 size d r = length $ toList d r
 
+
+-- | The universal negative relation.
+--   All members of the domain are not related.
 allR :: Eq a => Rel a
 allR = (/=)
 
-differenceR :: Rel a -> Rel a -> Rel a
-differenceR       f g = \x y -> f x y && not (g x y)
 
+-- | Fifference of two relations.
+differenceR :: Rel a -> Rel a -> Rel a
+differenceR     f g = \x y -> f x y && not (g x y)
+
+
+-- | Union two relations.
 unionR :: Rel a -> Rel a -> Rel a
 unionR          f g = \x y -> f x y || g x y
 
+
+-- | Compose two relations.
 composeR :: Dom a -> Rel a -> Rel a -> Rel a
 composeR dom f g = \x y -> or [ f x z && g z y | z <- dom ]
 
+
+-- | Check whether a relation is transitive.
 transitiveR :: Dom a -> Rel a -> Bool
 transitiveR dom r
  = and [ not (r x y  && r y z && not (r x z)) 
@@ -63,14 +82,22 @@ transClosure :: (Eq a) => Dom a -> Rel a -> Rel a
 transClosure dom r = fromList $ step dom $ toList dom r
     where step [] es     = es
           step (_:xs) es = step xs 
-                              $ nub (es ++ [(a, d) | (a, b) <- es, (c, d) <- es, b == c])
+                          $ nub (es ++ [(a, d) 
+                                | (a, b) <- es
+                                , (c, d) <- es
+                                , b == c])
 
+
+-- | Get the size of the transitive closure of a relation.
 transCloSize :: (Eq a) => Dom a -> Rel a -> Int
 transCloSize d r = size d $ transClosure d r
 
 
 -- Graphs ---------------------------------------------------------------------
+-- | An undirected graph.
 newtype UG  a = UG (Dom a, Rel a)
+
+-- | A directed graph.
 newtype DG  a = DG (Dom a, Rel a)
 
 instance Show a => Show (UG a) where
@@ -80,10 +107,12 @@ instance Show a => Show (DG a) where
   show (DG (d,r)) = "DG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
 
 
--- | Give a random orientation of an undirected graph
+-- | Give a random orientation of an undirected graph.
 orientation :: Eq a => UG a -> DG a
 orientation (UG (d,g)) = DG (d,g)
 
+
+-- | Compute the transitive closure of a directed graph.
 transClosureDG :: (Eq a) => DG a -> DG a
 transClosureDG (DG (d,g)) = DG (d, transClosure d g)
 
@@ -140,6 +169,8 @@ isTree dom r
   = let neighbours x = filter (r x) dom 
     in  all ((<=1) . length . neighbours) dom
 
+
+-- | Get the sources of a tree.
 sources :: Eq a => a -> Tree a -> [a]
 sources x (Tree (d, r)) = [y | y <- d, r y x]
 
@@ -150,7 +181,6 @@ sources x (Tree (d, r)) = [y | y <- d, r y x]
 partitionDG :: Eq a => DG a -> [Tree a]
 partitionDG (DG (d,g))
  = let mkGraph  g' nodes = (nodes, fromList [ (x,y) | x <- nodes, y <- nodes, g' x y ])
---       clo               = transClosure d g
    in map Tree $ fromMaybe (error "partitionDG: no partition found!") 
                $ find (all $ uncurry isTree) 
                $ map (map (mkGraph g)) 
@@ -158,8 +188,10 @@ partitionDG (DG (d,g))
                $ partitionings d
 
 
-type SubList a   = [a]
+-- | A partitioning of a tree.
 type Partitioning a = [SubList a]
+type SubList a      = [a]
+
 
 -- | Calculate the aliasing induced by a set of trees
 --      this includes aliasing within each of the trees
@@ -186,7 +218,7 @@ partitionings (x:xs) = concatMap (nondetPut x) $ partitionings xs
                               in putHere:putLater
                  
         
--- | Enroot a tree with the given root
+-- | Enroot a tree with the given root.
 anchor :: Eq a => a -> Tree a -> Tree a
 anchor root (Tree (d,g))
   = let leaves = filter (null . flip filter d . g) d

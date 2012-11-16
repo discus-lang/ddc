@@ -11,7 +11,7 @@ import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
-import DDC.Core.Llvm.Convert.Metadata.Tbaa
+import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
