@@ -7,20 +7,20 @@
 --   can be easily mapped onto C or LLVM code. It has functions, case
 --   expressions and primops, but no partial application, data types, or nested
 --   functions. All operations on algebraic data need to have been expanded to
---   raw memory operations.
+--   primitive store operations.
 -- 
---   Salt exposes raw memory and control primops, so its possible for functions
+--   Salt exposes raw store and control primops, so its possible for functions
 --   written directly in Salt to corrupt the heap (if they are wrong).
 --
 module DDC.Core.Salt
         ( -- * Language profile
           profile
 
-          -- * Conversion to C source code
-        , convertModule
+          -- * Conversion
+        , seaOfSaltModule
         , Error(..)
 
-          -- * Names of variables and constructors
+          -- * Names
         , Name          (..)
         , PrimTyCon     (..)
         , PrimOp        (..)
@@ -29,9 +29,11 @@ module DDC.Core.Salt
         , PrimControl   (..)
         , PrimStore     (..)
         , PrimArith     (..)
+
+          -- * Name parsing
         , readName
 
-          -- * Lexers
+          -- * Name lexing
         , lexModuleString
         , lexExpString)
 

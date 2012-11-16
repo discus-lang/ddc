@@ -15,33 +15,46 @@ Description:    Disciple Core translation to C
 
 Library
   Build-Depends: 
-        base            == 4.5.*,
-        containers      == 0.4.*,
+        base            == 4.6.*,
+        containers      == 0.5.*,
         array           == 0.4.*,
-        transformers    == 0.2.*,
-        mtl             == 2.0.*,
+        transformers    == 0.3.*,
+        mtl             == 2.1.*,
         ddc-base        == 0.3.0.*,
-        ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Salt.Base.Name
-        DDC.Core.Salt.Base.Sanitize
-        DDC.Core.Salt.Base
-        DDC.Core.Salt.Lite
-        DDC.Core.Salt.Output
+        DDC.Core.Salt
+        DDC.Core.Salt.Platform
+        DDC.Core.Salt.Compounds
+        DDC.Core.Salt.Runtime
+        DDC.Core.Salt.Env
+
+
+        DDC.Core.Lite
 
   Other-modules:
-        DDC.Core.Salt.Lite.Compounds
-        DDC.Core.Salt.Lite.Convert
-        DDC.Core.Salt.Lite.Env
-        DDC.Core.Salt.Lite.Name
-        DDC.Core.Salt.Lite.Profile
-        DDC.Core.Salt.Output.Convert
-        DDC.Core.Salt.Output.Env
-        DDC.Core.Salt.Output.Error
-        DDC.Core.Salt.Output.Name
-        DDC.Core.Salt.Output.Profile
+        DDC.Core.Lite.Convert.Base
+        DDC.Core.Lite.Convert.Data
+        DDC.Core.Lite.Convert.Type
+        DDC.Core.Lite.Compounds
+        DDC.Core.Lite.Convert
+        DDC.Core.Lite.Env
+        DDC.Core.Lite.Layout
+        DDC.Core.Lite.Name
+        DDC.Core.Lite.Profile
+
+        DDC.Core.Salt.Convert.Base
+        DDC.Core.Salt.Convert.Init
+        DDC.Core.Salt.Convert.Prim
+        DDC.Core.Salt.Convert.Transfer
+        DDC.Core.Salt.Name.Lit
+        DDC.Core.Salt.Name.PrimOp
+        DDC.Core.Salt.Name.PrimTyCon
+        DDC.Core.Salt.Name.Sanitize
+        DDC.Core.Salt.Convert
+        DDC.Core.Salt.Name
+        DDC.Core.Salt.Profile
 
                   
   GHC-options:
@@ -57,4 +70,6 @@ Library
         ScopedTypeVariables
         StandaloneDeriving
         PatternGuards
+        DeriveDataTypeable
+        ParallelListComp
         

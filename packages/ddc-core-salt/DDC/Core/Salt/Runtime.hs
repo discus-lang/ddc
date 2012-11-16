@@ -191,7 +191,7 @@ utPayloadOfRawSmall
 
 
 -- Primops --------------------------------------------------------------------
--- | Create the heap
+-- | Create the heap.
 xCreate :: a -> Integer -> Exp a Name
 xCreate a bytes
         = XApp a (XVar a uCreate) 

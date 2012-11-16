@@ -7,23 +7,23 @@ where
 import DDC.Base.Pretty
 
 -- | Enough information about the platform to generate code for it.
---   We need to know the pointer size, and alignment constraints
+--   We need to know the pointer size and alignment constraints
 --   so that we can lay out heap objects.
 data Platform
         = Platform
-        { -- Width of an address.
+        { -- | Width of an address in bytes.
           platformAddrBytes     :: Integer
 
-          -- Width of a constructor tag.
+          -- | Width of a constructor tag in bytes.
         , platformTagBytes      :: Integer
 
-          -- Width of a Nat (used for object sizes like size_t).
+          -- | Width of a Nat in bytes (used for object sizes like size_t).
         , platformNatBytes      :: Integer
 
-          -- Align functions on this boundary.
+          -- | Align functions on this boundary in bytes.
         , platformAlignBytes    :: Integer 
 
-          -- Minimum size of a heap object.
+          -- | Minimum size of a heap object in bytes.
         , platformObjBytes      :: Integer }
         deriving Show
 
@@ -46,7 +46,8 @@ instance Pretty Platform where
                 <> text (show $ platformObjBytes   pp) ]
 
 
--- | 32-bit platform.
+-- | 32-bit platform specification.
+--
 --   Heap objects are aligned to 64-bit so that double-precision floats
 --   in the object payloads maintain their alignments.
 platform32 :: Platform
@@ -59,7 +60,7 @@ platform32
         , platformObjBytes      = 8 }
 
 
--- | 64-bit platform.
+-- | 64-bit platform specification.
 platform64 :: Platform
 platform64 
         = Platform

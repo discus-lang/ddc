@@ -8,7 +8,7 @@ where
 import DDC.Core.Salt.Env
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Compounds
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Type.Exp
 import DDC.Type.Predicates

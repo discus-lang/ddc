@@ -1,6 +1,6 @@
 
 module DDC.Core.Lite.Convert.Base
-        (  ConvertM(..)
+        (  ConvertM
         ,  Error (..))
 where
 import DDC.Core.Exp

@@ -4,7 +4,7 @@
 --   If we get any of these then the program doesn't map onto the features
 --   of the C-language.
 module DDC.Core.Salt.Convert.Base
-        ( ConvertM      (..)
+        ( ConvertM
         , Error(..))
 where
 import DDC.Core.Salt.Name

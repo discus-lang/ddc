@@ -11,7 +11,7 @@
 --      
 module DDC.Core.Salt.Convert
         ( Error (..)
-        , convertModule)
+        , seaOfSaltModule)
 where
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
@@ -31,13 +31,13 @@ import Data.Maybe
 
 
 -- | Convert a Disciple Core Salt module to C-source text.
-convertModule 
+seaOfSaltModule
         :: Show a 
         => Bool                 -- ^ Whether to include top-level include macros.
         -> Module a Name        -- ^ Module to convert.
         -> Either (Error a) Doc
 
-convertModule withPrelude mm
+seaOfSaltModule withPrelude mm
  = result $ convModuleM withPrelude mm
 
 

@@ -7,7 +7,7 @@ module DDC.Core.Lite.Profile
 where
 import DDC.Core.Lite.Env
 import DDC.Core.Lite.Name
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Data.Token
 

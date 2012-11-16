@@ -19,11 +19,15 @@ import qualified DDC.Type.Env                   as Env
 -- DataDefs -------------------------------------------------------------------
 -- | Data type definitions for:
 --
--- @  Type   Constructors
---  ----   ------------
---  Nat    ... -2 -1 0 1 2 ...
---  Tag    0 1 2 ...
--- @
+-- >  Type                        Constructors
+-- >  ----                --------------------------
+-- >  Bool#               True# False#
+-- >  Nat#                0# 1# 2# ...
+-- >  Int#                ... -2i# -1i# 0i# 1i# 2i# ...
+-- >  Tag#                (none, convert from Nat#)
+-- >  Word{8,16,32,64}#   42w8# 123w64# ...
+-- >  Float{32,64}#       (none, convert from Int#)
+-- 
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
@@ -39,6 +43,9 @@ primDataDefs
         -- Int
         , DataDef (NamePrimTyCon PrimTyConInt) [] Nothing
 
+        -- Tag
+        , DataDef (NamePrimTyCon PrimTyConTag) [] Nothing
+
         -- Word 8, 16, 32, 64
         , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
         , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
@@ -48,9 +55,6 @@ primDataDefs
         -- Float 32, 64
         , DataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
         , DataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
-
-        -- Tag
-        , DataDef (NamePrimTyCon PrimTyConTag) [] Nothing
         ]
 
 
