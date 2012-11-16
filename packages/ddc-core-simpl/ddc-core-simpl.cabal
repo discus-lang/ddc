@@ -30,7 +30,6 @@ Library
         DDC.Core.Simplifier.Parser
         DDC.Core.Transform.Rewrite.Disjoint
         DDC.Core.Transform.Rewrite.Env
-        DDC.Core.Transform.Rewrite.Error
         DDC.Core.Transform.Rewrite.Match
         DDC.Core.Transform.Rewrite.Parser
         DDC.Core.Transform.Rewrite.Rule
@@ -56,6 +55,7 @@ Library
         DDC.Core.Simplifier.Base
 
         DDC.Core.Transform.Inline.Templates
+        DDC.Core.Transform.Rewrite.Error
 
 
   GHC-options:

@@ -1,16 +1,18 @@
 -- | Constructing and checking whether rewrite rules are valid
 module DDC.Core.Transform.Rewrite.Rule 
-        ( RewriteRule   (..)
-        , NamedRewriteRule
-
-          -- * Binding modes
-        , BindMode      (..)
+        ( -- * Binding modes
+          BindMode      (..)
         , isBMSpec
         , isBMValue
 
+        , RewriteRule   (..)
+        , NamedRewriteRule
+
           -- * Construction
         , mkRewriteRule
-        , checkRewriteRule)
+        , checkRewriteRule
+        , Error (..)
+        , Side  (..))
 where
 import DDC.Core.Transform.Rewrite.Error
 import DDC.Core.Exp
