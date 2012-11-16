@@ -8,7 +8,7 @@ module DDC.Core.Simplifier.Recipe
         , flatten
         , beta
         , betaLets
-        , deadCode
+        , prune
         , forward
         , bubble
         , elaborate
@@ -57,8 +57,8 @@ betaLets = Trans BetaLets
 
 
 -- | Remove unused, pure let bindings.
-deadCode  :: Simplifier s a n
-deadCode = Trans DeadCode
+prune  :: Simplifier s a n
+prune   = Trans Prune
 
 
 -- | Float single-use bindings forward into their use sites.

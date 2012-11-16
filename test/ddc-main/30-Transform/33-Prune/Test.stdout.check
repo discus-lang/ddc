@@ -6,9 +6,9 @@ ok
 -- No effects
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        3;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Alloc R0#] in
@@ -22,7 +22,7 @@ weakclo {} in
 -- Doesn't work for anonymous
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        0
 
 let ^ : Int R0# = 5 [R0#] () in
@@ -33,9 +33,9 @@ let ^ : Int R0# = 5 [R0#] () in
 -- Works for unnamed
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        3;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Alloc R0#] in
@@ -50,9 +50,9 @@ weakclo {} in
 -- Use one of them
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        1;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Alloc R0#] in
@@ -63,9 +63,9 @@ y
 -- Make mutable, but no update
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        1;
-        DeadCode:
+        Prune:
             Removed:        0
 
 letregion r with {w : Mutable r} in
@@ -76,7 +76,7 @@ weakclo {[r]} in
 -- Do an update - update name is unmentioned
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        0
 
 letregion r with {w : Mutable r} in
@@ -88,13 +88,13 @@ copyInt [r] [R0#] x
 -- TODO Doesn't cascade, because of the weakclo produced...
 * TRANSFORM INFORMATION: 
     fix 5:
-        DeadCode:
+        Prune:
             Removed:        1;
-        DeadCode:
+        Prune:
             Removed:        1;
-        DeadCode:
+        Prune:
             Removed:        1;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Read R0# + Alloc R0#] in

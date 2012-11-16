@@ -5,10 +5,10 @@
 --   visible to anything in the calling context. This includes allocation
 --   and read effects, but not writes or any globally visible effects.
 --
-module DDC.Core.Transform.DeadCode
-        ( DeadCodeInfo  (..)
-        , deadCodeModule
-        , deadCodeX)
+module DDC.Core.Transform.Prune
+        ( PruneInfo  (..)
+        , pruneModule
+        , pruneX)
 where
 import DDC.Core.Analysis.Usage
 import DDC.Core.Simplifier.Base
@@ -25,56 +25,54 @@ import Control.Monad.Writer                     (Writer, runWriter, tell)
 import Data.Monoid                              (Monoid, mempty, mappend)
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
+import qualified DDC.Type.Env                           as Env
 import qualified DDC.Core.Collect                       as C
 import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Core.Transform.Trim               	as Trim
 import qualified DDC.Type.Compounds			as T
-import qualified DDC.Type.Env				as T
 import qualified DDC.Type.Sum				as TS
 import qualified DDC.Type.Transform.Crush		as T
 
 
 -------------------------------------------------------------------------------
--- | A summary of what the dead-code transform did.
-data DeadCodeInfo
-    = DeadCodeInfo
+-- | A summary of what the prune transform did.
+data PruneInfo
+    = PruneInfo
     { -- | How many let-bindings we erased.
       infoBindingsErased  :: Int }
     deriving Typeable
 
 
-instance Pretty DeadCodeInfo where
- ppr (DeadCodeInfo remo)
-  =  text "DeadCode:"
+instance Pretty PruneInfo where
+ ppr (PruneInfo remo)
+  =  text "Prune:"
   <$> indent 4 (vcat
       [ text "Removed:        " <> int remo])
 
 
-instance Monoid DeadCodeInfo where
- mempty = DeadCodeInfo 0
+instance Monoid PruneInfo where
+ mempty = PruneInfo 0
 
- mappend (DeadCodeInfo r1) (DeadCodeInfo r2)
-        = DeadCodeInfo (r1 + r2)
+ mappend (PruneInfo r1) (PruneInfo r2)
+        = PruneInfo (r1 + r2)
 
 
 -------------------------------------------------------------------------------
 -- | Erase pure let-bindings in a module that have no uses.
-deadCodeModule
+pruneModule
 	:: (Show a, Show n, Ord n, Pretty n)
 	=> Profile n           -- ^ Profile of the language we're in
-	-> KindEnv n           -- ^ Kind environment
-	-> TypeEnv n           -- ^ Type environment
 	-> Module a n
 	-> Module a n
 
-deadCodeModule profile kenv tenv mm
+pruneModule profile mm
  = mm { moduleBody      = result 
-                        $ deadCodeX profile kenv tenv 
+                        $ pruneX profile Env.empty Env.empty
                         $ moduleBody mm }
 
 
 -- | Erase pure let-bindings in an expression that have no uses.
-deadCodeX
+pruneX
 	:: (Show a, Show n, Ord n, Pretty n)
 	=> Profile n           -- ^ Profile of the language we're in
 	-> KindEnv n           -- ^ Kind environment
@@ -82,14 +80,14 @@ deadCodeX
 	-> Exp a n
 	-> TransformResult (Exp a n)
 
-deadCodeX profile kenv tenv xx
+pruneX profile kenv tenv xx
  = let  
         (xx', info)
                 = transformTypeUsage profile kenv tenv
-	               (transformUpMX deadCodeTrans kenv tenv)
+	               (transformUpMX pruneTrans kenv tenv)
                        xx
 
-        progress (DeadCodeInfo r) 
+        progress (PruneInfo r) 
                 = r > 0
 
    in TransformResult
@@ -99,7 +97,7 @@ deadCodeX profile kenv tenv xx
         , resultInfo     = TransformInfo info }
 
 
--- The dead-code transform proper needs to have every expression annotated
+-- The prune transform proper needs to have every expression annotated
 -- with its type an effect, as well the variable usage map.
 --
 -- We generate these annotations here then pass the result off to
@@ -115,7 +113,7 @@ transformTypeUsage profile kenv tenv trans xx
 
         Left err 
          -> error $  renderIndent
-         $  vcat [ text "DDC.Core.Transform.DeadCode: core type error"
+         $  vcat [ text "DDC.Core.Transform.Prune: core type error"
                  , ppr err ]
 
 
@@ -126,15 +124,15 @@ type Annot a n
 
 
 -- | Apply the dead-code transform to an annotated expression.
-deadCodeTrans
+pruneTrans
 	:: (Show a, Show n, Ord n, Pretty n)
 	=> KindEnv n
 	-> TypeEnv n
 	-> Exp (Annot a n) n
-	-> Writer DeadCodeInfo 
+	-> Writer PruneInfo 
                  (Exp (Annot a n) n)
 
-deadCodeTrans _ _ xx
+pruneTrans _ _ xx
  = case xx of
         XLet a@(usedMap, antec) (LLet _mode b x1) x2
          | isUnusedBind b usedMap
@@ -164,10 +162,10 @@ deadCodeTrans _ _ xx
          $ Trim.trimClosures a
                 (  (map (XType . TVar)
                         $ Set.toList
-                        $ C.freeT T.empty x1)
+                        $ C.freeT Env.empty x1)
                 ++ (map (XVar a)
                         $ Set.toList
-                          $ C.freeX T.empty x1))
+                          $ C.freeX Env.empty x1))
 
 
 -- | Check whether this binder has no uses, 

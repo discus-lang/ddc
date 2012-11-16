@@ -9,7 +9,7 @@ import DDC.Base.Pretty
 import DDC.Build.Language
 import DDC.Core.Lexer
 import DDC.Core.Fragment.Profile
-import DDC.Core.Transform.Rewrite.Rule
+import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State
 import DDCI.Core.Output

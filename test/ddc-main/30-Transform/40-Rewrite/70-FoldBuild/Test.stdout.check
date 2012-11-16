@@ -62,7 +62,7 @@ ok
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          0
@@ -76,7 +76,7 @@ ok
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
     Inline: No information;
     fix 10:
@@ -92,7 +92,7 @@ ok
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
@@ -123,7 +123,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          7
@@ -137,7 +137,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          7
@@ -151,7 +151,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          0
@@ -165,7 +165,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          0
@@ -179,7 +179,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
     Inline: No information;
     fix 10:
@@ -195,7 +195,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
@@ -228,7 +228,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          0
@@ -242,7 +242,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
     Inline: No information;
     fix 10:
@@ -258,7 +258,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          7
@@ -272,7 +272,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0;
         Beta reduction:
             Types:          0
@@ -286,7 +286,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Forward:
             Substitutions:  0
             Bindings:       0;
-        DeadCode:
+        Prune:
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in

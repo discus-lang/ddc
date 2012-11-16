@@ -59,7 +59,7 @@ ok
             Values letted:  3
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        0;
         Rules fired:
             Unfold:  foldrBuild;
@@ -76,7 +76,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        0;
         Rules fired:
             Unfold:  foldrBuild
@@ -96,7 +96,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        1;
         Rules fired:
             Unfold:  foldrBuild
@@ -114,7 +114,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        0;
         Rules fired:
             Unfold:  foldrBuild
@@ -133,7 +133,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        1;
         Rules fired:
             Unfold:  foldrBuild;
@@ -150,7 +150,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        0;
         Rules fired:
             Unfold:  foldrBuild
@@ -168,7 +168,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        1;
         Rules fired:
             ;
@@ -185,7 +185,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Bubble: No information;
-        DeadCode:
+        Prune:
             Removed:        0;
         Rules fired:
             ;

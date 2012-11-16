@@ -80,7 +80,7 @@ data Transform s a n
         | BetaLets
 
         -- | Remove unused, pure let bindings.
-        | DeadCode
+        | Prune
 
         -- | Float single-use bindings forward into their use sites.
         | Forward
@@ -133,7 +133,7 @@ instance Pretty (Transform s a n) where
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         BetaLets        -> text "BetaLets"
-        DeadCode        -> text "DeadCode"
+        Prune           -> text "Prune"
         Forward         -> text "Forward"
         Bubble          -> text "Bubble"
         Inline{}        -> text "Inline"

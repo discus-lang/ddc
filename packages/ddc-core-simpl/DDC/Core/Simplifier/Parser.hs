@@ -110,7 +110,7 @@ parseTransform namK namT rules templates modules ((KCon name):rest)
         "Beta"          -> ret Beta
         "BetaLets"      -> ret BetaLets
         "Bubble"        -> ret Bubble
-        "DeadCode"      -> ret DeadCode
+        "Prune"         -> ret Prune
         "Forward"       -> ret Forward
         "Namify"        -> ret (Namify namK namT)
         "Rewrite"       -> ret (Rewrite rules)

@@ -36,7 +36,7 @@ Library
         DDC.Core.Transform.AnonymizeX
         DDC.Core.Transform.Beta
         DDC.Core.Transform.Bubble
-        DDC.Core.Transform.DeadCode
+        DDC.Core.Transform.Prune
         DDC.Core.Transform.Elaborate
         DDC.Core.Transform.Flatten
         DDC.Core.Transform.Forward

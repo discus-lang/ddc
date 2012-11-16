@@ -15,7 +15,7 @@ import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
-import DDC.Core.Transform.DeadCode
+import DDC.Core.Transform.Prune
 import DDC.Core.Transform.Forward
 import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Inline
@@ -73,7 +73,7 @@ applyTransform
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
 
-applyTransform profile kenv tenv spec mm
+applyTransform profile _kenv _tenv spec mm
  = case spec of
         Id               -> return mm
         Anonymize        -> return $ anonymizeX mm
@@ -86,7 +86,7 @@ applyTransform profile kenv tenv spec mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef mm
         Rewrite rules    -> return $ rewriteModule rules mm
-        DeadCode         -> return $ deadCodeModule profile kenv tenv mm
+        Prune            -> return $ pruneModule profile mm
         Elaborate        -> return $ elaborateModule mm
 
 
@@ -227,7 +227,7 @@ applyTransformX profile kenv tenv spec xx
         Inline  getDef    -> res    $ inline getDef xx
         Beta              -> return $ betaReduce False xx
         BetaLets          -> return $ betaReduce True  xx
-        DeadCode          -> return $ deadCodeX  profile kenv tenv xx
+        Prune             -> return $ pruneX  profile kenv tenv xx
         Forward           -> return $ forwardX xx
         Bubble            -> res    $ bubbleX kenv tenv xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
