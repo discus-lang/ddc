@@ -21,27 +21,27 @@ import qualified Data.Map       as Map
 
 -- | Check whether a core thing complies with a language fragment profile.
 complies 
-        :: forall n c. (Ord n, Show n, Complies c)
+        :: (Ord n, Show n, Complies c)
         => Profile n            -- ^ Fragment profile giving the supported
                                 --   language features and primitive operators.
-        -> c n                  -- ^ The thing to check.
+        -> c a n                -- ^ The thing to check.
         -> Maybe (Error n)
 
 complies profile thing
  = compliesWithEnvs profile
-    (profilePrimKinds profile)
-    (profilePrimTypes profile)
-    thing
+        (profilePrimKinds profile)
+        (profilePrimTypes profile)
+        thing
 
 
 -- | Like `complies` but with some starting environments.
 compliesWithEnvs
-        :: forall n c. (Ord n, Show n, Complies c)
+        :: (Ord n, Show n, Complies c)
         => Profile n            -- ^ Fragment profile giving the supported
                                 --   language features and primitive operators.
 	-> Env.KindEnv n        -- ^ Starting kind environment.
 	-> Env.TypeEnv n        -- ^ Starting type environment.
-	-> c n                  -- ^ The thing to check.
+	-> c a n                -- ^ The thing to check.
 	-> Maybe (Error n)
 
 compliesWithEnvs profile kenv tenv thing
@@ -56,24 +56,23 @@ compliesWithEnvs profile kenv tenv thing
 
 
 -- Complies -------------------------------------------------------------------
-
 -- | Class of things we can check language fragment compliance for.
-class Complies (c :: * -> *) where
+class Complies (c :: * -> * -> *) where
  -- Check compliance of a well typed term with a language profile.
  -- If it is not well typed then this can return a bad result.
  compliesX
-        :: forall n. (Ord n, Show n)
+        :: (Ord n, Show n)
         => Profile n            -- ^ Fragment profile giving the supported
                                 --   language features and primitive operators.
         -> Env n                -- ^ Starting Kind environment.
         -> Env n                -- ^ Starting Type environment.
         -> Context
-        -> c n 
+        -> c a n 
         -> CheckM n
                 (Set n, Set n)  -- Used type and value names.
 
 
-instance Show a => Complies (Module a) where
+instance Complies Module where
  compliesX profile kenv tenv context mm
   = do  let bs          = [ BName n t 
                                 | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
@@ -82,7 +81,7 @@ instance Show a => Complies (Module a) where
 
 
 -- We'll mark type vars that only appear in types of binders as unused.
-instance Show a => Complies (Exp a) where
+instance Complies Exp where
  compliesX profile kenv tenv context xx
   = let has f   = f $ profileFeatures profile
         ok      = return (Set.empty, Set.empty)
@@ -222,7 +221,7 @@ instance Show a => Complies (Exp a) where
         XWitness w      -> throw $ ErrorNakedWitness w
 
 
-instance Show a => Complies (Alt a) where
+instance Complies Alt where
  compliesX profile kenv tenv context aa
   = case aa of
         AAlt PDefault x
