@@ -8,6 +8,7 @@ import DDC.Build.Pipeline
 import DDC.Build.Language
 import System.Directory
 import System.Exit
+import System.IO
 import Control.Monad
 import Data.List
 import qualified DDC.Core.Pretty        as P
@@ -56,7 +57,7 @@ cmdCompile config filePath
 
         -- Print any errors that arose during compilation.
         errs    <- make
-        mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+        mapM_ (hPutStrLn stderr . P.renderIndent . P.ppr) errs
 
         -- If there were errors then quit and set the exit code.
         when (not $ null errs)

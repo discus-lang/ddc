@@ -14,6 +14,7 @@ import DDC.Data.Canned
 import Control.Monad
 import Data.IORef
 import System.Directory
+import System.IO
 
 
 -- | Load and transform a module, 
@@ -66,5 +67,5 @@ cmdReadModule_parse filePath frag source src
 
          _ -> do
                 putStrLn $ "When reading " ++ filePath
-                mapM_ (putStrLn . renderIndent . ppr) errs
+                mapM_ (hPutStrLn stderr . renderIndent . ppr) errs
                 return Nothing

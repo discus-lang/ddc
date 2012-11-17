@@ -10,6 +10,7 @@ import DDC.Build.Language
 import DDC.Core.Fragment
 import System.FilePath
 import System.Exit
+import System.IO
 import Control.Monad
 import qualified DDC.Base.Pretty        as P
 
@@ -53,7 +54,7 @@ cmdToC config bundle source sourceText
 
         -- Print any errors that arose during compilation
         errs <- compile
-        mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+        mapM_ (hPutStrLn stderr . P.renderIndent . P.ppr) errs
 
         -- If there were errors then quit and set the exit code.
         when (not $ null errs)
