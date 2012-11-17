@@ -104,7 +104,7 @@ applyOffside mm (LexemeToken t@Token { tokenTok = KA KBraceKet } : ts)
         | _tNext : _     <- dropNewLinesLexeme ts
         = error "DDC.Core.Lexer.Tokens.Offside: no brace match"
 
-        -- ISSUE #272: Better error message for non-matching braces.
+        -- ISSUE #289: Better error message for non-matching braces.
         --      Can we trigger the above error in a test?
         --      If so we need a better message for it.
 
