@@ -13,6 +13,8 @@ import qualified DDC.Type.Env           as Env
 import Control.Monad.State.Strict
 
 
+-- | The `Salt` fragment contains just those features that can be easily mapped
+--   onto C or LLVM code.
 fragmentSalt :: Fragment Name Error
 fragmentSalt 
         = Fragment

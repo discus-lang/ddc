@@ -1,25 +1,31 @@
 {-# LANGUAGE GADTs #-}
+-- | A pipeline is an abstraction of a single compiler pass.
+--
+--  NOTE: The Haddock documentation on pipeline constructors is missing
+--        because Haddock does not support commenting GADTs.
+--        See the source code for documentation.
+--
 module DDC.Build.Pipeline
-        ( -- * Things that can go wrong
+        ( -- * Errors
           Error(..)
 
-          -- * Processing text source code
+          -- * Source code
         , PipeText        (..)
         , pipeText
 
-          -- * Processing core modules
+          -- * Generic Core modules
         , PipeCore        (..)
         , pipeCore
 
-          -- * Processing Core Lite modules
+          -- * Core Lite modules
         , PipeLite        (..)
         , pipeLite
 
-          -- * Processing Core Salt modules
+          -- * Core Salt modules
         , PipeSalt        (..)
         , pipeSalt
 
-          -- * Processing LLVM modules
+          -- * LLVM modules
         , PipeLlvm        (..)
         , pipeLlvm
 
@@ -33,15 +39,13 @@ import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import DDC.Data.Canned
 import DDC.Core.Check                           (AnTEC)
-import qualified DDC.Core.Fragment.Compliance   as C
 import qualified DDC.Core.Transform.Reannotate  as C
-import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Fragment              as C
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
-import qualified DDC.Core.Salt.Convert          as Salt
-import qualified DDC.Core.Salt.Convert.Transfer as Salt
+import qualified DDC.Core.Salt.Transfer         as Salt
 import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Salt                  as Salt
@@ -55,7 +59,10 @@ import Control.Monad
 data Error
         = ErrorSaltLoad    (CL.Error Salt.Name)
 
+        -- | Error converting the module to Disciple Core Salt.
         | forall err. Pretty err => ErrorSaltConvert err
+
+        -- | Error converting the module to Disciple Core Lite.
         | forall err. Pretty err => ErrorLiteConvert err
 
         -- | Error when loading a module.
@@ -181,7 +188,7 @@ data PipeCore a n where
         -> PipeCore a n
 
 
--- | Process a core module.
+-- | Process a Core module.
 --
 --   Returns empty list on success.
 pipeCore
@@ -249,6 +256,7 @@ data PipeLite
                          [PipeCore () Salt.Name]
 
 
+-- | Process a Core Lite module.
 pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name
          -> PipeLite
          -> IO [Error]
@@ -429,6 +437,7 @@ data Sink
         deriving (Show)
 
 
+-- | Emit a string to the given `Sink`.
 pipeSink :: String -> Sink -> IO [Error]
 pipeSink str tg
  = case tg of

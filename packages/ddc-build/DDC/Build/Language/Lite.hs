@@ -13,6 +13,8 @@ import qualified DDC.Type.Env           as Env
 import Control.Monad.State.Strict
 
 
+-- | The `Lite` fragment is a desugared version of Disciple Core that has all
+--   the polymorphism of System-F2 along with algebraic data types.
 fragmentLite :: Fragment Name Error 
 fragmentLite
         = Fragment

@@ -1,9 +1,11 @@
 
 module DDC.Build.Language.Zero
-        (fragmentZero)
+        ( fragmentZero
+        , Name
+        , Error)
 where
 import DDC.Build.Language.Base
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import DDC.Data.Token
@@ -15,6 +17,8 @@ import qualified DDC.Type.Env           as Env
 import Control.Monad.State.Strict
 
 
+-- | The `Zero` fragment has no features and no primops.
+--   It it provides the first order calculus, and is good for debugging.
 fragmentZero :: Fragment Name Error
 fragmentZero 
         = Fragment

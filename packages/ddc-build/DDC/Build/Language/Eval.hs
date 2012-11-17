@@ -13,6 +13,7 @@ import qualified DDC.Type.Env                   as Env
 import Control.Monad.State.Strict
 
 
+-- | The @Eval@ fragment is accepted by the DDC interpreter.
 fragmentEval :: Fragment Name Error
 fragmentEval
         = Fragment
@@ -20,7 +21,10 @@ fragmentEval
         , fragmentExtension     = "dcv"
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
-        , fragmentCheckModule   = error "DDC.Core.Language.Eval: finish me"
+
+        -- ISSUE #288: Check for conflicting capabilities in Eval modules
+        , fragmentCheckModule   = const Nothing
+
         , fragmentCheckExp      = checkCapsX 
         , fragmentMakeNamifierT = makeNamifier freshT
         , fragmentMakeNamifierX = makeNamifier freshX 

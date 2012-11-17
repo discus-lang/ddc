@@ -1,23 +1,5 @@
 
--- | Add control transfer primops to function bodies.
---   For example:
---
---   @
---      fun [x : Int32#] : Int32#
---         = case ... of
---                 ...      -> add# [Int32] ...
---                 ...      -> fun x
---
---   => fun [x : Int32#] : Int32#
---         = case ... of
---                 ...      -> return# [Int32#] (add# [Int32] ...)
---                 ...      -> tailcall1# [Int32#] [Int32#] fun x
---  @
---
---  The return# and tailcall1# primops tell us how to transfer control
---  after we've finished with the current function.
---
-module DDC.Core.Salt.Convert.Transfer
+module DDC.Core.Salt.Transfer
         (transferModule)
 where
 import DDC.Core.Salt.Convert.Base
@@ -33,6 +15,24 @@ import Data.Map                 (Map)
 import qualified Data.Map       as Map
 
 
+-- | Add control transfer primops to function bodies.
+--   For example:
+--
+--   @
+--      fun \[x : Int32\#\] : Int32\#
+--         = case ... of
+--                 ...      -> add\# \[Int32\] ...
+--                 ...      -> fun x
+--
+--   => fun \[x : Int32\#\] : Int32\#
+--         = case ... of
+--                 ...      -> return\# \[Int32\#] (add\# \[Int32\] ...)
+--                 ...      -> tailcall1\# \[Int32\#] \[Int32\#\] fun x
+--  @
+--
+--  The control primops return# and tailcall1# tell us how to transfer control
+--  after we've finished with the current function.
+--
 transferModule 
         :: Module (AnTEC a Name) Name 
         -> Either (Error  (AnTEC a Name))

@@ -24,6 +24,7 @@ Library
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Core.Salt.Transfer
         DDC.Core.Salt.Platform
         DDC.Core.Salt.Compounds
         DDC.Core.Salt.Runtime
@@ -47,7 +48,6 @@ Library
         DDC.Core.Salt.Convert.Base
         DDC.Core.Salt.Convert.Init
         DDC.Core.Salt.Convert.Prim
-        DDC.Core.Salt.Convert.Transfer
         DDC.Core.Salt.Name.Lit
         DDC.Core.Salt.Name.PrimOp
         DDC.Core.Salt.Name.PrimTyCon

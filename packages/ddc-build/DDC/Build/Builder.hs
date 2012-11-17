@@ -32,11 +32,11 @@ data Builder
           -- | The platform we're compiling code for.
         , buildTarget   :: Platform
 
-          -- | The LLVM target specification
+          -- | The LLVM target specification.
           --   Gives the widths of pointers and primitive numeric types.
         , buildSpec     :: Llvm.Platform
 
-          -- | Invoke the C compiler.
+          -- | Invoke the C compiler
           --   to compile a .c file into a .o file.
         , buildCC       :: FilePath -> FilePath -> IO ()
 
@@ -94,6 +94,13 @@ instance Pretty Builder where
 -- builders -------------------------------------------------------------------
 -- | All supported builders.
 --   The host and target platforms are the same.
+-- 
+--   Supported builders are: 
+--      @x86_32-darwin@, @x86_64-darwin@,
+--      @x86_32-linux@,  @x86_64-linux@,
+--      @x86_32-cygwin@,
+--      @ppc32-linux@
+--
 builders :: BuilderConfig -> [Builder]
 builders config
  =      [ builder_X8632_Darwin config

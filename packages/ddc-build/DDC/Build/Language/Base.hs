@@ -3,7 +3,7 @@ module DDC.Build.Language.Base
         ( Language (..)
         , Fragment (..))
 where
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -19,7 +19,10 @@ import DDC.Type.Env                     (Env)
 -- | Existential container for a language fragment, and the dictionaries
 --   we need to work with its type parameters.
 data Language
-        = forall n err. (Typeable n, Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        = forall n err
+        . ( Typeable n, Ord n, Show n
+          , Pretty n
+          , Pretty (err (AnTEC () n)))
         => Language (Fragment n err)
 
 deriving instance Show Language
@@ -63,6 +66,4 @@ data Fragment n (err :: * -> *)
 instance Show (Fragment n err) where
  show frag
   = profileName $ fragmentProfile frag
-
-
 
