@@ -1,0 +1,5 @@
+Error loading module
+  While parsing.
+    Parse error in "/Users/benl/devel/ddc/ddc-head-devel/test/ddc-main/11-Parser/T271-UnterminatedComment/Main.dcl" (line 16, column 1)
+    Unexpected unterminated block comment.
+    Expected a binder.
