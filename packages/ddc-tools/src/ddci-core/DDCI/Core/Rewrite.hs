@@ -8,7 +8,7 @@ where
 import DDC.Base.Pretty
 import DDC.Build.Language
 import DDC.Core.Lexer
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State

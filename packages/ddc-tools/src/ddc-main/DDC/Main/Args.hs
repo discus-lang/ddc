@@ -7,6 +7,7 @@ where
 import DDC.Main.Config
 import Data.Char
 
+
 -- | Parse command line arguments.
 parseArgs :: [String] -> Config -> IO Config
 parseArgs [] config

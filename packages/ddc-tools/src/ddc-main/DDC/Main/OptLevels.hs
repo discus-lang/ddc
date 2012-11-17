@@ -10,7 +10,7 @@ import DDC.Build.Builder
 import DDC.Build.Platform
 import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Simplifier                      (Simplifier)
-import DDC.Core.Transform.Inline.Templates
+import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import System.FilePath
 import Control.Monad
@@ -18,8 +18,8 @@ import Data.Monoid
 import Data.Maybe
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
-import qualified DDC.Core.Lite.Name             as Lite
-import qualified DDC.Core.Salt.Name             as Salt
+import qualified DDC.Core.Lite                  as Lite
+import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 

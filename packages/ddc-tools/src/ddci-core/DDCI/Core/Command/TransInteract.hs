@@ -7,16 +7,14 @@ import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Driver.Command.Check
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Compounds
 import DDC.Core.Check
-import DDC.Base.Pretty
-import qualified Data.Map               as Map
-import qualified DDC.Core.Transform.Inline.Templates	as I
-
 import DDC.Core.Module
-
+import DDC.Base.Pretty
+import qualified Data.Map                       as Map
+import qualified DDC.Core.Transform.Inline      as I
 
 
 -- TransInteract --------------------------------------------------------------
@@ -87,7 +85,8 @@ cmdTransInteractLoop state str
                         (I.lookupTemplateFromModules $ Map.elems modules)
 
                         -- Module-specific templates
-                        (map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules))
+                        (map (\(n,m) -> (n, I.lookupTemplateFromModules [m])) 
+                                $ Map.assocs modules))
 		    str
 
 	let x' = case steps of

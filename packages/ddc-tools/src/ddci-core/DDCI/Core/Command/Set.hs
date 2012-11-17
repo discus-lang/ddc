@@ -9,18 +9,17 @@ import DDCI.Core.Mode
 import DDCI.Core.Output
 import DDC.Build.Builder
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Simplifier
 import DDC.Core.Simplifier.Parser
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Char
 import Data.List
-import qualified DDC.Core.Transform.Inline.Templates	as I
-import qualified DDCI.Core.Rewrite			as R
-import qualified Data.Set				as Set
-import qualified Data.Map				as Map
-
+import qualified DDC.Core.Transform.Inline      as I
+import qualified DDCI.Core.Rewrite		as R
+import qualified Data.Set			as Set
+import qualified Data.Map			as Map
 
 
 cmdSet ::  State -> String -> IO State
@@ -67,7 +66,8 @@ cmdSet state cmd
                         (I.lookupTemplateFromModules $ Map.elems modules)
 
         		-- Module-specific templates
-        		(map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules))
+        		(map (\(n,m) -> (n, I.lookupTemplateFromModules [m])) 
+                                        $ Map.assocs modules))
                 (concat $ intersperse " " rest) of
          Just simpl
           -> do chatStrLn state "ok"

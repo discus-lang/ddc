@@ -32,11 +32,11 @@ import DDC.Base.Pretty
 import Data.Typeable
 import DDC.Core.Transform.Namify        (Namifier)
 import DDC.Type.Env                     (Env)
-import DDC.Core.Fragment.Profile	(Profile)
+import DDC.Core.Fragment                (Profile)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
-import qualified DDC.Core.Salt.Name     as Salt
-import qualified DDC.Core.Lite.Name     as Lite
+import qualified DDC.Core.Salt          as Salt
+import qualified DDC.Core.Lite          as Lite
 import qualified DDC.Core.Simplifier    as S
 import qualified DDC.Core.Salt.Runtime  as Runtime
 import qualified DDC.Driver.Stage       as D

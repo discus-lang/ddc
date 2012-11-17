@@ -10,7 +10,7 @@ import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Driver.Command.Check
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier
 import DDC.Core.Check
@@ -68,8 +68,8 @@ cmdTransEval state source str
  , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
  , Just (modules :: ModuleMap (AnTEC () Eval.Name) Eval.Name)
 				       <- gcast modules0
- = do   result  <- cmdParseCheckExp fragmentEval modules False source str 
-        case result of
+ = do   result'  <- cmdParseCheckExp fragmentEval modules False source str 
+        case result' of
          Nothing         -> return ()
          Just xx
           -> do let kenv    = modulesExportKinds modules (profilePrimKinds profile)

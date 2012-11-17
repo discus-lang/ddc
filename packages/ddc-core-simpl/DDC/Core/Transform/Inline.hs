@@ -1,10 +1,12 @@
 
 -- | Inlining definitions into their use sites.
 module DDC.Core.Transform.Inline
-        (inline)
+        ( inline
+        , lookupTemplateFromModules)
 where
 import DDC.Core.Exp
 import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.Inline.Templates
 import Data.Functor.Identity
 
 
