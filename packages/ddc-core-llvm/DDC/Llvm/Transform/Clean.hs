@@ -92,7 +92,7 @@ cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
         IComment{}              
          -> next binds defs (ins : acc)        
 
-        -- The LLVM compiler doesn't support ISet instructions,                 -- TODO: do occ check
+        -- The LLVM compiler doesn't support ISet instructions,
         --  so we inline them into their use sites.
         ISet v x                
          -> let binds'  = Map.insert v x binds
@@ -122,7 +122,7 @@ cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
 
                  | otherwise    
                  = error $ unlines
-                         [ "DDC.LLVM.Transform.Clean.cleanInstrs"
+                         [ "DDC.LLVM.Transform.Clean"
                          , "  Can't find join label for " ++ show x ]
 
                 i'      = IPhi v [(sub x, getLabel (sub x)) 
@@ -202,5 +202,7 @@ mergeCallConvs mc cc
         Just cc'        
          | cc == cc'    -> cc
          | otherwise    
-         -> error "DDC.LLVM.Transform.Clean: not overriding exising calling convention."
+         -> error $ unlines
+                  [ "DDC.LLVM.Transform.Clean"
+                  , "  Not overriding exising calling convention." ]
 

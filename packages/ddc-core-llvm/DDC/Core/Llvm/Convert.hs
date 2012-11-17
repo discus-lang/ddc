@@ -125,7 +125,7 @@ convModuleM mm@(C.ModuleCore{})
                 , modFuncs      = functions 
                 , modMDecls     = concat mdecls }
 
- | otherwise    = die "invalid module"
+ | otherwise    = die "Invalid module"
 
 
 -- | Global variables used directly by the converted code.
@@ -236,7 +236,7 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
                   
 
 convSuperM _ _ _ _ _
-        = die "invalid super"
+        = die "Invalid super"
 
 
 -- | Take the string name to use for a function parameter.
@@ -246,7 +246,7 @@ nameOfParam bb
         C.BName (A.NameVar n) _ 
            -> A.sanitizeName n
 
-        _  -> die $ "invalid parameter name: " ++ show bb
+        _  -> die $ "Invalid parameter name: " ++ show bb
 
 
 -- Body -----------------------------------------------------------------------
@@ -413,10 +413,12 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           -> do instrs'   <- convExpM ExpTop pp kenv tenv mdsup x1
                 convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
 
-         -- Variable assignment from an unsed binder.
-         -- We need to invent a dummy binder as LLVM needs some name for it.
-         --  TODO: do an initial pass to add binders,
-         --        so we don't need to handle this separately.
+         -- ISSUE #251 Fix nested case expressions that assign to nothing binders
+         --     This is another instance of this issue.
+         --     Variable assignment from an unsed binder.
+         --     We need to invent a dummy binder as LLVM needs some name for it.
+         --     Should instead do an initial pass to add fresh names to replace BNones.
+         --
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           -> do let t'    =  convertType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
@@ -513,7 +515,7 @@ convExpM context pp kenv tenv mdsup xx
                  -> return $ Seq.singleton $ annotNil
                            $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
-                _ -> die "invalid literal"
+                _ -> die "Invalid literal"
 
         C.XApp{}
          -- Call to primop.
@@ -536,7 +538,7 @@ convExpM context pp kenv tenv mdsup xx
         C.XCast _ _ x
          -> convExpM context pp kenv tenv mdsup x
 
-        _ -> die $ "invalid expression " ++ show xx
+        _ -> die $ "Invalid expression " ++ show xx
 
 
 -- Case -----------------------------------------------------------------------
@@ -584,7 +586,7 @@ convCaseM context pp kenv tenv mdsup label instrs xScrut alts
                 <| (blocksTable >< blocksDefault >< blocksJoin)
 
 convCaseM _ _ _ _ _ _ _ _ _
-        = error "convCaseM: sorry"
+        = die "Invalid case expression"
 
 
 -- Alts -----------------------------------------------------------------------
@@ -675,7 +677,7 @@ convAltM context kenv tenv mdsup aa
                 blocks  <- convBodyM context kenv tenv mdsup Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
-         _ -> die "invalid alternative"
+         _ -> die "Invalid alternative"
 
 
 -- | Convert a constructor name from a pattern to a LLVM literal.
