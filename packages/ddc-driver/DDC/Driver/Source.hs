@@ -5,13 +5,20 @@ module DDC.Driver.Source
         , nameOfSource)
 where
 
--- | The source of some program text.
---   This is different from 'Input', because an interactive command may instruct us
---   to load some program text from a file.
+-- | Where some source code was obtained from.
+--
+--   This is used when generating error messages.
 data Source
+        -- | Read directly from a file.
         = SourceFile            FilePath 
+
+        -- | Supplied on the command line.
         | SourceArgs            
+
+        -- | Typed into the console.
         | SourceConsole         Int
+
+        -- | Part of a @.dcx@ batch file.
         | SourceBatch           FilePath Int
         deriving (Eq, Show)
 

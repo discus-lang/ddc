@@ -7,14 +7,22 @@ import DDC.Driver.Source
 import DDC.Driver.Bundle
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import System.FilePath
 import qualified DDC.Base.Pretty        as P
 
 
 -- | Parse, check and convert a  module to LLVM.
----
-cmdToLlvm :: Config -> Bundle -> Source -> String -> IO ()
+--
+--   The output is printed to @stdout@. 
+--
+cmdToLlvm 
+        :: Config       -- ^ Compiler configuration.
+        -> Bundle       -- ^ Language bundle.
+        -> Source       -- ^ Source of the code.
+        -> String       -- ^ Program module text.
+        -> IO ()
+
 cmdToLlvm config bundle source sourceText
  | Bundle fragment _ _ _ _ <- bundle
  = do   let fragName = profileName (fragmentProfile fragment)

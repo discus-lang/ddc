@@ -12,6 +12,7 @@ import Data.List
 import qualified DDC.Core.Pretty        as P
 
 
+-- | Make a source module into an executable.
 cmdMake :: Config -> FilePath -> IO ()
 cmdMake config filePath
  = do

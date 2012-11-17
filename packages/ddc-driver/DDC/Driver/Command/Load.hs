@@ -16,8 +16,12 @@ import Data.IORef
 import System.Directory
 
 
--- | Load and transform a module.
-cmdLoad :: Bundle -> Source -> String -> IO ()
+-- | Load and transform a module, 
+--   then print the result to @stdout@.
+cmdLoad :: Bundle               -- ^ Language bundle.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
+        -> IO ()
 cmdLoad bundle source str
  | Bundle fragment _ zero simpl _    <- bundle
  = do   errs    <- pipeText (nameOfSource source) (lineStartOfSource source) str
@@ -29,10 +33,11 @@ cmdLoad bundle source str
         mapM_ (putStrLn . renderIndent . ppr) errs
 
 
+-- | Load and typecheck a module.
 cmdReadModule 
         :: (Ord n, Show n, Pretty n)
-        => Fragment n err 
-        -> FilePath 
+        => Fragment n err       -- ^ Language fragment.
+        -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC () n) n))
 
 cmdReadModule frag filePath

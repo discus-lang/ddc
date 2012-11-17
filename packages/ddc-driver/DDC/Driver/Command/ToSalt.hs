@@ -7,7 +7,7 @@ import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Module
 import DDC.Data.Canned
 import System.FilePath
@@ -16,11 +16,19 @@ import qualified Data.Map               as Map
 
 
 -- | Parse, check, and fully evaluate an expression.
+--
+--   The output is printed to @stdout@.
 ---
 --   The Core -> Salt conversion only accepts A-normalised programs,
 --   so we normalize it along the way.
 --
-cmdToSalt :: Config -> Bundle -> Source -> String -> IO ()
+cmdToSalt 
+        :: Config       -- ^ Compiler configuration.
+        -> Bundle       -- ^ Language bundle.
+        -> Source       -- ^ Source of the code.
+        -> String       -- ^ Program module text.
+        -> IO ()
+
 cmdToSalt config bundle source sourceText
  | Bundle fragment _ _ _ _ <- bundle
  = do   let fragName = profileName (fragmentProfile fragment)

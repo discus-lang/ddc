@@ -12,6 +12,7 @@ import Data.List
 import qualified DDC.Core.Pretty        as P
 
 
+-- | Compile a source module into a @.o@ file.
 cmdCompile :: Config -> FilePath -> IO ()
 cmdCompile config filePath
  = do   

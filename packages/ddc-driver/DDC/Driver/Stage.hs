@@ -1,22 +1,27 @@
 -- | Compiler stages.
---     A compiler 'stage' is a set of standard transformations that we apply
---     to all modules their particular language.
+--
+--     A compiler stage is a sequence of standard transformations.
+--     Each of the individual transformations are expressed as a pipeline from 
+--     "DDC.Build.Pipeline". The stages here run several pipelines each,
+--     and contain the code that can dump the intermediate program after
+--     each transformation.
+--
 module DDC.Driver.Stage
         ( Config        (..)
         , ViaBackend    (..)
 
-          -- * Lite stages. 
+          -- * Lite stages
         , stageLiteLoad
         , stageLiteOpt
         , stageLiteToSalt
 
-          -- * Salt stages.
+          -- * Salt stages
         , stageSaltOpt
         , stageSaltToC
         , stageSaltToLLVM
         , stageCompileSalt
 
-          -- * LLvm stages.
+          -- * LLVM stages
         , stageCompileLLVM)
 where
 import DDC.Driver.Source
@@ -80,7 +85,7 @@ data ViaBackend
 
 
 -------------------------------------------------------------------------------
--- | Load Lite.
+-- | Type check Core Lite.
 stageLiteLoad
         :: Config -> Source
         -> [PipeCore (AnTEC () Lite.Name) Lite.Name]
@@ -93,7 +98,7 @@ stageLiteLoad config source pipesLite
 
 
 -------------------------------------------------------------------------------
--- | Optimise Lite.
+-- | Optimise Core Lite.
 stageLiteOpt 
         :: Config -> Source
         -> [PipeCore (AnTEC () Lite.Name) Lite.Name]
@@ -115,7 +120,7 @@ stageLiteOpt config source pipes
                 (makeNamifier Lite.freshX)
 
 -------------------------------------------------------------------------------
--- | Optimise Salt.
+-- | Optimise Core Salt.
 stageSaltOpt
         :: Config -> Source
         -> [PipeCore (AnTEC () Salt.Name) Salt.Name]
@@ -138,9 +143,9 @@ stageSaltOpt config source pipes
 
 
 -------------------------------------------------------------------------------
--- | Convert Lite to Salt.
+-- | Convert Core Lite to Core Salt.
 --   
---   Result is a-normalised.
+--   The result is a-normalised.
 --
 stageLiteToSalt 
         :: Config -> Source
@@ -172,7 +177,7 @@ stageLiteToSalt config source pipesSalt
 
 
 -------------------------------------------------------------------------------
--- | Convert Salt to C code.
+-- | Convert Core Salt to C code.
 stageSaltToC
         :: Config -> Source
         -> Sink
@@ -194,7 +199,7 @@ stageSaltToC config source sink
 
 
 -------------------------------------------------------------------------------
--- | Compile Salt via C code.
+-- | Compile Core Salt via C code.
 stageCompileSalt
         :: Config -> Source
         -> FilePath             -- ^ Path of original source file.
@@ -229,7 +234,7 @@ stageCompileSalt config source filePath shouldLinkExe
                                 else Nothing) ]]]]
 
 -------------------------------------------------------------------------------
--- | Convert Salt to LLVM.
+-- | Convert Core Salt to LLVM.
 stageSaltToLLVM
         :: Config -> Source
         -> [PipeLlvm]

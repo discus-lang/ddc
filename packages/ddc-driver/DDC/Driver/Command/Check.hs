@@ -17,7 +17,7 @@ import DDC.Driver.Bundle
 import DDC.Driver.Source
 import DDC.Driver.Output
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment
 import DDC.Core.Load
 import DDC.Core.Parser
 import DDC.Core.Lexer

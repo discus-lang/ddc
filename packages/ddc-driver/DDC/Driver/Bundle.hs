@@ -22,14 +22,25 @@ data Bundle
         = forall s n err
         .  (Typeable n, Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
         => Bundle 
-        {  bundleFragment        :: Fragment n err
+        {  -- | Language fragment definition.
+           bundleFragment        :: Fragment n err
+
+           -- | Modules being used for inliner templates.
         ,  bundleModules         :: Map ModuleName (Module (AnTEC () n) n)
+
+           -- | Initial simplifier state.
         ,  bundleStateInit       :: s
+
+           -- | Current simplifier to apply to module.
         ,  bundleSimplifier      :: Simplifier s (AnTEC () n) n
+
+           -- | Current rewrite rules to apply to module.
         ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n) }
 
 
--- | Get the bundle for the language with this file extension.
+-- | Get the default bundle for the language with this file extension.
+--
+--   The simplifier is set to @Id@ and the rewrite rules set is empty.
 bundleOfExtension :: String -> Maybe Bundle
 bundleOfExtension ext
  = case languageOfExtension ext of

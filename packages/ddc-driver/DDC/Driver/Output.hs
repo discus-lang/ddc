@@ -12,6 +12,7 @@ outDoc :: Doc -> IO ()
 outDoc doc
         = putDoc   RenderIndent doc
 
+-- | Output a document and newline to the console.
 outDocLn :: Doc -> IO ()
 outDocLn doc
         = putDocLn RenderIndent doc
@@ -23,6 +24,7 @@ outStr str
         = putStr str
 
 
+-- | Output a string and newline to the console.
 outStrLn :: String -> IO ()
 outStrLn str
         = putStrLn str
