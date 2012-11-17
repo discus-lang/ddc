@@ -14,6 +14,7 @@ import BuildBox.IO.Directory
 import BuildBox.Pretty
 import BuildBox
 import System.FilePath
+import System.Directory
 import Control.Monad
 import Data.List
 
@@ -81,12 +82,16 @@ instance Pretty Result where
 -- Build ----------------------------------------------------------------------
 -- | Compile a Disciple Core Sea source file.
 build :: Spec -> Build Result
-build   (Spec   srcDC optionsDDC _fragment 
+build   (Spec   srcDC_ optionsDDC _fragment 
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
- = do   needs srcDC
+ = do   needs srcDC_
         needs "bin/ddc"
+
+        -- Normalise the file name relative to the current directory
+        -- so that error messages don't change between hosts.
+        srcDC   <- io $ makeRelativeToCurrentDirectory srcDC_
 
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDC
