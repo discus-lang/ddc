@@ -83,7 +83,7 @@ build spec
                 
         -- Canonicalize all the paths and put them in a set (which sorts them)
         testFilesSet   <- io $ liftM (Set.fromList . Seq.toList)
-                        $  Seq.mapM canonicalizePath
+                        $  Seq.mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
                         $  testFilesRaw
 
         -- Skip over files with 'skip' in the path,
