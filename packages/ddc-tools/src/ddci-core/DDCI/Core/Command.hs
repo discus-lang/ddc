@@ -20,6 +20,8 @@ import DDC.Driver.Command.Make
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
+import System.IO
+import Control.Monad.Trans.Error
 import Data.List
 
 
@@ -220,27 +222,27 @@ handleCmd1 state cmd source line
 
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
-                cmdToSalt config (stateBundle state) source line
+                runError $ cmdToSalt config (stateBundle state) source line
                 return    state
 
         CommandToC
          -> do  config  <- getDriverConfigOfState state
-                cmdToC config (stateBundle state) source line
+                runError $ cmdToC config (stateBundle state) source line
                 return state
 
         CommandToLlvm
          -> do  config  <- getDriverConfigOfState state
-                cmdToLlvm config (stateBundle state) source line
+                runError $ cmdToLlvm config (stateBundle state) source line
                 return state
 
         CommandCompile
          -> do  config  <- getDriverConfigOfState state
-                cmdCompile config line
+                runError $ cmdCompile config line
                 return state
 
         CommandMake
          -> do  config  <- getDriverConfigOfState state
-                cmdMake config line
+                runError $ cmdMake config line
                 return state
 
         CommandWith
@@ -251,4 +253,13 @@ handleCmd1 state cmd source line
 
         CommandWithSalt
          ->     cmdWithSalt state source line
+
+
+-- | Just print errors to stdout and continue the session.
+runError :: ErrorT String IO () -> IO ()
+runError m
+ = do   result  <- runErrorT m
+        case result of
+         Left err       -> hPutStrLn stdout err
+         Right _        -> return ()
 

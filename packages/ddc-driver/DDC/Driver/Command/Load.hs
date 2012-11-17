@@ -23,6 +23,7 @@ cmdLoad :: Bundle               -- ^ Language bundle.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> IO ()
+
 cmdLoad bundle source str
  | Bundle fragment _ zero simpl _    <- bundle
  = do   errs    <- pipeText (nameOfSource source) (lineStartOfSource source) str

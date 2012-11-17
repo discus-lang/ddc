@@ -9,9 +9,8 @@ import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment
 import System.FilePath
-import System.Exit
-import System.IO
-import Control.Monad
+import Control.Monad.Trans.Error
+import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty        as P
 
 
@@ -23,7 +22,7 @@ cmdToC  :: Config       -- ^ Compiler configuration.
         -> Bundle       -- ^ Language bundle.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
-        -> IO ()
+        -> ErrorT String IO ()
 
 cmdToC config bundle source sourceText
  | Bundle fragment _ _ _  _ <- bundle
@@ -36,26 +35,27 @@ cmdToC config bundle source sourceText
         let compile
                 -- Compile a Core Lite module.
                 | fragName == "Lite" || mSuffix == Just ".dcl"
-                = pipeText (nameOfSource source) (lineStartOfSource source) sourceText
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
                 [ stageLiteToSalt  config source 
                 [ stageSaltToC     config source SinkStdout]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
-                = pipeText (nameOfSource source) (lineStartOfSource source) sourceText
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentSalt
                 [ stageSaltToC     config source SinkStdout]
 
                 -- Unrecognised.
                 | otherwise
-                = error $ "Don't know how to convert this to C"
+                = throwError "Don't know how to convert this to C"
 
 
-        -- Print any errors that arose during compilation
+        -- Throw any errors that arose during compilation
         errs <- compile
-        mapM_ (hPutStrLn stderr . P.renderIndent . P.ppr) errs
+        case errs of
+         []     -> return ()
+         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
 
-        -- If there were errors then quit and set the exit code.
-        when (not $ null errs)
-         $ exitWith (ExitFailure 1)

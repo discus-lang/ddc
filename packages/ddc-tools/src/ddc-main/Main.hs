@@ -17,6 +17,9 @@ import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Base.Pretty
 import System.Environment
+import System.IO
+import System.Exit
+import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage       as Driver
 import qualified DDC.Core.Salt.Runtime  as Runtime
 
@@ -50,12 +53,12 @@ run config
         -- Compile a module to object code.
         ModeCompile filePath
          -> do  dconfig  <- getDriverConfig config
-                cmdCompile dconfig filePath
+                runError $ cmdCompile dconfig filePath
 
         -- Compile a module into an executable.
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config
-                cmdMake    dconfig filePath
+                runError $ cmdMake    dconfig filePath
 
         -- Pretty print the AST of a module.
         ModeAST filePath
@@ -71,21 +74,21 @@ run config
          -> do  let Just bundle = bundleFromFilePath config filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
-                cmdToSalt dconfig bundle (SourceFile filePath) str
+                runError $ cmdToSalt dconfig bundle (SourceFile filePath) str
 
         -- Convert a module to C
         ModeToC filePath
          -> do  let Just bundle = bundleFromFilePath config filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
-                cmdToC    dconfig bundle (SourceFile filePath) str
+                runError $ cmdToC    dconfig bundle (SourceFile filePath) str
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
          -> do  let Just bundle = bundleFromFilePath config filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
-                cmdToLlvm dconfig bundle (SourceFile filePath) str
+                runError $ cmdToLlvm dconfig bundle (SourceFile filePath) str
 
         -- Print the external builder info for this platform.
         ModePrintBuilder
@@ -116,4 +119,16 @@ getDriverConfig config
                 , Driver.configOutputFile               = configOutputFile config
                 , Driver.configOutputDir                = configOutputDir  config }
 
+
+-- | Print errors to stderr and set the exit code.
+runError :: ErrorT String IO () -> IO ()
+runError m
+ = do   result  <- runErrorT m
+        case result of
+         Left err       
+          -> do hPutStrLn stderr err
+                exitWith $ ExitFailure 1
+
+         Right _
+          -> return ()
 

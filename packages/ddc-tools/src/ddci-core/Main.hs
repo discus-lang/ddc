@@ -10,6 +10,8 @@ import DDCI.Core.Interface.Interactive
 import DDCI.Core.State
 import DDC.Driver.Command.Make
 import System.Environment
+import System.IO
+import Control.Monad.Trans.Error
 import Data.List
 
 
@@ -34,7 +36,7 @@ main
          ["--make",  filePath]
           -> do let state       = initState (InterfaceBatch filePath)
                 config          <- getDriverConfigOfState state
-                cmdMake config filePath
+                runError $ cmdMake config filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]
@@ -44,4 +46,13 @@ main
 
         
          _       -> runArgs args
+
+
+-- | Just print errors to stdout and continue the session.
+runError :: ErrorT String IO () -> IO ()
+runError m
+ = do   result  <- runErrorT m
+        case result of
+         Left err       -> hPutStrLn stdout err
+         Right _        -> return ()
 

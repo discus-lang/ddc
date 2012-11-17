@@ -11,9 +11,8 @@ import DDC.Core.Fragment
 import DDC.Core.Module
 import DDC.Data.Canned
 import System.FilePath
-import System.Exit
-import System.IO
-import Control.Monad
+import Control.Monad.Trans.Error
+import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty        as P
 import qualified Data.Map               as Map
 
@@ -30,7 +29,7 @@ cmdToSalt
         -> Bundle       -- ^ Language bundle.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
-        -> IO ()
+        -> ErrorT String IO ()
 
 cmdToSalt config bundle source sourceText
  | Bundle fragment _ _ _ _ <- bundle
@@ -43,7 +42,8 @@ cmdToSalt config bundle source sourceText
         let compile
                 -- Compile a Core Lite module.
                 | fragName == "Lite" || mSuffix == Just ".dcl"
-                = pipeText (nameOfSource source) (lineStartOfSource source) sourceText
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
                 [ stageLiteToSalt  config source
                 [ (if configSuppressCoreImports config
@@ -53,15 +53,13 @@ cmdToSalt config bundle source sourceText
 
                 -- Unrecognised.
                 | otherwise
-                = error $ "Don't know how to convert this to Salt"
+                = throwError $ "Don't know how to convert this to Salt"
 
-        -- Print any errors that arose during compilation
+        -- Throw any errors that arose during compilation
         errs <- compile
-        mapM_ (hPutStrLn stderr . P.renderIndent . P.ppr) errs
-
-        -- If there were errors then quit and set the exit code.
-        when (not $ null errs)
-         $ exitWith (ExitFailure 1)
+        case errs of
+         []     -> return ()
+         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
 
 
 -- | Erase the import list of a module.
