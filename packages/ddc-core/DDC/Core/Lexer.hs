@@ -92,8 +92,10 @@ lexString sourceName lineStart str
          -> tokN (KLit ('-':c:body))                 : lexMore (length (c:body)) rest
 
         -- Meta tokens
-        '-'  : '-' : w'  -> tokM KCommentLineStart : lexMore 2 w'
-        '\n' : w'        -> tokM KNewLine          : lexWord (line + 1) 1 w'
+        '{'  : '-' : w'  -> tokM KCommentBlockStart : lexMore 2 w'
+        '-'  : '}' : w'  -> tokM KCommentBlockEnd   : lexMore 2 w'
+        '-'  : '-' : w'  -> tokM KCommentLineStart  : lexMore 2 w'
+        '\n' : w'        -> tokM KNewLine           : lexWord (line + 1) 1 w'
 
 
         -- The unit data constructor

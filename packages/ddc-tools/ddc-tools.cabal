@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciplined Disciple Compiler tools.
-Description:    Disciplined Disciple Compiler tools.
+Synopsis:       Disciplined Disciple Compiler command-line tools.
+Description:    Disciplined Disciple Compiler command-line tools.
 
 Executable ddc-check
     hs-source-dirs:

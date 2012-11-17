@@ -99,7 +99,12 @@ data TokMeta
         | KCommentLineStart
         | KCommentBlockStart
         | KCommentBlockEnd
+
+        -- | This is injected by the `dropCommentBlock` when it finds
+        --   an unterminated block comment.
+        | KCommentUnterminated
         deriving (Eq, Show)
+
 
 -- | Describe a TokMeta, for lexer error messages.
 describeTokMeta :: TokMeta -> String
@@ -109,6 +114,7 @@ describeTokMeta tm
         KCommentLineStart       -> "comment start"
         KCommentBlockStart      -> "block comment start"
         KCommentBlockEnd        -> "block comment end"
+        KCommentUnterminated    -> "unterminated block comment"
 
 
 -- TokAtom --------------------------------------------------------------------
