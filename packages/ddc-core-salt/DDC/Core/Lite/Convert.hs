@@ -315,8 +315,7 @@ convertExpX ctx pp defs kenv tenv xx
         -- Match against finite algebraic data.
         --   The branch is against the constructor tag.
         XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
-         | TCon (TyConBound (UPrim nType _) _) : _ <- takeTApps tScrut
-         , L.NameDataTyCon _                       <- nType
+         | TCon _ : _                           <- takeTApps tScrut
          -> do  x'      <- convertExpX ExpArg pp defs kenv tenv xScrut
                 tX'     <- convertT kenv tX
                 alts'   <- mapM (convertAlt (min ctx ExpBody) pp defs kenv tenv a' uScrut tScrut) 
@@ -336,8 +335,11 @@ convertExpX ctx pp defs kenv tenv xx
                 return  $ XCase a' (S.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
+        -- Trying to matching against something that isn't primitive or
+        --  algebraic data.
         XCase{} 
-         -> throw $ ErrorNotNormalized ("Unexpected case expression.")
+         -> throw $ ErrorNotNormalized ("Invalid case expression.")
+
 
         -- Casts.
         XCast _ _ x
@@ -543,8 +545,14 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 xBody1  <- convertExpX ctx pp defs kenv tenv x
                 return  $ AAlt (PData dc' []) xBody1
 
-        -- ISSUE #285: Allow maching against unit literals
-        -- .. missing case here ..
+        -- Match against the unit constructor.
+        --  This is baked into the langauge and doesn't have a real name,
+        --  so we need to handle it separately.
+        AAlt (PData dc []) x
+         | DaConUnit    <- daConName dc
+         -> do  xBody           <- convertExpX ctx pp defs kenv tenv x
+                let dcTag       = mkDaConAlg (S.NameLitTag 0) S.tTag
+                return  $ AAlt (PData dcTag []) xBody
 
         -- Match against algebraic data with a finite number
         -- of data constructors.

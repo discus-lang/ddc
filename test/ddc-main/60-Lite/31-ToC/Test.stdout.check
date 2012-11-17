@@ -95,3 +95,32 @@ Obj* singleton (Obj* _x)
         return _x3;
 }
 
+
+
+-- #285: Case matches on unit arguments.
+module Test with
+letrec {
+  foo : [r1 : %].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(r1 : %).
+       \(x : Ptr# rT Obj).
+      let x0 : Tag# = getTag [rT] x in
+      case x0 of {
+        _ 
+         -> allocBoxed [rT] TAG0# 0#
+      }
+}
+
+module Test with
+letrec {
+  foo : [r1 : %].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(r1 : %).
+       \(x : Ptr# rT Obj).
+      let x0 : Tag# = getTag [rT] x in
+      case x0 of {
+        TAG0#  
+         -> allocBoxed [rT] TAG0# 0#;
+        _ 
+         -> fail# [Ptr# rT Obj]
+      }
+}
+

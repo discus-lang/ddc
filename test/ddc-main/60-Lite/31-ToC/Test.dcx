@@ -40,3 +40,16 @@ module Test with letrec
 singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
         : List r1 (Int r2)
  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+
+
+-- #285: Case matches on unit arguments.
+:to-salt..
+module Test with letrec
+foo [r1 : %] (x : Unit) : Unit
+ = case x of { _ -> () };;
+
+:to-salt..
+module Test with letrec
+foo [r1 : %] (x : Unit) : Unit
+ = case x of { () -> () };;
+
