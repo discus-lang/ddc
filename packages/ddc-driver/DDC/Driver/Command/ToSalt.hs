@@ -11,6 +11,8 @@ import DDC.Core.Fragment
 import DDC.Core.Module
 import DDC.Data.Canned
 import System.FilePath
+import System.Exit
+import Control.Monad
 import qualified DDC.Base.Pretty        as P
 import qualified Data.Map               as Map
 
@@ -54,8 +56,11 @@ cmdToSalt config bundle source sourceText
 
         -- Print any errors that arose during compilation
         errs <- compile
-
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+
+        -- If there were errors then quit and set the exit code.
+        when (not $ null errs)
+         $ exitWith (ExitFailure 1)
 
 
 -- | Erase the import list of a module.

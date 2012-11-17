@@ -7,6 +7,7 @@ import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import System.Directory
+import System.Exit
 import Control.Monad
 import Data.List
 import qualified DDC.Core.Pretty        as P
@@ -56,3 +57,6 @@ cmdMake config filePath
         -- Print any errors that arose during compilation.
         errs    <- make
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+
+        when (not $ null errs)
+         $ exitWith (ExitFailure 1)
