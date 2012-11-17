@@ -192,7 +192,7 @@ convertExpX ctx pp defs kenv tenv xx
 
         XVar _ UIx{}
          -> throw $ ErrorMalformed 
-         $  "convertBodyX: can't convert program with anonymous value binders."
+                  $ "Cannot convert program with anonymous value binders."
 
         XVar a u
          -> do  let a'  = annotTail a
@@ -224,7 +224,8 @@ convertExpX ctx pp defs kenv tenv xx
                 convertExpX ctx pp defs kenv' tenv x
 
          | otherwise
-         -> error $ "convertBodyX: can't convert XLAM in " ++ show ctx
+         -> throw $ ErrorMalformed
+                  $ "Cannot convert XLAM in this context " ++ show ctx
 
 
         -- Value abstractions can only appear at the top-level of a fucntion.
@@ -247,7 +248,8 @@ convertExpX ctx pp defs kenv tenv xx
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
          | otherwise
-         -> error $ "convertBodyX: can't convert XLam in " ++ show ctx
+         -> throw $ ErrorMalformed 
+                  $ "Cannot convert XLam in this context " ++ show ctx
 
 
         -- Data constructor applications.
@@ -292,7 +294,7 @@ convertExpX ctx pp defs kenv tenv xx
                 return $ XLet (annotTail a) lts' x2'
 
         XLet{}
-         -> throw $ ErrorNotNormalized ("let-expression")
+         -> throw $ ErrorNotNormalized "Unexpected let-expression."
 
 
         -- ISSUE #284: Reject case matches against float literals.
@@ -335,8 +337,7 @@ convertExpX ctx pp defs kenv tenv xx
                         $ alts' ++ asDefault
 
         XCase{} 
-         -> throw $ ErrorNotNormalized ("case expression")
-
+         -> throw $ ErrorNotNormalized ("Unexpected case expression.")
 
         -- Casts.
         XCast _ _ x
@@ -346,13 +347,13 @@ convertExpX ctx pp defs kenv tenv xx
         -- Types can only appear as the arguments in function applications.
         XType t
          | ExpArg <- ctx  -> liftM XType (convertT kenv t)
-         | otherwise      -> throw $ ErrorNotNormalized ("type expresison")
+         | otherwise      -> throw $ ErrorNotNormalized ("Unexpected type expresison.")
 
 
         -- Witnesses can only appear as the arguments to function applications.
         XWitness w      
          | ExpArg <- ctx  -> liftM XWitness (convertWitnessX kenv w)
-         | otherwise      -> throw $ ErrorNotNormalized ("witness expression")
+         | otherwise      -> throw $ ErrorNotNormalized ("Unexpected witness expression.")
 
 
 
@@ -383,7 +384,7 @@ convertLetsX pp defs kenv tenv lts
                 return  $ LLet LetStrict b' x1'
 
         LLet LetLazy{} _ _
-         ->     error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
+         ->     throw $ ErrorMalformed "XLet lazy not handled yet"
 
         LLetRegions b bs
          -> do  b'              <- mapM (convertB kenv) b
@@ -486,7 +487,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                                      return  $ TVar u'
                              else return S.rTop
 
-                        _ -> error $ "convertCtorAppX: prime region var not in environment" 
+                        _ -> throw $ ErrorMalformed "Prime region variable is not in scope." 
 
 
                 -- Convert the types of each field.
@@ -505,7 +506,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorAppX _ _ _ _ _ _nCtor _xsArgs
-        = throw $ ErrorMalformed "convertCtorAppX: invalid constructor application"
+        = throw $ ErrorMalformed "Invalid constructor application."
 
 
 -- Alt ------------------------------------------------------------------------
@@ -608,8 +609,8 @@ convertCtor pp defs kenv tenv a dc
                 let rPrime      = S.rTop
                 constructData pp kenv tenv a dataDef ctorDef rPrime [] []
 
-        _ -> throw $ ErrorMalformed "convertCtor: invalid constructor"
+        _ -> throw $ ErrorMalformed "Invalid constructor."
 
  | otherwise
- = throw $ ErrorMalformed "convertCtor: invalid constructor"
+ = throw $ ErrorMalformed "Invalid constructor."
 

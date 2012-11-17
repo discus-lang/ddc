@@ -111,14 +111,12 @@ convTypeM kenv tt
         TVar u
          -> case Env.lookup u kenv of
              Nothing            
-              -> error $ "convertTypeM Type variable not in kind environment." 
-                       ++ show u
+              -> throw $ ErrorUndefined u
 
              Just k
               | isDataKind k -> return $ text "Obj*"
               | otherwise    
-              -> error $  "convertTypeM: Invalid type variable." 
-                       ++ show (u, Env.envMap kenv)
+              -> throw $ ErrorTypeInvalid tt
 
         TCon{}
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
@@ -137,7 +135,7 @@ convTypeM kenv tt
         TForall b t
           -> convTypeM (Env.extend b kenv) t
 
-        _ -> throw $ ErrorLocalTypeInvalid tt
+        _ -> throw $ ErrorTypeInvalid tt
 
 
 -- | Convert a Salt function type to a C source prototype.

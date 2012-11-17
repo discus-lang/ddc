@@ -144,7 +144,7 @@ convertTyCon tc
          ->     convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        _ -> error "Lite.Convert.convertTyCon: sorry"
+        _ -> error "convertTyCon: cannot convert type"
 
 
 -- | Convert a primitive type constructor to Salt form.
@@ -165,7 +165,7 @@ convertDC
 convertDC kenv dc
  = case daConName dc of
         DaConUnit
-         -> error "DDC.Core.Lite.convertDC: not converting unit DaConName"
+         -> error "convertDC: not converting unit DaConName"
 
         DaConNamed n
          -> do  n'      <- convertBoundNameM n
@@ -209,5 +209,5 @@ convertBoundNameM nn
         L.NameLitNat  val       -> return $ O.NameLitNat  val
         L.NameLitInt  val       -> return $ O.NameLitInt  val
         L.NameLitWord val bits  -> return $ O.NameLitWord val bits
-        _                       -> error $ "toSaltX: convertBoundName"
+        _                       -> error $ "convertBoundNameM: cannot convert name"
 

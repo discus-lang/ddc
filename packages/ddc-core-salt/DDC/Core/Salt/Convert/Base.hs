@@ -21,12 +21,16 @@ type ConvertM a x = G.CheckM (Error a) x
 -- | Things that can go wrong when converting Disciple Core Salt to
 --   to C source text.
 data Error a
-        -- Modules must contain a top-level letrec.
-        = ErrorNoTopLevelLetrec
+        -- | Variable is not in scope.
+        = ErrorUndefined
+        { errorVar      :: Bound Name }
+
+        -- | Modules must contain a top-level letrec.
+        | ErrorNoTopLevelLetrec
         { errorModule   :: Module a Name }
 
         -- | A local variable has an invalid type.
-        | ErrorLocalTypeInvalid 
+        | ErrorTypeInvalid 
         { errorType     :: Type Name }
 
         -- | An invalid function definition.
@@ -71,13 +75,16 @@ data Error a
 instance (Show a, Pretty a) => Pretty (Error a) where
  ppr err
   = case err of
+        ErrorUndefined var
+         -> vcat [ text "Undefined variable"                    <+> ppr var ]
+
         ErrorNoTopLevelLetrec _mm
          -> vcat [ text "Module does not have a top-level letrec." ]
 
-        ErrorLocalTypeInvalid xx
+        ErrorTypeInvalid tt
          -> vcat [ text "Invalid type for local variable."
                  , empty
-                 , text "with:"                                 <+> align (ppr xx) ]
+                 , text "with:"                                 <+> align (ppr tt) ]
 
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."
