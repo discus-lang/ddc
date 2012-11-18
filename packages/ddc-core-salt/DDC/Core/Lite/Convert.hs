@@ -297,11 +297,6 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorNotNormalized "Unexpected let-expression."
 
 
-        -- ISSUE #284: Reject case matches against float literals.
-        --   Case expressions should turn into 'switch' in the C and LLVM
-        --   backends, and float can't be made into a jump table.
-        --   Just reject case matches on floats in Salt.
-        --
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts

@@ -1,4 +1,3 @@
-
 -- | Convert the Disciple Core Salt into to real C code.
 --
 --   The input module needs to be:
@@ -488,6 +487,11 @@ convAltM context kenv tenv aa
         AAlt{} -> throw $ ErrorAltInvalid aa
 
 
+-- | Convert a data constructor name to a pattern to use in a switch.
+--
+--   Only integral-ish types can be used as patterns, for others 
+--   such as Floats we rely on the Lite transform to have expanded
+--   cases on float literals into a sequence of boolean checks.
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
  = case nn of

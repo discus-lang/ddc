@@ -681,15 +681,26 @@ convAltM context kenv tenv mdsup aa
 
 
 -- | Convert a constructor name from a pattern to a LLVM literal.
+--
+--   Only integral-ish types can be used as patterns, for others 
+--   such as Floats we rely on the Lite transform to have expanded
+--   cases on float literals into a sequence of boolean checks.
 convPatName :: Platform -> A.Name -> Maybe Lit
 convPatName pp name
  = case name of
         A.NameLitBool True   -> Just $ LitInt (TInt 1) 1
         A.NameLitBool False  -> Just $ LitInt (TInt 1) 0
+
         A.NameLitNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+
         A.NameLitInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        A.NameLitWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+
+        A.NameLitWord i bits 
+         | elem bits [8, 16, 32, 64]
+         -> Just $ LitInt (TInt $ fromIntegral bits) i
+
         A.NameLitTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+
         _                    -> Nothing
 
 
@@ -705,5 +716,4 @@ altResultBlocks aa
 takeAltCase :: AltResult -> Maybe (Lit, Label)
 takeAltCase (AltCase lit label _)       = Just (lit, label)
 takeAltCase _                           = Nothing
-
 
