@@ -5,6 +5,10 @@ module DDC.Core.Salt.Name
 
           -- * Primitive Type Constructors
         , PrimTyCon     (..)
+        , primTyConIsIntegral
+        , primTyConIsFloating
+        , primTyConIsUnsigned
+        , primTyConIsSigned
 
           -- * Primitive Operators
         , PrimOp        (..)

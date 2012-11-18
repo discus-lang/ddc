@@ -1,7 +1,11 @@
 
 module DDC.Core.Salt.Name.PrimTyCon
         ( PrimTyCon     (..)
-        , readPrimTyCon)
+        , readPrimTyCon
+        , primTyConIsIntegral
+        , primTyConIsFloating
+        , primTyConIsUnsigned
+        , primTyConIsSigned)
 where
 import DDC.Base.Pretty
 import Data.Char
@@ -98,4 +102,53 @@ readPrimTyCon str
 
         | otherwise
         = Nothing
+
+
+-- | Integral constructors are the ones that we can reasonably
+--   convert from integers of the same size. 
+--  
+--   These are @Bool#@ @Nat#@ @Int#@ @WordN#@ and @Tag#@.
+--
+primTyConIsIntegral :: PrimTyCon -> Bool
+primTyConIsIntegral tc
+ = case tc of
+        PrimTyConBool           -> True
+        PrimTyConNat            -> True
+        PrimTyConInt            -> True
+        PrimTyConWord{}         -> True
+        PrimTyConTag            -> True
+        _                       -> False
+
+
+-- | Floating point constructors.
+-- 
+--   These are @FloatN@.
+primTyConIsFloating :: PrimTyCon -> Bool
+primTyConIsFloating tc
+ = case tc of
+        PrimTyConFloat{}        -> True
+        _                       -> False
+
+
+-- | Unsigned integral constructors.
+--
+--   These are @Bool@ @Nat@ @WordN@ @Tag@.
+primTyConIsUnsigned :: PrimTyCon -> Bool
+primTyConIsUnsigned tc
+ = case tc of
+        PrimTyConBool           -> True
+        PrimTyConNat            -> True
+        PrimTyConWord{}         -> True
+        PrimTyConTag            -> True
+        _                       -> False
+
+-- | Signed integral constructors.
+-- 
+--   This is just @Int@.
+primTyConIsSigned :: PrimTyCon -> Bool
+primTyConIsSigned tc
+ = case tc of
+        PrimTyConInt            -> True
+        PrimTyConFloat{}        -> True
+        _                       -> False
 

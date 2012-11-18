@@ -207,48 +207,34 @@ isVoidT _ = False
 isSignedT :: C.Type A.Name -> Bool
 isSignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
-         -> case n of
-                A.PrimTyConInt{}        -> True
-                A.PrimTyConFloat{}      -> True
-                _                       -> False
-        _                               -> False
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+          -> A.primTyConIsSigned tc
+        _ -> False
 
 
 -- | Check whether some type is unsigned: NatN or WordN
 isUnsignedT :: C.Type A.Name -> Bool
 isUnsignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
-         -> case n of
-                A.PrimTyConNat          -> True
-                A.PrimTyConTag          -> True
-                A.PrimTyConWord{}       -> True
-                _                       -> False
-        _                               -> False
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+          -> A.primTyConIsUnsigned tc
+        _ -> False
 
 
 -- | Check whether some type is an integral type. Nat, Int, WordN or Addr
 isIntegralT :: C.Type A.Name -> Bool
 isIntegralT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
-         -> case n of
-                A.PrimTyConNat          -> True
-                A.PrimTyConInt          -> True
-                A.PrimTyConWord{}       -> True
-                A.PrimTyConAddr         -> True
-                _                       -> False
-        _                               -> False
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+          -> A.primTyConIsIntegral tc
+        _ -> False
 
 
 -- | Check whether some type is an integral type. Nat, IntN or WordN.
 isFloatingT :: C.Type A.Name -> Bool
 isFloatingT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
-         -> case n of
-                A.PrimTyConFloat  _     -> True
-                _                       -> False
-        _                               -> False
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+          -> A.primTyConIsFloating tc
+        _ -> False
 
