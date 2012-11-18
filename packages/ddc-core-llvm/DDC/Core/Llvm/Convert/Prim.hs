@@ -8,6 +8,7 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
+import DDC.Core.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Sequence            (Seq)
@@ -335,7 +336,8 @@ convPrimArith2 op t
 
 
 -- Cast -----------------------------------------------------------------------
--- | Convert a primitive promotion to LLVM.
+-- | Convert a primitive promotion to LLVM, 
+--   or `Nothing` for an invalid promotion.
 convPrimPromote 
         :: Platform 
         -> KindEnv A.Name
@@ -344,11 +346,15 @@ convPrimPromote
         -> Maybe Instr
 
 convPrimPromote pp kenv tDst vDst tSrc xSrc
- = let  tDst'   = convertType pp kenv tDst
-        tSrc'   = convertType pp kenv tSrc
-   in case (tDst', tSrc') of
+ | tSrc'        <- convertType pp kenv tSrc
+ , tDst'        <- convertType pp kenv tDst
+ , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
+ , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+ , A.primCastPromoteIsValid pp tcSrc tcDst
+ = case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
-         -- Same sized integers
+
+         -- Same sized integers         
          | bitsDst == bitsSrc       
          -> Just $ ISet vDst xSrc
 
@@ -372,8 +378,12 @@ convPrimPromote pp kenv tDst vDst tSrc xSrc
 
         _ -> Nothing
 
+ | otherwise
+ = Nothing
 
--- | Convert a primitive truncation to LLVM.
+
+-- | Convert a primitive truncation to LLVM, 
+--   or `Nothing` for an invalid truncation.
 convPrimTruncate
         :: Platform 
         -> KindEnv A.Name
@@ -382,9 +392,12 @@ convPrimTruncate
         -> Maybe Instr
 
 convPrimTruncate pp kenv tDst vDst tSrc xSrc
- = let  tDst'   = convertType pp kenv tDst
-        tSrc'   = convertType pp kenv tSrc
-   in case (tDst', tSrc') of
+ | tSrc'        <- convertType pp kenv tSrc
+ , tDst'        <- convertType pp kenv tDst
+ , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
+ , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+ , A.primCastTruncateIsValid pp tcSrc tcDst
+ = case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers
          | bitsDst == bitsSrc       
@@ -402,6 +415,9 @@ convPrimTruncate pp kenv tDst vDst tSrc xSrc
          -> Just $ IConv vDst ConvZext xSrc
 
         _ -> Nothing
+
+ | otherwise
+ = Nothing
 
 
 -- Cond -----------------------------------------------------------------------

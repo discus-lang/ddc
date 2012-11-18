@@ -5,9 +5,11 @@ module DDC.Core.Salt.Name.PrimTyCon
         , primTyConIsIntegral
         , primTyConIsFloating
         , primTyConIsUnsigned
-        , primTyConIsSigned)
+        , primTyConIsSigned
+        , primTyConWidth)
 where
 import DDC.Base.Pretty
+import DDC.Core.Salt.Platform
 import Data.Char
 import Data.List
 
@@ -151,4 +153,21 @@ primTyConIsSigned tc
         PrimTyConInt            -> True
         PrimTyConFloat{}        -> True
         _                       -> False
+
+
+-- | Get the representation width of a primitive type constructor, 
+--   in bits.
+primTyConWidth :: Platform -> PrimTyCon -> Integer
+primTyConWidth pp tc
+ = case tc of
+        PrimTyConVoid           -> 0
+        PrimTyConBool           -> 1
+        PrimTyConNat            -> 8 * platformNatBytes  pp
+        PrimTyConInt            -> 8 * platformNatBytes  pp
+        PrimTyConWord  bits     -> fromIntegral bits
+        PrimTyConFloat bits     -> fromIntegral bits
+        PrimTyConTag            -> 8 * platformTagBytes  pp
+        PrimTyConAddr           -> 8 * platformAddrBytes pp
+        PrimTyConPtr            -> 8 * platformAddrBytes pp
+        PrimTyConString         -> 8 * platformAddrBytes pp
 

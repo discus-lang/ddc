@@ -9,13 +9,21 @@ module DDC.Core.Salt.Name
         , primTyConIsFloating
         , primTyConIsUnsigned
         , primTyConIsSigned
+        , primTyConWidth
 
           -- * Primitive Operators
         , PrimOp        (..)
+
         , PrimArith     (..)
+
         , PrimCast      (..)
+        , primCastPromoteIsValid
+        , primCastTruncateIsValid
+
         , PrimStore     (..)
+
         , PrimCall      (..)
+
         , PrimControl   (..)
 
           -- * Name Parsing

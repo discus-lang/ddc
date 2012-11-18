@@ -272,7 +272,7 @@ takeDataTyConApps tt
 --   This corresponds to the region the outermost constructor is allocated into.
 takePrimeRegion :: Type n -> Maybe (Type n)
 takePrimeRegion tt
- = case takeTApps tt of                                 -- TODO: check we're actually returning a region var
+ = case takeTApps tt of
         TCon _ : tR@(TVar _) : _
           -> Just tR
 

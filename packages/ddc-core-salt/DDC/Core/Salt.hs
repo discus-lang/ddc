@@ -24,10 +24,17 @@ module DDC.Core.Salt
         , Name          (..)
         , PrimTyCon     (..)
         , PrimOp        (..)
+
         , PrimCast      (..)
+        , primCastPromoteIsValid
+        , primCastTruncateIsValid
+
         , PrimCall      (..)
+
         , PrimControl   (..)
+
         , PrimStore     (..)
+
         , PrimArith     (..)
 
           -- * Name parsing

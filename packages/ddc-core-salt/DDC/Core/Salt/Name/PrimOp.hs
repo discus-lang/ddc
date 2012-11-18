@@ -6,10 +6,14 @@ module DDC.Core.Salt.Name.PrimOp
         ( PrimOp        (..)
         , PrimArith     (..),   readPrimArith
         , PrimCast      (..),   readPrimCast
+        , primCastPromoteIsValid
+        , primCastTruncateIsValid
         , PrimStore     (..),   readPrimStore
         , PrimCall      (..),   readPrimCall
         , PrimControl   (..),   readPrimControl)
 where
+import DDC.Core.Salt.Name.PrimTyCon
+import DDC.Core.Salt.Platform
 import DDC.Base.Pretty
 import Data.Char
 import Data.List
@@ -152,6 +156,52 @@ readPrimCast str
         "promote#"              -> Just PrimCastPromote
         "truncate#"             -> Just PrimCastTruncate
         _                       -> Nothing
+
+
+-- | Check for a valid promotion primop.
+primCastPromoteIsValid 
+        :: Platform     -- ^ Target platform.
+        -> PrimTyCon    -- ^ Source type.
+        -> PrimTyCon    -- ^ Destination type.
+        -> Bool
+
+primCastPromoteIsValid pp src dst
+        -- Promote unsigned to a larger or similar width.
+        | primTyConIsIntegral src, primTyConIsIntegral dst
+        , primTyConIsUnsigned src, primTyConIsUnsigned dst
+        , primTyConWidth pp dst >= primTyConWidth pp src
+        = True
+
+        -- Promote signed to a larger or similar width.
+        | primTyConIsIntegral src, primTyConIsIntegral dst
+        , primTyConIsSigned   src, primTyConIsSigned   dst
+        , primTyConWidth pp dst >= primTyConWidth pp src
+        = True
+
+        -- Promote unsigned to a strictly larger unsigned width.
+        | primTyConIsIntegral src, primTyConIsIntegral dst
+        , primTyConIsUnsigned src, primTyConIsSigned   dst
+        , primTyConWidth pp dst >  primTyConWidth pp src
+        = True
+
+        | otherwise
+        = False
+
+
+-- | Check for valid truncation primop.
+primCastTruncateIsValid 
+        :: Platform     -- ^ Target platform.
+        -> PrimTyCon    -- ^ Source type.
+        -> PrimTyCon    -- ^ Destination type.
+        -> Bool
+
+primCastTruncateIsValid _pp src dst
+        | primTyConIsIntegral src
+        , primTyConIsIntegral dst
+        = True
+
+        | otherwise
+        = False
 
 
 -- PrimStore --------------------------------------------------------------------
