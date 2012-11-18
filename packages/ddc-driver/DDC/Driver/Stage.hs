@@ -195,6 +195,7 @@ stageSaltToC config source sink
          [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
          , PipeSaltPrint  
                 (not $ configSuppressHashImports config)
+                (buildSpec $ configBuilder config)
                 sink]]]]
 
 
@@ -226,6 +227,7 @@ stageCompileSalt config source filePath shouldLinkExe
                [ PipeSaltTransfer
                  [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
                  , PipeSaltCompile
+                        (buildSpec $ configBuilder config)
                         (configBuilder config)
                         cPath
                         oPath

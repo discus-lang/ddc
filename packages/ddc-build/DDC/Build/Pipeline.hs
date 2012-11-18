@@ -297,7 +297,8 @@ data PipeSalt a where
 
         -- Print the module as a C source code.
         PipeSaltPrint      
-                :: Bool         -- with prelide
+                :: Bool                 -- With C prelude.
+                -> Salt.Platform        -- Target platform specification
                 -> Sink 
                 -> PipeSalt a
 
@@ -309,7 +310,8 @@ data PipeSalt a where
 
         -- Compile the module via C source code.
         PipeSaltCompile
-                :: Builder              --  Builder to use.
+                :: Salt.Platform        --  Target platform specification
+                -> Builder              --  Builder to use.
                 -> FilePath             --  Intermediate C file.
                 -> FilePath             --  Object file.
                 -> Maybe FilePath       --  Link into this exe file
@@ -339,8 +341,8 @@ pipeSalt mm pp
                 Left err        -> return [ErrorSaltConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
 
-        PipeSaltPrint withPrelude sink
-         -> case Salt.seaOfSaltModule withPrelude mm of
+        PipeSaltPrint withPrelude platform sink
+         -> case Salt.seaOfSaltModule withPrelude platform mm of
                 Left  err 
                  -> return $ [ErrorSaltConvert err]
 
@@ -353,8 +355,8 @@ pipeSalt mm pp
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 
-        PipeSaltCompile builder cPath oPath mExePath
-         -> case Salt.seaOfSaltModule True mm of
+        PipeSaltCompile platform builder cPath oPath mExePath
+         -> case Salt.seaOfSaltModule True platform mm of
              Left errs
               -> error $ show errs
 
