@@ -100,9 +100,13 @@ data TokMeta
         | KCommentBlockStart
         | KCommentBlockEnd
 
-        -- | This is injected by the `dropCommentBlock` when it finds
+        -- | This is injected by `dropCommentBlock` when it finds
         --   an unterminated block comment.
         | KCommentUnterminated
+
+        -- | This is injected by `applyOffside` when it finds an explit close
+        --   brace in a position where it would close a synthetic one.
+        | KOffsideClosingBrace
         deriving (Eq, Show)
 
 
@@ -115,6 +119,7 @@ describeTokMeta tm
         KCommentBlockStart      -> "block comment start"
         KCommentBlockEnd        -> "block comment end"
         KCommentUnterminated    -> "unterminated block comment"
+        KOffsideClosingBrace    -> "closing brace"
 
 
 -- TokAtom --------------------------------------------------------------------

@@ -25,9 +25,6 @@ dropComments (t@(Token tok sourcePos) : xs)
 
 
 -- | Drop block comments form a token stream.
----
--- ISSUE #271: Better error message for unterminated comment blocks.
---
 dropCommentBlock 
         :: Eq n
         => SourcePos            -- ^ Position of outer-most block comment start.

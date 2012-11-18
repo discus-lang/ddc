@@ -102,11 +102,7 @@ applyOffside mm (LexemeToken t@Token { tokenTok = KA KBraceKet } : ts)
 
         -- nup
         | _tNext : _     <- dropNewLinesLexeme ts
-        = error "DDC.Core.Lexer.Tokens.Offside: no brace match"
-
-        -- ISSUE #289: Better error message for non-matching braces.
-        --      Can we trigger the above error in a test?
-        --      If so we need a better message for it.
+        = [newOffsideClosingBrace ts]
 
 
 -- push contexts for explicit open braces
@@ -230,15 +226,25 @@ isKNToken _                     = False
 -- | When generating new source tokens, take the position from the first
 --   non-newline token in this list
 newCBra :: [Lexeme n] -> Token (Tok n)
-newCBra ts      = (takeTok ts) { tokenTok = KA KBraceBra }
+newCBra ts
+        = (takeTok ts) { tokenTok = KA KBraceBra }
 
 
 newCKet :: [Lexeme n] -> Token (Tok n)
-newCKet ts      = (takeTok ts) { tokenTok = KA KBraceKet }
+newCKet ts
+        = (takeTok ts) { tokenTok = KA KBraceKet }
 
 
 newSemiColon :: [Lexeme n] -> Token (Tok n)
-newSemiColon ts = (takeTok ts) { tokenTok = KA KSemiColon }
+newSemiColon ts 
+        = (takeTok ts) { tokenTok = KA KSemiColon }
+
+
+-- | This is injected by `applyOffside` when it finds an explit close
+--   brace in a position where it would close a synthetic one.
+newOffsideClosingBrace :: [Lexeme n] -> Token (Tok n)
+newOffsideClosingBrace ts
+        = (takeTok ts) { tokenTok = KM KOffsideClosingBrace }
 
 
 takeTok :: [Lexeme n] -> Token (Tok n)
