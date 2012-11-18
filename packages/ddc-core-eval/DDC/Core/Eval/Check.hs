@@ -1,11 +1,13 @@
 
 -- | Check for conflicting store capabilities in the initial program.
 module DDC.Core.Eval.Check 
-        ( checkCapsX
+        ( checkCapsModule
+        , checkCapsX
         , Error(..))
 where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Name
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Base.Pretty
@@ -22,7 +24,13 @@ type CheckM a x
         = G.CheckM (Error a) x
 
 
--- | Check for conflicting store capabilities in the program.
+-- | Check for conflicting store capabilities in a module.
+checkCapsModule :: Module a Name -> Maybe (Error a)
+checkCapsModule mm
+        = checkCapsX $ moduleBody mm
+
+
+-- | Check for conflicting store capabilities in an expression.
 checkCapsX :: Exp a Name -> Maybe (Error a)
 checkCapsX xx 
  = case result $ checkCapsXM xx of

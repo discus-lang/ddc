@@ -21,10 +21,7 @@ fragmentEval
         , fragmentExtension     = "dcv"
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
-
-        -- ISSUE #288: Check for conflicting capabilities in Eval modules
-        , fragmentCheckModule   = const Nothing
-
+        , fragmentCheckModule   = checkCapsModule
         , fragmentCheckExp      = checkCapsX 
         , fragmentMakeNamifierT = makeNamifier freshT
         , fragmentMakeNamifierX = makeNamifier freshX 
