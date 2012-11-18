@@ -819,11 +819,17 @@ checkLetsM xx config kenv tenv (LRec bxs)
  = do   
         let (bs, xs)    = unzip bxs
 
-        -- Check all the annotations.
+        -- No binders can be multiply defined,
+        -- except for BNones.
+        (case duplicates $ filter (not . isBNone) bs of
+          []    -> return ()
+          b : _ -> throw $ ErrorLetrecRebound xx b)
+
+        -- Check the types on all the binders.
         ks              <- mapM (checkTypeM config kenv) 
                         $  map typeOfBind bs
 
-        -- Check all the annots have data kind.
+        -- Check all the binders have data kind.
         zipWithM_ (\b k
          -> when (not $ isDataKind k)
                 $ throw $ ErrorLetBindingNotData xx b k)
@@ -860,9 +866,16 @@ checkLetsM xx config kenv tenv (LRec bxs)
                 , Sum.empty kEffect
                 , clos_cut)
 
-
 checkLetsM _xx _config _kenv _tenv _lts
-        = error "checkLetsM: not done yet"
+        = error "checkLetsM: case should have been handled in checkExpM"
+
+
+-- | Take elements of a list that have more than once occurrence.
+duplicates :: Eq a => [a] -> [a]
+duplicates []           = []
+duplicates (x : xs)
+        | L.elem x xs   = x : duplicates (filter (/= x) xs)
+        | otherwise     = duplicates xs
 
 
 -------------------------------------------------------------------------------

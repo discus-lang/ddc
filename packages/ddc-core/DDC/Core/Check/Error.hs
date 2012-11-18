@@ -148,6 +148,11 @@ data Error a n
         { errorChecking         :: Exp a n 
         , errorExp              :: Exp a n }
 
+        -- | A recursive let-expression that has more than one binding
+        --   with the same name.
+        | ErrorLetrecRebound
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n }
 
         -- Letregion --------------------------------------
         -- | A letregion-expression where the some of the bound variables do not

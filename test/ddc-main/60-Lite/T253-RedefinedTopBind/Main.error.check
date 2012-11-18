@@ -1,0 +1,14 @@
+Error loading module
+  When checking expression.
+    Redefined binder 'main : [r : %].Ptr# r String# -> Int#' in letrec.
+    
+    with: letrec {
+            main : [r : %].Ptr# r String# -> Int#
+              = /\(r : %).
+                 \(x : Ptr# r String#). 5i#;
+            
+            main : [r : %].Ptr# r String# -> Int#
+              = /\(r : %).
+                 \(x : Ptr# r String#). 2i#
+          } in
+          ()

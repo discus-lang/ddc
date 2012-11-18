@@ -177,6 +177,10 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+        ErrorLetrecRebound xx b
+         -> vcat [ text "Redefined binder '" <> ppr b <> text "' in letrec."
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
 
         -- Letregion --------------------------------------
         ErrorLetRegionsNotRegion xx bs ks
