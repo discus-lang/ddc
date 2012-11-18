@@ -641,21 +641,24 @@ convPrimCallM pp kenv tenv p xs
                 return  $ parens (x1' <+> op' <+> x2')
 
 
-        -- ISSUE #287: Check for valid promotion and truncation in
-        --   to-C conversion
-
         -- Cast primops.
         PrimCast PrimCastPromote
-         | [XType tTo, XType _tFrom, x1] <- xs
-         -> do  tTo'    <- convTypeM   kenv tTo
+         | [XType tDst, XType tSrc, x1]    <- xs
+         , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
+         , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+         , primCastPromoteIsValid pp tcSrc tcDst
+         -> do  tDst'   <- convTypeM   kenv tDst
                 x1'     <- convRValueM pp kenv tenv x1
-                return  $  parens tTo' <> parens x1'
+                return  $  parens tDst' <> parens x1'
 
         PrimCast PrimCastTruncate
-         | [XType tTo, XType _tFrom, x1] <- xs
-         -> do  tTo'    <- convTypeM   kenv tTo
+         | [XType tDst, XType tSrc, x1] <- xs
+         , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
+         , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+         , primCastTruncateIsValid pp tcSrc tcDst
+         -> do  tDst'   <- convTypeM   kenv tDst
                 x1'     <- convRValueM pp kenv tenv x1
-                return  $  parens tTo' <> parens x1'
+                return  $  parens tDst' <> parens x1'
 
 
         -- Control primops.
