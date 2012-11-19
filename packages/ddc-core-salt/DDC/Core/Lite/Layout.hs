@@ -40,14 +40,12 @@ heapObjectOfDataCtor pp ctor
         -- If all the fields are boxed objects then used a Boxed heap object, 
         -- as these just contain pointer fields.
         | tsFields              <- dataCtorFieldTypes ctor
-        , Just unboxeds         <- sequence $ map isUnboxedType tsFields
-        , all not unboxeds
+        , all isBoxedType tsFields
         = Just HeapObjectBoxed
 
         -- All of the fixed size primitive types will fit in a RawSmall object.
         --   Each field needs to be non-abstract, and have a real width.
-        | [t@(TCon tc)]            <- dataCtorFieldTypes ctor
-        , Just True                <- isUnboxedType t
+        | [TCon tc]                <- dataCtorFieldTypes ctor
         , TyConBound (UPrim n _) _ <- tc
         , NamePrimTyCon ptc        <- n
         , isJust $ A.primTyConWidth pp ptc
@@ -102,7 +100,8 @@ fieldSizeOfType platform tt
         -- We're not supporting polymorphic fields yet.
         TForall{}       -> Nothing
 
-        -- Assume any non-unboxed thing is represented by a pointer.
+        -- Assume anything that isn't a primitive constructor is 
+        -- represented by a pointer.
         TApp{}          -> Just $ platformAddrBytes platform
 
         -- We shouldn't find any TSums, because field types always have
@@ -143,3 +142,4 @@ fieldSizeOfPrimTyCon platform tc
 
         -- Strings shouldn't appear as raw fields, only pointers to them.
         PrimTyConString      -> Nothing
+

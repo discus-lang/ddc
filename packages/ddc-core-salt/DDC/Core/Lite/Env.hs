@@ -3,7 +3,7 @@ module DDC.Core.Lite.Env
         ( primDataDefs
         , primKindEnv
         , primTypeEnv
-        , isUnboxedType)
+        , isBoxedType)
 where
 import DDC.Core.Lite.Compounds
 import DDC.Core.Lite.Name
@@ -270,22 +270,19 @@ typeOfPrimArith op
 
 
 -- Unboxed --------------------------------------------------------------------
--- | Check whether a type is represents an unboxed object.
---   Returns `Nothing` for sums, as this cannot be a data type.
-isUnboxedType :: Type Name -> Maybe Bool
-isUnboxedType tt
- = case tt of
-        TVar{}          -> Just False
-        TCon tc
-         | TyConBound (UPrim n _) _ <- tc
-         , NamePrimTyCon _          <- n  -> Just True
-         | otherwise                      -> Just False
+-- | Check if a type represents a boxed data type, 
+--   where type variables are treated as boxed.
+isBoxedType :: Type Name -> Bool
+isBoxedType tt
+        | TVar _        <- tt   = True
+        | TForall _ t   <- tt   = isBoxedType t
+        | TSum{}        <- tt   = False
 
-        TForall{}       -> Just False
-
-        -- ISSUE #286: Application of pointer constructor is treated as a boxed type.
-        TApp{}          -> Just False
-
-        TSum{}          -> Nothing
-
+        | otherwise
+        = case takeTyConApps tt of
+           Nothing                                              -> False
+           Just (TyConSpec  TcConUnit, _)                       -> True
+           Just (TyConBound (UName (NameDataTyCon _))   _, _)   -> True
+           Just (TyConBound (UPrim (NameDataTyCon _) _) _,   _) -> True
+           _                                                    -> False
 
