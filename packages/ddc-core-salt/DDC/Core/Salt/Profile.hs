@@ -7,11 +7,8 @@ module DDC.Core.Salt.Profile
 where
 import DDC.Core.Salt.Env
 import DDC.Core.Salt.Name
-import DDC.Core.Salt.Compounds
 import DDC.Core.Fragment
 import DDC.Core.Lexer
-import DDC.Type.Exp
-import DDC.Type.Predicates
 import DDC.Data.Token
 
 
@@ -60,30 +57,3 @@ lexExpString sourceName lineStart str
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
                 Nothing -> Token (KJunk "lexical error") sp
-
-
--- | Check if a type is an unboxed data type.
-typeIsUnboxed :: Type Name -> Bool
-typeIsUnboxed tt
- = case tt of
-        TVar{}          -> False
-
-        -- All plain constructors are unboxed.
-        TCon (TyConBound _ k)
-         | isDataKind k -> True
-
-        TCon _          -> False
-
-        TForall _ t     -> typeIsUnboxed t
-
-        -- Pointers to objects are boxed.
-        TApp{}
-         | Just (_tR, tTarget)  <- takeTPtr tt
-         , tTarget == tObj
-         -> False
-
-        TApp t1 t2      
-         -> typeIsUnboxed t1 || typeIsUnboxed t2
-
-        TSum{}          -> False
-

@@ -7,17 +7,16 @@ module DDC.Core.Lite.Layout
 
           -- * Fields
         , payloadSizeOfDataCtor
-        , fieldOffsetsOfDataCtor
-
-          -- * Field types
-        , isUnboxedType
-        , isFixedSizePrimTyCon)
+        , fieldOffsetsOfDataCtor)
 where
 import DDC.Core.Lite.Name
+import DDC.Core.Lite.Env
 import DDC.Core.Salt.Platform
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import Control.Monad
+import Data.Maybe
+import qualified DDC.Core.Salt.Name     as A
 
 
 -- HeapObject -----------------------------------------------------------------
@@ -35,8 +34,8 @@ data HeapObject
 
 
 -- | Decide which heap object to use to represent a data constructor.
-heapObjectOfDataCtor :: DataCtor Name -> Maybe HeapObject
-heapObjectOfDataCtor ctor
+heapObjectOfDataCtor :: Platform -> DataCtor Name -> Maybe HeapObject
+heapObjectOfDataCtor pp ctor
 
         -- If all the fields are boxed objects then used a Boxed heap object, 
         -- as these just contain pointer fields.
@@ -46,11 +45,12 @@ heapObjectOfDataCtor ctor
         = Just HeapObjectBoxed
 
         -- All of the fixed size primitive types will fit in a RawSmall object.
+        --   Each field needs to be non-abstract, and have a real width.
         | [t@(TCon tc)]            <- dataCtorFieldTypes ctor
         , Just True                <- isUnboxedType t
         , TyConBound (UPrim n _) _ <- tc
         , NamePrimTyCon ptc        <- n
-        , Just True                <- isFixedSizePrimTyCon ptc
+        , isJust $ A.primTyConWidth pp ptc
         = Just HeapObjectRawSmall
 
         | otherwise
@@ -143,43 +143,3 @@ fieldSizeOfPrimTyCon platform tc
 
         -- Strings shouldn't appear as raw fields, only pointers to them.
         PrimTyConString      -> Nothing
-
-
--- Unboxed --------------------------------------------------------------------
--- | Check whether a type is represents an unboxed object.
---   Returns `Nothing` for sums, as this cannot be a data type.
-isUnboxedType :: Type Name -> Maybe Bool
-isUnboxedType tt
- = case tt of
-        TVar{}          -> Just False
-        TCon tc
-         | TyConBound (UPrim n _) _ <- tc
-         , NamePrimTyCon _          <- n  -> Just True
-         | otherwise                      -> Just False
-
-        TForall{}       -> Just False
-
-        -- ISSUE #286: Application of pointer constructor is treated as a boxed type.
-        TApp{}          -> Just False
-
-        TSum{}          -> Nothing
-
-
--- | Check whether a primitive type constructor represents a value with a fixed
---   size. Types WordN# and IntN# have a fixed size, but String# does not.
---
---   Returns `Nothing` for void and (unapplied) pointers.
-isFixedSizePrimTyCon :: PrimTyCon -> Maybe Bool
-isFixedSizePrimTyCon tc
- = case tc of
-        PrimTyConVoid    -> Nothing
-        PrimTyConPtr     -> Nothing
-        PrimTyConAddr    -> Just True
-        PrimTyConNat     -> Just True
-        PrimTyConTag     -> Just True
-        PrimTyConBool    -> Just True
-        PrimTyConString  -> Just False
-        PrimTyConWord{}  -> Just True
-        PrimTyConInt{}   -> Just True
-        PrimTyConFloat{} -> Just True
-

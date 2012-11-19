@@ -38,7 +38,7 @@ constructData
         -> ConvertM a (Exp a O.Name)
 
 constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs 
- | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
+ | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor pp ctorDef
  = do
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
@@ -69,7 +69,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
                 $ foldr (XLet a) xObject' lsFields
 
 
- | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
+ | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor pp ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
  = do   
         -- Allocate the object.
@@ -111,7 +111,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
  = error $ unlines
         [ "constructData: don't know how to construct a " 
                 ++ (show $ dataCtorName ctorDef)
-        , "  heapObject = " ++ (show $ L.heapObjectOfDataCtor ctorDef) 
+        , "  heapObject = " ++ (show $ L.heapObjectOfDataCtor  pp ctorDef) 
         , "  fields     = " ++ (show $ dataCtorFieldTypes ctorDef)
         , "  size       = " ++ (show $ L.payloadSizeOfDataCtor pp ctorDef) ]
 
@@ -132,7 +132,7 @@ destructData
 
 destructData pp a uScrut ctorDef trPrime bsFields xBody
 
- | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
+ | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor pp ctorDef
  = do   
 
         -- Bind pattern variables to each of the fields.
@@ -149,7 +149,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
 
         return  $ foldr (XLet a) xBody lsFields
 
- | Just L.HeapObjectRawSmall <- L.heapObjectOfDataCtor ctorDef
+ | Just L.HeapObjectRawSmall <- L.heapObjectOfDataCtor   pp ctorDef
  , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
         -- Get the address of the payload.

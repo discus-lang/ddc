@@ -156,18 +156,24 @@ primTyConIsSigned tc
 
 
 -- | Get the representation width of a primitive type constructor, 
---   in bits.
-primTyConWidth :: Platform -> PrimTyCon -> Integer
+--   in bits. This is how much space it takes up in an object payload.
+--
+--   Bools are representable with a single bit, but we unpack
+--   them into a whole word.
+--
+--   The abstract constructors `Void` and `String` have no width.
+primTyConWidth :: Platform -> PrimTyCon -> Maybe Integer
 primTyConWidth pp tc
  = case tc of
-        PrimTyConVoid           -> 0
-        PrimTyConBool           -> 1
-        PrimTyConNat            -> 8 * platformNatBytes  pp
-        PrimTyConInt            -> 8 * platformNatBytes  pp
-        PrimTyConWord  bits     -> fromIntegral bits
-        PrimTyConFloat bits     -> fromIntegral bits
-        PrimTyConTag            -> 8 * platformTagBytes  pp
-        PrimTyConAddr           -> 8 * platformAddrBytes pp
-        PrimTyConPtr            -> 8 * platformAddrBytes pp
-        PrimTyConString         -> 8 * platformAddrBytes pp
+        PrimTyConBool           -> Just $ 8 * platformNatBytes pp 
+        PrimTyConNat            -> Just $ 8 * platformNatBytes  pp
+        PrimTyConInt            -> Just $ 8 * platformNatBytes  pp
+        PrimTyConWord  bits     -> Just $ fromIntegral bits
+        PrimTyConFloat bits     -> Just $ fromIntegral bits
+        PrimTyConTag            -> Just $ 8 * platformTagBytes  pp
+        PrimTyConAddr           -> Just $ 8 * platformAddrBytes pp
+        PrimTyConPtr            -> Just $ 8 * platformAddrBytes pp
+
+        PrimTyConVoid           -> Nothing
+        PrimTyConString         -> Nothing
 

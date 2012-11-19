@@ -5,12 +5,14 @@ module DDC.Core.Salt.Env
         , primKindEnv
         , primTypeEnv
         , typeOfPrimCall
-        , typeOfPrimStore )
+        , typeOfPrimStore 
+        , typeIsUnboxed)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Type.DataDef
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Exp
 import DDC.Type.Env                             (Env)
 import qualified DDC.Type.Env                   as Env
@@ -254,4 +256,32 @@ typeOfPrimStore jj
 
         PrimStoreCastPtr
          -> tForalls [kRegion, kData, kData] $ \[r,t1,t2] -> tPtr r t2 `tFunPE` tPtr r t1
+
+
+-------------------------------------------------------------------------------
+-- | Check if a type is an unboxed data type.
+typeIsUnboxed :: Type Name -> Bool
+typeIsUnboxed tt
+ = case tt of
+        TVar{}          -> False
+
+        -- All plain constructors are unboxed.
+        TCon (TyConBound _ k)
+         | isDataKind k -> True
+
+        TCon _          -> False
+
+        TForall _ t     -> typeIsUnboxed t
+
+        -- Pointers to objects are boxed.
+        TApp{}
+         | Just (_tR, tTarget)  <- takeTPtr tt
+         , tTarget == tObj
+         -> False
+
+        TApp t1 t2      
+         -> typeIsUnboxed t1 || typeIsUnboxed t2
+
+        TSum{}          -> False
+
 
