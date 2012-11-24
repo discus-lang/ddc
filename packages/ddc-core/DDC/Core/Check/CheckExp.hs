@@ -387,8 +387,11 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> checkExpM config kenv tenv x     
     us   -> do
+        -- 
+        let depth = length $ map isBAnon bsRgn
+
         -- Check the type on the region binders.
-        let ks   = map typeOfBind bsRgn
+        let ks    = map typeOfBind bsRgn
         mapM_ (checkTypeM config kenv) ks
 
         -- The binders must have region kind.
@@ -403,7 +406,7 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
         
         -- Check the witness types.
         let kenv'       = Env.extends bsRgn kenv
-        let tenv'       = Env.lift 1 tenv                               -- lift by 1 is wrong
+        let tenv'       = Env.lift depth tenv
         mapM_ (checkTypeM config kenv') $ map typeOfBind bsWit
 
         -- Check that the witnesses bound here are for the region,
@@ -439,8 +442,8 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
 
         returnX a
                 (\z -> XLet z (LLetRegions bsRgn bsWit) xBody')
-                (lowerT 1 tBody)                                        -- lower by 1 is wrong
-                (lowerT 1 effs')                                        -- lower by 1 is wrong
+                (lowerT depth tBody)
+                (lowerT depth effs')
                 c2_cut
 
 
