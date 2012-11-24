@@ -42,10 +42,3 @@ thing   [r1 : %]
                         False# -> N# [r1] 6#
    in   addNat [:r1 r1 r1:] x (N# [r1] 1#);;
 
-
-
--- BROKEN: CAF binder.
---module Test with letrec
---thing [r1 : %] : Unit
--- = do   x       = N# [r1] 5#
---        x;;

@@ -153,10 +153,3 @@ l5.cont:
 !3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
 !2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
 
-
-
--- BROKEN: CAF binder.
---module Test with letrec
---thing [r1 : %] : Unit
--- = do   x       = N# [r1] 5#
---        x;;
