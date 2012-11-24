@@ -6,6 +6,7 @@ where
 import DDC.Core.Analysis.Arity
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import qualified DDC.Core.Transform.LiftX       as L
 import qualified DDC.Type.Compounds             as T
 
@@ -52,7 +53,7 @@ snipX arities x args
         | null args
         = enterX arities x
 
-        -- Some non-application none being applied to arguments.
+        -- Some non-application node being applied to arguments.
         | otherwise
         = makeLets arities (enterX arities x) args
 
@@ -64,7 +65,7 @@ enterX arities xx
    in case xx of
         -- The snipX function shouldn't have called us with an XApp.
         XApp{}           
-         -> error "DDC.Core.Transform.ANormal.anormal: unexpected XApp"
+         -> error "DDC.Core.Transform.ANormal: unexpected XApp"
 
         -- leafy constructors
         XVar{}           -> xx
@@ -106,7 +107,7 @@ enterX arities xx
         -- case
         -- Split out non-atomic discriminants into their own bindings.
         XCase a e alts
-         | isNormal e
+         | isAtom e
          -> let  e'      = down [] e 
                  alts'   = map (\(AAlt pat ae) 
                               -> AAlt pat (down (aritiesOfPat pat) ae)) alts 
@@ -134,10 +135,10 @@ makeLets
         -> Exp a n
 
 makeLets _  f0 [] = f0
-makeLets arities f0 args@((_,annot):_) 
- = go 0 f0Arity ((f0,annot):args) []
+makeLets arities f0 args@( (_, annot) : _)
+ = make annot f0 args
  where
-        f0Arity    
+        _f0Arity    
          = case f0 of
                 XVar _ b
                  | Just arity <- getArity arities b
@@ -146,60 +147,77 @@ makeLets arities f0 args@((_,annot):_)
                 _ -> max (arityOfExp' f0) 1
 
 
-        tBot = T.tBot T.kData
+        tBot' = T.tBot T.kData
 
-        -- out of arguments, create XApps out of leftovers
-        go i _arf [] acc
-         = mkApps i 0 acc
+        -- Make a normalised function application.
+        make a xFun xsArgs
+         -- The function part is already atomic.
+         | isAtom xFun
+         = splitLets 0 xFun xsArgs
 
-        -- ISSUE #278: Snip transform doesn't handle over-applications.
-        -- 
-        -- f is fully applied and we have arguments left to add:
-        --	create let for intermediate result
-        -- BROKEN: this produces the wrong debruijn indices.
-        -- go i arf ((x, a) : xs) acc 
-        --  |  length acc > arf
-        --  =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
-        --           (go i 1 ((x, a) : xs) [(XVar a $ UIx 0, a)])
-
-        ---- application to variable, don't bother binding
-        go i arf ((x,a):xs) acc 
-         | isNormal x
-         =  go i arf xs ((x,a):acc)
-
-        -- non-trivial argument, create binding
-        go i arf ((x,a):xs) acc
-         = XLet a (LLet LetStrict (BAnon tBot) (L.liftX i x))
-                (go (i+1) arf xs ((x,a):acc))
+         -- The function part is not atomic, 
+         --  so we need to add an outer-most let-binding for it.
+         | otherwise
+         = XLet a (LLet LetStrict (BAnon tBot') xFun)
+                  (splitLets 1 (XVar a (UIx 0)) xsArgs)
 
 
-        -- fold list into applications
-        -- can't create empty app
-        mkApps _ _ []
-         = error "DDC.Core.Transform.ANormal.makeLets.mkApps: unexpected empty list"
+        splitLets (depth :: Int) xFun xsArgs
+         = let  -- Split arguments into the already atomic ones,
+                --  and the ones we need to introduce let-expressions for.
+                argss    = splitArgs xsArgs
 
-        -- single element - this is the function
-        mkApps l _ [(x,_)] 
-         | isNormal x
-         = L.liftX l x
+                -- Collect up the new let-bindings.
+                xsLets   = [ (x, a)      | (_,    a, _,       Just x) <- argss]
 
-        mkApps _ i [(_,a)]
-         = XVar a $ UIx i
+                -- Collect up the new function arguments.
+                --  If the argument was already atomic then we have to lift
+                --  its indices past the new let bindings we're about to add.
+                depth'   = depth + length xsLets
+                xsArgs'  = [if liftMe 
+                                then (L.liftX depth' xArg, a)
+                                else (xArg, a)
+                                | (xArg, a, liftMe, _)      <- argss]
 
-        -- apply this argument and recurse
-        mkApps l i ((x,a):xs) 
-         | isNormal x
-         = XApp a (mkApps l i xs) (L.liftX l x)
+                -- Construct the new function application.
+                --  TODO: can handle over-application here.
+                xFunApps = makeXAppsWithAnnots 
+                                (L.liftX (length xsLets) xFun)
+                                xsArgs'              
 
-        mkApps l i ((_,a):xs)
-         = XApp a (mkApps l (i+1) xs) (XVar a $ UIx i)
+                -- Wrap the function application in the let-bindings
+                -- for its arguments.
+           in   foldr (\(x, a) x' -> XLet a x x')
+                        xFunApps
+                        [ (LLet LetStrict (BAnon tBot') x, a) | (x, a) <- xsLets ]
 
+
+-- | Sort function arguments into either the atomic ones, 
+--   or compound ones.
+splitArgs 
+        :: Ord n
+        => [(Exp a n, a)] 
+        -> [( Exp a n            -- Expression to use as the new argument.
+            , a                  -- Annoation for the argument application.
+            , Bool               -- Whether this expression argument was already atomic.
+            , Maybe (Exp a n))]  -- New expression to let-bind.
+
+splitArgs args
+ = reverse $ go 0 $ reverse args
+ where  
+        go _n [] = []
+        go n ((xArg, a) : xsArgs)
+         | isAtom xArg
+         = (xArg,           a, True,  Nothing)    : go n       xsArgs
+
+         | otherwise
+         = (XVar a (UIx n), a, False, Just xArg)  : go (n + 1) xsArgs
 
 
 -- | Check if an expression needs a binding, or if it's simple enough to be
 --   applied as-is.
-isNormal :: Ord n => Exp a n -> Bool
-isNormal xx
+isAtom :: Ord n => Exp a n -> Bool
+isAtom xx
  = case xx of
         XVar{}          -> True
         XCon{}          -> True
@@ -208,12 +226,13 @@ isNormal xx
 
         -- Casts are ignored by code generator, so we can leave them in if
         -- their subexpression is normal
-        XCast _ _ x     -> isNormal x
+        XCast _ _ x     -> isAtom x
         _               -> False
 
 
 arityOfExp' :: Ord n => Exp a n -> Int
 arityOfExp' xx
  = case arityOfExp xx of
-        Nothing -> 0 -- error $ "no arity"
+        Nothing -> 0
         Just a  -> a
+
