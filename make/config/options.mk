@@ -41,7 +41,7 @@ GHC_WARNINGS	:= \
 	-fwarn-unused-imports \
 	-fno-warn-missing-methods
 
-# These are turned on for all code under the DDC tree, 
+# These are turned on for all code under the DDC tree,
 #  Other code will have this enabled when it is moved there.
 GHC_WARNINGS2	:= \
 	-fwarn-unused-matches \
@@ -66,7 +66,7 @@ endif
 # Warnings that are enabled manually in the DDC tree
 #	-fwarn-unused-matches
 #	-fwarn-incomplete-patterns
-#	-fwarn-name-shadowing 
+#	-fwarn-name-shadowing
 
 # Warnings we should probably enable
 #	-fwarn-unused-do-bind
@@ -86,7 +86,7 @@ endif
 
 
 # -- Packages -----------------------------------------------------------------
-# 
+#
 #    Don't add unix or posix packages.
 #    They're not supported natively by the Haskell platform on Windows, and when
 #    I tried to cabal install the unix package under cygwin I got a boatload of

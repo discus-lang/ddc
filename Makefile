@@ -126,6 +126,7 @@ include make/targets/ddc-check.mk
 include make/targets/ddc-main.mk
 include make/targets/ddci-core.mk
 include make/targets/proof.mk
+include make/targets/helper.mk
 
 
 # -- Include magic ------------------------------------------------------------
