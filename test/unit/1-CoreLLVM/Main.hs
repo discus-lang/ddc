@@ -7,7 +7,7 @@ import Control.Applicative
 
 import Test.QuickCheck
 import Test.QuickCheck.All
-import DDC.Core.Llvm.Convert.Metadata.Graph
+import DDC.Core.Llvm.Metadata.Graph
 
 
 main = $(quickCheckAll)
