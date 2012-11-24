@@ -112,3 +112,12 @@ foo2 (x : Nat#) (y : Nat#) : Nat#
 module Main with letrec
 id  [a : *] (x : a) : a    = x
 foo (x : Int#)      : Int# = id [Int#] x;;
+
+
+-- Error: nested functions
+:to-c..
+module Main with letrec
+
+thing [a : *] (x : a) : a   
+ = let id (y : a) = y
+   in  id x;;

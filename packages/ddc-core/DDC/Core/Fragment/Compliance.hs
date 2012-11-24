@@ -8,6 +8,7 @@ import DDC.Core.Fragment.Feature
 import DDC.Core.Fragment.Profile
 import DDC.Core.Fragment.Error
 import DDC.Core.Compounds
+import DDC.Core.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
 import Control.Monad
@@ -116,9 +117,21 @@ instance Complies Exp where
 
         -- spec binders -------------------------
         XLAM _ b x
-         -> do  (tUsed, vUsed)  <- compliesX profile 
+         | contextAbsBody context
+         , not $ has featuresNestedFunctions
+         -> throw $ ErrorUnsupported NestedFunctions
+
+         | otherwise
+         -> do  
+                -- If the body isn't another lambda then remember
+                -- that we've entered into a function.
+                let context'
+                     | isXLAM x || isXLam x = context
+                     | otherwise            = setBody context
+
+                (tUsed, vUsed)  <- compliesX profile 
                                         (Env.extend b kenv) tenv 
-                                        (setBody context) x
+                                        context' x
 
                 tUsed'          <- checkBind profile kenv b tUsed
                 return (tUsed', vUsed)
@@ -126,9 +139,21 @@ instance Complies Exp where
         -- value and witness abstraction --------
         -- ISSUE #270: Compliance check for nested functions
         XLam _ b x
-         -> do  (tUsed, vUsed)  <- compliesX profile 
+         | contextAbsBody context
+         , not $ has featuresNestedFunctions
+         -> throw $ ErrorUnsupported NestedFunctions
+
+         | otherwise
+         -> do  
+                -- If the body isn't another lambda then remember
+                -- that we've entered into a function.
+                let context'
+                     | isXLAM x || isXLam x = context
+                     | otherwise            = setBody context
+
+                (tUsed, vUsed)  <- compliesX profile 
                                         kenv (Env.extend b tenv)
-                                        (setBody context) x
+                                        context' x
 
                 vUsed'          <- checkBind profile tenv b vUsed
                 return (tUsed, vUsed')

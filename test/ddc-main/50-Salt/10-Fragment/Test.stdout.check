@@ -115,3 +115,9 @@ Fragment violation when converting Salt module to C code.
 Error loading module
   During fragment compliance check.
     Unsupported feature: UnboxedInstantiation
+
+
+-- Error: nested functions
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: NestedFunctions
