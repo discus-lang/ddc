@@ -14,6 +14,7 @@ module DDC.Core.Salt.Convert
 where
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
+import DDC.Core.Salt.Convert.Type
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Platform
 import DDC.Core.Collect
@@ -60,7 +61,7 @@ convModuleM withPrelude pp mm@(ModuleCore{})
 
         -- Import external symbols ----
         let nts = Map.elems $ C.moduleImportTypes mm
-        docs    <- mapM (uncurry $ convFunctionType Env.empty) nts
+        docs    <- mapM (uncurry $ convFunctionTypeM Env.empty) nts
         let cExterns
                 |  not withPrelude
                 = []
@@ -99,68 +100,6 @@ convModuleM withPrelude pp mm@(ModuleCore{})
 
  | otherwise
  = throw $ ErrorNoTopLevelLetrec mm
-
-
--- Type -----------------------------------------------------------------------
--- | Convert a Salt type to C source text.
---   This is used to convert the types of function parameters and locally
---   defined variables. It only handles non-function types, as we don't
---   directly support higher-order functions or partial application in Salt.
-convTypeM :: KindEnv Name -> Type Name -> ConvertM a Doc
-convTypeM kenv tt
- = case tt of
-        TVar u
-         -> case Env.lookup u kenv of
-             Nothing            
-              -> throw $ ErrorUndefined u
-
-             Just k
-              | isDataKind k -> return $ text "Obj*"
-              | otherwise    
-              -> throw $ ErrorTypeInvalid tt
-
-        TCon{}
-         | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
-         , Just doc     <- convPrimTyCon tc
-         -> return doc
-
-         | TCon (TyConBound (UPrim NameObjTyCon _) _)   <- tt
-         -> return  $ text "Obj"
-
-
-        TApp{}
-         | Just (NamePrimTyCon PrimTyConPtr, [_, t2])   <- takePrimTyConApps tt
-         -> do  t2'     <- convTypeM kenv t2
-                return  $ t2' <> text "*"
-
-        TForall b t
-          -> convTypeM (Env.extend b kenv) t
-
-        _ -> throw $ ErrorTypeInvalid tt
-
-
--- | Convert a Salt function type to a C source prototype.
-convFunctionType 
-        :: KindEnv  Name
-        -> QualName Name        -- ^ Function name.
-        -> Type     Name        -- ^ Function type.
-        -> ConvertM a Doc
-
-convFunctionType kenv nFunc tFunc
- | TForall b t' <- tFunc
- = convFunctionType (Env.extend b kenv) nFunc t'
-
- | otherwise
- = do   -- Qualifiers aren't supported yet.
-        let QualName _ n = nFunc        
-        let nFun'        = text $ sanitizeGlobal (renderPlain $ ppr n)
-
-        let (tsArgs, tResult) = takeTFunArgResult tFunc
-
-        tsArgs'          <- mapM (convTypeM kenv) tsArgs
-        tResult'         <- convTypeM kenv tResult
-
-        return $ tResult' <+> nFun' <+> parenss tsArgs'
 
 
 -- Super definition -----------------------------------------------------------

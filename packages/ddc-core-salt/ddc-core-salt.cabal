@@ -46,6 +46,7 @@ Library
         DDC.Core.Lite.Profile
 
         DDC.Core.Salt.Convert.Base
+        DDC.Core.Salt.Convert.Type
         DDC.Core.Salt.Convert.Init
         DDC.Core.Salt.Convert.Prim
         DDC.Core.Salt.Name.Lit
