@@ -35,7 +35,7 @@ lexModuleWithOffside
         -> [Token (Tok String)]
 
 lexModuleWithOffside sourceName lineStart str
-        = applyOffside []
+        = applyOffside [] 
         $ addStarts
         $ dropComments 
         $ lexString sourceName lineStart str

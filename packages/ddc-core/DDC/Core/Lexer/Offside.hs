@@ -41,7 +41,9 @@ applyOffside [] (LexemeToken t : ts)
 
 -- When we see the top-level letrec then enter into the outer-most context.
 applyOffside [] (LexemeToken t1 : (LexemeStartBlock n) : ls)
-        | isToken t1 (KA KLetRec)
+        |   isToken t1 (KA KLetRec)
+         || isToken t1 (KA KExports)
+         || isToken t1 (KA KImports)
         = t1 : newCBra ls : applyOffside [n] ls 
 
 -- At top level without a context.
@@ -208,6 +210,8 @@ isBlockStart Token { tokenTok = tok }
         KA KOf          -> True
         KA KLetRec      -> True
         KA KWhere       -> True
+        KA KExports     -> True
+        KA KImports     -> True
         _               -> False
 
 

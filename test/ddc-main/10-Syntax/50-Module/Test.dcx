@@ -9,6 +9,7 @@ imports {
         Thing.whatever 
          with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5;
 }
+with
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 
 let     one = purify <read [rt] w1> in 
@@ -29,3 +30,35 @@ letrec {
          : Int r
          = addInt [:r rt r:] x one;
 };;
+
+
+-- Load the same module using the offside rule.
+:load..
+module Main
+exports
+        main    :: Unit -> Unit
+        double  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r
+imports 
+        Thing.whatever
+         with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5
+with
+letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
+
+let     one = purify <read [rt] w1> in 
+              1 [rt] ()  in
+
+letrec 
+        main (_ : Unit) : Unit
+         = letregion r0 in
+           ()
+
+        double  [r : %] (x : Int r) 
+                { Read r + Alloc r | Use r } 
+         : Int r
+         = mulInt [:r r r:] x (two [r] ())
+
+        thing   [r : %] (x : Int r) 
+                { Read r + Read rt + Alloc r | Use r + Use rt} 
+         : Int r
+         = addInt [:r rt r:] x one
+;;

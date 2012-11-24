@@ -1,16 +1,16 @@
 
 -- | Int primitives for 64-bit machines.
 module Int64
-exports {
-        boxInt    :: [r : %]. Int#   -> Ptr# r Obj;
-        unboxInt  :: [r : %]. Ptr# r Obj -> Int#;
-        addInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-        subInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-        mulInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-}
-imports {
-        allocRawSmall :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
-} 
+exports
+        boxInt    :: [r : %]. Int#   -> Ptr# r Obj
+        unboxInt  :: [r : %]. Ptr# r Obj -> Int#
+        addInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        subInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        mulInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+
+imports
+        allocRawSmall :: [r : %]. Tag# -> Nat# -> Ptr# r Obj
+
 with letrec 
 
 

@@ -1,0 +1,58 @@
+-- Load a module definition.
+module Main 
+exports {
+        double :: [r : %].Int r -(Read r + Alloc r | $0)> Int r;
+        main :: Unit -> Unit;
+} 
+imports {
+        two :: [r5 : %].Unit -(Alloc r5 | $0)> Int r5;
+} with
+letregion rt with {w1 : Const rt; w2 : Lazy rt}
+let one : Int rt
+      = purify <read [rt] w1> in
+        1 [rt] ()
+letrec {
+  main : Unit -> Unit
+    = \(_ : Unit).
+      letregion r0 in
+      ();
+  
+  double : [r : %].Int r -(Read r + Alloc r | Use r)> Int r
+    = /\(r : %).
+       \(x : Int r).
+      mulInt [r] [r] [r] x (two [r] ());
+  
+  thing : [r : %].Int r -(Read r + Read rt + Alloc r | Use r + Use rt)> Int r
+    = /\(r : %).
+       \(x : Int r). addInt [r] [rt] [r] x one
+}
+
+
+-- Load the same module using the offside rule.
+module Main 
+exports {
+        double :: [r : %].Int r -(Read r + Alloc r | $0)> Int r;
+        main :: Unit -> Unit;
+} 
+imports {
+        two :: [r5 : %].Unit -(Alloc r5 | $0)> Int r5;
+} with
+letregion rt with {w1 : Const rt; w2 : Lazy rt}
+let one : Int rt
+      = purify <read [rt] w1> in
+        1 [rt] ()
+letrec {
+  main : Unit -> Unit
+    = \(_ : Unit).
+      letregion r0 in
+      ();
+  
+  double : [r : %].Int r -(Read r + Alloc r | Use r)> Int r
+    = /\(r : %).
+       \(x : Int r).
+      mulInt [r] [r] [r] x (two [r] ());
+  
+  thing : [r : %].Int r -(Read r + Read rt + Alloc r | Use r + Use rt)> Int r
+    = /\(r : %).
+       \(x : Int r). addInt [r] [rt] [r] x one
+}

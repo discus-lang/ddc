@@ -1,12 +1,11 @@
 
 module Main
-exports {
-        main      :: [r : %]. Nat# -(!0 | Use r)> Ptr# r String# -(Read r + Alloc r | Use r)> Int#;
-}
-imports {
-        showNat   :: [r : %]. Nat# -> Ptr# r String#;
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#;
-}
+exports
+        main    :: [r : %]. Nat# -(!0 | Use r)> Ptr# r String# -(Read r + Alloc r | Use r)> Int#
+imports
+        showNat   :: [r : %]. Nat# -> Ptr# r String#
+        putStrLn  :: [r : %]. Ptr# r String# -> Void#
+
 with letrec
 
 
