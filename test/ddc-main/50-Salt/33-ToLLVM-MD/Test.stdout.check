@@ -102,7 +102,7 @@ l9.entry:
         %a.ptr       = inttoptr i64 %a.addr2 to i64*
         %a           = load i64* %a.ptr,    !tbaa !8
         %b           = add i64 %a, 1
-        %_v10.dummy  = call fastcc i64 @nothing (i64* %x) 
+        %_dummy10    = call fastcc i64 @nothing (i64* %x) 
         %c.addr1     = ptrtoint i64* %x to i64
         %c.addr2     = add i64 %c.addr1, 0
         %c.ptr       = inttoptr i64 %c.addr2 to i64*

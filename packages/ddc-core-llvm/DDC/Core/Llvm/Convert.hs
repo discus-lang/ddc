@@ -372,6 +372,27 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
 
          -- Assignment ------------------------------------
+
+         -- A statement of type void does not produce a value.
+         C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
+          | isVoidT t
+          -> do instrs'   <- convExpM ExpTop pp kenv tenv mdsup x1
+                convBodyM context kenv tenv mdsup blocks label
+                        (instrs >< instrs') x2
+
+         -- A non-void let-expression.
+         --   In C we can just drop a computed value on the floor, 
+         --   but the LLVM compiler needs an explicit name for it.
+         --   Add the required name then call ourselves again.
+         C.XLet a (C.LLet C.LetStrict (C.BNone t) x1) x2
+          | not $ isVoidT t
+          -> do 
+                n       <- newUnique
+                let b   = C.BName (A.NameVar ("_dummy" ++ show n)) t
+
+                convBodyM context kenv tenv mdsup blocks label instrs 
+                        (C.XLet a (C.LLet C.LetStrict b x1) x2)
+
          -- Variable assigment from a case-expression.
          C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) 
                                         (C.XCase _ xScrut alts)) 
@@ -397,7 +418,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                         Seq.empty
                         x2
 
-         -- Variable assignment from an expression.
+         -- Variable assignment from an non-case expression.
          C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) x1) x2
           -> do let tenv' = Env.extend b tenv
                 let n'    = A.sanitizeName n
@@ -407,23 +428,6 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                 instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
                 convBodyM context kenv tenv' mdsup blocks label (instrs >< instrs') x2
 
-         -- A statement that provides no value.
-         C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
-          | isVoidT t
-          -> do instrs'   <- convExpM ExpTop pp kenv tenv mdsup x1
-                convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
-
-         -- ISSUE #251 Fix nested case expressions that assign to nothing binders
-         --     This is another instance of this issue.
-         --     Variable assignment from an unsed binder.
-         --     We need to invent a dummy binder as LLVM needs some name for it.
-         --     Should instead do an initial pass to add fresh names to replace BNones.
-         --
-         C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
-          -> do let t'    =  convertType pp kenv t
-                dst       <- newUniqueNamedVar "dummy" t'
-                instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
-                convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Letregions ------------------------------------
          C.XLet _ (C.LLetRegions b _) x2
@@ -452,6 +456,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                  $   text "Invalid body statement " 
                  <$> ppr xx
  
+
 -- Exp ------------------------------------------------------------------------
 -- | What context we're doing this conversion in.
 data ExpContext
