@@ -180,7 +180,7 @@ makeLets arities f0 args@( (_, annot) : _)
                                 | (xArg, a, liftMe, _)      <- argss]
 
                 -- Construct the new function application.
-                --  TODO: can handle over-application here.
+                --  ISSUE #278 can handle over-application here.
                 xFunApps = makeXAppsWithAnnots 
                                 (L.liftX (length xsLets) xFun)
                                 xsArgs'              
