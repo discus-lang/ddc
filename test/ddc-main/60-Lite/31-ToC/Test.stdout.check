@@ -87,11 +87,11 @@ Obj* singleton (Obj* _x)
 
         _x1          = allocBoxed(0, 1);
         _x2          = allocBoxed(0, 0);
-        setFieldOfBoxed (_x1, 0, _x2);
+        setFieldOfBoxed(_x1, 0, _x2);
         _x0          = _x1;
         _x3          = allocBoxed(1, 2);
-        setFieldOfBoxed (_x3, 0, _x);
-        setFieldOfBoxed (_x3, 1, _x0);
+        setFieldOfBoxed(_x3, 0, _x);
+        setFieldOfBoxed(_x3, 1, _x0);
         return _x3;
 }
 

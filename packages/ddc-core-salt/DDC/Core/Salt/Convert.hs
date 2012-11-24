@@ -292,7 +292,7 @@ data Context
         -- | In a nested context, like in the right of a let-binding.
         --   The expression should produce a value that we assign to this
         --   variable.
-        | ContextNest Name (Type Name)          
+        | ContextNest (Bind Name)        
         deriving Show
 
 
@@ -334,47 +334,51 @@ convBlockM context pp kenv tenv xx
          , isControlPrim p || isCallPrim p
          -> convPrimCallM pp kenv tenv p xs
 
-         -- In a nested context we assign the result value to the 
-         -- provided variable.
-         | ContextNest n _  <- context
+        _ 
+         -- In a nested context with a BName binder,
+         --   assign the result value to the provided variable.
+         | isRValue xx
+         , ContextNest (BName n _)  <- context
          -> do  xx'     <- convRValueM pp kenv tenv xx
                 let n'  = text $ sanitizeLocal (renderPlain $ ppr n)
                 return  $ vcat 
                        [ fill 12 n' <+> equals <+> xx' <> semi ]
 
-        -- ISSUE #251: Fix nested case expressions that assign to nothing binders
-        --   Change the Name field of ContextNext to a Bind so we can use
-        --   the BNone form.
-        --
-        -- Binding from a case-expression.
-        XLet _ (LLet LetStrict b@(BName n t) x1@XCase{}) x2
-         -> do  x1'     <- convBlockM (ContextNest n t) pp kenv tenv x1
+         -- In a nested context with a BNone binder,
+         --   just drop the result on the floor.
+         | isRValue xx
+         , ContextNest  (BNone _)   <- context
+         -> do  xx'     <- convRValueM pp kenv tenv xx
+                return  $ vcat 
+                       [ xx' <> semi ]
 
+        -- Binding from a case-expression.
+        XLet _ (LLet LetStrict b x1@XCase{}) x2
+         -> do  
+                -- Convert the right hand side in a nested context.
+                --  The ContextNext holds the var to assign the result to.
+                x1'     <- convBlockM (ContextNest b) pp kenv tenv x1
+
+                -- Convert the rest of the function.
                 let tenv' = Env.extend b tenv 
-                x2'     <- convBlockM context           pp kenv tenv' x2
+                x2'     <- convBlockM context         pp kenv tenv' x2
 
                 return  $ vcat
                         [ x1' <> semi
                         , x2' ]
 
-        -- Variable assignment from an r-value.
-        XLet _ (LLet LetStrict (BName (NameVar n) _) x1) x2
+        -- Binding from an r-value.
+        XLet _ (LLet LetStrict b x1) x2
          -> do  x1'     <- convRValueM pp kenv tenv x1
                 x2'     <- convBlockM  context pp kenv tenv x2
-                let n'  = text $ sanitizeLocal n
+
+                let dst = case b of
+                           BName (NameVar n) _ 
+                             -> fill 12 (text $ sanitizeLocal n) <+> equals <> space
+                           _ -> empty
 
                 return  $ vcat
-                        [ fill 12 n' <+> equals <+> x1' <> semi
-                        , x2' ]
-
-        -- Non-binding statement.
-        --  We just drop any returned value on the floor.
-        XLet _ (LLet LetStrict (BNone _) x1) x2
-         -> do  x1'     <- convStmtM  context pp kenv tenv x1
-                x2'     <- convBlockM context pp kenv tenv x2
-
-                return  $ vcat
-                        [ x1' <> semi
+                        [ dst <> x1' <> semi
                         , x2' ]
 
         -- Ditch letregions.
@@ -516,42 +520,6 @@ convDaConName nn
         _                  -> Nothing
 
 
--- Stmt -----------------------------------------------------------------------
--- | Convert an effectful statement to C source text.
-convStmtM 
-        :: Show a 
-        => Context
-        -> Platform
-        -> KindEnv Name
-        -> TypeEnv Name 
-        -> Exp a Name 
-        -> ConvertM a Doc
-
-convStmtM context pp kenv tenv xx
- = case xx of
-        -- Primop application.
-        XApp{}
-          |  Just (NamePrimOp p, xs) <- takeXPrimApps xx
-          -> convPrimCallM pp kenv tenv p xs
-
-        -- Super application.
-        XApp{}
-         |  Just (XVar _ (UName n), args)  <- takeXApps xx
-         ,  NameVar nTop <- n
-         -> do  let nTop'       = sanitizeGlobal nTop
-
-                args'           <- mapM (convRValueM pp kenv tenv)
-                                $  filter keepFunArgX args
-
-                return  $ text nTop' <+> parenss args'
-
-        -- Ditch casts.
-        XCast _ _ x
-         -> convStmtM context pp kenv tenv x
-
-        _ -> throw $ ErrorStmtInvalid xx
-
-
 -- RValue ---------------------------------------------------------------------
 -- | Convert an r-value to C source text.
 convRValueM 
@@ -608,6 +576,18 @@ convRValueM pp kenv tenv xx
          -> convRValueM pp kenv tenv x
 
         _ -> throw $ ErrorRValueInvalid xx
+
+
+-- | Check if some expression is an r-value, 
+--   meaning a variable, constructor, application or cast of one.
+isRValue :: Exp a Name -> Bool
+isRValue xx
+ = case xx of
+        XVar{}          -> True
+        XCon{}          -> True
+        XApp{}          -> True
+        XCast _ _ x     -> isRValue x
+        _               -> False
 
 
 -- | We don't need to pass types and witnesses to top-level supers.
@@ -691,15 +671,15 @@ convPrimCallM pp kenv tenv p xs
         PrimStore op
          -> do  let op'  = convPrimStore op
                 xs'     <- mapM (convRValueM pp kenv tenv) 
-                        $  filter (keepArgX kenv) xs
+                        $  filter (keepPrimArgX kenv) xs
                 return  $ op' <> parenss xs'
 
         _ -> throw $ ErrorPrimCallInvalid p xs
 
 
--- | Throw away region arguments.
-keepArgX :: KindEnv Name -> Exp a Name -> Bool
-keepArgX kenv xx
+-- | Ditch away region arguments.
+keepPrimArgX :: KindEnv Name -> Exp a Name -> Bool
+keepPrimArgX kenv xx
  = case xx of
         XType (TVar u)
          |  Just k       <- Env.lookup u kenv

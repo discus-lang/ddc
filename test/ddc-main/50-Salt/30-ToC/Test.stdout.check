@@ -48,7 +48,7 @@ int_t main (nat_t _argc, addr_t _argv)
         _x2          = addInt(_x, _x);
         _x0          = unboxInt(_x2);
         _str         = showInt(_x0);
-        putStrLn (_str);
+        putStrLn(_str);
         return 0;
 }
 
@@ -105,8 +105,26 @@ int_t main (nat_t _argc, addr_t _argv)
         _ret         = addDistinct(_x1, _x2);
         _x0          = unboxInt(_ret);
         _str         = showInt(_x0);
-        putStrLn (_str);
+        putStrLn(_str);
         return 0;
+}
+
+
+
+-- Case expression that assignes to a BNone binder.
+nat_t thing (nat_t _x)
+{
+        
+
+        switch (_x)
+        { case 3:
+          {     4;;
+          }
+          default:
+          {     5;;
+          }
+        };
+        return 5;
 }
 
 

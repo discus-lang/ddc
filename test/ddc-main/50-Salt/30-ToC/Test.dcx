@@ -92,3 +92,13 @@ main (argc : Nat#) (argv : Addr#) : Int#
      return# [Int#] 0i#;
 };;
 
+
+-- Case expression that assignes to a BNone binder.
+:to-c..
+module Main with letrec
+thing (x : Nat#) : Nat#
+ = let  _       = case x of
+                        3#      -> 4#
+                        _       -> 5#
+   in   5#;;
+

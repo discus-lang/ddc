@@ -25,6 +25,9 @@ data Error a
         = ErrorUndefined
         { errorVar      :: Bound Name }
 
+        -- | Binder has BNone form, binds no variable.
+        | ErrorBindNone
+
         -- | Modules must contain a top-level letrec.
         | ErrorNoTopLevelLetrec
         { errorModule   :: Module a Name }
@@ -77,6 +80,9 @@ instance (Show a, Pretty a) => Pretty (Error a) where
   = case err of
         ErrorUndefined var
          -> vcat [ text "Undefined variable"                    <+> ppr var ]
+
+        ErrorBindNone
+         -> vcat [ text "Found a _ binder"]
 
         ErrorNoTopLevelLetrec _mm
          -> vcat [ text "Module does not have a top-level letrec." ]
