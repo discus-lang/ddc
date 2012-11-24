@@ -14,6 +14,9 @@ data Feature
         -- | Partially applied primitive operators.
         | PartialPrims
 
+        -- | Partially applied functions
+        | PartialApplication
+
         -- | Function application where the thing being applied
         --   is not a variable.
         --   Most backend languages (like LLVM) don't support this.

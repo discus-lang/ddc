@@ -94,6 +94,13 @@ instance Complies Exp where
          ,  not $ has featuresUnboundLevel0Vars 
          -> throw $ ErrorUndefinedVar n
 
+         |  args        <- fromMaybe 0 $ contextFunArgs context
+         ,  Just t      <- Env.lookup u tenv
+         ,  arity       <- arityOfType t
+         ,  args < arity
+         ,  not $ has featuresPartialApplication
+         -> throw $ ErrorUnsupported PartialApplication
+
          | otherwise
          ->     return (Set.empty, Set.singleton n)
 
@@ -137,7 +144,6 @@ instance Complies Exp where
                 return (tUsed', vUsed)
 
         -- value and witness abstraction --------
-        -- ISSUE #270: Compliance check for nested functions
         XLam _ b x
          | contextAbsBody context
          , not $ has featuresNestedFunctions

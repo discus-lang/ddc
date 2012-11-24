@@ -1,0 +1,18 @@
+
+-- Error: Partial application.
+--   This is really a test of the Salt fragment checker.
+--   We don't have a lambda lifter yet, to converting this code to C will
+--   try to use partial application at Salt level, which that language
+--   does not support.
+ok
+Error in transformed module.
+  Unsupported feature: PartialApplication
+
+
+-- Error: Partial application at unboxed types.
+--   We allow this in the Lite language, and generate the Salt code for it, 
+--   but this is not part of the Salt language.
+Error in transformed module.
+  Unsupported feature: PartialApplication
+
+

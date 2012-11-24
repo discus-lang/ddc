@@ -209,17 +209,6 @@ bar (_ : Unit) : Word64#
    do   foo [:r1 r2 r3:] <w1> <w2> ();;
 
 
--- Partial application at unboxed types.
---  We allow this in the Lite language, and generate the Salt code for it, 
---  but the current backends will give an user error if we try to produce
---  C or LLVM code for it.
-:to-salt..
-module Test with letrec
-foo2 (x : Nat#) (y : Nat#) : Nat#
- = let foo1     = foo2 2#
-   in  foo1 3#;;
-
-
 -- Error: cannot instantiate a data type variable at an unboxed type.
 --  This produce a fragment error from the Salt compilance checker.
 --  We could compile this code by forcing specialisation for id before we

@@ -105,10 +105,9 @@ Error loading module
 
 
 -- Error: partial application not supported in Salt.
-Fragment violation when converting Salt module to C code.
-  Invalid type for local variable.
-  
-  with: Nat# -> Nat#
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: PartialApplication
 
 
 -- Error: cannot instantiate a type variable at an unboxed type.

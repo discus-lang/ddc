@@ -58,6 +58,7 @@ data Features
         = Features
         { featuresClosureTerms          :: Bool
         , featuresPartialPrims          :: Bool
+        , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
         , featuresNestedFunctions       :: Bool
         , featuresLazyBindings          :: Bool
@@ -76,6 +77,7 @@ zeroFeatures
         = Features
         { featuresClosureTerms          = False
         , featuresPartialPrims          = False
+        , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
         , featuresNestedFunctions       = False
         , featuresLazyBindings          = False
@@ -93,6 +95,7 @@ setFeature feature val features
  = case feature of
         ClosureTerms            -> features { featuresClosureTerms         = val }
         PartialPrims            -> features { featuresPartialPrims         = val }
+        PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }
         NestedFunctions         -> features { featuresNestedFunctions      = val }
         LazyBindings            -> features { featuresLazyBindings         = val }
@@ -102,5 +105,4 @@ setFeature feature val features
         NameShadowing           -> features { featuresNameShadowing        = val }
         UnusedBindings          -> features { featuresUnusedBindings       = val }
         UnusedMatches           -> features { featuresUnusedMatches        = val }
-
 

@@ -402,19 +402,6 @@ letrec {
 }
 
 
--- Partial application at unboxed types.
---  We allow this in the Lite language, and generate the Salt code for it, 
---  but the current backends will give an user error if we try to produce
---  C or LLVM code for it.
-module Test with
-letrec {
-  foo2 : Nat# -> Nat# -> Nat#
-    = \(x y : Nat#).
-      let foo1 : Nat# -> Nat# = foo2 2# in
-      foo1 3#
-}
-
-
 -- Error: cannot instantiate a data type variable at an unboxed type.
 --  This produce a fragment error from the Salt compilance checker.
 --  We could compile this code by forcing specialisation for id before we

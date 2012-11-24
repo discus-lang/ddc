@@ -32,6 +32,7 @@ features
         = Features
         { featuresClosureTerms          = True
         , featuresPartialPrims          = False
+        , featuresPartialApplication    = True
         , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
         , featuresLazyBindings          = True
