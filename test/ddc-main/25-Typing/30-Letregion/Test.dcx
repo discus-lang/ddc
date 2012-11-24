@@ -81,11 +81,20 @@ letregion r2 with { w1: Distinct2 r1 r2 } in ();;
 letregion r1                             in
 letregion r2 with { w1: Distinct2 r2 r2 } in ();;
 
+
 -- Parse letregion with witness for multi-way distinctness
 :check..
 letregions r1 r2 r3 with { w : Distinct3 r1 r2 r3 } in ();;
+
 
 -- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
 :check..
 letregion  r1 in
 letregions r2 r3 with {w : Distinct3 r1 r2 r3} in ();;
+
+
+-- #255: Letregions with deBruijn indices
+:check..
+letregions ^ ^ with { w : Distinct ^1 ^0 } in ();;
+
+

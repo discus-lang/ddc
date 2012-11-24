@@ -383,36 +383,35 @@ checkExpM' config kenv tenv xx@(XLet a lts x2)
 
 
 -- letregion --------------------------------------
-checkExpM' config kenv tenv xx@(XLet a (LLetRegions b bs) x)
- = case (takeSubstBoundsOfBinds b) of
-     Nothing -> checkExpM config kenv tenv x     
-     Just us
-      -> do
+checkExpM' config kenv tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
+ = case takeSubstBoundsOfBinds bsRgn of
+    []   -> checkExpM config kenv tenv x     
+    us   -> do
         -- Check the type on the region binders.
-        let ks   = map typeOfBind b
+        let ks   = map typeOfBind bsRgn
         mapM_ (checkTypeM config kenv) ks
 
         -- The binders must have region kind.
         when (any (not . isRegionKind) ks) 
-         $ throw $ ErrorLetRegionsNotRegion xx b ks
+         $ throw $ ErrorLetRegionsNotRegion xx bsRgn ks
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
-        let rebounds = filter (flip Env.memberBind kenv) b
+        let rebounds = filter (flip Env.memberBind kenv) bsRgn
         when (not $ null rebounds)
          $ throw $ ErrorLetRegionsRebound xx rebounds
         
         -- Check the witness types.
-        let kenv'       = Env.extends b kenv
-        let tenv'       = Env.lift 1 tenv
-        mapM_ (checkTypeM config kenv') $ map typeOfBind bs
+        let kenv'       = Env.extends bsRgn kenv
+        let tenv'       = Env.lift 1 tenv                               -- lift by 1 is wrong
+        mapM_ (checkTypeM config kenv') $ map typeOfBind bsWit
 
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM kenv xx us bs
+        checkWitnessBindsM kenv xx us bsWit
 
         -- Check the body expression.
-        let tenv2       = Env.extends bs tenv'
+        let tenv2       = Env.extends bsWit tenv'
         (xBody', tBody, effs, clo)  <- checkExpM config kenv' tenv2 x
 
         -- The body type must have data kind.
@@ -423,7 +422,7 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegions b bs) x)
         -- The bound region variable cannot be free in the body type.
         let fvsT         = freeT Env.empty tBody
         when (any (flip Set.member fvsT) us)
-         $ throw $ ErrorLetRegionFree xx b tBody
+         $ throw $ ErrorLetRegionFree xx bsRgn tBody
         
         -- Delete effects on the bound region from the result.
         let delEff es u = Sum.delete (tRead  (TVar u))
@@ -436,12 +435,12 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegions b bs) x)
         -- Mask closure terms due to locally bound region vars.
         let cutClo c r  = mapMaybe (cutTaggedClosureT r) c
         let c2_cut      = Set.fromList 
-                        $ foldl cutClo (Set.toList clo) b
+                        $ foldl cutClo (Set.toList clo) bsRgn
 
         returnX a
-                (\z -> XLet z (LLetRegions b bs) xBody')
-                (lowerT 1 tBody)
-                (lowerT 1 effs')
+                (\z -> XLet z (LLetRegions bsRgn bsWit) xBody')
+                (lowerT 1 tBody)                                        -- lower by 1 is wrong
+                (lowerT 1 effs')                                        -- lower by 1 is wrong
                 c2_cut
 
 

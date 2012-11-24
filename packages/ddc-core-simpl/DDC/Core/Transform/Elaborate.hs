@@ -77,7 +77,7 @@ elaborateLets us lts
         LRec bs    -> (us, LRec $ map (second down) bs)
 
         LLetRegions brs bws
-         |  Just urs@(_:_) <- takeSubstBoundsOfBinds brs
+         |  urs@(_:_) <- takeSubstBoundsOfBinds brs
          -> let 
                 -- Mutable regions bound here.
                 rsMutable       = catMaybes 

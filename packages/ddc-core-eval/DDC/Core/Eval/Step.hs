@@ -300,7 +300,7 @@ step store (XLet _ (LRec bxs) x2)
 -- (EvCreateRegion)
 -- Create a new region.
 step store (XLet a (LLetRegions bRegions bws) x)
-        | Just uRegions <- takeSubstBoundsOfBinds bRegions
+        | uRegions <- takeSubstBoundsOfBinds bRegions
 
         -- Allocate a new region handle for the bound region.
         , (store1, uHandle@(UPrim (NameRgn rgn) _))

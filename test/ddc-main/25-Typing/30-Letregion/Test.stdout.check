@@ -141,12 +141,14 @@ When checking expression.
   with: letregion r2 with {w1 : Distinct2 r2 r2} in
         ()
 
+
 -- Parse letregion with witness for multi-way distinctness
 letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
 ()
 :*: Unit
 :!: !0
 :$: $0
+
 
 -- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
 When checking expression.
@@ -156,3 +158,13 @@ When checking expression.
   
   with: letregions r2 r3 with {w : Distinct3 r1 r2 r3} in
         ()
+
+
+-- #255: Letregions with deBruijn indices
+letregions ^ ^ with {w : Distinct2 ^1 ^0} in
+()
+:*: Unit
+:!: !0
+:$: $0
+
+

@@ -84,7 +84,6 @@ module DDC.Type.Compounds
         , tConData0,    tConData1)
 where
 import DDC.Type.Exp
-import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
 
 
@@ -191,13 +190,14 @@ takeSubstBoundOfBind bb
 
 
 -- | Convert some `Bind`s to `Bounds`
-takeSubstBoundsOfBinds :: [Bind n] -> Maybe [Bound n]
-takeSubstBoundsOfBinds bbs
- = let us = map takeSubstBoundOfBind bbs
-   in  case us of
-            [Nothing] -> Nothing
-            _         -> Just    $ catMaybes us
-            
+takeSubstBoundsOfBinds :: [Bind n] -> [Bound n]
+takeSubstBoundsOfBinds bs
+ = go 0 bs
+ where  go _level []               = []
+        go level (BName n _ : bs') = UName n   : go level bs'
+        go level (BAnon _   : bs') = UIx level : go (level + 1) bs'
+        go level (BNone _   : bs') =             go level bs'
+
             
 -- Variables ------------------------------------------------------------------
 -- | Construct a deBruijn index.
