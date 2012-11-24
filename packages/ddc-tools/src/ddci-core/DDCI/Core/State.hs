@@ -166,7 +166,10 @@ getDriverConfigOfState state
          , D.configSimplSalt             = stateSimplSalt  state
          , D.configBuilder               = builder
          , D.configSuppressCoreImports   = Set.member SuppressImports (stateModes state)
-         , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) }
+         , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) 
+         , D.configKeepLlvmFiles         = False
+         , D.configKeepSeaFiles          = False
+         , D.configKeepAsmFiles          = False }
 
 
 -- | Holds platform independent builder info.

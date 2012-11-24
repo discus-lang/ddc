@@ -53,7 +53,7 @@ import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Llvm.Module                as Llvm
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
-
+import System.Directory
 
 -- Error ----------------------------------------------------------------------
 data Error
@@ -315,6 +315,7 @@ data PipeSalt a where
                 -> FilePath             --  Intermediate C file.
                 -> FilePath             --  Object file.
                 -> Maybe FilePath       --  Link into this exe file
+                -> Bool                 --  Keep intermediate .c files
                 -> PipeSalt a
 
 deriving instance Show a => Show (PipeSalt a)
@@ -355,7 +356,9 @@ pipeSalt mm pp
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 
-        PipeSaltCompile platform builder cPath oPath mExePath
+        PipeSaltCompile 
+                platform builder cPath oPath mExePath
+                keepSeaFiles
          -> case Salt.seaOfSaltModule True platform mm of
              Left errs
               -> error $ show errs
@@ -374,6 +377,10 @@ pipeSalt mm pp
                        -> do buildLdExe builder oPath exePath
                              return ())
 
+                    -- Remove intermediate .c files if we weren't asked for them.
+                    when (not keepSeaFiles)
+                     $ removeFile cPath
+
                     return []
 
 
@@ -387,7 +394,9 @@ data PipeLlvm
         , pipeFileLlvm          :: FilePath
         , pipeFileAsm           :: FilePath
         , pipeFileObject        :: FilePath
-        , pipeFileExe           :: Maybe FilePath }
+        , pipeFileExe           :: Maybe FilePath 
+        , pipeKeepLlvmFiles     :: Bool 
+        , pipeKeepAsmFiles      :: Bool }
         deriving (Show)
 
 
@@ -404,7 +413,9 @@ pipeLlvm mm pp
         PipeLlvmPrint sink
          ->     pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLlvmCompile builder llPath sPath oPath mExePath
+        PipeLlvmCompile 
+                builder llPath sPath oPath mExePath
+                keepLlvmFiles keepAsmFiles
          -> do  -- Write out the LLVM source file.
                 let llSrc       = renderIndent $ ppr mm
                 writeFile llPath llSrc
@@ -417,10 +428,20 @@ pipeLlvm mm pp
 
                 -- Link .o file into an executable if we were asked for one.      
                 (case mExePath of
-                  Nothing -> return ()
+                  Nothing 
+                   -> return ()
+
                   Just exePath
                    -> do buildLdExe builder oPath exePath
                          return ())
+
+                -- Remove LLVM IR files if we weren't asked for them.
+                when (not keepLlvmFiles)
+                 $ removeFile llPath
+
+                -- Remove Asm IR files if we weren't asked for them.
+                when (not keepAsmFiles)
+                 $ removeFile sPath
 
                 return []
 

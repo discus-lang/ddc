@@ -97,6 +97,11 @@ data Config
           -- | Default size of heap for compiled program.
         , configRuntimeHeapSize :: Integer
 
+          -- Intermediates -------------
+        , configKeepLlvmFiles   :: Bool
+        , configKeepSeaFiles    :: Bool
+        , configKeepAsmFiles    :: Bool
+
           -- Debugging -----------------
           -- | Dump intermediate representations.
         , configDump            :: Bool }
@@ -123,6 +128,11 @@ defaultConfig
 
           -- Runtime ------------------
         , configRuntimeHeapSize = 65536
+
+          -- Intermediates ------------
+        , configKeepLlvmFiles   = False
+        , configKeepSeaFiles    = False
+        , configKeepAsmFiles    = False
 
           -- Debugging ----------------
         , configDump            = False }

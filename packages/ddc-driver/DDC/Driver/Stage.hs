@@ -48,14 +48,14 @@ data Config
         { -- | Dump intermediate code.
           configDump            :: Bool
 
-          -- | Simplifiers to apply to intermediate code.
+          -- | Simplifiers to apply to intermediate code
         , configSimplLite       :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
         , configSimplSalt       :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
 
-          -- | Backend code generator to use.
+          -- | Backend code generator to use
         , configViaBackend              :: ViaBackend
 
-          -- | Runtime system configuration.
+          -- | Runtime system configuration
         , configRuntime                 :: Salt.Config
 
           -- | The builder to use for the target architecture
@@ -64,14 +64,23 @@ data Config
           -- | Suppress imports in Core modules
         , configSuppressCoreImports     :: Bool
 
-          -- | Suppress the #import prelude in C modules.
+          -- | Suppress the #import prelude in C modules
         , configSuppressHashImports     :: Bool 
 
-          -- | Override output file.
+          -- | Override output file
         , configOutputFile              :: Maybe FilePath
 
-          -- | Override directory for build products.
+          -- | Override directory for build products
         , configOutputDir               :: Maybe FilePath
+
+          -- | Keep intermediate .ddc.ll files
+        , configKeepLlvmFiles           :: Bool
+
+          -- | Keep intermediate .ddc.c files
+        , configKeepSeaFiles            :: Bool
+
+          -- | Keep intermediate .ddc.s files
+        , configKeepAsmFiles            :: Bool
         }
 
 
@@ -233,7 +242,9 @@ stageCompileSalt config source filePath shouldLinkExe
                         oPath
                         (if shouldLinkExe 
                                 then Just exePath 
-                                else Nothing) ]]]]
+                                else Nothing) 
+                        (configKeepSeaFiles config)
+                        ]]]]
 
 -------------------------------------------------------------------------------
 -- | Convert Core Salt to LLVM.
@@ -283,7 +294,9 @@ stageCompileLLVM config _source filePath shouldLinkExe
           , pipeFileObject        = oPath
           , pipeFileExe           = if shouldLinkExe 
                                         then Just exePath 
-                                        else Nothing }
+                                        else Nothing 
+          , pipeKeepLlvmFiles     = configKeepLlvmFiles config
+          , pipeKeepAsmFiles      = configKeepAsmFiles  config }
 
 
 ------------------------------------------------------------------------------

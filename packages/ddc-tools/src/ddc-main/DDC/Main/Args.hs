@@ -20,13 +20,14 @@ parseArgs args config
         = return 
         $ config { configMode   = ModeHelp }
 
-        | "-make"      : file : rest <- args
+        | flag : file : rest <- args
+        , elem flag ["-make", "--make" ]
         = parseArgs rest
         $ setMode config $ ModeMake file
 
         -- Compilation --------------------------
-        | compile : file : rest <- args
-        , elem compile ["-c", "-compile"]
+        | flag : file : rest <- args
+        , elem flag ["-c", "-compile", "--compile"]
         = parseArgs rest
         $ setMode config $ ModeCompile file
 
@@ -82,6 +83,23 @@ parseArgs args config
         | "-to-llvm" : file : rest  <- args
         = parseArgs rest
         $ setMode config $ ModeToLLVM file
+
+        -- Intermediates ------------------------
+        | flag : rest   <- args
+        , elem flag ["keep-ll-files", "-keep-llvm-files" ]
+        = parseArgs rest
+        $ config { configKeepLlvmFiles = True }
+
+        | flag : rest      <- args
+        , elem flag ["-keep-c-files", "keep-sea-files" ]
+        = parseArgs rest
+        $ config { configKeepSeaFiles = True }
+
+        | flag : rest      <- args
+        , elem flag ["-keep-s-files", "-keep-asm-files" ]
+        = parseArgs rest
+        $ config { configKeepAsmFiles = True }
+
 
         -- Debugging ----------------------------
         | "-dump"   : rest        <- args

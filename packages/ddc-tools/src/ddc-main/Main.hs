@@ -117,7 +117,10 @@ getDriverConfig config
                 , Driver.configSuppressCoreImports      = False
                 , Driver.configSuppressHashImports      = False
                 , Driver.configOutputFile               = configOutputFile config
-                , Driver.configOutputDir                = configOutputDir  config }
+                , Driver.configOutputDir                = configOutputDir  config 
+                , Driver.configKeepLlvmFiles            = configKeepLlvmFiles config
+                , Driver.configKeepSeaFiles             = configKeepSeaFiles  config
+                , Driver.configKeepAsmFiles             = configKeepAsmFiles  config }
 
 
 -- | Print errors to stderr and set the exit code.
