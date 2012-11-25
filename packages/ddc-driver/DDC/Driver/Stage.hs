@@ -139,13 +139,15 @@ stageSaltOpt config source pipes
  = PipeCoreSimplify 
 	fragmentSalt
         (0 :: Int) 
-        (configSimplSalt config <> normalizeSalt)
-        ( PipeCoreOutput (dump config source "dump.salt-opt.dcl")
-        : pipes)
+        (configSimplSalt config)        
+        [ PipeCoreOutput  (dump config source "dump.salt-opt.dcl")
+        , PipeCoreReCheck fragmentSalt pipes ]
+
+        -- TODO: Normalise after dumping opt version.
 
  where  -- The code fed to later stages must be normalized,
         -- so ensure out simplifications are preserving this.
-        normalizeSalt
+        _normalizeSalt
          = S.anormalize
                 (makeNamifier Salt.freshT)      
                 (makeNamifier Salt.freshX)

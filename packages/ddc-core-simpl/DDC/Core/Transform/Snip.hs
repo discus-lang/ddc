@@ -168,12 +168,21 @@ makeLets arities f0 args@( (_, annot) : _)
                 argss    = splitArgs xsArgs
 
                 -- Collect up the new let-bindings.
-                xsLets   = [ (x, a)      | (_,    a, _,       Just x) <- argss]
+                xsLets   = [ (x, a)  
+                                | (_,    a, _,       Just x) <- argss]
+
+                -- Lift each binding over the binders added before it.
+                xsLets'  = [ (L.liftX n x, a)
+                                | (x, a)        <- xsLets
+                                | (n :: Int)    <- [0..] ]
+
+                -- The total number of new let-bindings.
+                nLets   = length xsLets'
 
                 -- Collect up the new function arguments.
                 --  If the argument was already atomic then we have to lift
                 --  its indices past the new let bindings we're about to add.
-                depth'   = depth + length xsLets
+                depth'   = depth + nLets
                 xsArgs'  = [if liftMe 
                                 then (L.liftX depth' xArg, a)
                                 else (xArg, a)
@@ -182,14 +191,15 @@ makeLets arities f0 args@( (_, annot) : _)
                 -- Construct the new function application.
                 --  ISSUE #278 can handle over-application here.
                 xFunApps = makeXAppsWithAnnots 
-                                (L.liftX (length xsLets) xFun)
+                                (L.liftX nLets xFun)
                                 xsArgs'              
 
                 -- Wrap the function application in the let-bindings
                 -- for its arguments.
            in   foldr (\(x, a) x' -> XLet a x x')
                         xFunApps
-                        [ (LLet LetStrict (BAnon tBot') x, a) | (x, a) <- xsLets ]
+                        [ (LLet LetStrict (BAnon tBot') x, a) 
+                                | (x, a) <- xsLets' ]
 
 
 -- | Sort function arguments into either the atomic ones, 

@@ -69,3 +69,15 @@ in  (id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int
         add
         (2 [R0#] ())
         (3 [R0#] ());;
+
+
+-- Function applied to several nested arguments with deBruijn binders.
+:set lang Salt
+:set trans Snip
+:trans..
+(/\(^ : %)./\(^ : *).
+ \(^ : Ptr# ^1 Obj).\(^ : Nat#).\(^ : ^0).
+    write# [^0] (takePtr# [^1] [Obj] ^2)
+                (add# [Nat#] 8#
+                        (shl# [Nat#] ^1 (size2# [Addr#]))) ^0);;
+

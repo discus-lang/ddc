@@ -106,3 +106,18 @@ let ^ : Int R0# = 2 [R0#] () in
 let ^ : Int R0# = 3 [R0#] () in
 id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add ^1 ^0
 5
+
+
+-- Function applied to several nested arguments with deBruijn binders.
+ok
+ok
+/\(^ : %)./\(^ : *).
+ \(^ : Ptr# ^1 Obj).\(^ : Nat#).\(^ : ^0).
+let ^ : Addr# = takePtr# [^1] [Obj] ^2 in
+let ^ : Nat#
+      = let ^ : Nat#
+              = let ^ : Nat# = size2# [Addr#] in
+                shl# [Nat#] ^3 ^0 in
+        add# [Nat#] 8# ^0 in
+write# [^0] ^1 ^0 ^2
+
