@@ -153,45 +153,48 @@ makeLets arities f0 args@( (_, annot) : _)
         make a xFun xsArgs
          -- The function part is already atomic.
          | isAtom xFun
-         = splitLets 0 xFun xsArgs
+         = splitLets xFun xsArgs
 
          -- The function part is not atomic, 
          --  so we need to add an outer-most let-binding for it.
          | otherwise
          = XLet a (LLet LetStrict (BAnon tBot') xFun)
-                  (splitLets 1 (XVar a (UIx 0)) xsArgs)
+                  (splitLets (XVar a (UIx 0)) 
+                             [ (L.liftX 1 x, a') | (x, a') <- xsArgs])
 
-
-        splitLets (depth :: Int) xFun xsArgs
+        splitLets xFun xsArgs
          = let  -- Split arguments into the already atomic ones,
                 --  and the ones we need to introduce let-expressions for.
                 argss    = splitArgs xsArgs
 
                 -- Collect up the new let-bindings.
                 xsLets   = [ (x, a)  
-                                | (_,    a, _,       Just x) <- argss]
+                                | (_,    a, _, Just x) <- argss]
 
-                -- Lift each binding over the binders added before it.
+                -- The total number of new let-bindings.
+                nLets    = length xsLets
+
+                -- Lift indices in each binding over the bindings before it.
                 xsLets'  = [ (L.liftX n x, a)
                                 | (x, a)        <- xsLets
                                 | (n :: Int)    <- [0..] ]
 
-                -- The total number of new let-bindings.
-                nLets   = length xsLets'
+                -- Lift indices in the function over the bindings before it.
+                xFun'    = L.liftX nLets xFun
 
                 -- Collect up the new function arguments.
                 --  If the argument was already atomic then we have to lift
                 --  its indices past the new let bindings we're about to add.
-                depth'   = depth + nLets
+                --  Otherwise it's a reference to one of the bindings directly.
                 xsArgs'  = [if liftMe 
-                                then (L.liftX depth' xArg, a)
+                                then (L.liftX nLets xArg, a)
                                 else (xArg, a)
                                 | (xArg, a, liftMe, _)      <- argss]
 
                 -- Construct the new function application.
                 --  ISSUE #278 can handle over-application here.
                 xFunApps = makeXAppsWithAnnots 
-                                (L.liftX nLets xFun)
+                                xFun'
                                 xsArgs'              
 
                 -- Wrap the function application in the let-bindings
