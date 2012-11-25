@@ -9,8 +9,6 @@ module DDC.Core.Transform.Rewrite.Match
 where
 import DDC.Core.Exp
 import DDC.Type.Transform.Crush
-import DDC.Type.Bind
-import DDC.Type.Compounds
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import qualified DDC.Type.Sum                   as Sum
@@ -85,7 +83,7 @@ match m bs (XCast _ c1 x1) (XCast _ c2 x2)
  | eqCast c1 c2	= match m bs x1 x2
 
 match (xs, tys) bs (XType t1) (XType t2)
- = do	tys' <- matchT bs tys t1 t2
+ = do	tys' <- matchT t1 t2 bs tys
 	return (xs, tys')
 
 match m _ (XWitness w1) (XWitness w2)
@@ -117,48 +115,22 @@ type Subst n  = Map.Map n (Type n)
 
 -- | Try to find a simple substitution between two types.
 --   Ignoring complicated effect sums.
+--   Also ignoring TForall - checkRewriteRule outlaws foralls in the template, so it's safe.
 --   Eg given template @a -> b@ and target @Int -> Float@,
 --   returns substitution:
 --      @{ a |-> Int, b |-> Float }@
 --
 matchT  :: Ord n
-        => VarSet n     -- ^ Only attempt to match these names.
-        -> Subst n      -- ^ Already matched (or @Map.empty@)
-        -> Type n       -- ^ Template type.
+        => Type n       -- ^ Template type.
         -> Type n       -- ^ Target type.
+        -> VarSet n     -- ^ Only attempt to match these names.
+        -> Subst n      -- ^ Already matched (or @Map.empty@)
         -> Maybe (Subst n)
 
-matchT vs subst t1 t2
-        = matchT' [] [] t1 t2 vs subst
-
-
-matchT' :: Ord n
-        => [Bind n]
-        -> [Bind n]
-        -> Type n   -> Type n
-        -> VarSet n -> Subst n
-        -> Maybe (Subst n)
-
-matchT' stack1 stack2 t1 t2 vs subst
+matchT t1 t2 vs subst
  = let  t1'     = unpackSumT $ crushSomeT t1
         t2'     = unpackSumT $ crushSomeT t2
    in case (t1', t2') of
-        (TVar u1,         TVar u2)
-         -- If variables are bound in foralls, no need to match.
-         -- Don't check their names - lookup bind depth instead.
-         -- 
-         -- I was calling equivT' here, but changing to matchT':
-         -- perhaps if we had
-         --     RULE [a : **] [b : a]. something [b] ...
-         -- then matching against
-         --     let i = Int in
-         --             something [i]
-         -- so to find a, we need to find i's type.
-         | Just (ix1, t1a)   <- getBindType stack1 u1
-         , Just (ix2, t2a)   <- getBindType stack2 u2
-         , ix1 == ix2
-         -> matchT' stack1 stack2 t1a t2a vs subst
-
         -- Constructor names must be equal.
         --
         -- Will this still work when it's a TyConBound - basically same as TVar?
@@ -166,21 +138,9 @@ matchT' stack1 stack2 t1 t2 vs subst
          | tc1 == tc2
          -> Just subst
 
-        -- Push binders on the stack as we enter foralls.
-        (TForall b11 t12, TForall b21 t22)
-         -> do
-                subst' <- matchT' stack1 stack2 (typeOfBind b11) (typeOfBind b21) vs subst
-                matchT' (b11 : stack1)
-                        (b21 : stack2)
-                        t12 t22
-                        vs subst'
-
         -- Decend into applications.
         (TApp t11 t12,    TApp t21 t22)
-         -> do
-                subst' <- matchT' stack1 stack2 t11 t21 vs subst
-                matchT' stack1 stack2 t12 t22 vs subst'
-        
+         -> matchT t11 t21 vs subst >>= matchT t12 t22 vs
 
         -- Sums are equivalent if all of their components are.
         --   Very simple matching, only consider equivalent if both have same
@@ -204,7 +164,7 @@ matchT' stack1 stack2 t1 t2 vs subst
          -> let ts1'      = Sum.toList ts1
                 ts2'      = Sum.toList ts2
 
-                go (l:ls) (r:rs) s = matchT' stack1 stack2 l r vs s >>= go ls rs
+                go (l:ls) (r:rs) s = matchT l r vs s >>= go ls rs
                 go _      _      s = Just s
             in  if   length ts1' /= length ts2'
                 then Nothing
@@ -212,19 +172,32 @@ matchT' stack1 stack2 t1 t2 vs subst
 
 
         -- If template is in variable set, push the target into substitution
-        -- But we might need to rename bound variables...
         (TVar (UName n), _)
-
-        -- TODO rewrite binders from t2 to t1 in t2'
          | Set.member n vs
          , Nothing <- Map.lookup n subst
          -> Just $ Map.insert n t2' subst
 
          | Set.member n vs
          , Just t1'' <- Map.lookup n subst
-         , TE.equivWithBindsT stack1 stack2 t1'' t2'
+         , TE.equivT t1'' t2'
          -> Just subst
 
+        -- Both are variables but it's not a template variable,
+        -- so it's only valid if they're equal.
+        (TVar (UName n), TVar v2)
+         | not $ Set.member n vs
+         , UName n == v2
+         -> Just subst
+
+        (TVar (UIx i), TVar v2)
+         | UIx i == v2
+         -> Just subst
+
+        (TVar (UPrim n t), TVar v2)
+         | UPrim n t == v2
+         -> Just subst
+
+        -- Otherwise the two are different
         (_, _)  -> Nothing
 
 
