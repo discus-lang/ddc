@@ -182,36 +182,34 @@ matchT' stack1 stack2 t1 t2 vs subst
                 matchT' stack1 stack2 t12 t22 vs subst'
         
 
-        -- ISSUE #279: Rewrite rule type matcher doesn't handle type sums
-        --   Unifying two arbitrary sums is probably too hard, but we could handle
-        --   simple specific cases, like matching a single variable against a sum,
-        --   or when the two sums share the same components.
-        --
-        --  Also fix the other TODOs in this function.
-        (TSum _,        TSum _)
-         -> Just subst
-
-        {-
         -- Sums are equivalent if all of their components are.
+        --   Very simple matching, only consider equivalent if both have same
+        --   length and in the same order.
+        --
+        -- > (Read + Write + a) `matchT` (Read + Write + Alloc)
+        -- > =
+        -- > Just { a |-> Alloc }
+        -- but
+        -- > (Read + a + Write) `matchT` (Read + Write + Alloc)
+        -- > =
+        -- > Nothing
+        -- and
+        -- > (Read + Write + Alloc + a) `matchT` (Read + Write + Alloc)
+        -- > =
+        -- > Nothing
+        -- despite a valid substitution existing as
+        -- > { a |-> !0 }
+        --
         (TSum ts1,        TSum ts2)
          -> let ts1'      = Sum.toList ts1
                 ts2'      = Sum.toList ts2
-                equiv     = equivT' stack1 depth1 stack2 depth2
 
-                -- If all the components of the sum were in the element
-                -- arrays then they come out of Sum.toList sorted
-                -- and we can compare corresponding pairs.
-                checkFast = and $ zipWith equiv ts1' ts2'
+                go (l:ls) (r:rs) s = matchT' stack1 stack2 l r vs s >>= go ls rs
+                go _      _      s = Just s
+            in  if   length ts1' /= length ts2'
+                then Nothing
+                else go ts1' ts2' subst
 
-                -- If any of the components use a higher kinded type variable
-                -- like (c : % ~> !) then they won't nessesarally be sorted,
-                -- so we need to do this slower O(n^2) check.
-                checkSlow = and [ or (map (equiv t1c) ts2') | t1c <- ts1' ]
-                         && and [ or (map (equiv t2c) ts1') | t2c <- ts2' ]
-
-            in  (length ts1' == length ts2')
-            &&  (checkFast || checkSlow)
-            -}
 
         -- If template is in variable set, push the target into substitution
         -- But we might need to rename bound variables...
