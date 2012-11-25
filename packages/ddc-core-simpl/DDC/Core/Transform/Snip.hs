@@ -36,7 +36,6 @@ instance Snip (Exp a) where
  snip bOver x = snipX bOver emptyArities x []
 
 
--- ANormal --------------------------------------------------------------------
 -- | Convert an expression into A-normal form.
 snipX 
         :: Ord n
@@ -69,7 +68,7 @@ enterX bOver arities xx
    in case xx of
         -- The snipX function shouldn't have called us with an XApp.
         XApp{}           
-         -> error "DDC.Core.Transform.ANormal: unexpected XApp"
+         -> error "DDC.Core.Transform.Snip: snipX shouldn't give us an XApp"
 
         -- leafy constructors
         XVar{}           -> xx
@@ -114,16 +113,16 @@ enterX bOver arities xx
          | isAtom e
          -> let  e'      = down [] e 
                  alts'   = map (\(AAlt pat ae) 
-                              -> AAlt pat (down (aritiesOfPat pat) ae)) alts 
+                               -> AAlt pat (down (aritiesOfPat pat) ae)) alts 
             in   XCase a e' alts'
 
          | otherwise
          -> let e'      = down [] e
                 alts'   = [AAlt pat (down (aritiesOfPat pat) ae) | AAlt pat ae <- alts]
 
-            in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) e')
+            in   XLet a (LLet LetStrict (BAnon (T.tBot T.kData)) e')
                         (XCase a (XVar a $ UIx 0) 
-                                (map (L.liftX 1) alts'))
+                                 (map (L.liftX 1) alts'))
 
         -- cast
         XCast a c e
@@ -148,6 +147,7 @@ buildNormalisedApp bOver arities f0 args@( (_, annot) : _)
  where
         tBot' = T.tBot T.kData
 
+        -- Lookup the arity of the function.
         f0Arity    
          = case f0 of
                 XVar _ b
@@ -287,6 +287,8 @@ isAtom xx
         _               -> False
 
 
+-- | Take the arity of an expression, 
+--   returning 0 for XType and XWitness.
 arityOfExp' :: Ord n => Exp a n -> Int
 arityOfExp' xx
  = case arityOfExp xx of
