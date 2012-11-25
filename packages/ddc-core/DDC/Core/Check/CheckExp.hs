@@ -30,7 +30,6 @@ import DDC.Type.Env                     (Env, KindEnv, TypeEnv)
 import DDC.Control.Monad.Check          (throw, result)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.Check         as T
 import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
@@ -1072,20 +1071,6 @@ checkWitnessBindM kenv xx uRegions bsWit bWit
           -> mapM_ checkWitnessArg ts
 
         _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
-
-
--------------------------------------------------------------------------------
--- | Check a type in the exp checking monad.
-checkTypeM :: (Ord n, Show n, Pretty n) 
-           => Config n 
-           -> Env n 
-           -> Type n 
-           -> CheckM a n (Kind n)
-
-checkTypeM config kenv tt
- = case T.checkType (configPrimDataDefs config) kenv tt of
-        Left err        -> throw $ ErrorType err
-        Right k         -> return k
 
 
 -------------------------------------------------------------------------------

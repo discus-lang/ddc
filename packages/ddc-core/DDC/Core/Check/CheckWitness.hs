@@ -9,7 +9,9 @@ module DDC.Core.Check.CheckWitness
         , typeOfWbCon
 
         , CheckM
-        , checkWitnessM)
+        , checkWitnessM
+
+        , checkTypeM)
 where
 import DDC.Core.Exp
 import DDC.Core.Pretty

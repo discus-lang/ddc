@@ -15,6 +15,7 @@ module DDC.Core.Transform.Rewrite.Rule
         , Side  (..))
 where
 import DDC.Core.Transform.Rewrite.Error
+import DDC.Core.Transform.TransformX
 import DDC.Core.Exp
 import DDC.Core.Pretty                          ()
 import DDC.Core.Collect
@@ -23,8 +24,10 @@ import DDC.Type.Pretty                          ()
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import Control.Monad
+import qualified DDC.Control.Monad.Check        as G
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Check.CheckWitness    as C
 import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.Check                 as T
@@ -218,7 +221,7 @@ checkRewriteRule config kenv tenv
 
         -- Check that the closure of the right is smaller than that
         -- of the left, and add a weakclo cast if nessesary.
-        cloWeak        <- makeClosureWeakening lhs_full' rhs'
+        cloWeak        <- makeClosureWeakening config kenv' tenv' lhs_full' rhs'
 
         -- Check that all the bound variables are mentioned
         -- in the left-hand side.
@@ -361,19 +364,24 @@ makeEffectWeakening k effLeft effRight onError
 --   in the left of a rule but not in the right.
 --
 makeClosureWeakening 
-        :: (Ord n, Pretty n)
-        => Exp (C.AnTEC a n) n      -- ^ Expression on the left of the rule.
+        :: (Ord n, Pretty n, Show n)
+        => C.Config n               -- ^ Type-checker config
+        -> T.Env n                  -- ^ Kind environment.
+        -> T.Env n                  -- ^ Type environment.
+        -> Exp (C.AnTEC a n) n      -- ^ Expression on the left of the rule.
         -> Exp (C.AnTEC a n) n      -- ^ Expression on the right of the rule.
         -> Either (Error a n) 
                   [Exp (C.AnTEC a n) n]
 
-makeClosureWeakening lhs rhs
- = let  supportLeft  = support Env.empty Env.empty lhs
+makeClosureWeakening config kenv tenv lhs rhs
+ = let  lhs'         = removeEffects config kenv tenv lhs
+        supportLeft  = support Env.empty Env.empty lhs'
         daLeft  = supportDaVar supportLeft
         wiLeft  = supportWiVar supportLeft
         spLeft  = supportSpVar supportLeft
 
-        supportRight = support Env.empty Env.empty rhs
+        rhs'         = removeEffects config kenv tenv rhs
+        supportRight = support Env.empty Env.empty rhs'
         daRight = supportDaVar supportRight
         wiRight = supportWiVar supportRight
         spRight = supportSpVar supportRight
@@ -389,6 +397,29 @@ makeClosureWeakening lhs rhs
 
          ++ [XType (TVar u)
                 | u <- Set.toList $ spLeft `Set.difference` spRight ]
+
+
+-- | Replace all effects with !0.
+--   This is done so that when @makeClosureWeakening@ finds free variables,
+--   it ignores those only mentioned in effects.
+removeEffects
+        :: (Ord n, Pretty n, Show n)
+        => C.Config n   -- ^ Type-checker config
+        -> T.Env n      -- ^ Kind environment
+        -> T.Env n      -- ^ Type environment
+        -> Exp a n      -- ^ Target expression - has all effects replaced with bottom.
+        -> Exp a n
+removeEffects config = transformUpX remove
+ where
+  remove kenv _tenv x
+
+   | XType et   <- x
+   , Right k    <- G.result $ C.checkTypeM config kenv et
+   , T.isEffectKind k
+   = XType $ T.tBot T.kEffect
+
+   | otherwise
+   = x
 
 
 -- Structural Checks ----------------------------------------------------------
