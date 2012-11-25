@@ -247,7 +247,7 @@ allocRaw
                                       bytesPayload)
 
         case check# bytesObj of
-         True#  -> allocRaw [r] tag bytesObj
+         True#  -> allocRaw_ok [r] tag bytesObj
          False# -> fail# [Ptr# r Obj]
 
 allocRaw_ok
