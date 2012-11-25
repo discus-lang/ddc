@@ -1,0 +1,10 @@
+
+
+-- Error: Exported signature does not match type of definition.
+ok
+Error loading module
+  When checking expression.
+    Type of exported value does not match type of definition.
+                 with binding: foo
+               type of export: Int r -(Read r | $0)> Int r
+           type of definition: Int r -> Int r

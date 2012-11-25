@@ -9,8 +9,10 @@ import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
 import DDC.Type.Compounds
 import DDC.Base.Pretty
+import DDC.Type.Equiv
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (result, throw)
+import Data.Map                 (Map)
 import qualified DDC.Type.Check as T
 import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map
@@ -69,13 +71,57 @@ checkModuleM config kenv tenv mm@ModuleCore{}
         -- Check our let bindings.
         (x', _, _effs, _) <- checkExpM config kenv' tenv' (moduleBody mm)
 
-        -- TODO: check that types of bindings match types of exports.
         -- TODO: check that all exported bindings are defined.
-        -- TODO: don't permit top-level let-bindings to have visible effects.
+
+        -- Check that exported signature matches the type of the binding.
+        checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm'         = mm { moduleBody = x' }
         return mm'
+
+
+-- | Check that the exported signatures match the types of their bindings.
+checkModuleBinds 
+        :: Ord n
+        => Map n (Kind n)       -- ^ Kinds of exported types.
+        -> Map n (Type n)       -- ^ Types of exported values.
+        -> Exp (AnTEC a n) n
+        -> CheckM a n ()
+
+checkModuleBinds ksExports tsExports xx
+ = case xx of
+        XLet _ (LLet _ b _) x2     
+         -> do  checkModuleBind  ksExports tsExports b
+                checkModuleBinds ksExports tsExports x2
+
+        XLet _ (LRec bxs) x2
+         -> do  mapM_ (checkModuleBind ksExports tsExports) $ map fst bxs
+                checkModuleBinds ksExports tsExports x2
+
+        _ -> return ()
+
+
+-- | If some bind is exported, then check that it matches the exported version.
+checkModuleBind 
+        :: Ord n
+        => Map n (Kind n)       -- ^ Kinds of exported types.
+        -> Map n (Type n)       -- ^ Types of exported values.
+        -> Bind n
+        -> CheckM a n ()
+
+checkModuleBind _ksExports tsExports b
+ | BName n tDef <- b
+ = case Map.lookup n tsExports of
+        Nothing                 -> return ()
+        Just tExport 
+         | equivT tDef tExport  -> return ()
+         | otherwise            -> throw $ ErrorExportMismatch n tExport tDef
+
+ -- Only named bindings can be exported, 
+ --  so we don't need to worry about non-named ones.
+ | otherwise
+ = return ()
 
 
 -------------------------------------------------------------------------------

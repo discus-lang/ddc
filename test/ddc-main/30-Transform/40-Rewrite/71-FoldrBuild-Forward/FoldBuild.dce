@@ -1,13 +1,12 @@
 module FoldBuild
 exports {
 
-foldr  :: [a b : *]. [r : %].
-    [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
-	(a -(ek1|ck1)> b -(ek2|ck2)> b)
-    ->	(Unit -(ez|cz)> b)
-    ->	(List r a)
-    -(Read r + ek1 + ek2 + ez | ck1 + ck2 + cz + Use r)>
-	b;
+foldr   :: [a b : *]. [r : %].
+        [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
+        (a -(ek1|ck1)> b -(ek2|ck2)> b) -(!0 | Use r)> 
+        (Unit -(ez|cz)> b)              -(!0 | Use r + ck1)>
+        (List r a)                      -(Read r + ek1 + ek2 + ez | ck1 + cz + Use r)>
+        b;
 
 build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
     ([b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].

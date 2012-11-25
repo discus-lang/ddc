@@ -1,7 +1,7 @@
 
 module Main
 exports
-        main    :: [r : %]. Nat# -(!0 | Use r)> Ptr# r String# -(Read r + Alloc r | Use r)> Int#
+        main      :: [r : %]. Nat# -> Ptr# r String# -> Int#
 imports
         showNat   :: [r : %]. Nat# -> Ptr# r String#
         putStrLn  :: [r : %]. Ptr# r String# -> Void#

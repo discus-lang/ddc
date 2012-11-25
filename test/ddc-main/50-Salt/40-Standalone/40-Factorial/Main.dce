@@ -1,7 +1,7 @@
 
 module Main 
 exports {
-        main      :: [r1 : %]. Nat# -> Ptr# r1 String# -> Int#;
+        main      :: [r1 r2 : %]. Nat# -> Ptr# r1 String# -> Int#;
 }
 imports {
         showInt   :: [r : %].Int# -> Ptr# r String#;

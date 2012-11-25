@@ -3,7 +3,7 @@
 --   With a small fixed sized heap this will run out of space.
 module Main 
 exports {
-        main      :: [r : %]. Nat# -(!0 | Use r)> Ptr# r String# -(Read r + Alloc r | Use r)> Int#;
+        main      :: [r : %]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec
 

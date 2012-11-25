@@ -10,14 +10,10 @@ import qualified DDC.Type.Check as T
 -- | All the things that can go wrong when type checking an expression
 --   or witness.
 data Error a n
+        -- Type -------------------------------------------
         -- | Found a kind error when checking a type.
         = ErrorType
         { errorTypeError        :: T.Error n }
-
-        -- | Found a malformed expression, 
-        --   and we don't have a more specific diagnosis.
-        | ErrorMalformedExp
-        { errorChecking         :: Exp a n }
 
         -- | Found a malformed type,
         --   and we don't have a more specific diagnosis.
@@ -25,13 +21,26 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorType             :: Type n }
 
-        -- | Found a naked `XType` that wasn't the argument of an application.
-        | ErrorNakedType
+
+        -- Module -----------------------------------------
+        -- | Exported value is undefined.
+        | ErrorExportUndefined
+        { errorName             :: n }
+
+        -- | Type signature of exported binding does not match the type at
+        --   the definition site.
+        | ErrorExportMismatch
+        { errorName             :: n
+        , errorExportType       :: Type n
+        , errorDefType          :: Type n }
+
+
+        -- Exp --------------------------------------------
+        -- | Found a malformed expression, 
+        --   and we don't have a more specific diagnosis.
+        | ErrorMalformedExp
         { errorChecking         :: Exp a n }
 
-        -- | Found a naked `XWitness` that wasn't the argument of an application.
-        | ErrorNakedWitness
-        { errorChecking         :: Exp a n }
 
         -- Var --------------------------------------------
         -- | An undefined type variable.
@@ -46,10 +55,12 @@ data Error a n
         , errorTypeAnnot        :: Type n
         , errorTypeEnv          :: Type n }
 
+
         -- Con --------------------------------------------
         -- | A data constructor that wasn't in the set of data definitions.
         | ErrorUndefinedCtor
         { errorChecking         :: Exp a n }
+
 
         -- Application ------------------------------------
         -- | A function application where the parameter and argument don't match.
@@ -153,6 +164,7 @@ data Error a n
         | ErrorLetrecRebound
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
+
 
         -- Letregion --------------------------------------
         -- | A letregion-expression where the some of the bound variables do not
@@ -316,5 +328,17 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorEffect           :: Effect n
         , errorKind             :: Kind n }
+
+
+        -- Types ------------------------------------------
+        -- | Found a naked `XType` that wasn't the argument of an application.
+        | ErrorNakedType
+        { errorChecking         :: Exp a n }
+
+
+        -- Witnesses --------------------------------------
+        -- | Found a naked `XWitness` that wasn't the argument of an application.
+        | ErrorNakedWitness
+        { errorChecking         :: Exp a n }
         deriving (Show)
 

@@ -22,15 +22,17 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorNakedType xx
-         -> vcat [ text "Found naked type in core program."
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
+        -- Modules ---------------------------------------
+        ErrorExportUndefined n
+         -> vcat [ text "Exported value is undefined."
+                 , text "  with: "                      <> ppr n ]
 
-        ErrorNakedWitness xx
-         -> vcat [ text "Found naked witness in core program."
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
+        ErrorExportMismatch n tExport tDef
+         -> vcat [ text "Type of exported value does not match type of definition."
+                 , text "             with binding: "   <> ppr n
+                 , text "           type of export: "   <> ppr tExport
+                 , text "       type of definition: "   <> ppr tDef ]
+
 
         -- Variable ---------------------------------------
         ErrorUndefinedVar  u universe
@@ -364,3 +366,16 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
        
+        -- Type -------------------------------------------
+        ErrorNakedType xx
+         -> vcat [ text "Found naked type in core program."
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+        -- Witness ----------------------------------------
+        ErrorNakedWitness xx
+         -> vcat [ text "Found naked witness in core program."
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+

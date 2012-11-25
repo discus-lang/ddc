@@ -1,0 +1,11 @@
+
+
+-- Error: Exported signature does not match type of definition.
+:set lang Lite
+:load..
+module Foo 
+exports foo    :: Int r -(Read r | $0)> Int r
+imports type r :: %
+with letrec
+foo (x : Int r) : Int r
+ = x;;
