@@ -1,0 +1,13 @@
+module Module
+exports {
+
+effectful :: [ef : !].
+    Unit -> Unit;
+
+}
+with letrec
+
+effectful [ef : !]
+    (u : Unit)
+    : Unit
+    = u

@@ -1,0 +1,33 @@
+ok
+ok
+-- import a function with polymorphic effects
+ok
+
+-- silly rule with effect matching
+ok, added silly
+
+ok
+
+-- match 'ef' with an Alloc
+* TRANSFORM INFORMATION: 
+    Rules fired:
+        Rewrite: silly
+
+weakclo {effectful} in
+()
+
+-- same length but doesn't include the Write
+* TRANSFORM INFORMATION: 
+    Rules fired:
+        
+
+effectful [Read R0# + Read R1# + Read R2#] ()
+
+-- longer - could match but doesn't
+* TRANSFORM INFORMATION: 
+    Rules fired:
+        
+
+effectful [Read R0# + Read R1# + Write R0# + Write R1#] ()
+
+
