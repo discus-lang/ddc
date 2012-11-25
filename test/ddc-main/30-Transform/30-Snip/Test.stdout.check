@@ -96,7 +96,8 @@ case ^0 of {
 ()
 
 
--- Over-application
+-- Introduce new bindings for over-applied functions.
+ok
 let id : [a : *].a -> a
       = /\(a : *).
          \(x : a). x in
@@ -104,7 +105,9 @@ let add : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> In
       = \(x y : Int R0#). addInt [R0#] [R0#] [R0#] x y in
 let ^ : Int R0# = 2 [R0#] () in
 let ^ : Int R0# = 3 [R0#] () in
-id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add ^1 ^0
+let ^ : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+      = id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add in
+^0 ^2 ^1
 5
 
 

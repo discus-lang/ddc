@@ -69,6 +69,10 @@ data Transform s a n
         -- | Introduce let-bindings for nested applications.
         | Snip
 
+        -- | Introduce let-bindings for nested applications and over-applied
+        --   functions
+        | SnipOver
+
         -- | Flatten nested let and case expressions.
         | Flatten
 
@@ -130,6 +134,7 @@ instance Pretty (Transform s a n) where
         Id              -> text "Id"
         Anonymize       -> text "Anonymize"
         Snip            -> text "Snip"
+        SnipOver        -> text "Snip"
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         BetaLets        -> text "BetaLets"

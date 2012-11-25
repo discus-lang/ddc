@@ -77,7 +77,8 @@ applyTransform profile _kenv _tenv spec mm
  = case spec of
         Id               -> return mm
         Anonymize        -> return $ anonymizeX mm
-        Snip             -> return $ snip mm
+        Snip             -> return $ snip False mm
+        SnipOver         -> return $ snip True mm
         Flatten          -> return $ flatten mm
         Beta             -> return $ result $ betaReduce False mm
         BetaLets         -> return $ result $ betaReduce True  mm
@@ -222,7 +223,8 @@ applyTransformX profile kenv tenv spec xx
    in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
-        Snip              -> res    $ snip xx
+        Snip              -> res    $ snip False xx
+        SnipOver          -> res    $ snip True xx
         Flatten           -> res    $ flatten xx
         Inline  getDef    -> res    $ inline getDef xx
         Beta              -> return $ betaReduce False xx

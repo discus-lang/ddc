@@ -19,48 +19,52 @@ class Snip (c :: * -> *) where
  --      f (g x) (h y)
  --  ==> let ^ = g x in ^ = h y in f ^1 ^0
  -- @
- snip :: Ord n => c n -> c n
+ snip   :: Ord n 
+        => Bool         -- ^ Introduce extra bindings for over-applied functions.
+        -> c n 
+        -> c n
 
 
 instance Snip (Module a) where
- snip mm
+ snip bOver mm
   = let arities = aritiesOfModule mm
-        body'   = snipX arities (moduleBody mm) []
+        body'   = snipX bOver arities (moduleBody mm) []
     in  mm { moduleBody = body'  }
 
 
 instance Snip (Exp a) where
- snip x = snipX emptyArities x []
+ snip bOver x = snipX bOver emptyArities x []
 
 
 -- ANormal --------------------------------------------------------------------
 -- | Convert an expression into A-normal form.
 snipX 
         :: Ord n
-        => Arities n    -- ^ Arities of functions in environment.
-        -> Exp a n      -- ^ Expression to transform.
-        -> [(Exp a n,a)]-- ^ Arguments being applied to current expression.
+        => Bool           -- ^ Introduce extra bindings for over-applied functions.
+        -> Arities n      -- ^ Arities of functions in environment.
+        -> Exp a n        -- ^ Expression to transform.
+        -> [(Exp a n, a)] -- ^ Arguments being applied to current expression.
         -> Exp a n
 
-snipX arities x args
+snipX bOver arities x args
         -- For applications, remember the argument that the function is being 
         --   applied to, and decend into the function part.
         --   This unzips application nodes as we decend into the tree.
         | XApp a fun arg        <- x
-        = snipX arities fun $ (snipX arities arg [], a) : args
+        = snipX bOver arities fun $ (snipX bOver arities arg [], a) : args
 
         -- Some non-application node with no arguments.
         | null args
-        = enterX arities x
+        = enterX bOver arities x
 
         -- Some non-application node being applied to arguments.
         | otherwise
-        = makeLets arities (enterX arities x) args
+        = buildNormalisedApp bOver arities (enterX bOver arities x) args
 
 -- Enter into a non-application.
-enterX arities xx
+enterX bOver arities xx
  = let  down ars e 
-         = snipX (extendsArities arities ars) e []
+         = snipX bOver (extendsArities arities ars) e []
 
    in case xx of
         -- The snipX function shouldn't have called us with an XApp.
@@ -126,19 +130,25 @@ enterX arities xx
          -> XCast a c (down [] e)
 
 
--- | Create lets for any non-trivial arguments
-makeLets 
+-- | Build an A-normalised application of some functional expression to 
+--   its arguments. Atomic arguments are applied directly, while 
+--   on-atomic arguments are bound via let-expressions, then the
+--   associated let-bound variable is passed to the function.
+buildNormalisedApp 
         :: Ord n
-        => Arities n	   -- ^ environment, arities of bound variables
+        => Bool            -- ^ Introduce extra bindings for over-applied functions.
+        -> Arities n	   -- ^ environment, arities of bound variables
         -> Exp a n	   -- ^ function
         -> [(Exp a n,a)]   -- ^ arguments being applied to current expression
         -> Exp a n
 
-makeLets _  f0 [] = f0
-makeLets arities f0 args@( (_, annot) : _)
+buildNormalisedApp _bOver _  f0 [] = f0
+buildNormalisedApp bOver arities f0 args@( (_, annot) : _)
  = make annot f0 args
  where
-        _f0Arity    
+        tBot' = T.tBot T.kData
+
+        f0Arity    
          = case f0 of
                 XVar _ b
                  | Just arity <- getArity arities b
@@ -146,63 +156,97 @@ makeLets arities f0 args@( (_, annot) : _)
 
                 _ -> max (arityOfExp' f0) 1
 
-
-        tBot' = T.tBot T.kData
-
         -- Make a normalised function application.
         make a xFun xsArgs
+
          -- The function part is already atomic.
          | isAtom xFun
-         = splitLets xFun xsArgs
+         = buildNormalisedFunApp bOver a f0Arity xFun xsArgs
 
          -- The function part is not atomic, 
          --  so we need to add an outer-most let-binding for it.
          | otherwise
          = XLet a (LLet LetStrict (BAnon tBot') xFun)
-                  (splitLets (XVar a (UIx 0)) 
-                             [ (L.liftX 1 x, a') | (x, a') <- xsArgs])
+                  (buildNormalisedFunApp bOver a f0Arity 
+                               (XVar a (UIx 0)) 
+                               [ (L.liftX 1 x, a') | (x, a') <- xsArgs])
 
-        splitLets xFun xsArgs
-         = let  -- Split arguments into the already atomic ones,
-                --  and the ones we need to introduce let-expressions for.
-                argss    = splitArgs xsArgs
 
-                -- Collect up the new let-bindings.
-                xsLets   = [ (x, a)  
-                                | (_,    a, _, Just x) <- argss]
+-- | Build an A-normalised application of some functional expression to 
+--   its arguments. Atomic arguments are applied directly, while 
+--   on-atomic arguments are bound via let-expressions, then the
+--   associated let-bound variable is passed to the function.
+--
+--   Unlike the `buildNormalisedFunApp` function above, this one
+--   wants the function part to be normalised as well.
+buildNormalisedFunApp
+        :: Ord n
+        => Bool           -- ^ Introduce extra bindings for over-applied functions.
+        -> a              -- ^ Annotation to use.
+        -> Int            -- ^ Arity of the function part.
+        -> Exp a n        -- ^ Function part.
+        -> [(Exp a n, a)] -- ^ Arguments to apply
+        -> Exp a n
 
-                -- The total number of new let-bindings.
-                nLets    = length xsLets
+buildNormalisedFunApp bOver an funArity xFun xsArgs
+ = let  tBot' = T.tBot T.kData
 
-                -- Lift indices in each binding over the bindings before it.
-                xsLets'  = [ (L.liftX n x, a)
-                                | (x, a)        <- xsLets
-                                | (n :: Int)    <- [0..] ]
+        -- Split arguments into the already atomic ones,
+        --  and the ones we need to introduce let-expressions for.
+        argss    = splitArgs xsArgs
 
-                -- Lift indices in the function over the bindings before it.
-                xFun'    = L.liftX nLets xFun
+        -- Collect up the new let-bindings.
+        xsLets   = [ (x, a)  
+                        | (_,    a, _, Just x) <- argss]
 
-                -- Collect up the new function arguments.
-                --  If the argument was already atomic then we have to lift
-                --  its indices past the new let bindings we're about to add.
-                --  Otherwise it's a reference to one of the bindings directly.
-                xsArgs'  = [if liftMe 
-                                then (L.liftX nLets xArg, a)
-                                else (xArg, a)
-                                | (xArg, a, liftMe, _)      <- argss]
+        -- The total number of new let-bindings.
+        nLets    = length xsLets
 
-                -- Construct the new function application.
-                --  ISSUE #278 can handle over-application here.
-                xFunApps = makeXAppsWithAnnots 
-                                xFun'
-                                xsArgs'              
+        -- Lift indices in each binding over the bindings before it.
+        xsLets'  = [ (L.liftX n x, a)
+                        | (x, a)        <- xsLets
+                        | (n :: Int)    <- [0..] ]
 
-                -- Wrap the function application in the let-bindings
-                -- for its arguments.
-           in   foldr (\(x, a) x' -> XLet a x x')
-                        xFunApps
-                        [ (LLet LetStrict (BAnon tBot') x, a) 
-                                | (x, a) <- xsLets' ]
+        -- Lift indices in the function over the bindings before it.
+        xFun'    = L.liftX nLets xFun
+
+        -- Collect up the new function arguments.
+        --  If the argument was already atomic then we have to lift
+        --  its indices past the new let bindings we're about to add.
+        --  Otherwise it's a reference to one of the bindings directly.
+        xsArgs'  = [if liftMe 
+                        then (L.liftX nLets xArg, a)
+                        else (xArg, a)
+                        | (xArg, a, liftMe, _)      <- argss]
+
+        -- Construct the new function application.
+        xFunApps 
+
+         -- If the function is over-applied then create an intermediate
+         -- binding that saturates it, then apply the extra arguments
+         -- separately.
+         | bOver
+         , length xsArgs' > funArity
+         , (xsSat, xsOver)      <- splitAt funArity xsArgs'
+         = XLet an (LLet LetStrict (BAnon tBot') 
+                        (makeXAppsWithAnnots xFun' xsSat))
+                   (makeXAppsWithAnnots 
+                        (XVar an (UIx 0)) 
+                        [ (L.liftX 1 x, a) | (x, a) <- xsOver ])
+
+         -- Function has the correct number of arguments,
+         -- or is partially applied.
+         | otherwise
+         = makeXAppsWithAnnots 
+                xFun'
+                xsArgs'              
+
+        -- Wrap the function application in the let-bindings
+        -- for its arguments.
+   in   foldr (\(x, a) x' -> XLet a x x')
+                xFunApps
+                [ (LLet LetStrict (BAnon tBot') x, a) 
+                        | (x, a) <- xsLets' ]
 
 
 -- | Sort function arguments into either the atomic ones, 
@@ -212,7 +256,7 @@ splitArgs
         => [(Exp a n, a)] 
         -> [( Exp a n            -- Expression to use as the new argument.
             , a                  -- Annoation for the argument application.
-            , Bool               -- Whether this expression argument was already atomic.
+            , Bool               -- Whether this argument was already atomic.
             , Maybe (Exp a n))]  -- New expression to let-bind.
 
 splitArgs args

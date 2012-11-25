@@ -57,7 +57,8 @@ case (\(x : Int R0#). x) (5 [R0#] ()) of {
 };;
 
 
--- Over-application
+-- Introduce new bindings for over-applied functions.
+:set trans SnipOver
 :trun..
 let id [a : *] (x : a)
         = x 

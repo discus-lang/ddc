@@ -106,6 +106,7 @@ parseTransform namK namT rules templates modules ((KCon name):rest)
         "Id"            -> ret Id
         "Anonymize"     -> ret Anonymize
         "Snip"          -> ret Snip
+        "SnipOver"      -> ret SnipOver
         "Flatten"       -> ret Flatten
         "Beta"          -> ret Beta
         "BetaLets"      -> ret BetaLets

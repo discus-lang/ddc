@@ -5,6 +5,7 @@ module DDC.Core.Simplifier.Recipe
           idsimp
         , anonymize
         , snip
+        , snipOver
         , flatten
         , beta
         , betaLets
@@ -39,6 +40,11 @@ anonymize = Trans Anonymize
 -- | Introduce let-bindings for nested applications.
 snip      :: Simplifier s a n
 snip      = Trans Snip
+
+
+-- | Introduce let-bindings for nested applications.
+snipOver  :: Simplifier s a n
+snipOver  = Trans SnipOver
 
 
 -- | Flatten nested let and case expressions.
