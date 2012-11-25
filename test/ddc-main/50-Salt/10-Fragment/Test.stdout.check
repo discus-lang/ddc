@@ -86,12 +86,6 @@ Error loading module
     Binding shadows existing name: x
 
 
--- Error: use of debruijn binders
-Error loading module
-  During fragment compliance check.
-    Unsupported feature: DebruijnBinders
-
-
 -- Error: general application
 Error loading module
   During fragment compliance check.

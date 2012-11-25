@@ -76,13 +76,6 @@ foo (x : Int#) : Int#
    in  return# [Int#] x;;
 
 
--- Error: use of debruijn binders
-:to-c..
-module Main with letrec
-foo (^ : Int#) : Int#
- = return# [Int#] ^0;;
-
-
 -- Error: general application
 :to-c..
 module Main with letrec
