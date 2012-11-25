@@ -1,0 +1,10 @@
+module Module
+exports {
+    id :: [a : *]. a -> a;
+} with letrec
+
+id [a : *]
+   (x : a)
+      : a
+ = x
+

@@ -1,4 +1,5 @@
 :set Indent
+:with test/ddc-main/30-Transform/40-Rewrite/80-Bad/Module.dce
 
 -- Bad: rhs & lhs have different types
 :set.. rule bad_DifferentTypes
@@ -17,6 +18,12 @@
 :set.. rule bad_Binders
     (x : Unit).
     (\(x : Unit). x) x = x
+;;
+
+-- Bad: left-hand side shouldn't have foralls
+:set.. rule bad_Forall
+    (i : Int R0#).
+    (/\(a : *). id [a]) [Int R0#] i = i
 ;;
 
 -- ..Ok: right-hand side can have binders

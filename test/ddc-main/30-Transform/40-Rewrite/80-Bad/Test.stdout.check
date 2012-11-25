@@ -1,4 +1,5 @@
 ok
+ok
 
 -- Bad: rhs & lhs have different types
 LHS and RHS have different types:
@@ -17,6 +18,10 @@ While checking r [r] ()
 -- Bad: left-hand side shouldn't have binders
 No binders allowed in left-hand side.
 While checking \(x : Unit). x
+
+-- Bad: left-hand side shouldn't have foralls
+No binders allowed in left-hand side.
+While checking /\(a : *). id [a]
 
 -- ..Ok: right-hand side can have binders
 ok, added ok_BindersRhs
