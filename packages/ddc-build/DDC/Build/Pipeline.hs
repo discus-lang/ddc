@@ -157,7 +157,7 @@ data PipeCore a n where
 
   -- Type check a module, discarding previous per-node type annotations.
   PipeCoreReCheck
-        :: Show a 
+        :: (Show a, NFData a)
         => Fragment n err
         -> [PipeCore (C.AnTEC a n)  n]
         -> PipeCore  (C.AnTEC a n') n
@@ -194,7 +194,7 @@ data PipeCore a n where
 --
 --   Returns empty list on success.
 pipeCore
-        :: (Show a, Eq n, Ord n, Show n, Pretty n)
+        :: (NFData a, Show a, NFData n, Eq n, Ord n, Show n, Pretty n)
         => C.Module a n
         -> PipeCore a n
         -> IO [Error]
@@ -212,18 +212,19 @@ pipeCore mm pp
 
                 goCheck mm1
                  = case C.checkModule (C.configOfProfile profile) mm1 of
-                        Left err  -> return [ErrorLint err]
+                        Left err   -> return [ErrorLint err]
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1
-                 = case C.complies profile mm1 of
+                 = mm1 `deepseq` 
+                   case C.complies profile mm1 of
                         Just err   -> return [ErrorLint err]
                         Nothing    -> liftM concat $ mapM (pipeCore mm1) pipes
 
              in goCheck mm
 
         PipeCoreReCheck fragment pipes
-         -> pipeCore (C.reannotate C.annotTail mm) 
+         -> pipeCore (C.reannotate C.annotTail mm)
          $  PipeCoreCheck fragment pipes
 
         PipeCoreSimplify fragment nameZero simpl pipes
@@ -233,7 +234,8 @@ pipeCore mm pp
 
                 mm'		= flip S.evalState nameZero
 				$ applySimplifier profile primKindEnv primTypeEnv simpl mm 
-            in  liftM concat $ mapM (pipeCore mm') pipes
+            in  mm `deepseq` 
+                liftM concat $ mapM (pipeCore mm') pipes
 
         PipeCoreAsLite pipes
          -> liftM concat $ mapM (pipeLite mm) pipes
@@ -275,7 +277,7 @@ pipeLite mm pp
                         (C.profilePrimTypes    Lite.profile)
                         mm 
             of  Left  err       -> return [ErrorLiteConvert err]
-                Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
+                Right mm'       -> mm' `deepseq` liftM concat $ mapM (pipeCore mm') pipes
 
 
 -- PipeSaltModule --------------------------------------------------------------
@@ -326,7 +328,7 @@ deriving instance Show a => Show (PipeSalt a)
 -- | Process a Core Salt module.
 --  
 --   Returns empty list on success.
-pipeSalt  :: (Show a, Pretty a)
+pipeSalt  :: (Show a, Pretty a, NFData a)
           => C.Module a Salt.Name 
           -> PipeSalt a
           -> IO [Error]
@@ -342,7 +344,8 @@ pipeSalt mm pp
         PipeSaltTransfer pipes
          -> case Salt.transferModule mm of
                 Left err        -> return [ErrorSaltConvert err]
-                Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
+                Right mm'       -> mm' `deepseq` 
+                                   liftM concat $ mapM (pipeSalt mm') pipes
 
         PipeSaltPrint withPrelude platform sink
          -> case Salt.seaOfSaltModule withPrelude platform mm of
