@@ -59,7 +59,8 @@ saltOfLiteModule
         -> Either (Error a) (Module a S.Name)   -- ^ Salt module.
 
 saltOfLiteModule platform runConfig defs kenv tenv mm
- = result $ convertM platform runConfig defs kenv tenv mm
+ = {-# SCC saltOfLiteModule #-}
+   result $ convertM platform runConfig defs kenv tenv mm
 
 
 -- Module ---------------------------------------------------------------------

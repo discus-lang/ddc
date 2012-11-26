@@ -18,9 +18,9 @@ module DDC.Core.Module
 where
 import DDC.Core.Exp
 import Data.Typeable
-import Data.Map                         (Map)
+import Data.Map.Strict                  (Map)
 import DDC.Type.Env                     as Env
-import qualified Data.Map               as Map
+import qualified Data.Map.Strict        as Map
 
 
 -- Module ---------------------------------------------------------------------
@@ -28,23 +28,23 @@ import qualified Data.Map               as Map
 data Module a n
         = ModuleCore
         { -- | Name of this module.
-          moduleName            :: ModuleName
+          moduleName            :: !ModuleName
 
           -- Exports ------------------
           -- | Kinds of exported types.
-        , moduleExportKinds     :: Map n (Kind n)
+        , moduleExportKinds     :: !(Map n (Kind n))
 
           -- | Types of exported values.
-        , moduleExportTypes     :: Map n (Type n)
+        , moduleExportTypes     :: !(Map n (Type n))
 
           -- Imports ------------------
           -- | Kinds of imported types,
           --   along with the name of the module they are from.
-        , moduleImportKinds     :: Map n (QualName n, Kind n)
+        , moduleImportKinds     :: !(Map n (QualName n, Kind n))
 
           -- | Types of imported values,
           --   along with the name of the module they are from.
-        , moduleImportTypes     :: Map n (QualName n, Type n)
+        , moduleImportTypes     :: !(Map n (QualName n, Type n))
 
           -- Local --------------------
           -- | The module body consists of some let-bindings
@@ -52,7 +52,7 @@ data Module a n
           -- 
           --  We're only interested in the bindings, 
           --  with the unit being just a place-holder.
-        , moduleBody            :: Exp a n
+        , moduleBody            :: !(Exp a n)
         }
         deriving (Show, Typeable)
 

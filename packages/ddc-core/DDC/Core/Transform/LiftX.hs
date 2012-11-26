@@ -20,7 +20,8 @@ liftAtDepthX
         -> c n
 
 liftAtDepthX n d
- = mapBoundAtDepthX liftU d
+ = {-# SCC liftAtDepthX #-} 
+   mapBoundAtDepthX liftU d
  where  
         liftU d' u
          = case u of
@@ -46,7 +47,8 @@ lowerAtDepthX
         -> c n
 
 lowerAtDepthX n d
- = mapBoundAtDepthX liftU d
+ = {-# SCC lowerAtDepthX #-}
+   mapBoundAtDepthX liftU d
  where  
         liftU d' u
          = case u of

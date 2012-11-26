@@ -20,23 +20,23 @@ import qualified DDC.Type.Env           as Env
 data Profile n
         = Profile
         { -- | The name of this profile.
-          profileName                   :: String
+          profileName                   :: !String
 
           -- | Permitted language features.
-        , profileFeatures               :: Features
+        , profileFeatures               :: !Features
 
           -- | Primitive data type declarations.
-        , profilePrimDataDefs           :: DataDefs n
+        , profilePrimDataDefs           :: !(DataDefs n)
 
           -- | Kinds of primitive types.
-        , profilePrimKinds              :: KindEnv n
+        , profilePrimKinds              :: !(KindEnv n)
 
           -- | Types of primitive operators.
-        , profilePrimTypes              :: TypeEnv n
+        , profilePrimTypes              :: !(TypeEnv n)
 
           -- | Check whether a type is an unboxed type.
           --   Some fragments limit how these can be used.
-        , profileTypeIsUnboxed          :: Type n -> Bool }
+        , profileTypeIsUnboxed          :: !(Type n -> Bool) }
 
 
 -- | A language profile with no features or primitive operators.

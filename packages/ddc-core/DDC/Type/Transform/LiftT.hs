@@ -48,7 +48,8 @@ instance LiftT Bound where
 
 instance LiftT Type where
  liftAtDepthT n d tt
-  = let down = liftAtDepthT n
+  = {-# SCC liftAtDepthT #-}
+    let down = liftAtDepthT n
     in case tt of
         TVar u          -> TVar    (down d u)
         TCon{}          -> tt

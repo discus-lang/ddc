@@ -18,7 +18,8 @@ import Data.Maybe
 --
 crushSomeT :: Ord n => Type n -> Type n
 crushSomeT tt
- = case tt of
+ = {-# SCC crushSomeT #-}
+   case tt of
         (TApp (TCon tc) _)
          -> case tc of
                 TyConSpec    TcConDeepRead   -> crushEffect tt
@@ -43,7 +44,8 @@ crushSomeT tt
 --
 crushEffect :: Ord n => Effect n -> Effect n
 crushEffect tt
- = case tt of
+ = {-# SCC crushEffect #-}
+   case tt of
         TVar{}          -> tt
         TCon{}          -> tt
         TForall b t

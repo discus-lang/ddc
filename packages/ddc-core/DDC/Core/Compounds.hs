@@ -55,6 +55,7 @@ import DDC.Type.Compounds
 import DDC.Core.Exp
 import DDC.Core.DaCon
 
+
 -- Annotations ----------------------------------------------------------------
 -- | Take the outermost annotation from an expression,
 --   or Nothing if this is an `XType` or `XWitness` without an annotation.

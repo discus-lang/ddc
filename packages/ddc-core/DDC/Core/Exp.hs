@@ -28,34 +28,34 @@ import DDC.Type.Sum             ()
 --   and their types aways have kind '*' (Data)
 data Exp a n
         -- | Value variable   or primitive operation.
-        = XVar  a  (Bound n)
+        = XVar  a  !(Bound n)
 
         -- | Data constructor or literal.
-        | XCon  a  (DaCon n)
+        | XCon  a  !(DaCon n)
 
         -- | Type abstraction (level-1).
-        | XLAM  a  (Bind n)   (Exp a n)
+        | XLAM  a  !(Bind n)   !(Exp a n)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam  a  (Bind n)   (Exp a n)
+        | XLam  a  !(Bind n)   !(Exp a n)
 
         -- | Application.
-        | XApp  a  (Exp a n)  (Exp a n)
+        | XApp  a  !(Exp a n)  !(Exp a n)
 
         -- | Possibly recursive bindings.
-        | XLet  a  (Lets a n) (Exp a n)
+        | XLet  a  !(Lets a n) !(Exp a n)
 
         -- | Case branching.
-        | XCase a  (Exp a n)  [Alt a n]
+        | XCase a  !(Exp a n)  ![Alt a n]
 
         -- | Type cast.
-        | XCast a  (Cast a n) (Exp a n)
+        | XCast a  !(Cast a n) !(Exp a n)
 
         -- | Type can appear as the argument of an application.
-        | XType    (Type n)
+        | XType    !(Type n)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness (Witness n)
+        | XWitness !(Witness n)
         deriving (Eq, Show)
 
 deriving instance Eq n => Eq (DaCon n)
@@ -66,35 +66,35 @@ data Cast a n
         -- | Weaken the effect of an expression.
         --   The given effect is added to the effect
         --   of the body.
-        = CastWeakenEffect  (Effect n)
+        = CastWeakenEffect  !(Effect n)
         
         -- | Weaken the closure of an expression.
         --   The closures of these expressions are added to the closure
         --   of the body.
-        | CastWeakenClosure [Exp a n]
+        | CastWeakenClosure ![Exp a n]
 
         -- | Purify the effect (action) of an expression.
-        | CastPurify (Witness n)
+        | CastPurify !(Witness n)
 
         -- | Forget about the closure (sharing) of an expression.
-        | CastForget (Witness n)
+        | CastForget !(Witness n)
         deriving (Eq, Show)
 
 
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
-        = LLet    (LetMode n) (Bind n) (Exp a n)
+        = LLet    !(LetMode n) !(Bind n) !(Exp a n)
 
         -- | Recursive binding of lambda abstractions.
-        | LRec    [(Bind n, Exp a n)]
+        | LRec    ![(Bind n, Exp a n)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LLetRegions  [Bind n] [Bind n]
+        | LLetRegions ![Bind n] ![Bind n]
         
         -- | Holds a region handle during evaluation.
-        | LWithRegion (Bound n)
+        | LWithRegion !(Bound n)
         deriving (Eq, Show)
 
 
@@ -106,13 +106,13 @@ data LetMode n
         -- | Use lazy evaluation. 
         --   The witness shows that the head region of the bound expression
         --   can contain thunks (is lazy), or Nothing if there is no head region.
-        | LetLazy (Maybe (Witness n))
+        | LetLazy !(Maybe (Witness n))
         deriving (Eq, Show)
 
 
 -- | Case alternatives.
 data Alt a n
-        = AAlt (Pat n) (Exp a n)
+        = AAlt !(Pat n) !(Exp a n)
         deriving (Eq, Show)
 
 
@@ -122,7 +122,7 @@ data Pat n
         = PDefault
         
         -- | Match a data constructor and bind its arguments.
-        | PData (DaCon n) [Bind n]
+        | PData !(DaCon n) ![Bind n]
         deriving (Eq, Show)
         
 
@@ -131,31 +131,31 @@ data Pat n
 --   certain property of the program is true.
 data Witness n
         -- | Witness variable.
-        = WVar  (Bound n)
+        = WVar  !(Bound n)
         
         -- | Witness constructor.
-        | WCon  (WiCon n)
+        | WCon  !(WiCon n)
         
         -- | Witness application.
-        | WApp  (Witness n) (Witness n)
+        | WApp  !(Witness n) !(Witness n)
 
         -- | Joining of witnesses.
-        | WJoin (Witness n) (Witness n)
+        | WJoin !(Witness n) !(Witness n)
 
         -- | Type can appear as the argument of an application.
-        | WType (Type n)
+        | WType !(Type n)
         deriving (Eq, Show)
 
 
 -- | Witness constructors.
 data WiCon n
         -- | Witness constructors baked into the language.
-        = WiConBuiltin WbCon
+        = WiConBuiltin !WbCon
 
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        | WiConBound (Bound n) (Type n)
+        | WiConBound !(Bound n) !(Type n)
         deriving (Eq, Show)
 
 

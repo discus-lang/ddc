@@ -15,8 +15,8 @@ module DDC.Type.DataDef
         , lookupModeOfDataType)
 where
 import DDC.Type.Exp
-import Data.Map                 (Map)
-import qualified Data.Map       as Map
+import Data.Map                         (Map)
+import qualified Data.Map.Strict        as Map
 import Data.Maybe
 import Control.Monad
 
@@ -25,14 +25,14 @@ import Control.Monad
 data DataDef n
         = DataDef
         { -- | Name of the data type.
-          dataDefTypeName       :: n
+          dataDefTypeName       :: !n
 
           -- | Kinds of type parameters.
-        , dataDefParamKinds     :: [Kind n]
+        , dataDefParamKinds     :: ![Kind n]
 
           -- | Constructors of the data type, or Nothing if there are
           --   too many to list (like with `Int`).
-        , dataDefCtors          :: Maybe [(n, [Type n])] }
+        , dataDefCtors          :: !(Maybe [(n, [Type n])]) }
         deriving Show
 
 
@@ -41,8 +41,8 @@ data DataDef n
 --   unpacked into type and data constructors so we can find them easily.
 data DataDefs n
         = DataDefs
-        { dataDefsTypes :: Map n (DataType n)
-        , dataDefsCtors :: Map n (DataCtor n) }
+        { dataDefsTypes :: !(Map n (DataType n))
+        , dataDefsCtors :: !(Map n (DataCtor n)) }
         deriving Show
 
 
@@ -51,7 +51,7 @@ data DataDefs n
 --   In this case we don't ever expect them all to be enumerated
 --   as case alternatives.
 data DataMode n
-        = DataModeSmall [n]
+        = DataModeSmall ![n]
         | DataModeLarge
         deriving Show
 
@@ -60,14 +60,14 @@ data DataMode n
 data DataType n
         = DataType 
         { -- | Name of data type constructor.
-          dataTypeName       :: n
+          dataTypeName       :: !n
 
           -- | Kinds of type parameters to constructor.
-        , dataTypeParamKinds :: [Kind n]
+        , dataTypeParamKinds :: ![Kind n]
 
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
-        , dataTypeMode       :: DataMode n }
+        , dataTypeMode       :: !(DataMode n) }
         deriving Show
 
 
@@ -75,16 +75,16 @@ data DataType n
 data DataCtor n
         = DataCtor
         { -- | Name of data constructor.
-          dataCtorName       :: n
+          dataCtorName       :: !n
 
           -- | Tag of constructor (order in data type declaration)
-        , dataCtorTag        :: Integer
+        , dataCtorTag        :: !Integer
 
           -- | Field types of constructor.
-        , dataCtorFieldTypes :: [Type n]
+        , dataCtorFieldTypes :: ![Type n]
 
           -- | Name of result type of constructor.
-        , dataCtorTypeName   :: n }
+        , dataCtorTypeName   :: !n }
         deriving Show
 
 

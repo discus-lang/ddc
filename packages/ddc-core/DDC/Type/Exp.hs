@@ -15,7 +15,7 @@ module DDC.Type.Exp
         , Bound    (..))
 where
 import Data.Array
-import Data.Map         (Map)
+import Data.Map.Strict  (Map)
 import Data.Set         (Set)
 
 
@@ -24,20 +24,20 @@ import Data.Set         (Set)
 data Binder n
         = RNone
         | RAnon
-        | RName n
+        | RName !n
         deriving Show
 
 
 -- | A variable binder with its type.
 data Bind n
         -- | A variable with no uses in the body doesn't need a name.
-        = BNone     (Type n)
+        = BNone     !(Type n)
 
         -- | Nameless variable on the deBruijn stack.
-        | BAnon     (Type n)
+        | BAnon     !(Type n)
 
         -- | Named variable in the environment.
-        | BName n   (Type n)
+        | BName n   !(Type n)
         deriving Show
 
 
@@ -49,14 +49,14 @@ data Bind n
 
 data Bound n
         -- | Nameless variable that should be on the deBruijn stack.
-        = UIx   Int   
+        = UIx   !Int   
 
         -- | Named variable that should be in the environment.
-        | UName n
+        | UName !n
 
         -- | Named primitive that has its type attached to it.
         --   The types of primitives must be closed.
-        | UPrim n (Type n)
+        | UPrim !n !(Type n)
         deriving Show
 
 
@@ -68,19 +68,19 @@ data Bound n
 --
 data Type n
         -- | Variable.
-        = TVar    (Bound n)
+        = TVar    !(Bound n)
 
         -- | Constructor.
-        | TCon    (TyCon n)
+        | TCon    !(TyCon n)
 
         -- | Abstraction.
-        | TForall (Bind  n) (Type  n)
+        | TForall !(Bind  n) !(Type  n)
         
         -- | Application.
-        | TApp    (Type  n) (Type  n)
+        | TApp    !(Type  n) !(Type  n)
 
         -- | Least upper bound.
-        | TSum    (TypeSum n)
+        | TSum    !(TypeSum n)
         deriving Show
 
 
@@ -99,27 +99,27 @@ type Closure n = Type n
 --   with, as a given sum type often only has a single physical representation.
 data TypeSum n
         = TypeSumBot
-        { typeSumKind           :: Kind n }
+        { typeSumKind           :: !(Kind n) }
 
         | TypeSumSet
         { -- | The kind of the elements in this sum.
-          typeSumKind           :: Kind n
+          typeSumKind           :: !(Kind n)
 
           -- | Where we can see the outer constructor of a type, its argument
           --   is inserted into this array. This handles common cases like
           --   Read, Write, Alloc effects.
-        , typeSumElems          :: Array TyConHash (Set (TypeSumVarCon n))
+        , typeSumElems          :: !(Array TyConHash (Set (TypeSumVarCon n)))
 
           -- | A map for named type variables.
-        , typeSumBoundNamed     :: Map n   (Kind n)
+        , typeSumBoundNamed     :: !(Map n   (Kind n))
 
           -- | A map for anonymous type variables.
-        , typeSumBoundAnon      :: Map Int (Kind n)
+        , typeSumBoundAnon      :: !(Map Int (Kind n))
 
           -- | Types that can't be placed in the other fields go here.
           -- 
           --   INVARIANT: this list doesn't contain more `TSum`s.
-        , typeSumSpill          :: [Type n] }
+        , typeSumSpill          :: ![Type n] }
         deriving (Show)
         
 
@@ -131,8 +131,8 @@ data TyConHash
 
 -- | Wraps a variable or constructor that can be added the `typeSumElems` array.
 data TypeSumVarCon n
-        = TypeSumVar (Bound n)
-        | TypeSumCon (Bound n) (Type n)
+        = TypeSumVar !(Bound n)
+        | TypeSumCon !(Bound n) !(Type n)
         deriving Show
 
 
@@ -144,19 +144,19 @@ data TypeSumVarCon n
 -- 
 data TyCon n
         -- | (level 3) Builtin Sort constructors.
-        = TyConSort     SoCon
+        = TyConSort     !SoCon
 
         -- | (level 2) Builtin Kind constructors.
-        | TyConKind     KiCon
+        | TyConKind     !KiCon
 
         -- | (level 1) Builtin Spec constructors for the types of witnesses.
-        | TyConWitness  TwCon
+        | TyConWitness  !TwCon
 
         -- | (level 1) Builtin Spec constructors for types of other kinds.
-        | TyConSpec     TcCon
+        | TyConSpec     !TcCon
 
         -- | User defined and primitive constructors.
-        | TyConBound   (Bound n) (Kind n)
+        | TyConBound   !(Bound n) !(Kind n)
         deriving Show
 
 

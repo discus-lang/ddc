@@ -73,6 +73,7 @@ checkTypeM
 
 checkTypeM defs env tt
         = -- trace (pretty $ text "checkTypeM:" <+> ppr tt) $
+          {-# SCC checkTypeM #-}
           checkTypeM' defs env tt
 
 -- Variables ------------------

@@ -20,7 +20,8 @@ freeX tenv xx = Set.unions $ map (freeOfTreeX tenv) $ slurpBindTree xx
 
 freeOfTreeX :: Ord n => Env n -> BindTree n -> Set (Bound n)
 freeOfTreeX tenv tt
- = case tt of
+ = {-# SCC freeOfTreeX #-}
+   case tt of
         BindDef way bs ts
          |  isBoundExpWit $ boundLevelOfBindWay way
          ,  tenv'        <- Env.extends bs tenv

@@ -68,7 +68,8 @@ instance Monad m => TransformUpMX m Module where
 
 instance Monad m => TransformUpMX m Exp where
  transformUpMX f kenv tenv xx
-  = (f kenv tenv =<<)
+  = {-# SCC transformUpMX #-} 
+    (f kenv tenv =<<)
   $ case xx of
         XVar{}          -> return xx
         XCon{}          -> return xx

@@ -75,7 +75,8 @@ rewriteX
         -> TransformResult (Exp a n)
 
 rewriteX rules x0
- = let  (x,info) = runWriter $ down RE.empty x0 
+ = {-# SCC rewriteX #-}
+   let  (x,info) = runWriter $ down RE.empty x0 
    in   TransformResult
          { result               = x
          , resultAgain          = isProgress info

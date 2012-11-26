@@ -10,7 +10,7 @@ import DDC.Type.Collect
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Core.Transform.Reannotate
-import Data.List (nubBy)
+import Data.List                (nubBy)
 
 
 -- | Trim the expressions of a weaken closure @(XCast CastWeakenClosure)@
@@ -27,7 +27,8 @@ trimClosures
         -> [Exp a n]
 
 trimClosures a xs
- = nub' $ concatMap (freeExp a empty empty) xs
+ = {-# SCC trimClosures #-}
+   nub' $ concatMap (freeExp a empty empty) xs
  where  nub' = nubBy (\x y -> reannotate (const ()) x == reannotate (const ()) y)
 
 

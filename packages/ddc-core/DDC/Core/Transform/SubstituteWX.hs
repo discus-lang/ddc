@@ -70,7 +70,8 @@ class SubstituteWX (c :: * -> *) where
 
 instance SubstituteWX (Exp a) where 
  substituteWithWX wArg sub xx
-  = let down    = substituteWithWX wArg
+  = {-# SCC substituteWithWX #-}
+    let down    = substituteWithWX wArg
         into    = renameWith
     in case xx of
         XVar a u        -> XVar a u

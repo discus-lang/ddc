@@ -23,16 +23,15 @@ import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
 import qualified DDC.Base.Parser                as BP
-
-import Data.Map (Map)
+import Data.Map.Strict                          (Map)
 
 
 -- | Things that can go wrong when loading a core thing.
 data Error n
-        = ErrorParser     BP.ParseError
-        | ErrorCheckType  (T.Error n)      
-        | ErrorCheckExp   (C.Error () n)
-        | ErrorCompliance (I.Error n)
+        = ErrorParser     !BP.ParseError
+        | ErrorCheckType  !(T.Error n)      
+        | ErrorCheckExp   !(C.Error () n)
+        | ErrorCompliance !(I.Error n)
         deriving Show
 
 

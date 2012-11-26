@@ -40,7 +40,8 @@ seaOfSaltModule
         -> Either (Error a) Doc
 
 seaOfSaltModule withPrelude pp mm
- = result $ convModuleM withPrelude pp mm
+ = {-# SCC seaOfSaltModule #-}
+   result $ convModuleM withPrelude pp mm
 
 
 -- Module ---------------------------------------------------------------------

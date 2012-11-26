@@ -47,7 +47,8 @@ import qualified Data.Foldable          as Seq
 --
 convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
- = let  
+ = {-# SCC convertModule #-}
+   let  
         prims   = primDeclsMap platform
         state   = llvmStateInit platform prims
 

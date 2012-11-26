@@ -77,7 +77,8 @@ betaReduce
         -> c a n 
         -> TransformResult (c a n)
 betaReduce lets x
- = let (x', info) = runWriter
+ = {-# SCC betaReduce #-}
+   let (x', info) = runWriter
 		  $ transformUpMX (betaReduce1 lets) Env.empty Env.empty x
 
        -- Check if any actual work was performed

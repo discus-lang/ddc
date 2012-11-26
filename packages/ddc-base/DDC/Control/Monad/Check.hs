@@ -12,16 +12,20 @@ data CheckM err a
 
 
 instance Monad (CheckM err) where
- return x   = CheckM (Right x)
- (>>=) m f  
+ return !x   
+  = CheckM (Right x)
+ {-# INLINE return #-}
+
+ (>>=) !m !f  
   = case m of
           CheckM (Left err)     -> CheckM (Left err)
-          CheckM (Right x)      -> f x
+          CheckM (Right x)      -> x `seq` f x
+ {-# INLINE (>>=) #-}
 
-          
+
 -- | Throw a type error in the monad.
 throw :: err -> CheckM err a
-throw e       = CheckM $ Left e
+throw !e        = CheckM $ Left e
 
 
 -- | Take the result from a check monad.

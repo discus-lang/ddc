@@ -13,11 +13,11 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import Control.Monad
 import Data.Maybe
-import DDC.Type.Env             (Env)
-import Data.Set                 (Set)
-import qualified DDC.Type.Env   as Env
-import qualified Data.Set       as Set
-import qualified Data.Map       as Map
+import DDC.Type.Env                     (Env)
+import Data.Set                         (Set)
+import qualified DDC.Type.Env           as Env
+import qualified Data.Set               as Set
+import qualified Data.Map.Strict        as Map
 
 
 -- | Check whether a core thing complies with a language fragment profile.

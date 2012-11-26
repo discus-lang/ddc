@@ -20,7 +20,9 @@ import Data.Functor.Identity
 flatten :: Ord n 
         => (TransformUpMX Identity c)
         => c a n -> c a n
-flatten = transformUpX' flatten1
+flatten 
+ = {-# SCC flatten #-}
+   transformUpX' flatten1
 
 
 -- | Flatten a single nested let-expression.

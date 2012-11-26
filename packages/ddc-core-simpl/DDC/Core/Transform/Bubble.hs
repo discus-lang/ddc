@@ -59,7 +59,8 @@ class Bubble (c :: * -> * -> *) where
 
 instance Bubble Exp where
  bubble kenv tenv xx
-  = case xx of
+  = {-# SCC bubble #-}
+    case xx of
         XVar{}  -> ([], xx)
         XCon{}  -> ([], xx)
 

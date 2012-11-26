@@ -42,10 +42,10 @@ import Data.Typeable
 --   giving its type, effect and closure.
 data AnTEC a n
         = AnTEC
-        { annotType     :: Type    n
-        , annotEffect   :: Effect  n
-        , annotClosure  :: Closure n 
-        , annotTail     :: a }
+        { annotType     :: !(Type    n)
+        , annotEffect   :: !(Effect  n)
+        , annotClosure  :: !(Closure n)
+        , annotTail     :: !a }
         deriving (Show, Typeable)
 
 instance Pretty (AnTEC a n) where
@@ -122,7 +122,8 @@ checkExpM
                 , Set (TaggedClosure n))
 
 checkExpM config kenv tenv xx
- = checkExpM' config kenv tenv xx
+ = {-# SCC checkExpM #-}
+   checkExpM' config kenv tenv xx
 {-
  = do (xx', t, eff, clo) <- checkExpM' config kenv tenv xx
       trace (renderIndent $ vcat 

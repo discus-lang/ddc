@@ -28,10 +28,10 @@ module DDC.Type.Sum
 where
 import DDC.Type.Exp
 import Data.Array
-import qualified Data.List      as L
-import qualified Data.Map       as Map
-import qualified Data.Set       as Set
-import Prelude                  hiding (elem)
+import qualified Data.List              as L
+import qualified Data.Map.Strict        as Map
+import qualified Data.Set               as Set
+import Prelude                          hiding (elem)
 
 
 -- | Construct an empty type sum of the given kind.

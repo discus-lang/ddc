@@ -33,7 +33,8 @@ class Elaborate (c :: * -> *) where
 
 instance Elaborate (Exp a) where
  elaborate us xx
-  = let down = elaborate us 
+  = {-# SCC elaborate #-}
+    let down = elaborate us 
     in case xx of
         XVar{}            -> xx
         XCon{}            -> xx    

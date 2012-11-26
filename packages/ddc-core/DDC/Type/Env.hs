@@ -41,10 +41,10 @@ where
 import DDC.Type.Exp
 import DDC.Type.Transform.LiftT
 import Data.Maybe
-import Data.Map                 (Map)
-import Prelude                  hiding (lookup)
-import qualified Data.Map       as Map
-import qualified Prelude        as P
+import Data.Map                         (Map)
+import Prelude                          hiding (lookup)
+import qualified Data.Map.Strict        as Map
+import qualified Prelude                as P
 import Control.Monad
 
 
@@ -52,16 +52,16 @@ import Control.Monad
 data Env n
         = Env
         { -- | Types of named binders.
-          envMap         :: Map n (Type n)
+          envMap         :: !(Map n (Type n))
 
           -- | Types of anonymous deBruijn binders.
-        , envStack       :: [Type n] 
+        , envStack       :: ![Type n] 
         
           -- | The length of the above stack.
-        , envStackLength :: Int
+        , envStackLength :: !Int
 
           -- | Types of baked in, primitive names.
-        , envPrimFun     :: n -> Maybe (Type n) }
+        , envPrimFun     :: !(n -> Maybe (Type n)) }
 
 
 -- | Type synonym to improve readability.

@@ -110,7 +110,8 @@ instance Forward Module where
 
 instance Forward Exp where
  forwardWith bindings xx
-  = let down    = forwardWith bindings 
+  = {-# SCC forwardWith #-}
+    let down    = forwardWith bindings 
     in case xx of
         XVar a u@(UName n)
          -> case Map.lookup n bindings of

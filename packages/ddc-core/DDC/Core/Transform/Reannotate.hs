@@ -25,7 +25,8 @@ instance Reannotate Module where
 
 instance Reannotate Exp where
  reannotate f xx
-  = let down    = reannotate f
+  = {-# SCC reannotate #-}
+    let down    = reannotate f
     in case xx of
         XVar  a u       -> XVar  (f a) u
         XCon  a u       -> XCon  (f a) u

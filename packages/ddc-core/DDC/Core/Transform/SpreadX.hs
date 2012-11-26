@@ -37,7 +37,8 @@ instance SpreadX (Module a) where
 -------------------------------------------------------------------------------
 instance SpreadX (Exp a) where
  spreadX kenv tenv xx 
-  = let down = spreadX kenv tenv 
+  = {-# SCC spreadX #-}
+    let down = spreadX kenv tenv 
     in case xx of
         XVar a u        -> XVar a (down u)
         XCon a u        -> XCon a (down u)

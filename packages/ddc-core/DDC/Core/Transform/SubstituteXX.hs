@@ -100,7 +100,8 @@ class SubstituteXX (c :: * -> * -> *) where
 
 instance SubstituteXX Exp where 
  substituteWithXX xArg sub xx
-  = let down    = substituteWithXX xArg
+  = {-# SCC substituteWithXX #-}
+    let down    = substituteWithXX xArg
         into    = renameWith
     in case xx of
         XVar a u

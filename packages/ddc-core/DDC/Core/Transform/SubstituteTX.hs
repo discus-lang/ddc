@@ -65,7 +65,8 @@ class SubstituteTX (c :: * -> *) where
 
 instance SubstituteTX (Exp a) where 
  substituteWithTX tArg sub xx
-  = let down    = substituteWithTX tArg
+  = {-# SCC substituteWithTX #-}
+    let down    = substituteWithTX tArg
     in case xx of
         XVar a u        -> XVar a u
         XCon{}          -> xx

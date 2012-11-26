@@ -6,7 +6,7 @@ BuildFlavour    := $(strip $(BUILDFLAVOUR))
 
 # -- Distribution compile (fastest at runtime)
 ifeq "$(BuildFlavour)" "distro"
-GHC_FLAGS	:= -O2 $(GHC_VERSION_FLAGS) $(GHC_WARNINGS) $(GHC_LANGUAGE)
+GHC_FLAGS	:= -O2 -fsimpl-tick-factor=1000 $(GHC_VERSION_FLAGS) $(GHC_WARNINGS) $(GHC_LANGUAGE)
 GCC_FLAGS	:= -std=c99 -O3 -Wundef
 
 # -- Development Compile (fastest compile)

@@ -48,7 +48,8 @@ instance LowerT Bound where
 
 instance LowerT Type where
  lowerAtDepthT n d tt
-  = let down = lowerAtDepthT n 
+  = {-# SCC lowerAtDepthT #-}
+    let down = lowerAtDepthT n 
     in case tt of
         TVar uu         -> TVar    (down d uu)
         TCon{}          -> tt

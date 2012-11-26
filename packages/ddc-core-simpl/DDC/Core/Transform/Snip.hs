@@ -27,13 +27,16 @@ class Snip (c :: * -> *) where
 
 instance Snip (Module a) where
  snip bOver mm
-  = let arities = aritiesOfModule mm
+  = {-# SCC "snip[Module]" #-}
+    let arities = aritiesOfModule mm
         body'   = snipX bOver arities (moduleBody mm) []
     in  mm { moduleBody = body'  }
 
 
 instance Snip (Exp a) where
- snip bOver x = snipX bOver emptyArities x []
+ snip bOver x 
+  = {-# SCC "snip[Exp]" #-}
+    snipX bOver emptyArities x []
 
 
 -- | Convert an expression into A-normal form.

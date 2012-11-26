@@ -34,14 +34,10 @@ class Rename (c :: * -> *) where
  renameWith :: Ord n => Sub n -> c n -> c n 
 
 
-instance Rename Bind where
- renameWith sub bb
-  = replaceTypeOfBind  (renameWith sub (typeOfBind bb))  bb
-
-
 instance Rename Type where
  renameWith sub tt 
-  = let down    = renameWith 
+  = {-# SCC renameWith #-}
+    let down    = renameWith 
     in case tt of
         TVar u          -> TVar (use1 sub u)
         TCon{}          -> tt
@@ -62,6 +58,11 @@ instance Rename TypeSum where
         $ Sum.toList ts
 
 
+instance Rename Bind where
+ renameWith sub bb
+  = replaceTypeOfBind  (renameWith sub (typeOfBind bb))  bb
+
+
 -------------------------------------------------------------------------------
 -- | Substitution state.
 --   Keeps track of the binders in the environment that have been rewrittten
@@ -69,25 +70,25 @@ instance Rename TypeSum where
 data Sub n
         = Sub
         { -- | Bound variable that we're substituting for.
-          subBound      :: Bound n
+          subBound      :: !(Bound n)
 
           -- | We've decended past a binder that shadows the one that we're
           --   substituting for. We're no longer substituting, but still may
           --   need to anonymise variables in types. 
           --   This can only happen for level-0 named binders.
-        , subShadow0    :: Bool 
+        , subShadow0    :: !Bool 
 
           -- | Level-1 names that need to be rewritten to avoid capture.
-        , subConflict1  :: Set n
+        , subConflict1  :: !(Set n)
 
           -- | Level-0 names that need to be rewritten to avoid capture.
-        , subConflict0  :: Set n 
+        , subConflict0  :: !(Set n)
 
           -- | Rewriting stack for level-1 names.
-        , subStack1     :: BindStack n
+        , subStack1     :: !(BindStack n)
 
           -- | Rewriting stack for level-0 names.
-        , subStack0     :: BindStack n  }
+        , subStack0     :: !(BindStack n)  }
 
 
 -- | Stack of anonymous binders that we've entered under during substitution. 
@@ -96,16 +97,16 @@ data BindStack n
         { -- | Holds anonymous binders that were already in the program,
           --   as well as named binders that are being rewritten to anonymous ones.
           --   In the resulting expression all these binders will be anonymous.
-          stackBinds    :: [Bind n]
+          stackBinds    :: ![Bind n]
 
           -- | Holds all binders, independent of whether they are being rewritten or not.
-        , stackAll      :: [Bind n] 
+        , stackAll      :: ![Bind n] 
 
           -- | Number of `BAnon` in `stackBinds`.
-        , stackAnons    :: Int
+        , stackAnons    :: !Int
 
           -- | Number of `BName` in `stackBinds`.
-        , stackNamed    :: Int }
+        , stackNamed    :: !Int }
 
 
 -- | Push several binds onto the bind stack,

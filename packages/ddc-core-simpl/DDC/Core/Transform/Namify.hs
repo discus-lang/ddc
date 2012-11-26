@@ -119,7 +119,8 @@ instance Namify Witness where
 
 instance Namify (Exp a) where
  namify tnam xnam xx
-  = let down = namify tnam xnam
+  = {-# SCC namify #-}
+    let down = namify tnam xnam
     in case xx of
         XVar a u        -> liftM2 XVar (return a) (rewriteX tnam xnam u)
         XCon{}          -> return xx

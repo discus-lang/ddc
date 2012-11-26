@@ -81,7 +81,8 @@ pruneX
 	-> TransformResult (Exp a n)
 
 pruneX profile kenv tenv xx
- = let  
+ = {-# SCC pruneX #-}
+   let  
         (xx', info)
                 = transformTypeUsage profile kenv tenv
 	               (transformUpMX pruneTrans kenv tenv)

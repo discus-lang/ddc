@@ -35,7 +35,8 @@ lexModuleWithOffside
         -> [Token (Tok String)]
 
 lexModuleWithOffside sourceName lineStart str
-        = applyOffside [] 
+ = {-# SCC lexWithOffside #-}
+        applyOffside [] 
         $ addStarts
         $ dropComments 
         $ lexString sourceName lineStart str
@@ -52,7 +53,8 @@ lexExp  :: FilePath     -- ^ Path to source file, for error messages.
         -> [Token (Tok String)]
 
 lexExp sourceName lineStart str
-        = dropNewLines
+ = {-# SCC lexExp #-}
+        dropNewLines
         $ dropComments
         $ lexString sourceName lineStart str
 

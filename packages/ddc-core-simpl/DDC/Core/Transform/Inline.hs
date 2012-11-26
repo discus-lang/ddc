@@ -20,7 +20,8 @@ inline  :: forall (c :: * -> * -> *) a n
         -> c a n
 
 inline getTemplate xx
-        = transformUpX' (inline1 getTemplate) xx
+        = {-# SCC inline #-}
+          transformUpX' (inline1 getTemplate) xx
 
 
 inline1 :: Ord n 

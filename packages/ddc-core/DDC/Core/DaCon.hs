@@ -17,18 +17,18 @@ import DDC.Type.Exp
 data DaCon n
         = DaCon
         { -- | Name of the data constructor.
-          daConName             :: DaConName n
+          daConName             :: !(DaConName n)
 
           -- | Type of the data constructor.
           --   The type must be closed.
-        , daConType             :: Type n
+        , daConType             :: !(Type n)
 
           -- | Algebraic constructors can be deconstructed with case-expressions,
           --   and must have a data type declaration.
           -- 
           --   Non-algebraic types like 'Float' can't be inspected with
           --   case-expressions.
-        , daConIsAlgebraic      :: Bool }
+        , daConIsAlgebraic      :: !Bool }
         deriving Show
 
 

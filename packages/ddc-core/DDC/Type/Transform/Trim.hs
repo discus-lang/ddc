@@ -32,7 +32,8 @@ trimClosure
         -> Maybe (Closure n)
 
 trimClosure cc
-        = liftM TSum $ trimToSumC cc
+        = {-# SCC trimClosure #-}
+          liftM TSum $ trimToSumC cc
 
 
 -- | Trim a closure down to a closure sum.

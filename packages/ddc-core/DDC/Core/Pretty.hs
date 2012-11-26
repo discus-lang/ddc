@@ -11,7 +11,7 @@ import DDC.Core.Exp
 import DDC.Type.Pretty
 import DDC.Base.Pretty
 import Data.List
-import qualified Data.Map       as Map
+import qualified Data.Map.Strict        as Map
 
 
 -- ModuleName -----------------------------------------------------------------
@@ -29,7 +29,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleImportKinds     = importKinds
         , moduleImportTypes     = importTypes
         , moduleBody            = body }
-  = let 
+  = {-# SCC "ppr[Module]" #-}
+    let 
         (lts, _)         = splitXLets body
 
         docsExportKinds
@@ -84,7 +85,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 -- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx
-  = case xx of
+  = {-# SCC "ppr[Exp]" #-}
+    case xx of
         XVar  _ u       -> ppr u
         XCon  _ dc      -> ppr dc
         

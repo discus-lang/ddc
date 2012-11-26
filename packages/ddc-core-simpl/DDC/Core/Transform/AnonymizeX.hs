@@ -40,7 +40,8 @@ instance AnonymizeX (Module a) where
 
 instance AnonymizeX (Exp a) where
  anonymizeWithX kstack tstack xx
-  = let down = anonymizeWithX kstack tstack
+  = {-# SCC anonymizeWithX #-}
+    let down = anonymizeWithX kstack tstack
     in case xx of
         XVar _ UPrim{}  -> xx
         XCon{}          -> xx      
