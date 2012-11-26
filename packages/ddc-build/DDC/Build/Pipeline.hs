@@ -53,6 +53,7 @@ import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Llvm.Module                as Llvm
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
+import Control.DeepSeq
 import System.Directory
 
 -- Error ----------------------------------------------------------------------
@@ -116,7 +117,8 @@ data PipeText n (err :: * -> *) where
 --
 --   Returns empty list on success.
 pipeText
-        :: String
+        :: NFData n
+        => String
         -> Int
         -> String
         -> PipeText n err
@@ -131,7 +133,7 @@ pipeText srcName srcLine str pp
          -> let toks            = fragmentLexModule frag srcName srcLine str
             in case CL.loadModule (fragmentProfile frag) srcName toks of
                  Left err -> return $ [ErrorLoad err]
-                 Right mm -> liftM concat $ mapM (pipeCore mm) pipes
+                 Right mm -> mm `deepseq` (liftM concat $ mapM (pipeCore mm) pipes)
 
 
 -- PipeCoreModule -------------------------------------------------------------

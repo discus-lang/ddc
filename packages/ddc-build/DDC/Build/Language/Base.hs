@@ -10,6 +10,7 @@ import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Base.Pretty
 import DDC.Data.Token
+import Control.DeepSeq
 import Data.Typeable
 import DDC.Core.Transform.Namify        (Namifier)
 import DDC.Type.Env                     (Env)
@@ -22,7 +23,8 @@ data Language
         = forall n err
         . ( Typeable n, Ord n, Show n
           , Pretty n
-          , Pretty (err (AnTEC () n)))
+          , Pretty (err (AnTEC () n))
+          , NFData n)
         => Language (Fragment n err)
 
 deriving instance Show Language

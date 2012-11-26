@@ -15,6 +15,7 @@ import DDC.Type.Env                     (Env)
 import DDC.Core.Lexer                   as Core
 import qualified DDC.Type.Env           as Env
 import Control.Monad.State.Strict
+import Control.DeepSeq
 
 
 -- | The `Zero` fragment has no features and no primops.
@@ -46,6 +47,9 @@ instance Pretty (Error a) where
 data Name 
         = Name String
         deriving (Eq, Ord, Show, Typeable)
+
+instance NFData Name where
+ rnf (Name str) = rnf str
 
 instance Pretty Name where
  ppr (Name str) = text str

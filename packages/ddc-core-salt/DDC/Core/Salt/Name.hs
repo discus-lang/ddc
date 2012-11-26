@@ -42,7 +42,7 @@ import DDC.Base.Pretty
 import Data.Typeable
 import Data.Char
 import Data.List
-
+import Control.DeepSeq
 
 -- | Names of things used in Disciple Core Salt.
 data Name
@@ -79,6 +79,22 @@ data Name
         -- | A @WordN#@ literal, of the given width.
         | NameLitWord   Integer Int
         deriving (Eq, Ord, Show, Typeable)
+
+
+instance NFData Name where
+ rnf name
+  = case name of
+        NameVar s               -> rnf s
+        NameCon s               -> rnf s
+        NameObjTyCon            -> ()
+        NamePrimTyCon con       -> rnf con
+        NamePrimOp    op        -> rnf op
+        NameLitVoid             -> ()
+        NameLitBool   b         -> rnf b
+        NameLitNat    i         -> rnf i
+        NameLitInt    i         -> rnf i
+        NameLitTag    i         -> rnf i
+        NameLitWord   i bits    -> rnf i `seq` rnf bits
 
 
 instance Pretty Name where

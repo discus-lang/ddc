@@ -35,6 +35,7 @@ import Control.Monad
 import Data.List                        as L
 import Data.Maybe
 import Data.Typeable
+import Control.DeepSeq
 
 
 -- Annot ----------------------------------------------------------------------
@@ -47,6 +48,15 @@ data AnTEC a n
         , annotClosure  :: !(Closure n)
         , annotTail     :: !a }
         deriving (Show, Typeable)
+
+
+instance (NFData a, NFData n) => NFData (AnTEC a n) where
+ rnf an
+        =     rnf (annotType    an)
+        `seq` rnf (annotEffect  an)
+        `seq` rnf (annotClosure an)
+        `seq` rnf (annotTail    an)
+
 
 instance Pretty (AnTEC a n) where
  ppr _ = text "AnTEC"        

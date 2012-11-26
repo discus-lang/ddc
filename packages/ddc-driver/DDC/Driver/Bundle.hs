@@ -9,6 +9,7 @@ import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Base.Pretty
+import Control.DeepSeq
 import Data.Typeable
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
@@ -20,7 +21,7 @@ import qualified DDC.Core.Simplifier    as S
 --      and the dictionaries we need to work with its type parameters.
 data Bundle
         = forall s n err
-        .  (Typeable n, Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        .  (Typeable n, Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)), NFData n)
         => Bundle 
         {  -- | Language fragment definition.
            bundleFragment        :: Fragment n err

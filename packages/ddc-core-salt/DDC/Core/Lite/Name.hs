@@ -20,6 +20,7 @@ import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimOp
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
+import Control.DeepSeq
 import Data.Typeable
 import Data.Char
 
@@ -59,6 +60,22 @@ data Name
         -- | An unboxed word literal
         | NameLitWord   Integer Int
         deriving (Eq, Ord, Show, Typeable)
+
+
+instance NFData Name where
+ rnf nn
+  = case nn of
+        NameVar s               -> rnf s
+        NameCon s               -> rnf s
+        NameDataTyCon con       -> rnf con
+        NamePrimDaCon con       -> rnf con
+        NamePrimTyCon con       -> rnf con
+        NamePrimArith con       -> rnf con
+        NamePrimCast  c         -> rnf c
+        NameLitBool b           -> rnf b
+        NameLitNat  n           -> rnf n
+        NameLitInt  i           -> rnf i
+        NameLitWord i bits      -> rnf i `seq` rnf bits
 
 
 instance Pretty Name where
@@ -145,6 +162,7 @@ data DataTyCon
         | DataTyConList         -- ^ @List@  type constructor.
         deriving (Eq, Ord, Show)
 
+instance NFData DataTyCon
 
 instance Pretty DataTyCon where
  ppr dc
@@ -182,6 +200,7 @@ data PrimDaCon
         | PrimDaConCons         -- ^ @Cons@ data constructor (lists).
         deriving (Show, Eq, Ord)
 
+instance NFData PrimDaCon
 
 instance Pretty PrimDaCon where
  ppr dc

@@ -11,11 +11,11 @@ import DDC.Core.Module
 import DDC.Core.Load
 import DDC.Core.Pretty
 import DDC.Data.Canned
+import Control.DeepSeq
 import Control.Monad
 import Data.IORef
 import System.Directory
 import System.IO
-
 
 -- | Load and transform a module, 
 --   then print the result to @stdout@.
@@ -37,7 +37,7 @@ cmdLoad bundle source str
 
 -- | Load and typecheck a module.
 cmdReadModule 
-        :: (Ord n, Show n, Pretty n)
+        :: (Ord n, Show n, Pretty n, NFData n)
         => Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC () n) n))

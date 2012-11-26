@@ -13,6 +13,7 @@ where
 import DDC.Core.Lexer
 import DDC.Base.Pretty
 import DDC.Data.Token
+import Control.DeepSeq
 import Data.Typeable
 import Data.Char
 import Data.List
@@ -35,7 +36,20 @@ data Name
         | NameRgn     Rgn        -- ^ Region handles.
         | NameCap     Cap        -- ^ Store capabilities.
         deriving (Show, Eq, Ord, Typeable)
-        
+
+
+instance NFData Name where
+ rnf nn
+  = case nn of
+        NameVar s               -> rnf s
+        NameCon s               -> rnf s
+        NameInt i               -> rnf i
+        NamePrimCon pc          -> rnf pc
+        NamePrimOp  po          -> rnf po
+        NameLoc     l           -> rnf l
+        NameRgn     r           -> rnf r
+        NameCap     c           -> rnf c
+
 
 instance Pretty Name where
  ppr nn
@@ -58,9 +72,13 @@ data Loc
         = Loc Int
         deriving (Eq, Ord, Show)
 
+
+instance NFData Loc where
+ rnf (Loc i)    = rnf i
+
+
 instance Pretty Loc where
- ppr (Loc l)    
-        = text "L" <> text (show l) <> text "#"
+ ppr (Loc l)    = text "L" <> text (show l) <> text "#"
  
 
 -- Regions --------------------------------------------------------------------
@@ -71,9 +89,11 @@ data Rgn
         = Rgn Int
         deriving (Eq, Ord, Show)
 
+instance NFData Rgn where
+ rnf (Rgn i)    = rnf i
+
 instance Pretty Rgn where
- ppr (Rgn r)    
-        = text "R" <> text (show r) <> text "#"
+ ppr (Rgn r)    = text "R" <> text (show r) <> text "#"
 
 
 -- Capabilities --------------------------------------------------------------
@@ -115,6 +135,13 @@ data Cap
         deriving (Eq, Ord, Show)
 
 
+instance NFData Cap where
+ rnf cap 
+  = case cap of
+        CapDistinct i   -> rnf i
+        _               -> ()
+
+
 instance Pretty Cap where
  ppr cp
   = case cp of
@@ -139,6 +166,8 @@ data PrimCon
         | PrimDaConNil          -- ^ @Nil@ data constructor.
         | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
+
+instance NFData PrimCon
 
 instance Pretty PrimCon where
  ppr con
@@ -165,6 +194,7 @@ data PrimOp
         | PrimOpCopyInt
         deriving (Show, Eq, Ord)
 
+instance NFData PrimOp
 
 instance Pretty PrimOp where
  ppr op

@@ -15,6 +15,7 @@ where
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Platform
 import DDC.Base.Pretty
+import Control.DeepSeq
 import Data.Char
 import Data.List
 
@@ -37,6 +38,16 @@ data    PrimOp
         -- | Non-functional control flow.
         | PrimControl   PrimControl
         deriving (Eq, Ord, Show)
+
+
+instance NFData PrimOp where
+ rnf op
+  = case op of
+        PrimArith pa    -> rnf pa
+        PrimCast  pc    -> rnf pc
+        PrimStore ps    -> rnf ps
+        PrimCall  pc    -> rnf pc
+        PrimControl pc  -> rnf pc
 
 
 instance Pretty PrimOp where
@@ -85,6 +96,7 @@ data PrimArith
         | PrimArithBXOr -- ^ Bit-wise eXclusive Or
         deriving (Eq, Ord, Show)
 
+instance NFData PrimArith
 
 instance Pretty PrimArith where
  ppr op
@@ -142,6 +154,7 @@ data PrimCast
         | PrimCastTruncate
         deriving (Eq, Ord, Show)
 
+instance NFData PrimCast
 
 instance Pretty PrimCast where
  ppr c
@@ -267,6 +280,7 @@ data PrimStore
         | PrimStoreCastPtr
         deriving (Eq, Ord, Show)
 
+instance NFData PrimStore
 
 instance Pretty PrimStore where
  ppr p
@@ -328,6 +342,10 @@ data PrimCall
         deriving (Eq, Ord, Show)
 
 
+instance NFData PrimCall where
+ rnf (PrimCallTail i)   = rnf i
+
+
 instance Pretty PrimCall where
  ppr pc
   = case pc of
@@ -363,6 +381,7 @@ data PrimControl
         | PrimControlReturn
         deriving (Eq, Ord, Show)
 
+instance NFData PrimControl
 
 instance Pretty PrimControl where
  ppr pc

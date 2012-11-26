@@ -12,6 +12,7 @@ import DDC.Base.Pretty
 import DDC.Core.Salt.Platform
 import Data.Char
 import Data.List
+import Control.DeepSeq
 
 
 -- PrimTyCon -----------------------------------------------------------------
@@ -53,6 +54,14 @@ data PrimTyCon
         --   These are primitive until we can define our own unboxed types.
         | PrimTyConString 
         deriving (Eq, Ord, Show)
+
+
+instance NFData PrimTyCon where
+ rnf tc
+  = case tc of
+        PrimTyConWord i         -> rnf i
+        PrimTyConFloat i        -> rnf i
+        _                       -> ()
 
 
 instance Pretty PrimTyCon where
