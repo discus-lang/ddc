@@ -116,4 +116,6 @@ DDC_PACKAGES	:= \
 	-package wl-pprint \
 	-package transformers \
         -package hashable \
-        -package hashtables
+        -package hashtables \
+        -package deepseq
+

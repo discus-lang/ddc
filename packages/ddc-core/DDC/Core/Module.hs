@@ -21,6 +21,7 @@ import Data.Typeable
 import Data.Map.Strict                  (Map)
 import DDC.Type.Env                     as Env
 import qualified Data.Map.Strict        as Map
+import Control.DeepSeq
 
 
 -- Module ---------------------------------------------------------------------
@@ -55,6 +56,16 @@ data Module a n
         , moduleBody            :: !(Exp a n)
         }
         deriving (Show, Typeable)
+
+
+instance (NFData a, NFData n) => NFData (Module a n) where
+ rnf mm
+        =     rnf (moduleName mm)
+        `seq` rnf (moduleExportKinds mm)
+        `seq` rnf (moduleExportTypes mm)
+        `seq` rnf (moduleImportKinds mm)
+        `seq` rnf (moduleImportTypes mm)
+        `seq` rnf (moduleBody mm)
 
 
 -- | Check if this is the `Main` module.
@@ -110,12 +121,20 @@ data ModuleName
         = ModuleName [String]
         deriving (Show, Eq, Ord, Typeable)
 
+instance NFData ModuleName where
+ rnf (ModuleName ss)
+        = rnf ss
+
 
 -- | A fully qualified name, 
 --   including the name of the module it is from.
 data QualName n
         = QualName ModuleName n
         deriving Show
+
+instance NFData n => NFData (QualName n) where
+ rnf (QualName mn n)
+        = rnf mn `seq` rnf n
 
 
 -- | Check whether this is the name of the \"Main\" module.

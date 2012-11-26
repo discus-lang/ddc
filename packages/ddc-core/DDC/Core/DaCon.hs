@@ -11,6 +11,7 @@ module DDC.Core.DaCon
 where
 import DDC.Type.Compounds
 import DDC.Type.Exp
+import Control.DeepSeq
 
 
 -- | Data constructors.
@@ -32,6 +33,13 @@ data DaCon n
         deriving Show
 
 
+instance NFData n => NFData (DaCon n) where
+ rnf dc
+        =     rnf (daConName dc)
+        `seq` rnf (daConType dc)
+        `seq` rnf (daConIsAlgebraic dc)
+
+
 -- | Data constructor names.
 data DaConName n
         -- | The unit data constructor is builtin.
@@ -41,6 +49,13 @@ data DaConName n
         | DaConNamed n
         deriving (Eq, Show)
 
+
+instance NFData n => NFData (DaConName n) where
+ rnf dcn
+  = case dcn of
+        DaConUnit       -> ()
+        DaConNamed n    -> rnf n
+        
 
 -- | Take the name of data constructor.
 takeNameOfDaCon :: DaCon n -> Maybe n
