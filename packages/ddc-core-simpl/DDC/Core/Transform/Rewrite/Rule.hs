@@ -198,7 +198,8 @@ checkRewriteRule config kenv tenv
 
         -- Build application from lhs and the hole so we can check its
         -- type against rhs
-        let lhs_full = maybe lhs (XApp undefined lhs) hole
+        let Just a      = takeAnnotOfExp lhs
+        let lhs_full    = maybe lhs (XApp a lhs) hole
 
         -- Check the full left hand side.
         (lhs_full', tLeft, effLeft, cloLeft)

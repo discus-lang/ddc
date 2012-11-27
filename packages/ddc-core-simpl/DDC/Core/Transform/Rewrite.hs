@@ -303,9 +303,7 @@ rewriteWithX rule env f args
         (m, rest)       <- matchWithRule rule env f args RM.emptySubstInfo
 
         -- Check constraints, perform substitution and add weakens if necessary.
-        let a           = case args of
-                           (_, a') : _  -> a'
-                           _            -> error "rewriteWithX: no annotation"
+        let Just a      = X.takeAnnotOfExp f
 
         let bs          = map snd binds
         let bas2        = lookupFromSubst bs m
@@ -489,7 +487,7 @@ matchWithRule
 
         -- Try to match against entire rule with no inlining.
         -- Eg (unbox (box 5))
-        | a             <- error "unifyWithRule: no annotation"
+        | Just a        <- X.takeAnnotOfExp f
         , lhs_full      <- XApp a (ruleLeft rule) hole 
         , rule_full     <- rule { ruleLeft = lhs_full, ruleLeftHole = Nothing}
         , Just subst    <- matchWithRule rule_full env f args sub
