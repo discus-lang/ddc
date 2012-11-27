@@ -10,28 +10,28 @@ import DDC.Type.Sum             ()
 --   and their types aways have kind '*' (Data)
 data Exp a n
         -- | Value variable   or primitive operation.
-        = XVar  a  !(Bound n)
+        = XVar  !a  !(Bound n)
 
         -- | Data constructor or literal.
-        | XCon  a  !(DaCon n)
+        | XCon  !a  !(DaCon n)
 
         -- | Type abstraction (level-1).
-        | XLAM  a  !(Bind n)   !(Exp a n)
+        | XLAM  !a  !(Bind n)   !(Exp a n)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam  a  !(Bind n)   !(Exp a n)
+        | XLam  !a  !(Bind n)   !(Exp a n)
 
         -- | Application.
-        | XApp  a  !(Exp a n)  !(Exp a n)
+        | XApp  !a  !(Exp a n)  !(Exp a n)
 
         -- | Possibly recursive bindings.
-        | XLet  a  !(Lets a n) !(Exp a n)
+        | XLet  !a  !(Lets a n) !(Exp a n)
 
         -- | Case branching.
-        | XCase a  !(Exp a n)  ![Alt a n]
+        | XCase !a  !(Exp a n)  ![Alt a n]
 
         -- | Type cast.
-        | XCast a  !(Cast a n) !(Exp a n)
+        | XCast !a  !(Cast a n) !(Exp a n)
 
         -- | Type can appear as the argument of an application.
         | XType    !(Type n)
