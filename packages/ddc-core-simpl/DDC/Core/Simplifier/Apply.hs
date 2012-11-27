@@ -25,6 +25,7 @@ import DDC.Core.Transform.Elaborate
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
+import Control.DeepSeq
 import qualified DDC.Base.Pretty	as P
 
 
@@ -38,7 +39,7 @@ import qualified DDC.Base.Pretty	as P
 --      with the transform log, and we should get one for a module as well.
 --
 applySimplifier 
-        :: (Show a, Ord n, Show n, Pretty n) 
+        :: (Show a, Ord n, Show n, Pretty n, NFData a, NFData n) 
 	=> Profile n		-- ^ Profile of language we're working in
 	-> KindEnv n		-- ^ Kind environment
 	-> TypeEnv n		-- ^ Type environment
@@ -60,7 +61,7 @@ applySimplifier profile kenv tenv spec mm
 
 	Fix n s
 	 -> do	mm' <- applySimplifier profile kenv tenv s mm
-		applySimplifier profile kenv tenv (Fix (n - 1) s) mm'
+                applySimplifier profile kenv tenv (Fix (n - 1) s) mm'
 
 
 -- | Apply a transform to a module.

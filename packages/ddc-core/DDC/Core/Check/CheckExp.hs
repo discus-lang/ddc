@@ -41,12 +41,16 @@ import Control.DeepSeq
 -- Annot ----------------------------------------------------------------------
 -- | The type checker adds this annotation to every node in the AST, 
 --   giving its type, effect and closure.
+---
+--   NOTE: We wwant to leave the components lazy so that the checker
+--         doesn't actualy need to produce the type components if they're
+--         not needed.
 data AnTEC a n
         = AnTEC
-        { annotType     :: !(Type    n)
-        , annotEffect   :: !(Effect  n)
-        , annotClosure  :: !(Closure n)
-        , annotTail     :: !a }
+        { annotType     :: (Type    n)
+        , annotEffect   :: (Effect  n)
+        , annotClosure  :: (Closure n)
+        , annotTail     :: a }
         deriving (Show, Typeable)
 
 
@@ -90,7 +94,7 @@ checkExp
                   , Effect n
                   , Closure n)
 
-checkExp config kenv tenv xx 
+checkExp !config !kenv !tenv !xx 
  = result
  $ do   (xx', t, effs, clos) 
                 <- checkExpM config 
@@ -111,7 +115,7 @@ typeOfExp
         -> TypeEnv n            -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n) (Type n)
-typeOfExp config kenv tenv xx 
+typeOfExp !config !kenv !tenv !xx 
  = case checkExp config kenv tenv xx of
         Left err           -> Left err
         Right (_, t, _, _) -> Right t
@@ -131,7 +135,7 @@ checkExpM
                 , TypeSum n
                 , Set (TaggedClosure n))
 
-checkExpM config kenv tenv xx
+checkExpM !config !kenv !tenv !xx
  = {-# SCC checkExpM #-}
    checkExpM' config kenv tenv xx
 {-
@@ -145,7 +149,7 @@ checkExpM config kenv tenv xx
          $ return (xx', t, eff, clo)
 -}
 -- variables ------------------------------------
-checkExpM' _config _kenv tenv (XVar a u)
+checkExpM' !_config !_kenv !tenv (XVar a u)
  = case Env.lookup u tenv of
         Nothing -> throw $ ErrorUndefinedVar u UniverseData
         Just t  
@@ -157,7 +161,7 @@ checkExpM' _config _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' config _kenv _tenv xx@(XCon a dc)
+checkExpM' !config !_kenv !_tenv xx@(XCon a dc)
  = do   
         -- All data constructors need to have valid type annotations.
         when (isBot $ daConType dc)
@@ -184,7 +188,7 @@ checkExpM' config _kenv _tenv xx@(XCon a dc)
 --       the bound type variable is not visible outside the abstraction.
 --       thus we can't be sharing objects that have it in its type.
 --
-checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
+checkExpM' !config !kenv !tenv xx@(XApp a x1 (XType t2))
  = do   (x1', t1, effs1, clos1) <- checkExpM  config kenv tenv x1
 
         -- Check the type argument.
@@ -208,7 +212,7 @@ checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
 
 
 -- value-witness application.
-checkExpM' config kenv tenv xx@(XApp a x1 (XWitness w2))
+checkExpM' !config !kenv !tenv xx@(XApp a x1 (XWitness w2))
  = do   (x1', t1, effs1, clos1) <- checkExpM     config kenv tenv x1
         t2                      <- checkWitnessM config kenv tenv w2
         case t1 of
@@ -223,7 +227,7 @@ checkExpM' config kenv tenv xx@(XApp a x1 (XWitness w2))
                  
 
 -- value-value application.
-checkExpM' config kenv tenv xx@(XApp a x1 x2)
+checkExpM' !config !kenv !tenv xx@(XApp a x1 x2)
  = do   (x1', t1, effs1, clos1)    <- checkExpM config kenv tenv x1
         (x2', t2, effs2, clos2)    <- checkExpM config kenv tenv x2
 
@@ -244,7 +248,7 @@ checkExpM' config kenv tenv xx@(XApp a x1 x2)
 
 
 -- spec abstraction -----------------------------
-checkExpM' config kenv tenv xx@(XLAM a b1 x2)
+checkExpM' !config !kenv !tenv xx@(XLAM a b1 x2)
  = do   let t1            = typeOfBind b1
         _                 <- checkTypeM config kenv t1
 
@@ -278,7 +282,7 @@ checkExpM' config kenv tenv xx@(XLAM a b1 x2)
          
 
 -- function abstraction -------------------------
-checkExpM' config kenv tenv xx@(XLam a b1 x2)
+checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
  = do   
         -- Check the type of the binder.
         let t1  =  typeOfBind b1
@@ -360,7 +364,7 @@ checkExpM' config kenv tenv xx@(XLam a b1 x2)
 
 
 -- let --------------------------------------------
-checkExpM' config kenv tenv xx@(XLet a lts x2)
+checkExpM' !config !kenv !tenv xx@(XLet a lts x2)
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -393,7 +397,7 @@ checkExpM' config kenv tenv xx@(XLet a lts x2)
 
 
 -- letregion --------------------------------------
-checkExpM' config kenv tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
+checkExpM' !config !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> checkExpM config kenv tenv x     
     us   -> do
@@ -458,7 +462,7 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
 
 
 -- withregion -----------------------------------
-checkExpM' config kenv tenv xx@(XLet a (LWithRegion u) x)
+checkExpM' !config !kenv !tenv xx@(XLet a (LWithRegion u) x)
  = do
         -- The handle must have region kind.
         (case Env.lookup u kenv of
@@ -496,7 +500,7 @@ checkExpM' config kenv tenv xx@(XLet a (LWithRegion u) x)
                 
 
 -- case expression ------------------------------
-checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
+checkExpM' !config !kenv !tenv xx@(XCase a xDiscrim alts)
  = do   
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim) 
@@ -612,7 +616,7 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
 
 -- type cast -------------------------------------
 -- Weaken an effect, adding in the given terms.
-checkExpM' config kenv tenv xx@(XCast a (CastWeakenEffect eff) x1)
+checkExpM' !config !kenv !tenv xx@(XCast a (CastWeakenEffect eff) x1)
  = do
         -- Check the effect term.
         kEff    <- checkTypeM config kenv eff
@@ -631,7 +635,7 @@ checkExpM' config kenv tenv xx@(XCast a (CastWeakenEffect eff) x1)
 
 
 -- Weaken a closure, adding in the given terms.
-checkExpM' config kenv tenv (XCast a (CastWeakenClosure xs) x1)
+checkExpM' !config !kenv !tenv (XCast a (CastWeakenClosure xs) x1)
  = do
         -- Check the contained expressions.
         (xs', closs)
@@ -650,7 +654,7 @@ checkExpM' config kenv tenv (XCast a (CastWeakenClosure xs) x1)
 
 
 -- Purify an effect, given a witness that it is pure.
-checkExpM' config kenv tenv xx@(XCast a (CastPurify w) x1)
+checkExpM' !config !kenv !tenv xx@(XCast a (CastPurify w) x1)
  = do
         tW                   <- checkWitnessM config kenv tenv w
         (x1', t1, effs, clo) <- checkExpM     config kenv tenv x1
@@ -668,7 +672,7 @@ checkExpM' config kenv tenv xx@(XCast a (CastPurify w) x1)
 
 
 -- Forget a closure, given a witness that it is empty.
-checkExpM' config kenv tenv xx@(XCast a (CastForget w) x1)
+checkExpM' !config !kenv !tenv xx@(XCast a (CastForget w) x1)
  = do   
         tW                    <- checkWitnessM config kenv tenv w
         (x1', t1, effs, clos) <- checkExpM     config kenv tenv x1
@@ -690,10 +694,10 @@ checkExpM' config kenv tenv xx@(XCast a (CastForget w) x1)
 
 -- Type and witness expressions can only appear as the arguments 
 -- to  applications.
-checkExpM' _config _kenv _tenv xx@(XType _)
+checkExpM' !_config !_kenv !_tenv xx@(XType _)
         = throw $ ErrorNakedType xx 
 
-checkExpM' _config _kenv _tenv xx@(XWitness _)
+checkExpM' !_config !_kenv !_tenv xx@(XWitness _)
         = throw $ ErrorNakedWitness xx
 
 checkExpM' _ _ _ _
@@ -711,7 +715,7 @@ checkArgM
                 ( Exp (AnTEC a n) n
                 , Set (TaggedClosure n))
 
-checkArgM config kenv tenv xx
+checkArgM !config !kenv !tenv !xx
  = case xx of
         XType t
          -> do  checkTypeM config kenv t
@@ -747,12 +751,12 @@ returnX :: Ord n
                 , TypeSum n
                 , Set (TaggedClosure n))
 
-returnX a f t es cs
+returnX !a !f !t !es !cs
  = let  e       = TSum es
         c       = closureOfTaggedSet cs
    in   return  (f (AnTEC t e c a)
                 , t, es, cs)
-
+{-# INLINE returnX #-}
 
 -------------------------------------------------------------------------------
 -- | Check some let bindings.
@@ -769,7 +773,7 @@ checkLetsM
                 , TypeSum n
                 , Set (TaggedClosure n))
 
-checkLetsM xx config kenv tenv (LLet mode b11 x12)
+checkLetsM !xx !config !kenv !tenv (LLet mode b11 x12)
  = do   
         -- Check the right of the binding.
         (x12', t12, effs12, clo12)  
@@ -827,7 +831,7 @@ checkLetsM xx config kenv tenv (LLet mode b11 x12)
                 , clo12)
 
 -- letrec ---------------------------------------
-checkLetsM xx config kenv tenv (LRec bxs)
+checkLetsM !xx !config !kenv !tenv (LRec bxs)
  = do   
         let (bs, xs)    = unzip bxs
 
@@ -907,7 +911,7 @@ checkAltM
                 , TypeSum n
                 , Set (TaggedClosure n))
 
-checkAltM _xx config kenv tenv _tDiscrim _tsArgs (AAlt PDefault xBody)
+checkAltM !_xx !config !kenv !tenv !_tDiscrim !_tsArgs (AAlt PDefault xBody)
  = do   (xBody', tBody, effBody, cloBody)
                 <- checkExpM config kenv tenv xBody
 
@@ -916,7 +920,7 @@ checkAltM _xx config kenv tenv _tDiscrim _tsArgs (AAlt PDefault xBody)
                 , effBody
                 , cloBody)
 
-checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData dc bsArg) xBody)
+checkAltM !xx !config !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
  = do   
         let Just aCase  = takeAnnotOfExp xx
 
@@ -987,7 +991,7 @@ checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData dc bsArg) xBody)
 -- | Merge a type annotation on a pattern field with a type we get by
 --   instantiating the constructor type.
 mergeAnnot :: Eq n => Exp a n -> Type n -> Type n -> CheckM a n (Type n)
-mergeAnnot xx tAnnot tActual
+mergeAnnot !xx !tAnnot !tActual
         -- Annotation is bottom, so just use the real type.
         | isBot tAnnot      = return tActual
 
@@ -1009,7 +1013,7 @@ checkWitnessBindsM
         -> [Bind n] 
         -> CheckM a n ()
 
-checkWitnessBindsM kenv xx nRegions bsWits
+checkWitnessBindsM !kenv !xx !nRegions !bsWits
  = mapM_ (checkWitnessBindM kenv xx nRegions bsWits) bsWits
 
 
@@ -1022,7 +1026,7 @@ checkWitnessBindM
         -> Bind  n              -- ^ The witness binding to check.
         -> CheckM a n ()
 
-checkWitnessBindM kenv xx uRegions bsWit bWit
+checkWitnessBindM !kenv !xx !uRegions !bsWit !bWit
  = let btsWit   
         = [(typeOfBind b, b) | b <- bsWit]
 
@@ -1090,7 +1094,7 @@ checkWitnessBindM kenv xx uRegions bsWit bWit
 --   If the annotation is Bot then we just replace the annotation,
 --   otherwise it must match that for the right of the binding.
 checkLetBindOfTypeM 
-        :: (Eq n, Ord n, Show n, Pretty n) 
+        :: (Ord n, Show n, Pretty n) 
         => Exp a n 
         -> Config n             -- Data type definitions.
         -> Env n                -- Kind environment. 
@@ -1099,7 +1103,7 @@ checkLetBindOfTypeM
         -> Bind n 
         -> CheckM a n (Bind n, Kind n)
 
-checkLetBindOfTypeM xx config kenv _tenv tRight b
+checkLetBindOfTypeM !xx !config !kenv !_tenv !tRight b
         -- If the annotation is Bot then just replace it.
         | isBot (typeOfBind b)
         = do    k       <- checkTypeM config kenv tRight

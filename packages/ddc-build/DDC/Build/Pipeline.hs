@@ -61,18 +61,18 @@ data Error
         = ErrorSaltLoad    (CL.Error Salt.Name)
 
         -- | Error converting the module to Disciple Core Salt.
-        | forall err. Pretty err => ErrorSaltConvert err
+        | forall err. Pretty err => ErrorSaltConvert !err
 
         -- | Error converting the module to Disciple Core Lite.
-        | forall err. Pretty err => ErrorLiteConvert err
+        | forall err. Pretty err => ErrorLiteConvert !err
 
         -- | Error when loading a module.
         --   Blame it on the user.
-        | forall err. Pretty err => ErrorLoad err
+        | forall err. Pretty err => ErrorLoad !err
 
         -- | Error when type checking a transformed module.
         --   Blame it on the compiler.
-        | forall err. Pretty err => ErrorLint err
+        | forall err. Pretty err => ErrorLint !err
 
 
 instance Pretty Error where
@@ -98,18 +98,20 @@ instance Pretty Error where
          -> vcat [ text "Error in transformed module."
                  , indent 2 (ppr err') ]
 
+instance NFData Error
+
 
 -- PipeSource -----------------------------------------------------------------
 -- | Process program text.
 data PipeText n (err :: * -> *) where
   PipeTextOutput 
-        :: Sink
+        :: !Sink
         -> PipeText n err
 
   PipeTextLoadCore 
         :: (Ord n, Show n, Pretty n)
-        => Fragment n err
-        -> [PipeCore (C.AnTEC () n) n]
+        => !(Fragment n err)
+        -> ![PipeCore (C.AnTEC () n) n]
         -> PipeText n err
 
 
@@ -124,16 +126,18 @@ pipeText
         -> PipeText n err
         -> IO [Error]
 
-pipeText srcName srcLine str pp
+pipeText !srcName !srcLine !str !pp
  = case pp of
-        PipeTextOutput sink
-         -> pipeSink str sink
+        PipeTextOutput !sink
+         -> {-# SCC "PipeTextOutput" #-}
+            pipeSink str sink
 
-        PipeTextLoadCore frag pipes
-         -> let toks            = fragmentLexModule frag srcName srcLine str
+        PipeTextLoadCore !frag !pipes
+         -> {-# SCC "PipeTextLoadCore" #-}
+            let toks            = fragmentLexModule frag srcName srcLine str
             in case CL.loadModule (fragmentProfile frag) srcName toks of
                  Left err -> return $ [ErrorLoad err]
-                 Right mm -> mm `deepseq` (liftM concat $ mapM (pipeCore mm) pipes)
+                 Right mm -> pipeCores mm pipes
 
 
 -- PipeCoreModule -------------------------------------------------------------
@@ -141,49 +145,49 @@ pipeText srcName srcLine str pp
 data PipeCore a n where
   -- Plumb the module on without transforming it.
   PipeCoreId
-        :: [PipeCore a n]
+        :: ![PipeCore a n]
         -> PipeCore a n
 
   -- Output a module to console or file.
   PipeCoreOutput    
-        :: Sink 
+        :: !Sink 
         -> PipeCore a n
 
   -- Type check a module.
   PipeCoreCheck      
-        :: Fragment n err
-        -> [PipeCore (C.AnTEC a n) n]
+        :: !(Fragment n err)
+        -> ![PipeCore (C.AnTEC a n) n]
         -> PipeCore a n
 
   -- Type check a module, discarding previous per-node type annotations.
   PipeCoreReCheck
         :: (Show a, NFData a)
-        => Fragment n err
-        -> [PipeCore (C.AnTEC a n)  n]
+        => !(Fragment n err)
+        -> ![PipeCore (C.AnTEC a n)  n]
         -> PipeCore  (C.AnTEC a n') n
 
   -- Strip annotations from a module.
   PipeCoreStrip
-        :: [PipeCore () n]
+        :: ![PipeCore () n]
         ->  PipeCore a n
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
-        :: Fragment n err
-        -> s
-        -> Simplifier s a n
-        -> [PipeCore () n] 
+        :: !(Fragment n err)
+        -> !s
+        -> !(Simplifier s a n)
+        -> ![PipeCore () n] 
         -> PipeCore a n
 
   -- Treat a module as belonging to the Core Lite fragment from now on.
   PipeCoreAsLite
-        :: [PipeLite]
+        :: ![PipeLite]
         -> PipeCore (C.AnTEC () Lite.Name) Lite.Name
 
   -- Treat a module as beloning to the Core Salt fragment from now on.
   PipeCoreAsSalt
         :: Pretty a 
-        => [PipeSalt a] 
+        => ![PipeSalt a] 
         -> PipeCore a Salt.Name
 
   -- Apply a canned function to a module.
@@ -191,7 +195,7 @@ data PipeCore a n where
   -- More reusable transforms should be made into their own pipeline stage.
   PipeCoreHacks
         :: Canned (C.Module a n -> IO (C.Module a n))
-        -> [PipeCore a n]
+        -> ![PipeCore a n]
         -> PipeCore a n
 
 
@@ -204,16 +208,19 @@ pipeCore
         -> PipeCore a n
         -> IO [Error]
 
-pipeCore mm pp
+pipeCore !mm !pp
  = case pp of
-        PipeCoreId pipes
-         -> liftM concat $ mapM (pipeCore mm) pipes
+        PipeCoreId !pipes
+         -> {-# SCC "PipeCoreId" #-}
+            pipeCores mm pipes
 
-        PipeCoreOutput sink
-         -> pipeSink (renderIndent $ ppr mm) sink
+        PipeCoreOutput !sink
+         -> {-# SCC "PipeCoreOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
 
-        PipeCoreCheck fragment pipes
-         -> let profile         = fragmentProfile fragment
+        PipeCoreCheck !fragment !pipes
+         -> {-# SCC "PipeCoreCheck" #-}
+            let profile         = fragmentProfile fragment
 
                 goCheck mm1
                  = case C.checkModule (C.configOfProfile profile) mm1 of
@@ -221,56 +228,72 @@ pipeCore mm pp
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1
-                 = mm1 `deepseq` 
-                   case C.complies profile mm1 of
+                 = case C.complies profile mm1 of
                         Just err   -> return [ErrorLint err]
-                        Nothing    -> liftM concat $ mapM (pipeCore mm1) pipes
+                        Nothing    -> pipeCores mm1 pipes
 
              in goCheck mm
 
-        PipeCoreReCheck fragment pipes
-         -> pipeCore (C.reannotate C.annotTail mm)
+        PipeCoreReCheck !fragment !pipes
+         -> {-# SCC "PipeCoreReCheck" #-}
+            pipeCore (C.reannotate C.annotTail mm)
          $  PipeCoreCheck fragment pipes
 
-        PipeCoreStrip pipes
-         -> let mm' = (C.reannotate (const ()) mm)
-            in  liftM concat $ mapM (pipeCore mm') pipes
+        PipeCoreStrip !pipes
+         -> {-# SCC "PipeCoreStrip" #-}
+            let mm' = (C.reannotate (const ()) mm)
+            in  pipeCores mm' pipes
 
-        PipeCoreSimplify fragment nameZero simpl pipes
-         -> let profile         = fragmentProfile fragment
+        PipeCoreSimplify !fragment !nameZero !simpl !pipes
+         -> {-# SCC "PipeCoreSimplify" #-}
+            let profile         = fragmentProfile fragment
                 primKindEnv     = C.profilePrimKinds      profile
                 primTypeEnv     = C.profilePrimTypes      profile
 
-                mm'		= flip S.evalState nameZero
-				$ applySimplifier profile primKindEnv primTypeEnv simpl mm 
+                !mm'		= (flip S.evalState nameZero
+				   $ applySimplifier profile primKindEnv primTypeEnv simpl mm)
 
-                -- TODO: simplifiers do not preserve type annotations.
-                mm2             = C.reannotate (const ()) mm'
+                !mm2            = C.reannotate (const ()) mm'
 
-            in  mm `deepseq` 
-                liftM concat $ mapM (pipeCore mm2) pipes
+            in  pipeCores mm2 pipes
 
-        PipeCoreAsLite pipes
-         -> liftM concat $ mapM (pipeLite mm) pipes
+        PipeCoreAsLite !pipes
+         -> {-# SCC "PipeCoreAsLite" #-}
+            liftM concat $ mapM (pipeLite mm) pipes
 
-        PipeCoreAsSalt pipes
-         -> liftM concat $ mapM (pipeSalt mm) pipes
+        PipeCoreAsSalt !pipes
+         -> {-# SCC "PipeCoreAsSalt" #-}
+            liftM concat $ mapM (pipeSalt mm) pipes
 
-        PipeCoreHacks (Canned f) pipes
-         -> do  mm'     <- f mm
-                liftM concat $ mapM (pipeCore mm') pipes
+        PipeCoreHacks !(Canned f) !pipes
+         -> {-# SCC "PipeCoreHacks" #-} 
+            do  mm'     <- f mm
+                pipeCores mm' pipes
+
+
+pipeCores :: (NFData a, Show a, NFData n, Eq n, Ord n, Show n, Pretty n)
+          => C.Module a n -> [PipeCore a n] -> IO [Error]
+
+pipeCores !mm !pipes 
+ = go [] pipes
+ where  go !errs []   
+         = return errs
+
+        go !errs (pipe : rest)
+         = do   !err     <- pipeCore mm pipe
+                go (errs ++ err) rest
 
 
 -- PipeLiteModule -------------------------------------------------------------
 -- | Process a Core Lite module.
 data PipeLite
         -- | Output the module in core language syntax.
-        = PipeLiteOutput Sink
+        = PipeLiteOutput !Sink
 
         -- | Convert the module to the Core Salt Fragment.
-        | PipeLiteToSalt Salt.Platform 
-                         Salt.Config
-                         [PipeCore () Salt.Name]
+        | PipeLiteToSalt !Salt.Platform 
+                         !Salt.Config
+                         ![PipeCore () Salt.Name]
 
 
 -- | Process a Core Lite module.
@@ -278,61 +301,62 @@ pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name
          -> PipeLite
          -> IO [Error]
 
-pipeLite mm pp
+pipeLite !mm !pp
  = case pp of
-        PipeLiteOutput sink
-         -> pipeSink (renderIndent $ ppr mm) sink
+        PipeLiteOutput !sink
+         -> {-# SCC "PipeLiteOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLiteToSalt platform runConfig pipes
-         -> case Lite.saltOfLiteModule platform runConfig 
+        PipeLiteToSalt !platform !runConfig !pipes
+         -> {-# SCC "PipeLiteToSalt" #-}
+            case Lite.saltOfLiteModule platform runConfig 
                         (C.profilePrimDataDefs Lite.profile) 
                         (C.profilePrimKinds    Lite.profile)
                         (C.profilePrimTypes    Lite.profile)
                         mm 
-            of  Left  err       -> return [ErrorLiteConvert err]
-                Right mm'       -> mm' `deepseq` liftM concat $ mapM (pipeCore mm') pipes
-
+             of  Left  err  -> return [ErrorLiteConvert err]
+                 Right mm'  -> pipeCores mm' pipes 
 
 -- PipeSaltModule --------------------------------------------------------------
 -- | Process a Core Salt module.
 data PipeSalt a where
         -- Plumb the module on without doing anything to it.
         PipeSaltId
-                :: [PipeSalt a]
+                :: ![PipeSalt a]
                 -> PipeSalt a
 
         -- Output the module in core language syntax.
         PipeSaltOutput 
-                :: Sink
+                :: !Sink
                 -> PipeSalt a
 
         -- Insert control-transfer primops.
         --      This needs to be done before we convert the module to C or LLVM.
         PipeSaltTransfer
-                :: [PipeSalt (AnTEC a Salt.Name)]
+                :: ![PipeSalt (AnTEC a Salt.Name)]
                 -> PipeSalt (AnTEC a Salt.Name)
 
         -- Print the module as a C source code.
         PipeSaltPrint      
-                :: Bool                 -- With C prelude.
-                -> Salt.Platform        -- Target platform specification
-                -> Sink 
+                :: !Bool                 -- With C prelude.
+                -> !Salt.Platform        -- Target platform specification
+                -> !Sink 
                 -> PipeSalt a
 
         -- Convert the module to LLVM.
         PipeSaltToLlvm
-                :: Salt.Platform 
-                -> [PipeLlvm]
+                :: !Salt.Platform 
+                -> ![PipeLlvm]
                 -> PipeSalt a
 
         -- Compile the module via C source code.
         PipeSaltCompile
-                :: Salt.Platform        --  Target platform specification
-                -> Builder              --  Builder to use.
-                -> FilePath             --  Intermediate C file.
-                -> FilePath             --  Object file.
-                -> Maybe FilePath       --  Link into this exe file
-                -> Bool                 --  Keep intermediate .c files
+                :: !Salt.Platform        --  Target platform specification
+                -> !Builder              --  Builder to use.
+                -> !FilePath             --  Intermediate C file.
+                -> !FilePath             --  Object file.
+                -> !(Maybe FilePath)     --  Link into this exe file
+                -> !Bool                 --  Keep intermediate .c files
                 -> PipeSalt a
 
 deriving instance Show a => Show (PipeSalt a)
@@ -342,42 +366,47 @@ deriving instance Show a => Show (PipeSalt a)
 --  
 --   Returns empty list on success.
 pipeSalt  :: (Show a, Pretty a, NFData a)
-          => C.Module a Salt.Name 
+          => C.Module a Salt.Name
           -> PipeSalt a
           -> IO [Error]
 
-pipeSalt mm pp
+pipeSalt !mm !pp
  = case pp of
-        PipeSaltId pipes
-         -> liftM concat $ mapM (pipeSalt mm) pipes
+        PipeSaltId !pipes
+         -> {-# SCC "PipeSaltId" #-}
+            liftM concat $ mapM (pipeSalt mm) pipes
 
-        PipeSaltOutput sink
-         -> pipeSink (renderIndent $ ppr mm) sink
+        PipeSaltOutput !sink
+         -> {-# SCC "PipeSaltOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
 
-        PipeSaltTransfer pipes
-         -> case Salt.transferModule mm of
+        PipeSaltTransfer !pipes
+         -> {-# SCC "PipeSaltTransfer" #-}
+            case Salt.transferModule mm of
                 Left err        -> return [ErrorSaltConvert err]
-                Right mm'       -> mm' `deepseq` 
-                                   liftM concat $ mapM (pipeSalt mm') pipes
+                Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
 
-        PipeSaltPrint withPrelude platform sink
-         -> case Salt.seaOfSaltModule withPrelude platform mm of
+        PipeSaltPrint !withPrelude !platform !sink
+         -> {-# SCC "PipeSaltPrint" #-}
+            case Salt.seaOfSaltModule withPrelude platform mm of
                 Left  err 
                  -> return $ [ErrorSaltConvert err]
 
                 Right doc 
                  -> pipeSink (renderIndent doc)  sink
 
-        PipeSaltToLlvm platform more
-         -> do  let mm'     = Llvm.convertModule platform 
+        PipeSaltToLlvm !platform !more
+         -> {-# SCC "PipeSaltToLlvm" #-}
+            do  let mm'     = Llvm.convertModule platform 
                             $ C.reannotate (const ()) mm
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 
         PipeSaltCompile 
-                platform builder cPath oPath mExePath
-                keepSeaFiles
-         -> case Salt.seaOfSaltModule True platform mm of
+                !platform !builder !cPath !oPath !mExePath
+                !keepSeaFiles
+         -> {-# SCC "PipeSaltCompile" #-}
+            case Salt.seaOfSaltModule True platform mm of
              Left errs
               -> error $ show errs
 
@@ -426,15 +455,17 @@ pipeLlvm
         -> PipeLlvm 
         -> IO [Error]
 
-pipeLlvm mm pp
+pipeLlvm !mm !pp
  = case pp of
-        PipeLlvmPrint sink
-         ->     pipeSink (renderIndent $ ppr mm) sink
+        PipeLlvmPrint !sink
+         -> {-# SCC "PipeLlvmPrint" #-} 
+            pipeSink (renderIndent $ ppr mm) sink
 
         PipeLlvmCompile 
-                builder llPath sPath oPath mExePath
-                keepLlvmFiles keepAsmFiles
-         -> do  -- Write out the LLVM source file.
+                !builder !llPath !sPath !oPath !mExePath
+                !keepLlvmFiles !keepAsmFiles
+         -> {-# SCC "PipeLlvmCompile" #-}
+            do  -- Write out the LLVM source file.
                 let llSrc       = renderIndent $ ppr mm
                 writeFile llPath llSrc
 
@@ -480,7 +511,7 @@ data Sink
 
 -- | Emit a string to the given `Sink`.
 pipeSink :: String -> Sink -> IO [Error]
-pipeSink str tg
+pipeSink !str !tg
  = case tg of
         SinkDiscard
          -> do  return []
