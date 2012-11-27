@@ -59,7 +59,7 @@ data Module a n
 
 
 instance (NFData a, NFData n) => NFData (Module a n) where
- rnf mm
+ rnf !mm
         =     rnf (moduleName mm)
         `seq` rnf (moduleExportKinds mm)
         `seq` rnf (moduleExportTypes mm)
@@ -124,7 +124,7 @@ data ModuleName
 instance NFData ModuleName where
  rnf (ModuleName ss)
         = rnf ss
-
+ 
 
 -- | A fully qualified name, 
 --   including the name of the module it is from.

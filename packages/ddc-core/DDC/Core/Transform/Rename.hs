@@ -31,7 +31,7 @@ instance Rename LetMode where
 
 instance Rename Witness where
  renameWith sub ww
-  = let down    = renameWith
+  = let down x   = renameWith x
     in case ww of
         WVar u          -> WVar  (use0 sub u)
         WCon{}          -> ww

@@ -66,7 +66,7 @@ class SubstituteTX (c :: * -> *) where
 instance SubstituteTX (Exp a) where 
  substituteWithTX tArg sub xx
   = {-# SCC substituteWithTX #-}
-    let down    = substituteWithTX tArg
+    let down x   = substituteWithTX tArg x
     in case xx of
         XVar a u        -> XVar a u
         XCon{}          -> xx
@@ -113,7 +113,7 @@ instance SubstituteTX (Exp a) where
 
 instance SubstituteTX LetMode where
  substituteWithTX tArg sub lm
-  = let down    = substituteWithTX tArg
+  = let down x   = substituteWithTX tArg x
     in case lm of
         LetStrict         -> lm
         LetLazy Nothing   -> lm
@@ -122,7 +122,7 @@ instance SubstituteTX LetMode where
 
 instance SubstituteTX (Alt a) where
  substituteWithTX tArg sub aa
-  = let down = substituteWithTX tArg
+  = let down x = substituteWithTX tArg x
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down sub xBody
@@ -135,7 +135,7 @@ instance SubstituteTX (Alt a) where
 
 instance SubstituteTX (Cast a) where
  substituteWithTX tArg sub cc
-  = let down    = substituteWithTX tArg
+  = let down x   = substituteWithTX tArg x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (down sub eff)
         CastWeakenClosure clo   -> CastWeakenClosure (map (down sub) clo)
@@ -145,7 +145,7 @@ instance SubstituteTX (Cast a) where
 
 instance SubstituteTX Witness where
  substituteWithTX tArg sub ww
-  = let down    = substituteWithTX tArg
+  = let down x   = substituteWithTX tArg x
     in case ww of
         WVar u                  -> WVar u
         WCon{}                  -> ww

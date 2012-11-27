@@ -14,6 +14,25 @@ import DDC.Type.Exp
 import Control.DeepSeq
 
 
+-------------------------------------------------------------------------------
+-- | Data constructor names.
+data DaConName n
+        -- | The unit data constructor is builtin.
+        = DaConUnit
+
+        -- | Data constructor name defined by the client.
+        | DaConNamed n
+        deriving (Eq, Show)
+
+
+instance NFData n => NFData (DaConName n) where
+ rnf dcn
+  = case dcn of
+        DaConUnit       -> ()
+        DaConNamed n    -> rnf n
+
+
+-------------------------------------------------------------------------------
 -- | Data constructors.
 data DaCon n
         = DaCon
@@ -34,28 +53,11 @@ data DaCon n
 
 
 instance NFData n => NFData (DaCon n) where
- rnf dc
+ rnf !dc
         =     rnf (daConName dc)
         `seq` rnf (daConType dc)
         `seq` rnf (daConIsAlgebraic dc)
 
-
--- | Data constructor names.
-data DaConName n
-        -- | The unit data constructor is builtin.
-        = DaConUnit
-
-        -- | Data constructor name defined by the client.
-        | DaConNamed n
-        deriving (Eq, Show)
-
-
-instance NFData n => NFData (DaConName n) where
- rnf dcn
-  = case dcn of
-        DaConUnit       -> ()
-        DaConNamed n    -> rnf n
-        
 
 -- | Take the name of data constructor.
 takeNameOfDaCon :: DaCon n -> Maybe n

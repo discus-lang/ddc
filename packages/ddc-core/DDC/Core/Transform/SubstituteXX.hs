@@ -101,8 +101,8 @@ class SubstituteXX (c :: * -> * -> *) where
 instance SubstituteXX Exp where 
  substituteWithXX xArg sub xx
   = {-# SCC substituteWithXX #-}
-    let down    = substituteWithXX xArg
-        into    = renameWith
+    let down s x   = substituteWithXX xArg s x
+        into s x   = renameWith s x
     in case xx of
         XVar a u
          -> case substX xArg sub u of
@@ -153,7 +153,7 @@ instance SubstituteXX Exp where
 
 instance SubstituteXX Alt where
  substituteWithXX xArg sub aa
-  = let down = substituteWithXX xArg
+  = let down s x = substituteWithXX xArg s x
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down sub xBody
@@ -166,8 +166,8 @@ instance SubstituteXX Alt where
 
 instance SubstituteXX Cast where
  substituteWithXX xArg sub cc
-  = let down = substituteWithXX xArg
-        into = renameWith
+  = let down s x = substituteWithXX xArg s x
+        into s x = renameWith s x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
         CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)

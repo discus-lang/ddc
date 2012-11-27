@@ -47,10 +47,10 @@ applySimplifier
         -> Module a n           -- ^ Module to simplify
         -> State s (Module a n)
 
-applySimplifier profile kenv tenv spec mm
+applySimplifier !profile !kenv !tenv !spec !mm
  = case spec of
         Seq t1 t2
-         -> do  mm'     <- applySimplifier profile kenv tenv t1 mm
+         -> do  !mm'     <- applySimplifier profile kenv tenv t1 mm
                 applySimplifier profile kenv tenv t2 mm'
 
         Trans t1
@@ -59,8 +59,8 @@ applySimplifier profile kenv tenv spec mm
 	Fix 0 _
 	 -> return mm
 
-	Fix n s
-	 -> do	mm' <- applySimplifier profile kenv tenv s mm
+	Fix !n !s
+	 -> do	!mm' <- applySimplifier profile kenv tenv s mm
                 applySimplifier profile kenv tenv (Fix (n - 1) s) mm'
 
 
@@ -74,7 +74,7 @@ applyTransform
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
 
-applyTransform profile _kenv _tenv spec mm
+applyTransform !profile !_kenv !_tenv !spec !mm
  = case spec of
         Id               -> return mm
         Anonymize        -> return $ anonymizeX mm
@@ -106,7 +106,7 @@ applySimplifierX
         -> Exp a n              -- ^ Expression to simplify
         -> State s (TransformResult (Exp a n))
 
-applySimplifierX profile kenv tenv spec xx
+applySimplifierX !profile !kenv !tenv !spec !xx
  = let down = applySimplifierX profile kenv tenv
    in  case spec of
         Seq t1 t2
@@ -153,7 +153,7 @@ applyFixpointX
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (TransformResult (Exp a n))
 
-applyFixpointX profile kenv tenv i' s xx'
+applyFixpointX !profile !kenv !tenv !i' !s !xx'
  = go i' xx' False
  where
   simp = applySimplifierX profile kenv tenv s
@@ -219,7 +219,7 @@ applyTransformX
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (TransformResult (Exp a n))
 
-applyTransformX profile kenv tenv spec xx
+applyTransformX !profile !kenv !tenv !spec !xx
  = let  res x = return $ resultDone (show $ ppr spec) x
    in case spec of
         Id                -> res xx

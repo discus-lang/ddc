@@ -47,10 +47,11 @@ cmdToSalt config bundle source sourceText
                 $ PipeTextLoadCore fragmentLite
                 [ PipeCoreStrip
                 [ stageLiteToSalt  config source
+                [ PipeCoreCheck    fragmentSalt
                 [ (if configSuppressCoreImports config
                         then PipeCoreHacks    (Canned (\x -> return $ eraseImports x))
                         else PipeCoreId)
-                [ PipeCoreOutput   SinkStdout]]]]
+                [ PipeCoreOutput   SinkStdout]]]]]
 
                 -- Unrecognised.
                 | otherwise

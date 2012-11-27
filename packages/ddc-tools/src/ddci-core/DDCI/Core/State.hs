@@ -62,8 +62,8 @@ data State
         , stateWithSalt         :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
 
           -- | Simplifier to apply to core program.
-        , stateSimplLite        :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
-        , stateSimplSalt        :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
+        , stateSimplLite        :: Simplifier Int () Lite.Name
+        , stateSimplSalt        :: Simplifier Int () Salt.Name
 
           -- | Force the builder to this one, this sets the address width etc.
           --   If Nothing then query the host system for the default builder.

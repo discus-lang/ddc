@@ -61,13 +61,13 @@ class TransformUpMX m (c :: * -> * -> *) where
 
 
 instance Monad m => TransformUpMX m Module where
- transformUpMX f kenv tenv mm
+ transformUpMX f kenv tenv !mm
   = do  x'    <- transformUpMX f kenv tenv $ moduleBody mm
         return  $ mm { moduleBody = x' }
 
 
 instance Monad m => TransformUpMX m Exp where
- transformUpMX f kenv tenv xx
+ transformUpMX f kenv tenv !xx
   = {-# SCC transformUpMX #-} 
     (f kenv tenv =<<)
   $ case xx of

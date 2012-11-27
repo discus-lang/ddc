@@ -29,10 +29,8 @@ import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Transform.Namify
---import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
-import Data.Monoid
 import Data.Maybe
 import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Build.Language.Salt        as Salt
@@ -103,7 +101,7 @@ stageLiteLoad
 stageLiteLoad config source pipesLite
  = PipeTextLoadCore fragmentLite
  [ PipeCoreStrip
-        ( PipeCoreOutput (dump config source "dump.lite-load.dcl")
+        ( PipeCoreOutput (dump config source "dump.lite.dcl")
         : pipesLite ) ]
 
 
@@ -116,19 +114,12 @@ stageLiteOpt
 
 stageLiteOpt config source pipes
  = PipeCoreSimplify 
-	fragmentLite
+        fragmentLite
         (0 :: Int) 
-        (configSimplLite config <> normalizeLite)
+        (configSimplLite config)
         ( PipeCoreOutput (dump config source "dump.lite-opt.dcl") 
         : pipes)
 
- 
- where  -- The code fed to later stages must be normalized, 
-        -- so ensure out simplifications are preserving this.
-        normalizeLite
-         = S.anormalize
-                (makeNamifier Lite.freshT)      
-                (makeNamifier Lite.freshX)
 
 -------------------------------------------------------------------------------
 -- | Optimise Core Salt.
@@ -139,51 +130,37 @@ stageSaltOpt
 
 stageSaltOpt config source pipes
  = PipeCoreSimplify 
-	fragmentSalt
+        fragmentSalt
         (0 :: Int) 
         (configSimplSalt config)        
         ( PipeCoreOutput  (dump config source "dump.salt-opt.dcl")
         : pipes )
 
- where  -- The code fed to later stages must be normalized,
-        -- so ensure out simplifications are preserving this.
-        _normalizeSalt
-         = S.anormalize
-                (makeNamifier Salt.freshT)      
-                (makeNamifier Salt.freshX)
-
 
 -------------------------------------------------------------------------------
 -- | Convert Core Lite to Core Salt.
---   
---   The result is a-normalised.
---
+---
+--   The Lite to Salt transform requires the program to be normalised,
+--   and have type annotations.
 stageLiteToSalt 
         :: Config -> Source
         -> [PipeCore () Salt.Name] 
         -> PipeCore  () Lite.Name
 
 stageLiteToSalt config source pipesSalt
- = PipeCoreSimplify             fragmentLite 0 normalizeLite
-     [ PipeCoreOutput           (dump config source "dump.lite-normalized.dcl")
-     , PipeCoreCheck            fragmentLite                                      
-       [ PipeCoreAsLite 
-         [ PipeLiteToSalt       (buildSpec $ configBuilder config) 
-                                (configRuntime config)
-           [ PipeCoreOutput     (dump config source "dump.lite-to-salt.dce")
-           , PipeCoreSimplify fragmentSalt 0 normalizeSalt
-                ( PipeCoreOutput (dump config source "dump.salt-normalized.dce")
-                : pipesSalt)]]]]
-
+ = PipeCoreSimplify       fragmentLite 0 normalizeLite
+   [ PipeCoreCheck        fragmentLite
+     [ PipeCoreOutput     (dump config source "dump.lite-normalized.dcl")
+     , PipeCoreAsLite
+       [ PipeLiteToSalt   (buildSpec $ configBuilder config) 
+                          (configRuntime config)
+         ( PipeCoreOutput (dump config source "dump.salt.dce")
+         : pipesSalt)]]]
+           
  where  normalizeLite
          = S.anormalize
                 (makeNamifier Lite.freshT)      
                 (makeNamifier Lite.freshX)
-
-        normalizeSalt
-         = S.anormalize
-                (makeNamifier Salt.freshT)      
-                (makeNamifier Salt.freshX)
 
 
 -------------------------------------------------------------------------------
@@ -194,19 +171,20 @@ stageSaltToC
         -> PipeCore () Salt.Name
 
 stageSaltToC config source sink
- = PipeCoreSimplify fragmentSalt 0
-        (configSimplSalt config 
-                <> S.anormalize (makeNamifier Salt.freshT) 
-                                (makeNamifier Salt.freshX))
-   [ PipeCoreOutput       (dump config source "dump.salt-simplified.dce")
-   , PipeCoreCheck        fragmentSalt
-     [ PipeCoreAsSalt
+ = PipeCoreSimplify       fragmentSalt 0 normalizeSalt
+   [ PipeCoreCheck        fragmentSalt
+     [ PipeCoreOutput     (dump config source "dump.salt-normalized.dce")
+     , PipeCoreAsSalt
        [ PipeSaltTransfer
          [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
-         , PipeSaltPrint  
+         , PipeSaltPrint
                 (not $ configSuppressHashImports config)
                 (buildSpec $ configBuilder config)
-                sink]]]]
+                sink ]]]]
+
+ where  normalizeSalt
+         = S.anormalize (makeNamifier Salt.freshT) 
+                        (makeNamifier Salt.freshX)
 
 
 -------------------------------------------------------------------------------
@@ -226,17 +204,14 @@ stageCompileSalt config source filePath shouldLinkExe
         oPath          = outputDirBase ++ ".o"
         exePathDefault = outputDirBase
         exePath        = fromMaybe exePathDefault (configOutputFile config)
-   in   -- Make the pipeline for the final compilation.
-        PipeCoreSimplify fragmentSalt 0
-                (configSimplSalt config 
-                        <> S.anormalize (makeNamifier Salt.freshT) 
-                                        (makeNamifier Salt.freshX))
-           [ PipeCoreOutput       (dump config source "dump.salt-simplified.dce")
-           , PipeCoreCheck        fragmentSalt
-             [ PipeCoreAsSalt
-               [ PipeSaltTransfer
-                 [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
-                 , PipeSaltCompile
+   in
+        PipeCoreSimplify        fragmentSalt 0 normalizeSalt
+         [ PipeCoreCheck        fragmentSalt
+           [ PipeCoreOutput     (dump config source "dump.salt-normalized.dce")
+           , PipeCoreAsSalt
+             [ PipeSaltTransfer
+               [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
+               , PipeSaltCompile
                         (buildSpec $ configBuilder config)
                         (configBuilder config)
                         cPath
@@ -247,6 +222,11 @@ stageCompileSalt config source filePath shouldLinkExe
                         (configKeepSeaFiles config)
                         ]]]]
 
+ where  normalizeSalt
+         = S.anormalize (makeNamifier Salt.freshT) 
+                        (makeNamifier Salt.freshX)
+
+
 -------------------------------------------------------------------------------
 -- | Convert Core Salt to LLVM.
 stageSaltToLLVM
@@ -255,18 +235,18 @@ stageSaltToLLVM
         -> PipeCore () Salt.Name
 
 stageSaltToLLVM config source pipesLLVM
- = PipeCoreSimplify fragmentSalt 0
-        (configSimplSalt config
-                <> S.anormalize (makeNamifier Salt.freshT)
-                                (makeNamifier Salt.freshX))
-   [ PipeCoreOutput         (dump config source "dump.salt-simplified.dce")
-   , PipeCoreCheck          fragmentSalt
-     [ PipeCoreAsSalt
+ = PipeCoreSimplify fragmentSalt 0 normalizeSalt
+   [ PipeCoreCheck          fragmentSalt
+     [ PipeCoreOutput       (dump config source "dump.salt-normalized.dce")
+     , PipeCoreAsSalt
        [ PipeSaltTransfer
          [ PipeSaltOutput   (dump config source "dump.salt-transfer.dce")
          , PipeSaltToLlvm   (buildSpec $ configBuilder config) 
-           ( PipeLlvmPrint  (dump config source "dump.salt-to-llvm.ll")
-           : pipesLLVM) ]]]]
+                            pipesLLVM ]]]]
+
+ where  normalizeSalt
+         = S.anormalize (makeNamifier Salt.freshT) 
+                        (makeNamifier Salt.freshX)
 
 
 -------------------------------------------------------------------------------

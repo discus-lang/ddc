@@ -31,7 +31,7 @@ checkModule
         -> Module a n           -- ^ Module to check.
         -> Either (Error a n) (Module (AnTEC a n) n)
 
-checkModule config xx 
+checkModule !config !xx 
         = result 
         $ checkModuleM 
                 config 
@@ -50,7 +50,7 @@ checkModuleM
         -> Module a n           -- ^ Module to check.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM config kenv tenv mm@ModuleCore{}
+checkModuleM !config !kenv !tenv mm@ModuleCore{}
  = do   
         -- Convert the imported kind and type map to a list of binds.
         let bksImport  = [BName n k |  (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
@@ -89,7 +89,7 @@ checkModuleBinds
         -> Exp (AnTEC a n) n
         -> CheckM a n ()
 
-checkModuleBinds ksExports tsExports xx
+checkModuleBinds !ksExports !tsExports !xx
  = case xx of
         XLet _ (LLet _ b _) x2     
          -> do  checkModuleBind  ksExports tsExports b
@@ -110,7 +110,7 @@ checkModuleBind
         -> Bind n
         -> CheckM a n ()
 
-checkModuleBind _ksExports tsExports b
+checkModuleBind !_ksExports !tsExports !b
  | BName n tDef <- b
  = case Map.lookup n tsExports of
         Nothing                 -> return ()
@@ -132,7 +132,7 @@ checkTypeM :: (Ord n, Show n, Pretty n)
            -> Type n 
            -> CheckM a n (Kind n)
 
-checkTypeM config kenv tt
+checkTypeM !config !kenv !tt
  = case T.checkType (configPrimDataDefs config) kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k

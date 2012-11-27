@@ -26,7 +26,7 @@ instance Reannotate Module where
 instance Reannotate Exp where
  reannotate f xx
   = {-# SCC reannotate #-}
-    let down    = reannotate f
+    let down x   = reannotate f x
     in case xx of
         XVar  a u       -> XVar  (f a) u
         XCon  a u       -> XCon  (f a) u
@@ -42,7 +42,7 @@ instance Reannotate Exp where
 
 instance Reannotate Lets where
  reannotate f xx
-  = let down    = reannotate f
+  = let down x  = reannotate f x
     in case xx of
         LLet m b x       -> LLet m b (down x)
         LRec bxs         -> LRec [(b, down x) | (b, x) <- bxs]
@@ -58,7 +58,7 @@ instance Reannotate Alt where
 
 instance Reannotate Cast where
  reannotate f cc
-  = let down    = reannotate f
+  = let down x  = reannotate f x
     in case cc of
         CastWeakenEffect  eff   -> CastWeakenEffect eff
         CastWeakenClosure xs    -> CastWeakenClosure (map down xs)

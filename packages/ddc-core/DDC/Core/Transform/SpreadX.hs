@@ -38,7 +38,7 @@ instance SpreadX (Module a) where
 instance SpreadX (Exp a) where
  spreadX kenv tenv xx 
   = {-# SCC spreadX #-}
-    let down = spreadX kenv tenv 
+    let down x = spreadX kenv tenv x
     in case xx of
         XVar a u        -> XVar a (down u)
         XCon a u        -> XCon a (down u)
@@ -84,7 +84,7 @@ instance SpreadX DaCon where
 
 instance SpreadX (Cast a) where
  spreadX kenv tenv cc
-  = let down = spreadX kenv tenv 
+  = let down x = spreadX kenv tenv x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (spreadT kenv eff)
         CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
@@ -94,7 +94,7 @@ instance SpreadX (Cast a) where
 
 instance SpreadX Pat where
  spreadX kenv tenv pat
-  = let down    = spreadX kenv tenv
+  = let down x   = spreadX kenv tenv x
     in case pat of
         PDefault        -> PDefault
         PData u bs      -> PData (down u) (map down bs)
@@ -111,7 +111,7 @@ instance SpreadX (Alt a) where
 
 instance SpreadX (Lets a) where
  spreadX kenv tenv lts
-  = let down = spreadX kenv tenv
+  = let down x = spreadX kenv tenv x
     in case lts of
         LLet m b x       -> LLet (down m) (down b) (down x)
         

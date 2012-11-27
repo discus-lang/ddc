@@ -55,7 +55,7 @@ data AnTEC a n
 
 
 instance (NFData a, NFData n) => NFData (AnTEC a n) where
- rnf an
+ rnf !an
         =     rnf (annotType    an)
         `seq` rnf (annotEffect  an)
         `seq` rnf (annotClosure an)

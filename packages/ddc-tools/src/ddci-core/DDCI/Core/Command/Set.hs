@@ -63,12 +63,14 @@ cmdSet state cmd
                         (Map.assocs rules) 
         
         		-- Collect all definitions from modules
-                        (I.lookupTemplateFromModules $ Map.elems modules)
+                        (I.lookupTemplateFromModules
+                                $ Map.elems modules)
 
         		-- Module-specific templates
         		(map (\(n,m) -> (n, I.lookupTemplateFromModules [m])) 
                                         $ Map.assocs modules))
                 (concat $ intersperse " " rest) of
+
          Just simpl
           -> do chatStrLn state "ok"
                 return $ state { stateBundle = Bundle frag modules zero simpl rules }

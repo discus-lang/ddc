@@ -103,8 +103,7 @@ letrec {
   foo : [r1 : %].Ptr# rT Obj -> Ptr# rT Obj
     = /\(r1 : %).
        \(x : Ptr# rT Obj).
-      let x0 : Tag# = getTag [rT] x in
-      case x0 of {
+      case getTag [rT] x of {
         _ 
          -> allocBoxed [rT] TAG0# 0#
       }
@@ -115,8 +114,7 @@ letrec {
   foo : [r1 : %].Ptr# rT Obj -> Ptr# rT Obj
     = /\(r1 : %).
        \(x : Ptr# rT Obj).
-      let x0 : Tag# = getTag [rT] x in
-      case x0 of {
+      case getTag [rT] x of {
         TAG0#  
          -> allocBoxed [rT] TAG0# 0#;
         _ 

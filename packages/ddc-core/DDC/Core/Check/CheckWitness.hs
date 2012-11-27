@@ -130,16 +130,16 @@ checkWitnessM
         -> Witness n            -- ^ Witness to check.
         -> CheckM a n (Type n)
 
-checkWitnessM _config _kenv tenv (WVar u)
+checkWitnessM !_config !_kenv !tenv (WVar u)
  = case Env.lookup u tenv of
         Nothing -> throw $ ErrorUndefinedVar u UniverseWitness
         Just t  -> return t
 
-checkWitnessM _config _kenv _tenv (WCon wc)
+checkWitnessM !_config !_kenv !_tenv (WCon wc)
  = return $ typeOfWiCon wc
   
 -- witness-type application
-checkWitnessM config kenv tenv ww@(WApp w1 (WType t2))
+checkWitnessM !config !kenv !tenv ww@(WApp w1 (WType t2))
  = do   t1      <- checkWitnessM  config kenv tenv w1
         k2      <- checkTypeM     config kenv t2
         case t1 of
@@ -151,7 +151,7 @@ checkWitnessM config kenv tenv ww@(WApp w1 (WType t2))
          _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 -- witness-witness application
-checkWitnessM config kenv tenv ww@(WApp w1 w2)
+checkWitnessM !config !kenv !tenv ww@(WApp w1 w2)
  = do   t1      <- checkWitnessM config kenv tenv w1
         t2      <- checkWitnessM config kenv tenv w2
         case t1 of
@@ -163,7 +163,7 @@ checkWitnessM config kenv tenv ww@(WApp w1 w2)
          _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 -- witness joining
-checkWitnessM config kenv tenv ww@(WJoin w1 w2)
+checkWitnessM !config !kenv !tenv ww@(WJoin w1 w2)
  = do   t1      <- checkWitnessM config kenv tenv w1
         t2      <- checkWitnessM config kenv tenv w2
         case (t1, t2) of
@@ -180,7 +180,7 @@ checkWitnessM config kenv tenv ww@(WJoin w1 w2)
          _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
 
 -- embedded types
-checkWitnessM config kenv _tenv (WType t)
+checkWitnessM !config !kenv !_tenv (WType t)
  = checkTypeM config kenv t
         
 

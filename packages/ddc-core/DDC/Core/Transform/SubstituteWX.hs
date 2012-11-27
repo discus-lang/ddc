@@ -71,8 +71,8 @@ class SubstituteWX (c :: * -> *) where
 instance SubstituteWX (Exp a) where 
  substituteWithWX wArg sub xx
   = {-# SCC substituteWithWX #-}
-    let down    = substituteWithWX wArg
-        into    = renameWith
+    let down s x   = substituteWithWX wArg s x
+        into s x   = renameWith s x
     in case xx of
         XVar a u        -> XVar a u
         XCon{}          -> xx
@@ -120,7 +120,7 @@ instance SubstituteWX (Exp a) where
 
 instance SubstituteWX LetMode where
  substituteWithWX wArg sub lm
-  = let down = substituteWithWX wArg
+  = let down s x = substituteWithWX wArg s x
     in case lm of
         LetStrict        -> lm
         LetLazy Nothing  -> LetLazy Nothing
@@ -129,7 +129,7 @@ instance SubstituteWX LetMode where
 
 instance SubstituteWX (Alt a) where
  substituteWithWX wArg sub aa
-  = let down = substituteWithWX wArg
+  = let down s x = substituteWithWX wArg s x
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down sub xBody
@@ -142,8 +142,8 @@ instance SubstituteWX (Alt a) where
 
 instance SubstituteWX (Cast a) where
  substituteWithWX wArg sub cc
-  = let down    = substituteWithWX wArg
-        into    = renameWith
+  = let down s x = substituteWithWX wArg s x
+        into s x = renameWith s x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
         CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
@@ -153,8 +153,8 @@ instance SubstituteWX (Cast a) where
 
 instance SubstituteWX Witness where
  substituteWithWX wArg sub ww
-  = let down    = substituteWithWX wArg
-        into    = renameWith
+  = let down s x = substituteWithWX wArg s x
+        into s x = renameWith s x
     in case ww of
         WVar u
          -> case substW wArg sub u of
