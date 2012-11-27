@@ -39,17 +39,19 @@ cmdToLlvm config bundle source sourceText
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
+                [ PipeCoreStrip
                 [ stageLiteToSalt  config source
                 [ stageSaltToLLVM  config source 
-                [ PipeLlvmPrint SinkStdout]]]
+                [ PipeLlvmPrint SinkStdout]]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentSalt
+                [ PipeCoreStrip
                 [ stageSaltToLLVM  config source
-                [ PipeLlvmPrint SinkStdout]]
+                [ PipeLlvmPrint SinkStdout]]]
 
                 -- Unrecognised.
                 | otherwise

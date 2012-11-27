@@ -49,13 +49,15 @@ cmdMake config filePath
             pipesSalt
              = case configViaBackend config of
                 ViaLLVM
-                 -> [ stageSaltOpt      config source
+                 -> [ PipeCoreStrip
+                    [ stageSaltOpt      config source
                     [ stageSaltToLLVM   config source 
-                    [ stageCompileLLVM  config source filePath True ]]]
+                    [ stageCompileLLVM  config source filePath True ]]]]
 
                 ViaC
-                 -> [ stageSaltOpt      config source
-                    [ stageCompileSalt  config source filePath True ]]
+                 -> [ PipeCoreStrip
+                    [ stageSaltOpt      config source
+                    [ stageCompileSalt  config source filePath True ]]]
 
         -- Throw any errors that arose during compilation.
         errs <- make

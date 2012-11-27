@@ -29,7 +29,7 @@ import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Transform.Namify
-import DDC.Core.Check                           (AnTEC)
+--import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
 import Data.Monoid
@@ -49,8 +49,8 @@ data Config
           configDump            :: Bool
 
           -- | Simplifiers to apply to intermediate code
-        , configSimplLite       :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
-        , configSimplSalt       :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
+        , configSimplLite       :: Simplifier Int () Lite.Name
+        , configSimplSalt       :: Simplifier Int () Salt.Name
 
           -- | Backend code generator to use
         , configViaBackend              :: ViaBackend
@@ -97,30 +97,32 @@ data ViaBackend
 -- | Type check Core Lite.
 stageLiteLoad
         :: Config -> Source
-        -> [PipeCore (AnTEC () Lite.Name) Lite.Name]
+        -> [PipeCore () Lite.Name]
         -> PipeText Lite.Name Lite.Error
 
 stageLiteLoad config source pipesLite
  = PipeTextLoadCore fragmentLite
-    ( PipeCoreOutput (dump config source "dump.lite-load.dcl")
-    : pipesLite )
+ [ PipeCoreStrip
+        ( PipeCoreOutput (dump config source "dump.lite-load.dcl")
+        : pipesLite ) ]
 
 
 -------------------------------------------------------------------------------
 -- | Optimise Core Lite.
 stageLiteOpt 
         :: Config -> Source
-        -> [PipeCore (AnTEC () Lite.Name) Lite.Name]
-        -> PipeCore  (AnTEC () Lite.Name) Lite.Name
+        -> [PipeCore () Lite.Name]
+        ->  PipeCore () Lite.Name
 
 stageLiteOpt config source pipes
  = PipeCoreSimplify 
 	fragmentLite
         (0 :: Int) 
         (configSimplLite config <> normalizeLite)
-        [ PipeCoreOutput (dump config source "dump.lite-opt.dcl")
-        , PipeCoreReCheck fragmentLite pipes ]
+        ( PipeCoreOutput (dump config source "dump.lite-opt.dcl") 
+        : pipes)
 
+ 
  where  -- The code fed to later stages must be normalized, 
         -- so ensure out simplifications are preserving this.
         normalizeLite
@@ -132,18 +134,16 @@ stageLiteOpt config source pipes
 -- | Optimise Core Salt.
 stageSaltOpt
         :: Config -> Source
-        -> [PipeCore (AnTEC () Salt.Name) Salt.Name]
-        -> PipeCore  (AnTEC () Salt.Name) Salt.Name
+        -> [PipeCore () Salt.Name]
+        -> PipeCore  () Salt.Name
 
 stageSaltOpt config source pipes
  = PipeCoreSimplify 
 	fragmentSalt
         (0 :: Int) 
         (configSimplSalt config)        
-        [ PipeCoreOutput  (dump config source "dump.salt-opt.dcl")
-        , PipeCoreReCheck fragmentSalt pipes ]
-
-        -- TODO: Normalise after dumping opt version.
+        ( PipeCoreOutput  (dump config source "dump.salt-opt.dcl")
+        : pipes )
 
  where  -- The code fed to later stages must be normalized,
         -- so ensure out simplifications are preserving this.
@@ -160,21 +160,20 @@ stageSaltOpt config source pipes
 --
 stageLiteToSalt 
         :: Config -> Source
-        -> [PipeCore (AnTEC () Salt.Name) Salt.Name] 
-        -> PipeCore  (AnTEC () Lite.Name) Lite.Name
+        -> [PipeCore () Salt.Name] 
+        -> PipeCore  () Lite.Name
 
 stageLiteToSalt config source pipesSalt
- = PipeCoreSimplify         fragmentLite 0 normalizeLite
+ = PipeCoreSimplify             fragmentLite 0 normalizeLite
      [ PipeCoreOutput           (dump config source "dump.lite-normalized.dcl")
-     , PipeCoreReCheck          fragmentLite
+     , PipeCoreCheck            fragmentLite                                      
        [ PipeCoreAsLite 
          [ PipeLiteToSalt       (buildSpec $ configBuilder config) 
                                 (configRuntime config)
            [ PipeCoreOutput     (dump config source "dump.lite-to-salt.dce")
            , PipeCoreSimplify fragmentSalt 0 normalizeSalt
-             [ PipeCoreCheck    fragmentSalt
-               ( PipeCoreOutput (dump config source "dump.salt-normalized.dce")
-               : pipesSalt)]]]]]
+                ( PipeCoreOutput (dump config source "dump.salt-normalized.dce")
+                : pipesSalt)]]]]
 
  where  normalizeLite
          = S.anormalize
@@ -192,7 +191,7 @@ stageLiteToSalt config source pipesSalt
 stageSaltToC
         :: Config -> Source
         -> Sink
-        -> PipeCore (AnTEC () Salt.Name) Salt.Name
+        -> PipeCore () Salt.Name
 
 stageSaltToC config source sink
  = PipeCoreSimplify fragmentSalt 0
@@ -217,7 +216,7 @@ stageCompileSalt
         -> FilePath             -- ^ Path of original source file.
                                 --   Build products are placed into the same dir.
         -> Bool                 -- ^ Should we link this into an executable
-        -> PipeCore (AnTEC () Salt.Name) Salt.Name
+        -> PipeCore () Salt.Name
 
 stageCompileSalt config source filePath shouldLinkExe
  = let  -- Decide where to place the build products.
@@ -253,7 +252,7 @@ stageCompileSalt config source filePath shouldLinkExe
 stageSaltToLLVM
         :: Config -> Source
         -> [PipeLlvm]
-        -> PipeCore (AnTEC () Salt.Name) Salt.Name
+        -> PipeCore () Salt.Name
 
 stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify fragmentSalt 0

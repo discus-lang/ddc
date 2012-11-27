@@ -162,12 +162,17 @@ data PipeCore a n where
         -> [PipeCore (C.AnTEC a n)  n]
         -> PipeCore  (C.AnTEC a n') n
 
+  -- Strip annotations from a module.
+  PipeCoreStrip
+        :: [PipeCore () n]
+        ->  PipeCore a n
+
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
         :: Fragment n err
         -> s
         -> Simplifier s a n
-        -> [PipeCore a n] 
+        -> [PipeCore () n] 
         -> PipeCore a n
 
   -- Treat a module as belonging to the Core Lite fragment from now on.
@@ -227,6 +232,10 @@ pipeCore mm pp
          -> pipeCore (C.reannotate C.annotTail mm)
          $  PipeCoreCheck fragment pipes
 
+        PipeCoreStrip pipes
+         -> let mm' = (C.reannotate (const ()) mm)
+            in  liftM concat $ mapM (pipeCore mm') pipes
+
         PipeCoreSimplify fragment nameZero simpl pipes
          -> let profile         = fragmentProfile fragment
                 primKindEnv     = C.profilePrimKinds      profile
@@ -234,8 +243,12 @@ pipeCore mm pp
 
                 mm'		= flip S.evalState nameZero
 				$ applySimplifier profile primKindEnv primTypeEnv simpl mm 
+
+                -- TODO: simplifiers do not preserve type annotations.
+                mm2             = C.reannotate (const ()) mm'
+
             in  mm `deepseq` 
-                liftM concat $ mapM (pipeCore mm') pipes
+                liftM concat $ mapM (pipeCore mm2) pipes
 
         PipeCoreAsLite pipes
          -> liftM concat $ mapM (pipeLite mm) pipes

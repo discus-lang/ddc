@@ -8,10 +8,10 @@ import DDC.Main.Config
 import DDC.Driver.Command.Load
 import DDC.Build.Builder
 import DDC.Build.Platform
-import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Simplifier                      (Simplifier)
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
+import DDC.Core.Transform.Reannotate
 import System.FilePath
 import Control.Monad
 import Data.Monoid
@@ -33,7 +33,7 @@ import qualified DDC.Build.Language.Lite        as Lite
 --
 getSimplLiteOfConfig 
         :: Config -> Builder 
-        -> IO (Simplifier Int (AnTEC () Lite.Name) Lite.Name)
+        -> IO (Simplifier Int () Lite.Name)
 
 getSimplLiteOfConfig config builder
  = case configOptLevelLite config of
@@ -45,7 +45,7 @@ getSimplLiteOfConfig config builder
 --
 getSimplSaltOfConfig 
         :: Config -> Builder
-        -> IO (Simplifier Int (AnTEC () Salt.Name) Salt.Name)
+        -> IO (Simplifier Int () Salt.Name)
 
 getSimplSaltOfConfig config builder
  = case configOptLevelSalt config of
@@ -57,13 +57,13 @@ getSimplSaltOfConfig config builder
 -- This just passes the code through unharmed.
 
 -- | Level 0 optimiser for Core Lite code.
-opt0_lite :: Config -> IO (Simplifier Int (AnTEC () Lite.Name) Lite.Name)
+opt0_lite :: Config -> IO (Simplifier Int () Lite.Name)
 opt0_lite _
         = return $ S.Trans S.Id
 
 
 -- | Level 0 optimiser for Core Salt code.
-opt0_salt :: Config -> IO (Simplifier Int (AnTEC () Salt.Name) Salt.Name)
+opt0_salt :: Config -> IO (Simplifier Int () Salt.Name)
 opt0_salt _
         = return $ S.Trans S.Id
 
@@ -74,7 +74,7 @@ opt0_salt _
 -- | Level 1 optimiser for Core Lite code.
 opt1_lite 
         :: Config -> Builder
-        -> IO (Simplifier Int (AnTEC () Lite.Name) Lite.Name)
+        -> IO (Simplifier Int () Lite.Name)
 
 opt1_lite config _builder
  = do
@@ -93,7 +93,8 @@ opt1_lite config _builder
                         inlineModulePaths
 
         let inlineModules
-                = fromMaybe (error "Imported modules do not parse.")
+                = map (reannotate (const ()))
+                $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
 
         -- Simplifier to convert to a-normal form.
@@ -112,7 +113,7 @@ opt1_lite config _builder
 -- | Level 1 optimiser for Core Salt code.
 opt1_salt 
         :: Config -> Builder
-        -> IO (Simplifier Int (AnTEC () Salt.Name) Salt.Name)
+        -> IO (Simplifier Int () Salt.Name)
 
 opt1_salt config builder
  = do   
@@ -137,8 +138,10 @@ opt1_salt config builder
                         inlineModulePaths
 
         let inlineModules
-                = fromMaybe (error "Imported modules do not parse.")
+                = map (reannotate (const ()))
+                $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
+
 
         -- Simplifier to convert to a-normal form.
         let normalizeSalt

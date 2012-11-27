@@ -45,11 +45,12 @@ cmdToSalt config bundle source sourceText
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
+                [ PipeCoreStrip
                 [ stageLiteToSalt  config source
                 [ (if configSuppressCoreImports config
                         then PipeCoreHacks    (Canned (\x -> return $ eraseImports x))
                         else PipeCoreId)
-                [ PipeCoreOutput   SinkStdout]]]
+                [ PipeCoreOutput   SinkStdout]]]]
 
                 -- Unrecognised.
                 | otherwise

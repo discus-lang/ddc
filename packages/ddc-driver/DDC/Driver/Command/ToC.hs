@@ -38,15 +38,17 @@ cmdToC config bundle source sourceText
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
+                [ PipeCoreStrip
                 [ stageLiteToSalt  config source 
-                [ stageSaltToC     config source SinkStdout]]
+                [ stageSaltToC     config source SinkStdout]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToC     config source SinkStdout]
+                [ PipeCoreStrip
+                [ stageSaltToC     config source SinkStdout]]
 
                 -- Unrecognised.
                 | otherwise
