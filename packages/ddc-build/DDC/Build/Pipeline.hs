@@ -255,7 +255,11 @@ pipeCore !mm !pp
 
                 !mm2            = C.reannotate (const ()) mm'
 
-            in  pipeCores mm2 pipes
+                -- NOTE: It is helpful to deepseq here so that we release 
+                --       references to the unsimplified version of the code.
+                --       Because we've just applied reannotate, we also
+                --       release type annotations on the expression tree.
+            in  mm2 `deepseq` pipeCores mm2 pipes
 
         PipeCoreAsLite !pipes
          -> {-# SCC "PipeCoreAsLite" #-}
@@ -397,8 +401,8 @@ pipeSalt !mm !pp
 
         PipeSaltToLlvm !platform !more
          -> {-# SCC "PipeSaltToLlvm" #-}
-            do  let mm'     = Llvm.convertModule platform 
-                            $ C.reannotate (const ()) mm
+            do  let !mm_cut  = C.reannotate (const ()) mm
+                let !mm'     = Llvm.convertModule platform mm_cut 
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 

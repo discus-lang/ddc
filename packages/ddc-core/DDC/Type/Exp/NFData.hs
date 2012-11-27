@@ -39,7 +39,7 @@ instance NFData n => NFData (Type n) where
 
 
 instance NFData n => NFData (TypeSum n) where
- rnf ts
+ rnf !ts
   = case ts of
         TypeSumBot{}
          -> rnf (typeSumKind ts)
