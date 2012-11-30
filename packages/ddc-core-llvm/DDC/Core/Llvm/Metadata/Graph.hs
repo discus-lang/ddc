@@ -2,6 +2,7 @@
 -- Manipulate graphs for metadata generation
 --  WARNING: everything in here is REALLY SLOW
 --
+
 module DDC.Core.Llvm.Metadata.Graph
        ( -- * Binary Relations
          Rel
@@ -12,13 +13,19 @@ module DDC.Core.Llvm.Metadata.Graph
          -- * Graphs
        , UG(..)
        , DG(..)
-       , transClosureDG, orientation
-       , transOrientation,    minOrientation
+       , orientation, orientations
+       , transOrientation, minOrientation, smallOrientation
        , partitionDG
 
          -- * Trees
        , Tree(..)
-       , sources, anchor )
+       , sources, anchor 
+
+         -- * QC Testing. TODO: get rid of this
+       , Dom
+       , bruteforceMinOrientation, partitionings
+       , aliasMeasure, isTree 
+       , transReduction, minimumCompletion )
 where
 import Data.List          hiding (partition)
 import Data.Ord
@@ -92,6 +99,11 @@ transClosure dom r = fromList $ step dom $ toList dom r
 transCloSize :: (Eq a) => Dom a -> Rel a -> Int
 transCloSize d r = size d $ transClosure d r
 
+transReduction :: Eq a => Dom a -> Rel a -> Rel a
+transReduction dom rel 
+  = let composeR' = composeR dom
+    in  rel `differenceR` (rel `composeR'` transClosure dom rel)
+
 
 -- Graphs ---------------------------------------------------------------------
 -- | An undirected graph.
@@ -101,21 +113,28 @@ newtype UG  a = UG (Dom a, Rel a)
 newtype DG  a = DG (Dom a, Rel a)
 
 instance Show a => Show (UG a) where
-  show (UG (d,r)) = "UG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
+  show (UG (d,r)) = "UG (" ++ (show d) ++ ", fromList " ++ (show $ toList d r) ++ ")"
 
 instance Show a => Show (DG a) where
-  show (DG (d,r)) = "DG (" ++ (show d) ++ ", " ++ (show $ toList d r) ++ ")"
+  show (DG (d,r)) = "DG (" ++ (show d) ++ ", fromList " ++ (show $ toList d r) ++ ")"
 
+instance Show a => Eq (DG a) where
+  a == b = show a == show b 
 
 -- | Give a random orientation of an undirected graph.
 orientation :: Eq a => UG a -> DG a
 orientation (UG (d,g)) = DG (d,g)
 
-
 -- | Compute the transitive closure of a directed graph.
-transClosureDG :: (Eq a) => DG a -> DG a
-transClosureDG (DG (d,g)) = DG (d, transClosure d g)
-
+orientations :: Eq a => UG a -> [Rel a]
+orientations (UG (d,g))
+  = case toList d g of
+        []    -> [g]
+        edges -> let combo k      = filter ((k==) . length) $ subsequences edges
+                     choices      = concatMap combo [0..length d]
+                     choose c     = g `differenceR` fromList c
+                                      `unionR`      fromList (map swap c)
+                  in map choose choices
 
 -- | Find the transitive orientation of an undirected graph if one exists
 --    TODO implement linear time algorithm (this is the whole point of
@@ -123,36 +142,46 @@ transClosureDG (DG (d,g)) = DG (d, transClosure d g)
 --         the minimum orientation!)
 --
 transOrientation :: Eq a => UG a -> Maybe (DG a)
-transOrientation (UG (d,g))
- = case toList d g of
-        [] -> Just (DG (d,g))
-        edges 
-          -> let  -- Treat G as a directed graph. For all subsets S of A (set of arcs),
-                  --   reverse the direction of all arcs in S and check if the result
-                  --   is transitive.
-                  combo k      = filter ((k==) . length) $ subsequences edges
-                  choices      = concatMap combo [1..length d]
-                  choose c     = g `differenceR` fromList c
-                                   `unionR`      fromList (map swap c)
-              in  liftM DG $ liftM (d,) $ find (transitiveR d) $ map choose choices
+transOrientation ug@(UG (d,_))
+  = liftM DG 
+  $ liftM (d,) 
+  $ find (transitiveR d) 
+  $ orientations ug
 
 
 -- | Find the orientation with the smallest transitive closure
 minOrientation :: (Show a, Eq a) => UG a -> DG a
-minOrientation ug = fromMaybe (minOrientation' ug) (transOrientation ug)
+minOrientation ug = fromMaybe (bruteforceMinOrientation ug) (transOrientation ug)
 
-minOrientation' :: (Show a, Eq a) => UG a -> DG a
-minOrientation' (UG (d, g))
- = case toList d g of
-        [] -> DG (d,g)
-        edges 
-          -> let  combo k   = filter ((k==) . length) $ subsequences edges
-                  choices   = concatMap combo [1..length d]
-                  choose c  = g `differenceR` fromList c
-                                `unionR`      fromList (map swap c)
-                  minTransClo = head $ sortBy (comparing $ transCloSize d) 
-                                     $ map choose choices
-              in  DG (d, minTransClo)
+bruteforceMinOrientation :: (Show a, Eq a) => UG a -> DG a
+bruteforceMinOrientation ug@(UG (d, _))
+  = let minTransClo = head $ sortBy (comparing $ transCloSize d)
+                           $ orientations ug
+     in DG (d, minTransClo)
+
+
+-- | Find the orientation with a `small enough' transitive closure
+smallOrientation :: (Show a, Eq a) => UG a -> DG a
+smallOrientation ug = fromMaybe (orientation ug) (transOrientation ug)
+
+
+minimumCompletion :: (Show a, Eq a) => UG a -> UG a
+minimumCompletion (UG (d,g))
+ = let 
+       -- Let U be the set of all possible fill edges. For all subsets
+       --   S of U, add S to G and see if the result is trans-orientable.
+       u           = toList d $ allR `differenceR` g
+       combo k     = filter ((k==) . length) $ subsequences u
+       choices     = concatMap combo [0..length u]
+       choose c    = g `unionR` fromList c
+
+       -- There always exists a comparability completion for an undirected graph
+       --   in the worst case it's the complete version of the graph.
+       --   the result is minimum thanks to how `subsequences` and
+       --   list comprehensions work.
+   in  fromMaybe (error "minimumCompletion: no completion found!") 
+                $ liftM UG 
+                $ find (isJust . transOrientation . UG) $ map ((d,) . choose) choices
 
 
 -- Trees ----------------------------------------------------------------------
@@ -184,7 +213,7 @@ partitionDG (DG (d,g))
    in map Tree $ fromMaybe (error "partitionDG: no partition found!") 
                $ find (all $ uncurry isTree) 
                $ map (map (mkGraph g)) 
-               $ sortBy (comparing (aliasingAmount g))
+               $ sortBy (comparing (aliasMeasure g))
                $ partitionings d
 
 
@@ -198,8 +227,8 @@ type SubList a      = [a]
 --      and aliasing among trees
 --   TODO - come up with a more efficient to compute measure
 --
-aliasingAmount :: Eq a => Rel a -> Partitioning a -> Int
-aliasingAmount g p
+aliasMeasure :: Eq a => Rel a -> Partitioning a -> Int
+aliasMeasure g p
  = (outerAliasing $ map length p) + (sum $ map innerAliasing p)
     where innerAliasing t = length $ toList t $ transClosure t g
           outerAliasing (l:ls) = l * (sum ls) + outerAliasing ls
