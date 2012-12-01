@@ -2,5 +2,6 @@
 
 .PHONY  : show-pkgs
 show-pkgs :
-	@echo -n "Packages required to compile DDC: "
-	@echo $(DDC_PACKAGES) | sed 's/-hide-all-packages //;s/-package //g;s/base //;s/array //;s/containers //'
+	@echo $(DDC_PACKAGES) \
+         | sed 's/-hide-all-packages //;s/-package //g;s/base //g;s/directory //;s/array //;s/containers //'
+
