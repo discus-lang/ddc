@@ -15,11 +15,12 @@ bin/war : $(war_hs)
 .PHONY 	: war
 war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/war test \
+	@bin/war test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
-		+compway std
+		+compway std \
+                +compway opt -O
 	@echo
 
 
