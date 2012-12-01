@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>  
+        <key>scopeName</key>
+        <string>source.disciplecore</string>
+
+        <key>fileTypes</key>
+	<array> <string>dcl, dce</string>
+	</array>
+
+	<key>keyEquivalent</key>
+	<string>^~H</string>
+
+	<key>name</key>
+	<string>Disciple Core</string>
+
+	<key>patterns</key>
+	<array>
+                <dict>  <key>name</key> <string>comment.line.disciple.core</string>
+                        <key>match</key>
+                        <string>(--).*$\n?</string>
+                </dict>
+
+
+                <dict>  <key>name</key> <string>keyword.disciple.core</string>
+                        <key>match</key>
+                        <string>\b(module|imports|exports|with|let|letrec|in|letregion|withregion|case|of|weakeff|weakclo|purify|forget|do)\b</string>
+                </dict>
+
+
+                <dict>  <key>name</key> <string>type.constructor.effect.disciple.core</string>
+                        <key>match</key>
+                        <string>\!0</string>
+                </dict>
+
+
+                <dict>  <key>name</key> <string>type.constructor.unboxed</string>
+                        <key>match</key>
+                        <string>\b(Void#|Bool#|Nat#|Int#|Word[0-9]*#|Float[0-8]*#|Tag#|Addr#|Ptr#|String#)</string>
+                </dict>
+
+
+                <dict>  <key>name</key> <string>kind.constructor.disciple.core</string>
+                        <key>match</key>
+                        <string>[\*\%\!\$]</string>
+                </dict>
+
+
+                <dict>  <key>name</key> <string>data.constructor.unboxed</string>
+                        <key>match</key>
+                        <string>\b(True#|False#|N#|I#|W[0-9]*#|F[0-8]*#)</string>
+                </dict>
+
+                <dict>  <key>name</key> <string>constant.language.primop.disciple.core</string>
+                        <key>match</key>
+                        <string>\b[a-z][a-zA-Z0-9']*\#</string>
+                </dict>
+
+                <dict>  <key>name</key> <string>constant.numeric.unboxed.disciple.core</string>
+
+                        <key>match</key>
+                        <string>\b([0-9]+|0[b][0-1]+|0([x][0-9a-fA-F]+))(i[0-9]*|w[0-9]*)?#</string>
+                </dict>
+
+
+                <dict>  <key>name</key> <string>constant.numeric.disciple.core</string>
+
+                        <key>match</key>
+                        <string>\b([0-9]+|0[b][0-1]+|0([x][0-9a-fA-F]+))\b</string>
+                </dict>
+	</array>
+</dict>
+</plist>
