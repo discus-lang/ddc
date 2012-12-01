@@ -56,6 +56,11 @@ runtime : $(runtime_dep) \
 		code/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),code/libddc-runtime.$(SHARED_SUFFIX),)
 
+.PHONY  : runtime-new
+runtime-new : $(runtime_dep) \
+                code/libddc-runtime.a \
+                $(if $(SHARED_SUFFIX),code/libddc-runtime.$(SHARED_SUFFIX),)
+
 
 # Clean objects in the runtime system
 .PHONY : cleanRuntime

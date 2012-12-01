@@ -13,7 +13,7 @@ bin/war : $(war_hs)
 
 # Run the testsuite in just the standard way.
 .PHONY 	: war
-war : allWithConfig
+war : newWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
 	@bin/war test/ddc-main \
                 -j $(THREADS) \

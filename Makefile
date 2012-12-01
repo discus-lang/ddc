@@ -48,13 +48,23 @@ all 	:
 include make/build.mk
 
 
-# Build everything, now that we have the configuration included above.
+# Build everything related to alpha and new compiler.
+# now that we have the configuration included above.
 .PHONY	: allWithConfig
 allWithConfig :
 	@$(MAKE) packages/ddc-alpha/src/Source/Lexer.hs
 	@$(MAKE) deps
 	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core \
 		 runtime external libs bin/war -j $(THREADS)
+
+
+# Build everything related to the new compiler, 
+# now that we have the configuration included above.
+.PHONY	: newWithConfig
+newWithConfig :
+	@$(MAKE) deps-new
+	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core \
+		 runtime-new bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -85,6 +95,12 @@ deps	: make/deps/Makefile-ddc-alpha.deps \
           make/deps/Makefile-ddc-check.deps \
           make/deps/Makefile-ddc-main.deps \
           make/deps/Makefile-ddci-core.deps
+
+# -- Build all dependencies related to the new compiler
+.PHONY	 : deps-new
+deps-new : make/deps/Makefile-ddc-check.deps \
+           make/deps/Makefile-ddc-main.deps \
+           make/deps/Makefile-ddci-core.deps
 
 
 # -- What to do during the nightly builds
