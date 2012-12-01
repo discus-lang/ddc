@@ -19,7 +19,8 @@ clean  : cleanWar cleanRuntime cleanLibrary
 		-o	-name "*.glob" \
 		-follow | xargs -n 1 rm -f
 
-	@rm -f doc/haddock/*
-	@rm -f packages/ddc-alpha/Config/Config.hs package/ddc-alpha/Source/Lexer.hs
+	@rm -f  doc/haddock/*
+	@rm -f  doc/haddock-core/*
+	@rm -f  packages/ddc-alpha/Config/Config.hs package/ddc-alpha/Source/Lexer.hs
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak

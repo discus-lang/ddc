@@ -29,8 +29,8 @@ verbLocateRunLib verbose args
 				then ["."]
 				else pathBase_
 
-	let pathLibrary_test = map (++ "/library") pathBase
-	let pathRuntime_test = map (++ "/runtime") pathBase
+	let pathLibrary_test = map (++ "/packages/ddc-alpha/library") pathBase
+	let pathRuntime_test = map (++ "/packages/ddc-alpha/runtime") pathBase
 
 	-- use the pathBase args and see if we can find the base library and the runtime system.
 	mPathRuntime	<- liftM (liftM fst)

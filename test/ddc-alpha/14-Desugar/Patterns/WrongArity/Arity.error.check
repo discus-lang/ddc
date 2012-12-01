@@ -8,12 +8,12 @@ ddc-alpha: ERROR
 ./test/ddc-alpha/14-Desugar/Patterns/WrongArity/Arity.ds:8:8
     Wrong number of arguments for constructor match.
          constructor: Data.List.Nil
-          defined at: ./library/Data/List.di:27:10
+          defined at: ./packages/ddc-alpha/library/Data/List.di:27:10
                  has: 0 arguments, but has been used here with 1.
 
 ./test/ddc-alpha/14-Desugar/Patterns/WrongArity/Arity.ds:7:8
     Wrong number of arguments for constructor match.
          constructor: Data.List.Cons
-          defined at: ./library/Data/List.di:28:10
+          defined at: ./packages/ddc-alpha/library/Data/List.di:28:10
                  has: 2 arguments, but has been used here with 3.
 

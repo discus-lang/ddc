@@ -13,7 +13,8 @@ ddci-core_packages = \
         packages/ddc-tools/src/ddci-core/DDCI 
 
 # -- packages without /DDC etc at end, so we can load them in ghci
-ddci-core_packages_root = $(patsubst %/DDC,%,$(patsubst %/DDCI,%,$(ddci-core_packages)))
+ddci-core_packages_root = \
+        $(patsubst %/DDC,%,$(patsubst %/DDCI,%,$(ddci-core_packages)))
 
 ddci-core_src_hs_all = \
         $(shell find $(ddci-core_packages) -name "*.hs" -follow) \

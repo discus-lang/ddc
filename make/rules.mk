@@ -16,12 +16,15 @@ code/c/%.o : code/c/%.c
 #   inter-package dependencies.
 packages/ddc-alpha/%.o : packages/ddc-alpha/%.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-alpha
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+                -c $< \
+                -ipackages/ddc-alpha/src
 
 packages/ddc-alpha/%.hi-boot : packages/ddc-alpha/%.hs-boot packages/ddc-alpha/%.o-boot
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-alpha
-
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+                -c $< \
+                -ipackages/ddc-alpha/src
 
 packages/ddc-base/%.o : packages/ddc-base/%.hs
 	@echo "* Compiling $<"

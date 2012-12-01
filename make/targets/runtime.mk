@@ -4,22 +4,22 @@
 # Runtime for alpha compiler
 # Find source files for the runtime system.
 runtime_c = \
-	$(shell ls runtime/*.c) \
-	$(shell find runtime/Foreign/C -name "*.c") \
-	$(shell find runtime/Prim -name "*.c") \
-	$(shell find runtime/Storage -name "*.c") \
-	$(shell find runtime/Debug -name "*.c")
+	$(shell ls   packages/ddc-alpha/runtime/*.c) \
+	$(shell find packages/ddc-alpha/runtime/Foreign/C -name "*.c") \
+	$(shell find packages/ddc-alpha/runtime/Prim -name "*.c") \
+	$(shell find packages/ddc-alpha/runtime/Storage -name "*.c") \
+	$(shell find packages/ddc-alpha/runtime/Debug -name "*.c")
 
 runtime_dep	= $(patsubst %.c,%.dep,$(runtime_c))
 runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
 
 # Link runtime libraries
-runtime/libddc-runtime.a  : $(runtime_o)
+packages/ddc-alpha/runtime/libddc-runtime.a  : $(runtime_o)
 	@echo "* Linking $@"
 	@ar r $@ $^
 
-runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
+packages/ddc-alpha/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
 
@@ -51,8 +51,8 @@ code/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 #   The shared runtime is only built if SHARED_SUFFIX is defined.
 .PHONY  : runtime
 runtime : $(runtime_dep) \
-		runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
+		packages/ddc-alpha/runtime/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),packages/ddc-alpha/runtime/libddc-runtime.$(SHARED_SUFFIX),) \
 		code/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),code/libddc-runtime.$(SHARED_SUFFIX),)
 
@@ -61,7 +61,7 @@ runtime : $(runtime_dep) \
 .PHONY : cleanRuntime
 cleanRuntime :
 	@echo "* Cleaning runtime"
-	@find runtime \
+	@find packages/ddc-alpha/runtime \
 		    	-name "*.o" \
 		-o	-name "*.dep" \
 		-o	-name "*.so" \

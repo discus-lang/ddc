@@ -25,8 +25,8 @@ main :: IO ()
 main
  = do	[buildDir] <- getArgs
         testCtorOrder (buildDir </> "A.di") "X" "ABC"
-	testCtorOrder "library/Base.di" "Bool" "FalseTrue"
-	testCtorOrder "library/Data/List.di" "List" "NilCons"
+	testCtorOrder "packages/ddc-alpha/library/Base.di" "Bool" "FalseTrue"
+	testCtorOrder "packages/ddc-alpha/library/Data/List.di" "List" "NilCons"
 
 
 testCtorOrder :: FilePath -> String -> String -> IO ()

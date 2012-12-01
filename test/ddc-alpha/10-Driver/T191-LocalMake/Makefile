@@ -3,7 +3,7 @@ top = ../../../../
 
 DDC = $(top)bin/ddc-alpha -basedir $(top)
 
-export DYLD_LIBRARY_PATH = $(top)runtime
+export DYLD_LIBRARY_PATH = $(top)packages/ddc-alpha/runtime
 
 all : Main.bin
 

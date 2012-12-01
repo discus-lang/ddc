@@ -51,9 +51,10 @@ include make/build.mk
 # Build everything, now that we have the configuration included above.
 .PHONY	: allWithConfig
 allWithConfig :
-	@$(MAKE) packages/ddc-alpha/Source/Lexer.hs
+	@$(MAKE) packages/ddc-alpha/src/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core runtime external libs bin/war -j $(THREADS)
+	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core \
+		 runtime external libs bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
