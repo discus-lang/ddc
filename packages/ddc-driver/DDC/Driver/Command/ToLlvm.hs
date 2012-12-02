@@ -40,9 +40,11 @@ cmdToLlvm config bundle source sourceText
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
                 [ PipeCoreStrip
+                [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
+                [ stageSaltOpt     config source
                 [ stageSaltToLLVM  config source 
-                [ PipeLlvmPrint SinkStdout]]]]
+                [ PipeLlvmPrint SinkStdout]]]]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
@@ -50,8 +52,9 @@ cmdToLlvm config bundle source sourceText
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentSalt
                 [ PipeCoreStrip
+                [ stageSaltOpt     config source
                 [ stageSaltToLLVM  config source
-                [ PipeLlvmPrint SinkStdout]]]
+                [ PipeLlvmPrint SinkStdout]]]]
 
                 -- Unrecognised.
                 | otherwise

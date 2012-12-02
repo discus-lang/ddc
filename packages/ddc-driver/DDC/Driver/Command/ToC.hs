@@ -39,8 +39,10 @@ cmdToC config bundle source sourceText
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
                 [ PipeCoreStrip
+                [ stageLiteOpt     config source 
                 [ stageLiteToSalt  config source 
-                [ stageSaltToC     config source SinkStdout]]]
+                [ stageSaltOpt     config source
+                [ stageSaltToC     config source SinkStdout]]]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
@@ -48,7 +50,8 @@ cmdToC config bundle source sourceText
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentSalt
                 [ PipeCoreStrip
-                [ stageSaltToC     config source SinkStdout]]
+                [ stageSaltOpt     config source
+                [ stageSaltToC     config source SinkStdout]]]
 
                 -- Unrecognised.
                 | otherwise
