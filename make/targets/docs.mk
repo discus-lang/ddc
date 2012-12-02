@@ -19,7 +19,7 @@ docs	:
 	@$(MAKE) docs-core
 
 docs-alpha :
-	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-alpha \
+	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-alpha/src \
                 $(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-alpha_src_hs_all))
@@ -46,7 +46,7 @@ docs-hoogle	:
 
 docs-hoogle-alpha :
 	@haddock --hoogle -w -o doc/hoogle 
-                        --optghc=-ipackages/ddc-alpha \
+                        --optghc=-ipackages/ddc-alpha/src \
 			$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-main_src_hs_all))
