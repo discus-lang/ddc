@@ -25,8 +25,17 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [^0] <^2> (mulInt [^0] [^0] [^0] ^1 ^0)
-                         (subInt [^0] [^0] [^0] ^0 (boxInt [^0] 1i#))
+                  -> fac [^0] <^2>
+                         ((/\(^ ^ ^ : %).
+                            \(^ : Int ^2).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [^2] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
+                         ((/\(^ ^ ^ : %).
+                            \(^ : Int ^2).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [^2] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0 (boxInt [^0] 1i#))
                }) [r] <w> (boxInt [r] 1i#) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       unboxInt [r] (boxInt [r] 0i#)
@@ -34,7 +43,7 @@ letrec {
 ()
 * TRANSFORM INFORMATION: 
     Beta reduction:
-        Types:          1
+        Types:          3
         Witnesses:      1
         Values:         0
         Values letted:  0
@@ -56,8 +65,19 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
-                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+                  -> fac [r] <w>
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0 (boxInt [r] 1i#))
                }) (boxInt [r] 1i#) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       unboxInt [r] (boxInt [r] 0i#)
@@ -81,8 +101,19 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
-                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+                  -> fac [r] <w>
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0 (boxInt [r] 1i#))
                }) (boxInt [r] 1i#) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       unboxInt [r] (boxInt [r] 0i#)
@@ -105,8 +136,19 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
-                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+                  -> fac [r] <w>
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0 (boxInt [r] 1i#))
                }) (boxInt [r] 1i#) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       weakeff [Read r + Alloc r] in
@@ -128,8 +170,19 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
-                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+                  -> fac [r] <w>
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0 (boxInt [r] 1i#))
                }) (boxInt [r] 1i#) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       unboxInt [r] (boxInt [r] 0i#)
@@ -149,8 +202,19 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
-                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+                  -> fac [r] <w>
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int# = unboxInt [r] ^1 in
+                           let ^ : Int# = unboxInt [^1] ^1 in
+                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0 (boxInt [r] 1i#))
                }) (boxInt [r] 1i#) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       unboxInt [r] (boxInt [r] 0i#)
@@ -179,25 +243,95 @@ letrec {
                  _ 
                   -> (/\(^ : %).
                        \(^ : Const ^0).\(^ ^ : Int ^0).
-                      case unboxInt [^0] ^0 of {
+                      case (/\(^ : %).
+                          \(^ : Int ^0).
+                         case ^0 of {
+                           I# (^ : Int#) 
+                            -> ^0
+                         }) [^0] ^0 of {
                         0i#  
                          -> ^1;
                         1i#  
                          -> ^1;
                         _ 
-                         -> fac [^0] <^2> (mulInt [^0] [^0] [^0] ^1 ^0)
-                                (subInt [^0] [^0] [^0] ^0 (boxInt [^0] 1i#))
+                         -> fac [^0] <^2>
+                                ((/\(^ ^ ^ : %).
+                                   \(^ : Int ^2).\(^ : Int ^1).
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^2] ^1 in
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^1] ^1 in
+                                  (/\(^ : %).
+                                    \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
+                                ((/\(^ ^ ^ : %).
+                                   \(^ : Int ^2).\(^ : Int ^1).
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^2] ^1 in
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^1] ^1 in
+                                  (/\(^ : %).
+                                    \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0
+                                     ((/\(^ : %).
+                                        \(^ : Int#). I# [^0] ^0) [^0] 1i#))
                       }) [r] <w>
-                         ((/\(^ ^ ^ : %).
-                            \(^ : Int ^2).\(^ : Int ^1).
-                           let ^ : Int# = unboxInt [^2] ^1 in
-                           let ^ : Int# = unboxInt [^1] ^1 in
-                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] [r] ^1 ^0)
-                         ((/\(^ ^ ^ : %).
-                            \(^ : Int ^2).\(^ : Int ^1).
-                           let ^ : Int# = unboxInt [^2] ^1 in
-                           let ^ : Int# = unboxInt [^1] ^1 in
-                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] [r] ^0
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [r] ^1 in
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [^1] ^1 in
+                           (/\(^ : %).
+                             \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [r] ^1 in
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [^1] ^1 in
+                           (/\(^ : %).
+                             \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0
                               ((/\(^ : %).
                                  \(^ : Int#). I# [^0] ^0) [r] 1i#))
                })
@@ -246,25 +380,95 @@ letrec {
                  _ 
                   -> (/\(^ : %).
                        \(^ : Const ^0).\(^ ^ : Int ^0).
-                      case unboxInt [^0] ^0 of {
+                      case (/\(^ : %).
+                          \(^ : Int ^0).
+                         case ^0 of {
+                           I# (^ : Int#) 
+                            -> ^0
+                         }) [^0] ^0 of {
                         0i#  
                          -> ^1;
                         1i#  
                          -> ^1;
                         _ 
-                         -> fac [^0] <^2> (mulInt [^0] [^0] [^0] ^1 ^0)
-                                (subInt [^0] [^0] [^0] ^0 (boxInt [^0] 1i#))
+                         -> fac [^0] <^2>
+                                ((/\(^ ^ ^ : %).
+                                   \(^ : Int ^2).\(^ : Int ^1).
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^2] ^1 in
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^1] ^1 in
+                                  (/\(^ : %).
+                                    \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
+                                ((/\(^ ^ ^ : %).
+                                   \(^ : Int ^2).\(^ : Int ^1).
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^2] ^1 in
+                                  let ^ : Int#
+                                        = (/\(^ : %).
+                                            \(^ : Int ^0).
+                                           case ^0 of {
+                                             I# (^ : Int#) 
+                                              -> ^0
+                                           }) [^1] ^1 in
+                                  (/\(^ : %).
+                                    \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0
+                                     ((/\(^ : %).
+                                        \(^ : Int#). I# [^0] ^0) [^0] 1i#))
                       }) [r] <w>
-                         ((/\(^ ^ ^ : %).
-                            \(^ : Int ^2).\(^ : Int ^1).
-                           let ^ : Int# = unboxInt [^2] ^1 in
-                           let ^ : Int# = unboxInt [^1] ^1 in
-                           boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] [r] ^1 ^0)
-                         ((/\(^ ^ ^ : %).
-                            \(^ : Int ^2).\(^ : Int ^1).
-                           let ^ : Int# = unboxInt [^2] ^1 in
-                           let ^ : Int# = unboxInt [^1] ^1 in
-                           boxInt [^0] (sub# [Int#] ^1 ^0)) [r] [r] [r] ^0
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [r] ^1 in
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [^1] ^1 in
+                           (/\(^ : %).
+                             \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
+                         ((weakclo {[r]} in
+                           /\(^ ^ : %).
+                            \(^ : Int r).\(^ : Int ^1).
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [r] ^1 in
+                           let ^ : Int#
+                                 = (/\(^ : %).
+                                     \(^ : Int ^0).
+                                    case ^0 of {
+                                      I# (^ : Int#) 
+                                       -> ^0
+                                    }) [^1] ^1 in
+                           (/\(^ : %).
+                             \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0
                               ((/\(^ : %).
                                  \(^ : Int#). I# [^0] ^0) [r] 1i#))
                })

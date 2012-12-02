@@ -40,7 +40,7 @@ ok
             Substitutions:  0
             Bindings:       0;
         Beta reduction:
-            Types:          1
+            Types:          3
             Witnesses:      1
             Values:         0
             Values letted:  0
@@ -52,7 +52,7 @@ ok
             Substitutions:  0
             Bindings:       0;
         Beta reduction:
-            Types:          0
+            Types:          2
             Witnesses:      0
             Values:         0
             Values letted:  1
@@ -64,17 +64,32 @@ ok
             Substitutions:  0
             Bindings:       1;
         Beta reduction:
-            Types:          0
+            Types:          2
             Witnesses:      0
-            Values:         0
+            Values:         2
             Values letted:  0
             Values skipped: 0;
         Rules fired:
-            Unfold:  unboxInt_boxInt;
+            Unfold:  unboxInt_boxInt
+            Rewrite: unboxInt_boxInt;
         Bubble: No information;
         Forward:
             Substitutions:  0
-            Bindings:       1;
+            Bindings:       2;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         1
+            Values letted:  1
+            Values skipped: 0;
+        Rules fired:
+            Unfold:  unboxInt_boxInt
+            Unfold:  unboxInt_boxInt
+            Rewrite: unboxInt_boxInt;
+        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       3;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -82,11 +97,12 @@ ok
             Values letted:  0
             Values skipped: 0;
         Rules fired:
+            Unfold:  unboxInt_boxInt
             Unfold:  unboxInt_boxInt;
         Bubble: No information;
         Forward:
             Substitutions:  0
-            Bindings:       1;
+            Bindings:       2;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -94,18 +110,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Rules fired:
-            Unfold:  unboxInt_boxInt;
-        Bubble: No information;
-        Forward:
-            Substitutions:  0
-            Bindings:       1;
-        Beta reduction:
-            Types:          0
-            Witnesses:      0
-            Values:         0
-            Values letted:  0
-            Values skipped: 0;
-        Rules fired:
+            Unfold:  unboxInt_boxInt
             Unfold:  unboxInt_boxInt;
         Bubble: No information
 
@@ -119,14 +124,21 @@ letrec {
             = (let ^ : Int# = 1i# in
                let ^ : Int r = boxInt [r] ^0 in
                \(^ : Int r).
+               weakeff [Read r + Alloc r] in
+               weakclo {[r]; ^0; ^1} in
                case unboxInt [r] ^0 of {
                  0i#  
                   -> ^1;
                  1i#  
                   -> ^1;
                  _ 
-                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
-                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+                  -> fac [r] <w>
+                         (let ^ : Int# = unboxInt [r] ^0 in
+                          boxInt [r] (mul# [Int#] 1i# ^0))
+                         (let ^ : Int# = 1i# in
+                          let ^ : Int r = boxInt [r] ^0 in
+                          let ^ : Int# = unboxInt [r] ^2 in
+                          boxInt [r] (sub# [Int#] ^0 1i#))
                }) (boxInt [r] 10i#) in
       let show : Int# = unboxInt [r] x in
       0i#

@@ -150,10 +150,7 @@ opt1_salt config builder
                         (makeNamifier Salt.freshX)
         
         return  $  (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules inlineModules)
-                <> (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules inlineModules)
-                
+                            $ lookupTemplateFromModules inlineModules)
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeSalt <> S.forward)

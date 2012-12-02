@@ -12,6 +12,9 @@ import Data.List
 -- | Lookup an inliner template from a list of modules.
 ---
 --   This just does a linear search through all the modules.
+--   As we only inline functions defined at top level, we don't need to worry
+--   about lifting indices in templates when we go under binders.
+--
 lookupTemplateFromModules 
         :: (Eq n, Ord n)
         => [Module a n] 

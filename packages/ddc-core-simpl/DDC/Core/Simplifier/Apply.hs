@@ -27,6 +27,7 @@ import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
 import Control.DeepSeq
 import qualified DDC.Base.Pretty	as P
+import qualified Data.Set               as Set
 
 
 -- Modules --------------------------------------------------------------------
@@ -86,7 +87,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
         Forward          -> return $ forwardModule mm
         Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
-        Inline getDef    -> return $ inline getDef mm
+        Inline getDef    -> return $ inline getDef Set.empty mm
         Rewrite rules    -> return $ rewriteModule rules mm
         Prune            -> return $ pruneModule profile mm
         Elaborate        -> return $ elaborateModule mm
@@ -227,7 +228,7 @@ applyTransformX !profile !kenv !tenv !spec !xx
         Snip              -> res    $ snip False xx
         SnipOver          -> res    $ snip True xx
         Flatten           -> res    $ flatten xx
-        Inline  getDef    -> res    $ inline getDef xx
+        Inline  getDef    -> res    $ inline getDef Set.empty xx
         Beta              -> return $ betaReduce False xx
         BetaLets          -> return $ betaReduce True  xx
         Prune             -> return $ pruneX  profile kenv tenv xx

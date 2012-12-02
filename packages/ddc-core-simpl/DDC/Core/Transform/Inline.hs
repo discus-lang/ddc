@@ -5,35 +5,67 @@ module DDC.Core.Transform.Inline
         , lookupTemplateFromModules)
 where
 import DDC.Core.Exp
-import DDC.Core.Transform.TransformX
+import DDC.Core.Module
 import DDC.Core.Transform.Inline.Templates
-import Data.Functor.Identity
+import qualified Data.Set               as Set
+import Data.Set                         (Set)
 
 
--- | Inline the definitions of named bound variables into their use sites
---   in some core thing.
-inline  :: forall (c :: * -> * -> *) a n
-        .  (Ord n, TransformUpMX Identity c)
-        => (n -> Maybe (Exp a n))       -- ^ Lookup the inliner template for
-                                        --   some name.
-        -> c a n                        -- ^ Inline into this thing.
+class Inline (c :: * -> * -> *) where
+ inline :: Ord n
+        => (n -> Maybe (Exp a n))
+                        -- ^ Get the template for a named variable.
+        -> Set n        -- ^ Don't inline definitions for these names.
+        -> c a n
         -> c a n
 
-inline getTemplate xx
-        = {-# SCC inline #-}
-          transformUpX' (inline1 getTemplate) xx
+
+instance Inline Module where
+ inline get inside mm
+  = mm  { moduleBody = inline get inside (moduleBody mm) }
 
 
-inline1 :: Ord n 
-        => (n -> Maybe (Exp a n))       -- ^ Lookup the inliner template for
-                                        --   some name.
-        -> Exp a n                      -- ^ Inline into this expression.
-        -> Exp a n
-
-inline1 getTemplate xx
- = case xx of
+instance Inline Exp where
+ inline get inside xx
+  = let down x = inline get inside x
+    in case xx of
         XVar _ (UName n)
-         | Just xx'     <- getTemplate n
-         -> xx'
+         -- Don't inline a recursive definition into itself.
+         | Set.member n inside
+         -> xx
 
-        _ -> xx
+         -- If there is a template for this variable then inline it, 
+         -- but remember that we're now inside the body so we don't inline
+         -- recursive functions forever.
+         | Just xx'     <- get n
+         -> let !inside' = Set.insert n inside
+            in  inline get inside' xx'
+
+        XVar{}          -> xx
+        XCon{}          -> xx
+        XLAM  a b x     -> XLAM  a b (down x)
+        XLam  a b x     -> XLam  a b (down x)
+        XApp  a x1 x2   -> XApp  a (down x1)  (down x2)
+        XLet  a lts x2  -> XLet  a (down lts) (down x2)
+        XCase a x alts  -> XCase a (down x)   (map down alts)
+        XCast a c x     -> XCast a c          (down x)
+        XType{}         -> xx
+        XWitness{}      -> xx
+
+
+instance Inline Lets where
+ inline get inside lts
+  = let down x = inline get inside x
+    in case lts of
+        LLet mode b x   -> LLet mode b (down x)
+        LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
+        LLetRegions{}   -> lts
+        LWithRegion{}   -> lts
+
+
+instance Inline Alt where
+ inline get inside alt
+  = case alt of
+        AAlt p x        -> AAlt p (inline get inside x)
+
+
