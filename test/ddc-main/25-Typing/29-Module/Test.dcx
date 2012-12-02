@@ -9,3 +9,13 @@ imports type r :: %
 with letrec
 foo (x : Int r) : Int r
  = x;;
+
+
+-- Error: Exported signature has no binding.
+:load..
+module Foo
+exports foo     :: Int r -(Read r | $0)> Int r
+imports type r  :: %
+with letrec
+bar (x : Int r) : Int r
+ = x;;

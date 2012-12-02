@@ -1,7 +1,7 @@
 -- Load a module definition.
 module Main 
 exports {
-        double :: [r : %].Int r -(Read r + Alloc r | $0)> Int r;
+        double :: [r : %].Int r -(Read r + Alloc r | Use r)> Int r;
         main :: Unit -> Unit;
 } 
 imports {
@@ -31,7 +31,7 @@ letrec {
 -- Load the same module using the offside rule.
 module Main 
 exports {
-        double :: [r : %].Int r -(Read r + Alloc r | $0)> Int r;
+        double :: [r : %].Int r -(Read r + Alloc r | Use r)> Int r;
         main :: Unit -> Unit;
 } 
 imports {

@@ -3,7 +3,7 @@
 module Main
 exports {
         main    :: Unit -> Unit;
-        double  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
+        double  :: [r : %]. Int r -(Read r + Alloc r | Use r)> Int r;
 }
 imports {
         Thing.whatever 
@@ -37,7 +37,7 @@ letrec {
 module Main
 exports
         main    :: Unit -> Unit
-        double  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r
+        double  :: [r : %]. Int r -(Read r + Alloc r | Use r)> Int r
 imports 
         Thing.whatever
          with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5

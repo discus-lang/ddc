@@ -71,10 +71,11 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
         -- Check our let bindings.
         (x', _, _effs, _) <- checkExpM config kenv' tenv' (moduleBody mm)
 
-        -- TODO: check that all exported bindings are defined.
+        -- Check that each exported signature matches the type of its binding.
+        envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'
 
-        -- Check that exported signature matches the type of the binding.
-        checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'
+        -- Check that all exported bindings are defined by the module.
+        mapM_ (checkBindDefined envDef) $ Map.keys $ moduleExportTypes mm
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm'         = mm { moduleBody = x' }
@@ -84,22 +85,28 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
 -- | Check that the exported signatures match the types of their bindings.
 checkModuleBinds 
         :: Ord n
-        => Map n (Kind n)       -- ^ Kinds of exported types.
-        -> Map n (Type n)       -- ^ Types of exported values.
+        => Map n (Kind n)               -- ^ Kinds of exported types.
+        -> Map n (Type n)               -- ^ Types of exported values.
         -> Exp (AnTEC a n) n
-        -> CheckM a n ()
+        -> CheckM a n (TypeEnv n)       -- ^ Environment of top-level bindings
+                                        --   defined by the module
 
 checkModuleBinds !ksExports !tsExports !xx
  = case xx of
         XLet _ (LLet _ b _) x2     
          -> do  checkModuleBind  ksExports tsExports b
-                checkModuleBinds ksExports tsExports x2
+                env     <- checkModuleBinds ksExports tsExports x2
+                return  $ Env.extend b env
 
         XLet _ (LRec bxs) x2
          -> do  mapM_ (checkModuleBind ksExports tsExports) $ map fst bxs
-                checkModuleBinds ksExports tsExports x2
+                env     <- checkModuleBinds ksExports tsExports x2
+                return  $ Env.extends (map fst bxs) env
 
-        _ -> return ()
+        XLet _ (LLetRegions _ _) x2
+         ->     checkModuleBinds ksExports tsExports x2
+
+        _ ->    return Env.empty
 
 
 -- | If some bind is exported, then check that it matches the exported version.
@@ -122,6 +129,19 @@ checkModuleBind !_ksExports !tsExports !b
  --  so we don't need to worry about non-named ones.
  | otherwise
  = return ()
+
+
+-- | Check that a top-level binding is actually defined by the module.
+checkBindDefined 
+        :: Ord n
+        => TypeEnv n            -- ^ Types defined by the module.
+        -> n                    -- ^ Name of an exported binding.
+        -> CheckM a n ()
+
+checkBindDefined env n
+ = case Env.lookup (UName n) env of
+        Just _  -> return ()
+        _       -> throw $ ErrorExportUndefined n
 
 
 -------------------------------------------------------------------------------

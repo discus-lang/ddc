@@ -8,3 +8,9 @@ Error loading module
                  with binding: foo
                type of export: Int r -(Read r | $0)> Int r
            type of definition: Int r -> Int r
+
+
+-- Error: Exported signature has no binding.
+Error loading module
+  When checking expression.
+    Exported value 'foo' is undefined.

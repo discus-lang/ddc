@@ -24,8 +24,7 @@ instance (Show n, Eq n, Pretty n)
 
         -- Modules ---------------------------------------
         ErrorExportUndefined n
-         -> vcat [ text "Exported value is undefined."
-                 , text "  with: "                      <> ppr n ]
+         -> vcat [ text "Exported value '" <> ppr n <> text "' is undefined." ]
 
         ErrorExportMismatch n tExport tDef
          -> vcat [ text "Type of exported value does not match type of definition."
