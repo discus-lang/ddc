@@ -10,9 +10,9 @@ with letrec
 
 
 -- | Add two natural numbers.
-addNat [r1 r2 r3 : %] 
-        (x : Nat r1)    { !0 | Use r3 }
-        (y : Nat r2)    { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
+addNat  [r1 r2 r3 : %] 
+        (x : Nat r1)            { !0 | Use r3 }
+        (y : Nat r2)            { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Nat r3
  = case x of
         N# n1 
@@ -21,9 +21,9 @@ addNat [r1 r2 r3 : %]
 
 
 -- | Subtract two natural numbers.
-subNat [r1 r2 r3 : %] 
-        (x : Nat r1)    { !0 | Use r3 }
-        (y : Nat r2)    { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
+subNat  [r1 r2 r3 : %] 
+        (x : Nat r1)            { !0 | Use r3 }
+        (y : Nat r2)            { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Nat r3
  = case x of
         N# n1 
