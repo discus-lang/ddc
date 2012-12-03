@@ -4,28 +4,22 @@
 --
 
 module DDC.Core.Llvm.Metadata.Graph
-       ( -- * Binary Relations
-         Rel
-       , fromList, toList
-       , allR, differenceR, unionR, composeR, transitiveR
-       , transClosure
-
-         -- * Graphs
-       , UG(..)
-       , DG(..)
-       , orientation, orientations
-       , transOrientation, minOrientation, smallOrientation
-       , partitionDG
-
-         -- * Trees
+       ( -- * Graphs and Trees for TBAA metadata
+         UG(..), DG(..)
+       , minOrientation, partitionDG
        , Tree(..)
        , sources, anchor 
 
-         -- * QC Testing. TODO: get rid of this
-       , Dom
-       , bruteforceMinOrientation, partitionings
+         -- * QC Testing ONLY
+         -- * TODO: should make QC module able to access local functions instead
+       , Dom, Rel
+       , fromList, toList
+       , allR, differenceR, unionR, composeR, transitiveR
+       , transClosure, transReduction
        , aliasMeasure, isTree 
-       , transReduction, minimumCompletion )
+       , orientation, orientations, bruteforceMinOrientation, transOrientation, smallOrientation
+       , partitionings       
+       , minimumCompletion )
 where
 import Data.List          hiding (partition)
 import Data.Ord
@@ -121,11 +115,17 @@ instance Show a => Show (DG a) where
 instance Show a => Eq (DG a) where
   a == b = show a == show b 
 
--- | Give a random orientation of an undirected graph.
-orientation :: Eq a => UG a -> DG a
-orientation (UG (d,g)) = DG (d,g)
 
--- | Compute the transitive closure of a directed graph.
+-- | Find the transitive orientation of an undirected graph if one exists
+--    TODO implement the O(n+m) algorithm
+--
+transOrientation :: Eq a => UG a -> Maybe (DG a)
+transOrientation ug@(UG (d,_))
+  = liftM DG 
+  $ liftM (d,) 
+  $ find (transitiveR d) 
+  $ orientations ug
+
 orientations :: Eq a => UG a -> [Rel a]
 orientations (UG (d,g))
   = case toList d g of
@@ -136,20 +136,9 @@ orientations (UG (d,g))
                                       `unionR`      fromList (map swap c)
                   in map choose choices
 
--- | Find the transitive orientation of an undirected graph if one exists
---    TODO implement linear time algorithm (this is the whole point of
---         finding the transitive orientation before bruteforcing for
---         the minimum orientation!)
---
-transOrientation :: Eq a => UG a -> Maybe (DG a)
-transOrientation ug@(UG (d,_))
-  = liftM DG 
-  $ liftM (d,) 
-  $ find (transitiveR d) 
-  $ orientations ug
-
 
 -- | Find the orientation with the smallest transitive closure
+--
 minOrientation :: (Show a, Eq a) => UG a -> DG a
 minOrientation ug = fromMaybe (bruteforceMinOrientation ug) (transOrientation ug)
 
@@ -161,10 +150,17 @@ bruteforceMinOrientation ug@(UG (d, _))
 
 
 -- | Find the orientation with a `small enough' transitive closure
+--
 smallOrientation :: (Show a, Eq a) => UG a -> DG a
 smallOrientation ug = fromMaybe (orientation ug) (transOrientation ug)
 
+orientation :: Eq a => UG a -> DG a
+orientation (UG (d,g)) = DG (d,g)
 
+
+-- | Add a minimum number of edges to an undirected graph such that
+--    it has a transitive orientation
+--
 minimumCompletion :: (Show a, Eq a) => UG a -> UG a
 minimumCompletion (UG (d,g))
  = let 
@@ -205,8 +201,7 @@ sources x (Tree (d, r)) = [y | y <- d, r y x]
 
 
 -- | Partition a DG into the minimum set of (directed) trees
---    rank the partitionings by the number of partitions for now
---   
+--
 partitionDG :: Eq a => DG a -> [Tree a]
 partitionDG (DG (d,g))
  = let mkGraph  g' nodes = (nodes, fromList [ (x,y) | x <- nodes, y <- nodes, g' x y ])
