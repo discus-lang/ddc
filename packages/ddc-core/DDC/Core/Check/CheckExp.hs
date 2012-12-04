@@ -138,16 +138,7 @@ checkExpM
 checkExpM !config !kenv !tenv !xx
  = {-# SCC checkExpM #-}
    checkExpM' config kenv tenv xx
-{-
- = do (xx', t, eff, clo) <- checkExpM' config kenv tenv xx
-      trace (renderIndent $ vcat 
-                [ text "checkExpM:  " <+> ppr xx 
-                , text "        ::  " <+> ppr t 
-                , text "        :!: " <+> ppr eff
-                , text "        :$: " <+> ppr clo
-                , text ""])
-         $ return (xx', t, eff, clo)
--}
+
 -- variables ------------------------------------
 checkExpM' !_config !_kenv !tenv (XVar a u)
  = case Env.lookup u tenv of
@@ -170,12 +161,15 @@ checkExpM' !config !_kenv !_tenv xx@(XCon a dc)
         -- Check that the constructor is in the data type declarations.
         checkDaConM config xx dc
 
-        let tResult     = typeOfDaCon dc
+        -- Type of the data constructor.
+        let tResult     
+                = typeOfDaCon dc
+
         returnX a
                 (\z -> XCon z dc)
                 tResult
                 (Sum.empty kEffect)
-                (Set.empty)
+                Set.empty
 
 
 -- application ------------------------------------
@@ -482,6 +476,12 @@ checkExpM' !config !kenv !tenv xx@(XLet a (LWithRegion u) x)
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
         
+        -- The bound region variable cannot be free in the body type.
+        let tcs         = supportTyCon
+                        $ support Env.empty Env.empty tBody
+        when (Set.member u tcs)
+         $ throw $ ErrorWithRegionFree xx u tBody
+
         -- Delete effects on the bound region from the result.
         let tu          = TCon $ TyConBound u kRegion
         let effs'       = Sum.delete (tRead  tu)

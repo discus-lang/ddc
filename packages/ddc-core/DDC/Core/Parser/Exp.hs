@@ -80,10 +80,14 @@ pExp
 
         -- withregion CON in EXP
  , do   pTok KWithRegion
-        n       <- pVar
+        u       <- P.choice 
+                [  do   n    <- pVar
+                        return $ UName n
+
+                ,  do   n    <- pCon
+                        return $ UPrim n kRegion]
         pTok KIn
         x       <- pExp
-        let u   = UName n
         return  $ XLet () (LWithRegion u) x
 
 

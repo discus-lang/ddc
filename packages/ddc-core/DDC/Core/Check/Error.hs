@@ -212,11 +212,20 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorBindWitness      :: Bind n }
         
+
+        -- Withregion -------------------------------------
         -- | A withregion-expression where the handle does not have region kind.
         | ErrorWithRegionNotRegion
         { errorChecking         :: Exp a n
         , errorBound            :: Bound n
         , errorKind             :: Kind n }
+
+        -- | A letregion-expression where some of the the bound region variables
+        --   are free in the type of the body.
+        | ErrorWithRegionFree
+        { errorChecking         :: Exp a n
+        , errorBound            :: Bound n
+        , errorType             :: Type n }
 
 
         -- Witnesses --------------------------------------

@@ -234,6 +234,14 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
                  
+        -- Withregion -------------------------------------
+        ErrorWithRegionFree xx u t
+         -> vcat [ text "Region handle escapes scope of withregion."
+                 , text "         The region handle: "   <> ppr u
+                 , text "  is used in the body type: "   <> ppr t
+                 , empty
+                 , text "with: "                         <> align (ppr xx) ]
+
         ErrorWithRegionNotRegion xx u k
          -> vcat [ text "Withregion handle does not have region kind."
                  , text "   Region var or ctor: "       <> ppr u
