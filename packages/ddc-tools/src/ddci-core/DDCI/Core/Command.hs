@@ -88,7 +88,7 @@ commands
         , (":closure",          CommandExpClosure)
         , (":eval",             CommandEval)
         , (":trun",             CommandTransEval)
-        , (":trans-interact",   CommandTransInteract)
+        , (":tinteract",        CommandTransInteract)
         , (":trans",            CommandTrans)
         , (":ast",              CommandAst) 
         , (":compile",          CommandCompile)

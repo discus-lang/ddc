@@ -74,9 +74,14 @@ parseSimplifier
 
 
 	parse1 (KVar "fix" : KInt n : KRoundBra : rest)
-	 | Just (t1, rest1)	      <- parse rest
-	 , KRoundKet : rest2	      <- rest1
+	 | Just (t1, rest1)            <- parse rest
+	 , KRoundKet : rest2           <- rest1
 	 = Just (Fix n t1, rest2)
+
+        parse1 (KVar "fix" : KInt n : rest)
+         | Just (t1, rest1)             <- parse1 rest
+         , rest2                        <- rest1
+         = Just (Fix n t1, rest2)
 
 	parse1 (KVar name : rest)
          = case name of

@@ -13,7 +13,7 @@
 :set trans Rewrite
 
 -- do the factorial
-:trans-interact..
+:tinteract..
 letrec
 main    [r : %] 
 	<w : Const r>
