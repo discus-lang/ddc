@@ -1,4 +1,4 @@
-:with test/ddc-main/30-Transform/40-Rewrite/70-FoldBuild/Module.dce
+:with test/ddc-main/30-Transform/40-Rewrite/70-FoldBuild/Module.dcs
 
 :set Indent
 :set TraceTrans

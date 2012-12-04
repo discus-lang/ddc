@@ -38,7 +38,7 @@ cmdCompile config filePath
                 [ stageLiteToSalt   config source pipesSalt ]]
 
                 -- Make a Core Salt module.
-                | isSuffixOf ".dce" filePath
+                | isSuffixOf ".dcs" filePath
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentSalt pipesSalt

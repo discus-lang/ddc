@@ -154,7 +154,7 @@ stageLiteToSalt config source pipesSalt
      , PipeCoreAsLite
        [ PipeLiteToSalt   (buildSpec $ configBuilder config) 
                           (configRuntime config)
-         ( PipeCoreOutput (dump config source "dump.salt.dce")
+         ( PipeCoreOutput (dump config source "dump.salt.dcs")
          : pipesSalt)]]]
            
  where  normalizeLite
@@ -173,10 +173,10 @@ stageSaltToC
 stageSaltToC config source sink
  = PipeCoreSimplify       fragmentSalt 0 normalizeSalt
    [ PipeCoreCheck        fragmentSalt
-     [ PipeCoreOutput     (dump config source "dump.salt-normalized.dce")
+     [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
+         [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")
          , PipeSaltPrint
                 (not $ configSuppressHashImports config)
                 (buildSpec $ configBuilder config)
@@ -207,10 +207,10 @@ stageCompileSalt config source filePath shouldLinkExe
    in
         PipeCoreSimplify        fragmentSalt 0 normalizeSalt
          [ PipeCoreCheck        fragmentSalt
-           [ PipeCoreOutput     (dump config source "dump.salt-normalized.dce")
+           [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
            , PipeCoreAsSalt
              [ PipeSaltTransfer
-               [ PipeSaltOutput (dump config source "dump.salt-transfer.dce")
+               [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")
                , PipeSaltCompile
                         (buildSpec $ configBuilder config)
                         (configBuilder config)
@@ -237,10 +237,10 @@ stageSaltToLLVM
 stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify fragmentSalt 0 normalizeSalt
    [ PipeCoreCheck          fragmentSalt
-     [ PipeCoreOutput       (dump config source "dump.salt-normalized.dce")
+     [ PipeCoreOutput       (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput   (dump config source "dump.salt-transfer.dce")
+         [ PipeSaltOutput   (dump config source "dump.salt-transfer.dcs")
          , PipeSaltToLlvm   (buildSpec $ configBuilder config) 
                             pipesLLVM ]]]]
 

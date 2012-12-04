@@ -26,15 +26,15 @@ packages/ddc-alpha/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
-salt-runtime_dce = \
-	$(shell find code/salt/runtime${BITS}   -name "*.dce") \
-	$(shell find code/salt/primitive${BITS} -name "*.dce")
+salt-runtime_dcs = \
+	$(shell find code/salt/runtime${BITS}   -name "*.dcs") \
+	$(shell find code/salt/primitive${BITS} -name "*.dcs")
 
 salt-runtime_c   = \
         $(shell find code/c/primitive           -name "*.c")
 
 salt-runtime_o   = \
-        $(patsubst %.dce,%.o,$(salt-runtime_dce)) \
+        $(patsubst %.dcs,%.o,$(salt-runtime_dcs)) \
         $(patsubst %.c,%.o,$(salt-runtime_c))
 
 code/libddc-runtime.a : $(salt-runtime_o)

@@ -172,7 +172,7 @@ bundleFromFilePath :: Config -> FilePath -> Maybe Bundle
 bundleFromFilePath config filePath
  = case takeExtension filePath of
         ".dcl"  -> Just (liteBundleOfConfig config)
-        ".dce"  -> Just (saltBundleOfConfig config)
+        ".dcs"  -> Just (saltBundleOfConfig config)
         _       -> Nothing
 
 

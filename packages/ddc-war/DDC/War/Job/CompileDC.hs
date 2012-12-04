@@ -98,7 +98,7 @@ build   (Spec   srcDC_ optionsDDC _fragment
                 
         -- Touch the .dce and .dcl files to the build directory to ensure they're built.
         sources <- io
-                $  liftM (filter (\f -> isSuffixOf ".dce" f || isSuffixOf ".dcl" f))
+                $  liftM (filter (\f -> isSuffixOf ".dcs" f || isSuffixOf ".dcl" f))
                 $  lsFilesIn srcDir
 
         ssystemq $ "touch " ++ (intercalate " " sources)

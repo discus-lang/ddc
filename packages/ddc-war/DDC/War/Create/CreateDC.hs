@@ -17,7 +17,7 @@ import qualified Data.Set                       as Set
 -- | Compile and run .dce files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- |   takeFileName filePath == "Main.dce"
+ |   takeFileName filePath == "Main.dcs"
   || takeFileName filePath == "Main.dcl"
  = let  
         sourceDir        = takeDirectory  filePath
@@ -48,7 +48,7 @@ create way allFiles filePath
         shouldDiffStderr = Set.member mainStderrCheck allFiles
 
         fragment
-         | takeExtension filePath == "dce"  = CompileDC.FragmentSalt
+         | takeExtension filePath == "dcs"  = CompileDC.FragmentSalt
          | takeExtension filePath == "dcl"  = CompileDC.FragmentLite
          | otherwise            = error "CreateDC.create: bad fragment"
 

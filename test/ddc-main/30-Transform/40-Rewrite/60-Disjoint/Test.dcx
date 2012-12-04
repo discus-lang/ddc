@@ -1,4 +1,4 @@
-:with test/ddc-main/30-Transform/40-Rewrite/60-Disjoint/Module.dce
+:with test/ddc-main/30-Transform/40-Rewrite/60-Disjoint/Module.dcs
 :set.. rule mapMap [a b c : *] [r1 r2 r3 : %]
 	[ef eg : !] [cf cg : $]
 	(f : b -(ef|cf)> c) (g : a -(eg|cg)> b)

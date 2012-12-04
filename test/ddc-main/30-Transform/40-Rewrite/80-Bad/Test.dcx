@@ -1,5 +1,5 @@
 :set Indent
-:with test/ddc-main/30-Transform/40-Rewrite/80-Bad/Module.dce
+:with test/ddc-main/30-Transform/40-Rewrite/80-Bad/Module.dcs
 
 -- Bad: rhs & lhs have different types
 :set.. rule bad_DifferentTypes

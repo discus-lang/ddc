@@ -1,7 +1,7 @@
 :set Indent
 :set TraceTrans
 -- import a function with polymorphic effects
-:with test/ddc-main/30-Transform/40-Rewrite/T279-SumMatch/Module.dce
+:with test/ddc-main/30-Transform/40-Rewrite/T279-SumMatch/Module.dcs
 
 -- silly rule with effect matching
 :set.. rule silly [ef : !]
