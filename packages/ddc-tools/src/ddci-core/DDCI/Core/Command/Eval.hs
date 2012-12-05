@@ -195,8 +195,8 @@ forcePrint state store x
                     let deathE = not $ subsumesT kEffect  effX effX'
 
                     -- ISSUE #290: locations don't reveal closure information.
---                    let deathC = not $ subsumesT kClosure cloX cloX'
-                    let death  = deathT || deathE -- || deathC
+--                  let deathC = not $ subsumesT kClosure cloX cloX'
+                    let death  = deathT || deathE -- deathC
 
 
                     when death
