@@ -19,13 +19,13 @@ docs	:
 	@$(MAKE) docs-core
 
 docs-alpha :
-	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-alpha/src \
+	@haddock -w -h -o doc/haddock-alpha --optghc=-ipackages/ddc-alpha/src \
                 $(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-alpha_src_hs_all))
 
 docs-core :
-	@haddock -w -h -o doc/haddock-core \
+	@haddock -w -h -o doc/haddock \
                         --optghc=-ipackages/ddc-base \
                         --optghc=-ipackages/ddc-build \
                         --optghc=-ipackages/ddc-core \
