@@ -11,7 +11,7 @@ module DDC.Core.Check.TaggedClosure
         , cutTaggedClosureXs
         , cutTaggedClosureT)
 where
-import DDC.Type.Transform.LowerT
+import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Trim
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -64,9 +64,9 @@ instance (Eq n, Pretty n) => Pretty (TaggedClosure n) where
         GBoundRgnCon u      -> text "CLORGNCON" <+> ppr u
 
 
-instance LowerT TaggedClosure where
- lowerAtDepthT n d cc
-  = let down = lowerAtDepthT n d
+instance Ord n => MapBoundT TaggedClosure n where
+ mapBoundAtDepthT f d cc
+  = let down = mapBoundAtDepthT f d
     in case cc of
         GBoundVal u ts    -> GBoundVal (down u) (down ts)
         GBoundRgnVar u1   -> GBoundRgnVar (down u1)

@@ -21,7 +21,7 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Instantiate
-import DDC.Type.Transform.LowerT
+import DDC.Type.Transform.LiftT
 import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Type.Universe

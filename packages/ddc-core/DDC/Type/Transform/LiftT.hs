@@ -1,14 +1,14 @@
 
 -- | Lifting of deBruijn indices in a type.
----
---   TODO: merge this code with LowerT
 module DDC.Type.Transform.LiftT
         ( liftT,        liftAtDepthT
+        , lowerT,       lowerAtDepthT
         , MapBoundT(..))
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as Sum
+
 
 -- Lift -----------------------------------------------------------------------
 -- | Lift debruijn indices less than or equal to the given depth.
@@ -34,6 +34,32 @@ liftAtDepthT n d
 -- | Wrapper for `liftAtDepthX` that starts at depth 0.       
 liftT   :: MapBoundT c n => Int -> c n -> c n
 liftT n xx  = liftAtDepthT n 0 xx
+
+
+-- Lower ----------------------------------------------------------------------
+-- | Lower debruijn indices less than or equal to the given depth.
+lowerAtDepthT
+        :: MapBoundT c n
+        => Int          -- ^ Number of levels to lower.
+        -> Int          -- ^ Current binding depth.
+        -> c n          -- ^ Lower expression indices in this thing.
+        -> c n
+
+lowerAtDepthT n d
+ = mapBoundAtDepthT lowerU d
+ where  
+        lowerU d' u
+         = case u of
+                UName{}         -> u
+                UPrim{}         -> u
+                UIx i
+                 | d' <= i      -> UIx (i - n)
+                 | otherwise    -> u
+
+
+-- | Wrapper for `lowerAtDepthX` that starts at depth 0.       
+lowerT   :: MapBoundT c n => Int -> c n -> c n
+lowerT n xx  = lowerAtDepthT n 0 xx
 
 
 -- MapBoundT ------------------------------------------------------------------
