@@ -25,7 +25,7 @@ docs-alpha :
 		$(filter-out $(nodoc),$(ddc-alpha_src_hs_all))
 
 docs-core :
-	@haddock -w -h -o doc/haddock \
+	@haddock -w -h -o doc/haddock-core \
                         --optghc=-ipackages/ddc-base \
                         --optghc=-ipackages/ddc-build \
                         --optghc=-ipackages/ddc-core \
@@ -45,7 +45,7 @@ docs-hoogle	:
 	@$(MAKE) docs-hoogle-core
 
 docs-hoogle-alpha :
-	@haddock --hoogle -w -o doc/hoogle 
+	@haddock --hoogle -w -o doc/hoogle-alpha
                         --optghc=-ipackages/ddc-alpha/src \
 			$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
