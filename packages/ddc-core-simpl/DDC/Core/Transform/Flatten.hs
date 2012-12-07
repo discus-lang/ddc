@@ -3,6 +3,7 @@
 module DDC.Core.Transform.Flatten
         (flatten)
 where
+-- import DDC.Type.Transform.LiftT
 import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.LiftX
@@ -83,7 +84,7 @@ flatten1 (XLet a1 (LLet LetStrict b1
  = let  x1'      = liftAcrossX [b1] b2 x1
    in   XLet a2 (LLetRegions b2 bs2) 
       $ flatten1
-      $ XLet a1 (LLet LetStrict b1 x2) 
+      $ XLet a1 (LLet LetStrict (zapX b1) x2) 
              x1'
 
 
@@ -138,3 +139,13 @@ liftAcrossX bsDepth bsLevels x
         levels  = length [b | b@(BAnon _) <- bsLevels]
    in   liftAtDepthX levels depth x
 
+
+--liftAcrossT :: Ord n => [Bind n] -> Exp a n -> Exp a n
+--liftAcrossT bsLevels x
+-- = let  levels  = length [b | b@(BAnon _) <- bsLevels]
+--   in   liftT levels x
+
+
+-- | Erase the type of a data binder.
+zapX :: Bind n -> Bind n
+zapX b = replaceTypeOfBind (tBot kData) b

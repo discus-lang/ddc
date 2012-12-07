@@ -70,7 +70,8 @@ class MapBoundX (c :: * -> *) n where
  --   The function is passed the current binding depth.
  --   This is used to defined both `liftX` and `lowerX`.
  mapBoundAtDepthX
-        :: (Int -> Bound n -> Bound n)  -- ^ Number of levels to lift.
+        :: (Int -> Bound n -> Bound n)  -- ^ Function to apply to the bound occ.
+                                        --   It is passed the current binding depth.
         -> Int                          -- ^ Current binding depth.
         -> c n                          -- ^ Lift expression indices in this thing.
         -> c n
