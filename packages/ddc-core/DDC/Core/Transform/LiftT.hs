@@ -11,7 +11,7 @@ instance Ord n => MapBoundT (Exp a) n where
  mapBoundAtDepthT f d xx
   = let down = mapBoundAtDepthT f d
     in case xx of
-        XVar a u        -> XVar a   (f d u)
+        XVar a u        -> XVar a   u
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a   (down x1) (down x2)
         XLAM a b x      -> XLAM a b (mapBoundAtDepthT f (d + countBAnons [b]) x)

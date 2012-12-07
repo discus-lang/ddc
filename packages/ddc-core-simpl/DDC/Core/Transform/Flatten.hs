@@ -3,7 +3,7 @@
 module DDC.Core.Transform.Flatten
         (flatten)
 where
--- import DDC.Type.Transform.LiftT
+import DDC.Core.Transform.LiftT
 import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.LiftX
@@ -71,6 +71,9 @@ flatten1 (XLet a1 (LLet LetStrict b1
 --    x1
 -- @
 --
+-- NOTE: For region allocation this increases the lifetime of the region.
+--       Maybe use a follow on transform to reduce the lifetime again.
+--
 flatten1 (XLet a1 (LLet LetStrict b1
             inner@(XLet a2 (LLetRegions b2 bs2) x2))
                x1)
@@ -81,7 +84,8 @@ flatten1 (XLet a1 (LLet LetStrict b1
                x1
 
  | otherwise
- = let  x1'      = liftAcrossX [b1] b2 x1
+ = let  x1'     = liftAcrossT []   b2
+                $ liftAcrossX [b1] bs2 x1
    in   XLet a2 (LLetRegions b2 bs2) 
       $ flatten1
       $ XLet a1 (LLet LetStrict (zapX b1) x2) 
@@ -140,10 +144,11 @@ liftAcrossX bsDepth bsLevels x
    in   liftAtDepthX levels depth x
 
 
---liftAcrossT :: Ord n => [Bind n] -> Exp a n -> Exp a n
---liftAcrossT bsLevels x
--- = let  levels  = length [b | b@(BAnon _) <- bsLevels]
---   in   liftT levels x
+liftAcrossT :: Ord n => [Bind n] -> [Bind n] -> Exp a n -> Exp a n
+liftAcrossT bsDepth bsLevels x
+ = let  depth   = length [b | b@(BAnon _) <- bsDepth]
+        levels  = length [b | b@(BAnon _) <- bsLevels]
+   in   liftAtDepthT levels depth x
 
 
 -- | Erase the type of a data binder.

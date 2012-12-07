@@ -110,3 +110,26 @@ let useWit : Const R0# => Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
 let ^ : Int R0# = 1 [R0#] () in
 let ^ : Int R0# = addInt [R0#] [R0#] [R0#] ^0 ^1 in
 useWit <^3> ^0
+
+
+-- Drag letregion out of the top-level of a binding
+--  using anonymous binders.
+-- 
+ok
+ok
+let ^ : [^ ^ : %].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair ^1 (Int ^1) (Int ^0)
+      = /\(^ ^ : %).
+         \(_ : Unit).
+        let ^ : Int ^1 = 5 [^1] () in
+        letregion ^ in
+        let ^ : Int ^0 = 1 [^0] () in
+        let ^ : Int ^1 = addInt [^2] [^0] [^1] ^1 ^0 in
+        Pr [^2] [Int ^2] [Int ^1] ^2 ^0 in
+letregion ^ in
+letregion ^ in
+let ^ : Pair ^1 (Int ^1) (Int ^0) = ^0 [^1] [^0] () in
+case ^0 of {
+  Pr (_ : Int ^1) (^ : Int ^0) 
+   -> copyInt [^0] [R0#] ^0
+}
+
