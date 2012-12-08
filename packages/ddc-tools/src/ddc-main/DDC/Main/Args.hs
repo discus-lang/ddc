@@ -65,6 +65,22 @@ parseArgs args config
         $ config { configOptLevelLite   = OptLevel1
                  , configOptLevelSalt   = OptLevel1 }
 
+        -- Intermediates ------------------------
+        | flag : rest   <- args
+        , elem flag ["keep-ll-files", "-keep-llvm-files" ]
+        = parseArgs rest
+        $ config { configKeepLlvmFiles = True }
+
+        | flag : rest      <- args
+        , elem flag ["-keep-c-files", "keep-sea-files" ]
+        = parseArgs rest
+        $ config { configKeepSeaFiles = True }
+
+        | flag : rest      <- args
+        , elem flag ["-keep-s-files", "-keep-asm-files" ]
+        = parseArgs rest
+        $ config { configKeepAsmFiles = True }
+
         -- Runtime ------------------------------
         | "-run-heap" : bytes : rest    <- args
         , all isDigit bytes
@@ -83,23 +99,6 @@ parseArgs args config
         | "-to-llvm" : file : rest  <- args
         = parseArgs rest
         $ setMode config $ ModeToLLVM file
-
-        -- Intermediates ------------------------
-        | flag : rest   <- args
-        , elem flag ["keep-ll-files", "-keep-llvm-files" ]
-        = parseArgs rest
-        $ config { configKeepLlvmFiles = True }
-
-        | flag : rest      <- args
-        , elem flag ["-keep-c-files", "keep-sea-files" ]
-        = parseArgs rest
-        $ config { configKeepSeaFiles = True }
-
-        | flag : rest      <- args
-        , elem flag ["-keep-s-files", "-keep-asm-files" ]
-        = parseArgs rest
-        $ config { configKeepAsmFiles = True }
-
 
         -- Debugging ----------------------------
         | "-dump"   : rest        <- args
@@ -197,6 +196,11 @@ help    = unlines
         , " Optimisation:"
         , "       -O0                    No optimisations.             (default)"
         , "  -O,  -O1                    Do standard optimisations."
+        , ""
+        , " Intermediates:"
+        , "       -keep-ll-files         Keep intermediate .llvm files."
+        , "       -keep-c-files          Keep intermediate .c files."
+        , "       -keep-s-files          Keep intermediate .s files."
         , ""
         , " Runtime for compiled program:"
         , "       -run-heap     <bytes>  Size of fixed heap            (65536)"
