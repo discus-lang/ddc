@@ -1,0 +1,13 @@
+:set Indent
+
+-- use 'x' once at each level
+:set rule add0r [x : %] (x : Int x). addInt [:x x x:] x (0 [x] ()) = x
+
+:set trans Rewrite
+
+-- rewrite
+:trans addInt [:R0# R0# R0#:] (5 [R0#] ()) (0 [R0#] ())
+
+-- don't rewrite; different regions
+:trans addInt [:R0# R0# R1#:] (5 [R0#] ()) (0 [R0#] ())
+

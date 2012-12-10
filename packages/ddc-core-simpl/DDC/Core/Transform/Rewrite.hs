@@ -187,7 +187,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e env down
         <- checkHoles rules def env
 
  = let  -- only get value-level bindings
-        bs'     = map snd $ filter (isBMValue . fst) bs
+        bs'     = filter (isBMValue . fst) bs
         bas'    = lookupFromSubst bs' sub
 
         -- check if it looks like something has already been unfolded
@@ -200,7 +200,7 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e env down
                 = all isUIx $ map snd bas'
 
         -- find kind-values and sub those in as well
-        bsK'    = map snd $ filter ((== BMSpec) . fst) bs
+        bsK'    = filter ((== BMSpec) . fst) bs
         basK    = lookupFromSubst bsK' sub
 
         basK'   = concatMap (\(b,x) -> case X.takeXType x of
@@ -305,8 +305,7 @@ rewriteWithX rule env f args
         -- Check constraints, perform substitution and add weakens if necessary.
         let Just a      = X.takeAnnotOfExp f
 
-        let bs          = map snd binds
-        let bas2        = lookupFromSubst bs m
+        let bas2        = lookupFromSubst binds m
         let rhs2        = A.anonymizeX rhs
         let (bas3,lets) = wrapLets a binds bas2
         let rhs3        = L.liftX (length lets) rhs2
@@ -528,7 +527,7 @@ matchWithRule
 --    Eg: RULE [x : %] (x : Int x). ...
 -- 
 lookupFromSubst :: Ord n
-        => [Bind n]
+        => [(BindMode,Bind n)]
         -> (Map n (Exp a n), Map n (Type n))
         -> [(Bind n, Exp a n)]
 
@@ -536,11 +535,11 @@ lookupFromSubst bs m
  = let  bas  = catMaybes $ map (lookupX m) bs
    in   map (\(b, a) -> (A.anonymizeX b, A.anonymizeX a)) bas
    
- where  lookupX (xs,_) b@(BName n _)
+ where  lookupX (xs,_) (BMValue _, b@(BName n _))
          | Just x <- Map.lookup n xs
          = Just (b, x)
 
-        lookupX (_,tys) b@(BName n _)
+        lookupX (_,tys) (BMSpec, b@(BName n _))
          | Just t <- Map.lookup n tys
          = Just (b, XType t)
 

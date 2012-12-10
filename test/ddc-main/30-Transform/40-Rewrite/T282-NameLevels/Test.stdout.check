@@ -1,0 +1,15 @@
+ok
+
+-- use 'x' once at each level
+ok, added add0r
+
+ok
+
+-- rewrite
+weakeff [Read R0# + Alloc R0#] in
+weakclo {addInt; [R0#]} in
+5 [R0#] ()
+
+-- don't rewrite; different regions
+addInt [R0#] [R0#] [R1#] (5 [R0#] ()) (0 [R0#] ())
+
