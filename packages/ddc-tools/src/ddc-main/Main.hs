@@ -6,7 +6,7 @@
 import DDC.Main.Config
 import DDC.Main.Args
 import DDC.Main.OptLevels
-import DDC.Driver.Command.Load
+import DDC.Main.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
@@ -44,7 +44,7 @@ run config
 
         -- Just load, parse and type check a module.
         ModeLoad filePath
-         -> do  
+         -> do  runError $ cmdLoad config (configTrans config) filePath
 
         -- Compile a module to object code.
         ModeCompile filePath
