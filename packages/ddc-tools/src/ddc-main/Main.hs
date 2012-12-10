@@ -44,11 +44,7 @@ run config
 
         -- Just load, parse and type check a module.
         ModeLoad filePath
-         -> do  let Just bundle = bundleFromFilePath config filePath
-                str        <- readFile filePath
-                cmdLoad bundle
-                        (SourceFile filePath)
-                        str
+         -> do  
 
         -- Compile a module to object code.
         ModeCompile filePath

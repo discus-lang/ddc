@@ -102,6 +102,15 @@ data Config
         , configKeepSeaFiles    :: Bool
         , configKeepAsmFiles    :: Bool
 
+          -- Transformation ------------
+          -- | String containing the transform definition to apply with
+          --   the -load command. We can't parse this definition until
+          --   we know what language we're dealing with.
+        , configTrans           :: Maybe String
+
+          -- | Other modules to use for inliner templates.
+        , configWith            :: [FilePath]
+
           -- Debugging -----------------
           -- | Dump intermediate representations.
         , configDump            :: Bool }
@@ -133,6 +142,10 @@ defaultConfig
         , configKeepLlvmFiles   = False
         , configKeepSeaFiles    = False
         , configKeepAsmFiles    = False
+
+          -- Transformation -----------
+        , configTrans           = Nothing
+        , configWith            = []
 
           -- Debugging ----------------
         , configDump            = False }
