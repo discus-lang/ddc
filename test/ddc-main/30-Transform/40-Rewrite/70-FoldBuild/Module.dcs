@@ -18,23 +18,22 @@ build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
 	 b)
     -(eg1+eg2 + Alloc r | Use r)> List r a;
 
--- TODO implement
 foldrAndBuild ::
     [a b : *]. [r : %].
     [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
     [eg1 eg2 : !]. [cg1 cg2 : $].
 
 	(a -(ek1|ck1)> b -(ek2|ck2)> b)
-    ->	(Unit -(ez|cz)> b)
+    -(!0 | Use r)>	(Unit -(ez|cz)> b)
 
 -- TODO very strange issue here: if use names 'ec1' instead of 'ec1FB' they parse as anonymous & then references get mixed up
-    ->  ([bFB : *]. [ec1FB ec2FB enFB : !]. [cc1FB cc2FB cnFB : $].
+    -(!0 | Use r + ck1)>  ([bFB : *]. [ec1FB ec2FB enFB : !]. [cc1FB cc2FB cnFB : $].
 	     (a -(ec1FB|cc1FB)> bFB -(ec2FB|cc2FB)> bFB)
 	    -(eg1|cg1)>
 	     (Unit -(enFB|cnFB)> bFB)
 	    -(eg2+ec1FB+ec2FB+enFB|cg2+cc1FB)>
 	     bFB)
-    -(Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + ck2 + cz + Use r)>
+    -(Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + cz + Use r)>
     b;
 
 compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
@@ -121,6 +120,25 @@ compose [a b c : *] [ef eg : !] [cf cg : $]
     (x : a) { ef + eg | cf + cg }
 	    : c
  = f (g x)
+
+foldrAndBuild [a b : *] [r : %]
+    [ek1 ek2 ez : !] [ck1 ck2 cz : $]
+    [eg1 eg2 : !] [cg1 cg2 : $]
+    (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+    { !0 | Use r }
+    (z : Unit -(ez|cz)> b)
+    { !0 | Use r + ck1 }
+    (g : [bFB : *]. [ec1FB ec2FB enFB : !]. [cc1FB cc2FB cnFB : $].
+	     (a -(ec1FB|cc1FB)> bFB -(ec2FB|cc2FB)> bFB)
+	    -(eg1|cg1)>
+	     (Unit -(enFB|cnFB)> bFB)
+	    -(eg2+ec1FB+ec2FB+enFB|cg2+cc1FB)>
+	     bFB)
+    {Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + cz + Use r}
+    : b
+    = foldr [:a b r ek1 ek2 ez ck1 ck2 cz:] k z 
+      (g [List r a] [!0] [Alloc r] [Alloc r] [:$0 (DeepUse a) $0:]
+	(Cons [:r a:]) (Nil [:r a:]))
 
 
 plus
