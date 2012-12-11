@@ -133,6 +133,10 @@ kindOfPrimTyCon tc
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
+        -- Console
+        NameEffectTyCon EffectTyConConsole
+         -> Just $ kEffect
+
         -- Unit
         NameDataTyCon DataTyConUnit
          -> Just $ kData

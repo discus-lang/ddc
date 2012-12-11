@@ -1,9 +1,9 @@
 
 module Main
-exports main      :: [r : %]. Nat# -> Ptr# r String# -> Int#
+exports main      :: [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
 
 imports showNat   :: [r : %]. Nat# -> Ptr# r String#
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#
+        putStrLn  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
 
 with letrec
 
@@ -113,7 +113,7 @@ reverse [r1 r2 : %] [a : *]
 -- | Print out all Nats in a list
 dumpNats
         [r1 r2 : %] 
-        (xx : List r1 (Nat r2)) { Read r1 + Read r2 | Use r1 + Use r2 }
+        (xx : List r1 (Nat r2)) { Read r1 + Read r2 + Console | Use r1 + Use r2 }
         : Unit
  = case xx of
         Nil     -> ()
@@ -127,7 +127,7 @@ dumpNats
 -- | Construct a list of length 23 then take its length.
 main    [r : %] 
         (argc : Nat#)
-        (argv : Ptr# r String#)
+        (argv : Ptr# r String#) { Console | $0 }
         : Int#
  = letregion r2 in
    do

@@ -56,7 +56,8 @@ zeroProfile
 -- | A flattened set of features, for easy lookup.
 data Features 
         = Features
-        { featuresClosureTerms          :: Bool
+        { featuresUntrackedEffects      :: Bool
+        , featuresUntrackedClosures     :: Bool
         , featuresPartialPrims          :: Bool
         , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
@@ -75,7 +76,8 @@ data Features
 zeroFeatures :: Features
 zeroFeatures
         = Features
-        { featuresClosureTerms          = False
+        { featuresUntrackedEffects      = False
+        , featuresUntrackedClosures     = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
@@ -93,7 +95,8 @@ zeroFeatures
 setFeature :: Feature -> Bool -> Features -> Features
 setFeature feature val features
  = case feature of
-        ClosureTerms            -> features { featuresClosureTerms         = val }
+        UntrackedEffects        -> features { featuresUntrackedEffects     = val }
+        UntrackedClosures       -> features { featuresUntrackedClosures    = val }
         PartialPrims            -> features { featuresPartialPrims         = val }
         PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }

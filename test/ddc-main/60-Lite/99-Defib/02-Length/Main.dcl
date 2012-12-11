@@ -1,10 +1,10 @@
 
 module Main 
 exports 
-        main    :: [r : %]. Nat# -> Ptr# r String# -> Int#
+        main    :: [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
 imports 
         showNat   :: [r : %]. Nat# -> Ptr# r String#
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#
+        putStrLn  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
 
 with letrec
 
@@ -63,7 +63,7 @@ length  [r1 r2 : %] [a : *]
 -- | Construct a list of length 23 then take its length.
 main    [r : %] 
         (argc : Nat#)
-        (argv : Ptr# r String#)
+        (argv : Ptr# r String#) { Console | $0 }
         : Int#
  = letregion r2 in
    do

@@ -110,12 +110,12 @@ insert t ts@TypeSumSet{}
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
         TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
-        TCon{}          -> ts { typeSumSpill      = t : typeSumSpill ts }
+        TCon{}          -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
 
         -- Foralls can't be part of well-kinded sums.
         --  Just add them to the splill lists so that we can still
         --  pretty print such mis-kinded types.
-        TForall{}        -> ts { typeSumSpill      = t : typeSumSpill ts }
+        TForall{}        -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
 
         TApp (TCon _) _
          |  Just (h, vc)  <- takeSumArrayElem t
@@ -124,7 +124,7 @@ insert t ts@TypeSumSet{}
                 then ts
                 else ts { typeSumElems = (typeSumElems ts) // [(h, Set.insert vc tsThere)] }
         
-        TApp{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
+        TApp{}           -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
         
         TSum ts'         -> foldr insert ts (toList ts')
 

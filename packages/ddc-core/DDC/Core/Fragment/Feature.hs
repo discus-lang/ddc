@@ -7,8 +7,13 @@ where
 -- | Language feature supported by a fragment.
 data Feature
         -- Type system features ---------------------------
-        -- | Produce and require @Use@ and @DeepUse@ terms in closures.
-        = ClosureTerms 
+        -- | Assume all functions perform global side effects, 
+        --   and don't generate effect terms in types.
+        = UntrackedEffects
+
+        -- | Assume all functions share data invisibly,
+        --   and don't generate closure terms in types.
+        | UntrackedClosures
 
         -- General features -------------------------------
         -- | Partially applied primitive operators.

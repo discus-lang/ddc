@@ -72,8 +72,8 @@ configOfProfile profile
         , configPrimTypes       = F.profilePrimTypes profile
 
         , configSuppressClosures      
-                = not   $ F.featuresClosureTerms
-                        $ F.profileFeatures profile }
+                = F.featuresUntrackedClosures
+                $ F.profileFeatures profile }
 
 
 -- Wrappers --------------------------------------------------------------------

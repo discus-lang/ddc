@@ -30,7 +30,8 @@ profile
 features :: Features
 features 
         = Features
-        { featuresClosureTerms          = True
+        { featuresUntrackedEffects      = False
+        , featuresUntrackedClosures     = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

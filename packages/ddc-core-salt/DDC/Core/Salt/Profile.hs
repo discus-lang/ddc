@@ -28,7 +28,9 @@ profile
 --   No nested functions, no partial application and so on.
 features :: Features
 features = zeroFeatures
-        { featuresDebruijnBinders       = True
+        { featuresUntrackedEffects      = True
+        , featuresUntrackedClosures     = True
+        , featuresDebruijnBinders       = True
         , featuresUnusedBindings        = True }
 
 

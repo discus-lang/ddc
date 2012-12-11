@@ -2,6 +2,9 @@
 module DDC.Core.Lite.Name
         ( Name          (..) 
 
+        -- * Baked in global effect type constructors.
+        , EffectTyCon   (..)
+
         -- * Baked in Algebraic Data Types
         , DataTyCon     (..)
         , PrimDaCon     (..)
@@ -28,37 +31,40 @@ import Data.Char
 -- | Names of things used in Disciple Core Lite.
 data Name
         -- | User defined variables.
-        = NameVar       String
+        = NameVar               String
 
         -- | A user defined constructor.
-        | NameCon       String
+        | NameCon               String
+
+        -- | Baked in effect type constructors.
+        | NameEffectTyCon       EffectTyCon
 
         -- | Baked in data type constructors.
-        | NameDataTyCon DataTyCon
+        | NameDataTyCon         DataTyCon
 
         -- | A primitive data constructor.
-        | NamePrimDaCon PrimDaCon
+        | NamePrimDaCon         PrimDaCon
 
         -- | A primitive type constructor.
-        | NamePrimTyCon PrimTyCon
+        | NamePrimTyCon         PrimTyCon
 
         -- | Primitive arithmetic, logic, comparison and bit-wise operators.
-        | NamePrimArith PrimArith
+        | NamePrimArith         PrimArith
 
         -- | Primitive casting between numeric types.
-        | NamePrimCast  PrimCast
+        | NamePrimCast          PrimCast
 
         -- | An unboxed boolean literal
-        | NameLitBool   Bool
+        | NameLitBool           Bool
 
         -- | An unboxed natural literal.
-        | NameLitNat    Integer
+        | NameLitNat            Integer
 
         -- | An unboxed integer literal.
-        | NameLitInt    Integer
+        | NameLitInt            Integer
 
         -- | An unboxed word literal
-        | NameLitWord   Integer Int
+        | NameLitWord           Integer Int
         deriving (Eq, Ord, Show, Typeable)
 
 
@@ -67,6 +73,7 @@ instance NFData Name where
   = case nn of
         NameVar s               -> rnf s
         NameCon s               -> rnf s
+        NameEffectTyCon con     -> rnf con
         NameDataTyCon con       -> rnf con
         NamePrimDaCon con       -> rnf con
         NamePrimTyCon con       -> rnf con
@@ -83,6 +90,7 @@ instance Pretty Name where
   = case nn of
         NameVar  v              -> text v
         NameCon  c              -> text c
+        NameEffectTyCon con     -> ppr con
         NameDataTyCon dc        -> ppr dc
         NamePrimTyCon tc        -> ppr tc
         NamePrimDaCon dc        -> ppr dc
@@ -98,6 +106,9 @@ instance Pretty Name where
 -- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
+        |  Just name    <- readEffectTyCon str
+        =  Just $ NameEffectTyCon name
+
         |  Just name    <- readDataTyCon str
         =  Just $ NameDataTyCon name
 
@@ -150,6 +161,27 @@ readName str
         = Nothing
 
 
+-- EffectTyCon ----------------------------------------------------------------
+-- | Baked-in effect type constructors.
+data EffectTyCon
+        = EffectTyConConsole    -- ^ @Console@ type constructor.
+        deriving (Eq, Ord, Show)
+
+instance NFData EffectTyCon
+
+instance Pretty EffectTyCon where
+ ppr tc
+  = case tc of
+        EffectTyConConsole      -> text "Console"
+
+
+-- | Read a baked-in effect type constructor.
+readEffectTyCon :: String -> Maybe EffectTyCon
+readEffectTyCon str
+ = case str of
+        "Console"       -> Just EffectTyConConsole
+        _               -> Nothing
+
 
 -- DataTyCon ------------------------------------------------------------------
 -- | Baked-in data type constructors.
@@ -175,17 +207,17 @@ instance Pretty DataTyCon where
         DataTyConList           -> text "List"
 
 
--- | Read a Baked-in data type constructor.
+-- | Read a baked-in data type constructor.
 readDataTyCon :: String -> Maybe DataTyCon
 readDataTyCon str
  = case str of
-        "Unit"  -> Just DataTyConUnit
-        "Bool"  -> Just DataTyConBool
-        "Nat"   -> Just DataTyConNat
-        "Int"   -> Just DataTyConInt
-        "Pair"  -> Just DataTyConPair
-        "List"  -> Just DataTyConList
-        _       -> Nothing
+        "Unit"          -> Just DataTyConUnit
+        "Bool"          -> Just DataTyConBool
+        "Nat"           -> Just DataTyConNat
+        "Int"           -> Just DataTyConInt
+        "Pair"          -> Just DataTyConPair
+        "List"          -> Just DataTyConList
+        _               -> Nothing
 
 
 -- PrimDaCon ------------------------------------------------------------------

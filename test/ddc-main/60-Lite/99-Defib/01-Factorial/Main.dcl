@@ -4,10 +4,10 @@ exports
         main    :: [r : %]
                 .  Nat# 
                 -(!0 | Use r)> Ptr# r String# 
-                -(Read r + Alloc r | Use r)> Int#
+                -(Read r + Alloc r + Console | Use r)> Int#
 imports 
         showInt   :: [r : %]. Int# -> Ptr# r String#
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#
+        putStrLn  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
 
 with letrec
 
@@ -51,8 +51,8 @@ fac     [r : %]
 
 
 main    [r : %] 
-        (argc : Nat#)           {!0 | Use r} 
-        (argv : Ptr# r String#) {Read r + Alloc r | Use r} 
+        (argc : Nat#)           {!0                             | Use r} 
+        (argv : Ptr# r String#) {Read r + Alloc r + Console     | Use r} 
         : Int#
  = do   x        = fac [r] (I# [r] 1i#) (I# [r] 10i#)
         putStrLn [r] (showInt [r] (unboxInt [r] x))

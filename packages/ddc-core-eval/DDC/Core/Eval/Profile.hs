@@ -24,7 +24,8 @@ evalProfile
 evalFeatures :: Features
 evalFeatures 
         = Features
-        { featuresClosureTerms          = True
+        { featuresUntrackedClosures     = False
+        , featuresUntrackedEffects      = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True
