@@ -31,6 +31,9 @@ data Mode
         | ModeHelp
 
         -- | Parse and type-check a module.
+        | ModeCheck     FilePath
+
+        -- | Parse, type-check and transform a module.
         | ModeLoad      FilePath
 
         -- | Compile a .dcl or .dce into an object file.

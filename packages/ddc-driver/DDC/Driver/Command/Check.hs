@@ -9,8 +9,9 @@ module DDC.Driver.Command.Check
         , cmdShowType
         , cmdExpRecon
         , ShowTypeMode(..)
+        , cmdCheckModuleFromFile
+        , cmdCheckModuleFromString
         , cmdParseCheckType
-        , cmdParseCheckModule
         , cmdParseCheckExp)
 where
 import DDC.Driver.Bundle
@@ -28,6 +29,8 @@ import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Type.Equiv
+import Control.Monad.Trans.Error
+import Control.Monad.IO.Class
 import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check         as T
 
@@ -231,6 +234,64 @@ cmdExpRecon bundle source ss
 
 
 -- Check ----------------------------------------------------------------------
+-- | Parse and type-check a core module from a file.
+cmdCheckModuleFromFile
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        => Fragment n err
+        -> FilePath
+        -> ErrorT String IO (Module (AnTEC () n) n)
+
+cmdCheckModuleFromFile fragment filePath
+ = goLoad 
+ where  lexModule =  fragmentLexModule fragment filePath 1
+
+        -- Load and type-check the module.
+        goLoad 
+         = do   mModule <- liftIO 
+                        $ loadModuleFromFile 
+                                (fragmentProfile fragment) lexModule filePath
+                case mModule of
+                 Left  err      -> throwError (renderIndent $ ppr err)
+                 Right mm       -> goCheckFragment mm
+
+        -- Do fragment specific checks.
+        goCheckFragment mm
+         = case fragmentCheckModule fragment mm of
+                Just err        -> throwError (renderIndent $ ppr err)
+                Nothing         -> return mm
+
+
+-- | Parse and type-check a core module from a string.
+cmdCheckModuleFromString
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        => Fragment n err
+        -> Source
+        -> String
+        -> ErrorT String IO (Module (AnTEC () n) n)
+
+cmdCheckModuleFromString fragment source str
+ = goLoad
+ where  lexModule = fragmentLexModule fragment 
+                        (nameOfSource source) 
+                        (lineStartOfSource source)
+
+        -- Load and type-check the module.
+        goLoad
+         = let  mModule = loadModuleFromString
+                                (fragmentProfile fragment) lexModule
+                                (nameOfSource source)
+                                str
+
+            in  case mModule of
+                  Left err       -> throwError (renderIndent $ ppr err)
+                  Right mm       -> goCheckFragment mm
+
+        goCheckFragment mm
+         = case fragmentCheckModule fragment mm of
+                Just err        -> throwError  (renderIndent $ ppr err)
+                Nothing         -> return mm
+
+
 -- | Parse a core type, and check its kind.
 cmdParseCheckType 
         :: (Ord n, Show n, Pretty n)
@@ -251,38 +312,6 @@ cmdParseCheckType source frag str
 
          Right (t, k)
           ->    return $ Just (t, k)
-
-
--- | Parse and type-check the given core module.
-cmdParseCheckModule 
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
-        => Fragment n err
-        -> Source
-        -> String
-        -> IO (Maybe (Module (AnTEC () n) n))
-
-cmdParseCheckModule frag source str
- = goLoad (fragmentLexModule frag 
-                (nameOfSource source) (lineStartOfSource source) str)
- where
-        -- Parse and type-check the module.
-        goLoad toks
-         = case loadModule (fragmentProfile frag) (nameOfSource source) toks of
-                Left err
-                 -> do  outDocLn $ ppr err
-                        return Nothing
-
-                Right result
-                 -> do  goCheckFragment result
-
-        goCheckFragment m
-         = case fragmentCheckModule frag m of
-                Just err
-                 -> do outDocLn $ ppr err
-                       return Nothing
-
-                Nothing
-                 ->     return (Just m)
 
 
 -- | Parse the given core expression, 

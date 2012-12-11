@@ -6,6 +6,7 @@ where
 import DDC.Driver.Command.Check
 import DDC.Driver.Source
 import DDC.Driver.Bundle
+import Control.Monad.Trans.Error
 import qualified Language.Haskell.Exts.Parser as H
 import qualified Language.Haskell.Exts.Pretty as H
 
@@ -14,14 +15,16 @@ import qualified Language.Haskell.Exts.Pretty as H
 cmdAstModule :: Bundle -> Source -> String -> IO ()
 cmdAstModule bundle source str
  | Bundle frag _ _ _ _ <- bundle
- = cmdParseCheckModule frag source str >>= goShow
+ = do   mModule <- runErrorT $ cmdCheckModuleFromString frag source str
+        goShow mModule
  where
         -- Expression had a parse or type error.
-        goShow Nothing
-         = return ()
+        goShow (Left err)
+         = do   putStrLn err
+                return ()
 
         -- Expression is well-typed.
-        goShow (Just x)
+        goShow (Right x)
          = let p = pretty x in
            putStrLn p
          

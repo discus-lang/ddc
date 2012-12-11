@@ -87,6 +87,20 @@ parseArgs args config
         = parseArgs rest
         $ config  { configRuntimeHeapSize = read bytes }
 
+        -- Checking -----------------------------
+        | "-check" : file : rest    <- args
+        = parseArgs rest
+        $ config { configMode  = ModeCheck file }
+
+        -- Transformation -----------------------
+        | "-trans" : trans : rest   <- args
+        = parseArgs rest
+        $ config { configTrans = Just trans }
+
+        | "-with"  : file  : rest   <- args
+        = parseArgs rest
+        $ config { configWith  = configWith config ++ [file] }
+
         -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
         = parseArgs rest
@@ -99,15 +113,6 @@ parseArgs args config
         | "-to-llvm" : file : rest  <- args
         = parseArgs rest
         $ setMode config $ ModeToLLVM file
-
-        -- Transformation -----------------------
-        | "-trans" : trans : rest   <- args
-        = parseArgs rest
-        $ config { configTrans = Just trans }
-
-        | "-with"  : file  : rest   <- args
-        = parseArgs rest
-        $ config { configWith  = configWith config ++ [file] }
 
         -- Debugging ----------------------------
         | "-dump"   : rest        <- args
@@ -172,6 +177,7 @@ flagOfMode mode
  = case mode of
         ModeNone{}              -> Nothing
         ModeHelp{}              -> Just "-help"
+        ModeCheck{}             -> Just "-check"
         ModeLoad{}              -> Just "-load"
         ModeCompile{}           -> Just "-compile"
         ModeMake{}              -> Just "-make"
@@ -202,6 +208,10 @@ help    = unlines
         , "  -o,  -output       FILE     Redirect output to this file."
         , "       -output-dir   DIR      Redirect output to this directory."
         , ""
+        , "       -keep-ll-files         Keep intermediate .llvm files."
+        , "       -keep-c-files          Keep intermediate .c files."
+        , "       -keep-s-files          Keep intermediate .s files."
+        , ""
         , " Optimisation:"
         , "       -O0                    No optimisations.             (default)"
         , "  -O,  -O1                    Do standard optimisations."
@@ -209,25 +219,21 @@ help    = unlines
         , " Runtime for compiled program:"
         , "       -run-heap     BYTES    Size of fixed heap            (65536)"
         , ""
+        , " Checking:"
+        , "       -check        FILE     Parse and type check a core module."
+        , ""
+        , " Transformation:"
+        , "       -load         FILE     Parse, type check and transform a module."
+        , "       -trans        TRANS    Set the transformation to use with -load."
+        , "       -with         FILE     Use this module for inliner templates with -load."
+        , ""
         , " Conversion:"
         , "       -to-salt      FILE     Convert a module to Disciple Core Salt."
         , "       -to-c         FILE     Convert a module to C code."
         , "       -to-llvm      FILE     Convert a module to LLVM code."
         , ""
-        , " Transformation:"
-        , "       -load         FILE     Parse, type-check and transform a module."
-        , "       -trans        TRANS    Set the transformation to use with -load."
-        , "       -with         FILE     Use this module for inliner templates with -load."
-        , ""
         , " Debugging:"
         , "       -dump                  Dump intermediate representations."
         , "       -ast          FILE     Pretty print the AST of a module."
-        , "       -print-builder         Print external builder info for this platform."
-        , ""
-        , " Intermediates:"
-        , "       -keep-ll-files         Keep intermediate .llvm files."
-        , "       -keep-c-files          Keep intermediate .c files."
-        , "       -keep-s-files          Keep intermediate .s files."
-
-        , "" ]
+        , "       -print-builder         Print external builder info for this platform." ]
 

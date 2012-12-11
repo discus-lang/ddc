@@ -7,6 +7,7 @@ import DDC.Main.Config
 import DDC.Main.Args
 import DDC.Main.OptLevels
 import DDC.Driver.Command.Load
+import DDC.Driver.Command.Check
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
@@ -14,6 +15,7 @@ import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Source
+import DDC.Driver.Bundle
 import DDC.Build.Builder
 import DDC.Base.Pretty
 import System.Environment
@@ -37,24 +39,46 @@ run config
          -> do  putStr help
                 return ()
 
+
         -- Display the help page.
         ModeHelp
          -> do  putStr help
                 return ()
 
-        -- Just load, parse and type check a module.
+
+        -- Parse and type check a module.
+        ModeCheck filePath
+         | Just (Bundle fragment _ _ _ _) <- bundleFromFilePath config filePath
+         -> do  mm      <- runErrorT $ cmdCheckModuleFromFile fragment filePath
+                case mm of
+                 Left err        
+                  -> do putStrLn err
+                        exitWith $ ExitFailure 1
+
+                 Right _
+                  -> return ()
+
+         |  otherwise
+         -> do  putStrLn "Unknown file extension."
+                exitWith $ ExitFailure 1
+
+
+        -- Parse, type check and transform a module.
         ModeLoad filePath
          -> do  runError $ cmdLoadFromFile (configTrans config) filePath
+
 
         -- Compile a module to object code.
         ModeCompile filePath
          -> do  dconfig  <- getDriverConfig config
                 runError $ cmdCompile dconfig filePath
 
+
         -- Compile a module into an executable.
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config
                 runError $ cmdMake    dconfig filePath
+
 
         -- Pretty print the AST of a module.
         ModeAST filePath
@@ -65,12 +89,14 @@ run config
                         (SourceFile filePath) 
                         str
 
+
         -- Convert a module to Salt.
         ModeToSalt filePath
          -> do  let Just bundle = bundleFromFilePath config filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
                 runError $ cmdToSalt dconfig bundle (SourceFile filePath) str
+
 
         -- Convert a module to C
         ModeToC filePath
@@ -79,12 +105,14 @@ run config
                 str             <- readFile filePath
                 runError $ cmdToC    dconfig bundle (SourceFile filePath) str
 
+
         -- Convert a module to LLVM
         ModeToLLVM filePath
          -> do  let Just bundle = bundleFromFilePath config filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
                 runError $ cmdToLlvm dconfig bundle (SourceFile filePath) str
+
 
         -- Print the external builder info for this platform.
         ModePrintBuilder

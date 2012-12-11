@@ -5,7 +5,9 @@
 module DDC.Core.Load
         ( C.AnTEC (..)
         , Error (..)
-        , loadModule
+        , loadModuleFromFile
+        , loadModuleFromString
+        , loadModuleFromTokens
         , loadExp
         , loadType
         , loadWitness)
@@ -24,11 +26,13 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
 import qualified DDC.Base.Parser                as BP
 import Data.Map.Strict                          (Map)
+import System.Directory
 
 
 -- | Things that can go wrong when loading a core thing.
 data Error n
-        = ErrorParser     !BP.ParseError
+        = ErrorRead       !String
+        | ErrorParser     !BP.ParseError
         | ErrorCheckType  !(T.Error n)      
         | ErrorCheckExp   !(C.Error () n)
         | ErrorCompliance !(I.Error n)
@@ -38,6 +42,10 @@ data Error n
 instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
+        ErrorRead str
+         -> vcat [ text "While reading."
+                 , indent 2 $ text str ]
+
         ErrorParser     err'    
          -> vcat [ text "While parsing."
                  , indent 2 $ ppr err' ]
@@ -57,15 +65,52 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 
 
 -- Module ---------------------------------------------------------------------
--- | Parse and type check a core module.
-loadModule 
+-- | Parse and type check a core module from a file.
+loadModuleFromFile 
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n            -- ^ Language fragment profile.
-        -> FilePath             -- ^ Path to source file for error messages.
-        -> [Token (Tok n)]      -- ^ Source tokens.
+        => Profile n                    -- ^ Language fragment profile.
+        -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
+        -> FilePath                     -- ^ File containing source code.
+        -> IO (Either (Error n)
+                      (Module (C.AnTEC () n) n))
+
+loadModuleFromFile profile lexSource filePath
+ = do   
+        -- Check whether the file exists.
+        exists  <- doesFileExist filePath
+        if not exists 
+         then return $ Left $ ErrorRead "Cannot read file."
+         else do
+                -- Read the source file.
+                src     <- readFile filePath
+
+                -- Lex the source.
+                let toks = lexSource src
+
+                return $ loadModuleFromTokens profile filePath toks
+
+-- | Parse and type check a core module from a string.
+loadModuleFromString
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Profile n                    -- ^ Language fragment profile.
+        -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
+        -> FilePath                     -- ^ Path to source file for error messages.
+        -> String                       -- ^ Program text.
         -> Either (Error n) (Module (C.AnTEC () n) n)
 
-loadModule profile sourceName toks'
+loadModuleFromString profile lexSource filePath src
+        = loadModuleFromTokens profile filePath (lexSource src)
+
+
+-- | Parse and type check a core module.
+loadModuleFromTokens
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Profile n                    -- ^ Language fragment profile.
+        -> FilePath                     -- ^ Path to source file for error messages.
+        -> [Token (Tok n)]              -- ^ Source tokens.
+        -> Either (Error n) (Module (C.AnTEC () n) n)
+
+loadModuleFromTokens profile sourceName toks'
  = goParse toks'
  where  
         -- Type checker config kind and type environments.
