@@ -10,6 +10,7 @@ import DDC.Core.Analysis.Usage
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier.Base
+import DDC.Core.Fragment
 import DDC.Core.Predicates
 import Data.Map                 (Map)
 import Control.Monad
@@ -50,24 +51,22 @@ instance Monoid ForwardInfo where
 --   their use sites.
 forwardModule 
         :: Ord n
-        => Module a n -> Module a n
+        => Profile n -> Module a n -> Module a n
 
-forwardModule mm
-        = fst
-	$ runWriter
-	$ forwardWith Map.empty 
-        $ usageModule mm
+forwardModule profile mm
+        = fst   $ runWriter
+                $ forwardWith profile Map.empty 
+                $ usageModule mm
 
 
 -- | Float let-bindings in an expression with a single use forward into
 --   their use-sites.
 forwardX :: Ord n
-         => Exp a n -> TransformResult (Exp a n)
-
-forwardX xx
+         => Profile n -> Exp a n -> TransformResult (Exp a n)
+forwardX profile xx
  = let  (x',info) = runWriter
-		 $ forwardWith Map.empty
-		 $ usageX xx
+		  $ forwardWith profile Map.empty
+		  $ usageX xx
 
         progress (ForwardInfo s _) 
                 = s > 0
@@ -84,12 +83,13 @@ class Forward (c :: * -> * -> *) where
  -- | Carry bindings forward and downward into their use-sites.
  forwardWith 
         :: Ord n
-        => Map n (Exp a n)
+        => Profile n
+        -> Map n (Exp a n)
         -> c (UsedMap n, a) n
         -> Writer ForwardInfo (c a n)
 
 instance Forward Module where
- forwardWith bindings 
+ forwardWith profile bindings 
         (ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = exportKinds
@@ -98,7 +98,7 @@ instance Forward Module where
                 , moduleImportTypes     = importTypes
                 , moduleBody            = body })
 
-  = do	body' <- forwardWith bindings body
+  = do	body' <- forwardWith profile bindings body
 	return ModuleCore
 		{ moduleName            = name
 		, moduleExportKinds     = exportKinds
@@ -109,9 +109,9 @@ instance Forward Module where
 
 
 instance Forward Exp where
- forwardWith bindings xx
+ forwardWith profile bindings xx
   = {-# SCC forwardWith #-}
-    let down    = forwardWith bindings 
+    let down    = forwardWith profile bindings 
     in case xx of
         XVar a u@(UName n)
          -> case Map.lookup n bindings of
@@ -134,10 +134,8 @@ instance Forward Exp where
 	 -> do
                 -- Record that we've moved this binding.
                 tell mempty { infoBindings = 1 }
-
                 x1'           <- down x1
-
-                forwardWith (Map.insert n x1' bindings) x2
+                forwardWith profile (Map.insert n x1' bindings) x2
 
 	-- Always float atomic bindings (variables, constructors)
         XLet _ (LLet _mode b x1) x2
@@ -165,8 +163,8 @@ filterUsedInCasts = filter notCast
 
 
 instance Forward Cast where
- forwardWith bindings xx
-  = let down    = forwardWith bindings
+ forwardWith profile bindings xx
+  = let down    = forwardWith profile bindings
     in case xx of
         CastWeakenEffect eff    -> return $ CastWeakenEffect eff
         CastWeakenClosure xs    -> liftM    CastWeakenClosure (mapM down xs)
@@ -175,8 +173,8 @@ instance Forward Cast where
 
 
 instance Forward Lets where
- forwardWith bindings lts
-  = let down    = forwardWith bindings
+ forwardWith profile bindings lts
+  = let down    = forwardWith profile bindings
     in case lts of
         LLet mode b x   -> liftM (LLet mode b) (down x)
 
@@ -192,6 +190,6 @@ instance Forward Lets where
 
 
 instance Forward Alt where
- forwardWith bindings (AAlt p x)
-  = liftM (AAlt p) (forwardWith bindings x)
+ forwardWith profile bindings (AAlt p x)
+  = liftM (AAlt p) (forwardWith profile bindings x)
 

@@ -66,9 +66,18 @@ pruneModule
 	-> Module a n
 
 pruneModule profile mm
- = mm { moduleBody      = result 
-                        $ pruneX profile (moduleKindEnv mm) (moduleTypeEnv mm)
-                        $ moduleBody mm }
+         -- If the language fragment has untracked effects then we can't do
+         -- the prune transform because we risk dropping statements with global
+         -- effects.
+         | featuresUntrackedEffects 
+                $ profileFeatures profile
+         = mm
+
+         | otherwise
+         = mm { moduleBody      
+                = result 
+                $ pruneX profile (moduleKindEnv mm) (moduleTypeEnv mm)
+                $ moduleBody mm }
 
 
 -- | Erase pure let-bindings in an expression that have no uses.

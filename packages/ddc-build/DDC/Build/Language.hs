@@ -33,7 +33,7 @@ languageOfExtension :: String -> Maybe Language
 languageOfExtension ext
  = case ext of
         "dcl"   -> Just $ Language fragmentLite
-        "dce"   -> Just $ Language fragmentSalt
+        "dcs"   -> Just $ Language fragmentSalt
         "dcv"   -> Just $ Language fragmentEval
         "dcz"   -> Just $ Language fragmentZero
         _       -> Nothing
