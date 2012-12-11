@@ -4,8 +4,8 @@
 --
 module Main where
 import Config
-import DDC.Build.Pipeline
 import DDC.Build.Language
+import DDC.Build.Pipeline
 import DDC.Core.Pretty
 import System.IO
 import System.Environment
@@ -31,7 +31,8 @@ main
 
 
 runLanguage config source sourceName language
- | Language fragment <- language
+ | Language bundle      <- language
+ , fragment             <- bundleFragment bundle
  = do   
         -- In quiet mode just drop the checked module on the floor.
         let sink

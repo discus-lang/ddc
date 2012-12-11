@@ -10,7 +10,6 @@ import DDCI.Core.Output
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment
-import DDC.Core.Simplifier
 import DDC.Core.Simplifier.Parser
 import DDC.Base.Pretty
 import Control.Monad
@@ -18,16 +17,20 @@ import Data.Char
 import Data.List
 import qualified DDC.Core.Transform.Inline      as I
 import qualified DDCI.Core.Rewrite		as R
-import qualified Data.Set			as Set
 import qualified Data.Map			as Map
+import qualified Data.Set                       as Set
 
 
 cmdSet ::  State -> String -> IO State
 
 -- Display the active modes.
 cmdSet state []
- | Bundle frag modules _ simpl _  <- stateBundle state
- = do   let langName    = profileName (fragmentProfile frag)
+ | Language bundle      <- stateLanguage state
+ , fragment             <- bundleFragment   bundle
+ , modules              <- bundleModules    bundle
+ , simpl                <- bundleSimplifier bundle
+ = do
+        let langName    = profileName (fragmentProfile fragment)
 
         putStrLn $ renderIndent
          $ vcat  [ text "Modes:      " <> text (show $ Set.toList $ stateModes state)
@@ -38,25 +41,26 @@ cmdSet state []
          <$> vcat (text "With Lite:  " : map ppr (Map.keys (stateWithLite state)))
          <$> vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state)))
 
-
         return state
 
 -- Toggle active modes.
 cmdSet state cmd
  | ["lang", name]       <- words cmd
  = do   case lookup name languages of
-         Just (Language fragment)
-          | Fragment _ _ _ _ _ _ _ _ zero <- fragment
-          -> do chatStrLn state "ok"
-                return $ state { stateBundle = Bundle fragment Map.empty zero (Trans Id) Map.empty }
+         Just language
+          -> do putStrLn "ok"
+                return $ state { stateLanguage = language }
 
          Nothing
           -> do putStrLn "unknown language"
                 return state
 
- | "trans" : rest        <- words cmd
- , Bundle frag modules _ _ rules <- stateBundle state
- , Fragment _ _ _ _ _ _ mkNamT mkNamX zero <- frag
+ | "trans" : rest       <- words cmd
+ , Language bundle      <- stateLanguage state
+ , modules              <- bundleModules       bundle
+ , rules                <- bundleRewriteRules  bundle 
+ , mkNamT               <- bundleMakeNamifierT bundle
+ , mkNamX               <- bundleMakeNamifierX bundle
  = do   case parseSimplifier 
                 (SimplifierDetails
                         mkNamT mkNamX 
@@ -73,26 +77,32 @@ cmdSet state cmd
 
          Just simpl
           -> do chatStrLn state "ok"
-                return $ state { stateBundle = Bundle frag modules zero simpl rules }
+                let bundle'     = bundle { bundleSimplifier = simpl }
+                return $ state { stateLanguage = Language bundle' }
 
          Nothing
           -> do putStrLn "transform spec parse error"
                 return state
 
- | ("rule", rest)	        <- R.parseFirstWord cmd
- , Bundle frag modules zero simpl rules <- stateBundle state
- = case R.parseRewrite frag modules rest of
+ | ("rule", rest)       <- R.parseFirstWord cmd
+ , Language bundle      <- stateLanguage state
+ , fragment             <- bundleFragment      bundle
+ , modules              <- bundleModules       bundle
+ , rules                <- bundleRewriteRules  bundle 
+ = case R.parseRewrite fragment modules rest of
 	Right (R.SetAdd name rule)
 	 -> do	chatStrLn state $ "ok, added " ++ name
-		let rules' = Map.insert name rule rules
-		return $ state { stateBundle = Bundle frag modules zero simpl rules' }
+		let rules'  = Map.insert name rule rules
+                let bundle' = bundle { bundleRewriteRules = rules' }
+		return $ state { stateLanguage = Language bundle' }
 
 	Right (R.SetRemove name)
 	 -> do	chatStrLn state $ "ok, removed " ++ name
-		let rules' = Map.delete name rules
-		return $ state { stateBundle = Bundle frag modules zero simpl rules' }
+		let rules'  = Map.delete name rules
+                let bundle' = bundle { bundleRewriteRules = rules' }
+                return $ state { stateLanguage = Language bundle' }
 
-	Right (R.SetList)
+	Right R.SetList
 	 -> do	let rules' = Map.toList rules
 		mapM_ (uncurry $ R.showRule state 0) rules'
 		return state

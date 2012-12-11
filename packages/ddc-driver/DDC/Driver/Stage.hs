@@ -27,7 +27,6 @@ where
 import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
-import DDC.Build.Language
 import DDC.Core.Transform.Namify
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
@@ -44,11 +43,11 @@ import qualified DDC.Core.Salt.Runtime          as Salt
 data Config
         = Config
         { -- | Dump intermediate code.
-          configDump            :: Bool
+          configDump                    :: Bool
 
           -- | Simplifiers to apply to intermediate code
-        , configSimplLite       :: Simplifier Int () Lite.Name
-        , configSimplSalt       :: Simplifier Int () Salt.Name
+        , configSimplLite               :: Simplifier Int () Lite.Name
+        , configSimplSalt               :: Simplifier Int () Salt.Name
 
           -- | Backend code generator to use
         , configViaBackend              :: ViaBackend
@@ -99,7 +98,7 @@ stageLiteLoad
         -> PipeText Lite.Name Lite.Error
 
 stageLiteLoad config source pipesLite
- = PipeTextLoadCore fragmentLite
+ = PipeTextLoadCore Lite.fragment
  [ PipeCoreStrip
         ( PipeCoreOutput (dump config source "dump.lite.dcl")
         : pipesLite ) ]
@@ -114,7 +113,7 @@ stageLiteOpt
 
 stageLiteOpt config source pipes
  = PipeCoreSimplify 
-        fragmentLite
+        Lite.fragment
         (0 :: Int) 
         (configSimplLite config)
         ( PipeCoreOutput (dump config source "dump.lite-opt.dcl") 
@@ -130,7 +129,7 @@ stageSaltOpt
 
 stageSaltOpt config source pipes
  = PipeCoreSimplify 
-        fragmentSalt
+        Salt.fragment
         (0 :: Int) 
         (configSimplSalt config)        
         ( PipeCoreOutput  (dump config source "dump.salt-opt.dcl")
@@ -148,8 +147,8 @@ stageLiteToSalt
         -> PipeCore  () Lite.Name
 
 stageLiteToSalt config source pipesSalt
- = PipeCoreSimplify       fragmentLite 0 normalizeLite
-   [ PipeCoreCheck        fragmentLite
+ = PipeCoreSimplify       Lite.fragment 0 normalizeLite
+   [ PipeCoreCheck        Lite.fragment
      [ PipeCoreOutput     (dump config source "dump.lite-normalized.dcl")
      , PipeCoreAsLite
        [ PipeLiteToSalt   (buildSpec $ configBuilder config) 
@@ -171,8 +170,8 @@ stageSaltToC
         -> PipeCore () Salt.Name
 
 stageSaltToC config source sink
- = PipeCoreSimplify       fragmentSalt 0 normalizeSalt
-   [ PipeCoreCheck        fragmentSalt
+ = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
+   [ PipeCoreCheck        Salt.fragment
      [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
@@ -205,8 +204,8 @@ stageCompileSalt config source filePath shouldLinkExe
         exePathDefault = outputDirBase
         exePath        = fromMaybe exePathDefault (configOutputFile config)
    in
-        PipeCoreSimplify        fragmentSalt 0 normalizeSalt
-         [ PipeCoreCheck        fragmentSalt
+        PipeCoreSimplify        Salt.fragment 0 normalizeSalt
+         [ PipeCoreCheck        Salt.fragment
            [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
            , PipeCoreAsSalt
              [ PipeSaltTransfer
@@ -235,8 +234,8 @@ stageSaltToLLVM
         -> PipeCore () Salt.Name
 
 stageSaltToLLVM config source pipesLLVM
- = PipeCoreSimplify fragmentSalt 0 normalizeSalt
-   [ PipeCoreCheck          fragmentSalt
+ = PipeCoreSimplify Salt.fragment 0 normalizeSalt
+   [ PipeCoreCheck          Salt.fragment
      [ PipeCoreOutput       (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer

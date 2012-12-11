@@ -8,7 +8,6 @@ import DDCI.Core.Stats.Trace
 import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Driver.Command.Check
-import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
@@ -21,24 +20,25 @@ import DDC.Core.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import Control.Monad
-import DDC.Core.Eval.Store              (Store)
-import qualified DDC.Core.Eval.Store    as Store
-import qualified Data.Set               as Set
-
-import Data.Maybe (fromMaybe)
-import qualified Data.Map		as Map
+import DDC.Core.Eval.Store                      (Store)
+import qualified DDC.Core.Eval.Store            as Store
+import qualified Data.Set                       as Set
+import qualified DDC.Build.Language.Eval        as Eval
+import qualified Data.Map		     as Map
 import Data.Typeable
 import DDC.Core.Module (ModuleMap)
+import Data.Maybe (fromMaybe)
 
 
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Source -> String -> IO ()
 cmdStep state source str
- | Bundle _ modules0 _ _ _		<- stateBundle state
+ | Language bundle      <- stateLanguage state
+ , modules0             <- bundleModules bundle
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
-				        <- gcast modules0
- , modules'				<- fromMaybe Map.empty modules
- = cmdParseCheckExp fragmentEval modules' False source str >>= goStore 
+			<- gcast modules0
+ , modules'		<- fromMaybe Map.empty modules
+ = cmdParseCheckExp Eval.fragment modules' False source str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -62,11 +62,12 @@ cmdStep state source str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Source -> String -> IO ()
 cmdEval state source str
- | Bundle _ modules0 _ _ _		<- stateBundle state
+ | Language bundle      <- stateLanguage state
+ , modules0             <- bundleModules bundle
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
-				        <- gcast modules0
- , modules'				<- fromMaybe Map.empty modules
- = cmdParseCheckExp fragmentEval modules' False source str >>= goEval
+			<- gcast modules0
+ , modules'		<- fromMaybe Map.empty modules
+ = cmdParseCheckExp Eval.fragment modules' False source str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing
@@ -158,7 +159,7 @@ forcePrint state store x
 
    in case force store x_stripped of
         StepProgress store' x_stripped'
-         -> case checkExp (configOfProfile $ fragmentProfile fragmentEval) 
+         -> case checkExp (configOfProfile Eval.profile) 
                         primKindEnv primTypeEnv x_stripped' of
              Left err
               -> do 

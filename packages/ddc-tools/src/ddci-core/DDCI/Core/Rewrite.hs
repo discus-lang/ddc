@@ -71,8 +71,8 @@ parseAdd
         -> String 
         -> Either Error (SetRuleCommand (C.AnTEC () n) n)
 
-parseAdd fragment@(Fragment profile _ _ _ _ _ _ _ _) modules str
- | (name, rest)                         <- parseFirstWord str
+parseAdd fragment modules str
+ | (name, rest) <- parseFirstWord str
  = case BP.runTokenParser describeTok "<interactive>" pRule
           (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err
@@ -81,9 +81,9 @@ parseAdd fragment@(Fragment profile _ _ _ _ _ _ _ _) modules str
                     Left err    -> Left  $ renderIndent $ ppr err
                     Right rule' -> Right $ SetAdd name rule'
  where
-        config   = C.configOfProfile	profile
-	kinds	 = profilePrimKinds	profile
-	types	 = profilePrimTypes	profile
+        config   = C.configOfProfile (fragmentProfile fragment)
+	kinds	 = profilePrimKinds  (fragmentProfile fragment)
+	types	 = profilePrimTypes  (fragmentProfile fragment)
 
 	kinds'	 = modulesExportKinds modules kinds
 	types'	 = modulesExportTypes modules types

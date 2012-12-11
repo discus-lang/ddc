@@ -21,8 +21,14 @@ import qualified DDC.Core.Transform.Inline      as I
 -- | Apply the current transform to an expression.
 cmdTransInteract :: State -> Source -> String -> IO State
 cmdTransInteract state source str
- | Bundle fragment modules _ _ rules		    <- stateBundle state
- , Fragment profile _ _ _ _ _ mkNamT mkNamX zero    <- fragment
+ | Language bundle      <- stateLanguage state
+ , fragment             <- bundleFragment   bundle
+ , modules              <- bundleModules    bundle
+ , zero                 <- bundleStateInit  bundle
+ , profile              <- fragmentProfile  fragment
+ , mkNamT               <- bundleMakeNamifierT bundle
+ , mkNamX               <- bundleMakeNamifierX bundle
+ , rules                <- bundleRewriteRules  bundle
  =   cmdParseCheckExp fragment modules True source str 
  >>= goStore mkNamT mkNamX zero profile modules rules
  where

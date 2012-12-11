@@ -14,7 +14,6 @@ module DDC.Driver.Command.Check
         , cmdParseCheckType
         , cmdParseCheckExp)
 where
-import DDC.Driver.Bundle
 import DDC.Driver.Source
 import DDC.Driver.Output
 import DDC.Build.Language
@@ -37,15 +36,15 @@ import qualified DDC.Type.Check         as T
 
 -- universe -------------------------------------------------------------------
 -- | Show the universe of some type.
-cmdUniverse :: Bundle -> Source -> String -> IO ()
-cmdUniverse bundle source str
- | Bundle frag _ _ _ _ <- bundle
- = do   result         <- cmdParseCheckType source frag str
+cmdUniverse :: Language -> Source -> String -> IO ()
+cmdUniverse language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment bundle
+ , profile              <- fragmentProfile fragment
+ = do   result          <- cmdParseCheckType source fragment str
         case result of
          Just (t, _)
-          | Just u      <- universeOfType 
-                                (profilePrimKinds $ fragmentProfile frag)
-                                t
+          | Just u      <- universeOfType (profilePrimKinds profile) t
           ->    outDocLn $ ppr u
 
          _ ->   outDocLn $ text "no universe"
@@ -53,15 +52,15 @@ cmdUniverse bundle source str
 
 -- | Given the type of some thing (up one level)
 --   show the universe of the thing.
-cmdUniverse1 :: Bundle -> Source -> String -> IO ()
-cmdUniverse1 bundle source str
- | Bundle frag _ _ _ _ <- bundle
- = do   result         <- cmdParseCheckType source frag str
+cmdUniverse1 :: Language -> Source -> String -> IO ()
+cmdUniverse1 language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment bundle
+ , profile              <- fragmentProfile fragment
+ = do   result          <- cmdParseCheckType source fragment str
         case result of
          Just (t, _)
-          | Just u      <- universeFromType1 
-                                (profilePrimKinds $ fragmentProfile frag)
-                                t
+          | Just u      <- universeFromType1 (profilePrimKinds profile) t
           ->    outDocLn $ ppr u
 
          _ ->   outDocLn $ text "no universe"
@@ -69,10 +68,11 @@ cmdUniverse1 bundle source str
 
 -- | Given the kind of some thing (up two levels)
 --   show the universe of the thing.
-cmdUniverse2 :: Bundle -> Source -> String -> IO ()
-cmdUniverse2 bundle source str
- | Bundle frag _ _ _ _ <- bundle
- = do   result         <- cmdParseCheckType source frag str
+cmdUniverse2 :: Language -> Source -> String -> IO ()
+cmdUniverse2 language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment bundle
+ = do   result          <- cmdParseCheckType source fragment str
         case result of
          Just (t, _)
           | Just u      <- universeFromType2 t
@@ -84,12 +84,13 @@ cmdUniverse2 bundle source str
 -- | Given the sort of some thing (up three levels)
 --   show the universe of the thing.
 --   We can't type check naked sorts, so just parse them.
-cmdUniverse3 :: Bundle -> Source -> String -> IO ()
-cmdUniverse3 bundle source str
- | Bundle frag _ _ _ _ <- bundle
+cmdUniverse3 :: Language -> Source -> String -> IO ()
+cmdUniverse3 language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
-        profile = fragmentProfile frag
         kenv    = profilePrimKinds profile
 
         -- Parse the tokens.
@@ -103,18 +104,20 @@ cmdUniverse3 bundle source str
             Just u      -> outDocLn $ ppr u
             Nothing     -> outDocLn $ text "no universe"
 
-   in   goParse (fragmentLexExp frag srcName srcLine str)
+   in   goParse (fragmentLexExp fragment srcName srcLine str)
 
 
 -- kind ------------------------------------------------------------------------
 -- | Show the kind of a type.
-cmdShowKind :: Bundle -> Source -> String -> IO ()
-cmdShowKind bundle source str
- | Bundle frag _ _ _ _ <- bundle
+cmdShowKind :: Language -> Source -> String -> IO ()
+cmdShowKind language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
-        toks    = fragmentLexExp frag srcName srcLine str
-        eTK     = loadType (fragmentProfile frag) srcName toks
+        toks    = fragmentLexExp fragment srcName srcLine str
+        eTK     = loadType profile srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
          Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
@@ -122,9 +125,11 @@ cmdShowKind bundle source str
 
 -- tequiv ---------------------------------------------------------------------
 -- | Check if two types are equivlant.
-cmdTypeEquiv :: Bundle -> Source -> String -> IO ()
-cmdTypeEquiv bundle source ss
- | Bundle frag _ _ _ _ <- bundle
+cmdTypeEquiv :: Language -> Source -> String -> IO ()
+cmdTypeEquiv language source ss
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         
@@ -144,8 +149,8 @@ cmdTypeEquiv bundle source ss
                  then outStrLn $ show $ equivT t1 t2    
                  else return ()
 
-        defs    = profilePrimDataDefs (fragmentProfile frag)
-        kenv    = profilePrimKinds    (fragmentProfile frag)
+        defs    = profilePrimDataDefs profile
+        kenv    = profilePrimKinds    profile
 
         checkT t
          = case T.checkType defs kenv (spreadT kenv t) of
@@ -156,18 +161,20 @@ cmdTypeEquiv bundle source ss
                 Right{} 
                  ->     return True
 
-   in goParse (fragmentLexExp frag srcName srcLine ss)
+   in goParse (fragmentLexExp fragment srcName srcLine ss)
 
 
 -- wtype ----------------------------------------------------------------------
 -- | Show the type of a witness.
-cmdShowWType :: Bundle -> Source -> String -> IO ()
-cmdShowWType bundle source str
- | Bundle frag _ _ _ _ <- bundle
+cmdShowWType :: Language -> Source -> String -> IO ()
+cmdShowWType language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
-        toks    = fragmentLexExp frag srcName srcLine str
-        eTK     = loadWitness (fragmentProfile frag) srcName toks
+        toks    = fragmentLexExp fragment srcName srcLine str
+        eTK     = loadWitness profile srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
          Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
@@ -184,10 +191,12 @@ data ShowTypeMode
 
 
 -- | Show the type of an expression.
-cmdShowType :: Bundle -> ShowTypeMode -> Source -> String -> IO ()
-cmdShowType bundle mode source ss
- | Bundle frag modules _ _ _ <- bundle
- = cmdParseCheckExp frag modules True source ss >>= goResult
+cmdShowType :: Language -> ShowTypeMode -> Source -> String -> IO ()
+cmdShowType language mode source ss
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , modules              <- bundleModules   bundle
+ = cmdParseCheckExp fragment modules True source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -220,10 +229,12 @@ cmdShowType bundle mode source ss
 
 -- Recon ----------------------------------------------------------------------
 -- | Check expression and reconstruct type annotations on binders.
-cmdExpRecon :: Bundle -> Source -> String -> IO ()
-cmdExpRecon bundle source ss
- |   Bundle frag modules _ _ _ <- bundle
- =   cmdParseCheckExp frag modules True source ss 
+cmdExpRecon :: Language -> Source -> String -> IO ()
+cmdExpRecon language source ss
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , modules              <- bundleModules   bundle
+ =   cmdParseCheckExp fragment modules True source ss 
  >>= goResult
  where
         goResult Nothing

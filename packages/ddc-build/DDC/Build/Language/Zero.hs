@@ -1,9 +1,14 @@
 
+-- | The `Zero` fragment has no features and no primops.
+--   It it provides the first order calculus, and is good for debugging.
 module DDC.Build.Language.Zero
-        ( fragmentZero
+        ( language
+        , bundle
+        , fragment
         , Name
         , Error)
 where
+import DDC.Core.Simplifier
 import DDC.Build.Language.Base
 import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Namify
@@ -14,24 +19,38 @@ import Data.Typeable
 import DDC.Type.Env                     (Env)
 import DDC.Core.Lexer                   as Core
 import qualified DDC.Type.Env           as Env
+import qualified Data.Map               as Map
 import Control.Monad.State.Strict
 import Control.DeepSeq
 
 
--- | The `Zero` fragment has no features and no primops.
---   It it provides the first order calculus, and is good for debugging.
-fragmentZero :: Fragment Name Error
-fragmentZero 
+-- | Language definitition for Disciple Core Zero.
+language :: Language
+language = Language bundle
+
+
+-- | Language bundle for Disciple Core Zero
+bundle      :: Bundle Int Name Error
+bundle  = Bundle
+        { bundleFragment        = fragment
+        , bundleModules         = Map.empty
+        , bundleStateInit       = 0 :: Int
+        , bundleSimplifier      = Trans Id
+        , bundleMakeNamifierT   = makeNamifier freshT
+        , bundleMakeNamifierX   = makeNamifier freshX
+        , bundleRewriteRules    = Map.empty }
+
+
+-- | Fragment definition for Disciple Core Eval.
+fragment :: Fragment Name Error
+fragment
         = Fragment
-        { fragmentProfile       = (zeroProfile :: Profile Name)
+        { fragmentProfile       = zeroProfile
         , fragmentExtension     = "dcz"
         , fragmentLexModule     = lexModuleZero
         , fragmentLexExp        = lexExpZero
         , fragmentCheckModule   = const Nothing
-        , fragmentCheckExp      = const Nothing 
-        , fragmentMakeNamifierT = makeNamifier freshT
-        , fragmentMakeNamifierX = makeNamifier freshX 
-        , fragmentNameZero      = 0 :: Int }
+        , fragmentCheckExp      = const Nothing }
 
 
 data Error a

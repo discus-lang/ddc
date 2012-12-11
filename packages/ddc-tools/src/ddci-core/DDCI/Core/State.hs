@@ -20,7 +20,6 @@ module DDCI.Core.State
 where
 import DDCI.Core.Mode
 import DDC.Driver.Source
-import DDC.Driver.Bundle
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Check
@@ -30,18 +29,19 @@ import DDC.Core.Simplifier
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Base.Pretty
 import Data.Typeable
-import DDC.Core.Transform.Namify        (Namifier)
-import DDC.Type.Env                     (Env)
-import DDC.Core.Fragment                (Profile)
-import Data.Map                         (Map)
-import Data.Set                         (Set)
-import qualified DDC.Core.Salt          as Salt
-import qualified DDC.Core.Lite          as Lite
-import qualified DDC.Core.Simplifier    as S
-import qualified DDC.Core.Salt.Runtime  as Runtime
-import qualified DDC.Driver.Stage       as D
-import qualified Data.Map               as Map
-import qualified Data.Set               as Set
+import DDC.Core.Transform.Namify                (Namifier)
+import DDC.Type.Env                             (Env)
+import DDC.Core.Fragment                        (Profile)
+import Data.Map                                 (Map)
+import Data.Set                                 (Set)
+import qualified DDC.Build.Language.Eval        as Eval
+import qualified DDC.Core.Salt                  as Salt
+import qualified DDC.Core.Lite                  as Lite
+import qualified DDC.Core.Simplifier            as S
+import qualified DDC.Core.Salt.Runtime          as Runtime
+import qualified DDC.Driver.Stage               as D
+import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 
 
 -- | Interpreter state.
@@ -55,7 +55,7 @@ data State
         , stateModes            :: Set Mode 
 
           -- | Source language to accept.
-        , stateBundle           :: Bundle
+        , stateLanguage         :: Language
 
           -- | Maps of modules we can use as inliner templates.
         , stateWithLite         :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
@@ -135,7 +135,7 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
-        , stateBundle           = Bundle fragmentEval Map.empty () (S.Trans S.Id) Map.empty
+        , stateLanguage         = Eval.language
         , stateWithLite         = Map.empty
         , stateWithSalt         = Map.empty
         , stateSimplLite        = S.Trans S.Id

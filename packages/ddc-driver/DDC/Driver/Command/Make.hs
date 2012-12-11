@@ -5,7 +5,7 @@ where
 import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
-import DDC.Build.Language
+import DDC.Build.Language.Salt          as Salt
 import System.Directory
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
@@ -40,7 +40,7 @@ cmdMake config filePath
                 | isSuffixOf ".dcs" filePath
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  fragmentSalt pipesSalt
+                $ PipeTextLoadCore  Salt.fragment pipesSalt
 
                 -- Unrecognised.
                 | otherwise

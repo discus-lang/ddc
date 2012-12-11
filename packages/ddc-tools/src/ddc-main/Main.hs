@@ -15,12 +15,13 @@ import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Source
-import DDC.Driver.Bundle
 import DDC.Build.Builder
+import DDC.Build.Language
 import DDC.Base.Pretty
 import System.Environment
 import System.IO
 import System.Exit
+import System.FilePath
 import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage       as Driver
 import qualified DDC.Core.Salt.Runtime  as Runtime
@@ -48,19 +49,18 @@ run config
 
         -- Parse and type check a module.
         ModeCheck filePath
-         | Just (Bundle fragment _ _ _ _) <- bundleFromFilePath config filePath
-         -> do  mm      <- runErrorT $ cmdCheckModuleFromFile fragment filePath
-                case mm of
-                 Left err        
-                  -> do putStrLn err
-                        exitWith $ ExitFailure 1
+         -> do  language        <- languageFromFilePath filePath
+                case language of 
+                 Language bundle
+                  -> do  mm      <- runErrorT 
+                                 $ cmdCheckModuleFromFile (bundleFragment bundle) filePath
+                         case mm of
+                          Left err        
+                           -> do putStrLn err
+                                 exitWith $ ExitFailure 1
 
-                 Right _
-                  -> return ()
-
-         |  otherwise
-         -> do  putStrLn "Unknown file extension."
-                exitWith $ ExitFailure 1
+                          Right _
+                           -> return ()
 
 
         -- Parse, type check and transform a module.
@@ -82,36 +82,36 @@ run config
 
         -- Pretty print the AST of a module.
         ModeAST filePath
-         -> do  let Just bundle = bundleFromFilePath config filePath
-                str        <- readFile filePath
+         -> do  language        <- languageFromFilePath filePath
+                str             <- readFile filePath
                 cmdAstModule 
-                        bundle
+                        language
                         (SourceFile filePath) 
                         str
 
 
         -- Convert a module to Salt.
         ModeToSalt filePath
-         -> do  let Just bundle = bundleFromFilePath config filePath
+         -> do  language        <- languageFromFilePath filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
-                runError $ cmdToSalt dconfig bundle (SourceFile filePath) str
+                runError $ cmdToSalt dconfig language (SourceFile filePath) str
 
 
         -- Convert a module to C
         ModeToC filePath
-         -> do  let Just bundle = bundleFromFilePath config filePath
+         -> do  language        <- languageFromFilePath filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
-                runError $ cmdToC    dconfig bundle (SourceFile filePath) str
+                runError $ cmdToC dconfig language (SourceFile filePath) str
 
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
-         -> do  let Just bundle = bundleFromFilePath config filePath
+         -> do  language        <- languageFromFilePath filePath
                 dconfig         <- getDriverConfig config
                 str             <- readFile filePath
-                runError $ cmdToLlvm dconfig bundle (SourceFile filePath) str
+                runError $ cmdToLlvm dconfig language (SourceFile filePath) str
 
 
         -- Print the external builder info for this platform.
@@ -145,6 +145,20 @@ getDriverConfig config
                 , Driver.configKeepLlvmFiles            = configKeepLlvmFiles config
                 , Driver.configKeepSeaFiles             = configKeepSeaFiles  config
                 , Driver.configKeepAsmFiles             = configKeepAsmFiles  config }
+
+
+
+-- | Determine the current language based on the file extension of this path, 
+--   and slurp out a bundle of stuff specific to that language from the config.
+languageFromFilePath :: FilePath -> IO Language
+languageFromFilePath filePath
+ = case languageOfExtension (takeExtension filePath) of
+        Nothing 
+         -> do  hPutStrLn stderr "Unknown file extension."
+                exitWith $ ExitFailure 1
+
+        Just ext 
+         -> return ext
 
 
 -- | Print errors to stderr and set the exit code.

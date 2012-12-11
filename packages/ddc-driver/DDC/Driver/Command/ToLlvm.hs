@@ -4,14 +4,15 @@ module DDC.Driver.Command.ToLlvm
 where
 import DDC.Driver.Stage
 import DDC.Driver.Source
-import DDC.Driver.Bundle
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment
 import System.FilePath
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import qualified DDC.Base.Pretty        as P
+import qualified DDC.Build.Language.Salt        as Salt
+import qualified DDC.Build.Language.Lite        as Lite
+import qualified DDC.Base.Pretty                as P
 
 
 -- | Parse, check and convert a  module to LLVM.
@@ -20,14 +21,16 @@ import qualified DDC.Base.Pretty        as P
 --
 cmdToLlvm 
         :: Config       -- ^ Compiler configuration.
-        -> Bundle       -- ^ Language bundle.
+        -> Language     -- ^ Language definition.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdToLlvm config bundle source sourceText
- | Bundle fragment _ _ _ _ <- bundle
- = do   let fragName = profileName (fragmentProfile fragment)
+cmdToLlvm config language source sourceText
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , profile              <- fragmentProfile fragment
+ = do   let fragName = profileName profile
         let mSuffix  = case source of 
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
@@ -38,7 +41,7 @@ cmdToLlvm config bundle source sourceText
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore fragmentLite
+                $ PipeTextLoadCore Lite.fragment
                 [ PipeCoreStrip
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
@@ -50,7 +53,7 @@ cmdToLlvm config bundle source sourceText
                 | fragName == "Salt" || mSuffix == Just ".dcs"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore fragmentSalt
+                $ PipeTextLoadCore Salt.fragment
                 [ PipeCoreStrip
                 [ stageSaltOpt     config source
                 [ stageSaltToLLVM  config source

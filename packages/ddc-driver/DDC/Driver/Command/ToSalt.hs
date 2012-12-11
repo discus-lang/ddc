@@ -2,7 +2,6 @@
 module DDC.Driver.Command.ToSalt
         (cmdToSalt)
 where
-import DDC.Driver.Bundle
 import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
@@ -13,8 +12,10 @@ import DDC.Data.Canned
 import System.FilePath
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import qualified DDC.Base.Pretty        as P
-import qualified Data.Map               as Map
+import qualified DDC.Build.Language.Salt        as Salt
+import qualified DDC.Build.Language.Lite        as Lite
+import qualified DDC.Base.Pretty                as P
+import qualified Data.Map                       as Map
 
 
 -- | Parse, check, and fully evaluate an expression.
@@ -26,14 +27,16 @@ import qualified Data.Map               as Map
 --
 cmdToSalt 
         :: Config       -- ^ Compiler configuration.
-        -> Bundle       -- ^ Language bundle.
+        -> Language     -- ^ Language definition.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdToSalt config bundle source sourceText
- | Bundle fragment _ _ _ _ <- bundle
- = do   let fragName = profileName (fragmentProfile fragment)
+cmdToSalt config language source sourceText
+ | Language bundle      <- language
+ , fragment             <- bundleFragment  bundle
+ , profile              <- fragmentProfile fragment
+ = do   let fragName = profileName profile
         let mSuffix  = case source of 
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
@@ -44,12 +47,12 @@ cmdToSalt config bundle source sourceText
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore fragmentLite
+                $ PipeTextLoadCore Lite.fragment
                 [ PipeCoreStrip
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
                 [ stageSaltOpt     config source
-                [ PipeCoreCheck    fragmentSalt
+                [ PipeCoreCheck    Salt.fragment
                 [ (if configSuppressCoreImports config
                         then PipeCoreHacks    (Canned (\x -> return $ eraseImports x))
                         else PipeCoreId)

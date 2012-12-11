@@ -7,19 +7,10 @@ module DDC.Main.Config
         , Config       (..)
 
         , defaultConfig
-        , defaultBuilderConfig
-
-        , liteBundleOfConfig
-        , saltBundleOfConfig
-        , bundleFromFilePath)
+        , defaultBuilderConfig)
 where
-import DDC.Build.Language
 import DDC.Build.Builder
-import DDC.Driver.Bundle
-import System.FilePath
-import qualified DDC.Driver.Stage       as D
-import qualified DDC.Core.Simplifier    as S
-import qualified Data.Map               as Map
+import qualified DDC.Driver.Stage               as D
 
 
 -- | The main command that we're running.
@@ -158,37 +149,4 @@ defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
         { builderConfigRuntime  = configLibraryPath config }
-
-
--- | Get the Lite specific stuff from the config.
-liteBundleOfConfig :: Config -> Bundle
-liteBundleOfConfig _config
- = Bundle
-        { bundleFragment        = fragmentLite
-        , bundleModules         = Map.empty
-        , bundleStateInit       = ()
-        , bundleSimplifier      = S.Trans S.Id
-        , bundleRewriteRules    = Map.empty }
-
-
--- | Get the Salt specific stuff from the config.
-saltBundleOfConfig :: Config -> Bundle
-saltBundleOfConfig _config
- = Bundle
-        { bundleFragment        = fragmentSalt
-        , bundleModules         = Map.empty
-        , bundleStateInit       = ()
-        , bundleSimplifier      = S.Trans S.Id
-        , bundleRewriteRules    = Map.empty }
-
-
--- | Determine the current language based on the file extension of this path, 
---   and slurp out a bundle of stuff specific to that language from the config.
-bundleFromFilePath :: Config -> FilePath -> Maybe Bundle
-bundleFromFilePath config filePath
- = case takeExtension filePath of
-        ".dcl"  -> Just (liteBundleOfConfig config)
-        ".dcs"  -> Just (saltBundleOfConfig config)
-        _       -> Nothing
-
 

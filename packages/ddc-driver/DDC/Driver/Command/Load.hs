@@ -2,10 +2,9 @@
 module DDC.Driver.Command.Load
         ( cmdReadModule
         , cmdLoadFromFile
-        , cmdLoadWithBundle)
+        , cmdLoadFromString)
 where
 import DDC.Driver.Source
-import DDC.Driver.Bundle
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Simplifier.Parser
@@ -21,8 +20,8 @@ import Data.IORef
 import System.Directory
 import System.FilePath
 import System.IO
-import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.Inline.Templates    as I
+import qualified Data.Map                               as Map
 
 
 -- Read -----------------------------------------------------------------------
@@ -72,16 +71,19 @@ cmdLoadFromFile
         -> ErrorT String IO ()
 
 cmdLoadFromFile strSimpl filePath
- = case bundleOfExtension (takeExtension filePath) of
-        Nothing      -> throwError $ "Unknown file extension."
-        Just bundle  -> cmdLoad_bundle strSimpl filePath bundle 
+ = case languageOfExtension (takeExtension filePath) of
+        Nothing       -> throwError $ "Unknown file extension."
+        Just language -> cmdLoad_language strSimpl filePath language
 
-cmdLoad_bundle Nothing filePath bundle
- = configLoad_simpl bundle filePath
+cmdLoad_language Nothing filePath language
+ = configLoad_simpl language filePath
 
-cmdLoad_bundle (Just strSimpl) filePath bundle
- | Bundle frag modules _ _ rules       <- bundle
- , Fragment _ _ _ _ _ _ mkNamT mkNamX zero      <- frag
+cmdLoad_language (Just strSimpl) filePath language
+ | Language bundle      <- language
+ , modules              <- bundleModules       bundle
+ , rules                <- bundleRewriteRules  bundle
+ , mkNamT               <- bundleMakeNamifierT bundle
+ , mkNamX               <- bundleMakeNamifierX bundle
  = let
         rules'          = Map.assocs rules
 
@@ -103,10 +105,10 @@ cmdLoad_bundle (Just strSimpl) filePath bundle
           -> throwError $ "Transform spec parse error."
 
          Just simpl
-          -> let bundle' = Bundle frag modules zero simpl rules 
-             in  configLoad_simpl bundle' filePath
+          -> let bundle' = bundle { bundleSimplifier = simpl }
+             in  configLoad_simpl (Language bundle') filePath
 
-configLoad_simpl bundle filePath
+configLoad_simpl language filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -116,20 +118,23 @@ configLoad_simpl bundle filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdLoadWithBundle bundle (SourceFile filePath) src
+        cmdLoadFromString language (SourceFile filePath) src
 
 
 -------------------------------------------------------------------------------
 -- | Load and transform a module, 
 --   then print the result to @stdout@.
-cmdLoadWithBundle
-        :: Bundle               -- ^ Language bundle.
+cmdLoadFromString
+        :: Language             -- ^ Language definition
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdLoadWithBundle bundle source str
- | Bundle fragment _ zero simpl _    <- bundle
+cmdLoadFromString language source str
+ | Language bundle      <- language
+ , fragment             <- bundleFragment   bundle
+ , simpl                <- bundleSimplifier bundle
+ , zero                 <- bundleStateInit  bundle
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore  fragment

@@ -9,7 +9,6 @@ import DDCI.Core.Command.Eval
 import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Driver.Command.Check
-import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier
@@ -21,6 +20,7 @@ import DDC.Type.Subsumes
 import DDC.Base.Pretty
 import DDC.Type.Env                             as Env
 import qualified Control.Monad.State.Strict     as S
+import qualified DDC.Build.Language.Eval        as Eval
 import qualified DDC.Core.Eval.Name             as Eval
 import qualified Data.Set               as Set
 import Data.Typeable
@@ -32,8 +32,12 @@ import DDC.Core.Module
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- | Bundle fragment modules zero simpl _     <- stateBundle state
- , Fragment profile _ _ _ _ _ _ _ _ <- fragment
+ | Language bundle      <- stateLanguage state
+ , fragment             <- bundleFragment   bundle
+ , modules              <- bundleModules    bundle
+ , simpl                <- bundleSimplifier bundle
+ , zero                 <- bundleStateInit  bundle
+ , profile              <- fragmentProfile  fragment
  =   cmdParseCheckExp fragment modules True source str 
  >>= goStore profile modules zero simpl
  where
@@ -57,8 +61,12 @@ cmdTrans state source str
 --   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- | Bundle fragment modules0 zero simpl0 _	<- stateBundle state
- , Fragment profile0 _ _ _ _ _ _ _ _		<- fragment
+ | Language bundle      <- stateLanguage    state
+ , fragment             <- bundleFragment   bundle
+ , modules0             <- bundleModules    bundle
+ , zero                 <- bundleStateInit  bundle
+ , simpl0               <- bundleSimplifier bundle
+ , profile0             <- fragmentProfile  fragment
 
  -- The evaluator only works on expressions with Eval.Names, 
  --   The actual name type is an existential of Bundle, 
@@ -68,7 +76,7 @@ cmdTransEval state source str
  , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
  , Just (modules :: ModuleMap (AnTEC () Eval.Name) Eval.Name)
 				       <- gcast modules0
- = do   result'  <- cmdParseCheckExp fragmentEval modules False source str 
+ = do   result'  <- cmdParseCheckExp Eval.fragment modules False source str 
         case result' of
          Nothing         -> return ()
          Just xx

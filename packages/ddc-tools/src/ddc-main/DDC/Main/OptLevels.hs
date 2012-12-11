@@ -89,7 +89,7 @@ opt1_lite config _builder
         --  will display the errors.
         minlineModules
                 <- liftM sequence
-                $  mapM (cmdReadModule Lite.fragmentLite)
+                $  mapM (cmdReadModule Lite.fragment)
                         inlineModulePaths
 
         let inlineModules
@@ -134,7 +134,7 @@ opt1_salt config builder
         --  will display the errors.
         minlineModules
                 <- liftM sequence
-                $  mapM (cmdReadModule Salt.fragmentSalt)
+                $  mapM (cmdReadModule Salt.fragment)
                         inlineModulePaths
 
         let inlineModules

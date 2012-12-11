@@ -150,55 +150,55 @@ handleCmd1 state cmd source line
                 return state'
 
         CommandLoad
-         -> do  runError $ cmdLoadWithBundle (stateBundle state) source line
+         -> do  runError $ cmdLoadFromString (stateLanguage state) source line
                 return state
 
         CommandKind       
-         -> do  cmdShowKind (stateBundle state) source line
+         -> do  cmdShowKind  (stateLanguage state) source line
                 return state
 
         CommandUniverse
-         -> do  cmdUniverse (stateBundle state) source line
+         -> do  cmdUniverse  (stateLanguage state) source line
                 return state
 
         CommandUniverse1
-         -> do  cmdUniverse1 (stateBundle state) source line
+         -> do  cmdUniverse1 (stateLanguage state) source line
                 return state
 
         CommandUniverse2
-         -> do  cmdUniverse2 (stateBundle state) source line
+         -> do  cmdUniverse2 (stateLanguage state) source line
                 return state
 
         CommandUniverse3
-         -> do  cmdUniverse3 (stateBundle state) source line
+         -> do  cmdUniverse3 (stateLanguage state) source line
                 return state
 
         CommandEquivType
-         -> do  cmdTypeEquiv (stateBundle state) source line
+         -> do  cmdTypeEquiv (stateLanguage state) source line
                 return state
 
         CommandWitType    
-         -> do  cmdShowWType (stateBundle state) source line
+         -> do  cmdShowWType (stateLanguage state) source line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType (stateBundle state) ShowTypeAll source line
+         -> do  cmdShowType  (stateLanguage state) ShowTypeAll source line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType (stateBundle state) ShowTypeValue source line
+         -> do  cmdShowType  (stateLanguage state) ShowTypeValue source line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType (stateBundle state) ShowTypeEffect source line
+         -> do  cmdShowType  (stateLanguage state) ShowTypeEffect source line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType (stateBundle state) ShowTypeClosure source line
+         -> do  cmdShowType  (stateLanguage state) ShowTypeClosure source line
                 return state
 
         CommandExpRecon
-         -> do  cmdExpRecon (stateBundle state) source line
+         -> do  cmdExpRecon  (stateLanguage state) source line
                 return state
 
         CommandEval       
@@ -217,22 +217,22 @@ handleCmd1 state cmd source line
          -> do  cmdTransInteract state source line
         
         CommandAst
-         -> do  cmdAstExp (stateBundle state) source line
+         -> do  cmdAstExp (stateLanguage state) source line
                 return state
 
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToSalt config (stateBundle state) source line
+                runError $ cmdToSalt config (stateLanguage state) source line
                 return    state
 
         CommandToC
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToC config (stateBundle state) source line
+                runError $ cmdToC    config (stateLanguage state) source line
                 return state
 
         CommandToLlvm
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToLlvm config (stateBundle state) source line
+                runError $ cmdToLlvm config (stateLanguage state) source line
                 return state
 
         CommandCompile

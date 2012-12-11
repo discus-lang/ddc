@@ -1,19 +1,17 @@
 
 module DDC.Build.Language
         ( Language      (..)
+        , Bundle        (..)
         , Fragment      (..)
         , languages
-        , languageOfExtension
-        , fragmentLite
-        , fragmentSalt
-        , fragmentEval
-        , fragmentZero)
+        , languageOfExtension)
 where
+import DDC.Core.Fragment
 import DDC.Build.Language.Base
-import DDC.Build.Language.Lite
-import DDC.Build.Language.Salt
-import DDC.Build.Language.Eval
-import DDC.Build.Language.Zero
+import DDC.Build.Language.Lite  as Lite
+import DDC.Build.Language.Salt  as Salt
+import DDC.Build.Language.Eval  as Eval
+import DDC.Build.Language.Zero  as Zero
 
 
 -- | Supported language profiles.
@@ -21,19 +19,25 @@ import DDC.Build.Language.Zero
 --   One of @Lite@, @Salt@, @Eval@, @Zero@.
 languages :: [(String, Language)]
 languages
- =      [ ( "Lite",     Language fragmentLite) 
-        , ( "Salt",     Language fragmentSalt)
-        , ( "Eval",     Language fragmentEval)
-        , ( "Zero",     Language fragmentZero) ]
+ =      [ ( "Lite", Lite.language)
+        , ( "Salt", Salt.language)
+        , ( "Eval", Eval.language)
+        , ( "Zero", Zero.language) ]
 
 
 -- | Return the language fragment definition corresponding to the given 
 --   file extension. eg @dcl@ gives the definition of the Lite language.
 languageOfExtension :: String -> Maybe Language
 languageOfExtension ext
- = case ext of
-        "dcl"   -> Just $ Language fragmentLite
-        "dcs"   -> Just $ Language fragmentSalt
-        "dcv"   -> Just $ Language fragmentEval
-        "dcz"   -> Just $ Language fragmentZero
+ = let  -- Strip of dots at the front.
+        -- the 'takeExtension' function from System.FilePath
+        -- doens't do this itself.
+        ext'     = case ext of 
+                        '.' : rest      -> rest
+                        _               -> ext
+   in case ext' of
+        "dcl"   -> Just Lite.language
+        "dcs"   -> Just Salt.language
+        "dcv"   -> Just Eval.language
+        "dcz"   -> Just Zero.language
         _       -> Nothing

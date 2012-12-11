@@ -2,6 +2,7 @@
 
 module Config where
 import DDC.Build.Language
+import qualified DDC.Build.Language.Lite        as Lite
 import System.FilePath
 import System.Exit
 
@@ -23,7 +24,7 @@ defaultConfig :: Config
 defaultConfig
         = Config
         { configSourceFile      = Nothing
-        , configLanguage        = Language fragmentLite 
+        , configLanguage        = Language Lite.bundle
         , configQuiet           = False }
 
 
