@@ -44,7 +44,14 @@ data Bundle
 --   The simplifier is set to @Id@ and the rewrite rules set is empty.
 bundleOfExtension :: String -> Maybe Bundle
 bundleOfExtension ext
- = case languageOfExtension ext of
+ = let  -- Strip of dots at the front.
+        -- the 'takeExtension' function from System.FilePath
+        -- doens't do this itself.
+        ext'     = case ext of 
+                        '.' : rest      -> rest
+                        _               -> ext
+
+   in case languageOfExtension ext' of
         Nothing         -> Nothing
         Just (Language frag)
          -> Just $ Bundle 
