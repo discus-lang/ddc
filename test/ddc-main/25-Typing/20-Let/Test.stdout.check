@@ -210,3 +210,7 @@ When checking expression.
           foo : Unit = ()
         } in
         foo
+
+-- Ok: letrec with multiple anonymous binders.
+5
+

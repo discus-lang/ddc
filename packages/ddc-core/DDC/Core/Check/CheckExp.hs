@@ -835,9 +835,8 @@ checkLetsM !xx !config !kenv !tenv (LRec bxs)
  = do   
         let (bs, xs)    = unzip bxs
 
-        -- No binders can be multiply defined,
-        -- except for BNones.
-        (case duplicates $ filter (not . isBNone) bs of
+        -- No named binders can be multiply defined.
+        (case duplicates $ filter isBName bs of
           []    -> return ()
           b : _ -> throw $ ErrorLetrecRebound xx b)
 

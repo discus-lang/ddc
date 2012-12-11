@@ -149,3 +149,14 @@ letrec {
  letrec { foo : Unit = () }
  in foo;;
  
+
+-- Ok: letrec with multiple anonymous binders.
+:eval..
+(/\(r : %).
+ \(x : Unit).
+letrec { 
+    ^ (_ : Unit) {Alloc r | Use r} : Int r = 2 [r] ();
+    ^ (_ : Unit) {Alloc r | Use r} : Int r = 3 [r] ();
+} in
+addInt [:r r r:] (^0 ()) (^1 ())) [R0#] ();;
+
