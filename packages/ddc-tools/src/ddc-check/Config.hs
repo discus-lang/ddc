@@ -1,5 +1,4 @@
 
-
 module Config where
 import DDC.Build.Language
 import qualified DDC.Build.Language.Lite        as Lite
@@ -20,6 +19,7 @@ data Config
         , configQuiet           :: Bool }
 
 
+-- | Default command line configuration.
 defaultConfig :: Config
 defaultConfig
         = Config
@@ -46,21 +46,22 @@ parseArgs args@(arg : more) config
         -- Set the language fragment manually.
         | "-language" : lang : rest     <- args
         = case lookup lang languages of
-                Just l  -> parseArgs rest $ config { configLanguage = l }
-                Nothing -> error $ unlines
-                                 [ "unknown language " ++ lang
-                                 , "  options are: " ++ (show $ map fst languages) ]
+           Just l  -> parseArgs rest $ config { configLanguage = l }
+           Nothing -> error $ unlines
+                        [ "unknown language " ++ lang
+                        , "  options are: " ++ (show $ map fst languages) ]
 
         -- Try to guess the language fragment based on the file name extension.
-        | fileName : []   <- args
-        , '.' : extension <- takeExtension fileName
+        | fileName : [] <- args
+        , extension     <- takeExtension fileName
         = case languageOfExtension extension of
            Just language
             -> return
             $  config { configSourceFile   = Just fileName
                       , configLanguage     = language }
 
-           Nothing -> error $ "unrecognised extension " ++ show extension
+           Nothing 
+            ->  error $ "unrecognised extension " ++ show extension
 
         | otherwise
         = do    putStr usage
@@ -83,4 +84,4 @@ usage
         , "  -language <fragment>        Set the language fragment.  (default Lite)"
         , "     fragment one of " ++ (show $ map fst languages)
         , "" ]
- 
+

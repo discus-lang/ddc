@@ -48,4 +48,7 @@ help    = unlines
         , " Debugging:"
         , "       -dump                  Dump intermediate representations."
         , "       -ast          FILE     Pretty print the AST of a module."
-        , "       -print-builder         Print external builder info for this platform." ]
+        , "       -print-builder         Print external builder info for this platform." 
+        , "" ]
+
+        

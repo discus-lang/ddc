@@ -1,6 +1,9 @@
 
--- | Command-line interface to the DDC type checker.
---   Used to check core files from the command line.
+-- | Command-line interface to the DDC type checker, which is also 
+--   possible via the plain 'ddc' command.
+--
+--   This code is provided as an example of how to drive the DDC
+--   compiler framework.
 --
 module Main where
 import Config
@@ -10,6 +13,8 @@ import DDC.Core.Pretty
 import System.IO
 import System.Environment
 
+
+main :: IO ()
 main 
  = do   args    <- getArgs
         config  <- parseArgs args defaultConfig
