@@ -150,7 +150,7 @@ handleCmd1 state cmd source line
                 return state'
 
         CommandLoad
-         -> do  cmdLoad (stateBundle state) source line
+         -> do  runError $ cmdLoadWithBundle (stateBundle state) source line
                 return state
 
         CommandKind       
