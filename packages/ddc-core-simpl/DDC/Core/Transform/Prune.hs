@@ -67,7 +67,7 @@ pruneModule
 
 pruneModule profile mm
  = mm { moduleBody      = result 
-                        $ pruneX profile Env.empty Env.empty
+                        $ pruneX profile (moduleKindEnv mm) (moduleTypeEnv mm)
                         $ moduleBody mm }
 
 
