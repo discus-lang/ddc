@@ -64,7 +64,7 @@ help    = unlines
         , ""
         , "   TRANS   ::= "
         , "    fix N TRANS         Transform to a fixpoint, or bail out after N iters."
-        , "    TRANS1 <> TRANS2    Sequence two transforms."
+        , "    TRANS <> TRANS      Sequence two transforms."
         , "    Id                  Return the original program unharmed."
         , "    Anonymize           Anonymize names to deBruijn form."
         , "    Namify              Introduce fresh names for deBruijn binders."
