@@ -94,6 +94,10 @@ parseArgs args config
         $ config { configMode  = ModeCheck file }
 
         -- Transformation -----------------------
+        | "-load"   : file : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeLoad file
+
         | "-trans" : trans : rest   <- args
         = parseArgs rest
         $ config { configTrans = Just trans }
@@ -119,10 +123,6 @@ parseArgs args config
         | "-dump"   : rest        <- args
         = parseArgs rest
         $ config { configDump   = True }
-
-        | "-load"   : file : rest <- args
-        = parseArgs rest
-        $ setMode config $ ModeLoad file
 
         | "-ast"   : file : rest  <- args
         = parseArgs rest

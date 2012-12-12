@@ -12,7 +12,6 @@ imports {
 
         showInt   :: [r : %]. Nat# -> Ptr# r String#;
         putStrLn  :: [r : %]. Ptr# r String# -> Void#;
-
 }
 with letrec
 

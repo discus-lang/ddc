@@ -67,40 +67,58 @@ cmdReadModule_parse filePath frag source src
 --   The current transform is set with the given string.
 cmdLoadFromFile
         :: Maybe String         -- ^ Simplifier specification.
+        -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
         -> ErrorT String IO ()
 
-cmdLoadFromFile strSimpl filePath
+cmdLoadFromFile strSimpl fsTemplates filePath
  = case languageOfExtension (takeExtension filePath) of
         Nothing       -> throwError $ "Unknown file extension."
-        Just language -> cmdLoad_language strSimpl filePath language
+        Just language -> cmdLoad_language strSimpl fsTemplates filePath language
 
-cmdLoad_language Nothing filePath language
+cmdLoad_language Nothing _ filePath language
  = configLoad_simpl language filePath
 
-cmdLoad_language (Just strSimpl) filePath language
+cmdLoad_language (Just strSimpl) fsTemplates filePath language
  | Language bundle      <- language
+ , fragment             <- bundleFragment      bundle
  , modules              <- bundleModules       bundle
  , rules                <- bundleRewriteRules  bundle
  , mkNamT               <- bundleMakeNamifierT bundle
  , mkNamX               <- bundleMakeNamifierX bundle
- = let
-        rules'          = Map.assocs rules
+ = do
+        let rules'          = Map.assocs rules
+
+        -- Load all the modues that we're using for inliner templates.
+        --  If any of these don't load then the 'cmdReadModule' function 
+        --  will display the errors.
+        mMoreModules
+         <- liftM sequence
+         $  mapM (liftIO . cmdReadModule fragment)
+                 fsTemplates
+
+        moreModules
+         <- case mMoreModules of
+                 Nothing -> throwError $ "Imported modules do not parse."
+                 Just ms -> return ms
 
         -- Collect all definitions from modules
-        localTemplates  = I.lookupTemplateFromModules
-                        $ Map.elems modules
+        let localTemplates  
+                = I.lookupTemplateFromModules
+                $ moreModules ++ (Map.elems modules)
 
         -- Module specific templates.
-        importTemplates = map (\(n,m) -> (n, I.lookupTemplateFromModules [m]))
-                        $ Map.assocs modules
+        let importTemplates 
+                = map (\(n,m) -> (n, I.lookupTemplateFromModules [m]))
+                $ Map.assocs modules
 
         -- Simplifier details for the parser.
-        details         = SimplifierDetails mkNamT mkNamX rules' 
-                                localTemplates
-                                importTemplates
+        let details
+                = SimplifierDetails mkNamT mkNamX rules' 
+                        localTemplates
+                        importTemplates
 
-   in   case parseSimplifier details strSimpl of
+        case parseSimplifier details strSimpl of
          Nothing
           -> throwError $ "Transform spec parse error."
 

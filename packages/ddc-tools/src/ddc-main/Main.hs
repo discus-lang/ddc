@@ -65,8 +65,10 @@ run config
 
         -- Parse, type check and transform a module.
         ModeLoad filePath
-         -> do  runError $ cmdLoadFromFile (configTrans config) filePath
-
+         ->     runError $ cmdLoadFromFile 
+                                (configTrans config) 
+                                (configWith config) 
+                                filePath
 
         -- Compile a module to object code.
         ModeCompile filePath
