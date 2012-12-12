@@ -24,33 +24,33 @@
 
 -- Let using function syntax with a return type.
 :check..
- let f (x:Unit) : Unit = x
- in  f ();;
+let f (x:Unit) : Unit = x
+in  f ();;
 
 
 -- Lazy using function syntax with a return type.
 :check..
- let f (x:Unit) : Unit lazy = x
- in  f ();;
+let f (x:Unit) : Unit lazy = x
+in  f ();;
 
 
 -- Let using function syntax without a return type.
 :check..
- let f (x:Unit) = x
- in  f ();;
+let f (x:Unit) = x
+in  f ();;
 
 
 -- Lazy using function syntax without a return type.
 :check..
- let f (x:Unit) = x
- in  f ();;
+let f (x:Unit) = x
+in  f ();;
 
 
 -- Multiple lets.
 :check..
- let x : Unit = () in
- let y : Unit = () in
- y;;
+let x : Unit = () in
+let y : Unit = () in
+y;;
 
 
 -- Mutltiple lets with debruijn indices.
@@ -63,58 +63,64 @@ let ^ : Int R0# = 23 [R0#] ^0 in ^0;;
 
 -- Let and lazy
 :check..
- let x : Unit = () in
- let y : Unit lazy = () in
- y;;
+let x : Unit = () in
+let y : Unit lazy = () in
+y;;
 
  
 -- Simple letregion.
 :check..
- letregion r in
- let x : Int r = 4 [r] () in
- addInt [:r r R1#:] x x;;
+letregion r in
+let x : Int r = 4 [r] () in
+addInt [:r r R1#:] x x;;
 
 
 -- Letregion with explicitly empty witness set.
 :check..
- letregion r with {} in
- let x : Int r = 4 [r] () in
- addInt [:r r R1#:] x x;;
+letregion r with {} in
+let x : Int r = 4 [r] () in
+addInt [:r r R1#:] x x;;
 
 
 -- Simple letregion with letrec using explicit type annotation
 :check..
- letregion r in
- letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } 
- in addInt [:r r R1#:] (f ()) (f ());;
+letregion r in
+letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } 
+in addInt [:r r R1#:] (f ()) (f ());;
 
 
 -- Simple letregion with letrec using function syntax.
 :check..
- letregion r in
- letrec { f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () } in
- addInt [:r r R1#:] (f ()) (f ());;
+letregion r in
+letrec { f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () } in
+addInt [:r r R1#:] (f ()) (f ());;
 
 
 -- Letrec with a single binding and no braces around it.
 :check..
- letregion r in
- letrec f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () in
- addInt [:r r R1#:] (f ()) (f ());;
+letregion r in
+letrec f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () in
+addInt [:r r R1#:] (f ()) (f ());;
 
 
 -- Multiple lets and letregion. 
 :check..
- letregions r1 r2 in
- let x1 : Int r1 = 2 [r1] () in
- let x2 : Int r2 = 3 [r2] () in
- addInt [:r1 r2 R1#:] x1 x2;;
+letregions r1 r2 in
+let x1 : Int r1 = 2 [r1] () in
+let x2 : Int r2 = 3 [r2] () in
+addInt [:r1 r2 R1#:] x1 x2;;
 
  
 -- As above, but no annots on binders.
 :check..
- letregions r1 r2 in
- let x1 = 2 [r1] () in
- let x2 = 3 [r2] () in
- addInt [:r1 r2 R1#:] x1 x2;;
+letregions r1 r2 in
+let x1 = 2 [r1] () in
+let x2 = 3 [r2] () in
+addInt [:r1 r2 R1#:] x1 x2;;
+
+
+-- Anonymous witness binders
+:check..
+letregion r with {_ : Const r} in
+();;
 

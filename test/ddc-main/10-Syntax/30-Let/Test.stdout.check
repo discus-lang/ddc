@@ -184,3 +184,11 @@ addInt [r1] [r2] [R1#] x1 x2
 :!: Alloc R1#
 :$: Use R1#
 
+
+-- Anonymous witness binders
+letregion r with {_ : Const r} in
+()
+:*: Unit
+:!: !0
+:$: $0
+

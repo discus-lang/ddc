@@ -345,10 +345,10 @@ pLetWits bs
     [ do   pTok KWith
            pTok KBraceBra
            wits    <- P.sepBy
-                      (do  w       <- pVar
+                      (do  b    <- pBinder
                            pTok KColon
-                           t       <- pTypeApp
-                           return  (BName w t))
+                           t    <- pTypeApp
+                           return  $ T.makeBindFromBinder b t)
                       (pTok KSemiColon)
            pTok KBraceKet
            return (LLetRegions bs wits)
