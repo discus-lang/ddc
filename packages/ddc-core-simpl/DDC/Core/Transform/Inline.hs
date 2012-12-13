@@ -55,10 +55,14 @@ instance Inline Exp where
 
 instance Inline Lets where
  inline get inside lts
-  = let down x = inline get inside x
+  = let enter b x
+         = case b of
+                BName n _       -> inline get (Set.insert n inside) x
+                _               -> inline get inside x
+
     in case lts of
-        LLet mode b x   -> LLet mode b (down x)
-        LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
+        LLet mode b x   -> LLet mode b (enter b x)
+        LRec bxs        -> LRec [(b, enter b x) | (b, x) <- bxs]
         LLetRegions{}   -> lts
         LWithRegion{}   -> lts
 

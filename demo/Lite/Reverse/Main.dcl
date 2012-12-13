@@ -4,7 +4,7 @@ exports main      :: [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
 
 imports showNat   :: [r : %]. Nat# -> Ptr# r String#
         putStrLn  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
-
+        
 with letrec
 
 
