@@ -8,6 +8,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Collect
 import DDC.Core.Exp
+import DDC.Core.Predicates
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.SubstituteTX
@@ -110,19 +111,40 @@ betaReduce1
         -> Exp a n
         -> Writer BetaReduceInfo (Exp a n)
 
-betaReduce1 lets kenv tenv xx
+betaReduce1 lets _kenv tenv xx
  = let  ret info x = tell info >> return x
    in case xx of
+
+        -- Substitute type arguments into type abstractions.
+        --  If the type argument of the redex does not appear as an 
+        --  argument of the result then we need to add a closure weakening
+        --  for the case where t2 was a region variable or handle.
         XApp a (XLAM _ b11 x12) (XType t2)
-         -> let usesBind        = any (flip boundMatchesBind b11)
-                                $ Set.toList $ freeT kenv x12
+         | isRegionKind $ typeOfBind b11
+         -> let sup             = support Env.empty Env.empty x12
+
+                usUsed          = Set.unions
+                                        [ supportTyConXArg sup
+                                        , supportSpVarXArg sup ]
+
+                usesBind        = any (flip boundMatchesBind b11)
+                                $ Set.toList usUsed
+
                 fvs2            = freeT Env.empty t2
+
             in  ret mempty { infoTypes = 1}
                  $ if usesBind || Set.null fvs2
                     then substituteTX b11 t2 x12
                     else XCast a (CastWeakenClosure [XType t2])
                         $ substituteTX b11 t2 x12
 
+        -- Substitute type arguments into type abstractions,
+        --  Where the argument is not a region type.
+        XApp _ (XLAM _ b11 x12) (XType t2)
+         -> ret mempty { infoTypes = 1 }
+                 $ substituteTX b11 t2 x12
+
+        -- Substitute witness arguments into witness abstractions.
         XApp a (XLam _ b11 x12) (XWitness w2)
          -> let usesBind        = any (flip boundMatchesBind b11)
                                 $ Set.toList $ freeX tenv x12
@@ -133,6 +155,8 @@ betaReduce1 lets kenv tenv xx
                     else XCast a (CastWeakenClosure [XWitness w2])
                        $ substituteWX b11 w2 x12
 
+
+        -- Substitute value arguments into value abstractions.
         XApp a (XLam _ b11 x12) x2
          |  canBetaSubstX x2
          -> let usesBind        = any (flip boundMatchesBind b11) 

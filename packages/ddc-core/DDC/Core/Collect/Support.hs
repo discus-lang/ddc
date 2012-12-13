@@ -18,8 +18,14 @@ data Support n
         { -- | Type constructors used in the expression.
           supportTyCon          :: Set (Bound n)
 
+          -- | Type constructors used in the argument of a value-type application.
+        , supportTyConXArg      :: Set (Bound n)
+
           -- | Free spec variables in an expression.
         , supportSpVar          :: Set (Bound n)
+
+          -- | Type constructors used in the argument of a value-type application.
+        , supportSpVarXArg      :: Set (Bound n)
 
           -- | Free witness variables in an expression.
           --   (from the Witness universe)
@@ -34,16 +40,20 @@ data Support n
 instance Ord n => Monoid (Support n) where
  mempty = Support
         { supportTyCon          = Set.empty
+        , supportTyConXArg      = Set.empty
         , supportSpVar          = Set.empty
+        , supportSpVarXArg      = Set.empty
         , supportWiVar          = Set.empty
         , supportDaVar          = Set.empty }
 
  mappend sp1 sp2
         = Support
-        { supportTyCon          = supportTyCon sp1 `Set.union` supportTyCon sp2
-        , supportSpVar          = supportSpVar sp1 `Set.union` supportSpVar sp2
-        , supportWiVar          = supportWiVar sp1 `Set.union` supportWiVar sp2
-        , supportDaVar          = supportDaVar sp1 `Set.union` supportDaVar sp2 }
+        { supportTyCon          = Set.unions [supportTyCon sp1,     supportTyCon sp2]
+        , supportTyConXArg      = Set.unions [supportTyConXArg sp1, supportTyConXArg sp2]
+        , supportSpVar          = Set.unions [supportSpVar sp1,     supportSpVar sp2]
+        , supportSpVarXArg      = Set.unions [supportSpVarXArg sp1, supportSpVarXArg sp2]
+        , supportWiVar          = Set.unions [supportWiVar sp1,     supportWiVar sp2]
+        , supportDaVar          = Set.unions [supportDaVar sp1,     supportDaVar sp2] }
 
 
 class SupportX (c :: * -> *) where
@@ -108,7 +118,11 @@ instance SupportX (Exp a) where
                 s2              = support kenv tenv x2
             in  mappend s1 s2
 
-        XType t         -> support kenv tenv t
+        XType t 
+         -> let sup = support kenv tenv t
+            in  sup { supportTyConXArg  = supportTyCon sup
+                    , supportSpVarXArg  = supportSpVar sup }
+
         XWitness w      -> support kenv tenv w
 
 
