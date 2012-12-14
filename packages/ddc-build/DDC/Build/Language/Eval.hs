@@ -42,6 +42,7 @@ fragment
         = Fragment
         { fragmentProfile       = evalProfile
         , fragmentExtension     = "dcv"
+        , fragmentReadName      = readName
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = checkCapsModule

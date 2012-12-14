@@ -47,6 +47,7 @@ fragment
         = Fragment
         { fragmentProfile       = zeroProfile
         , fragmentExtension     = "dcz"
+        , fragmentReadName      = \x -> Just (Name x)
         , fragmentLexModule     = lexModuleZero
         , fragmentLexExp        = lexExpZero
         , fragmentCheckModule   = const Nothing

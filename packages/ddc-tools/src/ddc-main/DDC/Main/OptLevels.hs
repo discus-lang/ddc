@@ -23,6 +23,7 @@ import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
+import qualified Data.Map                       as Map
 
 
 -- | Get the simplifier for Lite code from the config.
@@ -109,10 +110,8 @@ opt1_lite config _builder
                         (makeNamifier Lite.freshT)      
                         (makeNamifier Lite.freshX)
 
-        -- Perform rewrites before inlining
-        return  $  (S.Trans $ S.Rewrite rules')
-                <> (S.Trans $ S.Inline 
-                            $ lookupTemplateFromModules inlineModules)        
+        return  $ (S.Trans $ S.Inline 
+                           $ lookupTemplateFromModules inlineModules)        
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeLite <> S.forward
@@ -166,7 +165,7 @@ opt1_salt config builder
         -- Perform rewrites before inlining
         return  $  (S.Trans $ S.Rewrite rules')
                 <> (S.Trans $ S.Inline 
-                            $ lookupTemplateFromModules inlineModules)
+                            $ lookupTemplateFromModules Map.empty inlineModules)
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeSalt <> S.forward

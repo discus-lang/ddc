@@ -8,70 +8,68 @@ import DDC.Data.SourcePos
 import Data.Char
 
 
-lexSimplifier :: String -> [Token Tok]
-lexSimplifier str
+lexSimplifier 
+        :: (String -> Maybe n)  -- ^ Function to read a name.
+        -> String               -- ^ String to parse.
+        -> [Token (Tok n)]
+
+lexSimplifier readName str
  = map (\t -> Token t (SourcePos "<simplifier spec>" 0 0)) 
- $ lexer str
+ $ lexer readName str
 
 
 -- Lexer ----------------------------------------------------------------------
 -- | Lex a transform specification.
-lexer :: String -> [Tok]
-lexer ss
- = case ss of
+lexer   :: (String -> Maybe n)  -- ^ Function to read a name.
+        -> String               -- ^ String to parse.
+        -> [Tok n]
+
+lexer readName ss
+ = let down = lexer readName
+   in case ss of
         []              -> []
 
-        (';' : cs)
-         -> KSemi      : lexer cs
-
-        ('{' : cs)
-         -> KBraceBra  : lexer cs
-
-        ('}' : cs)
-         -> KBraceKet  : lexer cs
-
-        ('[' : cs)
-         -> KSquareBra : lexer cs
-
-        (']' : cs)
-         -> KSquareKet : lexer cs
-
-        ('-' : cs)
-         -> KMinus     : lexer cs
-
-        ('+' : cs)
-         -> KPlus      : lexer cs
+        (';' : cs)      -> KSemiColon : down cs
+        (',' : cs)      -> KComma     : down cs
+        ('-' : cs)      -> KMinus     : down cs
+        ('+' : cs)      -> KPlus      : down cs
+        ('{' : cs)      -> KBraceBra  : down cs
+        ('}' : cs)      -> KBraceKet  : down cs
+        ('[' : cs)      -> KSquareBra : down cs
+        (']' : cs)      -> KSquareKet : down cs
 
         (c : cs)
          |  isSpace c
-         -> lexer cs
+         -> down cs
 
         (c : cs)
          | isUpper c
          , (body, rest) <- span isAlpha cs
-         -> KTrans  (c : body) : lexer rest
+         -> KCon    (c : body) : down rest
 
         (c : cs)
          | isLower c
-         ,  (body, rest) <- span isAlpha cs
-         -> KVar    (c : body) : lexer rest
+         , (body, rest) <- span isAlpha cs
+         , Just n       <- readName (c : body)
+         -> KVar  n : down rest
 
         (c : cs)
          | isDigit c
          , (digits, rest) <- span isDigit cs
-         -> KInt (read (c:digits)) : lexer rest
+         -> KInt (read (c:digits)) : down rest
 
         _ -> [KJunk ss]
 
 
 -- | Tokens for transform specification.
-data Tok
-        = KJunk         String
-        | KTrans        String
-        | KVar          String
-        | KInt          Int
+data Tok n
+        = KEnd
+        | KJunk  String
+        | KCon   String
+        | KVar   n
+        | KInt   Int
 
-        | KSemi
+        | KSemiColon
         | KComma
         | KMinus
         | KPlus

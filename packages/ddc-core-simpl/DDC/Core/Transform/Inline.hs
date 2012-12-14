@@ -2,6 +2,7 @@
 -- | Inlining definitions into their use sites.
 module DDC.Core.Transform.Inline
         ( inline
+        , InlineSpec   (..)
         , lookupTemplateFromModules)
 where
 import DDC.Core.Exp

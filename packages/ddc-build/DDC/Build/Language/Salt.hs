@@ -43,6 +43,7 @@ fragment
         = Fragment
         { fragmentProfile       = profile 
         , fragmentExtension     = "dcs"
+        , fragmentReadName      = readName
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = const Nothing

@@ -7,7 +7,7 @@ where
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Core.Simplifier.Parser
+import DDC.Core.Simplifier.Parser2
 import DDC.Core.Module
 import DDC.Core.Load
 import DDC.Core.Pretty
@@ -20,8 +20,7 @@ import Data.IORef
 import System.Directory
 import System.FilePath
 import System.IO
-import qualified DDC.Core.Transform.Inline.Templates    as I
-import qualified Data.Map                               as Map
+import qualified Data.Map               as Map
 
 
 -- Read -----------------------------------------------------------------------
@@ -81,11 +80,12 @@ cmdLoad_language Nothing _ filePath language
 
 cmdLoad_language (Just strSimpl) fsTemplates filePath language
  | Language bundle      <- language
- , fragment             <- bundleFragment      bundle
  , modules              <- bundleModules       bundle
  , rules                <- bundleRewriteRules  bundle
  , mkNamT               <- bundleMakeNamifierT bundle
  , mkNamX               <- bundleMakeNamifierX bundle
+ , fragment             <- bundleFragment      bundle
+ , readName             <- fragmentReadName    fragment
  = do
         let rules'          = Map.assocs rules
 
@@ -103,26 +103,19 @@ cmdLoad_language (Just strSimpl) fsTemplates filePath language
                  Just ms -> return ms
 
         -- Collect all definitions from modules
-        let localTemplates  
-                = I.lookupTemplateFromModules
-                $ moreModules ++ (Map.elems modules)
-
-        -- Module specific templates.
-        let importTemplates 
-                = map (\(n,m) -> (n, I.lookupTemplateFromModules [m]))
-                $ Map.assocs modules
+        let templateModules
+                = moreModules ++ (Map.elems modules)
 
         -- Simplifier details for the parser.
         let details
                 = SimplifierDetails mkNamT mkNamX rules' 
-                        localTemplates
-                        importTemplates
+                        templateModules
 
-        case parseSimplifier details strSimpl of
-         Nothing
-          -> throwError $ "Transform spec parse error."
+        case parseSimplifier readName details strSimpl of
+         Left err
+          -> throwError $ renderIndent $ ppr err
 
-         Just simpl
+         Right simpl
           -> let bundle' = bundle { bundleSimplifier = simpl }
              in  configLoad_simpl (Language bundle') filePath
 

@@ -44,6 +44,7 @@ fragment
         = Fragment
         { fragmentProfile       = profile 
         , fragmentExtension     = "dcl"
+        , fragmentReadName      = readName
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = const Nothing

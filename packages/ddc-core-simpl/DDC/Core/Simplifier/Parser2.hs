@@ -4,11 +4,18 @@ module DDC.Core.Simplifier.Parser2
         , parseSimplifier)
 where
 import DDC.Core.Transform.Namify
+import DDC.Core.Transform.Inline
 import DDC.Core.Simplifier.Base
 import DDC.Core.Module
 import DDC.Type.Env
 import DDC.Core.Simplifier.Lexer
-import qualified DDC.Base.Parser                as P
+import DDC.Data.Token
+import DDC.Data.SourcePos
+import DDC.Base.Parser                  (pTok)
+import Data.Set                         (Set)
+import qualified DDC.Base.Parser        as P
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 
 
 -------------------------------------------------------------------------------
@@ -26,49 +33,130 @@ data SimplifierDetails s a n
           -- | Rewrite rules along with their names.
         , simplifierRules               :: NamedRewriteRules a n
 
-          -- | Inliner templates from the current module
-        , simplifierLocalTemplates      :: InlinerTemplates a n
-
-          -- | Inliner templates from imported moodules
-        , simplifierImportedTemplates   :: [(ModuleName, InlinerTemplates a n)] }
+          -- | Modules available for inlining.
+        , simplifierTemplates           :: [Module a n] }
 
 
 -------------------------------------------------------------------------------
 -- | A parser of simplifier specifications.
 type Parser n a
-        = P.Parser Tok a
+        = P.Parser (Tok n) a
 
+-- | Parse a simplifier from a string.
 parseSimplifier
-        :: SimplifierDetails s a n
+        :: (Ord n, Show n)
+        => (String -> Maybe n)               -- Function to read a name.
+        -> SimplifierDetails s a n
         -> String
         -> Either P.ParseError (Simplifier s a n)
 
+parseSimplifier readName details str
+ = let  kend    = Token KEnd (SourcePos "<simplifier spec>" 0 0)
+        toks    = lexSimplifier readName str ++ [kend]
+   in   P.runTokenParser show "<simplifier spec>" 
+                (pSimplifier details)
+                toks
 
-parseSimplifier _details str
- = let  toks    = lexSimplifier str
-   in   P.runTokenParser show "<simplifier spec>" pSimplifier toks
 
-
-pSimplifier :: Parser n (Simplifier s a n)
+-- | Parse a simplifier.
 pSimplifier 
+        :: Ord n
+        => SimplifierDetails s a n
+        -> Parser n (Simplifier s a n)
+
+pSimplifier details
+ = do   simpl   <- pSimplifierSeq details
+        pTok KEnd
+        return simpl
+
+
+-- | Parse a simplifier sequence.
+pSimplifierSeq 
+        :: Ord n
+        => SimplifierDetails s a n
+        -> Parser n (Simplifier s a n)
+
+pSimplifierSeq details
+ = do   -- Single Transform or Sequence.
+        trans   <- pTransform details
+
+        P.choice
+         [ do   pTok KSemiColon
+                simpl   <- pSimplifierSeq details
+                return  $ Seq (Trans trans) simpl
+
+         , do   return (Trans trans) ]
+
+
+-- | Parse a single transform.
+pTransform 
+        :: Ord n
+        => SimplifierDetails s a n
+        -> Parser n (Transform s a n)
+
+pTransform details
  = P.choice
- [      -- Single transform.
-   do   trans   <- pTransform
-        return  $ Trans trans
+ [      -- Single transforms with no parameters.
+   do   trans   <- P.pTokMaybe readTransformAtomic
+        return trans
+
+        -- Namifier
+ , do   pTok (KCon "Namify")
+        return  $ Namify (simplifierMkNamifierT details)
+                         (simplifierMkNamifierX details)
+
+        -- Rewrite
+ , do   pTok (KCon "Rewrite")
+        return  $ Rewrite (simplifierRules details) 
+
+        -- Inline
+ , do   pTok (KCon "Inline")
+        let modules     = simplifierTemplates details
+        specs           <- P.many pInlinerSpec
+        let specsMap    = Map.fromList specs
+        return  $ Inline (lookupTemplateFromModules specsMap modules) ]
+
+
+-- | Parse an inlining specification.
+pInlinerSpec 
+        :: Ord n
+        => Parser n (ModuleName, InlineSpec n)
+
+pInlinerSpec 
+ = P.choice 
+ [ do   modname  <- pModuleName
+        P.choice
+         [ pInlinerSpecIncludeList modname
+         , pInlinerSpecExcludeList modname
+         , return (modname, InlineSpecAll modname (Set.empty :: Set n)) ]
  ]
 
+-- Inline all bindings in a module, except particulars.
+--   Inline MODULENAME +[VAR1, VAR2, ... VARn]
+--   Inline MODULENAME  [VAR1, VAR2, ... VARn]
+pInlinerSpecIncludeList modname
+ = do   P.choice [ pTok KPlus, return () ]
+        pTok KSquareBra
+        ns      <- P.sepEndBy pVar (pTok KComma)
+        pTok KSquareKet
+        return  $ (modname, InlineSpecNone modname (Set.fromList ns))
 
-pTransform :: Parser n (Transform s a n)
-pTransform
- = P.choice
- [      -- Transform with an atomic specification
-   do   P.pTokMaybe readTransformAtomic 
- ]
+
+-- Inline no bindings in a module by default,
+--   but include some particulars.
+--   Inline MODULENAME -[VAR1, VAR2, ... VARn]
+pInlinerSpecExcludeList modname
+ = do   pTok KMinus
+        pTok KSquareBra
+        ns      <- P.sepEndBy pVar (pTok KComma)
+        pTok KSquareKet
+        return  $ (modname, InlineSpecNone modname (Set.fromList ns))
 
 
-readTransformAtomic :: Tok -> Maybe (Transform s a n)
+-- | Read an atomic transform name.
+readTransformAtomic :: Tok n -> Maybe (Transform s a n)
 readTransformAtomic kk
- | KTrans name  <- kk
+ | KCon name  <- kk
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
@@ -85,5 +173,19 @@ readTransformAtomic kk
 
  | otherwise
  = Nothing
+
+
+-- | Parse a variable name
+pVar :: Parser n n
+pVar = P.pTokMaybe f
+ where  f (KVar n) = Just n
+        f _        = Nothing
+
+
+-- | Parse a module name.
+pModuleName :: Parser n ModuleName
+pModuleName = P.pTokMaybe f
+ where  f (KCon n) = Just $ ModuleName [n]
+        f _        = Nothing
 
 

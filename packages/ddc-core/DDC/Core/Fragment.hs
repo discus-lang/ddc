@@ -41,6 +41,9 @@ data Fragment n (err :: * -> *)
           -- | File extension to use when dumping modules in this fragment.
         , fragmentExtension     :: String
 
+          -- | Read a name.
+        , fragmentReadName      :: String -> Maybe n
+        
           -- | Lex module source into tokens,
           --   given the source name and starting line number. 
         , fragmentLexModule     :: String -> Int -> String -> [Token (Tok n)]
