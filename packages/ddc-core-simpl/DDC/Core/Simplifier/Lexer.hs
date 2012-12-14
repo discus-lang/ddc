@@ -29,14 +29,17 @@ lexer readName ss
    in case ss of
         []              -> []
 
-        (';' : cs)      -> KSemiColon : down cs
-        (',' : cs)      -> KComma     : down cs
-        ('-' : cs)      -> KMinus     : down cs
-        ('+' : cs)      -> KPlus      : down cs
-        ('{' : cs)      -> KBraceBra  : down cs
-        ('}' : cs)      -> KBraceKet  : down cs
-        ('[' : cs)      -> KSquareBra : down cs
-        (']' : cs)      -> KSquareKet : down cs
+        (';' : cs)      -> KSemiColon   : down cs
+        (',' : cs)      -> KComma       : down cs
+        ('-' : cs)      -> KMinus       : down cs
+        ('+' : cs)      -> KPlus        : down cs
+        ('{' : cs)      -> KBraceBra    : down cs
+        ('}' : cs)      -> KBraceKet    : down cs
+        ('[' : cs)      -> KSquareBra   : down cs
+        (']' : cs)      -> KSquareKet   : down cs
+
+        'f' : 'i' : 'x' : s : cs  
+         | isSpace s    -> KFix         : down cs
 
         (c : cs)
          |  isSpace c
@@ -68,6 +71,8 @@ data Tok n
         | KCon   String
         | KVar   n
         | KInt   Int
+
+        | KFix
 
         | KSemiColon
         | KComma

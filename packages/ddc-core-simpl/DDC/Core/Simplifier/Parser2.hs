@@ -77,15 +77,46 @@ pSimplifierSeq
         -> Parser n (Simplifier s a n)
 
 pSimplifierSeq details
- = do   -- Single Transform or Sequence.
-        trans   <- pTransform details
+ = P.choice
+ [ do   -- Single Transform or Sequence.
+        simpl0  <- pSimplifier0 details
 
         P.choice
          [ do   pTok KSemiColon
-                simpl   <- pSimplifierSeq details
-                return  $ Seq (Trans trans) simpl
+                simpl1  <- pSimplifierSeq details
+                return  $ Seq simpl0 simpl1
 
-         , do   return (Trans trans) ]
+         , do   return simpl0 ]
+ ]
+
+
+pSimplifier0
+        :: Ord n
+        => SimplifierDetails s a n
+        -> Parser n (Simplifier s a n)
+
+pSimplifier0 details
+ = P.choice
+ [      -- Fixpoint transform.
+        --  fix INT SIMP
+   do   pTok KFix
+        maxIters <- pInt
+        pTok KBraceBra
+        simp     <- pSimplifierSeq details
+        pTok KBraceKet
+        return  $ Fix maxIters simp
+
+ , do   -- Atomic transform.
+        trans   <- pTransform details
+        return  $ Trans trans
+
+ , do   -- Simplifier in braces
+        --  { SIMP }
+        pTok KBraceBra
+        simpl   <- pSimplifierSeq details
+        pTok KBraceKet
+        return simpl
+ ]
 
 
 -- | Parse a single transform.
@@ -179,6 +210,13 @@ readTransformAtomic kk
 pVar :: Parser n n
 pVar = P.pTokMaybe f
  where  f (KVar n) = Just n
+        f _        = Nothing
+
+
+-- | Parse an integer.
+pInt :: Parser n Int
+pInt = P.pTokMaybe f
+ where  f (KInt i) = Just i
         f _        = Nothing
 
 
