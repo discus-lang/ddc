@@ -5,6 +5,7 @@ module DDC.Core.Module
         , isMainModule
 	, moduleKindEnv
         , moduleTypeEnv
+        , modulesGetBinds
 
 	  -- * Module maps
 	, ModuleMap

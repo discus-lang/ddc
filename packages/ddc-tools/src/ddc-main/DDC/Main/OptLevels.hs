@@ -6,6 +6,7 @@ module DDC.Main.OptLevels
 where
 import DDC.Main.Config
 import DDC.Driver.Command.Load
+import DDC.Driver.Command.RewriteRules
 import DDC.Build.Builder
 import DDC.Build.Platform
 import DDC.Core.Simplifier                      (Simplifier)
@@ -29,7 +30,7 @@ import qualified DDC.Build.Language.Lite        as Lite
 --
 --   We don't want to delay this until all arguments are parsed, 
 --   because the simplifier spec also contains the list of modules used
---   as inliner templates, so we need to wait until their all specified.
+--   as inliner templates, so we need to wait until they're all specified.
 --
 getSimplLiteOfConfig 
         :: Config -> Builder 
@@ -82,9 +83,9 @@ opt1_lite config _builder
         let inlineModulePaths
                 =  [ configLibraryPath config </> "lite/base/Data/Numeric/Int.dcl"
                    , configLibraryPath config </> "lite/base/Data/Numeric/Nat.dcl" ]
-                ++ (configWithSalt config)
+                ++ (configWithLite config)
 
-        -- Load all the modues that we're using for inliner templates.
+        -- Load all the modules that we're using for inliner templates.
         --  If any of these don't load then the 'cmdReadModule' function 
         --  will display the errors.
         minlineModules
@@ -97,17 +98,25 @@ opt1_lite config _builder
                 $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
 
+        -- Optionally load the rewrite rules for each 'with' module
+        rules <- mapM (\(m,file) -> cmdTryReadRules Lite.fragment (file ++ ".rules") m)
+              $  inlineModules `zip` inlineModulePaths
+        let rules' = concat rules
+
         -- Simplifier to convert to a-normal form.
         let normalizeLite
                 = S.anormalize
                         (makeNamifier Lite.freshT)      
                         (makeNamifier Lite.freshX)
 
-        return  $ (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules inlineModules)        
+        -- Perform rewrites before inlining
+        return  $  (S.Trans $ S.Rewrite rules')
+                <> (S.Trans $ S.Inline 
+                            $ lookupTemplateFromModules inlineModules)        
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
-                                <> normalizeLite <> S.forward)
+                                <> normalizeLite <> S.forward
+                                <> (S.Trans $ S.Rewrite rules'))
 
 
 -- | Level 1 optimiser for Core Salt code.
@@ -142,6 +151,11 @@ opt1_salt config builder
                 $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
 
+        -- Optionally load the rewrite rules for each 'with' module
+        rules <- mapM (\(m,file) -> cmdTryReadRules Salt.fragment (file ++ ".rules") m)
+              $  inlineModules `zip` inlineModulePaths
+        let rules' = concat rules
+
 
         -- Simplifier to convert to a-normal form.
         let normalizeSalt
@@ -149,9 +163,12 @@ opt1_salt config builder
                         (makeNamifier Salt.freshT)      
                         (makeNamifier Salt.freshX)
         
-        return  $  (S.Trans $ S.Inline 
+        -- Perform rewrites before inlining
+        return  $  (S.Trans $ S.Rewrite rules')
+                <> (S.Trans $ S.Inline 
                             $ lookupTemplateFromModules inlineModules)
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
-                                <> normalizeSalt <> S.forward)
+                                <> normalizeSalt <> S.forward
+                                <> (S.Trans $ S.Rewrite rules'))
 

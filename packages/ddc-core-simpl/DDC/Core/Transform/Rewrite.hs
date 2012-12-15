@@ -519,11 +519,6 @@ matchWithRule
 -------------------------------------------------------------------------------
 -- | Lookup a binding from a rewrite rule substitution.
 --
---   ISSUE #282: Rewrite rule lookup code doesn't distinguish between name levels
---    The lookupFromSubst function tries to lookup the same name from a map
---    of level-1 names as well as level-0 names, but the same textual name
---    can be used at both levels.
---
 --    Eg: RULE [x : %] (x : Int x). ...
 -- 
 lookupFromSubst :: Ord n

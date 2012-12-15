@@ -15,6 +15,7 @@ module DDC.Core.Transform.Rewrite.Rule
         , Side  (..))
 where
 import DDC.Core.Transform.Rewrite.Error
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.TransformX
 import DDC.Core.Exp
 import DDC.Core.Pretty                          ()
@@ -502,3 +503,12 @@ countBinderUsage bs x
          = b
 
    in   return $ map get bs
+
+
+-- | Allow the expressions and anything else with annotations to be reannotated
+instance Reannotate RewriteRule where
+ reannotate f (RewriteRule bs cs lhs hole rhs eff clo fv)
+   = RewriteRule bs cs (re lhs) (fmap re hole) (re rhs) eff (map re clo) fv
+    where
+     re = reannotate f
+

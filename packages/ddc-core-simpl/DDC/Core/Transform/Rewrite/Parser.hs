@@ -1,7 +1,7 @@
 
 -- | Core language parser.
 module DDC.Core.Transform.Rewrite.Parser
-        (pRule)
+        (pRule, pRuleMany)
 where
 import DDC.Core.Exp
 import DDC.Core.Parser
@@ -28,6 +28,26 @@ pRule
 	rhs	 <- pExp
 
 	return $ R.mkRewriteRule bs cs lhs hole rhs
+
+
+{-
+add_zero_r
+    [r1 r2 : %] (x : Int r1).
+	Const r1 =>
+	addInt [:r1 r2 r1:] x (0 [r2] ()) =
+	x;
+add_zero_l
+    [r1 r2 : %] ...
+        ;
+-}
+-- | Parse many rewrite rules.
+pRuleMany	:: Ord n => Parser n [(n,R.RewriteRule () n)]
+pRuleMany
+ = P.many (do
+        n <- pName
+        r <- pRule
+        pTok KSemiColon
+        return (n,r))
 
 
 pRuleBinders :: Ord n => Parser n [(R.BindMode,Bind n)]
