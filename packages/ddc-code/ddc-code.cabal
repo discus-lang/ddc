@@ -14,6 +14,8 @@ Synopsis:       Disciplined Disciple Compiler base libraries.
 Description:    Disciplined Disciple Compiler base libraries.
 
 data-files:
+        LICENSE
+
         lite/base/Data/Container/List.dcl
         lite/base/Data/Numeric/Int.dcl
         lite/base/Data/Numeric/Int.dcl
@@ -30,5 +32,15 @@ data-files:
         sea/runtime/Runtime.h        
 
 Library
-  Exposed-modules:
+  build-depends:
+        base            == 4.6.*,
+        filepath        == 1.3.*
+
+  exposed-modules:
         DDC.Code.Config
+
+  other-modules:
+        Paths_ddc_code
+
+  cpp-options:
+        -DDDC_CABAL_INSTALLED

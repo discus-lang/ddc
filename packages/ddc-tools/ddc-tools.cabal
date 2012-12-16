@@ -51,7 +51,8 @@ Executable ddc
         ddc-core-salt   == 0.3.0.*,
         ddc-core-llvm   == 0.3.0.*,
         ddc-build       == 0.3.0.*,
-        ddc-driver      == 0.3.0.*
+        ddc-driver      == 0.3.0.*,
+        ddc-code        == 0.3.0.*
 
     Main-is:
         Main.hs

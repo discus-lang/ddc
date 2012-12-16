@@ -42,7 +42,6 @@ Library
   Other-modules:
         DDC.Build.Language.Base
 
-
   Extensions:
         BangPatterns
         PatternGuards
