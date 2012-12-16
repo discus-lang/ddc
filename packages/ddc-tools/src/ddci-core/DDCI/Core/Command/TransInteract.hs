@@ -8,7 +8,7 @@ import DDCI.Core.State
 import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment
-import DDC.Core.Simplifier.Parser2
+import DDC.Core.Simplifier.Parser
 import DDC.Core.Compounds
 import DDC.Core.Check
 import DDC.Core.Module

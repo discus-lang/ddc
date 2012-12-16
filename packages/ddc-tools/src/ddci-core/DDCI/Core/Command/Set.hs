@@ -10,7 +10,7 @@ import DDCI.Core.Output
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment
-import DDC.Core.Simplifier.Parser2
+import DDC.Core.Simplifier.Parser
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Char

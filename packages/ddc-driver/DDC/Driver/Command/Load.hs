@@ -7,7 +7,7 @@ where
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Core.Simplifier.Parser2
+import DDC.Core.Simplifier.Parser
 import DDC.Core.Module
 import DDC.Core.Load
 import DDC.Core.Pretty
