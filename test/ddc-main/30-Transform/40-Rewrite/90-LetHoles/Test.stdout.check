@@ -1,10 +1,10 @@
 ok
-
 ok
 
 -- don't look past lets normally
 ok, added unbox_box
 ok
+
 
 -- don't rewrite non-locals
 let x : Int R0#
@@ -14,9 +14,11 @@ let z : Int R0# = unbox x in
 weakclo {box; unbox} in
 addInt [R0#] [R0#] [R0#] y z
 
+
 -- the {{ }} brackets indicate that the argument is cheap enough to be split across places
 ok, added unbox_box
 ok
+
 
 -- rewrite y and z
 let ^ : Int R0# = 5 [R0#] () in
@@ -29,11 +31,13 @@ let z : Int R0#
         ^0 in
 addInt [R0#] [R0#] [R0#] y z
 
+
 -- shadowing, don't rewrite
 let ^ : Int R0# = 5 [R0#] () in
 let x : Int R0# = box ^0 in
 let x : Int R0# = 2 [R0#] () in
 unbox x
+
 
 -- shadowing with lambdas, don't rewrite
 let ^ : Int R0# = 5 [R0#] () in
@@ -54,6 +58,7 @@ let c : Int R0#
         ^3 in
 ()
 
+
 -- some surrounding de bruijns
 let ^ : Int R0# = 2 [R0#] () in
 let ^ : Int R0# = 5 [R0#] () in
@@ -63,6 +68,7 @@ let c : Int R0#
       = weakclo {box; unbox} in
         ^2 in
 ()
+
 
 -- some lambda-y de bruijns
 let ^ : Int R0# = 2 [R0#] () in
@@ -76,14 +82,15 @@ let c : Int R0#
 ()
 
 
-
 -- now with a Const contraint and regions
 ok, added unbox_box
 ok
 
+
 -- don't do it: not const
 unbox_ [R0#]
     (box_ [R0#] (5 [R0#] ()))
+
 
 -- do it: const
 letregion r with {w : Const r} in
@@ -91,6 +98,7 @@ let x : Int r
       = weakclo {box_; unbox_; [r]} in
         5 [r] () in
 ()
+
 
 -- separated
 letregion r with {w : Const r} in
@@ -104,6 +112,7 @@ let y : Int r
 
 ok, added silly
 ok
+
 
 -- don't fire, just unfold
 let ^ : Int R0# = 5 [R0#] () in

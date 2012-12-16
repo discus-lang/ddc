@@ -1,15 +1,17 @@
 ok
 ok
-
 ok
+
 
 -- now with a Const contraint and regions
 ok, added unboxInt_boxInt
 ok
 
+
 -- don't do it: not const
 letregion r in
 unboxInt [r] (boxInt [r] 5i#)
+
 
 -- do it: const
 letregion r with {w : Const r} in
@@ -18,6 +20,7 @@ let x : Int#
         weakclo {boxInt; unboxInt; [r]} in
         5i# in
 ()
+
 
 -- separated
 letregion r with {w : Const r} in
@@ -29,8 +32,10 @@ let y : Int#
         ^0 in
 ()
 
+
 ok
 ok
+
 
 -- do the factorial
 * TRANSFORM INFORMATION: 

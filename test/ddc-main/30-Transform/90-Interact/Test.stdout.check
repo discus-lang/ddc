@@ -8,6 +8,7 @@ ok
 ok, added unboxInt_boxInt
 ok
 
+
 -- do the factorial
 * TRANSFORM INFORMATION: 
     Inline: No information
@@ -495,6 +496,6 @@ letrec {
 ()
 * TRANSFORM SEQUENCE:
     Inline
-    BetaLets <> Forward
+    BetaLets ; Forward
     Inline
     Rewrite

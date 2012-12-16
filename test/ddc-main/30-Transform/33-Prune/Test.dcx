@@ -1,7 +1,7 @@
 :set TraceTrans
 :set Indent
 
-:set trans fix 5 (Prune)
+:set trans fix 5 Prune
 
 -- No effects
 :trans..

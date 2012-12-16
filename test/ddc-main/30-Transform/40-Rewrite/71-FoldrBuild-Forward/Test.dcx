@@ -24,7 +24,7 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 ;;
 
 :set.. trans
-  Inline List <> fix 10 (BetaLets <> Forward <> Rewrite)
+Inline List; fix 10 {BetaLets; Forward; Rewrite}
 ;;
 
 :trans..
@@ -35,7 +35,7 @@ sum (count num)
 ;;
 
 :set.. trans
-    fix 30 (Forward <> BetaLets <> Bubble <> Prune <> Rewrite <> anormalize)
+fix 30 {Forward; BetaLets; Bubble; Prune; Rewrite; Snip; Flatten; Namify}
 ;;
 
 :trans..

@@ -70,13 +70,15 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 -- Here we would inline map, sum, filter, etc. But output is cleaner with them
 -- Try to fuse anything we can, even fusing interfering foldr/builds into foldrAndBuild.
 -- Also for cleaner output, don't anormalize
-    fix 10 (BetaLets <> Bubble <> Rewrite <> Forward <> Prune) <>
+    fix 10 {BetaLets; Bubble; Rewrite; Forward; Prune};
+
 -- By now we've turned all the foldr/builds we can into foldrAndBuild,
 -- so inline any pesky builds that were getting in the way
 -- But for cleaner output, don't inline anything else...
-    Inline -foldrAndBuild -foldr -compose -plus -zero -pred -countZ -double -even <>
+    Inline Module[build];
+
 -- Crush again
-    fix 10 (BetaLets <> Bubble <> Rewrite <> Forward <> Prune)
+    fix 10 {BetaLets; Bubble; Rewrite; Forward; Prune}
 ;;
 
 

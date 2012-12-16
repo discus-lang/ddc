@@ -12,6 +12,7 @@
 ;;
 :set trans Rewrite
 
+
 -- do the factorial
 :tinteract..
 letrec
@@ -26,8 +27,8 @@ main    [r : %]
 
 in ()
 ;;
-Inline Int -boxInt -unboxInt
-BetaLets <> Forward
+Inline Int-[boxInt, unboxInt]
+BetaLets; Forward
 Forward
 Rewrite
 :back

@@ -1,7 +1,7 @@
 :set Indent
 :set lang Lite
-
 :with test/ddc-main/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
+
 
 -- now with a Const contraint and regions
 :set.. rule unboxInt_boxInt [r : %] (s : Int#).
@@ -11,11 +11,13 @@
 ;;
 :set trans Rewrite
 
+
 -- don't do it: not const
 :trans..
 letregion r				in
 unboxInt [r] (boxInt [r] 5i#)
 ;;
+
 
 -- do it: const
 :trans..
@@ -23,6 +25,7 @@ letregion r with {w : Const r}		in
 let x = unboxInt [r] (boxInt [r] 5i#)	in
     ()
 ;;
+
 
 -- separated
 :trans..
@@ -32,11 +35,13 @@ let y = unboxInt [r] x		in
     ()
 ;;
 
+
 :set TraceTrans
 :set.. trans
- Inline Int -boxInt -unboxInt <>
- fix 5 (Forward <> BetaLets <> Rewrite <> Bubble)
+Inline Int-[boxInt, unboxInt];
+fix 5 {Forward; BetaLets; Rewrite; Bubble}
 ;;
+
 
 -- do the factorial
 :trans..

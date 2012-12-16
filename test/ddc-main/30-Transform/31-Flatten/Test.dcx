@@ -19,7 +19,7 @@ foo : [r : %]. Int r -(Alloc r | Use r)> Unit
 
 -- A-Normalisation ------------------------------------------------------------
 -- These tests use a combination of snipping and flattening.
-:set trans Snip <> Flatten
+:set trans Snip; Flatten
 
 -- Nested applications
 :trun.. 
@@ -91,7 +91,7 @@ in
 -- Drag letregion out of the top-level of a binding
 --  using anonymous binders.
 -- 
-:set trans Anonymize <> Snip <> Flatten
+:set trans Anonymize; Snip; Flatten
 :set +Indent
 :trans..
 let foo [r1 r2 : %] (_ : Unit)

@@ -135,7 +135,8 @@ applyTransAndCheck state profile kenv tenv zero simpl xx
 	when (Set.member TraceTrans $ stateModes state)
 	 $ case (resultInfo tx) of
 	   TransformInfo inf
-	    -> outDocLn state (text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text "")
+	    -> outDocLn state 
+            $  text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text ""
 
         -- Check that the simplifier perserved the type of the expression.
         case checkExp (configOfProfile profile) kenv tenv x' of

@@ -118,7 +118,7 @@ head    [r : %] [a : *] (def : a)
 
 -- Construct a singleton list,
 --      packs a Boxed objet.
-:set trans anormalize
+:set trans Snip; Flatten; Namify
 :load..
 module Test with letrec
 singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 

@@ -48,10 +48,10 @@ instance Pretty (Simplifier s a n) where
  ppr ss
   = case ss of
         Seq s1 s2
-         -> ppr s1 <+> text "<>" <+> ppr s2
+         -> ppr s1 <+> text ";" <+> ppr s2
 
         Fix i s
-         -> text "fix" <+> int i <+> text "(" P.<> ppr s P.<> text ")"
+         -> text "fix" <+> int i <+> ppr s
 
         Trans t1
          -> ppr t1
