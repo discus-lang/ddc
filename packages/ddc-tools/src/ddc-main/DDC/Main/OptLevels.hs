@@ -9,10 +9,11 @@ import DDC.Driver.Command.Load
 import DDC.Driver.Command.RewriteRules
 import DDC.Build.Builder
 import DDC.Build.Platform
-import DDC.Core.Simplifier                      (Simplifier)
+import DDC.Core.Module
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Reannotate
+import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
 import Control.Monad
 import Data.Monoid
@@ -24,6 +25,7 @@ import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 
 
 -- | Get the simplifier for Lite code from the config.
@@ -99,9 +101,15 @@ opt1_lite config _builder
                 $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
 
+        let inlineSpec
+                = Map.fromList
+                [ (ModuleName ["Int"], InlineSpecAll (ModuleName ["Int"]) Set.empty)
+                , (ModuleName ["Nat"], InlineSpecAll (ModuleName ["Nat"]) Set.empty) ]
+
         -- Optionally load the rewrite rules for each 'with' module
         rules <- mapM (\(m,file) -> cmdTryReadRules Lite.fragment (file ++ ".rules") m)
               $  inlineModules `zip` inlineModulePaths
+
         let rules' = concat rules
 
         -- Simplifier to convert to a-normal form.
@@ -110,10 +118,11 @@ opt1_lite config _builder
                         (makeNamifier Lite.freshT)      
                         (makeNamifier Lite.freshX)
 
+
         -- Perform rewrites before inlining
         return  $  (S.Trans $ S.Rewrite rules')
                 <> (S.Trans $ S.Inline
-                            $ lookupTemplateFromModules Map.empty inlineModules)
+                            $ lookupTemplateFromModules inlineSpec inlineModules)
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeLite <> S.forward
@@ -152,6 +161,10 @@ opt1_salt config builder
                 $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
 
+        let inlineSpec
+                = Map.fromList
+                [ (ModuleName ["Object"], InlineSpecAll (ModuleName ["Int"]) Set.empty) ]
+
         -- Optionally load the rewrite rules for each 'with' module
         rules <- mapM (\(m,file) -> cmdTryReadRules Salt.fragment (file ++ ".rules") m)
               $  inlineModules `zip` inlineModulePaths
@@ -167,7 +180,7 @@ opt1_salt config builder
         -- Perform rewrites before inlining
         return  $  (S.Trans $ S.Rewrite rules')
                 <> (S.Trans $ S.Inline 
-                            $ lookupTemplateFromModules Map.empty inlineModules)
+                            $ lookupTemplateFromModules inlineSpec inlineModules)
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeSalt <> S.forward
