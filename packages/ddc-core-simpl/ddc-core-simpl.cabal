@@ -16,6 +16,7 @@ Description:    Disciple Core language simplifying code transformations.
 Library
   Build-Depends: 
         base            == 4.6.*,
+        deepseq         == 1.3.*,
         containers      == 0.5.*,
         array           == 0.4.*,
         transformers    == 0.3.*,
@@ -52,6 +53,7 @@ Library
 
   Other-modules:
         DDC.Core.Simplifier.Apply
+        DDC.Core.Simplifier.Lexer
         DDC.Core.Simplifier.Base
 
         DDC.Core.Transform.Inline.Templates
@@ -66,7 +68,9 @@ Library
         -fno-warn-unused-do-bind
 
   Extensions:
+        BangPatterns
         NoMonomorphismRestriction
+        ParallelListComp
         ExplicitForAll
         KindSignatures
         PatternGuards
@@ -76,3 +80,6 @@ Library
         RankNTypes
         ExistentialQuantification
         DeriveDataTypeable
+        ScopedTypeVariables
+
+        

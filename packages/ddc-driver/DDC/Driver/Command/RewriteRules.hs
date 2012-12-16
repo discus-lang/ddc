@@ -1,12 +1,11 @@
 
 module DDC.Driver.Command.RewriteRules
-        ( cmdTryReadRules
-        )
+        ( cmdTryReadRules )
 where
 import DDC.Driver.Source
 import DDC.Build.Language
-import DDC.Core.Fragment.Profile
-import DDC.Core.Simplifier.Base
+import DDC.Core.Fragment
+import DDC.Core.Simplifier
 import DDC.Core.Module
 import DDC.Core.Lexer
 import DDC.Core.Pretty
@@ -22,7 +21,8 @@ import qualified DDC.Type.Env                     as Env
 
 
 -- Read rewrite rules ---------------------------------------------------------
--- | Load and typecheck a module's rewrite rules, using exported and imported definitions from module
+-- | Load and typecheck a module's rewrite rules, using exported and imported
+--   definitions from module
 cmdTryReadRules 
         :: (Ord n, Show n, Pretty n, NFData n)
         => Fragment n err       -- ^ Language fragment.

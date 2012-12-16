@@ -21,6 +21,7 @@ Description:
 Library
   Build-Depends: 
         base            == 4.6.*,
+        deepseq         == 1.3.*,
         containers      == 0.5.*,
         array           == 0.4.*,
         transformers    == 0.3.*,

@@ -25,10 +25,8 @@ import DDC.Type.Pretty                          ()
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import Control.Monad
-import qualified DDC.Control.Monad.Check        as G
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
-import qualified DDC.Core.Check.CheckWitness    as C
 import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.Check                 as T
@@ -416,7 +414,8 @@ removeEffects config = transformUpX remove
   remove kenv _tenv x
 
    | XType et   <- x
-   , Right k    <- G.result $ C.checkTypeM config kenv et
+   , Right k    <- T.checkType (C.configPrimDataDefs config)
+                               kenv et
    , T.isEffectKind k
    = XType $ T.tBot T.kEffect
 

@@ -45,3 +45,4 @@ Library
         RankNTypes
         FlexibleContexts
         KindSignatures
+        BangPatterns

@@ -16,8 +16,10 @@ Description:    Disciple Core build framework.
 Library
   Build-depends:
         base            == 4.6.*,
+        deepseq         == 1.3.*,
         containers      == 0.5.*,
         filepath        == 1.3.*,
+        directory       == 1.2.*,
         process         == 1.1.*,
         mtl             == 2.1.*,
         ddc-base        == 0.3.0.*,
@@ -42,6 +44,7 @@ Library
 
 
   Extensions:
+        BangPatterns
         PatternGuards
         ParallelListComp
         StandaloneDeriving

@@ -43,6 +43,7 @@ Executable ddc
         haskell-src-exts== 1.*,
         directory       == 1.2.*,
         mtl             == 2.1.*,
+        transformers    == 0.3.*,
         ddc-base        == 0.3.0.*,
         ddc-core        == 0.3.0.*,
         ddc-core-eval   == 0.3.0.*,
