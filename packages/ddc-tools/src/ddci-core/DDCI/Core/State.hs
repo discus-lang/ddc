@@ -26,12 +26,8 @@ import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
-import DDC.Core.Transform.Rewrite.Rule
 import DDC.Base.Pretty
 import Data.Typeable
-import DDC.Core.Transform.Namify                (Namifier)
-import DDC.Type.Env                             (Env)
-import DDC.Core.Fragment                        (Profile)
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import qualified DDC.Build.Language.Eval        as Eval
@@ -81,25 +77,17 @@ data State
 
 
 data TransHistory
-	= forall s n
+	= forall s n err
         .  (Typeable n, Ord n, Show n, Pretty n)
 	=> TransHistory
 	{ -- | Original expression and its types
 	  historyExp		:: (Exp (AnTEC () n) n, Type n, Effect n, Closure n) 
+
 	  -- | Keep history of steps so we can go back and construct final sequence
 	, historySteps		:: [(Exp (AnTEC () n) n, Simplifier s (AnTEC () n) n)]
 
-	  -- | We need to keep these around so we know they're same type
-	  --   I must be doing this wrong.
-	  --   But I tried using casts and would have needed to derive
-	  --   Data.Typeable on Env, RewriteRule, everything.
-	, historyMakeNamifierT	:: Env n -> Namifier s n
-	, historyMakeNamifierX	:: Env n -> Namifier s n 
-	, historyNameZero	:: s
-	, historyProfile	:: Profile n 
-	, historyModules	:: Map ModuleName (Module (AnTEC () n) n) 
-        , historyRewriteRules   :: Map String (RewriteRule (AnTEC () n) n) }
-
+          -- | Bundle for the language that we're transforming.
+        , historyBundle         :: Bundle s n err }
 
 
 -- | What interface is being used.

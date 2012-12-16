@@ -10,12 +10,11 @@ import DDCI.Core.Output
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment
-import DDC.Core.Simplifier.Parser
+import DDC.Core.Simplifier.Parser2
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Char
 import Data.List
-import qualified DDC.Core.Transform.Inline      as I
 import qualified DDCI.Core.Rewrite		as R
 import qualified Data.Map			as Map
 import qualified Data.Set                       as Set
@@ -61,28 +60,24 @@ cmdSet state cmd
  , rules                <- bundleRewriteRules  bundle 
  , mkNamT               <- bundleMakeNamifierT bundle
  , mkNamX               <- bundleMakeNamifierX bundle
+ , fragment             <- bundleFragment      bundle
  = do   case parseSimplifier 
+                (fragmentReadName fragment)
                 (SimplifierDetails
                         mkNamT mkNamX 
                         (Map.assocs rules) 
-        
-        		-- Collect all definitions from modules
-                        (I.lookupTemplateFromModules
-                                $ Map.elems modules)
-
-        		-- Module-specific templates
-        		(map (\(n,m) -> (n, I.lookupTemplateFromModules [m])) 
-                                        $ Map.assocs modules))
+                        (Map.elems  modules))
                 (concat $ intersperse " " rest) of
 
-         Just simpl
+         Left _err
+          -> do putStrLn $ "transform spec parse error"
+                return state
+
+         Right simpl
           -> do chatStrLn state "ok"
                 let bundle'     = bundle { bundleSimplifier = simpl }
                 return $ state { stateLanguage = Language bundle' }
 
-         Nothing
-          -> do putStrLn "transform spec parse error"
-                return state
 
  | ("rule", rest)       <- R.parseFirstWord cmd
  , Language bundle      <- stateLanguage state

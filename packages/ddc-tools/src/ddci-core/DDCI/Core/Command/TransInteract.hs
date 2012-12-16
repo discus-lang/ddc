@@ -8,13 +8,12 @@ import DDCI.Core.State
 import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment
-import DDC.Core.Simplifier.Parser
+import DDC.Core.Simplifier.Parser2
 import DDC.Core.Compounds
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Base.Pretty
 import qualified Data.Map                       as Map
-import qualified DDC.Core.Transform.Inline      as I
 
 
 -- TransInteract --------------------------------------------------------------
@@ -24,20 +23,15 @@ cmdTransInteract state source str
  | Language bundle      <- stateLanguage state
  , fragment             <- bundleFragment   bundle
  , modules              <- bundleModules    bundle
- , zero                 <- bundleStateInit  bundle
- , profile              <- fragmentProfile  fragment
- , mkNamT               <- bundleMakeNamifierT bundle
- , mkNamX               <- bundleMakeNamifierX bundle
- , rules                <- bundleRewriteRules  bundle
  =   cmdParseCheckExp fragment modules True source str 
- >>= goStore mkNamT mkNamX zero profile modules rules
+ >>= goStore bundle
  where
         -- Expression had a parse or type error.
-        goStore _ _ _ _ _ _ Nothing
+        goStore _ Nothing
          = do   return state
 
         -- Expression is well-typed.
-        goStore mkNamT mkNamX zero profile modules rules (Just xx)
+        goStore bundle (Just xx)
          = do   
                 let Just annot  = takeAnnotOfExp xx
                 let t1          = annotType annot
@@ -47,19 +41,17 @@ cmdTransInteract state source str
                 let hist   = TransHistory
 			     { historyExp	    = (xx, t1, eff1, clo1)
 			     , historySteps	    = []
-			     , historyMakeNamifierT = mkNamT
-			     , historyMakeNamifierX = mkNamX
-			     , historyNameZero	    = zero
-			     , historyProfile	    = profile
-			     , historyModules	    = modules
-			     , historyRewriteRules  = rules }
+                             , historyBundle        = bundle }
+
 		return state { stateTransInteract = Just hist }
 
 
 cmdTransInteractLoop :: State -> String -> IO State
 cmdTransInteractLoop state str
- | Just hist						    <- stateTransInteract state
- , TransHistory (x,t,e,c) steps mkNamT mkNamX zero profile modules rules <- hist
+ | Just hist    <- stateTransInteract state
+ , TransHistory (x,t,e,c) steps bundle <- hist
+ , fragment     <- bundleFragment bundle
+ , profile      <- fragmentProfile fragment
  = case str of
     ":back" -> do
 	let steps' = case steps of
@@ -72,7 +64,7 @@ cmdTransInteractLoop state str
 		   ((xz,_):_) -> xz
 	outDocLn state $ ppr x'
 
-	let hist'      = TransHistory (x,t,e,c) steps' mkNamT mkNamX zero profile modules rules
+	let hist'      = TransHistory (x,t,e,c) steps' bundle
 	return state { stateTransInteract = Just hist' }
 
     ":done" -> do
@@ -82,17 +74,14 @@ cmdTransInteractLoop state str
 	return state { stateTransInteract = Nothing }
 
     _	    -> do
+
  	let tr = parseSimplifier 
+                    (fragmentReadName fragment)
 		    (SimplifierDetails
-                        mkNamT mkNamX
-        		(Map.assocs rules) 
-
-                        -- Collect all definitions from modules
-                        (I.lookupTemplateFromModules $ Map.elems modules)
-
-                        -- Module-specific templates
-                        (map (\(n,m) -> (n, I.lookupTemplateFromModules [m])) 
-                                $ Map.assocs modules))
+                        (bundleMakeNamifierT bundle) 
+                        (bundleMakeNamifierX bundle)
+        		(Map.assocs $ bundleRewriteRules bundle) 
+                        (Map.elems  $ bundleModules      bundle))
 		    str
 
 	let x' = case steps of
@@ -100,23 +89,28 @@ cmdTransInteractLoop state str
 		((xz,_):_) -> xz
 
 	case tr of
-	    Just tr' -> do
-                let kenv    = modulesExportKinds modules (profilePrimKinds profile)
-                let tenv    = modulesExportTypes modules (profilePrimTypes profile)
+            Left _err -> do
+                putStrLn "Error parsing simplifier"
+                return state
+
+	    Right tr' -> do
+                let kenv    = modulesExportKinds
+                                (bundleModules bundle) 
+                                (profilePrimKinds profile)
+
+                let tenv    = modulesExportTypes
+                                (bundleModules bundle) 
+                                (profilePrimTypes profile)
 
 		x_trans <- applyTransAndCheck state profile kenv tenv
-			    zero tr' x'
+			    (bundleStateInit bundle) tr' x'
 
 		case x_trans of
 		    Nothing -> return state
 		    Just x_trans' -> do
 			outDocLn state $ ppr x_trans'
 			let steps' = (x_trans', tr') : steps
-		        let hist'  = TransHistory (x,t,e,c) steps' mkNamT mkNamX zero profile modules rules
+		        let hist'  = TransHistory (x,t,e,c) steps' bundle
 			return state { stateTransInteract = Just hist' }
-
-	    Nothing -> do
-		putStrLn "Error parsing simplifier"
-		return state
 
  | otherwise = error "No transformation history!"
