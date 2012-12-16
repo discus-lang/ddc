@@ -4,6 +4,7 @@
 --    and does unix-style command line argument parsing.
 --
 import DDC.Main.Config
+import DDC.Main.Help
 import DDC.Main.Args
 import DDC.Main.OptLevels
 import DDC.Driver.Command.Load
@@ -37,15 +38,15 @@ run config
  = case configMode config of
         -- We didn't get any arguments on the command line.
         ModeNone
-         -> do  putStr help
-                return ()
+         ->     putStr help
 
+        -- Display the version string.
+        ModeVersion
+         ->     putStrLn version
 
         -- Display the help page.
         ModeHelp
-         -> do  putStr help
-                return ()
-
+         ->     putStrLn help
 
         -- Parse and type check a module.
         ModeCheck filePath

@@ -17,6 +17,11 @@ parseArgs [] config
 parseArgs args config
         -- General ------------------------------
         | flag : _              <- args
+        , elem flag ["-version", "--version"]
+        = return
+        $ config { configMode   = ModeVersion }
+
+        | flag : _              <- args
         , elem flag ["-h", "-help", "--help"]
         = return 
         $ config { configMode   = ModeHelp }
@@ -177,6 +182,7 @@ flagOfMode :: Mode -> Maybe String
 flagOfMode mode
  = case mode of
         ModeNone{}              -> Nothing
+        ModeVersion{}           -> Just "-version"
         ModeHelp{}              -> Just "-help"
         ModeCheck{}             -> Just "-check"
         ModeLoad{}              -> Just "-load"

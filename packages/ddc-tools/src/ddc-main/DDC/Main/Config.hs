@@ -18,6 +18,9 @@ data Mode
         -- | Don't do anything
         = ModeNone
 
+        -- | Display the version string.
+        | ModeVersion
+
         -- | Display the help page.
         | ModeHelp
 

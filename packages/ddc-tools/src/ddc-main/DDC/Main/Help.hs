@@ -1,10 +1,14 @@
 
 module DDC.Main.Help where
 
+-- | The version identifier string.
+version :: String
+version = "The Disciplined Disciple Compiler, version 0.3.0"
+
 -- | The command-line help page.
 help :: String
 help    = unlines
-        [ "The Disciplined Disciple Compiler, version 0.3.0"
+        [ version
         , ""
         , "General:"
         , "     -help              Display this help."
@@ -66,7 +70,6 @@ help    = unlines
         , "Debugging:"
         , "     -dump              Dump intermediate representations."
         , "     -ast      FILE     Pretty print the AST of a module."
-        , "     -print-builder     Print external builder info for this platform." 
-        , "" ]
+        , "     -print-builder     Print external builder info for this platform." ]
 
         
