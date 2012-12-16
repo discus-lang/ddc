@@ -110,8 +110,10 @@ opt1_lite config _builder
                         (makeNamifier Lite.freshT)      
                         (makeNamifier Lite.freshX)
 
-        return  $ (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules inlineModules)        
+        -- Perform rewrites before inlining
+        return  $  (S.Trans $ S.Rewrite rules')
+                <> (S.Trans $ S.Inline
+                            $ lookupTemplateFromModules Map.empty inlineModules)
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeLite <> S.forward
