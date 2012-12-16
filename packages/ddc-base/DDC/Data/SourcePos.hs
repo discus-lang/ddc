@@ -18,6 +18,12 @@ data SourcePos
 
 
 instance Pretty SourcePos where
+ -- Suppress printing of line and column number when they are both zero.
+ -- File line numbers officially start from 1, so having 0 0 probably
+ -- means this isn't real information.
+ ppr (SourcePos source 0 0)
+        = ppr $ source
+
  ppr (SourcePos source l c)     
         = ppr $ source ++ ":" ++ show l ++ ":" ++ show c
 
