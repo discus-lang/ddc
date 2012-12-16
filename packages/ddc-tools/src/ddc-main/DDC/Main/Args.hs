@@ -37,9 +37,9 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeCompile file
 
-        | "-library" : path : rest <- args
+        | "-codedir" : path : rest <- args
         = parseArgs rest
-        $ config { configLibraryPath = path }
+        $ config { configCodeDir = path }
 
         | flag         : file : rest     <- args
         , elem flag    ["-o", "-output"]
@@ -137,6 +137,10 @@ parseArgs args config
         = parseArgs rest
         $ setMode config ModePrintBuilder
 
+        | "-print-codedir" : rest <- args
+        = parseArgs rest
+        $ setMode config ModePrintCodeDir
+
         -- If we get some other argument starting with '-' then assume it's
         -- a flag we don't support.
         | arg : _               <- args
@@ -193,5 +197,6 @@ flagOfMode mode
         ModeToC{}               -> Just "-to-c"
         ModeToLLVM{}            -> Just "-to-llvm"
         ModePrintBuilder{}      -> Just "-print-builder"
+        ModePrintCodeDir{}      -> Just "-print-codedir"
 
 

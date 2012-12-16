@@ -53,6 +53,9 @@ data Mode
 
         -- | Print the builder info for this platform.
         | ModePrintBuilder
+
+        -- | Print where the runtime and base libraries are intalled.
+        | ModePrintCodeDir
         deriving (Eq, Show)
 
 
@@ -72,8 +75,8 @@ data Config
           configMode            :: Mode 
 
           -- Compilation --------------
-          -- | Path to the base library code.
-        , configLibraryPath     :: FilePath
+          -- | Directory holding the runtime and base library code.
+        , configCodeDir         :: FilePath
 
           -- | Redirect output to this file.
         , configOutputFile      :: Maybe FilePath
@@ -120,13 +123,13 @@ data Config
 -- | Default configuation.
 getDefaultConfig :: IO Config
 getDefaultConfig
- = do   baseLibraryPath <- locateBaseLibrary
+ = do   codeDir <- locateBaseLibrary
 
         return $ Config
           { configMode            = ModeNone 
  
             -- Compilation --------------
-          , configLibraryPath     = baseLibraryPath
+          , configCodeDir         = codeDir
           , configOutputFile      = Nothing
           , configOutputDir       = Nothing
           , configViaBackend      = D.ViaLLVM
@@ -157,6 +160,6 @@ getDefaultConfig
 defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigCodeBase = configLibraryPath config 
-        , builderConfigLibDir   = configLibraryPath config </> "build" }
+        { builderConfigCodeBase = configCodeDir config 
+        , builderConfigLibDir   = configCodeDir config </> "build" }
 

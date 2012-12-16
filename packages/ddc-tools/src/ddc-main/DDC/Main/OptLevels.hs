@@ -84,8 +84,8 @@ opt1_lite config _builder
  = do
         -- Auto-inline basic numeric code.
         let inlineModulePaths
-                =  [ configLibraryPath config </> "lite/base/Data/Numeric/Int.dcl"
-                   , configLibraryPath config </> "lite/base/Data/Numeric/Nat.dcl" ]
+                =  [ configCodeDir config </> "lite/base/Data/Numeric/Int.dcl"
+                   , configCodeDir config </> "lite/base/Data/Numeric/Nat.dcl" ]
                 ++ (configWithLite config)
 
         -- Load all the modules that we're using for inliner templates.
@@ -144,7 +144,7 @@ opt1_salt config builder
         -- The runtime system code comes in different versions, 
         --  depending on the pointer width of the target architecture.
         let inlineModulePaths
-                =  [ configLibraryPath config 
+                =  [ configCodeDir config 
                         </> "salt/runtime" ++ show targetWidth </> "Object.dcs"]
                 ++ configWithSalt config
 

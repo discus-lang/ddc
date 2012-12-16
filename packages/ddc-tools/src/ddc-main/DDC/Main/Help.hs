@@ -17,7 +17,7 @@ help    = unlines
         , "     -make     FILE     Compile a module into an executable file."
         , " -c, -compile  FILE     Compile a module into an object file."
         , ""
-        , "     -library  DIR      Path to the base library code (./code)"
+        , "     -codedir  DIR      Path to the base library code."
         , ""
         , "     -fvia-llvm         Compile via the LLVM backend  (default)"
         , "     -fvia-c            Compile via the C backend."
@@ -70,6 +70,7 @@ help    = unlines
         , "Debugging:"
         , "     -dump              Dump intermediate representations."
         , "     -ast      FILE     Pretty print the AST of a module."
-        , "     -print-builder     Print external builder info for this platform." ]
+        , "     -print-builder     Print external builder info for this platform."
+        , "     -print-codedir     Print directory holding the runtime and base libraries." ]
 
         

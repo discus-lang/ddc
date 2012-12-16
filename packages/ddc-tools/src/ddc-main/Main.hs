@@ -132,6 +132,10 @@ run config
          -> do  dconfig         <- getDriverConfig config
                 putStrLn $ renderIndent $ ppr (Driver.configBuilder dconfig)
 
+        -- Print where the runtime and base libraries are installed.
+        ModePrintCodeDir
+         ->     putStrLn $ configCodeDir config
+
 
 -- | Get the compile driver from the config.
 getDriverConfig :: Config -> IO Driver.Config
