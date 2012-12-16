@@ -12,13 +12,14 @@ module DDCI.Core.State
 
         , Language      (..)
         , languages
-        , defaultBuilderConfig
+        , getDefaultBuilderConfig
         , getActiveBuilder
 
         , Mode          (..)
         , adjustMode)
 where
 import DDCI.Core.Mode
+import DDC.Code.Config
 import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Build.Language
@@ -26,8 +27,9 @@ import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
-import DDC.Base.Pretty
+import DDC.Base.Pretty                          hiding ((</>))
 import Data.Typeable
+import System.FilePath
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import qualified DDC.Build.Language.Eval        as Eval
@@ -161,10 +163,12 @@ getDriverConfigOfState state
 
 
 -- | Holds platform independent builder info.
-defaultBuilderConfig :: BuilderConfig
-defaultBuilderConfig
-        = BuilderConfig
-        { builderConfigRuntime  = "code/salt" }
+getDefaultBuilderConfig :: IO BuilderConfig
+getDefaultBuilderConfig
+ = do   baseLibraryPath <- locateBaseLibrary
+        return $ BuilderConfig
+          { builderConfigCodeBase       = baseLibraryPath
+          , builderConfigLibDir         = baseLibraryPath </> "build" }
 
 
 -- | Get the active builder.
@@ -176,7 +180,8 @@ getActiveBuilder state
  = case stateBuilder state of
         Just builder          -> return builder
         Nothing         
-         -> do  mBuilder <- determineDefaultBuilder defaultBuilderConfig
+         -> do  config   <- getDefaultBuilderConfig 
+                mBuilder <- determineDefaultBuilder config
                 case mBuilder of
                  Nothing      -> error "getActiveBuilder unrecognised host platform"
                  Just builder -> return builder

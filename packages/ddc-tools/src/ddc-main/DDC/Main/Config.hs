@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 
 -- | Define the command line configuation arguments.
 module DDC.Main.Config
@@ -6,10 +7,12 @@ module DDC.Main.Config
         , D.ViaBackend (..)
         , Config       (..)
 
-        , defaultConfig
+        , getDefaultConfig
         , defaultBuilderConfig)
 where
+import DDC.Code.Config
 import DDC.Build.Builder
+import System.FilePath
 import qualified DDC.Driver.Stage               as D
 
 
@@ -115,41 +118,45 @@ data Config
 
 
 -- | Default configuation.
-defaultConfig :: Config
-defaultConfig
-        = Config
-        { configMode            = ModeNone 
+getDefaultConfig :: IO Config
+getDefaultConfig
+ = do   baseLibraryPath <- locateBaseLibrary
 
-          -- Compilation --------------
-        , configLibraryPath     = "code"
-        , configOutputFile      = Nothing
-        , configOutputDir       = Nothing
-        , configViaBackend      = D.ViaLLVM
+        return $ Config
+          { configMode            = ModeNone 
+ 
+            -- Compilation --------------
+          , configLibraryPath     = baseLibraryPath
+          , configOutputFile      = Nothing
+          , configOutputDir       = Nothing
+          , configViaBackend      = D.ViaLLVM
+ 
+            -- Optimisation -------------
+          , configOptLevelLite    = OptLevel0
+          , configOptLevelSalt    = OptLevel0
+          , configWithLite        = []
+          , configWithSalt        = []
+ 
+            -- Runtime ------------------
+          , configRuntimeHeapSize = 65536
+ 
+            -- Intermediates ------------
+          , configKeepLlvmFiles   = False
+          , configKeepSeaFiles    = False
+          , configKeepAsmFiles    = False
+ 
+            -- Transformation -----------
+          , configTrans           = Nothing
+          , configWith            = []
+ 
+            -- Debugging ----------------
+         , configDump            = False }
 
-          -- Optimisation -------------
-        , configOptLevelLite    = OptLevel0
-        , configOptLevelSalt    = OptLevel0
-        , configWithLite        = []
-        , configWithSalt        = []
 
-          -- Runtime ------------------
-        , configRuntimeHeapSize = 65536
-
-          -- Intermediates ------------
-        , configKeepLlvmFiles   = False
-        , configKeepSeaFiles    = False
-        , configKeepAsmFiles    = False
-
-          -- Transformation -----------
-        , configTrans           = Nothing
-        , configWith            = []
-
-          -- Debugging ----------------
-        , configDump            = False }
-
-
+-- | Get the builder configuation from the ddc configuration.
 defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigRuntime  = configLibraryPath config }
+        { builderConfigCodeBase = configLibraryPath config 
+        , builderConfigLibDir   = configLibraryPath config </> "build" }
 

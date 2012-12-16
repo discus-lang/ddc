@@ -9,6 +9,7 @@ ddci-core_packages = \
         packages/ddc-core-salt/DDC \
         packages/ddc-core-llvm/DDC \
         packages/ddc-build/DDC \
+        packages/ddc-code/DDC \
         packages/ddc-driver/DDC \
         packages/ddc-tools/src/ddci-core/DDCI 
 

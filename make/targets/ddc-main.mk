@@ -9,6 +9,7 @@ ddc-main_packages = \
         packages/ddc-core-salt/DDC \
         packages/ddc-core-llvm/DDC \
         packages/ddc-build/DDC \
+        packages/ddc-code/DDC \
         packages/ddc-driver/DDC \
 
 ddc-main_src_hs_all = \

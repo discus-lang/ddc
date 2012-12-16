@@ -30,7 +30,17 @@ import qualified DDC.Core.Salt.Runtime  as Runtime
 
 main
  = do   args    <- getArgs
-        config  <- parseArgs args defaultConfig
+
+        -- Get the default configuration.
+        --  This contains static information such as where the code
+        --  for the base libraries and runtime system is installed.
+        config0 <- getDefaultConfig
+
+        -- Update the static config with dynamic config read from
+        --   the command-line arguments.
+        config  <- parseArgs args config0
+
+        -- Run the main compiler.
         run config
 
 
@@ -38,7 +48,7 @@ run config
  = case configMode config of
         -- We didn't get any arguments on the command line.
         ModeNone
-         ->     putStr help
+         ->     putStrLn help
 
         -- Display the version string.
         ModeVersion
@@ -148,7 +158,6 @@ getDriverConfig config
                 , Driver.configKeepLlvmFiles            = configKeepLlvmFiles config
                 , Driver.configKeepSeaFiles             = configKeepSeaFiles  config
                 , Driver.configKeepAsmFiles             = configKeepAsmFiles  config }
-
 
 
 -- | Determine the current language based on the file extension of this path, 

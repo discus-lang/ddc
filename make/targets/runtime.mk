@@ -27,21 +27,21 @@ packages/ddc-alpha/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
 salt-runtime_dcs = \
-	$(shell find code/salt/runtime${BITS}   -name "*.dcs") \
-	$(shell find code/salt/primitive${BITS} -name "*.dcs")
+	$(shell find packages/ddc-code/salt/runtime${BITS}   -name "*.dcs") \
+	$(shell find packages/ddc-code/salt/primitive${BITS} -name "*.dcs")
 
 salt-runtime_c   = \
-        $(shell find code/c/primitive           -name "*.c")
+        $(shell find packages/ddc-code/sea/primitive           -name "*.c")
 
 salt-runtime_o   = \
         $(patsubst %.dcs,%.o,$(salt-runtime_dcs)) \
         $(patsubst %.c,%.o,$(salt-runtime_c))
 
-code/libddc-runtime.a : $(salt-runtime_o)
+packages/ddc-code/build/libddc-runtime.a : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@ar r $@ $^
 
-code/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
+packages/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
 
@@ -53,13 +53,13 @@ code/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 runtime : $(runtime_dep) \
 		packages/ddc-alpha/runtime/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),packages/ddc-alpha/runtime/libddc-runtime.$(SHARED_SUFFIX),) \
-		code/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),code/libddc-runtime.$(SHARED_SUFFIX),)
+		packages/ddc-code/build/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),packages/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX),)
 
 .PHONY  : runtime-new
 runtime-new : $(runtime_dep) \
-                code/libddc-runtime.a \
-                $(if $(SHARED_SUFFIX),code/libddc-runtime.$(SHARED_SUFFIX),)
+                packages/ddc-code/build/libddc-runtime.a \
+                $(if $(SHARED_SUFFIX),packages/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system

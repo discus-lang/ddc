@@ -16,8 +16,13 @@ import qualified DDC.Core.Salt.Platform         as Llvm
 -- | Configuration information for a builder that is not platform specific.
 data BuilderConfig
         = BuilderConfig
-        { -- | Directory that holds the runtime system libraries.
-          builderConfigRuntime  :: FilePath }
+        { -- | Directory that holds the source for the runtime system
+          --   and base library.
+          builderConfigCodeBase  :: FilePath 
+
+          -- | Directory that holds the shared objects for the runtime
+          --   system and base library.
+        , builderConfigLibDir    :: FilePath }
 
 
 -- | Actions to use to invoke external compilation tools.
@@ -167,8 +172,8 @@ builder_X8632_Darwin config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
-                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/runtime"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -185,7 +190,7 @@ builder_X8632_Darwin config
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.dylib")
+                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.dylib")
         }
 
 
@@ -214,8 +219,8 @@ builder_X8664_Darwin config
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
-                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/runtime"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -232,7 +237,7 @@ builder_X8664_Darwin config
                 $  "gcc -m64" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.dylib")
+                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.dylib")
         }
 
 
@@ -259,8 +264,8 @@ builder_X8632_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
-                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/runtime"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/primitive"
 
 
         , buildAs
@@ -278,7 +283,7 @@ builder_X8632_Linux config
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.so")
+                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.so")
         }
 
 
@@ -305,8 +310,8 @@ builder_X8664_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
-                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/runtime"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/primitive"
 
 
         , buildAs
@@ -324,7 +329,7 @@ builder_X8664_Linux config
                 $  "gcc -m64" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.so")
+                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.so")
         }
 
 
@@ -351,8 +356,8 @@ builder_PPC32_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
-                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/runtime"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -369,7 +374,7 @@ builder_PPC32_Linux config
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.so")
+                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.so")
         }
 
 
@@ -396,8 +401,8 @@ builder_X8632_Cygwin config
                 $  "gcc-4 -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigRuntime config </> "c/runtime"
-                ++ " -I"  ++ builderConfigRuntime config </> "c/primitive"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/runtime"
+                ++ " -I"  ++ builderConfigCodeBase config </> "c/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -416,7 +421,7 @@ builder_X8632_Cygwin config
                 $  "gcc-4 -m32" 
                 ++ " -o " ++ (normalise binFile)
                 ++ " "    ++ (normalise oFile)
-                ++ " "    ++ (normalise $ builderConfigRuntime config </> "libddc-runtime.a")
+                ++ " "    ++ (normalise $ builderConfigLibDir config </> "libddc-runtime.a")
         }
 
 

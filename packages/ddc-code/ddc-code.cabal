@@ -1,0 +1,34 @@
+Name:           ddc-code
+Version:        0.3.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Bug-reports:    disciple@ouroborus.net
+Synopsis:       Disciplined Disciple Compiler base libraries.
+Description:    Disciplined Disciple Compiler base libraries.
+
+data-files:
+        lite/base/Data/Container/List.dcl
+        lite/base/Data/Numeric/Int.dcl
+        lite/base/Data/Numeric/Int.dcl
+        lite/base/Math/Integer.dcl
+
+        salt/primitive/Vector.dcs
+        salt/primitive32/Int.dcs
+        salt/primitive64/Int.dcs
+        salt/runtime32/Object.dcs
+        salt/runtime64/Object.dcs
+
+        sea/primitive/Primitive.c
+        sea/primitive/Primitive.h
+        sea/runtime/Runtime.h        
+
+Library
+  Exposed-modules:
+        DDC.Code.Config

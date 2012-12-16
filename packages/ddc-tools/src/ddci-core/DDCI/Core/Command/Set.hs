@@ -107,16 +107,15 @@ cmdSet state cmd
 		return state
 
  | "builder" : name : []     <- words cmd
- = case find (\b -> builderName b == name) 
-          (builders defaultBuilderConfig) of
-        Nothing
-         -> do  putStrLn "unknown builder"
-                return state
+ = do   config  <- getDefaultBuilderConfig
+        case find (\b -> builderName b == name) (builders config) of
+         Nothing
+          -> do  putStrLn "unknown builder"
+                 return state
 
-        Just builder
-         -> do  chatStrLn state "ok"
-                return state { stateBuilder = Just builder }
-
+         Just builder
+          -> do  chatStrLn state "ok"
+                 return state { stateBuilder = Just builder }
 
  | "outputdir" : dir : []    <- words cmd
  = return $ state { stateOutputDir  = Just dir }
