@@ -1,6 +1,8 @@
 
 module DDC.Build.Platform
         ( Platform      (..)
+        , staticFileExtensionOfPlatform
+        , sharedFileExtensionOfPlatform
 
         , Arch          (..)
         , archPointerWidth
@@ -18,6 +20,7 @@ import System.Exit
 import Data.List
 
 
+-------------------------------------------------------------------------------
 -- | Describes a build or target platform.
 data Platform
         = Platform
@@ -32,6 +35,25 @@ instance Pretty Platform where
   , text "Operating System       : " <> ppr (platformOs   platform) ]
 
 
+-- | Get the file extension to use for a static library on this platform.
+staticFileExtensionOfPlatform :: Platform -> String
+staticFileExtensionOfPlatform pp
+ = case platformOs pp of
+        OsDarwin        -> "a"
+        OsLinux         -> "a"
+        OsCygwin        -> "a"
+
+
+-- | Get the file extension to use for a shared library on this platform.
+sharedFileExtensionOfPlatform :: Platform -> String
+sharedFileExtensionOfPlatform pp
+ = case platformOs pp of
+        OsDarwin        -> "dylib"
+        OsLinux         -> "so"
+        OsCygwin        -> "so"
+
+
+-------------------------------------------------------------------------------
 -- | Processor Architecture.
 data Arch
         = ArchX86_32
@@ -49,6 +71,17 @@ instance Pretty Arch where
         ArchPPC_64      -> text "PPC 64-bit"
 
 
+-- | Get the width of a pointer on the architecture, in bits.
+archPointerWidth :: Arch -> Int
+archPointerWidth arch
+ = case arch of
+        ArchX86_32      -> 32
+        ArchX86_64      -> 64
+        ArchPPC_32      -> 32
+        ArchPPC_64      -> 64
+
+
+-------------------------------------------------------------------------------
 -- | Operating System.
 data Os
         = OsDarwin
@@ -64,16 +97,7 @@ instance Pretty Os where
         OsCygwin        -> text "Cygwin"
 
 
--- | Get the width of a pointer on the architecture, in bits.
-archPointerWidth :: Arch -> Int
-archPointerWidth arch
- = case arch of
-        ArchX86_32      -> 32
-        ArchX86_64      -> 64
-        ArchPPC_32      -> 32
-        ArchPPC_64      -> 64
-
-
+-- Determinators --------------------------------------------------------------
 -- | Determine the default host platform.
 --
 --   Uses the @arch@ and @uname@ commands which must be in the current path.
