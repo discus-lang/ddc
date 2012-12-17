@@ -14,7 +14,7 @@ help    = unlines
         , "     -help              Display this help."
         , ""
         , "Configuration:"
-        , "     -codedir  DIR      Path to the runtime and base library code."
+        , "     -basedir  DIR      Path to the runtime and base library code."
         , ""
         , "Compilation:"
         , "     -make     FILE     Compile a module into an executable file."

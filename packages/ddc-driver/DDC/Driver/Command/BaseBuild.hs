@@ -65,3 +65,4 @@ cmdBaseBuild config
         liftIO $ buildLdLibShared builder objFiles sharedRuntime
 
         return ()
+

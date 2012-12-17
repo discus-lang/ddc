@@ -4,7 +4,7 @@ License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
 Maintainer:     Ben Lippmeier <benl@ouroborus.net>
-Build-Type:     Simple
+Build-Type:     Custom
 Cabal-Version:  >=1.6
 Stability:      experimental
 Category:       Compilers/Interpreters
