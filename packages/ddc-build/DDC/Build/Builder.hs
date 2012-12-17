@@ -212,9 +212,9 @@ builder_X8632_Darwin config
         , buildLdLibShared
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ [ "gcc -shared", "-o", libFile ] ++ oFiles
+                $ [ "gcc -m32 -dynamiclib -undefined dynamic_lookup"
+                  , "-o", libFile ] ++ oFiles
         }
-
 
 -- x86_64-darwin --------------------------------------------------------------
 builder_X8664_Darwin config
@@ -267,7 +267,8 @@ builder_X8664_Darwin config
         , buildLdLibShared
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ [ "gcc -shared", "-o", libFile ] ++ oFiles
+                $ [ "gcc -m64 -dynamiclib -undefined dynamic_lookup"
+                  , "-o", libFile ] ++ oFiles
         }
 
 

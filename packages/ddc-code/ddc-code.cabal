@@ -18,7 +18,7 @@ data-files:
 
         lite/base/Data/Container/List.dcl
         lite/base/Data/Numeric/Int.dcl
-        lite/base/Data/Numeric/Int.dcl
+        lite/base/Data/Numeric/Nat.dcl
         lite/base/Math/Integer.dcl
 
         salt/primitive/Vector.dcs

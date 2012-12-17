@@ -26,10 +26,14 @@ parseArgs args config
         = return 
         $ config { configMode   = ModeHelp }
 
-        | flag : file : rest <- args
+        | flag : file : rest    <- args
         , elem flag ["-make", "--make" ]
         = parseArgs rest
         $ setMode config $ ModeMake file
+
+        | "-basebuild" : rest   <- args
+        = parseArgs rest
+        $ setMode config $ ModeBaseBuild
 
         -- Compilation --------------------------
         | flag : file : rest <- args
@@ -37,9 +41,9 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeCompile file
 
-        | "-codedir" : path : rest <- args
+        | "-basedir" : path : rest <- args
         = parseArgs rest
-        $ config { configCodeDir = path }
+        $ config { configBaseDir = path }
 
         | flag         : file : rest     <- args
         , elem flag    ["-o", "-output"]
@@ -137,9 +141,9 @@ parseArgs args config
         = parseArgs rest
         $ setMode config ModePrintBuilder
 
-        | "-print-codedir" : rest <- args
+        | "-print-basedir" : rest <- args
         = parseArgs rest
-        $ setMode config ModePrintCodeDir
+        $ setMode config ModePrintBaseDir
 
         -- If we get some other argument starting with '-' then assume it's
         -- a flag we don't support.
@@ -196,7 +200,8 @@ flagOfMode mode
         ModeToSalt{}            -> Just "-to-salt"
         ModeToC{}               -> Just "-to-c"
         ModeToLLVM{}            -> Just "-to-llvm"
+        ModeBaseBuild{}         -> Just "-basebuild"
         ModePrintBuilder{}      -> Just "-print-builder"
-        ModePrintCodeDir{}      -> Just "-print-codedir"
+        ModePrintBaseDir{}      -> Just "-print-basedir"
 
 

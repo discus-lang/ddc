@@ -51,11 +51,14 @@ data Mode
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
 
+        -- | Build the base libraries and runtime.
+        | ModeBaseBuild
+
         -- | Print the builder info for this platform.
         | ModePrintBuilder
 
         -- | Print where the runtime and base libraries are intalled.
-        | ModePrintCodeDir
+        | ModePrintBaseDir
         deriving (Eq, Show)
 
 
@@ -76,7 +79,7 @@ data Config
 
           -- Compilation --------------
           -- | Directory holding the runtime and base library code.
-        , configCodeDir         :: FilePath
+        , configBaseDir         :: FilePath
 
           -- | Redirect output to this file.
         , configOutputFile      :: Maybe FilePath
@@ -123,13 +126,13 @@ data Config
 -- | Default configuation.
 getDefaultConfig :: IO Config
 getDefaultConfig
- = do   codeDir <- locateBaseLibrary
+ = do   baseDir <- locateBaseLibrary
 
         return $ Config
           { configMode            = ModeNone 
  
             -- Compilation --------------
-          , configCodeDir         = codeDir
+          , configBaseDir         = baseDir
           , configOutputFile      = Nothing
           , configOutputDir       = Nothing
           , configViaBackend      = D.ViaLLVM
@@ -160,6 +163,6 @@ getDefaultConfig
 defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigBaseSrcDir = configCodeDir config 
-        , builderConfigBaseLibDir = configCodeDir config </> "build" }
+        { builderConfigBaseSrcDir = configBaseDir config 
+        , builderConfigBaseLibDir = configBaseDir config </> "build" }
 

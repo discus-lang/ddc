@@ -37,6 +37,7 @@ Library
   
   Exposed-modules:
         DDC.Driver.Command.Ast
+        DDC.Driver.Command.BaseBuild
         DDC.Driver.Command.Check
         DDC.Driver.Command.Compile
         DDC.Driver.Command.Load

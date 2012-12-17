@@ -73,6 +73,6 @@ help    = unlines
         , "     -dump              Dump intermediate representations."
         , "     -ast      FILE     Pretty print the AST of a module."
         , "     -print-builder     Print external builder info for this platform."
-        , "     -print-codedir     Print directory holding the runtime and base libraries." ]
+        , "     -print-basedir     Print directory holding the runtime and base libraries." ]
 
         

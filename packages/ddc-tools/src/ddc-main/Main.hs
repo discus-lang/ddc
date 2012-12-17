@@ -12,6 +12,7 @@ import DDC.Driver.Command.Check
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
+import DDC.Driver.Command.BaseBuild
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
@@ -126,6 +127,10 @@ run config
                 str             <- readFile filePath
                 runError $ cmdToLlvm dconfig language (SourceFile filePath) str
 
+        -- Build the runtime and base libraries.
+        ModeBaseBuild
+         -> do  dconfig         <- getDriverConfig config
+                runError $ cmdBaseBuild dconfig
 
         -- Print the external builder info for this platform.
         ModePrintBuilder
@@ -133,8 +138,8 @@ run config
                 putStrLn $ renderIndent $ ppr (Driver.configBuilder dconfig)
 
         -- Print where the runtime and base libraries are installed.
-        ModePrintCodeDir
-         ->     putStrLn $ configCodeDir config
+        ModePrintBaseDir
+         ->     putStrLn $ configBaseDir config
 
 
 -- | Get the compile driver from the config.
