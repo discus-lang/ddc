@@ -160,6 +160,6 @@ getDefaultConfig
 defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigCodeBase = configCodeDir config 
-        , builderConfigLibDir   = configCodeDir config </> "build" }
+        { builderConfigBaseSrcDir = configCodeDir config 
+        , builderConfigBaseLibDir = configCodeDir config </> "build" }
 

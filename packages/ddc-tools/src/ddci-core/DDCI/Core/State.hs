@@ -167,8 +167,8 @@ getDefaultBuilderConfig :: IO BuilderConfig
 getDefaultBuilderConfig
  = do   baseLibraryPath <- locateBaseLibrary
         return $ BuilderConfig
-          { builderConfigCodeBase       = baseLibraryPath
-          , builderConfigLibDir         = baseLibraryPath </> "build" }
+          { builderConfigBaseSrcDir     = baseLibraryPath
+          , builderConfigBaseLibDir     = baseLibraryPath </> "build" }
 
 
 -- | Get the active builder.

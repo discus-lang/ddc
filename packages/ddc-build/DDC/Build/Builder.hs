@@ -18,43 +18,51 @@ data BuilderConfig
         = BuilderConfig
         { -- | Directory that holds the source for the runtime system
           --   and base library.
-          builderConfigCodeBase  :: FilePath 
+          builderConfigBaseSrcDir       :: FilePath 
 
           -- | Directory that holds the shared objects for the runtime
           --   system and base library.
-        , builderConfigLibDir    :: FilePath }
+        , builderConfigBaseLibDir       :: FilePath }
 
 
 -- | Actions to use to invoke external compilation tools.
 data Builder
         = Builder
         { -- | The name of this platform.
-          builderName   :: String
+          builderName           :: String
 
           -- | The platform the build is being performed on.
-        , buildHost     :: Platform
+        , buildHost             :: Platform
 
           -- | The platform we're compiling code for.
-        , buildTarget   :: Platform
+        , buildTarget           :: Platform
 
           -- | The LLVM target specification.
           --   Gives the widths of pointers and primitive numeric types.
-        , buildSpec     :: Llvm.Platform
+        , buildSpec             :: Llvm.Platform
+
+          -- | Directory that holds the source for the runtime system
+          --   and base library.
+        , buildBaseSrcDir       :: FilePath
+
+          -- | Directory that holds the shared objects for the runtime
+          --   system and base library.
+        , buildBaseLibDir       :: FilePath 
 
           -- | Invoke the C compiler
           --   to compile a .c file into a .o file.
-        , buildCC       :: FilePath -> FilePath -> IO ()
+        , buildCC               :: FilePath -> FilePath -> IO ()
 
           -- | Invoke the LLVM compiler
           --   to compile a .ll file into a .s file.
-        , buildLlc      :: FilePath -> FilePath -> IO ()
+        , buildLlc              :: FilePath -> FilePath -> IO ()
 
           -- | Invoke the system assembler
           --   to assemble a .s file into a .o file.
-        , buildAs       :: FilePath -> FilePath -> IO ()
+        , buildAs               :: FilePath -> FilePath -> IO ()
 
           -- | Link an executable.
-        , buildLdExe    :: FilePath -> FilePath -> IO () }
+        , buildLdExe            :: FilePath -> FilePath -> IO () }
 
 
 -- | The result of a build command.
@@ -150,10 +158,12 @@ determineDefaultBuilder config
 -- x86_32-darwin ----------------------------------------------------------------
 builder_X8632_Darwin config
  =      Builder 
-        { builderName   = "x86_32-darwin" 
-        , buildHost     = Platform ArchX86_32 OsDarwin
-        , buildTarget   = Platform ArchX86_32 OsDarwin
-        , buildSpec     = Llvm.platform32
+        { builderName           = "x86_32-darwin" 
+        , buildHost             = Platform ArchX86_32 OsDarwin
+        , buildTarget           = Platform ArchX86_32 OsDarwin
+        , buildSpec             = Llvm.platform32
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
 
         -- Use -disable-cfi to disable Call Frame Identification (CFI) directives
         -- because the OSX system assembler doesn't support them.
@@ -172,8 +182,8 @@ builder_X8632_Darwin config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/runtime"
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/primitive"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -190,17 +200,19 @@ builder_X8632_Darwin config
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.dylib")
+                ++ " "    ++ (builderConfigBaseLibDir config </> "libddc-runtime.dylib")
         }
 
 
 -- x86_64-darwin --------------------------------------------------------------
 builder_X8664_Darwin config
  =      Builder
-        { builderName   = "x86_64-darwin"
-        , buildHost     = Platform ArchX86_64 OsDarwin
-        , buildTarget   = Platform ArchX86_64 OsDarwin
-        , buildSpec     = Llvm.platform64
+        { builderName           = "x86_64-darwin"
+        , buildHost             = Platform ArchX86_64 OsDarwin
+        , buildTarget           = Platform ArchX86_64 OsDarwin
+        , buildSpec             = Llvm.platform64
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
 
         -- Use -disable-cfi to disable Call Frame Identification (CFI) directives
         -- because the OSX system assembler doesn't support them.
@@ -219,8 +231,8 @@ builder_X8664_Darwin config
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/runtime"
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/primitive"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -237,17 +249,19 @@ builder_X8664_Darwin config
                 $  "gcc -m64" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.dylib")
+                ++ " "    ++ (builderConfigBaseLibDir config </> "libddc-runtime.dylib")
         }
 
 
 -- x86_32-linux ---------------------------------------------------------------
 builder_X8632_Linux config
  =      Builder
-        { builderName   = "x86_32-linux"
-        , buildHost     = Platform ArchX86_32 OsLinux
-        , buildTarget   = Platform ArchX86_32 OsLinux
-        , buildSpec     = Llvm.platform32
+        { builderName           = "x86_32-linux"
+        , buildHost             = Platform ArchX86_32 OsLinux
+        , buildTarget           = Platform ArchX86_32 OsLinux
+        , buildSpec             = Llvm.platform32
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlc    
                 = \llFile sFile
@@ -264,8 +278,8 @@ builder_X8632_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/runtime"
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/primitive"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/primitive"
 
 
         , buildAs
@@ -283,17 +297,19 @@ builder_X8632_Linux config
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.so")
+                ++ " "    ++ (builderConfigBaseLibDir config </> "libddc-runtime.so")
         }
 
 
 -- x86_64-linux ---------------------------------------------------------------
 builder_X8664_Linux config
  =      Builder
-        { builderName   = "x86_64-linux"
-        , buildHost     = Platform ArchX86_64 OsLinux
-        , buildTarget   = Platform ArchX86_64 OsLinux
-        , buildSpec     = Llvm.platform64
+        { builderName           = "x86_64-linux"
+        , buildHost             = Platform ArchX86_64 OsLinux
+        , buildTarget           = Platform ArchX86_64 OsLinux
+        , buildSpec             = Llvm.platform64
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlc    
                 = \llFile sFile
@@ -310,8 +326,8 @@ builder_X8664_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m64"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/runtime"
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/primitive"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/primitive"
 
 
         , buildAs
@@ -329,17 +345,19 @@ builder_X8664_Linux config
                 $  "gcc -m64" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.so")
+                ++ " "    ++ (builderConfigBaseLibDir config </> "libddc-runtime.so")
         }
 
 
 -- ppc32-linux ---------------------------------------------------------------
 builder_PPC32_Linux config
  =      Builder
-        { builderName   = "ppc32-linux"
-        , buildHost     = Platform ArchPPC_32 OsLinux
-        , buildTarget   = Platform ArchPPC_32 OsLinux
-        , buildSpec     = Llvm.platform32
+        { builderName           = "ppc32-linux"
+        , buildHost             = Platform ArchPPC_32 OsLinux
+        , buildTarget           = Platform ArchPPC_32 OsLinux
+        , buildSpec             = Llvm.platform32
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlc    
                 = \llFile sFile
@@ -356,8 +374,8 @@ builder_PPC32_Linux config
                 $  "gcc -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/runtime"
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/primitive"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -374,17 +392,19 @@ builder_PPC32_Linux config
                 $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
-                ++ " "    ++ (builderConfigLibDir config </> "libddc-runtime.so")
+                ++ " "    ++ (builderConfigBaseLibDir config </> "libddc-runtime.so")
         }
 
 
 -- x86_32-cygwin ---------------------------------------------------------------
 builder_X8632_Cygwin config
  =      Builder
-        { builderName   = "x86_32-cygwin"
-        , buildHost     = Platform ArchX86_32 OsCygwin
-        , buildTarget   = Platform ArchX86_32 OsCygwin
-        , buildSpec     = Llvm.platform32
+        { builderName           = "x86_32-cygwin"
+        , buildHost             = Platform ArchX86_32 OsCygwin
+        , buildTarget           = Platform ArchX86_32 OsCygwin
+        , buildSpec             = Llvm.platform32
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlc    
                 = \llFile sFile
@@ -401,8 +421,8 @@ builder_X8632_Cygwin config
                 $  "gcc-4 -Werror -std=c99 -O3 -m32"
                 ++ " -c " ++ cFile
                 ++ " -o " ++ oFile
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/runtime"
-                ++ " -I"  ++ builderConfigCodeBase config </> "sea/primitive"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                ++ " -I"  ++ builderConfigBaseSrcDir config </> "sea/primitive"
 
         , buildAs
                 = \sFile oFile
@@ -421,7 +441,7 @@ builder_X8632_Cygwin config
                 $  "gcc-4 -m32" 
                 ++ " -o " ++ (normalise binFile)
                 ++ " "    ++ (normalise oFile)
-                ++ " "    ++ (normalise $ builderConfigLibDir config </> "libddc-runtime.a")
+                ++ " "    ++ (normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a")
         }
 
 
