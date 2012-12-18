@@ -118,7 +118,7 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
-                      -ipackages/ddc-code \
+		      -ipackages/ddc-code \
 		      -ipackages/ddc-tools/src/ddci-core
 
 packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
@@ -154,6 +154,11 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 %.o : %.c
 	@echo "* Compiling $<"
 	@gcc $(GCC_FLAGS) -c $< -o $@ 
+
+
+%.o : %.dcl bin/ddc
+	@echo "* Compiling $<"
+	@bin/ddc -c $<
 
 
 %.o : %.dcs bin/ddc

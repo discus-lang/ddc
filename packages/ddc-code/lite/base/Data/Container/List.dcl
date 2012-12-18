@@ -1,18 +1,20 @@
 module List
-imports {
-        addNat  :: [r1 r2 r3 : %]
-                . Nat r1 
-                -(!0 | Use r3)> Nat r2 
-                -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+imports 
+ addNat 
+  ::    [r1 r2 r3 : %].
+        Nat r1 -(!0 | Use r3)>
+        Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+        Nat r3
 
-        subNat  :: [r1 r2 r3 : %]
-                . Nat r1 
-                -(!0 | Use r3)> Nat r2 
-                -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+ subNat 
+  ::    [r1 r2 r3 : %].
+        Nat r1 -(!0 | Use r3)>
+        Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+        Nat r3
 
-        showInt   :: [r : %]. Nat# -> Ptr# r String#;
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#;
-}
+ showInt   :: [r : %]. Nat# -> Ptr# r String#
+ putStrLn  :: [r : %]. Ptr# r String# -> Void#
+
 with letrec
 
 
