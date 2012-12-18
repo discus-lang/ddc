@@ -1,0 +1,37 @@
+
+-- | Nat primitives for 32-bit machines.
+module Nat
+exports
+        boxNat    :: [r : %]. Nat#   -> Ptr# r Obj
+        unboxNAt  :: [r : %]. Ptr# r Obj -> Nat#
+        addNAt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        subNAt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        mulNAt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+
+imports 
+        allocRawSmall :: [r : %]. Tag# -> Nat# -> Ptr# r Obj
+
+with letrec
+
+boxNat [r : %] (x : Nat#) : Ptr# r Obj
+ = do   obj     = allocRawSmall [r] TAG0# 4#
+        addr    = takePtr# [r] [Obj] obj
+        write#  [Nat#] addr 4# x
+        obj
+
+
+unboxNat [r : %] (obj : Ptr# r Obj) : Nat#
+ = do   addr    = takePtr# [r] [Obj] obj
+        read#   [Nat#] addr 4#
+
+
+addNat [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = boxNat [r3] (add# [Nat#] (unboxNat [r1] x) (unboxNat [r2] y))
+
+
+subInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = boxNat [r3] (sub# [Nat#] (unboxNat [r1] x) (unboxNat [r2] y))
+
+
+mulNat [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = boxNat [r3] (mul# [Nat#] (unboxNat [r1] x) (unboxNat [r2] y))

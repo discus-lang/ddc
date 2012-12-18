@@ -31,7 +31,7 @@ hookPostInstall _args _flags desc buildInfo
                         <.> (fromPathTemplate $ progSuffix buildInfo)
 
         -- Run the basebuild command, which builds the library.
-        code            <- system $ ddcExe ++ " -basebuild"
+        code            <- system $ ddcExe ++ " -basebuild -O"
         case code of
          ExitFailure _  -> error "Failed!"
          ExitSuccess    -> return ()

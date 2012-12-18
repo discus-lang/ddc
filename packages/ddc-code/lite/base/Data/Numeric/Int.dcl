@@ -1,35 +1,33 @@
 module Int 
-exports {
+exports
+ boxInt  
+  ::    [r : %].
+        Int# -(Alloc r | Use r)>
+        Int r
 
-boxInt  ::
-    [r : %].
-    Int# -(Alloc r | Use r)>
-    Int r;
+ unboxInt 
+  ::    [r : %].
+        Int r -(Read r | $0)>
+        Int#
 
-unboxInt ::
-    [r : %].
-    Int r -(Read r | $0)>
-    Int#;
+ addInt 
+  ::    [r1 r2 r3 : %].
+        Int r1 -(!0 | Use r3)>
+        Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+        Int r3
 
-addInt ::
-    [r1 r2 r3 : %].
-    Int r1 -(!0 | Use r3)>
-    Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
-    Int r3;
+ subInt 
+  ::    [r1 r2 r3 : %].
+        Int r1 -(!0 | Use r3)>
+        Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+        Int r3
 
-subInt ::
-    [r1 r2 r3 : %].
-    Int r1 -(!0 | Use r3)>
-    Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
-    Int r3;
+ mulInt 
+  ::    [r1 r2 r3 : %].
+        Int r1 -(!0 | Use r3)>
+        Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+        Int r3
 
-mulInt ::
-    [r1 r2 r3 : %].
-    Int r1 -(!0 | Use r3)>
-    Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
-    Int r3;
-
-}
 with letrec
 
 
@@ -49,7 +47,7 @@ unboxInt [r : %]
 
 
 -- | Add two integers.
-addInt [r1 r2 r3 : %] 
+addInt  [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
@@ -59,23 +57,21 @@ addInt [r1 r2 r3 : %]
 
 
 -- | Subtract the second integer from the first.
-subInt [r1 r2 r3 : %] 
+subInt  [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
  =  case x of { I# i1 
- -> case y of { I# i2 
+ -> case y of { I# i2
  -> I# [r3] (sub# [Int#] i1 i2) } }
 
 
 -- | Multiply two integers.
-mulInt [r1 r2 r3 : %] 
+mulInt  [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
  =  case x of { I# i1 
  -> case y of { I# i2 
  -> I# [r3] (mul# [Int#] i1 i2) } }
-
-
 
