@@ -41,6 +41,11 @@ mconvAtom pp kenv tenv xx
          | C.DaConNamed n <- C.daConName dc
          , t              <- C.daConType dc
          -> case n of
+                A.NameLitBool bool  
+                 -> let i | bool        = 1
+                          | otherwise   = 0
+                    in Just $ XLit (LitInt (convertType pp kenv t) i)
+
                 A.NameLitNat  nat   -> Just $ XLit (LitInt (convertType pp kenv t) nat)
                 A.NameLitInt  val   -> Just $ XLit (LitInt (convertType pp kenv t) val)
                 A.NameLitWord val _ -> Just $ XLit (LitInt (convertType pp kenv t) val)

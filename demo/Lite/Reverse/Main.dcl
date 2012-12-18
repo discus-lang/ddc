@@ -2,14 +2,14 @@
 module Main
 exports 
  main
-  :: [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
+  ::    [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
 
 imports 
  showNat   
-  :: [r : %]. Nat# -> Ptr# r String#
+  ::    [r : %]. Nat# -> Ptr# r String#
 
  putStrLn  
-  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
+  ::    [r : %]. Ptr# r String# -(Console | $0)> Void#
  
  boxNat
   ::    [r : %].

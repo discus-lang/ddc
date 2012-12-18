@@ -482,6 +482,10 @@ convRValueM pp kenv tenv xx
         XCon _ dc
          | DaConNamed n         <- daConName dc
          -> case n of
+                NameLitBool b   
+                 | b            -> return $ integer 1
+                 | otherwise    -> return $ integer 0
+
                 NameLitNat  i   -> return $ integer i
                 NameLitInt  i   -> return $ integer i
                 NameLitWord i _ -> return $ integer i
