@@ -49,7 +49,7 @@ run config
  = case configMode config of
         -- We didn't get any arguments on the command line.
         ModeNone
-         ->     putStrLn help
+         ->     putStr hello
 
         -- Display the version string.
         ModeVersion

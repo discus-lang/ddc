@@ -77,12 +77,12 @@ parseArgs args config
 
         -- Intermediates ------------------------
         | flag : rest   <- args
-        , elem flag ["keep-ll-files", "-keep-llvm-files" ]
+        , elem flag ["-keep-ll-files", "-keep-llvm-files" ]
         = parseArgs rest
         $ config { configKeepLlvmFiles = True }
 
         | flag : rest      <- args
-        , elem flag ["-keep-c-files", "keep-sea-files" ]
+        , elem flag ["-keep-c-files",  "-keep-sea-files" ]
         = parseArgs rest
         $ config { configKeepSeaFiles = True }
 
@@ -149,7 +149,7 @@ parseArgs args config
         -- a flag we don't support.
         | arg : _               <- args
         , '-' : _               <- arg
-        = error $ "Unrecognised flag: " ++ arg
+        = error $ "Cannot parse arguments " ++ show args
 
         -- Otherwise, treat the argument as a source file to make.
         | arg : rest            <- args

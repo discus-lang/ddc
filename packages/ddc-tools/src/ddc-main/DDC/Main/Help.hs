@@ -5,6 +5,14 @@ module DDC.Main.Help where
 version :: String
 version = "The Disciplined Disciple Compiler, version 0.3.0"
 
+
+-- | What to print when we have no input files.
+hello :: String
+hello   = unlines
+        [ "ddc: no input files"
+        , "For usage information, try the -help option." ]
+
+
 -- | The command-line help page.
 help :: String
 help    = unlines
@@ -12,9 +20,7 @@ help    = unlines
         , ""
         , "General:"
         , "     -help              Display this help."
-        , ""
-        , "Configuration:"
-        , "     -basedir  DIR      Path to the runtime and base library code."
+        , "     -version           Display the version string."
         , ""
         , "Compilation:"
         , "     -make     FILE     Compile a module into an executable file."
@@ -26,7 +32,7 @@ help    = unlines
         , "     -fvia-llvm         Compile via the LLVM backend  (default)"
         , "     -fvia-c            Compile via the C backend."
         , ""
-        , "     -keep-ll-files     Keep intermediate .llvm files."
+        , "     -keep-ll-files     Keep intermediate .ll files."
         , "     -keep-c-files      Keep intermediate .c files."
         , "     -keep-s-files      Keep intermediate .s files."
         , ""
@@ -48,8 +54,11 @@ help    = unlines
         , "Debugging:"
         , "     -dump              Dump intermediate representations."
         , "     -ast      FILE     Pretty print the AST of a module."
-        , "     -print-builder     Print external builder info for this platform."
+        , ""
+        , "Configuration:"
+        , "     -basedir  DIR      Path to the runtime and base library code."
         , "     -print-basedir     Print directory holding the runtime and base libraries."
+        , "     -print-builder     Print external builder info for this platform."
         , ""
         , "Transformation:"
         , "     -load     FILE     Parse, type check and transform a module."
