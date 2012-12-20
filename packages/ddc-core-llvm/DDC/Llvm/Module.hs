@@ -22,7 +22,7 @@ import Control.Monad
 
 -- Module ---------------------------------------------------------------------
 -- | This is a top level container in LLVM.
-data Module 
+data Module
         = Module  
         { -- | Comments to include at the start of the module.
           modComments  :: [String]

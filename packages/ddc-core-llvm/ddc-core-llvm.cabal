@@ -30,10 +30,12 @@ Library
         DDC.Core.Llvm.Metadata.Tbaa
         DDC.Core.Llvm.Convert
                   
+        DDC.Llvm.Analysis.Children
         DDC.Llvm.Transform.Clean
         DDC.Llvm.Attr
         DDC.Llvm.Exp
         DDC.Llvm.Function
+        DDC.Llvm.Graph
         DDC.Llvm.Instr
         DDC.Llvm.Metadata
         DDC.Llvm.Module

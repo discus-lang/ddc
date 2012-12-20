@@ -134,9 +134,9 @@ annot kenv mdsup xs ins
        mdecls   = concat $ catMaybes $ lookups regions mdsup
        annotate' ms is 
          = case is of
-                V.ILoad{}  -> V.AnnotInstr (is, ms)
-                V.IStore{} -> V.AnnotInstr (is, ms)
-                _          -> V.AnnotInstr (is, [])              
+                V.ILoad{}  -> V.AnnotInstr is ms
+                V.IStore{} -> V.AnnotInstr is ms
+                _          -> V.AnnotInstr is []
    in  annotate' mdecls ins
 
 

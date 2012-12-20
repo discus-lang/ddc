@@ -160,7 +160,7 @@ convSuperM' pp kenv tenv bTop bsParam xx
                 , lbrace
                 ,       indent 8 $ vcat dsVal     -- Variable declarations.
                 ,       empty
-                ,       indent 8 (xBody' <> semi) -- Function body.
+                ,       indent 8 xBody' -- Function body.
                 ,       rbrace
                 , empty]
         
@@ -236,6 +236,14 @@ data Context
         deriving Show
 
 
+-- | Check whether a context is nested.
+isContextNest :: Context -> Bool
+isContextNest cc
+ = case cc of
+        ContextNest{}   -> True
+        _               -> False
+
+
 -- | Convert an expression to a block of statements.
 --
 --   If this expression defines a top-level function then the block
@@ -262,7 +270,8 @@ convBlockM context pp kenv tenv xx
          -> case takeXPrimApps xx of
                 Just (NamePrimOp p, xs)
                  |  isControlPrim p || isCallPrim p
-                 -> convPrimCallM pp kenv tenv p xs
+                 -> do  x1      <- convPrimCallM pp kenv tenv p xs
+                        return  $ x1 <> semi
 
                 _ -> throw $ ErrorBodyMustPassControl xx
 
@@ -272,7 +281,8 @@ convBlockM context pp kenv tenv xx
          | ContextNest{}         <- context
          , Just (NamePrimOp p, xs) <- takeXPrimApps xx
          , isControlPrim p || isCallPrim p
-         -> convPrimCallM pp kenv tenv p xs
+         -> do  x1      <- convPrimCallM pp kenv tenv p xs
+                return  $ x1 <> semi
 
         _ 
          -- In a nested context with a BName binder,
@@ -304,7 +314,7 @@ convBlockM context pp kenv tenv xx
                 x2'     <- convBlockM context         pp kenv tenv' x2
 
                 return  $ vcat
-                        [ x1' <> semi
+                        [ x1'
                         , x2' ]
 
         -- Binding from an r-value.
@@ -342,7 +352,7 @@ convBlockM context pp kenv tenv xx
                 return  $ vcat
                         [ text "if"
                                 <+> parens (x' <+> text "!=" <+> n')
-                                <+> xFail' <> semi
+                                <+> xFail'
                         , x1' ]
 
         -- Case-expression.
@@ -357,9 +367,9 @@ convBlockM context pp kenv tenv xx
 
                 return  $ vcat
                         [ text "if" <> parens x'
-                        , lbrace <> indent 7 x1' <> semi <> line <> rbrace
+                        , lbrace <> indent 7 x1' <> line <> rbrace
                         , text "else"
-                        , lbrace <> indent 7 x2' <> semi <> line <> rbrace ]
+                        , lbrace <> indent 7 x2' <> line <> rbrace ]
 
         -- Case-expression.
         --   In the general case we use the C-switch statement.
@@ -414,12 +424,15 @@ convAltM
         -> ConvertM a Doc
 
 convAltM context pp kenv tenv aa
- = case aa of
+ = let end 
+        | isContextNest context = line <> text "break;"
+        | otherwise             = empty
+   in case aa of
         AAlt PDefault x1 
          -> do  x1'     <- convBlockM context pp kenv tenv x1
                 return  $ vcat
                         [ text "default:" 
-                        , lbrace <> indent 5 (x1' <> semi)
+                        , lbrace <> indent 5 (x1' <> end)
                                  <> line
                                  <> rbrace]
 
@@ -429,7 +442,7 @@ convAltM context pp kenv tenv aa
          -> do  x1'     <- convBlockM context pp kenv tenv x1
                 return  $ vcat
                         [ text "case" <+> n' <> colon
-                        , lbrace <> indent 5 (x1' <> semi)
+                        , lbrace <> indent 5 (x1' <> end)
                                  <> line
                                  <> rbrace]
 

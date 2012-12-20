@@ -118,12 +118,14 @@ nat_t thing (nat_t _x)
 
         switch (_x)
         { case 3:
-          {     4;;
+          {     4;
+                break;
           }
           default:
-          {     5;;
+          {     5;
+                break;
           }
-        };
+        }
         return 5;
 }
 

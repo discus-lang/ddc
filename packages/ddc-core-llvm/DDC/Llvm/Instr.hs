@@ -1,13 +1,17 @@
 
 module DDC.Llvm.Instr
         ( module DDC.Llvm.Exp
-        , module DDC.Llvm.Type
         , module DDC.Llvm.Prim
         , module DDC.Llvm.Metadata
+        , module DDC.Llvm.Type
+
         , Label         (..)
         , Block         (..)
         , CallType      (..)
+
+        -- * Instructions
         , Instr         (..)
+        , branchTargetsOfInstr
         
         -- * Instructions annotated with metadata
         , AnnotInstr    (..)
@@ -19,78 +23,71 @@ import DDC.Llvm.Exp
 import DDC.Llvm.Metadata
 import DDC.Base.Pretty
 import Data.Sequence            (Seq)
+import Data.Set                 (Set)
 import Data.List
 import qualified Data.Foldable  as Seq
+import qualified Data.Set       as Set
 
 
 -- Label ----------------------------------------------------------------------
 -- | Block labels.
 data Label
         = Label String
-        deriving (Eq, Show)
+        deriving (Eq, Ord, Show)
 
 instance Pretty Label where
  ppr (Label str)        = text str
 
 
 -- Block ----------------------------------------------------------------------
--- | A block of LLVM code.
-data Block 
+-- | A block of LLVM code with an optional annotation.
+data Block
         = Block 
         { -- | The code label for this block
           blockLabel    :: Label
 
           -- | A list of LlvmStatement's representing the code for this block.
-          -- This list must end with a control flow statement.
+          --   This list must end with a control flow statement.
         , blockStmts    :: Seq AnnotInstr
         }
 
 
-instance Pretty Block where
+instance  Pretty Block where
  ppr (Block label instrs)
         =    ppr label <> colon
         <$$> indent 8 (vcat $ map ppr $ Seq.toList instrs)
 
 
--- CallType -------------------------------------------------------------------
--- | Different types to call a function.
-data CallType
-        -- | Normal call, allocate a new stack frame.
-        = CallTypeStd
-
-        -- | Tail call, perform the call in the current stack frame.
-        | CallTypeTail
-        deriving (Eq,Show)
-
-
-instance Pretty CallType where
- ppr ct
-  = case ct of
-        CallTypeStd     -> empty
-        CallTypeTail    -> text "tail"
-
-
--- Instr ----------------------------------------------------------------------
-data AnnotInstr = AnnotInstr (Instr, [MDecl])
-                  deriving Show
+-- AnnotInstr ----------------------------------------------------------------------
+-- | Instructions annotated with metadata.
+data AnnotInstr 
+        = AnnotInstr 
+        { annotInstr    :: Instr
+        , annotMDecl    :: [MDecl] }
+        deriving Show
                   
+
 instance Pretty AnnotInstr where
- ppr (AnnotInstr (instr, [])) = ppr instr
- ppr (AnnotInstr (instr, mds))
+ ppr (AnnotInstr instr []) = ppr instr
+ ppr (AnnotInstr instr mds)
   = let pprWithTag (MDecl ref Tbaa{}) = text "!tbaa"  <> space <> ppr ref
         pprWithTag (MDecl ref Debug)  = text "!debug" <> space <> ppr ref
     in  ppr  instr
         <>   comma <> (hcat $ replicate 4 space)
         <>   (hcat $ punctuate (comma <> space) (map pprWithTag mds))
                                         
-                                        
+
+-- | Construct an annotated instruction with no annotations.
 annotNil :: Instr -> AnnotInstr
-annotNil ins = AnnotInstr (ins, [])
+annotNil ins = AnnotInstr ins []
 
+
+-- | Annotate an instruction with some metadata.
 annotWith :: Instr -> [MDecl] -> AnnotInstr
-annotWith ins mds = AnnotInstr (ins, mds)
+annotWith ins mds = AnnotInstr ins mds
 
-                    
+
+-------------------------------------------------------------------------------                    
 -- | Instructions
 data Instr
         -- | Comment meta-instruction.
@@ -163,7 +160,7 @@ data Instr
         deriving (Show, Eq)
 
 
-
+-------------------------------------------------------------------------------
 instance Pretty Instr where
  ppr ii
   = let -- Pad binding occurrence of variable.
@@ -290,4 +287,39 @@ instance Pretty Instr where
                          , ppr name
                          , encloseSep lparen rparen (comma <> space) (map ppr xsArgs)
                          , hsep $ map ppr attrs ]
+
+
+-------------------------------------------------------------------------------
+-- | If this instruction can branch to a label then return the possible targets.
+branchTargetsOfInstr :: Instr -> Maybe (Set Label)
+branchTargetsOfInstr instr
+ = case instr of
+        IBranch l               
+         -> Just $ Set.singleton l
+
+        IBranchIf _ l1 l2
+         -> Just $ Set.fromList [l1, l2]
+
+        ISwitch _ lDef ls       
+         -> Just $ Set.fromList (lDef : map snd ls) 
+
+        _ -> Nothing
+
+
+-- CallType -------------------------------------------------------------------
+-- | Different types to call a function.
+data CallType
+        -- | Normal call, allocate a new stack frame.
+        = CallTypeStd
+
+        -- | Tail call, perform the call in the current stack frame.
+        | CallTypeTail
+        deriving (Eq,Show)
+
+
+instance Pretty CallType where
+ ppr ct
+  = case ct of
+        CallTypeStd     -> empty
+        CallTypeTail    -> text "tail"
 

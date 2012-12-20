@@ -7,6 +7,7 @@ where
 import DDC.Llvm.Module
 import DDC.Llvm.Function
 import DDC.Llvm.Instr
+import DDC.Llvm.Transform.Clean
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
@@ -25,7 +26,6 @@ import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.DaCon         as C
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Simplifier    as Simp
-import qualified DDC.Llvm.Transform.Clean as Clean
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
@@ -66,7 +66,7 @@ convertModule platform mm@(C.ModuleCore{})
 
         -- Clean out the ISet and INop meta instructions, and fixup IPhis.
         --  This gives us code that the LLVM compiler will accept directly.
-        mmClean  = Clean.clean mmRaw mmRaw
+        mmClean  = cleanModule mmRaw
 
    in   mmClean
 
@@ -651,7 +651,7 @@ convAlts (BodyNest vDst lCont)
 
 -- Alt ------------------------------------------------------------------------
 -- | Holds the result of converting an alternative.
-data AltResult 
+data AltResult
         = AltDefault        Label (Seq Block)
         | AltCase       Lit Label (Seq Block)
 
@@ -661,10 +661,10 @@ data AltResult
 --   This only works for zero-arity constructors.
 --   The client should extrac the fields of algebraic data objects manually.
 convAltM 
-        :: BodyContext
-        -> KindEnv  A.Name
-        -> TypeEnv  A.Name
-        -> MDSuper
+        :: BodyContext          -- ^ Context we're converting in.
+        -> KindEnv  A.Name      -- ^ Kind environment.
+        -> TypeEnv  A.Name      -- ^ Type environment.
+        -> MDSuper              -- ^ Meta-data for the enclosing super.
         -> C.Alt () A.Name      -- ^ Alternative to convert.
         -> LlvmM AltResult
 

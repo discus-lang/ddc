@@ -5,10 +5,11 @@
 --   part of the LLVM language itself, but it isn't.
 --
 module DDC.Llvm.Transform.Clean
-        (Clean(..))
+        (cleanModule)
 where
 import DDC.Llvm.Module
 import DDC.Llvm.Function
+import DDC.Llvm.Exp
 import DDC.Llvm.Instr           hiding (blockLabel)
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
@@ -16,25 +17,23 @@ import qualified Data.Foldable  as Seq
 import qualified Data.Sequence  as Seq
 
 
-class Clean a where
- clean     :: Module -> a -> a
- clean mm  = cleanWith mm Map.empty
-
- cleanWith :: Module -> Map Var Exp -> a -> a
-
-
-instance Clean Module where
- cleanWith _ binds mm
-  = mm  { modFuncs      
-                = map (cleanWith mm binds)
-                $ modFuncs mm }
+-- | Clean a module.
+cleanModule :: Module -> Module
+cleanModule mm
+ = let  binds           = Map.empty
+   in   mm { modFuncs   = map (cleanFunction mm binds) 
+                        $ modFuncs mm }
 
 
-instance Clean Function where
- cleanWith mm binds fun
-  = fun { funBlocks     
-                = cleanBlocks mm binds Map.empty [] 
-                $ funBlocks fun }
+-- | Clean a function.
+cleanFunction
+        :: Module
+        -> Map Var Exp          -- ^ Map of variables to their values.
+        -> Function -> Function
+
+cleanFunction mm binds fun
+ = fun { funBlocks      = cleanBlocks mm binds Map.empty [] 
+                        $ funBlocks fun }
 
 
 -- | Clean set instructions in some blocks.
@@ -68,14 +67,14 @@ cleanInstrs
         -> Map Var Exp          -- ^ Map of variables to their values.
         -> Map Var Label        -- ^ Map of variables to the label
                                 --    of the block they were defined in.
-        -> [AnnotInstr] 
+        -> [AnnotInstr]
         -> [AnnotInstr] 
         -> (Map Var Exp, Map Var Label, [AnnotInstr])
 
 cleanInstrs _mm _blockLabel binds defs acc []
         = (binds, defs, reverse acc)
 
-cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr (i,annots)) : instrs)
+cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr i annots) : instrs)
   = let next binds' defs' acc' 
                 = cleanInstrs mm blockLabel binds' defs' acc' instrs
         

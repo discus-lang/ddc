@@ -21,7 +21,7 @@ data Section
 
 -- Function -------------------------------------------------------------------
 -- | A LLVM Function
-data Function 
+data Function
         = Function 
         { -- | The signature of this declared function.
           funDecl          :: FunctionDecl
