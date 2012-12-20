@@ -64,7 +64,7 @@ rewriteModule
         -> Module a n
 
 rewriteModule rules mm
- = mm { moduleBody = result $ rewriteX rules $ moduleBody mm }
+ = mm { moduleBody = result $ rewriteX' True rules $ moduleBody mm }
 
 
 -- | Perform rewrites top-down, repeatedly.
@@ -73,19 +73,31 @@ rewriteX
         => [NamedRewriteRule a n]       -- ^ Rewrite rules database.
         -> Exp a n                      -- ^ Rewrite in this expression.
         -> TransformResult (Exp a n)
+rewriteX = rewriteX' False
 
-rewriteX rules x0
+
+-- | Repeatedly perform rewrites top-down.
+--   Usually any names bound in @letrec@s disable rules, because the
+--   new binding makes the old rule meaningless.
+--   For modules we do not want to do this, since the rules for that module
+--   are probably about the functions exported from the module.
+--   In this case, we ignore the top-level bindings when checking for rule shadowing.
+rewriteX'
+        :: (Show a, Show n, Ord n, Pretty n) 
+        => Bool                         -- ^ Ignore top-level bindings when checking for shadowing?
+        -> [NamedRewriteRule a n]       -- ^ Rewrite rules database.
+        -> Exp a n                      -- ^ Rewrite in this expression.
+        -> TransformResult (Exp a n)
+
+rewriteX' ignore_toplevel rules x0
  = {-# SCC rewriteX #-}
-   let  (x,info) = runWriter $ down RE.empty x0 
+   let  (x,info) = runWriter $ go RE.empty x0 [] ignore_toplevel
    in   TransformResult
          { result               = x
          , resultAgain          = isProgress info
          , resultProgress       = isProgress info
          , resultInfo           = TransformInfo (RewriteInfo info) }
  where
-        down env x  
-         = go env x []
-
         -- ISSUE #280:  Rewrites should be done with the most specific rule.
         --   The rewrite engine should apply the most specific rule, instead
         --   of the first one that it finds that matches. If not, then we
@@ -102,52 +114,60 @@ rewriteX rules x0
         rewrites' ((n, rule) : rs) env f args
          = case rewriteWithX rule env f args of
                 Nothing -> rewrites' rs env f args
-                Just x  -> tell [LogRewrite n] >> go env x []
+                Just x  -> tell [LogRewrite n] >> go env x [] False
+
+
+        down env x  
+         = go env x [] False
+
 
         -- Decend into the expression, looking for applications that we 
         -- might be able to apply rewrites to.
-        go env (XApp a f arg) args
+        go env (XApp a f arg) args _toplevel
          = do   arg' <- down env arg
-                go env f ((arg',a):args)
+                go env f ((arg',a):args) False
 
-        go env x@XVar{}   args 
+        go env x@XVar{}   args  _toplevel
          =      rewrites env x args
 
-        go env x@XCon{}   args 
+        go env x@XCon{}   args  _toplevel
          =      rewrites env x args
 
-        go env (XLAM a b e) args
+        go env (XLAM a b e) args _toplevel
          = do   e' <- down (RE.lift b env) e 
                 rewrites env (XLAM a b e') args
 
-        go env (XLam a b e) args
-         = do   e' <- down (RE.extend b env) e 
+        go env (XLam a b e) args _toplevel
+         = do   e' <- down (RE.extend b env) e
                 rewrites env (XLam a b e') args
 
-        go env (XLet a l@(LRec _) e) args
-         = do   let env' = RE.extendLets l env
+        go env (XLet a l@(LRec _) e) args toplevel
+         = do   -- Don't add the @letrec@'s bindings to the rule shadow list if we're at the top-level
+                let env' = if   toplevel
+                           then env
+                           else RE.extendLets l env
                 l'      <- goLets l env'
                 e'      <- down env' e 
                 rewrites env' (XLet a l' e') args
 
-        go env (XLet a l e)     args
+        go env (XLet a l e)     args _toplevel
          = do   l'      <- goLets l env
                 dh      <- goDefHoles rules a l' e env down
                 rewrites env dh args 
 
-        go env (XCase a e alts) args
+        go env (XCase a e alts) args _toplevel
          = do   e'      <- down env e
                 alts'   <- mapM (goAlts env) alts
                 rewrites env (XCase a e' alts') args
 
-        go env (XCast a c e)    args
+        go env (XCast a c e)    args _toplevel
          = do   e'      <- down env e
                 rewrites env (XCast a c e') args
 
-        go env x@(XType{})      args
+        go env x@(XType{})      args _toplevel
          =      rewrites env x args
 
-        go env x@(XWitness{})   args
+        go env x@(XWitness{})   args _toplevel
          =      rewrites env x args
 
 
