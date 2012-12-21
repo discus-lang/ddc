@@ -1,4 +1,4 @@
-
+{-# LANGUAGE GADTs #-}
 -- | A pipeline is an abstraction of a single compiler pass.
 --
 --  NOTE: The Haddock documentation on pipeline constructors is missing

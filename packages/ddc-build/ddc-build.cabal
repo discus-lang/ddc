@@ -52,7 +52,6 @@ Library
         ExistentialQuantification
         KindSignatures
         RankNTypes
-        GADTs
         DeriveDataTypeable
 
   ghc-options:
