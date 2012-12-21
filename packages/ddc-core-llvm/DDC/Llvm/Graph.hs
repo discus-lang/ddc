@@ -1,15 +1,10 @@
 
 module DDC.Llvm.Graph
-        ( module DDC.Llvm.Exp
-        , module DDC.Llvm.Type
-        , module DDC.Llvm.Prim
-        , module DDC.Llvm.Metadata
-
-        -- * Block Graphs
-        , Graph (..)
+        ( -- * Block Graphs
+          Graph (..)
         , Node  (..)
 
-        -- * Graph Utils
+          -- * Graph Utils
         , graphOfBlocks
         , blocksOfGraph
         , labelsOfGraph
@@ -18,15 +13,11 @@ module DDC.Llvm.Graph
         , mapNodesOfGraph
         , mapAnnotsOfGraph
 
-        -- * Node Utils
+          -- * Node Utils
         , blockOfNode
         , childrenOfNode)
 where
-import DDC.Llvm.Exp
-import DDC.Llvm.Type
-import DDC.Llvm.Instr
-import DDC.Llvm.Prim
-import DDC.Llvm.Metadata
+import DDC.Llvm.Syntax
 import Data.Maybe
 import Data.Map                 (Map)
 import Data.Set                 (Set)

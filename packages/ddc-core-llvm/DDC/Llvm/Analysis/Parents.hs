@@ -4,8 +4,8 @@ module DDC.Llvm.Analysis.Parents
         , annotParentsOfGraph
         , lineageOfVar)
 where
-import DDC.Llvm.Instr
 import DDC.Llvm.Graph
+import DDC.Llvm.Syntax
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map

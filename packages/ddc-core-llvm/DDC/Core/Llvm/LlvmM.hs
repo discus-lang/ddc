@@ -17,7 +17,7 @@ module DDC.Core.Llvm.LlvmM
         , getBytesOfTypeM)
 where
 import DDC.Core.Salt.Platform
-import DDC.Llvm.Instr
+import DDC.Llvm.Syntax
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import Control.Monad.State.Strict

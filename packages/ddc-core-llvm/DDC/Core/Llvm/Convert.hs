@@ -4,15 +4,13 @@ module DDC.Core.Llvm.Convert
         , convertType
         , convertSuperType)
 where
-import DDC.Llvm.Module
-import DDC.Llvm.Function
-import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
+import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Type.Env                             (KindEnv, TypeEnv)

@@ -10,8 +10,8 @@ module DDC.Core.Llvm.Metadata.Graph
        , Tree(..)
        , sources, anchor 
 
-         -- * QC Testing ONLY
-         -- * TODO: should make QC module able to access local functions instead
+         -- * Quickcheck Testing ONLY
+         -- TODO: should make QC module able to access local functions instead
        , Dom, Rel
        , fromList, toList
        , allR, differenceR, unionR, composeR, transitiveR

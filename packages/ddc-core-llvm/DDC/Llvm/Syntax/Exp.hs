@@ -1,10 +1,7 @@
 
-module DDC.Llvm.Exp
-        ( module DDC.Llvm.Type
-
-          -- * Expressions
-        , Exp   (..)
-        , pprPlainX
+module DDC.Llvm.Syntax.Exp
+        ( -- * Expressions
+          Exp   (..)
         , typeOfExp
 
           -- * Variables
@@ -17,12 +14,9 @@ module DDC.Llvm.Exp
 
           -- * Literals
         , Lit   (..)
-        , pprPlainL
         , typeOfLit)
 where
-import DDC.Llvm.Attr
-import DDC.Llvm.Type
-import DDC.Base.Pretty
+import DDC.Llvm.Syntax.Type
 
 
 -- Exp ------------------------------------------------------------------------
@@ -36,23 +30,6 @@ data Exp
         -- | An undefined value.
         | XUndef Type
         deriving (Eq, Show)  
-
-
-instance Pretty Exp where
- ppr xx
-  = case xx of
-        XVar v   -> ppr v
-        XLit l   -> ppr l
-        XUndef _ -> text "undef"
-
-
--- | Pretty print an expression without its type.
-pprPlainX :: Exp -> Doc
-pprPlainX xx
- = case xx of
-        XVar v   -> ppr $ nameOfVar v
-        XLit l   -> pprPlainL l
-        XUndef _ -> text "undef"
 
 
 -- | Take the type of an expression.
@@ -81,9 +58,6 @@ typeOfVar :: Var -> Type
 typeOfVar (Var _ t)     = t
 
 
-instance Pretty Var where
- ppr (Var n t)  = ppr t <+> ppr n
-
 instance Ord Var where
  compare (Var n1 _) (Var n2 _)
         = compare n1 n2
@@ -95,11 +69,6 @@ data Name
         = NameGlobal String
         | NameLocal  String
         deriving (Show, Eq, Ord)
-
-instance Pretty Name where
- ppr (NameGlobal str)   = text "@" <> text str
- ppr (NameLocal  str)   = text "%" <> text str
-
 
 
 -- Lit ------------------------------------------------------------------------
@@ -120,25 +89,6 @@ data Lit
         deriving (Eq, Show)
 
 
-instance Pretty Lit where
- ppr ll
-  = case ll of
-        LitInt   t i    -> ppr t <+> integer i
-        LitFloat{}      -> error "ppr[Lit]: floats aren't handled yet"
-        LitNull  _      -> text "null"
-        LitUndef _      -> text "undef"
-
-
--- | Pretty print a literal without its type.
-pprPlainL :: Lit -> Doc
-pprPlainL ll
- = case ll of
-        LitInt _ i      -> integer i
-        LitFloat{}      -> error "ppr[Lit]: floats aren't handled yet"
-        LitNull  _      -> text "null"
-        LitUndef _      -> text "undef"
-
-
 -- | Yield the `Type` of a `Lit`.
 typeOfLit :: Lit -> Type
 typeOfLit ll
@@ -147,5 +97,3 @@ typeOfLit ll
         LitFloat  t _   -> t
         LitNull   t     -> t
         LitUndef  t     -> t
-
-

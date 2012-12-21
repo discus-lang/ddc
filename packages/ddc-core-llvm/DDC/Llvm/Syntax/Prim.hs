@@ -1,14 +1,12 @@
 
-module DDC.Llvm.Prim
+module DDC.Llvm.Syntax.Prim
         ( Op    (..)
         , ICond (..)
         , FCond (..)
         , Conv  (..))
 where
-import DDC.Base.Pretty
 
 
--- BinOp -----------------------------------------------------------------------------------------
 -- | Binary arithmetic operators.
 data Op
         = OpAdd     -- ^ add two integers, floating point or vector values.
@@ -37,30 +35,6 @@ data Op
         deriving (Eq, Show)
 
 
-instance Pretty Op where
- ppr op
-  = case op of
-        OpAdd       -> text "add"
-        OpSub       -> text "sub"
-        OpMul       -> text "mul"
-        OpUDiv      -> text "udiv"
-        OpSDiv      -> text "sdiv"
-        OpURem      -> text "urem"
-        OpSRem      -> text "srem"
-        OpFAdd      -> text "fadd"
-        OpFSub      -> text "fsub"
-        OpFMul      -> text "fmul"
-        OpFDiv      -> text "fdiv"
-        OpFRem      -> text "frem"
-        OpShl       -> text "shl"
-        OpLShr      -> text "lshr"
-        OpAShr      -> text "ashr"
-        OpAnd       -> text "and"
-        OpOr        -> text "or"
-        OpXor       -> text "xor"
-
-
--- PrimICond --------------------------------------------------------------------------------------
 -- | Integer comparison.
 data ICond
         = ICondEq       -- ^ Equal (Signed and Unsigned)
@@ -75,22 +49,8 @@ data ICond
         | ICondSle      -- ^ Signed less than or equal
         deriving (Eq, Show)
 
-instance Pretty ICond where
- ppr pp
-  = case pp of
-        ICondEq         -> text "eq"
-        ICondNe         -> text "ne"
-        ICondUgt        -> text "ugt"
-        ICondUge        -> text "uge"
-        ICondUlt        -> text "ult"
-        ICondUle        -> text "ule"
-        ICondSgt        -> text "sgt"
-        ICondSge        -> text "sge"
-        ICondSlt        -> text "slt"
-        ICondSle        -> text "sle"
 
-
--- PrimFCond --------------------------------------------------------------------------------------
+-- | Floating point comparison.
 data FCond
         = FCondFalse    -- ^ Always yields false, regardless of operands.
         | FCondOeq      -- ^ Both operands are not a QNAN and op1 is equal to op2.
@@ -110,28 +70,7 @@ data FCond
         | FCondTrue     -- ^ Always yields true, regardless of operands.
         deriving (Eq, Show)
 
-instance Pretty FCond where
- ppr pp
-  = case pp of
-        FCondFalse      -> text "false"
-        FCondOeq        -> text "oeq"
-        FCondOgt        -> text "ogt"
-        FCondOge        -> text "oge"
-        FCondOlt        -> text "olt"
-        FCondOle        -> text "ole"
-        FCondOne        -> text "one"
-        FCondOrd        -> text "ord"
-        FCondUeq        -> text "ueq"
-        FCondUgt        -> text "ugt"
-        FCondUge        -> text "uge"
-        FCondUlt        -> text "ult"
-        FCondUle        -> text "ule"
-        FCondUne        -> text "une"
-        FCondUno        -> text "uno"
-        FCondTrue       -> text "true"
 
-
--- PrimConv ---------------------------------------------------------------------------------------
 -- | Conversion Operations
 data Conv
         = ConvTrunc     -- ^ Integer truncate
@@ -147,21 +86,4 @@ data Conv
         | ConvInttoptr  -- ^ Integer to Pointer
         | ConvBitcast   -- ^ Cast between types where no bit manipulation is needed
         deriving (Eq, Show)
-
-
-instance Pretty Conv where
- ppr pp
-  = case pp of
-        ConvTrunc       -> text "trunc"
-        ConvZext        -> text "zext"
-        ConvSext        -> text "sext"
-        ConvFptrunc     -> text "fptrunc"
-        ConvFpext       -> text "fpext"
-        ConvFptoui      -> text "fptoui"
-        ConvFptosi      -> text "fptosi"
-        ConvUintofp     -> text "uintofp"
-        ConvSintofp     -> text "sintofp"
-        ConvPtrtoint    -> text "ptrtoint"
-        ConvInttoptr    -> text "inttoptr"
-        ConvBitcast     -> text "bitcast"
 

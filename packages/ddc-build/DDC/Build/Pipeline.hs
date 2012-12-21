@@ -38,6 +38,7 @@ import DDC.Build.Builder
 import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import DDC.Data.Canned
+import DDC.Llvm.Pretty                          ()
 import DDC.Core.Check                           (AnTEC)
 import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Fragment              as C
@@ -50,7 +51,7 @@ import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Lite                  as Lite
-import qualified DDC.Llvm.Module                as Llvm
+import qualified DDC.Llvm.Syntax                as Llvm
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
 import Control.DeepSeq

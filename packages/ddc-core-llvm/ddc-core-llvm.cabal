@@ -31,16 +31,14 @@ Library
         DDC.Core.Llvm.Convert
                   
         DDC.Llvm.Analysis.Children
+        DDC.Llvm.Analysis.Parents
+
         DDC.Llvm.Transform.Clean
-        DDC.Llvm.Attr
-        DDC.Llvm.Exp
-        DDC.Llvm.Function
+        DDC.Llvm.Transform.LinkPhi
+
+        DDC.Llvm.Pretty
+        DDC.Llvm.Syntax
         DDC.Llvm.Graph
-        DDC.Llvm.Instr
-        DDC.Llvm.Metadata
-        DDC.Llvm.Module
-        DDC.Llvm.Prim
-        DDC.Llvm.Type
 
   Other-modules:
         DDC.Core.Llvm.Convert.Atom
@@ -48,6 +46,24 @@ Library
         DDC.Core.Llvm.Convert.Prim
         DDC.Core.Llvm.Convert.Type
         DDC.Core.Llvm.LlvmM
+
+        DDC.Llvm.Pretty.Attr
+        DDC.Llvm.Pretty.Exp
+        DDC.Llvm.Pretty.Function
+        DDC.Llvm.Pretty.Instr
+        DDC.Llvm.Pretty.Metadata
+        DDC.Llvm.Pretty.Module
+        DDC.Llvm.Pretty.Prim
+        DDC.Llvm.Pretty.Type
+
+        DDC.Llvm.Syntax.Attr
+        DDC.Llvm.Syntax.Exp
+        DDC.Llvm.Syntax.Function
+        DDC.Llvm.Syntax.Instr
+        DDC.Llvm.Syntax.Metadata
+        DDC.Llvm.Syntax.Module
+        DDC.Llvm.Syntax.Prim
+        DDC.Llvm.Syntax.Type
 
   GHC-options:
         -Werror

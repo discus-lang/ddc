@@ -10,7 +10,8 @@ import DDC.Core.Exp
 import DDC.Core.Transform.TransformX
 
 
--- | Erase type and witness arge Slurp out only the values from a list of function arguments.
+-- | Erase type and witness arge Slurp out only the values from a list of
+--   function arguments.
 eraseTypeWitArgs :: [Exp a n] -> [Exp a n]
 eraseTypeWitArgs []       = []
 eraseTypeWitArgs (x:xs)

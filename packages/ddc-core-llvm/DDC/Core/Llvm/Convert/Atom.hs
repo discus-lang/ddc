@@ -4,7 +4,7 @@ module DDC.Core.Llvm.Convert.Atom
         , takeLocalV
         , takeGlobalV)
 where
-import DDC.Llvm.Exp
+import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
 import DDC.Type.Env                     (KindEnv, TypeEnv)

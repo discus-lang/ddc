@@ -4,19 +4,20 @@ module DDC.Core.Llvm.Metadata.Tbaa
        , annot 
        , lookup, lookups )
 where
-import DDC.Llvm.Metadata
-import DDC.Core.Llvm.LlvmM
+import DDC.Llvm.Syntax.Metadata
+import DDC.Llvm.Pretty.Metadata         ()
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Collect
-import DDC.Core.Exp
-import DDC.Base.Pretty                  hiding (empty)
 import DDC.Type.Env                     (KindEnv)
+import DDC.Core.Exp
 import DDC.Core.Llvm.Metadata.Graph
+import DDC.Core.Llvm.LlvmM
+import DDC.Base.Pretty                  hiding (empty)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Llvm.Instr         as V
+import qualified DDC.Llvm.Syntax        as V
 
 import Prelude                          hiding (lookup)
 import Control.Applicative

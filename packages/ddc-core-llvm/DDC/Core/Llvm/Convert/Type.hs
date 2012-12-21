@@ -20,8 +20,8 @@ module DDC.Core.Llvm.Convert.Type
         , isIntegralT
         , isFloatingT)
 where
-import DDC.Llvm.Attr
-import DDC.Llvm.Type
+import DDC.Llvm.Syntax.Type
+import DDC.Llvm.Syntax.Attr
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Llvm.Convert.Erase

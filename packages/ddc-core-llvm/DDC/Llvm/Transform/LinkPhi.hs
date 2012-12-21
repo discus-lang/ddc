@@ -2,11 +2,9 @@
 module DDC.Llvm.Transform.LinkPhi
         (linkPhi)
 where
-import DDC.Llvm.Module
-import DDC.Llvm.Graph
-import DDC.Llvm.Function
-import DDC.Llvm.Instr
 import DDC.Llvm.Analysis.Parents
+import DDC.Llvm.Syntax
+import DDC.Llvm.Graph
 import qualified Data.Sequence  as Seq
 
 

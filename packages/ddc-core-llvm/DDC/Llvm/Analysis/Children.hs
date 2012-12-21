@@ -5,7 +5,7 @@ module DDC.Llvm.Analysis.Children
         , annotChildrenOfNode
         , childrenOfNode)
 where
-import DDC.Llvm.Instr
+import DDC.Llvm.Syntax
 import DDC.Llvm.Graph
 import Data.Set                 (Set)
 import qualified Data.Map       as Map

@@ -7,10 +7,7 @@
 module DDC.Llvm.Transform.Clean
         (clean)
 where
-import DDC.Llvm.Module
-import DDC.Llvm.Function
-import DDC.Llvm.Exp
-import DDC.Llvm.Instr           hiding (blockLabel)
+import DDC.Llvm.Syntax
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import qualified Data.Foldable  as Seq
@@ -71,12 +68,12 @@ cleanInstrs
         -> [AnnotInstr] 
         -> (Map Var Exp, Map Var Label, [AnnotInstr])
 
-cleanInstrs _mm _blockLabel binds defs acc []
+cleanInstrs _mm _label binds defs acc []
         = (binds, defs, reverse acc)
 
-cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr i annots) : instrs)
+cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
   = let next binds' defs' acc' 
-                = cleanInstrs mm blockLabel binds' defs' acc' instrs
+                = cleanInstrs mm label binds' defs' acc' instrs
         
         reAnnot i' = annotWith i' annots
 
@@ -128,7 +125,7 @@ cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr i annots) : instrs)
                                         | (x, _) <- xls 
                                         , keepPair (sub x) ]
 
-                defs'   = Map.insert v blockLabel defs
+                defs'   = Map.insert v label defs
             in  next binds defs' $ (reAnnot i') : acc
 
 
@@ -151,30 +148,30 @@ cleanInstrs mm blockLabel binds defs acc (ins@(AnnotInstr i annots) : instrs)
          -> next binds defs $ ins                                       : acc
 
         IOp    v op x1 x2
-         |  defs'        <- Map.insert v blockLabel defs
+         |  defs'        <- Map.insert v label defs
          -> next binds defs' $ (reAnnot $ IOp   v op (sub x1) (sub x2))  : acc
 
         IConv  v c x
-         |  defs'        <- Map.insert v blockLabel defs
+         |  defs'        <- Map.insert v label defs
          -> next binds defs' $ (reAnnot $ IConv v c (sub x))             : acc
 
         ILoad  v x
-         |  defs'        <- Map.insert v blockLabel defs
+         |  defs'        <- Map.insert v label defs
          -> next binds defs' $ (reAnnot $ ILoad v   (sub x))             : acc
 
         IStore x1 x2
          -> next binds defs  $ (reAnnot $ IStore    (sub x1) (sub x2))   : acc
 
         IICmp  v c x1 x2
-         |  defs'        <- Map.insert v blockLabel defs
+         |  defs'        <- Map.insert v label defs
          -> next binds defs' $ (reAnnot $ IICmp v c (sub x1) (sub x2))   : acc
 
         IFCmp  v c x1 x2
-         |  defs'        <- Map.insert v blockLabel defs
+         |  defs'        <- Map.insert v label defs
          -> next binds defs' $ (reAnnot $ IFCmp v c (sub x1) (sub x2))   : acc
 
         ICall  (Just v) ct mcc t n xs ats
-         |  defs'        <- Map.insert v blockLabel defs
+         |  defs'        <- Map.insert v label defs
          -> let NameGlobal str  = n
                 Just cc2        = lookupCallConv str mm
                 cc'             = mergeCallConvs mcc cc2

@@ -2,7 +2,7 @@
 module DDC.Core.Llvm.Convert.Prim
         (convPrimCallM)
 where
-import DDC.Llvm.Instr
+import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Metadata.Tbaa

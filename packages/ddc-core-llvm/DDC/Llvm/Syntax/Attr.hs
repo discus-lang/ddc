@@ -1,14 +1,13 @@
 
--- | Attributes for functions and parameters.
-module DDC.Llvm.Attr
-        ( FuncAttr       (..)
-        , ParamAttr      (..)
+module DDC.Llvm.Syntax.Attr
+        ( FuncAttr      (..)
+        , ParamAttr     (..)
         , CallConv      (..)
-        , Linkage       (..))
+        , Linkage       (..)
+        , CallType      (..))
 where
-import DDC.Base.Pretty
 
- 
+
 -- FuncAttr ---------------------------------------------------------------------------------------
 -- | Function attributes are set to communicate additional information about a
 --   function. Function attributes are considered to be part of the function,
@@ -95,25 +94,6 @@ data FuncAttr
         deriving (Eq, Show)
 
 
-instance Pretty FuncAttr where
- ppr attr
-  = case attr of
-        AlwaysInline    -> text "alwaysinline"
-        InlineHint      -> text "inlinehint"
-        NoInline        -> text "noinline"
-        OptSize         -> text "optsize"
-        NoReturn        -> text "noreturn"
-        NoUnwind        -> text "nounwind"
-        ReadNone        -> text "readnon"
-        ReadOnly        -> text "readonly"
-        Ssp             -> text "ssp"
-        SspReq          -> text "ssqreq"
-        NoRedZone       -> text "noredzone"
-        NoImplicitFloat -> text "noimplicitfloat"
-        Naked           -> text "naked"
-
-
-
 -- ParamAttr --------------------------------------------------------------------------------------
 -- | Parameter attributes are used to communicate additional information about
 --   the result or parameters of a function
@@ -147,19 +127,6 @@ data ParamAttr
         -- | The pointer parameter can be excised using the trampoline intrinsics.
         | Nest
         deriving (Eq, Show)
-
-
-instance Pretty ParamAttr where
- ppr attr
-  = case attr of
-        ZeroExt         -> text "zeroext"
-        SignExt         -> text "signext"
-        InReg           -> text "inreg"
-        ByVal           -> text "byval"
-        SRet            -> text "sret"
-        NoAlias         -> text "noalias"
-        NoCapture       -> text "nocapture"
-        Nest            -> text "nest"
 
 
 -- CallConvention ---------------------------------------------------------------------------------
@@ -200,16 +167,6 @@ data CallConv
         --   rather than just using CC_Ncc.
         | CC_X86_Stdcc
         deriving (Eq, Show)
-
-
-instance Pretty CallConv where
- ppr cc
-  = case cc of
-        CC_Ccc          -> text "ccc"
-        CC_Fastcc       -> text "fastcc"
-        CC_Coldcc       -> text "coldcc"
-        CC_Ncc i        -> text "cc "  <> int i
-        CC_X86_Stdcc    -> text "x86_stdcallcc"
 
 
 -- LlvmLinkageType --------------------------------------------------------------------------------
@@ -264,19 +221,14 @@ data Linkage
         deriving (Eq, Show)
 
 
-instance Pretty Linkage where
- ppr lt
-  = case lt of
-        Internal          -> text "internal"
-        LinkOnce          -> text "linkonce"
-        Weak              -> text "weak"
-        Appending         -> text "appending"
-        ExternWeak        -> text "extern_weak"
+-- CallType -------------------------------------------------------------------
+-- | Different ways to call a function.
+data CallType
+        -- | Normal call, allocate a new stack frame.
+        = CallTypeStd
 
-        -- ExternallyVisible does not have a textual representation, it is
-        -- the linkage type a function resolves to if no other is specified
-        -- in Llvm.
-        ExternallyVisible -> empty
+        -- | Tail call, perform the call in the current stack frame.
+        | CallTypeTail
+        deriving (Eq, Show)
 
-        External          -> text "external"
 
