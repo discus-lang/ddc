@@ -1,9 +1,7 @@
 
 -- | Inline `ISet` meta-instructions, drop `INop` meta-instructions,
---   fill in labels on `IPhi` instructions, and propagate calling
---   conventions from declarations to call sites. This should all be
---   part of the LLVM language itself, but it isn't.
---
+--   and propagate calling conventions from declarations to call sites.
+--   This should all be part of the LLVM language itself, but it isn't.
 module DDC.Llvm.Transform.Clean
         (clean)
 where
@@ -102,27 +100,14 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
         -- At phi nodes, drop out joins of the 'undef' value.
         --  The converter adds these in rigtht before calling 'abort',
         --  so we can never arrive from one of those blocks.
-        -- We also need to replace any 'unknown' labels with the
-        --  label of the block each variable was defined in.
         IPhi v xls
          -> let 
                 -- Don't merge undef expressions in phi nodes.
                 keepPair (XUndef _)  = False
                 keepPair _           = True
 
-                -- Lookup the lable of the block a variable was defined in.
-                getLabel x
-                 |  XVar v'      <- x
-                 ,  Just l       <- Map.lookup v' defs
-                 = l
-
-                 | otherwise    
-                 = error $ unlines
-                         [ "DDC.LLVM.Transform.Clean"
-                         , "  Can't find join label for " ++ show x ]
-
-                i'      = IPhi v [(sub x, getLabel (sub x)) 
-                                        | (x, _) <- xls 
+                i'      = IPhi v [(sub x, l) 
+                                        | (x, l) <- xls 
                                         , keepPair (sub x) ]
 
                 defs'   = Map.insert v label defs
