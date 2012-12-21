@@ -81,5 +81,6 @@ Library
         ParallelListComp
         FlexibleContexts
         ViewPatterns
+        TupleSections
 
         
