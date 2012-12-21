@@ -114,3 +114,13 @@ childrenOfNode node
         _ Seq.:> instr    
                 -> fromMaybe Set.empty
                 $  branchTargetsOfInstr $ annotInstr instr
+
+
+-- | Get a list of parents tracing back to the node that defines a given
+--   variable, or Nothing if the definition site can not be found.
+{- lineageOfVar
+        :: Graph Parent 
+        -> Label                -- Label of starting node.
+        -> Var                  -- Variable we want the definition for.
+        -> Maybe [Label]
+-}

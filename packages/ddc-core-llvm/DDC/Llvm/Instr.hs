@@ -12,6 +12,7 @@ module DDC.Llvm.Instr
         -- * Instructions
         , Instr         (..)
         , branchTargetsOfInstr
+        , defVarOfInstr
         
         -- * Instructions annotated with metadata
         , AnnotInstr    (..)
@@ -304,6 +305,29 @@ branchTargetsOfInstr instr
          -> Just $ Set.fromList (lDef : map snd ls) 
 
         _ -> Nothing
+
+
+-- | Get the LLVM variable that this instruction assigns to, 
+--   or `Nothing` if there isn't one.
+defVarOfInstr :: Instr -> Maybe Var
+defVarOfInstr instr
+ = case instr of
+        IComment{}      -> Nothing
+        ISet var _      -> Just var
+        INop            -> Nothing
+        IPhi var _      -> Just var
+        IReturn{}       -> Nothing
+        IBranch{}       -> Nothing
+        IBranchIf{}     -> Nothing
+        ISwitch{}       -> Nothing
+        IUnreachable{}  -> Nothing
+        IOp var _ _ _   -> Just var
+        IConv var _ _   -> Just var
+        ILoad var _     -> Just var
+        IStore{}        -> Nothing
+        IICmp var _ _ _ -> Just var
+        IFCmp var _ _ _ -> Just var
+        ICall mvar _ _ _ _ _ _ -> mvar
 
 
 -- CallType -------------------------------------------------------------------
