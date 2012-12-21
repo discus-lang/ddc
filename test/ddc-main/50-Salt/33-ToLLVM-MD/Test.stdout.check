@@ -31,6 +31,7 @@ l6.entry:
 !2 = metadata !{metadata !"bar_ROOT_1", null, i32 1}
 
 
+
 -- Observable optimisations: GVN
 -- Feed the output of this test to `opt -S -tbaa -basicaa -gvn -o - <test.ll>`
 --
@@ -80,6 +81,7 @@ l6.entry:
 !3 = metadata !{metadata !"x_plus_y_square_rx", metadata !2, i32 0}
 !2 = metadata !{metadata !"x_plus_y_square_ROOT_1", null, i32 1}
 
+
 -- Observable optimisations: GVN - constprop behaviour
 ok
 %s.Obj = type <{i64}>
@@ -118,6 +120,7 @@ l9.entry:
 !2 = metadata !{metadata !"nothing_ROOT_1", null, i32 1}
 !8 = metadata !{metadata !"three_x_plus_one_rx", metadata !7, i32 1}
 !7 = metadata !{metadata !"three_x_plus_one_ROOT_6", null, i32 1}
+
 
 -- Observarble optimisations: LICM
 ok
@@ -158,5 +161,6 @@ l9.default:
 !4 = metadata !{metadata !"go_rx", metadata !2, i32 0}
 !3 = metadata !{metadata !"go_ra", metadata !2, i32 0}
 !2 = metadata !{metadata !"go_ROOT_1", null, i32 1}
+
 
 

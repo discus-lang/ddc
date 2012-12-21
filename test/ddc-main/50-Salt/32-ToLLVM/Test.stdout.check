@@ -44,6 +44,7 @@ l7.entry:
 
 
 
+
 -- Get the log2 size of prim types.
 %s.Obj = type <{i64}>
 @_DDC_Runtime_heapTop = external global  i64
@@ -91,3 +92,4 @@ l14.entry:
 
 !11 = metadata !{metadata !"ptr_r", metadata !10, i32 0}
 !10 = metadata !{metadata !"ptr_ROOT_9", null, i32 1}
+

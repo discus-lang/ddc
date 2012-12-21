@@ -64,6 +64,7 @@ l15.default:
 !2 = metadata !{metadata !"addInt_ROOT_1", null, i32 1}
 
 
+
 -- None binders.
 %s.Obj = type <{i64}>
 @_DDC_Runtime_heapTop = external global  i64
@@ -95,6 +96,7 @@ l4.entry:
 
 !3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
 !2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
+
 
 
 -- Join points.
@@ -152,4 +154,5 @@ l8.alt:
 
 !3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
 !2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
+
 
