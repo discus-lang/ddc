@@ -21,6 +21,7 @@ instance Pretty Module where
   <$$> line
   <$$> empty
   <$$> (vcat    $ map ppr mdecls)
+  <$$> empty
 
 
 instance Pretty Global where
