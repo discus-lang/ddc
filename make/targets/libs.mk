@@ -22,7 +22,7 @@ packages/ddc-alpha/library/Prelude.di packages/ddc-alpha/library/Graphics.di : b
 .PHONY : cleanLibrary
 cleanLibrary :
 	@echo "* Cleaning library"
-	@find code \
+	@find packages/ddc-code/build \
 		    	-name "*.o" \
 		-o	-name "*.dep" \
 		-o	-name "*.so" \
