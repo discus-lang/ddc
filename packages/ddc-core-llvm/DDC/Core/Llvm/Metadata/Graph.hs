@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections, FlexibleInstances #-}
 -- Manipulate graphs for metadata generation
 --  WARNING: everything in here is REALLY SLOW
 --

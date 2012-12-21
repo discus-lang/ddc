@@ -24,7 +24,9 @@ GHC_LANGUAGE	:= \
 	-XNoMonomorphismRestriction \
         -XStandaloneDeriving \
         -XDeriveDataTypeable \
-        -XViewPatterns
+        -XViewPatterns \
+        -XGADTs \
+        -XTupleSections
 
 
 # -- Warnings -----------------------------------------------------------------
