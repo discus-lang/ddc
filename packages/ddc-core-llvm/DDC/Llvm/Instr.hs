@@ -13,6 +13,7 @@ module DDC.Llvm.Instr
         , Instr         (..)
         , branchTargetsOfInstr
         , defVarOfInstr
+        , defVarsOfBlock
         
         -- * Instructions annotated with metadata
         , AnnotInstr    (..)
@@ -23,11 +24,12 @@ import DDC.Llvm.Type
 import DDC.Llvm.Exp
 import DDC.Llvm.Metadata
 import DDC.Base.Pretty
-import Data.Sequence            (Seq)
 import Data.Set                 (Set)
 import Data.List
+import Data.Sequence            (Seq)
 import qualified Data.Foldable  as Seq
 import qualified Data.Set       as Set
+import Data.Maybe
 
 
 -- Label ----------------------------------------------------------------------
@@ -49,7 +51,7 @@ data Block
 
           -- | A list of LlvmStatement's representing the code for this block.
           --   This list must end with a control flow statement.
-        , blockStmts    :: Seq AnnotInstr
+        , blockInstrs   :: Seq AnnotInstr
         }
 
 
@@ -328,6 +330,14 @@ defVarOfInstr instr
         IICmp var _ _ _ -> Just var
         IFCmp var _ _ _ -> Just var
         ICall mvar _ _ _ _ _ _ -> mvar
+
+
+-- | Get the set of LLVM variables that this block defines.
+defVarsOfBlock :: Block -> Set Var
+defVarsOfBlock (Block _ instrs)
+        = Set.fromList
+        $ mapMaybe (defVarOfInstr . annotInstr)
+        $ Seq.toList instrs
 
 
 -- CallType -------------------------------------------------------------------

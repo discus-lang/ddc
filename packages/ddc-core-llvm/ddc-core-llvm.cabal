@@ -64,5 +64,6 @@ Library
         PatternGuards
         ParallelListComp
         FlexibleContexts
+        ViewPatterns
 
         

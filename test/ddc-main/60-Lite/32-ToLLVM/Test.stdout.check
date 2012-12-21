@@ -22,6 +22,9 @@ define internal fastcc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8
 l8.entry:
         %x1          = call ccc i32 @getTag (%s.Obj* %x) 
         switch i32 %x1, label %l16.default [ i32 0,label %l9.alt ]
+l16.default:
+        call ccc void @abort () 
+        unreachable
 l9.alt:
         %x2          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x) 
         %x3          = bitcast i8* %x2 to i64*
@@ -48,9 +51,6 @@ l10.alt:
         store i64 %x0, i64* %_v13.ptr,    !tbaa !4
         ret %s.Obj* %x7
 l15.default:
-        call ccc void @abort () 
-        unreachable
-l16.default:
         call ccc void @abort () 
         unreachable
 }
@@ -115,15 +115,6 @@ define internal fastcc %s.Obj* @thing(i1  %b) align 8
 {
 l4.entry:
         switch i1 %b, label %l13.alt [ i1 1,label %l8.alt ]
-l8.alt:
-        %x1          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
-        %x2          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x1) 
-        %x3          = bitcast i8* %x2 to i64*
-        %_v9.addr1   = ptrtoint i64* %x3 to i64
-        %_v10.addr2  = add i64 %_v9.addr1, 0
-        %_v11.ptr    = inttoptr i64 %_v10.addr2 to i64*
-        store i64 5, i64* %_v11.ptr,    !tbaa !3
-        br label %l6.join
 l13.alt:
         %x4          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
         %x5          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x4) 
@@ -146,6 +137,15 @@ l5.cont:
         store i64 1, i64* %_v19.ptr,    !tbaa !3
         %_v20        = call ccc %s.Obj* @addNat (%s.Obj* %x, %s.Obj* %x7) 
         ret %s.Obj* %_v20
+l8.alt:
+        %x1          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x2          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x1) 
+        %x3          = bitcast i8* %x2 to i64*
+        %_v9.addr1   = ptrtoint i64* %x3 to i64
+        %_v10.addr2  = add i64 %_v9.addr1, 0
+        %_v11.ptr    = inttoptr i64 %_v10.addr2 to i64*
+        store i64 5, i64* %_v11.ptr,    !tbaa !3
+        br label %l6.join
 }
 
 

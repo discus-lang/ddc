@@ -7,7 +7,6 @@ where
 import DDC.Llvm.Module
 import DDC.Llvm.Function
 import DDC.Llvm.Instr
-import DDC.Llvm.Transform.Clean
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
@@ -16,27 +15,29 @@ import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
-import DDC.Type.Env                     (KindEnv, TypeEnv)
+import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Type.Predicates
-import DDC.Base.Pretty                  hiding (align)
-import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Module        as C
-import qualified DDC.Core.Exp           as C
-import qualified DDC.Core.DaCon         as C
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Core.Simplifier    as Simp
-import Control.Monad.State.Strict       (evalState)
-import Control.Monad.State.Strict       (gets)
+import DDC.Base.Pretty                          hiding (align)
+import Control.Monad.State.Strict               (evalState)
+import Control.Monad.State.Strict               (gets)
 import Control.Monad
 import Data.Maybe
-import Data.Sequence                    (Seq, (<|), (|>), (><))
-import Data.Map                         (Map)
-import Data.Set                         (Set)
-import qualified Data.Map               as Map
-import qualified Data.Set               as Set
-import qualified Data.Sequence          as Seq
-import qualified Data.Foldable          as Seq
+import Data.Sequence                            (Seq, (<|), (|>), (><))
+import Data.Map                                 (Map)
+import Data.Set                                 (Set)
+import qualified DDC.Llvm.Transform.Clean       as Llvm
+import qualified DDC.Llvm.Transform.LinkPhi     as Llvm
+import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Name             as A
+import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Exp                   as C
+import qualified DDC.Core.DaCon                 as C
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Simplifier            as Simp
+import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
+import qualified Data.Sequence                  as Seq
+import qualified Data.Foldable                  as Seq
 
 
 -- Module ---------------------------------------------------------------------
@@ -64,11 +65,16 @@ convertModule platform mm@(C.ModuleCore{})
         --  cleaned out. We also need to fixup the labels in IPhi instructions.
         mmRaw    = evalState (convModuleM mmElab) state
 
-        -- Clean out the ISet and INop meta instructions, and fixup IPhis.
+        -- Inline the ISet meta instructions and drop INops.
         --  This gives us code that the LLVM compiler will accept directly.
-        mmClean  = cleanModule mmRaw
+        mmClean  = Llvm.clean   mmRaw
 
-   in   mmClean
+        -- Fixup the source labels in IPhi instructions.
+        --  The converter itself sets these to 'undef', so we need to find the 
+        --  real block label of each merged variable.
+        mmPhi    = Llvm.linkPhi mmClean
+
+   in   mmPhi
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module

@@ -5,14 +5,21 @@ module DDC.Llvm.Graph
         , module DDC.Llvm.Prim
         , module DDC.Llvm.Metadata
 
-        -- | Block Graphs
+        -- * Block Graphs
         , Graph (..)
         , Node  (..)
+
+        -- * Graph Utils
         , graphOfBlocks
         , blocksOfGraph
         , labelsOfGraph
-        , mapNodesOfGraph
+        , lookupNodeOfGraph
         , modifyNodeOfGraph
+        , mapNodesOfGraph
+        , mapAnnotsOfGraph
+
+        -- * Node Utils
+        , blockOfNode
         , childrenOfNode)
 where
 import DDC.Llvm.Exp
@@ -56,6 +63,7 @@ data Node a
         deriving Show
 
 
+-- Graph Utils ----------------------------------------------------------------
 -- | Convert a list of blocks to a block graph.
 graphOfBlocks :: a -> [Block] -> Maybe (Graph a)
 graphOfBlocks _ []      = Nothing
@@ -70,13 +78,24 @@ graphOfBlocks a blocks@(first : _)
 -- | Flatten a graph back into a list of blocks.
 blocksOfGraph :: Graph a -> [Block]
 blocksOfGraph (Graph entry nodes)
- = go [entry]
- where  go []                   = []
-        go (label : more)       
+ = go Set.empty [entry]
+ where  
+        -- The 'done' set records which nodes we've already visited. 
+        -- We need this to handle join points, where there are multiple
+        -- in-edges to the node.
+        go _ []           = []
+        go done (label : more)       
          = let  Just node = Map.lookup label nodes
                 children  = childrenOfNode node
-                more'     = Set.toList $ Set.union (Set.fromList more) children
-           in   Block label (nodeInstrs node) : go more'
+
+                -- Remember that we've already visited this node.
+                done'     = Set.insert label done
+
+                -- Add the children of this node to the set still to visit.
+                more'     = Set.toList $ (Set.union (Set.fromList more) children)
+                                         `Set.difference` done'
+
+           in   Block label (nodeInstrs node) : go done' more'
 
 
 -- | Get the set of all block labels in a graph.
@@ -85,10 +104,10 @@ labelsOfGraph graph
         = map blockLabel $ blocksOfGraph graph
 
 
--- | Apply a function to every node in the graph.
-mapNodesOfGraph :: (Node a -> Node b) -> Graph a -> Graph b
-mapNodesOfGraph f (Graph entry nodes)
-        = Graph entry $ Map.map f nodes
+-- | Lookup a node from the graph, or `Nothing` if it can't be found.
+lookupNodeOfGraph :: Graph a -> Label -> Maybe (Node a)
+lookupNodeOfGraph (Graph _ nodes) label
+        = Map.lookup label nodes
 
 
 -- | Apply a function to a single node in the graoh.
@@ -103,8 +122,27 @@ modifyNodeOfGraph label modify graph@(Graph entry nodes)
         Just node       -> Graph entry (Map.insert label (modify node) nodes)
 
 
+-- | Apply a function to every node in the graph.
+mapNodesOfGraph :: (Node a -> Node b) -> Graph a -> Graph b
+mapNodesOfGraph f (Graph entry nodes)
+        = Graph entry $ Map.map f nodes
+
+
+-- | Apply a function to every node annotation in the graph.
+mapAnnotsOfGraph :: (a -> b) -> Graph a -> Graph b
+mapAnnotsOfGraph f graph
+ = let  modifyNode (Node label nodes annot) = Node label nodes (f annot)
+   in   mapNodesOfGraph modifyNode graph
+
+
+-- Node Utils -----------------------------------------------------------------
+-- | Convert a `Node` to `Block` form, dropping any annotation.
+blockOfNode :: Node a -> Block
+blockOfNode (Node label instrs _)
+        = Block label instrs
+
+
 -- | Get the children of a node.
---   These are the blocks this node may transfer control to.
 childrenOfNode :: Node a -> Set Label
 childrenOfNode node
  = case Seq.viewr $ nodeInstrs node of
@@ -115,12 +153,3 @@ childrenOfNode node
                 -> fromMaybe Set.empty
                 $  branchTargetsOfInstr $ annotInstr instr
 
-
--- | Get a list of parents tracing back to the node that defines a given
---   variable, or Nothing if the definition site can not be found.
-{- lineageOfVar
-        :: Graph Parent 
-        -> Label                -- Label of starting node.
-        -> Var                  -- Variable we want the definition for.
-        -> Maybe [Label]
--}

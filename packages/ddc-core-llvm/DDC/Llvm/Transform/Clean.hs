@@ -5,7 +5,7 @@
 --   part of the LLVM language itself, but it isn't.
 --
 module DDC.Llvm.Transform.Clean
-        (cleanModule)
+        (clean)
 where
 import DDC.Llvm.Module
 import DDC.Llvm.Function
@@ -18,8 +18,8 @@ import qualified Data.Sequence  as Seq
 
 
 -- | Clean a module.
-cleanModule :: Module -> Module
-cleanModule mm
+clean :: Module -> Module
+clean mm
  = let  binds           = Map.empty
    in   mm { modFuncs   = map (cleanFunction mm binds) 
                         $ modFuncs mm }

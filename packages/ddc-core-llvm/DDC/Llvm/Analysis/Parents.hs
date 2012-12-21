@@ -1,13 +1,15 @@
 
 module DDC.Llvm.Analysis.Parents
         ( Parents (..)
-        , annotParentsOfGraph)
+        , annotParentsOfGraph
+        , lineageOfVar)
 where
 import DDC.Llvm.Instr
 import DDC.Llvm.Graph
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
+import Data.Maybe
 
 
 -- | The parents of a node are the other nodes that might branch
@@ -47,3 +49,33 @@ annotParentsOfGraph graph0
         zeroParents graph
          = flip mapNodesOfGraph graph
          $ \node  -> node { nodeAnnot = (nodeAnnot node, Parents Set.empty) }
+
+
+-- | Get a list of parents tracing back to the node that defines the given
+--   variable, or `Nothing` if the definition site can not be found.
+lineageOfVar
+        :: Graph Parents
+        -> Var                  -- Variable we want the definition for.
+        -> Label                -- Label of starting node.
+        -> Maybe [Label]
+
+lineageOfVar graph target start
+ = go start
+ where  go label
+         | Just node    <- lookupNodeOfGraph graph label
+         , defs         <- defVarsOfBlock $ blockOfNode node
+         = if Set.member target defs 
+            -- We found the defining node.
+            then Just [nodeLabel node]
+
+            -- We haven't found the definining node yet, 
+            -- so check the parents.
+            else let Parents parents = nodeAnnot node
+                     psLines    = map (lineageOfVar graph target)
+                                $ Set.toList parents
+                 in  case catMaybes psLines of
+                        line : _        -> Just (nodeLabel node : line)
+                        _               -> Nothing
+
+         | otherwise
+         = Nothing
