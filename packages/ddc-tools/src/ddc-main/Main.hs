@@ -29,6 +29,7 @@ import qualified DDC.Driver.Stage       as Driver
 import qualified DDC.Core.Salt.Runtime  as Runtime
 
 
+main :: IO ()
 main
  = do   args    <- getArgs
 
@@ -45,6 +46,7 @@ main
         run config
 
 
+run :: Config -> IO ()
 run config
  = case configMode config of
         -- We didn't get any arguments on the command line.
