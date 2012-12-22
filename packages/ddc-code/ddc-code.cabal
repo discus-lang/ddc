@@ -16,10 +16,11 @@ Description:    Disciplined Disciple Compiler base libraries.
 data-files:
         LICENSE
 
-        lite/base/Data/Container/List.dcl
+        lite/base/Data/Numeric/Bool.dcl
         lite/base/Data/Numeric/Int.dcl
         lite/base/Data/Numeric/Nat.dcl
         lite/base/Math/Integer.dcl
+        lite/base/Data/Container/List.dcl
 
         salt/primitive/Vector.dcs
         salt/primitive32/Int.dcs

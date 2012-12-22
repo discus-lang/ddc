@@ -16,7 +16,8 @@ import Control.Monad
 baseLiteFiles :: Builder -> [FilePath]
 baseLiteFiles builder
  = let  _bits    = show $ archPointerWidth $ platformArch $ buildTarget builder
-   in   [ "lite" </> "base" </> "Data" </> "Numeric" </> "Int.dcl"
+   in   [ "lite" </> "base" </> "Data" </> "Numeric" </> "Bool.dcl"
+        , "lite" </> "base" </> "Data" </> "Numeric" </> "Int.dcl"
         , "lite" </> "base" </> "Data" </> "Numeric" </> "Nat.dcl" ]
 
 
