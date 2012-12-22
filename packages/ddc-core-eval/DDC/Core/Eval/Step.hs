@@ -120,7 +120,9 @@ step store xx
         | Just (x1@(XVar _ (UPrim p _)), xs)  <- takeXApps xx
         , Just arity                          <- arityOfName p
         = let
-                -- TODO: we're not allowing over-applied primops
+                -- ISSUE #296: Evaluator doesn't support over-applied primops.
+                --  This would be a problem if we read a reference to a function
+                --  and then apply it directly.
                 stepArg i _acc []
                  | i == arity
                  , Just  (store', x') <- stepPrimOp p xs store

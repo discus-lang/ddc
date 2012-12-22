@@ -128,7 +128,7 @@ instance Bubble Lets where
                 (cs', xc')      = dropCasts kenv tenv a [] [b] cs x'
             in  (cs', LLet m b xc')
 
-        -- TODO: Bubble casts out of recursive lets.
+        -- ISSUE #299: Bubble casts out of recursive lets.
         LRec bxs
          -> let bs              = map fst bxs
                 tenv'           = Env.extends bs tenv

@@ -145,7 +145,8 @@ getDriverConfigOfState state
          { D.configDump                  = Set.member Dump (stateModes state)
          , D.configViaBackend            = D.ViaLLVM
 
-         -- TODO: be able to set this from command-line option
+         -- ISSUE #300: Allow the default heap size to be set when
+         --   compiling the program.
          , D.configRuntime
                 = Runtime.Config
                 { Runtime.configHeapSize = 65536 }

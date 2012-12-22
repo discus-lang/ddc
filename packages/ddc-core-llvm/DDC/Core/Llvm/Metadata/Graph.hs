@@ -1,7 +1,5 @@
 -- Manipulate graphs for metadata generation
 --  WARNING: everything in here is REALLY SLOW
---
-
 module DDC.Core.Llvm.Metadata.Graph
        ( -- * Graphs and Trees for TBAA metadata
          UG(..), DG(..)
@@ -10,13 +8,15 @@ module DDC.Core.Llvm.Metadata.Graph
        , sources, anchor 
 
          -- * Quickcheck Testing ONLY
-         -- TODO: should make QC module able to access local functions instead
        , Dom, Rel
        , fromList, toList
        , allR, differenceR, unionR, composeR, transitiveR
        , transClosure, transReduction
        , aliasMeasure, isTree 
-       , orientation, orientations, bruteforceMinOrientation, transOrientation, smallOrientation
+       , orientation, orientations
+       , bruteforceMinOrientation
+       , transOrientation
+       , smallOrientation
        , partitionings       
        , minimumCompletion )
 where
@@ -116,7 +116,10 @@ instance Show a => Eq (DG a) where
 
 
 -- | Find the transitive orientation of an undirected graph if one exists
---    TODO implement the O(n+m) algorithm
+---
+--   ISSUE #297: Taking the transitive orientation of an aliasing graph
+--    takes exponential(?) time. We should implement the O(n+m) algorithm
+--    or detect when this is taking too long and bail out.
 --
 transOrientation :: Eq a => UG a -> Maybe (DG a)
 transOrientation ug@(UG (d,_))
@@ -216,10 +219,11 @@ type Partitioning a = [SubList a]
 type SubList a      = [a]
 
 
--- | Calculate the aliasing induced by a set of trees
---      this includes aliasing within each of the trees
---      and aliasing among trees
---   TODO - come up with a more efficient to compute measure
+-- | Calculate the aliasing induced by a set of trees this includes aliasing
+--   within each of the trees and aliasing among trees.
+---
+--   ISSUE #298: Need a more efficient way to compute the
+--     aliasing measure. What is the complexity of this current version?
 --
 aliasMeasure :: Eq a => Rel a -> Partitioning a -> Int
 aliasMeasure g p

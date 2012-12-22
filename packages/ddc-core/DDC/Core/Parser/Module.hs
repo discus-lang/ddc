@@ -57,8 +57,9 @@ pModule
         -- around a unit constructor place-holder.
         let body = xLets () lts (xUnit ())
 
-        -- TODO: make having duplicate names in the imports 
-        --       or exports list a parse error, so we never build a bad map. 
+        -- ISSUE #295: Check for duplicate exported names in module parser.
+        --  The names are added to a unique map, so later ones with the same
+        --  name will replace earlier ones.
         return  $ ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = Map.empty

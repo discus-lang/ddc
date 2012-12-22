@@ -41,8 +41,7 @@ runChainIO
         -> IO ()
 
 runChainIO tmpDir mChanResult ixChain chain
- = do   uid             <- getUniqueId          -- TODO: buildbox should handle this
-                                                --       should not need process id.
+ = do   uid             <- getUniqueId
         let state       = buildStateDefault uid tmpDir
 
         runBuildWithState state

@@ -1,8 +1,5 @@
 #pragma once
 
-// TODO: This only works for 32-bit objects. 
-//       The 64-bit bit objects have a different layout.
-
 // Interface to the DDC runtime.
 //   This is imported by generated modules and defines the types and macros
 //   that those modules uses.
@@ -11,7 +8,6 @@
 //   needing to link against external code. Primops that are implemented with
 //   manifest object code should be imported separately.
 //   
-
 #include <stdint.h>
 #include <stdlib.h>
 
