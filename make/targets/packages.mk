@@ -31,3 +31,13 @@ packages-unregister :
 	for package in ${PACKAGES}; do \
 		ghc-pkg unregister $${package} --force; \
 	done;
+
+
+# Make source distributions for all the Cabal packages.
+.PHONY : packages-sdist
+packages-sdist : 
+	for package in ${PACKAGES}; do \
+		cd packages/$${package}; \
+		 cabal sdist; \
+		cd ../..; \
+	done;
