@@ -60,6 +60,7 @@ Executable ddc
     Other-modules:
         DDC.Main.Args
         DDC.Main.Config
+        DDC.Main.Help
         DDC.Main.OptLevels
 
     Extensions:
