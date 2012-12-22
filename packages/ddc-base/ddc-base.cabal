@@ -1,5 +1,5 @@
 Name:           ddc-base
-Version:        0.3.0.0
+Version:        0.3.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -10,7 +10,7 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core language common utilities.    
+Synopsis:       Disciplined Disciple Compiler common utilities.    
 Description:
         This package re-exports the main external dependencies of 
         the Disciplined Disciple Compiler project, and provides some

@@ -1,5 +1,5 @@
 Name:           ddc-core-eval
-Version:        0.3.0.0
+Version:        0.3.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -10,7 +10,7 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core language semantic evaluator.
+Synopsis:       Disciplined Disciple Compiler semantic evaluator for the core language.
 Description:
         This is a direct implementation of the operational semantics and is by no
         means fast, or a substitute for a real interpreter. Programs run with this
@@ -26,8 +26,8 @@ Library
         array           == 0.4.*,
         transformers    == 0.3.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.0.*,
-        ddc-core        == 0.3.0.*
+        ddc-base        == 0.3.1.*,
+        ddc-core        == 0.3.1.*
 
   Exposed-modules:
         DDC.Core.Eval.Check

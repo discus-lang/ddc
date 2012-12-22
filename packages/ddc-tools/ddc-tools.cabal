@@ -1,5 +1,5 @@
 Name:           ddc-tools
-Version:        0.3.0.0
+Version:        0.3.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciplined Disciple Compiler command-line tools.
-Description:    Disciplined Disciple Compiler command-line tools.
+Synopsis:       Disciplined Disciple Compiler command line tools.
+Description:    Disciplined Disciple Compiler command line tools.
 
 Executable ddc-check
     hs-source-dirs:
@@ -19,7 +19,7 @@ Executable ddc-check
 
     Build-depends:
         base            == 4.6.*,
-        ddc-core        == 0.3.0.*
+        ddc-core        == 0.3.1.*
 
     Main-is:
         Main.hs
@@ -40,19 +40,19 @@ Executable ddc
         process         == 1.1.*,
         filepath        == 1.3.*,
         haskeline       == 0.7.*,
-        haskell-src-exts== 1.*,
+        haskell-src-exts== 1.13.*,
         directory       == 1.2.*,
         mtl             == 2.1.*,
         transformers    == 0.3.*,
-        ddc-base        == 0.3.0.*,
-        ddc-core        == 0.3.0.*,
-        ddc-core-eval   == 0.3.0.*,
-        ddc-core-simpl  == 0.3.0.*,
-        ddc-core-salt   == 0.3.0.*,
-        ddc-core-llvm   == 0.3.0.*,
-        ddc-build       == 0.3.0.*,
-        ddc-driver      == 0.3.0.*,
-        ddc-code        == 0.3.0.*
+        ddc-base        == 0.3.1.*,
+        ddc-core        == 0.3.1.*,
+        ddc-core-eval   == 0.3.1.*,
+        ddc-core-simpl  == 0.3.1.*,
+        ddc-core-salt   == 0.3.1.*,
+        ddc-core-llvm   == 0.3.1.*,
+        ddc-build       == 0.3.1.*,
+        ddc-driver      == 0.3.1.*,
+        ddc-code        == 0.3.1.*
 
     Main-is:
         Main.hs
@@ -78,14 +78,14 @@ Executable ddci-core
         haskell-src-exts== 1.*,
         directory       == 1.2.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.0.*,
-        ddc-core        == 0.3.0.*,
-        ddc-core-eval   == 0.3.0.*,
-        ddc-core-simpl  == 0.3.0.*,
-        ddc-core-salt   == 0.3.0.*,
-        ddc-core-llvm   == 0.3.0.*,
-        ddc-build       == 0.3.0.*,
-        ddc-driver      == 0.3.0.*
+        ddc-base        == 0.3.1.*,
+        ddc-core        == 0.3.1.*,
+        ddc-core-eval   == 0.3.1.*,
+        ddc-core-simpl  == 0.3.1.*,
+        ddc-core-salt   == 0.3.1.*,
+        ddc-core-llvm   == 0.3.1.*,
+        ddc-build       == 0.3.1.*,
+        ddc-driver      == 0.3.1.*
 
     Main-is:
         Main.hs

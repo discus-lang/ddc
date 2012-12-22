@@ -1,5 +1,5 @@
 Name:           ddc-build
-Version:        0.3.0.0
+Version:        0.3.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core build framework.
-Description:    Disciple Core build framework.
+Synopsis:       Disciplined Disciple Compiler build framework.
+Description:    Disciplined Disciple Compiler build framework.
 
 Library
   Build-depends:
@@ -22,12 +22,12 @@ Library
         directory       == 1.2.*,
         process         == 1.1.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.0.*,
-        ddc-core        == 0.3.0.*,
-        ddc-core-eval   == 0.3.0.*,
-        ddc-core-simpl  == 0.3.0.*,
-        ddc-core-salt   == 0.3.0.*,
-        ddc-core-llvm   == 0.3.0.*
+        ddc-base        == 0.3.1.*,
+        ddc-core        == 0.3.1.*,
+        ddc-core-eval   == 0.3.1.*,
+        ddc-core-simpl  == 0.3.1.*,
+        ddc-core-salt   == 0.3.1.*,
+        ddc-core-llvm   == 0.3.1.*
   
   Exposed-modules:
         DDC.Build.Language.Eval

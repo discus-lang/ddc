@@ -1,5 +1,5 @@
 Name:           ddc-core
-Version:        0.3.0.0
+Version:        0.3.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -10,7 +10,7 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core language and type checker.
+Synopsis:       Disciplined Disciple Compiler core language and type checker.
 Description:    
         Disciple Core is an explicitly typed language based on System-F2, intended
         as an intermediate representation for a compiler. In addition to the polymorphism of 
@@ -31,7 +31,7 @@ Library
         directory       == 1.2.*,
         transformers    == 0.3.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.0.*
+        ddc-base        == 0.3.1.*
 
   Exposed-modules:
         DDC.Core.Lexer.Names

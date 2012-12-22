@@ -1,5 +1,5 @@
 Name:           ddc-core-salt
-Version:        0.3.0.0
+Version:        0.3.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core translation to C-like intermediate representations.
-Description:    Disciple Core translation to C-like intermediate representations.
+Synopsis:       Disciplined Disciple Compiler C code generator.
+Description:    Disciplined Disciple Compiler C code generator.
 
 Library
   Build-Depends: 
@@ -21,8 +21,8 @@ Library
         array           == 0.4.*,
         transformers    == 0.3.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.0.*,
-        ddc-core        == 0.3.0.*
+        ddc-base        == 0.3.1.*,
+        ddc-core        == 0.3.1.*
 
   Exposed-modules:
         DDC.Core.Salt.Transfer
