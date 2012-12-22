@@ -292,7 +292,7 @@ builder_X8632_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"           [(2, BuilderCanceled)]
-                [ "gcc -Werror -std=c99 -O3 -m32"
+                [ "gcc -Werror -std=c99 -O3 -m32 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
                 , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
@@ -346,7 +346,7 @@ builder_X8664_Linux config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"           [(2, BuilderCanceled)]
-                [ "gcc -Werror -std=c99 -O3 -m64"
+                [ "gcc -Werror -std=c99 -O3 -m64 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
                 , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
