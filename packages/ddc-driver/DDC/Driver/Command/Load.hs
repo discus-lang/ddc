@@ -1,6 +1,7 @@
 
 module DDC.Driver.Command.Load
         ( cmdReadModule
+        , cmdReadModule'
         , cmdLoadFromFile
         , cmdLoadFromString)
 where
@@ -30,8 +31,17 @@ cmdReadModule
         => Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC () n) n))
+cmdReadModule = cmdReadModule' True
 
-cmdReadModule frag filePath
+
+cmdReadModule'
+        :: (Ord n, Show n, Pretty n, NFData n)
+        => Bool                 -- ^ If true, print errors out
+        -> Fragment n err       -- ^ Language fragment.
+        -> FilePath             -- ^ Path to the module.
+        -> IO (Maybe (Module (AnTEC () n) n))
+
+cmdReadModule' printErrors frag filePath
  = do
         -- Read in the source file.
         exists  <- doesFileExist filePath
@@ -41,10 +51,10 @@ cmdReadModule frag filePath
         src     <- readFile filePath
         let source   = SourceFile filePath
 
-        cmdReadModule_parse filePath frag source src
+        cmdReadModule_parse printErrors filePath frag source src
 
 
-cmdReadModule_parse filePath frag source src
+cmdReadModule_parse printErrors filePath frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore frag
@@ -56,8 +66,9 @@ cmdReadModule_parse filePath frag source src
                 readIORef ref
 
          _ -> do
-                putStrLn $ "When reading " ++ filePath
-                mapM_ (hPutStrLn stderr . renderIndent . ppr) errs
+                when printErrors
+                 $ do putStrLn $ "When reading " ++ filePath
+                      mapM_ (hPutStrLn stderr . renderIndent . ppr) errs
                 return Nothing
 
 

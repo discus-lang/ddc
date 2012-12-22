@@ -211,7 +211,7 @@ loadLiteRules
 loadLiteRules (Just filePath)
  | isSuffixOf ".dcl" filePath
  = do -- Parse module to get exported fn types
-      modu     <- cmdReadModule Lite.fragment filePath
+      modu     <- cmdReadModule' False Lite.fragment filePath
       case modu of
        Just mod' -> cmdTryReadRules Lite.fragment (filePath ++ ".rules")
                                     (reannotate (const ()) mod')
@@ -231,7 +231,7 @@ loadSaltRules
 loadSaltRules builder runtimeConfig (Just filePath)
  -- If the main module is a lite module, we need to load the lite then convert it to salt
  | isSuffixOf ".dcl" filePath
- = do modu     <- cmdReadModule Lite.fragment filePath
+ = do modu     <- cmdReadModule' False Lite.fragment filePath
       let path' = (reverse $ drop 3 $ reverse filePath) ++ "dcs.rules"
       case modu of
        Just mod' ->
@@ -248,7 +248,7 @@ loadSaltRules builder runtimeConfig (Just filePath)
        Nothing   -> return []
 
  | isSuffixOf ".dcs" filePath
- = do modu      <- cmdReadModule Salt.fragment filePath
+ = do modu      <- cmdReadModule' False Salt.fragment filePath
       case modu of
        Just mod' -> cmdTryReadRules Salt.fragment (filePath ++ ".rules") (reannotate (const ()) mod')
        Nothing   -> return []
