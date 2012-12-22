@@ -9,7 +9,6 @@ Cabal-Version:  >=1.6
 Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
-Bug-reports:    disciple@ouroborus.net
 Synopsis:       Disciplined Disciple Compiler core language and type checker.
 Description:    
         Disciple Core is an explicitly typed language based on System-F2, intended
