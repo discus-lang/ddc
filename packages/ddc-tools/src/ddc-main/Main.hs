@@ -86,13 +86,13 @@ run config
 
         -- Compile a module to object code.
         ModeCompile filePath
-         -> do  dconfig  <- getDriverConfig config
+         -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdCompile dconfig filePath
 
 
         -- Compile a module into an executable.
         ModeMake filePath
-         -> do  dconfig  <- getDriverConfig config
+         -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdMake    dconfig filePath
 
 
@@ -109,7 +109,7 @@ run config
         -- Convert a module to Salt.
         ModeToSalt filePath
          -> do  language        <- languageFromFilePath filePath
-                dconfig         <- getDriverConfig config
+                dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdToSalt dconfig language (SourceFile filePath) str
 
@@ -117,7 +117,7 @@ run config
         -- Convert a module to C
         ModeToC filePath
          -> do  language        <- languageFromFilePath filePath
-                dconfig         <- getDriverConfig config
+                dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdToC dconfig language (SourceFile filePath) str
 
@@ -125,18 +125,18 @@ run config
         -- Convert a module to LLVM
         ModeToLLVM filePath
          -> do  language        <- languageFromFilePath filePath
-                dconfig         <- getDriverConfig config
+                dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdToLlvm dconfig language (SourceFile filePath) str
 
         -- Build the runtime and base libraries.
         ModeBaseBuild
-         -> do  dconfig         <- getDriverConfig config
+         -> do  dconfig         <- getDriverConfig config Nothing
                 runError $ cmdBaseBuild dconfig
 
         -- Print the external builder info for this platform.
         ModePrintBuilder
-         -> do  dconfig         <- getDriverConfig config
+         -> do  dconfig         <- getDriverConfig config Nothing
                 putStrLn $ renderIndent $ ppr (Driver.configBuilder dconfig)
 
         -- Print where the runtime and base libraries are installed.
@@ -145,11 +145,15 @@ run config
 
 
 -- | Get the compile driver from the config.
-getDriverConfig :: Config -> IO Driver.Config
-getDriverConfig config
+getDriverConfig :: Config -> Maybe FilePath -> IO Driver.Config
+getDriverConfig config filePath
  = do   Just builder    <- determineDefaultBuilder (defaultBuilderConfig config)
-        simplLite       <- getSimplLiteOfConfig config builder
-        simplSalt       <- getSimplSaltOfConfig config builder
+        let runtimeConfig
+             = Runtime.Config
+             { Runtime.configHeapSize = configRuntimeHeapSize config }
+
+        simplLite       <- getSimplLiteOfConfig config builder               filePath
+        simplSalt       <- getSimplSaltOfConfig config builder runtimeConfig filePath
 
         return  $ Driver.Config
                 { Driver.configDump                     = configDump config
@@ -157,10 +161,7 @@ getDriverConfig config
                 , Driver.configSimplSalt                = simplSalt
                 , Driver.configViaBackend               = configViaBackend config
 
-                , Driver.configRuntime               
-                        = Runtime.Config
-                        { Runtime.configHeapSize        = configRuntimeHeapSize config }
-
+                , Driver.configRuntime                  = runtimeConfig
                 , Driver.configBuilder                  = builder
                 , Driver.configSuppressCoreImports      = False
                 , Driver.configSuppressHashImports      = False

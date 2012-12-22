@@ -16,12 +16,15 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
 import Control.Monad
+import Data.List
 import Data.Monoid
 import Data.Maybe
+import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt                  as Salt
+import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified Data.Map                       as Map
@@ -37,24 +40,27 @@ import qualified Data.Set                       as Set
 --
 getSimplLiteOfConfig 
         :: Config -> Builder 
+        -> Maybe FilePath -- ^ path of current module
         -> IO (Simplifier Int () Lite.Name)
 
-getSimplLiteOfConfig config builder
+getSimplLiteOfConfig config builder filePath
  = case configOptLevelLite config of
         OptLevel0       -> opt0_lite config
-        OptLevel1       -> opt1_lite config builder
+        OptLevel1       -> opt1_lite config builder filePath
 
 
 -- | Get the simplifier for Salt code from the config.
 --
 getSimplSaltOfConfig 
         :: Config -> Builder
+        -> Salt.Config
+        -> Maybe FilePath -- ^ path of current module
         -> IO (Simplifier Int () Salt.Name)
 
-getSimplSaltOfConfig config builder
+getSimplSaltOfConfig config builder runtimeConfig filePath
  = case configOptLevelSalt config of
         OptLevel0       -> opt0_salt config
-        OptLevel1       -> opt1_salt config builder
+        OptLevel1       -> opt1_salt config builder runtimeConfig filePath
 
 
 -- Level 0 --------------------------------------------------------------------
@@ -78,9 +84,10 @@ opt0_salt _
 -- | Level 1 optimiser for Core Lite code.
 opt1_lite 
         :: Config -> Builder
+        -> Maybe FilePath -- ^ path of current module
         -> IO (Simplifier Int () Lite.Name)
 
-opt1_lite config _builder
+opt1_lite config _builder filePath
  = do
         -- Auto-inline basic numeric code.
         let inlineModulePaths
@@ -110,7 +117,10 @@ opt1_lite config _builder
         rules <- mapM (\(m,file) -> cmdTryReadRules Lite.fragment (file ++ ".rules") m)
               $  inlineModules `zip` inlineModulePaths
 
-        let rules' = concat rules
+        -- Load rules for target module as well
+        modrules <- loadLiteRules filePath
+
+        let rules' = concat rules ++ modrules
 
         -- Simplifier to convert to a-normal form.
         let normalizeLite
@@ -132,9 +142,11 @@ opt1_lite config _builder
 -- | Level 1 optimiser for Core Salt code.
 opt1_salt 
         :: Config -> Builder
+        -> Salt.Config
+        -> Maybe FilePath -- ^ path of current module
         -> IO (Simplifier Int () Salt.Name)
 
-opt1_salt config builder
+opt1_salt config builder runtimeConfig filePath
  = do   
         -- Auto-inline the low-level code from the runtime system
         --   that constructs and destructs objects.
@@ -168,7 +180,11 @@ opt1_salt config builder
         -- Optionally load the rewrite rules for each 'with' module
         rules <- mapM (\(m,file) -> cmdTryReadRules Salt.fragment (file ++ ".rules") m)
               $  inlineModules `zip` inlineModulePaths
-        let rules' = concat rules
+
+        -- Load rules for target module as well
+        modrules <- loadSaltRules builder runtimeConfig filePath
+
+        let rules' = concat rules ++ modrules
 
 
         -- Simplifier to convert to a-normal form.
@@ -185,4 +201,59 @@ opt1_salt config builder
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeSalt <> S.forward
                                 <> (S.Trans $ S.Rewrite rules'))
+
+
+-- | Load rules for main module
+loadLiteRules
+    :: Maybe FilePath
+    -> IO (S.NamedRewriteRules () Lite.Name)
+
+loadLiteRules (Just filePath)
+ | isSuffixOf ".dcl" filePath
+ = do -- Parse module to get exported fn types
+      modu     <- cmdReadModule Lite.fragment filePath
+      case modu of
+       Just mod' -> cmdTryReadRules Lite.fragment (filePath ++ ".rules")
+                                    (reannotate (const ()) mod')
+       Nothing   -> return []
+
+loadLiteRules _
+ = return []
+
+
+-- | Load rules for main module
+loadSaltRules
+    :: Builder
+    -> Salt.Config
+    -> Maybe FilePath
+    -> IO (S.NamedRewriteRules () Salt.Name)
+
+loadSaltRules builder runtimeConfig (Just filePath)
+ -- If the main module is a lite module, we need to load the lite then convert it to salt
+ | isSuffixOf ".dcl" filePath
+ = do modu     <- cmdReadModule Lite.fragment filePath
+      let path' = (reverse $ drop 3 $ reverse filePath) ++ "dcs.rules"
+      case modu of
+       Just mod' ->
+        case Lite.saltOfLiteModule (buildSpec builder) 
+                    runtimeConfig
+                    (C.profilePrimDataDefs Lite.profile) 
+                    (C.profilePrimKinds    Lite.profile)
+                    (C.profilePrimTypes    Lite.profile)
+                    mod' 
+         of  Left  _    -> return []
+             Right mm'  -> cmdTryReadRules Salt.fragment path'
+                                           (reannotate (const ()) mm')
+
+       Nothing   -> return []
+
+ | isSuffixOf ".dcs" filePath
+ = do modu      <- cmdReadModule Salt.fragment filePath
+      case modu of
+       Just mod' -> cmdTryReadRules Salt.fragment (filePath ++ ".rules") (reannotate (const ()) mod')
+       Nothing   -> return []
+
+loadSaltRules _ _ _
+ = return []
+
 
