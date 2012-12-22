@@ -3,7 +3,7 @@ module DDC.Main.Help where
 
 -- | The version identifier string.
 version :: String
-version = "The Disciplined Disciple Compiler, version 0.3.0"
+version = "The Disciplined Disciple Compiler, version 0.3.1"
 
 
 -- | What to print when we have no input files.
