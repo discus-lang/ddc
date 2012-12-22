@@ -146,8 +146,8 @@ minOrientation ug = fromMaybe (bruteforceMinOrientation ug) (transOrientation ug
 
 bruteforceMinOrientation :: (Show a, Eq a) => UG a -> DG a
 bruteforceMinOrientation ug@(UG (d, _))
-  = let minTransClo = head $ sortBy (comparing $ transCloSize d)
-                           $ orientations ug
+  = let minTransClo : _ = sortBy (comparing $ transCloSize d)
+                        $ orientations ug
      in DG (d, minTransClo)
 
 

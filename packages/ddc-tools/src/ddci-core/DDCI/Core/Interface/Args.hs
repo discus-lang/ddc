@@ -5,6 +5,7 @@ where
 import DDCI.Core.Command.Help
 import DDCI.Core.Command
 import DDCI.Core.State
+import DDC.Data.ListUtils
 import Data.List
 
 
@@ -26,7 +27,7 @@ runArgs args
 
         loop state (('-':cmdColon) : filePath : rest)
          | isSuffixOf ":" cmdColon
-         , cmdStr               <- init cmdColon
+         , Just cmdStr          <- takeInit cmdColon
          , Just (cmd, [])       <- readCommand (':' : cmdStr)
          = do   contents        <- readFile filePath
                 state'          <- handleCmd state cmd (SourceFile filePath) 

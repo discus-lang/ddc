@@ -16,6 +16,7 @@ import DDC.Core.Compounds
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Type.Predicates
 import DDC.Base.Pretty                          hiding (align)
+import DDC.Data.ListUtils
 import Control.Monad.State.Strict               (evalState)
 import Control.Monad.State.Strict               (gets)
 import Control.Monad
@@ -581,7 +582,7 @@ convCaseM context pp kenv tenv mdsup label instrs xScrut alts
                 AltCase _  l bs -> return (l, bs)
 
         -- Alts that aren't the default.
-        let altsTable   = init alts'
+        let Just altsTable = takeInit alts'
 
         -- Build the jump table of non-default alts.
         let table       = mapMaybe takeAltCase altsTable

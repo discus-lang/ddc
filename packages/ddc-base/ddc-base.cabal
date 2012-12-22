@@ -33,6 +33,7 @@ Library
         DDC.Data.Canned
         DDC.Data.SourcePos
         DDC.Data.Token
+        DDC.Data.ListUtils
         
   GHC-options:
         -Werror

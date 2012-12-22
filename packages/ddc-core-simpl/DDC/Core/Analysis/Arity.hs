@@ -26,6 +26,7 @@ import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Data.ListUtils
 import Control.Monad
 import Data.Maybe
 import qualified Data.Map       as Map
@@ -54,7 +55,9 @@ getArity :: Ord n => Arities n -> Bound n -> Maybe Int
 getArity (named, anon) u
  = case u of
         -- Get arities of anonymous things from the stack.
-        UIx ix          -> Just (anon !! ix)
+        UIx ix 
+         -> let Just x  = index anon ix
+            in  Just x
 
         -- Lookup arities of named things from the stack.
         UName n         -> Map.lookup n named

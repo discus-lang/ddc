@@ -27,6 +27,7 @@ module DDC.Core.Lexer.Names
 where
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
+import DDC.Data.ListUtils
 import Data.Char
 import Data.List
 
@@ -128,8 +129,9 @@ isVarName str
         -> True
         
         | _ : _         <- cs
+        , Just initCs   <- takeInit cs
         , isVarStart c
-        , and (map isVarBody (init cs))
+        , and (map isVarBody initCs)
         , last cs == '#'
         -> True
 
@@ -167,8 +169,9 @@ isConName str
         -> True
         
         | _ : _         <- cs
+        , Just initCs   <- takeInit cs
         , isConStart c
-        , and (map isConBody (init cs))
+        , and (map isConBody initCs)
         , last cs == '#'
         -> True
 

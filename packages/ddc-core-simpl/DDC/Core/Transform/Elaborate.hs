@@ -8,6 +8,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Type.Compounds
+import DDC.Data.ListUtils
 import Control.Monad
 import Control.Arrow
 import Data.Maybe
@@ -90,9 +91,10 @@ elaborateLets us lts
 
                 -- Make a new distinct witness against all regions
                 -- in the environment.
+                Just ursTail    = takeTail urs
                 distinctWits    = map makeDistinctWit 
                                 $  liftM2 (,) us   urs
-                                ++ zip        urs (tail urs)
+                                ++ zip        urs  ursTail
 
             in  ( us ++ urs
                 , LLetRegions brs $ bws ++ distinctWits ++ constWits )

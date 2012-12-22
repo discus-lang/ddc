@@ -8,6 +8,7 @@ where
 import DDCI.Core.State
 import DDCI.Core.Command
 import DDCI.Core.Command.TransInteract
+import DDC.Data.ListUtils
 import System.Directory
 import Data.List
 import Data.Char
@@ -109,10 +110,11 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
          InputLine
           | not $ null rest
           , last rest == '\\'
+          , Just initRest       <- takeInit rest
           -> do return ( state
                        , InputState (Just (cmd, lineStart)) input
                                 (lineNumber + 1)
-                                (acc ++ init rest ++ "\n"))
+                                (acc ++ initRest ++ "\n"))
 
           | otherwise
           -> do state'  <- handleCmd state cmd source (acc ++ rest)

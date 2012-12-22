@@ -32,6 +32,7 @@ import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 import Control.Monad
+import DDC.Data.ListUtils
 import Data.List                        as L
 import Data.Maybe
 import Data.Typeable
@@ -571,7 +572,8 @@ checkExpM' !config !kenv !tenv xx@(XCase a xDiscrim alts)
         (case pats of
           [] -> throw $ ErrorCaseNoAlternatives xx
 
-          _  |  or $ map isPDefault $ init pats 
+          _  |  Just patsInit <- takeInit pats
+             ,  or $ map isPDefault $ patsInit
              -> throw $ ErrorCaseOverlapping xx
 
              |  otherwise
