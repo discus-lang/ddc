@@ -1,30 +1,21 @@
 -- Manipulate graphs for metadata generation
---  WARNING: everything in here is REALLY SLOW
+{-# LANGUAGE TupleSections #-}
 module DDC.Core.Llvm.Metadata.Graph
        ( -- * Graphs and Trees for TBAA metadata
          UG(..), DG(..)
-       , minOrientation, partitionDG
+       , orientUG, partitionDG
        , Tree(..)
        , sources, anchor 
 
          -- * Quickcheck Testing ONLY
        , Dom, Rel
        , fromList, toList
-       , allR, differenceR, unionR, composeR, transitiveR
-       , transClosure, transReduction
-       , aliasMeasure, isTree 
-       , orientation, orientations
-       , bruteforceMinOrientation
-       , transOrientation
-       , smallOrientation
-       , partitionings       
-       , minimumCompletion )
+       , transClosure, transOrient
+       , aliasMeasure, isTree )
 where
-import Data.List          hiding (partition)
+import Data.List 
 import Data.Ord
-import Data.Tuple
 import Data.Maybe
-import Control.Monad
 
 
 -- Binary relations -----------------------------------------------------------
@@ -43,37 +34,9 @@ fromList :: Eq a => [(a, a)] -> Rel a
 fromList s = \x y -> (x,y) `elem` s
 
 
--- | Get the size of a a relation.
-size :: Dom a -> Rel a -> Int
-size d r = length $ toList d r
-
-
--- | The universal negative relation.
---   All members of the domain are not related.
-allR :: Eq a => Rel a
-allR = (/=)
-
-
--- | Fifference of two relations.
-differenceR :: Rel a -> Rel a -> Rel a
-differenceR     f g = \x y -> f x y && not (g x y)
-
-
 -- | Union two relations.
 unionR :: Rel a -> Rel a -> Rel a
-unionR          f g = \x y -> f x y || g x y
-
-
--- | Compose two relations.
-composeR :: Dom a -> Rel a -> Rel a -> Rel a
-composeR dom f g = \x y -> or [ f x z && g z y | z <- dom ]
-
-
--- | Check whether a relation is transitive.
-transitiveR :: Dom a -> Rel a -> Bool
-transitiveR dom r
- = and [ not (r x y  && r y z && not (r x z)) 
-       | x <- dom, y <- dom, z <- dom ]
+unionR f g = \x y -> f x y || g x y
 
 
 -- | Find the transitive closure of a binary relation
@@ -86,16 +49,6 @@ transClosure dom r = fromList $ step dom $ toList dom r
                                 | (a, b) <- es
                                 , (c, d) <- es
                                 , b == c])
-
-
--- | Get the size of the transitive closure of a relation.
-transCloSize :: (Eq a) => Dom a -> Rel a -> Int
-transCloSize d r = size d $ transClosure d r
-
-transReduction :: Eq a => Dom a -> Rel a -> Rel a
-transReduction dom rel 
-  = let composeR' = composeR dom
-    in  rel `differenceR` (rel `composeR'` transClosure dom rel)
 
 
 -- Graphs ---------------------------------------------------------------------
@@ -114,72 +67,130 @@ instance Show a => Show (DG a) where
 instance Show a => Eq (DG a) where
   a == b = show a == show b 
 
+neighbourUG :: Rel a -> a -> a -> Bool
+neighbourUG f v x = f v x  || f x v
 
--- | Find the transitive orientation of an undirected graph if one exists
+
+-- | A partition (class) of vertices
+type Class a = [a]
+
+
+-- | Enforce an ordering on the relation of an undirected graph
+forceOrder :: Ord a => Class a -> Rel a -> Rel a 
+forceOrder ordering f 
+  = let index = fromJust . (flip elemIndex ordering) 
+    in  \x y -> neighbourUG f x y && index x < index y
+
+
+-- | Set of vertices is not a singleton or empty set
+nonSingleton :: Class a -> Bool
+nonSingleton []  = False
+nonSingleton [_] = False
+nonSingleton _   = True
+
+                      
+-- | Use lexicographic breadth-first search on an undirected graph to produce an ordering of the vertices
+--              
+lexBFS :: (Show a, Ord a) => UG a -> Class a
+lexBFS (UG (vertices, f)) = refine [] [vertices]
+  where refine acc classes
+          | any nonSingleton classes = pivot acc classes
+          | otherwise                = concat classes ++ acc
+
+        pivot acc ([vertex]:classes)    = refine (vertex:acc) $ classes      `splitAllOn` vertex
+        pivot acc ((vertex:vs):classes) = refine (vertex:acc) $ (vs:classes) `splitAllOn` vertex
+        pivot _   _               = error "impossible!"
+
+        splitAllOn [] _ = []
+        splitAllOn (cl:classes) vertex
+          | (neighbours, nonneighbours) <- partition (neighbourUG f vertex) cl
+          , all (not . null) [neighbours, nonneighbours]
+          = nonneighbours : neighbours : (classes `splitAllOn` vertex)
+          | otherwise 
+          = cl                         : (classes `splitAllOn` vertex)
+
+
+-- | Transitively orient an undireted graph
+--
+--      Using the algorithm from
+--      "Lex-BFS and partition refinement, with applications to transitive orientation, interval 
+--      graph recognition and consecutive ones testing", R. McConnell et al 2000
+--
+--      In the case where the transitive orientation does not exist, it simply gives some orientation
+--
+--      note: gave up on modular decomposition, this approach has very slightly worse time
+--            complexity but much simpler
+--   
+transOrient :: (Show a, Ord a) => UG a -> DG a
+transOrient g@(UG (vertices, f)) 
+  = let vertices' = refine $ [(lexBFS g, maxBound)]
+    in  DG (vertices, forceOrder vertices' f)
+  where refine classes 
+          | any nonSingleton $ map fst classes = refine (splitOthers [] classes)
+          | otherwise                          = concatMap fst classes
+        
+        -- Split all other classes with respect to each member of a pivot class
+        splitOthers before [] = before
+        splitOthers before (pivot:after)
+          | (pivotClass, lastused) <- pivot
+          , length pivotClass <= lastused `div` 2
+          =  foldl (split True) before pivotClass ++ [(pivotClass, length pivotClass)] ++ foldl (split False) after pivotClass
+          | otherwise 
+          = let classes = before ++ (pivot:after) in splitLargest (largestClass classes) classes
+
+        -- Split a class cl with regard to some vertex
+        split _ [] _ = []
+        split isBefore (cl:classes) vertex
+          | (neighbours, nonneighbours) <- partition (neighbourUG f vertex) $ fst cl
+          , all (not . null) [neighbours, nonneighbours]
+          = let lastused = snd cl
+            in  if   isBefore 
+                then (nonneighbours, lastused) : (neighbours,    lastused) : (split isBefore classes vertex)
+                else (neighbours,    lastused) : (nonneighbours, lastused) : (split isBefore classes vertex)
+          | otherwise = cl:classes
+
+        -- Split the largest class by the last vertex in the class found by lexBFS
+        splitLargest _ [] = []
+        splitLargest cl ((cs, lastused):css)
+          | cl == cs = (tail cs, lastused) : ([head cs], maxBound) : css
+          | otherwise = (cs, lastused) : (splitLargest cl css)
+
+        largestClass []      = []
+        largestClass classes = maximumBy (comparing length) $ map fst classes
+         
+
+orientUG :: (Show a, Ord a) => UG a -> DG a
+orientUG = transOrient
+
+
+-- | A vertex partitioning of a graph.
+type Partitioning a = [Class a]
+
+
+-- | Generate all possible partitions of a list
+--    by nondeterministically decide which sublist to add an element to.
+partitionings :: Eq a => [a] -> [Partitioning a]
+partitionings []     = [[]]
+partitionings (x:xs) = concatMap (nondetPut x) $ partitionings xs
+  where nondetPut :: a -> Partitioning a -> [Partitioning a]
+        nondetPut y []     = [ [[y]] ]
+        nondetPut y (l:ls) = let putHere  = (y:l):ls
+                                 putLater = map (l:) $ nondetPut y ls
+                              in putHere:putLater
+
+
+-- | Calculate the aliasing induced by a set of trees this includes aliasing
+--   within each of the trees and aliasing among trees.
 ---
---   ISSUE #297: Taking the transitive orientation of an aliasing graph
---    takes exponential(?) time. We should implement the O(n+m) algorithm
---    or detect when this is taking too long and bail out.
+--   ISSUE #298: Need a more efficient way to compute the
+--     aliasing measure. Currently O(|V|^5)
 --
-transOrientation :: Eq a => UG a -> Maybe (DG a)
-transOrientation ug@(UG (d,_))
-  = liftM DG 
-  $ liftM (d,) 
-  $ find (transitiveR d) 
-  $ orientations ug
-
-orientations :: Eq a => UG a -> [Rel a]
-orientations (UG (d,g))
-  = case toList d g of
-        []    -> [g]
-        edges -> let combo k      = filter ((k==) . length) $ subsequences edges
-                     choices      = concatMap combo [0..length d]
-                     choose c     = g `differenceR` fromList c
-                                      `unionR`      fromList (map swap c)
-                  in map choose choices
-
-
--- | Find the orientation with the smallest transitive closure
---
-minOrientation :: (Show a, Eq a) => UG a -> DG a
-minOrientation ug = fromMaybe (bruteforceMinOrientation ug) (transOrientation ug)
-
-bruteforceMinOrientation :: (Show a, Eq a) => UG a -> DG a
-bruteforceMinOrientation ug@(UG (d, _))
-  = let minTransClo : _ = sortBy (comparing $ transCloSize d)
-                        $ orientations ug
-     in DG (d, minTransClo)
-
-
--- | Find the orientation with a `small enough' transitive closure
---
-smallOrientation :: (Show a, Eq a) => UG a -> DG a
-smallOrientation ug = fromMaybe (orientation ug) (transOrientation ug)
-
-orientation :: Eq a => UG a -> DG a
-orientation (UG (d,g)) = DG (d,g)
-
-
--- | Add a minimum number of edges to an undirected graph such that
---    it has a transitive orientation
---
-minimumCompletion :: (Show a, Eq a) => UG a -> UG a
-minimumCompletion (UG (d,g))
- = let 
-       -- Let U be the set of all possible fill edges. For all subsets
-       --   S of U, add S to G and see if the result is trans-orientable.
-       u           = toList d $ allR `differenceR` g
-       combo k     = filter ((k==) . length) $ subsequences u
-       choices     = concatMap combo [0..length u]
-       choose c    = g `unionR` fromList c
-
-       -- There always exists a comparability completion for an undirected graph
-       --   in the worst case it's the complete version of the graph.
-       --   the result is minimum thanks to how `subsequences` and
-       --   list comprehensions work.
-   in  fromMaybe (error "minimumCompletion: no completion found!") 
-                $ liftM UG 
-                $ find (isJust . transOrientation . UG) $ map ((d,) . choose) choices
+aliasMeasure :: Eq a => Rel a -> Partitioning a -> Int
+aliasMeasure g p
+ = (outerAliasing $ map length p) + (sum $ map innerAliasing p)
+    where innerAliasing t = length $ toList t $ transClosure t g
+          outerAliasing (l:ls) = l * (sum ls) + outerAliasing ls
+          outerAliasing []     = 0    
 
 
 -- Trees ----------------------------------------------------------------------
@@ -213,41 +224,11 @@ partitionDG (DG (d,g))
                $ sortBy (comparing (aliasMeasure g))
                $ partitionings d
 
-
--- | A partitioning of a tree.
-type Partitioning a = [SubList a]
-type SubList a      = [a]
-
-
--- | Calculate the aliasing induced by a set of trees this includes aliasing
---   within each of the trees and aliasing among trees.
----
---   ISSUE #298: Need a more efficient way to compute the
---     aliasing measure. What is the complexity of this current version?
---
-aliasMeasure :: Eq a => Rel a -> Partitioning a -> Int
-aliasMeasure g p
- = (outerAliasing $ map length p) + (sum $ map innerAliasing p)
-    where innerAliasing t = length $ toList t $ transClosure t g
-          outerAliasing (l:ls) = l * (sum ls) + outerAliasing ls
-          outerAliasing []     = 0
-
-
--- | Generate all possible partitions of a list
---    by nondeterministically decide which sublist to add an element to.
-partitionings :: Eq a => [a] -> [Partitioning a]
-partitionings []     = [[]]
-partitionings (x:xs) = concatMap (nondetPut x) $ partitionings xs
-  where nondetPut :: a -> Partitioning a -> [Partitioning a]
-        nondetPut y []     = [ [[y]] ]
-        nondetPut y (l:ls) = let putHere  = (y:l):ls
-                                 putLater = map (l:) $ nondetPut y ls
-                              in putHere:putLater
-                 
-        
+                    
 -- | Enroot a tree with the given root.
 anchor :: Eq a => a -> Tree a -> Tree a
 anchor root (Tree (d,g))
   = let leaves = filter (null . flip filter d . g) d
         arcs   = map (, root) leaves
     in  Tree (root:d, g `unionR` fromList arcs)
+

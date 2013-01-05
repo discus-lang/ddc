@@ -51,11 +51,11 @@ l6.entry:
         %xval1.addr1 = ptrtoint i64* %x to i64
         %xval1.addr2 = add i64 %xval1.addr1, 0
         %xval1.ptr   = inttoptr i64 %xval1.addr2 to i64*
-        %xval1       = load i64* %xval1.ptr,    !tbaa !3
+        %xval1       = load i64* %xval1.ptr,    !tbaa !4
         %yval1.addr1 = ptrtoint i64* %y to i64
         %yval1.addr2 = add i64 %yval1.addr1, 0
         %yval1.ptr   = inttoptr i64 %yval1.addr2 to i64*
-        %yval1       = load i64* %yval1.ptr,    !tbaa !4
+        %yval1       = load i64* %yval1.ptr,    !tbaa !3
         %a           = add i64 %xval1, %yval1
         %_v7.addr1   = ptrtoint i64* %z to i64
         %_v8.addr2   = add i64 %_v7.addr1, 0
@@ -64,11 +64,11 @@ l6.entry:
         %xval2.addr1 = ptrtoint i64* %x to i64
         %xval2.addr2 = add i64 %xval2.addr1, 0
         %xval2.ptr   = inttoptr i64 %xval2.addr2 to i64*
-        %xval2       = load i64* %xval2.ptr,    !tbaa !3
+        %xval2       = load i64* %xval2.ptr,    !tbaa !4
         %yval2.addr1 = ptrtoint i64* %y to i64
         %yval2.addr2 = add i64 %yval2.addr1, 0
         %yval2.ptr   = inttoptr i64 %yval2.addr2 to i64*
-        %yval2       = load i64* %yval2.ptr,    !tbaa !4
+        %yval2       = load i64* %yval2.ptr,    !tbaa !3
         %b           = add i64 %xval2, %yval2
         %_v10        = mul i64 %a, %b
         ret i64 %_v10
@@ -77,8 +77,8 @@ l6.entry:
 
 
 !5 = metadata !{metadata !"x_plus_y_square_rz", metadata !2, i32 0}
-!4 = metadata !{metadata !"x_plus_y_square_ry", metadata !3, i32 0}
-!3 = metadata !{metadata !"x_plus_y_square_rx", metadata !2, i32 0}
+!4 = metadata !{metadata !"x_plus_y_square_rx", metadata !3, i32 0}
+!3 = metadata !{metadata !"x_plus_y_square_ry", metadata !2, i32 0}
 !2 = metadata !{metadata !"x_plus_y_square_ROOT_1", null, i32 1}
 
 

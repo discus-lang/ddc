@@ -83,7 +83,7 @@ deriveMD nTop xx
         (constwits, diswits) = partitionWits $ collectWitsB xx
         arel                 = constructARel   diswits
         domain               = constructANodes regs constwits
-        mdDG                 = minOrientation $ UG (domain, arel)
+        mdDG                 = orientUG $ UG (domain, arel)
         mdTrees              = partitionDG mdDG
     in  foldM (buildMDTree nTop) (MDSuper emptyDict []) mdTrees
 
@@ -144,9 +144,9 @@ annot kenv mdsup xs ins
 -- Alias relation -------------------------------------------------------------
 -- | A node in the alias graphs, representing a region
 data ANode  = ANode { regionU :: RegBound
-                   , isConst :: Bool }
+                    , isConst :: Bool }
             | ARoot
-              deriving (Show, Eq)
+              deriving (Show, Eq, Ord)
 
 
 -- | Make nodes from regions
