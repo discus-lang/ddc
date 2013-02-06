@@ -16,7 +16,7 @@ import DDC.Core.Llvm.Metadata.Graph
 main = $(quickCheckAll)
 
 -- Too slow for anything more than 6
-magicLimit = 4
+magicLimit = 6
 rootStart  = 42
 
 

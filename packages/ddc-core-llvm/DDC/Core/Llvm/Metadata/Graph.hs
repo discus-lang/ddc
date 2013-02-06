@@ -99,7 +99,7 @@ lexBFS (UG (vertices, f)) = refine [] [vertices]
 
         pivot acc ([vertex]:classes)    = refine (vertex:acc) $ classes      `splitAllOn` vertex
         pivot acc ((vertex:vs):classes) = refine (vertex:acc) $ (vs:classes) `splitAllOn` vertex
-        pivot _   _               = error "impossible!"
+        pivot _   _                     = error "impossible!"
 
         splitAllOn [] _ = []
         splitAllOn (cl:classes) vertex
@@ -122,21 +122,21 @@ lexBFS (UG (vertices, f)) = refine [] [vertices]
 --            complexity but much simpler
 --   
 transOrient :: (Show a, Ord a) => UG a -> DG a
-transOrient g@(UG (vertices, f)) 
+transOrient g@(UG (vertices, f))
   = let vertices' = refine $ [(lexBFS g, maxBound)]
     in  DG (vertices, forceOrder vertices' f)
   where refine classes 
-          | any nonSingleton $ map fst classes = refine (splitOthers [] classes)
-          | otherwise                          = concatMap fst classes
+          | any nonSingleton $ map fst classes
+          = let (before, after) = partition (\(c,lastused) -> length c > lastused `div` 2) classes
+            in  refine (splitOthers before after)
+          | otherwise = concatMap fst classes
         
         -- Split all other classes with respect to each member of a pivot class
-        splitOthers before [] = before
-        splitOthers before (pivot:after)
-          | (pivotClass, lastused) <- pivot
-          , length pivotClass <= lastused `div` 2
-          =  foldl (split True) before pivotClass ++ [(pivotClass, length pivotClass)] ++ foldl (split False) after pivotClass
-          | otherwise 
-          = let classes = before ++ (pivot:after) in splitLargest (largestClass classes) classes
+        splitOthers before [] = splitLargest (largestClass before) before
+        splitOthers before ((pivot,_):after)
+          =    foldl' (split True) before pivot 
+            ++ [(pivot, length pivot)] 
+            ++ foldl' (split False) after pivot
 
         -- Split a class cl with regard to some vertex
         split _ [] _ = []
@@ -152,7 +152,7 @@ transOrient g@(UG (vertices, f))
         -- Split the largest class by the last vertex in the class found by lexBFS
         splitLargest _ [] = []
         splitLargest cl ((cs, lastused):css)
-          | cl == cs = (tail cs, lastused) : ([head cs], maxBound) : css
+          | cl == cs  = (tail cs, lastused) : ([head cs], maxBound) : css
           | otherwise = (cs, lastused) : (splitLargest cl css)
 
         largestClass []      = []
