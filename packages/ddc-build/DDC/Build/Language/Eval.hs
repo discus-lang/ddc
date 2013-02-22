@@ -11,11 +11,11 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Name
 import DDC.Core.Fragment
-import DDC.Core.Eval.Check                      as Eval
+import DDC.Core.Eval.Check              as Eval
 import DDC.Type.Exp
-import DDC.Type.Env                             (Env)
-import qualified DDC.Type.Env                   as Env
-import qualified Data.Map                       as Map
+import DDC.Type.Env                     (Env)
+import qualified DDC.Type.Env           as Env
+import qualified Data.Map               as Map
 import Control.Monad.State.Strict
 
 

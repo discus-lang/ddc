@@ -1,5 +1,5 @@
 Name:           ddc-tools
-Version:        0.3.1.3
+Version:        0.3.2.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -18,7 +18,7 @@ Executable ddc-check
 
     Build-depends:
         base            == 4.6.*,
-        ddc-core        == 0.3.1.*
+        ddc-core        == 0.3.2.*
 
     Main-is:
         Main.hs
@@ -43,15 +43,15 @@ Executable ddc
         directory       == 1.2.*,
         mtl             == 2.1.*,
         transformers    == 0.3.*,
-        ddc-base        == 0.3.1.*,
-        ddc-core        == 0.3.1.*,
-        ddc-core-eval   == 0.3.1.*,
-        ddc-core-simpl  == 0.3.1.*,
-        ddc-core-salt   == 0.3.1.*,
-        ddc-core-llvm   == 0.3.1.*,
-        ddc-code        == 0.3.1.*,
-        ddc-build       >= 0.3.1.3 && < 0.3.2,
-        ddc-driver      >= 0.3.1.3 && < 0.3.2
+        ddc-base        == 0.3.2.*,
+        ddc-core        == 0.3.2.*,
+        ddc-core-eval   == 0.3.2.*,
+        ddc-core-simpl  == 0.3.2.*,
+        ddc-core-salt   == 0.3.2.*,
+        ddc-core-llvm   == 0.3.2.*,
+        ddc-code        == 0.3.2.*,
+        ddc-build       == 0.3.2.*,
+        ddc-driver      == 0.3.2.*
 
     Main-is:
         Main.hs
@@ -78,15 +78,15 @@ Executable ddci-core
         haskell-src-exts== 1.*,
         directory       == 1.2.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.1.*,
-        ddc-core        == 0.3.1.*,
-        ddc-core-eval   == 0.3.1.*,
-        ddc-core-simpl  == 0.3.1.*,
-        ddc-core-salt   == 0.3.1.*,
-        ddc-core-llvm   == 0.3.1.*,
-        ddc-code        == 0.3.1.*,
-        ddc-build       >= 0.3.1.3 && < 0.3.2,
-        ddc-driver      >= 0.3.1.3 && < 0.3.2
+        ddc-base        == 0.3.2.*,
+        ddc-core        == 0.3.2.*,
+        ddc-core-eval   == 0.3.2.*,
+        ddc-core-simpl  == 0.3.2.*,
+        ddc-core-salt   == 0.3.2.*,
+        ddc-core-llvm   == 0.3.2.*,
+        ddc-code        == 0.3.2.*,
+        ddc-build       == 0.3.2.*,
+        ddc-driver      == 0.3.2.*
 
     Main-is:
         Main.hs

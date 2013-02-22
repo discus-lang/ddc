@@ -1,0 +1,49 @@
+
+module Main 
+imports 
+        map     :: [a b : *]    [k : $]
+                .  (a -> b) -> Stream k a -> Stream k b
+
+        rep     :: [a : *]      [k : $]
+                .  a -> Stream k a
+
+        folds   :: [a b c : *]  [k1 k2 : $]
+                => (a -> b -> c)
+                -> Stream k1 Int -> Stream k1 a -> Stream k2 b -> Stream k1 a
+
+with letrec
+
+thing   [a b c : *] [k : $] 
+        (lens  : StreamK k Int#)
+        (elems : StreamK (Up k K_lens) Int#)
+        : StreamK k Int#
+
+ = folds [:Int# Int# Int#:] [:k (Up k K_lens):]
+         (add [Int#])
+         lens 
+         (replicate [Int#] [k] 0i#)
+         elems
+
+
+thing'  [a b c : *] [s1 s2 s3 : %]
+        (k     : Nat#)
+        (lens  : Stream s1 Nat#)
+        (elems : Stream s2 Int#)
+        : Stream s3 Int#
+
+ =      letregion r1 in
+        loop# k 
+         (\(i : Nat#). 
+         do     len     = next# [Nat#] [s1] lens
+                acc     = new#  [Int#] [r1] 0i#
+
+                loop# len
+                 (\(j : Nat#).
+                 do     elem    = next# [Int#] [s2] elems
+                        a'      = read# [Int#] [r1] acc
+                        x'      = add#  [Int#] a elem
+                        write# [Int#] [r1] acc x')
+
+                a       = read# [Int#] [r1]
+                out# [Int#] [s3] a)
+

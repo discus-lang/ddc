@@ -5,6 +5,7 @@ module DDC.Core.Salt.Name
 
           -- * Primitive Type Constructors
         , PrimTyCon     (..)
+        , readPrimTyCon
         , primTyConIsIntegral
         , primTyConIsFloating
         , primTyConIsUnsigned
@@ -15,16 +16,27 @@ module DDC.Core.Salt.Name
         , PrimOp        (..)
 
         , PrimArith     (..)
+        , readPrimArith
 
         , PrimCast      (..)
+        , readPrimCast
         , primCastPromoteIsValid
         , primCastTruncateIsValid
 
         , PrimStore     (..)
+        , readPrimStore
 
         , PrimCall      (..)
+        , readPrimCall
 
         , PrimControl   (..)
+        , readPrimControl
+
+          -- * Primitive Literals
+        , readLitInteger
+        , readLitPrimNat
+        , readLitPrimInt
+        , readLitPrimWordOfBits
 
           -- * Name Parsing
         , readName

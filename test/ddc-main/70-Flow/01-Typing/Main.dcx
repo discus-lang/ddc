@@ -1,0 +1,9 @@
+
+:set lang Flow
+
+-- Check for DSL primitives.
+:kind Stream
+:kind Vector
+
+:type add#
+:type sub#

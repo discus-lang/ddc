@@ -8,6 +8,7 @@ ddc-check_packages = \
 	packages/ddc-core-eval/DDC \
 	packages/ddc-core-salt/DDC \
  	packages/ddc-core-llvm/DDC \
+        packages/ddc-core-flow/DDC \
 	packages/ddc-build/DDC
 
 ddc-check_src_hs_all = \

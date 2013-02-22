@@ -1,5 +1,5 @@
 Name:           ddc-build
-Version:        0.3.1.3
+Version:        0.3.2.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -21,18 +21,20 @@ Library
         directory       == 1.2.*,
         process         == 1.1.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.1.*,
-        ddc-core        == 0.3.1.*,
-        ddc-core-eval   == 0.3.1.*,
-        ddc-core-simpl  == 0.3.1.*,
-        ddc-core-salt   == 0.3.1.*,
-        ddc-core-llvm   == 0.3.1.*
+        ddc-base        == 0.3.2.*,
+        ddc-core        == 0.3.2.*,
+        ddc-core-eval   == 0.3.2.*,
+        ddc-core-simpl  == 0.3.2.*,
+        ddc-core-salt   == 0.3.2.*,
+        ddc-core-llvm   == 0.3.2.*,
+        ddc-core-flow   == 0.3.2.*
   
   Exposed-modules:
         DDC.Build.Language.Eval
         DDC.Build.Language.Lite
         DDC.Build.Language.Salt
         DDC.Build.Language.Zero
+        DDC.Build.Language.Flow
         DDC.Build.Language
         DDC.Build.Builder
         DDC.Build.Pipeline

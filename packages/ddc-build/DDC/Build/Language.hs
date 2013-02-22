@@ -11,6 +11,7 @@ import DDC.Build.Language.Base
 import DDC.Build.Language.Lite  as Lite
 import DDC.Build.Language.Salt  as Salt
 import DDC.Build.Language.Eval  as Eval
+import DDC.Build.Language.Flow  as Flow
 import DDC.Build.Language.Zero  as Zero
 
 
@@ -22,6 +23,7 @@ languages
  =      [ ( "Lite", Lite.language)
         , ( "Salt", Salt.language)
         , ( "Eval", Eval.language)
+        , ( "Flow", Flow.language)
         , ( "Zero", Zero.language) ]
 
 
@@ -39,5 +41,6 @@ languageOfExtension ext
         "dcl"   -> Just Lite.language
         "dcs"   -> Just Salt.language
         "dcv"   -> Just Eval.language
+        "dcf"   -> Just Flow.language
         "dcz"   -> Just Zero.language
         _       -> Nothing
