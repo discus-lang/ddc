@@ -9,6 +9,7 @@ module DDC.Core.Flow.Name
         -- * Primitive operators
         , PrimArith     (..)
         , PrimCast      (..)
+        , PrimFlow      (..)
 
         -- * Name parsing
         , readName)
@@ -24,6 +25,7 @@ import DDC.Core.Salt.Name
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Typeable
+import Data.List
 import Data.Char        
 
 
@@ -46,6 +48,9 @@ data Name
 
         -- | Primitive casting between numeric types.
         | NamePrimCast          PrimCast
+
+        -- | Primitive data flow operators.
+        | NamePrimFlow          PrimFlow
 
         -- | An unboxed boolean literal
         | NameLitBool           Bool
@@ -70,6 +75,7 @@ instance NFData Name where
         NamePrimTyCon con       -> rnf con
         NamePrimArith con       -> rnf con
         NamePrimCast  c         -> rnf c
+        NamePrimFlow  f         -> rnf f
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
         NameLitInt  i           -> rnf i
@@ -84,6 +90,7 @@ instance Pretty Name where
         NameDataTyCon dc        -> ppr dc
         NamePrimTyCon tc        -> ppr tc
         NamePrimArith op        -> ppr op
+        NamePrimFlow  op        -> ppr op
         NamePrimCast  op        -> ppr op
         NameLitBool True        -> text "True#"
         NameLitBool False       -> text "False#"
@@ -108,6 +115,9 @@ readName str
         -- PrimCast
         | Just p        <- readPrimCast  str
         = Just $ NamePrimCast p
+
+        | Just p        <- readPrimFlow str
+        = Just $ NamePrimFlow p
 
         -- Literal Bools
         | str == "True#"  = Just $ NameLitBool True
@@ -163,5 +173,61 @@ readDataTyCon str
         "Stream"        -> Just DataTyConStream
         "Vector"        -> Just DataTyConVector
         _               -> Nothing
+
+
+-- PrimFlow -------------------------------------------------------------------
+-- | Baked-in data-flow operators.
+data PrimFlow
+        = PrimFlowMap      Int
+        | PrimFlowFold
+        | PrimFlowFolds
+        | PrimFlowUnfold
+        | PrimFlowUnfolds
+        | PrimFlowSplit    Int
+        | PrimFlowCombine  Int
+        deriving (Eq, Ord, Show)
+
+instance NFData PrimFlow
+
+instance Pretty PrimFlow where
+ ppr pf
+  = case pf of
+        PrimFlowMap i           -> text "map"     <> int i      <> text "#"
+        PrimFlowFold            -> text "fold"                  <> text "#"
+        PrimFlowFolds           -> text "folds"                 <> text "#"
+        PrimFlowUnfold          -> text "unfold"                <> text "#"
+        PrimFlowUnfolds         -> text "unfolds"               <> text "#"
+        PrimFlowSplit   i       -> text "split"   <> int i      <> text "#"
+        PrimFlowCombine i       -> text "combine" <> int i      <> text "#"
+
+
+-- | Read a baked-in data flow operator.
+readPrimFlow :: String -> Maybe PrimFlow
+readPrimFlow str
+        | Just rest     <- stripPrefix "map" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ PrimFlowMap arity
+
+        | Just rest     <- stripPrefix "split" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ PrimFlowSplit arity
+
+        | Just rest     <- stripPrefix "combine" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ PrimFlowCombine arity
+
+        | otherwise
+        = case str of
+                "fold#"         -> Just $ PrimFlowFold
+                "folds#"        -> Just $ PrimFlowFolds
+                "unfold#"       -> Just $ PrimFlowUnfold
+                "unfolds#"      -> Just $ PrimFlowUnfolds
+                _               -> Nothing
 
 

@@ -125,19 +125,17 @@ typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
         -- Primitive arithmetic operators
-        NamePrimArith p
-         -> Just $ typeOfPrimArith p
-
-        NamePrimCast p
-         -> Just $ typeOfPrimCast p
+        NamePrimArith p         -> Just $ typeOfPrimArith p
+        NamePrimCast p          -> Just $ typeOfPrimCast p
+        NamePrimFlow p          -> Just $ typeOfPrimFlow p
 
         -- Unboxed Literals
-        NameLitBool _      -> Just $ tBoolU
-        NameLitNat  _      -> Just $ tNatU
-        NameLitInt  _      -> Just $ tIntU
-        NameLitWord _ bits -> Just $ tWordU bits
+        NameLitBool _           -> Just $ tBoolU
+        NameLitNat  _           -> Just $ tNatU
+        NameLitInt  _           -> Just $ tIntU
+        NameLitWord _ bits      -> Just $ tWordU bits
 
-        _                  -> Nothing
+        _                       -> Nothing
 
 
 -- | Take the type of a primitive cast.
@@ -181,4 +179,21 @@ typeOfPrimArith op
         PrimArithBAnd   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithBOr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithBXOr   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+
+
+-- | Take the type of a primitive data-flow operator.
+typeOfPrimFlow :: PrimFlow -> Type Name
+typeOfPrimFlow op
+ = case op of
+        -- fold :: [a b: *]. [s : %]. [k : $]
+        --      .  (a -> b -> a) -> a -> Stream s k b -> a
+        PrimFlowFold    
+         -> tForalls [kData, kData, kRegion, kClosure] 
+         $  \[tA, tB, tS, tK] 
+         ->     (tA `tFunPE` tB `tFunPE` tA)
+                `tFunPE` tA
+                `tFunPE` tStream tS tK tA
+                `tFunPE` tA
+
+        _ -> error "typeOfPrimFlow: not finished"
 

@@ -3,7 +3,8 @@ module DDC.Core.Flow.Compounds
         ( tBoolU
         , tNatU,  dcNatU, xNatU
         , tIntU
-        , tWordU)
+        , tWordU
+        , tStream)
 where
 import DDC.Core.Flow.Name
 import DDC.Core.Exp
@@ -45,3 +46,11 @@ tWordU :: Int -> Type Name
 tWordU bits 
  = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
 
+
+-- Streams --------------------------------------------------------------------
+tStream :: Type Name -> Type Name -> Type Name -> Type Name
+tStream tR tK tA
+ = tApps (TCon tcStream) [tR, tK, tA]
+ where  uStream         = UPrim (NameDataTyCon DataTyConStream) kStream
+        tcStream        = TyConBound uStream kStream
+        kStream         = kRegion `kFun` kClosure `kFun` kData `kFun` kData

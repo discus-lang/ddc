@@ -1,0 +1,18 @@
+:set lang Flow
+
+
+-- Single stream being eaten by multiple consumers.
+:load..
+module Test with letrec
+test    [a : *] [r : %] [k : $]
+        (elems : Stream r k Int#)
+        : Int#
+ = do   
+        sum     = fold# [:Int# Int#:] [r] [k]
+                        (add# [Int#]) 0i# elems
+
+        prod    = fold# [:Int# Int#:] [r] [k]
+                        (mul# [Int#]) 1i# elems
+
+        add# [:Int#:] sum prod;;
+

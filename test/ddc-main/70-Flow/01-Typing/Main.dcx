@@ -1,9 +1,11 @@
-
 :set lang Flow
 
--- Check for DSL primitives.
+-- Check DSL primitives have the correct type.
 :kind Stream
 :kind Vector
 
+:type fold#
+
+-- Check primitives have real types.
 :type add#
 :type sub#
