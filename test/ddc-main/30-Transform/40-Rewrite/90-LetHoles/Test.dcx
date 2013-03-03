@@ -86,7 +86,7 @@ let ^ = box (5 [R0#] ())	in
 
 
 -- now with a Const contraint and regions
-:set.. rule unbox_box [r : %] (s : Int r).
+:set.. rule unbox_box [r : Region] (s : Int r).
     Const r =>
     unbox_ [r] {box_ [r] s}
     = s
@@ -117,7 +117,7 @@ let y = unbox_ [r] x		in
 ;;
 
 
-:set.. rule silly [r : %] (x y : Int r).
+:set.. rule silly [r : Region] (x y : Int r).
     addInt [:r r r:] x {subInt [:r r r:] y x}
     = y
 ;;

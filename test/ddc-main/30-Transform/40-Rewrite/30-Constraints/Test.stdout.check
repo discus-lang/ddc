@@ -3,7 +3,7 @@ ok
 ok, added copyConst
 ok
 
-copyConst [r1 : %] (x : Int r1) . Const r1 => copyInt [r1] [r1] x = x
+copyConst [r1 : Region] (x : Int r1) . Const r1 => copyInt [r1] [r1] x = x
 
 -- don't do for any region
 letregion r in
@@ -67,7 +67,7 @@ ok
 addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ())
 
 -- don't: not known
-/\(r1 r2 : %).
+/\(r1 r2 : Region).
  \(_ : Unit).
 addInt [r1] [r2] [r1] (5 [r1] ()) (3 [r2] ())
 
@@ -87,7 +87,7 @@ weakclo {^0; ^1; addInt; [^0]} in
 0 [R0#] ()
 
 -- do: known from argument
-/\(r1 r2 : %).
+/\(r1 r2 : Region).
  \(w : Distinct2 r1 r2).\(_ : Unit).
 let ^ : Int r2 = 3 [r2] () in
 let ^ : Int r1 = 5 [r1] () in
@@ -106,7 +106,7 @@ copyInt [r1] [R0#]
 
 -- do: subset of a Distinct3
 -- this needs to be an argument because letregions are treated as 'concrete' & known to be distinct to other concretes as well.
-/\(r1 r2 r3 : %).
+/\(r1 r2 r3 : Region).
  \(w : Distinct3 r1 r2 r3).\(_ : Unit).
 let ^ : Int r2 = 3 [r2] () in
 let ^ : Int r1 = 5 [r1] () in
@@ -115,7 +115,7 @@ weakclo {^0; ^1; addInt; [r2]} in
 0 [r1] ()
 
 -- do: another subset (rot)
-/\(r1 r2 r3 : %).
+/\(r1 r2 r3 : Region).
  \(w : Distinct3 r2 r3 r1).\(_ : Unit).
 let ^ : Int r2 = 3 [r2] () in
 let ^ : Int r1 = 5 [r1] () in

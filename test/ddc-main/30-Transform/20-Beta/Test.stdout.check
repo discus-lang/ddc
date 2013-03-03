@@ -46,19 +46,19 @@ letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () 
 
 
 -- Rewrite outer type binder to avoid shadow conflict on type lambda.
-/\(^ : *). (/\(a : *). \(_ : Unit). ()) [^0] ()
+/\(^ : Data). (/\(a : Data). \(_ : Unit). ()) [^0] ()
 
 
 -- Rewrite quantifier to avoid capture.
-/\(a : *). \(x : [^ : *].^0 -> a). ()
+/\(a : Data). \(x : [^ : Data].^0 -> a). ()
 
 
 -- Rewrite variables on types of value binders.
-/\(^ : %). \(y : Int ^0). y
+/\(^ : Region). \(y : Int ^0). y
 
 
 -- Rewrite variables on types of witness binders.
-/\(^ : %). \(y : Int ^0). \(wg : Global ^0). \(wl : Lazy ^0). let x : Int ^0 lazy <wl> = forget <use [^0] wg> in y in x
+/\(^ : Region). \(y : Int ^0). \(wg : Global ^0). \(wl : Lazy ^0). let x : Int ^0 lazy <wl> = forget <use [^0] wg> in y in x
 
 
 -- In the resulting expression, check that closure variables are only

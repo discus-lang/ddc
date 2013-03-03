@@ -33,6 +33,6 @@ addInt [:R0# R0# R0#:] (weakclo {^1} in (2 [R0#] ())) (3 [R0#] ());;
 
 -- Arguments to weakclo that don't have any free variables should be eliminated.
 :trans..
-let id = /\(r : %). \(x : Int r). x
+let id = /\(r : Region). \(x : Int r). x
 in  weakclo {id} in ();;
 

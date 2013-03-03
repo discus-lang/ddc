@@ -14,11 +14,11 @@ ok
     Inline: No information
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
-            = (/\(^ : %).
+            = (/\(^ : Region).
                 \(^ : Const ^0).\(^ ^ : Int ^0).
                case unboxInt [^0] ^0 of {
                  0i#  
@@ -27,12 +27,12 @@ letrec {
                   -> ^1;
                  _ 
                   -> fac [^0] <^2>
-                         ((/\(^ ^ ^ : %).
+                         ((/\(^ ^ ^ : Region).
                             \(^ : Int ^2).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [^2] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
                            boxInt [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
-                         ((/\(^ ^ ^ : %).
+                         ((/\(^ ^ ^ : Region).
                             \(^ : Int ^2).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [^2] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
@@ -54,8 +54,8 @@ letrec {
         Bindings:       0
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
@@ -68,13 +68,13 @@ letrec {
                  _ 
                   -> fac [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
                            boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
@@ -90,8 +90,8 @@ letrec {
         Bindings:       0
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
@@ -104,13 +104,13 @@ letrec {
                  _ 
                   -> fac [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
                            boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
@@ -125,8 +125,8 @@ letrec {
         Rewrite: unboxInt_boxInt
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
@@ -139,13 +139,13 @@ letrec {
                  _ 
                   -> fac [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
                            boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
@@ -159,8 +159,8 @@ letrec {
 ()
 Going back: 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
@@ -173,13 +173,13 @@ letrec {
                  _ 
                   -> fac [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
                            boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
@@ -191,8 +191,8 @@ letrec {
 ()
 Going back: 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
@@ -205,13 +205,13 @@ letrec {
                  _ 
                   -> fac [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
                            boxInt [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int# = unboxInt [r] ^1 in
                            let ^ : Int# = unboxInt [^1] ^1 in
@@ -225,13 +225,13 @@ letrec {
     Inline: No information
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
                \(^ ^ : Int r).
-               case (/\(^ : %).
+               case (/\(^ : Region).
                    \(^ : Int ^0).
                   case ^0 of {
                     I# (^ : Int#) 
@@ -242,9 +242,9 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> (/\(^ : %).
+                  -> (/\(^ : Region).
                        \(^ : Const ^0).\(^ ^ : Int ^0).
-                      case (/\(^ : %).
+                      case (/\(^ : Region).
                           \(^ : Int ^0).
                          case ^0 of {
                            I# (^ : Int#) 
@@ -256,104 +256,104 @@ letrec {
                          -> ^1;
                         _ 
                          -> fac [^0] <^2>
-                                ((/\(^ ^ ^ : %).
+                                ((/\(^ ^ ^ : Region).
                                    \(^ : Int ^2).\(^ : Int ^1).
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^2] ^1 in
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^1] ^1 in
-                                  (/\(^ : %).
+                                  (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
-                                ((/\(^ ^ ^ : %).
+                                ((/\(^ ^ ^ : Region).
                                    \(^ : Int ^2).\(^ : Int ^1).
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^2] ^1 in
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^1] ^1 in
-                                  (/\(^ : %).
+                                  (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0
-                                     ((/\(^ : %).
+                                     ((/\(^ : Region).
                                         \(^ : Int#). I# [^0] ^0) [^0] 1i#))
                       }) [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [r] ^1 in
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [^1] ^1 in
-                           (/\(^ : %).
+                           (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [r] ^1 in
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [^1] ^1 in
-                           (/\(^ : %).
+                           (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0
-                              ((/\(^ : %).
+                              ((/\(^ : Region).
                                  \(^ : Int#). I# [^0] ^0) [r] 1i#))
                })
-                  ((/\(^ : %).
+                  ((/\(^ : Region).
                      \(^ : Int#). I# [^0] ^0) [r] 1i#)
-                  ((/\(^ : %).
+                  ((/\(^ : Region).
                      \(^ : Int#). I# [^0] ^0) [r] 10i#) in
       let show : Int#
-            = (/\(^ : %).
+            = (/\(^ : Region).
                 \(^ : Int ^0).
                case ^0 of {
                  I# (^ : Int#) 
                   -> ^0
                }) [r] x in
-      (/\(^ : %).
+      (/\(^ : Region).
         \(^ : Int ^0).
        case ^0 of {
          I# (^ : Int#) 
           -> ^0
        }) [r]
-          ((/\(^ : %).
+          ((/\(^ : Region).
              \(^ : Int#). I# [^0] ^0) [r] 0i#)
 } in
 ()
@@ -362,13 +362,13 @@ letrec {
         
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       let x : Int r
             = (weakclo {<w>} in
                \(^ ^ : Int r).
-               case (/\(^ : %).
+               case (/\(^ : Region).
                    \(^ : Int ^0).
                   case ^0 of {
                     I# (^ : Int#) 
@@ -379,9 +379,9 @@ letrec {
                  1i#  
                   -> ^1;
                  _ 
-                  -> (/\(^ : %).
+                  -> (/\(^ : Region).
                        \(^ : Const ^0).\(^ ^ : Int ^0).
-                      case (/\(^ : %).
+                      case (/\(^ : Region).
                           \(^ : Int ^0).
                          case ^0 of {
                            I# (^ : Int#) 
@@ -393,104 +393,104 @@ letrec {
                          -> ^1;
                         _ 
                          -> fac [^0] <^2>
-                                ((/\(^ ^ ^ : %).
+                                ((/\(^ ^ ^ : Region).
                                    \(^ : Int ^2).\(^ : Int ^1).
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^2] ^1 in
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^1] ^1 in
-                                  (/\(^ : %).
+                                  (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
-                                ((/\(^ ^ ^ : %).
+                                ((/\(^ ^ ^ : Region).
                                    \(^ : Int ^2).\(^ : Int ^1).
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^2] ^1 in
                                   let ^ : Int#
-                                        = (/\(^ : %).
+                                        = (/\(^ : Region).
                                             \(^ : Int ^0).
                                            case ^0 of {
                                              I# (^ : Int#) 
                                               -> ^0
                                            }) [^1] ^1 in
-                                  (/\(^ : %).
+                                  (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0
-                                     ((/\(^ : %).
+                                     ((/\(^ : Region).
                                         \(^ : Int#). I# [^0] ^0) [^0] 1i#))
                       }) [r] <w>
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [r] ^1 in
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [^1] ^1 in
-                           (/\(^ : %).
+                           (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
-                           /\(^ ^ : %).
+                           /\(^ ^ : Region).
                             \(^ : Int r).\(^ : Int ^1).
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [r] ^1 in
                            let ^ : Int#
-                                 = (/\(^ : %).
+                                 = (/\(^ : Region).
                                      \(^ : Int ^0).
                                     case ^0 of {
                                       I# (^ : Int#) 
                                        -> ^0
                                     }) [^1] ^1 in
-                           (/\(^ : %).
+                           (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0
-                              ((/\(^ : %).
+                              ((/\(^ : Region).
                                  \(^ : Int#). I# [^0] ^0) [r] 1i#))
                })
-                  ((/\(^ : %).
+                  ((/\(^ : Region).
                      \(^ : Int#). I# [^0] ^0) [r] 1i#)
-                  ((/\(^ : %).
+                  ((/\(^ : Region).
                      \(^ : Int#). I# [^0] ^0) [r] 10i#) in
       let show : Int#
-            = (/\(^ : %).
+            = (/\(^ : Region).
                 \(^ : Int ^0).
                case ^0 of {
                  I# (^ : Int#) 
                   -> ^0
                }) [r] x in
-      (/\(^ : %).
+      (/\(^ : Region).
         \(^ : Int ^0).
        case ^0 of {
          I# (^ : Int#) 
           -> ^0
        }) [r]
-          ((/\(^ : %).
+          ((/\(^ : Region).
              \(^ : Int#). I# [^0] ^0) [r] 0i#)
 } in
 ()

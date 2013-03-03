@@ -1,16 +1,16 @@
 module Module
 exports {
 
-foldr   :: [a b : *]. [r : %].
-        [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
-        (a -(ek1|ck1)> b -(ek2|ck2)> b) -(!0 | Use r)> 
-        (Unit -(ez|cz)> b)              -(!0 | Use r + ck1)>
+foldr   :: [a b : Data]. [r : Region].
+        [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
+        (a -(ek1|ck1)> b -(ek2|ck2)> b) -(Pure | Use r)> 
+        (Unit -(ez|cz)> b)              -(Pure | Use r + ck1)>
         (List r a)                      -(Read r + ek1 + ek2 + ez | ck1 + cz + Use r)>
         b;
 
 
-build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
-    ([b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+build :: [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
+    ([b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>
 	 (Unit -(en|cn)> b)
@@ -19,15 +19,15 @@ build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
     -(eg1+eg2 + Alloc r | Use r)> List r a;
 
 foldrAndBuild ::
-    [a b : *]. [r : %].
-    [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
-    [eg1 eg2 : !]. [cg1 cg2 : $].
+    [a b : Data]. [r : Region].
+    [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
+    [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
 
 	(a -(ek1|ck1)> b -(ek2|ck2)> b)
-    -(!0 | Use r)>	(Unit -(ez|cz)> b)
+    -(Pure | Use r)>	(Unit -(ez|cz)> b)
 
 -- TODO very strange issue here: if use names 'ec1' instead of 'ec1FB' they parse as anonymous & then references get mixed up
-    -(!0 | Use r + ck1)>  ([bFB : *]. [ec1FB ec2FB enFB : !]. [cc1FB cc2FB cnFB : $].
+    -(Pure | Use r + ck1)>  ([bFB : Data]. [ec1FB ec2FB enFB : Effect]. [cc1FB cc2FB cnFB : Closure].
 	     (a -(ec1FB|cc1FB)> bFB -(ec2FB|cc2FB)> bFB)
 	    -(eg1|cg1)>
 	     (Unit -(enFB|cnFB)> bFB)
@@ -36,17 +36,17 @@ foldrAndBuild ::
     -(Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + cz + Use r)>
     b;
 
-compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
+compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
        (b -(ef|cf)> c)
     -> (a -(eg|cg)> b)
-    -(!0      | cf)>
+    -(Pure      | cf)>
 	a
     -(ef + eg | cf + cg)>
 	c;
 
 plus ::
     Int R0#
-    -( !0 | Use R0#)>
+    -( Pure | Use R0#)>
     Int R0#
     -(Read R0# + Alloc R0# | Use R0#)>
     Int R0#;
@@ -63,12 +63,12 @@ pred ::
 
 countZ ::
     Int R0#
-    -(!0 | Use R0#)>
-    ([b : *].
-    [ec1 ec2 en : !].
-    [cc1 cc2 cn : $].
+    -(Pure | Use R0#)>
+    ([b : Data].
+    [ec1 ec2 en : Effect].
+    [cc1 cc2 cn : Closure].
     (Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-    -(!0 | Use R0#)>
+    -(Pure | Use R0#)>
     (Unit -(en|cn)> b)
     -(Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0#)>
     b);
@@ -87,12 +87,12 @@ even ::
 }
 with letrec
 
-foldr  [a b : *] [r : %]
-    [ek1 ek2 ez : !] [ck1 ck2 cz : $]
+foldr  [a b : Data] [r : Region]
+    [ek1 ek2 ez : Effect] [ck1 ck2 cz : Closure]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
-    { !0 | Use r }
+    { Pure | Use r }
     (z : Unit -(ez|cz)> b)
-    { !0 | Use r + ck1 }
+    { Pure | Use r + ck1 }
     (xs: List r a)
     { Read r + ek1 + ek2 + ez | ck1 + cz + Use r }
     : b
@@ -102,8 +102,8 @@ foldr  [a b : *] [r : %]
 	    k x (foldr [:a b r ek1 ek2 ez ck1 ck2 cz:] k z xs')
     }
 
-build [a : *] [r : %] [eg1 eg2 : !] [cg1 cg2 : $]
-    (g : [b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+build [a : Data] [r : Region] [eg1 eg2 : Effect] [cg1 cg2 : Closure]
+    (g : [b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>
 	 (Unit -(en|cn)> b)
@@ -111,24 +111,24 @@ build [a : *] [r : %] [eg1 eg2 : !] [cg1 cg2 : $]
 	 b)
     { eg1+eg2 + Alloc r | Use r }
     : List r a
-    = g [List r a] [!0] [Alloc r] [Alloc r] [:$0 (DeepUse a) $0:]
+    = g [List r a] [Pure] [Alloc r] [Alloc r] [:Empty (DeepUse a) Empty:]
 	(Cons [:r a:]) (Nil [:r a:])
 
-compose [a b c : *] [ef eg : !] [cf cg : $]
+compose [a b c : Data] [ef eg : Effect] [cf cg : Closure]
     (f : b -(ef|cf)> c) (g : a -(eg|cg)> b)
-	    { !0      | cf }
+	    { Pure      | cf }
     (x : a) { ef + eg | cf + cg }
 	    : c
  = f (g x)
 
-foldrAndBuild [a b : *] [r : %]
-    [ek1 ek2 ez : !] [ck1 ck2 cz : $]
-    [eg1 eg2 : !] [cg1 cg2 : $]
+foldrAndBuild [a b : Data] [r : Region]
+    [ek1 ek2 ez : Effect] [ck1 ck2 cz : Closure]
+    [eg1 eg2 : Effect] [cg1 cg2 : Closure]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
-    { !0 | Use r }
+    { Pure | Use r }
     (z : Unit -(ez|cz)> b)
-    { !0 | Use r + ck1 }
-    (g : [bFB : *]. [ec1FB ec2FB enFB : !]. [cc1FB cc2FB cnFB : $].
+    { Pure | Use r + ck1 }
+    (g : [bFB : Data]. [ec1FB ec2FB enFB : Effect]. [cc1FB cc2FB cnFB : Closure].
 	     (a -(ec1FB|cc1FB)> bFB -(ec2FB|cc2FB)> bFB)
 	    -(eg1|cg1)>
 	     (Unit -(enFB|cnFB)> bFB)
@@ -137,13 +137,13 @@ foldrAndBuild [a b : *] [r : %]
     {Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + cz + Use r}
     : b
     = foldr [:a b r ek1 ek2 ez ck1 ck2 cz:] k z 
-      (g [List r a] [!0] [Alloc r] [Alloc r] [:$0 (DeepUse a) $0:]
+      (g [List r a] [Pure] [Alloc r] [Alloc r] [:Empty (DeepUse a) Empty:]
 	(Cons [:r a:]) (Nil [:r a:]))
 
 
 plus
     (a : Int R0#)
-    { !0 | Use R0# }
+    { Pure | Use R0# }
     (b : Int R0#)
     { Read R0# + Alloc R0# | Use R0# }
     : Int R0#
@@ -160,12 +160,12 @@ pred
     : Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
 
 countZ (m : Int R0#)
-       { !0 | Use R0# }
-       [b : *]
-       [ec1 ec2 en : !]
-       [cc1 cc2 cn : $]
+       { Pure | Use R0# }
+       [b : Data]
+       [ec1 ec2 en : Effect]
+       [cc1 cc2 cn : Closure]
        (k : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-       { !0 | Use R0# }
+       { Pure | Use R0# }
        (z : Unit -(en|cn)> b)
        { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0# }
        : b

@@ -1,9 +1,9 @@
 module Module
 exports {
-    id :: [a : *]. a -> a;
+    id :: [a : Data]. a -> a;
 } with letrec
 
-id [a : *]
+id [a : Data]
    (x : a)
       : a
  = x

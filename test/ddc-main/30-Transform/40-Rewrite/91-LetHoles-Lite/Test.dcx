@@ -4,7 +4,7 @@
 
 
 -- now with a Const contraint and regions
-:set.. rule unboxInt_boxInt [r : %] (s : Int#).
+:set.. rule unboxInt_boxInt [r : Region] (s : Int#).
     Const r =>
     unboxInt [r] {boxInt [r] s}
     = s
@@ -46,7 +46,7 @@ fix 5 {Forward; BetaLets; Rewrite; Bubble}
 -- do the factorial
 :trans..
 letrec
-main    [r : %] 
+main    [r : Region] 
 	<w : Const r>
 	(_ : Int#)
 	{ Read r + Alloc r | Use r }

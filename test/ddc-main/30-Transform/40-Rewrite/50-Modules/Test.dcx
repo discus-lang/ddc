@@ -1,5 +1,5 @@
 :with test/ddc-main/30-Transform/40-Rewrite/50-Modules/Module.dcs
-:set.. rule fromTo [r1 r2 r3 : %]
+:set.. rule fromTo [r1 r2 r3 : Region]
 	(c : Int r3).
     toInt [:r2 r1:] (fromInt [:r3 r2:] c)
  =  copyInt [:r3 r1:] c

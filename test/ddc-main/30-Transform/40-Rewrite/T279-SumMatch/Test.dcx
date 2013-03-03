@@ -4,7 +4,7 @@
 :with test/ddc-main/30-Transform/40-Rewrite/T279-SumMatch/Module.dcs
 
 -- silly rule with effect matching
-:set.. rule silly [ef : !]
+:set.. rule silly [ef : Effect]
     (u : Unit).
         effectful [Read R0# + Write R0# + ef] u
         = u

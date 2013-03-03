@@ -1,6 +1,6 @@
 :set Indent
 
-:set.. rule mul2r [r1 r2 r3 : %] (x : Int r1).
+:set.. rule mul2r [r1 r2 r3 : Region] (x : Int r1).
     mulInt [:r1 r2 r3:] x (2 [r2] ())
     = addInt [:r1 r1 r3:] x x
 ;;
@@ -11,7 +11,7 @@ let put = (\(_ : Unit). 3 [R0#] ())
 in  mulInt [:R0# R0# R0#:] (put ()) (2 [R0#] ())
 ;;
 
-:set.. rule mul0r [r1 r2 r3 : %] (x : Int r1).
+:set.. rule mul0r [r1 r2 r3 : Region] (x : Int r1).
     mulInt [:r1 r2 r3:] x (0 [r2] ())
     = 0 [r3] ()
 ;;

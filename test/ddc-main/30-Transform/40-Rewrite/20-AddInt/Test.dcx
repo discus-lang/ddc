@@ -1,8 +1,8 @@
 :set Indent
 
 -- add zero on right. make copy
-:set rule add0r [r1 r2 r3 : %] (x : Int r1). addInt [:r1 r2 r3:] x (0 [r2] ()) = copyInt [:r1 r3:] x
-:set rule add0l [r1 r2 r3 : %] (y : Int r2). addInt [:r1 r2 r3:] (0 [r1] ()) y = copyInt [:r2 r3:] y
+:set rule add0r [r1 r2 r3 : Region] (x : Int r1). addInt [:r1 r2 r3:] x (0 [r2] ()) = copyInt [:r1 r3:] x
+:set rule add0l [r1 r2 r3 : Region] (y : Int r2). addInt [:r1 r2 r3:] (0 [r1] ()) y = copyInt [:r2 r3:] y
 
 -- should work with any regions
 :set trans Rewrite
@@ -11,11 +11,11 @@
 :trans addInt [:R1# R2# R3#:] (5 [R1#] ()) (0 [R2#] ())
 
 -- addInt is strict & closure free so we can reduce any copies in its args
-:set.. rule addCopy1 [r1 r1' r2 r3 : %] (x : Int r1') (y : Int r2).
+:set.. rule addCopy1 [r1 r1' r2 r3 : Region] (x : Int r1') (y : Int r2).
     addInt [:r1 r2 r3:] (copyInt [:r1' r1:] x) y =
     addInt [:r1' r2 r3:] x y;;
 
-:set.. rule addCopy2 [r1 r2 r2' r3 : %] (x : Int r1) (y : Int r2').
+:set.. rule addCopy2 [r1 r2 r2' r3 : Region] (x : Int r1) (y : Int r2').
     addInt [:r1 r2 r3:] x (copyInt [:r2' r2:] y) =
     addInt [:r1 r2' r3:] x y;;
 
@@ -26,11 +26,11 @@
 
 
 -- we can simplify out a copy of a literal.
-:set.. rule copyLit [r1 r2 : %] (lit : [^:%]. Unit -(Alloc ^0 | $0)> Int ^0).
+:set.. rule copyLit [r1 r2 : Region] (lit : [^:Region]. Unit -(Alloc ^0 | Empty)> Int ^0).
     copyInt [:r1 r2:] (lit [r1] ()) =
     lit [r2] ();;
 -- and a copy of a copy
-:set.. rule copyCopy [r1 r2 r3 : %] (x : Int r1).
+:set.. rule copyCopy [r1 r2 r3 : Region] (x : Int r1).
     copyInt [:r2 r3:] (copyInt [:r1 r2:] x) =
     copyInt [:r1 r3:] x;;
 
@@ -49,7 +49,7 @@ addInt [:R7# R1# R2#:]
 
 -- nested inside a function: give the closures a workout
 :trans..
-letrec foo [r1 r2 r3 : %]
+letrec foo [r1 r2 r3 : Region]
     (x : Int r1)
     { Read r1 + Read r2 + Alloc r2 + Alloc r3 | Use r1 + Use r2 + Use r3 }
     : Int r3

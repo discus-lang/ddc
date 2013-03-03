@@ -1,15 +1,15 @@
 module FoldBuild
 exports {
 
-foldr   :: [a b : *]. [r : %].
-        [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
-        (a -(ek1|ck1)> b -(ek2|ck2)> b) -(!0 | Use r)> 
-        (Unit -(ez|cz)> b)              -(!0 | Use r + ck1)>
+foldr   :: [a b : Data]. [r : Region].
+        [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
+        (a -(ek1|ck1)> b -(ek2|ck2)> b) -(Pure | Use r)> 
+        (Unit -(ez|cz)> b)              -(Pure | Use r + ck1)>
         (List r a)                      -(Read r + ek1 + ek2 + ez | ck1 + cz + Use r)>
         b;
 
-build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
-    ([b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+build :: [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
+    ([b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>
 	 (Unit -(en|cn)> b)
@@ -20,12 +20,12 @@ build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
 }
 with letrec
 
-foldr  [a b : *] [r : %]
-    [ek1 ek2 ez : !] [ck1 ck2 cz : $]
+foldr  [a b : Data] [r : Region]
+    [ek1 ek2 ez : Effect] [ck1 ck2 cz : Closure]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
-    { !0 | Use r }
+    { Pure | Use r }
     (z : Unit -(ez|cz)> b)
-    { !0 | Use r + ck1 }
+    { Pure | Use r + ck1 }
     (xs: List r a)
     { Read r + ek1 + ek2 + ez | ck1 + cz + Use r }
     : b
@@ -35,8 +35,8 @@ foldr  [a b : *] [r : %]
 	    k x (foldr [:a b r ek1 ek2 ez ck1 ck2 cz:] k z xs')
     }
 
-build [a : *] [r : %] [eg1 eg2 : !] [cg1 cg2 : $]
-    (g : [b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+build [a : Data] [r : Region] [eg1 eg2 : Effect] [cg1 cg2 : Closure]
+    (g : [b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>
 	 (Unit -(en|cn)> b)
@@ -44,6 +44,6 @@ build [a : *] [r : %] [eg1 eg2 : !] [cg1 cg2 : $]
 	 b)
     { eg1+eg2 + Alloc r | Use r }
     : List r a
-    = g [List r a] [!0] [Alloc r] [Alloc r] [:$0 (DeepUse a) $0:]
+    = g [List r a] [Pure] [Alloc r] [Alloc r] [:Empty (DeepUse a) Empty:]
 	(Cons [:r a:]) (Nil [:r a:])
 

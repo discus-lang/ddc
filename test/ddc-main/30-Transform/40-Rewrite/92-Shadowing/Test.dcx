@@ -3,7 +3,7 @@
 -- Use test 50's simple module
 :with test/ddc-main/30-Transform/40-Rewrite/50-Modules/Module.dcs
 
-:set.. rule fromTo [r1 r2 r3 : %]
+:set.. rule fromTo [r1 r2 r3 : Region]
 	(c : Int r3).
     toInt [:r2 r1:] (fromInt [:r3 r2:] c)
  =  newInt [:r3 r1:] c
@@ -19,7 +19,7 @@ in  toInt
 
 -- Redefinition with similar type, but not as big effect
 :trans..
-let toInt = /\(r1 r2 : %).
+let toInt = /\(r1 r2 : Region).
 	     \(xs : List r1 Unit).
 		0 [r2] ()
 in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
@@ -27,7 +27,7 @@ in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 
 -- Redefinition with same type
 :trans..
-let toInt = /\(r1 r2 : %).
+let toInt = /\(r1 r2 : Region).
 	     \(xs : List r1 Unit).
 		case xs of {
 		    Nil -> 100 [r2] ();
@@ -39,7 +39,7 @@ in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 -- Letrec
 :trans..
 letrec {
-toInt [r1 r2 : %]
+toInt [r1 r2 : Region]
     (xs : List r1 Unit) {Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2}
     : Int r2
  = case xs of {
@@ -52,14 +52,14 @@ in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 
 -- Lambda instead of let
 :trans..
-\(toInt : [r1 r2 : %]. List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2).
+\(toInt : [r1 r2 : Region]. List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2).
   toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 ;;
 
 -- Try shadowing fromInt instead
 :trans..
 letrec {
-fromInt [r1 r2 : %]
+fromInt [r1 r2 : Region]
     (c : Int r1) {Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
     : List r2 Unit
  = case c of {
@@ -73,7 +73,7 @@ in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 -- Try shadowing newInt (only visible in result) instead
 :trans..
 letrec {
-newInt [r1 r2 : %]
+newInt [r1 r2 : Region]
     (x : Int r1) {Read r1 + Alloc r2 | Use r1 + Use r2}
     : Int r2
  = copyInt [:r1 r2:] x
@@ -84,7 +84,7 @@ in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 -- Inside the same letrec
 :trans..
 letrec {
-newInt [r1 r2 : %]
+newInt [r1 r2 : Region]
     (x : Int r1) {Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
     : Int r2
  =  toInt [:r2 r2:] (fromInt [:r1 r2:] x)

@@ -32,8 +32,8 @@ addInt [R0#] [R0#] [R0#] (2 [R0#] ()) (3 [R0#] ())
 
 
 -- Arguments to weakclo that don't have any free variables should be eliminated.
-let id : [r : %].Int r -> Int r
-      = /\(r : %).
+let id : [r : Region].Int r -> Int r
+      = /\(r : Region).
          \(x : Int r). x in
 ()
 

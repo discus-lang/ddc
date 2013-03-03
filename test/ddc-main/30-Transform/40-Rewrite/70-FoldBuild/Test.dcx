@@ -4,12 +4,12 @@
 :set TraceTrans
 
 :set.. rule foldrBuild_one
-    [a b : *] [r : %]
-    [ek1 ek2 ez eg1 eg2 : !]
-    [ck1 ck2 cz cg1 cg2 : $]
+    [a b : Data] [r : Region]
+    [ek1 ek2 ez eg1 eg2 : Effect]
+    [ck1 ck2 cz cg1 cg2 : Closure]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
     (z : Unit -(ez|cz)> b)
-    (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+    (g : [gb : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
        -(eg1|cg1)>
 	(Unit -(en|cn)> gb)
@@ -24,12 +24,12 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 ;;
 
 :set.. rule foldrBuild_fuse
-    [a b : *] [r : %]
-    [ek1 ek2 ez eg1 eg2 : !]
-    [ck1 ck2 cz cg1 cg2 : $]
+    [a b : Data] [r : Region]
+    [ek1 ek2 ez eg1 eg2 : Effect]
+    [ck1 ck2 cz cg1 cg2 : Closure]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
     (z : Unit -(ez|cz)> b)
-    (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+    (g : [gb : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
        -(eg1|cg1)>
 	(Unit -(en|cn)> gb)
@@ -45,12 +45,12 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 
 
 -- :set.. rule foldrBuild
---     [a b : *] [r : %]
---     [ek1 ek2 ez eg1 eg2 : !]
---     [ck1 ck2 cz cg1 cg2 : $]
+--     [a b : Data] [r : Region]
+--     [ek1 ek2 ez eg1 eg2 : Effect]
+--     [ck1 ck2 cz cg1 cg2 : Closure]
 --     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
 --     (z : Unit -(ez|cz)> b)
---     (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+--     (g : [gb : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 -- 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
 --        -(eg1|cg1)>
 -- 	(Unit -(en|cn)> gb)
@@ -90,10 +90,10 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 --			else c m (count' (m-1) c n)
 :trans..
 foldr [:(Int R0#) (Int R0#) R1#
-	!0 (Read R0# + Alloc R0#) (Alloc R0#)
+	Pure (Read R0# + Alloc R0#) (Alloc R0#)
 	(Use R0#) (Use R0#) (Use R0#):]
 	plus zero
-    (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (10 [R0#] ())))
+    (build [:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (10 [R0#] ())))
 ;;
 
 
@@ -107,22 +107,22 @@ foldr [:(Int R0#) (Int R0#) R1#
 
 -- sum
 foldr [:(Int R0#) (Int R0#) R1#
-	!0 (Read R0# + Alloc R0#) (Alloc R0#)
+	Pure (Read R0# + Alloc R0#) (Alloc R0#)
 	(Use R0#) (Use R0#) (Use R0#):]
 	plus zero
     -- filter f xs
     (build [:(Int R0#) R1#
-	!0 (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
-	-- (Read R0# + Alloc R0#) !0
+	Pure (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
+	-- (Read R0# + Alloc R0#) Pure
 	(Use R0# + Use R1#)
 	(Use R0# + Use R1#)
 	:]
-	(/\(bF : *). /\(ec1F ec2F enF : !). /\(cc1F cc2F cnF : $).
+	(/\(bF : Data). /\(ec1F ec2F enF : Effect). /\(cc1F cc2F cnF : Closure).
 	\(c : Int R0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
 	\(n : Unit -(enF|cnF)> bF).
 
 	foldr [:(Int R0#) bF R1#
-		!0 (Read R0# + Alloc R0# + ec1F + ec2F) enF
+		Pure (Read R0# + Alloc R0# + ec1F + ec2F) enF
 		(Use R0# + cc1F) (Use R0# + cc1F) cnF
 		:] 
 	    (\(x : Int R0#).
@@ -134,11 +134,11 @@ foldr [:(Int R0#) (Int R0#) R1#
 	     )
 	    n
 	    
-	-- map *2
+	-- map Data2
 	    (build [:(Int R0#) R1# 
-		     !0 (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
+		     Pure (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
 		     (Use R0# + Use R1#) (Use R0# + Use R1#) :]
-		    (/\(b : *). /\(ec1 ec2 en : !). /\(cc1 cc2 cn : $).
+		    (/\(b : Data). /\(ec1 ec2 en : Effect). /\(cc1 cc2 cn : Closure).
 		    \(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
 		    \(n : Unit -(en|cn)> b).
 
@@ -155,7 +155,7 @@ foldr [:(Int R0#) (Int R0#) R1#
 			n
 
 			-- enum 100
-			(build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
+			(build [:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
 		    ))))
 
 ;;
@@ -165,11 +165,11 @@ foldr [:(Int R0#) (Int R0#) R1#
 -- what their entire effect will be. So they were not being fired.
 :trans..
 
--- map *2
+-- map Data2
 (build [:(Int R0#) R1# 
-	 !0 (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
+	 Pure (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
 	 (Use R0# + Use R1#) (Use R0# + Use R1#) :]
-	(/\(b : *). /\(ec1 ec2 en : !). /\(cc1 cc2 cn : $).
+	(/\(b : Data). /\(ec1 ec2 en : Effect). /\(cc1 cc2 cn : Closure).
 	\(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
 	\(n : Unit -(en|cn)> b).
 
@@ -186,7 +186,7 @@ foldr [:(Int R0#) (Int R0#) R1#
 	    n
 
 	    -- enum 100
-	    (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
+	    (build [:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
 	))
 ;;
 

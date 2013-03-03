@@ -3,13 +3,13 @@
 
 -- Anonymize lambdas and applications.
 :trans..
-/\(r:%).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
+/\(r:Region).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
 
 
 -- Anonymize lambdas and applications.
 -- Spec and value binder have the same name.
 :trans..
-/\(x : %).\(x : Int x). addInt [:x x x:] x x;;
+/\(x : Region).\(x : Int x). addInt [:x x x:] x x;;
 
 
 -- Single let
@@ -48,8 +48,8 @@ case xx of {
 -- letrec expressions
 :trans..
 letrec {
- append  [r : %] [a : *]
-         (xx : List r a) {!0               | Use r}
+ append  [r : Region] [a : Data]
+         (xx : List r a) {Pure               | Use r}
          (ys : List r a) {Read r + Alloc r | Use r + DeepUse a}
          : List r a
   = case xx of {
@@ -61,7 +61,7 @@ letrec {
 
 -- Mixed spec and value binders.
 :trans..
-let foo [r1 r2 : %] (_ : Unit)
+let foo [r1 r2 : Region] (_ : Unit)
      = let x = 5 [r1] () in
        let y = letregion r3 in
                addInt [:r1 r3 r2:] x (1 [r3] ()) in
@@ -77,8 +77,8 @@ in  letregion r4 in
 -- Mixed spec and value and witness binders, 
 -- With spec binders interspersed with the others, and a non-binder.
 :trans..
-let foo [r1 : %] (wc1 : Const r1) (wg1 : Global r1) 
-        [r2 : %] (wc2 : Const r2) (wg2 : Global r2) (wl2 : Lazy  r2)
+let foo [r1 : Region] (wc1 : Const r1) (wg1 : Global r1) 
+        [r2 : Region] (wc2 : Const r2) (wg2 : Global r2) (wl2 : Lazy  r2)
         (_ : Unit)
      = let x = 5 [r1] () in
        let y : Int r2 lazy <wl2> 

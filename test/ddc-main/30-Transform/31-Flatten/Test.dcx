@@ -6,8 +6,8 @@
 :load..
 module Main with
 letrec {
-foo : [r : %]. Int r -(Alloc r | Use r)> Unit
- = /\(r : %). \(x : Int r). 
+foo : [r : Region]. Int r -(Alloc r | Use r)> Unit
+ = /\(r : Region). \(x : Int r). 
    let x0 : Int r
          = let ^ : Int r  = 10 [r] () in
            let _ : Unit   = () in
@@ -61,7 +61,7 @@ let ^ = \(^ : Int R0#). addInt [:R0# R0# R0#:] ^0 (1 [R0#] ()) in
 -- Letrec
 :trun..
 letrec {
- fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
+ fac    [r:Region] (n : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> 1 [r] ();
         _       -> mulInt [:r r r:] n
@@ -94,7 +94,7 @@ in
 :set trans Anonymize; Snip; Flatten
 :set +Indent
 :trans..
-let foo [r1 r2 : %] (_ : Unit)
+let foo [r1 r2 : Region] (_ : Unit)
      = let x = 5 [r1] () in
        let y = letregion r3 in
                addInt [:r1 r3 r2:] x (1 [r3] ()) in

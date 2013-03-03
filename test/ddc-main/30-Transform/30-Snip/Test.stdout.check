@@ -36,8 +36,8 @@ addInt [R0#] [R1#] [R2#] ^1 ^0
 10
 
 -- Type abstraction
-let ^ : [t : *].t -> t
-      = /\(t : *).
+let ^ : [t : Data].t -> t
+      = /\(t : Data).
          \(x : t). x in
 let ^ : List R0# (Int R0#)
       = Nil [R0#] [Int R0#] () in
@@ -63,8 +63,8 @@ let ^ : Unit -(Read R0# + Alloc R0# | Use R0#)> Int R0#
 
 -- Letrec
 letrec {
-  fac : [r : %].Int r -(Read r + Alloc r | Use r)> Int r
-    = /\(r : %).
+  fac : [r : Region].Int r -(Read r + Alloc r | Use r)> Int r
+    = /\(r : Region).
        \(n : Int r).
       case n of {
         0  
@@ -98,15 +98,15 @@ case ^0 of {
 
 -- Introduce new bindings for over-applied functions.
 ok
-let id : [a : *].a -> a
-      = /\(a : *).
+let id : [a : Data].a -> a
+      = /\(a : Data).
          \(x : a). x in
-let add : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+let add : Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(x y : Int R0#). addInt [R0#] [R0#] [R0#] x y in
 let ^ : Int R0# = 2 [R0#] () in
 let ^ : Int R0# = 3 [R0#] () in
-let ^ : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add in
+let ^ : Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+      = id [Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add in
 ^0 ^2 ^1
 5
 
@@ -114,7 +114,7 @@ let ^ : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int 
 -- Function applied to several nested arguments with deBruijn binders.
 ok
 ok
-/\(^ : %)./\(^ : *).
+/\(^ : Region)./\(^ : Data).
  \(^ : Ptr# ^1 Obj).\(^ : Nat#).\(^ : ^0).
 let ^ : Addr# = takePtr# [^1] [Obj] ^2 in
 let ^ : Nat#

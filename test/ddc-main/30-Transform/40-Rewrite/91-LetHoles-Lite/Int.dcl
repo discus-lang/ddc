@@ -2,37 +2,37 @@ module Int
 exports {
 
 boxInt  ::
-    [r : %].
+    [r : Region].
     Int# -(Alloc r | Use r)>
     Int r;
 
 unboxInt ::
-    [r : %].
-    Int r -(Read r | $0)>
+    [r : Region].
+    Int r -(Read r | Empty)>
     Int#;
 
 addInt ::
-    [r1 r2 r3 : %].
-    Int r1 -(!0 | Use r1 + Use r2 + Use r3)>
+    [r1 r2 r3 : Region].
+    Int r1 -(Pure | Use r1 + Use r2 + Use r3)>
     Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3)>
     Int r3;
 
 subInt ::
-    [r1 r2 r3 : %].
-    Int r1 -(!0 | Use r1 + Use r2 + Use r3)>
+    [r1 r2 r3 : Region].
+    Int r1 -(Pure | Use r1 + Use r2 + Use r3)>
     Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3)>
     Int r3;
 
 mulInt ::
-    [r1 r2 r3 : %].
-    Int r1 -(!0 | Use r1 + Use r2 + Use r3)>
+    [r1 r2 r3 : Region].
+    Int r1 -(Pure | Use r1 + Use r2 + Use r3)>
     Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3)>
     Int r3;
 
 fac     ::
-    [r : %].
+    [r : Region].
     Const r =>
-    Int r -(!0 | Use r)>
+    Int r -(Pure | Use r)>
     Int r -(Read r + Alloc r | Use r)>
     Int r;
 }
@@ -40,23 +40,23 @@ with letrec
 
 
 -- | Box an integer.
-boxInt  [r : %] 
+boxInt  [r : Region] 
         (i : Int#) { Alloc r | Use r } 
         : Int r
  = I# [r] i
 
 
 -- | Unbox an integer.
-unboxInt [r : %]
-        (x : Int r) { Read r | $0 } 
+unboxInt [r : Region]
+        (x : Int r) { Read r | Empty } 
         : Int#
  = case x of 
     I# i  -> i
 
 
 -- | Add two integers.
-addInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r1 + Use r2 + Use r3 } 
+addInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r1 + Use r2 + Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3 }
         : Int r3
  =  let x' = unboxInt [r1] x	in
@@ -65,8 +65,8 @@ addInt [r1 r2 r3 : %]
 
 
 -- | Subtract the second integer from the first.
-subInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r1 + Use r2 + Use r3 } 
+subInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r1 + Use r2 + Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3 }
         : Int r3
  =  let x' = unboxInt [r1] x	in
@@ -75,17 +75,17 @@ subInt [r1 r2 r3 : %]
 
 
 -- | Multiply two integers.
-mulInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r1 + Use r2 + Use r3 } 
+mulInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r1 + Use r2 + Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3 }
         : Int r3
  =  let x' = unboxInt [r1] x	in
     let y' = unboxInt [r2] y	in
 	boxInt [r3] (mul# [Int#] x' y')
 
-fac     [r : %] 
+fac     [r : Region] 
 	<w : Const r>
-        (acc : Int r) {!0 | Use r }
+        (acc : Int r) {Pure | Use r }
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
  =  case unboxInt [r] n  of { 
 	0i#   -> acc;

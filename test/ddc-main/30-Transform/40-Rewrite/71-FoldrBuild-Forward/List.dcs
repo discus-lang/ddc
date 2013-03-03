@@ -1,17 +1,17 @@
 module List
 exports {
 
-compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
+compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
        (b -(ef|cf)> c)
     -> (a -(eg|cg)> b)
-    -(!0      | cf)>
+    -(Pure      | cf)>
 	a
     -(ef + eg | cf + cg)>
 	c;
 
 plus ::
     Int R0#
-    -( !0 | Use R0#)>
+    -( Pure | Use R0#)>
     Int R0#
     -(Read R0# + Alloc R0# | Use R0#)>
     Int R0#;
@@ -28,12 +28,12 @@ pred ::
 
 count' ::
     Int R0#
-    -(!0 | Use R0#)>
-    ([b : *].
-    [ec1 ec2 en : !].
-    [cc1 cc2 cn : $].
+    -(Pure | Use R0#)>
+    ([b : Data].
+    [ec1 ec2 en : Effect].
+    [cc1 cc2 cn : Closure].
     (Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-    -(!0 | Use R0#)>
+    -(Pure | Use R0#)>
     (Unit -(en|cn)> b)
     -(Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0#)>
     b);
@@ -60,16 +60,16 @@ count ::
 
 }
 imports {
-foldr  :: [a b : *]. [r : %].
-    [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
+foldr  :: [a b : Data]. [r : Region].
+    [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
 	(a -(ek1|ck1)> b -(ek2|ck2)> b)
     ->	(Unit -(ez|cz)> b)
     ->	(List r a)
     -(Read r + ek1 + ek2 + ez | ck1 + ck2 + cz + Use r)>
 	b;
 
-build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
-    ([b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+build :: [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
+    ([b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>
 	 (Unit -(en|cn)> b)
@@ -80,9 +80,9 @@ build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
 }
 with letrec
 
-compose [a b c : *] [ef eg : !] [cf cg : $]
+compose [a b c : Data] [ef eg : Effect] [cf cg : Closure]
     (f : b -(ef|cf)> c) (g : a -(eg|cg)> b)
-	    { !0      | cf }
+	    { Pure      | cf }
     (x : a) { ef + eg | cf + cg }
 	    : c
  = f (g x)
@@ -90,7 +90,7 @@ compose [a b c : *] [ef eg : !] [cf cg : $]
 
 plus
     (a : Int R0#)
-    { !0 | Use R0# }
+    { Pure | Use R0# }
     (b : Int R0#)
     { Read R0# + Alloc R0# | Use R0# }
     : Int R0#
@@ -107,12 +107,12 @@ pred
     : Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
 
 count' (m : Int R0#)
-       { !0 | Use R0# }
-       [b : *]
-       [ec1 ec2 en : !]
-       [cc1 cc2 cn : $]
+       { Pure | Use R0# }
+       [b : Data]
+       [ec1 ec2 en : Effect]
+       [cc1 cc2 cn : Closure]
        (k : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-       { !0 | Use R0# }
+       { Pure | Use R0# }
        (z : Unit -(en|cn)> b)
        { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0# }
        : b
@@ -140,7 +140,7 @@ sum (xs : List R1# (Int R0#))
     : Int R0#
  = foldr
 	    [:(Int R0#) (Int R0#) R1#
-	    !0 (Read R0# + Alloc R0#) (Alloc R0#)
+	    Pure (Read R0# + Alloc R0#) (Alloc R0#)
 	    (Use R0#) (Use R0#) (Use R0#):]
 	plus zero xs
 
@@ -148,7 +148,7 @@ count (m : Int R0#)
     { Read R0# + Alloc R0# + Alloc R1# | Use R0# + Use R1# }
     : List R1# (Int R0#) 
  = build
-	[:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
+	[:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
 	(count' m)
 
 

@@ -1,6 +1,6 @@
 :set Indent
 
-:set rule copyConst [r1:%] (x:Int r1). Const r1 => copyInt [:r1 r1:] x = x
+:set rule copyConst [r1:Region] (x:Int r1). Const r1 => copyInt [:r1 r1:] x = x
 :set trans Rewrite
 
 :set rule
@@ -65,7 +65,7 @@ letregion ^ in
 
 
 -- a silly rule to test Distinct constraints
-:set.. rule dumbDistinct [r1 r2:%] (x:Int r1) (y:Int r2).
+:set.. rule dumbDistinct [r1 r2:Region] (x:Int r1) (y:Int r2).
     Distinct r1 r2 =>
     addInt [:r1 r2 r1:] x y
     = 0 [r1] ()
@@ -80,7 +80,7 @@ addInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ())
 
 -- don't: not known
 :trans..
-/\(r1 r2 : %). \(_ : Unit).
+/\(r1 r2 : Region). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
 
@@ -97,7 +97,7 @@ addInt [:R0# ^0 R0#:] (5 [R0#] ()) (3 [^0] ())
 
 -- do: known from argument
 :trans..
-/\(r1 r2 : %). \(w : Distinct r1 r2). \(_ : Unit).
+/\(r1 r2 : Region). \(w : Distinct r1 r2). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
 
@@ -111,12 +111,12 @@ copyInt [:r1 R0#:]
 -- do: subset of a Distinct3
 -- this needs to be an argument because letregions are treated as 'concrete' & known to be distinct to other concretes as well.
 :trans..
-/\(r1 r2 r3 : %). \(w : Distinct3 r1 r2 r3). \(_ : Unit).
+/\(r1 r2 r3 : Region). \(w : Distinct3 r1 r2 r3). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
 
 -- do: another subset (rot)
 :trans..
-/\(r1 r2 r3 : %). \(w : Distinct3 r2 r3 r1). \(_ : Unit).
+/\(r1 r2 r3 : Region). \(w : Distinct3 r2 r3 r1). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;

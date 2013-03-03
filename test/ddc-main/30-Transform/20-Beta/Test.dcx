@@ -106,26 +106,26 @@ addInt [:r0 r0 R0#:]
 
 -- Rewrite outer type binder to avoid shadow conflict on type lambda.
 :trans..
-(\(f : [a : *]. Unit -> Unit). /\(a : *). f [a] ())
-        (/\(a : *). \(_ : Unit). ());;
+(\(f : [a : Data]. Unit -> Unit). /\(a : Data). f [a] ())
+        (/\(a : Data). \(_ : Unit). ());;
 
 
 -- Rewrite quantifier to avoid capture.
 :trans..
-(/\(a : *). 
-    (/\(b : *). \(x : [a : *]. a -> b). ())
+(/\(a : Data). 
+    (/\(b : Data). \(x : [a : Data]. a -> b). ())
     [a]);;
 
 
 -- Rewrite variables on types of value binders.
 :trans..
-(\(x : Unit -> Unit). /\(r : %). \(y : Int r). y)
+(\(x : Unit -> Unit). /\(r : Region). \(y : Int r). y)
         (\(_ : Unit). letregion r in ());;
 
 
 -- Rewrite variables on types of witness binders.
 :trans..
-(\(x : Unit -> Unit). /\(r : %). \(y : Int r). \(wg : Global r). \(wl : Lazy r).
+(\(x : Unit -> Unit). /\(r : Region). \(y : Int r). \(wg : Global r). \(wl : Lazy r).
         let x lazy <wl> = forget <use [r] wg> in y 
         in x)
         (\(_ : Unit). letregion r in ());;

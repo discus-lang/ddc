@@ -3,13 +3,13 @@
 
 -- Bad: rhs & lhs have different types
 :set.. rule bad_DifferentTypes
-    [r : %].
+    [r : Region].
     5 [r] () = ()
 ;;
 
 -- Bad: doesn't typecheck
 :set.. rule bad_BadType
-    [r : %].
+    [r : Region].
     r [r] () = ()
 ;;
 
@@ -23,7 +23,7 @@
 -- Bad: left-hand side shouldn't have foralls
 :set.. rule bad_Forall
     (i : Int R0#).
-    (/\(a : *). id [a]) [Int R0#] i = i
+    (/\(a : Data). id [a]) [Int R0#] i = i
 ;;
 
 -- ..Ok: right-hand side can have binders
@@ -34,21 +34,21 @@
 
 -- Bad: no such constraint 'Mutz'
 :set.. rule bad_Constraint
-    [r : %].
+    [r : Region].
     Mutz r =>
     0 [r] () = 1 [r] ()
 ;;
 
 -- Bad: constraint isn't a witness
 :set.. rule bad_Constraint2
-    [r : %].
+    [r : Region].
     Int r =>
     0 [r] () = 1 [r] ()
 ;;
 
 -- Bad: not all variables mentioned in left-hand side
 :set.. rule bad_Unmentioned
-    [r : %].
+    [r : Region].
     () = ()
 ;;
 

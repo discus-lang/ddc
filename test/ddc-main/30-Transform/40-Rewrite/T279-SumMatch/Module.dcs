@@ -1,13 +1,13 @@
 module Module
 exports {
 
-effectful :: [ef : !].
+effectful :: [ef : Effect].
     Unit -> Unit;
 
 }
 with letrec
 
-effectful [ef : !]
+effectful [ef : Effect]
     (u : Unit)
     : Unit
     = u

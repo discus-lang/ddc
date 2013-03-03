@@ -42,9 +42,9 @@ addInt [R0#] [R0#] [R0#] ^0 ^0
 -- binders inside let
 weakclo {mulInt} in
 let ^ : Int R0#
-      = let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 5 in
+      = let ^ : [^ : Region].Unit -(Alloc ^0 | Empty)> Int ^0 = 5 in
         let ^ : Unit = () in
-        (/\(^ : %).
+        (/\(^ : Region).
           \(^ : Unit). ^2 [^0] ^0) [R0#] () in
 addInt [R0#] [R0#] [R0#] ^0 ^0
 10

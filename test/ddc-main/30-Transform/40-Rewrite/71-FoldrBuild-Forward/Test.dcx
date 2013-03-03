@@ -5,12 +5,12 @@
 :set TraceTrans
 
 :set.. rule foldrBuild
-    [a b : *] [r : %]
-    [ek1 ek2 ez eg1 eg2 : !]
-    [ck1 ck2 cz cg1 cg2 : $]
+    [a b : Data] [r : Region]
+    [ek1 ek2 ez eg1 eg2 : Effect]
+    [ck1 ck2 cz cg1 cg2 : Closure]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
     (z : Unit -(ez|cz)> b)
-    (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+    (g : [gb : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
        -(eg1|cg1)>
 	(Unit -(en|cn)> gb)
@@ -42,23 +42,23 @@ fix 30 {Forward; BetaLets; Bubble; Prune; Rewrite; Snip; Flatten; Namify}
 let sum = \(xs : List R1# (Int R0#)).
 	foldr
 	    [:(Int R0#) (Int R0#) R1#
-	    !0 (Read R0# + Alloc R0#) (Alloc R0#)
+	    Pure (Read R0# + Alloc R0#) (Alloc R0#)
 	    (Use R0#) (Use R0#) (Use R0#):]
 	plus zero xs
 in
 let filter = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List R1# (Int R0#)).
     (build [:(Int R0#) R1#
-	!0 (Read R0# + Read R1# + Alloc R0#)
-	-- (Read R0# + Alloc R0#) !0
+	Pure (Read R0# + Read R1# + Alloc R0#)
+	-- (Read R0# + Alloc R0#) Pure
 	(Use R0# + Use R1#)
 	(Use R0# + Use R1#)
 	:]
-	(/\(bF : *). /\(ec1F ec2F enF : !). /\(cc1F cc2F cnF : $).
+	(/\(bF : Data). /\(ec1F ec2F enF : Effect). /\(cc1F cc2F cnF : Closure).
 	\(c : Int R0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
 	\(n : Unit -(enF|cnF)> bF).
 
 	foldr [:(Int R0#) bF R1#
-		!0 (Read R0# + Alloc R0# + ec1F + ec2F) enF
+		Pure (Read R0# + Alloc R0# + ec1F + ec2F) enF
 		(Use R0# + cc1F) (Use R0# + cc1F) cnF
 		:] 
 	    (\(x : Int R0#).
@@ -73,9 +73,9 @@ let filter = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : L
 in
 let map = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List R1# (Int R0#)).
 	    (build [:(Int R0#) R1# 
-		     !0 (Read R0# + Read R1# + Alloc R0#)
+		     Pure (Read R0# + Read R1# + Alloc R0#)
 		     (Use R0# + Use R1#) (Use R0# + Use R1#) :]
-		    (/\(b : *). /\(ec1 ec2 en : !). /\(cc1 cc2 cn : $).
+		    (/\(b : Data). /\(ec1 ec2 en : Effect). /\(cc1 cc2 cn : Closure).
 		    \(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
 		    \(n : Unit -(en|cn)> b).
 
@@ -93,7 +93,7 @@ let map = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List
 in
 let count = \(m : Int R0#).
     build
-	[:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
+	[:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
 	(count' m)
 in
 -- define outside, otherwise beta reduction won't fire...

@@ -5,7 +5,7 @@
 :with test/ddc-main/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
 
 -- now with a Const contraint and regions
-:set.. rule unboxInt_boxInt [r : %] (s : Int#).
+:set.. rule unboxInt_boxInt [r : Region] (s : Int#).
     Const r =>
     unboxInt [r] {boxInt [r] s}
     = s
@@ -16,7 +16,7 @@
 -- do the factorial
 :tinteract..
 letrec
-main    [r : %] 
+main    [r : Region] 
 	<w : Const r>
 	(_ : Int#)
 	{ Read r + Alloc r | Use r }

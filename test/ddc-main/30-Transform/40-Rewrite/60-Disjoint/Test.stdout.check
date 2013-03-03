@@ -47,7 +47,7 @@ map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMu
               (Nil [R0#] [Int R0#] ())))
 
 -- a write and a read from different regions, but lambda-bound - don't rewrite
-/\(rMut : %).
+/\(rMut : Region).
  \(wMut : Mutable rMut).\(dummy : Int R0#).
 let mutabl : Int rMut = 5 [rMut] () in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
@@ -62,7 +62,7 @@ map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
                    (Nil [R0#] [Int R0#] ()))))
 
 -- lambda-bound different regions, but with a Distinctness witness. do rewrite.
-/\(rMut : %).
+/\(rMut : Region).
  \(wMut : Mutable rMut).\(wDistinct : Distinct2 R0# rMut).\(dummy : Int R0#).
 let mutabl : Int rMut = 5 [rMut] () in
 weakeff [Read R0# + Write rMut + Alloc R0#] in

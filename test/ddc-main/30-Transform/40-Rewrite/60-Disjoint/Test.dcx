@@ -1,6 +1,6 @@
 :with test/ddc-main/30-Transform/40-Rewrite/60-Disjoint/Module.dcs
-:set.. rule mapMap [a b c : *] [r1 r2 r3 : %]
-	[ef eg : !] [cf cg : $]
+:set.. rule mapMap [a b c : Data] [r1 r2 r3 : Region]
+	[ef eg : Effect] [cf cg : Closure]
 	(f : b -(ef|cf)> c) (g : a -(eg|cg)> b)
 	(xs : List r3 a).
     Disjoint ef eg =>
@@ -63,7 +63,7 @@ map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
 
 -- a write and a read from different regions, but lambda-bound - don't rewrite
 :trans..
-/\(rMut : %). \(wMut : Mutable rMut). \(dummy : Int R0#).
+/\(rMut : Region). \(wMut : Mutable rMut). \(dummy : Int R0#).
 let mutabl = 5 [rMut] () in
 
 map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
@@ -81,7 +81,7 @@ map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
 
 -- lambda-bound different regions, but with a Distinctness witness. do rewrite.
 :trans..
-/\(rMut : %). \(wMut : Mutable rMut). \(wDistinct : Distinct R0# rMut). \(dummy : Int R0#).
+/\(rMut : Region). \(wMut : Mutable rMut). \(wDistinct : Distinct R0# rMut). \(dummy : Int R0#).
 let mutabl = 5 [rMut] () in
 
 map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]

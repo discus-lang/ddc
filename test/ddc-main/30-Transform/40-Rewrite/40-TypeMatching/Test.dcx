@@ -1,7 +1,7 @@
 :set Indent
 
 -- create a whacky rule (because only want to use builtins). wrap second param in another lambda
-:set.. rule whacky0 [r1 : %] [a : % ~> *] (x : a r1).
+:set.. rule whacky0 [r1 : Region] [a : Region ~> Data] (x : a r1).
 	Cons [r1] [a r1] x (Nil [r1] [a r1] ()) =
 	Nil [r1] [a r1] ()
 ;;
@@ -18,7 +18,7 @@ Cons [R1#] [Int R0#] (5 [R0#] ()) (Nil [R1#] [Int R0#] ())
 ;;
 
 -- try doing something with a function
-:set.. rule whacky1 [r1 : %] [a : % ~> *] [b : *] (x : a r1 -> b).
+:set.. rule whacky1 [r1 : Region] [a : Region ~> Data] [b : Data] (x : a r1 -> b).
 	Cons [r1] [a r1 -> b] x (Nil [r1] [a r1 -> b] ()) =
 	Nil [r1] [a r1 -> b] ()
 ;;

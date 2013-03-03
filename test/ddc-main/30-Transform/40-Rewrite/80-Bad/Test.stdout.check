@@ -6,9 +6,9 @@ LHS and RHS have different types:
 Type L: Int r
 Type R: Unit
 Eff L:  Alloc r
-Eff R:  !0
+Eff R:  Pure
 Clo L:  Use r
-Clo R:  $0
+Clo R:  Empty
 
 -- Bad: doesn't typecheck
 Can't typecheck lhs:  Undefined value variable: r
@@ -21,7 +21,7 @@ While checking \(x : Unit). x
 
 -- Bad: left-hand side shouldn't have foralls
 No binders allowed in left-hand side.
-While checking /\(a : *). id [a]
+While checking /\(a : Data). id [a]
 
 -- ..Ok: right-hand side can have binders
 ok, added ok_BindersRhs

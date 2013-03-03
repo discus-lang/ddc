@@ -1,16 +1,16 @@
 
 module List
 imports {
-        subNat  :: [r1 r2 r3 : %]
+        subNat  :: [r1 r2 r3 : Region]
                 . Nat r1 
-                -(!0 | Use r3)> Nat r2 
+                -(Pure | Use r3)> Nat r2 
                 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
 }
 with letrec
 
 replicate
-        [r1 r2 : %] [a : *]
-        (n : Nat r1)            { !0 | Use r1 + Use r2 }
+        [r1 r2 : Region] [a : Data]
+        (n : Nat r1)            { Pure | Use r1 + Use r2 }
         (x : a)                 { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2}
         : List r2 a
  = letregion r3 in

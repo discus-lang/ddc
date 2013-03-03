@@ -10,12 +10,12 @@ ok, added foldrBuild_fuse
 
 
 -- :set.. rule foldrBuild
---     [a b : *] [r : %]
---     [ek1 ek2 ez eg1 eg2 : !]
---     [ck1 ck2 cz cg1 cg2 : $]
+--     [a b : Data] [r : Region]
+--     [ek1 ek2 ez eg1 eg2 : Effect]
+--     [ck1 ck2 cz cg1 cg2 : Closure]
 --     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
 --     (z : Unit -(ez|cz)> b)
---     (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+--     (g : [gb : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 -- 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
 --        -(eg1|cg1)>
 -- 	(Unit -(en|cn)> gb)
@@ -96,7 +96,7 @@ ok
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
+countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 
 -- map f xs = build (\c n -> foldr (c . f) n xs)
@@ -201,7 +201,7 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {even; plus} in
 countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
-    (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
+    (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [Pure] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
          (\(^ ^ : Int R0#).
           case even ^1 of {
             0  
@@ -213,7 +213,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
 
 -- If it's only a 'build' at the start, the inner foldrs and builds don't know
 -- what their entire effect will be. So they were not being fired.
--- map *2
+-- map Data2
 * TRANSFORM INFORMATION: 
     fix 10:
         Beta reduction:
@@ -290,8 +290,8 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
             Removed:        0
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-countZ (100 [R0#] ()) [List R1# (Int R0#)] [Read R0# + Alloc R0#] [Alloc R1#] [Alloc R1#] [Use R0#] [Use R0#] [$0]
-    (compose [Int R0#] [Int R0#] [List R1# (Int R0#) -(Alloc R1# | Use R0#)> List R1# (Int R0#)] [!0] [Read R0# + Alloc R0#] [$0] [Use R0#]
+countZ (100 [R0#] ()) [List R1# (Int R0#)] [Read R0# + Alloc R0#] [Alloc R1#] [Alloc R1#] [Use R0#] [Use R0#] [Empty]
+    (compose [Int R0#] [Int R0#] [List R1# (Int R0#) -(Alloc R1# | Use R0#)> List R1# (Int R0#)] [Pure] [Read R0# + Alloc R0#] [Empty] [Use R0#]
          (Cons [R1#] [Int R0#]) double)
     (Nil [R1#] [Int R0#])
 

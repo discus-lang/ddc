@@ -40,6 +40,6 @@
     mulInt [:R0# R0# R0#:]
 	(let x = 5 in
 	 let y = () in
-	 (/\(r : %).\(u:Unit). x [r] u) [R0#] ())
+	 (/\(r : Region).\(u:Unit). x [r] u) [R0#] ())
 	(2 [R0#] ())
 ;;

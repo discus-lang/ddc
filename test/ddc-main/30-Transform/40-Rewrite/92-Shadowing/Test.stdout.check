@@ -12,15 +12,15 @@ let toInt : Int R0# = 5 [R0#] () in
 toInt
 
 -- Redefinition with similar type, but not as big effect
-let toInt : [r1 r2 : %].List r1 Unit -(Alloc r2 | Use r2)> Int r2
-      = /\(r1 r2 : %).
+let toInt : [r1 r2 : Region].List r1 Unit -(Alloc r2 | Use r2)> Int r2
+      = /\(r1 r2 : Region).
          \(xs : List r1 Unit). 0 [r2] () in
 toInt [R0#] [R0#]
     (fromInt [R0#] [R0#] (5 [R0#] ()))
 
 -- Redefinition with same type
-let toInt : [r1 r2 : %].List r1 Unit -(Read r1 + Alloc r2 | Use r2)> Int r2
-      = /\(r1 r2 : %).
+let toInt : [r1 r2 : Region].List r1 Unit -(Read r1 + Alloc r2 | Use r2)> Int r2
+      = /\(r1 r2 : Region).
          \(xs : List r1 Unit).
         case xs of {
           Nil  
@@ -33,8 +33,8 @@ toInt [R0#] [R0#]
 
 -- Letrec
 letrec {
-  toInt : [r1 r2 : %].List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2
-    = /\(r1 r2 : %).
+  toInt : [r1 r2 : Region].List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2
+    = /\(r1 r2 : Region).
        \(xs : List r1 Unit).
       case xs of {
         Nil  
@@ -47,14 +47,14 @@ toInt [R0#] [R0#]
     (fromInt [R0#] [R0#] (5 [R0#] ()))
 
 -- Lambda instead of let
-\(toInt : [r1 r2 : %].List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2).
+\(toInt : [r1 r2 : Region].List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2).
 toInt [R0#] [R0#]
     (fromInt [R0#] [R0#] (5 [R0#] ()))
 
 -- Try shadowing fromInt instead
 letrec {
-  fromInt : [r1 r2 : %].Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 Unit
-    = /\(r1 r2 : %).
+  fromInt : [r1 r2 : Region].Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 Unit
+    = /\(r1 r2 : Region).
        \(c : Int r1).
       case c of {
         0  
@@ -70,8 +70,8 @@ toInt [R0#] [R0#]
 
 -- Try shadowing newInt (only visible in result) instead
 letrec {
-  newInt : [r1 r2 : %].Int r1 -(Read r1 + Alloc r2 | Use r1 + Use r2)> Int r2
-    = /\(r1 r2 : %).
+  newInt : [r1 r2 : Region].Int r1 -(Read r1 + Alloc r2 | Use r1 + Use r2)> Int r2
+    = /\(r1 r2 : Region).
        \(x : Int r1). copyInt [r1] [r2] x
 } in
 toInt [R0#] [R0#]
@@ -79,8 +79,8 @@ toInt [R0#] [R0#]
 
 -- Inside the same letrec
 letrec {
-  newInt : [r1 r2 : %].Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> Int r2
-    = /\(r1 r2 : %).
+  newInt : [r1 r2 : Region].Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> Int r2
+    = /\(r1 r2 : Region).
        \(x : Int r1).
       toInt [r2] [r2] (fromInt [r1] [r2] x)
 } in

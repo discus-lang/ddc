@@ -120,8 +120,8 @@ ok
         Bubble: No information
 
 letrec {
-  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
-    = /\(r : %).
+  main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : Region).
        \(w : Const r).\(_ : Int#).
       weakeff [Read r + Alloc r] in
       weakclo {[r]} in

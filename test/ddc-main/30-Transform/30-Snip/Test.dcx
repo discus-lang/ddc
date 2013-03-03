@@ -25,7 +25,7 @@ addInt [:R0# R1# R2#:]
                        (4 [R3#] ())));;
 
 -- Type abstraction
-:trun (/\(t:*).\(x:t).x) [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
+:trun (/\(t:Data).\(x:t).x) [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
 
 
 -- Primitive in case exp
@@ -40,7 +40,7 @@ case 1 [R0#] u of {
 -- Letrec
 :trun..
 letrec {
- fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
+ fac    [r:Region] (n : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> 1 [r] ();
         _       -> mulInt [:r r r:] n
@@ -60,13 +60,13 @@ case (\(x : Int R0#). x) (5 [R0#] ()) of {
 -- Introduce new bindings for over-applied functions.
 :set trans SnipOver
 :trun..
-let id [a : *] (x : a)
+let id [a : Data] (x : a)
         = x 
 in 
 let add (x : Int R0#) (y : Int R0#) 
         = addInt [:R0# R0# R0#:] x y
 
-in  (id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#])
+in  (id [Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#])
         add
         (2 [R0#] ())
         (3 [R0#] ());;
@@ -76,7 +76,7 @@ in  (id [Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int
 :set lang Salt
 :set trans Snip
 :trans..
-(/\(^ : %)./\(^ : *).
+(/\(^ : Region)./\(^ : Data).
  \(^ : Ptr# ^1 Obj).\(^ : Nat#).\(^ : ^0).
     write# [^0] (takePtr# [^1] [Obj] ^2)
                 (add# [Nat#] 8#

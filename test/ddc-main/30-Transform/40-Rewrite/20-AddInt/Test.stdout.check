@@ -58,8 +58,8 @@ copyInt [R7#] [R2#]
 
 -- nested inside a function: give the closures a workout
 letrec {
-  foo : [r1 r2 r3 : %].Int r1 -(Read r1 + Read r2 + Alloc r2 + Alloc r3 | Use r1 + Use r2 + Use r3)> Int r3
-    = /\(r1 r2 r3 : %).
+  foo : [r1 r2 r3 : Region].Int r1 -(Read r1 + Read r2 + Alloc r2 + Alloc r3 | Use r1 + Use r2 + Use r3)> Int r3
+    = /\(r1 r2 r3 : Region).
        \(x : Int r1).
       weakeff [Read r1 + Read r2 + Alloc r2 + Alloc r3] in
       weakclo {addInt; [r2]} in
