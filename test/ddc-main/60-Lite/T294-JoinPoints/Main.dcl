@@ -1,24 +1,24 @@
 module Main 
 exports {
-        main :: [r : %].Nat# -> Ptr# r String# -(Console | $0)> Int#;
+        main :: [r : Region].Nat# -> Ptr# r String# -(Console | Empty)> Int#;
 } 
 imports {
-        addNat :: [r1 r2 r3 : %].Nat r1 -(!0 | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
-        boxNat :: [r : %].Nat# -(Alloc r | Use r)> Nat r;
-        putStrLn :: [r : %].Ptr# r String# -(Console | $0)> Void#;
-        showNat :: [r : %].Nat# -> Ptr# r String#;
-        subNat :: [r1 r2 r3 : %].Nat r1 -(!0 | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
-        unboxNat :: [r : %].Nat r -(Read r | $0)> Nat#;
+        addNat :: [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+        boxNat :: [r : Region].Nat# -(Alloc r | Use r)> Nat r;
+        putStrLn :: [r : Region].Ptr# r String# -(Console | Empty)> Void#;
+        showNat :: [r : Region].Nat# -> Ptr# r String#;
+        subNat :: [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+        unboxNat :: [r : Region].Nat r -(Read r | Empty)> Nat#;
 } with
 letrec {
-  singleton : [r : %].[a : *].a -(Alloc r | Use r)> List r a
-    = /\(r : %)./\(a : *).
+  singleton : [r : Region].[a : Data].a -(Alloc r | Use r)> List r a
+    = /\(r : Region)./\(a : Data).
        \(x : a).
       let x0 : List r a = Nil [r] [a] () in
       Cons [r] [a] x x0;
   
-  length : [r1 r2 : %].[a : *].List r1 a -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Nat r2
-    = /\(r1 r2 : %)./\(a : *).
+  length : [r1 r2 : Region].[a : Data].List r1 a -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Nat r2
+    = /\(r1 r2 : Region)./\(a : Data).
        \(xx : List r1 a).
       case xx of {
         Nil  
@@ -29,8 +29,8 @@ letrec {
             addNat [r2] [r2] [r2] x1 x3
       };
   
-  replicate : [r1 r2 : %].[a : *].Nat r1 -(!0 | Use r1 + Use r2)> a -(Read r1 + Alloc r2 | Use r1 + Use r2)> List r2 a
-    = /\(r1 r2 : %)./\(a : *).
+  replicate : [r1 r2 : Region].[a : Data].Nat r1 -(Pure | Use r1 + Use r2)> a -(Read r1 + Alloc r2 | Use r1 + Use r2)> List r2 a
+    = /\(r1 r2 : Region)./\(a : Data).
        \(n : Nat r1).\(x : a).
       letregion r3 in
       case n of {
@@ -47,8 +47,8 @@ letrec {
             }
       };
   
-  enumFromTo : [r1 r2 : %].Nat r2 -(!0 | Use r1 + Use r2)> Nat r2 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r1 (Nat r2)
-    = /\(r1 r2 : %).
+  enumFromTo : [r1 r2 : Region].Nat r2 -(Pure | Use r1 + Use r2)> Nat r2 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r1 (Nat r2)
+    = /\(r1 r2 : Region).
        \(n max : Nat r2).
       case n of {
         N# (n2 : Nat#) 
@@ -67,8 +67,8 @@ letrec {
             }
       };
   
-  append : [r1 r2 : %].[a : *].List r1 a -(!0 | Use r1 + Use r2)> List r2 a -(Read r1 + Alloc r2 | Use r1 + Use r2 + DeepUse a)> List r2 a
-    = /\(r1 r2 : %)./\(a : *).
+  append : [r1 r2 : Region].[a : Data].List r1 a -(Pure | Use r1 + Use r2)> List r2 a -(Read r1 + Alloc r2 | Use r1 + Use r2 + DeepUse a)> List r2 a
+    = /\(r1 r2 : Region)./\(a : Data).
        \(xx : List r1 a).\(yy : List r2 a).
       case xx of {
         Nil  
@@ -78,8 +78,8 @@ letrec {
             Cons [r2] [a] x x12
       };
   
-  reverse : [r1 r2 : %].[a : *].List r1 a -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> List r2 a
-    = /\(r1 r2 : %)./\(a : *).
+  reverse : [r1 r2 : Region].[a : Data].List r1 a -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> List r2 a
+    = /\(r1 r2 : Region)./\(a : Data).
        \(xx : List r1 a).
       case xx of {
         Nil  
@@ -96,8 +96,8 @@ letrec {
             }
       };
   
-  dumpNats : [r1 r2 : %].List r1 (Nat r2) -(Read r1 + Read r2 + Console | Use r1 + Use r2)> Unit
-    = /\(r1 r2 : %).
+  dumpNats : [r1 r2 : Region].List r1 (Nat r2) -(Read r1 + Read r2 + Console | Use r1 + Use r2)> Unit
+    = /\(r1 r2 : Region).
        \(xx : List r1 (Nat r2)).
       case xx of {
         Nil  
@@ -111,8 +111,8 @@ letrec {
             }
       };
   
-  main : [r : %].Nat# -> Ptr# r String# -(Console | $0)> Int#
-    = /\(r : %).
+  main : [r : Region].Nat# -> Ptr# r String# -(Console | Empty)> Int#
+    = /\(r : Region).
        \(argc : Nat#).\(argv : Ptr# r String#).
       letregion r2 in
       let x25 : Nat r2 = N# [r2] 5# in

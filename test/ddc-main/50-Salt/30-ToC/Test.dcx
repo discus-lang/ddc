@@ -5,13 +5,13 @@
 :to-c..
 module Main 
 imports {
-        allocRaw  :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
-        getTag    :: [r : %]. Ptr# r Obj -> Tag#;
-        showInt   :: [r : %]. Int# -> Ptr# r String#;
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#;
+        allocRaw  :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj;
+        getTag    :: [r : Region]. Ptr# r Obj -> Tag#;
+        showInt   :: [r : Region]. Int# -> Ptr# r String#;
+        putStrLn  :: [r : Region]. Ptr# r String# -> Void#;
 }
 with letrec {
-addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+addInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
         : Ptr# r3 Obj
  =      let x'  = unboxInt [r1] x in
         let y'  = unboxInt [r2] y in
@@ -20,7 +20,7 @@ addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
         return# [Ptr# r3 Obj] z;
 
 
-boxInt  [r : %] (x : Int#) : Ptr# r Obj
+boxInt  [r : Region] (x : Int#) : Ptr# r Obj
  = do { obj     = allocRaw [r] TAG0# 4#;
         addr    = takePtr# [r] [Obj] obj;
         write#  [Int#] addr 8# x;
@@ -28,7 +28,7 @@ boxInt  [r : %] (x : Int#) : Ptr# r Obj
       };
 
 
-unboxInt [r : %] (obj : Ptr# r Obj) : Int#
+unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
  = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#    [Int#] addr 8#;
         return# [Int#] x;
@@ -51,13 +51,13 @@ main (argc : Nat#) (argv : Addr#) : Int#
 :to-c..
 module Main 
 imports {
-        allocRaw :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
-        getTag   :: [r : %]. Ptr# r Obj -> Tag#;
-        showInt  :: [r : %]. Int# -> Ptr# r String#;
-        putStrLn :: [r : %]. Ptr# r String# -> Void#;
+        allocRaw :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj;
+        getTag   :: [r : Region]. Ptr# r Obj -> Tag#;
+        showInt  :: [r : Region]. Int# -> Ptr# r String#;
+        putStrLn :: [r : Region]. Ptr# r String# -> Void#;
 }
 with letrec {
-addDistinct [r1 r2 r3 : %] <w1 : Mutable r1> <w2 : Distinct2 r1 r2> (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+addDistinct [r1 r2 r3 : Region] <w1 : Mutable r1> <w2 : Distinct2 r1 r2> (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
     : Ptr# r3 Obj
  =  let x'  = unboxInt [r1] x in
     let y'  = unboxInt [r2] y in
@@ -66,7 +66,7 @@ addDistinct [r1 r2 r3 : %] <w1 : Mutable r1> <w2 : Distinct2 r1 r2> (x : Ptr# r1
     return# [Ptr# r3 Obj] z;
 
 
-boxInt  [r : %] (x : Int#) : Ptr# r Obj
+boxInt  [r : Region] (x : Int#) : Ptr# r Obj
  = do { obj     = allocRaw [r] TAG0# 4#;
     addr    = takePtr# [r] [Obj] obj;
     write#  [Int#] addr 8# x;
@@ -74,7 +74,7 @@ boxInt  [r : %] (x : Int#) : Ptr# r Obj
     };
 
 
-unboxInt [r : %] (obj : Ptr# r Obj) : Int#
+unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
  = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#    [Int#] addr 8#;
         return# [Int#] x;

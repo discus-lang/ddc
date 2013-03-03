@@ -68,8 +68,8 @@ letrec {
 --      packs a RawSmall Object.
 module Test with
 letrec {
-  boxInt : [r : %].Int# -> Ptr# r Obj
-    = /\(r : %).
+  boxInt : [r : Region].Int# -> Ptr# r Obj
+    = /\(r : Region).
        \(i : Int#).
       let ^ : Ptr# r Obj = allocRawSmall [r] TAG0# 8# in
       let ^ : Ptr# r Word8# = payloadOfRawSmall [r] ^0 in
@@ -83,8 +83,8 @@ letrec {
 --      unpacks a RawSmall Object.
 module Test with
 letrec {
-  unboxInt : [r : %].Ptr# r Obj -> Int#
-    = /\(r : %).
+  unboxInt : [r : Region].Ptr# r Obj -> Int#
+    = /\(r : Region).
        \(x : Ptr# r Obj).
       case getTag [r] x of {
         TAG0#  
@@ -101,8 +101,8 @@ letrec {
 -- Nested case-expressions.
 module Test with
 letrec {
-  addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Int#
-    = /\(r1 r2 r3 : %).
+  addInt : [r1 r2 r3 : Region].Ptr# r1 Obj -> Ptr# r2 Obj -> Int#
+    = /\(r1 r2 r3 : Region).
        \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
       case getTag [r1] x of {
         TAG0#  
@@ -127,8 +127,8 @@ letrec {
 -- Boxed addition
 module Test with
 letrec {
-  addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-    = /\(r1 r2 r3 : %).
+  addInt : [r1 r2 r3 : Region].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+    = /\(r1 r2 r3 : Region).
        \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
       case getTag [r1] x of {
         TAG0#  
@@ -159,8 +159,8 @@ letrec {
 --      unpacks a Boxed object.
 module Test with
 letrec {
-  head : [r : %].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
-    = /\(r : %).
+  head : [r : Region].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
+    = /\(r : Region).
        \(def xs : Ptr# r Obj).
       case getTag [r] xs of {
         TAG1#  
@@ -178,8 +178,8 @@ letrec {
 -- Take the tail of an Int list
 module Test with
 letrec {
-  tail : [r : %].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
-    = /\(r : %).
+  tail : [r : Region].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
+    = /\(r : Region).
        \(def xs : Ptr# r Obj).
       case getTag [r] xs of {
         TAG1#  
@@ -197,8 +197,8 @@ letrec {
 -- Take the head of a polymorphic list
 module Test with
 letrec {
-  head : [r : %].[a : *].a -> Ptr# r Obj -> a
-    = /\(r : %)./\(a : *).
+  head : [r : Region].[a : Data].a -> Ptr# r Obj -> a
+    = /\(r : Region)./\(a : Data).
        \(def : a).\(xs : Ptr# r Obj).
       case getTag [r] xs of {
         TAG1#  
@@ -217,8 +217,8 @@ letrec {
 ok
 module Test with
 letrec {
-  singleton : [r1 r2 : %].Int r2 -(Alloc r1 | Use r1)> List r1 (Int r2)
-    = /\(r1 r2 : %).
+  singleton : [r1 r2 : Region].Int r2 -(Alloc r1 | Use r1)> List r1 (Int r2)
+    = /\(r1 r2 : Region).
        \(x : Int r2).
       let x0 : List r1 (Int r2)
             = Nil [r1] [Int r2] () in
@@ -230,8 +230,8 @@ letrec {
 --      packs a Boxed object.
 module Test with
 letrec {
-  singleton : [r1 r2 : %].Ptr# r2 Obj -> Ptr# r1 Obj
-    = /\(r1 r2 : %).
+  singleton : [r1 r2 : Region].Ptr# r2 Obj -> Ptr# r1 Obj
+    = /\(r1 r2 : Region).
        \(x : Ptr# r2 Obj).
       let x0 : Ptr# r1 Obj
             = let ^ : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
@@ -250,8 +250,8 @@ letrec {
 -- Full application.
 module Test with
 letrec {
-  addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-    = /\(r1 r2 r3 : %).
+  addInt : [r1 r2 r3 : Region].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+    = /\(r1 r2 r3 : Region).
        \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
       case getTag [r1] x of {
         TAG0#  
@@ -276,8 +276,8 @@ letrec {
          -> fail# [Ptr# r3 Obj]
       };
   
-  double : [r1 r2 : %].Ptr# r1 Obj -> Ptr# r2 Obj
-    = /\(r1 r2 : %).
+  double : [r1 r2 : Region].Ptr# r1 Obj -> Ptr# r2 Obj
+    = /\(r1 r2 : Region).
        \(x : Ptr# r1 Obj). addInt [r1] [r1] [r2] x x
 }
 
@@ -286,8 +286,8 @@ letrec {
 -- The head field of the Cons cells has no primary region.
 module Test with
 letrec {
-  singleton : [r1 : %].Ptr# rT Obj -> Ptr# r1 Obj
-    = /\(r1 : %).
+  singleton : [r1 : Region].Ptr# rT Obj -> Ptr# r1 Obj
+    = /\(r1 : Region).
        \(x : Ptr# rT Obj).
       let x0 : Ptr# r1 Obj
             = let ^ : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
@@ -307,8 +307,8 @@ letrec {
 -- The head field of the Cons cell has no primary region.
 module Test with
 letrec {
-  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# rT Obj
-    = /\(r1 : %).
+  headUnit : [r1 : Region].Ptr# r1 Obj -> Ptr# rT Obj
+    = /\(r1 : Region).
        \(xx : Ptr# r1 Obj).
       case getTag [r1] xx of {
         TAG1#  
@@ -326,8 +326,8 @@ letrec {
 -- Construct a singleton unit list and take its head.
 module Test with
 letrec {
-  singleton : [r1 : %].Ptr# rT Obj -> Ptr# r1 Obj
-    = /\(r1 : %).
+  singleton : [r1 : Region].Ptr# rT Obj -> Ptr# r1 Obj
+    = /\(r1 : Region).
        \(x : Ptr# rT Obj).
       let x0 : Ptr# r1 Obj
             = let ^ : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
@@ -341,8 +341,8 @@ letrec {
             = setFieldOfBoxed [r1] [Ptr# r1 Obj] ^0 1# x0 in
       ^0;
   
-  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# rT Obj
-    = /\(r1 : %).
+  headUnit : [r1 : Region].Ptr# r1 Obj -> Ptr# rT Obj
+    = /\(r1 : Region).
        \(xx : Ptr# r1 Obj).
       case getTag [r1] xx of {
         TAG1#  
@@ -367,8 +367,8 @@ letrec {
 -- Keep witnesses arguments
 module Test with
 letrec {
-  foo : [r : %].Mutable r => Ptr# rT Obj -> Word64#
-    = /\(r : %).
+  foo : [r : Region].Mutable r => Ptr# rT Obj -> Word64#
+    = /\(r : Region).
        \(w : Mutable r).\(x : Ptr# rT Obj). 42w64#
 }
 
@@ -376,8 +376,8 @@ letrec {
 -- Keep witnesses applications
 module Test with
 letrec {
-  foo : [r1 r2 r3 : %].Mutable r1 => Distinct2 r2 r3 => Ptr# rT Obj -> Word64#
-    = /\(r1 r2 r3 : %).
+  foo : [r1 r2 r3 : Region].Mutable r1 => Distinct2 r2 r3 => Ptr# rT Obj -> Word64#
+    = /\(r1 r2 r3 : Region).
        \(w1 : Mutable r1).\(w2 : Distinct2 r2 r3).\(x : Ptr# rT Obj). 42w64#;
   
   bar : Ptr# rT Obj -> Word64#

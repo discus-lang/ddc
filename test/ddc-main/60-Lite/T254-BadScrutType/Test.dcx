@@ -8,13 +8,13 @@
 :load..
 module Test 
 imports { 
-        addNat  :: [r1 r2 r3 : %]
+        addNat  :: [r1 r2 r3 : Region]
                 . Nat r1 
-                -(!0 | Use r3)> Nat r2 
+                -(Pure | Use r3)> Nat r2 
                 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
 }
 with letrec
-thing [r1 : %] (b : Bool r1) : Int r1
+thing [r1 : Region] (b : Bool r1) : Int r1
  = let  x       = case b of
                         True  -> N# [r1] 5#
                         False -> N# [r1] 6#
@@ -24,7 +24,7 @@ thing [r1 : %] (b : Bool r1) : Int r1
 -- Foo isn't defined.
 :load..
 module Test with letrec
-thing [r1 : %] (b : Int r1) : Int r1
+thing [r1 : Region] (b : Int r1) : Int r1
  = case b of
         Foo     -> N# [r1] 5#;;
 

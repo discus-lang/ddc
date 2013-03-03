@@ -4,8 +4,8 @@ ok
 
 
 -- Check that the size prims are available
-size# :: [^ : *].Nat#
-size2# :: [^ : *].Nat#
+size# :: [^ : Data].Nat#
+size2# :: [^ : Data].Nat#
 
 
 -- Get the size of prim types.

@@ -1,6 +1,6 @@
 -- Construction and destruction of a pair.
 :eval..
-let fst = /\(r : %) (a b : *). \(p : Pair r a b).
+let fst = /\(r : Region) (a b : Data). \(p : Pair r a b).
           case p of { 
             Pr x _  -> x
           } in

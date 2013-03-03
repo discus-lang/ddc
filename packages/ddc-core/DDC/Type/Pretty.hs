@@ -157,8 +157,8 @@ instance Pretty TwCon where
  ppr tw
   = case tw of
         TwConImpl       -> text "(=>)"
-        TwConPure       -> text "Pure"
-        TwConEmpty      -> text "Empty"
+        TwConPure       -> text "Purify"
+        TwConEmpty      -> text "Emptify"
         TwConGlobal     -> text "Global"
         TwConDeepGlobal -> text "DeepGlobal"
         TwConConst      -> text "Const"

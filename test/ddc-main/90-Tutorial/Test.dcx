@@ -45,8 +45,8 @@ addInt [:R0# R0# R0#:] x y;;
 -- Using lambdas.
 :eval..
 letrec {
- fac : [r : %]. Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
-  = /\(r : %). \(acc n : Int r)
+ fac : [r : Region]. Int r -(Pure | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+  = /\(r : Region). \(acc n : Int r)
   . case n of {
         0     -> acc;
         1     -> acc;
@@ -59,8 +59,8 @@ letrec {
 -- Using function binding syntax.
 :eval..
 letrec {
- fac    [r:%] 
-        (acc : Int r) {!0 | Use r}
+ fac    [r:Region] 
+        (acc : Int r) {Pure | Use r}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> acc;
@@ -73,7 +73,7 @@ letrec {
 
 -- Local regions, witnesses and destructive update ----------------------------
 :eval..
-let fac  [r1:%] 
+let fac  [r1:Region] 
          (n   : Int r1) {Read r1 + Alloc r1 | Use r1} : Int r1
      = letregion r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
@@ -99,7 +99,7 @@ in fac [R0#] (10 [R0#] ());;
 -- Tail recursive factorial.
 -- With argument and return values in different regions.
 :eval..
-let fac  [r1:%] [r3:%]
+let fac  [r1:Region] [r3:Region]
          (n   : Int r1) {Read r1 + Alloc r1 + Alloc r3 | Use r1 + Use r3} : Int r3
      = letregion r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
@@ -121,7 +121,7 @@ in fac [R1#] [R2#] (10 [R1#] ());;
 -- Exercise 3: With argument and return regions holding only the argument
 -- and return values.
 :eval..
-let fac  [r1:%] [r3:%]
+let fac  [r1:Region] [r3:Region]
          (n   : Int r1) {Read r1 + Alloc r1 + Alloc r3 | Use r1 + Use r3} : Int r3
      = letregion r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
@@ -142,7 +142,7 @@ in fac [R1#] [R2#] (10 [R1#] ());;
 
 -- Exercise 4: Without copying the result out.
 :eval..
-let fac  [r1:%] [r3:%]
+let fac  [r1:Region] [r3:Region]
          (n   : Int r1) { Read r1 + Alloc r3 
                         | Use r1  + Use r3} : Int r3
      = letregion r2 with { w : Mutable r2 } in
@@ -197,7 +197,7 @@ let z  = 5 [r1] () in
 -- Laziness and purification -------------------------------------------------
 -- Original expression with no laziness.
 :eval..
-let foo [r1 r2 : %] (_ : Unit)
+let foo [r1 r2 : Region] (_ : Unit)
      = let x = 5 [r1] () in
        let y = letregion r3 in
                addInt [:r1 r3 r2:] x (1 [r3] ()) in
@@ -212,8 +212,8 @@ in  letregion r4 in
 
 -- Suspend the 'y' binding.
 :eval..
-let foo [r1 : %] (wc1 : Const r1) (wg1 : Global r1) 
-        [r2 : %] (wc2 : Const r2) (wg2 : Global r2) (wl2 : Lazy  r2)
+let foo [r1 : Region] (wc1 : Const r1) (wg1 : Global r1) 
+        [r2 : Region] (wc2 : Const r2) (wg2 : Global r2) (wl2 : Lazy  r2)
         (_ : Unit)
      = let x = 5 [r1] () in
        let y : Int r2 lazy <wl2> 
@@ -235,7 +235,7 @@ in  letregion r4 with { wc4 : Const r4; wg4 : Global r4 } in
 :set trans Anonymize
 :set +Indent
 :trans..
-let foo [r1 r2 : %] (_ : Unit)
+let foo [r1 r2 : Region] (_ : Unit)
      = let x = 5 [r1] () in
        let y = letregion r3 in
                addInt [:r1 r3 r2:] x (1 [r3] ()) in

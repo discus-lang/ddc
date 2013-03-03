@@ -2,7 +2,7 @@
 -- letregion that created it.
 When checking expression.
   Type cannot apply non-constructor witness
-                of type: Empty (Use r1)
+                of type: Emptify (Use r1)
     to argument of type: Const r1
   
   with: use [r1] w0 w1
@@ -17,7 +17,7 @@ When checking expression.
 When checking expression.
   Withregion handle does not have region kind.
      Region var or ctor: e
-               has kind: !
+               has kind: Effect
          but it must be: %
   
   with: withregion e in

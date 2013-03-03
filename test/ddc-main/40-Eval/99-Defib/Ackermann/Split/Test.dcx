@@ -1,8 +1,8 @@
 -- Using different input and output regions.
 :eval..
 letrec {
- ack    [r1 r2 r3: %] 
-        (m : Int r1) {!0 | Use r1 + Use r2 + Use r3}
+ ack    [r1 r2 r3: Region] 
+        (m : Int r1) {Pure | Use r1 + Use r2 + Use r3}
         (n : Int r2) { Read r1 + Read r2 + Alloc r3
                      | Use r1  + Use r2  + Use r3}
         : Int r3

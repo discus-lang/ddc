@@ -2,8 +2,8 @@
 -- Using an explicit typesig.
 :eval..
 letrec {
- fac : [r : %]. Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
-  = /\(r : %). \(acc n : Int r)
+ fac : [r : Region]. Int r -(Pure | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+  = /\(r : Region). \(acc n : Int r)
   . case n of {
         0     -> acc;
         1     -> acc;
@@ -17,8 +17,8 @@ letrec {
 -- Using function binding syntax.
 :eval..
 letrec {
- fac    [r:%] 
-        (acc : Int r) {!0 | Use r}
+ fac    [r:Region] 
+        (acc : Int r) {Pure | Use r}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> acc;
@@ -32,7 +32,7 @@ letrec {
 -- Tail recursive factorial.
 -- Using destructive update.
 :eval..
-let fac  [r1:%] 
+let fac  [r1:Region] 
          (n   : Int r1) {Read r1 + Alloc r1 | Use r1} : Int r1
      = letregion r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in

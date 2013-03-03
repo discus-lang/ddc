@@ -100,8 +100,8 @@ Obj* singleton (Obj* _x)
 -- #285: Case matches on unit arguments.
 module Test with
 letrec {
-  foo : [r1 : %].Ptr# rT Obj -> Ptr# rT Obj
-    = /\(r1 : %).
+  foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(r1 : Region).
        \(x : Ptr# rT Obj).
       case getTag [rT] x of {
         _ 
@@ -111,8 +111,8 @@ letrec {
 
 module Test with
 letrec {
-  foo : [r1 : %].Ptr# rT Obj -> Ptr# rT Obj
-    = /\(r1 : %).
+  foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(r1 : Region).
        \(x : Ptr# rT Obj).
       case getTag [rT] x of {
         TAG0#  

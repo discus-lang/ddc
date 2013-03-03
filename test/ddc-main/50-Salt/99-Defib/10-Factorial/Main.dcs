@@ -1,19 +1,19 @@
 
 module Main
 exports {
-        main      :: [r1 : %]. Nat# -> Ptr# r1 String# -> Int#;
+        main      :: [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
 imports {
-        boxInt    :: [r : %]. Int#   -> Ptr# r Obj;
-        unboxInt  :: [r : %]. Ptr# r Obj -> Int#;
-        subInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-        mulInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-        showInt   :: [r1 : %]. Int# -> Ptr# r1 String#;
-        putStrLn  :: [r1 : %]. Ptr# r1 String# -> Void#;
+        boxInt    :: [r : Region]. Int#   -> Ptr# r Obj;
+        unboxInt  :: [r : Region]. Ptr# r Obj -> Int#;
+        subInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
+        mulInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
+        showInt   :: [r1 : Region]. Int# -> Ptr# r1 String#;
+        putStrLn  :: [r1 : Region]. Ptr# r1 String# -> Void#;
 }
 with letrec 
 
-fac [r1 : %] (x: Ptr# r1 Obj) : Ptr# r1 Obj
+fac [r1 : Region] (x: Ptr# r1 Obj) : Ptr# r1 Obj
  = case eq# [Int#] (unboxInt [r1] x) 0i# of 
         True#  
          ->     boxInt [r1] 1i#
@@ -22,7 +22,7 @@ fac [r1 : %] (x: Ptr# r1 Obj) : Ptr# r1 Obj
          ->     mulInt [:r1 r1 r1:] x (fac [r1] (subInt [:r1 r1 r1:] x (boxInt [r1] 1i#)))
 
 
-main [r1 : %] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
+main [r1 : Region] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
  = do   create# 100000#
         x2      = fac [r1] (boxInt [r1] 10i#)
         putStrLn [r1] (showInt [r1] (unboxInt [r1] x2))

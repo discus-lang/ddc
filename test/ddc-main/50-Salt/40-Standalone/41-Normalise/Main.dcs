@@ -1,15 +1,15 @@
 
 module Main
 exports {
-         main     :: [r1 : %]. Nat# -> Ptr# r1 String# -> Int#;
+         main     :: [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
 imports {
-        showInt   :: [r : %]. Int# -> Ptr# r String#;
-        putStrLn  :: [r : %]. Ptr# r String# -> Void#;
+        showInt   :: [r : Region]. Int# -> Ptr# r String#;
+        putStrLn  :: [r : Region]. Ptr# r String# -> Void#;
 }
 with letrec {
 
-allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
+allocRaw [r : Region] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do { bytesObj        = add# [Nat#] 8# bytesPayload;
         addr            = alloc# bytesObj;
 
@@ -26,7 +26,7 @@ allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
      };
 
 
-boxWord32 [r : %] (x : Word32#) : Ptr# r Obj
+boxWord32 [r : Region] (x : Word32#) : Ptr# r Obj
  = do { obj     = allocRaw [r] TAG0# 4#;
         addr    = takePtr# [r] [Obj] obj;
         write#  [Word32#] addr 8# x;
@@ -34,26 +34,26 @@ boxWord32 [r : %] (x : Word32#) : Ptr# r Obj
       };
 
 
-unboxWord32 [r : %] (obj : Ptr# r Obj) : Word32#
+unboxWord32 [r : Region] (obj : Ptr# r Obj) : Word32#
  = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#   [Word32#] addr 8#;
         return# [Word32#] x;
       };
 
 
-addWord32 [r : %] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
+addWord32 [r : Region] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
  = return# [Ptr# r Obj] (boxWord32 [r] (add# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y)));
 
 
-subWord32 [r : %] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
+subWord32 [r : Region] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
  = return# [Ptr# r Obj] (boxWord32 [r] (sub# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y)));
 
 
-mulWord32 [r : %] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
+mulWord32 [r : Region] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
  = return# [Ptr# r Obj] (boxWord32 [r] (mul# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y)));
 
 
-fac [r : %] (x: Ptr# r Obj) : Ptr# r Obj
+fac [r : Region] (x: Ptr# r Obj) : Ptr# r Obj
  = do { cc      = eq# [Word32#] (unboxWord32 [r] x) 0w32#;
         case cc of {
          True#  -> return# [Ptr# r Obj] (boxWord32 [r] 1w32#);
@@ -62,7 +62,7 @@ fac [r : %] (x: Ptr# r Obj) : Ptr# r Obj
       };
 
 
-main [r : %] (argc : Nat#) (argv : Ptr# r String#) : Int#
+main [r : Region] (argc : Nat#) (argv : Ptr# r String#) : Int#
  = do { create# 1000#;
         x       = boxWord32 [r] 10w32#;
         str     = showInt [r] (truncate# [Int#] [Word32#] (unboxWord32 [r] (fac [r] x)));

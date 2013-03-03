@@ -4,13 +4,13 @@
 -- mask out the effect and closure of the worker before passing it to mapL.
 :eval..
 letrec {
- mapL   [r1 r2: %] [a b : *] [e1:!] [c1:$]
+ mapL   [r1 r2: Region] [a b : Data] [e1:Effect] [c1:Closure]
         <w1g : Global r1>  <w1c : Const r1>
         <w2g : Global r2>  <w2c : Const r2> <w2l : Lazy r2>
-        <wag : Empty (DeepUse a) >
-        <wbg : Empty (DeepUse b) >
-        <wpe : Pure  e1>
-        <wce : Empty c1>
+        <wag : Emptify (DeepUse a) >
+        <wbg : Emptify (DeepUse b) >
+        <wpe : Purify  e1>
+        <wce : Emptify c1>
         (f  : a -(e1 | c1)> b) 
         (xx : List r1 a)
         : List r2 b
@@ -29,7 +29,7 @@ letrec {
   };
 
 
- sum    [r1 r2 r3 : %]
+ sum    [r1 r2 r3 : Region]
         (xx : List r1 (Int r2)) 
                 { Read r1 + Read r2 + Read r3 + Alloc r3
                 | Use  r1 + Use  r2 + Use r3 }
@@ -44,7 +44,7 @@ letrec {
   };
 
 
- list1  [r1 r2 : %] 
+ list1  [r1 r2 : Region] 
         (_:Unit)    {Alloc r1 + Alloc r2 | Use r1 + Use r2} 
         : List r1 (Int r2)
   = Cons [r1] [Int r2] (5 [r2] ())

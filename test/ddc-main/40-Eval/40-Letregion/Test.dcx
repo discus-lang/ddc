@@ -10,8 +10,8 @@ in  f ();;
 
 
 -- Error: Region variable is not in scope (wrong level)
-:check (\(e:!). withregion e in ()) 
+:check (\(e:Effect). withregion e in ()) 
 
 
 -- Error: Region variable has wrong kind.
-:check (/\(e:!). withregion e in ()) 
+:check (/\(e:Effect). withregion e in ()) 

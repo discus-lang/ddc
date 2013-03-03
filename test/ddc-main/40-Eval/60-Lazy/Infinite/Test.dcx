@@ -30,8 +30,8 @@ letrec {
     in purify     <alloc [r1] w1 & alloc [R0#] (Const#  [R0#]) > 
     in Cons [r1] [Int R0#] (5 [R0#] ()) rest;
 
- take [r:%] [a:*] 
-      (n : Int r)     { !0                           | Use r + Use R0# }
+ take [r:Region] [a:Data] 
+      (n : Int r)     { Pure                           | Use r + Use R0# }
       (xx : List r a) { Read r + Alloc r + Alloc R0# | Use r + Use R0# }
       : List R0# a
   = case eqInt [:r r r:] n (0 [r] ()) of {

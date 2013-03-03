@@ -8,15 +8,15 @@
 :to-c..
 module Test with letrec
 
-addInt  [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r3 } 
+addInt  [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
  =  case x of { I# i1 
  -> case y of { I# i2 
  -> I# [r3] (sub# [Int#] i1 i2) } }
 
-addOne  [r1 : %] (x : Int r1) { !0 | Use r1 } 
+addOne  [r1 : Region] (x : Int r1) { Pure | Use r1 } 
         : Int r1 -(Read r1 + Alloc r1 | Use r1)> Int r1
  = addInt [:r1 r1 r1:] x;;
 

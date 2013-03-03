@@ -9,9 +9,9 @@
 
 
 -- Typing ---------------------------------------------------------------------
-42 :: [^ : %].Unit -(Alloc ^0 | $0)> Int ^0
+42 :: [^ : Region].Unit -(Alloc ^0 | Empty)> Int ^0
 
-addInt :: [^ ^ ^ : %].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
+addInt :: [^ ^ ^ : Region].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
 
 42 [R0#] ()
 :*: Int R0#
@@ -20,13 +20,13 @@ addInt :: [^ ^ ^ : %].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)>
 
 
 -- Kinding --------------------------------------------------------------------
-Int :: % ~> *
+Int :: Region ~> Data
 
-R0# :: %
+R0# :: Region
 
-(->) :: * ~> ! ~> $ ~> * ~> *
+(->) :: Data ~> Effect ~> Closure ~> Data ~> Data
 
-Read :: % ~> !
+Read :: Region ~> Effect
 
 
 -- Tracing --------------------------------------------------------------------
@@ -110,7 +110,7 @@ ok
 3628800
 
 
-updateInt :: [^ ^ : %].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use ^1)> Unit
+updateInt :: [^ ^ : Region].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use ^1)> Unit
 
 
 -- Exercise 2: Refactor fac so arg and return values are in different regions.
@@ -132,7 +132,7 @@ updateInt :: [^ ^ : %].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use
 -- Error: local region visible in return type.
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Int r1
   
   with: letregion r1 in
@@ -142,7 +142,7 @@ When checking expression.
 -- Error: local region visible in return type.
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 in
@@ -154,7 +154,7 @@ When checking expression.
 -- Error: local region visible in return type.
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 in
@@ -184,8 +184,8 @@ When checking expression.
 -- Anonymize first example from the previous section.
 ok
 ok
-let ^ : [^ ^ : %].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair ^1 (Int ^1) (Int ^0)
-      = /\(^ ^ : %).
+let ^ : [^ ^ : Region].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair ^1 (Int ^1) (Int ^0)
+      = /\(^ ^ : Region).
          \(_ : Unit).
         let ^ : Int ^1 = 5 [^1] () in
         let ^ : Int ^0

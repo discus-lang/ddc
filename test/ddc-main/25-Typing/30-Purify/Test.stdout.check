@@ -15,7 +15,7 @@ When checking expression.
 When checking expression.
   Witness for a purify does not witness purity.
           Witness: alloc [r1]
-         has type: Const r1 => Pure (Alloc r1)
+         has type: Const r1 => Purify (Alloc r1)
   
   with: purify <alloc [r1]> in
         5 [r1] ()

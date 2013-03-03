@@ -2,14 +2,14 @@
 -- See if we've managed to changed modes.
 ok
 add#
-:*: [^ : *].^0 -> ^0 -> ^0
-:!: !0
-:$: $0
+:*: [^ : Data].^0 -> ^0 -> ^0
+:!: Pure
+:$: Empty
 
 -- Type constructors
-Nat# :: *
-Int# :: *
-Word32# :: *
+Nat# :: Data
+Int# :: Data
+Word32# :: Data
 
 -- Error: invalid type constructors
 When checking type.
@@ -25,56 +25,56 @@ When checking expression.
   Undefined value variable: tailcall0#
 
 tailcall1#
-:*: [^ ^ : *].(^1 -> ^0) -> ^1 -> ^0
-:!: !0
-:$: $0
+:*: [^ ^ : Data].(^1 -> ^0) -> ^1 -> ^0
+:!: Pure
+:$: Empty
 
 tailcall4#
-:*: [^ ^ ^ ^ ^ : *].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
-:!: !0
-:$: $0
+:*: [^ ^ ^ ^ ^ : Data].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
+:!: Pure
+:$: Empty
 
 
 -- Literals
 42#
 :*: Nat#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 5i#
 :*: Int#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 96i#
 :*: Int#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 42w8#
 :*: Word8#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 42w16#
 :*: Word16#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 42w32#
 :*: Word32#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 42w64#
 :*: Word64#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 TAG42#
 :*: Tag#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 -- Error: lex error
 -- no negative naturals
@@ -98,13 +98,13 @@ While parsing.
 -- Binary literals
 4w32#
 :*: Word32#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 128w8#
 :*: Word8#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 -- Error: Binary literal is wider than word size.
 While parsing.

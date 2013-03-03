@@ -7,8 +7,8 @@
 -- Boxed addition
 :to-llvm..
 module Test with letrec
-addInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r3 } 
+addInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
         : Int r3
  =  case x of { I# i1 
@@ -19,7 +19,7 @@ addInt [r1 r2 r3 : %]
 -- None binders.
 :to-llvm..
 module Test with letrec
-thing [r1 : %] (z : Unit) { Alloc r1 | Use r1 } : Unit
+thing [r1 : Region] (z : Unit) { Alloc r1 | Use r1 } : Unit
  = do   _       = N# [r1] 5#
         ();;
 
@@ -28,13 +28,13 @@ thing [r1 : %] (z : Unit) { Alloc r1 | Use r1 } : Unit
 :to-llvm..
 module Test 
 imports { 
-        addNat  :: [r1 r2 r3 : %]
+        addNat  :: [r1 r2 r3 : Region]
                 . Nat r1 
-                -(!0 | Use r3)> Nat r2 
+                -(Pure | Use r3)> Nat r2 
                 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
 }
 with letrec
-thing   [r1 : %] 
+thing   [r1 : Region] 
         (b : Bool#) { Read r1 + Alloc r1 | Use r1 } 
         : Nat r1
  = let  x       = case b of

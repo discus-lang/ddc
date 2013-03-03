@@ -1,19 +1,19 @@
 
 module Main
 exports 
-        main    :: [r : %]
+        main    :: [r : Region]
                 .  Nat# 
-                -(!0 | Use r)> Ptr# r String# 
+                -(Pure | Use r)> Ptr# r String# 
                 -(Read r + Alloc r + Console | Use r)> Int#
 imports 
-        showInt   :: [r : %]. Int# -> Ptr# r String#
-        putStrLn  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
+        showInt   :: [r : Region]. Int# -> Ptr# r String#
+        putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
 with letrec
 
 
-subInt  [r1 r2 r3 : %] 
-        (x : Int r1)            { !0 | Use r3 } 
+subInt  [r1 r2 r3 : Region] 
+        (x : Int r1)            { Pure | Use r3 } 
         (y : Int r2)            { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
  =  case x of { I# i1 
@@ -21,8 +21,8 @@ subInt  [r1 r2 r3 : %]
  -> I# [r3] (sub# [Int#] i1 i2) } }
 
 
-mulInt  [r1 r2 r3 : %] 
-        (x : Int r1)            { !0 | Use r3 } 
+mulInt  [r1 r2 r3 : Region] 
+        (x : Int r1)            { Pure | Use r3 } 
         (y : Int r2)            { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
  =  case x of { I# i1 
@@ -30,14 +30,14 @@ mulInt  [r1 r2 r3 : %]
  -> I# [r3] (mul# [Int#] i1 i2) } }
 
 
-unboxInt [r : %] (x : Int r)    { Read r | $0 } 
+unboxInt [r : Region] (x : Int r)    { Read r | Empty } 
         : Int#
  = case x of 
         I# i  -> i
 
 
-fac     [r : %] 
-        (acc : Int r)           {!0 | Use r }
+fac     [r : Region] 
+        (acc : Int r)           {Pure | Use r }
         (n   : Int r)           {Read r + Alloc r | Use r} : Int r
  =  case n of { 
         I# i -> 
@@ -50,8 +50,8 @@ fac     [r : %]
  }
 
 
-main    [r : %] 
-        (argc : Nat#)           {!0                             | Use r} 
+main    [r : Region] 
+        (argc : Nat#)           {Pure                             | Use r} 
         (argv : Ptr# r String#) {Read r + Alloc r + Console     | Use r} 
         : Int#
  = do   x        = fac [r] (I# [r] 1i#) (I# [r] 10i#)

@@ -1,15 +1,15 @@
 
 module Main 
 exports {
-        main      :: [r1 r2 : %]. Nat# -> Ptr# r1 String# -> Int#;
+        main      :: [r1 r2 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
 imports {
-        showInt   :: [r : %].Int# -> Ptr# r String#;
-        putStrLn  :: [r : %].Ptr# r String# -> Void#;
+        showInt   :: [r : Region].Int# -> Ptr# r String#;
+        putStrLn  :: [r : Region].Ptr# r String# -> Void#;
 }
 with letrec {
 
-allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#)
+allocRaw [r : Region] (tag : Tag#) (bytesPayload : Nat#)
          : Ptr# r Obj
  = do { bytesObj        = add# [Nat#] 8# bytesPayload;
         addr            = alloc# bytesObj;
@@ -28,7 +28,7 @@ allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#)
      };
 
 
-boxWord32 [r : %] (x : Word32#)
+boxWord32 [r : Region] (x : Word32#)
           : Ptr# r Obj
  = do { obj     = allocRaw [r] TAG0# 4#;
         addr    = takePtr# [r] [Obj] obj;
@@ -36,7 +36,7 @@ boxWord32 [r : %] (x : Word32#)
         return# [Ptr# r Obj] obj;
       };
 
-unboxWord32 [r : %] (obj : Ptr# r Obj)
+unboxWord32 [r : Region] (obj : Ptr# r Obj)
             : Word32#
  = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#   [Word32#] addr 8#;
@@ -44,7 +44,7 @@ unboxWord32 [r : %] (obj : Ptr# r Obj)
       };
 
 
-addWord32 [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+addWord32 [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
           : Ptr# r3 Obj
  = do { xu      = unboxWord32 [r1] x;
         yu      = unboxWord32 [r2] y;
@@ -54,7 +54,7 @@ addWord32 [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
       };
 
 
-subWord32 [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+subWord32 [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
           : Ptr# r3 Obj
  = do { xu      = unboxWord32 [r1] x;
         yu      = unboxWord32 [r2] y;
@@ -64,7 +64,7 @@ subWord32 [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
       };
 
 
-mulWord32 [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+mulWord32 [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
           : Ptr# r3 Obj
  = do { xu      = unboxWord32 [r1] x;
         yu      = unboxWord32 [r2] y;
@@ -73,7 +73,7 @@ mulWord32 [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
         return# [Ptr# r3 Obj] z;
       };
 
-fac [r1 r2 : %] (x: Ptr# r1 Obj) : Ptr# r2 Obj
+fac [r1 r2 : Region] (x: Ptr# r1 Obj) : Ptr# r2 Obj
  = do { x2      = unboxWord32 [r1] x;
         cc      = eq# [Word32#] x2 0w32#;
         case cc of {
@@ -93,7 +93,7 @@ fac [r1 r2 : %] (x: Ptr# r1 Obj) : Ptr# r2 Obj
       };
 
 -- needs support for letregion
-main [r1 r2 : %] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
+main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
  = do { create# 1000#;
         x       = boxWord32 [r1] 10w32#;
         x2      = fac [r1] [r2] x;

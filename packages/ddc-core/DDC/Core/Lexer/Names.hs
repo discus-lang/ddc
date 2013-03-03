@@ -72,8 +72,8 @@ readTwConBuiltin ss
         "Lazy"          -> Just TwConLazy
         "HeadLazy"      -> Just TwConHeadLazy
         "Manifest"      -> Just TwConManifest
-        "Pure"          -> Just TwConPure
-        "Empty"         -> Just TwConEmpty
+        "Purify"        -> Just TwConPure
+        "Emptify"       -> Just TwConEmpty
         "Disjoint"      -> Just TwConDisjoint
         "Distinct"      -> Just (TwConDistinct 2)
         _               -> readTwConWithArity ss

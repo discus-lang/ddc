@@ -60,6 +60,6 @@ case Pr [R0#] [Unit] [Int R0#] () (5 [R0#] ()) of {
 :eval..
 let x : Int R1# = 2 [R1#] () in
 let ^ : Unit    = () in
-let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 1 in
+let ^ : [^ : Region].Unit -(Alloc ^0 | Empty)> Int ^0 = 1 in
 let ^           = ^0 [R0#] ^1 in
 addInt [R0#] [R1#] [R2#] ^0 x;;

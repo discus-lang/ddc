@@ -39,7 +39,7 @@ module Test with letrec
  word16 (_ : Unit) : Nat#
   = size2# [Word16#]
 
- ptr [r : %] (_ : Unit) : Nat#
+ ptr [r : Region] (_ : Unit) : Nat#
   = size2# [Ptr# r Word16#]
 
  tag (_ : Unit) : Nat#

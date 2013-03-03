@@ -1,8 +1,8 @@
 -- Ackermann's function.
 :eval..
 letrec {
- ack    [r : %] 
-        (m : Int r) {!0 | Use r}
+ ack    [r : Region] 
+        (m : Int r) {Pure | Use r}
         (n : Int r) {Read r + Alloc r | Use r}
         : Int r
   = let zero = 0 [r] () in

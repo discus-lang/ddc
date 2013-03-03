@@ -19,29 +19,29 @@ add#;;
 
 -- Boxing bools
 :check..
-/\(r : %). \(x : Bool#). B# [r] x;;
+/\(r : Region). \(x : Bool#). B# [r] x;;
 
 
 -- Unboxing bools.
 :check..
-/\(r : %). \(x : Bool r). case x of { B# b -> b };;
+/\(r : Region). \(x : Bool r). case x of { B# b -> b };;
 
 
 -- Boxing ints
 :check..
-/\(r : %). \(x : Int#). I# [r] x;;
+/\(r : Region). \(x : Int#). I# [r] x;;
 
 
 -- Unboxing ints
 :check..
-/\(r : %). \(x : Int r). case x of { I# i -> i };;
+/\(r : Region). \(x : Int r). case x of { I# i -> i };;
 
 
 -- Boxed integer add
 :check..
-let unboxInt = /\(r : %). \(x : Int r). case x of { I# i -> i } in
-let addInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r3 } 
+let unboxInt = /\(r : Region). \(x : Int r). case x of { I# i -> i } in
+let addInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
      =  case x of { I# i1 

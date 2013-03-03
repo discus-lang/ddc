@@ -1,17 +1,17 @@
 
 module Main 
 exports 
-        main    :: [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
+        main    :: [r : Region]. Nat# -> Ptr# r String# -(Console | Empty)> Int#
 imports 
-        showNat   :: [r : %]. Nat# -> Ptr# r String#
-        putStrLn  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
+        showNat   :: [r : Region]. Nat# -> Ptr# r String#
+        putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
 with letrec
 
 
 -- | Add two natural numbers.
-addNat  [r1 r2 r3 : %] 
-        (x : Nat r1)            { !0 | Use r3 }
+addNat  [r1 r2 r3 : Region] 
+        (x : Nat r1)            { Pure | Use r3 }
         (y : Nat r2)            { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Nat r3
  = case x of
@@ -21,8 +21,8 @@ addNat  [r1 r2 r3 : %]
 
 
 -- | Subtract two natural numbers.
-subNat  [r1 r2 r3 : %] 
-        (x : Nat r1)            { !0 | Use r3 }
+subNat  [r1 r2 r3 : Region] 
+        (x : Nat r1)            { Pure | Use r3 }
         (y : Nat r2)            { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Nat r3
  = case x of
@@ -33,8 +33,8 @@ subNat  [r1 r2 r3 : %]
 
 -- | Construct a list containing copies of some value.
 replicate
-        [r1 r2 : %] [a : *]
-        (n : Nat r1)            { !0 | Use r1 + Use r2 }
+        [r1 r2 : Region] [a : Data]
+        (n : Nat r1)            { Pure | Use r1 + Use r2 }
         (x : a)                 { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2}
         : List r2 a
  = letregion r3 in
@@ -48,7 +48,7 @@ replicate
                                         x)
 
 -- | Take the length of a list.
-length  [r1 r2 : %] [a : *]
+length  [r1 r2 : Region] [a : Data]
         (xx : List r1 a)        { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2 }
         : Nat r2
  = case xx of
@@ -61,9 +61,9 @@ length  [r1 r2 : %] [a : *]
 
 
 -- | Construct a list of length 23 then take its length.
-main    [r : %] 
+main    [r : Region] 
         (argc : Nat#)
-        (argv : Ptr# r String#) { Console | $0 }
+        (argv : Ptr# r String#) { Console | Empty }
         : Int#
  = letregion r2 in
    do

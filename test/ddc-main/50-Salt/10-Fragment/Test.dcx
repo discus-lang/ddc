@@ -103,7 +103,7 @@ foo2 (x : Nat#) (y : Nat#) : Nat#
 -- Error: cannot instantiate a type variable at an unboxed type.
 :to-c..
 module Main with letrec
-id  [a : *] (x : a) : a    = x
+id  [a : Data] (x : a) : a    = x
 foo (x : Int#)      : Int# = id [Int#] x;;
 
 
@@ -111,6 +111,6 @@ foo (x : Int#)      : Int# = id [Int#] x;;
 :to-c..
 module Main with letrec
 
-thing [a : *] (x : a) : a   
+thing [a : Data] (x : a) : a   
  = let id (y : a) = y
    in  id x;;

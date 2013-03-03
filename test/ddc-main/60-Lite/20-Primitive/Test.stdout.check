@@ -6,75 +6,75 @@ ok
 -- Literals
 5#
 :*: Nat#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 5i#
 :*: Int#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Primitives
 add#
-:*: [^ : *].^0 -> ^0 -> ^0
-:!: !0
-:$: $0
+:*: [^ : Data].^0 -> ^0 -> ^0
+:!: Pure
+:$: Empty
 
-Int :: % ~> *
-Bool :: % ~> *
+Int :: Region ~> Data
+Bool :: Region ~> Data
 
 
 -- Boxing bools
-/\(r : %).
+/\(r : Region).
  \(x : Bool#). B# [r] x
-:*: [r : %].Bool# -(Alloc r | Use r)> Bool r
-:!: !0
-:$: $0
+:*: [r : Region].Bool# -(Alloc r | Use r)> Bool r
+:!: Pure
+:$: Empty
 
 
 -- Unboxing bools.
-/\(r : %).
+/\(r : Region).
  \(x : Bool r).
 case x of {
   B# (b : Bool#) 
    -> b
 }
-:*: [r : %].Bool r -(Read r | $0)> Bool#
-:!: !0
-:$: $0
+:*: [r : Region].Bool r -(Read r | Empty)> Bool#
+:!: Pure
+:$: Empty
 
 
 -- Boxing ints
-/\(r : %).
+/\(r : Region).
  \(x : Int#). I# [r] x
-:*: [r : %].Int# -(Alloc r | Use r)> Int r
-:!: !0
-:$: $0
+:*: [r : Region].Int# -(Alloc r | Use r)> Int r
+:!: Pure
+:$: Empty
 
 
 -- Unboxing ints
-/\(r : %).
+/\(r : Region).
  \(x : Int r).
 case x of {
   I# (i : Int#) 
    -> i
 }
-:*: [r : %].Int r -(Read r | $0)> Int#
-:!: !0
-:$: $0
+:*: [r : Region].Int r -(Read r | Empty)> Int#
+:!: Pure
+:$: Empty
 
 
 -- Boxed integer add
-let unboxInt : [r : %].Int r -(Read r | $0)> Int#
-      = /\(r : %).
+let unboxInt : [r : Region].Int r -(Read r | Empty)> Int#
+      = /\(r : Region).
          \(x : Int r).
         case x of {
           I# (i : Int#) 
            -> i
         } in
-let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3
-      = /\(r1 r2 r3 : %).
+let addInt : [r1 r2 r3 : Region].Int r1 -(Pure | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3
+      = /\(r1 r2 r3 : Region).
          \(x : Int r1).\(y : Int r2).
         case x of {
           I# (i1 : Int#) 
@@ -87,5 +87,5 @@ letregion r1 in
 unboxInt [r1]
     (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))
 :*: Int#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
