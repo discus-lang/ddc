@@ -35,7 +35,6 @@ Library
         DDC.Data.ListUtils
         
   GHC-options:
-        -Werror
         -Wall
         -fno-warn-orphans
 

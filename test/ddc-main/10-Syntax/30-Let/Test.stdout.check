@@ -2,32 +2,32 @@
 let _ : Unit = () in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Non-binding lazy.
 let _ : Unit lazy = () in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Binding let.
 let x : Unit = () in
 x
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Binding lazy.
 let x : Unit lazy = () in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Let-bound function with full signature.
@@ -35,8 +35,8 @@ let f : Unit -> Unit
       = \(x : Unit). x in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Lazy-bound function with full signature.
@@ -44,8 +44,8 @@ let f : Unit -> Unit lazy
       = \(x : Unit). x in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Let using function syntax with a return type.
@@ -53,8 +53,8 @@ let f : Unit -> Unit
       = \(x : Unit). x in
 f ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Lazy using function syntax with a return type.
@@ -62,8 +62,8 @@ let f : Unit -> Unit lazy
       = \(x : Unit). x in
 f ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Let using function syntax without a return type.
@@ -71,8 +71,8 @@ let f : Unit -> Unit
       = \(x : Unit). x in
 f ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Lazy using function syntax without a return type.
@@ -80,8 +80,8 @@ let f : Unit -> Unit
       = \(x : Unit). x in
 f ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Multiple lets.
@@ -89,8 +89,8 @@ let x : Unit = () in
 let y : Unit = () in
 y
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Mutltiple lets with debruijn indices.
@@ -109,8 +109,8 @@ let x : Unit = () in
 let y : Unit lazy = () in
 y
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 -- Simple letregion.
 letregion r in
@@ -189,6 +189,6 @@ addInt [r1] [r2] [R1#] x1 x2
 letregion r with {_ : Const r} in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 

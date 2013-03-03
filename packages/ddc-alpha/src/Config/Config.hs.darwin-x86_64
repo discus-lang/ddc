@@ -57,6 +57,7 @@ makeSeaCompileCmd
 	++ " -I."
 	++ " -I"  ++ (take (length pathRuntime - length "/runtime") pathRuntime)
 	++ " -I"  ++ pathLibrary
+        ++ " -I/usr/X11/include"
 
 	++ concat [ " -I" ++ p | p <- extraIncludeDirs ]
 	++ concat [ " "   ++ f | f <- extraCompileFlags ]

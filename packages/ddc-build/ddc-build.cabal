@@ -56,7 +56,6 @@ Library
         DeriveDataTypeable
 
   ghc-options:
-        -Werror
         -Wall
         -fno-warn-missing-signatures
         -fno-warn-unused-do-bind

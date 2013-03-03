@@ -60,7 +60,6 @@ Library
 
 
   GHC-options:
-        -Werror
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures

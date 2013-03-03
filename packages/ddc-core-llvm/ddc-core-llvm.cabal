@@ -65,7 +65,6 @@ Library
         DDC.Llvm.Syntax.Type
 
   GHC-options:
-        -Werror
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures

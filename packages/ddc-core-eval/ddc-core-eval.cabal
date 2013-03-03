@@ -40,7 +40,6 @@ Library
         DDC.Core.Eval
 
   GHC-options:
-        -Werror
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures

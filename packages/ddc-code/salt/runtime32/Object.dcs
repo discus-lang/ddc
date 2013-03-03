@@ -28,7 +28,7 @@
 --           0  1  0  1  a  0  0  1  -- SuspIndir
 --           -- size --  a  0  1  1  -- DataRawSmall
 -- 
---   * GC Forwarding / Broken-Heart pointers.
+--   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
 --     "to-space" its header in the "from-space" is overwritten with a pointer
 --     to where the "to-space" version of the object is.
@@ -39,12 +39,12 @@
 --     For all other values of the format field, we ensure the lowest two bits
 --     are not 00.
 -- 
---   * Anchor flag
+--   Data Anchor flag
 --     If bit 3 in the format field is set then the GC is not permitted to move
 --     the object. This is useful when the object has been allocated by malloc
 --     and exists outside the DDC runtime's garbage collected heap.
 -- 
---   * Data{Boxed, Mixed, Raw, RawSmall}
+--   Data Data{Boxed, Mixed, Raw, RawSmall}
 --     There are four data object formats:
 --      DataBoxed:    A boxed object containing pointers to more heap objects.
 --      DataMixed:    Some heap pointers, and some raw data.
@@ -67,26 +67,26 @@
 --
 module Object 
 exports
-        getTag            :: [r : %]. Ptr# r Obj -> Tag#
+        getTag            :: [r : Region]. Ptr# r Obj -> Tag#
 
-        allocBoxed        :: [r : %]. Tag# -> Nat# -> Ptr# r Obj
-        getFieldOfBoxed   :: [r : %]. [a : *]. Ptr# r Obj -> Nat# -> a
-        setFieldOfBoxed   :: [r : %]. [a : *]. Ptr# r Obj -> Nat# -> a -> Void#
+        allocBoxed        :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+        getFieldOfBoxed   :: [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
+        setFieldOfBoxed   :: [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a -> Void#
 
-        allocMixed        :: [r : %]. Tag# -> Nat# -> Nat# -> Ptr# r Obj
-        fieldOfMixed      :: [r : %]. Ptr# r Obj -> Nat# -> Ptr# r Obj
-        payloadOfMixed    :: [r : %]. Ptr# r Obj -> Ptr# r Word8#
+        allocMixed        :: [r : Region]. Tag# -> Nat# -> Nat# -> Ptr# r Obj
+        fieldOfMixed      :: [r : Region]. Ptr# r Obj -> Nat# -> Ptr# r Obj
+        payloadOfMixed    :: [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
-        allocRaw          :: [r : %]. Tag# -> Nat# -> Ptr# r Obj
-        payloadOfRaw      :: [r : %]. Ptr# r Obj -> Ptr# r Word8#
+        allocRaw          :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+        payloadOfRaw      :: [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
-        allocRawSmall     :: [r : %]. Tag# -> Nat# -> Ptr# r Obj
-        payloadOfRawSmall :: [r : %]. Ptr# r Obj -> Ptr# r Word8#
+        allocRawSmall     :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+        payloadOfRawSmall :: [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
 with letrec
 
 -- | Get the constructor tag of an object.
-getTag [r : %] (obj : Ptr# r Obj) : Tag#
+getTag [r : Region] (obj : Ptr# r Obj) : Tag#
  = do   
         ptr             = castPtr# [r] [Word32#] [Obj] obj
         header          = peek# [r] [Word32#] ptr 0#
@@ -102,11 +102,11 @@ getTag [r : %] (obj : Ptr# r Obj) : Tag#
 --   {    uint32_t  tagFormat;    // Constructor tag and format field.
 --        uint32_t  arity;        // Arity of the data constructor.
 --                                //  (The number of pointers in the payload)
---        Obj*      payload[];    
+--        ObjData      payload[];    
 --   } DataBoxed;
 --    
 allocBoxed 
-        [r : %]
+        [r : Region]
         (tag : Tag#) (arity : Nat#) : Ptr# r Obj
  = do   
         -- multiply arity by 4 bytes-per-pointer to get size of payload.
@@ -118,7 +118,7 @@ allocBoxed
          False# -> fail# [Ptr# r Obj]
 
 allocBoxed_ok
-        [r : %]
+        [r : Region]
         (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do   
         addr            = alloc# bytesObj
@@ -136,7 +136,7 @@ allocBoxed_ok
 
 ---- | Get one of the pointers from a boxed data object.
 getFieldOfBoxed 
-        [r1 : %] [a : *] 
+        [r1 : Region] [a : Data] 
         (obj : Ptr# r1 Obj) (index : Nat#) 
         : a
  =      read# [a]  (takePtr# [r1] [Obj] obj)
@@ -145,7 +145,7 @@ getFieldOfBoxed
 
 -- | Set one of the pointers from a boxed data object.
 setFieldOfBoxed 
-        [r1 : %] [a : *]
+        [r1 : Region] [a : Data]
         (obj : Ptr# r1 Obj) (index : Nat#) 
         (val : a) 
         : Void#
@@ -163,11 +163,11 @@ setFieldOfBoxed
 --           uint32_t  padding;      // Padding to ensure payload is 8 byte aligned.
 --           uint32_t  size;         // Size of the whole object, in bytes.
 --           uint32_t  ptrCount;     // Number of pointers at the start of the payload.
---           Obj*      payload[];    // Contains ptrCount pointers, then raw data.
+--           ObjData      payload[];    // Contains ptrCount pointers, then raw data.
 --   } DataMixed;
 --
 allocMixed
-        [r : %]
+        [r : Region]
         (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
  = do   
         bytesPtrs       = shl# [Nat#] arity 2#
@@ -177,7 +177,7 @@ allocMixed
          False# -> fail# [Ptr# r Obj]
 
 allocMixed_ok 
-        [r : %]
+        [r : Region]
         (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do
         addr            = alloc# bytesObj
@@ -198,14 +198,14 @@ allocMixed_ok
 
 
 -- | Get one of the pointers from a mixed data object.
-fieldOfMixed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
+fieldOfMixed [r : Region] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
  = do   
         offset          = add# [Nat#] 16# (shl# [Nat#] index 2#)
         plusPtr# [r] [Obj] obj offset
       
 
 -- | Get the address of the raw data payload from a mixed object.
-payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
+payloadOfMixed [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 16#
 
 
@@ -221,7 +221,7 @@ payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
 --   } DataRaw;
 --
 allocRaw
-        [r : %]
+        [r : Region]
         (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
         bytesObj        = add# [Nat#] 8# bytesPayload
@@ -230,7 +230,7 @@ allocRaw
          False# -> fail# [Ptr# r Obj]
 
 allocRaw_ok 
-        [r : %] 
+        [r : Region] 
         (tag : Tag#) (bytesPayload : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do
         addr            = alloc# bytesObj
@@ -247,7 +247,7 @@ allocRaw_ok
 
 
 -- | Get the payload data from a raw object.
-payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
+payloadOfRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 8#
 
 
@@ -262,7 +262,7 @@ payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
 --   } DataRawSmall;
 --
 allocRawSmall 
-        [r : %] 
+        [r : Region] 
         (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
         bytesObj        = add# [Nat#] 4# bytesPayload
@@ -271,7 +271,7 @@ allocRawSmall
          False# -> fail# [Ptr# r Obj]
 
 allocRawSmall_ok
-        [r : %] 
+        [r : Region] 
         (tag : Tag#) (bytesPayload : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do
         addr            = alloc# bytesObj
@@ -289,5 +289,5 @@ allocRawSmall_ok
 
 
 -- | Get the payload data from a raw small object.
-payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Ptr# r Word8#
+payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 4#

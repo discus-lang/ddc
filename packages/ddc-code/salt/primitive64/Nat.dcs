@@ -2,38 +2,38 @@
 -- | Int primitives for 64-bit machines.
 module Int
 exports
-        boxInt    :: [r : %]. Int#   -> Ptr# r Obj
-        unboxInt  :: [r : %]. Ptr# r Obj -> Int#
-        addInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        subInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        mulInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        boxInt    :: [r : Region]. Int#   -> Ptr# r Obj
+        unboxInt  :: [r : Region]. Ptr# r Obj -> Int#
+        addInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        subInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        mulInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
 
 imports
-        allocRawSmall :: [r : %]. Tag# -> Nat# -> Ptr# r Obj
+        allocRawSmall :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
 
 with letrec 
 
 
-boxInt [r : %] (x : Int#) : Ptr# r Obj
+boxInt [r : Region] (x : Int#) : Ptr# r Obj
  = do   obj     = allocRawSmall [r] TAG0# 8#
         addr    = takePtr# [r] [Obj] obj
         write#  [Int#] addr 4# x
         obj
 
 
-unboxInt [r : %] (obj : Ptr# r Obj) : Int#
+unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
  = do   addr    = takePtr# [r] [Obj] obj
         read#   [Int#] addr 4#
 
 
-addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+addInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
  = boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 
 
-subInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+subInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
  = boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 
 
-mulInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+mulInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
  = boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 

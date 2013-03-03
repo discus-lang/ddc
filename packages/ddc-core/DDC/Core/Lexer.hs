@@ -21,6 +21,7 @@ import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
 import DDC.Data.Token
 import Data.Char
+import Data.List
 
 
 -- Module ---------------------------------------------------------------------
@@ -150,20 +151,22 @@ lexString sourceName lineStart str
         '-'  : w'       -> tokA KDash            : lexMore 1 w'
         
         -- Bottoms
-        '!' : '0' : w'  -> tokA KBotEffect       : lexMore 2 w'
-        '$' : '0' : w'  -> tokA KBotClosure      : lexMore 2 w'
+        name
+         | Just w'      <- stripPrefix "Pure"    name -> tokA KBotEffect   : lexMore 2 w'
+         | Just w'      <- stripPrefix "Empty"   name -> tokA KBotClosure  : lexMore 2 w'
 
-        -- Sort Constructors
-        '*' : '*' : w'  -> tokA KSortComp        : lexMore 2 w'
-        '@' : '@' : w'  -> tokA KSortProp        : lexMore 2 w'        
+        -- Baked in Sort Constructors
+        name 
+         | Just w'      <- stripPrefix "Comp"    name -> tokA KSortComp    : lexMore 4 w'
+         | Just w'      <- stripPrefix "Prop"    name -> tokA KSortProp    : lexMore 4 w'
 
-        -- Kind Constructors
-        '*' : w'        -> tokA KKindValue       : lexMore 1 w'
-        '%' : w'        -> tokA KKindRegion      : lexMore 1 w'
-        '!' : w'        -> tokA KKindEffect      : lexMore 1 w'
-        '$' : w'        -> tokA KKindClosure     : lexMore 1 w'
-        '@' : w'        -> tokA KKindWitness     : lexMore 1 w'
-        
+        -- Baked in Kind Constructors
+        name
+         | Just w'      <- stripPrefix "Data"    name -> tokA KKindValue   : lexMore 4 w'
+         | Just w'      <- stripPrefix "Region"  name -> tokA KKindRegion  : lexMore 6 w'
+         | Just w'      <- stripPrefix "Effect"  name -> tokA KKindEffect  : lexMore 6 w'
+         | Just w'      <- stripPrefix "Closure" name -> tokA KKindClosure : lexMore 7 w'
+         | Just w'      <- stripPrefix "Witness" name -> tokA KKindWitness : lexMore 7 w'
 
         -- Named Constructors
         c : cs

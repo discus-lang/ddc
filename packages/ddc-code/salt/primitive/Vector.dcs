@@ -2,8 +2,8 @@
 -- | Vectors are arrays of unboxed values.
 module Vector
 imports {
-        allocRaw     :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
-        payloadOfRaw :: [r : %]. Ptr# r Obj -> Addr#;
+        allocRaw     :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj;
+        payloadOfRaw :: [r : Region]. Ptr# r Obj -> Addr#;
 } 
 with letrec
 
@@ -16,7 +16,7 @@ with letrec
 --      uint8_t payload[] 
 --   } Vector8
 --
-allocVector8 [r : %] (length : Nat#) : Ptr# r Obj
+allocVector8 [r : Region] (length : Nat#) : Ptr# r Obj
  = do   
         -- total size of object payload.
         bytes   = add# [Nat#] (bytesNat# V#) length
@@ -34,13 +34,13 @@ allocVector8 [r : %] (length : Nat#) : Ptr# r Obj
 
 -- Projections ----------------------------------------------------------------
 -- | Get the length of a vector.
-lengthVector8 [r : %] (obj : Ptr# r Obj) : Nat#
+lengthVector8 [r : Region] (obj : Ptr# r Obj) : Nat#
  = do   payload = payloadOfRaw [r] obj
         read# [Nat#] payload 0#
 
 
 -- | Unsafely read a byte from a vector.
-indexVector8 [r : %] (obj : Ptr# r Obj) (index : Nat#) : Word8#
+indexVector8 [r : Region] (obj : Ptr# r Obj) (index : Nat#) : Word8#
  = do   payload = payloadOfRaw [r] obj
         offset  = add# [Nat#] (bytesNat# V#) index
         read# [Word8#] payload offset 
@@ -49,7 +49,7 @@ indexVector8 [r : %] (obj : Ptr# r Obj) (index : Nat#) : Word8#
 -- Update ---------------------------------------------------------------------
 -- | Unsafely write a byte into a vector.
 updateVector8 
-        [r : %]
+        [r : Region]
         (obj : Ptr# r Obj)
         (index : Nat#) (val : Word8#)
         : Void#
@@ -61,7 +61,7 @@ updateVector8
 -- Fill -----------------------------------------------------------------------
 -- | Fill a vector with the given value.
 fillVector8 
-        [r : %]
+        [r : Region]
         (obj : Ptr# r Obj) (val : Word8#)
         : Void#
  = do   payload = payloadOfRaw [r] obj
@@ -74,7 +74,7 @@ fillVector8
 
 -- | Fill a range of bytes with the given value.
 fillPtr8 
-        [r : %] 
+        [r : Region] 
         (cur : Ptr# r Word8#) 
         (top : Ptr# r Word8#) (val : Word8#)
         : Void#
@@ -92,7 +92,7 @@ fillPtr8
 -- Copy -----------------------------------------------------------------------
 -- | Copy a vector into a fresh buffer.
 copyVector8 
-        [r1 r2 : %]
+        [r1 r2 : Region]
         (vec1 : Ptr# r1 Obj)
         : Ptr# r2 Obj
  = do   
@@ -112,7 +112,7 @@ copyVector8
 
 
 copyPtr8
-        [r1 r2 : %]
+        [r1 r2 : Region]
         (offset : Nat#)
         (length : Nat#)
         (src : Ptr# r1 Word8#)

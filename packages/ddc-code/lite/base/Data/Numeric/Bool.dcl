@@ -1,41 +1,41 @@
 module Bool
 exports
  boxBool
-  ::    [r : %].
+  ::    [r : Region].
         Bool# -(Alloc r | Use r)>
         Bool r
 
  unboxBool
-  ::    [r : %].
-        Bool r -(Read r | $0)>
+  ::    [r : Region].
+        Bool r -(Read r | Empty)>
         Bool#
 
  addBool
-  ::    [r1 r2 r3 : %].
-        Bool r1 -(!0 | Use r3)>
+  ::    [r1 r2 r3 : Region].
+        Bool r1 -(Pure | Use r3)>
         Bool r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Bool r3
 
  mulBool
-  ::    [r1 r2 r3 : %].
-        Bool r1 -(!0 | Use r3)>
+  ::    [r1 r2 r3 : Region].
+        Bool r1 -(Pure | Use r3)>
         Bool r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Bool r3
 
  not    
-  ::    [r1 r2 : %].
+  ::    [r1 r2 : Region].
         Bool r1 -(Read r1 + Alloc r2 | Use r1 + Use r2)>
         Bool r2
 
  and    
-  ::    [r1 r2 r3 : %].
-        Bool r1 -(!0 | Use r1 + Use r2)>
+  ::    [r1 r2 r3 : Region].
+        Bool r1 -(Pure | Use r1 + Use r2)>
         Bool r2 -(Read r1 + Alloc r2 | Use r1 + Use r2)>
         Bool r2
 
  or
-  ::    [r1 r2 r3 : %].
-        Bool r1 -(!0 | Use r1 + Use r2)>
+  ::    [r1 r2 r3 : Region].
+        Bool r1 -(Pure | Use r1 + Use r2)>
         Bool r2 -(Read r1 + Alloc r2 | Use r1 + Use r2)>
         Bool r2
 
@@ -43,23 +43,24 @@ with letrec
 
 
 -- | Box a boolean.
-boxBool [r : %] 
+boxBool [r : Region] 
         (i : Bool#)     { Alloc r | Use r } 
         : Bool r
  = B# [r] i
 
 
 -- | Unbox a boolean.
-unboxBool [r : %]
-        (x : Bool r)    { Read r | $0 } 
+unboxBool 
+        [r : Region]
+        (x : Bool r)    { Read r | Empty } 
         : Bool#
  = case x of 
     B# i  -> i
 
 
 -- | Add two booleans.
-addBool [r1 r2 r3 : %] 
-        (x : Bool r1)   { !0 | Use r3 } 
+addBool [r1 r2 r3 : Region] 
+        (x : Bool r1)   { Pure | Use r3 } 
         (y : Bool r2)   { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Bool r3
  =  case x of { B# i1 
@@ -68,8 +69,8 @@ addBool [r1 r2 r3 : %]
 
 
 -- | Multiply two naturals.
-mulBool [r1 r2 r3 : %] 
-        (x : Bool r1)   { !0 | Use r3 } 
+mulBool [r1 r2 r3 : Region] 
+        (x : Bool r1)   { Pure | Use r3 } 
         (y : Bool r2)   { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Bool r3
  =  case x of { B# i1 
@@ -78,7 +79,7 @@ mulBool [r1 r2 r3 : %]
 
 
 -- | Boolean negation.
-not     [r1 r2 : %]
+not     [r1 r2 : Region]
         (x : Bool r1)   {Read r1 + Alloc r2 | Use r1 + Use r2}
         : Bool r2
  = case unboxBool [r1] x of
@@ -87,8 +88,8 @@ not     [r1 r2 : %]
 
 
 -- | Right biased short-circuiting and.
-and     [r1 r2 r3 : %]
-        (x : Bool r1)   {!0 | Use r1 + Use r2 }
+and     [r1 r2 r3 : Region]
+        (x : Bool r1)   { Pure | Use r1 + Use r2 }
         (y : Bool r2)   { Read r1 + Alloc r2 | Use r1 + Use r2 }
         : Bool r2
  = case unboxBool [r1] x of 
@@ -97,8 +98,8 @@ and     [r1 r2 r3 : %]
 
 
 -- | Right biased short-circuiting or.
-or      [r1 r2 r3 : %]
-        (x : Bool r1)   {!0 | Use r1 + Use r2 }
+or      [r1 r2 r3 : Region]
+        (x : Bool r1)   { Pure | Use r1 + Use r2 }
         (y : Bool r2)   { Read r1 + Alloc r2 | Use r1 + Use r2 }
         : Bool r2
  = case unboxBool [r1] x of 

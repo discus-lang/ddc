@@ -1,9 +1,9 @@
 -- Show the type of the mutable constructor.
-Mutable# :: [^ : %].Mutable ^0
+Mutable# :: [^ : Region].Mutable ^0
 
 -- Show the type of the distinct constructors.
-Distinct2# :: [^ ^ : %].Distinct2 ^1 ^0
-Distinct10# :: [^ ^ ^ ^ ^ ^ ^ ^ ^ ^ : %].Distinct10 ^9 ^8 ^7 ^6 ^5 ^4 ^3 ^2 ^1 ^0
+Distinct2# :: [^ ^ : Region].Distinct2 ^1 ^0
+Distinct10# :: [^ ^ ^ ^ ^ ^ ^ ^ ^ ^ : Region].Distinct10 ^9 ^8 ^7 ^6 ^5 ^4 ^3 ^2 ^1 ^0
 
 -- Mutability of some region.
 Mutable# [R0#] :: Mutable R0#
@@ -12,8 +12,8 @@ Mutable# [R0#] :: Mutable R0#
 -- Error: type mismatch in witness application.
 When checking expression.
   Type cannot apply non-constructor witness
-                of type: [^ : %].Mutable ^0
-    to argument of type: [^ : %].Mutable ^0
+                of type: [^ : Region].Mutable ^0
+    to argument of type: [^ : Region].Mutable ^0
   
   with: Mutable# Mutable#
 
@@ -21,8 +21,8 @@ When checking expression.
 -- Error: type mismatch in witness application.
 When checking expression.
   Type mismatch in witness application.
-    Constructor expects: %
-        but argument is: *
+    Constructor expects: Region
+        but argument is: Data
   
   with: Mutable# [Unit]
 
@@ -31,6 +31,6 @@ When checking expression.
 When checking expression.
   Type cannot apply non-constructor witness
                 of type: Mutable R0#
-    to argument of type: [^ : %].Mutable ^0
+    to argument of type: [^ : Region].Mutable ^0
   
   with: Mutable# [R0#] Mutable#

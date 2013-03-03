@@ -97,8 +97,17 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          $  ppr t1 <+> pprPrec 11 t2
 
         TSum ts
-         | isBot tt     
-         -> ppr (Sum.kindOfSum ts) <> text "0"
+         | isBot tt, isEffectKind  $ Sum.kindOfSum ts
+         -> text "Pure"
+
+         | isBot tt, isClosureKind $ Sum.kindOfSum ts 
+         -> text "Empty"
+
+         | isBot tt, isDataKind    $ Sum.kindOfSum ts 
+         -> text "Bot"
+
+         | isBot tt, otherwise  
+         -> error $ stage ++ ": malformed sum"
          
          | otherwise
          -> pprParen (d > 9) $  ppr ts
@@ -107,9 +116,9 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
 instance (Pretty n, Eq n) => Pretty (TypeSum n) where
  ppr ss
   = case Sum.toList ss of
-      [] | isEffectKind  $ Sum.kindOfSum ss -> text "!0"
-         | isClosureKind $ Sum.kindOfSum ss -> text "$0"
-         | isDataKind    $ Sum.kindOfSum ss -> text "*0"
+      [] | isEffectKind  $ Sum.kindOfSum ss -> text "Pure"
+         | isClosureKind $ Sum.kindOfSum ss -> text "Empty"
+         | isDataKind    $ Sum.kindOfSum ss -> text "Bot"
          | otherwise     -> error $ stage ++ ": malformed sum"
          
       ts  -> sep $ punctuate (text " +") (map ppr ts)
@@ -129,19 +138,19 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
 instance Pretty SoCon where
  ppr sc 
   = case sc of
-        SoConComp       -> text "**"
-        SoConProp       -> text "@@"
+        SoConComp       -> text "Comp"
+        SoConProp       -> text "Prop"
 
 
 instance Pretty KiCon where
  ppr kc
   = case kc of
         KiConFun        -> text "(~>)"
-        KiConData       -> text "*"
-        KiConRegion     -> text "%"
-        KiConEffect     -> text "!"
-        KiConClosure    -> text "$"
-        KiConWitness    -> text "@"
+        KiConData       -> text "Data"
+        KiConRegion     -> text "Region"
+        KiConEffect     -> text "Effect"
+        KiConClosure    -> text "Closure"
+        KiConWitness    -> text "Witness"
 
 
 instance Pretty TwCon where
