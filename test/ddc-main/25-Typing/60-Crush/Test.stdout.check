@@ -19,46 +19,46 @@ case () of {
    -> ()
 }
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Check substituted effects are crushed under HeadRead.
-\(f : [a : *].a -(HeadRead a | DeepUse a)> a).
+\(f : [a : Data].a -(HeadRead a | DeepUse a)> a).
 f [Int R0#] (5 [R0#] ())
-:*: ([a : *].a -(HeadRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-:!: !0
+:*: ([a : Data].a -(HeadRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+:!: Pure
 :$: Use R0#
 
 
 -- Check substituted effects are crushed under DeepRead
-\(f : [a : *].a -(DeepRead a | DeepUse a)> a).
+\(f : [a : Data].a -(DeepRead a | DeepUse a)> a).
 f [Int R0#] (5 [R0#] ())
-:*: ([a : *].a -(DeepRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-:!: !0
+:*: ([a : Data].a -(DeepRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+:!: Pure
 :$: Use R0#
 
 
 -- Check substituted effects are crushed under DeepWrite
-\(f : [a : *].a -(DeepWrite a | DeepUse a)> a).
+\(f : [a : Data].a -(DeepWrite a | DeepUse a)> a).
 f [Int R0#] (5 [R0#] ())
-:*: ([a : *].a -(DeepWrite a | DeepUse a)> a) -(Write R0# + Alloc R0# | Use R0#)> Int R0#
-:!: !0
+:*: ([a : Data].a -(DeepWrite a | DeepUse a)> a) -(Write R0# + Alloc R0# | Use R0#)> Int R0#
+:!: Pure
 :$: Use R0#
 
 
 -- Check substituted effects are crushed under DeepAlloc
-\(f : [a : *].a -(DeepAlloc a | DeepUse a)> a).
+\(f : [a : Data].a -(DeepAlloc a | DeepUse a)> a).
 f [Int R0#] (5 [R0#] ())
-:*: ([a : *].a -(DeepAlloc a | DeepUse a)> a) -(Alloc R0# | Use R0#)> Int R0#
-:!: !0
+:*: ([a : Data].a -(DeepAlloc a | DeepUse a)> a) -(Alloc R0# | Use R0#)> Int R0#
+:!: Pure
 :$: Use R0#
 
 
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc
 letrec {
-  double : [a : *].(a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a) -> a -(DeepRead a + DeepAlloc a | $0)> a
-    = /\(a : *).
+  double : [a : Data].(a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a) -> a -(DeepRead a + DeepAlloc a | Empty)> a
+    = /\(a : Data).
        \(add : a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a).\(x : a). add x x
 } in
 double [Int R0#] (addInt [R0#] [R0#] [R0#]) (5 [R0#] ())

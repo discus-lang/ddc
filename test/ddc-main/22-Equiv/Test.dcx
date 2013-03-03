@@ -4,8 +4,8 @@
 
 -- Alpha equiv of binders
 :tequiv.. 
-([a : *]. a)
-([b : *]. b);;
+([a : Data]. a)
+([b : Data]. b);;
 
 
 -- Region handles.
@@ -34,58 +34,58 @@
 
 -- Alpha equiv of type constructor.
 :tequiv..
-([c1 : % ~> *]. [r : %]. c1 r)
-([c2 : % ~> *]. [r : %]. c2 r);;
+([c1 : Region ~> Data]. [r : Region]. c1 r)
+([c2 : Region ~> Data]. [r : Region]. c2 r);;
 
 
 -- Alpha equiv of higher kinded constructors in a sum.
 :tequiv..
-([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
-([c2 : % ~> !]. [r : %]. Int r -(c2 r | $0)> Int r);;
+([c1 : Region ~> Effect]. [r : Region]. Int r -(c1 r | Empty)> Int r)
+([c2 : Region ~> Effect]. [r : Region]. Int r -(c2 r | Empty)> Int r);;
 
 
 -- Alpha equiv of higher kinded constructors in a sum.
 :tequiv..
-([c1 : % ~> !]. [c2 : * ~> !]. [r : %]. [a : *].
- Int r -(c1 r | $0)> Int r)
-([c2 : % ~> !]. [c1 : * ~> !]. [r : %]. [a : *].
- Int r -(c2 r | $0)> Int r);;
+([c1 : Region ~> Effect]. [c2 : Data ~> Effect]. [r : Region]. [a : Data].
+ Int r -(c1 r | Empty)> Int r)
+([c2 : Region ~> Effect]. [c1 : Data ~> Effect]. [r : Region]. [a : Data].
+ Int r -(c2 r | Empty)> Int r);;
 
 
 -- Alpha equiv of higher kinded constructors in a sum.
 :tequiv..
-([c1 : % ~> !]. [c2 : * ~> !]. [r : %]. [a : *].
- Int r -(c1 r + c2 a | $0)> Int r)
-([c2 : % ~> !]. [c1 : * ~> !]. [r : %]. [a : *].
- Int r -(c2 r + c1 a | $0)> Int r);;
+([c1 : Region ~> Effect]. [c2 : Data ~> Effect]. [r : Region]. [a : Data].
+ Int r -(c1 r + c2 a | Empty)> Int r)
+([c2 : Region ~> Effect]. [c1 : Data ~> Effect]. [r : Region]. [a : Data].
+ Int r -(c2 r + c1 a | Empty)> Int r);;
 
 
 -- Alpha equiv of higher kinded constructors in a sum.
 -- This equivalence relies on the slow sum equivalence check as the components
 -- have different names and are also in a different porder.
 :tequiv..
-([c1 : % ~> !]. [c2 : * ~> !]. [r : %]. [a : *].
- Int r -(c1 r + c2 a | $0)> Int r)
-([c2 : % ~> !]. [c1 : * ~> !]. [r : %]. [a : *].
- Int r -(c1 a + c2 r | $0)> Int r);;
+([c1 : Region ~> Effect]. [c2 : Data ~> Effect]. [r : Region]. [a : Data].
+ Int r -(c1 r + c2 a | Empty)> Int r)
+([c2 : Region ~> Effect]. [c1 : Data ~> Effect]. [r : Region]. [a : Data].
+ Int r -(c1 a + c2 r | Empty)> Int r);;
 
 
 -- Alpha equiv of single binder in an effect sum.
 :tequiv..
-([^  : %]. Int ^0 -(Read ^0 | $0)> Int ^0)
-([r1 : %]. Int r1 -(Read r1 | $0)> Int r1);;
+([^  : Region]. Int ^0 -(Read ^0 | Empty)> Int ^0)
+([r1 : Region]. Int r1 -(Read r1 | Empty)> Int r1);;
 
 
 -- Alpha equiv of second binder in an effect sum.
 :tequiv..
-([r1 ^  : %]. Unit -(Read r1 + Read ^0 | $0)> Unit)
-([r1 r2 : %]. Unit -(Read r1 + Read r2 | $0)> Unit);;
+([r1 ^  : Region]. Unit -(Read r1 + Read ^0 | Empty)> Unit)
+([r1 r2 : Region]. Unit -(Read r1 + Read r2 | Empty)> Unit);;
 
 
 -- Alpha equiv with multiple anonymous binders.
 :tequiv..
-([r1 : %]. [a : *]. List r1 Unit)
-([^  : %]. [^ : *]. List ^1 Unit);;
+([r1 : Region]. [a : Data]. List r1 Unit)
+([^  : Region]. [^ : Data]. List ^1 Unit);;
 
 
 -- False: constructors are different
@@ -106,29 +106,29 @@
 
 -- False: binders have differing kinds.
 :tequiv..
-([a : %]. Unit)
-([a : *]. Unit);;
+([a : Region]. Unit)
+([a : Data]. Unit);;
 
 
 -- False: binders have same kind but they are in different positions.
 :tequiv..
-([r : %]. [a b : *]. List r (List r a))
-([r : %]. [a b : *]. List r (List r b));;
+([r : Region]. [a b : Data]. List r (List r a))
+([r : Region]. [a b : Data]. List r (List r b));;
 
 
 -- False: effect args don't match.
 :tequiv..
-([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
-([c2 : % ~> !]. [r : %]. Int r -(!0   | $0)> Int r);;
+([c1 : Region ~> Effect]. [r : Region]. Int r -(c1 r | Empty)> Int r)
+([c2 : Region ~> Effect]. [r : Region]. Int r -(Pure   | Empty)> Int r);;
 
 
 -- False: Effect components don't match.
 :tequiv..
-([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
-([c2 : % ~> !]. [r : %]. Int r -(!0   | $0)> Int r);;
+([c1 : Region ~> Effect]. [r : Region]. Int r -(c1 r | Empty)> Int r)
+([c2 : Region ~> Effect]. [r : Region]. Int r -(Pure   | Empty)> Int r);;
 
 
 -- False: Binder in different order
 :tequiv..
-([a : *]. [b : *]. b)
-([b : *]. [a : *]. b);;
+([a : Data]. [b : Data]. b)
+([b : Data]. [a : Data]. b);;

@@ -1,8 +1,8 @@
 -- Error: Junk ? symbol in program.
 :check..
 letrec {
- fac    [r : %]
-        (acc : Int r) {!0 | Use r}
+ fac    [r : Region]
+        (acc : Int r) {Pure | Use r}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> acc;

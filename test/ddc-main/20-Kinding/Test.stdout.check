@@ -1,6 +1,6 @@
 -- Error: sorts don't have a higher classification
 When checking type.
-  Can't check a naked sort: @@
+  Can't check a naked sort: Prop
 
 
 -- Error: can't sort-check the naked kind function, 
@@ -14,18 +14,18 @@ When checking type.
 When checking type.
   Invalid kind for body of quantified type.
           the body type: Read r
-               has kind: !
+               has kind: Effect
     but it must be * or @
-          when checking: [r : %].Read r
+          when checking: [r : Region].Read r
 
 
 -- Error: witness implication is invalid.
 When checking type.
   Invalid args for witness implication.
               left type: r
-               has kind: %
+               has kind: Region
              right type: Int r
-               has kind: *
+               has kind: Data
           when checking: r => Int r
 
 
@@ -33,9 +33,9 @@ When checking type.
 When checking type.
   Invalid args for witness implication.
               left type: r
-               has kind: %
+               has kind: Region
              right type: Mutable r
-               has kind: @
+               has kind: Witness
           when checking: r => Mutable r
 
 
@@ -43,19 +43,19 @@ When checking type.
 When checking type.
   Core type mismatch in sum.
    found multiple types: Read r + Use r
-   with differing kinds: [!,$]
+   with differing kinds: [Effect,Closure]
 
 
 -- Error: invalid kind for type sum.
 When checking type.
   Invalid kind for type sum.
            the type sum: Const
-               has kind: % ~> @
+               has kind: Region ~> Witness
     but it must be ! or $
 
 
 -- #242 Error: Undefined type constructor ().
 While parsing.
-  Parse error in "<batch>" (line 32, column 10)
+  Parse error in "<batch>" (line 32, column 17)
   Unexpected constructor "()".
   Expected a type.

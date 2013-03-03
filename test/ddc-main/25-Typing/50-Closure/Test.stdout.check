@@ -17,67 +17,67 @@ let x : Int R0# = 5 [R0#] () in
 -- Inner function uses the bound value, but it is not free in the closure.
 \(x : Int R0#). addInt [R0#] [R0#] [R1#] x x
 :*: Int R0# -(Read R0# + Alloc R1# | Use R0# + Use R1#)> Int R1#
-:!: !0
+:!: Pure
 :$: Use R0# + Use R1#
 
 
 -- Inner function uses the bound value, and it is free in the closure.
 \(x : Int R0#).\(y : Int R1#). addInt [R0#] [R1#] [R2#] x y
-:*: Int R0# -(!0 | Use R0# + Use R1# + Use R2#)> Int R1# -(Read R0# + Read R1# + Alloc R2# | Use R0# + Use R1# + Use R2#)> Int R2#
-:!: !0
+:*: Int R0# -(Pure | Use R0# + Use R1# + Use R2#)> Int R1# -(Read R0# + Read R1# + Alloc R2# | Use R0# + Use R1# + Use R2#)> Int R2#
+:!: Pure
 :$: Use R0# + Use R1# + Use R2#
 
 
 -- Multiple levels of binding.
 \(x : Int R0#).\(y : Int R1#).\(z : Int R2#).
 addInt [R3#] [R0#] [R4#] (addInt [R1#] [R2#] [R3#] y z) x
-:*: Int R0# -(!0 | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R1# -(!0 | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R2# -(Read R0# + Read R1# + Read R2# + Read R3# + Alloc R3# + Alloc R4# | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R4#
-:!: !0
+:*: Int R0# -(Pure | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R1# -(Pure | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R2# -(Read R0# + Read R1# + Read R2# + Read R3# + Alloc R3# + Alloc R4# | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R4#
+:!: Pure
 :$: Use R0# + Use R1# + Use R2# + Use R3# + Use R4#
 
 
 -- Inner function has a value in the closure whose type contains
 -- a higher kinded type variable.
-/\(a : % ~> *).
+/\(a : Region ~> Data).
  \(x : a R1#).\(f : a R1# -> a R1#). f x
-:*: [a : % ~> *].a R1# -> (a R1# -> a R1#) -(!0 | DeepUse (a R1#))> a R1#
-:!: !0
-:$: $0
+:*: [a : Region ~> Data].a R1# -> (a R1# -> a R1#) -(Pure | DeepUse (a R1#))> a R1#
+:!: Pure
+:$: Empty
 
 
 -- Inner funtion has a value in the clousre whose type contains
 -- a closure variable.
-/\(e : !)./\(c : $).
+/\(e : Effect)./\(c : Closure).
  \(f : Unit -(e | c)> Unit).\(x : Unit). f x
-:*: [e : !].[c : $].(Unit -(e | c)> Unit) -> Unit -(e | c)> Unit
-:!: !0
-:$: $0
+:*: [e : Effect].[c : Closure].(Unit -(e | c)> Unit) -> Unit -(e | c)> Unit
+:!: Pure
+:$: Empty
 
 
 -- Like above, and we've also instantiated the variable with a
 -- pre-trimmed closure.
-(/\(e : !)./\(c : $).
+(/\(e : Effect)./\(c : Closure).
   \(f : Unit -(e | c)> Unit).\(x : Unit). f x) [Read R0#] [Use R1#]
 :*: (Unit -(Read R0# | Use R1#)> Unit) -> Unit -(Read R0# | Use R1#)> Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Like above, and we've also instantiated the variable with a closure that
 -- could be trimmed, but because it's explicit in the term we don't do so. 
-(/\(e : !)./\(c : $).
+(/\(e : Effect)./\(c : Closure).
   \(f : Unit -(e | c)> Unit).\(x : Unit). f x) [Read R0#] [DeepUse (Int R1#)]
 :*: (Unit -(Read R0# | DeepUse (Int R1#))> Unit) -> Unit -(Read R0# | DeepUse (Int R1#))> Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Region handle in the type argument should show up in the overall closure.
-(/\(a : *).
+(/\(a : Data).
   \(f : a -> a).\(x : a). f x) [Int R1#]
 :*: (Int R1# -> Int R1#) -> Int R1# -> Int R1#
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Local region should not appear in the closure of the overall term.
@@ -95,7 +95,7 @@ addInt [r1] [R0#] [R0#] (5 [r1] ()) (5 [R0#] ())
 -- function's closure.
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 with {w1 : Const r1} in

@@ -1,5 +1,5 @@
 -- Error: sorts don't have a higher classification
-:kind @@
+:kind Prop
 
 
 -- Error: can't sort-check the naked kind function, 
@@ -9,24 +9,24 @@
 
 
 -- Error: body of a forall must have data or witness kind.
-:kind [r:%]. Read r
+:kind [r : Region]. Read r
 
 
 -- Error: witness implication is invalid.
-:kind [r:%]. r => Int r
+:kind [r : Region]. r => Int r
 
 
 -- Error: witness implication is invalid.
-:kind [r:%]. r => Mutable r
+:kind [r : Region]. r => Mutable r
 
 
 -- Error: types in a sum don't all have the same kind.
-:kind [r:%]. [a:*]. a -(Read r | Use r + Read r)> a
+:kind [r : Region]. [a : Data]. a -(Read r | Use r + Read r)> a
 
 
 -- Error: invalid kind for type sum.
-:kind [r:%]. (Const + Const)
+:kind [r : Region]. (Const + Const)
 
 
 -- #242 Error: Undefined type constructor ().
-:kind [r:%]. (() + ())
+:kind [r : Region]. (() + ())

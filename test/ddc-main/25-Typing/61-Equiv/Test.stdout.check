@@ -6,19 +6,19 @@ case x of {
   _ 
    -> z
 }
-:*: Int R0# -> (Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit) -(!0 | Use R0#)> (Unit -(Read R0# | Use R0#)> Unit) -(Read R0# | Use R0#)> Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit
-:!: !0
-:$: $0
+:*: Int R0# -> (Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit) -(Pure | Use R0#)> (Unit -(Read R0# | Use R0#)> Unit) -(Read R0# | Use R0#)> Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit
+:!: Pure
+:$: Empty
 
 
 -- Equivalence checker must handle alpha-equivalence.
-\(x : Int R0#).\(y : [a : *].a -> a).\(z : [^ : *].^0 -> ^0).
+\(x : Int R0#).\(y : [a : Data].a -> a).\(z : [^ : Data].^0 -> ^0).
 case x of {
   0  
    -> y;
   _ 
    -> z
 }
-:*: Int R0# -> ([a : *].a -> a) -(!0 | Use R0#)> ([^ : *].^0 -> ^0) -(Read R0# | Use R0#)> [a : *].a -> a
-:!: !0
-:$: $0
+:*: Int R0# -> ([a : Data].a -> a) -(Pure | Use R0#)> ([^ : Data].^0 -> ^0) -(Read R0# | Use R0#)> [a : Data].a -> a
+:!: Pure
+:$: Empty

@@ -2,24 +2,24 @@
 letregion r1 in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Parse letregion with one witness.
 letregion r1 with {w1 : Const r1} in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Parse letregion with multiple witnesses.
 letregion r1 with {w1 : Const r1; w2 : Manifest r1} in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Use the bound region in the body of the expression.
@@ -42,7 +42,7 @@ addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
 When checking expression.
   Withregion handle does not have region kind.
      Region var or ctor: e
-               has kind: !
+               has kind: Effect
          but it must be: %
   
   with: withregion e in
@@ -53,7 +53,7 @@ When checking expression.
 -- environment because the new witnesses may conflict with the old ones.
 When checking expression.
   Region variables shadow existing ones.
-             Region variables: r1 : %
+             Region variables: r1 : Region
        are already in environment
   
   with: letregion r1 with {w1 : Mutable r1} in
@@ -64,7 +64,7 @@ When checking expression.
 -- environment.
 When checking expression.
   Region variables shadow existing ones.
-             Region variables: r : %
+             Region variables: r : Region
        are already in environment
   
   with: letregion r with {w1 : Mutable r} in
@@ -74,7 +74,7 @@ When checking expression.
 -- Error: bound region variable is free in the type of the body of a letregion.
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Int r1
   
   with: letregion r1 in
@@ -84,7 +84,7 @@ When checking expression.
 -- Error: bound region is free in the effect of a returned function.
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | Use r1 + Use R2#)> Int R2#
   
   with: letregion r1 with {w1 : Const r1} in
@@ -95,7 +95,7 @@ When checking expression.
 -- Error: region variable appears in closure term
 When checking expression.
   Region variables escape scope of letregion.
-         The region variables: r1 : %
+         The region variables: r1 : Region
     is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 in
@@ -127,8 +127,8 @@ letregion r1 in
 letregion r2 with {w1 : Distinct2 r1 r2} in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Error: distinct witness must have as one argument the region introduced with
@@ -146,8 +146,8 @@ When checking expression.
 letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 
 -- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
@@ -164,7 +164,7 @@ When checking expression.
 letregions ^ ^ with {w : Distinct2 ^1 ^0} in
 ()
 :*: Unit
-:!: !0
-:$: $0
+:!: Pure
+:$: Empty
 
 

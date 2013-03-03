@@ -12,8 +12,8 @@ case x of {
 -- Equivalence checker must handle alpha-equivalence.
 :check..
 \(x : Int R0#).
-\(y : [a:*]. a -> a).
-\(z : [^:*]. ^0 -> ^0).
+\(y : [a:Data]. a -> a).
+\(z : [^:Data]. ^0 -> ^0).
 case x of {
         0       -> y;
         _       -> z

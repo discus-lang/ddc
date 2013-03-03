@@ -29,12 +29,12 @@ When checking expression.
 When checking expression.
   Type mismatch in let-binding.
                   The binder: fac
-                    has type: [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
-       but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+                    has type: [r : Region].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
+       but the body has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
   
   with: letrec {
-          fac : [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
-            = /\(r : %).
+          fac : [r : Region].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
+            = /\(r : Region).
                \(acc n : Int r).
               case n of {
                 0  
@@ -53,12 +53,12 @@ When checking expression.
 When checking expression.
   Type mismatch in let-binding.
                   The binder: fac
-                    has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
-       but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+                    has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r | Use r)> Int r
+       but the body has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
   
   with: letrec {
-          fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
-            = /\(r : %).
+          fac : [r : Region].Int r -(Pure | Use r)> Int r -(Read r | Use r)> Int r
+            = /\(r : Region).
                \(acc n : Int r).
               case n of {
                 0  
@@ -88,12 +88,12 @@ When checking expression.
 When checking expression.
   Type mismatch in let-binding.
                   The binder: enumFromTo
-                    has type: [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-       but the body has type: [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+                    has type: [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+       but the body has type: [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
   
   with: letrec {
-          enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-            = /\(r1 r2 : %).
+          enumFromTo : [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+            = /\(r1 r2 : Region).
                \(m n : Int r1).
               case eqInt [r1] [r1] [r1] m n of {
                 0  
@@ -110,8 +110,8 @@ When checking expression.
 
 -- Should be ok.
 letrec {
-  enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-    = /\(r1 r2 : %).
+  enumFromTo : [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+    = /\(r1 r2 : Region).
        \(m n : Int r1).
       case eqInt [r1] [r1] [r1] m n of {
         0  
@@ -131,8 +131,8 @@ enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 
 -- Same as above, but the effect and closure terms are in a different order.
 letrec {
-  enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-    = /\(r1 r2 : %).
+  enumFromTo : [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+    = /\(r1 r2 : Region).
        \(m n : Int r1).
       case eqInt [r1] [r1] [r1] m n of {
         0  
@@ -154,11 +154,11 @@ enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 When checking expression.
   Let binding does not have data kind.
         The binding for: e2
-               has type: !
-              with kind: **
+               has type: Effect
+              with kind: Comp
          but it must be: * 
   
-  with: let e2 : ! = e1 in
+  with: let e2 : Effect = e1 in
         ()
 
 
@@ -166,12 +166,12 @@ When checking expression.
 When checking expression.
   Let binding does not have data kind.
         The binding for: e2
-               has type: !
-              with kind: **
+               has type: Effect
+              with kind: Comp
          but it must be: * 
   
   with: letrec {
-          e2 : ! = e1
+          e2 : Effect = e1
         } in
         ()
 
@@ -179,8 +179,8 @@ When checking expression.
 -- Error: body must have data kind.
 When checking expression.
   Let body does not have data kind.
-   Body of let has type: !
-              with kind: **
+   Body of let has type: Effect
+              with kind: Comp
          but it must be: * 
   
   with: let x : Unit = () in
@@ -190,8 +190,8 @@ When checking expression.
 -- Error: body must have data kind.
 When checking expression.
   Let body does not have data kind.
-   Body of let has type: !
-              with kind: **
+   Body of let has type: Effect
+              with kind: Comp
          but it must be: * 
   
   with: letrec {

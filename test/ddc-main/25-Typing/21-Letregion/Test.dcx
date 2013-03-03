@@ -19,7 +19,7 @@
 
 
 -- Error: withregion must contain a region variable or constructor.
-:check (/\(e:!). withregion e in ())
+:check (/\(e:Effect). withregion e in ())
 
 
 -- Error: letregion cannot shadow region variables that are already in the
@@ -34,7 +34,7 @@ updateInt [:r1 r1:] <w1> x (0 [r1] ());;
 -- Error: letregion can't shadow region variables that are already in the
 -- environment.
 :check..
-/\(r : %). 
+/\(r : Region). 
  \(x : Int r).
  letregion r with {w1 : Mutable r} in
  updateInt [:r r:] <w1> x (0 [r] ());;
@@ -64,7 +64,7 @@ let z  = 5 [r1] () in
 
 -- Error: witness types with a letregion must use explicit type constructors.
 :check..
-/\(c : % ~> @).
+/\(c : Region ~> Witness).
 letregion r1 with { w : c r1 } in
 ();;
 

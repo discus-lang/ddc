@@ -1,30 +1,30 @@
 -- See if we can print out any type.
 addInt
-:*: [^ ^ ^ : %].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
-:!: !0
-:$: $0
+:*: [^ ^ ^ : Region].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
+:!: Pure
+:$: Empty
 
 
 -- Instantiate the outer forall of the type of add with a region handle.
 -- Region handles in the expression are automatically added to the store at
 -- startup time.
 addInt [R1#]
-:*: [^ ^ : %].Int R1# -> Int ^1 -(Read ^1 + Read R1# + Alloc ^0 | Use R1#)> Int ^0
-:!: !0
+:*: [^ ^ : Region].Int R1# -> Int ^1 -(Read ^1 + Read R1# + Alloc ^0 | Use R1#)> Int ^0
+:!: Pure
 :$: Use R1#
 
 
 -- Instantiate all the foralls with different region handles.
 addInt [R1#] [R2#] [R3#]
 :*: Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
-:!: !0
+:!: Pure
 :$: Use R1# + Use R2# + Use R3#
 
 
 -- Same as above, but with nicer syntax.
 addInt [R1#] [R2#] [R3#]
 :*: Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
-:!: !0
+:!: Pure
 :$: Use R1# + Use R2# + Use R3#
 
 
@@ -33,16 +33,16 @@ addInt [R1#] [R2#] [R3#]
 -- packed down to just (Read R1#).
 addInt [R1#] [R1#] [R1#]
 :*: Int R1# -> Int R1# -(Read R1# + Alloc R1# | Use R1#)> Int R1#
-:!: !0
+:!: Pure
 :$: Use R1#
 
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
-/\(r1 r2 r3 : %). addInt [r1] [r2] [r3]
-:*: [r1 r2 r3 : %].Int r1 -> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1)> Int r3
-:!: !0
-:$: $0
+/\(r1 r2 r3 : Region). addInt [r1] [r2] [r3]
+:*: [r1 r2 r3 : Region].Int r1 -> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1)> Int r3
+:!: Pure
+:$: Empty
 
 
 -- A fully applied integer constructor should cause an alloc effect.
@@ -63,9 +63,9 @@ addInt [R1#] [R2#] [R3#] (2 [R1#] ()) (3 [R2#] ())
 -- This breaks progress if we try to run it.
 When checking expression.
   Cannot shadow named spec variable.
-    binder: r : %
+    binder: r : Region
     is already in the environment.
-  with: /\(r : %).
+  with: /\(r : Region).
          \(y : Int r).
         case x of {
           0  
@@ -78,18 +78,18 @@ When checking expression.
 -- Error: cannot shadow spec binders.
 When checking expression.
   Cannot shadow named spec variable.
-    binder: r : %
+    binder: r : Region
     is already in the environment.
-  with: /\(r : %).
+  with: /\(r : Region).
          \(_ : Unit). 2 [r] ()
 
 
 -- Error: cannot shadow spec binders.
 When checking expression.
   Cannot shadow named spec variable.
-    binder: r : %
+    binder: r : Region
     is already in the environment.
-  with: /\(r : %).
+  with: /\(r : Region).
          \(_ : Unit). 2 [r] ()
 
 

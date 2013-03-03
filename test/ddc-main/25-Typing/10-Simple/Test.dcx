@@ -24,7 +24,7 @@
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
-:check /\(r1 r2 r3:%).addInt [:r1 r2 r3:]
+:check /\(r1 r2 r3:Region).addInt [:r1 r2 r3:]
 
 
 -- A fully applied integer constructor should cause an alloc effect.
@@ -38,7 +38,7 @@
 -- Error: cannot shadow spec binders.
 -- This breaks progress if we try to run it.
 :check..
-(/\(r : %). \(x : Int r). /\(r : %). \(y : Int r).
+(/\(r : Region). \(x : Int r). /\(r : Region). \(y : Int r).
  case x of {
         0       -> x;
         _       -> y;
@@ -47,13 +47,13 @@
 
 -- Error: cannot shadow spec binders.
 :check..
-(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
+(/\(r : Region). \(x : Int r). /\(r : Region). \(_ : Unit). 2 [r] ()) 
         [R1#];;
 
 
 -- Error: cannot shadow spec binders.
 :check..
-(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
+(/\(r : Region). \(x : Int r). /\(r : Region). \(_ : Unit). 2 [r] ()) 
         [R1#] 
         (5 [R1#] ()) 
         [R2#];;
@@ -80,5 +80,5 @@
 
 
 -- Error: Type variable used as a value variable.
-:check (/\(a : *). \(x : a). a)
+:check (/\(a : Data). \(x : a). a)
 

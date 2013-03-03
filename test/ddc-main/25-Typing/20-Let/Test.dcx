@@ -13,8 +13,8 @@
 -- Error: outer function is missing a Use annotation.
 :check..
 letrec {
- fac    [r:%] 
-        (acc : Int r) {!0 | $0}
+ fac    [r:Region] 
+        (acc : Int r) {Pure | Empty}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> acc;
@@ -28,8 +28,8 @@ letrec {
 -- Error: inner function is missing an Alloc effect.
 :check..
 letrec {
- fac    [r:%] 
-        (acc : Int r) {!0 | Use r}
+ fac    [r:Region] 
+        (acc : Int r) {Pure | Use r}
         (n   : Int r) {Read r | Use r} : Int r
   = case n of {
         0       -> acc;
@@ -44,8 +44,8 @@ letrec {
 :check..
 letrec {
  enumFromTo 
-        [r1 r2:%]
-        (m : Int r1) {!0 | Use r1 + Use r2}
+        [r1 r2:Region]
+        (m : Int r1) {Pure | Use r1 + Use r2}
         (n : Int r1) {Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
         : List r2 (Int r2)
   = case eqInt [:r1 r1 r1:] m n of {
@@ -63,8 +63,8 @@ letrec {
 :check..
 letrec {
  enumFromTo 
-        [r1 r2:%]
-        (m : Int r1) {!0 | Use r1 + Use r2}
+        [r1 r2:Region]
+        (m : Int r1) {Pure | Use r1 + Use r2}
         (n : Int r1) {Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
         : List r2 (Int r1)
   = case eqInt [:r1 r1 r1:] m n of {
@@ -82,8 +82,8 @@ letrec {
 :check..
 letrec {
  enumFromTo 
-        [r1 r2:%]
-        (m : Int r1) {!0 | Use r1 + Use r2}
+        [r1 r2:Region]
+        (m : Int r1) {Pure | Use r1 + Use r2}
         (n : Int r1) {Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
         : List r2 (Int r1)
   = case eqInt [:r1 r1 r1:] m n of {
@@ -101,8 +101,8 @@ letrec {
 :check..
 letrec {
  enumFromTo 
-        [r1 r2:%]
-        (m : Int r1) {!0 | Use r2 + Use r1}
+        [r1 r2:Region]
+        (m : Int r1) {Pure | Use r2 + Use r1}
         (n : Int r1) {Alloc r1 + Alloc r2 + Read r1 | Use r1 + Use r2}
         : List r2 (Int r1)
   = case eqInt [:r1 r1 r1:] m n of {
@@ -118,28 +118,28 @@ letrec {
 
 -- Error: binding must have data kind.
 :check..
- \(e1:!).
-  let e2 : !  = e1
+ \(e1:Effect).
+  let e2 : Effect  = e1
   in ();;
 
 
 -- Error: binding must have data kind.
 :check..
- \(e1:!).
-  letrec { e2 : !  = e1 }
+ \(e1:Effect).
+  letrec { e2 : Effect  = e1 }
   in ();;
 
 
 -- Error: body must have data kind.
 :check..
- \(e1:!).
+ \(e1:Effect).
   let x : Unit  = ()
   in e1;;
 
 
 -- Error: body must have data kind.
 :check..
- \(e1:!).
+ \(e1:Effect).
   letrec { foo (x:Unit) : Unit = () }
   in e1;;
 
@@ -152,7 +152,7 @@ letrec {
 
 -- Ok: letrec with multiple anonymous binders.
 :eval..
-(/\(r : %).
+(/\(r : Region).
  \(x : Unit).
 letrec { 
     ^ (_ : Unit) {Alloc r | Use r} : Int r = 2 [r] ();

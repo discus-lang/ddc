@@ -4,8 +4,8 @@
 :set lang Lite
 :load..
 module Foo 
-exports foo    :: Int r -(Read r | $0)> Int r
-imports type r :: %
+exports foo    :: Int r -(Read r | Empty)> Int r
+imports type r :: Region
 with letrec
 foo (x : Int r) : Int r
  = x;;
@@ -14,8 +14,8 @@ foo (x : Int r) : Int r
 -- Error: Exported signature has no binding.
 :load..
 module Foo
-exports foo     :: Int r -(Read r | $0)> Int r
-imports type r  :: %
+exports foo     :: Int r -(Read r | Empty)> Int r
+imports type r  :: Region
 with letrec
 bar (x : Int r) : Int r
  = x;;

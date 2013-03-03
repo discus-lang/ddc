@@ -15,34 +15,34 @@ case () of { () -> () };;
 
 -- Check substituted effects are crushed under HeadRead.
 :check..
-\(f:[a:*].a -(HeadRead a | DeepUse a)> a). 
+\(f:[a:Data].a -(HeadRead a | DeepUse a)> a). 
         f [Int R0#] (5 [R0#] ()));;
 
 
 -- Check substituted effects are crushed under DeepRead
 :check..
-\(f:[a:*].a -(DeepRead a | DeepUse a)> a). 
+\(f:[a:Data].a -(DeepRead a | DeepUse a)> a). 
         f [Int R0#] (5 [R0#] ()));;
 
 
 -- Check substituted effects are crushed under DeepWrite
 :check..
-\(f:[a:*].a -(DeepWrite a | DeepUse a)> a). 
+\(f:[a:Data].a -(DeepWrite a | DeepUse a)> a). 
         f [Int R0#] (5 [R0#] ()));;
 
 
 -- Check substituted effects are crushed under DeepAlloc
 :check..
-\(f:[a:*].a -(DeepAlloc a | DeepUse a)> a). 
+\(f:[a:Data].a -(DeepAlloc a | DeepUse a)> a). 
         f [Int R0#] (5 [R0#] ()));;
 
 
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc
 :check..
 letrec {
- double [a:*] 
+ double [a:Data] 
            (add : a -> a -( DeepRead a + DeepAlloc a | DeepUse a)> a)
-           (x   : a)      { DeepRead a + DeepAlloc a | $0}
+           (x   : a)      { DeepRead a + DeepAlloc a | Empty}
            : a
         = add x x;
 } in double [Int R0#] (addInt [:R0# R0# R0#:]) (5 [R0#] ());;

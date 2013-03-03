@@ -4,11 +4,11 @@
 
 module Main 
 exports {
-        main    :: [r : %]. Nat# -> Ptr# r String# -> Int#;
+        main    :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec
 
-main    [r : %] 
+main    [r : Region] 
         (argc : Nat#)   
         (argv : Ptr# r String#)
         : Int#

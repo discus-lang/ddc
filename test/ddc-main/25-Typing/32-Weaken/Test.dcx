@@ -2,7 +2,7 @@
 -- use the weakening forms to make the type of the smaller
 -- one match the larger.
 :check..
-/\(r1 r2 : %). \(x : Int r1).
+/\(r1 r2 : Region). \(x : Int r1).
 case x of {
         0       -> \(y : Int r2). 
                    weakeff [Read r1 + Read r2 + Alloc r2] in
@@ -15,7 +15,7 @@ case x of {
 
 -- Error: type supplied to weakeff does not have effect kind
 :check..
-/\(r1 r2 : %). \(x : Int r1).
+/\(r1 r2 : Region). \(x : Int r1).
 case x of {
         0       -> \(y : Int r2). 
                    weakeff [r1] in

@@ -3,11 +3,11 @@
 module Main
 exports {
         main    :: Unit -> Unit;
-        double  :: [r : %]. Int r -(Read r + Alloc r | Use r)> Int r;
+        double  :: [r : Region]. Int r -(Read r + Alloc r | Use r)> Int r;
 }
 imports {
         Thing.whatever 
-         with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5;
+         with two :: [r5 : Region]. Unit -(Alloc r5 | Empty)> Int r5;
 }
 with
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
@@ -20,12 +20,12 @@ letrec {
          = letregion r0 in
            ();
 
-        double  [r : %] (x : Int r) 
+        double  [r : Region] (x : Int r) 
                 { Read r + Alloc r | Use r } 
          : Int r
          = mulInt [:r r r:] x (two [r] ());
 
-        thing   [r : %] (x : Int r) 
+        thing   [r : Region] (x : Int r) 
                 { Read r + Read rt + Alloc r | Use r + Use rt} 
          : Int r
          = addInt [:r rt r:] x one;
@@ -37,10 +37,10 @@ letrec {
 module Main
 exports
         main    :: Unit -> Unit
-        double  :: [r : %]. Int r -(Read r + Alloc r | Use r)> Int r
+        double  :: [r : Region]. Int r -(Read r + Alloc r | Use r)> Int r
 imports 
         Thing.whatever
-         with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5
+         with two :: [r5 : Region]. Unit -(Alloc r5 | Empty)> Int r5
 with
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 
@@ -52,12 +52,12 @@ letrec
          = letregion r0 in
            ()
 
-        double  [r : %] (x : Int r) 
+        double  [r : Region] (x : Int r) 
                 { Read r + Alloc r | Use r } 
          : Int r
          = mulInt [:r r r:] x (two [r] ())
 
-        thing   [r : %] (x : Int r) 
+        thing   [r : Region] (x : Int r) 
                 { Read r + Read rt + Alloc r | Use r + Use rt} 
          : Int r
          = addInt [:r rt r:] x one
