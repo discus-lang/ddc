@@ -2,39 +2,39 @@
 module Main
 exports 
  main    
-  ::    [r : %].
-        Nat#            -(!0 | Use r)> 
+  ::    [r : Region].
+        Nat#            -(Pure | Use r)> 
         Ptr# r String#  -(Read r + Alloc r + Console | Use r)> 
         Int#
 
 imports 
  showInt
-  :: [r : %]. Int# -> Ptr# r String#
+  :: [r : Region]. Int# -> Ptr# r String#
 
  putStrLn  
-  :: [r : %]. Ptr# r String# -(Console | $0)> Void#
+  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
  unboxInt 
-  ::    [r : %].
-        Int r -(Read r | $0)>
+  ::    [r : Region].
+        Int r -(Read r | Empty)>
         Int#
 
  subInt 
-  ::    [r1 r2 r3 : %].
-        Int r1 -(!0 | Use r3)>
+  ::    [r1 r2 r3 : Region].
+        Int r1 -(Pure | Use r3)>
         Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Int r3
 
  mulInt 
-  ::    [r1 r2 r3 : %].
-        Int r1 -(!0 | Use r3)>
+  ::    [r1 r2 r3 : Region].
+        Int r1 -(Pure | Use r3)>
         Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Int r3
 
 with letrec
 
-fac     [r : %] 
-        (acc : Int r)           {!0 | Use r }
+fac     [r : Region] 
+        (acc : Int r)           {Pure | Use r }
         (n   : Int r)           {Read r + Alloc r | Use r} : Int r
  =  case n of
         I# i -> 
@@ -45,9 +45,9 @@ fac     [r : %]
                                    (subInt [:r r r:] n (I# [r] 1i#))
 
 
-main    [r : %] 
-        (argc : Nat#)           {!0                             | Use r} 
-        (argv : Ptr# r String#) {Read r + Alloc r + Console     | Use r} 
+main    [r : Region] 
+        (argc : Nat#)           {Pure                       | Use r} 
+        (argv : Ptr# r String#) {Read r + Alloc r + Console | Use r} 
         : Int#
  = do   x        = fac [r] (I# [r] 1i#) (I# [r] 10i#)
         putStrLn [r] (showInt [r] (unboxInt [r] x))

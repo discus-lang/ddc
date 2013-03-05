@@ -2,34 +2,34 @@
 module Main
 exports 
  main
-  ::    [r : %]. Nat# -> Ptr# r String# -(Console | $0)> Int#
+  ::    [r : Region]. Nat# -> Ptr# r String# -(Console | Empty)> Int#
 
 imports 
  showNat   
-  ::    [r : %]. Nat# -> Ptr# r String#
+  ::    [r : Region]. Nat# -> Ptr# r String#
 
  putStrLn  
-  ::    [r : %]. Ptr# r String# -(Console | $0)> Void#
+  ::    [r : Region]. Ptr# r String# -(Console | Empty)> Void#
  
  boxNat
-  ::    [r : %].
+  ::    [r : Region].
         Nat# -(Alloc r | Use r)>
         Nat r
 
  unboxNat 
-  ::    [r : %].
-        Nat r -(Read r | $0)>
+  ::    [r : Region].
+        Nat r -(Read r | Empty)>
         Nat#
 
  addNat 
-  ::    [r1 r2 r3 : %].
-        Nat r1 -(!0 | Use r3)>
+  ::    [r1 r2 r3 : Region].
+        Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Nat r3
 
  subNat 
-  ::    [r1 r2 r3 : %].
-        Nat r1 -(!0 | Use r3)>
+  ::    [r1 r2 r3 : Region].
+        Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Nat r3
 
@@ -38,14 +38,14 @@ with letrec
 
 -- | Construct a list containing a single element.
 singleton 
-        [r : %] [a : *]
+        [r : Region] [a : Data]
         (x : a)                 { Alloc r | Use r }
         : List r a
  = Cons [r] [a] x (Nil [r] [a] ())
              
 
 -- | Take the length of a list.
-length  [r1 r2 : %] [a : *]
+length  [r1 r2 : Region] [a : Data]
         (xx : List r1 a)        { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2 }
         : Nat r2
  = case xx of
@@ -59,8 +59,8 @@ length  [r1 r2 : %] [a : *]
 
 -- | Construct a list containing copies of some value.
 replicate
-        [r1 r2 : %] [a : *]
-        (n : Nat r1)            { !0 | Use r1 + Use r2 }
+        [r1 r2 : Region] [a : Data]
+        (n : Nat r1)            { Pure | Use r1 + Use r2 }
         (x : a)                 { Read r1 + Alloc r2 | Use r1 + Use r2}
         : List r2 a
  = letregion r3 in
@@ -73,10 +73,11 @@ replicate
                                         (subNat [:r1 r3 r3:] n (N# [r3] 1#))
                                         x)
 
+
 -- | Construct a range of Nat values
 enumFromTo
-        [r1 r2 : %]
-        (n      : Nat r2)       { !0 | Use r1 + Use r2 }
+        [r1 r2  : Region]
+        (n      : Nat r2)       { Pure | Use r1 + Use r2 }
         (max    : Nat r2)       { Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2 }
         : List r1 (Nat r2)
  = case n of
@@ -92,8 +93,8 @@ enumFromTo
 
 
 -- | Append two lists.
-append  [r1 r2 : %] [a : *]
-        (xx : List r1 a)        { !0 | Use r1 + Use r2 }
+append  [r1 r2 : Region] [a : Data]
+        (xx : List r1 a)        { Pure | Use r1 + Use r2 }
         (yy : List r2 a)        { Read r1 + Alloc r2 | Use r1 + Use r2 + DeepUse a }
         : List r2 a
  = case xx of
@@ -105,7 +106,7 @@ append  [r1 r2 : %] [a : *]
 
 
 -- | Quadratic reverse function, used for testing.
-reverse [r1 r2 : %] [a : *]
+reverse [r1 r2 : Region] [a : Data]
         (xx : List r1 a)        { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2 }
         : List r2 a
  = case xx of
@@ -118,7 +119,7 @@ reverse [r1 r2 : %] [a : *]
 
 -- | Print out all Nats in a list
 dumpNats
-        [r1 r2 : %] 
+        [r1 r2 : Region] 
         (xx : List r1 (Nat r2)) { Read r1 + Read r2 + Console | Use r1 + Use r2 }
         : Unit
  = case xx of
@@ -131,9 +132,9 @@ dumpNats
 
 
 -- | Construct a list of length 23 then take its length.
-main    [r : %] 
+main    [r : Region] 
         (argc : Nat#)
-        (argv : Ptr# r String#) { Console | $0 }
+        (argv : Ptr# r String#) { Console | Empty }
         : Int#
  = letregion r2 in
    do
@@ -145,5 +146,4 @@ main    [r : %]
 
         dumpNats [:r2 r2:] zs2
         0i#
-
 
