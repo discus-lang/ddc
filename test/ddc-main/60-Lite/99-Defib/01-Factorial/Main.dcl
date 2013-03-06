@@ -1,7 +1,7 @@
 
 module Main
 exports 
-        main    :: [r : Region] [k : Rate]
+        main    :: [r : Region]
                 .  Nat# 
                 -(Pure | Use r)> Ptr# r String# 
                 -(Read r + Alloc r + Console | Use r)> Int#
