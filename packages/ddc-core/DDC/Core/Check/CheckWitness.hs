@@ -17,7 +17,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()
-import DDC.Type.DataDef
+import DDC.Type.Check                           (Config (..), configOfProfile)
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
 import DDC.Type.Universe
@@ -28,52 +28,11 @@ import DDC.Base.Pretty                          ()
 import qualified DDC.Control.Monad.Check        as G
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Check                 as T
-import qualified DDC.Core.Fragment              as F
 
 
 -- | Type checker monad. 
 --   Used to manage type errors.
 type CheckM a n   = G.CheckM (Error a n)
-
-
--- Config ---------------------------------------------------------------------
--- | Static configuration for the type checker.
---   These fields don't change as we decend into the tree.
---
---   The starting configuration should be converted from the profile that
---   defines the language fragment you are checking. 
---   See "DDC.Core.Fragment" and use `configOfProfile` below.
-data Config n
-        = Config
-        { -- | Data type definitions.
-          configPrimDataDefs            :: DataDefs n 
-
-          -- | Kinds of primitive types.
-        , configPrimKinds               :: KindEnv n
-
-          -- | Types of primitive operators.
-        , configPrimTypes               :: TypeEnv n
-
-          -- | Suppress all closure information, 
-          --   annotating all functions with an empty closure.
-          --   
-          --   This is used when checking the Disciple Core Salt fragment,
-          --   as transforms in this language don't use the closure
-          --   information.
-        , configSuppressClosures        :: Bool }
-
-
--- | Convert a langage profile to a type checker configuration.
-configOfProfile :: F.Profile n -> Config n
-configOfProfile profile
-        = Config
-        { configPrimDataDefs    = F.profilePrimDataDefs profile
-        , configPrimKinds       = F.profilePrimKinds profile
-        , configPrimTypes       = F.profilePrimTypes profile
-
-        , configSuppressClosures      
-                = F.featuresUntrackedClosures
-                $ F.profileFeatures profile }
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -213,7 +172,7 @@ checkTypeM
         -> CheckM a n (Kind n)
 
 checkTypeM config kenv tt
- = case T.checkType (configPrimDataDefs config) kenv tt of
+ = case T.checkType config kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

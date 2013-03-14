@@ -24,6 +24,7 @@ import qualified DDC.Core.Fragment              as I
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
+import qualified DDC.Type.Env                   as Env
 import qualified DDC.Base.Parser                as BP
 import Data.Map.Strict                          (Map)
 import System.Directory
@@ -191,18 +192,16 @@ loadType
 
 loadType profile sourceName toks'
  = goParse toks'
- where  defs    = profilePrimDataDefs profile
-        kenv    = profilePrimKinds    profile
-
+ where  
         -- Parse the tokens.
         goParse toks                
          = case BP.runTokenParser describeTok sourceName C.pType toks of
                 Left err  -> Left (ErrorParser err)
-                Right t   -> goCheckType (spreadT kenv t)
+                Right t   -> goCheckType (spreadT (profilePrimKinds profile) t)
 
         -- Check the kind of the type.
         goCheckType t
-         = case T.checkType defs kenv t of
+         = case T.checkType (T.configOfProfile profile) Env.empty t of
                 Left err  -> Left (ErrorCheckType err)
                 Right k   -> Right (t, k)
         

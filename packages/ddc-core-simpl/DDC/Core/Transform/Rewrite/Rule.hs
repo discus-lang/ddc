@@ -305,8 +305,8 @@ checkConstraint
         -> Type n       -- ^ The constraint type to check.
         -> Either (Error a n) (Kind n)
 
-checkConstraint defs kenv tt
- = case T.checkType (C.configPrimDataDefs defs) kenv tt of
+checkConstraint config kenv tt
+ = case T.checkType config kenv tt of
         Left _err               -> Left $ ErrorBadConstraint tt
         Right k
          | T.isWitnessType tt   -> return k
@@ -414,8 +414,7 @@ removeEffects config = transformUpX remove
   remove kenv _tenv x
 
    | XType et   <- x
-   , Right k    <- T.checkType (C.configPrimDataDefs config)
-                               kenv et
+   , Right k    <- T.checkType config kenv et
    , T.isEffectKind k
    = XType $ T.tBot T.kEffect
 

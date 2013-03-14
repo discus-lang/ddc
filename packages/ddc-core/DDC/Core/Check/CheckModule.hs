@@ -153,7 +153,7 @@ checkTypeM :: (Ord n, Show n, Pretty n)
            -> CheckM a n (Kind n)
 
 checkTypeM !config !kenv !tt
- = case T.checkType (configPrimDataDefs config) kenv tt of
+ = case T.checkType config kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

@@ -149,11 +149,12 @@ cmdTypeEquiv language source ss
                  then outStrLn $ show $ equivT t1 t2    
                  else return ()
 
-        defs    = profilePrimDataDefs profile
+
+        config  = T.configOfProfile profile
         kenv    = profilePrimKinds    profile
 
         checkT t
-         = case T.checkType defs kenv (spreadT kenv t) of
+         = case T.checkType config kenv (spreadT kenv t) of
                 Left err 
                  -> do  outDocLn $ ppr err
                         return False

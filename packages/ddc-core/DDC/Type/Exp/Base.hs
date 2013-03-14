@@ -142,7 +142,7 @@ data TyCon n
         | TyConSpec     !TcCon
 
         -- | User defined and primitive constructors.
-        | TyConBound   !(Bound n) !(Kind n)
+        | TyConBound   !(Bound n) !(Type n)
         deriving Show
 
 
