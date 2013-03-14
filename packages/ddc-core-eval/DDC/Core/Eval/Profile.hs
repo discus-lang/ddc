@@ -6,6 +6,7 @@ where
 import DDC.Core.Fragment
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
+import qualified DDC.Type.Env           as Env
 
 
 -- | Core language fragment that can be directly evaluated.
@@ -15,6 +16,7 @@ evalProfile
         { profileName                   = "Eval"
         , profileFeatures               = evalFeatures
         , profilePrimDataDefs           = primDataDefs
+        , profilePrimSupers             = Env.empty
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv 
         , profileTypeIsUnboxed          = const False }

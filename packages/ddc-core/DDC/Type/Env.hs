@@ -8,6 +8,7 @@
 --
 module DDC.Type.Env
         ( Env(..)
+        , SuperEnv
         , KindEnv
         , TypeEnv
 
@@ -65,8 +66,10 @@ data Env n
 
 
 -- | Type synonym to improve readability.
-type KindEnv n  = Env n
+type SuperEnv n = Env n
 
+-- | Type synonym to improve readability.
+type KindEnv n  = Env n
 
 -- | Type synonym to improve readability.
 type TypeEnv n  = Env n

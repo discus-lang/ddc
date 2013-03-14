@@ -4,7 +4,7 @@ module DDC.Type.Check.Config
         , configOfProfile)
 where
 import DDC.Type.DataDef
-import DDC.Type.Env                     (KindEnv, TypeEnv)
+import DDC.Type.Env                     (SuperEnv, KindEnv, TypeEnv)
 import qualified DDC.Core.Fragment      as F
 
 
@@ -19,6 +19,9 @@ data Config n
         = Config
         { -- | Data type definitions.
           configPrimDataDefs            :: DataDefs n 
+
+          -- | Super kinds of primitive kinds.
+        , configPrimSupers              :: SuperEnv n
 
           -- | Kinds of primitive types.
         , configPrimKinds               :: KindEnv n
@@ -40,8 +43,9 @@ configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
         = Config
         { configPrimDataDefs    = F.profilePrimDataDefs profile
-        , configPrimKinds       = F.profilePrimKinds profile
-        , configPrimTypes       = F.profilePrimTypes profile
+        , configPrimSupers      = F.profilePrimSupers profile
+        , configPrimKinds       = F.profilePrimKinds  profile
+        , configPrimTypes       = F.profilePrimTypes  profile
 
         , configSuppressClosures      
                 = F.featuresUntrackedClosures

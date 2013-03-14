@@ -11,7 +11,7 @@ where
 import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Exp
-import DDC.Type.Env                     (KindEnv, TypeEnv)
+import DDC.Type.Env                     (SuperEnv, KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 
 
@@ -27,6 +27,9 @@ data Profile n
 
           -- | Primitive data type declarations.
         , profilePrimDataDefs           :: !(DataDefs n)
+
+          -- | Supers of primitive kinds.
+        , profilePrimSupers             :: !(SuperEnv n)
 
           -- | Kinds of primitive types.
         , profilePrimKinds              :: !(KindEnv n)
@@ -48,6 +51,7 @@ zeroProfile
         { profileName                   = "Zero"
         , profileFeatures               = zeroFeatures
         , profilePrimDataDefs           = emptyDataDefs
+        , profilePrimSupers             = Env.empty
         , profilePrimKinds              = Env.empty
         , profilePrimTypes              = Env.empty
         , profileTypeIsUnboxed          = const False }
