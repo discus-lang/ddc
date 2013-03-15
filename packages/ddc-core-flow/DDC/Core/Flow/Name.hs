@@ -9,6 +9,7 @@ module DDC.Core.Flow.Name
 
         -- * Data type constructors.
         , DataTyCon     (..)
+        , DataCon       (..)
 
         -- * Primitive types and operators.
         , PrimTyCon     (..)
@@ -41,6 +42,7 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
+
         -- | Flow rate kind.
         | NameFlowKiCon         FlowKiCon
 
@@ -50,8 +52,13 @@ data Name
         -- | Flow combinators.
         | NameFlowOp            FlowOp
 
+
         -- | Baked in data type constructors.
         | NameDataTyCon         DataTyCon
+
+        -- | Baked in data constructors.
+        | NameDataCon           DataCon
+
 
         -- | A primitive type constructor.
         | NamePrimTyCon         PrimTyCon
@@ -87,6 +94,7 @@ instance NFData Name where
         NameFlowOp    op        -> rnf op
 
         NameDataTyCon con       -> rnf con
+        NameDataCon con         -> rnf con
 
         NamePrimTyCon con       -> rnf con
         NamePrimArith con       -> rnf con
@@ -109,6 +117,7 @@ instance Pretty Name where
         NameFlowOp    op        -> ppr op
 
         NameDataTyCon dc        -> ppr dc
+        NameDataCon   con       -> ppr con
 
         NamePrimTyCon tc        -> ppr tc
         NamePrimArith op        -> ppr op
@@ -130,8 +139,9 @@ readName str
         | Just p        <- readFlowTyCon str    = Just $ NameFlowTyCon p
         | Just p        <- readFlowOp    str    = Just $ NameFlowOp    p
 
-        -- Data type constructors.
+        -- Data types.
         | Just p        <- readDataTyCon str    = Just $ NameDataTyCon p
+        | Just p        <- readDataCon   str    = Just $ NameDataCon   p
 
         -- Primitive names.
         | Just p        <- readPrimTyCon str    = Just $ NamePrimTyCon p
@@ -339,7 +349,8 @@ readFlowOp str
 -- DataTyCon ------------------------------------------------------------------
 -- | Baked-in data type constructors.
 data DataTyCon
-        = DataTyConArray        -- ^ @Array@   type constructor.
+        = DataTyConTuple Int    -- ^ @TN@      type constructor.
+        | DataTyConArray        -- ^ @Array@   type constructor.
         | DataTyConVector       -- ^ @Vector@  type constructor.
         | DataTyConStream       -- ^ @Stream@  type constructor.
         | DataTyConSegd         -- ^ @Segd@    type constructor.
@@ -351,22 +362,55 @@ instance NFData DataTyCon
 instance Pretty DataTyCon where
  ppr dc
   = case dc of
-        DataTyConArray  -> text "Array"
-        DataTyConVector -> text "Vector"
-        DataTyConStream -> text "Stream"
-        DataTyConSegd   -> text "Segd"
-        DataTyConSel n  -> text "Sel" <> int n
+        DataTyConTuple n        -> text "Tuple" <> int n
+        DataTyConArray          -> text "Array"
+        DataTyConVector         -> text "Vector"
+        DataTyConStream         -> text "Stream"
+        DataTyConSegd           -> text "Segd"
+        DataTyConSel n          -> text "Sel" <> int n
 
 
 -- | Read a baked-in data type constructor.
 readDataTyCon :: String -> Maybe DataTyCon
 readDataTyCon str
- = case str of
-        "Array"         -> Just $ DataTyConArray
-        "Vector"        -> Just $ DataTyConVector
-        "Stream"        -> Just $ DataTyConStream
-        "Segd"          -> Just $ DataTyConSegd
-        "Sel1"          -> Just $ DataTyConSel 1
-        "Sel2"          -> Just $ DataTyConSel 2
-        _               -> Nothing
+        | Just rest     <- stripPrefix "Tuple" str
+        , (ds, "")      <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ DataTyConTuple arity
+
+        | otherwise
+        = case str of
+                "Array"         -> Just $ DataTyConArray
+                "Vector"        -> Just $ DataTyConVector
+                "Stream"        -> Just $ DataTyConStream
+                "Segd"          -> Just $ DataTyConSegd
+                "Sel1"          -> Just $ DataTyConSel 1
+                "Sel2"          -> Just $ DataTyConSel 2
+                _               -> Nothing
+
+-- DataCon --------------------------------------------------------------------
+data DataCon
+        = DataConTuple Int      -- ^ @TN@ data constructor.
+        deriving (Eq, Ord, Show)
+
+instance NFData DataCon
+
+instance Pretty DataCon where
+ ppr dc
+  = case dc of
+        DataConTuple n          -> text "T" <> int n
+
+
+-- Read a baked in data constructor.
+readDataCon :: String -> Maybe DataCon
+readDataCon str
+        | Just rest     <- stripPrefix "T" str
+        , (ds, "")      <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ DataConTuple arity
+
+        | otherwise
+        = Nothing
 

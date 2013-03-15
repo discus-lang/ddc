@@ -8,6 +8,7 @@ module DDC.Core.Flow.Compounds
         , tWordU
 
         , tLen
+        , tTuple2
         , tArray, tVector, tStream
         , tSegd
         , tSel1, tSel2)
@@ -62,6 +63,13 @@ tLen tN
  where  uLen            = UPrim (NameFlowTyCon FlowTyConLen) kLen
         tcLen           = TyConBound uLen kLen
         kLen            = kNatP `kFun` kRate
+
+
+tTuple2 :: Type Name -> Type Name -> Type Name
+tTuple2 tA tB
+ = tApps (TCon tcPair) [tA, tB]
+ where  tcPair  = TyConBound (UPrim (NameDataTyCon (DataTyConTuple 2)) kPair) kPair
+        kPair   = kFuns [kData, kData] kData
 
 
 tArray :: Type Name -> Type Name

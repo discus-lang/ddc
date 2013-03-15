@@ -29,12 +29,12 @@ data Config n
           -- | Types of primitive operators.
         , configPrimTypes               :: TypeEnv n
 
-          -- | Suppress all closure information, 
+          -- | Suppress effect information,
+          --   annotating all functions with a pure effect.
+        , configSuppressEffects         :: Bool
+
+          -- | Suppress closure information, 
           --   annotating all functions with an empty closure.
-          --   
-          --   This is used when checking the Disciple Core Salt fragment,
-          --   as transforms in this language don't use the closure
-          --   information.
         , configSuppressClosures        :: Bool }
 
 
@@ -46,6 +46,10 @@ configOfProfile profile
         , configPrimSupers      = F.profilePrimSupers profile
         , configPrimKinds       = F.profilePrimKinds  profile
         , configPrimTypes       = F.profilePrimTypes  profile
+
+        , configSuppressEffects
+                = F.featuresUntrackedEffects
+                $ F.profileFeatures profile
 
         , configSuppressClosures      
                 = F.featuresUntrackedClosures

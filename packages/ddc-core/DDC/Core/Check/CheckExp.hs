@@ -322,17 +322,26 @@ checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
                  -- already already checked that.
                  Just c2_captured
 
-                  -- If we're suppressing closures then just drop them on the
-                  -- floor. The consumer of this core program doesn't care.
+                  -- If we're suppressing closures then just drop them on the floor.
+                  -- The consumer of this core program doesn't care about closures.
                   | configSuppressClosures config
                   = Just $ tBot kClosure
 
                   | otherwise
                   = trimClosure $ closureOfTaggedSet c2_cut
 
+                 -- If we're suppressing effects then just drop them on the floor.
+                 -- The consumer of this core program doesn't care about effects.
+                 e2_captured
+                  | configSuppressEffects config
+                  = tBot kEffect
+
+                  | otherwise
+                  = TSum e2
+
              in  returnX a
                         (\z -> XLam z b1 x2')
-                        (tFun t1 (TSum e2) c2_captured t2)
+                        (tFun t1 e2_captured c2_captured t2)
                         (Sum.empty kEffect)
                         c2_cut
 

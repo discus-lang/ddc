@@ -1,0 +1,65 @@
+
+:set lang Flow
+
+-- Kernel of QuickHull algorithm.
+-- This has a diamond dependency on the points stream,
+--  which is something that generic stream fusion can't fuse.
+--
+:load..
+module Test with letrec
+
+max     (n1 : Float64#) (n2 : Float64#) : Float64#
+ = case gt# [Float64#] n1 n2 of
+        True#   -> n1
+        False#  -> n2
+
+
+det     (l1 : Tuple2 Float64# Float64#)
+        (l2 : Tuple2 Float64# Float64#)
+        (p0 : Tuple2 Float64# Float64#) 
+        : Float64#
+ = case p0 of { T2 x0 y0 -> 
+   case l1 of { T2 x1 y1 -> 
+   case l2 of { T2 x2 y2 -> 
+        sub# [Float64#]
+                (mul# [Float64#] 
+                        (sub# [Float64#] x1 x0) 
+                        (sub# [Float64#] y2 y0))
+                (mul# [Float64#]
+                        (sub# [Float64#] y1 y0)
+                        (sub# [Float64#] x2 x0)) }}}
+
+
+split   [k1     : Rate]
+        (l1     : Tuple2 Float64# Float64#)
+        (l2     : Tuple2 Float64# Float64#)
+        (points : Stream k1 (Tuple2 Float64# Float64#))
+        : Tuple2 (Array (Tuple2 Float64# Float64#)) 
+                 Float64#
+ = do   
+        dets    
+         = map# [k1] [Tuple2 Float64# Float64#] [Float64#]
+                (det l1 l2) 
+                points
+
+        flags   
+         = map# [k1] [Float64#] [Bool#]
+                (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) 
+                dets
+
+        vAbove
+         = mkSel1# [k1] [Array (Tuple2 Float64# Float64#)] flags 
+           (/\(k2 : Rate). \(sel : Sel1 k1 k2).
+            let above   = pack#       [k1] [k2]  [Tuple2 Float64# Float64#] sel points in
+            let vAbove  = fromStream# [k2]       [Tuple2 Float64# Float64#] above       
+            in  fromVector# [k2] [Tuple2 Float64# Float64#] vAbove)
+
+        xMax 
+         = fold# [k1] [Float64#] [Float64#] 
+                max 
+                (promote# [Float64#] [Nat#] 0#)
+                dets 
+
+        T2 [Array (Tuple2 Float64# Float64#)] [Float64#] 
+                vAbove xMax
+;;

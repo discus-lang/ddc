@@ -55,19 +55,32 @@ primDataDefs
         , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
 
-        -- Boxed ----------------------------------------------------
+        -- Flow -----------------------------------------------------
         -- Stream
         , DataDef
                 (NameDataTyCon DataTyConStream)
-                [kRegion, kClosure, kData]
+                [kRate, kData]
                 (Just   [])
 
         -- Vector
         , DataDef
                 (NameDataTyCon DataTyConVector)
-                [kRegion, kData]
+                [kRate, kData]
                 (Just   [])
 
+        -- Array
+        , DataDef
+                (NameDataTyCon DataTyConArray)
+                [kData]
+                (Just   [])
+
+        -- Boxed -----------------------------------------------------
+        -- Tuple
+        , DataDef
+                (NameDataTyCon (DataTyConTuple 2))
+                [kData, kData]
+                (Just   [ ( NameDataCon (DataConTuple 2)
+                          , [tIx kData 1, tIx kData 0]) ])
         ]
 
 -- Sorts ---------------------------------------------------------------------
@@ -118,6 +131,9 @@ kindOfPrimName nn
          -> Just $ kNatP `kFun` kRate
 
         -- DataTyCon
+        NameDataTyCon (DataTyConTuple 2)
+         -> Just $ kData `kFun` kData `kFun` kData
+
         NameDataTyCon DataTyConArray
          -> Just $ kData `kFun` kData
 
@@ -172,6 +188,9 @@ typeOfPrimName dc
  = case dc of
         -- Flow operators
         NameFlowOp p            -> Just $ typeOfFlowOp p
+
+        -- Data constructors
+        NameDataCon p           -> Just $ typeOfDataCon p
 
         -- Primitive operators.
         NamePrimArith p         -> Just $ typeOfPrimArith p
@@ -279,6 +298,17 @@ typeOfFlowOp op
                 `tFunPE` tStream tK2 tA
 
         _ -> error "typeOfPrimFlow: not finished"
+
+
+-- | Take the type of a data constructor.
+typeOfDataCon :: DataCon -> Type Name
+typeOfDataCon cc
+ = case cc of
+        DataConTuple 2
+         -> tForalls [kData, kData] 
+         $ \[t1, t2] -> t1 `tFunPE` t2 `tFunPE` tTuple2 t1 t2
+
+        _ -> error "typeOfDataCon: not finished"
 
 
 -- | Take the type of a primitive cast.
