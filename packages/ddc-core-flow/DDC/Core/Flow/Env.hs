@@ -216,6 +216,13 @@ typeOfFlowOp op
          $  \[tK, tA]
          -> tStream tK tA `tFunPE` tVector tK tA
 
+        -- toStream   :: [k : Rate]. [a : Data]
+        --            .  Vector k a -> Stream k a
+        FlowOpToStream
+         -> tForalls [kRate, kData]
+         $  \[tK, tA]
+         -> tVector tK tA `tFunPE` tStream tK tA
+
         -- fromVector :: [k : Rate]. [a : Data]
         --            .  Vector k a -> Array a
         FlowOpFromVector 

@@ -4,16 +4,18 @@
 -- Kernel of QuickHull algorithm.
 -- This has a diamond dependency on the points stream,
 --  which is something that generic stream fusion can't fuse.
---
 :load..
 module Test with letrec
 
+
+-- Get the maximum of two floats.
 max     (n1 : Float64#) (n2 : Float64#) : Float64#
  = case gt# [Float64#] n1 n2 of
         True#   -> n1
         False#  -> n2
 
 
+-- Compute the determinate between a line and a point vector.
 det     (l1 : Tuple2 Float64# Float64#)
         (l2 : Tuple2 Float64# Float64#)
         (p0 : Tuple2 Float64# Float64#) 
@@ -30,30 +32,48 @@ det     (l1 : Tuple2 Float64# Float64#)
                         (sub# [Float64#] x2 x0)) }}}
 
 
-split   [k1     : Rate]
-        (l1     : Tuple2 Float64# Float64#)
-        (l2     : Tuple2 Float64# Float64#)
-        (points : Stream k1 (Tuple2 Float64# Float64#))
+-- Select points that are above the given line,
+--  and also return the maximum determinate.
+split   [k1      : Rate]
+        (l1      : Tuple2 Float64# Float64#)
+        (l2      : Tuple2 Float64# Float64#)
+        (vPoints : Vector k1 (Tuple2 Float64# Float64#))
         : Tuple2 (Array (Tuple2 Float64# Float64#)) 
                  Float64#
- = do   
+ = do
+        -- Convert the points to a stream.
+        -- The stream is used by multiple consumers.
+        points  
+         = toStream# [k1] [Tuple2 Float64# Float64#]
+                vPoints
+
+        -- Take the determinate between the line and each point.
         dets    
          = map# [k1] [Tuple2 Float64# Float64#] [Float64#]
                 (det l1 l2) 
                 points
 
+        -- We only want points where the determinate is more than zero.
         flags   
          = map# [k1] [Float64#] [Bool#]
                 (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) 
                 dets
 
-        vAbove
+        -- Filter the points, keeping those where the determinate was more
+        -- than zero.
+        aAbove
          = mkSel1# [k1] [Array (Tuple2 Float64# Float64#)] flags 
            (/\(k2 : Rate). \(sel : Sel1 k1 k2).
-            let above   = pack#       [k1] [k2]  [Tuple2 Float64# Float64#] sel points in
-            let vAbove  = fromStream# [k2]       [Tuple2 Float64# Float64#] above       
+
+            let above   = pack#       [k1] [k2]  [Tuple2 Float64# Float64#] 
+                                sel points in
+
+            let vAbove  = fromStream# [k2]       [Tuple2 Float64# Float64#] 
+                                above       
+
             in  fromVector# [k2] [Tuple2 Float64# Float64#] vAbove)
 
+        -- Also compute the maximum determinate.
         xMax 
          = fold# [k1] [Float64#] [Float64#] 
                 max 
@@ -61,5 +81,5 @@ split   [k1     : Rate]
                 dets 
 
         T2 [Array (Tuple2 Float64# Float64#)] [Float64#] 
-                vAbove xMax
+                aAbove xMax
 ;;

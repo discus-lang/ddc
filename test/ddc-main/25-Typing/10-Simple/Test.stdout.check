@@ -95,12 +95,12 @@ When checking expression.
 
 -- Error: Type variable not in environment.
 When checking type.
-  Undefined type variable:  a
+  Undefined type variable: a
 
 
 -- Error: Type constructor not in environment.
 When checking type.
-  Undefined type constructor:  Whatever
+  Undefined type constructor: Whatever
 
 
 -- Error: Data constructor not in environment.

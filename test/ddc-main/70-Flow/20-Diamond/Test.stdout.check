@@ -1,0 +1,59 @@
+
+ok
+
+-- Kernel of QuickHull algorithm.
+-- This has a diamond dependency on the points stream,
+--  which is something that generic stream fusion can't fuse.
+-- Get the maximum of two floats.
+-- Compute the determinate between a line and a point vector.
+-- Select points that are above the given line,
+--  and also return the maximum determinate.
+module Test with
+letrec {
+  max : Float64# -> Float64# -> Float64#
+    = \(n1 n2 : Float64#).
+      case gt# [Float64#] n1 n2 of {
+        True#  
+         -> n1;
+        False#  
+         -> n2
+      };
+  
+  det : Tuple2 Float64# Float64# -> Tuple2 Float64# Float64# -> Tuple2 Float64# Float64# -> Float64#
+    = \(l1 l2 p0 : Tuple2 Float64# Float64#).
+      case p0 of {
+        T2 (x0 : Float64#) (y0 : Float64#) 
+         -> case l1 of {
+              T2 (x1 : Float64#) (y1 : Float64#) 
+               -> case l2 of {
+                    T2 (x2 : Float64#) (y2 : Float64#) 
+                     -> sub# [Float64#]
+                            (mul# [Float64#] (sub# [Float64#] x1 x0) (sub# [Float64#] y2 y0))
+                            (mul# [Float64#] (sub# [Float64#] y1 y0) (sub# [Float64#] x2 x0))
+                  }
+            }
+      };
+  
+  split : [k1 : Rate].Tuple2 Float64# Float64# -> Tuple2 Float64# Float64# -> Vector k1 (Tuple2 Float64# Float64#) -> Tuple2 (Array (Tuple2 Float64# Float64#)) Float64#
+    = /\(k1 : Rate).
+       \(l1 l2 : Tuple2 Float64# Float64#).\(vPoints : Vector k1 (Tuple2 Float64# Float64#)).
+      let points : Stream k1 (Tuple2 Float64# Float64#)
+            = toStream# [k1] [Tuple2 Float64# Float64#] vPoints in
+      let dets : Stream k1 Float64#
+            = map1# [k1] [Tuple2 Float64# Float64#] [Float64#] (det l1 l2) points in
+      let flags : Stream k1 Bool#
+            = map1# [k1] [Float64#] [Bool#]
+                  (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) dets in
+      let aAbove : Array (Tuple2 Float64# Float64#)
+            = mkSel1# [k1] [Array (Tuple2 Float64# Float64#)] flags
+                  (/\(k2 : Rate).
+                    \(sel : Sel1 k1 k2).
+                   let above : Stream k2 (Tuple2 Float64# Float64#)
+                         = pack# [k1] [k2] [Tuple2 Float64# Float64#] sel points in
+                   let vAbove : Vector k2 (Tuple2 Float64# Float64#)
+                         = fromStream# [k2] [Tuple2 Float64# Float64#] above in
+                   fromVector# [k2] [Tuple2 Float64# Float64#] vAbove) in
+      let xMax : Float64#
+            = fold# [k1] [Float64#] [Float64#] max (promote# [Float64#] [Nat#] 0#) dets in
+      T2 [Array (Tuple2 Float64# Float64#)] [Float64#] aAbove xMax
+}

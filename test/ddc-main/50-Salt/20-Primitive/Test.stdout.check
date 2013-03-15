@@ -13,11 +13,11 @@ Word32# :: Data
 
 -- Error: invalid type constructors
 When checking type.
-  Undefined type constructor:  Word#
+  Undefined type constructor: Word#
 When checking type.
-  Undefined type constructor:  Int32#
+  Undefined type constructor: Int32#
 When checking type.
-  Undefined type constructor:  Int65#
+  Undefined type constructor: Int65#
 
 
 -- Check types of tailcallN# prims.

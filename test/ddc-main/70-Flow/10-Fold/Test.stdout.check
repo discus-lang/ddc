@@ -13,36 +13,3 @@ letrec {
             = fold# [k] [Int#] [Int#] (mul# [Int#]) 1i# elems in
       add# [Int#] sum prod
 }
-
-
--- Diamond dependency
-module Test with
-letrec {
-  det : Nat# -> Nat#
-    = \(x : Nat#). add# [Nat#] x x;
-  
-  max : Nat# -> Nat# -> Nat#
-    = \(n1 n2 : Nat#).
-      case gt# [Nat#] n1 n2 of {
-        True#  
-         -> n1;
-        False#  
-         -> n2
-      };
-  
-  test : [k1 : Rate].Stream k1 Nat# -> Array Nat#
-    = /\(k1 : Rate).
-       \(points : Stream k1 Nat#).
-      let dets : Stream k1 Nat# = map1# [k1] [Nat#] [Nat#] det points in
-      let flags : Stream k1 Bool#
-            = map1# [k1] [Nat#] [Bool#] (gt# [Nat#] 0#) dets in
-      let vAbove : Array Nat#
-            = mkSel1# [k1] [Array Nat#] flags
-                  (/\(k2 : Rate).
-                    \(sel : Sel1 k1 k2).
-                   let above : Stream k2 Nat# = pack# [k1] [k2] [Nat#] sel points in
-                   let vAbove : Vector k2 Nat# = fromStream# [k2] [Nat#] above in
-                   fromVector# [k2] [Nat#] vAbove) in
-      let xMax : Nat# = fold# [k1] [Nat#] [Nat#] max 0# dets in
-      vAbove
-}
