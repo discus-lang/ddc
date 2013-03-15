@@ -190,89 +190,90 @@ typeOfPrimName dc
 typeOfFlowOp :: FlowOp -> Type Name
 typeOfFlowOp op
  = case op of
-        -- fromStream :: [a : Data]. [k : Rate]
+        -- fromStream :: [k : Rate]. [a : Data]
         --            .  Stream k a -> Vector k a
         FlowOpFromStream
-         -> tForalls [kData, kRate]
-         $  \[tA, tK]
+         -> tForalls [kRate, kData]
+         $  \[tK, tA]
          -> tStream tK tA `tFunPE` tVector tK tA
 
-        -- fromVector :: [a : Data]. [k : Rate]
+        -- fromVector :: [k : Rate]. [a : Data]
         --            .  Vector k a -> Array a
         FlowOpFromVector 
-         -> tForalls [kData, kRate]
-         $  \[tA, tK]
+         -> tForalls [kRate, kData]
+         $  \[tK, tA]
          -> tVector tK tA `tFunPE` tArray tA
 
-        -- mkSel1#    :: [a : Data]. [k1 : Rate]
+        -- mkSel1#    :: [k1 : Rate]. [a : Data]
         --            .  Stream k1 Bool#
         --            -> ([k2 : Rate]. Sel1 k1 k2 -> a)
         --            -> a
         FlowOpMkSel 1
-         -> tForalls [kData, kRate]
-         $  \[tA, tK1]
+         -> tForalls [kRate, kData]
+         $  \[tK1, tA]
          -> tStream tK1 tBoolU
-                `tFunPE` (tForall kRate $ \tK2 -> tSel1 (liftT 1 tK1) tK2 `tFunPE` (liftT 1 tA))
+                `tFunPE` (tForall kRate $ \tK2 
+                                -> tSel1 (liftT 1 tK1) tK2 `tFunPE` (liftT 1 tA))
                 `tFunPE` tA
 
-        -- map   :: [a b : Data]. [k : Rate]
+        -- map   :: [k : Rate] [a b : Data]
         --       .  (a -> b) -> Stream k a -> Stream k b
         FlowOpMap 1
-         -> tForalls [kData, kData, kRate]
-         $  \[tA, tB, tK]
+         -> tForalls [kRate, kData, kData]
+         $  \[tK, tA, tB]
          -> (tA `tFunPE` tB)
                 `tFunPE` tStream tK tA
                 `tFunPE` tStream tK tB
 
-        -- rep  :: [a : Data]. [n : Nat']
+        -- rep  :: [n : Nat']. [a : Data]
         --      .  n -> a -> Stream (Len n) a
         FlowOpRep 
-         -> tForalls [kData, kNatP]
-         $  \[tA, tN]
+         -> tForalls [kNatP, kData]
+         $  \[tN, tA]
          ->     tN `tFunPE` tA `tFunPE` tStream (tLen tN) tA
 
-        -- reps  :: [a : Data]. [k1 k2 : Rate]
+        -- reps  :: [k1 k2 : Rate]. [a : Data]
         --       .  Segd   k1 k2 
         --       -> Stream k1 a
         --       -> Stream k2 a
         FlowOpReps 
-         -> tForalls [kData, kRate, kRate]
-         $  \[tA, tK1, tK2]
+         -> tForalls [kRate, kRate, kData]
+         $  \[tK1, tK2, tA]
          -> tSegd tK1 tK2
                 `tFunPE` tStream tK1 tA
                 `tFunPE` tStream tK2 tA
 
-        -- fold :: [a b: Data]. [k : Rate]
+        -- fold :: [k : Rate]. [a b: Data]
         --      .  (a -> b -> a) -> a -> Stream k b -> a
         FlowOpFold    
-         -> tForalls [kData, kData, kRate] 
-         $  \[tA, tB, tK] 
+         -> tForalls [kRate, kData, kData] 
+         $  \[tK, tA, tB]
          -> (tA `tFunPE` tB `tFunPE` tA)
                 `tFunPE` tA
                 `tFunPE` tStream tK tA
                 `tFunPE` tA
 
-        -- folds :: [a b: Data]. [k1 k2 : Rate]
+        -- folds :: [k1 k2 : Rate]. [a b: Data]
         --       .  Segd   k1 k2 
         --       -> (a -> b -> a)       -- fold operator
         --       -> Stream k1 a         -- start values
         --       -> Stream k2 b         -- source elements
         --       -> Stream k1 a         -- result values
         FlowOpFolds
-         -> tForalls [kData, kData, kRate, kRate]
-         $  \[tA, tB, tK1, tK2]
+         -> tForalls [kRate, kRate, kData, kData]
+         $  \[tK1, tK2, tA, tB]
          -> tSegd tK1 tK2
                 `tFunPE` (tA `tFunPE` tB `tFunPE` tA)
                 `tFunPE` tStream tK1 tA
                 `tFunPE` tStream tK2 tB
                 `tFunPE` tStream tK1 tA
 
-        -- pack  :: [a : Data]. [k1 k2 : Rate]
+        -- pack  :: [k1 k2 : Rate]. [a : Data]
         --       .  Sel2 k1 k2
         --       -> Stream k1 a -> Stream k2 a
         FlowOpPack
-         -> tForalls [kData, kRate, kRate]
-         $  \[tA, tK1, tK2]
+         -> tForalls [kRate, kRate, kData]
+         $  \[tK1, tK2, tA]
          -> tSel1 tK1 tK2 
                 `tFunPE` tStream tK1 tA
                 `tFunPE` tStream tK2 tA

@@ -8,15 +8,15 @@ sub# :: [^ : Data].^0 -> ^0 -> ^0
 -- Flow DSL types.
 Len :: Nat' ~> Rate
 Stream :: Rate ~> Data ~> Data
-Vector :: Data ~> Data
+Vector :: Rate ~> Data ~> Data
 Segd :: Rate ~> Rate ~> Data
-Sel2 :: Rate ~> Rate ~> Data
+Sel2 :: Rate ~> Rate ~> Rate ~> Data
 
 -- Flow DSL operators.
-map1# :: [^ ^ : Data].[^ : Rate].(^2 -> ^1) -> Stream ^0 ^2 -> Stream ^0 ^1
-rep# :: [^ : Data].[^ : Nat'].^0 -> ^1 -> Stream (Len ^0) ^1
-reps# :: [^ : Data].[^ ^ : Rate].Segd ^1 ^0 -> Stream ^1 ^2 -> Stream ^0 ^2
-fold# :: [^ ^ : Data].[^ : Rate].(^2 -> ^1 -> ^2) -> ^2 -> Stream ^0 ^2 -> ^2
-folds# :: [^ ^ : Data].[^ ^ : Rate].Segd ^1 ^0 -> (^3 -> ^2 -> ^3) -> Stream ^1 ^3 -> Stream ^0 ^2 -> Stream ^1 ^3
-pack# :: [^ : Data].[^ ^ : Rate].Sel2 ^1 ^0 -> Stream ^1 ^2 -> Stream ^0 ^2
+map1# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Stream ^2 ^1 -> Stream ^2 ^0
+rep# :: [^ : Nat'].[^ : Data].^1 -> ^0 -> Stream (Len ^1) ^0
+reps# :: [^ ^ : Rate].[^ : Data].Segd ^2 ^1 -> Stream ^2 ^0 -> Stream ^1 ^0
+fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Stream ^2 ^1 -> ^1
+folds# :: [^ ^ : Rate].[^ ^ : Data].Segd ^3 ^2 -> (^1 -> ^0 -> ^1) -> Stream ^3 ^1 -> Stream ^2 ^0 -> Stream ^3 ^1
+pack# :: [^ ^ : Rate].[^ : Data].Sel1 ^2 ^1 -> Stream ^2 ^0 -> Stream ^1 ^0
 
