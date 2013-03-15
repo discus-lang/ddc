@@ -87,7 +87,7 @@ checkExp
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> KindEnv n            -- ^ Starting Kind environment.
-        -> TypeEnv n            -- ^ Strating Type environment.
+        -> TypeEnv n            -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n)
                   ( Exp (AnTEC a n) n

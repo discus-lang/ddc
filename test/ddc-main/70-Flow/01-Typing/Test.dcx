@@ -1,0 +1,22 @@
+:set lang Flow
+
+-- Check primitives have real types.
+:type add#
+:type sub#
+
+
+-- Flow DSL types.
+:kind Len
+:kind Stream
+:kind Vector
+:kind Segd
+:kind Sel2
+
+-- Flow DSL operators.
+:type map#
+:type rep#
+:type reps#
+:type fold#
+:type folds#
+:type pack#
+

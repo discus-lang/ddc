@@ -10,7 +10,7 @@ import DDC.Core.Flow.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Data.Token
-import qualified DDC.Type.Env           as Env
+
 
 -- | Profile for Disciple Core Flow.
 profile :: Profile Name 
@@ -19,7 +19,7 @@ profile
         { profileName                   = "Flow"
         , profileFeatures               = features
         , profilePrimDataDefs           = primDataDefs
-        , profilePrimSupers             = Env.empty
+        , profilePrimSupers             = primSortEnv
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
 

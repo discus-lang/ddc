@@ -34,7 +34,6 @@ import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
-
 -- | The type checker monad.
 type CheckM n   = G.CheckM (Error n)
 
@@ -77,7 +76,7 @@ checkTypeM
         -> CheckM n (Kind n)
 
 checkTypeM config env tt
-        = -- trace (pretty $ text "checkTypeM:" <+> ppr tt) $
+        = -- trace (renderPlain $ text "checkTypeM:" <+> text (show tt)) $
           {-# SCC checkTypeM #-}
           checkTypeM' config env tt
 
@@ -104,12 +103,16 @@ checkTypeM' config _env tt@(TCon tc)
         TyConSpec    tcc -> return $ kindOfTcCon tcc
 
         -- User defined type constructors need to be in the set of data defs.
-        TyConBound   u k
+        TyConBound u k
          -> case u of
                 UName n
                  | Just _ <- Map.lookup n 
-                          $ dataDefsTypes $ configPrimDataDefs config
+                          $  dataDefsTypes $ configPrimDataDefs config
                  -> return k
+
+                 | Just s <- Env.lookupName n
+                          $  configPrimSupers config
+                 -> return s
 
                  | otherwise
                  -> throw $ ErrorUndefinedCtor u

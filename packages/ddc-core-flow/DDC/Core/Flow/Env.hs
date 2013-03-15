@@ -1,6 +1,7 @@
 
 module DDC.Core.Flow.Env
         ( primDataDefs
+        , primSortEnv
         , primKindEnv
         , primTypeEnv )
 where
@@ -68,11 +69,71 @@ primDataDefs
 
         ]
 
+-- Sorts ---------------------------------------------------------------------
+primSortEnv :: Env Name
+primSortEnv  = Env.setPrimFun sortOfPrimName Env.empty
+
+
+-- | Take the sort of a primitive kind name.
+sortOfPrimName :: Name -> Maybe (Sort Name)
+sortOfPrimName _
+ = Nothing
+
+{-
+ case nn of
+        NameFlowKiCon FlowKiConNatP     
+          -> Just sProp
+
+        NameFlowKiCon FlowKiConRate     
+          -> Just sProp
+
+        _ -> Nothing
+-}
 
 -- Kinds ----------------------------------------------------------------------
 -- | Kind environment containing kinds of primitive data types.
 primKindEnv :: Env Name
 primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
+
+
+-- | Take the kind of a primitive name.
+--
+--   Returns `Nothing` if the name isn't primitive. 
+--
+kindOfPrimName :: Name -> Maybe (Kind Name)
+kindOfPrimName nn
+ = case nn of
+        NameFlowKiCon FlowKiConNatP
+         -> Just sProp
+
+        NameFlowKiCon FlowKiConRate
+         -> Just sProp
+
+        -- FlowTyCon
+        NameFlowTyCon (FlowTyConNatP _)
+         -> Just kNatP
+
+        NameFlowTyCon FlowTyConLen
+         -> Just $ kNatP `kFun` kRate
+
+        -- DataTyCon
+        NameDataTyCon DataTyConStream
+         -> Just $ kRate `kFun` kData `kFun` kData
+
+        NameDataTyCon DataTyConVector
+         -> Just $ kData `kFun` kData
+
+        NameDataTyCon DataTyConSegd
+         -> Just $ kRate `kFun` kRate `kFun` kData
+
+        NameDataTyCon DataTyConSel2
+         -> Just $ kRate `kFun` kRate `kFun` kData
+
+        -- Primitive type constructors.
+        NamePrimTyCon tc
+         -> Just $ kindOfPrimTyCon tc
+
+        _ -> Nothing
 
 
 -- | Take the kind of a primitive name.
@@ -91,28 +152,6 @@ kindOfPrimTyCon tc
         PrimTyConString  -> kData
 
 
--- | Take the kind of a primitive name.
---
---   Returns `Nothing` if the name isn't primitive. 
---
-kindOfPrimName :: Name -> Maybe (Kind Name)
-kindOfPrimName nn
- = case nn of
-        -- Stream
-        NameDataTyCon DataTyConStream
-         -> Just $ kRegion `kFun` kClosure `kFun` kData `kFun` kData
-
-        -- Vector
-        NameDataTyCon DataTyConVector
-         -> Just $ kRegion `kFun` kData `kFun` kData
-
-        -- Primitive type constructors.
-        NamePrimTyCon tc
-         -> Just $ kindOfPrimTyCon tc
-
-        _ -> Nothing
-
-
 -- Types ----------------------------------------------------------------------
 -- | Type environment containing types of primitive operators.
 primTypeEnv :: Env Name
@@ -124,10 +163,12 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        -- Primitive arithmetic operators
+        -- Flow operators
+        NameFlowOp p            -> Just $ typeOfFlowOp p
+
+        -- Primitive operators.
         NamePrimArith p         -> Just $ typeOfPrimArith p
         NamePrimCast p          -> Just $ typeOfPrimCast p
-        NamePrimFlow p          -> Just $ typeOfPrimFlow p
 
         -- Unboxed Literals
         NameLitBool _           -> Just $ tBoolU
@@ -136,6 +177,75 @@ typeOfPrimName dc
         NameLitWord _ bits      -> Just $ tWordU bits
 
         _                       -> Nothing
+
+
+-- | Take the type of a primitive data-flow operator.
+typeOfFlowOp :: FlowOp -> Type Name
+typeOfFlowOp op
+ = case op of
+        -- map   :: [a b : Data]. [k : Rate]
+        --       .  (a -> b) -> Stream k a -> Stream k b
+        FlowOpMap 1
+         -> tForalls [kData, kData, kRate]
+         $  \[tA, tB, tK]
+         -> (tA `tFunPE` tB)
+                `tFunPE` tStream tK tA
+                `tFunPE` tStream tK tB
+
+        -- rep  :: [a : Data]. [n : Nat']
+        --      .  n -> a -> Stream (Len n) a
+        FlowOpRep 
+         -> tForalls [kData, kNatP]
+         $  \[tA, tN]
+         ->     tN `tFunPE` tA `tFunPE` tStream (tLen tN) tA
+
+        -- reps  :: [a : Data]. [k1 k2 : Rate]
+        --       .  Segd   k1 k2 
+        --       -> Stream k1 a
+        --       -> Stream k2 a
+        FlowOpReps 
+         -> tForalls [kData, kRate, kRate]
+         $  \[tA, tK1, tK2]
+         -> tSegd tK1 tK2
+                `tFunPE` tStream tK1 tA
+                `tFunPE` tStream tK2 tA
+
+        -- fold :: [a b: Data]. [k : Rate]
+        --      .  (a -> b -> a) -> a -> Stream k b -> a
+        FlowOpFold    
+         -> tForalls [kData, kData, kRate] 
+         $  \[tA, tB, tK] 
+         -> (tA `tFunPE` tB `tFunPE` tA)
+                `tFunPE` tA
+                `tFunPE` tStream tK tA
+                `tFunPE` tA
+
+        -- folds :: [a b: Data]. [k1 k2 : Rate]
+        --       .  Segd   k1 k2 
+        --       -> (a -> b -> a)       -- fold operator
+        --       -> Stream k1 a         -- start values
+        --       -> Stream k2 b         -- source elements
+        --       -> Stream k1 a         -- result values
+        FlowOpFolds
+         -> tForalls [kData, kData, kRate, kRate]
+         $  \[tA, tB, tK1, tK2]
+         -> tSegd tK1 tK2
+                `tFunPE` (tA `tFunPE` tB `tFunPE` tA)
+                `tFunPE` tStream tK1 tA
+                `tFunPE` tStream tK2 tB
+                `tFunPE` tStream tK1 tA
+
+        -- pack  :: [a : Data]. [k1 k2 : Rate]
+        --       .  Sel2 k1 k2
+        --       -> Stream k1 a -> Stream k2 a
+        FlowOpPack
+         -> tForalls [kData, kRate, kRate]
+         $  \[tA, tK1, tK2]
+         -> tSel2 tK1 tK2 
+                `tFunPE` tStream tK1 tA
+                `tFunPE` tStream tK2 tA
+
+        _ -> error "typeOfPrimFlow: not finished"
 
 
 -- | Take the type of a primitive cast.
@@ -179,21 +289,4 @@ typeOfPrimArith op
         PrimArithBAnd   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithBOr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithBXOr   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-
-
--- | Take the type of a primitive data-flow operator.
-typeOfPrimFlow :: PrimFlow -> Type Name
-typeOfPrimFlow op
- = case op of
-        -- fold :: [a b: *]. [s : %]. [k : $]
-        --      .  (a -> b -> a) -> a -> Stream s k b -> a
-        PrimFlowFold    
-         -> tForalls [kData, kData, kRegion, kClosure] 
-         $  \[tA, tB, tS, tK] 
-         ->     (tA `tFunPE` tB `tFunPE` tA)
-                `tFunPE` tA
-                `tFunPE` tStream tS tK tA
-                `tFunPE` tA
-
-        _ -> error "typeOfPrimFlow: not finished"
 

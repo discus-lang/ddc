@@ -11,10 +11,10 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
         ErrorUndefined u
-         -> text "Undefined type variable:  " <> ppr u
+         -> text "Undefined type variable: " <> ppr u
 
         ErrorUndefinedCtor u
-         -> text "Undefined type constructor:  " <> ppr u
+         -> text "Undefined type constructor: " <> ppr u
 
         ErrorUnappliedKindFun 
          -> text "Can't take sort of unapplied kind function constructor."

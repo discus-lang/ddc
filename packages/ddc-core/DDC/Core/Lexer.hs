@@ -95,9 +95,17 @@ lexString sourceName lineStart str
          -> tokN (KLit ('-':c:body))                 : lexMore (length (c:body)) rest
 
         -- Meta tokens
-        '{'  : '-' : w'  -> tokM KCommentBlockStart : lexMore 2 w'
-        '-'  : '}' : w'  -> tokM KCommentBlockEnd   : lexMore 2 w'
-        '-'  : '-' : w'  -> tokM KCommentLineStart  : lexMore 2 w'
+        -- ISSUE #302: Don't try to lex body of a block comment.
+        '{'  : '-' : w'  
+         -> tokM KCommentBlockStart : lexMore 2 w'
+
+        '-'  : '}' : w'  
+         -> tokM KCommentBlockEnd   : lexMore 2 w'
+
+        '-'  : '-' : w'  
+         -> let  (_junk, w'') = span (/= '\n') w'
+            in   tokM KCommentLineStart  : lexMore 2 w''
+
         '\n' : w'        -> tokM KNewLine           : lexWord (line + 1) 1 w'
 
 
@@ -173,7 +181,8 @@ lexString sourceName lineStart str
          | isConStart c
          , (body,  rest)        <- span isConBody cs
          , (body', rest')       <- case rest of
-                                        '#' : rest'     -> (body ++ "#", rest')
+                                        '\'' : rest'    -> (body ++ "'", rest')
+                                        '#'  : rest'    -> (body ++ "#", rest')
                                         _               -> (body, rest)
          -> let readNamedCon s
                  | Just twcon   <- readTwConBuiltin s

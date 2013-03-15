@@ -2,14 +2,18 @@
 module DDC.Core.Flow.Name
         ( Name          (..)
 
-        -- * Primitive type constructors
-        , DataTyCon     (..)
-        , PrimTyCon     (..)
+        -- * Flow types and combinators.
+        , FlowKiCon     (..)
+        , FlowTyCon     (..)
+        , FlowOp        (..)
 
-        -- * Primitive operators
+        -- * Data type constructors.
+        , DataTyCon     (..)
+
+        -- * Primitive types and operators.
+        , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimCast      (..)
-        , PrimFlow      (..)
 
         -- * Name parsing
         , readName)
@@ -37,6 +41,15 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
+        -- | Flow rate kind.
+        | NameFlowKiCon         FlowKiCon
+
+        -- | Flow type constructors.
+        | NameFlowTyCon         FlowTyCon
+
+        -- | Flow combinators.
+        | NameFlowOp            FlowOp
+
         -- | Baked in data type constructors.
         | NameDataTyCon         DataTyCon
 
@@ -48,9 +61,6 @@ data Name
 
         -- | Primitive casting between numeric types.
         | NamePrimCast          PrimCast
-
-        -- | Primitive data flow operators.
-        | NamePrimFlow          PrimFlow
 
         -- | An unboxed boolean literal
         | NameLitBool           Bool
@@ -71,11 +81,17 @@ instance NFData Name where
   = case nn of
         NameVar s               -> rnf s
         NameCon s               -> rnf s
+
+        NameFlowKiCon con       -> rnf con
+        NameFlowTyCon con       -> rnf con
+        NameFlowOp    op        -> rnf op
+
         NameDataTyCon con       -> rnf con
+
         NamePrimTyCon con       -> rnf con
         NamePrimArith con       -> rnf con
         NamePrimCast  c         -> rnf c
-        NamePrimFlow  f         -> rnf f
+
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
         NameLitInt  i           -> rnf i
@@ -87,11 +103,17 @@ instance Pretty Name where
   = case nn of
         NameVar  v              -> text v
         NameCon  c              -> text c
+
+        NameFlowKiCon con       -> ppr con
+        NameFlowTyCon con       -> ppr con
+        NameFlowOp    op        -> ppr op
+
         NameDataTyCon dc        -> ppr dc
+
         NamePrimTyCon tc        -> ppr tc
         NamePrimArith op        -> ppr op
-        NamePrimFlow  op        -> ppr op
         NamePrimCast  op        -> ppr op
+
         NameLitBool True        -> text "True#"
         NameLitBool False       -> text "False#"
         NameLitNat  i           -> integer i <> text "#"
@@ -102,22 +124,19 @@ instance Pretty Name where
 -- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
-        |  Just name    <- readDataTyCon str
-        =  Just $ NameDataTyCon name
 
-        |  Just name    <- readPrimTyCon str
-        =  Just $ NamePrimTyCon name
+        -- Flow constructors
+        | Just p        <- readFlowKiCon str    = Just $ NameFlowKiCon p
+        | Just p        <- readFlowTyCon str    = Just $ NameFlowTyCon p
+        | Just p        <- readFlowOp    str    = Just $ NameFlowOp    p
 
-        -- PrimArith
-        | Just p        <- readPrimArith str
-        = Just $ NamePrimArith p
+        -- Data type constructors.
+        | Just p        <- readDataTyCon str    = Just $ NameDataTyCon p
 
-        -- PrimCast
-        | Just p        <- readPrimCast  str
-        = Just $ NamePrimCast p
-
-        | Just p        <- readPrimFlow str
-        = Just $ NamePrimFlow p
+        -- Primitive names.
+        | Just p        <- readPrimTyCon str    = Just $ NamePrimTyCon p
+        | Just p        <- readPrimArith str    = Just $ NamePrimArith p
+        | Just p        <- readPrimCast  str    = Just $ NamePrimCast  p
 
         -- Literal Bools
         | str == "True#"  = Just $ NameLitBool True
@@ -150,11 +169,132 @@ readName str
         = Nothing
 
 
+-- FlowKiCon ------------------------------------------------------------------
+-- | Flow kind constructors.
+data FlowKiCon
+        = FlowKiConNatP
+        | FlowKiConRate
+        deriving (Eq, Ord, Show)
+
+instance NFData FlowKiCon
+
+instance Pretty FlowKiCon where
+ ppr con
+  = case con of
+        FlowKiConNatP   -> text "Nat'"
+        FlowKiConRate   -> text "Rate"
+
+
+-- | Read a flow kind constructor.
+readFlowKiCon :: String -> Maybe FlowKiCon
+readFlowKiCon str
+ = case str of
+        "Nat'"  -> Just $ FlowKiConNatP
+        "Rate"  -> Just $ FlowKiConRate
+        _       -> Nothing
+
+
+-- FlowTyCon ------------------------------------------------------------------
+data FlowTyCon
+        = FlowTyConNatP  Int
+        | FlowTyConLen
+        deriving (Eq, Ord, Show)
+
+instance NFData FlowTyCon
+
+instance Pretty FlowTyCon where
+ ppr con
+  = case con of
+        FlowTyConNatP n -> int n <> text "'"
+        FlowTyConLen    -> text "Len"
+
+
+-- | Read a flow type constructor.
+readFlowTyCon :: String -> Maybe FlowTyCon
+readFlowTyCon str
+        | (ds, str2)    <- span isDigit str
+        , not $ null ds
+        , Just ""       <- stripPrefix "'" str2
+        = Just $ FlowTyConNatP (read ds)
+
+        | otherwise
+        = case str of
+                "Len"   -> Just $ FlowTyConLen
+                _       -> Nothing
+
+
+-- FlowOp ---------------------------------------------------------------------
+-- | Flow combinators.
+data FlowOp
+        = FlowOpMap      Int
+        | FlowOpRep
+        | FlowOpReps
+        | FlowOpFold
+        | FlowOpFolds
+        | FlowOpUnfold
+        | FlowOpUnfolds
+        | FlowOpSplit    Int
+        | FlowOpCombine  Int
+        | FlowOpPack
+        deriving (Eq, Ord, Show)
+
+instance NFData FlowOp
+
+instance Pretty FlowOp where
+ ppr pf
+  = case pf of
+        FlowOpMap i     -> text "map"     <> int i      <> text "#"
+        FlowOpRep       -> text "rep"                   <> text "#"
+        FlowOpReps      -> text "reps"                  <> text "#"
+        FlowOpFold      -> text "fold"                  <> text "#"
+        FlowOpFolds     -> text "folds"                 <> text "#"
+        FlowOpUnfold    -> text "unfold"                <> text "#"
+        FlowOpUnfolds   -> text "unfolds"               <> text "#"
+        FlowOpSplit   i -> text "split"   <> int i      <> text "#"
+        FlowOpCombine i -> text "combine" <> int i      <> text "#"
+        FlowOpPack      -> text "pack"                  <> text "#"
+
+-- | Read a baked-in data flow operator.
+readFlowOp :: String -> Maybe FlowOp
+readFlowOp str
+        | Just rest     <- stripPrefix "map" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ FlowOpMap arity
+
+        | Just rest     <- stripPrefix "split" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ FlowOpSplit arity
+
+        | Just rest     <- stripPrefix "combine" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ FlowOpCombine arity
+
+        | otherwise
+        = case str of
+                "map#"          -> Just $ FlowOpMap 1
+                "rep#"          -> Just $ FlowOpRep
+                "reps#"         -> Just $ FlowOpReps
+                "fold#"         -> Just $ FlowOpFold
+                "folds#"        -> Just $ FlowOpFolds
+                "unfold#"       -> Just $ FlowOpUnfold
+                "unfolds#"      -> Just $ FlowOpUnfolds
+                "pack#"         -> Just $ FlowOpPack
+                _               -> Nothing
+
+
 -- DataTyCon ------------------------------------------------------------------
 -- | Baked-in data type constructors.
 data DataTyCon
         = DataTyConStream       -- ^ @Stream@  type constructor.
         | DataTyConVector       -- ^ @Vector@  type constructor.
+        | DataTyConSegd         -- ^ @Segd@    type constructor.
+        | DataTyConSel2         -- ^ @Sel2@     type constructor.
         deriving (Eq, Ord, Show)
 
 instance NFData DataTyCon
@@ -162,8 +302,10 @@ instance NFData DataTyCon
 instance Pretty DataTyCon where
  ppr dc
   = case dc of
-        DataTyConStream         -> text "Stream"
-        DataTyConVector         -> text "Vector"
+        DataTyConStream -> text "Stream"
+        DataTyConVector -> text "Vector"
+        DataTyConSegd   -> text "Segd"
+        DataTyConSel2   -> text "Sel2"
 
 
 -- | Read a baked-in data type constructor.
@@ -172,62 +314,7 @@ readDataTyCon str
  = case str of
         "Stream"        -> Just DataTyConStream
         "Vector"        -> Just DataTyConVector
+        "Segd"          -> Just DataTyConSegd
+        "Sel2"          -> Just DataTyConSel2
         _               -> Nothing
-
-
--- PrimFlow -------------------------------------------------------------------
--- | Baked-in data-flow operators.
-data PrimFlow
-        = PrimFlowMap      Int
-        | PrimFlowFold
-        | PrimFlowFolds
-        | PrimFlowUnfold
-        | PrimFlowUnfolds
-        | PrimFlowSplit    Int
-        | PrimFlowCombine  Int
-        deriving (Eq, Ord, Show)
-
-instance NFData PrimFlow
-
-instance Pretty PrimFlow where
- ppr pf
-  = case pf of
-        PrimFlowMap i           -> text "map"     <> int i      <> text "#"
-        PrimFlowFold            -> text "fold"                  <> text "#"
-        PrimFlowFolds           -> text "folds"                 <> text "#"
-        PrimFlowUnfold          -> text "unfold"                <> text "#"
-        PrimFlowUnfolds         -> text "unfolds"               <> text "#"
-        PrimFlowSplit   i       -> text "split"   <> int i      <> text "#"
-        PrimFlowCombine i       -> text "combine" <> int i      <> text "#"
-
-
--- | Read a baked-in data flow operator.
-readPrimFlow :: String -> Maybe PrimFlow
-readPrimFlow str
-        | Just rest     <- stripPrefix "map" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ PrimFlowMap arity
-
-        | Just rest     <- stripPrefix "split" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ PrimFlowSplit arity
-
-        | Just rest     <- stripPrefix "combine" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ PrimFlowCombine arity
-
-        | otherwise
-        = case str of
-                "fold#"         -> Just $ PrimFlowFold
-                "folds#"        -> Just $ PrimFlowFolds
-                "unfold#"       -> Just $ PrimFlowUnfold
-                "unfolds#"      -> Just $ PrimFlowUnfolds
-                _               -> Nothing
-
 

@@ -4,14 +4,14 @@
 -- Single stream being eaten by multiple consumers.
 :load..
 module Test with letrec
-test    [a : Data] [r : Region] [k : Closure]
-        (elems : Stream r k Int#)
+test    [a : Data] [k : Rate]
+        (elems : Stream k Int#)
         : Int#
  = do   
-        sum     = fold# [:Int# Int#:] [r] [k]
+        sum     = fold# [:Int# Int#:] [k]
                         (add# [Int#]) 0i# elems
 
-        prod    = fold# [:Int# Int#:] [r] [k]
+        prod    = fold# [:Int# Int#:] [k]
                         (mul# [Int#]) 1i# elems
 
         add# [:Int#:] sum prod;;
