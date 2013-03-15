@@ -9,6 +9,7 @@ import DDC.Core.Flow.Name
 import DDC.Core.Flow.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Compounds
+import DDC.Type.Transform.LiftT
 import DDC.Type.Exp
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
@@ -117,17 +118,23 @@ kindOfPrimName nn
          -> Just $ kNatP `kFun` kRate
 
         -- DataTyCon
-        NameDataTyCon DataTyConStream
-         -> Just $ kRate `kFun` kData `kFun` kData
+        NameDataTyCon DataTyConArray
+         -> Just $ kData `kFun` kData
 
         NameDataTyCon DataTyConVector
-         -> Just $ kData `kFun` kData
+         -> Just $ kRate `kFun` kData `kFun` kData
+
+        NameDataTyCon DataTyConStream
+         -> Just $ kRate `kFun` kData `kFun` kData
 
         NameDataTyCon DataTyConSegd
          -> Just $ kRate `kFun` kRate `kFun` kData
 
-        NameDataTyCon DataTyConSel2
+        NameDataTyCon (DataTyConSel 1)
          -> Just $ kRate `kFun` kRate `kFun` kData
+
+        NameDataTyCon (DataTyConSel 2)
+         -> Just $ kRate `kFun` kRate `kFun` kRate `kFun` kData
 
         -- Primitive type constructors.
         NamePrimTyCon tc
@@ -183,6 +190,31 @@ typeOfPrimName dc
 typeOfFlowOp :: FlowOp -> Type Name
 typeOfFlowOp op
  = case op of
+        -- fromStream :: [a : Data]. [k : Rate]
+        --            .  Stream k a -> Vector k a
+        FlowOpFromStream
+         -> tForalls [kData, kRate]
+         $  \[tA, tK]
+         -> tStream tK tA `tFunPE` tVector tK tA
+
+        -- fromVector :: [a : Data]. [k : Rate]
+        --            .  Vector k a -> Array a
+        FlowOpFromVector 
+         -> tForalls [kData, kRate]
+         $  \[tA, tK]
+         -> tVector tK tA `tFunPE` tArray tA
+
+        -- mkSel1#    :: [a : Data]. [k1 : Rate]
+        --            .  Stream k1 Bool#
+        --            -> ([k2 : Rate]. Sel1 k1 k2 -> a)
+        --            -> a
+        FlowOpMkSel 1
+         -> tForalls [kData, kRate]
+         $  \[tA, tK1]
+         -> tStream tK1 tBoolU
+                `tFunPE` (tForall kRate $ \tK2 -> tSel1 (liftT 1 tK1) tK2 `tFunPE` (liftT 1 tA))
+                `tFunPE` tA
+
         -- map   :: [a b : Data]. [k : Rate]
         --       .  (a -> b) -> Stream k a -> Stream k b
         FlowOpMap 1
@@ -241,7 +273,7 @@ typeOfFlowOp op
         FlowOpPack
          -> tForalls [kData, kRate, kRate]
          $  \[tA, tK1, tK2]
-         -> tSel2 tK1 tK2 
+         -> tSel1 tK1 tK2 
                 `tFunPE` tStream tK1 tA
                 `tFunPE` tStream tK2 tA
 

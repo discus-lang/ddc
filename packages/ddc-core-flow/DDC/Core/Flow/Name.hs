@@ -226,15 +226,34 @@ readFlowTyCon str
 -- FlowOp ---------------------------------------------------------------------
 -- | Flow combinators.
 data FlowOp
-        = FlowOpMap      Int
+        -- conversion
+        = FlowOpToStream
+        | FlowOpFromStream
+        | FlowOpToVector        Int
+        | FlowOpFromVector
+
+        | FlowOpMkSel           Int
+
+        -- maps
+        | FlowOpMap             Int
+
+        -- replicates
         | FlowOpRep
         | FlowOpReps
+
+        -- folds
         | FlowOpFold
         | FlowOpFolds
+
+        -- unfolds
         | FlowOpUnfold
         | FlowOpUnfolds
-        | FlowOpSplit    Int
-        | FlowOpCombine  Int
+
+        -- split/combine
+        | FlowOpSplit           Int
+        | FlowOpCombine         Int
+
+        -- packing
         | FlowOpPack
         deriving (Eq, Ord, Show)
 
@@ -243,20 +262,45 @@ instance NFData FlowOp
 instance Pretty FlowOp where
  ppr pf
   = case pf of
-        FlowOpMap i     -> text "map"     <> int i      <> text "#"
-        FlowOpRep       -> text "rep"                   <> text "#"
-        FlowOpReps      -> text "reps"                  <> text "#"
-        FlowOpFold      -> text "fold"                  <> text "#"
-        FlowOpFolds     -> text "folds"                 <> text "#"
-        FlowOpUnfold    -> text "unfold"                <> text "#"
-        FlowOpUnfolds   -> text "unfolds"               <> text "#"
-        FlowOpSplit   i -> text "split"   <> int i      <> text "#"
-        FlowOpCombine i -> text "combine" <> int i      <> text "#"
-        FlowOpPack      -> text "pack"                  <> text "#"
+        FlowOpToStream          -> text "toStream"              <> text "#"
+        FlowOpFromStream        -> text "fromStream"            <> text "#"
+        FlowOpToVector  n       -> text "toVector"   <> int n   <> text "#"
+        FlowOpFromVector        -> text "fromVector"            <> text "#"
+
+        FlowOpMkSel n           -> text "mkSel"      <> int n   <> text "#"
+
+        FlowOpMap i             -> text "map"        <> int i   <> text "#"
+
+        FlowOpRep               -> text "rep"                   <> text "#"
+        FlowOpReps              -> text "reps"                  <> text "#"
+
+        FlowOpFold              -> text "fold"                  <> text "#"
+        FlowOpFolds             -> text "folds"                 <> text "#"
+
+        FlowOpUnfold            -> text "unfold"                <> text "#"
+        FlowOpUnfolds           -> text "unfolds"               <> text "#"
+
+        FlowOpSplit   i         -> text "split"      <> int i   <> text "#"
+        FlowOpCombine i         -> text "combine"    <> int i   <> text "#"
+
+        FlowOpPack              -> text "pack"                  <> text "#"
+
 
 -- | Read a baked-in data flow operator.
 readFlowOp :: String -> Maybe FlowOp
 readFlowOp str
+        | Just rest     <- stripPrefix "toVector" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ FlowOpToVector arity
+
+        | Just rest     <- stripPrefix "mkSel" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ FlowOpMkSel arity
+
         | Just rest     <- stripPrefix "map" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -277,6 +321,10 @@ readFlowOp str
 
         | otherwise
         = case str of
+                "toStream#"     -> Just $ FlowOpToStream
+                "fromStream#"   -> Just $ FlowOpFromStream
+                "toVector#"     -> Just $ FlowOpToVector 1
+                "fromVector#"   -> Just $ FlowOpFromVector
                 "map#"          -> Just $ FlowOpMap 1
                 "rep#"          -> Just $ FlowOpRep
                 "reps#"         -> Just $ FlowOpReps
@@ -291,10 +339,11 @@ readFlowOp str
 -- DataTyCon ------------------------------------------------------------------
 -- | Baked-in data type constructors.
 data DataTyCon
-        = DataTyConStream       -- ^ @Stream@  type constructor.
+        = DataTyConArray        -- ^ @Array@   type constructor.
         | DataTyConVector       -- ^ @Vector@  type constructor.
+        | DataTyConStream       -- ^ @Stream@  type constructor.
         | DataTyConSegd         -- ^ @Segd@    type constructor.
-        | DataTyConSel2         -- ^ @Sel2@     type constructor.
+        | DataTyConSel Int      -- ^ @SelN@    type constructor.
         deriving (Eq, Ord, Show)
 
 instance NFData DataTyCon
@@ -302,19 +351,22 @@ instance NFData DataTyCon
 instance Pretty DataTyCon where
  ppr dc
   = case dc of
-        DataTyConStream -> text "Stream"
+        DataTyConArray  -> text "Array"
         DataTyConVector -> text "Vector"
+        DataTyConStream -> text "Stream"
         DataTyConSegd   -> text "Segd"
-        DataTyConSel2   -> text "Sel2"
+        DataTyConSel n  -> text "Sel" <> int n
 
 
 -- | Read a baked-in data type constructor.
 readDataTyCon :: String -> Maybe DataTyCon
 readDataTyCon str
  = case str of
-        "Stream"        -> Just DataTyConStream
-        "Vector"        -> Just DataTyConVector
-        "Segd"          -> Just DataTyConSegd
-        "Sel2"          -> Just DataTyConSel2
+        "Array"         -> Just $ DataTyConArray
+        "Vector"        -> Just $ DataTyConVector
+        "Stream"        -> Just $ DataTyConStream
+        "Segd"          -> Just $ DataTyConSegd
+        "Sel1"          -> Just $ DataTyConSel 1
+        "Sel2"          -> Just $ DataTyConSel 2
         _               -> Nothing
 

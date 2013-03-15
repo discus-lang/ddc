@@ -26,8 +26,9 @@ module DDC.Type.Compounds
         , takeResultKind
 
          -- * Quantifiers
-        , tForall
-        , tForalls,      takeTForalls,  eraseTForalls
+        , tForall,  tForall'
+        , tForalls, tForalls'
+        , takeTForalls,  eraseTForalls
 
           -- * Sums
         , tBot
@@ -285,12 +286,28 @@ tForall :: Kind n -> (Type n -> Type n) -> Type n
 tForall k f
         = TForall (BAnon k) (f (TVar (UIx 0)))
 
+-- | Build an anonymous type abstraction, with a single parameter.
+--   Starting the next index from the given value.
+tForall' :: Int -> Kind n -> (Type n -> Type n) -> Type n
+tForall' ix k f
+        = TForall (BAnon k) (f (TVar (UIx ix)))
+
 
 -- | Build an anonymous type abstraction, with several parameters.
+--   Starting the next index from the given value.
 tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
 tForalls ks f
  = let  bs      = [BAnon k | k <- ks]
-        us      = map (\i -> TVar (UIx i)) [0.. (length ks - 1)]
+        us      = map (\i -> TVar (UIx i)) [0 .. (length ks - 1)]
+   in   foldr TForall (f $ reverse us) bs
+
+
+-- | Build an anonymous type abstraction, with several parameters.
+--   Starting the next index from the given value.
+tForalls'  :: Int -> [Kind n] -> ([Type n] -> Type n) -> Type n
+tForalls' ix ks f
+ = let  bs      = [BAnon k | k <- ks]
+        us      = map (\i -> TVar (UIx i)) [ix .. ix + (length ks - 1)]
    in   foldr TForall (f $ reverse us) bs
 
 

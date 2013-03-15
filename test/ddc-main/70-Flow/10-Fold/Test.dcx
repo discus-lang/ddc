@@ -4,15 +4,53 @@
 -- Single stream being eaten by multiple consumers.
 :load..
 module Test with letrec
-test    [a : Data] [k : Rate]
+test    [k : Rate]
         (elems : Stream k Int#)
         : Int#
  = do   
-        sum     = fold# [:Int# Int#:] [k]
+        sum     = fold# [Int#] [Int#] [k]
                         (add# [Int#]) 0i# elems
 
-        prod    = fold# [:Int# Int#:] [k]
+        prod    = fold# [Int#] [Int#] [k]
                         (mul# [Int#]) 1i# elems
 
-        add# [:Int#:] sum prod;;
+        add# [:Int#:] sum prod
+;;
 
+
+-- Diamond dependency
+:load..
+module Test with letrec
+
+det     (x : Nat#) : Nat#
+ = add# [Nat#] x x
+
+max     (n1 : Nat#) (n2 : Nat#) : Nat#
+ = case gt# [Nat#] n1 n2 of
+        True#   -> n1
+        False#  -> n2
+
+test    [k1     : Rate]
+        (points : Stream k1 Nat#)
+        : Array Nat#
+ = do   
+        dets    
+         = map# [Nat#] [Nat#]  [k1] 
+                det points
+
+        flags   
+         = map# [Nat#] [Bool#] [k1] 
+                (gt# [Nat#] 0#) dets
+
+        vAbove
+         = mkSel1# [Array Nat#] [k1] flags 
+           (/\(k2 : Rate). \(sel : Sel1 k1 k2).
+            let above   = pack# [Nat#] [k1] [k2] sel points in
+            let vAbove  = fromStream# [Nat#] [k2] above       
+            in  fromVector# [Nat#] [k2] vAbove)
+
+        xMax 
+         = fold# [Nat#] [Nat#] [k1] max 0# dets 
+
+        vAbove
+;;
