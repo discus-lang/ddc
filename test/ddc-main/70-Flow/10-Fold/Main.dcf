@@ -1,9 +1,5 @@
-:set lang Flow
 
-
--- Single stream being eaten by multiple consumers.
-:load..
-module Test with letrec
+module Main with letrec
 test    [k : Rate]
         (elems : Stream k Int#)
         : Int#
@@ -15,4 +11,4 @@ test    [k : Rate]
                         (\(x2 : Int#) (y2 : Int#). mul# [Int#] x2 y2) 1i# elems
 
         add# [:Int#:] sum prod
-;;
+

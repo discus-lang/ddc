@@ -42,6 +42,9 @@ data Mode
         -- | Pretty print a module's AST.
         | ModeAST       FilePath
 
+        -- | Lower a Flow program.
+        | ModeFlowLower FilePath
+
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath
 

@@ -115,6 +115,11 @@ parseArgs args config
         = parseArgs rest
         $ config { configWith  = configWith config ++ [file] }
 
+        -- Flow ---------------------------------
+        | "-flow-lower" : file : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeFlowLower file
+
         -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
         = parseArgs rest
@@ -197,6 +202,7 @@ flagOfMode mode
         ModeCompile{}           -> Just "-compile"
         ModeMake{}              -> Just "-make"
         ModeAST{}               -> Just "-ast"
+        ModeFlowLower{}         -> Just "-flow-lower"
         ModeToSalt{}            -> Just "-to-salt"
         ModeToC{}               -> Just "-to-c"
         ModeToLLVM{}            -> Just "-to-llvm"
