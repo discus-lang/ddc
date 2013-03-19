@@ -31,11 +31,11 @@ extractProcedure (Procedure n t paramTypes paramValues loop)
 
 
 extractLoop      :: Loop -> Exp () Name
-extractLoop (Loop _context starts bodys ends result)
+extractLoop (Loop _context starts bodys _nested ends result)
  =  xLets ()
         (  concatMap extractStmtStart starts
         ++ concatMap extractStmtBody  bodys
-        ++ concatMap extractStmtEnd   ends)
+        ++ concatMap extractStmtEnd   ends)     -- TODO: add nested
         result
 
 
@@ -49,8 +49,8 @@ extractStmtStart ss
 extractStmtBody  :: StmtBody  -> [Lets () Name]
 extractStmtBody sb
  = case sb of
-        BodyStmts ss    -> map extractStmt ss
-        BodyLoop _      -> []
+        BodyAcc n t _nStream xWorker    
+         -> [LLet LetStrict (BName n t) xWorker]
 
 
 extractStmtEnd   :: StmtEnd   -> [Lets () Name]

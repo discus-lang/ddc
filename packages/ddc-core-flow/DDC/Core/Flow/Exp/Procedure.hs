@@ -27,6 +27,7 @@ data Loop
         { loopContext           :: Context
         , loopStart             :: [StmtStart]
         , loopBody              :: [StmtBody]
+        , loopNested            :: [Loop]
         , loopEnd               :: [StmtEnd] 
         , loopResult            :: Exp () Name }
         deriving Show
@@ -53,11 +54,11 @@ data StmtStart
 
 -- | Statements that appear in the body of a loop.
 data StmtBody
-        = BodyStmts
-        { bodyStmts             :: [Stmt] }
-
-        | BodyLoop
-        { bodyLoop              :: Loop }
+        = BodyAcc
+        { bodyAccName           :: Name
+        , bodyAccType           :: Type Name
+        , bodyAccStream         :: Bound Name
+        , bodyAccExp            :: Exp () Name }
         deriving Show
 
 

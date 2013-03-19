@@ -8,8 +8,10 @@ letrec {
     = /\(k : Rate).
        \(elems : Stream k Int#).
       let sum : Int#
-            = fold# [k] [Int#] [Int#] (add# [Int#]) 0i# elems in
+            = fold# [k] [Int#] [Int#]
+                  (\(x1 y1 : Int#). add# [Int#] x1 y1) 0i# elems in
       let prod : Int#
-            = fold# [k] [Int#] [Int#] (mul# [Int#]) 1i# elems in
+            = fold# [k] [Int#] [Int#]
+                  (\(x2 y2 : Int#). mul# [Int#] x2 y2) 1i# elems in
       add# [Int#] sum prod
 }
