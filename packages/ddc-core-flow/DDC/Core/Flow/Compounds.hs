@@ -11,12 +11,19 @@ module DDC.Core.Flow.Compounds
         , tTuple2
         , tArray, tVector, tStream
         , tSegd
-        , tSel1, tSel2)
+        , tSel1, tSel2
+        , tRef
+
+        , xNew
+        , xRead
+        , xWrite
+        , xNext
+        , xLengthOfRate)
 where
 import DDC.Core.Flow.Name
 import DDC.Core.Exp
 import DDC.Core.DaCon
-import DDC.Type.Compounds
+import DDC.Core.Compounds
 
 
 -- Kind Constructors ----------------------------------------------------------
@@ -118,3 +125,43 @@ tSel2 tK1 tK2 tK3
  where  uSel2         = UPrim (NameDataTyCon $ DataTyConSel 2) kSel2
         tcSel2        = TyConBound uSel2 kSel2
         kSel2         = kRate `kFun` kRate `kFun` kRate `kFun` kData
+
+
+tRef  :: Type Name -> Type Name
+tRef tVal
+ = tApp (TCon tcRef) tVal
+ where  uRef          = UPrim (NameDataTyCon DataTyConRef) kRef
+        tcRef         = TyConBound uRef kRef
+        kRef          = kData `kFun` kData
+
+
+-- Operators ------------------------------------------------------------------
+xNew :: Type Name -> Exp () Name -> Exp () Name
+xNew t xV
+ = xApps () (XVar () (UName (NameStoreOp StoreOpNew)))
+            [XType t, xV ]
+
+
+xRead :: Type Name -> Exp () Name -> Exp () Name
+xRead t xRef
+ = xApps () (XVar () (UName (NameStoreOp StoreOpRead)))
+            [XType t, xRef ]
+
+
+xWrite :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xWrite t xRef xVal
+ = xApps () (XVar () (UName (NameStoreOp StoreOpWrite)))
+            [XType t, xRef, xVal ]
+
+
+xNext  :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xNext t xStream xIndex
+ = xApps () (XVar () (UName (NameStoreOp StoreOpNext)))
+            [XType t, xStream, xIndex]
+
+
+xLengthOfRate :: Type Name -> Exp () Name
+xLengthOfRate t
+ = XApp () (XVar () $ UName (NameFlowOp FlowOpLengthOfRate)) 
+           (XType t)
+

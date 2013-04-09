@@ -19,7 +19,7 @@ data Procedure
         , procedureType         :: Type Name
         , procedureParamTypes   :: [Bind Name]
         , procedureParamValues  :: [Bind Name]
-        , procedureLoop         :: Loop  }
+        , procedureNest         :: [Loop]  }
 
 -- | A loop nest.
 data Loop
@@ -38,7 +38,7 @@ data Context
 
         | ContextRate           
         { contextRate           :: Type Name }
-        deriving Show
+        deriving (Show, Eq)
 
 
 -- | Statements that appear at the start of a loop.
@@ -54,10 +54,36 @@ data StmtStart
 
 -- | Statements that appear in the body of a loop.
 data StmtBody
-        = BodyAcc
-        { bodyAccName           :: Name
+        -- | Read from an accumulator.
+        = BodyAccRead
+        { -- | Name of the accumulator.
+          bodyAccName           :: Name
+
+          -- | Type of the accumulator.
         , bodyAccType           :: Type Name
+
+          -- | Name of the read value
+        , bodyAccNameBind       :: Bind Name
+        }
+
+        -- | Body of an accumulation operation.
+        --   Writes to the accumulator.
+        | BodyAccWrite
+
+        { -- | Name of the accumulator.
+          bodyAccName           :: Name
+
+          -- | Type of the accumulator.
+        , bodyAccType           :: Type Name
+
+          -- | Stream being read.
         , bodyAccStream         :: Bound Name
+
+          -- | Parameter that binds the next element from the
+          --   stream in the body expression.
+        , bodyAccParamElem      :: Bind Name
+
+          -- | Expression to update the accumulator.
         , bodyAccExp            :: Exp () Name }
         deriving Show
 

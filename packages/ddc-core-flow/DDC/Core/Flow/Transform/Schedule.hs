@@ -26,41 +26,44 @@ scheduleProcess
                 , procedureType         = ty
                 , procedureParamTypes   = psType
                 , procedureParamValues  = psValue
-                , procedureLoop         = foldl' scheduleOperator loop0 ops })
+                , procedureNest         = foldl' scheduleOperator nest0 ops })
   where
-        loop0   = Loop
+        nest0   
+         = [ Loop
                 { loopContext           = ContextTop
                 , loopStart             = []
                 , loopBody              = []
                 , loopNested            = []
                 , loopEnd               = [] 
-                , loopResult            = xUnit () }
+                , loopResult            = xUnit () } ]
 
 
 -- | Schedule a single stream operator into a loop nest.
-scheduleOperator :: Loop -> Operator -> Loop
-scheduleOperator loop op
+scheduleOperator :: [Loop] -> Operator -> [Loop]
+scheduleOperator nest op
  | OpFold{}                     <- op
  , BName n@(NameVar strName) t  <- opResult op
  = let  
         nAcc    = NameVar $ strName ++ "_acc"
 
-        loop1   = insertStarts loop   ContextTop
-                        [ StartAcc nAcc t (opZero op) ]
+        nest1   = insertStarts nest   ContextTop
+                   [ StartAcc nAcc t (opZero op) ]
 
-        loop2   = insertBody   loop1 (ContextRate (opRate op))
-                        [ BodyAcc nAcc t
-                                (opStream op)
+        nest2   = insertBody   nest1 (ContextRate (opRate op))
+                   [ BodyAccRead  nAcc t (opWorkerParamAcc op)
+                   , BodyAccWrite nAcc t 
+                                (opStream op) 
+                                (opWorkerParamElem op)
                                 (opWorkerBody op) ]
 
-        loop3   = insertEnds   loop2  ContextTop
+        nest3   = insertEnds   nest2  ContextTop
                         [ EndAcc   n t nAcc ]
-
-   in   loop3
+   in   nest3
 
  -- TODO: we're assuming the only plain statement is the result expression.
  | OpBase x           <- op
- = loop { loopResult  = x }
+ , loopTop : loops    <- nest
+ = loopTop { loopResult  = x } : loops
 
  | otherwise
  = error "scheduleOperator: can't schedule"
@@ -68,17 +71,56 @@ scheduleOperator loop op
 
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
-insertStarts :: Loop -> Context -> [StmtStart] -> Loop
-insertStarts (Loop c starts body nested end result) _c' starts'       -- TODO: put into correct context.
- = Loop c (starts ++ starts') body nested end result
+--   TODO: proper context.
+insertStarts :: [Loop] -> Context -> [StmtStart] -> [Loop]
+
+insertStarts [] c' starts' 
+ = insertStarts
+    [Loop c' [] [] [] [] (xUnit ())] c' starts'
+
+insertStarts (loop : loops) c' starts' 
+ | Loop c starts body nested end result        <- loop
+ , c == c'
+ = Loop c (starts ++ starts') body nested end result : loops
+
+ | otherwise
+ = loop : insertStarts loops c' starts'
 
 
+-------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
-insertBody :: Loop -> Context -> [StmtBody] -> Loop
-insertBody (Loop c starts body nested end result) _c' body'       -- TODO: put into correct context.
- = Loop c starts (body ++ body') nested end result
+--   TODO: proper context
+insertBody :: [Loop] -> Context -> [StmtBody] -> [Loop]
 
+insertBody [] c' body'
+ = insertBody 
+    [Loop c' [] [] [] [] (xUnit ())] c' body'
+
+insertBody  (loop : loops) c' body' 
+ | Loop c starts body nested end result         <- loop
+ , c == c'
+ = Loop c starts (body ++ body') nested end result : loops
+
+ | otherwise
+ = loop : insertBody loops c' body'
+
+
+-------------------------------------------------------------------------------
 -- | Insert ending statements in the given context.
-insertEnds :: Loop -> Context -> [StmtEnd] -> Loop
-insertEnds (Loop c starts body nested end result) _c' ends'           -- TODO: put into correct context.
- = Loop c starts body nested (end ++ ends') result
+insertEnds :: [Loop] -> Context -> [StmtEnd] -> [Loop] 
+
+insertEnds [] c' ends' 
+ = insertEnds 
+    [Loop c' [] [] [] [] (xUnit ())] c' ends'
+
+insertEnds (loop : loops) c' ends' 
+ | Loop c starts body nested end result       <- loop
+ , c == c'
+ = Loop c starts body nested (end ++ ends') result : loops
+
+ | otherwise
+ = loop : insertEnds loops c' ends'
+
+
+
+

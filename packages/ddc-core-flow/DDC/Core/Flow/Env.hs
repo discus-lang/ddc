@@ -152,6 +152,9 @@ kindOfPrimName nn
         NameDataTyCon (DataTyConSel 2)
          -> Just $ kRate `kFun` kRate `kFun` kRate `kFun` kData
 
+        NameDataTyCon DataTyConRef
+         -> Just $ kData `kFun` kData
+
         -- Primitive type constructors.
         NamePrimTyCon tc
          -> Just $ kindOfPrimTyCon tc

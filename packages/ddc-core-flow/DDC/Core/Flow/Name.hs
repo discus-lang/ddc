@@ -7,6 +7,12 @@ module DDC.Core.Flow.Name
         , FlowTyCon     (..)
         , FlowOp        (..)
 
+        -- * Loop combinators.
+        , LoopOp        (..)
+
+        -- * Store operators.
+        , StoreOp       (..)
+
         -- * Data type constructors.
         , DataTyCon     (..)
         , DataCon       (..)
@@ -42,8 +48,7 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
-
-        -- | Flow rate kind.
+        -- | Flow kind constructors.
         | NameFlowKiCon         FlowKiCon
 
         -- | Flow type constructors.
@@ -52,6 +57,11 @@ data Name
         -- | Flow combinators.
         | NameFlowOp            FlowOp
 
+        -- | Loop combinators.
+        | NameLoopOp            LoopOp
+
+        -- | Store operators.
+        | NameStoreOp           StoreOp
 
         -- | Baked in data type constructors.
         | NameDataTyCon         DataTyCon
@@ -93,6 +103,9 @@ instance NFData Name where
         NameFlowTyCon con       -> rnf con
         NameFlowOp    op        -> rnf op
 
+        NameLoopOp    op        -> rnf op
+        NameStoreOp   op        -> rnf op
+
         NameDataTyCon con       -> rnf con
         NameDataCon con         -> rnf con
 
@@ -116,6 +129,9 @@ instance Pretty Name where
         NameFlowTyCon con       -> ppr con
         NameFlowOp    op        -> ppr op
 
+        NameLoopOp    op        -> ppr op
+        NameStoreOp   op        -> ppr op
+
         NameDataTyCon dc        -> ppr dc
         NameDataCon   con       -> ppr con
 
@@ -134,10 +150,16 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
 
-        -- Flow constructors
+        -- Flow names.
         | Just p        <- readFlowKiCon str    = Just $ NameFlowKiCon p
         | Just p        <- readFlowTyCon str    = Just $ NameFlowTyCon p
         | Just p        <- readFlowOp    str    = Just $ NameFlowOp    p
+
+        -- Loop combinator names.
+        | Just p        <- readLoopOp    str    = Just $ NameLoopOp    p
+
+        -- Store operator names.
+        | Just p        <- readStoreOp   str    = Just $ NameStoreOp   p
 
         -- Data types.
         | Just p        <- readDataTyCon str    = Just $ NameDataTyCon p
@@ -239,9 +261,15 @@ data FlowOp
         -- conversion
         = FlowOpToStream
         | FlowOpFromStream
+        | FlowOpLengthOfStream
+
         | FlowOpToVector        Int
         | FlowOpFromVector
 
+        -- rate conversion
+        | FlowOpLengthOfRate    
+
+        -- selectors
         | FlowOpMkSel           Int
 
         -- maps
@@ -274,8 +302,12 @@ instance Pretty FlowOp where
   = case pf of
         FlowOpToStream          -> text "toStream"              <> text "#"
         FlowOpFromStream        -> text "fromStream"            <> text "#"
+        FlowOpLengthOfStream    -> text "lengthOfStream"        <> text "#"
+
         FlowOpToVector  n       -> text "toVector"   <> int n   <> text "#"
         FlowOpFromVector        -> text "fromVector"            <> text "#"
+
+        FlowOpLengthOfRate      -> text "lengthOfRate"          <> text "#"
 
         FlowOpMkSel n           -> text "mkSel"      <> int n   <> text "#"
 
@@ -331,19 +363,80 @@ readFlowOp str
 
         | otherwise
         = case str of
-                "toStream#"     -> Just $ FlowOpToStream
-                "fromStream#"   -> Just $ FlowOpFromStream
-                "toVector#"     -> Just $ FlowOpToVector 1
-                "fromVector#"   -> Just $ FlowOpFromVector
-                "map#"          -> Just $ FlowOpMap 1
-                "rep#"          -> Just $ FlowOpRep
-                "reps#"         -> Just $ FlowOpReps
-                "fold#"         -> Just $ FlowOpFold
-                "folds#"        -> Just $ FlowOpFolds
-                "unfold#"       -> Just $ FlowOpUnfold
-                "unfolds#"      -> Just $ FlowOpUnfolds
-                "pack#"         -> Just $ FlowOpPack
-                _               -> Nothing
+                "toStream#"       -> Just $ FlowOpToStream
+                "fromStream#"     -> Just $ FlowOpFromStream
+                "lengthOfStream#" -> Just $ FlowOpLengthOfStream
+
+                "toVector#"       -> Just $ FlowOpToVector 1
+                "fromVector#"     -> Just $ FlowOpFromVector
+
+                "lengthOfRate#"   -> Just $ FlowOpLengthOfRate
+
+                "map#"            -> Just $ FlowOpMap 1
+                "rep#"            -> Just $ FlowOpRep
+                "reps#"           -> Just $ FlowOpReps
+                "fold#"           -> Just $ FlowOpFold
+                "folds#"          -> Just $ FlowOpFolds
+                "unfold#"         -> Just $ FlowOpUnfold
+                "unfolds#"        -> Just $ FlowOpUnfolds
+                "pack#"           -> Just $ FlowOpPack
+                _                 -> Nothing
+
+
+-- LoopOp ---------------------------------------------------------------------
+data LoopOp
+        = LoopOpLoop
+        deriving (Eq, Ord, Show)
+
+instance NFData LoopOp
+
+instance Pretty LoopOp where
+ ppr fo
+  = case fo of
+        LoopOpLoop              -> text "loop#"
+
+
+-- | Read a baked-in loop operator.
+readLoopOp :: String -> Maybe LoopOp
+readLoopOp str
+        | str == "loop#"
+        = Just $ LoopOpLoop
+
+        | otherwise
+        = Nothing
+
+
+-- StoreOp --------------------------------------------------------------------
+data StoreOp
+        = StoreOpNew            -- ^ @new#@   operator.
+        | StoreOpRead           -- ^ @read#@  operator.
+        | StoreOpWrite          -- ^ @write#@ operator.
+
+        | StoreOpNext           -- ^ @next#@  operator.
+        deriving (Eq, Ord, Show)
+
+instance NFData StoreOp
+
+instance Pretty StoreOp where
+ ppr so
+  = case so of
+        StoreOpNew              -> text "new#"
+        StoreOpRead             -> text "read#"
+        StoreOpWrite            -> text "write#"
+
+        StoreOpNext             -> text "next#"
+
+
+-- | Read a baked-in store operator.
+readStoreOp :: String -> Maybe StoreOp
+readStoreOp str
+ = case str of
+        "new#"          -> Just StoreOpNew
+        "read#"         -> Just StoreOpRead
+        "write#"        -> Just StoreOpWrite
+
+        "next#"         -> Just StoreOpNext
+        _               -> Nothing
 
 
 -- DataTyCon ------------------------------------------------------------------
@@ -355,6 +448,8 @@ data DataTyCon
         | DataTyConStream       -- ^ @Stream@  type constructor.
         | DataTyConSegd         -- ^ @Segd@    type constructor.
         | DataTyConSel Int      -- ^ @SelN@    type constructor.
+
+        | DataTyConRef          -- ^ @Ref@     type constructor.
         deriving (Eq, Ord, Show)
 
 instance NFData DataTyCon
@@ -368,6 +463,7 @@ instance Pretty DataTyCon where
         DataTyConStream         -> text "Stream"
         DataTyConSegd           -> text "Segd"
         DataTyConSel n          -> text "Sel" <> int n
+        DataTyConRef            -> text "Ref"
 
 
 -- | Read a baked-in data type constructor.
@@ -387,6 +483,7 @@ readDataTyCon str
                 "Segd"          -> Just $ DataTyConSegd
                 "Sel1"          -> Just $ DataTyConSel 1
                 "Sel2"          -> Just $ DataTyConSel 2
+                "Ref"           -> Just $ DataTyConRef
                 _               -> Nothing
 
 -- DataCon --------------------------------------------------------------------
