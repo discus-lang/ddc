@@ -14,11 +14,12 @@ import DDC.Core.Flow.Name
 --   original program.
 data Process
         = Process
-        { processName          :: Name
-        , processType          :: Type Name
-        , processParamTypes    :: [Bind Name]
-        , processParamValues   :: [Bind Name]
-        , processOperators     :: [Operator] }
+        { processName           :: Name
+        , processType           :: Type Name
+        , processParamTypes     :: [Bind Name]
+        , processParamValues    :: [Bind Name]
+        , processOperators      :: [Operator] 
+        , processResult         :: Exp () Name }
 
 
 -------------------------------------------------------------------------------

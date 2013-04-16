@@ -19,7 +19,8 @@ data Procedure
         , procedureType         :: Type Name
         , procedureParamTypes   :: [Bind Name]
         , procedureParamValues  :: [Bind Name]
-        , procedureNest         :: [Loop]  }
+        , procedureNest         :: [Loop]  
+        , procedureResult       :: Exp () Name }
 
 -- | A loop nest.
 data Loop
@@ -32,14 +33,9 @@ data Loop
         , loopResult            :: Exp () Name }
         deriving Show
 
--- | Loop contexts.
 data Context
-        = ContextTop
-
-        | ContextRate           
-        { contextRate           :: Type Name }
+        = Context (Type Name)
         deriving (Show, Eq)
-
 
 -- | Statements that appear at the start of a loop.
 --   These initialise accumulators.

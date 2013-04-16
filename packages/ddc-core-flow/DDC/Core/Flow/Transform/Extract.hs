@@ -27,33 +27,24 @@ extractTop procs
 
 -- | Extract code for a whole procedure.
 extractProcedure  :: Procedure -> (Bind Name, Exp () Name)
-extractProcedure (Procedure n t paramTypes paramValues nest)
+extractProcedure (Procedure n t paramTypes paramValues nest xResult)
  = ( BName n t
    ,   xLAMs () paramTypes
      $ xLams () paramValues
-     $ extractNest nest )
+     $ extractNest nest xResult )
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a loop nest.
-extractNest :: [Loop] -> Exp () Name
-extractNest loops
-        = xLets () 
-                [ LLet LetStrict (BNone tUnit) (extractLoop loop)
-                        | loop <- loops]
-                (xUnit ())
+extractNest :: [Loop] -> Exp () Name -> Exp () Name
+extractNest loops xResult
+        = xLets () (concatMap extractLoop loops) xResult
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a possibly nested loop.
-extractLoop      :: Loop -> Exp () Name
-extractLoop (Loop ContextTop _ _ nested _ _)
-        = xLets ()
-                [ LLet LetStrict (BNone tUnit) (extractLoop loop)
-                        | loop <- nested ]
-                (xUnit ())
-
-extractLoop (Loop context starts bodys _nested ends result)
+extractLoop      :: Loop -> [Lets () Name]
+extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
  = let  
         -- Starting statements.
         lsStart = concatMap extractStmtStart starts
@@ -67,7 +58,6 @@ extractLoop (Loop context starts bodys _nested ends result)
                         | ix     <- [0..] ]
 
         -- Length of the context.
-        ContextRate tRate = context
         xLength = xLengthOfRate tRate
 
         -- The loop itself.
@@ -99,7 +89,7 @@ extractLoop (Loop context starts bodys _nested ends result)
         -- Ending statements.
         lsEnd   = concatMap extractStmtEnd ends
 
-   in   xLets () (lsStart ++ [lLoop] ++ lsEnd ) result
+   in   lsStart ++ [lLoop] ++ lsEnd
 
 
 -- | Get streams read by this body statement.

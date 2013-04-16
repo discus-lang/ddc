@@ -20,22 +20,15 @@ scheduleProcess
                 , processType           = ty
                 , processParamTypes     = psType
                 , processParamValues    = psValue
-                , processOperators      = ops })
+                , processOperators      = ops 
+                , processResult         = xResult})
   =     (Procedure
                 { procedureName         = name
                 , procedureType         = ty
                 , procedureParamTypes   = psType
                 , procedureParamValues  = psValue
-                , procedureNest         = foldl' scheduleOperator nest0 ops })
-  where
-        nest0   
-         = [ Loop
-                { loopContext           = ContextTop
-                , loopStart             = []
-                , loopBody              = []
-                , loopNested            = []
-                , loopEnd               = [] 
-                , loopResult            = xUnit () } ]
+                , procedureNest         = foldl' scheduleOperator [] ops 
+                , procedureResult       = xResult })
 
 
 -- | Schedule a single stream operator into a loop nest.
@@ -46,17 +39,18 @@ scheduleOperator nest op
  = let  
         nAcc    = NameVar $ strName ++ "_acc"
 
-        nest1   = insertStarts nest   ContextTop
+        context = Context (opRate op)
+        nest1   = insertStarts nest  context
                    [ StartAcc nAcc t (opZero op) ]
 
-        nest2   = insertBody   nest1 (ContextRate (opRate op))
+        nest2   = insertBody   nest1 context
                    [ BodyAccRead  nAcc t (opWorkerParamAcc op)
                    , BodyAccWrite nAcc t 
                                 (opStream op) 
                                 (opWorkerParamElem op)
                                 (opWorkerBody op) ]
 
-        nest3   = insertEnds   nest2  ContextTop
+        nest3   = insertEnds   nest2 context
                         [ EndAcc   n t nAcc ]
    in   nest3
 
