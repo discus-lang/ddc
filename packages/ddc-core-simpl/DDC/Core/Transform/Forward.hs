@@ -2,6 +2,7 @@
 -- | Float let-bindings with a single use forward into their use-sites.
 module DDC.Core.Transform.Forward
         ( ForwardInfo   (..)
+        , FloatControl  (..)
         , forwardModule
         , forwardX)
 where
@@ -10,6 +11,7 @@ import DDC.Core.Analysis.Usage
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier.Base
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment
 import DDC.Core.Predicates
 import Data.Map                 (Map)
@@ -24,26 +26,39 @@ import qualified DDC.Core.Transform.SubstituteXX	as S
 -- | Summary of number of bindings floated.
 data ForwardInfo
         = ForwardInfo
-        { -- | Number of trivial @v1 = v2@ bindings inlined.
-          infoSubsts   :: Int
+        { -- | Number of bindings inspected.
+          infoInspected :: !Int
+
+          -- | Number of trivial @v1 = v2@ bindings inlined.
+        , infoSubsts    :: !Int
 
           -- | Number of bindings floated forwards.
-        , infoBindings :: Int }
+        , infoBindings  :: !Int }
         deriving Typeable
 
 
 instance Pretty ForwardInfo where
- ppr (ForwardInfo substs bindings)
+ ppr (ForwardInfo inspected substs bindings)
   =  text "Forward:"
   <$> indent 4 (vcat
-      [ text "Substitutions:  " <> int substs
-      , text "Bindings:       " <> int bindings ])
+      [ text "Total bindings inspected:      " <> int inspected
+      , text "  Trivial substitutions made:  " <> int substs
+      , text "  Bindings moved forward:      " <> int bindings ])
 
 
 instance Monoid ForwardInfo where
- mempty = ForwardInfo 0 0
- mappend (ForwardInfo s1 b1)(ForwardInfo s2 b2)
-        = ForwardInfo (s1 + s2) (b1 + b2)
+ mempty = ForwardInfo 0 0 0
+ mappend (ForwardInfo i1 s1 b1)(ForwardInfo i2 s2 b2)
+        = ForwardInfo (i1 + i2) (s1 + s2) (b1 + b2)
+
+
+-------------------------------------------------------------------------------
+-- | Fine control over what should be floated.
+data FloatControl
+        = FloatAllow    -- ^ Allow binding to be floated, but don't require it.
+        | FloatDeny     -- ^ Prevent a binding being floated, at all times.
+        | FloatForce    -- ^ Force   a binding to be floated, at all times.
+        deriving (Eq, Show)
 
 
 -------------------------------------------------------------------------------
@@ -51,25 +66,46 @@ instance Monoid ForwardInfo where
 --   their use sites.
 forwardModule 
         :: Ord n
-        => Profile n -> Module a n -> Module a n
+        => Profile n    -- ^ Language profile
+        -> (Lets a n -> FloatControl)   
+                        -- ^ Additional predicate to indicate whether 
+                        --   a binding should ever be floated.
+        -> Module a n 
+        -> TransformResult (Module a n)
 
-forwardModule profile mm
-        = fst   $ runWriter
-                $ forwardWith profile Map.empty 
+forwardModule profile isFloatable mm
+ = let  (mm', info)
+         = runWriter
+                $ forwardWith profile isFloatable Map.empty 
                 $ usageModule mm
+
+        progress (ForwardInfo _ s f)
+                = s + f > 0
+
+   in   TransformResult
+         { result         = mm'
+         , resultProgress = progress info
+         , resultAgain    = False
+         , resultInfo     = TransformInfo info }
 
 
 -- | Float let-bindings in an expression with a single use forward into
 --   their use-sites.
 forwardX :: Ord n
-         => Profile n -> Exp a n -> TransformResult (Exp a n)
-forwardX profile xx
+         => Profile n   -- ^ Language profile.
+         -> (Lets a n -> FloatControl)  
+                        -- ^ Additional predicate to indicate whether
+                        --   a binding should ever be floated.
+         -> Exp a n                      
+         -> TransformResult (Exp a n)
+
+forwardX profile isFloatable xx
  = let  (x',info) = runWriter
-		  $ forwardWith profile Map.empty
+		  $ forwardWith profile isFloatable Map.empty
 		  $ usageX xx
 
-        progress (ForwardInfo s _) 
-                = s > 0
+        progress (ForwardInfo _ s f) 
+                = s + f > 0
 
    in  TransformResult
         { result	 = x'
@@ -83,13 +119,16 @@ class Forward (c :: * -> * -> *) where
  -- | Carry bindings forward and downward into their use-sites.
  forwardWith 
         :: Ord n
-        => Profile n
-        -> Map n (Exp a n)
+        => Profile n            -- ^ Language profile.
+        -> (Lets a n -> FloatControl)   
+                                -- ^ Additional predicate to indicate whether
+                                --   a binding should ever be floated.
+        -> Map n (Exp a n)      -- ^ Bindings currently being carried forward.
         -> c (UsedMap n, a) n
         -> Writer ForwardInfo (c a n)
 
 instance Forward Module where
- forwardWith profile bindings 
+ forwardWith profile isFloatable bindings 
         (ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = exportKinds
@@ -98,7 +137,7 @@ instance Forward Module where
                 , moduleImportTypes     = importTypes
                 , moduleBody            = body })
 
-  = do	body' <- forwardWith profile bindings body
+  = do	body' <- forwardWith profile isFloatable bindings body
 	return ModuleCore
 		{ moduleName            = name
 		, moduleExportKinds     = exportKinds
@@ -109,9 +148,9 @@ instance Forward Module where
 
 
 instance Forward Exp where
- forwardWith profile bindings xx
+ forwardWith profile isFloatable bindings xx
   = {-# SCC forwardWith #-}
-    let down    = forwardWith profile bindings 
+    let down    = forwardWith profile isFloatable bindings 
     in case xx of
         XVar a u@(UName n)
          -> case Map.lookup n bindings of
@@ -127,28 +166,51 @@ instance Forward Exp where
         XLam a b x      -> liftM    (XLam (snd a) b) (down x)
         XApp a x1 x2    -> liftM2   (XApp (snd a))   (down x1) (down x2)
 
-        XLet (UsedMap um, _) (LLet _mode (BName n _) x1) x2
-         | isXLam x1 || isXLAM x1
-         , Just usage     <- Map.lookup n um
-         , [UsedFunction] <- filterUsedInCasts usage
-	 -> do
-                -- Record that we've moved this binding.
-                tell mempty { infoBindings = 1 }
-                x1'           <- down x1
-                forwardWith profile (Map.insert n x1' bindings) x2
-
-	-- Always float atomic bindings (variables, constructors)
+        -- Always float atomic bindings (variables, constructors)
         XLet _ (LLet _mode b x1) x2
-	 | isAtomX x1
-	 -> do 
+         | isAtomX x1
+         -> do 
                 -- Record that we've moved this binding.
-                tell mempty { infoBindings = 1 }
+                tell mempty { infoInspected = 1
+                            , infoBindings  = 1 }
 
                 -- Slow, but handles anonymous binders and shadowing
                 down $ S.substituteXX b x1 x2
 
+        XLet (UsedMap um, a') lts@(LLet mode b@(BName n _) x1) x2
+         -> do  
+                let control    = isFloatable $ reannotate snd lts
+
+                let isFun      = isXLam x1 || isXLAM x1
+
+                let isApplied
+                     | Just usage       <- Map.lookup n um
+                     , [UsedFunction]   <- filterUsedInCasts usage
+                                        = True
+                     | otherwise        = False
+
+                let shouldFloat
+                     = case control of
+                        FloatDeny       -> False
+                        FloatForce      -> True
+                        FloatAllow      -> isFun && isApplied
+
+                if shouldFloat 
+                 then do
+                        -- Record that we've moved this binding.
+                        tell mempty { infoInspected = 1
+                                    , infoBindings  = 1 }
+
+                        x1'             <- down x1
+                        let bindings'   = Map.insert n x1' bindings
+                        forwardWith profile isFloatable bindings' x2
+
+                 else do        
+                        tell mempty { infoInspected = 1}
+                        liftM2 (XLet a') (down lts) (down x2)
+
         XLet (_, a') lts x     
-         -> liftM2 (XLet a') (down lts) (down x)
+         ->     liftM2 (XLet a') (down lts) (down x)
 
         XCase a x alts  -> liftM2   (XCase (snd a)) (down x) (mapM down alts)
         XCast a c x     -> liftM2   (XCast (snd a)) (down c) (down x)
@@ -163,8 +225,8 @@ filterUsedInCasts = filter notCast
 
 
 instance Forward Cast where
- forwardWith profile bindings xx
-  = let down    = forwardWith profile bindings
+ forwardWith profile isFloatable bindings xx
+  = let down    = forwardWith profile isFloatable bindings
     in case xx of
         CastWeakenEffect eff    -> return $ CastWeakenEffect eff
         CastWeakenClosure xs    -> liftM    CastWeakenClosure (mapM down xs)
@@ -173,8 +235,8 @@ instance Forward Cast where
 
 
 instance Forward Lets where
- forwardWith profile bindings lts
-  = let down    = forwardWith profile bindings
+ forwardWith profile isFloatable bindings lts
+  = let down    = forwardWith profile isFloatable bindings
     in case lts of
         LLet mode b x   -> liftM (LLet mode b) (down x)
 
@@ -190,6 +252,6 @@ instance Forward Lets where
 
 
 instance Forward Alt where
- forwardWith profile bindings (AAlt p x)
-  = liftM (AAlt p) (forwardWith profile bindings x)
+ forwardWith profile isFloatable bindings (AAlt p x)
+  = liftM (AAlt p) (forwardWith profile isFloatable bindings x)
 

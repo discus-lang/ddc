@@ -19,7 +19,7 @@ import qualified Data.Map       as Map
 -- Used -----------------------------------------------------------------------
 -- | Tracks how a bound variable is used.
 data Used
-        -- | Bound variable is used as the function of an application.
+        -- | Bound variable is used as the function in an application.
         = UsedFunction
 
         -- | Bound variable is destructed by a case-expression.
