@@ -4,7 +4,10 @@ module DDC.Core.Salt.Env
         ( primDataDefs
         , primKindEnv
         , primTypeEnv
+        , typeOfPrimArith
+        , typeOfPrimCast
         , typeOfPrimCall
+        , typeOfPrimControl
         , typeOfPrimStore 
         , typeIsUnboxed)
 where

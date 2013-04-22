@@ -69,7 +69,6 @@ data Name
         -- | Baked in data constructors.
         | NameDataCon           DataCon
 
-
         -- | A primitive type constructor.
         | NamePrimTyCon         PrimTyCon
 

@@ -3,7 +3,12 @@ module DDC.Core.Flow.Env
         ( primDataDefs
         , primSortEnv
         , primKindEnv
-        , primTypeEnv )
+        , primTypeEnv 
+
+        , typeOfFlowOp
+        , typeOfDataCon
+        , typeOfPrimCast
+        , typeOfPrimArith)
 where
 import DDC.Core.Flow.Name
 import DDC.Core.Flow.Compounds

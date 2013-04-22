@@ -22,12 +22,24 @@ Library
         mtl             == 2.1.*,
         ddc-base        == 0.3.2.*,
         ddc-core        == 0.3.2.*,
-        ddc-core-salt   == 0.3.2.*
+        ddc-core-salt   == 0.3.2.*,
+        ddc-core-simpl  == 0.3.2.*
 
   Exposed-modules:
+        DDC.Core.Flow
         DDC.Core.Flow.Name
         DDC.Core.Flow.Profile
+        DDC.Core.Flow.Compounds
+        DDC.Core.Flow.Env
                   
+        DDC.Core.Flow.Exp.Procedure
+        DDC.Core.Flow.Exp.Process
+
+        DDC.Core.Flow.Transform.Prep
+        DDC.Core.Flow.Transform.Slurp
+        DDC.Core.Flow.Transform.Schedule
+        DDC.Core.Flow.Transform.Extract
+
   GHC-options:
         -Werror
         -Wall

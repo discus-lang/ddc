@@ -113,6 +113,7 @@ Library
         DDC.Type.Check.CheckCon
         DDC.Type.Check.Error
         DDC.Type.Check.ErrorMessage
+        DDC.Type.Check.Config
 
         DDC.Type.Collect.FreeT
 
