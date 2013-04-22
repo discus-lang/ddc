@@ -19,8 +19,9 @@ ok
             Values letted:  1
             Values skipped: 0;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      1
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Rules fired:
             Unfold:  foldrBuild
             Rewrite: foldrBuild;
@@ -31,8 +32,9 @@ ok
             Values letted:  0
             Values skipped: 0;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      1
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Rules fired:
             
 
@@ -64,8 +66,9 @@ ok
 * TRANSFORM INFORMATION: 
     fix 30:
         Forward:
-            Substitutions:  4
-            Bindings:       4;
+            Total bindings inspected:      5
+              Trivial substitutions made:  4
+              Bindings moved forward:      4;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -81,8 +84,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      10
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -101,8 +105,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       3;
+            Total bindings inspected:      13
+              Trivial substitutions made:  0
+              Bindings moved forward:      3;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -119,8 +124,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  2
-            Bindings:       3;
+            Total bindings inspected:      11
+              Trivial substitutions made:  2
+              Bindings moved forward:      3;
         Beta reduction:
             Types:          7
             Witnesses:      0
@@ -138,8 +144,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       2;
+            Total bindings inspected:      10
+              Trivial substitutions made:  0
+              Bindings moved forward:      2;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -155,8 +162,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  3
-            Bindings:       2;
+            Total bindings inspected:      8
+              Trivial substitutions made:  3
+              Bindings moved forward:      2;
         Beta reduction:
             Types:          7
             Witnesses:      0
@@ -173,8 +181,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       1;
+            Total bindings inspected:      7
+              Trivial substitutions made:  0
+              Bindings moved forward:      1;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -190,8 +199,9 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      5
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Beta reduction:
             Types:          0
             Witnesses:      0

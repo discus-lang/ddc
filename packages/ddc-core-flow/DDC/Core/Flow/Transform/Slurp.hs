@@ -32,25 +32,33 @@ slurpProcessesLts :: Lets () Name -> [Process]
 slurpProcessesLts (LRec binds)
  = catMaybes [slurpProcessLet b x | (b, x) <- binds]
 
+slurpProcessesLts (LLet _ b x)
+ = catMaybes [slurpProcessLet b x]
+
 slurpProcessesLts _
  = []
 
 
 -- | Slurp stream operators from a top-level binding.
 slurpProcessLet :: Bind Name -> Exp () Name -> Maybe Process
-slurpProcessLet (BName n t) xx
+slurpProcessLet (BName n _) xx
 
  -- TODO: check that all the type params come before the value params.
  | Just (fbs, xBody)    <- takeXLamFlags xx
  , (fbts, fbvs)         <- partition fst fbs
  , (ops,  xResult)      <- slurpProcessX xBody
- = Just $ Process
-        { processName          = n
-        , processType          = t
-        , processParamTypes    = map snd fbts
-        , processParamValues   = map snd fbvs
-        , processOperators     = ops
-        , processResult        = xResult }
+ , o : _                <- ops          -- TODO: requires at least one operator
+ = let  Just tElem      = elemTypeOfOperator o          
+                                        -- TODO: doesn't handle OpBase, or multiple streams
+                                        --       of different types.
+
+   in   Just $ Process
+         { processName          = n
+         , processType          = tElem
+         , processParamTypes    = map snd fbts
+         , processParamValues   = map snd fbvs
+         , processOperators     = ops
+         , processResult        = xResult }
 
 slurpProcessLet _ _
  = Nothing

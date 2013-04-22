@@ -42,8 +42,9 @@ ok
     Inline: No information;
     fix 5:
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      2
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Beta reduction:
             Types:          3
             Witnesses:      1
@@ -54,8 +55,9 @@ ok
             Rewrite: unboxInt_boxInt;
         Bubble: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      2
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Beta reduction:
             Types:          2
             Witnesses:      0
@@ -66,8 +68,9 @@ ok
             Unfold:  unboxInt_boxInt;
         Bubble: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       1;
+            Total bindings inspected:      3
+              Trivial substitutions made:  0
+              Bindings moved forward:      1;
         Beta reduction:
             Types:          2
             Witnesses:      0
@@ -79,8 +82,9 @@ ok
             Rewrite: unboxInt_boxInt;
         Bubble: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       2;
+            Total bindings inspected:      4
+              Trivial substitutions made:  0
+              Bindings moved forward:      2;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -93,8 +97,9 @@ ok
             Rewrite: unboxInt_boxInt;
         Bubble: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       3;
+            Total bindings inspected:      5
+              Trivial substitutions made:  0
+              Bindings moved forward:      3;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -106,8 +111,9 @@ ok
             Unfold:  unboxInt_boxInt;
         Bubble: No information;
         Forward:
-            Substitutions:  0
-            Bindings:       2;
+            Total bindings inspected:      4
+              Trivial substitutions made:  0
+              Bindings moved forward:      2;
         Beta reduction:
             Types:          0
             Witnesses:      0

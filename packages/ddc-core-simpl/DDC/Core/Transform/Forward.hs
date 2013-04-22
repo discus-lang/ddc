@@ -177,7 +177,7 @@ instance Forward Exp where
                 -- Slow, but handles anonymous binders and shadowing
                 down $ S.substituteXX b x1 x2
 
-        XLet (UsedMap um, a') lts@(LLet mode b@(BName n _) x1) x2
+        XLet (UsedMap um, a') lts@(LLet _mode (BName n _) x1) x2
          -> do  
                 let control    = isFloatable $ reannotate snd lts
 

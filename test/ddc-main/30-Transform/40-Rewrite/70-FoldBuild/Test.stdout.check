@@ -60,8 +60,9 @@ ok
             Rewrite: foldrBuild_one
             Rewrite: foldrBuild_fuse;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -74,8 +75,9 @@ ok
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
     Inline: No information;
@@ -90,8 +92,9 @@ ok
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0
 
@@ -121,8 +124,9 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
             Rewrite: foldrBuild_one
             Rewrite: foldrBuild_fuse;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -135,8 +139,9 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
         Rules fired:
             Rewrite: foldrBuild_fuse;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -149,8 +154,9 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
         Rules fired:
             Rewrite: foldrBuild_fuse;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -163,8 +169,9 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -177,8 +184,9 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
     Inline: No information;
@@ -193,8 +201,9 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0
 
@@ -226,8 +235,9 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Rules fired:
             Rewrite: foldrBuild_one;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -240,8 +250,9 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
     Inline: No information;
@@ -256,8 +267,9 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -270,8 +282,9 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Rules fired:
             Rewrite: foldrBuild_fuse;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0;
         Beta reduction:
@@ -284,8 +297,9 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Rules fired:
             ;
         Forward:
-            Substitutions:  0
-            Bindings:       0;
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
         Prune:
             Removed:        0
 

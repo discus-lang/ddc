@@ -50,8 +50,9 @@ letrec {
         Values letted:  0
         Values skipped: 0;
     Forward:
-        Substitutions:  0
-        Bindings:       0
+        Total bindings inspected:      2
+          Trivial substitutions made:  0
+          Bindings moved forward:      0
 
 letrec {
   main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#
@@ -86,8 +87,9 @@ letrec {
 ()
 * TRANSFORM INFORMATION: 
     Forward:
-        Substitutions:  0
-        Bindings:       0
+        Total bindings inspected:      2
+          Trivial substitutions made:  0
+          Bindings moved forward:      0
 
 letrec {
   main : [r : Region].Const r => Int# -(Read r + Alloc r | Use r)> Int#

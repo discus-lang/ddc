@@ -2,6 +2,7 @@
 module DDC.Core.Flow.Exp.Process
         ( Process       (..)
         , Operator      (..)
+        , elemTypeOfOperator
         , slurpOperator)
 where
 import DDC.Core.Exp
@@ -44,6 +45,14 @@ data Operator
         , opWorkerParamAcc      :: Bind   Name
         , opWorkerParamElem     :: Bind   Name
         , opWorkerBody          :: Exp () Name }
+
+
+-- | Get the type of stream element that an operator processes.
+elemTypeOfOperator :: Operator -> Maybe (Type Name)
+elemTypeOfOperator op
+ = case op of
+        OpBase{}                -> Nothing
+        OpFold{}                -> Just $ opTypeStream op
 
 
 -------------------------------------------------------------------------------
