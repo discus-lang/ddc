@@ -7,10 +7,10 @@
 
 -- Flow DSL types.
 :kind Len
-:kind Stream
-:kind Vector
-:kind Segd
-:kind Sel2
+:kind Stream#
+:kind Vector#
+:kind Segd#
+:kind Sel2#
 
 -- Flow DSL operators.
 :type map#

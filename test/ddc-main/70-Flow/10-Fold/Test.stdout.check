@@ -4,9 +4,9 @@ ok
 -- Single stream being eaten by multiple consumers.
 module Test with
 letrec {
-  test : [k : Rate].Stream k Int# -> Int#
+  test : [k : Rate].Stream# k Int# -> Int#
     = /\(k : Rate).
-       \(elems : Stream k Int#).
+       \(elems : Stream# k Int#).
       let sum : Int#
             = fold# [k] [Int#] [Int#]
                   (\(x1 y1 : Int#). add# [Int#] x1 y1) 0i# elems in
