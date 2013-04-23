@@ -42,7 +42,6 @@ prepX xx
          -> do   addWorkerArgs n [tA, tB]
                  return xx
 
-
         -- Bottom-up transform boilerplate.
         XVar{}          -> return xx
         XCon{}          -> return xx

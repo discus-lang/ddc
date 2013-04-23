@@ -47,11 +47,10 @@ slurpProcessLet (BName n _) xx
  | Just (fbs, xBody)    <- takeXLamFlags xx
  , (fbts, fbvs)         <- partition fst fbs
  , (ops,  xResult)      <- slurpProcessX xBody
- , o : _                <- ops          -- TODO: requires at least one operator
+ , o : _                <- ops  -- TODO: requires at least one operator
  = let  Just tElem      = elemTypeOfOperator o          
-                                        -- TODO: doesn't handle OpBase, or multiple streams
-                                        --       of different types.
-
+                                -- TODO: doesn't handle OpBase, or multiple
+                                --       streams of different types.
    in   Just $ Process
          { processName          = n
          , processType          = tElem

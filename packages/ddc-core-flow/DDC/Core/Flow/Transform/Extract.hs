@@ -54,7 +54,7 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         ntsRead = nub $ concatMap readStreamsOfStmtBody bodys
 
         -- Map of stream name to the deBruijn index that binds its element.
-        nixRead  = [ (n, ix) 
+        nixRead = [ (n, ix) 
                         | (n, _) <- ntsRead 
                         | ix     <- [0..] ]
 
@@ -65,8 +65,8 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         lLoop   = LLet LetStrict 
                         (BNone tUnit)
                         (xApps () (XVar  () (UName (NameOpLoop OpLoopLoop)))
-                                [ xLength       -- loop length
-                                , xBody ])      -- loop body
+                                [ xLength               -- loop length
+                                , xBody ])              -- loop body
 
         -- The worker passed to the loop# combinator.
         xBody   = XLam  () (BAnon tNat)                 -- loop counter.
@@ -148,7 +148,6 @@ extractStmtBody nixRead sb
 
             in  [ LLet LetStrict (BNone tUnit)
                    (xWrite tElem (XVar () (UName nAcc)) xWorker')]
-
 
 
 -------------------------------------------------------------------------------

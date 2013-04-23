@@ -12,7 +12,7 @@ module DDC.Core.Flow.Compounds
         , tBool, tNat, tInt, tWord
 
           -- * DaConPrim
-        , xNat,  dcNat
+        , xNat,  dcNat, xTuple2, dcTuple2
 
           -- * OpFlow
         , xLengthOfRate

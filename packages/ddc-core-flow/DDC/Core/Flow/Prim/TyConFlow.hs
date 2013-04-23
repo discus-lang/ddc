@@ -118,7 +118,7 @@ tSegd tK1 tK2   = tApps (tConTyConFlow TyConFlowSegd)     [tK1, tK2]
 
 
 tSel1 :: Type Name -> Type Name -> Type Name
-tSel1 tK1 tK2   = tApps (tConTyConFlow $ TyConFlowSel 1)  [tK1, tK2]
+tSel1 tK1 tK2     = tApps (tConTyConFlow $ TyConFlowSel 1)  [tK1, tK2]
 
 
 tSel2 :: Type Name -> Type Name -> Type Name -> Type Name

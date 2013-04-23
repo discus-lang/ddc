@@ -45,14 +45,15 @@ scheduleOperator nest op
                    [ StartAcc nAcc tElem (opZero op) ]
 
         nest2   = insertBody   nest1 context
-                   [ BodyAccRead  nAcc tElem (opWorkerParamAcc op)
+                   [ BodyAccRead  nAcc tElem 
+                        (opWorkerParamAcc op)
                    , BodyAccWrite nAcc tElem 
-                                (opStream op) 
-                                (opWorkerParamElem op)
-                                (opWorkerBody op) ]
+                        (opStream op) 
+                        (opWorkerParamElem op)
+                        (opWorkerBody op) ]
 
         nest3   = insertEnds   nest2 context
-                        [ EndAcc   n tElem nAcc ]
+                   [ EndAcc   n tElem nAcc ]
    in   nest3
 
  -- TODO: we're assuming the only plain statement is the result expression.
