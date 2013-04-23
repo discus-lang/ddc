@@ -7,7 +7,6 @@ import DDC.Core.Flow.Exp.Procedure
 import DDC.Core.Flow.Prim
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Compounds
 import DDC.Core.Transform.SubstituteXX
 import Data.List
 
@@ -63,7 +62,7 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         -- The loop itself.
         lLoop   = LLet LetStrict 
                         (BNone tUnit)
-                        (xApps () (XVar  () (UName (NameLoopOp LoopOpLoop)))
+                        (xApps () (XVar  () (UName (NameOpLoop OpLoopLoop)))
                                 [ xLength       -- loop length
                                 , xBody ])      -- loop body
 

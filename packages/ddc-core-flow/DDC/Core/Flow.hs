@@ -10,7 +10,7 @@ module DDC.Core.Flow
 
           -- * Names
         , Name          (..)
-        , DataTyCon     (..)
+        , TyConFlow     (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimCast      (..)

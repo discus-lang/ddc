@@ -38,7 +38,7 @@ prepX xx
         XApp{}
          | Just (XVar _ u, [_, XType tA, XType tB, XVar _ (UName n), _, _])
                                                <- takeXApps xx
-         , UPrim (NameFlowOp FlowOpFold) _     <- u
+         , UPrim (NameOpFlow OpFlowFold) _     <- u
          -> do   addWorkerArgs n [tA, tB]
                  return xx
 

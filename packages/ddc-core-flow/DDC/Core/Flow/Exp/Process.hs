@@ -64,7 +64,7 @@ slurpOperator
 
 slurpOperator bResult xx
  -- Slurp a fold# operator.
- | Just ( NameFlowOp FlowOpFold
+ | Just ( NameOpFlow OpFlowFold
         , [ XType tRate, XType tAcc, XType tStream
           , xWorker,     xZero,     (XVar _ uStream)])
                                 <- takeXPrimApps xx
