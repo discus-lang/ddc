@@ -25,6 +25,8 @@ module DDC.Core.Flow.Name
         -- * Name parsing
         , readName)
 where
+import DDC.Core.Flow.Name.Flow
+import DDC.Core.Flow.Name.Proc
 import DDC.Core.Salt.Name 
         ( PrimTyCon     (..),   readPrimTyCon
         , PrimCast      (..),   readPrimCast
@@ -48,6 +50,8 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
+
+        -- Flow related names -------------------
         -- | Flow kind constructors.
         | NameFlowKiCon         FlowKiCon
 
@@ -57,18 +61,24 @@ data Name
         -- | Flow combinators.
         | NameFlowOp            FlowOp
 
+
+        -- Proc related names -------------------
         -- | Loop combinators.
         | NameLoopOp            LoopOp
 
         -- | Store operators.
         | NameStoreOp           StoreOp
 
+
+        -- Data types ---------------------------
         -- | Baked in data type constructors.
         | NameDataTyCon         DataTyCon
 
         -- | Baked in data constructors.
         | NameDataCon           DataCon
 
+
+        -- Primitives ---------------------------
         -- | A primitive type constructor.
         | NamePrimTyCon         PrimTyCon
 
@@ -78,6 +88,8 @@ data Name
         -- | Primitive casting between numeric types.
         | NamePrimCast          PrimCast
 
+
+        -- Literals -----------------------------
         -- | An unboxed boolean literal
         | NameLitBool           Bool
 
@@ -198,244 +210,6 @@ readName str
 
         | otherwise
         = Nothing
-
-
--- FlowKiCon ------------------------------------------------------------------
--- | Flow kind constructors.
-data FlowKiCon
-        = FlowKiConNatP
-        | FlowKiConRate
-        deriving (Eq, Ord, Show)
-
-instance NFData FlowKiCon
-
-instance Pretty FlowKiCon where
- ppr con
-  = case con of
-        FlowKiConNatP   -> text "Nat'"
-        FlowKiConRate   -> text "Rate"
-
-
--- | Read a flow kind constructor.
-readFlowKiCon :: String -> Maybe FlowKiCon
-readFlowKiCon str
- = case str of
-        "Nat'"  -> Just $ FlowKiConNatP
-        "Rate"  -> Just $ FlowKiConRate
-        _       -> Nothing
-
-
--- FlowTyCon ------------------------------------------------------------------
-data FlowTyCon
-        = FlowTyConNatP  Int
-        | FlowTyConLen
-        deriving (Eq, Ord, Show)
-
-instance NFData FlowTyCon
-
-instance Pretty FlowTyCon where
- ppr con
-  = case con of
-        FlowTyConNatP n -> int n <> text "'"
-        FlowTyConLen    -> text "Len"
-
-
--- | Read a flow type constructor.
-readFlowTyCon :: String -> Maybe FlowTyCon
-readFlowTyCon str
-        | (ds, str2)    <- span isDigit str
-        , not $ null ds
-        , Just ""       <- stripPrefix "'" str2
-        = Just $ FlowTyConNatP (read ds)
-
-        | otherwise
-        = case str of
-                "Len"   -> Just $ FlowTyConLen
-                _       -> Nothing
-
-
--- FlowOp ---------------------------------------------------------------------
--- | Flow combinators.
-data FlowOp
-        -- conversion
-        = FlowOpToStream
-        | FlowOpFromStream
-        | FlowOpLengthOfStream
-
-        | FlowOpToVector        Int
-        | FlowOpFromVector
-
-        -- rate conversion
-        | FlowOpLengthOfRate    
-
-        -- selectors
-        | FlowOpMkSel           Int
-
-        -- maps
-        | FlowOpMap             Int
-
-        -- replicates
-        | FlowOpRep
-        | FlowOpReps
-
-        -- folds
-        | FlowOpFold
-        | FlowOpFolds
-
-        -- unfolds
-        | FlowOpUnfold
-        | FlowOpUnfolds
-
-        -- split/combine
-        | FlowOpSplit           Int
-        | FlowOpCombine         Int
-
-        -- packing
-        | FlowOpPack
-        deriving (Eq, Ord, Show)
-
-instance NFData FlowOp
-
-instance Pretty FlowOp where
- ppr pf
-  = case pf of
-        FlowOpToStream          -> text "toStream"              <> text "#"
-        FlowOpFromStream        -> text "fromStream"            <> text "#"
-        FlowOpLengthOfStream    -> text "lengthOfStream"        <> text "#"
-
-        FlowOpToVector  n       -> text "toVector"   <> int n   <> text "#"
-        FlowOpFromVector        -> text "fromVector"            <> text "#"
-
-        FlowOpLengthOfRate      -> text "lengthOfRate"          <> text "#"
-
-        FlowOpMkSel n           -> text "mkSel"      <> int n   <> text "#"
-
-        FlowOpMap i             -> text "map"        <> int i   <> text "#"
-
-        FlowOpRep               -> text "rep"                   <> text "#"
-        FlowOpReps              -> text "reps"                  <> text "#"
-
-        FlowOpFold              -> text "fold"                  <> text "#"
-        FlowOpFolds             -> text "folds"                 <> text "#"
-
-        FlowOpUnfold            -> text "unfold"                <> text "#"
-        FlowOpUnfolds           -> text "unfolds"               <> text "#"
-
-        FlowOpSplit   i         -> text "split"      <> int i   <> text "#"
-        FlowOpCombine i         -> text "combine"    <> int i   <> text "#"
-
-        FlowOpPack              -> text "pack"                  <> text "#"
-
-
--- | Read a baked-in data flow operator.
-readFlowOp :: String -> Maybe FlowOp
-readFlowOp str
-        | Just rest     <- stripPrefix "toVector" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ FlowOpToVector arity
-
-        | Just rest     <- stripPrefix "mkSel" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ FlowOpMkSel arity
-
-        | Just rest     <- stripPrefix "map" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ FlowOpMap arity
-
-        | Just rest     <- stripPrefix "split" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ FlowOpSplit arity
-
-        | Just rest     <- stripPrefix "combine" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ FlowOpCombine arity
-
-        | otherwise
-        = case str of
-                "toStream#"       -> Just $ FlowOpToStream
-                "fromStream#"     -> Just $ FlowOpFromStream
-                "lengthOfStream#" -> Just $ FlowOpLengthOfStream
-
-                "toVector#"       -> Just $ FlowOpToVector 1
-                "fromVector#"     -> Just $ FlowOpFromVector
-
-                "lengthOfRate#"   -> Just $ FlowOpLengthOfRate
-
-                "map#"            -> Just $ FlowOpMap 1
-                "rep#"            -> Just $ FlowOpRep
-                "reps#"           -> Just $ FlowOpReps
-                "fold#"           -> Just $ FlowOpFold
-                "folds#"          -> Just $ FlowOpFolds
-                "unfold#"         -> Just $ FlowOpUnfold
-                "unfolds#"        -> Just $ FlowOpUnfolds
-                "pack#"           -> Just $ FlowOpPack
-                _                 -> Nothing
-
-
--- LoopOp ---------------------------------------------------------------------
-data LoopOp
-        = LoopOpLoop
-        deriving (Eq, Ord, Show)
-
-instance NFData LoopOp
-
-instance Pretty LoopOp where
- ppr fo
-  = case fo of
-        LoopOpLoop              -> text "loop#"
-
-
--- | Read a baked-in loop operator.
-readLoopOp :: String -> Maybe LoopOp
-readLoopOp str
-        | str == "loop#"
-        = Just $ LoopOpLoop
-
-        | otherwise
-        = Nothing
-
-
--- StoreOp --------------------------------------------------------------------
-data StoreOp
-        = StoreOpNew            -- ^ @new#@   operator.
-        | StoreOpRead           -- ^ @read#@  operator.
-        | StoreOpWrite          -- ^ @write#@ operator.
-
-        | StoreOpNext           -- ^ @next#@  operator.
-        deriving (Eq, Ord, Show)
-
-instance NFData StoreOp
-
-instance Pretty StoreOp where
- ppr so
-  = case so of
-        StoreOpNew              -> text "new#"
-        StoreOpRead             -> text "read#"
-        StoreOpWrite            -> text "write#"
-
-        StoreOpNext             -> text "next#"
-
-
--- | Read a baked-in store operator.
-readStoreOp :: String -> Maybe StoreOp
-readStoreOp str
- = case str of
-        "new#"          -> Just StoreOpNew
-        "read#"         -> Just StoreOpRead
-        "write#"        -> Just StoreOpWrite
-
-        "next#"         -> Just StoreOpNext
-        _               -> Nothing
 
 
 -- DataTyCon ------------------------------------------------------------------

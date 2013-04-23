@@ -40,6 +40,9 @@ Library
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Extract
 
+  Other-modules:
+        DDC.Core.Flow.Name.Flow
+
   GHC-options:
         -Werror
         -Wall
