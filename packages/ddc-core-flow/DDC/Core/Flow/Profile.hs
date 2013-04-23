@@ -5,7 +5,7 @@ module DDC.Core.Flow.Profile
         , lexModuleString
         , lexExpString)
 where
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer

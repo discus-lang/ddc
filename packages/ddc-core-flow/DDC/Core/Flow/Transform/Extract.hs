@@ -4,7 +4,7 @@ module DDC.Core.Flow.Transform.Extract
 where
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Exp.Procedure
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
@@ -68,7 +68,7 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
                                 , xBody ])      -- loop body
 
         -- The worker passed to the loop# combinator.
-        xBody   = XLam  () (BAnon tNatU)                 -- loop counter.
+        xBody   = XLam  () (BAnon tNat)                 -- loop counter.
                 $ xLets () (lsBodyNext ++ lsBodyProcess) 
                            (xUnit ())
 

@@ -5,7 +5,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp.Process
 import Data.Maybe
 import Data.List

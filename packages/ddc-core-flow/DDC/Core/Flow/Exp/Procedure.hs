@@ -9,7 +9,7 @@ module DDC.Core.Flow.Exp.Procedure
         , Stmt          (..))
 where
 import DDC.Core.Exp
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 
 
 -- | An imperative procedure made up of some loops.

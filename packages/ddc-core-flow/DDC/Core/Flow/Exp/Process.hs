@@ -7,7 +7,7 @@ module DDC.Core.Flow.Exp.Process
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 
 
 -- | A stream process consisting of abstract stream operators.

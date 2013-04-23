@@ -2,7 +2,7 @@
 module DDC.Core.Flow.Transform.Prep
         (prepModule)
 where
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp

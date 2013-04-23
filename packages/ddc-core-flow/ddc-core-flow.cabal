@@ -27,7 +27,7 @@ Library
 
   Exposed-modules:
         DDC.Core.Flow
-        DDC.Core.Flow.Name
+        DDC.Core.Flow.Prim
         DDC.Core.Flow.Profile
         DDC.Core.Flow.Compounds
         DDC.Core.Flow.Env
@@ -41,7 +41,16 @@ Library
         DDC.Core.Flow.Transform.Extract
 
   Other-modules:
-        DDC.Core.Flow.Name.Flow
+        DDC.Core.Flow.Prim.Base
+        DDC.Core.Flow.Prim.KiConFlow
+        DDC.Core.Flow.Prim.TyConFlow
+        DDC.Core.Flow.Prim.TyConPrim
+        DDC.Core.Flow.Prim.DaConFlow
+        DDC.Core.Flow.Prim.DaConPrim
+        DDC.Core.Flow.Prim.OpFlow
+        DDC.Core.Flow.Prim.OpLoop
+        DDC.Core.Flow.Prim.OpStore
+
 
   GHC-options:
         -Werror

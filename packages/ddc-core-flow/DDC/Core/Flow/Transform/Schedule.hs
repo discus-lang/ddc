@@ -4,7 +4,7 @@ module DDC.Core.Flow.Transform.Schedule
 where
 import DDC.Core.Flow.Exp.Procedure
 import DDC.Core.Flow.Exp.Process
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import Data.List

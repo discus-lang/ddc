@@ -23,5 +23,5 @@ module DDC.Core.Flow
         , lexExpString)
 
 where
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Profile
