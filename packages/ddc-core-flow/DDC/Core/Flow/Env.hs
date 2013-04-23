@@ -85,8 +85,7 @@ primSortEnv  = Env.setPrimFun sortOfPrimName Env.empty
 
 -- | Take the sort of a primitive kind name.
 sortOfPrimName :: Name -> Maybe (Sort Name)
-sortOfPrimName _
- = Nothing
+sortOfPrimName _ = Nothing
 
 
 -- Kinds ----------------------------------------------------------------------
@@ -102,16 +101,11 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameKiConFlow KiConFlowNatP
-         -> Just sProp
-
-        NameKiConFlow KiConFlowRate
-         -> Just sProp
-
-        NameTyConFlow tc
-         -> Just $ kindTyConFlow tc
-
-        _ -> Nothing
+        NameKiConFlow KiConFlowNatP     -> Just sProp
+        NameKiConFlow KiConFlowRate     -> Just sProp
+        NameTyConFlow tc                -> Just $ kindTyConFlow tc
+        NamePrimTyCon tc                -> Just $ kindPrimTyCon tc
+        _                               -> Nothing
 
 
 -- Types ----------------------------------------------------------------------

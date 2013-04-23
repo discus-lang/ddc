@@ -50,6 +50,7 @@ Library
         DDC.Core.Flow.Prim.OpFlow
         DDC.Core.Flow.Prim.OpLoop
         DDC.Core.Flow.Prim.OpStore
+        DDC.Core.Flow.Prim.OpPrim
 
 
   GHC-options:

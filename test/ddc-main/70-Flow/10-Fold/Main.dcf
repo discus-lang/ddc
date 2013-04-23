@@ -1,7 +1,7 @@
 
 module Main with letrec
 test    [k : Rate]
-        (elems : Stream k Int#)
+        (elems : Stream# k Int#)
         : Int#
  = do   
         sum     = fold# [k] [Int#] [Int#]

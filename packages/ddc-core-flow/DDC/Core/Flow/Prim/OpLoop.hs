@@ -35,6 +35,6 @@ readOpLoop str
 typeOpLoop  :: OpLoop -> Type Name
 typeOpLoop op
  = case op of
-        -- loop#  :: Int -> (Int -> Unit) -> Unit
+        -- loop#  :: Nat# -> (Nat# -> Unit) -> Unit
         OpLoopLoop
-         -> tInt `tFunPE` (tInt `tFunPE` tUnit) `tFunPE` tUnit
+         -> tNat `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit

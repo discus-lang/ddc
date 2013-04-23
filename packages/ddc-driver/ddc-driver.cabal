@@ -45,6 +45,8 @@ Library
         DDC.Driver.Command.ToC
         DDC.Driver.Command.ToLlvm
         DDC.Driver.Command.ToSalt
+        DDC.Driver.Command.FlowLower
+        DDC.Driver.Command.FlowThread
         DDC.Driver.Source
         DDC.Driver.Stage
 

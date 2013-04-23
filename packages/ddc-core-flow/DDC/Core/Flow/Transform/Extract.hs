@@ -26,11 +26,13 @@ extractTop procs
 
 -- | Extract code for a whole procedure.
 extractProcedure  :: Procedure -> (Bind Name, Exp () Name)
-extractProcedure (Procedure n t paramTypes paramValues nest xResult)
- = ( BName n t
-   ,   xLAMs () paramTypes
-     $ xLams () paramValues
-     $ extractNest nest xResult )
+extractProcedure (Procedure n bsParam xsParam nest xResult tResult)
+ = let  tBody   = foldr tFunPE  tResult $ map typeOfBind xsParam
+        tQuant  = foldr TForall tBody   $ bsParam
+   in   ( BName n tQuant
+        ,   xLAMs () bsParam
+          $ xLams () xsParam
+          $ extractNest nest xResult )
 
 
 -------------------------------------------------------------------------------
@@ -75,7 +77,7 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         lsBodyNext  
                 = [LLet LetStrict 
                         (BAnon tElem) 
-                        (xNext tElem 
+                        (xNext  tRate tElem 
                                 (XVar () (UName nStream))
                                 (XVar () (UIx (0 + offset))))
                         | offset              <- [0..]

@@ -99,13 +99,6 @@ readOpFlow str
 typeOpFlow :: OpFlow -> Type Name
 typeOpFlow op
  = case op of
-        -- fromStream :: [k : Rate]. [a : Data]
-        --            .  Stream k a -> Vector k a
-        OpFlowFromStream
-         -> tForalls [kRate, kData]
-         $  \[tK, tA]
-         -> tStream tK tA `tFunPE` tVector tK tA
-
         -- toStream   :: [k : Rate]. [a : Data]
         --            .  Vector k a -> Stream k a
         OpFlowToStream
@@ -113,12 +106,23 @@ typeOpFlow op
          $  \[tK, tA]
          -> tVector tK tA `tFunPE` tStream tK tA
 
+        -- fromStream :: [k : Rate]. [a : Data]
+        --            .  Stream k a -> Vector k a
+        OpFlowFromStream
+         -> tForalls [kRate, kData]
+         $  \[tK, tA]
+         -> tStream tK tA `tFunPE` tVector tK tA
+
         -- fromVector :: [k : Rate]. [a : Data]
         --            .  Vector k a -> Array a
         OpFlowFromVector 
          -> tForalls [kRate, kData]
          $  \[tK, tA]
          -> tVector tK tA `tFunPE` tArray tA
+
+        -- lengthOfRate# :: [k : Rate]. Nat#
+        OpFlowLengthOfRate
+         -> tForall kRate $ \_ -> tNat
 
         -- mkSel1#    :: [k1 : Rate]. [a : Data]
         --            .  Stream k1 Bool#
@@ -194,7 +198,7 @@ typeOpFlow op
                 `tFunPE` tStream tK1 tA
                 `tFunPE` tStream tK2 tA
 
-        _ -> error "typeOfPrimFlow: not finished"
+        _ -> error $ "typeOfPrimFlow: not finished for " ++ show op
 
 
 -- Compounds ------------------------------------------------------------------

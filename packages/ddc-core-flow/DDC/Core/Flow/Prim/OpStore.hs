@@ -47,22 +47,22 @@ readOpStore str
 typeOpStore :: OpStore -> Type Name
 typeOpStore op
  = case op of
-        -- new#   :: [a : Data]. Int -> Array a
+        -- new#   :: [a : Data]. a -> Array# a
         OpStoreNew
-         -> tForall kData $ \tA -> tInt `tFunPE` tArray tA
+         -> tForall kData $ \tA -> tA `tFunPE` tRef tA
 
-        -- read#  :: [a : Data]. Array a -> Int -> a
+        -- read#  :: [a : Data]. Ref# a -> a
         OpStoreRead
-         -> tForall kData $ \tA -> tArray tA `tFunPE` tInt `tFunPE` tA
+         -> tForall kData $ \tA -> tRef tA `tFunPE` tA
 
-        -- write# :: [a : Data]. Array a -> Int -> a -> Unit
+        -- write# :: [a : Data]. Ref# a -> a -> Unit
         OpStoreWrite
-         -> tForall kData $ \tA -> tArray tA `tFunPE` tInt `tFunPE` tA `tFunPE` tUnit
+         -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tUnit
 
-        -- next#  :: [k : Rate]. [a : Data]. Stream k a -> Int -> a
+        -- next#  :: [k : Rate]. [a : Data]. Stream# k a -> Nat# -> a
         OpStoreNext
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tStream tK tA `tFunPE` tInt `tFunPE` tA
+         -> tForalls [kRate, kData]
+         $  \[tK, tA] -> tStream tK tA `tFunPE` tNat `tFunPE` tA
 
 
 -- Compounds ------------------------------------------------------------------
@@ -84,10 +84,10 @@ xWrite t xRef xVal
             [XType t, xRef, xVal ]
 
 
-xNext  :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xNext t xStream xIndex
+xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xNext tRate tElem xStream xIndex
  = xApps () (xVarOpStore OpStoreNext)
-            [XType t, xStream, xIndex]
+            [XType tRate, XType tElem, xStream, xIndex]
 
 
 -- Utils ----------------------------------------------------------------------

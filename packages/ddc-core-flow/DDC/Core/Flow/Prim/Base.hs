@@ -83,14 +83,29 @@ data TyConFlow
         = TyConFlowNatP  Int
         | TyConFlowLen
 
-        | TyConFlowTuple Int            -- ^ @TN@      type constructor.
-        | TyConFlowArray                -- ^ @Array#@  type constructor.
-        | TyConFlowVector               -- ^ @Vector#@ type constructor.
-        | TyConFlowStream               -- ^ @Stream#@ type constructor.
-        | TyConFlowSegd                 -- ^ @Segd#@   type constructor.
-        | TyConFlowSel Int              -- ^ @SelN#@   type constructor.
+        -- | @TN@      type constructor.
+        | TyConFlowTuple Int            
 
-        | TyConFlowRef                  -- ^ @Ref#@    type constructor.
+        -- | @Array#@  type constructor.
+        | TyConFlowArray
+
+        -- | @Vector#@ type constructor.
+        | TyConFlowVector
+
+        -- | @Stream#@ type constructor.
+        | TyConFlowStream
+
+        -- | @Segd#@   type constructor.
+        | TyConFlowSegd
+
+        -- | @SelN#@   type constructor.
+        | TyConFlowSel Int
+
+        -- | @Ref#@    type constructor.
+        | TyConFlowRef                  
+
+        -- | @World#@  state token used when converting to GHC core.
+        | TyConFlowWorld                
         deriving (Eq, Ord, Show)
 
 

@@ -44,6 +44,7 @@ Library
         DDC.Core.Transform.Namify
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Snip
+        DDC.Core.Transform.Thread
         DDC.Core.Transform.TransformX
         DDC.Core.Simplifier
 

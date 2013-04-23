@@ -120,6 +120,10 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeFlowLower file
 
+        | "-flow-thread" : file : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeFlowThread file
+
         -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
         = parseArgs rest
@@ -202,10 +206,11 @@ flagOfMode mode
         ModeCompile{}           -> Just "-compile"
         ModeMake{}              -> Just "-make"
         ModeAST{}               -> Just "-ast"
-        ModeFlowLower{}         -> Just "-flow-lower"
         ModeToSalt{}            -> Just "-to-salt"
         ModeToC{}               -> Just "-to-c"
         ModeToLLVM{}            -> Just "-to-llvm"
+        ModeFlowLower{}         -> Just "-flow-lower"
+        ModeFlowThread{}        -> Just "-flow-thread"
         ModeBaseBuild{}         -> Just "-basebuild"
         ModePrintBuilder{}      -> Just "-print-builder"
         ModePrintBaseDir{}      -> Just "-print-basedir"

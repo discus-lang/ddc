@@ -14,6 +14,7 @@ import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.BaseBuild
 import DDC.Driver.Command.FlowLower
+import DDC.Driver.Command.FlowThread
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
@@ -106,12 +107,6 @@ run config
                         (SourceFile filePath) 
                         str
 
-        -- Lower a flow program to loops.
-        ModeFlowLower filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
-                runError $ cmdFlowLower dconfig (SourceFile filePath) str
-
         -- Convert a module to Salt.
         ModeToSalt filePath
          -> do  language        <- languageFromFilePath filePath
@@ -134,6 +129,18 @@ run config
                 dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdToLlvm dconfig language (SourceFile filePath) str
+
+        -- Lower a Disciple Core Flow program to loops.
+        ModeFlowLower filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowLower dconfig (SourceFile filePath) str
+
+        -- Thread the world token through a Disciple Core Flow program.
+        ModeFlowThread filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowThread dconfig (SourceFile filePath) str
 
         -- Build the runtime and base libraries.
         ModeBaseBuild

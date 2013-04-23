@@ -11,7 +11,8 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tSegd
         , tSel1
         , tSel2
-        , tRef)
+        , tRef
+        , tWorld)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
@@ -38,6 +39,7 @@ instance Pretty TyConFlow where
         TyConFlowSegd           -> text "Segd#"
         TyConFlowSel n          -> text "Sel"   <> int n <> text "#"
         TyConFlowRef            -> text "Ref#"
+        TyConFlowWorld          -> text "World#"
 
 
 -- | Read a baked-in data type constructor.
@@ -64,6 +66,7 @@ readTyConFlow str
                 "Sel1#"         -> Just $ TyConFlowSel 1
                 "Sel2#"         -> Just $ TyConFlowSel 2
                 "Ref#"          -> Just $ TyConFlowRef
+                "World#"        -> Just $ TyConFlowWorld
                 _               -> Nothing
 
 
@@ -81,6 +84,7 @@ kindTyConFlow tc
         TyConFlowSel 1          -> kRate `kFun` kRate `kFun` kData
         TyConFlowSel 2          -> kRate `kFun` kRate `kFun` kRate `kFun` kData
         TyConFlowRef            -> kData `kFun` kData
+        TyConFlowWorld          -> kData
         _                       -> error "ddc-core-flow.kindTyConFlow: no match"
 
 
@@ -123,6 +127,10 @@ tSel2 tK1 tK2 tK3 = tApps (tConTyConFlow $ TyConFlowSel 2) [tK1, tK2, tK3]
 
 tRef  :: Type Name -> Type Name
 tRef tVal       = tApp (tConTyConFlow $ TyConFlowRef) tVal
+
+
+tWorld :: Type Name
+tWorld          = tConTyConFlow TyConFlowWorld
 
 
 -- Utils ----------------------------------------------------------------------

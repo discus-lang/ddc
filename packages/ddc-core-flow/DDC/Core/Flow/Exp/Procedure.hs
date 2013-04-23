@@ -16,11 +16,12 @@ import DDC.Core.Flow.Prim
 data Procedure
         = Procedure
         { procedureName         :: Name
-        , procedureType         :: Type Name
         , procedureParamTypes   :: [Bind Name]
         , procedureParamValues  :: [Bind Name]
         , procedureNest         :: [Loop]  
-        , procedureResult       :: Exp () Name }
+        , procedureResult       :: Exp () Name 
+        , procedureResultType   :: Type Name }
+
 
 -- | A loop nest.
 data Loop

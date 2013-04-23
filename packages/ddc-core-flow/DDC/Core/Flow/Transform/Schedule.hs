@@ -24,11 +24,11 @@ scheduleProcess
                 , processResult         = xResult})
   =     (Procedure
                 { procedureName         = name
-                , procedureType         = ty
                 , procedureParamTypes   = psType
                 , procedureParamValues  = psValue
                 , procedureNest         = foldl' scheduleOperator [] ops 
-                , procedureResult       = xResult })
+                , procedureResult       = xResult 
+                , procedureResultType   = ty })
 
 
 -- | Schedule a single stream operator into a loop nest.

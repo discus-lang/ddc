@@ -42,9 +42,6 @@ data Mode
         -- | Pretty print a module's AST.
         | ModeAST       FilePath
 
-        -- | Lower a Flow program.
-        | ModeFlowLower FilePath
-
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath
 
@@ -54,6 +51,14 @@ data Mode
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
 
+        -- Disciple Core Flow specific ----------
+        -- | Lower a Flow program.
+        | ModeFlowLower FilePath
+
+        -- | Thread the World token through a Flow program.
+        | ModeFlowThread FilePath
+
+        -- Builder ------------------------------
         -- | Build the base libraries and runtime.
         | ModeBaseBuild
 
