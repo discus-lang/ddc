@@ -48,6 +48,7 @@ module DDC.Type.Compounds
         , takeTFun
         , takeTFunArgResult
         , takeTFunWitArgResult
+        , takeTFunAllArgResult
         , arityOfType
 
           -- * Implications
@@ -436,6 +437,31 @@ takeTFunWitArgResult tt
 
         _ -> let (tvsMore, tResult)          = takeTFunArgResult tt
              in  ([], tvsMore, tResult)
+
+
+-- | Destruct the type of a possibly polymorphic function
+--   returning all kinds of quantifiers, witness arguments, 
+--   and value arguments in the order they appear, along with 
+--   the type of the result.
+takeTFunAllArgResult :: Type n -> ([Type n], Type n)
+takeTFunAllArgResult tt
+ = case tt of
+        TVar{}          -> ([], tt)
+        TCon{}          -> ([], tt)
+
+        TForall b t     
+         -> let (tsMore, tResult)       = takeTFunAllArgResult t
+            in  (typeOfBind b : tsMore, tResult)
+
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) _eff) _clo) t2
+          -> let (tsMore, tResult) = takeTFunAllArgResult t2
+             in  (t1 : tsMore, tResult)
+
+        TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
+         ->  let (tsMore, tResult) = takeTFunAllArgResult t2
+             in  (t1 : tsMore, tResult)
+
+        _ -> ([], tt)
 
 
 -- | Determine the arity of an expression by looking at its type.

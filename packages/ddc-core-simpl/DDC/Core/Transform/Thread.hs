@@ -9,6 +9,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.DataDef
 
+-------------------------------------------------------------------------------
 data Config a n
         = Config
         { -- | Data type definitions
@@ -34,7 +35,6 @@ data Config a n
         }
 
 
-
 class Thread (c :: * -> * -> *) where
  thread :: Eq n => Config a n -> c a n -> c a n
 
@@ -47,8 +47,8 @@ instance Thread Module where
 
 -- ModuleBody -----------------------------------------------------------------
 -- | Thread state token though a module body.
---    We assume every top-level binding is a stateful function
---    that needs to accept and return the state token.
+--   We assume every top-level binding is a stateful function
+--   that needs to accept and return the state token.
 threadModuleBody :: Eq n => Config a n -> Exp a n -> Exp a n
 threadModuleBody config xx
  = case xx of
@@ -71,30 +71,138 @@ threadTopLets config lts
         _ -> lts
 
 
--- TopBind --------------------------------------------------------------------
+-- TopBind ------------------------------------------------------------------
 -- | Thread state token into a top-level binding.
---    We're just assuming every top-level binding is stateful function
---    and needs to accept and return the state token.
+--   We assume every top-level binding is stateful function that needs to
+--   accept and return the state token.
 --
---    We inject the world type into the type of the function and then call
---    threadBind which will add the actual lambda for the new argument.
+--   We inject the world type into the type of the function and then call
+--   threadBind which will add the actual lambda for the new argument.
 --
 threadTopBind
         :: Eq n
         => Config a n
-        -> Bind n
-        -> Exp a n
-        -> (Bind n, Exp a n)
+        ->  Bind n -> Exp a n
+        -> (Bind n,   Exp a n)
 
 threadTopBind config b xBody
  = let  tBind   = typeOfBind b
         tBind'  = injectStateType config tBind
         b'      = replaceTypeOfBind tBind' b
+        tsArgs  = fst $ takeTFunAllArgResult tBind'
    in   ( b'
-        , threadBind config b' xBody)
+        , threadProc config xBody tsArgs)
 
 
--- | Inject the state token into the type of a top-level function.
+-- Arg ------------------------------------------------------------------------
+-- | Thread state token into an argument expression.
+--   If it is a syntactic function then we assume the function is stateful
+--   and needs the state token added, otherwise return it unharmed.
+threadArg 
+        :: Eq n
+        => Config a n
+        -> Type n -> Exp a n
+        -> Exp a n
+
+threadArg config t xx
+ = case xx of
+        XLam{}  -> threadProcArg config t xx
+        XLAM{}  -> threadProcArg config t xx
+        _       -> xx
+
+threadProcArg config t xx
+ = let  tsArgs  = fst $ takeTFunAllArgResult t
+   in   threadProc config xx tsArgs
+
+
+-- Proc -----------------------------------------------------------------------
+-- | Thread world token into the body of a stateful function (procedure).
+threadProc
+        :: Eq n
+        => Config a n
+        -> Exp a n      -- Whole expression, including lambdas.
+        -> [Type n]     -- Types of function parameters.
+        -> Exp a n
+
+-- We're out of parameters. 
+--  Now thread into the statements in the function body.
+threadProc config xx []
+ = threadProcBody config xx
+
+-- We're still decending past all the lambdas.
+--  When we get to the inner-most one then add the state parameter.
+threadProc config xx (t : tsArgs)
+ = case xx of
+        -- TODO: check arg type matches
+        XLAM a b x
+          -> XLAM a b (threadProc config x tsArgs)
+
+        -- TODO: check arg type matches.
+        XLam a b x      
+          -> XLam a b (threadProc config x tsArgs)
+
+        -- Inject a new lambda to bind the state parameter.
+        _ |  Just a     <- takeAnnotOfExp xx
+          ,  t == configTokenType config 
+          -> XLam a (BAnon (configTokenType config))
+                    (threadProc config xx tsArgs)
+
+        -- We've decended past all the lambdas,
+        -- so now thread into the procedure body.
+        _ -> threadProcBody config xx
+
+
+-- | Thread world token into a binding that isn't a function.
+threadProcBody :: Eq n => Config a n -> Exp a n -> Exp a n
+threadProcBody config xx
+ = case xx of
+ 
+        -- A statement in the procedure body.
+        XLet _ (LLet _ b x) x2
+         |  Just (XVar a (UPrim nPrim _), xsArgs) 
+                         <- takeXApps x
+         ,  Just tNew    <- configThreadMe  config nPrim
+         ,  Just mkPat   <- configThreadPat config nPrim
+         -> let 
+                tWorld  = configTokenType config
+
+                -- Thread into possibly higher order arguments.
+                tsArgs  = fst $ takeTFunAllArgResult tNew
+                xsArgs' = zipWith (threadArg config) tsArgs xsArgs
+
+                -- Add world token as final argument 
+                xsArgs_world = xsArgs' ++ [XVar a (UIx 0)]
+                x'      = xApps a (XVar a (UPrim nPrim tNew)) xsArgs_world
+
+                -- Thread into let-expression body.
+                x2'     = threadProcBody config x2
+                pat'    = mkPat (BAnon tWorld) b
+            in  XCase a x' [AAlt pat' x2']
+
+        -- A pure binding that doesn't need the token.
+        XLet a lts x
+         -> let x'      = threadProcBody config x
+            in  XLet a lts x'
+
+        XCase{}         -> error "ddc-core-simpl: thread not finished"
+
+        -- TODO: convert this to Nothing, proper exception.
+        XLAM{}          -> error "ddc-core-simpl: death XLAM"
+        XLam{}          -> error "ddc-core-simpl: death XLam"
+        XCast{}         -> error "ddc-core-simpl: death XCast"
+        XType{}         -> xx
+        XWitness{}      -> xx
+
+        -- For XVar, XCon, XApp as result value of function.
+        _
+         -> let Just a  = takeAnnotOfExp xx
+                xWorld  = XVar a (UIx 0)
+                wrap    = configWrapResultExp config
+            in  wrap xWorld xx
+
+
+-------------------------------------------------------------------------------
+-- | Inject the state token into the type of an effectful function.
 --   Eg, change  ([a b : Data]. a -> b -> Int) 
 --          to   ([a b : Data]. a -> b -> World -> (World, Int)
 injectStateType :: Config a n -> Type n -> Type n
@@ -112,154 +220,3 @@ injectStateType config tt
 
         _ -> configWrapResultType config tt
 
-
--- Bind ------------------------------------------------------------------------
--- | Thread world tokens into a let binding.
-threadBind :: Eq n => Config a n -> Bind n -> Exp a n -> Exp a n
-threadBind config bind xBody
- | tBind                        <- typeOfBind bind
- , Just (bsQuant, tBody)        <- takeTForalls tBind
- , (tsArg,   _tsResult)         <- takeTFunArgResult tBody
- = let  tks     =  map typeOfBind bsQuant ++ tsArg
-   in   threadBindFun config xBody tks
-
- | otherwise
- = thread config xBody
-
-
--- | Thread world token into a possibly functional binding.
---    If it has parameters then we know it's a function, 
---    so add the new world parameter.
-threadBindFun
-        :: Eq n
-        => Config a n
-        -> Exp a n      -- Whole expression, including lambdas.
-        -> [Type n]     -- Types of function parameters.
-        -> Exp a n
-
--- We're out of parameters. 
---  Now thread into the statements in the function body.
-threadBindFun config xx []
- = threadBindStmt config xx
-
--- We're still decending past all the lambdas.
---  When we get to the inner-most one then add the state parameter.
-threadBindFun config xx (t : tsArgs)
- = case xx of
-        -- TODO: check arg type matches
-        XLAM a b x
-          -> XLAM a b (threadBindFun config x tsArgs)
-
-        -- TODO: check arg type matches.
-        XLam a b x      
-          -> XLam a b (threadBindFun config x tsArgs)
-
-        -- Inject a new lambda to bind the state parameter.
-        _ |  Just a     <- takeAnnotOfExp xx
-          ,  t == configTokenType config 
-          -> XLam a (BAnon (configTokenType config))
-                    (threadBindFun config xx tsArgs)
-
-        -- Now thread into the function body.
-        _ -> threadBindStmt config xx
-
-
--- | Thread world token into a binding that isn't a function.
-threadBindStmt :: Eq n => Config a n -> Exp a n -> Exp a n
-threadBindStmt config xx
- = case xx of
- 
-        XLet _ (LLet _ b x) x2
-         |  Just (XVar a (UPrim nPrim _), xsArgs) 
-                         <- takeXApps x
-         ,  Just tNew    <- configThreadMe  config nPrim
-         ,  Just mkPat   <- configThreadPat config nPrim
-         -> let tWorld  = configTokenType config
-                xsArgs' = xsArgs ++ [XVar a (UIx 0)]
-                x'      = xApps a (XVar a (UPrim nPrim tNew)) xsArgs'
-                x2'     = threadBindStmt config x2
-                pat'    = mkPat (BAnon tWorld) b
-            in  XCase a x' [AAlt pat' x2']
-
-        -- A pure binding that doesn't need the token.
-        XLet a lts x
-         -> let x'      = threadBindStmt config x
-            in  XLet a lts x'
-
-        XCase{}         -> error "ddc-core-simpl: thread not finished"
-
-        -- TODO: convert this to Nothing, proper exception.
-        XLAM{}          -> error "ddc-core-simpl: death"
-        XLam{}          -> error "ddc-core-simpl: death"
-        XCast{}         -> error "ddc-core-simpl: death"
-        XType{}         -> error "ddc-core-simpl: death"
-        XWitness{}      -> error "ddc-core-simpl: death"
-
-        -- For XVar, XCon, XApp as result value of function.
-        _
-         -> let Just a  = takeAnnotOfExp xx
-                xWorld  = XVar a (UIx 0)
-                wrap    = configWrapResultExp config
-            in  wrap xWorld xx
-
-{-
-threadBindLets :: Eq n => Config a n -> Lets a n -> Lets a n
-threadBindLets config lts
- = case lts of
-        LLet m b x      
-         -> let x'      = threadBindStmt config x
-            in  LLet m b x'
-
-        LRec bxs
-         -> let bxs'    = [ (b, threadBindStmt config x) | (b, x) <- bxs]
-            in  LRec bxs'
-
-        LLetRegions{}   -> lts
-        LWithRegion{}   -> lts
--}
-
-
--------------------------------------------------------------------------------
-instance Thread Exp where
- thread config xx 
-  = let down = thread config
-    in case xx of
-        XApp{}
-         |  Just (XVar a (UPrim nPrim tPrim), xsArgs) 
-                        <- takeXApps xx
-         ,  Just tNew   <- configThreadMe config nPrim
-         -> threadIt a nPrim tPrim tNew xsArgs
-
-        -- Traversal boilerplate
-        XVar{}          -> xx
-        XCon{}          -> xx
-        XLAM  a b x     -> XLAM  a b (down x)
-        XLam  a b x     -> XLam  a b (down x)
-        XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
-        XLet  a lts x2  -> XLet  a   (down lts) (down x2)
-        XCase a x  alts -> XCase a   (down x)   (map down alts)
-        XCast a c x     -> XCast a   c          (down x)
-        XType{}         -> xx
-        XWitness{}      -> xx
-
-
-instance Thread Lets where
- thread config lts
-  = case lts of
-        LLet m b x      -> LLet m b (thread config x)  
-        LRec bxs        -> LRec [(b, thread config x) | (b, x) <- bxs]
-        LLetRegions{}   -> lts
-        LWithRegion{}   -> lts
-
-
-instance Thread Alt where
- thread config alt
-  = let down = thread config
-    in case alt of
-        AAlt w x        -> AAlt w (down x)
-
--------------------------------------------------------------------------------
-threadIt :: a -> n -> Type n -> Type n -> [Exp a n] -> Exp a n
-threadIt a nPrim tOrig _tNew xsArgs
-        = xApps a (XVar a (UPrim nPrim tOrig))
-                  xsArgs
