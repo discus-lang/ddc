@@ -64,7 +64,8 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         -- The loop itself.
         lLoop   = LLet LetStrict 
                         (BNone tUnit)
-                        (xApps () (XVar  () (UName (NameOpLoop OpLoopLoop)))
+                        (xApps () (XVar  () (UPrim (NameOpLoop OpLoopLoop) 
+                                                   (typeOpLoop OpLoopLoop)))
                                 [ xLength               -- loop length
                                 , xBody ])              -- loop body
 

@@ -18,7 +18,9 @@ module DDC.Core.Flow.Compounds
         , xLengthOfRate
 
           -- * OpStore
-        , xNew, xRead, xWrite, xNext)
+        , xNew,      xRead,      xWrite
+        , xNewArray, xReadArray, xWriteArray
+        , xNext)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow

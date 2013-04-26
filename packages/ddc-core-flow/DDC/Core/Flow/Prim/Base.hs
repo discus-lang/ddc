@@ -122,17 +122,17 @@ data OpFlow
         | OpFlowFromStream
         | OpFlowLengthOfStream
 
-        | OpFlowToVector        Int
+        | OpFlowToVector Int
         | OpFlowFromVector
 
         -- rate conversion
         | OpFlowLengthOfRate    
 
         -- selectors
-        | OpFlowMkSel           Int
+        | OpFlowMkSel Int
 
         -- maps
-        | OpFlowMap              Int
+        | OpFlowMap Int
 
         -- replicates
         | OpFlowRep
@@ -147,8 +147,8 @@ data OpFlow
         | OpFlowUnfolds
 
         -- split/combine
-        | OpFlowSplit           Int
-        | OpFlowCombine         Int
+        | OpFlowSplit   Int
+        | OpFlowCombine Int
 
         -- packing
         | OpFlowPack
@@ -163,11 +163,18 @@ data OpLoop
 
 -- | Store operators.
 data OpStore
-        = OpStoreNew                    -- ^ @new#@,   allocate a new array.
-        | OpStoreRead                   -- ^ @read#@,  read from an array.
-        | OpStoreWrite                  -- ^ @write#@, write to an array.
+        -- Assignables.
+        = OpStoreNew            -- ^ Allocate a new assignable.
+        | OpStoreRead           -- ^ Read from an assignable.
+        | OpStoreWrite          -- ^ Write to an assignable.
 
-        | OpStoreNext                   -- ^ @next#@,  take the next element of a stream.
+        -- Arrays.
+        | OpStoreNewArray       -- ^ Allocate a new array.
+        | OpStoreReadArray      -- ^ Read from an array.
+        | OpStoreWriteArray     -- ^ Write to an array.
+
+        -- Streams.
+        | OpStoreNext           -- ^ Take the next element from a stream.
         deriving (Eq, Ord, Show)
 
 

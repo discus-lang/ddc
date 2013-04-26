@@ -28,6 +28,7 @@ Library
   Exposed-modules:
         DDC.Core.Flow
         DDC.Core.Flow.Prim
+        DDC.Core.Flow.PrimState.Thread
         DDC.Core.Flow.Profile
         DDC.Core.Flow.Compounds
         DDC.Core.Flow.Env
@@ -39,6 +40,7 @@ Library
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Extract
+        DDC.Core.Flow.Transform.Storage
 
   Other-modules:
         DDC.Core.Flow.Prim.Base

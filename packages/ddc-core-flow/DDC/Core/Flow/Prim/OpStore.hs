@@ -3,9 +3,8 @@ module DDC.Core.Flow.Prim.OpStore
         ( OpStore (..)
         , readOpStore
         , typeOpStore
-        , xNew
-        , xRead
-        , xWrite
+        , xNew,      xRead,      xWrite
+        , xNewArray, xReadArray, xWriteArray
         , xNext)
 where
 import DDC.Core.Flow.Prim.KiConFlow
@@ -24,10 +23,17 @@ instance NFData OpStore
 instance Pretty OpStore where
  ppr so
   = case so of
+        -- Assignables.
         OpStoreNew              -> text "new#"
         OpStoreRead             -> text "read#"
         OpStoreWrite            -> text "write#"
 
+        -- Arrays.
+        OpStoreNewArray         -> text "newArray#"
+        OpStoreReadArray        -> text "readArray#"
+        OpStoreWriteArray       -> text "writeArray#"
+
+        -- Streams.
         OpStoreNext             -> text "next#"
 
 
@@ -39,6 +45,10 @@ readOpStore str
         "read#"         -> Just OpStoreRead
         "write#"        -> Just OpStoreWrite
 
+        "newArray#"     -> Just OpStoreNewArray
+        "readArray#"    -> Just OpStoreReadArray
+        "writeArray#"   -> Just OpStoreWriteArray
+
         "next#"         -> Just OpStoreNext
         _               -> Nothing
 
@@ -47,18 +57,35 @@ readOpStore str
 typeOpStore :: OpStore -> Type Name
 typeOpStore op
  = case op of
-        -- new#   :: [a : Data]. a -> Array# a
+        -- Assignables ----------------
+        -- new#        :: [a : Data]. a -> Array# a
         OpStoreNew
          -> tForall kData $ \tA -> tA `tFunPE` tRef tA
 
-        -- read#  :: [a : Data]. Ref# a -> a
+        -- read#       :: [a : Data]. Ref# a -> a
         OpStoreRead
          -> tForall kData $ \tA -> tRef tA `tFunPE` tA
 
-        -- write# :: [a : Data]. Ref# a -> a -> Unit
+        -- write#      :: [a : Data]. Ref# a -> a -> Unit
         OpStoreWrite
          -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tUnit
 
+        -- Arrays ---------------------
+        -- newArray#   :: [a : Data]. Nat# -> Array# a
+        OpStoreNewArray
+         -> tForall kData $ \tA -> tNat `tFunPE` tArray tA
+
+        -- readArray#  :: [a : Data]. Array# a -> NAt# -> a
+        OpStoreReadArray
+         -> tForall kData 
+         $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA
+
+        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> Void#
+        OpStoreWriteArray 
+         -> tForall kData 
+         $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA `tFunPE` tVoid
+
+        -- Streams --------------------
         -- next#  :: [k : Rate]. [a : Data]. Stream# k a -> Nat# -> a
         OpStoreNext
          -> tForalls [kRate, kData]
@@ -82,6 +109,24 @@ xWrite :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xWrite t xRef xVal
  = xApps () (xVarOpStore OpStoreWrite)
             [XType t, xRef, xVal ]
+
+
+xNewArray :: Type Name -> Exp () Name -> Exp () Name
+xNewArray t xLen
+ = xApps () (xVarOpStore OpStoreNewArray)
+            [XType t, xLen]
+
+
+xReadArray :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xReadArray t xArr xIx
+ = xApps () (xVarOpStore OpStoreReadArray)
+            [XType t, xArr, xIx]
+
+
+xWriteArray :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
+xWriteArray t xArr xIx xElem
+ = xApps () (xVarOpStore OpStoreWriteArray)
+            [XType t, xArr, xIx, xElem]
 
 
 xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
