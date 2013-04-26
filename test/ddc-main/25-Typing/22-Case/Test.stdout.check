@@ -17,10 +17,9 @@ When checking expression.
   Scrutinee of case expression is not algebraic data.
        Scrutinee type: Unit -> Unit
   
-  with: case \(x : Unit). x of {
-          _ 
-           -> ()
-        }
+  with: caselet _ 
+          = \(x : Unit). x in
+        ()
 
 
 -- Error: pattern binds more fields than provided by constructor.
@@ -58,20 +57,16 @@ When checking expression.
   Case alternatives are non-exhaustive.
    Constructors not matched: Nil
   
-  with: case xx of {
-          Cons _ _ 
-           -> ()
-        }
+  with: caselet Cons _ _  = xx in
+        ()
 
 
 -- Error: alternatives are not exhaustive, for a Large type.
 When checking expression.
   Case alternatives are non-exhaustive.
   
-  with: case xx of {
-          0  
-           -> ()
-        }
+  with: caselet 0   = xx in
+        ()
 
 
 -- Error: alternatives are overlapping due to multiple defaults.
@@ -124,10 +119,8 @@ When checking expression.
           Scrutinee type: List R0# (Int R0#)
         Constructor type: Unit
   
-  with: case xx1 of {
-          ()  
-           -> ()
-        }
+  with: caselet ()   = xx1 in
+        ()
 
 
 -- Error: pattern and discriminant types don't match.
@@ -136,10 +129,8 @@ When checking expression.
           Scrutinee type: Int R0#
             Pattern type: [^ : Data].Unit -(Alloc R0# | Empty)> List R0# ^0
   
-  with: case xx of {
-          Nil  
-           -> ()
-        }
+  with: caselet Nil   = xx in
+        ()
 
 
 -- Check that vars in alts are masked from closure
@@ -159,10 +150,8 @@ case xx of {
 
 -- Check that the HeadRead effect is crushed out when
 -- the read is on a type with no head region.
-case () of {
-  ()  
-   -> ()
-}
+caselet ()   = () in
+()
 :*: Unit
 :!: Pure
 :$: Empty

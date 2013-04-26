@@ -18,6 +18,9 @@ data Config a n
           -- | Type of the token to use.
         , configTokenType       :: Type n
 
+          -- | Type that represents a missing value.
+        , configVoidType        :: Type n
+
           -- | Wrap a type with the world token
           --   eg change Int to (World#, Int)
         , configWrapResultType  :: Type n -> Type n
@@ -205,7 +208,7 @@ threadProcBody config xx
 -- | Inject the state token into the type of an effectful function.
 --   Eg, change  ([a b : Data]. a -> b -> Int) 
 --          to   ([a b : Data]. a -> b -> World -> (World, Int)
-injectStateType :: Config a n -> Type n -> Type n
+injectStateType :: Eq n => Config a n -> Type n -> Type n
 injectStateType config tt
  = let down = injectStateType config
    in case tt of
@@ -218,5 +221,10 @@ injectStateType config tt
                  tResult' = injectStateType config tResult
             in   foldr tFunPE tResult' tsArg'
 
-        _ -> configWrapResultType config tt
+        _ | tt == configTokenType config -> tt
+          | tt == configVoidType  config -> configTokenType config
+          | otherwise                    -> configWrapResultType config tt
+
+
+
 

@@ -147,7 +147,7 @@ extractStmtBody nixRead sb
                                 bElem (XVar () (UIx ix))
                                 xWorker
 
-            in  [ LLet LetStrict (BNone tUnit)
+            in  [ LLet LetStrict (BNone tVoid)
                    (xWrite tElem (XVar () (UName nAcc)) xWorker')]
 
 

@@ -43,8 +43,8 @@ storageX xx
      -> let b'      = replaceTypeOfBind (tArray tA) b
             Just u' = takeSubstBoundOfBind b'
         in  XLet a (LLet m b'            
-                        $ xNewArray   tA (xNat () 1))
-          $ XLet a (LLet m (BNone tUnit) 
+                        $ xNewArray   tA (xNat () 8))                   -- SIZE WRONG
+          $ XLet a (LLet m (BNone tVoid) 
                         $ xWriteArray tA (XVar () u') (xNat () 0) xVal)
           $ storageX x2
 

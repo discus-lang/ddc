@@ -21,18 +21,12 @@ letrec {
   
   det : Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Float64#
     = \(l1 l2 p0 : Tuple2# Float64# Float64#).
-      case p0 of {
-        T2# (x0 : Float64#) (y0 : Float64#) 
-         -> case l1 of {
-              T2# (x1 : Float64#) (y1 : Float64#) 
-               -> case l2 of {
-                    T2# (x2 : Float64#) (y2 : Float64#) 
-                     -> sub# [Float64#]
-                            (mul# [Float64#] (sub# [Float64#] x1 x0) (sub# [Float64#] y2 y0))
-                            (mul# [Float64#] (sub# [Float64#] y1 y0) (sub# [Float64#] x2 x0))
-                  }
-            }
-      };
+      caselet T2# (x0 : Float64#) (y0 : Float64#)  = p0 in
+      caselet T2# (x1 : Float64#) (y1 : Float64#)  = l1 in
+      caselet T2# (x2 : Float64#) (y2 : Float64#)  = l2 in
+      sub# [Float64#]
+          (mul# [Float64#] (sub# [Float64#] x1 x0) (sub# [Float64#] y2 y0))
+          (mul# [Float64#] (sub# [Float64#] y1 y0) (sub# [Float64#] x2 x0));
   
   split : [k1 : Rate].Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Vector# k1 (Tuple2# Float64# Float64#) -> Tuple2# (Array# (Tuple2# Float64# Float64#)) Float64#
     = /\(k1 : Rate).

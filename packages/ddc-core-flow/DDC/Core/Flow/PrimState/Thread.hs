@@ -21,6 +21,7 @@ threadConfig
         = Config
         { configDataDefs         = primDataDefs
         , configTokenType        = tWorld
+        , configVoidType         = tVoid
         , configWrapResultType   = wrapResultType
         , configWrapResultExp    = wrapResultExp
         , configThreadMe         = threadType 
@@ -54,6 +55,7 @@ unwrapResult _
 threadType :: Name -> Maybe (Type Name)
 threadType n
  = case n of
+        -- Assignables --------------------------
         -- new#  :: [a : Data]. a -> World# -> T2# (World#, Ref# a)
         NameOpStore OpStoreNew
          -> Just $ tForall kData 
@@ -72,6 +74,26 @@ threadType n
                  $ \tA -> tRef tA `tFunPE` tA `tFunPE` tWorld
                         `tFunPE` (tTuple2 tWorld tUnit)
 
+        -- Arrays -------------------------------
+        -- newArray#   :: [a : Data]. a -> Nat# -> World# -> World#
+        NameOpStore OpStoreNewArray
+         -> Just $ tForall kData
+                 $ \tA -> tA `tFunPE` tNat `tFunPE` tWorld 
+                        `tFunPE` (tTuple2 tWorld (tArray tA))
+
+        -- readArray#  :: [a : Data]. Array# a -> Nat# -> World# -> T2# (World#, a)
+        NameOpStore OpStoreReadArray
+         -> Just $ tForall kData
+                 $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tWorld
+                        `tFunPE` (tTuple2 tWorld tA)
+
+        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> World# -> T2 (World#, Void#)
+        NameOpStore OpStoreWriteArray
+         -> Just $ tForall kData
+                 $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tA `tFunPE` tWorld
+                        `tFunPE` (tTuple2 tWorld tVoid)
+
+        -- Streams ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Stream# k a -> Int# -> World# -> (World#, a)
         NameOpStore OpStoreNext

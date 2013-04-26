@@ -89,10 +89,8 @@ let ^ : Int R0#
               = \(x : Int R0#). x in
         let ^ : Int R0# = 5 [R0#] () in
         ^1 ^0 in
-case ^0 of {
-  _ 
-   -> ()
-}
+caselet _  = ^0 in
+()
 ()
 
 

@@ -120,6 +120,14 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $   ppr lts <+> text "in"
          <$> ppr x
 
+        XCase _ x1 [AAlt p x2]
+         ->  pprParen' (d > 2)
+         $   text "caselet" <+> ppr p 
+                <+> nest 2 (breakWhen (not $ isSimpleX x1)
+                            <> text "=" <+> align (ppr x1))
+                <+> text "in"
+         <$> ppr x2
+
         XCase _ x alts
          -> pprParen' (d > 2) 
          $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line

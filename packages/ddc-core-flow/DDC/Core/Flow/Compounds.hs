@@ -9,7 +9,7 @@ module DDC.Core.Flow.Compounds
         , tLen, tTuple2, tArray, tVector, tStream, tSegd, tSel1, tSel2, tRef, tWorld
 
           -- * TyConPrim
-        , tBool, tNat, tInt, tWord
+        , tVoid, tBool, tNat, tInt, tWord
 
           -- * DaConPrim
         , xNat,  dcNat, xTuple2, dcTuple2

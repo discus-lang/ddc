@@ -235,10 +235,8 @@ letrec {
                \(^ ^ : Int r).
                case (/\(^ : Region).
                    \(^ : Int ^0).
-                  case ^0 of {
-                    I# (^ : Int#) 
-                     -> ^0
-                  }) [r] ^0 of {
+                  caselet I# (^ : Int#)  = ^0 in
+                  ^0) [r] ^0 of {
                  0i#  
                   -> ^1;
                  1i#  
@@ -248,10 +246,8 @@ letrec {
                        \(^ : Const ^0).\(^ ^ : Int ^0).
                       case (/\(^ : Region).
                           \(^ : Int ^0).
-                         case ^0 of {
-                           I# (^ : Int#) 
-                            -> ^0
-                         }) [^0] ^0 of {
+                         caselet I# (^ : Int#)  = ^0 in
+                         ^0) [^0] ^0 of {
                         0i#  
                          -> ^1;
                         1i#  
@@ -263,17 +259,13 @@ letrec {
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^2] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^2] ^1 in
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^1] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^1] ^1 in
                                   (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
                                 ((/\(^ ^ ^ : Region).
@@ -281,17 +273,13 @@ letrec {
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^2] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^2] ^1 in
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^1] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^1] ^1 in
                                   (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0
                                      ((/\(^ : Region).
@@ -303,17 +291,13 @@ letrec {
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [r] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [r] ^1 in
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [^1] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [^1] ^1 in
                            (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
@@ -322,17 +306,13 @@ letrec {
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [r] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [r] ^1 in
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [^1] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [^1] ^1 in
                            (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0
                               ((/\(^ : Region).
@@ -345,16 +325,12 @@ letrec {
       let show : Int#
             = (/\(^ : Region).
                 \(^ : Int ^0).
-               case ^0 of {
-                 I# (^ : Int#) 
-                  -> ^0
-               }) [r] x in
+               caselet I# (^ : Int#)  = ^0 in
+               ^0) [r] x in
       (/\(^ : Region).
         \(^ : Int ^0).
-       case ^0 of {
-         I# (^ : Int#) 
-          -> ^0
-       }) [r]
+       caselet I# (^ : Int#)  = ^0 in
+       ^0) [r]
           ((/\(^ : Region).
              \(^ : Int#). I# [^0] ^0) [r] 0i#)
 } in
@@ -372,10 +348,8 @@ letrec {
                \(^ ^ : Int r).
                case (/\(^ : Region).
                    \(^ : Int ^0).
-                  case ^0 of {
-                    I# (^ : Int#) 
-                     -> ^0
-                  }) [r] ^0 of {
+                  caselet I# (^ : Int#)  = ^0 in
+                  ^0) [r] ^0 of {
                  0i#  
                   -> ^1;
                  1i#  
@@ -385,10 +359,8 @@ letrec {
                        \(^ : Const ^0).\(^ ^ : Int ^0).
                       case (/\(^ : Region).
                           \(^ : Int ^0).
-                         case ^0 of {
-                           I# (^ : Int#) 
-                            -> ^0
-                         }) [^0] ^0 of {
+                         caselet I# (^ : Int#)  = ^0 in
+                         ^0) [^0] ^0 of {
                         0i#  
                          -> ^1;
                         1i#  
@@ -400,17 +372,13 @@ letrec {
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^2] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^2] ^1 in
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^1] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^1] ^1 in
                                   (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [^0] [^0] [^0] ^1 ^0)
                                 ((/\(^ ^ ^ : Region).
@@ -418,17 +386,13 @@ letrec {
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^2] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^2] ^1 in
                                   let ^ : Int#
                                         = (/\(^ : Region).
                                             \(^ : Int ^0).
-                                           case ^0 of {
-                                             I# (^ : Int#) 
-                                              -> ^0
-                                           }) [^1] ^1 in
+                                           caselet I# (^ : Int#)  = ^0 in
+                                           ^0) [^1] ^1 in
                                   (/\(^ : Region).
                                     \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [^0] [^0] [^0] ^0
                                      ((/\(^ : Region).
@@ -440,17 +404,13 @@ letrec {
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [r] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [r] ^1 in
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [^1] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [^1] ^1 in
                            (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (mul# [Int#] ^1 ^0)) [r] [r] ^1 ^0)
                          ((weakclo {[r]} in
@@ -459,17 +419,13 @@ letrec {
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [r] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [r] ^1 in
                            let ^ : Int#
                                  = (/\(^ : Region).
                                      \(^ : Int ^0).
-                                    case ^0 of {
-                                      I# (^ : Int#) 
-                                       -> ^0
-                                    }) [^1] ^1 in
+                                    caselet I# (^ : Int#)  = ^0 in
+                                    ^0) [^1] ^1 in
                            (/\(^ : Region).
                              \(^ : Int#). I# [^0] ^0) [^0] (sub# [Int#] ^1 ^0)) [r] [r] ^0
                               ((/\(^ : Region).
@@ -482,16 +438,12 @@ letrec {
       let show : Int#
             = (/\(^ : Region).
                 \(^ : Int ^0).
-               case ^0 of {
-                 I# (^ : Int#) 
-                  -> ^0
-               }) [r] x in
+               caselet I# (^ : Int#)  = ^0 in
+               ^0) [r] x in
       (/\(^ : Region).
         \(^ : Int ^0).
-       case ^0 of {
-         I# (^ : Int#) 
-          -> ^0
-       }) [r]
+       caselet I# (^ : Int#)  = ^0 in
+       ^0) [r]
           ((/\(^ : Region).
              \(^ : Int#). I# [^0] ^0) [r] 0i#)
 } in
