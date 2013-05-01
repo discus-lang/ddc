@@ -1,0 +1,19 @@
+% Disciple-BD.tex
+\begin{hcarentry}[section,updated]{Disciple}
+\report{Ben Lippmeier}%11/12
+\status{experimental, active development}
+\makeheader
+
+Disciple Core is an explicitly typed language based on System-F2, intended as an intermediate representation for a compiler. In addition to the polymorphism of System-F2 it supports region, effect and closure typing. Evaluation order is left-to-right call-by-value by default, but explicit lazy evaluation is also supported. The language includes a capability system to track whether objects are mutable or constant, and to ensure that computations that perform visible side effects are not suspended with lazy evaluation.
+
+The Disciplined Disciple Compiler (DDC) is being rewritten to use the redesigned Disciple Core language. This new DDC is at a stage where it will parse and type-check core programs, and compile first-order functions over lists to executables via C or LLVM backends. There is also an interpreter that supports the full language.
+
+\WhatsNew
+
+\begin{itemize}
+\item Over the last month we've been working on a new core language fragment, Disciple Core Flow, to support work on array fusion for Data Parallel Haskell (DPH). We're writing a GHC plugin that translates GHC core programs to Disciple Core Flow, performs array fusion, and translates back. We're using Disciple Core Flow instead of GHC Core directly because it has a simple (and working) external core format, which we use to test the fusion transform.
+\end{itemize}
+
+\FurtherReading
+  \url{http://disciple.ouroborus.net}
+\end{hcarentry}
