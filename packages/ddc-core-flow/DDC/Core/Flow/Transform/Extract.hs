@@ -78,7 +78,7 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         lsBodyNext  
                 = [LLet LetStrict 
                         (BAnon tElem) 
-                        (xNext  tRate tElem 
+                        (xNext  tElem tRate
                                 (XVar () (UName nStream))
                                 (XVar () (UIx (0 + offset))))
                         | offset              <- [0..]

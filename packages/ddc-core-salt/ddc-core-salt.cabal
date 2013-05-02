@@ -62,6 +62,7 @@ Library
         -fno-warn-orphans
         -fno-warn-missing-signatures
         -fno-warn-unused-do-bind
+        -Werror
 
   Extensions:
         KindSignatures

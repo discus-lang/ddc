@@ -7,30 +7,46 @@ where
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.DataDef
+import DDC.Base.Pretty
+import DDC.Type.Env             (KindEnv, TypeEnv)
+import qualified DDC.Type.Env   as Env
+import qualified DDC.Core.Check as Check
 
 -------------------------------------------------------------------------------
+-- | Configuration for the Thread transform.
 data Config a n
         = Config
-        { -- | Data type definitions
-          configDataDefs        :: DataDefs n
+        { -- | Config for the type checker.
+          --   We need to reconstruct the type of the result of stateful
+          --   functions when bundling them into the tuple that holds the 
+          --   state token.
+          configCheckConfig     :: Check.Config n
 
-          -- | Type of the token to use.
+          -- | Function to decide which top-level bindings are stateful and
+          --   need the state token threaded through them. If the binding with
+          --   the given name is stateful then the function should return the
+          --   new type for the binding that accepts and returns the state token.
+        , configThreadMe        :: n -> Maybe (Type n) 
+
+          -- | Type of the state token to use.
         , configTokenType       :: Type n
 
           -- | Type that represents a missing value.
+          --   If a stateful function returns a void then our thread transform
+          --   rewrites it to return the state token, instead of a tuple
+          --   that contains the token as well as a void value.
         , configVoidType        :: Type n
 
-          -- | Wrap a type with the world token
+          -- | Wrap a type with the world token.
           --   eg change Int to (World#, Int)
         , configWrapResultType  :: Type n -> Type n
 
-          -- | Wrap a result expression with the world token
-        , configWrapResultExp   :: Exp a n  -> Exp a n -> Exp a n
-
-          -- | If a name maps to a new type,
-          --   then pass the token for all matching arguments.
-        , configThreadMe        :: n -> Maybe (Type n) 
+          -- | Wrap a result expression with the state token.
+          --   The function is given the types of the world token and result,
+          --   then the expressions for the same.
+        , configWrapResultExp   :: Type n   -> Type n 
+                                -> Exp a n  -> Exp a n 
+                                -> Exp a n
 
           -- | Make a pattern which binds the world argument
           --   from a threaded primop.
@@ -38,37 +54,60 @@ data Config a n
         }
 
 
+-- | Class of things that can have a state token threaded through them.
 class Thread (c :: * -> * -> *) where
- thread :: Eq n => Config a n -> c a n -> c a n
+ thread :: (Ord n, Show n, Pretty n)
+        => Config a n 
+        -> KindEnv n -> TypeEnv n 
+        -> c a n     -> c a n
 
 
 instance Thread Module where
- thread config mm
-  = let body'   = threadModuleBody config (moduleBody mm) 
+ thread config kenv tenv mm
+  = let body'   = threadModuleBody config kenv tenv (moduleBody mm) 
     in  mm { moduleBody = body' }
 
 
--- ModuleBody -----------------------------------------------------------------
+-- Module ---------------------------------------------------------------------
 -- | Thread state token though a module body.
 --   We assume every top-level binding is a stateful function
 --   that needs to accept and return the state token.
-threadModuleBody :: Eq n => Config a n -> Exp a n -> Exp a n
-threadModuleBody config xx
+threadModuleBody 
+        :: (Ord n, Show n, Pretty n)
+        => Config a n 
+        -> KindEnv n -> TypeEnv n
+        -> Exp a n   -> Exp a n
+
+threadModuleBody config kenv tenv xx
  = case xx of
         XLet a lts x
-          -> XLet a (threadTopLets config lts) 
-                    (threadModuleBody config x)
+         -> let lts'       = threadTopLets    config kenv tenv lts
+                (bks, bts) = bindsOfLets lts
+                kenv'      = Env.extends bks kenv
+                tenv'      = Env.extends bts tenv
+                x'         = threadModuleBody config kenv' tenv' x
+            in  XLet a lts' x'
+
         _ -> xx
 
-threadTopLets    :: Eq n => Config a n -> Lets a n -> Lets a n
-threadTopLets config lts
+
+-- | Thread state token through some top-level bindings in a module.
+threadTopLets    
+        :: (Ord n, Show n, Pretty n)
+        => Config a n 
+        -> KindEnv n -> TypeEnv n
+        -> Lets a n  -> Lets a n
+
+threadTopLets config kenv tenv lts
  = case lts of
         LLet m b x
-         -> let (b', x')  = threadTopBind config b x
+         -> let (b', x')  = threadTopBind  config kenv tenv b x
             in  LLet m b' x'
 
         LRec bxs
-         -> let bxs'      = [threadTopBind config b x | (b, x) <- bxs]
+         -> let tenv'     =   Env.extends (map fst bxs) tenv
+                bxs'      = [ threadTopBind config kenv tenv' b x 
+                                | (b, x) <- bxs]
             in  LRec bxs'
 
         _ -> lts
@@ -83,18 +122,20 @@ threadTopLets config lts
 --   threadBind which will add the actual lambda for the new argument.
 --
 threadTopBind
-        :: Eq n
+        :: (Ord n, Show n, Pretty n)
         => Config a n
-        ->  Bind n -> Exp a n
+        -> KindEnv n -> TypeEnv n
+        ->  Bind n   -> Exp a n
         -> (Bind n,   Exp a n)
 
-threadTopBind config b xBody
+threadTopBind config kenv tenv b xBody
  = let  tBind   = typeOfBind b
         tBind'  = injectStateType config tBind
         b'      = replaceTypeOfBind tBind' b
+        tenv'   = Env.extend b' tenv
         tsArgs  = fst $ takeTFunAllArgResult tBind'
    in   ( b'
-        , threadProc config xBody tsArgs)
+        , threadProc config kenv tenv' xBody tsArgs)
 
 
 -- Arg ------------------------------------------------------------------------
@@ -102,62 +143,83 @@ threadTopBind config b xBody
 --   If it is a syntactic function then we assume the function is stateful
 --   and needs the state token added, otherwise return it unharmed.
 threadArg 
-        :: Eq n
+        :: (Ord n, Show n, Pretty n)
         => Config a n
-        -> Type n -> Exp a n
+        -> KindEnv n -> TypeEnv n
+        -> Type n    -> Exp a n
         -> Exp a n
 
-threadArg config t xx
+threadArg config kenv tenv t xx
  = case xx of
-        XLam{}  -> threadProcArg config t xx
-        XLAM{}  -> threadProcArg config t xx
-        _       -> xx
+        XLam a b x  
+          -> let tenv'  = Env.extend b tenv
+                 x'     = threadProcArg config kenv tenv' t x
+             in  XLam a b x'
 
-threadProcArg config t xx
+        XLAM a b x
+          -> let kenv'  = Env.extend b kenv
+                 x'     = threadProcArg config kenv' tenv t x
+             in  XLAM  a b x'
+
+        _ -> xx
+
+threadProcArg config kenv tenv t xx
  = let  tsArgs  = fst $ takeTFunAllArgResult t
-   in   threadProc config xx tsArgs
+   in   threadProc config kenv tenv xx tsArgs
 
 
 -- Proc -----------------------------------------------------------------------
 -- | Thread world token into the body of a stateful function (procedure).
 threadProc
-        :: Eq n
+        :: (Ord n, Show n, Pretty n)
         => Config a n
+        -> KindEnv n -> TypeEnv n
         -> Exp a n      -- Whole expression, including lambdas.
         -> [Type n]     -- Types of function parameters.
         -> Exp a n
 
 -- We're out of parameters. 
 --  Now thread into the statements in the function body.
-threadProc config xx []
- = threadProcBody config xx
+threadProc config kenv tenv xx []
+ = threadProcBody config kenv tenv xx
 
 -- We're still decending past all the lambdas.
 --  When we get to the inner-most one then add the state parameter.
-threadProc config xx (t : tsArgs)
+threadProc config kenv tenv xx (t : tsArgs)
  = case xx of
         -- TODO: check arg type matches
         XLAM a b x
-          -> XLAM a b (threadProc config x tsArgs)
+          -> let kenv'  = Env.extend b kenv
+                 x'     = threadProc config kenv' tenv x tsArgs
+             in  XLAM a b x'
 
         -- TODO: check arg type matches.
         XLam a b x      
-          -> XLam a b (threadProc config x tsArgs)
+          -> let tenv'  = Env.extend b tenv
+                 x'     = threadProc config kenv tenv' x tsArgs
+             in  XLam a b x'
 
         -- Inject a new lambda to bind the state parameter.
         _ |  Just a     <- takeAnnotOfExp xx
           ,  t == configTokenType config 
-          -> XLam a (BAnon (configTokenType config))
-                    (threadProc config xx tsArgs)
+          -> let b'     = BAnon (configTokenType config)
+                 tenv'  = Env.extend b' tenv
+                 x'     = threadProc config kenv tenv' xx tsArgs
+             in  XLam a b' x'
 
         -- We've decended past all the lambdas,
         -- so now thread into the procedure body.
-        _ -> threadProcBody config xx
+        _ -> threadProcBody config kenv tenv xx
 
 
 -- | Thread world token into a binding that isn't a function.
-threadProcBody :: Eq n => Config a n -> Exp a n -> Exp a n
-threadProcBody config xx
+threadProcBody 
+        :: (Ord n, Show n, Pretty n)
+        => Config a n 
+        -> KindEnv n -> TypeEnv n
+        -> Exp a n   -> Exp a n
+
+threadProcBody config kenv tenv xx
  = case xx of
  
         -- A statement in the procedure body.
@@ -171,20 +233,24 @@ threadProcBody config xx
 
                 -- Thread into possibly higher order arguments.
                 tsArgs  = fst $ takeTFunAllArgResult tNew
-                xsArgs' = zipWith (threadArg config) tsArgs xsArgs
+                xsArgs' = zipWith (threadArg config kenv tenv ) tsArgs xsArgs
 
                 -- Add world token as final argument 
                 xsArgs_world = xsArgs' ++ [XVar a (UIx 0)]
                 x'      = xApps a (XVar a (UPrim nPrim tNew)) xsArgs_world
 
                 -- Thread into let-expression body.
-                x2'     = threadProcBody config x2
+                tenv'   = Env.extend b tenv
+                x2'     = threadProcBody config kenv tenv' x2
                 pat'    = mkPat (BAnon tWorld) b
             in  XCase a x' [AAlt pat' x2']
 
         -- A pure binding that doesn't need the token.
         XLet a lts x
-         -> let x'      = threadProcBody config x
+         -> let (bks, bts) = bindsOfLets lts
+                kenv'   = Env.extends bks kenv
+                tenv'   = Env.extends bts tenv
+                x'      = threadProcBody config kenv' tenv' x
             in  XLet a lts x'
 
         XCase{}         -> error "ddc-core-simpl: thread not finished"
@@ -200,8 +266,16 @@ threadProcBody config xx
         _
          -> let Just a  = takeAnnotOfExp xx
                 xWorld  = XVar a (UIx 0)
+                tWorld  = configTokenType     config
                 wrap    = configWrapResultExp config
-            in  wrap xWorld xx
+                
+                etBody  = Check.typeOfExp (configCheckConfig config)
+                                          kenv tenv xx
+                tBody   = case etBody of
+                           Left{}  -> error "ddc-core-simpl.thread: type error in body"
+                           Right t -> t
+
+            in  wrap tWorld tBody xWorld xx
 
 
 -------------------------------------------------------------------------------
@@ -224,7 +298,4 @@ injectStateType config tt
         _ | tt == configTokenType config -> tt
           | tt == configVoidType  config -> configTokenType config
           | otherwise                    -> configWrapResultType config tt
-
-
-
 

@@ -22,11 +22,16 @@ dcNat :: Integer -> DaCon Name
 dcNat i   = mkDaConAlg (NameLitNat i) tNat
 
 
-
 -- | Construct a Tuple2#
-xTuple2 :: a -> Exp a Name -> Exp a Name -> Exp a Name
-xTuple2 a x1 x2
-        = xApps a (XCon a dcTuple2) [x1, x2]
+xTuple2 :: a 
+        -> Type Name  -> Type Name 
+        -> Exp a Name -> Exp a Name 
+        -> Exp a Name
+
+xTuple2 a t1 t2 x1 x2
+        = xApps a (XCon a dcTuple2) 
+                  [XType t1, XType t2, x1, x2]
+
 
 -- | Data constructor for Tuple2#
 dcTuple2 :: DaCon Name

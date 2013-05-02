@@ -7,11 +7,12 @@ module DDC.Core.Flow.PrimState.Thread
         , unwrapResult
         , threadType)
 where
-import DDC.Core.Flow.Env
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
+import DDC.Core.Flow.Profile
 import DDC.Core.Transform.Thread
 import DDC.Core.Exp
+import qualified DDC.Core.Check as Check
 
 
 -- | Thread config defines what state token to use,
@@ -19,7 +20,7 @@ import DDC.Core.Exp
 threadConfig :: Config () Name
 threadConfig
         = Config
-        { configDataDefs         = primDataDefs
+        { configCheckConfig      = Check.configOfProfile profile
         , configTokenType        = tWorld
         , configVoidType         = tVoid
         , configWrapResultType   = wrapResultType
@@ -35,9 +36,13 @@ wrapResultType tt
 
 
 -- | Wrap the result of a stateful computation with the state token.
-wrapResultExp  :: Exp () Name -> Exp () Name -> Exp () Name
-wrapResultExp xWorld xResult
- = xTuple2 () xWorld xResult
+wrapResultExp  
+        :: Type Name   -> Type Name 
+        -> Exp () Name -> Exp () Name 
+        -> Exp () Name
+
+wrapResultExp tWorld' tResult xWorld xResult
+ = xTuple2 () tWorld' tResult xWorld xResult
 
 
 -- | Make a pattern to unwrap the result of a stateful computation.

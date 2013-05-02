@@ -10,9 +10,9 @@ import DDC.Driver.Source
 import DDC.Data.Canned
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
+import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Transform.Thread      as Thread
 import qualified DDC.Base.Pretty                as P
-
 
 -- | Thread a state token through the given flow program.
 --     This can't be generic in the language fragment because we
@@ -34,7 +34,7 @@ cmdFlowThread _config source sourceText
                 [  PipeCoreStrip
                 [  PipeCoreHacks 
                         (Canned $ \m -> return 
-                                     $  Thread.thread threadConfig m)
+                                     $  Thread.thread threadConfig Env.empty Env.empty m)
                 [  PipeCoreOutput SinkStdout ]]]
 
         case errs of
