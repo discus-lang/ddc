@@ -102,7 +102,10 @@ data TyConFlow
         | TyConFlowRef                  
 
         -- | @World#@  state token used when converting to GHC core.
-        | TyConFlowWorld                
+        | TyConFlowWorld
+
+        -- | @RateNat#@ type constructor.          
+        | TyConFlowRateNat
         deriving (Eq, Ord, Show)
 
 
@@ -114,16 +117,14 @@ data DaConFlow
 
 -- | Flow operators.
 data OpFlow
-        -- conversion
-        = OpFlowToStream
-        | OpFlowFromStream
-        | OpFlowLengthOfStream
+        -- Stream conversions.
+        = OpFlowStreamOfVector
+        | OpFlowVectorOfStream
+        | OpFlowRateOfStream
 
-        | OpFlowToVector Int
-        | OpFlowFromVector
-
-        -- rate conversion
-        | OpFlowLengthOfRate    
+        -- Vector conversions
+        | OpFlowArrayOfVector
+        | OpFlowVectorOfArray Int
 
         -- selectors
         | OpFlowMkSel Int
@@ -155,6 +156,7 @@ data OpFlow
 -- | Loop operators.
 data OpLoop
         = OpLoopLoop
+        | OpLoopLoopN
         deriving (Eq, Ord, Show)
 
 

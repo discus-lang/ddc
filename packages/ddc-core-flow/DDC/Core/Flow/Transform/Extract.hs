@@ -58,15 +58,12 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
                         | (n, _) <- ntsRead 
                         | ix     <- [0..] ]
 
-        -- Length of the context.
-        xLength = xLengthOfRate tRate
-
         -- The loop itself.
         lLoop   = LLet LetStrict 
                         (BNone tUnit)
                         (xApps () (XVar  () (UPrim (NameOpLoop OpLoopLoop) 
                                                    (typeOpLoop OpLoopLoop)))
-                                [ xLength               -- loop length
+                                [ XType tRate           -- loop rate
                                 , xBody ])              -- loop body
 
         -- The worker passed to the loop# combinator.

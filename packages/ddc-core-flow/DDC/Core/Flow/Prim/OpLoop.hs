@@ -4,7 +4,9 @@ module DDC.Core.Flow.Prim.OpLoop
         ( readOpLoop
         , typeOpLoop)
 where
+import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConPrim
+import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Compounds
 import DDC.Core.Exp
@@ -18,23 +20,29 @@ instance NFData OpLoop
 instance Pretty OpLoop where
  ppr fo
   = case fo of
-        OpLoopLoop              -> text "loop#"
-
+        OpLoopLoop      -> text "loop#"
+        OpLoopLoopN     -> text "loopn#"
 
 -- | Read a baked-in loop operator.
 readOpLoop :: String -> Maybe OpLoop
 readOpLoop str
-        | str == "loop#"
-        = Just $ OpLoopLoop
+ = case str of
+        "loop#"         -> Just $ OpLoopLoop
+        "loopn#"        -> Just $ OpLoopLoopN
 
-        | otherwise
-        = Nothing
+        _               -> Nothing
 
 
 -- Types ----------------------------------------------------------------------
 typeOpLoop  :: OpLoop -> Type Name
 typeOpLoop op
  = case op of
-        -- loop#  :: Nat# -> (Nat# -> Unit) -> Unit
+        -- loop#  :: [k : Rate]. (Nat# -> Unit) -> Unit
         OpLoopLoop
-         -> tNat `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
+         -> tForall kRate 
+         $  \_ -> (tNat `tFunPE` tUnit) `tFunPE` tUnit
+
+        -- loopn#  :: [k : Rate]. RateNat k -> (Nat# -> Unit) -> Unit
+        OpLoopLoopN
+         -> tForall kRate 
+         $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit

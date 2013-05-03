@@ -11,7 +11,8 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tSel1
         , tSel2
         , tRef
-        , tWorld)
+        , tWorld
+        , tRateNat)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
@@ -30,13 +31,19 @@ instance Pretty TyConFlow where
  ppr dc
   = case dc of
         TyConFlowTuple n        -> text "Tuple" <> int n <> text "#"
+
         TyConFlowArray          -> text "Array#"
         TyConFlowVector         -> text "Vector#"
         TyConFlowStream         -> text "Stream#"
+
         TyConFlowSegd           -> text "Segd#"
         TyConFlowSel n          -> text "Sel"   <> int n <> text "#"
+
         TyConFlowRef            -> text "Ref#"
         TyConFlowWorld          -> text "World#"
+
+        TyConFlowRateNat        -> text "RateNat#"
+
 
 
 -- | Read a baked-in data type constructor.
@@ -53,11 +60,15 @@ readTyConFlow str
                 "Array#"        -> Just $ TyConFlowArray
                 "Vector#"       -> Just $ TyConFlowVector
                 "Stream#"       -> Just $ TyConFlowStream
+
                 "Segd#"         -> Just $ TyConFlowSegd
                 "Sel1#"         -> Just $ TyConFlowSel 1
                 "Sel2#"         -> Just $ TyConFlowSel 2
+
                 "Ref#"          -> Just $ TyConFlowRef
                 "World#"        -> Just $ TyConFlowWorld
+
+                "RateNat#"      -> Just $ TyConFlowRateNat
                 _               -> Nothing
 
 
@@ -74,6 +85,7 @@ kindTyConFlow tc
         TyConFlowSel 2          -> kRate `kFun` kRate `kFun` kRate `kFun` kData
         TyConFlowRef            -> kData `kFun` kData
         TyConFlowWorld          -> kData
+        TyConFlowRateNat        -> kRate `kFun` kData
         _                       -> error "ddc-core-flow.kindTyConFlow: no match"
 
 
@@ -112,6 +124,10 @@ tRef tVal       = tApp (tConTyConFlow $ TyConFlowRef) tVal
 
 tWorld :: Type Name
 tWorld          = tConTyConFlow TyConFlowWorld
+
+
+tRateNat :: Type Name -> Type Name
+tRateNat tK     = tApps (tConTyConFlow TyConFlowRateNat) [tK]
 
 
 -- Utils ----------------------------------------------------------------------
