@@ -12,6 +12,7 @@ import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Core.Check as Check
 
+
 -------------------------------------------------------------------------------
 -- | Configuration for the Thread transform.
 data Config a n
@@ -151,17 +152,9 @@ threadArg
 
 threadArg config kenv tenv t xx
  = case xx of
-        XLam a b x  
-          -> let tenv'  = Env.extend b tenv
-                 x'     = threadProcArg config kenv tenv' t x
-             in  XLam a b x'
-
-        XLAM a b x
-          -> let kenv'  = Env.extend b kenv
-                 x'     = threadProcArg config kenv' tenv t x
-             in  XLAM  a b x'
-
-        _ -> xx
+        XLam{}  -> threadProcArg config kenv tenv t xx
+        XLAM{}  -> threadProcArg config kenv tenv t xx
+        _       -> xx
 
 threadProcArg config kenv tenv t xx
  = let  tsArgs  = fst $ takeTFunAllArgResult t
@@ -231,13 +224,15 @@ threadProcBody config kenv tenv xx
          -> let 
                 tWorld  = configTokenType config
 
-                -- Thread into possibly higher order arguments.
-                tsArgs  = fst $ takeTFunAllArgResult tNew
-                xsArgs' = zipWith (threadArg config kenv tenv ) tsArgs xsArgs
-
                 -- Add world token as final argument 
-                xsArgs_world = xsArgs' ++ [XVar a (UIx 0)]
-                x'      = xApps a (XVar a (UPrim nPrim tNew)) xsArgs_world
+                xsArgs' = xsArgs ++ [XVar a (UIx 0)]
+
+                -- Thread into possibly higher order arguments.
+                tsArgs   = fst $ takeTFunAllArgResult tNew
+                xsArgs'' = zipWith (threadArg config kenv tenv) tsArgs xsArgs'
+
+                -- Build the final expression.
+                x'      = xApps a (XVar a (UPrim nPrim tNew)) xsArgs''
 
                 -- Thread into let-expression body.
                 tenv'   = Env.extend b tenv

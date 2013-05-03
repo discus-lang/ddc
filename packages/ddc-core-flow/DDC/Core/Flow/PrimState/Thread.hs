@@ -22,7 +22,7 @@ threadConfig
         = Config
         { configCheckConfig      = Check.configOfProfile profile
         , configTokenType        = tWorld
-        , configVoidType         = tVoid
+        , configVoidType         = tUnit
         , configWrapResultType   = wrapResultType
         , configWrapResultExp    = wrapResultExp
         , configThreadMe         = threadType 
@@ -42,14 +42,20 @@ wrapResultExp
         -> Exp () Name
 
 wrapResultExp tWorld' tResult xWorld xResult
- = xTuple2 () tWorld' tResult xWorld xResult
+ | tResult == tUnit     = xWorld
+ | otherwise            = xTuple2 () tWorld' tResult xWorld xResult
 
 
 -- | Make a pattern to unwrap the result of a stateful computation.
 unwrapResult   :: Name -> Maybe (Bind Name -> Bind Name -> Pat Name)
 unwrapResult _
  = Just unwrap
+
  where  unwrap bWorld bResult 
+         | typeOfBind bResult == tUnit
+         = PData dcTuple1 [bWorld] 
+
+         | otherwise
          = PData dcTuple2 [bWorld, bResult]
 
 
@@ -73,14 +79,14 @@ threadType n
                  $ \tA -> tRef tA `tFunPE` tWorld 
                         `tFunPE` (tTuple2 tWorld (tRef tA))
 
-        -- write# :: [a : Data]. Ref# -> a -> T2# (World#, Unit)
+        -- write# :: [a : Data]. Ref# -> a -> World# -> World#
         NameOpStore OpStoreWrite 
          -> Just $ tForall kData
-                 $ \tA -> tRef tA `tFunPE` tA `tFunPE` tWorld
-                        `tFunPE` (tTuple2 tWorld tUnit)
+                 $ \tA  -> tRef tA `tFunPE` tA 
+                        `tFunPE` tWorld `tFunPE` tWorld
 
         -- Arrays -------------------------------
-        -- newArray#   :: [a : Data]. a -> Nat# -> World# -> World#
+        -- newArray#   :: [a : Data]. a -> Nat# -> World# -> T2# (World#, Array# a)
         NameOpStore OpStoreNewArray
          -> Just $ tForall kData
                  $ \tA -> tA `tFunPE` tNat `tFunPE` tWorld 
@@ -92,26 +98,27 @@ threadType n
                  $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tWorld
                         `tFunPE` (tTuple2 tWorld tA)
 
-        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> World# -> T2 (World#, Void#)
+        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> World# -> World#
         NameOpStore OpStoreWriteArray
          -> Just $ tForall kData
-                 $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tA `tFunPE` tWorld
-                        `tFunPE` (tTuple2 tWorld tVoid)
+                 $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tA 
+                        `tFunPE` tWorld `tFunPE` tWorld
 
         -- Streams ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Stream# k a -> Int# -> World# -> (World#, a)
         NameOpStore OpStoreNext
          -> Just $ tForalls [kRate, kData]
-                 $ \[tK, tA] -> tStream tK tA `tFunPE` tInt `tFunPE` tWorld
-                             `tFunPE` (tTuple2 tWorld tA)
+                 $ \[tK, tA] -> tStream tK tA `tFunPE` tInt 
+                                `tFunPE` tWorld `tFunPE` (tTuple2 tWorld tA)
 
-        -- loop#  :: Nat# -> (Nat# -> World# -> (World#, Unit)) 
-        --        -> World# -> T2# (World#, Unit)
-        NameOpLoop  OpLoopLoop
-         -> Just $ tNat 
-                `tFunPE` (tNat `tFunPE` tWorld `tFunPE` tTuple2 tWorld tNat) 
-                `tFunPE` tWorld
-                `tFunPE` (tTuple2 tWorld tUnit)
+        -- loopn#  :: [k : Rate]. RateNat# k 
+        --         -> (Nat#  -> World# -> World#) 
+        --         -> World# -> World#
+        NameOpLoop  OpLoopLoopN
+         -> Just $ tForalls [kRate]
+                 $ \[tK] -> tRateNat tK
+                                `tFunPE`  (tNat `tFunPE` tWorld `tFunPE` tWorld)
+                                `tFunPE` tWorld `tFunPE` tWorld
 
         _ -> Nothing

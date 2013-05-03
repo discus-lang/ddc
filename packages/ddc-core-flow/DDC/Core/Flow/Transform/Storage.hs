@@ -44,7 +44,7 @@ storageX xx
             Just u' = takeSubstBoundOfBind b'
         in  XLet a (LLet m b'            
                         $ xNewArray   tA (xNat () 8))                   -- SIZE WRONG
-          $ XLet a (LLet m (BNone tVoid) 
+          $ XLet a (LLet m (BNone tUnit) 
                         $ xWriteArray tA (XVar () u') (xNat () 0) xVal)
           $ storageX x2
 

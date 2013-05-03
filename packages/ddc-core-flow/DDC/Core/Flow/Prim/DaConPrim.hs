@@ -2,8 +2,8 @@
 module DDC.Core.Flow.Prim.DaConPrim
         ( xNat
         , dcNat
-        , xTuple2
-        , dcTuple2)
+        , xTuple2, dcTuple2
+        , dcTuple1)
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
@@ -20,6 +20,12 @@ xNat a i = XCon a (dcNat i)
 -- | A Literal Nat# data constructor.
 dcNat :: Integer -> DaCon Name
 dcNat i   = mkDaConAlg (NameLitNat i) tNat
+
+
+-- | Data constructor for Tuple1#
+dcTuple1 :: DaCon Name
+dcTuple1  = mkDaConAlg (NameDaConFlow (DaConFlowTuple 1))
+          $ typeDaConFlow (DaConFlowTuple 1)
 
 
 -- | Construct a Tuple2#

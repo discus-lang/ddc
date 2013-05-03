@@ -68,7 +68,7 @@ typeOpStore op
 
         -- write#      :: [a : Data]. Ref# a -> a -> Unit
         OpStoreWrite
-         -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tVoid
+         -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tUnit
 
         -- Arrays ---------------------
         -- newArray#   :: [a : Data]. Nat# -> Array# a
@@ -80,10 +80,10 @@ typeOpStore op
          -> tForall kData 
          $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA
 
-        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> Void#
+        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> Unit
         OpStoreWriteArray 
          -> tForall kData 
-         $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA `tFunPE` tVoid
+         $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA `tFunPE` tUnit
 
         -- Streams --------------------
         -- next#  :: [a : Data]. [k : Rate]. Stream# k a -> Nat# -> a

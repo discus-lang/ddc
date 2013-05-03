@@ -40,6 +40,10 @@ readDaConFlow str
 typeDaConFlow :: DaConFlow -> Type Name
 typeDaConFlow cc
  = case cc of
+        DaConFlowTuple 1
+         -> tForalls [kData] 
+         $ \[t1] -> t1  `tFunPE` tTuple1 t1
+
         DaConFlowTuple 2
          -> tForalls [kData, kData] 
          $ \[t1, t2] -> t1 `tFunPE` t2 `tFunPE` tTuple2 t1 t2

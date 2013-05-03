@@ -7,12 +7,15 @@ module DDC.Core.Flow.Compounds
 
           -- * TyConFlow
         , tTuple2, tArray, tVector, tStream, tSegd, tSel1, tSel2, tRef, tWorld
+        , tRateNat
 
           -- * TyConPrim
         , tVoid, tBool, tNat, tInt, tWord
 
           -- * DaConPrim
-        , xNat,  dcNat, xTuple2, dcTuple2
+        , xNat,  dcNat
+        ,          dcTuple1
+        , xTuple2, dcTuple2
 
           -- * OpFlow
         , xRateOfStream
