@@ -14,6 +14,12 @@ module DDC.Core.Flow.Compounds
           -- * DaConPrim
         , xNat,  dcNat, xTuple2, dcTuple2
 
+          -- * OpFlow
+        , xRateOfStream
+
+          -- * OpLoop
+        , xLoopLoopN
+
           -- * OpStore
         , xNew,      xRead,      xWrite
         , xNewArray, xReadArray, xWriteArray
@@ -23,5 +29,7 @@ import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConPrim
+import DDC.Core.Flow.Prim.OpFlow
+import DDC.Core.Flow.Prim.OpLoop
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Compounds

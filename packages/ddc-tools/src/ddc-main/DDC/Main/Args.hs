@@ -120,6 +120,10 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeFlowLower file
 
+        | "-flow-concretize" : file : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeFlowConcretize file
+
         | "-flow-thread" : file : rest <- args
         = parseArgs rest
         $ setMode config $ ModeFlowThread file
@@ -210,6 +214,7 @@ flagOfMode mode
         ModeToC{}               -> Just "-to-c"
         ModeToLLVM{}            -> Just "-to-llvm"
         ModeFlowLower{}         -> Just "-flow-lower"
+        ModeFlowConcretize{}    -> Just "-flow-concretize"
         ModeFlowThread{}        -> Just "-flow-thread"
         ModeBaseBuild{}         -> Just "-basebuild"
         ModePrintBuilder{}      -> Just "-print-builder"

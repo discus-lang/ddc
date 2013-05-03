@@ -2,7 +2,8 @@
 -- | Loop related names.
 module DDC.Core.Flow.Prim.OpLoop
         ( readOpLoop
-        , typeOpLoop)
+        , typeOpLoop
+        , xLoopLoopN)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConPrim
@@ -46,3 +47,15 @@ typeOpLoop op
         OpLoopLoopN
          -> tForall kRate 
          $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
+
+
+-- Compounds ------------------------------------------------------------------
+xLoopLoopN :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xLoopLoopN tR xRN xF 
+         = xApps () (xVarOpLoop OpLoopLoopN) [XType tR, xRN, xF]
+
+
+-- Utils -----------------------------------------------------------------------
+xVarOpLoop :: OpLoop -> Exp () Name
+xVarOpLoop op
+        = XVar () (UPrim (NameOpLoop op) (typeOpLoop op))

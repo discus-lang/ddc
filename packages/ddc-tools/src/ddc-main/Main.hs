@@ -14,6 +14,7 @@ import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.BaseBuild
 import DDC.Driver.Command.FlowLower
+import DDC.Driver.Command.FlowConcretize
 import DDC.Driver.Command.FlowThread
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
@@ -135,6 +136,12 @@ run config
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdFlowLower dconfig (SourceFile filePath) str
+
+        -- Concretize rate type variables in a Disciple Core Flow program.
+        ModeFlowConcretize filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowConcretize dconfig (SourceFile filePath) str
 
         -- Thread the world token through a Disciple Core Flow program.
         ModeFlowThread filePath

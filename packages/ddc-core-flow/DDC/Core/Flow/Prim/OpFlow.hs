@@ -1,7 +1,8 @@
 
 module DDC.Core.Flow.Prim.OpFlow
         ( readOpFlow
-        , typeOpFlow)
+        , typeOpFlow
+        , xRateOfStream)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -217,4 +218,17 @@ typeOpFlow op
                 `tFunPE` tStream tK2 tA
 
         _ -> error $ "typeOfPrimFlow: not finished for " ++ show op
+
+
+-- Compounds ------------------------------------------------------------------
+xRateOfStream :: Type Name -> Type Name -> Exp () Name -> Exp () Name
+xRateOfStream tK tA xS 
+         = xApps () (xVarOpFlow OpFlowRateOfStream) 
+                    [XType tK, XType tA, xS]
+
+
+-- Utils -----------------------------------------------------------------------
+xVarOpFlow :: OpFlow -> Exp () Name
+xVarOpFlow op
+        = XVar () (UPrim (NameOpFlow op) (typeOpFlow op))
 

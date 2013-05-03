@@ -68,7 +68,7 @@ typeOpStore op
 
         -- write#      :: [a : Data]. Ref# a -> a -> Unit
         OpStoreWrite
-         -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tUnit
+         -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tVoid
 
         -- Arrays ---------------------
         -- newArray#   :: [a : Data]. Nat# -> Array# a

@@ -55,6 +55,9 @@ data Mode
         -- | Lower a Flow program.
         | ModeFlowLower FilePath
 
+        -- | Concretize rate type variables in a Flow program.
+        | ModeFlowConcretize FilePath
+
         -- | Thread the World token through a Flow program.
         | ModeFlowThread FilePath
 
