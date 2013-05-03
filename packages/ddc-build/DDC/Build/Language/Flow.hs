@@ -4,21 +4,16 @@
 module DDC.Build.Language.Flow
         ( language
         , bundle
-        , fragment
-        , freshT
-        , freshX)
+        , fragment)
 where
 import DDC.Build.Language.Base
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
 import DDC.Core.Flow                    as Flow
-import DDC.Type.Exp
-import DDC.Type.Env                     (Env)
+import DDC.Core.Flow.Profile            as Flow
 import DDC.Base.Pretty
-import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
-import Control.Monad.State.Strict
 
 
 -- | Language definition for Disciple Core Lite.
@@ -59,24 +54,3 @@ data Error a
 instance Pretty (Error a) where
  ppr Error  = text (show Error)
 
-
--- | Create a new type variable name that is not in the given environment.
-freshT :: Env Name -> Bind Name -> State Int Name
-freshT env bb
- = do   i       <- get
-        put (i + 1)
-        let n =  NameVar ("t" ++ show i)
-        case Env.lookupName n env of
-         Nothing -> return n
-         _       -> freshT env bb
-
-
--- | Create a new value variable name that is not in the given environment.
-freshX :: Env Name -> Bind Name -> State Int Name
-freshX env bb
- = do   i       <- get
-        put (i + 1)
-        let n = NameVar ("x" ++ show i)
-        case Env.lookupName n env of
-         Nothing -> return n
-         _       -> freshX env bb

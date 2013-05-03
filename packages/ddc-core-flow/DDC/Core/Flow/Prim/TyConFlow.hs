@@ -3,7 +3,6 @@ module DDC.Core.Flow.Prim.TyConFlow
         ( TyConFlow      (..)
         , readTyConFlow
         , kindTyConFlow
-        , tLen
         , tTuple2
         , tArray
         , tVector
@@ -30,8 +29,6 @@ instance NFData TyConFlow
 instance Pretty TyConFlow where
  ppr dc
   = case dc of
-        TyConFlowNatP n         -> int n <> text "'"
-        TyConFlowLen            -> text "Len"
         TyConFlowTuple n        -> text "Tuple" <> int n <> text "#"
         TyConFlowArray          -> text "Array#"
         TyConFlowVector         -> text "Vector#"
@@ -45,11 +42,6 @@ instance Pretty TyConFlow where
 -- | Read a baked-in data type constructor.
 readTyConFlow :: String -> Maybe TyConFlow
 readTyConFlow str
-        | (ds, str2)    <- span isDigit str
-        , not $ null ds
-        , Just ""       <- stripPrefix "'" str2
-        = Just $ TyConFlowNatP (read ds)
-
         | Just rest     <- stripPrefix "Tuple" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -58,7 +50,6 @@ readTyConFlow str
 
         | otherwise
         = case str of
-                "Len"           -> Just $ TyConFlowLen
                 "Array#"        -> Just $ TyConFlowArray
                 "Vector#"       -> Just $ TyConFlowVector
                 "Stream#"       -> Just $ TyConFlowStream
@@ -74,8 +65,6 @@ readTyConFlow str
 kindTyConFlow :: TyConFlow -> Kind Name
 kindTyConFlow tc
  = case tc of
-        TyConFlowNatP _         -> kNatP
-        TyConFlowLen            -> kNatP `kFun` kRate
         TyConFlowTuple 2        -> kData `kFun` kData `kFun` kData
         TyConFlowArray          -> kData `kFun` kData
         TyConFlowVector         -> kRate `kFun` kData `kFun` kData
@@ -89,14 +78,6 @@ kindTyConFlow tc
 
 
 -- Compounds ------------------------------------------------------------------
-tLen    :: Type Name -> Type Name
-tLen tN
- = tApp (TCon tcLen) tN
- where  uLen            = UPrim (NameTyConFlow TyConFlowLen) kLen
-        tcLen           = TyConBound uLen kLen
-        kLen            = kNatP `kFun` kRate
-
-
 tTuple2 :: Type Name -> Type Name -> Type Name
 tTuple2 tA tB   = tApps (tConTyConFlow (TyConFlowTuple 2)) [tA, tB]
 

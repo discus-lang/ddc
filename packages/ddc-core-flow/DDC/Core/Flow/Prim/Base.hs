@@ -80,11 +80,8 @@ data KiConFlow
 
 -- | Flow type constructors.
 data TyConFlow
-        = TyConFlowNatP  Int
-        | TyConFlowLen
-
         -- | @TN@      type constructor.
-        | TyConFlowTuple Int            
+        = TyConFlowTuple Int            
 
         -- | @Array#@  type constructor.
         | TyConFlowArray

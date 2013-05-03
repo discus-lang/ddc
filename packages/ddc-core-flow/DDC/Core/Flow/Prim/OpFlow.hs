@@ -145,12 +145,12 @@ typeOpFlow op
                 `tFunPE` tStream tK tA
                 `tFunPE` tStream tK tB
 
-        -- rep  :: [n : Nat']. [a : Data]
-        --      .  n -> a -> Stream (Len n) a
+        -- rep  :: [a : Data] [k : Rate]
+        --      .  a -> Stream (Len n) a
         OpFlowRep 
-         -> tForalls [kNatP, kData]
-         $  \[tN, tA]
-         ->     tN `tFunPE` tA `tFunPE` tStream (tLen tN) tA
+         -> tForalls [kData, kRate]
+         $  \[tA, tR]
+         ->     tA `tFunPE` tStream tR tA
 
         -- reps  :: [k1 k2 : Rate]. [a : Data]
         --       .  Segd   k1 k2 

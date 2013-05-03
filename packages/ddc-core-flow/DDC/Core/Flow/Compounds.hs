@@ -6,7 +6,7 @@ module DDC.Core.Flow.Compounds
         , kNatP, kRate
 
           -- * TyConFlow
-        , tLen, tTuple2, tArray, tVector, tStream, tSegd, tSel1, tSel2, tRef, tWorld
+        , tTuple2, tArray, tVector, tStream, tSegd, tSel1, tSel2, tRef, tWorld
 
           -- * TyConPrim
         , tVoid, tBool, tNat, tInt, tWord

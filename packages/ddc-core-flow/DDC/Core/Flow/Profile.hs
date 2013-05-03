@@ -3,14 +3,19 @@
 module DDC.Core.Flow.Profile
         ( profile
         , lexModuleString
-        , lexExpString)
+        , lexExpString
+        , freshT
+        , freshX)
 where
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer
+import DDC.Type.Exp
 import DDC.Data.Token
-
+import Control.Monad.State.Strict
+import DDC.Type.Env             (Env)
+import qualified DDC.Type.Env   as Env
 
 -- | Profile for Disciple Core Flow.
 profile :: Profile Name 
@@ -70,3 +75,23 @@ lexExpString sourceName lineStart str
                 Nothing -> Token (KJunk "lexical error") sp
 
 
+-- | Create a new type variable name that is not in the given environment.
+freshT :: Env Name -> Bind Name -> State Int Name
+freshT env bb
+ = do   i       <- get
+        put (i + 1)
+        let n =  NameVar ("t" ++ show i)
+        case Env.lookupName n env of
+         Nothing -> return n
+         _       -> freshT env bb
+
+
+-- | Create a new value variable name that is not in the given environment.
+freshX :: Env Name -> Bind Name -> State Int Name
+freshX env bb
+ = do   i       <- get
+        put (i + 1)
+        let n = NameVar ("x" ++ show i)
+        case Env.lookupName n env of
+         Nothing -> return n
+         _       -> freshX env bb
