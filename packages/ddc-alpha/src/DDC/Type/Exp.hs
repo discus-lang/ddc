@@ -226,12 +226,12 @@ instance Ord Type where
 
 
 instance Hashable Bound where
- hash bb
+ hashWithSalt s bb
   = case bb of
-	UVar   v	-> hash (1 :: Int) + hash v
-	UMore  v _	-> hash (2 :: Int) + hash v
-	UIndex ix	-> hash (3 :: Int) + hash ix
-	UClass cid	-> hash (4 :: Int) + hash cid
+	UVar   v	-> hashWithSalt s (1 :: Int) + hashWithSalt s v
+	UMore  v _	-> hashWithSalt s (2 :: Int) + hashWithSalt s v
+	UIndex ix	-> hashWithSalt s (3 :: Int) + hashWithSalt s ix
+	UClass cid	-> hashWithSalt s (4 :: Int) + hashWithSalt s cid
 
 
 instance Ord Bound where

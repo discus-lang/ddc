@@ -24,6 +24,7 @@ data VarId
 	| VarIdNil
 	deriving (Show)
 
+
 instance Eq VarId where
  {-# INLINE (==) #-}
  (==) (VarId s1 i1) (VarId s2 i2)
@@ -53,11 +54,11 @@ instance Ord VarId where
 
 
 instance Hashable VarId where
- {-# INLINE hash #-}
- hash (VarId _ int)	= hash int
- hash (VarIdPrim pid)	= hash pid
- hash VarIdNil		= 0
-
+ hashWithSalt s (VarId _ int)           = hashWithSalt s int
+ hashWithSalt s (VarIdPrim pid)         = hashWithSalt s pid
+ hashWithSalt _ VarIdNil		= 0
+ {-# INLINE hashWithSalt #-}
+ 
 
 instance Pretty VarId PMode where
  ppr b

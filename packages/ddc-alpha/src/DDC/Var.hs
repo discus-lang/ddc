@@ -108,8 +108,8 @@ instance Ord Var where
 
 -- | Hashing of variables.
 instance Hashable Var where
- {-# INLINE hash #-}
- hash var = hash $ varId var
+ {-# INLINE hashWithSalt #-}
+ hashWithSalt s var = hashWithSalt s $ varId var
 
 
 -- | Pretty print a variable.

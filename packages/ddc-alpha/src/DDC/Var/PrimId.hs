@@ -103,75 +103,77 @@ data PrimId
 
 -- This is a bit tragic.
 -- We can't derive Enum because some of the constructors have arguments.
-
 instance Hashable PrimId where
- {-# INLINE hash #-}
- hash pid
+ {-# INLINE hashWithSalt #-}
+ hashWithSalt s pid
   = case pid of
-	TObj			-> hash (0  :: Int) 
-	TData			-> hash (1  :: Int) 
-	TThunk			-> hash (2  :: Int) 
-	TTuple i		-> hash (3  :: Int)   + hash i
-	TList			-> hash (4  :: Int) 
-	TRef			-> hash (5  :: Int) 
-	TVoidU			-> hash (6  :: Int) 
-	TPtrU			-> hash (7  :: Int) 
-	TUnit			-> hash (8  :: Int) 
-	TBool   fmt		-> hash (10 :: Int) + hash fmt
-	TWord   fmt		-> hash (11 :: Int) + hash fmt
-	TInt	fmt		-> hash (11 :: Int) + hash fmt
-	TFloat	fmt		-> hash (11 :: Int) + hash fmt
-	TChar	fmt		-> hash (11 :: Int) + hash fmt
-	TString	fmt		-> hash (11 :: Int) + hash fmt
-	FConst			-> hash (12 :: Int)
-	FConstT			-> hash (13 :: Int)
-	FMutable		-> hash (14 :: Int)
-	FMutableT		-> hash (15 :: Int)
-	FLazy			-> hash (16 :: Int)
-	FLazyT			-> hash (17 :: Int)
-	FLazyH			-> hash (18 :: Int)
-	FDirect			-> hash (19 :: Int)
-	FDirectT		-> hash (20 :: Int)
-	FPure			-> hash (21 :: Int)
-	FEmpty			-> hash (22 :: Int)
-	FProj			-> hash (23 :: Int)
-	FShape i		-> hash (24 :: Int) + hash i
-	VNegate			-> hash (25 :: Int)
-	VTuple i		-> hash (26 :: Int) + hash i
-	VUnit			-> hash (27 :: Int)
-	VTrue	 		-> hash (28 :: Int)
-	VFalse			-> hash (29 :: Int)
-	VSuspend i		-> hash (30 :: Int) + hash i
-	VProjField		-> hash (31 :: Int)
-	VProjFieldR		-> hash (32 :: Int)
-	VIndex 			-> hash (33 :: Int)
-	VIndexR			-> hash (34 :: Int)
-	VCons			-> hash (35 :: Int)
-	VNil			-> hash (36 :: Int)
-	VAppend			-> hash (37 :: Int)
-	VExceptionBreak		-> hash (38 :: Int)
-	VGateLoop		-> hash (39 :: Int)
-	VTry			-> hash (40 :: Int)
-	VThrow			-> hash (41 :: Int)
-	VWhile			-> hash (42 :: Int)
-	VWhen			-> hash (43 :: Int)
-	VUnless			-> hash (44 :: Int)
-	VRange			-> hash (45 :: Int)
-	VRangeL			-> hash (46 :: Int)
-	VRangeInfL		-> hash (47 :: Int)
-	VRangeIntStep		-> hash (48 :: Int)
-	VRangeIntStepL		-> hash (49 :: Int)
-	VRangeInfIntStepL	-> hash (50 :: Int)
-	VConcatMap		-> hash (51 :: Int)
-	VConcatMapL		-> hash (52 :: Int)
-	VBind			-> hash (53 :: Int)
-	VEq			-> hash (54 :: Int)
-	VBoxString		-> hash (55 :: Int)
+	TObj			-> hashWithSalt s (0  :: Int) 
+	TData			-> hashWithSalt s (1  :: Int) 
+	TThunk			-> hashWithSalt s (2  :: Int) 
+	TTuple i		-> hashWithSalt s (3  :: Int) + hashWithSalt s i
+	TList			-> hashWithSalt s (4  :: Int) 
+	TRef			-> hashWithSalt s (5  :: Int) 
+	TVoidU			-> hashWithSalt s (6  :: Int) 
+	TPtrU			-> hashWithSalt s (7  :: Int) 
+	TUnit			-> hashWithSalt s (8  :: Int) 
+	TBool   fmt		-> hashWithSalt s (10 :: Int) + hashWithSalt s fmt
+	TWord   fmt		-> hashWithSalt s (11 :: Int) + hashWithSalt s fmt
+	TInt	fmt		-> hashWithSalt s (11 :: Int) + hashWithSalt s fmt
+	TFloat	fmt		-> hashWithSalt s (11 :: Int) + hashWithSalt s fmt
+	TChar	fmt		-> hashWithSalt s (11 :: Int) + hashWithSalt s fmt
+	TString	fmt		-> hashWithSalt s (11 :: Int) + hashWithSalt s fmt
+	FConst			-> hashWithSalt s (12 :: Int)
+	FConstT			-> hashWithSalt s (13 :: Int)
+	FMutable		-> hashWithSalt s (14 :: Int)
+	FMutableT		-> hashWithSalt s (15 :: Int)
+	FLazy			-> hashWithSalt s (16 :: Int)
+	FLazyT			-> hashWithSalt s (17 :: Int)
+	FLazyH			-> hashWithSalt s (18 :: Int)
+	FDirect			-> hashWithSalt s (19 :: Int)
+	FDirectT		-> hashWithSalt s (20 :: Int)
+	FPure			-> hashWithSalt s (21 :: Int)
+	FEmpty			-> hashWithSalt s (22 :: Int)
+	FProj			-> hashWithSalt s (23 :: Int)
+	FShape i		-> hashWithSalt s (24 :: Int) + hashWithSalt s i
+	VNegate			-> hashWithSalt s (25 :: Int)
+	VTuple i		-> hashWithSalt s (26 :: Int) + hashWithSalt s i
+	VUnit			-> hashWithSalt s (27 :: Int)
+	VTrue	 		-> hashWithSalt s (28 :: Int)
+	VFalse			-> hashWithSalt s (29 :: Int)
+	VSuspend i		-> hashWithSalt s (30 :: Int) + hashWithSalt s i
+	VProjField		-> hashWithSalt s (31 :: Int)
+	VProjFieldR		-> hashWithSalt s (32 :: Int)
+	VIndex 			-> hashWithSalt s (33 :: Int)
+	VIndexR			-> hashWithSalt s (34 :: Int)
+	VCons			-> hashWithSalt s (35 :: Int)
+	VNil			-> hashWithSalt s (36 :: Int)
+	VAppend			-> hashWithSalt s (37 :: Int)
+	VExceptionBreak		-> hashWithSalt s (38 :: Int)
+	VGateLoop		-> hashWithSalt s (39 :: Int)
+	VTry			-> hashWithSalt s (40 :: Int)
+	VThrow			-> hashWithSalt s (41 :: Int)
+	VWhile			-> hashWithSalt s (42 :: Int)
+	VWhen			-> hashWithSalt s (43 :: Int)
+	VUnless			-> hashWithSalt s (44 :: Int)
+	VRange			-> hashWithSalt s (45 :: Int)
+	VRangeL			-> hashWithSalt s (46 :: Int)
+	VRangeInfL		-> hashWithSalt s (47 :: Int)
+	VRangeIntStep		-> hashWithSalt s (48 :: Int)
+	VRangeIntStepL		-> hashWithSalt s (49 :: Int)
+	VRangeInfIntStepL	-> hashWithSalt s (50 :: Int)
+	VConcatMap		-> hashWithSalt s (51 :: Int)
+	VConcatMapL		-> hashWithSalt s (52 :: Int)
+	VBind			-> hashWithSalt s (53 :: Int)
+	VEq			-> hashWithSalt s (54 :: Int)
+	VBoxString		-> hashWithSalt s (55 :: Int)
 
 
 -- | For PrimIds that contain a `DataFormat`, split them 
 --   into the constructor and said format.
-splitPrimIdWithDataFormat :: PrimId -> Maybe (DataFormat -> PrimId, DataFormat)
+splitPrimIdWithDataFormat 
+        :: PrimId 
+        -> Maybe (DataFormat -> PrimId, DataFormat)
+
 splitPrimIdWithDataFormat pid
  = case pid of
 	TBool	fmt	-> Just (TBool,   fmt)

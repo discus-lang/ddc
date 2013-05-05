@@ -34,13 +34,13 @@ data DataFormat
 
 
 instance Hashable DataFormat where
- {-# INLINE hash #-}
- hash fmt 
+ {-# INLINE hashWithSalt #-}
+ hashWithSalt s fmt 
   = case fmt of
-	Boxed			-> hash (1 :: Int)
-	BoxedBits bits		-> hash (2 :: Int) + hash bits
-	Unboxed			-> hash (3 :: Int)
-	UnboxedBits bits	-> hash (4 :: Int) + hash bits
+	Boxed			-> hashWithSalt s (1 :: Int)
+	BoxedBits bits		-> hashWithSalt s (2 :: Int) + hashWithSalt s bits
+	Unboxed			-> hashWithSalt s (3 :: Int)
+	UnboxedBits bits	-> hashWithSalt s (4 :: Int) + hashWithSalt s bits
 	
 
 -- | Check whether this data format corresponds to an unboxed value
