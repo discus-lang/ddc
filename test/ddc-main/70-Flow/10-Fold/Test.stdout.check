@@ -1,7 +1,6 @@
 ok
 
-
--- Single stream being eaten by multiple consumers.
+-- Single stream being eaten by two consumers.
 module Test with
 letrec {
   test : [k : Rate].Stream# k Int# -> Int#
