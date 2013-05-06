@@ -1,22 +1,57 @@
 :set lang Flow
 
--- Check primitives have real types.
-:type add#
-:type sub#
-
-
--- Flow DSL types.
-:kind Len
-:kind Stream#
+-- Flow type constructors
+:kind Tuple2#
+:kind Array#
 :kind Vector#
+:kind Stream#
 :kind Segd#
 :kind Sel2#
+:kind Ref#
+:kind World#
+:kind RateNat#
 
--- Flow DSL operators.
+
+-- Primitive data constructors
+:type T2#
+
+
+-- Flow operators
+:type streamOfVector#
+:type vectorOfStream#
+:type rateOfStream#
+:type arrayOfVector#
 :type map#
 :type rep#
 :type reps#
 :type fold#
 :type folds#
 :type pack#
+
+
+-- Loop operators
+:type loop#
+:type loopn#
+
+
+-- Store operators
+:type new#
+:type read#
+:type write#
+:type newArray#
+:type readArray#
+:type writeArray#
+:type next#
+
+
+-- Machine type constructors
+:kind Int#
+:kind Nat#
+:kind Float32#
+:kind Float64#
+
+
+-- Machine arithmetic operators
+:type add#
+:type sub#
 

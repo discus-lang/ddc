@@ -1,22 +1,57 @@
 ok
 
--- Check primitives have real types.
-add# :: [^ : Data].^0 -> ^0 -> ^0
-sub# :: [^ : Data].^0 -> ^0 -> ^0
-
-
--- Flow DSL types.
-Len :: Nat' ~> Rate
-Stream# :: Rate ~> Data ~> Data
+-- Flow type constructors
+Tuple2# :: Data ~> Data ~> Data
+Array# :: Data ~> Data
 Vector# :: Rate ~> Data ~> Data
+Stream# :: Rate ~> Data ~> Data
 Segd# :: Rate ~> Rate ~> Data
 Sel2# :: Rate ~> Rate ~> Rate ~> Data
+Ref# :: Data ~> Data
+World# :: Data
+RateNat# :: Rate ~> Data
 
--- Flow DSL operators.
+
+-- Primitive data constructors
+T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
+
+
+-- Flow operators
+streamOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Stream# ^1 ^0
+vectorOfStream# :: [^ : Rate].[^ : Data].Stream# ^1 ^0 -> Vector# ^1 ^0
+rateOfStream# :: [^ : Rate].[^ : Data].Stream# ^1 ^0 -> RateNat# ^1
+arrayOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Array# ^0
 map1# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Stream# ^2 ^1 -> Stream# ^2 ^0
-rep# :: [^ : Nat'].[^ : Data].^1 -> ^0 -> Stream# (Len ^1) ^0
+rep# :: [^ : Data].[^ : Rate].^1 -> Stream# ^0 ^1
 reps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Stream# ^2 ^0 -> Stream# ^1 ^0
 fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Stream# ^2 ^1 -> ^1
 folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (^1 -> ^0 -> ^1) -> Stream# ^3 ^1 -> Stream# ^2 ^0 -> Stream# ^3 ^1
 pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Stream# ^2 ^0 -> Stream# ^1 ^0
+
+
+-- Loop operators
+loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
+loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
+
+
+-- Store operators
+new# :: [^ : Data].^0 -> Ref# ^0
+read# :: [^ : Data].Ref# ^0 -> ^0
+write# :: [^ : Data].Ref# ^0 -> ^0 -> Unit
+newArray# :: [^ : Data].Nat# -> Array# ^0
+readArray# :: [^ : Data].Array# ^0 -> Nat# -> ^0
+writeArray# :: [^ : Data].Array# ^0 -> Nat# -> ^0 -> Unit
+next# :: [^ : Data].[^ : Rate].Stream# ^0 ^1 -> Nat# -> ^1
+
+
+-- Machine type constructors
+Int# :: Data
+Nat# :: Data
+Float32# :: Data
+Float64# :: Data
+
+
+-- Machine arithmetic operators
+add# :: [^ : Data].^0 -> ^0 -> ^0
+sub# :: [^ : Data].^0 -> ^0 -> ^0
 
