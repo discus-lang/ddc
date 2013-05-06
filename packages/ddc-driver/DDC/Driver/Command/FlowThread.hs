@@ -32,10 +32,11 @@ cmdFlowThread _config source sourceText
                             sourceText
                 $  PipeTextLoadCore fragment
                 [  PipeCoreStrip
+                [  PipeCoreCheck    fragment
                 [  PipeCoreHacks 
                         (Canned $ \m -> return 
                                      $  Thread.thread threadConfig Env.empty Env.empty m)
-                [  PipeCoreOutput SinkStdout ]]]
+                [  PipeCoreOutput SinkStdout ]]]]
 
         case errs of
          []     -> return ()

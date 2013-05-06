@@ -11,7 +11,9 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
 import DDC.Core.Transform.Thread
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp
+import DDC.Core.Check           (AnTEC (..))
 import qualified DDC.Core.Check as Check
 
 
@@ -37,13 +39,25 @@ wrapResultType tt
 
 -- | Wrap the result of a stateful computation with the state token.
 wrapResultExp  
-        :: Type Name   -> Type Name 
-        -> Exp () Name -> Exp () Name 
+        :: Exp (AnTEC () Name) Name     -- ^ World expression
+        -> Exp (AnTEC () Name) Name     -- ^ Result expression
         -> Exp () Name
 
-wrapResultExp tWorld' tResult xWorld xResult
- | tResult == tUnit     = xWorld
- | otherwise            = xTuple2 () tWorld' tResult xWorld xResult
+wrapResultExp xWorld xResult
+ | Just aResult         <- takeAnnotOfExp xResult
+ , annotType aResult == tUnit     
+ = reannotate annotTail xWorld
+
+ | Just aWorld          <- takeAnnotOfExp xWorld
+ , Just aResult         <- takeAnnotOfExp xResult
+ = let  tWorld'  = annotType aWorld
+        tResult  = annotType aResult
+        xWorld'  = reannotate annotTail xWorld
+        xResult' = reannotate annotTail xResult
+   in   xTuple2 () tWorld' tResult xWorld' xResult'
+
+ | otherwise
+ = error "ddc-core-flow: wrapResultExp can't get type annotations"
 
 
 -- | Make a pattern to unwrap the result of a stateful computation.

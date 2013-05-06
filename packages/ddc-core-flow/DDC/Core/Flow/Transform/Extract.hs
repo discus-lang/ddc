@@ -26,20 +26,27 @@ extractTop procs
 
 -- | Extract code for a whole procedure.
 extractProcedure  :: Procedure -> (Bind Name, Exp () Name)
-extractProcedure (Procedure n bsParam xsParam nest xResult tResult)
+extractProcedure (Procedure n bsParam xsParam nest stmts xResult tResult)
  = let  tBody   = foldr tFunPE  tResult $ map typeOfBind xsParam
         tQuant  = foldr TForall tBody   $ bsParam
    in   ( BName n tQuant
         ,   xLAMs () bsParam
           $ xLams () xsParam
-          $ extractNest nest xResult )
+          $ extractNest nest stmts xResult )
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a loop nest.
-extractNest :: [Loop] -> Exp () Name -> Exp () Name
-extractNest loops xResult
-        = xLets () (concatMap extractLoop loops) xResult
+extractNest 
+        :: [Loop]               -- ^ Loops to run in sequence.
+        -> [Lets () Name]       -- ^ Baseband statements from the source program
+                                --   that run after the loop operators.
+        -> Exp () Name          -- ^ Final result of procedure.
+        -> Exp () Name
+
+extractNest loops stmts xResult
+ = let stmts'   = concatMap extractLoop loops ++ stmts
+   in  xLets () stmts' xResult
 
 
 -------------------------------------------------------------------------------

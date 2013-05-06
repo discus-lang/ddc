@@ -9,10 +9,13 @@ import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Flow.Prim
 
-
--- | A stream process consisting of abstract stream operators.
+-------------------------------------------------------------------------------
+-- | A process that applies some stream operators and produces some 
+--   non-stream result.
+--
 --   We get one of these for each top-level stream function in the
 --   original program.
+--
 data Process
         = Process
         { processName           :: Name
@@ -20,19 +23,24 @@ data Process
         , processParamTypes     :: [Bind Name]
         , processParamValues    :: [Bind Name]
         , processOperators      :: [Operator] 
+
+          -- | Top-level statements that don't invoke stream operators.
+          --   These are typically statements that combine reduction results, 
+          --   like the addition in  (fold (+) 0 s1 + fold (*) 1 s1).
+          -- 
+          --   INVARIANT: the worker functions for stream operators can not 
+          --   mention any of of the bound variables.                           -- TODO: check this.
+        , processStmts          :: [Lets () Name]
+
+          -- Final result of process.
         , processResult         :: Exp () Name }
 
 
 -------------------------------------------------------------------------------
 -- | An abstract stream operator.
 data Operator
-
-        -- Some base-band thing that doesn't process streams.
-        = OpBase
-        { opExp                 :: Exp () Name }
-
         -- Fold all the elements of a stream.
-        | OpFold
+        = OpFold
         { opRate                :: Type   Name
         , opResult              :: Bind   Name
         , opStream              :: Bound  Name
@@ -51,7 +59,6 @@ data Operator
 elemTypeOfOperator :: Operator -> Maybe (Type Name)
 elemTypeOfOperator op
  = case op of
-        OpBase{}                -> Nothing
         OpFold{}                -> Just $ opTypeStream op
 
 

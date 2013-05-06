@@ -12,5 +12,11 @@ test    [k : Rate]
                         (\(x2 : Int#) (y2 : Int#). mul# [Int#] x2 y2) 
                         1i# elems
 
-        add# [:Int#:] sum prod
+        thing   = add# [Int#] sum prod
+
+        prod2   = fold# [k] [Int#] [Int#]
+                        (\(x2 : Int#) (y2 : Int#). mul# [Int#] x2 y2) 
+                        1i# elems
+
+        add# [:Int#:] thing prod2
 

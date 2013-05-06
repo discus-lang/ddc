@@ -46,7 +46,7 @@ features
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
         , featuresUnboxedInstantiation  = True
-        , featuresNameShadowing         = False
+        , featuresNameShadowing         = True
         , featuresUnusedBindings        = True
         , featuresUnusedMatches         = True }
 

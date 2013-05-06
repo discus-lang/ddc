@@ -21,14 +21,17 @@ scheduleProcess
                 , processParamTypes     = psType
                 , processParamValues    = psValue
                 , processOperators      = ops 
+                , processStmts          = stmts
                 , processResult         = xResult})
   =     (Procedure
                 { procedureName         = name
                 , procedureParamTypes   = psType
                 , procedureParamValues  = psValue
                 , procedureNest         = foldl' scheduleOperator [] ops 
+                , procedureStmts        = stmts
                 , procedureResult       = xResult 
                 , procedureResultType   = ty })
+
 
 
 -- | Schedule a single stream operator into a loop nest.
@@ -55,11 +58,6 @@ scheduleOperator nest op
         nest3   = insertEnds   nest2 context
                    [ EndAcc   n tElem nAcc ]
    in   nest3
-
- -- TODO: we're assuming the only plain statement is the result expression.
- | OpBase x           <- op
- , loopTop : loops    <- nest
- = loopTop { loopResult  = x } : loops
 
  | otherwise
  = error "scheduleOperator: can't schedule"

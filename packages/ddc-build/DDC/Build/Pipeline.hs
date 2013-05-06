@@ -195,8 +195,9 @@ data PipeCore a n where
   -- This is helpful for debugging, and tweaking the output before pretty printing.
   -- More reusable transforms should be made into their own pipeline stage.
   PipeCoreHacks
-        :: Canned (C.Module a n -> IO (C.Module a n))
-        -> ![PipeCore a n]
+        :: (NFData a, Show b, NFData b)
+        => Canned (C.Module a n -> IO (C.Module b n))
+        -> ![PipeCore b n]
         -> PipeCore a n
 
 

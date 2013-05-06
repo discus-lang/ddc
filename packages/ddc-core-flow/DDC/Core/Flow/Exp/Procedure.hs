@@ -18,7 +18,8 @@ data Procedure
         { procedureName         :: Name
         , procedureParamTypes   :: [Bind Name]
         , procedureParamValues  :: [Bind Name]
-        , procedureNest         :: [Loop]  
+        , procedureNest         :: [Loop]
+        , procedureStmts        :: [Lets () Name]
         , procedureResult       :: Exp () Name 
         , procedureResultType   :: Type Name }
 
@@ -37,6 +38,7 @@ data Loop
 data Context
         = Context (Type Name)
         deriving (Show, Eq)
+
 
 -- | Statements that appear at the start of a loop.
 --   These initialise accumulators.

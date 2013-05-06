@@ -8,6 +8,8 @@ import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
+import DDC.Core.Transform.Reannotate
+import DDC.Core.Check           (AnTEC (..))
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Core.Check as Check
@@ -45,8 +47,7 @@ data Config a n
           -- | Wrap a result expression with the state token.
           --   The function is given the types of the world token and result,
           --   then the expressions for the same.
-        , configWrapResultExp   :: Type n   -> Type n 
-                                -> Exp a n  -> Exp a n 
+        , configWrapResultExp   :: Exp (AnTEC a n) n  -> Exp (AnTEC a n) n 
                                 -> Exp a n
 
           -- | Make a pattern which binds the world argument
@@ -60,7 +61,8 @@ class Thread (c :: * -> * -> *) where
  thread :: (Ord n, Show n, Pretty n)
         => Config a n 
         -> KindEnv n -> TypeEnv n 
-        -> c a n     -> c a n
+        -> c (AnTEC a n) n     
+        -> c a n
 
 
 instance Thread Module where
@@ -77,7 +79,8 @@ threadModuleBody
         :: (Ord n, Show n, Pretty n)
         => Config a n 
         -> KindEnv n -> TypeEnv n
-        -> Exp a n   -> Exp a n
+        -> Exp (AnTEC a n) n   
+        -> Exp a n
 
 threadModuleBody config kenv tenv xx
  = case xx of
@@ -87,9 +90,9 @@ threadModuleBody config kenv tenv xx
                 kenv'      = Env.extends bks kenv
                 tenv'      = Env.extends bts tenv
                 x'         = threadModuleBody config kenv' tenv' x
-            in  XLet a lts' x'
+            in  XLet (annotTail a) lts' x'
 
-        _ -> xx
+        _ -> reannotate annotTail xx
 
 
 -- | Thread state token through some top-level bindings in a module.
@@ -97,7 +100,8 @@ threadTopLets
         :: (Ord n, Show n, Pretty n)
         => Config a n 
         -> KindEnv n -> TypeEnv n
-        -> Lets a n  -> Lets a n
+        -> Lets (AnTEC a n) n  
+        -> Lets a n
 
 threadTopLets config kenv tenv lts
  = case lts of
@@ -111,7 +115,7 @@ threadTopLets config kenv tenv lts
                                 | (b, x) <- bxs]
             in  LRec bxs'
 
-        _ -> lts
+        _ -> reannotate annotTail lts
 
 
 -- TopBind ------------------------------------------------------------------
@@ -126,8 +130,8 @@ threadTopBind
         :: (Ord n, Show n, Pretty n)
         => Config a n
         -> KindEnv n -> TypeEnv n
-        ->  Bind n   -> Exp a n
-        -> (Bind n,   Exp a n)
+        ->  Bind n   -> Exp (AnTEC a n) n
+        -> (Bind n,     Exp a n)
 
 threadTopBind config kenv tenv b xBody
  = let  tBind   = typeOfBind b
@@ -147,14 +151,14 @@ threadArg
         :: (Ord n, Show n, Pretty n)
         => Config a n
         -> KindEnv n -> TypeEnv n
-        -> Type n    -> Exp a n
+        -> Type n    -> Exp (AnTEC a n) n
         -> Exp a n
 
 threadArg config kenv tenv t xx
  = case xx of
         XLam{}  -> threadProcArg config kenv tenv t xx
         XLAM{}  -> threadProcArg config kenv tenv t xx
-        _       -> xx
+        _       -> reannotate annotTail xx
 
 threadProcArg config kenv tenv t xx
  = let  tsArgs  = fst $ takeTFunAllArgResult t
@@ -167,8 +171,8 @@ threadProc
         :: (Ord n, Show n, Pretty n)
         => Config a n
         -> KindEnv n -> TypeEnv n
-        -> Exp a n      -- Whole expression, including lambdas.
-        -> [Type n]     -- Types of function parameters.
+        -> Exp (AnTEC a n) n    -- Whole expression, including lambdas.
+        -> [Type n]             -- Types of function parameters.
         -> Exp a n
 
 -- We're out of parameters. 
@@ -184,13 +188,13 @@ threadProc config kenv tenv xx (t : tsArgs)
         XLAM a b x
           -> let kenv'  = Env.extend b kenv
                  x'     = threadProc config kenv' tenv x tsArgs
-             in  XLAM a b x'
+             in  XLAM (annotTail a) b x'
 
         -- TODO: check arg type matches.
         XLam a b x      
           -> let tenv'  = Env.extend b tenv
                  x'     = threadProc config kenv tenv' x tsArgs
-             in  XLam a b x'
+             in  XLam (annotTail a) b x'
 
         -- Inject a new lambda to bind the state parameter.
         _ |  Just a     <- takeAnnotOfExp xx
@@ -198,7 +202,7 @@ threadProc config kenv tenv xx (t : tsArgs)
           -> let b'     = BAnon (configTokenType config)
                  tenv'  = Env.extend b' tenv
                  x'     = threadProc config kenv tenv' xx tsArgs
-             in  XLam a b' x'
+             in  XLam (annotTail a) b' x'
 
         -- We've decended past all the lambdas,
         -- so now thread into the procedure body.
@@ -210,7 +214,8 @@ threadProcBody
         :: (Ord n, Show n, Pretty n)
         => Config a n 
         -> KindEnv n -> TypeEnv n
-        -> Exp a n   -> Exp a n
+        -> Exp (AnTEC a n) n   
+        -> Exp a n
 
 threadProcBody config kenv tenv xx
  = case xx of
@@ -232,21 +237,22 @@ threadProcBody config kenv tenv xx
                 xsArgs'' = zipWith (threadArg config kenv tenv) tsArgs xsArgs'
 
                 -- Build the final expression.
-                x'      = xApps a (XVar a (UPrim nPrim tNew)) xsArgs''
+                x'      = xApps (annotTail a) (XVar (annotTail a) (UPrim nPrim tNew)) xsArgs''
 
                 -- Thread into let-expression body.
                 tenv'   = Env.extend b tenv
                 x2'     = threadProcBody config kenv tenv' x2
                 pat'    = mkPat (BAnon tWorld) b
-            in  XCase a x' [AAlt pat' x2']
+            in  XCase (annotTail a) x' [AAlt pat' x2']
 
         -- A pure binding that doesn't need the token.
         XLet a lts x
          -> let (bks, bts) = bindsOfLets lts
                 kenv'   = Env.extends bks kenv
                 tenv'   = Env.extends bts tenv
+                lts'    = reannotate annotTail lts
                 x'      = threadProcBody config kenv' tenv' x
-            in  XLet a lts x'
+            in  XLet (annotTail a) lts' x'
 
         XCase{}         -> error "ddc-core-simpl: thread not finished"
 
@@ -254,23 +260,21 @@ threadProcBody config kenv tenv xx
         XLAM{}          -> error "ddc-core-simpl: death XLAM"
         XLam{}          -> error "ddc-core-simpl: death XLam"
         XCast{}         -> error "ddc-core-simpl: death XCast"
-        XType{}         -> xx
-        XWitness{}      -> xx
+        XType t         -> XType t
+        XWitness w      -> XWitness w
 
         -- For XVar, XCon, XApp as result value of function.
         _
          -> let Just a  = takeAnnotOfExp xx
-                xWorld  = XVar a (UIx 0)
-                tWorld  = configTokenType     config
+                a'      = AnTEC (configTokenType config) 
+                                (tBot kEffect) 
+                                (tBot kClosure)
+                                (annotTail a)
+
+                xWorld  = XVar a' (UIx 0)
                 wrap    = configWrapResultExp config
                 
-                etBody  = Check.typeOfExp (configCheckConfig config)
-                                          kenv tenv xx
-                tBody   = case etBody of
-                           Left{}  -> error "ddc-core-simpl.thread: type error in body"
-                           Right t -> t
-
-            in  wrap tWorld tBody xWorld xx
+            in  wrap xWorld xx
 
 
 -------------------------------------------------------------------------------
