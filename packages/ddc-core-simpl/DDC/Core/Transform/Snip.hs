@@ -1,16 +1,41 @@
 
 -- | Snip out nested applications.
 module DDC.Core.Transform.Snip
-        (Snip(..))
+        ( Snip   (..)
+        , Config (..)
+        , configZero)
 where
 import DDC.Core.Analysis.Arity
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
+import DDC.Core.Predicates
 import qualified DDC.Core.Transform.LiftX       as L
 import qualified DDC.Type.Compounds             as T
 
 
+-------------------------------------------------------------------------------
+-- | Snipper configuration.
+data Config 
+        = Config
+        { -- | Introduce new bindings for over-applied functions.
+          configSnipOverApplied :: Bool
+        
+          -- | Ensure the body of a let-expression is a variable.
+        , configSnipLetBody     :: Bool
+        }
+
+
+-- | Snipper configuration with all flags set to False.
+configZero :: Config
+configZero
+        = Config
+        { configSnipOverApplied = False
+        , configSnipLetBody     = False }
+
+
+-------------------------------------------------------------------------------
+-- | Class of things that can have things snipped out of them.
 class Snip (c :: * -> *) where
 
  -- | Snip out nested applications as anonymous bindings.
@@ -19,54 +44,50 @@ class Snip (c :: * -> *) where
  --      f (g x) (h y)
  --  ==> let ^ = g x in ^ = h y in f ^1 ^0
  -- @
- snip   :: Ord n 
-        => Bool         -- ^ Introduce extra bindings for over-applied functions.
-        -> c n 
-        -> c n
+ snip   :: Ord n => Config -> c n -> c n
 
 
 instance Snip (Module a) where
- snip bOver mm
-  = {-# SCC "snip[Module]" #-}
-    let arities = aritiesOfModule mm
-        body'   = snipX bOver arities (moduleBody mm) []
+ snip config mm
+  = let arities = aritiesOfModule mm
+        body'   = snipX config arities (moduleBody mm) []
     in  mm { moduleBody = body'  }
 
 
 instance Snip (Exp a) where
- snip bOver x 
-  = {-# SCC "snip[Exp]" #-}
-    snipX bOver emptyArities x []
+ snip config x 
+  = snipX config emptyArities x []
 
 
 -- | Convert an expression into A-normal form.
-snipX 
-        :: Ord n
-        => Bool           -- ^ Introduce extra bindings for over-applied functions.
+snipX   :: Ord n
+        => Config
         -> Arities n      -- ^ Arities of functions in environment.
         -> Exp a n        -- ^ Expression to transform.
         -> [(Exp a n, a)] -- ^ Arguments being applied to current expression.
         -> Exp a n
 
-snipX bOver arities x args
+snipX config arities x args
         -- For applications, remember the argument that the function is being 
         --   applied to, and decend into the function part.
         --   This unzips application nodes as we decend into the tree.
         | XApp a fun arg        <- x
-        = snipX bOver arities fun $ (snipX bOver arities arg [], a) : args
+        = snipX  config arities fun 
+                $ (snipX config arities arg [], a) : args
 
         -- Some non-application node with no arguments.
         | null args
-        = enterX bOver arities x
+        = enterX config arities x
 
         -- Some non-application node being applied to arguments.
         | otherwise
-        = buildNormalisedApp bOver arities (enterX bOver arities x) args
+        = let   x'      = enterX config arities x
+          in    buildNormalisedApp config arities x' args
 
 -- Enter into a non-application.
-enterX bOver arities xx
+enterX config arities xx
  = let  down ars e 
-         = snipX bOver (extendsArities arities ars) e []
+         = snipX config (extendsArities arities ars) e []
 
    in case xx of
         -- The snipX function shouldn't have called us with an XApp.
@@ -88,8 +109,9 @@ enterX bOver arities xx
 
         -- non-recursive let
         XLet a (LLet m b x1) x2
-         -> let x1' = down [] x1
-                x2' = down [(b, arityOfExp' x1')] x2
+         -> let x1'     = down [] x1
+                x2'     = snipLetBody config a
+                        $ down [(b, arityOfExp' x1')] x2
             in  XLet a (LLet m b x1') x2'
 
         -- recursive let
@@ -98,17 +120,19 @@ enterX bOver arities xx
                 xs      = map snd lets 
                 ars     = zip bs (map arityOfExp' xs) 
                 xs'     = map (down ars) xs
-                x2'     = down ars x2
+                x2'     = snipLetBody config a $ down ars x2
             in  XLet a (LRec $ zip bs xs') x2' 
 
         -- letregion, just make sure we record bindings with dummy val.
         XLet a (LLetRegions b bs) x2
-         -> let ars = zip bs (repeat 0) 
-            in  XLet a (LLetRegions b bs) (down ars x2)
+         -> let ars     = zip bs (repeat 0)
+                x2'     = snipLetBody config a $ down ars x2
+            in  XLet a (LLetRegions b bs) x2'
 
         -- withregion
-        XLet a (LWithRegion b) z2
-         -> XLet a (LWithRegion b) (down [] z2)
+        XLet a (LWithRegion b) x2
+         -> let x2'     = snipLetBody config a $ down [] x2
+            in  XLet a (LWithRegion b) x2'
 
         -- case
         -- Split out non-atomic discriminants into their own bindings.
@@ -121,11 +145,14 @@ enterX bOver arities xx
 
          | otherwise
          -> let e'      = down [] e
-                alts'   = [AAlt pat (down (aritiesOfPat pat) ae) | AAlt pat ae <- alts]
+                alts'   = [AAlt pat (down (aritiesOfPat pat) ae) 
+                                | AAlt pat ae <- alts]
+                xBody'  = snipLetBody config a
+                        $ XCase a (XVar a $ UIx 0)
+                                  (map (L.liftX 1) alts')
 
-            in   XLet a (LLet LetStrict (BAnon (T.tBot T.kData)) e')
-                        (XCase a (XVar a $ UIx 0) 
-                                 (map (L.liftX 1) alts'))
+            in  XLet a (LLet LetStrict (BAnon (T.tBot T.kData)) e')
+                       xBody'
 
         -- cast
         XCast a c e
@@ -134,18 +161,18 @@ enterX bOver arities xx
 
 -- | Build an A-normalised application of some functional expression to 
 --   its arguments. Atomic arguments are applied directly, while 
---   on-atomic arguments are bound via let-expressions, then the
+--   non-atomic arguments are bound via let-expressions, then the
 --   associated let-bound variable is passed to the function.
 buildNormalisedApp 
         :: Ord n
-        => Bool            -- ^ Introduce extra bindings for over-applied functions.
+        => Config          -- ^ Snipper config.
         -> Arities n	   -- ^ environment, arities of bound variables
         -> Exp a n	   -- ^ function
         -> [(Exp a n,a)]   -- ^ arguments being applied to current expression
         -> Exp a n
 
-buildNormalisedApp _bOver _  f0 [] = f0
-buildNormalisedApp bOver arities f0 args@( (_, annot) : _)
+buildNormalisedApp _ _  f0 [] = f0
+buildNormalisedApp config arities f0 args@( (_, annot) : _)
  = make annot f0 args
  where
         tBot' = T.tBot T.kData
@@ -164,13 +191,14 @@ buildNormalisedApp bOver arities f0 args@( (_, annot) : _)
 
          -- The function part is already atomic.
          | isAtom xFun
-         = buildNormalisedFunApp bOver a f0Arity xFun xsArgs
+         = buildNormalisedFunApp config a f0Arity xFun xsArgs
 
          -- The function part is not atomic, 
          --  so we need to add an outer-most let-binding for it.
          | otherwise
          = XLet a (LLet LetStrict (BAnon tBot') xFun)
-                  (buildNormalisedFunApp bOver a f0Arity 
+                  (snipLetBody config a
+                    $ buildNormalisedFunApp config a f0Arity 
                                (XVar a (UIx 0)) 
                                [ (L.liftX 1 x, a') | (x, a') <- xsArgs])
 
@@ -184,14 +212,14 @@ buildNormalisedApp bOver arities f0 args@( (_, annot) : _)
 --   wants the function part to be normalised as well.
 buildNormalisedFunApp
         :: Ord n
-        => Bool           -- ^ Introduce extra bindings for over-applied functions.
+        => Config         -- ^ Snipper configuration.
         -> a              -- ^ Annotation to use.
         -> Int            -- ^ Arity of the function part.
         -> Exp a n        -- ^ Function part.
         -> [(Exp a n, a)] -- ^ Arguments to apply
         -> Exp a n
 
-buildNormalisedFunApp bOver an funArity xFun xsArgs
+buildNormalisedFunApp config an funArity xFun xsArgs
  = let  tBot' = T.tBot T.kData
 
         -- Split arguments into the already atomic ones,
@@ -228,12 +256,13 @@ buildNormalisedFunApp bOver an funArity xFun xsArgs
          -- If the function is over-applied then create an intermediate
          -- binding that saturates it, then apply the extra arguments
          -- separately.
-         | bOver
+         | configSnipOverApplied config
          , length xsArgs' > funArity
          , (xsSat, xsOver)      <- splitAt funArity xsArgs'
          = XLet an (LLet LetStrict (BAnon tBot') 
                         (makeXAppsWithAnnots xFun' xsSat))
-                   (makeXAppsWithAnnots 
+                   (snipLetBody config an
+                    $ makeXAppsWithAnnots 
                         (XVar an (UIx 0)) 
                         [ (L.liftX 1 x, a) | (x, a) <- xsOver ])
 
@@ -246,10 +275,12 @@ buildNormalisedFunApp bOver an funArity xFun xsArgs
 
         -- Wrap the function application in the let-bindings
         -- for its arguments.
-   in   foldr (\(x, a) x' -> XLet a x x')
-                xFunApps
-                [ (LLet LetStrict (BAnon tBot') x, a) 
-                        | (x, a) <- xsLets' ]
+   in   case xsLets' of
+         []     -> xFunApps
+         _      -> foldr (\(x, a) x' -> XLet a x x')
+                        (snipLetBody config an xFunApps)
+                        [ (LLet LetStrict (BAnon tBot') x, a) 
+                                | (x, a) <- xsLets' ]
 
 
 -- | Sort function arguments into either the atomic ones, 
@@ -274,9 +305,24 @@ splitArgs args
          = (XVar a (UIx n), a, False, Just xArg)  : go (n + 1) xsArgs
 
 
+-- | If `snipLetResults` is set and this is not an atomic expression then
+--   introduce a new binding for it.
+snipLetBody :: Config -> a -> Exp a n -> Exp a n
+snipLetBody config a xx
+        | configSnipLetBody config
+        , not (isAtom xx)
+        , not (isXLet xx)
+        = let  tBot'   = T.tBot T.kData
+          in   XLet a  (LLet LetStrict (BAnon tBot') xx)
+                       (XVar a (UIx 0))
+        
+        | otherwise
+        = xx
+
+
 -- | Check if an expression needs a binding, or if it's simple enough to be
 --   applied as-is.
-isAtom :: Ord n => Exp a n -> Bool
+isAtom :: Exp a n -> Bool
 isAtom xx
  = case xx of
         XVar{}          -> True

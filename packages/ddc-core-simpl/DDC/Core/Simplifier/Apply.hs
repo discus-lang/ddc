@@ -12,7 +12,7 @@ import DDC.Core.Exp
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.AnonymizeX
-import DDC.Core.Transform.Snip
+import DDC.Core.Transform.Snip          as Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Prune
@@ -79,8 +79,13 @@ applyTransform !profile !_kenv !_tenv !spec !mm
  = case spec of
         Id               -> return mm
         Anonymize        -> return $ anonymizeX mm
-        Snip             -> return $ snip False mm
-        SnipOver         -> return $ snip True mm
+        
+        Snip             
+         -> return $ snip Snip.configZero mm
+        
+        SnipOver         
+         -> return $ snip Snip.configZero { configSnipOverApplied = True } mm
+        
         Flatten          -> return $ flatten mm
         Beta             -> return $ result $ betaReduce False mm
         BetaLets         -> return $ result $ betaReduce True  mm
@@ -225,8 +230,13 @@ applyTransformX !profile !kenv !tenv !spec !xx
    in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
-        Snip              -> res    $ snip False xx
-        SnipOver          -> res    $ snip True xx
+
+        Snip             
+         -> res    $ snip Snip.configZero xx
+
+        SnipOver          
+         -> res    $ snip Snip.configZero { configSnipOverApplied = True } xx
+
         Flatten           -> res    $ flatten xx
         Inline  getDef    -> res    $ inline getDef Set.empty xx
         Beta              -> return $ betaReduce False xx

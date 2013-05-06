@@ -14,6 +14,9 @@ module DDC.Core.Predicates
           -- * Applications
         , isXApp
 
+          -- * Let bindings
+        , isXLet
+
           -- * Types and Witnesses
         , isXType
         , isXWitness
@@ -94,6 +97,14 @@ isXApp xx
         XApp{}  -> True
         _       -> False
 
+
+-- Let Bindings ---------------------------------------------------------------
+isXLet :: Exp a n -> Bool
+isXLet xx
+ = case xx of
+        XLet{}  -> True
+        _       -> False
+        
 
 -- Type and Witness -----------------------------------------------------------
 -- | Check whether an expression is an `XType`
