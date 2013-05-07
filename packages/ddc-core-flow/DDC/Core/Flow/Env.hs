@@ -54,7 +54,7 @@ primDataDefs
         -- Flow -----------------------------------------------------
         -- Stream
         , DataDef
-                (NameTyConFlow TyConFlowStream)
+                (NameTyConFlow TyConFlowSeries)
                 [kRate, kData]
                 (Just   [])
 

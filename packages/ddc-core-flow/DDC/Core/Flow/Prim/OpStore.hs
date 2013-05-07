@@ -86,10 +86,10 @@ typeOpStore op
          $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA `tFunPE` tUnit
 
         -- Streams --------------------
-        -- next#  :: [a : Data]. [k : Rate]. Stream# k a -> Nat# -> a
+        -- next#  :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
         OpStoreNext
          -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tStream tK tA `tFunPE` tNat `tFunPE` tA
+         $  \[tA, tK] -> tSeries tK tA `tFunPE` tNat `tFunPE` tA
 
 
 -- Compounds ------------------------------------------------------------------

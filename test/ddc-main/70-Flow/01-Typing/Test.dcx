@@ -4,7 +4,7 @@
 :kind Tuple2#
 :kind Array#
 :kind Vector#
-:kind Stream#
+:kind Series#
 :kind Segd#
 :kind Sel2#
 :kind Ref#
@@ -17,9 +17,9 @@
 
 
 -- Flow operators
-:type streamOfVector#
-:type vectorOfStream#
-:type rateOfStream#
+:type seriesOfVector#
+:type vectorOfSeries#
+:type rateOfSeries#
 :type arrayOfVector#
 :type map#
 :type rep#

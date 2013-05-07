@@ -7,7 +7,7 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tTuple2
         , tArray
         , tVector
-        , tStream
+        , tSeries
         , tSegd
         , tSel1
         , tSel2
@@ -35,7 +35,7 @@ instance Pretty TyConFlow where
 
         TyConFlowArray          -> text "Array#"
         TyConFlowVector         -> text "Vector#"
-        TyConFlowStream         -> text "Stream#"
+        TyConFlowSeries         -> text "Series#"
 
         TyConFlowSegd           -> text "Segd#"
         TyConFlowSel n          -> text "Sel"   <> int n <> text "#"
@@ -60,7 +60,7 @@ readTyConFlow str
         = case str of
                 "Array#"        -> Just $ TyConFlowArray
                 "Vector#"       -> Just $ TyConFlowVector
-                "Stream#"       -> Just $ TyConFlowStream
+                "Series#"       -> Just $ TyConFlowSeries
 
                 "Segd#"         -> Just $ TyConFlowSegd
                 "Sel1#"         -> Just $ TyConFlowSel 1
@@ -81,7 +81,7 @@ kindTyConFlow tc
         TyConFlowTuple 2        -> kData `kFun` kData `kFun` kData
         TyConFlowArray          -> kData `kFun` kData
         TyConFlowVector         -> kRate `kFun` kData `kFun` kData
-        TyConFlowStream         -> kRate `kFun` kData `kFun` kData
+        TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
         TyConFlowSel 1          -> kRate `kFun` kRate `kFun` kData
         TyConFlowSel 2          -> kRate `kFun` kRate `kFun` kRate `kFun` kData
@@ -107,8 +107,8 @@ tVector :: Type Name -> Type Name -> Type Name
 tVector tK tA   = tApps (tConTyConFlow TyConFlowVector)   [tK, tA]
 
 
-tStream :: Type Name -> Type Name -> Type Name
-tStream tK tA   = tApps (tConTyConFlow TyConFlowStream)   [tK, tA]
+tSeries :: Type Name -> Type Name -> Type Name
+tSeries tK tA   = tApps (tConTyConFlow TyConFlowSeries)   [tK, tA]
 
 
 tSegd :: Type Name -> Type Name -> Type Name
@@ -142,5 +142,4 @@ tConTyConFlow tcf
         u       = UPrim (NameTyConFlow tcf) k
         tc      = TyConBound u k
    in   TCon tc
-
 

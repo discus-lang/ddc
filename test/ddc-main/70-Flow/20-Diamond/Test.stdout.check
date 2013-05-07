@@ -31,21 +31,21 @@ letrec {
   split : [k1 : Rate].Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Vector# k1 (Tuple2# Float64# Float64#) -> Tuple2# (Array# (Tuple2# Float64# Float64#)) Float64#
     = /\(k1 : Rate).
        \(l1 l2 : Tuple2# Float64# Float64#).\(vPoints : Vector# k1 (Tuple2# Float64# Float64#)).
-      let points : Stream# k1 (Tuple2# Float64# Float64#)
-            = streamOfVector# [k1] [Tuple2# Float64# Float64#] vPoints in
-      let dets : Stream# k1 Float64#
+      let points : Series# k1 (Tuple2# Float64# Float64#)
+            = seriesOfVector# [k1] [Tuple2# Float64# Float64#] vPoints in
+      let dets : Series# k1 Float64#
             = map1# [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
-      let flags : Stream# k1 Bool#
+      let flags : Series# k1 Bool#
             = map1# [k1] [Float64#] [Bool#]
                   (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) dets in
       let aAbove : Array# (Tuple2# Float64# Float64#)
             = mkSel1# [k1] [Array# (Tuple2# Float64# Float64#)] flags
                   (/\(k2 : Rate).
                     \(sel : Sel1# k1 k2).
-                   let above : Stream# k2 (Tuple2# Float64# Float64#)
+                   let above : Series# k2 (Tuple2# Float64# Float64#)
                          = pack# [k1] [k2] [Tuple2# Float64# Float64#] sel points in
                    let vAbove : Vector# k2 (Tuple2# Float64# Float64#)
-                         = vectorOfStream# [k2] [Tuple2# Float64# Float64#] above in
+                         = vectorOfSeries# [k2] [Tuple2# Float64# Float64#] above in
                    arrayOfVector# [k2] [Tuple2# Float64# Float64#] vAbove) in
       let xMax : Float64#
             = fold# [k1] [Float64#] [Float64#] max (promote# [Float64#] [Nat#] 0#) dets in

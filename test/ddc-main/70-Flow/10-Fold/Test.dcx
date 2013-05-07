@@ -1,10 +1,10 @@
 :set lang Flow
 
--- Single stream being eaten by two consumers.
+-- Single series being eaten by two consumers.
 :load..
 module Test with letrec
 test    [k : Rate]
-        (elems : Stream# k Int#)
+        (elems : Series# k Int#)
         : Int#
  = do   
         sum     = fold#  [k] [Int#] [Int#]

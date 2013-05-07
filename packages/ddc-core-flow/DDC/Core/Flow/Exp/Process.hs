@@ -8,6 +8,8 @@ where
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Flow.Prim
+import DDC.Base.Pretty
+import DDC.Type.Pretty          ()
 
 -------------------------------------------------------------------------------
 -- | A process that applies some stream operators and produces some 
@@ -22,6 +24,8 @@ data Process
         , processType           :: Type Name
         , processParamTypes     :: [Bind Name]
         , processParamValues    :: [Bind Name]
+
+          -- | Flow operators in this process.
         , processOperators      :: [Operator] 
 
           -- | Top-level statements that don't invoke stream operators.
@@ -34,6 +38,15 @@ data Process
 
           -- Final result of process.
         , processResult         :: Exp () Name }
+
+
+instance Pretty Process where
+ ppr p
+  = vcat
+  $     [ ppr (processName p)
+        , text "  element type:  " <> ppr (processType p)
+        , text "  parameters:    " <> ppr (processParamValues p) ]
+        ++ map (indent 2 . ppr) (processOperators p)
 
 
 -------------------------------------------------------------------------------
@@ -60,6 +73,13 @@ elemTypeOfOperator :: Operator -> Maybe (Type Name)
 elemTypeOfOperator op
  = case op of
         OpFold{}                -> Just $ opTypeStream op
+
+
+instance Pretty Operator where
+ ppr op@OpFold{}
+        = vcat
+        [ text "Fold"
+        , text " rate: "        <> ppr (opRate op) ]
 
 
 -------------------------------------------------------------------------------

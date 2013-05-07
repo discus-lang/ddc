@@ -89,8 +89,8 @@ data TyConFlow
         -- | @Vector#@ type constructor.
         | TyConFlowVector
 
-        -- | @Stream#@ type constructor.
-        | TyConFlowStream
+        -- | @Series#@ type constructor.
+        | TyConFlowSeries
 
         -- | @Segd#@   type constructor.
         | TyConFlowSegd
@@ -118,9 +118,9 @@ data DaConFlow
 -- | Flow operators.
 data OpFlow
         -- Stream conversions.
-        = OpFlowStreamOfVector
-        | OpFlowVectorOfStream
-        | OpFlowRateOfStream
+        = OpFlowSeriesOfVector
+        | OpFlowVectorOfSeries
+        | OpFlowRateOfSeries
 
         -- Vector conversions
         | OpFlowArrayOfVector

@@ -120,10 +120,10 @@ threadType n
 
         -- Streams ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
-        --        .  Stream# k a -> Int# -> World# -> (World#, a)
+        --        .  Series# k a -> Int# -> World# -> (World#, a)
         NameOpStore OpStoreNext
          -> Just $ tForalls [kRate, kData]
-                 $ \[tK, tA] -> tStream tK tA `tFunPE` tInt 
+                 $ \[tK, tA] -> tSeries tK tA `tFunPE` tInt 
                                 `tFunPE` tWorld `tFunPE` (tTuple2 tWorld tA)
 
         -- loopn#  :: [k : Rate]. RateNat# k 

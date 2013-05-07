@@ -4,7 +4,7 @@ ok
 Tuple2# :: Data ~> Data ~> Data
 Array# :: Data ~> Data
 Vector# :: Rate ~> Data ~> Data
-Stream# :: Rate ~> Data ~> Data
+Series# :: Rate ~> Data ~> Data
 Segd# :: Rate ~> Rate ~> Data
 Sel2# :: Rate ~> Rate ~> Rate ~> Data
 Ref# :: Data ~> Data
@@ -17,16 +17,16 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 
 -- Flow operators
-streamOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Stream# ^1 ^0
-vectorOfStream# :: [^ : Rate].[^ : Data].Stream# ^1 ^0 -> Vector# ^1 ^0
-rateOfStream# :: [^ : Rate].[^ : Data].Stream# ^1 ^0 -> RateNat# ^1
+seriesOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Series# ^1 ^0
+vectorOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^1 ^0
+rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
 arrayOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Array# ^0
-map1# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Stream# ^2 ^1 -> Stream# ^2 ^0
-rep# :: [^ : Data].[^ : Rate].^1 -> Stream# ^0 ^1
-reps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Stream# ^2 ^0 -> Stream# ^1 ^0
-fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Stream# ^2 ^1 -> ^1
-folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (^1 -> ^0 -> ^1) -> Stream# ^3 ^1 -> Stream# ^2 ^0 -> Stream# ^3 ^1
-pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Stream# ^2 ^0 -> Stream# ^1 ^0
+map1# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
+rep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
+reps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
+fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^1 -> ^1
+folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
+pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 
 
 -- Loop operators
@@ -41,7 +41,7 @@ write# :: [^ : Data].Ref# ^0 -> ^0 -> Unit
 newArray# :: [^ : Data].Nat# -> Array# ^0
 readArray# :: [^ : Data].Array# ^0 -> Nat# -> ^0
 writeArray# :: [^ : Data].Array# ^0 -> Nat# -> ^0 -> Unit
-next# :: [^ : Data].[^ : Rate].Stream# ^0 ^1 -> Nat# -> ^1
+next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
 
 
 -- Machine type constructors

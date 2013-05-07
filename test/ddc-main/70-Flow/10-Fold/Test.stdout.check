@@ -1,11 +1,11 @@
 ok
 
--- Single stream being eaten by two consumers.
+-- Single series being eaten by two consumers.
 module Test with
 letrec {
-  test : [k : Rate].Stream# k Int# -> Int#
+  test : [k : Rate].Series# k Int# -> Int#
     = /\(k : Rate).
-       \(elems : Stream# k Int#).
+       \(elems : Series# k Int#).
       let sum : Int#
             = fold# [k] [Int#] [Int#]
                   (\(x1 y1 : Int#). add# [Int#] x1 y1) 0i# elems in

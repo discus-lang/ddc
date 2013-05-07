@@ -26,7 +26,7 @@ concretizeX
 concretizeX _kenv tenv xx
         | Just (NameOpLoop OpLoopLoop, [XType tK, xF])       
                                 <- takeXPrimApps xx
-        , Just (nS, _, tA)      <- findStreamWithRate tenv tK
+        , Just (nS, _, tA)      <- findSeriesWithRate tenv tK
         , xS                    <- XVar () (UName nS)
         = xLoopLoopN 
                 tK                              -- type level rate
@@ -37,19 +37,19 @@ concretizeX _kenv tenv xx
         = xx
 
 
--- | Search the given environment for the name of a stream with the
+-- | Search the given environment for the name of a series with the
 --   given rate parameter. We only look at named binders.
-findStreamWithRate 
+findSeriesWithRate 
         :: TypeEnv Name         -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
         -> Maybe (Name, Type Name, Type Name)
-                                -- ^ Stream name, rate type, element type.
-findStreamWithRate tenv tR
+                                -- ^ Series name, rate type, element type.
+findSeriesWithRate tenv tR
  = go (Map.toList (Env.envMap tenv))
  where 
         go []           = Nothing
         go ((n, tS) : moar)
-         = case isStreamTypeOfRate tR tS of
+         = case isSeriesTypeOfRate tR tS of
                 Nothing         -> go moar
                 Just (_, tA)    -> Just (n, tR, tA)
 
@@ -57,12 +57,12 @@ findStreamWithRate tenv tR
 -- | Given a rate type and a stream type, check whether the stream
 --   is of the given rate. If it is then return the rate and element
 --   types, otherwise `Nothing`.
-isStreamTypeOfRate 
+isSeriesTypeOfRate 
         :: Type Name -> Type Name 
         -> Maybe (Type Name, Type Name)
 
-isStreamTypeOfRate tR tS
-        |  Just (NameTyConFlow TyConFlowStream, [tR', tA])
+isSeriesTypeOfRate tR tS
+        |  Just (NameTyConFlow TyConFlowSeries, [tR', tA])
                 <- takePrimTyConApps tS
         ,  tR == tR'
         =  Just (tR, tA)

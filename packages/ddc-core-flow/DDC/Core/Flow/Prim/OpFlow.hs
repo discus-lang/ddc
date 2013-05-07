@@ -23,9 +23,9 @@ instance NFData OpFlow
 instance Pretty OpFlow where
  ppr pf
   = case pf of
-        OpFlowStreamOfVector    -> text "streamOfVector"        <> text "#"
-        OpFlowVectorOfStream    -> text "vectorOfStream"        <> text "#"
-        OpFlowRateOfStream      -> text "rateOfStream"          <> text "#"
+        OpFlowSeriesOfVector    -> text "seriesOfVector"        <> text "#"
+        OpFlowVectorOfSeries    -> text "vectorOfSeries"        <> text "#"
+        OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
 
         OpFlowArrayOfVector     -> text "arrayOfVector"          <> text "#"
         OpFlowVectorOfArray n   -> text "vectorOfArray" <> int n <> text "#"
@@ -84,9 +84,9 @@ readOpFlow str
 
         | otherwise
         = case str of
-                "streamOfVector#"  -> Just $ OpFlowStreamOfVector
-                "vectorOfStream#"  -> Just $ OpFlowVectorOfStream
-                "rateOfStream#"    -> Just $ OpFlowRateOfStream
+                "seriesOfVector#"  -> Just $ OpFlowSeriesOfVector
+                "vectorOfSeries#"  -> Just $ OpFlowVectorOfSeries
+                "rateOfSeries#"    -> Just $ OpFlowRateOfSeries
                 "arrayOfVector#"   -> Just $ OpFlowArrayOfVector
                 "vectorOfArray#"   -> Just $ OpFlowVectorOfArray 1
                 "map#"             -> Just $ OpFlowMap 1
@@ -105,27 +105,27 @@ readOpFlow str
 typeOpFlow :: OpFlow -> Type Name
 typeOpFlow op
  = case op of
-        -- Stream Conversions -------------------
-        -- streamOfVector# :: [k : Rate]. [a : Data]
-        --                 .  Vector k a -> Stream k a
-        OpFlowStreamOfVector
+        -- Series Conversions -------------------
+        -- seriesOfVector# :: [k : Rate]. [a : Data]
+        --                 .  Vector k a -> Series k a
+        OpFlowSeriesOfVector
          -> tForalls [kRate, kData]
          $  \[tK, tA]
-                -> tVector tK tA `tFunPE` tStream tK tA
+                -> tVector tK tA `tFunPE` tSeries tK tA
 
-        -- vectorOfStream# :: [k : Rate]. [a : Data]
-        --                 .  Stream k a -> Vector k a
-        OpFlowVectorOfStream
+        -- vectorOfSeries# :: [k : Rate]. [a : Data]
+        --                 .  Series k a -> Vector k a
+        OpFlowVectorOfSeries
          -> tForalls [kRate, kData]
          $  \[tK, tA]
-                -> tStream tK tA `tFunPE` tVector tK tA
+                -> tSeries tK tA `tFunPE` tVector tK tA
 
-        -- rateOfStream#   :: [k : Rate]. [a : Data]
-        --                 .  Stream k a -> RateNat k
-        OpFlowRateOfStream 
+        -- rateOfSeries#   :: [k : Rate]. [a : Data]
+        --                 .  Series k a -> RateNat k
+        OpFlowRateOfSeries 
          -> tForalls [kRate, kData]
          $  \[tK, tA]
-                -> tStream tK tA `tFunPE` tRateNat tK
+                -> tSeries tK tA `tFunPE` tRateNat tK
 
 
         -- Vector Conversions ---------------
@@ -140,82 +140,82 @@ typeOpFlow op
 
         -- Selectors ----------------------------
         -- mkSel1#    :: [k1 : Rate]. [a : Data]
-        --            .  Stream k1 Bool#
+        --            .  Series k1 Bool#
         --            -> ([k2 : Rate]. Sel1 k1 k2 -> a)
         --            -> a
         OpFlowMkSel 1
          -> tForalls [kRate, kData]
          $  \[tK1, tA]
-         -> tStream tK1 tBool
+         -> tSeries tK1 tBool
                 `tFunPE` (tForall kRate $ \tK2 
                                 -> tSel1 (liftT 1 tK1) tK2 `tFunPE` (liftT 1 tA))
                 `tFunPE` tA
 
         -- Maps ---------------------------------
         -- map   :: [k : Rate] [a b : Data]
-        --       .  (a -> b) -> Stream k a -> Stream k b
+        --       .  (a -> b) -> Series k a -> Series k b
         OpFlowMap 1
          -> tForalls [kRate, kData, kData]
          $  \[tK, tA, tB]
          -> (tA `tFunPE` tB)
-                `tFunPE` tStream tK tA
-                `tFunPE` tStream tK tB
+                `tFunPE` tSeries tK tA
+                `tFunPE` tSeries tK tB
 
 
         -- Replicates -------------------------
         -- rep  :: [a : Data] [k : Rate]
-        --      .  a -> Stream k a
+        --      .  a -> Series k a
         OpFlowRep 
          -> tForalls [kData, kRate]
          $  \[tA, tR]
-         ->     tA `tFunPE` tStream tR tA
+         ->     tA `tFunPE` tSeries tR tA
 
 
         -- reps  :: [k1 k2 : Rate]. [a : Data]
         --       .  Segd   k1 k2 
-        --       -> Stream k1 a
-        --       -> Stream k2 a
+        --       -> Series k1 a
+        --       -> Series k2 a
         OpFlowReps 
          -> tForalls [kRate, kRate, kData]
          $  \[tK1, tK2, tA]
          -> tSegd tK1 tK2
-                `tFunPE` tStream tK1 tA
-                `tFunPE` tStream tK2 tA
+                `tFunPE` tSeries tK1 tA
+                `tFunPE` tSeries tK2 tA
 
         -- fold :: [k : Rate]. [a b: Data]
-        --      .  (a -> b -> a) -> a -> Stream k b -> a
+        --      .  (a -> b -> a) -> a -> Series k b -> a
         OpFlowFold    
          -> tForalls [kRate, kData, kData] 
          $  \[tK, tA, tB]
          -> (tA `tFunPE` tB `tFunPE` tA)
                 `tFunPE` tA
-                `tFunPE` tStream tK tA
+                `tFunPE` tSeries tK tA
                 `tFunPE` tA
 
         -- folds :: [k1 k2 : Rate]. [a b: Data]
         --       .  Segd   k1 k2 
         --       -> (a -> b -> a)       -- fold operator
-        --       -> Stream k1 a         -- start values
-        --       -> Stream k2 b         -- source elements
-        --       -> Stream k1 a         -- result values
+        --       -> Series k1 a         -- start values
+        --       -> Series k2 b         -- source elements
+        --       -> Series k1 a         -- result values
         OpFlowFolds
          -> tForalls [kRate, kRate, kData, kData]
          $  \[tK1, tK2, tA, tB]
          -> tSegd tK1 tK2
                 `tFunPE` (tA `tFunPE` tB `tFunPE` tA)
-                `tFunPE` tStream tK1 tA
-                `tFunPE` tStream tK2 tB
-                `tFunPE` tStream tK1 tA
+                `tFunPE` tSeries tK1 tA
+                `tFunPE` tSeries tK2 tB
+                `tFunPE` tSeries tK1 tA
 
         -- pack  :: [k1 k2 : Rate]. [a : Data]
         --       .  Sel2 k1 k2
-        --       -> Stream k1 a -> Stream k2 a
+        --       -> Series k1 a -> Series k2 a
         OpFlowPack
          -> tForalls [kRate, kRate, kData]
          $  \[tK1, tK2, tA]
          -> tSel1 tK1 tK2 
-                `tFunPE` tStream tK1 tA
-                `tFunPE` tStream tK2 tA
+                `tFunPE` tSeries tK1 tA
+                `tFunPE` tSeries tK2 tA
 
         _ -> error $ "typeOfPrimFlow: not finished for " ++ show op
 
@@ -223,7 +223,7 @@ typeOpFlow op
 -- Compounds ------------------------------------------------------------------
 xRateOfStream :: Type Name -> Type Name -> Exp () Name -> Exp () Name
 xRateOfStream tK tA xS 
-         = xApps () (xVarOpFlow OpFlowRateOfStream) 
+         = xApps () (xVarOpFlow OpFlowRateOfSeries) 
                     [XType tK, XType tA, xS]
 
 
