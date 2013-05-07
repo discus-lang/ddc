@@ -6,7 +6,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Exp.Process
+import DDC.Core.Flow.Process
 import Data.Maybe
 import Data.List
 
@@ -69,7 +69,7 @@ slurpProcessLet _ _
 slurpProcessX :: Exp () Name -> ([Operator], [Lets () Name], Exp () Name)
 slurpProcessX xx
  | XLet _ lts@(LLet _ b x) xMore    <- xx
- , (opsMore, ltss, xBase)             <- slurpProcessX xMore
+ , (opsMore, ltss, xBase)           <- slurpProcessX xMore
  = case slurpOperator b x of
 
         -- This binding is a flow operator.        

@@ -34,6 +34,14 @@ prepModuleM mm
 prepX   :: Exp () Name -> PrepM (Exp () Name)
 prepX xx
  = case xx of
+        -- Detect workers passed to maps.
+        XApp{}
+         | Just (XVar _ u, [_,  XType tA, XType _tB, XVar _ (UName n), _])
+                                                <- takeXApps xx
+         , UPrim (NameOpFlow (OpFlowMap 1)) _   <- u
+         -> do  addWorkerArgs n [tA]
+                return xx
+
         -- Detect workers passed to folds.
         XApp{}
          | Just (XVar _ u, [_, XType tA, XType tB, XVar _ (UName n), _, _])

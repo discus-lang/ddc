@@ -34,7 +34,11 @@ Library
         DDC.Core.Flow.Env
                   
         DDC.Core.Flow.Exp.Procedure
-        DDC.Core.Flow.Exp.Process
+
+        DDC.Core.Flow.Process.Process
+        DDC.Core.Flow.Process.Operator
+        DDC.Core.Flow.Process.Pretty
+        DDC.Core.Flow.Process.Slurp
 
         DDC.Core.Flow.Transform.Prep
         DDC.Core.Flow.Transform.Slurp
