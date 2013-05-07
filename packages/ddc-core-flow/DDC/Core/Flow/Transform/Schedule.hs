@@ -7,6 +7,7 @@ import DDC.Core.Flow.Process
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds
 import DDC.Core.Exp
+import DDC.Base.Pretty
 import Data.List
 
 
@@ -17,11 +18,11 @@ scheduleProcess :: Process -> Procedure
 scheduleProcess 
         (Process 
                 { processName           = name
-                , processType           = ty
                 , processParamTypes     = psType
                 , processParamValues    = psValue
                 , processOperators      = ops 
                 , processStmts          = stmts
+                , processResultType     = tResult
                 , processResult         = xResult})
   =     (Procedure
                 { procedureName         = name
@@ -29,29 +30,34 @@ scheduleProcess
                 , procedureParamValues  = psValue
                 , procedureNest         = foldl' scheduleOperator [] ops 
                 , procedureStmts        = stmts
-                , procedureResult       = xResult 
-                , procedureResultType   = ty })
-
+                , procedureResultType   = tResult
+                , procedureResult       = xResult })
 
 
 -- | Schedule a single stream operator into a loop nest.
 scheduleOperator :: [Loop] -> Operator -> [Loop]
-scheduleOperator nest op
+scheduleOperator nest0 op
+ | OpMap{}                      <- op
+ , BName n@(NameVar strName) _  <- opResult op
+ = let  
+        nest1   = insertBody   nest1 context
+                  [ ]                   !!!!!!! not finished
+
  | OpFold{}                     <- op
  , BName n@(NameVar strName) _  <- opResult op
  = let  
         nAcc    = NameVar $ strName ++ "_acc"
-        tElem   = opTypeStream op
+        tElem   = opTypeElem op
 
         context = Context (opRate op)
-        nest1   = insertStarts nest  context
+        nest1   = insertStarts nest0 context
                    [ StartAcc nAcc tElem (opZero op) ]
 
         nest2   = insertBody   nest1 context
                    [ BodyAccRead  nAcc tElem 
                         (opWorkerParamAcc op)
                    , BodyAccWrite nAcc tElem 
-                        (opStream op) 
+                        (opInput op) 
                         (opWorkerParamElem op)
                         (opWorkerBody op) ]
 
@@ -60,7 +66,11 @@ scheduleOperator nest op
    in   nest3
 
  | otherwise
- = error "scheduleOperator: can't schedule"
+ = error $ renderIndent 
+ $ vcat [ text "repa-plugin: can't schedule operator"
+        , ppr op ]
+
+
         
 
 -------------------------------------------------------------------------------

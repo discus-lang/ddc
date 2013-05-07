@@ -36,16 +36,16 @@ slurpOperator bResult xx
 
  -- Slurp a fold# operator.
  | Just ( NameOpFlow OpFlowFold
-        , [ XType tRate, XType tAcc, XType tStream
+        , [ XType tRate, XType tAcc, XType tElem
           , xWorker,     xZero,     (XVar _ uStream)])
                                 <- takeXPrimApps xx
  , Just ([pAcc, pElem], xBody)  <- takeXLams xWorker
  = Just $ OpFold
         { opRate                = tRate
         , opResult              = bResult
-        , opStream              = uStream 
+        , opInput               = uStream
         , opTypeAcc             = tAcc
-        , opTypeStream          = tStream
+        , opTypeElem            = tElem
         , opZero                = xZero
         , opWorkerParamAcc      = pAcc
         , opWorkerParamElem     = pElem

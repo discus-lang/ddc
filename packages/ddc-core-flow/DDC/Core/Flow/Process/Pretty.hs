@@ -10,7 +10,7 @@ instance Pretty Process where
  ppr p
   = vcat
   $     [ ppr (processName p)
-        , text "  element type:  " <> ppr (processType p)
+        , text "  result type:   " <> ppr (processResultType p)
         , text "  parameters:    " <> ppr (processParamValues p) ]
         ++ map (indent 2 . ppr) (processOperators p)
 

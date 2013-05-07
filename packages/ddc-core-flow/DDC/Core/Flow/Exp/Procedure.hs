@@ -61,7 +61,7 @@ data StmtBody
           -- | Type of the accumulator.
         , bodyAccType           :: Type Name
 
-          -- | Name of the read value
+          -- | Binder for the read value.
         , bodyAccNameBind       :: Bind Name
         }
 

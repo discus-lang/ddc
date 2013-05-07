@@ -1,10 +1,11 @@
 
 module DDC.Core.Flow.Process.Operator
         ( Operator (..)
-        , elemTypeOfOperator)
+        , resultTypeOfOperator)
 where
 import DDC.Core.Exp
 import DDC.Core.Flow.Prim
+import DDC.Core.Compounds
 
 
 -- | An abstract series operator.
@@ -20,11 +21,12 @@ data Operator
           -- | Rate of source and result streams.
         , opRate                :: Type Name
 
+          -- | Binder for result stream.
+        , opResult              :: Bind Name
+
           -- | Bound for input stream.
         , opInputs              :: [Bound Name]
 
-          -- | Binder for result stream.
-        , opResult              :: Bind Name
 
           -- | Type of input elements.
         , opTypeElems           :: [Type Name]
@@ -42,19 +44,21 @@ data Operator
         -----------------------------------------
         -- | Fold all the elements of a series.
         | OpFold
-        { opRate                :: Type   Name
+        { 
+          -- | Rate of source stream.
+          opRate                :: Type   Name
 
           -- | Binder for result stream.
         , opResult              :: Bind   Name
 
           -- | Bound of input stream.
-        , opStream              :: Bound  Name
+        , opInput               :: Bound  Name
 
           -- | Type of fold accumulator.
         , opTypeAcc             :: Type   Name
 
           -- | Type of stream element.
-        , opTypeStream          :: Type   Name
+        , opTypeElem            :: Type   Name
 
           -- | Starting accumulator value.
         , opZero                :: Exp () Name
@@ -68,10 +72,10 @@ data Operator
           -- | Worker body.
         , opWorkerBody          :: Exp () Name }
 
+        deriving (Show)
+
 
 -- | Get the type of stream element that an operator processes.
-elemTypeOfOperator :: Operator -> Maybe (Type Name)
-elemTypeOfOperator op
- = case op of
-        OpMap{}                 -> Nothing              -- TODO: handle multiple source elem types.
-        OpFold{}                -> Just $ opTypeStream op
+resultTypeOfOperator :: Operator -> Type Name
+resultTypeOfOperator op
+        = typeOfBind $ opResult op
