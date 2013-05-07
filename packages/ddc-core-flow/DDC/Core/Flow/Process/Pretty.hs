@@ -19,9 +19,9 @@ instance Pretty Operator where
  ppr op@OpMap{}
         = vcat
         [ text "Map"
-        , text " rate: "        <> ppr (opRate op) ]
+        , text " rate: "        <> ppr (opInputRate op) ]
 
  ppr op@OpFold{}
         = vcat
         [ text "Fold"
-        , text " rate: "        <> ppr (opRate op) ]
+        , text " rate: "        <> ppr (opInputRate op) ]

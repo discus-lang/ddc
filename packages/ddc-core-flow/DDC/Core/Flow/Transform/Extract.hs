@@ -7,8 +7,6 @@ import DDC.Core.Flow.Exp.Procedure
 import DDC.Core.Flow.Prim
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Transform.SubstituteXX
-import Data.List
 
 
 -- | Extract a core module from some stream procedures.
@@ -57,14 +55,6 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         -- Starting statements.
         lsStart = concatMap extractStmtStart starts
 
-        -- Bounds and types of streams being read in the loop body.
-        ntsRead = nub $ concatMap readStreamsOfStmtBody bodys
-
-        -- Map of stream name to the deBruijn index that binds its element.
-        nixRead = [ (n, ix) 
-                        | (n, _) <- ntsRead 
-                        | ix     <- [0..] ]
-
         -- The loop itself.
         lLoop   = LLet LetStrict 
                         (BNone tUnit)
@@ -75,40 +65,16 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
 
         -- The worker passed to the loop# combinator.
         xBody   = XLam  () (BAnon tNat)                 -- loop counter.
-                $ xLets () (lsBodyNext ++ lsBodyProcess) 
+                $ xLets () lsBody
                            (xUnit ())
 
-        -- Get the next element from each stream.
-        lsBodyNext  
-                = [LLet LetStrict 
-                        (BAnon tElem) 
-                        (xNext  tElem tRate
-                                (XVar () (UName nStream))
-                                (XVar () (UIx (0 + offset))))
-                        | offset              <- [0..]
-                        | (nStream, tElem)    <- ntsRead ]
-
         -- Process the elements.
-        lsBodyProcess  
-                = concatMap (extractStmtBody nixRead) bodys
+        lsBody  = concatMap extractStmtBody bodys
 
         -- Ending statements.
         lsEnd   = concatMap extractStmtEnd ends
 
    in   lsStart ++ [lLoop] ++ lsEnd
-
-
--- | Get streams read by this body statement.
-readStreamsOfStmtBody 
-        :: StmtBody -> [(Name, Type Name)]
-
-readStreamsOfStmtBody bb
- = case bb of
-        BodyAccRead{}   -> []
-
-        BodyAccWrite{}  
-         -> let UName n = bodyAccStream bb
-            in  [(n, bodyAccType bb)]
 
 
 -------------------------------------------------------------------------------
@@ -127,32 +93,23 @@ extractStmtStart ss
 -------------------------------------------------------------------------------
 -- | Extract loop body code.
 extractStmtBody  
-        :: [(Name, Int)]        -- Map of stream name to deBruijn ix that binds
-                                --   the next element for this iteration.
-        -> StmtBody  
+        :: StmtBody  
         -> [Lets () Name]
 
-extractStmtBody nixRead sb
+extractStmtBody sb
  = case sb of
+        BodyStmt b x
+         -> [ LLet LetStrict b x ]
+
         -- Read from an accumulator.
         BodyAccRead  n t bVar
          -> [ LLet LetStrict bVar
                    (xRead t (XVar () (UName n))) ]
 
         -- Accumulate an element from a stream.
-        BodyAccWrite nAcc tElem uStream bElem xWorker    
-         -> let 
-                -- Find the variable that binds the next element from this stream.
-                UName nStream  = uStream
-                Just ix        = lookup nStream nixRead
-
-                -- Give the worker the variable pointing to the element.
-                xWorker' = substituteXX 
-                                bElem (XVar () (UIx ix))
-                                xWorker
-
-            in  [ LLet LetStrict (BNone tUnit)
-                   (xWrite tElem (XVar () (UName nAcc)) xWorker')]
+        BodyAccWrite nAcc tElem xWorker    
+         -> [ LLet LetStrict (BName nAcc tElem)
+                   (xWrite tElem (XVar () (UName nAcc)) xWorker)]
 
 
 -------------------------------------------------------------------------------

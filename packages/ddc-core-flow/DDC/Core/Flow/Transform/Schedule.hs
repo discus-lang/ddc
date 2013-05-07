@@ -2,13 +2,15 @@
 module DDC.Core.Flow.Transform.Schedule
         (scheduleProcess)
 where
+import DDC.Core.Flow.Transform.Schedule.SeriesEnv
+import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Exp.Procedure
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Prim
-import DDC.Core.Compounds
+import DDC.Core.Flow.Compounds
+import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import Data.List
 
 
 -- | Create loops from a list of operators.
@@ -28,103 +30,118 @@ scheduleProcess
                 { procedureName         = name
                 , procedureParamTypes   = psType
                 , procedureParamValues  = psValue
-                , procedureNest         = foldl' scheduleOperator [] ops 
+                , procedureNest         = scheduleOperators [] emptySeriesEnv ops 
                 , procedureStmts        = stmts
                 , procedureResultType   = tResult
                 , procedureResult       = xResult })
 
 
--- | Schedule a single stream operator into a loop nest.
-scheduleOperator :: [Loop] -> Operator -> [Loop]
-scheduleOperator nest0 op
- | OpMap{}                      <- op
- , BName n@(NameVar strName) _  <- opResult op
+-------------------------------------------------------------------------------
+-- | Schedule some series operators into a loop nest.
+scheduleOperators 
+        :: [Loop]       -- ^ The starting loop nest.
+        -> SeriesEnv    -- ^ Series environment maps series binds to elem binds.
+        -> [Operator]   -- ^ The operators to schedule.
+        -> [Loop]      
+
+scheduleOperators nest0 env ops
+ = case ops of
+        []              -> nest0
+        op : ops'     
+         -> let (env', nest')   = scheduleOperator nest0 env op
+            in  scheduleOperators nest' env' ops'
+
+
+-- | Schedule a single series operator into a loop nest.
+scheduleOperator 
+        :: [Loop]       -- ^ The current loop nest
+        -> SeriesEnv    -- ^ Series environment maps series binds to elem binds.
+        -> Operator     -- ^ Operator to schedule.
+        -> (SeriesEnv, [Loop])
+
+scheduleOperator nest0 env op
+ 
+ -- Maps -----------------------------------------
+ | OpMap{} <- op
  = let  
-        nest1   = insertBody   nest1 context
-                  [ ]                   !!!!!!! not finished
+        -- Get binders for the input elements.
+        Just nsSeries   = sequence $ map takeNameOfBound $ opInputSeriess op
+        tsRate          = repeat (opInputRate op)
+        tsElem          = map typeOfBind $ opWorkerParams op
 
- | OpFold{}                     <- op
- , BName n@(NameVar strName) _  <- opResult op
+        (usInputs, env1, nest1)    
+                        = bindNextElems (zip3 nsSeries tsRate tsElem) env nest0
+
+        -- Variables for all the input elements.
+        xsInputs        = map (XVar ()) usInputs
+
+        -- Substitute input element vars into the worker body.
+        xBody   = substituteXXs 
+                        (zip (opWorkerParams op) xsInputs)
+                        (opWorkerBody op)
+
+        -- Binder for a single result element in the series context.
+        Just nResultSeries = takeNameOfBind $ opResultSeries op
+        Just nResultElem   = elemNameOfSeriesName nResultSeries
+        uResultElem        = UName nResultElem
+
+        Just bResultElem = elemBindOfSeriesBind (opResultSeries op)
+
+        -- Insert the expression that computes the new result into the nest.
+        Just tRate      = rateTypeOfSeriesType (typeOfBind $ opResultSeries op)
+        context         = Context tRate
+        nest2           = insertBody nest1 context
+                                [ BodyStmt bResultElem xBody ]
+
+        -- Associate the variable for the result element with the result series.
+        env2            = insertElemForSeries nResultSeries uResultElem env1
+
+    in  (env2, nest2)
+
+ -- Folds ---------------------------------------
+ | OpFold{} <- op
  = let  
-        nAcc    = NameVar $ strName ++ "_acc"
-        tElem   = opTypeElem op
+        -- Lookup binders for the input elements.
+        Just nSeries    = takeNameOfBound (opInputSeries op)
+        tRate           = opInputRate op
+        tInputElem      = typeOfBind (opWorkerParamElem op)
+        (uInput, env1, nest1)
+                        = bindNextElem nSeries tRate tInputElem env nest0
 
-        context = Context (opRate op)
-        nest1   = insertStarts nest0 context
-                   [ StartAcc nAcc tElem (opZero op) ]
+        -- Make a name for the accumulator
+        BName n@(NameVar strName) _ 
+                        = opResultValue op
+        nAcc            = NameVar $ strName ++ "_acc"
+        uAcc            = UName nAcc
+        
+        -- Type of the accumulator
+        tAcc    = typeOfBind (opWorkerParamAcc op)
+        
+        -- Insert statements that initializes the consumer.
+        context = Context $ opInputRate op
+        nest2   = insertStarts nest1 context
+                        [ StartAcc nAcc tAcc (opZero op) ]
 
-        nest2   = insertBody   nest1 context
-                   [ BodyAccRead  nAcc tElem 
-                        (opWorkerParamAcc op)
-                   , BodyAccWrite nAcc tElem 
-                        (opInput op) 
-                        (opWorkerParamElem op)
-                        (opWorkerBody op) ]
+        -- Substitute input and accumulator vars into worker body.
+        xBody   = substituteXXs
+                        [ (opWorkerParamAcc op,  XVar () uAcc)
+                        , (opWorkerParamElem op, XVar () uInput) ]
+                        (opWorkerBody op)
 
-        nest3   = insertEnds   nest2 context
-                   [ EndAcc   n tElem nAcc ]
-   in   nest3
+        -- Insert statements that update the accumulator
+        nest3   = insertBody nest2 context
+                        [ BodyAccRead  nAcc tAcc (opWorkerParamAcc op)
+                        , BodyAccWrite nAcc tAcc xBody ]
+                                
+        -- Insert statements that read back the final value.
+        nest4   = insertEnds nest3 context
+                        [ EndAcc   n tAcc nAcc ]
+   in   (env1, nest4)
 
  | otherwise
  = error $ renderIndent 
  $ vcat [ text "repa-plugin: can't schedule operator"
         , ppr op ]
-
-
-        
-
--------------------------------------------------------------------------------
--- | Insert starting statements in the given context.
---   TODO: proper context.
-insertStarts :: [Loop] -> Context -> [StmtStart] -> [Loop]
-
-insertStarts [] c' starts' 
- = insertStarts
-    [Loop c' [] [] [] [] (xUnit ())] c' starts'
-
-insertStarts (loop : loops) c' starts' 
- | Loop c starts body nested end result        <- loop
- , c == c'
- = Loop c (starts ++ starts') body nested end result : loops
-
- | otherwise
- = loop : insertStarts loops c' starts'
-
-
--------------------------------------------------------------------------------
--- | Insert starting statements in the given context.
---   TODO: proper context
-insertBody :: [Loop] -> Context -> [StmtBody] -> [Loop]
-
-insertBody [] c' body'
- = insertBody 
-    [Loop c' [] [] [] [] (xUnit ())] c' body'
-
-insertBody  (loop : loops) c' body' 
- | Loop c starts body nested end result         <- loop
- , c == c'
- = Loop c starts (body ++ body') nested end result : loops
-
- | otherwise
- = loop : insertBody loops c' body'
-
-
--------------------------------------------------------------------------------
--- | Insert ending statements in the given context.
-insertEnds :: [Loop] -> Context -> [StmtEnd] -> [Loop] 
-
-insertEnds [] c' ends' 
- = insertEnds 
-    [Loop c' [] [] [] [] (xUnit ())] c' ends'
-
-insertEnds (loop : loops) c' ends' 
- | Loop c starts body nested end result       <- loop
- , c == c'
- = Loop c starts body nested (end ++ ends') result : loops
-
- | otherwise
- = loop : insertEnds loops c' ends'
-
 
 
 

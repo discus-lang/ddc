@@ -20,32 +20,28 @@ slurpOperator bResult xx
  -- Slurp a map1# operator                       
  -- TODO: handle higher arity maps generally
  | Just ( NameOpFlow (OpFlowMap 1)
-        , [ XType tRate, XType tA, XType tB
-          , xWorker,     (XVar _  uStream)])
+        , [ XType tRate, XType _tA, XType _tB
+          , xWorker,     (XVar _  uSeries)])
                                 <- takeXPrimApps xx
  , Just ([pIn1], xBody)         <- takeXLams xWorker
  = Just $ OpMap
         { opArity               = 1
-        , opRate                = tRate
-        , opInputs              = [uStream]
-        , opResult              = bResult
-        , opTypeElems           = [tA]
-        , opTypeResult          = tB
+        , opResultSeries        = bResult
+        , opInputRate           = tRate
+        , opInputSeriess        = [uSeries]
         , opWorkerParams        = [pIn1]
         , opWorkerBody          = xBody }
 
  -- Slurp a fold# operator.
  | Just ( NameOpFlow OpFlowFold
-        , [ XType tRate, XType tAcc, XType tElem
-          , xWorker,     xZero,     (XVar _ uStream)])
+        , [ XType tRate, XType _tAcc, XType _tElem
+          , xWorker,     xZero,     (XVar _ uSeries)])
                                 <- takeXPrimApps xx
  , Just ([pAcc, pElem], xBody)  <- takeXLams xWorker
  = Just $ OpFold
-        { opRate                = tRate
-        , opResult              = bResult
-        , opInput               = uStream
-        , opTypeAcc             = tAcc
-        , opTypeElem            = tElem
+        { opResultValue         = bResult
+        , opInputRate           = tRate
+        , opInputSeries         = uSeries
         , opZero                = xZero
         , opWorkerParamAcc      = pAcc
         , opWorkerParamElem     = pElem
@@ -53,3 +49,4 @@ slurpOperator bResult xx
 
  | otherwise
  = Nothing
+

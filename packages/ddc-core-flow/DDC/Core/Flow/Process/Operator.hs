@@ -1,38 +1,33 @@
 
 module DDC.Core.Flow.Process.Operator
-        ( Operator (..)
-        , resultTypeOfOperator)
+        (Operator (..))
 where
 import DDC.Core.Exp
 import DDC.Core.Flow.Prim
-import DDC.Core.Compounds
 
 
 -- | An abstract series operator.
+--
+--   Each of the constructors holds all the information we need to produce
+--   code for that operator.
 data Operator
         -----------------------------------------
-        -- | Apply a function to corresponding elements in a series,
-        --   producing a new series. This subsumes regular 'map' as well
-        --   as 'zipWith' like functions where the input lengths are identical.
+        -- | Apply a function to corresponding elements in several input series
+        --   of the same rate, producing a new series. This subsumes the regular
+        --   'map' operator as well as 'zipWith' like operators where the input
+        --   lengths are identical.
         = OpMap
         { -- | Arity of map, number of input streams.
           opArity               :: Int
 
-          -- | Rate of source and result streams.
-        , opRate                :: Type Name
+          -- | Binder for result series.
+        , opResultSeries        :: Bind Name
 
-          -- | Binder for result stream.
-        , opResult              :: Bind Name
+          -- | Rate of all input series.
+        , opInputRate           :: Type Name
 
-          -- | Bound for input stream.
-        , opInputs              :: [Bound Name]
-
-
-          -- | Type of input elements.
-        , opTypeElems           :: [Type Name]
-
-          -- | Type of result stream element.
-        , opTypeResult          :: Type Name
+          -- | Names for input series.
+        , opInputSeriess        :: [Bound Name]
 
           -- | Worker input parameters
         , opWorkerParams        :: [Bind Name]
@@ -44,38 +39,25 @@ data Operator
         -----------------------------------------
         -- | Fold all the elements of a series.
         | OpFold
-        { 
-          -- | Rate of source stream.
-          opRate                :: Type   Name
+        { -- | Binder for result value.
+          opResultValue         :: Bind Name
 
-          -- | Binder for result stream.
-        , opResult              :: Bind   Name
+          -- | Rate of input series.
+        , opInputRate           :: Type Name
 
-          -- | Bound of input stream.
-        , opInput               :: Bound  Name
-
-          -- | Type of fold accumulator.
-        , opTypeAcc             :: Type   Name
-
-          -- | Type of stream element.
-        , opTypeElem            :: Type   Name
+          -- | Bound of input series.
+        , opInputSeries         :: Bound Name
 
           -- | Starting accumulator value.
         , opZero                :: Exp () Name
 
-          -- | Worker accumulator input.
-        , opWorkerParamAcc      :: Bind   Name
+          -- | Worker parameter for accumulator input.
+        , opWorkerParamAcc      :: Bind Name
 
-          -- | Worker series element input.
-        , opWorkerParamElem     :: Bind   Name
+          -- | Worker parameter for element input.
+        , opWorkerParamElem     :: Bind Name
 
           -- | Worker body.
         , opWorkerBody          :: Exp () Name }
 
         deriving (Show)
-
-
--- | Get the type of stream element that an operator processes.
-resultTypeOfOperator :: Operator -> Type Name
-resultTypeOfOperator op
-        = typeOfBind $ opResult op

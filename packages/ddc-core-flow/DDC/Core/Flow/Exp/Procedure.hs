@@ -53,8 +53,17 @@ data StmtStart
 
 -- | Statements that appear in the body of a loop.
 data StmtBody
+        -- | Evaluate a pure expression.
+        = BodyStmt
+        { -- | Bind for the result
+          bodyResultBind        :: Bind Name
+
+          -- | Expression to evaluate
+        , bodyExpression        :: Exp () Name }
+
+
         -- | Read from an accumulator.
-        = BodyAccRead
+        | BodyAccRead
         { -- | Name of the accumulator.
           bodyAccName           :: Name
 
@@ -68,19 +77,11 @@ data StmtBody
         -- | Body of an accumulation operation.
         --   Writes to the accumulator.
         | BodyAccWrite
-
         { -- | Name of the accumulator.
           bodyAccName           :: Name
 
           -- | Type of the accumulator.
         , bodyAccType           :: Type Name
-
-          -- | Stream being read.
-        , bodyAccStream         :: Bound Name
-
-          -- | Parameter that binds the next element from the
-          --   stream in the body expression.
-        , bodyAccParamElem      :: Bind Name
 
           -- | Expression to update the accumulator.
         , bodyAccExp            :: Exp () Name }

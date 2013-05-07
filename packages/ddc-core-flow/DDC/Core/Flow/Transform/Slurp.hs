@@ -41,20 +41,20 @@ slurpProcessesLts _
 
 -- | Slurp stream operators from a top-level binding.
 slurpProcessLet :: Bind Name -> Exp () Name -> Maybe Process
-slurpProcessLet (BName n _) xx
+slurpProcessLet (BName n tProcess) xx
 
  -- TODO: check that all the type params come before the value params.
  | Just (fbs, xBody)      <- takeXLamFlags xx
  , (fbts, fbvs)           <- partition fst fbs
  , (ops,  ltss, xResult)  <- slurpProcessX xBody
- , o : _                  <- ops
+ , tResult                <- snd $ takeTFunAllArgResult tProcess
  = Just  $ Process
          { processName          = n
          , processParamTypes    = map snd fbts
          , processParamValues   = map snd fbvs
          , processOperators     = ops
          , processStmts         = ltss
-         , processResultType    = resultTypeOfOperator o
+         , processResultType    = tResult
          , processResult        = xResult }
 
 slurpProcessLet _ _
