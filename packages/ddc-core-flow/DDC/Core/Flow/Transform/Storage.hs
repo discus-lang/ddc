@@ -33,41 +33,41 @@ storageX xx
      -- Demote allocs ---------------------------
      --    let x = new#        [a] val    in ...
      --
-     -- => let x = newArray#   [a] 1#     in
-     --    let _ = writeArray# [a] 0# val in ...
+     -- => let x = newVector#   [a] 1#     in
+     --    let _ = writeVector# [a] 0# val in ...
      --
      | LLet m b x1      <- lts
      , Just (NameOpStore OpStoreNew, [XType tA, xVal])        
                 <- takeXPrimApps x1
 
-     -> let b'      = replaceTypeOfBind (tArray tA) b
+     -> let b'      = replaceTypeOfBind (tVector tA) b
             Just u' = takeSubstBoundOfBind b'
         in  XLet a (LLet m b'            
-                        $ xNewArray   tA (xNat () 8))                   -- SIZE WRONG
+                        $ xNewVector   tA (xNat () 1))
           $ XLet a (LLet m (BNone tUnit) 
-                        $ xWriteArray tA (XVar () u') (xNat () 0) xVal)
+                        $ xWriteVector tA (XVar () u') (xNat () 0) xVal)
           $ storageX x2
 
 
      -- Demote reads ----------------------------
-     --    let x = read#       [a] arr    in ...
+     --    let x = read#        [a] arr    in ...
      --
-     -- => let x = readArray#  [a] arr 0# in ...
+     -- => let x = readVector#  [a] arr 0# in ...
      | LLet m b x1      <- lts
      , Just (NameOpStore OpStoreRead, [XType tA, xArr])
                 <- takeXPrimApps x1
-     -> XLet a (LLet m b $ xReadArray tA xArr (xNat () 0))
+     -> XLet a (LLet m b $ xReadVector tA xArr (xNat () 0))
       $ storageX x2
 
 
      -- Demote writes ---------------------------
      --    let  x = write#      [a] arr x    in ...
      --
-     -- => let  x = writeArray# [a] arr 0# x in ...
+     -- => let  x = writeVector# [a] arr 0# x in ...
      | LLet m b x1      <- lts
      , Just (NameOpStore OpStoreWrite, [XType tA, xArr, xVal])
                 <- takeXPrimApps x1
-     -> XLet a (LLet m b $ xWriteArray tA xArr (xNat () 0) xVal)
+     -> XLet a (LLet m b $ xWriteVector tA xArr (xNat () 0) xVal)
       $ storageX x2
 
    

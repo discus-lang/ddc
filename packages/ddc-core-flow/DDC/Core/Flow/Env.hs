@@ -52,11 +52,12 @@ primDataDefs
 
 
         -- Flow -----------------------------------------------------
-        -- Stream
+        -- Tuple
         , DataDef
-                (NameTyConFlow TyConFlowSeries)
-                [kRate, kData]
-                (Just   [])
+                (NameTyConFlow (TyConFlowTuple 2))
+                [kData, kData]
+                (Just   [ ( NameDaConFlow (DaConFlowTuple 2)
+                          , [tIx kData 1, tIx kData 0]) ])
 
         -- Vector
         , DataDef
@@ -64,18 +65,11 @@ primDataDefs
                 [kRate, kData]
                 (Just   [])
 
-        -- Array
+        -- Series
         , DataDef
-                (NameTyConFlow TyConFlowArray)
-                [kData]
+                (NameTyConFlow TyConFlowSeries)
+                [kRate, kData]
                 (Just   [])
-
-        -- Tuple
-        , DataDef
-                (NameTyConFlow (TyConFlowTuple 2))
-                [kData, kData]
-                (Just   [ ( NameDaConFlow (DaConFlowTuple 2)
-                          , [tIx kData 1, tIx kData 0]) ])
         ]
 
 -- Sorts ---------------------------------------------------------------------

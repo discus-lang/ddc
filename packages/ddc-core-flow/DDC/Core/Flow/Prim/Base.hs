@@ -83,9 +83,6 @@ data TyConFlow
         -- | @TN@      type constructor.
         = TyConFlowTuple Int            
 
-        -- | @Array#@ type constructor.
-        | TyConFlowArray
-
         -- | @Vector#@ type constructor.
         | TyConFlowVector
 
@@ -163,10 +160,10 @@ data OpStore
         | OpStoreRead           -- ^ Read from an assignable.
         | OpStoreWrite          -- ^ Write to an assignable.
 
-        -- Arrays.
-        | OpStoreNewArray       -- ^ Allocate a new array.
-        | OpStoreReadArray      -- ^ Read from an array.
-        | OpStoreWriteArray     -- ^ Write to an array.
+        -- Vectors.
+        | OpStoreNewVector      -- ^ Allocate a new vector.
+        | OpStoreReadVector     -- ^ Read from a vector.
+        | OpStoreWriteVector    -- ^ Write to a vector.
 
         -- Streams.
         | OpStoreNext           -- ^ Take the next element from a stream.

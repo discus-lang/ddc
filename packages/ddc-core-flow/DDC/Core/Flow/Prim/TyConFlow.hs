@@ -5,7 +5,6 @@ module DDC.Core.Flow.Prim.TyConFlow
         , kindTyConFlow
         , tTuple1
         , tTuple2
-        , tArray
         , tVector
         , tSeries
         , tSegd
@@ -33,7 +32,6 @@ instance Pretty TyConFlow where
   = case dc of
         TyConFlowTuple n        -> text "Tuple" <> int n <> text "#"
 
-        TyConFlowArray          -> text "Array#"
         TyConFlowVector         -> text "Vector#"
         TyConFlowSeries         -> text "Series#"
 
@@ -58,7 +56,6 @@ readTyConFlow str
 
         | otherwise
         = case str of
-                "Array#"        -> Just $ TyConFlowArray
                 "Vector#"       -> Just $ TyConFlowVector
                 "Series#"       -> Just $ TyConFlowSeries
 
@@ -79,7 +76,6 @@ kindTyConFlow tc
  = case tc of
         TyConFlowTuple 1        -> kData `kFun` kData
         TyConFlowTuple 2        -> kData `kFun` kData `kFun` kData
-        TyConFlowArray          -> kData `kFun` kData
         TyConFlowVector         -> kData `kFun` kData
         TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
@@ -98,10 +94,6 @@ tTuple1 tA      = tApps (tConTyConFlow (TyConFlowTuple 1)) [tA]
 
 tTuple2 :: Type Name -> Type Name -> Type Name
 tTuple2 tA tB   = tApps (tConTyConFlow (TyConFlowTuple 2)) [tA, tB]
-
-
-tArray :: Type Name -> Type Name
-tArray tA       = tApps (tConTyConFlow TyConFlowArray)    [tA]
 
 
 tVector :: Type Name -> Type Name

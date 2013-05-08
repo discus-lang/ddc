@@ -99,23 +99,23 @@ threadType n
                  $ \tA  -> tRef tA `tFunPE` tA 
                         `tFunPE` tWorld `tFunPE` tWorld
 
-        -- Arrays -------------------------------
-        -- newArray#   :: [a : Data]. a -> Nat# -> World# -> T2# (World#, Array# a)
-        NameOpStore OpStoreNewArray
+        -- Vectors -------------------------------
+        -- newVector#   :: [a : Data]. Nat# -> World# -> T2# (World#, Vector# a)
+        NameOpStore OpStoreNewVector
          -> Just $ tForall kData
-                 $ \tA -> tA `tFunPE` tNat `tFunPE` tWorld 
-                        `tFunPE` (tTuple2 tWorld (tArray tA))
+                 $ \tA -> tNat `tFunPE` tWorld 
+                        `tFunPE` (tTuple2 tWorld (tVector tA))
 
-        -- readArray#  :: [a : Data]. Array# a -> Nat# -> World# -> T2# (World#, a)
-        NameOpStore OpStoreReadArray
+        -- readVector#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# (World#, a)
+        NameOpStore OpStoreReadVector
          -> Just $ tForall kData
-                 $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tWorld
+                 $ \tA -> tA `tFunPE` tVector tA `tFunPE` tNat `tFunPE` tWorld
                         `tFunPE` (tTuple2 tWorld tA)
 
-        -- writeArray# :: [a : Data]. Array# a -> Nat# -> a -> World# -> World#
-        NameOpStore OpStoreWriteArray
+        -- writeVector# :: [a : Data]. Vector# a -> Nat# -> a -> World# -> World#
+        NameOpStore OpStoreWriteVector
          -> Just $ tForall kData
-                 $ \tA -> tA `tFunPE` tArray tA `tFunPE` tNat `tFunPE` tA 
+                 $ \tA -> tA `tFunPE` tVector tA `tFunPE` tNat `tFunPE` tA 
                         `tFunPE` tWorld `tFunPE` tWorld
 
         -- Streams ------------------------------

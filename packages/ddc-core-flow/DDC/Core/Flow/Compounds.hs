@@ -6,7 +6,7 @@ module DDC.Core.Flow.Compounds
         , kNatP, kRate
 
           -- * TyConFlow
-        , tTuple2, tArray, tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
+        , tTuple2, tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
 
           -- * TyConPrim
@@ -24,8 +24,8 @@ module DDC.Core.Flow.Compounds
         , xLoopLoopN
 
           -- * OpStore
-        , xNew,      xRead,      xWrite
-        , xNewArray, xReadArray, xWriteArray
+        , xNew,       xRead,       xWrite
+        , xNewVector, xReadVector, xWriteVector
         , xNext)
 where
 import DDC.Core.Flow.Prim.KiConFlow
