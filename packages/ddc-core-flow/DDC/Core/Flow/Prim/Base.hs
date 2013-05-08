@@ -83,7 +83,7 @@ data TyConFlow
         -- | @TN@      type constructor.
         = TyConFlowTuple Int            
 
-        -- | @Array#@  type constructor.
+        -- | @Array#@ type constructor.
         | TyConFlowArray
 
         -- | @Vector#@ type constructor.
@@ -121,10 +121,6 @@ data OpFlow
         = OpFlowSeriesOfVector
         | OpFlowVectorOfSeries
         | OpFlowRateOfSeries
-
-        -- Vector conversions
-        | OpFlowArrayOfVector
-        | OpFlowVectorOfArray Int
 
         -- selectors
         | OpFlowMkSel Int

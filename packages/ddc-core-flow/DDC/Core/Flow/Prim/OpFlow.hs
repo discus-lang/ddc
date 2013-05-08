@@ -27,9 +27,6 @@ instance Pretty OpFlow where
         OpFlowVectorOfSeries    -> text "vectorOfSeries"        <> text "#"
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
 
-        OpFlowArrayOfVector     -> text "arrayOfVector"          <> text "#"
-        OpFlowVectorOfArray n   -> text "vectorOfArray" <> int n <> text "#"
-
         OpFlowMkSel n           -> text "mkSel"      <> int n   <> text "#"
 
         OpFlowMap i             -> text "map"        <> int i   <> text "#"
@@ -52,12 +49,6 @@ instance Pretty OpFlow where
 -- | Read a baked-in data flow operator.
 readOpFlow :: String -> Maybe OpFlow
 readOpFlow str
-        | Just rest     <- stripPrefix "vectorOfArray" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ OpFlowVectorOfArray arity
-
         | Just rest     <- stripPrefix "mkSel" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -87,8 +78,6 @@ readOpFlow str
                 "seriesOfVector#"  -> Just $ OpFlowSeriesOfVector
                 "vectorOfSeries#"  -> Just $ OpFlowVectorOfSeries
                 "rateOfSeries#"    -> Just $ OpFlowRateOfSeries
-                "arrayOfVector#"   -> Just $ OpFlowArrayOfVector
-                "vectorOfArray#"   -> Just $ OpFlowVectorOfArray 1
                 "map#"             -> Just $ OpFlowMap 1
                 "rep#"             -> Just $ OpFlowRep
                 "reps#"            -> Just $ OpFlowReps
@@ -106,19 +95,11 @@ typeOpFlow :: OpFlow -> Type Name
 typeOpFlow op
  = case op of
         -- Series Conversions -------------------
-        -- seriesOfVector# :: [k : Rate]. [a : Data]
-        --                 .  Vector k a -> Series k a
-        OpFlowSeriesOfVector
-         -> tForalls [kRate, kData]
-         $  \[tK, tA]
-                -> tVector tK tA `tFunPE` tSeries tK tA
-
         -- vectorOfSeries# :: [k : Rate]. [a : Data]
-        --                 .  Series k a -> Vector k a
+        --                 .  Series k a -> Vector a
         OpFlowVectorOfSeries
          -> tForalls [kRate, kData]
-         $  \[tK, tA]
-                -> tSeries tK tA `tFunPE` tVector tK tA
+         $  \[tK, tA] -> tSeries tK tA `tFunPE` tVector tA
 
         -- rateOfSeries#   :: [k : Rate]. [a : Data]
         --                 .  Series k a -> RateNat k
@@ -127,16 +108,6 @@ typeOpFlow op
          $  \[tK, tA]
                 -> tSeries tK tA `tFunPE` tRateNat tK
 
-
-        -- Vector Conversions ---------------
-        -- arrayOfVector#  :: [k : Rate]. [a : Data]
-        --                 .  Vector k a -> Array a
-        OpFlowArrayOfVector
-         -> tForalls [kRate, kData]
-         $  \[tK, tA]
-         -> tVector tK tA `tFunPE` tArray tA
-
-        -- MISSING: vectorOfArrayN
 
         -- Selectors ----------------------------
         -- mkSel1#    :: [k1 : Rate]. [a : Data]

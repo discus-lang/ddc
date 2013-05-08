@@ -75,7 +75,7 @@ typeOpStore op
         OpStoreNewArray
          -> tForall kData $ \tA -> tNat `tFunPE` tArray tA
 
-        -- readArray#  :: [a : Data]. Array# a -> NAt# -> a
+        -- readArray#  :: [a : Data]. Array# a -> Nat# -> a
         OpStoreReadArray
          -> tForall kData 
          $  \tA -> tArray tA `tFunPE` tNat `tFunPE` tA

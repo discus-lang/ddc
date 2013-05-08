@@ -80,7 +80,7 @@ kindTyConFlow tc
         TyConFlowTuple 1        -> kData `kFun` kData
         TyConFlowTuple 2        -> kData `kFun` kData `kFun` kData
         TyConFlowArray          -> kData `kFun` kData
-        TyConFlowVector         -> kRate `kFun` kData `kFun` kData
+        TyConFlowVector         -> kData `kFun` kData
         TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
         TyConFlowSel 1          -> kRate `kFun` kRate `kFun` kData
@@ -88,12 +88,13 @@ kindTyConFlow tc
         TyConFlowRef            -> kData `kFun` kData
         TyConFlowWorld          -> kData
         TyConFlowRateNat        -> kRate `kFun` kData
-        _                       -> error "ddc-core-flow.kindTyConFlow: no match"
+        _ -> error $ "ddc-core-flow.kindTyConFlow: no match for " ++ show tc
 
 
 -- Compounds ------------------------------------------------------------------
 tTuple1 :: Type Name -> Type Name
 tTuple1 tA      = tApps (tConTyConFlow (TyConFlowTuple 1)) [tA]
+
 
 tTuple2 :: Type Name -> Type Name -> Type Name
 tTuple2 tA tB   = tApps (tConTyConFlow (TyConFlowTuple 2)) [tA, tB]
@@ -103,8 +104,8 @@ tArray :: Type Name -> Type Name
 tArray tA       = tApps (tConTyConFlow TyConFlowArray)    [tA]
 
 
-tVector :: Type Name -> Type Name -> Type Name
-tVector tK tA   = tApps (tConTyConFlow TyConFlowVector)   [tK, tA]
+tVector :: Type Name -> Type Name
+tVector tA      = tApps (tConTyConFlow TyConFlowVector)   [tA]
 
 
 tSeries :: Type Name -> Type Name -> Type Name
