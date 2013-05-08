@@ -108,7 +108,7 @@ extractStmtBody sb
 
         -- Accumulate an element from a stream.
         BodyAccWrite nAcc tElem xWorker    
-         -> [ LLet LetStrict (BName nAcc tElem)
+         -> [ LLet LetStrict (BNone tUnit)
                    (xWrite tElem (XVar () (UName nAcc)) xWorker)]
 
 

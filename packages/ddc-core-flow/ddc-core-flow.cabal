@@ -41,9 +41,11 @@ Library
         DDC.Core.Flow.Process.Slurp
         DDC.Core.Flow.Process
 
+        DDC.Core.Flow.Transform.Schedule.SeriesEnv
+        DDC.Core.Flow.Transform.Schedule.Nest
+        DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Prep
         DDC.Core.Flow.Transform.Slurp
-        DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Extract
         DDC.Core.Flow.Transform.Concretize
         DDC.Core.Flow.Transform.Storage

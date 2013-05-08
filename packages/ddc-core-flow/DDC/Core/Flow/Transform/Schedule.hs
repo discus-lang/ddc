@@ -111,8 +111,8 @@ scheduleOperator nest0 env op
         -- Make a name for the accumulator
         BName n@(NameVar strName) _ 
                         = opResultValue op
-        nAcc            = NameVar $ strName ++ "_acc"
-        uAcc            = UName nAcc
+        nAcc            = NameVar $ strName ++ "__acc"
+--        uAcc            = UName nAcc
         
         -- Type of the accumulator
         tAcc    = typeOfBind (opWorkerParamAcc op)
@@ -124,8 +124,7 @@ scheduleOperator nest0 env op
 
         -- Substitute input and accumulator vars into worker body.
         xBody   = substituteXXs
-                        [ (opWorkerParamAcc op,  XVar () uAcc)
-                        , (opWorkerParamElem op, XVar () uInput) ]
+                        [ (opWorkerParamElem op, XVar () uInput) ]
                         (opWorkerBody op)
 
         -- Insert statements that update the accumulator

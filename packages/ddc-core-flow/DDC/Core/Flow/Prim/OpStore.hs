@@ -132,7 +132,7 @@ xWriteArray t xArr xIx xElem
 xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xNext tRate tElem xStream xIndex
  = xApps () (xVarOpStore OpStoreNext)
-            [XType tRate, XType tElem, xStream, xIndex]
+            [XType tElem, XType tRate, xStream, xIndex]
 
 
 -- Utils ----------------------------------------------------------------------
