@@ -161,7 +161,9 @@ data OpStore
         | OpStoreWrite          -- ^ Write to an assignable.
 
         -- Vectors.
-        | OpStoreNewVector      -- ^ Allocate a new vector.
+        | OpStoreNewVector      -- ^ Allocate a new vector (Nat length)
+        | OpStoreNewVectorR     -- ^ Allocate a new vector (type-level rate)
+        | OpStoreNewVectorN     -- ^ Allocate a new vector (RateNat version)
         | OpStoreReadVector     -- ^ Read from a vector.
         | OpStoreWriteVector    -- ^ Write to a vector.
 

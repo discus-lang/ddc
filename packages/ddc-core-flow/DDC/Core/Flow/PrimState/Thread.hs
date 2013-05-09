@@ -106,6 +106,15 @@ threadType n
                  $ \tA -> tNat `tFunPE` tWorld 
                         `tFunPE` (tTuple2 tWorld (tVector tA))
 
+        -- newVectorN#  :: [a : Data]. [k : Rate]. RateNat# k 
+        --              -> World# -> T2# (World#, Vector# a)
+        NameOpStore OpStoreNewVectorN
+         -> Just $ tForalls [kData, kRate]
+                 $ \[tA, tK] 
+                     -> tRateNat tK 
+                        `tFunPE` tWorld 
+                        `tFunPE` (tTuple2 tWorld (tVector tA))
+
         -- readVector#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# (World#, a)
         NameOpStore OpStoreReadVector
          -> Just $ tForall kData

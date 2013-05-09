@@ -83,6 +83,11 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
 extractStmtStart :: StmtStart -> [Lets () Name]
 extractStmtStart ss
  = case ss of
+        -- Allocate a new vector
+        StartVecNew nVec tElem tRate'
+         -> [LLet LetStrict (BName nVec (tVector tElem))
+                  (xNewVectorR tElem tRate') ]
+
 
         -- Initialise the accumulator for a reduction operation.
         StartAcc n t x    
@@ -100,6 +105,11 @@ extractStmtBody sb
  = case sb of
         BodyStmt b x
          -> [ LLet LetStrict b x ]
+
+        -- Write to a vector.
+        BodyVecWrite nVec tElem xIx xVal
+         -> [ LLet LetStrict (BNone tUnit)
+                   (xWriteVector tElem (XVar () (UName nVec)) xIx xVal)]
 
         -- Read from an accumulator.
         BodyAccRead  n t bVar

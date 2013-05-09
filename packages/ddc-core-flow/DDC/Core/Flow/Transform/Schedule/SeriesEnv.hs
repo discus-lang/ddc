@@ -40,8 +40,7 @@ emptySeriesEnv
 -- | Insert an entry into the series environment.
 insertElemForSeries
         :: Name -> Bound Name -> SeriesEnv -> SeriesEnv
-insertElemForSeries
- n u (SeriesEnv env)
+insertElemForSeries n u (SeriesEnv env)
         = SeriesEnv (Map.insert n u env)
 
 

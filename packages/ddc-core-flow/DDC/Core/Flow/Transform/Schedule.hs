@@ -60,6 +60,38 @@ scheduleOperator
         -> (SeriesEnv, [Loop])
 
 scheduleOperator nest0 env op
+
+ -- Create ---------------------------------------
+ | OpCreate{} <- op
+ = let  
+        -- Get binders for the input elements.
+        Just nSeries    
+         = takeNameOfBound (opInputSeries op)
+        
+        (uInput, env1, nest1)
+         = bindNextElem nSeries 
+                        (opInputRate op) (opElemType  op)
+                        env nest0
+
+        -- Insert statements that allocate the vector.
+        BName nVec _    = opResultVector op
+        context         = Context (opInputRate op)
+        
+        nest2   = insertStarts nest1 context
+                $ [ StartVecNew  
+                        nVec 
+                        (opElemType op) 
+                        (opInputRate op) ]
+
+        -- Insert statements that write the current element to the vector.
+        nest3   = insertBody   nest2 context 
+                $ [ BodyVecWrite 
+                        nVec 
+                        (opElemType op)
+                        (XVar () (UIx 0))
+                        (XVar () uInput) ]
+   in   (env1, nest3)
+
  
  -- Maps -----------------------------------------
  | OpMap{} <- op
@@ -112,7 +144,6 @@ scheduleOperator nest0 env op
         BName n@(NameVar strName) _ 
                         = opResultValue op
         nAcc            = NameVar $ strName ++ "__acc"
---        uAcc            = UName nAcc
         
         -- Type of the accumulator
         tAcc    = typeOfBind (opWorkerParamAcc op)
@@ -139,8 +170,8 @@ scheduleOperator nest0 env op
 
  | otherwise
  = error $ renderIndent 
- $ vcat [ text "repa-plugin: can't schedule operator"
-        , ppr op ]
+ $ vcat [ text "repa-plugin: can't schedule series operator"
+        , indent 8 $ ppr op ]
 
 
 

@@ -16,6 +16,13 @@ instance Pretty Process where
 
 
 instance Pretty Operator where
+ ppr op@OpCreate{}
+        = vcat
+        [ text "Create"
+        , text " rate:   "      <> ppr (opInputRate op)
+        , text " input:  "      <> ppr (opInputSeries op)        
+        , text " result: "      <> ppr (opResultVector op) ]
+
  ppr op@OpMap{}
         = vcat
         [ text "Map"

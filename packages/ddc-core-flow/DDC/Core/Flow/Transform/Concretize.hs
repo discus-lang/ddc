@@ -24,6 +24,7 @@ concretizeX
         -> Exp () Name  -> Exp () Name
 
 concretizeX _kenv tenv xx
+        -- loop# -> loopn#
         | Just (NameOpLoop OpLoopLoop, [XType tK, xF])       
                                 <- takeXPrimApps xx
         , Just (nS, _, tA)      <- findSeriesWithRate tenv tK
@@ -33,6 +34,16 @@ concretizeX _kenv tenv xx
                 (xRateOfStream tK tA xS)        -- 
                 xF                              -- loop body
 
+        -- newVectorR# -> newVectorN#
+        | Just (NameOpStore OpStoreNewVectorR
+                        , [XType tA, XType tK])
+                                <- takeXPrimApps xx
+        , Just (nS, _, _)       <- findSeriesWithRate tenv tK
+        , xS                    <- XVar () (UName nS)
+        = xNewVectorN
+                tA tK
+                (xRateOfStream tK tA xS)
+                
         | otherwise
         = xx
 

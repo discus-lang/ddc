@@ -17,6 +17,16 @@ slurpOperator
         -> Maybe Operator
 
 slurpOperator bResult xx
+ -- Slurp a create# operator
+ | Just ( NameOpFlow OpFlowVectorOfSeries
+        , [ XType tRate, XType tA, (XVar _ uSeries) ])
+                                <- takeXPrimApps xx
+ = Just $ OpCreate
+        { opResultVector        = bResult
+        , opInputRate           = tRate
+        , opInputSeries         = uSeries 
+        , opElemType            = tA }
+
  -- Slurp a map1# operator                       
  -- TODO: handle higher arity maps generally
  | Just ( NameOpFlow (OpFlowMap 1)

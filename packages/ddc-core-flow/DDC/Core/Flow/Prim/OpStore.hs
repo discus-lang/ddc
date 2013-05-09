@@ -4,7 +4,7 @@ module DDC.Core.Flow.Prim.OpStore
         , readOpStore
         , typeOpStore
         , xNew,       xRead,       xWrite
-        , xNewVector, xReadVector, xWriteVector
+        , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
         , xNext)
 where
 import DDC.Core.Flow.Prim.KiConFlow
@@ -30,6 +30,8 @@ instance Pretty OpStore where
 
         -- Vectors.
         OpStoreNewVector        -> text "newVector#"
+        OpStoreNewVectorR       -> text "newVectorR#"
+        OpStoreNewVectorN       -> text "newVectorN#"
         OpStoreReadVector       -> text "readVector#"
         OpStoreWriteVector      -> text "writeVector#"
 
@@ -46,6 +48,8 @@ readOpStore str
         "write#"        -> Just OpStoreWrite
 
         "newVector#"    -> Just OpStoreNewVector
+        "newVectorR#"   -> Just OpStoreNewVectorR
+        "newVectorN#"   -> Just OpStoreNewVectorN
         "readVector#"   -> Just OpStoreReadVector
         "writeVector#"  -> Just OpStoreWriteVector
 
@@ -71,10 +75,20 @@ typeOpStore op
          -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tUnit
 
         -- Arrays ---------------------
-        -- newVector#   :: [a : Data]. Nat# -> Vector# a
+        -- newVector#   :: [a : Data]. Nat -> Vector# a
         OpStoreNewVector
          -> tForall kData $ \tA -> tNat `tFunPE` tVector tA
-
+                
+        -- newVectorR#  :: [a : Data]. [k : Rate]. Vector# a
+        OpStoreNewVectorR
+         -> tForalls [kData, kRate] 
+         $ \[tA, _] -> tVector tA
+         
+        -- newVectorN#  :: [a : Data]. [k : Rate]. RateNat k -> Vector a
+        OpStoreNewVectorN
+         -> tForalls [kData, kRate]
+         $ \[tA, tK] -> tRateNat tK `tFunPE` tVector tA
+        
         -- readVector#  :: [a : Data]. Vector# a -> Nat# -> a
         OpStoreReadVector
          -> tForall kData 
@@ -112,9 +126,21 @@ xWrite t xRef xVal
 
 
 xNewVector :: Type Name -> Exp () Name -> Exp () Name
-xNewVector t xLen
+xNewVector tElem xLen
  = xApps () (xVarOpStore OpStoreNewVector)
-            [XType t, xLen]
+            [XType tElem, xLen]
+
+
+xNewVectorR :: Type Name -> Type Name -> Exp () Name
+xNewVectorR tElem tR
+ = xApps () (xVarOpStore OpStoreNewVectorR)
+            [XType tElem, XType tR]
+
+
+xNewVectorN :: Type Name -> Type Name -> Exp () Name -> Exp () Name
+xNewVectorN tA tR  xRN
+ = xApps () (xVarOpStore OpStoreNewVectorN)
+            [XType tA, XType tR, xRN]
 
 
 xReadVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
