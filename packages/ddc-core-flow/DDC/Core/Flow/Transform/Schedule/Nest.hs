@@ -4,7 +4,7 @@ module DDC.Core.Flow.Transform.Schedule.Nest
         , insertBody
         , insertEnds)
 where
-import DDC.Core.Flow.Exp.Procedure
+import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 
 

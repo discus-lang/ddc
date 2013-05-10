@@ -3,7 +3,7 @@ module DDC.Core.Flow.Transform.Extract
         (extractModule)
 where
 import DDC.Core.Flow.Compounds
-import DDC.Core.Flow.Exp.Procedure
+import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Prim
 import DDC.Core.Module
 import DDC.Core.Exp

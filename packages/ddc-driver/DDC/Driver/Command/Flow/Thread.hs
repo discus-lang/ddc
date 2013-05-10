@@ -4,7 +4,6 @@ module DDC.Driver.Command.Flow.Thread
 where
 import DDC.Build.Pipeline
 import DDC.Build.Language.Flow
-import DDC.Core.Flow.PrimState.Thread
 import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Data.Canned
@@ -12,6 +11,7 @@ import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Transform.Thread      as Thread
+import qualified DDC.Core.Flow.Transform.Thread as Flow
 import qualified DDC.Base.Pretty                as P
 
 -- | Thread a state token through the given flow program.
@@ -35,7 +35,7 @@ cmdFlowThread _config source sourceText
                 [  PipeCoreCheck    fragment
                 [  PipeCoreHacks 
                    (Canned $ \m -> return 
-                           $  Thread.thread threadConfig Env.empty Env.empty m)
+                           $  Thread.thread Flow.threadConfig Env.empty Env.empty m)
                 [  PipeCoreOutput SinkStdout ]]]]
 
         case errs of

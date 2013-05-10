@@ -1,5 +1,5 @@
 
-module DDC.Core.Flow.Exp.Procedure
+module DDC.Core.Flow.Procedure
         ( Procedure     (..)
         , Loop          (..)
         , Context       (..)

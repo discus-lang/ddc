@@ -1,6 +1,6 @@
 
 -- | Definition for the thread transform.
-module DDC.Core.Flow.PrimState.Thread
+module DDC.Core.Flow.Transform.Thread
         ( threadConfig
         , wrapResultType
         , wrapResultExp

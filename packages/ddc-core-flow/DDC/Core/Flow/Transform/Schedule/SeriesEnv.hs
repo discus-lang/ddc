@@ -14,7 +14,7 @@ module DDC.Core.Flow.Transform.Schedule.SeriesEnv
         , rateTypeOfSeriesType )
 where
 import DDC.Core.Flow.Transform.Schedule.Nest
-import DDC.Core.Flow.Exp.Procedure
+import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
 import DDC.Core.Exp
