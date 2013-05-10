@@ -4,7 +4,9 @@
 module DDC.Build.Language.Flow
         ( language
         , bundle
-        , fragment)
+        , fragment
+
+        , Error (..))
 where
 import DDC.Build.Language.Base
 import DDC.Core.Simplifier

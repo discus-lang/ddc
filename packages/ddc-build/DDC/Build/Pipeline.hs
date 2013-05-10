@@ -17,6 +17,10 @@ module DDC.Build.Pipeline
         , PipeCore        (..)
         , pipeCore
 
+          -- * Core Flow modules
+        , PipeFlow        (..)
+        , pipeFlow
+
           -- * Core Lite modules
         , PipeLite        (..)
         , pipeLite
@@ -30,7 +34,7 @@ module DDC.Build.Pipeline
         , pipeLlvm
 
           -- * Emitting output
-        , Sink                  (..)
+        , Sink            (..)
         , pipeSink)
 where
 import DDC.Build.Pipeline.Text

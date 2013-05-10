@@ -5,7 +5,10 @@ module DDC.Build.Pipeline.Core
         , pipeCores
 
         , PipeLite (..)
-        , pipeLite)
+        , pipeLite
+
+        , PipeFlow (..)
+        , pipeFlow)
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
@@ -19,10 +22,11 @@ import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Flow                  as Flow
+import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Salt                  as Salt
-import qualified DDC.Core.Lite                  as Lite
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
 import Control.DeepSeq
@@ -70,6 +74,12 @@ data PipeCore a n where
   PipeCoreAsLite
         :: ![PipeLite]
         -> PipeCore (C.AnTEC () Lite.Name) Lite.Name
+
+  -- Treat a module as beloning to the Core Flow fragment from now on.
+  PipeCoreAsFlow 
+        :: Pretty a
+        => ![PipeFlow a]
+        -> PipeCore (C.AnTEC a Flow.Name) Flow.Name
 
   -- Treat a module as beloning to the Core Salt fragment from now on.
   PipeCoreAsSalt
@@ -153,6 +163,10 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreAsLite" #-}
             liftM concat $ mapM (pipeLite mm) pipes
 
+        PipeCoreAsFlow !pipes
+         -> {-# SCC "PipeCoreAsFlow" #-}
+            liftM concat $ mapM (pipeFlow mm) pipes
+
         PipeCoreAsSalt !pipes
          -> {-# SCC "PipeCoreAsSalt" #-}
             liftM concat $ mapM (pipeSalt mm) pipes
@@ -176,7 +190,7 @@ pipeCores !mm !pipes
                 go (errs ++ err) rest
 
 
--- PipeLiteModule -------------------------------------------------------------
+-- PipeLite -------------------------------------------------------------------
 -- | Process a Core Lite module.
 data PipeLite
         -- | Output the module in core language syntax.
@@ -208,3 +222,24 @@ pipeLite !mm !pp
                         mm 
              of  Left  err  -> return [ErrorLiteConvert err]
                  Right mm'  -> pipeCores mm' pipes 
+
+
+-- PipeFlow -------------------------------------------------------------------
+-- | Process a Core Flow module.
+data PipeFlow a
+        -- | Output the module in core language syntax.
+        = PipeFlowOutput !Sink
+
+
+-- | Process a Core Flow module.
+pipeFlow :: C.Module (C.AnTEC a Flow.Name) Flow.Name
+         -> PipeFlow a
+         -> IO [Error]
+
+pipeFlow !mm !pp
+ = case pp of
+        PipeFlowOutput !sink
+         -> {-# SCC "PipeFlowOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
+
+

@@ -10,6 +10,10 @@ module DDC.Driver.Stage
         ( Config        (..)
         , ViaBackend    (..)
 
+          -- * Flow stages
+        , stageFlowLoad
+        , stageFlowLower
+
           -- * Lite stages
         , stageLiteLoad
         , stageLiteOpt
@@ -30,13 +34,22 @@ import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
+import Data.Monoid
 import Data.Maybe
+import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
+import qualified DDC.Core.Transform.Namify      as S
+
+import qualified DDC.Core.Flow                  as Flow
+import qualified DDC.Core.Flow.Profile          as Flow
+import qualified DDC.Build.Language.Flow        as Flow
+
 import qualified DDC.Build.Language.Salt        as Salt
+import qualified DDC.Core.Salt.Runtime          as Salt
+import qualified DDC.Core.Salt.Name             as Salt
+
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Lite                  as Lite
-import qualified DDC.Core.Salt.Name             as Salt
-import qualified DDC.Core.Salt.Runtime          as Salt
 
 
 -- | Configuration for main compiler stages.
@@ -89,6 +102,41 @@ data ViaBackend
         | ViaLLVM
         deriving Show
 
+
+-------------------------------------------------------------------------------
+-- | Type check Core Flow.
+stageFlowLoad
+        :: Config -> Source
+        -> [PipeCore () Flow.Name]
+        -> PipeText Flow.Name Flow.Error
+
+stageFlowLoad config source pipesFlow
+ = PipeTextLoadCore Flow.fragment
+ [ PipeCoreStrip
+        ( PipeCoreOutput (dump config source "dump.flow.dcf")
+        : pipesFlow ) ]
+
+
+-------------------------------------------------------------------------------
+-- | Lower a Core Flow module,
+--   first normalizing it into the form needed by the lowering transform.
+stageFlowLower
+        :: Config -> Source
+        -> [PipeCore () Flow.Name]
+        ->  PipeCore () Flow.Name
+
+stageFlowLower config source pipesFlow
+ = PipeCoreStrip
+ [ PipeCoreSimplify   Flow.fragment (0 :: Int) simplPrep
+        ( PipeCoreOutput     (dump config source "dump.flow-prep.dcf")
+        : pipesFlow ) ]
+ 
+ where  simplPrep       
+         =  S.snip <> S.flatten 
+         <> S.Trans (S.Namify namifierT namifierX)
+
+        namifierT       = S.makeNamifier Flow.freshT
+        namifierX       = S.makeNamifier Flow.freshX
 
 -------------------------------------------------------------------------------
 -- | Type check Core Lite.
