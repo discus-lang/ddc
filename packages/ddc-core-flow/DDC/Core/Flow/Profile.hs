@@ -40,7 +40,7 @@ features
         , featuresUntrackedClosures     = True
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
-        , featuresGeneralApplication    = False
+        , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
         , featuresLazyBindings          = False
         , featuresDebruijnBinders       = True

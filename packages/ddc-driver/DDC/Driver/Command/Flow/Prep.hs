@@ -7,7 +7,8 @@ import DDC.Driver.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import qualified DDC.Base.Pretty        as P
+import qualified DDC.Base.Pretty                as P
+import qualified DDC.Build.Language.Flow        as Flow
 
 
 -- | Prepare a Disciple Core Flow module for lowering.
@@ -25,7 +26,8 @@ cmdFlowPrep config source sourceText
                             sourceText
                 $  stageFlowLoad  config source
                 [  stageFlowPrep  config source
-                [  PipeCoreOutput SinkStdout ]]
+                [  PipeCoreCheck Flow.fragment
+                [  PipeCoreOutput SinkStdout ]]]
 
         case errs of
          []     -> return ()
