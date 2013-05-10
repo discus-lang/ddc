@@ -2,8 +2,7 @@ ok
 
 -- Flow type constructors
 Tuple2# :: Data ~> Data ~> Data
-Array# :: Data ~> Data
-Vector# :: Rate ~> Data ~> Data
+Vector# :: Data ~> Data
 Series# :: Rate ~> Data ~> Data
 Segd# :: Rate ~> Rate ~> Data
 Sel2# :: Rate ~> Rate ~> Rate ~> Data
@@ -17,10 +16,8 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 
 -- Flow operators
-seriesOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Series# ^1 ^0
-vectorOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^1 ^0
+vectorOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^0
 rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
-arrayOfVector# :: [^ : Rate].[^ : Data].Vector# ^1 ^0 -> Array# ^0
 map1# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
 rep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
 reps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
@@ -38,9 +35,11 @@ loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
 new# :: [^ : Data].^0 -> Ref# ^0
 read# :: [^ : Data].Ref# ^0 -> ^0
 write# :: [^ : Data].Ref# ^0 -> ^0 -> Unit
-newArray# :: [^ : Data].Nat# -> Array# ^0
-readArray# :: [^ : Data].Array# ^0 -> Nat# -> ^0
-writeArray# :: [^ : Data].Array# ^0 -> Nat# -> ^0 -> Unit
+newVector# :: [^ : Data].Nat# -> Vector# ^0
+newVectorR# :: [^ : Data].[^ : Rate].Vector# ^1
+newVectorN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
+readVector# :: [^ : Data].Vector# ^0 -> Nat# -> ^0
+writeVector# :: [^ : Data].Vector# ^0 -> Nat# -> ^0 -> Unit
 next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
 
 

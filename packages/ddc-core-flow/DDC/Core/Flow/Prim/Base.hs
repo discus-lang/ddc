@@ -115,8 +115,7 @@ data DaConFlow
 -- | Flow operators.
 data OpFlow
         -- Stream conversions.
-        = OpFlowSeriesOfVector
-        | OpFlowVectorOfSeries
+        = OpFlowVectorOfSeries
         | OpFlowRateOfSeries
 
         -- selectors

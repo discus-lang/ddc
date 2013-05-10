@@ -23,7 +23,6 @@ instance NFData OpFlow
 instance Pretty OpFlow where
  ppr pf
   = case pf of
-        OpFlowSeriesOfVector    -> text "seriesOfVector"        <> text "#"
         OpFlowVectorOfSeries    -> text "vectorOfSeries"        <> text "#"
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
 
@@ -75,7 +74,6 @@ readOpFlow str
 
         | otherwise
         = case str of
-                "seriesOfVector#"  -> Just $ OpFlowSeriesOfVector
                 "vectorOfSeries#"  -> Just $ OpFlowVectorOfSeries
                 "rateOfSeries#"    -> Just $ OpFlowRateOfSeries
                 "map#"             -> Just $ OpFlowMap 1
@@ -188,7 +186,7 @@ typeOpFlow op
                 `tFunPE` tSeries tK1 tA
                 `tFunPE` tSeries tK2 tA
 
-        _ -> error $ "typeOfPrimFlow: not finished for " ++ show op
+        _ -> error $ "typeOpFlow: not finished for " ++ show op
 
 
 -- Compounds ------------------------------------------------------------------

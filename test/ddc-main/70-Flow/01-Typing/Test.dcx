@@ -2,7 +2,6 @@
 
 -- Flow type constructors
 :kind Tuple2#
-:kind Array#
 :kind Vector#
 :kind Series#
 :kind Segd#
@@ -17,10 +16,8 @@
 
 
 -- Flow operators
-:type seriesOfVector#
 :type vectorOfSeries#
 :type rateOfSeries#
-:type arrayOfVector#
 :type map#
 :type rep#
 :type reps#
@@ -38,9 +35,11 @@
 :type new#
 :type read#
 :type write#
-:type newArray#
-:type readArray#
-:type writeArray#
+:type newVector#
+:type newVectorR#
+:type newVectorN#
+:type readVector#
+:type writeVector#
 :type next#
 
 
