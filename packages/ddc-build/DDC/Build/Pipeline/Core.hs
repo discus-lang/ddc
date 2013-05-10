@@ -17,17 +17,35 @@ import DDC.Build.Language
 import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import DDC.Data.Canned
-import DDC.Llvm.Pretty                          ()
-import qualified DDC.Core.Transform.Reannotate  as C
-import qualified DDC.Core.Fragment              as C
-import qualified DDC.Core.Check                 as C
-import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Flow                  as Flow
-import qualified DDC.Core.Lite                  as Lite
-import qualified DDC.Core.Salt.Platform         as Salt
-import qualified DDC.Core.Salt.Runtime          as Salt
-import qualified DDC.Core.Salt                  as Salt
-import qualified Control.Monad.State.Strict     as S
+import DDC.Llvm.Pretty                                  ()
+
+import qualified DDC.Core.Flow                          as Flow
+import qualified DDC.Core.Flow.Profile                  as Flow
+import qualified DDC.Core.Flow.Transform.Prep           as Flow
+import qualified DDC.Core.Flow.Transform.Slurp          as Flow
+import qualified DDC.Core.Flow.Transform.Schedule       as Flow
+import qualified DDC.Core.Flow.Transform.Extract        as Flow
+
+import qualified DDC.Core.Lite                          as Lite
+
+import qualified DDC.Core.Salt.Platform                 as Salt
+import qualified DDC.Core.Salt.Runtime                  as Salt
+import qualified DDC.Core.Salt                          as Salt
+
+import qualified DDC.Core.Transform.Reannotate          as C
+import qualified DDC.Core.Transform.Forward             as C
+import qualified DDC.Core.Transform.Namify              as C
+import qualified DDC.Core.Simplifier                    as C
+
+import qualified DDC.Core.Fragment                      as C
+import qualified DDC.Core.Check                         as C
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Exp                           as C
+
+import qualified DDC.Type.Env                           as Env
+
+import qualified Control.Monad.State.Strict             as S
+import qualified Data.Map                               as Map
 import Control.Monad
 import Control.DeepSeq
 
@@ -79,7 +97,7 @@ data PipeCore a n where
   PipeCoreAsFlow 
         :: Pretty a
         => ![PipeFlow a]
-        -> PipeCore (C.AnTEC a Flow.Name) Flow.Name
+        -> PipeCore a Flow.Name
 
   -- Treat a module as beloning to the Core Salt fragment from now on.
   PipeCoreAsSalt
@@ -226,13 +244,29 @@ pipeLite !mm !pp
 
 -- PipeFlow -------------------------------------------------------------------
 -- | Process a Core Flow module.
-data PipeFlow a
-        -- | Output the module in core language syntax.
-        = PipeFlowOutput !Sink
+data PipeFlow a where
+  -- Output the module in core language syntax.
+  PipeFlowOutput 
+        :: Sink
+        -> PipeFlow a
+
+  -- Run the prep transform to eta-expand worker functions.
+  -- It needs to be already a-normalized and namified. 
+  PipeFlowPrep
+        :: (NFData a, Show a)
+        => [PipeCore a Flow.Name] 
+        -> PipeFlow a
+
+  -- Run the lowering transform on a module.
+  -- It needs to be already prepped.
+  -- Doing this kills all annotations.
+  PipeFlowLower
+        :: [PipeCore () Flow.Name]
+        -> PipeFlow a
 
 
 -- | Process a Core Flow module.
-pipeFlow :: C.Module (C.AnTEC a Flow.Name) Flow.Name
+pipeFlow :: C.Module a Flow.Name
          -> PipeFlow a
          -> IO [Error]
 
@@ -241,5 +275,50 @@ pipeFlow !mm !pp
         PipeFlowOutput !sink
          -> {-# SCC "PipeFlowOutput" #-}
             pipeSink (renderIndent $ ppr mm) sink
+
+        PipeFlowPrep  !pipes
+         -> {-# SCC "PipeFlowPrep"   #-}
+            let -- Run the prep transform itself which finds worker functions,
+                -- eta-expands them and returns their names.
+                (mm_prep, nsWorker) 
+                 = Flow.prepModule mm
+
+                -- Force all worker functions to be floated forward into their
+                -- use sites.
+                isFloatable lts
+                 = case lts of
+                    C.LLet _ (C.BName n _) _ 
+                      | Just{}   <- Map.lookup n nsWorker
+                      -> C.FloatForce
+                    _ -> C.FloatAllow
+
+                mm_float
+                 = C.result $ C.forwardModule Flow.profile 
+                                isFloatable mm_prep
+
+                -- Ensure the final code is fully named.
+                namifierT       = C.makeNamifier Flow.freshT Env.empty
+                namifierX       = C.makeNamifier Flow.freshX Env.empty
+
+                mm_namified
+                 = S.evalState (C.namify namifierT namifierX mm_float) 0
+
+            in  pipeCores mm_namified pipes
+
+        PipeFlowLower !pipes
+         -> {-# SCC "PipeFlowLower" #-}
+            let mm_stripped     = C.reannotate (const ()) mm
+                processes       = Flow.slurpProcesses mm_stripped
+                procedures      = map Flow.scheduleProcess processes
+                mm_lowered      = Flow.extractModule mm_stripped procedures
+
+             in pipeCores mm_lowered pipes
+
+
+
+
+
+
+
 
 

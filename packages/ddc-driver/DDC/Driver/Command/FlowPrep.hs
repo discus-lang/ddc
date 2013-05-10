@@ -1,23 +1,23 @@
 
-module DDC.Driver.Command.FlowLower
-        (cmdFlowLower)
+module DDC.Driver.Command.FlowPrep
+        (cmdFlowPrep)
 where
 import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import qualified DDC.Base.Pretty                        as P
+import qualified DDC.Base.Pretty        as P
 
 
--- | Lower a flow program to loop code.
-cmdFlowLower
+-- | Prepare a Disciple Core Flow module for lowering.
+cmdFlowPrep
         :: Config
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowLower config source sourceText
+cmdFlowPrep config source sourceText
  = do   
         errs    <- liftIO
                 $  pipeText (nameOfSource source)
@@ -25,8 +25,7 @@ cmdFlowLower config source sourceText
                             sourceText
                 $  stageFlowLoad  config source
                 [  stageFlowPrep  config source
-                [  stageFlowLower config source
-                [  PipeCoreOutput SinkStdout ]]]
+                [  PipeCoreOutput SinkStdout ]]
 
         case errs of
          []     -> return ()

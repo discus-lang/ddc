@@ -12,15 +12,20 @@ import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
 import DDCI.Core.Command.With
 import DDCI.Core.State
+
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
+
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
+
+import DDC.Driver.Command.FlowPrep
 import DDC.Driver.Command.FlowLower
+
 import System.IO
 import Control.Monad.Trans.Error
 import Data.List
@@ -60,7 +65,8 @@ data Command
         | CommandToC            -- ^ Convert a module to C code.
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
 
-        | CommandFlowLower      -- ^ Lower a Disciple Core Flow module.
+        | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
+        | CommandFlowLower      -- ^ Prepare and Lower a Core Flow module.
 
         | CommandWith           -- ^ Add a module to the inliner table.
 	| CommandWithLite
@@ -99,6 +105,7 @@ commands
         , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
         , (":to-llvm",          CommandToLlvm) 
+        , (":flow-prep",        CommandFlowPrep)
         , (":flow-lower",       CommandFlowLower)
         , (":with-lite",        CommandWithLite)
         , (":with-salt",        CommandWithSalt) 
@@ -237,6 +244,11 @@ handleCmd1 state cmd source line
         CommandToLlvm
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdToLlvm config (stateLanguage state) source line
+                return state
+
+        CommandFlowPrep
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdFlowPrep config source line
                 return state
 
         CommandFlowLower

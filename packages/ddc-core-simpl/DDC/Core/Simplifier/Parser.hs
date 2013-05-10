@@ -11,11 +11,12 @@ import DDC.Type.Env
 import DDC.Core.Simplifier.Lexer
 import DDC.Data.Token
 import DDC.Data.SourcePos
-import DDC.Base.Parser                  (pTok)
-import Data.Set                         (Set)
-import qualified DDC.Base.Parser        as P
-import qualified Data.Map               as Map
-import qualified Data.Set               as Set
+import DDC.Base.Parser                          (pTok)
+import Data.Set                                 (Set)
+import qualified DDC.Core.Transform.Snip        as Snip
+import qualified DDC.Base.Parser                as P
+import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 
 
 -------------------------------------------------------------------------------
@@ -189,8 +190,11 @@ readTransformAtomic kk
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
-        "Snip"          -> Just Snip
-        "SnipOver"      -> Just SnipOver
+
+        -- TODO: better parsing of snipper options.
+        "Snip"          -> Just (Snip Snip.configZero)
+        "SnipOver"      -> Just (Snip Snip.configZero { Snip.configSnipOverApplied = True })
+
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta
         "BetaLets"      -> Just BetaLets

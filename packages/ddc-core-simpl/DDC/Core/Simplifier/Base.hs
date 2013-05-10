@@ -19,7 +19,8 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Base.Pretty
-import qualified DDC.Base.Pretty	as P
+import qualified DDC.Core.Transform.Snip       as Snip
+import qualified DDC.Base.Pretty	       as P
 import Data.Monoid
 import Data.Typeable (Typeable)
 
@@ -67,11 +68,7 @@ data Transform s a n
         | Anonymize
 
         -- | Introduce let-bindings for nested applications.
-        | Snip
-
-        -- | Introduce let-bindings for nested applications and over-applied
-        --   functions
-        | SnipOver
+        | Snip  Snip.Config
 
         -- | Flatten nested let and case expressions.
         | Flatten
@@ -133,8 +130,7 @@ instance Pretty (Transform s a n) where
   = case ss of
         Id              -> text "Id"
         Anonymize       -> text "Anonymize"
-        Snip            -> text "Snip"
-        SnipOver        -> text "Snip"
+        Snip{}          -> text "Snip"
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         BetaLets        -> text "BetaLets"

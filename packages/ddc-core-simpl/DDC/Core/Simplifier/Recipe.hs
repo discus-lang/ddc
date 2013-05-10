@@ -20,6 +20,7 @@ module DDC.Core.Simplifier.Recipe
 where
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
+import qualified DDC.Core.Transform.Snip  as Snip
 import DDC.Type.Env
 import Data.Monoid
 
@@ -39,12 +40,12 @@ anonymize = Trans Anonymize
 
 -- | Introduce let-bindings for nested applications.
 snip      :: Simplifier s a n
-snip      = Trans Snip
+snip      = Trans (Snip Snip.configZero)
 
 
 -- | Introduce let-bindings for nested applications.
 snipOver  :: Simplifier s a n
-snipOver  = Trans SnipOver
+snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
 
 
 -- | Flatten nested let and case expressions.
@@ -93,7 +94,7 @@ anormalize
         -> Simplifier s a n
 
 anormalize namK namT
-        =  Trans Snip 
+        =  snip
         <> Trans Flatten 
         <> Trans (Namify namK namT)
 

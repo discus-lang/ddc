@@ -15,14 +15,14 @@ import qualified Data.Map       as Map
 --   and for their parameters to have real names.
 --
 prepModule 
-        ::  Module () Name 
-        -> (Module () Name, Map Name [Type Name])
+        ::  Module a Name 
+        -> (Module a Name, Map Name [Type Name])
 
 prepModule mm
  = do   runState (prepModuleM mm) Map.empty
 
 
-prepModuleM :: Module () Name -> PrepM (Module () Name)
+prepModuleM :: Module a Name -> PrepM (Module a Name)
 prepModuleM mm
  = do   xBody'  <- prepX $ moduleBody mm
         return  $  mm { moduleBody = xBody' }
@@ -31,7 +31,7 @@ prepModuleM mm
 -- Do a bottom-up rewrite,
 --  on the way up remember names of variables that are passed as workers 
 --  to flow operators, then eta-expand bindings with those names.
-prepX   :: Exp () Name -> PrepM (Exp () Name)
+prepX   :: Exp a Name -> PrepM (Exp a Name)
 prepX xx
  = case xx of
         -- Detect workers passed to maps.
@@ -59,7 +59,7 @@ prepX xx
 
         XLet  a lts x   
          -> do  x'      <- prepX x
-                lts'    <- prepLts lts
+                lts'    <- prepLts a lts
                 return  $  XLet a lts' x'
 
         XCase{}         -> error "ddc-core-flow.prepX: cases not handled yet"
@@ -68,8 +68,8 @@ prepX xx
         XWitness{}      -> return xx
 
 
-prepLts :: Lets () Name -> PrepM (Lets () Name)
-prepLts lts
+prepLts :: a -> Lets a Name -> PrepM (Lets a Name)
+prepLts a lts
  = case lts of
         LLet m b@(BName n _) x
          -> do  x'      <- prepX x
@@ -78,9 +78,9 @@ prepLts lts
                 case mArgs of
                  Just tsArgs
                   |  length tsArgs > 0
-                  -> let x_eta = xLams  ()    (map BAnon tsArgs)
-                               $ xApps () x'  [ XVar () (UIx (length tsArgs - 1 - ix))
-                                              | ix <- [0 ..   length tsArgs - 1] ]
+                  -> let x_eta = xLams a    (map BAnon tsArgs)
+                               $ xApps a x'  [ XVar a (UIx (length tsArgs - 1 - ix))
+                                             | ix <- [0 ..   length tsArgs - 1] ]
                      in  return $ LLet m b x_eta
 
                  _ -> return $ LLet m b x'

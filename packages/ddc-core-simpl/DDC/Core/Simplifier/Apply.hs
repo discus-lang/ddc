@@ -79,13 +79,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
  = case spec of
         Id               -> return mm
         Anonymize        -> return $ anonymizeX mm
-        
-        Snip             
-         -> return $ snip Snip.configZero mm
-        
-        SnipOver         
-         -> return $ snip Snip.configZero { configSnipOverApplied = True } mm
-        
+        Snip config      -> return $ snip config mm
         Flatten          -> return $ flatten mm
         Beta             -> return $ result $ betaReduce False mm
         BetaLets         -> return $ result $ betaReduce True  mm
@@ -230,13 +224,7 @@ applyTransformX !profile !kenv !tenv !spec !xx
    in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
-
-        Snip             
-         -> res    $ snip Snip.configZero xx
-
-        SnipOver          
-         -> res    $ snip Snip.configZero { configSnipOverApplied = True } xx
-
+        Snip config       -> res    $ snip config xx
         Flatten           -> res    $ flatten xx
         Inline  getDef    -> res    $ inline getDef Set.empty xx
         Beta              -> return $ betaReduce False xx
