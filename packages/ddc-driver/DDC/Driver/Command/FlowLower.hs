@@ -29,7 +29,7 @@ cmdFlowLower _config source sourceText
                             (lineStartOfSource source)
                             sourceText
                 $  PipeTextLoadCore Flow.fragment
-                [  PipeCoreStrip 
+                [  PipeCoreStrip
                 [  PipeCoreHacks 
                     (Canned $ \m 
                      -> do let processes   = Flow.slurpProcesses m
@@ -41,4 +41,3 @@ cmdFlowLower _config source sourceText
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
-

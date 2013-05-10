@@ -36,8 +36,16 @@ Library
         DDC.Build.Language.Zero
         DDC.Build.Language.Flow
         DDC.Build.Language
-        DDC.Build.Builder
+
+        DDC.Build.Pipeline.Core
+        DDC.Build.Pipeline.Error
+        DDC.Build.Pipeline.Llvm
+        DDC.Build.Pipeline.Salt
+        DDC.Build.Pipeline.Sink
+        DDC.Build.Pipeline.Text
         DDC.Build.Pipeline
+
+        DDC.Build.Builder
         DDC.Build.Platform
 
   Other-modules:
