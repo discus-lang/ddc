@@ -45,7 +45,7 @@ instance Pretty TyConFlow where
 
 
 
--- | Read a baked-in data type constructor.
+-- | Read a type constructor name.
 readTyConFlow :: String -> Maybe TyConFlow
 readTyConFlow str
         | Just rest     <- stripPrefix "Tuple" str
@@ -71,6 +71,7 @@ readTyConFlow str
 
 
 -- Kinds ----------------------------------------------------------------------
+-- | Yield the kind of a primitive type constructor.
 kindTyConFlow :: TyConFlow -> Kind Name
 kindTyConFlow tc
  = case tc of

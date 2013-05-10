@@ -1,41 +1,49 @@
 
 module DDC.Core.Flow.Prim
-        ( Name          (..)
+        ( -- * Names and lexing
+          Name          (..)
+        , readName
 
+          -- * Fragment specific kind constructors
         , KiConFlow     (..)
         , readKiConFlow
 
+          -- * Fragment specific type constructors
         , TyConFlow     (..)
         , readTyConFlow
         , kindTyConFlow
 
+          -- * Fragment specific data constructors
         , DaConFlow     (..)
         , readDaConFlow
         , typeDaConFlow
 
+          -- * Flow operators
         , OpFlow        (..)
         , readOpFlow
         , typeOpFlow
 
+          -- * Loop operators
         , OpLoop        (..)
         , readOpLoop
         , typeOpLoop
 
+          -- * Store operators
         , OpStore       (..)
         , readOpStore
         , typeOpStore
 
+          -- * Primitive type constructors
         , PrimTyCon     (..)
         , kindPrimTyCon
 
+          -- * Primitive arithmetic operators
         , PrimArith     (..)
         , typePrimArith
 
+          -- * Casting between primitive types
         , PrimCast      (..)
-        , typePrimCast
-
-        -- * Name parsing
-        , readName)
+        , typePrimCast)
 where
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Flow.Prim.KiConFlow

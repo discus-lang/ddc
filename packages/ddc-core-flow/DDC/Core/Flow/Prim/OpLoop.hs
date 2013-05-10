@@ -24,7 +24,8 @@ instance Pretty OpLoop where
         OpLoopLoop      -> text "loop#"
         OpLoopLoopN     -> text "loopn#"
 
--- | Read a baked-in loop operator.
+
+-- | Read a loop operator name.
 readOpLoop :: String -> Maybe OpLoop
 readOpLoop str
  = case str of
@@ -35,6 +36,7 @@ readOpLoop str
 
 
 -- Types ----------------------------------------------------------------------
+-- | Yield the type of a loop operator.
 typeOpLoop  :: OpLoop -> Type Name
 typeOpLoop op
  = case op of

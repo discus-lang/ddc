@@ -9,8 +9,8 @@ Cabal-Version:  >=1.6
 Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
-Synopsis:       Disciplined Disciple Compiler data flow optimiser.
-Description:    Disciplined Disciple Compiler data flow optimiser.
+Synopsis:       Disciplined Disciple Compiler data flow compiler.
+Description:    Disciplined Disciple Compiler data flow compiler.
 
 Library
   Build-Depends: 

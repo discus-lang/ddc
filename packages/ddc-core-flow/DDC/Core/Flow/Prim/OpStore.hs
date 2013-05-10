@@ -39,7 +39,7 @@ instance Pretty OpStore where
         OpStoreNext             -> text "next#"
 
 
--- | Read a baked-in store operator.
+-- | Read a store operator name.
 readOpStore :: String -> Maybe OpStore
 readOpStore str
  = case str of
@@ -58,6 +58,7 @@ readOpStore str
 
 
 -- Types ----------------------------------------------------------------------
+-- | Yield the type of a store operator.
 typeOpStore :: OpStore -> Type Name
 typeOpStore op
  = case op of

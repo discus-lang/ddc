@@ -1,29 +1,30 @@
 
+-- | Short-hands for constructing compound expressions.
 module DDC.Core.Flow.Compounds
         ( module DDC.Core.Compounds
 
-          -- * KiConFlow
-        , kNatP, kRate
+          -- * Fragment specific kinds
+        , kRate
 
-          -- * TyConFlow
+          -- * Fragment specific types
         , tTuple2, tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
 
-          -- * TyConPrim
+          -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord
 
-          -- * DaConPrim
+          -- * Primitive literals and data constructors
         , xNat,  dcNat
         ,          dcTuple1
         , xTuple2, dcTuple2
 
-          -- * OpFlow
+          -- * Flow operators
         , xRateOfStream
 
-          -- * OpLoop
+          -- * Loop operators
         , xLoopLoopN
 
-          -- * OpStore
+          -- * Store operators
         , xNew,       xRead,       xWrite
         , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
         , xNext)

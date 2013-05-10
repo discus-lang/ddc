@@ -45,7 +45,7 @@ instance Pretty OpFlow where
         OpFlowPack              -> text "pack"                  <> text "#"
 
 
--- | Read a baked-in data flow operator.
+-- | Read a data flow operator name.
 readOpFlow :: String -> Maybe OpFlow
 readOpFlow str
         | Just rest     <- stripPrefix "mkSel" str
@@ -88,7 +88,7 @@ readOpFlow str
 
 
 -- Types -----------------------------------------------------------------------
--- | Take the type of a primitive data-flow operator.
+-- | Yield the type of a data flow operator.
 typeOpFlow :: OpFlow -> Type Name
 typeOpFlow op
  = case op of

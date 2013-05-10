@@ -1,9 +1,20 @@
 
--- | Disciple Core Flow
+-- | Disciple Core Flow is a Domain Specific Language (DSL) for writing first
+--   order data flow programs.
+--   
+--   This package provides the language definition as a fragment of Disciple
+--   Core. It also provides an implementation of the lowering transform which
+--   converts data flow programs into imperative nested loop code.
 --
---   This is a DSL intended for optimising first order data flow programs
---   as part of the Data Parallel Haskell vectorisation pipeline.
+--   The @repa-plugin@ package provides a GHC plugin that transforms GHC core
+--   programs gained from vanilla Haskell sources. Use this package if you
+--   just want to write and run real programs.
 --
+--   Alternatively, Disciple Core Flow programs can be transformed directly
+--   via the @ddc@ or @ddci-core@ command line interfaces, but DDC itself
+--   doesn't provide full compilation to machine code. Use GHC and the 
+--   @repa-plugin@ for that.
+-- 
 module DDC.Core.Flow
         ( -- * Language profile
           profile

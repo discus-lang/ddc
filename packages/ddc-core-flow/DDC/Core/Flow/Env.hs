@@ -73,6 +73,7 @@ primDataDefs
         ]
 
 -- Sorts ---------------------------------------------------------------------
+-- | Sort environment containing sorts of primitive kinds.
 primSortEnv :: Env Name
 primSortEnv  = Env.setPrimFun sortOfPrimName Env.empty
 
@@ -95,7 +96,6 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameKiConFlow KiConFlowNatP     -> Just sProp
         NameKiConFlow KiConFlowRate     -> Just sProp
         NameTyConFlow tc                -> Just $ kindTyConFlow tc
         NamePrimTyCon tc                -> Just $ kindPrimTyCon tc

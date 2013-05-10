@@ -12,7 +12,7 @@ import DDC.Core.Compounds
 import DDC.Core.Exp
 
 
--- | Take the kind of a primitive name.
+-- | Yield the kind of a type constructor.
 kindPrimTyCon :: PrimTyCon -> Kind Name
 kindPrimTyCon tc
  = case tc of

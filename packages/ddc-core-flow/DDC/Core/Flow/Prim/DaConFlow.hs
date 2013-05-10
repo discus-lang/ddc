@@ -22,8 +22,7 @@ instance Pretty DaConFlow where
         DaConFlowTuple n        -> text "T" <> int n <> text "#"
 
 
-
--- Read a baked in data constructor.
+-- | Read a data constructor name.
 readDaConFlow :: String -> Maybe DaConFlow
 readDaConFlow str
         | Just rest     <- stripPrefix "T" str
@@ -37,6 +36,7 @@ readDaConFlow str
 
 
 -- Type -----------------------------------------------------------------------
+-- | Yield the type of a data constructor.
 typeDaConFlow :: DaConFlow -> Type Name
 typeDaConFlow cc
  = case cc of

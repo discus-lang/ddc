@@ -26,13 +26,13 @@ data Name
         | NameCon               String
 
         -- Fragment specific names -----------
-        -- | Flow kind constructors.
+        -- | Fragment specific kind constructors.
         | NameKiConFlow         KiConFlow
 
-        -- | Flow type constructors.
+        -- | Fragment specific type constructors.
         | NameTyConFlow         TyConFlow
 
-        -- | Baked in data constructors.
+        -- | Fragment specific data constructors.
         | NameDaConFlow         DaConFlow
 
         -- | Flow operators.
@@ -57,51 +57,50 @@ data Name
 
 
         -- Literals -----------------------------
-        -- | An unboxed boolean literal
+        -- | A boolean literal.
         | NameLitBool           Bool
 
-        -- | An unboxed natural literal.
+        -- | A natural literal.
         | NameLitNat            Integer
 
-        -- | An unboxed integer literal.
+        -- | An integer literal.
         | NameLitInt            Integer
 
-        -- | An unboxed word literal
+        -- | A word literal.
         | NameLitWord           Integer Int
         deriving (Eq, Ord, Show, Typeable)
 
 
--- | Flow kind constructors.
+-- | Fragment specific kind constructors.
 data KiConFlow
-        = KiConFlowNatP
-        | KiConFlowRate
+        = KiConFlowRate
         deriving (Eq, Ord, Show)
 
 
--- | Flow type constructors.
+-- | Fragment specific type constructors.
 data TyConFlow
-        -- | @TN@      type constructor.
+        -- | @TupleN#@ constructor. Tuples.
         = TyConFlowTuple Int            
 
-        -- | @Vector#@ type constructor.
+        -- | @Vector#@ constructor. Vectors. 
         | TyConFlowVector
 
-        -- | @Series#@ type constructor.
+        -- | @Series#@ constructor. Series types.
         | TyConFlowSeries
 
-        -- | @Segd#@   type constructor.
+        -- | @Segd#@   constructor. Segment Descriptors.
         | TyConFlowSegd
 
-        -- | @SelN#@   type constructor.
+        -- | @SelN#@   constructor. Selectors.
         | TyConFlowSel Int
 
-        -- | @Ref#@    type constructor.
+        -- | @Ref#@    constructor. References.
         | TyConFlowRef                  
 
-        -- | @World#@  state token used when converting to GHC core.
+        -- | @World#@  constructor. State token used when converting to GHC core.
         | TyConFlowWorld
 
-        -- | @RateNat#@ type constructor.          
+        -- | @RateNat#@ constructor. Naturals witnessing a type-level Rate.          
         | TyConFlowRateNat
         deriving (Eq, Ord, Show)
 
@@ -155,19 +154,19 @@ data OpLoop
 -- | Store operators.
 data OpStore
         -- Assignables.
-        = OpStoreNew            -- ^ Allocate a new assignable.
-        | OpStoreRead           -- ^ Read from an assignable.
-        | OpStoreWrite          -- ^ Write to an assignable.
+        = OpStoreNew            -- ^ Allocate a new reference.
+        | OpStoreRead           -- ^ Read from a reference.
+        | OpStoreWrite          -- ^ Write to a reference.
 
         -- Vectors.
-        | OpStoreNewVector      -- ^ Allocate a new vector (Nat length)
-        | OpStoreNewVectorR     -- ^ Allocate a new vector (type-level rate)
-        | OpStoreNewVectorN     -- ^ Allocate a new vector (RateNat version)
+        | OpStoreNewVector      -- ^ Allocate a new vector (taking a @Nat@ for the length)
+        | OpStoreNewVectorR     -- ^ Allocate a new vector (taking a @Rate@ for the length)
+        | OpStoreNewVectorN     -- ^ Allocate a new vector (taking a @RateNat@ for the length)
         | OpStoreReadVector     -- ^ Read from a vector.
         | OpStoreWriteVector    -- ^ Write to a vector.
 
         -- Streams.
-        | OpStoreNext           -- ^ Take the next element from a stream.
+        | OpStoreNext           -- ^ Take the next element from a series.
         deriving (Eq, Ord, Show)
 
 
