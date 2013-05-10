@@ -52,6 +52,9 @@ data Mode
         | ModeToLLVM    FilePath
 
         -- Disciple Core Flow specific ----------
+        -- | Prepare a Flow program for lowering.
+        | ModeFlowPrep  FilePath
+
         -- | Lower a Flow program.
         | ModeFlowLower FilePath
 

@@ -23,8 +23,10 @@ import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 
-import DDC.Driver.Command.FlowPrep
-import DDC.Driver.Command.FlowLower
+import DDC.Driver.Command.Flow.Prep
+import DDC.Driver.Command.Flow.Lower
+import DDC.Driver.Command.Flow.Concretize
+import DDC.Driver.Command.Flow.Thread
 
 import System.IO
 import Control.Monad.Trans.Error
@@ -52,22 +54,30 @@ data Command
         | CommandExpClosure     -- ^ Check an expression, showing its closure.
         | CommandExpRecon       -- ^ Reconstruct type annotations on binders.
         | CommandEval           -- ^ Evaluate an expression.
+
+        | CommandAst            -- ^ Show the AST of an expression.
+
+        -- Generic transformations
         | CommandTrans          -- ^ Transform an expression.
         | CommandTransEval      -- ^ Transform then evaluate an expression.
         | CommandTransInteract  -- ^ Interactively transform an expression.
 
-        | CommandAst            -- ^ Show the AST of an expression.
-
+        -- Make and compile
         | CommandCompile        -- ^ Compile a file.
         | CommandMake           -- ^ Compile and link and executable.
 
+        -- Conversion to machine code
         | CommandToSalt         -- ^ Convert a module to Disciple Salt.
         | CommandToC            -- ^ Convert a module to C code.
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
 
+        -- Core Flow passes 
         | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
         | CommandFlowLower      -- ^ Prepare and Lower a Core Flow module.
+        | CommandFlowConcretize -- ^ Convert operations on type level rates to concrete ones.
+        | CommandFlowThread     -- ^ Thread a world token through lowered code.
 
+        -- Inline control
         | CommandWith           -- ^ Add a module to the inliner table.
 	| CommandWithLite
 	| CommandWithSalt
@@ -84,29 +94,46 @@ commands
         , (":set",              CommandSet)
         , (":load",             CommandLoad)
         , (":kind",             CommandKind)
+
         , (":universe1",        CommandUniverse1)
         , (":universe2",        CommandUniverse2)
         , (":universe3",        CommandUniverse3)
         , (":universe",         CommandUniverse)
+
         , (":tequiv",           CommandEquivType)
         , (":wtype",            CommandWitType)
         , (":check",            CommandExpCheck)
         , (":recon",            CommandExpRecon)
+
         , (":type",             CommandExpType)
         , (":effect",           CommandExpEffect)
         , (":closure",          CommandExpClosure)
+
         , (":eval",             CommandEval)
+
+        , (":ast",              CommandAst) 
+
+        -- Generic transformations
         , (":trun",             CommandTransEval)
         , (":tinteract",        CommandTransInteract)
         , (":trans",            CommandTrans)
-        , (":ast",              CommandAst) 
-        , (":compile",          CommandCompile)
-        , (":make",             CommandMake)
+
+        -- Conversion to machine code.
         , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
         , (":to-llvm",          CommandToLlvm) 
+
+        -- Core Flow passes
         , (":flow-prep",        CommandFlowPrep)
         , (":flow-lower",       CommandFlowLower)
+        , (":flow-concretize",  CommandFlowConcretize)
+        , (":flow-thread",      CommandFlowThread)
+
+        -- Make and Compile
+        , (":compile",          CommandCompile)
+        , (":make",             CommandMake)
+
+        -- Inliner control
         , (":with-lite",        CommandWithLite)
         , (":with-salt",        CommandWithSalt) 
         , (":with",             CommandWith) ]
@@ -216,6 +243,11 @@ handleCmd1 state cmd source line
          -> do  cmdEval state source line
                 return state
 
+        CommandAst
+         -> do  cmdAstExp (stateLanguage state) source line
+                return state
+
+        -- Generic transformations --------------
         CommandTrans
          -> do  cmdTrans state source line
                 return state
@@ -227,10 +259,8 @@ handleCmd1 state cmd source line
         CommandTransInteract
          -> do  cmdTransInteract state source line
         
-        CommandAst
-         -> do  cmdAstExp (stateLanguage state) source line
-                return state
 
+        -- Conversion to machine code -----------
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdToSalt config (stateLanguage state) source line
@@ -246,6 +276,8 @@ handleCmd1 state cmd source line
                 runError $ cmdToLlvm config (stateLanguage state) source line
                 return state
 
+
+        -- Core Flow passes ----------------------
         CommandFlowPrep
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdFlowPrep config source line
@@ -256,6 +288,18 @@ handleCmd1 state cmd source line
                 runError $ cmdFlowLower config source line
                 return state
 
+        CommandFlowConcretize
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdFlowConcretize config source line
+                return state
+
+        CommandFlowThread
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdFlowThread config source line
+                return state
+
+
+        -- Make and Compile ---------------------
         CommandCompile
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdCompile config line
@@ -266,6 +310,8 @@ handleCmd1 state cmd source line
                 runError $ cmdMake config line
                 return state
 
+
+        -- Inliner Control ----------------------
         CommandWith
          ->     cmdWith state source line
 

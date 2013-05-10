@@ -1,5 +1,5 @@
 
-module DDC.Driver.Command.FlowThread
+module DDC.Driver.Command.Flow.Thread
         (cmdFlowThread)
 where
 import DDC.Build.Pipeline
@@ -34,8 +34,8 @@ cmdFlowThread _config source sourceText
                 [  PipeCoreStrip
                 [  PipeCoreCheck    fragment
                 [  PipeCoreHacks 
-                        (Canned $ \m -> return 
-                                     $  Thread.thread threadConfig Env.empty Env.empty m)
+                   (Canned $ \m -> return 
+                           $  Thread.thread threadConfig Env.empty Env.empty m)
                 [  PipeCoreOutput SinkStdout ]]]]
 
         case errs of

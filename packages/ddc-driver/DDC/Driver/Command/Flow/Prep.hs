@@ -1,5 +1,5 @@
 
-module DDC.Driver.Command.FlowPrep
+module DDC.Driver.Command.Flow.Prep
         (cmdFlowPrep)
 where
 import DDC.Driver.Stage

@@ -1,34 +1,39 @@
 
-module DDC.Driver.Command.FlowLower
-        (cmdFlowLower)
+module DDC.Driver.Command.Flow.Concretize
+        (cmdFlowConcretize)
 where
+import DDC.Build.Pipeline
+import DDC.Build.Language.Flow
 import DDC.Driver.Stage
 import DDC.Driver.Source
-import DDC.Build.Pipeline
+import DDC.Data.Canned
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
+import qualified DDC.Core.Flow.Transform.Concretize     as Concretize
 import qualified DDC.Base.Pretty                        as P
 
-
--- | Lower a flow program to loop code.
-cmdFlowLower
+cmdFlowConcretize
         :: Config
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowLower config source sourceText
+cmdFlowConcretize _config source sourceText
  = do   
         errs    <- liftIO
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  stageFlowLoad  config source
-                [  stageFlowPrep  config source
-                [  stageFlowLower config source
+                $  PipeTextLoadCore fragment
+                [  PipeCoreStrip
+                [  PipeCoreHacks 
+                   (Canned $ \m -> return 
+                           $  Concretize.concretizeModule m)
                 [  PipeCoreOutput SinkStdout ]]]
 
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+
+
 

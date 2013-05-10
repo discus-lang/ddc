@@ -13,9 +13,12 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.BaseBuild
-import DDC.Driver.Command.FlowLower
-import DDC.Driver.Command.FlowConcretize
-import DDC.Driver.Command.FlowThread
+
+import DDC.Driver.Command.Flow.Prep
+import DDC.Driver.Command.Flow.Lower
+import DDC.Driver.Command.Flow.Concretize
+import DDC.Driver.Command.Flow.Thread
+
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
@@ -130,6 +133,12 @@ run config
                 dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdToLlvm dconfig language (SourceFile filePath) str
+
+        -- Prepare a Disciple Core Flow program for lowering.
+        ModeFlowPrep filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowPrep dconfig (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLower filePath
