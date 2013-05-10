@@ -12,7 +12,6 @@ import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Exp
 import DDC.Base.Pretty
 
-
 -- | Create loops from a list of operators.
 --   TODO: allow the operators to be at different rates, 
 --         and create multiple loops as needed.
@@ -117,11 +116,10 @@ scheduleOperator nest0 env op
         Just nResultElem   = elemNameOfSeriesName nResultSeries
         uResultElem        = UName nResultElem
 
-        Just bResultElem = elemBindOfSeriesBind (opResultSeries op)
+        Just bResultElem   = elemBindOfSeriesBind (opResultSeries op)
 
         -- Insert the expression that computes the new result into the nest.
-        Just tRate      = rateTypeOfSeriesType (typeOfBind $ opResultSeries op)
-        context         = Context tRate
+        context         = Context $ opInputRate op
         nest2           = insertBody nest1 context
                                 [ BodyStmt bResultElem xBody ]
 

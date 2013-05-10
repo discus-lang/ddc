@@ -1,0 +1,33 @@
+
+:set lang Flow
+
+-- Two folds over the same input series.
+:flow-lower..
+module Test with letrec
+ffold [k : Rate] (s : Series# k Int#) : Int#
+ = add# [Int#]
+        (fold# [k] [Int#] [Int#] (add# [Int#]) 0i# s)
+        (fold# [k] [Int#] [Int#] (mul# [Int#]) 1i# s)
+;;
+
+
+-- Three folds over the same input series
+:flow-lower..
+module Test with letrec
+fffold [k : Rate] (s : Series# k Int#) : Int#
+ = add# [Int#]
+    (add# [Int#]
+          (fold# [k] [Int#] [Int#] (add# [Int#]) 0i# s)
+          (fold# [k] [Int#] [Int#] (mul# [Int#]) 1i# s))
+    (fold# [k] [Int#] [Int#] (mul# [Int#]) 1i# s)
+;;
+
+
+-- Fuse map into fold
+:flow-lower..
+module Test with letrec
+foldMap [k : Rate] (s : Series# k Int#) : Int#
+ = fold# [k] [Int#] [Int#] (add# [Int#]) 0i#
+         (map1# [k] [Int#] [Int#]
+                 (\(x : Int#). mul# [Int#] x 2i#) s)
+;;

@@ -258,11 +258,11 @@ data PipeFlow a where
         -> PipeFlow a
 
   -- Run the lowering transform on a module.
-  -- It needs to be already prepped.
-  -- Doing this kills all annotations.
+  --  It needs to be already prepped and have full type annotations.
+  --  Lowering it kills the annotations.
   PipeFlowLower
         :: [PipeCore () Flow.Name]
-        -> PipeFlow a
+        -> PipeFlow (C.AnTEC () Flow.Name)
 
 
 -- | Process a Core Flow module.

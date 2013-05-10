@@ -1,0 +1,59 @@
+
+ok
+
+-- Two folds over the same input series.
+module Test with
+letrec {
+  ffold : [k : Rate].Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x1__acc : Ref# Int# = new# [Int#] 0i# in
+      let x4__acc : Ref# Int# = new# [Int#] 1i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s__elem : Int# = next# [Int#] [k] s ^0 in
+                   let x0 : Int# = read# [Int#] x1__acc in
+                   let _ : Unit
+                         = write# [Int#] x1__acc (add# [Int#] x0 s__elem) in
+                   let x2 : Int# = read# [Int#] x4__acc in
+                   let _ : Unit
+                         = write# [Int#] x4__acc (mul# [Int#] x2 s__elem) in
+                   ()) in
+      let x1 : Int# = read# [Int#] x1__acc in
+      let x4 : Int# = read# [Int#] x4__acc in
+      let x6 : Int# = add# [Int#] x1 x4 in
+      x6
+}
+
+
+-- Three folds over the same input series
+module Test with
+letrec {
+  fffold : [k : Rate].Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x1__acc : Ref# Int# = new# [Int#] 0i# in
+      let x4__acc : Ref# Int# = new# [Int#] 1i# in
+      let x9__acc : Ref# Int# = new# [Int#] 1i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s__elem : Int# = next# [Int#] [k] s ^0 in
+                   let x0 : Int# = read# [Int#] x1__acc in
+                   let _ : Unit
+                         = write# [Int#] x1__acc (add# [Int#] x0 s__elem) in
+                   let x2 : Int# = read# [Int#] x4__acc in
+                   let _ : Unit
+                         = write# [Int#] x4__acc (mul# [Int#] x2 s__elem) in
+                   let x5 : Int# = read# [Int#] x9__acc in
+                   let _ : Unit
+                         = write# [Int#] x9__acc (mul# [Int#] x5 s__elem) in
+                   ()) in
+      let x1 : Int# = read# [Int#] x1__acc in
+      let x4 : Int# = read# [Int#] x4__acc in
+      let x9 : Int# = read# [Int#] x9__acc in
+      let x6 : Int# = add# [Int#] x1 x4 in
+      let x11 : Int# = add# [Int#] x6 x9 in
+      x11
+}

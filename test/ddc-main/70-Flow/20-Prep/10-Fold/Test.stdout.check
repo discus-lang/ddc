@@ -1,0 +1,18 @@
+
+ok
+
+-- Two folds over the same input series.
+module Fold with
+letrec {
+  ffold : [k : Rate].Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x1 : Int#
+            = fold# [k] [Int#] [Int#]
+                  (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# s in
+      let x4 : Int#
+            = fold# [k] [Int#] [Int#]
+                  (\(x2 x3 : Int#). mul# [Int#] x2 x3) 1i# s in
+      let x6 : Int# = add# [Int#] x1 x4 in
+      x6
+}

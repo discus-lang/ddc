@@ -37,10 +37,6 @@ import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
 import Data.Monoid
 import Data.Maybe
-import qualified DDC.Core.Simplifier            as S
-import qualified DDC.Core.Simplifier.Recipe     as S
-import qualified DDC.Core.Transform.Namify      as S
-import qualified DDC.Core.Transform.Snip        as Snip
 
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Core.Flow.Profile          as Flow
@@ -52,6 +48,12 @@ import qualified DDC.Core.Salt.Name             as Salt
 
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Lite                  as Lite
+
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Simplifier            as S
+import qualified DDC.Core.Simplifier.Recipe     as S
+import qualified DDC.Core.Transform.Namify      as S
+import qualified DDC.Core.Transform.Snip        as Snip
 
 
 -- | Configuration for main compiler stages.
@@ -149,17 +151,18 @@ stageFlowPrep config source pipesFlow
 
 -------------------------------------------------------------------------------
 -- | Lower a Core Flow module.
---   Is needs to already be prepped.
+--   Is needs to already be prepped,
+--   and have full type annotations.
 stageFlowLower
         :: Config -> Source
         -> [PipeCore () Flow.Name]
-        ->  PipeCore () Flow.Name
+        ->  PipeCore (C.AnTEC () Flow.Name) Flow.Name
 
 stageFlowLower config source pipesFlow
  = PipeCoreAsFlow
-   [ PipeFlowLower
-     ( PipeCoreOutput    (dump config source "dump.lower-done.dcf")
-     : pipesFlow ) ]
+     [ PipeFlowLower
+       ( PipeCoreOutput    (dump config source "dump.lower-done.dcf")
+       : pipesFlow ) ]
 
 
 -------------------------------------------------------------------------------
