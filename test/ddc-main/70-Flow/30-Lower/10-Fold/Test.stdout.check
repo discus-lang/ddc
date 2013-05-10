@@ -1,6 +1,26 @@
 
 ok
 
+-- Single fold of input series.
+module Test with
+letrec {
+  fold : [k : Rate].Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x1__acc : Ref# Int# = new# [Int#] 0i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s__elem : Int# = next# [Int#] [k] s ^0 in
+                   let x0 : Int# = read# [Int#] x1__acc in
+                   let _ : Unit
+                         = write# [Int#] x1__acc (add# [Int#] x0 s__elem) in
+                   ()) in
+      let x1 : Int# = read# [Int#] x1__acc in
+      x1
+}
+
+
 -- Two folds over the same input series.
 module Test with
 letrec {
@@ -56,4 +76,26 @@ letrec {
       let x6 : Int# = add# [Int#] x1 x4 in
       let x11 : Int# = add# [Int#] x6 x9 in
       x11
+}
+
+
+-- Fuse map into fold
+module Test with
+letrec {
+  foldMap : [k : Rate].Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x4__acc : Ref# Int# = new# [Int#] 0i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s__elem : Int# = next# [Int#] [k] s ^0 in
+                   let x2__elem : Int#
+                         = (\(x : Int#). mul# [Int#] x 2i#) s__elem in
+                   let x1 : Int# = read# [Int#] x4__acc in
+                   let _ : Unit
+                         = write# [Int#] x4__acc (add# [Int#] x1 x2__elem) in
+                   ()) in
+      let x4 : Int# = read# [Int#] x4__acc in
+      x4
 }

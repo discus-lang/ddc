@@ -1,6 +1,14 @@
 
 :set lang Flow
 
+-- Single fold of input series.
+:flow-lower..
+module Test with letrec
+fold [k : Rate] (s : Series# k Int#) : Int#
+ = fold# [k] [Int#] [Int#] (add# [Int#]) 0i# s
+;;
+
+
 -- Two folds over the same input series.
 :flow-lower..
 module Test with letrec

@@ -1,0 +1,44 @@
+
+ok
+
+-- Single map over input series, producing a vector.
+module Test with
+letrec {
+  map : [k : Rate].Series# k Int# -> Vector# Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x5 : Vector# Int# = newVectorR# [Int#] [k] in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s__elem : Int# = next# [Int#] [k] s ^0 in
+                   let x3__elem : Int#
+                         = (\(x : Int#).
+                            let x0 : Int# = mul# [Int#] x 2i# in
+                            let x1 : Int# = add# [Int#] x0 1i# in
+                            x1) s__elem in
+                   let _ : Unit = writeVector# [Int#] x5 ^0 x3__elem in
+                   ()) in
+      x5
+}
+
+
+-- Map/Map fusion, producing a vector.
+module Test with
+letrec {
+  map : [k : Rate].Series# k Int# -> Vector# Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x6 : Vector# Int# = newVectorR# [Int#] [k] in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s__elem : Int# = next# [Int#] [k] s ^0 in
+                   let x2__elem : Int#
+                         = (\(x : Int#). add# [Int#] x 1i#) s__elem in
+                   let x4__elem : Int#
+                         = (\(x : Int#). mul# [Int#] x 2i#) x2__elem in
+                   let _ : Unit = writeVector# [Int#] x6 ^0 x4__elem in
+                   ()) in
+      x6
+}
