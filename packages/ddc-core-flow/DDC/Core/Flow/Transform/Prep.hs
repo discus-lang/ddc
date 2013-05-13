@@ -13,7 +13,6 @@ import qualified Data.Map       as Map
 -- | Prepare a module for lowering.
 --   We need all worker functions passed to flow operators to be eta-expanded
 --   and for their parameters to have real names.
---
 prepModule 
         ::  Module a Name 
         -> (Module a Name, Map Name [Type Name])
@@ -62,12 +61,14 @@ prepX xx
                 lts'    <- prepLts a lts
                 return  $  XLet a lts' x'
 
-        XCase{}         -> error "ddc-core-flow.prepX: cases not handled yet"
+        XCase a x alts  -> liftM3 XCase (return a) (prepX x)  (mapM prepAlt alts)
         XCast a c x     -> liftM3 XCast (return a) (return c) (prepX x)
         XType{}         -> return xx
         XWitness{}      -> return xx
 
 
+
+-- Prepare let bindings for lowering.
 prepLts :: a -> Lets a Name -> PrepM (Lets a Name)
 prepLts a lts
  = case lts of
@@ -96,6 +97,12 @@ prepLts a lts
 
         LLetRegions{}   -> return lts
         LWithRegion{}   -> return lts
+
+
+-- Prepare case alternative for lowering.
+prepAlt :: Alt a Name -> PrepM (Alt a Name)
+prepAlt (AAlt w x)
+        = liftM (AAlt w) (prepX x)
 
 
 -- State ----------------------------------------------------------------------
