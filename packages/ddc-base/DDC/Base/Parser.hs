@@ -5,12 +5,13 @@ module DDC.Base.Parser
         , Parser
         , ParserState   (..)
         , runTokenParser
-        , pTokMaybe
-        , pTokAs
-        , pTok)
+        , pTokMaybe,    pTokMaybeSP
+        , pTokAs,       pTokAsSP
+        , pTok,         pTokSP)
 where
 import DDC.Base.Pretty
 import DDC.Data.Token
+import DDC.Data.SourcePos       as D
 import Data.Functor.Identity
 import Text.Parsec
 import Text.Parsec              as P
@@ -50,22 +51,57 @@ runTokenParser tokenShow fileName parser
 
 -------------------------------------------------------------------------------
 -- | Accept the given token.
-pTok      :: Eq k => k -> Parser k ()
+pTok   :: Eq k => k -> Parser k ()
 pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
+
+
+-- | Accept the given token, returning its source position.
+pTokSP :: Eq k => k -> Parser k D.SourcePos
+pTokSP k  
+ = do   (_, sp) <- pTokMaybeSP 
+                $ \k' -> if k == k' then Just () else Nothing
+        return sp
 
 
 -- | Accept a token and return the given value.
 pTokAs    :: Eq k => k -> t -> Parser k t
-pTokAs k t = pTok k >> return t
+pTokAs k t 
+ = do   pTok k
+        return t
 
 
--- | Accept a token if the function returns `Just`. 
-pTokMaybe  :: (k -> Maybe a) -> Parser k a
-pTokMaybe f
+-- | Accept a token and return the given value, 
+--   along with the source position of the token.
+pTokAsSP :: Eq k => k -> t -> Parser k (t, D.SourcePos)
+pTokAsSP k t 
+ = do   sp      <- pTokSP k
+        return  (t, sp)
+
+
+-- | Accept a token if the function return `Just`, 
+--   also returning the source position of that token.
+pTokMaybe :: (k -> Maybe a) -> Parser k a
+pTokMaybe f 
  = do   state   <- P.getState
+
         P.token (stateTokenShow state . tokenTok)
                 (takeParsecSourcePos)
                 (f . tokenTok)
+
+
+-- | Accept a token if the function returns `Just`. 
+pTokMaybeSP  :: (k -> Maybe a) -> Parser k (a, D.SourcePos)
+pTokMaybeSP f
+ = do   state   <- P.getState
+
+        let f' token' 
+                = case f (tokenTok token') of
+                        Nothing -> Nothing
+                        Just x  -> Just (x, tokenSourcePos token')
+
+        P.token (stateTokenShow state . tokenTok)
+                (takeParsecSourcePos)
+                f'
 
 
 -------------------------------------------------------------------------------
