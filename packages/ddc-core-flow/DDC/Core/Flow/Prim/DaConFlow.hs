@@ -38,15 +38,7 @@ readDaConFlow str
 -- Type -----------------------------------------------------------------------
 -- | Yield the type of a data constructor.
 typeDaConFlow :: DaConFlow -> Type Name
-typeDaConFlow cc
- = case cc of
-        DaConFlowTuple 1
-         -> tForalls [kData] 
-         $ \[t1] -> t1  `tFunPE` tTuple1 t1
-
-        DaConFlowTuple 2
-         -> tForalls [kData, kData] 
-         $ \[t1, t2] -> t1 `tFunPE` t2 `tFunPE` tTuple2 t1 t2
-
-        _ -> error "daConFlowTuple: not finished"
+typeDaConFlow (DaConFlowTuple n)
+        = tForalls (replicate n kData)
+        $ \args -> foldr tFunPE (tTupleN args) args
 

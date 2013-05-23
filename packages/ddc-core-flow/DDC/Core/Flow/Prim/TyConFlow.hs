@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.TyConFlow
         , kindTyConFlow
         , tTuple1
         , tTuple2
+        , tTupleN
         , tVector
         , tSeries
         , tSegd
@@ -75,8 +76,7 @@ readTyConFlow str
 kindTyConFlow :: TyConFlow -> Kind Name
 kindTyConFlow tc
  = case tc of
-        TyConFlowTuple 1        -> kData `kFun` kData
-        TyConFlowTuple 2        -> kData `kFun` kData `kFun` kData
+        TyConFlowTuple n        -> foldr kFun kData (replicate n kData)
         TyConFlowVector         -> kData `kFun` kData
         TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
@@ -95,6 +95,10 @@ tTuple1 tA      = tApps (tConTyConFlow (TyConFlowTuple 1)) [tA]
 
 tTuple2 :: Type Name -> Type Name -> Type Name
 tTuple2 tA tB   = tApps (tConTyConFlow (TyConFlowTuple 2)) [tA, tB]
+
+
+tTupleN :: [Type Name] -> Type Name
+tTupleN tys     = tApps (tConTyConFlow (TyConFlowTuple (length tys))) tys
 
 
 tVector :: Type Name -> Type Name
