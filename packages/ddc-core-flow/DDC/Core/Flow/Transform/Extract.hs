@@ -36,21 +36,21 @@ extractProcedure (Procedure n bsParam xsParam nest stmts xResult tResult)
 -------------------------------------------------------------------------------
 -- | Extract code for a loop nest.
 extractNest 
-        :: [Loop]               -- ^ Loops to run in sequence.
+        :: Nest                 -- ^ Loops to run in sequence.
         -> [Lets () Name]       -- ^ Baseband statements from the source program
                                 --   that run after the loop operators.
         -> Exp () Name          -- ^ Final result of procedure.
         -> Exp () Name
 
-extractNest loops stmts xResult
- = let stmts'   = concatMap extractLoop loops ++ stmts
+extractNest nest stmts xResult
+ = let stmts'   = extractLoop nest ++ stmts
    in  xLets () stmts' xResult
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a possibly nested loop.
-extractLoop      :: Loop -> [Lets () Name]
-extractLoop (Loop _ tRate starts bodys _nested ends _result)
+extractLoop      :: Nest -> [Lets () Name]
+extractLoop (NestLoop tRate starts bodys inner ends _result)
  = let  
         -- Starting statements.
         lsStart = concatMap extractStmtStart starts
@@ -65,18 +65,43 @@ extractLoop (Loop _ tRate starts bodys _nested ends _result)
 
         -- The worker passed to the loop# combinator.
         xBody   = XLam  () (BAnon tNat)                 -- loop counter.
-                $ xLets () lsBody
+                $ xLets () (lsBody ++ lsInner)
                            (xUnit ())
 
         -- Process the elements.
         lsBody  = concatMap extractStmtBody bodys
+
+        -- Handle inner contexts.
+        lsInner = extractLoop inner
 
         -- Ending statements.
         lsEnd   = concatMap extractStmtEnd ends
 
    in   lsStart ++ [lLoop] ++ lsEnd
 
+extractLoop (NestIf _tRateOuter _tRateInner uFlags stmtsBody)
+ = let
+        -- TODO: hacks to get flag, 
+        --       how to handle this cleanly??
+        UName (NameVar sFlags)  = uFlags
+        xFlag                   = XVar () (UName (NameVar $ sFlags ++ "__elem"))
 
+        lCase   = LLet LetStrict
+                        (BNone tUnit)
+                        (XCase () xFlag 
+                                [ AAlt (PData (dcBool True)  [])  xBody
+                                , AAlt (PData (dcBool False) []) (xUnit ()) ])
+
+        lsBody  = concatMap extractStmtBody stmtsBody
+        xBody   = xLets () lsBody (xUnit ())
+
+  in    [lCase]
+
+extractLoop NestEmpty
+ = error "extractLoop: NestEmpty"
+
+extractLoop (NestList _)
+ = error "extractLoop: NestList"
 
 -------------------------------------------------------------------------------
 -- | Extract loop starting code.

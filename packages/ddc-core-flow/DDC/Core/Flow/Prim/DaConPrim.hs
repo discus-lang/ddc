@@ -1,7 +1,7 @@
 
 module DDC.Core.Flow.Prim.DaConPrim
-        ( xNat
-        , dcNat
+        ( xBool, dcBool
+        , xNat,  dcNat
         , dcTuple1
         , xTuple2, dcTuple2
         , dcTupleN)
@@ -11,6 +11,16 @@ import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Compounds
 import DDC.Core.Exp
+
+
+-- | A literal @Bool#@
+xBool :: a -> Bool   -> Exp a Name
+xBool a b       = XCon a (mkDaConAlg (NameLitBool b) tBool)
+
+
+-- | A literal @Bool#@ data constructor.
+dcBool :: Bool -> DaCon Name
+dcBool b = mkDaConAlg (NameLitBool b) tBool
 
 
 -- | A literal @Nat#@
@@ -51,3 +61,4 @@ dcTupleN :: Int -> DaCon Name
 dcTupleN n
           = mkDaConAlg (NameDaConFlow (DaConFlowTuple n))
           $ typeDaConFlow (DaConFlowTuple n)
+

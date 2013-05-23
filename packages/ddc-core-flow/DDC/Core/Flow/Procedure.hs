@@ -1,7 +1,7 @@
 
 module DDC.Core.Flow.Procedure
         ( Procedure     (..)
-        , Loop          (..)
+        , Nest          (..)
         , Context       (..)
         , StmtStart     (..)
         , StmtBody      (..)
@@ -11,7 +11,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
-
+import Data.Monoid
 
 -- | An imperative procedure made up of some loops.
 data Procedure
@@ -19,23 +19,46 @@ data Procedure
         { procedureName         :: Name
         , procedureParamTypes   :: [Bind Name]
         , procedureParamValues  :: [Bind Name]
-        , procedureNest         :: [Loop]
+        , procedureNest         :: Nest
         , procedureStmts        :: [Lets () Name]
         , procedureResult       :: Exp () Name 
         , procedureResultType   :: Type Name }
 
 
 -- | A loop nest.
-data Loop
-        = Loop
-        { loopContext           :: Context
-        , loopRate              :: Type Name
-        , loopStart             :: [StmtStart]
-        , loopBody              :: [StmtBody]
-        , loopNested            :: [Loop]
-        , loopEnd               :: [StmtEnd] 
-        , loopResult            :: Exp () Name }
+data Nest
+        = NestEmpty
+
+        | NestList
+        { nestList              :: [Nest]}
+
+        | NestLoop
+        { nestRate              :: Type Name
+        , nestStart             :: [StmtStart]
+        , nestBody              :: [StmtBody]
+        , nestInner             :: Nest
+        , nestEnd               :: [StmtEnd] 
+        , nestResult            :: Exp () Name }
+
+        | NestIf
+        { nestOuterRate         :: Type Name
+        , nestInnerRate         :: Type Name
+        , nestFlags             :: Bound Name
+        , nestBody              :: [StmtBody] }
         deriving Show
+
+
+instance Monoid Nest where
+ mempty  = NestEmpty
+
+ mappend n1 n2
+  = case (n1, n2) of
+        (NestEmpty, _)                  -> n2
+        (_, NestEmpty)                  -> n1
+        (NestList ns1, NestList ns2)    -> NestList (ns1 ++ ns2)
+        (NestList ns1, _)               -> NestList (ns1 ++ [n2])
+        (_, NestList ns2)               -> NestList (n1 : ns2)
+        (_, _)                          -> NestList [n1, n2]
 
 
 -- | Statements that appear at the start of a loop.

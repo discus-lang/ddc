@@ -57,7 +57,9 @@ slurpProcessLet (BName n tProcess) xx
         tsRate          = filter (\b -> typeOfBind b == kRate) bts
 
         -- Create contexts for all the parameter rate variables.
-        ctxParam        = map (ContextRate . typeOfBind) tsRate
+        ctxParam        = map (ContextRate . TVar . UName)
+                        $ map (\(BName nRate _) -> nRate)
+                        $ tsRate
 
         -- Value binders.
         bvs             = map snd fbvs
@@ -73,7 +75,12 @@ slurpProcessLet (BName n tProcess) xx
                 { processName          = n
                 , processParamTypes    = bts
                 , processParamValues   = bvs
+
+                -- Note that the parameter contexts needs to come first
+                -- so they are scheduled before the local contexts, which
+                -- are inside 
                 , processContexts      = ctxParam ++ ctxLocal
+
                 , processOperators     = ops
                 , processStmts         = ltss
                 , processResultType    = tResult
@@ -83,16 +90,15 @@ slurpProcessLet _ _
  = Nothing
 
 
-
 -------------------------------------------------------------------------------
 -- | Slurp stream operators from the body of a function and add them to 
 --   the provided loop nest.
 slurpProcessX 
-        :: Exp () Name 
+        :: Exp () Name          -- A sequence of non-recursive let-bindings.
         -> ( [Context]          -- Nested contexts created by this process.
-           , [Operator]         -- Flow operators.
+           , [Operator]         -- Series operators in this binding.
            , [Lets () Name]     -- Baseband statements that don't process series.
-           , Exp () Name)       -- final value of process.
+           , Exp () Name)       -- Final value of process.
 
 slurpProcessX xx
  | XLet _ (LLet _ b x) xMore            <- xx
@@ -110,11 +116,21 @@ slurpProcessX xx
 -------------------------------------------------------------------------------
 -- | Slurp stream operators from a let-binding.
 slurpBindingX 
-        :: Bind Name 
-        -> Exp () Name
-        -> ( [Context]
-           , [Operator]
-           , [Lets () Name])
+        :: Bind Name            -- Binder to assign result to.
+        -> Exp () Name          -- Right of the binding.
+        -> ( [Context]          -- Nested contexts created by this binding.
+           , [Operator]         -- Series operators in this binding.
+           , [Lets () Name])    -- Baseband statements that don't process series.
+
+-- Decend into more let bindings.
+-- We get these when entering into a nested context.
+slurpBindingX b1 xx
+ | XLet _ (LLet _ b2 x2) xMore            <- xx
+ , (ctxHere, opsHere, ltsHere)          <- slurpBindingX b2 x2
+ , (ctxMore, opsMore, ltsMore)          <- slurpBindingX b1 xMore
+ = ( ctxHere ++ ctxMore
+   , opsHere ++ opsMore
+   , ltsHere ++ ltsMore)
 
 -- Slurp a mkSel1#
 -- This creates a nested selector context.
@@ -123,19 +139,19 @@ slurpBindingX b
   -> Just ( NameOpFlow (OpFlowMkSel 1)
           , [ XType tK1, XType _tA
             , XVar _ uFlags
-            , XLAM _ bK2 (XLam _ bSel xBody)]))
+            , XLAM _ (BName nR kR) (XLam _ bSel xBody)]))
+ | kR == kRate
  = let  
         (ctxInner, osInner, ltsInner)
                 = slurpBindingX b xBody
 
         context = ContextSelect
                 { contextOuterRate      = tK1
-                , contextInnerRate      = typeOfBind bK2
+                , contextInnerRate      = TVar (UName nR)
                 , contextFlags          = uFlags
                 , contextSelector       = bSel }
 
    in   (context : ctxInner, osInner, ltsInner)
-
 
 -- | Slurp an operator that doesn't introduce a new context.
 slurpBindingX b x

@@ -6,9 +6,8 @@ import DDC.Type.Exp
 import DDC.Core.Flow.Prim
 
 data Context
-        -- | A top-level context associated with a rate which is a
-        --   parameter of the process. This context isn't created
-        --   by the process itself.
+        -- | A top-level context associated with a rate that is a parameter
+        --   of the process. This context isn't created by the process itself.
         = ContextRate
         { contextRate           :: Type Name }
 

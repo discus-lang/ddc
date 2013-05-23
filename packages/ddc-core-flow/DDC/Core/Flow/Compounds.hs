@@ -14,6 +14,7 @@ module DDC.Core.Flow.Compounds
         , tVoid, tBool, tNat, tInt, tWord
 
           -- * Primitive literals and data constructors
+        , xBool, dcBool
         , xNat,  dcNat
         ,          dcTuple1
         , xTuple2, dcTuple2

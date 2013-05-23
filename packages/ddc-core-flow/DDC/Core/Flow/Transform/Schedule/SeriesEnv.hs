@@ -55,8 +55,8 @@ bindNextElem
         -> Type Name            -- ^ Rate of series
         -> Type Name            -- ^ Series element type.
         -> SeriesEnv            -- ^ Current series environment.
-        -> [Loop]               -- ^ Current loop nest.
-        -> (Bound Name, SeriesEnv, [Loop])
+        -> Nest                 -- ^ Current loop nest.
+        -> (Bound Name, SeriesEnv, Nest)
 
 bindNextElem nSeries tRate tElem env nest0
         -- There is already a mapping in the environment.
@@ -76,8 +76,9 @@ bindNextElem nSeries tRate tElem env nest0
                 xGet    = xNext tRate tElem (XVar () uSeries) (XVar () uIndex)
 
                 -- Insert the statement into the loop nest.
-                nest1   = insertBody nest0 (ContextRate tRate)
-                                [ BodyStmt (BName nElem tElem) xGet ]
+                Just nest1   
+                        = (insertBody nest0 (ContextRate tRate)
+                                [ BodyStmt (BName nElem tElem) xGet ])
                                            
                 env'    = env { envSeriesElems 
                                         = Map.insert nSeries uElem 
@@ -91,8 +92,8 @@ bindNextElems
         :: [(Name, Type Name, Type Name)] 
                                 -- ^ Names, rates, and element types.
         -> SeriesEnv            -- ^ Current series environment.
-        -> [Loop]               -- ^ Current loop nest.
-        -> ([Bound Name], SeriesEnv, [Loop])
+        -> Nest                 -- ^ Current loop nest.
+        -> ([Bound Name], SeriesEnv, Nest)
 
 bindNextElems junk env nest0
  = case junk of
