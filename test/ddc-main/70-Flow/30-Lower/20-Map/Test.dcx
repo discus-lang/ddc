@@ -21,3 +21,23 @@ map [k : Rate] (s : Series# k Int#) : Vector# Int#
                (map1# [k] [Int#] [Int#]
                       (\(x : Int#). add# [Int#] x 1i#) s))
 ;;
+
+
+-- Map and Fold the same series, 
+-- producing both results.
+:flow-lower..
+module Test with letrec
+foldMap [k : Rate] (s : Series# k Int#) 
+        : Tuple2# Int# (Vector# Int#)
+ = do   
+        x1      = fold# [k] [Int#] [Int#]
+                        (add# [Int#]) 0i# s
+
+        x4      = map1# [k] [Int#] [Int#]
+                        (\(x : Int#). mul# [Int#] x 2i#) s
+
+        x6      = vectorOfSeries# [k] [Int#] x4
+
+        T2# [Int#] [Vector# Int#] x1 x6
+;;
+

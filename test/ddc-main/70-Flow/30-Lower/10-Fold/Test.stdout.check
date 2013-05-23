@@ -50,7 +50,7 @@ letrec {
 -- Three folds over the same input series
 module Test with
 letrec {
-  fffold : [k : Rate].Series# k Int# -> Int#
+  fffold : [k : Rate].Series# k Int# -> Tuple2# Int# Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
       let x1__acc : Ref# Int# = new# [Int#] 0i# in
@@ -74,7 +74,7 @@ letrec {
       let x4 : Int# = read# [Int#] x4__acc in
       let x9 : Int# = read# [Int#] x9__acc in
       let x6 : Int# = add# [Int#] x1 x4 in
-      let x11 : Int# = add# [Int#] x6 x9 in
+      let x11 : Tuple2# Int# Int# = T2# [Int#] [Int#] x6 x9 in
       x11
 }
 
