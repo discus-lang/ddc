@@ -7,20 +7,18 @@ where
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 
-
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
 --   TODO: proper context.
 insertStarts :: [Loop] -> Context -> [StmtStart] -> [Loop]
 
 insertStarts [] c' starts' 
- = insertStarts
-    [Loop c' [] [] [] [] (xUnit ())] c' starts'
+ = insertStarts [newLoopForContext c'] c' starts'
 
 insertStarts (loop : loops) c' starts' 
- | Loop c starts body nested end result        <- loop
+ | Loop c tRate starts body nested end result        <- loop
  , c == c'
- = Loop c (starts ++ starts') body nested end result : loops
+ = Loop c tRate (starts ++ starts') body nested end result : loops
 
  | otherwise
  = loop : insertStarts loops c' starts'
@@ -32,13 +30,12 @@ insertStarts (loop : loops) c' starts'
 insertBody :: [Loop] -> Context -> [StmtBody] -> [Loop]
 
 insertBody [] c' body'
- = insertBody 
-    [Loop c' [] [] [] [] (xUnit ())] c' body'
+ = insertBody [newLoopForContext c'] c' body'
 
 insertBody  (loop : loops) c' body' 
- | Loop c starts body nested end result         <- loop
+ | Loop c tRate starts body nested end result         <- loop
  , c == c'
- = Loop c starts (body ++ body') nested end result : loops
+ = Loop c tRate starts (body ++ body') nested end result : loops
 
  | otherwise
  = loop : insertBody loops c' body'
@@ -49,13 +46,21 @@ insertBody  (loop : loops) c' body'
 insertEnds :: [Loop] -> Context -> [StmtEnd] -> [Loop] 
 
 insertEnds [] c' ends' 
- = insertEnds 
-    [Loop c' [] [] [] [] (xUnit ())] c' ends'
+ = insertEnds [newLoopForContext c'] c' ends'
 
 insertEnds (loop : loops) c' ends' 
- | Loop c starts body nested end result       <- loop
+ | Loop c tRate starts body nested end result       <- loop
  , c == c'
- = Loop c starts body nested (end ++ ends') result : loops
+ = Loop c tRate starts body nested (end ++ ends') result : loops
 
  | otherwise
  = loop : insertEnds loops c' ends'
+
+
+-------------------------------------------------------------------------------
+newLoopForContext :: Context -> Loop
+newLoopForContext c@(ContextRate tRate)
+ = Loop c tRate [] [] [] [] (xUnit ())
+
+newLoopForContext _
+        = error "newLoopForContext: blerk"

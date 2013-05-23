@@ -4,6 +4,7 @@ module DDC.Core.Flow.Process.Process
 where
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Context
 import DDC.Core.Exp
 
 
@@ -26,6 +27,12 @@ data Process
           -- | Value parameters to process.
           --   These are the value parameters of the original function.
         , processParamValues    :: [Bind Name]
+
+          -- | Flow contexts in this process.
+          --   This contains a ContextRate entry for all the Rate variables
+          --   in the parameters, along with an entry for all the nested
+          --   contexts introduced by the process itself.
+        , processContexts       :: [Context]
 
           -- | Flow operators in this process.
         , processOperators      :: [Operator] 

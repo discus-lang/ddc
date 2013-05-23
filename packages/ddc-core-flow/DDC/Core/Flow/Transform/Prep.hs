@@ -49,6 +49,14 @@ prepX xx
          -> do   addWorkerArgs n [tA, tB]
                  return xx
 
+        -- Detect workers passed to mkSels
+        XApp{}
+         | Just (XVar _ u, [XType _tK1, XType _tA, _, XVar _ (UName n)])
+                                                <- takeXApps xx
+         , UPrim (NameOpFlow (OpFlowMkSel _)) _ <- u
+         -> do  addWorkerArgs n []
+                return xx
+
         -- Bottom-up transform boilerplate.
         XVar{}          -> return xx
         XCon{}          -> return xx

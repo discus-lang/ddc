@@ -10,6 +10,7 @@ module DDC.Core.Flow.Procedure
 where
 import DDC.Core.Exp
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Context
 
 
 -- | An imperative procedure made up of some loops.
@@ -28,16 +29,13 @@ data Procedure
 data Loop
         = Loop
         { loopContext           :: Context
+        , loopRate              :: Type Name
         , loopStart             :: [StmtStart]
         , loopBody              :: [StmtBody]
         , loopNested            :: [Loop]
         , loopEnd               :: [StmtEnd] 
         , loopResult            :: Exp () Name }
         deriving Show
-
-data Context
-        = Context (Type Name)
-        deriving (Show, Eq)
 
 
 -- | Statements that appear at the start of a loop.

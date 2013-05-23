@@ -78,13 +78,13 @@ takeAnnotOfExp xx
 -- | Make some nested type lambdas.
 xLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
 xLAMs a bs x
-        = foldr (XLAM a) x (reverse bs)
+        = foldr (XLAM a) x bs
 
 
 -- | Make some nested value or witness lambdas.
 xLams :: a -> [Bind n] -> Exp a n -> Exp a n
 xLams a bs x
-        = foldr (XLam a) x (reverse bs)
+        = foldr (XLam a) x bs
 
 
 -- | Split type lambdas from the front of an expression,

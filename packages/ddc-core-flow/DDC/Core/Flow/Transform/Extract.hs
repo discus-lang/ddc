@@ -50,7 +50,7 @@ extractNest loops stmts xResult
 -------------------------------------------------------------------------------
 -- | Extract code for a possibly nested loop.
 extractLoop      :: Loop -> [Lets () Name]
-extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
+extractLoop (Loop _ tRate starts bodys _nested ends _result)
  = let  
         -- Starting statements.
         lsStart = concatMap extractStmtStart starts
@@ -75,6 +75,7 @@ extractLoop (Loop (Context tRate) starts bodys _nested ends _result)
         lsEnd   = concatMap extractStmtEnd ends
 
    in   lsStart ++ [lLoop] ++ lsEnd
+
 
 
 -------------------------------------------------------------------------------

@@ -28,8 +28,8 @@ cmdFlowLower config source sourceText
                 [  stageFlowPrep  config source
                 [  PipeCoreCheck  Flow.fragment
                 [  stageFlowLower config source
-                [  PipeCoreCheck  Flow.fragment
-                [  PipeCoreOutput SinkStdout ]]]]]
+--                [  PipeCoreCheck  Flow.fragment
+                [  PipeCoreOutput SinkStdout ]]]]
 
         case errs of
          []     -> return ()

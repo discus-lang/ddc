@@ -31,6 +31,7 @@ Library
         DDC.Core.Flow.Profile
         DDC.Core.Flow.Compounds
         DDC.Core.Flow.Env
+        DDC.Core.Flow.Context
 
         DDC.Core.Flow.Prim
 

@@ -74,7 +74,7 @@ scheduleOperator nest0 env op
 
         -- Insert statements that allocate the vector.
         BName nVec _    = opResultVector op
-        context         = Context (opInputRate op)
+        context         = ContextRate (opInputRate op)
         
         nest2   = insertStarts nest1 context
                 $ [ StartVecNew  
@@ -119,7 +119,7 @@ scheduleOperator nest0 env op
         Just bResultElem   = elemBindOfSeriesBind (opResultSeries op)
 
         -- Insert the expression that computes the new result into the nest.
-        context         = Context $ opInputRate op
+        context         = ContextRate $ opInputRate op
         nest2           = insertBody nest1 context
                                 [ BodyStmt bResultElem xBody ]
 
@@ -147,7 +147,7 @@ scheduleOperator nest0 env op
         tAcc    = typeOfBind (opWorkerParamAcc op)
         
         -- Insert statements that initializes the consumer.
-        context = Context $ opInputRate op
+        context = ContextRate $ opInputRate op
         nest2   = insertStarts nest1 context
                         [ StartAcc nAcc tAcc (opZero op) ]
 

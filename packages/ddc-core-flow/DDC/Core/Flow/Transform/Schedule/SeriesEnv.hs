@@ -76,7 +76,7 @@ bindNextElem nSeries tRate tElem env nest0
                 xGet    = xNext tRate tElem (XVar () uSeries) (XVar () uIndex)
 
                 -- Insert the statement into the loop nest.
-                nest1   = insertBody nest0 (Context tRate)
+                nest1   = insertBody nest0 (ContextRate tRate)
                                 [ BodyStmt (BName nElem tElem) xGet ]
                                            
                 env'    = env { envSeriesElems 
