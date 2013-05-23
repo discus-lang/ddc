@@ -24,6 +24,7 @@ module DDC.Core.Flow.Compounds
 
           -- * Loop operators
         , xLoopLoopN
+        , xLoopGuard
 
           -- * Store operators
         , xNew,       xRead,       xWrite

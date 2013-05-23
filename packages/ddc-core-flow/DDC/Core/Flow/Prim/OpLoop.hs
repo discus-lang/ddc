@@ -3,7 +3,8 @@
 module DDC.Core.Flow.Prim.OpLoop
         ( readOpLoop
         , typeOpLoop
-        , xLoopLoopN)
+        , xLoopLoopN
+        , xLoopGuard)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConPrim
@@ -24,6 +25,8 @@ instance Pretty OpLoop where
         OpLoopLoop      -> text "loop#"
         OpLoopLoopN     -> text "loopn#"
 
+        OpLoopGuard     -> text "guard#"
+
 
 -- | Read a loop operator name.
 readOpLoop :: String -> Maybe OpLoop
@@ -31,7 +34,7 @@ readOpLoop str
  = case str of
         "loop#"         -> Just $ OpLoopLoop
         "loopn#"        -> Just $ OpLoopLoopN
-
+        "guard#"        -> Just $ OpLoopGuard
         _               -> Nothing
 
 
@@ -50,12 +53,23 @@ typeOpLoop op
          -> tForall kRate 
          $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
 
+        -- guard#  :: [k1 : Rate]. Bool# -> ([k2 : Rate]. Nat# -> Unit) -> Unit
+        OpLoopGuard 
+         -> tForall kRate
+         $  \_ -> tBool 
+                `tFunPE` (tForall kRate $ \_ -> tNat `tFunPE` tUnit)
+                `tFunPE` tUnit
+
 
 -- Compounds ------------------------------------------------------------------
 xLoopLoopN :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xLoopLoopN tR xRN xF 
          = xApps () (xVarOpLoop OpLoopLoopN) [XType tR, xRN, xF]
 
+
+xLoopGuard :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xLoopGuard tK1 xB xF
+        = xApps () (xVarOpLoop OpLoopGuard) [XType tK1, xB, xF]
 
 -- Utils -----------------------------------------------------------------------
 xVarOpLoop :: OpLoop -> Exp () Name

@@ -148,6 +148,7 @@ data OpFlow
 data OpLoop
         = OpLoopLoop
         | OpLoopLoopN
+        | OpLoopGuard
         deriving (Eq, Ord, Show)
 
 

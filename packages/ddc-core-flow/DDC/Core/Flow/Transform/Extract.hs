@@ -79,26 +79,27 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
 
    in   lsStart ++ [lLoop] ++ lsEnd
 
-extractLoop (NestIf _tRateOuter _tRateInner uFlags stmtsBody)
+
+extractLoop (NestIf tRateOuter tRateInner uFlags stmtsBody)
  = let
         -- TODO: hacks to get flag, 
         --       how to handle this cleanly??
         UName (NameVar sFlags)  = uFlags
         xFlag                   = XVar () (UName (NameVar $ sFlags ++ "__elem"))
 
-        lCase   = LLet LetStrict
-                        (BNone tUnit)
-                        (XCase () xFlag 
-                                [ AAlt (PData (dcBool True)  [])  xBody
-                                , AAlt (PData (dcBool False) []) (xUnit ()) ])
-
+        TVar (UName nInner)     = tRateInner
         lsBody  = concatMap extractStmtBody stmtsBody
-        xBody   = xLets () lsBody (xUnit ())
 
-  in    [lCase]
+        xGuard  = xLoopGuard tRateOuter xFlag
+                     (  XLAM () (BName nInner kRate)
+                      $ XLam () (BAnon tNat)
+                      $ xLets () lsBody (xUnit ()))
+
+  in    [LLet LetStrict (BNone tUnit) xGuard]
+
 
 extractLoop NestEmpty
- = error "extractLoop: NestEmpty"
+ = []
 
 extractLoop (NestList _)
  = error "extractLoop: NestList"
