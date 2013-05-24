@@ -13,18 +13,37 @@ import Data.Monoid
 
 
 -------------------------------------------------------------------------------
+
+-- | Insert a skeleton context into a nest.
+--    The new context doesn't contain any statements, it just provides
+--    the infrastructure to execute statements at the new rate.
 insertContext :: Nest -> Context -> Maybe Nest
+
+-- Loop context at top level.
 insertContext  NestEmpty      context@ContextRate{}
  = Just $ nestOfContext context
 
+-- Selector context inside loop context.
 insertContext nest@NestLoop{} context@ContextSelect{}
  | nestRate nest == contextOuterRate context
  = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
 
-insertContext _ _
+-- Nested selector context inside selector context.
+insertContext nest@NestIf{}   context@ContextSelect{}
+ | nestInnerRate nest == contextOuterRate context
+ = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
+
+-- Selector context needs to be inserted deeper in this nest.
+insertContext nest@NestLoop{} context@ContextSelect{}
+ | nestDominatesRate nest (contextOuterRate context)
+ , Just inner'  <- insertContext (nestInner nest) context
+ = Just $ nest { nestInner = inner' }
+
+insertContext _nest _context
  = Nothing
 
 
+-- | Yield a skeleton nest for a given context.
 nestOfContext :: Context -> Nest
 nestOfContext context
  = case context of
@@ -42,7 +61,28 @@ nestOfContext context
           { nestOuterRate       = contextOuterRate context
           , nestInnerRate       = contextInnerRate context
           , nestFlags           = contextFlags     context
-          , nestBody            = [] }
+          , nestBody            = [] 
+          , nestInner           = NestEmpty }
+
+
+-- | Check whether the top-level of this nest dominates the given rate.
+--   The nest is at a rate at least as large as the given rate.
+nestDominatesRate :: Nest -> Type Name -> Bool
+nestDominatesRate nest tRate
+ = case nest of
+        NestEmpty       
+         -> False
+
+        NestList ns     
+         -> any (flip nestDominatesRate tRate) ns
+
+        NestLoop{}
+         ->  nestRate nest == tRate
+          || nestDominatesRate (nestInner nest) tRate
+
+        NestIf{}
+         ->  nestInnerRate nest == tRate
+          || nestDominatesRate (nestInner nest) tRate
 
 
 -------------------------------------------------------------------------------
@@ -64,29 +104,6 @@ insertStarts nest context _
  = error $ show (nest, context)
 
 
--- | Check whether the top-level of this nest dominates the given rate.
---   The nest is at a rate at least as large as the given rate.
-nestDominatesRate :: Nest -> Type Name -> Bool
-nestDominatesRate nest tRate
- = case nest of
-        NestEmpty       
-         -> False
-
-        NestList ns     
-         -> any (flip nestDominatesRate tRate) ns
-
-        NestLoop{}
-         | nestRate nest == tRate       
-         -> True
-
-         | otherwise                    
-         -> nestDominatesRate (nestInner nest) tRate
-
-        NestIf{}
-         -> nestInnerRate nest == tRate
-
-
-
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
 insertBody :: Nest -> Context -> [StmtBody] -> Maybe Nest
@@ -101,13 +118,16 @@ insertBody nest@NestLoop{} context@(ContextRate tRate) body'
  | Just inner'  <- insertBody (nestInner nest) context body'
  = Just $ nest { nestInner = inner' }
 
-insertBody nest@NestIf{}   (ContextRate tRate) body'
+insertBody nest@NestIf{}   context@(ContextRate tRate) body'
  | tRate == nestInnerRate nest
  = Just $ nest { nestBody = nestBody nest ++ body' }
 
-
+ | Just inner'  <- insertBody (nestInner nest) context body'
+ = Just $ nest { nestInner = inner' }
+ 
 insertBody _ _ _
  = Nothing
+
 
 -------------------------------------------------------------------------------
 -- | Insert ending statements in the given context.

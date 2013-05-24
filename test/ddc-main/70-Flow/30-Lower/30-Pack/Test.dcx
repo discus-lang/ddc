@@ -1,17 +1,39 @@
 
 
-
 -- Filter
 :flow-lower..
 module Test with letrec
-filter  [k1 : Rate] [a : Data]
-        (f  : a -> Bool#) (s : Series# k1 a)
+filter  [k0 : Rate] [a : Data]
+        (f  : a -> Bool#) (s : Series# k0 a)
         : Vector# a
  = do   
-        flags   = map1# [k1] [a] [Bool#] (\(x : a). f x) s
+        flags   = map# [k0] [a] [Bool#] (\(x : a). f x) s
 
-        mkSel1# [k1] [Vector# a] flags
-         (/\(k2 : Rate). \(sel : Sel1# k1 k2).
-           let  s2      =  pack# [k1] [k2] [a] sel s
-           in   vectorOfSeries#  [k2] [a] s2)
+        mkSel1# [k0] [Vector# a] flags
+         (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+          let  s2      =  pack# [k0] [k1] [a] sel s
+          in   vectorOfSeries#  [k1] [a] s2)
+;;
+
+
+-- Nested filter.
+-- Ensure we can handle nested selector contexts.
+:flow-lower..
+module Test with letrec
+filter  [k0 : Rate] [a : Data]
+        (f  : a -> Bool#)  (g : a -> Bool#)
+        (s0 : Series# k0 a)
+        : Vector# a
+ = do   
+        flags1  = map# [k0] [a] [Bool#] (\(x : a). f x) s0
+
+        mkSel1# [k0] [Vector# a] flags1
+         (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
+          let  s1      = pack# [k0] [k1] [a] sel1 s0 in
+          let  flags2  = map#  [k1] [a]  [Bool#] (\(x : a). g x) s1 
+
+          in   mkSel1# [k1] [Vector# a] flags2
+                 (/\(k2 : Rate). \(sel2 : Sel1# k1 k2).
+                  let   s2 = pack# [k1] [k2] [a] sel2 s1
+                  in    vectorOfSeries# [k2] [a] s2))
 ;;

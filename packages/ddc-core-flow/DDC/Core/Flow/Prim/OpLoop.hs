@@ -53,11 +53,11 @@ typeOpLoop op
          -> tForall kRate 
          $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
 
-        -- guard#  :: [k1 : Rate]. Bool# -> (Nat# -> Unit) -> Unit
+        -- guard#  :: [k1 : Rate]. Bool# -> ([k2 : Rate]. Nat# -> Unit) -> Unit
         OpLoopGuard 
          -> tForall kRate
          $  \_ -> tBool 
-                `tFunPE` (tNat `tFunPE` tUnit)
+                `tFunPE` (tForall kRate $ \_ -> tNat `tFunPE` tUnit)
                 `tFunPE` tUnit
 
 

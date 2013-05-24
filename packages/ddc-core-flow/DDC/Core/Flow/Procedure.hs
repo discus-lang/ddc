@@ -44,7 +44,8 @@ data Nest
         { nestOuterRate         :: Type Name
         , nestInnerRate         :: Type Name
         , nestFlags             :: Bound Name
-        , nestBody              :: [StmtBody] }
+        , nestBody              :: [StmtBody] 
+        , nestInner             :: Nest }
         deriving Show
 
 

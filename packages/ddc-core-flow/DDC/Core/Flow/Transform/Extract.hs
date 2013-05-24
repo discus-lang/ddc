@@ -76,26 +76,30 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
         -- Handle inner contexts.
         lsInner = extractLoop inner
 
-        -- Ending statements.
+        -- Ending statements 
         lsEnd   = concatMap extractStmtEnd ends
 
    in   lsStart ++ [lLoop] ++ lsEnd
 
 -- Code in a select / if context.
---  The tRateInner parameter is not used because the the rate of the inner
---  context cannot be known in lowered code.
-extractLoop (NestIf tRateOuter _tRateInner uFlags stmtsBody)
+extractLoop (NestIf tRateOuter tRateInner uFlags stmtsBody nested)
  = let
         -- TODO: hacks to get flag, 
         --       how to handle this cleanly??
         UName (NameVar sFlags)  = uFlags
+        TVar (UName nInner)     = tRateInner
         xFlag                   = XVar () (UName (NameVar $ sFlags ++ "__elem"))
 
-        lsBody  = concatMap extractStmtBody stmtsBody
-
         xGuard  = xLoopGuard tRateOuter xFlag
-                     (  XLam  () (BAnon tNat)
-                      $ xLets () lsBody (xUnit ()))
+                     (  XLAM  () (BName nInner kRate)
+                      $ XLam  () (BAnon tNat)
+                      $ xLets () (lsBody ++ lsNested) (xUnit ()))
+
+        -- Selector context.
+        lsBody   = concatMap extractStmtBody stmtsBody
+
+        -- Nested contexts.
+        lsNested = extractLoop nested
 
   in    [LLet LetStrict (BNone tUnit) xGuard]
 
