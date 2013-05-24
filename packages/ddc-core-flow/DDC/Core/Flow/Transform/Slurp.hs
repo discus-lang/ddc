@@ -2,6 +2,7 @@ module DDC.Core.Flow.Transform.Slurp
         (slurpProcesses)
 where
 import DDC.Core.Flow.Transform.Slurp.Alloc
+import DDC.Core.Flow.Transform.Slurp.Operator
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Process

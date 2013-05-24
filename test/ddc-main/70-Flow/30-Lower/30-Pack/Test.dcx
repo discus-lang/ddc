@@ -1,6 +1,19 @@
 
+-- Pack with an existing series of flags.
+:flow-lower..
+module Test with letrec
+packMe  [k0 : Rate] [a : Data]
+        (s  : Series# k0 a) (flags : Series# k0 Bool#)
+        : Vector# a
 
--- Filter
+ =      mkSel1# [k0] [Vector# a] flags
+         (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+          let s2       = pack# [k0] [k1] [a] sel s
+          in  vectorOfSeries#  [k1] [a] s2)
+;;
+
+
+-- Filter, producing our own flags.
 :flow-lower..
 module Test with letrec
 filter  [k0 : Rate] [a : Data]
@@ -13,6 +26,25 @@ filter  [k0 : Rate] [a : Data]
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
           let  s2      =  pack# [k0] [k1] [a] sel s
           in   vectorOfSeries#  [k1] [a] s2)
+;;
+
+
+-- Filter, and also materialize the input vector inside the new
+-- selector context.
+:flow-lower..
+module Test with letrec
+filter  [k0 : Rate] [a : Data]
+        (f  : a -> Bool#) (s : Series# k0 a)
+        : Tuple2# (Vector# a) (Vector# a)
+ = do   
+        flags   = map# [k0] [a] [Bool#] (\(x : a). f x) s
+
+        mkSel1# [k0] [Tuple2# (Vector# a) (Vector# a)] flags
+         (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+          let  s2      =  pack# [k0] [k1] [a] sel s
+          in   T2# [Vector# a] [Vector# a]
+                   (vectorOfSeries#  [k1] [a] s2)
+                   (vectorOfSeries#  [k0] [a] s))
 ;;
 
 
@@ -37,3 +69,4 @@ filter  [k0 : Rate] [a : Data]
                   let   s2 = pack# [k1] [k2] [a] sel2 s1
                   in    vectorOfSeries# [k2] [a] s2))
 ;;
+

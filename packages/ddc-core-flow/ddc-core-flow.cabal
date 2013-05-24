@@ -47,6 +47,7 @@ Library
         DDC.Core.Flow.Transform.Schedule.Nest
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Prep
+        DDC.Core.Flow.Transform.Slurp.Operator
         DDC.Core.Flow.Transform.Slurp.Alloc
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Extract

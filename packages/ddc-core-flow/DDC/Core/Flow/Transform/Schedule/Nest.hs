@@ -35,7 +35,7 @@ insertContext nest@NestIf{}   context@ContextSelect{}
 
 -- Selector context needs to be inserted deeper in this nest.
 insertContext nest@NestLoop{} context@ContextSelect{}
- | nestDominatesRate nest (contextOuterRate context)
+ | nestContainsRate nest (contextOuterRate context)
  , Just inner'  <- insertContext (nestInner nest) context
  = Just $ nest { nestInner = inner' }
 
@@ -65,24 +65,24 @@ nestOfContext context
           , nestInner           = NestEmpty }
 
 
--- | Check whether the top-level of this nest dominates the given rate.
---   The nest is at a rate at least as large as the given rate.
-nestDominatesRate :: Nest -> Type Name -> Bool
-nestDominatesRate nest tRate
+-- | Check whether the top-level of this nest contains the given rate.
+--   It might be in a nested context.
+nestContainsRate :: Nest -> Type Name -> Bool
+nestContainsRate nest tRate
  = case nest of
         NestEmpty       
          -> False
 
         NestList ns     
-         -> any (flip nestDominatesRate tRate) ns
+         -> any (flip nestContainsRate tRate) ns
 
         NestLoop{}
          ->  nestRate nest == tRate
-          || nestDominatesRate (nestInner nest) tRate
+          || nestContainsRate (nestInner nest) tRate
 
         NestIf{}
          ->  nestInnerRate nest == tRate
-          || nestDominatesRate (nestInner nest) tRate
+          || nestContainsRate (nestInner nest) tRate
 
 
 -------------------------------------------------------------------------------
@@ -94,10 +94,10 @@ insertStarts nest@NestLoop{} (ContextRate tRate) starts'
  | tRate == nestRate nest
  = Just $ nest { nestStart = nestStart nest ++ starts' }
 
--- The starts are for some inner context dominated by this loop, 
+-- The starts are for some inner context contained by this loop, 
 -- so we can still drop them here.
 insertStarts nest@NestLoop{} (ContextRate tRate) starts'
- | nestDominatesRate nest tRate
+ | nestContainsRate nest tRate
  = Just $ nest { nestStart = nestStart nest ++ starts' }
 
 insertStarts nest context _

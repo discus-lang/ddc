@@ -1,5 +1,5 @@
 
-module DDC.Core.Flow.Process.Slurp
+module DDC.Core.Flow.Transform.Slurp.Operator
         (slurpOperator)
 where
 import DDC.Core.Flow.Process.Operator
