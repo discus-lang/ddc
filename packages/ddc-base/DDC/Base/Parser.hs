@@ -78,8 +78,7 @@ pTokAsSP k t
         return  (t, sp)
 
 
--- | Accept a token if the function return `Just`, 
---   also returning the source position of that token.
+-- | Accept a token if the function returns `Just`. 
 pTokMaybe :: (k -> Maybe a) -> Parser k a
 pTokMaybe f 
  = do   state   <- P.getState
@@ -89,7 +88,8 @@ pTokMaybe f
                 (f . tokenTok)
 
 
--- | Accept a token if the function returns `Just`. 
+-- | Accept a token if the function return `Just`, 
+--   also returning the source position of that token.
 pTokMaybeSP  :: (k -> Maybe a) -> Parser k (a, D.SourcePos)
 pTokMaybeSP f
  = do   state   <- P.getState

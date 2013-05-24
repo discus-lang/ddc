@@ -76,4 +76,21 @@ data Operator
           -- | Worker body.
         , opWorkerBody          :: Exp () Name }
 
+        -----------------------------------------
+        -- | Pack a series according to a selector.
+        | OpPack
+        { -- | Binder for result series.
+          opResultSeries        :: Bind Name
+
+          -- | Rate of input series.
+        , opInputRate           :: Type Name
+
+          -- | Bound of input series.
+        , opInputSeries         :: Bound Name
+
+          -- | Rate of output series.
+        , opOutputRate          :: Type Name 
+
+          -- | Type of a series element.
+        , opElemType            :: Type Name }
         deriving (Show)

@@ -32,3 +32,9 @@ instance Pretty Operator where
         = vcat
         [ text "Fold"
         , text " rate: "        <> ppr (opInputRate op) ]
+
+ ppr op@OpPack{}
+        = vcat
+        [ text "Pack"
+        , text " input  rate: " <> ppr (opInputRate op) 
+        , text " output rate: " <> ppr (opOutputRate op) ]

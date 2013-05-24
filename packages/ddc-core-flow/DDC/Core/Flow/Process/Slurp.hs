@@ -17,7 +17,8 @@ slurpOperator
         -> Maybe Operator
 
 slurpOperator bResult xx
- -- Slurp a create# operator
+
+ -- Create --------------------------------------
  | Just ( NameOpFlow OpFlowVectorOfSeries
         , [ XType tRate, XType tA, (XVar _ uSeries) ])
                                 <- takeXPrimApps xx
@@ -27,7 +28,7 @@ slurpOperator bResult xx
         , opInputSeries         = uSeries 
         , opElemType            = tA }
 
- -- Slurp a map1# operator                       
+ -- Map -----------------------------------------
  -- TODO: handle higher arity maps generally
  | Just ( NameOpFlow (OpFlowMap 1)
         , [ XType tRate, XType _tA, XType _tB
@@ -42,7 +43,7 @@ slurpOperator bResult xx
         , opWorkerParams        = [pIn1]
         , opWorkerBody          = xBody }
 
- -- Slurp a fold# operator.
+ -- Fold ----------------------------------------
  | Just ( NameOpFlow OpFlowFold
         , [ XType tRate, XType _tAcc, XType _tElem
           , xWorker,     xZero,     (XVar _ uSeries)])
@@ -56,6 +57,17 @@ slurpOperator bResult xx
         , opWorkerParamAcc      = pAcc
         , opWorkerParamElem     = pElem
         , opWorkerBody          = xBody }
+
+ -- Pack ----------------------------------------
+ | Just ( NameOpFlow OpFlowPack
+        , [ XType tRateInput, XType tRateOutput, XType tElem
+          , _xSel, (XVar _ uSeries) ])    <- takeXPrimApps xx
+ = Just $ OpPack
+        { opResultSeries        = bResult
+        , opInputRate           = tRateInput
+        , opInputSeries         = uSeries
+        , opOutputRate          = tRateOutput 
+        , opElemType            = tElem }
 
  | otherwise
  = Nothing

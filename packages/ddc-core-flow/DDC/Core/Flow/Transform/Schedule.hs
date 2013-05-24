@@ -83,22 +83,25 @@ scheduleOperator nest0 env op
                         env nest0
 
         -- Insert statements that allocate the vector.
+        --  We use the type-level series rate to describe the length of
+        --  the vector. This will be repalced by a RateNat value during
+        --  the concretization phase.
         BName nVec _    = opResultVector op
         context         = ContextRate (opInputRate op)
         
         Just nest2      = insertStarts nest1 context
                         $ [ StartVecNew  
-                                nVec 
-                                (opElemType op) 
-                                (opInputRate op) ]
+                                nVec                    -- allocated vector
+                                (opElemType op)         -- elem type
+                                (opInputRate op) ]      -- series rate
 
         -- Insert statements that write the current element to the vector.
         Just nest3      = insertBody   nest2 context 
                         $ [ BodyVecWrite 
-                                nVec 
-                                (opElemType op)
-                                (XVar () (UIx 0))
-                                (XVar () uInput) ]
+                                nVec                    -- destination vector
+                                (opElemType op)         -- elem type
+                                (XVar () (UIx 0))       -- index
+                                (XVar () uInput) ]      -- value
    in   (env1, nest3)
 
  
@@ -156,7 +159,8 @@ scheduleOperator nest0 env op
         -- Type of the accumulator
         tAcc            = typeOfBind (opWorkerParamAcc op)
         
-        -- Insert statements that initializes the consumer.
+        -- Insert statements that initialize the starting value
+        --  of the accumulator.
         context         = ContextRate $ opInputRate op
         Just nest2      = insertStarts nest1 context
                                 [ StartAcc nAcc tAcc (opZero op) ]
@@ -167,18 +171,36 @@ scheduleOperator nest0 env op
                                 (opWorkerBody op)
 
         -- Insert statements that update the accumulator
+        --  into the loop body.
         Just nest3      = insertBody nest2 context
                                 [ BodyAccRead  nAcc tAcc (opWorkerParamAcc op)
                                 , BodyAccWrite nAcc tAcc xBody ]
                                 
-        -- Insert statements that read back the final value.
+        -- Insert statements that read back the final value
+        --  after the loop has finished.
         Just nest4      = insertEnds nest3 context
                                 [ EndAcc   n tAcc nAcc ]
    in   (env1, nest4)
 
+ -- Pack ----------------------------------------
+ | OpPack{}     <- op
+ = let  
+        -- Lookup binder for the input element.
+        Just nSeries    = takeNameOfBound (opInputSeries op)
+        tRate           = opInputRate op
+        tInputElem      = opElemType op
+        (uInput, env1, nest1)
+                        = bindNextElem nSeries tRate tInputElem env nest0
+
+        -- Associate the variable for the result element with the result series.
+        Just nResultSeries = takeNameOfBind (opResultSeries op)
+        env2               = insertElemForSeries nResultSeries uInput env1
+
+   in   (env2, nest1)
+
  | otherwise
  = error $ renderIndent 
- $ vcat [ text "repa-plugin: can't schedule series operator"
+ $ vcat [ text "repa-plugin.scheduleOperator: can't schedule operator"
         , indent 8 $ ppr op ]
 
 
