@@ -1,14 +1,13 @@
-{-# LANGUAGE ViewPatterns #-}
 module DDC.Core.Flow.Transform.Slurp
         (slurpProcesses)
 where
-import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Flow.Transform.Slurp.Alloc
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
+import DDC.Core.Module
+import DDC.Core.Exp
 import Data.Maybe
 import Data.List
 
@@ -68,6 +67,9 @@ slurpProcessLet (BName n tProcess) xx
         (ctxLocal, ops, ltss, xResult)  
                         = slurpProcessX xBody
 
+        -- Decide what rates to use when allocating vectors.
+        ops_alloc       = patchAllocRates ops
+
         -- Determine the type of the result of the process.
         tResult         = snd $ takeTFunAllArgResult tProcess
 
@@ -81,7 +83,7 @@ slurpProcessLet (BName n tProcess) xx
                 -- are inside 
                 , processContexts      = ctxParam ++ ctxLocal
 
-                , processOperators     = ops
+                , processOperators     = ops_alloc
                 , processStmts         = ltss
                 , processResultType    = tResult
                 , processResult        = xResult }

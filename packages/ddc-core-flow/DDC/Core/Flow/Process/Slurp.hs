@@ -26,6 +26,7 @@ slurpOperator bResult xx
         { opResultVector        = bResult
         , opInputRate           = tRate
         , opInputSeries         = uSeries 
+        , opAllocRate           = Nothing
         , opElemType            = tA }
 
  -- Map -----------------------------------------

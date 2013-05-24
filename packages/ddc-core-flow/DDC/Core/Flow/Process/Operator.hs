@@ -23,6 +23,10 @@ data Operator
           -- | Bound of input series.
         , opInputSeries         :: Bound Name
 
+          -- | Rate that should be used when allocating the vector.
+          --   This is filled in by `patchAllocRates`.
+        , opAllocRate           :: Maybe (Type Name)
+
           -- | Type of the elements.
         , opElemType            :: Type Name
         }

@@ -88,12 +88,17 @@ scheduleOperator nest0 env op
         --  the concretization phase.
         BName nVec _    = opResultVector op
         context         = ContextRate (opInputRate op)
-        
+
+        -- Rate we're using to allocate the result vector.
+        --   This will be larger than the actual result series rate if we're
+        --   creating a vector inside a selector context.
+        Just tRateAlloc = opAllocRate op
+
         Just nest2      = insertStarts nest1 context
                         $ [ StartVecNew  
                                 nVec                    -- allocated vector
                                 (opElemType op)         -- elem type
-                                (opInputRate op) ]      -- series rate
+                                tRateAlloc ]            -- allocation rate
 
         -- Insert statements that write the current element to the vector.
         Just nest3      = insertBody   nest2 context 

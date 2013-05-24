@@ -47,6 +47,7 @@ Library
         DDC.Core.Flow.Transform.Schedule.Nest
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Prep
+        DDC.Core.Flow.Transform.Slurp.Alloc
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Extract
         DDC.Core.Flow.Transform.Concretize
@@ -81,4 +82,5 @@ Library
         PatternGuards
         ParallelListComp
         DeriveDataTypeable
+        ViewPatterns
         

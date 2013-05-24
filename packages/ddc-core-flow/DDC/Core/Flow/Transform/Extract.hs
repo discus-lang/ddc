@@ -50,6 +50,8 @@ extractNest nest stmts xResult
 -------------------------------------------------------------------------------
 -- | Extract code for a possibly nested loop.
 extractLoop      :: Nest -> [Lets () Name]
+
+-- Code in a loop context.
 extractLoop (NestLoop tRate starts bodys inner ends _result)
  = let  
         -- Starting statements.
@@ -79,20 +81,20 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
 
    in   lsStart ++ [lLoop] ++ lsEnd
 
-
-extractLoop (NestIf tRateOuter tRateInner uFlags stmtsBody)
+-- Code in a select / if context.
+--  The tRateInner parameter is not used because the the rate of the inner
+--  context cannot be known in lowered code.
+extractLoop (NestIf tRateOuter _tRateInner uFlags stmtsBody)
  = let
         -- TODO: hacks to get flag, 
         --       how to handle this cleanly??
         UName (NameVar sFlags)  = uFlags
         xFlag                   = XVar () (UName (NameVar $ sFlags ++ "__elem"))
 
-        TVar (UName nInner)     = tRateInner
         lsBody  = concatMap extractStmtBody stmtsBody
 
         xGuard  = xLoopGuard tRateOuter xFlag
-                     (  XLAM () (BName nInner kRate)
-                      $ XLam () (BAnon tNat)
+                     (  XLam  () (BAnon tNat)
                       $ xLets () lsBody (xUnit ()))
 
   in    [LLet LetStrict (BNone tUnit) xGuard]
