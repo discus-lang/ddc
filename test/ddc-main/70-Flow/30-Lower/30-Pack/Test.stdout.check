@@ -1,0 +1,117 @@
+
+-- Pack with an existing series of flags.
+module Test with
+letrec {
+  packMe : [k0 : Rate].[a : Data].Series# k0 a -> Series# k0 Bool# -> Vector# a
+    = /\(k0 : Rate)./\(a : Data).
+       \(s : Series# k0 a).\(flags : Series# k0 Bool#).
+      let k1__count : Ref# Nat# = new# [Nat#] 0# in
+      let x0 : Vector# a = newVectorR# [a] [k0] in
+      let _ : Unit
+            = loop# [k0]
+                  (\(^ : Nat#).
+                   let s__elem : a = next# [a] [k0] s ^0 in
+                   let _ : Unit
+                         = guard# [k0] k1__count flags__elem
+                               (/\(k1 : Rate).
+                                 \(^ : Nat#).
+                                let _ : Unit = writeVector# [a] x0 ^0 s__elem in
+                                ()) in
+                   ()) in
+      let x2 : Vector# a = x0 in
+      x2
+}
+
+
+-- Filter, producing our own flags.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Series# k0 a -> Vector# a
+    = /\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(s : Series# k0 a).
+      let k1__count : Ref# Nat# = new# [Nat#] 0# in
+      let x2 : Vector# a = newVectorR# [a] [k0] in
+      let _ : Unit
+            = loop# [k0]
+                  (\(^ : Nat#).
+                   let s__elem : a = next# [a] [k0] s ^0 in
+                   let x1__elem : Bool#
+                         = (\(x : a). f x) s__elem in
+                   let _ : Unit
+                         = guard# [k0] k1__count x1__elem
+                               (/\(k1 : Rate).
+                                 \(^ : Nat#).
+                                let _ : Unit = writeVector# [a] x2 ^0 s__elem in
+                                ()) in
+                   ()) in
+      let x4 : Vector# a = x2 in
+      x4
+}
+
+
+-- Filter, and also materialize the input vector inside the new
+-- selector context.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Series# k0 a -> Tuple2# (Vector# a) (Vector# a)
+    = /\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(s : Series# k0 a).
+      let k1__count : Ref# Nat# = new# [Nat#] 0# in
+      let x2 : Vector# a = newVectorR# [a] [k0] in
+      let x3 : Vector# a = newVectorR# [a] [k0] in
+      let _ : Unit
+            = loop# [k0]
+                  (\(^ : Nat#).
+                   let s__elem : a = next# [a] [k0] s ^0 in
+                   let x1__elem : Bool#
+                         = (\(x : a). f x) s__elem in
+                   let _ : Unit = writeVector# [a] x3 ^0 s__elem in
+                   let _ : Unit
+                         = guard# [k0] k1__count x1__elem
+                               (/\(k1 : Rate).
+                                 \(^ : Nat#).
+                                let _ : Unit = writeVector# [a] x2 ^0 s__elem in
+                                ()) in
+                   ()) in
+      let x4 : Tuple2# (Vector# a) (Vector# a)
+            = T2# [Vector# a] [Vector# a] x2 x3 in
+      let x6 : Tuple2# (Vector# a) (Vector# a) = x4 in
+      x6
+}
+
+
+-- Nested filter.
+-- Ensure we can handle nested selector contexts.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(s0 : Series# k0 a).
+      let k1__count : Ref# Nat# = new# [Nat#] 0# in
+      let k2__count : Ref# Nat# = new# [Nat#] 0# in
+      let x4 : Vector# a = newVectorR# [a] [k0] in
+      let _ : Unit
+            = loop# [k0]
+                  (\(^ : Nat#).
+                   let s0__elem : a = next# [a] [k0] s0 ^0 in
+                   let x1__elem : Bool#
+                         = (\(x : a). f x) s0__elem in
+                   let _ : Unit
+                         = guard# [k0] k1__count x1__elem
+                               (/\(k1 : Rate).
+                                 \(^ : Nat#).
+                                let x3__elem : Bool#
+                                      = (\(x : a). g x) s0__elem in
+                                let _ : Unit
+                                      = guard# [k1] k2__count x3__elem
+                                            (/\(k2 : Rate).
+                                              \(^ : Nat#).
+                                             let _ : Unit = writeVector# [a] x4 ^0 s0__elem in
+                                             ()) in
+                                ()) in
+                   ()) in
+      let x6 : Vector# a = x4 in
+      let x8 : Vector# a = x6 in
+      x8
+}
+

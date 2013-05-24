@@ -135,6 +135,7 @@ threadType n
                  $ \[tK, tA] -> tSeries tK tA `tFunPE` tInt 
                                 `tFunPE` tWorld `tFunPE` (tTuple2 tWorld tA)
 
+        -- Contexts -----------------------------
         -- loopn#  :: [k : Rate]. RateNat# k 
         --         -> (Nat#  -> World# -> World#) 
         --         -> World# -> World#
@@ -143,5 +144,13 @@ threadType n
                  $ \[tK] -> tRateNat tK
                                 `tFunPE`  (tNat `tFunPE` tWorld `tFunPE` tWorld)
                                 `tFunPE` tWorld `tFunPE` tWorld
+        
+        -- guard#
+        NameOpLoop  OpLoopGuard
+         -> Just $ tForall kRate
+                 $ \_tK1 -> tRef tNat
+                        `tFunPE` tBool
+                        `tFunPE` (tForall kRate $ \_tK2 -> tNat `tFunPE` tWorld `tFunPE` tWorld)
+                        `tFunPE` tWorld `tFunPE` tWorld
 
         _ -> Nothing

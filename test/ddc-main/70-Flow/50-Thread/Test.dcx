@@ -1,3 +1,5 @@
+
+-- Ensure world threading works into loop and guard contexts.
 :flow-thread..
 module Test with
 letrec {
@@ -28,8 +30,6 @@ letrec {
                                              ()) in
                                 ()) in
                    ()) in
-      let x6 : Vector# a = x4 in
-      let x8 : Vector# a = x6 in
-      x8
+      x4
 }
 ;;

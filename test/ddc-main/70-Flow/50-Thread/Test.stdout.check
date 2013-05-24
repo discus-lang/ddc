@@ -1,0 +1,33 @@
+
+-- Ensure world threading works into loop and guard contexts.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> World# -> Tuple2# World# (Vector# a)
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(s0 : Series# k0 a).\(^ : World#).
+      caselet T2# (^ : World#) (k1__count : Ref# Nat#)  = new# [Nat#] 0# ^0 in
+      caselet T2# (^ : World#) (k2__count : Ref# Nat#)  = new# [Nat#] 0# ^0 in
+      caselet T2# (^ : World#) (x4 : Vector# a) 
+        = newVectorN# [a] [k0] (rateOfSeries# [k0] [a] s0) ^0 in
+      caselet T1# (^ : World#) 
+        = loopn# [k0] (rateOfSeries# [k0] [a] s0)
+              (\(x0 : Nat#).\(^ : World#).
+               caselet T2# (^ : World#) (s0__elem : a)  = next# [a] [k0] s0 x0 ^0 in
+               let x1__elem : Bool#
+                     = (\(x : a). f x) s0__elem in
+               caselet T1# (^ : World#) 
+                 = guard# [k0] k1__count x1__elem
+                       (/\(k1 : Rate).
+                         \(x1 : Nat#).\(^ : World#).
+                        let x3__elem : Bool#
+                              = (\(x : a). g x) s0__elem in
+                        caselet T1# (^ : World#) 
+                          = guard# [k1] k2__count x3__elem
+                                (/\(k2 : Rate).
+                                  \(x2 : Nat#).\(^ : World#).
+                                 caselet T1# (^ : World#)  = writeVector# [a] x4 x2 s0__elem ^0 in
+                                 ^0) ^0 in
+                        ^0) ^0 in
+               ^0) ^0 in
+      T2# [World#] [Vector# a] ^0 x4
+}
