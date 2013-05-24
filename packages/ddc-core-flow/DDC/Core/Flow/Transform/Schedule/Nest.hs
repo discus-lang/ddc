@@ -6,7 +6,7 @@ module DDC.Core.Flow.Transform.Schedule.Nest
         , insertEnds)
 where
 import DDC.Core.Flow.Procedure
-import DDC.Core.Compounds
+import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Type.Exp
 import Data.Monoid
@@ -26,18 +26,23 @@ insertContext  NestEmpty      context@ContextRate{}
 -- Selector context inside loop context.
 insertContext nest@NestLoop{} context@ContextSelect{}
  | nestRate nest == contextOuterRate context
- = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
+ = Just $ nest 
+        { nestInner = nestInner nest <> nestOfContext context 
+        , nestStart = nestStart nest ++ startsForSelect context }
+
+-- Selector context needs to be inserted deeper in this nest.
+insertContext nest@NestLoop{} context@ContextSelect{}
+ | nestContainsRate nest (contextOuterRate context)
+ , Just inner'  <- insertContext (nestInner nest) context
+ = Just $ nest 
+        { nestInner = inner' 
+        , nestStart = nestStart nest ++ startsForSelect context }
 
 -- Nested selector context inside selector context.
 insertContext nest@NestIf{}   context@ContextSelect{}
  | nestInnerRate nest == contextOuterRate context
  = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
 
--- Selector context needs to be inserted deeper in this nest.
-insertContext nest@NestLoop{} context@ContextSelect{}
- | nestContainsRate nest (contextOuterRate context)
- , Just inner'  <- insertContext (nestInner nest) context
- = Just $ nest { nestInner = inner' }
 
 insertContext _nest _context
  = Nothing
@@ -83,6 +88,19 @@ nestContainsRate nest tRate
         NestIf{}
          ->  nestInnerRate nest == tRate
           || nestContainsRate (nestInner nest) tRate
+
+
+-- | For a select context make statements that initialise the counter of 
+--   how many times the inner context has been entered.
+startsForSelect :: Context -> [StmtStart]
+startsForSelect context
+ = let  ContextSelect{} = context
+        TVar (UName (NameVar strK))  = contextInnerRate context
+        nCounter         = NameVar (strK ++ "__count")
+   in   [StartAcc 
+         { startAccName  = nCounter
+         , startAccType  = tNat
+         , startAccExp   = xNat () 0 }]
 
 
 -------------------------------------------------------------------------------
