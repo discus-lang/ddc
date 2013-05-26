@@ -12,9 +12,8 @@ letrec {
                   (\(^ : Nat#).
                    let s__elem : a = next# [a] [k0] s ^0 in
                    let _ : Unit
-                         = guard# [k0] k1__count flags__elem
-                               (/\(k1 : Rate).
-                                 \(^ : Nat#).
+                         = guard# k1__count flags__elem
+                               (\(^ : Nat#).
                                 let _ : Unit = writeVector# [a] x0 ^0 s__elem in
                                 ()) in
                    ()) in
@@ -38,9 +37,8 @@ letrec {
                    let x1__elem : Bool#
                          = (\(x : a). f x) s__elem in
                    let _ : Unit
-                         = guard# [k0] k1__count x1__elem
-                               (/\(k1 : Rate).
-                                 \(^ : Nat#).
+                         = guard# k1__count x1__elem
+                               (\(^ : Nat#).
                                 let _ : Unit = writeVector# [a] x2 ^0 s__elem in
                                 ()) in
                    ()) in
@@ -67,9 +65,8 @@ letrec {
                          = (\(x : a). f x) s__elem in
                    let _ : Unit = writeVector# [a] x3 ^0 s__elem in
                    let _ : Unit
-                         = guard# [k0] k1__count x1__elem
-                               (/\(k1 : Rate).
-                                 \(^ : Nat#).
+                         = guard# k1__count x1__elem
+                               (\(^ : Nat#).
                                 let _ : Unit = writeVector# [a] x2 ^0 s__elem in
                                 ()) in
                    ()) in
@@ -97,15 +94,13 @@ letrec {
                    let x1__elem : Bool#
                          = (\(x : a). f x) s0__elem in
                    let _ : Unit
-                         = guard# [k0] k1__count x1__elem
-                               (/\(k1 : Rate).
-                                 \(^ : Nat#).
+                         = guard# k1__count x1__elem
+                               (\(^ : Nat#).
                                 let x3__elem : Bool#
                                       = (\(x : a). g x) s0__elem in
                                 let _ : Unit
-                                      = guard# [k1] k2__count x3__elem
-                                            (/\(k2 : Rate).
-                                              \(^ : Nat#).
+                                      = guard# k2__count x3__elem
+                                            (\(^ : Nat#).
                                              let _ : Unit = writeVector# [a] x4 ^0 s0__elem in
                                              ()) in
                                 ()) in
@@ -114,4 +109,5 @@ letrec {
       let x8 : Vector# a = x6 in
       x8
 }
+
 

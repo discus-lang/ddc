@@ -17,15 +17,13 @@ letrec {
                    let x1__elem : Bool#
                          = (\(x : a). f x) s0__elem in
                    let _ : Unit
-                         = guard# [k0] k1__count x1__elem
-                               (/\(k1 : Rate).
-                                 \(x1 : Nat#).
+                         = guard# k1__count x1__elem
+                               (\(x1 : Nat#).
                                 let x3__elem : Bool#
                                       = (\(x : a). g x) s0__elem in
                                 let _ : Unit
-                                      = guard# [k1] k2__count x3__elem
-                                            (/\(k2 : Rate).
-                                              \(x2 : Nat#).
+                                      = guard# k2__count x3__elem
+                                            (\(x2 : Nat#).
                                              let _ : Unit = writeVector# [a] x4 x2 s0__elem in
                                              ()) in
                                 ()) in
