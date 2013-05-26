@@ -49,13 +49,13 @@ cmdMake config filePath
             pipesSalt
              = case configViaBackend config of
                 ViaLLVM
-                 -> [ PipeCoreStrip
+                 -> [ PipeCoreReannotate (const ())
                     [ stageSaltOpt      config source
                     [ stageSaltToLLVM   config source 
                     [ stageCompileLLVM  config source filePath True ]]]]
 
                 ViaC
-                 -> [ PipeCoreStrip
+                 -> [ PipeCoreReannotate (const ())
                     [ stageSaltOpt      config source
                     [ stageCompileSalt  config source filePath True ]]]
 

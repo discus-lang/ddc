@@ -116,7 +116,7 @@ stageFlowLoad
 
 stageFlowLoad config source pipesFlow
  = PipeTextLoadCore Flow.fragment
- [ PipeCoreStrip
+ [ PipeCoreReannotate (const ())
         ( PipeCoreOutput (dump config source "dump.flow.dcf")
         : pipesFlow ) ]
 
@@ -129,7 +129,7 @@ stageFlowPrep
         ->  PipeCore () Flow.Name
 
 stageFlowPrep config source pipesFlow
- = PipeCoreStrip
+ = PipeCoreReannotate   (const ())
  [ PipeCoreSimplify     Flow.fragment (0 :: Int) simplNorm
    [ PipeCoreOutput     (dump config source "dump.lower-norm.dcf")
    , PipeCoreAsFlow
@@ -174,7 +174,7 @@ stageLiteLoad
 
 stageLiteLoad config source pipesLite
  = PipeTextLoadCore Lite.fragment
- [ PipeCoreStrip
+ [ PipeCoreReannotate (const ())
         ( PipeCoreOutput (dump config source "dump.lite.dcl")
         : pipesLite ) ]
 

@@ -4,6 +4,7 @@ module DDC.Base.Parser
         ( module Text.Parsec
         , Parser
         , ParserState   (..)
+        , D.SourcePos
         , runTokenParser
         , pTokMaybe,    pTokMaybeSP
         , pTokAs,       pTokAsSP
@@ -13,8 +14,8 @@ import DDC.Base.Pretty
 import DDC.Data.Token
 import DDC.Data.SourcePos       as D
 import Data.Functor.Identity
-import Text.Parsec
-import Text.Parsec              as P
+import Text.Parsec              hiding (SourcePos)
+import Text.Parsec              as P  
 import Text.Parsec.Error        as P
 
 

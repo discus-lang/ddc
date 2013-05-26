@@ -43,7 +43,7 @@ import Control.DeepSeq
 -- | The type checker adds this annotation to every node in the AST, 
 --   giving its type, effect and closure.
 ---
---   NOTE: We wwant to leave the components lazy so that the checker
+--   NOTE: We want to leave the components lazy so that the checker
 --         doesn't actualy need to produce the type components if they're
 --         not needed.
 data AnTEC a n
@@ -768,6 +768,7 @@ returnX !a !f !t !es !cs
    in   return  (f (AnTEC t e c a)
                 , t, es, cs)
 {-# INLINE returnX #-}
+
 
 -------------------------------------------------------------------------------
 -- | Check some let bindings.

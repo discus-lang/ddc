@@ -49,7 +49,7 @@ parseRewrite
         => Fragment n err 
 	-> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
-        -> Either Error (SetRuleCommand (C.AnTEC () n) n)
+        -> Either Error (SetRuleCommand (C.AnTEC BP.SourcePos n) n)
 
 parseRewrite fragment modules str
  = case dropWhile isSpace str of
@@ -69,7 +69,7 @@ parseAdd
         => Fragment n err
 	-> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
-        -> Either Error (SetRuleCommand (C.AnTEC () n) n)
+        -> Either Error (SetRuleCommand (C.AnTEC BP.SourcePos n) n)
 
 parseAdd fragment modules str
  | (name, rest) <- parseFirstWord str

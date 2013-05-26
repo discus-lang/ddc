@@ -9,6 +9,7 @@ import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Simplifier.Parser
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Module
 import DDC.Core.Load
 import DDC.Core.Pretty
@@ -22,7 +23,7 @@ import System.Directory
 import System.FilePath
 import System.IO
 import qualified Data.Map               as Map
-
+import qualified DDC.Base.Parser        as BP
 
 -- Read -----------------------------------------------------------------------
 -- | Load and typecheck a module.
@@ -30,7 +31,7 @@ cmdReadModule
         :: (Ord n, Show n, Pretty n, NFData n)
         => Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
-        -> IO (Maybe (Module (AnTEC () n) n))
+        -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
 cmdReadModule = cmdReadModule' True
 
 
@@ -39,7 +40,7 @@ cmdReadModule'
         => Bool                 -- ^ If true, print errors out
         -> Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
-        -> IO (Maybe (Module (AnTEC () n) n))
+        -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
 
 cmdReadModule' printErrors frag filePath
  = do
@@ -108,10 +109,13 @@ cmdLoad_language (Just strSimpl) fsTemplates filePath language
          $  mapM (liftIO . cmdReadModule fragment)
                  fsTemplates
 
+        let zapAnnot annot
+                = annot { annotTail = () }
+
         moreModules
          <- case mMoreModules of
                  Nothing -> throwError $ "Imported modules do not parse."
-                 Just ms -> return ms
+                 Just ms -> return     $ map (reannotate zapAnnot) ms
 
         -- Collect all definitions from modules
         let templateModules
@@ -119,7 +123,8 @@ cmdLoad_language (Just strSimpl) fsTemplates filePath language
 
         -- Simplifier details for the parser.
         let details
-                = SimplifierDetails mkNamT mkNamX rules' 
+                = SimplifierDetails mkNamT mkNamX 
+                        [(n, reannotate zapAnnot rule) | (n, rule) <- rules']
                         templateModules
 
         case parseSimplifier readName details strSimpl of
@@ -160,9 +165,10 @@ cmdLoadFromString language source str
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore  fragment
+                [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment
-                [  PipeCoreOutput    SinkStdout ]]]
+                [  PipeCoreOutput    SinkStdout ]]]]
 
         case errs of
          [] -> return ()

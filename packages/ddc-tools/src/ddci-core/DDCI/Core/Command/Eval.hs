@@ -75,7 +75,8 @@ cmdEval state source str
 
     -- Expression is well-typed.
     goEval (Just expr)
-     =	evalExp state expr
+     =	evalExp state 
+     $  reannotate (\a -> a { annotTail = ()} ) expr
 
 
 -- | Evaluate an already parsed and type-checked expression.
@@ -85,6 +86,7 @@ evalExp state x0
  = do   
         -- The evaluator doesn't want any annotations
         let x0_stripped = reannotate (const ()) x0
+        let x0_zapped   = reannotate (\a -> a { annotTail = ()}) x0
 
         -- Create the initial store.
 	let store = startingStoreForExp x0_stripped
@@ -98,7 +100,7 @@ evalExp state x0
 	 $ do   putStrLn $ renderIndent $ ppr store
 		outStr   state "\n"
 
-	goStep store x0
+	goStep store x0_zapped
 
     where
 	goStep store x

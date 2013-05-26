@@ -50,8 +50,10 @@ cmdTrans state source str
          = do   let kenv    = modulesExportKinds modules (profilePrimKinds profile)
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
-                tr <- applyTransAndCheck state profile kenv tenv zero simpl x
-		case tr of
+                tr      <- applyTransAndCheck state profile kenv tenv zero simpl 
+                        $  reannotate (\a -> a { annotTail = ()}) x
+		
+                case tr of
 		  Nothing -> return ()
 		  Just x' -> outDocLn state $ ppr x'
 
@@ -84,7 +86,8 @@ cmdTransEval state source str
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
                 -- Apply the current transform.
-                tr      <- applyTransAndCheck state profile kenv tenv zero simpl xx
+                tr      <- applyTransAndCheck state profile kenv tenv zero simpl 
+                        $  reannotate (\a -> a { annotTail = () }) xx
 
                 case tr of
                  Nothing -> return ()
@@ -109,14 +112,14 @@ data SimplBox s n
 -- Trans ----------------------------------------------------------------------
 -- | Transform an expression, or display errors
 applyTransAndCheck 
-        :: (Eq n, Ord n, Pretty n, Show n, Show a)
+        :: (Eq n, Ord n, Pretty n, Show n)
         => State
         -> Profile n
         -> Env n                        -- Kind Environment.
         -> Env n                        -- Type Environment.
         -> s
-        -> Simplifier s (AnTEC a n) n
-        -> Exp (AnTEC a n) n
+        -> Simplifier s (AnTEC () n) n
+        -> Exp (AnTEC () n) n
         -> IO (Maybe (Exp (AnTEC () n) n))
 
 applyTransAndCheck state profile kenv tenv zero simpl xx

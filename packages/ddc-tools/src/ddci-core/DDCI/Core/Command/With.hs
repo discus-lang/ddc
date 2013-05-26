@@ -8,6 +8,7 @@ import DDC.Core.Pretty
 import DDC.Build.Pipeline
 import DDC.Core.Module
 import DDC.Data.Canned
+import DDC.Core.Check
 import System.Directory
 import Control.Monad
 import Data.IORef
@@ -71,8 +72,9 @@ cmdWith_parse frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore frag
-                   [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
-                     [PipeCoreOutput SinkDiscard] ]
+                [  PipeCoreReannotate (\a -> a { annotTail = ()})
+                [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
+                [PipeCoreOutput SinkDiscard] ]]
 
         case errs of
          [] -> do

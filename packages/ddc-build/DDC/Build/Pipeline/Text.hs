@@ -8,6 +8,7 @@ import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
 import DDC.Base.Pretty
+import qualified DDC.Base.Parser        as BP
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Load          as CL
 import Control.DeepSeq
@@ -22,7 +23,7 @@ data PipeText n (err :: * -> *) where
   PipeTextLoadCore 
         :: (Ord n, Show n, Pretty n)
         => !(Fragment n err)
-        -> ![PipeCore (C.AnTEC () n) n]
+        -> ![PipeCore (C.AnTEC BP.SourcePos n) n]
         -> PipeText n err
 
 

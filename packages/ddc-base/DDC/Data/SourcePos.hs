@@ -3,7 +3,7 @@ module DDC.Data.SourcePos
         (SourcePos (..))
 where
 import DDC.Base.Pretty
-
+import Control.DeepSeq
 
 -- | A position in a source file.        
 --
@@ -15,6 +15,11 @@ data SourcePos
         , sourcePosLine         :: Int
         , sourcePosColumn       :: Int }
         deriving (Eq, Show)
+
+
+instance NFData SourcePos where
+ rnf (SourcePos str l c)
+  = rnf str `seq` rnf l `seq` rnf c
 
 
 instance Pretty SourcePos where

@@ -5,18 +5,18 @@ module DDC.Core.Parser.Base
         , pModuleName
         , pQualName
         , pName
-        , pCon
-        , pLit
-        , pIndex
-        , pVar
-        , pTok
-        , pTokAs)
+        , pCon,         pConSP
+        , pLit,         pLitSP
+        , pIndex,       pIndexSP
+        , pVar,         pVarSP
+        , pTok,         pTokSP
+        , pTokAs,       pTokAsSP)
 where
 import DDC.Base.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
-import DDC.Base.Parser                  ((<?>))
+import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
 
 
@@ -58,8 +58,15 @@ pName   = P.choice [pCon, pVar]
 
 
 -- | Parse a constructor name.
-pCon  :: Parser n n
+pCon    :: Parser n n
 pCon    = P.pTokMaybe f
+ where  f (KN (KCon n)) = Just n
+        f _             = Nothing
+
+
+-- | Parse a constructor name.
+pConSP    :: Parser n (n, SourcePos)
+pConSP    = P.pTokMaybeSP f
  where  f (KN (KCon n)) = Just n
         f _             = Nothing
 
@@ -71,9 +78,24 @@ pLit    = P.pTokMaybe f
         f _             = Nothing
 
 
+-- | Parse a literal, with source position.
+pLitSP :: Parser n (n, SourcePos)
+pLitSP  = P.pTokMaybeSP f
+ where  f (KN (KLit n)) = Just n
+        f _             = Nothing
+
+
 -- | Parse a variable.
 pVar :: Parser n n
 pVar    =   P.pTokMaybe f
+        <?> "a variable"
+ where  f (KN (KVar n))         = Just n
+        f _                     = Nothing
+
+
+-- | Parse a variable, with source position.
+pVarSP :: Parser n (n, SourcePos)
+pVarSP  =   P.pTokMaybeSP f
         <?> "a variable"
  where  f (KN (KVar n))         = Just n
         f _                     = Nothing
@@ -87,12 +109,29 @@ pIndex  =   P.pTokMaybe f
         f _                     = Nothing
 
 
+-- | Parse a deBruijn index, with source position.
+pIndexSP :: Parser n (Int, SourcePos)
+pIndexSP  =   P.pTokMaybeSP f
+        <?> "an index"
+ where  f (KA (KIndex i))       = Just i
+        f _                     = Nothing
+
+
 -- | Parse an atomic token.
 pTok :: TokAtom -> Parser n ()
 pTok k     = P.pTok (KA k)
+
+
+-- | Parse an atomic token, yielding its source position.
+pTokSP :: TokAtom -> Parser n SourcePos
+pTokSP k   = P.pTokSP (KA k)
 
 
 -- | Parse an atomic token and return some value.
 pTokAs :: TokAtom -> a -> Parser n a
 pTokAs k x = P.pTokAs (KA k) x
 
+
+-- | Parse an atomic token and return source position and value.
+pTokAsSP :: TokAtom -> a -> Parser n (a, SourcePos)
+pTokAsSP k x = P.pTokAsSP (KA k) x

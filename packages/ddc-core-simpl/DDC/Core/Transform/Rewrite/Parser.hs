@@ -19,7 +19,7 @@ import qualified DDC.Core.Transform.Rewrite.Rule as R
 	x
 -}
 -- | Parse a rewrite rule.
-pRule	:: Ord n => Parser n (R.RewriteRule () n)
+pRule	:: Ord n => Parser n (R.RewriteRule P.SourcePos n)
 pRule
  = do	bs	 <- pRuleBinders
 	(cs,lhs) <- pRuleCsLhs
@@ -41,7 +41,7 @@ add_zero_l
         ;
 -}
 -- | Parse many rewrite rules.
-pRuleMany	:: Ord n => Parser n [(n,R.RewriteRule () n)]
+pRuleMany	:: Ord n => Parser n [(n,R.RewriteRule P.SourcePos n)]
 pRuleMany
  = P.many (do
         n <- pName
@@ -60,7 +60,7 @@ pRuleBinders
  ]
 
 
-pRuleCsLhs :: Ord n => Parser n ([Type n], Exp () n)
+pRuleCsLhs :: Ord n => Parser n ([Type n], Exp P.SourcePos n)
 pRuleCsLhs
  = P.choice
  [ do	cs <- P.many1 $ P.try (do
@@ -74,7 +74,7 @@ pRuleCsLhs
  ]
 
 
-pRuleHole :: Ord n => Parser n (Maybe (Exp () n))
+pRuleHole :: Ord n => Parser n (Maybe (Exp P.SourcePos n))
 pRuleHole
  = P.optionMaybe
  $ do	pTok KBraceBra

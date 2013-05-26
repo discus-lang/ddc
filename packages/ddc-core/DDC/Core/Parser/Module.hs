@@ -17,9 +17,9 @@ import qualified Data.Map               as Map
 -- Module ---------------------------------------------------------------------
 -- | Parse a core module.
 pModule :: (Ord n, Pretty n) 
-        => Parser n (Module () n)
+        => Parser n (Module P.SourcePos n)
 pModule 
- = do   pTok KModule
+ = do   sp      <- pTokSP KModule
         name    <- pModuleName
 
         -- exports { SIG;+ }
@@ -51,11 +51,11 @@ pModule
         pTok KWith
 
         -- LET;+
-        lts     <- P.sepBy1 pLets (pTok KIn)
+        lts     <- P.sepBy1 pLetsSP (pTok KIn)
 
         -- The body of the module consists of the top-level bindings wrapped
         -- around a unit constructor place-holder.
-        let body = xLets () lts (xUnit ())
+        let body = xLetsAnnot lts (xUnit sp)
 
         -- ISSUE #295: Check for duplicate exported names in module parser.
         --  The names are added to a unique map, so later ones with the same

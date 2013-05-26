@@ -14,6 +14,7 @@ import Control.DeepSeq
 import Data.Typeable
 import Data.Map                         (Map)
 import DDC.Type.Env                     (Env)
+import qualified DDC.Base.Parser        as BP
 
 
 -- | Existential container for a language fragment, and the dictionaries
@@ -24,7 +25,7 @@ data Language
           , Ord n
           , Show n
           , Pretty n
-          , Pretty (err (AnTEC () n))
+          , Pretty (err (AnTEC BP.SourcePos n))
           , NFData n)
         => Language (Bundle s n err)
 

@@ -26,7 +26,7 @@ module DDC.Core.Compounds
         , takeXPrimApps
 
           -- * Lets
-        , xLets
+        , xLets,               xLetsAnnot
         , splitXLets 
         , bindsOfLets
         , specBindsOfLets
@@ -215,6 +215,12 @@ takeXConApps xx
 xLets :: a -> [Lets a n] -> Exp a n -> Exp a n
 xLets a lts x
  = foldr (XLet a) x lts
+
+
+-- | Wrap some let-bindings around an expression, with individual annotations.
+xLetsAnnot :: [(Lets a n, a)] -> Exp a n -> Exp a n
+xLetsAnnot lts x
+ = foldr (\(l, a) x' -> XLet a l x') x lts
 
 
 -- | Split let-bindings from the front of an expression, if any.

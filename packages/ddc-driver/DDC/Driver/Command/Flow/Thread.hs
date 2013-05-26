@@ -31,7 +31,7 @@ cmdFlowThread _config source sourceText
                             (lineStartOfSource source)
                             sourceText
                 $  PipeTextLoadCore fragment
-                [  PipeCoreStrip
+                [  PipeCoreReannotate (const ())
                 [  PipeCoreCheck    fragment
                 [  PipeCoreHacks 
                    (Canned $ \m -> return 

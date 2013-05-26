@@ -248,10 +248,10 @@ cmdExpRecon language source ss
 -- Check ----------------------------------------------------------------------
 -- | Parse and type-check a core module from a file.
 cmdCheckModuleFromFile
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err
         -> FilePath
-        -> ErrorT String IO (Module (AnTEC () n) n)
+        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckModuleFromFile fragment filePath
  = goLoad 
@@ -275,11 +275,11 @@ cmdCheckModuleFromFile fragment filePath
 
 -- | Parse and type-check a core module from a string.
 cmdCheckModuleFromString
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err
         -> Source
         -> String
-        -> ErrorT String IO (Module (AnTEC () n) n)
+        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckModuleFromString fragment source str
  = goLoad
@@ -338,13 +338,13 @@ cmdParseCheckType source frag str
 --   only loading an expression to check its type.
 --
 cmdParseCheckExp 
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err       -- ^ The current language fragment.
         -> ModuleMap (AnTEC () n) n -- ^ Current modules
         -> Bool                 -- ^ Allow partial application of primitives.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
-        -> IO (Maybe ( Exp (AnTEC () n) n))
+        -> IO (Maybe ( Exp (AnTEC BP.SourcePos n) n))
 
 cmdParseCheckExp frag modules permitPartialPrims source str
  = goLoad (fragmentLexExp frag (nameOfSource source) (lineStartOfSource source) str)

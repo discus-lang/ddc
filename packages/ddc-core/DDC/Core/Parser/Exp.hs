@@ -3,8 +3,8 @@
 module DDC.Core.Parser.Exp
         ( pExp
         , pExpApp
-        , pExpAtom
-        , pLets
+        , pExpAtom,     pExpAtomSP
+        , pLetsSP
         , pType
         , pTypeApp
         , pTypeAtom)
@@ -16,7 +16,7 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Compounds
-import DDC.Base.Parser                  ((<?>))
+import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import Control.Monad.Error
@@ -24,12 +24,12 @@ import Control.Monad.Error
 
 -- Expressions ----------------------------------------------------------------
 -- | Parse a core language expression.
-pExp    :: Ord n => Parser n (Exp () n)
+pExp    :: Ord n => Parser n (Exp SourcePos n)
 pExp 
  = P.choice
         -- Level-0 lambda abstractions
         -- \(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
- [ do   pTok KBackSlash
+ [ do   sp      <- pTokSP KBackSlash
 
         bs      <- liftM concat
                 $  P.many1 
@@ -42,11 +42,11 @@ pExp
 
         pTok KDot
         xBody   <- pExp
-        return  $ foldr (XLam ()) xBody bs
+        return  $ foldr (XLam sp) xBody bs
 
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
- , do   pTok KBigLambda
+ , do   sp      <- pTokSP KBigLambda
 
         bs      <- liftM concat
                 $  P.many1 
@@ -59,14 +59,14 @@ pExp
 
         pTok KDot
         xBody   <- pExp
-        return  $ foldr (XLAM ()) xBody bs
+        return  $ foldr (XLAM sp) xBody bs
 
 
         -- let expression
- , do   lts     <- pLets
+ , do   (lts, sp) <- pLetsSP
         pTok    KIn
         x2      <- pExp
-        return  $ XLet () lts x2
+        return  $ XLet sp lts x2
 
 
         -- do { STMTS }
@@ -79,7 +79,7 @@ pExp
 
 
         -- withregion CON in EXP
- , do   pTok KWithRegion
+ , do   sp      <- pTokSP KWithRegion
         u       <- P.choice 
                 [  do   n    <- pVar
                         return $ UName n
@@ -88,22 +88,22 @@ pExp
                         return $ UPrim n kRegion]
         pTok KIn
         x       <- pExp
-        return  $ XLet () (LWithRegion u) x
+        return  $ XLet sp (LWithRegion u) x
 
 
         -- case EXP of { ALTS }
- , do   pTok KCase
+ , do   sp      <- pTokSP KCase
         x       <- pExp
         pTok KOf 
         pTok KBraceBra
         alts    <- P.sepEndBy1 pAlt (pTok KSemiColon)
         pTok KBraceKet
-        return  $ XCase () x alts
+        return  $ XCase sp x alts
 
 
         -- match PAT <- EXP else EXP in EXP
         --  Sugar for a case-expression.
- , do   pTok KMatch
+ , do   sp      <- pTokSP KMatch
         p       <- pPat
         pTok KArrowDashLeft
         x1      <- pExp 
@@ -111,47 +111,48 @@ pExp
         x2      <- pExp 
         pTok KIn
         x3      <- pExp
-        return  $ XCase () x1 [AAlt p x3, AAlt PDefault x2]
+        return  $ XCase sp x1 [AAlt p x3, AAlt PDefault x2]
 
 
         -- weakeff [TYPE] in EXP
- , do   pTok KWeakEff
+ , do   sp      <- pTokSP KWeakEff
         pTok KSquareBra
         t       <- pType
         pTok KSquareKet
         pTok KIn
         x       <- pExp
-        return  $ XCast () (CastWeakenEffect t) x
+        return  $ XCast sp (CastWeakenEffect t) x
 
 
         -- weakclo {EXP;+} in EXP
- , do   pTok KWeakClo
+ , do   sp      <- pTokSP KWeakClo
         pTok KBraceBra
-        xs       <- liftM concat $ P.sepEndBy1 pArgs (pTok KSemiColon)
+        xs      <- liftM (map fst . concat) 
+                $  P.sepEndBy1 pArgSPs (pTok KSemiColon)
         pTok KBraceKet
         pTok KIn
         x       <- pExp
-        return  $ XCast () (CastWeakenClosure xs) x
+        return  $ XCast sp (CastWeakenClosure xs) x
 
 
         -- purify <WITNESS> in EXP
- , do   pTok KPurify
+ , do   sp      <- pTokSP KPurify
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
         pTok KIn
         x       <- pExp
-        return  $ XCast () (CastPurify w) x
+        return  $ XCast sp (CastPurify w) x
 
 
         -- forget <WITNESS> in EXP
- , do   pTok KForget
+ , do   sp      <- pTokSP KForget
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
         pTok KIn
         x       <- pExp
-        return  $ XCast () (CastForget w) x
+        return  $ XCast sp (CastForget w) x
 
         -- APP
  , do   pExpApp
@@ -161,13 +162,13 @@ pExp
 
 
 -- Applications.
-pExpApp :: Ord n => Parser n (Exp () n)
+pExpApp :: Ord n => Parser n (Exp SourcePos n)
 pExpApp 
-  = do  x1      <- pExpAtom
+  = do  (x1, _)        <- pExpAtomSP
         
         P.choice
-         [ do   xs  <- liftM concat $ P.many1 pArgs
-                return  $ foldl (XApp ()) x1 xs
+         [ do   xs  <- liftM concat $ P.many1 pArgSPs
+                return  $ foldl (\x (x', sp) -> XApp sp x x') x1 xs
 
          ,      return x1]
 
@@ -175,75 +176,83 @@ pExpApp
 
 
 -- Comp, Witness or Spec arguments.
-pArgs   :: Ord n => Parser n [Exp () n]
-pArgs 
+pArgSPs :: Ord n => Parser n [(Exp SourcePos n, SourcePos)]
+pArgSPs 
  = P.choice
         -- [TYPE]
- [ do   pTok KSquareBra
+ [ do   sp      <- pTokSP KSquareBra
         t       <- pType 
         pTok KSquareKet
-        return  [XType t]
+        return  [(XType t, sp)]
 
         -- [: TYPE0 TYPE0 ... :]
- , do   pTok KSquareColonBra
+ , do   sp      <- pTokSP KSquareColonBra
         ts      <- P.many1 pTypeAtom
         pTok KSquareColonKet
-        return  $ map XType ts
+        return  [(XType t, sp) | t <- ts]
         
         -- <WITNESS>
- , do   pTok KAngleBra
+ , do   sp      <- pTokSP KAngleBra
         w       <- pWitness
         pTok KAngleKet
-        return  [XWitness w]
+        return  [(XWitness w, sp)]
                 
         -- <: WITNESS0 WITNESS0 ... :>
- , do   pTok KAngleColonBra
+ , do   sp      <- pTokSP KAngleColonBra
         ws      <- P.many1 pWitnessAtom
         pTok KAngleColonKet
-        return  $ map XWitness ws
+        return  [(XWitness w, sp) | w <- ws]
                 
         -- EXP0
- , do   x       <- pExpAtom
-        return  [x]
+ , do   (x, sp)  <- pExpAtomSP
+        return  [(x, sp)]
  ]
  <?> "a type, witness or expression argument"
 
 
 -- | Parse a variable, constructor or parenthesised expression.
-pExpAtom   :: Ord n => Parser n (Exp () n)
+pExpAtom   :: Ord n => Parser n (Exp SourcePos n)
 pExpAtom 
+ = do   (x, _) <- pExpAtomSP
+        return x
+
+
+-- | Parse a variable, constructor or parenthesised expression,
+--   also returning source position.
+pExpAtomSP :: Ord n => Parser n (Exp SourcePos n, SourcePos)
+pExpAtomSP 
  = P.choice
         -- (EXP2)
- [ do   pTok KRoundBra
+ [ do   sp      <- pTokSP KRoundBra
         t       <- pExp
         pTok KRoundKet
-        return  $ t
+        return  (t, sp)
  
         -- The unit data constructor.       
- , do   pTok KDaConUnit
-        return  $ XCon () dcUnit
+ , do   sp              <- pTokSP KDaConUnit
+        return  (XCon sp dcUnit, sp)
 
         -- Named algebraic constructors.
         --  We just fill-in the type with tBot for now, and leave it to 
         --  the spreader to attach the real type.
- , do   con     <- pCon
-        return  $ XCon () (mkDaConAlg con (T.tBot T.kData))
+ , do   (con, sp)       <- pConSP
+        return  (XCon sp (mkDaConAlg con (T.tBot T.kData)), sp)
 
         -- Literals.
         --  We just fill-in the type with tBot for now, and leave it to
         --  the spreader to attach the real type.
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
- , do   lit     <- pLit
-        return  $ XCon () (mkDaConAlg lit (T.tBot T.kData))
+ , do   (lit, sp)       <- pLitSP
+        return  (XCon sp (mkDaConAlg lit (T.tBot T.kData)), sp)
 
         -- Debruijn indices
- , do   i       <- pIndex
-        return  $ XVar () (UIx   i)
+ , do   (i, sp)         <- pIndexSP
+        return  (XVar sp (UIx   i), sp)
 
         -- Variables
- , do   var     <- pVar
-        return  $ XVar () (UName var) 
+ , do   (var, sp)       <- pVarSP
+        return  (XVar sp (UName var), sp)
  ]
 
  <?> "a variable, constructor, or parenthesised type"
@@ -251,7 +260,7 @@ pExpAtom
 
 -- Alternatives ---------------------------------------------------------------
 -- Case alternatives.
-pAlt    :: Ord n => Parser n (Alt () n)
+pAlt    :: Ord n => Parser n (Alt SourcePos n)
 pAlt
  = do   p       <- pPat
         pTok KArrowDash
@@ -301,45 +310,47 @@ pBindPat
 
 
 -- Bindings -------------------------------------------------------------------
-pLets :: Ord n => Parser n (Lets () n)
-pLets
+pLetsSP :: Ord n => Parser n (Lets SourcePos n, SourcePos)
+pLetsSP
  = P.choice
     [ -- non-recursive let.
-      do pTok KLet
+      do sp     <- pTokSP KLet
          (mode1, b1, x1) <- pLetBinding
-         return  $ LLet mode1 b1 x1
+         return (LLet mode1 b1 x1, sp)
 
       -- recursive let.
-    , do pTok KLetRec
+    , do sp     <- pTokSP KLetRec
          P.choice
           -- Multiple bindings in braces
           [ do   pTok KBraceBra
                  lets    <- P.sepEndBy1 pLetRecBinding (pTok KSemiColon)
                  pTok KBraceKet
-                 return $ LRec lets
+                 return (LRec lets, sp)
 
           -- A single binding without braces.
           , do   ll      <- pLetRecBinding
-                 return  $ LRec [ll]
+                 return (LRec [ll], sp)
           ]      
 
       -- Local region binding.
       --   letregions [BINDER] with { BINDER : TYPE ... } in EXP
       --   letregions [BINDER] in EXP
-    , do pTok KLetRegions
+    , do sp     <- pTokSP KLetRegions
          brs    <- P.manyTill pBinder (P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith])
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
-         pLetWits bs
+         r      <- pLetWits bs
+         return (r, sp)
           
-    , do pTok KLetRegion
+    , do sp     <- pTokSP KLetRegion
          br    <- pBinder
          let b =  T.makeBindFromBinder br T.kRegion
-         pLetWits [b]
+         r      <- pLetWits [b]
+         return (r, sp)
          
     ]
     
     
-pLetWits :: Ord n => [Bind n] -> Parser n (Lets () n)
+pLetWits :: Ord n => [Bind n] -> Parser n (Lets SourcePos n)
 pLetWits bs
  = P.choice 
     [ do   pTok KWith
@@ -358,7 +369,7 @@ pLetWits bs
 
 
 -- | A binding for let expression.
-pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp () n)
+pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp SourcePos n)
 pLetBinding 
  = do   b       <- pBinder
 
@@ -396,10 +407,10 @@ pLetBinding
                         pTok KColon
                         tBody   <- pType
                         mode    <- pLetMode
-                        pTok KEquals
+                        sp      <- pTokSP KEquals
                         xBody   <- pExp
 
-                        let x   = expOfParams () ps xBody
+                        let x   = expOfParams sp ps xBody
                         let t   = funTypeOfParams ps tBody
                         return  (mode, T.makeBindFromBinder b t, x)
 
@@ -409,10 +420,10 @@ pLetBinding
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
                  , do   mode    <- pLetMode
-                        pTok KEquals
+                        sp      <- pTokSP KEquals
                         xBody   <- pExp
 
-                        let x   = expOfParams () ps xBody
+                        let x   = expOfParams sp ps xBody
                         let t   = T.tBot T.kData
                         return  (mode, T.makeBindFromBinder b t, x) ]
          ]
@@ -441,7 +452,7 @@ pLetMode
 
 -- | Letrec bindings must have a full type signature, 
 --   or use function syntax with a return type so that we can make one.
-pLetRecBinding :: Ord n => Parser n (Bind n, Exp () n)
+pLetRecBinding :: Ord n => Parser n (Bind n, Exp SourcePos n)
 pLetRecBinding 
  = do   b       <- pBinder
 
@@ -465,18 +476,18 @@ pLetRecBinding
                 tBody   <- pType
                 let t   = funTypeOfParams ps tBody
 
-                pTok KEquals
+                sp      <- pTokSP KEquals
                 xBody   <- pExp
-                let x   = expOfParams () ps xBody
+                let x   = expOfParams sp ps xBody
 
                 return  (T.makeBindFromBinder b t, x) ]
 
 
 -- Statements -----------------------------------------------------------------
 data Stmt n
-        = StmtBind  (Bind n) (Exp () n)
-        | StmtMatch (Pat n)  (Exp () n) (Exp () n)
-        | StmtNone  (Exp () n)
+        = StmtBind  SourcePos (Bind n) (Exp SourcePos n)
+        | StmtMatch SourcePos (Pat n)  (Exp SourcePos n) (Exp SourcePos n)
+        | StmtNone  SourcePos (Exp SourcePos n)
 
 
 -- | Parse a single statement.
@@ -489,11 +500,11 @@ pStmt
    --  
    P.try $ 
     do  br      <- pBinder
-        pTok    KEquals
+        sp      <- pTokSP    KEquals
         x1      <- pExp
         let t   = T.tBot T.kData
         let b   = T.makeBindFromBinder br t
-        return  $ StmtBind b x1
+        return  $ StmtBind sp b x1
 
    -- PAT <- EXP else EXP;
    -- Sugar for a case-expression.
@@ -501,20 +512,25 @@ pStmt
    --  as a function name in a non-binding statement.
  , P.try $
     do  p       <- pPat
-        pTok KArrowDashLeft
+        sp      <- pTokSP KArrowDashLeft
         x1      <- pExp 
         pTok KElse
         x2      <- pExp 
-        return  $ StmtMatch p x1 x2
+        return  $ StmtMatch sp p x1 x2
 
         -- EXP
- , do   x       <- pExp
-        return  $ StmtNone x
+ , do   x               <- pExp
+
+        -- This should always succeed because pExp doesn't
+        -- parse plain types or witnesses
+        let Just sp     = takeAnnotOfExp x
+        
+        return  $ StmtNone sp x
  ]
 
 
 -- | Parse some statements.
-pStmts :: Ord n => Parser n (Exp () n)
+pStmts :: Ord n => Parser n (Exp SourcePos n)
 pStmts
  = do   stmts   <- P.sepEndBy1 pStmt (pTok KSemiColon)
         case makeStmts stmts of
@@ -523,23 +539,23 @@ pStmts
 
 
 -- | Make an expression from some statements.
-makeStmts :: [Stmt n] -> Maybe (Exp () n)
+makeStmts :: [Stmt n] -> Maybe (Exp SourcePos n)
 makeStmts ss
  = case ss of
-        [StmtNone x]    
+        [StmtNone _ x]    
          -> Just x
 
-        StmtNone x1 : rest
+        StmtNone sp x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet () (LLet LetStrict (BNone (T.tBot T.kData)) x1) x2
+         -> Just $ XLet sp (LLet LetStrict (BNone (T.tBot T.kData)) x1) x2
 
-        StmtBind b x1 : rest
+        StmtBind sp b x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet () (LLet LetStrict b x1) x2
+         -> Just $ XLet sp (LLet LetStrict b x1) x2
 
-        StmtMatch p x1 x2 : rest
+        StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest
-         -> Just $ XCase () x1 
+         -> Just $ XCase sp x1 
                  [ AAlt p x3
                  , AAlt PDefault x2]
 

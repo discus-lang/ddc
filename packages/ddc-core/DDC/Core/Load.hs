@@ -35,7 +35,7 @@ data Error n
         = ErrorRead       !String
         | ErrorParser     !BP.ParseError
         | ErrorCheckType  !(T.Error n)      
-        | ErrorCheckExp   !(C.Error () n)
+        | ErrorCheckExp   !(C.Error BP.SourcePos n)
         | ErrorCompliance !(I.Error n)
         deriving Show
 
@@ -73,7 +73,7 @@ loadModuleFromFile
         -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
         -> FilePath                     -- ^ File containing source code.
         -> IO (Either (Error n)
-                      (Module (C.AnTEC () n) n))
+                      (Module (C.AnTEC BP.SourcePos n) n))
 
 loadModuleFromFile profile lexSource filePath
  = do   
@@ -90,6 +90,7 @@ loadModuleFromFile profile lexSource filePath
 
                 return $ loadModuleFromTokens profile filePath toks
 
+
 -- | Parse and type check a core module from a string.
 loadModuleFromString
         :: (Eq n, Ord n, Show n, Pretty n)
@@ -97,7 +98,8 @@ loadModuleFromString
         -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
         -> FilePath                     -- ^ Path to source file for error messages.
         -> String                       -- ^ Program text.
-        -> Either (Error n) (Module (C.AnTEC () n) n)
+        -> Either (Error n) 
+                  (Module (C.AnTEC BP.SourcePos n) n)
 
 loadModuleFromString profile lexSource filePath src
         = loadModuleFromTokens profile filePath (lexSource src)
@@ -109,7 +111,8 @@ loadModuleFromTokens
         => Profile n                    -- ^ Language fragment profile.
         -> FilePath                     -- ^ Path to source file for error messages.
         -> [Token (Tok n)]              -- ^ Source tokens.
-        -> Either (Error n) (Module (C.AnTEC () n) n)
+        -> Either (Error n) 
+                  (Module (C.AnTEC BP.SourcePos n) n)
 
 loadModuleFromTokens profile sourceName toks'
  = goParse toks'
@@ -150,7 +153,7 @@ loadExp
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
-                  (Exp (C.AnTEC () n) n)
+                  (Exp (C.AnTEC BP.SourcePos n) n)
 
 loadExp profile modules sourceName toks'
  = goParse toks'

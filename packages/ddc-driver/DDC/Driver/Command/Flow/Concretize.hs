@@ -25,7 +25,7 @@ cmdFlowConcretize _config source sourceText
                             (lineStartOfSource source)
                             sourceText
                 $  PipeTextLoadCore fragment
-                [  PipeCoreStrip
+                [  PipeCoreReannotate (const ())
                 [  PipeCoreHacks 
                    (Canned $ \m -> return 
                            $  Concretize.concretizeModule m)

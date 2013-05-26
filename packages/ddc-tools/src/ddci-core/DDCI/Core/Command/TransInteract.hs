@@ -9,6 +9,7 @@ import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Compounds
 import DDC.Core.Check
 import DDC.Core.Module
@@ -33,13 +34,14 @@ cmdTransInteract state source str
         -- Expression is well-typed.
         goStore bundle (Just xx)
          = do   
-                let Just annot  = takeAnnotOfExp xx
+                let xx'         = reannotate (\a -> a { annotTail = () }) xx
+                let Just annot  = takeAnnotOfExp xx'
                 let t1          = annotType annot
                 let eff1        = annotEffect annot
                 let clo1        = annotClosure annot
 
                 let hist   = TransHistory
-			     { historyExp	    = (xx, t1, eff1, clo1)
+			     { historyExp	    = (xx', t1, eff1, clo1)
 			     , historySteps	    = []
                              , historyBundle        = bundle }
 

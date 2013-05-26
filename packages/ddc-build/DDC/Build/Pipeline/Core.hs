@@ -75,10 +75,12 @@ data PipeCore a n where
         -> ![PipeCore (C.AnTEC a n)  n]
         -> PipeCore  (C.AnTEC a n') n
 
-  -- Strip annotations from a module.
-  PipeCoreStrip
-        :: ![PipeCore () n]
-        ->  PipeCore a n
+  -- Reannotate a module module.
+  PipeCoreReannotate
+        :: (NFData b, Show b)
+        => (a -> b)
+        -> ![PipeCore b n]
+        ->  PipeCore  a n
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
@@ -155,9 +157,9 @@ pipeCore !mm !pp
             pipeCore (C.reannotate C.annotTail mm)
          $  PipeCoreCheck fragment pipes
 
-        PipeCoreStrip !pipes
+        PipeCoreReannotate f !pipes
          -> {-# SCC "PipeCoreStrip" #-}
-            let mm' = (C.reannotate (const ()) mm)
+            let mm' = (C.reannotate f mm)
             in  pipeCores mm' pipes
 
         PipeCoreSimplify !fragment !nameZero !simpl !pipes

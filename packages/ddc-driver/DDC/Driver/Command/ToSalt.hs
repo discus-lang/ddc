@@ -48,7 +48,7 @@ cmdToSalt config language source sourceText
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore Lite.fragment
-                [ PipeCoreStrip
+                [ PipeCoreReannotate (const ())
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
                 [ stageSaltOpt     config source
