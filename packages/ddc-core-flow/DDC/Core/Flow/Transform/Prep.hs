@@ -9,6 +9,8 @@ import DDC.Core.Exp
 import Control.Monad.State.Strict
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
+import DDC.Type.Env             (TypeEnv)
+import qualified DDC.Type.Env   as Env
 
 -- | Prepare a module for lowering.
 --   We need all worker functions passed to flow operators to be eta-expanded
@@ -23,23 +25,37 @@ prepModule mm
 
 prepModuleM :: Module a Name -> PrepM (Module a Name)
 prepModuleM mm
- = do   xBody'  <- prepX $ moduleBody mm
+ = do   xBody'  <- prepX Env.empty $ moduleBody mm
         return  $  mm { moduleBody = xBody' }
 
 
 -- Do a bottom-up rewrite,
 --  on the way up remember names of variables that are passed as workers 
 --  to flow operators, then eta-expand bindings with those names.
-prepX   :: Exp a Name -> PrepM (Exp a Name)
-prepX xx
+-- Record the environment of let-bound expressions, to know whether to 
+--  eta-expand in their definition or at the callsite.
+prepX   :: TypeEnv Name -> Exp a Name -> PrepM (Exp a Name)
+prepX tenv xx
  = case xx of
         -- Detect workers passed to maps.
+        -- Check if the worker is bound in a let: if so, defer till later
         XApp{}
          | Just (XVar _ u, [_,  XType tA, XType _tB, XVar _ (UName n), _])
                                                 <- takeXApps xx
          , UPrim (NameOpFlow (OpFlowMap 1)) _   <- u
+         , Env.member (UName n) tenv
          -> do  addWorkerArgs n [tA]
                 return xx
+
+        -- Worker passed to map, but not let-bound.
+        -- Eta-expand in-place.
+        XApp{}
+         | Just (xmap@(XVar _ u), args@[_,  XType tA, XType _tB, f@(XVar a _), _])
+                                                <- takeXApps xx
+         , UPrim (NameOpFlow (OpFlowMap 1)) _   <- u
+         -> do  let f'    = xEtaExpand a f [tA]
+                    args' = take 3 args ++ [f'] ++ [last args]
+                return $ xApps a xmap args'
 
         -- Detect workers passed to folds.
         XApp{}
@@ -60,47 +76,50 @@ prepX xx
         -- Bottom-up transform boilerplate.
         XVar{}          -> return xx
         XCon{}          -> return xx
-        XLAM  a b x     -> liftM3 XLAM  (return a) (return b) (prepX x)
-        XLam  a b x     -> liftM3 XLam  (return a) (return b) (prepX x)
-        XApp  a x1 x2   -> liftM3 XApp  (return a) (prepX x1) (prepX x2)
+        XLAM  a b x     -> liftM3 XLAM  (return a) (return b) (go x)
+        XLam  a b x     -> liftM3 XLam  (return a) (return b) (go x)
+        XApp  a x1 x2   -> liftM3 XApp  (return a) (go x1)    (go x2)
 
         XLet  a lts x   
-         -> do  x'      <- prepX x
-                lts'    <- prepLts a lts
+         -> do  -- Slurp binds from lets, add to tenv
+                let tenv' = Env.extends (valwitBindsOfLets lts) tenv
+                x'      <- prepX tenv' x
+                -- Use old tenv for the binders
+                lts'    <- prepLts tenv a lts
                 return  $  XLet a lts' x'
 
-        XCase a x alts  -> liftM3 XCase (return a) (prepX x)  (mapM prepAlt alts)
-        XCast a c x     -> liftM3 XCast (return a) (return c) (prepX x)
+        XCase a x alts  -> liftM3 XCase (return a) (go x)     (mapM (prepAlt tenv) alts)
+        XCast a c x     -> liftM3 XCast (return a) (return c) (go x)
         XType{}         -> return xx
         XWitness{}      -> return xx
+ where
+  go = prepX tenv
 
 
 
 -- Prepare let bindings for lowering.
-prepLts :: a -> Lets a Name -> PrepM (Lets a Name)
-prepLts a lts
+prepLts :: TypeEnv Name -> a -> Lets a Name -> PrepM (Lets a Name)
+prepLts tenv a lts
  = case lts of
         LLet m b@(BName n _) x
-         -> do  x'      <- prepX x
+         -> do  x'      <- prepX tenv x
 
                 mArgs   <- lookupWorkerArgs n
                 case mArgs of
                  Just tsArgs
                   |  length tsArgs > 0
-                  -> let x_eta = xLams a    (map BAnon tsArgs)
-                               $ xApps a x'  [ XVar a (UIx (length tsArgs - 1 - ix))
-                                             | ix <- [0 ..   length tsArgs - 1] ]
-                     in  return $ LLet m b x_eta
+                   -> return $ LLet m b $ xEtaExpand a x' tsArgs
 
                  _ -> return $ LLet m b x'
 
         LLet m b x
-         -> do  x'      <- prepX x
+         -> do  x'      <- prepX tenv x
                 return  $ LLet m b x'
 
         LRec bxs
          -> do  let (bs, xs) = unzip bxs
-                xs'     <- mapM prepX xs
+                let tenv'    = Env.extends bs tenv
+                xs'     <- mapM (prepX tenv') xs
                 return  $ LRec $ zip bs xs'
 
         LLetRegions{}   -> return lts
@@ -108,10 +127,16 @@ prepLts a lts
 
 
 -- Prepare case alternative for lowering.
-prepAlt :: Alt a Name -> PrepM (Alt a Name)
-prepAlt (AAlt w x)
-        = liftM (AAlt w) (prepX x)
+prepAlt :: TypeEnv Name -> Alt a Name -> PrepM (Alt a Name)
+prepAlt tenv (AAlt w x)
+        = liftM (AAlt w) (prepX tenv x)
 
+
+xEtaExpand :: a -> Exp a Name -> [Type Name] -> Exp a Name
+xEtaExpand a x tys
+ = xLams a    (map BAnon tys)
+ $ xApps a x  [ XVar a (UIx (length tys - 1 - ix))
+              | ix <- [0 ..  length tys - 1] ]
 
 -- State ----------------------------------------------------------------------
 type PrepS      = Map   Name [Type Name]

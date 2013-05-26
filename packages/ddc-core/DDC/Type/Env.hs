@@ -22,7 +22,7 @@ module DDC.Type.Env
         , fromList
         , fromTypeMap
 
-        -- * Projetions 
+        -- * Projections 
         , depth
         , member
         , memberBind
