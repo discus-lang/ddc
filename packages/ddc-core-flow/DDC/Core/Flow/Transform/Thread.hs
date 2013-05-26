@@ -147,10 +147,9 @@ threadType n
         
         -- guard#
         NameOpLoop  OpLoopGuard
-         -> Just $ tForall kRate
-                 $ \_tK1 -> tRef tNat
+         -> Just $ tRef tNat
                         `tFunPE` tBool
-                        `tFunPE` (tForall kRate $ \_tK2 -> tNat `tFunPE` tWorld `tFunPE` tWorld)
+                        `tFunPE` (tNat `tFunPE` tWorld `tFunPE` tWorld)
                         `tFunPE` tWorld `tFunPE` tWorld
 
         _ -> Nothing

@@ -257,9 +257,9 @@ threadProcBody config kenv tenv xx
         XCase{}         -> error "ddc-core-simpl: thread not finished"
 
         -- TODO: convert this to Nothing, proper exception.
-        XLAM{}          -> error "ddc-core-simpl: death XLAM"
-        XLam{}          -> error "ddc-core-simpl: death XLam"
-        XCast{}         -> error "ddc-core-simpl: death XCast"
+        XLAM{}          -> error "ddc-core-simpl: threadProcBody unexpected XLAM"
+        XLam{}          -> error "ddc-core-simpl: threadProcBody unexpected XLam"
+        XCast{}         -> error "ddc-core-simpl: threadProcBody unexpected XCast"
         XType t         -> XType t
         XWitness w      -> XWitness w
 

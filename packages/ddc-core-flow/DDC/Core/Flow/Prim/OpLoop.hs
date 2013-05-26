@@ -53,13 +53,12 @@ typeOpLoop op
          -> tForall kRate 
          $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
 
-        -- guard#  :: [k1 : Rate]. Ref# Nat# -> Bool# 
-        --              -> ([k2 : Rate]. Nat# -> Unit) -> Unit
+        -- guard#  :: Ref# Nat# -> Bool# 
+        --              -> (Nat# -> Unit) -> Unit
         OpLoopGuard 
-         -> tForall kRate
-         $  \_ -> tRef tNat
+         -> tRef tNat
                 `tFunPE` tBool
-                `tFunPE` (tForall kRate $ \_ -> tNat `tFunPE` tUnit)
+                `tFunPE` (tNat `tFunPE` tUnit)
                 `tFunPE` tUnit
 
 
@@ -70,14 +69,13 @@ xLoopLoopN tR xRN xF
 
 
 xLoopGuard 
-        :: Type Name    -- ^ Rate of outer context.
-        -> Exp () Name  -- ^ Reference to guard counter.
+        :: Exp () Name  -- ^ Reference to guard counter.
         -> Exp () Name  -- ^ Boolean flag to test.
         -> Exp () Name  -- ^ Body of guard.
         -> Exp () Name
 
-xLoopGuard tK1 xB xCount xF
-        = xApps () (xVarOpLoop OpLoopGuard) [XType tK1, xCount, xB, xF]
+xLoopGuard xB xCount xF
+        = xApps () (xVarOpLoop OpLoopGuard) [xCount, xB, xF]
 
 
 -- Utils -----------------------------------------------------------------------
