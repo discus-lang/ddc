@@ -74,6 +74,7 @@ data PrimArith
         | PrimArithSub  -- ^ Subtraction
         | PrimArithMul  -- ^ Multiplication
         | PrimArithDiv  -- ^ Division
+        | PrimArithMod  -- ^ Modulus
         | PrimArithRem  -- ^ Remainder
 
         -- comparison
@@ -121,6 +122,7 @@ primArithNames
         , (PrimArithMul,        "mul#")
         , (PrimArithDiv,        "div#")
         , (PrimArithRem,        "rem#")
+        , (PrimArithMod,        "mod#")
         , (PrimArithEq ,        "eq#" )
         , (PrimArithNeq,        "neq#")
         , (PrimArithGt ,        "gt#" )

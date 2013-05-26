@@ -40,7 +40,6 @@ Library
         DDC.Core.Flow.Process.Process
         DDC.Core.Flow.Process.Operator
         DDC.Core.Flow.Process.Pretty
-        DDC.Core.Flow.Process.Slurp
         DDC.Core.Flow.Process
 
         DDC.Core.Flow.Transform.Schedule.SeriesEnv

@@ -141,6 +141,7 @@ typeOfPrimArith op
         PrimArithSub    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithMul    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithDiv    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithMod    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimArithRem    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 
         -- Comparison

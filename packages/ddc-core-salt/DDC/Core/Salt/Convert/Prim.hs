@@ -35,7 +35,8 @@ convPrimArith2 pp
         PrimArithSub            -> Just $ text "-"
         PrimArithMul            -> Just $ text "*"
         PrimArithDiv            -> Just $ text "/"
-        PrimArithRem            -> Just $ text "%"
+        PrimArithMod            -> Just $ text "_MOD"
+        PrimArithRem            -> Just $ text "_REM"
 
         -- comparison
         PrimArithEq             -> Just $ text "=="
