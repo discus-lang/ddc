@@ -14,6 +14,7 @@ import DDC.Data.SourcePos
 import DDC.Base.Parser                          (pTok)
 import Data.Set                                 (Set)
 import qualified DDC.Core.Transform.Snip        as Snip
+import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Base.Parser                as P
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
@@ -194,6 +195,9 @@ readTransformAtomic kk
         -- TODO: better parsing of snipper options.
         "Snip"          -> Just (Snip Snip.configZero)
         "SnipOver"      -> Just (Snip Snip.configZero { Snip.configSnipOverApplied = True })
+
+        -- TODO: better parsing of eta options.
+        "Eta"           -> Just (Eta  Eta.configZero  { Eta.configExpand = True })
 
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta

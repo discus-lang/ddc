@@ -15,6 +15,7 @@ import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Snip          as Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
+import DDC.Core.Transform.Eta           as Eta
 import DDC.Core.Transform.Prune
 import DDC.Core.Transform.Forward
 import DDC.Core.Transform.Bubble
@@ -83,6 +84,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
         Flatten          -> return $ flatten mm
         Beta             -> return $ result $ betaReduce False mm
         BetaLets         -> return $ result $ betaReduce True  mm
+        Eta config       -> return $ result $ Eta.etaModule config profile mm
         Forward          -> return $ result $ forwardModule profile (const FloatAllow) mm
         Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
@@ -229,6 +231,7 @@ applyTransformX !profile !kenv !tenv !spec !xx
         Inline  getDef    -> res    $ inline getDef Set.empty xx
         Beta              -> return $ betaReduce False xx
         BetaLets          -> return $ betaReduce True  xx
+        Eta config        -> return $ Eta.etaX config profile kenv tenv xx
         Prune             -> return $ pruneX   profile kenv tenv xx
         Forward           -> return $ forwardX profile (const FloatAllow) xx
         Bubble            -> res    $ bubbleX kenv tenv xx

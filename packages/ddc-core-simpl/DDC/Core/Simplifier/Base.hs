@@ -14,15 +14,15 @@ module DDC.Core.Simplifier.Base
 	, NoInformation(..)
 	, resultDone)
 where
+import DDC.Core.Simplifier.Result
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Namify
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Base.Pretty
-import qualified DDC.Core.Transform.Snip       as Snip
-import qualified DDC.Base.Pretty	       as P
+import qualified DDC.Core.Transform.Snip        as Snip
+import qualified DDC.Core.Transform.Eta         as Eta
 import Data.Monoid
-import Data.Typeable (Typeable)
 
 
 -- Simplifier -----------------------------------------------------------------
@@ -78,7 +78,12 @@ data Transform s a n
 
         -- | Perform beta reduction, introducing new let-bindings for 
         --   arguments that are redexes.
+        ---
+        --   TODO: make this take a config.
         | BetaLets
+
+        -- | Perform eta expansion and reduction.
+        | Eta    Eta.Config
 
         -- | Remove unused, pure let bindings.
         | Prune
@@ -134,6 +139,7 @@ instance Pretty (Transform s a n) where
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         BetaLets        -> text "BetaLets"
+        Eta{}           -> text "Eta"
         Prune           -> text "Prune"
         Forward         -> text "Forward"
         Bubble          -> text "Bubble"
@@ -142,62 +148,3 @@ instance Pretty (Transform s a n) where
         Rewrite{}       -> text "Rewrite"
         Elaborate       -> text "Elaborate"
 
-
--- TransformResult ------------------------------------------------------------
--- | Package up the result of applying a single transform.
-data TransformResult r
-        = TransformResult
-        { -- | Transform result proper (eg the new module)
-          result         :: r
-
-          -- | Whether this transform made any progess.
-          --   
-          --   If `False` then the result program must be the same as the
-          --   input program, and a simplifer fixpoint won't apply this
-          --   transform again to the result program.
-        , resultProgress :: Bool
-
-          -- | Whether it might help to run the same transform again.
-          -- 
-          --   If `False` then a simplifier fixpoint won't apply this transform
-          --   again to the result program.
-        , resultAgain    :: Bool
-
-          -- | Transform specific log. This might contain a count of what rules
-          --   fired, or information about what parts of the program couldn't
-          --   be processed.
-        , resultInfo     :: TransformInfo }
-
-
--- | Existential package for a typeable thing,
---   used in `TransformResult`.
-data TransformInfo
-	=  forall i
-        .  (Typeable i, Pretty i)
-	=> TransformInfo i
-
-
--- | Place-holder type to use when there is no real `TransformResult`.
-data NoInformation 
-        = NoInformation String
-        deriving Typeable
-
-
-instance Pretty NoInformation where
-    ppr (NoInformation name) = text name P.<> text ": No information"
-
-
-instance Pretty (TransformResult r) where
- ppr (TransformResult _ _ _ (TransformInfo i))
-  = ppr i
-
-
--- | Create a default result with no transform again.
---  
---   We'll say we made progress, but set `resultAgain` to False
---   so to stop any simplifier fixpoints.
-resultDone :: String -> r -> TransformResult r
-resultDone name r 
-        = TransformResult r True False
-        $ TransformInfo 
-        $ NoInformation name
