@@ -78,9 +78,11 @@ etaModule
 etaModule config profile mm
  = let  cconfig     = Check.configOfProfile profile
         (mm', info) = runWriter
-                    $ etaModuleM config cconfig
-                        (profilePrimKinds profile)
-                        (profilePrimTypes profile) 
+                    $ etaM config cconfig
+                        (Env.union (profilePrimKinds profile) 
+                                   (moduleKindEnv mm))
+                        (Env.union (profilePrimTypes profile) 
+                                   (moduleTypeEnv mm))
                         mm
 
         -- Check if any actual work was performed
@@ -95,22 +97,7 @@ etaModule config profile mm
          , resultProgress = progress
          , resultInfo     = TransformInfo info }
 
-etaModuleM
-        :: (Ord n, Show n, Pretty n, Show a)
-        => Config -> Check.Config n
-        -> KindEnv n
-        -> TypeEnv n
-        -> Module a n
-        -> Writer Info (Module a n)
 
-etaModuleM config cconfig kenv tenv mm
- = do   let kenv'       = Env.union (moduleKindEnv mm) kenv
-        let tenv'       = Env.union (moduleTypeEnv mm) tenv
-        xx'             <- etaXM config cconfig kenv' tenv' (moduleBody mm)
-        return  $ mm { moduleBody = xx' }
-
-
--- Exp ------------------------------------------------------------------------
 -- | Eta-transform functional values in an expression.
 etaX    :: (Ord n, Show n, Show a, Pretty n)
         => Config -> Profile n
@@ -121,7 +108,7 @@ etaX    :: (Ord n, Show n, Show a, Pretty n)
 etaX config profile kenv tenv xx
  = let  cconfig         = Check.configOfProfile profile
         (xx', info)     = runWriter
-                        $ etaXM config cconfig
+                        $ etaM config cconfig
                                 (Env.union (profilePrimKinds profile) kenv)
                                 (Env.union (profilePrimTypes profile) tenv)
                                 xx
@@ -139,20 +126,86 @@ etaX config profile kenv tenv xx
          , resultInfo     = TransformInfo info }
 
 
-etaXM   :: (Ord n, Show n, Show a, Pretty n)
-        => Config -> Check.Config n
-        -> KindEnv n -> TypeEnv n
-        -> Exp a n
-        -> Writer Info (Exp a n)
+-------------------------------------------------------------------------------
+class Eta (c :: * -> * -> *) where
+ etaM   :: (Ord n, Pretty n, Show n)
+        => Config
+        -> Check.Config n
+        -> KindEnv n
+        -> TypeEnv n
+        -> c a n
+        -> Writer Info (c a n)
 
-etaXM config cconfig kenv tenv xx
- = case xx of
-        XApp a _ _
+
+instance Eta Module where
+ etaM config cconfig kenv tenv mm
+  = do  let kenv'       = Env.union (moduleKindEnv mm) kenv
+        let tenv'       = Env.union (moduleTypeEnv mm) tenv
+        xx'             <- etaM config cconfig kenv' tenv' (moduleBody mm)
+        return  $ mm { moduleBody = xx' }
+
+
+instance Eta Exp where
+ etaM config cconfig kenv tenv xx
+  = let down = etaM config cconfig kenv tenv
+    in case xx of
+
+        XVar a _
          | configExpand config
          , Right tX     <- Check.typeOfExp cconfig kenv tenv xx
-         -> etaExpand a tX xx
+         -> do  etaExpand a tX xx
+
+        XApp a _ _
+         |  configExpand config
+         ,  Right tX    <- Check.typeOfExp cconfig kenv tenv xx
+         -> do  
+                -- Decend into the components first.
+                let xs            =  takeXAppsAsList xx
+                (x_eta : xs_eta)  <- mapM down xs
+
+                -- Now eta expand the result.
+                etaExpand a tX $ xApps a x_eta xs_eta
+
+
+        XLAM a b x
+         -> do  let kenv'       = Env.extend b kenv
+                x'              <- etaM config cconfig kenv' tenv x
+                return $ XLAM a b x'
+
+        XLam a b x
+         -> do  let tenv'       = Env.extend b tenv
+                x'              <- etaM config cconfig kenv tenv' x
+                return $ XLam a b x'
+
+        XLet a lts x2
+         -> do  lts'            <- down lts
+                let (bs1, bs0)  = bindsOfLets lts
+                let kenv'       = Env.extends bs1 kenv
+                let tenv'       = Env.extends bs0 tenv
+                x2'             <- etaM config cconfig kenv' tenv' x2
+                return $ XLet a lts' x2'
+
+
 
         _ -> return xx
+
+
+instance Eta Lets where
+ etaM config cconfig kenv tenv lts
+  = let down    = etaM config cconfig kenv tenv
+    in case lts of
+        LLet m b x
+         -> do  x'      <- down x
+                return  $ LLet m b x'
+
+        LRec bxs
+         -> do  let bs    = map fst bxs
+                let tenv' = Env.extends bs tenv
+                xs'       <- mapM (etaM config cconfig kenv tenv') $ map snd bxs
+                return    $ LRec (zip bs xs')
+
+
+        _ -> error "eta blerk"
 
 
 -- Expand ---------------------------------------------------------------------

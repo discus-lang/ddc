@@ -2,7 +2,7 @@
 ok
 
 -- Two folds over the same input series.
-module Fold with
+module Test with
 letrec {
   ffold : [k : Rate].Series# k Int# -> Int#
     = /\(k : Rate).
@@ -16,3 +16,6 @@ letrec {
       let x6 : Int# = add# [Int#] x1 x4 in
       x6
 }
+
+
+-- Function with an imported variable binding that needs to be eta-expanded.
