@@ -4,6 +4,7 @@
 -- NOTE: This is module currently just does eta-expansion, but in future
 --       we should expand the config to also make it do expansion/contraction
 --       based on the real arity of bindings.
+--
 module DDC.Core.Transform.Eta
         ( Info  (..)
         , Config(..)
@@ -67,7 +68,7 @@ configZero
 
 
 -- Module ---------------------------------------------------------------------
--- | Eta-transform functional values in a module.
+-- | Eta-transform expressions in a module.
 etaModule
         :: (Ord n, Show n, Pretty n, Show a)
         => Config
@@ -76,15 +77,15 @@ etaModule
         -> TransformResult (Module a n)
 
 etaModule config profile mm
- = let  cconfig     = Check.configOfProfile profile
-        (mm', info) = runWriter
-                    $ etaM config cconfig
-                        (Env.union (profilePrimKinds profile) 
-                                   (moduleKindEnv mm))
-                        (Env.union (profilePrimTypes profile) 
-                                   (moduleTypeEnv mm))
-                        mm
-
+ = let  cconfig = Check.configOfProfile profile
+        kenv'   = Env.union (profilePrimKinds profile) (moduleKindEnv mm)
+        tenv'   = Env.union (profilePrimTypes profile) (moduleTypeEnv mm)
+        
+        -- Run the eta transform.
+        (mm', info) 
+                = runWriter 
+                $ etaM config cconfig kenv' tenv' mm
+                    
         -- Check if any actual work was performed
         progress
          = case info of
@@ -98,20 +99,24 @@ etaModule config profile mm
          , resultInfo     = TransformInfo info }
 
 
--- | Eta-transform functional values in an expression.
+-- | Eta-transform an expression.
 etaX    :: (Ord n, Show n, Show a, Pretty n)
-        => Config -> Profile n
-        -> KindEnv n -> TypeEnv n
-        -> Exp a n
+        => Config               -- ^ Eta-transform config.
+        -> Profile n            -- ^ Language profile.
+        -> KindEnv n            -- ^ Kind environment.
+        -> TypeEnv n            -- ^ Type environment.
+        -> Exp a n              -- ^ Expression to transform.
         -> TransformResult (Exp a n)
 
 etaX config profile kenv tenv xx
- = let  cconfig         = Check.configOfProfile profile
-        (xx', info)     = runWriter
-                        $ etaM config cconfig
-                                (Env.union (profilePrimKinds profile) kenv)
-                                (Env.union (profilePrimTypes profile) tenv)
-                                xx
+ = let  cconfig = Check.configOfProfile profile
+        kenv'   = Env.union (profilePrimKinds profile) kenv
+        tenv'   = Env.union (profilePrimTypes profile) tenv
+
+        -- Run the eta transform.
+        (xx', info)     
+                = runWriter
+                $ etaM config cconfig kenv' tenv' xx
 
         -- Check if any actual work was performed
         progress
@@ -129,11 +134,11 @@ etaX config profile kenv tenv xx
 -------------------------------------------------------------------------------
 class Eta (c :: * -> * -> *) where
  etaM   :: (Ord n, Pretty n, Show n)
-        => Config
-        -> Check.Config n
-        -> KindEnv n
-        -> TypeEnv n
-        -> c a n
+        => Config               -- ^ Eta-transform config.
+        -> Check.Config n       -- ^ Type checker config.
+        -> KindEnv n            -- ^ Kind environment.
+        -> TypeEnv n            -- ^ Type environment.
+        -> c a n                -- ^ Do eta-expansion in this thing.
         -> Writer Info (c a n)
 
 
@@ -159,13 +164,14 @@ instance Eta Exp where
          |  configExpand config
          ,  Right tX    <- Check.typeOfExp cconfig kenv tenv xx
          -> do  
-                -- Decend into the components first.
-                let xs            =  takeXAppsAsList xx
-                (x_eta : xs_eta)  <- mapM down xs
+                -- Decend into the arguments first.
+                --   We don't need to decend into the function part because
+                --   we're eta-expanding that here.
+                let (x : xs)    =  takeXAppsAsList xx
+                xs_eta          <- mapM down xs
 
                 -- Now eta expand the result.
-                etaExpand a tX $ xApps a x_eta xs_eta
-
+                etaExpand a tX $ xApps a x xs_eta
 
         XLAM a b x
          -> do  let kenv'       = Env.extend b kenv
@@ -185,6 +191,15 @@ instance Eta Exp where
                 x2'             <- etaM config cconfig kenv' tenv' x2
                 return $ XLet a lts' x2'
 
+        XCase a x alts
+         -> do  x'              <- down x
+                alts'           <- mapM (etaM config cconfig kenv tenv) alts
+                return $ XCase a x' alts'
+
+        XCast a cc x
+         -> do  x'              <- down x
+                return $ XCast a cc x'
+
         _ -> return xx
 
 
@@ -199,17 +214,28 @@ instance Eta Lets where
         LRec bxs
          -> do  let bs    = map fst bxs
                 let tenv' = Env.extends bs tenv
-                xs'       <- mapM (etaM config cconfig kenv tenv') $ map snd bxs
+                xs'       <- mapM (etaM config cconfig kenv tenv') 
+                          $  map snd bxs
                 return    $ LRec (zip bs xs')
 
+        LLetRegions{}   -> return lts
+        LWithRegion{}   -> return lts
 
-        _ -> error "eta blerk"
+
+instance Eta Alt where
+ etaM config cconfig kenv tenv alt
+  = case alt of
+        AAlt p x        
+         -> do  let bs    = bindsOfPat p
+                let tenv' = Env.extends bs tenv
+                x'        <- etaM config cconfig kenv tenv' x
+                return  $ AAlt p x'
 
 
 -- Expand ---------------------------------------------------------------------
 -- | Eta expand an expression.
 etaExpand 
-        :: (Ord n, Pretty n)
+        :: Ord n
         => a                    -- ^ Annotation to use for new AST nodes.
         -> Type n               -- ^ Type of the expression.
         -> Exp a n              -- ^ Inner expression to wrap.
@@ -218,13 +244,6 @@ etaExpand
 etaExpand a tX xx
  = do   let btsMore     = expandableArgs tX
         xx'             <- etaExpand' a 0 0 [] btsMore xx
-{-        trace (renderIndent
-              $ vcat [ text "EtaExpand"
-                     , ppr tX
-                     , ppr btsMore
-                     , text "before: " <> ppr xx
-                     , text "after:  " <> ppr xx'
-                     , text ""]) $ -}
         return xx'
 
 

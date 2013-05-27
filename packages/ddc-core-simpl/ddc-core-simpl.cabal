@@ -28,6 +28,7 @@ Library
         DDC.Core.Analysis.Usage
         DDC.Core.Simplifier.Recipe
         DDC.Core.Simplifier.Parser
+        DDC.Core.Simplifier.Result
         DDC.Core.Transform.Rewrite.Disjoint
         DDC.Core.Transform.Rewrite.Env
         DDC.Core.Transform.Rewrite.Match
@@ -38,6 +39,7 @@ Library
         DDC.Core.Transform.Bubble
         DDC.Core.Transform.Prune
         DDC.Core.Transform.Elaborate
+        DDC.Core.Transform.Eta
         DDC.Core.Transform.Flatten
         DDC.Core.Transform.Forward
         DDC.Core.Transform.Inline
