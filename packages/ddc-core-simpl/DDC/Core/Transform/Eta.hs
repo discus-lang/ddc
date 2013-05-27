@@ -185,8 +185,6 @@ instance Eta Exp where
                 x2'             <- etaM config cconfig kenv' tenv' x2
                 return $ XLet a lts' x2'
 
-
-
         _ -> return xx
 
 
