@@ -13,7 +13,7 @@ where
 import DDC.Core.Analysis.Usage
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.TransformUpX
 import DDC.Core.Fragment
 import DDC.Core.Check
 import DDC.Core.Module

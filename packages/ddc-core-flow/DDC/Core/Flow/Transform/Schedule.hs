@@ -146,6 +146,7 @@ scheduleOperator nest0 env op
 
     in  (env2, nest2)
 
+
  -- Folds ---------------------------------------
  | OpFold{} <- op
  = let  
@@ -186,6 +187,7 @@ scheduleOperator nest0 env op
         Just nest4      = insertEnds nest3 context
                                 [ EndAcc   n tAcc nAcc ]
    in   (env1, nest4)
+
 
  -- Pack ----------------------------------------
  | OpPack{}     <- op

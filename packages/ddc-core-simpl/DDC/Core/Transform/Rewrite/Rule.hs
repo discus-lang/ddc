@@ -16,7 +16,7 @@ module DDC.Core.Transform.Rewrite.Rule
 where
 import DDC.Core.Transform.Rewrite.Error
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.TransformUpX
 import DDC.Core.Exp
 import DDC.Core.Pretty                          ()
 import DDC.Core.Collect

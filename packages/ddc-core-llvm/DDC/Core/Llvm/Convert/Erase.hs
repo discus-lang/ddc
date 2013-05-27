@@ -7,7 +7,7 @@ module DDC.Core.Llvm.Convert.Erase
 where
 import DDC.Type.Predicates
 import DDC.Core.Exp
-import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.TransformUpX
 
 
 -- | Erase type and witness arge Slurp out only the values from a list of

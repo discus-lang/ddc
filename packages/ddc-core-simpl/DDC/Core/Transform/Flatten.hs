@@ -4,7 +4,7 @@ module DDC.Core.Transform.Flatten
         (flatten)
 where
 import DDC.Core.Transform.LiftT
-import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.LiftX
 import DDC.Core.Exp

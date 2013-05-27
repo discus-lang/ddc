@@ -10,7 +10,7 @@ import DDC.Core.Collect
 import DDC.Core.Exp
 import DDC.Core.Predicates
 import DDC.Core.Simplifier.Base
-import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
@@ -59,9 +59,9 @@ instance Monoid BetaReduceInfo where
  mempty = BetaReduceInfo 0 0 0 0 0
  mappend (BetaReduceInfo ty1 wit1 val1 lets1 skip1)
          (BetaReduceInfo ty2 wit2 val2 lets2 skip2)
-  = (BetaReduceInfo 
+  = BetaReduceInfo 
                 (ty1   + ty2)   (wit1  + wit2) (val1 + val2)
-                (lets1 + lets2) (skip1 + skip2))
+                (lets1 + lets2) (skip1 + skip2)
 
 
 -------------------------------------------------------------------------------

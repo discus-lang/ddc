@@ -45,7 +45,8 @@ Library
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Snip
         DDC.Core.Transform.Thread
-        DDC.Core.Transform.TransformX
+        DDC.Core.Transform.TransformUpX
+        DDC.Core.Transform.TransformDownX
         DDC.Core.Simplifier
 
         DDC.Type.Transform.Alpha

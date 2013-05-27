@@ -150,10 +150,18 @@ insertBody _ _ _
 -------------------------------------------------------------------------------
 -- | Insert ending statements in the given context.
 insertEnds :: Nest -> Context -> [StmtEnd] -> Maybe Nest
+
+-- The ends are for this loop.
 insertEnds nest@NestLoop{} (ContextRate tRate) ends'
  | tRate == nestRate nest
  = Just $ nest { nestEnd = nestEnd nest ++ ends' }
 
+-- The ends are for some inner context contained by this loop,
+-- so we can still drop them here.
+insertEnds nest@NestLoop{} (ContextRate tRate) ends'
+ | nestContainsRate nest tRate
+ = Just $ nest { nestEnd = nestEnd nest ++ ends' }
+ 
 insertEnds _ _ _
  = Nothing
 
