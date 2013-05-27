@@ -87,7 +87,7 @@ checkTypeM' _config env (TVar u)
         Nothing -> throw $ ErrorUndefined u
 
 -- Constructors ---------------
-checkTypeM' config _env tt@(TCon tc)
+checkTypeM' config env tt@(TCon tc)
  = case tc of
         -- Sorts don't have a higher classification.
         TyConSort _      -> throw $ ErrorNakedSort tt
@@ -112,6 +112,9 @@ checkTypeM' config _env tt@(TCon tc)
 
                  | Just s <- Env.lookupName n
                           $  configPrimSupers config
+                 -> return s
+
+                 | Just s <- Env.lookupName n env
                  -> return s
 
                  | otherwise
