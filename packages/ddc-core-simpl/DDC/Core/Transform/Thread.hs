@@ -254,7 +254,11 @@ threadProcBody config kenv tenv xx
                 x'      = threadProcBody config kenv' tenv' x
             in  XLet (annotTail a) lts' x'
 
-        XCase{}         -> error "ddc-core-simpl: thread not finished"
+        -- Assume it's a pure case for now, and that it's been ANF'd.
+        XCase a x alts
+         -> let alts' = map (threadAlt config kenv tenv) alts
+                x'    = threadProcBody config kenv tenv x
+            in  XCase (annotTail a) x' alts'
 
         -- TODO: convert this to Nothing, proper exception.
         XLAM{}          -> error "ddc-core-simpl: threadProcBody unexpected XLAM"
@@ -276,6 +280,22 @@ threadProcBody config kenv tenv xx
                 
             in  wrap xWorld xx
 
+-- | Thread world token into a case alternative
+threadAlt 
+        :: (Ord n, Show n, Pretty n)
+        => Config a n 
+        -> KindEnv n -> TypeEnv n
+        -> Alt (AnTEC a n) n   
+        -> Alt a n
+
+threadAlt config kenv tenv (AAlt pat xx)
+ = case pat of
+        PDefault
+         -> AAlt pat (threadProcBody config kenv tenv xx)
+        PData _ bs
+         -> let tenv' = Env.extends bs tenv
+            in  AAlt pat (threadProcBody config kenv tenv' xx)
+ 
 
 -------------------------------------------------------------------------------
 -- | Inject the state token into the type of an effectful function.
