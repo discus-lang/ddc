@@ -38,11 +38,11 @@ concretizeX _kenv tenv xx
         | Just (NameOpStore OpStoreNewVectorR
                         , [XType tA, XType tK])
                                 <- takeXPrimApps xx
-        , Just (nS, _, _)       <- findSeriesWithRate tenv tK
+        , Just (nS, _, tS)      <- findSeriesWithRate tenv tK
         , xS                    <- XVar () (UName nS)
         = xNewVectorN
                 tA tK
-                (xRateOfStream tK tA xS)
+                (xRateOfStream tK tS xS)
                 
         | otherwise
         = xx
