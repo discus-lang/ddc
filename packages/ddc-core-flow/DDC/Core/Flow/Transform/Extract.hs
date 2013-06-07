@@ -5,6 +5,7 @@ where
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Transform.Extract.Intersperse
 import DDC.Core.Module
 import DDC.Core.Exp
 
@@ -43,7 +44,7 @@ extractNest
         -> Exp () Name
 
 extractNest nest stmts xResult
- = let stmts'   = extractLoop nest ++ stmts
+ = let stmts'   = intersperseStmts (extractLoop nest) stmts
    in  xLets () stmts' xResult
 
 
