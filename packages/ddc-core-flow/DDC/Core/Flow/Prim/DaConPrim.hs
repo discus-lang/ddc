@@ -30,7 +30,7 @@ xNat a i = XCon a (dcNat i)
 
 -- | A Literal @Nat#@ data constructor.
 dcNat :: Integer -> DaCon Name
-dcNat i   = mkDaConAlg (NameLitNat i) tNat
+dcNat i   = mkDaConAlg (NameLitInt i) tNat
 
 
 -- | Data constructor for @Tuple1#@

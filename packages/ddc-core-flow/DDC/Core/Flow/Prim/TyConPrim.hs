@@ -40,7 +40,7 @@ tBool   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
 
 -- | Primitive Nat# type.
 tNat ::  Type Name
-tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData) kData)
+tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
 
 
 -- | Primitive `Int#` type.
