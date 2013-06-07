@@ -71,6 +71,10 @@ data Operator
           -- | Starting accumulator value.
         , opZero                :: Exp () Name
 
+          -- | Worker parameter for index input.
+          -- Should be BNone for OpFlowFold, but something for OpFlowFoldIndex
+        , opWorkerParamIndex    :: Bind Name
+
           -- | Worker parameter for accumulator input.
         , opWorkerParamAcc      :: Bind Name
 

@@ -129,6 +129,7 @@ data OpFlow
 
         -- folds
         | OpFlowFold
+        | OpFlowFoldIndex
         | OpFlowFolds
 
         -- unfolds

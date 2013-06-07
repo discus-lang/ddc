@@ -173,7 +173,8 @@ scheduleOperator nest0 env op
 
         -- Substitute input and accumulator vars into worker body.
         xBody           = substituteXXs
-                                [ (opWorkerParamElem op, XVar () uInput) ]
+                                [ (opWorkerParamElem  op, XVar () uInput)
+                                , (opWorkerParamIndex op, XVar () (UIx 0)) ]
                                 (opWorkerBody op)
 
         -- Insert statements that update the accumulator

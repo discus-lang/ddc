@@ -34,6 +34,7 @@ instance Pretty OpFlow where
         OpFlowReps              -> text "reps"                  <> text "#"
 
         OpFlowFold              -> text "fold"                  <> text "#"
+        OpFlowFoldIndex         -> text "foldIndex"             <> text "#"
         OpFlowFolds             -> text "folds"                 <> text "#"
 
         OpFlowUnfold            -> text "unfold"                <> text "#"
@@ -80,6 +81,7 @@ readOpFlow str
                 "rep#"             -> Just $ OpFlowRep
                 "reps#"            -> Just $ OpFlowReps
                 "fold#"            -> Just $ OpFlowFold
+                "foldIndex#"       -> Just $ OpFlowFoldIndex
                 "folds#"           -> Just $ OpFlowFolds
                 "unfold#"          -> Just $ OpFlowUnfold
                 "unfolds#"         -> Just $ OpFlowUnfolds
@@ -130,6 +132,18 @@ typeOpFlow op
                 `tFunPE` tSeries tK tA
                 `tFunPE` tSeries tK tB
 
+        -- map2  :: [k : Rate] [a b c : Data]
+        --       .  (a -> b -> c) -> Series k a -> Series k b -> Series k c
+        -- TODO generalise
+        OpFlowMap 2
+         -> tForalls [kRate, kData, kData, kData]
+         $  \[tK, tA, tB, tC]
+         -> (tA `tFunPE` tB `tFunPE` tC)
+                `tFunPE` tSeries tK tA
+                `tFunPE` tSeries tK tB
+                `tFunPE` tSeries tK tC
+
+
 
         -- Replicates -------------------------
         -- rep  :: [a : Data] [k : Rate]
@@ -158,7 +172,17 @@ typeOpFlow op
          $  \[tK, tA, tB]
          -> (tA `tFunPE` tB `tFunPE` tA)
                 `tFunPE` tA
-                `tFunPE` tSeries tK tA
+                `tFunPE` tSeries tK tB
+                `tFunPE` tA
+
+        -- foldIndex :: [k : Rate]. [a b: Data]
+        --           .  (Int# -> a -> b -> a) -> a -> Series k b -> a
+        OpFlowFoldIndex
+         -> tForalls [kRate, kData, kData] 
+         $  \[tK, tA, tB]
+         -> (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
+                `tFunPE` tA
+                `tFunPE` tSeries tK tB
                 `tFunPE` tA
 
         -- folds :: [k1 k2 : Rate]. [a b: Data]
@@ -171,7 +195,7 @@ typeOpFlow op
          -> tForalls [kRate, kRate, kData, kData]
          $  \[tK1, tK2, tA, tB]
          -> tSegd tK1 tK2
-                `tFunPE` (tA `tFunPE` tB `tFunPE` tA)
+                `tFunPE` (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
                 `tFunPE` tSeries tK1 tA
                 `tFunPE` tSeries tK2 tB
                 `tFunPE` tSeries tK1 tA

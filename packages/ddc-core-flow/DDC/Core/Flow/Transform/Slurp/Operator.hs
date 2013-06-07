@@ -4,6 +4,7 @@ module DDC.Core.Flow.Transform.Slurp.Operator
 where
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Pretty          ()
@@ -55,9 +56,26 @@ slurpOperator bResult xx
         , opInputRate           = tRate
         , opInputSeries         = uSeries
         , opZero                = xZero
+        , opWorkerParamIndex    = BNone tInt
         , opWorkerParamAcc      = pAcc
         , opWorkerParamElem     = pElem
         , opWorkerBody          = xBody }
+
+ | Just ( NameOpFlow OpFlowFoldIndex
+        , [ XType tRate, XType _tAcc, XType _tElem
+          , xWorker,     xZero,     (XVar _ uSeries)])
+                                    <- takeXPrimApps xx
+ , Just ([pIx, pAcc, pElem], xBody) <- takeXLams xWorker
+ = Just $ OpFold
+        { opResultValue         = bResult
+        , opInputRate           = tRate
+        , opInputSeries         = uSeries
+        , opZero                = xZero
+        , opWorkerParamIndex    = pIx
+        , opWorkerParamAcc      = pAcc
+        , opWorkerParamElem     = pElem
+        , opWorkerBody          = xBody }
+
 
  -- Pack ----------------------------------------
  | Just ( NameOpFlow OpFlowPack

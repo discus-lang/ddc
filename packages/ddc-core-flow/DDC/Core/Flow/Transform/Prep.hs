@@ -3,6 +3,7 @@ module DDC.Core.Flow.Transform.Prep
         (prepModule)
 where
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -46,6 +47,14 @@ prepX tenv xx
          , Env.member (UName n) tenv
          -> do  addWorkerArgs n [tA]
                 return xx
+        -- Map2
+        XApp{}
+         | Just (XVar _ u, [_,  XType tA, XType tB, XType _tC, XVar _ (UName n), _])
+                                                <- takeXApps xx
+         , UPrim (NameOpFlow (OpFlowMap 2)) _   <- u
+         , Env.member (UName n) tenv
+         -> do  addWorkerArgs n [tA, tB]
+                return xx
 
         -- Worker passed to map, but not let-bound.
         -- Eta-expand in-place.
@@ -64,6 +73,14 @@ prepX tenv xx
          , UPrim (NameOpFlow OpFlowFold) _     <- u
          -> do   addWorkerArgs n [tA, tB]
                  return xx
+        -- FoldIndex
+        XApp{}
+         | Just (XVar _ u, [_, XType tA, XType tB, XVar _ (UName n), _, _])
+                                                <- takeXApps xx
+         , UPrim (NameOpFlow OpFlowFoldIndex) _ <- u
+         -> do   addWorkerArgs n [tInt, tA, tB]
+                 return xx
+
 
         -- Detect workers passed to mkSels
         XApp{}
