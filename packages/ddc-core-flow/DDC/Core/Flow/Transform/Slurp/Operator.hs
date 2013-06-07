@@ -44,6 +44,21 @@ slurpOperator bResult xx
         , opInputSeriess        = [uSeries]
         , opWorkerParams        = [pIn1]
         , opWorkerBody          = xBody }
+ -- Map2
+ | Just ( NameOpFlow (OpFlowMap 2)
+        , [ XType tRate, XType _tA, XType _tB, XType _tC
+          , xWorker
+          , XVar _  uSeries1, XVar _  uSeries2])
+                                <- takeXPrimApps xx
+ , Just ([pIn1, pIn2], xBody)   <- takeXLams xWorker
+ = Just $ OpMap
+        { opArity               = 2
+        , opResultSeries        = bResult
+        , opInputRate           = tRate
+        , opInputSeriess        = [uSeries1, uSeries2]
+        , opWorkerParams        = [pIn1, pIn2]
+        , opWorkerBody          = xBody }
+
 
  -- Fold ----------------------------------------
  | Just ( NameOpFlow OpFlowFold
