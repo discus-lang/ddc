@@ -142,6 +142,11 @@ data StmtEnd
         { endName               :: Name
         , endType               :: Type Name
         , endAccName            :: Name }
+
+        | EndVecSlice
+        { endVecName            :: Name
+        , endVecType            :: Type Name
+        , endVecRate            :: Type Name }
         deriving Show
 
 

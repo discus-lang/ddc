@@ -172,6 +172,20 @@ extractStmtEnd se
          -> [LLet LetStrict (BName n t) 
                   (xRead t (XVar () (UName nAcc))) ]
 
+        -- Slice.
+        -- HACK overwrite original vector name!
+        EndVecSlice nVec tElem tRate 
+         -> let -- TODO: hacks to get counter name.
+                TVar (UName (NameVar strK)) = tRate
+                nCounter                    = UName (NameVar (strK ++ "__count"))
+                xCounter                    = xRead tInt (XVar () nCounter)
+                xVec                        = XVar () (UName nVec)
+                -- Read the counter in a let since it will need to be threaded
+           in   [ LLet LetStrict (BAnon      tInt)
+                   xCounter
+                , LLet LetStrict (BName nVec (tVector tElem)) 
+                   (xSliceVector tElem (XVar () (UIx 0)) xVec) ]
+
 
 -------------------------------------------------------------------------------
 -- | Extract code for a generic statement.

@@ -112,6 +112,10 @@ slurpProcessX xx
    , ltsHere ++ ltsMore
    , xResult)
 
+ -- Only handle very simple cases for now
+ | XCase _ _scrut [AAlt (PData _ _) x]    <- xx
+ = slurpProcessX x
+
  | otherwise
  = ([], [], [], xx)
 

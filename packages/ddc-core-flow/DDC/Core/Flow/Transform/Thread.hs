@@ -127,6 +127,13 @@ threadType n
                  $ \tA -> tA `tFunPE` tVector tA `tFunPE` tNat `tFunPE` tA 
                         `tFunPE` tWorld `tFunPE` tWorld
 
+        -- sliceVector#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# (World#, Vector# a)
+        NameOpStore OpStoreSliceVector
+         -> Just $ tForall kData
+                 $ \tA -> tNat `tFunPE` tVector tA `tFunPE` tWorld 
+                        `tFunPE` (tTuple2 tWorld (tVector tA))
+
+
         -- Streams ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Series# k a -> Int# -> World# -> (World#, a)

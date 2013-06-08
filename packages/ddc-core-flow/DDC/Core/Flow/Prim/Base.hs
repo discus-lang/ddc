@@ -166,6 +166,7 @@ data OpStore
         | OpStoreNewVectorN     -- ^ Allocate a new vector (taking a @RateNat@ for the length)
         | OpStoreReadVector     -- ^ Read from a vector.
         | OpStoreWriteVector    -- ^ Write to a vector.
+        | OpStoreSliceVector    -- ^ Slice after a pack/filter (taking a @Nat@ for new length)
 
         -- Streams.
         | OpStoreNext           -- ^ Take the next element from a series.

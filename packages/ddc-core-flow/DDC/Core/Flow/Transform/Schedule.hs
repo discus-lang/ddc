@@ -107,7 +107,18 @@ scheduleOperator nest0 env op
                                 (opElemType op)         -- elem type
                                 (XVar () (UIx 0))       -- index
                                 (XVar () uInput) ]      -- value
-   in   (env1, nest3)
+
+        -- Slice the vector at the end
+        Just nest4      = insertEnds   nest3 context 
+                        $ [ EndVecSlice
+                                nVec                    -- destination vector
+                                (opElemType op)         -- elem type
+                                (opInputRate op) ]      -- index
+        -- But only slice it if the input rate is different to output rate
+        nest'           = if   opInputRate op == tRateAlloc
+                          then nest3
+                          else nest4
+   in   (env1, nest')
 
  
  -- Maps -----------------------------------------

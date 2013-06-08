@@ -29,6 +29,7 @@ module DDC.Core.Flow.Compounds
           -- * Store operators
         , xNew,       xRead,       xWrite
         , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
+        , xSliceVector
         , xNext)
 where
 import DDC.Core.Flow.Prim.KiConFlow

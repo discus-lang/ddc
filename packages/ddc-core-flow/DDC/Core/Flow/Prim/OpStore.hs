@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.OpStore
         , typeOpStore
         , xNew,       xRead,       xWrite
         , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
+        , xSliceVector
         , xNext)
 where
 import DDC.Core.Flow.Prim.KiConFlow
@@ -34,6 +35,7 @@ instance Pretty OpStore where
         OpStoreNewVectorN       -> text "newVectorN#"
         OpStoreReadVector       -> text "readVector#"
         OpStoreWriteVector      -> text "writeVector#"
+        OpStoreSliceVector      -> text "sliceVector#"
 
         -- Streams.
         OpStoreNext             -> text "next#"
@@ -52,6 +54,7 @@ readOpStore str
         "newVectorN#"   -> Just OpStoreNewVectorN
         "readVector#"   -> Just OpStoreReadVector
         "writeVector#"  -> Just OpStoreWriteVector
+        "sliceVector#"  -> Just OpStoreSliceVector
 
         "next#"         -> Just OpStoreNext
         _               -> Nothing
@@ -99,6 +102,12 @@ typeOpStore op
         OpStoreWriteVector
          -> tForall kData 
          $  \tA -> tVector tA `tFunPE` tNat `tFunPE` tA `tFunPE` tUnit
+
+        -- sliceVector# :: [a : Data]. Nat# -> Vector# a -> Vector# a
+        OpStoreSliceVector
+         -> tForall kData 
+         $  \tA -> tNat `tFunPE` tVector tA `tFunPE` tVector tA
+
 
         -- Streams --------------------
         -- next#  :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
@@ -154,6 +163,11 @@ xWriteVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp ()
 xWriteVector t xArr xIx xElem
  = xApps () (xVarOpStore OpStoreWriteVector)
             [XType t, xArr, xIx, xElem]
+
+xSliceVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xSliceVector tElem xLen xArr
+ = xApps () (xVarOpStore OpStoreSliceVector)
+            [XType tElem, xLen, xArr]
 
 
 xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
