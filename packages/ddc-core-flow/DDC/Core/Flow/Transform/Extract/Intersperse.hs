@@ -9,37 +9,39 @@ import DDC.Core.Collect
 import DDC.Type.Env
 
 import qualified Data.Set as Set
+import Data.List (partition, (\\))
 
--- | Given two lists of lets, order them so that it 'makes sense',
--- ...
+-- | Given two lists of lets, order them so that any variables are bound before use.
 intersperseStmts :: [Lets () Name] -> [Lets () Name] -> [Lets () Name]
 intersperseStmts ls rs
- = let bls = map takeSubstBoundsOfBinds $ map valwitBindsOfLets ls
-       brs = map takeSubstBoundsOfBinds $ map valwitBindsOfLets rs
-   in  intersperse' ls bls rs brs
+ = let bls = nubbish $ map takeSubstBoundsOfBinds $ map valwitBindsOfLets ls
+       brs = nubbish $ map takeSubstBoundsOfBinds $ map valwitBindsOfLets rs
+   in  intersperse' (ls `zip` bls ++ rs `zip` brs)
 
 
-intersperse' :: [Lets () Name] -> [[Bound Name]]
-             -> [Lets () Name] -> [[Bound Name]]
+-- Because a name might be bound a couple of times (see extractStmtEnd:EndVecSlice)
+-- ignore the later times... HACK
+nubbish :: [[Bound Name]] -> [[Bound Name]]
+nubbish bs' = go bs' []
+ where
+  go [] _        = []
+  go (b:bs) accs = (b \\ accs) : go bs (accs ++ b)
+
+
+intersperse' :: [(Lets () Name, [Bound Name])]
              -> [Lets () Name]
-
--- If one is empty, just return the other one
-intersperse' ls _bls [] _brs
- = ls
-intersperse' [] _bls rs _brs
- = rs
-
--- Both non-empty
-intersperse' (l:ls) bls (r:rs) brs
- | f        <- freeXLets l
- -- Check if any of the free variables in l are bound later on in rs.
- -- If so, take one from rs instead.
- -- We could save time by taking multiple from rs, but that's not important right now.
- , any (flip Set.member f) (concat brs)
- = r : intersperse' (l:ls) bls rs (tail brs)
- -- Otherwise, take one from ls
+intersperse' []
+ = []
+intersperse' ((x,b):bxs)
+ | f        <- freeXLets x
+ -- Check if any of the free variables in x are bound later on.
+ -- If so, defer this binding...
+ -- HACK this might not terminate
+ , (r:rs,os)  <- partition (any (flip Set.member f) . snd) bxs
+ = intersperse' (r : rs ++ (x,b) : os)
+ -- Otherwise it's a valid binding
  | otherwise
- = l : intersperse' ls (tail bls) (r:rs) brs
+ = x : intersperse' bxs
 
 
 freeXLets :: Lets () Name -> Set.Set (Bound Name)
