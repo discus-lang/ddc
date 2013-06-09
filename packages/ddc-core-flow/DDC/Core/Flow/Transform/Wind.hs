@@ -7,7 +7,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
-import DDC.Core.Compounds
+import DDC.Core.Flow.Compounds
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
@@ -37,11 +37,18 @@ insertRefInfo info (RefMap mm)
  = RefMap (Map.insert (refInfoName info) info mm)
 
 
+-- | Lookup a `RefInfo` record from the map.
+lookupRefInfo  :: RefMap -> Name -> Maybe RefInfo
+lookupRefInfo (RefMap mm) n
+ = Map.lookup n mm
+
+
+-- | Get the name of the current version of a value from a `RefInfo`.
 nameOfRefInfo :: RefInfo -> Maybe Name
 nameOfRefInfo info
  = case refInfoName info of
         NameVar str     
-          -> Just $ NameVar (str ++ "__" ++ show (refInfoVersionNumber info))
+          -> Just $ NameVar (str ++ "_" ++ show (refInfoVersionNumber info))
         _ -> Nothing
 
 
@@ -100,14 +107,13 @@ windBodyX refMap xx
         -- Detect ref allocation,
         --  and bind the initial value to a new variable.
         --
-        --    ref        : Ref# type = new# [type] val
-        -- => ref__init  : type      = val
+        --    ref     : Ref# type = new# [type] val
+        -- => ref__0  : type      = val
         --
         XLet a (LLet LetStrict (BName nRef _) x) x2
          | Just ( NameOpStore OpStoreNew
-                , [XType tElem, xVal] )    <- takeXPrimApps x
+                , [XType tElem, xVal] ) <- takeXPrimApps x
          -> let 
-
                 -- Add the new ref record to the map.
                 info        = RefInfo 
                             { refInfoName          = nRef
@@ -124,39 +130,87 @@ windBodyX refMap xx
                         (windBodyX refMap' x2)
 
 
+        -- Detect read,
+        --  and rewrite to use the current version of the variable.
+        --      val : type     = read# [type] ref
+        --   => val : type     = ref_N
+        --
+        XLet a (LLet LetStrict bResult x) x2
+         | Just ( NameOpStore OpStoreRead
+                , [XType _tElem, XVar _ (UName nRef)] )   
+                                        <- takeXPrimApps x
+         , Just info    <- lookupRefInfo refMap nRef
+         , Just nVal    <- nameOfRefInfo info
+         ->     XLet a  (LLet LetStrict bResult (XVar a (UName nVal)))
+                        (windBodyX refMap x2)
+
+
         -- Detect loop combinator.
         XLet a (LLet LetStrict (BNone _) x) x2
          | Just ( NameOpLoop OpLoopLoopN
-                , [ XType _tK, _xLength
-                  , XLam  _ bIx xBody]) <- takeXPrimApps x
+                , [ XType _tK, xLength
+                  , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
-                nLoop   = NameVar "loop"                        -- TODO: make a fresh name
-                bLoop   = BName nLoop tUnit                     -- TODO: update to return type
+                -- Name of the new loop function.
+                nLoop   = NameVar "loop"                             -- TODO: make a fresh name
+                bLoop   = BName nLoop tLoop
+                uLoop   = UName nLoop
 
+                -- RefMap for before the loop, in the body, and after the loop.
+                refMap_init  = refMap
+                refMap_body  = bumpAllVersionsInRefMap refMap
+                refMap_final = bumpAllVersionsInRefMap refMap_body
 
-                -- Decend into body of loop.
-                refMap1 = bumpAllVersionsInRefMap refMap
-                bsRef   = [ BName nVar (refInfoType info)
-                                | info  <- refMapElems refMap1
+                -- Get binds and bounds for accumluators,
+                --  to use in the body of the loop.
+                bsAccs   = [ BName nVar (refInfoType info)
+                                | info  <- refMapElems refMap_body
                                 , let Just nVar    = nameOfRefInfo info ]
 
-                xBody'  = XLam a bIx (xLams a bsRef xBody)
+                usAccs  = takeSubstBoundsOfBinds bsAccs
 
+                -- The loop function itself will return us a tuple
+                -- containing the final value of all the accumulators.
+                tIndex  = typeOfBind bIx
+                tsAccs  = map typeOfBind bsAccs
+                tResult = tTupleN tsAccs
+
+                -- Type of the loop function.
+                tLoop   = foldr tFunPE tResult (tIndex : tsAccs)
+
+                -- Create the loop body.
+                xBody'  = xLams a (bIx : bsAccs) 
+                        $ XCase a (XVar a (UName nIx)) 
+                                [ AAlt (PData (dcNat 0) []) xResult
+                                , AAlt PDefault xBody ]
+
+                xResult = xApps a (XCon a (dcTupleN $ length tsAccs)) 
+                                  [XVar a u | u <- usAccs]
+
+                -- Initial values of index and accumulators.
+                xsInit  = xLength
+                        : [ XVar a (UName nVar)
+                                | info  <- refMapElems refMap_init
+                                , let Just nVar = nameOfRefInfo info ]
 
                 -- Decend into loop postlude.
-                refMap2 = bumpAllVersionsInRefMap refMap1
-                x2'     = windBodyX refMap2 x2
+                bsFinal = [ BName nVar (refInfoType info)
+                                | info  <- refMapElems refMap_final
+                                , let Just nVar = nameOfRefInfo info ]
+
+                x2'     = windBodyX refMap_final x2
 
 
-            in  XLet a  (LRec [(bLoop, xBody')]) 
-                        x2'
+            in  XLet  a  (LRec [(bLoop, xBody')]) 
+             $  XCase a (xApps a (XVar a uLoop) xsInit)
+                        [ AAlt (PData (dcTupleN $ length tsAccs) bsFinal) x2' ]
 
 
         -- Boilerplate -----------------------------------------
         XVar{}          -> xx
         XCon{}          -> xx
         XLAM a b x      -> XLAM a b (down x)
-        XLam a b x      -> XLAM a b (down x)
+        XLam a b x      -> XLam a b (down x)
 
         XApp{}          -> xx
 

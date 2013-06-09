@@ -7,7 +7,8 @@ module DDC.Core.Flow.Compounds
         , kRate
 
           -- * Fragment specific types
-        , tTuple2, tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
+        , tTuple1, tTuple2, tTupleN
+        , tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
 
           -- * Primtiive types
@@ -18,6 +19,7 @@ module DDC.Core.Flow.Compounds
         , xNat,  dcNat
         ,          dcTuple1
         , xTuple2, dcTuple2
+        , dcTupleN
 
           -- * Flow operators
         , xRateOfStream
