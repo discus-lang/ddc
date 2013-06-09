@@ -14,6 +14,7 @@ module DDC.Driver.Stage
         , stageFlowLoad
         , stageFlowPrep
         , stageFlowLower
+        , stageFlowWind
 
           -- * Lite stages
         , stageLiteLoad
@@ -122,7 +123,7 @@ stageFlowLoad
 stageFlowLoad config source pipesFlow
  = PipeTextLoadCore Flow.fragment
  [ PipeCoreReannotate (const ())
-        ( PipeCoreOutput (dump config source "dump.flow.dcf")
+        ( PipeCoreOutput (dump config source "dump.flow-load.dcf")
         : pipesFlow ) ]
 
 
@@ -136,10 +137,10 @@ stageFlowPrep
 stageFlowPrep config source pipesFlow
  = PipeCoreReannotate   (const ())
  [ PipeCoreSimplify     Flow.fragment (0 :: Int) simplNorm
-   [ PipeCoreOutput     (dump config source "dump.lower-norm.dcf")
+   [ PipeCoreOutput     (dump config source "dump.flow-prep-norm.dcf")
    , PipeCoreAsFlow
      [ PipeFlowPrep
-       ( PipeCoreOutput (dump config source "dump.lower-prep.dcf")
+       ( PipeCoreOutput (dump config source "dump.flow-prep-done.dcf")
          : pipesFlow)]]]
  
  where  simplNamify
@@ -166,7 +167,21 @@ stageFlowLower
 stageFlowLower config source pipesFlow
  = PipeCoreAsFlow
      [ PipeFlowLower
-       ( PipeCoreOutput    (dump config source "dump.lower-done.dcf")
+       ( PipeCoreOutput    (dump config source "dump.flow-lower.dcf")
+       : pipesFlow ) ]
+
+
+-------------------------------------------------------------------------------
+-- | Wind loop primops into tail recursive loops in a Core Flow module.
+stageFlowWind
+        :: Config -> Source
+        -> [PipeCore () Flow.Name]
+        ->  PipeCore (C.AnTEC () Flow.Name) Flow.Name
+
+stageFlowWind config source pipesFlow
+ = PipeCoreAsFlow
+     [ PipeFlowWind
+       ( PipeCoreOutput    (dump config source "dump.flow-wind.dcf")
        : pipesFlow ) ]
 
 

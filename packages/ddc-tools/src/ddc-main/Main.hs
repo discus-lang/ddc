@@ -18,6 +18,7 @@ import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Lower
 import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Thread
+import DDC.Driver.Command.Flow.Wind
 
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
@@ -157,6 +158,12 @@ run config
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdFlowThread dconfig (SourceFile filePath) str
+
+        -- Wind loop primops into tail recursive loops.
+        ModeFlowWind filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowWind dconfig (SourceFile filePath) str
 
         -- Build the runtime and base libraries.
         ModeBaseBuild

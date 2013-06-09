@@ -58,6 +58,9 @@ data Mode
         -- | Lower a Flow program.
         | ModeFlowLower FilePath
 
+        -- | Wind loop primops into tail recursive loops.
+        | ModeFlowWind  FilePath
+
         -- | Concretize rate type variables in a Flow program.
         | ModeFlowConcretize FilePath
 

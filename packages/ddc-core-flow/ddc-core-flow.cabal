@@ -54,6 +54,7 @@ Library
         DDC.Core.Flow.Transform.Concretize
         DDC.Core.Flow.Transform.Storage
         DDC.Core.Flow.Transform.Thread
+        DDC.Core.Flow.Transform.Wind
 
   Other-modules:
         DDC.Core.Flow.Prim.Base

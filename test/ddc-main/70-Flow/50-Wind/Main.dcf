@@ -1,0 +1,34 @@
+
+module Flow 
+imports {
+        maxx :: Int# -> Int# -> Int#;
+} with
+letrec {
+filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#
+    = /\(k : Rate).
+       \(s1 : Series# k Int#).
+      let k2__count : Ref# Int#     = new# [Int#] 0i# in
+      let x5        : Vector# Int#  = newVectorN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
+      let x9__acc   : Ref# Int#     = new# [Int#] 0i# in
+      let _ : Unit
+            = loopn# [k] (rateOfSeries# [k] [Int#] s1)
+                  (\(x2 : Int#).
+                   let s1__elem : Int# = next# [Int#] [k] s1 x2 in
+                   let x3__elem : Bool#
+                         = let x0 : Int# = mod# [Int#] s1__elem 2i# in
+                           let x1 : Bool# = eq# [Int#] x0 0i# in
+                           x1 in
+                   let x3__use__elem : Bool# = x3__elem in
+                   let _ : Unit
+                         = guard# k2__count x3__use__elem
+                               (\(x3 : Int#).
+                                let _  : Unit = writeVector# [Int#] x5 x3 s1__elem in
+                                let x6 : Int# = read# [Int#]  x9__acc in
+                                let _  : Unit = write# [Int#] x9__acc (maxx x6 s1__elem) in
+                                ()) in
+                   ()) in
+      let x4  : Int#         = read# [Int#] k2__count in
+      let x5  : Vector# Int# = sliceVector# [Int#] x4 x5 in
+      let x9  : Int#         = read# [Int#] x9__acc 
+      in T2# [Vector# Int#] [Int#] x5 x9
+}

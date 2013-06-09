@@ -25,6 +25,7 @@ import qualified DDC.Core.Flow.Transform.Prep           as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
+import qualified DDC.Core.Flow.Transform.Wind           as Flow
 
 import qualified DDC.Core.Lite                          as Lite
 
@@ -266,6 +267,12 @@ data PipeFlow a where
         :: [PipeCore () Flow.Name]
         -> PipeFlow (C.AnTEC () Flow.Name)
 
+  -- Wind loop# primops into tail recursive loops.
+  PipeFlowWind
+        :: [PipeCore () Flow.Name]
+        -> PipeFlow (C.AnTEC () Flow.Name)
+
+
 
 -- | Process a Core Flow module.
 pipeFlow :: C.Module a Flow.Name
@@ -316,11 +323,10 @@ pipeFlow !mm !pp
 
              in pipeCores mm_lowered pipes
 
-
-
-
-
-
-
+        PipeFlowWind !pipes
+         -> {-# SCC "PipeFlowWind" #-}
+            let mm_stripped     = C.reannotate (const ()) mm
+                mm_wound        = Flow.windModule mm_stripped
+            in  pipeCores mm_wound pipes
 
 
