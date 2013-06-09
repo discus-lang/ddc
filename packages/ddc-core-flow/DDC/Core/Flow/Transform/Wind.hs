@@ -110,6 +110,7 @@ windModuleBodyX xx
         _ -> xx
 
 
+-------------------------------------------------------------------------------
 -- | Do winding in the body of a function.
 windBodyX 
         :: RefMap       -- ^ Info about how references are being rewritten.
@@ -121,8 +122,9 @@ windBodyX refMap context xx
  = let down = windBodyX refMap context
    in case xx of
 
+        -----------------------------------------
         -- Detect ref allocation,
-        --  and bind the initial value to a new variable.
+        --  to bind the initial value to a new variable.
         --
         --    ref     : Ref# type = new# [type] val
         -- => ref__0  : type      = val
@@ -147,7 +149,8 @@ windBodyX refMap context xx
                         (windBodyX refMap' context x2)
 
 
-        -- Detect read,
+        -----------------------------------------
+        -- Detect ref read,
         --  and rewrite to use the current version of the variable.
         --      val : type     = read# [type] ref
         --   => val : type     = ref_N
@@ -162,6 +165,22 @@ windBodyX refMap context xx
                         (windBodyX refMap context x2)
 
 
+        -----------------------------------------
+        -- Detect ref write,
+        --  to just bind the new value.
+        XLet a (LLet LetStrict (BNone _) x) x2
+         | Just ( NameOpStore OpStoreWrite 
+                , [XType _tElem, XVar _ (UName nRef), xVal])
+                                        <- takeXPrimApps x
+         , refMap'      <- bumpVersionInRefMap nRef refMap
+         , Just info    <- lookupRefInfo refMap' nRef
+         , Just nVal    <- nameOfRefInfo info
+         , tVal         <- refInfoType info
+         ->     XLet a  (LLet LetStrict (BName nVal tVal) xVal)
+                        (windBodyX refMap' context x2)
+
+
+        -----------------------------------------
         -- Detect loop combinator.
         XLet a (LLet LetStrict (BNone _) x) x2
          | Just ( NameOpLoop OpLoopLoopN
@@ -239,6 +258,7 @@ windBodyX refMap context xx
                         [ AAlt (PData (dcTupleN $ length tsAccs) bsFinal) x2' ]
 
 
+        -----------------------------------------
         -- Detect guard combinator.
         XLet a (LLet LetStrict (BNone _) x) x2
          | Just ( NameOpLoop OpLoopGuard
@@ -258,7 +278,7 @@ windBodyX refMap context xx
                         , AAlt PDefault (down x2) ]
 
 
-        -- Boilerplate -----------------------------------------
+        -- Boilerplate --------------------------
         XVar{}          -> xx
         XCon{}          -> xx
         XLAM a b x      -> XLAM a b (down x)
@@ -266,12 +286,15 @@ windBodyX refMap context xx
 
         XApp{}          -> xx
 
+        -- Decend into nest let binding.
+        --  We need to drop the contexts because we never do a tail-call
+        --  from a nested binding.
         XLet a (LLet m b x) x2
-         -> XLet a (LLet m b (down x)) 
+         -> XLet a (LLet m b (windBodyX refMap [] x)) 
                    (down x2)
 
         XLet a (LRec bxs) x2
-         -> XLet a (LRec [(b, down x) | (b, x) <- bxs])
+         -> XLet a (LRec [(b, windBodyX refMap [] x) | (b, x) <- bxs])
                    (down x2)
 
         XLet a lts x2
@@ -286,4 +309,5 @@ windBodyX refMap context xx
 
         XType{}         -> xx
         XWitness{}      -> xx
+
 
