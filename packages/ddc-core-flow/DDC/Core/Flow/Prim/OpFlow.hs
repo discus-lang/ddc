@@ -2,7 +2,8 @@
 module DDC.Core.Flow.Prim.OpFlow
         ( readOpFlow
         , typeOpFlow
-        , xRateOfStream)
+        , xRateOfSeries
+        , xNatOfRateNat)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -25,6 +26,7 @@ instance Pretty OpFlow where
   = case pf of
         OpFlowVectorOfSeries    -> text "vectorOfSeries"        <> text "#"
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
+        OpFlowNatOfRateNat      -> text "natOfRateNat"          <> text "#"
 
         OpFlowMkSel n           -> text "mkSel"      <> int n   <> text "#"
 
@@ -77,6 +79,7 @@ readOpFlow str
         = case str of
                 "vectorOfSeries#"  -> Just $ OpFlowVectorOfSeries
                 "rateOfSeries#"    -> Just $ OpFlowRateOfSeries
+                "natOfRateNat#"    -> Just $ OpFlowNatOfRateNat
                 "map#"             -> Just $ OpFlowMap 1
                 "rep#"             -> Just $ OpFlowRep
                 "reps#"            -> Just $ OpFlowReps
@@ -107,6 +110,11 @@ typeOpFlow op
          -> tForalls [kRate, kData]
          $  \[tK, tA]
                 -> tSeries tK tA `tFunPE` tRateNat tK
+
+        -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
+        OpFlowNatOfRateNat 
+         -> tForall kRate
+         $  \tK -> tRateNat tK `tFunPE` tNat
 
 
         -- Selectors ----------------------------
@@ -214,11 +222,16 @@ typeOpFlow op
 
 
 -- Compounds ------------------------------------------------------------------
-xRateOfStream :: Type Name -> Type Name -> Exp () Name -> Exp () Name
-xRateOfStream tK tA xS 
+xRateOfSeries :: Type Name -> Type Name -> Exp () Name -> Exp () Name
+xRateOfSeries tK tA xS 
          = xApps () (xVarOpFlow OpFlowRateOfSeries) 
                     [XType tK, XType tA, xS]
 
+
+xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
+xNatOfRateNat tK xR
+        = xApps () (xVarOpFlow OpFlowNatOfRateNat)
+                   [XType tK, xR]
 
 -- Utils -----------------------------------------------------------------------
 xVarOpFlow :: OpFlow -> Exp () Name

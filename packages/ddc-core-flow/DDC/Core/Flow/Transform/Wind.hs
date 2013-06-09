@@ -1,4 +1,27 @@
 
+-- | Convert a loop expressed with the loopn# and guard# combinators into
+--   a tail recursive loop with accumulators.
+--
+--   ASUMPTIONS:
+--   * No nested loops.
+--      We could support these, but we don't yet.
+--  
+--   * Outer control flow is only defined via the loopn# and guard# 
+--     combinators.
+--
+--   * References don't escape, 
+--      so they're not stored in data structures or captured in closures.
+--
+--   * No aliasing of references, 
+--      so updating ref with a particular name does not affect any other ref.
+-- 
+--   * Refs holding loop counters for loopn# and entry counters for guard# 
+--     are not written to by any other statements.
+-- 
+--   The above assumptions are true for code generated with the lowering
+--   transform, but won't be true for general code, and we don't check for
+--   violiations of these assumptions.
+--
 module DDC.Core.Flow.Transform.Wind
         ( RefInfo(..)
         , windModule)
@@ -73,13 +96,75 @@ bumpAllVersionsInRefMap mm
 
 -------------------------------------------------------------------------------
 data Context
+        -- | We're currently in the body of a loop.
         = ContextLoop 
         { contextLoopName       :: Name
-        , contextLoopAccs       :: [Bound Name] }
+        , contextLoopCounter    :: Name
+        , contextLoopAccs       :: [Name] }
 
+        -- | We're currently in the body of a guard.
         | ContextGuard
-        { _contextGuardCount     :: Name }
+        { -- | Name of the entry counter,
+          --   the number of times this guard has matched.
+          _contextGuardCounter   :: Name
+
+          -- | Whether we're in the matching or non-matching branch.
+        , _contextGuardFlag      :: Bool }
         deriving Show
+
+
+-- | Build a tailcall from the current context.
+--   This tells us where to go after finishing the body of a loop.
+makeTailCallFromContexts :: a -> RefMap -> [Context] -> Exp a Name
+makeTailCallFromContexts a refMap context@(ContextLoop nLoop _ _ : _)
+ = let  
+        xLoop   = XVar a (UName nLoop)
+        xArgs   = slurpArgUpdates a refMap [] context
+
+   in   xApps a xLoop xArgs
+   
+makeTailCallFromContexts _ _ _
+ = error "makeTailCallFromContexts: sorry"
+
+
+-- | Slurp expressions to update each of the accumulators of the loop.
+--   TODO: Don't assume there have been no other updates to the loop counter
+--         and guard entry refs.
+slurpArgUpdates 
+        :: a
+        -> RefMap
+        -> [(Name, Exp a Name)] 
+        -> [Context] 
+        -> [Exp a Name]
+
+slurpArgUpdates a refMap [] (ContextLoop _ nCounter nAccs : more)
+ = let
+        -- Expression to update loop counter.
+        nxCounter' 
+         = ( nCounter
+           , xApps a (XVar a (UName (NamePrimArith PrimArithAdd)))
+                             [ XType tNat, XVar a (UName nCounter), xNat a 1 ] )
+
+        -- Updated accumulators.
+        nxAccs'    
+         = [ (nAcc, XVar a (UName nAcc'))
+                | nAcc          <- nAccs
+                , let Just info  = lookupRefInfo refMap nAcc
+                , let Just nAcc' = nameOfRefInfo info ]
+
+   in   slurpArgUpdates a refMap (nxCounter' : nxAccs') more
+
+slurpArgUpdates a refMap args (ContextGuard{} : more)
+ = slurpArgUpdates a refMap args more
+
+slurpArgUpdates _ _ _   (ContextLoop{} : _)
+ = error "slurpArgUpdates: nested loops not supported"
+
+
+
+slurpArgUpdates _ _ args []
+ = map snd args
+
 
 
 -------------------------------------------------------------------------------
@@ -184,7 +269,7 @@ windBodyX refMap context xx
         -- Detect loop combinator.
         XLet a (LLet LetStrict (BNone _) x) x2
          | Just ( NameOpLoop OpLoopLoopN
-                , [ XType _tK, xLength
+                , [ XType tK, xLength
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
                 -- Name of the new loop function.
@@ -203,8 +288,8 @@ windBodyX refMap context xx
                                 | info  <- refMapElems refMap_body
                                 , let Just nVar    = nameOfRefInfo info ]
 
-                usAccs  = takeSubstBoundsOfBinds bsAccs
-                tsAccs  = map typeOfBind bsAccs
+                usAccs          = takeSubstBoundsOfBinds bsAccs
+                tsAccs          = map typeOfBind bsAccs
 
 
                 -- The loop function itself will return us a tuple
@@ -218,10 +303,12 @@ windBodyX refMap context xx
 
                 -- Decend into loop body,
                 --  and remember that we're doing the rewrite inside a loop context.
-                context' = ContextLoop 
-                                {  contextLoopName      = nLoop
-                                ,  contextLoopAccs      = usAccs }
-                         : context
+                context' = [ ContextLoop 
+                                { contextLoopName      = nLoop
+                                , contextLoopCounter   = nIx
+                                , contextLoopAccs      = map refInfoName 
+                                                       $ refMapElems refMap_body } ]
+                         ++ context
 
                 xBody'   = windBodyX refMap_body context' xBody
 
@@ -239,7 +326,7 @@ windBodyX refMap context xx
 
 
                 -- Initial values of index and accumulators.
-                xsInit  = xLength
+                xsInit  = xNatOfRateNat tK xLength
                         : [ XVar a (UName nVar)
                                 | info  <- refMapElems refMap_init
                                 , let Just nVar = nameOfRefInfo info ]
@@ -277,6 +364,14 @@ windBodyX refMap context xx
                         [ AAlt (PData (dcBool True) []) xBody'
                         , AAlt PDefault (down x2) ]
 
+        -----------------------------------------
+        -- Detect end value.
+        --   When we hit a Unit at the top level of the body of a loop then
+        --   we know it's time to do the recursive call.
+        XCon a dc
+         | dc == dcUnit
+         -> makeTailCallFromContexts a refMap context
+
 
         -- Boilerplate --------------------------
         XVar{}          -> xx
@@ -309,5 +404,6 @@ windBodyX refMap context xx
 
         XType{}         -> xx
         XWitness{}      -> xx
+
 
 

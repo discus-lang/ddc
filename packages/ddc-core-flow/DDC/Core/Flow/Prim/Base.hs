@@ -116,6 +116,7 @@ data OpFlow
         -- Stream conversions.
         = OpFlowVectorOfSeries
         | OpFlowRateOfSeries
+        | OpFlowNatOfRateNat
 
         -- selectors
         | OpFlowMkSel Int

@@ -31,7 +31,7 @@ concretizeX _kenv tenv xx
         , xS                    <- XVar () (UName nS)
         = xLoopLoopN 
                 tK                              -- type level rate
-                (xRateOfStream tK tA xS)        -- 
+                (xRateOfSeries tK tA xS)        -- 
                 xF                              -- loop body
 
         -- newVectorR# -> newVectorN#
@@ -42,7 +42,7 @@ concretizeX _kenv tenv xx
         , xS                    <- XVar () (UName nS)
         = xNewVectorN
                 tA tK
-                (xRateOfStream tK tS xS)
+                (xRateOfSeries tK tS xS)
                 
         | otherwise
         = xx
