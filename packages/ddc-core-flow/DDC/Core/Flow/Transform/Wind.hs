@@ -106,10 +106,10 @@ data Context
         | ContextGuard
         { -- | Name of the entry counter,
           --   the number of times this guard has matched.
-          _contextGuardCounter   :: Name
+          contextGuardCounter   :: Name
 
           -- | Whether we're in the matching or non-matching branch.
-        , _contextGuardFlag      :: Bool }
+        , contextGuardFlag      :: Bool }
         deriving Show
 
 
@@ -142,8 +142,7 @@ slurpArgUpdates a refMap [] (ContextLoop _ nCounter nAccs : more)
         -- Expression to update loop counter.
         nxCounter' 
          = ( nCounter
-           , xApps a (XVar a (UName (NamePrimArith PrimArithAdd)))
-                             [ XType tNat, XVar a (UName nCounter), xNat a 1 ] )
+           , xIncrement a (XVar a (UName nCounter)) )
 
         -- Updated accumulators.
         nxAccs'    
@@ -154,8 +153,20 @@ slurpArgUpdates a refMap [] (ContextLoop _ nCounter nAccs : more)
 
    in   slurpArgUpdates a refMap (nxCounter' : nxAccs') more
 
-slurpArgUpdates a refMap args (ContextGuard{} : more)
- = slurpArgUpdates a refMap args more
+-- If we're inside the true branch of a guard then update
+-- the associated entry counter for the guard.
+slurpArgUpdates a refMap args (ContextGuard nCounter flag : more)
+ | flag == True
+ = let  
+        update []               = []
+        update ((n, x) : args')
+         | n == nCounter        = (n, xIncrement a x) : update args'
+         | otherwise            = (n, x)              : update args'
+
+   in   slurpArgUpdates a refMap (update args) more
+
+ | otherwise
+ =      slurpArgUpdates a refMap args more
 
 slurpArgUpdates _ _ _   (ContextLoop{} : _)
  = error "slurpArgUpdates: nested loops not supported"
@@ -166,6 +177,11 @@ slurpArgUpdates _ _ args []
  = map snd args
 
 
+-- | Build an expression that increments a natural.
+xIncrement :: a -> Exp a Name -> Exp a Name
+xIncrement a xx
+        = xApps a (XVar a (UName (NamePrimArith PrimArithAdd)))
+                  [ XType tNat, xx, xNat a 1 ]
 
 -------------------------------------------------------------------------------
 windModule :: Module () Name -> Module () Name
@@ -303,12 +319,12 @@ windBodyX refMap context xx
 
                 -- Decend into loop body,
                 --  and remember that we're doing the rewrite inside a loop context.
-                context' = [ ContextLoop 
+                context' =  context
+                         ++ [ ContextLoop 
                                 { contextLoopName      = nLoop
                                 , contextLoopCounter   = nIx
                                 , contextLoopAccs      = map refInfoName 
                                                        $ refMapElems refMap_body } ]
-                         ++ context
 
                 xBody'   = windBodyX refMap_body context' xBody
 
@@ -357,12 +373,18 @@ windBodyX refMap context xx
 
                 Just nCount     = nameOfRefInfo infoCount
 
+                context' = context
+                         ++ [ ContextGuard
+                                { contextGuardCounter = nCountRef
+                                , contextGuardFlag    = True }  ]
+
                 xBody'  = XLet a (LLet LetStrict bCount (XVar a (UName nCount)))
-                        $ down xBody
+                        $ windBodyX refMap context' xBody
 
             in  XCase a xFlag 
                         [ AAlt (PData (dcBool True) []) xBody'
                         , AAlt PDefault (down x2) ]
+
 
         -----------------------------------------
         -- Detect end value.
@@ -404,6 +426,4 @@ windBodyX refMap context xx
 
         XType{}         -> xx
         XWitness{}      -> xx
-
-
 
