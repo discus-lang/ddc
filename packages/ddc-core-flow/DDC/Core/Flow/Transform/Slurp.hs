@@ -112,9 +112,18 @@ slurpProcessX xx
    , ltsHere ++ ltsMore
    , xResult)
 
- -- Only handle very simple cases for now
- | XCase _ _scrut [AAlt (PData _ _) x]    <- xx
- = slurpProcessX x
+ -- Only handle very simple cases with one alt for now.
+ -- 'Invert' the case and create a let binding for each binder.
+ -- We can safely duplicate xScrut since it's in ANF.
+ | XCase _ xScrut [AAlt (PData dc bs) x]    <- xx
+ , bs'  <- takeSubstBoundsOfBinds bs
+ , length bs == length bs'
+ , lets <- zipWith
+              (\b b' -> LLet LetStrict b
+                (XCase () xScrut
+                 [AAlt (PData dc bs)
+                       (XVar () b')])) bs bs'
+ = slurpProcessX (xLets () lets x)
 
  | otherwise
  = ([], [], [], xx)
