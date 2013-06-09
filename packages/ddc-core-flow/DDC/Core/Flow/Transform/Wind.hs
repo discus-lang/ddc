@@ -12,6 +12,7 @@ import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
 
+-------------------------------------------------------------------------------
 -- | Current information for a reference.
 data RefInfo
         = RefInfo
@@ -71,6 +72,17 @@ bumpAllVersionsInRefMap mm
 
 
 -------------------------------------------------------------------------------
+data Context
+        = ContextLoop 
+        { contextLoopName       :: Name
+        , contextLoopAccs       :: [Bound Name] }
+
+        | ContextGuard
+        { _contextGuardCount     :: Name }
+        deriving Show
+
+
+-------------------------------------------------------------------------------
 windModule :: Module () Name -> Module () Name
 windModule m
  = let  body'   = windModuleBodyX (moduleBody m)
@@ -82,12 +94,12 @@ windModuleBodyX :: Exp () Name -> Exp () Name
 windModuleBodyX xx
  = case xx of
         XLet a (LLet m b x1) x2
-         -> let x1'     = windBodyX refMapZero x1
+         -> let x1'     = windBodyX refMapZero [] x1
                 x2'     = windModuleBodyX x2
             in  XLet a (LLet m b x1') x2'
 
         XLet a (LRec bxs) x2
-         -> let bxs'    = [(b, windBodyX refMapZero x) | (b, x) <- bxs]
+         -> let bxs'    = [(b, windBodyX refMapZero [] x) | (b, x) <- bxs]
                 x2'     = windModuleBodyX x2
             in  XLet a (LRec bxs') x2'
 
@@ -99,9 +111,14 @@ windModuleBodyX xx
 
 
 -- | Do winding in the body of a function.
-windBodyX :: RefMap -> Exp () Name -> Exp () Name
-windBodyX refMap xx
- = let down = windBodyX refMap 
+windBodyX 
+        :: RefMap       -- ^ Info about how references are being rewritten.
+        -> [Context]    -- ^ What loops and guards we're currently inside.
+        -> Exp () Name  -- ^ Rewrite this expression.
+        -> Exp () Name
+
+windBodyX refMap context xx
+ = let down = windBodyX refMap context
    in case xx of
 
         -- Detect ref allocation,
@@ -127,7 +144,7 @@ windBodyX refMap xx
                 refMap'     = insertRefInfo info refMap
 
             in  XLet a  (LLet LetStrict (BName nInit tElem) xVal)
-                        (windBodyX refMap' x2)
+                        (windBodyX refMap' context x2)
 
 
         -- Detect read,
@@ -142,7 +159,7 @@ windBodyX refMap xx
          , Just info    <- lookupRefInfo refMap nRef
          , Just nVal    <- nameOfRefInfo info
          ->     XLet a  (LLet LetStrict bResult (XVar a (UName nVal)))
-                        (windBodyX refMap x2)
+                        (windBodyX refMap context x2)
 
 
         -- Detect loop combinator.
@@ -168,24 +185,39 @@ windBodyX refMap xx
                                 , let Just nVar    = nameOfRefInfo info ]
 
                 usAccs  = takeSubstBoundsOfBinds bsAccs
+                tsAccs  = map typeOfBind bsAccs
+
 
                 -- The loop function itself will return us a tuple
                 -- containing the final value of all the accumulators.
                 tIndex  = typeOfBind bIx
-                tsAccs  = map typeOfBind bsAccs
                 tResult = tTupleN tsAccs
 
                 -- Type of the loop function.
                 tLoop   = foldr tFunPE tResult (tIndex : tsAccs)
 
-                -- Create the loop body.
-                xBody'  = xLams a (bIx : bsAccs) 
+
+                -- Decend into loop body,
+                --  and remember that we're doing the rewrite inside a loop context.
+                context' = ContextLoop 
+                                {  contextLoopName      = nLoop
+                                ,  contextLoopAccs      = usAccs }
+                         : context
+
+                xBody'   = windBodyX refMap_body context' xBody
+
+
+                -- Create the loop driver.
+                --  This is the code that tests for the end-of-loop condition.
+                xDriver = xLams a (bIx : bsAccs) 
                         $ XCase a (XVar a (UName nIx)) 
                                 [ AAlt (PData (dcNat 0) []) xResult
-                                , AAlt PDefault xBody ]
+                                , AAlt PDefault xBody' ]
 
                 xResult = xApps a (XCon a (dcTupleN $ length tsAccs)) 
-                                  [XVar a u | u <- usAccs]
+                                  (  [XType t  | t <- tsAccs]
+                                  ++ [XVar a u | u <- usAccs] )
+
 
                 -- Initial values of index and accumulators.
                 xsInit  = xLength
@@ -193,17 +225,37 @@ windBodyX refMap xx
                                 | info  <- refMapElems refMap_init
                                 , let Just nVar = nameOfRefInfo info ]
 
+
                 -- Decend into loop postlude.
                 bsFinal = [ BName nVar (refInfoType info)
                                 | info  <- refMapElems refMap_final
                                 , let Just nVar = nameOfRefInfo info ]
 
-                x2'     = windBodyX refMap_final x2
+                x2'     = windBodyX refMap_final context x2
 
 
-            in  XLet  a  (LRec [(bLoop, xBody')]) 
+            in  XLet  a  (LRec [(bLoop, xDriver)]) 
              $  XCase a (xApps a (XVar a uLoop) xsInit)
                         [ AAlt (PData (dcTupleN $ length tsAccs) bsFinal) x2' ]
+
+
+        -- Detect guard combinator.
+        XLet a (LLet LetStrict (BNone _) x) x2
+         | Just ( NameOpLoop OpLoopGuard
+                , [ XVar _ (UName nCountRef)
+                  , xFlag
+                  , XLam _ bCount xBody ])       <- takeXPrimApps x
+         -> let 
+                Just infoCount  = lookupRefInfo refMap nCountRef
+
+                Just nCount     = nameOfRefInfo infoCount
+
+                xBody'  = XLet a (LLet LetStrict bCount (XVar a (UName nCount)))
+                        $ down xBody
+
+            in  XCase a xFlag 
+                        [ AAlt (PData (dcBool True) []) xBody'
+                        , AAlt PDefault (down x2) ]
 
 
         -- Boilerplate -----------------------------------------
@@ -229,7 +281,7 @@ windBodyX refMap xx
          -> error "windBodyX: not finished"
 
         XCast a c x
-         -> let  x'      = windBodyX refMap x
+         -> let  x'      = windBodyX refMap context x
             in  XCast a c x'
 
         XType{}         -> xx
