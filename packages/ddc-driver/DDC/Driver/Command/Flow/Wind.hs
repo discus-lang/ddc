@@ -25,9 +25,8 @@ cmdFlowWind config source sourceText
                     (lineStartOfSource source)
                     sourceText
          $  stageFlowLoad  config source
-         [  stageFlowPrep  config source
          [  PipeCoreCheck  Flow.fragment
-         [  stageFlowWind config source [ pipeFinal ]]]]
+         [  stageFlowWind config source [ pipeFinal ]]]
 
         pipeFinal
          | configTaintAvoidTypeChecks config
