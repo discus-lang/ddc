@@ -16,6 +16,13 @@ instance Pretty Process where
 
 
 instance Pretty Operator where
+ ppr op@OpId{}
+        = vcat
+        [ text "Id"
+        , text " rate:   "      <> ppr (opInputRate op)
+        , text " input:  "      <> ppr (opInputSeries op)
+        , text " result: "      <> ppr (opResultSeries op) ]
+
  ppr op@OpCreate{}
         = vcat
         [ text "Create"

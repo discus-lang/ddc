@@ -70,6 +70,28 @@ scheduleOperator
 
 scheduleOperator nest0 env op
 
+ -- Id -------------------------------------------
+ | OpId{}     <- op
+ = let
+        -- Get binders for the input elements.
+        Just nSeries
+         = takeNameOfBound (opInputSeries op)
+
+        (uInput, env1, nest1)
+         = bindNextElem nSeries
+                        (opInputRate op) (opElemType op)
+                        env nest0
+
+        Just bResultElem     
+         = elemBindOfSeriesBind $ opResultSeries op
+
+        context         = ContextRate (opInputRate op)
+
+        Just nest2      = insertBody nest1 context
+                        $ [ BodyStmt bResultElem (XVar () uInput) ]
+
+   in   (env1, nest2)
+
  -- Create ---------------------------------------
  | OpCreate{} <- op
  = let  
@@ -211,7 +233,9 @@ scheduleOperator nest0 env op
         (uInput, env1, nest1)
                         = bindNextElem nSeries tRate tInputElem env nest0
 
-        -- Associate the variable for the result element with the result series.
+        -- Associate the variable for the result element with the result
+        -- series. We could instead add an explicit binding, but it's 
+        -- easier just to insert an entry into the series environment.
         Just nResultSeries = takeNameOfBind (opResultSeries op)
         env2               = insertElemForSeries nResultSeries uInput env1
 

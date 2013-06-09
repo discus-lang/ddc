@@ -26,7 +26,7 @@ import Control.Monad.Writer     (Writer, tell, runWriter)
 import Data.Monoid              (Monoid, mempty, mappend)
 import qualified DDC.Type.Env   as Env
 import Data.Typeable
--- import Debug.Trace
+
 
 -------------------------------------------------------------------------------
 data Info

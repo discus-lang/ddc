@@ -21,26 +21,26 @@ rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
 map1# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
 rep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
 reps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
-fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^1 -> ^1
-folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
+fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^0 -> ^1
+folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (Int# -> ^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
 pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 
 
 -- Loop operators
-loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
-loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
+loop# :: [^ : Rate].(Int# -> Unit) -> Unit
+loopn# :: [^ : Rate].RateNat# ^0 -> (Int# -> Unit) -> Unit
 
 
 -- Store operators
 new# :: [^ : Data].^0 -> Ref# ^0
 read# :: [^ : Data].Ref# ^0 -> ^0
 write# :: [^ : Data].Ref# ^0 -> ^0 -> Unit
-newVector# :: [^ : Data].Nat# -> Vector# ^0
+newVector# :: [^ : Data].Int# -> Vector# ^0
 newVectorR# :: [^ : Data].[^ : Rate].Vector# ^1
 newVectorN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
-readVector# :: [^ : Data].Vector# ^0 -> Nat# -> ^0
-writeVector# :: [^ : Data].Vector# ^0 -> Nat# -> ^0 -> Unit
-next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
+readVector# :: [^ : Data].Vector# ^0 -> Int# -> ^0
+writeVector# :: [^ : Data].Vector# ^0 -> Int# -> ^0 -> Unit
+next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Int# -> ^1
 
 
 -- Machine type constructors

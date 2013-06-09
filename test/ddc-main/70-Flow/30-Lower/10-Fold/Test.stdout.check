@@ -10,7 +10,7 @@ letrec {
       let x1__acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x1__acc in
                    let _ : Unit
@@ -31,7 +31,7 @@ letrec {
       let x4__acc : Ref# Int# = new# [Int#] 1i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x1__acc in
                    let _ : Unit
@@ -58,7 +58,7 @@ letrec {
       let x9__acc : Ref# Int# = new# [Int#] 1i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x1__acc in
                    let _ : Unit
@@ -88,7 +88,7 @@ letrec {
       let x4__acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x2__elem : Int#
                          = (\(x : Int#). mul# [Int#] x 2i#) s__elem in

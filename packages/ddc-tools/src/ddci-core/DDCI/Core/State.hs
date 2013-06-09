@@ -151,16 +151,19 @@ getDriverConfigOfState state
                 = Runtime.Config
                 { Runtime.configHeapSize = 65536 }
 
-         , D.configOutputFile            = stateOutputFile state
-         , D.configOutputDir             = stateOutputDir  state
-         , D.configSimplLite             = stateSimplLite  state
-         , D.configSimplSalt             = stateSimplSalt  state
-         , D.configBuilder               = builder
-         , D.configSuppressCoreImports   = Set.member SuppressImports (stateModes state)
-         , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) 
-         , D.configKeepLlvmFiles         = False
-         , D.configKeepSeaFiles          = False
-         , D.configKeepAsmFiles          = False }
+         , D.configOutputFile           = stateOutputFile state
+         , D.configOutputDir            = stateOutputDir  state
+         , D.configSimplLite            = stateSimplLite  state
+         , D.configSimplSalt            = stateSimplSalt  state
+         , D.configBuilder              = builder
+         , D.configSuppressCoreImports  = Set.member SuppressImports (stateModes state)
+         , D.configSuppressHashImports  = not $ Set.member SaltPrelude (stateModes state) 
+         , D.configKeepLlvmFiles        = False
+         , D.configKeepSeaFiles         = False
+         , D.configKeepAsmFiles         = False 
+
+         , D.configTaintAvoidTypeChecks 
+                = Set.member TaintAvoidTypeChecks (stateModes state) }
 
 
 -- | Holds platform independent builder info.

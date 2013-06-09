@@ -198,7 +198,8 @@ getDriverConfig config filePath
                 , Driver.configOutputDir                = configOutputDir  config 
                 , Driver.configKeepLlvmFiles            = configKeepLlvmFiles config
                 , Driver.configKeepSeaFiles             = configKeepSeaFiles  config
-                , Driver.configKeepAsmFiles             = configKeepAsmFiles  config }
+                , Driver.configKeepAsmFiles             = configKeepAsmFiles  config 
+                , Driver.configTaintAvoidTypeChecks     = configTaintAvoidTypeChecks config }
 
 
 -- | Determine the current language based on the file extension of this path, 

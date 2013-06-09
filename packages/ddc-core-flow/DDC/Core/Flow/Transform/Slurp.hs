@@ -152,13 +152,29 @@ slurpBindingX b
         (ctxInner, osInner, ltsInner)
                 = slurpBindingX b xBody
 
+        -- Add an intermediate edge from the flags variable to its use. 
+        -- This is needed for the case when the flags series is one of the
+        -- parameters to the process, because the intermediate OpId forces 
+        -- the scheduler to add the  flags_elem = next [k] flags_series 
+        -- statement.
+        UName (NameVar strFlags) = uFlags
+        nFlagsUse       = NameVar (strFlags ++ "__use")
+        uFlagsUse       = UName nFlagsUse
+        bFlagsUse       = BName nFlagsUse (tSeries tK1 tBool)
+
+        opId    = OpId
+                { opResultSeries        = bFlagsUse
+                , opInputRate           = tK1
+                , opInputSeries         = uFlags 
+                , opElemType            = tBool }
+
         context = ContextSelect
                 { contextOuterRate      = tK1
                 , contextInnerRate      = TVar (UName nR)
-                , contextFlags          = uFlags
+                , contextFlags          = uFlagsUse
                 , contextSelector       = bSel }
 
-   in   (context : ctxInner, osInner, ltsInner)
+   in   (context : ctxInner, opId : osInner, ltsInner)
 
 -- | Slurp an operator that doesn't introduce a new context.
 slurpBindingX b x

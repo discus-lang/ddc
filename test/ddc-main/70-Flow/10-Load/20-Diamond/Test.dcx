@@ -50,7 +50,7 @@ split   [k1      : Rate]
         -- We only want points where the determinate is more than zero.
         flags   
          = map# [k1] [Float64#] [Bool#]
-                (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) 
+                (gt# [Float64#] (promote# [Float64#] [Int#] 0#)) 
                 dets
 
         -- Filter the points, keeping those where the determinate was more
@@ -68,7 +68,7 @@ split   [k1      : Rate]
         xMax 
          = fold# [k1] [Float64#] [Float64#] 
                 max 
-                (promote# [Float64#] [Nat#] 0#)
+                (promote# [Float64#] [Int#] 0#)
                 dets 
 
         T2# [Vector# (Tuple2# Float64# Float64#)] [Float64#] 

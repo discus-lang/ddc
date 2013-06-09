@@ -28,6 +28,11 @@ data Mode
 
 	-- | Display information about each transformation step
 	|  TraceTrans
+
+        -- | Avoid type checking if possible.
+        --   Helpful when debugging program transformations to see invalid
+        --   code instead of an error message.
+        |  TaintAvoidTypeChecks
         deriving (Eq, Ord, Show)
 
 
@@ -42,5 +47,6 @@ readMode str
         "SaltPrelude"           -> Just SaltPrelude
         "Dump"                  -> Just Dump
         "TraceTrans"            -> Just TraceTrans
+        "TaintAvoidTypeChecks"  -> Just TaintAvoidTypeChecks
         _                       -> Nothing
 

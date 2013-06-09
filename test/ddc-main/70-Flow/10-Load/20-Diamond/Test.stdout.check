@@ -35,7 +35,7 @@ letrec {
             = map1# [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
       let flags : Series# k1 Bool#
             = map1# [k1] [Float64#] [Bool#]
-                  (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) dets in
+                  (gt# [Float64#] (promote# [Float64#] [Int#] 0#)) dets in
       let aAbove : Vector# (Tuple2# Float64# Float64#)
             = mkSel1# [k1] [Vector# (Tuple2# Float64# Float64#)] flags
                   (/\(k2 : Rate).
@@ -44,6 +44,6 @@ letrec {
                          = pack# [k1] [k2] [Tuple2# Float64# Float64#] sel points in
                    vectorOfSeries# [k2] [Tuple2# Float64# Float64#] above) in
       let xMax : Float64#
-            = fold# [k1] [Float64#] [Float64#] max (promote# [Float64#] [Nat#] 0#) dets in
+            = fold# [k1] [Float64#] [Float64#] max (promote# [Float64#] [Int#] 0#) dets in
       T2# [Vector# (Tuple2# Float64# Float64#)] [Float64#] aAbove xMax
 }

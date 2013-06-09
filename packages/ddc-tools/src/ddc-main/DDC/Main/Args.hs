@@ -162,6 +162,11 @@ parseArgs args config
         = parseArgs rest
         $ setMode config ModePrintBaseDir
 
+        -- Taints -------------------------------
+        | "-taint-avoid-type-checks" : rest     <- args
+        = parseArgs rest
+        $ config { configTaintAvoidTypeChecks = True }
+        
         -- If we get some other argument starting with '-' then assume it's
         -- a flag we don't support.
         | arg : _               <- args
@@ -206,23 +211,23 @@ setMode config newMode
 flagOfMode :: Mode -> Maybe String
 flagOfMode mode
  = case mode of
-        ModeNone{}              -> Nothing
-        ModeVersion{}           -> Just "-version"
-        ModeHelp{}              -> Just "-help"
-        ModeCheck{}             -> Just "-check"
-        ModeLoad{}              -> Just "-load"
-        ModeCompile{}           -> Just "-compile"
-        ModeMake{}              -> Just "-make"
-        ModeAST{}               -> Just "-ast"
-        ModeToSalt{}            -> Just "-to-salt"
-        ModeToC{}               -> Just "-to-c"
-        ModeToLLVM{}            -> Just "-to-llvm"
-        ModeFlowPrep{}          -> Just "-flow-prep"
-        ModeFlowLower{}         -> Just "-flow-lower"
-        ModeFlowConcretize{}    -> Just "-flow-concretize"
-        ModeFlowThread{}        -> Just "-flow-thread"
-        ModeBaseBuild{}         -> Just "-basebuild"
-        ModePrintBuilder{}      -> Just "-print-builder"
-        ModePrintBaseDir{}      -> Just "-print-basedir"
+        ModeNone{}                      -> Nothing
+        ModeVersion{}                   -> Just "-version"
+        ModeHelp{}                      -> Just "-help"
+        ModeCheck{}                     -> Just "-check"
+        ModeLoad{}                      -> Just "-load"
+        ModeCompile{}                   -> Just "-compile"
+        ModeMake{}                      -> Just "-make"
+        ModeAST{}                       -> Just "-ast"
+        ModeToSalt{}                    -> Just "-to-salt"
+        ModeToC{}                       -> Just "-to-c"
+        ModeToLLVM{}                    -> Just "-to-llvm"
+        ModeFlowPrep{}                  -> Just "-flow-prep"
+        ModeFlowLower{}                 -> Just "-flow-lower"
+        ModeFlowConcretize{}            -> Just "-flow-concretize"
+        ModeFlowThread{}                -> Just "-flow-thread"
+        ModeBaseBuild{}                 -> Just "-basebuild"
+        ModePrintBuilder{}              -> Just "-print-builder"
+        ModePrintBaseDir{}              -> Just "-print-basedir"
 
 

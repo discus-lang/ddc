@@ -14,6 +14,14 @@ hello   = unlines
 
 
 -- | The command-line help page.
+---
+--   The following internal debugging flags are also accepted but do not appear
+--   in the help page.
+--
+--     -taint-avoid-type-checks    Avoid type checking if possible.
+--                                 Exactly how much checking is avoided depends
+--                                 on the compilation mode. 
+--  
 help :: String
 help    = unlines
         [ version
@@ -47,9 +55,15 @@ help    = unlines
         , "     -check    FILE     Parse and type check a core module."
         , ""
         , "Conversion:"
-        , "     -to-salt  FILE     Convert a module to Disciple Core Salt."
-        , "     -to-c     FILE     Convert a module to C code."
-        , "     -to-llvm  FILE     Convert a module to LLVM code."
+        , "     -to-salt    FILE   Convert a module to Disciple Core Salt."
+        , "     -to-c       FILE   Convert a module to C code."
+        , "     -to-llvm    FILE   Convert a module to LLVM code."
+        , ""
+        , "Data Flow Fusion Transforms:"
+        , "  These work on modules in the Disciple Core Flow (.dcf) fragment."
+        , "     -flow-prep  FILE   Prepare a module for lowering."
+        , "     -flow-lower FILE   Lower functions to loop code."
+        , "     -flow-"
         , ""
         , "Debugging:"
         , "     -dump              Dump intermediate representations."

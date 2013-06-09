@@ -133,7 +133,11 @@ data Config
 
           -- Debugging -----------------
           -- | Dump intermediate representations.
-        , configDump            :: Bool }
+        , configDump            :: Bool 
+
+          -- Taints --------------------
+          -- | Disable type checking where possible.
+        , configTaintAvoidTypeChecks :: Bool }
         deriving (Show)
 
 
@@ -170,7 +174,10 @@ getDefaultConfig
           , configWith            = []
  
             -- Debugging ----------------
-         , configDump            = False }
+          , configDump            = False 
+
+            -- Taints -------------------
+          , configTaintAvoidTypeChecks = False }
 
 
 -- | Get the builder configuation from the ddc configuration.

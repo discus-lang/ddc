@@ -95,6 +95,11 @@ data Config
 
           -- | Keep intermediate .ddc.s files
         , configKeepAsmFiles            :: Bool
+
+          -- | Avoid running the type checker where possible.
+          --   When debugging program transformations, use this to get
+          --   the invalid code rather than just the type error message.
+        , configTaintAvoidTypeChecks    :: Bool
         }
 
 

@@ -10,7 +10,7 @@ letrec {
       let x5 : Vector# Int# = newVectorR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x3__elem : Int#
                          = (\(x : Int#).
@@ -32,7 +32,7 @@ letrec {
       let x6 : Vector# Int# = newVectorR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x2__elem : Int#
                          = (\(x : Int#). add# [Int#] x 1i#) s__elem in
@@ -55,7 +55,7 @@ letrec {
       let x6 : Vector# Int# = newVectorR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
+                  (\(^ : Int#).
                    let s__elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x2__acc in
                    let _ : Unit

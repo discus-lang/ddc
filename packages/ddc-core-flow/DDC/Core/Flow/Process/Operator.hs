@@ -12,8 +12,26 @@ import DDC.Core.Flow.Prim
 --   code for that operator.
 data Operator
         -----------------------------------------
+        -- | Connect a series from one place to another.
+        --   These don't come from the source program, but are useful for 
+        --   during code generation.
+        = OpId
+        { -- Binder for result series.
+          opResultSeries        :: Bind Name
+
+          -- Rate of the input series.
+        , opInputRate           :: Type Name
+
+          -- Bound of the input series
+        , opInputSeries         :: Bound Name
+
+          -- Type of the elements.
+        , opElemType            :: Type Name
+        }
+
+        -----------------------------------------
         -- | Convert a series to a manifest vector.
-        = OpCreate
+        | OpCreate
         { -- | Binder for result vector
           opResultVector        :: Bind Name
 
@@ -30,6 +48,7 @@ data Operator
           -- | Type of the elements.
         , opElemType            :: Type Name
         }
+
 
         -----------------------------------------
         -- | Apply a function to corresponding elements in several input series

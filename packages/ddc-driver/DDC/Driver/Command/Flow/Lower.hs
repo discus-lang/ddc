@@ -19,19 +19,26 @@ cmdFlowLower
         -> ErrorT String IO ()
 
 cmdFlowLower config source sourceText
- = do   
-        errs    <- liftIO
-                $  pipeText (nameOfSource source)
-                            (lineStartOfSource source)
-                            sourceText
-                $  stageFlowLoad  config source
-                [  stageFlowPrep  config source
-                [  PipeCoreCheck  Flow.fragment
-                [  stageFlowLower config source
---                [  PipeCoreCheck  Flow.fragment
-                [  PipeCoreOutput SinkStdout ]]]]
+ = let  
+        pipeLower
+         = pipeText (nameOfSource source)
+                    (lineStartOfSource source)
+                    sourceText
+         $  stageFlowLoad  config source
+         [  stageFlowPrep  config source
+         [  PipeCoreCheck  Flow.fragment
+         [  stageFlowLower config source [ pipeFinal ]]]]
 
+        pipeFinal
+         | configTaintAvoidTypeChecks config
+         = PipeCoreOutput SinkStdout
+
+         | otherwise
+         = PipeCoreCheck Flow.fragment
+         [ PipeCoreOutput SinkStdout ]
+
+   in do        
+        errs    <- liftIO pipeLower
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
-
