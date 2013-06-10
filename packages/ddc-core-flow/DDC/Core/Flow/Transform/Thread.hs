@@ -34,6 +34,12 @@ threadConfig
 -- | Wrap the result type of a stateful computation with the state type.
 wrapResultType :: Type Name -> Type Name
 wrapResultType tt
+ | Just (TyConBound u _, tsArgs)        <- takeTyConApps tt
+ , UPrim n _                            <- u
+ , NameTyConFlow (TyConFlowTuple _)     <- n
+ = tTupleN (tWorld : tsArgs)
+
+ | otherwise
  = tTuple2 tWorld tt
 
 
@@ -44,6 +50,7 @@ wrapResultExp
         -> Exp () Name
 
 wrapResultExp xWorld xResult
+ -- Rewrite Unit => World
  | Just aResult         <- takeAnnotOfExp xResult
  , annotType aResult == tUnit     
  = reannotate annotTail xWorld
@@ -54,7 +61,18 @@ wrapResultExp xWorld xResult
         tResult  = annotType aResult
         xWorld'  = reannotate annotTail xWorld
         xResult' = reannotate annotTail xResult
-   in   xTuple2 () tWorld' tResult xWorld' xResult'
+   in   case takeXConApps xResult' of
+         Just (dc, [xT1, xT2, x1, x2])                  -- TODO: handle tuple arities generically
+          | dc == dcTupleN 2
+          -> xApps () (XCon () (dcTupleN 3))
+                [XType tWorld', xT1, xT2, xWorld', x1, x2]
+
+         Just (dc, [xT1, xT2, xT3, x1, x2, x3])
+          | dc == dcTupleN 3
+          -> xApps () (XCon () (dcTupleN 4))
+                [XType tWorld', xT1, xT2, xT3, xWorld', x1, x2, x3]
+
+         _ -> xTuple2 () tWorld' tResult xWorld' xResult'
 
  | otherwise
  = error "ddc-core-flow: wrapResultExp can't get type annotations"
@@ -77,8 +95,8 @@ unwrapResult _
 --   The new types have a World# token threaded though them, which make them
 --   suitable for applying the Thread transform when converting a Core Flow
 --   program to a language that needs such state threading (like GHC Core).
-threadType :: Name -> Maybe (Type Name)
-threadType n
+threadType :: Name -> Type Name -> Maybe (Type Name)
+threadType n _
  = case n of
         -- Assignables --------------------------
         -- new#  :: [a : Data]. a -> World# -> T2# (World#, Ref# a)

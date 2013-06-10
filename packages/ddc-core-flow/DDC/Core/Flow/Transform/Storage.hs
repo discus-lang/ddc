@@ -1,4 +1,9 @@
 
+
+-- TODO: This is dead code. 
+--       The Storage transform isn't used anymore.
+--       Please delete me.
+--
 module DDC.Core.Flow.Transform.Storage
         (storageModule)
 where

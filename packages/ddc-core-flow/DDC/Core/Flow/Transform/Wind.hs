@@ -289,7 +289,8 @@ windBodyX refMap context xx
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
                 -- Name of the new loop function.
-                nLoop   = NameVar "loop"                             -- TODO: make a fresh name
+                TVar (UName (NameVar strK))    = tK
+                nLoop   = NameVar ("loop_" ++ strK)     -- TODO: make a fresh name
                 bLoop   = BName nLoop tLoop
                 uLoop   = UName nLoop
 

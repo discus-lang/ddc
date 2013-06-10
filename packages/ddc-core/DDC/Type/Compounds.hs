@@ -16,6 +16,7 @@ module DDC.Type.Compounds
         , namedBoundMatchesBind
         , takeSubstBoundOfBind
         , takeSubstBoundsOfBinds
+        , replaceTypeOfBound
 
           -- * Kinds
         , kFun
@@ -200,7 +201,17 @@ takeSubstBoundsOfBinds bs
         go level (BAnon _   : bs') = UIx level : go (level + 1) bs'
         go level (BNone _   : bs') =             go level bs'
 
-            
+
+-- | If this `Bound` is a `UPrim` then replace it's embedded type with a new
+--   one, otherwise return it unharmed.
+replaceTypeOfBound :: Type n -> Bound n -> Bound n
+replaceTypeOfBound t uu
+ = case uu of
+        UName{}         -> uu
+        UPrim n _       -> UPrim n t
+        UIx{}           -> uu
+
+
 -- Variables ------------------------------------------------------------------
 -- | Construct a deBruijn index.
 tIx :: Kind n -> Int -> Type n
