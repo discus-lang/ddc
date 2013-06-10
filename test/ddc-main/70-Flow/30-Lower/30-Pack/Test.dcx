@@ -70,4 +70,30 @@ filter  [k0 : Rate] [a : Data]
                   in    vectorOfSeries# [k2] [a] s2))
 ;;
 
+-- Sequential filter.
+-- Ensure we can handle two selector contexts on the same input.
+:flow-lower..
+module Test with letrec
+filter  [k0 : Rate] [a : Data]
+        (f  : a -> Bool#)  (g : a -> Bool#)
+        (s0 : Series# k0 a)
+        : Tuple2# (Vector# a) (Vector# a)
+ = do   
+        flags1  = map# [k0] [a] [Bool#] (\(x : a). f x) s0
+        flags2  = map# [k0] [a] [Bool#] (\(x : a). f x) s0
+
+        s1 = mkSel1# [k0] [Vector# a] flags1
+         (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
+          let  s1      = pack# [k0] [k1] [a] sel1 s0 in
+               vectorOfSeries# [k1] [a] s1)
+         
+        s2 = mkSel1# [k0] [Vector# a] flags2
+         (/\(k2 : Rate). \(sel2 : Sel1# k0 k2).
+          let  s2      = pack# [k0] [k2] [a] sel2 s0 in
+               vectorOfSeries# [k2] [a] s2)
+
+        T2# [Vector# a] [Vector# a] s1 s2
+;;
+
+
 

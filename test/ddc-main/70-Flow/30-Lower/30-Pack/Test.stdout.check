@@ -124,4 +124,48 @@ letrec {
       x8
 }
 
+-- Sequential filter.
+-- Ensure we can handle two selector contexts on the same input.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Tuple2# (Vector# a) (Vector# a)
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(s0 : Series# k0 a).
+      let k1__count : Ref# Int# = new# [Int#] 0i# in
+      let k2__count : Ref# Int# = new# [Int#] 0i# in
+      let x4 : Vector# a = newVectorR# [a] [k0] in
+      let x7 : Vector# a = newVectorR# [a] [k0] in
+      let _ : Unit
+            = loop# [k0]
+                  (\(^ : Int#).
+                   let s0__elem : a = next# [a] [k0] s0 ^0 in
+                   let x1__elem : Bool#
+                         = (\(x : a). f x) s0__elem in
+                   let x3__elem : Bool#
+                         = (\(x : a). f x) s0__elem in
+                   let x1__use__elem : Bool# = x1__elem in
+                   let x3__use__elem : Bool# = x3__elem in
+                   let _ : Unit
+                         = guard# k1__count x1__use__elem
+                               (\(^ : Int#).
+                                let _ : Unit = writeVector# [a] x4 ^0 s0__elem in
+                                ()) in
+                   let _ : Unit
+                         = guard# k2__count x3__use__elem
+                               (\(^ : Int#).
+                                let _ : Unit = writeVector# [a] x7 ^0 s0__elem in
+                                ()) in
+                   ()) in
+      let ^ : Int# = read# [Int#] k1__count in
+      let x4 : Vector# a = sliceVector# [a] ^0 x4 in
+      let ^ : Int# = read# [Int#] k2__count in
+      let x7 : Vector# a = sliceVector# [a] ^0 x7 in
+      let x6 : Vector# a = x4 in
+      let x9 : Vector# a = x7 in
+      let x10 : Tuple2# (Vector# a) (Vector# a)
+            = T2# [Vector# a] [Vector# a] x6 x9 in
+      x10
+}
+
+
 
