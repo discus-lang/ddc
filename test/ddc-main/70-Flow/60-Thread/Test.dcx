@@ -1,33 +1,60 @@
 
--- Ensure world threading works into loop and guard contexts.
+-- Check world threading works into loop and guard combaintors.
+-- This is before the wind-transform that eliminates these combinators.
 :flow-thread..
-module Test with
-letrec {
-  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
-    = /\(k0 : Rate)./\(a : Data).
-       \(f g : a -> Bool#).\(s0 : Series# k0 a).
-      let k1__count : Ref# Int# = new# [Int#] 0i# in
-      let k2__count : Ref# Int# = new# [Int#] 0i# in
-      let x4 : Vector# a
-            = newVectorN# [a] [k0] (rateOfSeries# [k0] [a] s0) in
-      let _ : Unit
-            = loopn# [k0] (rateOfSeries# [k0] [a] s0)
-                  (\(x0 : Int#).
-                   let s0__elem : a = next# [a] [k0] s0 x0 in
-                   let x1__elem : Bool#
-                         = (\(x : a). f x) s0__elem in
-                   let _ : Unit
-                         = guard# k1__count x1__elem
-                               (\(x1 : Int#).
-                                let x3__elem : Bool#
-                                      = (\(x : a). g x) s0__elem in
-                                let _ : Unit
-                                      = guard# k2__count x3__elem
-                                            (\(x2 : Int#).
-                                             let _ : Unit = writeVector# [a] x4 x2 s0__elem in
-                                             ()) in
-                                ()) in
-                   ()) in
-      x4
-}
+module Test with letrec
+filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
+  = /\(k0 : Rate)./\(a : Data).
+     \(f g : a -> Bool#).\(s0 : Series# k0 a).
+    let k1__count : Ref# Int# = new# [Int#] 0i# in
+    let k2__count : Ref# Int# = new# [Int#] 0i# in
+    let x4 : Vector# a
+          = newVectorN# [a] [k0] (rateOfSeries# [k0] [a] s0) in
+    let _ : Unit
+          = loopn# [k0] (rateOfSeries# [k0] [a] s0)
+                (\(x0 : Int#).
+                 let s0__elem : a = next# [a] [k0] s0 x0 in
+                 let x1__elem : Bool#
+                       = (\(x : a). f x) s0__elem in
+                 let _ : Unit
+                       = guard# k1__count x1__elem
+                             (\(x1 : Int#).
+                              let x3__elem : Bool#
+                                    = (\(x : a). g x) s0__elem in
+                              let _ : Unit
+                                    = guard# k2__count x3__elem
+                                          (\(x2 : Int#).
+                                           let _ : Unit = writeVector# [a] x4 x2 s0__elem in
+                                           ()) in
+                              ()) in
+                 ()) in
+    x4
+;;
+
+
+-- Check world threading works after the wind tranform.
+-- Where we have explicit tail-recursive loops.
+:flow-thread..
+module Test with letrec
+map_map : [k : Rate].Series# k Int# -> Vector# Int#
+  = /\(k : Rate).
+     \(s_aub : Series# k Int#).
+    let x6 : Vector# Int#
+          = newVectorN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) in
+    letrec {
+      loop_k : Int# -> Unit
+        = \(x0 : Int#).
+          case x0 of {
+            0i# -> ();
+            _   -> let s_aub__elem : Int# = next# [Int#] [k] s_aub x0 in
+                   let x2__elem : Int#    = add#  [Int#] s_aub__elem 1i# in
+                   let x4__elem : Int#    = mul#  [Int#] x2__elem 2i# in
+                   let _        : Unit    = writeVector# [Int#] x6 x0 x4__elem in
+                   loop_k (add# [Int#] x0 1i#)
+          }
+    } in
+    let _ : Unit
+          = loop_k
+                (natOfRateNat# [k] (rateOfSeries# [k] [Int#] s_aub)) in
+    x6;
 ;;

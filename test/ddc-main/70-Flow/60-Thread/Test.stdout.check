@@ -1,5 +1,6 @@
 
--- Ensure world threading works into loop and guard contexts.
+-- Check world threading works into loop and guard combaintors.
+-- This is before the wind-transform that eliminates these combinators.
 module Test with
 letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> World# -> Tuple2# World# (Vector# a)
@@ -28,4 +29,34 @@ letrec {
                         ^0) ^0 in
                ^0) ^0 in
       T2# [World#] [Vector# a] ^0 x4
+}
+
+
+-- Check world threading works after the wind tranform.
+-- Where we have explicit tail-recursive loops.
+module Test with
+letrec {
+  map_map : [k : Rate].Series# k Int# -> World# -> Tuple2# World# (Vector# Int#)
+    = /\(k : Rate).
+       \(s_aub : Series# k Int#).\(^ : World#).
+      caselet T2# (^ : World#) (x6 : Vector# Int#) 
+        = newVectorN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) ^0 in
+      letrec {
+        loop_k : Int# -> World# -> World#
+          = \(x0 : Int#).\(^ : World#).
+            case x0 of {
+              0i#  
+               -> ^0;
+              _ 
+               -> caselet T2# (^ : World#) (s_aub__elem : Int#)  = next# [Int#] [k] s_aub x0 ^0 in
+                  let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
+                  let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
+                  caselet T1# (^ : World#)  = writeVector# [Int#] x6 x0 x4__elem ^0 in
+                  loop_k (add# [Int#] x0 1i#) ^0
+            }
+      } in
+      let _ : Unit
+            = loop_k
+                  (natOfRateNat# [k] (rateOfSeries# [k] [Int#] s_aub)) in
+      T2# [World#] [Vector# Int#] ^0 x6
 }
