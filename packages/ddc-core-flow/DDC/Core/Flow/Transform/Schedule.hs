@@ -13,7 +13,6 @@ import DDC.Core.Exp
 import DDC.Base.Pretty
 import Control.Monad
 
-
 -- | Create loops from a list of operators.
 --   TODO: allow the operators to be at different rates, 
 --         and create multiple loops as needed.
