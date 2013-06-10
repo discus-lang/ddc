@@ -166,6 +166,13 @@ instance Forward Exp where
         XLam a b x      -> liftM    (XLam (snd a) b) (down x)
         XApp a x1 x2    -> liftM2   (XApp (snd a))   (down x1) (down x2)
 
+        -- Always float last let-binding into its use.
+        --   let x = exp in x => exp
+        XLet _ (LLet _mode b x1) (XVar _ u)
+         |  boundMatchesBind u b
+         ,  configFloatLetBody config
+         -> down x1
+
         -- Always float atomic bindings (variables, constructors)
         XLet _ (LLet _mode b x1) x2
          | isAtomX x1
@@ -176,13 +183,6 @@ instance Forward Exp where
 
                 -- Slow, but handles anonymous binders and shadowing
                 down $ S.substituteXX b x1 x2
-
-        -- Always float last let-binding into its use.
-        --   let x = exp in x => exp
-        XLet _ (LLet _mode b x1) (XVar _ u)
-         |  boundMatchesBind u b
-         ,  configFloatLetBody config
-         -> down x1
 
         XLet (UsedMap um, a') lts@(LLet _mode (BName n _) x1) x2
          -> do  

@@ -127,7 +127,7 @@ threadType n _
                         `tFunPE` tWorld `tFunPE` tWorld
 
         -- Vectors -------------------------------
-        -- newVector#   :: [a : Data]. Nat# -> World# -> T2# (World#, Vector# a)
+        -- newVector#   :: [a : Data]. Nat# -> World# -> T2# World# (Vector# a)
         NameOpStore OpStoreNewVector
          -> Just $ tForall kData
                  $ \tA -> tNat `tFunPE` tWorld 
@@ -142,7 +142,7 @@ threadType n _
                         `tFunPE` tWorld 
                         `tFunPE` (tTuple2 tWorld (tVector tA))
 
-        -- readVector#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# (World#, a)
+        -- readVector#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# World# a
         NameOpStore OpStoreReadVector
          -> Just $ tForall kData
                  $ \tA -> tA `tFunPE` tVector tA `tFunPE` tNat `tFunPE` tWorld
@@ -154,7 +154,7 @@ threadType n _
                  $ \tA -> tA `tFunPE` tVector tA `tFunPE` tNat `tFunPE` tA 
                         `tFunPE` tWorld `tFunPE` tWorld
 
-        -- sliceVector#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# (World#, Vector# a)
+        -- sliceVector#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# World# (Vector# a)
         NameOpStore OpStoreSliceVector
          -> Just $ tForall kData
                  $ \tA -> tNat `tFunPE` tVector tA `tFunPE` tWorld 
