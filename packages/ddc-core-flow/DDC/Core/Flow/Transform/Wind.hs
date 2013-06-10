@@ -180,8 +180,18 @@ slurpArgUpdates _ _ args []
 -- | Build an expression that increments a natural.
 xIncrement :: a -> Exp a Name -> Exp a Name
 xIncrement a xx
-        = xApps a (XVar a (UName (NamePrimArith PrimArithAdd)))
+        = xApps a (XVar a (UPrim (NamePrimArith PrimArithAdd) 
+                                 (typePrimArith PrimArithAdd)))
                   [ XType tNat, xx, xNat a 1 ]
+
+
+-- | Build an expression that substracts two integers.
+xSubInt    :: a -> Exp a Name -> Exp a Name -> Exp a Name
+xSubInt a x1 x2
+        = xApps a (XVar a (UPrim (NamePrimArith PrimArithSub)
+                                 (typePrimArith PrimArithSub)))
+                  [ XType tNat, x1, x2]
+
 
 -------------------------------------------------------------------------------
 windModule :: Module () Name -> Module () Name
@@ -294,6 +304,10 @@ windBodyX refMap context xx
                 bLoop   = BName nLoop tLoop
                 uLoop   = UName nLoop
 
+                nLength = NameVar (strK ++ "_length")   -- TODO: make a fresh name
+                bLength = BName nLength tNat
+                uLength = UName nLength
+
                 -- RefMap for before the loop, in the body, and after the loop.
                 refMap_init  = refMap
                 refMap_body  = bumpAllVersionsInRefMap refMap
@@ -333,7 +347,7 @@ windBodyX refMap context xx
                 -- Create the loop driver.
                 --  This is the code that tests for the end-of-loop condition.
                 xDriver = xLams a (bIx : bsAccs) 
-                        $ XCase a (XVar a (UName nIx)) 
+                        $ XCase a (xSubInt a (XVar a uLength) (XVar a (UName nIx)))
                                 [ AAlt (PData (dcNat 0) []) xResult
                                 , AAlt PDefault xBody' ]
 
@@ -342,7 +356,7 @@ windBodyX refMap context xx
                                 [XVar a u | u <- usAccs]
 
                 -- Initial values of index and accumulators.
-                xsInit  = xNatOfRateNat tK xLength
+                xsInit  = xNat a 0 
                         : [ XVar a (UName nVar)
                                 | info  <- refMapElems refMap_init
                                 , let Just nVar = nameOfRefInfo info ]
@@ -356,7 +370,8 @@ windBodyX refMap context xx
                 x2'     = windBodyX refMap_final context x2
 
 
-            in  XLet  a  (LRec [(bLoop, xDriver)]) 
+            in  XLet  a  (LLet LetStrict bLength (xNatOfRateNat tK xLength))
+              $ XLet  a  (LRec [(bLoop, xDriver)]) 
               $ runUnpackLoop 
                         a 
                         tsAccs                          -- Types of accumulators.

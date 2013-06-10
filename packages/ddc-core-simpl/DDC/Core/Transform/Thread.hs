@@ -288,6 +288,23 @@ threadProcBody config context kenv tenv xx
                 pat'    = mkPat (BAnon tWorld) b
             in  XCase (annotTail a) x' [AAlt pat' x2']
 
+
+        -- Let bound effectful function.
+        -- Needs to be converted to a 'case'.
+        XLet a (LLet _ b x1) x2
+         | Just (XVar _ (UName n), _xsArgs) <- takeXApps x1
+         , elem (ContextFun n) context
+         , Just mkPat   <- configThreadPat config n
+         -> let 
+                tWorld  = configTokenType config
+                a'      = annotTail a
+                x1'     = XApp a' (reannotate annotTail x1) (XVar a' (UIx 0))
+                x2'     = threadProcBody config context kenv tenv x2
+                pat'    = mkPat (BAnon tWorld) b
+
+            in  XCase (annotTail a) x1' [AAlt pat' x2']
+
+
         -- A pure binding that doesn't need the token.
         XLet a lts x
          -> let (bks, bts) = bindsOfLets lts
@@ -310,6 +327,7 @@ threadProcBody config context kenv tenv xx
                                 (AAlt (PData dc (BAnon tWorld : bs)) xBody)
 
             in  XCase (annotTail a) xScrut' [alt']
+
 
 
         -- Pure case. 
