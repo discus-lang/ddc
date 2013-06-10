@@ -73,6 +73,12 @@ wrapResultExp xWorld xResult
           -> xApps () (XCon () (dcTupleN 4))
                 [XType tWorld', xT1, xT2, xT3, xWorld', x1, x2, x3]
 
+         Just (dc, [xT1, xT2, xT3, xT4, x1, x2, x3, x4])
+          | dc == dcTupleN 4
+          -> xApps () (XCon () (dcTupleN 5))
+                [ XType tWorld', xT1, xT2, xT3, xT4
+                , xWorld',       x1,  x2,  x3,  x4]
+
          _ -> xTuple2 () tWorld' tResult xWorld' xResult'
 
  | otherwise

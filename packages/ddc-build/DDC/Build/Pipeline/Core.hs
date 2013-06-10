@@ -34,7 +34,7 @@ import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
 
 import qualified DDC.Core.Transform.Reannotate          as C
-import qualified DDC.Core.Transform.Forward             as C
+import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Simplifier                    as C
 
@@ -294,16 +294,18 @@ pipeFlow !mm !pp
 
                 -- Force all worker functions to be floated forward into their
                 -- use sites.
-                isFloatable lts
+                isFloatable lts                                 -- TODO: cleanup
                  = case lts of
                     C.LLet _ (C.BName n _) _ 
                       | Just{}   <- Map.lookup n nsWorker
-                      -> C.FloatForce
-                    _ -> C.FloatAllow
+                      -> Forward.FloatForce
+                    _ -> Forward.FloatAllow
+
+                config = Forward.Config isFloatable False
 
                 mm_float
-                 = C.result $ C.forwardModule Flow.profile 
-                                isFloatable mm_prep
+                 = C.result $ Forward.forwardModule Flow.profile 
+                                config mm_prep
 
                 -- Ensure the final code is fully named.
                 namifierT       = C.makeNamifier Flow.freshT Env.empty

@@ -17,7 +17,7 @@ import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Eta           as Eta
 import DDC.Core.Transform.Prune
-import DDC.Core.Transform.Forward
+import DDC.Core.Transform.Forward       as Forward
 import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
@@ -85,7 +85,11 @@ applyTransform !profile !_kenv !_tenv !spec !mm
         Beta             -> return $ result $ betaReduce False mm
         BetaLets         -> return $ result $ betaReduce True  mm
         Eta config       -> return $ result $ Eta.etaModule config profile mm
-        Forward          -> return $ result $ forwardModule profile (const FloatAllow) mm
+
+        Forward          
+         -> let config  = Forward.Config (const FloatAllow) False
+            in  return $ result $ forwardModule profile config mm
+
         Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef Set.empty mm
@@ -233,7 +237,11 @@ applyTransformX !profile !kenv !tenv !spec !xx
         BetaLets          -> return $ betaReduce True  xx
         Eta config        -> return $ Eta.etaX config profile kenv tenv xx
         Prune             -> return $ pruneX   profile kenv tenv xx
-        Forward           -> return $ forwardX profile (const FloatAllow) xx
+
+        Forward          
+         -> let config  = Forward.Config (const FloatAllow) False
+            in  return $ forwardX profile config xx
+
         Bubble            -> res    $ bubbleX kenv tenv xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewriteX rules xx

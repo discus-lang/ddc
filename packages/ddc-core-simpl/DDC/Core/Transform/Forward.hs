@@ -3,6 +3,7 @@
 module DDC.Core.Transform.Forward
         ( ForwardInfo   (..)
         , FloatControl  (..)
+        , Config(..)
         , forwardModule
         , forwardX)
 where
@@ -14,6 +15,7 @@ import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment
 import DDC.Core.Predicates
+import DDC.Core.Compounds
 import Data.Map                 (Map)
 import Control.Monad
 import Control.Monad.Writer	(Writer, runWriter, tell)
@@ -60,6 +62,10 @@ data FloatControl
         | FloatForce    -- ^ Force   a binding to be floated, at all times.
         deriving (Eq, Show)
 
+data Config a n
+        = Config
+        { configFloatControl    :: Lets a n -> FloatControl
+        , configFloatLetBody    :: Bool }
 
 -------------------------------------------------------------------------------
 -- | Float let-bindings in a module with a single use forward into
@@ -67,16 +73,14 @@ data FloatControl
 forwardModule 
         :: Ord n
         => Profile n    -- ^ Language profile
-        -> (Lets a n -> FloatControl)   
-                        -- ^ Additional predicate to indicate whether 
-                        --   a binding should ever be floated.
+        -> Config a n
         -> Module a n 
         -> TransformResult (Module a n)
 
-forwardModule profile isFloatable mm
+forwardModule profile config mm
  = let  (mm', info)
          = runWriter
-                $ forwardWith profile isFloatable Map.empty 
+                $ forwardWith profile config Map.empty 
                 $ usageModule mm
 
         progress (ForwardInfo _ s f)
@@ -93,15 +97,13 @@ forwardModule profile isFloatable mm
 --   their use-sites.
 forwardX :: Ord n
          => Profile n   -- ^ Language profile.
-         -> (Lets a n -> FloatControl)  
-                        -- ^ Additional predicate to indicate whether
-                        --   a binding should ever be floated.
+         -> Config a n 
          -> Exp a n                      
          -> TransformResult (Exp a n)
 
-forwardX profile isFloatable xx
+forwardX profile config xx
  = let  (x',info) = runWriter
-		  $ forwardWith profile isFloatable Map.empty
+		  $ forwardWith profile config Map.empty
 		  $ usageX xx
 
         progress (ForwardInfo _ s f) 
@@ -120,15 +122,13 @@ class Forward (c :: * -> * -> *) where
  forwardWith 
         :: Ord n
         => Profile n            -- ^ Language profile.
-        -> (Lets a n -> FloatControl)   
-                                -- ^ Additional predicate to indicate whether
-                                --   a binding should ever be floated.
+        -> Config a n
         -> Map n (Exp a n)      -- ^ Bindings currently being carried forward.
         -> c (UsedMap n, a) n
         -> Writer ForwardInfo (c a n)
 
 instance Forward Module where
- forwardWith profile isFloatable bindings 
+ forwardWith profile config bindings 
         (ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = exportKinds
@@ -137,7 +137,7 @@ instance Forward Module where
                 , moduleImportTypes     = importTypes
                 , moduleBody            = body })
 
-  = do	body' <- forwardWith profile isFloatable bindings body
+  = do	body' <- forwardWith profile config bindings body
 	return ModuleCore
 		{ moduleName            = name
 		, moduleExportKinds     = exportKinds
@@ -148,9 +148,9 @@ instance Forward Module where
 
 
 instance Forward Exp where
- forwardWith profile isFloatable bindings xx
+ forwardWith profile config bindings xx
   = {-# SCC forwardWith #-}
-    let down    = forwardWith profile isFloatable bindings 
+    let down    = forwardWith profile config bindings 
     in case xx of
         XVar a u@(UName n)
          -> case Map.lookup n bindings of
@@ -177,9 +177,17 @@ instance Forward Exp where
                 -- Slow, but handles anonymous binders and shadowing
                 down $ S.substituteXX b x1 x2
 
+        -- Always float last let-binding into its use.
+        --   let x = exp in x => exp
+        XLet _ (LLet _mode b x1) (XVar _ u)
+         |  boundMatchesBind u b
+         ,  configFloatLetBody config
+         -> down x1
+
         XLet (UsedMap um, a') lts@(LLet _mode (BName n _) x1) x2
          -> do  
-                let control    = isFloatable $ reannotate snd lts
+                let control    = configFloatControl config 
+                               $ reannotate snd lts
 
                 let isFun      = isXLam x1 || isXLAM x1
 
@@ -203,7 +211,7 @@ instance Forward Exp where
 
                         x1'             <- down x1
                         let bindings'   = Map.insert n x1' bindings
-                        forwardWith profile isFloatable bindings' x2
+                        forwardWith profile config bindings' x2
 
                  else do        
                         tell mempty { infoInspected = 1}
@@ -225,8 +233,8 @@ filterUsedInCasts = filter notCast
 
 
 instance Forward Cast where
- forwardWith profile isFloatable bindings xx
-  = let down    = forwardWith profile isFloatable bindings
+ forwardWith profile config bindings xx
+  = let down    = forwardWith profile config bindings
     in case xx of
         CastWeakenEffect eff    -> return $ CastWeakenEffect eff
         CastWeakenClosure xs    -> liftM    CastWeakenClosure (mapM down xs)
@@ -235,8 +243,8 @@ instance Forward Cast where
 
 
 instance Forward Lets where
- forwardWith profile isFloatable bindings lts
-  = let down    = forwardWith profile isFloatable bindings
+ forwardWith profile config bindings lts
+  = let down    = forwardWith profile config bindings
     in case lts of
         LLet mode b x   -> liftM (LLet mode b) (down x)
 
@@ -252,6 +260,6 @@ instance Forward Lets where
 
 
 instance Forward Alt where
- forwardWith profile isFloatable bindings (AAlt p x)
-  = liftM (AAlt p) (forwardWith profile isFloatable bindings x)
+ forwardWith profile config bindings (AAlt p x)
+  = liftM (AAlt p) (forwardWith profile config bindings x)
 
