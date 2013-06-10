@@ -312,7 +312,7 @@ windBodyX refMap context xx
                 -- The loop function itself will return us a tuple
                 -- containing the final value of all the accumulators.
                 tIndex  = typeOfBind bIx
-                tResult = tTupleN tsAccs
+                tResult = loopResultT tsAccs
 
                 -- Type of the loop function.
                 tLoop   = foldr tFunPE tResult (tIndex : tsAccs)
@@ -337,10 +337,9 @@ windBodyX refMap context xx
                                 [ AAlt (PData (dcNat 0) []) xResult
                                 , AAlt PDefault xBody' ]
 
-                xResult = xApps a (XCon a (dcTupleN $ length tsAccs)) 
-                                  (  [XType t  | t <- tsAccs]
-                                  ++ [XVar a u | u <- usAccs] )
-
+                xResult = loopResultX a 
+                                tsAccs
+                                [XVar a u | u <- usAccs]
 
                 -- Initial values of index and accumulators.
                 xsInit  = xNatOfRateNat tK xLength
@@ -358,8 +357,12 @@ windBodyX refMap context xx
 
 
             in  XLet  a  (LRec [(bLoop, xDriver)]) 
-             $  XCase a (xApps a (XVar a uLoop) xsInit)
-                        [ AAlt (PData (dcTupleN $ length tsAccs) bsFinal) x2' ]
+              $ runUnpackLoop 
+                        a 
+                        tsAccs                          -- Types of accumulators.
+                        (xApps a (XVar a uLoop) xsInit) -- Expression to invoke loop
+                        bsFinal                         -- Binders for final accumulators
+                        x2'                             -- Continuation expression
 
 
         -----------------------------------------
@@ -427,4 +430,56 @@ windBodyX refMap context xx
 
         XType{}         -> xx
         XWitness{}      -> xx
+
+
+-------------------------------------------------------------------------------
+-- | Make the type of a loop result, 
+--   given the types of the accumulators for that loop. 
+--
+--   If we have no accumulators, return Unit.
+--   If we have just one, return that value.
+--   If more, then package them into a tuple.
+--
+loopResultT :: [Type Name] -> Type Name
+loopResultT tsAccs
+ = case tsAccs of
+        []      -> tUnit
+        [tAcc]  -> tAcc
+        _       -> tTupleN tsAccs
+
+
+-- | Make a loop result,
+--   given the expressions for the accumulators.
+loopResultX :: a -> [Type Name] -> [Exp a Name] -> Exp a Name
+loopResultX a tsAccs xsAccs
+ = case xsAccs of
+        []      -> xUnit a
+        [x]     -> x
+        _       -> xApps a (XCon a (dcTupleN $ length tsAccs)) 
+                           ([XType t  | t <- tsAccs] ++ xsAccs)
+
+
+-- | Call a loop, and unpack its result.
+runUnpackLoop 
+        :: a 
+        -> [Type Name]  -- ^ Types of accumulators.
+        -> Exp a Name   -- ^ Expression to invoke the loop.
+        -> [Bind Name]  -- ^ Binders for the accumulated values.
+        -> Exp a Name   -- ^ Continuation expression.
+        -> Exp a Name
+
+runUnpackLoop a tsAccs xRunLoop bsAcc xCont
+ | []   <- tsAccs
+ =      XLet a (LLet LetStrict (BNone tUnit) xRunLoop) xCont
+
+ | [_t]  <- tsAccs
+ , [b]   <- bsAcc
+ =      XLet a (LLet LetStrict b xRunLoop) xCont
+
+ | otherwise
+ =      XCase a xRunLoop
+                [ AAlt (PData (dcTupleN $ length tsAccs) bsAcc) xCont ]
+
+
+
 

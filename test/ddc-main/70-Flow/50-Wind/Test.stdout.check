@@ -1,4 +1,33 @@
 
+
+module Main with
+letrec {
+  lower_map_map_rq2 : [k_d : Rate].Series# k_d Int# -> Vector# Int#
+    = /\(k_d : Rate).
+       \(s_aub : Series# k_d Int#).
+      let x6 : Vector# Int#
+            = newVectorN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+      letrec {
+        loop_k_d : Int# -> Unit
+          = \(x0 : Int#).
+            case x0 of {
+              0i#  
+               -> ();
+              _ 
+               -> let s_aub__elem : Int# = next# [Int#] [k_d] s_aub x0 in
+                  let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
+                  let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
+                  let _ : Unit = writeVector# [Int#] x6 x0 x4__elem in
+                  loop_k_d (add# [Int#] x0 1i#)
+            }
+      } in
+      let _ : Unit
+            = loop_k_d
+                  (natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub)) in
+      x6
+}
+
+
 module Main 
 imports {
         maxx :: Int# -> Int# -> Int#;

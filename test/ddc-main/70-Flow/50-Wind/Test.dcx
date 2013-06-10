@@ -1,4 +1,24 @@
 
+
+:flow-wind..
+module Main with letrec
+lower_map_map_rq2 : [k_d : Rate].Series# k_d Int# -> Vector# Int#
+    = /\(k_d : Rate).
+       \(s_aub : Series# k_d Int#).
+      let x6 : Vector# Int#
+            = newVectorN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+      let _ : Unit
+            = loopn# [k_d] (rateOfSeries# [k_d] [Int#] s_aub)
+                  (\(x0 : Int#).
+                   let s_aub__elem : Int# = next# [Int#] [k_d] s_aub x0 in
+                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
+                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
+                   let _ : Unit = writeVector# [Int#] x6 x0 x4__elem in
+                   ()) in
+      x6;
+;;
+
+
 :flow-wind..
 module Main
 imports {

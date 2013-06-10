@@ -40,6 +40,7 @@ Library
         DDC.Driver.Command.Flow.Lower
         DDC.Driver.Command.Flow.Prep
         DDC.Driver.Command.Flow.Thread
+        DDC.Driver.Command.Flow.Wind
 
         DDC.Driver.Command.Ast
         DDC.Driver.Command.BaseBuild
