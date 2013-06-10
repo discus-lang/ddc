@@ -110,8 +110,8 @@ extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
 extractLoop NestEmpty
  = []
 
-extractLoop (NestList _)
- = error "extractLoop: NestList"
+extractLoop (NestList nests)
+ = concatMap extractLoop nests
 
 -------------------------------------------------------------------------------
 -- | Extract loop starting code.
