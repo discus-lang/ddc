@@ -58,3 +58,39 @@ map_map : [k : Rate].Series# k Int# -> Vector# Int#
                 (natOfRateNat# [k] (rateOfSeries# [k] [Int#] s_aub)) in
     x6;
 ;;
+
+
+-- Double fold fusion
+:flow-thread..
+module Test with letrec
+lower_ffold_rqB : [k_c : Rate].Series# k_c Int# -> Int#
+  = /\(k_c : Rate).
+     \(s_au5 : Series# k_c Int#).
+    let x3__acc_0 : Int# = 0i# in
+    let x8__acc_0 : Int# = 1i# in
+    let k_c_length : Int#
+          = natOfRateNat# [k_c] (rateOfSeries# [k_c] [Int#] s_au5) in
+    letrec {
+      loop_k_c : Int# -> Int# -> Int# -> Tuple2# Int# Int#
+        = \(x1 x3__acc_1 x8__acc_1 : Int#).
+          case sub# [Int#] k_c_length x1 of {
+            0i#  
+             -> T2# [Int#] [Int#] x3__acc_1 x8__acc_1;
+            _ 
+             -> let s_au5__elem : Int# = next# [Int#] [k_c] s_au5 x1 in
+                let x0 : Int# = x3__acc_1 in
+                let x3__acc_2 : Int# = add# [Int#] x0 s_au5__elem in
+                let x5 : Int# = x8__acc_1 in
+                let x8__acc_2 : Int# = mul# [Int#] x5 s_au5__elem in
+                loop_k_c (add# [Int#] x1 1i#) x3__acc_2 x8__acc_2
+          }
+    } in
+    case loop_k_c 0i# x3__acc_0 x8__acc_0 of
+     T2#(x3__acc_2 : Int#) (x8__acc_2 : Int#)
+      -> let x3  : Int# = x3__acc_2 in
+         let x8  : Int# = x8__acc_2 in
+         let x10 : Int# = add# [Int#] x3 x8 in
+         x10;
+;;
+
+

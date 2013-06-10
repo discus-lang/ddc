@@ -61,7 +61,8 @@ wrapResultExp xWorld xResult
         tResult  = annotType aResult
         xWorld'  = reannotate annotTail xWorld
         xResult' = reannotate annotTail xResult
-   in   case takeXConApps xResult' of
+   in   
+        case takeXConApps xResult' of
          Just (dc, [xT1, xT2, x1, x2])                  -- TODO: handle tuple arities generically
           | dc == dcTupleN 2
           -> xApps () (XCon () (dcTupleN 3))
@@ -79,16 +80,18 @@ wrapResultExp xWorld xResult
 
 
 -- | Make a pattern to unwrap the result of a stateful computation.
-unwrapResult   :: Name -> Maybe (Bind Name -> Bind Name -> Pat Name)
+unwrapResult   :: Name -> Maybe (Bind Name -> [Bind Name] -> Pat Name)
 unwrapResult _
  = Just unwrap
 
- where  unwrap bWorld bResult 
-         | typeOfBind bResult == tUnit
+ where  unwrap bWorld bsResult 
+         | [bResult]    <- bsResult
+         , typeOfBind bResult == tUnit
          = PData dcTuple1 [bWorld] 
 
          | otherwise
-         = PData dcTuple2 [bWorld, bResult]
+         = PData (dcTupleN (length (bWorld : bsResult)))
+                 (bWorld : bsResult)
 
 
 -- | Get the new type for a stateful primop.

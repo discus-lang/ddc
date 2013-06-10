@@ -7,10 +7,12 @@ letrec {
        \(s_aub : Series# k_d Int#).
       let x6 : Vector# Int#
             = newVectorN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+      let k_d_length : Int#
+            = natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
       letrec {
         loop_k_d : Int# -> Unit
           = \(x0 : Int#).
-            case x0 of {
+            case sub# [Int#] k_d_length x0 of {
               0i#  
                -> ();
               _ 
@@ -21,9 +23,7 @@ letrec {
                   loop_k_d (add# [Int#] x0 1i#)
             }
       } in
-      let _ : Unit
-            = loop_k_d
-                  (natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub)) in
+      let _ : Unit = loop_k_d 0i# in
       x6
 }
 
@@ -40,10 +40,12 @@ letrec {
       let x5 : Vector# Int#
             = newVectorN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
       let x9__acc_0 : Int# = 0i# in
+      let k_length : Int#
+            = natOfRateNat# [k] (rateOfSeries# [k] [Int#] s1) in
       letrec {
         loop_k : Int# -> Int# -> Int# -> Tuple2# Int# Int#
           = \(x2 k2__count_1 x9__acc_1 : Int#).
-            case x2 of {
+            case sub# [Int#] k_length x2 of {
               0i#  
                -> T2# [Int#] [Int#] k2__count_1 x9__acc_1;
               _ 
@@ -62,11 +64,11 @@ letrec {
                   }
             }
       } in
-      caselet T2# (k2__count_2 : Int#) (x9__acc_2 : Int#) 
-        = loop_k
-              (natOfRateNat# [k] (rateOfSeries# [k] [Int#] s1)) k2__count_0 x9__acc_0 in
+      caselet T2# (k2__count_2 : Int#) (x9__acc_2 : Int#)  = loop_k 0i# k2__count_0 x9__acc_0 in
       let x4 : Int# = k2__count_2 in
       let x6 : Vector# Int# = sliceVector# [Int#] x4 x5 in
       let x9 : Int# = x9__acc_2 in
       T2# [Vector# Int#] [Int#] x6 x9
 }
+
+

@@ -57,7 +57,7 @@ data Config a n
 
           -- | Make a pattern which binds the world argument
           --   from a threaded primop.
-        , configThreadPat       :: n -> Maybe (Bind n -> Bind n -> Pat n)
+        , configThreadPat       :: n -> Maybe (Bind n -> [Bind n] -> Pat n)
         }
 
 
@@ -285,7 +285,7 @@ threadProcBody config context kenv tenv xx
                 -- Thread into let-expression body.
                 tenv'   = Env.extend b tenv
                 x2'     = threadProcBody config context kenv tenv' x2
-                pat'    = mkPat (BAnon tWorld) b
+                pat'    = mkPat (BAnon tWorld) [b]
             in  XCase (annotTail a) x' [AAlt pat' x2']
 
 
@@ -300,7 +300,7 @@ threadProcBody config context kenv tenv xx
                 a'      = annotTail a
                 x1'     = XApp a' (reannotate annotTail x1) (XVar a' (UIx 0))
                 x2'     = threadProcBody config context kenv tenv x2
-                pat'    = mkPat (BAnon tWorld) b
+                pat'    = mkPat (BAnon tWorld) [b]
 
             in  XCase (annotTail a) x1' [AAlt pat' x2']
 
@@ -316,15 +316,17 @@ threadProcBody config context kenv tenv xx
 
 
         -- Case of an effectful function.
-        XCase a xScrut [AAlt (PData dc bs) xBody]
+        XCase a xScrut [AAlt (PData _dc bs) xBody]              -- TODO: check data constructor
          | Just ((XVar _ (UName n), _xsArgs)) <- takeXApps xScrut
          , elem (ContextFun n) context
+         , Just mkPat   <- configThreadPat config n
          -> let 
                 a'      = annotTail a
                 tWorld  = configTokenType config
                 xScrut' = XApp a' (reannotate annotTail xScrut) (XVar a' (UIx 0))
+                pat'    = mkPat (BAnon tWorld) bs
                 alt'    = threadAlt config context kenv tenv 
-                                (AAlt (PData dc (BAnon tWorld : bs)) xBody)
+                                (AAlt pat' xBody)
 
             in  XCase (annotTail a) xScrut' [alt']
 
