@@ -124,34 +124,6 @@ data Error a n
         , errorKind             :: Kind n }
 
 
-        -- Let Lazy ---------------------------------------
-        -- | A lazy let binding that has a visible side effect.
-        | ErrorLetLazyNotPure
-        { errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorEffect           :: Effect n }
-
-        -- | A lazy let binding with a non-empty closure.
-        | ErrorLetLazyNotEmpty
-        { errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorClosure          :: Closure n }
-
-        -- | A lazy let binding without a witness that binding is in a lazy region.
-        | ErrorLetLazyNoWitness
-        { errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorType             :: Type n }
-
-        -- | A lazy let binding where the witness has the wrong type.
-        | ErrorLetLazyWitnessTypeMismatch 
-        { errorChecking          :: Exp a n
-        , errorBind              :: Bind n
-        , errorWitnessTypeHave   :: Type n
-        , errorBindType          :: Type n
-        , errorWitnessTypeExpect :: Type n }
-
-
         -- Letrec -----------------------------------------
         -- | A recursive let-expression where the right of the binding is not
         --   a lambda abstraction.

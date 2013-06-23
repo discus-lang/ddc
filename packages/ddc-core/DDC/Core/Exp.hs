@@ -9,7 +9,6 @@ module DDC.Core.Exp
         , DaConName(..)
         , Cast    (..)
         , Lets    (..)
-        , LetMode (..)
         , Alt     (..)
         , Pat     (..)
                         

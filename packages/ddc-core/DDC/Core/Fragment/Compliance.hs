@@ -186,19 +186,11 @@ instance Complies Exp where
                         , Set.union vUsed1 vUsed2)
 
         -- let ----------------------------------
-        XLet _ (LLet mode b1 x1) x2
+        XLet _ (LLet b1 x1) x2
          -> do  let tenv'        = Env.extend b1 tenv
                 (tUsed1, vUsed1) <- compliesX profile kenv tenv  (reset context) x1
                 (tUsed2, vUsed2) <- compliesX profile kenv tenv' (reset context) x2
                 vUsed2'          <- checkBind profile tenv b1 vUsed2
-
-                -- Check for unsupported lazy bindings.
-                (case mode of
-                  LetStrict     -> return ()
-                  LetLazy _     
-                   | has featuresLazyBindings -> return ()
-                   | otherwise          
-                   -> throw $ ErrorUnsupported LazyBindings)
 
                 return  ( Set.union tUsed1 tUsed2
                         , Set.union vUsed1 vUsed2')

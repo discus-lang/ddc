@@ -113,7 +113,8 @@ instance SpreadX (Lets a) where
  spreadX kenv tenv lts
   = let down x = spreadX kenv tenv x
     in case lts of
-        LLet m b x       -> LLet (down m) (down b) (down x)
+        LLet b x         
+         -> LLet (down b) (down x)
         
         LRec bxs
          -> let (bs, xs) = unzip bxs
@@ -130,14 +131,6 @@ instance SpreadX (Lets a) where
 
         LWithRegion b
          -> LWithRegion (spreadX kenv tenv b)
-
-
-instance SpreadX (LetMode a) where
- spreadX kenv tenv lm
-  = case lm of
-        LetStrict        -> LetStrict
-        LetLazy Nothing  -> LetLazy Nothing
-        LetLazy (Just w) -> LetLazy (Just $ spreadX kenv tenv w)
 
 
 instance SpreadX (Witness a) where

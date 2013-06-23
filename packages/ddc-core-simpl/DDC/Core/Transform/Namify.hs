@@ -98,14 +98,6 @@ instance Namify (Module a) where
         return  $ mm { moduleBody = body' }
 
 
-instance Namify (LetMode a) where
- namify tnam xnam mm
-  = case mm of
-        LetStrict               -> return mm
-        LetLazy Nothing         -> return mm
-        LetLazy (Just w)        -> liftM (LetLazy . Just) $ namify tnam xnam w
-
-
 instance Namify (Witness a) where
  namify tnam xnam ww
   = let down = namify tnam xnam
@@ -138,12 +130,11 @@ instance Namify (Exp a) where
         XApp  a x1 x2   
          ->     liftM3 XApp     (return a) (down x1)  (down x2)
 
-        XLet  a (LLet mode b x1) x2
-         -> do  mode'           <- down mode
-                x1'             <- namify tnam xnam x1
+        XLet  a (LLet b x1) x2
+         -> do  x1'             <- namify tnam xnam x1
                 (xnam', b')     <- pushX  tnam xnam b
                 x2'             <- namify tnam xnam' x2
-                return $ XLet a (LLet mode' b' x1') x2'
+                return $ XLet a (LLet b' x1') x2'
 
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs

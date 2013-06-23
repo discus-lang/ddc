@@ -59,8 +59,7 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
         lsStart = concatMap extractStmtStart starts
 
         -- The loop itself.
-        lLoop   = LLet LetStrict 
-                        (BNone tUnit)
+        lLoop   = LLet  (BNone tUnit)
                         (xApps () (XVar  () (UPrim (NameOpLoop OpLoopLoop) 
                                                    (typeOpLoop OpLoopLoop)))
                                 [ XType tRate           -- loop rate
@@ -104,7 +103,7 @@ extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
         -- Nested contexts.
         lsNested = extractLoop nested
 
-  in    [LLet LetStrict (BNone tUnit) xGuard]
+  in    [LLet (BNone tUnit) xGuard]
 
 
 extractLoop NestEmpty
@@ -121,13 +120,13 @@ extractStmtStart ss
  = case ss of
         -- Allocate a new vector
         StartVecNew nVec tElem tRate'
-         -> [LLet LetStrict (BName nVec (tVector tElem))
+         -> [LLet (BName nVec (tVector tElem))
                   (xNewVectorR tElem tRate') ]
 
 
         -- Initialise the accumulator for a reduction operation.
         StartAcc n t x    
-         -> [LLet LetStrict (BName n (tRef t)) 
+         -> [LLet (BName n (tRef t)) 
                   (xNew t x)]        
 
 
@@ -140,21 +139,21 @@ extractStmtBody
 extractStmtBody sb
  = case sb of
         BodyStmt b x
-         -> [ LLet LetStrict b x ]
+         -> [ LLet b x ]
 
         -- Write to a vector.
         BodyVecWrite nVec tElem xIx xVal
-         -> [ LLet LetStrict (BNone tUnit)
+         -> [ LLet (BNone tUnit)
                    (xWriteVector tElem (XVar () (UName nVec)) xIx xVal)]
 
         -- Read from an accumulator.
         BodyAccRead  n t bVar
-         -> [ LLet LetStrict bVar
+         -> [ LLet bVar
                    (xRead t (XVar () (UName n))) ]
 
         -- Accumulate an element from a stream.
         BodyAccWrite nAcc tElem xWorker    
-         -> [ LLet LetStrict (BNone tUnit)
+         -> [ LLet (BNone tUnit)
                    (xWrite tElem (XVar () (UName nAcc)) xWorker)]
 
 
@@ -169,7 +168,7 @@ extractStmtEnd se
 
         -- Read the accumulator of a reduction operation.
         EndAcc n t nAcc 
-         -> [LLet LetStrict (BName n t) 
+         -> [LLet (BName n t) 
                   (xRead t (XVar () (UName nAcc))) ]
 
         -- Slice.
@@ -181,9 +180,9 @@ extractStmtEnd se
                 xCounter                    = xRead tInt (XVar () nCounter)
                 xVec                        = XVar () (UName nVec)
                 -- Read the counter in a let since it will need to be threaded
-           in   [ LLet LetStrict (BAnon      tInt)
+           in   [ LLet (BAnon      tInt)
                    xCounter
-                , LLet LetStrict (BName nVec (tVector tElem)) 
+                , LLet (BName nVec (tVector tElem)) 
                    (xSliceVector tElem (XVar () (UIx 0)) xVec) ]
 
 
@@ -191,5 +190,5 @@ extractStmtEnd se
 -- | Extract code for a generic statement.
 extractStmt       :: Stmt -> Lets () Name
 extractStmt (Stmt b x)
- = LLet LetStrict b x
+ = LLet b x
  

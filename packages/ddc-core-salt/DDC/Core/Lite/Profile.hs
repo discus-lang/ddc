@@ -38,7 +38,6 @@ features
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
-        , featuresLazyBindings          = True
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
 

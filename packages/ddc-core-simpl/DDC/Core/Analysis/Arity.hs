@@ -96,7 +96,7 @@ aritiesOfLets ll
                 Nothing         -> Nothing
                 Just a          -> Just (b, a)
    in case ll of
-        LLet _ b x      -> sequence $ map get [(b, x)]
+        LLet b x        -> sequence $ map get [(b, x)]
         LRec bxs        -> sequence $ map get bxs
         _               -> Just []
 

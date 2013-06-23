@@ -21,14 +21,6 @@ import DDC.Core.Exp
 import DDC.Type.Transform.Rename
 
 
-instance Rename (LetMode a) where
- renameWith sub lm
-  = case lm of
-        LetStrict        -> lm
-        LetLazy (Just t) -> LetLazy (Just $ renameWith sub t) 
-        LetLazy Nothing  -> LetLazy Nothing
-
-
 instance Rename (Witness a) where
  renameWith sub ww
   = let down x   = renameWith x

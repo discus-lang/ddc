@@ -42,8 +42,8 @@ initRuntimeTopX config xx
                 -- Initial size of the heap.
                 bytes   = configHeapSize config
 
-                xMain'  = hackBodyX (XLet a (LLet LetStrict (BNone tVoid) 
-                                                 (xCreate a bytes))) 
+                xMain'  = hackBodyX (XLet a (LLet (BNone tVoid) 
+                                                  (xCreate a bytes))) 
                                     xMain
 
           in    Just $ XLet a (LRec $ bxs_cut ++ [(bMain, xMain')]) x2

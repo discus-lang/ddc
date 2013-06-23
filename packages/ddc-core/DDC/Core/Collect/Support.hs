@@ -178,9 +178,8 @@ instance SupportX (Cast a) where
 instance SupportX (Lets a) where
  support kenv tenv lts
   = case lts of
-        LLet m b x
-         -> support kenv tenv m
-         <> support kenv tenv b
+        LLet b x
+         -> support kenv tenv b
          <> support kenv (Env.extend b tenv) x
 
         LRec bxs
@@ -196,13 +195,4 @@ instance SupportX (Lets a) where
         LWithRegion u
          | Env.member u kenv    -> mempty
          | otherwise            -> mempty { supportSpVar = Set.singleton u }
-
-
-instance SupportX (LetMode a) where
- support kenv tenv mm
-  = case mm of
-        LetStrict               -> mempty
-        LetLazy Nothing         -> mempty
-        LetLazy (Just w)        -> support kenv tenv w
-
 

@@ -34,7 +34,7 @@ slurpProcessesLts :: Lets () Name -> [Process]
 slurpProcessesLts (LRec binds)
  = catMaybes [slurpProcessLet b x | (b, x) <- binds]
 
-slurpProcessesLts (LLet _ b x)
+slurpProcessesLts (LLet b x)
  = catMaybes [slurpProcessLet b x]
 
 slurpProcessesLts _
@@ -104,7 +104,7 @@ slurpProcessX
            , Exp () Name)       -- Final value of process.
 
 slurpProcessX xx
- | XLet _ (LLet _ b x) xMore            <- xx
+ | XLet _ (LLet b x) xMore            <- xx
  , (ctxHere, opsHere, ltsHere)          <- slurpBindingX b x
  , (ctxMore, opsMore, ltsMore, xResult) <- slurpProcessX xMore
  = ( ctxHere ++ ctxMore
@@ -119,7 +119,7 @@ slurpProcessX xx
  , bs'  <- takeSubstBoundsOfBinds bs
  , length bs == length bs'
  , lets <- zipWith
-              (\b b' -> LLet LetStrict b
+              (\b b' -> LLet b
                 (XCase () xScrut
                  [AAlt (PData dc bs)
                        (XVar () b')])) bs bs'
@@ -141,7 +141,7 @@ slurpBindingX
 -- Decend into more let bindings.
 -- We get these when entering into a nested context.
 slurpBindingX b1 xx
- | XLet _ (LLet _ b2 x2) xMore            <- xx
+ | XLet _ (LLet b2 x2) xMore            <- xx
  , (ctxHere, opsHere, ltsHere)          <- slurpBindingX b2 x2
  , (ctxMore, opsMore, ltsMore)          <- slurpBindingX b1 xMore
  = ( ctxHere ++ ctxMore
@@ -194,5 +194,5 @@ slurpBindingX b x
 
         -- This is some base-band statement that doesn't 
         -- work on a flow operator.
-        _       -> ([], [], [LLet LetStrict b x])
+        _       -> ([], [], [LLet b x])
 

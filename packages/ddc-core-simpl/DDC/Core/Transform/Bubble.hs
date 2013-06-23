@@ -122,11 +122,11 @@ instance Bubble Lets where
 
         -- Drop casts that mention the bound variable here, 
         -- but we can float the others further outwards.
-        LLet m b x
+        LLet b x
          -> let (cs, x')        = bubble kenv tenv x
                 Just a          = takeAnnotOfExp x'
                 (cs', xc')      = dropCasts kenv tenv a [] [b] cs x'
-            in  (cs', LLet m b xc')
+            in  (cs', LLet b xc')
 
         -- ISSUE #299: Bubble casts out of recursive lets.
         LRec bxs

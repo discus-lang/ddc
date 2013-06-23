@@ -31,11 +31,6 @@ data Feature
         --   The output of the lambda-lifter should not contain these.
         | NestedFunctions
 
-        -- | Lazy let-bindings.
-        --   Turning this off means the runtime system won't need to build
-        --   suspensions.
-        | LazyBindings
-
         -- | Debruijn binders.
         --   Most backends will want to use real names, instead of indexed
         --   binders.

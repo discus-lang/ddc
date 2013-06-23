@@ -168,13 +168,13 @@ instance Forward Exp where
 
         -- Always float last let-binding into its use.
         --   let x = exp in x => exp
-        XLet _ (LLet _mode b x1) (XVar _ u)
+        XLet _ (LLet b x1) (XVar _ u)
          |  boundMatchesBind u b
          ,  configFloatLetBody config
          -> down x1
 
         -- Always float atomic bindings (variables, constructors)
-        XLet _ (LLet _mode b x1) x2
+        XLet _ (LLet b x1) x2
          | isAtomX x1
          -> do 
                 -- Record that we've moved this binding.
@@ -184,7 +184,7 @@ instance Forward Exp where
                 -- Slow, but handles anonymous binders and shadowing
                 down $ S.substituteXX b x1 x2
 
-        XLet (UsedMap um, a') lts@(LLet _mode (BName n _) x1) x2
+        XLet (UsedMap um, a') lts@(LLet (BName n _) x1) x2
          -> do  
                 let control    = configFloatControl config 
                                $ reannotate snd lts
@@ -246,9 +246,8 @@ instance Forward Lets where
  forwardWith profile config bindings lts
   = let down    = forwardWith profile config bindings
     in case lts of
-        LLet mode b x   
-         -> let mode'   = reannotate snd mode
-            in  liftM (LLet mode' b) (down x)
+        LLet b x   
+         -> liftM (LLet b) (down x)
 
         LRec bxs        
          -> liftM LRec

@@ -43,21 +43,21 @@ flatten1
 --      x1
 -- @
 -- 
-flatten1 (XLet a1 (LLet LetStrict b1
-            inner@(XLet a2 (LLet LetStrict b2 def2) x2))
+flatten1 (XLet a1 (LLet b1
+            inner@(XLet a2 (LLet b2 def2) x2))
                x1)
 
  | isBName b2
  = flatten1
-        $ XLet a1 (LLet LetStrict b1 
+        $ XLet a1 (LLet b1 
                (anonymizeX inner))
                x1
 
  | otherwise
  = let  x1'       = liftAcrossX [b1] [b2] x1                                 
-   in   XLet a2 (LLet LetStrict b2 def2) 
+   in   XLet a2 (LLet b2 def2) 
       $ flatten1
-      $ XLet a1 (LLet LetStrict b1 x2) 
+      $ XLet a1 (LLet b1 x2) 
              x1'
 
 
@@ -74,12 +74,12 @@ flatten1 (XLet a1 (LLet LetStrict b1
 -- NOTE: For region allocation this increases the lifetime of the region.
 --       Maybe use a follow on transform to reduce the lifetime again.
 --
-flatten1 (XLet a1 (LLet LetStrict b1
+flatten1 (XLet a1 (LLet b1
             inner@(XLet a2 (LLetRegions b2 bs2) x2))
                x1)
  | all isBName b2
  = flatten1
-        $ XLet a1 (LLet LetStrict b1
+        $ XLet a1 (LLet b1
                   (anonymizeX inner))
                x1
 
@@ -88,7 +88,7 @@ flatten1 (XLet a1 (LLet LetStrict b1
                 $ liftAcrossX [b1] bs2 x1
    in   XLet a2 (LLetRegions b2 bs2) 
       $ flatten1
-      $ XLet a1 (LLet LetStrict (zapX b1) x2) 
+      $ XLet a1 (LLet (zapX b1) x2) 
              x1'
 
 
@@ -105,12 +105,12 @@ flatten1 (XLet a1 (LLet LetStrict b1
 --
 -- * binding must be strict because we force evaluation of x1.
 --
-flatten1 (XLet  a1 (LLet LetStrict b1 
+flatten1 (XLet  a1 (LLet b1 
              inner@(XCase a2 x1 [AAlt p x2]))
                    x3)
  | any isBName $ bindsOfPat p
  = flatten1
-        $ XLet  a1 (LLet LetStrict b1
+        $ XLet  a1 (LLet b1
                    (anonymizeX inner))
                    x3
 
@@ -118,7 +118,7 @@ flatten1 (XLet  a1 (LLet LetStrict b1
  = let  x3'     = liftAcrossX [b1] (bindsOfPat p) x3
    in   XCase a2 x1 
            [AAlt p ( flatten1 
-                   $ XLet a1 (LLet LetStrict b1 x2)
+                   $ XLet a1 (LLet b1 x2)
                              (anonymizeX x3'))]
 
 

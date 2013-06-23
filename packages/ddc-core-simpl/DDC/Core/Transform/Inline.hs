@@ -62,7 +62,7 @@ instance Inline Lets where
                 _               -> inline get inside x
 
     in case lts of
-        LLet mode b x   -> LLet mode b (enter b x)
+        LLet b x        -> LLet b (enter b x)
         LRec bxs        -> LRec [(b, enter b x) | (b, x) <- bxs]
         LLetRegions{}   -> lts
         LWithRegion{}   -> lts

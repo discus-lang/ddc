@@ -111,8 +111,8 @@ instance Monad m => TransformUpMX m Exp where
 instance Monad m => TransformUpMX m Lets where
  transformUpMX f kenv tenv xx
   = case xx of
-        LLet m b x
-         -> liftM3 LLet (return m) (return b)
+        LLet b x
+         -> liftM2 LLet (return b)
                         (transformUpMX f kenv tenv x)
         
         LRec bxs

@@ -195,19 +195,10 @@ checkCapsLM :: Lets a Name -> CheckM a [Witness a Name]
 checkCapsLM ll
  = let none     = return []
    in case ll of
-        LLet m _ x      -> liftM2 (++) (checkCapsMM m) (checkCapsXM x)
+        LLet _ x        -> checkCapsXM x
         LRec bxs        -> liftM  concat (mapM checkCapsXM $ map snd bxs)
         LLetRegions{}   -> none
         LWithRegion{}   -> none
-
-
-checkCapsMM :: LetMode a Name -> CheckM a [Witness a Name]
-checkCapsMM mm
- = let none     = return []
-   in case mm of
-        LetStrict        -> none
-        LetLazy (Just w) -> checkCapsWM w
-        LetLazy Nothing  -> none
 
 
 checkCapsAM :: Alt a Name  -> CheckM a [Witness a Name]

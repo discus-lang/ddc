@@ -108,11 +108,11 @@ enterX config arities xx
          -> XLam a b (down [(b,0)] e)
 
         -- non-recursive let
-        XLet a (LLet m b x1) x2
+        XLet a (LLet b x1) x2
          -> let x1'     = down [] x1
                 x2'     = snipLetBody config a
                         $ down [(b, arityOfExp' x1')] x2
-            in  XLet a (LLet m b x1') x2'
+            in  XLet a (LLet b x1') x2'
 
         -- recursive let
         XLet a (LRec lets) x2
@@ -151,7 +151,7 @@ enterX config arities xx
                         $ XCase a (XVar a $ UIx 0)
                                   (map (L.liftX 1) alts')
 
-            in  XLet a (LLet LetStrict (BAnon (T.tBot T.kData)) e')
+            in  XLet a (LLet (BAnon (T.tBot T.kData)) e')
                        xBody'
 
         -- cast
@@ -196,7 +196,7 @@ buildNormalisedApp config arities f0 args@( (_, annot) : _)
          -- The function part is not atomic, 
          --  so we need to add an outer-most let-binding for it.
          | otherwise
-         = XLet a (LLet LetStrict (BAnon tBot') xFun)
+         = XLet a (LLet (BAnon tBot') xFun)
                   (snipLetBody config a
                     $ buildNormalisedFunApp config a f0Arity 
                                (XVar a (UIx 0)) 
@@ -259,7 +259,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
          | configSnipOverApplied config
          , length xsArgs' > funArity
          , (xsSat, xsOver)      <- splitAt funArity xsArgs'
-         = XLet an (LLet LetStrict (BAnon tBot') 
+         = XLet an (LLet (BAnon tBot') 
                         (makeXAppsWithAnnots xFun' xsSat))
                    (snipLetBody config an
                     $ makeXAppsWithAnnots 
@@ -279,7 +279,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
          []     -> xFunApps
          _      -> foldr (\(x, a) x' -> XLet a x x')
                         (snipLetBody config an xFunApps)
-                        [ (LLet LetStrict (BAnon tBot') x, a) 
+                        [ (LLet (BAnon tBot') x, a) 
                                 | (x, a) <- xsLets' ]
 
 
@@ -313,7 +313,7 @@ snipLetBody config a xx
         , not (isAtom xx)
         , not (isXLet xx)
         = let  tBot'   = T.tBot T.kData
-          in   XLet a  (LLet LetStrict (BAnon tBot') xx)
+          in   XLet a  (LLet (BAnon tBot') xx)
                        (XVar a (UIx 0))
         
         | otherwise

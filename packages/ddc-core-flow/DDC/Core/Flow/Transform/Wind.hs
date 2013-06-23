@@ -204,10 +204,10 @@ windModule m
 windModuleBodyX :: Exp () Name -> Exp () Name
 windModuleBodyX xx
  = case xx of
-        XLet a (LLet m b x1) x2
+        XLet a (LLet b x1) x2
          -> let x1'     = windBodyX refMapZero [] x1
                 x2'     = windModuleBodyX x2
-            in  XLet a (LLet m b x1') x2'
+            in  XLet a (LLet b x1') x2'
 
         XLet a (LRec bxs) x2
          -> let bxs'    = [(b, windBodyX refMapZero [] x) | (b, x) <- bxs]
@@ -240,7 +240,7 @@ windBodyX refMap context xx
         --    ref     : Ref# type = new# [type] val
         -- => ref__0  : type      = val
         --
-        XLet a (LLet LetStrict (BName nRef _) x) x2
+        XLet a (LLet (BName nRef _) x) x2
          | Just ( NameOpStore OpStoreNew
                 , [XType tElem, xVal] ) <- takeXPrimApps x
          -> let 
@@ -256,7 +256,7 @@ windBodyX refMap context xx
                 Just nInit  = nameOfRefInfo info
                 refMap'     = insertRefInfo info refMap
 
-            in  XLet a  (LLet LetStrict (BName nInit tElem) xVal)
+            in  XLet a  (LLet (BName nInit tElem) xVal)
                         (windBodyX refMap' context x2)
 
 
@@ -266,20 +266,20 @@ windBodyX refMap context xx
         --      val : type     = read# [type] ref
         --   => val : type     = ref_N
         --
-        XLet a (LLet LetStrict bResult x) x2
+        XLet a (LLet bResult x) x2
          | Just ( NameOpStore OpStoreRead
                 , [XType _tElem, XVar _ (UName nRef)] )   
                                         <- takeXPrimApps x
          , Just info    <- lookupRefInfo refMap nRef
          , Just nVal    <- nameOfRefInfo info
-         ->     XLet a  (LLet LetStrict bResult (XVar a (UName nVal)))
+         ->     XLet a  (LLet bResult (XVar a (UName nVal)))
                         (windBodyX refMap context x2)
 
 
         -----------------------------------------
         -- Detect ref write,
         --  to just bind the new value.
-        XLet a (LLet LetStrict (BNone _) x) x2
+        XLet a (LLet (BNone _) x) x2
          | Just ( NameOpStore OpStoreWrite 
                 , [XType _tElem, XVar _ (UName nRef), xVal])
                                         <- takeXPrimApps x
@@ -287,13 +287,13 @@ windBodyX refMap context xx
          , Just info    <- lookupRefInfo refMap' nRef
          , Just nVal    <- nameOfRefInfo info
          , tVal         <- refInfoType info
-         ->     XLet a  (LLet LetStrict (BName nVal tVal) xVal)
+         ->     XLet a  (LLet (BName nVal tVal) xVal)
                         (windBodyX refMap' context x2)
 
 
         -----------------------------------------
         -- Detect loop combinator.
-        XLet a (LLet LetStrict (BNone _) x) x2
+        XLet a (LLet (BNone _) x) x2
          | Just ( NameOpLoop OpLoopLoopN
                 , [ XType tK, xLength
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
@@ -370,7 +370,7 @@ windBodyX refMap context xx
                 x2'     = windBodyX refMap_final context x2
 
 
-            in  XLet  a  (LLet LetStrict bLength (xNatOfRateNat tK xLength))
+            in  XLet  a  (LLet bLength (xNatOfRateNat tK xLength))
               $ XLet  a  (LRec [(bLoop, xDriver)]) 
               $ runUnpackLoop 
                         a 
@@ -382,7 +382,7 @@ windBodyX refMap context xx
 
         -----------------------------------------
         -- Detect guard combinator.
-        XLet a (LLet LetStrict (BNone _) x) x2
+        XLet a (LLet (BNone _) x) x2
          | Just ( NameOpLoop OpLoopGuard
                 , [ XVar _ (UName nCountRef)
                   , xFlag
@@ -397,7 +397,7 @@ windBodyX refMap context xx
                                 { contextGuardCounter = nCountRef
                                 , contextGuardFlag    = True }  ]
 
-                xBody'  = XLet a (LLet LetStrict bCount (XVar a (UName nCount)))
+                xBody'  = XLet a (LLet bCount (XVar a (UName nCount)))
                         $ windBodyX refMap context' xBody
 
             in  XCase a xFlag 
@@ -425,8 +425,8 @@ windBodyX refMap context xx
         -- Decend into nest let binding.
         --  We need to drop the contexts because we never do a tail-call
         --  from a nested binding.
-        XLet a (LLet m b x) x2
-         -> XLet a (LLet m b (windBodyX refMap [] x)) 
+        XLet a (LLet b x) x2
+         -> XLet a (LLet b (windBodyX refMap [] x)) 
                    (down x2)
 
         XLet a (LRec bxs) x2
@@ -485,11 +485,11 @@ runUnpackLoop
 
 runUnpackLoop a tsAccs xRunLoop bsAcc xCont
  | []   <- tsAccs
- =      XLet a (LLet LetStrict (BNone tUnit) xRunLoop) xCont
+ =      XLet a (LLet (BNone tUnit) xRunLoop) xCont
 
  | [_t]  <- tsAccs
  , [b]   <- bsAcc
- =      XLet a (LLet LetStrict b xRunLoop) xCont
+ =      XLet a (LLet b xRunLoop) xCont
 
  | otherwise
  =      XCase a xRunLoop

@@ -82,12 +82,11 @@ instance SubstituteTX (Exp a) where
                 x'              = down  sub1 x
             in  XLam a b' x'
 
-        XLet a (LLet m b x1) x2
-         -> let m'              = down  sub  m
-                x1'             = down  sub  x1
+        XLet a (LLet b x1) x2
+         -> let x1'             = down  sub  x1
                 (sub1, b')      = bind0 sub  (down sub b)
                 x2'             = down  sub1 x2
-            in  XLet a (LLet m' b' x1') x2'
+            in  XLet a (LLet b' x1') x2'
 
         XLet a (LRec bxs) x2
          -> let (bs, xs)        = unzip  bxs
@@ -109,15 +108,6 @@ instance SubstituteTX (Exp a) where
         XCast a cc x1   -> XCast a  (down sub cc) (down sub x1)
         XType t         -> XType    (down sub t)
         XWitness w      -> XWitness (down sub w)
-
-
-instance SubstituteTX (LetMode a) where
- substituteWithTX tArg sub lm
-  = let down x   = substituteWithTX tArg x
-    in case lm of
-        LetStrict         -> lm
-        LetLazy Nothing   -> lm
-        LetLazy (Just w)  -> LetLazy (Just $ down sub w)
 
 
 instance SubstituteTX (Alt a) where

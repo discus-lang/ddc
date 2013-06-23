@@ -75,7 +75,7 @@ elaborateLets
 elaborateLets us lts 
  = let down = elaborate us 
    in case lts of
-        LLet m b x -> (us, LLet m b (down x))
+        LLet b x   -> (us, LLet b (down x))
         LRec bs    -> (us, LRec $ map (second down) bs)
 
         LLetRegions brs bws

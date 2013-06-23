@@ -93,7 +93,7 @@ extendLets (LLetRegions bs cs) renv
         extend' b (r:rs') = (b:r) : rs'
         extend' b []	   = [[b]]
 
-extendLets (LLet _ b def) env
+extendLets (LLet b def) env
  = insertDef b (Just def') (liftValue b env)
  where  def' = case b of
 	         BAnon{} -> L.liftX 1 def

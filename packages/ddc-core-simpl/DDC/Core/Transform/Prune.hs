@@ -144,7 +144,7 @@ pruneTrans
 
 pruneTrans _ _ xx
  = case xx of
-        XLet a@(usedMap, antec) (LLet _mode b x1) x2
+        XLet a@(usedMap, antec) (LLet b x1) x2
          | isUnusedBind b usedMap
          , isContainedEffect $ annotEffect antec
          -> do      

@@ -102,14 +102,6 @@ instance MapBoundX (Exp a) n where
         XWitness w	-> XWitness (down w)
 
 
-instance MapBoundX (LetMode a) n where
- mapBoundAtDepthX f d m
-  = case m of
-        LetStrict        -> m
-        LetLazy Nothing  -> m
-        LetLazy (Just w) -> LetLazy (Just $ mapBoundAtDepthX f d w)
-
-         
 instance MapBoundX (Witness a) n where
  mapBoundAtDepthX f d ww
   = let down = mapBoundAtDepthX f d
@@ -156,13 +148,12 @@ mapBoundAtDepthXLets
 
 mapBoundAtDepthXLets f d lts
  = case lts of
-        LLet m b x
+        LLet b x
          -> let inc = countBAnons [b]
-                m'  = mapBoundAtDepthX f d m
-
+                
 		-- non-recursive binding: do not increase x's depth
                 x'  = mapBoundAtDepthX f d x
-            in  (LLet m' b x', inc)
+            in  (LLet b x', inc)
 
         LRec bs
          -> let inc = countBAnons (map fst bs)

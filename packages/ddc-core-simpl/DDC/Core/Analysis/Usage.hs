@@ -196,11 +196,9 @@ usageLets
 
 usageLets lts
  = case lts of
-        LLet mode b x
+        LLet b x
          |  (used1', x')        <- usageX' x
-         ,  (used2', mode')     <- usageMode mode
-         ,  used'               <- plusUsedMap used1' used2'
-         -> (used', LLet mode' b x')
+         -> (used1', LLet b x')
 
         LRec bxs
          |  (bs, xs)      <- unzip bxs
@@ -213,27 +211,6 @@ usageLets lts
 
         LWithRegion b
          -> (empty, LWithRegion b)
-
-
--- | Annotate binding occurrences of named value variables with
---   usage information.
-usageMode 
-        :: Ord n
-        => LetMode a n
-        -> (UsedMap n, LetMode (UsedMap n, a) n)
-
-usageMode mm
- = case mm of
-        LetStrict       
-         -> (empty, LetStrict)
-        
-        LetLazy Nothing 
-         -> (empty, LetLazy Nothing)
-        
-        LetLazy (Just w)      
-         | (used', w')  <- usageWitness w
-         -> (used', LetLazy (Just w'))
-
 
 
 -- | Annotate binding occurrences of named value variables with 

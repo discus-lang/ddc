@@ -6,25 +6,9 @@ let _ : Unit = () in
 :$: Empty
 
 
--- Non-binding lazy.
-let _ : Unit lazy = () in
-()
-:*: Unit
-:!: Pure
-:$: Empty
-
-
 -- Binding let.
 let x : Unit = () in
 x
-:*: Unit
-:!: Pure
-:$: Empty
-
-
--- Binding lazy.
-let x : Unit lazy = () in
-()
 :*: Unit
 :!: Pure
 :$: Empty
@@ -39,26 +23,8 @@ let f : Unit -> Unit
 :$: Empty
 
 
--- Lazy-bound function with full signature.
-let f : Unit -> Unit lazy
-      = \(x : Unit). x in
-()
-:*: Unit
-:!: Pure
-:$: Empty
-
-
 -- Let using function syntax with a return type.
 let f : Unit -> Unit
-      = \(x : Unit). x in
-f ()
-:*: Unit
-:!: Pure
-:$: Empty
-
-
--- Lazy using function syntax with a return type.
-let f : Unit -> Unit lazy
       = \(x : Unit). x in
 f ()
 :*: Unit
@@ -102,15 +68,6 @@ let ^ : Int R0# = 23 [R0#] ^0 in
 :*: Int R0#
 :!: Alloc R0#
 :$: Use R0#
-
-
--- Let and lazy
-let x : Unit = () in
-let y : Unit lazy = () in
-y
-:*: Unit
-:!: Pure
-:$: Empty
 
 -- Simple letregion.
 letregion r in

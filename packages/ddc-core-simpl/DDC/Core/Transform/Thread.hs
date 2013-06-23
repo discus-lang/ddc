@@ -121,10 +121,9 @@ threadTopLets
 
 threadTopLets config kenv tenv lts
  = case lts of
-        LLet m b x
+        LLet b x
          -> let (b', x')  = threadTopBind config [] kenv tenv b x
-                m'        = reannotate annotTail m
-            in  LLet m' b' x'
+            in  LLet b' x'
 
         LRec bxs
          -> let tenv'     =   Env.extends (map fst bxs) tenv
@@ -263,7 +262,7 @@ threadProcBody config context kenv tenv xx
             in  XLet (annotTail a) (LRec bxs') x2'
 
         -- A statement in the procedure body.
-        XLet _ (LLet _ b x) x2
+        XLet _ (LLet b x) x2
          |  Just (XVar a u, xsArgs) <- takeXApps x
          ,  Just n       <- takeNameOfBound u
          ,  Just tOld    <- Env.lookup u tenv
@@ -292,7 +291,7 @@ threadProcBody config context kenv tenv xx
 
         -- Let bound effectful function.
         -- Needs to be converted to a 'case'.
-        XLet a (LLet _ b x1) x2
+        XLet a (LLet b x1) x2
          | Just (XVar _ (UName n), _xsArgs) <- takeXApps x1
          , elem (ContextFun n) context
          , Just mkPat   <- configThreadPat config n

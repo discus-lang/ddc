@@ -171,9 +171,9 @@ rewriteX' ignore_toplevel rules x0
          =      rewrites env x args
 
 
-        goLets (LLet lm b e) ws 
+        goLets (LLet b e) ws 
          = do   e' <- down ws e 
-                return $ LLet lm b e'
+                return $ LLet b e'
 
         goLets (LRec bs) ws 
          = do   bs'     <- mapM (down ws) $ map snd bs
@@ -202,7 +202,7 @@ rewriteX' ignore_toplevel rules x0
 --       x = box ^0
 --   in ...
 --
-goDefHoles rules a l@(LLet LetStrict let_bind def) e env down
+goDefHoles rules a l@(LLet let_bind def) e env down
  | (((sub, []), name, RewriteRule { ruleBinds = bs, ruleLeft = hole }):_)
         <- checkHoles rules def env
 
@@ -233,13 +233,13 @@ goDefHoles rules a l@(LLet LetStrict let_bind def) e env down
 
         -- replace 'def' with LHS-HOLE[sub => ^n]
         anons   = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
-        lets    = map (\(b,v) -> LLet LetStrict b v) values
+        lets    = map (\(b,v) -> LLet b v) values
 
         def'    = S.substituteXArgs basK
                 $ S.substituteXArgs anons hole
 
         let_bind'  = S.substituteTs basK' let_bind
-        lets'      = lets ++ [LLet LetStrict let_bind' def']
+        lets'      = lets ++ [LLet let_bind' def']
 
         -- lift e by (length bas)
         depth   = case let_bind of
@@ -402,7 +402,7 @@ wrapLets a binds bas
         anons   = zipWith (\(b,_) i -> (b, XVar a (UIx i))) as' [0..]
         values  = map     (\(b,v) ->   (BAnon (substT bs' $ T.typeOfBind b), v)) 
                           (reverse as')
-        lets    = map (\(b,v) -> LLet LetStrict b v) values
+        lets    = map (\(b,v) -> LLet b v) values
 
    in   (bs' ++ anons, lets)
 

@@ -314,9 +314,9 @@ pLetsSP :: Ord n => Parser n (Lets SourcePos n, SourcePos)
 pLetsSP
  = P.choice
     [ -- non-recursive let.
-      do sp     <- pTokSP KLet
-         (mode1, b1, x1) <- pLetBinding
-         return (LLet mode1 b1 x1, sp)
+      do sp       <- pTokSP KLet
+         (b1, x1) <- pLetBinding
+         return (LLet b1 x1, sp)
 
       -- recursive let.
     , do sp     <- pTokSP KLetRec
@@ -371,8 +371,7 @@ pLetWits bs
 -- | A binding for let expression.
 pLetBinding 
         :: Ord n 
-        => Parser n ( LetMode SourcePos n
-                    , Bind n
+        => Parser n ( Bind n
                     , Exp SourcePos n)
 pLetBinding 
  = do   b       <- pBinder
@@ -382,22 +381,20 @@ pLetBinding
                 --  BINDER : TYPE = EXP
                 pTok KColon
                 t       <- pType
-                mode    <- pLetMode
                 pTok KEquals
                 xBody   <- pExp
 
-                return  $ (mode, T.makeBindFromBinder b t, xBody) 
+                return  $ (T.makeBindFromBinder b t, xBody) 
 
 
          , do   -- Non-function binding with no type signature.
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
                 --  BINDER = EXP
-                mode    <- pLetMode
                 pTok KEquals
                 xBody   <- pExp
                 let t   = T.tBot T.kData
-                return  $ (mode, T.makeBindFromBinder b t, xBody)
+                return  $ (T.makeBindFromBinder b t, xBody)
 
 
          , do   -- Binding using function syntax.
@@ -410,52 +407,25 @@ pLetBinding
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
                         pTok KColon
                         tBody   <- pType
-                        mode    <- pLetMode
                         sp      <- pTokSP KEquals
                         xBody   <- pExp
 
                         let x   = expOfParams sp ps xBody
                         let t   = funTypeOfParams ps tBody
-                        return  (mode, T.makeBindFromBinder b t, x)
+                        return  (T.makeBindFromBinder b t, x)
 
                         -- Function syntax with no return type.
                         -- We can't make the type sig for the let-bound variable,
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
-                 , do   mode    <- pLetMode
-                        sp      <- pTokSP KEquals
+                 , do   sp      <- pTokSP KEquals
                         xBody   <- pExp
 
                         let x   = expOfParams sp ps xBody
                         let t   = T.tBot T.kData
-                        return  (mode, T.makeBindFromBinder b t, x) ]
+                        return  (T.makeBindFromBinder b t, x) ]
          ]
-
--- | Parse a let mode specifier.
---   Only allow the lazy specifier with non-recursive bindings.
---   We don't support value recursion, so the right of all recursive
---   bindings must be explicit lambda abstractions anyway, so there's 
---   no point suspending them.
-pLetMode 
-        :: Ord n 
-        => Parser n (LetMode SourcePos n)
-
-pLetMode
- = do   P.choice
-                -- lazy <WITNESS>
-         [ do   pTok KLazy
-
-                P.choice
-                 [ do   pTok KAngleBra
-                        w       <- pWitness
-                        pTok KAngleKet
-                        return  $ LetLazy (Just w)
-                 
-                 , do   return  $ LetLazy Nothing ]
-
-         , do   return  $ LetStrict ]
-
 
 -- | Letrec bindings must have a full type signature, 
 --   or use function syntax with a return type so that we can make one.
@@ -554,11 +524,11 @@ makeStmts ss
 
         StmtNone sp x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet sp (LLet LetStrict (BNone (T.tBot T.kData)) x1) x2
+         -> Just $ XLet sp (LLet (BNone (T.tBot T.kData)) x1) x2
 
         StmtBind sp b x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet sp (LLet LetStrict b x1) x2
+         -> Just $ XLet sp (LLet b x1) x2
 
         StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest

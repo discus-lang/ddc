@@ -9,7 +9,6 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.AnonymizeT
 import DDC.Type.Compounds
-import Control.Monad
 import Data.List
 import Data.Set                         (Set)
 import qualified Data.Set               as Set
@@ -102,14 +101,6 @@ instance AnonymizeX (Cast a) where
          -> CastForget        (down w)
 
 
-instance AnonymizeX (LetMode a) where
- anonymizeWithX keep kstack tstack lm
-  = let down = anonymizeWithX keep kstack tstack
-    in case lm of
-        LetStrict       -> lm
-        LetLazy mw      -> LetLazy $ liftM down mw
-
-
 instance AnonymizeX (Alt a) where
  anonymizeWithX keep kstack tstack alt
   = let down = anonymizeWithX keep kstack tstack
@@ -199,11 +190,10 @@ pushAnonymizeLets
 
 pushAnonymizeLets keep kstack tstack lts
  = case lts of
-        LLet mode b x
-         -> let mode'           = anonymizeWithX     keep kstack tstack mode
-                x'              = anonymizeWithX     keep kstack tstack x
+        LLet b x
+         -> let x'              = anonymizeWithX     keep kstack tstack x
                 (tstack', b')   = pushAnonymizeBindX keep kstack tstack b
-            in  (kstack, tstack', LLet mode' b' x')
+            in  (kstack, tstack', LLet b' x')
 
         LRec bxs 
          -> let (bs, xs)        = unzip bxs

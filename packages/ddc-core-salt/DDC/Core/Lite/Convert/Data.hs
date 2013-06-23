@@ -58,14 +58,14 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 0
         let lsFields    
-                = [ LLet LetStrict (BNone O.tVoid)
+                = [ LLet (BNone O.tVoid)
                          (O.xSetFieldOfBoxed a 
                          rPrime trField xObject' ix (liftX 1 xField))
                   | ix            <- [0..]
                   | xField        <- xsFields
                   | trField       <- tsFields ]
 
-        return  $ XLet a (LLet LetStrict bObject xAlloc)
+        return  $ XLet a (LLet bObject xAlloc)
                 $ foldr (XLet a) xObject' lsFields
 
 
@@ -96,15 +96,15 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 1
         let xPayload'   = XVar a $ UIx 0
-        let lsFields    = [ LLet LetStrict (BNone O.tVoid)
+        let lsFields    = [ LLet (BNone O.tVoid)
                                 (O.xPokeBuffer a rPrime tField xPayload'
                                                  offset (liftX 2 xField))
                                 | tField        <- tsFields
                                 | offset        <- offsets
                                 | xField        <- xsFields]
 
-        return  $ XLet a (LLet LetStrict bObject  xAlloc)
-                $ XLet a (LLet LetStrict bPayload xPayload)
+        return  $ XLet a (LLet bObject  xAlloc)
+                $ XLet a (LLet bPayload xPayload)
                 $ foldr (XLet a) xObject' lsFields
 
  | otherwise
@@ -140,7 +140,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
                 = catMaybes
                 $ [ if isBNone bField
                         then Nothing
-                        else Just $ LLet LetStrict bField 
+                        else Just $ LLet bField 
                                     (O.xGetFieldOfBoxed a trPrime tField
                                                        (XVar a uScrut) ix)
                   | bField        <- bsFields
@@ -162,7 +162,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
                 = catMaybes
                 $ [ if isBNone bField
                      then Nothing 
-                     else Just $ LLet LetStrict bField 
+                     else Just $ LLet bField 
                                      (O.xPeekBuffer a trPrime tField 
                                                  (XVar a uPayload) offset) 
                   | bField        <- bsFields
@@ -170,7 +170,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
                   | offset        <- offsets ]
 
         return  $ foldr (XLet a) xBody
-                $ LLet LetStrict bPayload xPayload
+                $ LLet bPayload xPayload
                 : lsFields
 
 

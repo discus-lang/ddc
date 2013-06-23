@@ -31,17 +31,10 @@ instance (NFData a, NFData n) => NFData (Cast a n) where
 instance (NFData a, NFData n) => NFData (Lets a n) where
  rnf lts
   = case lts of
-        LLet mode b x           -> rnf mode `seq` rnf b `seq` rnf x
+        LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
         LLetRegions bs1 bs2     -> rnf bs1  `seq` rnf bs2
         LWithRegion u           -> rnf u
-
-
-instance (NFData a, NFData n) => NFData (LetMode a n) where
- rnf mode
-  = case mode of
-        LetStrict               -> ()
-        LetLazy mw              -> rnf mw
 
 
 instance (NFData a, NFData n) => NFData (Alt a n) where

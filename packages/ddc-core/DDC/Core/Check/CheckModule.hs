@@ -93,7 +93,7 @@ checkModuleBinds
 
 checkModuleBinds !ksExports !tsExports !xx
  = case xx of
-        XLet _ (LLet _ b _) x2     
+        XLet _ (LLet b _) x2     
          -> do  checkModuleBind  ksExports tsExports b
                 env     <- checkModuleBinds ksExports tsExports x2
                 return  $ Env.extend b env

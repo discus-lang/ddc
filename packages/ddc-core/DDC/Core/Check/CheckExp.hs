@@ -764,7 +764,7 @@ checkLetsM
                 , TypeSum n
                 , Set (TaggedClosure n))
 
-checkLetsM !xx !config !kenv !tenv (LLet mode b11 x12)
+checkLetsM !xx !config !kenv !tenv (LLet b11 x12)
  = do   
         -- Check the right of the binding.
         (x12', t12, effs12, clo12)  
@@ -778,50 +778,7 @@ checkLetsM !xx !config !kenv !tenv (LLet mode b11 x12)
         when (not $ isDataKind k11')
          $ throw $ ErrorLetBindingNotData xx b11' k11'
           
-        -- Check purity and emptiness for lazy bindings.
-        (case mode of
-          LetStrict     -> return ()
-          LetLazy _
-           -> do let eff12' = TSum effs12
-                 when (not $ isBot eff12')
-                  $ throw $ ErrorLetLazyNotPure xx b11 eff12'
-
-                 let clo12' = closureOfTaggedSet clo12
-                 when (not $ isBot clo12')
-                  $ throw $ ErrorLetLazyNotEmpty xx b11 clo12')
-
-        -- Check region witness for lazy bindings.
-        mode' 
-         <- case mode of
-             LetStrict     
-              -> return LetStrict
-
-             -- Type of lazy binding has no head region, like Unit and (->).
-             LetLazy Nothing
-              -> do case takeDataTyConApps t12 of
-                     Just (_tc, t1 : _)
-                      ->  do k1 <- checkTypeM config kenv t1
-                             when (isRegionKind k1)
-                              $ throw $ ErrorLetLazyNoWitness xx b11 t12
-                             return $ LetLazy Nothing
-
-                     _ -> return $ LetLazy Nothing
-
-             -- Type of lazy binding might have a head region,
-             -- so we need a Lazy witness for it.
-             LetLazy (Just wit)
-              -> do (wit', tWit) <- checkWitnessM config kenv tenv wit
-                    let tWitExp =  case takeDataTyConApps t12 of
-                                    Just (_tc, tR : _ts) -> tLazy tR
-                                    _                    -> tHeadLazy t12
-
-                    when (not $ equivT tWit tWitExp)
-                     $ throw $ ErrorLetLazyWitnessTypeMismatch 
-                                    xx b11 tWit t12 tWitExp
-
-                    return $ LetLazy (Just $ reannotate fromAnT wit')
-        
-        return  ( LLet mode' b11' x12'
+        return  ( LLet b11' x12'
                 , [b11']
                 , effs12
                 , clo12)

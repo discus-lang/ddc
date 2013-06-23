@@ -170,7 +170,7 @@ betaReduce1 lets _kenv tenv xx
 
          | lets
          -> ret mempty { infoValuesLetted  = 1 }
-	      $	XLet a (LLet LetStrict b11 x2) x12
+	      $	XLet a (LLet b11 x2) x12
 
          | otherwise
          -> ret mempty { infoValuesSkipped = 1 }

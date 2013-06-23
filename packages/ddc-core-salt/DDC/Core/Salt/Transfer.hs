@@ -141,7 +141,7 @@ transL  :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
 
 transL tails lts
  = case lts of
-        LLet mode b x   -> LLet mode b (transX tails x)
+        LLet b x        -> LLet b (transX tails x)
         LRec bxs        -> LRec [(b, transX tails x) | (b, x) <- bxs]
         LLetRegions{}   -> lts
         LWithRegion{}   -> lts

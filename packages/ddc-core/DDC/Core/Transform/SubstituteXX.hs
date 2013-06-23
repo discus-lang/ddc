@@ -122,12 +122,11 @@ instance SubstituteXX Exp where
                 x'              = down  sub1 x
             in  XLam a b' x'
 
-        XLet a (LLet m b x1) x2
-         -> let m'              = into  sub  m
-                x1'             = down  sub  x1
+        XLet a (LLet b x1) x2
+         -> let x1'             = down  sub  x1
                 (sub1, b')      = bind0 sub  b
                 x2'             = down  sub1 x2
-            in  XLet a (LLet m' b' x1') x2'
+            in  XLet a (LLet b' x1') x2'
 
         XLet a (LRec bxs) x2
          -> let (bs, xs)        = unzip  bxs

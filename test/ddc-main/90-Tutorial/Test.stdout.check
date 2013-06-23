@@ -171,15 +171,6 @@ When checking expression.
         }
 
 
--- Laziness and purification -------------------------------------------------
--- Original expression with no laziness.
-6
-
-
--- Suspend the 'y' binding.
-6
-
-
 -- Program transformation ----------------------------------------------------
 -- Anonymize first example from the previous section.
 ok

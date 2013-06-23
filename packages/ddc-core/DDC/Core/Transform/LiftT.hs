@@ -26,14 +26,6 @@ instance Ord n => MapBoundT (Exp a) n where
         XType    t      -> XType    (down t)
         XWitness w      -> XWitness (down w)
 
-
-instance Ord n => MapBoundT (LetMode a) n where
- mapBoundAtDepthT f d m
-  = case m of
-        LetStrict        -> m
-        LetLazy Nothing  -> m
-        LetLazy (Just w) -> LetLazy (Just $ mapBoundAtDepthT f d w)
-
          
 instance Ord n => MapBoundT (Witness a) n where
  mapBoundAtDepthT f d ww
@@ -84,8 +76,8 @@ mapBoundAtDepthTLets
 mapBoundAtDepthTLets f d lts
  = let down = mapBoundAtDepthT f d
    in case lts of
-        LLet m b x
-         ->     ( LLet (down m) (down b) (down x)
+        LLet b x
+         ->     ( LLet (down b) (down x)
                 , 0)
 
         LRec bs

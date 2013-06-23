@@ -207,9 +207,9 @@ instance Eta Lets where
  etaM config cconfig kenv tenv lts
   = let down    = etaM config cconfig kenv tenv
     in case lts of
-        LLet m b x
+        LLet b x
          -> do  x'      <- down x
-                return  $ LLet m b x'
+                return  $ LLet b x'
 
         LRec bxs
          -> do  let bs    = map fst bxs

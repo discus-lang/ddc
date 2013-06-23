@@ -66,7 +66,7 @@ data Cast a n
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
-        = LLet    !(LetMode a n) !(Bind n) !(Exp a n)
+        = LLet    !(Bind n) !(Exp a n)
 
         -- | Recursive binding of lambda abstractions.
         | LRec    ![(Bind n, Exp a n)]
@@ -77,18 +77,6 @@ data Lets a n
         
         -- | Holds a region handle during evaluation.
         | LWithRegion !(Bound n)
-        deriving (Eq, Show)
-
-
--- | Describes how a let binding should be evaluated.
-data LetMode a n
-        -- | Evaluate binding before substituting the result.
-        = LetStrict
-
-        -- | Use lazy evaluation. 
-        --   The witness shows that the head region of the bound expression
-        --   can contain thunks (is lazy), or Nothing if there is no head region.
-        | LetLazy !(Maybe (Witness a n))
         deriving (Eq, Show)
 
 

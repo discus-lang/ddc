@@ -66,7 +66,6 @@ data Features
         , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
         , featuresNestedFunctions       :: Bool
-        , featuresLazyBindings          :: Bool
         , featuresDebruijnBinders       :: Bool
         , featuresUnboundLevel0Vars     :: Bool
         , featuresUnboxedInstantiation  :: Bool
@@ -86,7 +85,6 @@ zeroFeatures
         , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
         , featuresNestedFunctions       = False
-        , featuresLazyBindings          = False
         , featuresDebruijnBinders       = False
         , featuresUnboundLevel0Vars     = False
         , featuresUnboxedInstantiation  = False
@@ -105,7 +103,6 @@ setFeature feature val features
         PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }
         NestedFunctions         -> features { featuresNestedFunctions      = val }
-        LazyBindings            -> features { featuresLazyBindings         = val }
         DebruijnBinders         -> features { featuresDebruijnBinders      = val }
         UnboundLevel0Vars       -> features { featuresUnboundLevel0Vars    = val }
         UnboxedInstantiation    -> features { featuresUnboxedInstantiation = val }

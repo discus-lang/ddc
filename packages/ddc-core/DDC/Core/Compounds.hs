@@ -239,7 +239,7 @@ splitXLets xx
 bindsOfLets :: Lets a n -> ([Bind n], [Bind n])
 bindsOfLets ll
  = case ll of
-        LLet _ b _         -> ([],  [b])
+        LLet b _           -> ([],  [b])
         LRec bxs           -> ([],  map fst bxs)
         LLetRegions bs bbs -> (bs, bbs)
         LWithRegion{}      -> ([],  [])
@@ -249,7 +249,7 @@ bindsOfLets ll
 specBindsOfLets :: Lets a n -> [Bind n]
 specBindsOfLets ll
  = case ll of
-        LLet _ _ _       -> []
+        LLet _ _         -> []
         LRec _           -> []
         LLetRegions bs _ -> bs
         LWithRegion{}    -> []
@@ -259,7 +259,7 @@ specBindsOfLets ll
 valwitBindsOfLets :: Lets a n -> [Bind n]
 valwitBindsOfLets ll
  = case ll of
-        LLet _ b _       -> [b]
+        LLet b _         -> [b]
         LRec bxs         -> map fst bxs
         LLetRegions _ bs -> bs
         LWithRegion{}    -> []

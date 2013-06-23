@@ -375,14 +375,11 @@ convertLetsX pp defs kenv tenv lts
                 xs'             <- mapM (convertExpX ExpFun pp defs kenv tenv') xs
                 return  $ LRec $ zip bs' xs'
 
-        LLet LetStrict b x1
+        LLet b x1
          -> do  let tenv'       = Env.extend b tenv
                 b'              <- convertB       kenv b
                 x1'             <- convertExpX ExpBind pp defs kenv tenv' x1
-                return  $ LLet LetStrict b' x1'
-
-        LLet LetLazy{} _ _
-         ->     throw $ ErrorMalformed "XLet lazy not handled yet"
+                return  $ LLet b' x1'
 
         LLetRegions b bs
          -> do  b'              <- mapM (convertB kenv) b

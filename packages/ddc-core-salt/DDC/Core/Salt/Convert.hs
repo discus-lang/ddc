@@ -303,7 +303,7 @@ convBlockM context pp kenv tenv xx
                        [ xx' <> semi ]
 
         -- Binding from a case-expression.
-        XLet _ (LLet LetStrict b x1@XCase{}) x2
+        XLet _ (LLet b x1@XCase{}) x2
          -> do  
                 -- Convert the right hand side in a nested context.
                 --  The ContextNext holds the var to assign the result to.
@@ -318,7 +318,7 @@ convBlockM context pp kenv tenv xx
                         , x2' ]
 
         -- Binding from an r-value.
-        XLet _ (LLet LetStrict b x1) x2
+        XLet _ (LLet b x1) x2
          -> do  x1'     <- convRValueM pp kenv tenv x1
                 x2'     <- convBlockM  context pp kenv tenv x2
 

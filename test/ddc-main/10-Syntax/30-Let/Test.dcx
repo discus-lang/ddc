@@ -2,35 +2,17 @@
 :check let _ : Unit = () in ()
 
 
--- Non-binding lazy.
-:check let _ : Unit lazy = () in ()
-
-
 -- Binding let.
 :check let x : Unit = () in x
-
-
--- Binding lazy.
-:check let x : Unit lazy = () in ()
 
 
 -- Let-bound function with full signature.
 :check let  f : Unit -> Unit = \(x:Unit). x in ()
 
 
--- Lazy-bound function with full signature.
-:check let  f : Unit -> Unit lazy = \(x:Unit). x in ()
-
-
 -- Let using function syntax with a return type.
 :check..
 let f (x:Unit) : Unit = x
-in  f ();;
-
-
--- Lazy using function syntax with a return type.
-:check..
-let f (x:Unit) : Unit lazy = x
 in  f ();;
 
 
@@ -59,13 +41,6 @@ y;;
 :check..
 let ^ : Unit = () in
 let ^ : Int R0# = 23 [R0#] ^0 in ^0;;
-
-
--- Let and lazy
-:check..
-let x : Unit = () in
-let y : Unit lazy = () in
-y;;
 
  
 -- Simple letregion.

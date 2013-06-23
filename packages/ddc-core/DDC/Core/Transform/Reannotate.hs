@@ -44,18 +44,10 @@ instance Reannotate Lets where
  reannotate f xx
   = let down x  = reannotate f x
     in case xx of
-        LLet m b x       -> LLet (down m) b (down x)
+        LLet b x         -> LLet b (down x)
         LRec bxs         -> LRec [(b, down x) | (b, x) <- bxs]
         LLetRegions b bs -> LLetRegions b bs
         LWithRegion b    -> LWithRegion b
-
-
-instance Reannotate LetMode where
- reannotate f mode
-  = case mode of
-        LetStrict        -> LetStrict
-        LetLazy Nothing  -> LetLazy Nothing
-        LetLazy (Just w) -> LetLazy (Just (reannotate f w))
 
 
 instance Reannotate Alt where

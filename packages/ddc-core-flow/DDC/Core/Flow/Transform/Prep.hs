@@ -118,20 +118,20 @@ prepX tenv xx
 prepLts :: TypeEnv Name -> a -> Lets a Name -> PrepM (Lets a Name)
 prepLts tenv a lts
  = case lts of
-        LLet m b@(BName n _) x
+        LLet b@(BName n _) x
          -> do  x'      <- prepX tenv x
 
                 mArgs   <- lookupWorkerArgs n
                 case mArgs of
                  Just tsArgs
                   |  length tsArgs > 0
-                   -> return $ LLet m b $ xEtaExpand a x' tsArgs
+                   -> return $ LLet b $ xEtaExpand a x' tsArgs
 
-                 _ -> return $ LLet m b x'
+                 _ -> return $ LLet b x'
 
-        LLet m b x
+        LLet b x
          -> do  x'      <- prepX tenv x
-                return  $ LLet m b x'
+                return  $ LLet b x'
 
         LRec bxs
          -> do  let (bs, xs) = unzip bxs

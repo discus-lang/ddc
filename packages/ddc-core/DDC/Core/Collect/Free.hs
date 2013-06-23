@@ -59,9 +59,8 @@ instance BindStruct (Exp a) where
         XLAM _ b x              -> [bindDefT BindLAM [b] [x]]
         XLam _ b x              -> [bindDefX BindLam [b] [x]]      
 
-        XLet _ (LLet m b x1) x2
-         -> slurpBindTree m
-         ++ slurpBindTree x1
+        XLet _ (LLet b x1) x2
+         -> slurpBindTree x1
          ++ [bindDefX BindLet [b] [x2]]
 
         XLet _ (LRec bxs) x2
@@ -80,14 +79,6 @@ instance BindStruct (Exp a) where
         XCast _ c x     -> slurpBindTree c ++ slurpBindTree x
         XType t         -> slurpBindTree t
         XWitness w      -> slurpBindTree w
-
-
-instance BindStruct (LetMode a) where
- slurpBindTree mode
-  = case mode of
-        LetStrict               -> []
-        LetLazy Nothing         -> []
-        LetLazy (Just ww)       -> slurpBindTree ww
 
 
 instance BindStruct (Cast a) where

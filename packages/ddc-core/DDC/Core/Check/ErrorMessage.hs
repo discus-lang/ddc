@@ -140,37 +140,6 @@ instance (Show n, Eq n, Pretty n)
                  , text "with: "                        <> align (ppr xx) ]
 
 
-        -- Let Lazy ---------------------------------------
-        ErrorLetLazyNotEmpty xx b clo
-         -> vcat [ text "Lazy let binding is not empty."
-                 , text "      The binding for: "       <> ppr (binderOfBind b)
-                 , text "          has closure: "       <> ppr clo
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorLetLazyNotPure xx b eff
-         -> vcat [ text "Lazy let binding is not pure."
-                 , text "      The binding for: "       <> ppr (binderOfBind b)
-                 , text "           has effect: "       <> ppr eff
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorLetLazyNoWitness xx b t
-         -> vcat [ text "Lazy let binding has no witness but the bound value may have a head region."
-                 , text "      The binding for: "       <> ppr (binderOfBind b)
-                 , text "             Has type: "       <> ppr t
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorLetLazyWitnessTypeMismatch xx b tWitGot tBind tWitExp
-         -> vcat [ text "Unexpected witness type in lazy let binding."
-                 , text "          The binding for: "   <> ppr (binderOfBind b)
-                 , text "    has a witness of type: "   <> ppr tWitGot
-                 , text "           but is type is: "   <> ppr tBind
-                 , text " so the witness should be: "   <> ppr tWitExp 
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
         -- Letrec -----------------------------------------
         ErrorLetrecBindingNotLambda xx x
          -> vcat [ text "Letrec can only bind lambda abstractions."

@@ -81,7 +81,7 @@ let foo [r1 : Region] (wc1 : Const r1) (wg1 : Global r1)
         [r2 : Region] (wc2 : Const r2) (wg2 : Global r2) (wl2 : Lazy  r2)
         (_ : Unit)
      = let x = 5 [r1] () in
-       let y : Int r2 lazy <wl2> 
+       let y : Int r2  
              = purify <read [r1] wc1 & alloc [r1] wc1 & alloc [r2] wc2> in
                forget <use  [r1] wg1 & use   [r2] wg2> in
                letregion r3 in 

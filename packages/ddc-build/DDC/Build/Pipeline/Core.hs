@@ -296,7 +296,7 @@ pipeFlow !mm !pp
                 -- use sites.
                 isFloatable lts                                 -- TODO: cleanup
                  = case lts of
-                    C.LLet _ (C.BName n _) _ 
+                    C.LLet (C.BName n _) _ 
                       | Just{}   <- Map.lookup n nsWorker
                       -> Forward.FloatForce
                     _ -> Forward.FloatAllow

@@ -66,9 +66,9 @@ let x = 5 [r0] () in
 addInt [:r0 r0 R0#:]
         ((\(wc' : Const r0) (wg' : Global r0). \(_ : Unit).
                 letregion r1 with { wl : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
-                let x lazy <wl> = purify <read [r0] wc' & alloc [r1] w1> in
-                                  forget <use  [r0] wg' & use   [r1] w2> in
-                                  addInt [:r0 r0 r1:] x x
+                let x = purify <read [r0] wc' & alloc [r1] w1> in
+                        forget <use  [r0] wg' & use   [r1] w2> in
+                        addInt [:r0 r0 r1:] x x
                 in  addInt [:r1 r1 r0:] x x)
                 <:wc wg:> ())
         (5 [r0] ());;
@@ -81,9 +81,9 @@ let x = 5 [r0] () in
 addInt [:r0 r0 R0#:]
         ((\(wc' : Const r0) (wc : Global r0). \(_ : Unit).
                 letregion r1 with { wl : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
-                let x lazy <wl> = purify <read [r0] wc' & alloc [r1] w1> in
-                                  forget <use  [r0] wc  & use   [r1] w2> in
-                                  addInt [:r0 r0 r1:] x x
+                let x = purify <read [r0] wc' & alloc [r1] w1> in
+                        forget <use  [r0] wc  & use   [r1] w2> in
+                        addInt [:r0 r0 r1:] x x
                 in  addInt [:r1 r1 r0:] x x)
                 <:wc wg:> ())
         (5 [r0] ());;
@@ -96,9 +96,9 @@ let x = 5 [r0] () in
 addInt [:r0 r0 R0#:]
         ((\(wc' : Const r0) (wg : Global r0). \(_ : Unit).
                 letregion r1 with { wc : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
-                let x lazy <wc> = purify <read [r0] wc' & alloc [r1] w1> in
-                                  forget <use  [r0] wg  & use   [r1] w2> in
-                                  addInt [:r0 r0 r1:] x x
+                let x = purify <read [r0] wc' & alloc [r1] w1> in
+                        forget <use  [r0] wg  & use   [r1] w2> in
+                        addInt [:r0 r0 r1:] x x
                 in  addInt [:r1 r1 r0:] x x)
                 <:wc wg:> ())
         (5 [r0] ());;
@@ -126,8 +126,8 @@ addInt [:r0 r0 R0#:]
 -- Rewrite variables on types of witness binders.
 :trans..
 (\(x : Unit -> Unit). /\(r : Region). \(y : Int r). \(wg : Global r). \(wl : Lazy r).
-        let x lazy <wl> = forget <use [r] wg> in y 
-        in x)
+        let x = forget <use [r] wg> in y 
+        in  x)
         (\(_ : Unit). letregion r in ());;
 
 

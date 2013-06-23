@@ -197,12 +197,12 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
-        LLet m b x
+        LLet b x
          -> let dBind = if isBot (typeOfBind b)
                           then ppr (binderOfBind b)
                           else ppr b
             in  text "let"
-                 <+> align (  dBind <> ppr m
+                 <+> align (  dBind
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
                                      <> text "=" <+> align (ppr x)))
 
@@ -245,14 +245,6 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
         LWithRegion b
          -> text "withregion"
                 <+> ppr b
-
-
-instance (Pretty n, Eq n) => Pretty (LetMode a n) where
- ppr lm
-  = case lm of
-        LetStrict        -> empty
-        LetLazy Nothing  -> text " lazy"
-        LetLazy (Just w) -> text " lazy <" <> ppr w <> text ">"
 
 
 -- Witness --------------------------------------------------------------------
