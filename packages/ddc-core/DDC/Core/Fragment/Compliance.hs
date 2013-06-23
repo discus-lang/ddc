@@ -26,7 +26,7 @@ complies
         => Profile n            -- ^ Fragment profile giving the supported
                                 --   language features and primitive operators.
         -> c a n                -- ^ The thing to check.
-        -> Maybe (Error n)
+        -> Maybe (Error a n)
 
 complies profile thing
  = compliesWithEnvs profile
@@ -43,7 +43,7 @@ compliesWithEnvs
 	-> Env.KindEnv n        -- ^ Starting kind environment.
 	-> Env.TypeEnv n        -- ^ Starting type environment.
 	-> c a n                -- ^ The thing to check.
-	-> Maybe (Error n)
+	-> Maybe (Error a n)
 
 compliesWithEnvs profile kenv tenv thing
  = let  merr    = result 
@@ -69,7 +69,7 @@ class Complies (c :: * -> * -> *) where
         -> Env n                -- ^ Starting Type environment.
         -> Context
         -> c a n 
-        -> CheckM n
+        -> CheckM a n
                 (Set n, Set n)  -- Used type and value names.
 
 
@@ -275,7 +275,7 @@ checkBind
         -> Env n                -- ^ The current environment
         -> Bind n               -- ^ The binder at this site.
         -> Set n                -- ^ Names used under the binder.
-        -> CheckM n (Set n)     -- ^ Names used above the binder.
+        -> CheckM a n (Set n)   -- ^ Names used above the binder.
 
 checkBind profile env bb used
  = let has f   = f $ profileFeatures profile
@@ -305,7 +305,7 @@ checkBinds
         :: Ord n  
         => Profile n 
         -> Env n  -> [Bind n] -> Set n 
-        -> CheckM n (Set n)
+        -> CheckM a n (Set n)
 
 checkBinds profile env bs used
  = case bs of
@@ -317,7 +317,7 @@ checkBinds profile env bs used
 
 -- Function -------------------------------------------------------------------
 -- | Check the function part of an application.
-checkFunction :: Profile n -> Exp a n -> CheckM n ()
+checkFunction :: Profile n -> Exp a n -> CheckM a n ()
 checkFunction profile xx 
  = let  has f   = f $ profileFeatures profile
         ok       = return ()
@@ -367,10 +367,10 @@ reset context   = context { contextFunArgs = Nothing }
 
 -- Monad ----------------------------------------------------------------------
 -- | Compliance checking monad.
-data CheckM n x
-        = CheckM (Either (Error n) x)
+data CheckM a n x
+        = CheckM (Either (Error a n) x)
 
-instance Monad (CheckM n) where
+instance Monad (CheckM a n) where
  return x   = CheckM (Right x)
  (>>=) m f  
   = case m of
@@ -379,10 +379,10 @@ instance Monad (CheckM n) where
 
 
 -- | Throw an error in the monad.
-throw :: Error n -> CheckM n x
+throw :: Error a n -> CheckM a n x
 throw e       = CheckM $ Left e
 
 
 -- | Take the result from a check monad.
-result :: CheckM n x -> Either (Error n) x
+result :: CheckM a n x -> Either (Error a n) x
 result (CheckM r)       = r

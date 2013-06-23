@@ -123,7 +123,8 @@ threadTopLets config kenv tenv lts
  = case lts of
         LLet m b x
          -> let (b', x')  = threadTopBind config [] kenv tenv b x
-            in  LLet m b' x'
+                m'        = reannotate annotTail m
+            in  LLet m' b' x'
 
         LRec bxs
          -> let tenv'     =   Env.extends (map fst bxs) tenv
@@ -343,7 +344,9 @@ threadProcBody config context kenv tenv xx
         XLam{}          -> error "ddc-core-simpl: threadProcBody unexpected XLam"
         XCast{}         -> error "ddc-core-simpl: threadProcBody unexpected XCast"
         XType t         -> XType t
-        XWitness w      -> XWitness w
+        
+        XWitness w      
+         -> XWitness (reannotate annotTail w)
 
         -- Tailcalls
         XApp a _ _

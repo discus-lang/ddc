@@ -132,7 +132,7 @@ instance SpreadX (Lets a) where
          -> LWithRegion (spreadX kenv tenv b)
 
 
-instance SpreadX LetMode where
+instance SpreadX (LetMode a) where
  spreadX kenv tenv lm
   = case lm of
         LetStrict        -> LetStrict
@@ -140,15 +140,15 @@ instance SpreadX LetMode where
         LetLazy (Just w) -> LetLazy (Just $ spreadX kenv tenv w)
 
 
-instance SpreadX Witness where
+instance SpreadX (Witness a) where
  spreadX kenv tenv ww
   = let down = spreadX kenv tenv 
     in case ww of
-        WCon  wc         -> WCon  (down wc)
-        WVar  u          -> WVar  (down u)
-        WApp  w1 w2      -> WApp  (down w1) (down w2)
-        WJoin w1 w2      -> WJoin (down w1) (down w2)
-        WType t1         -> WType (spreadT kenv t1)
+        WCon  a wc       -> WCon  a (down wc)
+        WVar  a u        -> WVar  a (down u)
+        WApp  a w1 w2    -> WApp  a (down w1) (down w2)
+        WJoin a w1 w2    -> WJoin a (down w1) (down w2)
+        WType a t1       -> WType a (spreadT kenv t1)
 
 
 instance SpreadX WiCon where

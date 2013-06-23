@@ -8,7 +8,7 @@ import DDC.Core.Pretty
 
 
 -- | Language fragment compliance violations.
-data Error n
+data Error a n
         -- | Found an unsupported language feature.
         = ErrorUnsupported      !Feature
 
@@ -30,11 +30,11 @@ data Error n
         | ErrorNakedType        !(Type    n)
 
         -- | Found a naked witness that isn't used as a function argument.
-        | ErrorNakedWitness     !(Witness n)
+        | ErrorNakedWitness     !(Witness a n)
         deriving (Eq, Show)
 
 
-instance (Pretty n, Eq n) => Pretty (Error n) where
+instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
   = case err of
         ErrorUnsupported feature

@@ -232,34 +232,34 @@ data Error a n
         -- | A witness application where the argument type does not match
         --   the parameter type.
         | ErrorWAppMismatch
-        { errorWitness          :: Witness n
+        { errorWitness          :: Witness a n
         , errorParamType        :: Type n
         , errorArgType          :: Type n }
 
         -- | Tried to perform a witness application with a non-witness.
         | ErrorWAppNotCtor
-        { errorWitness          :: Witness n
+        { errorWitness          :: Witness a n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
         -- | An invalid witness join.
         | ErrorCannotJoin
-        { errorWitness          :: Witness n
-        , errorWitnessLeft      :: Witness n
+        { errorWitness          :: Witness a n
+        , errorWitnessLeft      :: Witness a n
         , errorTypeLeft         :: Type n
-        , errorWitnessRight     :: Witness n
+        , errorWitnessRight     :: Witness a n
         , errorTypeRight        :: Type n }
 
         -- | A witness provided for a purify cast that does not witness purity.
         | ErrorWitnessNotPurity
         { errorChecking         :: Exp a n
-        , errorWitness          :: Witness n
+        , errorWitness          :: Witness a n
         , errorType             :: Type n }
 
         -- | A witness provided for a forget cast that does not witness emptiness.
         | ErrorWitnessNotEmpty
         { errorChecking         :: Exp a n
-        , errorWitness          :: Witness n
+        , errorWitness          :: Witness a n
         , errorType             :: Type n }
 
 

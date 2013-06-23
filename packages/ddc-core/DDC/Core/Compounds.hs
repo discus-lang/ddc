@@ -285,17 +285,17 @@ bindsOfPat pp
 
 -- Witnesses ------------------------------------------------------------------
 -- | Construct a witness application
-wApp :: Witness n -> Witness n -> Witness n
+wApp :: a -> Witness a n -> Witness a n -> Witness a n
 wApp = WApp
 
 
 -- | Construct a sequence of witness applications
-wApps :: Witness n -> [Witness n] -> Witness n
-wApps = foldl wApp
+wApps :: a -> Witness a n -> [Witness a n] -> Witness a n
+wApps a = foldl (wApp a)
 
 
 -- | Take the witness from an `XWitness` argument, if any.
-takeXWitness :: Exp a n -> Maybe (Witness n)
+takeXWitness :: Exp a n -> Maybe (Witness a n)
 takeXWitness xx
  = case xx of
         XWitness t -> Just t
@@ -303,10 +303,10 @@ takeXWitness xx
 
 
 -- | Flatten an application into the function parts and arguments, if any.
-takeWAppsAsList :: Witness n -> [Witness n]
+takeWAppsAsList :: Witness a n -> [Witness a n]
 takeWAppsAsList ww
  = case ww of
-        WApp w1 w2 -> takeWAppsAsList w1 ++ [w2]
+        WApp _ w1 w2 -> takeWAppsAsList w1 ++ [w2]
         _          -> [ww]
 
 
@@ -314,10 +314,10 @@ takeWAppsAsList ww
 --   name and its arguments.
 --
 --   Returns nothing if there is no witness constructor in head position.
-takePrimWiConApps :: Witness n -> Maybe (n, [Witness n])
+takePrimWiConApps :: Witness a n -> Maybe (n, [Witness a n])
 takePrimWiConApps ww
  = case takeWAppsAsList ww of
-        WCon wc : args | WiConBound (UPrim n _) _ <- wc
+        WCon _ wc : args | WiConBound (UPrim n _) _ <- wc
           -> Just (n, args)
         _ -> Nothing
 

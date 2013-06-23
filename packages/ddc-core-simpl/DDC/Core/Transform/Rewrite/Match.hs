@@ -80,7 +80,8 @@ match m bs (XApp _ x11 x12) (XApp _ x21 x22)
 	match m' bs x12 x22
 
 match m bs (XCast _ c1 x1) (XCast _ c2 x2)
- | eqCast c1 c2	= match m bs x1 x2
+ | eqCast c1 c2	
+ = match m bs x1 x2
 
 match (xs, tys) bs (XType t1) (XType t2)
  = do	tys' <- matchT t1 t2 bs tys
@@ -93,20 +94,23 @@ match _ _ _ _
  = Nothing
 
 
+eqCast :: Ord n => Cast a n -> Cast a n -> Bool
 eqCast lc rc 
  = clean lc == clean rc
  where  clean c 
-         = case c of
+         = T.reannotate (const ())
+         $ case c of
                 CastWeakenEffect  eff -> CastWeakenEffect  $ T.anonymizeT eff
-                CastWeakenClosure clo -> CastWeakenClosure $ map cleanX clo
-                CastPurify        wit -> CastPurify wit
+                CastWeakenClosure clo -> CastWeakenClosure $ map T.anonymizeX clo
+                CastPurify        wit -> CastPurify        wit
                 CastForget        wit -> CastForget wit
 
-        cleanX 
-         = T.anonymizeX . T.reannotate (const ())
 
+eqWit  :: Ord n => Witness a n -> Witness a n -> Bool
 eqWit lw rw 
-        = lw == rw
+        =  T.reannotate (const ()) lw 
+        == T.reannotate (const ()) rw
+
 
 -- Types ----------------------------------------------------------------------
 type VarSet n = Set.Set n

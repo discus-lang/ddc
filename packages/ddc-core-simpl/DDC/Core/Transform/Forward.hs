@@ -223,7 +223,7 @@ instance Forward Exp where
         XCase a x alts  -> liftM2   (XCase (snd a)) (down x) (mapM down alts)
         XCast a c x     -> liftM2   (XCast (snd a)) (down c) (down x)
         XType t         -> return $ XType t
-        XWitness w      -> return $ XWitness w
+        XWitness w      -> return $ XWitness (reannotate snd w)
 
 
 filterUsedInCasts :: [Used] -> [Used]
@@ -238,15 +238,17 @@ instance Forward Cast where
     in case xx of
         CastWeakenEffect eff    -> return $ CastWeakenEffect eff
         CastWeakenClosure xs    -> liftM    CastWeakenClosure (mapM down xs)
-        CastPurify w            -> return $ CastPurify w
-        CastForget w            -> return $ CastForget w
+        CastPurify w            -> return $ CastPurify (reannotate snd w)
+        CastForget w            -> return $ CastForget (reannotate snd w)
 
 
 instance Forward Lets where
  forwardWith profile config bindings lts
   = let down    = forwardWith profile config bindings
     in case lts of
-        LLet mode b x   -> liftM (LLet mode b) (down x)
+        LLet mode b x   
+         -> let mode'   = reannotate snd mode
+            in  liftM (LLet mode' b) (down x)
 
         LRec bxs        
          -> liftM LRec

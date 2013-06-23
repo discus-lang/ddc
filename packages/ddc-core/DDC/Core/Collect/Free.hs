@@ -82,7 +82,7 @@ instance BindStruct (Exp a) where
         XWitness w      -> slurpBindTree w
 
 
-instance BindStruct LetMode where
+instance BindStruct (LetMode a) where
  slurpBindTree mode
   = case mode of
         LetStrict               -> []
@@ -109,14 +109,14 @@ instance BindStruct (Alt a) where
          -> [bindDefX BindCasePat bs [x]]
 
 
-instance BindStruct Witness where
+instance BindStruct (Witness a) where
  slurpBindTree ww
   = case ww of
-        WVar u          -> [BindUse BoundWit u]
+        WVar _ u        -> [BindUse BoundWit u]
         WCon{}          -> []
-        WApp  w1 w2     -> slurpBindTree w1 ++ slurpBindTree w2
-        WJoin w1 w2     -> slurpBindTree w1 ++ slurpBindTree w2
-        WType t         -> slurpBindTree t
+        WApp  _ w1 w2   -> slurpBindTree w1 ++ slurpBindTree w2
+        WJoin _ w1 w2   -> slurpBindTree w1 ++ slurpBindTree w2
+        WType _ t       -> slurpBindTree t
 
 
 -- | Helper for constructing the `BindTree` for an expression or witness binder.

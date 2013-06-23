@@ -247,7 +247,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <+> ppr b
 
 
-instance (Pretty n, Eq n) => Pretty (LetMode n) where
+instance (Pretty n, Eq n) => Pretty (LetMode a n) where
  ppr lm
   = case lm of
         LetStrict        -> empty
@@ -256,19 +256,19 @@ instance (Pretty n, Eq n) => Pretty (LetMode n) where
 
 
 -- Witness --------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Witness n) where
+instance (Pretty n, Eq n) => Pretty (Witness a n) where
  pprPrec d ww
   = case ww of
-        WVar n          -> ppr n
-        WCon wc         -> ppr wc
+        WVar _ n         -> ppr n
+        WCon _ wc        -> ppr wc
 
-        WApp w1 w2
+        WApp _ w1 w2
          -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
          
-        WJoin w1 w2
+        WJoin _ w1 w2
          -> pprParen (d > 9)  (ppr w1 <+> text "&" <+> ppr w2)
 
-        WType t         -> text "[" <> ppr t <> text "]"
+        WType _ t        -> text "[" <> ppr t <> text "]"
 
 
 instance (Pretty n, Eq n) => Pretty (WiCon n) where

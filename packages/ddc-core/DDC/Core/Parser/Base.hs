@@ -1,10 +1,10 @@
 
 module DDC.Core.Parser.Base
         ( Parser
-        , pWbCon
         , pModuleName
         , pQualName
         , pName
+        , pWbCon,       pWbConSP
         , pCon,         pConSP
         , pLit,         pLitSP
         , pIndex,       pIndexSP
@@ -23,13 +23,6 @@ import qualified DDC.Base.Parser        as P
 -- | A parser of core language tokens.
 type Parser n a
         = P.Parser (Tok n) a
-
-
--- | Parse a builtin named `WiCon`
-pWbCon :: Parser n WbCon
-pWbCon  = P.pTokMaybe f
- where  f (KA (KWbConBuiltin wb)) = Just wb
-        f _                       = Nothing
 
 
 -- | Parse a module name.                               
@@ -55,6 +48,20 @@ pQualName
 -- | Parse a constructor or variable name.
 pName :: Parser n n
 pName   = P.choice [pCon, pVar]
+
+
+-- | Parse a builtin named `WbCon`
+pWbCon :: Parser n WbCon
+pWbCon  = P.pTokMaybe f
+ where  f (KA (KWbConBuiltin wb)) = Just wb
+        f _                       = Nothing
+
+
+-- | Parse a builtin named `WbCon`
+pWbConSP :: Parser n (WbCon, SourcePos)
+pWbConSP = P.pTokMaybeSP f
+ where  f (KA (KWbConBuiltin wb)) = Just wb
+        f _                       = Nothing
 
 
 -- | Parse a constructor name.

@@ -102,7 +102,7 @@ instance AnonymizeX (Cast a) where
          -> CastForget        (down w)
 
 
-instance AnonymizeX LetMode where
+instance AnonymizeX (LetMode a) where
  anonymizeWithX keep kstack tstack lm
   = let down = anonymizeWithX keep kstack tstack
     in case lm of
@@ -123,19 +123,19 @@ instance AnonymizeX (Alt a) where
             in  AAlt (PData uCon bs') x'
 
 
-instance AnonymizeX Witness where
+instance AnonymizeX (Witness a) where
  anonymizeWithX keep kstack tstack ww
   = let down = anonymizeWithX keep kstack tstack 
     in case ww of
-        WVar u@(UName _)
+        WVar a u@(UName _)
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
-         -> WVar (UIx ix)
+         -> WVar a (UIx ix)
 
-        WVar u          -> WVar u
-        WCon  c         -> WCon  c
-        WApp  w1 w2     -> WApp  (down w1) (down w2)
-        WJoin w1 w2     -> WJoin (down w1) (down w2)
-        WType t         -> WType (anonymizeWithT kstack t)
+        WVar  a u       -> WVar  a u
+        WCon  a c       -> WCon  a c
+        WApp  a w1 w2   -> WApp  a (down w1) (down w2)
+        WJoin a w1 w2   -> WJoin a (down w1) (down w2)
+        WType a t       -> WType a (anonymizeWithT kstack t)
 
 
 instance AnonymizeX Bind where

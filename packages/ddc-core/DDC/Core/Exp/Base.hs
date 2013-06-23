@@ -37,7 +37,7 @@ data Exp a n
         | XType    !(Type n)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness !(Witness n)
+        | XWitness !(Witness a n)
         deriving (Eq, Show)
 
 deriving instance Eq n => Eq (DaCon n)
@@ -56,17 +56,17 @@ data Cast a n
         | CastWeakenClosure ![Exp a n]
 
         -- | Purify the effect (action) of an expression.
-        | CastPurify !(Witness n)
+        | CastPurify !(Witness a n)
 
         -- | Forget about the closure (sharing) of an expression.
-        | CastForget !(Witness n)
+        | CastForget !(Witness a n)
         deriving (Eq, Show)
 
 
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
-        = LLet    !(LetMode n) !(Bind n) !(Exp a n)
+        = LLet    !(LetMode a n) !(Bind n) !(Exp a n)
 
         -- | Recursive binding of lambda abstractions.
         | LRec    ![(Bind n, Exp a n)]
@@ -81,14 +81,14 @@ data Lets a n
 
 
 -- | Describes how a let binding should be evaluated.
-data LetMode n
+data LetMode a n
         -- | Evaluate binding before substituting the result.
         = LetStrict
 
         -- | Use lazy evaluation. 
         --   The witness shows that the head region of the bound expression
         --   can contain thunks (is lazy), or Nothing if there is no head region.
-        | LetLazy !(Maybe (Witness n))
+        | LetLazy !(Maybe (Witness a n))
         deriving (Eq, Show)
 
 
@@ -111,21 +111,21 @@ data Pat n
 -- Witness --------------------------------------------------------------------
 -- | When a witness exists in the program it guarantees that a
 --   certain property of the program is true.
-data Witness n
+data Witness a n
         -- | Witness variable.
-        = WVar  !(Bound n)
+        = WVar  a !(Bound n)
         
         -- | Witness constructor.
-        | WCon  !(WiCon n)
+        | WCon  a !(WiCon n)
         
         -- | Witness application.
-        | WApp  !(Witness n) !(Witness n)
+        | WApp  a !(Witness a n) !(Witness a n)
 
         -- | Joining of witnesses.
-        | WJoin !(Witness n) !(Witness n)
+        | WJoin a !(Witness a n) !(Witness a n)
 
         -- | Type can appear as the argument of an application.
-        | WType !(Type n)
+        | WType a !(Type n)
         deriving (Eq, Show)
 
 

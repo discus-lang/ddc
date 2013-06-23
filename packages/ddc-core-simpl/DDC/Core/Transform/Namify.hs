@@ -98,7 +98,7 @@ instance Namify (Module a) where
         return  $ mm { moduleBody = body' }
 
 
-instance Namify LetMode where
+instance Namify (LetMode a) where
  namify tnam xnam mm
   = case mm of
         LetStrict               -> return mm
@@ -106,15 +106,15 @@ instance Namify LetMode where
         LetLazy (Just w)        -> liftM (LetLazy . Just) $ namify tnam xnam w
 
 
-instance Namify Witness where
+instance Namify (Witness a) where
  namify tnam xnam ww
   = let down = namify tnam xnam
     in case ww of
-        WVar u          -> liftM  WVar  (rewriteX tnam xnam u)
+        WVar  a u       -> liftM  (WVar  a) (rewriteX tnam xnam u)
         WCon{}          -> return ww
-        WApp  w1 w2     -> liftM2 WApp  (down w1) (down w2)
-        WJoin w1 w2     -> liftM2 WJoin (down w1) (down w2)
-        WType t         -> liftM  WType (down t)
+        WApp  a w1 w2   -> liftM2 (WApp  a) (down w1) (down w2)
+        WJoin a w1 w2   -> liftM2 (WJoin a) (down w1) (down w2)
+        WType a t       -> liftM  (WType a) (down t)
 
 
 instance Namify (Exp a) where

@@ -71,7 +71,7 @@ sumUsedMap (m:ms)
         = foldl' plusUsedMap m ms
 
 
--- Usage ----------------------------------------------------------------------
+-- Module ---------------------------------------------------------------------
 -- | Annotate all binding occurrences of variables in an expression
 --   with how they are used.
 usageModule 
@@ -96,6 +96,7 @@ usageModule
                 , moduleBody            = usageX body }
 
 
+-- Exp ------------------------------------------------------------------------
 -- | Annotate all binding occurrences of variables in an expression
 --   with how they are used.
 usageX  :: Ord n 
@@ -182,7 +183,9 @@ usageX' xx
          -> (empty, XType t)
 
         XWitness w     
-         -> (empty, XWitness w)
+         | (used', w')    <- usageWitness w
+         -> ( used'
+            , XWitness w')
 
 
 -- | Annotate binding occurences of named variables with usage information.
@@ -194,8 +197,10 @@ usageLets
 usageLets lts
  = case lts of
         LLet mode b x
-         |  (used, x')   <- usageX' x
-         -> (used, LLet mode b x')
+         |  (used1', x')        <- usageX' x
+         ,  (used2', mode')     <- usageMode mode
+         ,  used'               <- plusUsedMap used1' used2'
+         -> (used', LLet mode' b x')
 
         LRec bxs
          |  (bs, xs)      <- unzip bxs
@@ -208,6 +213,27 @@ usageLets lts
 
         LWithRegion b
          -> (empty, LWithRegion b)
+
+
+-- | Annotate binding occurrences of named value variables with
+--   usage information.
+usageMode 
+        :: Ord n
+        => LetMode a n
+        -> (UsedMap n, LetMode (UsedMap n, a) n)
+
+usageMode mm
+ = case mm of
+        LetStrict       
+         -> (empty, LetStrict)
+        
+        LetLazy Nothing 
+         -> (empty, LetLazy Nothing)
+        
+        LetLazy (Just w)      
+         | (used', w')  <- usageWitness w
+         -> (used', LetLazy (Just w'))
+
 
 
 -- | Annotate binding occurrences of named value variables with 
@@ -228,10 +254,12 @@ usageCast cc
          -> (UsedMap usedCasts, CastWeakenClosure xs')
 
         CastPurify w
-         -> (empty, CastPurify w)
+         | (used, w')   <- usageWitness w
+         -> (used, CastPurify w')
 
         CastForget w
-         -> (empty, CastForget w)
+         | (used, w')   <- usageWitness w
+         -> (used, CastForget w')
 
 
 -- | Annotate binding occurrences of named level-0 variables with
@@ -246,3 +274,32 @@ usageAlt (AAlt p x)
    in   (used, AAlt p x')
 
 
+-- | Annotate binding occurrences of named level-0 variables with
+--   usage information.
+usageWitness
+        :: Ord n
+        => Witness a n
+        -> (UsedMap n, Witness (UsedMap n, a) n)
+
+usageWitness ww
+ = case ww of
+        WVar a u
+         -> (empty, WVar (empty, a) u)
+
+        WCon a c
+         -> (empty, WCon (empty, a) c)
+
+        WApp a w1 w2
+         | (used1, w1') <- usageWitness w1
+         , (used2, w2') <- usageWitness w2
+         , used'        <- plusUsedMap used1 used2
+         -> (empty, WApp (used', a) w1' w2')
+
+        WJoin a w1 w2
+         | (used1, w1') <- usageWitness w1
+         , (used2, w2') <- usageWitness w2
+         , used'        <- plusUsedMap used1 used2
+         -> (empty, WJoin (used', a) w1' w2')
+
+        WType a t
+         -> (empty, WType (empty, a) t)

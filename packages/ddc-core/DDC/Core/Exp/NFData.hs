@@ -37,7 +37,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
         LWithRegion u           -> rnf u
 
 
-instance NFData n => NFData (LetMode n) where
+instance (NFData a, NFData n) => NFData (LetMode a n) where
  rnf mode
   = case mode of
         LetStrict               -> ()
@@ -57,14 +57,14 @@ instance NFData n => NFData (Pat n) where
         PData dc bs             -> rnf dc `seq` rnf bs
 
 
-instance NFData n => NFData (Witness n) where
+instance (NFData a, NFData n) => NFData (Witness a n) where
  rnf ww
   = case ww of
-        WVar  u                 -> rnf u
-        WCon  c                 -> rnf c
-        WApp  w1 w2             -> rnf w1 `seq` rnf w2
-        WJoin w1 w2             -> rnf w1 `seq` rnf w2
-        WType tt                -> rnf tt
+        WVar  a u                 -> rnf a `seq` rnf u
+        WCon  a c                 -> rnf a `seq` rnf c
+        WApp  a w1 w2             -> rnf a `seq` rnf w1 `seq` rnf w2
+        WJoin a w1 w2             -> rnf a `seq` rnf w1 `seq` rnf w2
+        WType a tt                -> rnf a `seq` rnf tt
 
 
 instance NFData n => NFData (WiCon n) where

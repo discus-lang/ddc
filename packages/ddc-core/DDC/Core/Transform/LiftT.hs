@@ -27,7 +27,7 @@ instance Ord n => MapBoundT (Exp a) n where
         XWitness w      -> XWitness (down w)
 
 
-instance Ord n => MapBoundT LetMode n where
+instance Ord n => MapBoundT (LetMode a) n where
  mapBoundAtDepthT f d m
   = case m of
         LetStrict        -> m
@@ -35,15 +35,15 @@ instance Ord n => MapBoundT LetMode n where
         LetLazy (Just w) -> LetLazy (Just $ mapBoundAtDepthT f d w)
 
          
-instance Ord n => MapBoundT Witness n where
+instance Ord n => MapBoundT (Witness a) n where
  mapBoundAtDepthT f d ww
   = let down = mapBoundAtDepthT f d
     in case ww of
-        WVar u         -> WVar  (down u)
-        WCon _         -> ww
-        WApp  w1 w2    -> WApp  (down w1) (down w2)
-        WJoin w1 w2    -> WJoin (down w1) (down w2)
-        WType t        -> WType (down t)
+        WVar  a u       -> WVar  a (down u)
+        WCon  _ _       -> ww
+        WApp  a w1 w2   -> WApp  a (down w1) (down w2)
+        WJoin a w1 w2   -> WJoin a (down w1) (down w2)
+        WType a t       -> WType a (down t)
 
 
 instance Ord n => MapBoundT (Cast a) n where

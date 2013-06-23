@@ -369,7 +369,11 @@ pLetWits bs
 
 
 -- | A binding for let expression.
-pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp SourcePos n)
+pLetBinding 
+        :: Ord n 
+        => Parser n ( LetMode SourcePos n
+                    , Bind n
+                    , Exp SourcePos n)
 pLetBinding 
  = do   b       <- pBinder
 
@@ -433,7 +437,10 @@ pLetBinding
 --   We don't support value recursion, so the right of all recursive
 --   bindings must be explicit lambda abstractions anyway, so there's 
 --   no point suspending them.
-pLetMode :: Ord n => Parser n (LetMode n)
+pLetMode 
+        :: Ord n 
+        => Parser n (LetMode SourcePos n)
+
 pLetMode
  = do   P.choice
                 -- lazy <WITNESS>

@@ -10,6 +10,7 @@ import DDC.Core.Eval.Name
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
+import DDC.Core.Transform.Reannotate
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Maybe
@@ -66,10 +67,10 @@ emptyCapSet
 
 
 -- | Insert a capability, or `error` if this isn't one.
-mustInsertCap :: Witness Name -> CapSet -> CapSet
+mustInsertCap :: Witness a Name -> CapSet -> CapSet
 mustInsertCap ww caps
- | WApp (WCon  (WiConBound       (UPrim nc _) _)) 
-        (WType (TCon (TyConBound (UPrim nh _) _))) <- ww
+ | WApp _ (WCon  _ (WiConBound       (UPrim nc _) _)) 
+          (WType _ (TCon (TyConBound (UPrim nh _) _))) <- ww
  , NameCap c     <- nc
  , NameRgn r     <- nh
  = case c of
@@ -90,9 +91,9 @@ mustInsertCap ww caps
 
 
 -- | Take a region name from a witness argument.
-takeNameRgn :: Witness Name -> Maybe Rgn
-takeNameRgn (WType (TCon (TyConBound (UPrim (NameRgn r) _) _))) = Just r
-takeNameRgn _                                                   = Nothing
+takeNameRgn :: Witness a Name -> Maybe Rgn
+takeNameRgn (WType _ (TCon (TyConBound (UPrim (NameRgn r) _) _))) = Just r
+takeNameRgn _                                                     = Nothing
 
 
 -- | Check a capability set for conflicts between the capabilities.
@@ -125,14 +126,14 @@ data Error a
         --   appliction we need to ensure the constructors aren't partially 
         --   applied.
         | ErrorPartial
-        { errorWitness  :: Witness Name }
+        { errorWitness  :: Witness () Name }
 
         -- | A capability constructor applied to a non-region handle.
         --   As with `ErrorPartial` we only need to check for this because we're
         --   using general witness application to represent capabilities, instead
         --   of having an atomic form. 
         | ErrorNonHandle
-        { errorWitness  :: Witness Name }
+        { errorWitness  :: Witness () Name }
 
 
 instance Pretty (Error a) where
@@ -156,7 +157,7 @@ instance Pretty (Error a) where
 -------------------------------------------------------------------------------
 -- | Collect the list of capabilities in an expression, 
 --   and check that they are well-formed.
-checkCapsXM :: Exp a Name -> CheckM a [Witness Name]
+checkCapsXM :: Exp a Name -> CheckM a [Witness a Name]
 checkCapsXM xx
  = let none    = return []
    in case xx of
@@ -173,7 +174,7 @@ checkCapsXM xx
         XWitness w      -> checkCapsWM w
 
 
-checkCapsCM :: Cast a Name -> CheckM a [Witness Name]
+checkCapsCM :: Cast a Name -> CheckM a [Witness a Name]
 checkCapsCM cc
  = let none     = return []
    in case cc of
@@ -190,7 +191,7 @@ checkCapsCM cc
          -> checkCapsWM w
 
 
-checkCapsLM :: Lets a Name -> CheckM a [Witness Name]
+checkCapsLM :: Lets a Name -> CheckM a [Witness a Name]
 checkCapsLM ll
  = let none     = return []
    in case ll of
@@ -200,7 +201,7 @@ checkCapsLM ll
         LWithRegion{}   -> none
 
 
-checkCapsMM :: LetMode Name -> CheckM a [Witness Name]
+checkCapsMM :: LetMode a Name -> CheckM a [Witness a Name]
 checkCapsMM mm
  = let none     = return []
    in case mm of
@@ -209,33 +210,33 @@ checkCapsMM mm
         LetLazy Nothing  -> none
 
 
-checkCapsAM :: Alt a Name  -> CheckM a [Witness Name]
+checkCapsAM :: Alt a Name  -> CheckM a [Witness a Name]
 checkCapsAM aa
  = case aa of
         AAlt _ x        -> checkCapsXM x
 
 
-checkCapsWM :: Witness Name -> CheckM a [Witness Name]
+checkCapsWM :: Witness a Name -> CheckM a [Witness a Name]
 checkCapsWM ww
  = let none     = return []
    in case ww of
         WVar{}             -> none
 
         WCon{}
-         | isCapConW ww    -> throw $ ErrorPartial ww
+         | isCapConW ww    -> throw $ ErrorPartial (reannotate (const ()) ww)
          | otherwise       -> none
 
 
-        WApp w1@WCon{} w2@(WType tR)
+        WApp _ w1@WCon{} w2@(WType _ tR)
          | isCapConW w1
          -> if isJust $ takeHandleT tR 
                 then return [ww]
-                else throw $ ErrorNonHandle ww
+                else throw $ ErrorNonHandle (reannotate (const ()) ww)
 
          |  otherwise
          -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
 
-        WApp w1 w2         -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
-        WJoin w1 w2        -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
+        WApp  _ w1 w2       -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
+        WJoin _ w1 w2      -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
         WType{}            -> none
 

@@ -398,18 +398,18 @@ convertLetsX pp defs kenv tenv lts
 -- | Convert a witness expression to Salt
 convertWitnessX
         :: Show a
-        => KindEnv L.Name               -- ^ Kind enviornment
-        -> Witness L.Name               -- ^ Witness to convert.
-        -> ConvertM a (Witness S.Name)
+        => KindEnv L.Name                   -- ^ Kind enviornment
+        -> Witness (AnTEC a L.Name) L.Name  -- ^ Witness to convert.
+        -> ConvertM a (Witness a S.Name)
 
 convertWitnessX kenv ww
  = let down = convertWitnessX kenv
    in  case ww of
-            WVar n      -> liftM  WVar  (convertU n)
-            WCon wc     -> liftM  WCon  (convertWiConX kenv wc)
-            WApp w1 w2  -> liftM2 WApp  (down w1) (down w2)
-            WJoin w1 w2 -> liftM2 WApp  (down w1) (down w2)
-            WType t     -> liftM  WType (convertT kenv t)
+            WVar  a n     -> liftM  (WVar  $ annotTail a) (convertU n)
+            WCon  a wc    -> liftM  (WCon  $ annotTail a) (convertWiConX kenv wc)
+            WApp  a w1 w2 -> liftM2 (WApp  $ annotTail a) (down w1) (down w2)
+            WJoin a w1 w2 -> liftM2 (WApp  $ annotTail a) (down w1) (down w2)
+            WType a t     -> liftM  (WType $ annotTail a) (convertT kenv t)
 
 
 convertWiConX

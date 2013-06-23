@@ -37,17 +37,25 @@ instance Reannotate Exp where
         XCase a x alts  -> XCase (f a) (down x)   (map down alts)
         XCast a c x     -> XCast (f a) (down c)   (down x)
         XType t         -> XType t
-        XWitness w      -> XWitness w
+        XWitness w      -> XWitness (down w)
 
 
 instance Reannotate Lets where
  reannotate f xx
   = let down x  = reannotate f x
     in case xx of
-        LLet m b x       -> LLet m b (down x)
+        LLet m b x       -> LLet (down m) b (down x)
         LRec bxs         -> LRec [(b, down x) | (b, x) <- bxs]
         LLetRegions b bs -> LLetRegions b bs
         LWithRegion b    -> LWithRegion b
+
+
+instance Reannotate LetMode where
+ reannotate f mode
+  = case mode of
+        LetStrict        -> LetStrict
+        LetLazy Nothing  -> LetLazy Nothing
+        LetLazy (Just w) -> LetLazy (Just (reannotate f w))
 
 
 instance Reannotate Alt where
@@ -62,7 +70,17 @@ instance Reannotate Cast where
     in case cc of
         CastWeakenEffect  eff   -> CastWeakenEffect eff
         CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
-        CastPurify w            -> CastPurify w
-        CastForget w            -> CastForget w
+        CastPurify w            -> CastPurify (down w)
+        CastForget w            -> CastForget (down w)
 
+
+instance Reannotate Witness where
+ reannotate f ww
+  = let down x = reannotate f x
+    in case ww of
+        WVar  a u               -> WVar  (f a) u
+        WCon  a c               -> WCon  (f a) c
+        WApp  a w1 w2           -> WApp  (f a) (down w1) (down w2)
+        WJoin a w1 w2           -> WJoin (f a) (down w1) (down w2)
+        WType a t               -> WType (f a) t
 

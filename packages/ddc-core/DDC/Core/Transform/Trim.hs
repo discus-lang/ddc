@@ -98,7 +98,7 @@ freeOfTreeExp a kenv tenv tt
 
         BindUse BoundWit u
          | member u tenv     -> []
-         | otherwise         -> [XWitness (WVar u)]
+         | otherwise         -> [XWitness (WVar a u)]
 
         BindUse BoundSpec u
          | member u kenv     -> []

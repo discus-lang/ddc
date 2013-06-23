@@ -58,7 +58,7 @@ isAtomX xx
 
 
 -- | Check whether a witness is a `WVar` or `WCon`.
-isAtomW :: Witness n -> Bool
+isAtomW :: Witness a n -> Bool
 isAtomW ww
  = case ww of
         WVar{}          -> True

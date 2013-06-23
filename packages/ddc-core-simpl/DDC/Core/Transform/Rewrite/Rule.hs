@@ -392,7 +392,7 @@ makeClosureWeakening config kenv tenv lhs rhs
          $  [XVar a u 
                 | u <- Set.toList $ daLeft `Set.difference` daRight ]
 
-         ++ [XWitness (WVar u)
+         ++ [XWitness (WVar a u)
                 | u <- Set.toList $ wiLeft `Set.difference` wiRight ]
 
          ++ [XType (TVar u)

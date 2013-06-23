@@ -16,6 +16,7 @@ import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
+import DDC.Core.Exp.AnT                         (AnT)
 import DDC.Type.Transform.SpreadT
 import DDC.Core.Module
 import DDC.Base.Pretty
@@ -36,7 +37,7 @@ data Error n
         | ErrorParser     !BP.ParseError
         | ErrorCheckType  !(T.Error n)      
         | ErrorCheckExp   !(C.Error BP.SourcePos n)
-        | ErrorCompliance !(I.Error n)
+        | ErrorCompliance !(I.Error (C.AnTEC BP.SourcePos n) n)
         deriving Show
 
 
@@ -219,7 +220,7 @@ loadWitness
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
-                  (Witness n, Type n)
+                  (Witness (AnT BP.SourcePos n) n, Type n)
 
 loadWitness profile sourceName toks'
  = goParse toks'
@@ -237,6 +238,6 @@ loadWitness profile sourceName toks'
         -- Check the kind of the type.
         goCheckType w
          = case C.checkWitness config kenv tenv w of
-                Left err  -> Left (ErrorCheckExp err)
-                Right k   -> Right (w, k)
+                Left err      -> Left (ErrorCheckExp err)
+                Right (w', t) -> Right (w', t)
 

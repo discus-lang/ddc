@@ -111,7 +111,7 @@ instance SubstituteTX (Exp a) where
         XWitness w      -> XWitness (down sub w)
 
 
-instance SubstituteTX LetMode where
+instance SubstituteTX (LetMode a) where
  substituteWithTX tArg sub lm
   = let down x   = substituteWithTX tArg x
     in case lm of
@@ -143,15 +143,15 @@ instance SubstituteTX (Cast a) where
         CastForget w            -> CastForget        (down sub w)
 
 
-instance SubstituteTX Witness where
+instance SubstituteTX (Witness a) where
  substituteWithTX tArg sub ww
   = let down x   = substituteWithTX tArg x
     in case ww of
-        WVar u                  -> WVar u
+        WVar  a u               -> WVar  a u
         WCon{}                  -> ww
-        WApp  w1 w2             -> WApp  (down sub w1) (down sub w2)
-        WJoin w1 w2             -> WJoin (down sub w1) (down sub w2)
-        WType t                 -> WType (down sub t)
+        WApp  a w1 w2           -> WApp  a (down sub w1) (down sub w2)
+        WJoin a w1 w2           -> WJoin a (down sub w1) (down sub w2)
+        WType a t               -> WType a (down sub t)
 
 
 instance SubstituteTX Bind where

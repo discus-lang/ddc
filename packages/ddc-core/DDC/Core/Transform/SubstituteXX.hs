@@ -72,7 +72,7 @@ substituteXXs bts x
 --   Perform type substitution for an `XType` 
 --    and witness substitution for an `XWitness`
 substituteXArg 
-        :: (Ord n, SubstituteXX c, SubstituteWX (c a), SubstituteTX (c a))
+        :: (Ord n, SubstituteXX c, SubstituteWX c, SubstituteTX (c a))
         => Bind n -> Exp a n -> c a n -> c a n
 
 substituteXArg b arg x
@@ -84,7 +84,7 @@ substituteXArg b arg x
 
 -- | Wrapper for `substituteXArgs` to substitute multiple arguments.
 substituteXArgs
-        :: (Ord n, SubstituteXX c, SubstituteWX (c a), SubstituteTX (c a))
+        :: (Ord n, SubstituteXX c, SubstituteWX c, SubstituteTX (c a))
         => [(Bind n, Exp a n)] -> c a n -> c a n
 
 substituteXArgs bas x

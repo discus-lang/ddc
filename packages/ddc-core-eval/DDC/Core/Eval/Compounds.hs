@@ -61,23 +61,24 @@ tList tR tA
 
 
 -- Witness --------------------------------------------------------------------
-wGlobal     :: Region Name -> Witness Name
-wGlobal r   = WApp (WCon wcGlobal)   (WType r)
+wGlobal     :: a -> Region Name -> Witness a Name
+wGlobal a r   = WApp a (WCon a wcGlobal)   (WType a r)
 
-wConst      :: Region Name -> Witness Name
-wConst r    = WApp (WCon wcConst)    (WType r)
+wConst      :: a -> Region Name -> Witness a Name
+wConst a r    = WApp a (WCon a wcConst)    (WType a r)
 
-wMutable    :: Region Name -> Witness Name
-wMutable r  = WApp (WCon wcMutable)  (WType r)
+wMutable    :: a -> Region Name -> Witness a Name
+wMutable a r  = WApp a (WCon a wcMutable)  (WType a r)
 
-wLazy       :: Region Name -> Witness Name
-wLazy r     = WApp (WCon wcLazy)     (WType r)
+wLazy       :: a -> Region Name -> Witness a Name
+wLazy a r     = WApp a (WCon a wcLazy)     (WType a r)
 
-wManifest   :: Region Name -> Witness Name
-wManifest r = WApp (WCon wcManifest) (WType r)
+wManifest   :: a -> Region Name -> Witness a Name
+wManifest a r = WApp a (WCon a wcManifest) (WType a r)
 
-wDistinct     :: Int -> [Region Name] -> Witness Name
-wDistinct n rs  = wApps (WCon (wcDistinct n)) (map WType rs)
+wDistinct     :: a -> Int -> [Region Name] -> Witness a Name
+wDistinct a n rs  
+        = wApps a (WCon a (wcDistinct n)) (map (WType a) rs)
 
 -- Just the Constructors
 wcGlobal   :: WiCon Name
@@ -106,10 +107,10 @@ wcDistinct n    = WiConBound (UPrim (NameCap (CapDistinct n)) t) t
 
 
 -- | Check whether a witness is a capability constructor.
-isCapConW :: Witness Name -> Bool
+isCapConW :: Witness a Name -> Bool
 isCapConW ww
  = case ww of
-        WCon WiConBound{}       -> True
+        WCon _ WiConBound{}     -> True
         _                       -> False
 
 
@@ -192,7 +193,7 @@ stripLocX xx
 takeMutableX :: Exp a Name -> Maybe Rgn
 takeMutableX xx
  = case xx of
-        XWitness (WApp (WCon wc) (WType tR1))
+        XWitness (WApp _ (WCon _ wc) (WType _ tR1))
          | WiConBound (UPrim (NameCap CapMutable) _) _ <- wc
                 -> takeHandleT tR1
         _       -> Nothing

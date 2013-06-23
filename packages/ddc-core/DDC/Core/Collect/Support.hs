@@ -137,25 +137,25 @@ instance SupportX (Alt a) where
             in  support kenv tenv' x
 
 
-instance SupportX Witness where
+instance SupportX (Witness a) where
  support kenv tenv ww
   = case ww of
-        WVar u
+        WVar _ u
          | Env.member u tenv    -> mempty
          | otherwise            -> mempty { supportWiVar = Set.singleton u }
 
         WCon{}
          -> mempty
 
-        WApp w1 w2
+        WApp _ w1 w2
          -> support kenv tenv w1
          <> support kenv tenv w2
 
-        WJoin w1 w2
+        WJoin _ w1 w2
          -> support kenv tenv w1
          <> support kenv tenv w2
 
-        WType t
+        WType _ t
          -> support kenv tenv t
 
 
@@ -198,7 +198,7 @@ instance SupportX (Lets a) where
          | otherwise            -> mempty { supportSpVar = Set.singleton u }
 
 
-instance SupportX LetMode where
+instance SupportX (LetMode a) where
  support kenv tenv mm
   = case mm of
         LetStrict               -> mempty

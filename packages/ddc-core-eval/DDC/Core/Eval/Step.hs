@@ -317,7 +317,7 @@ step store (XLet a (LLetRegions bRegions bws) x)
         -- Build witnesses for each of the witness types.
         -- This can fail if the set of witness signatures is malformed.
         , Just wits     <- sequence 
-                        $  map regionWitnessOfType
+                        $  map (regionWitnessOfType ())
                         $  map typeOfBind bws'
 
         = let   -- Substitute handle and witnesses into body.
@@ -553,14 +553,14 @@ isSomeValue weak store xx
 
 -- | Get the region witness corresponding to one of the witness types that are
 --   permitted in a letregion.
-regionWitnessOfType :: Type Name -> Maybe (Witness Name)
-regionWitnessOfType tt
+regionWitnessOfType :: a -> Type Name -> Maybe (Witness a Name)
+regionWitnessOfType a tt
  = case takeTyConApps tt of
-        Just (TyConWitness  TwConGlobal     , [r]) -> Just $ wGlobal   r
-        Just (TyConWitness  TwConMutable    , [r]) -> Just $ wMutable  r
-        Just (TyConWitness  TwConConst      , [r]) -> Just $ wConst    r
-        Just (TyConWitness  TwConLazy       , [r]) -> Just $ wLazy     r
-        Just (TyConWitness  TwConManifest   , [r]) -> Just $ wManifest r
-        Just (TyConWitness (TwConDistinct n), rs)  -> Just $ wDistinct n rs
+        Just (TyConWitness  TwConGlobal     , [r]) -> Just $ wGlobal   a r
+        Just (TyConWitness  TwConMutable    , [r]) -> Just $ wMutable  a r
+        Just (TyConWitness  TwConConst      , [r]) -> Just $ wConst    a r
+        Just (TyConWitness  TwConLazy       , [r]) -> Just $ wLazy     a r
+        Just (TyConWitness  TwConManifest   , [r]) -> Just $ wManifest a r
+        Just (TyConWitness (TwConDistinct n), rs)  -> Just $ wDistinct a n rs
         _                                          -> Nothing
 

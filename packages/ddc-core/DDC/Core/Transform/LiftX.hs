@@ -102,7 +102,7 @@ instance MapBoundX (Exp a) n where
         XWitness w	-> XWitness (down w)
 
 
-instance MapBoundX LetMode n where
+instance MapBoundX (LetMode a) n where
  mapBoundAtDepthX f d m
   = case m of
         LetStrict        -> m
@@ -110,15 +110,15 @@ instance MapBoundX LetMode n where
         LetLazy (Just w) -> LetLazy (Just $ mapBoundAtDepthX f d w)
 
          
-instance MapBoundX Witness n where
+instance MapBoundX (Witness a) n where
  mapBoundAtDepthX f d ww
   = let down = mapBoundAtDepthX f d
     in case ww of
-        WVar u         -> WVar  (down u)
-	WCon _         -> ww
-	WApp  w1 w2    -> WApp  (down w1) (down w2)
-	WJoin w1 w2    -> WJoin (down w1) (down w2)
-	WType _        -> ww
+        WVar  a u       -> WVar  a (down u)
+	WCon  _ _       -> ww
+	WApp  a w1 w2   -> WApp  a (down w1) (down w2)
+	WJoin a w1 w2   -> WJoin a (down w1) (down w2)
+	WType _ _       -> ww
 
 
 instance MapBoundX (Cast a) n where

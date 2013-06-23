@@ -13,10 +13,12 @@ import DDC.Core.Compounds
 import DDC.Core.Collect
 import DDC.Core.Pretty
 import DDC.Core.Exp
+import DDC.Core.Exp.AnTEC
 import DDC.Core.Check.Error
 import DDC.Core.Check.CheckDaCon
 import DDC.Core.Check.CheckWitness
 import DDC.Core.Check.TaggedClosure
+import DDC.Core.Transform.Reannotate
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
@@ -35,37 +37,6 @@ import Control.Monad
 import DDC.Data.ListUtils
 import Data.List                        as L
 import Data.Maybe
-import Data.Typeable
-import Control.DeepSeq
-
-
--- Annot ----------------------------------------------------------------------
--- | The type checker adds this annotation to every node in the AST, 
---   giving its type, effect and closure.
----
---   NOTE: We want to leave the components lazy so that the checker
---         doesn't actualy need to produce the type components if they're
---         not needed.
-data AnTEC a n
-        = AnTEC
-        { annotType     :: (Type    n)
-        , annotEffect   :: (Effect  n)
-        , annotClosure  :: (Closure n)
-        , annotTail     :: a }
-        deriving (Show, Typeable)
-
-
-instance (NFData a, NFData n) => NFData (AnTEC a n) where
- rnf !an
-        =     rnf (annotType    an)
-        `seq` rnf (annotEffect  an)
-        `seq` rnf (annotClosure an)
-        `seq` rnf (annotTail    an)
-
-
-instance Pretty (AnTEC a n) where
- ppr _ = text "AnTEC"        
-
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -209,12 +180,16 @@ checkExpM' !config !kenv !tenv xx@(XApp a x1 (XType t2))
 -- value-witness application.
 checkExpM' !config !kenv !tenv xx@(XApp a x1 (XWitness w2))
  = do   (x1', t1, effs1, clos1) <- checkExpM     config kenv tenv x1
-        t2                      <- checkWitnessM config kenv tenv w2
+
+        (w2', t2) <- checkWitnessM config kenv tenv w2
+        let w2TEC = reannotate fromAnT w2'
+
+
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           | t11 `equivT` t2   
           -> returnX a
-                (\z -> XApp z x1' (XWitness w2))
+                (\z -> XApp z x1' (XWitness w2TEC))
                 t12 effs1 clos1
 
           | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
@@ -667,7 +642,9 @@ checkExpM' !config !kenv !tenv (XCast a (CastWeakenClosure xs) x1)
 -- Purify an effect, given a witness that it is pure.
 checkExpM' !config !kenv !tenv xx@(XCast a (CastPurify w) x1)
  = do
-        tW                   <- checkWitnessM config kenv tenv w
+        (w', tW)        <- checkWitnessM config kenv tenv w
+        let wTEC        = reannotate fromAnT w'
+
         (x1', t1, effs, clo) <- checkExpM     config kenv tenv x1
                 
         effs' <- case tW of
@@ -675,7 +652,7 @@ checkExpM' !config !kenv !tenv xx@(XCast a (CastPurify w) x1)
                     -> return $ Sum.delete effMask effs
                   _ -> throw  $ ErrorWitnessNotPurity xx w tW
 
-        let c'  = CastPurify w
+        let c'  = CastPurify wTEC
 
         returnX a
                 (\z -> XCast z c' x1')
@@ -685,8 +662,10 @@ checkExpM' !config !kenv !tenv xx@(XCast a (CastPurify w) x1)
 -- Forget a closure, given a witness that it is empty.
 checkExpM' !config !kenv !tenv xx@(XCast a (CastForget w) x1)
  = do   
-        tW                    <- checkWitnessM config kenv tenv w
-        (x1', t1, effs, clos) <- checkExpM     config kenv tenv x1
+        (w', tW)      <- checkWitnessM config kenv tenv w        
+        let wTEC      = reannotate fromAnT w'
+
+        (x1', t1, effs, clos)  <- checkExpM     config kenv tenv x1
 
         clos' <- case tW of
                   TApp (TCon (TyConWitness TwConEmpty)) cloMask
@@ -696,7 +675,7 @@ checkExpM' !config !kenv !tenv xx@(XCast a (CastForget w) x1)
 
                   _ -> throw $ ErrorWitnessNotEmpty xx w tW
 
-        let c'  = CastForget w
+        let c'  = CastForget wTEC
 
         returnX a
                 (\z -> XCast z c' x1')
@@ -736,8 +715,8 @@ checkArgM !config !kenv !tenv !xx
                         , clo)
 
         XWitness w
-         -> do  checkWitnessM config kenv tenv w
-                return  ( XWitness w
+         -> do  (w', _) <- checkWitnessM config kenv tenv w
+                return  ( XWitness (reannotate fromAnT w')
                         , Set.empty)
 
         _ -> do
@@ -812,32 +791,37 @@ checkLetsM !xx !config !kenv !tenv (LLet mode b11 x12)
                   $ throw $ ErrorLetLazyNotEmpty xx b11 clo12')
 
         -- Check region witness for lazy bindings.
-        (case mode of
-          LetStrict     -> return ()
+        mode' 
+         <- case mode of
+             LetStrict     
+              -> return LetStrict
 
-          -- Type of lazy binding has no head region, like Unit and (->).
-          LetLazy Nothing
-           -> do case takeDataTyConApps t12 of
-                  Just (_tc, t1 : _)
-                   ->  do k1 <- checkTypeM config kenv t1
-                          when (isRegionKind k1)
-                           $ throw $ ErrorLetLazyNoWitness xx b11 t12
+             -- Type of lazy binding has no head region, like Unit and (->).
+             LetLazy Nothing
+              -> do case takeDataTyConApps t12 of
+                     Just (_tc, t1 : _)
+                      ->  do k1 <- checkTypeM config kenv t1
+                             when (isRegionKind k1)
+                              $ throw $ ErrorLetLazyNoWitness xx b11 t12
+                             return $ LetLazy Nothing
 
-                  _ -> return ()
+                     _ -> return $ LetLazy Nothing
 
-          -- Type of lazy binding might have a head region,
-          -- so we need a Lazy witness for it.
-          LetLazy (Just wit)
-           -> do tWit        <- checkWitnessM config kenv tenv wit
-                 let tWitExp =  case takeDataTyConApps t12 of
-                                 Just (_tc, tR : _ts) -> tLazy tR
-                                 _                    -> tHeadLazy t12
+             -- Type of lazy binding might have a head region,
+             -- so we need a Lazy witness for it.
+             LetLazy (Just wit)
+              -> do (wit', tWit) <- checkWitnessM config kenv tenv wit
+                    let tWitExp =  case takeDataTyConApps t12 of
+                                    Just (_tc, tR : _ts) -> tLazy tR
+                                    _                    -> tHeadLazy t12
 
-                 when (not $ equivT tWit tWitExp)
-                  $ throw $ ErrorLetLazyWitnessTypeMismatch 
-                                 xx b11 tWit t12 tWitExp)
+                    when (not $ equivT tWit tWitExp)
+                     $ throw $ ErrorLetLazyWitnessTypeMismatch 
+                                    xx b11 tWit t12 tWitExp
+
+                    return $ LetLazy (Just $ reannotate fromAnT wit')
         
-        return  ( LLet mode b11' x12'
+        return  ( LLet mode' b11' x12'
                 , [b11']
                 , effs12
                 , clo12)

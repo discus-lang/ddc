@@ -23,7 +23,7 @@ import qualified Data.Set       as Set
 --   type being substituted, and starts with an empty binder stack.
 substituteWX 
         :: (Ord n, SubstituteWX c) 
-        => Bind n -> Witness n -> c n -> c n
+        => Bind n -> Witness a n -> c a n -> c a n
 
 substituteWX b wArg xx
  | Just u       <- takeSubstBoundOfBind b
@@ -56,19 +56,19 @@ substituteWX b wArg xx
 -- | Wrapper for `substituteWithWX` to substitute multiple things.
 substituteWXs 
         :: (Ord n, SubstituteWX c) 
-        => [(Bind n, Witness n)] -> c n -> c n
+        => [(Bind n, Witness a n)] -> c a n -> c a n
 substituteWXs bts x
         = foldr (uncurry substituteWX) x bts
 
 
 -------------------------------------------------------------------------------
-class SubstituteWX (c :: * -> *) where
+class SubstituteWX (c :: * -> * -> *) where
  substituteWithWX
-        :: forall n. Ord n
-        => Witness n -> Sub n -> c n -> c n
+        :: forall a n. Ord n
+        => Witness a n -> Sub n -> c a n -> c a n
 
 
-instance SubstituteWX (Exp a) where 
+instance SubstituteWX Exp where 
  substituteWithWX wArg sub xx
   = {-# SCC substituteWithWX #-}
     let down s x   = substituteWithWX wArg s x
@@ -127,7 +127,7 @@ instance SubstituteWX LetMode where
         LetLazy (Just w) -> LetLazy (Just (down sub w))
 
 
-instance SubstituteWX (Alt a) where
+instance SubstituteWX Alt where
  substituteWithWX wArg sub aa
   = let down s x = substituteWithWX wArg s x
     in case aa of
@@ -140,7 +140,7 @@ instance SubstituteWX (Alt a) where
             in  AAlt (PData uCon bs') x'
 
 
-instance SubstituteWX (Cast a) where
+instance SubstituteWX Cast where
  substituteWithWX wArg sub cc
   = let down s x = substituteWithWX wArg s x
         into s x = renameWith s x
@@ -156,20 +156,20 @@ instance SubstituteWX Witness where
   = let down s x = substituteWithWX wArg s x
         into s x = renameWith s x
     in case ww of
-        WVar u
+        WVar a u
          -> case substW wArg sub u of
-                Left u'  -> WVar u'
+                Left u'  -> WVar a u'
                 Right w  -> w
 
         WCon{}                  -> ww
-        WApp  w1 w2             -> WApp  (down sub w1) (down sub w2)
-        WJoin w1 w2             -> WJoin (down sub w1) (down sub w2)
-        WType t                 -> WType (into sub t)
+        WApp  a w1 w2           -> WApp  a (down sub w1) (down sub w2)
+        WJoin a w1 w2           -> WJoin a (down sub w1) (down sub w2)
+        WType a t               -> WType a (into sub t)
 
 
 -- | Rewrite or substitute into a witness variable.
-substW  :: Ord n => Witness n -> Sub n -> Bound n 
-        -> Either (Bound n) (Witness n)
+substW  :: Ord n => Witness a n -> Sub n -> Bound n 
+        -> Either (Bound n) (Witness a n)
 
 substW wArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
