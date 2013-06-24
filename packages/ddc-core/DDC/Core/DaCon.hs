@@ -49,7 +49,7 @@ data DaCon n
           --   Non-algebraic types like 'Float' can't be inspected with
           --   case-expressions.
         , daConIsAlgebraic      :: !Bool }
-        deriving Show
+        deriving (Show, Eq)
 
 
 instance NFData n => NFData (DaCon n) where

@@ -1,12 +1,11 @@
 
--- | Core language AST that includes an annotation on every node of 
---   an expression.
+-- | Core language AST with a separate node to hold annotations.
 --
---   This is the default version of the language AST, and should be preferred
---   over the 'Simple' version in most cases. General purpose transformations 
---   that work over this AST should propagate the annotations in some
---   well-defined way.
-module DDC.Core.Exp.Annot where
+--   This version of the AST is used when generating code where most or all
+--   of the annotations would be empty. General purpose transformations should
+--   deal with the fully annotated version of the AST instead.
+--
+module DDC.Core.Exp.Simple where
 import DDC.Core.Exp.WiCon
 import DDC.Core.DaCon
 import DDC.Type.Exp
@@ -17,35 +16,38 @@ import Control.DeepSeq
 -- Values ---------------------------------------------------------------------
 -- | Well-typed expressions have types of kind `Data`.
 data Exp a n
+        -- | Annotation.
+        = XAnnot a (Exp a n)
+
         -- | Value variable   or primitive operation.
-        = XVar  !a  !(Bound n)
+        | XVar  !(Bound n)
 
         -- | Data constructor or literal.
-        | XCon  !a  !(DaCon n)
+        | XCon  !(DaCon n)
 
         -- | Type abstraction (level-1).
-        | XLAM  !a  !(Bind n)   !(Exp a n)
+        | XLAM  !(Bind n)   !(Exp a n)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam  !a  !(Bind n)   !(Exp a n)
+        | XLam  !(Bind n)   !(Exp a n)
 
         -- | Application.
-        | XApp  !a  !(Exp a n)  !(Exp a n)
+        | XApp  !(Exp a n)  !(Exp a n)
 
         -- | Possibly recursive bindings.
-        | XLet  !a  !(Lets a n) !(Exp a n)
+        | XLet  !(Lets a n) !(Exp a n)
 
         -- | Case branching.
-        | XCase !a  !(Exp a n)  ![Alt a n]
+        | XCase !(Exp a n)  ![Alt a n]
 
         -- | Type cast.
-        | XCast !a  !(Cast a n) !(Exp a n)
+        | XCast !(Cast a n) !(Exp a n)
 
         -- | Type can appear as the argument of an application.
-        | XType     !(Type n)
+        | XType    !(Type n)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness  !(Witness a n)
+        | XWitness !(Witness a n)
         deriving (Show, Eq)
 
 
@@ -62,20 +64,20 @@ data Cast a n
         | CastWeakenClosure ![Exp a n]
 
         -- | Purify the effect (action) of an expression.
-        | CastPurify !(Witness a n)
+        | CastPurify        !(Witness a n)
 
         -- | Forget about the closure (sharing) of an expression.
-        | CastForget !(Witness a n)
+        | CastForget        !(Witness a n)
         deriving (Show, Eq)
 
 
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
-        = LLet    !(Bind n) !(Exp a n)
+        = LLet        !(Bind n) !(Exp a n)
 
         -- | Recursive binding of lambda abstractions.
-        | LRec    ![(Bind n, Exp a n)]
+        | LRec        ![(Bind n, Exp a n)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
@@ -105,20 +107,22 @@ data Pat n
 -- | When a witness exists in the program it guarantees that a
 --   certain property of the program is true.
 data Witness a n
+        = WAnnot a (Witness a n)
+
         -- | Witness variable.
-        = WVar  a !(Bound n)
+        | WVar  !(Bound n)
         
         -- | Witness constructor.
-        | WCon  a !(WiCon n)
+        | WCon  !(WiCon n)
         
         -- | Witness application.
-        | WApp  a !(Witness a n) !(Witness a n)
+        | WApp  !(Witness a n) !(Witness a n)
 
         -- | Joining of witnesses.
-        | WJoin a !(Witness a n) !(Witness a n)
+        | WJoin !(Witness a n) !(Witness a n)
 
         -- | Type can appear as the argument of an application.
-        | WType a !(Type n)
+        | WType !(Type n)
         deriving (Show, Eq)
 
 
@@ -126,15 +130,16 @@ data Witness a n
 instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
-        XVar  a u       -> rnf a `seq` rnf u
-        XCon  a dc      -> rnf a `seq` rnf dc
-        XLAM  a b x     -> rnf a `seq` rnf b   `seq` rnf x
-        XLam  a b x     -> rnf a `seq` rnf b   `seq` rnf x
-        XApp  a x1 x2   -> rnf a `seq` rnf x1  `seq` rnf x2
-        XLet  a lts x   -> rnf a `seq` rnf lts `seq` rnf x
-        XCase a x alts  -> rnf a `seq` rnf x   `seq` rnf alts
-        XCast a c x     -> rnf a `seq` rnf c   `seq` rnf x
-        XType t         -> rnf t
+        XAnnot a x      -> rnf a   `seq` rnf x
+        XVar   u        -> rnf u
+        XCon   dc       -> rnf dc
+        XLAM   b x      -> rnf b   `seq` rnf x
+        XLam   b x      -> rnf b   `seq` rnf x
+        XApp   x1 x2    -> rnf x1  `seq` rnf x2
+        XLet   lts x    -> rnf lts `seq` rnf x
+        XCase  x alts   -> rnf x   `seq` rnf alts
+        XCast  c x      -> rnf c   `seq` rnf x
+        XType  t        -> rnf t
         XWitness w      -> rnf w
 
 
@@ -172,8 +177,10 @@ instance NFData n => NFData (Pat n) where
 instance (NFData a, NFData n) => NFData (Witness a n) where
  rnf ww
   = case ww of
-        WVar  a u                 -> rnf a `seq` rnf u
-        WCon  a c                 -> rnf a `seq` rnf c
-        WApp  a w1 w2             -> rnf a `seq` rnf w1 `seq` rnf w2
-        WJoin a w1 w2             -> rnf a `seq` rnf w1 `seq` rnf w2
-        WType a tt                -> rnf a `seq` rnf tt
+        WAnnot a w              -> rnf a `seq` rnf w
+        WVar   u                -> rnf u
+        WCon   c                -> rnf c
+        WApp   w1 w2            -> rnf w1 `seq` rnf w2
+        WJoin  w1 w2            -> rnf w1 `seq` rnf w2
+        WType  t                -> rnf t
+

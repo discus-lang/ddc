@@ -51,6 +51,8 @@ Library
         DDC.Core.Compounds
         DDC.Core.DaCon
         DDC.Core.Exp
+        DDC.Core.Exp.Simple
+        DDC.Core.Exp.Annot
         DDC.Core.Exp.AnTEC
         DDC.Core.Exp.AnT
         DDC.Core.Fragment
@@ -94,7 +96,6 @@ Library
         DDC.Core.Collect.Support
         DDC.Core.Collect.Free
 
-        DDC.Core.Exp.Annot
         DDC.Core.Exp.WiCon
         
         DDC.Core.Fragment.Compliance
