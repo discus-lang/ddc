@@ -1,5 +1,6 @@
 
 module DDC.Core.Exp.Base where
+import DDC.Core.Exp.WiCon
 import DDC.Core.DaCon
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
@@ -38,7 +39,7 @@ data Exp a n
 
         -- | Witness can appear as the argument of an application.
         | XWitness !(Witness a n)
-        deriving (Eq, Show)
+        deriving (Show, Eq)
 
 deriving instance Eq n => Eq (DaCon n)
 
@@ -60,7 +61,7 @@ data Cast a n
 
         -- | Forget about the closure (sharing) of an expression.
         | CastForget !(Witness a n)
-        deriving (Eq, Show)
+        deriving (Show, Eq)
 
 
 -- | Possibly recursive bindings.
@@ -77,13 +78,13 @@ data Lets a n
         
         -- | Holds a region handle during evaluation.
         | LWithRegion !(Bound n)
-        deriving (Eq, Show)
+        deriving (Show, Eq)
 
 
 -- | Case alternatives.
 data Alt a n
         = AAlt !(Pat n) !(Exp a n)
-        deriving (Eq, Show)
+        deriving (Show, Eq)
 
 
 -- | Pattern matching.
@@ -93,7 +94,7 @@ data Pat n
         
         -- | Match a data constructor and bind its arguments.
         | PData !(DaCon n) ![Bind n]
-        deriving (Eq, Show)
+        deriving (Show, Eq)
         
 
 -- Witness --------------------------------------------------------------------
@@ -114,61 +115,5 @@ data Witness a n
 
         -- | Type can appear as the argument of an application.
         | WType a !(Type n)
-        deriving (Eq, Show)
+        deriving (Show, Eq)
 
-
--- | Witness constructors.
-data WiCon n
-        -- | Witness constructors baked into the language.
-        = WiConBuiltin !WbCon
-
-        -- | Witness constructors defined in the environment.
-        --   In the interpreter we use this to hold runtime capabilities.
-        --   The attached type must be closed.
-        | WiConBound !(Bound n) !(Type n)
-        deriving (Eq, Show)
-
-
--- | Built-in witness constructors.
---
---   These are used to convert a runtime capability into a witness that
---   the corresponding property is true.
-data WbCon
-        -- | (axiom) The pure effect is pure.
-        -- 
-        --   @pure     :: Pure !0@
-        = WbConPure 
-
-        -- | (axiom) The empty closure is empty.
-        --
-        --   @empty    :: Empty $0@
-        | WbConEmpty
-
-        -- | Convert a capability guaranteeing that a region is in the global
-        --   heap, into a witness that a closure using this region is empty.
-        --   This lets us rely on the garbage collector to reclaim objects
-        --   in the region. It is needed when we suspend the evaluation of 
-        --   expressions that have a region in their closure, because the
-        --   type of the returned thunk may not reveal that it references
-        --   objects in that region.
-        -- 
-        --  @use      :: [r : %]. Global r => Empty (Use r)@
-        | WbConUse      
-
-        -- | Convert a capability guaranteeing the constancy of a region, into
-        --   a witness that a read from that region is pure.
-        --   This lets us suspend applications that read constant objects,
-        --   because it doesn't matter if the read is delayed, we'll always
-        --   get the same result.
-        --
-        --   @read     :: [r : %]. Const r  => Pure (Read r)@
-        | WbConRead     
-
-        -- | Convert a capability guaranteeing the constancy of a region, into
-        --   a witness that allocation into that region is pure.
-        --   This lets us increase the sharing of constant objects,
-        --   because we can't tell constant objects of the same value apart.
-        -- 
-        --  @alloc    :: [r : %]. Const r  => Pure (Alloc r)@
-        | WbConAlloc
-        deriving (Eq, Show)

@@ -95,6 +95,7 @@ Library
         DDC.Core.Collect.Free
 
         DDC.Core.Exp.Base
+        DDC.Core.Exp.WiCon
         DDC.Core.Exp.NFData
 
         DDC.Core.Fragment.Compliance

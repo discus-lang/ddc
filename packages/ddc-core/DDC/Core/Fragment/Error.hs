@@ -31,7 +31,7 @@ data Error a n
 
         -- | Found a naked witness that isn't used as a function argument.
         | ErrorNakedWitness     !(Witness a n)
-        deriving (Eq, Show)
+        deriving Show
 
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where

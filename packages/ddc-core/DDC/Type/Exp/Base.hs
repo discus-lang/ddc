@@ -106,7 +106,7 @@ data TypeSum n
           -- 
           --   INVARIANT: this list doesn't contain more `TSum`s.
         , typeSumSpill          :: ![Type n] }
-        deriving (Show)
+        deriving Show
         
 
 -- | Hash value used to insert types into the `typeSumElems` array of a `TypeSum`.

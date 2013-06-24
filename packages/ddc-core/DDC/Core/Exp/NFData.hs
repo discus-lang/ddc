@@ -1,6 +1,7 @@
 
 module DDC.Core.Exp.NFData where
 import DDC.Core.Exp.Base
+import DDC.Core.Exp.WiCon
 import Control.DeepSeq
 
 
