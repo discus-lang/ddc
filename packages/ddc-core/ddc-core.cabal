@@ -94,10 +94,9 @@ Library
         DDC.Core.Collect.Support
         DDC.Core.Collect.Free
 
-        DDC.Core.Exp.Base
+        DDC.Core.Exp.Annot
         DDC.Core.Exp.WiCon
-        DDC.Core.Exp.NFData
-
+        
         DDC.Core.Fragment.Compliance
         DDC.Core.Fragment.Error
         DDC.Core.Fragment.Feature

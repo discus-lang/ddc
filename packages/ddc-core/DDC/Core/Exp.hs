@@ -17,9 +17,8 @@ module DDC.Core.Exp
         , WiCon   (..)
         , WbCon   (..))
 where
-import DDC.Core.Exp.Base
+import DDC.Core.Exp.Annot
 import DDC.Core.Exp.WiCon
-import DDC.Core.Exp.NFData      ()
 import DDC.Core.DaCon
 import DDC.Type.Exp
 

@@ -5,6 +5,7 @@ module DDC.Core.Exp.WiCon
 where
 import DDC.Type.Exp
 import DDC.Type.Sum     ()
+import Control.DeepSeq
 
 
 -- | Witness constructors.
@@ -62,3 +63,13 @@ data WbCon
         --  @alloc    :: [r : %]. Const r  => Pure (Alloc r)@
         | WbConAlloc
         deriving (Show, Eq)
+
+
+-- NFData ---------------------------------------------------------------------
+instance NFData n => NFData (WiCon n) where
+ rnf wi
+  = case wi of
+        WiConBuiltin wb         -> rnf wb
+        WiConBound   u t        -> rnf u `seq` rnf t
+
+instance NFData WbCon
