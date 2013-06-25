@@ -2,7 +2,7 @@
 -- | Utilities for constructing and destructing compound expressions.
 module DDC.Core.Compounds 
         ( module DDC.Type.Compounds
-        , module DDC.Core.DaCon
+        , module DDC.Core.Exp.DaCon
 
           -- * Annotations
         , takeAnnotOfExp
@@ -53,7 +53,7 @@ module DDC.Core.Compounds
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 
 
 -- Annotations ----------------------------------------------------------------

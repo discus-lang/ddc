@@ -19,6 +19,6 @@ module DDC.Core.Exp
 where
 import DDC.Core.Exp.Annot
 import DDC.Core.Exp.WiCon
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 import DDC.Type.Exp
 

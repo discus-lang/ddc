@@ -4,7 +4,7 @@ module DDC.Core.Check.CheckDaCon
 where
 import DDC.Core.Check.Error
 import DDC.Core.Check.CheckWitness
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.DataDef

@@ -1,5 +1,5 @@
 
-module DDC.Core.DaCon 
+module DDC.Core.Exp.DaCon 
         ( DaCon         (..)
         , DaConName     (..)
 

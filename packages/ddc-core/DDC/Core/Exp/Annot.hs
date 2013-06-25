@@ -8,7 +8,7 @@
 --   well-defined way.
 module DDC.Core.Exp.Annot where
 import DDC.Core.Exp.WiCon
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
 import Control.DeepSeq
