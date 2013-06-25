@@ -54,6 +54,7 @@ Library
 
         DDC.Core.Parser
 
+        DDC.Core.Transform.Annotate
         DDC.Core.Transform.LiftT
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.Reannotate
@@ -104,6 +105,7 @@ Library
 
         DDC.Core.Exp.WiCon
         DDC.Core.Exp.DaCon
+        DDC.Core.Exp.Pat
 
         DDC.Core.Fragment.Compliance
         DDC.Core.Fragment.Error
@@ -153,4 +155,5 @@ Library
         DoAndIfThenElse
         DeriveDataTypeable
         ViewPatterns
+        FunctionalDependencies
 
