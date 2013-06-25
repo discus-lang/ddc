@@ -5,7 +5,27 @@
 --   of the annotations would be empty. General purpose transformations should
 --   deal with the fully annotated version of the AST instead.
 --
-module DDC.Core.Exp.Simple where
+module DDC.Core.Exp.Simple 
+        ( module DDC.Type.Exp
+
+          -- * Expressions
+        , Exp           (..)
+        , Cast          (..)
+        , Lets          (..)
+        , Alt           (..)
+        , Pat           (..)
+
+          -- * Witnesses
+        , Witness       (..)
+
+          -- * Data Constructors
+        , DaCon         (..)
+        , DaConName     (..)
+
+          -- * Witness Constructors
+        , WiCon         (..)
+        , WbCon         (..))
+where
 import DDC.Core.Exp.WiCon
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp

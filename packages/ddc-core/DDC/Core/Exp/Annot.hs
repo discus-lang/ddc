@@ -6,7 +6,27 @@
 --   over the 'Simple' version in most cases. General purpose transformations 
 --   that work over this AST should propagate the annotations in some
 --   well-defined way.
-module DDC.Core.Exp.Annot where
+module DDC.Core.Exp.Annot 
+        ( module DDC.Type.Exp
+
+         -- * Expressions
+        , Exp           (..)
+        , Cast          (..)
+        , Lets          (..)
+        , Alt           (..)
+        , Pat           (..)
+
+          -- * Witnesses
+        , Witness       (..)
+
+          -- * Data Constructors
+        , DaCon         (..)
+        , DaConName     (..)
+
+          -- * Witness Constructors
+        , WiCon         (..)
+        , WbCon         (..))
+where
 import DDC.Core.Exp.WiCon
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp

@@ -3,6 +3,7 @@ module DDC.Core.Exp.DaCon
         ( DaCon         (..)
         , DaConName     (..)
 
+        -- * Compounds
         , dcUnit
         , mkDaConAlg
         , mkDaConSolid

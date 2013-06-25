@@ -14,10 +14,9 @@ Description:
         Disciple Core is an explicitly typed language based on System-F2, intended
         as an intermediate representation for a compiler. In addition to the polymorphism of 
         System-F2 it supports region, effect and closure typing. Evaluation order is 
-        left-to-right call-by-value by default, but explicit lazy evaluation is also supported.
-        There is a capability system to track whether objects are mutable or constant,
-        and to ensure that computations that perform visible side effects are not suspended with
-        lazy evaluation.
+        left-to-right call-by-value by default. There is a capability system to track whether
+        objects are mutable or constant, and to ensure that computations that perform visible
+        side effects are reordered inappropriately.
 
         See the @ddc-tools@ package for a user-facing interpreter and compiler.
 
@@ -33,8 +32,27 @@ Library
         ddc-base        == 0.3.2.*
 
   Exposed-modules:
+        DDC.Core.Annot.AnT
+        DDC.Core.Annot.AnTEC
+
+        DDC.Core.Check
+        DDC.Core.Collect
+
+        DDC.Core.Compounds.Annot
+        DDC.Core.Compounds.Simple
+        DDC.Core.Compounds
+
+        DDC.Core.Exp.Simple
+        DDC.Core.Exp.Annot
+        DDC.Core.Exp
+
+        DDC.Core.Fragment
+
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Tokens
+        DDC.Core.Lexer
+
+        DDC.Core.Parser
 
         DDC.Core.Transform.LiftT
         DDC.Core.Transform.LiftX
@@ -46,23 +64,8 @@ Library
         DDC.Core.Transform.SubstituteXX
         DDC.Core.Transform.Trim
 
-        DDC.Core.Check
-        DDC.Core.Collect
-        DDC.Core.Compounds
-
-        DDC.Core.Exp.AnTEC
-        DDC.Core.Exp.AnT
-        DDC.Core.Exp.Simple
-        DDC.Core.Exp.Annot
-        DDC.Core.Exp.WiCon
-        DDC.Core.Exp.DaCon
-        DDC.Core.Exp
-        
-        DDC.Core.Fragment
-        DDC.Core.Lexer
         DDC.Core.Load
         DDC.Core.Module
-        DDC.Core.Parser
         DDC.Core.Predicates
         DDC.Core.Pretty
 
@@ -98,6 +101,9 @@ Library
 
         DDC.Core.Collect.Support
         DDC.Core.Collect.Free
+
+        DDC.Core.Exp.WiCon
+        DDC.Core.Exp.DaCon
 
         DDC.Core.Fragment.Compliance
         DDC.Core.Fragment.Error

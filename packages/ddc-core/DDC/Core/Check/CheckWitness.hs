@@ -14,7 +14,7 @@ module DDC.Core.Check.CheckWitness
         , checkTypeM)
 where
 import DDC.Core.Exp
-import DDC.Core.Exp.AnT
+import DDC.Core.Annot.AnT
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()

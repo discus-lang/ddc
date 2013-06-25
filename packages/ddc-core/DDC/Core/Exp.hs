@@ -1,24 +1,6 @@
 
 -- | Abstract syntax for the Disciple core language.
 module DDC.Core.Exp 
-        ( module DDC.Type.Exp
-
-          -- * Computation expressions
-        , Exp     (..)
-        , DaCon   (..)
-        , DaConName(..)
-        , Cast    (..)
-        , Lets    (..)
-        , Alt     (..)
-        , Pat     (..)
-                        
-          -- * Witnesses expressions
-        , Witness (..)
-        , WiCon   (..)
-        , WbCon   (..))
+        ( module DDC.Core.Exp.Annot )
 where
 import DDC.Core.Exp.Annot
-import DDC.Core.Exp.WiCon
-import DDC.Core.Exp.DaCon
-import DDC.Type.Exp
-

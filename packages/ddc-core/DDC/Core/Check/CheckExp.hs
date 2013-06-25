@@ -13,7 +13,7 @@ import DDC.Core.Compounds
 import DDC.Core.Collect
 import DDC.Core.Pretty
 import DDC.Core.Exp
-import DDC.Core.Exp.AnTEC
+import DDC.Core.Annot.AnTEC
 import DDC.Core.Check.Error
 import DDC.Core.Check.CheckDaCon
 import DDC.Core.Check.CheckWitness

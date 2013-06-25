@@ -1,5 +1,5 @@
 
-module DDC.Core.Exp.AnTEC
+module DDC.Core.Annot.AnTEC
         ( AnTEC (..)
         , fromAnT)
 where
@@ -8,8 +8,8 @@ import DDC.Type.Exp
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Typeable
-import DDC.Core.Exp.AnT           (AnT)
-import qualified DDC.Core.Exp.AnT as AnT
+import DDC.Core.Annot.AnT       (AnT)
+import qualified DDC.Core.Annot.AnT as AnT
 
 
 -- Annot ----------------------------------------------------------------------

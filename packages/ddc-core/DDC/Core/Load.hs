@@ -16,7 +16,7 @@ import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
-import DDC.Core.Exp.AnT                         (AnT)
+import DDC.Core.Annot.AnT                       (AnT)
 import DDC.Type.Transform.SpreadT
 import DDC.Core.Module
 import DDC.Base.Pretty
