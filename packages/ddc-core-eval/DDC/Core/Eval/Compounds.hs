@@ -40,7 +40,7 @@ import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import DDC.Core.Compounds       (wApps)
 import DDC.Core.Exp
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 
 
 -- Type -----------------------------------------------------------------------

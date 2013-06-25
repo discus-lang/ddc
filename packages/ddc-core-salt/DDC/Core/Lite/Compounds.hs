@@ -9,7 +9,7 @@ module DDC.Core.Lite.Compounds
 where
 import DDC.Core.Lite.Name
 import DDC.Core.Exp
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 import DDC.Type.Compounds
 
 

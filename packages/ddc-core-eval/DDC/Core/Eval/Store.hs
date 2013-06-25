@@ -27,7 +27,7 @@ module DDC.Core.Eval.Store
         , lookupRegionTypeBind)
 where
 import DDC.Core.Exp
-import DDC.Core.DaCon
+import DDC.Core.Exp.DaCon
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import Control.Monad
