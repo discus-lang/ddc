@@ -2,8 +2,10 @@
 -- | Utilities for constructing and destructing compound types and
 --   expressions.
 module DDC.Core.Eval.Compounds
-        ( -- * Types
-          tPair
+        ( module DDC.Core.Compounds
+
+          -- * Types
+        , tPair
         , tList 
 
           -- * Witnesses
@@ -21,7 +23,6 @@ module DDC.Core.Eval.Compounds
         , takeMutableX
 
           -- * Units
-        , xUnit
         , isUnitX
 
           -- * Region Handles
@@ -38,9 +39,8 @@ module DDC.Core.Eval.Compounds
 where
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
-import DDC.Core.Compounds       (wApps)
+import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Core.Exp.DaCon
 
 
 -- Type -----------------------------------------------------------------------
@@ -115,11 +115,6 @@ isCapConW ww
 
 
 -- Exp ------------------------------------------------------------------------
--- | Make a unit literal.
-xUnit :: Exp () Name
-xUnit   = XCon () $ dcUnit
-
-
 -- | Check whether an expression is the unit constructor.
 isUnitX :: Exp a Name -> Bool
 isUnitX xx

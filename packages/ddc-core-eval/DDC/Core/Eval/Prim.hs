@@ -12,9 +12,7 @@ where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Store
 import DDC.Core.Eval.Name
-import DDC.Type.Compounds
 import DDC.Core.Exp
-import DDC.Core.Exp.DaCon
 import qualified DDC.Core.Eval.Store   as Store
 
 -------------------------------------------------------------------------------
@@ -204,7 +202,7 @@ stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         -- update the destination
         , store1        <- Store.addBind l1 r1 tX1 (SObj (dcInt i2) []) store
         = Just  ( store1
-                , xUnit)
+                , xUnit ())
 
 -- Unary integer operations
 stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store

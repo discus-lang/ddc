@@ -9,7 +9,6 @@ import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Name
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Compounds
 import DDC.Core.Transform.Reannotate
 import DDC.Base.Pretty
 import Control.Monad

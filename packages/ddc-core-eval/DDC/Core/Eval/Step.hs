@@ -18,7 +18,6 @@ import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
 import DDC.Core.Predicates
-import DDC.Core.Compounds
 import DDC.Core.Exp
 import qualified DDC.Core.Fragment      as C
 import qualified Data.Set               as Set

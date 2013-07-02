@@ -30,7 +30,6 @@ import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Name             as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
-import qualified DDC.Core.Exp.DaCon             as C
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Simplifier            as Simp
 import qualified Data.Map                       as Map
@@ -293,7 +292,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _, C.XCon _ dc]           <- xs
-          ,  Just A.NameLitVoid                 <- C.takeNameOfDaCon dc
+          ,  Just A.NameLitVoid                 <- takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
                                (instrs |> (annotNil $ IReturn Nothing))
@@ -511,7 +510,7 @@ convExpM context pp kenv tenv mdsup xx
                         $ ISet vDst (XVar (Var (NameLocal n') t'))
         
         C.XCon _ dc
-         | Just n               <- C.takeNameOfDaCon dc
+         | Just n               <- takeNameOfDaCon dc
          , ExpAssign vDst       <- context
          -> case n of
                 A.NameLitNat i
@@ -682,7 +681,7 @@ convAltM context kenv tenv mdsup aa
                 return  $  AltDefault label blocks
 
          C.AAlt (C.PData dc []) x
-          | Just n      <- C.takeNameOfDaCon dc
+          | Just n      <- takeNameOfDaCon dc
           , Just lit    <- convPatName pp n
           -> do label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM context kenv tenv mdsup Seq.empty label Seq.empty x

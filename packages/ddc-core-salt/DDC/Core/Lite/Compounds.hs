@@ -8,9 +8,8 @@ module DDC.Core.Lite.Compounds
         , tList)
 where
 import DDC.Core.Lite.Name
+import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Core.Exp.DaCon
-import DDC.Type.Compounds
 
 
 -- Bools ----------------------------------------------------------------------

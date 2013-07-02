@@ -11,7 +11,7 @@ module DDC.Core.Simplifier.Base
           -- * Transform Results
         , TransformResult(..)
 	, TransformInfo(..)
-	, NoInformation(..)
+	, NoInformation
 	, resultDone)
 where
 import DDC.Core.Simplifier.Result

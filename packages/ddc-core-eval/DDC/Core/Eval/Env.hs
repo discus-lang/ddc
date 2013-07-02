@@ -21,7 +21,6 @@ import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Name
 import DDC.Type.DataDef
 import DDC.Type.Exp
-import DDC.Type.Compounds
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
