@@ -3,11 +3,10 @@ module DDC.Core.Flow.Transform.Concretize
         (concretizeModule)
 where
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
+import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Exp
 import DDC.Core.Transform.TransformUpX
-import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
 
@@ -16,42 +15,44 @@ import qualified Data.Map               as Map
 --   use value level ones.
 concretizeModule :: Module () Name -> Module () Name
 concretizeModule mm
-        = transformUpX concretizeX Env.empty Env.empty mm
+        = transformSimpleUpX concretizeX Env.empty Env.empty mm
 
 
+-- | Rewrite an expression to use concrete operators.
 concretizeX 
-        :: KindEnv Name -> TypeEnv Name 
-        -> Exp () Name  -> Exp () Name
+        :: KindEnvF -> TypeEnvF
+        -> ExpF     -> Maybe ExpF
 
 concretizeX _kenv tenv xx
         -- loop# -> loopn#
-        | Just (NameOpLoop OpLoopLoop, [XType tK, xF])       
-                                <- takeXPrimApps xx
-        , Just (nS, _, tA)      <- findSeriesWithRate tenv tK
-        , xS                    <- XVar () (UName nS)
-        = xLoopLoopN 
+        | Just ( NameOpLoop OpLoopLoop
+               , [XType tK, xF]) <- takeXPrimApps xx
+        , Just (nS, _, tA)       <- findSeriesWithRate tenv tK
+        , xS                     <- XVar (UName nS)
+        = Just 
+        $ xLoopLoopN 
                 tK                              -- type level rate
                 (xRateOfSeries tK tA xS)        -- 
                 xF                              -- loop body
 
         -- newVectorR# -> newVectorN#
-        | Just (NameOpStore OpStoreNewVectorR
-                        , [XType tA, XType tK])
-                                <- takeXPrimApps xx
+        | Just ( NameOpStore OpStoreNewVectorR
+               , [XType tA, XType tK])  <- takeXPrimApps xx
         , Just (nS, _, tS)      <- findSeriesWithRate tenv tK
-        , xS                    <- XVar () (UName nS)
-        = xNewVectorN
+        , xS                    <- XVar (UName nS)
+        = Just
+        $ xNewVectorN
                 tA tK
                 (xRateOfSeries tK tS xS)
                 
         | otherwise
-        = xx
+        = Nothing
 
 
 -- | Search the given environment for the name of a series with the
 --   given rate parameter. We only look at named binders.
 findSeriesWithRate 
-        :: TypeEnv Name         -- ^ Type Environment.
+        :: TypeEnvF             -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
         -> Maybe (Name, Type Name, Type Name)
                                 -- ^ Series name, rate type, element type.
@@ -73,11 +74,11 @@ isSeriesTypeOfRate
         -> Maybe (Type Name, Type Name)
 
 isSeriesTypeOfRate tR tS
-        |  Just (NameTyConFlow TyConFlowSeries, [tR', tA])
-                <- takePrimTyConApps tS
-        ,  tR == tR'
-        =  Just (tR, tA)
+        | Just ( NameTyConFlow TyConFlowSeries
+               , [tR', tA])    <- takePrimTyConApps tS
+        , tR == tR'
+        = Just (tR, tA)
 
         | otherwise
-        =  Nothing
+        = Nothing
 

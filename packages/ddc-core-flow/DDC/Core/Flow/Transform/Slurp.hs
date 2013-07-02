@@ -7,8 +7,9 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
+import DDC.Core.Flow.Exp
+import DDC.Core.Transform.Deannotate
 import DDC.Core.Module
-import DDC.Core.Exp
 import Data.Maybe
 import Data.List
 
@@ -16,14 +17,14 @@ import Data.List
 -- | Slurp stream processes from the top level of a module.
 slurpProcesses :: Module () Name -> [Process]
 slurpProcesses mm
- = slurpProcessesX (moduleBody mm)
+ = slurpProcessesX (deannotate (const Nothing) $ moduleBody mm)
 
 
 -- | Slurp stream processes from a module body.
 slurpProcessesX :: Exp () Name   -> [Process]
 slurpProcessesX xx
  = case xx of
-        XLet _ lts x'
+        XLet lts x'
           -> slurpProcessesLts lts ++ slurpProcessesX x'
 
         _ -> []
@@ -97,14 +98,14 @@ slurpProcessLet _ _
 -- | Slurp stream operators from the body of a function and add them to 
 --   the provided loop nest.
 slurpProcessX 
-        :: Exp () Name          -- A sequence of non-recursive let-bindings.
+        :: ExpF                 -- A sequence of non-recursive let-bindings.
         -> ( [Context]          -- Nested contexts created by this process.
            , [Operator]         -- Series operators in this binding.
-           , [Lets () Name]     -- Baseband statements that don't process series.
-           , Exp () Name)       -- Final value of process.
+           , [LetsF]            -- Baseband statements that don't process series.
+           , ExpF)              -- Final value of process.
 
 slurpProcessX xx
- | XLet _ (LLet b x) xMore            <- xx
+ | XLet (LLet b x) xMore                <- xx
  , (ctxHere, opsHere, ltsHere)          <- slurpBindingX b x
  , (ctxMore, opsMore, ltsMore, xResult) <- slurpProcessX xMore
  = ( ctxHere ++ ctxMore
@@ -115,15 +116,15 @@ slurpProcessX xx
  -- Only handle very simple cases with one alt for now.
  -- 'Invert' the case and create a let binding for each binder.
  -- We can safely duplicate xScrut since it's in ANF.
- | XCase _ xScrut [AAlt (PData dc bs) x]    <- xx
+ | XCase xScrut [AAlt (PData dc bs) x]  <- xx
  , bs'  <- takeSubstBoundsOfBinds bs
  , length bs == length bs'
  , lets <- zipWith
               (\b b' -> LLet b
-                (XCase () xScrut
+                (XCase xScrut
                  [AAlt (PData dc bs)
-                       (XVar () b')])) bs bs'
- = slurpProcessX (xLets () lets x)
+                       (XVar b')])) bs bs'
+ = slurpProcessX (xLets lets x)
 
  | otherwise
  = ([], [], [], xx)
@@ -132,18 +133,18 @@ slurpProcessX xx
 -------------------------------------------------------------------------------
 -- | Slurp stream operators from a let-binding.
 slurpBindingX 
-        :: Bind Name            -- Binder to assign result to.
-        -> Exp () Name          -- Right of the binding.
+        :: BindF                -- Binder to assign result to.
+        -> ExpF                 -- Right of the binding.
         -> ( [Context]          -- Nested contexts created by this binding.
            , [Operator]         -- Series operators in this binding.
-           , [Lets () Name])    -- Baseband statements that don't process series.
+           , [LetsF])           -- Baseband statements that don't process series.
 
 -- Decend into more let bindings.
 -- We get these when entering into a nested context.
 slurpBindingX b1 xx
- | XLet _ (LLet b2 x2) xMore            <- xx
- , (ctxHere, opsHere, ltsHere)          <- slurpBindingX b2 x2
- , (ctxMore, opsMore, ltsMore)          <- slurpBindingX b1 xMore
+ | XLet (LLet b2 x2) xMore      <- xx
+ , (ctxHere, opsHere, ltsHere)  <- slurpBindingX b2 x2
+ , (ctxMore, opsMore, ltsMore)  <- slurpBindingX b1 xMore
  = ( ctxHere ++ ctxMore
    , opsHere ++ opsMore
    , ltsHere ++ ltsMore)
@@ -154,8 +155,8 @@ slurpBindingX b
  (   takeXPrimApps 
   -> Just ( NameOpFlow (OpFlowMkSel 1)
           , [ XType tK1, XType _tA
-            , XVar _ uFlags
-            , XLAM _ (BName nR kR) (XLam _ bSel xBody)]))
+            , XVar uFlags
+            , XLAM (BName nR kR) (XLam bSel xBody)]))
  | kR == kRate
  = let  
         (ctxInner, osInner, ltsInner)

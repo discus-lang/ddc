@@ -10,8 +10,8 @@ import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Compounds.Simple
+import DDC.Core.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 
@@ -65,7 +65,7 @@ typeOpLoop op
 -- Compounds ------------------------------------------------------------------
 xLoopLoopN :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xLoopLoopN tR xRN xF 
-         = xApps () (xVarOpLoop OpLoopLoopN) [XType tR, xRN, xF]
+         = xApps (xVarOpLoop OpLoopLoopN) [XType tR, xRN, xF]
 
 
 xLoopGuard 
@@ -75,10 +75,10 @@ xLoopGuard
         -> Exp () Name
 
 xLoopGuard xB xCount xF
-        = xApps () (xVarOpLoop OpLoopGuard) [xCount, xB, xF]
+        = xApps (xVarOpLoop OpLoopGuard) [xCount, xB, xF]
 
 
 -- Utils -----------------------------------------------------------------------
 xVarOpLoop :: OpLoop -> Exp () Name
 xVarOpLoop op
-        = XVar () (UPrim (NameOpLoop op) (typeOpLoop op))
+        = XVar (UPrim (NameOpLoop op) (typeOpLoop op))

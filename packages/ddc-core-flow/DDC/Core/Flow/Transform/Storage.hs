@@ -7,34 +7,42 @@
 module DDC.Core.Flow.Transform.Storage
         (storageModule)
 where
-import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
+import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Exp
+import DDC.Core.Transform.Annotate
+import DDC.Core.Transform.Deannotate
 import DDC.Core.Module
-import DDC.Core.Exp
 
 
 -- | Assign references to array storage in a core module.
 storageModule :: Module () Name -> Module () Name
 storageModule mm
-        = mm { moduleBody    = storageX $ moduleBody mm}
+ = let  x'      = annotate ()
+                $ storageX 
+                $ deannotate (const Nothing) 
+                $ moduleBody mm 
+
+   in   mm { moduleBody = x' }
 
 
 -- Exp ------------------------------------------------------------------------
-storageX :: Exp () Name -> Exp () Name
+storageX :: ExpF -> ExpF
 storageX xx
  = case xx of
+    XAnnot{}            -> xx
     XVar{}              -> xx
     XCon{}              -> xx
-    XLAM  a b x         -> XLAM  a b (storageX x)
-    XLam  a b x         -> XLam  a b (storageX x)
-    XApp  a x1 x2       -> XApp  a   (storageX x1)    (storageX x2)
-    XCase a x alts      -> XCase a   (storageX x)     (map storageA alts)
-    XCast a c x         -> XCast a c (storageX x)
+    XLAM  b x           -> XLAM  b (storageX x)
+    XLam  b x           -> XLam  b (storageX x)
+    XApp  x1 x2         -> XApp    (storageX x1)    (storageX x2)
+    XCase x alts        -> XCase   (storageX x)     (map storageA alts)
+    XCast c x           -> XCast c (storageX x)
     XType{}             -> xx
     XWitness{}          -> xx
 
 
-    XLet  a lts x2      
+    XLet  lts x2      
      -- Demote allocs ---------------------------
      --    let x = new#        [a] val    in ...
      --
@@ -47,10 +55,9 @@ storageX xx
 
      -> let b'      = replaceTypeOfBind (tVector tA) b
             Just u' = takeSubstBoundOfBind b'
-        in  XLet a (LLet b'            
-                        $ xNewVector   tA (xNat () 1))
-          $ XLet a (LLet (BNone tUnit) 
-                        $ xWriteVector tA (XVar () u') (xNat () 0) xVal)
+        in  XLet (LLet b' $ xNewVector   tA (xNat 1))
+          $ XLet (LLet (BNone tUnit) 
+                          $ xWriteVector tA (XVar u') (xNat 0) xVal)
           $ storageX x2
 
 
@@ -61,7 +68,7 @@ storageX xx
      | LLet b x1      <- lts
      , Just (NameOpStore OpStoreRead, [XType tA, xArr])
                 <- takeXPrimApps x1
-     -> XLet a (LLet b $ xReadVector tA xArr (xNat () 0))
+     -> XLet (LLet b $ xReadVector tA xArr (xNat 0))
       $ storageX x2
 
 
@@ -72,16 +79,16 @@ storageX xx
      | LLet b x1      <- lts
      , Just (NameOpStore OpStoreWrite, [XType tA, xArr, xVal])
                 <- takeXPrimApps x1
-     -> XLet a (LLet b $ xWriteVector tA xArr (xNat () 0) xVal)
+     -> XLet (LLet b $ xWriteVector tA xArr (xNat 0) xVal)
       $ storageX x2
 
    
      | otherwise        
-     -> XLet  a  (storageLts lts) (storageX x2)
+     -> XLet (storageLts lts) (storageX x2)
 
 
 -- Lets -----------------------------------------------------------------------
-storageLts :: Lets () Name -> Lets () Name
+storageLts :: LetsF -> LetsF
 storageLts lts
  = case lts of
     LLet b x            -> LLet b (storageX x)
@@ -91,7 +98,8 @@ storageLts lts
 
 
 -- Alts -----------------------------------------------------------------------
-storageA   :: Alt () Name -> Alt () Name
+storageA   :: AltF -> AltF
 storageA aa
  = case aa of
     AAlt w x            -> AAlt w (storageX x)
+

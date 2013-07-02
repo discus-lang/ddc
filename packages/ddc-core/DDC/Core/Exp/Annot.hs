@@ -2,19 +2,28 @@
 -- | Core language AST that includes an annotation on every node of 
 --   an expression.
 --
---   This is the default version of the language AST, and should be preferred
---   over the 'Simple' version in most cases. General purpose transformations 
---   that work over this AST should propagate the annotations in some
---   well-defined way.
+--   This is the default representation for Disciple Core, and should be preferred
+--   over the 'Simple' version of the AST in most cases. 
+--
+--   * Local transformations on this AST should propagate the annotations in a way that
+--   would make sense if they were source position identifiers that tracked the provenance
+--   of each code snippet. If the specific annotations attached to the AST would not make
+--   sense after such a transformation, then the client should erase them to @()@ beforehand
+--   using the `reannotate` transform.
+--
+--   * Global transformations that drastically change the provenance of code snippets should
+--     accept an AST with an arbitrary annotation type, but produce one with the annotations
+--     set to @()@.
+--
 module DDC.Core.Exp.Annot 
         ( module DDC.Type.Exp
 
          -- * Expressions
         , Exp           (..)
-        , Cast          (..)
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
+        , Cast          (..)
 
           -- * Witnesses
         , Witness       (..)
@@ -70,26 +79,6 @@ data Exp a n
         deriving (Show, Eq)
 
 
--- | Type casts.
-data Cast a n
-        -- | Weaken the effect of an expression.
-        --   The given effect is added to the effect
-        --   of the body.
-        = CastWeakenEffect  !(Effect n)
-        
-        -- | Weaken the closure of an expression.
-        --   The closures of these expressions are added to the closure
-        --   of the body.
-        | CastWeakenClosure ![Exp a n]
-
-        -- | Purify the effect (action) of an expression.
-        | CastPurify !(Witness a n)
-
-        -- | Forget about the closure (sharing) of an expression.
-        | CastForget !(Witness a n)
-        deriving (Show, Eq)
-
-
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
@@ -110,6 +99,26 @@ data Lets a n
 -- | Case alternatives.
 data Alt a n
         = AAlt !(Pat n) !(Exp a n)
+        deriving (Show, Eq)
+
+
+-- | Type casts.
+data Cast a n
+        -- | Weaken the effect of an expression.
+        --   The given effect is added to the effect
+        --   of the body.
+        = CastWeakenEffect  !(Effect n)
+        
+        -- | Weaken the closure of an expression.
+        --   The closures of these expressions are added to the closure
+        --   of the body.
+        | CastWeakenClosure ![Exp a n]
+
+        -- | Purify the effect (action) of an expression.
+        | CastPurify !(Witness a n)
+
+        -- | Forget about the closure (sharing) of an expression.
+        | CastForget !(Witness a n)
         deriving (Show, Eq)
 
 

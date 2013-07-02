@@ -8,7 +8,7 @@ where
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
-import DDC.Type.Exp
+import DDC.Core.Flow.Exp
 import Data.Monoid
 
 
@@ -59,7 +59,7 @@ nestOfContext context
           , nestBody            = []
           , nestInner           = NestEmpty
           , nestEnd             = []
-          , nestResult          = xUnit () }
+          , nestResult          = xUnit }
 
         ContextSelect{}
          -> NestIf
@@ -72,7 +72,7 @@ nestOfContext context
 
 -- | Check whether the top-level of this nest contains the given rate.
 --   It might be in a nested context.
-nestContainsRate :: Nest -> Type Name -> Bool
+nestContainsRate :: Nest -> TypeF -> Bool
 nestContainsRate nest tRate
  = case nest of
         NestEmpty       
@@ -100,7 +100,7 @@ startsForSelect context
    in   [StartAcc 
          { startAccName  = nCounter
          , startAccType  = tNat
-         , startAccExp   = xNat () 0 }]
+         , startAccExp   = xNat 0 }]
 
 
 -------------------------------------------------------------------------------

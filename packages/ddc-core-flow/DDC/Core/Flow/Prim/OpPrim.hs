@@ -5,8 +5,8 @@ module DDC.Core.Flow.Prim.OpPrim
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Compounds.Simple
+import DDC.Core.Exp.Simple
 
 
 -- | Take the type of a primitive cast.

@@ -6,10 +6,9 @@ import DDC.Core.Flow.Transform.Schedule.SeriesEnv
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
-import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
-import DDC.Core.Transform.SubstituteXX
-import DDC.Core.Exp
+import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Exp
 import DDC.Base.Pretty
 import Control.Monad
 
@@ -87,7 +86,7 @@ scheduleOperator nest0 env op
         context         = ContextRate (opInputRate op)
 
         Just nest2      = insertBody nest1 context
-                        $ [ BodyStmt bResultElem (XVar () uInput) ]
+                        $ [ BodyStmt bResultElem (XVar uInput) ]
 
    in   (env1, nest2)
 
@@ -126,8 +125,8 @@ scheduleOperator nest0 env op
                         $ [ BodyVecWrite 
                                 nVec                    -- destination vector
                                 (opElemType op)         -- elem type
-                                (XVar () (UIx 0))       -- index
-                                (XVar () uInput) ]      -- value
+                                (XVar (UIx 0))          -- index
+                                (XVar uInput) ]         -- value
 
         -- Slice the vector at the end
         Just nest4      = insertEnds   nest3 context 
@@ -154,12 +153,12 @@ scheduleOperator nest0 env op
                         = bindNextElems (zip3 nsSeries tsRate tsElem) env nest0
 
         -- Variables for all the input elements.
-        xsInputs        = map (XVar ()) usInputs
+        xsInputs        = map XVar usInputs
 
         -- Substitute input element vars into the worker body.
-        xBody           = substituteXXs 
-                                (zip (opWorkerParams op) xsInputs)
+        xBody           = foldl (\x (b, p) -> XApp (XLam b x) p)
                                 (opWorkerBody op)
+                                (zip (opWorkerParams op) xsInputs)
 
         -- Binder for a single result element in the series context.
         Just nResultSeries = takeNameOfBind $ opResultSeries op
@@ -204,10 +203,10 @@ scheduleOperator nest0 env op
                                 [ StartAcc nAcc tAcc (opZero op) ]
 
         -- Substitute input and accumulator vars into worker body.
-        xBody           = substituteXXs
-                                [ (opWorkerParamElem  op, XVar () uInput)
-                                , (opWorkerParamIndex op, XVar () (UIx 0)) ]
-                                (opWorkerBody op)
+        xBody           = XApp  (XApp   ( XLam (opWorkerParamElem op)
+                                        $ XLam (opWorkerParamIndex op) (opWorkerBody op))
+                                        (XVar uInput))
+                                (XVar (UIx 0))
 
         -- Insert statements that update the accumulator
         --  into the loop body.

@@ -16,7 +16,7 @@ Description:
         System-F2 it supports region, effect and closure typing. Evaluation order is 
         left-to-right call-by-value by default. There is a capability system to track whether
         objects are mutable or constant, and to ensure that computations that perform visible
-        side effects are reordered inappropriately.
+        side effects are not reordered inappropriately.
 
         See the @ddc-tools@ package for a user-facing interpreter and compiler.
 
@@ -55,6 +55,7 @@ Library
         DDC.Core.Parser
 
         DDC.Core.Transform.Annotate
+        DDC.Core.Transform.Deannotate
         DDC.Core.Transform.LiftT
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.Reannotate

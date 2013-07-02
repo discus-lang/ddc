@@ -8,7 +8,7 @@ module DDC.Core.Flow.Procedure
         , StmtEnd       (..)
         , Stmt          (..))
 where
-import DDC.Core.Exp
+import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
 import Data.Monoid
@@ -17,12 +17,12 @@ import Data.Monoid
 data Procedure
         = Procedure
         { procedureName         :: Name
-        , procedureParamTypes   :: [Bind Name]
-        , procedureParamValues  :: [Bind Name]
+        , procedureParamTypes   :: [BindF]
+        , procedureParamValues  :: [BindF]
         , procedureNest         :: Nest
-        , procedureStmts        :: [Lets () Name]
-        , procedureResult       :: Exp () Name 
-        , procedureResultType   :: Type Name }
+        , procedureStmts        :: [LetsF]
+        , procedureResult       :: ExpF
+        , procedureResultType   :: TypeF }
 
 
 -- | A loop nest.

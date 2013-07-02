@@ -7,14 +7,15 @@ module DDC.Core.Flow.Transform.Thread
         , unwrapResult
         , threadType)
 where
-import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
+import DDC.Core.Flow.Prim
+import DDC.Core.Compounds       as C
+import DDC.Core.Exp
 import DDC.Core.Transform.Thread
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Exp
 import DDC.Core.Check           (AnTEC (..))
-import qualified DDC.Core.Check as Check
+import qualified DDC.Core.Check         as Check
 
 
 -- | Thread config defines what state token to use,
@@ -62,24 +63,28 @@ wrapResultExp xWorld xResult
         xWorld'  = reannotate annotTail xWorld
         xResult' = reannotate annotTail xResult
    in   
-        case takeXConApps xResult' of
+        case C.takeXConApps xResult' of
          Just (dc, [xT1, xT2, x1, x2])                  -- TODO: handle tuple arities generically
           | dc == dcTupleN 2
-          -> xApps () (XCon () (dcTupleN 3))
+          -> C.xApps () (XCon () (dcTupleN 3))
                 [XType tWorld', xT1, xT2, xWorld', x1, x2]
 
          Just (dc, [xT1, xT2, xT3, x1, x2, x3])
           | dc == dcTupleN 3
-          -> xApps () (XCon () (dcTupleN 4))
+          -> C.xApps () (XCon () (dcTupleN 4))
                 [XType tWorld', xT1, xT2, xT3, xWorld', x1, x2, x3]
 
          Just (dc, [xT1, xT2, xT3, xT4, x1, x2, x3, x4])
           | dc == dcTupleN 4
-          -> xApps () (XCon () (dcTupleN 5))
+          -> C.xApps () (XCon () (dcTupleN 5))
                 [ XType tWorld', xT1, xT2, xT3, xT4
                 , xWorld',       x1,  x2,  x3,  x4]
 
-         _ -> xTuple2 () tWorld' tResult xWorld' xResult'
+         _ -> C.xApps () (XCon () (dcTupleN 2))
+                         [ XType tWorld'
+                         , XType tResult
+                         , xWorld'
+                         , xResult' ]
 
  | otherwise
  = error "ddc-core-flow: wrapResultExp can't get type annotations"

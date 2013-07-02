@@ -3,10 +3,10 @@ module DDC.Core.Flow.Transform.Slurp.Operator
         (slurpOperator)
 where
 import DDC.Core.Flow.Process.Operator
+import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Prim.TyConPrim
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Compounds.Simple
 import DDC.Type.Pretty          ()
 
 
@@ -21,7 +21,7 @@ slurpOperator bResult xx
 
  -- Create --------------------------------------
  | Just ( NameOpFlow OpFlowVectorOfSeries
-        , [ XType tRate, XType tA, (XVar _ uSeries) ])
+        , [ XType tRate, XType tA, (XVar uSeries) ])
                                 <- takeXPrimApps xx
  = Just $ OpCreate
         { opResultVector        = bResult
@@ -34,7 +34,7 @@ slurpOperator bResult xx
  -- TODO: handle higher arity maps generally
  | Just ( NameOpFlow (OpFlowMap 1)
         , [ XType tRate, XType _tA, XType _tB
-          , xWorker,     (XVar _  uSeries)])
+          , xWorker,     (XVar uSeries)])
                                 <- takeXPrimApps xx
  , Just ([pIn1], xBody)         <- takeXLams xWorker
  = Just $ OpMap
@@ -48,7 +48,7 @@ slurpOperator bResult xx
  | Just ( NameOpFlow (OpFlowMap 2)
         , [ XType tRate, XType _tA, XType _tB, XType _tC
           , xWorker
-          , XVar _  uSeries1, XVar _  uSeries2])
+          , XVar uSeries1, XVar uSeries2])
                                 <- takeXPrimApps xx
  , Just ([pIn1, pIn2], xBody)   <- takeXLams xWorker
  = Just $ OpMap
@@ -63,7 +63,7 @@ slurpOperator bResult xx
  -- Fold ----------------------------------------
  | Just ( NameOpFlow OpFlowFold
         , [ XType tRate, XType _tAcc, XType _tElem
-          , xWorker,     xZero,     (XVar _ uSeries)])
+          , xWorker,     xZero,     (XVar uSeries)])
                                 <- takeXPrimApps xx
  , Just ([pAcc, pElem], xBody)  <- takeXLams xWorker
  = Just $ OpFold
@@ -78,7 +78,7 @@ slurpOperator bResult xx
 
  | Just ( NameOpFlow OpFlowFoldIndex
         , [ XType tRate, XType _tAcc, XType _tElem
-          , xWorker,     xZero,     (XVar _ uSeries)])
+          , xWorker,     xZero,     (XVar uSeries)])
                                     <- takeXPrimApps xx
  , Just ([pIx, pAcc, pElem], xBody) <- takeXLams xWorker
  = Just $ OpFold
@@ -95,7 +95,7 @@ slurpOperator bResult xx
  -- Pack ----------------------------------------
  | Just ( NameOpFlow OpFlowPack
         , [ XType tRateInput, XType tRateOutput, XType tElem
-          , _xSel, (XVar _ uSeries) ])    <- takeXPrimApps xx
+          , _xSel, (XVar uSeries) ])    <- takeXPrimApps xx
  = Just $ OpPack
         { opResultSeries        = bResult
         , opInputRate           = tRateInput

@@ -15,9 +15,9 @@ module DDC.Core.Flow.Transform.Schedule.SeriesEnv
 where
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Procedure
-import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
-import DDC.Core.Exp
+import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Exp
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
@@ -39,7 +39,8 @@ emptySeriesEnv
 
 -- | Insert an entry into the series environment.
 insertElemForSeries
-        :: Name -> Bound Name -> SeriesEnv -> SeriesEnv
+        :: Name -> BoundF -> SeriesEnv -> SeriesEnv
+
 insertElemForSeries n u (SeriesEnv env)
         = SeriesEnv (Map.insert n u env)
 
@@ -52,11 +53,11 @@ insertElemForSeries n u (SeriesEnv env)
 --   to get actually get the next element from the series.
 bindNextElem 
         :: Name                 -- ^ Name of series.
-        -> Type Name            -- ^ Rate of series
-        -> Type Name            -- ^ Series element type.
+        -> TypeF                -- ^ Rate of series
+        -> TypeF                -- ^ Series element type.
         -> SeriesEnv            -- ^ Current series environment.
         -> Nest                 -- ^ Current loop nest.
-        -> (Bound Name, SeriesEnv, Nest)
+        -> (BoundF, SeriesEnv, Nest)
 
 bindNextElem nSeries tRate tElem env nest0
         -- There is already a mapping in the environment.
@@ -73,7 +74,7 @@ bindNextElem nSeries tRate tElem env nest0
                 -- Expression to get the next element from the series.
                 uSeries = UName nSeries
                 uIndex  = UIx 0
-                xGet    = xNext tRate tElem (XVar () uSeries) (XVar () uIndex)
+                xGet    = xNext tRate tElem (XVar uSeries) (XVar uIndex)
 
                 -- Insert the statement into the loop nest.
                 Just nest1   
@@ -89,11 +90,11 @@ bindNextElem nSeries tRate tElem env nest0
 
 -- | Like `bindNextElem`, but handle several series at once.
 bindNextElems 
-        :: [(Name, Type Name, Type Name)] 
+        :: [(Name, TypeF, TypeF)] 
                                 -- ^ Names, rates, and element types.
         -> SeriesEnv            -- ^ Current series environment.
         -> Nest                 -- ^ Current loop nest.
-        -> ([Bound Name], SeriesEnv, Nest)
+        -> ([BoundF], SeriesEnv, Nest)
 
 bindNextElems junk env nest0
  = case junk of
@@ -112,7 +113,7 @@ bindNextElems junk env nest0
 
 -- | Given the bind of a series,  produce the bound that refers to the
 --   next element of the series in its context.
-elemBindOfSeriesBind   :: Bind Name  -> Maybe (Bind Name)
+elemBindOfSeriesBind   :: BindF  -> Maybe BindF
 elemBindOfSeriesBind bSeries
         | BName nSeries tSeries' <- bSeries
         , Just nElem    <- elemNameOfSeriesName nSeries
@@ -125,7 +126,7 @@ elemBindOfSeriesBind bSeries
 
 -- | Given the bound of a series, produce the bound that refers to the
 --   next element of the series in its context.
-elemBoundOfSeriesBound :: Bound Name -> Maybe (Bound Name)
+elemBoundOfSeriesBound :: BoundF -> Maybe BoundF
 elemBoundOfSeriesBound uSeries
         | UName nSeries <- uSeries
         , Just nElem    <- elemNameOfSeriesName nSeries
@@ -146,7 +147,7 @@ elemNameOfSeriesName n
 
 -- | Given the type of a series like @Series k e@, produce the type
 --   of a single element, namely the @e@.
-elemTypeOfSeriesType :: Type Name -> Maybe (Type Name)
+elemTypeOfSeriesType :: TypeF -> Maybe TypeF
 elemTypeOfSeriesType tSeries'
         | Just (_tcSeries, [_tK, tE]) <- takeTyConApps tSeries'
         = Just tE
@@ -157,7 +158,7 @@ elemTypeOfSeriesType tSeries'
 
 -- | Given the type of a series like @Series k e@, produce the type
 --   of the rate, namely the @k@.
-rateTypeOfSeriesType :: Type Name -> Maybe (Type Name)
+rateTypeOfSeriesType :: TypeF -> Maybe TypeF
 rateTypeOfSeriesType tSeries'
         | Just (_tcSeries, [tK, _tE]) <- takeTyConApps tSeries'
         = Just tK

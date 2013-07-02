@@ -12,8 +12,8 @@ import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Compounds.Simple
+import DDC.Core.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 
@@ -119,67 +119,67 @@ typeOpStore op
 -- Compounds ------------------------------------------------------------------
 xNew :: Type Name -> Exp () Name -> Exp () Name
 xNew t xV
- = xApps () (xVarOpStore OpStoreNew)
-            [XType t, xV ]
+ = xApps (xVarOpStore OpStoreNew)
+         [XType t, xV ]
 
 
 xRead :: Type Name -> Exp () Name -> Exp () Name
 xRead t xRef
- = xApps () (xVarOpStore OpStoreRead)
-            [XType t, xRef ]
+ = xApps (xVarOpStore OpStoreRead)
+         [XType t, xRef ]
 
 
 xWrite :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xWrite t xRef xVal
- = xApps () (xVarOpStore OpStoreWrite)
-            [XType t, xRef, xVal ]
+ = xApps (xVarOpStore OpStoreWrite)
+         [XType t, xRef, xVal ]
 
 
 xNewVector :: Type Name -> Exp () Name -> Exp () Name
 xNewVector tElem xLen
- = xApps () (xVarOpStore OpStoreNewVector)
-            [XType tElem, xLen]
+ = xApps (xVarOpStore OpStoreNewVector)
+         [XType tElem, xLen]
 
 
 xNewVectorR :: Type Name -> Type Name -> Exp () Name
 xNewVectorR tElem tR
- = xApps () (xVarOpStore OpStoreNewVectorR)
-            [XType tElem, XType tR]
+ = xApps (xVarOpStore OpStoreNewVectorR)
+         [XType tElem, XType tR]
 
 
 xNewVectorN :: Type Name -> Type Name -> Exp () Name -> Exp () Name
 xNewVectorN tA tR  xRN
- = xApps () (xVarOpStore OpStoreNewVectorN)
-            [XType tA, XType tR, xRN]
+ = xApps (xVarOpStore OpStoreNewVectorN)
+         [XType tA, XType tR, xRN]
 
 
 xReadVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xReadVector t xArr xIx
- = xApps () (xVarOpStore OpStoreReadVector)
-            [XType t, xArr, xIx]
+ = xApps (xVarOpStore OpStoreReadVector)
+         [XType t, xArr, xIx]
 
 
 xWriteVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
 xWriteVector t xArr xIx xElem
- = xApps () (xVarOpStore OpStoreWriteVector)
-            [XType t, xArr, xIx, xElem]
+ = xApps (xVarOpStore OpStoreWriteVector)
+         [XType t, xArr, xIx, xElem]
 
 xSliceVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xSliceVector tElem xLen xArr
- = xApps () (xVarOpStore OpStoreSliceVector)
-            [XType tElem, xLen, xArr]
+ = xApps (xVarOpStore OpStoreSliceVector)
+         [XType tElem, xLen, xArr]
 
 
 xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xNext tRate tElem xStream xIndex
- = xApps () (xVarOpStore OpStoreNext)
-            [XType tElem, XType tRate, xStream, xIndex]
+ = xApps (xVarOpStore OpStoreNext)
+         [XType tElem, XType tRate, xStream, xIndex]
 
 
 -- Utils ----------------------------------------------------------------------
 xVarOpStore :: OpStore -> Exp () Name
 xVarOpStore op
-        = XVar () (UPrim (NameOpStore op) (typeOpStore op))
+        = XVar (UPrim (NameOpStore op) (typeOpStore op))
 
 
 

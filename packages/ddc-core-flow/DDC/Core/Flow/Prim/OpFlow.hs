@@ -10,8 +10,8 @@ import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Transform.LiftT
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Compounds.Simple
+import DDC.Core.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.List
@@ -224,17 +224,17 @@ typeOpFlow op
 -- Compounds ------------------------------------------------------------------
 xRateOfSeries :: Type Name -> Type Name -> Exp () Name -> Exp () Name
 xRateOfSeries tK tA xS 
-         = xApps () (xVarOpFlow OpFlowRateOfSeries) 
-                    [XType tK, XType tA, xS]
+         = xApps  (xVarOpFlow OpFlowRateOfSeries) 
+                  [XType tK, XType tA, xS]
 
 
 xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
-        = xApps () (xVarOpFlow OpFlowNatOfRateNat)
-                   [XType tK, xR]
+        = xApps  (xVarOpFlow OpFlowNatOfRateNat)
+                 [XType tK, xR]
 
 -- Utils -----------------------------------------------------------------------
 xVarOpFlow :: OpFlow -> Exp () Name
 xVarOpFlow op
-        = XVar () (UPrim (NameOpFlow op) (typeOpFlow op))
+        = XVar  (UPrim (NameOpFlow op) (typeOpFlow op))
 

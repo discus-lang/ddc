@@ -2,35 +2,37 @@
 module DDC.Core.Flow.Transform.Extract
         (extractModule)
 where
+import DDC.Core.Flow.Transform.Extract.Intersperse
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Transform.Extract.Intersperse
+import DDC.Core.Flow.Exp
+import DDC.Core.Transform.Annotate
 import DDC.Core.Module
-import DDC.Core.Exp
 
 
 -- | Extract a core module from some stream procedures.
 --   This produces vanilla core code again.
-extractModule    :: Module () Name -> [Procedure] -> Module () Name
+extractModule    :: ModuleF -> [Procedure] -> ModuleF
 extractModule orig procs
         = orig
-        { moduleBody    = extractTop procs }
+        { moduleBody    = annotate () $ extractTop procs }
 
 
-extractTop       :: [Procedure] -> Exp () Name
+-- | Extract a top level binding from a procedure.
+extractTop       :: [Procedure] -> ExpF
 extractTop procs
- = XLet () (LRec (map extractProcedure procs)) (xUnit ())
+ = XLet (LRec (map extractProcedure procs)) xUnit
 
 
 -- | Extract code for a whole procedure.
-extractProcedure  :: Procedure -> (Bind Name, Exp () Name)
+extractProcedure  :: Procedure -> (Bind Name, ExpF)
 extractProcedure (Procedure n bsParam xsParam nest stmts xResult tResult)
  = let  tBody   = foldr tFunPE  tResult $ map typeOfBind xsParam
         tQuant  = foldr TForall tBody   $ bsParam
    in   ( BName n tQuant
-        ,   xLAMs () bsParam
-          $ xLams () xsParam
+        ,   xLAMs bsParam
+          $ xLams xsParam
           $ extractNest nest stmts xResult )
 
 
@@ -38,19 +40,19 @@ extractProcedure (Procedure n bsParam xsParam nest stmts xResult tResult)
 -- | Extract code for a loop nest.
 extractNest 
         :: Nest                 -- ^ Loops to run in sequence.
-        -> [Lets () Name]       -- ^ Baseband statements from the source program
+        -> [LetsF]              -- ^ Baseband statements from the source program
                                 --   that run after the loop operators.
-        -> Exp () Name          -- ^ Final result of procedure.
-        -> Exp () Name
+        -> ExpF                 -- ^ Final result of procedure.
+        -> ExpF
 
 extractNest nest stmts xResult
  = let stmts'   = intersperseStmts (extractLoop nest) stmts
-   in  xLets () stmts' xResult
+   in  xLets stmts' xResult
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a possibly nested loop.
-extractLoop      :: Nest -> [Lets () Name]
+extractLoop      :: Nest -> [LetsF]
 
 -- Code in a loop context.
 extractLoop (NestLoop tRate starts bodys inner ends _result)
@@ -60,15 +62,15 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
 
         -- The loop itself.
         lLoop   = LLet  (BNone tUnit)
-                        (xApps () (XVar  () (UPrim (NameOpLoop OpLoopLoop) 
-                                                   (typeOpLoop OpLoopLoop)))
+                        (xApps (XVar (UPrim (NameOpLoop OpLoopLoop) 
+                                            (typeOpLoop OpLoopLoop)))
                                 [ XType tRate           -- loop rate
                                 , xBody ])              -- loop body
 
         -- The worker passed to the loop# combinator.
-        xBody   = XLam  () (BAnon tNat)                 -- loop counter.
-                $ xLets () (lsBody ++ lsInner)
-                           (xUnit ())
+        xBody   = XLam  (BAnon tNat)                    -- loop counter.
+                $ xLets (lsBody ++ lsInner)
+                           xUnit
 
         -- Process the elements.
         lsBody  = concatMap extractStmtBody bodys
@@ -87,15 +89,15 @@ extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
         -- TODO: hacks to get flag name,
         --       how to handle this cleanly??
         UName (NameVar sFlags)  = uFlags
-        xFlag                   = XVar () (UName (NameVar $ sFlags ++ "__elem"))
+        xFlag                   = XVar (UName (NameVar $ sFlags ++ "__elem"))
 
         -- TODO: hacks to get counter name.
         TVar (UName (NameVar strK)) = tRateInner
         nCounter                = UName (NameVar (strK ++ "__count"))
 
-        xGuard  = xLoopGuard xFlag (XVar () nCounter)
-                     (  XLam  () (BAnon tNat)
-                      $ xLets () (lsBody ++ lsNested) (xUnit ()))
+        xGuard  = xLoopGuard xFlag (XVar nCounter)
+                     (  XLam  (BAnon tNat)
+                      $ xLets (lsBody ++ lsNested) xUnit)
 
         -- Selector context.
         lsBody   = concatMap extractStmtBody stmtsBody
@@ -112,10 +114,11 @@ extractLoop NestEmpty
 extractLoop (NestList nests)
  = concatMap extractLoop nests
 
+
 -------------------------------------------------------------------------------
 -- | Extract loop starting code.
 --   This comes before the main loop.
-extractStmtStart :: StmtStart -> [Lets () Name]
+extractStmtStart :: StmtStart -> [LetsF]
 extractStmtStart ss
  = case ss of
         -- Allocate a new vector
@@ -132,10 +135,7 @@ extractStmtStart ss
 
 -------------------------------------------------------------------------------
 -- | Extract loop body code.
-extractStmtBody  
-        :: StmtBody  
-        -> [Lets () Name]
-
+extractStmtBody :: StmtBody -> [LetsF]
 extractStmtBody sb
  = case sb of
         BodyStmt b x
@@ -144,23 +144,23 @@ extractStmtBody sb
         -- Write to a vector.
         BodyVecWrite nVec tElem xIx xVal
          -> [ LLet (BNone tUnit)
-                   (xWriteVector tElem (XVar () (UName nVec)) xIx xVal)]
+                   (xWriteVector tElem (XVar (UName nVec)) xIx xVal)]
 
         -- Read from an accumulator.
         BodyAccRead  n t bVar
          -> [ LLet bVar
-                   (xRead t (XVar () (UName n))) ]
+                   (xRead t (XVar (UName n))) ]
 
         -- Accumulate an element from a stream.
         BodyAccWrite nAcc tElem xWorker    
          -> [ LLet (BNone tUnit)
-                   (xWrite tElem (XVar () (UName nAcc)) xWorker)]
+                   (xWrite tElem (XVar (UName nAcc)) xWorker)]
 
 
 -------------------------------------------------------------------------------
 -- | Extract loop ending code.
 --   This comes after the main loop.
-extractStmtEnd   :: StmtEnd   -> [Lets () Name]
+extractStmtEnd :: StmtEnd -> [LetsF]
 extractStmtEnd se
  = case se of
         EndStmts ss     
@@ -169,26 +169,26 @@ extractStmtEnd se
         -- Read the accumulator of a reduction operation.
         EndAcc n t nAcc 
          -> [LLet (BName n t) 
-                  (xRead t (XVar () (UName nAcc))) ]
+                  (xRead t (XVar (UName nAcc))) ]
 
         -- Slice.
         -- HACK overwrite original vector name!
         EndVecSlice nVec tElem tRate 
          -> let -- TODO: hacks to get counter name.
                 TVar (UName (NameVar strK)) = tRate
-                nCounter                    = UName (NameVar (strK ++ "__count"))
-                xCounter                    = xRead tInt (XVar () nCounter)
-                xVec                        = XVar () (UName nVec)
+                nCounter        = UName (NameVar (strK ++ "__count"))
+                xCounter        = xRead tInt (XVar nCounter)
+                xVec            = XVar (UName nVec)
                 -- Read the counter in a let since it will need to be threaded
            in   [ LLet (BAnon      tInt)
                    xCounter
                 , LLet (BName nVec (tVector tElem)) 
-                   (xSliceVector tElem (XVar () (UIx 0)) xVec) ]
+                   (xSliceVector tElem (XVar (UIx 0)) xVec) ]
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a generic statement.
-extractStmt       :: Stmt -> Lets () Name
+extractStmt       :: Stmt -> LetsF
 extractStmt (Stmt b x)
  = LLet b x
  

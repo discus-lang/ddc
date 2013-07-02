@@ -9,27 +9,27 @@ where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Compounds.Simple
+import DDC.Core.Exp.Simple
 
 
 -- | A literal @Bool#@
-xBool :: a -> Bool   -> Exp a Name
-xBool a b       = XCon a (mkDaConAlg (NameLitBool b) tBool)
+xBool   :: Bool   -> Exp a Name
+xBool b = XCon (mkDaConAlg (NameLitBool b) tBool)
 
 
 -- | A literal @Bool#@ data constructor.
-dcBool :: Bool -> DaCon Name
+dcBool  :: Bool -> DaCon Name
 dcBool b = mkDaConAlg (NameLitBool b) tBool
 
 
 -- | A literal @Nat#@
-xNat  :: a -> Integer -> Exp a Name
-xNat a i = XCon a (dcNat i)
+xNat    :: Integer -> Exp a Name
+xNat i  = XCon (dcNat i)
 
 
 -- | A Literal @Nat#@ data constructor.
-dcNat :: Integer -> DaCon Name
+dcNat   :: Integer -> DaCon Name
 dcNat i   = mkDaConAlg (NameLitInt i) tNat
 
 
@@ -40,14 +40,13 @@ dcTuple1  = mkDaConAlg (NameDaConFlow (DaConFlowTuple 1))
 
 
 -- | Construct a @Tuple2#@
-xTuple2 :: a 
-        -> Type Name  -> Type Name 
+xTuple2 :: Type Name  -> Type Name 
         -> Exp a Name -> Exp a Name 
         -> Exp a Name
 
-xTuple2 a t1 t2 x1 x2
-        = xApps a (XCon a dcTuple2) 
-                  [XType t1, XType t2, x1, x2]
+xTuple2 t1 t2 x1 x2
+        = xApps (XCon dcTuple2) 
+                [XType t1, XType t2, x1, x2]
 
 
 -- | Data constructor for @Tuple2#@

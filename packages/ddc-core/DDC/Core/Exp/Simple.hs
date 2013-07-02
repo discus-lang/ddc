@@ -72,26 +72,6 @@ data Exp a n
         deriving (Show, Eq)
 
 
--- | Type casts.
-data Cast a n
-        -- | Weaken the effect of an expression.
-        --   The given effect is added to the effect
-        --   of the body.
-        = CastWeakenEffect  !(Effect n)
-        
-        -- | Weaken the closure of an expression.
-        --   The closures of these expressions are added to the closure
-        --   of the body.
-        | CastWeakenClosure ![Exp a n]
-
-        -- | Purify the effect (action) of an expression.
-        | CastPurify        !(Witness a n)
-
-        -- | Forget about the closure (sharing) of an expression.
-        | CastForget        !(Witness a n)
-        deriving (Show, Eq)
-
-
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
@@ -134,6 +114,26 @@ data Witness a n
 
         -- | Type can appear as the argument of an application.
         | WType !(Type n)
+        deriving (Show, Eq)
+
+
+-- | Type casts.
+data Cast a n
+        -- | Weaken the effect of an expression.
+        --   The given effect is added to the effect
+        --   of the body.
+        = CastWeakenEffect  !(Effect n)
+        
+        -- | Weaken the closure of an expression.
+        --   The closures of these expressions are added to the closure
+        --   of the body.
+        | CastWeakenClosure ![Exp a n]
+
+        -- | Purify the effect (action) of an expression.
+        | CastPurify        !(Witness a n)
+
+        -- | Forget about the closure (sharing) of an expression.
+        | CastForget        !(Witness a n)
         deriving (Show, Eq)
 
 

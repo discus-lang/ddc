@@ -1,7 +1,7 @@
 
 -- | Short-hands for constructing compound expressions.
 module DDC.Core.Flow.Compounds
-        ( module DDC.Core.Compounds
+        ( module DDC.Core.Compounds.Simple
 
           -- * Fragment specific kinds
         , kRate
@@ -42,4 +42,4 @@ import DDC.Core.Flow.Prim.DaConPrim
 import DDC.Core.Flow.Prim.OpFlow
 import DDC.Core.Flow.Prim.OpLoop
 import DDC.Core.Flow.Prim.OpStore
-import DDC.Core.Compounds
+import DDC.Core.Compounds.Simple

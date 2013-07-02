@@ -30,7 +30,8 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Compounds
+import DDC.Core.Compounds
+import DDC.Core.Flow.Compounds  (tNat, dcNat, dcTupleN, dcBool, tTupleN)
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
@@ -182,8 +183,7 @@ xIncrement :: a -> Exp a Name -> Exp a Name
 xIncrement a xx
         = xApps a (XVar a (UPrim (NamePrimArith PrimArithAdd) 
                                  (typePrimArith PrimArithAdd)))
-                  [ XType tNat, xx, xNat a 1 ]
-
+                  [ XType tNat, xx, XCon a (dcNat 1) ]
 
 -- | Build an expression that substracts two integers.
 xSubInt    :: a -> Exp a Name -> Exp a Name -> Exp a Name
@@ -356,7 +356,7 @@ windBodyX refMap context xx
                                 [XVar a u | u <- usAccs]
 
                 -- Initial values of index and accumulators.
-                xsInit  = xNat a 0 
+                xsInit  = XCon a (dcNat 0)
                         : [ XVar a (UName nVar)
                                 | info  <- refMapElems refMap_init
                                 , let Just nVar = nameOfRefInfo info ]
@@ -445,6 +445,17 @@ windBodyX refMap context xx
 
         XType{}         -> xx
         XWitness{}      -> xx
+
+
+xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
+xNatOfRateNat tK xR
+        = xApps () 
+                (xVarOpFlow OpFlowNatOfRateNat)
+                [XType tK, xR]
+
+xVarOpFlow :: OpFlow -> Exp () Name
+xVarOpFlow op
+        = XVar  () (UPrim (NameOpFlow op) (typeOpFlow op))
 
 
 -------------------------------------------------------------------------------

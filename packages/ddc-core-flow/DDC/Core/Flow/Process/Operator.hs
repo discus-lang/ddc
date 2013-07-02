@@ -2,8 +2,7 @@
 module DDC.Core.Flow.Process.Operator
         (Operator (..))
 where
-import DDC.Core.Exp
-import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Exp
 
 
 -- | An abstract series operator.
@@ -17,36 +16,36 @@ data Operator
         --   during code generation.
         = OpId
         { -- Binder for result series.
-          opResultSeries        :: Bind Name
+          opResultSeries        :: BindF
 
           -- Rate of the input series.
-        , opInputRate           :: Type Name
+        , opInputRate           :: TypeF
 
           -- Bound of the input series
-        , opInputSeries         :: Bound Name
+        , opInputSeries         :: BoundF
 
           -- Type of the elements.
-        , opElemType            :: Type Name
+        , opElemType            :: TypeF
         }
 
         -----------------------------------------
         -- | Convert a series to a manifest vector.
         | OpCreate
         { -- | Binder for result vector
-          opResultVector        :: Bind Name
+          opResultVector        :: BindF
 
           -- | Rate of input series
-        , opInputRate           :: Type Name
+        , opInputRate           :: TypeF
 
           -- | Bound of input series.
-        , opInputSeries         :: Bound Name
+        , opInputSeries         :: BoundF
 
           -- | Rate that should be used when allocating the vector.
           --   This is filled in by `patchAllocRates`.
-        , opAllocRate           :: Maybe (Type Name)
+        , opAllocRate           :: Maybe TypeF
 
           -- | Type of the elements.
-        , opElemType            :: Type Name
+        , opElemType            :: TypeF
         }
 
 
@@ -60,64 +59,65 @@ data Operator
           opArity               :: Int
 
           -- | Binder for result series.
-        , opResultSeries        :: Bind Name
+        , opResultSeries        :: BindF
 
           -- | Rate of all input series.
-        , opInputRate           :: Type Name
+        , opInputRate           :: TypeF
 
           -- | Names for input series.
-        , opInputSeriess        :: [Bound Name]
+        , opInputSeriess        :: [BoundF]
 
           -- | Worker input parameters
-        , opWorkerParams        :: [Bind Name]
+        , opWorkerParams        :: [BindF]
 
           -- | Worker body
-        , opWorkerBody          :: Exp () Name
+        , opWorkerBody          :: ExpF
         }
 
         -----------------------------------------
         -- | Fold all the elements of a series.
         | OpFold
         { -- | Binder for result value.
-          opResultValue         :: Bind Name
+          opResultValue         :: BindF
 
           -- | Rate of input series.
-        , opInputRate           :: Type Name
+        , opInputRate           :: TypeF
 
           -- | Bound of input series.
-        , opInputSeries         :: Bound Name
+        , opInputSeries         :: BoundF
 
           -- | Starting accumulator value.
-        , opZero                :: Exp () Name
+        , opZero                :: ExpF
 
           -- | Worker parameter for index input.
           -- Should be BNone for OpFlowFold, but something for OpFlowFoldIndex
-        , opWorkerParamIndex    :: Bind Name
+        , opWorkerParamIndex    :: BindF
 
           -- | Worker parameter for accumulator input.
-        , opWorkerParamAcc      :: Bind Name
+        , opWorkerParamAcc      :: BindF
 
           -- | Worker parameter for element input.
-        , opWorkerParamElem     :: Bind Name
+        , opWorkerParamElem     :: BindF
 
           -- | Worker body.
-        , opWorkerBody          :: Exp () Name }
+        , opWorkerBody          :: ExpF }
 
         -----------------------------------------
         -- | Pack a series according to a selector.
         | OpPack
         { -- | Binder for result series.
-          opResultSeries        :: Bind Name
+          opResultSeries        :: BindF
 
           -- | Rate of input series.
-        , opInputRate           :: Type Name
+        , opInputRate           :: TypeF
 
           -- | Bound of input series.
-        , opInputSeries         :: Bound Name
+        , opInputSeries         :: BoundF
 
           -- | Rate of output series.
-        , opOutputRate          :: Type Name 
+        , opOutputRate          :: TypeF
 
           -- | Type of a series element.
-        , opElemType            :: Type Name }
+        , opElemType            :: TypeF }
         deriving (Show)
+

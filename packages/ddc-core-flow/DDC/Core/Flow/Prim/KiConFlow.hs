@@ -5,7 +5,7 @@ module DDC.Core.Flow.Prim.KiConFlow
 where
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 

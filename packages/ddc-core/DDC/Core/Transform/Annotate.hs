@@ -8,9 +8,9 @@ import qualified DDC.Core.Exp.Simple    as S
 
 -- | Convert the `Simple` version of the AST to the `Annot` version,
 --   using a the provided default annotation value.
-class Annotate  (c1 :: * -> * -> *) 
-                (c2 :: * -> * -> *) 
-                | c1 -> c2 
+class Annotate  
+        (c1 :: * -> * -> *) 
+        (c2 :: * -> * -> *) | c1 -> c2 
  where
  annotate :: a -> c1 a n -> c2 a n
 
@@ -47,27 +47,27 @@ instance Annotate S.Cast A.Cast where
  annotate def cc
   = let down    = annotate def
     in case cc of
-        S.CastWeakenEffect eff  -> A.CastWeakenEffect  eff
-        S.CastWeakenClosure clo -> A.CastWeakenClosure (map down clo)
-        S.CastPurify w          -> A.CastPurify        (down w)
-        S.CastForget w          -> A.CastForget        (down w)
+        S.CastWeakenEffect eff          -> A.CastWeakenEffect  eff
+        S.CastWeakenClosure clo         -> A.CastWeakenClosure (map down clo)
+        S.CastPurify w                  -> A.CastPurify        (down w)
+        S.CastForget w                  -> A.CastForget        (down w)
 
 
 instance Annotate S.Lets A.Lets where
  annotate def lts
   = let down    = annotate def
     in case lts of
-        S.LLet b x              -> A.LLet b (down x)
-        S.LRec bxs              -> A.LRec [(b, down x) | (b, x) <- bxs]
-        S.LLetRegions bks bts   -> A.LLetRegions bks bts
-        S.LWithRegion u         -> A.LWithRegion u
+        S.LLet b x                      -> A.LLet b (down x)
+        S.LRec bxs                      -> A.LRec [(b, down x) | (b, x) <- bxs]
+        S.LLetRegions bks bts           -> A.LLetRegions bks bts
+        S.LWithRegion u                 -> A.LWithRegion u
 
 
 instance Annotate S.Alt A.Alt where
  annotate def alt
   = let down    = annotate def
     in case alt of
-        S.AAlt w x              -> A.AAlt w (down x)
+        S.AAlt w x                      -> A.AAlt w (down x)
 
 
 instance Annotate S.Witness A.Witness where

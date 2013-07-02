@@ -39,7 +39,8 @@ letrec {
                   (\(^ : Int#).
                    let s__elem : a = next# [a] [k0] s ^0 in
                    let x1__elem : Bool#
-                         = (\(x : a). f x) s__elem in
+                         = (\(x0 : a).
+                            (\(x : a). f x) x0) s__elem in
                    let x1__use__elem : Bool# = x1__elem in
                    let _ : Unit
                          = guard# k1__count x1__use__elem
@@ -69,7 +70,8 @@ letrec {
                   (\(^ : Int#).
                    let s__elem : a = next# [a] [k0] s ^0 in
                    let x1__elem : Bool#
-                         = (\(x : a). f x) s__elem in
+                         = (\(x0 : a).
+                            (\(x : a). f x) x0) s__elem in
                    let x1__use__elem : Bool# = x1__elem in
                    let _ : Unit = writeVector# [a] x3 ^0 s__elem in
                    let _ : Unit
@@ -102,13 +104,15 @@ letrec {
                   (\(^ : Int#).
                    let s0__elem : a = next# [a] [k0] s0 ^0 in
                    let x1__elem : Bool#
-                         = (\(x : a). f x) s0__elem in
+                         = (\(x0 : a).
+                            (\(x : a). f x) x0) s0__elem in
                    let x1__use__elem : Bool# = x1__elem in
                    let _ : Unit
                          = guard# k1__count x1__use__elem
                                (\(^ : Int#).
                                 let x3__elem : Bool#
-                                      = (\(x : a). g x) s0__elem in
+                                      = (\(x2 : a).
+                                         (\(x : a). g x) x2) s0__elem in
                                 let x3__use__elem : Bool# = x3__elem in
                                 let _ : Unit
                                       = guard# k2__count x3__use__elem
@@ -140,9 +144,11 @@ letrec {
                   (\(^ : Int#).
                    let s0__elem : a = next# [a] [k0] s0 ^0 in
                    let x1__elem : Bool#
-                         = (\(x : a). f x) s0__elem in
+                         = (\(x0 : a).
+                            (\(x : a). f x) x0) s0__elem in
                    let x3__elem : Bool#
-                         = (\(x : a). f x) s0__elem in
+                         = (\(x2 : a).
+                            (\(x : a). f x) x2) s0__elem in
                    let x1__use__elem : Bool# = x1__elem in
                    let x3__use__elem : Bool# = x3__elem in
                    let _ : Unit
