@@ -5,9 +5,8 @@ module DDC.Core.Blue
 
           -- * Names
         , Name          (..)
-        , PrimTyCon     (..)
-        , PrimArith     (..)
-        , PrimCast      (..)
+        , TyConPrim     (..)
+        , OpPrimArith   (..)
 
           -- * Name Parsing
         , readName

@@ -1,0 +1,11 @@
+
+:set lang Blue
+
+:type neg#
+:type add#
+:type sub#
+:type mul#
+:type div#
+:type mod#
+:type rem#
+

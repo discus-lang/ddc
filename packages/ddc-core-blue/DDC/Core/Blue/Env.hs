@@ -18,37 +18,32 @@ import qualified DDC.Type.Env   as Env
 --
 -- >  Type                         Constructors
 -- >  ----                ------------------------------
--- >  Bool#               True# False#
--- >  Nat#                0# 1# 2# ...
--- >  Int#                ... -2i# -1i# 0i# 1i# 2i# ...
--- >  Tag#                (none, convert from Nat#)
--- >  Word{8,16,32,64}#   42w8# 123w64# ...
--- >  Float{32,64}#       (none, convert from Int#)
--- >
--- >  Stream              (none, abstract)
--- >  Vector              (none, abstract)
+-- >  Bool                True False
+-- >  Nat                 0 1 2 ...
+-- >  Int                 ... -2i -1i 0i 1i 2i ...
+-- >  Word{8,16,32,64}#   42w8 123w64 ...
 -- 
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Primitive -----------------------------------------------
-        -- Bool#
-        [ DataDef (NamePrimTyCon PrimTyConBool) 
+        -- Bool
+        [ DataDef (NameTyConPrim TyConPrimBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
-        -- Nat#
-        , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+        -- Nat
+        , DataDef (NameTyConPrim TyConPrimNat)  [] Nothing
 
-        -- Int#
-        , DataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+        -- Int
+        , DataDef (NameTyConPrim TyConPrimInt)  [] Nothing
 
-        -- WordN#
-        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        -- WordN
+        , DataDef (NameTyConPrim (TyConPrimWord 64)) [] Nothing
+        , DataDef (NameTyConPrim (TyConPrimWord 32)) [] Nothing
+        , DataDef (NameTyConPrim (TyConPrimWord 16)) [] Nothing
+        , DataDef (NameTyConPrim (TyConPrimWord 8))  [] Nothing
         ]
 
 -- Sorts ---------------------------------------------------------------------
@@ -75,7 +70,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NamePrimTyCon tc                -> Just $ kindPrimTyCon tc
+        NameTyConPrim tc                -> Just $ kindTyConPrim tc
         _                               -> Nothing
 
 
@@ -90,13 +85,12 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NamePrimCast p          -> Just $ typePrimCast p
-        NamePrimArith p         -> Just $ typePrimArith p
+        NameOpPrimArith p       -> Just $ typeOpPrimArith p
 
-        NameLitBool _           -> Just $ tBoolU
-        NameLitNat  _           -> Just $ tNatU
-        NameLitInt  _           -> Just $ tIntU
-        NameLitWord _ bits      -> Just $ tWordU bits
+        NameLitBool _           -> Just $ tBool
+        NameLitNat  _           -> Just $ tNat
+        NameLitInt  _           -> Just $ tInt
+        NameLitWord _ bits      -> Just $ tWord bits
 
         _                       -> Nothing
 

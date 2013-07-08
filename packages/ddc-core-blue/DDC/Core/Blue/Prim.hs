@@ -5,25 +5,18 @@ module DDC.Core.Blue.Prim
         , readName
 
           -- * Primitive type constructors
-        , PrimTyCon     (..)
-        , kindPrimTyCon
+        , TyConPrim     (..)
+        , kindTyConPrim
 
           -- * Primitive arithmetic operators
-        , PrimArith     (..)
-        , typePrimArith
-
-          -- * Casting between primitive types
-        , PrimCast      (..)
-        , typePrimCast)
+        , OpPrimArith     (..)
+        , typeOpPrimArith)
 where
 import DDC.Core.Blue.Prim.Base
 import DDC.Core.Blue.Prim.TyConPrim
 import DDC.Core.Blue.Prim.OpPrim
 import DDC.Core.Salt.Name 
-        ( readPrimTyCon
-        , readPrimCast
-        , readPrimArith
-        , readLitPrimNat
+        ( readLitPrimNat
         , readLitPrimInt
         , readLitPrimWordOfBits)
 
@@ -38,9 +31,8 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
 
-        NamePrimTyCon con       -> rnf con
-        NamePrimArith con       -> rnf con
-        NamePrimCast  c         -> rnf c
+        NameTyConPrim con       -> rnf con
+        NameOpPrimArith con     -> rnf con
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
@@ -54,28 +46,26 @@ instance Pretty Name where
         NameVar  v              -> text v
         NameCon  c              -> text c
 
-        NamePrimTyCon tc        -> ppr tc
-        NamePrimArith op        -> ppr op
-        NamePrimCast  op        -> ppr op
+        NameTyConPrim tc        -> ppr tc
+        NameOpPrimArith op      -> ppr op
 
-        NameLitBool True        -> text "True#"
-        NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i <> text "#"
-        NameLitInt  i           -> integer i <> text "i" <> text "#"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+        NameLitBool True        -> text "True"
+        NameLitBool False       -> text "False"
+        NameLitNat  i           -> integer i
+        NameLitInt  i           -> integer i <> text "i"
+        NameLitWord i bits      -> integer i <> text "w" <> int bits
 
 
 -- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
         -- Primitive names.
-        | Just p        <- readPrimTyCon str    = Just $ NamePrimTyCon p
-        | Just p        <- readPrimArith str    = Just $ NamePrimArith p
-        | Just p        <- readPrimCast  str    = Just $ NamePrimCast  p
+        | Just p        <- readTyConPrim   str  = Just $ NameTyConPrim p
+        | Just p        <- readOpPrimArith str  = Just $ NameOpPrimArith p
 
         -- Literal Bools
-        | str == "True#"  = Just $ NameLitBool True
-        | str == "False#" = Just $ NameLitBool False
+        | str == "True"  = Just $ NameLitBool True
+        | str == "False" = Just $ NameLitBool False
 
         -- Literal Nat
         | Just val <- readLitPrimNat str
@@ -102,7 +92,3 @@ readName str
 
         | otherwise
         = Nothing
-
-
-
-
