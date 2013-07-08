@@ -12,6 +12,7 @@ import Control.DeepSeq
 import Data.List
 
 
+-- OpPrimArith ----------------------------------------------------------------
 instance NFData OpPrimArith
 
 instance Pretty OpPrimArith where

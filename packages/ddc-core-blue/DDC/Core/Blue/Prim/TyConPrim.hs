@@ -6,7 +6,8 @@ module DDC.Core.Blue.Prim.TyConPrim
         , tBool
         , tNat
         , tInt
-        , tWord)
+        , tWord
+        , tRef)
 where
 import DDC.Core.Blue.Prim.Base
 import DDC.Core.Compounds.Annot
@@ -31,6 +32,7 @@ instance Pretty TyConPrim where
         TyConPrimNat            -> text "Nat"
         TyConPrimInt            -> text "Int"
         TyConPrimWord   bits    -> text "Word"  <> int bits
+        TyConPrimRef            -> text "Ref"
 
 
 -- | Read a primitive type constructor.
@@ -40,9 +42,9 @@ instance Pretty TyConPrim where
 --   Floats are limited to 32 or 64 bits.
 readTyConPrim :: String -> Maybe TyConPrim
 readTyConPrim str
-        | str == "Bool"   = Just $ TyConPrimBool
-        | str == "Nat"    = Just $ TyConPrimNat
-        | str == "Int"    = Just $ TyConPrimInt
+        | str == "Bool" = Just $ TyConPrimBool
+        | str == "Nat"  = Just $ TyConPrimNat
+        | str == "Int"  = Just $ TyConPrimInt
 
         -- WordN
         | Just rest     <- stripPrefix "Word" str
@@ -51,6 +53,8 @@ readTyConPrim str
         , n             <- read ds
         , elem n [8, 16, 32, 64]
         = Just $ TyConPrimWord n
+
+        | str == "Ref"  = Just $ TyConPrimRef
 
         | otherwise
         = Nothing
@@ -64,6 +68,7 @@ kindTyConPrim tc
         TyConPrimNat     -> kData
         TyConPrimInt     -> kData
         TyConPrimWord  _ -> kData
+        TyConPrimRef     -> kRegion `kFun` kData `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -83,7 +88,15 @@ tInt    = TCon (TyConBound (UPrim (NameTyConPrim TyConPrimInt) kData) kData)
 
 
 -- | Primitive `WordN` type of the given width.
-tWord :: Int -> Type Name
+tWord   :: Int -> Type Name
 tWord bits 
         = TCon (TyConBound (UPrim (NameTyConPrim (TyConPrimWord bits)) kData) kData)
+
+
+-- | Primitive `Ref` type.
+tRef    :: Region Name -> Type Name -> Type Name
+tRef tR tA   
+ = tApps (TCon (TyConBound (UPrim (NameTyConPrim TyConPrimRef) k) k))
+                [tR, tA]
+ where k = kRegion `kFun` kData `kFun` kData
 

@@ -52,6 +52,9 @@ data TyConPrim
 
         -- | @WordN@ machine words of the given width.
         | TyConPrimWord   Int
+
+        -- | A mutable reference.
+        | TyConPrimRef
         deriving (Eq, Ord, Show)
 
 
