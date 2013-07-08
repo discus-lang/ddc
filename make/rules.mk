@@ -76,6 +76,15 @@ packages/ddc-core-flow/%.o : packages/ddc-core-flow/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-flow
 
+packages/ddc-core-blue/%.o : packages/ddc-core-blue/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-blue
+
 packages/ddc-build/%.o : packages/ddc-build/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -86,6 +95,7 @@ packages/ddc-build/%.o : packages/ddc-build/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-blue \
 		      -ipackages/ddc-build
 
 packages/ddc-driver/%.o : packages/ddc-driver/%.hs
@@ -98,6 +108,7 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-blue \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver
 
@@ -116,6 +127,7 @@ packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-blue \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-tools/src/ddc-check
 
@@ -129,6 +141,7 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-blue \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \
@@ -144,6 +157,7 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-blue \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \

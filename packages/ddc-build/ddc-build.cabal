@@ -27,14 +27,16 @@ Library
         ddc-core-simpl  == 0.3.2.*,
         ddc-core-salt   == 0.3.2.*,
         ddc-core-llvm   == 0.3.2.*,
-        ddc-core-flow   == 0.3.2.*
+        ddc-core-flow   == 0.3.2.*,
+        ddc-core-blue   == 0.3.2.*
   
   Exposed-modules:
         DDC.Build.Language.Eval
         DDC.Build.Language.Lite
         DDC.Build.Language.Salt
-        DDC.Build.Language.Zero
         DDC.Build.Language.Flow
+        DDC.Build.Language.Blue
+        DDC.Build.Language.Zero
         DDC.Build.Language
 
         DDC.Build.Pipeline.Core

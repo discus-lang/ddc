@@ -7,7 +7,8 @@ PACKAGES = \
 	ddc-core-eval \
 	ddc-core-salt \
 	ddc-core-llvm \
-        ddc-core-flow \
+	ddc-core-flow \
+	ddc-core-blue \
 	ddc-build \
 	ddc-driver \
 	ddc-code \

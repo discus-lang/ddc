@@ -7,13 +7,14 @@ ddc-check_packages = \
 	packages/ddc-core-simpl/DDC \
 	packages/ddc-core-eval/DDC \
 	packages/ddc-core-salt/DDC \
- 	packages/ddc-core-llvm/DDC \
-        packages/ddc-core-flow/DDC \
+	packages/ddc-core-llvm/DDC \
+	packages/ddc-core-flow/DDC \
+	packages/ddc-core-blue/DDC \
 	packages/ddc-build/DDC
 
 ddc-check_src_hs_all = \
 	$(shell find $(ddc-check_packages)            -name "*.hs" -follow) \
-        $(shell find packages/ddc-tools/src/ddc-check -name "*.hs" -follow)
+	$(shell find packages/ddc-tools/src/ddc-check -name "*.hs" -follow)
 
 # -- Dependencies -------------------------------------------------------------
 make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)

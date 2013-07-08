@@ -20,21 +20,23 @@ docs	:
 
 docs-alpha :
 	@haddock -w -h -o doc/haddock-alpha --optghc=-ipackages/ddc-alpha/src \
-                $(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
+		$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-alpha_src_hs_all))
 
 docs-core :
 	@haddock -w -h -o doc/haddock-core \
-                        --optghc=-ipackages/ddc-base \
-                        --optghc=-ipackages/ddc-build \
-                        --optghc=-ipackages/ddc-core \
+			--optghc=-ipackages/ddc-base \
+			--optghc=-ipackages/ddc-build \
+			--optghc=-ipackages/ddc-core \
 			--optghc=-ipackages/ddc-core-eval \
 			--optghc=-ipackages/ddc-core-llvm \
 			--optghc=-ipackages/ddc-core-salt \
 			--optghc=-ipackages/ddc-core-simpl \
-                        --optghc=-ipackages/ddc-driver \
-                        --optghc=-ipackages/ddci-core \
+			--optghc=-ipackages/ddc-core-flow \
+			--optghc=-ipackages/ddc-core-blue \
+			--optghc=-ipackages/ddc-driver \
+			--optghc=-ipackages/ddci-core \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(ddci-core_src_hs_all)
 
@@ -46,20 +48,22 @@ docs-hoogle	:
 
 docs-hoogle-alpha :
 	@haddock --hoogle -w -o doc/hoogle-alpha
-                        --optghc=-ipackages/ddc-alpha/src \
+			--optghc=-ipackages/ddc-alpha/src \
 			$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-main_src_hs_all))
 
 docs-hoogle-core :
 	@haddock --hoogle -w -o doc/hoogle-core \
-                        --optghc=-ipackages/ddc-base \
-                        --optghc=-ipackages/ddc-build \
-                        --optghc=-ipackages/ddc-core \
+			--optghc=-ipackages/ddc-base \
+			--optghc=-ipackages/ddc-build \
+			--optghc=-ipackages/ddc-core \
 			--optghc=-ipackages/ddc-core-eval \
 			--optghc=-ipackages/ddc-core-llvm \
 			--optghc=-ipackages/ddc-core-salt \
 			--optghc=-ipackages/ddc-core-simpl \
-                        --optghc=-ipackages/ddc-driver \
+			--optghc=-ipackages/ddc-core-flow \
+			--optghc=-ipackages/ddc-core-blue \
+			--optghc=-ipackages/ddc-driver \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(ddci-core_src_hs_all)
