@@ -17,6 +17,7 @@ import DDC.Core.Salt.Name
         , PrimArith     (..)
         , PrimCast      (..))
 
+
 -- | Names of things used in Disciple Core Flow.
 data Name
         -- | User defined variables.
@@ -107,13 +108,14 @@ data TyConFlow
 
 -- | Primitive data constructors.
 data DaConFlow
-        = DaConFlowTuple Int            -- ^ @TN@ data constructor.
+        -- | @TN@ data constructor.
+        = DaConFlowTuple Int            
         deriving (Eq, Ord, Show)
 
 
 -- | Flow operators.
 data OpFlow
-        -- Stream conversions.
+        -- series conversions.
         = OpFlowVectorOfSeries
         | OpFlowRateOfSeries
         | OpFlowNatOfRateNat
@@ -156,21 +158,40 @@ data OpLoop
 
 -- | Store operators.
 data OpStore
-        -- Assignables.
-        = OpStoreNew            -- ^ Allocate a new reference.
-        | OpStoreRead           -- ^ Read from a reference.
-        | OpStoreWrite          -- ^ Write to a reference.
+        -- Assignables ----------------
+        -- | Allocate a new reference.
+        = OpStoreNew            
 
-        -- Vectors.
-        | OpStoreNewVector      -- ^ Allocate a new vector (taking a @Nat@ for the length)
-        | OpStoreNewVectorR     -- ^ Allocate a new vector (taking a @Rate@ for the length)
-        | OpStoreNewVectorN     -- ^ Allocate a new vector (taking a @RateNat@ for the length)
-        | OpStoreReadVector     -- ^ Read from a vector.
-        | OpStoreWriteVector    -- ^ Write to a vector.
-        | OpStoreSliceVector    -- ^ Slice after a pack/filter (taking a @Nat@ for new length)
+        -- | Read from a reference.
+        | OpStoreRead
 
-        -- Streams.
-        | OpStoreNext           -- ^ Take the next element from a series.
+        -- | Write to a reference.
+        | OpStoreWrite
+
+
+        -- Vectors --------------------
+        -- | Allocate a new vector (taking a @Nat@ for the length)
+        | OpStoreNewVector
+
+        -- | Allocate a new vector (taking a @Rate@ for the length)
+        | OpStoreNewVectorR     
+
+        -- | Allocate a new vector (taking a @RateNat@ for the length)
+        | OpStoreNewVectorN     
+
+        -- | Read from a vector.
+        | OpStoreReadVector     
+
+        -- | Write to a vector.
+        | OpStoreWriteVector
+
+        -- | Slice after a pack/filter (taking a @Nat@ for new length)
+        | OpStoreSliceVector    
+
+
+        -- Streams --------------------
+        -- | Take the next element from a series.
+        | OpStoreNext
         deriving (Eq, Ord, Show)
 
 

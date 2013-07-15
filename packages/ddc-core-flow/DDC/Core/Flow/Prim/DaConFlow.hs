@@ -34,7 +34,6 @@ readDaConFlow str
         = Nothing
 
 
--- Type -----------------------------------------------------------------------
 -- | Yield the type of a data constructor.
 typeDaConFlow :: DaConFlow -> Type Name
 typeDaConFlow (DaConFlowTuple n)
