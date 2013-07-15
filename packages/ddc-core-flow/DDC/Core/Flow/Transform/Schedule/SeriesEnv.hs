@@ -9,7 +9,6 @@ module DDC.Core.Flow.Transform.Schedule.SeriesEnv
         
         , elemBindOfSeriesBind
         , elemBoundOfSeriesBound
-        , elemNameOfSeriesName
         , elemTypeOfSeriesType
         , rateTypeOfSeriesType )
 where
@@ -68,8 +67,8 @@ bindNextElem nSeries tRate tElem env nest0
         -- from the series.
         | otherwise
         = let   -- bound for the single element
-                Just nElem      = elemNameOfSeriesName nSeries
-                uElem           = UName nElem
+                nElem   = NameVarMod nSeries "elem"
+                uElem   = UName nElem
 
                 -- Expression to get the next element from the series.
                 uSeries = UName nSeries
@@ -116,7 +115,7 @@ bindNextElems junk env nest0
 elemBindOfSeriesBind   :: BindF  -> Maybe BindF
 elemBindOfSeriesBind bSeries
         | BName nSeries tSeries' <- bSeries
-        , Just nElem    <- elemNameOfSeriesName nSeries
+        , nElem         <- NameVarMod nSeries "elem"
         , Just tElem    <- elemTypeOfSeriesType tSeries'
         = Just $ BName nElem tElem
 
@@ -129,20 +128,11 @@ elemBindOfSeriesBind bSeries
 elemBoundOfSeriesBound :: BoundF -> Maybe BoundF
 elemBoundOfSeriesBound uSeries
         | UName nSeries <- uSeries
-        , Just nElem    <- elemNameOfSeriesName nSeries
+        , nElem         <- NameVarMod nSeries "elem"
         = Just $ UName nElem
 
         | otherwise
         = Nothing
-
-
--- | Given the name of a whole series, 
---   produce the name that refers to the next element in its associated context.
-elemNameOfSeriesName   :: Name -> Maybe Name
-elemNameOfSeriesName n
- = case n of
-        NameVar str     -> Just $ NameVar (str ++ "__elem")
-        _               -> Nothing
 
 
 -- | Given the type of a series like @Series k e@, produce the type

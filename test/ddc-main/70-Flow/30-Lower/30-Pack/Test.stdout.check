@@ -10,13 +10,13 @@ letrec {
       let _ : Unit
             = loop# [k0]
                   (\(^ : Int#).
-                   let flags__elem : Bool# = next# [Bool#] [k0] flags ^0 in
-                   let flags__use__elem : Bool# = flags__elem in
-                   let s__elem : a = next# [a] [k0] s ^0 in
+                   let flags$elem : Bool# = next# [Bool#] [k0] flags ^0 in
+                   let flags__use$elem : Bool# = flags$elem in
+                   let s$elem : a = next# [a] [k0] s ^0 in
                    let _ : Unit
-                         = guard# k1__count flags__use__elem
+                         = guard# k1__count flags__use$elem
                                (\(^ : Int#).
-                                let _ : Unit = writeVector# [a] x0 ^0 s__elem in
+                                let _ : Unit = writeVector# [a] x0 ^0 s$elem in
                                 ()) in
                    ()) in
       let ^ : Int# = read# [Int#] k1__count in
@@ -37,15 +37,15 @@ letrec {
       let _ : Unit
             = loop# [k0]
                   (\(^ : Int#).
-                   let s__elem : a = next# [a] [k0] s ^0 in
-                   let x1__elem : Bool#
+                   let s$elem : a = next# [a] [k0] s ^0 in
+                   let x1$elem : Bool#
                          = (\(x0 : a).
-                            (\(x : a). f x) x0) s__elem in
-                   let x1__use__elem : Bool# = x1__elem in
+                            (\(x : a). f x) x0) s$elem in
+                   let x1__use$elem : Bool# = x1$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use__elem
+                         = guard# k1__count x1__use$elem
                                (\(^ : Int#).
-                                let _ : Unit = writeVector# [a] x2 ^0 s__elem in
+                                let _ : Unit = writeVector# [a] x2 ^0 s$elem in
                                 ()) in
                    ()) in
       let ^ : Int# = read# [Int#] k1__count in
@@ -68,16 +68,16 @@ letrec {
       let _ : Unit
             = loop# [k0]
                   (\(^ : Int#).
-                   let s__elem : a = next# [a] [k0] s ^0 in
-                   let x1__elem : Bool#
+                   let s$elem : a = next# [a] [k0] s ^0 in
+                   let x1$elem : Bool#
                          = (\(x0 : a).
-                            (\(x : a). f x) x0) s__elem in
-                   let x1__use__elem : Bool# = x1__elem in
-                   let _ : Unit = writeVector# [a] x3 ^0 s__elem in
+                            (\(x : a). f x) x0) s$elem in
+                   let x1__use$elem : Bool# = x1$elem in
+                   let _ : Unit = writeVector# [a] x3 ^0 s$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use__elem
+                         = guard# k1__count x1__use$elem
                                (\(^ : Int#).
-                                let _ : Unit = writeVector# [a] x2 ^0 s__elem in
+                                let _ : Unit = writeVector# [a] x2 ^0 s$elem in
                                 ()) in
                    ()) in
       let ^ : Int# = read# [Int#] k1__count in
@@ -102,22 +102,22 @@ letrec {
       let _ : Unit
             = loop# [k0]
                   (\(^ : Int#).
-                   let s0__elem : a = next# [a] [k0] s0 ^0 in
-                   let x1__elem : Bool#
+                   let s0$elem : a = next# [a] [k0] s0 ^0 in
+                   let x1$elem : Bool#
                          = (\(x0 : a).
-                            (\(x : a). f x) x0) s0__elem in
-                   let x1__use__elem : Bool# = x1__elem in
+                            (\(x : a). f x) x0) s0$elem in
+                   let x1__use$elem : Bool# = x1$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use__elem
+                         = guard# k1__count x1__use$elem
                                (\(^ : Int#).
-                                let x3__elem : Bool#
+                                let x3$elem : Bool#
                                       = (\(x2 : a).
-                                         (\(x : a). g x) x2) s0__elem in
-                                let x3__use__elem : Bool# = x3__elem in
+                                         (\(x : a). g x) x2) s0$elem in
+                                let x3__use$elem : Bool# = x3$elem in
                                 let _ : Unit
-                                      = guard# k2__count x3__use__elem
+                                      = guard# k2__count x3__use$elem
                                             (\(^ : Int#).
-                                             let _ : Unit = writeVector# [a] x4 ^0 s0__elem in
+                                             let _ : Unit = writeVector# [a] x4 ^0 s0$elem in
                                              ()) in
                                 ()) in
                    ()) in
@@ -142,24 +142,24 @@ letrec {
       let _ : Unit
             = loop# [k0]
                   (\(^ : Int#).
-                   let s0__elem : a = next# [a] [k0] s0 ^0 in
-                   let x1__elem : Bool#
+                   let s0$elem : a = next# [a] [k0] s0 ^0 in
+                   let x1$elem : Bool#
                          = (\(x0 : a).
-                            (\(x : a). f x) x0) s0__elem in
-                   let x3__elem : Bool#
+                            (\(x : a). f x) x0) s0$elem in
+                   let x3$elem : Bool#
                          = (\(x2 : a).
-                            (\(x : a). f x) x2) s0__elem in
-                   let x1__use__elem : Bool# = x1__elem in
-                   let x3__use__elem : Bool# = x3__elem in
+                            (\(x : a). f x) x2) s0$elem in
+                   let x1__use$elem : Bool# = x1$elem in
+                   let x3__use$elem : Bool# = x3$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use__elem
+                         = guard# k1__count x1__use$elem
                                (\(^ : Int#).
-                                let _ : Unit = writeVector# [a] x4 ^0 s0__elem in
+                                let _ : Unit = writeVector# [a] x4 ^0 s0$elem in
                                 ()) in
                    let _ : Unit
-                         = guard# k2__count x3__use__elem
+                         = guard# k2__count x3__use$elem
                                (\(^ : Int#).
-                                let _ : Unit = writeVector# [a] x7 ^0 s0__elem in
+                                let _ : Unit = writeVector# [a] x7 ^0 s0$elem in
                                 ()) in
                    ()) in
       let ^ : Int# = read# [Int#] k1__count in

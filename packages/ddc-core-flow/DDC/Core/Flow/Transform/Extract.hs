@@ -86,10 +86,10 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
 -- Code in a select / if context.
 extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
  = let
-        -- TODO: hacks to get flag name,
-        --       how to handle this cleanly??
-        UName (NameVar sFlags)  = uFlags
-        xFlag                   = XVar (UName (NameVar $ sFlags ++ "__elem"))
+        -- Get the name of a single flag from the series of flags.
+        UName nFlags    = uFlags
+        nFlag           = NameVarMod nFlags "elem"
+        xFlag           = XVar (UName nFlag)
 
         -- TODO: hacks to get counter name.
         TVar (UName (NameVar strK)) = tRateInner

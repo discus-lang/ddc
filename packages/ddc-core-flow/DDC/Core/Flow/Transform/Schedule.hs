@@ -134,6 +134,7 @@ scheduleOperator nest0 env op
                                 nVec                    -- destination vector
                                 (opElemType op)         -- elem type
                                 (opInputRate op) ]      -- index
+
         -- But only slice it if the input rate is different to output rate
         nest'           = if   opInputRate op == tRateAlloc
                           then nest3
@@ -162,15 +163,15 @@ scheduleOperator nest0 env op
 
         -- Binder for a single result element in the series context.
         Just nResultSeries = takeNameOfBind $ opResultSeries op
-        Just nResultElem   = elemNameOfSeriesName nResultSeries
-        uResultElem        = UName nResultElem
+        nResultElem     = NameVarMod nResultSeries "elem"
+        uResultElem     = UName nResultElem
 
         Just bResultElem   = elemBindOfSeriesBind (opResultSeries op)
 
         -- Insert the expression that computes the new result into the nest.
         context         = ContextRate $ opInputRate op
         Just nest2      = insertBody nest1 context
-                                [ BodyStmt bResultElem xBody ]
+                        $ [ BodyStmt bResultElem xBody ]
 
         -- Associate the variable for the result element with the result series.
         env2            = insertElemForSeries nResultSeries uResultElem env1
@@ -188,19 +189,18 @@ scheduleOperator nest0 env op
         (uInput, env1, nest1)
                         = bindNextElem nSeries tRate tInputElem env nest0
 
-        -- Make a name for the accumulator
-        BName n@(NameVar strName) _ 
-                        = opResultValue op
-        nAcc            = NameVar $ strName ++ "__acc"
-        
-        -- Type of the accumulator
+        -- Make a name for the accumulator.
+        BName nResult _ = opResultValue op
+        nAcc            = NameVarMod nResult "acc"
+
+        -- Type of the accumulator.
         tAcc            = typeOfBind (opWorkerParamAcc op)
         
         -- Insert statements that initialize the starting value
         --  of the accumulator.
         context         = ContextRate $ opInputRate op
         Just nest2      = insertStarts nest1 context
-                                [ StartAcc nAcc tAcc (opZero op) ]
+                        $ [ StartAcc nAcc tAcc (opZero op) ]
 
         -- Substitute input and accumulator vars into worker body.
         xBody           = XApp  (XApp   ( XLam (opWorkerParamElem op)
@@ -211,13 +211,13 @@ scheduleOperator nest0 env op
         -- Insert statements that update the accumulator
         --  into the loop body.
         Just nest3      = insertBody nest2 context
-                                [ BodyAccRead  nAcc tAcc (opWorkerParamAcc op)
-                                , BodyAccWrite nAcc tAcc xBody ]
+                        $ [ BodyAccRead  nAcc tAcc (opWorkerParamAcc op)
+                          , BodyAccWrite nAcc tAcc xBody ]
                                 
         -- Insert statements that read back the final value
         --  after the loop has finished.
         Just nest4      = insertEnds nest3 context
-                                [ EndAcc   n tAcc nAcc ]
+                        $ [ EndAcc   nResult tAcc nAcc ]
    in   (env1, nest4)
 
 

@@ -56,7 +56,6 @@ import DDC.Core.Flow.Prim.OpLoop
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
 
-
 import DDC.Core.Salt.Name 
         ( readPrimTyCon
         , readPrimCast
@@ -73,48 +72,50 @@ import Data.Char
 instance NFData Name where
  rnf nn
   = case nn of
-        NameVar s               -> rnf s
-        NameCon s               -> rnf s
+        NameVar         s       -> rnf s
+        NameVarMod      n s     -> rnf n `seq` rnf s
+        NameCon         s       -> rnf s
 
-        NameKiConFlow con       -> rnf con
-        NameTyConFlow con       -> rnf con
-        NameDaConFlow con       -> rnf con
-        NameOpFlow    op        -> rnf op
-        NameOpLoop    op        -> rnf op
-        NameOpStore   op        -> rnf op
+        NameKiConFlow   con     -> rnf con
+        NameTyConFlow   con     -> rnf con
+        NameDaConFlow   con     -> rnf con
+        NameOpFlow      op      -> rnf op
+        NameOpLoop      op      -> rnf op
+        NameOpStore     op      -> rnf op
 
-        NamePrimTyCon con       -> rnf con
-        NamePrimArith con       -> rnf con
-        NamePrimCast  c         -> rnf c
+        NamePrimTyCon   con     -> rnf con
+        NamePrimArith   con     -> rnf con
+        NamePrimCast    c       -> rnf c
 
-        NameLitBool b           -> rnf b
-        NameLitNat  n           -> rnf n
-        NameLitInt  i           -> rnf i
-        NameLitWord i bits      -> rnf i `seq` rnf bits
+        NameLitBool     b       -> rnf b
+        NameLitNat      n       -> rnf n
+        NameLitInt      i       -> rnf i
+        NameLitWord     i bits  -> rnf i `seq` rnf bits
 
 
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  v              -> text v
-        NameCon  c              -> text c
+        NameVar         s       -> text s
+        NameVarMod      n s     -> ppr n <> text "$" <> text s
+        NameCon         c       -> text c
 
-        NameKiConFlow con       -> ppr con
-        NameTyConFlow con       -> ppr con
-        NameDaConFlow con       -> ppr con
-        NameOpFlow    op        -> ppr op
-        NameOpLoop    op        -> ppr op
-        NameOpStore   op        -> ppr op
+        NameKiConFlow   con     -> ppr con
+        NameTyConFlow   con     -> ppr con
+        NameDaConFlow   con     -> ppr con
+        NameOpFlow      op      -> ppr op
+        NameOpLoop      op      -> ppr op
+        NameOpStore     op      -> ppr op
 
-        NamePrimTyCon tc        -> ppr tc
-        NamePrimArith op        -> ppr op
-        NamePrimCast  op        -> ppr op
+        NamePrimTyCon   tc      -> ppr tc
+        NamePrimArith   op      -> ppr op
+        NamePrimCast    op      -> ppr op
 
-        NameLitBool True        -> text "True#"
-        NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i <> text "#"
-        NameLitInt  i           -> integer i <> text "i" <> text "#"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+        NameLitBool     True    -> text "True#"
+        NameLitBool     False   -> text "False#"
+        NameLitNat      i       -> integer i <> text "#"
+        NameLitInt      i       -> integer i <> text "i" <> text "#"
+        NameLitWord     i bits  -> integer i <> text "w" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -150,19 +151,30 @@ readName str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 
+        -- Variables.
+        | c : _                 <- str
+        , isLower c
+        , Just (str1, strMod)   <- splitModString str
+        , Just n                <- readName str1
+        = Just $ NameVarMod n strMod
+
+        | c : _         <- str
+        , isLower c      
+        = Just $ NameVar str
+
         -- Constructors.
         | c : _         <- str
         , isUpper c
         = Just $ NameCon str
 
-        -- Variables.
-        | c : _         <- str
-        , isLower c      
-        = Just $ NameVar str
-
         | otherwise
         = Nothing
 
 
-
-
+-- | Strip a `...$thing` modifier from a name.
+splitModString :: String -> Maybe (String, String)
+splitModString str
+ = case break (== '$') (reverse str) of
+        (_, "")         -> Nothing
+        ("", _)         -> Nothing
+        (s2, _ : s1)    -> Just (reverse s1, reverse s2)
