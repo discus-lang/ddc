@@ -119,5 +119,5 @@ data Operator
 
           -- | Type of a series element.
         , opElemType            :: TypeF }
-        deriving (Show)
+        deriving Show
 

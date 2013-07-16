@@ -32,18 +32,13 @@ instance Pretty TyConFlow where
  ppr dc
   = case dc of
         TyConFlowTuple n        -> text "Tuple" <> int n <> text "#"
-
         TyConFlowVector         -> text "Vector#"
         TyConFlowSeries         -> text "Series#"
-
         TyConFlowSegd           -> text "Segd#"
         TyConFlowSel n          -> text "Sel"   <> int n <> text "#"
-
         TyConFlowRef            -> text "Ref#"
         TyConFlowWorld          -> text "World#"
-
         TyConFlowRateNat        -> text "RateNat#"
-
 
 
 -- | Read a type constructor name.
@@ -59,14 +54,10 @@ readTyConFlow str
         = case str of
                 "Vector#"       -> Just $ TyConFlowVector
                 "Series#"       -> Just $ TyConFlowSeries
-
                 "Segd#"         -> Just $ TyConFlowSegd
                 "Sel1#"         -> Just $ TyConFlowSel 1
-                "Sel2#"         -> Just $ TyConFlowSel 2
-
                 "Ref#"          -> Just $ TyConFlowRef
                 "World#"        -> Just $ TyConFlowWorld
-
                 "RateNat#"      -> Just $ TyConFlowRateNat
                 _               -> Nothing
 
@@ -80,12 +71,10 @@ kindTyConFlow tc
         TyConFlowVector         -> kData `kFun` kData
         TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
-        TyConFlowSel 1          -> kRate `kFun` kRate `kFun` kData
-        TyConFlowSel 2          -> kRate `kFun` kRate `kFun` kRate `kFun` kData
+        TyConFlowSel n          -> foldr kFun kData (replicate (n + 1) kRate)
         TyConFlowRef            -> kData `kFun` kData
         TyConFlowWorld          -> kData
         TyConFlowRateNat        -> kRate `kFun` kData
-        _ -> error $ "ddc-core-flow.kindTyConFlow: no match for " ++ show tc
 
 
 -- Compounds ------------------------------------------------------------------
@@ -102,19 +91,19 @@ tTupleN tys     = tApps (tConTyConFlow (TyConFlowTuple (length tys))) tys
 
 
 tVector :: Type Name -> Type Name
-tVector tA      = tApps (tConTyConFlow TyConFlowVector)   [tA]
+tVector tA      = tApps (tConTyConFlow TyConFlowVector)    [tA]
 
 
 tSeries :: Type Name -> Type Name -> Type Name
-tSeries tK tA   = tApps (tConTyConFlow TyConFlowSeries)   [tK, tA]
+tSeries tK tA   = tApps (tConTyConFlow TyConFlowSeries)    [tK, tA]
 
 
 tSegd :: Type Name -> Type Name -> Type Name
-tSegd tK1 tK2   = tApps (tConTyConFlow TyConFlowSegd)     [tK1, tK2]
+tSegd tK1 tK2   = tApps (tConTyConFlow TyConFlowSegd)      [tK1, tK2]
 
 
 tSel1 :: Type Name -> Type Name -> Type Name
-tSel1 tK1 tK2     = tApps (tConTyConFlow $ TyConFlowSel 1)  [tK1, tK2]
+tSel1 tK1 tK2     = tApps (tConTyConFlow $ TyConFlowSel 1) [tK1, tK2]
 
 
 tSel2 :: Type Name -> Type Name -> Type Name -> Type Name

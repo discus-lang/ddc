@@ -44,7 +44,6 @@ data Process
           --   INVARIANT: 
           --    The worker functions for stream operators do not mention
           --    any of the bound variables.   
-          --    TODO: check this during code generation.
         , processStmts          :: [LetsF]
 
           -- Type of process result

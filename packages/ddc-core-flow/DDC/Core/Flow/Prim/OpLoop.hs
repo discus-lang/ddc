@@ -54,7 +54,7 @@ typeOpLoop op
          $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
 
         -- guard#  :: Ref# Nat# -> Bool# 
-        --              -> (Nat# -> Unit) -> Unit
+        --         -> (Nat# -> Unit) -> Unit
         OpLoopGuard 
          -> tRef tNat
                 `tFunPE` tBool

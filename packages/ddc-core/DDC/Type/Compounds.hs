@@ -45,7 +45,7 @@ module DDC.Type.Compounds
 
           -- * Functions
         , tFun
-        , tFunPE
+        , tFunPE,       tFunOfListPE
         , takeTFun
         , takeTFunArgResult
         , takeTFunWitArgResult
@@ -488,6 +488,18 @@ arityOfType tt
 tFunPE  :: Type n -> Type n -> Type n
 tFunPE t1 t2    = tFun t1 (tBot kEffect) (tBot kClosure) t2
 infixr `tFunPE`
+
+
+-- | Construct a pure and empty function from a list containing the 
+--   parameter and return type. Yields `Nothing` if the list is empty.
+tFunOfListPE :: [Type n] -> Maybe (Type n)
+tFunOfListPE ts
+  = case reverse ts of
+        []      -> Nothing
+        (t : tsArgs)       
+         -> let tFunPEs' []             = t
+                tFunPEs' (t' : ts')     = t' `tFunPE` tFunPEs' ts'
+            in  Just $ tFunPEs' (reverse tsArgs)
 
 
 -- | Construct a witness implication type.

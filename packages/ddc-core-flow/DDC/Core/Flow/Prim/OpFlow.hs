@@ -28,8 +28,10 @@ instance Pretty OpFlow where
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
         OpFlowNatOfRateNat      -> text "natOfRateNat"          <> text "#"
 
+        OpFlowMkSel 1           -> text "mkSel"                 <> text "#"
         OpFlowMkSel n           -> text "mkSel"      <> int n   <> text "#"
 
+        OpFlowMap 1             -> text "map"                   <> text "#"
         OpFlowMap i             -> text "map"        <> int i   <> text "#"
 
         OpFlowRep               -> text "rep"                   <> text "#"
@@ -55,6 +57,7 @@ readOpFlow str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , arity         <- read ds
+        , arity == 1
         = Just $ OpFlowMkSel arity
 
         | Just rest     <- stripPrefix "map" str
@@ -80,7 +83,8 @@ readOpFlow str
                 "vectorOfSeries#"  -> Just $ OpFlowVectorOfSeries
                 "rateOfSeries#"    -> Just $ OpFlowRateOfSeries
                 "natOfRateNat#"    -> Just $ OpFlowNatOfRateNat
-                "map#"             -> Just $ OpFlowMap 1
+                "mkSel#"           -> Just $ OpFlowMkSel 1
+                "map#"             -> Just $ OpFlowMap   1
                 "rep#"             -> Just $ OpFlowRep
                 "reps#"            -> Just $ OpFlowReps
                 "fold#"            -> Just $ OpFlowFold
@@ -93,28 +97,36 @@ readOpFlow str
 
 
 -- Types -----------------------------------------------------------------------
--- | Yield the type of a data flow operator.
+-- | Yield the type of a data flow operator, 
+--   or `error` if there isn't one.
 typeOpFlow :: OpFlow -> Type Name
 typeOpFlow op
+ = case takeTypeOpFlow op of
+        Just t  -> t
+        Nothing -> error $ "ddc-core-flow.typeOpFlow: invalid op " ++ show op
+
+
+-- | Yield the type of a data flow operator.
+takeTypeOpFlow :: OpFlow -> Maybe (Type Name)
+takeTypeOpFlow op
  = case op of
         -- Series Conversions -------------------
         -- vectorOfSeries# :: [k : Rate]. [a : Data]
         --                 .  Series k a -> Vector a
         OpFlowVectorOfSeries
-         -> tForalls [kRate, kData]
-         $  \[tK, tA] -> tSeries tK tA `tFunPE` tVector tA
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
+                -> tSeries tK tA `tFunPE` tVector tA
 
         -- rateOfSeries#   :: [k : Rate]. [a : Data]
         --                 .  Series k a -> RateNat k
         OpFlowRateOfSeries 
-         -> tForalls [kRate, kData]
-         $  \[tK, tA]
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
                 -> tSeries tK tA `tFunPE` tRateNat tK
 
         -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
         OpFlowNatOfRateNat 
-         -> tForall kRate
-         $  \tK -> tRateNat tK `tFunPE` tNat
+         -> Just $ tForall kRate $ \tK 
+                -> tRateNat tK `tFunPE` tNat
 
 
         -- Selectors ----------------------------
@@ -123,62 +135,62 @@ typeOpFlow op
         --            -> ([k2 : Rate]. Sel1 k1 k2 -> a)
         --            -> a
         OpFlowMkSel 1
-         -> tForalls [kRate, kData]
-         $  \[tK1, tA]
-         -> tSeries tK1 tBool
+         -> Just $ tForalls [kRate, kData] $ \[tK1, tA]
+                ->       tSeries tK1 tBool
                 `tFunPE` (tForall kRate $ \tK2 
                                 -> tSel1 (liftT 1 tK1) tK2 `tFunPE` (liftT 1 tA))
                 `tFunPE` tA
 
+  
         -- Maps ---------------------------------
         -- map   :: [k : Rate] [a b : Data]
         --       .  (a -> b) -> Series k a -> Series k b
         OpFlowMap 1
-         -> tForalls [kRate, kData, kData]
-         $  \[tK, tA, tB]
-         -> (tA `tFunPE` tB)
+         -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
+                ->       (tA `tFunPE` tB)
                 `tFunPE` tSeries tK tA
                 `tFunPE` tSeries tK tB
 
-        -- map2  :: [k : Rate] [a b c : Data]
-        --       .  (a -> b -> c) -> Series k a -> Series k b -> Series k c
-        -- TODO generalise
-        OpFlowMap 2
-         -> tForalls [kRate, kData, kData, kData]
-         $  \[tK, tA, tB, tC]
-         -> (tA `tFunPE` tB `tFunPE` tC)
-                `tFunPE` tSeries tK tA
-                `tFunPE` tSeries tK tB
-                `tFunPE` tSeries tK tC
+        -- mapN  :: [k : Rate] [a0..aN : Data]
+        --       .  (a0 -> .. aN) -> Series k a0 -> .. Series k aN
+        OpFlowMap n
+         | n >= 2
+         , Just tWork <- tFunOfListPE   
+                         [ TVar (UIx i) 
+                                | i <- reverse [0..n] ]
 
+         , Just tBody <- tFunOfListPE   
+                         (tWork : [tSeries (TVar (UIx (n + 1))) (TVar (UIx i)) 
+                                | i <- reverse [0..n] ])
+
+         -> Just $ foldr TForall tBody
+                         [ BAnon k | k <- kRate : replicate (n + 1) kData ]
 
 
         -- Replicates -------------------------
         -- rep  :: [a : Data] [k : Rate]
         --      .  a -> Series k a
         OpFlowRep 
-         -> tForalls [kData, kRate]
-         $  \[tA, tR]
-         ->     tA `tFunPE` tSeries tR tA
-
+         -> Just $ tForalls [kData, kRate] $ \[tA, tR]
+                -> tA `tFunPE` tSeries tR tA
 
         -- reps  :: [k1 k2 : Rate]. [a : Data]
         --       .  Segd   k1 k2 
         --       -> Series k1 a
         --       -> Series k2 a
         OpFlowReps 
-         -> tForalls [kRate, kRate, kData]
-         $  \[tK1, tK2, tA]
-         -> tSegd tK1 tK2
+         -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
+                ->       tSegd   tK1 tK2
                 `tFunPE` tSeries tK1 tA
                 `tFunPE` tSeries tK2 tA
 
+
+        -- Folds --------------------------------
         -- fold :: [k : Rate]. [a b: Data]
         --      .  (a -> b -> a) -> a -> Series k b -> a
         OpFlowFold    
-         -> tForalls [kRate, kData, kData] 
-         $  \[tK, tA, tB]
-         -> (tA `tFunPE` tB `tFunPE` tA)
+         -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
+                ->       (tA `tFunPE` tB `tFunPE` tA)
                 `tFunPE` tA
                 `tFunPE` tSeries tK tB
                 `tFunPE` tA
@@ -186,12 +198,11 @@ typeOpFlow op
         -- foldIndex :: [k : Rate]. [a b: Data]
         --           .  (Int# -> a -> b -> a) -> a -> Series k b -> a
         OpFlowFoldIndex
-         -> tForalls [kRate, kData, kData] 
-         $  \[tK, tA, tB]
-         -> (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
-                `tFunPE` tA
-                `tFunPE` tSeries tK tB
-                `tFunPE` tA
+         -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
+                 ->       (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
+                 `tFunPE` tA
+                 `tFunPE` tSeries tK tB
+                 `tFunPE` tA
 
         -- folds :: [k1 k2 : Rate]. [a b: Data]
         --       .  Segd   k1 k2 
@@ -200,27 +211,25 @@ typeOpFlow op
         --       -> Series k2 b         -- source elements
         --       -> Series k1 a         -- result values
         OpFlowFolds
-         -> tForalls [kRate, kRate, kData, kData]
-         $  \[tK1, tK2, tA, tB]
-         -> tSegd tK1 tK2
-                `tFunPE` (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
-                `tFunPE` tSeries tK1 tA
-                `tFunPE` tSeries tK2 tB
-                `tFunPE` tSeries tK1 tA
+         -> Just $ tForalls [kRate, kRate, kData, kData] $ \[tK1, tK2, tA, tB]
+                 ->       tSegd tK1 tK2
+                 `tFunPE` (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
+                 `tFunPE` tSeries tK1 tA
+                 `tFunPE` tSeries tK2 tB
+                 `tFunPE` tSeries tK1 tA
 
+
+        -- Packs --------------------------------
         -- pack  :: [k1 k2 : Rate]. [a : Data]
         --       .  Sel2 k1 k2
         --       -> Series k1 a -> Series k2 a
         OpFlowPack
-         -> tForalls [kRate, kRate, kData]
-         $  \[tK1, tK2, tA]
-         -> tSel1 tK1 tK2 
+         -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
+                ->       tSel1   tK1 tK2 
                 `tFunPE` tSeries tK1 tA
                 `tFunPE` tSeries tK2 tA
 
-        _ -> error $ unlines
-                   [ "ddc-core-flow.typeOpFlow"
-                   , "    Not finished for " ++ show op ]
+        _ -> Nothing
 
 
 -- Compounds ------------------------------------------------------------------

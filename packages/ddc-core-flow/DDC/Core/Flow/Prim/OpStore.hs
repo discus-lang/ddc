@@ -181,7 +181,3 @@ xVarOpStore :: OpStore -> Exp () Name
 xVarOpStore op
         = XVar (UPrim (NameOpStore op) (typeOpStore op))
 
-
-
-
-

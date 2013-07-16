@@ -71,10 +71,7 @@ lookupRefInfo (RefMap mm) n
 -- | Get the name of the current version of a value from a `RefInfo`.
 nameOfRefInfo :: RefInfo -> Maybe Name
 nameOfRefInfo info
- = case refInfoName info of
-        NameVar str     
-          -> Just $ NameVar (str ++ "_" ++ show (refInfoVersionNumber info))
-        _ -> Nothing
+ = Just $ NameVarMod (refInfoName info) (show $ refInfoVersionNumber info)
 
 
 -- | Bump the version number of a `RefInfo`
