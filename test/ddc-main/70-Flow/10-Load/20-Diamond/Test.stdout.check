@@ -32,12 +32,12 @@ letrec {
     = /\(k1 : Rate).
        \(l1 l2 : Tuple2# Float64# Float64#).\(points : Series# k1 (Tuple2# Float64# Float64#)).
       let dets : Series# k1 Float64#
-            = map1# [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
+            = map# [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
       let flags : Series# k1 Bool#
-            = map1# [k1] [Float64#] [Bool#]
+            = map# [k1] [Float64#] [Bool#]
                   (gt# [Float64#] (promote# [Float64#] [Int#] 0#)) dets in
       let aAbove : Vector# (Tuple2# Float64# Float64#)
-            = mkSel1# [k1] [Vector# (Tuple2# Float64# Float64#)] flags
+            = mkSel# [k1] [Vector# (Tuple2# Float64# Float64#)] flags
                   (/\(k2 : Rate).
                     \(sel : Sel1# k1 k2).
                    let above : Series# k2 (Tuple2# Float64# Float64#)

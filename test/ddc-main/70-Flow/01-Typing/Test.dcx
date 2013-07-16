@@ -5,7 +5,7 @@
 :kind Vector#
 :kind Series#
 :kind Segd#
-:kind Sel2#
+:kind Sel1#
 :kind Ref#
 :kind World#
 :kind RateNat#

@@ -22,28 +22,25 @@ intersperseStmts ls rs
 
 -- Because a name might be bound a couple of times 
 -- (see extractStmtEnd:EndVecSlice)
--- ignore the later times... HACK
 nubbish :: [[Bound Name]] -> [[Bound Name]]
 nubbish bs' = go bs' []
- where
-  go [] _        = []
-  go (b:bs) accs = (b \\ accs) : go bs (accs ++ b)
+ where  go [] _        = []
+        go (b:bs) accs = (b \\ accs) : go bs (accs ++ b)
 
 
 intersperse' 
         :: [(Lets () Name, [Bound Name])]
         -> [Lets () Name]
 
-intersperse' []
- = []
+intersperse' [] = []
 
 intersperse' ((x,b):bxs)
- | f        <- freeXLets x
  -- Check if any of the free variables in x are bound later on.
  -- If so, defer this binding...
- -- HACK this might not terminate
- , (r:rs,os)  <- partition (any (flip Set.member f) . snd) bxs
- = intersperse' (r : rs ++ (x,b) : os)
+ | f            <- freeXLets x
+ , (r:rs,os)    <- partition (any (flip Set.member f) . snd) bxs
+ , (x', _)     <- r
+ = x' : intersperse' (rs ++ (x, b) : os)
 
  -- Otherwise it's a valid binding
  | otherwise
@@ -52,5 +49,5 @@ intersperse' ((x,b):bxs)
 
 freeXLets :: LetsF -> Set.Set (Bound Name)
 freeXLets ll
- -- Cheating because there's no BindStruct Lets instance!
  = freeX empty $ annotate () (XLet ll (XCon (dcBool True)))
+

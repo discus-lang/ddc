@@ -117,8 +117,8 @@ insertStarts nest@NestLoop{} (ContextRate tRate) starts'
  | nestContainsRate nest tRate
  = Just $ nest { nestStart = nestStart nest ++ starts' }
 
-insertStarts nest context _
- = error $ show (nest, context)
+insertStarts _ _ _
+ = Nothing
 
 
 -------------------------------------------------------------------------------
