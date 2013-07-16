@@ -24,6 +24,7 @@ concretizeX
         -> ExpF     -> Maybe ExpF
 
 concretizeX _kenv tenv xx
+
         -- loop# -> loopn#
         | Just ( NameOpLoop OpLoopLoop
                , [XType tK, xF]) <- takeXPrimApps xx

@@ -178,3 +178,4 @@ splitModString str
         (_, "")         -> Nothing
         ("", _)         -> Nothing
         (s2, _ : s1)    -> Just (reverse s1, reverse s2)
+
