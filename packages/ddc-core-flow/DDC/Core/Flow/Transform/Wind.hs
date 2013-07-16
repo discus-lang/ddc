@@ -299,19 +299,19 @@ windBodyX refMap context xx
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
                 -- Name of the new loop function.
-                TVar (UName (NameVar strK))    = tK
-                nLoop   = NameVar ("loop_" ++ strK)     -- TODO: make a fresh name
-                bLoop   = BName nLoop tLoop
-                uLoop   = UName nLoop
+                TVar (UName nK) = tK
+                nLoop           = NameVarMod nK "loop"
+                bLoop           = BName nLoop tLoop
+                uLoop           = UName nLoop
 
-                nLength = NameVar (strK ++ "_length")   -- TODO: make a fresh name
-                bLength = BName nLength tNat
-                uLength = UName nLength
+                nLength         = NameVarMod nK "length"
+                bLength         = BName nLength tNat
+                uLength         = UName nLength
 
                 -- RefMap for before the loop, in the body, and after the loop.
-                refMap_init  = refMap
-                refMap_body  = bumpAllVersionsInRefMap refMap
-                refMap_final = bumpAllVersionsInRefMap refMap_body
+                refMap_init     = refMap
+                refMap_body     = bumpAllVersionsInRefMap refMap
+                refMap_final    = bumpAllVersionsInRefMap refMap_body
 
                 -- Get binds and bounds for accumluators,
                 --  to use in the body of the loop.

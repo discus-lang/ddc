@@ -5,21 +5,21 @@ letrec {
   packMe : [k0 : Rate].[a : Data].Series# k0 a -> Series# k0 Bool# -> Vector# a
     = /\(k0 : Rate)./\(a : Data).
        \(s : Series# k0 a).\(flags : Series# k0 Bool#).
-      let k1__count : Ref# Int# = new# [Int#] 0i# in
+      let k1$count : Ref# Int# = new# [Int#] 0i# in
       let x0 : Vector# a = newVectorR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
                   (\(^ : Int#).
                    let flags$elem : Bool# = next# [Bool#] [k0] flags ^0 in
-                   let flags__use$elem : Bool# = flags$elem in
+                   let flags$use$elem : Bool# = flags$elem in
                    let s$elem : a = next# [a] [k0] s ^0 in
                    let _ : Unit
-                         = guard# k1__count flags__use$elem
+                         = guard# k1$count flags$use$elem
                                (\(^ : Int#).
                                 let _ : Unit = writeVector# [a] x0 ^0 s$elem in
                                 ()) in
                    ()) in
-      let ^ : Int# = read# [Int#] k1__count in
+      let ^ : Int# = read# [Int#] k1$count in
       let x0 : Vector# a = sliceVector# [a] ^0 x0 in
       let x2 : Vector# a = x0 in
       x2
@@ -32,7 +32,7 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Series# k0 a -> Vector# a
     = /\(k0 : Rate)./\(a : Data).
        \(f : a -> Bool#).\(s : Series# k0 a).
-      let k1__count : Ref# Int# = new# [Int#] 0i# in
+      let k1$count : Ref# Int# = new# [Int#] 0i# in
       let x2 : Vector# a = newVectorR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
@@ -41,14 +41,14 @@ letrec {
                    let x1$elem : Bool#
                          = (\(x0 : a).
                             (\(x : a). f x) x0) s$elem in
-                   let x1__use$elem : Bool# = x1$elem in
+                   let x1$use$elem : Bool# = x1$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use$elem
+                         = guard# k1$count x1$use$elem
                                (\(^ : Int#).
                                 let _ : Unit = writeVector# [a] x2 ^0 s$elem in
                                 ()) in
                    ()) in
-      let ^ : Int# = read# [Int#] k1__count in
+      let ^ : Int# = read# [Int#] k1$count in
       let x2 : Vector# a = sliceVector# [a] ^0 x2 in
       let x4 : Vector# a = x2 in
       x4
@@ -62,7 +62,7 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Series# k0 a -> Tuple2# (Vector# a) (Vector# a)
     = /\(k0 : Rate)./\(a : Data).
        \(f : a -> Bool#).\(s : Series# k0 a).
-      let k1__count : Ref# Int# = new# [Int#] 0i# in
+      let k1$count : Ref# Int# = new# [Int#] 0i# in
       let x2 : Vector# a = newVectorR# [a] [k0] in
       let x3 : Vector# a = newVectorR# [a] [k0] in
       let _ : Unit
@@ -72,15 +72,15 @@ letrec {
                    let x1$elem : Bool#
                          = (\(x0 : a).
                             (\(x : a). f x) x0) s$elem in
-                   let x1__use$elem : Bool# = x1$elem in
+                   let x1$use$elem : Bool# = x1$elem in
                    let _ : Unit = writeVector# [a] x3 ^0 s$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use$elem
+                         = guard# k1$count x1$use$elem
                                (\(^ : Int#).
                                 let _ : Unit = writeVector# [a] x2 ^0 s$elem in
                                 ()) in
                    ()) in
-      let ^ : Int# = read# [Int#] k1__count in
+      let ^ : Int# = read# [Int#] k1$count in
       let x2 : Vector# a = sliceVector# [a] ^0 x2 in
       let x4 : Tuple2# (Vector# a) (Vector# a)
             = T2# [Vector# a] [Vector# a] x2 x3 in
@@ -96,8 +96,8 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
     = /\(k0 : Rate)./\(a : Data).
        \(f g : a -> Bool#).\(s0 : Series# k0 a).
-      let k1__count : Ref# Int# = new# [Int#] 0i# in
-      let k2__count : Ref# Int# = new# [Int#] 0i# in
+      let k1$count : Ref# Int# = new# [Int#] 0i# in
+      let k2$count : Ref# Int# = new# [Int#] 0i# in
       let x4 : Vector# a = newVectorR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
@@ -106,22 +106,22 @@ letrec {
                    let x1$elem : Bool#
                          = (\(x0 : a).
                             (\(x : a). f x) x0) s0$elem in
-                   let x1__use$elem : Bool# = x1$elem in
+                   let x1$use$elem : Bool# = x1$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use$elem
+                         = guard# k1$count x1$use$elem
                                (\(^ : Int#).
                                 let x3$elem : Bool#
                                       = (\(x2 : a).
                                          (\(x : a). g x) x2) s0$elem in
-                                let x3__use$elem : Bool# = x3$elem in
+                                let x3$use$elem : Bool# = x3$elem in
                                 let _ : Unit
-                                      = guard# k2__count x3__use$elem
+                                      = guard# k2$count x3$use$elem
                                             (\(^ : Int#).
                                              let _ : Unit = writeVector# [a] x4 ^0 s0$elem in
                                              ()) in
                                 ()) in
                    ()) in
-      let ^ : Int# = read# [Int#] k2__count in
+      let ^ : Int# = read# [Int#] k2$count in
       let x4 : Vector# a = sliceVector# [a] ^0 x4 in
       let x6 : Vector# a = x4 in
       let x8 : Vector# a = x6 in
@@ -135,8 +135,8 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Tuple2# (Vector# a) (Vector# a)
     = /\(k0 : Rate)./\(a : Data).
        \(f g : a -> Bool#).\(s0 : Series# k0 a).
-      let k1__count : Ref# Int# = new# [Int#] 0i# in
-      let k2__count : Ref# Int# = new# [Int#] 0i# in
+      let k1$count : Ref# Int# = new# [Int#] 0i# in
+      let k2$count : Ref# Int# = new# [Int#] 0i# in
       let x4 : Vector# a = newVectorR# [a] [k0] in
       let x7 : Vector# a = newVectorR# [a] [k0] in
       let _ : Unit
@@ -149,22 +149,22 @@ letrec {
                    let x3$elem : Bool#
                          = (\(x2 : a).
                             (\(x : a). f x) x2) s0$elem in
-                   let x1__use$elem : Bool# = x1$elem in
-                   let x3__use$elem : Bool# = x3$elem in
+                   let x1$use$elem : Bool# = x1$elem in
+                   let x3$use$elem : Bool# = x3$elem in
                    let _ : Unit
-                         = guard# k1__count x1__use$elem
+                         = guard# k1$count x1$use$elem
                                (\(^ : Int#).
                                 let _ : Unit = writeVector# [a] x4 ^0 s0$elem in
                                 ()) in
                    let _ : Unit
-                         = guard# k2__count x3__use$elem
+                         = guard# k2$count x3$use$elem
                                (\(^ : Int#).
                                 let _ : Unit = writeVector# [a] x7 ^0 s0$elem in
                                 ()) in
                    ()) in
-      let ^ : Int# = read# [Int#] k1__count in
+      let ^ : Int# = read# [Int#] k1$count in
       let x4 : Vector# a = sliceVector# [a] ^0 x4 in
-      let ^ : Int# = read# [Int#] k2__count in
+      let ^ : Int# = read# [Int#] k2$count in
       let x7 : Vector# a = sliceVector# [a] ^0 x7 in
       let x6 : Vector# a = x4 in
       let x9 : Vector# a = x7 in

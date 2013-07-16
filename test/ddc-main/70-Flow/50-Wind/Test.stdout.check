@@ -7,12 +7,12 @@ letrec {
        \(s_aub : Series# k_d Int#).
       let x6 : Vector# Int#
             = newVectorN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
-      let k_d_length : Int#
+      let k_d$length : Int#
             = natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
       letrec {
-        loop_k_d : Int# -> Unit
+        k_d$loop : Int# -> Unit
           = \(x0 : Int#).
-            case sub# [Int#] k_d_length x0 of {
+            case sub# [Int#] k_d$length x0 of {
               0i#  
                -> ();
               _ 
@@ -20,10 +20,10 @@ letrec {
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
                   let _ : Unit = writeVector# [Int#] x6 x0 x4__elem in
-                  loop_k_d (add# [Int#] x0 1i#)
+                  k_d$loop (add# [Int#] x0 1i#)
             }
       } in
-      let _ : Unit = loop_k_d 0i# in
+      let _ : Unit = k_d$loop 0i# in
       x6
 }
 
@@ -40,12 +40,12 @@ letrec {
       let x5 : Vector# Int#
             = newVectorN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
       let x9__acc_0 : Int# = 0i# in
-      let k_length : Int#
+      let k$length : Int#
             = natOfRateNat# [k] (rateOfSeries# [k] [Int#] s1) in
       letrec {
-        loop_k : Int# -> Int# -> Int# -> Tuple2# Int# Int#
+        k$loop : Int# -> Int# -> Int# -> Tuple2# Int# Int#
           = \(x2 k2__count_1 x9__acc_1 : Int#).
-            case sub# [Int#] k_length x2 of {
+            case sub# [Int#] k$length x2 of {
               0i#  
                -> T2# [Int#] [Int#] k2__count_1 x9__acc_1;
               _ 
@@ -58,13 +58,13 @@ letrec {
                         let _ : Unit = writeVector# [Int#] x5 x3 s1__elem in
                         let x6 : Int# = x9__acc_1 in
                         let x9__acc_2 : Int# = maxx x6 s1__elem in
-                        loop_k (add# [Int#] x2 1i#) (add# [Int#] k2__count_1 1i#) x9__acc_2;
+                        k$loop (add# [Int#] x2 1i#) (add# [Int#] k2__count_1 1i#) x9__acc_2;
                     _ 
-                     -> loop_k (add# [Int#] x2 1i#) k2__count_1 x9__acc_1
+                     -> k$loop (add# [Int#] x2 1i#) k2__count_1 x9__acc_1
                   }
             }
       } in
-      caselet T2# (k2__count_2 : Int#) (x9__acc_2 : Int#)  = loop_k 0i# k2__count_0 x9__acc_0 in
+      caselet T2# (k2__count_2 : Int#) (x9__acc_2 : Int#)  = k$loop 0i# k2__count_0 x9__acc_0 in
       let x4 : Int# = k2__count_2 in
       let x6 : Vector# Int# = sliceVector# [Int#] x4 x5 in
       let x9 : Int# = x9__acc_2 in

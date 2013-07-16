@@ -12,6 +12,7 @@ import DDC.Core.Flow.Exp
 import DDC.Base.Pretty
 import Control.Monad
 
+
 -- | Create loops from a list of operators.
 --   TODO: allow the operators to be at different rates, 
 --         and create multiple loops as needed.
@@ -89,6 +90,7 @@ scheduleOperator nest0 env op
                         $ [ BodyStmt bResultElem (XVar uInput) ]
 
    in   (env1, nest2)
+
 
  -- Create ---------------------------------------
  | OpCreate{} <- op
@@ -204,7 +206,8 @@ scheduleOperator nest0 env op
 
         -- Substitute input and accumulator vars into worker body.
         xBody           = XApp  (XApp   ( XLam (opWorkerParamElem op)
-                                        $ XLam (opWorkerParamIndex op) (opWorkerBody op))
+                                        $ XLam (opWorkerParamIndex op) 
+                                               (opWorkerBody op))
                                         (XVar uInput))
                                 (XVar (UIx 0))
 
@@ -243,6 +246,5 @@ scheduleOperator nest0 env op
  = error $ renderIndent 
  $ vcat [ text "repa-plugin.scheduleOperator: can't schedule operator"
         , indent 8 $ ppr op ]
-
 
 

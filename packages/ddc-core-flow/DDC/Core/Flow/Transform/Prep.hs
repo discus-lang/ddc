@@ -73,6 +73,7 @@ prepX tenv xx
          , UPrim (NameOpFlow OpFlowFold) _     <- u
          -> do   addWorkerArgs n [tA, tB]
                  return xx
+
         -- FoldIndex
         XApp{}
          | Just (XVar _ u, [_, XType tA, XType tB, XVar _ (UName n), _, _])
@@ -154,6 +155,7 @@ xEtaExpand a x tys
  = xLams a    (map BAnon tys)
  $ xApps a x  [ XVar a (UIx (length tys - 1 - ix))
               | ix <- [0 ..  length tys - 1] ]
+
 
 -- State ----------------------------------------------------------------------
 type PrepS      = Map   Name [Type Name]

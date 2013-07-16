@@ -13,7 +13,6 @@ import Data.Monoid
 
 
 -------------------------------------------------------------------------------
-
 -- | Insert a skeleton context into a nest.
 --    The new context doesn't contain any statements, it just provides
 --    the infrastructure to execute statements at the new rate.
@@ -95,12 +94,12 @@ nestContainsRate nest tRate
 startsForSelect :: Context -> [StmtStart]
 startsForSelect context
  = let  ContextSelect{} = context
-        TVar (UName (NameVar strK))  = contextInnerRate context
-        nCounter         = NameVar (strK ++ "__count")
+        TVar (UName nK) = contextInnerRate context
+        nCounter        = NameVarMod nK "count"
    in   [StartAcc 
-         { startAccName  = nCounter
-         , startAccType  = tNat
-         , startAccExp   = xNat 0 }]
+         { startAccName = nCounter
+         , startAccType = tNat
+         , startAccExp  = xNat 0 }]
 
 
 -------------------------------------------------------------------------------

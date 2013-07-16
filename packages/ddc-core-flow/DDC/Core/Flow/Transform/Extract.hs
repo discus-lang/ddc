@@ -91,13 +91,13 @@ extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
         nFlag           = NameVarMod nFlags "elem"
         xFlag           = XVar (UName nFlag)
 
-        -- TODO: hacks to get counter name.
-        TVar (UName (NameVar strK)) = tRateInner
-        nCounter                = UName (NameVar (strK ++ "__count"))
+        -- Make a name for the counter.
+        TVar (UName nK) = tRateInner
+        uCounter        = UName (NameVarMod nK "count")
 
-        xGuard  = xLoopGuard xFlag (XVar nCounter)
-                     (  XLam  (BAnon tNat)
-                      $ xLets (lsBody ++ lsNested) xUnit)
+        xGuard          = xLoopGuard xFlag (XVar uCounter)
+                          (  XLam (BAnon tNat)
+                          $ xLets (lsBody ++ lsNested) xUnit)
 
         -- Selector context.
         lsBody   = concatMap extractStmtBody stmtsBody
@@ -172,13 +172,14 @@ extractStmtEnd se
                   (xRead t (XVar (UName nAcc))) ]
 
         -- Slice.
-        -- HACK overwrite original vector name!
         EndVecSlice nVec tElem tRate 
-         -> let -- TODO: hacks to get counter name.
-                TVar (UName (NameVar strK)) = tRate
-                nCounter        = UName (NameVar (strK ++ "__count"))
-                xCounter        = xRead tInt (XVar nCounter)
+         -> let 
+                -- Get the name of the counter.
+                TVar (UName nK) = tRate
+                uCounter        = UName (NameVarMod nK "count")
+                xCounter        = xRead tInt (XVar uCounter)
                 xVec            = XVar (UName nVec)
+
                 -- Read the counter in a let since it will need to be threaded
            in   [ LLet (BAnon      tInt)
                    xCounter

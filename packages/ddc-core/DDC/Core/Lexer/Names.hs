@@ -147,7 +147,12 @@ isVarStart = isLower
 -- | Character can be part of a variable body.
 isVarBody  :: Char -> Bool
 isVarBody c
-        = isUpper c || isLower c || isDigit c || c == '_' || c == '\''
+        =  isUpper c 
+        || isLower c 
+        || isDigit c 
+        || c == '_' 
+        || c == '\'' 
+        || c == '$'
 
 
 -- | Read a named, user defined variable.
@@ -185,9 +190,12 @@ isConStart = isUpper
 
 -- | Charater can be part of a constructor body.
 isConBody  :: Char -> Bool
-isConBody c           = isUpper c || isLower c || isDigit c || c == '_'
+isConBody c     
+        =  isUpper c 
+        || isLower c 
+        || isDigit c 
+        || c == '_'
         
-
 
 -- | Read a named, user defined `TcCon`.
 readCon :: String -> Maybe String

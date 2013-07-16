@@ -167,8 +167,8 @@ slurpBindingX b
         -- parameters to the process, because the intermediate OpId forces 
         -- the scheduler to add the  flags_elem = next [k] flags_series 
         -- statement.
-        UName (NameVar strFlags) = uFlags
-        nFlagsUse       = NameVar (strFlags ++ "__use")
+        UName nFlags    = uFlags
+        nFlagsUse       = NameVarMod nFlags "use"
         uFlagsUse       = UName nFlagsUse
         bFlagsUse       = BName nFlagsUse (tSeries tK1 tBool)
 

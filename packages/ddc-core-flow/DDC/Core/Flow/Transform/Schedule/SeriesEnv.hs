@@ -21,7 +21,6 @@ import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
 
--------------------------------------------------------------------------------
 data SeriesEnv
         = SeriesEnv
         { -- | Maps the bound for a whole series to the bound for
