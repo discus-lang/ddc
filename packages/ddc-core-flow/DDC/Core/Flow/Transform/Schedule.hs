@@ -14,8 +14,9 @@ import Control.Monad
 
 
 -- | Create loops from a list of operators.
---   TODO: allow the operators to be at different rates, 
---         and create multiple loops as needed.
+--
+--   * The input series must all have the same rate.
+--
 scheduleProcess :: Process -> Procedure
 scheduleProcess 
         (Process 

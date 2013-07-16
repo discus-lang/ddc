@@ -9,7 +9,6 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Compounds.Simple
 import DDC.Type.Pretty          ()
 
-
 -- | Slurp a stream operator from a let-binding binding.
 --   We use this when recovering operators from the source program.
 slurpOperator 
@@ -31,32 +30,24 @@ slurpOperator bResult xx
         , opElemType            = tA }
 
  -- Map -----------------------------------------
- -- TODO: handle higher arity maps generally
- | Just ( NameOpFlow (OpFlowMap 1)
-        , [ XType tRate, XType _tA, XType _tB
-          , xWorker,     (XVar uSeries)])
+ | Just (NameOpFlow (OpFlowMap n), xs) 
                                 <- takeXPrimApps xx
- , Just ([pIn1], xBody)         <- takeXLams xWorker
+ , n >= 1
+ , XType tR : xsArgs2   <- xs
+ , (xsA, xsArgs3)       <- splitAt (n + 1) xsArgs2
+ , tsA                  <- [ t | XType t <- xsA ]
+ , length tsA      == n + 1
+ , xWorker : xsSeries   <- xsArgs3
+ , usSeries             <- [ u | XVar u  <- xsSeries ]
+ , length usSeries == n
+ , Just (psIn, xBody)           <- takeXLams xWorker
+ , length psIn     == n
  = Just $ OpMap
-        { opArity               = 1
+        { opArity               = n
         , opResultSeries        = bResult
-        , opInputRate           = tRate
-        , opInputSeriess        = [uSeries]
-        , opWorkerParams        = [pIn1]
-        , opWorkerBody          = xBody }
- -- Map2
- | Just ( NameOpFlow (OpFlowMap 2)
-        , [ XType tRate, XType _tA, XType _tB, XType _tC
-          , xWorker
-          , XVar uSeries1, XVar uSeries2])
-                                <- takeXPrimApps xx
- , Just ([pIn1, pIn2], xBody)   <- takeXLams xWorker
- = Just $ OpMap
-        { opArity               = 2
-        , opResultSeries        = bResult
-        , opInputRate           = tRate
-        , opInputSeriess        = [uSeries1, uSeries2]
-        , opWorkerParams        = [pIn1, pIn2]
+        , opInputRate           = tR
+        , opInputSeriess        = usSeries
+        , opWorkerParams        = psIn
         , opWorkerBody          = xBody }
 
 
