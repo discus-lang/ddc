@@ -1,17 +1,22 @@
 
+-- | A `Procedure` is an abstract imperative loop nest. 
+--   The loops are represented as a separated loop anatomy, to make it
+--   easy to incrementally build them from a data flow graph expressed
+--   as a `Process`.
+--
 module DDC.Core.Flow.Procedure
         ( Procedure     (..)
         , Nest          (..)
         , Context       (..)
         , StmtStart     (..)
         , StmtBody      (..)
-        , StmtEnd       (..)
-        , Stmt          (..))
+        , StmtEnd       (..))
 where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
 import Data.Monoid
+
 
 -- | An imperative procedure made up of some loops.
 data Procedure
@@ -54,15 +59,15 @@ instance Monoid Nest where
 
  mappend n1 n2
   = case (n1, n2) of
-        (NestEmpty, _)                  -> n2
-        (_, NestEmpty)                  -> n1
+        (NestEmpty,    _)               -> n2
+        (_,            NestEmpty)       -> n1
         (NestList ns1, NestList ns2)    -> NestList (ns1 ++ ns2)
         (NestList ns1, _)               -> NestList (ns1 ++ [n2])
-        (_, NestList ns2)               -> NestList (n1 : ns2)
-        (_, _)                          -> NestList [n1, n2]
+        (_,            NestList ns2)    -> NestList (n1 : ns2)
+        (_,            _)               -> NestList [n1, n2]
 
 
--- | Statements that appear at the start of a loop.
+-- | Statements that can appear at the start of a loop.
 --   These initialise accumulators.
 data StmtStart
         -- Allocate a new vector.
@@ -135,23 +140,22 @@ data StmtBody
 
 -- | Statements that appear after a loop to cleanup.
 data StmtEnd
-        = EndStmts
-        { endStmts              :: [Stmt] }
+        -- | Pure ending statements to produce the result of 
+        --   the overall process.
+        = EndStmt
+        { endBind               :: Bind Name
+        , endExp                :: Exp () Name }
 
+        -- | Read the result of an accumulator.
         | EndAcc
         { endName               :: Name
         , endType               :: Type Name
         , endAccName            :: Name }
 
+        -- | Destructively slice down a vector to its final size.
         | EndVecSlice
         { endVecName            :: Name
         , endVecType            :: Type Name
         , endVecRate            :: Type Name }
-        deriving Show
-
-
--- | Generic statement.
-data Stmt
-        = Stmt (Bind Name) (Exp () Name)
         deriving Show
 

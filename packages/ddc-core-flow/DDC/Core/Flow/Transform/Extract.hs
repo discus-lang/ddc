@@ -163,8 +163,8 @@ extractStmtBody sb
 extractStmtEnd :: StmtEnd -> [LetsF]
 extractStmtEnd se
  = case se of
-        EndStmts ss     
-         -> map extractStmt ss
+        EndStmt b x
+         -> [LLet b x]
 
         -- Read the accumulator of a reduction operation.
         EndAcc n t nAcc 
@@ -181,15 +181,9 @@ extractStmtEnd se
                 xVec            = XVar (UName nVec)
 
                 -- Read the counter in a let since it will need to be threaded
-           in   [ LLet (BAnon      tInt)
-                   xCounter
-                , LLet (BName nVec (tVector tElem)) 
-                   (xSliceVector tElem (XVar (UIx 0)) xVec) ]
+           in   [ LLet  (BAnon      tInt)
+                        xCounter
 
+                , LLet  (BName nVec (tVector tElem)) 
+                        (xSliceVector tElem (XVar (UIx 0)) xVec) ]
 
--------------------------------------------------------------------------------
--- | Extract code for a generic statement.
-extractStmt       :: Stmt -> LetsF
-extractStmt (Stmt b x)
- = LLet b x
- 
