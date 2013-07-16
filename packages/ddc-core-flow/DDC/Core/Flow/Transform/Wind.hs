@@ -125,7 +125,9 @@ makeTailCallFromContexts a refMap context@(ContextLoop nLoop _ _ : _)
    in   xApps a xLoop xArgs
    
 makeTailCallFromContexts _ _ _
- = error "makeTailCallFromContexts: sorry"
+ = error $ unlines
+         [ "ddc-core-flow.makeTailCallFromContexts" 
+         , "    Can't make a tailcall for this context." ]
 
 
 -- | Slurp expressions to update each of the accumulators of the loop.
@@ -170,9 +172,9 @@ slurpArgUpdates a refMap args (ContextGuard nCounter flag : more)
  =      slurpArgUpdates a refMap args more
 
 slurpArgUpdates _ _ _   (ContextLoop{} : _)
- = error "slurpArgUpdates: nested loops not supported"
-
-
+ = error $ unlines
+         [ "ddc-core-flow.slurpArgUpdates"
+         , "    Nested loops are not supported." ]
 
 slurpArgUpdates _ _ args []
  = map snd args
@@ -437,7 +439,9 @@ windBodyX refMap context xx
          -> XLet a lts (down x2)
 
         XCase{}
-         -> error "windBodyX: not finished"
+         -> error $ unlines
+                  [ "ddc-core-flow.windBodyX"
+                  , "    case-expressions not supported yet" ]
 
         XCast a c x
          -> let  x'      = windBodyX refMap context x
@@ -505,7 +509,4 @@ runUnpackLoop a tsAccs xRunLoop bsAcc xCont
  | otherwise
  =      XCase a xRunLoop
                 [ AAlt (PData (dcTupleN $ length tsAccs) bsAcc) xCont ]
-
-
-
 

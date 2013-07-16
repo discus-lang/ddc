@@ -218,7 +218,9 @@ typeOpFlow op
                 `tFunPE` tSeries tK1 tA
                 `tFunPE` tSeries tK2 tA
 
-        _ -> error $ "typeOpFlow: not finished for " ++ show op
+        _ -> error $ unlines
+                   [ "ddc-core-flow.typeOpFlow"
+                   , "    Not finished for " ++ show op ]
 
 
 -- Compounds ------------------------------------------------------------------
@@ -232,6 +234,7 @@ xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
         = xApps  (xVarOpFlow OpFlowNatOfRateNat)
                  [XType tK, xR]
+
 
 -- Utils -----------------------------------------------------------------------
 xVarOpFlow :: OpFlow -> Exp () Name

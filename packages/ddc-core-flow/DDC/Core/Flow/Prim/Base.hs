@@ -197,4 +197,3 @@ data OpStore
         | OpStoreNext
         deriving (Eq, Ord, Show)
 
-

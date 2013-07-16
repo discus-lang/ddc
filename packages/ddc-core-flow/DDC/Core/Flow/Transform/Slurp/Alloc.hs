@@ -23,7 +23,9 @@ patchAllocRates ops
         maxNestedContexts = 1000 :: Int
 
         getAllocRate 0 _rate
-         = error "ddc-core-flow.patchAllocRates: too many nested contexts"
+         = error $ unlines
+                 [ "ddc-core-flow.patchAllocRates"
+                 , "    Too many nested contexts." ]
 
         getAllocRate n rate
          = case lookup rate packRates of

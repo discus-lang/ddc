@@ -244,7 +244,8 @@ scheduleOperator nest0 env op
 
  | otherwise
  = error $ renderIndent 
- $ vcat [ text "repa-plugin.scheduleOperator: can't schedule operator"
-        , indent 8 $ ppr op ]
+ $ vcat [ text "ddc-core-flow.scheduleOperator"
+        , indent 4 $ text "Can't schedule operator."
+        , indent 4 $ ppr op ]
 
 
