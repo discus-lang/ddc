@@ -9,6 +9,7 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Compounds.Simple
 import DDC.Type.Pretty          ()
 
+
 -- | Slurp a stream operator from a let-binding binding.
 --   We use this when recovering operators from the source program.
 slurpOperator 
@@ -67,6 +68,8 @@ slurpOperator bResult xx
         , opWorkerParamElem     = pElem
         , opWorkerBody          = xBody }
 
+
+ -- FoldIndex -----------------------------------
  | Just ( NameOpFlow OpFlowFoldIndex
         , [ XType tRate, XType _tAcc, XType _tElem
           , xWorker,     xZero,     (XVar uSeries)])

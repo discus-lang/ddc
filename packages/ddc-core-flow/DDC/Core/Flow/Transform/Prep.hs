@@ -13,6 +13,7 @@ import qualified Data.Map       as Map
 import DDC.Type.Env             (TypeEnv)
 import qualified DDC.Type.Env   as Env
 
+
 -- | Prepare a module for lowering.
 --   We need all worker functions passed to flow operators to be eta-expanded
 --   and for their parameters to have real names.
@@ -37,23 +38,18 @@ prepModuleM mm
 --  eta-expand in their definition or at the callsite.
 prepX   :: TypeEnv Name -> Exp a Name -> PrepM (Exp a Name)
 prepX tenv xx
- = case xx of
-        -- Detect workers passed to maps.
-        -- Check if the worker is bound in a let: if so, defer till later
+ = let down     = prepX tenv
+   in  case xx of
+        -- MapN
         XApp{}
-         | Just (XVar _ u, [_,  XType tA, XType _tB, XVar _ (UName n), _])
-                                                <- takeXApps xx
-         , UPrim (NameOpFlow (OpFlowMap 1)) _   <- u
-         , Env.member (UName n) tenv
-         -> do  addWorkerArgs n [tA]
-                return xx
-        -- Map2
-        XApp{}
-         | Just (XVar _ u, [_,  XType tA, XType tB, XType _tC, XVar _ (UName n), _])
-                                                <- takeXApps xx
-         , UPrim (NameOpFlow (OpFlowMap 2)) _   <- u
-         , Env.member (UName n) tenv
-         -> do  addWorkerArgs n [tA, tB]
+         | Just (XVar _ u, xsArgs)              <- takeXApps xx
+         , UPrim (NameOpFlow (OpFlowMap n)) _   <- u
+         , _xTR : xsArgs2                       <- xsArgs
+         , (xsA, xsArgs3)                       <- splitAt (n + 1) xsArgs2
+         , tsA                                  <- [t | XType t <- xsA]
+         , XVar _ (UName nWorker) : _           <- xsArgs3
+         , Env.member (UName nWorker) tenv
+         -> do  addWorkerArgs nWorker (take n tsA)
                 return xx
 
         -- Worker passed to map, but not let-bound.
@@ -94,25 +90,23 @@ prepX tenv xx
         -- Bottom-up transform boilerplate.
         XVar{}          -> return xx
         XCon{}          -> return xx
-        XLAM  a b x     -> liftM3 XLAM  (return a) (return b) (go x)
-        XLam  a b x     -> liftM3 XLam  (return a) (return b) (go x)
-        XApp  a x1 x2   -> liftM3 XApp  (return a) (go x1)    (go x2)
+        XLAM  a b x     -> liftM3 XLAM  (return a) (return b) (down x)
+        XLam  a b x     -> liftM3 XLam  (return a) (return b) (down x)
+        XApp  a x1 x2   -> liftM3 XApp  (return a) (down x1)  (down x2)
 
         XLet  a lts x   
          -> do  -- Slurp binds from lets, add to tenv
                 let tenv' = Env.extends (valwitBindsOfLets lts) tenv
                 x'      <- prepX tenv' x
+
                 -- Use old tenv for the binders
                 lts'    <- prepLts tenv a lts
                 return  $  XLet a lts' x'
 
-        XCase a x alts  -> liftM3 XCase (return a) (go x)     (mapM (prepAlt tenv) alts)
-        XCast a c x     -> liftM3 XCast (return a) (return c) (go x)
+        XCase a x alts  -> liftM3 XCase (return a) (down x)   (mapM (prepAlt tenv) alts)
+        XCast a c x     -> liftM3 XCast (return a) (return c) (down x)
         XType{}         -> return xx
         XWitness{}      -> return xx
- where
-  go = prepX tenv
-
 
 
 -- Prepare let bindings for lowering.
