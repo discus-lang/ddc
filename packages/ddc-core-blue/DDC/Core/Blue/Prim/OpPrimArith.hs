@@ -1,5 +1,5 @@
 
-module DDC.Core.Blue.Prim.OpPrim
+module DDC.Core.Blue.Prim.OpPrimArith
         ( readOpPrimArith
         , typeOpPrimArith)
 where

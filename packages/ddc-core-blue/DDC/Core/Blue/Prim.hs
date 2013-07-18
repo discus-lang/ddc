@@ -14,7 +14,7 @@ module DDC.Core.Blue.Prim
 where
 import DDC.Core.Blue.Prim.Base
 import DDC.Core.Blue.Prim.TyConPrim
-import DDC.Core.Blue.Prim.OpPrim
+import DDC.Core.Blue.Prim.OpPrimArith
 import DDC.Core.Salt.Name 
         ( readLitPrimNat
         , readLitPrimInt
