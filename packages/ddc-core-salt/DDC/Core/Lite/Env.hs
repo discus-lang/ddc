@@ -182,21 +182,21 @@ typeOfPrimName dc
         -- B#
         NamePrimDaCon PrimDaConBoolU
          -> Just $ tForall kRegion $ \tR
-                -> tFun tBoolU          (tAlloc tR)
+                -> tFunEC tBoolU        (tAlloc tR)
                                         (tBot kClosure)
                  $ tBool tR
 
         -- N#
         NamePrimDaCon PrimDaConNatU
          -> Just $ tForall kRegion $ \tR
-                 -> tFun tNatU          (tAlloc tR)
+                 -> tFunEC tNatU        (tAlloc tR)
                                         (tBot kClosure)
                  $  tNat tR
 
         -- I#
         NamePrimDaCon PrimDaConIntU
          -> Just $ tForall kRegion $ \tR
-                 -> tFun tIntU          (tAlloc tR)
+                 -> tFunEC tIntU        (tAlloc tR)
                                         (tBot kClosure)
                  $  tInt tR
 
@@ -207,24 +207,24 @@ typeOfPrimName dc
         -- Pair
         NamePrimDaCon PrimDaConPr
          -> Just $ tForalls [kRegion, kData, kData] $ \[tR, tA, tB]
-                 -> tFun tA             (tBot kEffect)
+                 -> tFunEC tA           (tBot kEffect)
                                         (tBot kClosure)
-                 $  tFun tB             (tSum kEffect  [tAlloc   tR])
+                 $  tFunEC tB           (tSum kEffect  [tAlloc   tR])
                                         (tSum kClosure [tDeepUse tA])
                  $  tPair tR tA tB
 
         -- List
         NamePrimDaCon PrimDaConNil        
          -> Just $ tForalls [kRegion, kData] $ \[tR, tA]
-                -> tFun tUnit (tAlloc tR)
-                              (tBot kClosure)
+                -> tFunEC tUnit         (tAlloc tR)
+                                        (tBot kClosure)
                  $ tList tR tA
 
         NamePrimDaCon PrimDaConCons
          -> Just $ tForalls [kRegion, kData] $ \[tR, tA] 
-                -> tFun tA              (tBot kEffect)
+                -> tFunEC tA            (tBot kEffect)
                                         (tBot kClosure)
-                 $ tFun (tList tR tA)   (tSum kEffect  [tAlloc   tR])
+                 $ tFunEC (tList tR tA) (tSum kEffect  [tAlloc   tR])
                                         (tSum kClosure [tDeepUse tA])
                  $ tList tR tA
 

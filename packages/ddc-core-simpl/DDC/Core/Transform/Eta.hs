@@ -253,7 +253,7 @@ expandableArgs tt
         | TForall b t'          <- tt
         = (True, typeOfBind b)  : expandableArgs t'
 
-        | Just (t1, _, _, t2)   <- takeTFun tt
+        | Just (t1, _, _, t2)   <- takeTFunEC tt
         = (False, t1)           : expandableArgs t2
 
         | otherwise

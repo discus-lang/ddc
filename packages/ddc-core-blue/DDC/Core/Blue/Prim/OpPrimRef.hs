@@ -42,16 +42,16 @@ typeOpPrimRef op
  = case op of
         OpPrimRefAllocRef  
          -> tForalls [kRegion, kData] 
-          $ \[tR, tA] -> tFun   tA              (tAlloc tR)    (tBot kClosure)
+          $ \[tR, tA] -> tFunEC tA              (tAlloc tR)    (tBot kClosure)
                                 (tRef tR tA)
 
         OpPrimRefReadRef   
          -> tForalls [kRegion, kData]
-          $ \[tR, tA] -> tFun   (tRef tR tA)    (tRead tR)     (tBot kClosure) 
+          $ \[tR, tA] -> tFunEC (tRef tR tA)    (tRead tR)     (tBot kClosure) 
                                 tA
 
         OpPrimRefWriteRef  
          -> tForalls [kRegion, kData]
-         $  \[tR, tA] -> tFun   (tRef tR tA)    (tBot kEffect)  (tBot kClosure)
-                       $ tFun   tA              (tWrite tR)     (tBot kClosure)
+         $  \[tR, tA] -> tFunEC (tRef tR tA)    (tBot kEffect)  (tBot kClosure)
+                       $ tFunEC tA              (tWrite tR)     (tBot kClosure)
                        $        tUnit

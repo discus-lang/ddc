@@ -234,7 +234,7 @@ data TcCon
         = TcConUnit             -- 'Unit :: Data'
 
         -- | The function type constructor is baked in.
-        | TcConFun              -- '(->) :: Data ~> Data ~> Effect ~> Closure ~> Data'
+        | TcConFunEC            -- '(->) :: Data ~> Data ~> Effect ~> Closure ~> Data'
 
         -- | A suspended computation.
         | TcConSusp             -- 'S    :: Effect ~> Data ~> Data'

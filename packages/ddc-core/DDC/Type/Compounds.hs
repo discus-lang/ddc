@@ -44,9 +44,9 @@ module DDC.Type.Compounds
         , takePrimeRegion
 
           -- * Functions
-        , tFun
+        , tFunEC
         , tFunPE,       tFunOfListPE
-        , takeTFun
+        , takeTFunEC
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult
@@ -409,17 +409,17 @@ takeResultKind kk
 
 -- | Construct a value type function, 
 --   with the provided effect and closure.
-tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
-tFun t1 eff clo t2
-        = (TCon $ TyConSpec TcConFun) `tApps` [t1, eff, clo, t2]
-infixr `tFun`
+tFunEC    :: Type n -> Effect n -> Closure n -> Type n -> Type n
+tFunEC t1 eff clo t2
+        = (TCon $ TyConSpec TcConFunEC) `tApps` [t1, eff, clo, t2]
+infixr `tFunEC`
 
 
 -- | Destruct the type of a value function.
-takeTFun :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
-takeTFun tt
+takeTFunEC :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
+takeTFunEC tt
  = case tt of
-        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) eff) clo) t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) eff) clo) t2
          ->  Just (t1, eff, clo, t2)
         _ -> Nothing
 
@@ -429,7 +429,7 @@ takeTFun tt
 takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
-        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) _eff) _clo) t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) _eff) _clo) t2
           -> let (tsMore, tResult) = takeTFunArgResult t2
              in  (t1 : tsMore, tResult)
 
@@ -464,7 +464,7 @@ takeTFunAllArgResult tt
          -> let (tsMore, tResult)       = takeTFunAllArgResult t
             in  (typeOfBind b : tsMore, tResult)
 
-        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) _eff) _clo) t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) _eff) _clo) t2
           -> let (tsMore, tResult) = takeTFunAllArgResult t2
              in  (t1 : tsMore, tResult)
 
@@ -486,7 +486,7 @@ arityOfType tt
 
 -- | Construct a pure and empty value type function.
 tFunPE  :: Type n -> Type n -> Type n
-tFunPE t1 t2    = tFun t1 (tBot kEffect) (tBot kClosure) t2
+tFunPE t1 t2    = tFunEC t1 (tBot kEffect) (tBot kClosure) t2
 infixr `tFunPE`
 
 

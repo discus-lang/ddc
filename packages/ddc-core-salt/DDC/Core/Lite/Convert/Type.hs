@@ -98,7 +98,7 @@ convertT' isPrimType kenv tt
         -- Convert applications.
         TApp{}  
          -- Strip off effect and closure information.
-         |  Just (t1, _, _, t2)  <- takeTFun tt
+         |  Just (t1, _, _, t2)  <- takeTFunEC tt
          -> liftM2 tFunPE (down t1) (down t2)
 
          -- Witness application are passed through to Salt.
@@ -136,7 +136,7 @@ convertTyCon tc
         TyConWitness c           -> return $ TCon $ TyConWitness c 
 
         -- Handle baked-in unit and function constructors.
-        TyConSpec    TcConFun    -> return $ TCon $ TyConSpec TcConFun
+        TyConSpec    TcConFunEC  -> return $ TCon $ TyConSpec TcConFunEC
         TyConSpec    TcConUnit   -> return $ O.tPtr O.rTop O.tObj
 
         -- Convert primitive unboxed TyCons to Salt form.

@@ -107,7 +107,7 @@ trimDeepUsedD tt
 
         -- Trim function constructors.
         -- See Note: Material variables and the interpreter
-        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) _t1) _eff) clo) _t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) _t1) _eff) clo) _t2
          -> Sum.singleton kClosure clo
 
         -- Trim a type application.

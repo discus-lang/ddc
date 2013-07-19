@@ -108,7 +108,7 @@ pTypeFun
                 pTok KRoundKet
                 pTok KAngleKet
                 t2      <- pTypeFun
-                return  $ tFun t1 eff clo t2
+                return  $ tFunEC t1 eff clo t2
 
 
            -- Body type
@@ -141,7 +141,7 @@ pTypeAtom
 
                  , do   pTok KArrowDash
                         pTok KRoundKet
-                        return (TCon $ TyConSpec TcConFun)
+                        return (TCon $ TyConSpec TcConFunEC)
 
                  , do   t       <- pTypeSum
                         pTok KRoundKet

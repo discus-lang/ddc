@@ -41,7 +41,7 @@ funTypeOfParams (p:ps) tBody
                 $ funTypeOfParams ps tBody
 
         ParamValue b eff clo
-         -> T.tFun (T.typeOfBind b) eff clo 
+         -> T.tFunEC (T.typeOfBind b) eff clo 
                 $ funTypeOfParams ps tBody
 
 

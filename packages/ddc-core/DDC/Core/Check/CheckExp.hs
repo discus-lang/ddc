@@ -204,7 +204,7 @@ checkExpM' !config !kenv !tenv xx@(XApp a x1 x2)
         -- Note: we don't need to use the closure of the function because
         --       all of its components will already be part of clos1 above.
         case t1 of
-         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t11) eff) _clo) t12
+         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t11) eff) _clo) t12
           | t11 `equivT` t2   
           , effs    <- Sum.fromList kEffect  [eff]
           -> returnX a
@@ -316,7 +316,7 @@ checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
 
              in  returnX a
                         (\z -> XLam z b1 x2')
-                        (tFun t1 e2_captured c2_captured t2)
+                        (tFunEC t1 e2_captured c2_captured t2)
                         (Sum.empty kEffect)
                         c2_cut
 
