@@ -10,7 +10,7 @@ exports List (..)
         append, reverse
         map, mapS
 
-imports Data.Nat
+imports Prim.Nat
 imports Data.Ref
 with
 
@@ -49,7 +49,7 @@ enumFromTo (n max : Nat) : List Nat
 -- | Append two lists.
 append  [a : Data]
         (xx : List a) (yy : List a) : List a
- = case xx o
+ = case xx of
         Nil       -> yy
         Cons x xs -> Cons x (append xs yy)
 
