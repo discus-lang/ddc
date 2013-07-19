@@ -1,6 +1,6 @@
 -- Witness lambda with no computation lambda after it
 When checking expression.
-  Impure witness abstraction
+  Impure Witness abstraction
              has effect: Alloc R0#
   
   with: \(w : Mutable R0#). 0 [R0#] ()

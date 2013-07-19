@@ -136,10 +136,12 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          <> rbrace
 
         XCast _ CastSuspend x
-         -> text "suspend" <+> ppr x
+         -> pprParen' (d > 2)
+         $  text "suspend" <$> ppr x
 
         XCast _ CastRun x
-         -> text "run"     <+> ppr x
+         -> pprParen' (d > 2)
+         $  text "run"     <+> ppr x
 
         XCast _ cc x
          ->  pprParen' (d > 2)

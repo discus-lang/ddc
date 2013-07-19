@@ -39,8 +39,8 @@ features
         = Features
         { featuresTrackedEffects        = False
         , featuresTrackedClosures       = False
-        , featuresFunctionalEffects     = False
-        , featuresFunctionalClosures    = False
+        , featuresFunctionalEffects     = True
+        , featuresFunctionalClosures    = True
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

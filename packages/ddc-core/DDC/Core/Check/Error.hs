@@ -83,11 +83,19 @@ data Error a n
         { errorChecking         :: Exp a n 
         , errorBind             :: Bind n }
 
-        -- | A type or witness abstraction where the body has a visible side effect.
+        -- | An abstraction where the body has a visible side effect that 
+        --   is not supported by the current language fragment.
         | ErrorLamNotPure
         { errorChecking         :: Exp a n
-        , errorSpecOrWit        :: Bool
+        , errorUniverse         :: Universe
         , errorEffect           :: Effect n }
+
+        -- | An abstraction where the body has a visible closure that 
+        --   is not supported by the current language fragment.
+        | ErrorLamNotEmpty
+        { errorChecking         :: Exp a n
+        , errorUniverse         :: Universe
+        , errorClosure          :: Closure n }
 
         -- | A value function where the parameter does not have data kind.
         | ErrorLamBindNotData

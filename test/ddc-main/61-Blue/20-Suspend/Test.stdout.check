@@ -1,7 +1,81 @@
 ok
 
+
+-- Eta-expanding a function is fine.
 /\(r : Region)./\(a : Data).
- \(x : Ref r a).
-suspend readRef# [r] [a] x
+ \(x : Ref r a). readRef# [r] [a] x
 :*: [r : Region].[a : Data].Ref r a -> S (Read r) a
 :!: Pure
+
+
+-- We can build an abstraction when the effect of the body
+-- is suspended.
+/\(r : Region)./\(a : Data).
+ \(x : Ref r a).
+suspend
+run readRef# [r] [a] x
+:*: [r : Region].[a : Data].Ref r a -> S (Read r) a
+:!: Pure
+
+
+-- Error: impure function body.
+When checking expression.
+  Impure Data abstraction
+             has effect: Read r
+  
+  with: \(x : Ref r a).
+        run readRef# [r] [a] x
+
+
+-- Double the value in a reference.
+/\(r : Region).
+ \(ref : Ref r Int).
+suspend
+let x : Int
+      = run readRef# [r] [Int] ref in
+run writeRef# [r] [Int] ref (add# [Int] x x)
+:*: [r : Region].Ref r Int -> S (Read r + Write r) Unit
+:!: Pure
+
+
+-- Pure factorial function.
+module Test with
+letrec {
+  fac : Int -> Int
+    = \(x : Int).
+      case x of {
+        0  
+         -> 1;
+        _ 
+         -> add# [Int] x
+                (fac (sub# [Int] x 1))
+      }
+}
+
+
+-- Factorial using a local reference.
+module Test with
+letrec {
+  fac : Int -> Int
+    = \(x : Int).
+      letregion r in
+      let acc : Ref r Int
+            = run allocRef# [r] [Int] 0 in
+      letrec {
+        loop : Int -> S (Read r + Write r) Int
+          = \(i : Int).
+            suspend
+            case i of {
+              0  
+               -> run readRef# [r] [Int] acc;
+              _ 
+               -> let x : Int
+                        = run readRef# [r] [Int] acc in
+                  let x' : Int = add# [Int] x 1 in
+                  let _ : Unit
+                        = run writeRef# [r] [Int] acc x' in
+                  run loop (sub# [Int] x 1)
+            }
+      } in
+      run loop x
+}

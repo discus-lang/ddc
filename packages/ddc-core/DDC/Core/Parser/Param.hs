@@ -11,6 +11,7 @@ import DDC.Core.Parser.Base             (Parser, Context (..))
 import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
+-- import qualified DDC.Type.Predicates    as T
 
 
 -- | Specification of a function parameter.
@@ -25,24 +26,34 @@ data ParamSpec n
 -- | Build the type of a function from specifications of its parameters,
 --   and the type of the body.
 funTypeOfParams 
-        :: [ParamSpec n]        -- ^ Spec of parameters.
+        :: Context
+        => [ParamSpec n]        -- ^ Spec of parameters.
         -> Type n               -- ^ Type of body.
         -> Type n               -- ^ Type of whole function.
 
-funTypeOfParams [] tBody        = tBody
-funTypeOfParams (p:ps) tBody
+funTypeOfParams _ [] tBody        
+ = tBody
+
+funTypeOfParams c (p:ps) tBody
  = case p of
         ParamType  b    
          -> TForall b 
-                $ funTypeOfParams ps tBody
+                $ funTypeOfParams c ps tBody
 
         ParamWitness b
          -> T.tImpl (T.typeOfBind b)
-                $ funTypeOfParams ps tBody
+                $ funTypeOfParams c ps tBody
 
         ParamValue b eff clo
+         | contextFunctionalEffects c
+         , contextFunctionalClosures c
          -> T.tFunEC (T.typeOfBind b) eff clo 
-                $ funTypeOfParams ps tBody
+                $ funTypeOfParams c ps tBody
+         
+         | otherwise
+         -> T.tFun (T.typeOfBind b)
+                $ funTypeOfParams c ps tBody
+
 
 
 -- | Build the expression of a function from specifications of its parameters,

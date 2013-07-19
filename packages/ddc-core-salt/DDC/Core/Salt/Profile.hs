@@ -30,7 +30,9 @@ profile
 --   No nested functions, no partial application and so on.
 features :: Features
 features = zeroFeatures
-        { featuresDebruijnBinders       = True
+        { featuresFunctionalEffects     = True
+        , featuresFunctionalClosures    = True
+        , featuresDebruijnBinders       = True
         , featuresUnusedBindings        = True }
 
 

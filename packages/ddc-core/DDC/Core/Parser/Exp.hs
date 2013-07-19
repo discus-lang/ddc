@@ -432,7 +432,7 @@ pLetBinding c
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
-                        let t   = funTypeOfParams ps tBody
+                        let t   = funTypeOfParams c ps tBody
                         return  (T.makeBindFromBinder b t, x)
 
                         -- Function syntax with no return type.
@@ -476,7 +476,7 @@ pLetRecBinding  c
         
                 pTok KColon
                 tBody   <- pType c
-                let t   = funTypeOfParams ps tBody
+                let t   = funTypeOfParams c ps tBody
 
                 sp      <- pTokSP KEquals
                 xBody   <- pExp c

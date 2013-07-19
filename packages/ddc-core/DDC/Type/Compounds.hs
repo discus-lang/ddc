@@ -44,6 +44,7 @@ module DDC.Type.Compounds
         , takePrimeRegion
 
           -- * Functions
+        , tFun
         , tFunEC
         , tFunPE,       tFunOfListPE
         , takeTFunEC
@@ -51,6 +52,9 @@ module DDC.Type.Compounds
         , takeTFunWitArgResult
         , takeTFunAllArgResult
         , arityOfType
+
+          -- * Suspensions
+        , tSusp
 
           -- * Implications
         , tImpl
@@ -407,6 +411,14 @@ takeResultKind kk
         _       -> kk
 
 
+-- Function types -------------------------------------------------------------
+-- | Construct a pure function type.
+tFun      :: Type n -> Type n -> Type n
+tFun t1 t2
+        = (TCon $ TyConSpec TcConFun)  `tApps` [t1, t2]
+infixr `tFun`
+
+
 -- | Construct a value type function, 
 --   with the provided effect and closure.
 tFunEC    :: Type n -> Effect n -> Closure n -> Type n -> Type n
@@ -507,6 +519,12 @@ tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
         = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2
 infixr `tImpl`
+
+
+-- Suspensions ----------------------------------------------------------------
+tSusp  :: Effect n -> Type n -> Type n
+tSusp tE tA
+        = (TCon $ TyConSpec TcConSusp) `tApp` tE `tApp` tA
 
 
 -- Level 3 constructors (sorts) -----------------------------------------------

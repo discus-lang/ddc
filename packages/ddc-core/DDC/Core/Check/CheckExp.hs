@@ -201,9 +201,21 @@ checkExpM' !config !kenv !tenv xx@(XApp a x1 x2)
  = do   (x1', t1, effs1, clos1)    <- checkExpM config kenv tenv x1
         (x2', t2, effs2, clos2)    <- checkExpM config kenv tenv x2
 
-        -- Note: we don't need to use the closure of the function because
-        --       all of its components will already be part of clos1 above.
         case t1 of
+         -- Oblivious application of a pure function.
+         -- Computation of the function and argument may themselves have
+         -- an effect, but the function application does not.
+         TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
+          | t11 `equivT` t2
+          -> returnX a
+                (\z -> XApp z x1' x2')
+                t12
+                (effs1 `Sum.union` effs2)
+                (clos1 `Set.union` clos2)
+
+         -- Function with latent effect and closure.
+         -- Note: we don't need to use the closure of the function because
+         --       all of its components will already be part of clos1 above.
          TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t11) eff) _clo) t12
           | t11 `equivT` t2   
           , effs    <- Sum.fromList kEffect  [eff]
@@ -233,7 +245,7 @@ checkExpM' !config !kenv !tenv xx@(XLAM a b1 x2)
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure xx True (TSum e2)
+         $ throw $ ErrorLamNotPure xx UniverseSpec (TSum e2)
 
         -- The body of a spec abstraction must have data kind.
         when (not $ isDataKind k2)
@@ -314,18 +326,48 @@ checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
                   | otherwise
                   = TSum e2
 
-             in  returnX a
+                 -- If the function type for the current fragment supports
+                 -- latent effects and closures then just use that.
+                 fun_result
+                  | configFunctionalEffects  config
+                  , configFunctionalClosures config
+                  = returnX a
                         (\z -> XLam z b1 x2')
                         (tFunEC t1 e2_captured c2_captured t2)
                         (Sum.empty kEffect)
                         c2_cut
+
+                 -- If the function type for the current fragment does not
+                 -- support latent effects, then the body expression needs
+                 -- to be pure.
+                  | e2_captured == tBot kEffect
+                  , c2_captured == tBot kClosure
+                  = returnX a
+                        (\z -> XLam z b1 x2')
+                        (tFun t1 t2)
+                        (Sum.empty kEffect)
+                        Set.empty
+
+                  | e2_captured /= tBot kEffect
+                  = throw $ ErrorLamNotPure  xx UniverseData e2_captured
+
+                  | c2_captured /= tBot kClosure
+                  = throw $ ErrorLamNotEmpty xx UniverseData c2_captured
+
+                  -- One of the above error cases is supposed to fire,
+                  -- so we should never hit this error.
+                  | otherwise
+                  = error "checkExpM': can't build function type."
+
+             in  fun_result
+
 
          -- This is a witness abstraction.
          Just UniverseWitness
 
           -- The body of a witness abstraction must be pure.
           | e2 /= Sum.empty kEffect  
-          -> throw $ ErrorLamNotPure  xx False (TSum e2)
+          -> throw $ ErrorLamNotPure  xx UniverseWitness (TSum e2)
 
           -- The body of a witness abstraction must produce data.
           | not $ isDataKind k2      
@@ -681,6 +723,7 @@ checkExpM' !config !kenv !tenv xx@(XCast a (CastForget w) x1)
                 (\z -> XCast z c' x1')
                 t1 effs clos'
 
+
 -- Suspend a computation,
 -- capturing its effects in a computation type.
 checkExpM' !config !kenv !tenv (XCast a CastSuspend x1)
@@ -695,6 +738,23 @@ checkExpM' !config !kenv !tenv (XCast a CastSuspend x1)
                 tS (Sum.empty kEffect) clos
 
 
+-- Run a suspended computation,
+-- releasing its effects into the environment.
+checkExpM' !config !kenv !tenv (XCast a CastRun x1)
+ = do   
+        (x1', t1, effs, clos) <- checkExpM config kenv tenv x1
+
+        case t1 of
+         TApp (TApp (TCon (TyConSpec TcConSusp)) eff2) tA 
+          -> returnX a
+                (\z -> XCast z CastRun x1')
+                tA 
+                (Sum.union effs (Sum.singleton kEffect eff2))
+                clos
+
+         _ -> error "can't run a non suspension"
+
+
 -- Type and witness expressions can only appear as the arguments 
 -- to  applications.
 checkExpM' !_config !_kenv !_tenv xx@(XType _)
@@ -703,8 +763,9 @@ checkExpM' !_config !_kenv !_tenv xx@(XType _)
 checkExpM' !_config !_kenv !_tenv xx@(XWitness _)
         = throw $ ErrorNakedWitness xx
 
+-- This shouldn't happen.
 checkExpM' _ _ _ _
-        = error "checkExpM: bogus warning killer"
+        = error "checkExpM: can't check this expression"
 
 
 -- | Like `checkExp` but we allow naked types and witnesses.

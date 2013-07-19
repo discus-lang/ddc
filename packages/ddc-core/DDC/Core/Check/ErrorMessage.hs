@@ -85,16 +85,20 @@ instance (Show n, Eq n, Pretty n)
                  , text "  is already in the environment."
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamNotPure xx spec eff
-         -> let universe' = if spec then text "spec"
-                                    else text "witness"
-            in vcat 
-                [ text "Impure" <+> universe' <+> text "abstraction"
+        ErrorLamNotPure xx universe eff
+         -> vcat 
+                [ text "Impure" <+> ppr universe <+> text "abstraction"
                 , text "           has effect: "       <> ppr eff
                 , empty
                 , text "with: "                        <> align (ppr xx) ]
+
+        ErrorLamNotEmpty xx universe eff
+         -> vcat 
+                [ text "Non-empty" <+> ppr universe <+> text "abstraction"
+                , text "           has closure: "       <> ppr eff
+                , empty
+                , text "with: "                        <> align (ppr xx) ]
                  
-        
         ErrorLamBindNotData xx t1 k1
          -> vcat [ text "Function parameter does not have data kind."
                  , text "    The function parameter:"   <> ppr t1
