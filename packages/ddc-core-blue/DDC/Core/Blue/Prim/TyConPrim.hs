@@ -79,7 +79,7 @@ tBool   = TCon (TyConBound (UPrim (NameTyConPrim TyConPrimBool) kData) kData)
 
 -- | Primitive `Nat` type.
 tNat    ::  Type Name
-tNat    = TCon (TyConBound (UPrim (NameTyConPrim TyConPrimInt) kData) kData)
+tNat    = TCon (TyConBound (UPrim (NameTyConPrim TyConPrimNat) kData) kData)
 
 
 -- | Primitive `Int` type.

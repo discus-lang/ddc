@@ -25,38 +25,86 @@ run readRef# [r] [a] x
 
 -- Double the value in a reference.
 :check..
-/\(r : Region). \(ref : Ref r Int).
+/\(r : Region). \(ref : Ref r Nat).
 suspend do      
-        { x = run readRef# [:r Int:] ref
-        ; run writeRef# [:r Int:] ref (add# [Int] x x) }
+        { x = run readRef# [:r Nat:] ref
+        ; run writeRef# [:r Nat:] ref (add# [Nat] x x) }
 ;;
 
 
 -- Pure factorial function.
 :load..
 module Test with letrec
-fac (x : Int) : Int
+fac (x : Nat) : Nat
  = case x of
         0#      -> 1#
-        _       -> add# [Int] x (fac (sub# [Int] x 1#))
+        _       -> add# [Nat] x (fac (sub# [Nat] x 1#))
 ;;
 
 
 -- Factorial using a local reference.
 :load..
 module Test with letrec
-fac (x : Int) : Int
+fac (x : Nat) : Nat
  = letregion r in
-   let acc = run allocRef# [:r Int:] 0# in
+   let acc = run allocRef# [:r Nat:] 0# in
    letrec {
-        loop (i : Int) : S (Read r + Write r) Int
+        loop (i : Nat) : S (Read r + Write r) Nat
          = suspend 
            case i of
-            0# -> do    run readRef# [:r Int:] acc
+            0# -> do    run readRef# [:r Nat:] acc
 
-            _  -> do    x       = run readRef# [:r Int:] acc
-                        x'      = add# [Int] x 1#
-                        run writeRef# [:r Int:] acc x'
-                        run loop (sub# [Int] x 1#)
+            _  -> do    x       = run readRef# [:r Nat:] acc
+                        x'      = add# [Nat] x 1#
+                        run writeRef# [:r Nat:] acc x'
+                        run loop (sub# [Nat] x 1#)
    } in run loop x
 ;;
+
+
+-- Factorial pushing the suspend into the case expression.
+:load..
+module Test with letrec
+fac (x : Nat) : Nat
+ = letregion r in
+   let acc = run allocRef# [:r Nat:] 0# in
+   letrec {
+        loop (i : Nat) : S (Read r + Write r) Nat
+         = case i of
+            0# -> suspend
+                  weakeff [Read r + Write r] in 
+                  do    run readRef# [:r Nat:] acc
+
+            _  -> suspend
+                  do    x       = run readRef# [:r Nat:] acc
+                        x'      = add# [Nat] x 1#
+                        run writeRef# [:r Nat:] acc x'
+                        run loop (sub# [Nat] x 1#)
+   } in run loop x
+;;
+
+
+-- Pure iteratation function.
+:load..
+module Test with letrec
+iterate [a : Data] 
+        (f : a -> a) (i : Nat) (x : a) : a
+ = case i of
+    0#  -> x
+    _   -> do   x'      = f x
+                iterate [a] f (sub# [Nat] i 1#) x'
+;;
+
+
+-- Effectful iteration function.
+:load..
+module Test with letrec
+iterateS [e : Effect] [a : Data] 
+         (f : a -> S e a) (i : Nat) (x : a) : S e a
+ = suspend 
+   case i of
+    0#  -> x
+    _   -> do   x'      = run f x
+                run iterateS [:e a:] f (sub# [Nat] i 1#) x'
+;;
+
