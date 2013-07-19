@@ -297,18 +297,18 @@ checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
                  -- already already checked that.
                  Just c2_captured
 
-                  -- If we're suppressing closures then just drop them on the floor.
-                  -- The consumer of this core program doesn't care about closures.
-                  | configSuppressClosures config
+                  -- If we're not tracking closure information then just drop it 
+                  -- on the floor.
+                  | not  $ configTrackedClosures config
                   = Just $ tBot kClosure
 
                   | otherwise
                   = trimClosure $ closureOfTaggedSet c2_cut
 
-                 -- If we're suppressing effects then just drop them on the floor.
-                 -- The consumer of this core program doesn't care about effects.
+                 -- If we're not tracking effect information then just drop it 
+                 -- on the floor.
                  e2_captured
-                  | configSuppressEffects config
+                  | not  $ configTrackedEffects config
                   = tBot kEffect
 
                   | otherwise

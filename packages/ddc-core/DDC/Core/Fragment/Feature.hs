@@ -7,13 +7,17 @@ where
 -- | Language feature supported by a fragment.
 data Feature
         -- Type system features ---------------------------
-        -- | Assume all functions perform global side effects, 
-        --   and don't generate effect terms in types.
-        = UntrackedEffects
+        -- | Track effect type information.
+        = TrackedEffects
 
-        -- | Assume all functions share data invisibly,
-        --   and don't generate closure terms in types.
-        | UntrackedClosures
+        -- | Track closure type information.
+        | TrackedClosures
+
+        -- | Attach latent effects to function types.
+        | FunctionalEffects
+
+        -- | Attach latent closures to function types.
+        | FunctionalClosures
 
         -- General features -------------------------------
         -- | Partially applied primitive operators.

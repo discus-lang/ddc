@@ -69,8 +69,8 @@ pruneModule profile mm
          -- If the language fragment has untracked effects then we can't do
          -- the prune transform because we risk dropping statements with global
          -- effects.
-         | featuresUntrackedEffects 
-                $ profileFeatures profile
+         | not $ featuresTrackedEffects
+               $ profileFeatures profile
          = mm
 
          | otherwise

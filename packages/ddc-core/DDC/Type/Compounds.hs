@@ -551,10 +551,10 @@ tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
 tManifest       = twCon1 TwConManifest
 
-tcCon1 tc t  = (TCon $ TyConSpec    tc) `tApp` t
-twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
+tcCon1 tc t     = (TCon $ TyConSpec    tc) `tApp` t
+twCon1 tc t     = (TCon $ TyConWitness tc) `tApp` t
 
-twCon2 tc ts = tApps (TCon $ TyConWitness tc) ts
+twCon2 tc ts    = tApps (TCon $ TyConWitness tc) ts
 
 
 -- | Build a nullary type constructor of the given kind.

@@ -62,6 +62,7 @@ kindOfTcCon :: TcCon -> Kind n
 kindOfTcCon tc
  = case tc of
         TcConUnit       -> kData
+        TcConFun        -> kData    `kFun` kData `kFun` kData
         TcConFunEC      -> [kData, kEffect, kClosure, kData] `kFuns` kData
         TcConSusp       -> kEffect  `kFun` kData `kFun` kData
         TcConRead       -> kRegion  `kFun` kEffect

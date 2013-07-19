@@ -32,8 +32,10 @@ profile
 features :: Features
 features 
         = Features
-        { featuresUntrackedEffects      = False
-        , featuresUntrackedClosures     = False
+        { featuresTrackedEffects        = True
+        , featuresTrackedClosures       = True
+        , featuresFunctionalEffects     = True
+        , featuresFunctionalClosures    = True
         , featuresPartialPrims          = False
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

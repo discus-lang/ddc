@@ -26,8 +26,10 @@ evalProfile
 evalFeatures :: Features
 evalFeatures 
         = Features
-        { featuresUntrackedClosures     = False
-        , featuresUntrackedEffects      = False
+        { featuresTrackedEffects        = True
+        , featuresTrackedClosures       = True
+        , featuresFunctionalEffects     = True
+        , featuresFunctionalClosures    = True
         , featuresPartialPrims          = False
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

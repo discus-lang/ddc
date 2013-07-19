@@ -29,29 +29,38 @@ data Config n
           -- | Types of primitive operators.
         , configPrimTypes               :: TypeEnv n
 
-          -- | Suppress effect information,
-          --   annotating all functions with a pure effect.
-        , configSuppressEffects         :: Bool
+          -- | Track effect type information.
+        , configTrackedEffects          :: Bool
 
-          -- | Suppress closure information, 
-          --   annotating all functions with an empty closure.
-        , configSuppressClosures        :: Bool }
+          -- | Track closure type information.
+        , configTrackedClosures         :: Bool 
+
+          -- | Attach effect information to function types.
+        , configFunctionalEffects       :: Bool
+
+          -- | Attach closure information to function types.
+        , configFunctionalClosures      :: Bool }
+
 
 
 -- | Convert a langage profile to a type checker configuration.
 configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
         = Config
-        { configPrimDataDefs    = F.profilePrimDataDefs profile
-        , configPrimSupers      = F.profilePrimSupers profile
-        , configPrimKinds       = F.profilePrimKinds  profile
-        , configPrimTypes       = F.profilePrimTypes  profile
+        { configPrimDataDefs       = F.profilePrimDataDefs profile
+        , configPrimSupers         = F.profilePrimSupers profile
+        , configPrimKinds          = F.profilePrimKinds  profile
+        , configPrimTypes          = F.profilePrimTypes  profile
 
-        , configSuppressEffects
-                = F.featuresUntrackedEffects
-                $ F.profileFeatures profile
+        , configTrackedEffects     = F.featuresTrackedEffects
+                                   $ F.profileFeatures profile
 
-        , configSuppressClosures      
-                = F.featuresUntrackedClosures
-                $ F.profileFeatures profile }
+        , configTrackedClosures    = F.featuresTrackedClosures
+                                   $ F.profileFeatures profile
+
+        , configFunctionalEffects  = F.featuresFunctionalEffects
+                                   $ F.profileFeatures profile
+
+        , configFunctionalClosures = F.featuresFunctionalClosures
+                                   $ F.profileFeatures profile }
 

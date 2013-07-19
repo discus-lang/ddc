@@ -233,11 +233,14 @@ data TcCon
         -- | The unit data type constructor is baked in.
         = TcConUnit             -- 'Unit :: Data'
 
-        -- | The function type constructor is baked in.
-        | TcConFunEC            -- '(->) :: Data ~> Data ~> Effect ~> Closure ~> Data'
+        -- | Pure function.
+        | TcConFun              -- '(->)' :: Data ~> Data ~> Data
+
+        -- | Function with a latent effect and closure.
+        | TcConFunEC            -- '(->)  :: Data ~> Data ~> Effect ~> Closure ~> Data'
 
         -- | A suspended computation.
-        | TcConSusp             -- 'S    :: Effect ~> Data ~> Data'
+        | TcConSusp             -- 'S     :: Effect ~> Data ~> Data'
 
         -- Effect type constructors -------------
         -- | Read of some region.
