@@ -44,7 +44,11 @@ primDataDefs
         , DataDef (NameTyConPrim (TyConPrimWord 32)) [] Nothing
         , DataDef (NameTyConPrim (TyConPrimWord 16)) [] Nothing
         , DataDef (NameTyConPrim (TyConPrimWord 8))  [] Nothing
+
+        -- Ref
+        , DataDef (NameTyConPrim TyConPrimRef) [] Nothing
         ]
+
 
 -- Sorts ---------------------------------------------------------------------
 -- | Sort environment containing sorts of primitive kinds.
@@ -70,8 +74,8 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameTyConPrim tc                -> Just $ kindTyConPrim tc
-        _                               -> Nothing
+        NameTyConPrim tc        -> Just $ kindTyConPrim tc
+        _                       -> Nothing
 
 
 -- Types ----------------------------------------------------------------------
@@ -86,6 +90,7 @@ typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
         NameOpPrimArith p       -> Just $ typeOpPrimArith p
+        NameOpPrimRef   p       -> Just $ typeOpPrimRef   p
 
         NameLitBool _           -> Just $ tBool
         NameLitNat  _           -> Just $ tNat

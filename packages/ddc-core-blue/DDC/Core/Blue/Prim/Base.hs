@@ -2,7 +2,8 @@
 module DDC.Core.Blue.Prim.Base
         ( Name          (..)
         , TyConPrim     (..)
-        , OpPrimArith   (..))
+        , OpPrimArith   (..)
+        , OpPrimRef     (..))
 where
 import Data.Typeable
 
@@ -21,6 +22,9 @@ data Name
 
         -- | Primitive arithmetic, logic, comparison and bit-wise operators.
         | NameOpPrimArith       OpPrimArith
+
+        -- | Mutable references.
+        | NameOpPrimRef         OpPrimRef
 
         -- Literals -----------------------------
         -- | A boolean literal.
@@ -67,31 +71,40 @@ data TyConPrim
 --   (no sign-extension) shift.
 data OpPrimArith
         -- numeric
-        = OpPrimArithNeg  -- ^ Negation
-        | OpPrimArithAdd  -- ^ Addition
-        | OpPrimArithSub  -- ^ Subtraction
-        | OpPrimArithMul  -- ^ Multiplication
-        | OpPrimArithDiv  -- ^ Division
-        | OpPrimArithMod  -- ^ Modulus
-        | OpPrimArithRem  -- ^ Remainder
+        = OpPrimArithNeg        -- ^ Negation
+        | OpPrimArithAdd        -- ^ Addition
+        | OpPrimArithSub        -- ^ Subtraction
+        | OpPrimArithMul        -- ^ Multiplication
+        | OpPrimArithDiv        -- ^ Division
+        | OpPrimArithMod        -- ^ Modulus
+        | OpPrimArithRem        -- ^ Remainder
 
         -- comparison
-        | OpPrimArithEq   -- ^ Equality
-        | OpPrimArithNeq  -- ^ Negated Equality
-        | OpPrimArithGt   -- ^ Greater Than
-        | OpPrimArithGe   -- ^ Greater Than or Equal
-        | OpPrimArithLt   -- ^ Less Than
-        | OpPrimArithLe   -- ^ Less Than or Equal
+        | OpPrimArithEq         -- ^ Equality
+        | OpPrimArithNeq        -- ^ Negated Equality
+        | OpPrimArithGt         -- ^ Greater Than
+        | OpPrimArithGe         -- ^ Greater Than or Equal
+        | OpPrimArithLt         -- ^ Less Than
+        | OpPrimArithLe         -- ^ Less Than or Equal
 
         -- boolean
-        | OpPrimArithAnd  -- ^ Boolean And
-        | OpPrimArithOr   -- ^ Boolean Or
+        | OpPrimArithAnd        -- ^ Boolean And
+        | OpPrimArithOr         -- ^ Boolean Or
 
         -- bitwise
-        | OpPrimArithShl  -- ^ Shift Left
-        | OpPrimArithShr  -- ^ Shift Right
-        | OpPrimArithBAnd -- ^ Bit-wise And
-        | OpPrimArithBOr  -- ^ Bit-wise Or
-        | OpPrimArithBXOr -- ^ Bit-wise eXclusive Or
+        | OpPrimArithShl        -- ^ Shift Left
+        | OpPrimArithShr        -- ^ Shift Right
+        | OpPrimArithBAnd       -- ^ Bit-wise And
+        | OpPrimArithBOr        -- ^ Bit-wise Or
+        | OpPrimArithBXOr       -- ^ Bit-wise eXclusive Or
+        deriving (Eq, Ord, Show)
+
+
+-- OpPrimRef ------------------------------------------------------------------
+-- | Mutable References.
+data OpPrimRef
+        = OpPrimRefAllocRef     -- ^ Allocate a reference.
+        | OpPrimRefReadRef      -- ^ Read a reference.
+        | OpPrimRefWriteRef     -- ^ Write to a reference.
         deriving (Eq, Ord, Show)
 

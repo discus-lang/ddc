@@ -1,20 +1,25 @@
 
 module DDC.Core.Blue.Prim
-        ( -- * Names and lexing
+        ( -- * Names and lexing.
           Name          (..)
         , readName
 
-          -- * Primitive type constructors
+          -- * Primitive type constructors.
         , TyConPrim     (..)
         , kindTyConPrim
 
-          -- * Primitive arithmetic operators
-        , OpPrimArith     (..)
-        , typeOpPrimArith)
+          -- * Primitive arithmetic operators.
+        , OpPrimArith   (..)
+        , typeOpPrimArith
+
+          -- * Mutable references.
+        , OpPrimRef     (..)
+        , typeOpPrimRef)
 where
 import DDC.Core.Blue.Prim.Base
 import DDC.Core.Blue.Prim.TyConPrim
 import DDC.Core.Blue.Prim.OpPrimArith
+import DDC.Core.Blue.Prim.OpPrimRef
 import DDC.Core.Salt.Name 
         ( readLitPrimNat
         , readLitPrimInt
@@ -33,6 +38,7 @@ instance NFData Name where
 
         NameTyConPrim con       -> rnf con
         NameOpPrimArith con     -> rnf con
+        NameOpPrimRef   con     -> rnf con
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
@@ -48,6 +54,7 @@ instance Pretty Name where
 
         NameTyConPrim tc        -> ppr tc
         NameOpPrimArith op      -> ppr op
+        NameOpPrimRef   op      -> ppr op
 
         NameLitBool True        -> text "True"
         NameLitBool False       -> text "False"
@@ -60,8 +67,14 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Primitive names.
-        | Just p        <- readTyConPrim   str  = Just $ NameTyConPrim p
-        | Just p        <- readOpPrimArith str  = Just $ NameOpPrimArith p
+        | Just p <- readTyConPrim   str  
+        = Just $ NameTyConPrim p
+
+        | Just p <- readOpPrimArith str  
+        = Just $ NameOpPrimArith p
+
+        | Just p <- readOpPrimRef   str  
+        = Just $ NameOpPrimRef p
 
         -- Literal Bools
         | str == "True"  = Just $ NameLitBool True
