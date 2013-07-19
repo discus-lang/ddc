@@ -56,8 +56,10 @@ wrapResultExp xWorld xResult
  , annotType aResult == tUnit     
  = reannotate annotTail xWorld
 
- | Just aWorld          <- takeAnnotOfExp xWorld
- , Just aResult         <- takeAnnotOfExp xResult
+ -- Rewrite (TupleN        a1 a2 ..       x1 x2 ..) 
+ --      => (TupleN World# a1 a2 .. world x1 x2 ..)
+ | Just aWorld   <- takeAnnotOfExp xWorld
+ , Just aResult  <- takeAnnotOfExp xResult
  = let  tWorld'  = annotType aWorld
         tResult  = annotType aResult
         xWorld'  = reannotate annotTail xWorld
@@ -67,18 +69,21 @@ wrapResultExp xWorld xResult
          Just (dc, [xT1, xT2, x1, x2])                  -- TODO: handle tuple arities generically
           | dc == dcTupleN 2
           -> C.xApps () (XCon () (dcTupleN 3))
-                [XType tWorld', xT1, xT2, xWorld', x1, x2]
+                [ XType tWorld', xT1, xT2
+                , xWorld',       x1,  x2]
 
          Just (dc, [xT1, xT2, xT3, x1, x2, x3])
           | dc == dcTupleN 3
           -> C.xApps () (XCon () (dcTupleN 4))
-                [XType tWorld', xT1, xT2, xT3, xWorld', x1, x2, x3]
+                [ XType tWorld', xT1, xT2, xT3
+                , xWorld',       x1,  x2,  x3]
 
          Just (dc, [xT1, xT2, xT3, xT4, x1, x2, x3, x4])
           | dc == dcTupleN 4
           -> C.xApps () (XCon () (dcTupleN 5))
                 [ XType tWorld', xT1, xT2, xT3, xT4
                 , xWorld',       x1,  x2,  x3,  x4]
+
 
          _ -> C.xApps () (XCon () (dcTupleN 2))
                          [ XType tWorld'

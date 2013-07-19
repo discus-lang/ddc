@@ -53,16 +53,19 @@ primDataDefs
 
         -- Flow -----------------------------------------------------
         -- Tuple
+        --  TODO: build more tuple defs generically.
         , DataDef
                 (NameTyConFlow (TyConFlowTuple 2))
                 [kData, kData]
                 (Just   [ ( NameDaConFlow (DaConFlowTuple 2)
                           , [tIx kData 1, tIx kData 0]) ])
+
         , DataDef
                 (NameTyConFlow (TyConFlowTuple 3))
                 [kData, kData]
                 (Just   [ ( NameDaConFlow (DaConFlowTuple 3)
                           , [tIx kData 2, tIx kData 1, tIx kData 0]) ])
+
         , DataDef
                 (NameTyConFlow (TyConFlowTuple 4))
                 [kData, kData]
