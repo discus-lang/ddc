@@ -134,7 +134,17 @@ data Cast a n
 
         -- | Forget about the closure (sharing) of an expression.
         | CastForget        !(Witness a n)
+
+        -- | Suspend a computation, 
+        --   capturing its effects in the S computation type.
+        | CastSuspend 
+
+        -- | Run a computation,
+        --   releasing its effects into the environment.
+        | CastRun
         deriving (Show, Eq)
+
+
 
 
 -- NFData ---------------------------------------------------------------------
@@ -161,6 +171,8 @@ instance (NFData a, NFData n) => NFData (Cast a n) where
         CastWeakenClosure xs    -> rnf xs
         CastPurify w            -> rnf w
         CastForget w            -> rnf w
+        CastSuspend             -> ()
+        CastRun                 -> ()
 
 
 instance (NFData a, NFData n) => NFData (Lets a n) where

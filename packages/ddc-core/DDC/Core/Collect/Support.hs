@@ -173,6 +173,12 @@ instance SupportX (Cast a) where
 
         CastForget w
          -> support kenv tenv w
+
+        CastSuspend
+         -> mempty
+
+        CastRun
+         -> mempty
          
 
 instance SupportX (Lets a) where

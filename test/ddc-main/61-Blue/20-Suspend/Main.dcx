@@ -1,0 +1,6 @@
+:set lang Blue
+
+:check..
+/\(r : Region). /\(a : Data). 
+\(x : Ref r a). 
+suspend readRef# [r] [a] x;;

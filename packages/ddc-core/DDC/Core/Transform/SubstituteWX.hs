@@ -138,6 +138,8 @@ instance SubstituteWX Cast where
         CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
         CastPurify w            -> CastPurify        (down sub w)
         CastForget w            -> CastForget        (down sub w)
+        CastSuspend             -> CastSuspend
+        CastRun                 -> CastRun
 
 
 instance SubstituteWX Witness where

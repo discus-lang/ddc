@@ -681,6 +681,19 @@ checkExpM' !config !kenv !tenv xx@(XCast a (CastForget w) x1)
                 (\z -> XCast z c' x1')
                 t1 effs clos'
 
+-- Suspend a computation,
+-- capturing its effects in a computation type.
+checkExpM' !config !kenv !tenv (XCast a CastSuspend x1)
+ = do   
+        (x1', t1, effs, clos) <- checkExpM config kenv tenv x1
+
+        let tS  = tApps (TCon (TyConSpec TcConSusp))
+                        [TSum effs, t1]
+
+        returnX a
+                (\z -> XCast z CastSuspend x1')
+                tS (Sum.empty kEffect) clos
+
 
 -- Type and witness expressions can only appear as the arguments 
 -- to  applications.

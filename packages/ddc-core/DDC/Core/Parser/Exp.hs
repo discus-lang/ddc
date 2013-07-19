@@ -154,6 +154,16 @@ pExp
         x       <- pExp
         return  $ XCast sp (CastForget w) x
 
+        -- suspend EXP
+ , do   sp      <- pTokSP KSuspend
+        x       <- pExp
+        return  $ XCast sp CastSuspend x
+
+        -- run EXP
+ , do   sp      <- pTokSP KRun
+        x       <- pExp
+        return  $ XCast sp CastRun x
+
         -- APP
  , do   pExpApp
  ]

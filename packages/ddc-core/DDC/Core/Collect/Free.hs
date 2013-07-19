@@ -88,6 +88,8 @@ instance BindStruct (Cast a) where
         CastWeakenClosure xs    -> concatMap slurpBindTree xs
         CastPurify w            -> slurpBindTree w
         CastForget w            -> slurpBindTree w
+        CastSuspend             -> []
+        CastRun                 -> []
 
 
 instance BindStruct (Alt a) where

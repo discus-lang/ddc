@@ -100,10 +100,12 @@ eqCast lc rc
  where  clean c 
          = T.reannotate (const ())
          $ case c of
-                CastWeakenEffect  eff -> CastWeakenEffect  $ T.anonymizeT eff
-                CastWeakenClosure clo -> CastWeakenClosure $ map T.anonymizeX clo
-                CastPurify        wit -> CastPurify        wit
-                CastForget        wit -> CastForget wit
+                CastWeakenEffect  eff   -> CastWeakenEffect  $ T.anonymizeT eff
+                CastWeakenClosure clo   -> CastWeakenClosure $ map T.anonymizeX clo
+                CastPurify        wit   -> CastPurify        wit
+                CastForget        wit   -> CastForget wit
+                CastSuspend             -> CastSuspend
+                CastRun                 -> CastRun
 
 
 eqWit  :: Ord n => Witness a n -> Witness a n -> Bool

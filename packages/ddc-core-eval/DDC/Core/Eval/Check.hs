@@ -180,14 +180,13 @@ checkCapsCM cc
         CastWeakenEffect{}
          -> none
 
-        CastWeakenClosure xs
+        CastWeakenClosure xs    
          -> liftM concat $ mapM checkCapsXM xs
 
-        CastPurify w
-         -> checkCapsWM w
-
-        CastForget w
-         -> checkCapsWM w
+        CastPurify w            -> checkCapsWM w
+        CastForget w            -> checkCapsWM w
+        CastSuspend             -> none 
+        CastRun                 -> none
 
 
 checkCapsLM :: Lets a Name -> CheckM a [Witness a Name]
@@ -210,11 +209,11 @@ checkCapsWM :: Witness a Name -> CheckM a [Witness a Name]
 checkCapsWM ww
  = let none     = return []
    in case ww of
-        WVar{}             -> none
+        WVar{}          -> none
 
         WCon{}
-         | isCapConW ww    -> throw $ ErrorPartial (reannotate (const ()) ww)
-         | otherwise       -> none
+         | isCapConW ww -> throw $ ErrorPartial (reannotate (const ()) ww)
+         | otherwise    -> none
 
 
         WApp _ w1@WCon{} w2@(WType _ tR)
@@ -226,7 +225,7 @@ checkCapsWM ww
          |  otherwise
          -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
 
-        WApp  _ w1 w2       -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
-        WJoin _ w1 w2      -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
-        WType{}            -> none
+        WApp  _ w1 w2   -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
+        WJoin _ w1 w2   -> liftM2 (++) (checkCapsWM w1) (checkCapsWM w2)
+        WType{}         -> none
 

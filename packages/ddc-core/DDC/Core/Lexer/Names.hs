@@ -49,6 +49,8 @@ keywords
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
         , ("forget",     KA KForget)
+        , ("suspend",    KA KSuspend)
+        , ("run",        KA KRun)
         , ("type",       KA KType)
         , ("weakeff",    KA KWeakEff)
         , ("weakclo",    KA KWeakClo)
@@ -93,6 +95,7 @@ readTcConBuiltin :: String -> Maybe TcCon
 readTcConBuiltin ss
  = case ss of
         "Unit"          -> Just TcConUnit
+        "S"             -> Just TcConSusp
         "Read"          -> Just TcConRead
         "HeadRead"      -> Just TcConHeadRead
         "DeepRead"      -> Just TcConDeepRead

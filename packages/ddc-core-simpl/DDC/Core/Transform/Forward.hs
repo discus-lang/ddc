@@ -240,6 +240,8 @@ instance Forward Cast where
         CastWeakenClosure xs    -> liftM    CastWeakenClosure (mapM down xs)
         CastPurify w            -> return $ CastPurify (reannotate snd w)
         CastForget w            -> return $ CastForget (reannotate snd w)
+        CastSuspend             -> return $ CastSuspend
+        CastRun                 -> return $ CastRun
 
 
 instance Forward Lets where

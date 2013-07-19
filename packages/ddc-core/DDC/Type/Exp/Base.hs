@@ -168,16 +168,16 @@ data KiCon
 
         -- Computation kinds ---------------------
         -- | Kind of data values.
-        | KiConData             -- '* :: **'
+        | KiConData             -- 'Data    :: Comp'
 
         -- | Kind of regions.
-        | KiConRegion           -- '% :: **'
+        | KiConRegion           -- 'Region  :: Comp'
 
         -- | Kind of effects.
-        | KiConEffect           -- '! :: **'
+        | KiConEffect           -- 'Effect  :: Comp'
 
         -- | Kind of closures.
-        | KiConClosure          -- '$ :: **'
+        | KiConClosure          -- 'Closure :: Comp'
         deriving (Eq, Show)
 
 
@@ -231,10 +231,13 @@ data TwCon
 data TcCon
         -- Data type constructors ---------------
         -- | The unit data type constructor is baked in.
-        = TcConUnit             -- 'Unit :: *'
+        = TcConUnit             -- 'Unit :: Data'
 
         -- | The function type constructor is baked in.
-        | TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
+        | TcConFun              -- '(->) :: Data ~> Data ~> Effect ~> Closure ~> Data'
+
+        -- | A suspended computation.
+        | TcConSusp             -- 'S    :: Effect ~> Data ~> Data'
 
         -- Effect type constructors -------------
         -- | Read of some region.

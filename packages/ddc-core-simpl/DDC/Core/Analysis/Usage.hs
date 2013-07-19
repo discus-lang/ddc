@@ -238,6 +238,9 @@ usageCast cc
          | (used, w')   <- usageWitness w
          -> (used, CastForget w')
 
+        CastSuspend     -> (empty, CastSuspend)
+        CastRun         -> (empty, CastRun)
+
 
 -- | Annotate binding occurrences of named level-0 variables with
 --   usage information.

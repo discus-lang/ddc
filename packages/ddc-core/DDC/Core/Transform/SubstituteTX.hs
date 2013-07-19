@@ -131,6 +131,8 @@ instance SubstituteTX (Cast a) where
         CastWeakenClosure clo   -> CastWeakenClosure (map (down sub) clo)
         CastPurify w            -> CastPurify        (down sub w)
         CastForget w            -> CastForget        (down sub w)
+        CastSuspend             -> CastSuspend
+        CastRun                 -> CastRun
 
 
 instance SubstituteTX (Witness a) where
