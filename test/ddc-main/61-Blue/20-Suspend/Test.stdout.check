@@ -1,0 +1,7 @@
+ok
+
+/\(r : Region)./\(a : Data).
+ \(x : Ref r a).
+suspend readRef# [r] [a] x
+:*: [r : Region].[a : Data].Ref r a -> S (Read r) a
+:!: Pure

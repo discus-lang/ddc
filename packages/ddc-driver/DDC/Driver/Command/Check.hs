@@ -32,6 +32,7 @@ import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check         as T
+import Control.Monad
 
 
 -- universe -------------------------------------------------------------------
@@ -199,12 +200,12 @@ cmdShowType language mode source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- = cmdParseCheckExp fragment modules True source ss >>= goResult
+ = cmdParseCheckExp fragment modules True source ss >>= goResult fragment
  where
-        goResult Nothing
+        goResult _ Nothing
          = return ()
 
-        goResult (Just x)
+        goResult fragment (Just x)
          = let  -- This will always succeed because a well typed expression
                 -- is never a naked type or witness, and only those don't
                 -- have annotations.
@@ -213,21 +214,27 @@ cmdShowType language mode source ss
                 t               = annotType annot
                 eff             = annotEffect annot
                 clo             = annotClosure annot
+
            in case mode of
                 ShowTypeAll
                  -> do  outDocLn $ ppr x
                         outDocLn $ text ":*:" <+> ppr t
-                        outDocLn $ text ":!:" <+> ppr eff
-                        outDocLn $ text ":$:" <+> ppr clo
+                        
+                        let features    = profileFeatures $ fragmentProfile fragment
+                        when (featuresTrackedEffects  features)
+                         $ outDocLn $ text ":!:" <+> ppr eff
+
+                        when (featuresTrackedClosures features)
+                         $ outDocLn $ text ":$:" <+> ppr clo
         
                 ShowTypeValue
                  ->     outDocLn $ ppr x <+> text "::" <+> ppr t
         
                 ShowTypeEffect
-                 ->     outDocLn $ ppr x <+> text ":!" <+> ppr eff
+                 ->     outDocLn $ ppr x <+> text ":!:" <+> ppr eff
 
                 ShowTypeClosure
-                 ->     outDocLn $ ppr x <+> text ":$" <+> ppr clo
+                 ->     outDocLn $ ppr x <+> text ":$:" <+> ppr clo
 
 
 -- Recon ----------------------------------------------------------------------
