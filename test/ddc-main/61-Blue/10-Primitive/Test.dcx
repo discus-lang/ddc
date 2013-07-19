@@ -1,6 +1,7 @@
 
 :set lang Blue
 
+-- PrimArith
 :type neg#
 :type add#
 :type sub#
@@ -8,4 +9,22 @@
 :type div#
 :type mod#
 :type rem#
+:type eq#
+:type neq#
+:type gt#
+:type ge#
+:type lt#
+:type le#
+:type and#
+:type or#
+:type shl#
+:type shr#
+:type band#
+:type bor#
+:type bxor#
+
+-- PrimRef
+:type allocRef#
+:type readRef#
+:type writeRef#
 

@@ -7,6 +7,7 @@ module DDC.Core.Blue
         , Name          (..)
         , TyConPrim     (..)
         , OpPrimArith   (..)
+        , OpPrimRef     (..)
 
           -- * Name Parsing
         , readName

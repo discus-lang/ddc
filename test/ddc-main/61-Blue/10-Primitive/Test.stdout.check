@@ -1,6 +1,7 @@
 
 ok
 
+-- PrimArith
 neg# :: [^ : Data].^0 -> ^0
 add# :: [^ : Data].^0 -> ^0 -> ^0
 sub# :: [^ : Data].^0 -> ^0 -> ^0
@@ -8,4 +9,22 @@ mul# :: [^ : Data].^0 -> ^0 -> ^0
 div# :: [^ : Data].^0 -> ^0 -> ^0
 mod# :: [^ : Data].^0 -> ^0 -> ^0
 rem# :: [^ : Data].^0 -> ^0 -> ^0
+eq# :: [^ : Data].^0 -> ^0 -> Bool
+neq# :: [^ : Data].^0 -> ^0 -> Bool
+gt# :: [^ : Data].^0 -> ^0 -> Bool
+ge# :: [^ : Data].^0 -> ^0 -> Bool
+lt# :: [^ : Data].^0 -> ^0 -> Bool
+le# :: [^ : Data].^0 -> ^0 -> Bool
+and# :: Bool -> Bool -> Bool
+or# :: Bool -> Bool -> Bool
+shl# :: [^ : Data].^0 -> ^0 -> ^0
+shr# :: [^ : Data].^0 -> ^0 -> ^0
+band# :: [^ : Data].^0 -> ^0 -> ^0
+bor# :: [^ : Data].^0 -> ^0 -> ^0
+bxor# :: [^ : Data].^0 -> ^0 -> ^0
+
+-- PrimRef
+allocRef# :: [^ : Region].[^ : Data].^0 -> Ref ^1 ^0
+readRef# :: [^ : Region].[^ : Data].Ref ^1 ^0 -> ^0
+writeRef# :: [^ : Region].[^ : Data].Ref ^1 ^0 -> ^0 -> Unit
 
