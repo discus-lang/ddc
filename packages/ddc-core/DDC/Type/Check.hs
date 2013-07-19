@@ -38,7 +38,6 @@ import qualified Data.Map                as Map
 type CheckM n   = G.CheckM (Error n)
 
 
-
 -- Wrappers -------------------------------------------------------------------
 -- | Check a type in the given environment, returning an error or its kind.
 checkType  :: (Ord n, Show n, Pretty n) 
