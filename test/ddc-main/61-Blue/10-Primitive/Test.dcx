@@ -1,7 +1,10 @@
 
 :set lang Blue
 
--- PrimArith
+-- The Blue fragment uses the pure function type.
+:kind (->)
+
+-- Primitive Arithmetic.
 :type neg#
 :type add#
 :type sub#
@@ -23,7 +26,7 @@
 :type bor#
 :type bxor#
 
--- PrimRef
+-- Mutable References.
 :type allocRef#
 :type readRef#
 :type writeRef#

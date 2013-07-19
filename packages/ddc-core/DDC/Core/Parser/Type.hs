@@ -156,7 +156,14 @@ pTypeAtom c
 
                  , do   pTok KArrowDash
                         pTok KRoundKet
-                        return (TCon $ TyConSpec TcConFunEC)
+
+                        -- Decide what type constructor to use for the (->) token.
+                        -- Only use the function constructor with latent effects
+                        -- and closures if the language fragment supports both.
+                        if (  contextFunctionalEffects  c 
+                           && contextFunctionalClosures c)
+                         then return (TCon $ TyConSpec TcConFunEC)
+                         else return (TCon $ TyConSpec TcConFun)
 
                  , do   t       <- pTypeSum c
                         pTok KRoundKet
