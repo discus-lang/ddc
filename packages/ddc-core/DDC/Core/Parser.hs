@@ -1,6 +1,8 @@
 -- | Core language parser.
 module DDC.Core.Parser
         ( Parser
+        , Context       (..)
+        , contextOfProfile
 
         -- * Modules
         , pModule

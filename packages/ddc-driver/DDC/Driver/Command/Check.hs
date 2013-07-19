@@ -95,7 +95,9 @@ cmdUniverse3 language source str
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok srcName pType toks of
+         = case BP.runTokenParser describeTok srcName 
+                        (pType (contextOfProfile profile))
+                        toks of
             Left err    -> outDocLn $ ppr err
             Right t     -> goUniverse3 (spreadT kenv t)
 
@@ -135,8 +137,8 @@ cmdTypeEquiv language source ss
         
         goParse toks
          = case BP.runTokenParser describeTok (nameOfSource source)
-                        (do t1 <- pTypeAtom
-                            t2 <- pTypeAtom
+                        (do t1 <- pTypeAtom (contextOfProfile profile)
+                            t2 <- pTypeAtom (contextOfProfile profile)
                             return (t1, t2))
                         toks
             of Left err -> outDocLn $ text "parse error " <> ppr err

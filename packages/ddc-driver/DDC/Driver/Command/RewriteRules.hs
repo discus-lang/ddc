@@ -17,7 +17,8 @@ import System.Directory
 import System.IO
 import qualified DDC.Base.Parser        as BP
 import qualified DDC.Core.Check         as C
-import qualified DDC.Type.Env                     as Env
+import qualified DDC.Core.Parser        as C
+import qualified DDC.Type.Env           as Env
 
 
 -- Read rewrite rules ---------------------------------------------------------
@@ -54,7 +55,8 @@ cmdReadRules_parse filePath frag modu source src
 
 
 parse fragment modu source str
- = case BP.runTokenParser describeTok source' pRuleMany
+ = case BP.runTokenParser describeTok source' 
+        (pRuleMany (C.contextOfProfile (fragmentProfile fragment)))
           (fragmentLexExp fragment source' 0 str) of
                 Left err -> Left $ renderIndent $ ppr err
                 Right rules ->

@@ -125,7 +125,9 @@ loadModuleFromTokens profile sourceName toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName C.pModule toks of
+         = case BP.runTokenParser describeTok sourceName 
+                        (C.pModule (C.contextOfProfile profile))
+                        toks of
                 Left err  -> Left (ErrorParser err)
                 Right mm  -> goCheckType (spreadX kenv tenv mm)
 
@@ -166,7 +168,9 @@ loadExp profile modules sourceName toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName C.pExp toks of
+         = case BP.runTokenParser describeTok sourceName 
+                        (C.pExp (C.contextOfProfile profile))
+                        toks of
                 Left err  -> Left (ErrorParser err)
                 Right t   -> goCheckType (spreadX kenv tenv t)
 
@@ -199,7 +203,9 @@ loadType profile sourceName toks'
  where  
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName C.pType toks of
+         = case BP.runTokenParser describeTok sourceName 
+                        (C.pType (C.contextOfProfile profile))
+                        toks of
                 Left err  -> Left (ErrorParser err)
                 Right t   -> goCheckType (spreadT (profilePrimKinds profile) t)
 
@@ -231,7 +237,9 @@ loadWitness profile sourceName toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName C.pWitness toks of
+         = case BP.runTokenParser describeTok sourceName 
+                (C.pWitness (C.contextOfProfile profile)) 
+                toks of
                 Left err  -> Left (ErrorParser err)
                 Right t   -> goCheckType (spreadX kenv tenv t)
 

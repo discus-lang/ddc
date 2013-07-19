@@ -13,28 +13,36 @@ import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import Control.Monad 
 
+
 -- | Parse a witness expression.
-pWitness :: Ord n  => Parser n (Witness SourcePos n)
-pWitness = pWitnessJoin
+pWitness 
+        :: Ord n  
+        => Context -> Parser n (Witness SourcePos n)
+pWitness c = pWitnessJoin c
 
 
 -- | Parse a witness join.
-pWitnessJoin :: Ord n => Parser n (Witness SourcePos n)
 pWitnessJoin 
+        :: Ord n 
+        => Context -> Parser n (Witness SourcePos n)
+pWitnessJoin c
    -- WITNESS  or  WITNESS & WITNESS
- = do   w1      <- pWitnessApp
+ = do   w1      <- pWitnessApp c
         P.choice 
          [ do   sp      <- pTokSP KAmpersand
-                w2      <- pWitnessJoin
+                w2      <- pWitnessJoin c
                 return  (WJoin sp w1 w2)
 
          , do   return w1 ]
 
 
 -- | Parse a witness application.
-pWitnessApp :: Ord n => Parser n (Witness SourcePos n)
 pWitnessApp 
-  = do  (x:xs)  <- P.many1 pWitnessArgSP
+        :: Ord n 
+        => Context -> Parser n (Witness SourcePos n)
+
+pWitnessApp c
+  = do  (x:xs)  <- P.many1 (pWitnessArgSP c)
         let x'  = fst x
         let sp  = snd x
         let xs' = map fst xs
@@ -44,33 +52,43 @@ pWitnessApp
 
 
 -- | Parse a witness argument.
-pWitnessArgSP :: Ord n => Parser n (Witness SourcePos n, SourcePos)
 pWitnessArgSP 
+        :: Ord n 
+        => Context -> Parser n (Witness SourcePos n, SourcePos)
+
+pWitnessArgSP c
  = P.choice
  [ -- [TYPE]
    do   sp      <- pTokSP KSquareBra
-        t       <- pType
+        t       <- pType c
         pTok KSquareKet
         return  (WType sp t, sp)
 
    -- WITNESS
- , do   pWitnessAtomSP ]
+ , do   pWitnessAtomSP c ]
 
 
 
 -- | Parse a variable, constructor or parenthesised witness.
-pWitnessAtom   :: Ord n => Parser n (Witness SourcePos n)
-pWitnessAtom    = liftM fst pWitnessAtomSP
+pWitnessAtom   
+        :: Ord n 
+        => Context -> Parser n (Witness SourcePos n)
+
+pWitnessAtom c   
+        = liftM fst (pWitnessAtomSP c)
 
 
 -- | Parse a variable, constructor or parenthesised witness,
 --   also returning source position.
-pWitnessAtomSP :: Ord n => Parser n (Witness SourcePos n, SourcePos)
 pWitnessAtomSP 
+        :: Ord n 
+        => Context -> Parser n (Witness SourcePos n, SourcePos)
+
+pWitnessAtomSP c
  = P.choice
    -- (WITNESS)
  [ do   sp      <- pTokSP KRoundBra
-        w       <- pWitness
+        w       <- pWitness c
         pTok KRoundKet
         return  (w, sp)
 

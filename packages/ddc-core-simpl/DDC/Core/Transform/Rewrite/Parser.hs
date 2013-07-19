@@ -19,13 +19,14 @@ import qualified DDC.Core.Transform.Rewrite.Rule as R
 	x
 -}
 -- | Parse a rewrite rule.
-pRule	:: Ord n => Parser n (R.RewriteRule P.SourcePos n)
-pRule
- = do	bs	 <- pRuleBinders
-	(cs,lhs) <- pRuleCsLhs
-	hole	 <- pRuleHole
+pRule	:: Ord n 
+        => Context -> Parser n (R.RewriteRule P.SourcePos n)
+pRule c
+ = do	bs	 <- pRuleBinders c
+	(cs,lhs) <- pRuleCsLhs c
+	hole	 <- pRuleHole c
 	pTok KEquals
-	rhs	 <- pExp
+	rhs	 <- pExp c
 
 	return $ R.mkRewriteRule bs cs lhs hole rhs
 
@@ -41,44 +42,53 @@ add_zero_l
         ;
 -}
 -- | Parse many rewrite rules.
-pRuleMany	:: Ord n => Parser n [(n,R.RewriteRule P.SourcePos n)]
-pRuleMany
+pRuleMany	
+        :: Ord n 
+        => Context -> Parser n [(n,R.RewriteRule P.SourcePos n)]
+pRuleMany c
  = P.many (do
         n <- pName
-        r <- pRule
+        r <- pRule c
         pTok KSemiColon
         return (n,r))
 
 
-pRuleBinders :: Ord n => Parser n [(R.BindMode,Bind n)]
-pRuleBinders
+pRuleBinders 
+        :: Ord n 
+        => Context -> Parser n [(R.BindMode,Bind n)]
+
+pRuleBinders c
  = P.choice
- [ do	bs <- P.many1 pBinders
+ [ do	bs <- P.many1 (pBinders c)
 	pTok KDot
 	return $ concat bs
  , return []
  ]
 
 
-pRuleCsLhs :: Ord n => Parser n ([Type n], Exp P.SourcePos n)
-pRuleCsLhs
+pRuleCsLhs 
+        :: Ord n 
+        => Context -> Parser n ([Type n], Exp P.SourcePos n)
+pRuleCsLhs c
  = P.choice
  [ do	cs <- P.many1 $ P.try (do
-		c <- pTypeApp
+		cc <- pTypeApp c
 		pTok KArrowEquals
-		return c)
-	lhs <- pExp
+		return cc)
+	lhs <- pExp c
 	return (cs,lhs)
- , do	lhs <- pExp
+ , do	lhs <- pExp c
 	return ([],lhs)
  ]
 
 
-pRuleHole :: Ord n => Parser n (Maybe (Exp P.SourcePos n))
-pRuleHole
+pRuleHole 
+        :: Ord n 
+        => Context -> Parser n (Maybe (Exp P.SourcePos n))
+pRuleHole c
  = P.optionMaybe
  $ do	pTok KBraceBra
-	e <- pExp
+	e <- pExp c
 	pTok KBraceKet
 	return e
 
@@ -89,26 +99,29 @@ pRuleHole
 --       [BIND1 BIND2 .. BINDN : TYPE]
 --   or  (BIND : TYPE)
 --
-pBinders :: Ord n => Parser n [(R.BindMode, Bind n)]
-pBinders
+pBinders 
+        :: Ord n 
+        => Context -> Parser n [(R.BindMode, Bind n)]
+pBinders c
  = P.choice
- [ pBindersBetween R.BMSpec      (pTok KSquareBra) (pTok KSquareKet)
- , pBindersBetween (R.BMValue 0) (pTok KRoundBra)  (pTok KRoundKet)
+ [ pBindersBetween c R.BMSpec      (pTok KSquareBra) (pTok KSquareKet)
+ , pBindersBetween c (R.BMValue 0) (pTok KRoundBra)  (pTok KRoundKet)
  ]
 
 
 pBindersBetween 
         :: Ord n 
-        => R.BindMode 
+        => Context
+        -> R.BindMode 
         -> Parser n () 
         -> Parser n () 
         -> Parser n [(R.BindMode,Bind n)]
 
-pBindersBetween bm bra ket
+pBindersBetween c bm bra ket
  = do	bra
         bs      <- P.many1 pBinder
         pTok KColon
-        t       <- pType
+        t       <- pType c
         ket
         return $ map (mk t) bs
  where mk t b = (bm,T.makeBindFromBinder b t)

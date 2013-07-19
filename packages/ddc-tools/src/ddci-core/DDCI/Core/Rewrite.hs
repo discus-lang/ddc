@@ -15,6 +15,7 @@ import DDCI.Core.State
 import DDCI.Core.Output
 import Data.Char
 import qualified DDC.Core.Check         as C
+import qualified DDC.Core.Parser        as C
 import qualified DDC.Base.Parser        as BP
 
 import DDC.Core.Module
@@ -73,7 +74,8 @@ parseAdd
 
 parseAdd fragment modules str
  | (name, rest) <- parseFirstWord str
- = case BP.runTokenParser describeTok "<interactive>" pRule
+ = case BP.runTokenParser describeTok "<interactive>" 
+        (pRule (C.contextOfProfile (fragmentProfile fragment)))
           (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err
                 Right rule ->

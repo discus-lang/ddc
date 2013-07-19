@@ -19,20 +19,25 @@ import qualified DDC.Type.Sum           as TS
 
 
 -- | Parse a type.
-pType   :: Ord n => Parser n (Type n)
-pType   = pTypeSum
+pType   :: Ord n 
+        => Context -> Parser n (Type n)
+
+pType c  
+ =      pTypeSum c
  <?> "a type"
 
 
 --  | Parse a type sum.
-pTypeSum :: Ord n => Parser n (Type n)
 pTypeSum 
- = do   t1      <- pTypeForall
+        :: Ord n 
+        => Context -> Parser n (Type n)
+pTypeSum c
+ = do   t1      <- pTypeForall c
         P.choice 
          [ -- Type sums.
            -- T2 + T3
            do   pTok KPlus
-                t2      <- pTypeSum
+                t2      <- pTypeSum c
                 return  $ TSum $ TS.fromList (tBot sComp) [t1, t2]
                 
          , do   return t1 ]
@@ -55,59 +60,65 @@ pBinder
         , do    pTok KUnderscore
                 return  $ RNone ]
  <?> "a binder"
-   
+
+
 -- | Parse a quantified type.
-pTypeForall :: Ord n => Parser n (Type n)
-pTypeForall
+pTypeForall 
+        :: Ord n 
+        => Context -> Parser n (Type n)
+pTypeForall c
  = P.choice
          [ -- Universal quantification.
            -- [v1 v1 ... vn : T1]. T2
            do   pTok KSquareBra
                 bs      <- P.many1 pBinder
                 pTok KColon
-                k       <- pTypeSum
+                k       <- pTypeSum c
                 pTok KSquareKet
                 pTok KDot
 
-                body    <- pTypeForall
+                body    <- pTypeForall c
 
                 return  $ foldr TForall body 
                         $ map (\b -> makeBindFromBinder b k) bs
 
            -- Body type
-         , do   pTypeFun]
+         , do   pTypeFun c]
  <?> "a type"
 
 
 -- | Parse a function type.
-pTypeFun :: Ord n => Parser n (Type n)
-pTypeFun
- = do   t1      <- pTypeApp
+pTypeFun 
+        :: Ord n 
+        => Context -> Parser n (Type n)
+
+pTypeFun c
+ = do   t1      <- pTypeApp c
         P.choice 
          [ -- T1 ~> T2
            do   pTok KArrowTilde
-                t2      <- pTypeFun
+                t2      <- pTypeFun c
                 return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
 
            -- T1 => T2
          , do   pTok KArrowEquals
-                t2      <- pTypeFun
+                t2      <- pTypeFun c
                 return  $ TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
 
            -- T1 -> T2
          , do   pTok KArrowDash
-                t2      <- pTypeFun
+                t2      <- pTypeFun c
                 return  $ t1 `tFunPE` t2
 
            -- T1 -(TSUM | TSUM)> t2
          , do   pTok KDash
                 pTok KRoundBra
-                eff     <- pTypeSum
+                eff     <- pTypeSum c
                 pTok KBar
-                clo     <- pTypeSum
+                clo     <- pTypeSum c
                 pTok KRoundKet
                 pTok KAngleKet
-                t2      <- pTypeFun
+                t2      <- pTypeFun c
                 return  $ tFunEC t1 eff clo t2
 
 
@@ -117,16 +128,20 @@ pTypeFun
 
 
 -- | Parse a type application.
-pTypeApp :: Ord n => Parser n (Type n)
-pTypeApp  
- = do   (t:ts)  <- P.many1 pTypeAtom
+pTypeApp 
+        :: Ord n 
+        => Context -> Parser n (Type n)
+pTypeApp c
+ = do   (t:ts)  <- P.many1 (pTypeAtom c)
         return  $  foldl TApp t ts
  <?> "an atomic type or type application"
 
 
 -- | Parse a variable, constructor or parenthesised type.
-pTypeAtom :: Ord n => Parser n (Type n)
-pTypeAtom  
+pTypeAtom 
+        :: Ord n 
+        => Context -> Parser n (Type n)
+pTypeAtom c
  = P.choice
         -- (~>) and (=>) and (->) and (TYPE2)
         [ do    pTok KRoundBra
@@ -143,7 +158,7 @@ pTypeAtom
                         pTok KRoundKet
                         return (TCon $ TyConSpec TcConFunEC)
 
-                 , do   t       <- pTypeSum
+                 , do   t       <- pTypeSum c
                         pTok KRoundKet
                         return t 
                  ]
@@ -192,12 +207,14 @@ pTcCon  =   P.pTokMaybe f
  where f (KA (KTcConBuiltin c)) = Just c
        f _                      = Nothing 
 
+
 -- | Parse a builtin `TwCon`
 pTwCon :: Parser n TwCon
 pTwCon  =   P.pTokMaybe f
         <?> "a witness constructor"
  where f (KA (KTwConBuiltin c)) = Just c
        f _                      = Nothing
+
 
 -- | Parse a user `TcCon`
 pTyConNamed :: Parser n (TyCon n)

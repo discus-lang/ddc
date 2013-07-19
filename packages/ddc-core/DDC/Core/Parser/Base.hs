@@ -1,6 +1,8 @@
 
 module DDC.Core.Parser.Base
         ( Parser
+        , Context (..)
+        , contextOfProfile
         , pModuleName
         , pQualName
         , pName
@@ -16,6 +18,7 @@ import DDC.Base.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
+import DDC.Core.Fragment.Profile
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
 
@@ -23,6 +26,34 @@ import qualified DDC.Base.Parser        as P
 -- | A parser of core language tokens.
 type Parser n a
         = P.Parser (Tok n) a
+
+
+-- | Configuration and information from the context. 
+--   Used for context sensitive parsing.
+data Context
+        = Context
+        { contextTrackedEffects         :: Bool 
+        , contextTrackedClosures        :: Bool
+        , contextFunctionalEffects      :: Bool
+        , contextFunctionalClosures     :: Bool }
+
+
+-- | Slurp an initital Context from a Profile
+contextOfProfile :: Profile n -> Context
+contextOfProfile profile
+        = Context
+        { contextTrackedEffects         = featuresTrackedEffects
+                                        $ profileFeatures profile
+
+        , contextTrackedClosures        = featuresTrackedClosures
+                                        $ profileFeatures profile
+
+        , contextFunctionalEffects      = featuresFunctionalEffects
+                                        $ profileFeatures profile
+
+        , contextFunctionalClosures     = featuresFunctionalClosures
+                                        $ profileFeatures profile
+        }
 
 
 -- | Parse a module name.                               
