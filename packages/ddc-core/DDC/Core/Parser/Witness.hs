@@ -5,6 +5,7 @@ module DDC.Core.Parser.Witness
         , pWitnessAtom) 
 where
 import DDC.Core.Parser.Type
+import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp

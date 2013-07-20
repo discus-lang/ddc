@@ -38,6 +38,7 @@ module DDC.Core.Parser
 
 where
 import DDC.Core.Parser.Base
+import DDC.Core.Parser.Context
 import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Exp

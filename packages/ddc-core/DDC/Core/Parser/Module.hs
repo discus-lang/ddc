@@ -6,6 +6,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Exp
+import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Compounds
