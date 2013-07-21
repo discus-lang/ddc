@@ -12,7 +12,6 @@ import DDC.Core.Parser.Base             (Parser)
 import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
--- import qualified DDC.Type.Predicates    as T
 
 
 -- | Specification of a function parameter.
@@ -22,6 +21,27 @@ data ParamSpec n
         = ParamType    (Bind n)
         | ParamWitness (Bind n)
         | ParamValue   (Bind n) (Type n) (Type n)
+
+
+-- | Build the expression of a function from specifications of its parameters,
+--   and the expression for the body.
+expOfParams 
+        :: a
+        -> [ParamSpec n]        -- ^ Spec of parameters.
+        -> Exp a n              -- ^ Body of function.
+        -> Exp a n              -- ^ Expression of whole function.
+
+expOfParams _ [] xBody            = xBody
+expOfParams a (p:ps) xBody
+ = case p of
+        ParamType b     
+         -> XLAM a b $ expOfParams a ps xBody
+        
+        ParamWitness b
+         -> XLam a b $ expOfParams a ps xBody
+
+        ParamValue b _ _
+         -> XLam a b $ expOfParams a ps xBody
 
 
 -- | Build the type of a function from specifications of its parameters,
@@ -54,28 +74,6 @@ funTypeOfParams c (p:ps) tBody
          | otherwise
          -> T.tFun (T.typeOfBind b)
                 $ funTypeOfParams c ps tBody
-
-
-
--- | Build the expression of a function from specifications of its parameters,
---   and the expression for the body.
-expOfParams 
-        :: a
-        -> [ParamSpec n]        -- ^ Spec of parameters.
-        -> Exp a n              -- ^ Body of function.
-        -> Exp a n              -- ^ Expression of whole function.
-
-expOfParams _ [] xBody            = xBody
-expOfParams a (p:ps) xBody
- = case p of
-        ParamType b     
-         -> XLAM a b $ expOfParams a ps xBody
-        
-        ParamWitness b
-         -> XLam a b $ expOfParams a ps xBody
-
-        ParamValue b _ _
-         -> XLam a b $ expOfParams a ps xBody
 
 
 -- | Parse a parameter specification.
