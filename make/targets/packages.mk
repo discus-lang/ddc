@@ -12,6 +12,7 @@ PACKAGES = \
         ddc-source-tetra \
 	ddc-build \
 	ddc-driver \
+        ddc-interface \
 	ddc-code \
 
 

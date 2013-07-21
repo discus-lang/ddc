@@ -14,6 +14,7 @@ ddci-core_packages = \
 	packages/ddc-build/DDC \
 	packages/ddc-code/DDC \
 	packages/ddc-driver/DDC \
+        packages/ddc-interface/DDC \
 	packages/ddc-tools/src/ddci-core/DDCI 
 
 # -- packages without /DDC etc at end, so we can load them in ghci

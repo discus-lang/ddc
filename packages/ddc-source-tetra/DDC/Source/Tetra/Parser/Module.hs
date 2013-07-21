@@ -22,7 +22,7 @@ pModule :: (Ord n, Pretty n)
         => Context
         -> Parser n (Module P.SourcePos n)
 pModule c
- = do   _sp      <- pTokSP KModule
+ = do   _sp     <- pTokSP KModule
         name    <- pModuleName
 
         -- -- exports { SIG;+ }

@@ -1,0 +1,37 @@
+Name:           ddc-interface
+Version:        0.3.2.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Synopsis:       Disciplined Disciple Compiler user interface support.
+Description:    Disciplined Disciple Compiler user interface support.
+
+Library
+  Build-Depends: 
+        base            == 4.6.*,
+        containers      == 0.5.*,
+        ddc-base        == 0.3.2.*
+
+  Exposed-modules:
+        DDC.Interface.Input
+
+  GHC-options:
+        -Werror
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        NoMonomorphismRestriction
+        KindSignatures
+        ScopedTypeVariables
+        PatternGuards
+        ParallelListComp
+        
