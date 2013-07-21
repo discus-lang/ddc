@@ -97,30 +97,35 @@ parseArgs args config
         = parseArgs rest
         $ config  { configRuntimeHeapSize = read bytes }
 
-        -- Checking -----------------------------
-        | "-check" : file : rest    <- args
+        -- Parsing ------------------------------
+        | "-parse" : file : rest        <- args
         = parseArgs rest
-        $ config { configMode  = ModeCheck file }
+        $ config { configMode   = ModeParse file }
+
+        -- Checking -----------------------------
+        | "-check"  : file : rest       <- args
+        = parseArgs rest
+        $ config { configMode   = ModeCheck file }
 
         -- Transformation -----------------------
-        | "-load"   : file : rest <- args
+        | "-load"   : file : rest       <- args
         = parseArgs rest
         $ setMode config $ ModeLoad file
 
-        | "-trans" : trans : rest   <- args
+        | "-trans" : trans : rest       <- args
         = parseArgs rest
         $ config { configTrans = Just trans }
 
-        | "-with"  : file  : rest   <- args
+        | "-with"  : file  : rest       <- args
         = parseArgs rest
         $ config { configWith  = configWith config ++ [file] }
 
         -- Flow ---------------------------------
-        | "-flow-prep" : file : rest <- args
+        | "-flow-prep" : file : rest    <- args
         = parseArgs rest
         $ setMode config $ ModeFlowPrep file
 
-        | "-flow-lower" : file : rest <- args
+        | "-flow-lower" : file : rest   <- args
         = parseArgs rest
         $ setMode config $ ModeFlowLower file
 
@@ -128,11 +133,11 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeFlowConcretize file
 
-        | "-flow-thread" : file : rest <- args
+        | "-flow-thread" : file : rest  <- args
         = parseArgs rest
         $ setMode config $ ModeFlowThread file
 
-        | "-flow-wind" : file : rest <- args
+        | "-flow-wind" : file : rest    <- args
         = parseArgs rest
         $ setMode config $ ModeFlowWind file
 
@@ -218,6 +223,7 @@ flagOfMode mode
         ModeNone{}                      -> Nothing
         ModeVersion{}                   -> Just "-version"
         ModeHelp{}                      -> Just "-help"
+        ModeParse{}                     -> Just "-parse"
         ModeCheck{}                     -> Just "-check"
         ModeLoad{}                      -> Just "-load"
         ModeCompile{}                   -> Just "-compile"

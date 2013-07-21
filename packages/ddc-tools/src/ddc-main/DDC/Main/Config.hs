@@ -27,6 +27,9 @@ data Mode
         -- | Display the help page.
         | ModeHelp
 
+        -- | Parse a module.
+        | ModeParse     FilePath
+
         -- | Parse and type-check a module.
         | ModeCheck     FilePath
 

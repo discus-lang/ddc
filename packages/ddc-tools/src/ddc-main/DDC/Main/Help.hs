@@ -31,10 +31,10 @@ help    = unlines
         , "     -version           Display the version string."
         , ""
         , "Compilation:"
-        , "     -make     FILE     Compile a module into an executable file."
-        , " -c, -compile  FILE     Compile a module into an object file."
+        , "     -make       FILE   Compile a module into an executable file."
+        , " -c, -compile    FILE   Compile a module into an object file."
         , ""
-        , " -o, -output   FILE     Redirect output to this file."
+        , " -o, -output     FILE   Redirect output to this file."
         , "     -output-dir DIR    Redirect output to this directory."
         , ""
         , "     -fvia-llvm         Compile via the LLVM backend  (default)"
@@ -49,10 +49,11 @@ help    = unlines
         , " -O, -O1                Do standard optimisations."
         , ""
         , "Runtime for compiled program:"
-        , "     -run-heap BYTES    Size of fixed heap            (65536)"
+        , "     -run-heap   BYTES  Size of fixed heap            (65536)"
         , ""
-        , "Checking:"
-        , "     -check    FILE     Parse and type check a core module."
+        , "Parsing and Checking:"
+        , "     -parse      FILE   Parse a module."
+        , "     -check      FILE   Parse and type check a module."
         , ""
         , "Conversion:"
         , "     -to-salt    FILE   Convert a module to Disciple Core Salt."
@@ -99,4 +100,3 @@ help    = unlines
         , "     Elaborate          Introduce default witnesses for unconstrained regions."
         , "     Inline MODULE[NAME..] Perform inlining. Use '-with' to add source modules." ]
 
-        

@@ -7,8 +7,9 @@ import DDC.Main.Config
 import DDC.Main.Help
 import DDC.Main.Args
 import DDC.Main.OptLevels
-import DDC.Driver.Command.Load
+import DDC.Driver.Command.Parse
 import DDC.Driver.Command.Check
+import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
 import DDC.Driver.Command.Ast
@@ -68,6 +69,12 @@ run config
         ModeHelp
          ->     putStrLn help
 
+        -- Parser a module.
+        ModeParse filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
+                runError $ cmdParseModule dconfig (SourceFile filePath) str
+
         -- Parse and type check a module.
         ModeCheck filePath
          -> do  language        <- languageFromFilePath filePath
@@ -83,7 +90,6 @@ run config
                           Right _
                            -> return ()
 
-
         -- Parse, type check and transform a module.
         ModeLoad filePath
          ->     runError $ cmdLoadFromFile 
@@ -96,12 +102,10 @@ run config
          -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdCompile dconfig filePath
 
-
         -- Compile a module into an executable.
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdMake    dconfig filePath
-
 
         -- Pretty print the AST of a module.
         ModeAST filePath
@@ -119,14 +123,12 @@ run config
                 str             <- readFile filePath
                 runError $ cmdToSalt dconfig language (SourceFile filePath) str
 
-
         -- Convert a module to C
         ModeToC filePath
          -> do  language        <- languageFromFilePath filePath
                 dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdToC dconfig language (SourceFile filePath) str
-
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
