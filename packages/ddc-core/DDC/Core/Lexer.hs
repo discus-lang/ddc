@@ -159,8 +159,11 @@ lexString sourceName lineStart str
         
         -- Bottoms
         name
-         | Just w'      <- stripPrefix "Pure"    name -> tokA KBotEffect   : lexMore 2 w'
-         | Just w'      <- stripPrefix "Empty"   name -> tokA KBotClosure  : lexMore 2 w'
+         |  Just w'     <- stripPrefix "Pure"  name 
+         -> tokA KBotEffect   : lexMore 2 w'
+         
+         |  Just w'     <- stripPrefix "Empty" name 
+         -> tokA KBotClosure  : lexMore 2 w'
 
         -- Named Constructors
         c : cs
@@ -199,13 +202,13 @@ lexString sourceName lineStart str
                                         '#' : rest'     -> (body ++ "#", rest')
                                         _               -> (body, rest)
          -> let readNamedVar s
-                 | Just t <- lookup s keywords
+                 | Just t  <- lookup s keywords
                  = tok t                   : lexMore (length s) rest'
 
-                 | Just wc      <- readWbConBuiltin s
+                 | Just wc <- readWbConBuiltin s
                  = tokA (KWbConBuiltin wc) : lexMore (length s) rest'
          
-                 | Just v       <- readVar s
+                 | Just v  <- readVar s
                  = tokN (KVar v)           : lexMore (length s) rest'
 
                  | otherwise
