@@ -90,6 +90,7 @@ packages/ddc-source-tetra/%.o : packages/ddc-source-tetra/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base \
 		      -ipackages/ddc-core \
+                      -ipackages/ddc-core-blue \
                       -ipackages/ddc-source-tetra
 		       
 packages/ddc-build/%.o : packages/ddc-build/%.hs
