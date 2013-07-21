@@ -160,13 +160,6 @@ data TokAtom
         | KBigLambda
 
         -- symbolic constructors
-        | KSortComp
-        | KSortProp
-        | KKindValue
-        | KKindRegion
-        | KKindEffect
-        | KKindClosure
-        | KKindWitness
         | KArrowTilde
         | KArrowDash
         | KArrowDashLeft
@@ -208,8 +201,11 @@ data TokAtom
         | KIndex Int
 
         -- builtin names ------------
-        --   the unit data constructor.
-        | KDaConUnit
+        --   sort constructors.
+        | KSoConBuiltin SoCon
+
+        --   kind constructors.
+        | KKiConBuiltin KiCon
 
         --   witness type constructors.
         | KTwConBuiltin TwCon
@@ -219,6 +215,9 @@ data TokAtom
 
         --   other builtin spec constructors.
         | KTcConBuiltin TcCon
+
+        --   the unit data constructor.
+        | KDaConUnit
         deriving (Eq, Show)
 
 
@@ -264,13 +263,6 @@ describeTokAtom' ta
         KBigLambda              -> (Symbol, "/\\")
 
         -- symbolic constructors
-        KSortComp               -> (Constructor, "**")
-        KSortProp               -> (Constructor, "@@")
-        KKindValue              -> (Constructor, "*")
-        KKindRegion             -> (Constructor, "%")
-        KKindEffect             -> (Constructor, "!")
-        KKindClosure            -> (Constructor, "$")
-        KKindWitness            -> (Constructor, "@")
         KArrowTilde             -> (Constructor, "~>")
         KArrowDash              -> (Constructor, "->")
         KArrowDashLeft          -> (Constructor, "<-")
@@ -312,11 +304,13 @@ describeTokAtom' ta
         KIndex i                -> (Index,   "^" ++ show i)
 
         -- builtin names
-        KDaConUnit              -> (Constructor, "()")
+        KSoConBuiltin so        -> (Constructor, renderPlain $ ppr so)
+        KKiConBuiltin ki        -> (Constructor, renderPlain $ ppr ki)
         KTwConBuiltin tw        -> (Constructor, renderPlain $ ppr tw)
         KWbConBuiltin wi        -> (Constructor, renderPlain $ ppr wi)
         KTcConBuiltin tc        -> (Constructor, renderPlain $ ppr tc)
-
+        KDaConUnit              -> (Constructor, "()")
+        
 
 -- TokNamed -------------------------------------------------------------------
 -- | A token with a user-defined name.

@@ -4,6 +4,8 @@ module DDC.Core.Lexer.Names
           keywords
 
           -- * Builtin constructors
+        , readSoConBuiltin
+        , readKiConBuiltin
         , readTwConBuiltin
         , readTcConBuiltin
         , readWbConBuiltin
@@ -61,7 +63,28 @@ keywords
         , ("else",       KA KElse) ]
 
 
--- | Read a named `TwCon`. 
+-- | Read a named sort constructor.
+readSoConBuiltin :: String -> Maybe SoCon
+readSoConBuiltin ss
+ = case ss of
+        "Prop"          -> Just SoConProp
+        "Comp"          -> Just SoConComp
+        _               -> Nothing
+
+
+-- | Read a named kind constructor.
+readKiConBuiltin :: String -> Maybe KiCon
+readKiConBuiltin ss
+ = case ss of
+        "Witness"       -> Just KiConWitness
+        "Data"          -> Just KiConData
+        "Region"        -> Just KiConRegion
+        "Effect"        -> Just KiConEffect
+        "Closure"       -> Just KiConClosure
+        _               -> Nothing
+
+
+-- | Read a named witness type constructor.
 readTwConBuiltin :: String -> Maybe TwCon
 readTwConBuiltin ss
  = case ss of
@@ -89,7 +112,7 @@ readTwConWithArity ss
  | otherwise = Nothing
  
  
--- | Read a builtin `TcCon` with a non-symbolic name, 
+-- | Read a builtin type constructor with a non-symbolic name.
 --   ie not '->'.
 readTcConBuiltin :: String -> Maybe TcCon
 readTcConBuiltin ss
@@ -108,7 +131,7 @@ readTcConBuiltin ss
         _               -> Nothing
 
 
--- | Read a `WbCon`.
+-- | Read a witness constructor.
 readWbConBuiltin :: String -> Maybe WbCon
 readWbConBuiltin ss
  = case ss of

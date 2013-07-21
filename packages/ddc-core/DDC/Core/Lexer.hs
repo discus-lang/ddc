@@ -87,12 +87,12 @@ lexString sourceName lineStart str
         c : cs
          | isDigit c
          , (body, rest)         <- span isLitBody cs
-         -> tokN (KLit (c:body))                 : lexMore (length (c:body)) rest
+         -> tokN (KLit (c:body))        : lexMore (length (c:body)) rest
 
         '-' : c : cs
          | isDigit c
          , (body, rest)         <- span isLitBody cs
-         -> tokN (KLit ('-':c:body))                 : lexMore (length (c:body)) rest
+         -> tokN (KLit ('-':c:body))    : lexMore (length (c:body)) rest
 
         -- Meta tokens
         -- ISSUE #302: Don't try to lex body of a block comment.
@@ -107,7 +107,6 @@ lexString sourceName lineStart str
             in   tokM KCommentLineStart  : lexMore 2 w''
 
         '\n' : w'        -> tokM KNewLine           : lexWord (line + 1) 1 w'
-
 
         -- The unit data constructor
         '(' : ')' : w'   -> tokA KDaConUnit      : lexMore 2 w'
@@ -163,19 +162,6 @@ lexString sourceName lineStart str
          | Just w'      <- stripPrefix "Pure"    name -> tokA KBotEffect   : lexMore 2 w'
          | Just w'      <- stripPrefix "Empty"   name -> tokA KBotClosure  : lexMore 2 w'
 
-        -- Baked in Sort Constructors
-        name 
-         | Just w'      <- stripPrefix "Comp"    name -> tokA KSortComp    : lexMore 4 w'
-         | Just w'      <- stripPrefix "Prop"    name -> tokA KSortProp    : lexMore 4 w'
-
-        -- Baked in Kind Constructors
-        name
-         | Just w'      <- stripPrefix "Data"    name -> tokA KKindValue   : lexMore 4 w'
-         | Just w'      <- stripPrefix "Region"  name -> tokA KKindRegion  : lexMore 6 w'
-         | Just w'      <- stripPrefix "Effect"  name -> tokA KKindEffect  : lexMore 6 w'
-         | Just w'      <- stripPrefix "Closure" name -> tokA KKindClosure : lexMore 7 w'
-         | Just w'      <- stripPrefix "Witness" name -> tokA KKindWitness : lexMore 7 w'
-
         -- Named Constructors
         c : cs
          | isConStart c
@@ -185,6 +171,12 @@ lexString sourceName lineStart str
                                         '#'  : rest'    -> (body ++ "#", rest')
                                         _               -> (body, rest)
          -> let readNamedCon s
+                 | Just socon   <- readSoConBuiltin s
+                 = tokA (KSoConBuiltin socon)    : lexMore (length s) rest'
+
+                 | Just kicon   <- readKiConBuiltin s
+                 = tokA (KKiConBuiltin kicon)    : lexMore (length s) rest'
+
                  | Just twcon   <- readTwConBuiltin s
                  = tokA (KTwConBuiltin twcon)    : lexMore (length s) rest'
                  

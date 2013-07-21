@@ -149,10 +149,10 @@ data TyCon n
 -- | Sort constructor.
 data SoCon
         -- | Sort of witness kinds.
-        = SoConProp                -- '@@'
+        = SoConProp                -- 'Prop'
 
         -- | Sort of computation kinds.
-        | SoConComp                -- '**'
+        | SoConComp                -- 'Comp'
         deriving (Eq, Show)
 
 
@@ -164,7 +164,7 @@ data KiCon
 
         -- Witness kinds ------------------------
         -- | Kind of witnesses.
-        | KiConWitness          -- '@ :: @@'
+        | KiConWitness          -- 'Witness :: Prop'
 
         -- Computation kinds ---------------------
         -- | Kind of data values.
@@ -184,46 +184,46 @@ data KiCon
 -- | Witness type constructors.
 data TwCon
         -- Witness implication.
-        = TwConImpl             -- :: '(=>) :: @ ~> *'
+        = TwConImpl             -- :: '(=>) :: Witness ~> Data'
 
         -- | Purity of some effect.
-        | TwConPure             -- :: ! ~> @
+        | TwConPure             -- :: Effect  ~> Witness
 
         -- | Emptiness of some closure.
-        | TwConEmpty            -- :: $ ~> @
+        | TwConEmpty            -- :: Closure ~> Witness
 
         -- | Globalness of some region.
-        | TwConGlobal           -- :: % ~> @
+        | TwConGlobal           -- :: Region  ~> Witness
 
         -- | Globalness of material regions in some type.
-        | TwConDeepGlobal       -- :: * ~> @
+        | TwConDeepGlobal       -- :: Data    ~> Witness
         
         -- | Constancy of some region.
-        | TwConConst            -- :: % ~> @
+        | TwConConst            -- :: Region  ~> Witness
 
         -- | Constancy of material regions in some type
-        | TwConDeepConst        -- :: * ~> @
+        | TwConDeepConst        -- :: Data    ~> Witness
 
         -- | Mutability of some region.
-        | TwConMutable          -- :: % ~> @
+        | TwConMutable          -- :: Region  ~> Witness
 
         -- | Mutability of material regions in some type.
-        | TwConDeepMutable      -- :: * ~> @
+        | TwConDeepMutable      -- :: Data    ~> Witness
 
         -- | Distinctness of some n regions
-        | TwConDistinct Int     -- :: * ~> [%] ~> @
+        | TwConDistinct Int     -- :: Data    ~> [Region] ~> Witness
         
         -- | Laziness of some region.
-        | TwConLazy             -- :: % ~> @
+        | TwConLazy             -- :: Region  ~> Witness
 
         -- | Laziness of the primary region in some type.
-        | TwConHeadLazy         -- :: * ~> @
+        | TwConHeadLazy         -- :: Data    ~> Witness
 
         -- | Manifestness of some region (not lazy).
-        | TwConManifest         -- :: % ~> @
+        | TwConManifest         -- :: Region  ~> Witness
 
         -- | Non-interfering effects are disjoint. Used for rewrite rules.
-        | TwConDisjoint               -- :: ! ~> ! ~> @
+        | TwConDisjoint         -- :: Effect ~> Effect ~> Witness
         deriving (Eq, Show)
 
 
@@ -244,30 +244,30 @@ data TcCon
 
         -- Effect type constructors -------------
         -- | Read of some region.
-        | TcConRead             -- :: '% ~> !'
+        | TcConRead             -- :: 'Region ~> Effect'
 
         -- | Read the head region in a data type.
-        | TcConHeadRead         -- :: '* ~> !'
+        | TcConHeadRead         -- :: 'Data   ~> Effect'
 
         -- | Read of all material regions in a data type.
-        | TcConDeepRead         -- :: '* ~> !'
+        | TcConDeepRead         -- :: 'Data   ~> Effect'
         
         -- | Write of some region.
-        | TcConWrite            -- :: '% ~> !'
+        | TcConWrite            -- :: 'Region ~> Effect'
 
         -- | Write to all material regions in some data type.
-        | TcConDeepWrite        -- :: '* ~> !'
+        | TcConDeepWrite        -- :: 'Data   ~> Effect'
         
         -- | Allocation into some region.
-        | TcConAlloc            -- :: '% ~> !'
+        | TcConAlloc            -- :: 'Region ~> Effect'
 
         -- | Allocation into all material regions in some data type.
-        | TcConDeepAlloc        -- :: '* ~> !'
+        | TcConDeepAlloc        -- :: 'Data   ~> Effect'
         
         -- Closure type constructors ------------
         -- | Region is captured in a closure.
-        | TcConUse              -- :: '% ~> $'
+        | TcConUse              -- :: 'Region ~> Closure'
         
         -- | All material regions in a data type are captured in a closure.
-        | TcConDeepUse          -- :: '* ~> $'
+        | TcConDeepUse          -- :: 'Data   ~> Closure'
         deriving (Eq, Show)

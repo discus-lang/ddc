@@ -172,6 +172,12 @@ pTypeAtom c
                  ]
 
         -- Named type constructors
+        , do    so      <- pSoCon
+                return  $ TCon (TyConSort so)
+
+        , do    ki      <- pKiCon
+                return  $ TCon (TyConKind ki)
+
         , do    tc      <- pTcCon
                 return  $ TCon (TyConSpec tc)
 
@@ -180,15 +186,6 @@ pTypeAtom c
 
         , do    tc      <- pTyConNamed
                 return  $ TCon tc
-
-        -- Symbolic constructors.
-        , do    pTokAs KSortComp    (TCon $ TyConSort SoConComp)
-        , do    pTokAs KSortProp    (TCon $ TyConSort SoConProp) 
-        , do    pTokAs KKindValue   (TCon $ TyConKind KiConData)
-        , do    pTokAs KKindRegion  (TCon $ TyConKind KiConRegion) 
-        , do    pTokAs KKindEffect  (TCon $ TyConKind KiConEffect) 
-        , do    pTokAs KKindClosure (TCon $ TyConKind KiConClosure) 
-        , do    pTokAs KKindWitness (TCon $ TyConKind KiConWitness) 
             
         -- Bottoms.
         , do    pTokAs KBotEffect  (tBot kEffect)
@@ -208,7 +205,23 @@ pTypeAtom c
 
 
 -------------------------------------------------------------------------------
--- | Parse a builtin `TcCon`
+-- | Parse a builtin sort constructor.
+pSoCon :: Parser n SoCon
+pSoCon  =   P.pTokMaybe f
+        <?> "a sort constructor"
+ where f (KA (KSoConBuiltin c)) = Just c
+       f _                      = Nothing 
+
+
+-- | Parse a builtin kind constructor.
+pKiCon :: Parser n KiCon
+pKiCon  =   P.pTokMaybe f
+        <?> "a kind constructor"
+ where f (KA (KKiConBuiltin c)) = Just c
+       f _                      = Nothing 
+
+
+-- | Parse a builtin type constructor.
 pTcCon :: Parser n TcCon
 pTcCon  =   P.pTokMaybe f
         <?> "a type constructor"
@@ -216,7 +229,7 @@ pTcCon  =   P.pTokMaybe f
        f _                      = Nothing 
 
 
--- | Parse a builtin `TwCon`
+-- | Parse a builtin witness type constructor.
 pTwCon :: Parser n TwCon
 pTwCon  =   P.pTokMaybe f
         <?> "a witness constructor"
@@ -224,7 +237,7 @@ pTwCon  =   P.pTokMaybe f
        f _                      = Nothing
 
 
--- | Parse a user `TcCon`
+-- | Parse a user defined type constructor.
 pTyConNamed :: Parser n (TyCon n)
 pTyConNamed  
         =   P.pTokMaybe f
