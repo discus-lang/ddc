@@ -9,6 +9,7 @@ PACKAGES = \
 	ddc-core-llvm \
 	ddc-core-flow \
 	ddc-core-blue \
+        ddc-source-tetra \
 	ddc-build \
 	ddc-driver \
 	ddc-code \

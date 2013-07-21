@@ -10,6 +10,7 @@ ddc-check_packages = \
 	packages/ddc-core-llvm/DDC \
 	packages/ddc-core-flow/DDC \
 	packages/ddc-core-blue/DDC \
+        packages/ddc-source-tetra/DDC \
 	packages/ddc-build/DDC
 
 ddc-check_src_hs_all = \

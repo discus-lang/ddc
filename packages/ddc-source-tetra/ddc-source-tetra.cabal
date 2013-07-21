@@ -1,0 +1,44 @@
+Name:           ddc-core-tetra
+Version:        0.3.2.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Synopsis:       Disciplined Disciple Compiler source language.
+Description:    Disciplined Disciple Compiler source language.
+                
+Library
+  Build-Depends: 
+        base            == 4.6.*,
+        deepseq         == 1.3.*,
+        containers      == 0.5.*,
+        array           == 0.4.*,
+        transformers    == 0.3.*,
+        mtl             == 2.1.*,
+        ddc-base        == 0.3.2.*,
+        ddc-core        == 0.3.2.*
+
+  Exposed-modules:
+        DDC.Source.Tetra.Exp
+
+  Other-modules:
+        DDC.Source.Tetra.Exp.Base
+
+  GHC-options:
+        -Werror
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        KindSignatures
+        NoMonomorphismRestriction
+        ScopedTypeVariables
+        PatternGuards
+        

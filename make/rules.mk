@@ -85,6 +85,13 @@ packages/ddc-core-blue/%.o : packages/ddc-core-blue/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-blue
 
+packages/ddc-source-tetra/%.o : packages/ddc-source-tetra/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+                      -ipackages/ddc-source-tetra
+		       
 packages/ddc-build/%.o : packages/ddc-build/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \

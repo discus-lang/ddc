@@ -10,6 +10,7 @@ ddci-core_packages = \
 	packages/ddc-core-llvm/DDC \
 	packages/ddc-core-flow/DDC \
 	packages/ddc-core-blue/DDC \
+        packages/ddc-source-tetra/DDC \
 	packages/ddc-build/DDC \
 	packages/ddc-code/DDC \
 	packages/ddc-driver/DDC \

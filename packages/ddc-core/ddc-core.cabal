@@ -117,6 +117,7 @@ Library
         DDC.Core.Lexer.Offside
 
         DDC.Core.Parser.Base
+        DDC.Core.Parser.Context
         DDC.Core.Parser.Exp
         DDC.Core.Parser.Module
         DDC.Core.Parser.Param
