@@ -48,7 +48,7 @@ expOfParams a (p:ps) xBody
 --   and the type of the body.
 funTypeOfParams 
         :: Context
-        => [ParamSpec n]        -- ^ Spec of parameters.
+        -> [ParamSpec n]        -- ^ Spec of parameters.
         -> Type n               -- ^ Type of body.
         -> Type n               -- ^ Type of whole function.
 
