@@ -9,7 +9,27 @@ import Data.List
 import Data.Char
 
 
--- InputInterface -----------------------------------------------------------------
+-- InputState -----------------------------------------------------------------
+-- Interpreter input state
+data InputState command
+        = InputState
+        { 
+          -- Input mode.
+          inputMode        :: Input
+
+          -- Command that we're still receiving input for,
+          -- along with the line number it started on.
+        , inputCommand      :: Maybe (Maybe command, Int)
+
+
+          -- The current line number in the command stream.
+        , inputLineNumber   :: Int
+
+          -- Accumulation of current input buffer.
+        , inputAcc         :: String }
+
+
+-- InputInterface -------------------------------------------------------------
 -- | What interface is being used.
 data InputInterface
         -- | Read commands from unix command-line args.
@@ -23,26 +43,8 @@ data InputInterface
         deriving (Eq, Show)
 
 
-
--- InputState ----------------------------------------------------------------------
--- Interpreter input state
-data InputState command
-        = InputState
-        { -- Command that we're still receiving input for,
-          -- along with the line number it started on.
-          inputCommand      :: Maybe (Maybe command, Int)
-
-          -- Input mode.
-        , _inputMode        :: Input
-
-          -- The current line number in the command stream.
-        , inputLineNumber   :: Int
-
-          -- Accumulation of current input buffer.
-        , _inputAcc         :: String }
-
-
--- | How we're reading the input expression.
+-- Input ----------------------------------------------------------------------
+-- | How we're reading the current expression.
 data Input
         -- | Read input line-by-line, using a backslash at the end of the
         --   line to continue to the next.
@@ -54,6 +56,8 @@ data Input
         -- | Read input from a file specified on the prompt
         | InputFile     FilePath
         deriving (Eq, Show)
+
+
 
 
 -- | Read the input mode from the front of a string.

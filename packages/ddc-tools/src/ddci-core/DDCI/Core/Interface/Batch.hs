@@ -12,7 +12,15 @@ import Data.List
 runBatch :: FilePath -> String -> IO ()
 runBatch filePath str
  = do   let state       = initState (InputInterfaceBatch filePath)
-        let inputState  = InputState Nothing InputLine 1 []
+        
+        let inputState  
+                = InputState 
+                { inputMode             = InputLine
+                , inputCommand          = Nothing
+                , inputLineNumber       = 1
+                , inputAcc              = [] }
+
+
         loop state inputState (lines str)
  where 
         -- No more lines, we're done.

@@ -41,15 +41,21 @@ eatLine state inputState@(InputState mCommand inputMode lineNumber acc) chunk
           -> do state'  <- handleCmd state cmd source line
                 return  (state', inputState')         
 
+
+-- TODO: define nicer data type for Maybe result.
+-- TODO: shift Source into this package.
 inputLine 
         :: InputInterface
         -> (String -> Maybe (c, String))
         -> InputState c 
         -> String
-        -> IO (InputState c, Maybe (Source, Maybe c, String))
+        -> IO ( InputState c
+              , Maybe (Source, Maybe c, String))
+                        -- Just for complete command.
+                        --  .. then Maybe for the default command.
 
 inputLine interface readCmd inputState chunk
- | InputState mCommand inputMode lineNumber acc <- inputState
+ | InputState inputMode mCommand lineNumber acc <- inputState
  = do   
         -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
@@ -91,16 +97,19 @@ inputLine interface readCmd inputState chunk
           | not $ null rest
           , last rest == '\\'
           , Just initRest       <- takeInit rest
-          -> do return ( InputState (Just (cmd, lineStart)) input
-                                (lineNumber + 1)
-                                (acc ++ initRest ++ "\n")
-                       , Nothing)
+          -> return     ( inputState
+                                { inputCommand          =  (Just (cmd, lineStart))
+                                , inputLineNumber       = lineNumber + 1
+                                , inputAcc              = acc ++ initRest ++ "\n" }
+                        , Nothing)
 
           | otherwise
-          -> do return ( InputState Nothing InputLine
-                                (lineNumber + 1)
-                                []
-                       , Just (source, cmd, acc ++ rest))
+          -> return     ( inputState
+                                { inputMode             = InputLine
+                                , inputCommand          = Nothing
+                                , inputLineNumber       = lineNumber + 1
+                                , inputAcc              = [] }
+                        , Just (source, cmd, acc ++ rest))
 
 
          -- For block mode, if the line ends with ';;' then run the command,
@@ -108,15 +117,19 @@ inputLine interface readCmd inputState chunk
          InputBlock
           | isSuffixOf ";;" rest
           -> do let rest' = take (length rest - 2) rest
-                return ( InputState Nothing InputLine
-                                (lineNumber + 1)
-                                []
+                return  ( inputState
+                                { inputMode             = InputLine
+                                , inputCommand          = Nothing
+                                , inputLineNumber       = lineNumber + 1
+                                , inputAcc              = [] }
                        , Just (source, cmd, acc ++ rest'))
 
           | otherwise
-          ->    return ( InputState (Just (cmd, lineStart)) input
-                                (lineNumber + 1)
-                                (acc ++ rest ++ "\n")
+          ->    return ( inputState
+                                { inputMode             = input
+                                , inputCommand          = Just (cmd, lineStart)
+                                , inputLineNumber       = lineNumber + 1
+                                , inputAcc              = acc ++ rest ++ "\n" }
                        , Nothing)
 
          -- Read input from a file
@@ -125,14 +138,18 @@ inputLine interface readCmd inputState chunk
                 if exists 
                  then do        
                         contents  <- readFile filePath
-                        return  ( InputState Nothing InputLine
-                                        (lineNumber + 1)
-                                        []
+                        return  ( inputState
+                                        { inputMode     = InputLine
+                                        , inputCommand  = Nothing
+                                        , inputLineNumber = lineNumber + 1
+                                        , inputAcc      = [] }
                                 , Just (source, cmd, contents))
                  else do
                         putStrLn "No such file."
-                        return  ( InputState Nothing InputLine
-                                        (lineNumber + 1)
-                                        []
+                        return  ( inputState
+                                        { inputMode     = InputLine
+                                        , inputCommand  = Nothing
+                                        , inputLineNumber = lineNumber + 1
+                                        , inputAcc      = [] }
                                 , Nothing)
 

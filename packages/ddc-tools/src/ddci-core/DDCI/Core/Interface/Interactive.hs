@@ -27,7 +27,14 @@ loopInteractive :: IO ()
 loopInteractive 
  = do   hlState         <- HL.initializeInput HL.defaultSettings
         let state       = initState InputInterfaceConsole
-        let inputState  = InputState Nothing InputLine 1 []
+        
+        let inputState  
+                = InputState 
+                { inputMode             = InputLine
+                , inputCommand          = Nothing
+                , inputLineNumber       = 1
+                , inputAcc              = [] }
+                
         loop state inputState hlState
  where  
         loop state inputState hlState 
