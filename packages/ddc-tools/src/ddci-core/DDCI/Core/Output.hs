@@ -5,6 +5,7 @@ module DDCI.Core.Output
         , chatStrLn)
 where
 import DDCI.Core.State
+import DDC.Interface.Input
 import DDC.Base.Pretty
 import qualified Data.Set       as Set
 
@@ -44,6 +45,6 @@ outStrLn _state str
 chatStrLn :: State -> String -> IO ()
 chatStrLn state str
  = case stateInterface state of
-        InterfaceConsole        -> putStrLn str
-        InterfaceBatch _        -> putStrLn str
+        InputInterfaceConsole   -> putStrLn str
+        InputInterfaceBatch _   -> putStrLn str
         _                       -> return ()

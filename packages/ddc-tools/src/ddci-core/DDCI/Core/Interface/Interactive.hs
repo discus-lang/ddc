@@ -4,6 +4,7 @@ module DDCI.Core.Interface.Interactive
 where
 import DDCI.Core.Input
 import DDCI.Core.State
+import DDC.Interface.Input
 import Data.List
 import Data.Maybe
 import qualified System.Console.Haskeline       as HL
@@ -25,7 +26,7 @@ runInteractive
 loopInteractive :: IO ()
 loopInteractive 
  = do   hlState         <- HL.initializeInput HL.defaultSettings
-        let state       = initState InterfaceConsole
+        let state       = initState InputInterfaceConsole
         let inputState  = InputState Nothing InputLine 1 []
         loop state inputState hlState
  where  

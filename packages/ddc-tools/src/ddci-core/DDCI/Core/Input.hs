@@ -42,7 +42,7 @@ eatLine state inputState@(InputState mCommand inputMode lineNumber acc) chunk
                 return  (state', inputState')         
 
 inputLine 
-        :: Interface
+        :: InputInterface
         -> (String -> Maybe (c, String))
         -> InputState c 
         -> String
@@ -77,9 +77,9 @@ inputLine interface readCmd inputState chunk
                 -- The program was embedded in the command stream.
                 | otherwise
                 = case interface of
-                        InterfaceArgs           -> SourceArgs
-                        InterfaceConsole        -> SourceConsole lineStart
-                        InterfaceBatch file     -> SourceBatch   file lineStart
+                        InputInterfaceArgs           -> SourceArgs
+                        InputInterfaceConsole        -> SourceConsole lineStart
+                        InputInterfaceBatch file     -> SourceBatch   file lineStart
 
 
         case input of

@@ -4,13 +4,14 @@ module DDCI.Core.Interface.Batch
 where
 import DDCI.Core.State
 import DDCI.Core.Input
+import DDC.Interface.Input
 import Data.List
 
 
 -- | Run in batch mode, reading commands from the given string.
 runBatch :: FilePath -> String -> IO ()
 runBatch filePath str
- = do   let state       = initState (InterfaceBatch filePath)
+ = do   let state       = initState (InputInterfaceBatch filePath)
         let inputState  = InputState Nothing InputLine 1 []
         loop state inputState (lines str)
  where 

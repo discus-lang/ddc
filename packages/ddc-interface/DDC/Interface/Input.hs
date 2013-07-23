@@ -1,11 +1,27 @@
 
 module DDC.Interface.Input
-        ( InputState    (..)
-        , Input         (..)
+        ( InputInterface (..)
+        , InputState     (..)
+        , Input          (..)
         , readInput)
 where
 import Data.List
 import Data.Char
+
+
+-- InputInterface -----------------------------------------------------------------
+-- | What interface is being used.
+data InputInterface
+        -- | Read commands from unix command-line args.
+        = InputInterfaceArgs
+
+        -- | Read commands interactively from the console.
+        | InputInterfaceConsole
+
+        -- | Read commands from the file with this name.
+        | InputInterfaceBatch    FilePath
+        deriving (Eq, Show)
+
 
 
 -- InputState ----------------------------------------------------------------------

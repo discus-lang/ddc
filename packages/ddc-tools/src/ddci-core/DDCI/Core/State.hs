@@ -7,7 +7,6 @@ module DDCI.Core.State
 
         , TransHistory	(..)
 
-        , Interface     (..)
         , Source        (..)
 
         , Language      (..)
@@ -20,6 +19,7 @@ module DDCI.Core.State
 where
 import DDCI.Core.Mode
 import DDC.Code.Config
+import DDC.Interface.Input
 import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Build.Language
@@ -47,7 +47,7 @@ import qualified Data.Set                       as Set
 data State
         = State
         { -- | ddci interface state.
-          stateInterface        :: Interface
+          stateInterface        :: InputInterface
 
           -- | ddci mode flags.
         , stateModes            :: Set Mode 
@@ -92,19 +92,6 @@ data TransHistory
         , historyBundle         :: Bundle s n err }
 
 
--- | What interface is being used.
-data Interface
-        -- | Read commands from unix command-line args.
-        = InterfaceArgs
-
-        -- | Read commands interactively from the console.
-        | InterfaceConsole
-
-        -- | Read commands from the file with this name.
-        | InterfaceBatch        FilePath
-        deriving (Eq, Show)
-
-
 -- | Adjust a mode setting in the state.
 adjustMode 
         :: Bool         -- ^ Whether to enable or disable the mode.        
@@ -120,7 +107,7 @@ adjustMode False mode state
 
 
 -- | The initial state.
-initState :: Interface -> State
+initState :: InputInterface -> State
 initState interface
         = State
         { stateInterface        = interface

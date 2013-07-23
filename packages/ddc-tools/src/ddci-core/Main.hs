@@ -8,6 +8,7 @@ import DDCI.Core.Interface.Args
 import DDCI.Core.Interface.Batch
 import DDCI.Core.Interface.Interactive
 import DDCI.Core.State
+import DDC.Interface.Input
 import DDC.Driver.Command.Make
 import System.Environment
 import System.IO
@@ -34,7 +35,7 @@ main
          -- This gets us  --make on the command line as well as -make
          -- so we behave more like GHC.
          ["--make",  filePath]
-          -> do let state       = initState (InterfaceBatch filePath)
+          -> do let state       = initState (InputInterfaceBatch filePath)
                 config          <- getDriverConfigOfState state
                 runError $ cmdMake config filePath
 
