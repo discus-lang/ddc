@@ -16,17 +16,40 @@ import Data.List
 
 -- Eat ------------------------------------------------------------------------
 -- Eating input lines.
-eatLine :: State 
-        -> InputState Command -> String 
+eatLine :: State -> InputState Command 
+        -> String 
         -> IO (State, InputState Command)
 
-eatLine state (InputState mCommand inputMode lineNumber acc) line
+eatLine state inputState@(InputState mCommand inputMode lineNumber acc) chunk
  | Just _ <- stateTransInteract state
- = do
-	state' <- cmdTransInteractLoop state line
+ = do   state' <- cmdTransInteractLoop state chunk
 	return (state', InputState mCommand inputMode (lineNumber+1) acc)
 
- | otherwise
+ | otherwise 
+ = do  (inputState', mCmdLine)    
+                <- inputLine (stateInterface state) readCommand inputState chunk
+   
+       case mCmdLine of
+         Nothing        
+          ->    return  (state, inputState')
+
+         Just (source, Nothing,  line)
+          -> do state'  <- handleCmd state CommandEval source line
+                return  (state', inputState')
+
+         Just (source, Just cmd, line)
+          -> do state'  <- handleCmd state cmd source line
+                return  (state', inputState')         
+
+inputLine 
+        :: Interface
+        -> (String -> Maybe (c, String))
+        -> InputState c 
+        -> String
+        -> IO (InputState c, Maybe (Source, Maybe c, String))
+
+inputLine interface readCmd inputState chunk
+ | InputState mCommand inputMode lineNumber acc <- inputState
  = do   
         -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
@@ -36,13 +59,13 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
              = case mCommand of
                 -- We haven't started a command yet.
                 Nothing
-                 -> case readCommand line of
-                     Just (cmd', rest') -> (cmd',        lineNumber, readInput rest')
-                     Nothing            -> (CommandEval, lineNumber, (InputLine, line))
+                 -> case readCmd chunk of
+                     Just (cmd', rest') -> (Just cmd', lineNumber, readInput rest')
+                     Nothing            -> (Nothing,   lineNumber, (InputLine, chunk))
                 
                 -- We've already started a command, and this is more input for it.
                 Just (cmd', lineStart')
-                 -> (cmd', lineStart', (inputMode, line))
+                 -> (cmd', lineStart', (inputMode, chunk))
 
         let source 
                 -- We were instructed to read the program from a file.
@@ -53,7 +76,7 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
 
                 -- The program was embedded in the command stream.
                 | otherwise
-                = case stateInterface state of
+                = case interface of
                         InterfaceArgs           -> SourceArgs
                         InterfaceConsole        -> SourceConsole lineStart
                         InterfaceBatch file     -> SourceBatch   file lineStart
@@ -68,17 +91,16 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
           | not $ null rest
           , last rest == '\\'
           , Just initRest       <- takeInit rest
-          -> do return ( state
-                       , InputState (Just (cmd, lineStart)) input
+          -> do return ( InputState (Just (cmd, lineStart)) input
                                 (lineNumber + 1)
-                                (acc ++ initRest ++ "\n"))
+                                (acc ++ initRest ++ "\n")
+                       , Nothing)
 
           | otherwise
-          -> do state'  <- handleCmd state cmd source (acc ++ rest)
-                return ( state'
-                       , InputState Nothing InputLine
+          -> do return ( InputState Nothing InputLine
                                 (lineNumber + 1)
-                                [])
+                                []
+                       , Just (source, cmd, acc ++ rest))
 
 
          -- For block mode, if the line ends with ';;' then run the command,
@@ -86,17 +108,16 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
          InputBlock
           | isSuffixOf ";;" rest
           -> do let rest' = take (length rest - 2) rest
-                state'  <- handleCmd state cmd source (acc ++ rest')
-                return ( state'
-                       , InputState Nothing InputLine
+                return ( InputState Nothing InputLine
                                 (lineNumber + 1)
-                                [])
+                                []
+                       , Just (source, cmd, acc ++ rest'))
 
           | otherwise
-          ->    return ( state
-                       , InputState (Just (cmd, lineStart)) input
+          ->    return ( InputState (Just (cmd, lineStart)) input
                                 (lineNumber + 1)
-                                (acc ++ rest ++ "\n"))
+                                (acc ++ rest ++ "\n")
+                       , Nothing)
 
          -- Read input from a file
          InputFile filePath
@@ -104,15 +125,14 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
                 if exists 
                  then do        
                         contents  <- readFile filePath
-                        state'    <- handleCmd state cmd source contents
-                        return  ( state'
-                                , InputState Nothing InputLine
+                        return  ( InputState Nothing InputLine
                                         (lineNumber + 1)
-                                        [])
+                                        []
+                                , Just (source, cmd, contents))
                  else do
                         putStrLn "No such file."
-                        return  ( state
-                                , InputState Nothing InputLine
+                        return  ( InputState Nothing InputLine
                                         (lineNumber + 1)
-                                        [])
+                                        []
+                                , Nothing)
 

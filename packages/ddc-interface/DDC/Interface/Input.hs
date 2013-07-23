@@ -14,7 +14,7 @@ data InputState command
         = InputState
         { -- Command that we're still receiving input for,
           -- along with the line number it started on.
-          inputCommand      :: Maybe (command, Int)
+          inputCommand      :: Maybe (Maybe command, Int)
 
           -- Input mode.
         , _inputMode        :: Input
