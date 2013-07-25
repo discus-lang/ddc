@@ -129,7 +129,9 @@ packages/ddc-code/%.o : packages/ddc-code/%.hs
 packages/ddc-interface/%.o : packages/ddc-interface/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base 
+		-c $< -ipackages/ddc-base \
+                      -ipackages/ddc-interface 
+
 		
 packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
 	@echo "* Compiling $<"
