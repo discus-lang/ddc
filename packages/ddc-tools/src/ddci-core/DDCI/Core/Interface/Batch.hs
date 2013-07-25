@@ -4,6 +4,7 @@ module DDCI.Core.Interface.Batch
 where
 import DDCI.Core.State
 import DDCI.Core.Input
+import DDCI.Core.Command
 import DDC.Interface.Input
 import Data.List
 
@@ -15,7 +16,8 @@ runBatch filePath str
         
         let inputState  
                 = InputState 
-                { inputMode             = InputLine
+                { inputParseCommand     = readCommand
+                , inputMode             = InputLine
                 , inputCommand          = Nothing
                 , inputLineNumber       = 1
                 , inputAcc              = [] }

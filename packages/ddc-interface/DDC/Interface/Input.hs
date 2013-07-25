@@ -17,9 +17,11 @@ import Data.Char
 -- Interpreter input state
 data InputState command
         = InputState
-        { 
+        { -- Function to parse commands.
+          inputParseCommand :: String -> Maybe (command, String)
+
           -- Input mode.
-          inputMode        :: Input
+        , inputMode         :: Input
 
           -- Command that we're still receiving input for,
           -- along with the line number it started on.
@@ -78,7 +80,6 @@ readInput ss
 -------------------------------------------------------------------------------
 inputLine 
         :: InputInterface
-        -> (String -> Maybe (c, String))
         -> InputState c 
         -> String
         -> IO ( InputState c
@@ -86,8 +87,8 @@ inputLine
                         -- Just for complete command.
                         --  .. then Maybe for the default command.
 
-inputLine interface readCmd inputState chunk
- | InputState mode mCommand lineNumber acc <- inputState
+inputLine interface inputState chunk
+ | InputState readCmd mode mCommand lineNumber acc <- inputState
  = do   
         -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
@@ -115,9 +116,9 @@ inputLine interface readCmd inputState chunk
                 -- The program was embedded in the command stream.
                 | otherwise
                 = case interface of
-                        InputInterfaceArgs           -> SourceArgs
-                        InputInterfaceConsole        -> SourceConsole lineStart
-                        InputInterfaceBatch file     -> SourceBatch   file lineStart
+                        InputInterfaceArgs        -> SourceArgs
+                        InputInterfaceConsole     -> SourceConsole lineStart
+                        InputInterfaceBatch file  -> SourceBatch   file lineStart
 
 
         case input of
@@ -130,17 +131,17 @@ inputLine interface readCmd inputState chunk
           , last rest == '\\'
           , Just initRest       <- takeInit rest
           -> return     ( inputState
-                                { inputCommand          =  (Just (cmd, lineStart))
-                                , inputLineNumber       = lineNumber + 1
-                                , inputAcc              = acc ++ initRest ++ "\n" }
+                                { inputCommand    =  (Just (cmd, lineStart))
+                                , inputLineNumber = lineNumber + 1
+                                , inputAcc        = acc ++ initRest ++ "\n" }
                         , Nothing)
 
           | otherwise
           -> return     ( inputState
-                                { inputMode             = InputLine
-                                , inputCommand          = Nothing
-                                , inputLineNumber       = lineNumber + 1
-                                , inputAcc              = [] }
+                                { inputMode       = InputLine
+                                , inputCommand    = Nothing
+                                , inputLineNumber = lineNumber + 1
+                                , inputAcc        = [] }
                         , Just (source, cmd, acc ++ rest))
 
 
@@ -150,18 +151,18 @@ inputLine interface readCmd inputState chunk
           | isSuffixOf ";;" rest
           -> do let rest' = take (length rest - 2) rest
                 return  ( inputState
-                                { inputMode             = InputLine
-                                , inputCommand          = Nothing
-                                , inputLineNumber       = lineNumber + 1
-                                , inputAcc              = [] }
+                                { inputMode       = InputLine
+                                , inputCommand    = Nothing
+                                , inputLineNumber = lineNumber + 1
+                                , inputAcc        = [] }
                        , Just (source, cmd, acc ++ rest'))
 
           | otherwise
           ->    return ( inputState
-                                { inputMode             = input
-                                , inputCommand          = Just (cmd, lineStart)
-                                , inputLineNumber       = lineNumber + 1
-                                , inputAcc              = acc ++ rest ++ "\n" }
+                                { inputMode       = input
+                                , inputCommand    = Just (cmd, lineStart)
+                                , inputLineNumber = lineNumber + 1
+                                , inputAcc        = acc ++ rest ++ "\n" }
                        , Nothing)
 
          -- Read input from a file

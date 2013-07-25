@@ -4,6 +4,7 @@ module DDCI.Core.Interface.Interactive
 where
 import DDCI.Core.Input
 import DDCI.Core.State
+import DDCI.Core.Command
 import DDC.Interface.Input
 import Data.List
 import Data.Maybe
@@ -30,7 +31,8 @@ loopInteractive
         
         let inputState  
                 = InputState 
-                { inputMode             = InputLine
+                { inputParseCommand     = readCommand
+                , inputMode             = InputLine
                 , inputCommand          = Nothing
                 , inputLineNumber       = 1
                 , inputAcc              = [] }
