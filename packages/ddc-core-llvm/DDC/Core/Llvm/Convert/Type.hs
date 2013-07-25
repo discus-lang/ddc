@@ -44,7 +44,9 @@ convertType pp kenv tt
         -- represented as a generic boxed object.
         C.TVar u
          -> case Env.lookup u kenv of
-             Nothing            -> die $ "Type variable not in kind environment." ++ show u
+             Nothing            
+              -> die $ "Type variable not in kind environment." ++ show u
+
              Just k
               | isDataKind k    -> TPointer (tObj pp)
               | otherwise       -> die "Invalid type variable."
@@ -155,13 +157,13 @@ convTyCon platform tycon
 
                 PrimTyConFloat bits
                  -> case bits of
-                        32              -> TFloat
-                        64              -> TDouble
-                        80              -> TFloat80
-                        128             -> TFloat128
-                        _               -> die "Invalid width for float type constructor."
+                        32      -> TFloat
+                        64      -> TDouble
+                        80      -> TFloat80
+                        128     -> TFloat128
+                        _       -> die "Invalid width for float type constructor."
 
-                _                       -> die "Invalid primitive type constructor."
+                _               -> die "Invalid primitive type constructor."
 
         _ -> die "Invalid type constructor."
 
@@ -179,17 +181,21 @@ aObj platform   = TypeAlias "s.Obj" (sObj platform)
 tPtr :: Type -> Type
 tPtr t = TPointer t
 
+
 -- | Alias for address type.
 tAddr :: Platform -> Type
 tAddr pp = TInt (8 * platformAddrBytes pp)
+
 
 -- | Alias for natural numner type.
 tNat :: Platform -> Type
 tNat pp = TInt (8 * platformAddrBytes pp)
 
+
 -- | Alias for machine integer type.
 tInt :: Platform -> Type
 tInt pp = TInt (8 * platformAddrBytes pp)
+
 
 -- | Alias for address type.
 tTag :: Platform -> Type
@@ -199,7 +205,8 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 -- Predicates -----------------------------------------------------------------
 -- | Check whether this is the Void# type.
 isVoidT :: C.Type A.Name -> Bool
-isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid) _) _)) = True
+isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid) _) _)) 
+         = True
 isVoidT _ = False
 
 

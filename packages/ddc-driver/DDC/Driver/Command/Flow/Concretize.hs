@@ -12,6 +12,8 @@ import Control.Monad.IO.Class
 import qualified DDC.Core.Flow.Transform.Concretize     as Concretize
 import qualified DDC.Base.Pretty                        as P
 
+
+-- | Concretize rate variables to loop indices.
 cmdFlowConcretize
         :: Config
         -> Source       -- ^ Source of the code.
