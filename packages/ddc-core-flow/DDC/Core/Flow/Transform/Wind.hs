@@ -128,8 +128,8 @@ makeTailCallFromContexts _ _ _
 
 
 -- | Slurp expressions to update each of the accumulators of the loop.
---   TODO: Don't assume there have been no other updates to the loop counter
---         and guard entry refs.
+--   We assume that there have been no other updates to the loop
+--   counter, and we generated the code ourselves.
 slurpArgUpdates 
         :: a
         -> RefMap

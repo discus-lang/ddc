@@ -47,7 +47,7 @@ slurpProcessesLts _
 slurpProcessLet :: Bind Name -> Exp () Name -> Maybe Process
 slurpProcessLet (BName n tProcess) xx
 
- -- TODO: check that all the type params come before the value params.
+ -- We assume that all type params come before the value params.
  | Just (fbs, xBody)    <- takeXLamFlags xx
  = let  
         -- Split binders into type and value binders.

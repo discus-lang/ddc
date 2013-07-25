@@ -65,20 +65,24 @@ wrapResultExp xWorld xResult
         xWorld'  = reannotate annotTail xWorld
         xResult' = reannotate annotTail xResult
    in   
+        -- ISSUE #308: Handle Tuple arities generically in thread transform.
         case C.takeXConApps xResult' of
-         Just (dc, [xT1, xT2, x1, x2])                  -- TODO: handle tuple arities generically
+         Just (dc, [xT1, xT2
+                   , x1, x2])
           | dc == dcTupleN 2
           -> C.xApps () (XCon () (dcTupleN 3))
                 [ XType tWorld', xT1, xT2
                 , xWorld',       x1,  x2]
 
-         Just (dc, [xT1, xT2, xT3, x1, x2, x3])
+         Just (dc, [xT1, xT2, xT3
+                   , x1,  x2,  x3])
           | dc == dcTupleN 3
           -> C.xApps () (XCon () (dcTupleN 4))
                 [ XType tWorld', xT1, xT2, xT3
                 , xWorld',       x1,  x2,  x3]
 
-         Just (dc, [xT1, xT2, xT3, xT4, x1, x2, x3, x4])
+         Just (dc, [xT1, xT2, xT3, xT4
+                   , x1,  x2,  x3,  x4])
           | dc == dcTupleN 4
           -> C.xApps () (XCon () (dcTupleN 5))
                 [ XType tWorld', xT1, xT2, xT3, xT4
