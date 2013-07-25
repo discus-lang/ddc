@@ -32,7 +32,7 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Primitive -----------------------------------------------
-        -- Bool#
+ $      -- Bool#
         [ DataDef (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
@@ -52,25 +52,6 @@ primDataDefs
 
 
         -- Flow -----------------------------------------------------
-        -- Tuple
-        --  TODO: build more tuple defs generically.
-        , DataDef
-                (NameTyConFlow (TyConFlowTuple 2))
-                [kData, kData]
-                (Just   [ ( NameDaConFlow (DaConFlowTuple 2)
-                          , [tIx kData 1, tIx kData 0]) ])
-
-        , DataDef
-                (NameTyConFlow (TyConFlowTuple 3))
-                [kData, kData]
-                (Just   [ ( NameDaConFlow (DaConFlowTuple 3)
-                          , [tIx kData 2, tIx kData 1, tIx kData 0]) ])
-
-        , DataDef
-                (NameTyConFlow (TyConFlowTuple 4))
-                [kData, kData]
-                (Just   [ ( NameDaConFlow (DaConFlowTuple 4)
-                          , [tIx kData 3, tIx kData 2, tIx kData 1, tIx kData 0]) ])
 
         -- Vector
         , DataDef
@@ -84,6 +65,21 @@ primDataDefs
                 [kRate, kData]
                 (Just   [])
         ]
+
+        -- Tuple
+        -- Hard-code maximum tuple arity to 32.
+ ++     [ makeTupleDataDef arity        | arity <- [2..32] ]
+
+
+-- | Make a tuple data def for the given tuple arity.
+makeTupleDataDef :: Int -> DataDef Name
+makeTupleDataDef n
+        = DataDef
+                (NameTyConFlow (TyConFlowTuple n))
+                (replicate n kData)
+                (Just   [ ( NameDaConFlow (DaConFlowTuple n)
+                          , (reverse [tIx kData i | i <- [0..n - 1]]))])
+
 
 -- Sorts ---------------------------------------------------------------------
 -- | Sort environment containing sorts of primitive kinds.
