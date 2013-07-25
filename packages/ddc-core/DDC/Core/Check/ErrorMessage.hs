@@ -346,6 +346,13 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
        
+        ErrorRunNotSuspension xx t
+         -> vcat [ text "Expression to run is not a suspension."
+                 , text "          Type: "              <> ppr t
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+
         -- Type -------------------------------------------
         ErrorNakedType xx
          -> vcat [ text "Found naked type in core program."

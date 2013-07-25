@@ -740,7 +740,7 @@ checkExpM' !config !kenv !tenv (XCast a CastSuspend x1)
 
 -- Run a suspended computation,
 -- releasing its effects into the environment.
-checkExpM' !config !kenv !tenv (XCast a CastRun x1)
+checkExpM' !config !kenv !tenv xx@(XCast a CastRun x1)
  = do   
         (x1', t1, effs, clos) <- checkExpM config kenv tenv x1
 
@@ -752,7 +752,7 @@ checkExpM' !config !kenv !tenv (XCast a CastRun x1)
                 (Sum.union effs (Sum.singleton kEffect eff2))
                 clos
 
-         _ -> error "can't run a non suspension"
+         _ -> throw $ ErrorRunNotSuspension xx t1
 
 
 -- Type and witness expressions can only appear as the arguments 

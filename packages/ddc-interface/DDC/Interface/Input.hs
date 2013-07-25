@@ -58,8 +58,6 @@ data Input
         deriving (Eq, Show)
 
 
-
-
 -- | Read the input mode from the front of a string.
 readInput :: String -> (Input, String)
 readInput ss

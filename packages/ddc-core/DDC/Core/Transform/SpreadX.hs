@@ -10,6 +10,7 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
 
+
 class SpreadX (c :: * -> *) where
 
  -- | Spread type annotations from binders and the environment into bound

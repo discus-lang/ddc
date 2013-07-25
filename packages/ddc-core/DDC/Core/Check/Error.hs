@@ -318,6 +318,11 @@ data Error a n
         , errorEffect           :: Effect n
         , errorKind             :: Kind n }
 
+        -- | A run cast applied to a non-suspension.
+        | ErrorRunNotSuspension
+        { errorChecking         :: Exp a n
+        , errorType             :: Type n }
+
 
         -- Types ------------------------------------------
         -- | Found a naked `XType` that wasn't the argument of an application.

@@ -247,24 +247,6 @@ step store (XLet a (LLet b x1) x2)
     err -> err
 
 
--- TODO: Support lazy bindings via suspend primop, not let modes.
--- (EvLetLazyAlloc)
--- Allocate a lazy binding in the heap.
--- step store (XLet _ (LLet (LetLazy _w) b x1) x2)
---        -- We need the type of the expression to attach to the location
---        -- This fakes the store typing from the formal typing rules.
--- = case typeOfExp (configOfProfile  evalProfile)
---                  (C.profilePrimKinds evalProfile)
---                  (C.profilePrimTypes evalProfile)
---                  x1 
---   of
---        Left err -> StepMistyped err
---        Right t1
---         -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
---                x1'           = xLoc l t1
---            in  StepProgress store1 (substituteXX b x1' x2)
-
-
 -- (EvLetRec)
 -- Add recursive bindings to the store.
 step store (XLet _ (LRec bxs) x2)

@@ -30,7 +30,6 @@ import DDC.Core.Lexer
 import DDC.Data.Token
 
 
--- Fragment -------------------------------------------------------------------
 -- | Carries all the information we need to work on a particular 
 --   fragment of the Disciple Core language.
 data Fragment n (err :: * -> *)

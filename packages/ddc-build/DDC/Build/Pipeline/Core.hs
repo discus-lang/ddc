@@ -294,7 +294,7 @@ pipeFlow !mm !pp
 
                 -- Force all worker functions to be floated forward into their
                 -- use sites.
-                isFloatable lts                                 -- TODO: cleanup
+                isFloatable lts
                  = case lts of
                     C.LLet (C.BName n _) _ 
                       | Just{}   <- Map.lookup n nsWorker

@@ -5,6 +5,7 @@ where
 import qualified DDC.Core.Exp.Annot     as A
 import qualified DDC.Core.Exp.Simple    as S
 
+
 -- | Convert the `Annot` version of the AST to the `Simple` version,
 --   using the provided function to decide when to keep the annotation.
 class Deannotate 
