@@ -204,13 +204,11 @@ threadProc config context kenv tenv xx []
 --  When we get to the inner-most one then add the state parameter.
 threadProc config context kenv tenv xx (t : tsArgs)
  = case xx of
-        -- TODO: check arg type matches
         XLAM a b x
           -> let kenv'  = Env.extend b kenv
                  x'     = threadProc config context kenv' tenv x tsArgs
              in  XLAM (annotTail a) b x'
 
-        -- TODO: check arg type matches.
         XLam a b x      
           -> let tenv'  = Env.extend b tenv
                  x'     = threadProc config context kenv tenv' x tsArgs
@@ -316,7 +314,7 @@ threadProcBody config context kenv tenv xx
 
 
         -- Case of an effectful function.
-        XCase a xScrut [AAlt (PData _dc bs) xBody]              -- TODO: check data constructor
+        XCase a xScrut [AAlt (PData _dc bs) xBody]
          | Just ((XVar _ (UName n), _xsArgs)) <- takeXApps xScrut
          , elem (ContextFun n) context
          , Just mkPat   <- configThreadPat config n
@@ -331,17 +329,16 @@ threadProcBody config context kenv tenv xx
             in  XCase (annotTail a) xScrut' [alt']
 
 
-
         -- Pure case. 
         XCase a x alts
          -> let alts' = map (threadAlt config context kenv tenv) alts
                 x'    = reannotate annotTail x
             in  XCase (annotTail a) x' alts'
 
-        -- TODO: convert this to Nothing, proper exception.
-        XLAM{}          -> error "ddc-core-simpl: threadProcBody unexpected XLAM"
-        XLam{}          -> error "ddc-core-simpl: threadProcBody unexpected XLam"
-        XCast{}         -> error "ddc-core-simpl: threadProcBody unexpected XCast"
+        -- We shouldn't see these things in a proc body.
+        XLAM{}          -> error "ddc-core-simpl.Thread: unexpected XLAM"
+        XLam{}          -> error "ddc-core-simpl.Thread: unexpected XLam"
+        XCast{}         -> error "ddc-core-simpl.Thread: unexpected cast."
         XType t         -> XType t
         
         XWitness w      
