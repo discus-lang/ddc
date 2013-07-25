@@ -5,15 +5,19 @@ module DDCI.Tetra.Command
         , readCommand
         , handleCommand)
 where
-import DDCI.Tetra.State
 import DDC.Interface.Source
 import Data.List
+
+import DDCI.Tetra.State
+import DDCI.Tetra.Command.Help
+import DDCI.Tetra.Command.Parse
 
 
 data Command
         = CommandBlank          -- ^ No command was entered.
         | CommandUnknown        -- ^ Some unknown (invalid) command.
         | CommandHelp           -- ^ Display the interpreter help.
+        | CommandParse          -- ^ Parse a Tetra source module.
         deriving (Eq, Show)
 
 
@@ -21,7 +25,8 @@ data Command
 commands :: [(String, Command)]
 commands
  =      [ (":help",     CommandHelp)
-        , (":?",        CommandHelp) ]
+        , (":?",        CommandHelp) 
+        , (":parse",    CommandParse) ]
 
 
 -- | Read the command from the front of a string.
@@ -48,7 +53,7 @@ handleCommand state cmd source line
  = do   state'  <- handleCommand1 state cmd source line
         return state'
 
-handleCommand1 state cmd _source _line
+handleCommand1 state cmd source line
  = case cmd of
         CommandBlank
          -> return state
@@ -61,6 +66,9 @@ handleCommand1 state cmd _source _line
                 return state
 
         CommandHelp
-         -> do  putStr "you feel content"
+         -> do  putStrLn help
                 return state
 
+        CommandParse
+         -> do  cmdParse state source line
+                return state

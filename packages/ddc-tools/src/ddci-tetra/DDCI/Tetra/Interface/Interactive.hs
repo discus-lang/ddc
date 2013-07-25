@@ -40,7 +40,7 @@ loopInteractive
  where  
         loop state inputState hlState 
          = do   -- Read a line from the user and echo it back.
-                line    <- getInput hlState " >"
+                line    <- getInput hlState "> "
 
                 if  isPrefixOf ":quit" line
                  || isPrefixOf ":q"    line

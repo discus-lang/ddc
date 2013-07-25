@@ -8,5 +8,4 @@ help    = unlines
         , "General"
         , "    :quit               Exit DDCi-tetra." 
         , "    :help               Display this help page." 
-        , ""
         ]

@@ -5,6 +5,7 @@ where
 import DDC.Interface.Source
 import DDC.Driver.Stage
 import Control.Monad.Trans.Error
+import Control.Monad.IO.Class
 import System.FilePath
 import qualified DDC.Core.Lexer as C
 
@@ -22,4 +23,5 @@ cmdParseModule config source str
 
 cmdParseModule_tetra _config sourcePathName str
  = do   let tokens = C.lexModuleWithOffside sourcePathName 1 str
-        error $ show tokens
+        liftIO $ putStrLn $ show tokens
+        return ()
