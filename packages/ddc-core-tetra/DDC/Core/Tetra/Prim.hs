@@ -1,5 +1,5 @@
 
-module DDC.Core.Blue.Prim
+module DDC.Core.Tetra.Prim
         ( -- * Names and lexing.
           Name          (..)
         , readName
@@ -16,10 +16,10 @@ module DDC.Core.Blue.Prim
         , OpPrimRef     (..)
         , typeOpPrimRef)
 where
-import DDC.Core.Blue.Prim.Base
-import DDC.Core.Blue.Prim.TyConPrim
-import DDC.Core.Blue.Prim.OpPrimArith
-import DDC.Core.Blue.Prim.OpPrimRef
+import DDC.Core.Tetra.Prim.Base
+import DDC.Core.Tetra.Prim.TyConPrim
+import DDC.Core.Tetra.Prim.OpPrimArith
+import DDC.Core.Tetra.Prim.OpPrimRef
 import DDC.Core.Salt.Name 
         ( readLitPrimNat
         , readLitPrimInt

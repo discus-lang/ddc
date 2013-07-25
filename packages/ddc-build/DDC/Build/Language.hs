@@ -12,21 +12,21 @@ import DDC.Build.Language.Lite  as Lite
 import DDC.Build.Language.Salt  as Salt
 import DDC.Build.Language.Eval  as Eval
 import DDC.Build.Language.Flow  as Flow
-import DDC.Build.Language.Blue  as Blue
 import DDC.Build.Language.Zero  as Zero
+import DDC.Build.Language.Tetra as Tetra
 
 
 -- | Supported language profiles.
 --   
---   One of @Lite@, @Salt@, @Eval@, @Zero@.
+--   One of @Tetra@, @Lite@, @Salt@, @Eval@, @Flow@, @Zero@.
 languages :: [(String, Language)]
 languages
- =      [ ( "Lite", Lite.language)
-        , ( "Salt", Salt.language)
-        , ( "Eval", Eval.language)
-        , ( "Flow", Flow.language)
-        , ( "Blue", Blue.language)
-        , ( "Zero", Zero.language) ]
+ =      [ ( "Tetra", Tetra.language) 
+        , ( "Lite",  Lite.language)
+        , ( "Salt",  Salt.language)
+        , ( "Eval",  Eval.language)
+        , ( "Flow",  Flow.language)
+        , ( "Zero",  Zero.language) ]
 
 
 -- | Return the language fragment definition corresponding to the given 
@@ -40,11 +40,11 @@ languageOfExtension ext
                         '.' : rest      -> rest
                         _               -> ext
    in case ext' of
+        "dct"   -> Just Tetra.language
         "dcl"   -> Just Lite.language
         "dcs"   -> Just Salt.language
         "dcv"   -> Just Eval.language
         "dcf"   -> Just Flow.language
-        "dcb"   -> Just Blue.language
         "dcz"   -> Just Zero.language
         _       -> Nothing
 

@@ -1,4 +1,4 @@
-Name:           ddc-core-blue
+Name:           ddc-core-tetra
 Version:        0.3.2.0
 License:        MIT
 License-file:   LICENSE
@@ -27,18 +27,18 @@ Library
         ddc-core-simpl  == 0.3.2.*
 
   Exposed-modules:
-        DDC.Core.Blue
+        DDC.Core.Tetra
 
-        DDC.Core.Blue.Compounds
-        DDC.Core.Blue.Env
-        DDC.Core.Blue.Prim
-        DDC.Core.Blue.Profile
+        DDC.Core.Tetra.Compounds
+        DDC.Core.Tetra.Env
+        DDC.Core.Tetra.Prim
+        DDC.Core.Tetra.Profile
 
   Other-modules:
-        DDC.Core.Blue.Prim.Base
-        DDC.Core.Blue.Prim.OpPrimArith
-        DDC.Core.Blue.Prim.OpPrimRef
-        DDC.Core.Blue.Prim.TyConPrim
+        DDC.Core.Tetra.Prim.Base
+        DDC.Core.Tetra.Prim.OpPrimArith
+        DDC.Core.Tetra.Prim.OpPrimRef
+        DDC.Core.Tetra.Prim.TyConPrim
 
 
   GHC-options:

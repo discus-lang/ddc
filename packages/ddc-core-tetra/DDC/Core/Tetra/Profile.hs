@@ -1,14 +1,14 @@
 
--- | Language profile for Disciple Core Blue
-module DDC.Core.Blue.Profile
+-- | Language profile for Disciple Core Tetra
+module DDC.Core.Tetra.Profile
         ( profile
         , lexModuleString
         , lexExpString
         , freshT
         , freshX)
 where
-import DDC.Core.Blue.Prim
-import DDC.Core.Blue.Env
+import DDC.Core.Tetra.Prim
+import DDC.Core.Tetra.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Type.Exp
@@ -21,7 +21,7 @@ import qualified DDC.Type.Env   as Env
 profile :: Profile Name 
 profile
         = Profile
-        { profileName                   = "Blue"
+        { profileName                   = "Tetra"
         , profileFeatures               = features
         , profilePrimDataDefs           = primDataDefs
         , profilePrimSupers             = primSortEnv

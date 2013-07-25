@@ -1,7 +1,7 @@
 
 ok
 
--- The Blue fragment uses the pure function type.
+-- The Tetra fragment uses the pure function type.
 (->) :: Data ~> Data ~> Data
 
 -- Primitive Arithmetic.

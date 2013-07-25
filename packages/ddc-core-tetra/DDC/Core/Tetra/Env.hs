@@ -1,12 +1,12 @@
 
-module DDC.Core.Blue.Env
+module DDC.Core.Tetra.Env
         ( primDataDefs
         , primSortEnv
         , primKindEnv
         , primTypeEnv)
 where
-import DDC.Core.Blue.Prim
-import DDC.Core.Blue.Compounds
+import DDC.Core.Tetra.Prim
+import DDC.Core.Tetra.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Type.Env             (Env)

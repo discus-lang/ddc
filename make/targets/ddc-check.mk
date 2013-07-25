@@ -9,7 +9,7 @@ ddc-check_packages = \
 	packages/ddc-core-salt/DDC \
 	packages/ddc-core-llvm/DDC \
 	packages/ddc-core-flow/DDC \
-	packages/ddc-core-blue/DDC \
+	packages/ddc-core-tetra/DDC \
         packages/ddc-source-tetra/DDC \
 	packages/ddc-build/DDC \
         packages/ddc-interface/DDC

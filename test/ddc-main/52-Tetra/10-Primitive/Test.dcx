@@ -1,7 +1,7 @@
 
-:set lang Blue
+:set lang Tetra
 
--- The Blue fragment uses the pure function type.
+-- The Tetra fragment uses the pure function type.
 :kind (->)
 
 -- Primitive Arithmetic.

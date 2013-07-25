@@ -1,5 +1,5 @@
 
-module DDC.Core.Blue.Prim.Base
+module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
         , TyConPrim     (..)
         , OpPrimArith   (..)
@@ -8,7 +8,7 @@ where
 import Data.Typeable
 
 
--- | Names of things used in Disciple Core Blue.
+-- | Names of things used in Disciple Core Tetra.
 data Name
         -- | User defined variables.
         = NameVar               String

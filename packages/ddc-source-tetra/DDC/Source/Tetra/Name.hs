@@ -2,7 +2,7 @@
 module DDC.Source.Tetra.Name
         (Name (..))
 where
-import DDC.Core.Blue    
+import DDC.Core.Tetra    
         ( TyConPrim     (..)
         , OpPrimArith   (..)
         , OpPrimRef     (..))

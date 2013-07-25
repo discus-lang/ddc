@@ -1,5 +1,5 @@
 
-module DDC.Core.Blue
+module DDC.Core.Tetra
         ( -- * Language profile
           profile
 
@@ -17,5 +17,5 @@ module DDC.Core.Blue
         , lexExpString)
 
 where
-import DDC.Core.Blue.Prim
-import DDC.Core.Blue.Profile
+import DDC.Core.Tetra.Prim
+import DDC.Core.Tetra.Profile

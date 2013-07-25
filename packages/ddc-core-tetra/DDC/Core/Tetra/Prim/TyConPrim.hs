@@ -1,5 +1,5 @@
 
-module DDC.Core.Blue.Prim.TyConPrim 
+module DDC.Core.Tetra.Prim.TyConPrim 
         ( TyConPrim     (..)
         , readTyConPrim
         , kindTyConPrim
@@ -9,7 +9,7 @@ module DDC.Core.Blue.Prim.TyConPrim
         , tWord
         , tRef)
 where
-import DDC.Core.Blue.Prim.Base
+import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
 import DDC.Core.Exp.Simple
 import DDC.Base.Pretty

@@ -1,9 +1,10 @@
-module DDC.Core.Blue.Prim.OpPrimRef
+
+module DDC.Core.Tetra.Prim.OpPrimRef
         ( readOpPrimRef
         , typeOpPrimRef)
 where
-import DDC.Core.Blue.Prim.TyConPrim
-import DDC.Core.Blue.Prim.Base
+import DDC.Core.Tetra.Prim.TyConPrim
+import DDC.Core.Tetra.Prim.Base
 import DDC.Type.Compounds
 import DDC.Type.Exp
 import DDC.Base.Pretty

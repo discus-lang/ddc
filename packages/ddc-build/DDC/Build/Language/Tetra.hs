@@ -1,7 +1,5 @@
 
--- | The `Flow` fragment is used for data-flow optimisation as part
---   of the Data Parallel Haskell vectorisation pipeline.
-module DDC.Build.Language.Blue
+module DDC.Build.Language.Tetra
         ( language
         , bundle
         , fragment
@@ -12,18 +10,18 @@ import DDC.Build.Language.Base
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
-import DDC.Core.Blue                    as Blue
-import DDC.Core.Blue.Profile            as Blue
+import DDC.Core.Tetra                   as Tetra
+import DDC.Core.Tetra.Profile           as Tetra
 import DDC.Base.Pretty
 import qualified Data.Map               as Map
 
 
--- | Language definition for Disciple Core Lite.
+-- | Language definition for Disciple Core Tetra.
 language    :: Language
 language    = Language bundle
 
 
--- | Language bundle for Disciple Core Lite.
+-- | Language bundle for Disciple Core Tetra.
 bundle  :: Bundle Int Name Error
 bundle
         = Bundle
@@ -36,12 +34,12 @@ bundle
         , bundleRewriteRules    = Map.empty }
 
 
--- | Fragement definition for Disciple Core Lite.
+-- | Fragement definition for Disciple Core Tetra.
 fragment :: Fragment Name Error
 fragment
         = Fragment
         { fragmentProfile       = profile 
-        , fragmentExtension     = "dcb"
+        , fragmentExtension     = "dct"
         , fragmentReadName      = readName
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString

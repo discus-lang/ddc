@@ -31,11 +31,11 @@ Library
         ddc-core-blue   == 0.3.2.*
   
   Exposed-modules:
+        DDC.Build.Language.Tetra
         DDC.Build.Language.Eval
         DDC.Build.Language.Lite
         DDC.Build.Language.Salt
         DDC.Build.Language.Flow
-        DDC.Build.Language.Blue
         DDC.Build.Language.Zero
         DDC.Build.Language
 

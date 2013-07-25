@@ -8,7 +8,7 @@ PACKAGES = \
 	ddc-core-salt \
 	ddc-core-llvm \
 	ddc-core-flow \
-	ddc-core-blue \
+	ddc-core-tetra \
         ddc-source-tetra \
 	ddc-build \
 	ddc-driver \
