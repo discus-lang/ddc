@@ -25,8 +25,9 @@ import qualified DDC.Type.Env   as Env
 -- >  Word{8,16,32,64}#   42w8# 123w64# ...
 -- >  Float{32,64}#       (none, convert from Int#)
 -- >
--- >  Stream              (none, abstract)
+-- >  Tuple{2-32}         (T{2-32})
 -- >  Vector              (none, abstract)
+-- >  Series              (none, abstract)
 -- 
 primDataDefs :: DataDefs Name
 primDataDefs

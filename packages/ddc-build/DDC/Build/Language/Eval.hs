@@ -1,4 +1,5 @@
 
+-- | The `Eval` fragment can be interpreted with our semantic interpreter.
 module DDC.Build.Language.Eval
         ( language
         , bundle

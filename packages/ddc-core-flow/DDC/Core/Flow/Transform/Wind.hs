@@ -3,6 +3,7 @@
 --   a tail recursive loop with accumulators.
 --
 --   ASUMPTIONS:
+--
 --   * No nested loops.
 --      We could support these, but we don't yet.
 --  

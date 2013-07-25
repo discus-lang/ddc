@@ -1,4 +1,7 @@
 
+-- | The `Tetra` fragment has four base kinds: 
+--   `Data`, `Region`, `Effect`, `Witness` and uses the `S`
+--   computation type to represent effects.
 module DDC.Build.Language.Tetra
         ( language
         , bundle

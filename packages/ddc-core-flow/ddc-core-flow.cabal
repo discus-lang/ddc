@@ -43,14 +43,9 @@ Library
         DDC.Core.Flow.Process.Pretty
         DDC.Core.Flow.Process
 
-        DDC.Core.Flow.Transform.Schedule.SeriesEnv
-        DDC.Core.Flow.Transform.Schedule.Nest
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Prep
-        DDC.Core.Flow.Transform.Slurp.Operator
-        DDC.Core.Flow.Transform.Slurp.Alloc
         DDC.Core.Flow.Transform.Slurp
-        DDC.Core.Flow.Transform.Extract.Intersperse
         DDC.Core.Flow.Transform.Extract
         DDC.Core.Flow.Transform.Concretize
         DDC.Core.Flow.Transform.Thread
@@ -67,6 +62,14 @@ Library
         DDC.Core.Flow.Prim.OpLoop
         DDC.Core.Flow.Prim.OpStore
         DDC.Core.Flow.Prim.OpPrim
+
+        DDC.Core.Flow.Transform.Slurp.Operator
+        DDC.Core.Flow.Transform.Slurp.Alloc
+
+        DDC.Core.Flow.Transform.Schedule.SeriesEnv
+        DDC.Core.Flow.Transform.Schedule.Nest
+
+        DDC.Core.Flow.Transform.Extract.Intersperse
 
 
   GHC-options:
