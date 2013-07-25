@@ -450,6 +450,6 @@ letrec {
 ()
 * TRANSFORM SEQUENCE:
     Inline
-    BetaLets ; Forward
+    Beta ; Forward
     Inline
     Rewrite

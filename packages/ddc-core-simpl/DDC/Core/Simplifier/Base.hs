@@ -22,6 +22,7 @@ import DDC.Type.Env
 import DDC.Base.Pretty
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Eta         as Eta
+import qualified DDC.Core.Transform.Beta        as Beta
 import Data.Monoid
 
 
@@ -74,13 +75,7 @@ data Transform s a n
         | Flatten
 
         -- | Perform beta reduction when the argument is not a redex.
-        | Beta
-
-        -- | Perform beta reduction, introducing new let-bindings for 
-        --   arguments that are redexes.
-        ---
-        --   TODO: make this take a config.
-        | BetaLets
+        | Beta  Beta.Config
 
         -- | Perform eta expansion and reduction.
         | Eta    Eta.Config
@@ -137,8 +132,7 @@ instance Pretty (Transform s a n) where
         Anonymize       -> text "Anonymize"
         Snip{}          -> text "Snip"
         Flatten         -> text "Flatten"
-        Beta            -> text "Beta"
-        BetaLets        -> text "BetaLets"
+        Beta{}          -> text "Beta"
         Eta{}           -> text "Eta"
         Prune           -> text "Prune"
         Forward         -> text "Forward"

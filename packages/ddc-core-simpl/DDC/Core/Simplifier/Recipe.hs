@@ -21,6 +21,7 @@ where
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
 import qualified DDC.Core.Transform.Snip  as Snip
+import qualified DDC.Core.Transform.Beta  as Beta
 import DDC.Type.Env
 import Data.Monoid
 
@@ -55,12 +56,12 @@ flatten   = Trans Flatten
 
 -- | Perform beta reduction
 beta    :: Simplifier s a n
-beta    = Trans Beta
+beta    = Trans (Beta Beta.configZero)
 
 
 -- | Perform beta reduction, introducing let-expressions for compound arguments.
 betaLets :: Simplifier s a n
-betaLets = Trans BetaLets
+betaLets = Trans (Beta Beta.configZero { Beta.configBindRedexes = True })
 
 
 -- | Remove unused, pure let bindings.

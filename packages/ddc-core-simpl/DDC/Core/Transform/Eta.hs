@@ -6,9 +6,9 @@
 --       based on the real arity of bindings.
 --
 module DDC.Core.Transform.Eta
-        ( Info  (..)
-        , Config(..)
+        ( Config(..)
         , configZero
+        , Info  (..)
         , etaModule
         , etaX)
 where
@@ -26,6 +26,20 @@ import Control.Monad.Writer     (Writer, tell, runWriter)
 import Data.Monoid              (Monoid, mempty, mappend)
 import qualified DDC.Type.Env   as Env
 import Data.Typeable
+
+
+-------------------------------------------------------------------------------
+data Config
+        = Config
+        { configExpand  :: Bool }
+        deriving Show
+
+
+-- | Empty eta configuration with all flags set to False.
+configZero :: Config
+configZero
+        = Config
+        { configExpand  = False }
 
 
 -------------------------------------------------------------------------------
@@ -52,19 +66,6 @@ instance Monoid Info where
  mappend (Info ex1  ex0)
          (Info ex1' ex0')
   = Info (ex1 + ex1') (ex0 + ex0')
-
-
--------------------------------------------------------------------------------
-data Config
-        = Config
-        { configExpand  :: Bool }
-
-
--- | Empty eta configuration with all flags set to False.
-configZero :: Config
-configZero
-        = Config
-        { configExpand  = False }
 
 
 -- Module ---------------------------------------------------------------------

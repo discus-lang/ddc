@@ -18,7 +18,8 @@ instance NFData DaConFlow
 instance Pretty DaConFlow where
  ppr dc
   = case dc of
-        DaConFlowTuple n        -> text "T" <> int n <> text "#"
+        DaConFlowTuple n
+         -> text "T" <> int n <> text "#"
 
 
 -- | Read a data constructor name.
