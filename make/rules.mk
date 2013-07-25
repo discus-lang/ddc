@@ -118,6 +118,7 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
 		      -ipackages/ddc-build \
+                      -ipackages/ddc-interface \
 		      -ipackages/ddc-driver
 
 packages/ddc-code/%.o : packages/ddc-code/%.hs

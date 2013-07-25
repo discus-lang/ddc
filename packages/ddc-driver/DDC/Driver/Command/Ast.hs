@@ -4,7 +4,7 @@ module DDC.Driver.Command.Ast
         , cmdAstExp)
 where
 import DDC.Driver.Command.Check
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Build.Language
 import Control.Monad.Trans.Error
 import qualified Language.Haskell.Exts.Parser as H

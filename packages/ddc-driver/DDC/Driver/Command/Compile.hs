@@ -3,7 +3,7 @@ module DDC.Driver.Command.Compile
         (cmdCompile)
 where
 import DDC.Driver.Stage
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language.Salt          as Salt
 import System.Directory

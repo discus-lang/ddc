@@ -30,7 +30,7 @@ module DDC.Driver.Stage
           -- * LLVM stages
         , stageCompileLLVM)
 where
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify

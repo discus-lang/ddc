@@ -3,7 +3,7 @@ module DDCI.Core.Command.With
         (cmdWith, cmdWithLite, cmdWithSalt)
 where
 import DDCI.Core.State
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Core.Pretty
 import DDC.Build.Pipeline
 import DDC.Core.Module

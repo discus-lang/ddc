@@ -14,8 +14,8 @@ module DDC.Driver.Command.Check
         , cmdParseCheckType
         , cmdParseCheckExp)
 where
-import DDC.Driver.Source
 import DDC.Driver.Output
+import DDC.Interface.Source
 import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Load

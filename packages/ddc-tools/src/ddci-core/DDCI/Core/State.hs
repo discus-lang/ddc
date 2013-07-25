@@ -20,7 +20,7 @@ where
 import DDCI.Core.Mode
 import DDC.Code.Config
 import DDC.Interface.Input
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Check

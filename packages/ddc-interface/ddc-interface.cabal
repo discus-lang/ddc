@@ -20,6 +20,7 @@ Library
 
   Exposed-modules:
         DDC.Interface.Input
+        DDC.Interface.Source
 
   GHC-options:
         -Werror

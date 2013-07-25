@@ -3,7 +3,7 @@ module DDC.Driver.Command.Flow.Prep
         (cmdFlowPrep)
 where
 import DDC.Driver.Stage
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class

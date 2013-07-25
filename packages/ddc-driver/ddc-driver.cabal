@@ -33,7 +33,8 @@ Library
         ddc-core-salt   == 0.3.2.*,
         ddc-core-llvm   == 0.3.2.*,
         ddc-core-flow   == 0.3.2.*,
-        ddc-build       == 0.3.2.*
+        ddc-build       == 0.3.2.*,
+        ddc-interface   == 0.3.2.*
   
   Exposed-modules:
         DDC.Driver.Command.Flow.Concretize
@@ -53,7 +54,6 @@ Library
         DDC.Driver.Command.ToLlvm
         DDC.Driver.Command.ToSalt
 
-        DDC.Driver.Source
         DDC.Driver.Stage
 
   Other-modules:

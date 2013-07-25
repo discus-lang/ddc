@@ -2,7 +2,7 @@
 module DDC.Driver.Command.Parse
         (cmdParseModule)
 where
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Driver.Stage
 import Control.Monad.Trans.Error
 import System.FilePath

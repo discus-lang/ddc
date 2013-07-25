@@ -6,7 +6,7 @@ import DDC.Build.Pipeline
 import DDC.Build.Language.Flow
 import DDC.Core.Fragment
 import DDC.Driver.Stage
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Data.Canned
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class

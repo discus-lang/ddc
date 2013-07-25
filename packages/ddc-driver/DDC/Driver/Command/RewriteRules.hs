@@ -2,7 +2,7 @@
 module DDC.Driver.Command.RewriteRules
         ( cmdTryReadRules )
 where
-import DDC.Driver.Source
+import DDC.Interface.Source
 import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier
