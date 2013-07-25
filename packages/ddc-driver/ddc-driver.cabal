@@ -49,6 +49,7 @@ Library
         DDC.Driver.Command.Compile
         DDC.Driver.Command.Load
         DDC.Driver.Command.Make
+        DDC.Driver.Command.Parse
         DDC.Driver.Command.RewriteRules
         DDC.Driver.Command.ToC
         DDC.Driver.Command.ToLlvm

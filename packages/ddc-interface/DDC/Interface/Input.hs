@@ -87,7 +87,7 @@ inputLine
                         --  .. then Maybe for the default command.
 
 inputLine interface readCmd inputState chunk
- | InputState inputMode mCommand lineNumber acc <- inputState
+ | InputState mode mCommand lineNumber acc <- inputState
  = do   
         -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
@@ -103,7 +103,7 @@ inputLine interface readCmd inputState chunk
                 
                 -- We've already started a command, and this is more input for it.
                 Just (cmd', lineStart')
-                 -> (cmd', lineStart', (inputMode, chunk))
+                 -> (cmd', lineStart', (mode, chunk))
 
         let source 
                 -- We were instructed to read the program from a file.

@@ -11,8 +11,8 @@ PACKAGES = \
 	ddc-core-tetra \
         ddc-source-tetra \
 	ddc-build \
-	ddc-driver \
         ddc-interface \
+	ddc-driver \
 	ddc-code \
 
 

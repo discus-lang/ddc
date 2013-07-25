@@ -16,6 +16,7 @@ Library
   Build-Depends: 
         base            == 4.6.*,
         containers      == 0.5.*,
+        directory       == 1.2.*,
         ddc-base        == 0.3.2.*
 
   Exposed-modules:

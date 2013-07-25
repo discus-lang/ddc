@@ -16,10 +16,10 @@ eatLine :: State -> InputState Command
         -> String 
         -> IO (State, InputState Command)
 
-eatLine state inputState@(InputState mCommand inputMode lineNumber acc) chunk
+eatLine state inputState@(InputState mCommand mode lineNumber acc) chunk
  | Just _ <- stateTransInteract state
  = do   state' <- cmdTransInteractLoop state chunk
-	return (state', InputState mCommand inputMode (lineNumber+1) acc)
+	return (state', InputState mCommand mode (lineNumber+1) acc)
 
  | otherwise 
  = do  (inputState', mCmdLine)    
