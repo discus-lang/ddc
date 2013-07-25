@@ -1,10 +1,10 @@
 
-module DDCI.Core.Interface.Interactive
-        ( runInteractive)
+module DDCI.Tetra.Interface.Interactive
+        (runInteractive)
 where
-import DDCI.Core.Input
-import DDCI.Core.State
-import DDCI.Core.Command
+import DDCI.Tetra.Input
+import DDCI.Tetra.State
+import DDCI.Tetra.Command
 import DDC.Interface.Input
 import Data.List
 import Data.Maybe
@@ -15,7 +15,7 @@ import qualified System.Console.Haskeline.IO    as HL
 -- | Run an interactive session, reading commands from the console.
 runInteractive :: IO ()
 runInteractive
- = do   putStrLn "DDCi-core, version 0.3.1: http://disciple.ouroborus.net."
+ = do   putStrLn "DDCi-tetra, version 0.3.2: http://disciple.ouroborus.net."
         putStrLn "Type :help for help."
 
         -- Setup terminal mode.
@@ -39,15 +39,8 @@ loopInteractive
         loop state inputState hlState
  where  
         loop state inputState hlState 
-         = do   -- If this isn't the first line then print the prompt.
-                let prompt = if isJust (inputCommand inputState)
-                             then ""
-			     else if isJust (stateTransInteract state)
-			     then "trans> "
-                             else "> "
-         
-                -- Read a line from the user and echo it back.
-                line    <- getInput hlState prompt
+         = do   -- Read a line from the user and echo it back.
+                line    <- getInput hlState " >"
 
                 if  isPrefixOf ":quit" line
                  || isPrefixOf ":q"    line
@@ -64,4 +57,3 @@ getInput :: HL.InputState -> String -> IO String
 getInput hlState prompt
  = do   line <- HL.queryInput hlState (HL.getInputLine prompt)
         return (fromMaybe ":quit" line)
-

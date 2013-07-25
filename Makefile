@@ -8,7 +8,8 @@
 #
 #   deps                -- build dependencies (should be automatic with the 'all' target)
 #   bin/ddc             -- build the compiler binary
-#   bin/ddci-core       -- build the interactive shell for the core language
+#   bin/ddci-core       -- build the interactive shell for the Core languages
+#   bin/ddci-tetra	-- build the interactive shell for the Tetra language
 #   bin/war             -- build the test driver
 #   bin/plate           -- build the boilerplate generator
 #   runtime		-- build the runtime system
@@ -58,7 +59,7 @@ include make/build.mk
 allWithConfig :
 	@$(MAKE) packages/ddc-alpha/src/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core \
+	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
 		 runtime external libs bin/war -j $(THREADS)
 
 
@@ -67,7 +68,7 @@ allWithConfig :
 .PHONY	: newWithConfig
 newWithConfig :
 	@$(MAKE) deps-new
-	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core \
+	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
 		 runtime-new bin/war -j $(THREADS)
 
 
@@ -98,13 +99,15 @@ proof:
 deps	: make/deps/Makefile-ddc-alpha.deps \
           make/deps/Makefile-ddc-check.deps \
           make/deps/Makefile-ddc-main.deps \
-          make/deps/Makefile-ddci-core.deps
+          make/deps/Makefile-ddci-core.deps \
+          make/deps/Makefile-ddci-tetra.deps
 
 # -- Build all dependencies related to the new compiler
 .PHONY	 : deps-new
 deps-new : make/deps/Makefile-ddc-check.deps \
            make/deps/Makefile-ddc-main.deps \
-           make/deps/Makefile-ddci-core.deps
+           make/deps/Makefile-ddci-core.deps \
+           make/deps/Makefile-ddci-tetra.deps
 
 
 # -- What to do during the nightly builds
@@ -146,6 +149,7 @@ include make/targets/ddc-alpha.mk
 include make/targets/ddc-check.mk
 include make/targets/ddc-main.mk
 include make/targets/ddci-core.mk
+include make/targets/ddci-tetra.mk
 include make/targets/proof.mk
 include make/targets/helper.mk
 include make/targets/packages.mk
@@ -167,5 +171,6 @@ include make/rules.mk
 -include make/deps/Makefile-ddc-check.deps.inc
 -include make/deps/Makefile-ddc-main.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
+-include make/deps/Makefile-ddci-tetra.deps.inc
 -include make/deps/proof.deps.inc
 
