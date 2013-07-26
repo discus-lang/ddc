@@ -30,7 +30,6 @@ Library
         DDC.Source.Tetra.Exp.Base
 
   GHC-options:
-        -Werror
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
