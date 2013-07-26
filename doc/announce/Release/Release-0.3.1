@@ -1,7 +1,7 @@
 
-                 The Disciplined Disciple Compiler 0.3.0
+                 The Disciplined Disciple Compiler 0.3.1
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                         RELEASE NOTES    DATE
+                       RELEASE NOTES    22/12/2012
 
 DDC is a research compiler used to investigate program transformation in the
 presence of computational effects. This is a development release. There is
@@ -48,17 +48,17 @@ What Works in this Release:
 
  * Interpreter for the full Eval language.
 
- * Several standard program transformations:
-    Anonymize (remove names), Beta (substitute), Bubble (move type-casts),
-    Elaborate (add witnesses), Flatten (eliminate nested bindings), 
-    Forward (let-floating), Namify (add names), Prune (dead-code elimination),
-    Snip (eliminate nested applications).
-
  * Cross module inlining.
 
  * Rewrite rules.
 
  * Generation of LLVM aliasing and constancy meta-data.
+
+ * Several standard program transformations:
+    Anonymize (remove names), Beta (substitute), Bubble (move type-casts),
+    Elaborate (add witnesses), Flatten (eliminate nested bindings), 
+    Forward (let-floating), Namify (add names), Prune (dead-code elimination),
+    Snip (eliminate nested applications).
 
 
 What Doesn't
@@ -80,7 +80,7 @@ What Doesn't
      doesn't handle multiple modules. You'd need to do the linking yourself.
 
  * No user defined data types.
-   - Pairs and Lists are baked in, but we don't handle data type definitions.
+   - Pairs and Lists are baked in, but we don't handle data type declarations.
 
  * No code generation for lazy evaluation.
    - The language semantics and interpreter support it, but the C and LLVM
