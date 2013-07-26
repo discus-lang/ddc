@@ -1,7 +1,7 @@
 
-                 The Disciplined Disciple Compiler 0.3.1
+                 The Disciplined Disciple Compiler 0.3.2
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                       RELEASE NOTES    22/12/2012
+                       RELEASE NOTES    26/07/2013
 
 DDC is a research compiler used to investigate program transformation in the
 presence of computational effects. This is a development release. There is
@@ -13,13 +13,24 @@ DDC compiles several related languages:
  * Disciple Core Lite (Module.dcl)
 
    Explicitly typed System-F2 style core language with region, effect and
-   closure typing. Evaluation is left-to-right call-by-value by default,
-   but explicit lazy evaluation is also supported. There is also a capability
-   system to track whether objects are mutable or constant, and to ensure that
-   computations that perform visible side effects are not suspended with lazy 
-   evaluation. The Lite language supports higher order functions, algebraic
-   data types and unboxed primitive types.
+   closure typing. Evaluation is left-to-right call-by-value by default.
+   There is also a capability system to track whether objects are mutable or
+   constant, and to ensure that computations that perform visible side effects
+   are not reordered inappropriately. The Lite language supports higher order
+   functions, algebraic data types and unboxed primitive types.
     (* not all features are supported by the code generators yet, see below *)
+
+ * Disciple Core Tetra (Module.dct)
+
+   Like Disciple Core Lite but using the 'S' computation type to encode
+   effects rather than having a latent effect on the function type constructor.
+    (* does not yet compile to C or LLVM *)
+
+ * Disciple Core Flow (Module.dcf)
+
+   Language with builtin support for Series expressions and Data Flow Fusion.
+   This core language fragment and its associated transforms is used by
+   the repa-plugin available on Hackage.
 
  * Disciple Core Salt (Module.dce)
 
@@ -33,7 +44,7 @@ DDC compiles several related languages:
    Similar to Disciple Core Lite, except without unboxed primitive types.
    This language is accepted by the interpreter.
 
-All three languages share the same abstract syntax tree (AST), type checker,
+All core languages share the same abstract syntax tree (AST), type checker,
 and are amenable to the same program transformations. They differ only in the
 set of allowable language features, and which primitive types and operators
 are included.
@@ -42,11 +53,13 @@ are included.
 What Works in this Release:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * Parsing and type checking for the Lite, Salt and Eval languages.
+ * Parsing and type checking for the Lite, Tetra, Flow, Salt and Eval languages.
 
  * Compilation via C and LLVM for first-order Lite and Salt programs.
 
  * Interpreter for the full Eval language.
+
+ * Data Flow Fusion for the Flow language.
 
  * Cross module inlining.
 
@@ -93,6 +106,7 @@ What Doesn't
 Previous Releases
 ~~~~~~~~~~~~~~~~~
 
+ 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
  2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
  2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
  2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
@@ -101,16 +115,13 @@ Previous Releases
 Immediate Plans
 ~~~~~~~~~~~~~~~
 
- 1) Finish the Coq proof for the core language. We have a hand-done proof for
-    an earlier version of the language, and a Coq formalization for a
-    System-F2 language with a mutable heap. We need to add regions, effects
-    and the capability system to the Coq formalization.
-
- 2) Implement a local type inferencer. The type inferencer will fill in type
+ 1) Implement a local type inferencer. The type inferencer will fill in type
     applications as well as effect and closure annotations, but will not 
     perform let-generalisation. This is similar the local type inference used
     to support implicits in Coq/Gallina.
 
+ 2) Flesh out the Tetra fragment of the language, using the new approach to
+    representing effects with computation types.
 
 How you can help
 ~~~~~~~~~~~~~~~~
@@ -133,9 +144,7 @@ People:
 
  The following people contributed to DDC since the last release:
 
- Tran Ma                - LLVM aliasing and constancy meta-data.
  Amos Robinson          - Rewrite rule system and program transforms.
- Erik de Castro Lopo    - Build framework.
  Ben Lippmeier          - Code generators, framework, program transforms.
 
 
