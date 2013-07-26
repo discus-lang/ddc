@@ -39,5 +39,5 @@ readDaConFlow str
 typeDaConFlow :: DaConFlow -> Type Name
 typeDaConFlow (DaConFlowTuple n)
         = tForalls (replicate n kData)
-        $ \args -> foldr tFunPE (tTupleN args) args
+        $ \args -> foldr tFun (tTupleN args) args
 

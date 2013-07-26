@@ -436,14 +436,19 @@ takeTFunEC tt
         _ -> Nothing
 
 
--- | Destruct the type of a function,
---   returning just the argument and result types.
+-- | Destruct the type of a function, returning just the argument and result types.
+--
+--   Works for both `TcConFun` and `TcConFunEC`.
 takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
+        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+         -> let (tsMore, tResult) = takeTFunArgResult t2
+            in  (t1 : tsMore, tResult)
+
         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) _eff) _clo) t2
-          -> let (tsMore, tResult) = takeTFunArgResult t2
-             in  (t1 : tsMore, tResult)
+         -> let (tsMore, tResult) = takeTFunArgResult t2
+            in  (t1 : tsMore, tResult)
 
         _ -> ([], tt)
 
@@ -451,6 +456,9 @@ takeTFunArgResult tt
 --   returning the witness argument, value argument and result types.
 --   The function type must have the witness implications before 
 --   the value arguments, eg  @T1 => T2 -> T3 -> T4 -> T5@.
+--
+--   Works for both `TcConFun` and `TcConFunEC`.
+--
 takeTFunWitArgResult :: Type n -> ([Type n], [Type n], Type n)
 takeTFunWitArgResult tt
  = case tt of
@@ -476,13 +484,17 @@ takeTFunAllArgResult tt
          -> let (tsMore, tResult)       = takeTFunAllArgResult t
             in  (typeOfBind b : tsMore, tResult)
 
+        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+         -> let (tsMore, tResult) = takeTFunAllArgResult t2
+            in  (t1 : tsMore, tResult)
+
         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) _eff) _clo) t2
-          -> let (tsMore, tResult) = takeTFunAllArgResult t2
-             in  (t1 : tsMore, tResult)
+         -> let (tsMore, tResult) = takeTFunAllArgResult t2
+            in  (t1 : tsMore, tResult)
 
         TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
-         ->  let (tsMore, tResult) = takeTFunAllArgResult t2
-             in  (t1 : tsMore, tResult)
+         -> let (tsMore, tResult) = takeTFunAllArgResult t2
+            in  (t1 : tsMore, tResult)
 
         _ -> ([], tt)
 

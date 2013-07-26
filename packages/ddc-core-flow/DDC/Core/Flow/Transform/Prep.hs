@@ -78,7 +78,6 @@ prepX tenv xx
          -> do   addWorkerArgs n [tInt, tA, tB]
                  return xx
 
-
         -- Detect workers passed to mkSels
         XApp{}
          | Just (XVar _ u, [XType _tK1, XType _tA, _, XVar _ (UName n)])

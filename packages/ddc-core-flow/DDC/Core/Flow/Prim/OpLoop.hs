@@ -46,20 +46,20 @@ typeOpLoop op
         -- loop#  :: [k : Rate]. (Nat# -> Unit) -> Unit
         OpLoopLoop
          -> tForall kRate 
-         $  \_ -> (tNat `tFunPE` tUnit) `tFunPE` tUnit
+         $  \_ -> (tNat `tFun` tUnit) `tFun` tUnit
 
         -- loopn#  :: [k : Rate]. RateNat k -> (Nat# -> Unit) -> Unit
         OpLoopLoopN
          -> tForall kRate 
-         $  \kR -> tRateNat kR `tFunPE` (tNat `tFunPE` tUnit) `tFunPE` tUnit
+         $  \kR -> tRateNat kR `tFun` (tNat `tFun` tUnit) `tFun` tUnit
 
         -- guard#  :: Ref# Nat# -> Bool# 
         --         -> (Nat# -> Unit) -> Unit
         OpLoopGuard 
          -> tRef tNat
-                `tFunPE` tBool
-                `tFunPE` (tNat `tFunPE` tUnit)
-                `tFunPE` tUnit
+                `tFun` tBool
+                `tFun` (tNat `tFun` tUnit)
+                `tFun` tUnit
 
 
 -- Compounds ------------------------------------------------------------------

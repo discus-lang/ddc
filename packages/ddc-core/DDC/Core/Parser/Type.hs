@@ -109,7 +109,10 @@ pTypeFun c
            -- T1 -> T2
          , do   pTok KArrowDash
                 t2      <- pTypeFun c
-                return  $ t1 `tFunPE` t2
+                if (  contextFunctionalEffects c
+                   && contextFunctionalClosures c)
+                   then return $ t1 `tFunPE` t2
+                   else return $ t1 `tFun`   t2
 
            -- T1 -(TSUM | TSUM)> t2
          , do   pTok KDash

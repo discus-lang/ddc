@@ -145,9 +145,11 @@ insertBody nest@NestIf{}   context@(ContextRate tRate) body'
 insertBody (NestList (n:ns)) context body'
  | Just n'  <- insertBody n context body'
  = Just $ NestList (n':ns)
+
 insertBody (NestList (n:ns)) context body'
  | Just (NestList ns') <- insertBody (NestList ns) context body'
  = Just $ NestList (n:ns')
+
 insertBody (NestList []) _ _
  = Nothing
  

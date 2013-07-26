@@ -68,20 +68,20 @@ typeOpStore op
         -- Assignables ----------------
         -- new#        :: [a : Data]. a -> Array# a
         OpStoreNew
-         -> tForall kData $ \tA -> tA `tFunPE` tRef tA
+         -> tForall kData $ \tA -> tA `tFun` tRef tA
 
         -- read#       :: [a : Data]. Ref# a -> a
         OpStoreRead
-         -> tForall kData $ \tA -> tRef tA `tFunPE` tA
+         -> tForall kData $ \tA -> tRef tA `tFun` tA
 
         -- write#      :: [a : Data]. Ref# a -> a -> Unit
         OpStoreWrite
-         -> tForall kData $ \tA -> tRef tA `tFunPE` tA `tFunPE` tUnit
+         -> tForall kData $ \tA -> tRef tA `tFun` tA `tFun` tUnit
 
         -- Arrays ---------------------
         -- newVector#   :: [a : Data]. Nat -> Vector# a
         OpStoreNewVector
-         -> tForall kData $ \tA -> tNat `tFunPE` tVector tA
+         -> tForall kData $ \tA -> tNat `tFun` tVector tA
                 
         -- newVectorR#  :: [a : Data]. [k : Rate]. Vector# a
         OpStoreNewVectorR
@@ -91,29 +91,29 @@ typeOpStore op
         -- newVectorN#  :: [a : Data]. [k : Rate]. RateNat k -> Vector a
         OpStoreNewVectorN
          -> tForalls [kData, kRate]
-         $ \[tA, tK] -> tRateNat tK `tFunPE` tVector tA
+         $ \[tA, tK] -> tRateNat tK `tFun` tVector tA
         
         -- readVector#  :: [a : Data]. Vector# a -> Nat# -> a
         OpStoreReadVector
          -> tForall kData 
-         $  \tA -> tVector tA `tFunPE` tNat `tFunPE` tA
+         $  \tA -> tVector tA `tFun` tNat `tFun` tA
 
         -- writeVector# :: [a : Data]. Vector# a -> Nat# -> a -> Unit
         OpStoreWriteVector
          -> tForall kData 
-         $  \tA -> tVector tA `tFunPE` tNat `tFunPE` tA `tFunPE` tUnit
+         $  \tA -> tVector tA `tFun` tNat `tFun` tA `tFun` tUnit
 
         -- sliceVector# :: [a : Data]. Nat# -> Vector# a -> Vector# a
         OpStoreSliceVector
          -> tForall kData 
-         $  \tA -> tNat `tFunPE` tVector tA `tFunPE` tVector tA
+         $  \tA -> tNat `tFun` tVector tA `tFun` tVector tA
 
 
         -- Streams --------------------
         -- next#  :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
         OpStoreNext
          -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries tK tA `tFunPE` tNat `tFunPE` tA
+         $  \[tA, tK] -> tSeries tK tA `tFun` tNat `tFun` tA
 
 
 -- Compounds ------------------------------------------------------------------

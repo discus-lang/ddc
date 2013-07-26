@@ -329,7 +329,7 @@ windBodyX refMap context xx
                 tResult = loopResultT tsAccs
 
                 -- Type of the loop function.
-                tLoop   = foldr tFunPE tResult (tIndex : tsAccs)
+                tLoop   = foldr tFun tResult (tIndex : tsAccs)
 
 
                 -- Decend into loop body,

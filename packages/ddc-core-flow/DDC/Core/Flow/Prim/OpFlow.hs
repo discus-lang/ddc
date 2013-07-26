@@ -115,18 +115,18 @@ takeTypeOpFlow op
         --                 .  Series k a -> Vector a
         OpFlowVectorOfSeries
          -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
-                -> tSeries tK tA `tFunPE` tVector tA
+                -> tSeries tK tA `tFun` tVector tA
 
         -- rateOfSeries#   :: [k : Rate]. [a : Data]
         --                 .  Series k a -> RateNat k
         OpFlowRateOfSeries 
          -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                -> tSeries tK tA `tFunPE` tRateNat tK
+                -> tSeries tK tA `tFun` tRateNat tK
 
         -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
         OpFlowNatOfRateNat 
          -> Just $ tForall kRate $ \tK 
-                -> tRateNat tK `tFunPE` tNat
+                -> tRateNat tK `tFun` tNat
 
 
         -- Selectors ----------------------------
@@ -137,9 +137,9 @@ takeTypeOpFlow op
         OpFlowMkSel 1
          -> Just $ tForalls [kRate, kData] $ \[tK1, tA]
                 ->       tSeries tK1 tBool
-                `tFunPE` (tForall kRate $ \tK2 
-                                -> tSel1 (liftT 1 tK1) tK2 `tFunPE` (liftT 1 tA))
-                `tFunPE` tA
+                `tFun` (tForall kRate $ \tK2 
+                                -> tSel1 (liftT 1 tK1) tK2 `tFun` (liftT 1 tA))
+                `tFun` tA
 
   
         -- Maps ---------------------------------
@@ -147,9 +147,9 @@ takeTypeOpFlow op
         --       .  (a -> b) -> Series k a -> Series k b
         OpFlowMap 1
          -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
-                ->       (tA `tFunPE` tB)
-                `tFunPE` tSeries tK tA
-                `tFunPE` tSeries tK tB
+                ->       (tA `tFun` tB)
+                `tFun` tSeries tK tA
+                `tFun` tSeries tK tB
 
         -- mapN  :: [k : Rate] [a0..aN : Data]
         --       .  (a0 -> .. aN) -> Series k a0 -> .. Series k aN
@@ -172,7 +172,7 @@ takeTypeOpFlow op
         --      .  a -> Series k a
         OpFlowRep 
          -> Just $ tForalls [kData, kRate] $ \[tA, tR]
-                -> tA `tFunPE` tSeries tR tA
+                -> tA `tFun` tSeries tR tA
 
         -- reps  :: [k1 k2 : Rate]. [a : Data]
         --       .  Segd   k1 k2 
@@ -180,9 +180,9 @@ takeTypeOpFlow op
         --       -> Series k2 a
         OpFlowReps 
          -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
-                ->       tSegd   tK1 tK2
-                `tFunPE` tSeries tK1 tA
-                `tFunPE` tSeries tK2 tA
+                ->     tSegd   tK1 tK2
+                `tFun` tSeries tK1 tA
+                `tFun` tSeries tK2 tA
 
 
         -- Folds --------------------------------
@@ -190,19 +190,19 @@ takeTypeOpFlow op
         --      .  (a -> b -> a) -> a -> Series k b -> a
         OpFlowFold    
          -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
-                ->       (tA `tFunPE` tB `tFunPE` tA)
-                `tFunPE` tA
-                `tFunPE` tSeries tK tB
-                `tFunPE` tA
+                ->     (tA `tFun` tB `tFun` tA)
+                `tFun` tA
+                `tFun` tSeries tK tB
+                `tFun` tA
 
         -- foldIndex :: [k : Rate]. [a b: Data]
         --           .  (Int# -> a -> b -> a) -> a -> Series k b -> a
         OpFlowFoldIndex
          -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
-                 ->       (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
-                 `tFunPE` tA
-                 `tFunPE` tSeries tK tB
-                 `tFunPE` tA
+                 ->     (tInt `tFun` tA `tFun` tB `tFun` tA)
+                 `tFun` tA
+                 `tFun` tSeries tK tB
+                 `tFun` tA
 
         -- folds :: [k1 k2 : Rate]. [a b: Data]
         --       .  Segd   k1 k2 
@@ -212,11 +212,11 @@ takeTypeOpFlow op
         --       -> Series k1 a         -- result values
         OpFlowFolds
          -> Just $ tForalls [kRate, kRate, kData, kData] $ \[tK1, tK2, tA, tB]
-                 ->       tSegd tK1 tK2
-                 `tFunPE` (tInt `tFunPE` tA `tFunPE` tB `tFunPE` tA)
-                 `tFunPE` tSeries tK1 tA
-                 `tFunPE` tSeries tK2 tB
-                 `tFunPE` tSeries tK1 tA
+                 ->      tSegd tK1 tK2
+                 `tFun` (tInt `tFun` tA `tFun` tB `tFun` tA)
+                 `tFun` tSeries tK1 tA
+                 `tFun` tSeries tK2 tB
+                 `tFun` tSeries tK1 tA
 
 
         -- Packs --------------------------------
@@ -225,9 +225,9 @@ takeTypeOpFlow op
         --       -> Series k1 a -> Series k2 a
         OpFlowPack
          -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
-                ->       tSel1   tK1 tK2 
-                `tFunPE` tSeries tK1 tA
-                `tFunPE` tSeries tK2 tA
+                ->     tSel1   tK1 tK2 
+                `tFun` tSeries tK1 tA
+                `tFun` tSeries tK2 tA
 
         _ -> Nothing
 
