@@ -44,10 +44,10 @@ module DDC.Type.Compounds
         , takePrimeRegion
 
           -- * Functions
-        , tFun
-        , tFunEC
+        , tFun,         tFunOfList
         , tFunPE,       tFunOfListPE
-        , takeTFunEC
+        , tFunEC
+        , takeTFun,     takeTFunEC
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult
@@ -427,12 +427,58 @@ tFunEC t1 eff clo t2
 infixr `tFunEC`
 
 
--- | Destruct the type of a value function.
+-- | Construct a pure and empty value type function.
+tFunPE  :: Type n -> Type n -> Type n
+tFunPE t1 t2    = tFunEC t1 (tBot kEffect) (tBot kClosure) t2
+infixr `tFunPE`
+
+
+-- | Construct a pure and empty function from a list containing the 
+--   parameter and return type. Yields `Nothing` if the list is empty.
+tFunOfList :: [Type n] -> Maybe (Type n)
+tFunOfList ts
+  = case reverse ts of
+        []      -> Nothing
+        (t : tsArgs)       
+         -> let tFuns' []             = t
+                tFuns' (t' : ts')     = t' `tFun` tFuns' ts'
+            in  Just $ tFuns' (reverse tsArgs)
+
+
+-- | Construct a pure and empty function from a list containing the 
+--   parameter and return type. Yields `Nothing` if the list is empty.
+tFunOfListPE :: [Type n] -> Maybe (Type n)
+tFunOfListPE ts
+  = case reverse ts of
+        []      -> Nothing
+        (t : tsArgs)       
+         -> let tFunPEs' []             = t
+                tFunPEs' (t' : ts')     = t' `tFunPE` tFunPEs' ts'
+            in  Just $ tFunPEs' (reverse tsArgs)
+
+
+-- | Yield the argument and result type of a function type.
+--   
+--   Works for both `TcConFun` and `TcConFunEC`.
+takeTFun :: Type n -> Maybe (Type n, Type n)
+takeTFun tt
+ = case tt of
+        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+         ->  Just (t1, t2)
+
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) _eff) _clo) t2
+         ->  Just (t1, t2)
+
+        _ -> Nothing
+
+
+-- | Yield the argument and result type of a function type.
 takeTFunEC :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
 takeTFunEC tt
  = case tt of
         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) eff) clo) t2
          ->  Just (t1, eff, clo, t2)
+
         _ -> Nothing
 
 
@@ -451,6 +497,7 @@ takeTFunArgResult tt
             in  (t1 : tsMore, tResult)
 
         _ -> ([], tt)
+
 
 -- | Destruct the type of a function,
 --   returning the witness argument, value argument and result types.
@@ -508,24 +555,7 @@ arityOfType tt
         t               -> length $ fst $ takeTFunArgResult t
 
 
--- | Construct a pure and empty value type function.
-tFunPE  :: Type n -> Type n -> Type n
-tFunPE t1 t2    = tFunEC t1 (tBot kEffect) (tBot kClosure) t2
-infixr `tFunPE`
-
-
--- | Construct a pure and empty function from a list containing the 
---   parameter and return type. Yields `Nothing` if the list is empty.
-tFunOfListPE :: [Type n] -> Maybe (Type n)
-tFunOfListPE ts
-  = case reverse ts of
-        []      -> Nothing
-        (t : tsArgs)       
-         -> let tFunPEs' []             = t
-                tFunPEs' (t' : ts')     = t' `tFunPE` tFunPEs' ts'
-            in  Just $ tFunPEs' (reverse tsArgs)
-
-
+-- Implications ---------------------------------------------------------------
 -- | Construct a witness implication type.
 tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
@@ -595,5 +625,4 @@ tConData0 n k   = TCon (TyConBound (UName n) k)
 -- | Build a type constructor application of one argumnet.
 tConData1 :: n -> Kind n -> Type n -> Type n
 tConData1 n k t1 = TApp (TCon (TyConBound (UName n) k)) t1
-
 

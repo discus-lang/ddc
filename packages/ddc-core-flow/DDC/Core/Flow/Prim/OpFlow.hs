@@ -155,11 +155,11 @@ takeTypeOpFlow op
         --       .  (a0 -> .. aN) -> Series k a0 -> .. Series k aN
         OpFlowMap n
          | n >= 2
-         , Just tWork <- tFunOfListPE   
+         , Just tWork <- tFunOfList   
                          [ TVar (UIx i) 
                                 | i <- reverse [0..n] ]
 
-         , Just tBody <- tFunOfListPE   
+         , Just tBody <- tFunOfList
                          (tWork : [tSeries (TVar (UIx (n + 1))) (TVar (UIx i)) 
                                 | i <- reverse [0..n] ])
 
