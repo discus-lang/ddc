@@ -108,6 +108,7 @@ readTwConWithArity :: String -> Maybe TwCon
 readTwConWithArity ss
  | Just n <- stripPrefix "Distinct" ss 
  , all isDigit n
+ 
  = Just (TwConDistinct $ read n)
  | otherwise = Nothing
  

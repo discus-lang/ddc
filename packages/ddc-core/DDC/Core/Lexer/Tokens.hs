@@ -143,19 +143,33 @@ data TokAtom
         | KAngleColonBra
         | KAngleColonKet
 
-        -- punctuation
-        | KDot
-        | KBar
-        | KHat
-        | KPlus
-        | KColon
-        | KComma
-        | KBackSlash
+        -- Operator symbols
+        -- These can be used as part of an infix operator.
+        | KTilde    
+        | KBang     
+        | KAt       
+        | KHash     
+        | KDollar   
+        | KPercent  
+        | KHat      
+        | KAmpersand
+        | KStar     
+        | KDash     
+        | KPlus     
+        | KEquals   
+        | KBar      
+        | KColon    
+        | KDot      
+        | KSlash    
+
+        -- Punctuation symbols.
+        -- These cannot be used as part of an infix operator.
+        | KComma           
         | KSemiColon
         | KUnderscore
-        | KEquals
-        | KAmpersand
-        | KDash
+        | KBackSlash
+        
+        -- Compound symbols.
         | KColonColon
         | KBigLambda
 
@@ -246,19 +260,29 @@ describeTokAtom' ta
         KAngleColonBra          -> (Symbol, "<:")
         KAngleColonKet          -> (Symbol, ":>")
 
-        -- punctuation
-        KDot                    -> (Symbol, ".")
-        KBar                    -> (Symbol, "|")
+        -- operator symbols
+        KTilde                  -> (Symbol, "~")
+        KBang                   -> (Symbol, "!")
+        KAt                     -> (Symbol, "@")
+        KHash                   -> (Symbol, "#")
+        KDollar                 -> (Symbol, "$")
+        KPercent                -> (Symbol, "%")
         KHat                    -> (Symbol, "^")
+        KAmpersand              -> (Symbol, "&")
+        KStar                   -> (Symbol, "*")
+        KDash                   -> (Symbol, "-")
         KPlus                   -> (Symbol, "+")
+        KEquals                 -> (Symbol, "=")
+        KBar                    -> (Symbol, "|")
         KColon                  -> (Symbol, ":")
+        KDot                    -> (Symbol, ".")
+        KSlash                  -> (Symbol, "/")
+
+        -- punctuation symbols
         KComma                  -> (Symbol, ",")
-        KBackSlash              -> (Symbol, "\\")
         KSemiColon              -> (Symbol, ";")
         KUnderscore             -> (Symbol, "_")
-        KEquals                 -> (Symbol, "=")
-        KAmpersand              -> (Symbol, "&")
-        KDash                   -> (Symbol, "-")
+        KBackSlash              -> (Symbol, "\\")
         KColonColon             -> (Symbol, "::")
         KBigLambda              -> (Symbol, "/\\")
 
@@ -269,9 +293,9 @@ describeTokAtom' ta
         KArrowEquals            -> (Constructor, "=>")
 
         -- bottoms
-        KBotEffect              -> (Constructor, "!0")
-        KBotClosure             -> (Constructor, "!$")
-
+        KBotEffect              -> (Constructor, "Pure")
+        KBotClosure             -> (Constructor, "Empty")
+        
         -- expression keywords
         KModule                 -> (Keyword, "module")
         KImports                -> (Keyword, "imports")
