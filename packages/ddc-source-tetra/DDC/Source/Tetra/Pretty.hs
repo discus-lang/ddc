@@ -1,85 +1,39 @@
 
--- | Pretty printing for core modules and expressions.
-module DDC.Core.Pretty 
+-- | Pretty printing for Tetra modules and expressions.
+module DDC.Source.Tetra.Pretty
         ( module DDC.Type.Pretty
-        , module DDC.Base.Pretty)
+        , module DDC.Core.Pretty
+        , module DDC.Base.Pretty )
 where
-import DDC.Core.Compounds
-import DDC.Core.Predicates
-import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Source.Tetra.Compounds
+import DDC.Source.Tetra.Predicates
+import DDC.Source.Tetra.Module
+import DDC.Source.Tetra.Exp
+import DDC.Core.Pretty
 import DDC.Type.Pretty
 import DDC.Base.Pretty
-import Data.List
-import qualified Data.Map.Strict        as Map
-
-
--- ModuleName -----------------------------------------------------------------
-instance Pretty ModuleName where
- ppr (ModuleName parts)
-        = text $ intercalate "." parts
 
 
 -- Module ---------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
- ppr ModuleCore 
+ ppr Module
         { moduleName            = name
-        , moduleExportKinds     = exportKinds
-        , moduleExportTypes     = exportTypes
-        , moduleImportKinds     = importKinds
-        , moduleImportTypes     = importTypes
-        , moduleBody            = body }
-  = {-# SCC "ppr[Module]" #-}
-    let 
-        (lts, _)         = splitXLets body
+        , moduleExportedTypes   = _exportedTypes
+        , moduleExportedValues  = _exportedValues
+        , moduleImportedModules = _importedModules
+        , moduleTops            = tops }
+  =  text "module" <+> ppr name <+> text "where" <$$> (vcat $ map ppr tops)
 
-        docsExportKinds
-         | Map.null exportKinds        = empty
-         | otherwise  
-         = nest 8 $ line 
-         <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, t)      <- Map.toList exportKinds ]
 
-        docsExportTypes  
-         | Map.null exportTypes        = empty
-         | otherwise
-         = nest 8 $ line
-         <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
-                  | (n, t)      <- Map.toList exportTypes ]
-
-        docsImportKinds
-         | Map.null importKinds        = empty
-         | otherwise  
-         = nest 8 $ line 
-         <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- Map.toList importKinds ]
-
-        docsImportTypes  
-         | Map.null importTypes        = empty
-         | otherwise
-         = nest 8 $ line
-         <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- Map.toList importTypes ]
-
-    in  text "module" <+> ppr name 
-         <+> (if Map.null exportKinds && Map.null exportTypes
-                then empty
-                else line
-                        <> text "exports" <+> lbrace
-                        <> docsExportKinds
-                        <> docsExportTypes
-                        <> line 
-                        <> rbrace <> space)
-
-         <>  (if Map.null importKinds && Map.null importTypes
-                then empty
-                else line 
-                        <> text "imports" <+> lbrace 
-                        <> docsImportKinds
-                        <> docsImportTypes
-                        <> line 
-                        <> rbrace <> space)
-         <>  text "with" <$$> (vcat $ map ppr lts)
+-- Top ------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Top a n) where
+ ppr (TopBind _ b x)
+  = let dBind = if isBot (typeOfBind b)
+                          then ppr (binderOfBind b)
+                          else ppr b
+    in  align (  dBind
+                <> nest 2 ( breakWhen (not $ isSimpleX x)
+                          <> text "=" <+> align (ppr x)))
 
 
 -- Exp ------------------------------------------------------------------------
@@ -152,34 +106,10 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XWitness w      -> text "<" <> ppr w <> text ">"
 
 
--- Pat ------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Pat n) where
- ppr pp
-  = case pp of
-        PDefault        -> text "_"
-        PData u bs      -> ppr u <+> sep (map pprPatBind bs)
-
-
--- | Pretty print a binder, 
---   showing its type annotation only if it's not bottom.
-pprPatBind :: (Eq n, Pretty n) => Bind n -> Doc
-pprPatBind b
-        | isBot (typeOfBind b)  = ppr $ binderOfBind b
-        | otherwise             = parens $ ppr b
-
-
 -- Alt ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
  ppr (AAlt p x)
   = ppr p <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
-
-
--- DaCon ----------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (DaCon n) where
- ppr dc
-  = case daConName dc of
-        DaConUnit               -> text "()"
-        DaConNamed n            -> ppr n
 
 
 -- Cast -----------------------------------------------------------------------
@@ -189,16 +119,8 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
         CastWeakenEffect  eff   
          -> text "weakeff" <+> brackets (ppr eff)
 
-        CastWeakenClosure xs
-         -> text "weakclo" 
-         <+> braces (hcat $ punctuate (semi <> space) 
-                          $ map ppr xs)
-
         CastPurify w
          -> text "purify"  <+> angles   (ppr w)
-
-        CastForget w
-         -> text "forget"  <+> angles   (ppr w)
 
         CastSuspend
          -> text "suspend"
@@ -219,22 +141,6 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                  <+> align (  dBind
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
                                      <> text "=" <+> align (ppr x)))
-
-        LRec bxs
-         -> let pprLetRecBind (b, x)
-                 =   ppr (binderOfBind b)
-                 <+> text ":"
-                 <+> ppr (typeOfBind b)
-                 <>  nest 2 (  breakWhen (not $ isSimpleX x)
-                            <> text "=" <+> align (ppr x))
-        
-           in   (nest 2 $ text "letrec"
-                  <+> lbrace 
-                  <>  (  line 
-                      <> (vcat $ punctuate (semi <> line)
-                               $ map pprLetRecBind bxs)))
-                <$> rbrace
-
         
         LLetRegions [b] []
          -> text "letregion"
@@ -255,43 +161,6 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
-
-        LWithRegion b
-         -> text "withregion"
-                <+> ppr b
-
-
--- Witness --------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Witness a n) where
- pprPrec d ww
-  = case ww of
-        WVar _ n         -> ppr n
-        WCon _ wc        -> ppr wc
-
-        WApp _ w1 w2
-         -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
-         
-        WJoin _ w1 w2
-         -> pprParen (d > 9)  (ppr w1 <+> text "&" <+> ppr w2)
-
-        WType _ t        -> text "[" <> ppr t <> text "]"
-
-
-instance (Pretty n, Eq n) => Pretty (WiCon n) where
- ppr wc
-  = case wc of
-        WiConBuiltin wb   -> ppr wb
-        WiConBound   u  _ -> ppr u
-
-
-instance Pretty WbCon where
- ppr wb
-  = case wb of
-        WbConPure       -> text "pure"
-        WbConEmpty      -> text "empty"
-        WbConUse        -> text "use"
-        WbConRead       -> text "read"
-        WbConAlloc      -> text "alloc"
 
 
 -- Binder ---------------------------------------------------------------------

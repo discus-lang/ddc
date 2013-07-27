@@ -1,12 +1,14 @@
 
--- Parse module with some top-level things.
--- Top level things are signaled by 'where'.
-:parse..
-module Test where
-x : Int = 5
-y : Int = add# [Int] x;;
-
 
 -- A module with no top-level things.
 :parse..
 module Test where;;
+
+
+-- Parse module with some top-level things.
+-- Top level things are signaled by 'where'.
+:parse..
+module Test where
+x : Nat = 5
+y : Nat = add# [Nat] x;;
+

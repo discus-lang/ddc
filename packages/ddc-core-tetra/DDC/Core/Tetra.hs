@@ -11,6 +11,9 @@ module DDC.Core.Tetra
 
           -- * Name Parsing
         , readName
+        , readOpPrimArith
+        , readOpPrimRef
+        , readTyConPrim
 
           -- * Program Lexing
         , lexModuleString

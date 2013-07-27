@@ -90,6 +90,7 @@ packages/ddc-source-tetra/%.o : packages/ddc-source-tetra/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base \
 		      -ipackages/ddc-core \
+                      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-tetra \
 		      -ipackages/ddc-source-tetra
 		       
@@ -175,9 +176,9 @@ packages/ddc-tools/src/ddci-tetra/%.o : packages/ddc-tools/src/ddci-tetra/%.hs
 		      -ipackages/ddc-core-eval \
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
-                      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
-                      -ipackages/ddc-source-tetra \
+		      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \

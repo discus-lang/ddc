@@ -7,14 +7,17 @@ module DDC.Core.Tetra.Prim
           -- * Primitive type constructors.
         , TyConPrim     (..)
         , kindTyConPrim
+        , readTyConPrim
 
           -- * Primitive arithmetic operators.
         , OpPrimArith   (..)
         , typeOpPrimArith
+        , readOpPrimArith
 
           -- * Mutable references.
         , OpPrimRef     (..)
-        , typeOpPrimRef)
+        , typeOpPrimRef
+        , readOpPrimRef)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConPrim

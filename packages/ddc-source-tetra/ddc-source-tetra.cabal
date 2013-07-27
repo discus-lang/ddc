@@ -21,7 +21,8 @@ Library
         transformers    == 0.3.*,
         mtl             == 2.1.*,
         ddc-base        == 0.3.2.*,
-        ddc-core        == 0.3.2.*
+        ddc-core        == 0.3.2.*,
+        ddc-core-salt   == 0.3.2.*
 
   Exposed-modules:
         DDC.Source.Tetra.Exp
