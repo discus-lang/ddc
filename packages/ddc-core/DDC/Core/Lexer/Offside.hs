@@ -42,6 +42,7 @@ applyOffside [] (LexemeToken t : ts)
 -- When we see the top-level letrec then enter into the outer-most context.
 applyOffside [] (LexemeToken t1 : (LexemeStartBlock n) : ls)
         |   isToken t1 (KA KLetRec)
+         || isToken t1 (KA KWhere)
          || isToken t1 (KA KExports)
          || isToken t1 (KA KImports)
         = t1 : newCBra ls : applyOffside [n] ls 

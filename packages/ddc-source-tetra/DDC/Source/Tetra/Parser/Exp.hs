@@ -4,7 +4,7 @@ module DDC.Source.Tetra.Parser.Exp
         ( pExp
         , pExpApp
         , pExpAtom,     pExpAtomSP
-        , pLetsSP
+        , pLetsSP,      pLetBinding
         , pType
         , pTypeApp
         , pTypeAtom)

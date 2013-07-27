@@ -177,6 +177,7 @@ packages/ddc-tools/src/ddci-tetra/%.o : packages/ddc-tools/src/ddci-tetra/%.hs
 		      -ipackages/ddc-core-llvm \
                       -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
+                      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \

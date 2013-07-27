@@ -7,7 +7,10 @@ module DDC.Source.Tetra.Module
           -- * Module Names
         , QualName      (..)
         , ModuleName    (..)
-        , isMainModuleName)
+        , isMainModuleName
+
+          -- * Top-level things
+        , Top           (..))
 where
 import DDC.Source.Tetra.Exp
 import Control.DeepSeq
@@ -36,8 +39,8 @@ data Module a n
         , moduleImportedModules :: [ModuleName]
 
           -- Local ------------------------------
-          -- | Top-level bindings.
-        , moduleBindings        :: [Lets a n] }
+          -- | Top-level things
+        , moduleTops            :: [Top a n] }
         deriving Show
 
 
@@ -47,7 +50,7 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleExportedTypes   mm)
         `seq` rnf (moduleExportedValues  mm)
         `seq` rnf (moduleImportedModules mm)
-        `seq` rnf (moduleBindings        mm)
+        `seq` rnf (moduleTops            mm)
         
 
 -- | Check if this is the `Main` module.
@@ -57,4 +60,15 @@ isMainModule mm
         $ moduleName mm
 
 
+-- Top Level Thing ------------------------------------------------------------
+data Top a n
+        -- | Top-level, possibly recursive binding.
+        = TopBind a (Bind n) (Exp a n)
+        deriving Show
+
+
+instance (NFData a, NFData n) => NFData (Top a n) where
+ rnf !top
+  = case top of
+        TopBind a b x   -> rnf a `seq` rnf b `seq` rnf x
 

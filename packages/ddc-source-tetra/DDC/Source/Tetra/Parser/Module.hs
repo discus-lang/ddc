@@ -1,11 +1,16 @@
 
 module DDC.Source.Tetra.Parser.Module
-        ( pModule
+        ( -- * Modules
+          pModule
         , pTypeSig
         , pImportKindSpec
-        , pImportTypeSpec)
+        , pImportTypeSpec
+
+          -- * Top-level things
+        , pTop)
 where
 import DDC.Source.Tetra.Parser.Exp
+import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Core.Parser.Type
@@ -51,10 +56,13 @@ pModule c
         --let (tImportKinds, tImportTypes)
         --        = tImportKindsTypes
 
-        pTok KWith
+        pTok KWhere
+        pTok KBraceBra
 
-        -- LET;+
-        lts     <- P.sepBy1 (pLetsSP c) (pTok KIn)
+        -- TOP;+
+        tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
+
+        pTok KBraceKet
 
         -- ISSUE #295: Check for duplicate exported names in module parser.
         --  The names are added to a unique map, so later ones with the same
@@ -64,7 +72,7 @@ pModule c
                 , moduleExportedTypes   = []
                 , moduleExportedValues  = []
                 , moduleImportedModules = []
-                , moduleBindings        = map fst lts }
+                , moduleTops            = tops }
 
 
 -- | Parse a type signature.
@@ -124,3 +132,16 @@ pImportTypeSpec c
         t       <- pType c
         return  (n, (QualName (ModuleName []) n, t))
  ]        
+
+
+-- Top Level -----------------------------------------------------------------
+pTop    :: Ord n 
+        => Context -> Parser n (Top P.SourcePos n)
+pTop c
+ = P.choice
+ [ do   -- A top-level, possibly recursive binding.
+        (b, x)          <- pLetBinding c
+        let Just sp     = takeAnnotOfExp x
+        return  $ TopBind sp b x
+ ]
+
