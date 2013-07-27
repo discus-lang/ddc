@@ -7,6 +7,7 @@ import qualified DDC.War.Job.CompileDS  as CompileDS
 import qualified DDC.War.Job.CompileHS  as CompileHS
 import qualified DDC.War.Job.Diff       as Diff
 import qualified DDC.War.Job.RunDCX     as RunDCX
+import qualified DDC.War.Job.RunDSX     as RunDSX
 import qualified DDC.War.Job.RunExe     as RunExe
 import qualified DDC.War.Job.Shell      as Shell
 import BuildBox.Pretty
@@ -50,6 +51,13 @@ instance Spec RunDCX.Spec     RunDCX.Result where
  buildFromSpec                  = RunDCX.build
  productOfResult _ result
         = ProductStatus (ppr result) (RunDCX.resultSuccess result)
+
+
+instance Spec RunDSX.Spec     RunDSX.Result where
+ specActionName _               = "run"
+ buildFromSpec                  = RunDSX.build
+ productOfResult _ result
+        = ProductStatus (ppr result) (RunDSX.resultSuccess result)
 
 
 instance Spec RunExe.Spec     RunExe.Result where

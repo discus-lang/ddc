@@ -25,6 +25,9 @@
 --      Test.dcx                Run with ddci-core.
 --       Test.stdout.check       Diff run stdout with this file.
 --       
+--      Test.dsx                Run with ddci-tetra.
+--       Test.stdout.check       Diff run stdout with this file.
+--
 module DDC.War.Create
         ( Way   (..)
         , create)
@@ -38,6 +41,7 @@ import qualified DDC.War.Create.CreateMainHS    as CreateMainHS
 import qualified DDC.War.Create.CreateMainDS    as CreateMainDS
 import qualified DDC.War.Create.CreateTestDS    as CreateTestDS
 import qualified DDC.War.Create.CreateDCX       as CreateDCX
+import qualified DDC.War.Create.CreateDSX       as CreateDSX
 import qualified DDC.War.Create.CreateDC        as CreateDC
 
 
@@ -56,5 +60,6 @@ create way allFiles filePath
                 , CreateMainDS.create
                 , CreateTestDS.create
                 , CreateDCX.create
+                , CreateDSX.create
                 , CreateDC.create  ]]
 

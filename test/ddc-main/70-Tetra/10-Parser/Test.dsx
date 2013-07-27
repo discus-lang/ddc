@@ -10,5 +10,13 @@ module Test where;;
 :parse..
 module Test where
 x : Nat = 5
-y : Nat = add# [Nat] x;;
+y : Nat = add# x x;;
 
+
+-- Factorial function with primops.
+:parse..
+module Test where
+fac (x : Nat) : Nat
+ = case x of
+        0       -> 1
+        _       -> mul# 1 (fac (sub# x 1));;
