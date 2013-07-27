@@ -52,7 +52,6 @@ keywords
         , ("letregion",  KA KLetRegion)
         , ("withregion", KA KWithRegion)
         , ("let",        KA KLet)
-        , ("lazy",       KA KLazy)
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
         , ("forget",     KA KForget)
