@@ -7,7 +7,7 @@ import DDC.War.Driver
 import System.FilePath
 import DDC.War.Job                              ()
 import Data.Set                                 (Set)
-import qualified DDC.War.Job.RunDCX             as RunDSX
+import qualified DDC.War.Job.RunDSX             as RunDSX
 import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set
 

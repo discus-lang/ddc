@@ -21,6 +21,11 @@ main
          ["--help"]
           ->    putStr help
 
+         -- Run commands from a file in batch mode.
+         ["--batch", filePath]
+          -> do file    <- readFile filePath
+                runBatch filePath file
+
          -- Run a Disciple-Core-Exchange file.
          [filePath]
           | isSuffixOf ".dsx" filePath

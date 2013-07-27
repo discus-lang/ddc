@@ -1,0 +1,25 @@
+
+
+-- A module with no top-level things.
+module Test where
+
+
+
+-- Parse module with some top-level things.
+-- Top level things are signaled by 'where'.
+module Test where
+x : Nat = 5
+y : Nat = add# x x
+
+
+-- Factorial function with primops.
+module Test where
+fac : Nat -> Nat
+  = \(x : Nat).
+    case x of {
+      0  
+       -> 1;
+      _ 
+       -> mul# 1
+              (fac (sub# x 1))
+    }

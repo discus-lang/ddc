@@ -57,7 +57,7 @@ build (Spec     srcDSX
                 buildDir testRunStdout testRunStderr)
 
  = do   needs srcDSX
-        needs "bin/ddci-core"
+        needs "bin/ddci-tetra"
 
         -- ensure the output directory exists
         ensureDir buildDir
