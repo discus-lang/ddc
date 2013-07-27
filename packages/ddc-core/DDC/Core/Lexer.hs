@@ -143,20 +143,22 @@ lexString sourceName lineStart str
         '<'  : w'       -> tokA KAngleBra        : lexMore 1 w'
         '>'  : w'       -> tokA KAngleKet        : lexMore 1 w'            
 
-        -- Punctuation
+        -- Punctuation Symbols
         '.'  : w'       -> tokA KDot             : lexMore 1 w'
-        '|'  : w'       -> tokA KBar             : lexMore 1 w'
-        '^'  : w'       -> tokA KHat             : lexMore 1 w'
-        '+'  : w'       -> tokA KPlus            : lexMore 1 w'
-        ':'  : w'       -> tokA KColon           : lexMore 1 w'
         ','  : w'       -> tokA KComma           : lexMore 1 w'
-        '\\' : w'       -> tokA KBackSlash       : lexMore 1 w'
         ';'  : w'       -> tokA KSemiColon       : lexMore 1 w'
         '_'  : w'       -> tokA KUnderscore      : lexMore 1 w'
-        '='  : w'       -> tokA KEquals          : lexMore 1 w'
-        '&'  : w'       -> tokA KAmpersand       : lexMore 1 w'
-        '-'  : w'       -> tokA KDash            : lexMore 1 w'
+        '\\' : w'       -> tokA KBackSlash       : lexMore 1 w'
+
+        -- Operator symbols.
+        c : cs
+         |  isOpStart c
+         ,  (body, rest)         <- span isOpBody cs
+         -> tokA (KOp (c : body))                : lexMore (length (c : body)) rest
         
+        -- Operator body symbols.
+        '^'  : w'       -> tokA KHat             : lexMore 1 w'
+
         -- Bottoms
         name
          |  Just w'     <- stripPrefix "Pure"  name 

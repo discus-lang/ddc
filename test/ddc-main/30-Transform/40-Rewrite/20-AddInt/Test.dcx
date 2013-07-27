@@ -26,7 +26,7 @@
 
 
 -- we can simplify out a copy of a literal.
-:set.. rule copyLit [r1 r2 : Region] (lit : [^:Region]. Unit -(Alloc ^0 | Empty)> Int ^0).
+:set.. rule copyLit [r1 r2 : Region] (lit : [^ : Region]. Unit -(Alloc ^0 | Empty)> Int ^0).
     copyInt [:r1 r2:] (lit [r1] ()) =
     lit [r2] ();;
 -- and a copy of a copy

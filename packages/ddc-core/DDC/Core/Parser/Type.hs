@@ -37,7 +37,7 @@ pTypeSum c
         P.choice 
          [ -- Type sums.
            -- T2 + T3
-           do   pTok KPlus
+           do   pTok (KOp "+")
                 t2      <- pTypeSum c
                 return  $ TSum $ TS.fromList (tBot sComp) [t1, t2]
                 
@@ -73,7 +73,7 @@ pTypeForall c
            -- [v1 v1 ... vn : T1]. T2
            do   pTok KSquareBra
                 bs      <- P.many1 pBinder
-                pTok KColon
+                pTok (KOp ":")
                 k       <- pTypeSum c
                 pTok KSquareKet
                 pTok KDot
@@ -115,10 +115,10 @@ pTypeFun c
                    else return $ t1 `tFun`   t2
 
            -- T1 -(TSUM | TSUM)> t2
-         , do   pTok KDash
+         , do   pTok (KOp "-")
                 pTok KRoundBra
                 eff     <- pTypeSum c
-                pTok KBar
+                pTok (KOp "|")
                 clo     <- pTypeSum c
                 pTok KRoundKet
                 pTok KAngleKet

@@ -1,14 +1,14 @@
 -- Error: Junk ? symbol in program.
 While parsing.
   Parse error in "<batch>" (line 9, column 25)
-  Unexpected character "?".
+  Unexpected symbol "?".
 
 
 -- Error: Like above, but ensure the line number has advanced
 -- between interpreter commands.
 While parsing.
   Parse error in "<batch>" (line 18, column 4)
-  Unexpected character "?".
+  Unexpected symbol "??".
   Expected an expression.
 
 

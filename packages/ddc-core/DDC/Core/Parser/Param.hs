@@ -92,7 +92,7 @@ pBindParamSpec c
         -- [BIND1 BIND2 .. BINDN : TYPE]
  [ do   pTok KSquareBra
         bs      <- P.many1 pBinder
-        pTok KColon
+        pTok (KOp ":")
         t       <- pType c
         pTok KSquareKet
         return  [ ParamType b 
@@ -103,7 +103,7 @@ pBindParamSpec c
         -- <BIND : TYPE>
  , do   pTok KAngleBra
         b       <- pBinder
-        pTok KColon
+        pTok (KOp ":")
         t       <- pType c
         pTok KAngleKet
         return  [ ParamWitness $ T.makeBindFromBinder b t]
@@ -113,7 +113,7 @@ pBindParamSpec c
         -- (BIND : TYPE) { TYPE | TYPE }
  , do   pTok KRoundBra
         b       <- pBinder
-        pTok KColon
+        pTok (KOp ":")
         t       <- pType c
         pTok KRoundKet
 
@@ -121,7 +121,7 @@ pBindParamSpec c
          <- P.choice
                 [ do    pTok KBraceBra
                         eff'    <- pType c
-                        pTok KBar
+                        pTok (KOp "|")
                         clo'    <- pType c
                         pTok KBraceKet
                         return  (eff', clo')

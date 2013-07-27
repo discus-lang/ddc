@@ -30,7 +30,7 @@ pWitnessJoin c
    -- WITNESS  or  WITNESS & WITNESS
  = do   w1      <- pWitnessApp c
         P.choice 
-         [ do   sp      <- pTokSP KAmpersand
+         [ do   sp      <- pTokSP (KOp "&")
                 w2      <- pWitnessJoin c
                 return  (WJoin sp w1 w2)
 

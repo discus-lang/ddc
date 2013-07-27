@@ -42,7 +42,7 @@ pExp c
                 $  P.many1 
                 $  do   pTok KRoundBra
                         bs'     <- P.many1 pBinder
-                        pTok KColon
+                        pTok (KOp ":")
                         t       <- pType c
                         pTok KRoundKet
                         return (map (\b -> T.makeBindFromBinder b t) bs')
@@ -59,7 +59,7 @@ pExp c
                 $  P.many1 
                 $  do   pTok KRoundBra
                         bs'     <- P.many1 pBinder
-                        pTok KColon
+                        pTok (KOp ":")
                         t       <- pType c
                         pTok KRoundKet
                         return (map (\b -> T.makeBindFromBinder b t) bs')
@@ -293,7 +293,7 @@ pBindPat c
         -- Binder with type, wrapped in parens.
  , do   pTok KRoundBra
         b       <- pBinder
-        pTok KColon
+        pTok (KOp ":")
         t       <- pType c
         pTok KRoundKet
         return  $ T.makeBindFromBinder b t
@@ -337,7 +337,7 @@ pLetWits c bs
            pTok KBraceBra
            wits    <- P.sepBy
                       (do  b    <- pBinder
-                           pTok KColon
+                           pTok (KOp ":")
                            t    <- pTypeApp c
                            return  $ T.makeBindFromBinder b t)
                       (pTok KSemiColon)
@@ -360,9 +360,9 @@ pLetBinding c
         P.choice
          [ do   -- Binding with full type signature.
                 --  BINDER : TYPE = EXP
-                pTok KColon
+                pTok (KOp ":")
                 t       <- pType c
-                pTok KEquals
+                pTok (KOp "=")
                 xBody   <- pExp c
 
                 return  $ (T.makeBindFromBinder b t, xBody) 
@@ -372,7 +372,7 @@ pLetBinding c
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
                 --  BINDER = EXP
-                pTok KEquals
+                pTok (KOp "=")
                 xBody   <- pExp c
                 let t   = T.tBot T.kData
                 return  $ (T.makeBindFromBinder b t, xBody)
@@ -386,9 +386,9 @@ pLetBinding c
                  [ do   -- Function syntax with a return type.
                         -- We can make the full type sig for the let-bound variable.
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
-                        pTok KColon
+                        pTok (KOp ":")
                         tBody   <- pType c
-                        sp      <- pTokSP KEquals
+                        sp      <- pTokSP (KOp "=")
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -400,7 +400,7 @@ pLetBinding c
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
-                 , do   sp      <- pTokSP KEquals
+                 , do   sp      <- pTokSP (KOp "=")
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -426,7 +426,7 @@ pStmt c
    --  
    P.try $ 
     do  br      <- pBinder
-        sp      <- pTokSP    KEquals
+        sp      <- pTokSP (KOp "=")
         x1      <- pExp c
         let t   = T.tBot T.kData
         let b   = T.makeBindFromBinder br t

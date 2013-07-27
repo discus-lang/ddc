@@ -127,7 +127,8 @@ describeTokMeta tm
 --   They don't contain user-defined names or primops specific to the 
 --   language fragment.
 data TokAtom
-        -- parens
+        -----------------------------------------
+        -- Parens
         = KRoundBra
         | KRoundKet
         | KSquareBra
@@ -137,52 +138,58 @@ data TokAtom
         | KAngleBra
         | KAngleKet
 
-        -- compound parens
+        -----------------------------------------
+        -- Compound parens
         | KSquareColonBra
         | KSquareColonKet
         | KAngleColonBra
         | KAngleColonKet
 
+        -----------------------------------------
         -- Operator symbols
         -- These can be used as part of an infix operator.
-        | KTilde    
-        | KBang     
-        | KAt       
-        | KHash     
-        | KDollar   
-        | KPercent  
-        | KHat      
-        | KAmpersand
-        | KStar     
-        | KDash     
-        | KPlus     
-        | KEquals   
-        | KBar      
-        | KColon    
-        | KDot      
-        | KSlash    
+        | KOp String
+        
+        -----------------------------------------
+        -- Operator body symbols.
+        --   These can be used in an operator body, but cannot start an operator.
+        
+        -- Allowing '^' to start an operator causes problems in type signatures.
+        --   We end up lexing a '^^^' operator with  '[^^^ : Int]'
+        --   and a '^:' operator in                  '[^:Int]'
+        | KHat
 
+        -----------------------------------------
         -- Punctuation symbols.
-        -- These cannot be used as part of an infix operator.
+        --   These cannot be used as part of an infix operator.
+        
+        -- Allowing '.' in an operator conflicts with trailing big-lambdas.
+        --   We end up lexing './' as an operator in '\(x:Int)./\(a : Data)'
+        | KDot
+        
         | KComma           
         | KSemiColon
         | KUnderscore
         | KBackSlash
         
+        -----------------------------------------
         -- Compound symbols.
         | KColonColon
         | KBigLambda
 
+        -----------------------------------------
         -- symbolic constructors
         | KArrowTilde
         | KArrowDash
         | KArrowDashLeft
         | KArrowEquals
 
+        -----------------------------------------
         -- bottoms
         | KBotEffect
         | KBotClosure
 
+        -----------------------------------------
         -- core keywords
         | KModule
         | KImports
@@ -206,15 +213,18 @@ data TokAtom
         | KSuspend
         | KRun
 
+        -----------------------------------------
         -- sugar keywords
         | KDo
         | KMatch
         | KElse
 
+        -----------------------------------------
         -- debruijn indices
         | KIndex Int
 
-        -- builtin names ------------
+        -----------------------------------------
+        -- builtin names 
         --   sort constructors.
         | KSoConBuiltin SoCon
 
@@ -261,24 +271,13 @@ describeTokAtom' ta
         KAngleColonKet          -> (Symbol, ":>")
 
         -- operator symbols
-        KTilde                  -> (Symbol, "~")
-        KBang                   -> (Symbol, "!")
-        KAt                     -> (Symbol, "@")
-        KHash                   -> (Symbol, "#")
-        KDollar                 -> (Symbol, "$")
-        KPercent                -> (Symbol, "%")
+        KOp op                  -> (Symbol, op)
+        
+        -- operator body symbols
         KHat                    -> (Symbol, "^")
-        KAmpersand              -> (Symbol, "&")
-        KStar                   -> (Symbol, "*")
-        KDash                   -> (Symbol, "-")
-        KPlus                   -> (Symbol, "+")
-        KEquals                 -> (Symbol, "=")
-        KBar                    -> (Symbol, "|")
-        KColon                  -> (Symbol, ":")
-        KDot                    -> (Symbol, ".")
-        KSlash                  -> (Symbol, "/")
 
         -- punctuation symbols
+        KDot                    -> (Symbol, ".")
         KComma                  -> (Symbol, ",")
         KSemiColon              -> (Symbol, ";")
         KUnderscore             -> (Symbol, "_")

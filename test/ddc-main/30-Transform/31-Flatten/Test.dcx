@@ -53,7 +53,7 @@ cmp up up (1 [R0#] ());;
 -- Arity anon
 :trun..
 let ^ = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
-    let ^ = f in \(^:Int R0#). ^1 (g ^0) in
+    let ^ = f in \(^ : Int R0#). ^1 (g ^0) in
 let ^ = \(^ : Int R0#). addInt [:R0# R0# R0#:] ^0 (1 [R0#] ()) in
 ^1 ^0 ^0 (1 [R0#] ());;
 

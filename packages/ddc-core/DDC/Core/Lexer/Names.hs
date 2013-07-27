@@ -22,6 +22,11 @@ module DDC.Core.Lexer.Names
         , isConBody
         , readCon
 
+          -- * Operator names
+        , isOpName
+        , isOpStart
+        , isOpBody
+
           -- * Literal names
         , isLitName
         , isLitStart
@@ -229,6 +234,39 @@ readCon :: String -> Maybe String
 readCon ss
         | isConName ss  = Just ss
         | otherwise     = Nothing
+
+
+-- Operator names -------------------------------------------------------------
+-- | String is the name of some operator.
+isOpName :: String -> Bool
+isOpName str
+ = case str of
+        []      -> False
+        c : cs
+         | isOpStart c
+         , and (map isOpBody cs)
+         -> True
+
+         | otherwise
+         -> False
+
+
+-- | Character can start an operator.
+isOpStart :: Char -> Bool
+isOpStart c
+        =  c == '~'     || c == '!'     || c == '@'     || c == '#'     
+        || c == '$'     || c == '%'                     || c == '&'     
+        || c == '*'     || c == '-'     || c == '+'     || c == '='
+        || c == ':'     || c == '?'     || c == '/'     || c == '|'
+
+
+-- | Character can be part of an operator body.
+isOpBody :: Char -> Bool
+isOpBody c
+        =  c == '~'     || c == '!'     || c == '@'     || c == '#'     
+        || c == '$'     || c == '%'     || c == '^'     || c == '&'     
+        || c == '*'     || c == '-'     || c == '+'     || c == '='
+        || c == ':'     || c == '?'     || c == '/'     || c == '|'
 
 
 -- Literal names --------------------------------------------------------------

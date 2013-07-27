@@ -25,7 +25,7 @@ pRule c
  = do	bs	 <- pRuleBinders c
 	(cs,lhs) <- pRuleCsLhs c
 	hole	 <- pRuleHole c
-	pTok KEquals
+	pTok (KOp "=")
 	rhs	 <- pExp c
 
 	return $ R.mkRewriteRule bs cs lhs hole rhs
@@ -120,7 +120,7 @@ pBindersBetween
 pBindersBetween c bm bra ket
  = do	bra
         bs      <- P.many1 pBinder
-        pTok KColon
+        pTok (KOp ":")
         t       <- pType c
         ket
         return $ map (mk t) bs
