@@ -35,6 +35,7 @@ import qualified DDC.Core.Salt                          as Salt
 
 import qualified DDC.Core.Transform.Reannotate          as C
 import qualified DDC.Core.Transform.Forward             as Forward
+import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
@@ -48,6 +49,7 @@ import qualified DDC.Type.Env                           as Env
 
 import qualified Control.Monad.State.Strict             as S
 import qualified Data.Map                               as Map
+import qualified Data.Monoid                            as M
 import Control.Monad
 import Control.DeepSeq
 
@@ -324,13 +326,19 @@ pipeFlow !mm !pp
                 procedures      = map Flow.scheduleProcess processes
                 mm_lowered      = Flow.extractModule mm_stripped procedures
 
-                -- Do some beta-reductions to ensure that arguments to worker
-                -- functions are inlined.
+                -- Do some beta-reductions to ensure that arguments to worker functions
+                -- are inlined, then normalize nested applications. 
+                -- When snipping, leave lambda abstractions in place so the worker functions
+                -- applied to our loop combinators aren't moved.
+                clean           
+                 =    C.Fix 4 C.beta 
+                 M.<> C.Trans (C.Snip (Snip.configZero { Snip.configPreserveLambdas = True }))
+                 M.<> C.Trans C.Flatten
+
                 mm_cleaned      
                  = S.evalState
                         (C.applySimplifier Flow.profile Env.empty Env.empty
-                                (C.Fix 4 C.beta)
-                                mm_lowered)
+                                clean mm_lowered)
                         ()
 
              in pipeCores mm_cleaned pipes

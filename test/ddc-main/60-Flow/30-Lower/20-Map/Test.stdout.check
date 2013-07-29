@@ -12,11 +12,10 @@ letrec {
             = loop# [k]
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
-                   let x3$elem : Int#
-                         = let ^ : Int# = mul# [Int#] s$elem 2i# in
-                           let x1 : Int# = add# [Int#] ^0 1i# in
-                           x1 in
-                   let _ : Unit = writeVector# [Int#] x5 ^0 x3$elem in
+                   let ^ : Int# = mul# [Int#] s$elem 2i# in
+                   let ^ : Int# = add# [Int#] ^0 1i# in
+                   let x3$elem : Int# = ^0 in
+                   let _ : Unit = writeVector# [Int#] x5 ^2 x3$elem in
                    ()) in
       x5
 }
@@ -55,10 +54,10 @@ letrec {
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x2$acc in
-                   let _ : Unit
-                         = write# [Int#] x2$acc (add# [Int#] x0 s$elem) in
+                   let ^ : Int# = add# [Int#] x0 s$elem in
+                   let _ : Unit = write# [Int#] x2$acc ^0 in
                    let x5$elem : Int# = mul# [Int#] s$elem 2i# in
-                   let _ : Unit = writeVector# [Int#] x6 ^0 x5$elem in
+                   let _ : Unit = writeVector# [Int#] x6 ^1 x5$elem in
                    ()) in
       let x2 : Int# = read# [Int#] x2$acc in
       let x7 : Tuple2# Int# (Vector# Int#)

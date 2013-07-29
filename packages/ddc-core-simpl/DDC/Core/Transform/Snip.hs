@@ -23,6 +23,10 @@ data Config
         
           -- | Ensure the body of a let-expression is a variable.
         , configSnipLetBody     :: Bool
+
+          -- | Treat lambda abstractions as atomic, 
+          --   and don't snip them.
+        , configPreserveLambdas :: Bool 
         }
 
 
@@ -31,7 +35,8 @@ configZero :: Config
 configZero
         = Config
         { configSnipOverApplied = False
-        , configSnipLetBody     = False }
+        , configSnipLetBody     = False 
+        , configPreserveLambdas = False }
 
 
 -------------------------------------------------------------------------------
@@ -224,7 +229,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
 
         -- Split arguments into the already atomic ones,
         --  and the ones we need to introduce let-expressions for.
-        argss    = splitArgs xsArgs
+        argss    = splitArgs config xsArgs
 
         -- Collect up the new let-bindings.
         xsLets   = [ (x, a)  
@@ -287,18 +292,23 @@ buildNormalisedFunApp config an funArity xFun xsArgs
 --   or compound ones.
 splitArgs 
         :: Ord n
-        => [(Exp a n, a)] 
+        => Config               
+        -> [(Exp a n, a)] 
         -> [( Exp a n            -- Expression to use as the new argument.
             , a                  -- Annoation for the argument application.
             , Bool               -- Whether this argument was already atomic.
             , Maybe (Exp a n))]  -- New expression to let-bind.
 
-splitArgs args
+splitArgs config args
  = reverse $ go 0 $ reverse args
  where  
         go _n [] = []
         go n ((xArg, a) : xsArgs)
          | isAtom xArg
+         = (xArg,           a, True,  Nothing)    : go n       xsArgs
+
+         | configPreserveLambdas config
+         , isXLam xArg || isXLAM xArg
          = (xArg,           a, True,  Nothing)    : go n       xsArgs
 
          | otherwise
