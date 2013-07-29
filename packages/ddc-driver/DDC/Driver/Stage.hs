@@ -55,6 +55,7 @@ import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Core.Transform.Namify      as S
 import qualified DDC.Core.Transform.Snip        as Snip
+import qualified DDC.Core.Transform.Eta         as Eta
 
 
 -- | Configuration for main compiler stages.
@@ -143,13 +144,15 @@ stageFlowPrep config source pipesFlow
        ( PipeCoreOutput (dump config source "dump.flow-prep-done.dcf")
          : pipesFlow)]]]
  
- where  simplNamify
-         =  S.Trans (S.Namify namifierT namifierX)
-
+ where  
         simplNorm
-         =  S.Trans (S.Snip $ Snip.configZero { Snip.configSnipLetBody = True })
+         =  S.Trans (S.Eta  $  Eta.configZero {  Eta.configExpand      = True }) 
+         <> S.Trans (S.Snip $ Snip.configZero { Snip.configSnipLetBody = True })
          <> S.flatten 
          <> simplNamify
+
+        simplNamify
+         =  S.Trans (S.Namify namifierT namifierX)
 
         namifierT       = S.makeNamifier Flow.freshT
         namifierX       = S.makeNamifier Flow.freshX

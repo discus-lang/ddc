@@ -291,8 +291,7 @@ pipeFlow !mm !pp
         PipeFlowPrep  !pipes
          -> {-# SCC "PipeFlowPrep"   #-}
             let -- Run the prep transform itself which finds worker functions,
-                -- eta-expands them and returns their names.
-                (mm_prep, nsWorker) 
+                (_, nsWorker) 
                  = Flow.prepModule mm
 
                 -- Force all worker functions to be floated forward into their
@@ -306,9 +305,8 @@ pipeFlow !mm !pp
 
                 config = Forward.Config isFloatable False
 
-                mm_float
-                 = C.result $ Forward.forwardModule Flow.profile 
-                                config mm_prep
+                mm_float        = C.result 
+                                $ Forward.forwardModule Flow.profile config mm
 
                 -- Ensure the final code is fully named.
                 namifierT       = C.makeNamifier Flow.freshT Env.empty
