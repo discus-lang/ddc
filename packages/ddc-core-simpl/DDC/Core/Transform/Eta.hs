@@ -72,12 +72,12 @@ instance Monoid Info where
 -- | Eta-transform expressions in a module.
 etaModule
         :: (Ord n, Show n, Pretty n, Show a)
-        => Config
-        -> Profile n
+        => Profile n
+        -> Config
         -> Module a n
         -> TransformResult (Module a n)
 
-etaModule config profile mm
+etaModule profile config  mm
  = let  cconfig = Check.configOfProfile profile
         kenv'   = Env.union (profilePrimKinds profile) (moduleKindEnv mm)
         tenv'   = Env.union (profilePrimTypes profile) (moduleTypeEnv mm)
@@ -102,14 +102,14 @@ etaModule config profile mm
 
 -- | Eta-transform an expression.
 etaX    :: (Ord n, Show n, Show a, Pretty n)
-        => Config               -- ^ Eta-transform config.
-        -> Profile n            -- ^ Language profile.
+        => Profile n            -- ^ Language profile.
+        -> Config               -- ^ Eta-transform config.
         -> KindEnv n            -- ^ Kind environment.
         -> TypeEnv n            -- ^ Type environment.
         -> Exp a n              -- ^ Expression to transform.
         -> TransformResult (Exp a n)
 
-etaX config profile kenv tenv xx
+etaX profile config kenv tenv xx
  = let  cconfig = Check.configOfProfile profile
         kenv'   = Env.union (profilePrimKinds profile) kenv
         tenv'   = Env.union (profilePrimTypes profile) tenv

@@ -10,6 +10,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Collect
 import DDC.Core.Exp
+import DDC.Core.Fragment
 import DDC.Core.Predicates
 import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.SubstituteTX
@@ -19,7 +20,7 @@ import DDC.Core.Simplifier.Result
 import Control.Monad.Writer	        (Writer, runWriter, tell)
 import Data.Monoid		        (Monoid, mempty, mappend)
 import Data.Typeable		        (Typeable)
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Compounds
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
@@ -92,14 +93,15 @@ instance Monoid Info where
 betaReduce  
         :: forall (c :: * -> * -> *) a n 
         .  (Ord n, TransformUpMX (Writer Info) c)
-        => Config
-        -> c a n 
+        => Profile n    -- ^ Language profile.
+        -> Config       -- ^ Beta transform config.
+        -> c a n        -- ^ Thing to transform.
         -> TransformResult (c a n)
 
-betaReduce config x
+betaReduce profile config x
  = {-# SCC betaReduce #-}
    let (x', info) = runWriter
-		  $ transformUpMX (betaReduce1 config) Env.empty Env.empty x
+		  $ transformUpMX (betaReduce1 profile config) Env.empty Env.empty x
 
        -- Check if any actual work was performed
        progress 
@@ -124,14 +126,27 @@ betaReduce config x
 --    
 betaReduce1
         :: Ord n
-        => Config
-        -> Env n
-        -> Env n
-        -> Exp a n
+        => Profile n    -- ^ Language profile.
+        -> Config       -- ^ Beta tranform config.
+        -> KindEnv n    -- ^ Current kind environment.
+        -> TypeEnv n    -- ^ Current type environment.
+        -> Exp a n      -- ^ Expression to transform.
         -> Writer Info (Exp a n)
 
-betaReduce1 config _kenv tenv xx
+betaReduce1 profile config _kenv tenv xx
  = let  ret info x = tell info >> return x
+
+        -- If we're using closure types then when we perform a beta-reduction:
+        --  (\v. X1) X2 => X1[X2/v] then we need to weaken the closure if the 
+        -- body expression X1 does not reference 'v'.
+        weakenClosure a usesBind fvs2 xWeak x
+         | featuresTrackedClosures $ profileFeatures profile 
+         , not (usesBind || Set.null fvs2)
+         = XCast a (CastWeakenClosure [xWeak]) x
+
+         | otherwise
+         = x
+
    in case xx of
 
         -- Substitute type arguments into type abstractions.
@@ -152,10 +167,8 @@ betaReduce1 config _kenv tenv xx
                 fvs2            = freeT Env.empty t2
 
             in  ret mempty { infoTypes = 1}
-                 $ if usesBind || Set.null fvs2
-                    then substituteTX b11 t2 x12
-                    else XCast a (CastWeakenClosure [XType t2])
-                        $ substituteTX b11 t2 x12
+                 $ weakenClosure a usesBind fvs2 (XType t2)
+                 $ substituteTX b11 t2 x12
 
         -- Substitute type arguments into type abstractions,
         --  Where the argument is not a region type.
@@ -169,11 +182,8 @@ betaReduce1 config _kenv tenv xx
                                 $ Set.toList $ freeX tenv x12
                 fvs2            = freeX Env.empty w2
             in  ret mempty { infoWits = 1 }
-                 $ if usesBind || Set.null fvs2
-                    then substituteWX b11 w2 x12
-                    else XCast a (CastWeakenClosure [XWitness w2])
-                       $ substituteWX b11 w2 x12
-
+                 $ weakenClosure a usesBind fvs2 (XWitness w2)
+                 $ substituteWX b11 w2 x12
 
         -- Substitute value arguments into value abstractions.
         XApp a (XLam _ b11 x12) x2
@@ -182,10 +192,8 @@ betaReduce1 config _kenv tenv xx
                                 $ Set.toList $ freeX tenv x12
                 fvs2            = freeX Env.empty x2
             in  ret mempty { infoValues = 1 }
-                 $ if usesBind || Set.null fvs2
-                    then substituteXX b11 x2 x12
-                    else XCast a (CastWeakenClosure [x2])
-                       $ substituteXX b11 x2 x12
+                 $ weakenClosure a usesBind fvs2 x2
+                 $ substituteXX b11 x2 x12
 
          | configBindRedexes config
          -> ret mempty { infoValuesLetted  = 1 }

@@ -13,11 +13,9 @@ letrec {
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x3$elem : Int#
-                         = (\(x0 : Int#).
-                            (\(x : Int#).
-                             let x0 : Int# = mul# [Int#] x 2i# in
-                             let x1 : Int# = add# [Int#] x0 1i# in
-                             x1) x0) s$elem in
+                         = let ^ : Int# = mul# [Int#] s$elem 2i# in
+                           let x1 : Int# = add# [Int#] ^0 1i# in
+                           x1 in
                    let _ : Unit = writeVector# [Int#] x5 ^0 x3$elem in
                    ()) in
       x5
@@ -35,12 +33,8 @@ letrec {
             = loop# [k]
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
-                   let x2$elem : Int#
-                         = (\(x0 : Int#).
-                            (\(x : Int#). add# [Int#] x 1i#) x0) s$elem in
-                   let x4$elem : Int#
-                         = (\(x1 : Int#).
-                            (\(x : Int#). mul# [Int#] x 2i#) x1) x2$elem in
+                   let x2$elem : Int# = add# [Int#] s$elem 1i# in
+                   let x4$elem : Int# = mul# [Int#] x2$elem 2i# in
                    let _ : Unit = writeVector# [Int#] x6 ^0 x4$elem in
                    ()) in
       x6
@@ -62,11 +56,8 @@ letrec {
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x2$acc in
                    let _ : Unit
-                         = write# [Int#] x2$acc
-                               ((\(x1 _ : Int#). add# [Int#] x0 x1) s$elem ^0) in
-                   let x5$elem : Int#
-                         = (\(x3 : Int#).
-                            (\(x : Int#). mul# [Int#] x 2i#) x3) s$elem in
+                         = write# [Int#] x2$acc (add# [Int#] x0 s$elem) in
+                   let x5$elem : Int# = mul# [Int#] s$elem 2i# in
                    let _ : Unit = writeVector# [Int#] x6 ^0 x5$elem in
                    ()) in
       let x2 : Int# = read# [Int#] x2$acc in

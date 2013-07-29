@@ -37,6 +37,7 @@ import qualified DDC.Core.Transform.Reannotate          as C
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Simplifier                    as C
+import qualified DDC.Core.Simplifier.Recipe             as C
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
@@ -323,7 +324,16 @@ pipeFlow !mm !pp
                 procedures      = map Flow.scheduleProcess processes
                 mm_lowered      = Flow.extractModule mm_stripped procedures
 
-             in pipeCores mm_lowered pipes
+                -- Do some beta-reductions to ensure that arguments to worker
+                -- functions are inlined.
+                mm_cleaned      
+                 = S.evalState
+                        (C.applySimplifier Flow.profile Env.empty Env.empty
+                                (C.Fix 4 C.beta)
+                                mm_lowered)
+                        ()
+
+             in pipeCores mm_cleaned pipes
 
         PipeFlowWind !pipes
          -> {-# SCC "PipeFlowWind" #-}

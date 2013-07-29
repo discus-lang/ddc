@@ -82,8 +82,12 @@ applyTransform !profile !_kenv !_tenv !spec !mm
         Anonymize        -> return $ anonymizeX mm
         Snip config      -> return $ snip config mm
         Flatten          -> return $ flatten mm
-        Beta config      -> return $ result $ betaReduce config mm
-        Eta  config      -> return $ result $ Eta.etaModule config profile mm
+
+        Beta config      
+         -> return $ result $ betaReduce    profile config mm
+
+        Eta  config      
+         -> return $ result $ Eta.etaModule profile config mm
 
         Forward          
          -> let config  = Forward.Config (const FloatAllow) False
@@ -232,9 +236,15 @@ applyTransformX !profile !kenv !tenv !spec !xx
         Snip config       -> res    $ snip config xx
         Flatten           -> res    $ flatten xx
         Inline  getDef    -> res    $ inline getDef Set.empty xx
-        Beta config       -> return $ betaReduce config xx
-        Eta  config       -> return $ Eta.etaX config profile kenv tenv xx
-        Prune             -> return $ pruneX   profile kenv tenv xx
+
+        Beta config       
+         -> return $ betaReduce profile config xx
+
+        Eta  config       
+         -> return $ Eta.etaX   profile config kenv tenv xx
+
+        Prune             
+         -> return $ pruneX     profile kenv tenv xx
 
         Forward          
          -> let config  = Forward.Config (const FloatAllow) False
