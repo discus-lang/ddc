@@ -118,8 +118,12 @@ data DaConFlow
 
 -- | Flow operators.
 data OpFlow
+        -- | Project out a component of a tuple,
+        --   given the tuple arity and index of the desired component.
+        = OpFlowProj Int Int
+
         -- series conversions.
-        = OpFlowVectorOfSeries
+        | OpFlowVectorOfSeries
         | OpFlowRateOfSeries
         | OpFlowNatOfRateNat
 

@@ -1,0 +1,40 @@
+
+module Test 
+imports {
+        addInt :: Int# -> Int# -> Int#;
+        minIx :: Int# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+} with
+letrec {
+  foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x4 : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
+      let x5$acc$1 : Ref# Int#
+            = new# [Int#] (proj2_1# [Int#] [Int#] x4) in
+      let x5$acc$2 : Ref# Int#
+            = new# [Int#] (proj2_2# [Int#] [Int#] x4) in
+      let x9$acc : Ref# Int# = new# [Int#] 0i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Int#).
+                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                   let x1$1 : Int# = read# [Int#] x5$acc$1 in
+                   let x1$2 : Int# = read# [Int#] x5$acc$2 in
+                   let x1 : Tuple2# Int# Int# = T2# [Int#] [Int#] x1$1 x1$2 in
+                   let ^ : Tuple2# Int# Int# = minIx ^0 x1 s$elem in
+                   let _ : Unit
+                         = write# [Int#] x5$acc$1 (proj2_1# [Int#] [Int#] ^0) in
+                   let _ : Unit
+                         = write# [Int#] x5$acc$2 (proj2_2# [Int#] [Int#] ^0) in
+                   let x6 : Int# = read# [Int#] x9$acc in
+                   let ^ : Int# = addInt x6 s$elem in
+                   let _ : Unit = write# [Int#] x9$acc ^0 in
+                   ()) in
+      let x5$1 : Int# = read# [Int#] x5$acc$1 in
+      let x5$2 : Int# = read# [Int#] x5$acc$2 in
+      let x5 : Tuple2# Int# Int# = T2# [Int#] [Int#] x5$1 x5$2 in
+      let x9 : Int# = read# [Int#] x9$acc in
+      let x10 : Tuple2# (Tuple2# Int# Int#) Int#
+            = T2# [Tuple2# Int# Int#] [Int#] x5 x9 in
+      x10
+}

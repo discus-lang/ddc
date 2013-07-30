@@ -31,7 +31,8 @@ cmdFlowMelt config source sourceText
                 [  PipeCoreCheck fragment
                 [  PipeCoreAsFlow 
                 [  PipeFlowMelt
-                [  PipeCoreOutput SinkStdout ]]]]
+                [  PipeCoreCheck fragment
+                [  PipeCoreOutput SinkStdout ]]]]]
 
         case errs of
          []     -> return ()

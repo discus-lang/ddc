@@ -22,6 +22,7 @@ module DDC.Core.Flow.Compounds
         , dcTupleN
 
           -- * Flow operators
+        , xProj
         , xRateOfSeries
         , xNatOfRateNat
 

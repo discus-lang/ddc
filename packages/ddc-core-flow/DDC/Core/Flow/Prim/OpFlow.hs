@@ -2,6 +2,8 @@
 module DDC.Core.Flow.Prim.OpFlow
         ( readOpFlow
         , typeOpFlow
+          -- * Compounds
+        , xProj
         , xRateOfSeries
         , xNatOfRateNat)
 where
@@ -24,6 +26,9 @@ instance NFData OpFlow
 instance Pretty OpFlow where
  ppr pf
   = case pf of
+        OpFlowProj n i          
+         -> text "proj" <> int n <> text "_" <> int i           <> text "#"
+
         OpFlowVectorOfSeries    -> text "vectorOfSeries"        <> text "#"
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
         OpFlowNatOfRateNat      -> text "natOfRateNat"          <> text "#"
@@ -53,6 +58,18 @@ instance Pretty OpFlow where
 -- | Read a data flow operator name.
 readOpFlow :: String -> Maybe OpFlow
 readOpFlow str
+        | Just rest         <- stripPrefix "proj" str
+        , (ds, '_' : rest2) <- span isDigit rest
+        , not $ null ds
+        , arity             <- read ds
+        , arity >= 1
+        , (ds2, "#")        <- span isDigit rest2
+        , not $ null ds2
+        , ix                <- read ds2
+        , ix >= 1
+        , ix <= arity
+        = Just $ OpFlowProj arity ix
+
         | Just rest     <- stripPrefix "mkSel" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -110,6 +127,12 @@ typeOpFlow op
 takeTypeOpFlow :: OpFlow -> Maybe (Type Name)
 takeTypeOpFlow op
  = case op of
+        -- Tuple projections --------------------
+        OpFlowProj a ix
+         -> Just $ tForalls (replicate a kData) 
+         $ \_ -> tFun   (tTupleN [TVar (UIx i) | i <- reverse [0..a-1]])
+                        (TVar (UIx (a - ix)))
+
         -- Series Conversions -------------------
         -- vectorOfSeries# :: [k : Rate]. [a : Data]
         --                 .  Series k a -> Vector a
@@ -233,6 +256,11 @@ takeTypeOpFlow op
 
 
 -- Compounds ------------------------------------------------------------------
+xProj :: [Type Name] -> Int -> Exp () Name -> Exp () Name
+xProj ts ix  x
+        = xApps   (xVarOpFlow (OpFlowProj (length ts) ix))
+                  ([XType t | t <- ts] ++ [x])
+
 xRateOfSeries :: Type Name -> Type Name -> Exp () Name -> Exp () Name
 xRateOfSeries tK tA xS 
          = xApps  (xVarOpFlow OpFlowRateOfSeries) 
