@@ -104,4 +104,5 @@ Library
         ParallelListComp
         DeriveDataTypeable
         ViewPatterns
+        FlexibleInstances
         

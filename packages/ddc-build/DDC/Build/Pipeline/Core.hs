@@ -257,6 +257,15 @@ data PipeFlow a where
         :: Sink
         -> PipeFlow a
 
+  -- Apply a canned function to a module.
+  -- This is helpful for debugging, and tweaking the output before pretty printing.
+  -- More reusable transforms should be made into their own pipeline stage.
+  PipeFlowHacks
+        :: (NFData a, Show b, NFData b)
+        => Canned (C.Module a Flow.Name -> IO (C.Module b Flow.Name))
+        -> ![PipeFlow b]
+        -> PipeFlow a
+
   -- Run the prep transform to eta-expand worker functions.
   -- It needs to be already a-normalized and namified. 
   PipeFlowPrep
@@ -282,7 +291,6 @@ data PipeFlow a where
         -> PipeFlow (C.AnTEC () Flow.Name)
 
 
-
 -- | Process a Core Flow module.
 pipeFlow :: C.Module a Flow.Name
          -> PipeFlow a
@@ -293,6 +301,11 @@ pipeFlow !mm !pp
         PipeFlowOutput !sink
          -> {-# SCC "PipeFlowOutput" #-}
             pipeSink (renderIndent $ ppr mm) sink
+
+        PipeFlowHacks !(Canned f) !pipes
+         -> {-# SCC "PipeFlowHacks" #-} 
+            do  mm'     <- f mm
+                pipeFlows mm' pipes
 
         PipeFlowPrep  !pipes
          -> {-# SCC "PipeFlowPrep"   #-}
@@ -358,5 +371,19 @@ pipeFlow !mm !pp
             let mm_stripped     = C.reannotate (const ()) mm
                 mm_wound        = Flow.windModule mm_stripped
             in  pipeCores mm_wound pipes
+
+
+-- | Process a Flow module with several different pipes.
+pipeFlows :: (NFData a, Show a)
+          => C.Module a Flow.Name -> [PipeFlow a] -> IO [Error]
+
+pipeFlows !mm !pipes 
+ = go [] pipes
+ where  go !errs []   
+         = return errs
+
+        go !errs (pipe : rest)
+         = do   !err     <- pipeFlow mm pipe
+                go (errs ++ err) rest
 
 
