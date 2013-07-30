@@ -1,6 +1,9 @@
 
 module DDC.Source.Tetra.Name
-        ( Name (..)
+        ( Name          (..)
+        , TyConPrim     (..)
+        , OpPrimArith   (..)
+        , OpPrimRef     (..)
         , readName)
 where
 import DDC.Source.Tetra.Lexer.Lit
