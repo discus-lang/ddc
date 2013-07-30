@@ -148,15 +148,15 @@ pExp c
 -- Applications.
 pExpApp :: Ord n => Context -> Parser n (Exp SourcePos n)
 pExpApp c
-  = do  (x1, _)        <- pExpAtomSP c
-        
-        P.choice
-         [ do   xs  <- liftM concat $ P.many1 (pArgSPs c)
-                return  $ foldl (\x (x', sp) -> XApp sp x x') x1 xs
+  = do  xps     <- liftM concat $ P.many1 (pArgSPs c)
+        let (xs, sps)   = unzip xps
+        let sp1 : _     = sps
+                
+        case xs of
+         [x]    -> return x
+         _      -> return $ XDefix sp1 xs
 
-         ,      return x1]
-
- <?> "an expression or application"
+  <?> "an expression or application"
 
 
 -- Comp, Witness or Spec arguments.
@@ -186,7 +186,11 @@ pArgSPs c
         ws      <- P.many1 (pWitnessAtom c)
         pTok KAngleColonKet
         return  [(XWitness w, sp) | w <- ws]
-                
+               
+        -- Infix operator
+ , do   (str, sp) <- pOpSP
+        return  [(XOp sp str, sp)]
+
         -- EXP0
  , do   (x, sp)  <- pExpAtomSP c
         return  [(x, sp)]
@@ -487,3 +491,9 @@ makeStmts ss
 
         _ -> Nothing
 
+
+-- | Parse an infix operator.
+pOpSP    :: Parser n (String, SourcePos)
+pOpSP    = P.pTokMaybeSP f
+ where  f (KA (KOp str))  = Just str
+        f _               = Nothing

@@ -34,6 +34,11 @@ import DDC.Core.Exp
 
 -- | Well-typed expressions have types of kind `Data`.
 data Exp a n
+        ---------------------------------------------------
+        -- Core Language Constructs.
+        --   These are also in the core language, and after desugaring only
+        --   these constructs are used.
+        --
         -- | Value variable   or primitive operation.
         = XVar  !a  !(Bound n)
 
@@ -63,6 +68,20 @@ data Exp a n
 
         -- | Witness can appear as the argument of an application.
         | XWitness  !(Witness a n)
+
+
+        ---------------------------------------------------
+        -- Sugar Constructs.
+        --  These constructs are eliminated by the desugarer.
+        --
+        -- | Some expressions and infix operators that need to be resolver into
+        --   proper function applications.
+        | XDefix !a [Exp a n]
+
+        -- | Use of an infix operator.
+        --   INVARIANT: should only appear at the top-level in the list of
+        --   and XDefix node.
+        | XOp    !a String
         deriving (Show, Eq)
 
 
@@ -117,6 +136,8 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
         XCast a c x     -> rnf a `seq` rnf c   `seq` rnf x
         XType t         -> rnf t
         XWitness w      -> rnf w
+        XDefix a xs     -> rnf a `seq` rnf xs
+        XOp    a u      -> rnf a `seq` rnf u
 
 
 instance (NFData a, NFData n) => NFData (Cast a n) where

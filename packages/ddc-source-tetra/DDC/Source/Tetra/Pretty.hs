@@ -105,6 +105,13 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XType    t      -> text "[" <> ppr t <> text "]"
         XWitness w      -> text "<" <> ppr w <> text ">"
 
+        XDefix _ xs
+         -> pprParen' (d > 2)
+         $  text "DEFIX" <+> hsep (map (pprPrec 11) xs)
+
+        XOp _ str
+         -> parens $ text "OP" <+> text "\"" <> text str <> text "\""
+
 
 -- Alt ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where

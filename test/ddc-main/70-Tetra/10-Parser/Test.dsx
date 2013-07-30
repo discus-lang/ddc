@@ -13,10 +13,19 @@ x : Nat = 5
 y : Nat = add# x x;;
 
 
--- Factorial function with primops.
+-- Factorial with primops.
 :parse..
 module Test where
 fac (x : Nat) : Nat
  = case x of
         0       -> 1
-        _       -> mul# 1 (fac (sub# x 1));;
+        _       -> mul# x (fac (sub# x 1));;
+
+
+-- Factorial with infix operators.
+:parse..
+module Test where
+fac (x : Nat) : Nat
+ = case x of
+        0       -> 1
+        _       -> x * (fac (x - 1));;
