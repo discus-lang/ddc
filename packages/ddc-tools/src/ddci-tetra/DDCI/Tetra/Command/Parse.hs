@@ -7,9 +7,9 @@ import DDCI.Tetra.State
 import DDC.Base.Pretty
 import DDC.Source.Tetra.Lexer
 import DDC.Source.Tetra.Parser
-import DDC.Source.Tetra.Pretty                  ()
-import qualified DDC.Core.Lexer                 as C
-import qualified DDC.Base.Parser                as BP
+import DDC.Source.Tetra.Pretty          ()
+import qualified DDC.Core.Lexer         as C
+import qualified DDC.Base.Parser        as BP
 
 
 cmdParse :: State -> Source -> String -> IO ()

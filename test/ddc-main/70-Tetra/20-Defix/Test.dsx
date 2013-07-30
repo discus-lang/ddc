@@ -6,45 +6,42 @@
 
 
 -- Plus is left associative.
-:parse..
+:desugar..
 module Test where
 x : Int = a + b + c;;
 
 
 -- Multiplication has higher precedence than addition.
-:parse..
+:desugar..
 module Test where
 x : Int = a + b * c;;
 
 
 -- Multiplication has higher precedence than addition.
-:parse..
+:desugar..
 module Test where
 x : Int = a * b + c;;
 
 
 -- Arithmetic.
-:parse..
+:desugar..
 module Test where
 x : Int = a + b * c + d * e * f + g;;
 
 
 -- Defix dollar token.
-:parse..
+:desugar..
 module Test where
 x : Int = f $ g x $ h i j;;
 
 
 -- Equality.
-:parse..
+:desugar..
 module Test where
 x : Bool = 1 + 2 == 2 + 3;;
 
 
 -- Error: Cannot have multiple non-associative operators at the same level.
-:parse..
+:desugar..
 module Test where
 x : Int = 1 == 2 == 2;;
-
-
-
