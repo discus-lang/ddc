@@ -133,13 +133,17 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeFlowConcretize file
 
-        | "-flow-thread" : file : rest  <- args
+        | "-flow-melt" : file : rest <- args
         = parseArgs rest
-        $ setMode config $ ModeFlowThread file
+        $ setMode config $ ModeFlowMelt file
 
         | "-flow-wind" : file : rest    <- args
         = parseArgs rest
         $ setMode config $ ModeFlowWind file
+
+        | "-flow-thread" : file : rest  <- args
+        = parseArgs rest
+        $ setMode config $ ModeFlowThread file
 
         -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
@@ -235,6 +239,7 @@ flagOfMode mode
         ModeFlowPrep{}                  -> Just "-flow-prep"
         ModeFlowLower{}                 -> Just "-flow-lower"
         ModeFlowConcretize{}            -> Just "-flow-concretize"
+        ModeFlowMelt{}                  -> Just "-flow-melt"
         ModeFlowThread{}                -> Just "-flow-thread"
         ModeFlowWind{}                  -> Just "-flow-wind"
         ModeBaseBuild{}                 -> Just "-basebuild"

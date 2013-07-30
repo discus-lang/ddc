@@ -1,0 +1,35 @@
+
+:flow-melt..
+module Test 
+imports {
+        addInt :: Int# -> Int# -> Int#;
+        minIx :: Int# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+} with
+letrec {
+  foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x4 : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
+      let x5$acc : Ref# (Tuple2# Int# Int#)
+            = new# [Tuple2# Int# Int#] x4 in
+      let x9$acc : Ref# Int# = new# [Int#] 0i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Int#).
+                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                   let x1 : Tuple2# Int# Int#
+                         = read# [Tuple2# Int# Int#] x5$acc in
+                   let ^ : Tuple2# Int# Int# = minIx ^0 x1 s$elem in
+                   let _ : Unit
+                         = write# [Tuple2# Int# Int#] x5$acc ^0 in
+                   let x6 : Int# = read# [Int#] x9$acc in
+                   let ^ : Int# = addInt x6 s$elem in
+                   let _ : Unit = write# [Int#] x9$acc ^0 in
+                   ()) in
+      let x5 : Tuple2# Int# Int#
+            = read# [Tuple2# Int# Int#] x5$acc in
+      let x9 : Int# = read# [Int#] x9$acc in
+      let x10 : Tuple2# (Tuple2# Int# Int#) Int#
+            = T2# [Tuple2# Int# Int#] [Int#] x5 x9 in
+      x10
+};;

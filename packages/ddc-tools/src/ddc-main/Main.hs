@@ -18,8 +18,9 @@ import DDC.Driver.Command.BaseBuild
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Lower
 import DDC.Driver.Command.Flow.Concretize
-import DDC.Driver.Command.Flow.Thread
+import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Wind
+import DDC.Driver.Command.Flow.Thread
 
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
@@ -155,17 +156,23 @@ run config
                 str             <- readFile filePath
                 runError $ cmdFlowConcretize dconfig (SourceFile filePath) str
 
-        -- Thread the world token through a Disciple Core Flow program.
-        ModeFlowThread filePath
+        -- Melt compound data structures.
+        ModeFlowMelt filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowThread dconfig (SourceFile filePath) str
+                runError $ cmdFlowMelt dconfig (SourceFile filePath) str
 
         -- Wind loop primops into tail recursive loops.
         ModeFlowWind filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError $ cmdFlowWind dconfig (SourceFile filePath) str
+
+        -- Thread the world token through a Disciple Core Flow program.
+        ModeFlowThread filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowThread dconfig (SourceFile filePath) str
 
         -- Build the runtime and base libraries.
         ModeBaseBuild

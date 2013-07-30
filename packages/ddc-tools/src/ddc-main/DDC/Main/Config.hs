@@ -67,6 +67,9 @@ data Mode
         -- | Concretize rate type variables in a Flow program.
         | ModeFlowConcretize FilePath
 
+        -- | Melt compound data types in a Flow program.
+        | ModeFlowMelt  FilePath
+
         -- | Thread the World token through a Flow program.
         | ModeFlowThread FilePath
 

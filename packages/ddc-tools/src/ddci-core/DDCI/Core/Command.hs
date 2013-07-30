@@ -26,8 +26,9 @@ import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Lower
 import DDC.Driver.Command.Flow.Concretize
-import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.Flow.Wind
+import DDC.Driver.Command.Flow.Melt
+import DDC.Driver.Command.Flow.Thread
 
 import System.IO
 import Control.Monad.Trans.Error
@@ -76,8 +77,9 @@ data Command
         | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
         | CommandFlowLower      -- ^ Prepare and Lower a Core Flow module.
         | CommandFlowConcretize -- ^ Convert operations on type level rates to concrete ones.
-        | CommandFlowThread     -- ^ Thread a world token through lowered code.
+        | CommandFlowMelt       -- ^ Melt compound data structures.
         | CommandFlowWind       -- ^ Wind loop primops into tail recursive loops.
+        | CommandFlowThread     -- ^ Thread a world token through lowered code.
 
         -- Inline control
         | CommandWith           -- ^ Add a module to the inliner table.
@@ -129,8 +131,9 @@ commands
         , (":flow-prep",        CommandFlowPrep)
         , (":flow-lower",       CommandFlowLower)
         , (":flow-concretize",  CommandFlowConcretize)
-        , (":flow-thread",      CommandFlowThread)
+        , (":flow-melt",        CommandFlowMelt)
         , (":flow-wind",        CommandFlowWind)
+        , (":flow-thread",      CommandFlowThread)
 
         -- Make and Compile
         , (":compile",          CommandCompile)
@@ -296,14 +299,19 @@ handleCmd1 state cmd source line
                 runError $ cmdFlowConcretize config source line
                 return state
 
-        CommandFlowThread
+        CommandFlowMelt
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdFlowThread config source line
+                runError $ cmdFlowMelt config source line
                 return state
 
         CommandFlowWind
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdFlowWind config source line
+                return state
+
+        CommandFlowThread
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdFlowThread config source line
                 return state
 
         -- Make and Compile ---------------------

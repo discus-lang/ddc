@@ -64,6 +64,7 @@ Library
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Extract
         DDC.Core.Flow.Transform.Concretize
+        DDC.Core.Flow.Transform.Melt
         DDC.Core.Flow.Transform.Thread
         DDC.Core.Flow.Transform.Wind
 
