@@ -1,0 +1,50 @@
+
+-- BROKEN: need to reclaim angle brackets.
+-- :parse..
+-- module Test where
+-- x : Int = 1 < 2 > 3;;
+
+
+-- Plus is left associative.
+:parse..
+module Test where
+x : Int = a + b + c;;
+
+
+-- Multiplication has higher precedence than addition.
+:parse..
+module Test where
+x : Int = a + b * c;;
+
+
+-- Multiplication has higher precedence than addition.
+:parse..
+module Test where
+x : Int = a * b + c;;
+
+
+-- Arithmetic.
+:parse..
+module Test where
+x : Int = a + b * c + d * e * f + g;;
+
+
+-- Defix dollar token.
+:parse..
+module Test where
+x : Int = f $ g x $ h i j;;
+
+
+-- Equality.
+:parse..
+module Test where
+x : Bool = 1 + 2 == 2 + 3;;
+
+
+-- Error: Cannot have multiple non-associative operators at the same level.
+:parse..
+module Test where
+x : Int = 1 == 2 == 2;;
+
+
+
