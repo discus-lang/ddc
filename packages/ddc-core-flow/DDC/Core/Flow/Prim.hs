@@ -91,6 +91,7 @@ instance NFData Name where
         NameLitNat      n       -> rnf n
         NameLitInt      i       -> rnf i
         NameLitWord     i bits  -> rnf i `seq` rnf bits
+        NameLitFloat    r bits  -> rnf r `seq` rnf bits
 
 
 instance Pretty Name where
@@ -113,9 +114,10 @@ instance Pretty Name where
 
         NameLitBool     True    -> text "True#"
         NameLitBool     False   -> text "False#"
-        NameLitNat      i       -> integer i <> text "#"
-        NameLitInt      i       -> integer i <> text "i" <> text "#"
-        NameLitWord     i bits  -> integer i <> text "w" <> int bits <> text "#"
+        NameLitNat      i       -> integer  i <> text "#"
+        NameLitInt      i       -> integer  i <> text "i" <> text "#"
+        NameLitWord     i bits  -> integer  i <> text "w" <> int bits <> text "#"
+        NameLitFloat    r bits  -> double (fromRational r) <> text "f" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -147,7 +149,7 @@ readName str
         = Just $ NameLitInt  val
 
         -- Literal Words
-        | Just (val, bits) <- readLitPrimWordOfBits str
+        | Just (val, bits)      <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 

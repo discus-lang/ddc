@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.TyConPrim
         , tBool
         , tNat
         , tInt
+        , tFloat
         , tWord)
 where
 import DDC.Core.Flow.Prim.Base
@@ -46,6 +47,12 @@ tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
 -- | Primitive `Int#` type.
 tInt ::  Type Name
 tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
+
+
+-- | Primitive `FloatN#` type of the given width.
+tFloat :: Int -> Type Name
+tFloat bits
+        = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConFloat bits)) kData) kData)
 
 
 -- | Primitive `WordN#` type of the given width.

@@ -40,16 +40,22 @@ primDataDefs
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+        , DataDef (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , DataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+        , DataDef (NamePrimTyCon PrimTyConInt)        [] Nothing
+
+        -- Float32#
+        , DataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+
+        -- Float64#
+        , DataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
         -- WordN#
-        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
 
 
         -- Flow -----------------------------------------------------

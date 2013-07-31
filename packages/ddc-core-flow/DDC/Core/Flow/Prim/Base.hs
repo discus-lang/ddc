@@ -70,8 +70,11 @@ data Name
         -- | An integer literal.
         | NameLitInt            Integer
 
-        -- | A word literal.
-        | NameLitWord           Integer Int
+        -- | A word literal, with the given number of bits precision.
+        | NameLitWord           Integer  Int
+
+        -- | A float literal, with the given number of bits precision.
+        | NameLitFloat          Rational Int
         deriving (Eq, Ord, Show, Typeable)
 
 

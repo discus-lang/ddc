@@ -12,7 +12,7 @@ module DDC.Core.Flow.Compounds
         , tRateNat
 
           -- * Primtiive types
-        , tVoid, tBool, tNat, tInt, tWord
+        , tVoid, tBool, tNat, tInt, tWord, tFloat
 
           -- * Primitive literals and data constructors
         , xBool, dcBool
