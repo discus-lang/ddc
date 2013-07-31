@@ -9,10 +9,11 @@ module Test where
 -- Top level things are signaled by 'where'.
 module Test where
 x : Nat = 5
-y : Nat = add# x x
+y : Nat
+  = DEFIX add# x x
 
 
--- Factorial function with primops.
+-- Factorial with primops.
 module Test where
 fac : Nat -> Nat
   = \(x : Nat).
@@ -20,6 +21,17 @@ fac : Nat -> Nat
       0  
        -> 1;
       _ 
-       -> mul# 1
-              (fac (sub# x 1))
+       -> DEFIX mul# x (DEFIX fac (DEFIX sub# x 1))
+    }
+
+
+-- Factorial with infix operators.
+module Test where
+fac : Nat -> Nat
+  = \(x : Nat).
+    case x of {
+      0  
+       -> 1;
+      _ 
+       -> DEFIX x (OP "*") (DEFIX fac (DEFIX x (OP "-") 1))
     }
