@@ -140,6 +140,9 @@ fieldSizeOfPrimTyCon platform tc
          | bits `mod` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
          | otherwise         -> Nothing
 
+        -- Vectors don't appear as raw fields.
+        PrimTyConVec{}       -> Nothing
+
         -- Strings shouldn't appear as raw fields, only pointers to them.
         PrimTyConString      -> Nothing
 

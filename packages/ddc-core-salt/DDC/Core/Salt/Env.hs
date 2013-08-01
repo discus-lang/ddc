@@ -96,6 +96,7 @@ kindOfPrimTyCon tc
         PrimTyConPtr     -> (kRegion `kFun` kData `kFun` kData)
         PrimTyConTag     -> kData
         PrimTyConString  -> kData
+        PrimTyConVec   _ -> kData `kFun` kData
 
 
 -- Types ----------------------------------------------------------------------

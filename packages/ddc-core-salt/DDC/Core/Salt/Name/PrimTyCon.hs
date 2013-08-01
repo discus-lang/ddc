@@ -49,6 +49,11 @@ data PrimTyCon
         --   current process.
         | PrimTyConPtr
 
+        -- | @VecN#@ a packed vector of N values.
+        --   The acceptable values 'N' and the types this constructor
+        --   can be applied to are implementation dependent.
+        | PrimTyConVec    Int
+
         -- | @String#@ of UTF8 characters.
         -- 
         --   These are primitive until we can define our own unboxed types.
@@ -71,11 +76,12 @@ instance Pretty PrimTyCon where
         PrimTyConBool           -> text "Bool#"
         PrimTyConNat            -> text "Nat#"
         PrimTyConInt            -> text "Int#"
-        PrimTyConWord   bits    -> text "Word"  <> int bits <> text "#"
-        PrimTyConFloat  bits    -> text "Float" <> int bits <> text "#"
+        PrimTyConWord   bits    -> text "Word"  <> int bits  <> text "#"
+        PrimTyConFloat  bits    -> text "Float" <> int bits  <> text "#"
         PrimTyConTag            -> text "Tag#"
         PrimTyConAddr           -> text "Addr#"
         PrimTyConPtr            -> text "Ptr#"
+        PrimTyConVec    arity   -> text "Vec"   <> int arity <> text "#"
         PrimTyConString         -> text "String#"
 
 
@@ -110,6 +116,14 @@ readPrimTyCon str
         , n             <- read ds
         , elem n [32, 64]
         = Just $ PrimTyConFloat n
+
+        -- VecN#
+        | Just rest     <- stripPrefix "Vec" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ PrimTyConVec n
 
         | otherwise
         = Nothing
@@ -170,10 +184,12 @@ primTyConIsSigned tc
 --   Bools are representable with a single bit, but we unpack
 --   them into a whole word.
 --
---   The abstract constructors `Void` and `String` have no width.
+--   The constructors @Void@ and @VecN#@ and @String@ have no width.
+--
 primTyConWidth :: Platform -> PrimTyCon -> Maybe Integer
 primTyConWidth pp tc
  = case tc of
+        PrimTyConVoid           -> Nothing
         PrimTyConBool           -> Just $ 8 * platformNatBytes pp 
         PrimTyConNat            -> Just $ 8 * platformNatBytes  pp
         PrimTyConInt            -> Just $ 8 * platformNatBytes  pp
@@ -182,7 +198,6 @@ primTyConWidth pp tc
         PrimTyConTag            -> Just $ 8 * platformTagBytes  pp
         PrimTyConAddr           -> Just $ 8 * platformAddrBytes pp
         PrimTyConPtr            -> Just $ 8 * platformAddrBytes pp
-
-        PrimTyConVoid           -> Nothing
+        PrimTyConVec   _        -> Nothing
         PrimTyConString         -> Nothing
 

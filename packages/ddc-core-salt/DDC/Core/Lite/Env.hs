@@ -124,6 +124,7 @@ kindOfPrimTyCon tc
         PrimTyConFloat _ -> kData
         PrimTyConTag     -> kData
         PrimTyConString  -> kData
+        PrimTyConVec   _ -> kData `kFun` kData
 
 
 -- | Take the kind of a primitive name.
