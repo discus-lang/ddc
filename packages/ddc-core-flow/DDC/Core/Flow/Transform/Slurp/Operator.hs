@@ -20,7 +20,7 @@ slurpOperator
 slurpOperator bResult xx
 
  -- Create --------------------------------------
- | Just ( NameOpFlow OpFlowVectorOfSeries
+ | Just ( NameOpFlow OpFlowCreate
         , [ XType tRate, XType tA, (XVar uSeries) ])
                                 <- takeXPrimApps xx
  = Just $ OpCreate

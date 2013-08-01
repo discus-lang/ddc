@@ -61,8 +61,7 @@ split   [k1      : Rate]
 
             let above   = pack#       [k1] [k2] [Tuple2# Float64# Float64#] 
                                 sel points 
-            in  vectorOfSeries#  [k2] [Tuple2# Float64# Float64#] 
-                                above)
+            in  create#  [k2] [Tuple2# Float64# Float64#] above)
 
         -- Also compute the maximum determinate.
         xMax 

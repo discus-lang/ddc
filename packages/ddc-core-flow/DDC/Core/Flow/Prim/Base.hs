@@ -128,12 +128,19 @@ data OpFlow
         --   given the tuple arity and index of the desired component.
         = OpFlowProj Int Int
 
-        -- series conversions.
-        | OpFlowVectorOfSeries
+        -- | Take the rate of a series.
         | OpFlowRateOfSeries
+
+        -- | Take the underlying @Nat@ of a @RateNat@.
         | OpFlowNatOfRateNat
 
-        -- selectors
+        -- | Create a new vector from a series.
+        | OpFlowCreate
+
+        -- | Fill an existing vector from a series.
+        | OpFlowFill
+
+        -- | Make a selector.
         | OpFlowMkSel Int
 
         -- maps

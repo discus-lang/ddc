@@ -20,8 +20,9 @@
 
 
 -- Flow operators
-:type vectorOfSeries#
 :type rateOfSeries#
+:type create#
+:type fill#
 :type map#
 :type rep#
 :type reps#

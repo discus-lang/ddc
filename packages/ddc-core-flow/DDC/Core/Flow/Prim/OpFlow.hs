@@ -29,9 +29,11 @@ instance Pretty OpFlow where
         OpFlowProj n i          
          -> text "proj" <> int n <> text "_" <> int i           <> text "#"
 
-        OpFlowVectorOfSeries    -> text "vectorOfSeries"        <> text "#"
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
         OpFlowNatOfRateNat      -> text "natOfRateNat"          <> text "#"
+
+        OpFlowCreate            -> text "create"                <> text "#"
+        OpFlowFill              -> text "fill"                  <> text "#"
 
         OpFlowMkSel 1           -> text "mkSel"                 <> text "#"
         OpFlowMkSel n           -> text "mkSel"      <> int n   <> text "#"
@@ -97,9 +99,10 @@ readOpFlow str
 
         | otherwise
         = case str of
-                "vectorOfSeries#"  -> Just $ OpFlowVectorOfSeries
                 "rateOfSeries#"    -> Just $ OpFlowRateOfSeries
                 "natOfRateNat#"    -> Just $ OpFlowNatOfRateNat
+                "create#"          -> Just $ OpFlowCreate
+                "fill#"            -> Just $ OpFlowFill
                 "mkSel#"           -> Just $ OpFlowMkSel 1
                 "map#"             -> Just $ OpFlowMap   1
                 "rep#"             -> Just $ OpFlowRep
@@ -134,12 +137,6 @@ takeTypeOpFlow op
                         (TVar (UIx (a - ix)))
 
         -- Series Conversions -------------------
-        -- vectorOfSeries# :: [k : Rate]. [a : Data]
-        --                 .  Series k a -> Vector a
-        OpFlowVectorOfSeries
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
-                -> tSeries tK tA `tFun` tVector tA
-
         -- rateOfSeries#   :: [k : Rate]. [a : Data]
         --                 .  Series k a -> RateNat k
         OpFlowRateOfSeries 
@@ -150,6 +147,18 @@ takeTypeOpFlow op
         OpFlowNatOfRateNat 
          -> Just $ tForall kRate $ \tK 
                 -> tRateNat tK `tFun` tNat
+
+
+        -- Vector creation and filling ----------
+        -- create# :: [k : Rate]. [a : Data]. Series k a -> Vector a
+        OpFlowCreate
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
+                -> tSeries tK tA `tFun` tVector tA
+
+        -- fill#   :: [k : Rate]. [a . Data]. Vector a -> Series k a -> Unit
+        OpFlowFill
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
+                -> tVector tA `tFun` tSeries tK tA `tFun` tUnit
 
 
         -- Selectors ----------------------------

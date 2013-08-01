@@ -42,7 +42,7 @@ letrec {
                     \(sel : Sel1# k1 k2).
                    let above : Series# k2 (Tuple2# Float64# Float64#)
                          = pack# [k1] [k2] [Tuple2# Float64# Float64#] sel points in
-                   vectorOfSeries# [k2] [Tuple2# Float64# Float64#] above) in
+                   create# [k2] [Tuple2# Float64# Float64#] above) in
       let xMax : Float64#
             = fold# [k1] [Float64#] [Float64#] max (promote# [Float64#] [Int#] 0#) dets in
       T2# [Vector# (Tuple2# Float64# Float64#)] [Float64#] aAbove xMax
