@@ -35,11 +35,11 @@ loopn# :: [^ : Rate].RateNat# ^0 -> (Int# -> Unit) -> Unit
 new# :: [^ : Data].^0 -> Ref# ^0
 read# :: [^ : Data].Ref# ^0 -> ^0
 write# :: [^ : Data].Ref# ^0 -> ^0 -> Unit
-newVector# :: [^ : Data].Int# -> Vector# ^0
-newVectorR# :: [^ : Data].[^ : Rate].Vector# ^1
-newVectorN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
-readVector# :: [^ : Data].Vector# ^0 -> Int# -> ^0
-writeVector# :: [^ : Data].Vector# ^0 -> Int# -> ^0 -> Unit
+vnew# :: [^ : Data].Int# -> Vector# ^0
+vnewR# :: [^ : Data].[^ : Rate].Vector# ^1
+vnewN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
+vread# :: [^ : Data].Vector# ^0 -> Int# -> ^0
+vwrite# :: [^ : Data].Vector# ^0 -> Int# -> ^0 -> Unit
 next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Int# -> ^1
 
 

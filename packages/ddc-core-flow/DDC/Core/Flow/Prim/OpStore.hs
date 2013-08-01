@@ -30,12 +30,12 @@ instance Pretty OpStore where
         OpStoreWrite            -> text "write#"
 
         -- Vectors.
-        OpStoreNewVector        -> text "newVector#"
-        OpStoreNewVectorR       -> text "newVectorR#"
-        OpStoreNewVectorN       -> text "newVectorN#"
-        OpStoreReadVector       -> text "readVector#"
-        OpStoreWriteVector      -> text "writeVector#"
-        OpStoreSliceVector      -> text "sliceVector#"
+        OpStoreNewVector        -> text "vnew#"
+        OpStoreNewVectorR       -> text "vnewR#"
+        OpStoreNewVectorN       -> text "vnewN#"
+        OpStoreReadVector       -> text "vread#"
+        OpStoreWriteVector      -> text "vwrite#"
+        OpStoreSliceVector      -> text "vslice#"
 
         -- Streams.
         OpStoreNext             -> text "next#"
@@ -49,12 +49,12 @@ readOpStore str
         "read#"         -> Just OpStoreRead
         "write#"        -> Just OpStoreWrite
 
-        "newVector#"    -> Just OpStoreNewVector
-        "newVectorR#"   -> Just OpStoreNewVectorR
-        "newVectorN#"   -> Just OpStoreNewVectorN
-        "readVector#"   -> Just OpStoreReadVector
-        "writeVector#"  -> Just OpStoreWriteVector
-        "sliceVector#"  -> Just OpStoreSliceVector
+        "vnew#"         -> Just OpStoreNewVector
+        "vnewR#"        -> Just OpStoreNewVectorR
+        "vnewN#"        -> Just OpStoreNewVectorN
+        "vread#"        -> Just OpStoreReadVector
+        "vwrite#"       -> Just OpStoreWriteVector
+        "vslice#"       -> Just OpStoreSliceVector
 
         "next#"         -> Just OpStoreNext
         _               -> Nothing

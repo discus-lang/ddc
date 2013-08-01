@@ -9,7 +9,7 @@ letrec {
       caselet T2# (^ : World#) (k1__count : Ref# Int#)  = new# [Int#] 0i# ^0 in
       caselet T2# (^ : World#) (k2__count : Ref# Int#)  = new# [Int#] 0i# ^0 in
       caselet T2# (^ : World#) (x4 : Vector# a) 
-        = newVectorN# [a] [k0] (rateOfSeries# [k0] [a] s0) ^0 in
+        = vnewN# [a] [k0] (rateOfSeries# [k0] [a] s0) ^0 in
       caselet T1# (^ : World#) 
         = loopn# [k0] (rateOfSeries# [k0] [a] s0)
               (\(x0 : Int#).\(^ : World#).
@@ -24,7 +24,7 @@ letrec {
                         caselet T1# (^ : World#) 
                           = guard# k2__count x3__elem
                                 (\(x2 : Int#).\(^ : World#).
-                                 caselet T1# (^ : World#)  = writeVector# [a] x4 x2 s0__elem ^0 in
+                                 caselet T1# (^ : World#)  = vwrite# [a] x4 x2 s0__elem ^0 in
                                  ^0) ^0 in
                         ^0) ^0 in
                ^0) ^0 in
@@ -40,7 +40,7 @@ letrec {
     = /\(k : Rate).
        \(s_aub : Series# k Int#).\(^ : World#).
       caselet T2# (^ : World#) (x6 : Vector# Int#) 
-        = newVectorN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) ^0 in
+        = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) ^0 in
       letrec {
         loop_k : Int# -> World# -> World#
           = \(x0 : Int#).\(^ : World#).
@@ -51,7 +51,7 @@ letrec {
                -> caselet T2# (^ : World#) (s_aub__elem : Int#)  = next# [Int#] [k] s_aub x0 ^0 in
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
-                  caselet T1# (^ : World#)  = writeVector# [Int#] x6 x0 x4__elem ^0 in
+                  caselet T1# (^ : World#)  = vwrite# [Int#] x6 x0 x4__elem ^0 in
                   loop_k (add# [Int#] x0 1i#) ^0
             }
       } in

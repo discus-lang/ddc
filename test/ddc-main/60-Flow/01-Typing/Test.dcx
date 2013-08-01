@@ -35,11 +35,11 @@
 :type new#
 :type read#
 :type write#
-:type newVector#
-:type newVectorR#
-:type newVectorN#
-:type readVector#
-:type writeVector#
+:type vnew#
+:type vnewR#
+:type vnewN#
+:type vread#
+:type vwrite#
 :type next#
 
 

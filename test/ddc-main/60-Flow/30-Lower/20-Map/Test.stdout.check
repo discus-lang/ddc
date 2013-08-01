@@ -7,7 +7,7 @@ letrec {
   map : [k : Rate].Series# k Int# -> Vector# Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x5 : Vector# Int# = newVectorR# [Int#] [k] in
+      let x5 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
                   (\(^ : Int#).
@@ -15,7 +15,7 @@ letrec {
                    let ^ : Int# = mul# [Int#] s$elem 2i# in
                    let ^ : Int# = add# [Int#] ^0 1i# in
                    let x3$elem : Int# = ^0 in
-                   let _ : Unit = writeVector# [Int#] x5 ^2 x3$elem in
+                   let _ : Unit = vwrite# [Int#] x5 ^2 x3$elem in
                    ()) in
       x5
 }
@@ -27,14 +27,14 @@ letrec {
   map : [k : Rate].Series# k Int# -> Vector# Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x6 : Vector# Int# = newVectorR# [Int#] [k] in
+      let x6 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x2$elem : Int# = add# [Int#] s$elem 1i# in
                    let x4$elem : Int# = mul# [Int#] x2$elem 2i# in
-                   let _ : Unit = writeVector# [Int#] x6 ^0 x4$elem in
+                   let _ : Unit = vwrite# [Int#] x6 ^0 x4$elem in
                    ()) in
       x6
 }
@@ -48,7 +48,7 @@ letrec {
     = /\(k : Rate).
        \(s : Series# k Int#).
       let x5$acc : Ref# Int# = new# [Int#] 0i# in
-      let x6 : Vector# Int# = newVectorR# [Int#] [k] in
+      let x6 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
                   (\(^ : Int#).
@@ -57,7 +57,7 @@ letrec {
                    let ^ : Int# = add# [Int#] x0 s$elem in
                    let _ : Unit = write# [Int#] x5$acc ^0 in
                    let x8$elem : Int# = mul# [Int#] s$elem 2i# in
-                   let _ : Unit = writeVector# [Int#] x6 ^1 x8$elem in
+                   let _ : Unit = vwrite# [Int#] x6 ^1 x8$elem in
                    ()) in
       let x5 : Int# = read# [Int#] x5$acc in
       let x9 : Tuple2# Int# (Vector# Int#)
