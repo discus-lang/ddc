@@ -6,7 +6,8 @@ module DDC.Core.Flow.Prim.TyConPrim
         , tNat
         , tInt
         , tFloat
-        , tWord)
+        , tWord
+        , tVec)
 where
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Compounds.Simple
@@ -62,4 +63,15 @@ tWord bits
         = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
 
 
+-- | Primitive @VecN# a@.
+tVec  :: Int -> Type Name -> Type Name
+tVec n tA = TApp (tConPrimTyCon (PrimTyConVec n)) tA
 
+
+-- Utils ----------------------------------------------------------------------
+tConPrimTyCon :: PrimTyCon -> Type Name
+tConPrimTyCon tcp
+ = let  k       = kindPrimTyCon tcp
+        u       = UPrim (NamePrimTyCon tcp) k
+        tc      = TyConBound u k
+   in   TCon tc

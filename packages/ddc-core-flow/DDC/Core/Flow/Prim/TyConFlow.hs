@@ -13,7 +13,8 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tSel2
         , tRef
         , tWorld
-        , tRateNat)
+        , tRateNat
+        , tDown)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
@@ -39,6 +40,7 @@ instance Pretty TyConFlow where
         TyConFlowRef            -> text "Ref#"
         TyConFlowWorld          -> text "World#"
         TyConFlowRateNat        -> text "RateNat#"
+        TyConFlowDown  n        -> text "Down"  <> int n <> text "#"
 
 
 -- | Read a type constructor name.
@@ -49,6 +51,12 @@ readTyConFlow str
         , not $ null ds
         , arity         <- read ds
         = Just $ TyConFlowTuple arity
+
+        | Just rest     <- stripPrefix "Down" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        = Just $ TyConFlowDown n
 
         | otherwise
         = case str of
@@ -75,6 +83,7 @@ kindTyConFlow tc
         TyConFlowRef            -> kData `kFun` kData
         TyConFlowWorld          -> kData
         TyConFlowRateNat        -> kRate `kFun` kData
+        TyConFlowDown{}         -> kRate `kFun` kRate
 
 
 -- Compounds ------------------------------------------------------------------
@@ -119,7 +128,11 @@ tWorld          = tConTyConFlow TyConFlowWorld
 
 
 tRateNat :: Type Name -> Type Name
-tRateNat tK     = tApps (tConTyConFlow TyConFlowRateNat) [tK]
+tRateNat tK     = tApp (tConTyConFlow TyConFlowRateNat)  tK
+
+
+tDown :: Int -> Type Name -> Type Name 
+tDown n tK      = tApp (tConTyConFlow $ TyConFlowDown n) tK
 
 
 -- Utils ----------------------------------------------------------------------

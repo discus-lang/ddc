@@ -9,6 +9,10 @@ Sel1# :: Rate ~> Rate ~> Data
 Ref# :: Data ~> Data
 World# :: Data
 RateNat# :: Rate ~> Data
+Vec4# :: Data ~> Data
+Vec8# :: Data ~> Data
+Down4# :: Rate ~> Rate
+Down8# :: Rate ~> Rate
 
 
 -- Primitive data constructors
@@ -40,7 +44,10 @@ vnewR# :: [^ : Data].[^ : Rate].Vector# ^1
 vnewN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
 vread# :: [^ : Data].Vector# ^0 -> Int# -> ^0
 vwrite# :: [^ : Data].Vector# ^0 -> Int# -> ^0 -> Unit
+
 next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Int# -> ^1
+next4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Int# -> Vec4# ^1
+next8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Int# -> Vec8# ^1
 
 
 -- Machine type constructors
@@ -48,7 +55,8 @@ Int# :: Data
 Nat# :: Data
 Float32# :: Data
 Float64# :: Data
-
+Vec4# Float64# :: Data
+Vec8# Float32# :: Data
 
 -- Machine arithmetic operators
 add# :: [^ : Data].^0 -> ^0 -> ^0

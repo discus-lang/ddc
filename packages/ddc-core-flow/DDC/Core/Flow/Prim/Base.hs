@@ -101,14 +101,17 @@ data TyConFlow
         -- | @SelN#@   constructor. Selectors.
         | TyConFlowSel Int
 
-        -- | @Ref#@    constructor. References.
+        -- | @Ref#@    constructor.  References.
         | TyConFlowRef                  
 
-        -- | @World#@  constructor. State token used when converting to GHC core.
+        -- | @World#@  constructor.  State token used when converting to GHC core.
         | TyConFlowWorld
 
         -- | @RateNat#@ constructor. Naturals witnessing a type-level Rate.          
         | TyConFlowRateNat
+
+        -- | @DownN#@ constructor.   Rate decimation. 
+        | TyConFlowDown  Int
         deriving (Eq, Ord, Show)
 
 
@@ -199,8 +202,8 @@ data OpStore
         | OpStoreSliceVector    
 
 
-        -- Streams --------------------
-        -- | Take the next element from a series.
-        | OpStoreNext
+        -- Series --------------------
+        -- | Take some elements from a series.
+        | OpStoreNext Int
         deriving (Eq, Ord, Show)
 

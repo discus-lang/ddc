@@ -141,33 +141,33 @@ threadType n _
                         `tFun` tWorld `tFun` tWorld
 
         -- Vectors -------------------------------
-        -- newVector#   :: [a : Data]. Nat# -> World# -> T2# World# (Vector# a)
+        -- vnew#   :: [a : Data]. Nat# -> World# -> T2# World# (Vector# a)
         NameOpStore OpStoreNewVector
          -> Just $ tForall kData
                  $ \tA -> tNat 
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
 
-        -- newVectorN#  :: [a : Data]. [k : Rate]. RateNat# k 
-        --              -> World# -> T2# (World#, Vector# a)
+        -- vnew#  :: [a : Data]. [k : Rate]. RateNat# k 
+        --        -> World# -> T2# (World#, Vector# a)
         NameOpStore OpStoreNewVectorN
          -> Just $ tForalls [kData, kRate]
                  $ \[tA, tK] 
                      -> tRateNat tK 
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
 
-        -- readVector#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# World# a
+        -- vread#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# World# a
         NameOpStore OpStoreReadVector
          -> Just $ tForall kData
                  $ \tA -> tA `tFun` tVector tA `tFun` tNat 
                         `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
-        -- writeVector# :: [a : Data]. Vector# a -> Nat# -> a -> World# -> World#
+        -- vwrite# :: [a : Data]. Vector# a -> Nat# -> a -> World# -> World#
         NameOpStore OpStoreWriteVector
          -> Just $ tForall kData
                  $ \tA -> tA `tFun` tVector tA `tFun` tNat `tFun` tA 
                         `tFun` tWorld `tFun` tWorld
 
-        -- sliceVector#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# World# (Vector# a)
+        -- vslice#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# World# (Vector# a)
         NameOpStore OpStoreSliceVector
          -> Just $ tForall kData
                  $ \tA -> tNat `tFun` tVector tA 
@@ -177,7 +177,7 @@ threadType n _
         -- Streams ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Series# k a -> Int# -> World# -> (World#, a)
-        NameOpStore OpStoreNext
+        NameOpStore (OpStoreNext 1)
          -> Just $ tForalls [kRate, kData]
                  $ \[tK, tA] -> tSeries tK tA `tFun` tInt 
                                 `tFun` tWorld `tFun` (tTuple2 tWorld tA)

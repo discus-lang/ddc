@@ -9,6 +9,10 @@
 :kind Ref#
 :kind World#
 :kind RateNat#
+:kind Vec4#
+:kind Vec8#
+:kind Down4#
+:kind Down8#
 
 
 -- Primitive data constructors
@@ -40,7 +44,10 @@
 :type vnewN#
 :type vread#
 :type vwrite#
+
 :type next#
+:type next4#
+:type next8#
 
 
 -- Machine type constructors
@@ -48,7 +55,8 @@
 :kind Nat#
 :kind Float32#
 :kind Float64#
-
+:kind Vec4# Float64#
+:kind Vec8# Float32#
 
 -- Machine arithmetic operators
 :type add#
