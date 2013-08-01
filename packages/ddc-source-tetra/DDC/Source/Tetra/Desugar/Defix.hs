@@ -55,7 +55,7 @@ data InfixAssoc
 
 defixModule    
         :: InfixTable a n
-        => Module a n 
+        -> Module a n 
         -> Either Error (Module a n)
 
 defixModule _table mm 
