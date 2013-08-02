@@ -3,10 +3,10 @@ module DDC.Core.Flow.Prim.OpStore
         ( OpStore (..)
         , readOpStore
         , typeOpStore
-        , xNew,       xRead,       xWrite
-        , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
+        , xNew,         xRead,       xWrite
+        , xNewVector,   xReadVector, xWriteVector, xNewVectorR, xNewVectorN
         , xSliceVector
-        , xNext)
+        , xNext,        xNextC)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -188,6 +188,12 @@ xSliceVector tElem xLen xArr
 xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xNext tRate tElem xStream xIndex
  = xApps (xVarOpStore (OpStoreNext 1))
+         [XType tElem, XType tRate, xStream, xIndex]
+
+
+xNextC :: Int -> Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xNextC c tRate tElem xStream xIndex
+ = xApps (xVarOpStore (OpStoreNext c))
          [XType tElem, XType tRate, xStream, xIndex]
 
 

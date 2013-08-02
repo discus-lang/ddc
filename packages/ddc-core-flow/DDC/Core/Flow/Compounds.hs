@@ -12,7 +12,7 @@ module DDC.Core.Flow.Compounds
         , tRateNat
 
           -- * Primtiive types
-        , tVoid, tBool, tNat, tInt, tWord, tFloat
+        , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec
 
           -- * Primitive literals and data constructors
         , xBool, dcBool
@@ -34,7 +34,7 @@ module DDC.Core.Flow.Compounds
         , xNew,       xRead,       xWrite
         , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
         , xSliceVector
-        , xNext)
+        , xNext,        xNextC)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow

@@ -21,12 +21,14 @@ import Control.Monad
 scheduleProcess :: Process -> Procedure
 scheduleProcess p
  | processResultType p == tUnit
- = case scheduleKernel p of
+ = let lifting  = Lifting 4
+   in  case scheduleKernel lifting p of
         Left  fails     -> error $ "scheduleProcess failed: " ++ show fails
         Right proc      -> proc
 
  | otherwise
  = scheduleDriver p
+
 
 scheduleDriver :: Process -> Procedure
 scheduleDriver 
