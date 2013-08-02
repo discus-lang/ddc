@@ -48,6 +48,23 @@ data Operator
         , opElemType            :: TypeF
         }
 
+        -----------------------------------------
+        -- | Fill a vector with elements from a series.
+        | OpFill
+        { -- | Binder for result value (a Unit)
+          opResultBind          :: BindF
+
+          -- | Bound of target vector.
+        , opTargetVector        :: BoundF
+
+          -- | Rate of input series.
+        , opInputRate           :: TypeF
+
+          -- | Bound of input series.
+        , opInputSeries         :: BoundF 
+
+          -- | Type of the elements.
+        , opElemType            :: TypeF }
 
         -----------------------------------------
         -- | Apply a function to corresponding elements in several input series

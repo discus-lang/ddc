@@ -4,7 +4,9 @@ module DDC.Core.Flow.Prim.OpStore
         , readOpStore
         , typeOpStore
         , xNew,         xRead,       xWrite
-        , xNewVector,   xReadVector, xWriteVector, xNewVectorR, xNewVectorN
+        , xNewVector,   xNewVectorR, xNewVectorN
+        , xReadVector
+        , xWriteVector
         , xSliceVector
         , xNext,        xNextC)
 where
@@ -178,6 +180,7 @@ xWriteVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp ()
 xWriteVector t xArr xIx xElem
  = xApps (xVarOpStore OpStoreWriteVector)
          [XType t, xArr, xIx, xElem]
+
 
 xSliceVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xSliceVector tElem xLen xArr

@@ -30,6 +30,12 @@ instance Pretty Operator where
         , text " input:  "      <> ppr (opInputSeries op)        
         , text " result: "      <> ppr (opResultVector op) ]
 
+ ppr op@OpFill{}
+        = vcat
+        [ text "Fill"
+        , text " target: "      <> ppr (opTargetVector op)
+        , text " input:  "      <> ppr (opInputSeries  op) ]
+
  ppr op@OpMap{}
         = vcat
         [ text "Map"

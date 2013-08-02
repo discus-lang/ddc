@@ -22,14 +22,27 @@ slurpOperator bResult xx
 
  -- Create --------------------------------------
  | Just ( NameOpFlow OpFlowCreate
-        , [ XType tRate, XType tA, (XVar uSeries) ])
+        , [ XType tK, XType tA, XVar uSeries ])
                                 <- takeXPrimApps xx
  = Just $ OpCreate
         { opResultVector        = bResult
-        , opInputRate           = tRate
+        , opInputRate           = tK
         , opInputSeries         = uSeries 
         , opAllocRate           = Nothing
         , opElemType            = tA }
+
+
+ -- Fill ----------------------------------------
+ | Just ( NameOpFlow OpFlowFill
+        , [ XType tK, XType tA, XVar uV, XVar uS ])
+                                <- takeXPrimApps xx
+ = Just $ OpFill
+        { opResultBind          = bResult
+        , opTargetVector        = uV
+        , opInputRate           = tK 
+        , opInputSeries         = uS
+        , opElemType            = tA }
+
 
  -- Map -----------------------------------------
  | Just (NameOpFlow (OpFlowMap n), xs) 

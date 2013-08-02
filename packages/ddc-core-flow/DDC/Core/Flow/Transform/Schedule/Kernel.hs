@@ -107,6 +107,7 @@ scheduleOperator
         -> Either Fail Nest
 
 scheduleOperator lifting nest op
+ -- Map -----------------------------------------
  | OpMap{}      <- op
  = do   let tK            = opInputRate op
         let context       = ContextRate tK
@@ -141,6 +142,31 @@ scheduleOperator lifting nest op
 
         return nest2
 
+ -- Fill ----------------------------------------
+ | OpFill{}     <- op
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        let Just uInput = elemBoundOfSeriesBound 
+                        $ opInputSeries op
+
+        let Just tElem_lifted
+                        = liftType lifting 
+                        $ opElemType op
+
+        let Just nest2  = insertBody nest context
+                        $ [ BodyStmt (BNone tUnit)
+                                     (xWriteVector 
+                                        tElem_lifted 
+                                        (XVar $ opTargetVector op)
+                                        (XVar $ UIx 0)
+                                        (XVar $ uInput)) ]
+
+        let Just nest3  = insertEnds nest2 context
+                        $ [ EndStmt  (opResultBind op)
+                                     xUnit ]
+
+        return nest3
 
  | otherwise
  = return nest

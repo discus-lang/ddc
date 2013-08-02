@@ -54,7 +54,6 @@ liftTypeOfBind l b
         BNone   t       -> liftM BNone     (liftType l t)
 
 
-
 -- | Try to lift a first-order worker expression to work on elements of vector
 --   type instead of scalars.
 liftWorker :: Lifting -> LiftEnv -> ExpF -> Either Fail ExpF
