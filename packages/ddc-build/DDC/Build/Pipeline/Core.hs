@@ -38,6 +38,8 @@ import qualified DDC.Core.Transform.Deannotate          as C
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Snip                as Snip
+import qualified DDC.Core.Transform.Flatten             as Flatten
+import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
 
@@ -307,8 +309,21 @@ pipeFlow !mm !pp
         PipeFlowPrep  !pipes
          -> {-# SCC "PipeFlowPrep"   #-}
             let 
+                -- Eta-expand so all workers have explicit parameter names.
+                mm_eta          = C.result $ Eta.etaModule Flow.profile
+                                        (Eta.configZero { Eta.configExpand = True})
+                                        mm
+
                 -- Snip program to expose intermediate bindings.
-                mm_snip         = Snip.snip Snip.configZero mm
+                mm_snip         = Flatten.flatten 
+                                $ Snip.snip 
+                                        (Snip.configZero { Snip.configSnipLetBody = True })
+                                        mm_eta
+
+                -- The floater needs bindings to be fully named.
+                namifierT       = C.makeNamifier Flow.freshT Env.empty
+                namifierX       = C.makeNamifier Flow.freshX Env.empty
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
                 -- Float worker functions and initializers into their use sites, 
                 -- leaving only flow operators at the top-level.
@@ -319,16 +334,11 @@ pipeFlow !mm !pp
                       -> Forward.FloatDeny
                     _ -> Forward.FloatForce
 
-                config          = Forward.Config isFloatable False
-                mm_float        = C.result 
-                                $ Forward.forwardModule Flow.profile config mm_snip
+                mm_float        = C.result $ Forward.forwardModule Flow.profile 
+                                        (Forward.Config isFloatable False)
+                                        mm_namified
 
-                -- Ensure the final code is fully named.
-                namifierT       = C.makeNamifier Flow.freshT Env.empty
-                namifierX       = C.makeNamifier Flow.freshX Env.empty
-                mm_namified     = S.evalState (C.namify namifierT namifierX mm_float) 0
-
-            in  pipeCores mm_namified pipes
+            in  pipeCores mm_float pipes
 
         PipeFlowLower !pipes
          -> {-# SCC "PipeFlowLower" #-}

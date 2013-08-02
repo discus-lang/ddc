@@ -46,19 +46,19 @@ letrec {
   foldMap : [k : Rate].Series# k Int# -> Tuple2# Int# (Vector# Int#)
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x5$acc : Ref# Int# = new# [Int#] 0i# in
+      let x3$acc : Ref# Int# = new# [Int#] 0i# in
       let x6 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
-                   let x0 : Int# = read# [Int#] x5$acc in
+                   let x0 : Int# = read# [Int#] x3$acc in
                    let ^ : Int# = add# [Int#] x0 s$elem in
-                   let _ : Unit = write# [Int#] x5$acc ^0 in
-                   let x8$elem : Int# = mul# [Int#] s$elem 2i# in
-                   let _ : Unit = vwrite# [Int#] x6 ^1 x8$elem in
+                   let _ : Unit = write# [Int#] x3$acc ^0 in
+                   let x5$elem : Int# = mul# [Int#] s$elem 2i# in
+                   let _ : Unit = vwrite# [Int#] x6 ^1 x5$elem in
                    ()) in
-      let x5 : Int# = read# [Int#] x5$acc in
-      T2# [Int#] [Vector# Int#] x5 x6
+      let x3 : Int# = read# [Int#] x3$acc in
+      T2# [Int#] [Vector# Int#] x3 x6
 }
 

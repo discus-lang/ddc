@@ -36,11 +36,9 @@ import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
-import Data.Monoid
 import Data.Maybe
 
 import qualified DDC.Core.Flow                  as Flow
-import qualified DDC.Core.Flow.Profile          as Flow
 import qualified DDC.Build.Language.Flow        as Flow
 
 import qualified DDC.Build.Language.Salt        as Salt
@@ -51,11 +49,7 @@ import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Lite                  as Lite
 
 import qualified DDC.Core.Check                 as C
-import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
-import qualified DDC.Core.Transform.Namify      as S
-import qualified DDC.Core.Transform.Snip        as Snip
-import qualified DDC.Core.Transform.Eta         as Eta
 
 
 -- | Configuration for main compiler stages.
@@ -137,26 +131,11 @@ stageFlowPrep
 
 stageFlowPrep config source pipesFlow
  = PipeCoreReannotate   (const ())
- [ PipeCoreSimplify     Flow.fragment (0 :: Int) simplNorm
-   [ PipeCoreOutput     (dump config source "dump.flow-prep-norm.dcf")
-   , PipeCoreAsFlow
-     [ PipeFlowPrep
-       ( PipeCoreOutput (dump config source "dump.flow-prep-done.dcf")
-         : pipesFlow)]]]
+ [ PipeCoreAsFlow
+   [ PipeFlowPrep
+     ( PipeCoreOutput (dump config source "dump.flow-prep.dcf")
+     : pipesFlow)]]
  
- where  
-        simplNorm
-         =  S.Trans (S.Eta  $  Eta.configZero {  Eta.configExpand      = True }) 
-         <> S.Trans (S.Snip $ Snip.configZero { Snip.configSnipLetBody = True })
-         <> S.flatten 
-         <> simplNamify
-
-        simplNamify
-         =  S.Trans (S.Namify namifierT namifierX)
-
-        namifierT       = S.makeNamifier Flow.freshT
-        namifierX       = S.makeNamifier Flow.freshX
-
 
 -------------------------------------------------------------------------------
 -- | Lower a Core Flow module.
