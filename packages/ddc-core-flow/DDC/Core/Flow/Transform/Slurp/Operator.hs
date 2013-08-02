@@ -115,5 +115,6 @@ isFlowOperator xx
         Just (NameOpFlow OpFlowFoldIndex) -> True
         Just (NameOpFlow OpFlowPack)      -> True
         Just (NameOpFlow (OpFlowMkSel _)) -> True
+        Just (NameOpFlow OpFlowFill)      -> True
         _                                 -> False
 

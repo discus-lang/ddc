@@ -4,6 +4,7 @@ module DDC.Core.Flow.Transform.Schedule
 where
 import DDC.Core.Flow.Transform.Schedule.SeriesEnv
 import DDC.Core.Flow.Transform.Schedule.Nest
+import DDC.Core.Flow.Transform.Schedule.Kernel
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
@@ -18,9 +19,18 @@ import Control.Monad
 --   * The input series must all have the same rate.
 --
 scheduleProcess :: Process -> Procedure
-scheduleProcess 
-        (Process 
-                { processName           = name
+scheduleProcess p
+ | processResultType p == tUnit
+ = case scheduleKernel p of
+        Left  fails     -> error $ "scheduleProcess failed: " ++ show fails
+        Right proc      -> proc
+
+ | otherwise
+ = scheduleDriver p
+
+scheduleDriver :: Process -> Procedure
+scheduleDriver 
+       (Process { processName           = name
                 , processParamTypes     = psType
                 , processParamValues    = psValue
                 , processContexts       = contexts
