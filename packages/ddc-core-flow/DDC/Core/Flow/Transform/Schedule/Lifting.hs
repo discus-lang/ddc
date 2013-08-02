@@ -3,9 +3,13 @@ module DDC.Core.Flow.Transform.Schedule.Lifting
         ( Lifting (..)
         , LiftEnv (..)
 
+          -- * Lifting Types
         , liftType
         , liftTypeOfBind
-        , liftWorker)
+        , liftWorker
+
+          -- * Lowering Types
+        , lowerSeriesRate)
 where
 import DDC.Core.Flow.Transform.Schedule.Fail
 import DDC.Core.Flow.Compounds
@@ -79,4 +83,16 @@ liftWorker lifting env xx
         _ -> error $ "no lift " ++ show xx
 
 
+-- Down -----------------------------------------------------------------------
+-- | Lower the rate of a series,
+--   to account for lifting of the code that consumes it.
+lowerSeriesRate :: Lifting -> TypeF -> Maybe TypeF 
+lowerSeriesRate lifting tt
+ | Just (NameTyConFlow TyConFlowSeries, [tK, tA])
+        <- takePrimTyConApps tt
+ , c    <- liftingFactor lifting
+ = Just (tSeries (tDown c tK) tA)
+
+ | otherwise
+ = Nothing
 

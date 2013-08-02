@@ -10,6 +10,7 @@ module DDC.Core.Flow.Compounds
         , tTuple1, tTuple2, tTupleN
         , tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
+        , tDown
 
           -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec

@@ -60,6 +60,12 @@ scheduleKernel
            , TVar (UName n) == tK -> return ()
           _             -> Left FailPrimaryRateMismatch)
 
+        -- Lower rates of series parameters.
+        let bsParamValues_lowered
+                = map (\(BName n t) 
+                        -> let t' = fromMaybe t $ lowerSeriesRate lifting t
+                           in  BName n t')
+                $ bsParamValues
 
         -- Create the initial loop nest of the process rate.
         let bsSeries    = [ b   | b <- bsParamValues
@@ -92,7 +98,7 @@ scheduleKernel
         return  $ Procedure
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
-                , procedureParamValues  = bsParamValues
+                , procedureParamValues  = bsParamValues_lowered
                 , procedureNest         = nest'
                 , procedureResultType   = tResult
                 , procedureResultExp    = xResult }
@@ -170,8 +176,6 @@ scheduleOperator lifting nest op
 
  | otherwise
  = return nest
-
-
 
 
 -------------------------------------------------------------------------------
