@@ -14,6 +14,20 @@ import DDC.Base.Pretty
 import Control.Monad
 
 
+defaultLifting
+        = Lifting
+        { liftingFactor         = 4
+        , liftingOkPrimArith    = liftOkPrimArith 4 }
+
+liftOkPrimArith :: Int -> PrimArith -> TypeF -> Bool
+liftOkPrimArith f p t
+ |  t == tFloat 32, f == 4
+ = elem p [ PrimArithAdd, PrimArithSub, PrimArithMul, PrimArithDiv ]
+
+ | otherwise
+ = False
+
+
 -- | Create loops from a list of operators.
 --
 --   * The input series must all have the same rate.
@@ -21,13 +35,13 @@ import Control.Monad
 scheduleProcess :: Process -> Procedure
 scheduleProcess p
  | processResultType p == tUnit
- = let lifting  = Lifting 4
-   in  case scheduleKernel lifting p of
+ = case scheduleKernel defaultLifting p of
         Left  fails     -> error $ "scheduleProcess failed: " ++ show fails
         Right proc      -> proc
 
  | otherwise
  = scheduleDriver p
+
 
 
 scheduleDriver :: Process -> Procedure
