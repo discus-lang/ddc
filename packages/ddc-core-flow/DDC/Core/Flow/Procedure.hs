@@ -25,8 +25,8 @@ data Procedure
         , procedureParamTypes   :: [BindF]
         , procedureParamValues  :: [BindF]
         , procedureNest         :: Nest
-        , procedureResult       :: ExpF
-        , procedureResultType   :: TypeF }
+        , procedureResultType   :: TypeF 
+        , procedureResultExp    :: ExpF }
 
 
 -- | A loop nest.

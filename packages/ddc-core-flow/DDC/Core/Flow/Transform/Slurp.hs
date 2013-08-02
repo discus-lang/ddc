@@ -89,7 +89,7 @@ slurpProcessLet (BName n tProcess) xx
 
                 , processOperators     = ops_alloc
                 , processResultType    = tResult
-                , processResult        = xLets ltss xResult }
+                , processResultExp     = xLets ltss xResult }
 
 slurpProcessLet _ _
  = Nothing

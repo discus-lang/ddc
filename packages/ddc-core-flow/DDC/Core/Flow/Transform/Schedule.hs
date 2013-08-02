@@ -26,7 +26,7 @@ scheduleProcess
                 , processContexts       = contexts
                 , processOperators      = ops 
                 , processResultType     = tResult
-                , processResult         = xResult})
+                , processResultExp      = xResult})
   = let
         -- Create all the contexts, starting with an empty loop nest.
         Just nest1      = foldM insertContext NestEmpty contexts
@@ -40,7 +40,7 @@ scheduleProcess
                 , procedureParamValues  = psValue
                 , procedureNest         = nest2
                 , procedureResultType   = tResult
-                , procedureResult       = xResult }
+                , procedureResultExp    = xResult }
 
 
 -------------------------------------------------------------------------------

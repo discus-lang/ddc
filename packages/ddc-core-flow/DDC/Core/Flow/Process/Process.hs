@@ -37,19 +37,10 @@ data Process
           -- | Flow operators in this process.
         , processOperators      :: [Operator] 
 
-        --  -- | Top-level statements that don't invoke stream operators.
-        --  --   These are typically statements that combine reduction results, 
-        --  --   like the addition in  (fold (+) 0 s1 + fold (*) 1 s1).
-        --  -- 
-        --  --   INVARIANT: 
-        --  --    The worker functions for stream operators do not mention
-        --  --    any of the bound variables.   
-        -- , processStmts          :: [LetsF]
-
           -- Type of process result
         , processResultType     :: TypeF
 
           -- Final result of process.
-        , processResult         :: ExpF
+        , processResultExp      :: ExpF
         }
 
