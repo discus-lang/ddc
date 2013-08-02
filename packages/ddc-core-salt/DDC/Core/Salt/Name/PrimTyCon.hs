@@ -37,8 +37,10 @@ data PrimTyCon
         -- | @FloatN#@ floating point numbers of the given width.
         | PrimTyConFloat  Int
 
-        -- | @Tag#@ data constructor tags.
-        | PrimTyConTag
+        -- | @VecN#@ a packed vector of N values.
+        --   The acceptable values for 'N' and the types this constructor
+        --   can be applied to are implementation dependent.
+        | PrimTyConVec    Int
 
         -- | @Addr#@ raw machine addresses. Unlike pointers below,
         --   a raw @Addr#@ need not to refer to memory owned 
@@ -49,10 +51,8 @@ data PrimTyCon
         --   current process.
         | PrimTyConPtr
 
-        -- | @VecN#@ a packed vector of N values.
-        --   The acceptable values 'N' and the types this constructor
-        --   can be applied to are implementation dependent.
-        | PrimTyConVec    Int
+        -- | @Tag#@ data constructor tags.
+        | PrimTyConTag
 
         -- | @String#@ of UTF8 characters.
         -- 
@@ -78,10 +78,10 @@ instance Pretty PrimTyCon where
         PrimTyConInt            -> text "Int#"
         PrimTyConWord   bits    -> text "Word"  <> int bits  <> text "#"
         PrimTyConFloat  bits    -> text "Float" <> int bits  <> text "#"
+        PrimTyConVec    arity   -> text "Vec"   <> int arity <> text "#"
         PrimTyConTag            -> text "Tag#"
         PrimTyConAddr           -> text "Addr#"
         PrimTyConPtr            -> text "Ptr#"
-        PrimTyConVec    arity   -> text "Vec"   <> int arity <> text "#"
         PrimTyConString         -> text "String#"
 
 
@@ -122,7 +122,7 @@ readPrimTyCon str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds
-        , n >= 1
+        , elem n [2, 4, 8, 16]        
         = Just $ PrimTyConVec n
 
         | otherwise
