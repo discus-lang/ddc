@@ -25,7 +25,6 @@ data Procedure
         , procedureParamTypes   :: [BindF]
         , procedureParamValues  :: [BindF]
         , procedureNest         :: Nest
-        , procedureStmts        :: [LetsF]
         , procedureResult       :: ExpF
         , procedureResultType   :: TypeF }
 

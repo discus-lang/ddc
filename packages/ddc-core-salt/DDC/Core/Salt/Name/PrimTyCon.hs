@@ -25,10 +25,11 @@ data PrimTyCon
         | PrimTyConBool
 
         -- | @Nat#@ natural numbers.
-        --   Big enough to count every addressable byte in the store.
+        --   Enough precision to count every object in the heap.
         | PrimTyConNat
 
         -- | @Int#@ signed integers.
+        --   Enough precision to count every object in the heap.
         | PrimTyConInt
 
         -- | @WordN#@ machine words of the given width.

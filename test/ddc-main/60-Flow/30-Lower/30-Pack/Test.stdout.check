@@ -78,9 +78,8 @@ letrec {
                    ()) in
       let ^ : Int# = read# [Int#] k1$count in
       let x2 : Vector# a = vslice# [a] ^0 x2 in
-      let x4 : Tuple2# (Vector# a) (Vector# a)
+      let x6 : Tuple2# (Vector# a) (Vector# a)
             = T2# [Vector# a] [Vector# a] x2 x3 in
-      let x6 : Tuple2# (Vector# a) (Vector# a) = x4 in
       x6
 }
 
@@ -156,9 +155,7 @@ letrec {
       let x7 : Vector# a = vslice# [a] ^0 x7 in
       let x6 : Vector# a = x4 in
       let x9 : Vector# a = x7 in
-      let x10 : Tuple2# (Vector# a) (Vector# a)
-            = T2# [Vector# a] [Vector# a] x6 x9 in
-      x10
+      T2# [Vector# a] [Vector# a] x6 x9
 }
 
 

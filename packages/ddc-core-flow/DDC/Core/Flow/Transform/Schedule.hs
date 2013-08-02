@@ -25,7 +25,6 @@ scheduleProcess
                 , processParamValues    = psValue
                 , processContexts       = contexts
                 , processOperators      = ops 
-                , processStmts          = stmts
                 , processResultType     = tResult
                 , processResult         = xResult})
   = let
@@ -40,7 +39,6 @@ scheduleProcess
                 , procedureParamTypes   = psType
                 , procedureParamValues  = psValue
                 , procedureNest         = nest2
-                , procedureStmts        = stmts
                 , procedureResultType   = tResult
                 , procedureResult       = xResult }
 

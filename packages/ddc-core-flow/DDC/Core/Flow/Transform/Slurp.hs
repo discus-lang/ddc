@@ -1,5 +1,7 @@
 module DDC.Core.Flow.Transform.Slurp
-        (slurpProcesses)
+        ( slurpProcesses
+        , slurpOperator
+        , isFlowOperator)
 where
 import DDC.Core.Flow.Transform.Slurp.Alloc
 import DDC.Core.Flow.Transform.Slurp.Operator
@@ -86,9 +88,8 @@ slurpProcessLet (BName n tProcess) xx
                 , processContexts      = ctxParam ++ ctxLocal
 
                 , processOperators     = ops_alloc
-                , processStmts         = ltss
                 , processResultType    = tResult
-                , processResult        = xResult }
+                , processResult        = xLets ltss xResult }
 
 slurpProcessLet _ _
  = Nothing

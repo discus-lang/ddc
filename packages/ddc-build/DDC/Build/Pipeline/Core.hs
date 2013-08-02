@@ -21,7 +21,6 @@ import DDC.Llvm.Pretty                                  ()
 
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
-import qualified DDC.Core.Flow.Transform.Prep           as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
@@ -35,9 +34,10 @@ import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
 
 import qualified DDC.Core.Transform.Reannotate          as C
+import qualified DDC.Core.Transform.Deannotate          as C
+import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Snip                as Snip
-import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
 
@@ -49,7 +49,6 @@ import qualified DDC.Core.Exp                           as C
 import qualified DDC.Type.Env                           as Env
 
 import qualified Control.Monad.State.Strict             as S
-import qualified Data.Map                               as Map
 import qualified Data.Monoid                            as M
 import Control.Monad
 import Control.DeepSeq
@@ -266,12 +265,10 @@ data PipeFlow a where
         -> ![PipeFlow b]
         -> PipeFlow a
 
-  -- Run the prep transform to eta-expand worker functions.
-  -- It needs to be already a-normalized and namified. 
+  -- Run the prep transform to expose flow operators.
   PipeFlowPrep
-        :: (NFData a, Show a)
-        => [PipeCore a Flow.Name] 
-        -> PipeFlow a
+        :: [PipeCore () Flow.Name] 
+        -> PipeFlow ()
 
   -- Run the lowering transform on a module.
   --  It needs to be already prepped and have full type annotations.
@@ -309,30 +306,27 @@ pipeFlow !mm !pp
 
         PipeFlowPrep  !pipes
          -> {-# SCC "PipeFlowPrep"   #-}
-            let -- Run the prep transform itself which finds worker functions,
-                (_, nsWorker) 
-                 = Flow.prepModule mm
+            let 
+                -- Snip program to expose intermediate bindings.
+                mm_snip         = Snip.snip Snip.configZero mm
 
-                -- Force all worker functions to be floated forward into their
-                -- use sites.
+                -- Float worker functions and initializers into their use sites, 
+                -- leaving only flow operators at the top-level.
                 isFloatable lts
                  = case lts of
-                    C.LLet (C.BName n _) _ 
-                      | Just{}   <- Map.lookup n nsWorker
-                      -> Forward.FloatForce
-                    _ -> Forward.FloatAllow
+                    C.LLet (C.BName _ _) x
+                      |  Flow.isFlowOperator (C.deannotate (const Nothing) x)
+                      -> Forward.FloatDeny
+                    _ -> Forward.FloatForce
 
-                config = Forward.Config isFloatable False
-
+                config          = Forward.Config isFloatable False
                 mm_float        = C.result 
-                                $ Forward.forwardModule Flow.profile config mm
+                                $ Forward.forwardModule Flow.profile config mm_snip
 
                 -- Ensure the final code is fully named.
                 namifierT       = C.makeNamifier Flow.freshT Env.empty
                 namifierX       = C.makeNamifier Flow.freshX Env.empty
-
-                mm_namified
-                 = S.evalState (C.namify namifierT namifierX mm_float) 0
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_float) 0
 
             in  pipeCores mm_namified pipes
 

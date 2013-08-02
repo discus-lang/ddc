@@ -42,8 +42,7 @@ letrec {
                    ()) in
       let x3 : Int# = read# [Int#] x3$acc in
       let x8 : Int# = read# [Int#] x8$acc in
-      let x10 : Int# = add# [Int#] x3 x8 in
-      x10
+      add# [Int#] x3 x8
 }
 
 
@@ -73,9 +72,8 @@ letrec {
       let x3 : Int# = read# [Int#] x3$acc in
       let x8 : Int# = read# [Int#] x8$acc in
       let x15 : Int# = read# [Int#] x15$acc in
-      let x10 : Int# = add# [Int#] x3 x8 in
-      let x17 : Tuple2# Int# Int# = T2# [Int#] [Int#] x10 x15 in
-      x17
+      let ^ : Int# = add# [Int#] x3 x8 in
+      T2# [Int#] [Int#] ^0 x15
 }
 
 
@@ -110,9 +108,9 @@ letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x4 : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
+      let ^ : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
       let x5$acc : Ref# (Tuple2# Int# Int#)
-            = new# [Tuple2# Int# Int#] x4 in
+            = new# [Tuple2# Int# Int#] ^0 in
       let x9$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
@@ -130,8 +128,6 @@ letrec {
       let x5 : Tuple2# Int# Int#
             = read# [Tuple2# Int# Int#] x5$acc in
       let x9 : Int# = read# [Int#] x9$acc in
-      let x10 : Tuple2# (Tuple2# Int# Int#) Int#
-            = T2# [Tuple2# Int# Int#] [Int#] x5 x9 in
-      x10
+      T2# [Tuple2# Int# Int#] [Int#] x5 x9
 }
 

@@ -1,6 +1,7 @@
 
 module DDC.Core.Flow.Transform.Slurp.Operator
-        (slurpOperator)
+        ( slurpOperator
+        , isFlowOperator)
 where
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Exp
@@ -8,7 +9,7 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Compounds.Simple
 import DDC.Type.Pretty          ()
-
+import Control.Monad
 
 -- | Slurp a stream operator from a let-binding binding.
 --   We use this when recovering operators from the source program.
@@ -99,4 +100,20 @@ slurpOperator bResult xx
 
  | otherwise
  = Nothing
+
+
+-- | Check if some binding is a flow operator.
+isFlowOperator 
+        :: Exp () Name 
+        -> Bool
+
+isFlowOperator xx
+ = case liftM fst $ takeXPrimApps xx of
+        Just (NameOpFlow OpFlowCreate)    -> True
+        Just (NameOpFlow (OpFlowMap _))   -> True
+        Just (NameOpFlow OpFlowFold)      -> True
+        Just (NameOpFlow OpFlowFoldIndex) -> True
+        Just (NameOpFlow OpFlowPack)      -> True
+        Just (NameOpFlow (OpFlowMkSel _)) -> True
+        _                                 -> False
 

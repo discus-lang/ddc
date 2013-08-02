@@ -13,8 +13,7 @@ letrec {
       let x8 : Int#
             = fold# [k] [Int#] [Int#]
                   (\(x5 x6 : Int#). mul# [Int#] x5 x6) 1i# s in
-      let x10 : Int# = add# [Int#] x3 x8 in
-      x10
+      add# [Int#] x3 x8
 }
 
 

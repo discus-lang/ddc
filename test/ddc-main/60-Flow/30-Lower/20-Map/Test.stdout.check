@@ -13,9 +13,8 @@ letrec {
                   (\(^ : Int#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let ^ : Int# = mul# [Int#] s$elem 2i# in
-                   let ^ : Int# = add# [Int#] ^0 1i# in
-                   let x3$elem : Int# = ^0 in
-                   let _ : Unit = vwrite# [Int#] x5 ^2 x3$elem in
+                   let x3$elem : Int# = add# [Int#] ^0 1i# in
+                   let _ : Unit = vwrite# [Int#] x5 ^1 x3$elem in
                    ()) in
       x5
 }
@@ -60,8 +59,6 @@ letrec {
                    let _ : Unit = vwrite# [Int#] x6 ^1 x8$elem in
                    ()) in
       let x5 : Int# = read# [Int#] x5$acc in
-      let x9 : Tuple2# Int# (Vector# Int#)
-            = T2# [Int#] [Vector# Int#] x5 x6 in
-      x9
+      T2# [Int#] [Vector# Int#] x5 x6
 }
 

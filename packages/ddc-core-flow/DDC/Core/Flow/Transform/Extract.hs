@@ -27,13 +27,13 @@ extractTop procs
 
 -- | Extract code for a whole procedure.
 extractProcedure  :: Procedure -> (Bind Name, ExpF)
-extractProcedure (Procedure n bsParam xsParam nest stmts xResult tResult)
+extractProcedure (Procedure n bsParam xsParam nest xResult tResult)
  = let  tBody   = foldr tFun    tResult $ map typeOfBind xsParam
         tQuant  = foldr TForall tBody   $ bsParam
    in   ( BName n tQuant
         ,   xLAMs bsParam
           $ xLams xsParam
-          $ extractNest nest stmts xResult )
+          $ extractNest nest [] xResult )
 
 
 -------------------------------------------------------------------------------
