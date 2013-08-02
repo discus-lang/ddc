@@ -32,8 +32,11 @@ module DDC.Core.Flow.Compounds
         , xLoopGuard
 
           -- * Store operators
-        , xNew,       xRead,       xWrite
-        , xNewVector, xReadVector, xWriteVector, xNewVectorR, xNewVectorN
+        , xNew,         xRead,       xWrite
+        , xNewVector,   xNewVectorR, xNewVectorN
+        , xReadVector,  xReadVectorC
+        , xWriteVector, xWriteVectorC
+
         , xSliceVector
         , xNext,        xNextC)
 where

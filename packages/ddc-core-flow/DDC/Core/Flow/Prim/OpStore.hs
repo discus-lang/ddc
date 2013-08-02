@@ -5,8 +5,8 @@ module DDC.Core.Flow.Prim.OpStore
         , typeOpStore
         , xNew,         xRead,       xWrite
         , xNewVector,   xNewVectorR, xNewVectorN
-        , xReadVector
-        , xWriteVector
+        , xReadVector,  xReadVectorC
+        , xWriteVector, xWriteVectorC
         , xSliceVector
         , xNext,        xNextC)
 where
@@ -36,8 +36,13 @@ instance Pretty OpStore where
         OpStoreNewVector        -> text "vnew#"
         OpStoreNewVectorR       -> text "vnewR#"
         OpStoreNewVectorN       -> text "vnewN#"
-        OpStoreReadVector       -> text "vread#"
-        OpStoreWriteVector      -> text "vwrite#"
+
+        OpStoreReadVector  1    -> text "vread#"
+        OpStoreReadVector  n    -> text "vread"  <> int n <> text "#"
+
+        OpStoreWriteVector 1    -> text "vwrite#"
+        OpStoreWriteVector n    -> text "vwrite" <> int n <> text "#"
+
         OpStoreSliceVector      -> text "vslice#"
 
         -- Streams.
@@ -55,6 +60,20 @@ readOpStore str
         , n >= 1
         = Just $ OpStoreNext n
 
+        | Just rest     <- stripPrefix "vread" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpStoreReadVector n
+
+        | Just rest     <- stripPrefix "vwrite" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpStoreWriteVector n
+
         | otherwise
         = case str of
                 "new#"          -> Just OpStoreNew
@@ -64,8 +83,8 @@ readOpStore str
                 "vnew#"         -> Just OpStoreNewVector
                 "vnewR#"        -> Just OpStoreNewVectorR
                 "vnewN#"        -> Just OpStoreNewVectorN
-                "vread#"        -> Just OpStoreReadVector
-                "vwrite#"       -> Just OpStoreWriteVector
+                "vread#"        -> Just (OpStoreReadVector  1)
+                "vwrite#"       -> Just (OpStoreWriteVector 1)
                 "vslice#"       -> Just OpStoreSliceVector
 
                 "next#"         -> Just (OpStoreNext 1)
@@ -106,14 +125,24 @@ typeOpStore op
          $ \[tA, tK] -> tRateNat tK `tFun` tVector tA
         
         -- vread#  :: [a : Data]. Vector# a -> Nat# -> a
-        OpStoreReadVector
+        OpStoreReadVector 1
          -> tForall kData 
          $  \tA -> tVector tA `tFun` tNat `tFun` tA
 
+        -- vreadN#  :: [a : Data]. Vector# a -> Nat# -> VecN# a
+        OpStoreReadVector n
+         -> tForall kData 
+         $  \tA -> tVector tA `tFun` tNat `tFun` tVec n tA
+
         -- vwrite# :: [a : Data]. Vector# a -> Nat# -> a -> Unit
-        OpStoreWriteVector
+        OpStoreWriteVector 1
          -> tForall kData 
          $  \tA -> tVector tA `tFun` tNat `tFun` tA `tFun` tUnit
+
+        -- vwriteN# :: [a : Data]. Vector# a -> Nat# -> VecN# a -> Unit
+        OpStoreWriteVector n
+         -> tForall kData 
+         $  \tA -> tVector tA `tFun` tNat `tFun` tVec n tA `tFun` tUnit
 
         -- vslice# :: [a : Data]. Nat# -> Vector# a -> Vector# a
         OpStoreSliceVector
@@ -172,13 +201,25 @@ xNewVectorN tA tR  xRN
 
 xReadVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xReadVector t xArr xIx
- = xApps (xVarOpStore OpStoreReadVector)
+ = xApps (xVarOpStore (OpStoreReadVector 1))
+         [XType t, xArr, xIx]
+
+
+xReadVectorC :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xReadVectorC c t xArr xIx
+ = xApps (xVarOpStore (OpStoreReadVector c))
          [XType t, xArr, xIx]
 
 
 xWriteVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
 xWriteVector t xArr xIx xElem
- = xApps (xVarOpStore OpStoreWriteVector)
+ = xApps (xVarOpStore (OpStoreWriteVector 1))
+         [XType t, xArr, xIx, xElem]
+
+
+xWriteVectorC :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
+xWriteVectorC c t xArr xIx xElem
+ = xApps (xVarOpStore (OpStoreWriteVector c))
          [XType t, xArr, xIx, xElem]
 
 

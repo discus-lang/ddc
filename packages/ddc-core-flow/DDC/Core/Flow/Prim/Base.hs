@@ -199,11 +199,11 @@ data OpStore
         -- | Allocate a new vector (taking a @RateNat@ for the length)
         | OpStoreNewVectorN     
 
-        -- | Read from a vector.
-        | OpStoreReadVector     
+        -- | Read a packed Vec of values from a Vector buffer.
+        | OpStoreReadVector     Int
 
-        -- | Write to a vector.
-        | OpStoreWriteVector
+        -- | Write a packed Vec of values to a Vector buffer.
+        | OpStoreWriteVector    Int
 
         -- | Slice after a pack/filter (taking a @Nat@ for new length)
         | OpStoreSliceVector    

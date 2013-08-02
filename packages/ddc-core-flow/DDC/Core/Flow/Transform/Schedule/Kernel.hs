@@ -150,20 +150,17 @@ scheduleOperator lifting nest op
 
  -- Fill ----------------------------------------
  | OpFill{}     <- op
- = do   let tK          = opInputRate op
+ = do   let c           = liftingFactor lifting
+        let tK          = opInputRate op
         let context     = ContextRate tK
 
         let Just uInput = elemBoundOfSeriesBound 
                         $ opInputSeries op
 
-        let Just tElem_lifted
-                        = liftType lifting 
-                        $ opElemType op
-
         let Just nest2  = insertBody nest context
                         $ [ BodyStmt (BNone tUnit)
-                                     (xWriteVector 
-                                        tElem_lifted 
+                                     (xWriteVectorC c
+                                        (opElemType op)
                                         (XVar $ opTargetVector op)
                                         (XVar $ UIx 0)
                                         (XVar $ uInput)) ]
