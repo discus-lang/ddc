@@ -1,7 +1,7 @@
 
 module DDC.Core.Flow.Transform.Schedule.Lifting
         ( Lifting (..)
-        , LiftEnv (..)
+        , LiftEnv
 
           -- * Lifting Types
         , liftType

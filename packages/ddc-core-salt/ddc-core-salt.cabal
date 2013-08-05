@@ -29,6 +29,13 @@ Library
         DDC.Core.Salt.Compounds
         DDC.Core.Salt.Runtime
         DDC.Core.Salt.Name
+        DDC.Core.Salt.Name.Lit
+        DDC.Core.Salt.Name.PrimArith
+        DDC.Core.Salt.Name.PrimCall
+        DDC.Core.Salt.Name.PrimCast
+        DDC.Core.Salt.Name.PrimControl
+        DDC.Core.Salt.Name.PrimStore
+        DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Env
         DDC.Core.Salt
 
@@ -49,9 +56,6 @@ Library
         DDC.Core.Salt.Convert.Type
         DDC.Core.Salt.Convert.Init
         DDC.Core.Salt.Convert.Prim
-        DDC.Core.Salt.Name.Lit
-        DDC.Core.Salt.Name.PrimOp
-        DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Name.Sanitize
         DDC.Core.Salt.Convert
         DDC.Core.Salt.Profile

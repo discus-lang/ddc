@@ -20,7 +20,8 @@ module DDC.Core.Lite.Name
         , readName)
 where
 import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimOp
+import DDC.Core.Salt.Name.PrimArith
+import DDC.Core.Salt.Name.PrimCast
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Control.DeepSeq

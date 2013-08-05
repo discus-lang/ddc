@@ -22,10 +22,23 @@ Library
         mtl             == 2.1.*,
         ddc-base        == 0.3.2.*,
         ddc-core        == 0.3.2.*,
-        ddc-core-salt   == 0.3.2.*
+        ddc-core-salt   == 0.3.2.*,
+        ddc-core-tetra  == 0.3.2.*
 
   Exposed-modules:
+        DDC.Source.Tetra.Desugar.Defix
+        DDC.Source.Tetra.Lexer.Lit
+        DDC.Source.Tetra.Parser.Exp
+        DDC.Source.Tetra.Parser.Module
+        DDC.Source.Tetra.Parser.Param
+        DDC.Source.Tetra.Compounds
         DDC.Source.Tetra.Exp
+        DDC.Source.Tetra.Lexer
+        DDC.Source.Tetra.Module
+        DDC.Source.Tetra.Name
+        DDC.Source.Tetra.Parser
+        DDC.Source.Tetra.Predicates
+        DDC.Source.Tetra.Pretty
 
   Other-modules:
         DDC.Source.Tetra.Exp.Base
@@ -41,4 +54,8 @@ Library
         NoMonomorphismRestriction
         ScopedTypeVariables
         PatternGuards
+        FlexibleContexts
+        FlexibleInstances
+        RankNTypes
+        BangPatterns
         

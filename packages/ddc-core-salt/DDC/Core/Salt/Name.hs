@@ -49,7 +49,11 @@ module DDC.Core.Salt.Name
 where
 import DDC.Core.Salt.Name.Sanitize
 import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimOp
+import DDC.Core.Salt.Name.PrimArith
+import DDC.Core.Salt.Name.PrimCall
+import DDC.Core.Salt.Name.PrimCast
+import DDC.Core.Salt.Name.PrimControl
+import DDC.Core.Salt.Name.PrimStore
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Data.Typeable
@@ -196,4 +200,44 @@ readName str
 
         | otherwise
         = Nothing
+
+
+-- PrimOp ---------------------------------------------------------------------
+-- | Primitive operators implemented directly by the machine or runtime system.
+data    PrimOp
+        -- | Arithmetic, logic, comparison and bit-wise operators.
+        = PrimArith     PrimArith
+
+        -- | Casting between numeric types.
+        | PrimCast      PrimCast
+
+        -- | Raw store access.
+        | PrimStore     PrimStore
+
+        -- | Special function calling conventions.
+        | PrimCall      PrimCall
+
+        -- | Non-functional control flow.
+        | PrimControl   PrimControl
+        deriving (Eq, Ord, Show)
+
+
+instance NFData PrimOp where
+ rnf op
+  = case op of
+        PrimArith pa    -> rnf pa
+        PrimCast  pc    -> rnf pc
+        PrimStore ps    -> rnf ps
+        PrimCall  pc    -> rnf pc
+        PrimControl pc  -> rnf pc
+
+
+instance Pretty PrimOp where
+ ppr pp
+  = case pp of
+        PrimArith    op -> ppr op
+        PrimCast     c  -> ppr c
+        PrimStore    p  -> ppr p
+        PrimCall     c  -> ppr c
+        PrimControl  c  -> ppr c
 

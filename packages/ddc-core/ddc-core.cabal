@@ -53,6 +53,13 @@ Library
         DDC.Core.Lexer
 
         DDC.Core.Parser
+        DDC.Core.Parser.Base
+        DDC.Core.Parser.Context
+        DDC.Core.Parser.Exp
+        DDC.Core.Parser.Module
+        DDC.Core.Parser.Param
+        DDC.Core.Parser.Type
+        DDC.Core.Parser.Witness
 
         DDC.Core.Transform.Annotate
         DDC.Core.Transform.Deannotate
@@ -115,14 +122,6 @@ Library
 
         DDC.Core.Lexer.Comments
         DDC.Core.Lexer.Offside
-
-        DDC.Core.Parser.Base
-        DDC.Core.Parser.Context
-        DDC.Core.Parser.Exp
-        DDC.Core.Parser.Module
-        DDC.Core.Parser.Param
-        DDC.Core.Parser.Type
-        DDC.Core.Parser.Witness
 
         DDC.Type.Check.CheckCon
         DDC.Type.Check.Error
