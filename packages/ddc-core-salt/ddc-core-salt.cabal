@@ -36,6 +36,7 @@ Library
         DDC.Core.Salt.Name.PrimControl
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon
+        DDC.Core.Salt.Name.PrimVector
         DDC.Core.Salt.Env
         DDC.Core.Salt
 
