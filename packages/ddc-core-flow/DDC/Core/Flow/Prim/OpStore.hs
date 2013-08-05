@@ -38,36 +38,36 @@ instance Pretty OpStore where
         OpStoreNewVectorN       -> text "vnewN#"
 
         OpStoreReadVector  1    -> text "vread#"
-        OpStoreReadVector  n    -> text "vread"  <> int n <> text "#"
+        OpStoreReadVector  n    -> text "vread$"  <> int n <> text "#"
 
         OpStoreWriteVector 1    -> text "vwrite#"
-        OpStoreWriteVector n    -> text "vwrite" <> int n <> text "#"
+        OpStoreWriteVector n    -> text "vwrite$" <> int n <> text "#"
 
         OpStoreSliceVector      -> text "vslice#"
 
         -- Streams.
         OpStoreNext 1           -> text "next#"
-        OpStoreNext n           -> text "next" <> int n <> text "#"
+        OpStoreNext n           -> text "next$"   <> int n <> text "#"
 
 
 -- | Read a store operator name.
 readOpStore :: String -> Maybe OpStore
 readOpStore str
-        | Just rest     <- stripPrefix "next" str
+        | Just rest     <- stripPrefix "next$" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , n >= 1
         = Just $ OpStoreNext n
 
-        | Just rest     <- stripPrefix "vread" str
+        | Just rest     <- stripPrefix "vread$" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , n >= 1
         = Just $ OpStoreReadVector n
 
-        | Just rest     <- stripPrefix "vwrite" str
+        | Just rest     <- stripPrefix "vwrite$" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds

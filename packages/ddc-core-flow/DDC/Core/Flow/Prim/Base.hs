@@ -9,6 +9,7 @@ module DDC.Core.Flow.Prim.Base
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
+        , PrimVector    (..)
         , PrimCast      (..))
 where
 import Data.Typeable

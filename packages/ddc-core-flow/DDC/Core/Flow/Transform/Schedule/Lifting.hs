@@ -26,8 +26,8 @@ data Lifting
         { -- How many elements to process for each loop iteration.
           liftingFactor         :: Int 
 
-          -- Decide whether it's ok to lift this primitive operator.
-        , liftingOkPrimArith    :: PrimArith -> TypeF -> Bool }
+          -- Decide whether this vector operator is implementable.
+        , liftingOkPrimVector   :: PrimVector -> TypeF -> Bool }
 
 
 -- | Map original variable to lifted version.
@@ -64,10 +64,10 @@ liftWorker :: Lifting -> LiftEnv -> ExpF -> Either Fail ExpF
 liftWorker lifting env xx
  = let down     = liftWorker lifting env
    in  case xx of
-        XApp x1@(XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
-         |  liftingOkPrimArith lifting prim tElem
-         ,  Just tElem_lifted <- liftType lifting tElem
-         -> Right $ XApp x1 (XType tElem_lifted)
+        XApp (XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
+         |  Just prim' <- liftPrimArithToVector (liftingFactor lifting) prim
+         -> Right $ XApp (XVar (UPrim (NamePrimVector prim') (typePrimVector prim')))
+                         (XType tElem)
 
         XApp x1 x2      
          -> do  x1'     <- down x1

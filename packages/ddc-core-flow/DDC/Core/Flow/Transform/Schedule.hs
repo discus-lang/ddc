@@ -17,15 +17,17 @@ import Control.Monad
 defaultLifting
         = Lifting
         { liftingFactor         = 4
-        , liftingOkPrimArith    = liftOkPrimArith 4 }
+        , liftingOkPrimVector   = liftOkPrimVector 4 }
 
-liftOkPrimArith :: Int -> PrimArith -> TypeF -> Bool
-liftOkPrimArith f p t
- |  t == tFloat 32, f == 4
- = elem p [ PrimArithAdd, PrimArithSub, PrimArithMul, PrimArithDiv ]
 
- |  t == tFloat 32, f == 8
- = elem p [ PrimArithAdd, PrimArithSub, PrimArithMul, PrimArithDiv ]
+liftOkPrimVector :: Int -> PrimVector -> TypeF -> Bool
+liftOkPrimVector n p t
+ |    (t == tFloat 32 && n == 4)
+   || (t == tFloat 64 && n == 2)
+ = elem p [ PrimVectorAdd n
+          , PrimVectorSub n
+          , PrimVectorMul n
+          , PrimVectorDiv n ]
 
  | otherwise
  = False

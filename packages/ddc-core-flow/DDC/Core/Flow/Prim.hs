@@ -41,6 +41,13 @@ module DDC.Core.Flow.Prim
         , PrimArith     (..)
         , typePrimArith
 
+          -- * Primitive vector operators
+        , PrimVector    (..)
+        , typePrimVector
+        , multiOfPrimVector
+        , liftPrimArithToVector
+        , lowerPrimVectorToArith
+
           -- * Casting between primitive types
         , PrimCast      (..)
         , typePrimCast)
