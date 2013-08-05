@@ -39,6 +39,7 @@ Library
   Exposed-modules:
         DDC.Driver.Command.Flow.Concretize
         DDC.Driver.Command.Flow.Lower
+        DDC.Driver.Command.Flow.Melt
         DDC.Driver.Command.Flow.Prep
         DDC.Driver.Command.Flow.Thread
         DDC.Driver.Command.Flow.Wind

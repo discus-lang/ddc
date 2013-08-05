@@ -82,8 +82,11 @@ Library
         DDC.Core.Flow.Transform.Slurp.Operator
         DDC.Core.Flow.Transform.Slurp.Alloc
 
-        DDC.Core.Flow.Transform.Schedule.SeriesEnv
+        DDC.Core.Flow.Transform.Schedule.Fail
+        DDC.Core.Flow.Transform.Schedule.Kernel
+        DDC.Core.Flow.Transform.Schedule.Lifting
         DDC.Core.Flow.Transform.Schedule.Nest
+        DDC.Core.Flow.Transform.Schedule.SeriesEnv
 
         DDC.Core.Flow.Transform.Extract.Intersperse
 
