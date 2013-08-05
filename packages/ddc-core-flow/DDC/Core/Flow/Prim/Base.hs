@@ -12,10 +12,10 @@ module DDC.Core.Flow.Prim.Base
         , PrimCast      (..))
 where
 import Data.Typeable
-import DDC.Core.Salt.Name 
-        ( PrimTyCon     (..)
-        , PrimArith     (..)
-        , PrimCast      (..))
+import DDC.Core.Salt.Name.PrimTyCon
+import DDC.Core.Salt.Name.PrimArith
+import DDC.Core.Salt.Name.PrimCast
+import DDC.Core.Salt.Name.PrimVector
 
 
 -- | Names of things used in Disciple Core Flow.
@@ -58,6 +58,9 @@ data Name
 
         -- | Primitive casting between numeric types.
         | NamePrimCast          PrimCast
+
+        -- | Primitive vector operators.
+        | NamePrimVector        PrimVector
 
 
         -- Literals -----------------------------

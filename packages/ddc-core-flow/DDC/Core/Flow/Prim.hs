@@ -56,14 +56,11 @@ import DDC.Core.Flow.Prim.OpLoop
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
 
-import DDC.Core.Salt.Name 
-        ( readPrimTyCon
-        , readPrimCast
-        , readPrimArith
-        , readLitPrimNat
-        , readLitPrimInt
-        , readLitPrimWordOfBits
-        , readLitPrimFloatOfBits)
+import DDC.Core.Salt.Name.PrimTyCon
+import DDC.Core.Salt.Name.PrimArith
+import DDC.Core.Salt.Name.PrimVector
+import DDC.Core.Salt.Name.PrimCast
+import DDC.Core.Salt.Name.Lit
 
 import DDC.Base.Pretty
 import Control.DeepSeq
@@ -84,9 +81,10 @@ instance NFData Name where
         NameOpLoop      op      -> rnf op
         NameOpStore     op      -> rnf op
 
-        NamePrimTyCon   con     -> rnf con
-        NamePrimArith   con     -> rnf con
-        NamePrimCast    c       -> rnf c
+        NamePrimTyCon   op      -> rnf op
+        NamePrimArith   op      -> rnf op
+        NamePrimVector  op      -> rnf op
+        NamePrimCast    op      -> rnf op
 
         NameLitBool     b       -> rnf b
         NameLitNat      n       -> rnf n
@@ -111,6 +109,7 @@ instance Pretty Name where
 
         NamePrimTyCon   tc      -> ppr tc
         NamePrimArith   op      -> ppr op
+        NamePrimVector  op      -> ppr op
         NamePrimCast    op      -> ppr op
 
         NameLitBool     True    -> text "True#"
@@ -133,9 +132,10 @@ readName str
         | Just p        <- readOpStore   str    = Just $ NameOpStore   p
 
         -- Primitive names.
-        | Just p        <- readPrimTyCon str    = Just $ NamePrimTyCon p
-        | Just p        <- readPrimArith str    = Just $ NamePrimArith p
-        | Just p        <- readPrimCast  str    = Just $ NamePrimCast  p
+        | Just p        <- readPrimTyCon  str   = Just $ NamePrimTyCon  p
+        | Just p        <- readPrimArith  str   = Just $ NamePrimArith  p
+        | Just p        <- readPrimVector str   = Just $ NamePrimVector p
+        | Just p        <- readPrimCast   str   = Just $ NamePrimCast   p
 
         -- Literal Bools
         | str == "True#"  = Just $ NameLitBool True
