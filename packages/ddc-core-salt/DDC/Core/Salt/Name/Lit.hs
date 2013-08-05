@@ -4,7 +4,9 @@ module DDC.Core.Salt.Name.Lit
         ( readLitInteger
         , readLitPrimNat
         , readLitPrimInt
-        , readLitPrimWordOfBits)
+        , readLitPrimWordOfBits
+        , readLitPrimFloatOfBits)
+
 where
 import Data.List
 import Data.Char
@@ -37,7 +39,7 @@ readLitPrimNat str1
         = Nothing
 
 
--- | Read an integer with an explicit format specifier like @1234i#@.
+-- | Read an integer literal with an explicit format specifier like @1234i#@.
 readLitPrimInt :: String -> Maybe Integer
 readLitPrimInt str1
         | '-' : str2    <- str1
@@ -79,8 +81,30 @@ readLitPrimWordOfBits str1
         = Nothing
 
 
+-- | Read a float literal with an explicit format specifier like @123.00f32#@.
+readLitPrimFloatOfBits :: String -> Maybe (Double, Int)
+readLitPrimFloatOfBits str1
+        | '-' : str2    <- str1
+        , Just (d, bs)  <- readLitPrimFloatOfBits str2
+        = Just (negate d, bs)
+
+        | (ds1, str2)   <- span isDigit str1
+        , not $ null ds1
+        , Just str3     <- stripPrefix "." str2
+        , (ds2, str4)   <- span isDigit str3
+        , not $ null ds2
+        , Just str5     <- stripPrefix "f" str4
+        , (bs, "#")     <- span isDigit str5
+        , not $ null bs
+        = Just (read (ds1 ++ "." ++ ds2), read bs)
+
+        | otherwise
+        = Nothing
+
+
 -- | Read a binary string as a number.
 readBinary :: (Num a, Read a) => String -> a
 readBinary digits
         = foldl' (\ acc b -> if b then 2 * acc + 1 else 2 * acc) 0
         $ map (/= '0') digits
+

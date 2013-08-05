@@ -37,6 +37,7 @@ module DDC.Core.Salt.Name
         , readLitPrimNat
         , readLitPrimInt
         , readLitPrimWordOfBits
+        , readLitPrimFloatOfBits
 
           -- * Name Parsing
         , readName

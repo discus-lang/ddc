@@ -24,6 +24,9 @@ liftOkPrimArith f p t
  |  t == tFloat 32, f == 4
  = elem p [ PrimArithAdd, PrimArithSub, PrimArithMul, PrimArithDiv ]
 
+ |  t == tFloat 32, f == 8
+ = elem p [ PrimArithAdd, PrimArithSub, PrimArithMul, PrimArithDiv ]
+
  | otherwise
  = False
 

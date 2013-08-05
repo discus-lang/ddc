@@ -62,7 +62,8 @@ import DDC.Core.Salt.Name
         , readPrimArith
         , readLitPrimNat
         , readLitPrimInt
-        , readLitPrimWordOfBits)
+        , readLitPrimWordOfBits
+        , readLitPrimFloatOfBits)
 
 import DDC.Base.Pretty
 import Control.DeepSeq
@@ -152,6 +153,11 @@ readName str
         | Just (val, bits)      <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
+
+        -- Literal Floats
+        | Just (val, bits)      <- readLitPrimFloatOfBits str
+        , elem bits [32, 64]
+        = Just $ NameLitFloat (toRational val) bits
 
         -- Variables.
         | c : _                 <- str

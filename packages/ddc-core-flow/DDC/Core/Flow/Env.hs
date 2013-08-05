@@ -137,10 +137,11 @@ typeOfPrimName dc
         NamePrimCast p          -> Just $ typePrimCast p
         NamePrimArith p         -> Just $ typePrimArith p
 
-        NameLitBool _           -> Just $ tBool
-        NameLitNat  _           -> Just $ tNat
-        NameLitInt  _           -> Just $ tInt
-        NameLitWord _ bits      -> Just $ tWord bits
+        NameLitBool  _          -> Just $ tBool
+        NameLitNat   _          -> Just $ tNat
+        NameLitInt   _          -> Just $ tInt
+        NameLitWord  _ bits     -> Just $ tWord bits
+        NameLitFloat _ bits     -> Just $ tFloat bits
 
         _                       -> Nothing
 
