@@ -24,11 +24,7 @@ import Data.List
 data Lifting
         = Lifting
         { -- How many elements to process for each loop iteration.
-          liftingFactor         :: Int 
-
-          -- Decide whether this vector operator is implementable.
-        , liftingOkPrimVector   :: PrimVector -> TypeF -> Bool }
-
+          liftingFactor         :: Int }
 
 -- | Map original variable to lifted version.
 type LiftEnv
@@ -38,15 +34,14 @@ type LiftEnv
 -- | Try to lift the given type.
 liftType :: Lifting -> TypeF -> Maybe TypeF 
 liftType l tt
- | liftingFactor l == 1
- = Just tt
+        | liftingFactor l == 1 
+        = Just tt
 
- | Just (NamePrimTyCon (PrimTyConFloat 32), []) 
-        <- takePrimTyConApps tt
- = Just (tVec (liftingFactor l) tt)
+        | elem tt [tFloat 32, tFloat 64]      
+        = Just (tVec (liftingFactor l) tt)
 
- | otherwise
- = Nothing
+        | otherwise            
+        = Nothing
 
 
 -- | Try to lift the type of a binder.
@@ -58,29 +53,43 @@ liftTypeOfBind l b
         BNone   t       -> liftM BNone     (liftType l t)
 
 
--- | Try to lift a first-order worker expression to work on elements of vector
---   type instead of scalars.
+-- | Try to lift a first-order worker expression to so it operates on elements
+--   of vec type instead of scalars.
 liftWorker :: Lifting -> LiftEnv -> ExpF -> Either Fail ExpF
 liftWorker lifting env xx
  = let down     = liftWorker lifting env
    in  case xx of
-        XApp (XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
-         |  Just prim' <- liftPrimArithToVector (liftingFactor lifting) prim
-         -> Right $ XApp (XVar (UPrim (NamePrimVector prim') (typePrimVector prim')))
-                         (XType tElem)
-
-        XApp x1 x2      
-         -> do  x1'     <- down x1
-                x2'     <- down x2
-                return  $  XApp x1' x2'
-
+        -- Replace vars by their vector version.
         XVar u
          | Just (_, bL) 
                     <- find (\(bS', _) -> boundMatchesBind u bS') env
          , Just uL  <- takeSubstBoundOfBind bL
          -> Right (XVar uL)
 
-        _ -> error $ "no lift " ++ show xx
+        -- Replace scalar primops by vector versions.
+        XApp (XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
+         |  Just prim'  <- liftPrimArithToVec (liftingFactor lifting) prim
+         -> Right $ XApp (XVar (UPrim (NamePrimVec prim') (typePrimVec prim')))
+                         (XType tElem)
+
+        -- Replicate literals.
+        XCon dc
+         | DaConNamed (NameLitFloat _ 32) 
+                    <- daConName dc
+         , nPrim    <- PrimVecRep (liftingFactor lifting)
+         , tPrim    <- typePrimVec nPrim
+         -> Right $ XApp (XApp (XVar (UPrim (NamePrimVec nPrim) tPrim)) 
+                               (XType $ tFloat 32))
+                         xx
+
+        -- Boiler plate application.
+        XApp x1 x2      
+         -> do  x1'     <- down x1
+                x2'     <- down x2
+                return  $  XApp x1' x2'
+
+
+        _ -> Left (FailCannotLift xx)
 
 
 -- Down -----------------------------------------------------------------------

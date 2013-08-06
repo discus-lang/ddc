@@ -2,7 +2,7 @@
 module DDC.Core.Flow.Prim.OpPrim
         ( typePrimCast
         , typePrimArith
-        , typePrimVector)
+        , typePrimVec)
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
@@ -56,24 +56,31 @@ typePrimArith op
 
 
 -- | Take the type of a primitive vector operator.
-typePrimVector :: PrimVector -> Type Name
-typePrimVector op
+typePrimVec :: PrimVec -> Type Name
+typePrimVec op
  = case op of
-        PrimVectorNeg n -> tForall kData $ \t -> tVec n t `tFun` tVec n t
-        PrimVectorAdd n -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
-        PrimVectorSub n -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
-        PrimVectorMul n -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
-        PrimVectorDiv n -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
+        PrimVecNeg n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t
+        PrimVecAdd n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
+        PrimVecSub n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
+        PrimVecMul n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
+        PrimVecDiv n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
 
-        PrimVectorRep n 
+        PrimVecRep n 
          -> tForall kData $ \t -> t `tFun` tVec n t
 
-        PrimVectorPack n
+        PrimVecPack n
          -> tForall kData 
          $  \t -> let Just t' = tFunOfList (replicate n t ++ [tVec n t]) 
                   in  t'
 
-        PrimVectorUnpack n
+        PrimVecUnpack n
          -> tForall kData
          $  \t -> tVec n t `tFun` tTupleN  (replicate n t)
 
+        PrimVecGather n
+         -> tForall kData
+         $  \t -> tVector t `tFun` tVec n tInt `tFun` tVec n t
+
+        PrimVecScatter n
+         -> tForall kData
+         $  \t -> tVector t `tFun` tVec n tInt `tFun` tVec n t `tFun` tUnit

@@ -16,21 +16,7 @@ import Control.Monad
 
 defaultLifting
         = Lifting
-        { liftingFactor         = 4
-        , liftingOkPrimVector   = liftOkPrimVector 4 }
-
-
-liftOkPrimVector :: Int -> PrimVector -> TypeF -> Bool
-liftOkPrimVector n p t
- |    (t == tFloat 32 && n == 4)
-   || (t == tFloat 64 && n == 2)
- = elem p [ PrimVectorAdd n
-          , PrimVectorSub n
-          , PrimVectorMul n
-          , PrimVectorDiv n ]
-
- | otherwise
- = False
+        { liftingFactor         = 8 }
 
 
 -- | Create loops from a list of operators.

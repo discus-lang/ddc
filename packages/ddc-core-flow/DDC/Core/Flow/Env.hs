@@ -59,7 +59,6 @@ primDataDefs
 
 
         -- Flow -----------------------------------------------------
-
         -- Vector
         , DataDef
                 (NameTyConFlow TyConFlowVector)
@@ -129,14 +128,14 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NameOpFlow    p         -> Just $ typeOpFlow     p
-        NameOpLoop    p         -> Just $ typeOpLoop     p
-        NameOpStore   p         -> Just $ typeOpStore    p
-        NameDaConFlow p         -> Just $ typeDaConFlow  p
+        NameOpFlow     p        -> Just $ typeOpFlow     p
+        NameOpLoop     p        -> Just $ typeOpLoop     p
+        NameOpStore    p        -> Just $ typeOpStore    p
+        NameDaConFlow  p        -> Just $ typeDaConFlow  p
 
         NamePrimCast   p        -> Just $ typePrimCast   p 
         NamePrimArith  p        -> Just $ typePrimArith  p
-        NamePrimVector p        -> Just $ typePrimVector p
+        NamePrimVec    p        -> Just $ typePrimVec    p
 
         NameLitBool  _          -> Just $ tBool
         NameLitNat   _          -> Just $ tNat

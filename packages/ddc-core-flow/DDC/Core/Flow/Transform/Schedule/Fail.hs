@@ -26,5 +26,8 @@ data Fail
         -- | Primary rate variable of the process does not match
         --   the rate of the paramter series.
         | FailPrimaryRateMismatch
+
+        -- | Cannot lift expression to vector operators.
+        | FailCannotLift (Exp () Name)
         deriving Show
 

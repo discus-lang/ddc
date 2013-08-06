@@ -9,14 +9,14 @@ module DDC.Core.Flow.Prim.Base
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
-        , PrimVector    (..)
+        , PrimVec       (..)
         , PrimCast      (..))
 where
 import Data.Typeable
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimArith
+import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Salt.Name.PrimCast
-import DDC.Core.Salt.Name.PrimVector
 
 
 -- | Names of things used in Disciple Core Flow.
@@ -61,7 +61,7 @@ data Name
         | NamePrimCast          PrimCast
 
         -- | Primitive vector operators.
-        | NamePrimVector        PrimVector
+        | NamePrimVec           PrimVec
 
 
         -- Literals -----------------------------

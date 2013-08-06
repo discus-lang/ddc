@@ -42,11 +42,11 @@ module DDC.Core.Flow.Prim
         , typePrimArith
 
           -- * Primitive vector operators
-        , PrimVector    (..)
-        , typePrimVector
-        , multiOfPrimVector
-        , liftPrimArithToVector
-        , lowerPrimVectorToArith
+        , PrimVec    (..)
+        , typePrimVec
+        , multiOfPrimVec
+        , liftPrimArithToVec
+        , lowerPrimVecToArith
 
           -- * Casting between primitive types
         , PrimCast      (..)
@@ -65,7 +65,7 @@ import DDC.Core.Flow.Prim.OpPrim
 
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimArith
-import DDC.Core.Salt.Name.PrimVector
+import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Salt.Name.PrimCast
 import DDC.Core.Salt.Name.Lit
 
@@ -90,7 +90,7 @@ instance NFData Name where
 
         NamePrimTyCon   op      -> rnf op
         NamePrimArith   op      -> rnf op
-        NamePrimVector  op      -> rnf op
+        NamePrimVec     op      -> rnf op
         NamePrimCast    op      -> rnf op
 
         NameLitBool     b       -> rnf b
@@ -116,7 +116,7 @@ instance Pretty Name where
 
         NamePrimTyCon   tc      -> ppr tc
         NamePrimArith   op      -> ppr op
-        NamePrimVector  op      -> ppr op
+        NamePrimVec     op      -> ppr op
         NamePrimCast    op      -> ppr op
 
         NameLitBool     True    -> text "True#"
@@ -131,17 +131,17 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Flow fragment specific names.
-        | Just p        <- readKiConFlow str    = Just $ NameKiConFlow p
-        | Just p        <- readTyConFlow str    = Just $ NameTyConFlow p
-        | Just p        <- readDaConFlow str    = Just $ NameDaConFlow p
-        | Just p        <- readOpFlow    str    = Just $ NameOpFlow    p
-        | Just p        <- readOpLoop    str    = Just $ NameOpLoop    p
-        | Just p        <- readOpStore   str    = Just $ NameOpStore   p
+        | Just p        <- readKiConFlow str    = Just $ NameKiConFlow  p
+        | Just p        <- readTyConFlow str    = Just $ NameTyConFlow  p
+        | Just p        <- readDaConFlow str    = Just $ NameDaConFlow  p
+        | Just p        <- readOpFlow    str    = Just $ NameOpFlow     p
+        | Just p        <- readOpLoop    str    = Just $ NameOpLoop     p
+        | Just p        <- readOpStore   str    = Just $ NameOpStore    p
 
         -- Primitive names.
         | Just p        <- readPrimTyCon  str   = Just $ NamePrimTyCon  p
         | Just p        <- readPrimArith  str   = Just $ NamePrimArith  p
-        | Just p        <- readPrimVector str   = Just $ NamePrimVector p
+        | Just p        <- readPrimVec    str   = Just $ NamePrimVec    p
         | Just p        <- readPrimCast   str   = Just $ NamePrimCast   p
 
         -- Literal Bools
