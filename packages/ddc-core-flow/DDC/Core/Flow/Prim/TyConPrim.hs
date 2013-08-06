@@ -43,12 +43,12 @@ tBool   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
 
 -- | Primitive Nat# type.
 tNat ::  Type Name
-tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
+tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)  kData) kData)
 
 
 -- | Primitive `Int#` type.
 tInt ::  Type Name
-tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
+tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)  kData) kData)
 
 
 -- | Primitive `FloatN#` type of the given width.

@@ -2,7 +2,7 @@
 module Test 
 imports {
         addInt :: Int# -> Int# -> Int#;
-        minIx :: Int# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+        minIx :: Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
 } with
 letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
@@ -16,7 +16,7 @@ letrec {
       let x9$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Int#).
+                  (\(^ : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x1$1 : Int# = read# [Int#] x5$acc$1 in
                    let x1$2 : Int# = read# [Int#] x5$acc$2 in

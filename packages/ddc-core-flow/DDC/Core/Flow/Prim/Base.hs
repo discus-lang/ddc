@@ -144,6 +144,12 @@ data OpFlow
         -- | Fill an existing vector from a series.
         | OpFlowFill
 
+        -- | Gather  (read) elements from a vector.
+        | OpFlowGather
+
+        -- | Scatter (write) elements into a vector.
+        | OpFlowScatter
+
         -- | Make a selector.
         | OpFlowMkSel Int
 

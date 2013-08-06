@@ -7,12 +7,12 @@ letrec {
        \(s_aub : Series# k_d Int#).
       let x6 : Vector# Int#
             = vnewN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
-      let k_d$length : Int#
+      let k_d$length : Nat#
             = natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
       letrec {
-        k_d$loop : Int# -> Unit
-          = \(x0 : Int#).
-            case sub# [Int#] k_d$length x0 of {
+        k_d$loop : Nat# -> Unit
+          = \(x0 : Nat#).
+            case sub# [Nat#] k_d$length x0 of {
               0i#  
                -> ();
               _ 
@@ -20,7 +20,7 @@ letrec {
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
                   let _ : Unit = vwrite# [Int#] x6 x0 x4__elem in
-                  k_d$loop (add# [Int#] x0 1i#)
+                  k_d$loop (add# [Nat#] x0 1i#)
             }
       } in
       let _ : Unit = k_d$loop 0i# in
@@ -36,36 +36,36 @@ letrec {
   filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#
     = /\(k : Rate).
        \(s1 : Series# k Int#).
-      let k2__count$0 : Int# = 0i# in
+      let k2__count$0 : Nat# = 0# in
       let x5 : Vector# Int#
             = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
       let x9__acc$0 : Int# = 0i# in
-      let k$length : Int#
+      let k$length : Nat#
             = natOfRateNat# [k] (rateOfSeries# [k] [Int#] s1) in
       letrec {
-        k$loop : Int# -> Int# -> Int# -> Tuple2# Int# Int#
-          = \(x2 k2__count$1 x9__acc$1 : Int#).
-            case sub# [Int#] k$length x2 of {
+        k$loop : Nat# -> Nat# -> Int# -> Tuple2# Nat# Int#
+          = \(x2 k2__count$1 : Nat#).\(x9__acc$1 : Int#).
+            case sub# [Nat#] k$length x2 of {
               0i#  
-               -> T2# [Int#] [Int#] k2__count$1 x9__acc$1;
+               -> T2# [Nat#] [Int#] k2__count$1 x9__acc$1;
               _ 
                -> let s1__elem : Int# = next# [Int#] [k] s1 x2 in
                   let x0 : Int# = mod# [Int#] s1__elem 2i# in
                   let x3__elem : Bool# = eq# [Int#] x0 0i# in
                   case x3__elem of {
                     True#  
-                     -> let x3 : Int# = k2__count$1 in
+                     -> let x3 : Nat# = k2__count$1 in
                         let _ : Unit = vwrite# [Int#] x5 x3 s1__elem in
                         let x6 : Int# = x9__acc$1 in
                         let x9__acc$2 : Int# = maxx x6 s1__elem in
-                        k$loop (add# [Int#] x2 1i#) (add# [Int#] k2__count$1 1i#) x9__acc$2;
+                        k$loop (add# [Nat#] x2 1i#) (add# [Nat#] k2__count$1 1i#) x9__acc$2;
                     _ 
-                     -> k$loop (add# [Int#] x2 1i#) k2__count$1 x9__acc$1
+                     -> k$loop (add# [Nat#] x2 1i#) k2__count$1 x9__acc$1
                   }
             }
       } in
-      caselet T2# (k2__count$2 : Int#) (x9__acc$2 : Int#)  = k$loop 0i# k2__count$0 x9__acc$0 in
-      let x4 : Int# = k2__count$2 in
+      caselet T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = k$loop 0i# k2__count$0 x9__acc$0 in
+      let x4 : Nat# = k2__count$2 in
       let x6 : Vector# Int# = vslice# [Int#] x4 x5 in
       let x9 : Int# = x9__acc$2 in
       T2# [Vector# Int#] [Int#] x6 x9

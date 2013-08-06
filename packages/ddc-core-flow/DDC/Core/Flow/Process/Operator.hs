@@ -67,6 +67,47 @@ data Operator
         , opElemType            :: TypeF }
 
         -----------------------------------------
+        -- | Gather elements from a vector into a series.
+        | OpGather
+        { -- | Binder for result series.
+          opResultBind          :: BindF
+
+          -- | Bound  of source elem vector.
+        , opSourceVector        :: BoundF
+
+          -- | Bound  of source index series.
+        , opSourceIndices       :: BoundF
+
+          -- | Rate of input and output series.
+        , opInputRate           :: TypeF
+
+          -- | Type of gathered elements.
+        , opElemType            :: TypeF 
+        }
+
+        -----------------------------------------
+        -- | Scatter elements from a series into a vector.
+        | OpScatter
+        { -- | Binder for result value (a Unit)
+          opResultBind          :: BindF
+
+          -- | Bound of target vector.
+        , opTargetVector        :: BoundF
+
+          -- | Bound of source index series.
+        , opSourceIndices       :: BoundF
+
+          -- | Bound of source element series.
+        , opSourceElems         :: BoundF
+
+          -- | Rate of input serieses.
+        , opInputRate           :: TypeF
+
+          -- | Type of elements.
+        , opElemType            :: TypeF
+        }
+
+        -----------------------------------------
         -- | Apply a function to corresponding elements in several input series
         --   of the same rate, producing a new series. This subsumes the regular
         --   'map' operator as well as 'zipWith' like operators where the input

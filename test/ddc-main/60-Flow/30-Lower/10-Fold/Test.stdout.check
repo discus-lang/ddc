@@ -10,7 +10,7 @@ letrec {
       let x3$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Int#).
+                  (\(^ : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x3$acc in
                    let ^ : Int# = add# [Int#] x0 s$elem in
@@ -31,7 +31,7 @@ letrec {
       let x8$acc : Ref# Int# = new# [Int#] 1i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Int#).
+                  (\(^ : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x3$acc in
                    let ^ : Int# = add# [Int#] x0 s$elem in
@@ -57,7 +57,7 @@ letrec {
       let x15$acc : Ref# Int# = new# [Int#] 1i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Int#).
+                  (\(^ : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x0 : Int# = read# [Int#] x3$acc in
                    let ^ : Int# = add# [Int#] x0 s$elem in
@@ -86,7 +86,7 @@ letrec {
       let x6$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Int#).
+                  (\(^ : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x4$elem : Int# = mul# [Int#] s$elem 2i# in
                    let x0 : Int# = read# [Int#] x6$acc in
@@ -102,7 +102,7 @@ letrec {
 module Test 
 imports {
         addInt :: Int# -> Int# -> Int#;
-        minIx :: Int# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+        minIx :: Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
 } with
 letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
@@ -114,7 +114,7 @@ letrec {
       let x9$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Int#).
+                  (\(^ : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s ^0 in
                    let x1 : Tuple2# Int# Int#
                          = read# [Tuple2# Int# Int#] x5$acc in

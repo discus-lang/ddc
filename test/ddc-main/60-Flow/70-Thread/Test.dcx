@@ -6,24 +6,24 @@ module Test with letrec
 filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
   = /\(k0 : Rate)./\(a : Data).
      \(f g : a -> Bool#).\(s0 : Series# k0 a).
-    let k1__count : Ref# Int# = new# [Int#] 0i# in
-    let k2__count : Ref# Int# = new# [Int#] 0i# in
+    let k1__count : Ref# Nat# = new# [Nat#] 0# in
+    let k2__count : Ref# Nat# = new# [Nat#] 0# in
     let x4 : Vector# a
           = vnewN# [a] [k0] (rateOfSeries# [k0] [a] s0) in
     let _ : Unit
           = loopn# [k0] (rateOfSeries# [k0] [a] s0)
-                (\(x0 : Int#).
+                (\(x0 : Nat#).
                  let s0__elem : a = next# [a] [k0] s0 x0 in
                  let x1__elem : Bool#
                        = (\(x : a). f x) s0__elem in
                  let _ : Unit
                        = guard# k1__count x1__elem
-                             (\(x1 : Int#).
+                             (\(x1 : Nat#).
                               let x3__elem : Bool#
                                     = (\(x : a). g x) s0__elem in
                               let _ : Unit
                                     = guard# k2__count x3__elem
-                                          (\(x2 : Int#).
+                                          (\(x2 : Nat#).
                                            let _ : Unit = vwrite# [a] x4 x2 s0__elem in
                                            ()) in
                               ()) in
@@ -42,15 +42,15 @@ map_map : [k : Rate].Series# k Int# -> Vector# Int#
     let x6 : Vector# Int#
           = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) in
     letrec {
-      loop_k : Int# -> Unit
-        = \(x0 : Int#).
+      loop_k : Nat# -> Unit
+        = \(x0 : Nat#).
           case x0 of {
-            0i# -> ();
+            0#  -> ();
             _   -> let s_aub__elem : Int# = next# [Int#] [k] s_aub x0 in
                    let x2__elem : Int#    = add#  [Int#] s_aub__elem 1i# in
                    let x4__elem : Int#    = mul#  [Int#] x2__elem 2i# in
                    let _        : Unit    = vwrite# [Int#] x6 x0 x4__elem in
-                   loop_k (add# [Int#] x0 1i#)
+                   loop_k (add# [Nat#] x0 1#)
           }
     } in
     let _ : Unit
@@ -68,13 +68,13 @@ lower_ffold_rqB : [k_c : Rate].Series# k_c Int# -> Int#
      \(s_au5 : Series# k_c Int#).
     let x3__acc_0 : Int# = 0i# in
     let x8__acc_0 : Int# = 1i# in
-    let k_c_length : Int#
+    let k_c_length : Nat#
           = natOfRateNat# [k_c] (rateOfSeries# [k_c] [Int#] s_au5) in
     letrec {
-      loop_k_c : Int# -> Int# -> Int# -> Tuple2# Int# Int#
-        = \(x1 x3__acc_1 x8__acc_1 : Int#).
-          case sub# [Int#] k_c_length x1 of {
-            0i#  
+      loop_k_c : Nat# -> Int# -> Int# -> Tuple2# Int# Int#
+        = \(x1 : Nat#). \(x3__acc_1 x8__acc_1 : Int#).
+          case sub# [Nat#] k_c_length x1 of {
+            0#  
              -> T2# [Int#] [Int#] x3__acc_1 x8__acc_1;
             _ 
              -> let s_au5__elem : Int# = next# [Int#] [k_c] s_au5 x1 in
@@ -82,10 +82,10 @@ lower_ffold_rqB : [k_c : Rate].Series# k_c Int# -> Int#
                 let x3__acc_2 : Int# = add# [Int#] x0 s_au5__elem in
                 let x5 : Int# = x8__acc_1 in
                 let x8__acc_2 : Int# = mul# [Int#] x5 s_au5__elem in
-                loop_k_c (add# [Int#] x1 1i#) x3__acc_2 x8__acc_2
+                loop_k_c (add# [Nat#] x1 1#) x3__acc_2 x8__acc_2
           }
     } in
-    case loop_k_c 0i# x3__acc_0 x8__acc_0 of
+    case loop_k_c 0# x3__acc_0 x8__acc_0 of
      T2#(x3__acc_2 : Int#) (x8__acc_2 : Int#)
       -> let x3  : Int# = x3__acc_2 in
          let x8  : Int# = x8__acc_2 in

@@ -45,7 +45,7 @@ foldMap [k : Rate] (s : Series# k Int#) : Int#
 :flow-lower..
 module Test 
 imports { 
-        minIx  :: Int# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+        minIx  :: Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
         addInt :: Int# -> Int# -> Int#
 }
 with letrec

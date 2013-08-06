@@ -44,6 +44,31 @@ slurpOperator bResult xx
         , opElemType            = tA }
 
 
+ -- Gather --------------------------------------
+ | Just ( NameOpFlow OpFlowGather
+        , [ XType tK, XType tA, XVar uV, XVar uS ])
+                                <- takeXPrimApps xx
+ = Just $ OpGather
+        { opResultBind          = bResult
+        , opSourceVector        = uV
+        , opSourceIndices       = uS
+        , opInputRate           = tK
+        , opElemType            = tA }
+
+
+ -- Scatter -------------------------------------
+ | Just ( NameOpFlow OpFlowScatter
+        , [ XType tK, XType tA, XVar uV, XVar uIndices, XVar uElems ])
+                                <- takeXPrimApps xx
+ = Just $ OpScatter
+        { opResultBind          = bResult
+        , opTargetVector        = uV
+        , opSourceIndices       = uIndices
+        , opSourceElems         = uElems
+        , opInputRate           = tK
+        , opElemType            = tA }
+
+
  -- Map -----------------------------------------
  | Just (NameOpFlow (OpFlowMap n), xs) 
                                 <- takeXPrimApps xx
@@ -129,5 +154,8 @@ isFlowOperator xx
         Just (NameOpFlow OpFlowPack)      -> True
         Just (NameOpFlow (OpFlowMkSel _)) -> True
         Just (NameOpFlow OpFlowFill)      -> True
+        Just (NameOpFlow OpFlowGather)    -> True
+        Just (NameOpFlow OpFlowScatter)   -> True
         _                                 -> False
+
 

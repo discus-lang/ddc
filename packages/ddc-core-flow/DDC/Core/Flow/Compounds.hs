@@ -14,6 +14,7 @@ module DDC.Core.Flow.Compounds
 
           -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec
+        , xGather
 
           -- * Primitive literals and data constructors
         , xBool, dcBool
@@ -47,4 +48,5 @@ import DDC.Core.Flow.Prim.DaConPrim
 import DDC.Core.Flow.Prim.OpFlow
 import DDC.Core.Flow.Prim.OpLoop
 import DDC.Core.Flow.Prim.OpStore
+import DDC.Core.Flow.Prim.OpPrim
 import DDC.Core.Compounds.Simple

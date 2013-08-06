@@ -2,7 +2,10 @@
 module DDC.Core.Flow.Prim.OpPrim
         ( typePrimCast
         , typePrimArith
-        , typePrimVec)
+        , typePrimVec
+
+          -- * Compounds
+        , xGather)
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
@@ -84,3 +87,17 @@ typePrimVec op
         PrimVecScatter n
          -> tForall kData
          $  \t -> tVector t `tFun` tVec n tInt `tFun` tVec n t `tFun` tUnit
+
+
+-- Compounds ------------------------------------------------------------------
+xGather :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xGather c tA xVec xIxs
+ = xApps (xVarPrimVec (PrimVecGather c))
+         [XType tA, xVec, xIxs]
+
+
+-- Utils -----------------------------------------------------------------------
+xVarPrimVec :: PrimVec -> Exp () Name
+xVarPrimVec op
+        = XVar  (UPrim (NamePrimVec op) (typePrimVec op))
+

@@ -19,35 +19,53 @@ instance Pretty Operator where
  ppr op@OpId{}
         = vcat
         [ text "Id"
-        , text " rate:   "      <> ppr (opInputRate op)
-        , text " input:  "      <> ppr (opInputSeries op)
-        , text " result: "      <> ppr (opResultSeries op) ]
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " input:   "     <> ppr (opInputSeries   op)
+        , text " result:  "     <> ppr (opResultSeries  op) ]
 
  ppr op@OpCreate{}
         = vcat
         [ text "Create"
-        , text " rate:   "      <> ppr (opInputRate op)
-        , text " input:  "      <> ppr (opInputSeries op)        
-        , text " result: "      <> ppr (opResultVector op) ]
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " input:   "     <> ppr (opInputSeries   op)        
+        , text " result:  "     <> ppr (opResultVector  op) ]
 
  ppr op@OpFill{}
         = vcat
         [ text "Fill"
-        , text " target: "      <> ppr (opTargetVector op)
-        , text " input:  "      <> ppr (opInputSeries  op) ]
+        , text " target:  "     <> ppr (opTargetVector  op)
+        , text " input:   "     <> ppr (opInputSeries   op) ]
+
+ ppr op@OpGather{}
+        = vcat
+        [ text "Gather"
+        , text " result:  "     <> ppr (opResultBind    op)
+        , text " vector:  "     <> ppr (opSourceVector  op)
+        , text " indices: "     <> ppr (opSourceIndices op)
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " type:    "     <> ppr (opElemType      op) ]
+
+ ppr op@OpScatter{}
+        = vcat
+        [ text "Scatter"
+        , text " vector:  "     <> ppr (opTargetVector  op)
+        , text " indices: "     <> ppr (opSourceIndices op)
+        , text " elems:   "     <> ppr (opSourceElems   op)
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " type:    "     <> ppr (opElemType      op) ]
 
  ppr op@OpMap{}
         = vcat
         [ text "Map"
-        , text " rate: "        <> ppr (opInputRate op) ]
+        , text " rate:    "     <> ppr (opInputRate     op) ]
 
  ppr op@OpFold{}
         = vcat
         [ text "Fold"
-        , text " rate: "        <> ppr (opInputRate op) ]
+        , text " rate:    "     <> ppr (opInputRate     op) ]
 
  ppr op@OpPack{}
         = vcat
         [ text "Pack"
-        , text " input  rate: " <> ppr (opInputRate op) 
-        , text " output rate: " <> ppr (opOutputRate op) ]
+        , text " input  rate: " <> ppr (opInputRate     op) 
+        , text " output rate: " <> ppr (opOutputRate    op) ]

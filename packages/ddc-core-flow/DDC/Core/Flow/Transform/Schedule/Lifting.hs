@@ -37,7 +37,11 @@ liftType l tt
         | liftingFactor l == 1 
         = Just tt
 
-        | elem tt [tFloat 32, tFloat 64]      
+        | elem tt 
+                [ tFloat 32, tFloat 64
+                , tWord  8,  tWord  16, tWord  32, tWord  64
+                , tNat ]
+
         = Just (tVec (liftingFactor l) tt)
 
         | otherwise            

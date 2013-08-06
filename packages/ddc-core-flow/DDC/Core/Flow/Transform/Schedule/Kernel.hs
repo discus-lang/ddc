@@ -154,9 +154,11 @@ scheduleOperator lifting nest op
         let tK          = opInputRate op
         let context     = ContextRate tK
 
+        -- Bound for input element.
         let Just uInput = elemBoundOfSeriesBound 
                         $ opInputSeries op
 
+        -- Write to target vector.
         let Just nest2  = insertBody nest context
                         $ [ BodyStmt (BNone tUnit)
                                      (xWriteVectorC c
@@ -165,11 +167,36 @@ scheduleOperator lifting nest op
                                         (XVar $ UIx 0)
                                         (XVar $ uInput)) ]
 
+        -- Bind final unit value.
         let Just nest3  = insertEnds nest2 context
                         $ [ EndStmt  (opResultBind op)
                                      xUnit ]
 
         return nest3
+
+ -- Gather --------------------------------------
+ | OpGather{}   <- op
+ = do   
+        let c           = liftingFactor lifting
+        let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Bind for result element.
+        let Just bResultE =   elemBindOfSeriesBind (opResultBind op)
+                          >>= liftTypeOfBind lifting
+
+        -- Bound of source index.
+        let Just uIndex   = elemBoundOfSeriesBound (opSourceIndices op)
+
+        -- Read from vector.
+        let Just nest2  = insertBody nest context
+                        $ [ BodyStmt bResultE
+                                     (xGather c 
+                                        (opElemType      op)
+                                        (XVar $ opSourceVector  op)
+                                        (XVar $ uIndex)) ]
+
+        return nest2
 
  | otherwise
  = return nest

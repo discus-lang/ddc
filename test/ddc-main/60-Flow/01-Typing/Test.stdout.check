@@ -51,20 +51,20 @@ pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 
 
 -- Loop operators
-loop# :: [^ : Rate].(Int# -> Unit) -> Unit
-loopn# :: [^ : Rate].RateNat# ^0 -> (Int# -> Unit) -> Unit
+loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
+loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
 
 
 -- Store operators
 new# :: [^ : Data].^0 -> Ref# ^0
 read# :: [^ : Data].Ref# ^0 -> ^0
 write# :: [^ : Data].Ref# ^0 -> ^0 -> Unit
-vnew# :: [^ : Data].Int# -> Vector# ^0
+vnew# :: [^ : Data].Nat# -> Vector# ^0
 vnewR# :: [^ : Data].[^ : Rate].Vector# ^1
 vnewN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
-vread# :: [^ : Data].Vector# ^0 -> Int# -> ^0
-vwrite# :: [^ : Data].Vector# ^0 -> Int# -> ^0 -> Unit
-next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Int# -> ^1
-next$4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Int# -> Vec4# ^1
-next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Int# -> Vec8# ^1
+vread# :: [^ : Data].Vector# ^0 -> Nat# -> ^0
+vwrite# :: [^ : Data].Vector# ^0 -> Nat# -> ^0 -> Unit
+next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
+next$4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Nat# -> Vec4# ^1
+next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Nat# -> Vec8# ^1
 

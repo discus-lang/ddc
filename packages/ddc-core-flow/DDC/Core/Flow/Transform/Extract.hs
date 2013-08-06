@@ -177,11 +177,11 @@ extractStmtEnd se
                 -- Get the name of the counter.
                 TVar (UName nK) = tRate
                 uCounter        = UName (NameVarMod nK "count")
-                xCounter        = xRead tInt (XVar uCounter)
+                xCounter        = xRead tNat (XVar uCounter)
                 xVec            = XVar (UName nVec)
 
                 -- Read the counter in a let since it will need to be threaded
-           in   [ LLet  (BAnon      tInt)
+           in   [ LLet  (BAnon      tNat)
                         xCounter
 
                 , LLet  (BName nVec (tVector tElem)) 
