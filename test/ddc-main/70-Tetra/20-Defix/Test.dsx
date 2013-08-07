@@ -1,5 +1,11 @@
 
 
+-- Application of a symbolic operator.
+:desugar..
+module Test where
+x : Int = (+) a b;;
+
+
 -- Plus is left associative.
 :desugar..
 module Test where

@@ -6,17 +6,11 @@ import DDC.Interface.Source
 import DDCI.Tetra.State
 import DDC.Base.Pretty
 import DDC.Source.Tetra.Lexer
-import DDC.Source.Tetra.Name
 import DDC.Source.Tetra.Parser
 import DDC.Source.Tetra.Pretty          ()
 import DDC.Source.Tetra.Desugar.Defix
 import qualified DDC.Core.Lexer         as C
 import qualified DDC.Base.Parser        as BP
-
-
-infixTable :: InfixTable BP.SourcePos Name
-infixTable
- = InfixTable []
 
 
 cmdDesugar :: State -> Source -> String -> IO ()
@@ -42,7 +36,7 @@ cmdDesugar _state source str
                  Right mm        -> goDesugar mm
 
         goDesugar mm
-         = case defixModule infixTable mm of
+         = case defix defaultInfixTable mm of
                 Left err        -> error $ show err
                 Right mm'
                  -> putStrLn (renderIndent $ ppr mm')
