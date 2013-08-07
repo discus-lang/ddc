@@ -8,9 +8,15 @@ module DDC.Core.Flow
 
           -- * Names
         , Name          (..)
+        , KiConFlow     (..)
         , TyConFlow     (..)
+        , DaConFlow     (..)
+        , OpFlow        (..)
+        , OpLoop        (..)
+        , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
+        , PrimVec       (..)
         , PrimCast      (..)
 
           -- * Name Parsing

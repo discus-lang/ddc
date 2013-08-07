@@ -6,8 +6,8 @@
 --
 module DDC.Core.Flow.Transform.Schedule.Kernel
         ( scheduleKernel
-        , Fail (..)
-        , Lifting (..))
+        , Fail          (..)
+        , Lifting       (..))
 where
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Transform.Schedule.Fail

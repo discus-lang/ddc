@@ -54,14 +54,21 @@ instance Pretty Operator where
         , text " rate:    "     <> ppr (opInputRate     op)
         , text " type:    "     <> ppr (opElemType      op) ]
 
- ppr op@OpMap{}
-        = vcat
-        [ text "Map"
-        , text " rate:    "     <> ppr (opInputRate     op) ]
-
  ppr op@OpFold{}
         = vcat
         [ text "Fold"
+        , text " rate:    "     <> ppr (opInputRate     op) 
+        , text " input:   "     <> ppr (opInputSeries   op) ]
+
+ ppr op@OpReduce{}
+        = vcat
+        [ text "Reduce"
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " input:   "     <> ppr (opInputSeries   op) ]
+
+ ppr op@OpMap{}
+        = vcat
+        [ text "Map"
         , text " rate:    "     <> ppr (opInputRate     op) ]
 
  ppr op@OpPack{}

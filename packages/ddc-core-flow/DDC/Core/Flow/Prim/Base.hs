@@ -138,6 +138,35 @@ data OpFlow
         -- | Take the underlying @Nat@ of a @RateNat@.
         | OpFlowNatOfRateNat
 
+        -- | Apply a worker to corresponding elements of some series.
+        | OpFlowMap Int
+
+        -- | Replicate a single element into a series.
+        | OpFlowRep
+
+        -- | Segmented replicate.
+        | OpFlowReps
+
+        -- | Make a selector.
+        | OpFlowMkSel Int
+
+        -- | Pack a series according to a flags vector.
+        | OpFlowPack
+
+        -- | Reduce a series with an associative operator,
+        --   updating an existing accumulator.
+        | OpFlowReduce
+
+        -- | Fold a series with an associative operator,
+        --   returning the final result.
+        | OpFlowFold
+
+        -- | Fold where the worker also takes the current index into the series.
+        | OpFlowFoldIndex
+
+        -- | Segmented fold.
+        | OpFlowFolds
+
         -- | Create a new vector from a series.
         | OpFlowCreate
 
@@ -149,32 +178,6 @@ data OpFlow
 
         -- | Scatter (write) elements into a vector.
         | OpFlowScatter
-
-        -- | Make a selector.
-        | OpFlowMkSel Int
-
-        -- maps
-        | OpFlowMap Int
-
-        -- replicates
-        | OpFlowRep
-        | OpFlowReps
-
-        -- folds
-        | OpFlowFold
-        | OpFlowFoldIndex
-        | OpFlowFolds
-
-        -- unfolds
-        | OpFlowUnfold
-        | OpFlowUnfolds
-
-        -- split/combine
-        | OpFlowSplit   Int
-        | OpFlowCombine Int
-
-        -- packing
-        | OpFlowPack
         deriving (Eq, Ord, Show)
 
 

@@ -108,6 +108,59 @@ data Operator
         }
 
         -----------------------------------------
+        -- | Fold all the elements of a series.
+        | OpFold
+        { -- | Binder for result value.
+          opResultValue         :: BindF
+
+          -- | Rate of input series.
+        , opInputRate           :: TypeF
+
+          -- | Bound of input series.
+        , opInputSeries         :: BoundF
+
+          -- | Starting accumulator value.
+        , opZero                :: ExpF
+
+          -- | Worker parameter for index input.
+          --   Should be BNone for OpFlowFold, but something for OpFlowFoldIndex
+        , opWorkerParamIndex    :: BindF
+
+          -- | Worker parameter for accumulator input.
+        , opWorkerParamAcc      :: BindF
+
+          -- | Worker parameter for element input.
+        , opWorkerParamElem     :: BindF
+
+          -- | Worker body.
+        , opWorkerBody          :: ExpF }
+
+        -----------------------------------------
+        -- | Reduce the elements of a series into a reference.
+        | OpReduce
+        { -- | Binder for result value (a Unit)
+          opResultBind          :: BindF
+
+          -- | Bound of target Ref.
+        , opTargetRef           :: BoundF
+
+          -- | Rate of input series.
+        , opInputRate           :: TypeF
+
+          -- | Bound of input series.
+        , opInputSeries         :: BoundF
+
+          -- | Worker parameter for accumulator input.
+        , opWorkerParamAcc      :: BindF
+
+          -- | Worker parameter for element input.
+        , opworkerParamElem     :: BindF
+
+          -- | Worker body.
+        , opWorkerBody          :: ExpF
+        }
+
+        -----------------------------------------
         -- | Apply a function to corresponding elements in several input series
         --   of the same rate, producing a new series. This subsumes the regular
         --   'map' operator as well as 'zipWith' like operators where the input
@@ -131,34 +184,6 @@ data Operator
           -- | Worker body
         , opWorkerBody          :: ExpF
         }
-
-        -----------------------------------------
-        -- | Fold all the elements of a series.
-        | OpFold
-        { -- | Binder for result value.
-          opResultValue         :: BindF
-
-          -- | Rate of input series.
-        , opInputRate           :: TypeF
-
-          -- | Bound of input series.
-        , opInputSeries         :: BoundF
-
-          -- | Starting accumulator value.
-        , opZero                :: ExpF
-
-          -- | Worker parameter for index input.
-          -- Should be BNone for OpFlowFold, but something for OpFlowFoldIndex
-        , opWorkerParamIndex    :: BindF
-
-          -- | Worker parameter for accumulator input.
-        , opWorkerParamAcc      :: BindF
-
-          -- | Worker parameter for element input.
-        , opWorkerParamElem     :: BindF
-
-          -- | Worker body.
-        , opWorkerBody          :: ExpF }
 
         -----------------------------------------
         -- | Pack a series according to a selector.

@@ -1,6 +1,11 @@
 
 module DDC.Core.Flow.Transform.Schedule
-        (scheduleProcess)
+        (scheduleProcess
+
+         -- * Scheduling kernels
+        , scheduleKernel
+        , Fail          (..)
+        , Lifting       (..))
 where
 import DDC.Core.Flow.Transform.Schedule.SeriesEnv
 import DDC.Core.Flow.Transform.Schedule.Nest

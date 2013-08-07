@@ -32,32 +32,26 @@ instance Pretty OpFlow where
         OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
         OpFlowNatOfRateNat      -> text "natOfRateNat"          <> text "#"
 
-        OpFlowCreate            -> text "create"                <> text "#"
-        OpFlowFill              -> text "fill"                  <> text "#"
-        OpFlowGather            -> text "gather"                <> text "#"
-        OpFlowScatter           -> text "scatter"               <> text "#"
-
-        OpFlowMkSel 1           -> text "mkSel"                 <> text "#"
-        OpFlowMkSel n           -> text "mkSel"      <> int n   <> text "#"
-
         OpFlowMap 1             -> text "map"                   <> text "#"
         OpFlowMap i             -> text "map"        <> int i   <> text "#"
 
         OpFlowRep               -> text "rep"                   <> text "#"
         OpFlowReps              -> text "reps"                  <> text "#"
 
+        OpFlowMkSel 1           -> text "mkSel"                 <> text "#"
+        OpFlowMkSel n           -> text "mkSel"      <> int n   <> text "#"
+
+        OpFlowPack              -> text "pack"                  <> text "#"
+
+        OpFlowReduce            -> text "reduce"                <> text "#"
         OpFlowFold              -> text "fold"                  <> text "#"
         OpFlowFoldIndex         -> text "foldIndex"             <> text "#"
         OpFlowFolds             -> text "folds"                 <> text "#"
 
-        OpFlowUnfold            -> text "unfold"                <> text "#"
-        OpFlowUnfolds           -> text "unfolds"               <> text "#"
-
-        OpFlowSplit   i         -> text "split"      <> int i   <> text "#"
-        OpFlowCombine i         -> text "combine"    <> int i   <> text "#"
-
-        OpFlowPack              -> text "pack"                  <> text "#"
-
+        OpFlowCreate            -> text "create"                <> text "#"
+        OpFlowFill              -> text "fill"                  <> text "#"
+        OpFlowGather            -> text "gather"                <> text "#"
+        OpFlowScatter           -> text "scatter"               <> text "#"
 
 
 -- | Read a data flow operator name.
@@ -75,6 +69,12 @@ readOpFlow str
         , ix <= arity
         = Just $ OpFlowProj arity ix
 
+        | Just rest     <- stripPrefix "map" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ OpFlowMap arity
+
         | Just rest     <- stripPrefix "mkSel" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -82,40 +82,21 @@ readOpFlow str
         , arity == 1
         = Just $ OpFlowMkSel arity
 
-        | Just rest     <- stripPrefix "map" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ OpFlowMap arity
-
-        | Just rest     <- stripPrefix "split" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ OpFlowSplit arity
-
-        | Just rest     <- stripPrefix "combine" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , arity         <- read ds
-        = Just $ OpFlowCombine arity
-
         | otherwise
         = case str of
                 "rateOfSeries#" -> Just $ OpFlowRateOfSeries
                 "natOfRateNat#" -> Just $ OpFlowNatOfRateNat
-                "create#"       -> Just $ OpFlowCreate
-                "fill#"         -> Just $ OpFlowFill
-                "mkSel#"        -> Just $ OpFlowMkSel 1
                 "map#"          -> Just $ OpFlowMap   1
                 "rep#"          -> Just $ OpFlowRep
                 "reps#"         -> Just $ OpFlowReps
+                "mkSel#"        -> Just $ OpFlowMkSel 1
+                "pack#"         -> Just $ OpFlowPack
+                "reduce#"       -> Just $ OpFlowReduce
                 "fold#"         -> Just $ OpFlowFold
                 "foldIndex#"    -> Just $ OpFlowFoldIndex
                 "folds#"        -> Just $ OpFlowFolds
-                "unfold#"       -> Just $ OpFlowUnfold
-                "unfolds#"      -> Just $ OpFlowUnfolds
-                "pack#"         -> Just $ OpFlowPack
+                "create#"       -> Just $ OpFlowCreate
+                "fill#"         -> Just $ OpFlowFill
                 "gather#"       -> Just $ OpFlowGather
                 "scatter#"      -> Just $ OpFlowScatter
                 _               -> Nothing
@@ -153,42 +134,6 @@ takeTypeOpFlow op
          -> Just $ tForall kRate $ \tK 
                 -> tRateNat tK `tFun` tNat
 
-
-        -- Vector creation and filling ----------
-        -- create#  :: [k : Rate]. [a : Data]. Series k a -> Vector a
-        OpFlowCreate
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
-                -> tSeries tK tA `tFun` tVector tA
-
-        -- fill#    :: [k : Rate]. [a : Data]. Vector a -> Series k a -> Unit
-        OpFlowFill
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
-                -> tVector tA `tFun` tSeries tK tA `tFun` tUnit
-
-        -- gather#  :: [k : Rate]. [a : Data]. Vector a -> Series k Nat# -> Series k a
-        OpFlowGather
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                 -> tVector tA `tFun` tSeries tK tNat `tFun` tSeries tK tA
-
-        -- scatter# :: [k : Rate]. [a : Data]. Vector a -> Series k Nat# -> Series k a -> Unit
-        OpFlowScatter
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                 -> tVector tA `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tUnit
-
-
-        -- Selectors ----------------------------
-        -- mkSel1#    :: [k1 : Rate]. [a : Data]
-        --            .  Series k1 Bool#
-        --            -> ([k2 : Rate]. Sel1 k1 k2 -> a)
-        --            -> a
-        OpFlowMkSel 1
-         -> Just $ tForalls [kRate, kData] $ \[tK1, tA]
-                ->       tSeries tK1 tBool
-                `tFun` (tForall kRate $ \tK2 
-                                -> tSel1 (liftT 1 tK1) tK2 `tFun` (liftT 1 tA))
-                `tFun` tA
-
-  
         -- Maps ---------------------------------
         -- map   :: [k : Rate] [a b : Data]
         --       .  (a -> b) -> Series k a -> Series k b
@@ -213,7 +158,6 @@ takeTypeOpFlow op
          -> Just $ foldr TForall tBody
                          [ BAnon k | k <- kRate : replicate (n + 1) kData ]
 
-
         -- Replicates -------------------------
         -- rep  :: [a : Data] [k : Rate]
         --      .  a -> Series k a
@@ -227,12 +171,41 @@ takeTypeOpFlow op
         --       -> Series k2 a
         OpFlowReps 
          -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
-                ->     tSegd   tK1 tK2  `tFun` tSeries tK1 tA   `tFun` tSeries tK2 tA
+                -> tSegd tK1 tK2 `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
 
+        -- Selectors ----------------------------
+        -- mkSel1#    :: [k1 : Rate]. [a : Data]
+        --            .  Series k1 Bool#
+        --            -> ([k2 : Rate]. Sel1 k1 k2 -> a)
+        --            -> a
+        OpFlowMkSel 1
+         -> Just $ tForalls [kRate, kData] $ \[tK1, tA]
+                ->       tSeries tK1 tBool
+                `tFun` (tForall kRate $ \tK2 
+                                -> tSel1 (liftT 1 tK1) tK2 `tFun` (liftT 1 tA))
+                `tFun` tA
 
-        -- Folds --------------------------------
-        -- fold :: [k : Rate]. [a b: Data]
-        --      .  (a -> b -> a) -> a -> Series k b -> a
+        -- Packs --------------------------------
+        -- pack  :: [k1 k2 : Rate]. [a : Data]
+        --       .  Sel2 k1 k2
+        --       -> Series k1 a -> Series k2 a
+        OpFlowPack
+         -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
+                ->     tSel1   tK1 tK2 
+                `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
+
+        -- Reduce and Fold ----------------------
+        -- reduce :: [k : Rate]. [a : Data]
+        --        .  (a -> a -> a) -> Ref a -> Series k a -> Unit
+        OpFlowReduce
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 ->     (tA `tFun` tA `tFun` tA)
+                 `tFun` tRef tA
+                 `tFun` tSeries tK tA
+                 `tFun` tUnit
+
+        -- fold   :: [k : Rate]. [a b: Data]
+        --        .  (a -> b -> a) -> a -> Series k b -> a
         OpFlowFold    
          -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
                 ->     (tA `tFun` tB `tFun` tA)
@@ -261,15 +234,30 @@ takeTypeOpFlow op
                  `tFun` (tInt `tFun` tA `tFun` tB `tFun` tA)
                  `tFun` tSeries tK1 tA `tFun` tSeries tK2 tB `tFun` tSeries tK1 tA
 
+        -- Vector creation and filling ----------
+        -- create#  :: [k : Rate]. [a : Data]. Series k a -> Vector a
+        OpFlowCreate
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
+                -> tSeries tK tA `tFun` tVector tA
 
-        -- Packs --------------------------------
-        -- pack  :: [k1 k2 : Rate]. [a : Data]
-        --       .  Sel2 k1 k2
-        --       -> Series k1 a -> Series k2 a
-        OpFlowPack
-         -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
-                ->     tSel1   tK1 tK2 
-                `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
+        -- fill#    :: [k : Rate]. [a : Data]. Vector a -> Series k a -> Unit
+        OpFlowFill
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
+                -> tVector tA `tFun` tSeries tK tA `tFun` tUnit
+
+        -- gather#  :: [k : Rate]. [a : Data]
+        --          . Vector a -> Series k Nat# -> Series k a
+        OpFlowGather
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 -> tVector tA 
+                 `tFun` tSeries tK tNat `tFun` tSeries tK tA
+
+        -- scatter# :: [k : Rate]. [a : Data]
+        --          .  Vector a -> Series k Nat# -> Series k a -> Unit
+        OpFlowScatter
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 -> tVector tA 
+                 `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tUnit
 
         _ -> Nothing
 

@@ -24,7 +24,7 @@ data PrimVec
         -- | Subtract elements of a vector.
         | PrimVecSub         Int
 
-        -- | Multiple elements of a vector.
+        -- | Multiply elements of a vector.
         | PrimVecMul         Int
 
         -- | Divide elements of a vector.
