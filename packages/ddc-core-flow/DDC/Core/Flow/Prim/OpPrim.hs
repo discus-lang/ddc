@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.OpPrim
         , typePrimVec
 
           -- * Compounds
+        , xvRep
         , xGather
         , xScatter)
 where
@@ -91,6 +92,11 @@ typePrimVec op
 
 
 -- Compounds ------------------------------------------------------------------
+xvRep   :: Int -> Type Name -> Exp () Name -> Exp () Name
+xvRep c tA xZ
+ = xApps (xVarPrimVec (PrimVecRep c))   
+         [XType tA, xZ]
+
 xGather  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xGather c tA xVec xIxs
  = xApps (xVarPrimVec (PrimVecGather c))

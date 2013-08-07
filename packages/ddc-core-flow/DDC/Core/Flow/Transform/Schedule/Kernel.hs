@@ -174,6 +174,62 @@ scheduleOperator lifting nest op
 
         return nest3
 
+ -- Reduce --------------------------------------
+ | OpReduce{}   <- op
+ = do   let c           = liftingFactor lifting
+        let tK          = opInputRate op
+        let context     = ContextRate tK
+        let tA          = typeOfBind $ opWorkerParamElem op
+
+        -- Initialize vector accumulator.
+        let UName nRef  = opTargetRef op
+        let nAccVec     = NameVarMod nRef "vec"
+
+        let Just nest2  = insertStarts nest context
+                        $ [ StartAcc    
+                                nAccVec
+                                (tVec c tA)
+                                (xvRep c tA (opZero op)) ]
+
+        -- Bound for input element.
+        let Just uInput = elemBoundOfSeriesBound 
+                        $ opInputSeries op
+
+        -- Bound for intermediate accumulator value.
+        let nAccVal     = NameVarMod nRef "val"
+        let uAccVal     = UName nAccVal
+        let bAccVal     = BName nAccVal (tVec c tA)
+
+        -- Lift the worker function.
+        let bsParam     = [ opWorkerParamAcc op, opWorkerParamElem op ]
+        let Just bsParam_lifted  
+                        = sequence $ map (liftTypeOfBind lifting) bsParam
+        let liftEnv     = zip bsParam bsParam_lifted
+
+        xWorker_lifted  <- liftWorker lifting liftEnv 
+                        $  opWorkerBody op
+
+        -- Read the current accumulator value and update it with the worker.
+        let xBody       = XApp (XApp ( XLam (opWorkerParamAcc   op)
+                                     $ XLam (opWorkerParamElem  op)
+                                            (xWorker_lifted))
+                                     (XVar uAccVal))
+                               (XVar uInput)
+
+        let Just nest3  = insertBody nest2 context
+                        $ [ BodyAccRead  nAccVec (tVec c tA) bAccVal
+                          , BodyAccWrite nAccVec (tVec c tA) xBody ]
+
+        -- Bind final unit value.
+        let Just nest4  = insertEnds nest3 context
+                        $ [ EndStmt     (opResultBind op)
+                                        xUnit ]
+
+        -- TODO: horizontal fold of vector accumulator into scalar accumluator.
+
+        return $ nest4
+
+
  -- Gather --------------------------------------
  | OpGather{}   <- op
  = do   

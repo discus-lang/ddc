@@ -14,7 +14,6 @@ module DDC.Core.Flow.Compounds
 
           -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec
-        , xGather, xScatter
 
           -- * Primitive literals and data constructors
         , xBool, dcBool
@@ -31,6 +30,10 @@ module DDC.Core.Flow.Compounds
           -- * Loop operators
         , xLoopLoopN
         , xLoopGuard
+
+          -- * Vec operators
+        , xvRep
+        , xGather, xScatter
 
           -- * Store operators
         , xNew,         xRead,       xWrite

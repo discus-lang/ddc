@@ -196,11 +196,12 @@ takeTypeOpFlow op
 
         -- Reduce and Fold ----------------------
         -- reduce :: [k : Rate]. [a : Data]
-        --        .  (a -> a -> a) -> Ref a -> Series k a -> Unit
+        --        .  Ref a -> (a -> a -> a) -> a -> Series k a -> Unit
         OpFlowReduce
          -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                 ->     (tA `tFun` tA `tFun` tA)
-                 `tFun` tRef tA
+                 ->     tRef tA
+                 `tFun` (tA `tFun` tA `tFun` tA)
+                 `tFun` tA
                  `tFun` tSeries tK tA
                  `tFun` tUnit
 
