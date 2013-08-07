@@ -3,20 +3,20 @@
 letregion r with { wc : Const r } in
 let x = 0 [r] () in
 (\(w : [r : Region]. Mutable r). \(_ : Unit). 
-        updateInt [:r r:] <w [r]> x (5 [r] ())) <Mutable#> ();;
+        updateInt [:r r:] {w [r]} x (5 [r] ())) {Mutable#} ();;
 
 
 -- Error: Capability constructor applied to a non-constructor.
 :eval..
 letregion r with { wc : Const r } in
 let x = 0 [r] () in
-updateInt [:r r:] <Mutable# [r]> x (5 [r] ());;
+updateInt [:r r:] {Mutable# [r]} x (5 [r] ());;
 
 
 -- Error: conflicting capabilities in program.
 :eval..
-let x   = purify <alloc [R0#] (Const#  [R0#])> in 
-          forget <use   [R0#] (Global# [R0#])> in
+let x   = purify alloc [R0#] (Const#  [R0#]) in 
+          forget use   [R0#] (Global# [R0#]) in
           5 [R0#] () in
-updateInt [:R0# R0#:] <Mutable# [R0#]> x (0 [R0#] ());;
+updateInt [:R0# R0#:] {Mutable# [R0#]} x (0 [R0#] ());;
 

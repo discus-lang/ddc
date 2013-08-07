@@ -194,19 +194,23 @@ foo (_ : Unit) : Unit
 -- Keep witnesses arguments
 :to-salt..
 module Test with letrec
-foo [r : Region] <w : Mutable r> (x : Unit) : Word64# = 42w64#;;
+foo [r : Region] {w : Mutable r} (x : Unit) 
+        : Word64# = 42w64#;;
 
 
 -- Keep witnesses applications
 :to-salt..
 module Test with letrec
-foo [r1 r2 r3 : Region] <w1 : Mutable r1> <w2 : Distinct r2 r3> (x : Unit) : Word64# = 42w64#
+foo     [r1 r2 r3 : Region] 
+        {w1 : Mutable r1} {w2 : Distinct r2 r3}
+        (x : Unit) 
+        : Word64# = 42w64#
 
 bar (_ : Unit) : Word64#
  = letregion r1 with { w1 : Mutable r1 } in
    letregion r2 in
    letregion r3 with { w2 : Distinct r2 r3 } in
-   do   foo [:r1 r2 r3:] <w1> <w2> ();;
+   do   foo [:r1 r2 r3:] {w1} {w2} ();;
 
 
 -- Error: cannot instantiate a data type variable at an unboxed type.

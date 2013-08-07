@@ -11,5 +11,5 @@ addInt [:R1# R2# R3#:] (addInt [:R3# R4# R1#:] (20 [R3#] ()) (30 [R4#] ())) (40 
 :eval..
 letregion r with {w : Global r} in
 addInt [:r R2# R3#:] 
-        (forget <use [r] w> in (2 [r] ()))
+        (forget use [r] w in (2 [r] ()))
         (3 [R2#] ());;

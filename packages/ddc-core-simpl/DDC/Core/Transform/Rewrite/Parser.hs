@@ -87,9 +87,11 @@ pRuleHole
         => Context -> Parser n (Maybe (Exp P.SourcePos n))
 pRuleHole c
  = P.optionMaybe
- $ do	pTok KBraceBra
+ $ do	pTok KUnderscore
+        pTok KBraceBra
 	e <- pExp c
 	pTok KBraceKet
+        pTok KUnderscore
 	return e
 
 

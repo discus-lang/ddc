@@ -135,15 +135,13 @@ data TokAtom
         | KSquareKet
         | KBraceBra
         | KBraceKet
-        | KAngleBra
-        | KAngleKet
 
         -----------------------------------------
         -- Compound parens
         | KSquareColonBra
         | KSquareColonKet
-        | KAngleColonBra
-        | KAngleColonKet
+        | KBraceColonBra
+        | KBraceColonKet
 
         -----------------------------------------
         -- Operator symbols
@@ -260,14 +258,12 @@ describeTokAtom' ta
         KSquareKet              -> (Symbol, "]")
         KBraceBra               -> (Symbol, "{")
         KBraceKet               -> (Symbol, "}")
-        KAngleBra               -> (Symbol, "<")
-        KAngleKet               -> (Symbol, ">")
-
+        
         -- compound parens
         KSquareColonBra         -> (Symbol, "[:")
         KSquareColonKet         -> (Symbol, ":]")
-        KAngleColonBra          -> (Symbol, "<:")
-        KAngleColonKet          -> (Symbol, ":>")
+        KBraceColonBra          -> (Symbol, "{:")
+        KBraceColonKet          -> (Symbol, ":}")
 
         -- operator symbols
         KOp op                  -> (Symbol, op)

@@ -84,7 +84,7 @@ let useWit = \(^ : Const R0#). \(^ : Int R0#).
     addInt [:R0# R0# R0#:] ^0 ^0
 in
 \(^ : Const R0#). \(^ : Int R0#).
-   useWit <^1> (addInt [:R0# R0# R0#:] (1 [R0#] ()) ^0)
+   useWit {^1} (addInt [:R0# R0# R0#:] (1 [R0#] ()) ^0)
 ;;
 
 

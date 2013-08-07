@@ -136,21 +136,17 @@ pExp c
         return  $ XCast sp (CastWeakenClosure xs) x
 
 
-        -- purify <WITNESS> in EXP
+        -- purify WITNESS in EXP
  , do   sp      <- pTokSP KPurify
-        pTok KAngleBra
         w       <- pWitness c
-        pTok KAngleKet
         pTok KIn
         x       <- pExp c
         return  $ XCast sp (CastPurify w) x
 
 
-        -- forget <WITNESS> in EXP
+        -- forget WITNESS in EXP
  , do   sp      <- pTokSP KForget
-        pTok KAngleBra
         w       <- pWitness c
-        pTok KAngleKet
         pTok KIn
         x       <- pExp c
         return  $ XCast sp (CastForget w) x
@@ -202,16 +198,16 @@ pArgSPs c
         pTok KSquareColonKet
         return  [(XType t, sp) | t <- ts]
         
-        -- <WITNESS>
- , do   sp      <- pTokSP KAngleBra
+        -- {WITNESS}
+ , do   sp      <- pTokSP KBraceBra
         w       <- pWitness c
-        pTok KAngleKet
+        pTok KBraceKet
         return  [(XWitness w, sp)]
                 
-        -- <: WITNESS0 WITNESS0 ... :>
- , do   sp      <- pTokSP KAngleColonBra
+        -- {: WITNESS0 WITNESS0 ... :}
+ , do   sp      <- pTokSP KBraceColonBra
         ws      <- P.many1 (pWitnessAtom c)
-        pTok KAngleColonKet
+        pTok KBraceColonKet
         return  [(XWitness w, sp) | w <- ws]
                 
         -- EXP0

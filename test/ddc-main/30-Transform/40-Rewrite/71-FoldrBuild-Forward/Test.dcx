@@ -19,7 +19,7 @@
     Disjoint (ek1+ek2+ez) (eg1+eg2) =>
 foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
     k z
-    {build [:a r eg1 eg2 cg1 cg2:] g}
+    _{build [:a r eg1 eg2 cg1 cg2:] g}_
 = g [:b ek1 ek2 ez ck1 ck2 cz:] k z
 ;;
 

@@ -100,12 +100,12 @@ pBindParamSpec c
 
 
         -- Witness parameter
-        -- <BIND : TYPE>
- , do   pTok KAngleBra
+        -- {BIND : TYPE}
+ , do   pTok KBraceBra
         b       <- pBinder
         pTok (KOp ":")
         t       <- pType c
-        pTok KAngleKet
+        pTok KBraceKet
         return  [ ParamWitness $ T.makeBindFromBinder b t]
 
         -- Value parameter

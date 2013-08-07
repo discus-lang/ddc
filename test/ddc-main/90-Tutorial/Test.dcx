@@ -84,7 +84,7 @@ let fac  [r1:Region]
          = case i of {
             0    -> copyInt [:r2 r1:] acc;
             1    -> copyInt [:r2 r1:] acc;
-            _    -> let _ = updateInt [:r2 r2:] <w> acc 
+            _    -> let _ = updateInt [:r2 r2:] {w} acc 
                                     (mulInt [:r2 r1 r2:] acc i)
                     in  loop (subInt [:r1 r2 r1:] i one);
          }
@@ -110,7 +110,7 @@ let fac  [r1:Region] [r3:Region]
          = case i of {
             0  -> copyInt [:r2 r3:] acc;
             1  -> copyInt [:r2 r3:] acc;
-            _  -> let _ = updateInt [:r2 r2:] <w> acc 
+            _  -> let _ = updateInt [:r2 r2:] {w} acc 
                                     (mulInt [:r2 r1 r2:] acc i)
                   in  loop (subInt [:r1 r2 r1:] i one);
          }
@@ -132,7 +132,7 @@ let fac  [r1:Region] [r3:Region]
          = case i of {
             0  -> copyInt [:r2 r3:] acc;
             1  -> copyInt [:r2 r3:] acc;
-            _  -> let _ = updateInt [:r2 r2:] <w> acc 
+            _  -> let _ = updateInt [:r2 r2:] {w} acc 
                                     (mulInt [:r2 r2 r2:] acc i)
                   in  loop (subInt [:r2 r2 r2:] i one);
          }
@@ -160,7 +160,7 @@ let fac  [r1:Region] [r3:Region]
                                 0 -> 0 [r3] ();
                                 1 -> 0 [r3] ();
                                 2 -> mulInt [:r2 r2 r3:] j acc;
-                                _ -> let _ = updateInt [:r2 r2:] <w> acc 
+                                _ -> let _ = updateInt [:r2 r2:] {w} acc 
                                                        (mulInt [:r2 r2 r2:] acc j)
                                      in loop1 (subInt [:r2 r2 r2:] j (1 [r2] ()));
                          }

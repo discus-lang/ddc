@@ -20,7 +20,7 @@ let z = unbox x			in
 
 -- the {{ }} brackets indicate that the argument is cheap enough to be split across places
 :set.. rule unbox_box (s : Int R0#).
-    unbox {box s}
+    unbox _{box s}_
     = s
 ;;
 :set trans Rewrite
@@ -88,7 +88,7 @@ let ^ = box (5 [R0#] ())	in
 -- now with a Const contraint and regions
 :set.. rule unbox_box [r : Region] (s : Int r).
     Const r =>
-    unbox_ [r] {box_ [r] s}
+    unbox_ [r] _{box_ [r] s}_
     = s
 ;;
 :set trans Rewrite
@@ -118,7 +118,7 @@ let y = unbox_ [r] x		in
 
 
 :set.. rule silly [r : Region] (x y : Int r).
-    addInt [:r r r:] x {subInt [:r r r:] y x}
+    addInt [:r r r:] x _{subInt [:r r r:] y x}_
     = y
 ;;
 :set trans Rewrite

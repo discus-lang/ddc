@@ -114,8 +114,8 @@ lexString sourceName lineStart str
         -- Compound Parens
         '['  : ':' : w'  -> tokA KSquareColonBra : lexMore 2 w'
         ':'  : ']' : w'  -> tokA KSquareColonKet : lexMore 2 w'
-        '<'  : ':' : w'  -> tokA KAngleColonBra  : lexMore 2 w'
-        ':'  : '>' : w'  -> tokA KAngleColonKet  : lexMore 2 w'
+        '{'  : ':' : w'  -> tokA KBraceColonBra  : lexMore 2 w'
+        ':'  : '}' : w'  -> tokA KBraceColonKet  : lexMore 2 w'
 
         -- Function Constructors
         '~'  : '>'  : w' -> tokA KArrowTilde     : lexMore 2 w'
@@ -140,9 +140,7 @@ lexString sourceName lineStart str
         ']'  : w'       -> tokA KSquareKet       : lexMore 1 w'
         '{'  : w'       -> tokA KBraceBra        : lexMore 1 w'
         '}'  : w'       -> tokA KBraceKet        : lexMore 1 w'
-        '<'  : w'       -> tokA KAngleBra        : lexMore 1 w'
-        '>'  : w'       -> tokA KAngleKet        : lexMore 1 w'            
-
+        
         -- Punctuation Symbols
         '.'  : w'       -> tokA KDot             : lexMore 1 w'
         ','  : w'       -> tokA KComma           : lexMore 1 w'

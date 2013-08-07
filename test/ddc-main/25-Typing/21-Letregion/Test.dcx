@@ -28,7 +28,7 @@
 letregion r1 with {w1 : Const r1}   in
 let x : Int r1 = 5 [r1] () in
 letregion r1 with {w1 : Mutable r1} in
-updateInt [:r1 r1:] <w1> x (0 [r1] ());;
+updateInt [:r1 r1:] {w1} x (0 [r1] ());;
 
 
 -- Error: letregion can't shadow region variables that are already in the
@@ -37,7 +37,7 @@ updateInt [:r1 r1:] <w1> x (0 [r1] ());;
 /\(r : Region). 
  \(x : Int r).
  letregion r with {w1 : Mutable r} in
- updateInt [:r r:] <w1> x (0 [r] ());;
+ updateInt [:r r:] {w1} x (0 [r] ());;
 
 
 -- Error: bound region variable is free in the type of the body of a letregion.

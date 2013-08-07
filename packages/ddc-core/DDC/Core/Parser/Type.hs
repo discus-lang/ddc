@@ -121,7 +121,7 @@ pTypeFun c
                 pTok (KOp "|")
                 clo     <- pTypeSum c
                 pTok KRoundKet
-                pTok KAngleKet
+                pTok (KOp ">")
                 t2      <- pTypeFun c
                 return  $ tFunEC t1 eff clo t2
 

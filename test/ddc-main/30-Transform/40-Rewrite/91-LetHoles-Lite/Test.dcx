@@ -6,7 +6,7 @@
 -- now with a Const contraint and regions
 :set.. rule unboxInt_boxInt [r : Region] (s : Int#).
     Const r =>
-    unboxInt [r] {boxInt [r] s}
+    unboxInt [r] _{boxInt [r] s}_
     = s
 ;;
 :set trans Rewrite
@@ -47,11 +47,11 @@ fix 5 {Forward; BetaLets; Rewrite; Bubble}
 :trans..
 letrec
 main    [r : Region] 
-	<w : Const r>
+	{w : Const r}
 	(_ : Int#)
 	{ Read r + Alloc r | Use r }
         : Int#
- =     let x	= fac [r] <w> (boxInt [r] 1i#) (boxInt [r] 10i#)
+ =     let x	= fac [r] {w} (boxInt [r] 1i#) (boxInt [r] 10i#)
     in let show = (unboxInt [r] x)
     in	   unboxInt [r] (boxInt [r] 0i#)
 

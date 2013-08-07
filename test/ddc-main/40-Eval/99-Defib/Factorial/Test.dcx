@@ -43,7 +43,7 @@ let fac  [r1:Region]
          = case i of {
             0  -> copyInt [:r2 r1:] acc;
             1  -> copyInt [:r2 r1:] acc;
-            _  -> let _ = updateInt [:r2 r2:] <w> acc 
+            _  -> let _ = updateInt [:r2 r2:] {w} acc 
                                     (mulInt [:r2 r1 r2:] acc i)
                   in  loop (subInt [:r1 r2 r1:] i one);
          }

@@ -84,13 +84,13 @@ mulInt [r1 r2 r3 : Region]
 	boxInt [r3] (mul# [Int#] x' y')
 
 fac     [r : Region] 
-	<w : Const r>
+	{w : Const r}
         (acc : Int r) {Pure | Use r }
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
  =  case unboxInt [r] n  of { 
 	0i#   -> acc;
 	1i#   -> acc;
-	_       -> fac [r] <w> (mulInt [:r r r:] acc n)
+	_       -> fac [r] {w} (mulInt [:r r r:] acc n)
 			       (subInt [:r r r:] n (boxInt [r] 1i#));
  }
 

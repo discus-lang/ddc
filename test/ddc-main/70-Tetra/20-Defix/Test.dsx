@@ -1,9 +1,4 @@
 
--- BROKEN: need to reclaim angle brackets.
--- :parse..
--- module Test where
--- x : Int = 1 < 2 > 3;;
-
 
 -- Plus is left associative.
 :desugar..
@@ -45,3 +40,9 @@ x : Bool = 1 + 2 == 2 + 3;;
 :desugar..
 module Test where
 x : Int = 1 == 2 == 2;;
+
+
+-- Error: Cannot have multiple non-associative operators at the same level.
+:parse..
+module Test where
+x : Int = 1 < 2 > 3;;

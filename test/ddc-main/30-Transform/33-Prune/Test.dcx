@@ -46,7 +46,7 @@ let x = 5 [r] ()		 in
 :trans..
 letregion r with {w : Mutable r}		in
 let x = 5 [r] ()				in
-let y = updateInt [:r r:] <w> x (2 [r] ())	in
+let y = updateInt [:r r:] {w} x (2 [r] ())	in
 copyInt [:r R0#:] x
 ;;
 

@@ -24,8 +24,8 @@ module Test with letrec {
 
 x_plus_y_square 
     [rx ry rz : Region]                          -- Takes three regions
-    <w1 : Distinct rx rz>                   -- Two witnesses
-    <w2 : Distinct ry rz>
+    {w1 : Distinct rx rz}                   -- Two witnesses
+    {w2 : Distinct ry rz}
     (x : Ptr# rx Int#)                      -- Three value arguments
     (y : Ptr# ry Int#)                      -- of type pointer to int
     (z : Ptr# rz Int#)
@@ -51,7 +51,7 @@ module Constprop with letrec {
     = 42i#;
 
   three_x_plus_one [rx : Region]
-      <w : Const rx>
+      {w : Const rx}
       (x : Ptr# rx Int#)
       : Int#
     = do { a = peek# [rx] [Int#] x 0#;
@@ -68,7 +68,7 @@ module Constprop with letrec {
 :to-llvm..
 module Licm with letrec {
 go  [ra rx ry : Region]
-    <w : Distinct3 ra rx ry>
+    {w : Distinct3 ra rx ry}
     (a : Ptr# ra Nat#) (x : Ptr# rx Nat#) (y : Ptr# ry Nat#) (i : Nat#)
     : Nat#
   = case i of {
@@ -82,7 +82,7 @@ go  [ra rx ry : Region]
              poke# [ra] [Nat#] a i i;
 
              nexti    = add# [Nat#] i 1#;
-             go [ra] [rx] [ry] <w> a x y nexti;
+             go [ra] [rx] [ry] {w} a x y nexti;
            };
     };
 };;

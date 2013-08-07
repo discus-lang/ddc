@@ -12,7 +12,7 @@ imports {
 with
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 
-let     one = purify <read [rt] w1> in 
+let     one = purify read [rt] w1 in 
               1 [rt] ()  in
 
 letrec { 
@@ -44,7 +44,7 @@ imports
 with
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 
-let     one = purify <read [rt] w1> in 
+let     one = purify read [rt] w1 in 
               1 [rt] ()  in
 
 letrec 

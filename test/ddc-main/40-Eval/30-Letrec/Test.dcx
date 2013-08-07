@@ -48,6 +48,6 @@ letrec {
 -- Handle forget around let-expression.
 :eval..
 letregion r with {w : Global r} in
-forget <use [r] w> in
+forget use [r] w in
 let x = () in
 (\(x : Unit). x) x;;
