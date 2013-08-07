@@ -1,0 +1,79 @@
+
+-- Multiply two series.
+module Test with
+letrec {
+  test : [k : Rate].Vector# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s1$elem : Vec8# Float32# = next$8# [Float32#] [k] s1 ^0 in
+                   let s2$elem : Vec8# Float32# = next$8# [Float32#] [k] s2 ^0 in
+                   let x3$elem : Vec8# Float32# = vmul$8# [Float32#] s1$elem s2$elem in
+                   let _ : Unit = vwrite$8# [Float32#] v ^0 x3$elem in
+                   ()) in
+      let x4 : Unit = () in
+      x4
+}
+
+
+-- Multiply by constant, lifting replicates constant.
+module Test with
+letrec {
+  test : [k : Rate].Vector# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s1$elem : Vec8# Float32# = next$8# [Float32#] [k] s1 ^0 in
+                   let s2$elem : Vec8# Float32# = next$8# [Float32#] [k] s2 ^0 in
+                   let x3$elem : Vec8# Float32# = vmul$8# [Float32#] s1$elem s2$elem in
+                   let ^ : Vec8# Float32# = vrep$8# [Float32#] 2.0f32# in
+                   let x6$elem : Vec8# Float32# = vadd$8# [Float32#] ^0 x3$elem in
+                   let _ : Unit = vwrite$8# [Float32#] v ^1 x6$elem in
+                   ()) in
+      let x7 : Unit = () in
+      x7
+}
+
+
+-- Gather from vector.
+module Test with
+letrec {
+  test : [k : Rate].Vector# Float32# -> Vector# Float32# -> Series# (Down8# k) Nat# -> Unit
+    = /\(k : Rate).
+       \(v1 v2 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s1$elem : Vec8# Nat# = next$8# [Nat#] [k] s1 ^0 in
+                   let s2$elem : Vec8# Float32# = vgather$8# [Float32#] v1 s1$elem in
+                   let ^ : Vec8# Float32# = vrep$8# [Float32#] 2.0f32# in
+                   let x2$elem : Vec8# Float32# = vadd$8# [Float32#] ^0 s2$elem in
+                   let _ : Unit = vwrite$8# [Float32#] v2 ^1 x2$elem in
+                   ()) in
+      let x3 : Unit = () in
+      x3
+}
+
+
+-- Scatter into vector.
+module Test with
+letrec {
+  test : [k : Rate].Vector# Float32# -> Series# (Down8# k) Nat# -> Series# (Down8# k) Float32# -> Unit
+    = /\(k : Rate).
+       \(v1 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).\(s2 : Series# (Down8# k) Float32#).
+      let _ : Unit
+            = loop# [k]
+                  (\(^ : Nat#).
+                   let s1$elem : Vec8# Nat# = next$8# [Nat#] [k] s1 ^0 in
+                   let s2$elem : Vec8# Float32# = next$8# [Float32#] [k] s2 ^0 in
+                   let ^ : Vec8# Float32# = vrep$8# [Float32#] 2.0f32# in
+                   let x2$elem : Vec8# Float32# = vadd$8# [Float32#] ^0 s2$elem in
+                   let _ : Unit = vscatter$8# [Float32#] v1 s1$elem x2$elem in
+                   ()) in
+      let x3 : Unit = () in
+      x3
+}
