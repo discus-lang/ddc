@@ -105,7 +105,7 @@ scheduleKernel
 
 
 -------------------------------------------------------------------------------
----- | Schedule a single series operator into a loop nest.
+-- | Schedule a single series operator into a loop nest.
 scheduleOperator 
         :: Lifting
         -> Nest         -- ^ The current loop nest.
@@ -186,17 +186,45 @@ scheduleOperator lifting nest op
                           >>= liftTypeOfBind lifting
 
         -- Bound of source index.
-        let Just uIndex   = elemBoundOfSeriesBound (opSourceIndices op)
+        let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
 
         -- Read from vector.
         let Just nest2  = insertBody nest context
                         $ [ BodyStmt bResultE
-                                     (xGather c 
+                                (xGather c 
                                         (opElemType      op)
                                         (XVar $ opSourceVector  op)
                                         (XVar $ uIndex)) ]
 
         return nest2
+
+ -- Scatter -------------------------------------
+ | OpScatter{}  <- op
+ = do   
+        let c           = liftingFactor lifting
+        let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Bound of source index.
+        let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
+
+        -- Bound of source elements.
+        let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
+
+        -- Read from vector.
+        let Just nest2  = insertBody nest context
+                        $ [ BodyStmt (BNone tUnit)
+                                (xScatter c
+                                        (opElemType op)
+                                        (XVar $ opTargetVector op)
+                                        (XVar $ uIndex) (XVar $ uElem)) ]
+
+        -- Bind final unit value.
+        let Just nest3  = insertEnds nest2 context
+                        $ [ EndStmt     (opResultBind op)
+                                        xUnit ]
+
+        return nest3
 
  | otherwise
  = return nest

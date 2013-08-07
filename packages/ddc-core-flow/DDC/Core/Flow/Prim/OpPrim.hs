@@ -5,7 +5,8 @@ module DDC.Core.Flow.Prim.OpPrim
         , typePrimVec
 
           -- * Compounds
-        , xGather)
+        , xGather
+        , xScatter)
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
@@ -82,18 +83,24 @@ typePrimVec op
 
         PrimVecGather n
          -> tForall kData
-         $  \t -> tVector t `tFun` tVec n tInt `tFun` tVec n t
+         $  \t -> tVector t `tFun` tVec n tNat `tFun` tVec n t
 
         PrimVecScatter n
          -> tForall kData
-         $  \t -> tVector t `tFun` tVec n tInt `tFun` tVec n t `tFun` tUnit
+         $  \t -> tVector t `tFun` tVec n tNat `tFun` tVec n t `tFun` tUnit
 
 
 -- Compounds ------------------------------------------------------------------
-xGather :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xGather  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xGather c tA xVec xIxs
  = xApps (xVarPrimVec (PrimVecGather c))
          [XType tA, xVec, xIxs]
+
+
+xScatter :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
+xScatter c tA xVec xIxs xElems
+ = xApps (xVarPrimVec (PrimVecScatter c))
+         [XType tA, xVec, xIxs, xElems]
 
 
 -- Utils -----------------------------------------------------------------------
