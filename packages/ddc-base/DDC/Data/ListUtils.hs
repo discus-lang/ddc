@@ -6,6 +6,7 @@ module DDC.Data.ListUtils
         ( takeHead
         , takeTail
         , takeInit
+        , takeMaximum
         , index)
 where
 
@@ -32,6 +33,14 @@ takeInit xs
  = case xs of
         []      -> Nothing
         _       -> Just (init xs)
+
+
+-- | Take the maximum of a list, or `Nothing` if it's empty.
+takeMaximum :: Ord a => [a] -> Maybe a
+takeMaximum xs
+ = case xs of
+        []      -> Nothing
+        _       -> Just (maximum xs)
 
 
 -- | Retrieve the element at the given index,

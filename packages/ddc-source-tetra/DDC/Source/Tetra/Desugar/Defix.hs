@@ -7,17 +7,21 @@ module DDC.Source.Tetra.Desugar.Defix
         , defaultInfixTable
         , Defix         (..))
 where
+import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Name
 import DDC.Source.Tetra.Exp
+import DDC.Data.ListUtils
 import Control.Monad
 import Data.List
+import Data.Maybe
 import qualified DDC.Data.SourcePos     as BP
 
 
 -- | Things that can go wrong when defixing code.
 data Error
-        = ErrorBlerk
+        = ErrorNoInfixDef
+        { errorSymbol           :: String }
         deriving Show
 
 
@@ -61,9 +65,17 @@ data InfixAssoc
 
 
 -- | Lookup the `InfixDef` corresponding to a symbol name, if any.
-lookupInfixDefOfSymbol :: InfixTable a n -> String -> Maybe (InfixDef a n)
+lookupInfixDefOfSymbol  :: InfixTable a n -> String -> Maybe (InfixDef a n)
 lookupInfixDefOfSymbol (InfixTable defs) str
         = find (\def -> infixDefSymbol def == str) defs
+
+
+-- | Get the precedence of an infix symbol, else Error.
+getInfixDefOfSymbol :: InfixTable a n -> String -> Either Error (InfixDef a n)
+getInfixDefOfSymbol table str
+ = case lookupInfixDefOfSymbol table str of
+        Nothing         -> Left  (ErrorNoInfixDef str)
+        Just def        -> Right def
 
 
 -------------------------------------------------------------------------------
@@ -119,7 +131,11 @@ instance Defix Exp where
         XCast a c x     -> liftM  (XCast a c) (down x)
         XType{}         -> return xx
         XWitness{}      -> return xx
-        XDefix a xs     -> defixExps a table xs
+
+        XDefix a xs     
+         -> do  xs'     <- mapM down xs
+                defixExps a table xs'
+
         XOp{}           -> return xx
 
 
@@ -143,17 +159,85 @@ instance Defix Alt where
 -- defixExps ------------------------------------------------------------------
 -- | Defix the body of a XDefix node.
 defixExps 
-        :: a -> InfixTable a n 
-        -> [Exp a n] 
+        :: a                    -- ^ Annotation from original XDefix node.
+        -> InfixTable a n       -- ^ Table of infix defs.
+        -> [Exp a n]            -- ^ Body of the XDefix node.
         -> Either Error (Exp a n)
 
-defixExps a table xs
-        -- If the first element is an XOp then we've got a prefix application.
-        | XOp aOp str : xsRest    <- xs
-        , Just  def             <- lookupInfixDefOfSymbol table str
-        , Right x'              <- defixExps a table xsRest
-        = Right (XApp a (infixDefExp def aOp) x')
+defixExps a table xx
+ = case xx of
+        -- If there are no elements then we're screwed.
+        -- Maybe the parser is wrong or defixInfix has lost them.
+        []      ->  error "ddc-source-tetra.defixExps: no expressions"
 
-        | otherwise
-        = Right (XDefix a xs)
+        -- If there is only one element then we're done.
+        [x]     -> Right x
+
+        -- Keep calling defixInfix until we've resolved all the ops.
+        x : xs 
+         -> case defixInfix a table xx of
+                -- Defixer found errors.
+                Left  errs      -> Left errs
+                
+                -- Defixer didn't find any infix ops, so whatever is leftover
+                -- is a standard prefix application.
+                Right Nothing   -> Right $ xApps a x xs
+
+                -- Defixer made progress, so keep calling it.
+                Right (Just xs') -> defixExps a table xs'
+
+
+-- | Try to defix some expressions.
+--   If we make progress then return `Just` the new expressions, 
+--   otherwise Nothing.
+defixInfix
+        :: a                    -- ^ Annotation from original XDefix node.
+        -> InfixTable a n       -- ^ Table of infix defs.
+        -> [Exp a n]            -- ^ Body of the XDefix node.
+        -> Either Error (Maybe [Exp a n])
+
+defixInfix a table xs
+        -- If the first element is an XOp then we've got a prefix application.
+        -- WRONG: distinguish between op wrapped in brackets and not
+        --        doing "(+) a b" is ok but "+ a b" is not.
+        --        we still need to use the infixtable to resolve the first (+) though.
+        --        We should also be able to pass infix ops to other functions
+        --         like "f (+)". Need to resolve vars separately.
+        | XOp aOp str : xsRest  <- xs
+        , Just  def             <- lookupInfixDefOfSymbol table str
+        = Right (Just (infixDefExp def aOp : xsRest))
+        
+        -- Get the list of infix ops in the expression.
+        | opStrs        <- mapMaybe (\x -> case x of
+                                            XOp _ str -> Just str
+                                            _         -> Nothing)
+                                    xs
+        = case opStrs of
+            []     -> Right Nothing
+            _      -> defixInfix_ops a table xs opStrs
+
+defixInfix_ops _a table _xs opStrs
+ = do   
+        -- Lookup infix info for symbols.
+        defs    <- mapM (getInfixDefOfSymbol table) opStrs
+        let precs       = map infixDefPrec  defs
+        
+        -- Get the highest precedence of all symbols.
+        let Just precHigh = takeMaximum precs
+   
+        -- Get the list of all ops having this highest precedence.
+        let opsHigh     = [ op   | op    <- opStrs
+                                 | prec  <- precs,  prec == precHigh ]
+
+        -- Get the list of associativities for just the ops with
+        -- highest precedence.
+        defsHigh <- mapM (getInfixDefOfSymbol table) opsHigh
+        let assocsHigh  = map infixDefAssoc defsHigh
+
+        case nub assocsHigh of
+         [InfixLeft]    -> error "defixInfix: lefty"
+         [InfixRight]   -> error "defixInfix: righty"
+         [InfixNone]    -> error "defixInfix: none"
+
+         _              -> error "defixInfix: mixed"
 
