@@ -109,8 +109,11 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> pprParen' (d > 2)
          $  text "DEFIX" <+> hsep (map (pprPrec 11) xs)
 
-        XOp _ str
-         -> parens $ text "OP" <+> text "\"" <> text str <> text "\""
+        XInfixOp _ str
+         -> parens $ text "INFIXOP"  <+> text "\"" <> text str <> text "\""
+
+        XInfixVar _ str
+         -> parens $ text "INFIXVAR" <+> text "\"" <> text str <> text "\""
 
 
 -- Alt ------------------------------------------------------------------------

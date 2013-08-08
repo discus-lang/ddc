@@ -136,9 +136,14 @@ instance Defix Exp where
          -> do  xs'     <- mapM down xs
                 defixExps a table xs'
 
-        XOp{}           -> return xx
+        XInfixOp{}      -> return xx
+        
+        XInfixVar a str
+         -> case lookupInfixDefOfSymbol table str of
+                Just def -> return (infixDefExp def a)
+                Nothing  -> Left $ ErrorNoInfixDef str
 
-
+         
 -- Lets -----------------------------------------------------------------------
 instance Defix Lets where
  defix table lts
@@ -197,20 +202,10 @@ defixInfix
         -> Either Error (Maybe [Exp a n])
 
 defixInfix a table xs
-        -- If the first element is an XOp then we've got a prefix application.
-        -- WRONG: distinguish between op wrapped in brackets and not
-        --        doing "(+) a b" is ok but "+ a b" is not.
-        --        we still need to use the infixtable to resolve the first (+) though.
-        --        We should also be able to pass infix ops to other functions
-        --         like "f (+)". Need to resolve vars separately.
-        | XOp aOp str : xsRest  <- xs
-        , Just  def             <- lookupInfixDefOfSymbol table str
-        = Right (Just (infixDefExp def aOp : xsRest))
-        
         -- Get the list of infix ops in the expression.
         | opStrs        <- mapMaybe (\x -> case x of
-                                            XOp _ str -> Just str
-                                            _         -> Nothing)
+                                            XInfixOp _ str -> Just str
+                                            _              -> Nothing)
                                     xs
         = case opStrs of
             []     -> Right Nothing

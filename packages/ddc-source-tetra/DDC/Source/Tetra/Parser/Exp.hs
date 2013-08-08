@@ -185,10 +185,6 @@ pArgSPs c
         pTok KBraceColonKet
         return  [(XWitness w, sp) | w <- ws]
                
-        -- Infix operator
- , do   (str, sp) <- pOpSP
-        return  [(XOp sp str, sp)]
-
         -- EXP0
  , do   (x, sp)  <- pExpAtomSP c
         return  [(x, sp)]
@@ -212,12 +208,20 @@ pExpAtomSP
 
 pExpAtomSP c
  = P.choice
-        -- (EXP2)
- [ do   sp      <- pTokSP KRoundBra
+ [      -- (EXP2)
+   do   sp      <- pTokSP KRoundBra
         t       <- pExp c
         pTok KRoundKet
         return  (t, sp)
- 
+
+        -- Infix operator used as a variable.
+ , do   (str, sp) <- pOpVarSP
+        return  (XInfixVar sp str, sp)
+
+         -- Infix operator used nekkid.
+ , do   (str, sp) <- pOpSP
+        return  (XInfixOp sp str, sp)
+  
         -- The unit data constructor.       
  , do   sp              <- pTokSP KDaConUnit
         return  (XCon sp dcUnit, sp)
@@ -488,10 +492,3 @@ makeStmts ss
                  , AAlt PDefault x2]
 
         _ -> Nothing
-
-
--- | Parse an infix operator.
-pOpSP    :: Parser n (String, SourcePos)
-pOpSP    = P.pTokMaybeSP f
- where  f (KA (KOp str))  = Just str
-        f _               = Nothing

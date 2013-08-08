@@ -72,7 +72,8 @@ takeAnnotOfExp xx
         XType{}         -> Nothing
         XWitness{}      -> Nothing
         XDefix a _      -> Just a
-        XOp    a _      -> Just a
+        XInfixOp  a _   -> Just a
+        XInfixVar a _   -> Just a
 
 
 -- Lambdas ---------------------------------------------------------------------

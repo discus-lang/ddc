@@ -148,31 +148,30 @@ pTypeAtom
 pTypeAtom c
  = P.choice
         -- (~>) and (=>) and (->) and (TYPE2)
-        [ do    pTok KRoundBra
-                P.choice
-                 [ do   pTok KArrowTilde
-                        pTok KRoundKet
-                        return (TCon $ TyConKind KiConFun)
+        [ -- (~>)
+          do    pTok (KOpVar "~>")
+                return (TCon $ TyConKind KiConFun)
 
-                 , do   pTok KArrowEquals
-                        pTok KRoundKet
-                        return (TCon $ TyConWitness TwConImpl)
+          -- (=>)
+        , do    pTok (KOpVar "=>")
+                return (TCon $ TyConWitness TwConImpl)
 
-                 , do   pTok KArrowDash
-                        pTok KRoundKet
+          -- (->)
+        , do    pTok (KOpVar "->")
 
-                        -- Decide what type constructor to use for the (->) token.
-                        -- Only use the function constructor with latent effects
-                        -- and closures if the language fragment supports both.
-                        if (  contextFunctionalEffects  c 
-                           && contextFunctionalClosures c)
-                         then return (TCon $ TyConSpec TcConFunEC)
-                         else return (TCon $ TyConSpec TcConFun)
+                -- Decide what type constructor to use for the (->) token.
+                -- Only use the function constructor with latent effects
+                -- and closures if the language fragment supports both.
+                if (  contextFunctionalEffects  c 
+                   && contextFunctionalClosures c)
+                   then return (TCon $ TyConSpec TcConFunEC)
+                   else return (TCon $ TyConSpec TcConFun)
 
-                 , do   t       <- pTypeSum c
-                        pTok KRoundKet
-                        return t 
-                 ]
+        -- (TYPE2)
+        , do    pTok KRoundBra
+                t       <- pTypeSum c
+                pTok KRoundKet
+                return t 
 
         -- Named type constructors
         , do    so      <- pSoCon

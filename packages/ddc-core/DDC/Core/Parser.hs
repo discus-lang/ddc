@@ -32,6 +32,10 @@ module DDC.Core.Parser
         , pVar
         , pName
 
+          -- * Infix operators
+        , pOpSP
+        , pOpVarSP
+
           -- * Raw Tokens
         , pTok
         , pTokAs)

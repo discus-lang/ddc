@@ -6,6 +6,12 @@ module Test where
 x : Int = (+) a b;;
 
 
+-- Symbolic operator passed to some other function.
+:desugar..
+module Test where
+x : Int = f (+) (($) ((*) 3) 5);;
+
+
 -- Plus is left associative.
 :desugar..
 module Test where

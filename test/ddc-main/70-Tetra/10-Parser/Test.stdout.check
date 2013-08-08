@@ -33,5 +33,5 @@ fac : Nat -> Nat
       0  
        -> 1;
       _ 
-       -> DEFIX x (OP "*") (DEFIX fac (DEFIX x (OP "-") 1))
+       -> DEFIX x (INFIXOP "*") (DEFIX fac (DEFIX x (INFIXOP "-") 1))
     }

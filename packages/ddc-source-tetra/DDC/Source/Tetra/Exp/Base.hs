@@ -74,14 +74,17 @@ data Exp a n
         -- Sugar Constructs.
         --  These constructs are eliminated by the desugarer.
         --
-        -- | Some expressions and infix operators that need to be resolver into
+        -- | Some expressions and infix operators that need to be resolved into
         --   proper function applications.
-        | XDefix !a [Exp a n]
+        | XDefix    !a [Exp a n]
 
-        -- | Use of an infix operator.
-        --   INVARIANT: should only appear at the top-level in the list of
-        --   and XDefix node.
-        | XOp    !a String
+        -- | Use of a naked infix operator, like in 1 + 2.
+        --   INVARIANT: only appears in the list of an XDefix node.
+        | XInfixOp  !a String
+
+        -- | Use of an infix operator as a plain variable, like in (+) 1 2.
+        --   INVARIANT: only appears in the list of an XDefix node.
+        | XInfixVar !a String
         deriving (Show, Eq)
 
 
@@ -137,7 +140,8 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
         XType t         -> rnf t
         XWitness w      -> rnf w
         XDefix a xs     -> rnf a `seq` rnf xs
-        XOp    a u      -> rnf a `seq` rnf u
+        XInfixOp  a s   -> rnf a `seq` rnf s
+        XInfixVar a s   -> rnf a `seq` rnf s
 
 
 instance (NFData a, NFData n) => NFData (Cast a n) where

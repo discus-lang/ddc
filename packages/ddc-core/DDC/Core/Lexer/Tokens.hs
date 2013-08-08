@@ -146,7 +146,8 @@ data TokAtom
         -----------------------------------------
         -- Operator symbols
         -- These can be used as part of an infix operator.
-        | KOp String
+        | KOp     String        -- ^ Naked operator,   like in 1 + 2.
+        | KOpVar  String        -- ^ Wrapped operator, like in (+) 1 2.
         
         -----------------------------------------
         -- Operator body symbols.
@@ -266,7 +267,8 @@ describeTokAtom' ta
         KBraceColonKet          -> (Symbol, ":}")
 
         -- operator symbols
-        KOp op                  -> (Symbol, op)
+        KOp    op               -> (Symbol, op)
+        KOpVar op               -> (Symbol, "(" ++ op ++ ")")
         
         -- operator body symbols
         KHat                    -> (Symbol, "^")

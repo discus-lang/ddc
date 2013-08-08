@@ -10,7 +10,9 @@ module DDC.Core.Parser.Base
         , pIndex,       pIndexSP
         , pVar,         pVarSP
         , pTok,         pTokSP
-        , pTokAs,       pTokAsSP)
+        , pTokAs,       pTokAsSP
+        , pOpSP
+        , pOpVarSP)
 where
 import DDC.Base.Pretty
 import DDC.Core.Module
@@ -124,6 +126,20 @@ pIndexSP  =   P.pTokMaybeSP f
         f _                     = Nothing
 
 
+-- | Parse an infix operator.
+pOpSP    :: Parser n (String, SourcePos)
+pOpSP    = P.pTokMaybeSP f
+ where  f (KA (KOp str))  = Just str
+        f _               = Nothing
+
+
+-- | Parse an infix operator used as a variable.
+pOpVarSP :: Parser n (String, SourcePos)
+pOpVarSP = P.pTokMaybeSP f
+ where  f (KA (KOpVar str))  = Just str
+        f _                  = Nothing
+
+
 -- | Parse an atomic token.
 pTok :: TokAtom -> Parser n ()
 pTok k     = P.pTok (KA k)
@@ -142,3 +158,5 @@ pTokAs k x = P.pTokAs (KA k) x
 -- | Parse an atomic token and return source position and value.
 pTokAsSP :: TokAtom -> a -> Parser n (a, SourcePos)
 pTokAsSP k x = P.pTokAsSP (KA k) x
+
+

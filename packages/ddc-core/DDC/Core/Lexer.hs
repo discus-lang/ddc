@@ -108,6 +108,12 @@ lexString sourceName lineStart str
 
         '\n' : w'        -> tokM KNewLine           : lexWord (line + 1) 1 w'
 
+        -- Wrapper operator symbols.
+        '(' : c : cs 
+         | isOpStart c
+         , (body, ')' : w')     <- span isOpBody cs
+         -> tokA (KOpVar (c : body))             : lexMore (2 + length (c : body)) w'
+
         -- The unit data constructor
         '(' : ')' : w'   -> tokA KDaConUnit      : lexMore 2 w'
 
