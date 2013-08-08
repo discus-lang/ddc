@@ -19,9 +19,27 @@ import qualified DDC.Data.SourcePos     as BP
 
 
 -- | Things that can go wrong when defixing code.
-data Error
+data Error a n
+        -- | Infix operator symbol has no infix definition.
         = ErrorNoInfixDef
         { errorSymbol           :: String }
+
+        -- | Two non-associative operators with the same precedence.
+        | ErrorDefixNonAssoc
+        { errorOp1              :: String
+        , errorAnnot1           :: a
+        , errorOp2              :: String
+        , errorAnnot2           :: a }
+
+        -- | Two operators of different associativies with same precedence.
+        | ErrorDefixMixedAssoc 
+        { errorAnnot            :: a
+        , errorOps              :: [String] }
+
+        -- | Infix expression is malformed.
+        --   Eg "+ 3" or "2 + + 2"
+        | ErrorMalformed
+        { errorExp              :: Exp a n }
         deriving Show
 
 
@@ -71,7 +89,11 @@ lookupInfixDefOfSymbol (InfixTable defs) str
 
 
 -- | Get the precedence of an infix symbol, else Error.
-getInfixDefOfSymbol :: InfixTable a n -> String -> Either Error (InfixDef a n)
+getInfixDefOfSymbol 
+        :: InfixTable a n 
+        -> String 
+        -> Either (Error a n) (InfixDef a n)
+
 getInfixDefOfSymbol table str
  = case lookupInfixDefOfSymbol table str of
         Nothing         -> Left  (ErrorNoInfixDef str)
@@ -99,24 +121,21 @@ defaultInfixTable
 class Defix (c :: * -> * -> *) where
  defix  :: InfixTable a n
         -> c a n
-        -> Either Error (c a n)
+        -> Either (Error a n) (c a n)
 
 
--- Module ---------------------------------------------------------------------
 instance Defix Module where
  defix table mm 
   = do  tops'   <- mapM (defix table) (moduleTops mm)
         return  $ mm { moduleTops = tops' }
 
 
--- Top ------------------------------------------------------------------------
 instance Defix Top where
  defix table tt
   = case tt of
         TopBind a b x   -> liftM (TopBind a b) (defix table x)
 
 
--- Exp ------------------------------------------------------------------------
 instance Defix Exp where
  defix table xx
   = let down = defix table
@@ -143,8 +162,7 @@ instance Defix Exp where
                 Just def -> return (infixDefExp def a)
                 Nothing  -> Left $ ErrorNoInfixDef str
 
-         
--- Lets -----------------------------------------------------------------------
+
 instance Defix Lets where
  defix table lts
   = let down = defix table
@@ -153,7 +171,6 @@ instance Defix Lets where
         LLetRegions{}   -> return lts
 
 
--- Alt ------------------------------------------------------------------------
 instance Defix Alt where
  defix table aa
   = let down = defix table
@@ -163,11 +180,13 @@ instance Defix Alt where
 
 -- defixExps ------------------------------------------------------------------
 -- | Defix the body of a XDefix node.
+--   TODO: We first need to convert plain applications.
+--         This defixer needs  f a + g b  to be pre-processed into (f a) + (g b)
 defixExps 
         :: a                    -- ^ Annotation from original XDefix node.
         -> InfixTable a n       -- ^ Table of infix defs.
         -> [Exp a n]            -- ^ Body of the XDefix node.
-        -> Either Error (Exp a n)
+        -> Either (Error a n) (Exp a n)
 
 defixExps a table xx
  = case xx of
@@ -199,20 +218,22 @@ defixInfix
         :: a                    -- ^ Annotation from original XDefix node.
         -> InfixTable a n       -- ^ Table of infix defs.
         -> [Exp a n]            -- ^ Body of the XDefix node.
-        -> Either Error (Maybe [Exp a n])
+        -> Either (Error a n) (Maybe [Exp a n])
 
 defixInfix a table xs
         -- Get the list of infix ops in the expression.
-        | opStrs        <- mapMaybe (\x -> case x of
-                                            XInfixOp _ str -> Just str
-                                            _              -> Nothing)
+        | spOpStrs     <- mapMaybe (\x -> case x of
+                                            XInfixOp sp str -> Just (sp, str)
+                                            _               -> Nothing)
                                     xs
-        = case opStrs of
+        = case spOpStrs of
             []     -> Right Nothing
-            _      -> defixInfix_ops a table xs opStrs
+            _      -> defixInfix_ops a table xs spOpStrs
 
-defixInfix_ops _a table _xs opStrs
+defixInfix_ops sp table xs spOpStrs
  = do   
+        let (_opSps, opStrs) = unzip spOpStrs
+
         -- Lookup infix info for symbols.
         defs    <- mapM (getInfixDefOfSymbol table) opStrs
         let precs       = map infixDefPrec  defs
@@ -221,18 +242,95 @@ defixInfix_ops _a table _xs opStrs
         let Just precHigh = takeMaximum precs
    
         -- Get the list of all ops having this highest precedence.
-        let opsHigh     = [ op   | op    <- opStrs
-                                 | prec  <- precs,  prec == precHigh ]
-
+        let opsHigh     = nub
+                        $ [ op   | (op, prec) <- zip opStrs precs
+                                 , prec == precHigh ]
+                                 
         -- Get the list of associativities for just the ops with
         -- highest precedence.
         defsHigh <- mapM (getInfixDefOfSymbol table) opsHigh
         let assocsHigh  = map infixDefAssoc defsHigh
 
         case nub assocsHigh of
-         [InfixLeft]    -> error "defixInfix: lefty"
-         [InfixRight]   -> error "defixInfix: righty"
-         [InfixNone]    -> error "defixInfix: none"
+         [InfixLeft]    
+          -> do xs'     <- defixInfixLeft  sp table precHigh xs
+                return $ Just xs'
 
-         _              -> error "defixInfix: mixed"
+         [InfixRight]   
+          -> do xs'     <- defixInfixRight sp table precHigh (reverse xs)
+                return $ Just (reverse xs')
+         
+         [InfixNone]
+          -> do xs'     <- defixInfixNone  sp table precHigh xs
+                return $ Just (reverse xs')
+
+         _ -> Left $ ErrorDefixMixedAssoc sp opsHigh
+
+
+-- | Defix some left associative ops.
+defixInfixLeft 
+        :: a -> InfixTable a n -> Int 
+        -> [Exp a n] -> Either (Error a n) [Exp a n]
+
+defixInfixLeft sp table precHigh (x1 : XInfixOp spo op : x2 : xs)
+        | Just def      <- lookupInfixDefOfSymbol table op
+        , infixDefPrec def == precHigh
+        =       Right (XApp sp (XApp sp (infixDefExp def spo) x1) x2 : xs)
+
+        | otherwise
+        = do    xs'     <- defixInfixLeft sp table precHigh (x2 : xs)
+                Right   $ x1 : XInfixOp spo op : xs'
+
+defixInfixLeft sp _ _ xs
+        = Left $ ErrorMalformed (XDefix sp xs)
+
+
+-- | Defix some right associative ops.
+--   The input expression list is reversed, so we can eat the operators left
+--   to right. However, be careful to build the App node the right way around.
+defixInfixRight
+        :: a -> InfixTable a n -> Int 
+        -> [Exp a n] -> Either (Error a n) [Exp a n]
+
+defixInfixRight sp table precHigh (x2 : XInfixOp spo op : x1 : xs)
+        | Just def      <- lookupInfixDefOfSymbol table op
+        , infixDefPrec def == precHigh
+        =       Right (XApp sp (XApp sp (infixDefExp def spo) x1) x2 : xs)
+
+        | otherwise
+        = do    xs'     <- defixInfixRight sp table precHigh (x1 : xs)
+                Right   $ x2 : XInfixOp spo op : xs'
+
+defixInfixRight sp _ _ xs
+        = Left $ ErrorMalformed (XDefix sp xs)
+
+
+-- | Defix non-associative ops.
+defixInfixNone 
+        :: a -> InfixTable a n -> Int
+        -> [Exp a n] -> Either (Error a n) [Exp a n]
+
+defixInfixNone sp table precHigh xx
+        -- If there are two ops in a row that are non-associative and have
+        -- the same precedence then we don't know which one should come first.
+        | _ : XInfixOp sp2 op2 : _ : XInfixOp sp4 op4 : _ <- xx
+        , Just def2     <- lookupInfixDefOfSymbol table op2
+        , Just def4     <- lookupInfixDefOfSymbol table op4
+        , infixDefPrec def2 == infixDefPrec def4
+        = Left  $ ErrorDefixNonAssoc op2 sp2 op4 sp4
+
+        -- Found a use of the operator of interest.
+        | x1 : XInfixOp sp2 op2 : x3 : xs       <- xx
+        , Just def2     <- lookupInfixDefOfSymbol table op2
+        , infixDefPrec def2 == precHigh
+        = Right $ (XApp sp (XApp sp (infixDefExp def2 sp2) x1) x3) : xs
+
+        -- Some other operator.
+        | x1 : x2@(XInfixOp{}) : x3 : xs       <- xx
+        = case defixInfixNone sp table precHigh (x3 : xs) of
+                Right xs'       -> Right (x1 : x2 : xs')
+                Left errs       -> Left errs
+
+        | otherwise
+        = Left $ ErrorMalformed (XDefix sp xx)
 

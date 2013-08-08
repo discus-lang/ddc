@@ -39,13 +39,19 @@ x : Int = a + b * c + d * e * f + g;;
 -- Defix dollar token.
 :desugar..
 module Test where
-x : Int = f $ g x $ h i j;;
+x : Int = f $ g $ h ;;
 
 
 -- Equality.
 :desugar..
 module Test where
 x : Bool = 1 + 2 == 2 + 3;;
+
+
+-- Error: infix expression is malformed.
+:desugar..
+module Test where
+x : Int = + 3;;
 
 
 -- Error: Cannot have multiple non-associative operators at the same level.
@@ -58,3 +64,4 @@ x : Int = 1 == 2 == 2;;
 :parse..
 module Test where
 x : Int = 1 < 2 > 3;;
+
