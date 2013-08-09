@@ -142,13 +142,33 @@ scheduleOperator nest0 op
                         (opElemType op)         -- elem type
                         (opInputRate op) ]      -- index
 
-        -- Suppres slicing if we know the input rate is the same as
+        -- Suppress slicing if we know the input rate is the same as
         -- the ouput rate.
         let nest'   = if opInputRate op == tRateAlloc
                           then nest2
                           else nest3
 
         return nest'
+
+ -- Fill -----------------------------------------
+ | OpFill{} <- op
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Get bound of the input element.
+        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
+
+        -- Write the current element to the vector.
+        let UName nVec  = opTargetVector op
+        let Just nest1      
+                = insertBody   nest0 context 
+                $ [ BodyVecWrite 
+                        nVec                    -- destination vector
+                        (opElemType op)         -- elem type
+                        (XVar (UIx 0))          -- index
+                        (XVar uInput) ]         -- value
+
+        return nest1
 
  -- Maps -----------------------------------------
  | OpMap{} <- op
