@@ -69,13 +69,18 @@ instance Monoid Nest where
 -- | Statements that can appear at the start of a loop.
 --   These initialise accumulators.
 data StmtStart
-        -- Allocate a new vector.
-        = StartVecNew
+        -- | Evaluate a pure expression
+        = StartStmt
+        { startResultBind       :: Bind Name
+        , startExpression       :: Exp () Name }
+
+        -- | Allocate a new vector.
+        | StartVecNew
         { startVecNewName       :: Name
         , startVecNewElemType   :: Type Name
         , startVecNewRate       :: Type Name }
 
-        -- Inititlise a new accumulator.
+        -- | Inititlise a new accumulator.
         | StartAcc 
         { startAccName          :: Name
         , startAccType          :: Type Name

@@ -121,7 +121,11 @@ extractLoop (NestList nests)
 extractStmtStart :: StmtStart -> [LetsF]
 extractStmtStart ss
  = case ss of
-        -- Allocate a new vector
+        -- Evaluate a pure expression.
+        StartStmt b x
+         -> [LLet b x]
+
+        -- Allocate a new vector.
         StartVecNew nVec tElem tRate'
          -> [LLet (BName nVec (tVector tElem))
                   (xNewVectorR tElem tRate') ]

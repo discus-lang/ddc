@@ -181,16 +181,21 @@ scheduleOperator lifting nest op
         let context     = ContextRate tK
         let tA          = typeOfBind $ opWorkerParamElem op
 
-        -- Initialize vector accumulator.
+        -- Evaluate the zero value and initialize the vector accumulator.
         let UName nRef  = opTargetRef op
+        let nAccZero    = NameVarMod nRef "zero"
+        let bAccZero    = BName nAccZero tA
+        let uAccZero    = UName nAccZero
+
         let nAccVec     = NameVarMod nRef "vec"
         let uAccVec     = UName nAccVec
 
         let Just nest2  
                 = insertStarts nest context
-                $ [ StartAcc    nAccVec
+                $ [ StartStmt   bAccZero    (opZero op)
+                  , StartAcc    nAccVec
                                 (tVec c tA)
-                                (xvRep c tA (opZero op)) ]
+                                (xvRep c tA (XVar uAccZero)) ]
 
         -- Bound for input element.
         let Just uInput = elemBoundOfSeriesBound 
@@ -250,7 +255,7 @@ scheduleOperator lifting nest op
                                 (xRead (tVec c tA) (XVar uAccVec)) ]
 
                 ++ [ EndStmt    (bPart 0)
-                                (xBody  (opZero op)    
+                                (xBody  (XVar uAccZero)    
                                         (xvProj c 0 tA (XVar uAccResult))) ]
 
                 ++ [ EndStmt    (bPart i)
