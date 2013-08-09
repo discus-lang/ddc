@@ -5,12 +5,7 @@ module DDC.Core.Flow.Transform.Schedule.SeriesEnv
         , insertElemForSeries
 
         , bindNextElem
-        , bindNextElems
-        
-        , elemBindOfSeriesBind
-        , elemBoundOfSeriesBound
-        , elemTypeOfSeriesType
-        , rateTypeOfSeriesType )
+        , bindNextElems)
 where
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Procedure
@@ -108,50 +103,4 @@ bindNextElems junk env nest0
             
             in  (uElem1 : uElems', env', nest')
 
-
--- | Given the bind of a series,  produce the bound that refers to the
---   next element of the series in its context.
-elemBindOfSeriesBind   :: BindF  -> Maybe BindF
-elemBindOfSeriesBind bSeries
-        | BName nSeries tSeries' <- bSeries
-        , nElem         <- NameVarMod nSeries "elem"
-        , Just tElem    <- elemTypeOfSeriesType tSeries'
-        = Just $ BName nElem tElem
-
-        | otherwise
-        = Nothing
- 
-
--- | Given the bound of a series, produce the bound that refers to the
---   next element of the series in its context.
-elemBoundOfSeriesBound :: BoundF -> Maybe BoundF
-elemBoundOfSeriesBound uSeries
-        | UName nSeries <- uSeries
-        , nElem         <- NameVarMod nSeries "elem"
-        = Just $ UName nElem
-
-        | otherwise
-        = Nothing
-
-
--- | Given the type of a series like @Series k e@, produce the type
---   of a single element, namely the @e@.
-elemTypeOfSeriesType :: TypeF -> Maybe TypeF
-elemTypeOfSeriesType tSeries'
-        | Just (_tcSeries, [_tK, tE]) <- takeTyConApps tSeries'
-        = Just tE
-
-        | otherwise
-        = Nothing
-
-
--- | Given the type of a series like @Series k e@, produce the type
---   of the rate, namely the @k@.
-rateTypeOfSeriesType :: TypeF -> Maybe TypeF
-rateTypeOfSeriesType tSeries'
-        | Just (_tcSeries, [tK, _tE]) <- takeTyConApps tSeries'
-        = Just tK
-
-        | otherwise
-        = Nothing
 

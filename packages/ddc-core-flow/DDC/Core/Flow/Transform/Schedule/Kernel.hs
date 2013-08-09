@@ -1,16 +1,3 @@
-
--- | A Kernel is a process that
---    1) accumulates data into sinks, rather than allocating new values.
---    2) can be scheduled into a single loop.
---    3) may be run concurrently with other kernels.
---
---   The process kernel scheduler can produce code for
---    map, reduce, fill, gather, scatter
---
---   But not
---    fold   -- use reduce instead.
---    create -- use fill instead.
---    pack   -- we don't support SIMD masks.
 --
 module DDC.Core.Flow.Transform.Schedule.Kernel
         ( scheduleKernel
@@ -20,6 +7,7 @@ where
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Transform.Schedule.Fail
 import DDC.Core.Flow.Transform.Schedule.Lifting
+import DDC.Core.Flow.Transform.Schedule.Base
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
@@ -28,21 +16,22 @@ import DDC.Core.Flow.Prim
 import Control.Monad
 import Data.Maybe
 
-import DDC.Core.Flow.Transform.Schedule.SeriesEnv
-        ( rateTypeOfSeriesType
-        , elemTypeOfSeriesType 
-        , elemBindOfSeriesBind
-        , elemBoundOfSeriesBound)
 
-
--------------------------------------------------------------------------------
 -- | Schedule a process kernel into a procedure.
 --
---   A kernel is a process with the following restricitions:
+--   A process kernel is a process with the following restricitions:
 --    1) All input series have the same rate.
 --    2) A kernel accumulates data into sinks, rather than allocating new values.
 --    3) A kernel can be scheduled into a single loop.
 --    
+---  The process kernel scheduler can produce code for
+--    map, reduce, fill, gather, scatter
+--
+--   But not
+--    fold   -- use reduce instead.
+--    create -- use fill instead.
+--    pack   -- we don't support SIMD masks.
+--
 scheduleKernel :: Lifting -> Process -> Either Fail Procedure
 scheduleKernel 
        lifting
@@ -336,22 +325,4 @@ scheduleOperator lifting nest op
  = return nest
 
 
--------------------------------------------------------------------------------
--- | Given the type of the process parameters, 
---   yield the rate of the overall process.
-slurpRateOfParamTypes :: [Type Name] -> Either Fail (Type Name)
-slurpRateOfParamTypes tsParam
- = case mapMaybe rateTypeOfSeriesType tsParam of
-        []                      -> Left FailNoSeriesParameters
-        [tK]                    -> Right tK
-        (tK : ts)
-         | all (== tK) ts       -> Right tK
-         | otherwise            -> Left FailMultipleRates
-
-
-isSeriesType :: TypeF -> Bool
-isSeriesType tt
- = case takePrimTyConApps tt of
-        Just (NameTyConFlow TyConFlowSeries, [_, _]) -> True
-        _                                            -> False
 
