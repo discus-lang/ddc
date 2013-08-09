@@ -352,15 +352,18 @@ pipeFlow !mm !pp
                 -- When snipping, leave lambda abstractions in place so the worker functions
                 -- applied to our loop combinators aren't moved.
                 clean           
-                 =    C.Fix 4 C.beta 
+                 =    C.Trans (C.Namify (C.makeNamifier Flow.freshT)
+                                        (C.makeNamifier Flow.freshX))
+                 M.<> C.Trans C.Forward
+                 M.<> C.beta
                  M.<> C.Trans (C.Snip (Snip.configZero { Snip.configPreserveLambdas = True }))
                  M.<> C.Trans C.Flatten
 
                 mm_cleaned      
                  = S.evalState
                         (C.applySimplifier Flow.profile Env.empty Env.empty
-                                clean mm_lowered)
-                        ()
+                                (C.Fix 4 clean) mm_lowered)
+                        0
 
              in pipeCores mm_cleaned pipes
 

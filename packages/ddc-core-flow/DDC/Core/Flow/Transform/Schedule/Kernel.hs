@@ -184,10 +184,11 @@ scheduleOperator lifting nest op
         -- Initialize vector accumulator.
         let UName nRef  = opTargetRef op
         let nAccVec     = NameVarMod nRef "vec"
+        let uAccVec     = UName nAccVec
 
-        let Just nest2  = insertStarts nest context
-                        $ [ StartAcc    
-                                nAccVec
+        let Just nest2  
+                = insertStarts nest context
+                $ [ StartAcc    nAccVec
                                 (tVec c tA)
                                 (xvRep c tA (opZero op)) ]
 
@@ -210,24 +211,60 @@ scheduleOperator lifting nest op
                         $  opWorkerBody op
 
         -- Read the current accumulator value and update it with the worker.
-        let xBody       = XApp (XApp ( XLam (opWorkerParamAcc   op)
-                                     $ XLam (opWorkerParamElem  op)
-                                            (xWorker_lifted))
-                                     (XVar uAccVal))
-                               (XVar uInput)
+        let xBody_lifted x1 x2
+                = XApp (XApp ( XLam (opWorkerParamAcc   op)     -- TODO: wrong types
+                             $ XLam (opWorkerParamElem  op)
+                                    (xWorker_lifted))
+                             x1)
+                        x2
 
-        let Just nest3  = insertBody nest2 context
-                        $ [ BodyAccRead  nAccVec (tVec c tA) bAccVal
-                          , BodyAccWrite nAccVec (tVec c tA) xBody ]
+        let Just nest3  
+                = insertBody nest2 context
+                $ [ BodyAccRead  nAccVec (tVec c tA) bAccVal
+                  , BodyAccWrite nAccVec (tVec c tA) 
+                                 (xBody_lifted (XVar uAccVal) (XVar uInput)) ]
 
         -- Bind final unit value.
-        let Just nest4  = insertEnds nest3 context
-                        $ [ EndStmt     (opResultBind op)
-                                        xUnit ]
+        let Just nest4  
+                = insertEnds nest3 context
+                $ [ EndStmt     (opResultBind op)
+                                xUnit ]
 
-        -- TODO: horizontal fold of vector accumulator into scalar accumluator.
+        -- Read back the vector accumulator and to a final fold over its parts.
+        let nAccResult  = NameVarMod nRef "res"
+        let bAccResult  = BName nAccResult (tVec c tA)
+        let uAccResult  = UName nAccResult
+        let bPart (i :: Int) = BName (NameVarMod nAccResult (show i)) tA
+        let uPart (i :: Int) = UName (NameVarMod nAccResult (show i))
 
-        return $ nest4
+        let xBody x1 x2
+                = XApp (XApp ( XLam (opWorkerParamAcc op)
+                             $ XLam (opWorkerParamElem op)
+                                    (opWorkerBody op))
+                             x1)
+                        x2
+
+        let Just nest5  
+                =  insertEnds nest4 context
+                $  [ EndStmt    bAccResult
+                                (xRead (tVec c tA) (XVar uAccVec)) ]
+
+                ++ [ EndStmt    (bPart 0)
+                                (xBody  (opZero op)    
+                                        (xvProj c 0 tA (XVar uAccResult))) ]
+
+                ++ [ EndStmt    (bPart i)
+                                (xBody  (XVar (uPart (i - 1)))
+                                        (xvProj c i tA (XVar uAccResult)))
+                                | i <- [1.. c - 1]]
+
+        -- Write final value to destination.
+        let Just nest6  = insertEnds nest5 context
+                        $ [ EndStmt    (BNone tUnit)
+                                       (xWrite tA (XVar $ opTargetRef op)
+                                                  (XVar $ uPart (c - 1))) ]
+
+        return $ nest6
 
 
  -- Gather --------------------------------------
@@ -247,7 +284,7 @@ scheduleOperator lifting nest op
         -- Read from vector.
         let Just nest2  = insertBody nest context
                         $ [ BodyStmt bResultE
-                                (xGather c 
+                                (xvGather c 
                                         (opElemType      op)
                                         (XVar $ opSourceVector  op)
                                         (XVar $ uIndex)) ]
@@ -270,7 +307,7 @@ scheduleOperator lifting nest op
         -- Read from vector.
         let Just nest2  = insertBody nest context
                         $ [ BodyStmt (BNone tUnit)
-                                (xScatter c
+                                (xvScatter c
                                         (opElemType op)
                                         (XVar $ opTargetVector op)
                                         (XVar $ uIndex) (XVar $ uElem)) ]

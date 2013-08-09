@@ -10,11 +10,11 @@ letrec {
       let x3$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x2 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x2 in
                    let x0 : Int# = read# [Int#] x3$acc in
-                   let ^ : Int# = add# [Int#] x0 s$elem in
-                   let _ : Unit = write# [Int#] x3$acc ^0 in
+                   let x4 : Int# = add# [Int#] x0 s$elem in
+                   let _ : Unit = write# [Int#] x3$acc x4 in
                    ()) in
       let x3 : Int# = read# [Int#] x3$acc in
       x3
@@ -31,14 +31,14 @@ letrec {
       let x8$acc : Ref# Int# = new# [Int#] 1i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x2 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x2 in
                    let x0 : Int# = read# [Int#] x3$acc in
-                   let ^ : Int# = add# [Int#] x0 s$elem in
-                   let _ : Unit = write# [Int#] x3$acc ^0 in
+                   let x4 : Int# = add# [Int#] x0 s$elem in
+                   let _ : Unit = write# [Int#] x3$acc x4 in
                    let x5 : Int# = read# [Int#] x8$acc in
-                   let ^ : Int# = mul# [Int#] x5 s$elem in
-                   let _ : Unit = write# [Int#] x8$acc ^0 in
+                   let x6 : Int# = mul# [Int#] x5 s$elem in
+                   let _ : Unit = write# [Int#] x8$acc x6 in
                    ()) in
       let x3 : Int# = read# [Int#] x3$acc in
       let x8 : Int# = read# [Int#] x8$acc in
@@ -57,23 +57,23 @@ letrec {
       let x15$acc : Ref# Int# = new# [Int#] 1i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x2 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x2 in
                    let x0 : Int# = read# [Int#] x3$acc in
-                   let ^ : Int# = add# [Int#] x0 s$elem in
-                   let _ : Unit = write# [Int#] x3$acc ^0 in
+                   let x4 : Int# = add# [Int#] x0 s$elem in
+                   let _ : Unit = write# [Int#] x3$acc x4 in
                    let x5 : Int# = read# [Int#] x8$acc in
-                   let ^ : Int# = mul# [Int#] x5 s$elem in
-                   let _ : Unit = write# [Int#] x8$acc ^0 in
+                   let x6 : Int# = mul# [Int#] x5 s$elem in
+                   let _ : Unit = write# [Int#] x8$acc x6 in
                    let x12 : Int# = read# [Int#] x15$acc in
-                   let ^ : Int# = mul# [Int#] x12 s$elem in
-                   let _ : Unit = write# [Int#] x15$acc ^0 in
+                   let x7 : Int# = mul# [Int#] x12 s$elem in
+                   let _ : Unit = write# [Int#] x15$acc x7 in
                    ()) in
       let x3 : Int# = read# [Int#] x3$acc in
       let x8 : Int# = read# [Int#] x8$acc in
       let x15 : Int# = read# [Int#] x15$acc in
-      let ^ : Int# = add# [Int#] x3 x8 in
-      T2# [Int#] [Int#] ^0 x15
+      let x9 : Int# = add# [Int#] x3 x8 in
+      T2# [Int#] [Int#] x9 x15
 }
 
 
@@ -86,12 +86,12 @@ letrec {
       let x6$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x2 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x2 in
                    let x4$elem : Int# = mul# [Int#] s$elem 2i# in
                    let x0 : Int# = read# [Int#] x6$acc in
-                   let ^ : Int# = add# [Int#] x0 x4$elem in
-                   let _ : Unit = write# [Int#] x6$acc ^0 in
+                   let x3 : Int# = add# [Int#] x0 x4$elem in
+                   let _ : Unit = write# [Int#] x6$acc x3 in
                    ()) in
       let x6 : Int# = read# [Int#] x6$acc in
       x6
@@ -108,22 +108,22 @@ letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let ^ : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
+      let x4 : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
       let x5$acc : Ref# (Tuple2# Int# Int#)
-            = new# [Tuple2# Int# Int#] ^0 in
+            = new# [Tuple2# Int# Int#] x4 in
       let x9$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x3 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x3 in
                    let x1 : Tuple2# Int# Int#
                          = read# [Tuple2# Int# Int#] x5$acc in
-                   let ^ : Tuple2# Int# Int# = minIx ^0 x1 s$elem in
+                   let x7 : Tuple2# Int# Int# = minIx x3 x1 s$elem in
                    let _ : Unit
-                         = write# [Tuple2# Int# Int#] x5$acc ^0 in
+                         = write# [Tuple2# Int# Int#] x5$acc x7 in
                    let x6 : Int# = read# [Int#] x9$acc in
-                   let ^ : Int# = addInt x6 s$elem in
-                   let _ : Unit = write# [Int#] x9$acc ^0 in
+                   let x8 : Int# = addInt x6 s$elem in
+                   let _ : Unit = write# [Int#] x9$acc x8 in
                    ()) in
       let x5 : Tuple2# Int# Int#
             = read# [Tuple2# Int# Int#] x5$acc in

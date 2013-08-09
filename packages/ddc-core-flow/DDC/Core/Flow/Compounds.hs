@@ -33,7 +33,9 @@ module DDC.Core.Flow.Compounds
 
           -- * Vec operators
         , xvRep
-        , xGather, xScatter
+        , xvProj
+        , xvGather
+        , xvScatter
 
           -- * Store operators
         , xNew,         xRead,       xWrite

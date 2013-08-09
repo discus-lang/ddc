@@ -10,11 +10,11 @@ letrec {
       let x5 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
-                   let ^ : Int# = mul# [Int#] s$elem 2i# in
-                   let x3$elem : Int# = add# [Int#] ^0 1i# in
-                   let _ : Unit = vwrite# [Int#] x5 ^1 x3$elem in
+                  (\(x0 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x0 in
+                   let x1 : Int# = mul# [Int#] s$elem 2i# in
+                   let x3$elem : Int# = add# [Int#] x1 1i# in
+                   let _ : Unit = vwrite# [Int#] x5 x0 x3$elem in
                    ()) in
       x5
 }
@@ -29,11 +29,11 @@ letrec {
       let x6 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x0 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x0 in
                    let x2$elem : Int# = add# [Int#] s$elem 1i# in
                    let x4$elem : Int# = mul# [Int#] x2$elem 2i# in
-                   let _ : Unit = vwrite# [Int#] x6 ^0 x4$elem in
+                   let _ : Unit = vwrite# [Int#] x6 x0 x4$elem in
                    ()) in
       x6
 }
@@ -50,13 +50,13 @@ letrec {
       let x6 : Vector# Int# = vnewR# [Int#] [k] in
       let _ : Unit
             = loop# [k]
-                  (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                  (\(x2 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x2 in
                    let x0 : Int# = read# [Int#] x3$acc in
-                   let ^ : Int# = add# [Int#] x0 s$elem in
-                   let _ : Unit = write# [Int#] x3$acc ^0 in
+                   let x4 : Int# = add# [Int#] x0 s$elem in
+                   let _ : Unit = write# [Int#] x3$acc x4 in
                    let x5$elem : Int# = mul# [Int#] s$elem 2i# in
-                   let _ : Unit = vwrite# [Int#] x6 ^1 x5$elem in
+                   let _ : Unit = vwrite# [Int#] x6 x2 x5$elem in
                    ()) in
       let x3 : Int# = read# [Int#] x3$acc in
       T2# [Int#] [Vector# Int#] x3 x6

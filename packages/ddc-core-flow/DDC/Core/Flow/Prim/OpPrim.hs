@@ -6,8 +6,9 @@ module DDC.Core.Flow.Prim.OpPrim
 
           -- * Compounds
         , xvRep
-        , xGather
-        , xScatter)
+        , xvProj
+        , xvGather
+        , xvScatter)
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
@@ -78,9 +79,9 @@ typePrimVec op
          $  \t -> let Just t' = tFunOfList (replicate n t ++ [tVec n t]) 
                   in  t'
 
-        PrimVecUnpack n
+        PrimVecProj n _
          -> tForall kData
-         $  \t -> tVec n t `tFun` tTupleN  (replicate n t)
+         $  \t -> tVec n t `tFun` t
 
         PrimVecGather n
          -> tForall kData
@@ -97,14 +98,19 @@ xvRep c tA xZ
  = xApps (xVarPrimVec (PrimVecRep c))   
          [XType tA, xZ]
 
-xGather  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xGather c tA xVec xIxs
+xvProj   :: Int -> Int -> Type Name -> Exp () Name -> Exp () Name
+xvProj n i tA xV
+ = xApps (xVarPrimVec (PrimVecProj n i))
+         [XType tA, xV]
+
+xvGather  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xvGather c tA xVec xIxs
  = xApps (xVarPrimVec (PrimVecGather c))
          [XType tA, xVec, xIxs]
 
 
-xScatter :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
-xScatter c tA xVec xIxs xElems
+xvScatter :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name
+xvScatter c tA xVec xIxs xElems
  = xApps (xVarPrimVec (PrimVecScatter c))
          [XType tA, xVec, xIxs, xElems]
 

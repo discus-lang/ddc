@@ -9,20 +9,18 @@ letrec {
       let x0 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
-                  (\(^ : Nat#).
-                   let flags$elem : Bool# = next# [Bool#] [k0] flags ^0 in
-                   let flags$use$elem : Bool# = flags$elem in
-                   let s$elem : a = next# [a] [k0] s ^0 in
+                  (\(x1 : Nat#).
+                   let flags$elem : Bool# = next# [Bool#] [k0] flags x1 in
+                   let s$elem : a = next# [a] [k0] s x1 in
                    let _ : Unit
-                         = guard# k1$count flags$use$elem
-                               (\(^ : Nat#).
-                                let _ : Unit = vwrite# [a] x0 ^0 s$elem in
+                         = guard# k1$count flags$elem
+                               (\(x3 : Nat#).
+                                let _ : Unit = vwrite# [a] x0 x3 s$elem in
                                 ()) in
                    ()) in
-      let ^ : Nat# = read# [Nat#] k1$count in
-      let x0 : Vector# a = vslice# [a] ^0 x0 in
-      let x2 : Vector# a = x0 in
-      x2
+      let x4 : Nat# = read# [Nat#] k1$count in
+      let x0 : Vector# a = vslice# [a] x4 x0 in
+      x0
 }
 
 
@@ -36,20 +34,18 @@ letrec {
       let x2 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
-                  (\(^ : Nat#).
-                   let s$elem : a = next# [a] [k0] s ^0 in
+                  (\(x0 : Nat#).
+                   let s$elem : a = next# [a] [k0] s x0 in
                    let x1$elem : Bool# = f s$elem in
-                   let x1$use$elem : Bool# = x1$elem in
                    let _ : Unit
-                         = guard# k1$count x1$use$elem
-                               (\(^ : Nat#).
-                                let _ : Unit = vwrite# [a] x2 ^0 s$elem in
+                         = guard# k1$count x1$elem
+                               (\(x1 : Nat#).
+                                let _ : Unit = vwrite# [a] x2 x1 s$elem in
                                 ()) in
                    ()) in
-      let ^ : Nat# = read# [Nat#] k1$count in
-      let x2 : Vector# a = vslice# [a] ^0 x2 in
-      let x4 : Vector# a = x2 in
-      x4
+      let x3 : Nat# = read# [Nat#] k1$count in
+      let x2 : Vector# a = vslice# [a] x3 x2 in
+      x2
 }
 
 
@@ -65,19 +61,18 @@ letrec {
       let x3 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
-                  (\(^ : Nat#).
-                   let s$elem : a = next# [a] [k0] s ^0 in
+                  (\(x0 : Nat#).
+                   let s$elem : a = next# [a] [k0] s x0 in
                    let x1$elem : Bool# = f s$elem in
-                   let x1$use$elem : Bool# = x1$elem in
-                   let _ : Unit = vwrite# [a] x3 ^0 s$elem in
+                   let _ : Unit = vwrite# [a] x3 x0 s$elem in
                    let _ : Unit
-                         = guard# k1$count x1$use$elem
-                               (\(^ : Nat#).
-                                let _ : Unit = vwrite# [a] x2 ^0 s$elem in
+                         = guard# k1$count x1$elem
+                               (\(x1 : Nat#).
+                                let _ : Unit = vwrite# [a] x2 x1 s$elem in
                                 ()) in
                    ()) in
-      let ^ : Nat# = read# [Nat#] k1$count in
-      let x2 : Vector# a = vslice# [a] ^0 x2 in
+      let x4 : Nat# = read# [Nat#] k1$count in
+      let x2 : Vector# a = vslice# [a] x4 x2 in
       let x6 : Tuple2# (Vector# a) (Vector# a)
             = T2# [Vector# a] [Vector# a] x2 x3 in
       x6
@@ -96,27 +91,23 @@ letrec {
       let x4 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
-                  (\(^ : Nat#).
-                   let s0$elem : a = next# [a] [k0] s0 ^0 in
+                  (\(x0 : Nat#).
+                   let s0$elem : a = next# [a] [k0] s0 x0 in
                    let x1$elem : Bool# = f s0$elem in
-                   let x1$use$elem : Bool# = x1$elem in
                    let _ : Unit
-                         = guard# k1$count x1$use$elem
-                               (\(^ : Nat#).
+                         = guard# k1$count x1$elem
+                               (\(x1 : Nat#).
                                 let x3$elem : Bool# = g s0$elem in
-                                let x3$use$elem : Bool# = x3$elem in
                                 let _ : Unit
-                                      = guard# k2$count x3$use$elem
-                                            (\(^ : Nat#).
-                                             let _ : Unit = vwrite# [a] x4 ^0 s0$elem in
+                                      = guard# k2$count x3$elem
+                                            (\(x2 : Nat#).
+                                             let _ : Unit = vwrite# [a] x4 x2 s0$elem in
                                              ()) in
                                 ()) in
                    ()) in
-      let ^ : Nat# = read# [Nat#] k2$count in
-      let x4 : Vector# a = vslice# [a] ^0 x4 in
-      let x6 : Vector# a = x4 in
-      let x8 : Vector# a = x6 in
-      x8
+      let x3 : Nat# = read# [Nat#] k2$count in
+      let x4 : Vector# a = vslice# [a] x3 x4 in
+      x4
 }
 
 -- Sequential filter.
@@ -132,30 +123,26 @@ letrec {
       let x7 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
-                  (\(^ : Nat#).
-                   let s0$elem : a = next# [a] [k0] s0 ^0 in
+                  (\(x0 : Nat#).
+                   let s0$elem : a = next# [a] [k0] s0 x0 in
                    let x1$elem : Bool# = f s0$elem in
                    let x3$elem : Bool# = f s0$elem in
-                   let x1$use$elem : Bool# = x1$elem in
-                   let x3$use$elem : Bool# = x3$elem in
                    let _ : Unit
-                         = guard# k1$count x1$use$elem
-                               (\(^ : Nat#).
-                                let _ : Unit = vwrite# [a] x4 ^0 s0$elem in
+                         = guard# k1$count x1$elem
+                               (\(x1 : Nat#).
+                                let _ : Unit = vwrite# [a] x4 x1 s0$elem in
                                 ()) in
                    let _ : Unit
-                         = guard# k2$count x3$use$elem
-                               (\(^ : Nat#).
-                                let _ : Unit = vwrite# [a] x7 ^0 s0$elem in
+                         = guard# k2$count x3$elem
+                               (\(x2 : Nat#).
+                                let _ : Unit = vwrite# [a] x7 x2 s0$elem in
                                 ()) in
                    ()) in
-      let ^ : Nat# = read# [Nat#] k1$count in
-      let x4 : Vector# a = vslice# [a] ^0 x4 in
-      let ^ : Nat# = read# [Nat#] k2$count in
-      let x7 : Vector# a = vslice# [a] ^0 x7 in
-      let x6 : Vector# a = x4 in
-      let x9 : Vector# a = x7 in
-      T2# [Vector# a] [Vector# a] x6 x9
+      let x3 : Nat# = read# [Nat#] k1$count in
+      let x4 : Vector# a = vslice# [a] x3 x4 in
+      let x5 : Nat# = read# [Nat#] k2$count in
+      let x7 : Vector# a = vslice# [a] x5 x7 in
+      T2# [Vector# a] [Vector# a] x4 x7
 }
 
 
