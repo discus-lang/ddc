@@ -4,6 +4,14 @@
 --    2) can be scheduled into a single loop.
 --    3) may be run concurrently with other kernels.
 --
+--   The process kernel scheduler can produce code for
+--    map, reduce, fill, gather, scatter
+--
+--   But not
+--    fold   -- use reduce instead.
+--    create -- use fill instead.
+--    pack   -- we don't support SIMD masks.
+--
 module DDC.Core.Flow.Transform.Schedule.Kernel
         ( scheduleKernel
         , Fail          (..)
