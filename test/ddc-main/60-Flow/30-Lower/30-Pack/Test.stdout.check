@@ -10,8 +10,8 @@ letrec {
       let _ : Unit
             = loop# [k0]
                   (\(x1 : Nat#).
-                   let flags$elem : Bool# = next# [Bool#] [k0] flags x1 in
                    let s$elem : a = next# [a] [k0] s x1 in
+                   let flags$elem : Bool# = next# [Bool#] [k0] flags x1 in
                    let _ : Unit
                          = guard# k1$count flags$elem
                                (\(x3 : Nat#).

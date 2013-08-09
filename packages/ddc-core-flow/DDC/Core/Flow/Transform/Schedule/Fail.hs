@@ -4,6 +4,7 @@ module DDC.Core.Flow.Transform.Schedule.Fail
 where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Process.Operator
 
 
 -- | Reason a process kernel could not be scheduled into a procedure.
@@ -29,5 +30,8 @@ data Fail
 
         -- | Cannot lift expression to vector operators.
         | FailCannotLift (Exp () Name)
+
+        -- | Current scheduler does not support this operator.
+        | FailUnsupported Operator
         deriving Show
 

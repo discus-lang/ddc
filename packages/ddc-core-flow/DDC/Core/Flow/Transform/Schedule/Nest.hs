@@ -18,6 +18,11 @@ import Data.Monoid
 --    the infrastructure to execute statements at the new rate.
 insertContext :: Nest -> Context -> Maybe Nest
 
+-- Context already exists, don't bother.
+insertContext nest            context@ContextRate{}
+ | nestContainsRate nest (contextRate context)
+ = Just nest
+
 -- Loop context at top level.
 insertContext  NestEmpty      context@ContextRate{}
  = Just $ nestOfContext context

@@ -52,8 +52,8 @@ letrec {
             = loop# [k]
                   (\(x2 : Nat#).
                    let s$elem : Int# = next# [Int#] [k] s x2 in
-                   let x0 : Int# = read# [Int#] x3$acc in
-                   let x4 : Int# = add# [Int#] x0 s$elem in
+                   let x3$val : Int# = read# [Int#] x3$acc in
+                   let x4 : Int# = add# [Int#] x3$val s$elem in
                    let _ : Unit = write# [Int#] x3$acc x4 in
                    let x5$elem : Int# = mul# [Int#] s$elem 2i# in
                    let _ : Unit = vwrite# [Int#] x6 x2 x5$elem in

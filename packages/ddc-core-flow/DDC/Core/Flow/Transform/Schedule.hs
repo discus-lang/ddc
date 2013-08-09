@@ -27,13 +27,11 @@ scheduleProcess :: Process -> Procedure
 scheduleProcess process
  | processResultType process == tUnit
  = case scheduleKernel defaultLifting process of
-        Left  fails     -> error $ "scheduleProcess failed: " ++ show fails
+        Left  fails     -> error $ "scheduleProcess kernel failed: " ++ show fails
         Right proc      -> proc
 
  | otherwise
- = scheduleScalar process
-
-
-
-
+ = case scheduleScalar process of
+        Left fails      -> error $ "scheduleProcess scalar failed: " ++ show fails
+        Right proc      -> proc
 

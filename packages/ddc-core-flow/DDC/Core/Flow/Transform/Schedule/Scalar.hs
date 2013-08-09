@@ -2,37 +2,71 @@
 module DDC.Core.Flow.Transform.Schedule.Scalar
         (scheduleScalar)
 where
-import DDC.Core.Flow.Transform.Schedule.SeriesEnv
 import DDC.Core.Flow.Transform.Schedule.Nest
+import DDC.Core.Flow.Transform.Schedule.Fail
 import DDC.Core.Flow.Transform.Schedule.Base
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
-import DDC.Base.Pretty
 import Control.Monad
 
 
-scheduleScalar :: Process -> Procedure
+-- | Schedule a process into a procedure, producing scalar code.
+scheduleScalar :: Process -> Either Fail Procedure
 scheduleScalar 
        (Process { processName           = name
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
-                , processContexts       = contexts
                 , processOperators      = operators
+                , processContexts       = contexts
                 , processResultType     = tResult
                 , processResultExp      = xResult})
-  = let
+  = do
+        -- Check the parameter series all have the same rate.
+        tK      <- slurpRateOfParamTypes 
+                        $ filter isSeriesType 
+                        $ map typeOfBind bsParamValues
 
+        -- Check the primary rate variable matches the rates of the series.
+        (case bsParamTypes of
+          []            -> Left FailNoRateParameters
+          BName n k : _ 
+           | k == kRate
+           , TVar (UName n) == tK -> return ()
+          _             -> Left FailPrimaryRateMismatch)
 
-        -- Create all the contexts, starting with an empty loop nest.
-        Just nest1      = foldM insertContext NestEmpty contexts
+        -- Create the initial loop nest of the process rate.
+        let bsSeries    = [ b   | b <- bsParamValues
+                                , isSeriesType (typeOfBind b) ]
+
+        -- Body expressions that take the next element from each input series.
+        let ssBody      
+                = [ BodyStmt bElem
+                        (xNext tK tElem (XVar (UName nS)) (XVar uIndex))
+                        | bS@(BName nS tS)      <- bsSeries
+                        , let Just tElem        = elemTypeOfSeriesType tS 
+                        , let Just bElem        = elemBindOfSeriesBind bS
+                        , let uIndex            = UIx 0 ]
+
+        -- The initial loop nest.
+        let nest0       
+                = NestLoop 
+                { nestRate              = tK 
+                , nestStart             = []
+                , nestBody              = ssBody
+                , nestInner             = NestEmpty
+                , nestEnd               = []
+                , nestResult            = xUnit }
+
+        -- Create the nested contexts
+        let Just nest1  =  foldM insertContext nest0 contexts
 
         -- Schedule the series operators into the nest.
-        nest2           = scheduleOperators nest1 emptySeriesEnv operators
+        nest2           <- foldM scheduleOperator nest1 operators
 
-    in  Procedure
+        return  $ Procedure
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
                 , procedureParamValues  = bsParamValues
@@ -42,205 +76,171 @@ scheduleScalar
 
 
 -------------------------------------------------------------------------------
--- | Schedule some series operators into a loop nest.
-scheduleOperators 
-        :: Nest         -- ^ The starting loop nest.
-        -> SeriesEnv    -- ^ Series environment maps series binds to elem binds.
-        -> [Operator]   -- ^ The operators to schedule.
-        -> Nest
-
-scheduleOperators nest0 env ops
- = case ops of
-        [] -> nest0
-        op : ops'     
-           -> let (env', nest')   = scheduleOperator nest0 env op
-              in  scheduleOperators nest' env' ops'
-
-
 -- | Schedule a single series operator into a loop nest.
 scheduleOperator 
-        :: Nest         -- ^ The current loop nest
-        -> SeriesEnv    -- ^ Series environment maps series binds to elem binds.
+        :: Nest         -- ^ The current loop nest.
         -> Operator     -- ^ Operator to schedule.
-        -> (SeriesEnv, Nest)
+        -> Either Fail Nest
 
-scheduleOperator nest0 env op
+scheduleOperator nest0 op
 
  -- Id -------------------------------------------
  | OpId{}     <- op
- = let
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK
+
         -- Get binders for the input elements.
-        Just nSeries
-         = takeNameOfBound (opInputSeries op)
+        let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
+        let Just uInput  = elemBoundOfSeriesBound (opInputSeries  op)
 
-        (uInput, env1, nest1)
-         = bindNextElem nSeries
-                        (opInputRate op) (opElemType op)
-                        env nest0
+        let Just nest1   
+                = insertBody nest0 context
+                $ [ BodyStmt bResult (XVar uInput) ]
 
-        Just bResultElem     
-         = elemBindOfSeriesBind $ opResultSeries op
-
-        context         = ContextRate (opInputRate op)
-
-        Just nest2      = insertBody nest1 context
-                        $ [ BodyStmt bResultElem (XVar uInput) ]
-
-   in   (env1, nest2)
-
+        return nest1
 
  -- Create ---------------------------------------
  | OpCreate{} <- op
- = let  
-        -- Get binders for the input elements.
-        Just nSeries    
-         = takeNameOfBound (opInputSeries op)
-        
-        (uInput, env1, nest1)
-         = bindNextElem nSeries 
-                        (opInputRate op) (opElemType  op)
-                        env nest0
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Get bound of the input element.
+        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
 
         -- Insert statements that allocate the vector.
         --  We use the type-level series rate to describe the length of
         --  the vector. This will be repalced by a RateNat value during
         --  the concretization phase.
-        BName nVec _    = opResultVector op
-        context         = ContextRate (opInputRate op)
+        let BName nVec _    = opResultVector op
 
         -- Rate we're using to allocate the result vector.
         --   This will be larger than the actual result series rate if we're
         --   creating a vector inside a selector context.
-        Just tRateAlloc = opAllocRate op
+        let Just tRateAlloc = opAllocRate op
 
-        Just nest2      = insertStarts nest1 context
-                        $ [ StartVecNew  
-                                nVec                    -- allocated vector
-                                (opElemType op)         -- elem type
-                                tRateAlloc ]            -- allocation rate
+        let Just nest1  
+                = insertStarts nest0 context
+                $ [ StartVecNew  
+                        nVec                    -- allocated vector
+                        (opElemType op)         -- elem type
+                        tRateAlloc ]            -- allocation rate
 
         -- Insert statements that write the current element to the vector.
-        Just nest3      = insertBody   nest2 context 
-                        $ [ BodyVecWrite 
-                                nVec                    -- destination vector
-                                (opElemType op)         -- elem type
-                                (XVar (UIx 0))          -- index
-                                (XVar uInput) ]         -- value
+        let Just nest2      
+                = insertBody   nest1 context 
+                $ [ BodyVecWrite 
+                        nVec                    -- destination vector
+                        (opElemType op)         -- elem type
+                        (XVar (UIx 0))          -- index
+                        (XVar uInput) ]         -- value
 
-        -- Slice the vector at the end
-        Just nest4      = insertEnds   nest3 context 
-                        $ [ EndVecSlice
-                                nVec                    -- destination vector
-                                (opElemType op)         -- elem type
-                                (opInputRate op) ]      -- index
+        -- Slice the vector to the final length.
+        let Just nest3      
+                = insertEnds   nest2 context 
+                $ [ EndVecSlice
+                        nVec                    -- destination vector
+                        (opElemType op)         -- elem type
+                        (opInputRate op) ]      -- index
 
-        -- But only slice it if the input rate is different to output rate
-        nest'           = if   opInputRate op == tRateAlloc
-                          then nest3
-                          else nest4
-   in   (env1, nest')
+        -- Suppres slicing if we know the input rate is the same as
+        -- the ouput rate.
+        let nest'   = if opInputRate op == tRateAlloc
+                          then nest2
+                          else nest3
 
- 
+        return nest'
+
  -- Maps -----------------------------------------
  | OpMap{} <- op
- = let  
-        -- Get binders for the input elements.
-        Just nsSeries   = sequence $ map takeNameOfBound $ opInputSeriess op
-        tsRate          = repeat (opInputRate op)
-        tsElem          = map typeOfBind $ opWorkerParams op
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK
 
-        (usInputs, env1, nest1)    
-                        = bindNextElems (zip3 nsSeries tsRate tsElem) env nest0
+        -- Bind for the result element.
+        let Just bResult = elemBindOfSeriesBind (opResultSeries op)
 
-        -- Variables for all the input elements.
-        xsInputs        = map XVar usInputs
+        -- Binds for all the input elements.
+        let Just usInput = sequence
+                         $ map elemBoundOfSeriesBound
+                         $ opInputSeriess op
 
-        -- Substitute input element vars into the worker body.
-        xBody           = foldl (\x (b, p) -> XApp (XLam b x) p)
-                                (opWorkerBody op)
-                                (zip (opWorkerParams op) xsInputs)
+        -- Apply input element vars into the worker body.
+        let xBody       
+                = foldl (\x (b, p) -> XApp (XLam b x) p)
+                        (opWorkerBody op)
+                        [(b, XVar u)
+                                | b <- opWorkerParams op
+                                | u <- usInput ]
 
-        -- Binder for a single result element in the series context.
-        Just nResultSeries = takeNameOfBind $ opResultSeries op
-        nResultElem     = NameVarMod nResultSeries "elem"
-        uResultElem     = UName nResultElem
+        let Just nest1  
+                = insertBody nest0 context
+                $ [ BodyStmt bResult xBody ]
 
-        Just bResultElem   = elemBindOfSeriesBind (opResultSeries op)
+        return nest1
 
-        -- Insert the expression that computes the new result into the nest.
-        context         = ContextRate $ opInputRate op
-        Just nest2      = insertBody nest1 context
-                        $ [ BodyStmt bResultElem xBody ]
-
-        -- Associate the variable for the result element with the result series.
-        env2            = insertElemForSeries nResultSeries uResultElem env1
-
-    in  (env2, nest2)
-
-
- -- Folds ---------------------------------------
+ -- Fold and FoldIndex --------------------------
  | OpFold{} <- op
- = let  
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK 
+
         -- Lookup binders for the input elements.
-        Just nSeries    = takeNameOfBound (opInputSeries op)
-        tRate           = opInputRate op
-        tInputElem      = typeOfBind (opWorkerParamElem op)
-        (uInput, env1, nest1)
-                        = bindNextElem nSeries tRate tInputElem env nest0
+        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
 
-        -- Make a name for the accumulator.
-        BName nResult _ = opResultValue op
-        nAcc            = NameVarMod nResult "acc"
+        -- Initialize the accumulator.
+        let BName nResult _ = opResultValue op
+        let nAcc            = NameVarMod nResult "acc"
+        let tAcc            = typeOfBind (opWorkerParamAcc op)
 
-        -- Type of the accumulator.
-        tAcc            = typeOfBind (opWorkerParamAcc op)
-        
-        -- Insert statements that initialize the starting value
-        --  of the accumulator.
-        context         = ContextRate $ opInputRate op
-        Just nest2      = insertStarts nest1 context
-                        $ [ StartAcc nAcc tAcc (opZero op) ]
+        let Just nest1
+                = insertStarts nest0 context
+                $ [ StartAcc nAcc tAcc (opZero op) ]
+
+        -- Bind for intermediate accumulator value.
+        let nAccVal     = NameVarMod nResult "val"
+        let uAccVal     = UName nAccVal
+        let bAccVal     = BName nAccVal tAcc
 
         -- Substitute input and accumulator vars into worker body.
-        xBody           = XApp  (XApp   ( XLam (opWorkerParamElem op)
-                                        $ XLam (opWorkerParamIndex op) 
-                                               (opWorkerBody op))
-                                        (XVar uInput))
-                                (XVar (UIx 0))
+        let xBody x1 x2 x3
+                = XApp (XApp  (XApp   ( XLam (opWorkerParamIndex op) 
+                                      $ XLam (opWorkerParamAcc   op)
+                                      $ XLam (opWorkerParamElem  op)
+                                             (opWorkerBody op))
+                                       x1)
+                                x2)
+                       x3
 
-        -- Insert statements that update the accumulator
-        --  into the loop body.
-        Just nest3      = insertBody nest2 context
-                        $ [ BodyAccRead  nAcc tAcc (opWorkerParamAcc op)
-                          , BodyAccWrite nAcc tAcc xBody ]
+        -- Update the accumulator in the loop body.
+        let Just nest2
+                = insertBody nest1 context
+                $ [ BodyAccRead  nAcc tAcc bAccVal
+                  , BodyAccWrite nAcc tAcc 
+                        (xBody  (XVar $ UIx 0) 
+                                (XVar uAccVal) 
+                                (XVar uInput)) ]
                                 
-        -- Insert statements that read back the final value
-        --  after the loop has finished.
-        Just nest4      = insertEnds nest3 context
-                        $ [ EndAcc   nResult tAcc nAcc ]
-   in   (env1, nest4)
+        -- Read back the final value after the loop has finished
+        let Just nest3      
+                = insertEnds nest2 context
+                $ [ EndAcc   nResult tAcc nAcc ]
 
+        return nest3
 
  -- Pack ----------------------------------------
  | OpPack{}     <- op
- = let  
-        -- Lookup binder for the input element.
-        Just nSeries    = takeNameOfBound (opInputSeries op)
-        tRate           = opInputRate op
-        tInputElem      = opElemType op
-        (uInput, env1, nest1)
-                        = bindNextElem nSeries tRate tInputElem env nest0
+ = do   -- Lookup binder for the input element.
+        let Just uInput  = elemBoundOfSeriesBound (opInputSeries op)
 
-        -- Associate the variable for the result element with the result
-        -- series. We could instead add an explicit binding, but it's 
-        -- easier just to insert an entry into the series environment.
-        Just nResultSeries = takeNameOfBind (opResultSeries op)
-        env2               = insertElemForSeries nResultSeries uInput env1
+        -- Set the result to point to the input element
+        let Just bResult = elemBindOfSeriesBind  (opResultSeries op)
 
-   in   (env2, nest1)
+        let Just nest1
+                = insertBody nest0 (ContextRate (opOutputRate op))
+                $ [ BodyStmt    bResult
+                                (XVar uInput)]
 
+        return nest1
+
+ -- Unsupported ----------------------------------
  | otherwise
- = error $ renderIndent 
- $ vcat [ text "ddc-core-flow.scheduleOperator"
-        , indent 4 $ text "Can't schedule operator."
-        , indent 4 $ ppr op ]
+ = Left $ FailUnsupported op
+
