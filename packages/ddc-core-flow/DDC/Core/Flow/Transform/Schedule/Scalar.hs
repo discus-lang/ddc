@@ -310,8 +310,56 @@ scheduleOperator nest0 op
 
         return nest1
 
+ -- Gather ---------------------------------------
+ | OpGather{} <- op
+ = do   
+        let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Bind for result element.
+        let Just bResult = elemBindOfSeriesBind (opResultBind op)
+
+        -- Bound of source index.
+        let Just uIndex  = elemBoundOfSeriesBound (opSourceIndices op)
+
+        -- Read from the vector.
+        let Just nest1  = insertBody nest0 context
+                        $ [ BodyStmt bResult
+                                (xReadVector 
+                                        (opElemType op)
+                                        (XVar $ opSourceVector op)
+                                        (XVar $ uIndex)) ]
+
+        return nest1
  
- 
+ -- Scatter --------------------------------------
+ | OpScatter{} <- op
+ = do   
+        let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Bound of source index.
+        let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
+
+        -- Bound of source elements.
+        let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
+
+        -- Read from vector.
+        let Just nest1  = insertBody nest0 context
+                        $ [ BodyStmt (BNone tUnit)
+                                (xWriteVector
+                                        (opElemType op)
+                                        (XVar $ opTargetVector op)
+                                        (XVar $ uIndex) (XVar $ uElem)) ]
+
+        -- Bind final unit value.
+        let Just nest2  = insertEnds nest1 context
+                        $ [ EndStmt     (opResultBind op)
+                                        xUnit ]
+
+        return nest2
+
+
  -- Unsupported ----------------------------------
  | otherwise
  = Left $ FailUnsupported op

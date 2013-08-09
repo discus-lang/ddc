@@ -1,4 +1,4 @@
---
+
 module DDC.Core.Flow.Transform.Schedule.Kernel
         ( scheduleKernel
         , Fail          (..)
@@ -321,8 +321,9 @@ scheduleOperator lifting nest op
 
         return nest3
 
+ -- Unsupported ---------------------------------
  | otherwise
- = return nest
+ = Left $ FailUnsupported op
 
 
 
