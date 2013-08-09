@@ -186,14 +186,14 @@ threadType n _
         -- loopn#  :: [k : Rate]. RateNat# k 
         --         -> (Nat#  -> World# -> World#) 
         --         -> World# -> World#
-        NameOpLoop  OpLoopLoopN
+        NameOpControl OpControlLoopN
          -> Just $ tForalls [kRate]
                  $ \[tK] -> tRateNat tK
                         `tFun`  (tNat `tFun` tWorld `tFun` tWorld)
                         `tFun` tWorld `tFun` tWorld
         
         -- guard#
-        NameOpLoop  OpLoopGuard
+        NameOpControl OpControlGuard
          -> Just $ tRef tNat
                         `tFun` tBool
                         `tFun` (tNat  `tFun` tWorld `tFun` tWorld)

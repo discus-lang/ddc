@@ -129,7 +129,7 @@ typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
         NameOpFlow     p        -> Just $ typeOpFlow     p
-        NameOpLoop     p        -> Just $ typeOpLoop     p
+        NameOpControl  p        -> Just $ typeOpControl  p
         NameOpStore    p        -> Just $ typeOpStore    p
         NameDaConFlow  p        -> Just $ typeDaConFlow  p
 

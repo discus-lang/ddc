@@ -5,7 +5,7 @@ module DDC.Core.Flow.Prim.Base
         , TyConFlow     (..)
         , DaConFlow     (..)
         , OpFlow        (..)
-        , OpLoop        (..)
+        , OpControl     (..)
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
@@ -43,8 +43,8 @@ data Name
         -- | Flow operators.
         | NameOpFlow            OpFlow
 
-        -- | Loop operators.
-        | NameOpLoop            OpLoop
+        -- | Control operators.
+        | NameOpControl         OpControl
 
         -- | Store operators.
         | NameOpStore           OpStore
@@ -181,11 +181,11 @@ data OpFlow
         deriving (Eq, Ord, Show)
 
 
--- | Loop operators.
-data OpLoop
-        = OpLoopLoop
-        | OpLoopLoopN
-        | OpLoopGuard
+-- | Control operators.
+data OpControl
+        = OpControlLoop
+        | OpControlLoopN
+        | OpControlGuard
         deriving (Eq, Ord, Show)
 
 

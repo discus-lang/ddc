@@ -23,10 +23,10 @@ module DDC.Core.Flow.Prim
         , readOpFlow
         , typeOpFlow
 
-          -- * Loop operators
-        , OpLoop        (..)
-        , readOpLoop
-        , typeOpLoop
+          -- * Control operators
+        , OpControl        (..)
+        , readOpControl
+        , typeOpControl
 
           -- * Store operators
         , OpStore       (..)
@@ -59,7 +59,7 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.DaConPrim     ()
 import DDC.Core.Flow.Prim.OpFlow
-import DDC.Core.Flow.Prim.OpLoop
+import DDC.Core.Flow.Prim.OpControl
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
 
@@ -85,7 +85,7 @@ instance NFData Name where
         NameTyConFlow   con     -> rnf con
         NameDaConFlow   con     -> rnf con
         NameOpFlow      op      -> rnf op
-        NameOpLoop      op      -> rnf op
+        NameOpControl   op      -> rnf op
         NameOpStore     op      -> rnf op
 
         NamePrimTyCon   op      -> rnf op
@@ -111,7 +111,7 @@ instance Pretty Name where
         NameTyConFlow   con     -> ppr con
         NameDaConFlow   con     -> ppr con
         NameOpFlow      op      -> ppr op
-        NameOpLoop      op      -> ppr op
+        NameOpControl   op      -> ppr op
         NameOpStore     op      -> ppr op
 
         NamePrimTyCon   tc      -> ppr tc
@@ -135,7 +135,7 @@ readName str
         | Just p        <- readTyConFlow str    = Just $ NameTyConFlow  p
         | Just p        <- readDaConFlow str    = Just $ NameDaConFlow  p
         | Just p        <- readOpFlow    str    = Just $ NameOpFlow     p
-        | Just p        <- readOpLoop    str    = Just $ NameOpLoop     p
+        | Just p        <- readOpControl str    = Just $ NameOpControl  p
         | Just p        <- readOpStore   str    = Just $ NameOpStore    p
 
         -- Primitive names.

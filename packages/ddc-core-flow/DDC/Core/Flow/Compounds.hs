@@ -22,20 +22,20 @@ module DDC.Core.Flow.Compounds
         , xTuple2, dcTuple2
         , dcTupleN
 
+          -- * Primitive Vec operators
+        , xvRep
+        , xvProj
+        , xvGather
+        , xvScatter
+
           -- * Flow operators
         , xProj
         , xRateOfSeries
         , xNatOfRateNat
 
-          -- * Loop operators
-        , xLoopLoopN
-        , xLoopGuard
-
-          -- * Vec operators
-        , xvRep
-        , xvProj
-        , xvGather
-        , xvScatter
+          -- * Control operators
+        , xLoopN
+        , xGuard
 
           -- * Store operators
         , xNew,         xRead,       xWrite
@@ -50,8 +50,8 @@ import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConPrim
+import DDC.Core.Flow.Prim.OpControl
 import DDC.Core.Flow.Prim.OpFlow
-import DDC.Core.Flow.Prim.OpLoop
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
 import DDC.Core.Compounds.Simple

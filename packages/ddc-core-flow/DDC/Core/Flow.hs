@@ -12,7 +12,7 @@ module DDC.Core.Flow
         , TyConFlow     (..)
         , DaConFlow     (..)
         , OpFlow        (..)
-        , OpLoop        (..)
+        , OpControl     (..)
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)

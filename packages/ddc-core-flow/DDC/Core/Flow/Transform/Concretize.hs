@@ -26,12 +26,12 @@ concretizeX
 concretizeX _kenv tenv xx
 
         -- loop# -> loopn#
-        | Just ( NameOpLoop OpLoopLoop
+        | Just ( NameOpControl OpControlLoop
                , [XType tK, xF]) <- takeXPrimApps xx
         , Just (nS, _, tA)       <- findSeriesWithRate tenv tK
         , xS                     <- XVar (UName nS)
         = Just 
-        $ xLoopLoopN 
+        $ xLoopN 
                 tK                              -- type level rate
                 (xRateOfSeries tK tA xS)        -- 
                 xF                              -- loop body

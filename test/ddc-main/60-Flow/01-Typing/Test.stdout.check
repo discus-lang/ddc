@@ -50,7 +50,7 @@ folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (Int# -> ^1 -> ^0 -> ^1) -> S
 pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 
 
--- Loop operators
+-- Control operators
 loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
 loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
 

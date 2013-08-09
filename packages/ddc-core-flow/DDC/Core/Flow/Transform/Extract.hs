@@ -62,8 +62,8 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
 
         -- The loop itself.
         lLoop   = LLet  (BNone tUnit)
-                        (xApps (XVar (UPrim (NameOpLoop OpLoopLoop) 
-                                            (typeOpLoop OpLoopLoop)))
+                        (xApps (XVar (UPrim (NameOpControl OpControlLoop) 
+                                            (typeOpControl OpControlLoop)))
                                 [ XType tRate           -- loop rate
                                 , xBody ])              -- loop body
 
@@ -95,7 +95,7 @@ extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
         TVar (UName nK) = tRateInner
         uCounter        = UName (NameVarMod nK "count")
 
-        xGuard          = xLoopGuard xFlag (XVar uCounter)
+        xBody           = xGuard xFlag (XVar uCounter)
                           (  XLam (BAnon tNat)
                           $ xLets (lsBody ++ lsNested) xUnit)
 
@@ -105,7 +105,7 @@ extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
         -- Nested contexts.
         lsNested = extractLoop nested
 
-  in    [LLet (BNone tUnit) xGuard]
+  in    [LLet (BNone tUnit) xBody]
 
 
 extractLoop NestEmpty

@@ -294,7 +294,7 @@ windBodyX refMap context xx
         -----------------------------------------
         -- Detect loop combinator.
         XLet a (LLet (BNone _) x) x2
-         | Just ( NameOpLoop OpLoopLoopN
+         | Just ( NameOpControl OpControlLoopN
                 , [ XType tK, xLength
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
@@ -383,7 +383,7 @@ windBodyX refMap context xx
         -----------------------------------------
         -- Detect guard combinator.
         XLet a (LLet (BNone _) x) x2
-         | Just ( NameOpLoop OpLoopGuard
+         | Just ( NameOpControl OpControlGuard
                 , [ XVar _ (UName nCountRef)
                   , xFlag
                   , XLam _ bCount xBody ])       <- takeXPrimApps x

@@ -50,7 +50,7 @@
 :type pack#
 
 
--- Loop operators
+-- Control operators
 :type loop#
 :type loopn#
 
