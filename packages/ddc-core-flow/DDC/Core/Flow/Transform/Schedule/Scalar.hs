@@ -197,13 +197,60 @@ scheduleOperator nest0 op
 
         return nest1
 
+ -- Reduce --------------------------------------
+ | OpReduce{} <- op
+ = do   let tK          = opInputRate op
+        let context     = ContextRate tK
+
+        -- Initialize the accumulator.
+        let UName nResult = opTargetRef op
+        let nAcc          = NameVarMod nResult "acc"
+        let tAcc          = typeOfBind (opWorkerParamAcc op)
+
+        let Just nest1
+                = insertStarts nest0 context
+                $ [ StartAcc nAcc tAcc (opZero op) ]
+
+        -- Lookup binders for the input elements.
+        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
+        
+        -- Bind for intermediate accumulator value.
+        let nAccVal     = NameVarMod nResult "val"
+        let uAccVal     = UName nAccVal
+        let bAccVal     = BName nAccVal tAcc
+
+        -- Substitute input and accumulator vars into worker body.
+        let xBody x1 x2
+                = XApp  (XApp   ( XLam (opWorkerParamAcc   op)
+                                      $ XLam (opWorkerParamElem  op)
+                                             (opWorkerBody op))
+                                x1)
+                        x2
+                       
+        -- Update the accumulator in the loop body.
+        let Just nest2
+                = insertBody nest1 context
+                $ [ BodyAccRead  nAcc tAcc bAccVal
+                  , BodyAccWrite nAcc tAcc 
+                        (xBody  (XVar uAccVal) 
+                                (XVar uInput)) ]
+                                
+        -- Read back the final value after the loop has finished and
+        -- write it to the destination.
+        let nAccRes     = NameVarMod nResult "res"
+        let Just nest3      
+                = insertEnds nest2 context
+                $ [ EndAcc   nAccRes tAcc nAcc 
+                  , EndStmt  (BNone tUnit)
+                             (xWrite tAcc (XVar $ opTargetRef op)
+                                          (XVar $ UName nAccRes)) ]
+
+        return nest3
+
  -- Fold and FoldIndex --------------------------
  | OpFold{} <- op
  = do   let tK          = opInputRate op
         let context     = ContextRate tK 
-
-        -- Lookup binders for the input elements.
-        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
 
         -- Initialize the accumulator.
         let BName nResult _ = opResultValue op
@@ -214,6 +261,9 @@ scheduleOperator nest0 op
                 = insertStarts nest0 context
                 $ [ StartAcc nAcc tAcc (opZero op) ]
 
+        -- Lookup binders for the input elements.
+        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
+        
         -- Bind for intermediate accumulator value.
         let nAccVal     = NameVarMod nResult "val"
         let uAccVal     = UName nAccVal

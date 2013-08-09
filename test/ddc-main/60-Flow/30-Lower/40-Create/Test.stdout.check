@@ -1,0 +1,41 @@
+
+-- | Single map over input series, producing a vector.
+module Test with
+letrec {
+  test : [k : Rate].Series# k Int# -> Vector# Int#
+    = /\(k : Rate).
+       \(s : Series# k Int#).
+      let x5 : Vector# Int# = vnewR# [Int#] [k] in
+      let _ : Unit
+            = loop# [k]
+                  (\(x0 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x0 in
+                   let x1 : Int# = mul# [Int#] s$elem 2i# in
+                   let x3$elem : Int# = add# [Int#] x1 1i# in
+                   let _ : Unit = vwrite# [Int#] x5 x0 x3$elem in
+                   ()) in
+      x5
+}
+
+
+-- | Single map over input series, writing into existing vector.
+module Test with
+letrec {
+  test : [k : Rate].Vector# Int# -> Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(v : Vector# Int#).\(s : Series# k Int#).
+      let x9$acc : Ref# Int# = new# [Int#] 0i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(x0 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x0 in
+                   let x1 : Int# = mul# [Int#] s$elem 2i# in
+                   let x3$elem : Int# = add# [Int#] x1 1i# in
+                   let _ : Unit = vwrite# [Int#] v x0 x3$elem in
+                   let x9$val : Int# = read# [Int#] x9$acc in
+                   let x2 : Int# = add# [Int#] x9$val s$elem in
+                   let _ : Unit = write# [Int#] x9$acc x2 in
+                   ()) in
+      let x9 : Int# = read# [Int#] x9$acc in
+      x9
+}

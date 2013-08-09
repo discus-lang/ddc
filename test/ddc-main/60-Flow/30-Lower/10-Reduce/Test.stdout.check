@@ -1,0 +1,26 @@
+
+
+-- Fold and reduce at the same time.
+module Test with
+letrec {
+  ffold : [k : Rate].Ref# Int# -> Series# k Int# -> Int#
+    = /\(k : Rate).
+       \(x : Ref# Int#).\(s : Series# k Int#).
+      let x$acc : Ref# Int# = new# [Int#] 1i# in
+      let x7$acc : Ref# Int# = new# [Int#] 0i# in
+      let _ : Unit
+            = loop# [k]
+                  (\(x2 : Nat#).
+                   let s$elem : Int# = next# [Int#] [k] s x2 in
+                   let x$val : Int# = read# [Int#] x$acc in
+                   let x3 : Int# = mul# [Int#] x$val s$elem in
+                   let _ : Unit = write# [Int#] x$acc x3 in
+                   let x7$val : Int# = read# [Int#] x7$acc in
+                   let x4 : Int# = add# [Int#] x7$val s$elem in
+                   let _ : Unit = write# [Int#] x7$acc x4 in
+                   ()) in
+      let x$res : Int# = read# [Int#] x$acc in
+      let _ : Unit = write# [Int#] x x$res in
+      let x7 : Int# = read# [Int#] x7$acc in
+      x7
+}
