@@ -153,7 +153,8 @@ instance Defix Exp where
 
         XDefix a xs     
          -> do  xs'     <- mapM down xs
-                defixExps a table xs'
+                xs_apps <- defixApps a table xs'
+                defixExps a table xs_apps
 
         XInfixOp{}      -> return xx
         
@@ -178,10 +179,61 @@ instance Defix Alt where
         AAlt p x        -> liftM (AAlt p) (down x)
 
 
--- defixExps ------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-- | Preprocess the body of an XDefix node to insert applications.
+--    
+--   Takes         f a  +  g b  with five  nodes in the XDefix list.
+--   and produces (f a) + (g b) with three nodes in the XDefix list.
+--
+defixApps 
+        :: a
+        -> InfixTable a n
+        -> [Exp a n]
+        -> Either (Error a n) [Exp a n]
+
+defixApps a _table xx
+ = start xx
+ where
+        -- No expressions, we're done.
+        start [] 
+         = return []
+
+        -- Single element, we're done.
+        start [x]
+         = return [x]
+
+        -- Starting infix operator is malformed.
+        start (XInfixOp{} : _)
+         = Left $ ErrorMalformed (XDefix a xx)
+
+        -- Trailing infix operator is malformed.
+        start (_ : XInfixOp{} : [])
+         = Left $ ErrorMalformed (XDefix a xx)
+
+        -- Start accumulating an application node.
+        start (x1 : xs) 
+         = munch x1 xs
+
+
+        -- Munching is done.
+        munch acc []
+         = return [acc]
+
+        -- We've hit an infix op, drop the accumulated expression.
+        munch acc (xop@XInfixOp{} : xs)
+         = do   xs'     <- start xs
+                return $ acc : xop : xs'
+
+        -- Add another argument to the application.
+        munch acc (x1 : xs)
+         = munch (XApp a acc x1) xs
+
+
+-------------------------------------------------------------------------------
 -- | Defix the body of a XDefix node.
---   TODO: We first need to convert plain applications.
---         This defixer needs  f a + g b  to be pre-processed into (f a) + (g b)
+--
+--   The input needs to have already been preprocessed by defixApps above.
+--
 defixExps 
         :: a                    -- ^ Annotation from original XDefix node.
         -> InfixTable a n       -- ^ Table of infix defs.
@@ -211,9 +263,7 @@ defixExps a table xx
                 Right (Just xs') -> defixExps a table xs'
 
 
--- | Try to defix some expressions.
---   If we make progress then return `Just` the new expressions, 
---   otherwise Nothing.
+-- | Try to defix a sequence of expressions and XInfixOp nodes.
 defixInfix
         :: a                    -- ^ Annotation from original XDefix node.
         -> InfixTable a n       -- ^ Table of infix defs.

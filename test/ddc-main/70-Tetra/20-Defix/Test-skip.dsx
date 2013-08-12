@@ -48,10 +48,64 @@ module Test where
 x : Bool = 1 + 2 == 2 + 3;;
 
 
--- Error: infix expression is malformed.
+-- Check operators and applications
+:desugar..
+module Test where
+x : Int = f a + g b + h c;;
+
+
+-- Check operators and applications
+:desugar..
+module Test where
+x : Int = f a1 a2 + g b1 b2 * h c1 c2 c3;;
+
+
+-- Check operators and applications
+:desugar..
+module Test where
+x : Int = f a1 a2 + g b1 b2 * h (c1 c2) c3 == f a3 a4;;
+
+
+-- TODO: handle prefix negation.
+:desugar..
+module Test where
+x : Int = -a;;
+
+
+-- TODO: handle prefix negation.
+:desugar:..
+module Test where
+x : Int = f (-x) y (g (-a) b);;
+
+
+-- TODO: regular infix subtraction.
+:desugar..
+module Test where
+x : Int = a - b;;
+
+
+-- Error: prefix infix operator is malformed.
 :desugar..
 module Test where
 x : Int = + 3;;
+
+
+-- Error: trailing infix operator is malformed.
+:desugar..
+module Test where
+x : Int = f a +;;
+
+
+-- Error: trailing prefix operator is malformed.
+:desugar..
+module Test where
+x : Int = f a -;;
+
+
+-- Error: multiple infix operators in a row.
+:desugar..
+module Test where
+x : Int = a + b * * c;;
 
 
 -- Error: Cannot have multiple non-associative operators at the same level.
