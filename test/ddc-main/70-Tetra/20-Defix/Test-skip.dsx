@@ -73,7 +73,7 @@ x = -a;;
 
 
 -- TODO: handle prefix negation.
-:desugar:..
+:desugar..
 module Test where
 x = f (-x) y (g (-a) b);;
 

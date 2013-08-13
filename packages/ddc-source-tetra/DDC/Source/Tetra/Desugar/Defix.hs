@@ -26,7 +26,17 @@ data FixTable a n
 
 -- | Infix operator definition.
 data FixDef a n
-        = FixDefInfix
+        -- A prefix operator
+        = FixDefPrefix
+        { -- | String of the operator
+          fixDefSymbol  :: String
+
+          -- | Expression to rewrite the operator to, 
+          --   given the annotation of the original symbol.
+        , fixDefExp     :: a -> Exp a n }
+
+        -- An infix operator.
+        | FixDefInfix
         { -- | String of the operator.
           fixDefSymbol  :: String
         
@@ -39,6 +49,7 @@ data FixDef a n
         
           -- | Precedence of infix operator.
         , fixDefPrec    :: Int }
+
 
 
 -- | Infix associativity.
@@ -57,10 +68,22 @@ data InfixAssoc
         deriving (Show, Eq)
 
 
--- | Lookup the `InfixDef` corresponding to a symbol name, if any.
-lookupInfixDefOfSymbol  :: FixTable a n -> String -> Maybe (FixDef a n)
-lookupInfixDefOfSymbol (FixTable defs) str
-        = find (\def -> fixDefSymbol def == str) defs
+-- | Lookup the `FixDefInfix` corresponding to a symbol name, if any.
+lookupDefInfixOfSymbol  :: FixTable a n -> String -> Maybe (FixDef a n)
+lookupDefInfixOfSymbol (FixTable defs) str
+        = find (\def -> case def of
+                         FixDefInfix{}  -> fixDefSymbol def == str
+                         _              -> False)
+                defs
+
+
+-- | Lookup the `FixDefPrefix` corresponding to a symbol name, if any.
+lookupDefPrefixOfSymbol  :: FixTable a n -> String -> Maybe (FixDef a n)
+lookupDefPrefixOfSymbol (FixTable defs) str
+        = find (\def -> case def of
+                         FixDefPrefix{} -> fixDefSymbol def == str
+                         _              -> False)
+                defs
 
 
 -- | Get the precedence of an infix symbol, else Error.
@@ -70,7 +93,7 @@ getInfixDefOfSymbol
         -> Either (Error a n) (FixDef a n)
 
 getInfixDefOfSymbol table str
- = case lookupInfixDefOfSymbol table str of
+ = case lookupDefInfixOfSymbol table str of
         Nothing         -> Left  (ErrorNoInfixDef str)
         Just def        -> Right def
 
@@ -79,16 +102,17 @@ getInfixDefOfSymbol table str
 defaultFixTable :: FixTable BP.SourcePos Name
 defaultFixTable
  = FixTable 
-        [ FixDefInfix "*"  (\sp -> XVar sp (UName (NameVar "mul"))) InfixLeft  7
-        , FixDefInfix "+"  (\sp -> XVar sp (UName (NameVar "add"))) InfixLeft  6
-        , FixDefInfix "-"  (\sp -> XVar sp (UName (NameVar "sub"))) InfixLeft  6 
-        , FixDefInfix "==" (\sp -> XVar sp (UName (NameVar "eq" ))) InfixNone  5
-        , FixDefInfix "/=" (\sp -> XVar sp (UName (NameVar "neq"))) InfixNone  5
-        , FixDefInfix "<"  (\sp -> XVar sp (UName (NameVar "lt" ))) InfixNone  5
-        , FixDefInfix "<=" (\sp -> XVar sp (UName (NameVar "le" ))) InfixNone  5
-        , FixDefInfix ">"  (\sp -> XVar sp (UName (NameVar "gt" ))) InfixNone  5
-        , FixDefInfix ">=" (\sp -> XVar sp (UName (NameVar "ge" ))) InfixNone  5
-        , FixDefInfix "$"  (\sp -> XVar sp (UName (NameVar "app"))) InfixRight 1 ]
+        [ FixDefPrefix "-"  (\sp -> XVar sp (UName (NameVar "neg")))
+        , FixDefInfix  "*"  (\sp -> XVar sp (UName (NameVar "mul"))) InfixLeft  7
+        , FixDefInfix  "+"  (\sp -> XVar sp (UName (NameVar "add"))) InfixLeft  6
+        , FixDefInfix  "-"  (\sp -> XVar sp (UName (NameVar "sub"))) InfixLeft  6 
+        , FixDefInfix  "==" (\sp -> XVar sp (UName (NameVar "eq" ))) InfixNone  5
+        , FixDefInfix  "/=" (\sp -> XVar sp (UName (NameVar "neq"))) InfixNone  5
+        , FixDefInfix  "<"  (\sp -> XVar sp (UName (NameVar "lt" ))) InfixNone  5
+        , FixDefInfix  "<=" (\sp -> XVar sp (UName (NameVar "le" ))) InfixNone  5
+        , FixDefInfix  ">"  (\sp -> XVar sp (UName (NameVar "gt" ))) InfixNone  5
+        , FixDefInfix  ">=" (\sp -> XVar sp (UName (NameVar "ge" ))) InfixNone  5
+        , FixDefInfix  "$"  (\sp -> XVar sp (UName (NameVar "app"))) InfixRight 1 ]
 
 
 -- Error ----------------------------------------------------------------------
@@ -159,7 +183,7 @@ instance Defix Exp where
         XInfixOp{}      -> return xx
         
         XInfixVar a str
-         -> case lookupInfixDefOfSymbol table str of
+         -> case lookupDefInfixOfSymbol table str of
                 Just def -> return (fixDefExp def a)
                 Nothing  -> Left $ ErrorNoInfixDef str
 
@@ -191,7 +215,7 @@ defixApps
         -> [Exp a n]
         -> Either (Error a n) [Exp a n]
 
-defixApps a _table xx
+defixApps a table xx
  = start xx
  where
         -- No expressions, we're done.
@@ -202,8 +226,12 @@ defixApps a _table xx
         start [x]
          = return [x]
 
-        -- Starting infix operator is malformed.
-        start (XInfixOp{} : _)
+        -- Starting operator must be prefix.
+        start (XInfixOp aop op : xs)
+         | Just def     <- lookupDefPrefixOfSymbol table op
+         = munch (fixDefExp def aop) xs
+
+         | otherwise
          = Left $ ErrorMalformed (XDefix a xx)
 
         -- Trailing infix operator is malformed.
@@ -323,7 +351,7 @@ defixInfixLeft
         -> [Exp a n] -> Either (Error a n) [Exp a n]
 
 defixInfixLeft sp table precHigh (x1 : XInfixOp spo op : x2 : xs)
-        | Just def      <- lookupInfixDefOfSymbol table op
+        | Just def      <- lookupDefInfixOfSymbol table op
         , fixDefPrec def == precHigh
         =       Right (XApp sp (XApp sp (fixDefExp def spo) x1) x2 : xs)
 
@@ -343,7 +371,7 @@ defixInfixRight
         -> [Exp a n] -> Either (Error a n) [Exp a n]
 
 defixInfixRight sp table precHigh (x2 : XInfixOp spo op : x1 : xs)
-        | Just def      <- lookupInfixDefOfSymbol table op
+        | Just def      <- lookupDefInfixOfSymbol table op
         , fixDefPrec def == precHigh
         =       Right (XApp sp (XApp sp (fixDefExp def spo) x1) x2 : xs)
 
@@ -364,14 +392,14 @@ defixInfixNone sp table precHigh xx
         -- If there are two ops in a row that are non-associative and have
         -- the same precedence then we don't know which one should come first.
         | _ : XInfixOp sp2 op2 : _ : XInfixOp sp4 op4 : _ <- xx
-        , Just def2     <- lookupInfixDefOfSymbol table op2
-        , Just def4     <- lookupInfixDefOfSymbol table op4
+        , Just def2     <- lookupDefInfixOfSymbol table op2
+        , Just def4     <- lookupDefInfixOfSymbol table op4
         , fixDefPrec def2 == fixDefPrec def4
         = Left  $ ErrorDefixNonAssoc op2 sp2 op4 sp4
 
         -- Found a use of the operator of interest.
         | x1 : XInfixOp sp2 op2 : x3 : xs       <- xx
-        , Just def2     <- lookupInfixDefOfSymbol table op2
+        , Just def2     <- lookupDefInfixOfSymbol table op2
         , fixDefPrec def2 == precHigh
         = Right $ (XApp sp (XApp sp (fixDefExp def2 sp2) x1) x3) : xs
 
