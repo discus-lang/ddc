@@ -35,6 +35,7 @@ instance Defix Top where
  defix table tt
   = case tt of
         TopBind a b x   -> liftM (TopBind a b) (defix table x)
+        _               -> return tt
 
 
 instance Defix Exp where

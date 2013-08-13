@@ -18,6 +18,7 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Pretty
+import Control.Monad
 import qualified DDC.Base.Parser        as P
 
 
@@ -143,5 +144,51 @@ pTop c
         (b, x)          <- pLetBinding c
         let Just sp     = takeAnnotOfExp x
         return  $ TopBind sp b x
+ 
+        -- A data type declaration
+ , do   pData c
  ]
+
+
+-- Data -----------------------------------------------------------------------
+-- | Parse a data type declaration.
+pData   :: Ord n
+        => Context -> Parser n (Top P.SourcePos n)
+
+pData c
+ = do   sp      <- pTokSP KData
+        n       <- pName
+        ps      <- liftM concat $ P.many (pDataParam c)
+             
+        P.choice
+         [ -- Data declaration with constructors that have explicit types.
+           do   pTok KWhere
+                pTok KBraceBra
+                ctors   <- P.sepEndBy1 (pDataCtor c) (pTok KSemiColon)
+                pTok KBraceKet
+                return  $ TopData sp n ps ctors
+         
+           -- Data declaration with no data constructors.
+         , do   return  $ TopData sp n ps []
+         ]
+
+
+-- | Parse a type parameter to a data type.
+pDataParam :: Ord n => Context -> Parser n [(n, Type n)]
+pDataParam c 
+ = do   pTok KRoundBra
+        ns      <- P.many1 pName
+        pTokSP (KOp ":")
+        t       <- pType c
+        pTok KRoundKet
+        return  [(n, t) | n <- ns]
+
+
+-- | Parse a data constructor declaration.
+pDataCtor :: Ord n => Context -> Parser n (n, Type n)
+pDataCtor c
+ = do   n       <- pName
+        pTokSP (KOp ":")
+        t       <- pType c
+        return  (n, t)
 

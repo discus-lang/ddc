@@ -64,11 +64,22 @@ isMainModule mm
 data Top a n
         -- | Top-level, possibly recursive binding.
         = TopBind a (Bind n) (Exp a n)
+
+        -- | Data type definition.
+        | TopData 
+        { topAnnot      :: a 
+        , topName       :: n                    -- ^ Data type name.
+        , topParams     :: [(n, Kind n)]        -- ^ Type parameters.
+        , topCtors      :: [(n, Type n)]        -- ^ Data constructors.
+        }
         deriving Show
 
 
 instance (NFData a, NFData n) => NFData (Top a n) where
  rnf !top
   = case top of
-        TopBind a b x   -> rnf a `seq` rnf b `seq` rnf x
-
+        TopBind a b x   
+         -> rnf a `seq` rnf b  `seq` rnf x
+                 
+        TopData a n ps cs 
+         -> rnf a `seq` rnf n `seq` rnf ps `seq` rnf cs

@@ -35,6 +35,16 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
                 <> nest 2 ( breakWhen (not $ isSimpleX x)
                           <> text "=" <+> align (ppr x)))
 
+ ppr (TopData _ name params ctors)
+  = hsep
+        (  [ text "data", ppr name]
+        ++ [parens (ppr n <+> text ":" <+> ppr t)
+                        | (n, t) <- params]
+        ++ [text "where"])
+  <$> indent 8
+        (vcat [ ppr n <+> text ":" <+> ppr t
+                        | (n, t)        <- ctors ])
+
 
 -- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where

@@ -193,6 +193,7 @@ data TokAtom
         | KModule
         | KImports
         | KExports
+        | KData
         | KWith
         | KWhere
         | KIn
@@ -296,6 +297,7 @@ describeTokAtom' ta
         KModule                 -> (Keyword, "module")
         KImports                -> (Keyword, "imports")
         KExports                -> (Keyword, "exports")
+        KData                   -> (Keyword, "data")
         KWith                   -> (Keyword, "with")
         KWhere                  -> (Keyword, "where")
         KIn                     -> (Keyword, "in")
