@@ -118,3 +118,20 @@ test    [k  : Rate]
         reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
         reduce# [k] [Float32#] x2 (mul# [Float32#]) 1.0f32# s1
 ;;
+
+
+-- Fuse sum and dot product.
+:flow-lower..
+module Test with letrec
+test    [k  : Rate] 
+        (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
+        (s1 : Series# k Float32#) (s2 : Series# k Float32#)
+        : Unit
+ = do   
+        s3      = map2# [k] [Float32#] [Float32#] [Float32#]
+                        (mul# [Float32#]) s1 s2
+
+        reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
+        
+        reduce# [k] [Float32#] x2 (add# [Float32#]) 0.0f32# s1
+;;
