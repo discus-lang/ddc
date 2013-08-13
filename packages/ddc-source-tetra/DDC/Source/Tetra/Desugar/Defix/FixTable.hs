@@ -84,13 +84,14 @@ lookupDefPrefixOfSymbol (FixTable defs) str
 
 -- | Get the precedence of an infix symbol, else Error.
 getInfixDefOfSymbol 
-        :: FixTable a n 
+        :: a
+        -> FixTable a n 
         -> String 
         -> Either (Error a n) (FixDef a n)
 
-getInfixDefOfSymbol table str
+getInfixDefOfSymbol a table str
  = case lookupDefInfixOfSymbol table str of
-        Nothing         -> Left  (ErrorNoInfixDef str)
+        Nothing         -> Left  (ErrorNoInfixDef a str)
         Just def        -> Right def
 
 

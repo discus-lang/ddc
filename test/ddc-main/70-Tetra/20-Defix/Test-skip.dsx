@@ -66,19 +66,19 @@ module Test where
 x = f a1 a2 + g b1 b2 * h (c1 c2) c3 == f a3 a4;;
 
 
--- TODO: handle prefix negation.
+-- Prefix negation.
 :desugar..
 module Test where
 x = -a;;
 
 
--- TODO: handle prefix negation.
+-- Prefix negation in an argument.
 :desugar..
 module Test where
 x = f (-x) y (g (-a) b);;
 
 
--- TODO: regular infix subtraction.
+-- Regular infix subtraction (not prefix negation).
 :desugar..
 module Test where
 x = a - b;;

@@ -62,7 +62,7 @@ instance Defix Exp where
         XInfixVar a str
          -> case lookupDefInfixOfSymbol table str of
                 Just def -> return (fixDefExp def a)
-                Nothing  -> Left $ ErrorNoInfixDef str
+                Nothing  -> Left $ ErrorNoInfixDef a str
 
 
 instance Defix Lets where
@@ -109,11 +109,11 @@ defixApps a table xx
          = munch (fixDefExp def aop) xs
 
          | otherwise
-         = Left $ ErrorMalformed (XDefix a xx)
+         = Left $ ErrorMalformed a (XDefix a xx)
 
         -- Trailing infix operator is malformed.
         start (_ : XInfixOp{} : [])
-         = Left $ ErrorMalformed (XDefix a xx)
+         = Left $ ErrorMalformed a (XDefix a xx)
 
         -- Start accumulating an application node.
         start (x1 : xs) 
@@ -190,7 +190,7 @@ defixInfix_ops sp table xs spOpStrs
         let (_opSps, opStrs) = unzip spOpStrs
 
         -- Lookup infix info for symbols.
-        defs    <- mapM (getInfixDefOfSymbol table) opStrs
+        defs    <- mapM (getInfixDefOfSymbol sp table) opStrs
         let precs       = map fixDefPrec  defs
         
         -- Get the highest precedence of all symbols.
@@ -203,7 +203,7 @@ defixInfix_ops sp table xs spOpStrs
                                  
         -- Get the list of associativities for just the ops with
         -- highest precedence.
-        defsHigh <- mapM (getInfixDefOfSymbol table) opsHigh
+        defsHigh <- mapM (getInfixDefOfSymbol sp table) opsHigh
         let assocsHigh  = map fixDefAssoc defsHigh
 
         case nub assocsHigh of
@@ -237,7 +237,7 @@ defixInfixLeft sp table precHigh (x1 : XInfixOp spo op : x2 : xs)
                 Right   $ x1 : XInfixOp spo op : xs'
 
 defixInfixLeft sp _ _ xs
-        = Left $ ErrorMalformed (XDefix sp xs)
+        = Left $ ErrorMalformed sp (XDefix sp xs)
 
 
 -- | Defix some right associative ops.
@@ -257,7 +257,7 @@ defixInfixRight sp table precHigh (x2 : XInfixOp spo op : x1 : xs)
                 Right   $ x2 : XInfixOp spo op : xs'
 
 defixInfixRight sp _ _ xs
-        = Left $ ErrorMalformed (XDefix sp xs)
+        = Left $ ErrorMalformed sp (XDefix sp xs)
 
 
 -- | Defix non-associative ops.
@@ -287,5 +287,5 @@ defixInfixNone sp table precHigh xx
                 Left errs       -> Left errs
 
         | otherwise
-        = Left $ ErrorMalformed (XDefix sp xx)
+        = Left $ ErrorMalformed sp (XDefix sp xx)
 
