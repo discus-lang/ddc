@@ -1,4 +1,9 @@
 
+
+-- Insert [?] holes for type applications of variables with explicit signatures.
+-- We only reconstruct type applications for vars with signatures because we
+-- can do it without proper constraint solving.
+-- Convert source to core that includes holes, then fill holes at core level.
 :desugar..
 module Test where
 data List (a : Data) where
@@ -6,6 +11,21 @@ data List (a : Data) where
         Cons    : a -> List a -> List a
 
 map [a b : Data] (f : a -> b) (xx : List a) : List b
+ = case xs of
+        Nil       -> Nil
+        Cons x xs -> Cons (f x) (map f xs)
+;;
+
+
+-- If any type variables are not in scope in a top-level signature,
+-- then insert quantifiers for these.
+:desugar..
+module Test where
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+map (f : a -> b) (xx : List a) : List b
  = case xs of
         Nil       -> Nil
         Cons x xs -> Cons (f x) (map f xs)
