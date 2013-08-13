@@ -36,7 +36,7 @@ cmdDesugar _state source str
                  Right mm        -> goDesugar mm
 
         goDesugar mm
-         = case defix defaultInfixTable mm of
+         = case defix defaultFixTable mm of
                 Left err        -> error $ show err
                 Right mm'
                  -> putStrLn (renderIndent $ ppr mm')
