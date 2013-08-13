@@ -7,138 +7,15 @@ module DDC.Source.Tetra.Desugar.Defix
         , Error         (..)
         , Defix         (..))
 where
+import DDC.Source.Tetra.Desugar.Defix.FixTable
+import DDC.Source.Tetra.Desugar.Defix.Error
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Module
-import DDC.Source.Tetra.Name
 import DDC.Source.Tetra.Exp
 import DDC.Data.ListUtils
 import Control.Monad
 import Data.List
 import Data.Maybe
-import qualified DDC.Data.SourcePos     as BP
-
-
--- FixTable -----------------------------------------------------------------
--- | Table of infix operator definitions.
-data FixTable a n
-        = FixTable [FixDef a n]
-
-
--- | Infix operator definition.
-data FixDef a n
-        -- A prefix operator
-        = FixDefPrefix
-        { -- | String of the operator
-          fixDefSymbol  :: String
-
-          -- | Expression to rewrite the operator to, 
-          --   given the annotation of the original symbol.
-        , fixDefExp     :: a -> Exp a n }
-
-        -- An infix operator.
-        | FixDefInfix
-        { -- | String of the operator.
-          fixDefSymbol  :: String
-        
-          -- | Expression to rewrite the operator to, 
-          --   given the annotation of the original symbol.
-        , fixDefExp     :: a -> Exp a n
-
-          -- | Associativity of infix operator.
-        , fixDefAssoc   :: InfixAssoc
-        
-          -- | Precedence of infix operator.
-        , fixDefPrec    :: Int }
-
-
-
--- | Infix associativity.
-data InfixAssoc
-        -- | Left associative.
-        --      x * y * z => * (* x y) z
-        = InfixLeft
-
-        -- | Right associative.
-        --      x * y * z => * x (* y z)
-        | InfixRight
-
-        -- | Non associative.
-        --      x * y * z => error
-        | InfixNone
-        deriving (Show, Eq)
-
-
--- | Lookup the `FixDefInfix` corresponding to a symbol name, if any.
-lookupDefInfixOfSymbol  :: FixTable a n -> String -> Maybe (FixDef a n)
-lookupDefInfixOfSymbol (FixTable defs) str
-        = find (\def -> case def of
-                         FixDefInfix{}  -> fixDefSymbol def == str
-                         _              -> False)
-                defs
-
-
--- | Lookup the `FixDefPrefix` corresponding to a symbol name, if any.
-lookupDefPrefixOfSymbol  :: FixTable a n -> String -> Maybe (FixDef a n)
-lookupDefPrefixOfSymbol (FixTable defs) str
-        = find (\def -> case def of
-                         FixDefPrefix{} -> fixDefSymbol def == str
-                         _              -> False)
-                defs
-
-
--- | Get the precedence of an infix symbol, else Error.
-getInfixDefOfSymbol 
-        :: FixTable a n 
-        -> String 
-        -> Either (Error a n) (FixDef a n)
-
-getInfixDefOfSymbol table str
- = case lookupDefInfixOfSymbol table str of
-        Nothing         -> Left  (ErrorNoInfixDef str)
-        Just def        -> Right def
-
-
--- | Default fixity table for infix operators.
-defaultFixTable :: FixTable BP.SourcePos Name
-defaultFixTable
- = FixTable 
-        [ FixDefPrefix "-"  (\sp -> XVar sp (UName (NameVar "neg")))
-        , FixDefInfix  "*"  (\sp -> XVar sp (UName (NameVar "mul"))) InfixLeft  7
-        , FixDefInfix  "+"  (\sp -> XVar sp (UName (NameVar "add"))) InfixLeft  6
-        , FixDefInfix  "-"  (\sp -> XVar sp (UName (NameVar "sub"))) InfixLeft  6 
-        , FixDefInfix  "==" (\sp -> XVar sp (UName (NameVar "eq" ))) InfixNone  5
-        , FixDefInfix  "/=" (\sp -> XVar sp (UName (NameVar "neq"))) InfixNone  5
-        , FixDefInfix  "<"  (\sp -> XVar sp (UName (NameVar "lt" ))) InfixNone  5
-        , FixDefInfix  "<=" (\sp -> XVar sp (UName (NameVar "le" ))) InfixNone  5
-        , FixDefInfix  ">"  (\sp -> XVar sp (UName (NameVar "gt" ))) InfixNone  5
-        , FixDefInfix  ">=" (\sp -> XVar sp (UName (NameVar "ge" ))) InfixNone  5
-        , FixDefInfix  "$"  (\sp -> XVar sp (UName (NameVar "app"))) InfixRight 1 ]
-
-
--- Error ----------------------------------------------------------------------
--- | Things that can go wrong when defixing code.
-data Error a n
-        -- | Infix operator symbol has no infix definition.
-        = ErrorNoInfixDef
-        { errorSymbol           :: String }
-
-        -- | Two non-associative operators with the same precedence.
-        | ErrorDefixNonAssoc
-        { errorOp1              :: String
-        , errorAnnot1           :: a
-        , errorOp2              :: String
-        , errorAnnot2           :: a }
-
-        -- | Two operators of different associativies with same precedence.
-        | ErrorDefixMixedAssoc 
-        { errorAnnot            :: a
-        , errorOps              :: [String] }
-
-        -- | Infix expression is malformed.
-        --   Eg "+ 3" or "2 + + 2"
-        | ErrorMalformed
-        { errorExp              :: Exp a n }
-        deriving Show
 
 
 -- Defix ----------------------------------------------------------------------
