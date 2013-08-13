@@ -115,7 +115,7 @@ x = 1 == 2 == 2;;
 
 
 -- Error: Cannot have multiple non-associative operators at the same level.
-:parse..
+:desugar..
 module Test where
 x = 1 < 2 > 3;;
 

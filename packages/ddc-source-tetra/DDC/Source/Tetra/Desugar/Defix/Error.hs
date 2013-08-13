@@ -48,10 +48,11 @@ instance (Pretty n)
                  , text "Ambiguous infix expression."
                  , text " Operator  '"  <> text (errorOp1 err) 
                                         <> text "' at " <> ppr (errorAnnot1 err)
-                                        <+> text "is non associative"
-                 , text " but the same precedence as:"
-                 , text " operator  '"  <> text (errorOp2 err)
-                                        <> text "' at " <> ppr (errorAnnot2 err) ]
+                                        <+> text "is non associative,"
+                 , text " but the same precedence as"
+                 , text "  operator '"  <> text (errorOp2 err)
+                                        <> text "' at " <> ppr (errorAnnot2 err) 
+                                        <> text "."]
 
         ErrorDefixMixedAssoc{}
          -> vcat [ ppr $ errorAnnot err
