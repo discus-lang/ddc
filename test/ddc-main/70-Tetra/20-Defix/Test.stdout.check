@@ -1,0 +1,128 @@
+
+
+-- Application of a symbolic operator.
+module Test where
+x = add a b
+
+
+-- Symbolic operator passed to some other function.
+module Test where
+x
+  = f add
+        (app (mul 3) 5)
+
+
+-- Plus is left associative.
+module Test where
+x
+  = add (add a b) c
+
+
+-- Multiplication has higher precedence than addition.
+module Test where
+x
+  = add a (mul b c)
+
+
+-- Multiplication has higher precedence than addition.
+module Test where
+x
+  = add (mul a b) c
+
+
+-- Arithmetic.
+module Test where
+x
+  = add
+        (add
+             (add a (mul b c))
+             (mul (mul d e) f)) g
+
+
+-- Defix dollar token.
+module Test where
+x
+  = app f (app g h)
+
+
+-- Equality.
+module Test where
+x
+  = eq (add 1 2) (add 2 3)
+
+
+-- Check operators and applications
+module Test where
+x
+  = add
+        (add (f a) (g b)) (h c)
+
+
+-- Check operators and applications
+module Test where
+x
+  = add (f a1 a2)
+        (mul (g b1 b2) (h c1 c2 c3))
+
+
+-- Check operators and applications
+module Test where
+x
+  = eq
+        (add (f a1 a2)
+             (mul (g b1 b2)
+                  (h (c1 c2) c3))) (f a3 a4)
+
+
+-- Prefix negation.
+module Test where
+x = neg a
+
+
+-- Prefix negation in an argument.
+module Test where
+x
+  = f (neg x) y
+        (g (neg a) b)
+
+
+-- Regular infix subtraction (not prefix negation).
+module Test where
+x = sub a b
+
+
+-- Error: prefix infix operator is malformed.
+<batch>:3:5
+Malformed infix expression.
+
+
+-- Error: trailing infix operator is malformed.
+<batch>:3:5
+Malformed infix expression.
+
+
+-- Error: trailing prefix operator is malformed.
+<batch>:3:5
+Malformed infix expression.
+
+
+-- Error: multiple infix operators in a row.
+<batch>:3:5
+Malformed infix expression.
+
+
+-- Error: Cannot have multiple non-associative operators at the same level.
+<batch>:3:7
+Ambiguous infix expression.
+ Operator  '==' at <batch>:3:7 is non associative,
+ but the same precedence as
+  operator '==' at <batch>:3:12.
+
+
+-- Error: Cannot have multiple non-associative operators at the same level.
+<batch>:3:7
+Ambiguous infix expression.
+ Operator  '<' at <batch>:3:7 is non associative,
+ but the same precedence as
+  operator '>' at <batch>:3:11.
+
