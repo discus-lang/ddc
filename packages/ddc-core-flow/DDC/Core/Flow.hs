@@ -6,6 +6,9 @@ module DDC.Core.Flow
         ( -- * Language profile
           profile
 
+          -- * Driver
+        , lowerModule
+
           -- * Names
         , Name          (..)
         , KiConFlow     (..)
@@ -29,3 +32,4 @@ module DDC.Core.Flow
 where
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Profile
+import DDC.Core.Flow.Lower

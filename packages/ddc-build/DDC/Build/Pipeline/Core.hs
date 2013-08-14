@@ -22,8 +22,6 @@ import DDC.Llvm.Pretty                                  ()
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
-import qualified DDC.Core.Flow.Transform.Schedule       as Flow
-import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 
@@ -41,7 +39,6 @@ import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Simplifier                    as C
-import qualified DDC.Core.Simplifier.Recipe             as C
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
@@ -51,7 +48,6 @@ import qualified DDC.Core.Exp                           as C
 import qualified DDC.Type.Env                           as Env
 
 import qualified Control.Monad.State.Strict             as S
-import qualified Data.Monoid                            as M
 import Control.Monad
 import Control.DeepSeq
 
@@ -343,29 +339,8 @@ pipeFlow !mm !pp
         PipeFlowLower !pipes
          -> {-# SCC "PipeFlowLower" #-}
             let mm_stripped     = C.reannotate (const ()) mm
-                processes       = Flow.slurpProcesses mm_stripped
-                procedures      = map Flow.scheduleProcess processes
-                mm_lowered      = Flow.extractModule mm_stripped procedures
-
-                -- Do some beta-reductions to ensure that arguments to worker functions
-                -- are inlined, then normalize nested applications. 
-                -- When snipping, leave lambda abstractions in place so the worker functions
-                -- applied to our loop combinators aren't moved.
-                clean           
-                 =    C.Trans (C.Namify (C.makeNamifier Flow.freshT)
-                                        (C.makeNamifier Flow.freshX))
-                 M.<> C.Trans C.Forward
-                 M.<> C.beta
-                 M.<> C.Trans (C.Snip (Snip.configZero { Snip.configPreserveLambdas = True }))
-                 M.<> C.Trans C.Flatten
-
-                mm_cleaned      
-                 = S.evalState
-                        (C.applySimplifier Flow.profile Env.empty Env.empty
-                                (C.Fix 4 clean) mm_lowered)
-                        0
-
-             in pipeCores mm_cleaned pipes
+                mm_lowered      = Flow.lowerModule mm_stripped
+             in pipeCores mm_lowered pipes
 
         PipeFlowMelt !pipes
          -> {-# SCC "PipeFlowMelt" #-}

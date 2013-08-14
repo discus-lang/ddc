@@ -49,6 +49,7 @@ Library
         DDC.Core.Flow.Compounds
         DDC.Core.Flow.Env
         DDC.Core.Flow.Context
+        DDC.Core.Flow.Lower
 
         DDC.Core.Flow.Prim
 
