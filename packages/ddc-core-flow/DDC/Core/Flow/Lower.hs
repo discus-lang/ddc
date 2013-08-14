@@ -1,13 +1,22 @@
 
 
 module DDC.Core.Flow.Lower
-        (lowerModule)
+        ( Config        (..)
+        , defaultConfigScalar
+        , defaultConfigVector
+        , Method        (..)
+        , lowerModule)
 where
 import DDC.Core.Flow.Transform.Slurp
 import DDC.Core.Flow.Transform.Schedule
 import DDC.Core.Flow.Transform.Extract
+import DDC.Core.Flow.Process
+import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Exp
+import DDC.Core.Module
+
+import DDC.Core.Transform.Annotate
 
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
@@ -18,23 +27,86 @@ import qualified Control.Monad.State.Strict             as S
 import qualified Data.Monoid                            as M
 
 
-lowerModule :: ModuleF -> ModuleF
-lowerModule mm
+-- | Configuration for the lower transform.
+data Config
+        = Config
+        { configMethod          :: Method }
+        deriving (Eq, Show)
+
+
+-- | What lowering method to use.
+data Method
+        -- | Produce sequential scalar code with nested loops.
+        = MethodScalar
+
+        -- | Try to produce sequential vector code,
+        --   falling back to scalar code if this is not possible.
+        | MethodVector
+        { methodLifting         :: Lifting }
+        deriving (Eq, Show)
+
+
+defaultConfigScalar :: Config
+defaultConfigScalar
+        = Config
+        { configMethod  = MethodScalar }
+
+
+defaultConfigVector :: Config
+defaultConfigVector
+        = Config
+        { configMethod  = MethodVector (Lifting 8)}
+
+
+-- Lower ----------------------------------------------------------------------
+lowerModule :: Config -> ModuleF -> ModuleF
+lowerModule config mm
  = let  
         -- Slurp out series processes.
         processes       = slurpProcesses mm
 
         -- Schedule processeses into procedures.
-        procedures      = map scheduleProcess processes
+        lets            = map (lowerProcess config) processes
 
-        -- Extract core flow code from procedures
-        mm_lowered      = extractModule mm procedures
+        -- Stash all the processes into a module.
+        mm_lowered      = mm
+                        { moduleBody    = annotate ()
+                                        $ XLet (LRec lets) xUnit }
 
         -- Clean up extracted code
         mm_clean        = cleanModule mm_lowered
    in   mm_clean
 
 
+-- | Lower a single series process into fused code.
+lowerProcess :: Config -> Process -> (BindF, ExpF)
+lowerProcess config process
+ | MethodScalar         <- configMethod config
+ = let  
+        -- Schedule process into scalar code.
+        Right proc              = scheduleScalar process
+
+        -- Extract code for the kernel
+        (bProc, xProc)          = extractProcedure proc
+
+   in   (bProc, xProc)
+
+
+ | MethodVector lifting <- configMethod config
+ = let  
+        -- Create the vector version of the kernel.
+        Right procVec           = scheduleKernel lifting process
+
+        -- Extract code for the kernel
+        (bProcVec, xProcVec)    = extractProcedure procVec
+
+   in   (bProcVec, xProcVec)
+
+ | otherwise
+ = error "ddc-core-flow.lowerProcess: invalid lowering method"
+
+
+-- Clean ----------------------------------------------------------------------
 -- | Do some beta-reductions to ensure that arguments to worker functions
 --   are inlined, then normalize nested applications. 
 --   When snipping, leave lambda abstractions in place so the worker functions
@@ -56,3 +128,4 @@ cleanModule mm
                         (C.Fix 4 clean) mm)
                 0
    in   mm_cleaned
+

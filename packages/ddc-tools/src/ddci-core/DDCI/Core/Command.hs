@@ -29,6 +29,7 @@ import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
+import qualified DDC.Core.Flow          as Flow
 
 import System.IO
 import Control.Monad.Trans.Error
@@ -75,7 +76,7 @@ data Command
 
         -- Core Flow passes 
         | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
-        | CommandFlowLower      -- ^ Prepare and Lower a Core Flow module.
+        | CommandFlowLower Flow.Config  -- ^ Prepare and Lower a Core Flow module.
         | CommandFlowConcretize -- ^ Convert operations on type level rates to concrete ones.
         | CommandFlowMelt       -- ^ Melt compound data structures.
         | CommandFlowWind       -- ^ Wind loop primops into tail recursive loops.
@@ -128,12 +129,13 @@ commands
         , (":to-llvm",          CommandToLlvm) 
 
         -- Core Flow passes
-        , (":flow-prep",        CommandFlowPrep)
-        , (":flow-lower",       CommandFlowLower)
-        , (":flow-concretize",  CommandFlowConcretize)
-        , (":flow-melt",        CommandFlowMelt)
-        , (":flow-wind",        CommandFlowWind)
-        , (":flow-thread",      CommandFlowThread)
+        , (":flow-prep",         CommandFlowPrep)
+        , (":flow-lower-vector", CommandFlowLower Flow.defaultConfigVector)
+        , (":flow-lower",        CommandFlowLower Flow.defaultConfigScalar)
+        , (":flow-concretize",   CommandFlowConcretize)
+        , (":flow-melt",         CommandFlowMelt)
+        , (":flow-wind",         CommandFlowWind)
+        , (":flow-thread",       CommandFlowThread)
 
         -- Make and Compile
         , (":compile",          CommandCompile)
@@ -289,9 +291,9 @@ handleCmd1 state cmd source line
                 runError $ cmdFlowPrep config source line
                 return state
 
-        CommandFlowLower
+        CommandFlowLower lowerConfig
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdFlowLower config source line
+                runError $ cmdFlowLower config lowerConfig source line
                 return state
 
         CommandFlowConcretize

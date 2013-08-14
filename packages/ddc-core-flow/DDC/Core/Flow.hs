@@ -7,6 +7,10 @@ module DDC.Core.Flow
           profile
 
           -- * Driver
+        , Config        (..)
+        , defaultConfigVector
+        , defaultConfigScalar
+        , Method        (..)
         , lowerModule
 
           -- * Names

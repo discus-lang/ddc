@@ -59,6 +59,7 @@ tail$8# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Series# (Tail8# ^0) ^1
 -- Control operators
 loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
 loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
+split$8# :: [^ : Rate].RateNat# ^0 -> (RateNat# (Down8# ^0) -> Unit) -> (RateNat# (Tail8# ^0) -> Unit) -> Unit
 
 
 -- Store operators

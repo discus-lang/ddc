@@ -142,13 +142,13 @@ stageFlowPrep config source pipesFlow
 --   Is needs to already be prepped,
 --   and have full type annotations.
 stageFlowLower
-        :: Config -> Source
+        :: Config -> Flow.Config -> Source
         -> [PipeCore () Flow.Name]
         ->  PipeCore (C.AnTEC () Flow.Name) Flow.Name
 
-stageFlowLower config source pipesFlow
+stageFlowLower config lowerConfig source pipesFlow 
  = PipeCoreAsFlow
-     [ PipeFlowLower
+     [ PipeFlowLower lowerConfig
        ( PipeCoreOutput    (dump config source "dump.flow-lower.dcf")
        : pipesFlow ) ]
 

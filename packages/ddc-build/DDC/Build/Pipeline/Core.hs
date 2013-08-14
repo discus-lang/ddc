@@ -272,7 +272,8 @@ data PipeFlow a where
   --  It needs to be already prepped and have full type annotations.
   --  Lowering it kills the annotations.
   PipeFlowLower
-        :: [PipeCore () Flow.Name]
+        :: Flow.Config
+        -> [PipeCore () Flow.Name]
         -> PipeFlow (C.AnTEC () Flow.Name)
 
   -- Melt compound data into primitive types.
@@ -336,10 +337,10 @@ pipeFlow !mm !pp
 
             in  pipeCores mm_float pipes
 
-        PipeFlowLower !pipes
+        PipeFlowLower !config !pipes 
          -> {-# SCC "PipeFlowLower" #-}
             let mm_stripped     = C.reannotate (const ()) mm
-                mm_lowered      = Flow.lowerModule mm_stripped
+                mm_lowered      = Flow.lowerModule config mm_stripped
              in pipeCores mm_lowered pipes
 
         PipeFlowMelt !pipes

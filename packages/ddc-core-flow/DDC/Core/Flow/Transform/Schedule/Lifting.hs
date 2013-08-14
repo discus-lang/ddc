@@ -25,6 +25,7 @@ data Lifting
         = Lifting
         { -- How many elements to process for each loop iteration.
           liftingFactor         :: Int }
+        deriving (Eq, Show)
 
 -- | Map original variable to lifted version.
 type LiftEnv

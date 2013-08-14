@@ -1,6 +1,7 @@
 
 module DDC.Core.Flow.Transform.Extract
-        (extractModule)
+        ( extractModule
+        , extractProcedure)
 where
 import DDC.Core.Flow.Transform.Extract.Intersperse
 import DDC.Core.Flow.Compounds

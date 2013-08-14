@@ -21,6 +21,7 @@ import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Thread
+import qualified DDC.Core.Flow          as Flow
 
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
@@ -148,7 +149,7 @@ run config
         ModeFlowLower filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower dconfig (SourceFile filePath) str
+                runError $ cmdFlowLower dconfig Flow.defaultConfigScalar (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
         ModeFlowConcretize filePath

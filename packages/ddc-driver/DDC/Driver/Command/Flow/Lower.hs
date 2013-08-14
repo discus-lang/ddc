@@ -9,16 +9,18 @@ import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty                as P
 import qualified DDC.Build.Language.Flow        as Flow
+import qualified DDC.Core.Flow                  as Flow
 
 
 -- | Lower a flow program to loop code.
 cmdFlowLower
         :: Config
+        -> Flow.Config  -- ^ Config for the lowering transform.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowLower config source sourceText
+cmdFlowLower config lowerConfig source sourceText
  = let  
         pipeLower
          = pipeText (nameOfSource source)
@@ -27,7 +29,7 @@ cmdFlowLower config source sourceText
          $  stageFlowLoad  config source
          [  stageFlowPrep  config source
          [  PipeCoreCheck  Flow.fragment
-         [  stageFlowLower config source [ pipeFinal ]]]]
+         [  stageFlowLower config lowerConfig source [ pipeFinal ]]]]
 
         pipeFinal
          | configTaintAvoidTypeChecks config
