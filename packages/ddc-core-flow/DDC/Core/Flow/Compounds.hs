@@ -30,6 +30,8 @@ module DDC.Core.Flow.Compounds
 
           -- * Flow operators
         , xProj
+
+          -- * Series operators
         , xRateOfSeries
         , xNatOfRateNat
 
@@ -52,6 +54,7 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConPrim
 import DDC.Core.Flow.Prim.OpControl
 import DDC.Core.Flow.Prim.OpFlow
+import DDC.Core.Flow.Prim.OpSeries
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
 import DDC.Core.Compounds.Simple

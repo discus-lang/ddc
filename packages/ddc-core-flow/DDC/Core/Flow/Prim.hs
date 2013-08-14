@@ -18,13 +18,18 @@ module DDC.Core.Flow.Prim
         , readDaConFlow
         , typeDaConFlow
 
-          -- * Flow operators
+          -- * Fusable Flow operators
         , OpFlow        (..)
         , readOpFlow
         , typeOpFlow
 
+          -- * Series operators
+        , OpSeries      (..)
+        , readOpSeries
+        , typeOpSeries
+
           -- * Control operators
-        , OpControl        (..)
+        , OpControl     (..)
         , readOpControl
         , typeOpControl
 
@@ -59,6 +64,7 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.DaConPrim     ()
 import DDC.Core.Flow.Prim.OpFlow
+import DDC.Core.Flow.Prim.OpSeries
 import DDC.Core.Flow.Prim.OpControl
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
@@ -85,6 +91,7 @@ instance NFData Name where
         NameTyConFlow   con     -> rnf con
         NameDaConFlow   con     -> rnf con
         NameOpFlow      op      -> rnf op
+        NameOpSeries    op      -> rnf op
         NameOpControl   op      -> rnf op
         NameOpStore     op      -> rnf op
 
@@ -111,6 +118,7 @@ instance Pretty Name where
         NameTyConFlow   con     -> ppr con
         NameDaConFlow   con     -> ppr con
         NameOpFlow      op      -> ppr op
+        NameOpSeries    op      -> ppr op
         NameOpControl   op      -> ppr op
         NameOpStore     op      -> ppr op
 

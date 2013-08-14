@@ -2,10 +2,9 @@
 module DDC.Core.Flow.Prim.OpFlow
         ( readOpFlow
         , typeOpFlow
+
           -- * Compounds
-        , xProj
-        , xRateOfSeries
-        , xNatOfRateNat)
+        , xProj)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -28,9 +27,6 @@ instance Pretty OpFlow where
   = case pf of
         OpFlowProj n i          
          -> text "proj" <> int n <> text "_" <> int i           <> text "#"
-
-        OpFlowRateOfSeries      -> text "rateOfSeries"          <> text "#"
-        OpFlowNatOfRateNat      -> text "natOfRateNat"          <> text "#"
 
         OpFlowMap 1             -> text "map"                   <> text "#"
         OpFlowMap i             -> text "map"        <> int i   <> text "#"
@@ -84,8 +80,6 @@ readOpFlow str
 
         | otherwise
         = case str of
-                "rateOfSeries#" -> Just $ OpFlowRateOfSeries
-                "natOfRateNat#" -> Just $ OpFlowNatOfRateNat
                 "map#"          -> Just $ OpFlowMap   1
                 "rep#"          -> Just $ OpFlowRep
                 "reps#"         -> Just $ OpFlowReps
@@ -121,18 +115,6 @@ takeTypeOpFlow op
          -> Just $ tForalls (replicate a kData) 
          $ \_ -> tFun   (tTupleN [TVar (UIx i) | i <- reverse [0..a-1]])
                         (TVar (UIx (a - ix)))
-
-        -- Series Conversions -------------------
-        -- rateOfSeries#   :: [k : Rate]. [a : Data]
-        --                 .  Series k a -> RateNat k
-        OpFlowRateOfSeries 
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                -> tSeries tK tA `tFun` tRateNat tK
-
-        -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
-        OpFlowNatOfRateNat 
-         -> Just $ tForall kRate $ \tK 
-                -> tRateNat tK `tFun` tNat
 
         -- Maps ---------------------------------
         -- map   :: [k : Rate] [a b : Data]
@@ -268,17 +250,6 @@ xProj :: [Type Name] -> Int -> Exp () Name -> Exp () Name
 xProj ts ix  x
         = xApps   (xVarOpFlow (OpFlowProj (length ts) ix))
                   ([XType t | t <- ts] ++ [x])
-
-xRateOfSeries :: Type Name -> Type Name -> Exp () Name -> Exp () Name
-xRateOfSeries tK tA xS 
-         = xApps  (xVarOpFlow OpFlowRateOfSeries) 
-                  [XType tK, XType tA, xS]
-
-
-xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
-xNatOfRateNat tK xR
-        = xApps  (xVarOpFlow OpFlowNatOfRateNat)
-                 [XType tK, xR]
 
 
 -- Utils -----------------------------------------------------------------------

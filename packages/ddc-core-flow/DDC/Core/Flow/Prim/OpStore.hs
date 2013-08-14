@@ -45,7 +45,7 @@ instance Pretty OpStore where
 
         OpStoreSliceVector      -> text "vslice#"
 
-        -- Streams.
+        -- Series.
         OpStoreNext 1           -> text "next#"
         OpStoreNext n           -> text "next$"   <> int n <> text "#"
 

@@ -452,12 +452,12 @@ windBodyX refMap context xx
 xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
         = xApps () 
-                (xVarOpFlow OpFlowNatOfRateNat)
+                (xVarOpSeries OpSeriesNatOfRateNat)
                 [XType tK, xR]
 
-xVarOpFlow :: OpFlow -> Exp () Name
-xVarOpFlow op
-        = XVar  () (UPrim (NameOpFlow op) (typeOpFlow op))
+xVarOpSeries :: OpSeries -> Exp () Name
+xVarOpSeries op
+        = XVar  () (UPrim (NameOpSeries op) (typeOpSeries op))
 
 
 -------------------------------------------------------------------------------

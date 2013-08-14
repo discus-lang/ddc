@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.Base
         , TyConFlow     (..)
         , DaConFlow     (..)
         , OpFlow        (..)
+        , OpSeries      (..)
         , OpControl     (..)
         , OpStore       (..)
         , PrimTyCon     (..)
@@ -42,6 +43,9 @@ data Name
 
         -- | Flow operators.
         | NameOpFlow            OpFlow
+
+        -- | Series operators.
+        | NameOpSeries          OpSeries
 
         -- | Control operators.
         | NameOpControl         OpControl
@@ -115,7 +119,10 @@ data TyConFlow
         | TyConFlowRateNat
 
         -- | @DownN#@ constructor.   Rate decimation. 
-        | TyConFlowDown  Int
+        | TyConFlowDown Int
+
+        -- | @TailN#@ constructor.   Rate tail after decimation.
+        | TyConFlowTail Int
         deriving (Eq, Ord, Show)
 
 
@@ -126,17 +133,12 @@ data DaConFlow
         deriving (Eq, Ord, Show)
 
 
--- | Flow operators.
+-- | Fusable Flow operators.
 data OpFlow
         -- | Project out a component of a tuple,
         --   given the tuple arity and index of the desired component.
+        --   TODO: shift this somewhere else.
         = OpFlowProj Int Int
-
-        -- | Take the rate of a series.
-        | OpFlowRateOfSeries
-
-        -- | Take the underlying @Nat@ of a @RateNat@.
-        | OpFlowNatOfRateNat
 
         -- | Apply a worker to corresponding elements of some series.
         | OpFlowMap Int
@@ -181,11 +183,24 @@ data OpFlow
         deriving (Eq, Ord, Show)
 
 
+-- | Series related operators.
+--   These operators work on series after the code has been fused.
+--   They do not appear in the source program.
+data OpSeries
+        -- | Take the rate of a series.
+        = OpSeriesRateOfSeries
+
+        -- | Take the underlying @Nat@ of a @RateNat@.
+        | OpSeriesNatOfRateNat
+        deriving (Eq, Ord, Show)
+
+
 -- | Control operators.
 data OpControl
         = OpControlLoop
         | OpControlLoopN
         | OpControlGuard
+        | OpControlSplit Int
         deriving (Eq, Ord, Show)
 
 
