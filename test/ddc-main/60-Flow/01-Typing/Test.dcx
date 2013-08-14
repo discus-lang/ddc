@@ -59,6 +59,7 @@
 -- Control operators
 :type loop#
 :type loopn#
+:type split$8#
 
 
 -- Store operators

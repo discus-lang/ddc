@@ -27,13 +27,13 @@ instance Pretty OpControl where
         OpControlLoop     -> text "loop#"
         OpControlLoopN    -> text "loopn#"
         OpControlGuard    -> text "guard#"
-        OpControlSplit n  -> text "split" <> int n <> text "#"
+        OpControlSplit n  -> text "split$" <> int n <> text "#"
 
 
 -- | Read a control operator name.
 readOpControl :: String -> Maybe OpControl
 readOpControl str
-        | Just rest     <- stripPrefix "split" str
+        | Just rest     <- stripPrefix "split$" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , arity         <- read ds
@@ -77,6 +77,7 @@ typeOpControl op
           $ \tK -> tRateNat tK
                 `tFun` (tRateNat (tDown n tK) `tFun` tUnit)
                 `tFun` (tRateNat (tTail n tK) `tFun` tUnit)
+                `tFun` tUnit
 
 
 -- Compounds ------------------------------------------------------------------
