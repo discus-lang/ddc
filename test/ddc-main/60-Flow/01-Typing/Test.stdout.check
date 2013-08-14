@@ -39,7 +39,6 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 
 -- Flow operators
-rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
 create# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^0
 fill# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 ^0 -> Unit
 map# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
@@ -49,6 +48,13 @@ fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^0 -> ^1
 folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (Int# -> ^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
 pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 
+
+-- Series operators
+rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
+next$4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Nat# -> Vec4# ^1
+next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Nat# -> Vec8# ^1
+down$8# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Series# (Down8# ^0) ^1
+tail$8# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Series# (Tail8# ^0) ^1
 
 -- Control operators
 loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
@@ -65,6 +71,4 @@ vnewN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
 vread# :: [^ : Data].Vector# ^0 -> Nat# -> ^0
 vwrite# :: [^ : Data].Vector# ^0 -> Nat# -> ^0 -> Unit
 next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
-next$4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Nat# -> Vec4# ^1
-next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Nat# -> Vec8# ^1
 

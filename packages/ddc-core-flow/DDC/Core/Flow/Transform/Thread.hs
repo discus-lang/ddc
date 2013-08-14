@@ -174,10 +174,10 @@ threadType n _
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
 
 
-        -- Streams ------------------------------
+        -- Series ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Series# k a -> Int# -> World# -> (World#, a)
-        NameOpStore (OpStoreNext 1)
+        NameOpSeries (OpSeriesNext 1)
          -> Just $ tForalls [kRate, kData]
                  $ \[tK, tA] -> tSeries tK tA `tFun` tInt 
                                 `tFun` tWorld `tFun` (tTuple2 tWorld tA)

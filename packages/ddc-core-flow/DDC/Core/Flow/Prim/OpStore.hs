@@ -7,8 +7,7 @@ module DDC.Core.Flow.Prim.OpStore
         , xNewVector,   xNewVectorR, xNewVectorN
         , xReadVector,  xReadVectorC
         , xWriteVector, xWriteVectorC
-        , xSliceVector
-        , xNext,        xNextC)
+        , xSliceVector)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -36,30 +35,16 @@ instance Pretty OpStore where
         OpStoreNewVector        -> text "vnew#"
         OpStoreNewVectorR       -> text "vnewR#"
         OpStoreNewVectorN       -> text "vnewN#"
-
         OpStoreReadVector  1    -> text "vread#"
         OpStoreReadVector  n    -> text "vread$"  <> int n <> text "#"
-
         OpStoreWriteVector 1    -> text "vwrite#"
         OpStoreWriteVector n    -> text "vwrite$" <> int n <> text "#"
-
         OpStoreSliceVector      -> text "vslice#"
-
-        -- Series.
-        OpStoreNext 1           -> text "next#"
-        OpStoreNext n           -> text "next$"   <> int n <> text "#"
 
 
 -- | Read a store operator name.
 readOpStore :: String -> Maybe OpStore
 readOpStore str
-        | Just rest     <- stripPrefix "next$" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n >= 1
-        = Just $ OpStoreNext n
-
         | Just rest     <- stripPrefix "vread$" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -87,7 +72,6 @@ readOpStore str
                 "vwrite#"       -> Just (OpStoreWriteVector 1)
                 "vslice#"       -> Just OpStoreSliceVector
 
-                "next#"         -> Just (OpStoreNext 1)
                 _               -> Nothing
 
 
@@ -148,18 +132,6 @@ typeOpStore op
         OpStoreSliceVector
          -> tForall kData 
          $  \tA -> tNat `tFun` tVector tA `tFun` tVector tA
-
-
-        -- Streams --------------------
-        -- next#  :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
-        OpStoreNext 1
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries tK tA `tFun` tNat `tFun` tA
-
-        -- nextN# :: [a : Data]. [k : Rate]. Series# (DownN# k) a -> Nat# -> VecN# a
-        OpStoreNext n
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries (tDown n tK) tA `tFun` tNat `tFun` tVec n tA
 
 
 -- Compounds ------------------------------------------------------------------
@@ -227,18 +199,6 @@ xSliceVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xSliceVector tElem xLen xArr
  = xApps (xVarOpStore OpStoreSliceVector)
          [XType tElem, xLen, xArr]
-
-
-xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xNext tRate tElem xStream xIndex
- = xApps (xVarOpStore (OpStoreNext 1))
-         [XType tElem, XType tRate, xStream, xIndex]
-
-
-xNextC :: Int -> Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xNextC c tRate tElem xStream xIndex
- = xApps (xVarOpStore (OpStoreNext c))
-         [XType tElem, XType tRate, xStream, xIndex]
 
 
 -- Utils ----------------------------------------------------------------------

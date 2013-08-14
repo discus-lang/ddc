@@ -139,12 +139,13 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Flow fragment specific names.
-        | Just p        <- readKiConFlow str    = Just $ NameKiConFlow  p
-        | Just p        <- readTyConFlow str    = Just $ NameTyConFlow  p
-        | Just p        <- readDaConFlow str    = Just $ NameDaConFlow  p
-        | Just p        <- readOpFlow    str    = Just $ NameOpFlow     p
-        | Just p        <- readOpControl str    = Just $ NameOpControl  p
-        | Just p        <- readOpStore   str    = Just $ NameOpStore    p
+        | Just p        <- readKiConFlow  str   = Just $ NameKiConFlow  p
+        | Just p        <- readTyConFlow  str   = Just $ NameTyConFlow  p
+        | Just p        <- readDaConFlow  str   = Just $ NameDaConFlow  p
+        | Just p        <- readOpFlow     str   = Just $ NameOpFlow     p
+        | Just p        <- readOpSeries   str   = Just $ NameOpSeries   p 
+        | Just p        <- readOpControl  str   = Just $ NameOpControl  p
+        | Just p        <- readOpStore    str   = Just $ NameOpStore    p
 
         -- Primitive names.
         | Just p        <- readPrimTyCon  str   = Just $ NamePrimTyCon  p

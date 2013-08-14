@@ -39,7 +39,6 @@
 
 
 -- Flow operators
-:type rateOfSeries#
 :type create#
 :type fill#
 :type map#
@@ -49,6 +48,13 @@
 :type folds#
 :type pack#
 
+
+-- Series operators
+:type rateOfSeries#
+:type next$4#
+:type next$8#
+:type down$8#
+:type tail$8#
 
 -- Control operators
 :type loop#
@@ -65,6 +71,4 @@
 :type vread#
 :type vwrite#
 :type next#
-:type next$4#
-:type next$8#
 

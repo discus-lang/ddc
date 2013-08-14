@@ -192,6 +192,15 @@ data OpSeries
 
         -- | Take the underlying @Nat@ of a @RateNat@.
         | OpSeriesNatOfRateNat
+
+        -- | Take some elements from a series.
+        | OpSeriesNext Int
+
+        -- | Decimate the rate of a series.
+        | OpSeriesDown Int
+
+        -- | Take the tail rate of a decimated series.
+        | OpSeriesTail Int
         deriving (Eq, Ord, Show)
 
 
@@ -216,7 +225,6 @@ data OpStore
         -- | Write to a reference.
         | OpStoreWrite
 
-
         -- Vectors --------------------
         -- | Allocate a new vector (taking a @Nat@ for the length)
         | OpStoreNewVector
@@ -235,10 +243,5 @@ data OpStore
 
         -- | Slice after a pack/filter (taking a @Nat@ for new length)
         | OpStoreSliceVector    
-
-
-        -- Series --------------------
-        -- | Take some elements from a series.
-        | OpStoreNext Int
         deriving (Eq, Ord, Show)
 
