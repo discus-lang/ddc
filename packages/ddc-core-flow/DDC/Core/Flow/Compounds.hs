@@ -38,6 +38,7 @@ module DDC.Core.Flow.Compounds
           -- * Control operators
         , xLoopN
         , xGuard
+        , xSplit
 
           -- * Store operators
         , xNew,         xRead,       xWrite

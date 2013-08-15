@@ -4,7 +4,8 @@ module DDC.Core.Flow.Prim.OpControl
         ( readOpControl
         , typeOpControl
         , xLoopN
-        , xGuard)
+        , xGuard
+        , xSplit)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConPrim
@@ -72,6 +73,7 @@ typeOpControl op
         -- split#  :: [k : Rate]. RateNat# k
         --         -> (RateNat# (Down8# k) -> Unit)
         --         -> (RateNat# (Tail8# k) -> Unit)
+        --         -> Unit
         OpControlSplit n
          -> tForall kRate
           $ \tK -> tRateNat tK
@@ -94,6 +96,11 @@ xGuard  :: Exp () Name  -- ^ Reference to guard counter.
 xGuard xB xCount xF
         = xApps (xVarOpControl OpControlGuard) [xCount, xB, xF]
 
+
+xSplit  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xSplit n tK xDownFn xTailFn 
+        = xApps (xVarOpControl $ OpControlSplit n)
+                [ XType tK, xDownFn, xTailFn ]
 
 -- Utils -----------------------------------------------------------------------
 xVarOpControl :: OpControl -> Exp () Name
