@@ -61,6 +61,9 @@ data Mode
         -- | Lower a Flow program.
         | ModeFlowLower FilePath
 
+        -- | Lower a Flow program using vector instructions.
+        | ModeFlowLowerVector FilePath
+
         -- | Wind loop primops into tail recursive loops.
         | ModeFlowWind  FilePath
 

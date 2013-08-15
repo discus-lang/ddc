@@ -94,13 +94,36 @@ lowerProcess config process
 
  | MethodVector lifting <- configMethod config
  = let  
+        bK : _  = processParamTypes process
+        Just uK = takeSubstBoundOfBind bK
+
+
         -- Create the vector version of the kernel.
-        Right procVec           = scheduleKernel lifting process
+        Right procVec   = scheduleKernel lifting process
+        (_, xProcVec)   = extractProcedure procVec
+        
+        -- Create tail version
+        Right procTail  = scheduleScalar process
+        (_, xProcTail)  = extractProcedure procTail
 
-        -- Extract code for the kernel
-        (bProcVec, xProcVec)    = extractProcedure procVec
 
-   in   (bProcVec, xProcVec)
+        xProc
+         = foldr XLAM 
+                (foldr XLam xBody (processParamValues process))
+                (processParamTypes process)
+
+        xBody
+         = xSplit 4 (TVar uK) xProcVec' xProcTail
+
+        xProcVec'
+         = XApp xProcVec (XType (TVar uK))
+
+
+        -- Reconstruct a binder for the whole procedure / process.
+        bProc   = BName (processName process)
+                        (typeOfProcess process)
+
+   in   (bProc, xProc)
 
  | otherwise
  = error "ddc-core-flow.lowerProcess: invalid lowering method"

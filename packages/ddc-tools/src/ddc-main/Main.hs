@@ -151,6 +151,12 @@ run config
                 str             <- readFile filePath
                 runError $ cmdFlowLower dconfig Flow.defaultConfigScalar (SourceFile filePath) str
 
+        -- Lower a Disciple Core Flow program to loops.
+        ModeFlowLowerVector filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdFlowLower dconfig Flow.defaultConfigVector (SourceFile filePath) str
+
         -- Concretize rate type variables in a Disciple Core Flow program.
         ModeFlowConcretize filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)

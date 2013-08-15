@@ -162,4 +162,3 @@ data StmtEnd
         , endVecType            :: Type Name
         , endVecRate            :: Type Name }
         deriving Show
-
