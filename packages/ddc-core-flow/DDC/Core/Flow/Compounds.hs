@@ -38,6 +38,9 @@ module DDC.Core.Flow.Compounds
           -- * Series operators
         , xRateOfSeries
         , xNatOfRateNat
+        , xNext, xNextC
+        , xDown
+        , xTail
 
           -- * Control operators
         , xLoopN
@@ -49,9 +52,7 @@ module DDC.Core.Flow.Compounds
         , xNewVector,   xNewVectorR, xNewVectorN
         , xReadVector,  xReadVectorC
         , xWriteVector, xWriteVectorC
-
-        , xSliceVector
-        , xNext,        xNextC)
+        , xSliceVector)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow

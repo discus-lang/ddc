@@ -9,11 +9,13 @@ module DDC.Core.Flow.Lower
 where
 import DDC.Core.Flow.Transform.Slurp
 import DDC.Core.Flow.Transform.Schedule
+import DDC.Core.Flow.Transform.Schedule.Base
 import DDC.Core.Flow.Transform.Extract
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
+import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Module
 
@@ -99,6 +101,7 @@ lowerProcess config process
         -- Get the primary rate variable.
         bK : _  = processParamTypes process
         Just uK = takeSubstBoundOfBind bK
+        tK      = TVar uK
 
 
         -----------------------------------------
@@ -107,20 +110,36 @@ lowerProcess config process
         Right procVec   = scheduleKernel lifting process
         (_, xProcVec)   = extractProcedure procVec
         
-        factor          = liftingFactor lifting
+        c               = liftingFactor lifting
+
+        bxsSeries       
+         = [ ( bS
+             , ( BName (NameVarMod n "down")
+                       (tSeries (tDown c tK) tE)
+               , xDown c tK tE (XVar (UIx 0)) xS))
+           | bS@(BName n tS)  <- processParamValues process
+           , let Just tE = elemTypeOfSeriesType tS
+           , let Just uS = takeSubstBoundOfBind bS
+           , let xS      = XVar uS
+           , isSeriesType tS ]
 
         -- Get a value arg to give to the vector procedure.
         getVecValArg b
+                | Just (b', _)  <- lookup b bxsSeries
+                = liftM XVar $ takeSubstBoundOfBind b'
+
+                | otherwise
                 = liftM XVar $ takeSubstBoundOfBind b
 
         Just xsVecValArgs    
-         = sequence $ map getVecValArg (procedureParamValues procVec)
+         = sequence $ map getVecValArg (processParamValues process)
 
         bRateDown
-         = BAnon (tRateNat (tDown factor (TVar uK)))
+         = BAnon (tRateNat (tDown c (TVar uK)))
 
         xProcVec'       
          = XLam bRateDown
+         $ xLets [LLet b x | (_, (b, x)) <- bxsSeries]
          $ xApps (XApp xProcVec (XType (TVar uK)))
          $ xsVecValArgs
 
@@ -139,7 +158,7 @@ lowerProcess config process
          = sequence $ map getTailValArg (procedureParamValues procTail)
 
         bRateTail
-         = BAnon (tRateNat (tTail factor (TVar uK)))
+         = BAnon (tRateNat (tTail c (TVar uK)))
 
         xProcTail'
          = XLam bRateTail

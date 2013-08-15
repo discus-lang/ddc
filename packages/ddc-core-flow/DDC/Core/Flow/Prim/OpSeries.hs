@@ -7,7 +7,10 @@ module DDC.Core.Flow.Prim.OpSeries
         , xRateOfSeries
         , xNatOfRateNat
         , xNext
-        , xNextC)
+        , xNextC
+
+        , xDown
+        , xTail)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -95,42 +98,57 @@ typeOpSeries op
          -> tForalls [kData, kRate]
          $  \[tA, tK] -> tSeries (tDown n tK) tA `tFun` tNat `tFun` tVec n tA
 
-        -- down$N# :: [a : Data]. [k : Rate]
-        --         .  Series# k a -> Series# (DownN# k) a
+        -- down$N# :: [k : Rate]. [a : Data].
+        --         .  RateNat (DownN# k) -> Series# k a -> Series# (DownN# k) a
         OpSeriesDown n
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries tK tA `tFun` tSeries (tDown n tK) tA
+         -> tForalls [kRate, kData]
+         $  \[tA, tK] -> tDown n tK `tFun` tSeries tK tA `tFun` tSeries (tDown n tK) tA
 
-        -- tail$N# :: [a : Data]. [k : Rate]
-        --         .  Series# k a -> Series# (TailN# k) a
+        -- tail$N# :: [k : Rate]. [a : Data].
+        --         .  RateNat (TailN# k) -> Series# k a -> Series# (TailN# k) a
         OpSeriesTail n
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries tK tA `tFun` tSeries (tTail n tK) tA
+         -> tForalls [kRate, kData]
+         $  \[tA, tK] -> tTail n tK `tFun` tSeries tK tA `tFun` tSeries (tTail n tK) tA
 
 
 -- Compounds ------------------------------------------------------------------
-xRateOfSeries :: Type Name -> Type Name -> Exp () Name -> Exp () Name
+type TypeF      = Type Name
+type ExpF       = Exp () Name
+
+xRateOfSeries :: TypeF -> TypeF -> ExpF -> ExpF
 xRateOfSeries tK tA xS 
          = xApps  (xVarOpSeries OpSeriesRateOfSeries) 
                   [XType tK, XType tA, xS]
 
 
-xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
+xNatOfRateNat :: TypeF -> ExpF -> ExpF
 xNatOfRateNat tK xR
         = xApps  (xVarOpSeries OpSeriesNatOfRateNat)
                  [XType tK, xR]
 
 
-xNext  :: Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xNext  :: TypeF -> TypeF -> ExpF -> ExpF -> ExpF
 xNext tRate tElem xStream xIndex
  = xApps (xVarOpSeries (OpSeriesNext 1))
          [XType tElem, XType tRate, xStream, xIndex]
 
 
-xNextC :: Int -> Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xNextC :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
 xNextC c tRate tElem xStream xIndex
  = xApps (xVarOpSeries (OpSeriesNext c))
          [XType tElem, XType tRate, xStream, xIndex]
+
+
+xDown  :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xDown n tR tE xRN xS
+ = xApps (xVarOpSeries (OpSeriesDown n))
+         [XType tR, XType tE, xRN, xS]
+
+
+xTail  :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xTail n tR tE xRN xS
+ = xApps (xVarOpSeries (OpSeriesTail n))
+         [XType tR, XType tE, xRN, xS]
 
 
 -- Utils -----------------------------------------------------------------------
