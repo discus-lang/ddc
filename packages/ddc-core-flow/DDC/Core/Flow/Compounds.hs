@@ -7,10 +7,14 @@ module DDC.Core.Flow.Compounds
         , kRate
 
           -- * Fragment specific types
+        , isSeriesType
+        , isRefType
+        , isVectorType
         , tTuple1, tTuple2, tTupleN
         , tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
         , tDown
+        , tTail
 
           -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec

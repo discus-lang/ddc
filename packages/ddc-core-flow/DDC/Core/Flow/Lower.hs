@@ -11,6 +11,7 @@ import DDC.Core.Flow.Transform.Slurp
 import DDC.Core.Flow.Transform.Schedule
 import DDC.Core.Flow.Transform.Extract
 import DDC.Core.Flow.Process
+import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Exp
@@ -25,6 +26,7 @@ import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Type.Env                           as Env
 import qualified Control.Monad.State.Strict             as S
 import qualified Data.Monoid                            as M
+import Control.Monad
 
 
 -- | Configuration for the lower transform.
@@ -94,30 +96,66 @@ lowerProcess config process
 
  | MethodVector lifting <- configMethod config
  = let  
+        -- Get the primary rate variable.
         bK : _  = processParamTypes process
         Just uK = takeSubstBoundOfBind bK
 
 
+        -----------------------------------------
         -- Create the vector version of the kernel.
+        --  Vector code processes several elements per loop iteration.
         Right procVec   = scheduleKernel lifting process
         (_, xProcVec)   = extractProcedure procVec
         
-        -- Create tail version
+        factor          = liftingFactor lifting
+
+        -- Get a value arg to give to the vector procedure.
+        getVecValArg b
+                = liftM XVar $ takeSubstBoundOfBind b
+
+        Just xsVecValArgs    
+         = sequence $ map getVecValArg (procedureParamValues procVec)
+
+        bRateDown
+         = BAnon (tRateNat (tDown factor (TVar uK)))
+
+        xProcVec'       
+         = XLam bRateDown
+         $ xApps (XApp xProcVec (XType (TVar uK)))
+         $ xsVecValArgs
+
+
+        -----------------------------------------
+        -- Create tail version.
+        --  Scalar code processes the final elements of the loop.
         Right procTail  = scheduleScalar process
         (_, xProcTail)  = extractProcedure procTail
 
+        -- Get a value arg to give to the scalar procedure.
+        getTailValArg b
+                = liftM XVar $ takeSubstBoundOfBind b
 
+        Just xsTailValArgs
+         = sequence $ map getTailValArg (procedureParamValues procTail)
+
+        bRateTail
+         = BAnon (tRateNat (tTail factor (TVar uK)))
+
+        xProcTail'
+         = XLam bRateTail
+         $ xApps (XApp xProcTail (XType (TVar uK)))
+         $ xsTailValArgs
+
+
+        ------------------------------------------
+        -- Stich the vector and scalar versions together.
         xProc
          = foldr XLAM 
                 (foldr XLam xBody (processParamValues process))
                 (processParamTypes process)
 
         xBody
-         = xSplit 4 (TVar uK) xProcVec' xProcTail
-
-        xProcVec'
-         = XApp xProcVec (XType (TVar uK))
-
+         = xSplit 4 (TVar uK) xProcVec' xProcTail'
 
         -- Reconstruct a binder for the whole procedure / process.
         bProc   = BName (processName process)

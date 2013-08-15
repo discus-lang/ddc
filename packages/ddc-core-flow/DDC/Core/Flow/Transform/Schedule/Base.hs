@@ -4,8 +4,7 @@ module DDC.Core.Flow.Transform.Schedule.Base
         , elemBoundOfSeriesBound
         , elemTypeOfSeriesType
         , rateTypeOfSeriesType
-        , slurpRateOfParamTypes
-        , isSeriesType)
+        , slurpRateOfParamTypes)
 where
 import DDC.Core.Flow.Transform.Schedule.Fail
 import DDC.Core.Flow.Compounds
@@ -71,11 +70,4 @@ slurpRateOfParamTypes tsParam
         (tK : ts)
          | all (== tK) ts       -> Right tK
          | otherwise            -> Left FailMultipleRates
-
-
-isSeriesType :: TypeF -> Bool
-isSeriesType tt
- = case takePrimTyConApps tt of
-        Just (NameTyConFlow TyConFlowSeries, [_, _]) -> True
-        _                                            -> False
 

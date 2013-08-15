@@ -3,6 +3,13 @@ module DDC.Core.Flow.Prim.TyConFlow
         ( TyConFlow      (..)
         , readTyConFlow
         , kindTyConFlow
+
+          -- * Predicates
+        , isSeriesType
+        , isRefType
+        , isVectorType
+
+          -- * Compounds
         , tTuple1
         , tTuple2
         , tTupleN
@@ -87,6 +94,31 @@ kindTyConFlow tc
         TyConFlowRateNat        -> kRate `kFun` kData
         TyConFlowDown{}         -> kRate `kFun` kRate
         TyConFlowTail{}         -> kRate `kFun` kRate
+
+
+-- Predicates -----------------------------------------------------------------
+-- | Check if some type is a fully applied type of a Series.
+isSeriesType :: Type Name -> Bool
+isSeriesType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowSeries, [_, _]) -> True
+        _                                            -> False
+
+
+-- | Check is some type is a fully applied type of a Ref.
+isRefType :: Type Name -> Bool
+isRefType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowRef, [_])       -> True
+        _                                            -> False
+
+
+-- | Check is some type is a fully applied type of a Vector.
+isVectorType :: Type Name -> Bool
+isVectorType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowVector, [_])    -> True
+        _                                            -> False
 
 
 -- Compounds ------------------------------------------------------------------
