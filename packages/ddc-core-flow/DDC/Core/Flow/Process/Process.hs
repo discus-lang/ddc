@@ -1,8 +1,10 @@
 
 module DDC.Core.Flow.Process.Process
-        (Process       (..))
+        ( Process       (..)
+        , typeOfProcess)
 where
 import DDC.Core.Flow.Process.Operator
+import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
@@ -44,3 +46,14 @@ data Process
         , processResultExp      :: ExpF
         }
 
+
+-- | Take the functional type of a process.
+typeOfProcess :: Process -> TypeF
+typeOfProcess process
+ = let  tBody   = foldr tFun (processResultType process) 
+                $ map typeOfBind (processParamValues process)
+
+        tQuant  = foldr TForall tBody
+                $ processParamTypes process
+
+   in   tQuant
