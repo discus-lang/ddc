@@ -97,6 +97,9 @@ lowerProcess config process
 
 
  | MethodVector lifting <- configMethod config
+ , any isRateNatType 
+        $ map typeOfBind
+        $ processParamValues process
  = let  
         -- Get the primary rate variable.
         bK : _  = processParamTypes process
@@ -200,6 +203,19 @@ lowerProcess config process
                         (typeOfProcess process)
 
    in   (bProc, xProc)
+
+
+ | MethodVector lifting <- configMethod config
+ = let  
+        -- Schedule process into scalar code.
+        Right proc              = scheduleKernel lifting process
+
+        -- Extract code for the kernel
+        (bProc, xProc)          = extractProcedure proc
+
+   in   (bProc, xProc)
+
+
 
  | otherwise
  = error "ddc-core-flow.lowerProcess: invalid lowering method"

@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.TyConFlow
         , kindTyConFlow
 
           -- * Predicates
+        , isRateNatType
         , isSeriesType
         , isRefType
         , isVectorType
@@ -97,6 +98,14 @@ kindTyConFlow tc
 
 
 -- Predicates -----------------------------------------------------------------
+-- | Check if some type is a fully applied type of a RateNat
+isRateNatType :: Type Name -> Bool
+isRateNatType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowRateNat, [_])   -> True
+        _                                            -> False
+
+
 -- | Check if some type is a fully applied type of a Series.
 isSeriesType :: Type Name -> Bool
 isSeriesType tt

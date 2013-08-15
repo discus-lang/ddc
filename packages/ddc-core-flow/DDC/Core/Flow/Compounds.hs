@@ -7,6 +7,7 @@ module DDC.Core.Flow.Compounds
         , kRate
 
           -- * Fragment specific types
+        , isRateNatType
         , isSeriesType
         , isRefType
         , isVectorType
