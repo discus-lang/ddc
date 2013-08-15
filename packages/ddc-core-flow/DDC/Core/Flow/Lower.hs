@@ -55,7 +55,7 @@ defaultConfigScalar
 defaultConfigVector :: Config
 defaultConfigVector
         = Config
-        { configMethod  = MethodVector (Lifting 8)}
+        { configMethod  = MethodVector (Lifting 4)}
 
 
 -- Lower ----------------------------------------------------------------------
