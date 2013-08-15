@@ -112,7 +112,7 @@ lowerProcess config process
         
         c               = liftingFactor lifting
 
-        bxsSeries       
+        bxsDownSeries       
          = [ ( bS
              , ( BName (NameVarMod n "down")
                        (tSeries (tDown c tK) tE)
@@ -124,22 +124,23 @@ lowerProcess config process
            , isSeriesType tS ]
 
         -- Get a value arg to give to the vector procedure.
-        getVecValArg b
-                | Just (b', _)  <- lookup b bxsSeries
+        getDownValArg b
+                | Just (b', _)  <- lookup b bxsDownSeries
                 = liftM XVar $ takeSubstBoundOfBind b'
 
                 | otherwise
                 = liftM XVar $ takeSubstBoundOfBind b
 
         Just xsVecValArgs    
-         = sequence $ map getVecValArg (processParamValues process)
+         = sequence 
+         $ map getDownValArg (processParamValues process)
 
         bRateDown
          = BAnon (tRateNat (tDown c (TVar uK)))
 
         xProcVec'       
          = XLam bRateDown
-         $ xLets [LLet b x | (_, (b, x)) <- bxsSeries]
+         $ xLets [LLet b x | (_, (b, x)) <- bxsDownSeries]
          $ xApps (XApp xProcVec (XType (TVar uK)))
          $ xsVecValArgs
 
@@ -150,18 +151,36 @@ lowerProcess config process
         Right procTail  = scheduleScalar process
         (_, xProcTail)  = extractProcedure procTail
 
+
+        bxsTailSeries
+         = [ ( bS
+             , ( BName (NameVarMod n "tail")
+                       (tSeries (tTail c tK) tE)
+               , xTail c tK tE (XVar (UIx 0)) xS))
+           | bS@(BName n tS)    <- processParamValues process
+           , let Just tE = elemTypeOfSeriesType tS
+           , let Just uS = takeSubstBoundOfBind bS
+           , let xS      = XVar uS
+           , isSeriesType tS ]
+
         -- Get a value arg to give to the scalar procedure.
         getTailValArg b
+                | Just (b', _)  <- lookup b bxsTailSeries
+                = liftM XVar $ takeSubstBoundOfBind b'
+
+                | otherwise
                 = liftM XVar $ takeSubstBoundOfBind b
 
         Just xsTailValArgs
-         = sequence $ map getTailValArg (procedureParamValues procTail)
+         = sequence 
+         $ map getTailValArg (procedureParamValues procTail)
 
         bRateTail
          = BAnon (tRateNat (tTail c (TVar uK)))
 
         xProcTail'
          = XLam bRateTail
+         $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
          $ xApps (XApp xProcTail (XType (TVar uK)))
          $ xsTailValArgs
 
