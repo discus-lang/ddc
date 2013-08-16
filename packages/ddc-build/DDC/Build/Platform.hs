@@ -42,6 +42,7 @@ staticFileExtensionOfPlatform pp
         OsDarwin        -> "a"
         OsLinux         -> "a"
         OsCygwin        -> "a"
+        OsMingw         -> "a"
 
 
 -- | Get the file extension to use for a shared library on this platform.
@@ -51,6 +52,7 @@ sharedFileExtensionOfPlatform pp
         OsDarwin        -> "dylib"
         OsLinux         -> "so"
         OsCygwin        -> "so"
+        OsMingw         -> "dll"
 
 
 -------------------------------------------------------------------------------
@@ -87,6 +89,7 @@ data Os
         = OsDarwin
         | OsLinux
         | OsCygwin
+        | OsMingw
         deriving (Eq, Show)
 
 instance Pretty Os where
@@ -95,6 +98,7 @@ instance Pretty Os where
         OsDarwin        -> text "Darwin"
         OsLinux         -> text "Linux"
         OsCygwin        -> text "Cygwin"
+        OsMingw         -> text "Mingw"
 
 
 -- Determinators --------------------------------------------------------------
@@ -150,6 +154,7 @@ determineHostOs
                 | isPrefixOf "Darwin" strOs     = Just OsDarwin
                 | isPrefixOf "Linux"  strOs     = Just OsLinux
                 | isPrefixOf "CYGWIN" strOs     = Just OsCygwin
+                | isPrefixOf "MINGW"  strOs     = Just OsMingw
                 | otherwise                     = Nothing
 
         return result

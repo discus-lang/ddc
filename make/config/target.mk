@@ -14,8 +14,8 @@ include make/config.mk
 TARGET_OS \
 	:= $(shell uname -s \
 		| tr 'A-Z' 'a-z' \
-		| sed 's/cygwin_nt-5.1/cygwin/' \
-		| sed 's/cygwin_nt-6.1/cygwin/')
+		| sed 's/cygwin_nt-.*/cygwin/' \
+		| sed 's/mingw32_nt-.*/mingw/' )
 
 # Autodetect the build architecture.
 #   This works for 'i386', 'i686', 'x86_64' and 'ppc'.
@@ -90,6 +90,12 @@ else ifeq "$(Target)" "cygwin-x86"
 GCC_FLAGS		+= -D BITS=32 -m32
 GCC_LINK_SHARED		:= gcc -shared
 BITS                    := 32
+
+# -- Windows/MinGW on x86
+else ifeq "$(Target)" "mingw-x86"
+GCC_FLAGS           += -D BITS=32 -m32
+GCC_LINK_SHARED     := gcc -shared
+BITS                := 32
 
 else
 all : $(error "Unknown Target '$(Target)'. Set this in make/config.mk")

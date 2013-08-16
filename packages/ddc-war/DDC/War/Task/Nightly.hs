@@ -142,9 +142,9 @@ buildProject spec
                 io $ writeFile "log/01-wget.stdout" getOut
                 io $ writeFile "log/01-wget.stderr" getErr
 
-                needs (takeFileName urlSnapshot)
+                needs (Remote.takeFileName urlSnapshot)
                 outLn "* Unpacking snapshot"
-                ssystem $ "tar zxf " ++ takeFileName urlSnapshot
+                ssystem $ "tar zxf " ++ Remote.takeFileName urlSnapshot
 
                 inDir "ddc-head"
                  $ do

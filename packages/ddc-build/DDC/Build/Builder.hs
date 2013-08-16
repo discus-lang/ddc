@@ -146,17 +146,20 @@ determineDefaultBuilder config
          Just (Platform ArchX86_64 OsDarwin)    
                 -> return $ Just (builder_X8664_Darwin config)
 
-	 Just (Platform ArchX86_32 OsLinux)
-		-> return $ Just (builder_X8632_Linux  config)
+         Just (Platform ArchX86_32 OsLinux)
+                -> return $ Just (builder_X8632_Linux  config)
 
-	 Just (Platform ArchX86_64 OsLinux)
-		-> return $ Just (builder_X8664_Linux  config)
+         Just (Platform ArchX86_64 OsLinux)
+                -> return $ Just (builder_X8664_Linux  config)
 
-	 Just (Platform ArchPPC_32 OsLinux)
-		-> return $ Just (builder_PPC32_Linux  config)
+         Just (Platform ArchPPC_32 OsLinux)
+                -> return $ Just (builder_PPC32_Linux  config)
 
-	 Just (Platform ArchX86_32 OsCygwin)
-		-> return $ Just (builder_X8632_Cygwin config)
+         Just (Platform ArchX86_32 OsCygwin)
+                -> return $ Just (builder_X8632_Cygwin config)
+
+         Just (Platform ArchX86_32 OsMingw)
+                -> return $ Just (builder_X8632_Mingw config)
 
          _      -> return Nothing
 
@@ -466,12 +469,64 @@ builder_X8632_Cygwin config
                 , "-o", normalise oFile
                 , normalise sFile ]
 
-	-- Note on Cygwin we need to use 'gcc-4' explicitly because plain 'gcc'
-	-- is a symlink, which Windows doesn't really support.
+    -- Note on Cygwin we need to use 'gcc-4' explicitly because plain 'gcc'
+    -- is a symlink, which Windows doesn't really support.
         , buildLdExe  
                 = \oFile binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc-4 -m32" 
+                , "-o", normalise binFile
+                , normalise oFile
+                , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ]
+
+        , buildLdLibStatic
+                = \oFiles libFile
+                -> doCmd "linker"               [(2, BuilderCanceled)]
+                $ ["ar r", libFile] ++ oFiles 
+
+        , buildLdLibShared
+                = \oFiles libFile
+                -> doCmd "linker"               [(2, BuilderCanceled)]
+                $ [ "gcc -shared", "-o", libFile ] ++ oFiles
+        }
+
+-- x86_32-mingw ----------------------------------------------------------------
+builder_X8632_Mingw config
+ =      Builder
+        { builderName           = "x86_32-mingw"
+        , buildHost             = Platform ArchX86_32 OsMingw
+        , buildTarget           = Platform ArchX86_32 OsMingw
+        , buildSpec             = Llvm.platform32
+        , buildBaseSrcDir       = builderConfigBaseSrcDir config
+        , buildBaseLibDir       = builderConfigBaseLibDir config
+
+        , buildLlc    
+                = \llFile sFile
+                -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
+                [ "llc -O3 -march=x86 " 
+                , normalise llFile
+                , "-o", normalise sFile ]
+
+        , buildCC
+                = \cFile oFile
+                -> doCmd "C compiler"           [(2, BuilderCanceled)]
+                [ "gcc -Werror -std=c99 -O3 -m32"
+                , "-c", cFile
+                , "-o", oFile
+                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+
+        , buildAs
+                = \sFile oFile
+                -> doCmd "assembler"            [(2, BuilderCanceled)]
+                [ "as --32"
+                , "-o", normalise oFile
+                , normalise sFile ]
+
+        , buildLdExe  
+                = \oFile binFile
+                -> doCmd "linker"               [(2, BuilderCanceled)]
+                [ "gcc -m32" 
                 , "-o", normalise binFile
                 , normalise oFile
                 , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ]
