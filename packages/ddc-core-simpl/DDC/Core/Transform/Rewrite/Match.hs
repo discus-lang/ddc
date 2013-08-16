@@ -12,12 +12,12 @@ import DDC.Type.Transform.Crush
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import qualified DDC.Type.Sum                   as Sum
-import qualified DDC.Type.Transform.AnonymizeT	as T
-import qualified DDC.Core.Transform.AnonymizeX	as T
-import qualified DDC.Core.Transform.Reannotate	as T
-import qualified DDC.Type.Equiv			as TE
-import qualified Data.Map			as Map
-import qualified Data.Set			as Set
+import qualified DDC.Type.Transform.AnonymizeT  as T
+import qualified DDC.Core.Transform.AnonymizeX  as T
+import qualified DDC.Core.Transform.Reannotate  as T
+import qualified DDC.Type.Equiv                 as TE
+import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 
 
 -------------------------------------------------------------------------------
@@ -62,12 +62,12 @@ match m bs (XVar _ (UName n)) r
    Nothing -> return $ insertx n r m
    Just x  
     ->  -- Check if they're equal. Anonymize so names don't matter.
-	-- Reannotate so annotations are ignored.
-	let  x' = T.anonymizeX $ T.reannotate (const ()) x
-	     r' = T.anonymizeX $ T.reannotate (const ()) r
-	in if   x' == r'
-	   then Just m
-	   else Nothing
+        -- Reannotate so annotations are ignored.
+        let  x' = T.anonymizeX $ T.reannotate (const ()) x
+             r' = T.anonymizeX $ T.reannotate (const ()) r
+        in if   x' == r'
+           then Just m
+           else Nothing
 
 match m _ (XVar _ v1) (XVar _ v2)
  | v1 == v2      = Just m
@@ -76,19 +76,19 @@ match m _ (XCon _ c1) (XCon _ c2)
  | c1 == c2      = Just m
 
 match m bs (XApp _ x11 x12) (XApp _ x21 x22)
- = do	m' <- match m bs x11 x21
-	match m' bs x12 x22
+ = do   m' <- match m bs x11 x21
+        match m' bs x12 x22
 
 match m bs (XCast _ c1 x1) (XCast _ c2 x2)
- | eqCast c1 c2	
+ | eqCast c1 c2 
  = match m bs x1 x2
 
 match (xs, tys) bs (XType t1) (XType t2)
- = do	tys' <- matchT t1 t2 bs tys
-	return (xs, tys')
+ = do   tys' <- matchT t1 t2 bs tys
+        return (xs, tys')
 
 match m _ (XWitness w1) (XWitness w2)
- | eqWit w1 w2	= return m
+ | eqWit w1 w2  = return m
 
 match _ _ _ _ 
  = Nothing

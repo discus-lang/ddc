@@ -13,11 +13,11 @@ module DDC.Core.Transform.Rewrite.Env
         , liftValue)
 where
 import DDC.Core.Exp
-import qualified DDC.Type.Exp			as T
-import qualified DDC.Type.Compounds		as T
-import qualified DDC.Type.Predicates		as T
-import qualified DDC.Type.Transform.LiftT	as L
-import qualified DDC.Core.Transform.LiftX	as L
+import qualified DDC.Type.Exp                   as T
+import qualified DDC.Type.Compounds             as T
+import qualified DDC.Type.Predicates            as T
+import qualified DDC.Type.Transform.LiftT       as L
+import qualified DDC.Core.Transform.LiftX       as L
 import Data.Maybe (fromMaybe, listToMaybe, isJust)
 
 
