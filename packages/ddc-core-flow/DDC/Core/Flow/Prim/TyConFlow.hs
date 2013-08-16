@@ -68,6 +68,12 @@ readTyConFlow str
         , n             <- read ds
         = Just $ TyConFlowDown n
 
+        | Just rest     <- stripPrefix "Tail" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        = Just $ TyConFlowTail n
+
         | otherwise
         = case str of
                 "Vector#"       -> Just $ TyConFlowVector
