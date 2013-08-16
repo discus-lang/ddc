@@ -25,8 +25,9 @@ letrec {
                         ()) in
            let x1$res : Vec4# Float32#
                  = read# [Vec4# Float32#] x1$vec in
+           let x1$init : Float32# = read# [Float32#] x1 in
            let x13 : Float32# = vproj$4$0# [Float32#] x1$res in
-           let x1$res$0 : Float32# = add# [Float32#] 0.0f32# x13 in
+           let x1$res$0 : Float32# = add# [Float32#] x1$init x13 in
            let x15 : Float32# = vproj$4$1# [Float32#] x1$res in
            let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x15 in
            let x17 : Float32# = vproj$4$2# [Float32#] x1$res in
@@ -38,7 +39,8 @@ letrec {
           (\(x7 : RateNat# (Tail4# k)).
            let s1$tail : Series# (Tail4# k) Float32# = tail$4# [k] [Float32#] x7 s1 in
            let s2$tail : Series# (Tail4# k) Float32# = tail$4# [k] [Float32#] x7 s2 in
-           let x1$acc : Ref# Float32# = new# [Float32#] 0.0f32# in
+           let x1$init : Float32# = read# [Float32#] x1 in
+           let x1$acc : Ref# Float32# = new# [Float32#] x1$init in
            let _ : Unit
                  = loop# [Tail4# k]
                        (\(x9 : Nat#).

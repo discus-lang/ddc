@@ -96,8 +96,9 @@ letrec {
                    ()) in
       let x1$res : Vec4# Float32#
             = read# [Vec4# Float32#] x1$vec in
+      let x1$init : Float32# = read# [Float32#] x1 in
       let x7 : Float32# = vproj$4$0# [Float32#] x1$res in
-      let x1$res$0 : Float32# = add# [Float32#] 0.0f32# x7 in
+      let x1$res$0 : Float32# = add# [Float32#] x1$init x7 in
       let x9 : Float32# = vproj$4$1# [Float32#] x1$res in
       let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x9 in
       let x11 : Float32# = vproj$4$2# [Float32#] x1$res in
@@ -133,8 +134,9 @@ letrec {
                    ()) in
       let x1$res : Vec4# Float32#
             = read# [Vec4# Float32#] x1$vec in
+      let x1$init : Float32# = read# [Float32#] x1 in
       let x8 : Float32# = vproj$4$0# [Float32#] x1$res in
-      let x1$res$0 : Float32# = add# [Float32#] 0.0f32# x8 in
+      let x1$res$0 : Float32# = add# [Float32#] x1$init x8 in
       let x10 : Float32# = vproj$4$1# [Float32#] x1$res in
       let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x10 in
       let x12 : Float32# = vproj$4$2# [Float32#] x1$res in
@@ -169,8 +171,9 @@ letrec {
                    ()) in
       let x1$res : Vec4# Float32#
             = read# [Vec4# Float32#] x1$vec in
+      let x1$init : Float32# = read# [Float32#] x1 in
       let x8 : Float32# = vproj$4$0# [Float32#] x1$res in
-      let x1$res$0 : Float32# = add# [Float32#] 0.0f32# x8 in
+      let x1$res$0 : Float32# = add# [Float32#] x1$init x8 in
       let x10 : Float32# = vproj$4$1# [Float32#] x1$res in
       let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x10 in
       let x12 : Float32# = vproj$4$2# [Float32#] x1$res in
@@ -211,8 +214,9 @@ letrec {
                    ()) in
       let x1$res : Vec4# Float32#
             = read# [Vec4# Float32#] x1$vec in
+      let x1$init : Float32# = read# [Float32#] x1 in
       let x11 : Float32# = vproj$4$0# [Float32#] x1$res in
-      let x1$res$0 : Float32# = add# [Float32#] 0.0f32# x11 in
+      let x1$res$0 : Float32# = add# [Float32#] x1$init x11 in
       let x13 : Float32# = vproj$4$1# [Float32#] x1$res in
       let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x13 in
       let x15 : Float32# = vproj$4$2# [Float32#] x1$res in
@@ -222,8 +226,9 @@ letrec {
       let _ : Unit = write# [Float32#] x1 x1$res$3 in
       let x2$res : Vec4# Float32#
             = read# [Vec4# Float32#] x2$vec in
+      let x2$init : Float32# = read# [Float32#] x2 in
       let x19 : Float32# = vproj$4$0# [Float32#] x2$res in
-      let x2$res$0 : Float32# = mul# [Float32#] 1.0f32# x19 in
+      let x2$res$0 : Float32# = mul# [Float32#] x2$init x19 in
       let x21 : Float32# = vproj$4$1# [Float32#] x2$res in
       let x2$res$1 : Float32# = mul# [Float32#] x2$res$0 x21 in
       let x23 : Float32# = vproj$4$2# [Float32#] x2$res in
@@ -266,8 +271,9 @@ letrec {
                    ()) in
       let x1$res : Vec4# Float32#
             = read# [Vec4# Float32#] x1$vec in
+      let x1$init : Float32# = read# [Float32#] x1 in
       let x12 : Float32# = vproj$4$0# [Float32#] x1$res in
-      let x1$res$0 : Float32# = add# [Float32#] 0.0f32# x12 in
+      let x1$res$0 : Float32# = add# [Float32#] x1$init x12 in
       let x14 : Float32# = vproj$4$1# [Float32#] x1$res in
       let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x14 in
       let x16 : Float32# = vproj$4$2# [Float32#] x1$res in
@@ -277,8 +283,9 @@ letrec {
       let _ : Unit = write# [Float32#] x1 x1$res$3 in
       let x2$res : Vec4# Float32#
             = read# [Vec4# Float32#] x2$vec in
+      let x2$init : Float32# = read# [Float32#] x2 in
       let x20 : Float32# = vproj$4$0# [Float32#] x2$res in
-      let x2$res$0 : Float32# = add# [Float32#] 0.0f32# x20 in
+      let x2$res$0 : Float32# = add# [Float32#] x2$init x20 in
       let x22 : Float32# = vproj$4$1# [Float32#] x2$res in
       let x2$res$1 : Float32# = add# [Float32#] x2$res$0 x22 in
       let x24 : Float32# = vproj$4$2# [Float32#] x2$res in

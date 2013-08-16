@@ -6,7 +6,8 @@ letrec {
   ffold : [k : Rate].Ref# Int# -> Series# k Int# -> Int#
     = /\(k : Rate).
        \(x : Ref# Int#).\(s : Series# k Int#).
-      let x$acc : Ref# Int# = new# [Int#] 1i# in
+      let x$init : Int# = read# [Int#] x in
+      let x$acc : Ref# Int# = new# [Int#] x$init in
       let x7$acc : Ref# Int# = new# [Int#] 0i# in
       let _ : Unit
             = loop# [k]

@@ -235,6 +235,8 @@ scheduleOperator lifting nest op
         let bPart (i :: Int) = BName (NameVarMod nAccResult (show i)) tA
         let uPart (i :: Int) = UName (NameVarMod nAccResult (show i))
 
+        let nAccInit    = NameVarMod nRef "init"
+
         let xBody x1 x2
                 = XApp (XApp ( XLam (opWorkerParamAcc op)
                              $ XLam (opWorkerParamElem op)
@@ -245,10 +247,13 @@ scheduleOperator lifting nest op
         let Just nest4  
                 =  insertEnds nest3 context
                 $  [ EndStmt    bAccResult
-                                (xRead (tVec c tA) (XVar uAccVec)) ]
+                                (xRead (tVec c tA) (XVar uAccVec))
+
+                   , EndStmt    (BName nAccInit tA)
+                                (xRead tA (XVar $ opTargetRef op)) ]
 
                 ++ [ EndStmt    (bPart 0)
-                                (xBody  (XVar uAccZero)    
+                                (xBody  (XVar $ UName nAccInit)
                                         (xvProj c 0 tA (XVar uAccResult))) ]
 
                 ++ [ EndStmt    (bPart i)

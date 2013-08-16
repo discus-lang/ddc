@@ -151,9 +151,13 @@ scheduleOperator nest0 op
         let nAcc          = NameVarMod nResult "acc"
         let tAcc          = typeOfBind (opWorkerParamAcc op)
 
+        let nAccInit      = NameVarMod nResult "init"
+
         let Just nest1
                 = insertStarts nest0 context
-                $ [ StartAcc nAcc tAcc (opZero op) ]
+                $ [ StartStmt (BName nAccInit tAcc)
+                              (xRead tAcc (XVar $ opTargetRef op))
+                  , StartAcc   nAcc tAcc (XVar (UName nAccInit)) ]
 
         -- Lookup binders for the input elements.
         let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
