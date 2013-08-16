@@ -5,7 +5,7 @@ letrec {
   packMe : [k0 : Rate].[a : Data].Series# k0 a -> Series# k0 Bool# -> Vector# a
     = /\(k0 : Rate)./\(a : Data).
        \(s : Series# k0 a).\(flags : Series# k0 Bool#).
-      let k1$count : Ref# Nat# = new# [Nat#] 0i# in
+      let k1$count : Ref# Nat# = new# [Nat#] 0# in
       let x0 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
@@ -30,7 +30,7 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Series# k0 a -> Vector# a
     = /\(k0 : Rate)./\(a : Data).
        \(f : a -> Bool#).\(s : Series# k0 a).
-      let k1$count : Ref# Nat# = new# [Nat#] 0i# in
+      let k1$count : Ref# Nat# = new# [Nat#] 0# in
       let x2 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
@@ -56,7 +56,7 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Series# k0 a -> Tuple2# (Vector# a) (Vector# a)
     = /\(k0 : Rate)./\(a : Data).
        \(f : a -> Bool#).\(s : Series# k0 a).
-      let k1$count : Ref# Nat# = new# [Nat#] 0i# in
+      let k1$count : Ref# Nat# = new# [Nat#] 0# in
       let x2 : Vector# a = vnewR# [a] [k0] in
       let x3 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
@@ -86,8 +86,8 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
     = /\(k0 : Rate)./\(a : Data).
        \(f g : a -> Bool#).\(s0 : Series# k0 a).
-      let k1$count : Ref# Nat# = new# [Nat#] 0i# in
-      let k2$count : Ref# Nat# = new# [Nat#] 0i# in
+      let k1$count : Ref# Nat# = new# [Nat#] 0# in
+      let k2$count : Ref# Nat# = new# [Nat#] 0# in
       let x4 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit
             = loop# [k0]
@@ -117,8 +117,8 @@ letrec {
   filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Tuple2# (Vector# a) (Vector# a)
     = /\(k0 : Rate)./\(a : Data).
        \(f g : a -> Bool#).\(s0 : Series# k0 a).
-      let k1$count : Ref# Nat# = new# [Nat#] 0i# in
-      let k2$count : Ref# Nat# = new# [Nat#] 0i# in
+      let k1$count : Ref# Nat# = new# [Nat#] 0# in
+      let k2$count : Ref# Nat# = new# [Nat#] 0# in
       let x4 : Vector# a = vnewR# [a] [k0] in
       let x7 : Vector# a = vnewR# [a] [k0] in
       let _ : Unit

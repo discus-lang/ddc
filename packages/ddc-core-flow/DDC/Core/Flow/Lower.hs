@@ -212,7 +212,9 @@ lowerProcess config process
                 (processParamTypes process)
 
         xBody
-         = xSplit c (TVar uK) xRN xProcVec' xProcTail'
+         = XLet (LLet   (BNone tUnit) 
+                        (xSplit c (TVar uK) xRN xProcVec' xProcTail'))
+                xUnit
                 
         -- Reconstruct a binder for the whole procedure / process.
         bProc   = BName (processName process)

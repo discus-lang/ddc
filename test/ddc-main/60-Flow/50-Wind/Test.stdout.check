@@ -13,17 +13,17 @@ letrec {
         loop : Nat# -> Unit
           = \(x0 : Nat#).
             case sub# [Nat#] loop$length x0 of {
-              0i#  
+              0#  
                -> ();
               _ 
                -> let s_aub__elem : Int# = next# [Int#] [k_d] s_aub x0 in
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
                   let _ : Unit = vwrite# [Int#] x6 x0 x4__elem in
-                  loop (add# [Nat#] x0 1i#)
+                  loop (add# [Nat#] x0 1#)
             }
       } in
-      let _ : Unit = loop 0i# in
+      let _ : Unit = loop 0# in
       x6
 }
 
@@ -47,7 +47,7 @@ letrec {
         loop : Nat# -> Nat# -> Int# -> Tuple2# Nat# Int#
           = \(x2 k2__count$1 : Nat#).\(x9__acc$1 : Int#).
             case sub# [Nat#] loop$length x2 of {
-              0i#  
+              0#  
                -> T2# [Nat#] [Int#] k2__count$1 x9__acc$1;
               _ 
                -> let s1__elem : Int# = next# [Int#] [k] s1 x2 in
@@ -59,13 +59,13 @@ letrec {
                         let _ : Unit = vwrite# [Int#] x5 x3 s1__elem in
                         let x6 : Int# = x9__acc$1 in
                         let x9__acc$2 : Int# = maxx x6 s1__elem in
-                        loop (add# [Nat#] x2 1i#) (add# [Nat#] k2__count$1 1i#) x9__acc$2;
+                        loop (add# [Nat#] x2 1#) (add# [Nat#] k2__count$1 1#) x9__acc$2;
                     _ 
-                     -> loop (add# [Nat#] x2 1i#) k2__count$1 x9__acc$1
+                     -> loop (add# [Nat#] x2 1#) k2__count$1 x9__acc$1
                   }
             }
       } in
-      letcase T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = loop 0i# k2__count$0 x9__acc$0 in
+      letcase T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = loop 0# k2__count$0 x9__acc$0 in
       let x4 : Nat# = k2__count$2 in
       let x6 : Vector# Int# = vslice# [Int#] x4 x5 in
       let x9 : Int# = x9__acc$2 in
@@ -93,7 +93,7 @@ letrec {
              loop : Nat# -> Vec4# Float32# -> Vec4# Float32# -> Tuple2# (Vec4# Float32#) (Vec4# Float32#)
                = \(x5 : Nat#).\(x1$vec$1 x2$vec$1 : Vec4# Float32#).
                  case sub# [Nat#] loop$length x5 of {
-                   0i#  
+                   0#  
                     -> T2# [Vec4# Float32#] [Vec4# Float32#] x1$vec$1 x2$vec$1;
                    _ 
                     -> let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1$down x5 in
@@ -105,10 +105,10 @@ letrec {
                        let x2$val : Vec4# Float32# = x2$vec$1 in
                        let x16 : Vec4# Float32# = vmul$4# [Float32#] x2$val x5$elem in
                        let x2$vec$2 : Vec4# Float32# = x16 in
-                       loop (add# [Nat#] x5 1i#) x1$vec$2 x2$vec$2
+                       loop (add# [Nat#] x5 1#) x1$vec$2 x2$vec$2
                  }
            } in
-           letcase T2# (x1$vec$2 : Vec4# Float32#) (x2$vec$2 : Vec4# Float32#)  = loop 0i# x1$vec$0 x2$vec$0 in
+           letcase T2# (x1$vec$2 : Vec4# Float32#) (x2$vec$2 : Vec4# Float32#)  = loop 0# x1$vec$0 x2$vec$0 in
            let x1$res : Vec4# Float32# = x1$vec$2 in
            let x1$init : Float32# = read# [Float32#] x1 in
            let x18 : Float32# = vproj$4$0# [Float32#] x1$res in
@@ -145,7 +145,7 @@ letrec {
              loop : Nat# -> Float32# -> Float32# -> Tuple2# Float32# Float32#
                = \(x12 : Nat#).\(x1$acc$1 x2$acc$1 : Float32#).
                  case sub# [Nat#] loop$length x12 of {
-                   0i#  
+                   0#  
                     -> T2# [Float32#] [Float32#] x1$acc$1 x2$acc$1;
                    _ 
                     -> let s1$elem : Float32#
@@ -159,10 +159,10 @@ letrec {
                        let x2$val : Float32# = x2$acc$1 in
                        let x34 : Float32# = mul# [Float32#] x2$val x5$elem in
                        let x2$acc$2 : Float32# = x34 in
-                       loop (add# [Nat#] x12 1i#) x1$acc$2 x2$acc$2
+                       loop (add# [Nat#] x12 1#) x1$acc$2 x2$acc$2
                  }
            } in
-           letcase T2# (x1$acc$2 : Float32#) (x2$acc$2 : Float32#)  = loop 0i# x1$acc$0 x2$acc$0 in
+           letcase T2# (x1$acc$2 : Float32#) (x2$acc$2 : Float32#)  = loop 0# x1$acc$0 x2$acc$0 in
            let x1$res : Float32# = x1$acc$2 in
            let _ : Unit = write# [Float32#] x1 x1$res in
            let x2$res : Float32# = x2$acc$2 in

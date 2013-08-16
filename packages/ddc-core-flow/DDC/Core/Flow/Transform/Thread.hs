@@ -182,7 +182,7 @@ threadType n _
                  $ \[tK, tA] -> tSeries tK tA `tFun` tInt 
                                 `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
-        -- Contexts -----------------------------
+        -- Control -----------------------------
         -- loopn#  :: [k : Rate]. RateNat# k 
         --         -> (Nat#  -> World# -> World#) 
         --         -> World# -> World#
@@ -198,6 +198,17 @@ threadType n _
                         `tFun` tBool
                         `tFun` (tNat  `tFun` tWorld `tFun` tWorld)
                         `tFun` tWorld `tFun` tWorld
+
+        -- split#  :: [k : Rate]. RateNat# k
+        --         -> (RateNat# (Down8# k) -> World# -> World#)
+        --         -> (RateNat# (Tail8# k) -> World# -> World#)
+        --         -> World# -> World#
+        NameOpControl (OpControlSplit c)
+         -> Just $ tForall kRate
+          $ \tK -> tRateNat tK
+                `tFun` (tRateNat (tDown c tK) `tFun` tWorld `tFun` tWorld)
+                `tFun` (tRateNat (tTail c tK) `tFun` tWorld `tFun` tWorld)
+                `tFun` tWorld `tFun` tWorld
 
         _ -> Nothing
 
