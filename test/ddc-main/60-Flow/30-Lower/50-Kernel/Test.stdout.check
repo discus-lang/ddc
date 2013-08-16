@@ -6,7 +6,7 @@ letrec {
     = /\(k : Rate).
        \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x2 : Nat#).
                    let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1 x2 in
                    let s2$elem : Vec4# Float32# = next$4# [Float32#] [k] s2 x2 in
@@ -24,7 +24,7 @@ letrec {
     = /\(k : Rate).
        \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x2 : Nat#).
                    let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1 x2 in
                    let s2$elem : Vec4# Float32# = next$4# [Float32#] [k] s2 x2 in
@@ -44,7 +44,7 @@ letrec {
     = /\(k : Rate).
        \(n : RateNat# k).\(v1 v2 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x1 : Nat#).
                    let s1$elem : Vec4# Nat# = next$4# [Nat#] [k] s1 x1 in
                    let s2$elem : Vec4# Float32# = vgather$4# [Float32#] v1 s1$elem in
@@ -63,7 +63,7 @@ letrec {
     = /\(k : Rate).
        \(n : RateNat# k).\(v1 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).\(s2 : Series# (Down4# k) Float32#).
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x1 : Nat#).
                    let s1$elem : Vec4# Nat# = next$4# [Nat#] [k] s1 x1 in
                    let s2$elem : Vec4# Float32# = next$4# [Float32#] [k] s2 x1 in
@@ -85,7 +85,7 @@ letrec {
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x4 in
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x3 : Nat#).
                    let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1 x3 in
                    let x1$val : Vec4# Float32#
@@ -119,7 +119,7 @@ letrec {
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x3 in
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x2 : Nat#).
                    let s1$elem : Vec4# Nat# = next$4# [Nat#] [k] s1 x2 in
                    let s2$elem : Vec4# Float32# = vgather$4# [Float32#] v1 s1$elem in
@@ -156,7 +156,7 @@ letrec {
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x4 in
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x3 : Nat#).
                    let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1 x3 in
                    let s2$elem : Vec4# Float32# = next$4# [Float32#] [k] s2 x3 in
@@ -195,7 +195,7 @@ letrec {
       let x2$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x6 in
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x4 : Nat#).
                    let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1 x4 in
                    let x1$val : Vec4# Float32#
@@ -248,7 +248,7 @@ letrec {
       let x2$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x6 in
       let _ : Unit
-            = loop# [k]
+            = loop# [Down4# k]
                   (\(x4 : Nat#).
                    let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1 x4 in
                    let s2$elem : Vec4# Float32# = next$4# [Float32#] [k] s2 x4 in

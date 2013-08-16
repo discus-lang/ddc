@@ -80,8 +80,9 @@ scheduleKernel
                                 , let uIndex            = UIx 0 
                                 , let Just tElem_lifted = liftType lifting tElem ]
 
+
         let nest0       = NestLoop 
-                        { nestRate      = tK 
+                        { nestRate      = tDown c tK 
                         , nestStart     = []
                         , nestBody      = ssBody
                         , nestInner     = NestEmpty
@@ -112,8 +113,9 @@ scheduleOperator
 scheduleOperator lifting nest op
  -- Map -----------------------------------------
  | OpMap{}      <- op
- = do   let tK            = opInputRate op
-        let context       = ContextRate tK
+ = do   let c           = liftingFactor lifting
+        let tK          = opInputRate op
+        let context     = ContextRate (tDown c tK)
 
         -- Bind for the result element.
         let Just bResultE =   elemBindOfSeriesBind (opResultSeries op)
@@ -149,7 +151,7 @@ scheduleOperator lifting nest op
  | OpFill{}     <- op
  = do   let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate tK
+        let context     = ContextRate (tDown c tK)
 
         -- Bound for input element.
         let Just uInput = elemBoundOfSeriesBound 
@@ -175,7 +177,7 @@ scheduleOperator lifting nest op
  | OpReduce{}   <- op
  = do   let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate tK
+        let context     = ContextRate (tDown c tK)
         let tA          = typeOfBind $ opWorkerParamElem op
 
         -- Evaluate the zero value and initialize the vector accumulator.
@@ -274,7 +276,7 @@ scheduleOperator lifting nest op
  = do   
         let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate tK
+        let context     = ContextRate (tDown c tK)
 
         -- Bind for result element.
         let Just bResultE =   elemBindOfSeriesBind (opResultBind op)
@@ -298,7 +300,7 @@ scheduleOperator lifting nest op
  = do   
         let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate tK
+        let context     = ContextRate (tDown c tK)
 
         -- Bound of source index.
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
