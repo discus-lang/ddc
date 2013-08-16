@@ -18,11 +18,11 @@ import DDC.Core.Predicates
 import DDC.Core.Compounds
 import Data.Map                 (Map)
 import Control.Monad
-import Control.Monad.Writer	(Writer, runWriter, tell)
-import Data.Monoid		(Monoid, mempty, mappend)
+import Control.Monad.Writer     (Writer, runWriter, tell)
+import Data.Monoid              (Monoid, mempty, mappend)
 import Data.Typeable
 import qualified Data.Map                               as Map
-import qualified DDC.Core.Transform.SubstituteXX	as S
+import qualified DDC.Core.Transform.SubstituteXX        as S
 
 -------------------------------------------------------------------------------
 -- | Summary of number of bindings floated.
@@ -103,17 +103,17 @@ forwardX :: Ord n
 
 forwardX profile config xx
  = let  (x',info) = runWriter
-		  $ forwardWith profile config Map.empty
-		  $ usageX xx
+                  $ forwardWith profile config Map.empty
+                  $ usageX xx
 
         progress (ForwardInfo _ s f) 
                 = s + f > 0
 
    in  TransformResult
-        { result	 = x'
+        { result         = x'
         , resultProgress = progress info
         , resultAgain    = False
-        , resultInfo	 = TransformInfo info }
+        , resultInfo     = TransformInfo info }
 
 
 -------------------------------------------------------------------------------
@@ -137,14 +137,14 @@ instance Forward Module where
                 , moduleImportTypes     = importTypes
                 , moduleBody            = body })
 
-  = do	body' <- forwardWith profile config bindings body
-	return ModuleCore
-		{ moduleName            = name
-		, moduleExportKinds     = exportKinds
-		, moduleExportTypes     = exportTypes
-		, moduleImportKinds     = importKinds
-		, moduleImportTypes     = importTypes
-		, moduleBody            = body' }
+  = do  body' <- forwardWith profile config bindings body
+        return ModuleCore
+                { moduleName            = name
+                , moduleExportKinds     = exportKinds
+                , moduleExportTypes     = exportTypes
+                , moduleImportKinds     = importKinds
+                , moduleImportTypes     = importTypes
+                , moduleBody            = body' }
 
 
 instance Forward Exp where
@@ -155,10 +155,10 @@ instance Forward Exp where
         XVar a u@(UName n)
          -> case Map.lookup n bindings of
                 Just xx'        -> do
-		    tell mempty { infoSubsts = 1 }
-		    return xx'
+                    tell mempty { infoSubsts = 1 }
+                    return xx'
                 Nothing         ->
-		    return $ XVar (snd a) u
+                    return $ XVar (snd a) u
 
         XVar a u        -> return $ XVar (snd a) u
         XCon a u        -> return $ XCon (snd a) u
@@ -255,7 +255,7 @@ instance Forward Lets where
          -> liftM LRec
          $  mapM (\(b,x) 
                     -> do x' <- down x
-			  return (b, x')) 
+                          return (b, x')) 
             bxs
 
         LLetRegions b bs -> return $ LLetRegions b bs
