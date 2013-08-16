@@ -6,9 +6,9 @@ where
 import DDC.Core.Exp
 import DDC.Type.Predicates
 import DDC.Type.Compounds
-import qualified DDC.Core.Transform.Rewrite.Env	as RE
-import qualified DDC.Type.Sum			as Sum
-import qualified DDC.Type.Transform.Crush	as TC
+import qualified DDC.Core.Transform.Rewrite.Env as RE
+import qualified DDC.Type.Sum                   as Sum
+import qualified DDC.Type.Transform.Crush       as TC
 
 
 -- | Check whether a disjointness property is true in the given
@@ -53,15 +53,15 @@ import qualified DDC.Type.Transform.Crush	as TC
 --   Example:
 --   
 -- >  checkDisjoint
--- >	(Disjoint (Read r1 + Read r2) (Write r3))
--- >	[Distinct r1 r3, Distinct r2 r3]
+-- >    (Disjoint (Read r1 + Read r2) (Write r3))
+-- >    [Distinct r1 r3, Distinct r2 r3]
 -- >  = True
 --
 checkDisjoint
         :: (Ord n, Show n)
         => Type n               -- ^ Type of property we want
                                 --   eg @Disjoint e1 e2@
-        -> RE.RewriteEnv a n	-- ^ Environment we're rewriting in.
+        -> RE.RewriteEnv a n    -- ^ Environment we're rewriting in.
         -> Bool
 
 checkDisjoint c env
@@ -117,15 +117,15 @@ areDisjoint env t1 t2
 --
 checkDistinct
     :: Ord n
-    => Type n			-- ^ Type of the property we want,
+    => Type n                   -- ^ Type of the property we want,
                                 --   eg @Distinct r1 r2@
-    -> RE.RewriteEnv a n	-- ^ Environment we're rewriting in.
+    -> RE.RewriteEnv a n        -- ^ Environment we're rewriting in.
     -> Bool
 
 checkDistinct c env
         -- It's of the form "Distinct r q"
         | (TCon (TyConWitness (TwConDistinct _)) : args)
-        	<- takeTApps c
+                <- takeTApps c
         = all (uncurry $ areDistinct env) (combinations args)
 
         | otherwise
@@ -186,7 +186,7 @@ areDistinctBound env p q
                 concrete r
                  = case r of
                         UPrim _ _ -> True
-                        _	  -> RE.containsRegion r env
+                        _         -> RE.containsRegion r env
 
                 check w
                  | (TCon (TyConWitness (TwConDistinct _)) : args)
@@ -199,5 +199,5 @@ areDistinctBound env p q
                 rgn b
                  = case b of
                     UPrim _ t   -> TCon (TyConBound b t)
-                    _	        -> TVar b
+                    _           -> TVar b
 
