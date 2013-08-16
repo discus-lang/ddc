@@ -26,6 +26,16 @@ concretizeX
 concretizeX _kenv tenv xx
 
         -- loop# -> loopn#
+        -- using an existing RateNat in the environment.
+        | Just ( NameOpControl OpControlLoop
+               , [XType tK, xF]) <- takeXPrimApps xx
+        , Just nRN               <- findRateNatWithRate tenv tK
+        , xRN                    <- XVar (UName nRN)
+        = Just
+        $ xLoopN tK xRN xF
+
+        -- loop# -> loopn#
+        -- using the length of a series to get the rate.
         | Just ( NameOpControl OpControlLoop
                , [XType tK, xF]) <- takeXPrimApps xx
         , Just (nS, _, tA)       <- findSeriesWithRate tenv tK
@@ -50,6 +60,38 @@ concretizeX _kenv tenv xx
         = Nothing
 
 
+-------------------------------------------------------------------------------
+-- | Search the given environment for the name of a RateNat with the
+--   given rate parameter. We only look at named binders.
+findRateNatWithRate 
+        :: TypeEnvF             -- ^ Type Environment.
+        -> Type Name            -- ^ Rate type.
+        -> Maybe Name
+                                -- ^ RateNat name
+findRateNatWithRate tenv tR
+ = go (Map.toList (Env.envMap tenv))
+ where  go []           = Nothing
+        go ((n, tRN) : moar)
+         | isRateNatTypeOfRate tR tRN = Just n
+         | otherwise                  = go moar
+
+
+-- | Check whether some type is a RateNat type of the given rate.
+isRateNatTypeOfRate 
+        :: Type Name -> Type Name 
+        -> Bool
+
+isRateNatTypeOfRate tR tRN
+        | Just ( NameTyConFlow TyConFlowRateNat
+               , [tR'])    <- takePrimTyConApps tRN
+        , tR == tR'
+        = True
+
+        | otherwise
+        = False
+
+
+-------------------------------------------------------------------------------
 -- | Search the given environment for the name of a series with the
 --   given rate parameter. We only look at named binders.
 findSeriesWithRate 
@@ -59,8 +101,7 @@ findSeriesWithRate
                                 -- ^ Series name, rate type, element type.
 findSeriesWithRate tenv tR
  = go (Map.toList (Env.envMap tenv))
- where 
-        go []           = Nothing
+ where  go []           = Nothing
         go ((n, tS) : moar)
          = case isSeriesTypeOfRate tR tS of
                 Nothing         -> go moar
