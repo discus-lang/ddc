@@ -4,7 +4,7 @@
 -- We only reconstruct type applications for vars with signatures because we
 -- can do it without proper constraint solving.
 -- Convert source to core that includes holes, then fill holes at core level.
-:desugar..
+:infer..
 module Test where
 data List (a : Data) where
         Nil     : List a
@@ -19,7 +19,7 @@ map [a b : Data] (f : a -> b) (xx : List a) : List b
 
 -- If any type variables are not in scope in a top-level signature,
 -- then insert quantifiers for these.
-:desugar..
+:infer..
 module Test where
 data List (a : Data) where
         Nil     : List a
