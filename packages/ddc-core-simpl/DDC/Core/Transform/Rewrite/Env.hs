@@ -43,7 +43,7 @@ data RewriteEnv a n
           -- | Assoc of known values
           --   If going to inline them, they must only reference de bruijn binds
           --   these are value-level bindings, so be careful lifting.
-        , defs	         :: [[RewriteDef a n]] }
+        , defs           :: [[RewriteDef a n]] }
         deriving (Show,Eq)
 
 
@@ -91,13 +91,13 @@ extendLets (LLetRegions bs cs) renv
                  -> env
 
         extend' b (r:rs') = (b:r) : rs'
-        extend' b []	   = [[b]]
+        extend' b []      = [[b]]
 
 extendLets (LLet b def) env
  = insertDef b (Just def') (liftValue b env)
  where  def' = case b of
-	         BAnon{} -> L.liftX 1 def
-        	 _	 -> def
+                 BAnon{} -> L.liftX 1 def
+                 _       -> def
 
 extendLets (LRec bs) env
  = foldl lift' env (map fst bs)
@@ -160,7 +160,7 @@ insertDef b def env
  = env { defs = extend' $ defs env }
  where  
         extend' (r:rs') = ((b,def):r) : rs'
-        extend' []	= [[(b,def)]]
+        extend' []      = [[(b,def)]]
 
 
 hasDef  :: (Ord n, L.MapBoundX (Exp a) n)
@@ -192,9 +192,9 @@ getDef' b env
 
         match b' i ds
                 = fmap (fmap $ L.liftX i)
-		$ listToMaybe
-		$ map snd
-		$ filter (T.boundMatchesBind b' . fst) ds
+                $ listToMaybe
+                $ map snd
+                $ filter (T.boundMatchesBind b' . fst) ds
 
         orM (Just x) _  = Just x
         orM Nothing  y  = y
