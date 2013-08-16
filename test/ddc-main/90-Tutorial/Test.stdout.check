@@ -185,6 +185,6 @@ let ^ : [^ ^ : Region].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> 
         Pr [^1] [Int ^1] [Int ^0] ^1 ^0 in
 letregion ^ in
 letregion ^ in
-caselet Pr (_ : Int ^1) (^ : Int ^0)  = ^0 [^1] [^0] () in
+letcase Pr (_ : Int ^1) (^ : Int ^0)  = ^0 [^1] [^0] () in
 copyInt [^0] [R0#] ^0
 

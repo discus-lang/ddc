@@ -14,7 +14,7 @@ letrec {
       weakclo {[r1]; n} in
       letregion r3 in
       weakclo {[r3]} in
-      caselet N# (n2 : Nat#)  = n in
+      letcase N# (n2 : Nat#)  = n in
       case eq# [Nat#] n2 0# of {
         True#  
          -> Nil [r2] [a] ();
@@ -22,8 +22,8 @@ letrec {
          -> Cons [r2] [a] x
                 (replicate [r3] [r2] [a]
                      ((\(^ : Nat r3).
-                       caselet N# (^ : Nat#)  = n in
-                       caselet N# (^ : Nat#)  = ^1 in
+                       letcase N# (^ : Nat#)  = n in
+                       letcase N# (^ : Nat#)  = ^1 in
                        N# [r3] (sub# [Nat#] ^1 ^0)) (N# [r3] 1#)) x)
       }
 }

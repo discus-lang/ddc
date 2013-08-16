@@ -36,7 +36,7 @@ Bool :: Region ~> Data
 -- Unboxing bools.
 /\(r : Region).
  \(x : Bool r).
-caselet B# (b : Bool#)  = x in
+letcase B# (b : Bool#)  = x in
 b
 :*: [r : Region].Bool r -(Read r | Empty)> Bool#
 :!: Pure
@@ -54,7 +54,7 @@ b
 -- Unboxing ints
 /\(r : Region).
  \(x : Int r).
-caselet I# (i : Int#)  = x in
+letcase I# (i : Int#)  = x in
 i
 :*: [r : Region].Int r -(Read r | Empty)> Int#
 :!: Pure
@@ -65,13 +65,13 @@ i
 let unboxInt : [r : Region].Int r -(Read r | Empty)> Int#
       = /\(r : Region).
          \(x : Int r).
-        caselet I# (i : Int#)  = x in
+        letcase I# (i : Int#)  = x in
         i in
 let addInt : [r1 r2 r3 : Region].Int r1 -(Pure | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3
       = /\(r1 r2 r3 : Region).
          \(x : Int r1).\(y : Int r2).
-        caselet I# (i1 : Int#)  = x in
-        caselet I# (i2 : Int#)  = y in
+        letcase I# (i1 : Int#)  = x in
+        letcase I# (i2 : Int#)  = y in
         I# [r3] (add# [Int#] i1 i2) in
 letregion r1 in
 unboxInt [r1]

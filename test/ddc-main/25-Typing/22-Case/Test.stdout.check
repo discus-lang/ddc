@@ -17,7 +17,7 @@ When checking expression.
   Scrutinee of case expression is not algebraic data.
        Scrutinee type: Unit -> Unit
   
-  with: caselet _ 
+  with: letcase _ 
           = \(x : Unit). x in
         ()
 
@@ -57,7 +57,7 @@ When checking expression.
   Case alternatives are non-exhaustive.
    Constructors not matched: Nil
   
-  with: caselet Cons _ _  = xx in
+  with: letcase Cons _ _  = xx in
         ()
 
 
@@ -65,7 +65,7 @@ When checking expression.
 When checking expression.
   Case alternatives are non-exhaustive.
   
-  with: caselet 0   = xx in
+  with: letcase 0   = xx in
         ()
 
 
@@ -119,7 +119,7 @@ When checking expression.
           Scrutinee type: List R0# (Int R0#)
         Constructor type: Unit
   
-  with: caselet ()   = xx1 in
+  with: letcase ()   = xx1 in
         ()
 
 
@@ -129,7 +129,7 @@ When checking expression.
           Scrutinee type: Int R0#
             Pattern type: [^ : Data].Unit -(Alloc R0# | Empty)> List R0# ^0
   
-  with: caselet Nil   = xx in
+  with: letcase Nil   = xx in
         ()
 
 
@@ -150,7 +150,7 @@ case xx of {
 
 -- Check that the HeadRead effect is crushed out when
 -- the read is on a type with no head region.
-caselet ()   = () in
+letcase ()   = () in
 ()
 :*: Unit
 :!: Pure

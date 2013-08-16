@@ -103,7 +103,7 @@ letrec {
   foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
     = /\(r1 : Region).
        \(x : Ptr# rT Obj).
-      caselet _  = getTag [rT] x in
+      letcase _  = getTag [rT] x in
       allocBoxed [rT] TAG0# 0#
 }
 

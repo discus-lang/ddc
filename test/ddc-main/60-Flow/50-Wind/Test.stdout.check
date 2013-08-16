@@ -65,7 +65,7 @@ letrec {
                   }
             }
       } in
-      caselet T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = loop 0i# k2__count$0 x9__acc$0 in
+      letcase T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = loop 0i# k2__count$0 x9__acc$0 in
       let x4 : Nat# = k2__count$2 in
       let x6 : Vector# Int# = vslice# [Int#] x4 x5 in
       let x9 : Int# = x9__acc$2 in
@@ -108,7 +108,7 @@ letrec {
                        loop (add# [Nat#] x5 1i#) x1$vec$2 x2$vec$2
                  }
            } in
-           caselet T2# (x1$vec$2 : Vec4# Float32#) (x2$vec$2 : Vec4# Float32#)  = loop 0i# x1$vec$0 x2$vec$0 in
+           letcase T2# (x1$vec$2 : Vec4# Float32#) (x2$vec$2 : Vec4# Float32#)  = loop 0i# x1$vec$0 x2$vec$0 in
            let x1$res : Vec4# Float32# = x1$vec$2 in
            let x1$init : Float32# = read# [Float32#] x1 in
            let x18 : Float32# = vproj$4$0# [Float32#] x1$res in
@@ -162,7 +162,7 @@ letrec {
                        loop (add# [Nat#] x12 1i#) x1$acc$2 x2$acc$2
                  }
            } in
-           caselet T2# (x1$acc$2 : Float32#) (x2$acc$2 : Float32#)  = loop 0i# x1$acc$0 x2$acc$0 in
+           letcase T2# (x1$acc$2 : Float32#) (x2$acc$2 : Float32#)  = loop 0i# x1$acc$0 x2$acc$0 in
            let x1$res : Float32# = x1$acc$2 in
            let _ : Unit = write# [Float32#] x1 x1$res in
            let x2$res : Float32# = x2$acc$2 in

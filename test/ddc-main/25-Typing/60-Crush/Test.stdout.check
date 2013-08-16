@@ -14,7 +14,7 @@ case xx of {
 
 -- Check that the HeadRead effect is crushed out when
 -- the read is on a type with no head region.
-caselet ()   = () in
+letcase ()   = () in
 ()
 :*: Unit
 :!: Pure
