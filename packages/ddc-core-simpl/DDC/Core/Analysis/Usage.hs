@@ -25,8 +25,8 @@ data Used
         -- | Bound variable is destructed by a case-expression.
         | UsedDestruct
 
-	-- | Bound variable is used inside a @weakclo@ cast.
-	| UsedInCast
+        -- | Bound variable is used inside a @weakclo@ cast.
+        | UsedInCast
 
         -- | Bound variable has an occurrence that is not one of the above.
         | UsedOcc
@@ -227,7 +227,7 @@ usageCast cc
         CastWeakenClosure xs
          | (useds, xs')         <- unzip $ map usageX' xs
          , UsedMap used'        <- sumUsedMap useds
-	 , usedCasts		<- Map.map (map $ const UsedInCast) used'
+         , usedCasts            <- Map.map (map $ const UsedInCast) used'
          -> (UsedMap usedCasts, CastWeakenClosure xs')
 
         CastPurify w
