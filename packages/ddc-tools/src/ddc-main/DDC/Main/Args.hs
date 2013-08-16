@@ -129,6 +129,10 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeFlowLower file
 
+        | "-flow-lower-kernel" : file : rest   <- args
+        = parseArgs rest
+        $ setMode config $ ModeFlowLowerKernel file
+
         | "-flow-lower-vector" : file : rest   <- args
         = parseArgs rest
         $ setMode config $ ModeFlowLowerVector file
@@ -242,6 +246,7 @@ flagOfMode mode
         ModeToLLVM{}                    -> Just "-to-llvm"
         ModeFlowPrep{}                  -> Just "-flow-prep"
         ModeFlowLower{}                 -> Just "-flow-lower"
+        ModeFlowLowerKernel{}           -> Just "-flow-lower-kernel"
         ModeFlowLowerVector{}           -> Just "-flow-lower-vector"
         ModeFlowConcretize{}            -> Just "-flow-concretize"
         ModeFlowMelt{}                  -> Just "-flow-melt"

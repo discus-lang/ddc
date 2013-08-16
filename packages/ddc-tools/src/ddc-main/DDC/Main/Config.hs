@@ -61,6 +61,9 @@ data Mode
         -- | Lower a Flow program.
         | ModeFlowLower FilePath
 
+        -- | Lower a Flow program, producing a vector kernel.
+        | ModeFlowLowerKernel FilePath
+
         -- | Lower a Flow program using vector instructions.
         | ModeFlowLowerVector FilePath
 

@@ -130,6 +130,7 @@ commands
 
         -- Core Flow passes
         , (":flow-prep",         CommandFlowPrep)
+        , (":flow-lower-kernel", CommandFlowLower Flow.defaultConfigKernel)
         , (":flow-lower-vector", CommandFlowLower Flow.defaultConfigVector)
         , (":flow-lower",        CommandFlowLower Flow.defaultConfigScalar)
         , (":flow-concretize",   CommandFlowConcretize)

@@ -2,9 +2,9 @@
 -- Multiply two series.
 module Test with
 letrec {
-  test : [k : Rate].Vector# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(v : Vector# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
       let _ : Unit
             = loop# [k]
                   (\(x2 : Nat#).
@@ -20,9 +20,9 @@ letrec {
 -- Multiply by constant, lifting replicates constant.
 module Test with
 letrec {
-  test : [k : Rate].Vector# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(v : Vector# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
       let _ : Unit
             = loop# [k]
                   (\(x2 : Nat#).
@@ -40,9 +40,9 @@ letrec {
 -- Gather from vector.
 module Test with
 letrec {
-  test : [k : Rate].Vector# Float32# -> Vector# Float32# -> Series# (Down4# k) Nat# -> Unit
+  test : [k : Rate].RateNat# k -> Vector# Float32# -> Vector# Float32# -> Series# (Down4# k) Nat# -> Unit
     = /\(k : Rate).
-       \(v1 v2 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).
+       \(n : RateNat# k).\(v1 v2 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).
       let _ : Unit
             = loop# [k]
                   (\(x1 : Nat#).
@@ -59,9 +59,9 @@ letrec {
 -- Scatter into vector.
 module Test with
 letrec {
-  test : [k : Rate].Vector# Float32# -> Series# (Down4# k) Nat# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down4# k) Nat# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(v1 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).\(s2 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(v1 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).\(s2 : Series# (Down4# k) Float32#).
       let _ : Unit
             = loop# [k]
                   (\(x1 : Nat#).
@@ -78,9 +78,9 @@ letrec {
 -- Sum the elements of a vector.
 module Test with
 letrec {
-  test : [k : Rate].Ref# Float32# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Ref# Float32# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(x1 : Ref# Float32#).\(s1 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 : Series# (Down4# k) Float32#).
       let x4 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x4 in
@@ -112,9 +112,9 @@ letrec {
 -- Fuse gather, map and reduce in one.
 module Test with
 letrec {
-  test : [k : Rate].Ref# Float32# -> Vector# Float32# -> Series# (Down4# k) Nat# -> Unit
+  test : [k : Rate].RateNat# k -> Ref# Float32# -> Vector# Float32# -> Series# (Down4# k) Nat# -> Unit
     = /\(k : Rate).
-       \(x1 : Ref# Float32#).\(v1 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(v1 : Vector# Float32#).\(s1 : Series# (Down4# k) Nat#).
       let x3 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x3 in
@@ -149,9 +149,9 @@ letrec {
 -- Dot product.
 module Test with
 letrec {
-  test : [k : Rate].Ref# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Ref# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(x1 : Ref# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
       let x4 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x4 in
@@ -185,9 +185,9 @@ letrec {
 -- Fuse sum and product.
 module Test with
 letrec {
-  test : [k : Rate].Ref# Float32# -> Ref# Float32# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(x1 x2 : Ref# Float32#).\(s1 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 : Series# (Down4# k) Float32#).
       let x5 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x5 in
@@ -238,9 +238,9 @@ letrec {
 -- Fuse sum and dot product.
 module Test with
 letrec {
-  test : [k : Rate].Ref# Float32# -> Ref# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
+  test : [k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# (Down4# k) Float32# -> Series# (Down4# k) Float32# -> Unit
     = /\(k : Rate).
-       \(x1 x2 : Ref# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
+       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 s2 : Series# (Down4# k) Float32#).
       let x5 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
       let x1$vec : Ref# (Vec4# Float32#)
             = new# [Vec4# Float32#] x5 in

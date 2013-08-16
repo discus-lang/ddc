@@ -3,6 +3,7 @@
 module DDC.Core.Flow.Lower
         ( Config        (..)
         , defaultConfigScalar
+        , defaultConfigKernel
         , defaultConfigVector
         , Method        (..)
         , lowerModule)
@@ -43,6 +44,11 @@ data Method
         -- | Produce sequential scalar code with nested loops.
         = MethodScalar
 
+        -- | Produce vector kernel code that only processes an even multiple
+        --   of the vector width.
+        | MethodKernel
+        { methodLifting         :: Lifting }
+
         -- | Try to produce sequential vector code,
         --   falling back to scalar code if this is not possible.
         | MethodVector
@@ -54,6 +60,12 @@ defaultConfigScalar :: Config
 defaultConfigScalar
         = Config
         { configMethod  = MethodScalar }
+
+
+defaultConfigKernel :: Config
+defaultConfigKernel
+        = Config
+        { configMethod  = MethodKernel (Lifting 4)}
 
 
 defaultConfigVector :: Config
@@ -204,18 +216,15 @@ lowerProcess config process
 
    in   (bProc, xProc)
 
-
- | MethodVector lifting <- configMethod config
+ | MethodKernel lifting <- configMethod config
  = let  
-        -- Schedule process into scalar code.
+        -- Schedule process into 
         Right proc              = scheduleKernel lifting process
 
         -- Extract code for the kernel
         (bProc, xProc)          = extractProcedure proc
 
    in   (bProc, xProc)
-
-
 
  | otherwise
  = error "ddc-core-flow.lowerProcess: invalid lowering method"

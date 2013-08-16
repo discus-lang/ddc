@@ -1,8 +1,8 @@
 
 -- Multiply two series.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] 
+test    [k : Rate] (n  : RateNat# k)
         (v  : Vector# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
         : Unit
@@ -15,9 +15,9 @@ test    [k : Rate]
 
 
 -- Multiply by constant, lifting replicates constant.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] 
+test    [k : Rate] (n : RateNat# k)
         (v  : Vector# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
         : Unit
@@ -33,9 +33,9 @@ test    [k : Rate]
 
 
 -- Gather from vector.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] 
+test    [k : Rate] (n : RateNat# k)
         (v1 : Vector# Float32#)   (v2 : Vector# Float32#)
         (s1 : Series# k Nat#)
         : Unit
@@ -50,9 +50,9 @@ test    [k : Rate]
 
 
 -- Scatter into vector.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k : Rate]
+test    [k : Rate] (n : RateNat# k)
         (v1 : Vector# Float32#)
         (s1 : Series# k Nat#)   (s2 : Series# k Float32#)
         : Unit
@@ -65,9 +65,9 @@ test    [k : Rate]
 
 
 -- Sum the elements of a vector.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k : Rate]
+test    [k : Rate] (n : RateNat# k)
         (x1 : Ref# Float32#) (s1 : Series# k Float32#)
         : Unit
  =      reduce#  [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
@@ -75,9 +75,9 @@ test    [k : Rate]
 
 
 -- Fuse gather, map and reduce in one.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] 
+test    [k : Rate] (n : RateNat# k) 
         (x1  : Ref# Float32#)
         (v1 : Vector# Float32#)
         (s1 : Series# k Nat#)
@@ -93,9 +93,9 @@ test    [k : Rate]
 
 
 -- Dot product.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k  : Rate] 
+test    [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#)
         : Unit
@@ -108,9 +108,9 @@ test    [k  : Rate]
 
 
 -- Fuse sum and product.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k  : Rate] 
+test    [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
         (s1 : Series# k Float32#)
         : Unit
@@ -121,9 +121,9 @@ test    [k  : Rate]
 
 
 -- Fuse sum and dot product.
-:flow-lower-vector..
+:flow-lower-kernel..
 module Test with letrec
-test    [k  : Rate] 
+test    [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#)
         : Unit

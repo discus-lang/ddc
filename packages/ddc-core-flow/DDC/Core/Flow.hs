@@ -9,6 +9,7 @@ module DDC.Core.Flow
           -- * Driver
         , Config        (..)
         , defaultConfigVector
+        , defaultConfigKernel
         , defaultConfigScalar
         , Method        (..)
         , lowerModule
