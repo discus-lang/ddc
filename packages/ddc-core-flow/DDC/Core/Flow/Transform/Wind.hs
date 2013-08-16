@@ -32,7 +32,8 @@ import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds
-import DDC.Core.Flow.Compounds  (tNat, dcNat, dcTupleN, dcBool, tTupleN)
+import DDC.Core.Flow.Compounds  
+        (tNat, dcNat, dcTupleN, dcBool, tTupleN)
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
@@ -112,6 +113,14 @@ data Context
         deriving Show
 
 
+-- | Check if some `Context` is a `ContextLoop`.
+isContextLoop :: Context -> Bool
+isContextLoop cc
+ = case cc of
+        ContextLoop{}   -> True
+        _               -> False
+
+
 -- | Build a tailcall from the current context.
 --   This tells us where to go after finishing the body of a loop.
 makeTailCallFromContexts :: a -> RefMap -> [Context] -> Exp a Name
@@ -122,12 +131,14 @@ makeTailCallFromContexts a refMap context@(ContextLoop nLoop _ _ : _)
 
    in   xApps a xLoop xArgs
    
-makeTailCallFromContexts _ _ _
+makeTailCallFromContexts _ _ contexts
  = error $ unlines
          [ "ddc-core-flow.makeTailCallFromContexts" 
-         , "    Can't make a tailcall for this context." ]
+         , "    Can't make a tailcall for this context."
+         , "    context = " ++ show contexts ]
 
 
+-------------------------------------------------------------------------------
 -- | Slurp expressions to update each of the accumulators of the loop.
 --   We assume that there have been no other updates to the loop
 --   counter, and we generated the code ourselves.
@@ -299,12 +310,11 @@ windBodyX refMap context xx
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
                 -- Name of the new loop function.
-                TVar (UName nK) = tK
-                nLoop           = NameVarMod nK "loop"
+                nLoop           = NameVar "loop"
                 bLoop           = BName nLoop tLoop
                 uLoop           = UName nLoop
 
-                nLength         = NameVarMod nK "length"
+                nLength         = NameVarMod nLoop "length"
                 bLength         = BName nLength tNat
                 uLength         = UName nLength
 
@@ -407,12 +417,23 @@ windBodyX refMap context xx
 
         -----------------------------------------
         -- Detect end value.
-        --   When we hit a Unit at the top level of the body of a loop then
-        --   we know it's time to do the recursive call.
+        --   If we're inside a loop and hit a Unit at the top-level of the body
+        --   then we know it's time to do the recursive call.
         XCon a dc
-         | dc == dcUnit
+         |  any isContextLoop context
+         ,  dc == dcUnit
          -> makeTailCallFromContexts a refMap context
 
+
+        -----------------------------------------
+        -- Enter into both branches of a split.
+        XApp{}
+         | Just ( NameOpControl (OpControlSplit n)
+                , [ XType tK, xN, xBranch1, xBranch2 ]) <- takeXPrimApps xx
+         -> let xBranch1'       = down xBranch1
+                xBranch2'       = down xBranch2
+            in  xSplit n tK xN xBranch1' xBranch2'
+                 
 
         -- Boilerplate --------------------------
         XVar{}          -> xx
@@ -449,6 +470,13 @@ windBodyX refMap context xx
         XWitness{}      -> xx
 
 
+
+-------------------------------------------------------------------------------
+-- TODO: rewrite to use Simple version of Core language and reuse
+--       standard flow compounds.
+type TypeF      = Type Name
+type ExpF       = Exp () Name
+
 xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
         = xApps () 
@@ -458,6 +486,22 @@ xNatOfRateNat tK xR
 xVarOpSeries :: OpSeries -> Exp () Name
 xVarOpSeries op
         = XVar  () (UPrim (NameOpSeries op) (typeOpSeries op))
+
+
+
+xSplit  :: Int 
+        -> TypeF
+        -> ExpF
+        -> ExpF -> ExpF -> ExpF
+xSplit n tK xRN xDownFn xTailFn 
+        = xApps () 
+                (xVarOpControl $ OpControlSplit n)
+                [ XType tK, xRN, xDownFn, xTailFn ]
+
+
+xVarOpControl :: OpControl -> Exp () Name
+xVarOpControl op
+        = XVar  () (UPrim (NameOpControl op) (typeOpControl op))
 
 
 -------------------------------------------------------------------------------

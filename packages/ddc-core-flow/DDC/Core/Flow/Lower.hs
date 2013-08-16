@@ -113,7 +113,9 @@ lowerProcess config process
  , BName nRN tRN : _  <- processParamValues process
  , isRateNatType tRN
 
- = let  
+ = let  c       = liftingFactor lifting
+
+
         -- Get the primary rate variable.
         bK : _  = processParamTypes process
         Just uK = takeSubstBoundOfBind bK
@@ -128,8 +130,7 @@ lowerProcess config process
         Right procVec   = scheduleKernel lifting process
         (_, xProcVec)   = extractProcedure procVec
         
-        c               = liftingFactor lifting
-
+        
         bxsDownSeries       
          = [ ( bS
              , ( BName (NameVarMod n "down")
@@ -211,8 +212,8 @@ lowerProcess config process
                 (processParamTypes process)
 
         xBody
-         = xSplit 4 (TVar uK) xRN xProcVec' xProcTail'
-
+         = xSplit c (TVar uK) xRN xProcVec' xProcTail'
+                
         -- Reconstruct a binder for the whole procedure / process.
         bProc   = BName (processName process)
                         (typeOfProcess process)
