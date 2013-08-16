@@ -27,11 +27,11 @@ import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 import qualified DDC.Type.Env                           as Env
 import qualified DDC.Core.Collect                       as C
-import qualified DDC.Core.Transform.SubstituteXX	as S
-import qualified DDC.Core.Transform.Trim               	as Trim
-import qualified DDC.Type.Compounds			as T
-import qualified DDC.Type.Sum				as TS
-import qualified DDC.Type.Transform.Crush		as T
+import qualified DDC.Core.Transform.SubstituteXX        as S
+import qualified DDC.Core.Transform.Trim                as Trim
+import qualified DDC.Type.Compounds                     as T
+import qualified DDC.Type.Sum                           as TS
+import qualified DDC.Type.Transform.Crush               as T
 
 
 -------------------------------------------------------------------------------
@@ -60,10 +60,10 @@ instance Monoid PruneInfo where
 -------------------------------------------------------------------------------
 -- | Erase pure let-bindings in a module that have no uses.
 pruneModule
-	:: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n           -- ^ Profile of the language we're in
-	-> Module a n
-	-> Module a n
+        :: (Show a, Show n, Ord n, Pretty n)
+        => Profile n           -- ^ Profile of the language we're in
+        -> Module a n
+        -> Module a n
 
 pruneModule profile mm
          -- If the language fragment has untracked effects then we can't do
@@ -82,26 +82,26 @@ pruneModule profile mm
 
 -- | Erase pure let-bindings in an expression that have no uses.
 pruneX
-	:: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n           -- ^ Profile of the language we're in
-	-> KindEnv n           -- ^ Kind environment
-	-> TypeEnv n           -- ^ Type environment
-	-> Exp a n
-	-> TransformResult (Exp a n)
+        :: (Show a, Show n, Ord n, Pretty n)
+        => Profile n           -- ^ Profile of the language we're in
+        -> KindEnv n           -- ^ Kind environment
+        -> TypeEnv n           -- ^ Type environment
+        -> Exp a n
+        -> TransformResult (Exp a n)
 
 pruneX profile kenv tenv xx
  = {-# SCC pruneX #-}
    let  
         (xx', info)
                 = transformTypeUsage profile kenv tenv
-	               (transformUpMX pruneTrans kenv tenv)
+                       (transformUpMX pruneTrans kenv tenv)
                        xx
 
         progress (PruneInfo r) 
                 = r > 0
 
    in TransformResult
-        { result	 = xx'
+        { result         = xx'
         , resultAgain    = progress info
         , resultProgress = progress info
         , resultInfo     = TransformInfo info }
@@ -135,11 +135,11 @@ type Annot a n
 
 -- | Apply the dead-code transform to an annotated expression.
 pruneTrans
-	:: (Show a, Show n, Ord n, Pretty n)
-	=> KindEnv n
-	-> TypeEnv n
-	-> Exp (Annot a n) n
-	-> Writer PruneInfo 
+        :: (Show a, Show n, Ord n, Pretty n)
+        => KindEnv n
+        -> TypeEnv n
+        -> Exp (Annot a n) n
+        -> Writer PruneInfo 
                  (Exp (Annot a n) n)
 
 pruneTrans _ _ xx
@@ -187,7 +187,7 @@ isUnusedBind bb (UsedMap um)
         BName n _
          -> case Map.lookup n um of
                 Just useds -> filterUsedInCasts useds == []
-        	Nothing	   -> True
+                Nothing    -> True
 
         BNone _ -> True
         _       -> False
@@ -211,12 +211,12 @@ isContainedEffect eff
  where
         contained (c : _args)
          = case c of
-                TCon (TyConSpec TcConAlloc)	-> True
-        	TCon (TyConSpec TcConDeepAlloc) -> True
-        	TCon (TyConSpec TcConRead)      -> True
+                TCon (TyConSpec TcConAlloc)     -> True
+                TCon (TyConSpec TcConDeepAlloc) -> True
+                TCon (TyConSpec TcConRead)      -> True
                 TCon (TyConSpec TcConHeadRead)  -> True
                 TCon (TyConSpec TcConDeepRead)  -> True
-        	_				-> False
+                _                               -> False
 
         contained [] = False
 
