@@ -16,7 +16,7 @@ module DDC.Core.Simplifier.Recipe
 
           -- * Compound recipies
         , anormalize
-	, rewriteSimp)
+        , rewriteSimp)
 where
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
@@ -104,7 +104,7 @@ anormalize namK namT
 rewriteSimp
         :: Int                          -- ^ Maximum number of iterations.
         -> NamedRewriteRules a n        -- ^ Rewrite rules to apply.
-	-> Simplifier s a n
+        -> Simplifier s a n
 
 rewriteSimp maxIters rules
  = let  rewrite = Trans $ Rewrite rules
