@@ -27,7 +27,7 @@ import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
 import Control.DeepSeq
-import qualified DDC.Base.Pretty	as P
+import qualified DDC.Base.Pretty        as P
 import qualified Data.Set               as Set
 
 
@@ -42,9 +42,9 @@ import qualified Data.Set               as Set
 --
 applySimplifier 
         :: (Show a, Ord n, Show n, Pretty n, NFData a, NFData n) 
-	=> Profile n		-- ^ Profile of language we're working in
-	-> KindEnv n		-- ^ Kind environment
-	-> TypeEnv n		-- ^ Type environment
+        => Profile n            -- ^ Profile of language we're working in
+        -> KindEnv n            -- ^ Kind environment
+        -> TypeEnv n            -- ^ Type environment
         -> Simplifier s a n     -- ^ Simplifier to apply
         -> Module a n           -- ^ Module to simplify
         -> State s (Module a n)
@@ -57,21 +57,21 @@ applySimplifier !profile !kenv !tenv !spec !mm
 
         Trans t1
          -> applyTransform profile kenv tenv t1 mm
-	
-	Fix 0 _
-	 -> return mm
+        
+        Fix 0 _
+         -> return mm
 
-	Fix !n !s
-	 -> do	!mm' <- applySimplifier profile kenv tenv s mm
+        Fix !n !s
+         -> do  !mm' <- applySimplifier profile kenv tenv s mm
                 applySimplifier profile kenv tenv (Fix (n - 1) s) mm'
 
 
 -- | Apply a transform to a module.
 applyTransform
         :: (Show a, Ord n, Show n, Pretty n)
-	=> Profile n		-- ^ Profile of language we're working in
-	-> KindEnv n		-- ^ Kind environment
-	-> TypeEnv n		-- ^ Type environment
+        => Profile n            -- ^ Profile of language we're working in
+        -> KindEnv n            -- ^ Kind environment
+        -> TypeEnv n            -- ^ Type environment
         -> Transform s a n      -- ^ Transform to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
@@ -108,9 +108,9 @@ applyTransform !profile !_kenv !_tenv !spec !mm
 --
 applySimplifierX 
         :: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n		-- ^ Profile of language we're working in
-	-> KindEnv n		-- ^ Kind environment
-	-> TypeEnv n		-- ^ Type environment
+        => Profile n            -- ^ Profile of language we're working in
+        -> KindEnv n            -- ^ Kind environment
+        -> TypeEnv n            -- ^ Type environment
         -> Simplifier s a n     -- ^ Simplifier to apply
         -> Exp a n              -- ^ Expression to simplify
         -> State s (TransformResult (Exp a n))
@@ -122,31 +122,31 @@ applySimplifierX !profile !kenv !tenv !spec !xx
          -> do  tx  <- down t1 xx
                 tx' <- down t2 (result tx)
 
-		let info =
-			case (resultInfo tx, resultInfo tx') of
-			(TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
-		
+                let info =
+                        case (resultInfo tx, resultInfo tx') of
+                        (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
+                
                 let again    = resultAgain    tx || resultAgain    tx'
                 let progress = resultProgress tx || resultProgress tx'
 
-		return TransformResult
+                return TransformResult
                         { result         = result tx'
                         , resultAgain    = again
                         , resultProgress = progress
                         , resultInfo     = TransformInfo info }
 
-	Fix i s
-	 -> do	tx      <- applyFixpointX profile kenv tenv i s xx
-		let info =
-			case resultInfo tx of
-			TransformInfo info1 -> FixInfo i info1
-		
-		return TransformResult
+        Fix i s
+         -> do  tx      <- applyFixpointX profile kenv tenv i s xx
+                let info =
+                        case resultInfo tx of
+                        TransformInfo info1 -> FixInfo i info1
+                
+                return TransformResult
                         { result         = result tx
                         , resultAgain    = resultAgain    tx
                         , resultProgress = resultProgress tx
                         , resultInfo     = TransformInfo info }
-		
+                
         Trans t1
          -> applyTransformX profile kenv tenv t1 xx
 
@@ -154,11 +154,11 @@ applySimplifierX !profile !kenv !tenv !spec !xx
 -- | Apply a simplifier until it stops progressing, or a maximum number of times
 applyFixpointX
         :: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n		-- ^ Profile of language we're working in
-	-> KindEnv n		-- ^ Kind environment
-	-> TypeEnv n		-- ^ Type environment
-        -> Int			-- ^ Maximum number of times to apply
-	-> Simplifier s a n     -- ^ Simplifier to apply.
+        => Profile n            -- ^ Profile of language we're working in
+        -> KindEnv n            -- ^ Kind environment
+        -> TypeEnv n            -- ^ Type environment
+        -> Int                  -- ^ Maximum number of times to apply
+        -> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (TransformResult (Exp a n))
 
@@ -174,19 +174,19 @@ applyFixpointX !profile !kenv !tenv !i' !s !xx'
   go i xx progress 
    = do tx      <- simp xx
         case resultAgain tx of
-	 False 
+         False 
           ->    return tx { resultProgress = progress }
 
-	 True  
+         True  
           -> do tx'        <- go (i-1) (result tx) True
 
-	        let info 
+                let info 
                      = case (resultInfo tx, resultInfo tx') of
-	                (TransformInfo i1, TransformInfo i2) 
+                        (TransformInfo i1, TransformInfo i2) 
                           -> SeqInfo i1 i2
 
-	        return TransformResult
-                        { result   	 = result tx'
+                return TransformResult
+                        { result         = result tx'
                         , resultAgain    = resultProgress tx'
                         , resultProgress = resultProgress tx'
                         , resultInfo     = TransformInfo info }
@@ -221,9 +221,9 @@ instance Pretty FixInfo where
 -- | Apply a single transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n, Pretty n)
-	=> Profile n		-- ^ Profile of language we're working in
-	-> KindEnv n		-- ^ Kind environment
-	-> TypeEnv n		-- ^ Type environment
+        => Profile n            -- ^ Profile of language we're working in
+        -> KindEnv n            -- ^ Kind environment
+        -> TypeEnv n            -- ^ Type environment
         -> Transform s a n      -- ^ Transform to apply.
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (TransformResult (Exp a n))
