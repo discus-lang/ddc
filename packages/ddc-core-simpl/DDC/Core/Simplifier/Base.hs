@@ -10,9 +10,9 @@ module DDC.Core.Simplifier.Base
 
           -- * Transform Results
         , TransformResult(..)
-	, TransformInfo(..)
-	, NoInformation
-	, resultDone)
+        , TransformInfo(..)
+        , NoInformation
+        , resultDone)
 where
 import DDC.Core.Simplifier.Result
 import DDC.Core.Transform.Rewrite.Rule
@@ -38,7 +38,7 @@ data Simplifier s a n
         -- | Keep applying a transform until it reports that further
         --   applications won't be helpful, bailing out after a maximum number
         --   of applications.
-	| Fix	Int		   (Simplifier s a n)
+        | Fix   Int                (Simplifier s a n)
 
 
 instance Monoid (Simplifier s a n) where
