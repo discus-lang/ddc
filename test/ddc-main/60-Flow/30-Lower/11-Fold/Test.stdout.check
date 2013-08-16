@@ -1,4 +1,3 @@
-
 ok
 
 -- Single fold of input series.
@@ -7,16 +6,16 @@ letrec {
   fold : [k : Rate].Series# k Int# -> Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x3$acc : Ref# Int# = new# [Int#] 0i# in
-      let _ : Unit
+      let x3$acc = new# [Int#] 0i# in
+      let _
             = loop# [k]
                   (\(x2 : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s x2 in
-                   let x3$val : Int# = read# [Int#] x3$acc in
-                   let x4 : Int# = add# [Int#] x3$val s$elem in
-                   let _ : Unit = write# [Int#] x3$acc x4 in
+                   let s$elem = next# [Int#] [k] s x2 in
+                   let x3$val = read# [Int#] x3$acc in
+                   let x4 = add# [Int#] x3$val s$elem in
+                   let _ = write# [Int#] x3$acc x4 in
                    ()) in
-      let x3 : Int# = read# [Int#] x3$acc in
+      let x3 = read# [Int#] x3$acc in
       x3
 }
 
@@ -27,21 +26,21 @@ letrec {
   ffold : [k : Rate].Series# k Int# -> Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x3$acc : Ref# Int# = new# [Int#] 0i# in
-      let x8$acc : Ref# Int# = new# [Int#] 1i# in
-      let _ : Unit
+      let x3$acc = new# [Int#] 0i# in
+      let x8$acc = new# [Int#] 1i# in
+      let _
             = loop# [k]
                   (\(x2 : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s x2 in
-                   let x3$val : Int# = read# [Int#] x3$acc in
-                   let x4 : Int# = add# [Int#] x3$val s$elem in
-                   let _ : Unit = write# [Int#] x3$acc x4 in
-                   let x8$val : Int# = read# [Int#] x8$acc in
-                   let x5 : Int# = mul# [Int#] x8$val s$elem in
-                   let _ : Unit = write# [Int#] x8$acc x5 in
+                   let s$elem = next# [Int#] [k] s x2 in
+                   let x3$val = read# [Int#] x3$acc in
+                   let x4 = add# [Int#] x3$val s$elem in
+                   let _ = write# [Int#] x3$acc x4 in
+                   let x8$val = read# [Int#] x8$acc in
+                   let x5 = mul# [Int#] x8$val s$elem in
+                   let _ = write# [Int#] x8$acc x5 in
                    ()) in
-      let x3 : Int# = read# [Int#] x3$acc in
-      let x8 : Int# = read# [Int#] x8$acc in
+      let x3 = read# [Int#] x3$acc in
+      let x8 = read# [Int#] x8$acc in
       add# [Int#] x3 x8
 }
 
@@ -52,27 +51,27 @@ letrec {
   fffold : [k : Rate].Series# k Int# -> Tuple2# Int# Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x3$acc : Ref# Int# = new# [Int#] 0i# in
-      let x8$acc : Ref# Int# = new# [Int#] 1i# in
-      let x15$acc : Ref# Int# = new# [Int#] 1i# in
-      let _ : Unit
+      let x3$acc = new# [Int#] 0i# in
+      let x8$acc = new# [Int#] 1i# in
+      let x15$acc = new# [Int#] 1i# in
+      let _
             = loop# [k]
                   (\(x2 : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s x2 in
-                   let x3$val : Int# = read# [Int#] x3$acc in
-                   let x4 : Int# = add# [Int#] x3$val s$elem in
-                   let _ : Unit = write# [Int#] x3$acc x4 in
-                   let x8$val : Int# = read# [Int#] x8$acc in
-                   let x5 : Int# = mul# [Int#] x8$val s$elem in
-                   let _ : Unit = write# [Int#] x8$acc x5 in
-                   let x15$val : Int# = read# [Int#] x15$acc in
-                   let x6 : Int# = mul# [Int#] x15$val s$elem in
-                   let _ : Unit = write# [Int#] x15$acc x6 in
+                   let s$elem = next# [Int#] [k] s x2 in
+                   let x3$val = read# [Int#] x3$acc in
+                   let x4 = add# [Int#] x3$val s$elem in
+                   let _ = write# [Int#] x3$acc x4 in
+                   let x8$val = read# [Int#] x8$acc in
+                   let x5 = mul# [Int#] x8$val s$elem in
+                   let _ = write# [Int#] x8$acc x5 in
+                   let x15$val = read# [Int#] x15$acc in
+                   let x6 = mul# [Int#] x15$val s$elem in
+                   let _ = write# [Int#] x15$acc x6 in
                    ()) in
-      let x3 : Int# = read# [Int#] x3$acc in
-      let x8 : Int# = read# [Int#] x8$acc in
-      let x15 : Int# = read# [Int#] x15$acc in
-      let x7 : Int# = add# [Int#] x3 x8 in
+      let x3 = read# [Int#] x3$acc in
+      let x8 = read# [Int#] x8$acc in
+      let x15 = read# [Int#] x15$acc in
+      let x7 = add# [Int#] x3 x8 in
       T2# [Int#] [Int#] x7 x15
 }
 
@@ -83,17 +82,17 @@ letrec {
   foldMap : [k : Rate].Series# k Int# -> Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x6$acc : Ref# Int# = new# [Int#] 0i# in
-      let _ : Unit
+      let x6$acc = new# [Int#] 0i# in
+      let _
             = loop# [k]
                   (\(x2 : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s x2 in
-                   let x4$elem : Int# = mul# [Int#] s$elem 2i# in
-                   let x6$val : Int# = read# [Int#] x6$acc in
-                   let x3 : Int# = add# [Int#] x6$val x4$elem in
-                   let _ : Unit = write# [Int#] x6$acc x3 in
+                   let s$elem = next# [Int#] [k] s x2 in
+                   let x4$elem = mul# [Int#] s$elem 2i# in
+                   let x6$val = read# [Int#] x6$acc in
+                   let x3 = add# [Int#] x6$val x4$elem in
+                   let _ = write# [Int#] x6$acc x3 in
                    ()) in
-      let x6 : Int# = read# [Int#] x6$acc in
+      let x6 = read# [Int#] x6$acc in
       x6
 }
 
@@ -108,26 +107,26 @@ letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
     = /\(k : Rate).
        \(s : Series# k Int#).
-      let x4 : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
-      let x5$acc : Ref# (Tuple2# Int# Int#)
+      let x4 = T2# [Int#] [Int#] 0i# 0i# in
+      let x5$acc
             = new# [Tuple2# Int# Int#] x4 in
-      let x9$acc : Ref# Int# = new# [Int#] 0i# in
-      let _ : Unit
+      let x9$acc = new# [Int#] 0i# in
+      let _
             = loop# [k]
                   (\(x3 : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s x3 in
-                   let x5$val : Tuple2# Int# Int#
+                   let s$elem = next# [Int#] [k] s x3 in
+                   let x5$val
                          = read# [Tuple2# Int# Int#] x5$acc in
-                   let x6 : Tuple2# Int# Int# = minIx x3 x5$val s$elem in
-                   let _ : Unit
+                   let x6 = minIx x3 x5$val s$elem in
+                   let _
                          = write# [Tuple2# Int# Int#] x5$acc x6 in
-                   let x9$val : Int# = read# [Int#] x9$acc in
-                   let x7 : Int# = addInt x9$val s$elem in
-                   let _ : Unit = write# [Int#] x9$acc x7 in
+                   let x9$val = read# [Int#] x9$acc in
+                   let x7 = addInt x9$val s$elem in
+                   let _ = write# [Int#] x9$acc x7 in
                    ()) in
-      let x5 : Tuple2# Int# Int#
+      let x5
             = read# [Tuple2# Int# Int#] x5$acc in
-      let x9 : Int# = read# [Int#] x9$acc in
+      let x9 = read# [Int#] x9$acc in
       T2# [Tuple2# Int# Int#] [Int#] x5 x9
 }
 

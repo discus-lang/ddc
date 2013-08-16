@@ -1,3 +1,4 @@
+:set SuppressLetTypes
 
 -- | Single map over input series, producing a vector.
 :flow-lower..

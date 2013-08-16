@@ -1,4 +1,4 @@
-
+:set SuppressLetTypes
 
 -- Fold and reduce at the same time.
 :flow-lower..

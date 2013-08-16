@@ -1,5 +1,4 @@
-
-:set lang Flow
+:set SuppressLetTypes
 
 -- Single fold of input series.
 :flow-lower..

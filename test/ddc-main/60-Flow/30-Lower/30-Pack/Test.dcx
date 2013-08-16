@@ -1,3 +1,4 @@
+:set SuppressLetTypes
 
 -- Pack with an existing series of flags.
 :flow-lower..

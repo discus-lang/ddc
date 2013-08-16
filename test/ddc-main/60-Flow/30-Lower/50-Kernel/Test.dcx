@@ -1,3 +1,4 @@
+:set SuppressLetTypes
 
 -- Multiply two series.
 :flow-lower-kernel..
