@@ -53,8 +53,8 @@ pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
 next$4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Nat# -> Vec4# ^1
 next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Nat# -> Vec8# ^1
-down$8# :: [^ : Rate].[^ : Data].Down8# ^0 -> Series# ^0 ^1 -> Series# (Down8# ^0) ^1
-tail$8# :: [^ : Rate].[^ : Data].Tail8# ^0 -> Series# ^0 ^1 -> Series# (Tail8# ^0) ^1
+down$8# :: [^ : Rate].[^ : Data].RateNat# (Down8# ^1) -> Series# ^1 ^0 -> Series# (Down8# ^1) ^0
+tail$8# :: [^ : Rate].[^ : Data].RateNat# (Tail8# ^1) -> Series# ^1 ^0 -> Series# (Tail8# ^1) ^0
 
 -- Control operators
 loop# :: [^ : Rate].(Nat# -> Unit) -> Unit

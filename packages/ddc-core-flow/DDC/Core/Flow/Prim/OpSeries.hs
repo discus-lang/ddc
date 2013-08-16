@@ -102,13 +102,15 @@ typeOpSeries op
         --         .  RateNat (DownN# k) -> Series# k a -> Series# (DownN# k) a
         OpSeriesDown n
          -> tForalls [kRate, kData]
-         $  \[tA, tK] -> tDown n tK `tFun` tSeries tK tA `tFun` tSeries (tDown n tK) tA
+         $  \[tK, tA] -> tRateNat (tDown n tK) 
+                        `tFun` tSeries tK tA `tFun` tSeries (tDown n tK) tA
 
         -- tail$N# :: [k : Rate]. [a : Data].
         --         .  RateNat (TailN# k) -> Series# k a -> Series# (TailN# k) a
         OpSeriesTail n
          -> tForalls [kRate, kData]
-         $  \[tA, tK] -> tTail n tK `tFun` tSeries tK tA `tFun` tSeries (tTail n tK) tA
+         $  \[tK, tA] -> tRateNat (tTail n tK)
+                        `tFun` tSeries tK tA `tFun` tSeries (tTail n tK) tA
 
 
 -- Compounds ------------------------------------------------------------------

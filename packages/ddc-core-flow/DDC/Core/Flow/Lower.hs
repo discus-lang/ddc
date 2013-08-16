@@ -109,15 +109,18 @@ lowerProcess config process
 
 
  | MethodVector lifting <- configMethod config
- , any isRateNatType 
-        $ map typeOfBind
-        $ processParamValues process
+
+ , BName nRN tRN : _  <- processParamValues process
+ , isRateNatType tRN
+
  = let  
         -- Get the primary rate variable.
         bK : _  = processParamTypes process
         Just uK = takeSubstBoundOfBind bK
         tK      = TVar uK
 
+        -- The RateNat witness
+        xRN     = XVar (UName nRN)
 
         -----------------------------------------
         -- Create the vector version of the kernel.
@@ -208,7 +211,7 @@ lowerProcess config process
                 (processParamTypes process)
 
         xBody
-         = xSplit 4 (TVar uK) xProcVec' xProcTail'
+         = xSplit 4 (TVar uK) xRN xProcVec' xProcTail'
 
         -- Reconstruct a binder for the whole procedure / process.
         bProc   = BName (processName process)

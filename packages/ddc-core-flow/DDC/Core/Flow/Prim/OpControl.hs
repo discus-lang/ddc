@@ -83,27 +83,34 @@ typeOpControl op
 
 
 -- Compounds ------------------------------------------------------------------
-xLoopN  :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+type TypeF      = Type Name
+type ExpF       = Exp () Name
+
+xLoopN  :: TypeF -> ExpF -> ExpF -> ExpF
 xLoopN tR xRN xF 
         = xApps (xVarOpControl OpControlLoopN) [XType tR, xRN, xF]
 
 
-xGuard  :: Exp () Name  -- ^ Reference to guard counter.
-        -> Exp () Name  -- ^ Boolean flag to test.
-        -> Exp () Name  -- ^ Body of guard.
-        -> Exp () Name
+xGuard  :: ExpF         -- ^ Reference to guard counter.
+        -> ExpF         -- ^ Boolean flag to test.
+        -> ExpF         -- ^ Body of guard.
+        -> ExpF
 
 xGuard xB xCount xF
         = xApps (xVarOpControl OpControlGuard) [xCount, xB, xF]
 
 
-xSplit  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xSplit n tK xDownFn xTailFn 
+xSplit  :: Int 
+        -> TypeF
+        -> ExpF
+        -> ExpF -> ExpF -> ExpF
+xSplit n tK xRN xDownFn xTailFn 
         = xApps (xVarOpControl $ OpControlSplit n)
-                [ XType tK, xDownFn, xTailFn ]
+                [ XType tK, xRN, xDownFn, xTailFn ]
+
 
 -- Utils -----------------------------------------------------------------------
-xVarOpControl :: OpControl -> Exp () Name
+xVarOpControl :: OpControl -> ExpF
 xVarOpControl op
         = XVar (UPrim (NameOpControl op) (typeOpControl op))
 
