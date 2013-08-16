@@ -33,6 +33,7 @@ Library
         DDC.Source.Tetra.Parser.Param
         DDC.Source.Tetra.Compounds
         DDC.Source.Tetra.Exp
+        DDC.Source.Tetra.Infer.Expand
         DDC.Source.Tetra.Lexer
         DDC.Source.Tetra.Module
         DDC.Source.Tetra.Name
