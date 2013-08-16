@@ -12,6 +12,7 @@ import DDCI.Tetra.State
 import DDCI.Tetra.Command.Help
 import DDCI.Tetra.Command.Parse
 import DDCI.Tetra.Command.Desugar
+import DDCI.Tetra.Command.Infer
 
 
 -- | Commands accepted by ddci-tetra.
@@ -21,6 +22,7 @@ data Command
         | CommandHelp           -- ^ Display the interpreter help.
         | CommandParse          -- ^ Parse a Tetra source module.
         | CommandDesugar        -- ^ Desugar a Tetra source module.
+        | CommandInfer          -- ^ Perform type inference.
         deriving (Eq, Show)
 
 
@@ -30,7 +32,8 @@ commands
  =      [ (":help",     CommandHelp)
         , (":?",        CommandHelp) 
         , (":parse",    CommandParse) 
-        , (":desugar",  CommandDesugar) ]
+        , (":desugar",  CommandDesugar)
+        , (":infer",    CommandInfer) ]
 
 
 -- | Read the command from the front of a string.
@@ -80,3 +83,8 @@ handleCommand1 state cmd source line
         CommandDesugar
          -> do  cmdDesugar state source line
                 return state
+
+        CommandInfer
+         -> do  cmdInfer state source line
+                return state
+

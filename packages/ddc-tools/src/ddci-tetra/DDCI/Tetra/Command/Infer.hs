@@ -1,6 +1,6 @@
 
-module DDCI.Tetra.Command.Desugar
-        (cmdDesugar)
+module DDCI.Tetra.Command.Infer
+        (cmdInfer)
 where
 import DDC.Interface.Source
 import DDCI.Tetra.State
@@ -13,8 +13,8 @@ import qualified DDC.Core.Lexer         as C
 import qualified DDC.Base.Parser        as BP
 
 
-cmdDesugar :: State -> Source -> String -> IO ()
-cmdDesugar _state source str
+cmdInfer :: State -> Source -> String -> IO ()
+cmdInfer _state source str
  = goLex
  where  goLex 
          = let  tokens  = lexModuleString (nameOfSource source) 1 str
@@ -36,3 +36,4 @@ cmdDesugar _state source str
          = case defix defaultFixTable mm of
             Left err    -> putStrLn (renderIndent $ ppr err)
             Right mm'   -> putStrLn (renderIndent $ ppr mm')
+
