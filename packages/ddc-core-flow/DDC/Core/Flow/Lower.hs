@@ -199,7 +199,7 @@ lowerProcess config process
         xProcTail'
          = XLam bRateTail
          $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
-         $ xApps (XApp xProcTail (XType (TVar uK)))
+         $ xApps (XApp xProcTail (XType (tTail c (TVar uK))))
          $ xsTailValArgs
 
 

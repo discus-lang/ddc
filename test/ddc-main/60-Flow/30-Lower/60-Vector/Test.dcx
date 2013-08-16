@@ -1,0 +1,13 @@
+
+:flow-lower-vector..
+module Test with letrec
+test    [k  : Rate] (n  : RateNat# k)
+        (x1 : Ref# Float32#)
+        (s1 : Series# k Float32#) (s2 : Series# k Float32#)
+        : Unit
+ = do   
+        s3      = map2# [k] [Float32#] [Float32#] [Float32#]
+                        (mul# [Float32#]) s1 s2
+
+        reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
+;;

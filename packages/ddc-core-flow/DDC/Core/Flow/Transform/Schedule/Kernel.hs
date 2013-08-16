@@ -228,12 +228,6 @@ scheduleOperator lifting nest op
                   , BodyAccWrite nAccVec (tVec c tA) 
                                  (xBody_lifted (XVar uAccVal) (XVar uInput)) ]
 
-        -- Bind final unit value.
-        let Just nest4  
-                = insertEnds nest3 context
-                $ [ EndStmt     (opResultBind op)
-                                xUnit ]
-
         -- Read back the vector accumulator and to a final fold over its parts.
         let nAccResult  = NameVarMod nRef "res"
         let bAccResult  = BName nAccResult (tVec c tA)
@@ -248,8 +242,8 @@ scheduleOperator lifting nest op
                              x1)
                         x2
 
-        let Just nest5  
-                =  insertEnds nest4 context
+        let Just nest4  
+                =  insertEnds nest3 context
                 $  [ EndStmt    bAccResult
                                 (xRead (tVec c tA) (XVar uAccVec)) ]
 
@@ -263,10 +257,16 @@ scheduleOperator lifting nest op
                                 | i <- [1.. c - 1]]
 
         -- Write final value to destination.
-        let Just nest6  = insertEnds nest5 context
+        let Just nest5  = insertEnds nest4 context
                         $ [ EndStmt    (BNone tUnit)
                                        (xWrite tA (XVar $ opTargetRef op)
                                                   (XVar $ uPart (c - 1))) ]
+        -- Bind final unit value.
+        let Just nest6  
+                = insertEnds nest5 context
+                $ [ EndStmt     (opResultBind op)
+                                xUnit ]
+
 
         return $ nest6
 

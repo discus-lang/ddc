@@ -189,7 +189,13 @@ scheduleOperator nest0 op
                              (xWrite tAcc (XVar $ opTargetRef op)
                                           (XVar $ UName nAccRes)) ]
 
-        return nest3
+        -- Bind final unit value.
+        let Just nest4
+                = insertEnds nest3 context
+                $ [ EndStmt     (opResultBind op)
+                                xUnit ]
+
+        return nest4
 
 -- Fold and FoldIndex --------------------------
  | OpFold{} <- op
