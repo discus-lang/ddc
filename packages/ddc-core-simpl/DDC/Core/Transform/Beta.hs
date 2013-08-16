@@ -17,9 +17,9 @@ import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Simplifier.Result
-import Control.Monad.Writer	        (Writer, runWriter, tell)
-import Data.Monoid		        (Monoid, mempty, mappend)
-import Data.Typeable		        (Typeable)
+import Control.Monad.Writer             (Writer, runWriter, tell)
+import Data.Monoid                      (Monoid, mempty, mappend)
+import Data.Typeable                    (Typeable)
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Compounds
 import qualified DDC.Type.Env           as Env
@@ -101,7 +101,7 @@ betaReduce
 betaReduce profile config x
  = {-# SCC betaReduce #-}
    let (x', info) = runWriter
-		  $ transformUpMX (betaReduce1 profile config) Env.empty Env.empty x
+                  $ transformUpMX (betaReduce1 profile config) Env.empty Env.empty x
 
        -- Check if any actual work was performed
        progress 
@@ -110,10 +110,10 @@ betaReduce profile config x
                  -> (ty + wit + val + lets') > 0
 
    in  TransformResult
-	{ result   	 = x'
+        { result         = x'
         , resultAgain    = progress
-	, resultProgress = progress
-	, resultInfo	 = TransformInfo info }
+        , resultProgress = progress
+        , resultInfo     = TransformInfo info }
 
 
 -- | Do a single beta reduction for this application.
@@ -197,7 +197,7 @@ betaReduce1 profile config _kenv tenv xx
 
          | configBindRedexes config
          -> ret mempty { infoValuesLetted  = 1 }
-	      $	XLet a (LLet b11 x2) x12
+              $ XLet a (LLet b11 x2) x12
 
          | otherwise
          -> ret mempty { infoValuesSkipped = 1 }
