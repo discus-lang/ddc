@@ -12,6 +12,7 @@ import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
 import DDCI.Core.Command.With
 import DDCI.Core.State
+import DDCI.Core.Mode
 
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.Check
@@ -197,7 +198,9 @@ handleCmd1 state cmd source line
                 return state'
 
         CommandLoad
-         -> do  runError $ cmdLoadFromString (stateLanguage state) source line
+         -> do  runError $ cmdLoadFromString 
+                                (suppressConfigOfModes (stateModes state))
+                                (stateLanguage state) source line
                 return state
 
         CommandKind       
@@ -294,7 +297,9 @@ handleCmd1 state cmd source line
 
         CommandFlowLower lowerConfig
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdFlowLower config lowerConfig source line
+                runError $ cmdFlowLower
+                                (suppressConfigOfModes (stateModes state))
+                                config lowerConfig source line
                 return state
 
         CommandFlowConcretize

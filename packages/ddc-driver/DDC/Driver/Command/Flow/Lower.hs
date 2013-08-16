@@ -2,7 +2,7 @@
 module DDC.Driver.Command.Flow.Lower
         (cmdFlowLower)
 where
-import DDC.Driver.Stage
+import DDC.Driver.Stage                         as Driver
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
@@ -10,17 +10,19 @@ import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty                as P
 import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
+import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
 -- | Lower a flow program to loop code.
 cmdFlowLower
-        :: Config
+        :: Suppress.Config
+        -> Driver.Config
         -> Flow.Config  -- ^ Config for the lowering transform.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowLower config lowerConfig source sourceText
+cmdFlowLower supp config lowerConfig source sourceText
  = let  
         pipeLower
          = pipeText (nameOfSource source)
@@ -33,11 +35,13 @@ cmdFlowLower config lowerConfig source sourceText
 
         pipeFinal
          | configTaintAvoidTypeChecks config
-         = PipeCoreOutput SinkStdout
+         = PipeCoreSuppress supp
+         [ PipeCoreOutput SinkStdout ]
 
          | otherwise
          = PipeCoreCheck Flow.fragment
-         [ PipeCoreOutput SinkStdout ]
+         [ PipeCoreSuppress supp
+         [ PipeCoreOutput SinkStdout ]]
 
    in do        
         errs    <- liftIO pipeLower

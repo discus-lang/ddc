@@ -1,4 +1,6 @@
 
+:set SuppressLetTypes
+
 :flow-lower-vector..
 module Test with letrec
 test    [k  : Rate] (n  : RateNat# k)

@@ -22,8 +22,9 @@ import Data.IORef
 import System.Directory
 import System.FilePath
 import System.IO
-import qualified Data.Map               as Map
-import qualified DDC.Base.Parser        as BP
+import qualified Data.Map                       as Map
+import qualified DDC.Base.Parser                as BP
+import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
 -- Read -----------------------------------------------------------------------
@@ -78,20 +79,21 @@ cmdReadModule_parse printErrors filePath frag source src
 -- | Load and transform a module, printing the result to stdout.
 --   The current transform is set with the given string.
 cmdLoadFromFile
-        :: Maybe String         -- ^ Simplifier specification.
+        :: Suppress.Config      -- ^ Suppression config for output.
+        -> Maybe String         -- ^ Simplifier specification.
         -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
         -> ErrorT String IO ()
 
-cmdLoadFromFile strSimpl fsTemplates filePath
+cmdLoadFromFile supp strSimpl fsTemplates filePath
  = case languageOfExtension (takeExtension filePath) of
         Nothing       -> throwError $ "Unknown file extension."
-        Just language -> cmdLoad_language strSimpl fsTemplates filePath language
+        Just language -> cmdLoad_language supp strSimpl fsTemplates filePath language
 
-cmdLoad_language Nothing _ filePath language
- = configLoad_simpl language filePath
+cmdLoad_language supp Nothing _ filePath language
+ = configLoad_simpl supp language filePath
 
-cmdLoad_language (Just strSimpl) fsTemplates filePath language
+cmdLoad_language supp (Just strSimpl) fsTemplates filePath language
  | Language bundle      <- language
  , modules              <- bundleModules       bundle
  , rules                <- bundleRewriteRules  bundle
@@ -134,9 +136,9 @@ cmdLoad_language (Just strSimpl) fsTemplates filePath language
 
          Right simpl
           -> let bundle' = bundle { bundleSimplifier = simpl }
-             in  configLoad_simpl (Language bundle') filePath
+             in  configLoad_simpl supp (Language bundle') filePath
 
-configLoad_simpl language filePath
+configLoad_simpl supp language filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -146,19 +148,20 @@ configLoad_simpl language filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdLoadFromString language (SourceFile filePath) src
+        cmdLoadFromString supp language (SourceFile filePath) src
 
 
 -------------------------------------------------------------------------------
 -- | Load and transform a module, 
 --   then print the result to @stdout@.
 cmdLoadFromString
-        :: Language             -- ^ Language definition
+        :: Suppress.Config      -- ^ Suppression flags for output.
+        -> Language             -- ^ Language definition
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdLoadFromString language source str
+cmdLoadFromString supp language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
  , simpl                <- bundleSimplifier bundle
@@ -169,7 +172,8 @@ cmdLoadFromString language source str
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment
-                [  PipeCoreOutput    SinkStdout ]]]]
+                [  PipeCoreSuppress  supp 
+                [  PipeCoreOutput    SinkStdout ]]]]]
 
         case errs of
          [] -> return ()

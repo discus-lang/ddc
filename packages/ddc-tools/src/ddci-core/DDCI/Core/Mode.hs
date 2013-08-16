@@ -1,9 +1,12 @@
 
 module DDCI.Core.Mode
         ( Mode(..)
-        , readMode)
+        , readMode
+        , suppressConfigOfModes)
 where
-
+import qualified DDC.Core.Transform.Suppress    as Suppress
+import qualified Data.Set                       as Set
+import Data.Set                                 (Set)
 
 -- | DDCI mode flags.
 data Mode
@@ -18,6 +21,9 @@ data Mode
 
         -- | Suppress import lists when printing modules
         |  SuppressImports
+
+        -- | Suppress type annotations on let-bindings.
+        |  SuppressLetTypes
 
         -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
@@ -44,9 +50,22 @@ readMode str
         "TraceStore"            -> Just TraceStore
         "Indent"                -> Just Indent
         "SuppressImports"       -> Just SuppressImports
+        "SuppressLetTypes"      -> Just SuppressLetTypes
         "SaltPrelude"           -> Just SaltPrelude
         "Dump"                  -> Just Dump
         "TraceTrans"            -> Just TraceTrans
         "TaintAvoidTypeChecks"  -> Just TaintAvoidTypeChecks
         _                       -> Nothing
 
+
+-- | Build a suppress config from any appropriate mode flags.
+suppressConfigOfModes :: Set Mode -> Suppress.Config
+suppressConfigOfModes mm'
+ = go (Set.toList mm')
+ where go mm
+        = case mm of
+                SuppressLetTypes : moar
+                 -> (go moar) { Suppress.configLetTypes = True }
+                _ : moar        -> go moar
+                []              -> Suppress.configZero
+        

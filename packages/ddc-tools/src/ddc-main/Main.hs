@@ -35,8 +35,9 @@ import System.IO
 import System.Exit
 import System.FilePath
 import Control.Monad.Trans.Error
-import qualified DDC.Driver.Stage       as Driver
-import qualified DDC.Core.Salt.Runtime  as Runtime
+import qualified DDC.Driver.Stage               as Driver
+import qualified DDC.Core.Salt.Runtime          as Runtime
+import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
 main :: IO ()
@@ -94,7 +95,8 @@ run config
 
         -- Parse, type check and transform a module.
         ModeLoad filePath
-         ->     runError $ cmdLoadFromFile 
+         ->     runError $ cmdLoadFromFile
+                                Suppress.configZero
                                 (configTrans config) 
                                 (configWith config) 
                                 filePath
@@ -149,19 +151,26 @@ run config
         ModeFlowLower filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower dconfig Flow.defaultConfigScalar (SourceFile filePath) str
+                runError $ cmdFlowLower 
+                                Suppress.configZero
+                                dconfig
+                                Flow.defaultConfigScalar (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerKernel filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower dconfig Flow.defaultConfigKernel (SourceFile filePath) str
+                runError $ cmdFlowLower 
+                                Suppress.configZero
+                                dconfig Flow.defaultConfigKernel (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerVector filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower dconfig Flow.defaultConfigVector (SourceFile filePath) str
+                runError $ cmdFlowLower 
+                                Suppress.configZero
+                                dconfig Flow.defaultConfigVector (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
         ModeFlowConcretize filePath

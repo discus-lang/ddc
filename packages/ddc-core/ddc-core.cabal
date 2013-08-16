@@ -71,6 +71,7 @@ Library
         DDC.Core.Transform.SubstituteTX
         DDC.Core.Transform.SubstituteWX
         DDC.Core.Transform.SubstituteXX
+        DDC.Core.Transform.Suppress
         DDC.Core.Transform.Trim
 
         DDC.Core.Load
