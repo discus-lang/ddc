@@ -50,6 +50,7 @@ keywords
         , ("in",         KA KIn)
         , ("of",         KA KOf) 
         , ("letrec",     KA KLetRec)
+        , ("letcase",    KA KLetCase)
         , ("letregions", KA KLetRegions)
         , ("letregion",  KA KLetRegion)
         , ("withregion", KA KWithRegion)

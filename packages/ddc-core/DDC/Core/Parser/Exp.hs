@@ -102,6 +102,17 @@ pExp c
         return  $ XCase sp x alts
 
 
+        -- letcase PAT = EXP in EXP
+ , do   --  Sugar for a single-alternative case expression.
+        sp      <- pTokSP KLetCase
+        p       <- pPat c
+        pTok (KOp "=")
+        x1      <- pExp c
+        pTok KIn
+        x2      <- pExp c
+        return  $ XCase sp x1 [AAlt p x2]
+
+
         -- match PAT <- EXP else EXP in EXP
         --  Sugar for a case-expression.
  , do   sp      <- pTokSP KMatch

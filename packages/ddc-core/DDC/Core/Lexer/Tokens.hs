@@ -198,6 +198,7 @@ data TokAtom
         | KWhere
         | KIn
         | KLet
+        | KLetCase
         | KLetRec
         | KLetRegions
         | KLetRegion
@@ -302,6 +303,7 @@ describeTokAtom' ta
         KWhere                  -> (Keyword, "where")
         KIn                     -> (Keyword, "in")
         KLet                    -> (Keyword, "let")
+        KLetCase                -> (Keyword, "letcase")
         KLetRec                 -> (Keyword, "letrec")
         KLetRegions             -> (Keyword, "letregions")
         KLetRegion              -> (Keyword, "letregion")
