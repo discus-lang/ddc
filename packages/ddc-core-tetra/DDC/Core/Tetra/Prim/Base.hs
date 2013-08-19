@@ -2,10 +2,11 @@
 module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
         , TyConPrim     (..)
-        , OpPrimArith   (..)
-        , OpPrimRef     (..))
+        , PrimArith     (..)
+        , PrimRef       (..))
 where
 import Data.Typeable
+import DDC.Core.Salt.Name.PrimArith
 
 
 -- | Names of things used in Disciple Core Tetra.
@@ -21,10 +22,10 @@ data Name
         | NameTyConPrim         TyConPrim
 
         -- | Primitive arithmetic, logic, comparison and bit-wise operators.
-        | NameOpPrimArith       OpPrimArith
+        | NamePrimArith         PrimArith
 
         -- | Mutable references.
-        | NameOpPrimRef         OpPrimRef
+        | NamePrimRef           PrimRef
 
         -- Literals -----------------------------
         -- | A boolean literal.
@@ -62,49 +63,11 @@ data TyConPrim
         deriving (Eq, Ord, Show)
 
 
--- OpPrimArith ----------------------------------------------------------------
--- | Primitive arithmetic, logic, and comparison opretors.
---   We expect the backend/machine to be able to implement these directly.
---
---   For the Shift Right operator, the type that it is used at determines
---   whether it is an arithmetic (with sign-extension) or logical
---   (no sign-extension) shift.
-data OpPrimArith
-        -- numeric
-        = OpPrimArithNeg        -- ^ Negation
-        | OpPrimArithAdd        -- ^ Addition
-        | OpPrimArithSub        -- ^ Subtraction
-        | OpPrimArithMul        -- ^ Multiplication
-        | OpPrimArithDiv        -- ^ Division
-        | OpPrimArithMod        -- ^ Modulus
-        | OpPrimArithRem        -- ^ Remainder
-
-        -- comparison
-        | OpPrimArithEq         -- ^ Equality
-        | OpPrimArithNeq        -- ^ Negated Equality
-        | OpPrimArithGt         -- ^ Greater Than
-        | OpPrimArithGe         -- ^ Greater Than or Equal
-        | OpPrimArithLt         -- ^ Less Than
-        | OpPrimArithLe         -- ^ Less Than or Equal
-
-        -- boolean
-        | OpPrimArithAnd        -- ^ Boolean And
-        | OpPrimArithOr         -- ^ Boolean Or
-
-        -- bitwise
-        | OpPrimArithShl        -- ^ Shift Left
-        | OpPrimArithShr        -- ^ Shift Right
-        | OpPrimArithBAnd       -- ^ Bit-wise And
-        | OpPrimArithBOr        -- ^ Bit-wise Or
-        | OpPrimArithBXOr       -- ^ Bit-wise eXclusive Or
-        deriving (Eq, Ord, Show)
-
-
 -- OpPrimRef ------------------------------------------------------------------
 -- | Mutable References.
-data OpPrimRef
-        = OpPrimRefAllocRef     -- ^ Allocate a reference.
-        | OpPrimRefReadRef      -- ^ Read a reference.
-        | OpPrimRefWriteRef     -- ^ Write to a reference.
+data PrimRef
+        = PrimRefAllocRef     -- ^ Allocate a reference.
+        | PrimRefReadRef      -- ^ Read a reference.
+        | PrimRefWriteRef     -- ^ Write to a reference.
         deriving (Eq, Ord, Show)
 

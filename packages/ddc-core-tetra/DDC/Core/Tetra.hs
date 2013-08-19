@@ -6,13 +6,13 @@ module DDC.Core.Tetra
           -- * Names
         , Name          (..)
         , TyConPrim     (..)
-        , OpPrimArith   (..)
-        , OpPrimRef     (..)
+        , PrimArith     (..)
+        , PrimRef       (..)
 
           -- * Name Parsing
         , readName
-        , readOpPrimArith
-        , readOpPrimRef
+        , readPrimArith
+        , readPrimRef
         , readTyConPrim
 
           -- * Program Lexing

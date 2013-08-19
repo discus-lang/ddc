@@ -89,8 +89,8 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NameOpPrimArith p       -> Just $ typeOpPrimArith p
-        NameOpPrimRef   p       -> Just $ typeOpPrimRef   p
+        NamePrimArith p         -> Just $ typePrimArith p
+        NamePrimRef   p         -> Just $ typePrimRef   p
 
         NameLitBool _           -> Just $ tBool
         NameLitNat  _           -> Just $ tNat

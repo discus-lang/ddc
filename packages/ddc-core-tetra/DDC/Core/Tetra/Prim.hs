@@ -10,19 +10,19 @@ module DDC.Core.Tetra.Prim
         , readTyConPrim
 
           -- * Primitive arithmetic operators.
-        , OpPrimArith   (..)
-        , typeOpPrimArith
-        , readOpPrimArith
+        , PrimArith   (..)
+        , typePrimArith
+        , readPrimArith
 
           -- * Mutable references.
-        , OpPrimRef     (..)
-        , typeOpPrimRef
-        , readOpPrimRef)
+        , PrimRef     (..)
+        , typePrimRef
+        , readPrimRef)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConPrim
-import DDC.Core.Tetra.Prim.OpPrimArith
-import DDC.Core.Tetra.Prim.OpPrimRef
+import DDC.Core.Tetra.Prim.PrimArith
+import DDC.Core.Tetra.Prim.PrimRef
 import DDC.Core.Salt.Name 
         ( readLitPrimNat
         , readLitPrimInt
@@ -40,8 +40,8 @@ instance NFData Name where
         NameCon s               -> rnf s
 
         NameTyConPrim con       -> rnf con
-        NameOpPrimArith con     -> rnf con
-        NameOpPrimRef   con     -> rnf con
+        NamePrimArith con       -> rnf con
+        NamePrimRef   con       -> rnf con
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
@@ -56,8 +56,8 @@ instance Pretty Name where
         NameCon  c              -> text c
 
         NameTyConPrim tc        -> ppr tc
-        NameOpPrimArith op      -> ppr op
-        NameOpPrimRef   op      -> ppr op
+        NamePrimArith op        -> ppr op
+        NamePrimRef   op        -> ppr op
 
         NameLitBool True        -> text "True"
         NameLitBool False       -> text "False"
@@ -73,11 +73,11 @@ readName str
         | Just p <- readTyConPrim   str  
         = Just $ NameTyConPrim p
 
-        | Just p <- readOpPrimArith str  
-        = Just $ NameOpPrimArith p
+        | Just p <- readPrimArith str  
+        = Just $ NamePrimArith p
 
-        | Just p <- readOpPrimRef   str  
-        = Just $ NameOpPrimRef p
+        | Just p <- readPrimRef   str  
+        = Just $ NamePrimRef p
 
         -- Literal Bools
         | str == "True"  = Just $ NameLitBool True

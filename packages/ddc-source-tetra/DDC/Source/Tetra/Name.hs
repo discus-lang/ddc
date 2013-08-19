@@ -2,8 +2,8 @@
 module DDC.Source.Tetra.Name
         ( Name          (..)
         , TyConPrim     (..)
-        , OpPrimArith   (..)
-        , OpPrimRef     (..)
+        , PrimArith     (..)
+        , PrimRef       (..)
         , readName)
 where
 import DDC.Source.Tetra.Lexer.Lit
@@ -13,13 +13,13 @@ import Data.Char
 
 import DDC.Core.Tetra    
         ( TyConPrim     (..)
-        , OpPrimArith   (..)
-        , OpPrimRef     (..))
+        , PrimArith     (..)
+        , PrimRef       (..))
 
 import DDC.Core.Tetra.Prim
         ( readTyConPrim
-        , readOpPrimArith
-        , readOpPrimRef)
+        , readPrimArith
+        , readPrimRef)
 
 
 -- | Names of things used in Disciple Source Tetra.
@@ -35,10 +35,10 @@ data Name
         | NameTyConPrim         TyConPrim        
 
         -- | Primitive arithmetic, logic and comparison.
-        | NameOpPrimArith       OpPrimArith
+        | NamePrimArith         PrimArith
 
         -- | Mutable references.
-        | NameOpPrimRef         OpPrimRef
+        | NamePrimRef           PrimRef
 
 
         -- Literals -----------------------------
@@ -68,8 +68,8 @@ instance NFData Name where
         NameCon s               -> rnf s
 
         NameTyConPrim con       -> rnf con
-        NameOpPrimArith con     -> rnf con
-        NameOpPrimRef   con     -> rnf con
+        NamePrimArith con       -> rnf con
+        NamePrimRef   con       -> rnf con
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
@@ -86,8 +86,8 @@ instance Pretty Name where
         NameCon  c              -> text c
 
         NameTyConPrim tc        -> ppr tc
-        NameOpPrimArith op      -> ppr op
-        NameOpPrimRef   op      -> ppr op
+        NamePrimArith op        -> ppr op
+        NamePrimRef   op        -> ppr op
 
         NameLitBool True        -> text "True"
         NameLitBool False       -> text "False"
@@ -105,11 +105,11 @@ readName str
         | Just p <- readTyConPrim   str  
         = Just $ NameTyConPrim p
 
-        | Just p <- readOpPrimArith str  
-        = Just $ NameOpPrimArith p
+        | Just p <- readPrimArith str  
+        = Just $ NamePrimArith p
 
-        | Just p <- readOpPrimRef   str  
-        = Just $ NameOpPrimRef p
+        | Just p <- readPrimRef   str  
+        = Just $ NamePrimRef p
 
         -- Literal Bools
         | str == "True"  = Just $ NameLitBool True
