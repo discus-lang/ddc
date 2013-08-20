@@ -11,17 +11,6 @@ import DDC.Source.Tetra.Name.Base
 import DDC.Base.Pretty
 import Data.Char
 
-import DDC.Core.Tetra    
-        ( TyConPrim     (..)
-        , PrimArith     (..)
-        , PrimRef       (..))
-
-import DDC.Core.Tetra.Prim
-        ( readTyConPrim
-        , readPrimArith
-        , readPrimRef)
-
-
 instance Pretty Name where
  ppr nn
   = case nn of

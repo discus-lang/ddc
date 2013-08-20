@@ -1,12 +1,15 @@
 
 module DDC.Source.Tetra.Name.Base
-        (Name   (..))
+        ( Name          (..)
+        , TyConPrim     (..), readTyConPrim
+        , PrimArith     (..), readPrimArith
+        , PrimRef       (..), readPrimRef)
 where
 import Control.DeepSeq
 import DDC.Core.Tetra    
-        ( TyConPrim     (..)
-        , PrimArith     (..)
-        , PrimRef       (..))
+        ( TyConPrim     (..), readTyConPrim
+        , PrimArith     (..), readPrimArith
+        , PrimRef       (..), readPrimRef)
 
 
 -- | Names of things used in Disciple Source Tetra.
