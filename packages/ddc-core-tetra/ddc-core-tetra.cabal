@@ -27,17 +27,16 @@ Library
         ddc-core-simpl  == 0.3.2.*
 
   Exposed-modules:
-        DDC.Core.Tetra
-
         DDC.Core.Tetra.Compounds
         DDC.Core.Tetra.Env
         DDC.Core.Tetra.Prim
         DDC.Core.Tetra.Profile
+        DDC.Core.Tetra
 
   Other-modules:
         DDC.Core.Tetra.Prim.Base
-        DDC.Core.Tetra.Prim.OpPrimArith
-        DDC.Core.Tetra.Prim.OpPrimRef
+        DDC.Core.Tetra.Prim.PrimArith
+        DDC.Core.Tetra.Prim.PrimRef
         DDC.Core.Tetra.Prim.TyConPrim
 
 

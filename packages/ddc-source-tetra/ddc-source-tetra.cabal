@@ -26,23 +26,26 @@ Library
         ddc-core-tetra  == 0.3.2.*
 
   Exposed-modules:
+        DDC.Source.Tetra.Desugar.Defix.Error
+        DDC.Source.Tetra.Desugar.Defix.FixTable
         DDC.Source.Tetra.Desugar.Defix
+        DDC.Source.Tetra.Exp.Base
+        DDC.Source.Tetra.Infer.Expand
         DDC.Source.Tetra.Lexer.Lit
+        DDC.Source.Tetra.Name.Base
+        DDC.Source.Tetra.Name.PrimArith
+        DDC.Source.Tetra.Name.TyConPrim
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module
         DDC.Source.Tetra.Parser.Param
         DDC.Source.Tetra.Compounds
         DDC.Source.Tetra.Exp
-        DDC.Source.Tetra.Infer.Expand
         DDC.Source.Tetra.Lexer
         DDC.Source.Tetra.Module
         DDC.Source.Tetra.Name
         DDC.Source.Tetra.Parser
         DDC.Source.Tetra.Predicates
         DDC.Source.Tetra.Pretty
-
-  Other-modules:
-        DDC.Source.Tetra.Exp.Base
 
   GHC-options:
         -Wall

@@ -490,6 +490,7 @@ builder_X8632_Cygwin config
                 $ [ "gcc -shared", "-o", libFile ] ++ oFiles
         }
 
+
 -- x86_32-mingw ----------------------------------------------------------------
 builder_X8632_Mingw config
  =      Builder
