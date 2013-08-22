@@ -5,6 +5,7 @@ module DDC.Core.Module
         , isMainModule
 	, moduleKindEnv
         , moduleTypeEnv
+        , moduleTopBinds
         , modulesGetBinds
 
 	  -- * Module maps
@@ -18,11 +19,15 @@ module DDC.Core.Module
         , isMainModuleName)
 where
 import DDC.Core.Exp
+import DDC.Type.Compounds
 import Data.Typeable
 import Data.Map.Strict                  (Map)
+import Data.Set                         (Set)
 import DDC.Type.Env                     as Env
 import qualified Data.Map.Strict        as Map
+import qualified Data.Set               as Set
 import Control.DeepSeq
+import Data.Maybe
 
 
 -- Module ---------------------------------------------------------------------
@@ -90,6 +95,25 @@ moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
         = Env.fromList 
         $ [BName n k | (n, (_, k)) <- Map.toList $ moduleImportTypes mm]
+
+
+-- | Get the set of top-level value bindings in a module.
+moduleTopBinds :: Ord n => Module a n -> Set n
+moduleTopBinds mm
+ = go (moduleBody mm)
+ where  go xx
+         = case xx of
+                XLet _ (LLet (BName n _) _) x2    
+                 -> Set.insert n (go x2)
+
+                XLet _ (LLet _ _) x2    
+                 -> go x2
+
+                XLet _ (LRec bxs) x2    
+                 ->          Set.fromList (mapMaybe takeNameOfBind $ map fst bxs)
+                 `Set.union` go x2
+
+                _ -> Set.empty
 
 
 -- ModuleMap ------------------------------------------------------------------

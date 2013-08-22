@@ -75,37 +75,37 @@ defaultConfigVector
 
 
 -- Lower ----------------------------------------------------------------------
-lowerModule :: Config -> ModuleF -> ModuleF
+lowerModule :: Config -> ModuleF -> Either Fail ModuleF
 lowerModule config mm
- = let  
+ = do 
         -- Slurp out series processes.
-        processes       = slurpProcesses mm
+        let processes   = slurpProcesses mm
 
         -- Schedule processeses into procedures.
-        lets            = map (lowerProcess config) processes
+        lets            <- mapM (lowerProcess config) processes
 
         -- Stash all the processes into a module.
-        mm_lowered      = mm
+        let mm_lowered  = mm
                         { moduleBody    = annotate ()
                                         $ XLet (LRec lets) xUnit }
 
         -- Clean up extracted code
-        mm_clean        = cleanModule mm_lowered
-   in   mm_clean
+        let mm_clean        = cleanModule mm_lowered
+        return mm_clean
 
 
 -- | Lower a single series process into fused code.
-lowerProcess :: Config -> Process -> (BindF, ExpF)
+lowerProcess :: Config -> Process -> Either Fail (BindF, ExpF)
 lowerProcess config process
  | MethodScalar         <- configMethod config
- = let  
+ = do  
         -- Schedule process into scalar code.
-        Right proc              = scheduleScalar process
+        let Right proc              = scheduleScalar process
 
         -- Extract code for the kernel
-        (bProc, xProc)          = extractProcedure proc
+        let (bProc, xProc)          = extractProcedure proc
 
-   in   (bProc, xProc)
+        return (bProc, xProc)
 
 
  | MethodVector lifting <- configMethod config
@@ -113,124 +113,124 @@ lowerProcess config process
  , BName nRN tRN : _  <- processParamValues process
  , isRateNatType tRN
 
- = let  c       = liftingFactor lifting
+ = do   let c           = liftingFactor lifting
 
 
         -- Get the primary rate variable.
-        bK : _  = processParamTypes process
-        Just uK = takeSubstBoundOfBind bK
-        tK      = TVar uK
+        let bK : _      = processParamTypes process
+        let Just uK     = takeSubstBoundOfBind bK
+        let tK          = TVar uK
 
         -- The RateNat witness
-        xRN     = XVar (UName nRN)
+        let xRN         = XVar (UName nRN)
 
         -----------------------------------------
         -- Create the vector version of the kernel.
         --  Vector code processes several elements per loop iteration.
-        Right procVec   = scheduleKernel lifting process
-        (_, xProcVec)   = extractProcedure procVec
+        procVec         <- scheduleKernel lifting process
+        let (_, xProcVec) = extractProcedure procVec
         
         
-        bxsDownSeries       
-         = [ ( bS
-             , ( BName (NameVarMod n "down")
-                       (tSeries (tDown c tK) tE)
-               , xDown c tK tE (XVar (UIx 0)) xS))
-           | bS@(BName n tS)  <- processParamValues process
-           , let Just tE = elemTypeOfSeriesType tS
-           , let Just uS = takeSubstBoundOfBind bS
-           , let xS      = XVar uS
-           , isSeriesType tS ]
+        let bxsDownSeries       
+                = [ ( bS
+                    , ( BName (NameVarMod n "down")
+                              (tSeries (tDown c tK) tE)
+                      , xDown c tK tE (XVar (UIx 0)) xS))
+                  | bS@(BName n tS)  <- processParamValues process
+                  , let Just tE = elemTypeOfSeriesType tS
+                  , let Just uS = takeSubstBoundOfBind bS
+                  , let xS      = XVar uS
+                  , isSeriesType tS ]
 
         -- Get a value arg to give to the vector procedure.
-        getDownValArg b
+        let getDownValArg b
                 | Just (b', _)  <- lookup b bxsDownSeries
                 = liftM XVar $ takeSubstBoundOfBind b'
 
                 | otherwise
                 = liftM XVar $ takeSubstBoundOfBind b
 
-        Just xsVecValArgs    
-         = sequence 
-         $ map getDownValArg (processParamValues process)
+        let Just xsVecValArgs    
+                = sequence 
+                $ map getDownValArg (processParamValues process)
 
-        bRateDown
-         = BAnon (tRateNat (tDown c (TVar uK)))
+        let bRateDown
+                = BAnon (tRateNat (tDown c (TVar uK)))
 
-        xProcVec'       
-         = XLam bRateDown
-         $ xLets [LLet b x | (_, (b, x)) <- bxsDownSeries]
-         $ xApps (XApp xProcVec (XType (TVar uK)))
-         $ xsVecValArgs
+        let xProcVec'       
+                = XLam bRateDown
+                $ xLets [LLet b x | (_, (b, x)) <- bxsDownSeries]
+                $ xApps (XApp xProcVec (XType (TVar uK)))
+                $ xsVecValArgs
 
 
         -----------------------------------------
         -- Create tail version.
         --  Scalar code processes the final elements of the loop.
-        Right procTail  = scheduleScalar process
-        (_, xProcTail)  = extractProcedure procTail
+        procTail        <- scheduleScalar process
+        let (_, xProcTail) = extractProcedure procTail
 
 
-        bxsTailSeries
-         = [ ( bS
-             , ( BName (NameVarMod n "tail")
-                       (tSeries (tTail c tK) tE)
-               , xTail c tK tE (XVar (UIx 0)) xS))
-           | bS@(BName n tS)    <- processParamValues process
-           , let Just tE = elemTypeOfSeriesType tS
-           , let Just uS = takeSubstBoundOfBind bS
-           , let xS      = XVar uS
-           , isSeriesType tS ]
+        let bxsTailSeries
+                = [ ( bS
+                    , ( BName (NameVarMod n "tail")
+                              (tSeries (tTail c tK) tE)
+                      , xTail c tK tE (XVar (UIx 0)) xS))
+                  | bS@(BName n tS)    <- processParamValues process
+                  , let Just tE = elemTypeOfSeriesType tS
+                  , let Just uS = takeSubstBoundOfBind bS
+                  , let xS      = XVar uS
+                  , isSeriesType tS ]
 
         -- Get a value arg to give to the scalar procedure.
-        getTailValArg b
+        let getTailValArg b
                 | Just (b', _)  <- lookup b bxsTailSeries
                 = liftM XVar $ takeSubstBoundOfBind b'
 
                 | otherwise
                 = liftM XVar $ takeSubstBoundOfBind b
 
-        Just xsTailValArgs
-         = sequence 
-         $ map getTailValArg (procedureParamValues procTail)
+        let Just xsTailValArgs
+                = sequence 
+                $ map getTailValArg (procedureParamValues procTail)
 
-        bRateTail
-         = BAnon (tRateNat (tTail c (TVar uK)))
+        let bRateTail
+                = BAnon (tRateNat (tTail c (TVar uK)))
 
-        xProcTail'
-         = XLam bRateTail
-         $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
-         $ xApps (XApp xProcTail (XType (tTail c (TVar uK))))
-         $ xsTailValArgs
-
+        let xProcTail'
+                = XLam bRateTail
+                $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
+                $ xApps (XApp xProcTail (XType (tTail c (TVar uK))))
+                $ xsTailValArgs
 
         ------------------------------------------
         -- Stich the vector and scalar versions together.
-        xProc
-         = foldr XLAM 
-                (foldr XLam xBody (processParamValues process))
-                (processParamTypes process)
+        let xProc
+                = foldr XLAM 
+                       (foldr XLam xBody (processParamValues process))
+                       (processParamTypes process)
 
-        xBody
-         = XLet (LLet   (BNone tUnit) 
-                        (xSplit c (TVar uK) xRN xProcVec' xProcTail'))
-                xUnit
+            xBody
+                = XLet (LLet   (BNone tUnit) 
+                               (xSplit c (TVar uK) xRN xProcVec' xProcTail'))
+                       xUnit
                 
         -- Reconstruct a binder for the whole procedure / process.
-        bProc   = BName (processName process)
+        let bProc
+                = BName (processName process)
                         (typeOfProcess process)
 
-   in   (bProc, xProc)
+        return (bProc, xProc)
 
  | MethodKernel lifting <- configMethod config
- = let  
+ = do
         -- Schedule process into 
-        Right proc              = scheduleKernel lifting process
+        proc            <- scheduleKernel lifting process
 
         -- Extract code for the kernel
-        (bProc, xProc)          = extractProcedure proc
+        let (bProc, xProc)  = extractProcedure proc
 
-   in   (bProc, xProc)
+        return (bProc, xProc)
 
  | otherwise
  = error "ddc-core-flow.lowerProcess: invalid lowering method"

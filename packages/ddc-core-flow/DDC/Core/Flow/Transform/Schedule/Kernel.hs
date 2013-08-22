@@ -128,8 +128,13 @@ scheduleOperator lifting nest op
 
         -- Bounds for the worker parameters, along with the lifted versions.
         let bsParam     = opWorkerParams op
-        let Just bsParam_lifted  
-                        = sequence $ map (liftTypeOfBind lifting) bsParam
+
+        let liftTypeOfBind' b
+                = case liftTypeOfBind lifting b of
+                        Just b' -> return b'
+                        _       -> Left $ FailCannotLiftType (typeOfBind b)
+
+        bsParam_lifted  <- mapM liftTypeOfBind' bsParam
         let liftEnv     = zip bsParam bsParam_lifted
 
         xWorker_lifted  <- liftWorker lifting liftEnv 
@@ -207,8 +212,12 @@ scheduleOperator lifting nest op
 
         -- Lift the worker function.
         let bsParam     = [ opWorkerParamAcc op, opWorkerParamElem op ]
-        let Just bsParam_lifted  
-                        = sequence $ map (liftTypeOfBind lifting) bsParam
+        let liftTypeOfBind' b
+                = case liftTypeOfBind lifting b of
+                        Just b' -> return b'
+                        _       -> Left $ FailCannotLiftType (typeOfBind b)
+
+        bsParam_lifted  <- mapM liftTypeOfBind' bsParam
         let liftEnv     = zip bsParam bsParam_lifted
 
         xWorker_lifted  <- liftWorker lifting liftEnv 

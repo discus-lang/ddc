@@ -29,7 +29,10 @@ data Fail
         | FailPrimaryRateMismatch
 
         -- | Cannot lift expression to vector operators.
-        | FailCannotLift (Exp () Name)
+        | FailCannotLiftExp  (Exp () Name)
+
+        -- | Cannot lift type to vector type.
+        | FailCannotLiftType (Type Name)
 
         -- | Current scheduler does not support this operator.
         | FailUnsupported Operator

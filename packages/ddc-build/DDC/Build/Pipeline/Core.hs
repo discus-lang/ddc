@@ -351,7 +351,13 @@ pipeFlow !mm !pp
         PipeFlowLower !config !pipes 
          -> {-# SCC "PipeFlowLower" #-}
             let mm_stripped     = C.reannotate (const ()) mm
-                mm_lowered      = Flow.lowerModule config mm_stripped
+
+                -- TODO: send lower messages somewhere.
+                mm_lowered      
+                 = case Flow.lowerModule config mm_stripped of
+                        Right mm'       -> mm'
+                        _               -> mm_stripped
+
              in pipeCores mm_lowered pipes
 
         PipeFlowMelt !pipes

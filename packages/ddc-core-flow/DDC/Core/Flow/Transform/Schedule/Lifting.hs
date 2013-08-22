@@ -41,6 +41,7 @@ liftType l tt
         | elem tt 
                 [ tFloat 32, tFloat 64
                 , tWord  8,  tWord  16, tWord  32, tWord  64
+                , tInt
                 , tNat ]
 
         = Just (tVec (liftingFactor l) tt)
@@ -94,7 +95,7 @@ liftWorker lifting env xx
                 return  $  XApp x1' x2'
 
 
-        _ -> Left (FailCannotLift xx)
+        _ -> Left (FailCannotLiftExp xx)
 
 
 -- Down -----------------------------------------------------------------------
