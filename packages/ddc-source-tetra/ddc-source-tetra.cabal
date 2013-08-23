@@ -32,20 +32,21 @@ Library
         DDC.Source.Tetra.Exp.Base
         DDC.Source.Tetra.Infer.Expand
         DDC.Source.Tetra.Lexer.Lit
-        DDC.Source.Tetra.Name.Base
-        DDC.Source.Tetra.Name.PrimArith
-        DDC.Source.Tetra.Name.TyConPrim
+        DDC.Source.Tetra.Prim.Base
+        DDC.Source.Tetra.Prim.PrimArith
+        DDC.Source.Tetra.Prim.TyConPrim
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module
         DDC.Source.Tetra.Parser.Param
         DDC.Source.Tetra.Compounds
+        DDC.Source.Tetra.Env
         DDC.Source.Tetra.Exp
         DDC.Source.Tetra.Lexer
         DDC.Source.Tetra.Module
-        DDC.Source.Tetra.Name
         DDC.Source.Tetra.Parser
         DDC.Source.Tetra.Predicates
         DDC.Source.Tetra.Pretty
+        DDC.Source.Tetra.Prim
 
   GHC-options:
         -Wall

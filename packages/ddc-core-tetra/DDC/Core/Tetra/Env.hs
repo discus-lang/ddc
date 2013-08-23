@@ -28,25 +28,25 @@ primDataDefs
  = fromListDataDefs
         -- Primitive -----------------------------------------------
         -- Bool
-        [ DataDef (NameTyConPrim TyConPrimBool) 
+        [ DataDef (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
         -- Nat
-        , DataDef (NameTyConPrim TyConPrimNat)  [] Nothing
+        , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
 
         -- Int
-        , DataDef (NameTyConPrim TyConPrimInt)  [] Nothing
+        , DataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
 
         -- WordN
-        , DataDef (NameTyConPrim (TyConPrimWord 64)) [] Nothing
-        , DataDef (NameTyConPrim (TyConPrimWord 32)) [] Nothing
-        , DataDef (NameTyConPrim (TyConPrimWord 16)) [] Nothing
-        , DataDef (NameTyConPrim (TyConPrimWord 8))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
         -- Ref
-        , DataDef (NameTyConPrim TyConPrimRef) [] Nothing
+        , DataDef (NameTyConData TyConDataRef) [] Nothing
         ]
 
 
@@ -74,7 +74,8 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameTyConPrim tc        -> Just $ kindTyConPrim tc
+        NameTyConData tc        -> Just $ kindTyConData tc
+        NamePrimTyCon tc        -> Just $ kindPrimTyCon tc
         _                       -> Nothing
 
 
@@ -89,8 +90,8 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
+        NameOpStore   p         -> Just $ typeOpStore   p
         NamePrimArith p         -> Just $ typePrimArith p
-        NamePrimRef   p         -> Just $ typePrimRef   p
 
         NameLitBool _           -> Just $ tBool
         NameLitNat  _           -> Just $ tNat

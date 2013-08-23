@@ -1,11 +1,13 @@
 
 module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
-        , TyConPrim     (..)
-        , PrimArith     (..)
-        , PrimRef       (..))
+        , TyConData     (..)
+        , OpStore       (..)
+        , PrimTyCon     (..)
+        , PrimArith     (..))
 where
 import Data.Typeable
+import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimArith
 
 
@@ -17,15 +19,18 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
+        -- Baked-in data types -----------------
+        | NameTyConData         TyConData
+
+        -- Baked-in operators ------------------
+        | NameOpStore           OpStore
+
         -- Machine primitives ------------------
         -- | A primitive type constructor.
-        | NameTyConPrim         TyConPrim
+        | NamePrimTyCon         PrimTyCon
 
         -- | Primitive arithmetic, logic, comparison and bit-wise operators.
         | NamePrimArith         PrimArith
-
-        -- | Mutable references.
-        | NamePrimRef           PrimRef
 
         -- Literals -----------------------------
         -- | A boolean literal.
@@ -42,32 +47,19 @@ data Name
         deriving (Eq, Ord, Show, Typeable)
 
 
--- TyConPrim ------------------------------------------------------------------
--- | Primitive type constructors.
-data TyConPrim
-        -- | @Bool@ unboxed booleans.
-        = TyConPrimBool
-
-        -- | @Nat@ natural numbers.
-        --   Big enough to count every addressable byte in the store.
-        | TyConPrimNat
-
-        -- | @Int@ signed integers.
-        | TyConPrimInt
-
-        -- | @WordN@ machine words of the given width.
-        | TyConPrimWord   Int
-
+-- TyConData------------------------------------------------------------------
+-- | Baked-in data types.
+data TyConData
         -- | A mutable reference.
-        | TyConPrimRef
+        = TyConDataRef
         deriving (Eq, Ord, Show)
 
 
--- OpPrimRef ------------------------------------------------------------------
+-- OpStore -------------------------------------------------------------------
 -- | Mutable References.
-data PrimRef
-        = PrimRefAllocRef     -- ^ Allocate a reference.
-        | PrimRefReadRef      -- ^ Read a reference.
-        | PrimRefWriteRef     -- ^ Write to a reference.
+data OpStore
+        = OpStoreAllocRef     -- ^ Allocate a reference.
+        | OpStoreReadRef      -- ^ Read a reference.
+        | OpStoreWriteRef     -- ^ Write to a reference.
         deriving (Eq, Ord, Show)
 

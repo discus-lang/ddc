@@ -9,7 +9,7 @@ module DDC.Source.Tetra.Desugar.Defix.FixTable
         , defaultFixTable)
 where
 import DDC.Source.Tetra.Desugar.Defix.Error
-import DDC.Source.Tetra.Name
+import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import Data.List
 import qualified DDC.Data.SourcePos     as BP

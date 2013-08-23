@@ -4,8 +4,9 @@ module DDC.Source.Tetra.Infer.Expand
         , configDefault
         , Expand        (..))
 where
+import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Module
-import DDC.Source.Tetra.Name
+import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
@@ -53,6 +54,16 @@ instance Expand Exp where
  expand config kenv tenv xx
   = let down = expand config kenv tenv
     in case xx of
+
+        XApp{}
+         | (x1, xas)     <- takeXAppsWithAnnots xx
+         -> case x1 of
+             XVar{}  -> error "yarp"
+
+             _ -> let   x1'     = expand config kenv tenv x1'
+                        xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
+                  in    makeXAppsWithAnnots x1' xas'
+
         XVar{}          -> xx
         XCon{}          -> xx
 
@@ -78,7 +89,6 @@ instance Expand Exp where
                 x2'     = expand config kenv' tenv' x2
             in  XLet a (LLetRegions bts bxs) x2'
 
-        XApp a x1 x2    -> XApp a    (down x1)  (down x2)
         XCase a x alts  -> XCase a   (down x)   (map down alts)
         XCast a c x     -> XCast a c (down x)
         XType{}         -> xx

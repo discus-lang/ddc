@@ -5,15 +5,17 @@ module DDC.Core.Tetra
 
           -- * Names
         , Name          (..)
-        , TyConPrim     (..)
+        , TyConData     (..)
+        , OpStore       (..)
+        , PrimTyCon     (..)
         , PrimArith     (..)
-        , PrimRef       (..)
 
           -- * Name Parsing
         , readName
+        , readTyConData
+        , readOpStore
+        , readPrimTyCon
         , readPrimArith
-        , readPrimRef
-        , readTyConPrim
 
           -- * Program Lexing
         , lexModuleString

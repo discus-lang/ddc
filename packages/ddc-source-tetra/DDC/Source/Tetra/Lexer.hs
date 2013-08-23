@@ -2,7 +2,7 @@
 module DDC.Source.Tetra.Lexer
         (lexModuleString)
 where
-import DDC.Source.Tetra.Name
+import DDC.Source.Tetra.Prim
 import DDC.Core.Lexer
 import DDC.Data.Token
 

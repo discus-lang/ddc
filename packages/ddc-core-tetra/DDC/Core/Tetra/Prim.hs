@@ -4,25 +4,31 @@ module DDC.Core.Tetra.Prim
           Name          (..)
         , readName
 
+          -- * Baked-in data type constructors.
+        , TyConData     (..)
+        , readTyConData
+        , kindTyConData
+
+          -- * Baked-in store operators.
+        , OpStore       (..)
+        , readOpStore
+        , typeOpStore
+
           -- * Primitive type constructors.
-        , TyConPrim     (..)
-        , kindTyConPrim
-        , readTyConPrim
+        , PrimTyCon     (..)
+        , readPrimTyCon
+        , kindPrimTyCon
 
           -- * Primitive arithmetic operators.
-        , PrimArith   (..)
-        , typePrimArith
+        , PrimArith     (..)
         , readPrimArith
-
-          -- * Mutable references.
-        , PrimRef     (..)
-        , typePrimRef
-        , readPrimRef)
+        , typePrimArith)
 where
 import DDC.Core.Tetra.Prim.Base
+import DDC.Core.Tetra.Prim.TyConData
 import DDC.Core.Tetra.Prim.TyConPrim
-import DDC.Core.Tetra.Prim.PrimArith
-import DDC.Core.Tetra.Prim.PrimRef
+import DDC.Core.Tetra.Prim.OpStore
+import DDC.Core.Tetra.Prim.OpArith
 import DDC.Core.Salt.Name 
         ( readLitPrimNat
         , readLitPrimInt
@@ -39,9 +45,11 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
 
-        NameTyConPrim con       -> rnf con
+        NameTyConData con       -> rnf con
+        NameOpStore   con       -> rnf con
+
+        NamePrimTyCon con       -> rnf con
         NamePrimArith con       -> rnf con
-        NamePrimRef   con       -> rnf con
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
@@ -55,9 +63,11 @@ instance Pretty Name where
         NameVar  v              -> text v
         NameCon  c              -> text c
 
-        NameTyConPrim tc        -> ppr tc
+        NameTyConData tc        -> ppr tc
+        NameOpStore op          -> ppr op
+
+        NamePrimTyCon tc        -> ppr tc
         NamePrimArith op        -> ppr op
-        NamePrimRef   op        -> ppr op
 
         NameLitBool True        -> text "True"
         NameLitBool False       -> text "False"
@@ -69,15 +79,19 @@ instance Pretty Name where
 -- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
+        -- Baked-in names.
+        | Just p <- readTyConData str
+        = Just $ NameTyConData p
+
+        | Just p <- readOpStore   str
+        = Just $ NameOpStore p
+
         -- Primitive names.
-        | Just p <- readTyConPrim   str  
-        = Just $ NameTyConPrim p
+        | Just p <- readPrimTyCon str  
+        = Just $ NamePrimTyCon p
 
         | Just p <- readPrimArith str  
         = Just $ NamePrimArith p
-
-        | Just p <- readPrimRef   str  
-        = Just $ NamePrimRef p
 
         -- Literal Bools
         | str == "True"  = Just $ NameLitBool True

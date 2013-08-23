@@ -1,9 +1,9 @@
 
-module DDC.Source.Tetra.Name.PrimArith
+module DDC.Source.Tetra.Prim.OpArith
         (typePrimArith)
 where
-import DDC.Source.Tetra.Name.TyConPrim
-import DDC.Source.Tetra.Name.Base
+import DDC.Source.Tetra.Prim.TyConPrim
+import DDC.Source.Tetra.Prim.Base
 import DDC.Type.Compounds
 import DDC.Type.Exp
 

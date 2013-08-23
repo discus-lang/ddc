@@ -1,15 +1,17 @@
 
-module DDC.Source.Tetra.Name.Base
+module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
-        , TyConPrim     (..), readTyConPrim
-        , PrimArith     (..), readPrimArith
-        , PrimRef       (..), readPrimRef)
+        , TyConData     (..), readTyConData
+        , OpStore       (..), readOpStore
+        , PrimTyCon     (..), readPrimTyCon
+        , PrimArith     (..), readPrimArith)
 where
 import Control.DeepSeq
 import DDC.Core.Tetra    
-        ( TyConPrim     (..), readTyConPrim
-        , PrimArith     (..), readPrimArith
-        , PrimRef       (..), readPrimRef)
+        ( TyConData     (..), readTyConData
+        , OpStore       (..), readOpStore
+        , PrimTyCon     (..), readPrimTyCon
+        , PrimArith     (..), readPrimArith)
 
 
 -- | Names of things used in Disciple Source Tetra.
@@ -20,16 +22,19 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
+        -- Baked in things ----------------------
+        -- | Baked in data type constructors.
+        | NameTyConData         TyConData
+
+        -- | Baked in store operators.
+        | NameOpStore           OpStore
+
         -- Machine primitives -------------------
         -- | Primitive type cosntructors.
-        | NameTyConPrim         TyConPrim        
+        | NamePrimTyCon         PrimTyCon
 
         -- | Primitive arithmetic, logic and comparison.
         | NamePrimArith         PrimArith
-
-        -- | Mutable references.
-        | NamePrimRef           PrimRef
-
 
         -- Literals -----------------------------
         -- | A boolean literal.
@@ -44,7 +49,6 @@ data Name
         -- | A word literal.
         | NameLitWord           Integer Int
 
-
         -- Inference ----------------------------
         -- | A hole used during type inference.
         | NameHole              
@@ -57,9 +61,10 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
 
-        NameTyConPrim con       -> rnf con
-        NamePrimArith con       -> rnf con
-        NamePrimRef   con       -> rnf con
+        NameTyConData p         -> rnf p
+        NameOpStore   p         -> rnf p
+        NamePrimTyCon p         -> rnf p
+        NamePrimArith p         -> rnf p
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n

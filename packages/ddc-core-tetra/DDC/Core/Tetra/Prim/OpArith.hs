@@ -1,5 +1,5 @@
 
-module DDC.Core.Tetra.Prim.PrimArith
+module DDC.Core.Tetra.Prim.OpArith
         ( readPrimArith
         , typePrimArith)
 where

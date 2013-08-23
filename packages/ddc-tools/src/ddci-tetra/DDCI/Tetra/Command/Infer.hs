@@ -5,12 +5,12 @@ where
 import DDC.Interface.Source
 import DDCI.Tetra.State
 import DDC.Base.Pretty
--- import DDC.Core.Tetra.Env
+import DDC.Source.Tetra.Env
 import DDC.Source.Tetra.Lexer
 import DDC.Source.Tetra.Parser
 import DDC.Source.Tetra.Pretty          ()
 import DDC.Source.Tetra.Desugar.Defix
--- import DDC.Source.Tetra.Infer.Expand    as Expand
+import DDC.Source.Tetra.Infer.Expand    as Expand
 import qualified DDC.Core.Lexer         as C
 import qualified DDC.Base.Parser        as BP
 
@@ -37,10 +37,9 @@ cmdInfer _state source str
         goDesugar mm
          = case defix defaultFixTable mm of
             Left err    -> putStrLn (renderIndent $ ppr err)
-            Right mm'   -> putStrLn (renderIndent $ ppr mm')
+            Right mm'   -> goExpand mm'
 
-        --goExpand mm'
-        --goExpand mm
-        -- = do   let mm' = Expand.expand Expand.configDefault primKindEnv primTypeEnv mm
-        --        putStrLn (renderIndent $ ppr mm')
+        goExpand mm
+         = do   let mm' = Expand.expand Expand.configDefault primKindEnv primTypeEnv mm
+                putStrLn (renderIndent $ ppr mm')
 

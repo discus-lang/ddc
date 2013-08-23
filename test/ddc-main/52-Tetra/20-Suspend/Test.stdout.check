@@ -3,18 +3,18 @@ ok
 
 -- Eta-expanding a function is fine.
 /\(r : Region)./\(a : Data).
- \(x : Ref r a). readRef# [r] [a] x
-:*: [r : Region].[a : Data].Ref r a -> S (Read r) a
+ \(x : Ref# r a). readRef# [r] [a] x
+:*: [r : Region].[a : Data].Ref# r a -> S (Read r) a
 :!: Pure
 
 
 -- We can build an abstraction when the effect of the body
 -- is suspended.
 /\(r : Region)./\(a : Data).
- \(x : Ref r a).
+ \(x : Ref# r a).
 suspend
 run readRef# [r] [a] x
-:*: [r : Region].[a : Data].Ref r a -> S (Read r) a
+:*: [r : Region].[a : Data].Ref# r a -> S (Read r) a
 :!: Pure
 
 
@@ -23,32 +23,32 @@ When checking expression.
   Impure Data abstraction
              has effect: Read r
   
-  with: \(x : Ref r a).
+  with: \(x : Ref# r a).
         run readRef# [r] [a] x
 
 
 -- Double the value in a reference.
 /\(r : Region).
- \(ref : Ref r Nat).
+ \(ref : Ref# r Nat#).
 suspend
-let x : Nat
-      = run readRef# [r] [Nat] ref in
-run writeRef# [r] [Nat] ref (add# [Nat] x x)
-:*: [r : Region].Ref r Nat -> S (Read r + Write r) Unit
+let x : Nat#
+      = run readRef# [r] [Nat#] ref in
+run writeRef# [r] [Nat#] ref (add# [Nat#] x x)
+:*: [r : Region].Ref# r Nat# -> S (Read r + Write r) Unit
 :!: Pure
 
 
 -- Pure factorial function.
 module Test with
 letrec {
-  fac : Nat -> Nat
-    = \(x : Nat).
+  fac : Nat# -> Nat#
+    = \(x : Nat#).
       case x of {
         0  
          -> 1;
         _ 
-         -> add# [Nat] x
-                (fac (sub# [Nat] x 1))
+         -> add# [Nat#] x
+                (fac (sub# [Nat#] x 1))
       }
 }
 
@@ -56,25 +56,25 @@ letrec {
 -- Factorial using a local reference.
 module Test with
 letrec {
-  fac : Nat -> Nat
-    = \(x : Nat).
+  fac : Nat# -> Nat#
+    = \(x : Nat#).
       letregion r in
-      let acc : Ref r Nat
-            = run allocRef# [r] [Nat] 0 in
+      let acc : Ref# r Nat#
+            = run allocRef# [r] [Nat#] 0 in
       letrec {
-        loop : Nat -> S (Read r + Write r) Nat
-          = \(i : Nat).
+        loop : Nat# -> S (Read r + Write r) Nat#
+          = \(i : Nat#).
             suspend
             case i of {
               0  
-               -> run readRef# [r] [Nat] acc;
+               -> run readRef# [r] [Nat#] acc;
               _ 
-               -> let x : Nat
-                        = run readRef# [r] [Nat] acc in
-                  let x' : Nat = add# [Nat] x 1 in
+               -> let x : Nat#
+                        = run readRef# [r] [Nat#] acc in
+                  let x' : Nat# = add# [Nat#] x 1 in
                   let _ : Unit
-                        = run writeRef# [r] [Nat] acc x' in
-                  run loop (sub# [Nat] x 1)
+                        = run writeRef# [r] [Nat#] acc x' in
+                  run loop (sub# [Nat#] x 1)
             }
       } in
       run loop x
@@ -84,27 +84,27 @@ letrec {
 -- Factorial pushing the suspend into the case expression.
 module Test with
 letrec {
-  fac : Nat -> Nat
-    = \(x : Nat).
+  fac : Nat# -> Nat#
+    = \(x : Nat#).
       letregion r in
-      let acc : Ref r Nat
-            = run allocRef# [r] [Nat] 0 in
+      let acc : Ref# r Nat#
+            = run allocRef# [r] [Nat#] 0 in
       letrec {
-        loop : Nat -> S (Read r + Write r) Nat
-          = \(i : Nat).
+        loop : Nat# -> S (Read r + Write r) Nat#
+          = \(i : Nat#).
             case i of {
               0  
                -> suspend
                   weakeff [Read r + Write r] in
-                  run readRef# [r] [Nat] acc;
+                  run readRef# [r] [Nat#] acc;
               _ 
                -> suspend
-                  let x : Nat
-                        = run readRef# [r] [Nat] acc in
-                  let x' : Nat = add# [Nat] x 1 in
+                  let x : Nat#
+                        = run readRef# [r] [Nat#] acc in
+                  let x' : Nat# = add# [Nat#] x 1 in
                   let _ : Unit
-                        = run writeRef# [r] [Nat] acc x' in
-                  run loop (sub# [Nat] x 1)
+                        = run writeRef# [r] [Nat#] acc x' in
+                  run loop (sub# [Nat#] x 1)
             }
       } in
       run loop x
@@ -114,15 +114,15 @@ letrec {
 -- Pure iteratation function.
 module Test with
 letrec {
-  iterate : [a : Data].(a -> a) -> Nat -> a -> a
+  iterate : [a : Data].(a -> a) -> Nat# -> a -> a
     = /\(a : Data).
-       \(f : a -> a).\(i : Nat).\(x : a).
+       \(f : a -> a).\(i : Nat#).\(x : a).
       case i of {
         0  
          -> x;
         _ 
          -> let x' : a = f x in
-            iterate [a] f (sub# [Nat] i 1) x'
+            iterate [a] f (sub# [Nat#] i 1) x'
       }
 }
 
@@ -130,9 +130,9 @@ letrec {
 -- Effectful iteration function.
 module Test with
 letrec {
-  iterateS : [e : Effect].[a : Data].(a -> S e a) -> Nat -> a -> S e a
+  iterateS : [e : Effect].[a : Data].(a -> S e a) -> Nat# -> a -> S e a
     = /\(e : Effect)./\(a : Data).
-       \(f : a -> S e a).\(i : Nat).\(x : a).
+       \(f : a -> S e a).\(i : Nat#).\(x : a).
       suspend
       case i of {
         0  
@@ -140,7 +140,7 @@ letrec {
         _ 
          -> let x' : a
                   = run f x in
-            run iterateS [e] [a] f (sub# [Nat] i 1) x'
+            run iterateS [e] [a] f (sub# [Nat#] i 1) x'
       }
 }
 
