@@ -58,9 +58,7 @@ instance Expand Exp where
         XApp{}
          | (x1, xas)     <- takeXAppsWithAnnots xx
          -> case x1 of
-             XVar{}  -> error "yarp"
-
-             _ -> let   x1'     = expand config kenv tenv x1'
+             _ -> let   x1'     = expand config kenv tenv x1
                         xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
                   in    makeXAppsWithAnnots x1' xas'
 
