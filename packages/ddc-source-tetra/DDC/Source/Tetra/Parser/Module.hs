@@ -166,10 +166,10 @@ pData c
                 pTok KBraceBra
                 ctors   <- P.sepEndBy1 (pDataCtor c) (pTok KSemiColon)
                 pTok KBraceKet
-                return  $ TopData sp n ps ctors
+                return  $ TopData sp (DataDef n ps ctors)
          
            -- Data declaration with no data constructors.
-         , do   return  $ TopData sp n ps []
+         , do   return  $ TopData sp (DataDef n ps [])
          ]
 
 

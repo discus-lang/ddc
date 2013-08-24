@@ -10,9 +10,13 @@ module DDC.Source.Tetra.Module
         , isMainModuleName
 
           -- * Top-level things
-        , Top           (..))
+        , Top           (..)
+
+          -- * Data type definitions
+        , DataDef       (..))
 where
 import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.DataDef
 import Control.DeepSeq
 
 import DDC.Core.Module          
@@ -67,11 +71,8 @@ data Top a n
 
         -- | Data type definition.
         | TopData 
-        { topAnnot      :: a 
-        , topName       :: n                    -- ^ Data type name.
-        , topParams     :: [(n, Kind n)]        -- ^ Type parameters.
-        , topCtors      :: [(n, Type n)]        -- ^ Data constructors.
-        }
+        { topAnnot      :: a
+        , topDataDef    :: DataDef n }
         deriving Show
 
 
@@ -81,5 +82,6 @@ instance (NFData a, NFData n) => NFData (Top a n) where
         TopBind a b x   
          -> rnf a `seq` rnf b  `seq` rnf x
                  
-        TopData a n ps cs 
-         -> rnf a `seq` rnf n `seq` rnf ps `seq` rnf cs
+        TopData a def
+         -> rnf a `seq` rnf def 
+

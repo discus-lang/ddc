@@ -17,6 +17,7 @@ module DDC.Type.Env
         , extend
         , extends
         , union
+        , unions
 
         -- * Conversion
         , fromList
@@ -136,6 +137,13 @@ union env1 env2
         , envStack       = envStack       env2  ++ envStack       env1
         , envStackLength = envStackLength env2  +  envStackLength env1
         , envPrimFun     = \n -> envPrimFun env2 n `mplus` envPrimFun env1 n }
+
+
+-- | Combine multiple environments,
+--   with the latter ones taking preference.
+unions :: Ord n => [Env n] -> Env n
+unions envs
+        = foldr union empty envs
 
 
 -- | Check whether a bound variable is present in an environment.

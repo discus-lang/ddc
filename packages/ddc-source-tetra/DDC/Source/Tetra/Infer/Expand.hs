@@ -5,20 +5,24 @@ module DDC.Source.Tetra.Infer.Expand
         , Expand        (..))
 where
 import DDC.Source.Tetra.Compounds
+import DDC.Source.Tetra.Predicates
+import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
-import DDC.Type.Predicates
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 
 
 -------------------------------------------------------------------------------
+-- | Expander configuration.
 data Config a n
         = Config
-        { configMakeTypeHole    :: Kind n -> Type n }
+        { -- | Make a type hole of the given kind.
+          configMakeTypeHole    :: Kind n -> Type n }
 
 
+-- | Default expander configuration.
 configDefault :: Config a Name
 configDefault 
         = Config
@@ -32,11 +36,28 @@ class Expand (c :: * -> * -> *) where
         => Config a n
         -> KindEnv n -> TypeEnv n
         -> c a n     -> c a n
- 
+
+
 instance Expand Module where
  expand config kenv tenv mm
-  = mm { moduleTops     = map (expand config kenv tenv)
-                        $ moduleTops mm }
+  = let 
+        -- Build an environment with types for all the data constructors.
+        tenv_dataCtors  = Env.unions 
+                        $ [ typeEnvOfDataDef def | TopData _ def <- moduleTops mm]
+
+        -- Add types of top level bindings.
+        tenv_tops       = Env.fromList
+                        $ [ b                    | TopBind _ b _ <- moduleTops mm]
+
+        -- Build the compound top-level environment.
+        tenv'           = Env.unions
+                        $ [tenv, tenv_dataCtors, tenv_tops]
+
+        -- Expand all the top-level definitions.
+        tops'           = map (expand config kenv tenv')
+                        $ moduleTops mm
+
+    in  mm { moduleTops = tops' }
 
 
 instance Expand Top where
@@ -56,24 +77,28 @@ instance Expand Exp where
   = let down = expand config kenv tenv
     in case xx of
 
+        -- Invoke the expander --------
+        XVar{}
+         ->     expandApp config kenv tenv xx []
+
+        XCon{}
+         ->     expandApp config kenv tenv xx []
+
         XApp{}
          | (x1, xas)     <- takeXAppsWithAnnots xx
-         -> case x1 of
-             -- If the function is a variable then try to expand
+         -> if isXVar x1 || isXCon x1
+             -- If the function is a variable or constructor then try to expand
              -- extra arguments in the application.
-             XVar{}
-               -> let   xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
+             then let   xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
                   in    expandApp config kenv tenv x1 xas'
 
-             -- If the function is not a variable then just apply
-             -- the original arguments.
-             _ -> let   x1'     = expand config kenv tenv x1
+             -- Otherwise just apply the original arguments.
+             else let   x1'     = expand config kenv tenv x1
                         xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
                   in    makeXAppsWithAnnots x1' xas'
 
-        XVar{}          -> xx
-        XCon{}          -> xx
 
+        -- Boilerplate ----------------
         XLAM a b x
          -> let kenv'   = Env.extend b kenv
                 x'      = expand config kenv' tenv x
@@ -119,16 +144,25 @@ instance Expand Alt where
 
 
 -------------------------------------------------------------------------------
+-- | Expand missing type arguments in applications.
+--   
+--   The thing being applied needs to be a variable or data constructor
+--   so we can look up its type in the environment. Given the type, look
+--   at the quantifiers out the front and insert new type applications if
+--   the expression is missing them.
+--
 expandApp 
         :: Ord n
-        => Config a n
-        -> KindEnv n -> TypeEnv n
-        -> Exp a n   -> [(Exp a n, a)]
+        => Config a n           -- ^ Expander configuration.
+        -> KindEnv n            -- ^ Current kind environment.
+        -> TypeEnv n            -- ^ Current type environment.
+        -> Exp a n              -- ^ Functional expression being applied.
+        -> [(Exp a n, a)]       -- ^ Function arguments.
         -> Exp a n
 
 expandApp config _kenv tenv x0 xas0
- | XVar a u             <- x0
- , Just tt              <- Env.lookup u tenv 
+ | Just (a, u)  <- slurpVarConBound x0
+ , Just tt      <- Env.lookup u tenv 
  , not $ isBot tt
  = let
         go t xas
@@ -136,10 +170,10 @@ expandApp config _kenv tenv x0 xas0
                 (TForall _b t2, (x1@(XType _t1'), a1) : xas')
                  ->     (x1, a1) : go t2 xas'
 
-                (TForall b t2, xa1 : xas')
+                (TForall b t2, xas')
                  -> let k       = typeOfBind b
                         xh      = XType (configMakeTypeHole config k)
-                    in  (xh, a) : go t2 (xa1 : xas')
+                    in  (xh, a) : go t2 xas'
 
                 _ -> xas
 
@@ -151,4 +185,15 @@ expandApp config _kenv tenv x0 xas0
  | otherwise
  = makeXAppsWithAnnots x0 xas0
 
+
+-- | Slurp a `Bound` from and `XVar` or `XCon`. 
+--   Named data constructors are converted to `UName`s.
+slurpVarConBound :: Exp a n -> Maybe (a, Bound n)
+slurpVarConBound xx
+ = case xx of
+        XVar a u -> Just (a, u)
+        XCon a dc 
+         | DaConNamed n <- daConName dc
+         -> Just (a, UName n)
+        _       -> Nothing
 
