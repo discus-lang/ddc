@@ -1,6 +1,6 @@
 
-module DDCI.Tetra.Command.Infer
-        (cmdInfer)
+module DDCI.Tetra.Command.ToCore
+        (cmdToCore)
 where
 import DDC.Interface.Source
 import DDCI.Tetra.State
@@ -15,8 +15,8 @@ import qualified DDC.Core.Lexer         as C
 import qualified DDC.Base.Parser        as BP
 
 
-cmdInfer :: State -> Source -> String -> IO ()
-cmdInfer _state source str
+cmdToCore :: State -> Source -> String -> IO ()
+cmdToCore _state source str
  = goLex
  where  goLex 
          = let  tokens  = lexModuleString (nameOfSource source) 1 str
@@ -43,4 +43,3 @@ cmdInfer _state source str
          = do   let mm' = Expand.expand Expand.configDefault 
                                 primKindEnv primTypeEnv mm
                 putStrLn (renderIndent $ ppr mm')
-
