@@ -3,6 +3,7 @@ module DDC.Source.Tetra.ToCore
         (toCoreModule)
 where
 import qualified DDC.Source.Tetra.Module        as S
+import qualified DDC.Source.Tetra.DataDef       as S
 import qualified DDC.Source.Tetra.Exp           as S
 import qualified DDC.Source.Tetra.Prim          as S
 
@@ -10,6 +11,7 @@ import qualified DDC.Core.Tetra.Prim            as C
 import qualified DDC.Core.Compounds             as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
+import qualified DDC.Type.DataDef               as C
 
 import qualified DDC.Type.Sum                   as Sum
 import qualified Data.Map                       as Map
@@ -43,8 +45,16 @@ toCoreModule a mm
         , C.moduleExportTypes   = Map.empty
         , C.moduleImportKinds   = Map.empty
         , C.moduleImportTypes   = Map.empty
-        , C.moduleBody          = C.XLet  a (letsOfTops (S.moduleTops mm))
-                                            (C.xUnit a) }
+        
+        , C.moduleDataDefsLocal
+                = Map.fromList
+                $ [ ( toCoreN $ S.dataDefTypeName def
+                    , toCoreDataDef def) 
+                        | S.TopData _ def <- S.moduleTops mm ]
+
+        , C.moduleBody          
+                = C.XLet  a (letsOfTops (S.moduleTops mm))
+                                        (C.xUnit a) }
 
 
 -- | Extract the top-level bindings from some source definitions.
@@ -86,6 +96,22 @@ toCoreTC tc
         TyConWitness wc -> TyConWitness wc
         TyConSpec sc    -> TyConSpec sc
         TyConBound u k  -> TyConBound (toCoreU u) (toCoreT k)
+
+
+-- DataDef --------------------------------------------------------------------
+toCoreDataDef :: S.DataDef S.Name -> C.DataDef C.Name
+toCoreDataDef def
+        = C.DataDef
+        { C.dataDefTypeName       
+                = toCoreN     $ S.dataDefTypeName def
+
+        , C.dataDefParams
+                = map toCoreB $ S.dataDefParams def
+
+        , C.dataDefCtors          
+                = Just [( toCoreN     (S.dataCtorName ctor)
+                        , map toCoreT (S.dataCtorFieldTypes ctor))
+                                | ctor <- S.dataDefCtors def ] }
 
 
 -- Exp ------------------------------------------------------------------------

@@ -115,6 +115,10 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleImportKinds    = S.runtimeImportKinds
                 , moduleImportTypes    = Map.union S.runtimeImportTypes tsImports'
 
+                  -- Data constructors and pattern matches should have been flattened
+                  -- into primops, so we don't need the data type definitions.
+                , moduleDataDefsLocal  = Map.empty
+
                 , moduleBody           = x2 }
 
         -- If this is the 'Main' module then add code to initialise the 

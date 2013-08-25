@@ -16,10 +16,12 @@ instance Reannotate Module where
      (ModuleCore name 
                  exportKinds exportTypes 
                  importKinds importTypes
+                 dataDefsLocal
                  body)
   =   ModuleCore name
                  exportKinds exportTypes
                  importKinds importTypes
+                 dataDefsLocal
                  (reannotate f body)
 
 

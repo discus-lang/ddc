@@ -62,13 +62,13 @@ primDataDefs
         -- Vector
         , DataDef
                 (NameTyConFlow TyConFlowVector)
-                [kRate, kData]
+                [BAnon kRate, BAnon kData]
                 (Just   [])
 
         -- Series
         , DataDef
                 (NameTyConFlow TyConFlowSeries)
-                [kRate, kData]
+                [BAnon kRate, BAnon kData]
                 (Just   [])
         ]
 
@@ -82,7 +82,7 @@ makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
         = DataDef
                 (NameTyConFlow (TyConFlowTuple n))
-                (replicate n kData)
+                (replicate n (BAnon kData))
                 (Just   [ ( NameDaConFlow (DaConFlowTuple n)
                           , (reverse [tIx kData i | i <- [0..n - 1]]))])
 

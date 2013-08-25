@@ -69,35 +69,35 @@ primDataDefs
         -- Bool
         , DataDef
                 (NameDataTyCon DataTyConBool)
-                [kRegion]
+                [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConBoolU
                           , [tBoolU]) ])
 
         -- Nat
         , DataDef
                 (NameDataTyCon DataTyConNat)
-                [kRegion]
+                [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConNatU
                           , [tNatU]) ])
         
         -- Int
         , DataDef
                 (NameDataTyCon DataTyConInt)
-                [kRegion]
+                [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConIntU
                           , [tIntU]) ])
 
         -- Pair
         , DataDef
                 (NameDataTyCon DataTyConPair)
-                [kRegion, kData, kData]
+                [BAnon kRegion, BAnon kData, BAnon kData]
                 (Just   [ ( NamePrimDaCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
         -- List
         , DataDef
                 (NameDataTyCon DataTyConList)
-                [kRegion, kData]
+                [BAnon kRegion, BAnon kData]
                 (Just   [ (NamePrimDaCon PrimDaConNil,  [tUnit]) 
                         , (NamePrimDaCon PrimDaConCons, 
                                 [tIx kData 0, tList (tIx kRegion 1) (tIx kData 0)])])

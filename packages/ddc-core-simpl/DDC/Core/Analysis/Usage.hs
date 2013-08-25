@@ -78,13 +78,14 @@ usageModule
         :: Ord n
         => Module a n
         -> Module (UsedMap n, a) n
-usageModule 
+usageModule
         (ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = exportKinds
                 , moduleExportTypes     = exportTypes
                 , moduleImportKinds     = importKinds
                 , moduleImportTypes     = importTypes
+                , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body })
 
  =       ModuleCore
@@ -93,6 +94,7 @@ usageModule
                 , moduleExportTypes     = exportTypes
                 , moduleImportKinds     = importKinds
                 , moduleImportTypes     = importTypes
+                , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = usageX body }
 
 

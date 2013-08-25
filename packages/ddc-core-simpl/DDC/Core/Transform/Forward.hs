@@ -135,6 +135,7 @@ instance Forward Module where
                 , moduleExportTypes     = exportTypes
                 , moduleImportKinds     = importKinds
                 , moduleImportTypes     = importTypes
+                , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body })
 
   = do  body' <- forwardWith profile config bindings body
@@ -144,6 +145,7 @@ instance Forward Module where
                 , moduleExportTypes     = exportTypes
                 , moduleImportKinds     = importKinds
                 , moduleImportTypes     = importTypes
+                , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body' }
 
 

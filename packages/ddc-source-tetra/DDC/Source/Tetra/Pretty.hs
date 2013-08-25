@@ -7,6 +7,7 @@ module DDC.Source.Tetra.Pretty
 where
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Predicates
+import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Core.Pretty
@@ -38,12 +39,15 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
  ppr (TopData _ (DataDef name params ctors))
   = hsep
         (  [ text "data", ppr name]
-        ++ [parens (ppr n <+> text ":" <+> ppr t)
-                        | (n, t) <- params]
+        ++ [parens $ ppr b | b <- params]
         ++ [text "where"])
   <$> indent 8
-        (vcat [ ppr n <+> text ":" <+> ppr t
-                        | (n, t)        <- ctors ])
+        (vcat [ ppr (dataCtorName ctor) 
+                <+> text ":" 
+                <+> (hsep   $ punctuate (text " ->") 
+                                $ (  map (pprPrec 6) (dataCtorFieldTypes ctor)
+                                  ++ [ ppr           (dataCtorResultType ctor)]))
+                        | ctor       <- ctors ])
 
 
 -- Exp ------------------------------------------------------------------------

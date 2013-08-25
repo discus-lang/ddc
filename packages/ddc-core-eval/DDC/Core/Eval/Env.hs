@@ -40,20 +40,20 @@ primDataDefs
         [ -- Int
           DataDef
                 (NamePrimCon PrimTyConInt)
-                [kRegion]
+                [BAnon kRegion]
                 Nothing
 
           -- Pair
         , DataDef
                 (NamePrimCon PrimTyConPair)
-                [kRegion, kData, kData]
+                [BAnon kRegion, BAnon kData, BAnon kData]
                 (Just   [ ( NamePrimCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
           -- List
         , DataDef
                 (NamePrimCon PrimTyConList)
-                [kRegion, kData]
+                [BAnon kRegion, BAnon kData]
                 (Just   [ (NamePrimCon PrimDaConNil,  []) 
                         , (NamePrimCon PrimDaConCons, [tList (tIx kRegion 1) (tIx kData 0)])])
         ]

@@ -11,6 +11,7 @@ module DDC.Source.Tetra.Parser.Module
 where
 import DDC.Source.Tetra.Parser.Exp
 import DDC.Source.Tetra.Compounds
+import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Core.Parser.Type
@@ -174,21 +175,29 @@ pData c
 
 
 -- | Parse a type parameter to a data type.
-pDataParam :: Ord n => Context -> Parser n [(n, Type n)]
+pDataParam :: Ord n => Context -> Parser n [Bind n]
 pDataParam c 
  = do   pTok KRoundBra
         ns      <- P.many1 pName
         pTokSP (KOp ":")
-        t       <- pType c
+        k       <- pType c
         pTok KRoundKet
-        return  [(n, t) | n <- ns]
+        return  [BName n k | n <- ns]
 
 
 -- | Parse a data constructor declaration.
-pDataCtor :: Ord n => Context -> Parser n (n, Type n)
+--   TODO: More restructive parsing to reject extra quantifiers
+--   on the front of data constructor types.
+pDataCtor :: Ord n => Context -> Parser n (DataCtor n)
 pDataCtor c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-        return  (n, t)
+        let (tsArg, tResult)    
+                = takeTFunArgResult t
+
+        return  $ DataCtor
+                { dataCtorName          = n
+                , dataCtorFieldTypes    = tsArg
+                , dataCtorResultType    = tResult }
 

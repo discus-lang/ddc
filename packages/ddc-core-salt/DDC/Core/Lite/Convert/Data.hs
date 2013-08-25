@@ -43,11 +43,11 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
-        let xsFields            = drop (length $ dataTypeParamKinds dataDef) xsArgs
+        let xsFields            = drop (length $ dataTypeParams dataDef) xsArgs
 
         -- Get the regions each of the objects are in.
         let Just tsFields       = sequence 
-                                $ drop (length $ dataTypeParamKinds dataDef) tsArgs
+                                $ drop (length $ dataTypeParams dataDef) tsArgs
 
         -- Allocate the object.
         let arity       = length tsFields
@@ -88,7 +88,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
-        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
+        let xsFields     = drop (length $ dataTypeParams dataDef) xsArgs
 
         -- Get the offset of each field.
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef

@@ -19,6 +19,7 @@ import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
 import Data.Maybe
 import Control.Monad
+import Control.DeepSeq
 
 
 -- | The definition of a single data type.
@@ -27,13 +28,20 @@ data DataDef n
         { -- | Name of the data type.
           dataDefTypeName       :: !n
 
-          -- | Kinds of type parameters.
-        , dataDefParamKinds     :: ![Kind n]
+          -- | Binders for type parameters.
+        , dataDefParams         :: ![Bind n]
 
           -- | Constructors of the data type, or Nothing if there are
           --   too many to list (like with `Int`).
         , dataDefCtors          :: !(Maybe [(n, [Type n])]) }
         deriving Show
+
+
+instance NFData n => NFData (DataDef n) where
+ rnf !def
+        =       rnf (dataDefTypeName def)
+        `seq`   rnf (dataDefParams   def)
+        `seq`   rnf (dataDefCtors    def)
 
 
 -- DataDefs -------------------------------------------------------------------
@@ -63,7 +71,7 @@ data DataType n
           dataTypeName       :: !n
 
           -- | Kinds of type parameters to constructor.
-        , dataTypeParamKinds :: ![Kind n]
+        , dataTypeParams     :: ![Bind n]
 
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
@@ -98,10 +106,10 @@ emptyDataDefs
 
 -- | Insert a data type definition into some DataDefs.
 insertDataDef  :: Ord n => DataDef  n -> DataDefs n -> DataDefs n
-insertDataDef (DataDef nType ks mCtors) dataDefs
+insertDataDef (DataDef nType bsParam mCtors) dataDefs
  = let  defType = DataType
                 { dataTypeName       = nType
-                , dataTypeParamKinds = ks
+                , dataTypeParams     = bsParam
                 , dataTypeMode       = defMode }
 
         defMode = case mCtors of

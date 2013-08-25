@@ -19,6 +19,7 @@ module DDC.Core.Module
         , isMainModuleName)
 where
 import DDC.Core.Exp
+import DDC.Type.DataDef
 import DDC.Type.Compounds
 import Data.Typeable
 import Data.Map.Strict                  (Map)
@@ -54,11 +55,12 @@ data Module a n
         , moduleImportTypes     :: !(Map n (QualName n, Type n))
 
           -- Local --------------------
-          -- | The module body consists of some let-bindings
-          --   wrapping a unit data constructor.
-          -- 
-          --  We're only interested in the bindings, 
-          --  with the unit being just a place-holder.
+          -- | Data types defined in this module.
+        , moduleDataDefsLocal   :: !(Map n (DataDef n))
+
+          -- | The module body consists of some let-bindings wrapping a unit
+          --   data constructor. We're only interested in the bindings, with
+          --   the unit being just a place-holder.
         , moduleBody            :: !(Exp a n)
         }
         deriving (Show, Typeable)
@@ -67,10 +69,11 @@ data Module a n
 instance (NFData a, NFData n) => NFData (Module a n) where
  rnf !mm
         =     rnf (moduleName mm)
-        `seq` rnf (moduleExportKinds mm)
-        `seq` rnf (moduleExportTypes mm)
-        `seq` rnf (moduleImportKinds mm)
-        `seq` rnf (moduleImportTypes mm)
+        `seq` rnf (moduleExportKinds   mm)
+        `seq` rnf (moduleExportTypes   mm)
+        `seq` rnf (moduleImportKinds   mm)
+        `seq` rnf (moduleImportTypes   mm)
+        `seq` rnf (moduleDataDefsLocal mm)
         `seq` rnf (moduleBody mm)
 
 
