@@ -56,6 +56,8 @@ instance NFData Name where
         NameLitInt  i           -> rnf i
         NameLitWord i bits      -> rnf i `seq` rnf bits
 
+        NameHole                -> ()
+
 
 instance Pretty Name where
  ppr nn
@@ -74,6 +76,8 @@ instance Pretty Name where
         NameLitNat  i           -> integer i
         NameLitInt  i           -> integer i <> text "i"
         NameLitWord i bits      -> integer i <> text "w" <> int bits
+
+        NameHole                -> text "?"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -109,6 +113,10 @@ readName str
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
+
+        -- Holes
+        | str == "?"
+        = Just $ NameHole
 
         -- Constructors.
         | c : _         <- str

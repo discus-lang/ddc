@@ -44,6 +44,10 @@ data Name
 
         -- | A word literal.
         | NameLitWord           Integer Int
+
+        -- Inference ----------------------------
+        -- | Hole used during type inference.
+        | NameHole 
         deriving (Eq, Ord, Show, Typeable)
 
 
