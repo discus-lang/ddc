@@ -54,7 +54,7 @@ data List (a : Data) where
         Nil     : List a
         Cons    : a -> List a -> List a
 
-add (x : a) (y : a) : a 
+add (x y : a) : a 
         = add# [a] x y
 
 length (xx : List a) : Nat

@@ -109,10 +109,10 @@ pBindParamSpec c
         return  [ ParamWitness $ T.makeBindFromBinder b t]
 
         -- Value parameter
-        -- (BIND : TYPE) 
-        -- (BIND : TYPE) { TYPE | TYPE }
+        -- (BIND1 BIND2 .. BINDN : TYPE) 
+        -- (BIND1 BIND2 .. BINDN : TYPE) { TYPE | TYPE }
  , do   pTok KRoundBra
-        b       <- pBinder
+        bs      <- P.many1 pBinder
         pTok (KOp ":")
         t       <- pType c
         pTok KRoundKet
@@ -127,8 +127,13 @@ pBindParamSpec c
                         return  (eff', clo')
                 
                 , do    return  (T.tBot T.kEffect, T.tBot T.kClosure) ]
-                
+        
+        let bLast : bsInit 
+                = reverse bs
 
-        return  $ [ParamValue (T.makeBindFromBinder b t) eff clo]
+        return  $  [ ParamValue (T.makeBindFromBinder b     t) 
+                                (T.tBot T.kEffect) (T.tBot T.kClosure)
+                        | b <- reverse bsInit]
+                ++ [ ParamValue (T.makeBindFromBinder bLast t) eff clo]
  ]
 
