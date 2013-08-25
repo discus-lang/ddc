@@ -14,6 +14,7 @@ module DDC.Type.Env
 
         -- * Construction
         , empty
+        , singleton
         , extend
         , extends
         , union
@@ -83,6 +84,12 @@ empty   = Env
         , envStack       = [] 
         , envStackLength = 0
         , envPrimFun     = \_ -> Nothing }
+
+
+-- | Construct a singleton type environment.
+singleton :: Ord n => Bind n -> Env n
+singleton b
+        = extend b empty
 
 
 -- | Extend an environment with a new binding.

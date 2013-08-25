@@ -43,21 +43,28 @@ class Expand (c :: * -> * -> *) where
 instance Expand Module where
  expand config kenv tenv mm
   = let 
-        -- Build an environment with types for all the data constructors.
-        tenv_dataCtors  = Env.unions 
-                        $ [ typeEnvOfDataDef def | TopData _ def <- moduleTops mm]
+        -- Add quantifiers to the types of type level bindings, and also slurp
+        -- out the contribution to the top-level environment from each binding.
+        --   We need to do this in an initial binding because each top-level
+        --   thing is in-scope of all the others.
+        preTop p
+         = case p of
+                TopBind a b x
+                 -> let (b', x') = expandQuant a config kenv (b, x)
+                    in  (TopBind a b' x', Env.singleton b')
 
-        -- Add types of top level bindings.
-        tenv_tops       = Env.fromList
-                        $ [ b                    | TopBind _ b _ <- moduleTops mm]
+                TopData _ def
+                 -> (p, typeEnvOfDataDef def)
+
+        (tops_quant, tenvs)
+                = unzip $ map preTop $ moduleTops mm
 
         -- Build the compound top-level environment.
-        tenv'           = Env.unions
-                        $ [tenv, tenv_dataCtors, tenv_tops]
+        tenv'           = Env.unions $ tenv : tenvs
 
         -- Expand all the top-level definitions.
         tops'           = map (expand config kenv tenv')
-                        $ moduleTops mm
+                        $ tops_quant
 
     in  mm { moduleTops = tops' }
 
@@ -66,15 +73,9 @@ instance Expand Top where
  expand config kenv tenv top
   = case top of
         TopBind a b x   
-         -> let -- Add missing quantifiers to the type of the binding.
-                (b_quant, x_quant) 
-                        = expandQuant a config kenv (b, x)
-
-                -- Expand the body of the binding.
-                tenv'   = Env.extend b_quant tenv
-                x_exp   = expand config kenv tenv' x_quant
-
-            in  TopBind a b_quant x_exp
+         -> let tenv'   = Env.extend b tenv
+                x'      = expand config kenv tenv' x
+            in  TopBind a b x'
 
         TopData{}
          -> top
