@@ -1,6 +1,7 @@
 
 module DDC.Type.Collect.FreeT
-        (FreeVarConT(..))
+        ( FreeVarConT(..)
+        , freeVarsT)
 where
 import DDC.Type.Exp
 import Data.Set                 (Set)
@@ -8,6 +9,15 @@ import DDC.Type.Env             (KindEnv)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
+
+
+-- | Collect the free type variables in a type.
+freeVarsT 
+        :: Ord n
+        => KindEnv n -> Type n
+        -> Set (Bound n)
+freeVarsT kenv tt
+ = fst $ freeVarConT kenv tt
 
 
 class FreeVarConT (c :: * -> *) where

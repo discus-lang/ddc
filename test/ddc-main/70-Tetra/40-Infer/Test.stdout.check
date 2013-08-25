@@ -41,13 +41,14 @@ module Test where
 data List (a : Data) where
         Nil : List a
         Cons : a -> List a -> List a
-map : (a -> b) -> List a -> List b
-  = \(f : a -> b).\(xx : List a).
+map : [a b : Data].(a -> b) -> List a -> List b
+  = /\(a b : Data).
+     \(f : a -> b).\(xx : List a).
     case xs of {
       Nil  
        -> Nil [?];
       Cons x xs 
-       -> Cons [?] (f x) (map f xs)
+       -> Cons [?] (f x) (map [?] [?] f xs)
     }
 
 

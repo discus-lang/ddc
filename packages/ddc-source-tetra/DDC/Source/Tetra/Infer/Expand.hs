@@ -10,8 +10,10 @@ import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
+import DDC.Type.Collect.FreeT
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
+import qualified Data.Set               as Set
 
 
 -------------------------------------------------------------------------------
@@ -64,9 +66,15 @@ instance Expand Top where
  expand config kenv tenv top
   = case top of
         TopBind a b x   
-         -> let tenv'   = Env.extend b tenv
-                x'      = expand config kenv tenv' x
-            in  TopBind a b x'
+         -> let -- Add missing quantifiers to the type of the binding.
+                (b_quant, x_quant) 
+                        = expandQuant a config kenv (b, x)
+
+                -- Expand the body of the binding.
+                tenv'   = Env.extend b_quant tenv
+                x_exp   = expand config kenv tenv' x_quant
+
+            in  TopBind a b_quant x_exp
 
         TopData{}
          -> top
@@ -97,6 +105,16 @@ instance Expand Exp where
                         xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
                   in    makeXAppsWithAnnots x1' xas'
 
+        XLet a (LLet b x1) x2
+         -> let 
+                -- Add missing quantifiers to the types of let-bindings.
+                (b_quant, x1_quant)
+                        = expandQuant a config kenv (b, x1)
+
+                tenv'   = Env.extend b_quant tenv
+                x1'     = expand config kenv tenv' x1_quant
+                x2'     = expand config kenv tenv' x2
+            in  XLet a (LLet b x1') x2'
 
         -- Boilerplate ----------------
         XLAM a b x
@@ -108,12 +126,6 @@ instance Expand Exp where
          -> let tenv'   = Env.extend b tenv
                 x'      = expand config kenv tenv' x
             in  XLam a b x'
-
-        XLet a (LLet b x1) x2
-         -> let tenv'   = Env.extend b tenv
-                x1'     = expand config kenv tenv' x1
-                x2'     = expand config kenv tenv' x2
-            in  XLet a (LLet b x1') x2'
 
         XLet a (LLetRegions bts bxs) x2
          -> let tenv'   = Env.extends bts kenv
@@ -141,6 +153,48 @@ instance Expand Alt where
          -> let tenv'   = Env.extends bs tenv
                 x2'     = expand config kenv tenv' x2
             in  AAlt (PData dc bs) x2'
+
+
+-------------------------------------------------------------------------------
+-- | Expand missing quantifiers in types of bindings.
+--  
+--   If a binding mentions type variables that are not in scope then add new
+--   quantifiers to its type, as well as matching type lambdas.
+--
+expandQuant 
+        :: Ord n
+        => a                    -- ^ Annotation to use on new type lambdas.
+        -> Config a n           -- ^ Expander configuration.
+        -> KindEnv  n           -- ^ Current kind environment.
+        -> (Bind n, Exp a n)    -- ^ Binder and expression of bining.
+        -> (Bind n, Exp a n)
+
+expandQuant a _config kenv (b, x)
+ | fvs  <- freeVarsT kenv (typeOfBind b)
+ , not $ Set.null fvs
+ = let  
+        -- Make binders for each of the free variables.
+        -- TODO: Do kind inference here instead of just defaulting
+        --       the kind of each variable to Data.
+        makeBind u
+         = case u of 
+                UName n         -> Just (BName n kData)
+                UIx{}           -> Just (BAnon kData)
+                _               -> Nothing
+
+        Just bsNew = sequence $ map makeBind $ Set.toList fvs
+
+        -- Attach quantifiers to the front of the old type.
+        t'      = foldr TForall  (typeOfBind b) bsNew
+        b'      = replaceTypeOfBind t' b
+
+        -- Attach type lambdas to the front of the expression.
+        x'      = foldr (XLAM a) x bsNew
+
+   in   (b', x')
+
+ | otherwise
+ = (b, x)
 
 
 -------------------------------------------------------------------------------
