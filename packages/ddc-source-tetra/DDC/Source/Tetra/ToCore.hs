@@ -15,17 +15,26 @@ import qualified DDC.Type.Sum                   as Sum
 import qualified Data.Map                       as Map
 import Data.Maybe
 
+
 -- Things shared between both Source and Core languages.
 import DDC.Core.Exp
-        ( Bind    (..)
-        , Bound   (..)
-        , Type    (..)
-        , TyCon   (..)
-        , Witness (..)
-        , WiCon   (..))
+        ( Bind          (..)
+        , Bound         (..)
+        , Type          (..)
+        , TyCon         (..)
+        , Pat           (..)
+        , DaCon         (..)
+        , DaConName     (..)
+        , Witness       (..)
+        , WiCon         (..))
 
 
 -- Module ---------------------------------------------------------------------
+-- | Convert a Source Tetra module to Core Tetra.
+--
+--   The Source code needs to already have been desugared and cannot contain,
+--   and `XDefix`, `XInfixOp`, or `XInfixVar` nodes, else `error`.
+--
 toCoreModule :: a -> S.Module a S.Name -> C.Module a C.Name
 toCoreModule a mm
         = C.ModuleCore
@@ -34,29 +43,36 @@ toCoreModule a mm
         , C.moduleExportTypes   = Map.empty
         , C.moduleImportKinds   = Map.empty
         , C.moduleImportTypes   = Map.empty
-        , C.moduleBody          = C.xUnit a }
+        , C.moduleBody          = C.XLet  a (letsOfTops (S.moduleTops mm))
+                                            (C.xUnit a) }
 
 
-letsOfTops :: [S.Top a n] -> C.Lets a n
+-- | Extract the top-level bindings from some source definitions.
+letsOfTops :: [S.Top a S.Name] -> C.Lets a C.Name
 letsOfTops tops
  = C.LRec $ mapMaybe bindOfTop tops
 
 
-bindOfTop  :: S.Top a n -> (Bind n, C.Exp a n)
-bindOfTop (S.TopBind a b x) 
+-- | Try to convert a `TopBind` to a top-level binding, 
+--   or `Nothing` if it isn't one.
+bindOfTop  
+        :: S.Top a S.Name 
+        -> Maybe (Bind C.Name, C.Exp a C.Name)
+
+bindOfTop (S.TopBind _ b x) 
                 = Just (toCoreB b, toCoreX x)
 bindOfTop _     = Nothing
 
 
 -- Type -----------------------------------------------------------------------
-toCoreT :: Type S.Name -> Bind C.Name
+toCoreT :: Type S.Name -> Type C.Name
 toCoreT tt
  = case tt of
         TVar    u       -> TVar (toCoreU  u)
         TCon    tc      -> TCon (toCoreTC tc)        
         TForall b t     -> TForall (toCoreB b) (toCoreT t)
         TApp    t1 t2   -> TApp (toCoreT t1) (toCoreT t2)
-        TSum    ts      -> TSum $ Sum.fromList (Sum.kindOfSum ts)
+        TSum    ts      -> TSum $ Sum.fromList (toCoreT (Sum.kindOfSum ts))
                                 $ map toCoreT 
                                 $ Sum.toList ts  
 
@@ -69,7 +85,7 @@ toCoreTC tc
         TyConKind kc    -> TyConKind kc
         TyConWitness wc -> TyConWitness wc
         TyConSpec sc    -> TyConSpec sc
-        TyConBound u k  -> TyConBound (toCoreB u) (toCoreT k)
+        TyConBound u k  -> TyConBound (toCoreU u) (toCoreT k)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -87,6 +103,23 @@ toCoreX xx
         S.XType t        -> C.XType    (toCoreT t)
         S.XWitness w     -> C.XWitness (toCoreW w)
 
+        -- These shouldn't exist in the desugared source tetra code.
+        S.XDefix{}      -> error "source-tetra.toCoreX: found XDefix node"
+        S.XInfixOp{}    -> error "source-tetra.toCoreX: found XInfixOp node"
+        S.XInfixVar{}   -> error "source-tetra.toCoreX: found XInfixVar node"
+
+
+-- Lets -----------------------------------------------------------------------
+-- TODO: Split local bindings into recursive groups.
+toCoreLts :: S.Lets a S.Name -> C.Lets a C.Name
+toCoreLts lts
+ = case lts of
+        S.LLet b x
+         -> C.LLet (toCoreB b) (toCoreX x)
+        
+        S.LLetRegions bks bts
+         -> C.LLetRegions (map toCoreB bks) (map toCoreB bts)
+
 
 -- Cast -----------------------------------------------------------------------
 toCoreC :: S.Cast a S.Name -> C.Cast a C.Name
@@ -98,19 +131,50 @@ toCoreC cc
         S.CastRun               -> C.CastRun
 
 
+-- Alt ------------------------------------------------------------------------
+toCoreA  :: S.Alt a S.Name -> C.Alt a C.Name
+toCoreA aa
+ = case aa of
+        S.AAlt w x      -> C.AAlt (toCoreP w) (toCoreX x)
+
+
+-- Pat ------------------------------------------------------------------------
+toCoreP  :: Pat S.Name -> Pat C.Name
+toCoreP pp
+ = case pp of
+        PDefault        -> PDefault
+        PData dc bs     -> PData (toCoreDC dc) (map toCoreB bs)
+
+
+-- DaCon ----------------------------------------------------------------------
+toCoreDC :: DaCon S.Name -> DaCon C.Name
+toCoreDC dc
+        = DaCon
+        { daConName             = toCoreDCN (daConName dc)
+        , daConType             = toCoreT   (daConType dc)
+        , daConIsAlgebraic      = daConIsAlgebraic dc }
+ 
+
+toCoreDCN :: DaConName S.Name -> DaConName C.Name
+toCoreDCN dcn
+ = case dcn of
+        DaConUnit       -> DaConUnit
+        DaConNamed n    -> DaConNamed (toCoreN n)
+
+
 -- Witness --------------------------------------------------------------------
 toCoreW :: Witness a S.Name -> Witness a C.Name
 toCoreW ww
  = case ww of
         S.WVar  a u     -> C.WVar  a (toCoreU  u)
-        S.WCon  a wc    -> C.WVar  a (toCoreWC wc)
+        S.WCon  a wc    -> C.WCon  a (toCoreWC wc)
         S.WApp  a w1 w2 -> C.WApp  a (toCoreW  w1) (toCoreW w2)
         S.WJoin a w1 w2 -> C.WJoin a (toCoreW  w1) (toCoreW w2)
         S.WType a t     -> C.WType a (toCoreT  t)
 
 
 -- WiCon ----------------------------------------------------------------------
-toCoreWC :: WiCon a S.Name -> WiCon a C.Name
+toCoreWC :: WiCon S.Name -> WiCon C.Name
 toCoreWC wc
  = case wc of
         WiConBuiltin wb -> WiConBuiltin wb
@@ -122,15 +186,15 @@ toCoreB :: Bind S.Name -> Bind C.Name
 toCoreB bb
  = case bb of
         BName n t       -> BName (toCoreN n) (toCoreT t)
-        BAnon t         -> BName (toCoreT t)
-        BNone           -> BNone
+        BAnon t         -> BAnon (toCoreT t)
+        BNone t         -> BNone (toCoreT t)
 
 
 -- Bound ----------------------------------------------------------------------
 toCoreU :: Bound S.Name -> Bound C.Name
 toCoreU uu
  = case uu of
-        UName u         -> UName (toCoreU u)
+        UName n         -> UName (toCoreN n)
         UIx   i         -> UIx   i
         UPrim n t       -> UPrim (toCoreN n) (toCoreT t)
 
@@ -147,7 +211,7 @@ toCoreN nn
         S.NamePrimArith p   -> C.NamePrimArith  p
         S.NameLitBool   b   -> C.NameLitBool    b
         S.NameLitNat    n   -> C.NameLitNat     n
-        S.NameLitInt    i   -> C.NameLitInt     i
-        S.NameLitWord   w   -> C.NameLitWord    w
+        S.NameLitInt    i   -> C.NameLitInt     i  
+        S.NameLitWord   w b -> C.NameLitWord    w b
         S.NameHole          -> C.NameHole
 

@@ -1,0 +1,15 @@
+
+:to-core..
+module Test where
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+add (x y : a) : a 
+        = add# [a] x y
+
+length (xx : List a) : Nat
+ = case xx of
+        Nil       -> 0
+        Cons x xs -> 1 + length xs
+;;
