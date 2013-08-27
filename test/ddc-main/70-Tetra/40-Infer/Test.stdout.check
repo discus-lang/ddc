@@ -5,9 +5,10 @@
 -- can do it without proper constraint solving.
 -- Convert source to core that includes holes, then fill holes at core level.
 module Test where
-data List (a : Data) where
-        Nil : List a
-        Cons : a -> List a -> List a
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
 map : [a b : Data].(a -> b) -> List a -> List b
   = /\(a b : Data).
      \(f : a -> b).\(xx : List a).
@@ -21,9 +22,10 @@ map : [a b : Data].(a -> b) -> List a -> List b
 
 -- Function application already has some explicit type arguments.
 module Test where
-data List (a : Data) where
-        Nil : List a
-        Cons : a -> List a -> List a
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
 map : [a b : Data].(a -> b) -> List a -> List b
   = /\(a b : Data).
      \(f : a -> b).\(xx : List a).
@@ -38,9 +40,10 @@ map : [a b : Data].(a -> b) -> List a -> List b
 -- If any type variables are not in scope in a top-level signature,
 -- then insert quantifiers for these.
 module Test where
-data List (a : Data) where
-        Nil : List a
-        Cons : a -> List a -> List a
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
 map : [a b : Data].(a -> b) -> List a -> List b
   = /\(a b : Data).
      \(f : a -> b).\(xx : List a).
@@ -55,9 +58,10 @@ map : [a b : Data].(a -> b) -> List a -> List b
 -- The expanded type for 'add' should be used when expanding the body
 -- of 'length'.
 module Test where
-data List (a : Data) where
-        Nil : List a
-        Cons : a -> List a -> List a
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
 add : [a : Data].a -> a -> a
   = /\(a : Data).
      \(x y : a). add# [a] x y

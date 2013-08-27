@@ -8,6 +8,7 @@ import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Type.DataDef
 import DDC.Type.Pretty
 import DDC.Base.Pretty
 import Data.List
@@ -28,6 +29,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleExportTypes     = exportTypes
         , moduleImportKinds     = importKinds
         , moduleImportTypes     = importTypes
+        , moduleDataDefsLocal   = localData
         , moduleBody            = body }
   = {-# SCC "ppr[Module]" #-}
     let 
@@ -64,6 +66,12 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
                   | (n, (_, t)) <- Map.toList importTypes ]
 
         -- Local Data Definitions -----
+        docsLocalData
+         | Map.null localData = empty
+         | otherwise
+         = line
+         <> vsep  [ ppr def
+                  | def <- Map.elems localData ]
 
     in  text "module" <+> ppr name 
          <+> (if Map.null exportKinds && Map.null exportTypes
@@ -83,9 +91,37 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
                         <> docsImportTypes
                         <> line 
                         <> rbrace <> space)
-         <>  text "with" <$$> (vcat $ map ppr lts)
+         <> docsLocalData
+         <> text "with" <$$> (vcat $ map ppr lts)
 
 
+-- DataDef --------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (DataDef n) where
+ pprPrec _ def
+  = {-# SCC "ppr[DataDef]" #-}
+      (text "data" 
+        <+> ppr (dataDefTypeName def)
+        <+> hsep (map (parens . ppr) (dataDefParams def))
+        <+> text "where"
+        <+>  lbrace)
+  <$> (case dataDefCtors def of
+        Just ctors
+         -> indent 8
+          $ vcat [ ppr n
+                        <+> text ":" 
+                        <+> (hsep   $ punctuate (text " ->") 
+                                    $ (map (pprPrec 6) (fields ++ [tResult])))
+                        <> semi
+                 | (n, fields)  <- ctors 
+                 , let Just tResult  = dataTypeOfDataDef def]
+
+        Nothing
+         -> text "LARGE")
+  <> line
+  <> rbrace
+  <> line
+  
+  
 -- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx

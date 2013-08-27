@@ -40,15 +40,17 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
   = hsep
         (  [ text "data", ppr name]
         ++ [parens $ ppr b | b <- params]
-        ++ [text "where"])
+        ++ [text "where" <+> lbrace])
   <$> indent 8
         (vcat [ ppr (dataCtorName ctor) 
                 <+> text ":" 
                 <+> (hsep   $ punctuate (text " ->") 
                                 $ (  map (pprPrec 6) (dataCtorFieldTypes ctor)
                                   ++ [ ppr           (dataCtorResultType ctor)]))
+                <> semi
                         | ctor       <- ctors ])
-
+  <> line
+  <> rbrace
 
 -- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where

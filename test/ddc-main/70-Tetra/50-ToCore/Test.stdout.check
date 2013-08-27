@@ -1,5 +1,10 @@
 
-module Test with
+module Test 
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
+with
 letrec {
   add : [a : Data].a -> a -> a
     = /\(a : Data).

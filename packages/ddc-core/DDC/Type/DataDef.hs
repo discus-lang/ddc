@@ -2,6 +2,7 @@
 -- | Algebraic data type definitions.
 module DDC.Type.DataDef
         ( DataDef    (..)
+        , dataTypeOfDataDef
 
         -- * Data type definition table
         , DataDefs   (..)
@@ -15,6 +16,7 @@ module DDC.Type.DataDef
         , lookupModeOfDataType)
 where
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
 import Data.Maybe
@@ -42,6 +44,22 @@ instance NFData n => NFData (DataDef n) where
         =       rnf (dataDefTypeName def)
         `seq`   rnf (dataDefParams   def)
         `seq`   rnf (dataDefCtors    def)
+
+
+-- | Get the the type associated with a data definition, 
+--   that is, the type produced by the constructors.
+dataTypeOfDataDef :: DataDef n -> Maybe (Type n)
+dataTypeOfDataDef def
+ | Just usParam <- sequence 
+                $  map takeSubstBoundOfBind 
+                $  dataDefParams def
+ = let  ksParam = map typeOfBind $ dataDefParams def
+        tc      = TyConBound (UName (dataDefTypeName def))
+                             (kFuns ksParam kData)
+   in   Just $ tApps (TCon tc) (map TVar usParam)
+                                        
+ | otherwise
+ = Nothing                      
 
 
 -- DataDefs -------------------------------------------------------------------
