@@ -2,6 +2,7 @@
 module DDC.Build.Builder
         ( BuilderConfig (..)
         , Builder       (..)
+        , BuilderResult (..)
         , builders
 
         , determineDefaultBuilder)
@@ -10,7 +11,7 @@ import DDC.Build.Platform
 import DDC.Base.Pretty                          hiding ((</>))
 import System.FilePath                         
 import System.Exit
-import System.Cmd
+import System.Process
 import qualified DDC.Core.Salt.Platform         as Llvm
 
 -- | Configuration information for a builder that is not platform specific.

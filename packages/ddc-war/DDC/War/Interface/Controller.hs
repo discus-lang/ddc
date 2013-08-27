@@ -15,7 +15,7 @@ import Control.Monad
 import Data.Maybe
 import Data.List
 import DDC.War.Interface.VT100      as VT100
-import qualified System.Cmd
+import qualified System.Process
 
 
 data Config
@@ -202,7 +202,7 @@ handleResult_askDiff fileRef fileOut fileDiff
 
 		-- Update the expected output with the actual one
 		| ('u': _)	<- cmd
-		= do	System.Cmd.system 
+		= do	System.Process.system 
 				$ "cp " ++ fileOut ++ " " ++ fileRef
 
 			return True

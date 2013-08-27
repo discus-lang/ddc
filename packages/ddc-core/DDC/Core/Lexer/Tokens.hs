@@ -32,7 +32,6 @@ data TokenFamily
         | Keyword
         | Constructor
         | Index
-        | Variable
 
 
 -- | Describe a token family, for parser error messages.
@@ -43,7 +42,6 @@ describeTokenFamily tf
         Keyword         -> "keyword"
         Constructor     -> "constructor"
         Index           -> "index"
-        Variable        -> "variable"
 
 
 -- Tok ------------------------------------------------------------------------

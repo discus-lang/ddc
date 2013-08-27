@@ -4,7 +4,7 @@ module Util.Tunnel
 	Tunnel,
 	(##),
 	($<),
-	(#!),
+--	(#!),
 	(<#>),  (<#),
 	(<##>), (<##),
 
@@ -43,9 +43,9 @@ infixl 0 $<
 ($<) x f	= f x
 
 -- get from tunnel
-(#!) ::		a -> Tunnel a b -> b
-(#!)	   	a (get, set) 	
-	= get a
+-- (#!) ::		a -> Tunnel a b -> b
+-- (#!)	   	a (get, set) 	
+--	= get a
 	
 -- set to tunnel
 (<#) ::		Tunnel a b -> b -> a -> a

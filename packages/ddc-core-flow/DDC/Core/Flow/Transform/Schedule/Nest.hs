@@ -97,8 +97,11 @@ nestContainsRate nest tRate
 -- | For a select context make statements that initialise the counter of 
 --   how many times the inner context has been entered.
 startsForSelect :: Context -> [StmtStart]
-startsForSelect context
- = let  ContextSelect{} = context
+startsForSelect context'
+ = let  Just context    = case context' of
+                                ContextSelect{} -> Just context'
+                                _               -> Nothing
+
         TVar (UName nK) = contextInnerRate context
         nCounter        = NameVarMod nK "count"
    in   [StartAcc 

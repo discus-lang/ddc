@@ -24,7 +24,8 @@ ddc-main_src_hs_all = \
 make/deps/Makefile-ddc-main.deps : $(ddc-main_src_hs_all)
 	@echo "* Building dependencies (ddc-main)"
 	@$(GHC) $(patsubst %,-i%,$(ddc-main_packages)) \
-		-M $^ -dep-makefile -optdepmake/deps/Makefile-ddc-main.deps $(GHC_INCDIRS)
+		-M $^ -dep-makefile -optdepmake/deps/Makefile-ddc-main.deps \
+                -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-ddc-main.deps.bak
 	@cp make/deps/Makefile-ddc-main.deps make/deps/Makefile-ddc-main.deps.inc
 

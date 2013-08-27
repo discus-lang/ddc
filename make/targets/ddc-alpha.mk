@@ -9,9 +9,9 @@ ddc-alpha_src_hs_existing       =  $(shell find packages/ddc-alpha/src -name "*.
 
 # -- files that will be generated
 ddc-alpha_src_hs_generated = \
-        packages/ddc-alpha/src/Config/Config.hs \
-        packages/ddc-alpha/src/Source/Plate/Trans.hs \
-        $(src_alex_hs)
+	packages/ddc-alpha/src/Config/Config.hs \
+	packages/ddc-alpha/src/Source/Plate/Trans.hs \
+	$(src_alex_hs)
 
 # -- all .hs files in the src dir, including ones we need to preprocess.
 ddc-alpha_src_hs_all    += $(filter-out $(ddc-alpha_src_alex_hs),$(ddc-alpha_src_hs_existing))
@@ -28,8 +28,9 @@ packages/ddc-alpha/src/Config/Config.hs : packages/ddc-alpha/src/Config/Config.h
 # -- Dependencies -------------------------------------------------------------
 make/deps/Makefile-ddc-alpha.deps : $(ddc-alpha_src_hs_existing) $(ddc-alpha_src_hs_generated)
 	@echo "* Building dependencies (ddc-alpha)"
-	@$(GHC) -ipackages/ddc-alpha/src -M $^ -dep-makefile \
-                -optdepmake/deps/Makefile-ddc-alpha.deps $(GHC_INCDIRS)
+	@$(GHC) -ipackages/ddc-alpha/src -M $^ \
+		-dep-makefile -optdepmake/deps/Makefile-ddc-alpha.deps \
+		-dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-ddc-alpha.deps.bak
 	@cp make/deps/Makefile-ddc-alpha.deps make/deps/Makefile-ddc-alpha.deps.inc
 
@@ -41,5 +42,5 @@ ddc-alpha_src_obj =  $(patsubst %.hs,%.o,$(ddc-alpha_src_hs_existing))
 bin/ddc-alpha : make/deps/Makefile-ddc-alpha.deps $(ddc-alpha_src_obj)
 	@echo "* Linking ddc-alpha"
 	@$(GHC) -o bin/ddc-alpha $(GHC_FLAGS) $(GHC_VERSION_FLAGS) \
-                $(DDC_PACKAGES) \
-                $(ddc-alpha_src_obj)
+		$(DDC_PACKAGES) \
+		$(ddc-alpha_src_obj)
