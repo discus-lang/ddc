@@ -174,7 +174,9 @@ isVarName str
 
 -- | Charater can start a variable name.
 isVarStart :: Char -> Bool
-isVarStart = isLower
+isVarStart c
+        =  isLower c
+        || c == '?'
         
 
 -- | Character can be part of a variable body.
@@ -258,7 +260,7 @@ isOpStart c
         =  c == '~'     || c == '!'     || c == '@'     || c == '#'     
         || c == '$'     || c == '%'                     || c == '&'     
         || c == '*'     || c == '-'     || c == '+'     || c == '='
-        || c == ':'     || c == '?'     || c == '/'     || c == '|'
+        || c == ':'                     || c == '/'     || c == '|'
         || c == '<'     || c == '>'
 
 
