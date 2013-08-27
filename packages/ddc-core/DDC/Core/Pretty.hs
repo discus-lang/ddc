@@ -33,6 +33,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
     let 
         (lts, _)         = splitXLets body
 
+        -- Exports --------------------
         docsExportKinds
          | Map.null exportKinds        = empty
          | otherwise  
@@ -47,6 +48,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
                   | (n, t)      <- Map.toList exportTypes ]
 
+        -- Imports --------------------
         docsImportKinds
          | Map.null importKinds        = empty
          | otherwise  
@@ -60,6 +62,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          = nest 8 $ line
          <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
                   | (n, (_, t)) <- Map.toList importTypes ]
+
+        -- Local Data Definitions -----
 
     in  text "module" <+> ppr name 
          <+> (if Map.null exportKinds && Map.null exportTypes

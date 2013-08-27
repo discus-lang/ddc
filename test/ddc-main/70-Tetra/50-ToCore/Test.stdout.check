@@ -10,8 +10,8 @@ letrec {
        \(xx : List a).
       case xx of {
         Nil  
-         -> 0;
+         -> 0#;
         Cons x xs 
-         -> add [?] 1 (length [?] xs)
+         -> add [?] 1# (length [?] xs)
       }
 }

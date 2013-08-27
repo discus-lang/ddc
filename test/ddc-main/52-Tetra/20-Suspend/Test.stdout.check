@@ -44,11 +44,11 @@ letrec {
   fac : Nat# -> Nat#
     = \(x : Nat#).
       case x of {
-        0  
-         -> 1;
+        0#  
+         -> 1#;
         _ 
          -> add# [Nat#] x
-                (fac (sub# [Nat#] x 1))
+                (fac (sub# [Nat#] x 1#))
       }
 }
 
@@ -60,21 +60,21 @@ letrec {
     = \(x : Nat#).
       letregion r in
       let acc : Ref# r Nat#
-            = run allocRef# [r] [Nat#] 0 in
+            = run allocRef# [r] [Nat#] 0# in
       letrec {
         loop : Nat# -> S (Read r + Write r) Nat#
           = \(i : Nat#).
             suspend
             case i of {
-              0  
+              0#  
                -> run readRef# [r] [Nat#] acc;
               _ 
                -> let x : Nat#
                         = run readRef# [r] [Nat#] acc in
-                  let x' : Nat# = add# [Nat#] x 1 in
+                  let x' : Nat# = add# [Nat#] x 1# in
                   let _ : Unit
                         = run writeRef# [r] [Nat#] acc x' in
-                  run loop (sub# [Nat#] x 1)
+                  run loop (sub# [Nat#] x 1#)
             }
       } in
       run loop x
@@ -88,12 +88,12 @@ letrec {
     = \(x : Nat#).
       letregion r in
       let acc : Ref# r Nat#
-            = run allocRef# [r] [Nat#] 0 in
+            = run allocRef# [r] [Nat#] 0# in
       letrec {
         loop : Nat# -> S (Read r + Write r) Nat#
           = \(i : Nat#).
             case i of {
-              0  
+              0#  
                -> suspend
                   weakeff [Read r + Write r] in
                   run readRef# [r] [Nat#] acc;
@@ -101,10 +101,10 @@ letrec {
                -> suspend
                   let x : Nat#
                         = run readRef# [r] [Nat#] acc in
-                  let x' : Nat# = add# [Nat#] x 1 in
+                  let x' : Nat# = add# [Nat#] x 1# in
                   let _ : Unit
                         = run writeRef# [r] [Nat#] acc x' in
-                  run loop (sub# [Nat#] x 1)
+                  run loop (sub# [Nat#] x 1#)
             }
       } in
       run loop x
@@ -118,11 +118,11 @@ letrec {
     = /\(a : Data).
        \(f : a -> a).\(i : Nat#).\(x : a).
       case i of {
-        0  
+        0#  
          -> x;
         _ 
          -> let x' : a = f x in
-            iterate [a] f (sub# [Nat#] i 1) x'
+            iterate [a] f (sub# [Nat#] i 1#) x'
       }
 }
 
@@ -135,12 +135,12 @@ letrec {
        \(f : a -> S e a).\(i : Nat#).\(x : a).
       suspend
       case i of {
-        0  
+        0#  
          -> x;
         _ 
          -> let x' : a
                   = run f x in
-            run iterateS [e] [a] f (sub# [Nat#] i 1) x'
+            run iterateS [e] [a] f (sub# [Nat#] i 1#) x'
       }
 }
 

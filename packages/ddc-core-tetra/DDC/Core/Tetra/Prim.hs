@@ -73,9 +73,9 @@ instance Pretty Name where
 
         NameLitBool True        -> text "True"
         NameLitBool False       -> text "False"
-        NameLitNat  i           -> integer i
-        NameLitInt  i           -> integer i <> text "i"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits
+        NameLitNat  i           -> integer i <> text "#"
+        NameLitInt  i           -> integer i <> text "i" <> text "#"
+        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
 
         NameHole                -> text "?"
 
