@@ -35,6 +35,8 @@ instance NFData n => NFData (DaConName n) where
 
 -------------------------------------------------------------------------------
 -- | Data constructors.
+--   TODO: make DaConLit, DaConBound
+--   TODO: IsAlgebraic flag should be stored in the data type declaration.
 data DaCon n
         = DaCon
         { -- | Name of the data constructor.
