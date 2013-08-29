@@ -32,41 +32,42 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Primitive -----------------------------------------------
- $      -- Bool#
-        [ DataDef (NamePrimTyCon PrimTyConBool) 
+ $ map (\(Just def) -> def)
+ $      -- Primitive -----------------------------------------------
+        -- Bool#
+        [ makeDataDef (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , DataDef (NamePrimTyCon PrimTyConNat)        [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , DataDef (NamePrimTyCon PrimTyConInt)        [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- Float32#
-        , DataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
 
         -- Float64#
-        , DataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
         -- WordN#
-        , DataDef (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
 
 
         -- Flow -----------------------------------------------------
         -- Vector
-        , DataDef
+        , makeDataDef
                 (NameTyConFlow TyConFlowVector)
                 [BAnon kRate, BAnon kData]
                 (Just   [])
 
         -- Series
-        , DataDef
+        , makeDataDef
                 (NameTyConFlow TyConFlowSeries)
                 [BAnon kRate, BAnon kData]
                 (Just   [])
@@ -74,13 +75,14 @@ primDataDefs
 
         -- Tuple
         -- Hard-code maximum tuple arity to 32.
- ++     [ makeTupleDataDef arity        | arity <- [2..32] ]
+ ++     [ makeTupleDataDef arity
+                | arity <- [2..32] ]
 
 
 -- | Make a tuple data def for the given tuple arity.
-makeTupleDataDef :: Int -> DataDef Name
+makeTupleDataDef :: Int -> Maybe (DataDef Name)
 makeTupleDataDef n
-        = DataDef
+        = makeDataDef
                 (NameTyConFlow (TyConFlowTuple n))
                 (replicate n (BAnon kData))
                 (Just   [ ( NameDaConFlow (DaConFlowTuple n)

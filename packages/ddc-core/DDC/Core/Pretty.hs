@@ -107,21 +107,26 @@ instance (Pretty n, Eq n) => Pretty (DataDef n) where
   <$> (case dataDefCtors def of
         Just ctors
          -> indent 8
-          $ vcat [ ppr n
-                        <+> text ":" 
-                        <+> (hsep   $ punctuate (text " ->") 
-                                    $ (map (pprPrec 6) (fields ++ [tResult])))
-                        <> semi
-                 | (n, fields)  <- ctors 
-                 , let Just tResult  = dataTypeOfDataDef def]
+          $ vcat [ ppr ctor <> semi | ctor <- ctors]
 
         Nothing
          -> text "LARGE")
   <> line
   <> rbrace
   <> line
+
+
+-- DataCtor -------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (DataCtor n) where
+ pprPrec _ ctor
+        =   ppr (dataCtorName ctor)
+        <+> text ":"
+        <+> (hsep $ punctuate (text " ->") 
+                  $ (map (pprPrec 6) 
+                        (  dataCtorFieldTypes ctor
+                        ++ [dataCtorResultType ctor])))
   
-  
+
 -- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx

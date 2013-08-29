@@ -26,27 +26,28 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Primitive -----------------------------------------------
+ $ map (\(Just def) -> def)
+ $      -- Primitive -----------------------------------------------
         -- Bool
-        [ DataDef (NamePrimTyCon PrimTyConBool) 
+        [ makeDataDef (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
         -- Nat
-        , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
 
         -- Int
-        , DataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
 
         -- WordN
-        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
         -- Ref
-        , DataDef (NameTyConData TyConDataRef) [] Nothing
+        , makeDataDef (NameTyConData TyConDataRef) [] Nothing
         ]
 
 

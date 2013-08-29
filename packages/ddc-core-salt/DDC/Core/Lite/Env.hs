@@ -36,66 +36,67 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Unboxed --------------------------------------------------
+ $ map (\(Just def) -> def)
+ $      -- Unboxed --------------------------------------------------
         -- We need these so that we can match against unboxed patterns
         -- in case expressions.
         -- Bool#
-        [ DataDef (NamePrimTyCon PrimTyConBool) 
+        [ makeDataDef (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
 
         -- Int#
-        , DataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
 
         -- WordN#
-        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
 
         -- Boxed ----------------------------------------------------
         -- Unit
-        , DataDef
+        , makeDataDef
                 (NameDataTyCon DataTyConUnit)
                 []
                 (Just   [ ( NamePrimDaCon PrimDaConUnit
                           , []) ])
 
         -- Bool
-        , DataDef
+        , makeDataDef
                 (NameDataTyCon DataTyConBool)
                 [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConBoolU
                           , [tBoolU]) ])
 
         -- Nat
-        , DataDef
+        , makeDataDef
                 (NameDataTyCon DataTyConNat)
                 [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConNatU
                           , [tNatU]) ])
         
         -- Int
-        , DataDef
+        , makeDataDef
                 (NameDataTyCon DataTyConInt)
                 [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConIntU
                           , [tIntU]) ])
 
         -- Pair
-        , DataDef
+        , makeDataDef
                 (NameDataTyCon DataTyConPair)
                 [BAnon kRegion, BAnon kData, BAnon kData]
                 (Just   [ ( NamePrimDaCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
         -- List
-        , DataDef
+        , makeDataDef
                 (NameDataTyCon DataTyConList)
                 [BAnon kRegion, BAnon kData]
                 (Just   [ (NamePrimDaCon PrimDaConNil,  [tUnit]) 

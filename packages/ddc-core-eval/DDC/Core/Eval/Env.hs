@@ -37,21 +37,22 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        [ -- Int
-          DataDef
+ $ map (\(Just def) -> def)
+ $      [ -- Int
+          makeDataDef
                 (NamePrimCon PrimTyConInt)
                 [BAnon kRegion]
                 Nothing
 
           -- Pair
-        , DataDef
+        , makeDataDef
                 (NamePrimCon PrimTyConPair)
                 [BAnon kRegion, BAnon kData, BAnon kData]
                 (Just   [ ( NamePrimCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
           -- List
-        , DataDef
+        , makeDataDef
                 (NamePrimCon PrimTyConList)
                 [BAnon kRegion, BAnon kData]
                 (Just   [ (NamePrimCon PrimDaConNil,  []) 

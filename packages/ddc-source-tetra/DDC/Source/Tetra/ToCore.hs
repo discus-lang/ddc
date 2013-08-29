@@ -109,9 +109,27 @@ toCoreDataDef def
                 = map toCoreB $ S.dataDefParams def
 
         , C.dataDefCtors          
-                = Just [( toCoreN     (S.dataCtorName ctor)
-                        , map toCoreT (S.dataCtorFieldTypes ctor))
-                                | ctor <- S.dataDefCtors def ] }
+                = Just 
+                $ [ toCoreDataCtor def tag ctor
+                        | ctor  <- S.dataDefCtors def
+                        | tag   <- [0..] ]
+        }
+
+
+-- DataCtor -------------------------------------------------------------------
+toCoreDataCtor 
+        :: S.DataDef S.Name 
+        -> Integer
+        -> S.DataCtor S.Name 
+        -> C.DataCtor C.Name
+
+toCoreDataCtor dataDef tag ctor
+        = C.DataCtor
+        { C.dataCtorName        = toCoreN (S.dataCtorName ctor)
+        , C.dataCtorTag         = tag
+        , C.dataCtorFieldTypes  = map toCoreT (S.dataCtorFieldTypes ctor)
+        , C.dataCtorResultType  = toCoreT (S.dataCtorResultType ctor)
+        , C.dataCtorTypeName    = toCoreN (S.dataDefTypeName dataDef) }
 
 
 -- Exp ------------------------------------------------------------------------

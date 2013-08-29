@@ -36,30 +36,31 @@ import qualified DDC.Type.Env                   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Bool
-        [ DataDef
+ $ map (\(Just def) -> def)
+ $      -- Bool
+        [ makeDataDef
                 (NamePrimTyCon PrimTyConBool)
                 []
                 (Just   [ (NameLitBool True,  [])
                         , (NameLitBool False, []) ])
         -- Nat
-        , DataDef (NamePrimTyCon PrimTyConNat) [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConNat) [] Nothing
 
         -- Int
-        , DataDef (NamePrimTyCon PrimTyConInt) [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConInt) [] Nothing
 
         -- Tag
-        , DataDef (NamePrimTyCon PrimTyConTag) [] Nothing
+        , makeDataDef (NamePrimTyCon PrimTyConTag) [] Nothing
 
         -- Word 8, 16, 32, 64
-        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
 
         -- Float 32, 64
-        , DataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
         ]
 
 

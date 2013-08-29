@@ -3,6 +3,7 @@
 module DDC.Type.DataDef
         ( DataDef    (..)
         , dataTypeOfDataDef
+        , makeDataDef
 
         -- * Data type definition table
         , DataDefs   (..)
@@ -35,7 +36,7 @@ data DataDef n
 
           -- | Constructors of the data type, or Nothing if there are
           --   too many to list (like with `Int`).
-        , dataDefCtors          :: !(Maybe [(n, [Type n])]) }
+        , dataDefCtors          :: !(Maybe [DataCtor n]) }
         deriving Show
 
 
@@ -61,6 +62,41 @@ dataTypeOfDataDef def
  | otherwise
  = Nothing                      
 
+
+-- | Shortcut for constructing a `DataDef`
+makeDataDef 
+        :: n                            -- ^ Name of data type.
+        -> [Bind n]                     -- ^ Type parameters.
+        -> Maybe [(n, [Type n])]        -- ^ Constructor names and field types.
+        -> Maybe (DataDef n)
+
+makeDataDef nData bsParam Nothing 
+        = Just $ DataDef
+        { dataDefTypeName       = nData
+        , dataDefParams         = bsParam
+        , dataDefCtors          = Nothing }
+
+makeDataDef nData bsParam (Just ntsField)
+ | Just usParam <- sequence
+                $  map takeSubstBoundOfBind 
+                $  bsParam
+ = let  ksParam = map typeOfBind bsParam
+        tc      = TyConBound (UName nData) 
+                             (kFuns ksParam kData)
+
+        tResult = tApps (TCon tc) (map TVar usParam)
+   
+        ctors   = [ DataCtor n tag tsField tResult nData
+                            | tag          <- [0..]
+                            | (n, tsField) <- ntsField] 
+   in   Just $ DataDef
+        { dataDefTypeName = nData
+        , dataDefParams   = bsParam
+        , dataDefCtors    = Just ctors }
+
+ | otherwise
+ = Nothing
+        
 
 -- DataDefs -------------------------------------------------------------------
 -- | A table of data type definitions,
@@ -109,9 +145,17 @@ data DataCtor n
           -- | Field types of constructor.
         , dataCtorFieldTypes :: ![Type n]
 
+          -- | Result type of constructor.
+        , dataCtorResultType :: !(Type n)
+
           -- | Name of result type of constructor.
         , dataCtorTypeName   :: !n }
         deriving Show
+
+
+instance NFData n => NFData (DataCtor n) where
+ rnf (DataCtor n t fs tR nT)
+  = rnf n `seq` rnf t `seq` rnf fs `seq` rnf tR `seq` rnf nT
 
 
 -- | An empty table of data type definitions.
@@ -120,7 +164,6 @@ emptyDataDefs
         = DataDefs
         { dataDefsTypes = Map.empty
         , dataDefsCtors = Map.empty }
-
 
 -- | Insert a data type definition into some DataDefs.
 insertDataDef  :: Ord n => DataDef  n -> DataDefs n -> DataDefs n
@@ -132,24 +175,13 @@ insertDataDef (DataDef nType bsParam mCtors) dataDefs
 
         defMode = case mCtors of
                    Nothing    -> DataModeLarge
-                   Just ctors -> DataModeSmall (map fst ctors)
-
-        makeDefCtor tag (nCtor, tsFields)
-                = DataCtor
-                { dataCtorName       = nCtor
-                , dataCtorTag        = tag
-                , dataCtorFieldTypes = tsFields
-                , dataCtorTypeName   = nType }
-
-        defCtors = case mCtors of
-                    Nothing  -> Nothing
-                    Just cs  -> Just $ zipWith makeDefCtor [0..] cs
+                   Just ctors -> DataModeSmall (map dataCtorName ctors)
 
    in   dataDefs
          { dataDefsTypes = Map.insert nType defType (dataDefsTypes dataDefs)
          , dataDefsCtors = Map.union (dataDefsCtors dataDefs)
                          $ Map.fromList [(n, def) 
-                                | def@(DataCtor n _ _ _) <- concat $ maybeToList defCtors ]}
+                                | def@(DataCtor n _ _ _ _) <- concat $ maybeToList mCtors ]}
 
 
 -- | Build a `DataDefs` table from a list of `DataDef`
