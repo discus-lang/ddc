@@ -338,7 +338,7 @@ pipeFlow !mm !pp
                 isFloatable lts
                  = case lts of
                     C.LLet (C.BName _ _) x
-                      |  Flow.isFlowOperator (C.deannotate (const Nothing) x)
+                      |  Flow.isSeriesOperator (C.deannotate (const Nothing) x)
                       -> Forward.FloatDeny
                     _ -> Forward.FloatForce
 

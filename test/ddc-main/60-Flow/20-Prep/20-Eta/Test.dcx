@@ -7,7 +7,7 @@ module Test
 imports f :: Int# -> Int# -> Int#
 with letrec
 ffold [k : Rate] (s : Series# k Int#) : Int#
- = fold# [k] [Int#] [Int#] f 0i# s
+ = sfold# [k] [Int#] [Int#] f 0i# s
 ;;
 
 
@@ -22,11 +22,11 @@ with letrec
 foldix [k : Rate] (s : Series# k Int#) 
         : Tuple2# (Tuple2# Int# Int#) Int#
  = do   
-        mix     = foldIndex# [k] [Tuple2# Int# Int#] [Int#] 
+        mix     = sfoldIndex# [k] [Tuple2# Int# Int#] [Int#] 
                         minIx 
                         (T2# [Int#] [Int#] 0i# 0i#) s 
 
-        sum     = fold# [k] [Int#] [Int#] addInt 0i# s
+        sum     = sfold# [k] [Int#] [Int#] addInt 0i# s
    
         T2# [Tuple2# Int# Int#] [Int#] mix sum
 ;;

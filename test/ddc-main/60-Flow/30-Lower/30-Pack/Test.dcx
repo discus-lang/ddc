@@ -7,10 +7,10 @@ packMe  [k0 : Rate] [a : Data]
         (s  : Series# k0 a) (flags : Series# k0 Bool#)
         : Vector# a
 
- =      mkSel1# [k0] [Vector# a] flags
+ =      smkSel1# [k0] [Vector# a] flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-          let s2       = pack# [k0] [k1] [a] sel s
-          in  create#  [k1] [a] s2)
+          let s2       = spack# [k0] [k1] [a] sel s
+          in  screate#  [k1] [a] s2)
 ;;
 
 
@@ -21,12 +21,12 @@ filter  [k0 : Rate] [a : Data]
         (f  : a -> Bool#) (s : Series# k0 a)
         : Vector# a
  = do   
-        flags   = map# [k0] [a] [Bool#] (\(x : a). f x) s
+        flags   = smap# [k0] [a] [Bool#] (\(x : a). f x) s
 
-        mkSel1# [k0] [Vector# a] flags
+        smkSel1# [k0] [Vector# a] flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-          let  s2      =  pack# [k0] [k1] [a] sel s
-          in   create#  [k1] [a] s2)
+          let  s2      =  spack# [k0] [k1] [a] sel s
+          in   screate#  [k1] [a] s2)
 ;;
 
 
@@ -38,14 +38,14 @@ filter  [k0 : Rate] [a : Data]
         (f  : a -> Bool#) (s : Series# k0 a)
         : Tuple2# (Vector# a) (Vector# a)
  = do   
-        flags   = map# [k0] [a] [Bool#] (\(x : a). f x) s
+        flags   = smap# [k0] [a] [Bool#] (\(x : a). f x) s
 
-        mkSel1# [k0] [Tuple2# (Vector# a) (Vector# a)] flags
+        smkSel1# [k0] [Tuple2# (Vector# a) (Vector# a)] flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-          let  s2      =  pack# [k0] [k1] [a] sel s
+          let  s2      =  spack# [k0] [k1] [a] sel s
           in   T2# [Vector# a] [Vector# a]
-                   (create#  [k1] [a] s2)
-                   (create#  [k0] [a] s))
+                   (screate#  [k1] [a] s2)
+                   (screate#  [k0] [a] s))
 ;;
 
 
@@ -58,17 +58,17 @@ filter  [k0 : Rate] [a : Data]
         (s0 : Series# k0 a)
         : Vector# a
  = do   
-        flags1  = map# [k0] [a] [Bool#] (\(x : a). f x) s0
+        flags1  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
 
-        mkSel1# [k0] [Vector# a] flags1
+        smkSel1# [k0] [Vector# a] flags1
          (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
-          let  s1      = pack# [k0] [k1] [a] sel1 s0 in
-          let  flags2  = map#  [k1] [a]  [Bool#] (\(x : a). g x) s1 
+          let  s1      = spack# [k0] [k1] [a] sel1 s0 in
+          let  flags2  = smap#  [k1] [a]  [Bool#] (\(x : a). g x) s1 
 
-          in   mkSel1# [k1] [Vector# a] flags2
+          in   smkSel1# [k1] [Vector# a] flags2
                  (/\(k2 : Rate). \(sel2 : Sel1# k1 k2).
-                  let   s2 = pack# [k1] [k2] [a] sel2 s1
-                  in    create# [k2] [a] s2))
+                  let   s2 = spack# [k1] [k2] [a] sel2 s1
+                  in    screate# [k2] [a] s2))
 ;;
 
 -- Sequential filter.
@@ -80,18 +80,18 @@ filter  [k0 : Rate] [a : Data]
         (s0 : Series# k0 a)
         : Tuple2# (Vector# a) (Vector# a)
  = do   
-        flags1  = map# [k0] [a] [Bool#] (\(x : a). f x) s0
-        flags2  = map# [k0] [a] [Bool#] (\(x : a). f x) s0
+        flags1  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
+        flags2  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
 
-        s1 = mkSel1# [k0] [Vector# a] flags1
+        s1 = smkSel1# [k0] [Vector# a] flags1
          (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
-          let  s1      = pack# [k0] [k1] [a] sel1 s0 in
-               create# [k1] [a] s1)
+          let  s1      = spack# [k0] [k1] [a] sel1 s0 in
+               screate# [k1] [a] s1)
          
-        s2 = mkSel1# [k0] [Vector# a] flags2
+        s2 = smkSel1# [k0] [Vector# a] flags2
          (/\(k2 : Rate). \(sel2 : Sel1# k0 k2).
-          let  s2      = pack# [k0] [k2] [a] sel2 s0 in
-               create# [k2] [a] s2)
+          let  s2      = spack# [k0] [k2] [a] sel2 s0 in
+               screate# [k2] [a] s2)
 
         T2# [Vector# a] [Vector# a] s1 s2
 ;;

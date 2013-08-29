@@ -177,7 +177,7 @@ threadType n _
         -- Series ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Series# k a -> Int# -> World# -> (World#, a)
-        NameOpSeries (OpSeriesNext 1)
+        NameOpConcrete (OpConcreteNext 1)
          -> Just $ tForalls [kRate, kData]
                  $ \[tK, tA] -> tSeries tK tA `tFun` tInt 
                                 `tFun` tWorld `tFun` (tTuple2 tWorld tA)

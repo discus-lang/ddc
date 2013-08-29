@@ -4,8 +4,8 @@
 :flow-lower..
 module Test with letrec
 test [k : Rate] (s : Series# k Int#) : Vector# Int#
- = create# [k] [Int#]
-        (map# [k] [Int#] [Int#]
+ = screate# [k] [Int#]
+        (smap# [k] [Int#] [Int#]
                 (\(x : Int#). add# [Int#] (mul# [Int#] x 2i#) 1i#) s)
 ;;
 
@@ -16,9 +16,9 @@ module Test with letrec
 test    [k : Rate] 
         (v : Vector# Int#) (s : Series# k Int#) 
         : Int#
- = do   fill# [k] [Int#] v
-                (map# [k] [Int#] [Int#]
+ = do   sfill# [k] [Int#] v
+                (smap# [k] [Int#] [Int#]
                         (\(x : Int#). add# [Int#] (mul# [Int#] x 2i#) 1i#) s)
 
-        fold# [k] [Int#] [Int#] (add# [Int#]) 0i# s
+        sfold# [k] [Int#] [Int#] (add# [Int#]) 0i# s
 ;;

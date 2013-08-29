@@ -128,15 +128,15 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NameOpFlow      p       -> Just $ typeOpFlow    p
-        NameOpSeries    p       -> Just $ typeOpSeries  p
-        NameOpStore     p       -> Just $ typeOpStore   p
-        NameOpControl   p       -> Just $ typeOpControl p
-        NameDaConFlow   p       -> Just $ typeDaConFlow p
+        NameOpConcrete  p       -> Just $ typeOpConcrete p
+        NameOpSeries    p       -> Just $ typeOpSeries   p
+        NameOpStore     p       -> Just $ typeOpStore    p
+        NameOpControl   p       -> Just $ typeOpControl  p
+        NameDaConFlow   p       -> Just $ typeDaConFlow  p
 
-        NamePrimCast    p       -> Just $ typePrimCast  p 
-        NamePrimArith   p       -> Just $ typePrimArith p
-        NamePrimVec     p       -> Just $ typePrimVec   p
+        NamePrimCast    p       -> Just $ typePrimCast   p 
+        NamePrimArith   p       -> Just $ typePrimArith  p
+        NamePrimVec     p       -> Just $ typePrimVec    p
 
         NameLitBool     _       -> Just $ tBool
         NameLitNat      _       -> Just $ tNat

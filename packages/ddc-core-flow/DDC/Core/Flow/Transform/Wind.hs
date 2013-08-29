@@ -480,12 +480,12 @@ type ExpF       = Exp () Name
 xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
         = xApps () 
-                (xVarOpSeries OpSeriesNatOfRateNat)
+                (xVarOpConcrete OpConcreteNatOfRateNat)
                 [XType tK, xR]
 
-xVarOpSeries :: OpSeries -> Exp () Name
-xVarOpSeries op
-        = XVar  () (UPrim (NameOpSeries op) (typeOpSeries op))
+xVarOpConcrete :: OpConcrete -> Exp () Name
+xVarOpConcrete op
+        = XVar  () (UPrim (NameOpConcrete op) (typeOpConcrete op))
 
 
 

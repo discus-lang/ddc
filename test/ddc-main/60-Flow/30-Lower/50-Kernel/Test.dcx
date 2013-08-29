@@ -8,10 +8,10 @@ test    [k : Rate] (n  : RateNat# k)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
         : Unit
  = do   
-        s2      = map2# [k] [Float32#] [Float32#] [Float32#] 
+        s2      = smap2# [k] [Float32#] [Float32#] [Float32#] 
                         (mul# [Float32#]) s1 s2
 
-        fill# [k] [Float32#] v s2
+        sfill# [k] [Float32#] v s2
 ;;
 
 
@@ -23,13 +23,13 @@ test    [k : Rate] (n : RateNat# k)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
         : Unit
  = do   
-        s2      = map2# [k] [Float32#] [Float32#] [Float32#] 
+        s2      = smap2# [k] [Float32#] [Float32#] [Float32#] 
                         (mul# [Float32#]) s1 s2
 
-        s3      = map#  [k] [Float32#] [Float32#]
+        s3      = smap#  [k] [Float32#] [Float32#]
                         (add# [Float32#] 2.0f32#) s2
 
-        fill# [k] [Float32#] v s3
+        sfill# [k] [Float32#] v s3
 ;;
 
 
@@ -41,12 +41,12 @@ test    [k : Rate] (n : RateNat# k)
         (s1 : Series# k Nat#)
         : Unit
  = do   
-        s2      = gather# [k] [Float32#] v1 s1
+        s2      = sgather# [k] [Float32#] v1 s1
 
-        s3      = map#  [k] [Float32#] [Float32#]
+        s3      = smap#  [k] [Float32#] [Float32#]
                         (add# [Float32#] 2.0f32#) s2
 
-        fill# [k] [Float32#] v2 s3
+        sfill# [k] [Float32#] v2 s3
 ;;
 
 
@@ -58,10 +58,10 @@ test    [k : Rate] (n : RateNat# k)
         (s1 : Series# k Nat#)   (s2 : Series# k Float32#)
         : Unit
  = do   
-        s3      = map#  [k] [Float32#] [Float32#]
+        s3      = smap#  [k] [Float32#] [Float32#]
                         (add# [Float32#] 2.0f32#) s2
 
-        scatter# [k] [Float32#] v1 s1 s3
+        sscatter# [k] [Float32#] v1 s1 s3
 ;;
 
 
@@ -71,7 +71,7 @@ module Test with letrec
 test    [k : Rate] (n : RateNat# k)
         (x1 : Ref# Float32#) (s1 : Series# k Float32#)
         : Unit
- =      reduce#  [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
+ =      sreduce#  [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
 ;;
 
 
@@ -84,12 +84,12 @@ test    [k : Rate] (n : RateNat# k)
         (s1 : Series# k Nat#)
         : Unit
  = do   
-        s2      = gather# [k] [Float32#] v1 s1
+        s2      = sgather# [k] [Float32#] v1 s1
 
-        s3      = map#  [k] [Float32#] [Float32#]
+        s3      = smap#  [k] [Float32#] [Float32#]
                         (mul# [Float32#] 2.0f32#) s2
 
-        reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
+        sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
 ;;
 
 
@@ -101,10 +101,10 @@ test    [k  : Rate] (n : RateNat# k)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#)
         : Unit
  = do   
-        s3      = map2# [k] [Float32#] [Float32#] [Float32#]
+        s3      = smap2# [k] [Float32#] [Float32#] [Float32#]
                         (mul# [Float32#]) s1 s2
 
-        reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
+        sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
 ;;
 
 
@@ -116,8 +116,8 @@ test    [k  : Rate] (n : RateNat# k)
         (s1 : Series# k Float32#)
         : Unit
  = do   
-        reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
-        reduce# [k] [Float32#] x2 (mul# [Float32#]) 1.0f32# s1
+        sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
+        sreduce# [k] [Float32#] x2 (mul# [Float32#]) 1.0f32# s1
 ;;
 
 
@@ -129,10 +129,10 @@ test    [k  : Rate] (n : RateNat# k)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#)
         : Unit
  = do   
-        s3      = map2# [k] [Float32#] [Float32#] [Float32#]
+        s3      = smap2# [k] [Float32#] [Float32#] [Float32#]
                         (mul# [Float32#]) s1 s2
 
-        reduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
+        sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
         
-        reduce# [k] [Float32#] x2 (add# [Float32#]) 0.0f32# s1
+        sreduce# [k] [Float32#] x2 (add# [Float32#]) 0.0f32# s1
 ;;

@@ -19,9 +19,9 @@ module DDC.Core.Flow.Prim
         , typeDaConFlow
 
           -- * Fusable Flow operators
-        , OpFlow        (..)
-        , readOpFlow
-        , typeOpFlow
+        , OpConcrete    (..)
+        , readOpConcrete
+        , typeOpConcrete
 
           -- * Series operators
         , OpSeries      (..)
@@ -63,7 +63,7 @@ import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.DaConPrim     ()
-import DDC.Core.Flow.Prim.OpFlow
+import DDC.Core.Flow.Prim.OpConcrete
 import DDC.Core.Flow.Prim.OpSeries
 import DDC.Core.Flow.Prim.OpControl
 import DDC.Core.Flow.Prim.OpStore
@@ -90,7 +90,7 @@ instance NFData Name where
         NameKiConFlow   con     -> rnf con
         NameTyConFlow   con     -> rnf con
         NameDaConFlow   con     -> rnf con
-        NameOpFlow      op      -> rnf op
+        NameOpConcrete  op      -> rnf op
         NameOpSeries    op      -> rnf op
         NameOpControl   op      -> rnf op
         NameOpStore     op      -> rnf op
@@ -117,7 +117,7 @@ instance Pretty Name where
         NameKiConFlow   con     -> ppr con
         NameTyConFlow   con     -> ppr con
         NameDaConFlow   con     -> ppr con
-        NameOpFlow      op      -> ppr op
+        NameOpConcrete  op      -> ppr op
         NameOpSeries    op      -> ppr op
         NameOpControl   op      -> ppr op
         NameOpStore     op      -> ppr op
@@ -142,7 +142,7 @@ readName str
         | Just p        <- readKiConFlow  str   = Just $ NameKiConFlow  p
         | Just p        <- readTyConFlow  str   = Just $ NameTyConFlow  p
         | Just p        <- readDaConFlow  str   = Just $ NameDaConFlow  p
-        | Just p        <- readOpFlow     str   = Just $ NameOpFlow     p
+        | Just p        <- readOpConcrete str   = Just $ NameOpConcrete p
         | Just p        <- readOpSeries   str   = Just $ NameOpSeries   p 
         | Just p        <- readOpControl  str   = Just $ NameOpControl  p
         | Just p        <- readOpStore    str   = Just $ NameOpStore    p

@@ -6,8 +6,8 @@
 module Test with letrec
 ffold [k : Rate] (s : Series# k Int#) : Int#
  = add# [Int#]
-        (fold# [k] [Int#] [Int#] (add# [Int#]) 0i# s)
-        (fold# [k] [Int#] [Int#] (mul# [Int#]) 1i# s)
+        (sfold# [k] [Int#] [Int#] (add# [Int#]) 0i# s)
+        (sfold# [k] [Int#] [Int#] (mul# [Int#]) 1i# s)
 ;;
 
 
@@ -17,12 +17,12 @@ module Test
 lower_maxx_rqp : [k_aqs : Rate].Series# k_aqs Int# -> Tuple2# (Vector# Int#) Int#
       = /\(k_e : Rate).
          \(s1_azy : Series# k_e Int#).
-        mkSel1# [k_e] [Tuple2# (Vector# Int#) Int#]
-            (map1# [k_e] [Int#] [Bool#]
+        smkSel1# [k_e] [Tuple2# (Vector# Int#) Int#]
+            (smap1# [k_e] [Int#] [Bool#]
                  (\(x_azz : Int#). gt# [Int#] x_azz 0i#) s1_azy)
             (/\(k2_aNN : Rate).
               \(sel_azA : Sel1# k_e k2_aNN).
-             let sEven_azB : Series# k2_aNN Int# = pack# [k_e] [k2_aNN] [Int#] sel_azA s1_azy in
+             let sEven_azB : Series# k2_aNN Int# = spack# [k_e] [k2_aNN] [Int#] sel_azA s1_azy in
              T2# [Vector# Int#] [Int#] 
                         (vectorOfSeries# [k2_aNN] [Int#] sEven_azB) 
-                        (fold# [k2_aNN] [Int#] [Int#] maxx_rqq 0i# sEven_azB))
+                        (sfold# [k2_aNN] [Int#] [Int#] maxx_rqq 0i# sEven_azB))

@@ -39,14 +39,14 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 
 -- Flow operators
-create# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^0
-fill# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 ^0 -> Unit
-map# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
-rep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
-reps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
-fold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^0 -> ^1
-folds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (Int# -> ^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
-pack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
+screate# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^0
+sfill# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 ^0 -> Unit
+smap# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
+srep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
+sreps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
+sfold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^0 -> ^1
+sfolds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (Int# -> ^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
+spack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 
 
 -- Series operators

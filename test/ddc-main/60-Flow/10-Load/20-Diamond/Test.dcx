@@ -43,29 +43,29 @@ split   [k1      : Rate]
  = do
         -- Take the determinate between the line and each point.
         dets    
-         = map# [k1] [Tuple2# Float64# Float64#] [Float64#]
+         = smap# [k1] [Tuple2# Float64# Float64#] [Float64#]
                 (det l1 l2) 
                 points
 
         -- We only want points where the determinate is more than zero.
         flags   
-         = map# [k1] [Float64#] [Bool#]
+         = smap# [k1] [Float64#] [Bool#]
                 (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) 
                 dets
 
         -- Filter the points, keeping those where the determinate was more
         -- than zero.
         aAbove
-         = mkSel1# [k1] [Vector# (Tuple2# Float64# Float64#)] flags 
+         = smkSel1# [k1] [Vector# (Tuple2# Float64# Float64#)] flags 
            (/\(k2 : Rate). \(sel : Sel1# k1 k2).
 
-            let above   = pack#       [k1] [k2] [Tuple2# Float64# Float64#] 
+            let above   = spack#       [k1] [k2] [Tuple2# Float64# Float64#] 
                                 sel points 
-            in  create#  [k2] [Tuple2# Float64# Float64#] above)
+            in  screate#  [k2] [Tuple2# Float64# Float64#] above)
 
         -- Also compute the maximum determinate.
         xMax 
-         = fold# [k1] [Float64#] [Float64#] 
+         = sfold# [k1] [Float64#] [Float64#] 
                 max 
                 (promote# [Float64#] [Nat#] 0#)
                 dets 

@@ -8,10 +8,10 @@ letrec {
     = /\(k : Rate).
        \(s : Series# k Int#).
       let x3 : Int#
-            = fold# [k] [Int#] [Int#]
+            = sfold# [k] [Int#] [Int#]
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# s in
       let x8 : Int#
-            = fold# [k] [Int#] [Int#]
+            = sfold# [k] [Int#] [Int#]
                   (\(x5 x6 : Int#). mul# [Int#] x5 x6) 1i# s in
       add# [Int#] x3 x8
 }

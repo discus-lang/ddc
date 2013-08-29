@@ -19,7 +19,7 @@ module DDC.Core.Flow
         , KiConFlow     (..)
         , TyConFlow     (..)
         , DaConFlow     (..)
-        , OpFlow        (..)
+        , OpSeries      (..)
         , OpControl     (..)
         , OpStore       (..)
         , PrimTyCon     (..)

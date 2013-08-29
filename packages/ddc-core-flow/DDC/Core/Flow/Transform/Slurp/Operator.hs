@@ -1,7 +1,7 @@
 
 module DDC.Core.Flow.Transform.Slurp.Operator
         ( slurpOperator
-        , isFlowOperator)
+        , isSeriesOperator)
 where
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Exp
@@ -22,7 +22,7 @@ slurpOperator
 slurpOperator bResult xx
 
  -- Map -----------------------------------------
- | Just (NameOpFlow (OpFlowMap n), xs) 
+ | Just (NameOpSeries (OpSeriesMap n), xs) 
                                 <- takeXPrimApps xx
  , n >= 1
  , XType tR : xsArgs2   <- xs
@@ -44,7 +44,7 @@ slurpOperator bResult xx
 
 
  -- Pack ----------------------------------------
- | Just ( NameOpFlow OpFlowPack
+ | Just ( NameOpSeries OpSeriesPack
         , [ XType tRateInput, XType tRateOutput, XType tElem
           , _xSel, (XVar uSeries) ])    <- takeXPrimApps xx
  = Just $ OpPack
@@ -56,7 +56,7 @@ slurpOperator bResult xx
 
 
  -- Reduce --------------------------------------
- | Just ( NameOpFlow OpFlowReduce
+ | Just ( NameOpSeries OpSeriesReduce
         , [ XType tK, XType _
           , XVar uRef, xWorker, xZ, XVar uS ])
                                 <- takeXPrimApps xx
@@ -73,7 +73,7 @@ slurpOperator bResult xx
 
 
  -- Fold ----------------------------------------
- | Just ( NameOpFlow OpFlowFold
+ | Just ( NameOpSeries OpSeriesFold
         , [ XType tRate, XType _tAcc, XType _tElem
           , xWorker,     xZero,     (XVar uSeries)])
                                 <- takeXPrimApps xx
@@ -90,7 +90,7 @@ slurpOperator bResult xx
 
 
  -- FoldIndex -----------------------------------
- | Just ( NameOpFlow OpFlowFoldIndex
+ | Just ( NameOpSeries OpSeriesFoldIndex
         , [ XType tRate, XType _tAcc, XType _tElem
           , xWorker,     xZero,     (XVar uSeries)])
                                     <- takeXPrimApps xx
@@ -107,7 +107,7 @@ slurpOperator bResult xx
 
 
  -- Create --------------------------------------
- | Just ( NameOpFlow OpFlowCreate
+ | Just ( NameOpSeries OpSeriesCreate
         , [ XType tK, XType tA, XVar uSeries ])
                                 <- takeXPrimApps xx
  = Just $ OpCreate
@@ -119,7 +119,7 @@ slurpOperator bResult xx
 
 
  -- Fill ----------------------------------------
- | Just ( NameOpFlow OpFlowFill
+ | Just ( NameOpSeries OpSeriesFill
         , [ XType tK, XType tA, XVar uV, XVar uS ])
                                 <- takeXPrimApps xx
  = Just $ OpFill
@@ -131,7 +131,7 @@ slurpOperator bResult xx
 
 
  -- Gather --------------------------------------
- | Just ( NameOpFlow OpFlowGather
+ | Just ( NameOpSeries OpSeriesGather
         , [ XType tK, XType tA, XVar uV, XVar uS ])
                                 <- takeXPrimApps xx
  = Just $ OpGather
@@ -143,7 +143,7 @@ slurpOperator bResult xx
 
 
  -- Scatter -------------------------------------
- | Just ( NameOpFlow OpFlowScatter
+ | Just ( NameOpSeries OpSeriesScatter
         , [ XType tK, XType tA, XVar uV, XVar uIndices, XVar uElems ])
                                 <- takeXPrimApps xx
  = Just $ OpScatter
@@ -159,22 +159,22 @@ slurpOperator bResult xx
 
 
 -- | Check if some binding is a flow operator.
-isFlowOperator 
+isSeriesOperator 
         :: Exp () Name 
         -> Bool
 
-isFlowOperator xx
+isSeriesOperator xx
  = case liftM fst $ takeXPrimApps xx of
-        Just (NameOpFlow OpFlowCreate)    -> True
-        Just (NameOpFlow (OpFlowMap _))   -> True
-        Just (NameOpFlow OpFlowReduce)    -> True
-        Just (NameOpFlow OpFlowFold)      -> True
-        Just (NameOpFlow OpFlowFoldIndex) -> True
-        Just (NameOpFlow OpFlowPack)      -> True
-        Just (NameOpFlow (OpFlowMkSel _)) -> True
-        Just (NameOpFlow OpFlowFill)      -> True
-        Just (NameOpFlow OpFlowGather)    -> True
-        Just (NameOpFlow OpFlowScatter)   -> True
-        _                                 -> False
+        Just (NameOpSeries OpSeriesCreate)    -> True
+        Just (NameOpSeries (OpSeriesMap _))   -> True
+        Just (NameOpSeries OpSeriesReduce)    -> True
+        Just (NameOpSeries OpSeriesFold)      -> True
+        Just (NameOpSeries OpSeriesFoldIndex) -> True
+        Just (NameOpSeries OpSeriesPack)      -> True
+        Just (NameOpSeries (OpSeriesMkSel _)) -> True
+        Just (NameOpSeries OpSeriesFill)      -> True
+        Just (NameOpSeries OpSeriesGather)    -> True
+        Just (NameOpSeries OpSeriesScatter)   -> True
+        _                                     -> False
 
 

@@ -4,8 +4,8 @@ module DDC.Core.Flow.Prim.Base
         , KiConFlow     (..)
         , TyConFlow     (..)
         , DaConFlow     (..)
-        , OpFlow        (..)
         , OpSeries      (..)
+        , OpConcrete    (..)
         , OpControl     (..)
         , OpStore       (..)
         , PrimTyCon     (..)
@@ -41,8 +41,8 @@ data Name
         -- | Fragment specific data constructors.
         | NameDaConFlow         DaConFlow
 
-        -- | Flow operators.
-        | NameOpFlow            OpFlow
+        -- | Concrete series operators.
+        | NameOpConcrete        OpConcrete
 
         -- | Series operators.
         | NameOpSeries          OpSeries
@@ -133,74 +133,74 @@ data DaConFlow
         deriving (Eq, Ord, Show)
 
 
--- | Fusable Flow operators.
-data OpFlow
+-- | Fusable Flow operators that work on Series.
+data OpSeries
         -- | Project out a component of a tuple,
         --   given the tuple arity and index of the desired component.
         --   TODO: shift this somewhere else.
-        = OpFlowProj Int Int
+        = OpSeriesProj Int Int
 
         -- | Apply a worker to corresponding elements of some series.
-        | OpFlowMap Int
+        | OpSeriesMap Int
 
         -- | Replicate a single element into a series.
-        | OpFlowRep
+        | OpSeriesRep
 
         -- | Segmented replicate.
-        | OpFlowReps
+        | OpSeriesReps
 
         -- | Make a selector.
-        | OpFlowMkSel Int
+        | OpSeriesMkSel Int
 
         -- | Pack a series according to a flags vector.
-        | OpFlowPack
+        | OpSeriesPack
 
         -- | Reduce a series with an associative operator,
         --   updating an existing accumulator.
-        | OpFlowReduce
+        | OpSeriesReduce
 
         -- | Fold a series with an associative operator,
         --   returning the final result.
-        | OpFlowFold
+        | OpSeriesFold
 
         -- | Fold where the worker also takes the current index into the series.
-        | OpFlowFoldIndex
+        | OpSeriesFoldIndex
 
         -- | Segmented fold.
-        | OpFlowFolds
+        | OpSeriesFolds
 
         -- | Create a new vector from a series.
-        | OpFlowCreate
+        | OpSeriesCreate
 
         -- | Fill an existing vector from a series.
-        | OpFlowFill
+        | OpSeriesFill
 
         -- | Gather  (read) elements from a vector.
-        | OpFlowGather
+        | OpSeriesGather
 
         -- | Scatter (write) elements into a vector.
-        | OpFlowScatter
+        | OpSeriesScatter
         deriving (Eq, Ord, Show)
 
 
 -- | Series related operators.
 --   These operators work on series after the code has been fused.
 --   They do not appear in the source program.
-data OpSeries
+data OpConcrete
         -- | Take the rate of a series.
-        = OpSeriesRateOfSeries
+        = OpConcreteRateOfSeries
 
         -- | Take the underlying @Nat@ of a @RateNat@.
-        | OpSeriesNatOfRateNat
+        | OpConcreteNatOfRateNat
 
         -- | Take some elements from a series.
-        | OpSeriesNext Int
+        | OpConcreteNext Int
 
         -- | Decimate the rate of a series.
-        | OpSeriesDown Int
+        | OpConcreteDown Int
 
         -- | Take the tail rate of a decimated series.
-        | OpSeriesTail Int
+        | OpConcreteTail Int
         deriving (Eq, Ord, Show)
 
 

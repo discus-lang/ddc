@@ -1,7 +1,7 @@
 module DDC.Core.Flow.Transform.Slurp
         ( slurpProcesses
         , slurpOperator
-        , isFlowOperator)
+        , isSeriesOperator)
 where
 import DDC.Core.Flow.Transform.Slurp.Alloc
 import DDC.Core.Flow.Transform.Slurp.Operator
@@ -154,7 +154,7 @@ slurpBindingX b1 xx
 -- This creates a nested selector context.
 slurpBindingX b 
  (   takeXPrimApps 
-  -> Just ( NameOpFlow (OpFlowMkSel 1)
+  -> Just ( NameOpSeries (OpSeriesMkSel 1)
           , [ XType tK1, XType _tA
             , XVar uFlags
             , XLAM (BName nR kR) (XLam bSel xBody)]))

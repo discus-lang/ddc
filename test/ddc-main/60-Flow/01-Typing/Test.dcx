@@ -39,14 +39,14 @@
 
 
 -- Flow operators
-:type create#
-:type fill#
-:type map#
-:type rep#
-:type reps#
-:type fold#
-:type folds#
-:type pack#
+:type screate#
+:type sfill#
+:type smap#
+:type srep#
+:type sreps#
+:type sfold#
+:type sfolds#
+:type spack#
 
 
 -- Series operators

@@ -7,7 +7,7 @@ ffold   [k : Rate]
         (x : Ref# Int#)
         (s : Series# k Int#) : Int#
  = do
-        reduce# [k] [Int#] x (mul# [Int#]) 1i# s
+        sreduce# [k] [Int#] x (mul# [Int#]) 1i# s
 
-        fold# [k] [Int#] [Int#] (add# [Int#]) 0i# s
+        sfold# [k] [Int#] [Int#] (add# [Int#]) 0i# s
 ;;

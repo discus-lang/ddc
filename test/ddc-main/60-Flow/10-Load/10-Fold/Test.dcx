@@ -7,10 +7,10 @@ test    [k : Rate]
         (elems : Series# k Int#)
         : Int#
  = do   
-        sum     = fold#  [k] [Int#] [Int#]
+        sum     = sfold#  [k] [Int#] [Int#]
                         (\(x1 : Int#) (y1 : Int#). add# [Int#] x1 y1) 0i# elems
 
-        prod    = fold#  [k] [Int#] [Int#]
+        prod    = sfold#  [k] [Int#] [Int#]
                         (\(x2 : Int#) (y2 : Int#). mul# [Int#] x2 y2) 1i# elems
 
         add# [:Int#:] sum prod
