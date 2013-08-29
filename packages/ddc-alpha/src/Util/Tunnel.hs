@@ -4,7 +4,6 @@ module Util.Tunnel
 	Tunnel,
 	(##),
 	($<),
---	(#!),
 	(<#>),  (<#),
 	(<##>), (<##),
 
@@ -15,9 +14,7 @@ module Util.Tunnel
 
 	mapUpdateTl
 )
-
 where
-
 import Control.Monad.State.Strict
 
 type Tunnel s a	
@@ -25,7 +22,7 @@ type Tunnel s a
 	  , a -> s -> s)
 
 infixr 2 ##
-infixr 1 #!, <#, <#>, <##>, <##
+infixr 1 <#, <#>, <##>, <##
 infixl 0 $< 
 
 -- Tunnel composition.
@@ -39,13 +36,10 @@ infixl 0 $<
 			a'	= set1 b' a
 		     in a')
 
+
 -- application
 ($<) x f	= f x
 
--- get from tunnel
--- (#!) ::		a -> Tunnel a b -> b
--- (#!)	   	a (get, set) 	
---	= get a
 	
 -- set to tunnel
 (<#) ::		Tunnel a b -> b -> a -> a
@@ -57,6 +51,7 @@ infixl 0 $<
 (<#>)	   	(get, set)     f          a
  	= set (f (get a)) a
 	
+
 -----------------------
 -- via state monad
 --
@@ -102,54 +97,8 @@ tl3_3	= (\(a, b, c) 		-> c
 	,  \c' (a, b, c)	-> (a, b, c'))
 
 
-
-
------
---
 mapUpdateTl :: Tunnel a b -> (b -> b) -> [a] -> [a]
 mapUpdateTl    (get, set)     f          xx
  = case xx of
  	[]	-> []
 	(x:xs)	-> set (f (get x)) x : mapUpdateTl (get, set) f xs
-	
-
-
------------------------
--- examples
---
-{-
-type S1	= (Int, Int, S2)
-type S2 = (Char, S3, Char)
-type S3 = (String, String, String)
-
-
-t3_1 	= ( \(a, b, c) 	  -> a
-	  , \a' (a, b, c) -> (a', b, c))
-	  
-t3_2 	= ( \(a, b, c) 	  -> b
-	  , \b' (a, b, c) -> (a, b', c))
-
-t3_3 	= ( \(a, b, c) 	  -> c
-	  , \c' (a, b, c) -> (a, b, c'))
-
-
-s1	= ( 1
-          , 2
-	  , ( 'c'
-	    , ( "fish"
-	      , "rabbit"
-	      , "perch")
-	    , 'd'))
-
-
--- apply function to component
-ex1	= s1 $< t3_3 ## t3_2 ## t3_3 
-		<#> (\s -> s ++ " fish") 
-
--- update components
-ex2	= s1 $< t3_3 ## t3_2 ## t3_1 
-		<# "a"
-
--- select component
-ex3	= s1 #! t3_3 ## t3_2 ## t3_1 
--}
