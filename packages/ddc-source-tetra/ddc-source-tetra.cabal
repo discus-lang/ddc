@@ -33,12 +33,15 @@ Library
         DDC.Source.Tetra.Infer.Expand
         DDC.Source.Tetra.Lexer.Lit
         DDC.Source.Tetra.Prim.Base
-        DDC.Source.Tetra.Prim.PrimArith
+        DDC.Source.Tetra.Prim.OpArith
+        DDC.Source.Tetra.Prim.OpStore
+        DDC.Source.Tetra.Prim.TyConData
         DDC.Source.Tetra.Prim.TyConPrim
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module
         DDC.Source.Tetra.Parser.Param
         DDC.Source.Tetra.Compounds
+        DDC.Source.Tetra.DataDef
         DDC.Source.Tetra.Env
         DDC.Source.Tetra.Exp
         DDC.Source.Tetra.Lexer
@@ -47,6 +50,7 @@ Library
         DDC.Source.Tetra.Predicates
         DDC.Source.Tetra.Pretty
         DDC.Source.Tetra.Prim
+        DDC.Source.Tetra.ToCore
 
   GHC-options:
         -Wall

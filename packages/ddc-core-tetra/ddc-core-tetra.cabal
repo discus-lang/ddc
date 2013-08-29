@@ -35,8 +35,9 @@ Library
 
   Other-modules:
         DDC.Core.Tetra.Prim.Base
-        DDC.Core.Tetra.Prim.PrimArith
-        DDC.Core.Tetra.Prim.PrimRef
+        DDC.Core.Tetra.Prim.OpArith
+        DDC.Core.Tetra.Prim.OpStore
+        DDC.Core.Tetra.Prim.TyConData
         DDC.Core.Tetra.Prim.TyConPrim
 
 

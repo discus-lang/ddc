@@ -2,6 +2,10 @@
 -- | Collecting sets of variables and constructors.
 module DDC.Type.Collect
         ( freeT
+        , freeVarsT
+
+        , FreeVarConT (..)
+
         , collectBound
         , collectBinds
         , BindTree   (..)
@@ -14,6 +18,7 @@ module DDC.Type.Collect
         , bindDefT)
 where
 import DDC.Type.Exp
+import DDC.Type.Collect.FreeT
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as Sum

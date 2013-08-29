@@ -10,7 +10,7 @@ import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
-import DDC.Type.Collect.FreeT
+import DDC.Type.Collect
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
