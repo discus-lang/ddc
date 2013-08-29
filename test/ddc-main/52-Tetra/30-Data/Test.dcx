@@ -4,10 +4,10 @@
 -- Flip it.
 :load..
 module Test 
-data Hotness where {
-        Hot  : Hotness;
-        Cold : Hotness;
-}
+data Hotness where
+        Hot  : Hotness
+        Cold : Hotness
+
 with letrec 
 flip (x : Hotness) : Hotness 
  = case x of
@@ -19,10 +19,10 @@ flip (x : Hotness) : Hotness
 -- List data type.
 :load..
 module Test 
-data List (a : Data) where {
-        Nil : List a;
-        Cons : a -> List a -> List a;
-}
+data List (a : Data) where 
+        Nil  : List a
+        Cons : a -> List a -> List a
+
 with
 letrec {
   add : [a : Data].a -> a -> a
