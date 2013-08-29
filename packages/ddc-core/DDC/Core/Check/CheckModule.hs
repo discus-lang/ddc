@@ -165,7 +165,7 @@ checkTypeM :: (Ord n, Show n, Pretty n)
            => Config n 
            -> KindEnv n 
            -> Type n 
-           -> CheckM a n (Kind n)
+           -> CheckM a n (Type n, Kind n)
 
 checkTypeM !config !kenv !tt
  = case T.checkType config kenv tt of

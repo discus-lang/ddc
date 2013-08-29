@@ -158,7 +158,7 @@ checkExpM' !config !kenv !tenv xx@(XApp a x1 (XType t2))
  = do   (x1', t1, effs1, clos1) <- checkExpM  config kenv tenv x1
 
         -- Check the type argument.
-        k2                      <- checkTypeM config kenv t2
+        (_, k2)                 <- checkTypeM config kenv t2
 
         -- Take any Use annots from a region arg.
         --   This always matches because we just checked 't2'
@@ -231,16 +231,16 @@ checkExpM' !config !kenv !tenv xx@(XApp a x1 x2)
 
 -- spec abstraction -----------------------------
 checkExpM' !config !kenv !tenv xx@(XLAM a b1 x2)
- = do   let t1            = typeOfBind b1
-        _                 <- checkTypeM config kenv t1
-
+ = do   
+        (b1', _)          <- checkBindM config kenv b1
+        
         -- Check the body
-        let kenv'         = Env.extend b1 kenv
+        let kenv'         = Env.extend b1' kenv
         let tenv'         = Env.lift   1  tenv
         (x2', t2, e2, c2) <- checkExpM  config kenv' tenv' x2
-        k2                <- checkTypeM config kenv' t2
+        (_, k2)           <- checkTypeM config kenv' t2
 
-        when (Env.memberBind b1 kenv)
+        when (Env.memberBind b1' kenv)
          $ throw $ ErrorLamShadow xx b1
 
         -- The body of a spec abstraction must be pure.
@@ -257,8 +257,8 @@ checkExpM' !config !kenv !tenv xx@(XLAM a b1 x2)
                         $ Set.toList c2
 
         returnX a
-                (\z -> XLAM z b1 x2')
-                (TForall b1 t2)
+                (\z -> XLAM z b1' x2')
+                (TForall b1' t2)
                 (Sum.empty kEffect)
                 c2_cut
          
@@ -267,17 +267,17 @@ checkExpM' !config !kenv !tenv xx@(XLAM a b1 x2)
 checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
  = do   
         -- Check the type of the binder.
-        let t1  =  typeOfBind b1
-        k1      <- checkTypeM config kenv t1
-
+        (b1', k1)         <- checkBindM config kenv b1
+        let t1            = typeOfBind b1'
+        
         -- Check the body.
-        let tenv'            =  Env.extend b1 tenv
-        (x2', t2, e2, c2)    <- checkExpM  config kenv tenv' x2   
+        let tenv'         =  Env.extend b1' tenv
+        (x2', t2, e2, c2) <- checkExpM  config kenv tenv' x2   
 
         -- The typing rules guarantee that the checked type of an 
         -- expression is well kinded, but we need to check it again
         -- to find out what that kind is.
-        k2      <- checkTypeM config kenv t2
+        (_, k2)           <- checkTypeM config kenv t2
 
         -- The form of the function constructor depends on what universe the 
         -- binder is in.
@@ -376,7 +376,7 @@ checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
           -- Looks good.
           | otherwise                
           ->    returnX a
-                        (\z -> XLam z b1 x2')
+                        (\z -> XLam z b1' x2')
                         (tImpl t1 t2)
                         (Sum.empty kEffect)
                         c2
@@ -401,7 +401,7 @@ checkExpM' !config !kenv !tenv xx@(XLet a lts x2)
         (x2', t2, effs2, c2)    <- checkExpM config kenv tenv1 x2
 
         -- The body should have data kind.
-        k2       <- checkTypeM config kenv t2
+        (_, k2) <- checkTypeM config kenv t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLetBodyNotData xx t2 k2
 
@@ -423,37 +423,37 @@ checkExpM' !config !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x)
     []   -> checkExpM config kenv tenv x     
     us   -> do
         -- 
-        let depth = length $ map isBAnon bsRgn
+        let depth       = length $ map isBAnon bsRgn
 
         -- Check the type on the region binders.
-        let ks    = map typeOfBind bsRgn
-        mapM_ (checkTypeM config kenv) ks
-
+        (bsRgn', _)     <- liftM unzip $ mapM (checkBindM config kenv) bsRgn
+        let ksRgn       = map typeOfBind bsRgn'
+        
         -- The binders must have region kind.
-        when (any (not . isRegionKind) ks) 
-         $ throw $ ErrorLetRegionsNotRegion xx bsRgn ks
+        when (any (not . isRegionKind) ksRgn) 
+         $ throw $ ErrorLetRegionsNotRegion xx bsRgn ksRgn
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
-        let rebounds = filter (flip Env.memberBind kenv) bsRgn
+        let rebounds = filter (flip Env.memberBind kenv) bsRgn'
         when (not $ null rebounds)
          $ throw $ ErrorLetRegionsRebound xx rebounds
         
         -- Check the witness types.
         let kenv'       = Env.extends bsRgn kenv
         let tenv'       = Env.lift depth tenv
-        mapM_ (checkTypeM config kenv') $ map typeOfBind bsWit
-
+        (bsWit', _)     <- liftM unzip $ mapM (checkBindM config kenv') bsWit
+        
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM kenv xx us bsWit
+        checkWitnessBindsM kenv xx us bsWit'
 
         -- Check the body expression.
-        let tenv2       = Env.extends bsWit tenv'
+        let tenv2       = Env.extends bsWit' tenv'
         (xBody', tBody, effs, clo)  <- checkExpM config kenv' tenv2 x
 
         -- The body type must have data kind.
-        kBody           <- checkTypeM config kenv' tBody
+        (_, kBody)      <- checkTypeM config kenv' tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 
@@ -499,15 +499,15 @@ checkExpM' !config !kenv !tenv xx@(XLet a (LWithRegion u) x)
                <- checkExpM config kenv tenv x
 
         -- The body type must have data kind.
-        kBody  <- checkTypeM config kenv tBody
+        (tBody', kBody) <- checkTypeM config kenv tBody
         when (not $ isDataKind kBody)
-         $ throw $ ErrorLetBodyNotData xx tBody kBody
+         $ throw $ ErrorLetBodyNotData xx tBody' kBody
         
         -- The bound region variable cannot be free in the body type.
         let tcs         = supportTyCon
-                        $ support Env.empty Env.empty tBody
+                        $ support Env.empty Env.empty tBody'
         when (Set.member u tcs)
-         $ throw $ ErrorWithRegionFree xx u tBody
+         $ throw $ ErrorWithRegionFree xx u tBody'
 
         -- Delete effects on the bound region from the result.
         let tu          = TCon $ TyConBound u kRegion
@@ -647,18 +647,18 @@ checkExpM' !config !kenv !tenv xx@(XCase a xDiscrim alts)
 checkExpM' !config !kenv !tenv xx@(XCast a (CastWeakenEffect eff) x1)
  = do
         -- Check the effect term.
-        kEff    <- checkTypeM config kenv eff
+        (eff', kEff)    <- checkTypeM config kenv eff
         when (not $ isEffectKind kEff)
-         $ throw $ ErrorWeakEffNotEff xx eff kEff
+         $ throw $ ErrorWeakEffNotEff xx eff' kEff
 
         -- Check the body.
         (x1', t1, effs, clo)    <- checkExpM config kenv tenv x1
-        let c'                  = CastWeakenEffect eff
+        let c'                  = CastWeakenEffect eff'
 
         returnX a
                 (\z -> XCast z c' x1')
                 t1
-                (Sum.insert eff effs)
+                (Sum.insert eff' effs)
                 clo
 
 
@@ -868,14 +868,14 @@ checkLetsM !xx !config !kenv !tenv (LRec bxs)
           b : _ -> throw $ ErrorLetrecRebound xx b)
 
         -- Check the types on all the binders.
-        ks              <- mapM (checkTypeM config kenv) 
-                        $  map typeOfBind bs
-
+        (bs', ks)       <- liftM unzip
+                        $  mapM (checkBindM config kenv) bs
+                        
         -- Check all the binders have data kind.
         zipWithM_ (\b k
          -> when (not $ isDataKind k)
                 $ throw $ ErrorLetBindingNotData xx b k)
-                bs ks
+                bs' ks
 
         -- All right hand sides need to be lambdas.
         forM_ xs $ \x 
@@ -883,7 +883,7 @@ checkLetsM !xx !config !kenv !tenv (LRec bxs)
                 $ throw $ ErrorLetrecBindingNotLambda xx x
 
         -- All variables are in scope in all right hand sides.
-        let tenv'       = Env.extends bs tenv
+        let tenv'       = Env.extends bs' tenv
 
         -- Check the right hand sides.
         (xsRight', tsRight, _effssBinds, clossBinds) 
@@ -903,8 +903,8 @@ checkLetsM !xx !config !kenv !tenv (LRec bxs)
                 $ Set.toList 
                 $ Set.unions clossBinds
 
-        return  ( LRec (zip bs xsRight')
-                , zipWith replaceTypeOfBind tsRight bs
+        return  ( LRec (zip bs' xsRight')
+                , zipWith replaceTypeOfBind tsRight bs'
                 , Sum.empty kEffect
                 , clos_cut)
 
@@ -1130,16 +1130,17 @@ checkLetBindOfTypeM
         -> CheckM a n (Bind n, Kind n)
 
 checkLetBindOfTypeM !xx !config !kenv !_tenv !tRight b
-        -- If the annotation is Bot then just replace it.
+        -- If the binder just has type Bot then replace it
         | isBot (typeOfBind b)
-        = do    k       <- checkTypeM config kenv tRight
-                return  ( replaceTypeOfBind tRight b 
-                        , k)
+        = do    (_, k)  <- checkTypeM config kenv tRight
+                return (replaceTypeOfBind tRight b, k)
 
         -- The type of the binder must match that of the right of the binding.
         | not $ equivT (typeOfBind b) tRight
         = throw $ ErrorLetMismatch xx b tRight
 
         | otherwise
-        = do    k       <- checkTypeM config kenv (typeOfBind b)
-                return (b, k)
+        =       checkBindM config kenv b
+        
+
+

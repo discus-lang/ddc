@@ -308,7 +308,7 @@ checkConstraint
 checkConstraint config kenv tt
  = case T.checkType config kenv tt of
         Left _err               -> Left $ ErrorBadConstraint tt
-        Right k
+        Right (_, k)
          | T.isWitnessType tt   -> return k
          | otherwise            -> Left $ ErrorBadConstraint tt
 
@@ -413,8 +413,8 @@ removeEffects config = transformUpX remove
  where
   remove kenv _tenv x
 
-   | XType et   <- x
-   , Right k    <- T.checkType config kenv et
+   | XType et     <- x
+   , Right (_, k) <- T.checkType config kenv et
    , T.isEffectKind k
    = XType $ T.tBot T.kEffect
 

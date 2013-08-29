@@ -11,7 +11,8 @@ module DDC.Core.Check.CheckWitness
         , CheckM
         , checkWitnessM
 
-        , checkTypeM)
+        , checkTypeM
+        , checkBindM)
 where
 import DDC.Core.Exp
 import DDC.Core.Annot.AnT
@@ -109,16 +110,16 @@ checkWitnessM !_config !_kenv !_tenv (WCon a wc)
 -- witness-type application
 checkWitnessM !config !kenv !tenv ww@(WApp a1 w1 (WType a2 t2))
  = do   (w1', t1)       <- checkWitnessM  config kenv tenv w1
-        k2              <- checkTypeM     config kenv t2
+        (t2', k2)       <- checkTypeM     config kenv t2
         case t1 of
          TForall b11 t12
           |  typeOfBind b11 == k2
-          -> let t'     = substituteT b11 t2 t12
-             in  return ( WApp (AnT t' a1) w1' (WType (AnT k2 a2) t2)
+          -> let t'     = substituteT b11 t2' t12
+             in  return ( WApp (AnT t' a1) w1' (WType (AnT k2 a2) t2')
                         , t')
 
           | otherwise   -> throw $ ErrorWAppMismatch ww (typeOfBind b11) k2
-         _              -> throw $ ErrorWAppNotCtor  ww t1 t2
+         _              -> throw $ ErrorWAppNotCtor  ww t1 t2'
 
 -- witness-witness application
 checkWitnessM !config !kenv !tenv ww@(WApp a w1 w2)
@@ -156,8 +157,8 @@ checkWitnessM !config !kenv !tenv ww@(WJoin a w1 w2)
 
 -- embedded types
 checkWitnessM !config !kenv !_tenv (WType a t)
- = do   k       <- checkTypeM config kenv t
-        return  ( WType (AnT k a) t
+ = do   (t', k)  <- checkTypeM config kenv t
+        return  ( WType (AnT k a) t'
                 , k)
         
 
@@ -187,10 +188,26 @@ checkTypeM
         => Config n 
         -> KindEnv n 
         -> Type n 
-        -> CheckM a n (Kind n)
+        -> CheckM a n (Type n, Kind n)
 
 checkTypeM config kenv tt
  = case T.checkType config kenv tt of
         Left err        -> throw $ ErrorType err
-        Right k         -> return k
+        Right (t, k)    -> return (t, k)
+
+
+-- Bind -----------------------------------------------------------------------
+-- | Check a bind.
+checkBindM
+        :: (Ord n, Show n, Pretty n)
+        => Config n
+        -> KindEnv n
+        -> Bind n
+        -> CheckM a n (Bind n, Kind n)
+
+checkBindM config kenv bb
+ = case T.checkType config kenv (typeOfBind bb) of
+        Left err        -> throw $ ErrorType err
+        Right (t', k)   -> return (replaceTypeOfBind t' bb, k)
+
 

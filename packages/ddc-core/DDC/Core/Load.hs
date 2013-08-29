@@ -212,8 +212,8 @@ loadType profile sourceName toks'
         -- Check the kind of the type.
         goCheckType t
          = case T.checkType (T.configOfProfile profile) Env.empty t of
-                Left err  -> Left (ErrorCheckType err)
-                Right k   -> Right (t, k)
+                Left err      -> Left (ErrorCheckType err)
+                Right (t', k) -> Right (t', k)
         
 
 
