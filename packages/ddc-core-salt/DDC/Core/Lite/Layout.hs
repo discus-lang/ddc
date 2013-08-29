@@ -23,7 +23,7 @@ import qualified DDC.Core.Salt.Name     as A
 -- | Enumerates the heap object formats that can be used to store
 --   algebraic data.
 --
---   The layout of these is defined in the @ObjectNN.dce@ file of the runtime 
+--   The layout of these is defined in the @ObjectNN.dce@ file of the runtime
 --   system, where @NN@ is the word size of the machine.
 data HeapObject
         = HeapObjectBoxed
@@ -37,7 +37,7 @@ data HeapObject
 heapObjectOfDataCtor :: Platform -> DataCtor Name -> Maybe HeapObject
 heapObjectOfDataCtor pp ctor
 
-        -- If all the fields are boxed objects then used a Boxed heap object, 
+        -- If all the fields are boxed objects then used a Boxed heap object,
         -- as these just contain pointer fields.
         | tsFields              <- dataCtorFieldTypes ctor
         , all isBoxedType tsFields
@@ -72,16 +72,16 @@ payloadSizeOfDataCtor platform ctor
 -- | Given a constructor definition,
 --   get the offset of each field in the payload of a heap object.
 --
---   We don't know the absolute offset from the beginning of the heap 
---   object, because the size of the header is only known by the runtime 
+--   We don't know the absolute offset from the beginning of the heap
+--   object, because the size of the header is only known by the runtime
 --   system.
 --
 --   This doesn't add any padding for misaligned fields.
 fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]
 fieldOffsetsOfDataCtor platform ctor
         = liftM (init . scanl (+) 0)
-        $ sequence 
-        $ map (fieldSizeOfType platform) 
+        $ sequence
+        $ map (fieldSizeOfType platform)
         $ dataCtorFieldTypes ctor
 
 
@@ -100,7 +100,7 @@ fieldSizeOfType platform tt
         -- We're not supporting polymorphic fields yet.
         TForall{}       -> Nothing
 
-        -- Assume anything that isn't a primitive constructor is 
+        -- Assume anything that isn't a primitive constructor is
         -- represented by a pointer.
         TApp{}          -> Just $ platformAddrBytes platform
 
@@ -119,7 +119,7 @@ fieldSizeOfPrim platform nn
 fieldSizeOfPrimTyCon :: Platform -> PrimTyCon -> Maybe Integer
 fieldSizeOfPrimTyCon platform tc
  = case tc of
-        -- It might make sense to represent these as zero bytes, 
+        -- It might make sense to represent these as zero bytes,
         -- but I can't think of reason to have them in data type definitions.
         PrimTyConVoid        -> Nothing
 

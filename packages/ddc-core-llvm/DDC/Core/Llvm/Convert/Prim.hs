@@ -19,8 +19,8 @@ import qualified Data.Sequence  as Seq
 
 -- Prim call ------------------------------------------------------------------
 -- | Convert a primitive call to LLVM.
-convPrimCallM 
-        :: Show a 
+convPrimCallM
+        :: Show a
         => Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
@@ -78,12 +78,12 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                                 , text "   to type: " <> ppr tDst ]
 
         -- Store primops --------------
-        A.PrimStore A.PrimStoreSize 
+        A.PrimStore A.PrimStoreSize
          | [C.XType _ t]        <- xs
          , Just vDst            <- mdst
          -> let t'      = convertType pp kenv t
                 size    = case t' of
-                            TPointer _           -> platformAddrBytes pp   
+                            TPointer _           -> platformAddrBytes pp
                             TInt bits
                              | bits `rem` 8 == 0 -> bits `div` 8
                             _                    -> sorry
@@ -129,13 +129,13 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ICall (Just vAddr) CallTypeStd Nothing
-                                (tAddr pp) (NameGlobal "malloc") 
-                                [xBytes'] []                         
+                                (tAddr pp) (NameGlobal "malloc")
+                                [xBytes'] []
 
                         -- Store the top-of-heap pointer
                         , IStore (XVar vTopPtr) (XVar vAddr)
 
-                        -- Store the maximum heap pointer 
+                        -- Store the maximum heap pointer
                         , IOp    vMax OpAdd     (XVar vAddr) xBytes'
                         , IStore (XVar vMaxPtr) (XVar vMax) ]
 
@@ -162,7 +162,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                 let vTopPtr = Var (NameGlobal "_DDC_Runtime_heapTop") (TPointer (tAddr pp))
                 return  $ Seq.fromList
                         $ map annotNil
-                        [ ILoad  vDst  (XVar vTopPtr) 
+                        [ ILoad  vDst  (XVar vTopPtr)
                         , IOp    vBump OpAdd (XVar vDst) xBytes'
                         , IStore (XVar vTopPtr) (XVar vBump)]
 
@@ -180,7 +180,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
 
         A.PrimStore A.PrimStoreWrite
          | C.XType{} : args              <- xs
-         , Just [xAddr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args      
+         , Just [xAddr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args
          -> do  vOff    <- newUniqueNamedVar "off" (tAddr pp)
                 vPtr    <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
                 return  $ Seq.fromList
@@ -213,7 +213,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         $ (map annotNil
                         [ IConv vAddr1 ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
-                        , IConv vPtr   ConvInttoptr (XVar vAddr2) ])                        
+                        , IConv vPtr   ConvInttoptr (XVar vAddr2) ])
                         ++ [(annot kenv mdsup xs
                         ( ILoad vDst  (XVar vPtr)))]
 
@@ -229,7 +229,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         [ IConv vAddr1 ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
                         , IConv vPtr   ConvInttoptr (XVar vAddr2) ])
-                        ++ [(annot kenv mdsup xs 
+                        ++ [(annot kenv mdsup xs
                         ( IStore (XVar vPtr) xVal' ))]
 
         A.PrimStore A.PrimStorePlusPtr
@@ -294,15 +294,15 @@ bumpName nn s
 convPrimArith2 :: A.PrimArith -> C.Type A.Name -> Maybe Op
 convPrimArith2 op t
  = case op of
-        A.PrimArithAdd     
+        A.PrimArithAdd
          | isIntegralT t                -> Just OpAdd
-         | isFloatingT t                -> Just OpFAdd 
+         | isFloatingT t                -> Just OpFAdd
 
-        A.PrimArithSub      
+        A.PrimArithSub
          | isIntegralT t                -> Just OpSub
          | isFloatingT t                -> Just OpFSub
 
-        A.PrimArithMul 
+        A.PrimArithMul
          | isIntegralT t                -> Just OpMul
          | isFloatingT t                -> Just OpFMul
 
@@ -336,12 +336,12 @@ convPrimArith2 op t
 
 
 -- Cast -----------------------------------------------------------------------
--- | Convert a primitive promotion to LLVM, 
+-- | Convert a primitive promotion to LLVM,
 --   or `Nothing` for an invalid promotion.
-convPrimPromote 
-        :: Platform 
+convPrimPromote
+        :: Platform
         -> KindEnv A.Name
-        -> C.Type A.Name -> Var 
+        -> C.Type A.Name -> Var
         -> C.Type A.Name -> Exp
         -> Maybe Instr
 
@@ -349,19 +349,19 @@ convPrimPromote pp kenv tDst vDst tSrc xSrc
  | tSrc'        <- convertType pp kenv tSrc
  , tDst'        <- convertType pp kenv tDst
  , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
- , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+ , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
  , A.primCastPromoteIsValid pp tcSrc tcDst
  = case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
 
-         -- Same sized integers         
-         | bitsDst == bitsSrc       
+         -- Same sized integers
+         | bitsDst == bitsSrc
          -> Just $ ISet vDst xSrc
 
          -- Both Unsigned
          | isUnsignedT tSrc
          , isUnsignedT tDst
-         , bitsDst > bitsSrc        
+         , bitsDst > bitsSrc
          -> Just $ IConv vDst ConvZext xSrc
 
          -- Both Signed
@@ -382,10 +382,10 @@ convPrimPromote pp kenv tDst vDst tSrc xSrc
  = Nothing
 
 
--- | Convert a primitive truncation to LLVM, 
+-- | Convert a primitive truncation to LLVM,
 --   or `Nothing` for an invalid truncation.
 convPrimTruncate
-        :: Platform 
+        :: Platform
         -> KindEnv A.Name
         -> C.Type  A.Name -> Var
         -> C.Type  A.Name -> Exp
@@ -395,21 +395,21 @@ convPrimTruncate pp kenv tDst vDst tSrc xSrc
  | tSrc'        <- convertType pp kenv tSrc
  , tDst'        <- convertType pp kenv tDst
  , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
- , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+ , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
  , A.primCastTruncateIsValid pp tcSrc tcDst
  = case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers
-         | bitsDst == bitsSrc       
+         | bitsDst == bitsSrc
          -> Just $ ISet vDst xSrc
 
          -- Destination is smaller
-         | bitsDst < bitsSrc        
+         | bitsDst < bitsSrc
          -> Just $ IConv vDst ConvTrunc xSrc
 
          -- Unsigned to Signed,
          --  destination is larger
-         | bitsDst > bitsSrc        
+         | bitsDst > bitsSrc
          , isUnsignedT tSrc
          , isSignedT   tDst
          -> Just $ IConv vDst ConvZext xSrc
