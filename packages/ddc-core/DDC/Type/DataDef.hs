@@ -2,19 +2,25 @@
 -- | Algebraic data type definitions.
 module DDC.Type.DataDef
         ( DataDef    (..)
+        , kindOfDataDef
         , dataTypeOfDataDef
         , makeDataDef
 
         -- * Data type definition table
         , DataDefs   (..)
-        , DataMode   (..)
-        , DataType   (..)
-        , DataCtor   (..)
+        
 
+        , DataMode   (..)
         , emptyDataDefs
         , insertDataDef
+        , unionDataDefs
         , fromListDataDefs
-        , lookupModeOfDataType)
+        
+        , DataType   (..)
+        , kindOfDataType
+        , lookupModeOfDataType
+
+        , DataCtor   (..))
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -46,6 +52,13 @@ instance NFData n => NFData (DataDef n) where
         `seq`   rnf (dataDefParams   def)
         `seq`   rnf (dataDefCtors    def)
 
+
+-- | Get the kind of the type constructor defined by a `DataDef`.
+kindOfDataDef :: DataDef n -> Kind n
+kindOfDataDef def
+ = let  ksParam = map typeOfBind $ dataDefParams def
+   in   kFuns ksParam kData
+   
 
 -- | Get the the type associated with a data definition, 
 --   that is, the type produced by the constructors.
@@ -165,6 +178,7 @@ emptyDataDefs
         { dataDefsTypes = Map.empty
         , dataDefsCtors = Map.empty }
 
+
 -- | Insert a data type definition into some DataDefs.
 insertDataDef  :: Ord n => DataDef  n -> DataDefs n -> DataDefs n
 insertDataDef (DataDef nType bsParam mCtors) dataDefs
@@ -184,11 +198,19 @@ insertDataDef (DataDef nType bsParam mCtors) dataDefs
                                 | def@(DataCtor n _ _ _ _) <- concat $ maybeToList mCtors ]}
 
 
+-- | Union two `DataDef` tables.
+unionDataDefs :: Ord n => DataDefs n -> DataDefs n -> DataDefs n
+unionDataDefs defs1 defs2
+        = DataDefs
+        { dataDefsTypes = Map.union (dataDefsTypes defs1) (dataDefsTypes defs2)
+        , dataDefsCtors = Map.union (dataDefsCtors defs1) (dataDefsCtors defs2) }
+
+
+
 -- | Build a `DataDefs` table from a list of `DataDef`
 fromListDataDefs :: Ord n => [DataDef n] -> DataDefs n
 fromListDataDefs defs
         = foldr insertDataDef emptyDataDefs defs
-
 
 
 -- | Yield the list of data constructor names for some data type, 
@@ -197,4 +219,10 @@ lookupModeOfDataType :: Ord n => n -> DataDefs n -> Maybe (DataMode n)
 lookupModeOfDataType n defs
         = liftM dataTypeMode $ Map.lookup n (dataDefsTypes defs)
 
+
+-- | Get the kind of the type constructor defined by a `DataDef`.
+kindOfDataType :: DataType n -> Kind n
+kindOfDataType def
+ = let  ksParam = map typeOfBind $ dataTypeParams def
+   in   kFuns ksParam kData
 

@@ -548,12 +548,12 @@ checkExpM' !config !kenv !tenv xx@(XCase a xDiscrim alts)
 
                  | TyConBound (UName nTyCon) k <- tc
                  , takeResultKind k == kData
-                 -> return ( lookupModeOfDataType nTyCon (configPrimDataDefs config)
+                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
                            , ts )
                       
                  | TyConBound (UPrim nTyCon _) k <- tc
                  , takeResultKind k == kData
-                 -> return ( lookupModeOfDataType nTyCon (configPrimDataDefs config)
+                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
                            , ts )
 
                 _ -> throw $ ErrorCaseScrutineeNotAlgebraic xx tDiscrim

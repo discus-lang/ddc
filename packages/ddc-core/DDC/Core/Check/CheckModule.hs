@@ -8,8 +8,9 @@ import DDC.Core.Exp
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
 import DDC.Type.Compounds
-import DDC.Base.Pretty
+import DDC.Type.DataDef
 import DDC.Type.Equiv
+import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (result, throw)
 import Data.Map                 (Map)
@@ -68,8 +69,22 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
         mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportKinds mm
         mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportTypes mm
                 
-        -- Check our let bindings.
-        (x', _, _effs, _) <- checkExpM config kenv' tenv' (moduleBody mm)
+        
+        -- TODO: Check the data type definitions.
+        --       The constructor types need to return the defined data type.
+        let defs'   = unionDataDefs
+                        (configDataDefs config)
+                        (fromListDataDefs (Map.elems (moduleDataDefsLocal mm)))
+
+        -- Binders for the data type constructors defined by the data defs.
+        let bsData  = [BName (dataDefTypeName def) (kindOfDataDef def)
+                                | def <- Map.elems (moduleDataDefsLocal mm) ]
+        
+        let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
+        let config_data = config { configDataDefs = defs' }
+
+        -- Check the body of the module.
+        (x', _, _effs, _) <- checkExpM config_data kenv_data tenv' (moduleBody mm)
 
         -- Check that each exported signature matches the type of its binding.
         envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'

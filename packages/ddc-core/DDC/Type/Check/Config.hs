@@ -17,17 +17,17 @@ import qualified DDC.Core.Fragment      as F
 --   See "DDC.Core.Fragment" and use `configOfProfile` below.
 data Config n
         = Config
-        { -- | Data type definitions.
-          configPrimDataDefs            :: DataDefs n 
-
-          -- | Super kinds of primitive kinds.
-        , configPrimSupers              :: SuperEnv n
+        { -- | Super kinds of primitive kinds.
+          configPrimSupers              :: SuperEnv n
 
           -- | Kinds of primitive types.
         , configPrimKinds               :: KindEnv n
 
           -- | Types of primitive operators.
         , configPrimTypes               :: TypeEnv n
+
+        -- | Data type definitions.
+        , configDataDefs                :: DataDefs n  
 
           -- | Track effect type information.
         , configTrackedEffects          :: Bool
@@ -47,11 +47,12 @@ data Config n
 configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
         = Config
-        { configPrimDataDefs       = F.profilePrimDataDefs profile
-        , configPrimSupers         = F.profilePrimSupers profile
+        { configPrimSupers         = F.profilePrimSupers profile
         , configPrimKinds          = F.profilePrimKinds  profile
         , configPrimTypes          = F.profilePrimTypes  profile
 
+        , configDataDefs           = F.profilePrimDataDefs profile
+        
         , configTrackedEffects     = F.featuresTrackedEffects
                                    $ F.profileFeatures profile
 
