@@ -10,7 +10,9 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Compounds
+import DDC.Type.DataDef
 import DDC.Base.Pretty
+import Control.Monad
 import qualified DDC.Base.Parser        as P
 import qualified Data.Map               as Map
 
@@ -50,10 +52,12 @@ pModule c
         let (tImportKinds, tImportTypes)
                 = tImportKindsTypes
 
+        dataDefsLocal   <- P.many (pDataDef c)
+
         pTok KWith
 
         -- LET;+
-        lts     <- P.sepBy1 (pLetsSP c) (pTok KIn)
+        lts             <- P.sepBy1 (pLetsSP c) (pTok KIn)
 
         -- The body of the module consists of the top-level bindings wrapped
         -- around a unit constructor place-holder.
@@ -68,7 +72,11 @@ pModule c
                 , moduleExportTypes     = Map.fromList tExports
                 , moduleImportKinds     = Map.fromList tImportKinds
                 , moduleImportTypes     = Map.fromList tImportTypes
-                , moduleDataDefsLocal   = Map.empty
+                
+                , moduleDataDefsLocal   
+                        = Map.fromList [ (dataDefTypeName def, def)
+                                       | def <- dataDefsLocal]
+
                 , moduleBody            = body }
 
 
@@ -84,6 +92,7 @@ pTypeSig c
         return  (var, t)
 
 
+-- Imports --------------------------------------------------------------------
 -- | Parse the type signature of an imported variable.
 pImportKindSpec 
         :: (Ord n, Pretty n) 
@@ -129,3 +138,67 @@ pImportTypeSpec c
         t       <- pType c
         return  (n, (QualName (ModuleName []) n, t))
  ]        
+
+
+-- DataDef --------------------------------------------------------------------
+pDataDef 
+        :: Ord n
+        => Context -> Parser n (DataDef n)
+
+pDataDef c
+ = do   pTokSP KData
+        nData   <- pName 
+        ps      <- liftM concat $ P.many (pDataParam c)
+
+        P.choice
+         [ -- Data declaration with constructors that have explicit types.
+           do   pTok KWhere
+                pTok KBraceBra
+                ctors      <- P.sepEndBy1 (pDataCtor c nData) (pTok KSemiColon)
+                let ctors' = [ ctor { dataCtorTag = tag }
+                                | ctor <- ctors
+                                | tag  <- [0..] ]
+                pTok KBraceKet
+                return  $ DataDef nData ps (Just ctors')
+         
+           -- Data declaration with no data constructors.
+         , do   return  $ DataDef nData ps (Just [])
+         ]
+
+
+-- | Parse a type parameter to a data type.
+pDataParam :: Ord n => Context -> Parser n [Bind n]
+pDataParam c 
+ = do   pTok KRoundBra
+        ns      <- P.many1 pName
+        pTokSP (KOp ":")
+        k       <- pType c
+        pTok KRoundKet
+        return  [BName n k | n <- ns]
+
+
+-- | Parse a data constructor declaration.
+--   TODO: More restructive parsing to reject extra quantifiers
+--   on the front of data constructor types.
+pDataCtor 
+        :: Ord n 
+        => Context 
+        -> n                    -- ^ Name of data type constructor.
+        -> Parser n (DataCtor n)
+pDataCtor c nData
+ = do   n       <- pName
+        pTokSP (KOp ":")
+        t       <- pType c
+        let (tsArg, tResult)    
+                = takeTFunArgResult t
+
+        return  $ DataCtor
+                { dataCtorName          = n
+
+                -- Set tag to 0 for now. We fix this up in pDataDef above.
+                , dataCtorTag           = 0
+                
+                , dataCtorFieldTypes    = tsArg
+                , dataCtorResultType    = tResult 
+                , dataCtorTypeName      = nData }
+
