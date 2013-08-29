@@ -133,11 +133,11 @@ fieldSizeOfPrimTyCon platform tc
         PrimTyConBool        -> Just $ 1
 
         PrimTyConWord bits
-         | bits `mod` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
+         | bits `rem` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
          | otherwise         -> Nothing
 
         PrimTyConFloat bits
-         | bits `mod` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
+         | bits `rem` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
          | otherwise         -> Nothing
 
         -- Vectors don't appear as raw fields.

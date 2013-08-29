@@ -85,7 +85,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                 size    = case t' of
                             TPointer _           -> platformAddrBytes pp   
                             TInt bits
-                             | bits `mod` 8 == 0 -> bits `div` 8
+                             | bits `rem` 8 == 0 -> bits `div` 8
                             _                    -> sorry
 
                 -- Bool# is only 1 bit long.
@@ -103,9 +103,9 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
          , Just vDst            <- mdst
          -> let t'      = convertType pp kenv t
                 size    = case t' of
-                            TPointer _           -> platformAddrBytes pp   
-                            TInt bits   
-                             | bits `mod` 8 == 0 -> bits `div` 8
+                            TPointer _           -> platformAddrBytes pp
+                            TInt bits
+                             | bits `rem` 8 == 0 -> bits `div` 8
                             _                    -> sorry
 
                 size2   = truncate $ (log (fromIntegral size) / log 2 :: Double)
