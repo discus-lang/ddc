@@ -148,21 +148,21 @@ pDataDef
 pDataDef c
  = do   pTokSP KData
         nData   <- pName 
-        ps      <- liftM concat $ P.many (pDataParam c)
+        bsParam <- liftM concat $ P.many (pDataParam c)
 
         P.choice
          [ -- Data declaration with constructors that have explicit types.
            do   pTok KWhere
                 pTok KBraceBra
-                ctors      <- P.sepEndBy1 (pDataCtor c nData) (pTok KSemiColon)
+                ctors      <- P.sepEndBy1 (pDataCtor c nData bsParam) (pTok KSemiColon)
                 let ctors' = [ ctor { dataCtorTag = tag }
                                 | ctor <- ctors
                                 | tag  <- [0..] ]
                 pTok KBraceKet
-                return  $ DataDef nData ps (Just ctors')
+                return  $ DataDef nData bsParam (Just ctors')
          
            -- Data declaration with no data constructors.
-         , do   return  $ DataDef nData ps (Just [])
+         , do   return  $ DataDef nData bsParam (Just [])
          ]
 
 
@@ -184,8 +184,9 @@ pDataCtor
         :: Ord n 
         => Context 
         -> n                    -- ^ Name of data type constructor.
+        -> [Bind n]             -- ^ Type parameters of data type constructor.
         -> Parser n (DataCtor n)
-pDataCtor c nData
+pDataCtor c nData bsParam
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
@@ -200,5 +201,6 @@ pDataCtor c nData
                 
                 , dataCtorFieldTypes    = tsArg
                 , dataCtorResultType    = tResult 
-                , dataCtorTypeName      = nData }
+                , dataCtorTypeName      = nData 
+                , dataCtorTypeParams    = bsParam }
 

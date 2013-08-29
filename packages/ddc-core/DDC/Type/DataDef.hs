@@ -20,7 +20,8 @@ module DDC.Type.DataDef
         , kindOfDataType
         , lookupModeOfDataType
 
-        , DataCtor   (..))
+        , DataCtor   (..)
+        , typeOfDataCtor)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -99,7 +100,7 @@ makeDataDef nData bsParam (Just ntsField)
 
         tResult = tApps (TCon tc) (map TVar usParam)
    
-        ctors   = [ DataCtor n tag tsField tResult nData
+        ctors   = [ DataCtor n tag tsField tResult nData bsParam
                             | tag          <- [0..]
                             | (n, tsField) <- ntsField] 
    in   Just $ DataDef
@@ -150,25 +151,36 @@ data DataType n
 data DataCtor n
         = DataCtor
         { -- | Name of data constructor.
-          dataCtorName       :: !n
+          dataCtorName        :: !n
 
           -- | Tag of constructor (order in data type declaration)
-        , dataCtorTag        :: !Integer
+        , dataCtorTag         :: !Integer
 
           -- | Field types of constructor.
-        , dataCtorFieldTypes :: ![Type n]
+        , dataCtorFieldTypes  :: ![Type n]
 
           -- | Result type of constructor.
-        , dataCtorResultType :: !(Type n)
+        , dataCtorResultType  :: !(Type n)
 
           -- | Name of result type of constructor.
-        , dataCtorTypeName   :: !n }
+        , dataCtorTypeName    :: !n 
+
+          -- | Parameters of data type 
+        , dataCtorTypeParams :: ![Bind n] }
         deriving Show
 
 
+-- | Get the type of `DataCtor`
+typeOfDataCtor :: DataCtor n -> Type n
+typeOfDataCtor ctor
+ = let  Just t   = tFunOfList (  dataCtorFieldTypes ctor 
+                              ++ [dataCtorResultType ctor] )
+   in   foldr TForall t (dataCtorTypeParams ctor)
+
+
 instance NFData n => NFData (DataCtor n) where
- rnf (DataCtor n t fs tR nT)
-  = rnf n `seq` rnf t `seq` rnf fs `seq` rnf tR `seq` rnf nT
+ rnf (DataCtor n t fs tR nT bsParam)
+  = rnf n `seq` rnf t `seq` rnf fs `seq` rnf tR `seq` rnf nT `seq` rnf bsParam
 
 
 -- | An empty table of data type definitions.
@@ -195,7 +207,7 @@ insertDataDef (DataDef nType bsParam mCtors) dataDefs
          { dataDefsTypes = Map.insert nType defType (dataDefsTypes dataDefs)
          , dataDefsCtors = Map.union (dataDefsCtors dataDefs)
                          $ Map.fromList [(n, def) 
-                                | def@(DataCtor n _ _ _ _) <- concat $ maybeToList mCtors ]}
+                                | def@(DataCtor n _ _ _ _ _) <- concat $ maybeToList mCtors ]}
 
 
 -- | Union two `DataDef` tables.

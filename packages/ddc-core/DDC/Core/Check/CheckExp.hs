@@ -33,6 +33,7 @@ import DDC.Control.Monad.Check          (throw, result)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
+import qualified Data.Map               as Map
 import Control.Monad
 import DDC.Data.ListUtils
 import Data.List                        as L
@@ -954,16 +955,27 @@ checkAltM !xx !config !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody
         --  transform won't have given it a proper type.
         --  Note that we can't simply check whether the constructor is in the
         --  environment because literals like 42# never are.
-        (if isBot (daConType dc)
-                then throw $ ErrorUndefinedCtor $ XCon aCase dc
-                else return ())
+        tCtor
+         <- case daConName dc of
+             DaConUnit       -> return tUnit
+             
+             DaConNamed n
+              -- If the type is already attached then we can use that directly.
+              -- The spreader should have attached the types for literals.
+              | not $ isBot (daConType dc)
+              -> return $ daConType dc
+
+              -- Types of algebraic data ctors should be in the defs table.
+              |  Just ctor <- Map.lookup n (dataDefsCtors $ configDataDefs config)
+              -> return $ typeOfDataCtor ctor
+
+              | otherwise
+              -> throw  $ ErrorUndefinedCtor $ XCon aCase dc
 
         -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
         -- If the ctor type doesn't instantiate then it won't have enough foralls 
         -- on the front, which should have been checked by the def checker.
-        let tCtor = daConType dc
-
         tCtor_inst      
          <- case instantiateTs tCtor tsArgs of
              Nothing -> throw $ ErrorCaseCannotInstantiate xx tDiscrim tCtor

@@ -59,7 +59,7 @@ equivWithBindsT stack1 stack2 t1 t2
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
-         -> tc1 == tc2
+         -> equivTyCon tc1 tc2
 
         -- Push binders on the stack as we enter foralls.
         (TForall b11 t12, TForall b21 t22)
@@ -125,4 +125,13 @@ unpackSumT (TSum ts)
 	| [t]   <- Sum.toList ts = t
 unpackSumT tt			 = tt
 
+
+-- TyCon ----------------------------------------------------------------------
+-- | Check if two `TyCons` are equivalent.
+--   We need to handle `TyConBound` specially incase it's kind isn't attached,
+equivTyCon :: Eq n => TyCon n -> TyCon n -> Bool
+equivTyCon tc1 tc2
+ = case (tc1, tc2) of  
+        (TyConBound u1 _, TyConBound u2 _) -> u1  == u2
+        _                                  -> tc1 == tc2
 

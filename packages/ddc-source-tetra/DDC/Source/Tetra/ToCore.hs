@@ -129,7 +129,8 @@ toCoreDataCtor dataDef tag ctor
         , C.dataCtorTag         = tag
         , C.dataCtorFieldTypes  = map toCoreT (S.dataCtorFieldTypes ctor)
         , C.dataCtorResultType  = toCoreT (S.dataCtorResultType ctor)
-        , C.dataCtorTypeName    = toCoreN (S.dataDefTypeName dataDef) }
+        , C.dataCtorTypeName    = toCoreN (S.dataDefTypeName dataDef) 
+        , C.dataCtorTypeParams  = map toCoreB (S.dataDefParams dataDef) }
 
 
 -- Exp ------------------------------------------------------------------------
