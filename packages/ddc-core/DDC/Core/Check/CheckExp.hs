@@ -272,7 +272,7 @@ checkExpM' !config !kenv !tenv xx@(XLam a b1 x2)
         
         -- Check the body.
         let tenv'         =  Env.extend b1' tenv
-        (x2', t2, e2, c2) <- checkExpM  config kenv tenv' x2   
+        (x2', t2, e2, c2) <- checkExpM  config kenv tenv' x2 
 
         -- The typing rules guarantee that the checked type of an 
         -- expression is well kinded, but we need to check it again

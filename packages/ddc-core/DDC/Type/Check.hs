@@ -106,8 +106,9 @@ checkTypeM' config env tt@(TCon tc)
          -> case u of
                 UName n
                  | Just def <- Map.lookup n 
-                          $  dataDefsTypes $ configDataDefs config
-                 -> return (tt, kindOfDataType def)
+                            $  dataDefsTypes $ configDataDefs config
+                 -> let k'   = kindOfDataType def
+                    in  return (TCon (TyConBound u k'), k')
 
                  | Just s <- Env.lookupName n
                           $  configPrimSupers config
