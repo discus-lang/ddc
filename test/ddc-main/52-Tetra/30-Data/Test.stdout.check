@@ -1,0 +1,46 @@
+ok
+
+
+-- Flip it.
+module Test 
+data Hotness  where {
+        Hot : Hotness;
+        Cold : Hotness;
+}
+with
+letrec {
+  flip : Hotness -> Hotness
+    = \(x : Hotness).
+      case x of {
+        Hot  
+         -> Cold;
+        Cold  
+         -> Hot
+      }
+}
+
+
+-- List data type.
+module Test 
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
+with
+letrec {
+  add : [a : Data].a -> a -> a
+    = /\(a : Data).
+       \(x y : a). add# [a] x y;
+  
+  length : [a : Data].List a -> Nat#
+    = /\(a : Data).
+       \(xx : List a).
+      case xx of {
+        Nil  
+         -> 0#;
+        Cons (x : a) (xs : List a) 
+         -> add [Nat#] 1# (length [a] xs)
+      }
+}
+
+

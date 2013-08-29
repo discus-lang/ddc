@@ -118,10 +118,10 @@ checkTypeM' config env tt@(TCon tc)
                  -> return (tt, s)
 
                  | otherwise
-                 -> throw $ ErrorUndefinedCtor u
+                 -> throw $ ErrorUndefinedTypeCtor u
 
                 UPrim{} -> return (tt, k)
-                UIx{}   -> throw $ ErrorUndefinedCtor u
+                UIx{}   -> throw $ ErrorUndefinedTypeCtor u
 
 
 -- Quantifiers ----------------

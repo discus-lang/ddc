@@ -14,7 +14,7 @@ data Error n
         { errorBound            :: Bound n }
 
         -- | An undefined type constructor.
-        | ErrorUndefinedCtor
+        | ErrorUndefinedTypeCtor
         { errorBound            :: Bound n }
 
         -- | The kind annotation on the variables does not match the one in the environment.

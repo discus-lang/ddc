@@ -13,7 +13,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
         ErrorUndefined u
          -> text "Undefined type variable: " <> ppr u
 
-        ErrorUndefinedCtor u
+        ErrorUndefinedTypeCtor u
          -> text "Undefined type constructor: " <> ppr u
 
         ErrorUnappliedKindFun 

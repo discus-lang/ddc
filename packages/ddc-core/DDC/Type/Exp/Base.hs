@@ -142,6 +142,8 @@ data TyCon n
         | TyConSpec     !TcCon
 
         -- | User defined and primitive constructors.
+        --   TODO: split this into TyConPrim with a type and
+        --         TyConBound with no type (and get type from env when checking)
         | TyConBound   !(Bound n) !(Type n)
         deriving Show
 

@@ -127,20 +127,36 @@ checkExpM' !_config !_kenv !tenv (XVar a u)
 -- constructors ---------------------------------
 checkExpM' !config !_kenv !_tenv xx@(XCon a dc)
  = do   
+        -- TODO: this is duplicated in the case for XCase.
+        --       split into another function.
         -- All data constructors need to have valid type annotations.
-        when (isBot $ daConType dc)
-         $ throw $ ErrorUndefinedCtor xx
+        tCtor
+         <- case daConName dc of
+             DaConUnit       -> return tUnit
+             
+             DaConNamed n
+              -- If the type is already attached then we can use that directly.
+              -- The spreader should have attached the types for literals.
+              | not $ isBot (daConType dc)
+              -> return $ daConType dc
+
+              -- Types of algebraic data ctors should be in the defs table.
+              |  Just ctor <- Map.lookup n (dataDefsCtors $ configDataDefs config)
+              -> return $ typeOfDataCtor ctor
+
+              | otherwise
+              -> throw  $ ErrorUndefinedCtor $ XCon a dc
 
         -- Check that the constructor is in the data type declarations.
-        checkDaConM config xx dc
+        -- TODO: refactor DaCon so it never needs to contain tBot for the type.
+        --       patching the type like this is horrible
+        checkDaConM config xx 
+                (dc { daConType = tCtor })
 
         -- Type of the data constructor.
-        let tResult     
-                = typeOfDaCon dc
-
         returnX a
                 (\z -> XCon z dc)
-                tResult
+                tCtor
                 (Sum.empty kEffect)
                 Set.empty
 
