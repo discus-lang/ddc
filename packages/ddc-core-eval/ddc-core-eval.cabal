@@ -1,5 +1,5 @@
 Name:           ddc-core-eval
-Version:        0.3.2.1
+Version:        0.3.3.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -25,8 +25,8 @@ Library
         array           == 0.4.*,
         transformers    == 0.3.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.3.2.*,
-        ddc-core        == 0.3.2.*
+        ddc-base        == 0.3.3.*,
+        ddc-core        == 0.3.3.*
 
   Exposed-modules:
         DDC.Core.Eval.Check

@@ -1,5 +1,5 @@
 Name:           ddc-interface
-Version:        0.3.2.1
+Version:        0.3.3.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -17,7 +17,7 @@ Library
         base            >= 4.6 && < 4.8,
         containers      == 0.5.*,
         directory       == 1.2.*,
-        ddc-base        == 0.3.2.*
+        ddc-base        == 0.3.3.*
 
   Exposed-modules:
         DDC.Interface.Input

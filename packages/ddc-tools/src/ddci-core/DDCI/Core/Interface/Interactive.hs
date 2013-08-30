@@ -15,7 +15,7 @@ import qualified System.Console.Haskeline.IO    as HL
 -- | Run an interactive session, reading commands from the console.
 runInteractive :: IO ()
 runInteractive
- = do   putStrLn "DDCi-core, version 0.3.2: http://disciple.ouroborus.net."
+ = do   putStrLn "DDCi-core, version 0.3.3: http://disciple.ouroborus.net."
         putStrLn "Type :help for help."
 
         -- Setup terminal mode.
