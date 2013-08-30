@@ -27,8 +27,8 @@ class AnonymizeX (c :: * -> *) where
  --   The stacks contains existing anonymous binders that we have entered into,
  --   and named binders that we have rewritten. All bound occurrences of variables
  --   will be replaced by references into these stacks.
- anonymizeWithX 
-        :: forall n. Ord n 
+ anonymizeWithX
+        :: forall n. Ord n
         => Set n        -- ^ Don't anonymize level-0 binders with these names.
         -> [Bind n]     -- ^ Stack for Spec binders (level-1).
         -> [Bind n]     -- ^ Stack for Data and Witness binders (level-0).
@@ -36,11 +36,11 @@ class AnonymizeX (c :: * -> *) where
 
 instance AnonymizeX (Module a) where
  anonymizeWithX keep kstack tstack mm@ModuleCore{}
-  = let 
-        -- We need to keep exported names, 
+  = let
+        -- We need to keep exported names,
         -- because the export list can't deal with anonymous binders.
-        keep'   = Set.union keep 
-                        $ Set.fromList 
+        keep'   = Set.union keep
+                        $ Set.fromList
                         $ Map.keys $ moduleExportTypes mm
 
         x'      = anonymizeWithX keep' kstack tstack (moduleBody mm)
@@ -54,9 +54,9 @@ instance AnonymizeX (Exp a) where
     let down = anonymizeWithX keep kstack tstack
     in case xx of
         XVar _ UPrim{}  -> xx
-        XCon{}          -> xx      
+        XCon{}          -> xx
 
-        XVar a u@(UName{})       
+        XVar a u@(UName{})
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
          -> XVar a (UIx ix)
 
@@ -74,7 +74,7 @@ instance AnonymizeX (Exp a) where
             in  XLam a b'   (anonymizeWithX keep kstack tstack' x)
 
         XLet a lts x
-         -> let (kstack', tstack', lts')  
+         -> let (kstack', tstack', lts')
                  = pushAnonymizeLets keep kstack tstack lts
             in  XLet a lts' (anonymizeWithX keep kstack' tstack' x)
 
@@ -111,7 +111,7 @@ instance AnonymizeX (Alt a) where
 
 instance AnonymizeX (Witness a) where
  anonymizeWithX keep kstack tstack ww
-  = let down = anonymizeWithX keep kstack tstack 
+  = let down = anonymizeWithX keep kstack tstack
     in case ww of
         WVar a u@(UName _)
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
@@ -127,24 +127,24 @@ instance AnonymizeX (Witness a) where
 instance AnonymizeX Bind where
  anonymizeWithX _keep kstack _tstack bb
   = let t'      = anonymizeWithT kstack $ typeOfBind bb
-    in  replaceTypeOfBind t' bb 
+    in  replaceTypeOfBind t' bb
 
 
 -- Push ----------------------------------------------------------------------
--- | Push a binding occurrence of a level-0 on the stack, 
+-- | Push a binding occurrence of a level-0 on the stack,
 --   returning the anonyized binding occurrence and the new stack.
-pushAnonymizeBindX 
-        :: Ord n 
+pushAnonymizeBindX
+        :: Ord n
         => Set n        -- ^ Don't anonymize binders with these names.
         -> [Bind n]     -- ^ Stack for Spec binders (level-1)
         -> [Bind n]     -- ^ Stack for Value and Witness binders (level-0)
-        -> Bind n 
+        -> Bind n
         -> ([Bind n], Bind n)
 
 pushAnonymizeBindX keep kstack tstack b@(BName n _)
  | Set.member n keep
  = let  b'      = anonymizeWithX keep kstack tstack b
-   in  (tstack, b')
+   in   (tstack, b')
 
 pushAnonymizeBindX keep kstack tstack b@BNone{}
  = let  b'      = anonymizeWithX keep kstack tstack b
@@ -158,15 +158,15 @@ pushAnonymizeBindX keep kstack tstack b
    in   (tstack', BAnon t')
 
 
--- | Push a binding occurrence on the stack, 
+-- | Push a binding occurrence on the stack,
 --   returning the anonyized binding occurrence and the new stack.
 --  Used in the definition of `anonymize`.
-pushAnonymizeBindXs 
-        :: Ord n 
+pushAnonymizeBindXs
+        :: Ord n
         => Set n        -- ^ Don't anonymize binders with these names.
         -> [Bind n]     -- ^ Stack for Spec binders (level-1)
         -> [Bind n]     -- ^ Stack for Value and Witness binders (level-0)
-        -> [Bind n] 
+        -> [Bind n]
         -> ([Bind n], [Bind n])
 
 pushAnonymizeBindXs keep kstack tstack bs
@@ -175,12 +175,12 @@ pushAnonymizeBindXs keep kstack tstack bs
         tstack bs
 
 
-pushAnonymizeLets 
-        :: Ord n 
+pushAnonymizeLets
+        :: Ord n
         => Set n
-        -> [Bind n] 
-        -> [Bind n] 
-        -> Lets a n 
+        -> [Bind n]
+        -> [Bind n]
+        -> Lets a n
         -> ([Bind n], [Bind n], Lets a n)
 
 pushAnonymizeLets keep kstack tstack lts
@@ -190,7 +190,7 @@ pushAnonymizeLets keep kstack tstack lts
                 (tstack', b')   = pushAnonymizeBindX keep kstack tstack b
             in  (kstack, tstack', LLet b' x')
 
-        LRec bxs 
+        LRec bxs
          -> let (bs, xs)        = unzip bxs
                 (tstack', bs')  = pushAnonymizeBindXs keep kstack tstack   bs
                 xs'             = map (anonymizeWithX keep kstack tstack') xs
