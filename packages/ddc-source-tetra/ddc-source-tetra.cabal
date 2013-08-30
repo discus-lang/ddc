@@ -67,4 +67,5 @@ Library
         FlexibleInstances
         RankNTypes
         BangPatterns
+        ParallelListComp
         
