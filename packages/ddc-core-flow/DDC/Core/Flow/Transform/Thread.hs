@@ -64,30 +64,16 @@ wrapResultExp xWorld xResult
         tResult  = annotType aResult
         xWorld'  = reannotate annotTail xWorld
         xResult' = reannotate annotTail xResult
-   in   
-        -- ISSUE #308: Handle Tuple arities generically in thread transform.
-        case C.takeXConApps xResult' of
-         Just (dc, [xT1, xT2
-                   , x1, x2])
-          | dc == dcTupleN 2
-          -> C.xApps () (XCon () (dcTupleN 3))
-                [ XType tWorld', xT1, xT2
-                , xWorld',       x1,  x2]
+   in   case C.takeXConApps xResult' of
 
-         Just (dc, [xT1, xT2, xT3
-                   , x1,  x2,  x3])
-          | dc == dcTupleN 3
-          -> C.xApps () (XCon () (dcTupleN 4))
-                [ XType tWorld', xT1, xT2, xT3
-                , xWorld',       x1,  x2,  x3]
-
-         Just (dc, [xT1, xT2, xT3, xT4
-                   , x1,  x2,  x3,  x4])
-          | dc == dcTupleN 4
-          -> C.xApps () (XCon () (dcTupleN 5))
-                [ XType tWorld', xT1, xT2, xT3, xT4
-                , xWorld',       x1,  x2,  x3,  x4]
-
+         Just (dc, xa)
+          | (DaConNamed (NameDaConFlow (DaConFlowTuple n))) <- daConName dc
+          , x <- length xa
+          , x >= 2
+          -> let (b, a) = splitAt (x `quot` 2) xa
+             in C.xApps () (XCon () (dcTupleN $ n + 1))
+                 $  XType tWorld' : b   -- World# : a1 a2 ..
+                 ++ xWorld'       : a   -- world  : x1 x2 ..
 
          _ -> C.xApps () (XCon () (dcTupleN 2))
                          [ XType tWorld'
