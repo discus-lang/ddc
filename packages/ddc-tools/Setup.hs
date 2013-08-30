@@ -3,8 +3,8 @@ import Distribution.Simple.Setup
 import Distribution.Simple.LocalBuildInfo
 import Distribution.PackageDescription
 import System.FilePath
+import System.Process
 import System.Exit
-import System.Cmd
 
 main    = defaultMainWithHooks hooks
 

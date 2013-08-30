@@ -17,7 +17,7 @@ Description:
 
 Library
   Build-Depends: 
-        base            == 4.6.*,
+        base            >= 4.6 && < 4.8,
         transformers    == 0.3.*,
         containers      == 0.5.*,
         wl-pprint       == 1.1.*,
