@@ -28,7 +28,7 @@ threadConfig
         , configVoidType         = tUnit
         , configWrapResultType   = wrapResultType
         , configWrapResultExp    = wrapResultExp
-        , configThreadMe         = threadType 
+        , configThreadMe         = threadType
         , configThreadPat        = unwrapResult }
 
 
@@ -45,7 +45,7 @@ wrapResultType tt
 
 
 -- | Wrap the result of a stateful computation with the state token.
-wrapResultExp  
+wrapResultExp
         :: Exp (AnTEC () Name) Name     -- ^ World expression
         -> Exp (AnTEC () Name) Name     -- ^ Result expression
         -> Exp () Name
@@ -53,10 +53,10 @@ wrapResultExp
 wrapResultExp xWorld xResult
  -- Rewrite Unit => World
  | Just aResult         <- takeAnnotOfExp xResult
- , annotType aResult == tUnit     
+ , annotType aResult == tUnit
  = reannotate annotTail xWorld
 
- -- Rewrite (TupleN        a1 a2 ..       x1 x2 ..) 
+ -- Rewrite (TupleN        a1 a2 ..       x1 x2 ..)
  --      => (TupleN World# a1 a2 .. world x1 x2 ..)
  | Just aWorld   <- takeAnnotOfExp xWorld
  , Just aResult  <- takeAnnotOfExp xResult
@@ -104,10 +104,10 @@ unwrapResult   :: Name -> Maybe (Bind Name -> [Bind Name] -> Pat Name)
 unwrapResult _
  = Just unwrap
 
- where  unwrap bWorld bsResult 
+ where  unwrap bWorld bsResult
          | [bResult]    <- bsResult
          , typeOfBind bResult == tUnit
-         = PData dcTuple1 [bWorld] 
+         = PData dcTuple1 [bWorld]
 
          | otherwise
          = PData (dcTupleN (length (bWorld : bsResult)))
@@ -124,53 +124,53 @@ threadType n _
         -- Assignables --------------------------
         -- new#  :: [a : Data]. a -> World# -> T2# (World#, Ref# a)
         NameOpStore OpStoreNew
-         -> Just $ tForall kData 
-                 $ \tA -> tA 
+         -> Just $ tForall kData
+                 $ \tA -> tA
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tRef tA))
 
         -- read# :: [a : Data]. Ref# a -> World# -> T2# (World#, a)
         NameOpStore OpStoreRead
          -> Just $ tForall kData
-                 $ \tA -> tRef tA 
+                 $ \tA -> tRef tA
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tRef tA))
 
         -- write# :: [a : Data]. Ref# -> a -> World# -> World#
-        NameOpStore OpStoreWrite 
+        NameOpStore OpStoreWrite
          -> Just $ tForall kData
-                 $ \tA  -> tRef tA `tFun` tA 
+                 $ \tA  -> tRef tA `tFun` tA
                         `tFun` tWorld `tFun` tWorld
 
         -- Vectors -------------------------------
         -- vnew#   :: [a : Data]. Nat# -> World# -> T2# World# (Vector# a)
         NameOpStore OpStoreNewVector
          -> Just $ tForall kData
-                 $ \tA -> tNat 
+                 $ \tA -> tNat
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
 
-        -- vnew#  :: [a : Data]. [k : Rate]. RateNat# k 
+        -- vnew#  :: [a : Data]. [k : Rate]. RateNat# k
         --        -> World# -> T2# (World#, Vector# a)
         NameOpStore OpStoreNewVectorN
          -> Just $ tForalls [kData, kRate]
-                 $ \[tA, tK] 
-                     -> tRateNat tK 
+                 $ \[tA, tK]
+                     -> tRateNat tK
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
 
         -- vread#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# World# a
         NameOpStore (OpStoreReadVector _)
          -> Just $ tForall kData
-                 $ \tA -> tA `tFun` tVector tA `tFun` tNat 
+                 $ \tA -> tA `tFun` tVector tA `tFun` tNat
                         `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
         -- vwrite# :: [a : Data]. Vector# a -> Nat# -> a -> World# -> World#
         NameOpStore (OpStoreWriteVector _)
          -> Just $ tForall kData
-                 $ \tA -> tA `tFun` tVector tA `tFun` tNat `tFun` tA 
+                 $ \tA -> tA `tFun` tVector tA `tFun` tNat `tFun` tA
                         `tFun` tWorld `tFun` tWorld
 
         -- vslice#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# World# (Vector# a)
         NameOpStore OpStoreSliceVector
          -> Just $ tForall kData
-                 $ \tA -> tNat `tFun` tVector tA 
+                 $ \tA -> tNat `tFun` tVector tA
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
 
 
@@ -179,7 +179,7 @@ threadType n _
         --        .  Series# k a -> Int# -> World# -> (World#, a)
         NameOpConcrete (OpConcreteNext 1)
          -> Just $ tForalls [kRate, kData]
-                 $ \[tK, tA] -> tSeries tK tA `tFun` tInt 
+                 $ \[tK, tA] -> tSeries tK tA `tFun` tInt
                                 `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
         -- next4# :: [k : Rate]. [a : Data]
@@ -190,15 +190,15 @@ threadType n _
                                 `tFun` tWorld `tFun` (tTuple2 tWorld (tVec 4 tA))
 
         -- Control -----------------------------
-        -- loopn#  :: [k : Rate]. RateNat# k 
-        --         -> (Nat#  -> World# -> World#) 
+        -- loopn#  :: [k : Rate]. RateNat# k
+        --         -> (Nat#  -> World# -> World#)
         --         -> World# -> World#
         NameOpControl OpControlLoopN
          -> Just $ tForalls [kRate]
                  $ \[tK] -> tRateNat tK
                         `tFun`  (tNat `tFun` tWorld `tFun` tWorld)
                         `tFun` tWorld `tFun` tWorld
-        
+
         -- guard#
         NameOpControl OpControlGuard
          -> Just $ tRef tNat
