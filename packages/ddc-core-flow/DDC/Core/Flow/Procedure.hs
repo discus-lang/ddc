@@ -24,10 +24,7 @@ data Procedure
         { procedureName         :: Name
         , procedureParamTypes   :: [BindF]
         , procedureParamValues  :: [BindF]
-        , procedureNest         :: Nest
-        , procedureResultType   :: TypeF 
-        , procedureResultExp    :: ExpF }
-
+        , procedureNest         :: Nest }
 
 -- | A loop nest.
 data Nest

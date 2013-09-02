@@ -1,5 +1,6 @@
 :set SuppressLetTypes
 
+
 -- Pack with an existing series of flags.
 :flow-lower..
 module Test with letrec
@@ -71,29 +72,29 @@ filter  [k0 : Rate] [a : Data]
                   in    screate# [k2] [a] s2))
 ;;
 
+
 -- Sequential filter.
 -- Ensure we can handle two selector contexts on the same input.
 :flow-lower..
 module Test with letrec
 filter  [k0 : Rate] [a : Data]
         (f  : a -> Bool#)  (g : a -> Bool#)
+        (v1 v2 : Vector# a) 
         (s0 : Series# k0 a)
-        : Tuple2# (Vector# a) (Vector# a)
+        : Process#
  = do   
-        flags1  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
-        flags2  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
+        flags1  = smap# [k0] [a] [Bool#] f s0
+        flags2  = smap# [k0] [a] [Bool#] f s0
 
-        s1 = smkSel1# [k0] [Vector# a] flags1
-         (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
-          let  s1      = spack# [k0] [k1] [a] sel1 s0 in
-               screate# [k1] [a] s1)
-         
-        s2 = smkSel1# [k0] [Vector# a] flags2
-         (/\(k2 : Rate). \(sel2 : Sel1# k0 k2).
-          let  s2      = spack# [k0] [k2] [a] sel2 s0 in
-               screate# [k2] [a] s2)
+        pjoin#  (smkSel# [k0] flags1
+                 (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
+                  let  s1      = spack# [k0] [k1] [a] sel1 s0 
+                  in   sfill# [k1] [a] v1 s1))
 
-        T2# [Vector# a] [Vector# a] s1 s2
+                (smkSel# [k0] flags2
+                 (/\(k2 : Rate). \(sel2 : Sel1# k0 k2).
+                  let   s2      = spack# [k0] [k2] [a] sel2 s0
+                  in    sfill# [k2] [a] v2 s2))
 ;;
 
 

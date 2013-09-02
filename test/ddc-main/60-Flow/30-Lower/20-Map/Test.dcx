@@ -1,42 +1,52 @@
 :set SuppressLetTypes
 
--- Single map over input series, producing a vector.
+-- Fuse map into fill.
 :flow-lower..
 module Test with letrec
-map [k : Rate] (s : Series# k Int#) : Vector# Int#
- = screate# [k] [Int#]
-        (smap1# [k] [Int#] [Int#]
-                (\(x : Int#). add# [Int#] (mul# [Int#] x 2i#) 1i#) s)
+map     [k : Rate] (v : Vector# Int#)
+        (s : Series# k Int#) : Process#
+ = sfill# [k] [Int#] v
+        (smap# [k] [Int#] [Int#]
+                (\(x : Int#). add# [Int#] (mul# [Int#] x 2i#) 1i#)
+                s)
 ;;
 
 
--- Map/Map fusion, producing a vector.
+-- Fuse map into fold.
 :flow-lower..
 module Test with letrec
-map [k : Rate] (s : Series# k Int#) : Vector# Int#
- = screate# [k] [Int#]
-        (smap1# [k] [Int#] [Int#]
-               (\(x : Int#). mul# [Int#] x 2i#)
+foldMap [k : Rate] (x : Ref# Int#)
+        (s : Series# k Int#) : Process#
+ = sreduce# [k] [Int#] x
+        (add# [Int#]) 0i#
+        (smap# [k] [Int#] [Int#]
+                (\(x : Int#). mul# [Int#] x 2i#) 
+                s)
+;;
+
+
+-- Map/Map fusion, filling a vector.
+:flow-lower..
+module Test with letrec
+map     [k : Rate] (v : Vector# Int#)
+        (s : Series# k Int#) : Process#
+ = sfill# [k] [Int#] v
+        (smap# [k] [Int#] [Int#]
+               (mul# [Int#] 2i#)
                (smap1# [k] [Int#] [Int#]
-                      (\(x : Int#). add# [Int#] x 1i#) s))
+                      (add# [Int#] 1i#) 
+                      s))
 ;;
 
 
--- Map and Fold the same series, 
--- producing both results.
+-- Map and Reduce the same series.
 :flow-lower..
 module Test with letrec
-foldMap [k : Rate] (s : Series# k Int#) 
-        : Tuple2# Int# (Vector# Int#)
- = do   
-        x1      = sfold# [k] [Int#] [Int#]
-                        (add# [Int#]) 0i# s
-
-        x4      = smap1# [k] [Int#] [Int#]
-                        (\(x : Int#). mul# [Int#] x 2i#) s
-
-        x6      = screate# [k] [Int#] x4
-
-        T2# [Int#] [Vector# Int#] x1 x6
+foldMap [k : Rate] (v : Vector# Int#) (x : Ref# Int#)
+        (s : Series# k Int#) : Process#
+ = do   s2      = smap# [k] [Int#] [Int#] (mul# [Int#] 2i#) s
+        s3      = smap# [k] [Int#] [Int#] (add# [Int#] 1i#) s2
+        pjoin#  (sreduce# [k] [Int#] x (add# [Int#]) 0i# s)
+                (sfill#   [k] [Int#] v s3)
 ;;
 

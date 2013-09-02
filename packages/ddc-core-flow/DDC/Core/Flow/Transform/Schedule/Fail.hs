@@ -9,12 +9,8 @@ import DDC.Core.Flow.Process.Operator
 
 -- | Reason a process kernel could not be scheduled into a procedure.
 data Fail
-        -- | The return type of a kernel must be Unit, but it wasn't.
-        = FailReturnTypeNotUnit
-        { failReturnType        :: Type Name }
-
         -- | Process has no rate parameters.
-        | FailNoRateParameters
+        = FailNoRateParameters
 
         -- | Process has no series parameters, 
         --   but there needs to be at least one.

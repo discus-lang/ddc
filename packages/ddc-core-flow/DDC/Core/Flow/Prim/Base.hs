@@ -127,6 +127,9 @@ data TyConFlow
 
         -- | @TailN#@ constructor.   Rate tail after decimation.
         | TyConFlowTail Int
+
+        -- | @Process@ constructor.
+        | TyConFlowProcess
         deriving (Eq, Ord, Show)
 
 
@@ -184,9 +187,6 @@ data OpSeries
 
         -- | Scatter (write) elements into a vector.
         | OpSeriesScatter
-
-        -- | Convert vector(s) into series, all with same length with runtime check.
-        | OpSeriesRunSeries Int
         deriving (Eq, Ord, Show)
 
 

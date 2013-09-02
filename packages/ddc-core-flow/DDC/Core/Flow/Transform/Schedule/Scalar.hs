@@ -20,9 +20,7 @@ scheduleScalar
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
                 , processOperators      = operators
-                , processContexts       = contexts
-                , processResultType     = tResult
-                , processResultExp      = xResult})
+                , processContexts       = contexts})
   = do
         -- Check the parameter series all have the same rate.
         tK      <- slurpRateOfParamTypes 
@@ -70,9 +68,7 @@ scheduleScalar
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
                 , procedureParamValues  = bsParamValues
-                , procedureNest         = nest2
-                , procedureResultType   = tResult
-                , procedureResultExp    = xResult }
+                , procedureNest         = nest2 }
 
 
 -------------------------------------------------------------------------------
@@ -193,13 +189,13 @@ scheduleOperator nest0 op
                              (xWrite tAcc (XVar $ opTargetRef op)
                                           (XVar $ UName nAccRes)) ]
 
-        -- Bind final unit value.
-        let Just nest4
-                = insertEnds nest3 context
-                $ [ EndStmt     (opResultBind op)
-                                xUnit ]
+        ---- Bind final unit value.
+        --let Just nest4
+        --        = insertEnds nest3 context
+        --        $ [ EndStmt     (opResultBind op)
+        --                        xUnit ]
 
-        return nest4
+        return nest3
 
 -- Fold and FoldIndex --------------------------
  | OpFold{} <- op

@@ -10,11 +10,8 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 
 
--- | A process applies some series operators and produces some non-series
---   result.
---
---   We get one of these for each top-level series function in the
---   original program.
+-- | A process is a graph of series operators that read from some parameter
+--   series and write to some accumulators.
 data Process
         = Process
         { -- | Name of whole process.
@@ -38,19 +35,13 @@ data Process
 
           -- | Flow operators in this process.
         , processOperators      :: [Operator] 
-
-          -- Type of process result
-        , processResultType     :: TypeF
-
-          -- Final result of process.
-        , processResultExp      :: ExpF
         }
 
 
 -- | Take the functional type of a process.
 typeOfProcess :: Process -> TypeF
 typeOfProcess process
- = let  tBody   = foldr tFun (processResultType process) 
+ = let  tBody   = foldr tFun tProcess
                 $ map typeOfBind (processParamValues process)
 
         tQuant  = foldr TForall tBody

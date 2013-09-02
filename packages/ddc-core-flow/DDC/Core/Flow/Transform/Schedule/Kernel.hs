@@ -38,14 +38,8 @@ scheduleKernel
        (Process { processName           = name
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
-                , processOperators      = operators
-                , processResultType     = tResult
-                , processResultExp      = xResult })
-
- = do   -- Check the process returns Unit.
-        when (tResult /= tUnit)
-         $ Left (FailReturnTypeNotUnit tResult)
-
+                , processOperators      = operators })
+ = do   
         -- Check the parameter series all have the same rate.
         tK      <- slurpRateOfParamTypes (map typeOfBind bsParamValues)
 
@@ -97,9 +91,7 @@ scheduleKernel
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
                 , procedureParamValues  = bsParamValues_lowered
-                , procedureNest         = nest'
-                , procedureResultType   = tResult
-                , procedureResultExp    = xResult }
+                , procedureNest         = nest' }
 
 
 -------------------------------------------------------------------------------

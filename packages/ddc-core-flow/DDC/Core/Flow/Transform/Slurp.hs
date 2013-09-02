@@ -47,7 +47,7 @@ slurpProcessesLts _
 -------------------------------------------------------------------------------
 -- | Slurp stream operators from a top-level binding.
 slurpProcessLet :: Bind Name -> Exp () Name -> Maybe Process
-slurpProcessLet (BName n tProcess) xx
+slurpProcessLet (BName n _) xx
 
  -- We assume that all type params come before the value params.
  | Just (fbs, xBody)    <- takeXLamFlags xx
@@ -68,14 +68,11 @@ slurpProcessLet (BName n tProcess) xx
         bvs             = map snd fbvs
 
         -- Slurp the body of the process.
-        (ctxLocal, ops, ltss, xResult)  
+        (ctxLocal, ops, _ltss, _xResult)  
                         = slurpProcessX xBody
 
         -- Decide what rates to use when allocating vectors.
         ops_alloc       = patchAllocRates ops
-
-        -- Determine the type of the result of the process.
-        tResult         = snd $ takeTFunAllArgResult tProcess
 
    in   Just    $ Process
                 { processName          = n
@@ -87,9 +84,7 @@ slurpProcessLet (BName n tProcess) xx
                 -- are inside 
                 , processContexts      = ctxParam ++ ctxLocal
 
-                , processOperators     = ops_alloc
-                , processResultType    = tResult
-                , processResultExp     = xLets ltss xResult }
+                , processOperators     = ops_alloc }
 
 slurpProcessLet _ _
  = Nothing
@@ -193,6 +188,10 @@ slurpBindingX b x
 
         -- This binding is a flow operator.        
         Just op -> ([], [op], [])
+
+        -- This is a process join, which we're kicking out
+        _ | Just (NameOpSeries OpSeriesJoin, _) <- takeXPrimApps x
+          ->    ([], [], [])
 
         -- This is some base-band statement that doesn't 
         -- work on a flow operator.

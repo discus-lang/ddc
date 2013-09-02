@@ -16,6 +16,7 @@ module DDC.Core.Flow.Compounds
         , tRateNat
         , tDown
         , tTail
+        , tProcess
 
           -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec

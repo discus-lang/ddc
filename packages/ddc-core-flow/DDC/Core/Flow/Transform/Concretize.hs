@@ -46,15 +46,15 @@ concretizeX _kenv tenv xx
                 (xRateOfSeries tK tA xS)        -- 
                 xF                              -- loop body
 
-        -- newVectorR# -> newVectorN#
+        -- newVectorR# -> newVector#
         | Just ( NameOpStore OpStoreNewVectorR
                , [XType tA, XType tK])  <- takeXPrimApps xx
         , Just (nS, _, tS)      <- findSeriesWithRate tenv tK
         , xS                    <- XVar (UName nS)
         = Just
-        $ xNewVectorN
-                tA tK
-                (xRateOfSeries tK tS xS)
+        $ xNewVector
+                tA
+                (xNatOfRateNat tK $ xRateOfSeries tK tS xS)
                 
         | otherwise
         = Nothing

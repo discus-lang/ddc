@@ -23,7 +23,8 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tWorld
         , tRateNat
         , tDown
-        , tTail)
+        , tTail
+        , tProcess)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
@@ -51,6 +52,7 @@ instance Pretty TyConFlow where
         TyConFlowRateNat        -> text "RateNat#"
         TyConFlowDown n         -> text "Down"  <> int n <> text "#"
         TyConFlowTail n         -> text "Tail"  <> int n <> text "#"
+        TyConFlowProcess        -> text "Process#"
 
 
 -- | Read a type constructor name.
@@ -83,6 +85,7 @@ readTyConFlow str
                 "Ref#"          -> Just $ TyConFlowRef
                 "World#"        -> Just $ TyConFlowWorld
                 "RateNat#"      -> Just $ TyConFlowRateNat
+                "Process#"      -> Just $ TyConFlowProcess
                 _               -> Nothing
 
 
@@ -101,6 +104,7 @@ kindTyConFlow tc
         TyConFlowRateNat        -> kRate `kFun` kData
         TyConFlowDown{}         -> kRate `kFun` kRate
         TyConFlowTail{}         -> kRate `kFun` kRate
+        TyConFlowProcess        -> kData
 
 
 -- Predicates -----------------------------------------------------------------
@@ -187,6 +191,10 @@ tDown n tK      = tApp (tConTyConFlow $ TyConFlowDown n) tK
 
 tTail :: Int -> Type Name -> Type Name 
 tTail n tK      = tApp (tConTyConFlow $ TyConFlowTail n) tK
+
+
+tProcess :: Type Name 
+tProcess = tConTyConFlow $ TyConFlowProcess
 
 
 -- Utils ----------------------------------------------------------------------

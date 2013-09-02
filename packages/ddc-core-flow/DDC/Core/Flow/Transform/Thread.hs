@@ -182,6 +182,13 @@ threadType n _
                  $ \[tK, tA] -> tSeries tK tA `tFun` tInt 
                                 `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
+        -- next4# :: [k : Rate]. [a : Data]
+        --        .  Series# k a -> Int# -> World# -> (World#, a)
+        NameOpConcrete (OpConcreteNext 4)
+         -> Just $ tForalls [kRate, kData]
+                 $ \[tK, tA] -> tSeries (tDown 4 tK) tA `tFun` tInt 
+                                `tFun` tWorld `tFun` (tTuple2 tWorld (tVec 4 tA))
+
         -- Control -----------------------------
         -- loopn#  :: [k : Rate]. RateNat# k 
         --         -> (Nat#  -> World# -> World#) 
