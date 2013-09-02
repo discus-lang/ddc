@@ -30,7 +30,6 @@ module DDC.Core.Exp.Annot
 
           -- * Data Constructors
         , DaCon         (..)
-        , DaConName     (..)
 
           -- * Witness Constructors
         , WiCon         (..)

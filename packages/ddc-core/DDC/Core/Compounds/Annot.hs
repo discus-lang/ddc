@@ -51,10 +51,8 @@ module DDC.Core.Compounds.Annot
 
           -- * Data Constructors
         , xUnit, dcUnit
-        , mkDaConAlg
-        , mkDaConSolid
         , takeNameOfDaCon
-        , typeOfDaCon)
+        , takeTypeOfDaCon)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
