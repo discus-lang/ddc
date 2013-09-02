@@ -28,25 +28,20 @@ instance Pretty OpSeries where
         OpSeriesProj n i          
          -> text "proj" <> int n <> text "_" <> int i             <> text "#"
 
-        OpSeriesMap 1           -> text "smap"                  <> text "#"
-        OpSeriesMap i           -> text "smap"       <> int i   <> text "#"
-
         OpSeriesRep             -> text "srep"                  <> text "#"
         OpSeriesReps            -> text "sreps"                 <> text "#"
+        OpSeriesGather          -> text "sgather"               <> text "#"
 
         OpSeriesMkSel 1         -> text "smkSel"                <> text "#"
         OpSeriesMkSel n         -> text "smkSel"     <> int n   <> text "#"
 
+        OpSeriesMap 1           -> text "smap"                  <> text "#"
+        OpSeriesMap i           -> text "smap"       <> int i   <> text "#"
+
         OpSeriesPack            -> text "spack"                 <> text "#"
 
         OpSeriesReduce          -> text "sreduce"               <> text "#"
-        OpSeriesFold            -> text "sfold"                 <> text "#"
-        OpSeriesFoldIndex       -> text "sfoldIndex"            <> text "#"
-        OpSeriesFolds           -> text "sfolds"                <> text "#"
-
-        OpSeriesCreate          -> text "screate"               <> text "#"
         OpSeriesFill            -> text "sfill"                 <> text "#"
-        OpSeriesGather          -> text "sgather"               <> text "#"
         OpSeriesScatter         -> text "sscatter"              <> text "#"
 
         OpSeriesJoin            -> text "pjoin"                 <> text "#"
@@ -92,18 +87,14 @@ readOpSeries str
 
         | otherwise
         = case str of
-                "smap#"         -> Just $ OpSeriesMap   1
                 "srep#"         -> Just $ OpSeriesRep
                 "sreps#"        -> Just $ OpSeriesReps
+                "sgather#"      -> Just $ OpSeriesGather
                 "smkSel#"       -> Just $ OpSeriesMkSel 1
+                "smap#"         -> Just $ OpSeriesMap   1
                 "spack#"        -> Just $ OpSeriesPack
                 "sreduce#"      -> Just $ OpSeriesReduce
-                "sfold#"        -> Just $ OpSeriesFold
-                "sfoldIndex#"   -> Just $ OpSeriesFoldIndex
-                "sfolds#"       -> Just $ OpSeriesFolds
-                "screate#"      -> Just $ OpSeriesCreate
                 "sfill#"        -> Just $ OpSeriesFill
-                "sgather#"      -> Just $ OpSeriesGather
                 "sscatter#"     -> Just $ OpSeriesScatter
                 _               -> Nothing
 
@@ -128,6 +119,7 @@ takeTypeOpSeries op
          $ \_ -> tFun   (tTupleN [TVar (UIx i) | i <- reverse [0..a-1]])
                         (TVar (UIx (a - ix)))
 
+
         -- Replicates -------------------------
         -- rep  :: [a : Data] [k : Rate]
         --      .  a -> Series k a
@@ -142,6 +134,7 @@ takeTypeOpSeries op
         OpSeriesReps 
          -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
                 -> tSegd tK1 tK2 `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
+
 
         -- Gather -------------------------------
         -- gather#  :: [k : Rate]. [a : Data]
@@ -262,26 +255,6 @@ takeTypeOpSeries op
                  `tFun` (tInt `tFun` tA `tFun` tB `tFun` tA)
                  `tFun` tSeries tK1 tA `tFun` tSeries tK2 tB `tFun` tSeries tK1 tA
 
-
-        -- runSeriesN# ::[k : Rate]. [r : Data]. [a0..aN : Data]
-        --          .  Vector    a0 .. Vector   aN 
-        --          -> (Series k a0 .. Series k aN -> r)
-        --          -> r
-        OpSeriesRunSeries n
-         | tK         <- TVar (UIx (n+1))
-         , tR         <- TVar (UIx n)
-
-         , Just tWork <- tFunOfList   
-                       $ [ tSeries tK (TVar (UIx i))
-                                | i <- reverse [0..n-1] ]
-                       ++[ tR ]
-
-         , Just tBody <- tFunOfList
-                         ([tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
-                         ++ [tWork, tR])
-
-         -> Just $ foldr TForall tBody
-                         [ BAnon k | k <- kRate : replicate (n + 1) kData ]
 
         _ -> Nothing
 

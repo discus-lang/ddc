@@ -1,8 +1,7 @@
-
 :set lang Flow
 
--- Two folds over the same input series.
-:flow-prep..
+-- Single series being eaten by two consumers.
+:load..
 module Test with letrec
 test    [k : Rate]
         (u1 u2 : Ref# Int#)
@@ -10,5 +9,5 @@ test    [k : Rate]
         : Process#
  =      pjoin#  (sreduce#  [k] [Int#] u1 (add# [Int#]) 0i# elems)
                 (sreduce#  [k] [Int#] u2 (mul# [Int#]) 1i# elems)
-;;
 
+;;

@@ -6,9 +6,8 @@ where
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Compounds.Simple
-import DDC.Type.Pretty          ()
+import DDC.Type.Pretty                  ()
 import Control.Monad
 
 
@@ -72,52 +71,6 @@ slurpOperator bResult xx
         , opWorkerBody          = xBody }
 
 
- -- Fold ----------------------------------------
- | Just ( NameOpSeries OpSeriesFold
-        , [ XType tRate, XType _tAcc, XType _tElem
-          , xWorker,     xZero,     (XVar uSeries)])
-                                <- takeXPrimApps xx
- , Just ([pAcc, pElem], xBody)  <- takeXLams xWorker
- = Just $ OpFold
-        { opResultValue         = bResult
-        , opInputRate           = tRate
-        , opInputSeries         = uSeries
-        , opZero                = xZero
-        , opWorkerParamIndex    = BNone tInt
-        , opWorkerParamAcc      = pAcc
-        , opWorkerParamElem     = pElem
-        , opWorkerBody          = xBody }
-
-
- -- FoldIndex -----------------------------------
- | Just ( NameOpSeries OpSeriesFoldIndex
-        , [ XType tRate, XType _tAcc, XType _tElem
-          , xWorker,     xZero,     (XVar uSeries)])
-                                    <- takeXPrimApps xx
- , Just ([pIx, pAcc, pElem], xBody) <- takeXLams xWorker
- = Just $ OpFold
-        { opResultValue         = bResult
-        , opInputRate           = tRate
-        , opInputSeries         = uSeries
-        , opZero                = xZero
-        , opWorkerParamIndex    = pIx
-        , opWorkerParamAcc      = pAcc
-        , opWorkerParamElem     = pElem
-        , opWorkerBody          = xBody }
-
-
- -- Create --------------------------------------
- | Just ( NameOpSeries OpSeriesCreate
-        , [ XType tK, XType tA, XVar uSeries ])
-                                <- takeXPrimApps xx
- = Just $ OpCreate
-        { opResultVector        = bResult
-        , opInputRate           = tK
-        , opInputSeries         = uSeries 
-        , opAllocRate           = Nothing
-        , opElemType            = tA }
-
-
  -- Fill ----------------------------------------
  | Just ( NameOpSeries OpSeriesFill
         , [ XType tK, XType tA, XVar uV, XVar uS ])
@@ -165,11 +118,8 @@ isSeriesOperator
 
 isSeriesOperator xx
  = case liftM fst $ takeXPrimApps xx of
-        Just (NameOpSeries OpSeriesCreate)    -> True
         Just (NameOpSeries (OpSeriesMap _))   -> True
         Just (NameOpSeries OpSeriesReduce)    -> True
-        Just (NameOpSeries OpSeriesFold)      -> True
-        Just (NameOpSeries OpSeriesFoldIndex) -> True
         Just (NameOpSeries OpSeriesPack)      -> True
         Just (NameOpSeries (OpSeriesMkSel _)) -> True
         Just (NameOpSeries OpSeriesFill)      -> True

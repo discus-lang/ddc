@@ -39,16 +39,12 @@
 
 
 -- Flow operators
-:type screate#
-:type sfill#
-:type smap#
 :type srep#
 :type sreps#
-:type sfold#
-:type sfolds#
+:type sgather#
+:type smkSel#
+:type smap#
 :type spack#
-:type runSeries#
-:type runSeries2#
 
 
 -- Series operators

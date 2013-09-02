@@ -29,13 +29,14 @@ patchAllocRates ops
 
         getAllocRate n rate
          = case lookup rate packRates of
-                Just inRate     -> getAllocRate (n - 1) inRate
+                Just inRate     -> getAllocRate (n - (1 :: Int)) inRate
                 _               -> rate
 
-        patchOperator op@OpCreate{}
-         = op { opAllocRate = Just $ getAllocRate maxNestedContexts (opInputRate op) }
+--        patchOperator op@OpCreate{}
+--         = op { opAllocRate = Just $ getAllocRate maxNestedContexts (opInputRate op) }
 
         patchOperator op
-         = op
+         = maxNestedContexts `seq` getAllocRate `seq` op                        
+                -- TODO: actually patch filled vectors
 
    in   map patchOperator ops

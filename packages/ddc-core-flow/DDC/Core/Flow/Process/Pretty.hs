@@ -22,13 +22,6 @@ instance Pretty Operator where
         , text " input:   "     <> ppr (opInputSeries   op)
         , text " result:  "     <> ppr (opResultSeries  op) ]
 
- ppr op@OpCreate{}
-        = vcat
-        [ text "Create"
-        , text " rate:    "     <> ppr (opInputRate     op)
-        , text " input:   "     <> ppr (opInputSeries   op)        
-        , text " result:  "     <> ppr (opResultVector  op) ]
-
  ppr op@OpFill{}
         = vcat
         [ text "Fill"
@@ -52,12 +45,6 @@ instance Pretty Operator where
         , text " elems:   "     <> ppr (opSourceElems   op)
         , text " rate:    "     <> ppr (opInputRate     op)
         , text " type:    "     <> ppr (opElemType      op) ]
-
- ppr op@OpFold{}
-        = vcat
-        [ text "Fold"
-        , text " rate:    "     <> ppr (opInputRate     op) 
-        , text " input:   "     <> ppr (opInputSeries   op) ]
 
  ppr op@OpReduce{}
         = vcat

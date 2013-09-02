@@ -147,17 +147,20 @@ data OpSeries
         --   TODO: shift this somewhere else.
         = OpSeriesProj Int Int
 
-        -- | Apply a worker to corresponding elements of some series.
-        | OpSeriesMap Int
-
         -- | Replicate a single element into a series.
         | OpSeriesRep
 
         -- | Segmented replicate.
         | OpSeriesReps
 
+        -- | Gather  (read) elements from a vector.
+        | OpSeriesGather
+
         -- | Make a selector.
         | OpSeriesMkSel Int
+
+        -- | Apply a worker to corresponding elements of some series.
+        | OpSeriesMap Int
 
         -- | Pack a series according to a flags vector.
         | OpSeriesPack
@@ -166,24 +169,8 @@ data OpSeries
         --   updating an existing accumulator.
         | OpSeriesReduce
 
-        -- | Fold a series with an associative operator,
-        --   returning the final result.
-        | OpSeriesFold
-
-        -- | Fold where the worker also takes the current index into the series.
-        | OpSeriesFoldIndex
-
-        -- | Segmented fold.
-        | OpSeriesFolds
-
-        -- | Create a new vector from a series.
-        | OpSeriesCreate
-
         -- | Fill an existing vector from a series.
         | OpSeriesFill
-
-        -- | Gather  (read) elements from a vector.
-        | OpSeriesGather
 
         -- | Scatter (write) elements into a vector.
         | OpSeriesScatter
