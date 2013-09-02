@@ -97,6 +97,8 @@ lowerModule config mm
 -- | Lower a single series process into fused code.
 lowerProcess :: Config -> Process -> Either Fail (BindF, ExpF)
 lowerProcess config process
+ 
+ -- Scalar lowering ------------------------------
  | MethodScalar         <- configMethod config
  = do  
         -- Schedule process into scalar code.
@@ -108,6 +110,7 @@ lowerProcess config process
         return (bProc, xProc)
 
 
+ -- Vector lowering -----------------------------
  | MethodVector lifting <- configMethod config
 
  , BName nRN tRN : _  <- processParamValues process
@@ -170,7 +173,6 @@ lowerProcess config process
         procTail        <- scheduleScalar process
         let (bProcTail, xProcTail) = extractProcedure procTail
 
-
         let bxsTailSeries
                 = [ ( bS
                     , ( BName (NameVarMod n "tail")
@@ -222,6 +224,7 @@ lowerProcess config process
 
         return (bProc, xProc)
 
+ -- Kernel lowering -----------------------------
  | MethodKernel lifting <- configMethod config
  = do
         -- Schedule process into 
@@ -233,8 +236,8 @@ lowerProcess config process
         return (bProc, xProc)
 
  | otherwise
- = error "ddc-core-flow.lowerProcess: invalid lowering method"
-
+ = error $  "ddc-core-flow.lowerProcess: invalid lowering method"
+         
 
 -- Clean ----------------------------------------------------------------------
 -- | Do some beta-reductions to ensure that arguments to worker functions
