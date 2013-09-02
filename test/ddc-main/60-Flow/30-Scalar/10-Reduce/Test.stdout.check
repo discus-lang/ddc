@@ -1,0 +1,89 @@
+ok
+
+
+-- Single reduction of input series.
+module Test with
+letrec {
+  fold : [k : Rate].Ref# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(x : Ref# Int#).\(s : Series# k Int#).
+      let x$init = read# [Int#] x in
+      let x$acc = new# [Int#] x$init in
+      let _
+            = loop# [k]
+                  (\(x2 : Nat#).
+                   let s$elem = next# [Int#] [k] s x2 in
+                   let x$val = read# [Int#] x$acc in
+                   let x3 = add# [Int#] x$val s$elem in
+                   let _ = write# [Int#] x$acc x3 in
+                   ()) in
+      let x$res = read# [Int#] x$acc in
+      let _ = write# [Int#] x x$res in
+      ()
+}
+
+
+-- Two reductions over the same input series.
+module Test with
+letrec {
+  ffold : [k : Rate].Ref# Int# -> Ref# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(x1 x2 : Ref# Int#).\(s : Series# k Int#).
+      let x1$init = read# [Int#] x1 in
+      let x1$acc = new# [Int#] x1$init in
+      let x2$init = read# [Int#] x2 in
+      let x2$acc = new# [Int#] x2$init in
+      let _
+            = loop# [k]
+                  (\(x4 : Nat#).
+                   let s$elem = next# [Int#] [k] s x4 in
+                   let x1$val = read# [Int#] x1$acc in
+                   let x5 = add# [Int#] x1$val s$elem in
+                   let _ = write# [Int#] x1$acc x5 in
+                   let x2$val = read# [Int#] x2$acc in
+                   let x6 = mul# [Int#] x2$val s$elem in
+                   let _ = write# [Int#] x2$acc x6 in
+                   ()) in
+      let x1$res = read# [Int#] x1$acc in
+      let _ = write# [Int#] x1 x1$res in
+      let x2$res = read# [Int#] x2$acc in
+      let _ = write# [Int#] x2 x2$res in
+      ()
+}
+
+
+-- Three reductions over the same input series
+module Test with
+letrec {
+  fffold : [k : Rate].Ref# Int# -> Ref# Int# -> Ref# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(x1 x2 x3 : Ref# Int#).\(s : Series# k Int#).
+      let x1$init = read# [Int#] x1 in
+      let x1$acc = new# [Int#] x1$init in
+      let x2$init = read# [Int#] x2 in
+      let x2$acc = new# [Int#] x2$init in
+      let x3$init = read# [Int#] x3 in
+      let x3$acc = new# [Int#] x3$init in
+      let _
+            = loop# [k]
+                  (\(x5 : Nat#).
+                   let s$elem = next# [Int#] [k] s x5 in
+                   let x1$val = read# [Int#] x1$acc in
+                   let x6 = add# [Int#] x1$val s$elem in
+                   let _ = write# [Int#] x1$acc x6 in
+                   let x2$val = read# [Int#] x2$acc in
+                   let x7 = mul# [Int#] x2$val s$elem in
+                   let _ = write# [Int#] x2$acc x7 in
+                   let x3$val = read# [Int#] x3$acc in
+                   let x8 = mul# [Int#] x3$val s$elem in
+                   let _ = write# [Int#] x3$acc x8 in
+                   ()) in
+      let x1$res = read# [Int#] x1$acc in
+      let _ = write# [Int#] x1 x1$res in
+      let x2$res = read# [Int#] x2$acc in
+      let _ = write# [Int#] x2 x2$res in
+      let x3$res = read# [Int#] x3$acc in
+      let _ = write# [Int#] x3 x3$res in
+      ()
+}
+

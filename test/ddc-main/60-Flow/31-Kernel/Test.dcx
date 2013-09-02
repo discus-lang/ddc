@@ -1,12 +1,13 @@
 :set SuppressLetTypes
 
+
 -- Multiply two series.
 :flow-lower-kernel..
 module Test with letrec
 test    [k : Rate] (n  : RateNat# k)
         (v  : Vector# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
-        : Unit
+        : Process#
  = do   
         s2      = smap2# [k] [Float32#] [Float32#] [Float32#] 
                         (mul# [Float32#]) s1 s2
@@ -21,7 +22,7 @@ module Test with letrec
 test    [k : Rate] (n : RateNat# k)
         (v  : Vector# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
-        : Unit
+        : Process#
  = do   
         s2      = smap2# [k] [Float32#] [Float32#] [Float32#] 
                         (mul# [Float32#]) s1 s2
@@ -39,7 +40,7 @@ module Test with letrec
 test    [k : Rate] (n : RateNat# k)
         (v1 : Vector# Float32#)   (v2 : Vector# Float32#)
         (s1 : Series# k Nat#)
-        : Unit
+        : Process#
  = do   
         s2      = sgather# [k] [Float32#] v1 s1
 
@@ -56,7 +57,7 @@ module Test with letrec
 test    [k : Rate] (n : RateNat# k)
         (v1 : Vector# Float32#)
         (s1 : Series# k Nat#)   (s2 : Series# k Float32#)
-        : Unit
+        : Process#
  = do   
         s3      = smap#  [k] [Float32#] [Float32#]
                         (add# [Float32#] 2.0f32#) s2
@@ -70,7 +71,7 @@ test    [k : Rate] (n : RateNat# k)
 module Test with letrec
 test    [k : Rate] (n : RateNat# k)
         (x1 : Ref# Float32#) (s1 : Series# k Float32#)
-        : Unit
+        : Process#
  =      sreduce#  [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
 ;;
 
@@ -79,10 +80,10 @@ test    [k : Rate] (n : RateNat# k)
 :flow-lower-kernel..
 module Test with letrec
 test    [k : Rate] (n : RateNat# k) 
-        (x1  : Ref# Float32#)
+        (x1 : Ref# Float32#)
         (v1 : Vector# Float32#)
         (s1 : Series# k Nat#)
-        : Unit
+        : Process#
  = do   
         s2      = sgather# [k] [Float32#] v1 s1
 
@@ -99,7 +100,7 @@ module Test with letrec
 test    [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#)
-        : Unit
+        : Process#
  = do   
         s3      = smap2# [k] [Float32#] [Float32#] [Float32#]
                         (mul# [Float32#]) s1 s2
@@ -114,10 +115,10 @@ module Test with letrec
 test    [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
         (s1 : Series# k Float32#)
-        : Unit
- = do   
-        sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1
-        sreduce# [k] [Float32#] x2 (mul# [Float32#]) 1.0f32# s1
+        : Process#
+ = do
+        pjoin#  (sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s1)
+                (sreduce# [k] [Float32#] x2 (mul# [Float32#]) 1.0f32# s1)
 ;;
 
 
@@ -127,12 +128,12 @@ module Test with letrec
 test    [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
         (s1 : Series# k Float32#) (s2 : Series# k Float32#)
-        : Unit
+        : Process#
  = do   
         s3      = smap2# [k] [Float32#] [Float32#] [Float32#]
                         (mul# [Float32#]) s1 s2
 
-        sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
-        
-        sreduce# [k] [Float32#] x2 (add# [Float32#]) 0.0f32# s1
+        pjoin#  (sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3)
+                (sreduce# [k] [Float32#] x2 (add# [Float32#]) 0.0f32# s1)
 ;;
+

@@ -1,0 +1,85 @@
+ok
+
+-- Fuse map into fill.
+module Test with
+letrec {
+  map : [k : Rate].Vector# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Int#).\(s : Series# k Int#).
+      let _
+            = loop# [k]
+                  (\(x0 : Nat#).
+                   let s$elem = next# [Int#] [k] s x0 in
+                   let x1 = mul# [Int#] s$elem 2i# in
+                   let x3$elem = add# [Int#] x1 1i# in
+                   let _ = vwrite# [Int#] v x0 x3$elem in
+                   ()) in
+      ()
+}
+
+
+-- Fuse map into fold.
+module Test with
+letrec {
+  foldMap : [k : Rate].Ref# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(x : Ref# Int#).\(s : Series# k Int#).
+      let x$init = read# [Int#] x in
+      let x$acc = new# [Int#] x$init in
+      let _
+            = loop# [k]
+                  (\(x2 : Nat#).
+                   let s$elem = next# [Int#] [k] s x2 in
+                   let x4$elem = mul# [Int#] s$elem 2i# in
+                   let x$val = read# [Int#] x$acc in
+                   let x3 = add# [Int#] x$val x4$elem in
+                   let _ = write# [Int#] x$acc x3 in
+                   ()) in
+      let x$res = read# [Int#] x$acc in
+      let _ = write# [Int#] x x$res in
+      ()
+}
+
+
+-- Map/Map fusion, filling a vector.
+module Test with
+letrec {
+  map : [k : Rate].Vector# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Int#).\(s : Series# k Int#).
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let s$elem = next# [Int#] [k] s x1 in
+                   let x4$elem = add# [Int#] 1i# s$elem in
+                   let x6$elem = mul# [Int#] 2i# x4$elem in
+                   let _ = vwrite# [Int#] v x1 x6$elem in
+                   ()) in
+      ()
+}
+
+
+-- Map and Reduce the same series.
+module Test with
+letrec {
+  foldMap : [k : Rate].Vector# Int# -> Ref# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Int#).\(x : Ref# Int#).\(s : Series# k Int#).
+      let x$init = read# [Int#] x in
+      let x$acc = new# [Int#] x$init in
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let s$elem = next# [Int#] [k] s x1 in
+                   let x2$elem = mul# [Int#] 2i# s$elem in
+                   let x5$elem = add# [Int#] 1i# x2$elem in
+                   let x$val = read# [Int#] x$acc in
+                   let x2 = add# [Int#] x$val s$elem in
+                   let _ = write# [Int#] x$acc x2 in
+                   let _ = vwrite# [Int#] v x1 x5$elem in
+                   ()) in
+      let x$res = read# [Int#] x$acc in
+      let _ = write# [Int#] x x$res in
+      ()
+}
+

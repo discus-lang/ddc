@@ -1,5 +1,6 @@
 ok
 
+
 -- Multiply two series.
 module Test with
 letrec {
@@ -204,9 +205,9 @@ letrec {
                    let s1$elem = next$4# [Float32#] [k] s1 x4 in
                    let x1$val
                          = read# [Vec4# Float32#] x1$vec in
-                   let x8 = vadd$4# [Float32#] x1$val s1$elem in
+                   let x7 = vadd$4# [Float32#] x1$val s1$elem in
                    let _
-                         = write# [Vec4# Float32#] x1$vec x8 in
+                         = write# [Vec4# Float32#] x1$vec x7 in
                    let x2$val
                          = read# [Vec4# Float32#] x2$vec in
                    let x9 = vmul$4# [Float32#] x2$val s1$elem in
@@ -273,8 +274,8 @@ letrec {
       let x1$res
             = read# [Vec4# Float32#] x1$vec in
       let x1$init = read# [Float32#] x1 in
-      let x12 = vproj$4$0# [Float32#] x1$res in
-      let x1$res$0 = add# [Float32#] x1$init x12 in
+      let x11 = vproj$4$0# [Float32#] x1$res in
+      let x1$res$0 = add# [Float32#] x1$init x11 in
       let x14 = vproj$4$1# [Float32#] x1$res in
       let x1$res$1 = add# [Float32#] x1$res$0 x14 in
       let x16 = vproj$4$2# [Float32#] x1$res in
@@ -296,3 +297,4 @@ letrec {
       let _ = write# [Float32#] x2 x2$res$3 in
       ()
 }
+

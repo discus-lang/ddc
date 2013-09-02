@@ -168,7 +168,7 @@ lowerProcess config process
         -- Create tail version.
         --  Scalar code processes the final elements of the loop.
         procTail        <- scheduleScalar process
-        let (_, xProcTail) = extractProcedure procTail
+        let (bProcTail, xProcTail) = extractProcedure procTail
 
 
         let bxsTailSeries
@@ -218,7 +218,7 @@ lowerProcess config process
         -- Reconstruct a binder for the whole procedure / process.
         let bProc
                 = BName (processName process)
-                        (typeOfProcess process)
+                        (typeOfBind bProcTail)
 
         return (bProc, xProc)
 

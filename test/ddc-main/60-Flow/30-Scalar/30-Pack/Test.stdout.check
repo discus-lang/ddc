@@ -1,0 +1,128 @@
+ok
+
+
+-- Pack with an existing series of flags.
+module Test with
+letrec {
+  packMe : [k0 : Rate].[a : Data].Series# k0 a -> Vector# a -> Series# k0 Bool# -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(s : Series# k0 a).\(v : Vector# a).\(flags : Series# k0 Bool#).
+      let k1$count = new# [Nat#] 0# in
+      let _
+            = loop# [k0]
+                  (\(x0 : Nat#).
+                   let s$elem = next# [a] [k0] s x0 in
+                   let flags$elem = next# [Bool#] [k0] flags x0 in
+                   let _
+                         = guard# k1$count flags$elem
+                               (\(x1 : Nat#).
+                                let _ = vwrite# [a] v x1 s$elem in
+                                ()) in
+                   ()) in
+      ()
+}
+
+
+-- Filter, producing our own flags.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(v : Vector# a).\(s : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
+      let _
+            = loop# [k0]
+                  (\(x1 : Nat#).
+                   let s$elem = next# [a] [k0] s x1 in
+                   let x2$elem = f s$elem in
+                   let _
+                         = guard# k1$count x2$elem
+                               (\(x2 : Nat#).
+                                let _ = vwrite# [a] v x2 s$elem in
+                                ()) in
+                   ()) in
+      ()
+}
+
+
+-- Filter, and also materialize the input in a new selector context.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(v1 v2 : Vector# a).\(s : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
+      let _
+            = loop# [k0]
+                  (\(x1 : Nat#).
+                   let s$elem = next# [a] [k0] s x1 in
+                   let x2$elem = f s$elem in
+                   let _ = vwrite# [a] v1 x1 s$elem in
+                   let _
+                         = guard# k1$count x2$elem
+                               (\(x2 : Nat#).
+                                let _ = vwrite# [a] v1 x2 s$elem in
+                                ()) in
+                   ()) in
+      ()
+}
+
+
+-- Nested filter.
+-- Ensure we can handle nested selector contexts.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(v : Vector# a).\(s0 : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
+      let k2$count = new# [Nat#] 0# in
+      let _
+            = loop# [k0]
+                  (\(x0 : Nat#).
+                   let s0$elem = next# [a] [k0] s0 x0 in
+                   let x1$elem = f s0$elem in
+                   let _
+                         = guard# k1$count x1$elem
+                               (\(x1 : Nat#).
+                                let x4$elem = g s0$elem in
+                                let _
+                                      = guard# k2$count x4$elem
+                                            (\(x3 : Nat#).
+                                             let _ = vwrite# [a] v x3 s0$elem in
+                                             ()) in
+                                ()) in
+                   ()) in
+      ()
+}
+
+
+-- Sequential filter.
+-- Ensure we can handle two selector contexts on the same input.
+module Test with
+letrec {
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(v1 v2 : Vector# a).\(s0 : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
+      let k2$count = new# [Nat#] 0# in
+      let _
+            = loop# [k0]
+                  (\(x1 : Nat#).
+                   let s0$elem = next# [a] [k0] s0 x1 in
+                   let x2$elem = f s0$elem in
+                   let x5$elem = f s0$elem in
+                   let _
+                         = guard# k1$count x2$elem
+                               (\(x2 : Nat#).
+                                let _ = vwrite# [a] v1 x2 s0$elem in
+                                ()) in
+                   let _
+                         = guard# k2$count x5$elem
+                               (\(x4 : Nat#).
+                                let _ = vwrite# [a] v2 x4 s0$elem in
+                                ()) in
+                   ()) in
+      ()
+}
+

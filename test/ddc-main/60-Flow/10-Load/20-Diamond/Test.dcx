@@ -38,8 +38,9 @@ split   [k1      : Rate]
         (l1      : Tuple2# Float64# Float64#)
         (l2      : Tuple2# Float64# Float64#)
         (points  : Series# k1 (Tuple2# Float64# Float64#))
-        : Tuple2# (Vector#    (Tuple2# Float64# Float64#)) 
-                 Float64#
+        (vec     : Vector# (Tuple2# Float64# Float64#))
+        (mx      : Ref# Float64#)
+        : Process#
  = do
         -- Take the determinate between the line and each point.
         dets    
@@ -53,23 +54,15 @@ split   [k1      : Rate]
                 (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) 
                 dets
 
-        -- Filter the points, keeping those where the determinate was more
-        -- than zero.
-        aAbove
-         = smkSel1# [k1] [Vector# (Tuple2# Float64# Float64#)] flags 
-           (/\(k2 : Rate). \(sel : Sel1# k1 k2).
+        pjoin#  -- Filter the points, keeping those where the determinate was more
+                -- than zero.
+                (smkSel1# [k1] flags 
+                 (/\(k2 : Rate). \(sel : Sel1# k1 k2).
+                 let above   = spack# [k1] [k2] [Tuple2# Float64# Float64#] sel points 
+                 in  sfill# [k2] [Tuple2# Float64# Float64#] vec above))
 
-            let above   = spack#       [k1] [k2] [Tuple2# Float64# Float64#] 
-                                sel points 
-            in  screate#  [k2] [Tuple2# Float64# Float64#] above)
-
-        -- Also compute the maximum determinate.
-        xMax 
-         = sfold# [k1] [Float64#] [Float64#] 
-                max 
-                (promote# [Float64#] [Nat#] 0#)
-                dets 
-
-        T2# [Vector# (Tuple2# Float64# Float64#)] [Float64#] 
-                aAbove xMax
+                -- Also compute the maximum determinate.
+                (sreduce# [k1] [Float64#] mx max
+                        (promote# [Float64#] [Nat#] 0#)
+                        dets)
 ;;

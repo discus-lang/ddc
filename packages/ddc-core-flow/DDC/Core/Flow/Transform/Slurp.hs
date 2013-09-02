@@ -150,7 +150,7 @@ slurpBindingX b1 xx
 slurpBindingX b 
  (   takeXPrimApps 
   -> Just ( NameOpSeries (OpSeriesMkSel 1)
-          , [ XType tK1, XType _tA
+          , [ XType tK1
             , XVar uFlags
             , XLAM (BName nR kR) (XLam bSel xBody)]))
  | kR == kRate

@@ -40,7 +40,7 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 -- Flow operators
 screate# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> Vector# ^0
-sfill# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 ^0 -> Unit
+sfill# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 ^0 -> Process#
 smap# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
 srep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
 sreps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0

@@ -5,13 +5,15 @@
 :flow-lower..
 module Test with letrec
 packMe  [k0 : Rate] [a : Data]
-        (s  : Series# k0 a) (flags : Series# k0 Bool#)
-        : Vector# a
+        (s  : Series# k0 a) 
+        (v  : Vector# a)
+        (flags : Series# k0 Bool#)
+        : Process#
 
- =      smkSel1# [k0] [Vector# a] flags
+ =      smkSel1# [k0] flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
           let s2       = spack# [k0] [k1] [a] sel s
-          in  screate#  [k1] [a] s2)
+          in  sfill# [k1] [a] v s2)
 ;;
 
 
@@ -19,34 +21,36 @@ packMe  [k0 : Rate] [a : Data]
 :flow-lower..
 module Test with letrec
 filter  [k0 : Rate] [a : Data]
-        (f  : a -> Bool#) (s : Series# k0 a)
-        : Vector# a
+        (f  : a -> Bool#) 
+        (v  : Vector# a)
+        (s  : Series# k0 a)
+        : Process#
  = do   
-        flags   = smap# [k0] [a] [Bool#] (\(x : a). f x) s
+        flags   = smap# [k0] [a] [Bool#] f s
 
-        smkSel1# [k0] [Vector# a] flags
+        smkSel1# [k0] flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
           let  s2      =  spack# [k0] [k1] [a] sel s
-          in   screate#  [k1] [a] s2)
+          in   sfill# [k1] [a] v s2)
 ;;
 
 
--- Filter, and also materialize the input vector inside the new
--- selector context.
+-- Filter, and also materialize the input in a new selector context.
 :flow-lower..
 module Test with letrec
 filter  [k0 : Rate] [a : Data]
-        (f  : a -> Bool#) (s : Series# k0 a)
-        : Tuple2# (Vector# a) (Vector# a)
+        (f  : a -> Bool#) 
+        (v1 v2 : Vector# a)
+        (s : Series# k0 a)
+        : Process#
  = do   
-        flags   = smap# [k0] [a] [Bool#] (\(x : a). f x) s
+        flags   = smap# [k0] [a] [Bool#] f s
 
-        smkSel1# [k0] [Tuple2# (Vector# a) (Vector# a)] flags
-         (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-          let  s2      =  spack# [k0] [k1] [a] sel s
-          in   T2# [Vector# a] [Vector# a]
-                   (screate#  [k1] [a] s2)
-                   (screate#  [k0] [a] s))
+        pjoin#  (sfill# [k0] [a] v1 s)
+                (smkSel1# [k0] flags
+                 (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+                  let  s2  = spack# [k0] [k1] [a] sel s
+                  in   sfill# [k1] [a] v1 s2))
 ;;
 
 
@@ -56,20 +60,20 @@ filter  [k0 : Rate] [a : Data]
 module Test with letrec
 filter  [k0 : Rate] [a : Data]
         (f  : a -> Bool#)  (g : a -> Bool#)
+        (v  : Vector# a)
         (s0 : Series# k0 a)
-        : Vector# a
+        : Process#
  = do   
         flags1  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
 
-        smkSel1# [k0] [Vector# a] flags1
+        smkSel1# [k0] flags1
          (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
           let  s1      = spack# [k0] [k1] [a] sel1 s0 in
-          let  flags2  = smap#  [k1] [a]  [Bool#] (\(x : a). g x) s1 
-
-          in   smkSel1# [k1] [Vector# a] flags2
+          let  flags2  = smap#  [k1] [a]  [Bool#] g s1 
+          in   smkSel1# [k1] flags2
                  (/\(k2 : Rate). \(sel2 : Sel1# k1 k2).
                   let   s2 = spack# [k1] [k2] [a] sel2 s1
-                  in    screate# [k2] [a] s2))
+                  in    sfill# [k2] [a] v s2 ))
 ;;
 
 
@@ -96,6 +100,4 @@ filter  [k0 : Rate] [a : Data]
                   let   s2      = spack# [k0] [k2] [a] sel2 s0
                   in    sfill# [k2] [a] v2 s2))
 ;;
-
-
 

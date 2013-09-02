@@ -1,0 +1,18 @@
+ok
+
+-- | Single map over input series, writing into existing vector.
+module Test with
+letrec {
+  test : [k : Rate].Vector# Int# -> Series# k Int# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Int#).\(s : Series# k Int#).
+      let _
+            = loop# [k]
+                  (\(x0 : Nat#).
+                   let s$elem = next# [Int#] [k] s x0 in
+                   let x1 = mul# [Int#] s$elem 2i# in
+                   let x3$elem = add# [Int#] x1 1i# in
+                   let _ = vwrite# [Int#] v x0 x3$elem in
+                   ()) in
+      ()
+}
