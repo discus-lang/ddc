@@ -47,6 +47,8 @@ sreps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 sfold# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0 -> ^1) -> ^1 -> Series# ^2 ^0 -> ^1
 sfolds# :: [^ ^ : Rate].[^ ^ : Data].Segd# ^3 ^2 -> (Int# -> ^1 -> ^0 -> ^1) -> Series# ^3 ^1 -> Series# ^2 ^0 -> Series# ^3 ^1
 spack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
+runSeries# :: [^ : Rate].[^ ^ : Data].Vector# ^0 -> (Series# ^2 ^0 -> ^1) -> ^1
+runSeries2# :: [^ : Rate].[^ ^ ^ : Data].Vector# ^1 -> Vector# ^0 -> (Series# ^3 ^1 -> Series# ^3 ^0 -> ^2) -> ^2
 
 
 -- Series operators
@@ -73,3 +75,10 @@ vread# :: [^ : Data].Vector# ^0 -> Nat# -> ^0
 vwrite# :: [^ : Data].Vector# ^0 -> Nat# -> ^0 -> Unit
 next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
 
+-- Vector operators
+vmap# :: [^ ^ : Data].(^1 -> ^0) -> Vector# ^1 -> Vector# ^0
+vmap2# :: [^ ^ ^ : Data].(^2 -> ^1 -> ^0) -> Vector# ^2 -> Vector# ^1 -> Vector# ^0
+vfilter# :: [^ : Data].Vector# ^0 -> (Bool# -> ^0) -> Vector# ^0
+vfoldIndex# :: [^ ^ : Data].(Nat# -> ^1 -> ^0 -> ^1) -> ^1 -> Vector# ^0 -> ^1
+vgenerate# :: [^ : Data].Nat# -> (Nat# -> ^0) -> Vector# ^0
+vlength# :: [^ : Data].Vector# ^0 -> Nat#

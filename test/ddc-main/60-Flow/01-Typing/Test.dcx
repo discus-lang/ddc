@@ -47,6 +47,8 @@
 :type sfold#
 :type sfolds#
 :type spack#
+:type runSeries#
+:type runSeries2#
 
 
 -- Series operators
@@ -73,3 +75,10 @@
 :type vwrite#
 :type next#
 
+-- Vector operators
+:type vmap#
+:type vmap2#
+:type vfilter#
+:type vfoldIndex#
+:type vgenerate#
+:type vlength#

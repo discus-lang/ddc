@@ -4,10 +4,11 @@ module DDC.Core.Flow.Prim.Base
         , KiConFlow     (..)
         , TyConFlow     (..)
         , DaConFlow     (..)
-        , OpSeries      (..)
         , OpConcrete    (..)
         , OpControl     (..)
+        , OpSeries      (..)
         , OpStore       (..)
+        , OpVector      (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimVec       (..)
@@ -44,14 +45,17 @@ data Name
         -- | Concrete series operators.
         | NameOpConcrete        OpConcrete
 
-        -- | Series operators.
-        | NameOpSeries          OpSeries
-
         -- | Control operators.
         | NameOpControl         OpControl
 
+        -- | Series operators.
+        | NameOpSeries          OpSeries
+
         -- | Store operators.
         | NameOpStore           OpStore
+
+        -- | Vector operators.
+        | NameOpVector          OpVector
 
 
         -- Machine primitives ------------------
@@ -180,6 +184,9 @@ data OpSeries
 
         -- | Scatter (write) elements into a vector.
         | OpSeriesScatter
+
+        -- | Convert vector(s) into series, all with same length with runtime check.
+        | OpSeriesRunSeries Int
         deriving (Eq, Ord, Show)
 
 
@@ -243,5 +250,42 @@ data OpStore
 
         -- | Slice after a pack/filter (taking a @Nat@ for new length)
         | OpStoreSliceVector    
+        deriving (Eq, Ord, Show)
+
+-- | Fusable Flow operators that work on Vectors.
+data OpVector
+        -- | Apply worker function to @n@ vectors zipped.
+        = OpVectorMap Int
+
+        -- | Replicate a single element into a series.
+        -- Ignore: generate | OpVectorRep
+
+        -- | Segmented replicate.
+        -- TODO | OpVectorReps
+
+        -- | Filter a vector according to a predicate.
+        | OpVectorFilter
+
+        -- | Filter a vector according to a flags vector.
+        -- TODO | OpVectorPack
+
+        -- | Fold a series with an associative operator,
+        --   returning the final result.
+        -- Ignore: foldIndex | OpVectorFold
+
+        -- | Fold where the worker also takes the current index into the series.
+        | OpVectorFoldIndex
+
+        -- | Segmented fold.
+        -- TODO | OpVectorFolds
+
+        -- | Create a new vector from an index function.
+        | OpVectorGenerate
+
+        -- | Get a vector's length.
+        | OpVectorLength
+
+        -- | Concatenate two vectors
+        -- TODO | OpVectorAppend
         deriving (Eq, Ord, Show)
 

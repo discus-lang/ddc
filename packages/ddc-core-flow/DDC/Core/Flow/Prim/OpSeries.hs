@@ -49,6 +49,9 @@ instance Pretty OpSeries where
         OpSeriesGather            -> text "sgather"               <> text "#"
         OpSeriesScatter           -> text "sscatter"              <> text "#"
 
+        OpSeriesRunSeries 1       -> text "runSeries"             <> text "#"
+        OpSeriesRunSeries n       -> text "runSeries"  <> int n   <> text "#"
+
 
 -- | Read a data flow operator name.
 readOpSeries :: String -> Maybe OpSeries
@@ -78,6 +81,13 @@ readOpSeries str
         , arity == 1
         = Just $ OpSeriesMkSel arity
 
+        | Just rest     <- stripPrefix "runSeries" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ OpSeriesRunSeries arity
+
+
         | otherwise
         = case str of
                 "smap#"         -> Just $ OpSeriesMap   1
@@ -93,6 +103,7 @@ readOpSeries str
                 "sfill#"        -> Just $ OpSeriesFill
                 "sgather#"      -> Just $ OpSeriesGather
                 "sscatter#"     -> Just $ OpSeriesScatter
+                "runSeries#"    -> Just $ OpSeriesRunSeries 1
                 _               -> Nothing
 
 
@@ -241,6 +252,26 @@ takeTypeOpSeries op
          -> Just $ tForalls [kRate, kData] $ \[tK, tA]
                  -> tVector tA 
                  `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tUnit
+
+        -- runSeriesN# ::[k : Rate]. [r : Data]. [a0..aN : Data]
+        --          .  Vector    a0 .. Vector   aN 
+        --          -> (Series k a0 .. Series k aN -> r)
+        --          -> r
+        OpSeriesRunSeries n
+         | tK         <- TVar (UIx (n+1))
+         , tR         <- TVar (UIx n)
+
+         , Just tWork <- tFunOfList   
+                       $ [ tSeries tK (TVar (UIx i))
+                                | i <- reverse [0..n-1] ]
+                       ++[ tR ]
+
+         , Just tBody <- tFunOfList
+                         ([tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
+                         ++ [tWork, tR])
+
+         -> Just $ foldr TForall tBody
+                         [ BAnon k | k <- kRate : replicate (n + 1) kData ]
 
         _ -> Nothing
 

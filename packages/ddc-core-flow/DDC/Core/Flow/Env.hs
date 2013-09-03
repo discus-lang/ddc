@@ -134,6 +134,7 @@ typeOfPrimName dc
         NameOpSeries    p       -> Just $ typeOpSeries   p
         NameOpStore     p       -> Just $ typeOpStore    p
         NameOpControl   p       -> Just $ typeOpControl  p
+        NameOpVector    p       -> Just $ typeOpVector   p
         NameDaConFlow   p       -> Just $ typeDaConFlow  p
 
         NamePrimCast    p       -> Just $ typePrimCast   p 

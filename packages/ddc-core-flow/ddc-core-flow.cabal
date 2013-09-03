@@ -76,6 +76,7 @@ Library
         DDC.Core.Flow.Prim.OpPrim
         DDC.Core.Flow.Prim.OpSeries
         DDC.Core.Flow.Prim.OpStore
+        DDC.Core.Flow.Prim.OpVector
         DDC.Core.Flow.Prim.TyConFlow
         DDC.Core.Flow.Prim.TyConPrim
 

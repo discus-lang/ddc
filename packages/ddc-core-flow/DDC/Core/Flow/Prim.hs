@@ -38,6 +38,11 @@ module DDC.Core.Flow.Prim
         , readOpStore
         , typeOpStore
 
+          -- * Store operators
+        , OpVector      (..)
+        , readOpVector
+        , typeOpVector
+
           -- * Primitive type constructors
         , PrimTyCon     (..)
         , kindPrimTyCon
@@ -64,9 +69,10 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.DaConPrim     ()
 import DDC.Core.Flow.Prim.OpConcrete
-import DDC.Core.Flow.Prim.OpSeries
 import DDC.Core.Flow.Prim.OpControl
+import DDC.Core.Flow.Prim.OpSeries
 import DDC.Core.Flow.Prim.OpStore
+import DDC.Core.Flow.Prim.OpVector
 import DDC.Core.Flow.Prim.OpPrim
 
 import DDC.Core.Salt.Name.PrimTyCon
@@ -91,9 +97,10 @@ instance NFData Name where
         NameTyConFlow   con     -> rnf con
         NameDaConFlow   con     -> rnf con
         NameOpConcrete  op      -> rnf op
-        NameOpSeries    op      -> rnf op
         NameOpControl   op      -> rnf op
+        NameOpSeries    op      -> rnf op
         NameOpStore     op      -> rnf op
+        NameOpVector    op      -> rnf op
 
         NamePrimTyCon   op      -> rnf op
         NamePrimArith   op      -> rnf op
@@ -118,9 +125,10 @@ instance Pretty Name where
         NameTyConFlow   con     -> ppr con
         NameDaConFlow   con     -> ppr con
         NameOpConcrete  op      -> ppr op
-        NameOpSeries    op      -> ppr op
         NameOpControl   op      -> ppr op
+        NameOpSeries    op      -> ppr op
         NameOpStore     op      -> ppr op
+        NameOpVector    op      -> ppr op
 
         NamePrimTyCon   tc      -> ppr tc
         NamePrimArith   op      -> ppr op
@@ -143,9 +151,10 @@ readName str
         | Just p        <- readTyConFlow  str   = Just $ NameTyConFlow  p
         | Just p        <- readDaConFlow  str   = Just $ NameDaConFlow  p
         | Just p        <- readOpConcrete str   = Just $ NameOpConcrete p
-        | Just p        <- readOpSeries   str   = Just $ NameOpSeries   p 
         | Just p        <- readOpControl  str   = Just $ NameOpControl  p
+        | Just p        <- readOpSeries   str   = Just $ NameOpSeries   p 
         | Just p        <- readOpStore    str   = Just $ NameOpStore    p
+        | Just p        <- readOpVector   str   = Just $ NameOpVector   p 
 
         -- Primitive names.
         | Just p        <- readPrimTyCon  str   = Just $ NamePrimTyCon  p
