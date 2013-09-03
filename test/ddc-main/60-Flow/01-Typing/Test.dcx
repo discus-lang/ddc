@@ -45,6 +45,12 @@
 :type smkSel#
 :type smap#
 :type spack#
+:type runSeries#
+:type runSeries2#
+:type sreduce#
+:type sfill#
+:type sscatter#
+:type pjoin#
 
 
 -- Series operators

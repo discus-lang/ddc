@@ -174,6 +174,12 @@ data OpSeries
 
         -- | Scatter (write) elements into a vector.
         | OpSeriesScatter
+
+        -- | Convert vector(s) into series, all with same length with runtime check.
+        | OpSeriesRunSeries Int
+
+        -- | Join two series processes.
+        | OpSeriesJoin
         deriving (Eq, Ord, Show)
 
 

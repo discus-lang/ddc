@@ -96,6 +96,8 @@ readOpSeries str
                 "sreduce#"      -> Just $ OpSeriesReduce
                 "sfill#"        -> Just $ OpSeriesFill
                 "sscatter#"     -> Just $ OpSeriesScatter
+                "pjoin#"        -> Just $ OpSeriesJoin
+                "runSeries#"    -> Just $ OpSeriesRunSeries 1
                 _               -> Nothing
 
 
@@ -218,43 +220,25 @@ takeTypeOpSeries op
                  -> tVector tA 
                  `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tProcess
 
+        -- runSeriesN# ::[k : Rate]. [r : Data]. [a0..aN : Data]
+        --          .  Vector    a0 .. Vector   aN 
+        --          -> (Series k a0 .. Series k aN -> r)
+        --          -> r
+        OpSeriesRunSeries n
+         | tK         <- TVar (UIx (n+1))
+         , tR         <- TVar (UIx n)
 
-        -- OLD NEWS: delete me ===================
-        -- create#  :: [k : Rate]. [a : Data]. Series k a -> Vector a
-        OpSeriesCreate
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
-                -> tSeries tK tA `tFun` tVector tA
+         , Just tWork <- tFunOfList   
+                       $ [ tSeries tK (TVar (UIx i))
+                                | i <- reverse [0..n-1] ]
+                       ++[ tR ]
 
-        -- fold   :: [k : Rate]. [a b: Data]
-        --        .  (a -> b -> a) -> a -> Series k b -> a
-        OpSeriesFold    
-         -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
-                ->     (tA `tFun` tB `tFun` tA)
-                `tFun` tA
-                `tFun` tSeries tK tB
-                `tFun` tA
+         , Just tBody <- tFunOfList
+                         ([tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
+                         ++ [tWork, tR])
 
-        -- foldIndex :: [k : Rate]. [a b: Data]
-        --           .  (Nat# -> a -> b -> a) -> a -> Series k b -> a
-        OpSeriesFoldIndex
-         -> Just $ tForalls [kRate, kData, kData] $ \[tK, tA, tB]
-                 ->     (tNat `tFun` tA `tFun` tB `tFun` tA)
-                 `tFun` tA
-                 `tFun` tSeries tK tB
-                 `tFun` tA
-
-        -- folds :: [k1 k2 : Rate]. [a b: Data]
-        --       .  Segd   k1 k2 
-        --       -> (a -> b -> a)       -- fold operator
-        --       -> Series k1 a         -- start values
-        --       -> Series k2 b         -- source elements
-        --       -> Series k1 a         -- result values
-        OpSeriesFolds
-         -> Just $ tForalls [kRate, kRate, kData, kData] $ \[tK1, tK2, tA, tB]
-                 ->      tSegd tK1 tK2
-                 `tFun` (tInt `tFun` tA `tFun` tB `tFun` tA)
-                 `tFun` tSeries tK1 tA `tFun` tSeries tK2 tB `tFun` tSeries tK1 tA
-
+         -> Just $ foldr TForall tBody
+                         [ BAnon k | k <- kRate : replicate (n + 1) kData ]
 
         _ -> Nothing
 
