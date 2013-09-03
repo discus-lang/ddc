@@ -159,10 +159,18 @@ pDataDef c
                                 | ctor <- ctors
                                 | tag  <- [0..] ]
                 pTok KBraceKet
-                return  $ DataDef nData bsParam (Just ctors')
+                return  $ DataDef 
+                        { dataDefTypeName       = nData
+                        , dataDefParams         = bsParam 
+                        , dataDefCtors          = Just ctors'
+                        , dataDefIsAlgebraic    = True }
          
            -- Data declaration with no data constructors.
-         , do   return  $ DataDef nData bsParam (Just [])
+         , do   return  $ DataDef 
+                        { dataDefTypeName       = nData
+                        , dataDefParams         = bsParam
+                        , dataDefCtors          = Just []
+                        , dataDefIsAlgebraic    = True }
          ]
 
 

@@ -37,29 +37,29 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Bool
-        [ makeDataDef
+        [ makeDataDefAlg
                 (NamePrimTyCon PrimTyConBool)
                 []
                 (Just   [ (NameLitBool True,  [])
                         , (NameLitBool False, []) ])
         -- Nat
-        , makeDataDef (NamePrimTyCon PrimTyConNat) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat) [] Nothing
 
         -- Int
-        , makeDataDef (NamePrimTyCon PrimTyConInt) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt) [] Nothing
 
         -- Tag
-        , makeDataDef (NamePrimTyCon PrimTyConTag) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConTag) [] Nothing
 
         -- Word 8, 16, 32, 64
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
 
         -- Float 32, 64
-        , makeDataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDefAbs (NamePrimTyCon (PrimTyConFloat 32)) []
+        , makeDataDefAbs (NamePrimTyCon (PrimTyConFloat 64)) []
         ]
 
 

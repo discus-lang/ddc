@@ -112,6 +112,9 @@ toCoreDataDef def
                 $ [ toCoreDataCtor def tag ctor
                         | ctor  <- S.dataDefCtors def
                         | tag   <- [0..] ]
+
+        , C.dataDefIsAlgebraic
+                = True
         }
 
 

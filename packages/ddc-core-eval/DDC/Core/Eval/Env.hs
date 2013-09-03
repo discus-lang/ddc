@@ -38,20 +38,20 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         [ -- Int
-          makeDataDef
+          makeDataDefAlg
                 (NamePrimCon PrimTyConInt)
                 [BAnon kRegion]
                 Nothing
 
           -- Pair
-        , makeDataDef
+        , makeDataDefAlg
                 (NamePrimCon PrimTyConPair)
                 [BAnon kRegion, BAnon kData, BAnon kData]
                 (Just   [ ( NamePrimCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
           -- List
-        , makeDataDef
+        , makeDataDefAlg
                 (NamePrimCon PrimTyConList)
                 [BAnon kRegion, BAnon kData]
                 (Just   [ (NamePrimCon PrimDaConNil,  []) 

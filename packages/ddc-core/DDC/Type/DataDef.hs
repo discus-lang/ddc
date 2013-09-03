@@ -4,7 +4,8 @@ module DDC.Type.DataDef
         ( DataDef    (..)
         , kindOfDataDef
         , dataTypeOfDataDef
-        , makeDataDef
+        , makeDataDefAlg
+        , makeDataDefAbs
 
         -- * Data type definition table
         , DataDefs   (..)
@@ -41,17 +42,23 @@ data DataDef n
           -- | Binders for type parameters.
         , dataDefParams         :: ![Bind n]
 
-          -- | Constructors of the data type, or Nothing if there are
-          --   too many to list (like with `Int`).
-        , dataDefCtors          :: !(Maybe [DataCtor n]) }
+          -- | Constructors of the data type, 
+          --   or Nothing if the data type is algbraic but there are too many 
+          --      constructors to list (like with `Int`).
+        , dataDefCtors          :: !(Maybe [DataCtor n]) 
+
+          -- | Whether the data type is algebraic.
+          --   These can be deconstructed with 'case' expressions.
+        , dataDefIsAlgebraic    :: Bool }
         deriving Show
 
 
 instance NFData n => NFData (DataDef n) where
  rnf !def
-        =       rnf (dataDefTypeName def)
-        `seq`   rnf (dataDefParams   def)
-        `seq`   rnf (dataDefCtors    def)
+        =       rnf (dataDefTypeName    def)
+        `seq`   rnf (dataDefParams      def)
+        `seq`   rnf (dataDefCtors       def)
+        `seq`   rnf (dataDefIsAlgebraic def)
 
 
 -- | Get the kind of the type constructor defined by a `DataDef`.
@@ -72,20 +79,25 @@ dataTypeOfDataDef def
    in   tApps (TCon tc) (map TVar usParam)
                                         
 
--- | Shortcut for constructing a `DataDef`
-makeDataDef 
-        :: n                            -- ^ Name of data type.
-        -> [Bind n]                     -- ^ Type parameters.
-        -> Maybe [(n, [Type n])]        -- ^ Constructor names and field types.
+-- | Shortcut for constructing a `DataDef` for an algebraic type.
+--
+--   Values of algebraic type can be deconstructed with case-expressions.
+makeDataDefAlg 
+        :: n            -- ^ Name of data type.
+        -> [Bind n]     -- ^ Type parameters.
+        -> Maybe [(n, [Type n])]        
+                        -- ^ Constructor names and field types,
+                        --      or `Nothing` if there are too many to list.
         -> DataDef n
 
-makeDataDef nData bsParam Nothing 
+makeDataDefAlg nData bsParam Nothing 
         = DataDef
         { dataDefTypeName       = nData
         , dataDefParams         = bsParam
-        , dataDefCtors          = Nothing }
+        , dataDefCtors          = Nothing 
+        , dataDefIsAlgebraic    = True }
 
-makeDataDef nData bsParam (Just ntsField)
+makeDataDefAlg nData bsParam (Just ntsField)
  = let  usParam = takeSubstBoundsOfBinds bsParam
         ksParam = map typeOfBind bsParam
         tc      = TyConBound (UName nData) 
@@ -97,10 +109,23 @@ makeDataDef nData bsParam (Just ntsField)
                             | tag          <- [0..]
                             | (n, tsField) <- ntsField] 
    in   DataDef
-        { dataDefTypeName = nData
-        , dataDefParams   = bsParam
-        , dataDefCtors    = Just ctors }
-        
+        { dataDefTypeName       = nData
+        , dataDefParams         = bsParam
+        , dataDefCtors          = Just ctors 
+        , dataDefIsAlgebraic    = True }
+  
+
+-- | Shortcut for constructing a `DataDef` for an abstract type.
+--
+--   Values of abstract type cannot be deconstructed with case-expressions.
+makeDataDefAbs :: n -> [Bind n] -> DataDef n
+makeDataDefAbs nData bsParam
+ = DataDef
+        { dataDefTypeName       = nData
+        , dataDefParams         = bsParam
+        , dataDefCtors          = Just []
+        , dataDefIsAlgebraic    = False }
+
 
 -- DataDefs -------------------------------------------------------------------
 -- | A table of data type definitions,
@@ -133,7 +158,10 @@ data DataType n
 
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
-        , dataTypeMode       :: !(DataMode n) }
+        , dataTypeMode       :: !(DataMode n) 
+
+          -- | Whether the data type is algebraic.
+        , dataTypeIsAlgebraic :: Bool }
         deriving Show
 
 
@@ -183,11 +211,12 @@ emptyDataDefs
 
 -- | Insert a data type definition into some DataDefs.
 insertDataDef  :: Ord n => DataDef  n -> DataDefs n -> DataDefs n
-insertDataDef (DataDef nType bsParam mCtors) dataDefs
+insertDataDef (DataDef nType bsParam mCtors isAlg) dataDefs
  = let  defType = DataType
-                { dataTypeName       = nType
-                , dataTypeParams     = bsParam
-                , dataTypeMode       = defMode }
+                { dataTypeName        = nType
+                , dataTypeParams      = bsParam
+                , dataTypeMode        = defMode 
+                , dataTypeIsAlgebraic = isAlg }
 
         defMode = case mCtors of
                    Nothing    -> DataModeLarge

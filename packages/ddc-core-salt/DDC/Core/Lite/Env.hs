@@ -40,61 +40,61 @@ primDataDefs
         -- We need these so that we can match against unboxed patterns
         -- in case expressions.
         -- Bool#
-        [ makeDataDef (NamePrimTyCon PrimTyConBool) 
+        [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , makeDataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)  [] Nothing
 
         -- Int#
-        , makeDataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)  [] Nothing
 
         -- WordN#
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
         -- Boxed ----------------------------------------------------
         -- Unit
-        , makeDataDef
+        , makeDataDefAlg
                 (NameDataTyCon DataTyConUnit)
                 []
                 (Just   [ ( NamePrimDaCon PrimDaConUnit
                           , []) ])
 
         -- Bool
-        , makeDataDef
+        , makeDataDefAlg
                 (NameDataTyCon DataTyConBool)
                 [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConBoolU
                           , [tBoolU]) ])
 
         -- Nat
-        , makeDataDef
+        , makeDataDefAlg
                 (NameDataTyCon DataTyConNat)
                 [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConNatU
                           , [tNatU]) ])
         
         -- Int
-        , makeDataDef
+        , makeDataDefAlg
                 (NameDataTyCon DataTyConInt)
                 [BAnon kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConIntU
                           , [tIntU]) ])
 
         -- Pair
-        , makeDataDef
+        , makeDataDefAlg
                 (NameDataTyCon DataTyConPair)
                 [BAnon kRegion, BAnon kData, BAnon kData]
                 (Just   [ ( NamePrimDaCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
         -- List
-        , makeDataDef
+        , makeDataDefAlg
                 (NameDataTyCon DataTyConList)
                 [BAnon kRegion, BAnon kData]
                 (Just   [ (NamePrimDaCon PrimDaConNil,  [tUnit]) 

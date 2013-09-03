@@ -27,26 +27,26 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Primitive -----------------------------------------------
-        -- Bool
-        [ makeDataDef (NamePrimTyCon PrimTyConBool) 
+        -- Bool#
+        [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
-        -- Nat
-        , makeDataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+        -- Nat#
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)       [] Nothing
 
-        -- Int
-        , makeDataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+        -- Int#
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)       [] Nothing
 
-        -- WordN
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        -- WordN#
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
-        -- Ref
-        , makeDataDef (NameTyConData TyConDataRef) [] Nothing
+        -- Ref#
+        , makeDataDefAbs (NameTyConData TyConDataRef) []
         ]
 
 

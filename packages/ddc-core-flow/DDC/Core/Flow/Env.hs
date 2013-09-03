@@ -34,42 +34,40 @@ primDataDefs
  = fromListDataDefs
  $      -- Primitive -----------------------------------------------
         -- Bool#
-        [ makeDataDef (NamePrimTyCon PrimTyConBool) 
+        [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , makeDataDef (NamePrimTyCon PrimTyConNat)        [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , makeDataDef (NamePrimTyCon PrimTyConInt)        [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- Float32#
-        , makeDataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
 
         -- Float64#
-        , makeDataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
         -- WordN#
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
-        , makeDataDef (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
 
 
         -- Flow -----------------------------------------------------
         -- Vector
-        , makeDataDef
+        , makeDataDefAbs
                 (NameTyConFlow TyConFlowVector)
                 [BAnon kRate, BAnon kData]
-                (Just   [])
 
         -- Series
-        , makeDataDef
+        , makeDataDefAbs
                 (NameTyConFlow TyConFlowSeries)
                 [BAnon kRate, BAnon kData]
-                (Just   [])
         ]
 
         -- Tuple
@@ -81,7 +79,7 @@ primDataDefs
 -- | Make a tuple data def for the given tuple arity.
 makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
-        = makeDataDef
+        = makeDataDefAlg
                 (NameTyConFlow (TyConFlowTuple n))
                 (replicate n (BAnon kData))
                 (Just   [ ( NameDaConFlow (DaConFlowTuple n)
