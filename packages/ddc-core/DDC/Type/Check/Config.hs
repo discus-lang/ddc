@@ -39,7 +39,11 @@ data Config n
         , configFunctionalEffects       :: Bool
 
           -- | Attach closure information to function types.
-        , configFunctionalClosures      :: Bool }
+        , configFunctionalClosures      :: Bool 
+
+          -- | This name represents some hole in the expression that needs
+          --   to be filled in by the type checker.
+        , configNameIsHole              :: Maybe (n -> Bool) }
 
 
 
@@ -63,5 +67,7 @@ configOfProfile profile
                                    $ F.profileFeatures profile
 
         , configFunctionalClosures = F.featuresFunctionalClosures
-                                   $ F.profileFeatures profile }
+                                   $ F.profileFeatures profile 
+
+        , configNameIsHole         = F.profileNameIsHole profile }
 

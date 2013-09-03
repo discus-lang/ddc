@@ -2,6 +2,7 @@
 module DDC.Core.Tetra.Prim
         ( -- * Names and lexing.
           Name          (..)
+        , isNameHole
         , readName
 
           -- * Baked-in data type constructors.

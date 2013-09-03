@@ -1,6 +1,8 @@
 
 module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
+        , isNameHole
+        
         , TyConData     (..)
         , OpStore       (..)
         , PrimTyCon     (..)
@@ -49,6 +51,14 @@ data Name
         -- | Hole used during type inference.
         | NameHole 
         deriving (Eq, Ord, Show, Typeable)
+
+
+-- | Check whether a name is `NameHole`.
+isNameHole :: Name -> Bool
+isNameHole nn
+ = case nn of
+        NameHole        -> True
+        _               -> False
 
 
 -- TyConData------------------------------------------------------------------

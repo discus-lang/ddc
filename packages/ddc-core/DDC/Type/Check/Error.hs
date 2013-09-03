@@ -17,7 +17,8 @@ data Error n
         | ErrorUndefinedTypeCtor
         { errorBound            :: Bound n }
 
-        -- | The kind annotation on the variables does not match the one in the environment.
+        -- | The kind annotation on the variables does not match the one in the
+        --   environment.
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n
         , errorTypeEnv          :: Type n }
@@ -60,12 +61,17 @@ data Error n
         , errorBody             :: Type n
         , errorKind             :: Kind n }
 
-        -- | A witness implication where the premise or conclusion has an invalid kind.
+        -- | A witness implication where the premise or conclusion has an
+        --   invalid kind.
         | ErrorWitnessImplInvalid
         { errorChecking         :: Type n
         , errorLeftType         :: Type n
         , errorLeftKind         :: Kind n
         , errorRightType        :: Type n
         , errorRightKind        :: Kind n }
+        
+        -- | Cannot infer a type.
+        | ErrorCannotInfer
+        { errorChecking         :: Type n }
         deriving Show
 

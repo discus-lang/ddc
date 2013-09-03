@@ -19,7 +19,8 @@ evalProfile
         , profilePrimSupers             = Env.empty
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv 
-        , profileTypeIsUnboxed          = const False }
+        , profileTypeIsUnboxed          = const False 
+        , profileNameIsHole             = Nothing }
 
 
 -- | Language features used by the eval fragment.

@@ -23,10 +23,8 @@ profile
         , profilePrimSupers             = Env.empty
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
-
-          -- As we allow unboxed instantiation,
-          -- this isn't needed by the compliance check.
-        , profileTypeIsUnboxed          = const False }
+        , profileTypeIsUnboxed          = const False 
+        , profileNameIsHole             = Nothing }
 
 
 features :: Features

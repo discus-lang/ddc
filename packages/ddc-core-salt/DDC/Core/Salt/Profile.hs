@@ -23,7 +23,8 @@ profile
         , profilePrimSupers             = Env.empty
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv 
-        , profileTypeIsUnboxed          = typeIsUnboxed }
+        , profileTypeIsUnboxed          = typeIsUnboxed 
+        , profileNameIsHole             = Nothing }
 
 
 -- | The Salt fragment doesn't support many features.

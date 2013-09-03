@@ -39,7 +39,11 @@ data Profile n
 
           -- | Check whether a type is an unboxed type.
           --   Some fragments limit how these can be used.
-        , profileTypeIsUnboxed          :: !(Type n -> Bool) }
+        , profileTypeIsUnboxed          :: !(Type n -> Bool) 
+
+          -- | Check whether some name represents a hole that needs
+          --   to be filled in by the type checker.
+        , profileNameIsHole             :: !(Maybe (n -> Bool)) }
 
 
 -- | A language profile with no features or primitive operators.
@@ -54,7 +58,8 @@ zeroProfile
         , profilePrimSupers             = Env.empty
         , profilePrimKinds              = Env.empty
         , profilePrimTypes              = Env.empty
-        , profileTypeIsUnboxed          = const False }
+        , profileTypeIsUnboxed          = const False 
+        , profileNameIsHole             = Nothing }
 
 
 -- | A flattened set of features, for easy lookup.

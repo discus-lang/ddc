@@ -28,10 +28,8 @@ profile
         , profilePrimSupers             = primSortEnv
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
-
-          -- We don't need to distinguish been boxed and unboxed
-          -- because we allow unboxed instantiation.
-        , profileTypeIsUnboxed          = const False }
+        , profileTypeIsUnboxed          = const False 
+        , profileNameIsHole             = Nothing }
 
 
 features :: Features

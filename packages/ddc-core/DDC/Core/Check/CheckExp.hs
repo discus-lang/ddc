@@ -88,7 +88,7 @@ typeOfExp
         -> KindEnv n            -- ^ Starting Kind environment
         -> TypeEnv n            -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
-        -> Maybe (Type n)       -- ^ Expected type, if any.
+        -> Maybe  (Type n)      -- ^ Expected type, if any.
         -> Either (Error a n) (Type n)
 
 typeOfExp !config !kenv !tenv !xx !tXX

@@ -43,7 +43,7 @@ type CheckM n   = G.CheckM (Error n)
 checkType  :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> KindEnv n 
-           -> Type n 
+           -> Type n
            -> Either (Error n) (Type n, Kind n)
 
 checkType defs env tt 
@@ -80,12 +80,20 @@ checkTypeM config env tt
           checkTypeM' config env tt
 
 -- Variables ------------------
-checkTypeM' _config env tt@(TVar u)
+checkTypeM' config env tt@(TVar u)
  | UPrim _ k    <- u    = return (tt, k)
+ 
  | otherwise
  = case Env.lookup u env of
         Just k  -> return (tt, k)
-        Nothing -> throw $ ErrorUndefined u
+        Nothing 
+         | UName n      <- u
+         , Just isHole  <- configNameIsHole config
+         , isHole n
+         -> throw $ ErrorCannotInfer tt
+
+         | otherwise
+         -> throw $ ErrorUndefined u
 
 -- Constructors ---------------
 checkTypeM' config env tt@(TCon tc)

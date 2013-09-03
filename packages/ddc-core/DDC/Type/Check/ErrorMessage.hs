@@ -73,3 +73,6 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                  , text "             has kind: " <> ppr k2 
                  , text "        when checking: " <> ppr tt ]
                 
+        ErrorCannotInfer tt
+         -> vcat [ text "Cannot infer type"
+                 , text "     with placeholder: " <> ppr tt ]
