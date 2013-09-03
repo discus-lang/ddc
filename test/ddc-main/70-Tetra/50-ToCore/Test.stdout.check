@@ -1,4 +1,5 @@
 
+-- List length function.
 module Test 
 data List (a : Data) where {
         Nil : List a;
@@ -22,6 +23,7 @@ letrec {
 }
 
 
+-- List functions that don't need primops.
 module Test 
 data List (a : Data) where {
         Nil : List a;
@@ -29,6 +31,10 @@ data List (a : Data) where {
 }
 with
 letrec {
+  singleton : [a : Data].[x : a].List a
+    = /\(a : Data)./\(x : a).
+      Cons [?] x (Nil [?]);
+  
   append : [a : Data].List a -> List a -> List a
     = /\(a : Data).
        \(xx yy : List a).
@@ -37,5 +43,25 @@ letrec {
          -> yy;
         Cons x xs 
          -> Cons [?] x (append [?] xs yy)
+      };
+  
+  reverse : [a : Data].List a -> List a
+    = /\(a : Data).
+       \(xx : List a).
+      case xx of {
+        Nil  
+         -> Nil [?];
+        Cons x xs 
+         -> append [?] (reverse [?] xs) (singleton [?] [?] x)
+      };
+  
+  map : [a b : Data].(a -> b) -> List a -> List b
+    = /\(a b : Data).
+       \(f : a -> b).\(xx : List a).
+      case xx of {
+        Nil  
+         -> Nil [?];
+        Cons x xs 
+         -> Cons [?] (f x) (map [?] [?] f xs)
       }
 }
