@@ -1,12 +1,12 @@
 -- Error: types of alternatives are not identical.
 When checking expression.
   Mismatch in alternative result types.
-     Type of alternative: Int R0#
+     Type of alternative: Int r0#
           does not match: Unit
   
-  with: case 5 [R0#] () of {
+  with: case 5 [r0#] () of {
           0  
-           -> 0 [R0#] ();
+           -> 0 [r0#] ();
           _ 
            -> ()
         }
@@ -42,7 +42,7 @@ When checking expression.
 When checking expression.
   Annotation on pattern variable does not match type of field.
          Annotation type: Unit
-              Field type: Int R0#
+              Field type: Int r0#
   
   with: case xx of {
           Nil  
@@ -116,7 +116,7 @@ When checking expression.
   Cannot instantiate constructor type with scrutinee type args.
    Either the constructor has an invalid type,
    or the type of the scrutinee does not match the type of the pattern.
-          Scrutinee type: List R0# (Int R0#)
+          Scrutinee type: List r0# (Int r0#)
         Constructor type: Unit
   
   with: letcase ()   = xx1 in
@@ -126,8 +126,8 @@ When checking expression.
 -- Error: pattern and discriminant types don't match.
 When checking expression.
   Scrutinee type does not match result of pattern type.
-          Scrutinee type: Int R0#
-            Pattern type: [^ : Data].Unit -(Alloc R0# | Empty)> List R0# ^0
+          Scrutinee type: Int r0#
+            Pattern type: [^ : Data].Unit -(Alloc r0# | Empty)> List r0# ^0
   
   with: letcase Nil   = xx in
         ()
@@ -135,17 +135,17 @@ When checking expression.
 
 -- Check that vars in alts are masked from closure
 -- and effect includes the read of the discriminant.
-let xx : List R0# (Int R0#)
-      = Nil [R0#] [Int R0#] () in
+let xx : List r0# (Int r0#)
+      = Nil [r0#] [Int r0#] () in
 case xx of {
   Nil  
-   -> 0 [R0#] ();
-  Cons (x : Int R0#) (xs : List R0# (Int R0#)) 
+   -> 0 [r0#] ();
+  Cons (x : Int r0#) (xs : List r0# (Int r0#)) 
    -> x
 }
-:*: Int R0#
-:!: Read R0# + Alloc R0#
-:$: Use R0#
+:*: Int r0#
+:!: Read r0# + Alloc r0#
+:$: Use r0#
 
 
 -- Check that the HeadRead effect is crushed out when

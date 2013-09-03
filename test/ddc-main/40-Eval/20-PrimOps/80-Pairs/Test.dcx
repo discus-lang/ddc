@@ -4,8 +4,8 @@ let fst = /\(r : Region) (a b : Data). \(p : Pair r a b).
           case p of { 
             Pr x _  -> x
           } in
-fst  [R0#] [Int R1#] [Int R2#]
- (Pr [R0#] [Int R1#] [Int R2#] 
-     (5 [R1#] ()) 
-     (6 [R2#] ()));;
+fst  [r0#] [Int r1#] [Int r2#]
+ (Pr [r0#] [Int r1#] [Int r2#] 
+     (5 [r1#] ()) 
+     (6 [r2#] ()));;
 

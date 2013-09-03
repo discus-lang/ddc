@@ -1,27 +1,27 @@
 -- Ok: let expression with explicit type annotation.
-let x : Int R0# = 5 [R0#] () in
+let x : Int r0# = 5 [r0#] () in
 x
-:*: Int R0#
-:!: Alloc R0#
-:$: Use R0#
+:*: Int r0#
+:!: Alloc r0#
+:$: Use r0#
 
 
 -- Ok: let expression with no type annotation.
-let x : Int R0# = 5 [R0#] () in
+let x : Int r0# = 5 [r0#] () in
 x
-:*: Int R0#
-:!: Alloc R0#
-:$: Use R0#
+:*: Int r0#
+:!: Alloc r0#
+:$: Use r0#
 
 
 -- Error: let binder has incorrect type annotation.
 When checking expression.
   Type mismatch in let-binding.
                   The binder: x
-                    has type: Int R0#
+                    has type: Int r0#
        but the body has type: Unit
   
-  with: let x : Int R0# = () in
+  with: let x : Int r0# = () in
         x
 
 
@@ -46,7 +46,7 @@ When checking expression.
                         (subInt [r] [r] [r] n (1 [r] ()))
               }
         } in
-        fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+        fac [r1#] (1 [r1#] ()) (5 [r1#] ())
 
 
 -- Error: inner function is missing an Alloc effect.
@@ -70,7 +70,7 @@ When checking expression.
                         (subInt [r] [r] [r] n (1 [r] ()))
               }
         } in
-        fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+        fac [r1#] (1 [r1#] ()) (5 [r1#] ())
 
 
 -- Error: region var on the Int return type should be r1.
@@ -105,7 +105,7 @@ When checking expression.
                         (Nil [r2] [Int r1] ())
               }
         } in
-        enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+        enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
 
 
 -- Should be ok.
@@ -123,10 +123,10 @@ letrec {
                 (Nil [r2] [Int r1] ())
       }
 } in
-enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
-:*: List R2# (Int R1#)
-:!: Read R1# + Alloc R1# + Alloc R2#
-:$: Use R1# + Use R2#
+enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
+:*: List r2# (Int r1#)
+:!: Read r1# + Alloc r1# + Alloc r2#
+:$: Use r1# + Use r2#
 
 
 -- Same as above, but the effect and closure terms are in a different order.
@@ -144,10 +144,10 @@ letrec {
                 (Nil [r2] [Int r1] ())
       }
 } in
-enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
-:*: List R2# (Int R1#)
-:!: Read R1# + Alloc R1# + Alloc R2#
-:$: Use R1# + Use R2#
+enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
+:*: List r2# (Int r1#)
+:!: Read r1# + Alloc r1# + Alloc r2#
+:$: Use r1# + Use r2#
 
 
 -- Error: binding must have data kind.

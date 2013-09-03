@@ -5,20 +5,20 @@ ok, added whacky0
 
 -- should turn into a nil
 ok
-let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int r0# = 5 [r0#] () in
 weakclo {^0} in
-Nil [R0#] [Int R0#] ()
+Nil [r0#] [Int r0#] ()
 
 -- shouldn't turn into a nil; different regions
-Cons [R1#] [Int R0#] (5 [R0#] ())
-    (Nil [R1#] [Int R0#] ())
+Cons [r1#] [Int r0#] (5 [r0#] ())
+    (Nil [r1#] [Int r0#] ())
 
 -- try doing something with a function
 ok, added whacky1
 
 ok
-let ^ : Int R0# -> Unit
-      = \(_ : Int R0#). () in
+let ^ : Int r0# -> Unit
+      = \(_ : Int r0#). () in
 weakclo {^0} in
-Nil [R0#] [Int R0# -> Unit] ()
+Nil [r0#] [Int r0# -> Unit] ()
 

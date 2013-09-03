@@ -131,7 +131,7 @@ isUnitX xx
 takeHandleT :: Type Name -> Maybe Rgn
 takeHandleT tt
  = case tt of
-        TCon (TyConBound (UPrim (NameRgn r1) _) _)
+        TVar (UPrim (NameRgn r1) _)
                 -> Just r1
         _       -> Nothing
 
@@ -148,7 +148,7 @@ takeHandleX xx
 -- | Make a location expression.
 xLoc :: Loc -> Type Name -> Exp () Name
 xLoc l t
-        = XCon () $ DaConPrim (NameLoc l) t False
+        = XVar () (UPrim (NameLoc l) t)
 
 
 -- | Take a store location from an expression.
@@ -156,31 +156,18 @@ xLoc l t
 takeLocX :: Exp a Name -> Maybe Loc
 takeLocX xx
  = case xx of
-        XCast _ (CastForget _) x
-         -> takeLocX x
-
-        XCon _  dc
-         -> case takeNameOfDaCon dc of
-                Just (NameLoc l) -> Just l
-                _                -> Nothing
-
-        _       -> Nothing
+        XCast _ (CastForget _) x        -> takeLocX x
+        XVar _ (UPrim (NameLoc l) _)    -> Just l
+        _                               -> Nothing
 
 
 -- | Take a store location from an expression, reaching under any 'forget' casts.
 stripLocX :: Exp a Name -> Maybe Loc
 stripLocX xx
  = case xx of
-        XCast _ (CastForget _) x
-          -> stripLocX x
-
-
-        XCon _ dc
-         -> case takeNameOfDaCon dc of
-                Just (NameLoc l) -> Just l
-                _                -> Nothing
-
-        _ -> Nothing
+        XCast _ (CastForget _) x        -> stripLocX x
+        XVar _ (UPrim (NameLoc l) _)    -> Just l
+        _                               -> Nothing
 
 
 -- Witnesses ------------------------------------
@@ -209,7 +196,7 @@ tcInt = TyConBound (UPrim (NamePrimCon PrimTyConInt) kInt) kInt
 
 -- | Make an integer data constructor.
 dcInt :: Integer -> DaCon Name
-dcInt i = DaConPrim (NameInt i) (TCon tcInt) True
+dcInt i = DaConPrim (NameInt i) (TCon tcInt)
 
 
 -- | Take an integer literal from an data constructor.

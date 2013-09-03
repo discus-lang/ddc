@@ -7,8 +7,8 @@
 :set trans Rewrite
 
 :trans..
-let put = (\(_ : Unit). 3 [R0#] ())
-in  mulInt [:R0# R0# R0#:] (put ()) (2 [R0#] ())
+let put = (\(_ : Unit). 3 [r0#] ())
+in  mulInt [:r0# r0# r0#:] (put ()) (2 [r0#] ())
 ;;
 
 :set.. rule mul0r [r1 r2 r3 : Region] (x : Int r1).
@@ -18,6 +18,6 @@ in  mulInt [:R0# R0# R0#:] (put ()) (2 [R0#] ())
 :set trans Rewrite
 
 :trans..
-let put = (\(_ : Unit). 3 [R0#] ())
-in  mulInt [:R0# R0# R0#:] (put ()) (0 [R0#] ())
+let put = (\(_ : Unit). 3 [r0#] ())
+in  mulInt [:r0# r0# r0#:] (put ()) (0 [r0#] ())
 ;;

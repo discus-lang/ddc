@@ -11,12 +11,12 @@ ok
         Prune:
             Removed:        0
 
-weakeff [Alloc R0#] in
-weakclo {} in
-weakeff [Alloc R0#] in
-weakclo {} in
-weakeff [Alloc R0#] in
-weakclo {} in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
 ()
 
 -- Doesn't work for anonymous
@@ -25,9 +25,9 @@ weakclo {} in
         Prune:
             Removed:        0
 
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = 5 [r0#] () in
 ()
 
 -- Works for unnamed
@@ -38,12 +38,12 @@ let ^ : Int R0# = 5 [R0#] () in
         Prune:
             Removed:        0
 
-weakeff [Alloc R0#] in
-weakclo {} in
-weakeff [Alloc R0#] in
-weakclo {} in
-weakeff [Alloc R0#] in
-weakclo {} in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
 ()
 
 
@@ -55,9 +55,9 @@ weakclo {} in
         Prune:
             Removed:        0
 
-weakeff [Alloc R0#] in
-weakclo {} in
-let y : Int R0# = 5 [R0#] () in
+weakeff [Alloc r0#] in
+weakclo {[r0#]} in
+let y : Int r0# = 5 [r0#] () in
 y
 
 -- Make mutable, but no update
@@ -83,7 +83,7 @@ letregion r with {w : Mutable r} in
 let x : Int r = 5 [r] () in
 let y : Unit
       = updateInt [r] [r] <w> x (2 [r] ()) in
-copyInt [r] [R0#] x
+copyInt [r] [r0#] x
 
 -- TODO Doesn't cascade, because of the weakclo produced...
 * TRANSFORM INFORMATION: 
@@ -97,11 +97,11 @@ copyInt [r] [R0#] x
         Prune:
             Removed:        0
 
-weakeff [Read R0# + Alloc R0#] in
-weakclo {} in
-weakeff [Read R0# + Alloc R0#] in
-weakclo {[R0#]; addInt} in
-weakeff [Read R0# + Alloc R0#] in
-weakclo {[R0#]; addInt; subInt} in
+weakeff [Read r0# + Alloc r0#] in
+weakclo {[r0#]} in
+weakeff [Read r0# + Alloc r0#] in
+weakclo {[r0#]; addInt} in
+weakeff [Read r0# + Alloc r0#] in
+weakclo {[r0#]; addInt; subInt} in
 ()
 

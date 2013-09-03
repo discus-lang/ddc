@@ -5,7 +5,7 @@ Data ~> Data :: Comp
 
 -- Parse witness implication operator.
 -- This needs to be fully applied to have a sort.
-Const R0# => Int R0# :: Data
+Const r0# => Int r0# :: Data
 
 
 -- Parse type function operator.

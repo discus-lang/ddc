@@ -56,8 +56,7 @@ force   :: Store        -- ^ Current store.
 
 force store xx
         | (casts, xx')                  <- unwrapCasts xx
-        , XCon _ dc                     <- xx'
-        , Just (NameLoc l)              <- takeNameOfDaCon dc
+        , XVar _ (UPrim (NameLoc l) _)  <- xx'
         , Just (rgn, t, SThunk x)       <- lookupRegionTypeBind l store
         = case force store x of
                 StepProgress store' x'
@@ -117,7 +116,8 @@ step store xx
 -- Step a primitive operator or constructor defined by the client.
 step store xx
         | Just (x1@(XVar _ (UPrim p _)), xs)  <- takeXApps xx
-        , Just arity                          <- arityOfName p
+        , Nothing       <- takeLocX x1
+        , Just arity    <- arityOfName p
         = let
                 -- ISSUE #296: Evaluator doesn't support over-applied primops.
                 --  This would be a problem if we read a reference to a function
@@ -134,7 +134,8 @@ step store xx
                 stepArg i acc (ax:axs)
                  = case force store ax of
                     StepProgress store' x' 
-                     -> Right (store', xApps () x1 (reverse acc ++ (x' : axs)))
+                     -> Right ( store'
+                              , xApps () x1 (reverse acc ++ (x' : axs)))
 
                     StepDone
                      -> case stepArg (i + 1) (ax : acc) axs of
@@ -254,7 +255,7 @@ step store (XLet _ (LRec bxs) x2)
         ts       = map typeOfBind bs
 
         -- Allocate new locations in the store to hold the expressions.
-        (store1, ls)  = newLocs (length bs) store
+        (store1, ls)  = newLocs (map (typeOfBind . fst) bxs) store
         xls           = [xLoc l t | (l, t) <- zip ls ts]
 
         -- Substitute locations into all the bindings.
@@ -289,7 +290,7 @@ step store (XLet a (LLetRegions bRegions bws) x)
         -- Allocate a new region handle for the bound region.
         , (store1, uHandle@(UPrim (NameRgn rgn) _))
                         <- primNewRegion store
-        , tHandle       <- TCon $ TyConBound uHandle kRegion
+        , tHandle       <- TVar uHandle
 
         -- Substitute handle into the witness types.
         , bws'          <- concatMap 
@@ -477,12 +478,11 @@ isWeakValue store xx
 isSomeValue :: Bool -> Store -> Exp a Name -> Bool
 isSomeValue weak store xx
  = case xx of
-         XVar{}         -> True
+         XVar _ (UPrim (NameLoc l) _)
+          | Just SThunk{} <- lookupBind l store -> weak
+          | otherwise                           -> True
 
-         XCon _ dc
-          | Just (NameLoc l)    <- takeNameOfDaCon dc
-          , Just SThunk{}       <- lookupBind l store
-          -> weak
+         XVar{}         -> True
 
          XCon{}         -> True
 
@@ -513,9 +513,8 @@ isSomeValue weak store xx
           -> False
 
           -- Application of a lambda in the store is not wnf.
-          | Just (dc, _xs)      <- takeXConApps xx
-          , Just (NameLoc l)    <- takeNameOfDaCon dc
-          , Just SLams{}        <- lookupBind l store
+          | Just (NameLoc l, _xs) <- takeXPrimApps xx
+          , Just SLams{}          <- lookupBind l store
           -> False
 
           -- Application of a data constructor to enough args is not wnf.

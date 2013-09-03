@@ -4,7 +4,7 @@ ok, added fromTo
 ok
 ok
 
-weakeff [Read R0# + Alloc R0#] in
-weakclo {fromInt; toInt; [R0#]} in
-copyInt [R0#] [R0#] (5 [R0#] ())
+weakeff [Read r0# + Alloc r0#] in
+weakclo {fromInt; toInt; [r0#]} in
+copyInt [r0#] [r0#] (5 [r0#] ())
 

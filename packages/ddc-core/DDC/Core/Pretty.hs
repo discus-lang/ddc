@@ -223,9 +223,9 @@ instance (Pretty n, Eq n) => Pretty (Alt a n) where
 instance (Pretty n, Eq n) => Pretty (DaCon n) where
  ppr dc
   = case dc of
-        DaConUnit               -> text "()"
-        DaConPrim  n _ _        -> ppr n
-        DaConBound n            -> ppr n
+        DaConUnit       -> text "()"
+        DaConPrim  n _  -> ppr n
+        DaConBound n    -> ppr n
 
 
 -- Cast -----------------------------------------------------------------------

@@ -13,16 +13,16 @@
 
 addInt :: [^ ^ ^ : Region].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
 
-42 [R0#] ()
-:*: Int R0#
-:!: Alloc R0#
-:$: Use R0#
+42 [r0#] ()
+:*: Int r0#
+:!: Alloc r0#
+:$: Use r0#
 
 
 -- Kinding --------------------------------------------------------------------
 Int :: Region ~> Data
 
-R0# :: Region
+r0# :: Region
 
 (->) :: Data ~> Effect ~> Closure ~> Data ~> Data
 
@@ -32,61 +32,61 @@ Read :: Region ~> Effect
 -- Tracing --------------------------------------------------------------------
 ok
 
-* STEP: addInt [R0#] [R1#] [R2#] (2 [R0#] ()) (3 [R1#] ())
+* STEP: addInt [r0#] [r1#] [r2#] (2 [r0#] ()) (3 [r1#] ())
 * STORE
   NextLoc: 1
   NextRgn: 3
-  Regions: {R0#, R1#, R2#}
-  Global:  {R0#, R1#, R2#}
+  Regions: {r0#, r1#, r2#}
+  Global:  {r0#, r1#, r2#}
 
   Binds:
-   L0#:R0# -> OBJ ()
+   l0#:r0# -> OBJ ()
       :: Unit
 
-* STEP: addInt [R0#] [R1#] [R2#] L1# (3 [R1#] ())
+* STEP: addInt [r0#] [r1#] [r2#] l1# (3 [r1#] ())
 * STORE
   NextLoc: 2
   NextRgn: 3
-  Regions: {R0#, R1#, R2#}
-  Global:  {R0#, R1#, R2#}
+  Regions: {r0#, r1#, r2#}
+  Global:  {r0#, r1#, r2#}
 
   Binds:
-   L0#:R0# -> OBJ ()
+   l0#:r0# -> OBJ ()
       :: Unit
-   L1#:R0# -> OBJ 2
-      :: Int R0#
+   l1#:r0# -> OBJ 2
+      :: Int r0#
 
-* STEP: addInt [R0#] [R1#] [R2#] L1# L2#
+* STEP: addInt [r0#] [r1#] [r2#] l1# l2#
 * STORE
   NextLoc: 3
   NextRgn: 3
-  Regions: {R0#, R1#, R2#}
-  Global:  {R0#, R1#, R2#}
+  Regions: {r0#, r1#, r2#}
+  Global:  {r0#, r1#, r2#}
 
   Binds:
-   L0#:R0# -> OBJ ()
+   l0#:r0# -> OBJ ()
       :: Unit
-   L1#:R0# -> OBJ 2
-      :: Int R0#
-   L2#:R1# -> OBJ 3
-      :: Int R1#
+   l1#:r0# -> OBJ 2
+      :: Int r0#
+   l2#:r1# -> OBJ 3
+      :: Int r1#
 
-* STEP: L3#
+* STEP: l3#
 * STORE
   NextLoc: 4
   NextRgn: 3
-  Regions: {R0#, R1#, R2#}
-  Global:  {R0#, R1#, R2#}
+  Regions: {r0#, r1#, r2#}
+  Global:  {r0#, r1#, r2#}
 
   Binds:
-   L0#:R0# -> OBJ ()
+   l0#:r0# -> OBJ ()
       :: Unit
-   L1#:R0# -> OBJ 2
-      :: Int R0#
-   L2#:R1# -> OBJ 3
-      :: Int R1#
-   L3#:R2# -> OBJ 5
-      :: Int R2#
+   l1#:r0# -> OBJ 2
+      :: Int r0#
+   l2#:r1# -> OBJ 3
+      :: Int r1#
+   l3#:r2# -> OBJ 5
+      :: Int r2#
 
 5
 
@@ -143,31 +143,31 @@ When checking expression.
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
+    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 in
         let z = 5 [r1] () in
         \(x : Unit).
-        addInt [r1] [r1] [R0#] z (1 [r1] ())
+        addInt [r1] [r1] [r0#] z (1 [r1] ())
 
 
 -- Error: local region visible in return type.
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+    is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 in
         let z = 5 [r1] () in
         \(x : Unit).
         let xs
-              = Cons [R0#] [Int r1] z
-                    (Nil [R0#] [Int r1] ()) in
+              = Cons [r0#] [Int r1] z
+                    (Nil [r0#] [Int r1] ()) in
         case xs of {
           Nil  
-           -> 1 [R0#] ();
+           -> 1 [r0#] ();
           Cons _ _ 
-           -> 2 [R0#] ()
+           -> 2 [r0#] ()
         }
 
 
@@ -186,5 +186,5 @@ let ^ : [^ ^ : Region].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> 
 letregion ^ in
 letregion ^ in
 letcase Pr (_ : Int ^1) (^ : Int ^0)  = ^0 [^1] [^0] () in
-copyInt [^0] [R0#] ^0
+copyInt [^0] [r0#] ^0
 

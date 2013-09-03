@@ -6,13 +6,13 @@ ok, added add0l
 
 -- should work with any regions
 ok
-weakeff [Read R0# + Alloc R0#] in
-weakclo {addInt; [R0#]} in
-copyInt [R0#] [R0#] (5 [R0#] ())
+weakeff [Read r0# + Alloc r0#] in
+weakclo {addInt; [r0#]} in
+copyInt [r0#] [r0#] (5 [r0#] ())
 
-weakeff [Read R1# + Read R2# + Alloc R2# + Alloc R3#] in
-weakclo {addInt; [R2#]} in
-copyInt [R1#] [R3#] (5 [R1#] ())
+weakeff [Read r1# + Read r2# + Alloc r2# + Alloc r3#] in
+weakclo {addInt; [r2#]} in
+copyInt [r1#] [r3#] (5 [r1#] ())
 
 -- addInt is strict & closure free so we can reduce any copies in its args
 ok, added addCopy1
@@ -22,12 +22,12 @@ ok, added addCopy2
 
 -- simplify some nested zeroes
 ok
-weakeff [Read R0# + Read R1# + Alloc R1# + Alloc R2#] in
-weakclo {addInt; [R1#]} in
-copyInt [R0#] [R2#]
-    (weakeff [Read R0# + Alloc R0#] in
-     weakclo {addInt; [R0#]} in
-     copyInt [R0#] [R0#] (5 [R0#] ()))
+weakeff [Read r0# + Read r1# + Alloc r1# + Alloc r2#] in
+weakclo {addInt; [r1#]} in
+copyInt [r0#] [r2#]
+    (weakeff [Read r0# + Alloc r0#] in
+     weakclo {addInt; [r0#]} in
+     copyInt [r0#] [r0#] (5 [r0#] ()))
 
 
 -- we can simplify out a copy of a literal.
@@ -37,23 +37,23 @@ ok, added copyCopy
 
 -- some more nested zeroes
 ok
-weakeff [Read R0# + Read R1# + Alloc R1# + Alloc R2#] in
-weakclo {addInt; [R1#]} in
-copyInt [R0#] [R2#]
-    (weakeff [Read R0# + Alloc R0#] in
-     weakclo {addInt; [R0#]} in
-     weakeff [Read R0# + Alloc R0#] in
-     weakclo {copyInt; [R0#]} in
-     5 [R0#] ())
+weakeff [Read r0# + Read r1# + Alloc r1# + Alloc r2#] in
+weakclo {addInt; [r1#]} in
+copyInt [r0#] [r2#]
+    (weakeff [Read r0# + Alloc r0#] in
+     weakclo {addInt; [r0#]} in
+     weakeff [Read r0# + Alloc r0#] in
+     weakclo {copyInt; [r0#]} in
+     5 [r0#] ())
 
 -- add a let binding
-let x : Int R9# = 5 [R9#] () in
-weakeff [Read R1# + Read R7# + Alloc R1# + Alloc R2#] in
-weakclo {addInt; [R1#]} in
-copyInt [R7#] [R2#]
-    (weakeff [Read R8# + Read R9# + Alloc R7# + Alloc R8#] in
-     weakclo {addInt; [R8#]} in
-     copyInt [R9#] [R7#] x)
+let x : Int r9# = 5 [r9#] () in
+weakeff [Read r1# + Read r7# + Alloc r1# + Alloc r2#] in
+weakclo {addInt; [r1#]} in
+copyInt [r7#] [r2#]
+    (weakeff [Read r8# + Read r9# + Alloc r7# + Alloc r8#] in
+     weakclo {addInt; [r8#]} in
+     copyInt [r9#] [r7#] x)
 
 
 -- nested inside a function: give the closures a workout
@@ -65,4 +65,4 @@ letrec {
       weakclo {addInt; [r2]} in
       copyInt [r1] [r3] x
 } in
-foo [R0#] [R0#] [R0#] (5 [R0#] ())
+foo [r0#] [r0#] [r0#] (5 [r0#] ())

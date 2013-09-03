@@ -1,71 +1,71 @@
 :set Indent
 
 -- test using a binder twice
-:set.. rule add_n_n (n : Int R0#).
-    addInt [:R0# R0# R0#:] n n
-  = mulInt [:R0# R0# R0#:] n (2 [R0#] ())
+:set.. rule add_n_n (n : Int r0#).
+    addInt [:r0# r0# r0#:] n n
+  = mulInt [:r0# r0# r0#:] n (2 [r0#] ())
 ;;
 
 :set trans Rewrite
 
 -- simple one, do
 :trans..
- addInt [:R0# R0# R0#:] (5 [R0#] ()) (5 [R0#] ())
+ addInt [:r0# r0# r0#:] (5 [r0#] ()) (5 [r0#] ())
 ;;
 
 -- different values, don't
 :trans..
- addInt [:R0# R0# R0#:] (5 [R0#] ()) (6 [R0#] ())
+ addInt [:r0# r0# r0#:] (5 [r0#] ()) (6 [r0#] ())
 ;;
 
 -- more complicated value, do
 :trans..
- addInt [:R0# R0# R0#:]
-    (mulInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ()))
-    (mulInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ()))
+ addInt [:r0# r0# r0#:]
+    (mulInt [:r0# r0# r0#:] (5 [r0#] ()) (3 [r0#] ()))
+    (mulInt [:r0# r0# r0#:] (5 [r0#] ()) (3 [r0#] ()))
 ;;
 
 -- different regions, don't
 :trans..
- addInt [:R0# R0# R0#:]
-    (mulInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ()))
-    (mulInt [:R0# R1# R0#:] (5 [R0#] ()) (3 [R1#] ()))
+ addInt [:r0# r0# r0#:]
+    (mulInt [:r0# r0# r0#:] (5 [r0#] ()) (3 [r0#] ()))
+    (mulInt [:r0# r1# r0#:] (5 [r0#] ()) (3 [r1#] ()))
 ;;
 
 -- referencing let-bound vars, do
 :trans..
-let x = 5 [R0#] ()	in
-addInt [:R0# R0# R0#:]
+let x = 5 [r0#] ()	in
+addInt [:r0# r0# r0#:]
     x
     x
 ;;
 
 -- shadowing, don't
 :trans..
-let x = 5 [R0#] ()	in
-addInt [:R0# R0# R0#:]
+let x = 5 [r0#] ()	in
+addInt [:r0# r0# r0#:]
     x
-    (let x = 2 [R0#] () in x)
+    (let x = 2 [r0#] () in x)
 ;;
 
 -- with binders, do
 :trans..
-addInt [:R0# R0# R0#:]
-    (let y = 5 [R0#] () in y)
-    (let y = 5 [R0#] () in y)
+addInt [:r0# r0# r0#:]
+    (let y = 5 [r0#] () in y)
+    (let y = 5 [r0#] () in y)
 ;;
 
 -- with binders different values, don't
 :trans..
-addInt [:R0# R0# R0#:]
-    (let y = 5 [R0#] () in y)
-    (let y = 0 [R0#] () in y)
+addInt [:r0# r0# r0#:]
+    (let y = 5 [r0#] () in y)
+    (let y = 0 [r0#] () in y)
 ;;
 
 -- with binders same value different names, do
 :trans..
-addInt [:R0# R0# R0#:]
-    (let y = 5 [R0#] () in y)
-    (let z = 5 [R0#] () in z)
+addInt [:r0# r0# r0#:]
+    (let y = 5 [r0#] () in y)
+    (let z = 5 [r0#] () in z)
 ;;
 

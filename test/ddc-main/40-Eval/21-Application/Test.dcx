@@ -3,7 +3,7 @@
 
 
 -- Substitute into inner lambda.
-(\(i:Int R1#). \(x:Unit). i) (5 [R1#] ()) ()
+(\(i:Int r1#). \(x:Unit). i) (5 [r1#] ()) ()
 
 
 -- Under-applied primitive constructor.
@@ -11,7 +11,7 @@
 
 
 -- Under-applied primitive constructor.
-5 [R0#]
+5 [r0#]
 
 
 -- Over-applied abstraction.
@@ -19,8 +19,8 @@
 letrec { thing [a:Data] (x:a) : a = x }
 in  thing [[^^^:Region].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0] 
           addInt
-          [:R0# R0# R0#:]
-          (10 [R0#] ())
-          (20 [R0#] ());;
+          [:r0# r0# r0#:]
+          (10 [r0#] ())
+          (20 [r0#] ());;
 
 

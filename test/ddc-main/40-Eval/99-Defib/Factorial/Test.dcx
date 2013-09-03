@@ -10,7 +10,7 @@ letrec {
         _     -> fac [r] (mulInt [:r r r:] acc n)
                          (subInt [:r r r:] n (1 [r] ()))
   }
-} in fac [R0#] (1 [R0#] ()) (10 [R0#] ());;
+} in fac [r0#] (1 [r0#] ()) (10 [r0#] ());;
 
 
 -- Tail recursive factorial.
@@ -26,7 +26,7 @@ letrec {
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-} in fac [R0#] (1 [R0#] ()) (10 [R0#] ());;
+} in fac [r0#] (1 [r0#] ()) (10 [r0#] ());;
 
 
 -- Tail recursive factorial.
@@ -48,5 +48,5 @@ let fac  [r1:Region]
                   in  loop (subInt [:r1 r2 r1:] i one);
          }
        } in loop n
-in fac [R0#] (10 [R0#] ());;
+in fac [r0#] (10 [r0#] ());;
 

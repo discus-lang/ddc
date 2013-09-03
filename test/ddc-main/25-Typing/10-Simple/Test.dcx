@@ -5,21 +5,21 @@
 -- Instantiate the outer forall of the type of add with a region handle.
 -- Region handles in the expression are automatically added to the store at
 -- startup time.
-:check addInt [R1#]
+:check addInt [r1#]
 
 
 -- Instantiate all the foralls with different region handles.
-:check addInt [R1#] [R2#] [R3#]
+:check addInt [r1#] [r2#] [r3#]
 
 
 -- Same as above, but with nicer syntax.
-:check addInt [:R1# R2# R3#:]
+:check addInt [:r1# r2# r3#:]
 
 
 -- Instantiate all the foralls with the same region handle.
 -- The 'add' primop causes the effect (Read R1# + Read R1#) which should be 
 -- packed down to just (Read R1#).
-:check addInt [:R1# R1# R1#:]
+:check addInt [:r1# r1# r1#:]
 
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
@@ -28,11 +28,11 @@
 
 
 -- A fully applied integer constructor should cause an alloc effect.
-:check (2 [R1#] ())
+:check (2 [r1#] ())
 
 
 -- Addition should also read the args, and alloc the result.
-:check addInt [:R1# R2# R3#:] (2 [R1#] ()) (3 [R2#] ())
+:check addInt [:r1# r2# r3#:] (2 [r1#] ()) (3 [r2#] ())
 
 
 -- Error: cannot shadow spec binders.
@@ -42,21 +42,21 @@
  case x of {
         0       -> x;
         _       -> y;
- }) [R0#] (2 [R0#] ()) [R1#] (3 [R1#] ());;
+ }) [r0#] (2 [r0#] ()) [r1#] (3 [r1#] ());;
 
 
 -- Error: cannot shadow spec binders.
 :check..
 (/\(r : Region). \(x : Int r). /\(r : Region). \(_ : Unit). 2 [r] ()) 
-        [R1#];;
+        [r1#];;
 
 
 -- Error: cannot shadow spec binders.
 :check..
 (/\(r : Region). \(x : Int r). /\(r : Region). \(_ : Unit). 2 [r] ()) 
-        [R1#] 
-        (5 [R1#] ()) 
-        [R2#];;
+        [r1#] 
+        (5 [r1#] ()) 
+        [r2#];;
 
 
 -- Error: Type variable not in environment.

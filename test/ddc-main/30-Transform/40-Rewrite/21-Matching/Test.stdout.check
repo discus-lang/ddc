@@ -7,48 +7,48 @@ ok
 
 -- simple one, do
 weakclo {addInt} in
-mulInt [R0#] [R0#] [R0#] (5 [R0#] ()) (2 [R0#] ())
+mulInt [r0#] [r0#] [r0#] (5 [r0#] ()) (2 [r0#] ())
 
 -- different values, don't
-addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (6 [R0#] ())
+addInt [r0#] [r0#] [r0#] (5 [r0#] ()) (6 [r0#] ())
 
 -- more complicated value, do
 weakclo {addInt} in
-mulInt [R0#] [R0#] [R0#]
-    (mulInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ())) (2 [R0#] ())
+mulInt [r0#] [r0#] [r0#]
+    (mulInt [r0#] [r0#] [r0#] (5 [r0#] ()) (3 [r0#] ())) (2 [r0#] ())
 
 -- different regions, don't
-addInt [R0#] [R0#] [R0#]
-    (mulInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ()))
-    (mulInt [R0#] [R1#] [R0#] (5 [R0#] ()) (3 [R1#] ()))
+addInt [r0#] [r0#] [r0#]
+    (mulInt [r0#] [r0#] [r0#] (5 [r0#] ()) (3 [r0#] ()))
+    (mulInt [r0#] [r1#] [r0#] (5 [r0#] ()) (3 [r1#] ()))
 
 -- referencing let-bound vars, do
-let x : Int R0# = 5 [R0#] () in
+let x : Int r0# = 5 [r0#] () in
 weakclo {addInt} in
-mulInt [R0#] [R0#] [R0#] x (2 [R0#] ())
+mulInt [r0#] [r0#] [r0#] x (2 [r0#] ())
 
 -- shadowing, don't
-let x : Int R0# = 5 [R0#] () in
-addInt [R0#] [R0#] [R0#] x
-    (let x : Int R0# = 2 [R0#] () in
+let x : Int r0# = 5 [r0#] () in
+addInt [r0#] [r0#] [r0#] x
+    (let x : Int r0# = 2 [r0#] () in
      x)
 
 -- with binders, do
 weakclo {addInt} in
-mulInt [R0#] [R0#] [R0#]
-    (let ^ : Int R0# = 5 [R0#] () in
-     ^0) (2 [R0#] ())
+mulInt [r0#] [r0#] [r0#]
+    (let ^ : Int r0# = 5 [r0#] () in
+     ^0) (2 [r0#] ())
 
 -- with binders different values, don't
-addInt [R0#] [R0#] [R0#]
-    (let y : Int R0# = 5 [R0#] () in
+addInt [r0#] [r0#] [r0#]
+    (let y : Int r0# = 5 [r0#] () in
      y)
-    (let y : Int R0# = 0 [R0#] () in
+    (let y : Int r0# = 0 [r0#] () in
      y)
 
 -- with binders same value different names, do
 weakclo {addInt} in
-mulInt [R0#] [R0#] [R0#]
-    (let ^ : Int R0# = 5 [R0#] () in
-     ^0) (2 [R0#] ())
+mulInt [r0#] [r0#] [r0#]
+    (let ^ : Int r0# = 5 [r0#] () in
+     ^0) (2 [r0#] ())
 

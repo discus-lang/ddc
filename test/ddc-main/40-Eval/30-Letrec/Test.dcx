@@ -8,7 +8,7 @@ letrec {
                       (fac [r] (subInt [:r r r:] n
                                        (1 [r] ())));
      }
-} in fac [R1#] (5 [R1#] ());;
+} in fac [r1#] (5 [r1#] ());;
 
 
 -- Tail recursive factorial.
@@ -23,7 +23,7 @@ letrec {
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [r1#] (1 [r1#] ()) (5 [r1#] ());;
 
 
 -- Enumeration.
@@ -42,7 +42,7 @@ letrec {
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:r1# r2#:] (5 [r1#] ()) (9 [r1#] ());;
 
 
 -- Handle forget around let-expression.

@@ -1,4 +1,4 @@
 :eval..
 let id = (/\(t : Data).\(x : t).x)
-in  id [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
+in  id [List r0# (Int r0#)] (Nil [r0#] [Int r0#] ())
 ;;

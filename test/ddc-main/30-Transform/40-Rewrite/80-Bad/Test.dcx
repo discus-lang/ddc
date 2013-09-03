@@ -22,8 +22,8 @@
 
 -- Bad: left-hand side shouldn't have foralls
 :set.. rule bad_Forall
-    (i : Int R0#).
-    (/\(a : Data). id [a]) [Int R0#] i = i
+    (i : Int r0#).
+    (/\(a : Data). id [a]) [Int r0#] i = i
 ;;
 
 -- ..Ok: right-hand side can have binders

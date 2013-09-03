@@ -1,8 +1,8 @@
 -- Equivalence checker must crush effect and closure terms.
 :check..
-\(x : Int R0#).
-\(y : Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit).
-\(z : Unit -(Read R0#           | Use R0#)>           Unit).
+\(x : Int r0#).
+\(y : Unit -(DeepRead (Int r0#) | DeepUse (Int r0#))> Unit).
+\(z : Unit -(Read r0#           | Use r0#)>           Unit).
 case x of {
         0       -> y;
         _       -> z
@@ -11,7 +11,7 @@ case x of {
 
 -- Equivalence checker must handle alpha-equivalence.
 :check..
-\(x : Int R0#).
+\(x : Int r0#).
 \(y : [a : Data]. a -> a).
 \(z : [^ : Data]. ^0 -> ^0).
 case x of {

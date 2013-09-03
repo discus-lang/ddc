@@ -493,7 +493,7 @@ convRValueM pp kenv tenv xx
 
         -- Literals
         XCon _ dc
-         | DaConPrim n _ _      <- dc
+         | DaConPrim n _        <- dc
          -> case n of
                 NameLitBool b   
                  | b            -> return $ integer 1

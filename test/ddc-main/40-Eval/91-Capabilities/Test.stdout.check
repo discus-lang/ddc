@@ -10,7 +10,7 @@ with: Mutable# [r]
 
 -- Error: conflicting capabilities in program.
 Conflicting capabilities in core program.
-        region: R0#
+        region: r0#
  can't be both: Const#
            and: Mutable#
 

@@ -2,4 +2,4 @@
 
 :eval..
 letregion r3 in
-addInt [:R1# r3 R2#:] (5 [R1#] ()) (6 [r3] ());;
+addInt [:r1# r3 r2#:] (5 [r1#] ()) (6 [r3] ());;

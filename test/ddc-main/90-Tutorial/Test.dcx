@@ -3,9 +3,9 @@
 
 
 -- Evaluation -----------------------------------------------------------------
-42 [R0#] ()
+42 [r0#] ()
 
-addInt [R0#] [R1#] [R3#] (2 [R0#] ()) (3 [R1#] ())
+addInt [r0#] [r1#] [r3#] (2 [r0#] ()) (3 [r1#] ())
 
 
 -- Typing ---------------------------------------------------------------------
@@ -13,13 +13,13 @@ addInt [R0#] [R1#] [R3#] (2 [R0#] ()) (3 [R1#] ())
 
 :type addInt
 
-:check 42 [R0#] ()
+:check 42 [r0#] ()
 
 
 -- Kinding --------------------------------------------------------------------
 :kind Int
 
-:kind R0#
+:kind r0#
 
 :kind (->)
 
@@ -29,16 +29,16 @@ addInt [R0#] [R1#] [R3#] (2 [R0#] ()) (3 [R1#] ())
 -- Tracing --------------------------------------------------------------------
 :set +TraceEval +TraceStore
 
-addInt [R0#] [R1#] [R2#] (2 [R0#] ()) (3 [R1#] ())
+addInt [r0#] [r1#] [r2#] (2 [r0#] ()) (3 [r1#] ())
 
 :set /TraceEval /TraceStore
 
 
 -- Let-expressions and type application sugar ---------------------------------
 :eval..
-let x = 2 [R0#] () in
-let y = 3 [R0#] () in
-addInt [:R0# R0# R0#:] x y;;
+let x = 2 [r0#] () in
+let y = 3 [r0#] () in
+addInt [:r0# r0# r0#:] x y;;
 
 
 -- Recursion, type abstraction and function bindings --------------------------
@@ -53,7 +53,7 @@ letrec {
         _     -> fac [r] (mulInt [:r r r:] acc n)
                          (subInt [:r r r:] n (1 [r] ()))
   }
-} in fac [R0#] (1 [R0#] ()) (10 [R0#] ());;
+} in fac [r0#] (1 [r0#] ()) (10 [r0#] ());;
 
 
 -- Using function binding syntax.
@@ -68,7 +68,7 @@ letrec {
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-} in fac [R0#] (1 [R0#] ()) (10 [R0#] ());;
+} in fac [r0#] (1 [r0#] ()) (10 [r0#] ());;
 
 
 -- Local regions, witnesses and destructive update ----------------------------
@@ -89,7 +89,7 @@ let fac  [r1:Region]
                     in  loop (subInt [:r1 r2 r1:] i one);
          }
        } in loop n
-in fac [R0#] (10 [R0#] ());;
+in fac [r0#] (10 [r0#] ());;
 
 
 :type updateInt
@@ -115,7 +115,7 @@ let fac  [r1:Region] [r3:Region]
                   in  loop (subInt [:r1 r2 r1:] i one);
          }
        } in loop n
-in fac [R1#] [R2#] (10 [R1#] ());;
+in fac [r1#] [r2#] (10 [r1#] ());;
 
 
 -- Exercise 3: With argument and return regions holding only the argument
@@ -137,7 +137,7 @@ let fac  [r1:Region] [r3:Region]
                   in  loop (subInt [:r2 r2 r2:] i one);
          }
        } in loop (copyInt [:r1 r2:] n)
-in fac [R1#] [R2#] (10 [R1#] ());;
+in fac [r1#] [r2#] (10 [r1#] ());;
 
 
 -- Exercise 4: Without copying the result out.
@@ -167,7 +167,7 @@ let fac  [r1:Region] [r3:Region]
                      } in loop1 (copyInt [:r1 r2:] i);
            }
        } in loop0 n
-in fac [R1#] [R2#] (10 [R1#] ());;
+in fac [r1#] [r2#] (10 [r1#] ());;
 
 
 -- Local objects cannot escape ------------------------------------------------
@@ -179,7 +179,7 @@ letregion r1 in 5 [r1] ()
 :eval..
 letregion r1 in 
 let z = 5 [r1] () 
-in \(x : Unit). addInt [:r1 r1 R0#:] z (1 [r1] ());;
+in \(x : Unit). addInt [:r1 r1 r0#:] z (1 [r1] ());;
 
 
 -- Error: local region visible in return type.
@@ -187,10 +187,10 @@ in \(x : Unit). addInt [:r1 r1 R0#:] z (1 [r1] ());;
 letregion r1 in
 let z  = 5 [r1] () in
 \(x : Unit).
- let xs = Cons [R0#] [Int r1] z (Nil [R0#] [Int r1] ()) in
+ let xs = Cons [r0#] [Int r1] z (Nil [r0#] [Int r1] ()) in
  case xs of {
-        Nil      -> 1 [R0#] ();
-        Cons _ _ -> 2 [R0#] ();
+        Nil      -> 1 [r0#] ();
+        Cons _ _ -> 2 [r0#] ();
  };;
 
 
@@ -208,6 +208,6 @@ let foo [r1 r2 : Region] (_ : Unit)
 in  letregion r4 in
     letregion r5 in
     case foo [:r4 r5:] () of {
-            Pr _ y -> copyInt [:r5 R0#:] y
+            Pr _ y -> copyInt [:r5 r0#:] y
     };;
 

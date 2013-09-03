@@ -6,7 +6,7 @@
 -- silly rule with effect matching
 :set.. rule silly [ef : Effect]
     (u : Unit).
-        effectful [Read R0# + Write R0# + ef] u
+        effectful [Read r0# + Write r0# + ef] u
         = u
 ;;
 
@@ -14,19 +14,19 @@
 
 -- match 'ef' with an Alloc
 :trans..
-effectful [Read R0# + Write R0# + Alloc R0#]
+effectful [Read r0# + Write r0# + Alloc r0#]
     ()
 ;;
 
 -- same length but doesn't include the Write
 :trans..
-effectful [Read R0# + Read R1# + Read R2#]
+effectful [Read r0# + Read r1# + Read r2#]
     ()
 ;;
 
 -- longer - could match but doesn't
 :trans..
-effectful [Read R0# + Write R0# + Read R1# + Write R1#]
+effectful [Read r0# + Write r0# + Read r1# + Write r1#]
     ()
 ;;
 

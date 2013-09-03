@@ -87,10 +87,10 @@ instance Pretty Store where
   , text "  NextLoc: " <> text (show nextLoc)
   , text "  NextRgn: " <> text (show nextRgn)
 
-  , text "  Regions: " <> braces (sep  $ punctuate comma 
+  , text "  Regions: " <> braces (sep $ punctuate comma 
                                       $ map ppr $ Set.toList regions)
 
-  , text "  Global:  " <> braces (sep  $ punctuate comma
+  , text "  Global:  " <> braces (sep $ punctuate comma
                                       $ map ppr $ Set.toList global)
   , text ""
   , text "  Binds:"
@@ -132,43 +132,43 @@ initial = Store
 
         , storeBinds    
            = Map.fromList 
-                [ (Loc 0, (Rgn 0, tUnit, SObj dcUnit []))]
+                [ (Loc 0 tUnit, (Rgn 0, tUnit, SObj dcUnit []))]
         }
 
 -- | Location of the static unit object.
 locUnit :: Loc
-locUnit = Loc 0
+locUnit = Loc 0 tUnit
 
 
 -- | Check whether an expression is the unit constructor, 
 --   or its static heap location.
-isUnitOrLocX :: Exp a Name -> Bool
-isUnitOrLocX (XCon _ dc)
- = case dc of
-        DaConUnit                 -> True
-        DaConPrim (NameLoc l) _ _ -> l == locUnit
-        _                         -> False
-isUnitOrLocX _                    = False
+isUnitOrLocX :: Show a => Exp a Name -> Bool
+isUnitOrLocX xx
+ = case xx of
+        XCon _ DaConUnit                        -> True
+        XVar _ (UPrim (NameLoc (Loc 0 _)) _)    -> True
+        _                                       -> False
 
 
 -- Locations ------------------------------------------------------------------
 -- | Create a new location in the store.
-newLoc  :: Store -> (Store, Loc)
-newLoc store
+newLoc  :: Type Name -> Store -> (Store, Loc)
+newLoc t store
  = let  loc     = storeNextLoc store
         store'  = store { storeNextLoc  = loc + 1 }
-   in   (store', Loc loc)
+   in   (store', Loc loc t)
 
 
 -- | Create several new locations in the store.
-newLocs :: Int -> Store -> (Store, [Loc])
-newLocs n store
- = let  lFirst  = storeNextLoc store
+newLocs :: [Type Name] -> Store -> (Store, [Loc])
+newLocs ts store
+ = let  n       = length ts
+        lFirst  = storeNextLoc store
         lLast   = lFirst + n
         
         locs    = [lFirst .. lLast]
         store'  = store { storeNextLoc = lLast + 1 }
-    in  (store', map Loc locs)
+    in  (store', [Loc l t | l <- locs | t <- ts])
 
 
 -- Regions  -------------------------------------------------------------------
@@ -226,17 +226,16 @@ addBind loc rgn t sbind store
 --    returning the new location.
 allocBind :: Rgn -> Type Name -> SBind -> Store -> (Store, Loc)
 allocBind rgn t sbind store
- = let  (store1, loc)   = newLoc store
+ = let  (store1, loc)   = newLoc t store
         store2          = addBind loc rgn t sbind store1
    in   (store2, loc)
 
 
 -- | Alloc some recursive bindings into the given region, 
 --     returning the new locations.
-allocBinds :: ([[Loc] -> (Rgn, Type Name, SBind)]) -> Store -> (Store, [Loc])
-allocBinds mkSBinds store
- = let  n               = length mkSBinds
-        (store1, locs)  = newLocs n store
+allocBinds :: [[Loc] -> (Rgn, Type Name, SBind)] -> [Type Name] -> Store -> (Store, [Loc])
+allocBinds mkSBinds ts store
+ = let  (store1, locs)  = newLocs ts store
         rgnBinds        = map (\mk -> mk locs) mkSBinds
         store2          = foldr (\(l, (r, t, b)) -> addBind l r t b) store1
                         $ zip locs rgnBinds 
@@ -256,6 +255,7 @@ lookupTypeOfLoc loc store
  = case Map.lookup loc (storeBinds store) of
         Nothing         -> Nothing
         Just (_, t, _)  -> Just t
+
 
 -- | Lookup the region handle, type and binding for a location.
 lookupRegionTypeBind :: Loc -> Store -> Maybe (Rgn, Type Name, SBind)

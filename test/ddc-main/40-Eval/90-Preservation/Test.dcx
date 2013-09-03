@@ -1,10 +1,10 @@
 
 
 -- This once died because closure trimming on the bound occurrence of
--- 'f' wasn't eliminating the region handle R0#.
+-- 'f' wasn't eliminating the region handle r0#.
 :eval..
-let ap = \(f : Int R0# -> Int R0#).
-         \(x : Int R0#).
+let ap = \(f : Int r0# -> Int r0#).
+         \(x : Int r0#).
          f x
-in let id = ap (\(x:Int R0#). x) 
+in let id = ap (\(x:Int r0#). x) 
 in ();;

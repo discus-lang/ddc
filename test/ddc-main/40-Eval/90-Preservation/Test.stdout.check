@@ -1,5 +1,5 @@
 
 
 -- This once died because closure trimming on the bound occurrence of
--- 'f' wasn't eliminating the region handle R0#.
+-- 'f' wasn't eliminating the region handle r0#.
 ()

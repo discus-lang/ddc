@@ -28,23 +28,19 @@ checkDaConM config xx dc
     DaConUnit
      -> return tUnit
 
-    -- Primitive data constructors which are not algebraic do not need a
-    --   data type declaration. These are things like Float literals, or fragment
-    --   specific magic values that we can't destruct with case-expressions.
-    DaConPrim { daConType = t
-              , daConIsAlgebraic = False } 
-     -> return t
-
-    -- Primitive data constructors which are algebraic need to have a
-    --   corresponding data type definition.
-    --    If they are 'Small' the data constructor needs to be listed,
-    --    If they are 'Large' (like Ints) there are too many to enumerate.
+    -- Primitive data constructors need to have a corresponding data type,
+    -- but there may be too many constructors to list, like with Int literals. 
+    --
+    -- The mode field in the data type declaration says what to expect.
+    --    If the mode is 'Small' the data constructor needs to be listed,
+    --    If the mode is 'Large' (like Int) there are too many to enumerate.
+    --
+    -- The type of the constructor needs to be attached so we can determine
+    --  what data type it belongs to.
     DaConPrim { daConName        = nCtor
-              , daConType        = t
-              , daConIsAlgebraic = True  }
+              , daConType        = t }
      -> let  tResult = snd $ takeTFunArgResult $ eraseTForalls t
              defs    = configDataDefs config
-
         in case liftM fst $ takeTyConApps tResult of
             Just (TyConBound u _)
                 | Just nType         <- takeNameOfBound u

@@ -15,6 +15,7 @@ import DDC.Core.Eval.Name
 import DDC.Core.Exp
 import qualified DDC.Core.Eval.Store   as Store
 
+
 -------------------------------------------------------------------------------
 -- | Step a primitive constructor, which allocates an object in the store.
 stepPrimCon
@@ -24,7 +25,6 @@ stepPrimCon
         -> Maybe ( Store        
                  , Exp () Name) -- ^ New store and result expression, 
                                 --   if the operator steps, otherwise `Nothing`.
-
 
 -- Redirect the unit constructor.
 -- All unit values point to the same object in the store.

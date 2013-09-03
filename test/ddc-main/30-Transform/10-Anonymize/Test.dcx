@@ -19,13 +19,13 @@ let x = () in x;;
 
 -- Multiple lets
 :trans..
-let x = () in let y = 5 [R1#] () in x;;
+let x = () in let y = 5 [r1#] () in x;;
 
 
 -- letregion
 :trans..
 letregion r with {w : Const r} in
-addInt [:r r R0#:] (2 [r] ()) (2 [r] ());;
+addInt [:r r r0#:] (2 [r] ()) (2 [r] ());;
 
 
 -- letregion and lets
@@ -33,15 +33,15 @@ addInt [:r r R0#:] (2 [r] ()) (2 [r] ());;
 letregion r with {w : Const r} in
 let x = 2 [r] () in
 let y = 3 [r] () in
-addInt [:r r R0#:] x y;;
+addInt [:r r r0#:] x y;;
 
 
 -- case expressions
 :trans..
-\(xx : List R0# (Int R1#)).
+\(xx : List r0# (Int r1#)).
 case xx of {
         Nil             -> xx;
-        Cons ^ ^        -> Cons [R0#] [Int R1#] ^1 xx;
+        Cons ^ ^        -> Cons [r0#] [Int r1#] ^1 xx;
 };;
 
 
@@ -70,7 +70,7 @@ let foo [r1 r2 : Region] (_ : Unit)
 in  letregion r4 in
     letregion r5 in
     case foo [:r4 r5:] () of {
-            Pr _ y -> copyInt [:r5 R0#:] y
+            Pr _ y -> copyInt [:r5 r0#:] y
     };;
 
 
@@ -91,5 +91,5 @@ let foo [r1 : Region] (wc1 : Const r1) (wg1 : Global r1)
 in  letregion r4 with { wc4 : Const r4; wg4 : Global r4 } in
     letregion r5 with { wc5 : Const r5; wg5 : Global r5; wl5 : Lazy  r5 } in
     case foo [r4] {:wc4 wg4:} [r5] {:wc5 wg5 wl5:} () of {
-            Pr _ y -> copyInt [:r5 R0#:] y
+            Pr _ y -> copyInt [:r5 r0#:] y
     };;

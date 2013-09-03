@@ -1,45 +1,45 @@
 
 -- add is commutative. particular regions so it only runs once (ie terminates)
-:set rule add_comm (x : Int R0#) (y : Int R1#). addInt [:R0# R1# R2#:] x y = addInt [:R1# R0# R2#:] y x
+:set rule add_comm (x : Int r0#) (y : Int r1#). addInt [:r0# r1# r2#:] x y = addInt [:r1# r0# r2#:] y x
 
 -- commutativity. doesn't change (weaken) type. only for regions
 :set trans Rewrite
 
 -- swap the 1 and 2
-:trans addInt [:R0# R1# R2#:] (1 [R0#] ()) (2 [R1#] ())
+:trans addInt [:r0# r1# r2#:] (1 [r0#] ()) (2 [r1#] ())
 
 -- don't swap because they're all R0.
-:trans addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ())
+:trans addInt [:r0# r0# r0#:] (1 [r0#] ()) (2 [r0#] ())
 
 -- swap the whole whiz-bang
-:trans addInt [:R0# R1# R2#:] (addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ())) (3 [R1#] ())
+:trans addInt [:r0# r1# r2#:] (addInt [:r0# r0# r0#:] (1 [r0#] ()) (2 [r0#] ())) (3 [r1#] ())
 
 -- don't rewrite if it's not an addInt
-:trans mulInt [:R0# R1# R2#:] (1 [R0#] ()) (2 [R1#] ())
+:trans mulInt [:r0# r1# r2#:] (1 [r0#] ()) (2 [r1#] ())
 
 -- rule: let in right-hand side
-:set rule mul2 (x : Int R0#). mulInt [:R0# R0# R0#:] x (2 [R0#] ()) = let y = x in addInt [:R0# R0# R0#:] y y
+:set rule mul2 (x : Int r0#). mulInt [:r0# r0# r0#:] x (2 [r0#] ()) = let y = x in addInt [:r0# r0# r0#:] y y
 
 :set Indent
 :set trans Rewrite
 
 -- simple let
-:trun mulInt [:R0# R0# R0#:] (5 [R0#] ()) (2 [R0#] ())
+:trun mulInt [:r0# r0# r0#:] (5 [r0#] ()) (2 [r0#] ())
 
 -- nested apps 
 :trun..
-    mulInt [:R0# R0# R0#:]
-	(mulInt [:R0# R0# R0#:]
-	    (addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ()))
-	    (2 [R0#] ())
-	) (2 [R0#] ())
+    mulInt [:r0# r0# r0#:]
+	(mulInt [:r0# r0# r0#:]
+	    (addInt [:r0# r0# r0#:] (1 [r0#] ()) (2 [r0#] ()))
+	    (2 [r0#] ())
+	) (2 [r0#] ())
 ;;
 
 -- binders inside let
 :trun..
-    mulInt [:R0# R0# R0#:]
+    mulInt [:r0# r0# r0#:]
 	(let x = 5 in
 	 let y = () in
-	 (/\(r : Region).\(u:Unit). x [r] u) [R0#] ())
-	(2 [R0#] ())
+	 (/\(r : Region).\(u:Unit). x [r] u) [r0#] ())
+	(2 [r0#] ())
 ;;

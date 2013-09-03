@@ -13,33 +13,30 @@ import Control.DeepSeq
 
 
 -- | Data constructors.
---
---   Algebraic constructors can be deconstructed with case-expressions,
---   and must have a data type declaration. Non-algebraic types like 'Float'
---   can't be inspected with case-expressions.
---   TODO: shift daConIsAlgebraic into data type definition.
---
 data DaCon n
         -- | Baked in unit data constructor.
         = DaConUnit
 
-        -- | Primitive data constructor that has its type attached.
-        --   Used for literals and other baked-in data constructors.
+        -- | Primitive data constructor used for literals and baked-in
+        --   constructors. 
+        --
+        --   The type of the constructor needs to be attached to handle the
+        --   case where there are too many constructors in the data type to list, 
+        --   like for Int literals. In this case we determine what data type
+        --   it belongs to from the attached type of the data constructor.
+        --   
         | DaConPrim
         { -- | Name of the data constructor.
-          daConName             :: !n 
+          daConName     :: !n 
 
           -- | Type of the data constructor.
-        , daConType             :: !(Type n)
-
-          -- | Whether the data type is algebraic.      -- TODO: remove this.
-        , daConIsAlgebraic      :: Bool 
+        , daConType     :: !(Type n)
         }
 
-        -- | Algebraic data constructor that has a data type declaration.
+        -- | Data constructor that has a data type declaration.
         | DaConBound
         { -- | Name of the data constructor.
-          daConName             :: !n
+          daConName     :: !n
         }
         deriving (Show, Eq)
 
@@ -47,9 +44,9 @@ data DaCon n
 instance NFData n => NFData (DaCon n) where
  rnf !dc
   = case dc of
-        DaConUnit               -> ()
-        DaConPrim  n t f        -> rnf n `seq` rnf t `seq` rnf f
-        DaConBound n            -> rnf n
+        DaConUnit       -> ()
+        DaConPrim  n t  -> rnf n `seq` rnf t
+        DaConBound n    -> rnf n
 
 
 -- | Take the name of data constructor,
@@ -57,9 +54,9 @@ instance NFData n => NFData (DaCon n) where
 takeNameOfDaCon :: DaCon n -> Maybe n
 takeNameOfDaCon dc
  = case dc of
-        DaConUnit               -> Nothing
-        DaConPrim{}             -> Just $ daConName dc
-        DaConBound{}            -> Just $ daConName dc
+        DaConUnit       -> Nothing
+        DaConPrim{}     -> Just $ daConName dc
+        DaConBound{}    -> Just $ daConName dc
 
 
 -- | Take the type annotation of a data constructor,
@@ -67,9 +64,9 @@ takeNameOfDaCon dc
 takeTypeOfDaCon :: DaCon n -> Maybe (Type n)
 takeTypeOfDaCon dc  
  = case dc of
-        DaConUnit               -> Just $ tUnit
-        DaConPrim{}             -> Just $ daConType dc
-        DaConBound{}            -> Nothing
+        DaConUnit       -> Just $ tUnit
+        DaConPrim{}     -> Just $ daConType dc
+        DaConBound{}    -> Nothing
 
 
 -- | The unit data constructor.

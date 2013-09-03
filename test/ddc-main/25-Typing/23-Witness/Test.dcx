@@ -1,3 +1,3 @@
 -- Witness lambda with no computation lambda after it
-:check  \(w : Mutable R0#). 0 [R0#] ()
+:check  \(w : Mutable r0#). 0 [r0#] ()
 

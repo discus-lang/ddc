@@ -13,6 +13,8 @@ where
 import DDC.Core.Lexer
 import DDC.Base.Pretty
 import DDC.Data.Token
+import DDC.Type.Exp
+import DDC.Type.Compounds
 import Control.DeepSeq
 import Data.Typeable
 import Data.Char
@@ -41,14 +43,14 @@ data Name
 instance NFData Name where
  rnf nn
   = case nn of
-        NameVar s               -> rnf s
-        NameCon s               -> rnf s
-        NameInt i               -> rnf i
-        NamePrimCon pc          -> rnf pc
-        NamePrimOp  po          -> rnf po
-        NameLoc     l           -> rnf l
-        NameRgn     r           -> rnf r
-        NameCap     c           -> rnf c
+        NameVar s       -> rnf s
+        NameCon s       -> rnf s
+        NameInt i       -> rnf i
+        NamePrimCon pc  -> rnf pc
+        NamePrimOp  po  -> rnf po
+        NameLoc     l   -> rnf l
+        NameRgn     r   -> rnf r
+        NameCap     c   -> rnf c
 
 
 instance Pretty Name where
@@ -65,26 +67,34 @@ instance Pretty Name where
 
 
 -- Locations ------------------------------------------------------------------
--- | A store location.
+-- | A store location,
+--   tagged with the type of the value contained at that location.
 --
---  These are pretty printed like @L4#@.
+--  These are pretty printed like @l4#@.
 data Loc
-        = Loc Int
-        deriving (Eq, Ord, Show)
+        = Loc Int (Type Name)
+        deriving Show
 
 
 instance NFData Loc where
- rnf (Loc i)    = rnf i
-
+ rnf (Loc i t)  = rnf i `seq` rnf t
 
 instance Pretty Loc where
- ppr (Loc l)    = text "L" <> text (show l) <> text "#"
- 
+ ppr (Loc l _)  = text "l" <> text (show l) <> text "#"
+
+instance Eq Loc where
+ (==)    (Loc l1 _)  (Loc l2 _)    
+                = l1 == l2
+
+instance Ord Loc where
+ compare (Loc l1 _) (Loc l2 _)
+                = compare l1 l2
+
 
 -- Regions --------------------------------------------------------------------
 -- | A region handle.
 --
---  These are pretty printed like @R5#@.
+--  These are pretty printed like @r5#@.
 data Rgn
         = Rgn Int
         deriving (Eq, Ord, Show)
@@ -93,7 +103,7 @@ instance NFData Rgn where
  rnf (Rgn i)    = rnf i
 
 instance Pretty Rgn where
- ppr (Rgn r)    = text "R" <> text (show r) <> text "#"
+ ppr (Rgn r)    = text "r" <> text (show r) <> text "#"
 
 
 -- Capabilities --------------------------------------------------------------
@@ -214,6 +224,18 @@ instance Pretty PrimOp where
 readName :: String -> Maybe Name
 readName []     = Nothing
 readName str@(c:rest)
+        -- region handles
+        | c == 'r'
+        , (ds, "#")             <- span isDigit rest
+        , not $ null ds
+        = Just $ NameRgn (Rgn $ read ds)
+        
+        -- store locations
+        | c == 'l'
+        , (ds, "#")             <- span isDigit rest
+        , not $ null ds
+        = Just $ NameLoc (Loc (read ds) (tBot kData))
+
         -- primops and variables.
         | isLower c    
         = case (c:rest) of
@@ -245,19 +267,7 @@ readName str@(c:rest)
         | str == "List"         = Just $ NamePrimCon PrimTyConList
         | str == "Nil"          = Just $ NamePrimCon PrimDaConNil
         | str == "Cons"         = Just $ NamePrimCon PrimDaConCons
-        
-        -- region handles
-        | c == 'R'
-        , (ds, "#")             <- span isDigit rest
-        , not $ null ds
-        = Just $ NameRgn (Rgn $ read ds)
-        
-        -- store locations
-        | c == 'L'
-        , (ds, "#")             <- span isDigit rest
-        , not $ null ds
-        = Just $ NameLoc (Loc $ read ds)
-        
+                
         -- store capabilities
         | str == "Global#"      = Just $ NameCap CapGlobal
         | str == "Const#"       = Just $ NameCap CapConst

@@ -5,8 +5,8 @@
 
 -- Float cast out of application.
 :trans..
-let x = 5 [R0#] ()
-in  addInt [:R0# R0# R0#:] (weakclo {x} in (2 [R0#] ())) (3 [R0#] ());;
+let x = 5 [r0#] ()
+in  addInt [:r0# r0# r0#:] (weakclo {x} in (2 [r0#] ())) (3 [r0#] ());;
 
 
 -- Float cast out of inner let-binding, 
@@ -14,21 +14,21 @@ in  addInt [:R0# R0# R0#:] (weakclo {x} in (2 [R0#] ())) (3 [R0#] ());;
 letregion r in 
 let y = 6 [r] () in
 let x = 5 [r] () in
-addInt [:r r R0#:] (weakclo {y} in (2 [r] ())) (3 [r] ());;
+addInt [:r r r0#:] (weakclo {y} in (2 [r] ())) (3 [r] ());;
 
 
 -- Float cast out of inner let-binding, preserving region handles.
 :trans..
-let y = 6 [R0#] () in
-let x = 5 [R0#] () in
-addInt [:R0# R0# R0#:] (weakclo {y} in (2 [R0#] ())) (3 [R0#] ());;
+let y = 6 [r0#] () in
+let x = 5 [r0#] () in
+addInt [:r0# r0# r0#:] (weakclo {y} in (2 [r0#] ())) (3 [r0#] ());;
 
 
 -- Debruijn bounds must be lowered when bubbled past a binder.
 :trans..
-let ^ = 6 [R0#] () in
-let ^ = 5 [R0#] () in
-addInt [:R0# R0# R0#:] (weakclo {^1} in (2 [R0#] ())) (3 [R0#] ());;
+let ^ = 6 [r0#] () in
+let ^ = 5 [r0#] () in
+addInt [:r0# r0# r0#:] (weakclo {^1} in (2 [r0#] ())) (3 [r0#] ());;
 
 
 -- Arguments to weakclo that don't have any free variables should be eliminated.

@@ -29,7 +29,7 @@ Inline List; fix 10 {BetaLets; Forward; Rewrite}
 
 :trans..
 -- define outside, otherwise beta reduction won't fire...
-let num = 10 [R0#] ()
+let num = 10 [r0#] ()
 in
 sum (count num)
 ;;
@@ -39,29 +39,29 @@ fix 30 {Forward; BetaLets; Bubble; Prune; Rewrite; Snip; Flatten; Namify}
 ;;
 
 :trans..
-let sum = \(xs : List R1# (Int R0#)).
+let sum = \(xs : List r1# (Int r0#)).
 	foldr
-	    [:(Int R0#) (Int R0#) R1#
-	    Pure (Read R0# + Alloc R0#) (Alloc R0#)
-	    (Use R0#) (Use R0#) (Use R0#):]
+	    [:(Int r0#) (Int r0#) r1#
+	    Pure (Read r0# + Alloc r0#) (Alloc r0#)
+	    (Use r0#) (Use r0#) (Use r0#):]
 	plus zero xs
 in
-let filter = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List R1# (Int R0#)).
-    (build [:(Int R0#) R1#
-	Pure (Read R0# + Read R1# + Alloc R0#)
-	-- (Read R0# + Alloc R0#) Pure
-	(Use R0# + Use R1#)
-	(Use R0# + Use R1#)
+let filter = \(f : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#). \(xs : List r1# (Int r0#)).
+    (build [:(Int r0#) r1#
+	Pure (Read r0# + Read r1# + Alloc r0#)
+	-- (Read r0# + Alloc r0#) Pure
+	(Use r0# + Use r1#)
+	(Use r0# + Use r1#)
 	:]
 	(/\(bF : Data). /\(ec1F ec2F enF : Effect). /\(cc1F cc2F cnF : Closure).
-	\(c : Int R0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
+	\(c : Int r0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
 	\(n : Unit -(enF|cnF)> bF).
 
-	foldr [:(Int R0#) bF R1#
-		Pure (Read R0# + Alloc R0# + ec1F + ec2F) enF
-		(Use R0# + cc1F) (Use R0# + cc1F) cnF
+	foldr [:(Int r0#) bF r1#
+		Pure (Read r0# + Alloc r0# + ec1F + ec2F) enF
+		(Use r0# + cc1F) (Use r0# + cc1F) cnF
 		:] 
-	    (\(x : Int R0#).
+	    (\(x : Int r0#).
 	     \(xs : bF).
 	      case f x of {
 		0 -> c x xs;
@@ -71,33 +71,33 @@ let filter = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : L
 	    n xs
 	    ))
 in
-let map = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List R1# (Int R0#)).
-	    (build [:(Int R0#) R1# 
-		     Pure (Read R0# + Read R1# + Alloc R0#)
-		     (Use R0# + Use R1#) (Use R0# + Use R1#) :]
+let map = \(f : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#). \(xs : List r1# (Int r0#)).
+	    (build [:(Int r0#) r1# 
+		     Pure (Read r0# + Read r1# + Alloc r0#)
+		     (Use r0# + Use r1#) (Use r0# + Use r1#) :]
 		    (/\(b : Data). /\(ec1 ec2 en : Effect). /\(cc1 cc2 cn : Closure).
-		    \(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
+		    \(c : Int r0# -(ec1|cc1)> b -(ec2|cc2)> b).
 		    \(n : Unit -(en|cn)> b).
 
-		    foldr [:(Int R0#) b R1#
-			    (Read R0# + Alloc R0# + ec1)
+		    foldr [:(Int r0#) b r1#
+			    (Read r0# + Alloc r0# + ec1)
 				ec2 en
-			    (Use R0# + cc1) cc2 cn
+			    (Use r0# + cc1) cc2 cn
 			    :]
 
-			(compose [:(Int R0#) (Int R0#) (b -(ec2|cc2)> b)
-				   ec1 (Alloc R0# + Read R0#)
-				   cc1 (Use R0#)
+			(compose [:(Int r0#) (Int r0#) (b -(ec2|cc2)> b)
+				   ec1 (Alloc r0# + Read r0#)
+				   cc1 (Use r0#)
 				 :] c f)
 			n xs))
 in
-let count = \(m : Int R0#).
+let count = \(m : Int r0#).
     build
-	[:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
+	[:(Int r0#) r1# Pure (Read r0# + Alloc r0#) (Use r0#) (Use r0#):]
 	(count' m)
 in
 -- define outside, otherwise beta reduction won't fire...
-let num = 10 [R0#] ()
+let num = 10 [r0#] ()
 in
 sum
     (filter even

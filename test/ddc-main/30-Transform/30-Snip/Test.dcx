@@ -11,29 +11,29 @@
 
 
 -- Primitive operator.
-:trun addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ())
+:trun addInt [:r0# r0# r0#:] (1 [r0#] ()) (2 [r0#] ())
 
 
 -- Nested applications
 :trun.. 
-addInt [:R0# R1# R2#:] 
-       (1 [R0#] ()) 
-       (addInt [:R1# R1# R1#:] 
-               (2 [R1#] ()) 
-               (addInt [:R3# R3# R1#:] 
-                       (3 [R3#] ()) 
-                       (4 [R3#] ())));;
+addInt [:r0# r1# r2#:] 
+       (1 [r0#] ()) 
+       (addInt [:r1# r1# r1#:] 
+               (2 [r1#] ()) 
+               (addInt [:r3# r3# r1#:] 
+                       (3 [r3#] ()) 
+                       (4 [r3#] ())));;
 
 -- Type abstraction
-:trun (/\(t:Data).\(x:t).x) [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
+:trun (/\(t:Data).\(x:t).x) [List r0# (Int r0#)] (Nil [r0#] [Int r0#] ())
 
 
 -- Primitive in case exp
 :trun..
 (\(u:Unit). 
-case 1 [R0#] u of {
-    0 -> 1 [R0#] u;
-    _ -> addInt [:R0# R0# R0#:] (2 [R0#] u) (3 [R0#] u)
+case 1 [r0#] u of {
+    0 -> 1 [r0#] u;
+    _ -> addInt [:r0# r0# r0#:] (2 [r0#] u) (3 [r0#] u)
 }) ();;
 
 
@@ -47,12 +47,12 @@ letrec {
                       (fac [r] (subInt [:r r r:] n
                                        (1 [r] ())));
      }
-} in fac [R1#] (5 [R1#] ());;
+} in fac [r1#] (5 [r1#] ());;
 
 
 -- Snip out discriminants of case expressions
 :trun..
-case (\(x : Int R0#). x) (5 [R0#] ()) of {
+case (\(x : Int r0#). x) (5 [r0#] ()) of {
         _       -> ()
 };;
 
@@ -63,13 +63,13 @@ case (\(x : Int R0#). x) (5 [R0#] ()) of {
 let id [a : Data] (x : a)
         = x 
 in 
-let add (x : Int R0#) (y : Int R0#) 
-        = addInt [:R0# R0# R0#:] x y
+let add (x : Int r0#) (y : Int r0#) 
+        = addInt [:r0# r0# r0#:] x y
 
-in  (id [Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#])
+in  (id [Int r0# -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#])
         add
-        (2 [R0#] ())
-        (3 [R0#] ());;
+        (2 [r0#] ())
+        (3 [r0#] ());;
 
 
 -- Function applied to several nested arguments with deBruijn binders.

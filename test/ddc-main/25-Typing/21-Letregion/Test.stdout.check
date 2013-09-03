@@ -24,18 +24,18 @@ letregion r1 with {w1 : Const r1; w2 : Manifest r1} in
 
 -- Use the bound region in the body of the expression.
 letregion r1 in
-addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
-:*: Int R2#
-:!: Alloc R2#
-:$: Use R2#
+addInt [r1] [r1] [r2#] (2 [r1] ()) (3 [r1] ())
+:*: Int r2#
+:!: Alloc r2#
+:$: Use r2#
 
 
 -- As above, but with debruijn indices.
 letregion ^ in
-addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
-:*: Int R2#
-:!: Alloc R2#
-:$: Use R2#
+addInt [^0] [^0] [r2#] (2 [^0] ()) (3 [^0] ())
+:*: Int r2#
+:!: Alloc r2#
+:$: Use r2#
 
 
 -- Error: withregion must contain a region variable or constructor.
@@ -85,30 +85,30 @@ When checking expression.
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | Use r1 + Use R2#)> Int R2#
+    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r2# | Use r1 + Use r2#)> Int r2#
   
   with: letregion r1 with {w1 : Const r1} in
         \(x : Unit).
-        addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
+        addInt [r1] [r1] [r2#] (2 [r1] ()) (3 [r1] ())
 
 
 -- Error: region variable appears in closure term
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+    is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 in
         let z = 5 [r1] () in
         \(x : Unit).
         let xs
-              = Cons [R0#] [Int r1] z
-                    (Nil [R0#] [Int r1] ()) in
+              = Cons [r0#] [Int r1] z
+                    (Nil [r0#] [Int r1] ()) in
         case xs of {
           Nil  
-           -> 1 [R0#] ();
+           -> 1 [r0#] ();
           Cons _ _ 
-           -> 2 [R0#] ()
+           -> 2 [r0#] ()
         }
 
 

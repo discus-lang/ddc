@@ -21,13 +21,13 @@ weakclo {effectful} in
     Rules fired:
         
 
-effectful [Read R0# + Read R1# + Read R2#] ()
+effectful [Read r0# + Read r1# + Read r2#] ()
 
 -- longer - could match but doesn't
 * TRANSFORM INFORMATION: 
     Rules fired:
         
 
-effectful [Read R0# + Read R1# + Write R0# + Write R1#] ()
+effectful [Read r0# + Read r1# + Write r0# + Write r1#] ()
 
 

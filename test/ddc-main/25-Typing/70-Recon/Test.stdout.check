@@ -1,5 +1,5 @@
 -- Check reconstruction of annotation on let-bound variable.
-let x : Int R0# = 5 [R0#] () in
+let x : Int r0# = 5 [r0#] () in
 x
 
 -- Check reconstruction of annotations on case-bound variables.

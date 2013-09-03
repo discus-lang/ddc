@@ -3,5 +3,5 @@
 -- Error: fragment error with partially applied primop
 -- This would get stuck if we tried to evaluate it.
 :eval..
-let f = addInt [:R0# R0# R0#:] (5 [R0#] ())
-in  f (6 [R0#] ());;
+let f = addInt [:r0# r0# r0#:] (5 [r0#] ())
+in  f (6 [r0#] ());;

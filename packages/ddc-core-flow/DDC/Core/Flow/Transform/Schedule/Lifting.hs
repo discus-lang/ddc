@@ -80,7 +80,7 @@ liftWorker lifting env xx
 
         -- Replicate literals.
         XCon dc
-         | DaConPrim (NameLitFloat _ 32) _ _
+         | DaConPrim (NameLitFloat _ 32) _
                     <- dc
          , nPrim    <- PrimVecRep (liftingFactor lifting)
          , tPrim    <- typePrimVec nPrim

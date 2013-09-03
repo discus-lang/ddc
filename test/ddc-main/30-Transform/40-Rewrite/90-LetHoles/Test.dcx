@@ -2,7 +2,7 @@
 :with test/ddc-main/30-Transform/40-Rewrite/90-LetHoles/Module.dcs
 
 -- don't look past lets normally
-:set.. rule unbox_box (s : Int R0#).
+:set.. rule unbox_box (s : Int r0#).
     unbox (box s)
     = s
 ;;
@@ -11,15 +11,15 @@
 
 -- don't rewrite non-locals
 :trans..
-let x = box (5 [R0#] ())	in
+let x = box (5 [r0#] ())	in
 let y = unbox x			in
 let z = unbox x			in
-    unbox (box (addInt [:R0# R0# R0#:] y z))
+    unbox (box (addInt [:r0# r0# r0#:] y z))
 ;;
 
 
 -- the {{ }} brackets indicate that the argument is cheap enough to be split across places
-:set.. rule unbox_box (s : Int R0#).
+:set.. rule unbox_box (s : Int r0#).
     unbox _{box s}_
     = s
 ;;
@@ -28,35 +28,35 @@ let z = unbox x			in
 
 -- rewrite y and z
 :trans..
-let x = box (5 [R0#] ())	in
+let x = box (5 [r0#] ())	in
 let y = unbox x			in
 let z = unbox x			in
-    addInt [:R0# R0# R0#:] y z
+    addInt [:r0# r0# r0#:] y z
 ;;
 
 
 -- shadowing, don't rewrite
 :trans..
-let x = box (5 [R0#] ())	in
-let x = 2 [R0#] ()		in
+let x = box (5 [r0#] ())	in
+let x = 2 [r0#] ()		in
     unbox x
 ;;
 
 
 -- shadowing with lambdas, don't rewrite
 :trans..
-let x = box (5 [R0#] ())	in
-\(x : Int R0#).
+let x = box (5 [r0#] ())	in
+\(x : Int r0#).
     unbox x
 ;;
 
 
 -- some de bruijns. do rewrite
 :trans..
-let ^ = box (5 [R0#] ())	in
-let ^ = 2 [R0#] ()		in
+let ^ = box (5 [r0#] ())	in
+let ^ = 2 [r0#] ()		in
 let b = unbox ^1		in
-let ^ = 3 [R0#] ()		in
+let ^ = 3 [r0#] ()		in
 let c = unbox ^2		in
     ()
 ;;
@@ -64,8 +64,8 @@ let c = unbox ^2		in
 
 -- some surrounding de bruijns
 :trans..
-let ^ = 2 [R0#] ()		in
-let ^ = box (5 [R0#] ())	in
+let ^ = 2 [r0#] ()		in
+let ^ = box (5 [r0#] ())	in
 let ^ = ^1	        	in
 let c = unbox ^1		in
     ()
@@ -74,8 +74,8 @@ let c = unbox ^1		in
 
 -- some lambda-y de bruijns
 :trans..
-let ^ = 2 [R0#] ()		in
-let ^ = box (5 [R0#] ())	in
+let ^ = 2 [r0#] ()		in
+let ^ = box (5 [r0#] ())	in
  (\(a : Unit).
   \(^ : Unit).
     let ^ = ^2	        	in
@@ -96,7 +96,7 @@ let ^ = box (5 [R0#] ())	in
 
 -- don't do it: not const
 :trans..
-unbox_ [R0#] (box_ [R0#] (5 [R0#] ()))
+unbox_ [r0#] (box_ [r0#] (5 [r0#] ()))
 ;;
 
 
@@ -126,6 +126,6 @@ let y = unbox_ [r] x		in
 
 -- don't fire, just unfold
 :trans..
-let z = subInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ())
-in  addInt [:R0# R0# R0#:] (0 [R0#] ()) z
+let z = subInt [:r0# r0# r0#:] (5 [r0#] ()) (3 [r0#] ())
+in  addInt [:r0# r0# r0#:] (0 [r0#] ()) z
 ;;

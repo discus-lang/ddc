@@ -1,13 +1,13 @@
 -- Ok: let expression with explicit type annotation.
-:check let x : Int R0# = 5 [R0#] () in  x
+:check let x : Int r0# = 5 [r0#] () in  x
 
 
 -- Ok: let expression with no type annotation.
-:check let x = 5 [R0#] () in x
+:check let x = 5 [r0#] () in x
 
 
 -- Error: let binder has incorrect type annotation.
-:check let x : Int R0# = () in x
+:check let x : Int r0# = () in x
 
 
 -- Error: outer function is missing a Use annotation.
@@ -22,7 +22,7 @@ letrec {
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [r1#] (1 [r1#] ()) (5 [r1#] ());;
 
 
 -- Error: inner function is missing an Alloc effect.
@@ -37,7 +37,7 @@ letrec {
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [r1#] (1 [r1#] ()) (5 [r1#] ());;
 
 
 -- Error: region var on the Int return type should be r1.
@@ -56,7 +56,7 @@ letrec {
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:r1# r2#:] (5 [r1#] ()) (9 [r1#] ());;
 
 
 -- Error: second effect should have Read r1 instead of Read r2.
@@ -75,7 +75,7 @@ letrec {
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:r1# r2#:] (5 [r1#] ()) (9 [r1#] ());;
 
 
 -- Should be ok.
@@ -94,7 +94,7 @@ letrec {
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:r1# r2#:] (5 [r1#] ()) (9 [r1#] ());;
 
 
 -- Same as above, but the effect and closure terms are in a different order.
@@ -113,7 +113,7 @@ letrec {
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:r1# r2#:] (5 [r1#] ()) (9 [r1#] ());;
 
 
 -- Error: binding must have data kind.
@@ -158,5 +158,5 @@ letrec {
     ^ (_ : Unit) {Alloc r | Use r} : Int r = 2 [r] ();
     ^ (_ : Unit) {Alloc r | Use r} : Int r = 3 [r] ();
 } in
-addInt [:r r r:] (^0 ()) (^1 ())) [R0#] ();;
+addInt [:r r r:] (^0 ()) (^1 ())) [r0#] ();;
 

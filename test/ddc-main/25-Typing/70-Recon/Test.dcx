@@ -1,6 +1,6 @@
 -- Check reconstruction of annotation on let-bound variable.
 :recon..
-let x = 5 [R0#] ()
+let x = 5 [r0#] ()
 in  x;;
 
 -- Check reconstruction of annotations on case-bound variables.

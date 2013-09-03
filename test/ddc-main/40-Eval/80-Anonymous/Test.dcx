@@ -13,7 +13,7 @@ letrec {
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [r1#] (1 [r1#] ()) (5 [r1#] ());;
 
 
 -- Construct a list then immediately reverse it.
@@ -54,7 +54,7 @@ letrec {
     (Cons [r] [Int r] (9 [r] ())
     (Nil  [r] [Int r] ())));
 
-} in reverse [R0#] [Int R0#]
-     (append [R0#] [Int R0#] 
-       (list1 [R0#] ()) 
-       (list2 [R0#] ()));;
+} in reverse [r0#] [Int r0#]
+     (append [r0#] [Int r0#] 
+       (list1 [r0#] ()) 
+       (list2 [r0#] ()));;

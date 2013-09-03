@@ -5,7 +5,7 @@ let f = letregion r1 with {w0 : Global r1; w1 : Const r1} in
         \(x:Unit).
         forget use [r1] w0 w1 in
         purify read [r1] w1 & alloc [r1] w1 in
-        addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ())
+        addInt [:r1 r0# r0#:] (2 [r1] ()) (3 [r0#] ())
 in  f ();;
 
 

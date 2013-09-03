@@ -1,15 +1,15 @@
 -- Check that HeadRead in result effect is crushed.
-let xx : List R0# (Int R0#)
-      = Nil [R0#] [Int R0#] () in
+let xx : List r0# (Int r0#)
+      = Nil [r0#] [Int r0#] () in
 case xx of {
   Nil  
-   -> 0 [R0#] ();
-  Cons (x : Int R0#) (xs : List R0# (Int R0#)) 
+   -> 0 [r0#] ();
+  Cons (x : Int r0#) (xs : List r0# (Int r0#)) 
    -> x
 }
-:*: Int R0#
-:!: Read R0# + Alloc R0#
-:$: Use R0#
+:*: Int r0#
+:!: Read r0# + Alloc r0#
+:$: Use r0#
 
 
 -- Check that the HeadRead effect is crushed out when
@@ -23,34 +23,34 @@ letcase ()   = () in
 
 -- Check substituted effects are crushed under HeadRead.
 \(f : [a : Data].a -(HeadRead a | DeepUse a)> a).
-f [Int R0#] (5 [R0#] ())
-:*: ([a : Data].a -(HeadRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+f [Int r0#] (5 [r0#] ())
+:*: ([a : Data].a -(HeadRead a | DeepUse a)> a) -(Read r0# + Alloc r0# | Use r0#)> Int r0#
 :!: Pure
-:$: Use R0#
+:$: Use r0#
 
 
 -- Check substituted effects are crushed under DeepRead
 \(f : [a : Data].a -(DeepRead a | DeepUse a)> a).
-f [Int R0#] (5 [R0#] ())
-:*: ([a : Data].a -(DeepRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+f [Int r0#] (5 [r0#] ())
+:*: ([a : Data].a -(DeepRead a | DeepUse a)> a) -(Read r0# + Alloc r0# | Use r0#)> Int r0#
 :!: Pure
-:$: Use R0#
+:$: Use r0#
 
 
 -- Check substituted effects are crushed under DeepWrite
 \(f : [a : Data].a -(DeepWrite a | DeepUse a)> a).
-f [Int R0#] (5 [R0#] ())
-:*: ([a : Data].a -(DeepWrite a | DeepUse a)> a) -(Write R0# + Alloc R0# | Use R0#)> Int R0#
+f [Int r0#] (5 [r0#] ())
+:*: ([a : Data].a -(DeepWrite a | DeepUse a)> a) -(Write r0# + Alloc r0# | Use r0#)> Int r0#
 :!: Pure
-:$: Use R0#
+:$: Use r0#
 
 
 -- Check substituted effects are crushed under DeepAlloc
 \(f : [a : Data].a -(DeepAlloc a | DeepUse a)> a).
-f [Int R0#] (5 [R0#] ())
-:*: ([a : Data].a -(DeepAlloc a | DeepUse a)> a) -(Alloc R0# | Use R0#)> Int R0#
+f [Int r0#] (5 [r0#] ())
+:*: ([a : Data].a -(DeepAlloc a | DeepUse a)> a) -(Alloc r0# | Use r0#)> Int r0#
 :!: Pure
-:$: Use R0#
+:$: Use r0#
 
 
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc
@@ -59,7 +59,7 @@ letrec {
     = /\(a : Data).
        \(add : a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a).\(x : a). add x x
 } in
-double [Int R0#] (addInt [R0#] [R0#] [R0#]) (5 [R0#] ())
-:*: Int R0#
-:!: Read R0# + Alloc R0#
-:$: Use R0#
+double [Int r0#] (addInt [r0#] [r0#] [r0#]) (5 [r0#] ())
+:*: Int r0#
+:!: Read r0# + Alloc r0#
+:$: Use r0#

@@ -17,9 +17,10 @@ import DDC.Core.Exp.Simple
 xBool   :: Bool   -> Exp a Name
 xBool b  = XCon (dcBool b)
 
+
 -- | A literal @Bool#@ data constructor.
 dcBool  :: Bool -> DaCon Name
-dcBool b = DaConPrim (NameLitBool b) tBool True
+dcBool b = DaConPrim (NameLitBool b) tBool
 
 
 -- | A literal @Nat#@
@@ -29,14 +30,13 @@ xNat i  = XCon (dcNat i)
 
 -- | A Literal @Nat#@ data constructor.
 dcNat   :: Integer -> DaCon Name
-dcNat i   = DaConPrim (NameLitNat i) tNat True
+dcNat i   = DaConPrim (NameLitNat i) tNat
 
 
 -- | Data constructor for @Tuple1#@
 dcTuple1 :: DaCon Name
 dcTuple1  = DaConPrim (NameDaConFlow (DaConFlowTuple 1))
                       (typeDaConFlow (DaConFlowTuple 1))
-                      True
 
 
 -- | Construct a @Tuple2#@
@@ -53,7 +53,6 @@ xTuple2 t1 t2 x1 x2
 dcTuple2 :: DaCon Name
 dcTuple2  = DaConPrim   (NameDaConFlow (DaConFlowTuple 2))
                         (typeDaConFlow (DaConFlowTuple 2))
-                        True
 
 
 -- | Data constructor for n-tuples
@@ -61,5 +60,4 @@ dcTupleN :: Int -> DaCon Name
 dcTupleN n
           = DaConPrim   (NameDaConFlow (DaConFlowTuple n))
                         (typeDaConFlow (DaConFlowTuple n))
-                        True
 

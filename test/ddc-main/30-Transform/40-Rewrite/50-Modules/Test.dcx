@@ -9,6 +9,6 @@
 :set trans Rewrite
 
 :trans..
-toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 

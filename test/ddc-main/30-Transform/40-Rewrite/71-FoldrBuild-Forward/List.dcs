@@ -10,53 +10,53 @@ compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
 	c;
 
 plus ::
-    Int R0#
-    -( Pure | Use R0#)>
-    Int R0#
-    -(Read R0# + Alloc R0# | Use R0#)>
-    Int R0#;
+    Int r0#
+    -( Pure | Use r0#)>
+    Int r0#
+    -(Read r0# + Alloc r0# | Use r0#)>
+    Int r0#;
 
 zero ::
     Unit
-    -(Alloc R0# | Use R0#)>
-    Int R0#;
+    -(Alloc r0# | Use r0#)>
+    Int r0#;
 
 pred ::
-    Int R0#
-    -(Read R0# + Alloc R0# | Use R0#)>
-    Int R0#;
+    Int r0#
+    -(Read r0# + Alloc r0# | Use r0#)>
+    Int r0#;
 
 count' ::
-    Int R0#
-    -(Pure | Use R0#)>
+    Int r0#
+    -(Pure | Use r0#)>
     ([b : Data].
     [ec1 ec2 en : Effect].
     [cc1 cc2 cn : Closure].
-    (Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-    -(Pure | Use R0#)>
+    (Int r0# -(ec1|cc1)> b -(ec2|cc2)> b)
+    -(Pure | Use r0#)>
     (Unit -(en|cn)> b)
-    -(Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0#)>
+    -(Read r0# + Alloc r0# + ec1 + ec2 + en | cc1 + Use r0#)>
     b);
 
 double ::
-    Int R0#
-    -(Alloc R0# + Read R0# | Use R0#)>
-    Int R0#;
+    Int r0#
+    -(Alloc r0# + Read r0# | Use r0#)>
+    Int r0#;
 
 even ::
-    Int R0#
-    -(Alloc R0# + Read R0# | Use R0# )>
-    Int R0#;
+    Int r0#
+    -(Alloc r0# + Read r0# | Use r0# )>
+    Int r0#;
 
 sum ::
-    List R1# (Int R0#)
-    -(Read R0# + Read R1# + Alloc R0# | Use R0# + Use R1#)>
-    Int R0#;
+    List r1# (Int r0#)
+    -(Read r0# + Read r1# + Alloc r0# | Use r0# + Use r1#)>
+    Int r0#;
 
 count ::
-    Int R0#
-    -(Read R0# + Alloc R0# + Alloc R1# | Use R0# + Use R1#)>
-    List R1# (Int R0#);
+    Int r0#
+    -(Read r0# + Alloc r0# + Alloc r1# | Use r0# + Use r1#)>
+    List r1# (Int r0#);
 
 }
 imports {
@@ -89,32 +89,32 @@ compose [a b c : Data] [ef eg : Effect] [cf cg : Closure]
 
 
 plus
-    (a : Int R0#)
-    { Pure | Use R0# }
-    (b : Int R0#)
-    { Read R0# + Alloc R0# | Use R0# }
-    : Int R0#
-    = addInt [:R0# R0# R0#:] a b
+    (a : Int r0#)
+    { Pure | Use r0# }
+    (b : Int r0#)
+    { Read r0# + Alloc r0# | Use r0# }
+    : Int r0#
+    = addInt [:r0# r0# r0#:] a b
 
 zero
     (u : Unit)
-    { Alloc R0# | Use R0# }
-    : Int R0# = 0 [R0#] ()
+    { Alloc r0# | Use r0# }
+    : Int r0# = 0 [r0#] ()
 
 pred
-    (a : Int R0#)
-    { Read R0# + Alloc R0# | Use R0# }
-    : Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
+    (a : Int r0#)
+    { Read r0# + Alloc r0# | Use r0# }
+    : Int r0# = subInt [:r0# r0# r0#:] a (1 [r0#] ())
 
-count' (m : Int R0#)
-       { Pure | Use R0# }
+count' (m : Int r0#)
+       { Pure | Use r0# }
        [b : Data]
        [ec1 ec2 en : Effect]
        [cc1 cc2 cn : Closure]
-       (k : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-       { Pure | Use R0# }
+       (k : Int r0# -(ec1|cc1)> b -(ec2|cc2)> b)
+       { Pure | Use r0# }
        (z : Unit -(en|cn)> b)
-       { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0# }
+       { Read r0# + Alloc r0# + ec1 + ec2 + en | cc1 + Use r0# }
        : b
     = case m of {
 	0	-> z ();
@@ -122,33 +122,33 @@ count' (m : Int R0#)
 	}
 
 
-double (c : Int R0#)
-    {Alloc R0# + Read R0# | Use R0# }
-    : Int R0#
-    = mulInt [:R0# R0# R0#:] c (2 [R0#] ())
+double (c : Int r0#)
+    {Alloc r0# + Read r0# | Use r0# }
+    : Int r0#
+    = mulInt [:r0# r0# r0#:] c (2 [r0#] ())
 
-even (c : Int R0#)
-    {Alloc R0# + Read R0# | Use R0# }
-    : Int R0#
-    = weakeff [Read R0#]
+even (c : Int r0#)
+    {Alloc r0# + Read r0# | Use r0# }
+    : Int r0#
+    = weakeff [Read r0#]
       in
-      0 [R0#] ()
+      0 [r0#] ()
 
 
-sum (xs : List R1# (Int R0#))
-    { Read R0# + Read R1# + Alloc R0# | Use R0# + Use R1# }
-    : Int R0#
+sum (xs : List r1# (Int r0#))
+    { Read r0# + Read r1# + Alloc r0# | Use r0# + Use r1# }
+    : Int r0#
  = foldr
-	    [:(Int R0#) (Int R0#) R1#
-	    Pure (Read R0# + Alloc R0#) (Alloc R0#)
-	    (Use R0#) (Use R0#) (Use R0#):]
+	    [:(Int r0#) (Int r0#) r1#
+	    Pure (Read r0# + Alloc r0#) (Alloc r0#)
+	    (Use r0#) (Use r0#) (Use r0#):]
 	plus zero xs
 
-count (m : Int R0#)
-    { Read R0# + Alloc R0# + Alloc R1# | Use R0# + Use R1# }
-    : List R1# (Int R0#) 
+count (m : Int r0#)
+    { Read r0# + Alloc r0# + Alloc r1# | Use r0# + Use r1# }
+    : List r1# (Int r0#) 
  = build
-	[:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
+	[:(Int r0#) r1# Pure (Read r0# + Alloc r0#) (Use r0#) (Use r0#):]
 	(count' m)
 
 

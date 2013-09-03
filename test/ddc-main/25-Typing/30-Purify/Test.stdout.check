@@ -25,11 +25,11 @@ When checking expression.
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read r1 + Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
+    is free in the body type: Unit -(Read r1 + Read r0# + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 with {w1 : Const r1} in
         \(x : Unit).
-        addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ())
+        addInt [r1] [r0#] [r0#] (2 [r1] ()) (3 [r0#] ())
 
 
 -- Error: region is visible in the effect of the returned function.
@@ -37,12 +37,12 @@ When checking expression.
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
+    is free in the body type: Unit -(Read r0# + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 with {w1 : Const r1} in
         \(x : Unit).
         purify <read [r1] w1> in
-        addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ())
+        addInt [r1] [r0#] [r0#] (2 [r1] ()) (3 [r0#] ())
 
 
 -- Error: region is visible in the closure of the returned function.
@@ -52,9 +52,9 @@ When checking expression.
 When checking expression.
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+    is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 with {w1 : Const r1} in
         \(x : Unit).
         purify <read [r1] w1 & alloc [r1] w1> in
-        addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ())
+        addInt [r1] [r0#] [r0#] (2 [r1] ()) (3 [r0#] ())

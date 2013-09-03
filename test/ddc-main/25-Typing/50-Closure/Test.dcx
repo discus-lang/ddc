@@ -1,35 +1,35 @@
 -- The inner function uses a value in region R0#.
 :check..
-let x : Int R0# = 5 [R0#] () in
-\(z:Unit). addInt [:R0# R0# R1#:] x x;;
+let x : Int r0# = 5 [r0#] () in
+\(z:Unit). addInt [:r0# r0# r1#:] x x;;
 
 
 -- The inner function uses a value in region R0#.
 :check..
-let x : Int R0# = 5 [R0#] () in
-\(z:Unit). addInt [:R0# R0# R1#:] x x;;
+let x : Int r0# = 5 [r0#] () in
+\(z:Unit). addInt [:r0# r0# r1#:] x x;;
 
 
 -- Inner function uses the bound value, but it is not free in the closure.
 :check..
-\(x:Int R0#). addInt [:R0# R0# R1#:] x x;;
+\(x:Int r0#). addInt [:r0# r0# r1#:] x x;;
 
 
 -- Inner function uses the bound value, and it is free in the closure.
 :check..
-\(x:Int R0#). \(y:Int R1#). addInt [:R0# R1# R2#:] x y;;
+\(x:Int r0#). \(y:Int r1#). addInt [:r0# r1# r2#:] x y;;
 
 
 -- Multiple levels of binding.
 :check..
-\(x:Int R0#). \(y:Int R1#). \(z: Int R2#).
-  addInt [:R3# R0# R4#:] (addInt [:R1# R2# R3#:] y z) x;;
+\(x:Int r0#). \(y:Int r1#). \(z: Int r2#).
+  addInt [:r3# r0# r4#:] (addInt [:r1# r2# r3#:] y z) x;;
 
 
 -- Inner function has a value in the closure whose type contains
 -- a higher kinded type variable.
 :check..
-/\(a:Region ~> Data). \(x:a R1#). \(f: a R1# -> a R1#). f x;;
+/\(a:Region ~> Data). \(x:a r1#). \(f: a r1# -> a r1#). f x;;
 
 
 -- Inner funtion has a value in the clousre whose type contains
@@ -42,26 +42,26 @@ let x : Int R0# = 5 [R0#] () in
 -- pre-trimmed closure.
 :check..
 (/\(e:Effect). /\(c:Closure). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)
-[Read R0#] [Use R1#];;
+[Read r0#] [Use r1#];;
 
 
 -- Like above, and we've also instantiated the variable with a closure that
 -- could be trimmed, but because it's explicit in the term we don't do so. 
 :check..
 (/\(e:Effect). /\(c:Closure). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)
-[Read R0#] [DeepUse (Int R1#)];;
+[Read r0#] [DeepUse (Int r1#)];;
 
 
 -- Region handle in the type argument should show up in the overall closure.
 :check..
-(/\(a:Data). \(f:a -> a). \(x:a). f x) [Int R1#];;
+(/\(a:Data). \(f:a -> a). \(x:a). f x) [Int r1#];;
 
 
 -- Local region should not appear in the closure of the overall term.
 :check..
 letregion r1 with {w1 : Const r1} in
 purify read [r1] w1 in
-addInt [:r1 R0# R0#:] (5 [r1] ()) (5 [R0#] ());;
+addInt [:r1 r0# r0#:] (5 [r1] ()) (5 [r0#] ());;
 
 
 -- Error: region is visible in the closure of the returned function.
@@ -72,4 +72,4 @@ addInt [:r1 R0# R0#:] (5 [r1] ()) (5 [R0#] ());;
 letregion r1 with {w1 : Const r1} in
 \(x:Unit). 
  purify read [r1] w1 & alloc [r1] w1 in
- addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ());;
+ addInt [:r1 r0# r0#:] (2 [r1] ()) (3 [r0#] ());;

@@ -259,12 +259,10 @@ pExpAtomSP c
         return  (XCon sp (DaConBound con), sp)
 
         -- Literals.
-        --  We just fill-in the type with tBot for now, and leave it to
-        --  the spreader to attach the real type.
-        --  We also set the literal as being algebraic, which may not be
-        --  true (as for Floats). The spreader also needs to fix this.
+        --   The attached type is set to Bottom for now, which needs
+        --   to be filled in later by the Spread transform.
  , do   (lit, sp)       <- pLitSP
-        return  (XCon sp (DaConPrim lit (T.tBot T.kData) True), sp)
+        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
@@ -298,8 +296,10 @@ pPat c
         return  $ PDefault
 
         -- LIT
- , do   nLit    <- pLit
-        return  $ PData (DaConPrim nLit (T.tBot T.kData) True) []
+ , do   --  The attached type is set to Bottom for now, which needs
+        --  to be filled in later by the Spread transform.
+        nLit    <- pLit
+        return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
 
         -- Unit
  , do   pTok KDaConUnit

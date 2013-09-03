@@ -11,4 +11,4 @@ Cons 5 (Cons 6 (Cons 7 (Cons 8 (Cons 9 Nil))))
 
 
 -- Handle forget around let-expression.
-forget <use [R1#] (Global# [R1#])> in ()
+forget <use [r1#] (Global# [r1#])> in ()

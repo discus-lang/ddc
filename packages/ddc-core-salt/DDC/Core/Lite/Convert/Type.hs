@@ -167,13 +167,12 @@ convertDC kenv dc
         DaConUnit       
          -> return DaConUnit
 
-        DaConPrim n t isAlg
+        DaConPrim n t
          -> do  n'      <- convertBoundNameM n
                 t'      <- convertT kenv t
                 return  $ DaConPrim
                         { daConName             = n'
-                        , daConType             = t'
-                        , daConIsAlgebraic      = isAlg }
+                        , daConType             = t' }
 
         DaConBound n
          -> do  n'      <- convertBoundNameM n

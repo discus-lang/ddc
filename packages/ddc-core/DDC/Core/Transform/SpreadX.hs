@@ -71,7 +71,7 @@ instance SpreadX DaCon where
         DaConUnit       
          -> dc
 
-        DaConPrim n t _
+        DaConPrim n t
          -> let u | Env.isPrim tenv n   = UPrim n t
                   | otherwise           = UName n
 
@@ -82,7 +82,7 @@ instance SpreadX DaCon where
         DaConBound n
          | Env.isPrim tenv n
          , Just t'      <- Env.lookup (UPrim n (tBot kData)) tenv
-         -> DaConPrim n t' True
+         -> DaConPrim n t'
 
          | otherwise
          -> DaConBound n
@@ -187,5 +187,4 @@ instance SpreadX Bound where
         UPrim n _       -> UPrim n t'
 
   | otherwise   = uu        
-
 

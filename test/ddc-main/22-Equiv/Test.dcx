@@ -10,26 +10,26 @@
 
 -- Region handles.
 :tequiv..
-(Read R0#)
-(Read R0#);;
+(Read r0#)
+(Read r0#);;
 
 
 -- Commutativty of effect sum.
 :tequiv..
-(Read  R0# + Write R1#)
-(Write R1# + Read  R0#);;
+(Read  r0# + Write r1#)
+(Write r1# + Read  r0#);;
 
 
 -- Associativity of effect sum.
 :tequiv..
-(Read  R0# + (Write R1# + Read R2#))
-((Write R1# + Read  R0#) + Read R2#));;
+(Read  r0# + (Write r1# + Read r2#))
+((Write r1# + Read  r0#) + Read r2#));;
 
 
 -- Idempotence of effect sum.
 :tequiv..
-(Read R0# + Read R0#)
-(Read R0#);;
+(Read r0# + Read r0#)
+(Read r0#);;
 
 
 -- Alpha equiv of type constructor.
@@ -94,14 +94,14 @@
 
 -- False: Different effects
 :tequiv..
-(Read R0#)
-(Read R1#);;
+(Read r0#)
+(Read r1#);;
 
 
 -- False: Second effect is larger.
 :tequiv..
-(Read R0#)
-(Read R0# + Read R1#);;
+(Read r0#)
+(Read r0# + Read r1#);;
 
 
 -- False: binders have differing kinds.

@@ -11,11 +11,11 @@
 
 
 -- Use the bound region in the body of the expression.
-:check letregion r1 in addInt [:r1 r1 R2#:] (2 [r1] ()) (3 [r1] ())
+:check letregion r1 in addInt [:r1 r1 r2#:] (2 [r1] ()) (3 [r1] ())
 
 
 -- As above, but with debruijn indices.
-:check letregion ^  in addInt [:^0 ^0 R2#:] (2 [^0] ()) (3 [^0] ())
+:check letregion ^  in addInt [:^0 ^0 r2#:] (2 [^0] ()) (3 [^0] ())
 
 
 -- Error: withregion must contain a region variable or constructor.
@@ -47,7 +47,7 @@ updateInt [:r1 r1:] {w1} x (0 [r1] ());;
 -- Error: bound region is free in the effect of a returned function.
 :check..
 letregion r1 with {w1 : Const r1} in
-\(x:Unit). (addInt [:r1 r1 R2#:] (2 [r1] ()) (3 [r1] ()));;
+\(x:Unit). (addInt [:r1 r1 r2#:] (2 [r1] ()) (3 [r1] ()));;
 
 
 -- Error: region variable appears in closure term
@@ -55,10 +55,10 @@ letregion r1 with {w1 : Const r1} in
 letregion r1 in
 let z  = 5 [r1] () in
 \(x : Unit).
- let xs = Cons [R0#] [Int r1] z (Nil [R0#] [Int r1] ()) in
+ let xs = Cons [r0#] [Int r1] z (Nil [r0#] [Int r1] ()) in
  case xs of {
-        Nil      -> 1 [R0#] ();
-        Cons _ _ -> 2 [R0#] ();
+        Nil      -> 1 [r0#] ();
+        Cons _ _ -> 2 [r0#] ();
  };;
 
 

@@ -3,19 +3,19 @@ ok
 ok, added mul2r
 ok
 
-let put : Unit -(Alloc R0# | Use R0#)> Int R0#
-      = \(_ : Unit). 3 [R0#] () in
-let ^ : Int R0# = put () in
-weakeff [Read R0# + Alloc R0#] in
-weakclo {mulInt; [R0#]} in
-addInt [R0#] [R0#] [R0#] ^0 ^0
+let put : Unit -(Alloc r0# | Use r0#)> Int r0#
+      = \(_ : Unit). 3 [r0#] () in
+let ^ : Int r0# = put () in
+weakeff [Read r0# + Alloc r0#] in
+weakclo {mulInt; [r0#]} in
+addInt [r0#] [r0#] [r0#] ^0 ^0
 
 ok, added mul0r
 ok
 
-let put : Unit -(Alloc R0# | Use R0#)> Int R0#
-      = \(_ : Unit). 3 [R0#] () in
-let ^ : Int R0# = put () in
-weakeff [Read R0# + Alloc R0#] in
-weakclo {^0; mulInt; [R0#]} in
-0 [R0#] ()
+let put : Unit -(Alloc r0# | Use r0#)> Int r0#
+      = \(_ : Unit). 3 [r0#] () in
+let ^ : Int r0# = put () in
+weakeff [Read r0# + Alloc r0#] in
+weakclo {^0; mulInt; [r0#]} in
+0 [r0#] ()

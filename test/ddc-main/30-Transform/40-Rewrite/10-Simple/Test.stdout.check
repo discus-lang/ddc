@@ -6,16 +6,16 @@ ok, added add_comm
 ok
 
 -- swap the 1 and 2
-addInt [R1#] [R0#] [R2#] (2 [R1#] ()) (1 [R0#] ())
+addInt [r1#] [r0#] [r2#] (2 [r1#] ()) (1 [r0#] ())
 
 -- don't swap because they're all R0.
-addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ())
+addInt [r0#] [r0#] [r0#] (1 [r0#] ()) (2 [r0#] ())
 
 -- swap the whole whiz-bang
-addInt [R1#] [R0#] [R2#] (3 [R1#] ()) (addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ()))
+addInt [r1#] [r0#] [r2#] (3 [r1#] ()) (addInt [r0#] [r0#] [r0#] (1 [r0#] ()) (2 [r0#] ()))
 
 -- don't rewrite if it's not an addInt
-mulInt [R0#] [R1#] [R2#] (1 [R0#] ()) (2 [R1#] ())
+mulInt [r0#] [r1#] [r2#] (1 [r0#] ()) (2 [r1#] ())
 
 -- rule: let in right-hand side
 ok, added mul2
@@ -25,26 +25,26 @@ ok
 
 -- simple let
 weakclo {mulInt} in
-let ^ : Int R0# = 5 [R0#] () in
-addInt [R0#] [R0#] [R0#] ^0 ^0
+let ^ : Int r0# = 5 [r0#] () in
+addInt [r0#] [r0#] [r0#] ^0 ^0
 10
 
 -- nested apps 
 weakclo {mulInt} in
-let ^ : Int R0#
+let ^ : Int r0#
       = weakclo {mulInt} in
-        let ^ : Int R0#
-              = addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ()) in
-        addInt [R0#] [R0#] [R0#] ^0 ^0 in
-addInt [R0#] [R0#] [R0#] ^0 ^0
+        let ^ : Int r0#
+              = addInt [r0#] [r0#] [r0#] (1 [r0#] ()) (2 [r0#] ()) in
+        addInt [r0#] [r0#] [r0#] ^0 ^0 in
+addInt [r0#] [r0#] [r0#] ^0 ^0
 12
 
 -- binders inside let
 weakclo {mulInt} in
-let ^ : Int R0#
+let ^ : Int r0#
       = let ^ : [^ : Region].Unit -(Alloc ^0 | Empty)> Int ^0 = 5 in
         let ^ : Unit = () in
         (/\(^ : Region).
-          \(^ : Unit). ^2 [^0] ^0) [R0#] () in
-addInt [R0#] [R0#] [R0#] ^0 ^0
+          \(^ : Unit). ^2 [^0] ^0) [r0#] () in
+addInt [r0#] [r0#] [r0#] ^0 ^0
 10

@@ -13,7 +13,7 @@
 
 -- Not even trying
 :trans..
-let toInt = 5 [R0#] ()
+let toInt = 5 [r0#] ()
 in  toInt
 ;;
 
@@ -22,7 +22,7 @@ in  toInt
 let toInt = /\(r1 r2 : Region).
 	     \(xs : List r1 Unit).
 		0 [r2] ()
-in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+in  toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 
 -- Redefinition with same type
@@ -33,7 +33,7 @@ let toInt = /\(r1 r2 : Region).
 		    Nil -> 100 [r2] ();
 		    Cons _ _ -> 1 [r2] ()
 		}
-in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+in  toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 
 -- Letrec
@@ -47,13 +47,13 @@ toInt [r1 r2 : Region]
      Cons _ xs' -> subInt [:r2 r2 r2:] (1 [r2] ()) (toInt [:r1 r2:] xs')
  }
 }
-in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+in  toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 
 -- Lambda instead of let
 :trans..
 \(toInt : [r1 r2 : Region]. List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2).
-  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+  toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 
 -- Try shadowing fromInt instead
@@ -67,7 +67,7 @@ fromInt [r1 r2 : Region]
      _  -> Cons [:r2 Unit:] () (fromInt [:r1 r2:] (subInt [:r1 r1 r1:] c (2 [r1] ())))
  };
 }
-in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+in  toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 
 -- Try shadowing newInt (only visible in result) instead
@@ -78,7 +78,7 @@ newInt [r1 r2 : Region]
     : Int r2
  = copyInt [:r1 r2:] x
 }
-in  toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
+in  toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
 ;;
 
 -- Inside the same letrec

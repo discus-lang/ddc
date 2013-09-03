@@ -521,7 +521,7 @@ checkExpM' !config !kenv !tenv xx@(XLet a (LWithRegion u) x)
          $ throw $ ErrorWithRegionFree xx u tBody'
 
         -- Delete effects on the bound region from the result.
-        let tu          = TCon $ TyConBound u kRegion
+        let tu          = TVar u
         let effs'       = Sum.delete (tRead  tu)
                         $ Sum.delete (tWrite tu)
                         $ Sum.delete (tAlloc tu)

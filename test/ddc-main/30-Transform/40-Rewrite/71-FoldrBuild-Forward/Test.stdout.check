@@ -38,11 +38,11 @@ ok
         Rules fired:
             
 
-let num : Int R0# = 10 [R0#] () in
-let ^ : [^ : Data].[^ ^ ^ : Effect].[^ ^ ^ : Closure].(Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) -(Pure | Use R0#)> (Unit -(^3 | ^0)> ^6) -(Read R0# + Alloc R0# + ^3 + ^4 + ^5 | Use R0# + ^2)> ^6
+let num : Int r0# = 10 [r0#] () in
+let ^ : [^ : Data].[^ ^ ^ : Effect].[^ ^ ^ : Closure].(Int r0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) -(Pure | Use r0#)> (Unit -(^3 | ^0)> ^6) -(Read r0# + Alloc r0# + ^3 + ^4 + ^5 | Use r0# + ^2)> ^6
       = weakclo {num} in
         /\(^ : Data)./\(^ ^ ^ : Effect)./\(^ ^ ^ : Closure).
-         \(^ : Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6).\(^ : Unit -(^3 | ^0)> ^6).
+         \(^ : Int r0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6).\(^ : Unit -(^3 | ^0)> ^6).
         case num of {
           0  
            -> ^0 ();
@@ -50,15 +50,15 @@ let ^ : [^ : Data].[^ ^ ^ : Effect].[^ ^ ^ : Closure].(Int R0# -(^5 | ^2)> ^6 -(
            -> ^1 num
                   (count'
                        (weakclo {num} in
-                        subInt [R0#] [R0#] [R0#] num (1 [R0#] ())) [^6] [^5] [^4] [^3] [^2] [^1] [^0] ^1 ^0)
+                        subInt [r0#] [r0#] [r0#] num (1 [r0#] ())) [^6] [^5] [^4] [^3] [^2] [^1] [^0] ^1 ^0)
         } in
-let ^ : List R1# (Int R0#)
-      = build [Int R0#] [R1#] [Pure] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] ^0 in
-weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int]; [R0#]; [R1#]} in
-^1 [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
-    (\(^ ^ : Int R0#). addInt [R0#] [R0#] [R0#] ^1 ^0)
-    (\(^ : Unit). 0 [R0#] ())
+let ^ : List r1# (Int r0#)
+      = build [Int r0#] [r1#] [Pure] [Read r0# + Alloc r0#] [Use r0#] [Use r0#] ^0 in
+weakeff [Read r0# + Read r1# + Alloc r0# + Alloc r1#] in
+weakclo {build; foldr; [Int]; [r0#]; [r1#]} in
+^1 [Int r0#] [Pure] [Read r0# + Alloc r0#] [Alloc r0#] [Use r0#] [Use r0#] [Use r0#]
+    (\(^ ^ : Int r0#). addInt [r0#] [r0#] [r0#] ^1 ^0)
+    (\(^ : Unit). 0 [r0#] ())
 
 ok
 
@@ -217,19 +217,20 @@ ok
         Flatten: No information;
         Namify: No information
 
-weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-let num : Int R0# = 10 [R0#] () in
-let v7 : [t0 : Data].[t1 t2 t3 : Effect].[t4 t5 t6 : Closure].(Int R0# -(t1 | t4)> t0 -(t2 | t5)> t0) -(Pure | Use R0#)> (Unit -(t3 | t6)> t0) -(Read R0# + Alloc R0# + t1 + t2 + t3 | Use R0# + t4)> t0 = count' num in
-weakclo {double; even; v7} in
-let v33 : Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(v30 v31 : Int R0#).
-        let v32 : Int R0# = even v30 in
+weakeff [Read r0# + Read r1# + Alloc r0# + Alloc r1#] in
+weakclo {[r0#]; [r1#]} in
+let num : Int r0# = 10 [r0#] () in
+let v7 : [t0 : Data].[t1 t2 t3 : Effect].[t4 t5 t6 : Closure].(Int r0# -(t1 | t4)> t0 -(t2 | t5)> t0) -(Pure | Use r0#)> (Unit -(t3 | t6)> t0) -(Read r0# + Alloc r0# + t1 + t2 + t3 | Use r0# + t4)> t0 = count' num in
+weakclo {[r0#]; [r1#]; double; even; v7} in
+let v33 : Int r0# -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(v30 v31 : Int r0#).
+        let v32 : Int r0# = even v30 in
         case v32 of {
           0  
            -> plus v30 v31;
           _ 
            -> v31
         } in
-let v18 : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [Pure] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] v33 double in
-v7 [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] v18 zero
+let v18 : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = compose [Int r0#] [Int r0#] [Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#] [Pure] [Read r0# + Alloc r0#] [Use r0#] [Use r0#] v33 double in
+v7 [Int r0#] [Read r0# + Alloc r0#] [Read r0# + Alloc r0#] [Alloc r0#] [Use r0#] [Use r0#] [Use r0#] v18 zero

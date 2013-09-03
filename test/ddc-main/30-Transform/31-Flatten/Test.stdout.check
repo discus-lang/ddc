@@ -21,53 +21,53 @@ letrec {
 ok
 
 -- Nested applications
-let ^ : Int R0# = 1 [R0#] () in
-let ^ : Int R1# = 2 [R1#] () in
-let ^ : Int R3# = 3 [R3#] () in
-let ^ : Int R3# = 4 [R3#] () in
-let ^ : Int R1# = addInt [R3#] [R3#] [R1#] ^1 ^0 in
-let ^ : Int R1# = addInt [R1#] [R1#] [R1#] ^3 ^0 in
-addInt [R0#] [R1#] [R2#] ^5 ^0
+let ^ : Int r0# = 1 [r0#] () in
+let ^ : Int r1# = 2 [r1#] () in
+let ^ : Int r3# = 3 [r3#] () in
+let ^ : Int r3# = 4 [r3#] () in
+let ^ : Int r1# = addInt [r3#] [r3#] [r1#] ^1 ^0 in
+let ^ : Int r1# = addInt [r1#] [r1#] [r1#] ^3 ^0 in
+addInt [r0#] [r1#] [r2#] ^5 ^0
 10
 
 
 -- Lets in args (inner x must be anonymized)
-let x : Int R1# = 2 [R1#] () in
+let x : Int r1# = 2 [r1#] () in
 let ^ : Unit = () in
 let ^ : [^ : Region].Unit -(Alloc ^0 | Empty)> Int ^0 = 1 in
-let ^ : Int R0# = ^0 [R0#] ^1 in
-addInt [R0#] [R1#] [R2#] ^0 x
+let ^ : Int r0# = ^0 [r0#] ^1 in
+addInt [r0#] [r1#] [r2#] ^0 x
 3
 
 
 -- Arity
-let cmp : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
-        let f' : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in
-        \(x : Int R0#).
-        let ^ : Int R0# = g x in
+let cmp : (Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#) -> (Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#) -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(f g : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#).
+        let f' : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0# = f in
+        \(x : Int r0#).
+        let ^ : Int r0# = g x in
         f' ^0 in
-let up : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(n : Int R0#).
-        let ^ : Int R0# = 1 [R0#] () in
-        addInt [R0#] [R0#] [R0#] n ^0 in
-let ^ : Int R0# = 1 [R0#] () in
+let up : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(n : Int r0#).
+        let ^ : Int r0# = 1 [r0#] () in
+        addInt [r0#] [r0#] [r0#] n ^0 in
+let ^ : Int r0# = 1 [r0#] () in
 cmp up up ^0
 3
 
 
 -- Arity anon
-let ^ : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
-        let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in
-        \(^ : Int R0#).
-        let ^ : Int R0# = g ^0 in
+let ^ : (Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#) -> (Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#) -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(f g : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#).
+        let ^ : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0# = f in
+        \(^ : Int r0#).
+        let ^ : Int r0# = g ^0 in
         ^2 ^0 in
-let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(^ : Int R0#).
-        let ^ : Int R0# = 1 [R0#] () in
-        addInt [R0#] [R0#] [R0#] ^1 ^0 in
-let ^ : Int R0# = 1 [R0#] () in
+let ^ : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(^ : Int r0#).
+        let ^ : Int r0# = 1 [r0#] () in
+        addInt [r0#] [r0#] [r0#] ^1 ^0 in
+let ^ : Int r0# = 1 [r0#] () in
 ^2 ^1 ^1 ^0
 3
 
@@ -87,26 +87,26 @@ letrec {
             mulInt [r] [r] [r] n ^0
       }
 } in
-let ^ : Int R1# = 5 [R1#] () in
-fac [R1#] ^0
+let ^ : Int r1# = 5 [r1#] () in
+fac [r1#] ^0
 120
 
 
 -- Snip out discriminants of case expressions
-let ^ : Int R0# -> Int R0#
-      = \(x : Int R0#). x in
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = ^1 ^0 in
+let ^ : Int r0# -> Int r0#
+      = \(x : Int r0#). x in
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = ^1 ^0 in
 letcase _  = ^0 in
 ()
 
 
 -- Anonymous witnesses
-let useWit : Const R0# => Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(^ : Const R0#).\(^ : Int R0#). addInt [R0#] [R0#] [R0#] ^0 ^0 in
-\(^ : Const R0#).\(^ : Int R0#).
-let ^ : Int R0# = 1 [R0#] () in
-let ^ : Int R0# = addInt [R0#] [R0#] [R0#] ^0 ^1 in
+let useWit : Const r0# => Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(^ : Const r0#).\(^ : Int r0#). addInt [r0#] [r0#] [r0#] ^0 ^0 in
+\(^ : Const r0#).\(^ : Int r0#).
+let ^ : Int r0# = 1 [r0#] () in
+let ^ : Int r0# = addInt [r0#] [r0#] [r0#] ^0 ^1 in
 useWit <^3> ^0
 
 
@@ -127,5 +127,5 @@ letregion ^ in
 letregion ^ in
 let ^ : Pair ^1 (Int ^1) (Int ^0) = ^0 [^1] [^0] () in
 letcase Pr (_ : Int ^1) (^ : Int ^0)  = ^0 in
-copyInt [^0] [R0#] ^0
+copyInt [^0] [r0#] ^0
 

@@ -15,8 +15,8 @@ updateInt [:r r:] {Mutable# [r]} x (5 [r] ());;
 
 -- Error: conflicting capabilities in program.
 :eval..
-let x   = purify alloc [R0#] (Const#  [R0#]) in 
-          forget use   [R0#] (Global# [R0#]) in
-          5 [R0#] () in
-updateInt [:R0# R0#:] {Mutable# [R0#]} x (0 [R0#] ());;
+let x   = purify alloc [r0#] (Const#  [r0#]) in 
+          forget use   [r0#] (Global# [r0#]) in
+          5 [r0#] () in
+updateInt [:r0# r0#:] {Mutable# [r0#]} x (0 [r0#] ());;
 

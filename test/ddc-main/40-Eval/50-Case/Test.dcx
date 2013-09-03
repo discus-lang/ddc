@@ -1,38 +1,38 @@
 -- Construct an empty list.
-Nil [R0#] [Int R0#] ()
+Nil [r0#] [Int r0#] ()
 
 
 -- Construct a single element list.
 :eval..
-Cons [R0#] [Int R0#]
-        (5 [R0#] ())
-        (Nil [R0#] [Int R0#] ());;
+Cons [r0#] [Int r0#]
+        (5 [r0#] ())
+        (Nil [r0#] [Int r0#] ());;
 
 
 -- Contruct and destruct a single element list.
 :eval..
-let i   = 5 [R0#] () in
-let nil = Nil  [R0#] [Int R0#] () in
-let xx  = Cons [R0#] [Int R0#] i nil in
+let i   = 5 [r0#] () in
+let nil = Nil  [r0#] [Int r0#] () in
+let xx  = Cons [r0#] [Int r0#] i nil in
 case xx of {
-        Nil           -> 0 [R0#] ();
+        Nil           -> 0 [r0#] ();
         Cons x xs     -> x
 };;
 
 
 -- Match on an integer literal.
 :eval..
-case 5 [R0#] () of {
-        5  -> 1 [R0#] ();
-        _  -> 0 [R0#] ();
+case 5 [r0#] () of {
+        5  -> 1 [r0#] ();
+        _  -> 0 [r0#] ();
 };;
 
 
 -- Fall through to default alternative.
 :eval..
-case 5 [R0#] () of {
-        6 -> 1 [R0#] ();
-        _ -> 0 [R0#] ();
+case 5 [r0#] () of {
+        6 -> 1 [r0#] ();
+        _ -> 0 [r0#] ();
 };;
 
 
@@ -42,15 +42,15 @@ letregion r with {w : Global r} in
 let xx = forget use [r] w in 
         Cons [r] [Int r] (5 [r] ()) (Nil [r] [Int r] ()) in
 case xx of {
-        Nil      -> 0 [R0#] ();
-        Cons x _ -> addInt [:r R0# R0#:] x (0 [R0#] ());
+        Nil      -> 0 [r0#] ();
+        Cons x _ -> addInt [:r r0# r0#:] x (0 [r0#] ());
 };;
 
 
 -- Should be able to build a pair of unit
 -- All unit values share a single location.
 :eval..
-case Pr [R0#] [Unit] [Int R0#] () (5 [R0#] ()) of {
+case Pr [r0#] [Unit] [Int r0#] () (5 [r0#] ()) of {
         Pr x _ -> x
 };;
 
@@ -58,8 +58,8 @@ case Pr [R0#] [Unit] [Int R0#] () (5 [R0#] ()) of {
 -- Let-bound loc gets redirected to a static store location,
 -- and the integer constructor needs to accept this.
 :eval..
-let x : Int R1# = 2 [R1#] () in
+let x : Int r1# = 2 [r1#] () in
 let ^ : Unit    = () in
 let ^ : [^ : Region].Unit -(Alloc ^0 | Empty)> Int ^0 = 1 in
-let ^           = ^0 [R0#] ^1 in
-addInt [R0#] [R1#] [R2#] ^0 x;;
+let ^           = ^0 [r0#] ^1 in
+addInt [r0#] [r1#] [r2#] ^0 x;;

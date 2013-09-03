@@ -51,21 +51,21 @@ takeTPtr tt
 
 -- Expressions ----------------------------------------------------------------
 xBool :: a -> Bool   -> Exp a Name
-xBool a b       = XCon a (DaConPrim (NameLitBool b) tBool True)
+xBool a b       = XCon a (DaConPrim (NameLitBool b) tBool)
 
 
 xNat  :: a -> Integer -> Exp a Name
-xNat a i        = XCon a (DaConPrim (NameLitNat i)  tNat True)
+xNat a i        = XCon a (DaConPrim (NameLitNat i)  tNat)
 
 
 xInt  :: a -> Integer -> Exp a Name
-xInt a i        = XCon a (DaConPrim (NameLitInt i)  tInt True)
+xInt a i        = XCon a (DaConPrim (NameLitInt i)  tInt)
 
 
 xWord :: a -> Integer -> Int -> Exp a Name
-xWord a i bits  = XCon a (DaConPrim (NameLitWord i bits) (tWord bits) True)
+xWord a i bits  = XCon a (DaConPrim (NameLitWord i bits) (tWord bits))
 
 
 xTag  :: a -> Integer -> Exp a Name
-xTag a i        = XCon a (DaConPrim (NameLitTag i) tTag True)
+xTag a i        = XCon a (DaConPrim (NameLitTag i)  tTag)
 

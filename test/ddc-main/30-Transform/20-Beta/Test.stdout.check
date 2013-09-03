@@ -18,31 +18,31 @@ let u : Unit = () in weakclo {u} in \(x : Unit). x
 
 
 -- Avoid capture of value var by let binding in value subst.
-let x : Unit = () in let ^ : Int R0# = 2 [R0#] x in addInt [R0#] [R0#] [R0#] ^0 (3 [R0#] x)
+let x : Unit = () in let ^ : Int r0# = 2 [r0#] x in addInt [r0#] [r0#] [r0#] ^0 (3 [r0#] x)
 
 
 -- Don't substitute past binder with the same name.
-let u : Unit = () in weakclo {u} in let x : Int R0# = 2 [R0#] u in addInt [R0#] [R0#] [R0#] x (3 [R0#] u)
+let u : Unit = () in weakclo {u} in let x : Int r0# = 2 [r0#] u in addInt [r0#] [r0#] [r0#] x (3 [r0#] u)
 
 
 -- Avoid capture of value var by letrec binding in value subst.
-let x : Unit = () in letrec { ^ : Int R0# -> Int R0# = \(z : Int R0#). z } in addInt [R0#] [R0#] [R0#] (^0 (2 [R0#] x)) (3 [R0#] x)
+let x : Unit = () in letrec { ^ : Int r0# -> Int r0# = \(z : Int r0#). z } in addInt [r0#] [r0#] [r0#] (^0 (2 [r0#] x)) (3 [r0#] x)
 
 
 -- Avoid capture of value var by match bining in value subst.
-let x : Unit = () in case Nil [R0#] [Int R0#] () of { Nil -> 0 [R0#] (); Cons (^ : Int R0#) (xs : List R0# (Int R0#)) -> addInt [R0#] [R0#] [R0#] (3 [R0#] x) ^0 }
+let x : Unit = () in case Nil [r0#] [Int r0#] () of { Nil -> 0 [r0#] (); Cons (^ : Int r0#) (xs : List r0# (Int r0#)) -> addInt [r0#] [r0#] [r0#] (3 [r0#] x) ^0 }
 
 
 -- Should be ok.
-letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [R0#] (letregion r1 with {wl : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) (5 [r0] ())
+letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [r0#] (letregion r1 with {wl : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) (5 [r0] ())
 
 
 -- Avoid capture of witness var by witness lambda in witness subst.
-letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [R0#] (letregion r1 with {wl : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) (5 [r0] ())
+letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [r0#] (letregion r1 with {wl : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) (5 [r0] ())
 
 
 -- Avoid capture of witness var by witness binding in witness subst.
-letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [R0#] ((weakclo {<wg>} in \(_ : Unit). letregion r1 with {^ : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) ()) (5 [r0] ())
+letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [r0#] ((weakclo {<wg>} in \(_ : Unit). letregion r1 with {^ : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) ()) (5 [r0] ())
 
 
 -- Rewrite outer type binder to avoid shadow conflict on type lambda.
@@ -63,5 +63,5 @@ letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () 
 
 -- In the resulting expression, check that closure variables are only
 -- lowered when the corresponding bind is anonymous.
-let x : Unit = () in weakclo {x} in \(^ : Int R0#). \(y : Unit). ^0
+let x : Unit = () in weakclo {x} in \(^ : Int r0#). \(y : Unit). ^0
 

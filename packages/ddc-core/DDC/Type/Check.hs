@@ -81,6 +81,8 @@ checkTypeM config env tt
 
 -- Variables ------------------
 checkTypeM' _config env tt@(TVar u)
+ | UPrim _ k    <- u    = return (tt, k)
+ | otherwise
  = case Env.lookup u env of
         Just k  -> return (tt, k)
         Nothing -> throw $ ErrorUndefined u

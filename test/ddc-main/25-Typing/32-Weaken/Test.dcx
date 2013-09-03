@@ -28,7 +28,7 @@ case x of {
 
 -- Weakens should still evaluate their args
 :eval..
-let x = weakclo {mulInt} in 5 [R0#] ()
-in  addInt [:R0# R0# R0#:] x x
+let x = weakclo {mulInt} in 5 [r0#] ()
+in  addInt [:r0# r0# r0#:] x x
 ;;
 

@@ -3,4 +3,4 @@
 letregion r1 with {w1 : Mutable r1} in
 let x : Int r1 = 0 [r1] () in
 let _ : Unit   = updateInt [:r1 r1:] {w1} x (2 [r1] ()) in
-addInt [:r1 r1 R2#:] x (3 [r1] ());;
+addInt [:r1 r1 r2#:] x (3 [r1] ());;

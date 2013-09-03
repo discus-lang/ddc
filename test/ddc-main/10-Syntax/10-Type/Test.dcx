@@ -5,7 +5,7 @@
 
 -- Parse witness implication operator.
 -- This needs to be fully applied to have a sort.
-:kind (=>) (Const R0#) (Int R0#)
+:kind (=>) (Const r0#) (Int r0#)
 
 
 -- Parse type function operator.

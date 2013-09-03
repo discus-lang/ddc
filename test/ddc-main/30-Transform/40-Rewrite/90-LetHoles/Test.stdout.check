@@ -7,12 +7,12 @@ ok
 
 
 -- don't rewrite non-locals
-let x : Int R0#
-      = box (5 [R0#] ()) in
-let y : Int R0# = unbox x in
-let z : Int R0# = unbox x in
+let x : Int r0#
+      = box (5 [r0#] ()) in
+let y : Int r0# = unbox x in
+let z : Int r0# = unbox x in
 weakclo {box; unbox} in
-addInt [R0#] [R0#] [R0#] y z
+addInt [r0#] [r0#] [r0#] y z
 
 
 -- the {{ }} brackets indicate that the argument is cheap enough to be split across places
@@ -21,62 +21,62 @@ ok
 
 
 -- rewrite y and z
-let ^ : Int R0# = 5 [R0#] () in
-let x : Int R0# = box ^0 in
-let y : Int R0#
+let ^ : Int r0# = 5 [r0#] () in
+let x : Int r0# = box ^0 in
+let y : Int r0#
       = weakclo {box; unbox} in
         ^0 in
-let z : Int R0#
+let z : Int r0#
       = weakclo {box; unbox} in
         ^0 in
-addInt [R0#] [R0#] [R0#] y z
+addInt [r0#] [r0#] [r0#] y z
 
 
 -- shadowing, don't rewrite
-let ^ : Int R0# = 5 [R0#] () in
-let x : Int R0# = box ^0 in
-let x : Int R0# = 2 [R0#] () in
+let ^ : Int r0# = 5 [r0#] () in
+let x : Int r0# = box ^0 in
+let x : Int r0# = 2 [r0#] () in
 unbox x
 
 
 -- shadowing with lambdas, don't rewrite
-let ^ : Int R0# = 5 [R0#] () in
-let x : Int R0# = box ^0 in
-\(x : Int R0#). unbox x
+let ^ : Int r0# = 5 [r0#] () in
+let x : Int r0# = box ^0 in
+\(x : Int r0#). unbox x
 
 
 -- some de bruijns. do rewrite
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = box ^0 in
-let ^ : Int R0# = 2 [R0#] () in
-let b : Int R0#
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = box ^0 in
+let ^ : Int r0# = 2 [r0#] () in
+let b : Int r0#
       = weakclo {box; unbox} in
         ^2 in
-let ^ : Int R0# = 3 [R0#] () in
-let c : Int R0#
+let ^ : Int r0# = 3 [r0#] () in
+let c : Int r0#
       = weakclo {box; unbox} in
         ^3 in
 ()
 
 
 -- some surrounding de bruijns
-let ^ : Int R0# = 2 [R0#] () in
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = box ^0 in
-let ^ : Int R0# = ^2 in
-let c : Int R0#
+let ^ : Int r0# = 2 [r0#] () in
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = box ^0 in
+let ^ : Int r0# = ^2 in
+let c : Int r0#
       = weakclo {box; unbox} in
         ^2 in
 ()
 
 
 -- some lambda-y de bruijns
-let ^ : Int R0# = 2 [R0#] () in
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = box ^0 in
+let ^ : Int r0# = 2 [r0#] () in
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = box ^0 in
 \(a ^ : Unit).
-let ^ : Int R0# = ^3 in
-let c : Int R0#
+let ^ : Int r0# = ^3 in
+let c : Int r0#
       = weakclo {box; unbox} in
         ^3 in
 ()
@@ -88,8 +88,8 @@ ok
 
 
 -- don't do it: not const
-unbox_ [R0#]
-    (box_ [R0#] (5 [R0#] ()))
+unbox_ [r0#]
+    (box_ [r0#] (5 [r0#] ()))
 
 
 -- do it: const
@@ -115,7 +115,7 @@ ok
 
 
 -- don't fire, just unfold
-let ^ : Int R0# = 5 [R0#] () in
-let ^ : Int R0# = 3 [R0#] () in
-let z : Int R0# = subInt [R0#] [R0#] [R0#] ^1 ^0 in
-addInt [R0#] [R0#] [R0#] (0 [R0#] ()) z
+let ^ : Int r0# = 5 [r0#] () in
+let ^ : Int r0# = 3 [r0#] () in
+let z : Int r0# = subInt [r0#] [r0#] [r0#] ^1 ^0 in
+addInt [r0#] [r0#] [r0#] (0 [r0#] ()) z

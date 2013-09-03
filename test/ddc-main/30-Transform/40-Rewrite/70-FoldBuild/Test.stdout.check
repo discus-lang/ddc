@@ -98,8 +98,9 @@ ok
         Prune:
             Removed:        0
 
-weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
+weakeff [Read r0# + Read r1# + Alloc r0# + Alloc r1#] in
+weakclo {[r0#]; [r1#]} in
+countZ (10 [r0#] ()) [Int r0#] [Pure] [Read r0# + Alloc r0#] [Alloc r0#] [Use r0#] [Use r0#] [Use r0#] plus zero
 
 
 -- map f xs = build (\c n -> foldr (c . f) n xs)
@@ -207,11 +208,11 @@ countZ (10 [R0#] ()) [Int R0#] [Pure] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0
         Prune:
             Removed:        0
 
-weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {even; plus} in
-countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
-    (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [Pure] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
-         (\(^ ^ : Int R0#).
+weakeff [Read r0# + Read r1# + Alloc r0# + Alloc r1#] in
+weakclo {[r0#]; [r1#]; even; plus} in
+countZ (100 [r0#] ()) [Int r0#] [Read r0# + Alloc r0#] [Read r0# + Alloc r0#] [Alloc r0#] [Use r0#] [Use r0#] [Use r0#]
+    (compose [Int r0#] [Int r0#] [Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#] [Pure] [Read r0# + Alloc r0#] [Use r0#] [Use r0#]
+         (\(^ ^ : Int r0#).
           case even ^1 of {
             0  
              -> plus ^1 ^0;
@@ -258,7 +259,22 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
     Inline: No information;
     fix 10:
         Beta reduction:
-            Types:          6
+            Types:          2
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Total bindings inspected:      0
+              Trivial substitutions made:  0
+              Bindings moved forward:      0;
+        Prune:
+            Removed:        0;
+        Beta reduction:
+            Types:          4
             Witnesses:      0
             Values:         1
             Values letted:  0
@@ -303,9 +319,10 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
         Prune:
             Removed:        0
 
-weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-countZ (100 [R0#] ()) [List R1# (Int R0#)] [Read R0# + Alloc R0#] [Alloc R1#] [Alloc R1#] [Use R0#] [Use R0#] [Empty]
-    (compose [Int R0#] [Int R0#] [List R1# (Int R0#) -(Alloc R1# | Use R0#)> List R1# (Int R0#)] [Pure] [Read R0# + Alloc R0#] [Empty] [Use R0#]
-         (Cons [R1#] [Int R0#]) double)
-    (Nil [R1#] [Int R0#])
+weakeff [Read r0# + Read r1# + Alloc r0# + Alloc r1#] in
+weakclo {[r0#]; [r1#]} in
+countZ (100 [r0#] ()) [List r1# (Int r0#)] [Read r0# + Alloc r0#] [Alloc r1#] [Alloc r1#] [Use r0#] [Use r0#] [Empty]
+    (compose [Int r0#] [Int r0#] [List r1# (Int r0#) -(Alloc r1# | Use r0#)> List r1# (Int r0#)] [Pure] [Read r0# + Alloc r0#] [Empty] [Use r0#]
+         (Cons [r1#] [Int r0#]) double)
+    (Nil [r1#] [Int r0#])
 

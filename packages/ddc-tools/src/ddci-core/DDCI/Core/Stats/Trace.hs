@@ -26,14 +26,12 @@ traceStoreX :: Store -> Set Name -> Exp () Name -> Exp () Name
 traceStoreX store entered xx
  = let down = traceStoreX store entered
    in  case xx of
-        XVar{}  -> xx
-
-        XCon _ dc
-         | Just n@(NameLoc l)     <- takeNameOfDaCon dc
-         , not $ Set.member n entered
+        XVar _ (UPrim n@(NameLoc l) _)
+         | not $ Set.member n entered
          , Just sbind           <- lookupBind l store
          -> traceStoreX store (Set.insert n entered) (expOfSBind sbind)
 
+        XVar{}          -> xx
         XCon{}          -> xx
         XApp  a x1 x2   -> XApp  a (down x1) (down x2)
         XLAM  a b x     -> XLAM  a b (down x)
@@ -78,5 +76,5 @@ expOfSBind sbind
 
 -- | Convert a store location to a constructor expression.
 expOfLoc :: Loc -> Exp () Name
-expOfLoc l = XCon () (DaConPrim (NameLoc l) (tBot kData) False)
+expOfLoc l = XVar () (UPrim (NameLoc l) (tBot kData))
 

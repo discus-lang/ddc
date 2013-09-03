@@ -89,11 +89,11 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 --			then n
 --			else c m (count' (m-1) c n)
 :trans..
-foldr [:(Int R0#) (Int R0#) R1#
-	Pure (Read R0# + Alloc R0#) (Alloc R0#)
-	(Use R0#) (Use R0#) (Use R0#):]
+foldr [:(Int r0#) (Int r0#) r1#
+	Pure (Read r0# + Alloc r0#) (Alloc r0#)
+	(Use r0#) (Use r0#) (Use r0#):]
 	plus zero
-    (build [:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (10 [R0#] ())))
+    (build [:(Int r0#) r1# Pure (Read r0# + Alloc r0#) (Use r0#) (Use r0#):] (countZ (10 [r0#] ())))
 ;;
 
 
@@ -106,26 +106,26 @@ foldr [:(Int R0#) (Int R0#) R1#
 :trans..
 
 -- sum
-foldr [:(Int R0#) (Int R0#) R1#
-	Pure (Read R0# + Alloc R0#) (Alloc R0#)
-	(Use R0#) (Use R0#) (Use R0#):]
+foldr [:(Int r0#) (Int r0#) r1#
+	Pure (Read r0# + Alloc r0#) (Alloc r0#)
+	(Use r0#) (Use r0#) (Use r0#):]
 	plus zero
     -- filter f xs
-    (build [:(Int R0#) R1#
-	Pure (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
-	-- (Read R0# + Alloc R0#) Pure
-	(Use R0# + Use R1#)
-	(Use R0# + Use R1#)
+    (build [:(Int r0#) r1#
+	Pure (Read r0# + Read r1# + Alloc r0# + Alloc r1#)
+	-- (Read r0# + Alloc r0#) Pure
+	(Use r0# + Use r1#)
+	(Use r0# + Use r1#)
 	:]
 	(/\(bF : Data). /\(ec1F ec2F enF : Effect). /\(cc1F cc2F cnF : Closure).
-	\(c : Int R0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
+	\(c : Int r0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
 	\(n : Unit -(enF|cnF)> bF).
 
-	foldr [:(Int R0#) bF R1#
-		Pure (Read R0# + Alloc R0# + ec1F + ec2F) enF
-		(Use R0# + cc1F) (Use R0# + cc1F) cnF
+	foldr [:(Int r0#) bF r1#
+		Pure (Read r0# + Alloc r0# + ec1F + ec2F) enF
+		(Use r0# + cc1F) (Use r0# + cc1F) cnF
 		:] 
-	    (\(x : Int R0#).
+	    (\(x : Int r0#).
 	     \(xs : bF).
 	      case even x of {
 		0 -> c x xs;
@@ -135,27 +135,27 @@ foldr [:(Int R0#) (Int R0#) R1#
 	    n
 	    
 	-- map Data2
-	    (build [:(Int R0#) R1# 
-		     Pure (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
-		     (Use R0# + Use R1#) (Use R0# + Use R1#) :]
+	    (build [:(Int r0#) r1# 
+		     Pure (Read r0# + Read r1# + Alloc r0# + Alloc r1#)
+		     (Use r0# + Use r1#) (Use r0# + Use r1#) :]
 		    (/\(b : Data). /\(ec1 ec2 en : Effect). /\(cc1 cc2 cn : Closure).
-		    \(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
+		    \(c : Int r0# -(ec1|cc1)> b -(ec2|cc2)> b).
 		    \(n : Unit -(en|cn)> b).
 
-		    foldr [:(Int R0#) b R1#
-			    (Read R0# + Alloc R0# + ec1)
+		    foldr [:(Int r0#) b r1#
+			    (Read r0# + Alloc r0# + ec1)
 				ec2 en
-			    (Use R0# + cc1) cc2 cn
+			    (Use r0# + cc1) cc2 cn
 			    :]
 
-			(compose [:(Int R0#) (Int R0#) (b -(ec2|cc2)> b)
-				   ec1 (Alloc R0# + Read R0#)
-				   cc1 (Use R0#)
+			(compose [:(Int r0#) (Int r0#) (b -(ec2|cc2)> b)
+				   ec1 (Alloc r0# + Read r0#)
+				   cc1 (Use r0#)
 				 :] c double)
 			n
 
 			-- enum 100
-			(build [:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
+			(build [:(Int r0#) r1# Pure (Read r0# + Alloc r0#) (Use r0#) (Use r0#):] (countZ (100 [r0#] ())))
 		    ))))
 
 ;;
@@ -166,27 +166,27 @@ foldr [:(Int R0#) (Int R0#) R1#
 :trans..
 
 -- map Data2
-(build [:(Int R0#) R1# 
-	 Pure (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
-	 (Use R0# + Use R1#) (Use R0# + Use R1#) :]
+(build [:(Int r0#) r1# 
+	 Pure (Read r0# + Read r1# + Alloc r0# + Alloc r1#)
+	 (Use r0# + Use r1#) (Use r0# + Use r1#) :]
 	(/\(b : Data). /\(ec1 ec2 en : Effect). /\(cc1 cc2 cn : Closure).
-	\(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
+	\(c : Int r0# -(ec1|cc1)> b -(ec2|cc2)> b).
 	\(n : Unit -(en|cn)> b).
 
-	foldr [:(Int R0#) b R1#
-		(Read R0# + Alloc R0# + ec1)
+	foldr [:(Int r0#) b r1#
+		(Read r0# + Alloc r0# + ec1)
 		    ec2 en
-		(Use R0# + cc1) cc2 cn
+		(Use r0# + cc1) cc2 cn
 		:]
 
-	    (compose [:(Int R0#) (Int R0#) (b -(ec2|cc2)> b)
-		       ec1 (Alloc R0# + Read R0#)
-		       cc1 (Use R0#)
+	    (compose [:(Int r0#) (Int r0#) (b -(ec2|cc2)> b)
+		       ec1 (Alloc r0# + Read r0#)
+		       cc1 (Use r0#)
 		     :] c double)
 	    n
 
 	    -- enum 100
-	    (build [:(Int R0#) R1# Pure (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
+	    (build [:(Int r0#) r1# Pure (Read r0# + Alloc r0#) (Use r0#) (Use r0#):] (countZ (100 [r0#] ())))
 	))
 ;;
 

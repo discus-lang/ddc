@@ -6,9 +6,9 @@
 
 -- should work with any regions
 :set trans Rewrite
-:trans addInt [:R0# R0# R0#:] (5 [R0#] ()) (0 [R0#] ())
+:trans addInt [:r0# r0# r0#:] (5 [r0#] ()) (0 [r0#] ())
 
-:trans addInt [:R1# R2# R3#:] (5 [R1#] ()) (0 [R2#] ())
+:trans addInt [:r1# r2# r3#:] (5 [r1#] ()) (0 [r2#] ())
 
 -- addInt is strict & closure free so we can reduce any copies in its args
 :set.. rule addCopy1 [r1 r1' r2 r3 : Region] (x : Int r1') (y : Int r2).
@@ -22,7 +22,7 @@
 
 -- simplify some nested zeroes
 :set trans Rewrite
-:trans addInt [:R0# R1# R2#:] (addInt [:R0# R0# R0#:] (5 [R0#] ()) (0 [R0#] ())) (0 [R1#] ())
+:trans addInt [:r0# r1# r2#:] (addInt [:r0# r0# r0#:] (5 [r0#] ()) (0 [r0#] ())) (0 [r1#] ())
 
 
 -- we can simplify out a copy of a literal.
@@ -36,14 +36,14 @@
 
 -- some more nested zeroes
 :set trans Rewrite
-:trans addInt [:R0# R1# R2#:] (addInt [:R0# R0# R0#:] (5 [R0#] ()) (0 [R0#] ())) (0 [R1#] ())
+:trans addInt [:r0# r1# r2#:] (addInt [:r0# r0# r0#:] (5 [r0#] ()) (0 [r0#] ())) (0 [r1#] ())
 
 -- add a let binding
 :trans..
-let x = 5 [R9#] () in
-addInt [:R7# R1# R2#:]
-    (addInt [:R9# R8# R7#:] x (0 [R8#] ()))
-    (0 [R1#] ())
+let x = 5 [r9#] () in
+addInt [:r7# r1# r2#:]
+    (addInt [:r9# r8# r7#:] x (0 [r8#] ()))
+    (0 [r1#] ())
 ;;
 
 
@@ -55,5 +55,5 @@ letrec foo [r1 r2 r3 : Region]
     : Int r3
  =  addInt [:r1 r2 r3:] x (0 [r2] ())
 in
- foo [:R0# R0# R0#:] (5 [R0#] ())
+ foo [:r0# r0# r0#:] (5 [r0#] ())
 ;;

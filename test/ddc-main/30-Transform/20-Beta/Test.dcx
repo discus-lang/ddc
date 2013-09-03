@@ -25,24 +25,24 @@ let u = () in
 :trans..
 let x = () in 
 (\(y : Unit). 
-        let x = 2 [R0#] x 
-        in addInt [:R0# R0# R0#:] x (3 [R0#] y)) x;;
+        let x = 2 [r0#] x 
+        in addInt [:r0# r0# r0#:] x (3 [r0#] y)) x;;
 
 
 -- Don't substitute past binder with the same name.
 :trans..
 let u = () in 
 (\(x : Unit). 
-        let x = 2 [R0#] u 
-        in addInt [:R0# R0# R0#:] x (3 [R0#] u)) u;;
+        let x = 2 [r0#] u 
+        in addInt [:r0# r0# r0#:] x (3 [r0#] u)) u;;
 
 
 -- Avoid capture of value var by letrec binding in value subst.
 :trans..
 let x = () in 
 (\(y : Unit). 
-        letrec { x (z : Int R0#) : Int R0# = z } 
-        in addInt [:R0# R0# R0#:] (x (2 [R0#] y)) (3 [R0#] y)) 
+        letrec { x (z : Int r0#) : Int r0# = z } 
+        in addInt [:r0# r0# r0#:] (x (2 [r0#] y)) (3 [r0#] y)) 
         x;;
 
 
@@ -50,10 +50,10 @@ let x = () in
 :trans..
 let x = () in
 (\(y : Unit).
-       case Nil [R0#] [Int R0#] () of {
-        Nil            -> 0 [R0#] ();
-        Cons x xs      -> addInt [:R0# R0# R0#:]
-                                 (3 [R0#] y)
+       case Nil [r0#] [Int r0#] () of {
+        Nil            -> 0 [r0#] ();
+        Cons x xs      -> addInt [:r0# r0# r0#:]
+                                 (3 [r0#] y)
                                  x
        })
        x;;
@@ -63,7 +63,7 @@ let x = () in
 :trans..
 letregion r0 with { wc : Const r0; wg : Global r0 } in
 let x = 5 [r0] () in
-addInt [:r0 r0 R0#:]
+addInt [:r0 r0 r0#:]
         ((\(wc' : Const r0) (wg' : Global r0). \(_ : Unit).
                 letregion r1 with { wl : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
                 let x = purify read [r0] wc' & alloc [r1] w1 in
@@ -78,7 +78,7 @@ addInt [:r0 r0 R0#:]
 :trans..
 letregion r0 with { wc : Const r0; wg : Global r0 } in
 let x = 5 [r0] () in
-addInt [:r0 r0 R0#:]
+addInt [:r0 r0 r0#:]
         ((\(wc' : Const r0) (wc : Global r0). \(_ : Unit).
                 letregion r1 with { wl : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
                 let x = purify read [r0] wc' & alloc [r1] w1 in
@@ -93,7 +93,7 @@ addInt [:r0 r0 R0#:]
 :trans..
 letregion r0 with { wc : Const r0; wg : Global r0 } in
 let x = 5 [r0] () in
-addInt [:r0 r0 R0#:]
+addInt [:r0 r0 r0#:]
         ((\(wc' : Const r0) (wg : Global r0). \(_ : Unit).
                 letregion r1 with { wc : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
                 let x = purify read [r0] wc' & alloc [r1] w1 in
@@ -135,5 +135,5 @@ addInt [:r0 r0 R0#:]
 -- lowered when the corresponding bind is anonymous.
 :trans..
 let x = () in
-(\(y : Unit). \(x : Int R0#). \(y : Unit). x) x;;
+(\(y : Unit). \(x : Int r0#). \(y : Unit). x) x;;
 

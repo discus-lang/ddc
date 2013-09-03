@@ -17,45 +17,45 @@ let ^ : Unit -> Unit
 
 
 -- Primitive operator.
-let ^ : Int R0# = 1 [R0#] () in
-let ^ : Int R0# = 2 [R0#] () in
-addInt [R0#] [R0#] [R0#] ^1 ^0
+let ^ : Int r0# = 1 [r0#] () in
+let ^ : Int r0# = 2 [r0#] () in
+addInt [r0#] [r0#] [r0#] ^1 ^0
 3
 
 
 -- Nested applications
-let ^ : Int R0# = 1 [R0#] () in
-let ^ : Int R1#
-      = let ^ : Int R1# = 2 [R1#] () in
-        let ^ : Int R1#
-              = let ^ : Int R3# = 3 [R3#] () in
-                let ^ : Int R3# = 4 [R3#] () in
-                addInt [R3#] [R3#] [R1#] ^1 ^0 in
-        addInt [R1#] [R1#] [R1#] ^1 ^0 in
-addInt [R0#] [R1#] [R2#] ^1 ^0
+let ^ : Int r0# = 1 [r0#] () in
+let ^ : Int r1#
+      = let ^ : Int r1# = 2 [r1#] () in
+        let ^ : Int r1#
+              = let ^ : Int r3# = 3 [r3#] () in
+                let ^ : Int r3# = 4 [r3#] () in
+                addInt [r3#] [r3#] [r1#] ^1 ^0 in
+        addInt [r1#] [r1#] [r1#] ^1 ^0 in
+addInt [r0#] [r1#] [r2#] ^1 ^0
 10
 
 -- Type abstraction
 let ^ : [t : Data].t -> t
       = /\(t : Data).
          \(x : t). x in
-let ^ : List R0# (Int R0#)
-      = Nil [R0#] [Int R0#] () in
-^1 [List R0# (Int R0#)] ^0
+let ^ : List r0# (Int r0#)
+      = Nil [r0#] [Int r0#] () in
+^1 [List r0# (Int r0#)] ^0
 Nil
 
 
 -- Primitive in case exp
-let ^ : Unit -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+let ^ : Unit -(Read r0# + Alloc r0# | Use r0#)> Int r0#
       = \(u : Unit).
-        let ^ : Int R0# = 1 [R0#] u in
+        let ^ : Int r0# = 1 [r0#] u in
         case ^0 of {
           0  
-           -> 1 [R0#] u;
+           -> 1 [r0#] u;
           _ 
-           -> let ^ : Int R0# = 2 [R0#] u in
-              let ^ : Int R0# = 3 [R0#] u in
-              addInt [R0#] [R0#] [R0#] ^1 ^0
+           -> let ^ : Int r0# = 2 [r0#] u in
+              let ^ : Int r0# = 3 [r0#] u in
+              addInt [r0#] [r0#] [r0#] ^1 ^0
         } in
 ^0 ()
 5
@@ -78,16 +78,16 @@ letrec {
             mulInt [r] [r] [r] n ^0
       }
 } in
-let ^ : Int R1# = 5 [R1#] () in
-fac [R1#] ^0
+let ^ : Int r1# = 5 [r1#] () in
+fac [r1#] ^0
 120
 
 
 -- Snip out discriminants of case expressions
-let ^ : Int R0#
-      = let ^ : Int R0# -> Int R0#
-              = \(x : Int R0#). x in
-        let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int r0#
+      = let ^ : Int r0# -> Int r0#
+              = \(x : Int r0#). x in
+        let ^ : Int r0# = 5 [r0#] () in
         ^1 ^0 in
 letcase _  = ^0 in
 ()
@@ -99,12 +99,12 @@ ok
 let id : [a : Data].a -> a
       = /\(a : Data).
          \(x : a). x in
-let add : Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(x y : Int R0#). addInt [R0#] [R0#] [R0#] x y in
-let ^ : Int R0# = 2 [R0#] () in
-let ^ : Int R0# = 3 [R0#] () in
-let ^ : Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = id [Int R0# -(Pure | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] add in
+let add : Int r0# -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = \(x y : Int r0#). addInt [r0#] [r0#] [r0#] x y in
+let ^ : Int r0# = 2 [r0#] () in
+let ^ : Int r0# = 3 [r0#] () in
+let ^ : Int r0# -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
+      = id [Int r0# -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#] add in
 ^0 ^2 ^1
 5
 

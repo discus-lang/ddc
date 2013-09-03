@@ -9,12 +9,12 @@
 -- should turn into a nil
 :set trans Rewrite
 :trans..
-Cons [R0#] [Int R0#] (5 [R0#] ()) (Nil [R0#] [Int R0#] ())
+Cons [r0#] [Int r0#] (5 [r0#] ()) (Nil [r0#] [Int r0#] ())
 ;;
 
 -- shouldn't turn into a nil; different regions
 :trans..
-Cons [R1#] [Int R0#] (5 [R0#] ()) (Nil [R1#] [Int R0#] ())
+Cons [r1#] [Int r0#] (5 [r0#] ()) (Nil [r1#] [Int r0#] ())
 ;;
 
 -- try doing something with a function
@@ -25,6 +25,6 @@ Cons [R1#] [Int R0#] (5 [R0#] ()) (Nil [R1#] [Int R0#] ())
 
 :set trans Rewrite
 :trans..
-Cons [R0#] [Int R0# -> Unit] (\(_:Int R0#). ()) (Nil [R0#] [Int R0# -> Unit] ())
+Cons [r0#] [Int r0# -> Unit] (\(_:Int r0#). ()) (Nil [r0#] [Int r0# -> Unit] ())
 ;;
 

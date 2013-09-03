@@ -6,7 +6,7 @@
 :wtype Distinct10# 
 
 -- Mutability of some region.
-:wtype Mutable# [R0#]
+:wtype Mutable# [r0#]
 
 
 -- Error: type mismatch in witness application.
@@ -18,4 +18,4 @@
 
 
 -- Error: cannot apply non-constructor witness to argument.
-:wtype Mutable# [R0#] Mutable#
+:wtype Mutable# [r0#] Mutable#

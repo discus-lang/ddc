@@ -48,14 +48,14 @@ letregion ^ in
      23 [^1] ())
 
 -- and with witnesses as lambda arguments
-\(w : Const R0#).\(u : Unit).
-weakeff [Read R0# + Alloc R0#] in
-weakclo {copyInt; [R0#]} in
-23 [R0#] ()
+\(w : Const r0#).\(u : Unit).
+weakeff [Read r0# + Alloc r0#] in
+weakclo {copyInt; [r0#]} in
+23 [r0#] ()
 
 -- don't: lambda arguments for a different region
-\(w : Const R0#).\(u : Unit).
-copyInt [R1#] [R1#] (23 [R1#] ())
+\(w : Const r0#).\(u : Unit).
+copyInt [r1#] [r1#] (23 [r1#] ())
 
 
 -- a silly rule to test Distinct constraints
@@ -64,7 +64,7 @@ ok, added dumbDistinct
 ok
 
 -- don't: not distinct
-addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ())
+addInt [r0#] [r0#] [r0#] (5 [r0#] ()) (3 [r0#] ())
 
 -- don't: not known
 /\(r1 r2 : Region).
@@ -72,19 +72,19 @@ addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ())
 addInt [r1] [r2] [r1] (5 [r1] ()) (3 [r2] ())
 
 -- do: both concrete
-let ^ : Int R1# = 3 [R1#] () in
-let ^ : Int R0# = 5 [R0#] () in
-weakeff [Read R0# + Read R1# + Alloc R0#] in
-weakclo {^0; ^1; addInt; [R1#]} in
-0 [R0#] ()
+let ^ : Int r1# = 3 [r1#] () in
+let ^ : Int r0# = 5 [r0#] () in
+weakeff [Read r0# + Read r1# + Alloc r0#] in
+weakclo {^0; ^1; addInt; [r1#]} in
+0 [r0#] ()
 
 -- do: both concrete
 letregion ^ in
 let ^ : Int ^0 = 3 [^0] () in
-let ^ : Int R0# = 5 [R0#] () in
-weakeff [Read ^0 + Read R0# + Alloc R0#] in
+let ^ : Int r0# = 5 [r0#] () in
+weakeff [Read ^0 + Read r0# + Alloc r0#] in
 weakclo {^0; ^1; addInt; [^0]} in
-0 [R0#] ()
+0 [r0#] ()
 
 -- do: known from argument
 /\(r1 r2 : Region).
@@ -97,7 +97,7 @@ weakclo {^0; ^1; addInt; [r2]} in
 
 -- do: known from letregions
 letregions r1 r2 with {w : Distinct2 r1 r2} in
-copyInt [r1] [R0#]
+copyInt [r1] [r0#]
     (let ^ : Int r2 = 3 [r2] () in
      let ^ : Int r1 = 5 [r1] () in
      weakeff [Read r1 + Read r2 + Alloc r1] in

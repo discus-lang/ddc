@@ -548,7 +548,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
         AAlt (PData dc []) x
          | DaConUnit    <- dc
          -> do  xBody           <- convertExpX ctx pp defs kenv tenv x
-                let dcTag       = DaConPrim (S.NameLitTag 0) S.tTag True
+                let dcTag       = DaConPrim (S.NameLitTag 0) S.tTag
                 return  $ AAlt (PData dcTag []) xBody
 
         -- Match against algebraic data with a finite number
@@ -562,8 +562,8 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let dcTag       = DaConPrim (S.NameLitTag iTag) S.tTag True
-
+                let dcTag       = DaConPrim (S.NameLitTag iTag) S.tTag
+                
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertB kenv) bsFields
 

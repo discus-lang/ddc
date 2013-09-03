@@ -200,11 +200,10 @@ toCoreDC dc
         DaConUnit
          -> DaConUnit
 
-        DaConPrim n t is
+        DaConPrim n t 
          -> DaConPrim
                 { daConName             = toCoreN n
-                , daConType             = toCoreT   t
-                , daConIsAlgebraic      = is }
+                , daConType             = toCoreT t }
 
         DaConBound n
          -> DaConBound (toCoreN n)

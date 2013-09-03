@@ -5,76 +5,74 @@ ok
 ok
 
 -- should rewrite, just reading
-weakeff [Read R0# + Alloc R0#] in
-weakclo {[R0#]} in
-map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
-    (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
-         (\(^ : Int R0#).
-          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ()))
-         (\(^ : Int R0#).
-          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ())))
-    (Cons [R0#] [Int R0#] (1 [R0#] ())
-         (Cons [R0#] [Int R0#] (2 [R0#] ())
-              (Nil [R0#] [Int R0#] ())))
+weakeff [Read r0# + Alloc r0#] in
+weakclo {[r0#]} in
+map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Alloc r0#] [Use r0#]
+    (compose [Int r0#] [Int r0#] [Int r0#] [Read r0# + Alloc r0#] [Read r0# + Alloc r0#] [Use r0#] [Use r0#]
+         (\(^ : Int r0#).
+          addInt [r0#] [r0#] [r0#] ^0 (1 [r0#] ()))
+         (\(^ : Int r0#).
+          addInt [r0#] [r0#] [r0#] ^0 (1 [r0#] ())))
+    (Cons [r0#] [Int r0#] (1 [r0#] ())
+         (Cons [r0#] [Int r0#] (2 [r0#] ())
+              (Nil [r0#] [Int r0#] ())))
 
 -- a write and a read from same region, no rewrite.
 letregion rMut with {wMut : Mutable rMut} in
 let mutabl : Int rMut = 5 [rMut] () in
-map [R0#] [R0#] [Int R0#] [Int R0#] [Read rMut + Alloc R0#] [Use rMut + Use R0#]
-    (\(y : Int R0#). copyInt [rMut] [R0#] mutabl)
-    (map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut] [Use rMut + Use R0#]
-         (\(z : Int R0#).
-          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl z in
+map [r0#] [r0#] [Int r0#] [Int r0#] [Read rMut + Alloc r0#] [Use rMut + Use r0#]
+    (\(y : Int r0#). copyInt [rMut] [r0#] mutabl)
+    (map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Write rMut] [Use rMut + Use r0#]
+         (\(z : Int r0#).
+          let _ : Unit = updateInt [rMut] [r0#] <wMut> mutabl z in
           z)
-         (Cons [R0#] [Int R0#] (1 [R0#] ())
-              (Cons [R0#] [Int R0#] (2 [R0#] ())
-                   (Nil [R0#] [Int R0#] ()))))
+         (Cons [r0#] [Int r0#] (1 [r0#] ())
+              (Cons [r0#] [Int r0#] (2 [r0#] ())
+                   (Nil [r0#] [Int r0#] ()))))
 
 -- a write and a read from different regions - do rewrite
 letregion rMut with {wMut : Mutable rMut} in
 let mutabl : Int rMut = 5 [rMut] () in
-weakeff [Read R0# + Write rMut + Alloc R0#] in
-weakclo {[R0#]} in
-map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMut + Use R0#]
-    (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Write rMut] [Use R0#] [Use rMut + Use R0#]
-         (\(^ : Int R0#).
-          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ()))
-         (\(^ : Int R0#).
-          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl ^0 in
+weakeff [Read r0# + Write rMut + Alloc r0#] in
+weakclo {[r0#]} in
+map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Write rMut + Alloc r0#] [Use rMut + Use r0#]
+    (compose [Int r0#] [Int r0#] [Int r0#] [Read r0# + Alloc r0#] [Read r0# + Write rMut] [Use r0#] [Use rMut + Use r0#]
+         (\(^ : Int r0#).
+          addInt [r0#] [r0#] [r0#] ^0 (1 [r0#] ()))
+         (\(^ : Int r0#).
+          let _ : Unit = updateInt [rMut] [r0#] <wMut> mutabl ^0 in
           ^0))
-    (Cons [R0#] [Int R0#] (1 [R0#] ())
-         (Cons [R0#] [Int R0#] (2 [R0#] ())
-              (Nil [R0#] [Int R0#] ())))
+    (Cons [r0#] [Int r0#] (1 [r0#] ())
+         (Cons [r0#] [Int r0#] (2 [r0#] ())
+              (Nil [r0#] [Int r0#] ())))
 
 -- a write and a read from different regions, but lambda-bound - don't rewrite
 /\(rMut : Region).
- \(wMut : Mutable rMut).\(dummy : Int R0#).
+ \(wMut : Mutable rMut).\(dummy : Int r0#).
 let mutabl : Int rMut = 5 [rMut] () in
-map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
-    (\(y : Int R0#).
-     addInt [R0#] [R0#] [R0#] y (1 [R0#] ()))
-    (map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut] [Use rMut + Use R0#]
-         (\(z : Int R0#).
-          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl z in
+map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Alloc r0#] [Use r0#]
+    (\(y : Int r0#).
+     addInt [r0#] [r0#] [r0#] y (1 [r0#] ()))
+    (map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Write rMut] [Use rMut + Use r0#]
+         (\(z : Int r0#).
+          let _ : Unit = updateInt [rMut] [r0#] <wMut> mutabl z in
           z)
-         (Cons [R0#] [Int R0#] (1 [R0#] ())
-              (Cons [R0#] [Int R0#] (2 [R0#] ())
-                   (Nil [R0#] [Int R0#] ()))))
+         (Cons [r0#] [Int r0#] (1 [r0#] ())
+              (Cons [r0#] [Int r0#] (2 [r0#] ())
+                   (Nil [r0#] [Int r0#] ()))))
 
 -- lambda-bound different regions, but with a Distinctness witness. do rewrite.
 /\(rMut : Region).
- \(wMut : Mutable rMut).\(wDistinct : Distinct2 R0# rMut).\(dummy : Int R0#).
+ \(wMut : Mutable rMut).\(wDistinct : Distinct2 r0# rMut).\(dummy : Int r0#).
 let mutabl : Int rMut = 5 [rMut] () in
-weakeff [Read R0# + Write rMut + Alloc R0#] in
-weakclo {[R0#]} in
-map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMut + Use R0#]
-    (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Write rMut] [Use R0#] [Use rMut + Use R0#]
-         (\(^ : Int R0#).
-          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ()))
-         (\(^ : Int R0#).
-          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl ^0 in
-          ^0))
-    (Cons [R0#] [Int R0#] (1 [R0#] ())
-         (Cons [R0#] [Int R0#] (2 [R0#] ())
-              (Nil [R0#] [Int R0#] ())))
+map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Alloc r0#] [Use r0#]
+    (\(y : Int r0#).
+     addInt [r0#] [r0#] [r0#] y (1 [r0#] ()))
+    (map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Write rMut] [Use rMut + Use r0#]
+         (\(z : Int r0#).
+          let _ : Unit = updateInt [rMut] [r0#] <wMut> mutabl z in
+          z)
+         (Cons [r0#] [Int r0#] (1 [r0#] ())
+              (Cons [r0#] [Int r0#] (2 [r0#] ())
+                   (Nil [r0#] [Int r0#] ()))))
 

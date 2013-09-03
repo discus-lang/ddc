@@ -36,7 +36,7 @@ letrec {
     (Cons [r] [Int r] (9 [r] ())
     (Nil  [r] [Int r] ())));
 
-} in reverse [R0#] [Int R0#]
-     (append [R0#] [Int R0#] 
-       (list1 [R0#] ()) 
-       (list2 [R0#] ()));;
+} in reverse [r0#] [Int r0#]
+     (append [r0#] [Int r0#] 
+       (list1 [r0#] ()) 
+       (list2 [r0#] ()));;

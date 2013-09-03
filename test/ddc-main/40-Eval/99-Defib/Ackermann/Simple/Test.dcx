@@ -16,4 +16,4 @@ letrec {
                              (ack [r] m (subInt [:r r r:] n one));
         }
   }
-} in ack [R1#] (2 [R1#] ()) (3 [R1#] ());;
+} in ack [r1#] (2 [r1#] ()) (3 [r1#] ());;

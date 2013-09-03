@@ -23,39 +23,39 @@ foo : [r : Region]. Int r -(Alloc r | Use r)> Unit
 
 -- Nested applications
 :trun.. 
-addInt [:R0# R1# R2#:] 
-       (1 [R0#] ()) 
-       (addInt [:R1# R1# R1#:] 
-               (2 [R1#] ()) 
-               (addInt [:R3# R3# R1#:] 
-                       (3 [R3#] ()) 
-                       (4 [R3#] ())));;
+addInt [:r0# r1# r2#:] 
+       (1 [r0#] ()) 
+       (addInt [:r1# r1# r1#:] 
+               (2 [r1#] ()) 
+               (addInt [:r3# r3# r1#:] 
+                       (3 [r3#] ()) 
+                       (4 [r3#] ())));;
 
 
 -- Lets in args (inner x must be anonymized)
 :trun..
-let x = (2 [R1#] ()) in
-addInt [:R0# R1# R2#:]
+let x = (2 [r1#] ()) in
+addInt [:r0# r1# r2#:]
     (let x = () in
      let ^ = 1 in
-     ^0 [R0#] x)
+     ^0 [r0#] x)
     x;;
 
 
 -- Arity
 :trun..
-let cmp = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
-    let f' = f in \(x:Int R0#). f' (g x) in
-let up = \(n : Int R0#). addInt [:R0# R0# R0#:] n (1 [R0#] ()) in
-cmp up up (1 [R0#] ());;
+let cmp = \(f g : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#).
+    let f' = f in \(x:Int r0#). f' (g x) in
+let up = \(n : Int r0#). addInt [:r0# r0# r0#:] n (1 [r0#] ()) in
+cmp up up (1 [r0#] ());;
 
 
 -- Arity anon
 :trun..
-let ^ = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
-    let ^ = f in \(^ : Int R0#). ^1 (g ^0) in
-let ^ = \(^ : Int R0#). addInt [:R0# R0# R0#:] ^0 (1 [R0#] ()) in
-^1 ^0 ^0 (1 [R0#] ());;
+let ^ = \(f g : Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#).
+    let ^ = f in \(^ : Int r0#). ^1 (g ^0) in
+let ^ = \(^ : Int r0#). addInt [:r0# r0# r0#:] ^0 (1 [r0#] ()) in
+^1 ^0 ^0 (1 [r0#] ());;
 
 
 -- Letrec
@@ -68,23 +68,23 @@ letrec {
                       (fac [r] (subInt [:r r r:] n
                                        (1 [r] ())));
      }
-} in fac [R1#] (5 [R1#] ());;
+} in fac [r1#] (5 [r1#] ());;
 
 
 -- Snip out discriminants of case expressions
 :trans..
-case (\(x : Int R0#). x) (5 [R0#] ()) of {
+case (\(x : Int r0#). x) (5 [r0#] ()) of {
         _       -> ()
 };;
 
 
 -- Anonymous witnesses
 :trans..
-let useWit = \(^ : Const R0#). \(^ : Int R0#).
-    addInt [:R0# R0# R0#:] ^0 ^0
+let useWit = \(^ : Const r0#). \(^ : Int r0#).
+    addInt [:r0# r0# r0#:] ^0 ^0
 in
-\(^ : Const R0#). \(^ : Int R0#).
-   useWit {^1} (addInt [:R0# R0# R0#:] (1 [R0#] ()) ^0)
+\(^ : Const r0#). \(^ : Int r0#).
+   useWit {^1} (addInt [:r0# r0# r0#:] (1 [r0#] ()) ^0)
 ;;
 
 
@@ -103,6 +103,6 @@ let foo [r1 r2 : Region] (_ : Unit)
 in  letregion r4 in
     letregion r5 in
     case foo [:r4 r5:] () of {
-            Pr _ y -> copyInt [:r5 R0#:] y
+            Pr _ y -> copyInt [:r5 r0#:] y
     };;
 

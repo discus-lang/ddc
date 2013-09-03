@@ -53,14 +53,14 @@ letregion ^ in
 
 -- and with witnesses as lambda arguments
 :trans..
-(\(w : Const R0#). \(u : Unit).
-	(copyInt [:R0# R0#:] (23 [R0#] ())))
+(\(w : Const r0#). \(u : Unit).
+	(copyInt [:r0# r0#:] (23 [r0#] ())))
 ;;
 
 -- don't: lambda arguments for a different region
 :trans..
-(\(w : Const R0#). \(u : Unit).
-	(copyInt [:R1# R1#:] (23 [R1#] ())))
+(\(w : Const r0#). \(u : Unit).
+	(copyInt [:r1# r1#:] (23 [r1#] ())))
 ;;
 
 
@@ -75,7 +75,7 @@ letregion ^ in
 
 -- don't: not distinct
 :trans..
-addInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ())
+addInt [:r0# r0# r0#:] (5 [r0#] ()) (3 [r0#] ())
 ;;
 
 -- don't: not known
@@ -86,13 +86,13 @@ addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 
 -- do: both concrete
 :trans..
-addInt [:R0# R1# R0#:] (5 [R0#] ()) (3 [R1#] ())
+addInt [:r0# r1# r0#:] (5 [r0#] ()) (3 [r1#] ())
 ;;
 
 -- do: both concrete
 :trans..
 letregion ^ in
-addInt [:R0# ^0 R0#:] (5 [R0#] ()) (3 [^0] ())
+addInt [:r0# ^0 r0#:] (5 [r0#] ()) (3 [^0] ())
 ;;
 
 -- do: known from argument
@@ -104,7 +104,7 @@ addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 -- do: known from letregions
 :trans..
 letregions r1 r2 with { w : Distinct r1 r2 } in
-copyInt [:r1 R0#:]
+copyInt [:r1 r0#:]
     (addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ()))
 ;;
 

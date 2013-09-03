@@ -68,8 +68,8 @@ emptyCapSet
 -- | Insert a capability, or `error` if this isn't one.
 mustInsertCap :: Witness a Name -> CapSet -> CapSet
 mustInsertCap ww caps
- | WApp _ (WCon  _ (WiConBound       (UPrim nc _) _)) 
-          (WType _ (TCon (TyConBound (UPrim nh _) _))) <- ww
+ | WApp _ (WCon  _ (WiConBound (UPrim nc _) _))
+          (WType _ (TVar       (UPrim nh _))) <- ww
  , NameCap c     <- nc
  , NameRgn r     <- nh
  = case c of
@@ -91,8 +91,8 @@ mustInsertCap ww caps
 
 -- | Take a region name from a witness argument.
 takeNameRgn :: Witness a Name -> Maybe Rgn
-takeNameRgn (WType _ (TCon (TyConBound (UPrim (NameRgn r) _) _))) = Just r
-takeNameRgn _                                                     = Nothing
+takeNameRgn (WType _ (TVar (UPrim (NameRgn r) _))) = Just r
+takeNameRgn _                                        = Nothing
 
 
 -- | Check a capability set for conflicts between the capabilities.
@@ -183,10 +183,10 @@ checkCapsCM cc
         CastWeakenClosure xs    
          -> liftM concat $ mapM checkCapsXM xs
 
-        CastPurify w            -> checkCapsWM w
-        CastForget w            -> checkCapsWM w
-        CastSuspend             -> none 
-        CastRun                 -> none
+        CastPurify w    -> checkCapsWM w
+        CastForget w    -> checkCapsWM w
+        CastSuspend     -> none 
+        CastRun         -> none
 
 
 checkCapsLM :: Lets a Name -> CheckM a [Witness a Name]

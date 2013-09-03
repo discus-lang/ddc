@@ -68,13 +68,11 @@ pExp c
         xBody   <- pExp c
         return  $ foldr (XLAM sp) xBody bs
 
-
         -- let expression
  , do   (lts, sp) <- pLetsSP c
         pTok    KIn
         x2      <- pExp c
         return  $ XLet sp lts x2
-
 
         -- do { STMTS }
         --   Sugar for a let-expression.
@@ -93,7 +91,6 @@ pExp c
         pTok KBraceKet
         return  $ XCase sp x alts
 
-
         -- match PAT <- EXP else EXP in EXP
         --  Sugar for a case-expression.
  , do   sp      <- pTokSP KMatch
@@ -106,7 +103,6 @@ pExp c
         x3      <- pExp c
         return  $ XCase sp x1 [AAlt p x3, AAlt PDefault x2]
 
-
         -- weakeff [TYPE] in EXP
  , do   sp      <- pTokSP KWeakEff
         pTok KSquareBra
@@ -116,7 +112,6 @@ pExp c
         x       <- pExp c
         return  $ XCast sp (CastWeakenEffect t) x
 
-
         -- purify WITNESS in EXP
  , do   sp      <- pTokSP KPurify
         w       <- pWitness c
@@ -124,12 +119,10 @@ pExp c
         x       <- pExp c
         return  $ XCast sp (CastPurify w) x
 
-
         -- suspend EXP
  , do   sp      <- pTokSP KSuspend
         x       <- pExp c
         return  $ XCast sp CastSuspend x
-
 
         -- run EXP
  , do   sp      <- pTokSP KRun
@@ -236,7 +229,7 @@ pExpAtomSP c
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
  , do   (lit, sp)       <- pLitSP
-        return  (XCon sp (DaConPrim lit (T.tBot T.kData) True), sp)
+        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
@@ -271,7 +264,7 @@ pPat c
 
         -- LIT
  , do   nLit    <- pLit
-        return  $ PData (DaConPrim nLit (T.tBot T.kData) True) []
+        return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
 
         -- Unit
  , do   pTok KDaConUnit

@@ -101,7 +101,7 @@ xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
  = xApps a (XVar a $ fst utAllocBoxed)
         [ XType tR
-        , XCon a (DaConPrim (NameLitTag tag) tTag True)
+        , XCon a (DaConPrim (NameLitTag tag) tTag)
         , x2]
 
 utAllocBoxed :: (Bound Name, Type Name)
