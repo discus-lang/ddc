@@ -23,10 +23,8 @@ module DDC.Source.Tetra.Compounds
 
           -- * Data Constructors
         , dcUnit
-        , mkDaConAlg
-        , mkDaConSolid
         , takeNameOfDaCon
-        , typeOfDaCon
+        , takeTypeOfDaCon
 
           -- * Patterns
         , bindsOfPat
@@ -42,10 +40,8 @@ import DDC.Source.Tetra.Exp
 import DDC.Type.Compounds
 import DDC.Core.Compounds
         ( dcUnit
-        , mkDaConAlg
-        , mkDaConSolid
         , takeNameOfDaCon
-        , typeOfDaCon
+        , takeTypeOfDaCon
 
         , bindsOfPat
 

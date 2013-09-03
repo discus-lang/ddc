@@ -80,8 +80,8 @@ liftWorker lifting env xx
 
         -- Replicate literals.
         XCon dc
-         | DaConNamed (NameLitFloat _ 32) 
-                    <- daConName dc
+         | DaConPrim (NameLitFloat _ 32) _ _
+                    <- dc
          , nPrim    <- PrimVecRep (liftingFactor lifting)
          , tPrim    <- typePrimVec nPrim
          -> Right $ XApp (XApp (XVar (UPrim (NamePrimVec nPrim) tPrim)) 

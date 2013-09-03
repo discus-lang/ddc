@@ -20,7 +20,6 @@ module DDC.Core.Exp.Simple
 
           -- * Data Constructors
         , DaCon         (..)
-        , DaConName     (..)
 
           -- * Witness Constructors
         , WiCon         (..)

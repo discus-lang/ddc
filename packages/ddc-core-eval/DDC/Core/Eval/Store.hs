@@ -144,11 +144,11 @@ locUnit = Loc 0
 --   or its static heap location.
 isUnitOrLocX :: Exp a Name -> Bool
 isUnitOrLocX (XCon _ dc)
- = case daConName dc of
-        DaConUnit               -> True
-        DaConNamed (NameLoc l)  -> l == locUnit
-        _                       -> False
-isUnitOrLocX _                  = False
+ = case dc of
+        DaConUnit                 -> True
+        DaConPrim (NameLoc l) _ _ -> l == locUnit
+        _                         -> False
+isUnitOrLocX _                    = False
 
 
 -- Locations ------------------------------------------------------------------

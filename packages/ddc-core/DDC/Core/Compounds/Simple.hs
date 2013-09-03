@@ -46,10 +46,8 @@ module DDC.Core.Compounds.Simple
 
           -- * Data Constructors
         , xUnit, dcUnit
-        , mkDaConAlg
-        , mkDaConSolid
         , takeNameOfDaCon
-        , typeOfDaCon)
+        , takeTypeOfDaCon)
 where
 import DDC.Type.Exp
 import DDC.Core.Exp.Simple

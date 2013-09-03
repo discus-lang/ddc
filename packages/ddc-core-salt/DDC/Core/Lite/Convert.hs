@@ -463,7 +463,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
         = return $ S.xWord a i bits
 
         -- Handle the unit constructor.
-        | DaConUnit      <- daConName dc
+        | DaConUnit      <- dc
         = do    return  $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
 
         -- Construct algbraic data that has a finite number of data constructors.
@@ -546,9 +546,9 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
         --  This is baked into the langauge and doesn't have a real name,
         --  so we need to handle it separately.
         AAlt (PData dc []) x
-         | DaConUnit    <- daConName dc
+         | DaConUnit    <- dc
          -> do  xBody           <- convertExpX ctx pp defs kenv tenv x
-                let dcTag       = mkDaConAlg (S.NameLitTag 0) S.tTag
+                let dcTag       = DaConPrim (S.NameLitTag 0) S.tTag True
                 return  $ AAlt (PData dcTag []) xBody
 
         -- Match against algebraic data with a finite number
@@ -562,7 +562,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let dcTag       = mkDaConAlg (S.NameLitTag iTag) S.tTag
+                let dcTag       = DaConPrim (S.NameLitTag iTag) S.tTag True
 
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertB kenv) bsFields
@@ -594,7 +594,7 @@ convertCtor
         -> ConvertM a (Exp a S.Name)
 
 convertCtor pp defs kenv tenv a dc
- | DaConUnit    <- daConName dc
+ | DaConUnit    <- dc
  =      return $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
 
  | Just n       <- takeNameOfDaCon dc

@@ -227,10 +227,8 @@ pExpAtomSP c
         return  (XCon sp dcUnit, sp)
 
         -- Named algebraic constructors.
-        --  We just fill-in the type with tBot for now, and leave it to 
-        --  the spreader to attach the real type.
  , do   (con, sp)       <- pConSP
-        return  (XCon sp (mkDaConAlg con (T.tBot T.kData)), sp)
+        return  (XCon sp (DaConBound con), sp)
 
         -- Literals.
         --  We just fill-in the type with tBot for now, and leave it to
@@ -238,7 +236,7 @@ pExpAtomSP c
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
  , do   (lit, sp)       <- pLitSP
-        return  (XCon sp (mkDaConAlg lit (T.tBot T.kData)), sp)
+        return  (XCon sp (DaConPrim lit (T.tBot T.kData) True), sp)
 
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
@@ -273,7 +271,7 @@ pPat c
 
         -- LIT
  , do   nLit    <- pLit
-        return  $ PData (mkDaConAlg nLit (T.tBot T.kData)) []
+        return  $ PData (DaConPrim nLit (T.tBot T.kData) True) []
 
         -- Unit
  , do   pTok KDaConUnit
@@ -282,7 +280,7 @@ pPat c
         -- CON BIND BIND ...
  , do   nCon    <- pCon 
         bs      <- P.many (pBindPat c)
-        return  $ PData (mkDaConAlg nCon (T.tBot T.kData)) bs]
+        return  $ PData (DaConBound nCon) bs]
 
 
 -- Binds in patterns can have no type annotation,

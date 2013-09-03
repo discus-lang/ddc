@@ -63,38 +63,31 @@ kindOfDataDef def
 
 -- | Get the the type associated with a data definition, 
 --   that is, the type produced by the constructors.
-dataTypeOfDataDef :: DataDef n -> Maybe (Type n)
+dataTypeOfDataDef :: DataDef n -> Type n
 dataTypeOfDataDef def
- | Just usParam <- sequence 
-                $  map takeSubstBoundOfBind 
-                $  dataDefParams def
- = let  ksParam = map typeOfBind $ dataDefParams def
+ = let  usParam = takeSubstBoundsOfBinds $ dataDefParams def
+        ksParam = map typeOfBind $ dataDefParams def
         tc      = TyConBound (UName (dataDefTypeName def))
                              (kFuns ksParam kData)
-   in   Just $ tApps (TCon tc) (map TVar usParam)
+   in   tApps (TCon tc) (map TVar usParam)
                                         
- | otherwise
- = Nothing                      
-
 
 -- | Shortcut for constructing a `DataDef`
 makeDataDef 
         :: n                            -- ^ Name of data type.
         -> [Bind n]                     -- ^ Type parameters.
         -> Maybe [(n, [Type n])]        -- ^ Constructor names and field types.
-        -> Maybe (DataDef n)
+        -> DataDef n
 
 makeDataDef nData bsParam Nothing 
-        = Just $ DataDef
+        = DataDef
         { dataDefTypeName       = nData
         , dataDefParams         = bsParam
         , dataDefCtors          = Nothing }
 
 makeDataDef nData bsParam (Just ntsField)
- | Just usParam <- sequence
-                $  map takeSubstBoundOfBind 
-                $  bsParam
- = let  ksParam = map typeOfBind bsParam
+ = let  usParam = takeSubstBoundsOfBinds bsParam
+        ksParam = map typeOfBind bsParam
         tc      = TyConBound (UName nData) 
                              (kFuns ksParam kData)
 
@@ -103,13 +96,10 @@ makeDataDef nData bsParam (Just ntsField)
         ctors   = [ DataCtor n tag tsField tResult nData bsParam
                             | tag          <- [0..]
                             | (n, tsField) <- ntsField] 
-   in   Just $ DataDef
+   in   DataDef
         { dataDefTypeName = nData
         , dataDefParams   = bsParam
         , dataDefCtors    = Just ctors }
-
- | otherwise
- = Nothing
         
 
 -- DataDefs -------------------------------------------------------------------

@@ -29,7 +29,7 @@ stepPrimCon
 -- Redirect the unit constructor.
 -- All unit values point to the same object in the store.
 stepPrimCon dc xsArgs store
-        | DaConUnit     <- daConName dc
+        | DaConUnit     <- dc
         , []            <- xsArgs
         = Just  ( store
                 , xLoc locUnit tUnit )

@@ -38,8 +38,7 @@ mconvAtom pp kenv tenv xx
 
         -- Literals. 
         C.XCon _ dc
-         | C.DaConNamed n <- C.daConName dc
-         , t              <- C.daConType dc
+         | C.DaConPrim n t _ <- dc
          -> case n of
                 A.NameLitBool bool  
                  -> let i | bool        = 1

@@ -199,11 +199,13 @@ takeSubstBoundOfBind bb
 -- | Convert some `Bind`s to `Bounds`
 takeSubstBoundsOfBinds :: [Bind n] -> [Bound n]
 takeSubstBoundsOfBinds bs
- = go 0 bs
+ = go 1 bs
  where  go _level []               = []
-        go level (BName n _ : bs') = UName n   : go level bs'
-        go level (BAnon _   : bs') = UIx level : go (level + 1) bs'
-        go level (BNone _   : bs') =             go level bs'
+        go level (BName n _ : bs') = UName n           : go level bs'
+        go level (BAnon _   : bs') = UIx (len - level) : go (level + 1) bs'
+        go level (BNone _   : bs') =                     go level bs'
+
+        len = length [ () | BAnon _ <- bs]
 
 
 -- | If this `Bound` is a `UPrim` then replace it's embedded type with a new

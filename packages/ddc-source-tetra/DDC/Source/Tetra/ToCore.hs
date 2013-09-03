@@ -26,7 +26,6 @@ import DDC.Core.Exp
         , TyCon         (..)
         , Pat           (..)
         , DaCon         (..)
-        , DaConName     (..)
         , Witness       (..)
         , WiCon         (..))
 
@@ -194,17 +193,19 @@ toCoreP pp
 -- DaCon ----------------------------------------------------------------------
 toCoreDC :: DaCon S.Name -> DaCon C.Name
 toCoreDC dc
-        = DaCon
-        { daConName             = toCoreDCN (daConName dc)
-        , daConType             = toCoreT   (daConType dc)
-        , daConIsAlgebraic      = daConIsAlgebraic dc }
- 
+ = case dc of
+        DaConUnit
+         -> DaConUnit
 
-toCoreDCN :: DaConName S.Name -> DaConName C.Name
-toCoreDCN dcn
- = case dcn of
-        DaConUnit       -> DaConUnit
-        DaConNamed n    -> DaConNamed (toCoreN n)
+        DaConPrim n t is
+         -> DaConPrim
+                { daConName             = toCoreN n
+                , daConType             = toCoreT   t
+                , daConIsAlgebraic      = is }
+
+        DaConBound n
+         -> DaConBound (toCoreN n)
+
 
 
 -- Witness --------------------------------------------------------------------

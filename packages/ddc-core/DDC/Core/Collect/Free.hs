@@ -51,9 +51,9 @@ instance BindStruct (Exp a) where
          -> [BindUse BoundExp u]
 
         XCon _ dc
-         -> case daConName dc of
-                DaConUnit               -> []
-                DaConNamed n            -> [BindCon BoundExp (UName n) Nothing]
+         -> case dc of
+                DaConBound n    -> [BindCon BoundExp (UName n) Nothing]
+                _               -> []
 
         XApp _ x1 x2            -> slurpBindTree x1 ++ slurpBindTree x2
         XLAM _ b x              -> [bindDefT BindLAM [b] [x]]

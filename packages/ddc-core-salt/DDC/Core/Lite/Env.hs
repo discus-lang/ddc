@@ -36,8 +36,7 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
- $ map (\(Just def) -> def)
- $      -- Unboxed --------------------------------------------------
+        -- Unboxed --------------------------------------------------
         -- We need these so that we can match against unboxed patterns
         -- in case expressions.
         -- Bool#
@@ -57,7 +56,6 @@ primDataDefs
         , makeDataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
         , makeDataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
         , makeDataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
-
 
         -- Boxed ----------------------------------------------------
         -- Unit

@@ -14,7 +14,6 @@ module DDC.Source.Tetra.Exp
 
         -- * Data Constructors
         , DaCon         (..)
-        , DaConName     (..)
 
         -- * Witness Constructors
         , WiCon         (..)

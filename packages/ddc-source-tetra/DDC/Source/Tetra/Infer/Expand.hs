@@ -248,7 +248,7 @@ slurpVarConBound xx
  = case xx of
         XVar a u -> Just (a, u)
         XCon a dc 
-         | DaConNamed n <- daConName dc
-         -> Just (a, UName n)
+         | DaConBound n         <- dc -> Just (a, UName n)
+         | DaConPrim  n t _     <- dc -> Just (a, UPrim n t)
         _       -> Nothing
 

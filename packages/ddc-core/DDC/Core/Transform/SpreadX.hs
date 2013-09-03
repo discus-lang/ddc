@@ -67,20 +67,25 @@ instance SpreadX (Exp a) where
 
 instance SpreadX DaCon where
  spreadX _kenv tenv dc
-  = case daConName dc of
-        DaConUnit       -> dc
+  = case dc of
+        DaConUnit       
+         -> dc
 
-        DaConNamed n
-         -> let u | Env.isPrim tenv n   = UPrim n (daConType dc)
+        DaConPrim n t _
+         -> let u | Env.isPrim tenv n   = UPrim n t
                   | otherwise           = UName n
 
             in  case Env.lookup u tenv of
                  Just t' -> dc { daConType = t' }
-
-                 -- Primitive constructors won't be in the type environment.
-                 --  But we leave it to checkExp to worry about whether a constructor
-                 --  is primitive or simply undefined.
                  Nothing -> dc
+
+        DaConBound n
+         | Env.isPrim tenv n
+         , Just t'      <- Env.lookup (UPrim n (tBot kData)) tenv
+         -> DaConPrim n t' True
+
+         | otherwise
+         -> DaConBound n
 
 
 instance SpreadX (Cast a) where

@@ -14,7 +14,6 @@ module DDC.Source.Tetra.Exp.Base
 
         -- * Data Constructors
         , DaCon         (..)
-        , DaConName     (..)
 
         -- * Witness Constructors
         , WiCon         (..)
@@ -28,8 +27,7 @@ import DDC.Core.Exp
         , WiCon         (..)
         , WbCon         (..)
         , Pat           (..)
-        , DaCon         (..)
-        , DaConName     (..))
+        , DaCon         (..))
 
 
 -- | Well-typed expressions have types of kind `Data`.

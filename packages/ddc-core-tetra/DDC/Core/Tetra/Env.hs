@@ -26,8 +26,7 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
- $ map (\(Just def) -> def)
- $      -- Primitive -----------------------------------------------
+        -- Primitive -----------------------------------------------
         -- Bool
         [ makeDataDef (NamePrimTyCon PrimTyConBool) 
                 [] 

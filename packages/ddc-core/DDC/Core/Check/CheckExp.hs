@@ -130,16 +130,13 @@ checkExpM' !config !_kenv !_tenv xx@(XCon a dc)
         -- TODO: this is duplicated in the case for XCase.
         --       split into another function.
         -- All data constructors need to have valid type annotations.
-        tCtor
-         <- case daConName dc of
-             DaConUnit       -> return tUnit
+        tCtor 
+         <- case dc of
+             DaConUnit   -> return tUnit
              
-             DaConNamed n
-              -- If the type is already attached then we can use that directly.
-              -- The spreader should have attached the types for literals.
-              | not $ isBot (daConType dc)
-              -> return $ daConType dc
+             DaConPrim{} -> return $ daConType dc
 
+             DaConBound n
               -- Types of algebraic data ctors should be in the defs table.
               |  Just ctor <- Map.lookup n (dataDefsCtors $ configDataDefs config)
               -> return $ typeOfDataCtor ctor
@@ -148,10 +145,7 @@ checkExpM' !config !_kenv !_tenv xx@(XCon a dc)
               -> throw  $ ErrorUndefinedCtor $ XCon a dc
 
         -- Check that the constructor is in the data type declarations.
-        -- TODO: refactor DaCon so it never needs to contain tBot for the type.
-        --       patching the type like this is horrible
-        checkDaConM config xx 
-                (dc { daConType = tCtor })
+        checkDaConM config xx dc
 
         -- Type of the data constructor.
         returnX a
@@ -972,15 +966,11 @@ checkAltM !xx !config !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody
         --  Note that we can't simply check whether the constructor is in the
         --  environment because literals like 42# never are.
         tCtor
-         <- case daConName dc of
-             DaConUnit       -> return tUnit
-             
-             DaConNamed n
-              -- If the type is already attached then we can use that directly.
-              -- The spreader should have attached the types for literals.
-              | not $ isBot (daConType dc)
-              -> return $ daConType dc
-
+         <- case dc of
+             DaConUnit   -> return tUnit
+             DaConPrim{} -> return $ daConType dc
+     
+             DaConBound n
               -- Types of algebraic data ctors should be in the defs table.
               |  Just ctor <- Map.lookup n (dataDefsCtors $ configDataDefs config)
               -> return $ typeOfDataCtor ctor

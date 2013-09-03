@@ -15,12 +15,11 @@ import DDC.Core.Exp.Simple
 
 -- | A literal @Bool#@
 xBool   :: Bool   -> Exp a Name
-xBool b = XCon (mkDaConAlg (NameLitBool b) tBool)
-
+xBool b  = XCon (dcBool b)
 
 -- | A literal @Bool#@ data constructor.
 dcBool  :: Bool -> DaCon Name
-dcBool b = mkDaConAlg (NameLitBool b) tBool
+dcBool b = DaConPrim (NameLitBool b) tBool True
 
 
 -- | A literal @Nat#@
@@ -30,13 +29,14 @@ xNat i  = XCon (dcNat i)
 
 -- | A Literal @Nat#@ data constructor.
 dcNat   :: Integer -> DaCon Name
-dcNat i   = mkDaConAlg (NameLitNat i) tNat
+dcNat i   = DaConPrim (NameLitNat i) tNat True
 
 
 -- | Data constructor for @Tuple1#@
 dcTuple1 :: DaCon Name
-dcTuple1  = mkDaConAlg (NameDaConFlow (DaConFlowTuple 1))
-          $ typeDaConFlow (DaConFlowTuple 1)
+dcTuple1  = DaConPrim (NameDaConFlow (DaConFlowTuple 1))
+                      (typeDaConFlow (DaConFlowTuple 1))
+                      True
 
 
 -- | Construct a @Tuple2#@
@@ -51,13 +51,15 @@ xTuple2 t1 t2 x1 x2
 
 -- | Data constructor for @Tuple2#@
 dcTuple2 :: DaCon Name
-dcTuple2  = mkDaConAlg (NameDaConFlow (DaConFlowTuple 2))
-          $ typeDaConFlow (DaConFlowTuple 2)
+dcTuple2  = DaConPrim   (NameDaConFlow (DaConFlowTuple 2))
+                        (typeDaConFlow (DaConFlowTuple 2))
+                        True
 
 
 -- | Data constructor for n-tuples
 dcTupleN :: Int -> DaCon Name
 dcTupleN n
-          = mkDaConAlg (NameDaConFlow (DaConFlowTuple n))
-          $ typeDaConFlow (DaConFlowTuple n)
+          = DaConPrim   (NameDaConFlow (DaConFlowTuple n))
+                        (typeDaConFlow (DaConFlowTuple n))
+                        True
 

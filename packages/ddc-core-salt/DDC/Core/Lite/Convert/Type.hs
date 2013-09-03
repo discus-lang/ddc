@@ -163,17 +163,22 @@ convertDC
         -> ConvertM a (DaCon O.Name)
 
 convertDC kenv dc
- = case daConName dc of
-        DaConUnit
-         -> error "convertDC: not converting unit DaConName"
+ = case dc of
+        DaConUnit       
+         -> return DaConUnit
 
-        DaConNamed n
+        DaConPrim n t isAlg
          -> do  n'      <- convertBoundNameM n
-                t'      <- convertT kenv (daConType dc)
-                return  $ DaCon
-                        { daConName             = DaConNamed n'
+                t'      <- convertT kenv t
+                return  $ DaConPrim
+                        { daConName             = n'
                         , daConType             = t'
-                        , daConIsAlgebraic      = daConIsAlgebraic dc }
+                        , daConIsAlgebraic      = isAlg }
+
+        DaConBound n
+         -> do  n'      <- convertBoundNameM n
+                return  $ DaConBound
+                        { daConName             = n' }
 
 
 convertB :: KindEnv L.Name -> Bind L.Name -> ConvertM a (Bind O.Name)

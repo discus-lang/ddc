@@ -32,7 +32,6 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
- $ map (\(Just def) -> def)
  $      -- Primitive -----------------------------------------------
         -- Bool#
         [ makeDataDef (NamePrimTyCon PrimTyConBool) 
@@ -80,7 +79,7 @@ primDataDefs
 
 
 -- | Make a tuple data def for the given tuple arity.
-makeTupleDataDef :: Int -> Maybe (DataDef Name)
+makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
         = makeDataDef
                 (NameTyConFlow (TyConFlowTuple n))

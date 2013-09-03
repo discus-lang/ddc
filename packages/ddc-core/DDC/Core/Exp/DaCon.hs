@@ -32,7 +32,7 @@ data DaCon n
           -- | Type of the data constructor.
         , daConType             :: !(Type n)
 
-          -- | Whether the data type is algebraic.
+          -- | Whether the data type is algebraic.      -- TODO: remove this.
         , daConIsAlgebraic      :: Bool 
         }
 

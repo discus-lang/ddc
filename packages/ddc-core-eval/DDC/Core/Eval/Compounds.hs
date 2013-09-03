@@ -120,7 +120,7 @@ isUnitX :: Exp a Name -> Bool
 isUnitX xx
  = case xx of
         XCon _  dc
-         -> case daConName dc of
+         -> case dc of
                 DaConUnit       -> True
                 _               -> False
         _                       -> False
@@ -148,7 +148,7 @@ takeHandleX xx
 -- | Make a location expression.
 xLoc :: Loc -> Type Name -> Exp () Name
 xLoc l t
-        = XCon () $ mkDaConSolid (NameLoc l) t
+        = XCon () $ DaConPrim (NameLoc l) t False
 
 
 -- | Take a store location from an expression.
@@ -209,7 +209,7 @@ tcInt = TyConBound (UPrim (NamePrimCon PrimTyConInt) kInt) kInt
 
 -- | Make an integer data constructor.
 dcInt :: Integer -> DaCon Name
-dcInt i = mkDaConAlg (NameInt i) (TCon tcInt)
+dcInt i = DaConPrim (NameInt i) (TCon tcInt) True
 
 
 -- | Take an integer literal from an data constructor.
