@@ -162,7 +162,8 @@ forcePrint state store x
    in case force store x_stripped of
         StepProgress store' x_stripped'
          -> case checkExp (configOfProfile Eval.profile) 
-                        primKindEnv primTypeEnv x_stripped' of
+                        primKindEnv primTypeEnv 
+                        x_stripped' Nothing of
              Left err
               -> do 
                     -- Print intermediate expression.

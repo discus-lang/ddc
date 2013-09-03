@@ -95,6 +95,7 @@ step store xx
                 (C.profilePrimKinds evalProfile)
                 (C.profilePrimTypes evalProfile)
                 xp 
+                Nothing
    of   Left err -> StepMistyped err
         Right t   
          -> let Just (bs, xBody) = takeXLamFlags xp

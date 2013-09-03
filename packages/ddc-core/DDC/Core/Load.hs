@@ -176,7 +176,7 @@ loadExp profile modules sourceName toks'
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp config kenv tenv x of
+         = case C.checkExp config kenv tenv x Nothing of
                 Left err            -> Left  (ErrorCheckExp err)
                 Right (x', _, _, _) -> goCheckCompliance x'
 

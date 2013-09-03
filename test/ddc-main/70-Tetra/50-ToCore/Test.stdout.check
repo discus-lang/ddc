@@ -65,3 +65,23 @@ letrec {
          -> Cons [?] (f x) (map [?] [?] f xs)
       }
 }
+
+
+-- List map using the S computation type.
+module Test 
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
+with
+letrec {
+  mapS : [a b : Data].[e : Effect].(a -> S e b) -> List a -> S e (List b)
+    = /\(a b : Data)./\(e : Effect).
+       \(f : a -> S e b).\(xx : List a).
+      case xx of {
+        Nil  
+         -> Nil [?];
+        Cons x xs 
+         -> Cons [?] (f x) (mapS [?] [?] [?] f xs)
+      }
+}

@@ -158,12 +158,12 @@ instance Eta Exp where
 
         XVar a _
          | configExpand config
-         , Right tX     <- Check.typeOfExp cconfig kenv tenv xx
+         , Right tX     <- Check.typeOfExp cconfig kenv tenv xx Nothing
          -> do  etaExpand a tX xx
 
         XApp a _ _
          |  configExpand config
-         ,  Right tX    <- Check.typeOfExp cconfig kenv tenv xx
+         ,  Right tX    <- Check.typeOfExp cconfig kenv tenv xx Nothing
          -> do  
                 -- Decend into the arguments first.
                 --   We don't need to decend into the function part because
