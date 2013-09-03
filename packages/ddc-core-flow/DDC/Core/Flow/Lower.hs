@@ -111,16 +111,17 @@ lowerProcess config process
 
 
  -- Vector lowering -----------------------------
+ -- To use the vector method, 
+ --  the type of the source function needs to have a quantifier for
+ --  the rate variable (k), as well as a (RateNat k) witness.
+ --
  | MethodVector lifting <- configMethod config
-
- , BName nRN tRN : _  <- processParamValues process
- , isRateNatType tRN
-
+ , [nRN]  <- [ nRN | BName nRN tRN <- processParamValues process
+                   , isRateNatType tRN ]
+ , bK : _ <- processParamTypes process
  = do   let c           = liftingFactor lifting
 
-
         -- Get the primary rate variable.
-        let bK : _      = processParamTypes process
         let Just uK     = takeSubstBoundOfBind bK
         let tK          = TVar uK
 
