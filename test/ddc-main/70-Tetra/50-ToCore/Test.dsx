@@ -13,3 +13,16 @@ length (xx : List a) : Nat
         Nil       -> 0
         Cons x xs -> 1 + length xs
 ;;
+
+
+:to-core..
+module Test where
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+append  (xx : List a) (yy : List a) : List a
+ = case xx of
+        Nil       -> yy
+        Cons x xs -> Cons x (append xs yy)
+;;
