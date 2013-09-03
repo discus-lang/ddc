@@ -20,3 +20,22 @@ letrec {
          -> add [?] 1# (length [?] xs)
       }
 }
+
+
+module Test 
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
+with
+letrec {
+  append : [a : Data].List a -> List a -> List a
+    = /\(a : Data).
+       \(xx yy : List a).
+      case xx of {
+        Nil  
+         -> yy;
+        Cons x xs 
+         -> Cons [?] x (append [?] xs yy)
+      }
+}
