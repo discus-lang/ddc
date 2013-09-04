@@ -40,8 +40,8 @@ bubbleX kenv tenv x
  = let  
         -- Bubble the expression, yielding any casts that floated out
         -- to top-level.
-        (cs, x')        = bubble kenv tenv x
-        Just a          = takeAnnotOfExp x'
+        (cs, x') = bubble kenv tenv x
+        a        = annotOfExp x'
 
         -- Reattach top-level casts.
    in   dropAllCasts kenv tenv a cs x'
@@ -124,7 +124,7 @@ instance Bubble Lets where
         -- but we can float the others further outwards.
         LLet b x
          -> let (cs, x')        = bubble kenv tenv x
-                Just a          = takeAnnotOfExp x'
+                a               = annotOfExp x'
                 (cs', xc')      = dropCasts kenv tenv a [] [b] cs x'
             in  (cs', LLet b xc')
 
@@ -135,7 +135,7 @@ instance Bubble Lets where
 
                 bubbleRec (b, x)
                  = let  (cs, x') = bubble kenv tenv' x
-                        Just a   = takeAnnotOfExp x'
+                        a        = annotOfExp x'
                    in   (b, dropAllCasts kenv tenv' a cs x')
 
                 bxs'            = map bubbleRec bxs
@@ -158,7 +158,7 @@ instance Bubble Alt where
  -- variables bound by the pattern.
  bubble kenv tenv (AAlt p x)
   = let bs              = bindsOfPat p
-        Just a          = takeAnnotOfExp x'
+        a               = annotOfExp x'
         tenv'           = Env.extends bs tenv
         (cs, x')        = bubble kenv tenv' x
         (csUp, xcHere)  = dropCasts kenv tenv' a [] bs cs x'

@@ -6,7 +6,7 @@ module DDC.Core.Compounds.Annot
         ( module DDC.Type.Compounds
 
           -- * Annotations
-        , takeAnnotOfExp
+        , annotOfExp
 
           -- * Lambdas
         , xLAMs
@@ -61,21 +61,20 @@ import DDC.Core.Exp.DaCon
 
 
 -- Annotations ----------------------------------------------------------------
--- | Take the outermost annotation from an expression,
---   or Nothing if this is an `XType` or `XWitness` without an annotation.
-takeAnnotOfExp :: Exp a n -> Maybe a
-takeAnnotOfExp xx
+-- | Take the outermost annotation from an expression.
+annotOfExp :: Exp a n -> a
+annotOfExp xx
  = case xx of
-        XVar  a _       -> Just a
-        XCon  a _       -> Just a
-        XLAM  a _ _     -> Just a
-        XLam  a _ _     -> Just a
-        XApp  a _ _     -> Just a
-        XLet  a _ _     -> Just a
-        XCase a _ _     -> Just a
-        XCast a _ _     -> Just a
-        XType{}         -> Nothing
-        XWitness{}      -> Nothing
+        XVar     a _      -> a
+        XCon     a _      -> a
+        XLAM     a _ _    -> a
+        XLam     a _ _    -> a
+        XApp     a _ _    -> a
+        XLet     a _ _    -> a
+        XCase    a _ _    -> a
+        XCast    a _ _    -> a
+        XType    a _      -> a
+        XWitness a _      -> a
 
 
 -- Lambdas ---------------------------------------------------------------------

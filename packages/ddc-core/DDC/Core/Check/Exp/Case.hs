@@ -163,7 +163,7 @@ checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs (AAlt PDefault xBody)
 
 checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
  = do   let config      = tableConfig table
-        let Just a      = takeAnnotOfExp xx
+        let a           = annotOfExp xx
 
         -- If the data constructor isn't defined then the spread 
         --  transform won't have given it a proper type.

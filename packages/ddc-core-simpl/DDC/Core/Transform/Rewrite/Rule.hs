@@ -24,7 +24,6 @@ import DDC.Core.Compounds
 import DDC.Type.Pretty                          ()
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
-import Control.Monad
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C
@@ -197,7 +196,7 @@ checkRewriteRule config kenv tenv
 
         -- Build application from lhs and the hole so we can check its
         -- type against rhs
-        let Just a      = takeAnnotOfExp lhs
+        let a           = annotOfExp lhs
         let lhs_full    = maybe lhs (XApp a lhs) hole
 
         -- Check the full left hand side.
@@ -386,7 +385,7 @@ makeClosureWeakening config kenv tenv lhs rhs
         wiRight = supportWiVar supportRight
         spRight = supportSpVar supportRight
 
-        Just a  = takeAnnotOfExp lhs
+        a       = annotOfExp lhs
 
    in   Right 
          $  [XVar a u 
@@ -487,8 +486,8 @@ countBinderUsage
         -> Either (Error a n) [(BindMode, Bind n)]
 
 countBinderUsage bs x
- = let  Just (U.UsedMap um)
-                = liftM fst $ takeAnnotOfExp $ U.usageX x
+ = let  U.UsedMap um
+                = fst $ annotOfExp $ U.usageX x
 
         get (BMValue _, BName n t)
          = (BMValue

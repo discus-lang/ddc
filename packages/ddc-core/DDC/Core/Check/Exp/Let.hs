@@ -177,8 +177,8 @@ checkLetsM
                 , Set (TaggedClosure n))
 
 checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
- = do   let config = tableConfig table
-        let Just a = takeAnnotOfExp xx
+ = do   let config      = tableConfig table
+        let a           = annotOfExp xx
 
         -- Check the right of the binding.
         (x12', t12, effs12, clo12)  
@@ -202,7 +202,7 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
 checkLetsM !xx !table !kenv !tenv (LRec bxs)
  = do   let config      = tableConfig table
         let (bs, xs)    = unzip bxs
-        let Just a      = takeAnnotOfExp xx
+        let a           = annotOfExp xx
 
         -- Named binders cannot be multiply defined.
         (case duplicates $ filter isBName bs of

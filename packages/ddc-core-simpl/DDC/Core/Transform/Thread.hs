@@ -215,7 +215,7 @@ threadProc config context kenv tenv xx (t : tsArgs)
              in  XLam (annotTail a) b x'
 
         -- Inject a new lambda to bind the state parameter.
-        _ |  Just a     <- takeAnnotOfExp xx
+        _ |  a          <- annotOfExp xx
           ,  t == configTokenType config 
           -> let b'     = BAnon (configTokenType config)
                  tenv'  = Env.extend b' tenv
@@ -360,7 +360,7 @@ threadProcBody config context kenv tenv xx
          -- Otherwise wrap the returned value with a tuple holding
          -- the world.
          | otherwise
-         -> let Just a  = takeAnnotOfExp xx
+         -> let a       = annotOfExp xx
                 a'      = AnTEC (configTokenType config) 
                                 (tBot kEffect) 
                                 (tBot kClosure)

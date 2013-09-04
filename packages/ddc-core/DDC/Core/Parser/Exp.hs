@@ -528,12 +528,7 @@ pStmt c
 
         -- EXP
  , do   x               <- pExp c
-
-        -- This should always succeed because pExp doesn't
-        -- parse plain types or witnesses
-        let Just sp     = takeAnnotOfExp x
-        
-        return  $ StmtNone sp x
+        return  $ StmtNone (annotOfExp x) x
  ]
 
 

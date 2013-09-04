@@ -151,10 +151,10 @@ forcePrint
 forcePrint state store x
  = let  
         -- Get the type, effect and closure of the original expression.
-        Just annot  = takeAnnotOfExp x
-        tX          = annotType annot
-        effX        = annotEffect annot
-        cloX        = annotClosure annot
+        annot   = annotOfExp x
+        tX      = annotType annot
+        effX    = annotEffect annot
+        cloX    = annotClosure annot
 
         -- The evaluator doesn't want any type annotations on the expresison.
         x_stripped = reannotate (const ()) x

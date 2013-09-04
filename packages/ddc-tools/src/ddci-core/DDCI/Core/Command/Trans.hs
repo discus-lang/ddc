@@ -124,10 +124,10 @@ applyTransAndCheck
 
 applyTransAndCheck state profile kenv tenv zero simpl xx
  = do
-        let Just annot  = takeAnnotOfExp xx
-        let t1          = annotType    annot
-        let eff1        = annotEffect  annot
-        let clo1        = annotClosure annot
+        let annot  = annotOfExp xx
+        let t1     = annotType    annot
+        let eff1   = annotEffect  annot
+        let clo1   = annotClosure annot
 
          -- Apply the simplifier.
         let tx          = flip S.evalState zero

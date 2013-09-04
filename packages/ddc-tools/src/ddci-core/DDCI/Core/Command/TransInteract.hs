@@ -35,7 +35,7 @@ cmdTransInteract state source str
         goStore bundle (Just xx)
          = do   
                 let xx'         = reannotate (\a -> a { annotTail = () }) xx
-                let Just annot  = takeAnnotOfExp xx'
+                let annot       = annotOfExp xx'
                 let t1          = annotType annot
                 let eff1        = annotEffect annot
                 let clo1        = annotClosure annot

@@ -163,14 +163,12 @@ transformSimpleUpMX
 transformSimpleUpMX f kenv0 tenv0 xx0
  = let  
         f' kenv tenv xx
-         = case takeAnnotOfExp xx of
-            Nothing -> return xx
-            Just a  
-             -> do let sxx  = deannotate (const Nothing) xx
-                   msxx'    <- f kenv tenv sxx
-                   case msxx' of
-                        Nothing   -> return $ xx
-                        Just sxx' -> return $ annotate a sxx'
+         = do   let a    = annotOfExp xx
+                let sxx  = deannotate (const Nothing) xx
+                msxx'    <- f kenv tenv sxx
+                case msxx' of
+                     Nothing   -> return $ xx
+                     Just sxx' -> return $ annotate a sxx'
 
    in   transformUpMX f' kenv0 tenv0 xx0
 

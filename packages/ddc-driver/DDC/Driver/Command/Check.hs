@@ -206,14 +206,10 @@ cmdShowType language mode source ss
          = return ()
 
         goResult fragment (Just x)
-         = let  -- This will always succeed because a well typed expression
-                -- is never a naked type or witness, and only those don't
-                -- have annotations.
-                Just annot      = takeAnnotOfExp x
-
-                t               = annotType annot
-                eff             = annotEffect annot
-                clo             = annotClosure annot
+         = let  annot   = annotOfExp x
+                t       = annotType annot
+                eff     = annotEffect annot
+                clo     = annotClosure annot
 
            in case mode of
                 ShowTypeAll

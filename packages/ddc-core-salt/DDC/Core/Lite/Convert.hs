@@ -98,7 +98,7 @@ convertM pp runConfig defs kenv tenv mm
         -- Converting the body will also expand out code to construct,
         -- the place-holder '()' inside the top-level lets.
         -- We don't want that, so just replace that code with a fresh unit.
-        let Just a      = takeAnnotOfExp x1
+        let a           = annotOfExp x1
         let (lts', _)   = splitXLets x1
         let x2          = xLets a lts' (xUnit a)
 
@@ -491,9 +491,8 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
 
                 -- Convert the types of each field.
                 let makeFieldType x
-                        = case takeAnnotOfExp x of
-                                Nothing  -> return Nothing
-                                Just a'  -> liftM Just $ convertT kenv (annotType a')
+                        = let a' = annotOfExp x 
+                          in  liftM Just $ convertT kenv (annotType a')
 
                 xsArgs'         <- mapM (convertExpX ExpArg pp defs kenv tenv) xsArgs
                 tsArgs'         <- mapM makeFieldType xsArgs

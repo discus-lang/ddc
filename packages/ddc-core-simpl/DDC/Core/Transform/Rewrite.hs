@@ -323,7 +323,7 @@ rewriteWithX rule env f args
         (m, rest)       <- matchWithRule rule env f args RM.emptySubstInfo
 
         -- Check constraints, perform substitution and add weakens if necessary.
-        let Just a      = X.takeAnnotOfExp f
+        let a           = X.annotOfExp f
 
         let bas2        = lookupFromSubst a binds m
         let rhs2        = A.anonymizeX rhs
@@ -506,7 +506,7 @@ matchWithRule
 
         -- Try to match against entire rule with no inlining.
         -- Eg (unbox (box 5))
-        | Just a        <- X.takeAnnotOfExp f
+        | a             <- X.annotOfExp f
         , lhs_full      <- XApp a (ruleLeft rule) hole 
         , rule_full     <- rule { ruleLeft = lhs_full, ruleLeftHole = Nothing}
         , Just subst    <- matchWithRule rule_full env f args sub

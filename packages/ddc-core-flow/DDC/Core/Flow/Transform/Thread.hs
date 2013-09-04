@@ -52,14 +52,14 @@ wrapResultExp
 
 wrapResultExp xWorld xResult
  -- Rewrite Unit => World
- | Just aResult         <- takeAnnotOfExp xResult
+ | aResult      <- annotOfExp xResult
  , annotType aResult == tUnit
  = reannotate annotTail xWorld
 
  -- Rewrite (TupleN        a1 a2 ..       x1 x2 ..)
  --      => (TupleN World# a1 a2 .. world x1 x2 ..)
- | Just aWorld   <- takeAnnotOfExp xWorld
- , Just aResult  <- takeAnnotOfExp xResult
+ | aWorld   <- annotOfExp xWorld
+ , aResult  <- annotOfExp xResult
  = let  tWorld'  = annotType aWorld
         tResult  = annotType aResult
         xWorld'  = reannotate annotTail xWorld
