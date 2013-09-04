@@ -1,0 +1,108 @@
+
+module DDC.Core.Check.Exp.Base 
+        ( Checker
+        , Table (..)
+        , returnX
+
+        -- * Modules
+        , module DDC.Core.Check.TaggedClosure
+        , module DDC.Core.Check.Witness
+        , module DDC.Core.Check.DaCon
+        , module DDC.Core.Check.Error
+        , module DDC.Core.Annot.AnTEC
+        , module DDC.Core.Collect
+        , module DDC.Core.Predicates
+        , module DDC.Core.Compounds
+        , module DDC.Core.Exp
+        , module DDC.Type.Transform.SubstituteT
+        , module DDC.Type.Transform.LiftT
+        , module DDC.Type.Transform.Trim
+        , module DDC.Type.Predicates
+        , module DDC.Type.Universe
+        , module DDC.Type.DataDef
+        , module DDC.Type.Equiv
+        , module DDC.Base.Pretty
+        , module Control.Monad
+        , module Data.Maybe
+
+        -- * Re-exported things
+        , Config (..)
+        , Env, KindEnv, TypeEnv
+        , throw, result
+        , Set)
+where
+import DDC.Core.Check.TaggedClosure
+import DDC.Core.Check.Witness
+import DDC.Core.Check.DaCon
+import DDC.Core.Check.Error
+import DDC.Core.Annot.AnTEC
+import DDC.Core.Collect
+import DDC.Core.Predicates
+import DDC.Core.Compounds
+import DDC.Core.Exp
+import DDC.Type.Transform.SubstituteT
+import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.Trim
+import DDC.Type.Predicates
+import DDC.Type.Universe
+import DDC.Type.DataDef
+import DDC.Type.Equiv
+import DDC.Base.Pretty
+import Control.Monad
+import Data.Maybe
+
+import DDC.Type.Env             (Env, KindEnv, TypeEnv)
+import DDC.Control.Monad.Check  (throw, result)
+import Data.Set                 (Set)
+
+
+-- | Type of the function that checks some node of the core AST.
+type Checker a n
+        =  (Show n, Ord n, Pretty n)
+        => Table a n
+        -> KindEnv n    -> TypeEnv n
+        -> Exp a n      -> Maybe (Type n)
+        -> CheckM a n
+                ( Exp (AnTEC a n) n
+                , Type n
+                , TypeSum n
+                , Set (TaggedClosure n))
+
+
+-- | Table of type checking functions, 
+--   each one handle one or two nodes from the core AST.
+data Table a n
+        = Table
+        { tableConfig           :: Config n
+        , tableCheckExp         :: Checker a n
+        , tableCheckVarCon      :: Checker a n
+        , tableCheckApp         :: Checker a n
+        , tableCheckAbs         :: Checker a n
+        , tableCheckLet         :: Checker a n
+        , tableCheckCase        :: Checker a n
+        , tableCheckCast        :: Checker a n }
+
+
+-- | Helper function for building the return value of checkExpM'
+--   It builts the AnTEC annotation and attaches it to the new AST node,
+--   as well as returning the current effect and closure in the appropriate
+--   form as part of the tuple.
+returnX :: Ord n 
+        => a
+        -> (AnTEC a n -> Exp (AnTEC a n) n)
+        -> Type n 
+        -> TypeSum n
+        -> Set (TaggedClosure n)
+        -> CheckM a n 
+                ( Exp (AnTEC a n) n
+                , Type n
+                , TypeSum n
+                , Set (TaggedClosure n))
+
+returnX !a !f !t !es !cs
+ = let  e       = TSum es
+        c       = closureOfTaggedSet cs
+   in   return  (f (AnTEC t e c a)
+                , t, es, cs)
+{-# INLINE returnX #-}
+

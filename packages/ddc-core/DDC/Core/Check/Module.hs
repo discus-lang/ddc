@@ -85,7 +85,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
 
         -- Check the body of the module.
         (x', _, _effs, _) 
-                <- checkExpM config_data kenv_data tenv' (moduleBody mm) Nothing
+                <- checkExpM (tableOfConfig config_data) 
+                        kenv_data tenv' (moduleBody mm) Nothing
 
         -- Check that each exported signature matches the type of its binding.
         envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'
