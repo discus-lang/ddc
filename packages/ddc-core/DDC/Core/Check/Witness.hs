@@ -1,5 +1,5 @@
 -- | Type checker for witness expressions.
-module DDC.Core.Check.CheckWitness
+module DDC.Core.Check.Witness
         ( Config(..)
         , configOfProfile
 

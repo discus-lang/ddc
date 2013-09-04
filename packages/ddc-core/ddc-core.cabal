@@ -101,10 +101,10 @@ Library
         DDC.Type.Universe
 
   Other-modules:
-        DDC.Core.Check.CheckDaCon
-        DDC.Core.Check.CheckExp
-        DDC.Core.Check.CheckModule
-        DDC.Core.Check.CheckWitness
+        DDC.Core.Check.DaCon
+        DDC.Core.Check.Exp
+        DDC.Core.Check.Module
+        DDC.Core.Check.Witness
         DDC.Core.Check.ErrorMessage
         DDC.Core.Check.Error
         DDC.Core.Check.TaggedClosure

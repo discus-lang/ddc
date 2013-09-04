@@ -1,5 +1,5 @@
 -- | Type checker for the Disciple Core language.
-module DDC.Core.Check.CheckExp
+module DDC.Core.Check.Exp
         ( Config (..)
         , AnTEC  (..)
         , checkExp
@@ -15,8 +15,8 @@ import DDC.Core.Pretty
 import DDC.Core.Exp
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Check.Error
-import DDC.Core.Check.CheckDaCon
-import DDC.Core.Check.CheckWitness
+import DDC.Core.Check.DaCon
+import DDC.Core.Check.Witness
 import DDC.Core.Check.TaggedClosure
 import DDC.Core.Transform.Reannotate
 import DDC.Type.Transform.SubstituteT

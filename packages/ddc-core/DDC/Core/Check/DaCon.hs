@@ -1,9 +1,9 @@
 
-module DDC.Core.Check.CheckDaCon
+module DDC.Core.Check.DaCon
         (checkDaConM)
 where
 import DDC.Core.Check.Error
-import DDC.Core.Check.CheckWitness
+import DDC.Core.Check.Witness
 import DDC.Core.Exp.DaCon
 import DDC.Core.Exp
 import DDC.Type.Compounds

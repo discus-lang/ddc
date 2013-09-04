@@ -27,7 +27,7 @@ module DDC.Core.Check
 where
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage      ()
-import DDC.Core.Check.CheckModule
-import DDC.Core.Check.CheckExp
-import DDC.Core.Check.CheckWitness
+import DDC.Core.Check.Module
+import DDC.Core.Check.Exp
+import DDC.Core.Check.Witness
                 

@@ -1,11 +1,11 @@
 
-module DDC.Core.Check.CheckModule
+module DDC.Core.Check.Module
         ( checkModule
         , checkModuleM)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Check.CheckExp
+import DDC.Core.Check.Exp
 import DDC.Core.Check.Error
 import DDC.Type.Compounds
 import DDC.Type.DataDef
