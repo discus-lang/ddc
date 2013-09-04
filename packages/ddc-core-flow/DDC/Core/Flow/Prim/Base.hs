@@ -245,31 +245,32 @@ data OpStore
         | OpStoreSliceVector    
         deriving (Eq, Ord, Show)
 
+
 -- | Fusable Flow operators that work on Vectors.
 data OpVector
         -- | Apply worker function to @n@ vectors zipped.
         = OpVectorMap Int
 
-        -- | Replicate a single element into a series.
+        --  Replicate a single element into a series.
         -- Ignore: generate | OpVectorRep
 
-        -- | Segmented replicate.
+        --  Segmented replicate.
         -- TODO | OpVectorReps
 
         -- | Filter a vector according to a predicate.
         | OpVectorFilter
 
-        -- | Filter a vector according to a flags vector.
+        --  Filter a vector according to a flags vector.
         -- TODO | OpVectorPack
 
-        -- | Fold a series with an associative operator,
+        --  Fold a series with an associative operator,
         --   returning the final result.
         -- Ignore: foldIndex | OpVectorFold
 
         -- | Fold where the worker also takes the current index into the series.
         | OpVectorFoldIndex
 
-        -- | Segmented fold.
+        --  Segmented fold.
         -- TODO | OpVectorFolds
 
         -- | Create a new vector from an index function.
@@ -278,7 +279,7 @@ data OpVector
         -- | Get a vector's length.
         | OpVectorLength
 
-        -- | Concatenate two vectors
+        --  Concatenate two vectors
         -- TODO | OpVectorAppend
         deriving (Eq, Ord, Show)
 
