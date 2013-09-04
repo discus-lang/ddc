@@ -42,7 +42,7 @@ stepPrimCon dc xsArgs store
         , [xR, xUnit']  <- xsArgs
 
         -- unpack the args
-        , XType tR      <- xR
+        , XType _ tR    <- xR
         , Just rgn      <- takeHandleT tR
         , isUnitOrLocX xUnit'
 
@@ -62,12 +62,12 @@ stepPrimCon dc xsArgs store
         , [xR, xA, xB, x1, x2]           <- xsArgs
         
         -- unpack the args
-        , XType tR      <- xR
-        , Just rgn      <- takeHandleT tR
-        , XType tA      <- xA
-        , XType tB      <- xB
-        , Just l1       <- takeLocX x1
-        , Just l2       <- takeLocX x2
+        , XType _ tR    <- xR
+        , Just    rgn   <- takeHandleT tR
+        , XType _ tA    <- xA
+        , XType _ tB    <- xB
+        , Just    l1    <- takeLocX x1
+        , Just    l2    <- takeLocX x2
 
         -- the store must contain the region we're going to allocate into.
         , Store.hasRgn store rgn
@@ -85,9 +85,9 @@ stepPrimCon dc xsArgs store
         , [xR, xA, xUnit']                <- xsArgs
 
         -- unpack the args
-        , XType tR      <- xR
-        , Just rgn      <- takeHandleT tR
-        , XType tA      <- xA
+        , XType _ tR    <- xR
+        , Just  rgn     <- takeHandleT tR
+        , XType _ tA    <- xA
         , isUnitOrLocX xUnit'
 
         -- the store must contain the region we're going to allocate into.
@@ -104,9 +104,9 @@ stepPrimCon dc xsArgs store
         , [xR, xA, xHead, xTail]           <- xsArgs
 
         -- unpack the args
-        , XType tR      <- xR
+        , XType _ tR    <- xR
         , Just rgn      <- takeHandleT tR
-        , XType tA      <- xA
+        , XType _ tA    <- xA
         , Just lHead    <- takeLocX xHead
         , Just lTail    <- takeLocX xTail
 
@@ -145,7 +145,7 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
                                 , (PrimOpEqInt,  (\x y -> if x == y then 1 else 0))]
         , Just r1       <- takeHandleX xR1
         , Just r2       <- takeHandleX xR2
-        , XType tR3     <- xR3
+        , XType _ tR3   <- xR3
         , Just r3       <- takeHandleX xR3        
         , Just l1       <- stripLocX xL1
         , Just l2       <- stripLocX xL2
@@ -211,7 +211,7 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store
                                 [ (PrimOpCopyInt, id)
                                 , (PrimOpNegInt,  negate) ]
         , Just r1       <- takeHandleX  xR1
-        , XType tR2     <- xR2
+        , XType _ tR2   <- xR2
         , Just r2       <- takeHandleX  xR2
         , Just l1       <- stripLocX    xL1
 

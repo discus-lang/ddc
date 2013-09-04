@@ -208,7 +208,7 @@ goDefHoles rules a l@(LLet let_bind def) e env down
 
  = let  -- only get value-level bindings
         bs'     = filter (isBMValue . fst) bs
-        bas'    = lookupFromSubst bs' sub
+        bas'    = lookupFromSubst a bs' sub
 
         -- check if it looks like something has already been unfolded
         isUIx x = case x of 
@@ -221,7 +221,7 @@ goDefHoles rules a l@(LLet let_bind def) e env down
 
         -- find kind-values and sub those in as well
         bsK'    = filter ((== BMSpec) . fst) bs
-        basK    = lookupFromSubst bsK' sub
+        basK    = lookupFromSubst a bsK' sub
 
         basK'   = concatMap (\(b,x) -> case X.takeXType x of
                                              Just t -> [(b,t)]
@@ -325,7 +325,7 @@ rewriteWithX rule env f args
         -- Check constraints, perform substitution and add weakens if necessary.
         let Just a      = X.takeAnnotOfExp f
 
-        let bas2        = lookupFromSubst binds m
+        let bas2        = lookupFromSubst a binds m
         let rhs2        = A.anonymizeX rhs
         let (bas3,lets) = wrapLets a binds bas2
         let rhs3        = L.liftX (length lets) rhs2
@@ -410,7 +410,7 @@ wrapLets a binds bas
 -- | Substitute type bindings into a type.
 substT :: Ord n => [(Bind n, Exp a n)] -> Type n -> Type n
 substT bas x 
- = let  sub     = [(b, t) | (b, XType t) <- bas ] 
+ = let  sub     = [(b, t) | (b, XType _ t) <- bas ] 
    in   S.substituteTs sub x
 
 
@@ -541,12 +541,14 @@ matchWithRule
 --
 --    Eg: RULE [x : %] (x : Int x). ...
 -- 
-lookupFromSubst :: Ord n
-        => [(BindMode,Bind n)]
+lookupFromSubst 
+        :: Ord n
+        => a
+        -> [(BindMode,Bind n)]
         -> (Map n (Exp a n), Map n (Type n))
         -> [(Bind n, Exp a n)]
 
-lookupFromSubst bs m
+lookupFromSubst a1 bs m
  = let  bas  = catMaybes $ map (lookupX m) bs
    in   map (\(b, a) -> (A.anonymizeX b, A.anonymizeX a)) bas
    
@@ -556,7 +558,7 @@ lookupFromSubst bs m
 
         lookupX (_,tys) (BMSpec, b@(BName n _))
          | Just t <- Map.lookup n tys
-         = Just (b, XType t)
+         = Just (b, XType a1 t)
 
         lookupX _ _ = Nothing
 

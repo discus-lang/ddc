@@ -100,7 +100,7 @@ transSuper tails xx
                 p       = PrimCallTail arity
                 u       = UPrim (NamePrimOp (PrimCall p)) (typeOfPrimCall p)
             in  xApps a (XVar a u) 
-                        $  (map XType (tsValArgs ++ [tResult])) 
+                        $  (map (XType a) (tsValArgs ++ [tResult])) 
                         ++ [xApps a xv (xsArgsType ++ xsArgsWit)] 
                         ++ xsArgsVal
 

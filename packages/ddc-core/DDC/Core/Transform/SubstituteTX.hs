@@ -104,10 +104,10 @@ instance SubstituteTX (Exp a) where
         XLet a (LWithRegion uR) x2
          -> XLet a (LWithRegion uR) (down sub x2)
 
-        XCase a x1 alts -> XCase a  (down sub x1) (map (down sub) alts)
-        XCast a cc x1   -> XCast a  (down sub cc) (down sub x1)
-        XType t         -> XType    (down sub t)
-        XWitness w      -> XWitness (down sub w)
+        XCase a x1 alts -> XCase    a (down sub x1) (map (down sub) alts)
+        XCast a cc x1   -> XCast    a (down sub cc) (down sub x1)
+        XType    a t    -> XType    a (down sub t)
+        XWitness a w    -> XWitness a (down sub w)
 
 
 instance SubstituteTX (Alt a) where

@@ -222,12 +222,13 @@ expandApp config _kenv tenv x0 xas0
  = let
         go t xas
          = case (t, xas) of
-                (TForall _b t2, (x1@(XType _t1'), a1) : xas')
+                (TForall _b t2, (x1@(XType _ _t1'), a1) : xas')
                  ->     (x1, a1) : go t2 xas'
 
                 (TForall b t2, xas')
                  -> let k       = typeOfBind b
-                        xh      = XType (configMakeTypeHole config k)
+                        Just a0 = takeAnnotOfExp x0
+                        xh      = XType a0 (configMakeTypeHole config k)
                     in  (xh, a) : go t2 xas'
 
                 _ -> xas

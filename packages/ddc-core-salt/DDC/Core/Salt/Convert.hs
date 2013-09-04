@@ -524,7 +524,7 @@ convRValueM pp kenv tenv xx
                 return  $ text nTop' <> parenss args'
 
         -- Type argument.
-        XType t
+        XType _ t
          -> do  t'      <- convTypeM kenv t
                 return  $ t'
 
@@ -571,7 +571,7 @@ convPrimCallM pp kenv tenv p xs
 
         -- Binary arithmetic primops.
         PrimArith op
-         | [XType _t, x1, x2]   <- xs
+         | [XType _ _, x1, x2]  <- xs
          , Just op'             <- convPrimArith2 op
          -> do  x1'     <- convRValueM pp kenv tenv x1
                 x2'     <- convRValueM pp kenv tenv x2
@@ -580,7 +580,7 @@ convPrimCallM pp kenv tenv p xs
 
         -- Cast primops.
         PrimCast PrimCastPromote
-         | [XType tDst, XType tSrc, x1]    <- xs
+         | [XType _ tDst, XType _ tSrc, x1]    <- xs
          , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
          , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
          , primCastPromoteIsValid pp tcSrc tcDst
@@ -589,7 +589,7 @@ convPrimCallM pp kenv tenv p xs
                 return  $  parens tDst' <> parens x1'
 
         PrimCast PrimCastTruncate
-         | [XType tDst, XType tSrc, x1] <- xs
+         | [XType _ tDst, XType _ tSrc, x1] <- xs
          , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
          , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
          , primCastTruncateIsValid pp tcSrc tcDst
@@ -600,12 +600,12 @@ convPrimCallM pp kenv tenv p xs
 
         -- Control primops.
         PrimControl PrimControlReturn
-         | [XType _t, x1]       <- xs
+         | [XType _ _, x1]       <- xs
          -> do  x1'     <- convRValueM pp kenv tenv x1
                 return  $ text "return" <+> x1'
 
         PrimControl PrimControlFail
-         | [XType _t]           <- xs
+         | [XType _ _]           <- xs
          -> do  return  $ text "_FAIL()"
 
 
@@ -638,7 +638,7 @@ convPrimCallM pp kenv tenv p xs
 keepPrimArgX :: KindEnv Name -> Exp a Name -> Bool
 keepPrimArgX kenv xx
  = case xx of
-        XType (TVar u)
+        XType _ (TVar u)
          |  Just k       <- Env.lookup u kenv
          -> isDataKind k 
 

@@ -140,8 +140,8 @@ takeHandleT tt
 takeHandleX :: Exp a Name -> Maybe Rgn
 takeHandleX xx
  = case xx of
-        XType t -> takeHandleT t
-        _       -> Nothing
+        XType _ t -> takeHandleT t
+        _         -> Nothing
 
 
 -- Locations ------------------------------------
@@ -175,7 +175,7 @@ stripLocX xx
 takeMutableX :: Exp a Name -> Maybe Rgn
 takeMutableX xx
  = case xx of
-        XWitness (WApp _ (WCon _ wc) (WType _ tR1))
+        XWitness _ (WApp _ (WCon _ wc) (WType _ tR1))
          | WiConBound (UPrim (NameCap CapMutable) _) _ <- wc
                 -> takeHandleT tR1
         _       -> Nothing

@@ -139,16 +139,16 @@ toCoreDataCtor dataDef tag ctor
 toCoreX :: S.Exp a S.Name -> C.Exp a C.Name
 toCoreX xx
  = case xx of
-        S.XVar  a u      -> C.XVar  a  (toCoreU  u)
-        S.XCon  a dc     -> C.XCon  a  (toCoreDC dc)
-        S.XLAM  a b x    -> C.XLAM  a  (toCoreB b)  (toCoreX x)
-        S.XLam  a b x    -> C.XLam  a  (toCoreB b)  (toCoreX x)
-        S.XApp  a x1 x2  -> C.XApp  a  (toCoreX x1) (toCoreX x2)
-        S.XLet  a lts x  -> C.XLet  a  (toCoreLts lts) (toCoreX x)
-        S.XCase a x alts -> C.XCase a  (toCoreX x)  (map toCoreA alts)
-        S.XCast a c x    -> C.XCast a  (toCoreC c)  (toCoreX x)
-        S.XType t        -> C.XType    (toCoreT t)
-        S.XWitness w     -> C.XWitness (toCoreW w)
+        S.XVar     a u      -> C.XVar     a (toCoreU  u)
+        S.XCon     a dc     -> C.XCon     a (toCoreDC dc)
+        S.XLAM     a b x    -> C.XLAM     a (toCoreB b)  (toCoreX x)
+        S.XLam     a b x    -> C.XLam     a (toCoreB b)  (toCoreX x)
+        S.XApp     a x1 x2  -> C.XApp     a (toCoreX x1) (toCoreX x2)
+        S.XLet     a lts x  -> C.XLet     a (toCoreLts lts) (toCoreX x)
+        S.XCase    a x alts -> C.XCase    a (toCoreX x)  (map toCoreA alts)
+        S.XCast    a c x    -> C.XCast    a (toCoreC c)  (toCoreX x)
+        S.XType    a t      -> C.XType    a (toCoreT t)
+        S.XWitness a w      -> C.XWitness a (toCoreW w)
 
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> error "source-tetra.toCoreX: found XDefix node"

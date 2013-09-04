@@ -104,8 +104,8 @@ instance Monad m => TransformDownMX m Exp where
                         (return a) (return c)
                         (transformDownMX f kenv tenv x)
 
-        XType _         -> return xx'
-        XWitness _      -> return xx'
+        XType{}         -> return xx'
+        XWitness{}      -> return xx'
 
 
 instance Monad m => TransformDownMX m Lets where

@@ -222,10 +222,10 @@ instance Forward Exp where
         XLet (_, a') lts x     
          ->     liftM2 (XLet a') (down lts) (down x)
 
-        XCase a x alts  -> liftM2   (XCase (snd a)) (down x) (mapM down alts)
-        XCast a c x     -> liftM2   (XCast (snd a)) (down c) (down x)
-        XType t         -> return $ XType t
-        XWitness w      -> return $ XWitness (reannotate snd w)
+        XCase a x alts  -> liftM2 (XCase    (snd a)) (down x) (mapM down alts)
+        XCast a c x     -> liftM2 (XCast    (snd a)) (down c) (down x)
+        XType a t       -> return (XType    (snd a) t)
+        XWitness a w    -> return (XWitness (snd a) (reannotate snd w))
 
 
 filterUsedInCasts :: [Used] -> [Used]

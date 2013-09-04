@@ -35,7 +35,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
  = case p of
         -- Binary operations ----------
         A.PrimArith op
-         | C.XType t : args     <- xs
+         | C.XType _ t : args     <- xs
          , Just [x1', x2']      <- mconvAtoms pp kenv tenv args
          , Just dst             <- mdst
          -> let result
@@ -54,7 +54,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
 
         -- Cast primops ---------------
         A.PrimCast A.PrimCastPromote
-         | [C.XType tDst, C.XType tSrc, xSrc] <- xs
+         | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
          , Just xSrc'           <- mconvAtom pp kenv tenv xSrc
          , Just vDst            <- mdst
          , minstr               <- convPrimPromote pp kenv tDst vDst tSrc xSrc'
@@ -66,7 +66,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                                 , text "    to type: " <> ppr tDst]
 
         A.PrimCast A.PrimCastTruncate
-         | [C.XType tDst, C.XType tSrc, xSrc] <- xs
+         | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
          , Just xSrc'           <- mconvAtom pp kenv tenv xSrc
          , Just vDst            <- mdst
          , minstr               <- convPrimTruncate pp kenv tDst vDst tSrc xSrc'
@@ -79,7 +79,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
 
         -- Store primops --------------
         A.PrimStore A.PrimStoreSize 
-         | [C.XType t]          <- xs
+         | [C.XType _ t]        <- xs
          , Just vDst            <- mdst
          -> let t'      = convertType pp kenv t
                 size    = case t' of
@@ -99,7 +99,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
 
 
         A.PrimStore A.PrimStoreSize2
-         | [C.XType t]          <- xs
+         | [C.XType _ t]        <- xs
          , Just vDst            <- mdst
          -> let t'      = convertType pp kenv t
                 size    = case t' of
@@ -167,7 +167,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         , IStore (XVar vTopPtr) (XVar vBump)]
 
         A.PrimStore A.PrimStoreRead
-         | C.XType _t : args             <- xs
+         | C.XType{} : args             <- xs
          , Just [xAddr', xOffset']      <- mconvAtoms pp kenv tenv args
          , Just vDst@(Var nDst tDst)    <- mdst
          -> let vOff    = Var (bumpName nDst "off") (tAddr pp)
@@ -179,7 +179,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         , ILoad vDst (XVar vPtr) ]
 
         A.PrimStore A.PrimStoreWrite
-         | C.XType _t : args              <- xs
+         | C.XType{} : args              <- xs
          , Just [xAddr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args      
          -> do  vOff    <- newUniqueNamedVar "off" (tAddr pp)
                 vPtr    <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
@@ -202,7 +202,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         $ IOp vDst OpSub xAddr' xOffset'
 
         A.PrimStore A.PrimStorePeek
-         | C.XType _r : C.XType tDst : args     <- xs
+         | C.XType{} : C.XType _ tDst : args     <- xs
          , Just [xPtr', xOffset']       <- mconvAtoms pp kenv tenv args
          , Just vDst@(Var nDst _)       <- mdst
          , tDst'                        <- convertType   pp kenv tDst
@@ -218,7 +218,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         ( ILoad vDst  (XVar vPtr)))]
 
         A.PrimStore A.PrimStorePoke
-         | C.XType _r : C.XType tDst : args     <- xs
+         | C.XType{} : C.XType _ tDst : args     <- xs
          , Just [xPtr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args
          , tDst'                         <- convertType   pp kenv tDst
          -> do  vAddr1  <- newUniqueNamedVar "addr1" (tAddr pp)
@@ -257,21 +257,21 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
 
         A.PrimStore A.PrimStoreMakePtr
-         | [C.XType _r, C.XType _t, xAddr] <- xs
+         | [C.XType{}, C.XType{}, xAddr] <- xs
          , Just xAddr'  <- mconvAtom pp kenv tenv xAddr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvInttoptr xAddr'
 
         A.PrimStore A.PrimStoreTakePtr
-         | [C.XType _r, C.XType _t, xPtr]          <- xs
+         | [C.XType{}, C.XType{}, xPtr]          <- xs
          , Just xPtr'   <- mconvAtom pp kenv tenv xPtr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint xPtr'
 
         A.PrimStore A.PrimStoreCastPtr
-         | [C.XType _r, C.XType _tSrc, C.XType _tDst, xPtr] <- xs
+         | [C.XType{}, C.XType{}, C.XType{}, xPtr] <- xs
          , Just xPtr'   <- mconvAtom pp kenv tenv xPtr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton $ annotNil

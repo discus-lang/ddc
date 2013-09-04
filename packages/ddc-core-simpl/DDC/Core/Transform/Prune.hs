@@ -169,7 +169,7 @@ pruneTrans _ _ xx
         weakClo a x1 
          = CastWeakenClosure
          $ Trim.trimClosures a
-                (  (map (XType . TVar)
+                (  (map ((XType a) . TVar)
                         $ Set.toList
                         $ C.freeT Env.empty x1)
                 ++ (map (XVar a)

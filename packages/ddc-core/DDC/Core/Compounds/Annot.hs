@@ -313,8 +313,8 @@ annotOfWitness ww
 takeXWitness :: Exp a n -> Maybe (Witness a n)
 takeXWitness xx
  = case xx of
-        XWitness t -> Just t
-        _          -> Nothing
+        XWitness _ t -> Just t
+        _            -> Nothing
 
 
 -- | Flatten an application into the function parts and arguments, if any.
@@ -342,8 +342,8 @@ takePrimWiConApps ww
 takeXType :: Exp a n -> Maybe (Type n)
 takeXType xx
  = case xx of
-        XType t -> Just t
-        _       -> Nothing
+        XType _ t -> Just t
+        _         -> Nothing
 
 
 -- Units -----------------------------------------------------------------------

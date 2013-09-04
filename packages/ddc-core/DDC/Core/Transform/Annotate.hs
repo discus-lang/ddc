@@ -28,8 +28,8 @@ instance Annotate S.Exp A.Exp where
         S.XAnnot a (S.XLet   lts x)     -> A.XLet      a     (down lts) (down x)
         S.XAnnot a (S.XCase  x alts)    -> A.XCase     a     (down x)   (map down alts)
         S.XAnnot a (S.XCast  c x)       -> A.XCast     a     (down c)   (down x)
-        S.XAnnot _ (S.XType    t)       -> A.XType     t
-        S.XAnnot _ (S.XWitness w)       -> A.XWitness  (down w)
+        S.XAnnot a (S.XType    t)       -> A.XType     a t
+        S.XAnnot a (S.XWitness w)       -> A.XWitness  a (down w)
 
         S.XVar  u                       -> A.XVar      def u
         S.XCon  dc                      -> A.XCon      def dc
@@ -39,8 +39,8 @@ instance Annotate S.Exp A.Exp where
         S.XLet  lts x                   -> A.XLet      def   (down lts) (down x)
         S.XCase x alts                  -> A.XCase     def   (down x)   (map down alts)
         S.XCast c x                     -> A.XCast     def   (down c)   (down x)
-        S.XType t                       -> A.XType     t
-        S.XWitness w                    -> A.XWitness  (down w)
+        S.XType t                       -> A.XType     def t
+        S.XWitness w                    -> A.XWitness  def (down w)
 
 
 instance Annotate S.Cast A.Cast where

@@ -281,7 +281,7 @@ etaExpand' a levels1 levels0 args [] xx
 etaExpand' a levels1 levels0 args ((True, t) : ts) xx
  = do   let depth1 = length $ filter ((== True) . fst) ts
         xx'     <- etaExpand' a (levels1 + 1) levels0 
-                        (args ++ [XType (TVar (UIx depth1))]) 
+                        (args ++ [XType a (TVar (UIx depth1))]) 
                         ts
                         xx
 

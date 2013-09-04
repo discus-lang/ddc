@@ -77,8 +77,8 @@ instance BindStruct (Exp a) where
 
         XCase _ x alts  -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast _ c x     -> slurpBindTree c ++ slurpBindTree x
-        XType t         -> slurpBindTree t
-        XWitness w      -> slurpBindTree w
+        XType _ t       -> slurpBindTree t
+        XWitness _ w    -> slurpBindTree w
 
 
 instance BindStruct (Cast a) where

@@ -165,7 +165,7 @@ instance Complies Exp where
                 return (tUsed, vUsed')
        
         -- application --------------------------
-        XApp _ x1 (XType t2)
+        XApp _ x1 (XType _ t2)
          | profileTypeIsUnboxed profile t2
          , Nothing      <- takeXPrimApps xx
          -> throw $ ErrorUnsupported UnboxedInstantiation
@@ -240,8 +240,8 @@ instance Complies Exp where
         XCast _ _ x     -> compliesX profile kenv tenv (reset context) x
 
         -- type and witness ---------------------
-        XType t         -> throw $ ErrorNakedType    t
-        XWitness w      -> throw $ ErrorNakedWitness w
+        XType    _ t    -> throw $ ErrorNakedType    t
+        XWitness _ w    -> throw $ ErrorNakedWitness w
 
 
 instance Complies Alt where

@@ -392,10 +392,10 @@ makeClosureWeakening config kenv tenv lhs rhs
          $  [XVar a u 
                 | u <- Set.toList $ daLeft `Set.difference` daRight ]
 
-         ++ [XWitness (WVar a u)
+         ++ [XWitness a (WVar a u)
                 | u <- Set.toList $ wiLeft `Set.difference` wiRight ]
 
-         ++ [XType (TVar u)
+         ++ [XType a (TVar u)
                 | u <- Set.toList $ spLeft `Set.difference` spRight ]
 
 
@@ -413,10 +413,10 @@ removeEffects config = transformUpX remove
  where
   remove kenv _tenv x
 
-   | XType et     <- x
+   | XType a et     <- x
    , Right (_, k) <- T.checkType config kenv et
    , T.isEffectKind k
-   = XType $ T.tBot T.kEffect
+   = XType a $ T.tBot T.kEffect
 
    | otherwise
    = x
@@ -469,14 +469,14 @@ checkValidPattern expr
         go x@(XLet _ _ _)       = Left $ ErrorNotFirstOrder x
         go x@(XCase _ _ _)      = Left $ ErrorNotFirstOrder x
         go (XCast _ _ x)        = go x
-        go (XType t)            = go_t t
-        go (XWitness _)         = return ()
+        go (XType a t)          = go_t a t
+        go (XWitness _ _)       = return ()
 
-        go_t (TVar _)           = return ()
-        go_t (TCon _)           = return ()
-        go_t t@(TForall _ _)    = Left $ ErrorNotFirstOrder (XType t)
-        go_t (TApp l r)         = go_t l >> go_t r
-        go_t (TSum _)           = return ()
+        go_t _ (TVar _)         = return ()
+        go_t _ (TCon _)         = return ()
+        go_t a t@(TForall _ _)  = Left $ ErrorNotFirstOrder (XType a t)
+        go_t a (TApp l r)       = go_t a l >> go_t a r
+        go_t _ (TSum _)         = return ()
 
 
 -- | Count how many times each binder is used in right-hand side.

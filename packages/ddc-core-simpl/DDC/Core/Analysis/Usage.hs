@@ -181,13 +181,14 @@ usageX' xx
          -> ( used'
             , XCast (used', a) c' x1')
 
-        XType t        
-         -> (empty, XType t)
+        XType a t        
+         -> ( empty
+            , XType (empty, a) t)
 
-        XWitness w     
+        XWitness a w     
          | (used', w')    <- usageWitness w
          -> ( used'
-            , XWitness w')
+            , XWitness (used', a) w')
 
 
 -- | Annotate binding occurences of named variables with usage information.

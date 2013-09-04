@@ -83,11 +83,11 @@ match m bs (XCast _ c1 x1) (XCast _ c2 x2)
  | eqCast c1 c2 
  = match m bs x1 x2
 
-match (xs, tys) bs (XType t1) (XType t2)
+match (xs, tys) bs (XType _ t1) (XType _ t2)
  = do   tys' <- matchT t1 t2 bs tys
         return (xs, tys')
 
-match m _ (XWitness w1) (XWitness w2)
+match m _ (XWitness _ w1) (XWitness _ w2)
  | eqWit w1 w2  = return m
 
 match _ _ _ _ 

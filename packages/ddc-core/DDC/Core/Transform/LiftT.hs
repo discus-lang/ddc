@@ -21,10 +21,10 @@ instance Ord n => MapBoundT (Exp a) n where
          -> let (lets', levels) = mapBoundAtDepthTLets f d lets 
             in  XLet a lets' (mapBoundAtDepthT f (d + levels) x)
 
-        XCase a x alts          -> XCase a  (down x)  (map down alts)
-        XCast a cc x            -> XCast a  (down cc) (down x)
-        XType    t              -> XType    (down t)
-        XWitness w              -> XWitness (down w)
+        XCase    a x alts       -> XCase    a (down x)  (map down alts)
+        XCast    a cc x         -> XCast    a (down cc) (down x)
+        XType    a t            -> XType    a (down t)
+        XWitness a w            -> XWitness a (down w)
 
          
 instance Ord n => MapBoundT (Witness a) n where

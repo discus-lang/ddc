@@ -291,7 +291,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           |  BodyTop                            <- context
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [C.XType _, C.XCon _ dc]           <- xs
+          ,  [C.XType{}, C.XCon _ dc]           <- xs
           ,  Just A.NameLitVoid                 <- takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
@@ -304,7 +304,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           |  BodyTop                            <- context
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [C.XType t, x2]                    <- xs
+          ,  [C.XType _ t, x2]                  <- xs
           ,  isVoidT t
           -> do instrs2 <- convExpM ExpTop pp kenv tenv mdsup x2
                 return  $  blocks
@@ -317,7 +317,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           |  BodyTop                            <- context
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [C.XType t, x]                     <- xs
+          ,  [C.XType _ t, x]                   <- xs
           -> do let t'  =  convertType pp kenv t
                 vDst    <- newUniqueVar t'
                 is      <- convExpM (ExpAssign vDst) pp kenv tenv mdsup x
@@ -330,7 +330,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          C.XApp{}
           |  Just (A.NamePrimOp p, xs)         <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail   <- p
-          ,  [C.XType _tResult]                <- xs
+          ,  [C.XType _ _tResult]              <- xs
           -> let iFail  = ICall Nothing CallTypeStd Nothing 
                                 TVoid (NameGlobal "abort") [] []
 
@@ -354,7 +354,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           |  Just (A.NamePrimOp p, args)           <- takeXPrimApps xx
           ,  A.PrimCall (A.PrimCallTail arity)     <- p
           ,  _tsArgs                               <- take arity args
-          ,  C.XType tResult : xFunTys : xsArgs    <- drop arity args
+          ,  C.XType _ tResult : xFunTys : xsArgs  <- drop arity args
           ,  Just (xFun, _xsTys)        <- takeXApps xFunTys
           ,  Just (Var nFun _)          <- takeGlobalV pp kenv tenv xFun
           ,  Just xsArgs'               <- sequence $ map (mconvAtom pp kenv tenv) xsArgs

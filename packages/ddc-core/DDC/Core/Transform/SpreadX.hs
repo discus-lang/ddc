@@ -59,10 +59,10 @@ instance SpreadX (Exp a) where
                 tenv'   = Env.extends (valwitBindsOfLets lts') tenv
             in  XLet a lts' (spreadX kenv' tenv' x)
          
-        XCase a x alts  -> XCase a  (down x) (map down alts)
-        XCast a c x     -> XCast a  (down c) (down x)
-        XType t         -> XType    (spreadT kenv t)
-        XWitness w      -> XWitness (down w)
+        XCase a x alts  -> XCase    a (down x) (map down alts)
+        XCast a c x     -> XCast    a (down c) (down x)
+        XType a t       -> XType    a (spreadT kenv t)
+        XWitness a w    -> XWitness a (down w)
 
 
 instance SpreadX DaCon where

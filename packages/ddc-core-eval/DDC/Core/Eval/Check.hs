@@ -170,7 +170,7 @@ checkCapsXM xx
                                         (liftM concat $ mapM checkCapsAM alts)
         XCast _ cc x1   -> liftM2 (++)  (checkCapsCM cc)  (checkCapsXM x1)
         XType{}         -> none
-        XWitness w      -> checkCapsWM w
+        XWitness _ w    -> checkCapsWM w
 
 
 checkCapsCM :: Cast a Name -> CheckM a [Witness a Name]

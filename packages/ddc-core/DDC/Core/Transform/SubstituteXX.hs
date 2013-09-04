@@ -77,8 +77,8 @@ substituteXArg
 
 substituteXArg b arg x
  = case arg of
-        XType t         -> substituteTX  b t x
-        XWitness w      -> substituteWX  b w x
+        XType    _ t    -> substituteTX  b t x
+        XWitness _ w    -> substituteWX  b w x
         _               -> substituteXX  b arg x
 
 
@@ -144,10 +144,10 @@ instance SubstituteXX Exp where
         XLet a (LWithRegion uR) x2
          -> XLet a (LWithRegion uR) (down sub x2)
 
-        XCase a x1 alts -> XCase a  (down sub x1) (map (down sub) alts)
-        XCast a cc x1   -> XCast a  (down sub cc) (down sub x1)
-        XType t         -> XType    (into sub t)
-        XWitness w      -> XWitness (into sub w)
+        XCase    a x1 alts      -> XCase    a (down sub x1) (map (down sub) alts)
+        XCast    a cc x1        -> XCast    a (down sub cc) (down sub x1)
+        XType    a t            -> XType    a (into sub t)
+        XWitness a w            -> XWitness a (into sub w)
  
 
 instance SubstituteXX Alt where

@@ -38,34 +38,34 @@ data Exp a n
         --   these constructs are used.
         --
         -- | Value variable   or primitive operation.
-        = XVar  !a  !(Bound n)
+        = XVar      !a !(Bound n)
 
         -- | Data constructor or literal.
-        | XCon  !a  !(DaCon n)
+        | XCon      !a !(DaCon n)
 
         -- | Type abstraction (level-1).
-        | XLAM  !a  !(Bind n)   !(Exp a n)
+        | XLAM      !a !(Bind n)   !(Exp a n)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam  !a  !(Bind n)   !(Exp a n)
+        | XLam      !a !(Bind n)   !(Exp a n)
 
         -- | Application.
-        | XApp  !a  !(Exp a n)  !(Exp a n)
+        | XApp      !a !(Exp a n)  !(Exp a n)
 
         -- | Possibly recursive bindings.
-        | XLet  !a  !(Lets a n) !(Exp a n)
+        | XLet      !a !(Lets a n) !(Exp a n)
 
         -- | Case branching.
-        | XCase !a  !(Exp a n)  ![Alt a n]
+        | XCase     !a !(Exp a n)  ![Alt a n]
 
         -- | Type cast.
-        | XCast !a  !(Cast a n) !(Exp a n)
+        | XCast     !a !(Cast a n) !(Exp a n)
 
         -- | Type can appear as the argument of an application.
-        | XType     !(Type n)
+        | XType     !a !(Type n)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness  !(Witness a n)
+        | XWitness  !a !(Witness a n)
 
 
         ---------------------------------------------------
@@ -127,19 +127,19 @@ data Cast a n
 instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
-        XVar  a u       -> rnf a `seq` rnf u
-        XCon  a dc      -> rnf a `seq` rnf dc
-        XLAM  a b x     -> rnf a `seq` rnf b   `seq` rnf x
-        XLam  a b x     -> rnf a `seq` rnf b   `seq` rnf x
-        XApp  a x1 x2   -> rnf a `seq` rnf x1  `seq` rnf x2
-        XLet  a lts x   -> rnf a `seq` rnf lts `seq` rnf x
-        XCase a x alts  -> rnf a `seq` rnf x   `seq` rnf alts
-        XCast a c x     -> rnf a `seq` rnf c   `seq` rnf x
-        XType t         -> rnf t
-        XWitness w      -> rnf w
-        XDefix a xs     -> rnf a `seq` rnf xs
-        XInfixOp  a s   -> rnf a `seq` rnf s
-        XInfixVar a s   -> rnf a `seq` rnf s
+        XVar      a u      -> rnf a `seq` rnf u
+        XCon      a dc     -> rnf a `seq` rnf dc
+        XLAM      a b x    -> rnf a `seq` rnf b   `seq` rnf x
+        XLam      a b x    -> rnf a `seq` rnf b   `seq` rnf x
+        XApp      a x1 x2  -> rnf a `seq` rnf x1  `seq` rnf x2
+        XLet      a lts x  -> rnf a `seq` rnf lts `seq` rnf x
+        XCase     a x alts -> rnf a `seq` rnf x   `seq` rnf alts
+        XCast     a c x    -> rnf a `seq` rnf c   `seq` rnf x
+        XType     a t      -> rnf a `seq` rnf t
+        XWitness  a w      -> rnf a `seq` rnf w
+        XDefix    a xs     -> rnf a `seq` rnf xs
+        XInfixOp  a s      -> rnf a `seq` rnf s
+        XInfixVar a s      -> rnf a `seq` rnf s
 
 
 instance (NFData a, NFData n) => NFData (Cast a n) where

@@ -165,16 +165,17 @@ checkArgM
 
 checkArgM !table !kenv !tenv !xx !_
  = case xx of
-        XType t
-         -> do  checkTypeM (tableConfig table) kenv t
+        XType a t
+         -> do  (t', k) <- checkTypeM (tableConfig table) kenv t
                 let Just clo = taggedClosureOfTyArg kenv t
-
-                return  ( XType t
+                let a'   = AnTEC k (tBot kEffect) (tBot kClosure) a
+                return  ( XType a' t'
                         , clo)
 
-        XWitness w
-         -> do  (w', _) <- checkWitnessM (tableConfig table) kenv tenv w
-                return  ( XWitness (reannotate fromAnT w')
+        XWitness a w
+         -> do  (w', t)  <- checkWitnessM (tableConfig table) kenv tenv w
+                let a'   = AnTEC t (tBot kEffect) (tBot kClosure) a
+                return  ( XWitness a' (reannotate fromAnT w')
                         , Set.empty)
 
         _ -> do

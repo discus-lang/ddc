@@ -201,25 +201,25 @@ pArgSPs c
  [ do   sp      <- pTokSP KSquareBra
         t       <- pType c
         pTok KSquareKet
-        return  [(XType t, sp)]
+        return  [(XType sp t, sp)]
 
         -- [: TYPE0 TYPE0 ... :]
  , do   sp      <- pTokSP KSquareColonBra
         ts      <- P.many1 (pTypeAtom c)
         pTok KSquareColonKet
-        return  [(XType t, sp) | t <- ts]
+        return  [(XType sp t, sp) | t <- ts]
         
         -- {WITNESS}
  , do   sp      <- pTokSP KBraceBra
         w       <- pWitness c
         pTok KBraceKet
-        return  [(XWitness w, sp)]
+        return  [(XWitness sp w, sp)]
                 
         -- {: WITNESS0 WITNESS0 ... :}
  , do   sp      <- pTokSP KBraceColonBra
         ws      <- P.many1 (pWitnessAtom c)
         pTok KBraceColonKet
-        return  [(XWitness w, sp) | w <- ws]
+        return  [(XWitness sp w, sp) | w <- ws]
                 
         -- EXP0
  , do   (x, sp)  <- pExpAtomSP c

@@ -193,8 +193,8 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $   ppr cc <+> text "in"
          <$> ppr x
 
-        XType    t      -> text "[" <> ppr t <> text "]"
-        XWitness w      -> text "<" <> ppr w <> text ">"
+        XType    _ t    -> text "[" <> ppr t <> text "]"
+        XWitness _ w    -> text "<" <> ppr w <> text ">"
 
 
 -- Pat ------------------------------------------------------------------------

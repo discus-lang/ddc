@@ -19,7 +19,7 @@ checkApp :: Checker a n
 --       the bound type variable is not visible outside the abstraction.
 --       thus we can't be sharing objects that have it in its type.
 --
-checkApp !table !kenv !tenv xx@(XApp a x1 (XType t2)) _
+checkApp !table !kenv !tenv xx@(XApp a x1 (XType _ t2)) _
  = do   let config      = tableConfig table
 
         -- Check the functional expression.
@@ -39,7 +39,7 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XType t2)) _
          TForall b11 t12
           | typeOfBind b11 == k2
           -> returnX a
-                (\z -> XApp z x1' (XType t2))
+                (\z -> XApp z x1' (XType z t2))
                 (substituteT b11 t2 t12)
                 effs1   
                 (clos1 `Set.union` t2_clo)
@@ -49,7 +49,7 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XType t2)) _
 
 
 -- value-witness application --------------------
-checkApp !table !kenv !tenv xx@(XApp a x1 (XWitness w2)) _
+checkApp !table !kenv !tenv xx@(XApp a x1 (XWitness _ w2)) _
  = do   let config      = tableConfig table
 
         -- Check the functional expression.
@@ -66,7 +66,7 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XWitness w2)) _
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           | t11 `equivT` t2   
           -> returnX a
-                (\z -> XApp z x1' (XWitness w2TEC))
+                (\z -> XApp z x1' (XWitness z w2TEC))
                 t12 effs1 clos1
 
           | otherwise   -> throw $ ErrorAppMismatch a xx t11 t2

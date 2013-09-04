@@ -194,14 +194,14 @@ xIncrement :: a -> Exp a Name -> Exp a Name
 xIncrement a xx
         = xApps a (XVar a (UPrim (NamePrimArith PrimArithAdd) 
                                  (typePrimArith PrimArithAdd)))
-                  [ XType tNat, xx, XCon a (dcNat 1) ]
+                  [ XType a tNat, xx, XCon a (dcNat 1) ]
 
 -- | Build an expression that substracts two integers.
 xSubInt    :: a -> Exp a Name -> Exp a Name -> Exp a Name
 xSubInt a x1 x2
         = xApps a (XVar a (UPrim (NamePrimArith PrimArithSub)
                                  (typePrimArith PrimArithSub)))
-                  [ XType tNat, x1, x2]
+                  [ XType a tNat, x1, x2]
 
 
 -------------------------------------------------------------------------------
@@ -253,7 +253,7 @@ windBodyX refMap context xx
         --
         XLet a (LLet (BName nRef _) x) x2
          | Just ( NameOpStore OpStoreNew
-                , [XType tElem, xVal] ) <- takeXPrimApps x
+                , [XType _ tElem, xVal] ) <- takeXPrimApps x
          -> let 
                 -- Add the new ref record to the map.
                 info        = RefInfo 
@@ -279,7 +279,7 @@ windBodyX refMap context xx
         --
         XLet a (LLet bResult x) x2
          | Just ( NameOpStore OpStoreRead
-                , [XType _tElem, XVar _ (UName nRef)] )   
+                , [XType _ _tElem, XVar _ (UName nRef)] )   
                                         <- takeXPrimApps x
          , Just info    <- lookupRefInfo refMap nRef
          , Just nVal    <- nameOfRefInfo info
@@ -292,7 +292,7 @@ windBodyX refMap context xx
         --  to just bind the new value.
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpStore OpStoreWrite 
-                , [XType _tElem, XVar _ (UName nRef), xVal])
+                , [XType _ _tElem, XVar _ (UName nRef), xVal])
                                         <- takeXPrimApps x
          , refMap'      <- bumpVersionInRefMap nRef refMap
          , Just info    <- lookupRefInfo refMap' nRef
@@ -306,7 +306,7 @@ windBodyX refMap context xx
         -- Detect loop combinator.
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlLoopN
-                , [ XType tK, xLength
+                , [ XType _ tK, xLength
                   , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
          -> let 
                 -- Name of the new loop function.
@@ -429,7 +429,7 @@ windBodyX refMap context xx
         -- Enter into both branches of a split.
         XApp{}
          | Just ( NameOpControl (OpControlSplit n)
-                , [ XType tK, xN, xBranch1, xBranch2 ]) <- takeXPrimApps xx
+                , [ XType _ tK, xN, xBranch1, xBranch2 ]) <- takeXPrimApps xx
          -> let xBranch1'       = down xBranch1
                 xBranch2'       = down xBranch2
             in  xSplit n tK xN xBranch1' xBranch2'
@@ -481,7 +481,7 @@ xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
         = xApps () 
                 (xVarOpConcrete OpConcreteNatOfRateNat)
-                [XType tK, xR]
+                [XType () tK, xR]
 
 xVarOpConcrete :: OpConcrete -> Exp () Name
 xVarOpConcrete op
@@ -496,7 +496,7 @@ xSplit  :: Int
 xSplit n tK xRN xDownFn xTailFn 
         = xApps () 
                 (xVarOpControl $ OpControlSplit n)
-                [ XType tK, xRN, xDownFn, xTailFn ]
+                [ XType () tK, xRN, xDownFn, xTailFn ]
 
 
 xVarOpControl :: OpControl -> Exp () Name
@@ -528,7 +528,7 @@ loopResultX a tsAccs xsAccs
         []      -> xUnit a
         [x]     -> x
         _       -> xApps a (XCon a (dcTupleN $ length tsAccs)) 
-                           ([XType t  | t <- tsAccs] ++ xsAccs)
+                           ([XType a t  | t <- tsAccs] ++ xsAccs)
 
 
 -- | Call a loop, and unpack its result.

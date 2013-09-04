@@ -153,7 +153,7 @@ betaReduce1 profile config _kenv tenv xx
         --  If the type argument of the redex does not appear as an 
         --  argument of the result then we need to add a closure weakening
         --  for the case where t2 was a region variable or handle.
-        XApp a (XLAM _ b11 x12) (XType t2)
+        XApp a (XLAM _ b11 x12) (XType a2 t2)
          | isRegionKind $ typeOfBind b11
          -> let sup             = support Env.empty Env.empty x12
 
@@ -167,22 +167,22 @@ betaReduce1 profile config _kenv tenv xx
                 fvs2            = freeT Env.empty t2
 
             in  ret mempty { infoTypes = 1}
-                 $ weakenClosure a usesBind fvs2 (XType t2)
+                 $ weakenClosure a usesBind fvs2 (XType a2 t2)
                  $ substituteTX b11 t2 x12
 
         -- Substitute type arguments into type abstractions,
         --  Where the argument is not a region type.
-        XApp _ (XLAM _ b11 x12) (XType t2)
+        XApp _ (XLAM _ b11 x12) (XType _ t2)
          -> ret mempty { infoTypes = 1 }
                  $ substituteTX b11 t2 x12
 
         -- Substitute witness arguments into witness abstractions.
-        XApp a (XLam _ b11 x12) (XWitness w2)
+        XApp a (XLam _ b11 x12) (XWitness a2 w2)
          -> let usesBind        = any (flip boundMatchesBind b11)
                                 $ Set.toList $ freeX tenv x12
                 fvs2            = freeX Env.empty w2
             in  ret mempty { infoWits = 1 }
-                 $ weakenClosure a usesBind fvs2 (XWitness w2)
+                 $ weakenClosure a usesBind fvs2 (XWitness a2 w2)
                  $ substituteWX b11 w2 x12
 
         -- Substitute value arguments into value abstractions.
@@ -221,10 +221,10 @@ canBetaSubstX xx
         XLam{}  -> True
         XLAM{}  -> True
 
-        XApp _ x1 (XType _)
+        XApp _ x1 XType{}
          -> canBetaSubstX x1
 
-        XApp _ x1 (XWitness _)
+        XApp _ x1 XWitness{}
          -> canBetaSubstX x1 
 
         _       -> False

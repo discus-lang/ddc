@@ -99,7 +99,7 @@ instance MapBoundX (Exp a) n where
         XCase a x alts  -> XCase a (down x)  (map down alts)
         XCast a cc x    -> XCast a (down cc) (down x)
         XType{}         -> xx
-        XWitness w	-> XWitness (down w)
+        XWitness a w	-> XWitness a (down w)
 
 
 instance MapBoundX (Witness a) n where

@@ -78,10 +78,10 @@ instance AnonymizeX (Exp a) where
                  = pushAnonymizeLets keep kstack tstack lts
             in  XLet a lts' (anonymizeWithX keep kstack' tstack' x)
 
-        XCase a x alts  -> XCase a  (down x) (map down alts)
-        XCast a c x     -> XCast a  (down c) (down x)
-        XType t         -> XType    (anonymizeWithT kstack t)
-        XWitness w      -> XWitness (down w)
+        XCase a x alts  -> XCase a    (down x) (map down alts)
+        XCast a c x     -> XCast a    (down c) (down x)
+        XType a t       -> XType a    (anonymizeWithT kstack t)
+        XWitness a w    -> XWitness a (down w)
 
 
 instance AnonymizeX (Cast a) where

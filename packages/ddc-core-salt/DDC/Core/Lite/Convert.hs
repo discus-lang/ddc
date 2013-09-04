@@ -347,14 +347,14 @@ convertExpX ctx pp defs kenv tenv xx
 
 
         -- Types can only appear as the arguments in function applications.
-        XType t
-         | ExpArg <- ctx  -> liftM XType (convertT kenv t)
+        XType    (AnTEC _ _ _ a') t
+         | ExpArg <- ctx  -> liftM (XType a')    (convertT kenv t)
          | otherwise      -> throw $ ErrorNotNormalized ("Unexpected type expresison.")
 
 
         -- Witnesses can only appear as the arguments to function applications.
-        XWitness w      
-         | ExpArg <- ctx  -> liftM XWitness (convertWitnessX kenv w)
+        XWitness (AnTEC _ _ _ a') w      
+         | ExpArg <- ctx  -> liftM (XWitness a') (convertWitnessX kenv w)
          | otherwise      -> throw $ ErrorNotNormalized ("Unexpected witness expression.")
 
 
@@ -479,7 +479,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                         [] 
                          -> return S.rTop
 
-                        XType (TVar u) : _
+                        XType _ (TVar u) : _
                          | Just tu      <- Env.lookup u kenv
                          -> if isRegionKind tu
                              then do u'      <- convertU u

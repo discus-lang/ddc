@@ -154,10 +154,10 @@ instance Namify (Exp a) where
                 x2'             <- down x2
                 return  $ XLet a (LWithRegion u') x2'
 
-        XCase a x1 alts -> liftM3 XCase    (return a) (down x1)  (mapM down alts)
-        XCast a c  x    -> liftM3 XCast    (return a) (down c)   (down x)
-        XType t         -> liftM  XType    (down t)
-        XWitness w      -> liftM  XWitness (down w)
+        XCase a x1 alts -> liftM2 (XCase    a) (down x1)  (mapM down alts)
+        XCast a c  x    -> liftM2 (XCast    a) (down c)   (down x)
+        XType a t       -> liftM  (XType    a) (down t)
+        XWitness a w    -> liftM  (XWitness a) (down w)
 
 
 instance Namify (Alt a) where

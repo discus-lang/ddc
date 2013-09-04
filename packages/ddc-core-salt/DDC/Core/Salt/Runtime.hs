@@ -87,7 +87,7 @@ ukTop
 xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
 xGetTag a tR x2 
  = xApps a (XVar a $ fst utGetTag)
-        [ XType tR, x2 ]
+        [ XType a tR, x2 ]
 
 utGetTag :: (Bound Name, Type Name)
 utGetTag 
@@ -100,7 +100,7 @@ utGetTag
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
  = xApps a (XVar a $ fst utAllocBoxed)
-        [ XType tR
+        [ XType a tR
         , XCon a (DaConPrim (NameLitTag tag) tTag)
         , x2]
 
@@ -121,7 +121,7 @@ xGetFieldOfBoxed
 
 xGetFieldOfBoxed a trPrime tField x2 offset
  = xApps a (XVar a $ fst utGetFieldOfBoxed) 
-        [ XType trPrime, XType tField
+        [ XType a trPrime, XType a tField
         , x2
         , xNat a offset ]
 
@@ -147,7 +147,7 @@ xSetFieldOfBoxed
 
 xSetFieldOfBoxed a trPrime tField x2 offset val
  = xApps a (XVar a $ fst utSetFieldOfBoxed) 
-        [ XType trPrime, XType tField
+        [ XType a trPrime, XType a tField
         , x2
         , xNat a offset
         , val]
@@ -168,7 +168,7 @@ utSetFieldOfBoxed
 xAllocRawSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocRawSmall a tR tag x2
  = xApps a (XVar a $ fst utAllocRawSmall)
-        [ XType tR
+        [ XType a tR
         , xTag a tag
         , x2]
 
@@ -182,7 +182,7 @@ utAllocRawSmall
 xPayloadOfRawSmall :: a -> Type Name -> Exp a Name -> Exp a Name
 xPayloadOfRawSmall a tR x2 
  = xApps a (XVar a $ fst utPayloadOfRawSmall) 
-        [XType tR, x2]
+        [XType a tR, x2]
  
 utPayloadOfRawSmall :: (Bound Name, Type Name)
 utPayloadOfRawSmall
@@ -206,7 +206,7 @@ uCreate = UPrim (NamePrimOp $ PrimStore $ PrimStoreCreate)
 xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
 xRead a tField xAddr offset
         = XApp a (XApp a (XApp a (XVar a uRead) 
-                               (XType tField))
+                               (XType a tField))
                           xAddr)
                  (xNat a offset)
 
@@ -219,7 +219,7 @@ uRead   = UPrim (NamePrimOp $ PrimStore $ PrimStoreRead)
 xWrite   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
 xWrite a tField xAddr offset xVal
         = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
-                                         (XType tField))
+                                         (XType a tField))
                                   xAddr)
                           (xNat a offset))
                   xVal
@@ -234,8 +234,8 @@ xPeekBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Nam
 xPeekBuffer a r t xPtr offset
  = let castedPtr = xCast a r t (tWord 8) xPtr
    in  XApp a (XApp a (XApp a (XApp a (XVar a uPeek) 
-                                      (XType r)) 
-                              (XType t)) 
+                                      (XType a r)) 
+                              (XType a t)) 
                        castedPtr) 
               (xNat a offset)
 
@@ -249,8 +249,8 @@ xPokeBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Nam
 xPokeBuffer a r t xPtr offset xVal
  = let castedPtr = xCast a r t (tWord 8) xPtr
    in  XApp a (XApp a (XApp a (XApp a (XApp a (XVar a uPoke) 
-                                              (XType r)) 
-                                      (XType t)) 
+                                              (XType a r)) 
+                                      (XType a t)) 
                                castedPtr) 
                       (xNat a offset))
               xVal
@@ -264,9 +264,9 @@ uPoke = UPrim (NamePrimOp $ PrimStore $ PrimStorePoke)
 xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCast a r toType fromType xPtr
  =     XApp a (XApp a (XApp a (XApp a (XVar a uCast)
-                                      (XType r)) 
-                              (XType toType))
-                      (XType fromType))
+                                      (XType a r)) 
+                              (XType a toType))
+                      (XType a fromType))
               xPtr           
                       
 uCast :: Bound Name
@@ -277,7 +277,7 @@ uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
 -- | Fail with an internal error.
 xFail   :: a -> Type Name -> Exp a Name
 xFail a t       
- = XApp a (XVar a uFail) (XType t)
+ = XApp a (XVar a uFail) (XType a t)
  where  uFail   = UPrim (NamePrimOp (PrimControl PrimControlFail)) tFail
         tFail   = TForall (BAnon kData) (TVar $ UIx 0)
 
@@ -288,6 +288,6 @@ xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
 xReturn a t x
  = XApp a (XApp a (XVar a (UPrim (NamePrimOp (PrimControl PrimControlReturn))
                           (tForall kData $ \t1 -> t1 `tFunPE` t1)))
-                (XType t))
+                (XType a t))
            x
 

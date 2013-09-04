@@ -252,8 +252,8 @@ packWeakenClosureXs kenv tenv a xx
 
         (vsSp, vsDa)      = eat Set.empty Set.empty xx
 
-   in   [XType (TVar u) | u <- Set.toList vsSp]
-     ++ [XVar a u       | u <- Set.toList vsDa, keepBound kenv tenv u]
+   in   [XType a (TVar u) | u <- Set.toList vsSp]
+     ++ [XVar a u         | u <- Set.toList vsDa, keepBound kenv tenv u]
 
 
 -- | When packing vars given to a closure weakening, we only need to keep

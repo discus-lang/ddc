@@ -29,16 +29,16 @@ instance Reannotate Exp where
  reannotate f xx
   = let down x   = reannotate f x
     in case xx of
-        XVar  a u               -> XVar  (f a) u
-        XCon  a u               -> XCon  (f a) u
-        XLAM  a b x             -> XLAM  (f a) b (down x)
-        XLam  a b x             -> XLam  (f a) b (down x)
-        XApp  a x1 x2           -> XApp  (f a)   (down x1)  (down x2)
-        XLet  a lts x           -> XLet  (f a)   (down lts) (down x)
-        XCase a x alts          -> XCase (f a)   (down x)   (map down alts)
-        XCast a c x             -> XCast (f a)   (down c)   (down x)
-        XType t                 -> XType t
-        XWitness w              -> XWitness (down w)
+        XVar     a u            -> XVar     (f a) u
+        XCon     a u            -> XCon     (f a) u
+        XLAM     a b x          -> XLAM     (f a) b (down x)
+        XLam     a b x          -> XLam     (f a) b (down x)
+        XApp     a x1 x2        -> XApp     (f a)   (down x1)  (down x2)
+        XLet     a lts x        -> XLet     (f a)   (down lts) (down x)
+        XCase    a x alts       -> XCase    (f a)   (down x)   (map down alts)
+        XCast    a c x          -> XCast    (f a)   (down c)   (down x)
+        XType    a t            -> XType    (f a) t
+        XWitness a w            -> XWitness (f a)   (down w)
 
 
 instance Reannotate Lets where

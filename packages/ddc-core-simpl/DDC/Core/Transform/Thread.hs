@@ -339,10 +339,12 @@ threadProcBody config context kenv tenv xx
         XLAM{}          -> error "ddc-core-simpl.Thread: unexpected XLAM"
         XLam{}          -> error "ddc-core-simpl.Thread: unexpected XLam"
         XCast{}         -> error "ddc-core-simpl.Thread: unexpected cast."
-        XType t         -> XType t
+
+        XType a t       
+         -> XType    (annotTail a) t
         
-        XWitness w      
-         -> XWitness (reannotate annotTail w)
+        XWitness a w      
+         -> XWitness (annotTail a) (reannotate annotTail w)
 
         -- Tailcalls
         XApp a _ _
