@@ -110,8 +110,8 @@ checkExpM !table !kenv !tenv !xx !tXX
         XLet{}          -> tableCheckLet    table table kenv tenv xx tXX
         XCase{}         -> tableCheckCase   table table kenv tenv xx tXX
         XCast{}         -> tableCheckCast   table table kenv tenv xx tXX
-        XType{}         -> throw $ ErrorNakedType xx 
-        XWitness{}      -> throw $ ErrorNakedWitness xx
+        XType    a _    -> throw $ ErrorNakedType    a xx 
+        XWitness a _    -> throw $ ErrorNakedWitness a xx
 
 
 -- Table ----------------------------------------------------------------------

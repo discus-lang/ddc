@@ -371,12 +371,14 @@ data Error a n
         -- Types ------------------------------------------
         -- | Found a naked `XType` that wasn't the argument of an application.
         | ErrorNakedType
-        { errorChecking         :: Exp a n }
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n }
 
 
         -- Witnesses --------------------------------------
         -- | Found a naked `XWitness` that wasn't the argument of an application.
         | ErrorNakedWitness
-        { errorChecking         :: Exp a n }
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n }
         deriving (Show)
 

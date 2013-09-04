@@ -402,15 +402,17 @@ instance (Pretty a, Show n, Eq n, Pretty n)
 
 
         -- Type -------------------------------------------
-        ErrorNakedType xx
-         -> vcat [ text "Found naked type in core program."
+        ErrorNakedType a xx
+         -> vcat [ ppr a
+                 , text "Found naked type in core program."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
 
         -- Witness ----------------------------------------
-        ErrorNakedWitness xx
-         -> vcat [ text "Found naked witness in core program."
+        ErrorNakedWitness a xx
+         -> vcat [ ppr a
+                 , text "Found naked witness in core program."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
