@@ -9,18 +9,22 @@ module DDC.Core.Check.Exp.Base
         , module DDC.Core.Check.Witness
         , module DDC.Core.Check.DaCon
         , module DDC.Core.Check.Error
+        , module DDC.Core.Transform.Reannotate
         , module DDC.Core.Annot.AnTEC
         , module DDC.Core.Collect
         , module DDC.Core.Predicates
         , module DDC.Core.Compounds
         , module DDC.Core.Exp
         , module DDC.Type.Transform.SubstituteT
+        , module DDC.Type.Transform.Instantiate
+        , module DDC.Type.Transform.Crush
         , module DDC.Type.Transform.LiftT
         , module DDC.Type.Transform.Trim
         , module DDC.Type.Predicates
         , module DDC.Type.Universe
         , module DDC.Type.DataDef
         , module DDC.Type.Equiv
+        , module DDC.Data.ListUtils
         , module DDC.Base.Pretty
         , module Control.Monad
         , module Data.Maybe
@@ -35,18 +39,22 @@ import DDC.Core.Check.TaggedClosure
 import DDC.Core.Check.Witness
 import DDC.Core.Check.DaCon
 import DDC.Core.Check.Error
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Collect
 import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Transform.SubstituteT
+import DDC.Type.Transform.Instantiate
+import DDC.Type.Transform.Crush
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Trim
 import DDC.Type.Predicates
 import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Equiv
+import DDC.Data.ListUtils
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Maybe
