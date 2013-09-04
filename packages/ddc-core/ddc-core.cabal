@@ -103,6 +103,13 @@ Library
   Other-modules:
         DDC.Core.Check.DaCon
         DDC.Core.Check.Exp
+        DDC.Core.Check.Exp.Abs
+        DDC.Core.Check.Exp.App
+        DDC.Core.Check.Exp.Base
+        DDC.Core.Check.Exp.Cast
+        DDC.Core.Check.Exp.Case
+        DDC.Core.Check.Exp.Let
+        DDC.Core.Check.Exp.VarCon
         DDC.Core.Check.Module
         DDC.Core.Check.Witness
         DDC.Core.Check.ErrorMessage
