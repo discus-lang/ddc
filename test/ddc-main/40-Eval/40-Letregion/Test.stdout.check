@@ -1,6 +1,7 @@
 -- Global regions aren't deallocated as we leave the scope of the 
 -- letregion that created it.
 When checking expression.
+  <batch>:6:16
   Type cannot apply non-constructor witness
                 of type: Emptify (Use r1)
     to argument of type: Const r1
@@ -10,11 +11,13 @@ When checking expression.
 
 -- Error: Region variable is not in scope (wrong level)
 When checking expression.
+  <batch>:13:16
   Undefined spec variable: e
 
 
 -- Error: Region variable has wrong kind.
 When checking expression.
+  <batch>:17:17
   Withregion handle does not have region kind.
      Region var or ctor: e
                has kind: Effect

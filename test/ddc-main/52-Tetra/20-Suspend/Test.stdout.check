@@ -20,6 +20,7 @@ run readRef# [r] [a] x
 
 -- Error: impure function body.
 When checking expression.
+  <batch>:21:31
   Impure Data abstraction
              has effect: Read r
   

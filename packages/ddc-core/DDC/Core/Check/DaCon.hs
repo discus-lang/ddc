@@ -19,10 +19,11 @@ checkDaConM
         :: (Ord n, Eq n, Show n)
         => Config n
         -> Exp a n              -- ^ The full expression for error messages.
+        -> a                    -- ^ Annotation for error messages.
         -> DaCon n              -- ^ Data constructor to check.
         -> CheckM a n (Type n)
 
-checkDaConM config xx dc
+checkDaConM config xx a dc
  = case dc of
     -- Type type of the unit data constructor is baked-in.
     DaConUnit
@@ -48,16 +49,16 @@ checkDaConM config xx dc
                 -> case dataTypeMode dataType of
                     DataModeSmall nsCtors
                         | L.elem nCtor nsCtors -> return t
-                        | otherwise            -> throw $ ErrorUndefinedCtor xx
+                        | otherwise            -> throw $ ErrorUndefinedCtor a xx
 
                     DataModeLarge   -> return t
 
-            _ -> throw $ ErrorUndefinedCtor xx
+            _ -> throw $ ErrorUndefinedCtor a xx
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
     DaConBound { daConName = nCtor }
      -> case Map.lookup nCtor (dataDefsCtors $ configDataDefs config) of
          Just ctor       -> return $ typeOfDataCtor ctor
-         Nothing         -> throw $ ErrorUndefinedCtor xx
+         Nothing         -> throw $ ErrorUndefinedCtor a xx
 

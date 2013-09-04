@@ -7,11 +7,13 @@
 ok
 Error loading module
   When checking expression.
+    <batch>:18:19
     Undefined data constructor: True
 
 
 -- Foo isn't defined.
 Error loading module
   When checking expression.
+    <batch>:28:4
     Undefined data constructor: Foo
 

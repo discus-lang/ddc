@@ -15,7 +15,7 @@ checkVarCon :: Checker a n
 -- variables ------------------------------------
 checkVarCon !_table !_kenv !tenv (XVar a u) _
  = case Env.lookup u tenv of
-        Nothing -> throw $ ErrorUndefinedVar u UniverseData
+        Nothing -> throw $ ErrorUndefinedVar a u UniverseData
         Just t  
          -> returnX a 
                 (\z -> XVar z u)
@@ -44,10 +44,10 @@ checkVarCon !table !_kenv !_tenv xx@(XCon a dc) _
               -> return $ typeOfDataCtor ctor
 
               | otherwise
-              -> throw  $ ErrorUndefinedCtor $ XCon a dc
+              -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 
         -- Check that the constructor is in the data type declarations.
-        checkDaConM config xx dc
+        checkDaConM config xx a dc
 
         -- Type of the data constructor.
         returnX a

@@ -16,6 +16,7 @@ x
 
 -- Error: let binder has incorrect type annotation.
 When checking expression.
+  <batch>:10:2
   Type mismatch in let-binding.
                   The binder: x
                     has type: Int r0#
@@ -27,6 +28,7 @@ When checking expression.
 
 -- Error: outer function is missing a Use annotation.
 When checking expression.
+  <batch>:15:1
   Type mismatch in let-binding.
                   The binder: fac
                     has type: [r : Region].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
@@ -51,6 +53,7 @@ When checking expression.
 
 -- Error: inner function is missing an Alloc effect.
 When checking expression.
+  <batch>:30:1
   Type mismatch in let-binding.
                   The binder: fac
                     has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r | Use r)> Int r
@@ -75,6 +78,7 @@ When checking expression.
 
 -- Error: region var on the Int return type should be r1.
 When checking expression.
+  <batch>:53:17
   Type mismatch in application.
        Function expects: List r2 (Int r1)
         but argument is: List r2 (Int r2)
@@ -86,6 +90,7 @@ When checking expression.
 
 -- Error: second effect should have Read r1 instead of Read r2.
 When checking expression.
+  <batch>:64:1
   Type mismatch in let-binding.
                   The binder: enumFromTo
                     has type: [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
@@ -152,6 +157,7 @@ enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
 
 -- Error: binding must have data kind.
 When checking expression.
+  <batch>:122:3
   Let binding does not have data kind.
         The binding for: e2
                has type: Effect
@@ -164,6 +170,7 @@ When checking expression.
 
 -- Error: binding must have data kind.
 When checking expression.
+  <batch>:129:3
   Let binding does not have data kind.
         The binding for: e2
                has type: Effect
@@ -178,6 +185,7 @@ When checking expression.
 
 -- Error: body must have data kind.
 When checking expression.
+  <batch>:136:3
   Let body does not have data kind.
    Body of let has type: Effect
               with kind: Comp
@@ -189,6 +197,7 @@ When checking expression.
 
 -- Error: body must have data kind.
 When checking expression.
+  <batch>:143:3
   Let body does not have data kind.
    Body of let has type: Effect
               with kind: Comp
@@ -203,6 +212,7 @@ When checking expression.
 
 -- Error: right of letrec binding must be a lambda
 When checking expression.
+  <batch>:149:2
   Letrec can only bind lambda abstractions.
         This is not one: ()
   

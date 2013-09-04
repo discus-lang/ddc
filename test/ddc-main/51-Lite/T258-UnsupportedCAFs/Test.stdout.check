@@ -5,6 +5,7 @@ ok
 -- Only lambdas can appear in letrecs anyway.
 Error loading module
   When checking expression.
+    <batch>:7:18
     Letrec can only bind lambda abstractions.
           This is not one: ()
     

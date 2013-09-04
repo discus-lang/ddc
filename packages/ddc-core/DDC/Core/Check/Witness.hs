@@ -98,7 +98,7 @@ checkWitnessM
 
 checkWitnessM !_config !_kenv !tenv (WVar a u)
  = case Env.lookup u tenv of
-        Nothing -> throw $ ErrorUndefinedVar u UniverseWitness
+        Nothing -> throw $ ErrorUndefinedVar a u UniverseWitness
         Just t  -> return ( WVar (AnT t a) u
                           , t)
 
@@ -118,8 +118,8 @@ checkWitnessM !config !kenv !tenv ww@(WApp a1 w1 (WType a2 t2))
              in  return ( WApp (AnT t' a1) w1' (WType (AnT k2 a2) t2')
                         , t')
 
-          | otherwise   -> throw $ ErrorWAppMismatch ww (typeOfBind b11) k2
-         _              -> throw $ ErrorWAppNotCtor  ww t1 t2'
+          | otherwise   -> throw $ ErrorWAppMismatch a1 ww (typeOfBind b11) k2
+         _              -> throw $ ErrorWAppNotCtor  a1 ww t1 t2'
 
 -- witness-witness application
 checkWitnessM !config !kenv !tenv ww@(WApp a w1 w2)
@@ -131,8 +131,8 @@ checkWitnessM !config !kenv !tenv ww@(WApp a w1 w2)
           -> return ( WApp (AnT t12 a) w1' w2'
                     , t12)
           
-          | otherwise   -> throw $ ErrorWAppMismatch ww t11 t2
-         _              -> throw $ ErrorWAppNotCtor  ww t1 t2
+          | otherwise   -> throw $ ErrorWAppMismatch a ww t11 t2
+         _              -> throw $ ErrorWAppNotCtor  a ww t1 t2
 
 -- witness joining
 checkWitnessM !config !kenv !tenv ww@(WJoin a w1 w2)
@@ -153,7 +153,7 @@ checkWitnessM !config !kenv !tenv ww@(WJoin a w1 w2)
              in  return ( WJoin (AnT t' a) w1' w2'
                         , t')
 
-         _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
+         _ -> throw $ ErrorCannotJoin a ww w1 t1 w2 t2
 
 -- embedded types
 checkWitnessM !config !kenv !_tenv (WType a t)

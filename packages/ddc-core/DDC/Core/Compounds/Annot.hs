@@ -42,6 +42,7 @@ module DDC.Core.Compounds.Annot
           -- * Witnesses
         , wApp
         , wApps
+        , annotOfWitness
         , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps
@@ -295,6 +296,17 @@ wApp = WApp
 -- | Construct a sequence of witness applications
 wApps :: a -> Witness a n -> [Witness a n] -> Witness a n
 wApps a = foldl (wApp a)
+
+
+-- | Take the annotation from a witness.
+annotOfWitness :: Witness a n -> a
+annotOfWitness ww
+ = case ww of
+        WVar  a _       -> a
+        WCon  a _       -> a
+        WApp  a _ _     -> a
+        WJoin a _ _     -> a
+        WType a _       -> a
 
 
 -- | Take the witness from an `XWitness` argument, if any.

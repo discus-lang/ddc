@@ -23,7 +23,7 @@ checkCast !table !kenv !tenv xx@(XCast a (CastWeakenEffect eff) x1) _
 
         -- The effect term must have Effect kind.
         when (not $ isEffectKind kEff)
-         $ throw $ ErrorWeakEffNotEff xx eff' kEff
+         $ throw $ ErrorWeakEffNotEff a xx eff' kEff
 
         let c'  = CastWeakenEffect eff'
 
@@ -71,7 +71,7 @@ checkCast !table !kenv !tenv xx@(XCast a (CastPurify w) x1) _
         effs' <- case tW of
                   TApp (TCon (TyConWitness TwConPure)) effMask
                     -> return $ Sum.delete effMask effs
-                  _ -> throw  $ ErrorWitnessNotPurity xx w tW
+                  _ -> throw  $ ErrorWitnessNotPurity a xx w tW
 
         let c'  = CastPurify wTEC
 
@@ -99,7 +99,7 @@ checkCast !table !kenv !tenv xx@(XCast a (CastForget w) x1) _
                                         (Sum.singleton kClosure cloMask)
                                         clos
 
-                  _ -> throw $ ErrorWitnessNotEmpty xx w tW
+                  _ -> throw $ ErrorWitnessNotEmpty a xx w tW
 
         let c'  = CastForget wTEC
 
@@ -144,7 +144,7 @@ checkCast !table !kenv !tenv xx@(XCast a CastRun x1) _
                 (Sum.union effs (Sum.singleton kEffect eff2))
                 clos
 
-         _ -> throw $ ErrorRunNotSuspension xx t1
+         _ -> throw $ ErrorRunNotSuspension a xx t1
 
 checkCast _ _ _ _ _
         = error "ddc-core.checkCast: no match"

@@ -20,6 +20,7 @@ When checking type.
 
 -- Check types of tailcallN# prims.
 When checking expression.
+  <batch>:18:2
   Undefined value variable: tailcall0#
 
 tailcall1#

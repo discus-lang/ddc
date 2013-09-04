@@ -67,13 +67,14 @@ data PipeCore a n where
 
   -- Type check a module.
   PipeCoreCheck      
-        :: !(Fragment n err)
+        :: Pretty a
+        => !(Fragment n err)
         -> ![PipeCore (C.AnTEC a n) n]
         -> PipeCore a n
 
   -- Type check a module, discarding previous per-node type annotations.
   PipeCoreReCheck
-        :: (Show a, NFData a)
+        :: (NFData a, Show a, Pretty a)
         => !(Fragment n err)
         -> ![PipeCore (C.AnTEC a n)  n]
         -> PipeCore  (C.AnTEC a n') n

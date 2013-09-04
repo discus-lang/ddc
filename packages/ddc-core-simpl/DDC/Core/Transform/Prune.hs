@@ -121,10 +121,9 @@ transformTypeUsage profile kenv tenv trans xx
                 x''        = reannotate (\(_, AnTEC { annotTail = a }) -> a) x'
             in  (x'', info)
 
-        Left err 
+        Left _
          -> error $  renderIndent
-         $  vcat [ text "DDC.Core.Transform.Prune: core type error"
-                 , ppr err ]
+         $  vcat [ text "DDC.Core.Transform.Prune: core type error" ]
 
 
 -------------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 -- Error: types of alternatives are not identical.
 When checking expression.
+  <batch>:3:1
   Mismatch in alternative result types.
      Type of alternative: Int r0#
           does not match: Unit
@@ -14,6 +15,7 @@ When checking expression.
 
 -- Error: discriminant type is not a data type.
 When checking expression.
+  <batch>:11:1
   Scrutinee of case expression is not algebraic data.
        Scrutinee type: Unit -> Unit
   
@@ -24,6 +26,7 @@ When checking expression.
 
 -- Error: pattern binds more fields than provided by constructor.
 When checking expression.
+  <batch>:19:1
   Pattern has more binders than there are fields in the constructor.
        Contructor: Cons
               has: 2 fields
@@ -40,6 +43,7 @@ When checking expression.
 -- Error: annotation on pattern variable does not match field type
 --        of constructor.
 When checking expression.
+  <batch>:29:1
   Annotation on pattern variable does not match type of field.
          Annotation type: Unit
               Field type: Int r0#
@@ -54,6 +58,7 @@ When checking expression.
 
 -- Error: alternatives are not exhaustive, for a Small type.
 When checking expression.
+  <batch>:38:1
   Case alternatives are non-exhaustive.
    Constructors not matched: Nil
   
@@ -63,6 +68,7 @@ When checking expression.
 
 -- Error: alternatives are not exhaustive, for a Large type.
 When checking expression.
+  <batch>:46:1
   Case alternatives are non-exhaustive.
   
   with: letcase 0   = xx in
@@ -71,6 +77,7 @@ When checking expression.
 
 -- Error: alternatives are overlapping due to multiple defaults.
 When checking expression.
+  <batch>:54:1
   Case alternatives are overlapping.
   
   with: case xx of {
@@ -84,6 +91,7 @@ When checking expression.
 -- Error: alternatives are overlapping because there is a default
 --        earlier in the list.
 When checking expression.
+  <batch>:64:1
   Case alternatives are overlapping.
   
   with: case xx of {
@@ -99,6 +107,7 @@ When checking expression.
 -- Error: alternatives are overlapping because the same constructor
 --        appears multiple times.
 When checking expression.
+  <batch>:75:1
   Case alternatives are overlapping.
   
   with: case xx of {
@@ -113,6 +122,7 @@ When checking expression.
 
 -- Error: pattern and discriminant types don't match.
 When checking expression.
+  <batch>:86:1
   Cannot instantiate constructor type with scrutinee type args.
    Either the constructor has an invalid type,
    or the type of the scrutinee does not match the type of the pattern.
@@ -125,6 +135,7 @@ When checking expression.
 
 -- Error: pattern and discriminant types don't match.
 When checking expression.
+  <batch>:94:1
   Scrutinee type does not match result of pattern type.
           Scrutinee type: Int r0#
             Pattern type: [^ : Data].Unit -(Alloc r0# | Empty)> List r0# ^0

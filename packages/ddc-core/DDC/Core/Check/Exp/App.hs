@@ -44,8 +44,8 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XType t2)) _
                 effs1   
                 (clos1 `Set.union` t2_clo)
 
-          | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
-         _              -> throw $ ErrorAppNotFun   xx t1 t2
+          | otherwise   -> throw $ ErrorAppMismatch a xx (typeOfBind b11) t2
+         _              -> throw $ ErrorAppNotFun   a xx t1 t2
 
 
 -- value-witness application --------------------
@@ -69,8 +69,8 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XWitness w2)) _
                 (\z -> XApp z x1' (XWitness w2TEC))
                 t12 effs1 clos1
 
-          | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
-         _              -> throw $ ErrorAppNotFun   xx t1 t2
+          | otherwise   -> throw $ ErrorAppMismatch a xx t11 t2
+         _              -> throw $ ErrorAppNotFun   a xx t1 t2
                  
 
 -- value-value application ----------------------
@@ -108,8 +108,8 @@ checkApp !table !kenv !tenv xx@(XApp a x1 x2) _
                 (effs1 `Sum.union` effs2 `Sum.union` effs)
                 (clos1 `Set.union` clos2)
 
-          | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
-         _              -> throw $ ErrorAppNotFun xx t1 t2
+          | otherwise   -> throw $ ErrorAppMismatch a xx t11 t2
+         _              -> throw $ ErrorAppNotFun a xx t1 t2
 
 -- others ---------------------------------------
 checkApp _ _ _ _ _

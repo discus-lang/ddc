@@ -6,6 +6,7 @@ ok
 
 -- Error: Unknown primop.
 When checking expression.
+  <batch>:8:2
   Undefined value variable: foo#
 
 

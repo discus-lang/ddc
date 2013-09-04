@@ -40,6 +40,7 @@ addInt [^0] [^0] [r2#] (2 [^0] ()) (3 [^0] ())
 
 -- Error: withregion must contain a region variable or constructor.
 When checking expression.
+  <batch>:22:17
   Withregion handle does not have region kind.
      Region var or ctor: e
                has kind: Effect
@@ -52,6 +53,7 @@ When checking expression.
 -- Error: letregion cannot shadow region variables that are already in the
 -- environment because the new witnesses may conflict with the old ones.
 When checking expression.
+  <batch>:30:1
   Region variables shadow existing ones.
              Region variables: r1 : Region
        are already in environment
@@ -63,6 +65,7 @@ When checking expression.
 -- Error: letregion can't shadow region variables that are already in the
 -- environment.
 When checking expression.
+  <batch>:39:2
   Region variables shadow existing ones.
              Region variables: r : Region
        are already in environment
@@ -73,6 +76,7 @@ When checking expression.
 
 -- Error: bound region variable is free in the type of the body of a letregion.
 When checking expression.
+  <batch>:44:2
   Region variables escape scope of letregion.
          The region variables: r1 : Region
     is free in the body type: Int r1
@@ -83,6 +87,7 @@ When checking expression.
 
 -- Error: bound region is free in the effect of a returned function.
 When checking expression.
+  <batch>:49:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
     is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r2# | Use r1 + Use r2#)> Int r2#
@@ -94,6 +99,7 @@ When checking expression.
 
 -- Error: region variable appears in closure term
 When checking expression.
+  <batch>:55:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
     is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
@@ -114,6 +120,7 @@ When checking expression.
 
 -- Error: witness types with a letregion must use explicit type constructors.
 When checking expression.
+  <batch>:68:1
   Invalid witness type with letregion.
             The witness: w : c r1
     cannot be created with a letregion
@@ -134,6 +141,7 @@ letregion r2 with {w1 : Distinct2 r1 r2} in
 -- Error: distinct witness must have as one argument the region introduced with
 -- this letregion, and a bound region variable in the environment for the other.
 When checking expression.
+  <batch>:82:1
   Invalid witness type with letregion.
             The witness: w1 : Distinct2 r2 r2
     cannot be created with a letregion
@@ -152,6 +160,7 @@ letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
 
 -- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
 When checking expression.
+  <batch>:93:1
   Witness type is not for bound regions.
         letregion binds: r2 r3
     but witness type is: w : Distinct3 r1 r2 r3

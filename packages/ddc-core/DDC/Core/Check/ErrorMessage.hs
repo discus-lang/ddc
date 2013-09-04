@@ -8,17 +8,20 @@ import DDC.Type.Compounds
 import DDC.Type.Universe
 
 
-instance (Show n, Eq n, Pretty n) 
+instance (Pretty a, Show n, Eq n, Pretty n) 
        => Pretty (Error a n) where
  ppr err
   = case err of
-        ErrorType err'  -> ppr err'
+        ErrorType err'  
+         -> ppr err'
 
-        ErrorMalformedExp xx
-         -> vcat [ text "Malformed expression: "        <> align (ppr xx) ]
+        ErrorMalformedExp a xx
+         -> vcat [ ppr a
+                 , text "Malformed expression: "        <> align (ppr xx) ]
         
-        ErrorMalformedType xx tt
-         -> vcat [ text "Found malformed type: "        <> ppr tt
+        ErrorMalformedType a xx tt
+         -> vcat [ ppr a
+                 , text "Found malformed type: "        <> ppr tt
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -34,23 +37,28 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Variable ---------------------------------------
-        ErrorUndefinedVar  u universe
+        ErrorUndefinedVar a u universe
          -> case universe of
              UniverseSpec
-               -> vcat [ text "Undefined spec variable: "  <> ppr u ]
+               -> vcat  [ ppr a
+                        , text "Undefined spec variable: "  <> ppr u ]
 
              UniverseData
-               -> vcat [ text "Undefined value variable: " <> ppr u ]
+               -> vcat  [ ppr a
+                        , text "Undefined value variable: " <> ppr u ]
 
              UniverseWitness
-               -> vcat [ text "Undefined witness variable: " <> ppr u ]
+               -> vcat  [ ppr a
+                        , text "Undefined witness variable: " <> ppr u ]
 
              -- Universes other than the above don't have variables,
              -- but let's not worry about that here.
-             _ -> vcat [ text "Undefined variable: "    <> ppr u ]
+             _ -> vcat  [ ppr a
+                        , text "Undefined variable: "    <> ppr u ]
 
-        ErrorVarAnnotMismatch u tEnv tAnnot
-         -> vcat [ text "Type mismatch in annotation."
+        ErrorVarAnnotMismatch a u tEnv tAnnot
+         -> vcat [ ppr a
+                 , text "Type mismatch in annotation."
                  , text "             Variable: "       <> ppr u
                  , text "       has annotation: "       <> ppr tAnnot
                  , text " which conflicts with: "       <> ppr tEnv
@@ -58,20 +66,23 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Constructor ------------------------------------
-        ErrorUndefinedCtor xx
-         -> vcat [ text "Undefined data constructor: "  <> ppr xx ]
+        ErrorUndefinedCtor a xx
+         -> vcat [ ppr a
+                 , text "Undefined data constructor: "  <> ppr xx ]
 
 
         -- Application ------------------------------------
-        ErrorAppMismatch xx t1 t2
-         -> vcat [ text "Type mismatch in application." 
+        ErrorAppMismatch a xx t1 t2
+         -> vcat [ ppr a
+                 , text "Type mismatch in application." 
                  , text "     Function expects: "       <> ppr t1
                  , text "      but argument is: "       <> ppr t2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
          
-        ErrorAppNotFun xx t1 t2
-         -> vcat [ text "Cannot apply non-function"
+        ErrorAppNotFun a xx t1 t2
+         -> vcat [ ppr a
+                 , text "Cannot apply non-function"
                  , text "              of type: "       <> ppr t1
                  , text "  to argument of type: "       <> ppr t2 
                  , empty
@@ -79,36 +90,41 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Lambda -----------------------------------------
-        ErrorLamShadow xx b
-         -> vcat [ text "Cannot shadow named spec variable."
+        ErrorLamShadow a xx b
+         -> vcat [ ppr a
+                 , text "Cannot shadow named spec variable."
                  , text "  binder: "                    <> ppr b
                  , text "  is already in the environment."
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamNotPure xx universe eff
+        ErrorLamNotPure a xx universe eff
          -> vcat 
-                [ text "Impure" <+> ppr universe <+> text "abstraction"
+                [ ppr a
+                , text "Impure" <+> ppr universe <+> text "abstraction"
                 , text "           has effect: "       <> ppr eff
                 , empty
                 , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamNotEmpty xx universe eff
+        ErrorLamNotEmpty a xx universe eff
          -> vcat 
-                [ text "Non-empty" <+> ppr universe <+> text "abstraction"
+                [ ppr a
+                , text "Non-empty" <+> ppr universe <+> text "abstraction"
                 , text "           has closure: "       <> ppr eff
                 , empty
                 , text "with: "                        <> align (ppr xx) ]
                  
-        ErrorLamBindNotData xx t1 k1
-         -> vcat [ text "Function parameter does not have data kind."
+        ErrorLamBindNotData a xx t1 k1
+         -> vcat [ ppr a
+                 , text "Function parameter does not have data kind."
                  , text "    The function parameter:"   <> ppr t1
                  , text "                  has kind: "  <> ppr k1
                  , text "            but it must be: *"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamBodyNotData xx b1 t2 k2
-         -> vcat [ text "Result of function does not have data kind."
+        ErrorLamBodyNotData a xx b1 t2 k2
+         -> vcat [ ppr a
+                 , text "Result of function does not have data kind."
                  , text "   In function with binder: "  <> ppr b1
                  , text "       the result has type: "  <> ppr t2
                  , text "                 with kind: "  <> ppr k2
@@ -118,16 +134,18 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Let --------------------------------------------
-        ErrorLetMismatch xx b t
-         -> vcat [ text "Type mismatch in let-binding."
+        ErrorLetMismatch a xx b t
+         -> vcat [ ppr a
+                 , text "Type mismatch in let-binding."
                  , text "                The binder: "  <> ppr (binderOfBind b)
                  , text "                  has type: "  <> ppr (typeOfBind b)
                  , text "     but the body has type: "  <> ppr t
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetBindingNotData xx b k
-         -> vcat [ text "Let binding does not have data kind."
+        ErrorLetBindingNotData a xx b k
+         -> vcat [ ppr a
+                 , text "Let binding does not have data kind."
                  , text "      The binding for: "       <> ppr (binderOfBind b)
                  , text "             has type: "       <> ppr (typeOfBind b)
                  , text "            with kind: "       <> ppr k
@@ -135,8 +153,9 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetBodyNotData xx t k
-         -> vcat [ text "Let body does not have data kind."
+        ErrorLetBodyNotData a xx t k
+         -> vcat [ ppr a
+                 , text "Let body does not have data kind."
                  , text " Body of let has type: "       <> ppr t
                  , text "            with kind: "       <> ppr k
                  , text "       but it must be: * "
@@ -145,78 +164,89 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Letrec -----------------------------------------
-        ErrorLetrecBindingNotLambda xx x
-         -> vcat [ text "Letrec can only bind lambda abstractions."
+        ErrorLetrecBindingNotLambda a xx x
+         -> vcat [ ppr a
+                 , text "Letrec can only bind lambda abstractions."
                  , text "      This is not one: "       <> ppr x
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetrecRebound xx b
-         -> vcat [ text "Redefined binder '" <> ppr b <> text "' in letrec."
+        ErrorLetrecRebound a xx b
+         -> vcat [ ppr a
+                 , text "Redefined binder '" <> ppr b <> text "' in letrec."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
         -- Letregion --------------------------------------
-        ErrorLetRegionsNotRegion xx bs ks
-         -> vcat [ text "Letregion binders do not have region kind."
+        ErrorLetRegionsNotRegion a xx bs ks
+         -> vcat [ ppr a
+                 , text "Letregion binders do not have region kind."
                  , text "        Region binders: "       <> (hcat $ map ppr bs)
                  , text "             has kinds: "       <> (hcat $ map ppr ks)
                  , text "       but they must all be: %" 
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
 
-        ErrorLetRegionsRebound xx bs
-         -> vcat [ text "Region variables shadow existing ones."
+        ErrorLetRegionsRebound a xx bs
+         -> vcat [ ppr a
+                 , text "Region variables shadow existing ones."
                  , text "           Region variables: "  <> (hcat $ map ppr bs)
                  , text "     are already in environment"
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
 
-        ErrorLetRegionFree xx bs t
-         -> vcat [ text "Region variables escape scope of letregion."
+        ErrorLetRegionFree a xx bs t
+         -> vcat [ ppr a
+                 , text "Region variables escape scope of letregion."
                  , text "       The region variables: "  <> (hcat $ map ppr bs)
                  , text "  is free in the body type: "   <> ppr t
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
         
-        ErrorLetRegionWitnessInvalid xx b
-         -> vcat [ text "Invalid witness type with letregion."
+        ErrorLetRegionWitnessInvalid a xx b
+         -> vcat [ ppr a
+                 , text "Invalid witness type with letregion."
                  , text "          The witness: "       <> ppr b
                  , text "  cannot be created with a letregion"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetRegionWitnessConflict xx b1 b2
-         -> vcat [ text "Conflicting witness types with letregion."
+        ErrorLetRegionWitnessConflict a xx b1 b2
+         -> vcat [ ppr a
+                 , text "Conflicting witness types with letregion."
                  , text "      Witness binding: "       <> ppr b1
                  , text "       conflicts with: "       <> ppr b2 
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetRegionsWitnessOther xx bs1 b2
-         -> vcat [ text "Witness type is not for bound regions."
+        ErrorLetRegionsWitnessOther a xx bs1 b2
+         -> vcat [ ppr a
+                 , text "Witness type is not for bound regions."
                  , text "      letregion binds: "       <> (hsep $ map ppr bs1)
                  , text "  but witness type is: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
                  
-        ErrorLetRegionWitnessFree xx b
-         -> vcat [ text "Witness type references a free region variable."
+        ErrorLetRegionWitnessFree a xx b
+         -> vcat [ ppr a
+                 , text "Witness type references a free region variable."
                  , text "  the binding: "               <> ppr b 
                  , text "  contains free region variables."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
                  
         -- Withregion -------------------------------------
-        ErrorWithRegionFree xx u t
-         -> vcat [ text "Region handle escapes scope of withregion."
+        ErrorWithRegionFree a xx u t
+         -> vcat [ ppr a
+                 , text "Region handle escapes scope of withregion."
                  , text "         The region handle: "   <> ppr u
                  , text "  is used in the body type: "   <> ppr t
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
 
-        ErrorWithRegionNotRegion xx u k
-         -> vcat [ text "Withregion handle does not have region kind."
+        ErrorWithRegionNotRegion a xx u k
+         -> vcat [ ppr a
+                 , text "Withregion handle does not have region kind."
                  , text "   Region var or ctor: "       <> ppr u
                  , text "             has kind: "       <> ppr k
                  , text "       but it must be: %"
@@ -224,22 +254,25 @@ instance (Show n, Eq n, Pretty n)
                  , text "with: "                        <> align (ppr xx) ]
 
         -- Witnesses --------------------------------------
-        ErrorWAppMismatch ww t1 t2
-         -> vcat [ text "Type mismatch in witness application."
+        ErrorWAppMismatch a ww t1 t2
+         -> vcat [ ppr a
+                 , text "Type mismatch in witness application."
                  , text "  Constructor expects: "       <> ppr t1
                  , text "      but argument is: "       <> ppr t2
                  , empty
                  , text "with: "                        <> align (ppr ww) ]
 
-        ErrorWAppNotCtor ww t1 t2
-         -> vcat [ text "Type cannot apply non-constructor witness"
+        ErrorWAppNotCtor a ww t1 t2
+         -> vcat [ ppr a
+                 , text "Type cannot apply non-constructor witness"
                  , text "              of type: "       <> ppr t1
                  , text "  to argument of type: "       <> ppr t2
                  , empty
                  , text "with: "                        <> align (ppr ww) ]
 
-        ErrorCannotJoin ww w1 t1 w2 t2
-         -> vcat [ text "Cannot join witnesses."
+        ErrorCannotJoin a ww w1 t1 w2 t2
+         -> vcat [ ppr a
+                 , text "Cannot join witnesses."
                  , text "          Cannot join: "       <> ppr w1
                  , text "              of type: "       <> ppr t1
                  , text "         with witness: "       <> ppr w2
@@ -247,15 +280,17 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr ww) ]
 
-        ErrorWitnessNotPurity xx w t
-         -> vcat [ text "Witness for a purify does not witness purity."
+        ErrorWitnessNotPurity a xx w t
+         -> vcat [ ppr a
+                 , text "Witness for a purify does not witness purity."
                  , text "        Witness: "             <> ppr w
                  , text "       has type: "             <> ppr t
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorWitnessNotEmpty xx w t
-         -> vcat [ text "Witness for a forget does not witness emptiness."
+        ErrorWitnessNotEmpty a xx w t
+         -> vcat [ ppr a
+                 , text "Witness for a forget does not witness emptiness."
                  , text "        Witness: "             <> ppr w
                  , text "       has type: "             <> ppr t
                  , empty
@@ -263,42 +298,49 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Case Expressions -------------------------------
-        ErrorCaseScrutineeNotAlgebraic xx tScrutinee
-         -> vcat [ text "Scrutinee of case expression is not algebraic data."
+        ErrorCaseScrutineeNotAlgebraic a xx tScrutinee
+         -> vcat [ ppr a
+                 , text "Scrutinee of case expression is not algebraic data."
                  , text "     Scrutinee type: "         <> ppr tScrutinee
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
         
-        ErrorCaseScrutineeTypeUndeclared xx tScrutinee
-         -> vcat [ text "Type of scrutinee does not have a data declaration."
+        ErrorCaseScrutineeTypeUndeclared a xx tScrutinee
+         -> vcat [ ppr a
+                 , text "Type of scrutinee does not have a data declaration."
                  , text "     Scrutinee type: "         <> ppr tScrutinee
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseNoAlternatives xx
-         -> vcat [ text "Case expression does not have any alternatives."
+        ErrorCaseNoAlternatives a xx
+         -> vcat [ ppr a
+                 , text "Case expression does not have any alternatives."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseNonExhaustive xx ns
-         -> vcat [ text "Case alternatives are non-exhaustive."
+        ErrorCaseNonExhaustive a xx ns
+         -> vcat [ ppr a
+                 , text "Case alternatives are non-exhaustive."
                  , text " Constructors not matched: "   
                         <> (sep $ punctuate comma $ map ppr ns)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseNonExhaustiveLarge xx
-         -> vcat [ text "Case alternatives are non-exhaustive."
+        ErrorCaseNonExhaustiveLarge a xx
+         -> vcat [ ppr a
+                 , text "Case alternatives are non-exhaustive."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseOverlapping xx
-         -> vcat [ text "Case alternatives are overlapping."
+        ErrorCaseOverlapping a xx
+         -> vcat [ ppr a
+                 , text "Case alternatives are overlapping."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseTooManyBinders xx uCtor iCtorFields iPatternFields
-         -> vcat [ text "Pattern has more binders than there are fields in the constructor."
+        ErrorCaseTooManyBinders a xx uCtor iCtorFields iPatternFields
+         -> vcat [ ppr a
+                 , text "Pattern has more binders than there are fields in the constructor."
                  , text "     Contructor: " <> ppr uCtor
                  , text "            has: " <> ppr iCtorFields      
                                             <+> text "fields"
@@ -307,8 +349,9 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseCannotInstantiate xx tScrutinee tCtor
-         -> vcat [ text "Cannot instantiate constructor type with scrutinee type args."
+        ErrorCaseCannotInstantiate a xx tScrutinee tCtor
+         -> vcat [ ppr a
+                 , text "Cannot instantiate constructor type with scrutinee type args."
                  , text " Either the constructor has an invalid type,"
                  , text " or the type of the scrutinee does not match the type of the pattern."
                  , text "        Scrutinee type: "      <> ppr tScrutinee
@@ -316,22 +359,25 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseScrutineeTypeMismatch xx tScrutinee tPattern
-         -> vcat [ text "Scrutinee type does not match result of pattern type."
+        ErrorCaseScrutineeTypeMismatch a xx tScrutinee tPattern
+         -> vcat [ ppr a
+                 , text "Scrutinee type does not match result of pattern type."
                  , text "        Scrutinee type: "      <> ppr tScrutinee
                  , text "          Pattern type: "      <> ppr tPattern
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseFieldTypeMismatch xx tAnnot tField
-         -> vcat [ text "Annotation on pattern variable does not match type of field."
+        ErrorCaseFieldTypeMismatch a xx tAnnot tField
+         -> vcat [ ppr a
+                 , text "Annotation on pattern variable does not match type of field."
                  , text "       Annotation type: "      <> ppr tAnnot
                  , text "            Field type: "      <> ppr tField
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorCaseAltResultMismatch xx t1 t2
-         -> vcat [ text "Mismatch in alternative result types."
+        ErrorCaseAltResultMismatch a xx t1 t2
+         -> vcat [ ppr a
+                 , text "Mismatch in alternative result types."
                  , text "   Type of alternative: "      <> ppr t1
                  , text "        does not match: "      <> ppr t2
                  , empty
@@ -339,15 +385,17 @@ instance (Show n, Eq n, Pretty n)
 
 
         -- Casts ------------------------------------------
-        ErrorWeakEffNotEff xx eff k
-         -> vcat [ text "Type provided for a 'weakeff' does not have effect kind."
+        ErrorWeakEffNotEff a xx eff k
+         -> vcat [ ppr a
+                 , text "Type provided for a 'weakeff' does not have effect kind."
                  , text "           Type: "             <> ppr eff
                  , text "       has kind: "             <> ppr k
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
        
-        ErrorRunNotSuspension xx t
-         -> vcat [ text "Expression to run is not a suspension."
+        ErrorRunNotSuspension a xx t
+         -> vcat [ ppr a
+                 , text "Expression to run is not a suspension."
                  , text "          Type: "              <> ppr t
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
@@ -359,10 +407,10 @@ instance (Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+
         -- Witness ----------------------------------------
         ErrorNakedWitness xx
          -> vcat [ text "Found naked witness in core program."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-
 

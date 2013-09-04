@@ -19,7 +19,7 @@ checkAbs !table !kenv !tenv xx@(XLAM a b1 x2) _
 
         -- The bound variable cannot shadow others in the environment.
         when (Env.memberBind b1' kenv)
-         $ throw $ ErrorLamShadow xx b1
+         $ throw $ ErrorLamShadow a xx b1
         
         -- Check the body of the abstraction.
         let kenv'       = Env.extend b1' kenv
@@ -30,11 +30,11 @@ checkAbs !table !kenv !tenv xx@(XLAM a b1 x2) _
 
         -- The body of a spec abstraction must have data kind.
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData xx b1 t2 k2
+         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure xx UniverseSpec (TSum e2)
+         $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
 
         -- Mask closure terms due to locally bound region vars.
         let c2_cut      = Set.fromList
@@ -75,11 +75,11 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) _
 
           -- The body of a data abstraction must accept data.
           |  not $ isDataKind k1
-          -> throw $ ErrorLamBindNotData xx t1 k1
+          -> throw $ ErrorLamBindNotData a xx t1 k1
 
           -- The body of a data abstraction must produce data.
           |  not $ isDataKind k2
-          -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
+          -> throw $ ErrorLamBodyNotData a xx b1 t2 k2 
 
           -- Looks good.
           |  otherwise
@@ -136,10 +136,10 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) _
                         Set.empty
 
                   | e2_captured /= tBot kEffect
-                  = throw $ ErrorLamNotPure  xx UniverseData e2_captured
+                  = throw $ ErrorLamNotPure  a xx UniverseData e2_captured
 
                   | c2_captured /= tBot kClosure
-                  = throw $ ErrorLamNotEmpty xx UniverseData c2_captured
+                  = throw $ ErrorLamNotEmpty a xx UniverseData c2_captured
 
                   -- One of the above error cases is supposed to fire,
                   -- so we should never hit this error.
@@ -154,11 +154,11 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) _
 
           -- The body of a witness abstraction must be pure.
           | e2 /= Sum.empty kEffect  
-          -> throw $ ErrorLamNotPure  xx UniverseWitness (TSum e2)
+          -> throw $ ErrorLamNotPure a xx UniverseWitness (TSum e2)
 
           -- The body of a witness abstraction must produce data.
           | not $ isDataKind k2      
-          -> throw $ ErrorLamBodyNotData xx b1 t2 k2
+          -> throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
           -- Looks good.
           | otherwise                
@@ -168,7 +168,7 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) _
                         (Sum.empty kEffect)
                         c2
 
-         _ -> throw $ ErrorMalformedType xx k1
+         _ -> throw $ ErrorMalformedType a xx k1
 
 -- others ---------------------------------------
 checkAbs _ _ _ _ _

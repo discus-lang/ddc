@@ -11,7 +11,8 @@ Clo L:  Use r
 Clo R:  Empty
 
 -- Bad: doesn't typecheck
-Can't typecheck lhs:  Undefined value variable: r
+Can't typecheck lhs:  interactive:2:5
+Undefined value variable: r
 While checking r [r] ()
 
 

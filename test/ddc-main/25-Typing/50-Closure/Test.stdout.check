@@ -94,6 +94,7 @@ addInt [r1] [r0#] [r0#] (5 [r1] ()) (5 [r0#] ())
 -- that the function uses the region due to the Use term in the
 -- function's closure.
 When checking expression.
+  <batch>:72:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
     is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#

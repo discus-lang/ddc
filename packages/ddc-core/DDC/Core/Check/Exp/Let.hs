@@ -32,7 +32,7 @@ checkLet !table !kenv !tenv xx@(XLet a lts x2) _
         -- The body must have data kind.
         (_, k2) <- checkTypeM config kenv t2
         when (not $ isDataKind k2)
-         $ throw $ ErrorLetBodyNotData xx t2 k2
+         $ throw $ ErrorLetBodyNotData a xx t2 k2
 
         -- Mask closure terms due to locally bound value vars.
         let c2_cut      = Set.fromList
@@ -60,13 +60,13 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) _
         
         -- The binders must have region kind.
         when (any (not . isRegionKind) ksRgn) 
-         $ throw $ ErrorLetRegionsNotRegion xx bsRgn ksRgn
+         $ throw $ ErrorLetRegionsNotRegion a xx bsRgn ksRgn
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
         let rebounds    = filter (flip Env.memberBind kenv) bsRgn'
         when (not $ null rebounds)
-         $ throw $ ErrorLetRegionsRebound xx rebounds
+         $ throw $ ErrorLetRegionsRebound a xx rebounds
         
         -- Check the witness types.
         let kenv'       = Env.extends bsRgn kenv
@@ -75,7 +75,7 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) _
         
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM kenv xx us bsWit'
+        checkWitnessBindsM a kenv xx us bsWit'
 
         -- Check the body expression.
         let tenv2       = Env.extends bsWit' tenv'
@@ -85,12 +85,12 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) _
         -- The body type must have data kind.
         (_, kBody)      <- checkTypeM config kenv' tBody
         when (not $ isDataKind kBody)
-         $ throw $ ErrorLetBodyNotData xx tBody kBody
+         $ throw $ ErrorLetBodyNotData a xx tBody kBody
 
         -- The bound region variable cannot be free in the body type.
         let fvsT         = freeT Env.empty tBody
         when (any (flip Set.member fvsT) us)
-         $ throw $ ErrorLetRegionFree xx bsRgn tBody
+         $ throw $ ErrorLetRegionFree a xx bsRgn tBody
         
         -- Delete effects on the bound region from the result.
         let delEff es u = Sum.delete (tRead  (TVar u))
@@ -118,10 +118,10 @@ checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) _
 
         -- The handle must have region kind.
         (case Env.lookup u kenv of
-          Nothing -> throw $ ErrorUndefinedVar u UniverseSpec
+          Nothing -> throw $ ErrorUndefinedVar a u UniverseSpec
 
           Just k  |  not $ isRegionKind k
-                  -> throw $ ErrorWithRegionNotRegion xx u k
+                  -> throw $ ErrorWithRegionNotRegion a xx u k
 
           _       -> return ())
         
@@ -132,13 +132,13 @@ checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) _
         -- The body type must have data kind.
         (tBody', kBody) <- checkTypeM config kenv tBody
         when (not $ isDataKind kBody)
-         $ throw $ ErrorLetBodyNotData xx tBody' kBody
+         $ throw $ ErrorLetBodyNotData a xx tBody' kBody
         
         -- The bound region variable cannot be free in the body type.
         let tcs         = supportTyCon
                         $ support Env.empty Env.empty tBody'
         when (Set.member u tcs)
-         $ throw $ ErrorWithRegionFree xx u tBody'
+         $ throw $ ErrorWithRegionFree a xx u tBody'
 
         -- Delete effects on the bound region from the result.
         let tu          = TVar u
@@ -178,6 +178,7 @@ checkLetsM
 
 checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
  = do   let config = tableConfig table
+        let Just a = takeAnnotOfExp xx
 
         -- Check the right of the binding.
         (x12', t12, effs12, clo12)  
@@ -186,11 +187,11 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
         -- Check the annotation on the binder against the type of the
         -- bound expression.
         (b11', k11')    
-         <- checkLetBindOfTypeM xx config kenv tenv t12 b11
+         <- checkLetBindOfTypeM a xx config kenv tenv t12 b11
 
         -- The right of the binding must have data kind.
         when (not $ isDataKind k11')
-         $ throw $ ErrorLetBindingNotData xx b11' k11'
+         $ throw $ ErrorLetBindingNotData a xx b11' k11'
           
         return  ( LLet b11' x12'
                 , [b11']
@@ -201,11 +202,12 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
 checkLetsM !xx !table !kenv !tenv (LRec bxs)
  = do   let config      = tableConfig table
         let (bs, xs)    = unzip bxs
+        let Just a      = takeAnnotOfExp xx
 
         -- Named binders cannot be multiply defined.
         (case duplicates $ filter isBName bs of
           []    -> return ()
-          b : _ -> throw $ ErrorLetrecRebound xx b)
+          b : _ -> throw $ ErrorLetrecRebound a xx b)
 
         -- Check the types on all the binders.
         (bs', ks)       <- liftM unzip
@@ -214,13 +216,13 @@ checkLetsM !xx !table !kenv !tenv (LRec bxs)
         -- Check all the binders have data kind.
         zipWithM_ (\b k
          -> when (not $ isDataKind k)
-                $ throw $ ErrorLetBindingNotData xx b k)
+                $ throw $ ErrorLetBindingNotData a xx b k)
                 bs' ks
 
         -- All right hand sides must be syntactic abstractions.
         forM_ xs $ \x 
          -> when (not $ (isXLam x || isXLAM x))
-                $ throw $ ErrorLetrecBindingNotLambda xx x
+                $ throw $ ErrorLetrecBindingNotLambda a xx x
 
         -- All variables are in scope in all right hand sides.
         let tenv'       = Env.extends bs' tenv
@@ -233,7 +235,7 @@ checkLetsM !xx !table !kenv !tenv (LRec bxs)
         -- Check annots on binders against inferred types of the bindings.
         zipWithM_ (\b t
                 -> if not $ equivT (typeOfBind b) t
-                        then throw $ ErrorLetMismatch xx b t
+                        then throw $ ErrorLetMismatch a xx b t
                         else return ())
                 bs tsRight
 
@@ -268,7 +270,8 @@ duplicates (x : xs)
 --   otherwise it must match that for the right of the binding.
 checkLetBindOfTypeM 
         :: (Ord n, Show n, Pretty n) 
-        => Exp a n 
+        => a                    -- ^ Annotation for error messages.
+        -> Exp a n 
         -> Config n             -- Data type definitions.
         -> Env n                -- Kind environment. 
         -> Env n                -- Type environment.
@@ -276,7 +279,7 @@ checkLetBindOfTypeM
         -> Bind n 
         -> CheckM a n (Bind n, Kind n)
 
-checkLetBindOfTypeM !xx !config !kenv !_tenv !tRight b
+checkLetBindOfTypeM !a !xx !config !kenv !_tenv !tRight b
         -- If the binder just has type Bot then replace it
         | isBot (typeOfBind b)
         = do    (_, k)  <- checkTypeM config kenv tRight
@@ -284,7 +287,7 @@ checkLetBindOfTypeM !xx !config !kenv !_tenv !tRight b
 
         -- The type of the binder must match that of the right of the binding.
         | not $ equivT (typeOfBind b) tRight
-        = throw $ ErrorLetMismatch xx b tRight
+        = throw $ ErrorLetMismatch a xx b tRight
 
         | otherwise
         =       checkBindM config kenv b
@@ -294,51 +297,52 @@ checkLetBindOfTypeM !xx !config !kenv !_tenv !tRight b
 -- | Check the set of witness bindings bound in a letregion for conflicts.
 checkWitnessBindsM 
         :: (Show n, Ord n) 
-        => KindEnv n            -- ^ Kind Environment.
+        => a                    -- ^ Annotation for error messages.
+        -> KindEnv n            -- ^ Kind Environment.
         -> Exp a n              -- ^ The whole expression, for error messages.
         -> [Bound n]            -- ^ Region variables bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> CheckM a n ()
 
-checkWitnessBindsM !kenv !xx !nRegions !bsWits
- = mapM_ (checkWitnessBindM kenv xx nRegions bsWits) bsWits
+checkWitnessBindsM !a !kenv !xx !nRegions !bsWits
+ = mapM_ (checkWitnessBindM a kenv xx nRegions bsWits) bsWits
 
 checkWitnessBindM 
         :: (Show n, Ord n)
-        => KindEnv n            -- ^ Kind environment.
+        => a                    -- ^ Annotation for error messages.
+        -> KindEnv n            -- ^ Kind environment.
         -> Exp a n
         -> [Bound n]            -- ^ Region variables bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> Bind  n              -- ^ The witness binding to check.
         -> CheckM a n ()
 
-checkWitnessBindM !kenv !xx !uRegions !bsWit !bWit
- = let btsWit   
-        = [(typeOfBind b, b) | b <- bsWit]
+checkWitnessBindM !a !kenv !xx !uRegions !bsWit !bWit
+ = let  btsWit  = [(typeOfBind b, b) | b <- bsWit]
 
-       -- Check the argument of a witness type is for the region we're
-       -- introducing here.
-       checkWitnessArg t
-        = case t of
+        -- Check the argument of a witness type is for the region we're
+        -- introducing here.
+        checkWitnessArg t
+         = case t of
             TVar u'
              |  all (/= u') uRegions 
-                         -> throw $ ErrorLetRegionsWitnessOther xx uRegions bWit
+                         -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 
             TCon (TyConBound u' _)
              | all (/= u') uRegions 
-                         -> throw $ ErrorLetRegionsWitnessOther xx uRegions bWit
+                         -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
              | otherwise -> return ()
             
             -- The parser should ensure the right of a witness is a 
             -- constructor or variable.
-            _            -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+            _            -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
             
-       inEnv t
-        = case t of
-            TVar u'                | Env.member u' kenv -> True
-            TCon (TyConBound u' _) | Env.member u' kenv -> True
-            _                                           -> False 
+        inEnv t
+         = case t of
+             TVar u'                | Env.member u' kenv -> True
+             TCon (TyConBound u' _) | Env.member u' kenv -> True
+             _                                           -> False 
        
    in  case typeOfBind bWit of
         TApp (TCon (TyConWitness TwConGlobal))  t2
@@ -346,32 +350,32 @@ checkWitnessBindM !kenv !xx !uRegions !bsWit !bWit
 
         TApp (TCon (TyConWitness TwConConst))   t2
          | Just bConflict <- L.lookup (tMutable t2) btsWit
-         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
 
         TApp (TCon (TyConWitness TwConMutable)) t2
          | Just bConflict <- L.lookup (tConst t2)   btsWit
-         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
 
         TApp (TCon (TyConWitness TwConLazy))    t2
          | Just bConflict <- L.lookup (tManifest t2)  btsWit
-         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
 
         TApp (TCon (TyConWitness TwConManifest))  t2
          | Just bConflict <- L.lookup (tLazy t2)    btsWit
-         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
          
         (takeTyConApps -> Just (TyConWitness (TwConDistinct 2), [t1, t2]))
          | inEnv t1  -> checkWitnessArg t2
          | inEnv t2  -> checkWitnessArg t1
          | t1 /= t2  -> mapM_ checkWitnessArg [t1, t2]
-         | otherwise -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+         | otherwise -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
 
         (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
           -> mapM_ checkWitnessArg ts
 
-        _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+        _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
 

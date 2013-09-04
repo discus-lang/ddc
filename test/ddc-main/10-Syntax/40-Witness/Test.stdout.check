@@ -11,6 +11,7 @@ Mutable# [r0#] :: Mutable r0#
 
 -- Error: type mismatch in witness application.
 When checking expression.
+  <batch>:13:2
   Type cannot apply non-constructor witness
                 of type: [^ : Region].Mutable ^0
     to argument of type: [^ : Region].Mutable ^0
@@ -20,6 +21,7 @@ When checking expression.
 
 -- Error: type mismatch in witness application.
 When checking expression.
+  <batch>:17:2
   Type mismatch in witness application.
     Constructor expects: Region
         but argument is: Data
@@ -29,6 +31,7 @@ When checking expression.
 
 -- Error: cannot apply non-constructor witness to argument.
 When checking expression.
+  <batch>:21:2
   Type cannot apply non-constructor witness
                 of type: Mutable r0#
     to argument of type: [^ : Region].Mutable ^0

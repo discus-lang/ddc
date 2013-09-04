@@ -1,5 +1,6 @@
 Error loading module
   When checking expression.
+    test/ddc-main/51-Lite/T253-RedefinedTopBind/Main.dcl:6:6
     Redefined binder 'main : [r : Region].Ptr# r String# -> Int#' in letrec.
     
     with: letrec {

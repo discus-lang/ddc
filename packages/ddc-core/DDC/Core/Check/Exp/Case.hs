@@ -44,13 +44,13 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
                  -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
                            , ts )
 
-                _ -> throw $ ErrorCaseScrutineeNotAlgebraic xx tDiscrim
+                _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
 
         -- Get the mode of the data type, 
         --   this tells us how many constructors there are.
         mode    
          <- case mmode of
-             Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared xx tDiscrim
+             Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared a xx tDiscrim
              Just m  -> return m
 
         -- Check the alternatives.
@@ -60,13 +60,13 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
 
         -- There must be at least one alternative
         when (null ts)
-         $ throw $ ErrorCaseNoAlternatives xx
+         $ throw $ ErrorCaseNoAlternatives a xx
 
         -- All alternative result types must be identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
          -> when (not $ equivT tAlt tAlt') 
-             $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
+             $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
         let pats                = [p | AAlt p _ <- alts]
@@ -75,20 +75,20 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
 
         -- Alts were overlapping because there are multiple defaults.
         when (length psDefaults > 1)
-         $ throw $ ErrorCaseOverlapping xx
+         $ throw $ ErrorCaseOverlapping a xx
 
         -- Alts were overlapping because the same ctor is used multiple times.
         when (length (nub nsCtorsMatched) /= length nsCtorsMatched )
-         $ throw $ ErrorCaseOverlapping xx
+         $ throw $ ErrorCaseOverlapping a xx
 
         -- Check for alts overlapping because a default is not last.
         -- Also check there is at least one alternative.
         (case pats of
-          [] -> throw $ ErrorCaseNoAlternatives xx
+          [] -> throw $ ErrorCaseNoAlternatives a xx
 
           _  |  Just patsInit <- takeInit pats
              ,  or $ map isPDefault $ patsInit
-             -> throw $ ErrorCaseOverlapping xx
+             -> throw $ ErrorCaseOverlapping a xx
 
              |  otherwise
              -> return ())
@@ -106,7 +106,7 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
            -- Look for unmatched constructors.
            | nsCtorsMissing <- nsCtors \\ nsCtorsMatched
            , not $ null nsCtorsMissing
-           -> throw $ ErrorCaseNonExhaustive xx nsCtorsMissing
+           -> throw $ ErrorCaseNonExhaustive a xx nsCtorsMissing
 
            -- All constructors were matched.
            | otherwise 
@@ -117,7 +117,7 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
           DataModeLarge 
            | any isPDefault [p | AAlt p _ <- alts] -> return ()
            | otherwise  
-           -> throw $ ErrorCaseNonExhaustiveLarge xx)
+           -> throw $ ErrorCaseNonExhaustiveLarge a xx)
 
         let effsMatch    
                 = Sum.singleton kEffect 
@@ -163,7 +163,7 @@ checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs (AAlt PDefault xBody)
 
 checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
  = do   let config      = tableConfig table
-        let Just aCase  = takeAnnotOfExp xx
+        let Just a      = takeAnnotOfExp xx
 
         -- If the data constructor isn't defined then the spread 
         --  transform won't have given it a proper type.
@@ -180,7 +180,7 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
               -> return $ typeOfDataCtor ctor
 
               | otherwise
-              -> throw  $ ErrorUndefinedCtor $ XCon aCase dc
+              -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 
         -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
@@ -188,7 +188,7 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
         -- on the front, which should have been checked by the def checker.
         tCtor_inst      
          <- case instantiateTs tCtor tsArgs of
-             Nothing -> throw $ ErrorCaseCannotInstantiate xx tDiscrim tCtor
+             Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
              Just t  -> return t
         
         -- Split the constructor type into the field and result types.
@@ -199,19 +199,19 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
         --  If it doesn't then the constructor in the pattern probably isn't for
         --  the discriminant type.
         when (not $ equivT tDiscrim tResult)
-         $ throw $ ErrorCaseScrutineeTypeMismatch xx tDiscrim tResult
+         $ throw $ ErrorCaseScrutineeTypeMismatch a xx tDiscrim tResult
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
         when (length tsFields_ctor < length bsArg)
-         $ throw $ ErrorCaseTooManyBinders xx dc
+         $ throw $ ErrorCaseTooManyBinders a xx dc
                         (length tsFields_ctor)
                         (length bsArg)
 
         -- Merge the field types we get by instantiating the constructor
         -- type with possible annotations from the source program.
         -- If the annotations don't match, then we throw an error.
-        tsFields        <- zipWithM (mergeAnnot xx)
+        tsFields        <- zipWithM (mergeAnnot a xx)
                             (map typeOfBind bsArg)
                             tsFields_ctor        
 
@@ -238,8 +238,8 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
 
 -- | Merge a type annotation on a pattern field with a type we get by
 --   instantiating the constructor type.
-mergeAnnot :: Eq n => Exp a n -> Type n -> Type n -> CheckM a n (Type n)
-mergeAnnot !xx !tAnnot !tActual
+mergeAnnot :: Eq n => a -> Exp a n -> Type n -> Type n -> CheckM a n (Type n)
+mergeAnnot !a !xx !tAnnot !tActual
         -- Annotation is bottom, so just use the real type.
         | isBot tAnnot      = return tActual
 
@@ -248,5 +248,5 @@ mergeAnnot !xx !tAnnot !tActual
 
         -- Annotation does not match actual type.
         | otherwise       
-        = throw $ ErrorCaseFieldTypeMismatch xx tAnnot tActual
+        = throw $ ErrorCaseFieldTypeMismatch a xx tAnnot tActual
 
