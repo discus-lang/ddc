@@ -11,12 +11,12 @@ checkCast :: Checker a n
 
 -- type cast -------------------------------------
 -- Weaken an effect, adding in the given terms.
-checkCast !table !kenv !tenv xx@(XCast a (CastWeakenEffect eff) x1) _
+checkCast !table !kenv !tenv xx@(XCast a (CastWeakenEffect eff) x1) tXX
  = do   let config      = tableConfig table
 
         -- Check the body.
         (x1', t1, effs, clo)
-                        <- tableCheckExp table table kenv tenv x1 Nothing
+                        <- tableCheckExp table table kenv tenv x1 tXX
 
         -- Check the effect term.
         (eff', kEff)    <- checkTypeM config kenv eff 
@@ -35,11 +35,11 @@ checkCast !table !kenv !tenv xx@(XCast a (CastWeakenEffect eff) x1) _
 
 
 -- Weaken a closure, adding in the given terms.
-checkCast !table !kenv !tenv (XCast a (CastWeakenClosure xs) x1) _
+checkCast !table !kenv !tenv (XCast a (CastWeakenClosure xs) x1) tXX
  = do   
         -- Check the body.
         (x1', t1, effs, clos)
-                <- tableCheckExp table table kenv tenv x1 Nothing
+                <- tableCheckExp table table kenv tenv x1 tXX
 
         -- Check the contained expressions.
         (xs', closs)
@@ -56,12 +56,12 @@ checkCast !table !kenv !tenv (XCast a (CastWeakenClosure xs) x1) _
 
 
 -- Purify an effect, given a witness that it is pure.
-checkCast !table !kenv !tenv xx@(XCast a (CastPurify w) x1) _
+checkCast !table !kenv !tenv xx@(XCast a (CastPurify w) x1) tXX
  = do   let config      = tableConfig table
 
         -- Check the body.
         (x1', t1, effs, clo)
-                  <- tableCheckExp table table kenv tenv x1 Nothing
+                  <- tableCheckExp table table kenv tenv x1 tXX
 
         -- Check the witness.
         (w', tW)  <- checkWitnessM config kenv tenv w
@@ -81,12 +81,12 @@ checkCast !table !kenv !tenv xx@(XCast a (CastPurify w) x1) _
 
 
 -- Forget a closure, given a witness that it is empty.
-checkCast !table !kenv !tenv xx@(XCast a (CastForget w) x1) _
+checkCast !table !kenv !tenv xx@(XCast a (CastForget w) x1) tXX
  = do   let config      = tableConfig table
 
         -- Check the body.
         (x1', t1, effs, clos)  
-                  <- tableCheckExp table table kenv tenv x1 Nothing
+                  <- tableCheckExp table table kenv tenv x1 tXX
 
         -- Check the witness.
         (w', tW)  <- checkWitnessM config kenv tenv w        
@@ -163,7 +163,7 @@ checkArgM
                 ( Exp (AnTEC a n) n
                 , Set (TaggedClosure n))
 
-checkArgM !table !kenv !tenv !xx !_
+checkArgM !table !kenv !tenv !xx !tXX
  = case xx of
         XType a t
          -> do  (t', k) <- checkTypeM (tableConfig table) kenv t
@@ -180,7 +180,7 @@ checkArgM !table !kenv !tenv !xx !_
 
         _ -> do
                 (xx', _, _, clos) 
-                        <- tableCheckExp table table kenv tenv xx Nothing
+                        <- tableCheckExp table table kenv tenv xx tXX
                 return  ( xx'
                         , clos)
 

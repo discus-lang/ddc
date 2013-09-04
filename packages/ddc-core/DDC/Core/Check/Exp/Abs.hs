@@ -49,8 +49,18 @@ checkAbs !table !kenv !tenv xx@(XLAM a b1 x2) _
          
 
 -- function abstraction -------------------------
-checkAbs !table !kenv !tenv xx@(XLam a b1 x2) _
+checkAbs !table !kenv !tenv xx@(XLam a b1 x2) mtXX
  = do   let config      = tableConfig table
+
+        -- If we have an expected type for the abstraction then split it
+        -- into the expected types of the argument and body.
+        let (_mtX1, mtX2) 
+                = case mtXX of
+                        Nothing            -> (Nothing, Nothing)
+                        Just tXX
+                         | Just (tX1, tX2) <- takeTFun tXX
+                                           -> (Just tX1, Just tX2)
+                         | otherwise       -> (Nothing, Nothing)
 
         -- Check the type of the binder.
         (b1', k1)       <- checkBindM config kenv b1
@@ -59,7 +69,7 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) _
         -- Check the body of the abstraction.
         let tenv'       = Env.extend b1' tenv
         (x2', t2, e2, c2) 
-                <- tableCheckExp table table kenv tenv' x2 Nothing
+                <- tableCheckExp table table kenv tenv' x2 mtX2
 
         -- The typing rules guarantee that the checked type of an 
         -- expression is well kinded, but we need to check it again

@@ -13,7 +13,7 @@ import Data.List                as L
 checkCase :: Checker a n
 
 -- case expression ------------------------------
-checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
+checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) mtXX
  = do   let config      = tableConfig table
 
         -- Check the discriminant.
@@ -56,7 +56,8 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) _
         -- Check the alternatives.
         (alts', ts, effss, closs)     
                 <- liftM unzip4
-                $  mapM (checkAltM xx table kenv tenv tDiscrim tsArgs) alts
+                $  mapM (\alt -> checkAltM xx table kenv tenv tDiscrim tsArgs alt mtXX) 
+                $  alts
 
         -- There must be at least one alternative
         when (null ts)
@@ -144,24 +145,27 @@ checkAltM
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Alt a n              -- ^ Alternative to check.
+        -> Maybe (Type n)       -- ^ Expected type of right of alternative.
         -> CheckM a n 
                 ( Alt (AnTEC a n) n
                 , Type n
                 , TypeSum n
                 , Set (TaggedClosure n))
 
-checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs (AAlt PDefault xBody)
+checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs 
+          (AAlt PDefault xBody) mtXX
  = do   
         -- Check the right of the alternative.
         (xBody', tBody, effBody, cloBody)
-                <- tableCheckExp table table kenv tenv xBody Nothing
+                <- tableCheckExp table table kenv tenv xBody mtXX
 
         return  ( AAlt PDefault xBody'
                 , tBody
                 , effBody
                 , cloBody)
 
-checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
+checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs 
+          (AAlt (PData dc bsArg) xBody) mtXX
  = do   let config      = tableConfig table
         let a           = annotOfExp xx
 
@@ -221,7 +225,7 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs (AAlt (PData dc bsArg) xBody)
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody)
-                <- tableCheckExp table table kenv tenv' xBody Nothing
+                <- tableCheckExp table table kenv tenv' xBody mtXX
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.

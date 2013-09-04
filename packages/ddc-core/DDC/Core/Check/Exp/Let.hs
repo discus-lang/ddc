@@ -12,7 +12,7 @@ import Data.List                        as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !kenv !tenv xx@(XLet a lts x2) _
+checkLet !table !kenv !tenv xx@(XLet a lts x2) tXX
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -27,7 +27,7 @@ checkLet !table !kenv !tenv xx@(XLet a lts x2) _
         -- Check the body expression.
         let tenv1  = Env.extends bs' tenv
         (x2', t2, effs2, c2) 
-                <- tableCheckExp table table kenv tenv1 x2 Nothing
+                <- tableCheckExp table table kenv tenv1 x2 tXX
 
         -- The body must have data kind.
         (_, k2) <- checkTypeM config kenv t2
@@ -47,7 +47,7 @@ checkLet !table !kenv !tenv xx@(XLet a lts x2) _
 
 
 -- letregion --------------------------------------
-checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) _
+checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table kenv tenv x Nothing
     us   -> do
@@ -80,7 +80,7 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) _
         -- Check the body expression.
         let tenv2       = Env.extends bsWit' tenv'
         (xBody', tBody, effs, clo)  
-                        <- tableCheckExp table table kenv' tenv2 x Nothing
+                        <- tableCheckExp table table kenv' tenv2 x tXX
 
         -- The body type must have data kind.
         (_, kBody)      <- checkTypeM config kenv' tBody
@@ -113,7 +113,7 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) _
 
 
 -- withregion -----------------------------------
-checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) _
+checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) tXX
  = do   let config      = tableConfig table
 
         -- The handle must have region kind.
@@ -127,7 +127,7 @@ checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) _
         
         -- Check the body expression.
         (xBody', tBody, effs, clo) 
-                        <- tableCheckExp table table kenv tenv x Nothing
+                        <- tableCheckExp table table kenv tenv x tXX
 
         -- The body type must have data kind.
         (tBody', kBody) <- checkTypeM config kenv tBody
@@ -180,9 +180,14 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
  = do   let config      = tableConfig table
         let a           = annotOfExp xx
 
+        -- If the type of the binding is not Bot then use that
+        -- as the expected type when checking the body.
+        let tB          = typeOfBind b11
+        let tXX         = if isBot tB then Nothing else Just tB
+
         -- Check the right of the binding.
         (x12', t12, effs12, clo12)  
-         <- tableCheckExp table table kenv tenv x12 Nothing
+         <- tableCheckExp table table kenv tenv x12 tXX
 
         -- Check the annotation on the binder against the type of the
         -- bound expression.
@@ -230,7 +235,10 @@ checkLetsM !xx !table !kenv !tenv (LRec bxs)
         -- Check the right hand sides.
         (xsRight', tsRight, _effssBinds, clossBinds) 
                 <- liftM unzip4 
-                $  mapM (\x -> tableCheckExp table table kenv tenv' x Nothing) xs
+                $  mapM (\(b, x) -> let tB      = typeOfBind b
+                                        tXX     = if isBot tB then Nothing else Just tB
+                                    in  tableCheckExp table table kenv tenv' x tXX) 
+                $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.
         zipWithM_ (\b t
