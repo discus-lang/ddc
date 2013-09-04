@@ -65,9 +65,8 @@ wrapResultExp xWorld xResult
         xWorld'  = reannotate annotTail xWorld
         xResult' = reannotate annotTail xResult
    in   case C.takeXConApps xResult' of
-
          Just (dc, xa)
-          | (DaConNamed (NameDaConFlow (DaConFlowTuple n))) <- daConName dc
+          | DaConPrim (NameDaConFlow (DaConFlowTuple n)) _ <- dc
           , x <- length xa
           , x >= 2
           -> let (b, a) = splitAt (x `quot` 2) xa
