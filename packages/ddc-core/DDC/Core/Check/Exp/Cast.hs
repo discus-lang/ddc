@@ -66,7 +66,7 @@ checkCast !table !kenv !tenv !ctx xx@(XCast a (CastPurify w) x1) dXX
                   <- tableCheckExp table table kenv tenv ctx x1 dXX
 
         -- Check the witness.
-        (w', tW)  <- checkWitnessM config kenv tenv w
+        (w', tW)  <- checkWitnessM config kenv tenv ctx w
         let wTEC  = reannotate fromAnT w'
 
         -- The witness must have type (Pure e), for some effect e.
@@ -91,7 +91,7 @@ checkCast !table !kenv !tenv !ctx xx@(XCast a (CastForget w) x1) dXX
                   <- tableCheckExp table table kenv tenv ctx x1 dXX
 
         -- Check the witness.
-        (w', tW)  <- checkWitnessM config kenv tenv w        
+        (w', tW)  <- checkWitnessM config kenv tenv ctx w
         let wTEC  = reannotate fromAnT w'
 
         -- The witness must have type (Empty c), for some closure c.
@@ -179,7 +179,7 @@ checkArgM !table !kenv !tenv !ctx !xx !dXX
                         , ctx)
 
         XWitness a w
-         -> do  (w', t)  <- checkWitnessM (tableConfig table) kenv tenv w
+         -> do  (w', t)  <- checkWitnessM (tableConfig table) kenv tenv ctx w
                 let a'   = AnTEC t (tBot kEffect) (tBot kClosure) a
                 return  ( XWitness a' (reannotate fromAnT w')
                         , Set.empty

@@ -59,7 +59,7 @@ checkApp !table !kenv !tenv !ctx xx@(XApp a x1 (XWitness _ w2)) _
 
         -- Check the witness.
         (w2', t2) 
-         <- checkWitnessM config kenv tenv w2
+         <- checkWitnessM config kenv tenv ctx w2
         let w2TEC = reannotate fromAnT w2'
 
         -- The type of the function must have an outer implication.

@@ -21,13 +21,15 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a lts x2) tXX
  = do   let config  = tableConfig table
 
         -- Check the bindings
-        (lts', bs', effs12, clo12, ctx')
+        (lts', bs', effs12, clo12, ctx12)
                 <- checkLetsM xx table kenv tenv ctx lts
 
         -- Check the body expression.
-        let tenv1  = Env.extends bs' tenv
-        (x2', t2, effs2, c2, ctx2) 
-                <- tableCheckExp table table kenv tenv1 ctx' x2 tXX
+        let (ctx1', _pos12) 
+                = pushTypes bs' ctx12
+
+        (x2', t2, effs2, c2, _ctx2)                     -- TODO: use context
+                <- tableCheckExp table table kenv tenv ctx1' x2 tXX
 
         -- The body must have data kind.
         (_, k2) <- checkTypeM config kenv t2
@@ -44,7 +46,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a lts x2) tXX
                 t2
                 (effs12 `Sum.union` effs2)
                 (clo12  `Set.union` c2_cut)
-                ctx2
+                ctx                                     -- TODO: pop types of lets
 
 
 -- letregion --------------------------------------
@@ -71,7 +73,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
         
         -- Check the witness types.
         let kenv'       = Env.extends bsRgn kenv
-        let tenv'       = Env.lift depth tenv
+        let ctx'        = liftTypes depth ctx
         (bsWit', _)     <- liftM unzip $ mapM (checkBindM config kenv') bsWit
         
         -- Check that the witnesses bound here are for the region,
@@ -79,12 +81,12 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
         checkWitnessBindsM a kenv xx us bsWit'
 
         -- Check the body expression.
-        let tenv2       = Env.extends bsWit' tenv'
-        (xBody', tBody, effs, clo, ctx')  
-                        <- tableCheckExp table table kenv' tenv2 ctx x tXX
+        let (ctx2, _pos) = pushTypes bsWit' ctx'
+        (xBody', tBody, effs, clo, _ctx3)  
+                         <- tableCheckExp table table kenv' tenv ctx2 x tXX
 
         -- The body type must have data kind.
-        (_, kBody)      <- checkTypeM config kenv' tBody
+        (_, kBody)       <- checkTypeM config kenv' tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody kBody
 
@@ -111,7 +113,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
                 (lowerT depth tBody)
                 (lowerT depth effs')
                 c2_cut
-                ctx'
+                ctx
 
 
 -- withregion -----------------------------------
@@ -236,14 +238,14 @@ checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
                 $ throw $ ErrorLetrecBindingNotLambda a xx x
 
         -- All variables are in scope in all right hand sides.
-        let tenv'       = Env.extends bs' tenv
+        let (ctx', _pos) = pushTypes bs' ctx
 
         -- Check the right hand sides.
         (xsRight', tsRight, _effssBinds, clossBinds, _)         -- TODO: thread contexts properly
                 <- liftM unzip5
                 $  mapM (\(b, x) -> let tB      = typeOfBind b
                                         dXX     = if isBot tB then Synth else Check tB
-                                    in  tableCheckExp table table kenv tenv' ctx x dXX) 
+                                    in  tableCheckExp table table kenv tenv ctx' x dXX) 
                 $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.
@@ -264,7 +266,7 @@ checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
                 , zipWith replaceTypeOfBind tsRight bs'
                 , Sum.empty kEffect
                 , clos_cut
-                , ctx)
+                , ctx')                                         -- TODO: use final context.
 
 checkLetsM _xx _config _kenv _tenv _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"

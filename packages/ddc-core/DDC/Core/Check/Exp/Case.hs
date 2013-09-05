@@ -4,7 +4,6 @@ module DDC.Core.Check.Exp.Case
 where
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 import Data.List                as L
@@ -129,7 +128,7 @@ checkCase !table !kenv !tenv !ctx xx@(XCase a xDiscrim alts) mtXX
                 tAlt
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
                 (Set.unions         (closDiscrim : closs))
-                ctx'
+                ctx'                                    -- TODO: use final context.
 
 checkCase _ _ _ _ _ _
         = error "ddc-core.checkCase: no match"
@@ -224,12 +223,12 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs !ctx
                             tsFields_ctor        
 
         -- Extend the environment with the field types.
-        let bsArg'      = zipWith replaceTypeOfBind tsFields bsArg
-        let tenv'       = Env.extends bsArg' tenv
+        let bsArg'           = zipWith replaceTypeOfBind tsFields bsArg
+        let (ctxArg, posArg) = pushTypes bsArg' ctx
         
         -- Check the body in this new environment.
-        (xBody', tBody, effsBody, closBody, ctx')
-                <- tableCheckExp table table kenv tenv' ctx xBody dXX
+        (xBody', tBody, effsBody, closBody, ctxBody)
+                <- tableCheckExp table table kenv tenv ctxArg xBody dXX
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
@@ -237,6 +236,8 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs !ctx
                 = Set.fromList
                 $ mapMaybe (cutTaggedClosureXs bsArg')
                 $ Set.toList closBody
+
+        let Just ctx' = popToPos posArg ctxBody
 
         return  ( AAlt (PData dc bsArg') xBody'
                 , tBody

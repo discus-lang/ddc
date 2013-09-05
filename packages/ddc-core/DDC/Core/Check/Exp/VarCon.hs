@@ -14,16 +14,29 @@ checkVarCon :: Checker a n
 
 -- variables ------------------------------------
 checkVarCon !_table !_kenv !tenv !ctx (XVar a u) _
- = case Env.lookup u tenv of
-        Nothing -> throw $ ErrorUndefinedVar a u UniverseData
-        Just t  
-         -> returnX a 
-                (\z -> XVar z u)
-                t
-                (Sum.empty kEffect)
-                (Set.singleton $ taggedClosureOfValBound t u)
-                ctx
+ 
+ -- Look in the local context.
+ | Just t       <- lookupType u ctx
+ = returnX a
+        (\z -> XVar z u)
+        t
+        (Sum.empty kEffect)
+        (Set.singleton $ taggedClosureOfValBound t u)
+        ctx
 
+ -- Look in the global environment.
+ |  Just t      <- Env.lookup u tenv
+ = returnX a 
+        (\z -> XVar z u)
+        t
+        (Sum.empty kEffect)
+        (Set.singleton $ taggedClosureOfValBound t u)
+        ctx
+
+ 
+ | otherwise
+ = throw $ ErrorUndefinedVar a u UniverseData
+         
 
 -- constructors ---------------------------------
 checkVarCon !table !_kenv !_tenv !ctx xx@(XCon a dc) _

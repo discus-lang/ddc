@@ -21,6 +21,7 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()
 import DDC.Type.Check                           (Config (..), configOfProfile)
 import DDC.Type.Transform.SubstituteT
+import DDC.Type.Check.Context
 import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.Sum                             as Sum
@@ -63,7 +64,7 @@ checkWitness
                   , Type n)
 
 checkWitness config kenv tenv xx
-        = result $ checkWitnessM config kenv tenv xx
+        = result $ checkWitnessM config kenv tenv emptyContext xx
 
 
 -- | Like `checkWitness`, but check in an empty environment.
@@ -91,25 +92,32 @@ checkWitnessM
         => Config n             -- ^ Data type definitions.
         -> KindEnv n            -- ^ Kind environment.
         -> TypeEnv n            -- ^ Type environment.
+        -> Context n            -- ^ Input context
         -> Witness a n          -- ^ Witness to check.
         -> CheckM a n 
                 ( Witness (AnT a n) n
                 , Type n)
 
-checkWitnessM !_config !_kenv !tenv (WVar a u)
- = case Env.lookup u tenv of
-        Nothing -> throw $ ErrorUndefinedVar a u UniverseWitness
-        Just t  -> return ( WVar (AnT t a) u
-                          , t)
+checkWitnessM !_config !_kenv !tenv !ctx (WVar a u)
+ -- Witness is defined locally.
+ | Just t       <- lookupType u ctx
+ = return ( WVar (AnT t a) u, t)
 
-checkWitnessM !_config !_kenv !_tenv (WCon a wc)
+ -- Witness is defined globally.
+ | Just t       <- Env.lookup u tenv 
+ = return ( WVar (AnT t a) u, t)
+           
+ | otherwise
+ = throw $ ErrorUndefinedVar a u UniverseWitness
+ 
+checkWitnessM !_config !_kenv !_tenv !_ctx (WCon a wc)
  = let  t'       = typeOfWiCon wc
    in   return  ( WCon (AnT t' a) wc
                 , t')
   
 -- witness-type application
-checkWitnessM !config !kenv !tenv ww@(WApp a1 w1 (WType a2 t2))
- = do   (w1', t1)       <- checkWitnessM  config kenv tenv w1
+checkWitnessM !config !kenv !tenv !ctx ww@(WApp a1 w1 (WType a2 t2))
+ = do   (w1', t1)       <- checkWitnessM  config kenv tenv ctx w1
         (t2', k2)       <- checkTypeM     config kenv t2
         case t1 of
          TForall b11 t12
@@ -122,9 +130,9 @@ checkWitnessM !config !kenv !tenv ww@(WApp a1 w1 (WType a2 t2))
          _              -> throw $ ErrorWAppNotCtor  a1 ww t1 t2'
 
 -- witness-witness application
-checkWitnessM !config !kenv !tenv ww@(WApp a w1 w2)
- = do   (w1', t1)       <- checkWitnessM config kenv tenv w1
-        (w2', t2)       <- checkWitnessM config kenv tenv w2
+checkWitnessM !config !kenv !tenv !ctx ww@(WApp a w1 w2)
+ = do   (w1', t1)       <- checkWitnessM config kenv tenv ctx w1
+        (w2', t2)       <- checkWitnessM config kenv tenv ctx w2
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           |  t11 == t2   
@@ -135,9 +143,9 @@ checkWitnessM !config !kenv !tenv ww@(WApp a w1 w2)
          _              -> throw $ ErrorWAppNotCtor  a ww t1 t2
 
 -- witness joining
-checkWitnessM !config !kenv !tenv ww@(WJoin a w1 w2)
- = do   (w1', t1) <- checkWitnessM config kenv tenv w1
-        (w2', t2) <- checkWitnessM config kenv tenv w2
+checkWitnessM !config !kenv !tenv !ctx ww@(WJoin a w1 w2)
+ = do   (w1', t1) <- checkWitnessM config kenv tenv ctx w1
+        (w2', t2) <- checkWitnessM config kenv tenv ctx w2
         case (t1, t2) of
          (  TApp (TCon (TyConWitness TwConPure)) eff1
           , TApp (TCon (TyConWitness TwConPure)) eff2)
@@ -156,7 +164,7 @@ checkWitnessM !config !kenv !tenv ww@(WJoin a w1 w2)
          _ -> throw $ ErrorCannotJoin a ww w1 t1 w2 t2
 
 -- embedded types
-checkWitnessM !config !kenv !_tenv (WType a t)
+checkWitnessM !config !kenv !_tenv !_ctx (WType a t)
  = do   (t', k)  <- checkTypeM config kenv t
         return  ( WType (AnT k a) t'
                 , k)
