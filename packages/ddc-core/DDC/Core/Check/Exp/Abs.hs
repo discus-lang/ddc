@@ -27,7 +27,7 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) dXX
          _ -> throw $ ErrorLamBindBadKind a xx (typeOfBind b1') k1
 
 checkAbs _ _ _ _ _
-        = error "ddc-core.checkAbs: no match"
+        = error "ddc-core.checkAbs: no match."
 
 
 -- AbsLAM ---------------------------------------------------------------------
@@ -156,13 +156,16 @@ makeFunctionType config a xx t1 t2 e2 c2
          then   return  ( tFun t1 t2
                         , Set.empty)
 
+        -- We don't have a way of forming a function with an impure effect.
         else if (e2_captured /= tBot kEffect)
          then   throw $ ErrorLamNotPure  a xx UniverseData e2_captured
 
+        -- We don't have a way of forming a function with an non-empty closure.
         else if (c2_captured /= tBot kClosure)
          then   throw $ ErrorLamNotEmpty a xx UniverseData c2_captured
 
-        else    error "checkExpM': can't build function type."
+        -- One of the above error reporting cases should have fired already.
+        else    error $ "ddc-core.makeFunctionType: is broken."
 
 
 -- AbsLamWitness --------------------------------------------------------------
@@ -189,3 +192,4 @@ checkAbsLamWitness !table !kenv !tenv !a !b1 !_k1 !x2 !_dXX
                 (tImpl t1 t2)
                 (Sum.empty kEffect)
                 c2
+
