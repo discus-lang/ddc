@@ -93,3 +93,11 @@ in  letregion r4 with { wc4 : Const r4; wg4 : Global r4 } in
     case foo [r4] {:wc4 wg4:} [r5] {:wc5 wg5 wl5:} () of {
             Pr _ y -> copyInt [:r5 r0#:] y
     };;
+
+
+-- Mixed spec and value binders.
+:trans..
+let foo [r1 r2 : Region] (_ : Unit)
+     = 5 [r1] ()
+in  ();;
+

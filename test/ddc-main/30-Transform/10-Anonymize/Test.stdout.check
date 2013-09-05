@@ -41,3 +41,8 @@ let ^ : [^ ^ : Region].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> 
 -- Mixed spec and value and witness binders, 
 -- With spec binders interspersed with the others, and a non-binder.
 let ^ : [^ : Region].Const ^0 => Global ^0 => [^ : Region].Const ^0 => Global ^0 => Lazy ^0 => Unit -(Alloc ^1 | Use ^1)> Pair ^1 (Int ^1) (Int ^0) = /\(^ : Region). \(^ : Const ^0). \(^ : Global ^0). /\(^ : Region). \(^ : Const ^0). \(^ : Global ^0). \(^ : Lazy ^0). \(_ : Unit). let ^ : Int ^1 = 5 [^1] () in let ^ : Int ^0 = purify <read [^1] ^5 & alloc [^1] ^5 & alloc [^0] ^3> in forget <use [^1] ^4 & use [^0] ^2> in letregion ^ in addInt [^2] [^0] [^1] ^0 (1 [^0] ()) in Pr [^1] [Int ^1] [Int ^0] ^1 ^0 in letregion ^ with {^ : Const ^0; ^ : Global ^0} in letregion ^ with {^ : Const ^0; ^ : Global ^0; ^ : Lazy ^0} in letcase Pr (_ : Int ^1) (^ : Int ^0) = ^5 [^1] <^4> <^3> [^0] <^2> <^1> <^0> () in copyInt [^0] [r0#] ^0
+
+
+-- Mixed spec and value binders.
+let ^ : [^ ^ : Region].Unit -(Alloc ^1 | Use ^1)> Int ^1 = /\(^ ^ : Region). \(_ : Unit). 5 [^1] () in ()
+

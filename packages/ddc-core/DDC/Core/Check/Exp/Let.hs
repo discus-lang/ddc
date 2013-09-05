@@ -32,7 +32,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a lts x2) tXX
                 <- tableCheckExp table table kenv tenv ctx1' x2 tXX
 
         -- The body must have data kind.
-        (_, k2) <- checkTypeM config kenv t2
+        (_, k2) <- checkTypeM config kenv ctx1' t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLetBodyNotData a xx t2 k2
 
@@ -58,7 +58,8 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
         let depth       = length $ map isBAnon bsRgn
 
         -- Check the type on the region binders.
-        (bsRgn', _)     <- liftM unzip $ mapM (checkBindM config kenv) bsRgn
+        (bsRgn', _)     <- liftM unzip 
+                        $ mapM (checkBindM config kenv ctx) bsRgn
         let ksRgn       = map typeOfBind bsRgn'
         
         -- The binders must have region kind.
@@ -67,26 +68,27 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
-        let rebounds    = filter (flip Env.memberBind kenv) bsRgn'
+        let rebounds    = filter (flip memberKindBind ctx) bsRgn'
         when (not $ null rebounds)
          $ throw $ ErrorLetRegionsRebound a xx rebounds
         
         -- Check the witness types.
-        let kenv'       = Env.extends bsRgn kenv
-        let ctx'        = liftTypes depth ctx
-        (bsWit', _)     <- liftM unzip $ mapM (checkBindM config kenv') bsWit
+        let (ctx1, _pos1) = pushKinds bsRgn ctx
+        let ctx2          = liftTypes depth ctx1
+        (bsWit', _)       <- liftM unzip 
+                          $  mapM (checkBindM config kenv ctx2) bsWit
         
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM a kenv xx us bsWit'
+        checkWitnessBindsM a kenv ctx xx us bsWit'
 
         -- Check the body expression.
-        let (ctx2, _pos) = pushTypes bsWit' ctx'
-        (xBody', tBody, effs, clo, _ctx3)  
-                         <- tableCheckExp table table kenv' tenv ctx2 x tXX
+        let (ctx3, _pos2) = pushTypes bsWit' ctx2
+        (xBody', tBody, effs, clo, _ctx4)  
+                          <- tableCheckExp table table kenv tenv ctx3 x tXX
 
         -- The body type must have data kind.
-        (_, kBody)       <- checkTypeM config kenv' tBody
+        (_, kBody)       <- checkTypeM config kenv ctx3 tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody kBody
 
@@ -121,7 +123,9 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LWithRegion u) x) tXX
  = do   let config      = tableConfig table
 
         -- The handle must have region kind.
-        (case Env.lookup u kenv of
+        -- We need to look in the KindEnv as well as the Context here, 
+        --  because the KindEnv knows the types of primitive variables.
+        (case listToMaybe  $ catMaybes [Env.lookup u kenv, lookupKind u ctx] of
           Nothing -> throw $ ErrorUndefinedVar a u UniverseSpec
 
           Just k  |  not $ isRegionKind k
@@ -134,7 +138,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LWithRegion u) x) tXX
                         <- tableCheckExp table table kenv tenv ctx x tXX
 
         -- The body type must have data kind.
-        (tBody', kBody) <- checkTypeM config kenv tBody
+        (tBody', kBody) <- checkTypeM config kenv ctx tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody' kBody
         
@@ -199,7 +203,7 @@ checkLetsM !xx !table !kenv !tenv !ctx (LLet b11 x12)
         -- Check the annotation on the binder against the type of the
         -- bound expression.
         (b11', k11')    
-         <- checkLetBindOfTypeM a xx config kenv tenv t12 b11
+         <- checkLetBindOfTypeM a xx config kenv tenv ctx t12 b11
 
         -- The right of the binding must have data kind.
         when (not $ isDataKind k11')
@@ -224,7 +228,7 @@ checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
 
         -- Check the types on all the binders.
         (bs', ks)       <- liftM unzip
-                        $  mapM (checkBindM config kenv) bs
+                        $  mapM (checkBindM config kenv ctx) bs
                         
         -- Check all the binders have data kind.
         zipWithM_ (\b k
@@ -266,7 +270,7 @@ checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
                 , zipWith replaceTypeOfBind tsRight bs'
                 , Sum.empty kEffect
                 , clos_cut
-                , ctx')                                         -- TODO: use final context.
+                , ctx)                                         -- TODO: use final context.
 
 checkLetsM _xx _config _kenv _tenv _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"
@@ -292,14 +296,15 @@ checkLetBindOfTypeM
         -> Config n             -- Data type definitions.
         -> Env n                -- Kind environment. 
         -> Env n                -- Type environment.
+        -> Context n            -- Local context
         -> Type n 
         -> Bind n 
         -> CheckM a n (Bind n, Kind n)
 
-checkLetBindOfTypeM !a !xx !config !kenv !_tenv !tRight b
+checkLetBindOfTypeM !a !xx !config !kenv !_tenv !ctx !tRight b
         -- If the binder just has type Bot then replace it
         | isBot (typeOfBind b)
-        = do    (_, k)  <- checkTypeM config kenv tRight
+        = do    (_, k)  <- checkTypeM config kenv ctx tRight
                 return (replaceTypeOfBind tRight b, k)
 
         -- The type of the binder must match that of the right of the binding.
@@ -307,7 +312,7 @@ checkLetBindOfTypeM !a !xx !config !kenv !_tenv !tRight b
         = throw $ ErrorLetMismatch a xx b tRight
 
         | otherwise
-        =       checkBindM config kenv b
+        =       checkBindM config kenv ctx b
         
 
 -------------------------------------------------------------------------------
@@ -316,25 +321,27 @@ checkWitnessBindsM
         :: (Show n, Ord n) 
         => a                    -- ^ Annotation for error messages.
         -> KindEnv n            -- ^ Kind Environment.
+        -> Context n            -- ^ Context
         -> Exp a n              -- ^ The whole expression, for error messages.
         -> [Bound n]            -- ^ Region variables bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> CheckM a n ()
 
-checkWitnessBindsM !a !kenv !xx !nRegions !bsWits
- = mapM_ (checkWitnessBindM a kenv xx nRegions bsWits) bsWits
+checkWitnessBindsM !a !kenv !ctx !xx !nRegions !bsWits
+ = mapM_ (checkWitnessBindM a kenv ctx xx nRegions bsWits) bsWits
 
 checkWitnessBindM 
         :: (Show n, Ord n)
         => a                    -- ^ Annotation for error messages.
         -> KindEnv n            -- ^ Kind environment.
+        -> Context n
         -> Exp a n
         -> [Bound n]            -- ^ Region variables bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> Bind  n              -- ^ The witness binding to check.
         -> CheckM a n ()
 
-checkWitnessBindM !a !kenv !xx !uRegions !bsWit !bWit
+checkWitnessBindM !a !kenv !ctx !xx !uRegions !bsWit !bWit
  = let  btsWit  = [(typeOfBind b, b) | b <- bsWit]
 
         -- Check the argument of a witness type is for the region we're
@@ -357,9 +364,15 @@ checkWitnessBindM !a !kenv !xx !uRegions !bsWit !bWit
             
         inEnv t
          = case t of
-             TVar u'                | Env.member u' kenv -> True
-             TCon (TyConBound u' _) | Env.member u' kenv -> True
-             _                                           -> False 
+             TVar u'                
+                | Env.member u' kenv    -> True
+                | memberKind u' ctx     -> True
+             
+
+             TCon (TyConBound u' _) 
+                | Env.member u' kenv    -> True
+                | memberKind u' ctx     -> True
+             _                          -> False 
        
    in  case typeOfBind bWit of
         TApp (TCon (TyConWitness TwConGlobal))  t2

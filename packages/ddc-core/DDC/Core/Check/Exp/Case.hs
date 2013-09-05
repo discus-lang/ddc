@@ -237,13 +237,13 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs !ctx
                 $ mapMaybe (cutTaggedClosureXs bsArg')
                 $ Set.toList closBody
 
-        let Just ctx' = popToPos posArg ctxBody
+        let Just _ctx = popToPos posArg ctxBody
 
         return  ( AAlt (PData dc bsArg') xBody'
                 , tBody
                 , effsBody
                 , closBody_cut
-                , ctx')
+                , ctx)
 
 
 -- | Merge a type annotation on a pattern field with a type we get by

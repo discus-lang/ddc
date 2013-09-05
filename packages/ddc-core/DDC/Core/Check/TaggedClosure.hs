@@ -11,6 +11,7 @@ module DDC.Core.Check.TaggedClosure
         , cutTaggedClosureXs
         , cutTaggedClosureT)
 where
+import DDC.Type.Check.Context
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Trim
 import DDC.Type.Compounds
@@ -107,16 +108,20 @@ taggedClosureOfValBound t u
 --   or `Nothing` for out-of-scope type vars.
 taggedClosureOfTyArg 
         :: (Ord n, Pretty n) 
-        => Env n -> Type n -> Maybe (Set (TaggedClosure n))
+        => Env n -> Context n -> Type n -> Maybe (Set (TaggedClosure n))
 
-taggedClosureOfTyArg kenv tt
+taggedClosureOfTyArg kenv ctx tt
  = case tt of
         TVar u
-         -> case Env.lookup u kenv of
-                Nothing           -> Nothing
-                Just k  
-                 | isRegionKind k -> Just $ Set.singleton $ GBoundRgnVar u
-                 | otherwise      -> Just Set.empty
+         | Just k       <- Env.lookup u kenv
+         -> if isRegionKind k 
+                then Just $ Set.singleton $ GBoundRgnVar u
+                else Just Set.empty
+                 
+         | Just k       <- lookupKind u ctx
+         -> if isRegionKind k
+                then Just $ Set.singleton $ GBoundRgnVar u
+                else Just Set.empty
                                                     
         TCon (TyConBound u k)
          |   isRegionKind k

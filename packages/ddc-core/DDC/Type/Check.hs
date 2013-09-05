@@ -5,6 +5,7 @@ module DDC.Type.Check
 
           -- * Kinds of Types
         , checkType
+        , checkTypeWithContext
         , kindOfType
 
           -- * Kinds of Constructors
@@ -40,7 +41,8 @@ type CheckM n   = G.CheckM (Error n)
 
 
 -- Wrappers -------------------------------------------------------------------
--- | Check a type in the given environment, returning an error or its kind.
+-- | Check a type in the given environment,
+--   returning an error or its kind.
 checkType  :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> KindEnv n 
@@ -49,6 +51,20 @@ checkType  :: (Ord n, Show n, Pretty n)
 
 checkType defs env tt 
         = result $ checkTypeM defs env emptyContext tt
+
+
+-- | Check a type in the given environment and local context,
+--   returning an error or its kind.
+checkTypeWithContext 
+        :: (Ord n, Show n, Pretty n) 
+        => Config n 
+        -> KindEnv n 
+        -> Context n
+        -> Type n
+        -> Either (Error n) (Type n, Kind n)
+
+checkTypeWithContext defs env ctx tt 
+        = result $ checkTypeM defs env ctx tt
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
@@ -147,8 +163,9 @@ checkTypeM' config env _ctx tt@(TCon tc)
 
 -- Quantifiers ----------------
 checkTypeM' config env ctx tt@(TForall b1 t2)
- = do   _         <- checkTypeM config env ctx (typeOfBind b1)
-        (t2', k2) <- checkTypeM config (Env.extend b1 env) ctx t2
+ = do   let (ctx', _)  = pushKind b1 ctx
+        _         <- checkTypeM config env ctx  (typeOfBind b1)
+        (t2', k2) <- checkTypeM config env ctx' t2
 
         -- The body must have data or witness kind.
         when (  (not $ isDataKind k2)

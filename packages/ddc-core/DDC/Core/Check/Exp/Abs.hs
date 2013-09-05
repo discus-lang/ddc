@@ -4,7 +4,6 @@ module DDC.Core.Check.Exp.Abs
 where
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 
 
@@ -17,7 +16,7 @@ checkAbs !table !kenv !tenv !ctx xx@(XLam a b1 x2) dXX
  = do   let config      = tableConfig table
 
         -- The rule we use depends on the kind of the binder.
-        (b1', k1)       <- checkBindM config kenv b1
+        (b1', k1)       <- checkBindM config kenv ctx b1
 
         case universeFromType2 k1 of
          Just UniverseData
@@ -36,18 +35,19 @@ checkAbsLAM !table !kenv !tenv !ctx a b1 x2
         let config      = tableConfig table
         
         -- Check the type of the binder.
-        (b1', _)        <- checkBindM config kenv b1
+        (b1', _)        <- checkBindM config kenv ctx b1
 
-        -- The bound variable cannot shadow others in the environment.
-        when (Env.memberBind b1' kenv)
+        -- If the bound variable is named then it cannot shadow
+        -- shadow others in the environment.
+        when (memberKindBind b1' ctx)
          $ throw $ ErrorLamShadow a xx b1
         
         -- Check the body of the abstraction.
-        let kenv'       = Env.extend b1' kenv
-        let ctx'        = liftTypes 1    ctx
-        (x2', t2, e2, c2, _ctx2)
-                <- tableCheckExp table table  kenv' tenv ctx' x2 Synth
-        (_, k2) <- checkTypeM config kenv' t2
+        let (ctx1, _pos) = pushKind b1' ctx
+        let ctx2         = liftTypes 1  ctx1
+        (x2', t2, e2, c2, _ctx3)
+                <- tableCheckExp table table  kenv tenv ctx2 x2 Synth
+        (_, k2) <- checkTypeM config kenv ctx2 t2
 
         -- The body of a spec abstraction must have data kind.
         when (not $ isDataKind k2)
@@ -89,7 +89,7 @@ checkAbsLamData !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !dXX
          <- tableCheckExp table table kenv tenv ctx1 x2 dX2
 
         -- The body of a data abstraction must produce data.
-        (_, k2)         <- checkTypeM config kenv t2
+        (_, k2)         <- checkTypeM config kenv ctx2 t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a (XLam a b1 x2) b1 t2 k2 
 
@@ -104,14 +104,14 @@ checkAbsLamData !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !dXX
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1 x2) t1 t2 e2 c2_cut
 
-        let Just ctx'   = popToPos pos1 ctx2
+        let Just _ctx   = popToPos pos1 ctx2
         
         returnX a
                 (\z -> XLam z b1 x2')
                 tResult 
                 (Sum.empty kEffect)
                 cResult
-                ctx'
+                ctx
 
 
 -- | Construct a function type with the given effect and closure.
@@ -181,7 +181,7 @@ checkAbsLamWitness !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !_dXX
         let (ctx1, _pos) = pushType b1 ctx
         (x2', t2, e2, c2, _ctx2) 
                 <- tableCheckExp table table kenv tenv ctx1 x2 Synth
-        (_, k2) <- checkTypeM config kenv t2
+        (_, k2) <- checkTypeM config kenv ctx1 t2
 
         -- The body of a witness abstraction must be pure.
         when (e2 /= Sum.empty kEffect)

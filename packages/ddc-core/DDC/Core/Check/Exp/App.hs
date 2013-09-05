@@ -28,11 +28,11 @@ checkApp !table !kenv !tenv !ctx xx@(XApp a x1 (XType _ t2)) _
 
         -- Check the type argument.
         (_, k2) 
-         <- checkTypeM config kenv t2
+         <- checkTypeM config kenv ctx t2
 
         -- Take any Use annots from a region arg.
         --   This always matches because we just checked 't2'
-        let Just t2_clo = taggedClosureOfTyArg kenv t2
+        let Just t2_clo = taggedClosureOfTyArg kenv ctx t2
 
         -- The type of the function must have an outer forall quantifier.
         case t1 of

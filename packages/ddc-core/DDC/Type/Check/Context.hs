@@ -5,7 +5,7 @@ module DDC.Type.Check.Context
         , Context       (..)
         , emptyContext
         , pushType, pushTypes, lookupType, memberType
-        , pushKind, pushKinds, lookupKind, memberKind
+        , pushKind, pushKinds, lookupKind, memberKind, memberKindBind
         , popToPos
         , liftTypes)
 where
@@ -148,6 +148,15 @@ lookupKind u (Context _ ll)
 -- | See if this kind variable is in the context.
 memberKind :: Eq n => Bound n -> Context n -> Bool
 memberKind u ctx = isJust $ lookupKind u ctx
+
+
+-- | See if the name on a named binder is in the contexts.
+--   Returns False for non-named binders.
+memberKindBind :: Eq n => Bind n -> Context n -> Bool
+memberKindBind b ctx
+ = case b of
+        BName n _       -> memberKind (UName n) ctx
+        _               -> False
 
 
 -- Lifting --------------------------------------------------------------------

@@ -118,7 +118,7 @@ checkWitnessM !_config !_kenv !_tenv !_ctx (WCon a wc)
 -- witness-type application
 checkWitnessM !config !kenv !tenv !ctx ww@(WApp a1 w1 (WType a2 t2))
  = do   (w1', t1)       <- checkWitnessM  config kenv tenv ctx w1
-        (t2', k2)       <- checkTypeM     config kenv t2
+        (t2', k2)       <- checkTypeM     config kenv ctx t2
         case t1 of
          TForall b11 t12
           |  typeOfBind b11 == k2
@@ -164,8 +164,8 @@ checkWitnessM !config !kenv !tenv !ctx ww@(WJoin a w1 w2)
          _ -> throw $ ErrorCannotJoin a ww w1 t1 w2 t2
 
 -- embedded types
-checkWitnessM !config !kenv !_tenv !_ctx (WType a t)
- = do   (t', k)  <- checkTypeM config kenv t
+checkWitnessM !config !kenv !_tenv !ctx (WType a t)
+ = do   (t', k)  <- checkTypeM config kenv ctx t
         return  ( WType (AnT k a) t'
                 , k)
         
@@ -195,11 +195,12 @@ checkTypeM
         :: (Ord n, Show n, Pretty n) 
         => Config n 
         -> KindEnv n 
-        -> Type n 
+        -> Context n 
+        -> Type n
         -> CheckM a n (Type n, Kind n)
 
-checkTypeM config kenv tt
- = case T.checkType config kenv tt of
+checkTypeM config kenv ctx tt
+ = case T.checkTypeWithContext config kenv ctx tt of
         Left err        -> throw $ ErrorType err
         Right (t, k)    -> return (t, k)
 
@@ -210,11 +211,12 @@ checkBindM
         :: (Ord n, Show n, Pretty n)
         => Config n
         -> KindEnv n
+        -> Context n
         -> Bind n
         -> CheckM a n (Bind n, Kind n)
 
-checkBindM config kenv bb
- = case T.checkType config kenv (typeOfBind bb) of
+checkBindM config kenv ctx bb
+ = case T.checkTypeWithContext config kenv ctx (typeOfBind bb) of
         Left err        -> throw $ ErrorType err
         Right (t', k)   -> return (replaceTypeOfBind t' bb, k)
 
