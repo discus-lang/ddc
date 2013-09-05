@@ -8,6 +8,7 @@ module DDC.Type.Check.Context
         , pushKind
         , popToPos
         , lookupType
+        , lookupKind
         , liftTypes)
 where
 import DDC.Type.Exp
@@ -97,6 +98,30 @@ lookupType u (Context _ ll)
 
         goIx _ix _d []  = Nothing
         goIx ix d  (ElemType (BAnon t) : ls)
+         | ix == d      = Just t
+         | otherwise    = goIx   ix (d + 1) ls
+        goIx ix d  (_ : ls)
+         = goIx ix d ls
+
+
+-- | Lookup the kind of some variable from the context.
+lookupKind :: Eq n => Bound n -> Context n -> Maybe (Kind n)
+lookupKind u (Context _ ll)
+ = case u of
+        UPrim{}         -> Nothing
+        UName n         -> goName n    ll
+        UIx   ix        -> goIx   ix 0 ll
+ where
+        goName _n []    = Nothing
+        goName n  (ElemKind (BName n' t) : ls)
+         | n == n'      = Just t
+         | otherwise    = goName n ls
+        goName  n (_ : ls)
+         = goName n ls
+
+
+        goIx _ix _d []  = Nothing
+        goIx ix d  (ElemKind (BAnon t) : ls)
          | ix == d      = Just t
          | otherwise    = goIx   ix (d + 1) ls
         goIx ix d  (_ : ls)

@@ -16,6 +16,7 @@ module DDC.Type.Check
         , Error(..))
 where
 import DDC.Type.DataDef
+import DDC.Type.Check.Context
 import DDC.Type.Check.Error
 import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
@@ -47,7 +48,7 @@ checkType  :: (Ord n, Show n, Pretty n)
            -> Either (Error n) (Type n, Kind n)
 
 checkType defs env tt 
-        = result $ checkTypeM defs env tt
+        = result $ checkTypeM defs env emptyContext tt
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
@@ -57,7 +58,7 @@ kindOfType :: (Ord n, Show n, Pretty n)
            -> Either (Error n) (Kind n)
 
 kindOfType defs tt
- = liftM snd $ result $ checkTypeM defs Env.empty tt
+ = liftM snd $ result $ checkTypeM defs Env.empty emptyContext tt
 
 
 -- checkType ------------------------------------------------------------------
@@ -69,34 +70,39 @@ kindOfType defs tt
 --   crushable components terms.
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
-        => Config n
+        => Config  n
         -> KindEnv n
+        -> Context n   
         -> Type n 
         -> CheckM n (Type n, Kind n)
 
-checkTypeM config env tt
+checkTypeM config env ctx tt
         = -- trace (renderPlain $ text "checkTypeM:" <+> text (show tt)) $
           {-# SCC checkTypeM #-}
-          checkTypeM' config env tt
+          checkTypeM' config env ctx tt
 
 -- Variables ------------------
-checkTypeM' config env tt@(TVar u)
- | UPrim _ k    <- u    = return (tt, k)
+checkTypeM' config env ctx tt@(TVar u)
+ | UPrim _ k    <- u    
+ = return (tt, k)
  
- | otherwise
- = case Env.lookup u env of
-        Just k  -> return (tt, k)
-        Nothing 
-         | UName n      <- u
-         , Just isHole  <- configNameIsHole config
-         , isHole n
-         -> throw $ ErrorCannotInfer tt
+ | Just k       <- Env.lookup u env
+ = return (tt, k)
 
-         | otherwise
-         -> throw $ ErrorUndefined u
+ | Just k       <- lookupKind u ctx
+ = return (tt, k)
+
+ | UName n      <- u
+ , Just isHole  <- configNameIsHole config
+ , isHole n
+ = throw $ ErrorCannotInfer tt
+
+ | otherwise
+ = throw $ ErrorUndefined u
+
 
 -- Constructors ---------------
-checkTypeM' config env tt@(TCon tc)
+checkTypeM' config env _ctx tt@(TCon tc)
  = case tc of
         -- Sorts don't have a higher classification.
         TyConSort _      -> throw $ ErrorNakedSort tt
@@ -135,9 +141,9 @@ checkTypeM' config env tt@(TCon tc)
 
 
 -- Quantifiers ----------------
-checkTypeM' config env tt@(TForall b1 t2)
- = do   _         <- checkTypeM config env (typeOfBind b1)
-        (t2', k2) <- checkTypeM config (Env.extend b1 env) t2
+checkTypeM' config env ctx tt@(TForall b1 t2)
+ = do   _         <- checkTypeM config env ctx (typeOfBind b1)
+        (t2', k2) <- checkTypeM config (Env.extend b1 env) ctx t2
 
         -- The body must have data or witness kind.
         when (  (not $ isDataKind k2)
@@ -150,18 +156,18 @@ checkTypeM' config env tt@(TForall b1 t2)
 -- Applications ---------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
-checkTypeM' config env tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
- = do   _       <- checkTypeM config env k1
-        (_, s2) <- checkTypeM config env k2
+checkTypeM' config env ctx tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
+ = do   _       <- checkTypeM config env ctx k1
+        (_, s2) <- checkTypeM config env ctx k2
         return  (tt, s2)
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness implication.
 --   (=>) :: @ ~> * ~> *,  for a context.
-checkTypeM' config env tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
- = do   (t1', k1) <- checkTypeM config env t1
-        (t2', k2) <- checkTypeM config env t2
+checkTypeM' config env ctx tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
+ = do   (t1', k1) <- checkTypeM config env ctx t1
+        (t2', k2) <- checkTypeM config env ctx t2
 
         let tt' = TApp (TApp tC t1') t2'
 
@@ -172,9 +178,9 @@ checkTypeM' config env tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 -- Type application.
-checkTypeM' config env tt@(TApp t1 t2)
- = do   (t1', k1)       <- checkTypeM config env t1
-        (t2', k2)       <- checkTypeM config env t2
+checkTypeM' config env ctx tt@(TApp t1 t2)
+ = do   (t1', k1)       <- checkTypeM config env ctx t1
+        (t2', k2)       <- checkTypeM config env ctx t2
         case k1 of
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
           | k11 == k2   -> return (TApp t1' t2', k12)
@@ -183,8 +189,9 @@ checkTypeM' config env tt@(TApp t1 t2)
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
 -- Sums -----------------------
-checkTypeM' config env (TSum ts)
- = do   (ts', ks)       <- liftM unzip $ mapM (checkTypeM config env) $ TS.toList ts
+checkTypeM' config env ctx (TSum ts)
+ = do   (ts', ks)       <- liftM unzip 
+                        $ mapM (checkTypeM config env ctx) $ TS.toList ts
 
         -- Check that all the types in the sum have a single kind, 
         -- and return that kind.
