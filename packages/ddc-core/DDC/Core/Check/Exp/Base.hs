@@ -5,6 +5,7 @@ module DDC.Core.Check.Exp.Base
         , returnX
 
         -- * Modules
+        , module DDC.Core.Check.Context
         , module DDC.Core.Check.TaggedClosure
         , module DDC.Core.Check.Witness
         , module DDC.Core.Check.DaCon
@@ -35,6 +36,7 @@ module DDC.Core.Check.Exp.Base
         , throw, result
         , Set)
 where
+import DDC.Core.Check.Context
 import DDC.Core.Check.TaggedClosure
 import DDC.Core.Check.Witness
 import DDC.Core.Check.DaCon
@@ -69,7 +71,8 @@ type Checker a n
         =  (Show n, Ord n, Pretty n)
         => Table a n
         -> KindEnv n    -> TypeEnv n
-        -> Exp a n      -> Maybe (Type n)
+        -> Exp a n      
+        -> Direction n
         -> CheckM a n
                 ( Exp (AnTEC a n) n
                 , Type n

@@ -4,12 +4,13 @@ module DDC.Core.Check.Exp
           Config (..)
 
           -- * Pure checking.
-        , AnTEC  (..)
+        , AnTEC         (..)
+        , Direction     (..)
         , checkExp
         , typeOfExp
 
           -- * Monadic checking.
-        , Table  (..)
+        , Table         (..)
         , tableOfConfig
         , CheckM
         , checkExpM
@@ -48,7 +49,7 @@ checkExp
         -> KindEnv n            -- ^ Starting Kind environment.
         -> TypeEnv n            -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
-        -> Maybe (Type n)       -- ^ Expected type, if any.
+        -> Direction n          -- ^ Check direction.
         -> Either (Error a n)
                   ( Exp (AnTEC a n) n
                   , Type n
@@ -75,11 +76,10 @@ typeOfExp
         -> KindEnv n            -- ^ Starting Kind environment
         -> TypeEnv n            -- ^ Starting Type environment.
         -> Exp a n              -- ^ Expression to check.
-        -> Maybe  (Type n)      -- ^ Expected type, if any.
         -> Either (Error a n) (Type n)
 
-typeOfExp !config !kenv !tenv !xx !tXX
- = case checkExp config kenv tenv xx tXX of
+typeOfExp !config !kenv !tenv !xx
+ = case checkExp config kenv tenv xx Synth of
         Left err           -> Left err
         Right (_, t, _, _) -> Right t
 
@@ -92,7 +92,7 @@ checkExpM
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
         -> Exp a n              -- ^ Expression to check.
-        -> Maybe (Type n)       -- ^ Expected type, if any.
+        -> Direction n          -- ^ Check direction
         -> CheckM a n 
                 ( Exp (AnTEC a n) n
                 , Type n
@@ -100,16 +100,16 @@ checkExpM
                 , Set (TaggedClosure n))
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
-checkExpM !table !kenv !tenv !xx !tXX
+checkExpM !table !kenv !tenv !xx !dXX
  = case xx of
-        XVar{}          -> tableCheckVarCon table table kenv tenv xx tXX
-        XCon{}          -> tableCheckVarCon table table kenv tenv xx tXX
-        XApp{}          -> tableCheckApp    table table kenv tenv xx tXX
-        XLam{}          -> tableCheckAbs    table table kenv tenv xx tXX
-        XLAM{}          -> tableCheckAbs    table table kenv tenv xx tXX
-        XLet{}          -> tableCheckLet    table table kenv tenv xx tXX
-        XCase{}         -> tableCheckCase   table table kenv tenv xx tXX
-        XCast{}         -> tableCheckCast   table table kenv tenv xx tXX
+        XVar{}          -> tableCheckVarCon table table kenv tenv xx dXX
+        XCon{}          -> tableCheckVarCon table table kenv tenv xx dXX
+        XApp{}          -> tableCheckApp    table table kenv tenv xx dXX
+        XLam{}          -> tableCheckAbs    table table kenv tenv xx dXX
+        XLAM{}          -> tableCheckAbs    table table kenv tenv xx dXX
+        XLet{}          -> tableCheckLet    table table kenv tenv xx dXX
+        XCase{}         -> tableCheckCase   table table kenv tenv xx dXX
+        XCast{}         -> tableCheckCast   table table kenv tenv xx dXX
         XType    a _    -> throw $ ErrorNakedType    a xx 
         XWitness a _    -> throw $ ErrorNakedWitness a xx
 

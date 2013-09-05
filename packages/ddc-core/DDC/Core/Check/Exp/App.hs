@@ -24,7 +24,7 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XType _ t2)) _
 
         -- Check the functional expression.
         (x1', t1, effs1, clos1) 
-         <- tableCheckExp table table kenv tenv x1 Nothing
+         <- tableCheckExp table table kenv tenv x1 Synth
 
         -- Check the type argument.
         (_, k2) 
@@ -54,7 +54,7 @@ checkApp !table !kenv !tenv xx@(XApp a x1 (XWitness _ w2)) _
 
         -- Check the functional expression.
         (x1', t1, effs1, clos1) 
-         <- tableCheckExp table table kenv tenv x1 Nothing
+         <- tableCheckExp table table kenv tenv x1 Synth
 
         -- Check the witness.
         (w2', t2) 
@@ -78,11 +78,11 @@ checkApp !table !kenv !tenv xx@(XApp a x1 x2) _
  = do   
         -- Check the functional expression.
         (x1', t1, effs1, clos1) 
-         <- tableCheckExp table table kenv tenv x1 Nothing
+         <- tableCheckExp table table kenv tenv x1 Synth
 
         -- Check the argument.
         (x2', t2, effs2, clos2) 
-         <- tableCheckExp table table kenv tenv x2 Nothing
+         <- tableCheckExp table table kenv tenv x2 Synth
 
         case t1 of
          -- Oblivious application of a pure function.

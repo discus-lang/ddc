@@ -13,6 +13,7 @@ module DDC.Core.Check
         , checkModule
 
           -- * Checking Expressions
+        , Direction     (..)
         , checkExp,     typeOfExp
 
           -- * Checking Witnesses

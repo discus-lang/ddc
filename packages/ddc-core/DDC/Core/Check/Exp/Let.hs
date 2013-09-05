@@ -49,7 +49,7 @@ checkLet !table !kenv !tenv xx@(XLet a lts x2) tXX
 -- letregion --------------------------------------
 checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
-    []   -> tableCheckExp table table kenv tenv x Nothing
+    []   -> tableCheckExp table table kenv tenv x Synth
     us   -> do
         let config      = tableConfig table
         let depth       = length $ map isBAnon bsRgn
@@ -183,7 +183,7 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
         -- If the type of the binding is not Bot then use that
         -- as the expected type when checking the body.
         let tB          = typeOfBind b11
-        let tXX         = if isBot tB then Nothing else Just tB
+        let tXX         = if isBot tB then Synth else Check tB
 
         -- Check the right of the binding.
         (x12', t12, effs12, clo12)  
@@ -236,8 +236,8 @@ checkLetsM !xx !table !kenv !tenv (LRec bxs)
         (xsRight', tsRight, _effssBinds, clossBinds) 
                 <- liftM unzip4 
                 $  mapM (\(b, x) -> let tB      = typeOfBind b
-                                        tXX     = if isBot tB then Nothing else Just tB
-                                    in  tableCheckExp table table kenv tenv' x tXX) 
+                                        dXX     = if isBot tB then Synth else Check tB
+                                    in  tableCheckExp table table kenv tenv' x dXX) 
                 $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.

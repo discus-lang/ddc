@@ -25,7 +25,7 @@ checkAbs !table !kenv !tenv xx@(XLAM a b1 x2) _
         let kenv'       = Env.extend b1' kenv
         let tenv'       = Env.lift   1  tenv
         (x2', t2, e2, c2) 
-                <- tableCheckExp table table  kenv' tenv' x2 Nothing
+                <- tableCheckExp table table  kenv' tenv' x2 Synth
         (_, k2) <- checkTypeM config kenv' t2
 
         -- The body of a spec abstraction must have data kind.
@@ -49,18 +49,18 @@ checkAbs !table !kenv !tenv xx@(XLAM a b1 x2) _
          
 
 -- function abstraction -------------------------
-checkAbs !table !kenv !tenv xx@(XLam a b1 x2) mtXX
+checkAbs !table !kenv !tenv xx@(XLam a b1 x2) dXX
  = do   let config      = tableConfig table
 
         -- If we have an expected type for the abstraction then split it
         -- into the expected types of the argument and body.
-        let (_mtX1, mtX2) 
-                = case mtXX of
-                        Nothing            -> (Nothing, Nothing)
-                        Just tXX
+        let (_dX1, dX2) 
+                = case dXX of
+                        Synth           -> (Synth, Synth)
+                        Check tXX
                          | Just (tX1, tX2) <- takeTFun tXX
-                                           -> (Just tX1, Just tX2)
-                         | otherwise       -> (Nothing, Nothing)
+                                           -> (Check tX1, Check tX2)
+                         | otherwise       -> (Synth,     Synth)
 
         -- Check the type of the binder.
         (b1', k1)       <- checkBindM config kenv b1
@@ -69,7 +69,7 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) mtXX
         -- Check the body of the abstraction.
         let tenv'       = Env.extend b1' tenv
         (x2', t2, e2, c2) 
-                <- tableCheckExp table table kenv tenv' x2 mtX2
+                <- tableCheckExp table table kenv tenv' x2 dX2
 
         -- The typing rules guarantee that the checked type of an 
         -- expression is well kinded, but we need to check it again
@@ -183,3 +183,5 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) mtXX
 -- others ---------------------------------------
 checkAbs _ _ _ _ _
         = error "ddc-core.checkAbs: no match"
+
+

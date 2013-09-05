@@ -142,7 +142,7 @@ applyTransAndCheck state profile kenv tenv zero simpl xx
             $  text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text ""
 
         -- Check that the simplifier perserved the type of the expression.
-        case checkExp (configOfProfile profile) kenv tenv x' Nothing of
+        case checkExp (configOfProfile profile) kenv tenv x' Synth of
           Right (x2, t2, eff2, clo2)
            |  equivT t1 t2
            ,  subsumesT kEffect  eff1 eff2

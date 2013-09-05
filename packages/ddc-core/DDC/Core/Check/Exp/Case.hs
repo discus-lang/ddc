@@ -18,7 +18,7 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) mtXX
 
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim) 
-         <- tableCheckExp table table kenv tenv xDiscrim Nothing
+         <- tableCheckExp table table kenv tenv xDiscrim Synth
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -145,7 +145,7 @@ checkAltM
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Alt a n              -- ^ Alternative to check.
-        -> Maybe (Type n)       -- ^ Expected type of right of alternative.
+        -> Direction n          -- ^ Check direction for right of alternative.
         -> CheckM a n 
                 ( Alt (AnTEC a n) n
                 , Type n
@@ -153,11 +153,11 @@ checkAltM
                 , Set (TaggedClosure n))
 
 checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs 
-          (AAlt PDefault xBody) mtXX
+          (AAlt PDefault xBody) dXX
  = do   
         -- Check the right of the alternative.
         (xBody', tBody, effBody, cloBody)
-                <- tableCheckExp table table kenv tenv xBody mtXX
+                <- tableCheckExp table table kenv tenv xBody dXX
 
         return  ( AAlt PDefault xBody'
                 , tBody
@@ -165,7 +165,7 @@ checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs
                 , cloBody)
 
 checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs 
-          (AAlt (PData dc bsArg) xBody) mtXX
+          (AAlt (PData dc bsArg) xBody) dXX
  = do   let config      = tableConfig table
         let a           = annotOfExp xx
 
@@ -225,7 +225,7 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody)
-                <- tableCheckExp table table kenv tenv' xBody mtXX
+                <- tableCheckExp table table kenv tenv' xBody dXX
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
