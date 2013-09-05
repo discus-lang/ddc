@@ -11,12 +11,13 @@ checkCast :: Checker a n
 
 -- type cast -------------------------------------
 -- Weaken an effect, adding in the given terms.
-checkCast !table !kenv !tenv !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
- = do   let config      = tableConfig table
+checkCast !table !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
+ = do   let config      = tableConfig  table
+        let kenv        = tableKindEnv table
 
         -- Check the body.
         (x1', t1, effs, clo, ctx')
-                        <- tableCheckExp table table kenv tenv ctx x1 dXX
+                        <- tableCheckExp table table ctx x1 dXX
 
         -- Check the effect term.
         (eff', kEff)    <- checkTypeM config kenv ctx eff 
@@ -36,16 +37,16 @@ checkCast !table !kenv !tenv !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
 
 
 -- Weaken a closure, adding in the given terms.
-checkCast !table !kenv !tenv !ctx (XCast a (CastWeakenClosure xs) x1) dXX
+checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) dXX
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx')
-                <- tableCheckExp table table kenv tenv ctx x1 dXX
+                <- tableCheckExp table table ctx x1 dXX
 
         -- Check the contained expressions.
-        (xs', closs, _ctxx')                 -- TODO: need to thread contexts properly
+        (xs', closs, _ctxx')                             -- TODO: need to thread contexts properly
                 <- liftM unzip3
-                $ mapM (\x -> checkArgM table kenv tenv ctx x Synth) xs
+                $ mapM (\x -> checkArgM table ctx x Synth) xs
 
         let c'  = CastWeakenClosure xs'
 
@@ -58,12 +59,14 @@ checkCast !table !kenv !tenv !ctx (XCast a (CastWeakenClosure xs) x1) dXX
 
 
 -- Purify an effect, given a witness that it is pure.
-checkCast !table !kenv !tenv !ctx xx@(XCast a (CastPurify w) x1) dXX
+checkCast !table !ctx xx@(XCast a (CastPurify w) x1) dXX
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let tenv        = tableTypeEnv table
 
         -- Check the body.
         (x1', t1, effs, clo, ctx')
-                  <- tableCheckExp table table kenv tenv ctx x1 dXX
+                  <- tableCheckExp table table ctx x1 dXX
 
         -- Check the witness.
         (w', tW)  <- checkWitnessM config kenv tenv ctx w
@@ -83,12 +86,14 @@ checkCast !table !kenv !tenv !ctx xx@(XCast a (CastPurify w) x1) dXX
 
 
 -- Forget a closure, given a witness that it is empty.
-checkCast !table !kenv !tenv !ctx xx@(XCast a (CastForget w) x1) dXX
+checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let tenv        = tableTypeEnv table
 
         -- Check the body.
         (x1', t1, effs, clos, ctx')  
-                  <- tableCheckExp table table kenv tenv ctx x1 dXX
+                  <- tableCheckExp table table ctx x1 dXX
 
         -- Check the witness.
         (w', tW)  <- checkWitnessM config kenv tenv ctx w
@@ -112,11 +117,11 @@ checkCast !table !kenv !tenv !ctx xx@(XCast a (CastForget w) x1) dXX
 
 -- Suspend a computation,
 -- capturing its effects in a computation type.
-checkCast !table !kenv !tenv ctx (XCast a CastSuspend x1) _
+checkCast !table ctx (XCast a CastSuspend x1) _
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx') 
-                <- tableCheckExp table table kenv tenv ctx x1 Synth
+                <- tableCheckExp table table ctx x1 Synth
 
         -- The result type is (S effs a),
         --  where effs is the type of the body.
@@ -130,11 +135,11 @@ checkCast !table !kenv !tenv ctx (XCast a CastSuspend x1) _
 
 -- Run a suspended computation,
 -- releasing its effects into the environment.
-checkCast !table !kenv !tenv !ctx xx@(XCast a CastRun x1) _
+checkCast !table !ctx xx@(XCast a CastRun x1) _
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx') 
-                <- tableCheckExp table table kenv tenv ctx x1 Synth
+                <- tableCheckExp table table ctx x1 Synth
 
         -- The body must have type (S eff a),
         --  and the result has type 'a' while unleashing effect 'eff'.
@@ -149,7 +154,7 @@ checkCast !table !kenv !tenv !ctx xx@(XCast a CastRun x1) _
 
          _ -> throw $ ErrorRunNotSuspension a xx t1
 
-checkCast _ _ _ _ _ _
+checkCast _ _ _ _
         = error "ddc-core.checkCast: no match"
 
 
@@ -158,8 +163,6 @@ checkCast _ _ _ _ _ _
 checkArgM 
         :: (Show n, Pretty n, Ord n)
         => Table a n            -- ^ Static config.
-        -> Env n                -- ^ Kind environment.
-        -> Env n                -- ^ Type environment.
         -> Context n            -- ^ Input context.
         -> Exp a n              -- ^ Expression to check.
         -> Direction n          -- ^ Check direction.
@@ -168,8 +171,10 @@ checkArgM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkArgM !table !kenv !tenv !ctx !xx !dXX
- = case xx of
+checkArgM !table !ctx !xx !dXX
+ = let  tenv    = tableTypeEnv table
+        kenv    = tableKindEnv table
+   in case xx of
         XType a t
          -> do  (t', k) <- checkTypeM (tableConfig table) kenv ctx t
                 let Just clo = taggedClosureOfTyArg kenv ctx t
@@ -187,7 +192,7 @@ checkArgM !table !kenv !tenv !ctx !xx !dXX
 
         _ -> do
                 (xx', _, _, clos, ctx') 
-                        <- tableCheckExp table table kenv tenv ctx xx dXX
+                        <- tableCheckExp table table ctx xx dXX
                 return  (xx', clos, ctx')
                         
 

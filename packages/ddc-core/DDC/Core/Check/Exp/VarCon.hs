@@ -13,7 +13,7 @@ import qualified Data.Set       as Set
 checkVarCon :: Checker a n
 
 -- variables ------------------------------------
-checkVarCon !_table !_kenv !tenv !ctx (XVar a u) _
+checkVarCon !table !ctx (XVar a u) _
  
  -- Look in the local context.
  | Just t       <- lookupType u ctx
@@ -25,7 +25,7 @@ checkVarCon !_table !_kenv !tenv !ctx (XVar a u) _
         ctx
 
  -- Look in the global environment.
- |  Just t      <- Env.lookup u tenv
+ |  Just t      <- Env.lookup u (tableTypeEnv table)
  = returnX a 
         (\z -> XVar z u)
         t
@@ -39,7 +39,7 @@ checkVarCon !_table !_kenv !tenv !ctx (XVar a u) _
          
 
 -- constructors ---------------------------------
-checkVarCon !table !_kenv !_tenv !ctx xx@(XCon a dc) _
+checkVarCon !table !ctx xx@(XCon a dc) _
  = do   let config      = tableConfig table
         let defs        = configDataDefs config
 
@@ -72,5 +72,5 @@ checkVarCon !table !_kenv !_tenv !ctx xx@(XCon a dc) _
                 ctx
 
 -- others ---------------------------------------
-checkVarCon _ _ _ _ _ _
+checkVarCon _ _ _ _
  = error "ddc-core.checkVarCon: no match"

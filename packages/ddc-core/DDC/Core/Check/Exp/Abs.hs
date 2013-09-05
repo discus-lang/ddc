@@ -9,30 +9,32 @@ import qualified Data.Set       as Set
 
 -- Dispatch -------------------------------------------------------------------
 checkAbs :: Checker a n
-checkAbs !table !kenv !tenv !ctx (XLAM a b1 x2) _
- = do   checkAbsLAM table kenv tenv ctx a b1 x2
+checkAbs !table !ctx (XLAM a b1 x2) _
+ = do   checkAbsLAM table ctx a b1 x2
          
-checkAbs !table !kenv !tenv !ctx xx@(XLam a b1 x2) dXX
+checkAbs !table !ctx xx@(XLam a b1 x2) dXX
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
 
         -- The rule we use depends on the kind of the binder.
         (b1', k1)       <- checkBindM config kenv ctx b1
 
         case universeFromType2 k1 of
          Just UniverseData
-           -> checkAbsLamData    table kenv tenv a ctx b1' k1 x2 dXX
+           -> checkAbsLamData    table a ctx b1' k1 x2 dXX
          Just UniverseWitness
-           -> checkAbsLamWitness table kenv tenv a ctx b1' k1 x2 dXX
+           -> checkAbsLamWitness table a ctx b1' k1 x2 dXX
          _ -> throw $ ErrorLamBindBadKind a xx (typeOfBind b1') k1
 
-checkAbs _ _ _ _ _ _
+checkAbs _ _ _ _
         = error "ddc-core.checkAbs: no match."
 
 
 -- AbsLAM ---------------------------------------------------------------------
-checkAbsLAM !table !kenv !tenv !ctx a b1 x2
- = do   let xx          = XLAM a b1 x2
-        let config      = tableConfig table
+checkAbsLAM !table !ctx a b1 x2
+ = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let xx          = XLAM a b1 x2
         
         -- Check the type of the binder.
         (b1', _)        <- checkBindM config kenv ctx b1
@@ -46,7 +48,7 @@ checkAbsLAM !table !kenv !tenv !ctx a b1 x2
         let (ctx1, _pos) = pushKind b1' ctx
         let ctx2         = liftTypes 1  ctx1
         (x2', t2, e2, c2, _ctx3)
-                <- tableCheckExp table table  kenv tenv ctx2 x2 Synth
+                <- tableCheckExp table table ctx2 x2 Synth
         (_, k2) <- checkTypeM config kenv ctx2 t2
 
         -- The body of a spec abstraction must have data kind.
@@ -71,8 +73,9 @@ checkAbsLAM !table !kenv !tenv !ctx a b1 x2
 
 
 -- AbsLamData -----------------------------------------------------------------
-checkAbsLamData !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !dXX 
+checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !dXX 
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
         let t1          = typeOfBind b1
 
         -- If we have an expected type for the abstraction then split off
@@ -86,7 +89,7 @@ checkAbsLamData !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !dXX
         -- Check the body of the abstraction.
         let (ctx1, pos1) = pushType b1 ctx
         (x2', t2, e2, c2, ctx2)
-         <- tableCheckExp table table kenv tenv ctx1 x2 dX2
+         <- tableCheckExp table table ctx1 x2 dX2
 
         -- The body of a data abstraction must produce data.
         (_, k2)         <- checkTypeM config kenv ctx2 t2
@@ -173,14 +176,15 @@ makeFunctionType config a xx t1 t2 e2 c2
 
 
 -- AbsLamWitness --------------------------------------------------------------
-checkAbsLamWitness !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !_dXX
- = do   let config       = tableConfig table
-        let t1           = typeOfBind b1
+checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
+ = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let t1          = typeOfBind b1
 
         -- Check the body of the abstraction.
         let (ctx1, _pos) = pushType b1 ctx
         (x2', t2, e2, c2, _ctx2) 
-                <- tableCheckExp table table kenv tenv ctx1 x2 Synth
+                <- tableCheckExp table table ctx1 x2 Synth
         (_, k2) <- checkTypeM config kenv ctx1 t2
 
         -- The body of a witness abstraction must be pure.

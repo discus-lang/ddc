@@ -12,24 +12,25 @@ import Data.List                        as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !kenv !tenv !ctx xx@(XLet a lts x2) tXX
+checkLet !table !ctx xx@(XLet a lts x2) tXX
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
         _       -> False
 
  = do   let config  = tableConfig table
+        let kenv    = tableKindEnv table
 
         -- Check the bindings
         (lts', bs', effs12, clo12, ctx12)
-                <- checkLetsM xx table kenv tenv ctx lts
+                <- checkLetsM xx table ctx lts
 
         -- Check the body expression.
         let (ctx1', _pos12) 
                 = pushTypes bs' ctx12
 
         (x2', t2, effs2, c2, _ctx2)                     -- TODO: use context
-                <- tableCheckExp table table kenv tenv ctx1' x2 tXX
+                <- tableCheckExp table table ctx1' x2 tXX
 
         -- The body must have data kind.
         (_, k2) <- checkTypeM config kenv ctx1' t2
@@ -50,11 +51,12 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a lts x2) tXX
 
 
 -- letregion --------------------------------------
-checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
+checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
-    []   -> tableCheckExp table table kenv tenv ctx x Synth
+    []   -> tableCheckExp table table ctx x Synth
     us   -> do
         let config      = tableConfig table
+        let kenv        = tableKindEnv table
         let depth       = length $ map isBAnon bsRgn
 
         -- Check the type on the region binders.
@@ -85,7 +87,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
         -- Check the body expression.
         let (ctx3, _pos2) = pushTypes bsWit' ctx2
         (xBody', tBody, effs, clo, _ctx4)  
-                          <- tableCheckExp table table kenv tenv ctx3 x tXX
+                          <- tableCheckExp table table ctx3 x tXX
 
         -- The body type must have data kind.
         (_, kBody)       <- checkTypeM config kenv ctx3 tBody
@@ -119,8 +121,9 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
 
 
 -- withregion -----------------------------------
-checkLet !table !kenv !tenv !ctx xx@(XLet a (LWithRegion u) x) tXX
+checkLet !table !ctx xx@(XLet a (LWithRegion u) x) tXX
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
 
         -- The handle must have region kind.
         -- We need to look in the KindEnv as well as the Context here, 
@@ -135,7 +138,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LWithRegion u) x) tXX
         
         -- Check the body expression.
         (xBody', tBody, effs, clo, ctx') 
-                        <- tableCheckExp table table kenv tenv ctx x tXX
+                        <- tableCheckExp table table ctx x tXX
 
         -- The body type must have data kind.
         (tBody', kBody) <- checkTypeM config kenv ctx tBody
@@ -166,7 +169,7 @@ checkLet !table !kenv !tenv !ctx xx@(XLet a (LWithRegion u) x) tXX
                 ctx'
         
 -- others ---------------------------------------
-checkLet _ _ _ _ _ _
+checkLet _ _ _ _
         = error "ddc-core.checkLet: no match"        
 
 
@@ -176,8 +179,6 @@ checkLetsM
         :: (Show n, Pretty n, Ord n)
         => Exp a n              -- ^ Enclosing expression, for error messages.
         -> Table a n            -- ^ Static config.
-        -> Env n                -- ^ Kind environment.
-        -> Env n                -- ^ Type environment.
         -> Context n            -- ^ Input context.
         -> Lets a n
         -> CheckM a n
@@ -187,9 +188,8 @@ checkLetsM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkLetsM !xx !table !kenv !tenv !ctx (LLet b11 x12)
- = do   let config      = tableConfig table
-        let a           = annotOfExp xx
+checkLetsM !xx !table !ctx (LLet b11 x12)
+ = do   let a           = annotOfExp xx
 
         -- If the type of the binding is not Bot then use that
         -- as the expected type when checking the body.
@@ -198,12 +198,12 @@ checkLetsM !xx !table !kenv !tenv !ctx (LLet b11 x12)
 
         -- Check the right of the binding.
         (x12', t12, effs12, clo12, ctx')  
-         <- tableCheckExp table table kenv tenv ctx x12 tXX
+         <- tableCheckExp table table ctx x12 tXX
 
         -- Check the annotation on the binder against the type of the
         -- bound expression.
         (b11', k11')    
-         <- checkLetBindOfTypeM a xx config kenv tenv ctx t12 b11
+         <- checkLetBindOfTypeM a xx table ctx t12 b11
 
         -- The right of the binding must have data kind.
         when (not $ isDataKind k11')
@@ -216,8 +216,9 @@ checkLetsM !xx !table !kenv !tenv !ctx (LLet b11 x12)
                 , ctx')
 
 -- letrec ---------------------------------------
-checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
+checkLetsM !xx !table !ctx (LRec bxs)
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
         let (bs, xs)    = unzip bxs
         let a           = annotOfExp xx
 
@@ -249,7 +250,7 @@ checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
                 <- liftM unzip5
                 $  mapM (\(b, x) -> let tB      = typeOfBind b
                                         dXX     = if isBot tB then Synth else Check tB
-                                    in  tableCheckExp table table kenv tenv ctx' x dXX) 
+                                    in  tableCheckExp table table ctx' x dXX) 
                 $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.
@@ -272,7 +273,7 @@ checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
                 , clos_cut
                 , ctx)                                         -- TODO: use final context.
 
-checkLetsM _xx _config _kenv _tenv _ctx _lts
+checkLetsM _xx _config _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"
 
 
@@ -293,18 +294,18 @@ checkLetBindOfTypeM
         :: (Ord n, Show n, Pretty n) 
         => a                    -- ^ Annotation for error messages.
         -> Exp a n 
-        -> Config n             -- Data type definitions.
-        -> Env n                -- Kind environment. 
-        -> Env n                -- Type environment.
+        -> Table a n
         -> Context n            -- Local context
         -> Type n 
         -> Bind n 
         -> CheckM a n (Bind n, Kind n)
 
-checkLetBindOfTypeM !a !xx !config !kenv !_tenv !ctx !tRight b
+checkLetBindOfTypeM !a !xx !table !ctx !tRight b
         -- If the binder just has type Bot then replace it
         | isBot (typeOfBind b)
-        = do    (_, k)  <- checkTypeM config kenv ctx tRight
+        = do    let config = tableConfig table
+                let kenv   = tableKindEnv table
+                (_, k)  <- checkTypeM config kenv ctx tRight
                 return (replaceTypeOfBind tRight b, k)
 
         -- The type of the binder must match that of the right of the binding.
@@ -312,7 +313,9 @@ checkLetBindOfTypeM !a !xx !config !kenv !_tenv !ctx !tRight b
         = throw $ ErrorLetMismatch a xx b tRight
 
         | otherwise
-        =       checkBindM config kenv ctx b
+        = do    let config = tableConfig table
+                let kenv   = tableKindEnv table
+                checkBindM config kenv ctx b
         
 
 -------------------------------------------------------------------------------

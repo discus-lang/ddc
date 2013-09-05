@@ -70,8 +70,6 @@ import Data.Set                 (Set)
 type Checker a n
         =  (Show n, Ord n, Pretty n)
         => Table a n
-        -> KindEnv n
-        -> TypeEnv n
         -> Context n
         -> Exp a n      
         -> Direction n
@@ -83,11 +81,15 @@ type Checker a n
                 , Context n)
 
 
--- | Table of type checking functions, 
---   each one handle one or two nodes from the core AST.
+-- | Table of environment things that do not change during type checking
+--   We've got the static config, 
+--    global kind and type environments,
+--    and a type checking function for each node of the AST.
 data Table a n
         = Table
         { tableConfig           :: Config n
+        , tableKindEnv          :: KindEnv n
+        , tableTypeEnv          :: TypeEnv n
         , tableCheckExp         :: Checker a n
         , tableCheckVarCon      :: Checker a n
         , tableCheckApp         :: Checker a n

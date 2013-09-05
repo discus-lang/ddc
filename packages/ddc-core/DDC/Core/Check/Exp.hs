@@ -13,7 +13,7 @@ module DDC.Core.Check.Exp
 
           -- * Monadic checking.
         , Table         (..)
-        , tableOfConfig
+        , makeTable
         , CheckM
         , checkExpM
 
@@ -61,9 +61,10 @@ checkExp
 checkExp !config !kenv !tenv !xx !tXX
  = result
  $ do   (xx', t, effs, clos, _) 
-                <- checkExpM (tableOfConfig config)
-                        (Env.union kenv (configPrimKinds config))
-                        (Env.union tenv (configPrimTypes config))
+                <- checkExpM 
+                        (makeTable config
+                                (Env.union kenv (configPrimKinds config))
+                                (Env.union tenv (configPrimTypes config)))
                         emptyContext xx tXX
         return  ( xx'
                 , t
@@ -91,8 +92,6 @@ typeOfExp !config !kenv !tenv !xx
 checkExpM 
         :: (Show n, Pretty n, Ord n)
         => Table a n                    -- ^ Static config.
-        -> Env n                        -- ^ Kind environment.
-        -> Env n                        -- ^ Type environment.
         -> Context n                    -- ^ Input context.
         -> Exp a n                      -- ^ Expression to check.
         -> Direction n                  -- ^ Check direction
@@ -104,25 +103,27 @@ checkExpM
                 , Context n)            -- Output context.
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
-checkExpM !table !kenv !tenv !ctx !xx !dXX 
+checkExpM !table !ctx !xx !dXX 
  = case xx of
-        XVar{}          -> tableCheckVarCon table table kenv tenv ctx xx dXX
-        XCon{}          -> tableCheckVarCon table table kenv tenv ctx xx dXX
-        XApp{}          -> tableCheckApp    table table kenv tenv ctx xx dXX
-        XLam{}          -> tableCheckAbs    table table kenv tenv ctx xx dXX
-        XLAM{}          -> tableCheckAbs    table table kenv tenv ctx xx dXX
-        XLet{}          -> tableCheckLet    table table kenv tenv ctx xx dXX
-        XCase{}         -> tableCheckCase   table table kenv tenv ctx xx dXX
-        XCast{}         -> tableCheckCast   table table kenv tenv ctx xx dXX
+        XVar{}          -> tableCheckVarCon table table ctx xx dXX
+        XCon{}          -> tableCheckVarCon table table ctx xx dXX
+        XApp{}          -> tableCheckApp    table table ctx xx dXX
+        XLam{}          -> tableCheckAbs    table table ctx xx dXX
+        XLAM{}          -> tableCheckAbs    table table ctx xx dXX
+        XLet{}          -> tableCheckLet    table table ctx xx dXX
+        XCase{}         -> tableCheckCase   table table ctx xx dXX
+        XCast{}         -> tableCheckCast   table table ctx xx dXX
         XType    a _    -> throw $ ErrorNakedType    a xx 
         XWitness a _    -> throw $ ErrorNakedWitness a xx
 
 
 -- Table ----------------------------------------------------------------------
-tableOfConfig :: Config n -> Table a n
-tableOfConfig config
+makeTable :: Config n -> KindEnv n -> TypeEnv n -> Table a n
+makeTable config kenv tenv
         = Table
         { tableConfig           = config
+        , tableKindEnv          = kenv
+        , tableTypeEnv          = tenv
         , tableCheckExp         = checkExpM
         , tableCheckVarCon      = checkVarCon
         , tableCheckApp         = checkApp

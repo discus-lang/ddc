@@ -12,12 +12,13 @@ import Data.List                as L
 checkCase :: Checker a n
 
 -- case expression ------------------------------
-checkCase !table !kenv !tenv !ctx xx@(XCase a xDiscrim alts) mtXX
+checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
  = do   let config      = tableConfig table
+
 
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctx') 
-         <- tableCheckExp table table kenv tenv ctx xDiscrim Synth
+         <- tableCheckExp table table ctx xDiscrim Synth
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -55,7 +56,7 @@ checkCase !table !kenv !tenv !ctx xx@(XCase a xDiscrim alts) mtXX
         -- Check the alternatives.
         (alts', ts, effss, closs, _)            -- TODO: thread alt contexts properly
                 <- liftM unzip5
-                $  mapM (\alt -> checkAltM xx table kenv tenv tDiscrim tsArgs ctx' alt mtXX) 
+                $  mapM (\alt -> checkAltM xx table tDiscrim tsArgs ctx' alt mtXX) 
                 $  alts
 
         -- There must be at least one alternative
@@ -130,7 +131,7 @@ checkCase !table !kenv !tenv !ctx xx@(XCase a xDiscrim alts) mtXX
                 (Set.unions         (closDiscrim : closs))
                 ctx'                                    -- TODO: use final context.
 
-checkCase _ _ _ _ _ _
+checkCase _ _ _ _
         = error "ddc-core.checkCase: no match"
 
 
@@ -140,8 +141,6 @@ checkAltM
         :: (Show n, Pretty n, Ord n) 
         => Exp a n              -- ^ Whole case expression, for error messages.
         -> Table a n            -- ^ Checker table.
-        -> Env n                -- ^ Kind environment.
-        -> Env n                -- ^ Type environment.
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Context n            -- ^ Context for the right of the alt.
@@ -154,12 +153,12 @@ checkAltM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs !ctx 
+checkAltM !_xx !table !_tDiscrim !_tsArgs !ctx 
           (AAlt PDefault xBody) dXX
  = do   
         -- Check the right of the alternative.
         (xBody', tBody, effBody, cloBody, ctx')
-                <- tableCheckExp table table kenv tenv ctx xBody dXX
+                <- tableCheckExp table table ctx xBody dXX
 
         return  ( AAlt PDefault xBody'
                 , tBody
@@ -167,7 +166,7 @@ checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs !ctx
                 , cloBody
                 , ctx')
 
-checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs !ctx 
+checkAltM !xx !table !tDiscrim !tsArgs !ctx 
           (AAlt (PData dc bsArg) xBody) dXX
  = do   let config      = tableConfig table
         let a           = annotOfExp xx
@@ -228,7 +227,7 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs !ctx
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody, ctxBody)
-                <- tableCheckExp table table kenv tenv ctxArg xBody dXX
+                <- tableCheckExp table table ctxArg xBody dXX
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.

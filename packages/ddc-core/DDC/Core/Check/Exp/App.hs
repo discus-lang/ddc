@@ -19,12 +19,13 @@ checkApp :: Checker a n
 --       the bound type variable is not visible outside the abstraction.
 --       thus we can't be sharing objects that have it in its type.
 --
-checkApp !table !kenv !tenv !ctx xx@(XApp a x1 (XType _ t2)) _
+checkApp !table !ctx xx@(XApp a x1 (XType _ t2)) _
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
 
         -- Check the functional expression.
         (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table kenv tenv ctx x1 Synth
+         <- tableCheckExp table table ctx x1 Synth
 
         -- Check the type argument.
         (_, k2) 
@@ -50,12 +51,14 @@ checkApp !table !kenv !tenv !ctx xx@(XApp a x1 (XType _ t2)) _
 
 
 -- value-witness application --------------------
-checkApp !table !kenv !tenv !ctx xx@(XApp a x1 (XWitness _ w2)) _
+checkApp !table !ctx xx@(XApp a x1 (XWitness _ w2)) _
  = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let tenv        = tableTypeEnv table
 
         -- Check the functional expression.
         (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table kenv tenv ctx x1 Synth
+         <- tableCheckExp table table ctx x1 Synth
 
         -- Check the witness.
         (w2', t2) 
@@ -75,15 +78,15 @@ checkApp !table !kenv !tenv !ctx xx@(XApp a x1 (XWitness _ w2)) _
                  
 
 -- value-value application ----------------------
-checkApp !table !kenv !tenv !ctx xx@(XApp a x1 x2) _
+checkApp !table !ctx xx@(XApp a x1 x2) _
  = do   
         -- Check the functional expression.
         (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table kenv tenv ctx  x1 Synth
+         <- tableCheckExp table table ctx  x1 Synth
 
         -- Check the argument.
         (x2', t2, effs2, clos2, ctx2) 
-         <- tableCheckExp table table kenv tenv ctx1 x2 Synth
+         <- tableCheckExp table table ctx1 x2 Synth
 
         case t1 of
          -- Oblivious application of a pure function.
@@ -115,6 +118,6 @@ checkApp !table !kenv !tenv !ctx xx@(XApp a x1 x2) _
          _              -> throw $ ErrorAppNotFun a xx t1 t2
 
 -- others ---------------------------------------
-checkApp _ _ _ _ _ _
+checkApp _ _ _ _
  = error "ddc-core.checkApp: no match"
 
