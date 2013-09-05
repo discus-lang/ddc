@@ -22,18 +22,18 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
         let kenv    = tableKindEnv table
 
         -- Check the bindings
-        (lts', bs', effs12, clo12, ctx12)
+        (lts', bs', effs12, clo12, ctx1)
                 <- checkLetsM xx table ctx lts
 
         -- Check the body expression.
-        let (ctx1', _pos12) 
-                = pushTypes bs' ctx12
+        let (ctx2, pos1) 
+                = pushTypes bs' ctx1
 
-        (x2', t2, effs2, c2, _ctx2)                     -- TODO: use context
-                <- tableCheckExp table table ctx1' x2 tXX
+        (x2', t2, effs2, c2, ctx3)
+                <- tableCheckExp table table ctx2 x2 tXX
 
         -- The body must have data kind.
-        (_, k2) <- checkTypeM config kenv ctx1' t2
+        (_, k2) <- checkTypeM config kenv ctx3 t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLetBodyNotData a xx t2 k2
 
@@ -42,12 +42,15 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
                         $ mapMaybe (cutTaggedClosureXs bs')
                         $ Set.toList c2
 
-        returnX a
-                (\z -> XLet z lts' x2')
-                t2
-                (effs12 `Sum.union` effs2)
-                (clo12  `Set.union` c2_cut)
-                ctx                                     -- TODO: pop types of lets
+        -- The new effect and closure.
+        let effs'       = effs12 `Sum.union` effs2
+        let clos'       = clo12  `Set.union` c2_cut
+
+        -- Pop the elements due to the let-bindings from the context.
+        -- let Just ctx'   = popToPos pos1 ctx3
+                                                                -- TODO: this doesn't pop.
+        returnX a (\z -> XLet z lts' x2')
+                t2 effs' clos' (pos1 `seq` ctx)
 
 
 -- letregion --------------------------------------
