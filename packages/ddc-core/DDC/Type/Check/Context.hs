@@ -4,15 +4,14 @@ module DDC.Type.Check.Context
         , Elem          (..)
         , Context       (..)
         , emptyContext
-        , pushType, pushTypes
-        , pushKind
+        , pushType, pushTypes, lookupType, memberType
+        , pushKind, pushKinds, lookupKind, memberKind
         , popToPos
-        , lookupType
-        , lookupKind
         , liftTypes)
 where
 import DDC.Type.Exp
 import DDC.Type.Transform.LiftT
+import Data.Maybe
 
 
 -- | Direction used for bidirectional type checking.
@@ -24,15 +23,20 @@ data Direction n
         | Synth
         deriving Show
 
+
+-- | An element in the type checker context.
 data Elem n
         = ElemKind (Bind n)
         | ElemType (Bind n)
         deriving Show
 
+-- | The type checker context.
 data Context n
         = Context !Int [Elem n]
         deriving Show
 
+
+-- | A position in the type checker context.
 data Pos
         = Pos Int
 
@@ -63,6 +67,14 @@ pushTypes bs (Context len ls)
 pushKind :: Bind n -> Context n -> (Context n, Pos)
 pushKind b (Context len ls)
  =      ( Context (len + 1) (ElemKind b : ls)
+        , Pos len)
+
+
+-- | Push many kinds onto the context.
+pushKinds :: [Bind n] -> Context n -> (Context n, Pos)
+pushKinds bs (Context len ls)
+ =      ( Context (len + length bs) 
+                 ( reverse [ ElemKind b | b <- bs] ++ ls)
         , Pos len)
 
 
@@ -104,6 +116,11 @@ lookupType u (Context _ ll)
          = goIx ix d ls
 
 
+-- | See if this type variable is in the context.
+memberType :: Eq n => Bound n -> Context n -> Bool
+memberType u ctx = isJust $ lookupType u ctx
+
+
 -- | Lookup the kind of some variable from the context.
 lookupKind :: Eq n => Bound n -> Context n -> Maybe (Kind n)
 lookupKind u (Context _ ll)
@@ -126,6 +143,11 @@ lookupKind u (Context _ ll)
          | otherwise    = goIx   ix (d + 1) ls
         goIx ix d  (_ : ls)
          = goIx ix d ls
+
+
+-- | See if this kind variable is in the context.
+memberKind :: Eq n => Bound n -> Context n -> Bool
+memberKind u ctx = isJust $ lookupKind u ctx
 
 
 -- Lifting --------------------------------------------------------------------

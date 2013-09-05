@@ -83,20 +83,25 @@ checkTypeM config env ctx tt
 
 -- Variables ------------------
 checkTypeM' config env ctx tt@(TVar u)
+ -- Primitive type variable has its type directly attached.
  | UPrim _ k    <- u    
  = return (tt, k)
+
+ -- Kind is in the local environment.
+ | Just k       <- lookupKind u ctx
+ = return (tt, k)
  
+ -- Kind is in the global environment.
  | Just k       <- Env.lookup u env
  = return (tt, k)
 
- | Just k       <- lookupKind u ctx
- = return (tt, k)
-
+ -- This was some type we were supposed to infer.
  | UName n      <- u
  , Just isHole  <- configNameIsHole config
  , isHole n
  = throw $ ErrorCannotInfer tt
 
+ -- Type variable is nowhere to be found.
  | otherwise
  = throw $ ErrorUndefined u
 
