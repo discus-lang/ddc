@@ -13,7 +13,7 @@ import qualified Data.Set       as Set
 checkVarCon :: Checker a n
 
 -- variables ------------------------------------
-checkVarCon !_table !_kenv !tenv (XVar a u) _
+checkVarCon !_table !_kenv !tenv !ctx (XVar a u) _
  = case Env.lookup u tenv of
         Nothing -> throw $ ErrorUndefinedVar a u UniverseData
         Just t  
@@ -22,10 +22,11 @@ checkVarCon !_table !_kenv !tenv (XVar a u) _
                 t
                 (Sum.empty kEffect)
                 (Set.singleton $ taggedClosureOfValBound t u)
+                ctx
 
 
 -- constructors ---------------------------------
-checkVarCon !table !_kenv !_tenv xx@(XCon a dc) _
+checkVarCon !table !_kenv !_tenv !ctx xx@(XCon a dc) _
  = do   let config      = tableConfig table
         let defs        = configDataDefs config
 
@@ -55,7 +56,8 @@ checkVarCon !table !_kenv !_tenv xx@(XCon a dc) _
                 tCtor
                 (Sum.empty kEffect)
                 Set.empty
+                ctx
 
 -- others ---------------------------------------
-checkVarCon _ _ _ _ _
+checkVarCon _ _ _ _ _ _
  = error "ddc-core.checkVarCon: no match"

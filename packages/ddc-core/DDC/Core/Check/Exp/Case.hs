@@ -13,12 +13,12 @@ import Data.List                as L
 checkCase :: Checker a n
 
 -- case expression ------------------------------
-checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) mtXX
+checkCase !table !kenv !tenv !ctx xx@(XCase a xDiscrim alts) mtXX
  = do   let config      = tableConfig table
 
         -- Check the discriminant.
-        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim) 
-         <- tableCheckExp table table kenv tenv xDiscrim Synth
+        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctx') 
+         <- tableCheckExp table table kenv tenv ctx xDiscrim Synth
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -54,9 +54,9 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) mtXX
              Just m  -> return m
 
         -- Check the alternatives.
-        (alts', ts, effss, closs)     
-                <- liftM unzip4
-                $  mapM (\alt -> checkAltM xx table kenv tenv tDiscrim tsArgs alt mtXX) 
+        (alts', ts, effss, closs, _)            -- TODO: thread alt contexts properly
+                <- liftM unzip5
+                $  mapM (\alt -> checkAltM xx table kenv tenv tDiscrim tsArgs ctx' alt mtXX) 
                 $  alts
 
         -- There must be at least one alternative
@@ -129,8 +129,9 @@ checkCase !table !kenv !tenv xx@(XCase a xDiscrim alts) mtXX
                 tAlt
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
                 (Set.unions         (closDiscrim : closs))
+                ctx'
 
-checkCase _ _ _ _ _
+checkCase _ _ _ _ _ _
         = error "ddc-core.checkCase: no match"
 
 
@@ -144,27 +145,30 @@ checkAltM
         -> Env n                -- ^ Type environment.
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
+        -> Context n            -- ^ Context for the right of the alt.
         -> Alt a n              -- ^ Alternative to check.
         -> Direction n          -- ^ Check direction for right of alternative.
         -> CheckM a n 
                 ( Alt (AnTEC a n) n
                 , Type n
                 , TypeSum n
-                , Set (TaggedClosure n))
+                , Set (TaggedClosure n)
+                , Context n)
 
-checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs 
+checkAltM !_xx !table !kenv !tenv !_tDiscrim !_tsArgs !ctx 
           (AAlt PDefault xBody) dXX
  = do   
         -- Check the right of the alternative.
-        (xBody', tBody, effBody, cloBody)
-                <- tableCheckExp table table kenv tenv xBody dXX
+        (xBody', tBody, effBody, cloBody, ctx')
+                <- tableCheckExp table table kenv tenv ctx xBody dXX
 
         return  ( AAlt PDefault xBody'
                 , tBody
                 , effBody
-                , cloBody)
+                , cloBody
+                , ctx')
 
-checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs 
+checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs !ctx 
           (AAlt (PData dc bsArg) xBody) dXX
  = do   let config      = tableConfig table
         let a           = annotOfExp xx
@@ -224,8 +228,8 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs
         let tenv'       = Env.extends bsArg' tenv
         
         -- Check the body in this new environment.
-        (xBody', tBody, effsBody, closBody)
-                <- tableCheckExp table table kenv tenv' xBody dXX
+        (xBody', tBody, effsBody, closBody, ctx')
+                <- tableCheckExp table table kenv tenv' ctx xBody dXX
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
@@ -237,7 +241,8 @@ checkAltM !xx !table !kenv !tenv !tDiscrim !tsArgs
         return  ( AAlt (PData dc bsArg') xBody'
                 , tBody
                 , effsBody
-                , closBody_cut)
+                , closBody_cut
+                , ctx')
 
 
 -- | Merge a type annotation on a pattern field with a type we get by

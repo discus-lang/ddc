@@ -12,7 +12,7 @@ import Data.List                        as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !kenv !tenv xx@(XLet a lts x2) tXX
+checkLet !table !kenv !tenv !ctx xx@(XLet a lts x2) tXX
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -21,13 +21,13 @@ checkLet !table !kenv !tenv xx@(XLet a lts x2) tXX
  = do   let config  = tableConfig table
 
         -- Check the bindings
-        (lts', bs', effs12, clo12)
-                <- checkLetsM xx table kenv tenv lts
+        (lts', bs', effs12, clo12, ctx')
+                <- checkLetsM xx table kenv tenv ctx lts
 
         -- Check the body expression.
         let tenv1  = Env.extends bs' tenv
-        (x2', t2, effs2, c2) 
-                <- tableCheckExp table table kenv tenv1 x2 tXX
+        (x2', t2, effs2, c2, ctx2) 
+                <- tableCheckExp table table kenv tenv1 ctx' x2 tXX
 
         -- The body must have data kind.
         (_, k2) <- checkTypeM config kenv t2
@@ -44,12 +44,13 @@ checkLet !table !kenv !tenv xx@(XLet a lts x2) tXX
                 t2
                 (effs12 `Sum.union` effs2)
                 (clo12  `Set.union` c2_cut)
+                ctx2
 
 
 -- letregion --------------------------------------
-checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
+checkLet !table !kenv !tenv !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
-    []   -> tableCheckExp table table kenv tenv x Synth
+    []   -> tableCheckExp table table kenv tenv ctx x Synth
     us   -> do
         let config      = tableConfig table
         let depth       = length $ map isBAnon bsRgn
@@ -79,8 +80,8 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
 
         -- Check the body expression.
         let tenv2       = Env.extends bsWit' tenv'
-        (xBody', tBody, effs, clo)  
-                        <- tableCheckExp table table kenv' tenv2 x tXX
+        (xBody', tBody, effs, clo, ctx')  
+                        <- tableCheckExp table table kenv' tenv2 ctx x tXX
 
         -- The body type must have data kind.
         (_, kBody)      <- checkTypeM config kenv' tBody
@@ -110,10 +111,11 @@ checkLet !table !kenv !tenv xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
                 (lowerT depth tBody)
                 (lowerT depth effs')
                 c2_cut
+                ctx'
 
 
 -- withregion -----------------------------------
-checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) tXX
+checkLet !table !kenv !tenv !ctx xx@(XLet a (LWithRegion u) x) tXX
  = do   let config      = tableConfig table
 
         -- The handle must have region kind.
@@ -126,8 +128,8 @@ checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) tXX
           _       -> return ())
         
         -- Check the body expression.
-        (xBody', tBody, effs, clo) 
-                        <- tableCheckExp table table kenv tenv x tXX
+        (xBody', tBody, effs, clo, ctx') 
+                        <- tableCheckExp table table kenv tenv ctx x tXX
 
         -- The body type must have data kind.
         (tBody', kBody) <- checkTypeM config kenv tBody
@@ -155,9 +157,10 @@ checkLet !table !kenv !tenv xx@(XLet a (LWithRegion u) x) tXX
                 tBody
                 effs'
                 clo_masked
+                ctx'
         
 -- others ---------------------------------------
-checkLet _ _ _ _ _
+checkLet _ _ _ _ _ _
         = error "ddc-core.checkLet: no match"        
 
 
@@ -169,14 +172,16 @@ checkLetsM
         -> Table a n            -- ^ Static config.
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
+        -> Context n            -- ^ Input context.
         -> Lets a n
         -> CheckM a n
                 ( Lets (AnTEC a n) n
                 , [Bind n]
                 , TypeSum n
-                , Set (TaggedClosure n))
+                , Set (TaggedClosure n)
+                , Context n)
 
-checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
+checkLetsM !xx !table !kenv !tenv !ctx (LLet b11 x12)
  = do   let config      = tableConfig table
         let a           = annotOfExp xx
 
@@ -186,8 +191,8 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
         let tXX         = if isBot tB then Synth else Check tB
 
         -- Check the right of the binding.
-        (x12', t12, effs12, clo12)  
-         <- tableCheckExp table table kenv tenv x12 tXX
+        (x12', t12, effs12, clo12, ctx')  
+         <- tableCheckExp table table kenv tenv ctx x12 tXX
 
         -- Check the annotation on the binder against the type of the
         -- bound expression.
@@ -201,10 +206,11 @@ checkLetsM !xx !table !kenv !tenv (LLet b11 x12)
         return  ( LLet b11' x12'
                 , [b11']
                 , effs12
-                , clo12)
+                , clo12
+                , ctx')
 
 -- letrec ---------------------------------------
-checkLetsM !xx !table !kenv !tenv (LRec bxs)
+checkLetsM !xx !table !kenv !tenv !ctx (LRec bxs)
  = do   let config      = tableConfig table
         let (bs, xs)    = unzip bxs
         let a           = annotOfExp xx
@@ -233,11 +239,11 @@ checkLetsM !xx !table !kenv !tenv (LRec bxs)
         let tenv'       = Env.extends bs' tenv
 
         -- Check the right hand sides.
-        (xsRight', tsRight, _effssBinds, clossBinds) 
-                <- liftM unzip4 
+        (xsRight', tsRight, _effssBinds, clossBinds, _)         -- TODO: thread contexts properly
+                <- liftM unzip5
                 $  mapM (\(b, x) -> let tB      = typeOfBind b
                                         dXX     = if isBot tB then Synth else Check tB
-                                    in  tableCheckExp table table kenv tenv' x dXX) 
+                                    in  tableCheckExp table table kenv tenv' ctx x dXX) 
                 $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.
@@ -257,9 +263,10 @@ checkLetsM !xx !table !kenv !tenv (LRec bxs)
         return  ( LRec (zip bs' xsRight')
                 , zipWith replaceTypeOfBind tsRight bs'
                 , Sum.empty kEffect
-                , clos_cut)
+                , clos_cut
+                , ctx)
 
-checkLetsM _xx _config _kenv _tenv _lts
+checkLetsM _xx _config _kenv _tenv _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"
 
 

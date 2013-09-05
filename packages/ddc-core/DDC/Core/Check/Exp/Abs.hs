@@ -10,10 +10,10 @@ import qualified Data.Set       as Set
 
 -- Dispatch -------------------------------------------------------------------
 checkAbs :: Checker a n
-checkAbs !table !kenv !tenv (XLAM a b1 x2) _
- = do   checkAbsLAM table kenv tenv a b1 x2
+checkAbs !table !kenv !tenv !ctx (XLAM a b1 x2) _
+ = do   checkAbsLAM table kenv tenv ctx a b1 x2
          
-checkAbs !table !kenv !tenv xx@(XLam a b1 x2) dXX
+checkAbs !table !kenv !tenv !ctx xx@(XLam a b1 x2) dXX
  = do   let config      = tableConfig table
 
         -- The rule we use depends on the kind of the binder.
@@ -21,17 +21,17 @@ checkAbs !table !kenv !tenv xx@(XLam a b1 x2) dXX
 
         case universeFromType2 k1 of
          Just UniverseData
-           -> checkAbsLamData    table kenv tenv a b1' k1 x2 dXX
+           -> checkAbsLamData    table kenv tenv a ctx b1' k1 x2 dXX
          Just UniverseWitness
-           -> checkAbsLamWitness table kenv tenv a b1' k1 x2 dXX
+           -> checkAbsLamWitness table kenv tenv a ctx b1' k1 x2 dXX
          _ -> throw $ ErrorLamBindBadKind a xx (typeOfBind b1') k1
 
-checkAbs _ _ _ _ _
+checkAbs _ _ _ _ _ _
         = error "ddc-core.checkAbs: no match."
 
 
 -- AbsLAM ---------------------------------------------------------------------
-checkAbsLAM !table !kenv !tenv a b1 x2
+checkAbsLAM !table !kenv !tenv !ctx a b1 x2
  = do   let xx          = XLAM a b1 x2
         let config      = tableConfig table
         
@@ -45,8 +45,8 @@ checkAbsLAM !table !kenv !tenv a b1 x2
         -- Check the body of the abstraction.
         let kenv'       = Env.extend b1' kenv
         let tenv'       = Env.lift   1  tenv
-        (x2', t2, e2, c2) 
-                <- tableCheckExp table table  kenv' tenv' x2 Synth
+        (x2', t2, e2, c2, ctx2)
+                <- tableCheckExp table table  kenv' tenv' ctx x2 Synth
         (_, k2) <- checkTypeM config kenv' t2
 
         -- The body of a spec abstraction must have data kind.
@@ -67,10 +67,11 @@ checkAbsLAM !table !kenv !tenv a b1 x2
                 (TForall b1' t2)
                 (Sum.empty kEffect)
                 c2_cut
+                ctx2
 
 
 -- AbsLamData -----------------------------------------------------------------
-checkAbsLamData !table !kenv !tenv !a !b1 !_k1 !x2 !dXX 
+checkAbsLamData !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !dXX 
  = do   let config      = tableConfig table
         let t1          = typeOfBind b1
 
@@ -84,8 +85,8 @@ checkAbsLamData !table !kenv !tenv !a !b1 !_k1 !x2 !dXX
 
         -- Check the body of the abstraction.
         let tenv'       = Env.extend b1 tenv
-        (x2', t2, e2, c2) 
-         <- tableCheckExp table table kenv tenv' x2 dX2
+        (x2', t2, e2, c2, ctx2)
+         <- tableCheckExp table table kenv tenv' ctx x2 dX2
 
         -- The body of a data abstraction must produce data.
         (_, k2) <- checkTypeM config kenv t2
@@ -108,6 +109,7 @@ checkAbsLamData !table !kenv !tenv !a !b1 !_k1 !x2 !dXX
                 tResult 
                 (Sum.empty kEffect)
                 cResult
+                ctx2
 
 
 -- | Construct a function type with the given effect and closure.
@@ -169,14 +171,14 @@ makeFunctionType config a xx t1 t2 e2 c2
 
 
 -- AbsLamWitness --------------------------------------------------------------
-checkAbsLamWitness !table !kenv !tenv !a !b1 !_k1 !x2 !_dXX
+checkAbsLamWitness !table !kenv !tenv !a !ctx !b1 !_k1 !x2 !_dXX
  = do   let config      = tableConfig table
         let t1          = typeOfBind b1
 
         -- Check the body of the abstraction.
         let tenv'       = Env.extend b1 tenv
-        (x2', t2, e2, c2) 
-                <- tableCheckExp table table kenv tenv' x2 Synth
+        (x2', t2, e2, c2, ctx2) 
+                <- tableCheckExp table table kenv tenv' ctx x2 Synth
         (_, k2) <- checkTypeM config kenv t2
 
         -- The body of a witness abstraction must be pure.
@@ -192,4 +194,5 @@ checkAbsLamWitness !table !kenv !tenv !a !b1 !_k1 !x2 !_dXX
                 (tImpl t1 t2)
                 (Sum.empty kEffect)
                 c2
+                ctx2
 

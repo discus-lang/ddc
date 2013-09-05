@@ -5,7 +5,6 @@ module DDC.Core.Check.Exp.Base
         , returnX
 
         -- * Modules
-        , module DDC.Core.Check.Context
         , module DDC.Core.Check.TaggedClosure
         , module DDC.Core.Check.Witness
         , module DDC.Core.Check.DaCon
@@ -21,6 +20,7 @@ module DDC.Core.Check.Exp.Base
         , module DDC.Type.Transform.Crush
         , module DDC.Type.Transform.LiftT
         , module DDC.Type.Transform.Trim
+        , module DDC.Type.Check.Context
         , module DDC.Type.Predicates
         , module DDC.Type.Universe
         , module DDC.Type.DataDef
@@ -36,7 +36,6 @@ module DDC.Core.Check.Exp.Base
         , throw, result
         , Set)
 where
-import DDC.Core.Check.Context
 import DDC.Core.Check.TaggedClosure
 import DDC.Core.Check.Witness
 import DDC.Core.Check.DaCon
@@ -52,6 +51,7 @@ import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Trim
+import DDC.Type.Check.Context
 import DDC.Type.Predicates
 import DDC.Type.Universe
 import DDC.Type.DataDef
@@ -70,14 +70,17 @@ import Data.Set                 (Set)
 type Checker a n
         =  (Show n, Ord n, Pretty n)
         => Table a n
-        -> KindEnv n    -> TypeEnv n
+        -> KindEnv n
+        -> TypeEnv n
+        -> Context n
         -> Exp a n      
         -> Direction n
         -> CheckM a n
                 ( Exp (AnTEC a n) n
                 , Type n
                 , TypeSum n
-                , Set (TaggedClosure n))
+                , Set (TaggedClosure n)
+                , Context n)
 
 
 -- | Table of type checking functions, 
@@ -104,16 +107,18 @@ returnX :: Ord n
         -> Type n 
         -> TypeSum n
         -> Set (TaggedClosure n)
+        -> Context n
         -> CheckM a n 
                 ( Exp (AnTEC a n) n
                 , Type n
                 , TypeSum n
-                , Set (TaggedClosure n))
+                , Set (TaggedClosure n)
+                , Context n)
 
-returnX !a !f !t !es !cs
+returnX !a !f !t !es !cs !ctx
  = let  e       = TSum es
         c       = closureOfTaggedSet cs
    in   return  (f (AnTEC t e c a)
-                , t, es, cs)
+                , t, es, cs, ctx)
 {-# INLINE returnX #-}
 

@@ -6,6 +6,8 @@ module DDC.Core.Check.Exp
           -- * Pure checking.
         , AnTEC         (..)
         , Direction     (..)
+        , Context
+        , emptyContext
         , checkExp
         , typeOfExp
 
@@ -58,11 +60,11 @@ checkExp
 
 checkExp !config !kenv !tenv !xx !tXX
  = result
- $ do   (xx', t, effs, clos) 
+ $ do   (xx', t, effs, clos, _) 
                 <- checkExpM (tableOfConfig config)
                         (Env.union kenv (configPrimKinds config))
                         (Env.union tenv (configPrimTypes config))
-                        xx tXX
+                        emptyContext xx tXX
         return  ( xx'
                 , t
                 , TSum effs
@@ -88,28 +90,30 @@ typeOfExp !config !kenv !tenv !xx
 -- | Like `checkExp` but using the `CheckM` monad to handle errors.
 checkExpM 
         :: (Show n, Pretty n, Ord n)
-        => Table a n            -- ^ Static config.
-        -> Env n                -- ^ Kind environment.
-        -> Env n                -- ^ Type environment.
-        -> Exp a n              -- ^ Expression to check.
-        -> Direction n          -- ^ Check direction
+        => Table a n                    -- ^ Static config.
+        -> Env n                        -- ^ Kind environment.
+        -> Env n                        -- ^ Type environment.
+        -> Context n                    -- ^ Input context.
+        -> Exp a n                      -- ^ Expression to check.
+        -> Direction n                  -- ^ Check direction
         -> CheckM a n 
-                ( Exp (AnTEC a n) n
-                , Type n
-                , TypeSum n
-                , Set (TaggedClosure n))
+                ( Exp (AnTEC a n) n     -- Annotated expression.
+                , Type n                -- Output type.
+                , TypeSum n             -- Output effect
+                , Set (TaggedClosure n) -- Output closure
+                , Context n)            -- Output context.
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
-checkExpM !table !kenv !tenv !xx !dXX
+checkExpM !table !kenv !tenv !ctx !xx !dXX 
  = case xx of
-        XVar{}          -> tableCheckVarCon table table kenv tenv xx dXX
-        XCon{}          -> tableCheckVarCon table table kenv tenv xx dXX
-        XApp{}          -> tableCheckApp    table table kenv tenv xx dXX
-        XLam{}          -> tableCheckAbs    table table kenv tenv xx dXX
-        XLAM{}          -> tableCheckAbs    table table kenv tenv xx dXX
-        XLet{}          -> tableCheckLet    table table kenv tenv xx dXX
-        XCase{}         -> tableCheckCase   table table kenv tenv xx dXX
-        XCast{}         -> tableCheckCast   table table kenv tenv xx dXX
+        XVar{}          -> tableCheckVarCon table table kenv tenv ctx xx dXX
+        XCon{}          -> tableCheckVarCon table table kenv tenv ctx xx dXX
+        XApp{}          -> tableCheckApp    table table kenv tenv ctx xx dXX
+        XLam{}          -> tableCheckAbs    table table kenv tenv ctx xx dXX
+        XLAM{}          -> tableCheckAbs    table table kenv tenv ctx xx dXX
+        XLet{}          -> tableCheckLet    table table kenv tenv ctx xx dXX
+        XCase{}         -> tableCheckCase   table table kenv tenv ctx xx dXX
+        XCast{}         -> tableCheckCast   table table kenv tenv ctx xx dXX
         XType    a _    -> throw $ ErrorNakedType    a xx 
         XWitness a _    -> throw $ ErrorNakedWitness a xx
 
