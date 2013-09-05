@@ -113,12 +113,12 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                 , empty
                 , text "with: "                        <> align (ppr xx) ]
                  
-        ErrorLamBindNotData a xx t1 k1
+        ErrorLamBindBadKind a xx t1 k1
          -> vcat [ ppr a
-                 , text "Function parameter does not have data kind."
-                 , text "    The function parameter:"   <> ppr t1
+                 , text "Function parameter has invalid kind."
+                 , text "    The function parameter: "   <> ppr t1
                  , text "                  has kind: "  <> ppr k1
-                 , text "            but it must be: *"
+                 , text "            but it must be: Data or Witness"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -128,7 +128,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "   In function with binder: "  <> ppr b1
                  , text "       the result has type: "  <> ppr t2
                  , text "                 with kind: "  <> ppr k2
-                 , text "            but it must be: *"
+                 , text "            but it must be: Data"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -149,7 +149,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "      The binding for: "       <> ppr (binderOfBind b)
                  , text "             has type: "       <> ppr (typeOfBind b)
                  , text "            with kind: "       <> ppr k
-                 , text "       but it must be: * "
+                 , text "       but it must be: Data "
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -158,7 +158,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "Let body does not have data kind."
                  , text " Body of let has type: "       <> ppr t
                  , text "            with kind: "       <> ppr k
-                 , text "       but it must be: * "
+                 , text "       but it must be: Data "
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -199,7 +199,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
          -> vcat [ ppr a
                  , text "Region variables escape scope of letregion."
                  , text "       The region variables: "  <> (hcat $ map ppr bs)
-                 , text "  is free in the body type: "   <> ppr t
+                 , text "   is free in the body type: "   <> ppr t
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
         

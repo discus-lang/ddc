@@ -107,8 +107,9 @@ data Error a n
         , errorUniverse         :: Universe
         , errorClosure          :: Closure n }
 
-        -- | A value function where the parameter does not have data kind.
-        | ErrorLamBindNotData
+        -- | A value function where the parameter does not have data
+        --   or witness kind.
+        | ErrorLamBindBadKind
         { errorAnnot            :: a
         , errorChecking         :: Exp a n 
         , errorType             :: Type n

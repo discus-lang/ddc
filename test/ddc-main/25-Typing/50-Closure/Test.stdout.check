@@ -97,7 +97,7 @@ When checking expression.
   <batch>:72:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
+     is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 with {w1 : Const r1} in
         \(x : Unit).

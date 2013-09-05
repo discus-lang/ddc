@@ -134,7 +134,7 @@ When checking expression.
   <batch>:175:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Int r1
+     is free in the body type: Int r1
   
   with: letregion r1 in
         5 [r1] ()
@@ -145,7 +145,7 @@ When checking expression.
   <batch>:180:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
+     is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 in
         let z = 5 [r1] () in
@@ -158,7 +158,7 @@ When checking expression.
   <batch>:187:1
   Region variables escape scope of letregion.
          The region variables: r1 : Region
-    is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
+     is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
   with: letregion r1 in
         let z = 5 [r1] () in

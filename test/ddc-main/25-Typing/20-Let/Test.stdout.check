@@ -157,27 +157,27 @@ enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
 
 -- Error: binding must have data kind.
 When checking expression.
-  <batch>:122:3
-  Let binding does not have data kind.
-        The binding for: e2
-               has type: Effect
-              with kind: Comp
-         but it must be: * 
+  <batch>:121:2
+  Function parameter has invalid kind.
+      The function parameter: Effect
+                    has kind: Comp
+              but it must be: Data or Witness
   
-  with: let e2 : Effect = e1 in
+  with: \(e1 : Effect).
+        let e2 : Effect = e1 in
         ()
 
 
 -- Error: binding must have data kind.
 When checking expression.
-  <batch>:129:3
-  Let binding does not have data kind.
-        The binding for: e2
-               has type: Effect
-              with kind: Comp
-         but it must be: * 
+  <batch>:128:2
+  Function parameter has invalid kind.
+      The function parameter: Effect
+                    has kind: Comp
+              but it must be: Data or Witness
   
-  with: letrec {
+  with: \(e1 : Effect).
+        letrec {
           e2 : Effect = e1
         } in
         ()
@@ -185,25 +185,27 @@ When checking expression.
 
 -- Error: body must have data kind.
 When checking expression.
-  <batch>:136:3
-  Let body does not have data kind.
-   Body of let has type: Effect
-              with kind: Comp
-         but it must be: * 
+  <batch>:135:2
+  Function parameter has invalid kind.
+      The function parameter: Effect
+                    has kind: Comp
+              but it must be: Data or Witness
   
-  with: let x : Unit = () in
+  with: \(e1 : Effect).
+        let x : Unit = () in
         e1
 
 
 -- Error: body must have data kind.
 When checking expression.
-  <batch>:143:3
-  Let body does not have data kind.
-   Body of let has type: Effect
-              with kind: Comp
-         but it must be: * 
+  <batch>:142:2
+  Function parameter has invalid kind.
+      The function parameter: Effect
+                    has kind: Comp
+              but it must be: Data or Witness
   
-  with: letrec {
+  with: \(e1 : Effect).
+        letrec {
           foo : Unit -> Unit
             = \(x : Unit). ()
         } in

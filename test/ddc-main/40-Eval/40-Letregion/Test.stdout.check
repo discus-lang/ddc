@@ -11,8 +11,15 @@ When checking expression.
 
 -- Error: Region variable is not in scope (wrong level)
 When checking expression.
-  <batch>:13:16
-  Undefined spec variable: e
+  <batch>:13:3
+  Function parameter has invalid kind.
+      The function parameter: Effect
+                    has kind: Comp
+              but it must be: Data or Witness
+  
+  with: \(e : Effect).
+        withregion e in
+        ()
 
 
 -- Error: Region variable has wrong kind.
