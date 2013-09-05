@@ -15,47 +15,44 @@ checkCast !table !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
  = do   let config      = tableConfig  table
         let kenv        = tableKindEnv table
 
-        -- Check the body.
-        (x1', t1, effs, clo, ctx')
-                        <- tableCheckExp table table ctx x1 dXX
-
         -- Check the effect term.
         (eff', kEff)    <- checkTypeM config kenv ctx eff 
 
+        -- Check the body.
+        (x1', t1, effs, clo, ctx1)
+                        <- tableCheckExp table table ctx x1 dXX
+
+        
         -- The effect term must have Effect kind.
         when (not $ isEffectKind kEff)
          $ throw $ ErrorWeakEffNotEff a xx eff' kEff
 
-        let c'  = CastWeakenEffect eff'
+        let c'     = CastWeakenEffect eff'
+        let effs'  = Sum.insert eff' effs
 
-        returnX a
-                (\z -> XCast z c' x1')
-                t1
-                (Sum.insert eff' effs)
-                clo 
-                ctx'
-
+        returnX a (\z -> XCast z c' x1')
+                t1 effs' clo ctx1
+                
 
 -- Weaken a closure, adding in the given terms.
 checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) dXX
  = do   
-        -- Check the body.
-        (x1', t1, effs, clos, ctx')
-                <- tableCheckExp table table ctx x1 dXX
-
         -- Check the contained expressions.
-        (xs', closs, _ctxx')                             -- TODO: need to thread contexts properly
+        --  Just ditch the resulting contexts because they shouldn't
+        --  contain expression that need types infered.
+        (xs', closs, _ctx)
                 <- liftM unzip3
                 $ mapM (\x -> checkArgM table ctx x Synth) xs
 
-        let c'  = CastWeakenClosure xs'
+        -- Check the body.
+        (x1', t1, effs, clos, ctx1)
+                <- tableCheckExp table table ctx x1 dXX
+        
+        let c'     = CastWeakenClosure xs'
+        let closs' = Set.unions (clos : closs)
 
-        returnX a
-                (\z -> XCast z c' x1')
-                t1
-                effs
-                (Set.unions (clos : closs))
-                ctx'
+        returnX a (\z -> XCast z c' x1')
+                t1 effs closs' ctx1
 
 
 -- Purify an effect, given a witness that it is pure.
@@ -64,13 +61,13 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) dXX
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
 
-        -- Check the body.
-        (x1', t1, effs, clo, ctx')
-                  <- tableCheckExp table table ctx x1 dXX
-
         -- Check the witness.
         (w', tW)  <- checkWitnessM config kenv tenv ctx w
         let wTEC  = reannotate fromAnT w'
+
+        -- Check the body.
+        (x1', t1, effs, clo, ctx1)
+                  <- tableCheckExp table table ctx x1 dXX
 
         -- The witness must have type (Pure e), for some effect e.
         effs' <- case tW of
@@ -80,9 +77,8 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) dXX
 
         let c'  = CastPurify wTEC
 
-        returnX a
-                (\z -> XCast z c' x1')
-                t1 effs' clo ctx'
+        returnX a (\z -> XCast z c' x1')
+                t1 effs' clo ctx1
 
 
 -- Forget a closure, given a witness that it is empty.
@@ -91,13 +87,13 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
 
-        -- Check the body.
-        (x1', t1, effs, clos, ctx')  
-                  <- tableCheckExp table table ctx x1 dXX
-
         -- Check the witness.
         (w', tW)  <- checkWitnessM config kenv tenv ctx w
         let wTEC  = reannotate fromAnT w'
+
+        -- Check the body.
+        (x1', t1, effs, clos, ctx1)  
+                  <- tableCheckExp table table ctx x1 dXX
 
         -- The witness must have type (Empty c), for some closure c.
         clos' <- case tW of
@@ -110,9 +106,8 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
 
         let c'  = CastForget wTEC
 
-        returnX a
-                (\z -> XCast z c' x1')
-                t1 effs clos' ctx'
+        returnX a (\z -> XCast z c' x1')
+                t1 effs clos' ctx1
 
 
 -- Suspend a computation,
@@ -120,7 +115,7 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
 checkCast !table ctx (XCast a CastSuspend x1) _
  = do   
         -- Check the body.
-        (x1', t1, effs, clos, ctx') 
+        (x1', t1, effs, clos, ctx1) 
                 <- tableCheckExp table table ctx x1 Synth
 
         -- The result type is (S effs a),
@@ -128,9 +123,8 @@ checkCast !table ctx (XCast a CastSuspend x1) _
         let tS  = tApps (TCon (TyConSpec TcConSusp))
                         [TSum effs, t1]
 
-        returnX a
-                (\z -> XCast z CastSuspend x1')
-                tS (Sum.empty kEffect) clos ctx'
+        returnX a (\z -> XCast z CastSuspend x1')
+                tS (Sum.empty kEffect) clos ctx1
 
 
 -- Run a suspended computation,
@@ -138,7 +132,7 @@ checkCast !table ctx (XCast a CastSuspend x1) _
 checkCast !table !ctx xx@(XCast a CastRun x1) _
  = do   
         -- Check the body.
-        (x1', t1, effs, clos, ctx') 
+        (x1', t1, effs, clos, ctx1) 
                 <- tableCheckExp table table ctx x1 Synth
 
         -- The body must have type (S eff a),
@@ -150,7 +144,7 @@ checkCast !table !ctx xx@(XCast a CastRun x1) _
                 tA 
                 (Sum.union effs (Sum.singleton kEffect eff2))
                 clos
-                ctx'
+                ctx1
 
          _ -> throw $ ErrorRunNotSuspension a xx t1
 

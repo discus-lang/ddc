@@ -43,8 +43,6 @@ checkVarCon !table !ctx xx@(XCon a dc) _
  = do   let config      = tableConfig table
         let defs        = configDataDefs config
 
-        -- TODO: this is duplicated in the case for XCase.
-        --       split into another function.
         -- All data constructors need to have valid type annotations.
         tCtor 
          <- case dc of

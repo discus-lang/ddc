@@ -28,12 +28,11 @@ checkApp !table !ctx xx@(XApp a x1 (XType _ t2)) _
          <- tableCheckExp table table ctx x1 Synth
 
         -- Check the type argument.
-        (_, k2) 
-         <- checkTypeM config kenv ctx t2
+        (_, k2)         <- checkTypeM config kenv ctx1 t2
 
         -- Take any Use annots from a region arg.
         --   This always matches because we just checked 't2'
-        let Just t2_clo = taggedClosureOfTyArg kenv ctx t2
+        let Just t2_clo = taggedClosureOfTyArg kenv ctx1 t2
 
         -- The type of the function must have an outer forall quantifier.
         case t1 of
@@ -61,8 +60,7 @@ checkApp !table !ctx xx@(XApp a x1 (XWitness _ w2)) _
          <- tableCheckExp table table ctx x1 Synth
 
         -- Check the witness.
-        (w2', t2) 
-         <- checkWitnessM config kenv tenv ctx w2
+        (w2', t2)       <- checkWitnessM config kenv tenv ctx1 w2
         let w2TEC = reannotate fromAnT w2'
 
         -- The type of the function must have an outer implication.

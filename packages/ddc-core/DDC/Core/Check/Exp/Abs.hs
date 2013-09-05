@@ -45,8 +45,8 @@ checkAbsLAM !table !ctx a b1 x2
          $ throw $ ErrorLamShadow a xx b1
         
         -- Check the body of the abstraction.
-        let (ctx1, _pos) = pushKind b1' ctx
-        let ctx2         = liftTypes 1  ctx1
+        let (ctx1, pos) = pushKind b1' ctx
+        let ctx2        = liftTypes 1  ctx1
         (x2', t2, e2, c2, _ctx3)
                 <- tableCheckExp table table ctx2 x2 Synth
         (_, k2) <- checkTypeM config kenv ctx2 t2
@@ -64,12 +64,15 @@ checkAbsLAM !table !ctx a b1 x2
                         $ mapMaybe (cutTaggedClosureT b1)
                         $ Set.toList c2
 
+        -- Cut the bound kind and elems under it from the context.
+        let Just ctx'   = popToPos pos ctx1                      -- TODO: pop ctx3, after lowering
+                                                                
         returnX a
                 (\z -> XLAM z b1' x2')
                 (TForall b1' t2)
                 (Sum.empty kEffect)
                 c2_cut
-                ctx
+                ctx'
 
 
 -- AbsLamData -----------------------------------------------------------------
@@ -107,14 +110,15 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !dXX
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1 x2) t1 t2 e2 c2_cut
 
-        let Just _ctx   = popToPos pos1 ctx2
+        -- Cut the bound type and elems under it from the context.
+        let Just ctx'   = popToPos pos1 ctx2
         
         returnX a
                 (\z -> XLam z b1 x2')
                 tResult 
                 (Sum.empty kEffect)
                 cResult
-                ctx
+                ctx'
 
 
 -- | Construct a function type with the given effect and closure.
@@ -182,8 +186,8 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
         let t1          = typeOfBind b1
 
         -- Check the body of the abstraction.
-        let (ctx1, _pos) = pushType b1 ctx
-        (x2', t2, e2, c2, _ctx2) 
+        let (ctx1, pos) = pushType b1 ctx
+        (x2', t2, e2, c2, ctx2) 
                 <- tableCheckExp table table ctx1 x2 Synth
         (_, k2) <- checkTypeM config kenv ctx1 t2
 
@@ -195,10 +199,13 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData  a (XLam a b1 x2) b1 t2 k2
 
+        -- Cut the bound type and elems under it from the context.
+        let Just ctx'   = popToPos pos ctx2
+
         returnX a
                 (\z -> XLam z b1 x2')
                 (tImpl t1 t2)
                 (Sum.empty kEffect)
                 c2
-                ctx
+                ctx'
 
