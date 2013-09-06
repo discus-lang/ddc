@@ -7,10 +7,14 @@ module DDC.Type.Check.Context
         , pushType, pushTypes, lookupType, memberType
         , pushKind, pushKinds, lookupKind, memberKind, memberKindBind
         , popToPos
-        , liftTypes)
+        , liftTypes
+        , lowerTypes)
 where
 import DDC.Type.Exp
+import DDC.Type.Pretty
 import DDC.Type.Transform.LiftT
+import DDC.Type.Compounds
+import DDC.Base.Pretty                  ()
 import Data.Maybe
 
 
@@ -24,23 +28,52 @@ data Direction n
         deriving Show
 
 
--- | An element in the type checker context.
-data Elem n
-        = ElemKind (Bind n)
-        | ElemType (Bind n)
-        deriving Show
-
+-- Context --------------------------------------------------------------------
 -- | The type checker context.
 data Context n
         = Context !Int [Elem n]
         deriving Show
 
 
+instance (Pretty n, Eq n) => Pretty (Context n) where
+ ppr (Context len es)
+  =   text "Context "
+  <$> text "  length = " <> int len
+  <$> indent 2 
+        (vcat [int i <> (indent 4 $ ppr e)
+                        | e <- es
+                        | i <- [0..]])
+
+
 -- | A position in the type checker context.
 data Pos
         = Pos Int
+        deriving Show
 
 
+-- Elem -----------------------------------------------------------------------
+-- | An element in the type checker context.
+data Elem n
+        = ElemKind (Bind n)
+        | ElemType (Bind n)
+        deriving Show
+
+
+instance (Pretty n, Eq n) => Pretty (Elem n) where
+ ppr ll
+  = case ll of
+        ElemKind b      
+         -> ppr (binderOfBind b) 
+                <+> text "::" 
+                <+> (ppr $ typeOfBind b)
+
+        ElemType b
+         -> ppr (binderOfBind b)
+                <+> text "::"
+                <+> (ppr $ typeOfBind b)
+
+
+-- Empty ----------------------------------------------------------------------
 -- | An empty context.
 emptyContext :: Context n
 emptyContext 
@@ -87,7 +120,7 @@ popToPos (Pos pos) (Context len ll)
         cut 0    []     = Just $ Context 0 []
         cut _    []     = Nothing
         cut len' (l:ls)
-         | len' > pos   = cut (len - 1) ls
+         | pos < len'   = cut (len' - 1) ls
          | otherwise    = Just $ Context pos (l:ls)
 
 
@@ -167,5 +200,16 @@ liftTypes n (Context len ll)
  where
         go []                   = []
         go (ElemType b : ls)    = ElemType (liftT n b) : go ls
+        go (l:ls)               = l : go ls
+
+
+-- Lowering --------------------------------------------------------------------
+-- | Lower free debruijn indices in types by the given number of levels.
+lowerTypes :: Ord n => Int -> Context n -> Context n
+lowerTypes n (Context len ll)
+ = Context len (go ll)
+ where
+        go []                   = []
+        go (ElemType b : ls)    = ElemType (lowerT n b) : go ls
         go (l:ls)               = l : go ls
 

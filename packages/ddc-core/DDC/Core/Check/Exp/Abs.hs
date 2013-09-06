@@ -45,11 +45,11 @@ checkAbsLAM !table !ctx a b1 x2
          $ throw $ ErrorLamShadow a xx b1
         
         -- Check the body of the abstraction.
-        let (ctx1, pos) = pushKind b1' ctx
-        let ctx2        = liftTypes 1  ctx1
-        (x2', t2, e2, c2, _ctx3)
+        let (ctx1, pos1) = pushKind b1' ctx
+        let ctx2         = liftTypes 1  ctx1
+        (x2', t2, e2, c2, ctx3)
                 <- tableCheckExp table table ctx2 x2 Synth
-        (_, k2) <- checkTypeM config kenv ctx2 t2
+        (_, k2) <- checkTypeM config kenv ctx3 t2
 
         -- The body of a spec abstraction must have data kind.
         when (not $ isDataKind k2)
@@ -65,7 +65,8 @@ checkAbsLAM !table !ctx a b1 x2
                         $ Set.toList c2
 
         -- Cut the bound kind and elems under it from the context.
-        let Just ctx'   = popToPos pos ctx1                      -- TODO: pop ctx3, after lowering
+        let Just ctx'   = liftM (lowerTypes 1)
+                        $ popToPos pos1 ctx3
                                                                 
         returnX a
                 (\z -> XLAM z b1' x2')
@@ -106,7 +107,8 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !dXX
                         $ Set.toList c2
 
         -- Build the resulting function type.
-        --   The way the effect and closure term is captured depends on the config.
+        --   The way the effect and closure term is captured depends on
+        --   the configuration flags.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1 x2) t1 t2 e2 c2_cut
 
@@ -186,10 +188,10 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
         let t1          = typeOfBind b1
 
         -- Check the body of the abstraction.
-        let (ctx1, pos) = pushType b1 ctx
+        let (ctx1, pos1) = pushType b1 ctx
         (x2', t2, e2, c2, ctx2) 
                 <- tableCheckExp table table ctx1 x2 Synth
-        (_, k2) <- checkTypeM config kenv ctx1 t2
+        (_, k2) <- checkTypeM config kenv ctx2 t2
 
         -- The body of a witness abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
@@ -200,7 +202,7 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
          $ throw $ ErrorLamBodyNotData  a (XLam a b1 x2) b1 t2 k2
 
         -- Cut the bound type and elems under it from the context.
-        let Just ctx'   = popToPos pos ctx2
+        let Just ctx'   = popToPos pos1 ctx2
 
         returnX a
                 (\z -> XLam z b1 x2')

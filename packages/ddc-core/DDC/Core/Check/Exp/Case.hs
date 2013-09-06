@@ -15,9 +15,8 @@ checkCase :: Checker a n
 checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
  = do   let config      = tableConfig table
 
-
         -- Check the discriminant.
-        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctx') 
+        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctxDiscrim) 
          <- tableCheckExp table table ctx xDiscrim Synth
 
         -- Split the type into the type constructor names and type parameters.
@@ -54,9 +53,11 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
              Just m  -> return m
 
         -- Check the alternatives.
-        (alts', ts, effss, closs, _)            -- TODO: thread alt contexts properly
+        --  We ignore the returned context because the order of alternatives
+        --  should not matter for type inference.
+        (alts', ts, effss, closs, _)
                 <- liftM unzip5
-                $  mapM (\alt -> checkAltM xx table tDiscrim tsArgs ctx' alt mtXX) 
+                $  mapM (\alt -> checkAltM xx table tDiscrim tsArgs ctxDiscrim alt mtXX) 
                 $  alts
 
         -- There must be at least one alternative
@@ -129,7 +130,7 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
                 tAlt
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
                 (Set.unions         (closDiscrim : closs))
-                ctx'                                    -- TODO: use final context.
+                ctxDiscrim
 
 checkCase _ _ _ _
         = error "ddc-core.checkCase: no match"
@@ -236,13 +237,17 @@ checkAltM !xx !table !tDiscrim !tsArgs !ctx
                 $ mapMaybe (cutTaggedClosureXs bsArg')
                 $ Set.toList closBody
 
-        let Just _ctx = popToPos posArg ctxBody
+        -- Pop the argument types from the context.
+        let Just ctx' = popToPos posArg ctxBody
 
+        -- We're returning the new context for kicks,
+        -- but the caller doesn't use it because we don't want the order of 
+        -- alternatives to matter for type inference.
         return  ( AAlt (PData dc bsArg') xBody'
                 , tBody
                 , effsBody
                 , closBody_cut
-                , ctx)
+                , ctx')
 
 
 -- | Merge a type annotation on a pattern field with a type we get by

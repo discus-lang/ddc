@@ -47,10 +47,10 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
         let clos'       = clo12  `Set.union` c2_cut
 
         -- Pop the elements due to the let-bindings from the context.
-        -- let Just ctx'   = popToPos pos1 ctx3
-                                                                -- TODO: this doesn't pop.
+        let Just ctx'   = popToPos pos1 ctx
+
         returnX a (\z -> XLet z lts' x2')
-                t2 effs' clos' (pos1 `seq` ctx)
+                t2 effs' clos' ctx'
 
 
 -- letregion --------------------------------------
@@ -78,7 +78,7 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
          $ throw $ ErrorLetRegionsRebound a xx rebounds
         
         -- Check the witness types.
-        let (ctx1, _pos1) = pushKinds bsRgn ctx
+        let (ctx1, pos1)  = pushKinds bsRgn ctx
         let ctx2          = liftTypes depth ctx1
         (bsWit', _)       <- liftM unzip 
                           $  mapM (checkBindM config kenv ctx2) bsWit
@@ -89,11 +89,11 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
 
         -- Check the body expression.
         let (ctx3, _pos2) = pushTypes bsWit' ctx2
-        (xBody', tBody, effs, clo, _ctx4)  
-                          <- tableCheckExp table table ctx3 x tXX
+        (xBody', tBody, effs, clo, ctx4)  
+                        <- tableCheckExp table table ctx3 x tXX
 
         -- The body type must have data kind.
-        (_, kBody)       <- checkTypeM config kenv ctx3 tBody
+        (_, kBody)      <- checkTypeM config kenv ctx4 tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody kBody
 
@@ -115,12 +115,17 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
         let c2_cut      = Set.fromList 
                         $ foldl cutClo (Set.toList clo) bsRgn
 
+        -- Cut stack back to the length we started with,
+        --  remembering to lower to undo the lift we applied previously.
+        let Just ctx'   = liftM (lowerTypes depth)
+                        $ popToPos pos1 ctx4
+
         returnX a
                 (\z -> XLet z (LLetRegions bsRgn bsWit) xBody')
                 (lowerT depth tBody)
                 (lowerT depth effs')
                 c2_cut
-                ctx
+                ctx'
 
 
 -- withregion -----------------------------------
@@ -218,6 +223,7 @@ checkLetsM !xx !table !ctx (LLet b11 x12)
                 , clo12
                 , ctx')
 
+
 -- letrec ---------------------------------------
 checkLetsM !xx !table !ctx (LRec bxs)
  = do   let config      = tableConfig table
@@ -246,14 +252,16 @@ checkLetsM !xx !table !ctx (LRec bxs)
                 $ throw $ ErrorLetrecBindingNotLambda a xx x
 
         -- All variables are in scope in all right hand sides.
-        let (ctx', _pos) = pushTypes bs' ctx
+        let (ctx1, pos1) = pushTypes bs' ctx
 
         -- Check the right hand sides.
-        (xsRight', tsRight, _effssBinds, clossBinds, _)         -- TODO: thread contexts properly
+        -- Ignore the returned contet because the order of alternatives should
+        --  not matter for type inference.
+        (xsRight', tsRight, _effssBinds, clossBinds, _)
                 <- liftM unzip5
                 $  mapM (\(b, x) -> let tB      = typeOfBind b
                                         dXX     = if isBot tB then Synth else Check tB
-                                    in  tableCheckExp table table ctx' x dXX) 
+                                    in  tableCheckExp table table ctx1 x dXX) 
                 $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.
@@ -270,11 +278,14 @@ checkLetsM !xx !table !ctx (LRec bxs)
                 $ Set.toList 
                 $ Set.unions clossBinds
 
+        -- Pop types of the bindings from the stack.
+        let Just ctx'   = popToPos pos1 ctx1
+
         return  ( LRec (zip bs' xsRight')
                 , zipWith replaceTypeOfBind tsRight bs'
                 , Sum.empty kEffect
                 , clos_cut
-                , ctx)                                         -- TODO: use final context.
+                , ctx')
 
 checkLetsM _xx _config _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"
