@@ -131,6 +131,7 @@ Library
         DDC.Core.Lexer.Comments
         DDC.Core.Lexer.Offside
 
+        DDC.Type.Check.Context
         DDC.Type.Check.CheckCon
         DDC.Type.Check.Error
         DDC.Type.Check.ErrorMessage

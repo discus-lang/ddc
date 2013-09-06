@@ -7,6 +7,7 @@ module DDC.Core.Flow.Prim.OpStore
         , xNewVector,   xNewVectorR, xNewVectorN
         , xReadVector,  xReadVectorC
         , xWriteVector, xWriteVectorC
+        , xTailVector
         , xSliceVector)
 where
 import DDC.Core.Flow.Prim.KiConFlow
@@ -35,10 +36,16 @@ instance Pretty OpStore where
         OpStoreNewVector        -> text "vnew#"
         OpStoreNewVectorR       -> text "vnewR#"
         OpStoreNewVectorN       -> text "vnewN#"
+
         OpStoreReadVector  1    -> text "vread#"
         OpStoreReadVector  n    -> text "vread$"  <> int n <> text "#"
+
         OpStoreWriteVector 1    -> text "vwrite#"
         OpStoreWriteVector n    -> text "vwrite$" <> int n <> text "#"
+
+        OpStoreTailVector  1    -> text "vtail#"
+        OpStoreTailVector  n    -> text "vtail"   <> int n <> text "#"
+
         OpStoreSliceVector      -> text "vslice#"
 
 
@@ -59,6 +66,13 @@ readOpStore str
         , n >= 1
         = Just $ OpStoreWriteVector n
 
+        | Just rest     <- stripPrefix "vtail$" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpStoreTailVector n
+
         | otherwise
         = case str of
                 "new#"          -> Just OpStoreNew
@@ -70,6 +84,7 @@ readOpStore str
                 "vnewN#"        -> Just OpStoreNewVectorN
                 "vread#"        -> Just (OpStoreReadVector  1)
                 "vwrite#"       -> Just (OpStoreWriteVector 1)
+                "vtail#"        -> Just (OpStoreTailVector  1)
                 "vslice#"       -> Just OpStoreSliceVector
 
                 _               -> Nothing
@@ -127,6 +142,11 @@ typeOpStore op
         OpStoreWriteVector n
          -> tForall kData 
          $  \tA -> tVector tA `tFun` tNat `tFun` tVec n tA `tFun` tUnit
+
+        -- vtail$N#  :: [k : Rate]. [a : Data]. RateNat (TailN k) -> Vector# a -> Vector# a
+        OpStoreTailVector n
+         -> tForalls [kRate, kData]
+         $  \[tK, tA] -> tRateNat (tTail n tK) `tFun` tVector tA `tFun` tVector tA
 
         -- vslice# :: [a : Data]. Nat# -> Vector# a -> Vector# a
         OpStoreSliceVector
@@ -193,6 +213,12 @@ xWriteVectorC :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name -
 xWriteVectorC c t xArr xIx xElem
  = xApps (xVarOpStore (OpStoreWriteVector c))
          [XType t, xArr, xIx, xElem]
+
+
+xTailVector :: Int -> Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xTailVector n tK tA xRN xVec
+ = xApps (xVarOpStore (OpStoreTailVector n))
+         [XType tK, XType tA, xRN, xVec]
 
 
 xSliceVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name

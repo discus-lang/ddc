@@ -174,20 +174,32 @@ lowerProcess config process
         procTail        <- scheduleScalar process
         let (bProcTail, xProcTail) = extractProcedure procTail
 
+        -- Window the input series to select the tails.
         let bxsTailSeries
-                = [ ( bS
-                    , ( BName (NameVarMod n "tail")
-                              (tSeries (tTail c tK) tE)
-                      , xTail c tK tE (XVar (UIx 0)) xS))
+                = [ ( bS, ( BName (NameVarMod n "tail") (tSeries (tTail c tK) tE)
+                          , xTail c tK tE (XVar (UIx 0)) xS))
                   | bS@(BName n tS)    <- processParamValues process
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS
                   , let xS      = XVar uS
                   , isSeriesType tS ]
 
+        -- Window the output vectors to select the tails.
+        let bxsTailVector
+                = [ ( bV, ( BName (NameVarMod n "tail") (tVector tE)
+                          , xTailVector c tK tE (XVar (UIx 0)) xV))
+                  | bV@(BName n tV)     <- processParamValues process
+                  , let Just tE = elemTypeOfVectorType tV
+                  , let Just uV = takeSubstBoundOfBind bV
+                  , let xV      = XVar uV
+                  , isVectorType tV ]
+
         -- Get a value arg to give to the scalar procedure.
         let getTailValArg b
                 | Just (b', _)  <- lookup b bxsTailSeries
+                = liftM XVar $ takeSubstBoundOfBind b'
+
+                | Just (b', _)  <- lookup b bxsTailVector
                 = liftM XVar $ takeSubstBoundOfBind b'
 
                 | otherwise
@@ -203,6 +215,7 @@ lowerProcess config process
         let xProcTail'
                 = XLam bRateTail
                 $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
+                $ xLets [LLet b x | (_, (b, x)) <- bxsTailVector]
                 $ xApps (XApp xProcTail (XType (tTail c (TVar uK))))
                 $ xsTailValArgs
 

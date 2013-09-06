@@ -241,6 +241,9 @@ data OpStore
         -- | Write a packed Vec of values to a Vector buffer.
         | OpStoreWriteVector    Int
 
+        -- | Window a target vector to the tail of some rate.
+        | OpStoreTailVector     Int
+
         -- | Slice after a pack/filter (taking a @Nat@ for new length)
         | OpStoreSliceVector    
         deriving (Eq, Ord, Show)

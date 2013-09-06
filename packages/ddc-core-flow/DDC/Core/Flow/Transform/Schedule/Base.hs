@@ -4,7 +4,9 @@ module DDC.Core.Flow.Transform.Schedule.Base
         , elemBoundOfSeriesBound
         , elemTypeOfSeriesType
         , rateTypeOfSeriesType
-        , slurpRateOfParamTypes)
+        , slurpRateOfParamTypes
+
+        , elemTypeOfVectorType)
 where
 import DDC.Core.Flow.Transform.Schedule.Fail
 import DDC.Core.Flow.Compounds
@@ -71,3 +73,14 @@ slurpRateOfParamTypes tsParam
          | all (== tK) ts       -> Right tK
          | otherwise            -> Left FailMultipleRates
 
+
+-- Vector ---------------------------------------------------------------------
+-- | Given the type of a vector like @Vector k e@, produce the type
+--   of a single element, namely the @e@.
+elemTypeOfVectorType :: TypeF -> Maybe TypeF
+elemTypeOfVectorType tVector'
+        | Just (_tcVector, [tE]) <- takeTyConApps tVector'
+        = Just tE
+
+        | otherwise
+        = Nothing
