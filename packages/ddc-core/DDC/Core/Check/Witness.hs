@@ -26,7 +26,7 @@ import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.Sum                             as Sum
 import DDC.Type.Env                             (KindEnv, TypeEnv)
-import DDC.Control.Monad.Check                  (throw, result)
+import DDC.Control.Monad.Check                  (throw, evalCheck)
 import DDC.Base.Pretty                          ()
 import qualified DDC.Control.Monad.Check        as G
 import qualified DDC.Type.Env                   as Env
@@ -35,7 +35,7 @@ import qualified DDC.Type.Check                 as T
 
 -- | Type checker monad. 
 --   Used to manage type errors.
-type CheckM a n   = G.CheckM (Error a n)
+type CheckM a n   = G.CheckM () (Error a n)
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -64,7 +64,7 @@ checkWitness
                   , Type n)
 
 checkWitness config kenv tenv xx
-        = result $ checkWitnessM config kenv tenv emptyContext xx
+        = evalCheck () $ checkWitnessM config kenv tenv emptyContext xx
 
 
 -- | Like `checkWitness`, but check in an empty environment.

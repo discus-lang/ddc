@@ -16,7 +16,7 @@ import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Type.Universe
 import DDC.Type.DataDef
-import DDC.Control.Monad.Check           (throw, result)
+import DDC.Control.Monad.Check           (throw, evalCheck)
 import DDC.Core.Check                    (AnTEC(..))
 import DDC.Type.Env                      (KindEnv, TypeEnv)
 import qualified DDC.Core.Lite.Name      as L
@@ -60,7 +60,7 @@ saltOfLiteModule
 
 saltOfLiteModule platform runConfig defs kenv tenv mm
  = {-# SCC saltOfLiteModule #-}
-   result $ convertM platform runConfig defs kenv tenv mm
+   evalCheck () $ convertM platform runConfig defs kenv tenv mm
 
 
 -- Module ---------------------------------------------------------------------

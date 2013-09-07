@@ -11,7 +11,7 @@ import qualified DDC.Control.Monad.Check        as G
 
 
 -- | Conversion Monad
-type ConvertM a x = G.CheckM (Error a) x
+type ConvertM a x = G.CheckM () (Error a) x
 
 
 -- | Things that can go wrong during the conversion.

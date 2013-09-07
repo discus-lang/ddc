@@ -14,14 +14,14 @@ import DDC.Base.Pretty
 import Control.Monad
 import Data.Maybe
 import Data.Set                                 (Set)
-import DDC.Control.Monad.Check                  (throw, result)
+import DDC.Control.Monad.Check                  (evalCheck, throw)
 import qualified DDC.Control.Monad.Check        as G
 import qualified Data.Set                       as Set
 
 
 -- | Capability Checking monad.
 type CheckM a x 
-        = G.CheckM (Error a) x
+        = G.CheckM () (Error a) x
 
 
 -- | Check for conflicting store capabilities in a module.
@@ -33,7 +33,7 @@ checkCapsModule mm
 -- | Check for conflicting store capabilities in an expression.
 checkCapsX :: Exp a Name -> Maybe (Error a)
 checkCapsX xx 
- = case result $ checkCapsXM xx of
+ = case evalCheck () $ checkCapsXM xx of
         Left err        -> Just err
         Right ws
          -> let caps    = foldr mustInsertCap emptyCapSet ws

@@ -30,14 +30,14 @@ import Data.List
 import Control.Monad
 import DDC.Type.Pretty                   ()
 import DDC.Type.Env                      (KindEnv)
-import DDC.Control.Monad.Check           (throw, result)
+import DDC.Control.Monad.Check           (throw, evalCheck)
 import qualified DDC.Control.Monad.Check as G
 import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
 -- | The type checker monad.
-type CheckM n   = G.CheckM (Error n)
+type CheckM n   = G.CheckM () (Error n)
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -50,7 +50,7 @@ checkType  :: (Ord n, Show n, Pretty n)
            -> Either (Error n) (Type n, Kind n)
 
 checkType defs env tt 
-        = result $ checkTypeM defs env emptyContext tt
+        = evalCheck () $ checkTypeM defs env emptyContext tt
 
 
 -- | Check a type in the given environment and local context,
@@ -64,17 +64,18 @@ checkTypeWithContext
         -> Either (Error n) (Type n, Kind n)
 
 checkTypeWithContext defs env ctx tt 
-        = result $ checkTypeM defs env ctx tt
+        = evalCheck () $ checkTypeM defs env ctx tt
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
-kindOfType :: (Ord n, Show n, Pretty n) 
-           => Config n
-           -> Type n 
-           -> Either (Error n) (Kind n)
+kindOfType
+        :: (Ord n, Show n, Pretty n) 
+        => Config n
+        -> Type n 
+        -> Either (Error n) (Kind n)
 
 kindOfType defs tt
- = liftM snd $ result $ checkTypeM defs Env.empty emptyContext tt
+ = liftM snd $ evalCheck () $ checkTypeM defs Env.empty emptyContext tt
 
 
 -- checkType ------------------------------------------------------------------
@@ -213,7 +214,7 @@ checkTypeM' config env ctx tt@(TApp t1 t2)
 -- Sums -----------------------
 checkTypeM' config env ctx (TSum ts)
  = do   (ts', ks)       <- liftM unzip 
-                        $ mapM (checkTypeM config env ctx) $ TS.toList ts
+                        $  mapM (checkTypeM config env ctx) $ TS.toList ts
 
         -- Check that all the types in the sum have a single kind, 
         -- and return that kind.

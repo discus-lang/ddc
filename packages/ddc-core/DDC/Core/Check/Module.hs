@@ -12,7 +12,7 @@ import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
-import DDC.Control.Monad.Check  (result, throw)
+import DDC.Control.Monad.Check  (evalCheck, throw)
 import Data.Map                 (Map)
 import qualified DDC.Type.Check as T
 import qualified DDC.Type.Env   as Env
@@ -33,7 +33,7 @@ checkModule
         -> Either (Error a n) (Module (AnTEC a n) n)
 
 checkModule !config !xx 
-        = result 
+        = evalCheck ()
         $ checkModuleM 
                 config 
                 (configPrimKinds config)

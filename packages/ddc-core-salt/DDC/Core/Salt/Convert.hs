@@ -24,7 +24,7 @@ import DDC.Core.Module                          as C
 import DDC.Core.Exp
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
-import DDC.Control.Monad.Check                  (throw, result)
+import DDC.Control.Monad.Check                  (throw, evalCheck)
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 import Control.Monad
@@ -41,7 +41,7 @@ seaOfSaltModule
 
 seaOfSaltModule withPrelude pp mm
  = {-# SCC seaOfSaltModule #-}
-   result $ convModuleM withPrelude pp mm
+   evalCheck () $ convModuleM withPrelude pp mm
 
 
 -- Module ---------------------------------------------------------------------

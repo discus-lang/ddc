@@ -15,7 +15,7 @@ import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Control.Monad.Check          (throw)
+import DDC.Control.Monad.Check           (throw)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
@@ -26,6 +26,7 @@ import Control.Monad
 
 convertT     :: KindEnv L.Name -> Type L.Name -> ConvertM a (Type O.Name)
 convertT     = convertT' False
+
 
 convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
 convertPrimT = convertT' True Env.empty
