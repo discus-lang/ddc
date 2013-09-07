@@ -12,11 +12,11 @@ import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Check
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Char
 import Data.List
+import qualified DDC.Core.Check                 as Check
 import qualified DDCI.Core.Rewrite		as R
 import qualified Data.Map			as Map
 import qualified Data.Set                       as Set
@@ -89,7 +89,7 @@ cmdSet state cmd
  = case R.parseRewrite fragment modules rest of
 	Right (R.SetAdd name rule)
 	 -> do	chatStrLn state $ "ok, added " ++ name
-                let rule'   = reannotate (\a -> a { annotTail = ()}) rule
+                let rule'   = reannotate (\a -> a { Check.annotTail = ()}) rule
                 let rules'  = Map.insert name rule' rules
                 let bundle' = bundle { bundleRewriteRules = rules' }
 		return $ state { stateLanguage = Language bundle' }

@@ -43,7 +43,7 @@ data Config n
 
           -- | This name represents some hole in the expression that needs
           --   to be filled in by the type checker.
-        , configNameIsHole              :: Maybe (n -> Bool) }
+        , configNameIsHole              :: Maybe (n -> Bool)  }
 
 
 
@@ -70,4 +70,5 @@ configOfProfile profile
                                    $ F.profileFeatures profile 
 
         , configNameIsHole         = F.profileNameIsHole profile }
+        
 

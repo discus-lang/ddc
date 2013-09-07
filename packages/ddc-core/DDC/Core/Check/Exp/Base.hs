@@ -72,7 +72,7 @@ type Checker a n
         => Table a n
         -> Context n
         -> Exp a n      
-        -> Direction n
+        -> Mode n
         -> CheckM a n
                 ( Exp (AnTEC a n) n
                 , Type n

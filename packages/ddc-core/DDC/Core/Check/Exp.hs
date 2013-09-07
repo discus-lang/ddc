@@ -5,7 +5,7 @@ module DDC.Core.Check.Exp
 
           -- * Pure checking.
         , AnTEC         (..)
-        , Direction     (..)
+        , Mode          (..)
         , Context
         , emptyContext
         , checkExp
@@ -47,11 +47,11 @@ import qualified DDC.Type.Env           as Env
 --
 checkExp 
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static configuration.
-        -> KindEnv n            -- ^ Starting Kind environment.
-        -> TypeEnv n            -- ^ Starting Type environment.
-        -> Exp a n              -- ^ Expression to check.
-        -> Direction n          -- ^ Check direction.
+        => Config n                     -- ^ Static configuration.
+        -> KindEnv n                    -- ^ Starting Kind environment.
+        -> TypeEnv n                    -- ^ Starting Type environment.
+        -> Exp a n                      -- ^ Expression to check.
+        -> Mode  n                      -- ^ Check mode.
         -> Either (Error a n)
                   ( Exp (AnTEC a n) n
                   , Type n
@@ -75,10 +75,10 @@ checkExp !config !kenv !tenv !xx !tXX
 -- | Like `checkExp`, but only return the value type of an expression.
 typeOfExp 
         :: (Ord n, Pretty n, Show n)
-        => Config n             -- ^ Static configuration.
-        -> KindEnv n            -- ^ Starting Kind environment
-        -> TypeEnv n            -- ^ Starting Type environment.
-        -> Exp a n              -- ^ Expression to check.
+        => Config n                     -- ^ Static configuration.
+        -> KindEnv n                    -- ^ Starting Kind environment
+        -> TypeEnv n                    -- ^ Starting Type environment.
+        -> Exp a n                      -- ^ Expression to check.
         -> Either (Error a n) (Type n)
 
 typeOfExp !config !kenv !tenv !xx
@@ -94,7 +94,7 @@ checkExpM
         => Table a n                    -- ^ Static config.
         -> Context n                    -- ^ Input context.
         -> Exp a n                      -- ^ Expression to check.
-        -> Direction n                  -- ^ Check direction
+        -> Mode n                       -- ^ Check mode.
         -> CheckM a n 
                 ( Exp (AnTEC a n) n     -- Annotated expression.
                 , Type n                -- Output type.

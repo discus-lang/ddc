@@ -132,6 +132,25 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+        ErrorLamParamTypeMissing a _xx b1
+         -> vcat [ ppr a
+                 , text "Missing type annotation on function parameter."
+                 , text "             With paramter: " <> ppr b1 ]
+
+        ErrorLamParamUnexpected a xx b1 t1'
+         -> vcat [ ppr a
+                 , text "Type annotation of parameter does not match expected type."
+                 , text "                  Parameter: " <> ppr b1
+                 , text "    does not match expected: " <> ppr t1'
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+        ErrorLamUnexpected a xx tExpected
+         -> vcat [ ppr a
+                 , text "Context requires lambda abstraction to have a non-functional type."
+                 , text "             Expected type: " <> ppr tExpected
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
 
         -- Let --------------------------------------------
         ErrorLetMismatch a xx b t

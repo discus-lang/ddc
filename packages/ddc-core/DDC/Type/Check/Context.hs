@@ -1,8 +1,8 @@
 
 module DDC.Type.Check.Context
-        ( Direction     (..)
-        , Elem          (..)
-        , Context       (..)
+        ( Mode    (..)
+        , Elem    (..)
+        , Context (..)
         , emptyContext
         , pushType, pushTypes, lookupType, memberType
         , pushKind, pushKinds, lookupKind, memberKind, memberKindBind
@@ -18,13 +18,20 @@ import DDC.Base.Pretty                  ()
 import Data.Maybe
 
 
--- | Direction used for bidirectional type checking.
-data Direction n
-        -- | Check the type of an expression against this one.
-        = Check (Type n)
-
-        -- | Synthesise the type of the expression.
+-- | What mode we're performing type checking/inference in.
+data Mode n
+        -- | Reconstruct the type of the expression, requiring type annotations
+        --   on parameters  as well as type applications to already be present.
+        = Recon
+        
+        -- | Synthesise the type of the expression, producing unification
+        ---  variables for bidirectional type inference.
         | Synth
+
+        -- | heck the type of an expression against this expected type, and
+        --   unify expected types into unification variables for bidirecional
+        --   type inference.
+        | Check (Type n)
         deriving Show
 
 

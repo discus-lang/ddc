@@ -159,7 +159,7 @@ checkArgM
         => Table a n            -- ^ Static config.
         -> Context n            -- ^ Input context.
         -> Exp a n              -- ^ Expression to check.
-        -> Direction n          -- ^ Check direction.
+        -> Mode n               -- ^ Checking mode.
         -> CheckM a n 
                 ( Exp (AnTEC a n) n
                 , Set (TaggedClosure n)

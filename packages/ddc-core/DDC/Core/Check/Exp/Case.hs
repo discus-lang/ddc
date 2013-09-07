@@ -146,7 +146,7 @@ checkAltM
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Context n            -- ^ Context for the right of the alt.
         -> Alt a n              -- ^ Alternative to check.
-        -> Direction n          -- ^ Check direction for right of alternative.
+        -> Mode n               -- ^ Check mode for right of alternative.
         -> CheckM a n 
                 ( Alt (AnTEC a n) n
                 , Type n

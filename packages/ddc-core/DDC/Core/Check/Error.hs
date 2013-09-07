@@ -123,6 +123,24 @@ data Error a n
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
+        -- | Type annotation on function parameter is missing.
+        | ErrorLamParamTypeMissing
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorBind             :: Bind n }
+        
+        -- | An abstraction parameter does not match the expected type.
+        | ErrorLamParamUnexpected
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorExpected         :: Type n }
+
+        -- | The expected type of a lambda abstraction is not a function.
+        | ErrorLamUnexpected
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorExpected         :: Type n }
 
         -- Let --------------------------------------------
         -- | A let-expression where the type of the binder does not match the right

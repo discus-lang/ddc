@@ -77,28 +77,68 @@ checkAbsLAM !table !ctx a b1 x2
 
 
 -- AbsLamData -----------------------------------------------------------------
-checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !dXX 
+-- When reconstructing the type of a lambda abstraction,
+--  the formal parameter must have a type annotation: eg (\v : T. x2)
+checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let t1          = typeOfBind b1
+        let xx          = XLam a b1 x2
 
-        -- If we have an expected type for the abstraction then split off
-        -- the expected type of the body.
-        let dX2 = case dXX of
-                        Synth           -> Synth
-                        Check tXX
-                         | Just (_, tX2) <- takeTFun tXX -> Check tX2
-                         | otherwise    -> Synth        
+        -- The formal parameter must have a type annotation.
+        when (isBot t1)
+         $ throw $ ErrorLamParamTypeMissing a xx b1
 
-        -- Check the body of the abstraction.
+        -- Reconstruct a type for the body, under the extended environment.
         let (ctx1, pos1) = pushType b1 ctx
         (x2', t2, e2, c2, ctx2)
-         <- tableCheckExp table table ctx1 x2 dX2
+         <- tableCheckExp table table ctx1 x2 Recon
+
+        -- The body of the function must produce data.
+        (_, k2)         <- checkTypeM config kenv ctx2 t2
+        when (not $ isDataKind k2)
+         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2 
+
+        -- Cut closure terms due to locally bound value vars.
+        -- This also lowers deBruijn indices in un-cut closure terms.
+        let c2_cut      = Set.fromList
+                        $ mapMaybe (cutTaggedClosureX b1)
+                        $ Set.toList c2
+
+        -- Build the resulting function type.
+        --   The way the effect and closure term is captured depends on
+        --   the configuration flags.
+        (tResult, cResult)
+         <- makeFunctionType config a xx t1 t2 e2 c2_cut
+
+        -- Cut the bound type and elems under it from the context.
+        let Just ctx'   = popToPos pos1 ctx2
+        
+        returnX a
+                (\z -> XLam z b1 x2')
+                tResult 
+                (Sum.empty kEffect)
+                cResult
+                ctx'
+
+
+-- When synthesizing the type of a lambda abstraction
+--   we produce a type (?1 -> ?2) with new unification variables.       -- TODO.
+checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
+ = do   let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let t1          = typeOfBind b1
+        let xx          = XLam a b1 x2
+
+        -- Synth a type for the body, under the extended environment.
+        let (ctx1, pos1) = pushType b1 ctx
+        (x2', t2, e2, c2, ctx2)
+         <- tableCheckExp table table ctx1 x2 Synth
 
         -- The body of a data abstraction must produce data.
         (_, k2)         <- checkTypeM config kenv ctx2 t2
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a (XLam a b1 x2) b1 t2 k2 
+         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2 
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
@@ -117,6 +157,57 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !dXX
         
         returnX a
                 (\z -> XLam z b1 x2')
+                tResult 
+                (Sum.empty kEffect)
+                cResult
+                ctx'
+
+-- When checking type type of a lambda abstraction against an exising type,
+--   we allow the formal paramter to be missing its type annotation,
+--   and in this case we replace it with the expected type.
+checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
+ = do   let config      = tableConfig table
+        let t1          = typeOfBind b1
+        let xx          = XLam a b1 x2
+
+        -- Split the expected type into the part for the parameter and body.
+        (tX1, tX2)      
+            <- case takeTFun tXX of
+                Just (tX1, tX2) -> return (tX1, tX2)
+                _               -> throw $ ErrorLamUnexpected a xx tXX
+
+        -- If the parameter has no type annotation then we can use the
+        --   expected type we were passed down from above.
+        -- If it does have an annotation, then it needs to match the
+        --   expected type.
+        b1' <- if isBot t1             
+                then return (replaceTypeOfBind tX1 b1)
+               else if equivT t1 tX1   
+                then return b1
+               else  throw $ ErrorLamParamUnexpected a xx b1 tX1
+                        
+        -- Check the body of the abstraction under the extended environment.
+        let (ctx1, pos1) = pushType b1' ctx
+        (x2', t2, e2, c2, ctx2)
+         <- tableCheckExp table table ctx1 x2 (Check tX2)
+
+        -- Cut closure terms due to locally bound value vars.
+        -- This also lowers deBruijn indices in un-cut closure terms.
+        let c2_cut      = Set.fromList
+                        $ mapMaybe (cutTaggedClosureX b1)
+                        $ Set.toList c2
+
+        -- Build the resulting function type.
+        --   The way the effect and closure term is captured depends on
+        --   the configuration flags.
+        (tResult, cResult)
+         <- makeFunctionType config a (XLam a b1' x2) t1 t2 e2 c2_cut
+
+        -- Cut the bound type and elems under it from the context.
+        let Just ctx'   = popToPos pos1 ctx2
+        
+        returnX a
+                (\z -> XLam z b1' x2')
                 tResult 
                 (Sum.empty kEffect)
                 cResult

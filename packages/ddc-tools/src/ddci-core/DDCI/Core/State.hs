@@ -23,7 +23,6 @@ import DDC.Interface.Input
 import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Language
-import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
@@ -32,6 +31,7 @@ import Data.Typeable
 import System.FilePath
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
+import DDC.Core.Check                           (AnTEC(..))
 import qualified DDC.Build.Language.Eval        as Eval
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Lite                  as Lite
