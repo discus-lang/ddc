@@ -14,6 +14,7 @@ import BuildBox.IO.Directory
 import BuildBox.Pretty
 import BuildBox
 import System.FilePath
+import qualified System.FilePath.Posix as P
 import System.Directory
 import Control.Monad
 import Data.List
@@ -91,7 +92,13 @@ build   (Spec   srcDC_ optionsDDC _fragment
 
         -- Normalise the file name relative to the current directory
         -- so that error messages don't change between hosts.
-        srcDC   <- io $ makeRelativeToCurrentDirectory srcDC_
+        srcDC'  <- io $ makeRelativeToCurrentDirectory srcDC_
+
+        -- Make the file path use consistent path separators across all hosts.
+        let srcDC = flip map srcDC' $
+                \c -> if isPathSeparator c
+                        then P.pathSeparator
+                        else c
 
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDC
