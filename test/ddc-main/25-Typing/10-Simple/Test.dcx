@@ -35,6 +35,10 @@
 :check addInt [:r1# r2# r3#:] (2 [r1#] ()) (3 [r2#] ())
 
 
+-- Error: missing type annotation for parameter of lambda.
+:check \x. x
+
+
 -- Error: cannot shadow spec binders.
 -- This breaks progress if we try to run it.
 :check..

@@ -13,6 +13,13 @@ checkAbs !table !ctx (XLAM a b1 x2) _
  = do   checkAbsLAM table ctx a b1 x2
          
 checkAbs !table !ctx xx@(XLam a b1 x2) dXX
+ -- If there is no annotation then assume it should be a data binding.
+ | isBot (typeOfBind b1)
+ = checkAbsLamData table a ctx b1 (tBot kData) x2 dXX
+
+ -- Otherwise decide what to do based on the kind.
+ --  TODO: merge checkAbsLamData and checkAbsLamWitness into same case.
+ | otherwise
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
 
@@ -129,6 +136,10 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         let kenv        = tableKindEnv table
         let t1          = typeOfBind b1
         let xx          = XLam a b1 x2
+
+        -- The formal parameter must have a type annotation.
+        when (isBot t1)
+         $ throw $ ErrorLamParamTypeMissing a xx b1
 
         -- Synth a type for the body, under the extended environment.
         let (ctx1, pos1) = pushType b1 ctx

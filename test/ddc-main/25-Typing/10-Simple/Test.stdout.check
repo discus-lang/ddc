@@ -59,10 +59,17 @@ addInt [r1#] [r2#] [r3#] (2 [r1#] ()) (3 [r2#] ())
 :$: Use r1# + Use r2# + Use r3#
 
 
+-- Error: missing type annotation for parameter of lambda.
+When checking expression.
+  <batch>:39:2
+  Missing type annotation on function parameter.
+               With paramter: x : Bot
+
+
 -- Error: cannot shadow spec binders.
 -- This breaks progress if we try to run it.
 When checking expression.
-  <batch>:41:32
+  <batch>:45:32
   Cannot shadow named spec variable.
     binder: r : Region
     is already in the environment.
@@ -78,7 +85,7 @@ When checking expression.
 
 -- Error: cannot shadow spec binders.
 When checking expression.
-  <batch>:50:32
+  <batch>:54:32
   Cannot shadow named spec variable.
     binder: r : Region
     is already in the environment.
@@ -88,7 +95,7 @@ When checking expression.
 
 -- Error: cannot shadow spec binders.
 When checking expression.
-  <batch>:56:32
+  <batch>:60:32
   Cannot shadow named spec variable.
     binder: r : Region
     is already in the environment.
@@ -108,7 +115,7 @@ When checking type.
 
 -- Error: Data constructor not in environment.
 When checking expression.
-  <batch>:71:2
+  <batch>:75:2
   Undefined data constructor: Whatever
 
 
@@ -128,6 +135,6 @@ While parsing.
 
 -- Error: Type variable used as a value variable.
 When checking expression.
-  <batch>:83:27
+  <batch>:87:27
   Undefined value variable: a
 
