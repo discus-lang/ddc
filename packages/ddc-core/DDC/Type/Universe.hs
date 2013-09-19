@@ -82,6 +82,7 @@ universeFromType2 tt
         TCon TyConWitness{}     -> Nothing
         TCon TyConSpec{}        -> Nothing
         TCon TyConBound{}       -> Nothing
+        TCon TyConExists{}      -> Nothing
         TForall _ _             -> Nothing
         TApp _ t2               -> universeFromType2 t2
         TSum _                  -> Nothing
@@ -103,7 +104,8 @@ universeFromType1 kenv tt
         TCon (TyConSpec TcConFunEC)-> Just UniverseData
         TCon (TyConSpec TcConUnit) -> Just UniverseData
         TCon (TyConSpec _)         -> Nothing
-        TCon (TyConBound _ k)      -> universeFromType2 k
+        TCon (TyConBound  _ k)     -> universeFromType2 k
+        TCon (TyConExists _ k)     -> universeFromType2 k
         TForall b t2               -> universeFromType1 (Env.extend b kenv) t2
         TApp t1 _                  -> universeFromType1 kenv t1
         TSum _                     -> Nothing
@@ -127,7 +129,8 @@ universeOfType kenv tt
         TCon (TyConKind _)      -> Just UniverseKind
         TCon (TyConWitness _)   -> Just UniverseSpec
         TCon (TyConSpec _)      -> Just UniverseSpec
-        TCon (TyConBound _ k)   -> universeFromType1 kenv k
+        TCon (TyConBound  _ k)  -> universeFromType1 kenv k
+        TCon (TyConExists _ k)  -> universeFromType1 kenv k
         TForall b t2            -> universeOfType (Env.extend b kenv) t2
         TApp _ t2               -> universeOfType kenv t2
         TSum ss                 -> universeFromType1 kenv (T.kindOfSum ss)

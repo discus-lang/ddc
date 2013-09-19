@@ -87,7 +87,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
         (x', _, _effs, _, _) 
                 <- checkExpM 
                         (makeTable config_data kenv_data tenv')
-                        emptyContext (moduleBody mm) Synth
+                        emptyContext (moduleBody mm) Recon
 
         -- Check that each exported signature matches the type of its binding.
         envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'

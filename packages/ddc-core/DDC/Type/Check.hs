@@ -161,6 +161,7 @@ checkTypeM' config env _ctx tt@(TCon tc)
                 UPrim{} -> return (tt, k)
                 UIx{}   -> throw $ ErrorUndefinedTypeCtor u
 
+        TyConExists _ k -> return (tt, k)
 
 -- Quantifiers ----------------
 checkTypeM' config env ctx tt@(TForall b1 t2)

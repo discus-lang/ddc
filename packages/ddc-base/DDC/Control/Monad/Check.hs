@@ -4,7 +4,9 @@ module DDC.Control.Monad.Check
         ( CheckM (..)
         , throw
         , runCheck
-        , evalCheck)
+        , evalCheck
+        , get
+        , put)
 where
 
 
@@ -18,7 +20,6 @@ instance Monad (CheckM s err) where
   = CheckM (\s -> (s, Right x))
  {-# INLINE return #-}
 
- -- (>>=) :: CheckM s err a -> (a -> Check s err b) -> Check s err b
  (>>=) !(CheckM f) !g  
   = CheckM $ \s  
   -> case f s of
@@ -31,16 +32,31 @@ instance Monad (CheckM s err) where
 --      returning the result and new state.
 runCheck :: s -> CheckM s err a -> (s, Either err a)
 runCheck s (CheckM f)   = f s
+{-# INLINE runCheck #-}
 
 
 -- | Run a checker computation, 
 --      ignoreing the final state.
 evalCheck :: s -> CheckM s err a -> Either err a
 evalCheck s m   = snd $ runCheck s m
+{-# INLINE evalCheck #-}
 
 
 -- | Throw a type error in the monad.
 throw :: err -> CheckM s err a
 throw !e        = CheckM $ \s -> (s, Left e)
+{-# INLINE throw #-}
 
+
+-- | Get the state from the monad.
+get :: CheckM s err s
+get =  CheckM $ \s -> (s, Right s)
+{-# INLINE get #-}
+
+
+-- | Put a new state into the monad.
+put :: s -> CheckM s err ()
+put s 
+ =  CheckM $ \_ -> (s, Right ())
+{-# INLINE put #-}
 

@@ -19,7 +19,8 @@ takeKindOfTyCon tt
         TyConKind    kc  -> takeSortOfKiCon kc
         TyConWitness tc  -> Just $ kindOfTwCon tc
         TyConSpec    tc  -> Just $ kindOfTcCon tc
-        TyConBound  _u k -> Just k
+        TyConBound   _ k -> Just k
+        TyConExists  _ k -> Just k
 
 
 -- | Take the superkind of an atomic kind constructor.

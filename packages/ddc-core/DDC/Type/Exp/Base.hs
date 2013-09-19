@@ -144,7 +144,11 @@ data TyCon n
         -- | User defined and primitive constructors.
         --   TODO: split this into TyConPrim with a type and
         --         TyConBound with no type (and get type from env when checking)
-        | TyConBound   !(Bound n) !(Type n)
+        | TyConBound    !(Bound n) !(Type n)
+
+        -- | An existentially quantified name, with its kind.
+        --   Used during type checking, but not accepted in source programs.
+        | TyConExists   !Int !(Kind n)
         deriving Show
 
 

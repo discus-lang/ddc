@@ -55,7 +55,7 @@ checkAbsLAM !table !ctx a b1 x2
         let (ctx1, pos1) = pushKind b1' ctx
         let ctx2         = liftTypes 1  ctx1
         (x2', t2, e2, c2, ctx3)
-                <- tableCheckExp table table ctx2 x2 Synth
+                <- tableCheckExp table table ctx2 x2 Recon
         (_, k2) <- checkTypeM config kenv ctx3 t2
 
         -- The body of a spec abstraction must have data kind.
@@ -131,43 +131,46 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
 
 -- When synthesizing the type of a lambda abstraction
 --   we produce a type (?1 -> ?2) with new unification variables.       -- TODO.
+--   TOOD: If there was a paramer type annot, then use that.
 checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
-        let t1          = typeOfBind b1
         let xx          = XLam a b1 x2
 
-        -- The formal parameter must have a type annotation.
-        when (isBot t1)
-         $ throw $ ErrorLamParamTypeMissing a xx b1
+        -- Existential for the parameter type.
+        tA      <- newExists
+        let b1' = replaceTypeOfBind tA b1
+
+        -- Existential for the result type.
+        tB      <- newExists
 
         -- Synth a type for the body, under the extended environment.
-        let (ctx1, pos1) = pushType b1 ctx
+        let (ctx1, pos1) = pushType b1' ctx
         (x2', t2, e2, c2, ctx2)
          <- tableCheckExp table table ctx1 x2 Synth
 
         -- The body of a data abstraction must produce data.
         (_, k2)         <- checkTypeM config kenv ctx2 t2
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2 
+         $ throw $ ErrorLamBodyNotData a xx b1' t2 k2 
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
         let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureX b1)
+                        $ mapMaybe (cutTaggedClosureX b1')
                         $ Set.toList c2
 
         -- Build the resulting function type.
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (tResult, cResult)
-         <- makeFunctionType config a (XLam a b1 x2) t1 t2 e2 c2_cut
+         <- makeFunctionType config a (XLam a b1 x2) tA tB e2 c2_cut
 
         -- Cut the bound type and elems under it from the context.
         let Just ctx'   = popToPos pos1 ctx2
         
         returnX a
-                (\z -> XLam z b1 x2')
+                (\z -> XLam z b1' x2')
                 tResult 
                 (Sum.empty kEffect)
                 cResult
@@ -292,7 +295,7 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
         -- Check the body of the abstraction.
         let (ctx1, pos1) = pushType b1 ctx
         (x2', t2, e2, c2, ctx2) 
-                <- tableCheckExp table table ctx1 x2 Synth
+                <- tableCheckExp table table ctx1 x2 Recon
         (_, k2) <- checkTypeM config kenv ctx2 t2
 
         -- The body of a witness abstraction must be pure.

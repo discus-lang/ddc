@@ -95,6 +95,7 @@ toCoreTC tc
         TyConWitness wc -> TyConWitness wc
         TyConSpec sc    -> TyConSpec sc
         TyConBound u k  -> TyConBound (toCoreU u) (toCoreT k)
+        TyConExists n k -> TyConExists n          (toCoreT k)
 
 
 -- DataDef --------------------------------------------------------------------

@@ -72,6 +72,7 @@ instance NFData n => NFData (TyCon n) where
         TyConWitness con        -> rnf con
         TyConSpec    con        -> rnf con
         TyConBound   con k      -> rnf con `seq` rnf k
+        TyConExists  n   k      -> rnf n   `seq` rnf k
 
 
 instance NFData SoCon

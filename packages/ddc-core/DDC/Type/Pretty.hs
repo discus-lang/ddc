@@ -139,6 +139,7 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
         TyConWitness tc -> ppr tc
         TyConSpec tc    -> ppr tc
         TyConBound u _  -> ppr u
+        TyConExists n _ -> text "?" <> int n
 
 
 instance Pretty SoCon where

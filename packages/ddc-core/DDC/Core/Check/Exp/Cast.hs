@@ -42,7 +42,7 @@ checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) dXX
         --  contain expression that need types infered.
         (xs', closs, _ctx)
                 <- liftM unzip3
-                $ mapM (\x -> checkArgM table ctx x Synth) xs
+                $ mapM (\x -> checkArgM table ctx x Recon) xs
 
         -- Check the body.
         (x1', t1, effs, clos, ctx1)
@@ -116,7 +116,7 @@ checkCast !table ctx (XCast a CastSuspend x1) _
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx1) 
-                <- tableCheckExp table table ctx x1 Synth
+                <- tableCheckExp table table ctx x1 Recon
 
         -- The result type is (S effs a),
         --  where effs is the type of the body.
@@ -133,7 +133,7 @@ checkCast !table !ctx xx@(XCast a CastRun x1) _
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx1) 
-                <- tableCheckExp table table ctx x1 Synth
+                <- tableCheckExp table table ctx x1 Recon
 
         -- The body must have type (S eff a),
         --  and the result has type 'a' while unleashing effect 'eff'.

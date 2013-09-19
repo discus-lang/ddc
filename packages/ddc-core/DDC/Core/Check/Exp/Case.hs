@@ -17,7 +17,7 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
 
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctxDiscrim) 
-         <- tableCheckExp table table ctx xDiscrim Synth
+         <- tableCheckExp table table ctx xDiscrim Recon
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect

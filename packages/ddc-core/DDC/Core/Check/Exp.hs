@@ -82,7 +82,7 @@ typeOfExp
         -> Either (Error a n) (Type n)
 
 typeOfExp !config !kenv !tenv !xx
- = case checkExp config kenv tenv xx Synth of
+ = case checkExp config kenv tenv xx Recon of
         Left err           -> Left err
         Right (_, t, _, _) -> Right t
 

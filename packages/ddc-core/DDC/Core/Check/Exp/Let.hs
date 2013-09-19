@@ -56,7 +56,7 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
 -- letregion --------------------------------------
 checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
-    []   -> tableCheckExp table table ctx x Synth
+    []   -> tableCheckExp table table ctx x Recon
     us   -> do
         let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -202,7 +202,7 @@ checkLetsM !xx !table !ctx (LLet b11 x12)
         -- If the type of the binding is not Bot then use that
         -- as the expected type when checking the body.
         let tB          = typeOfBind b11
-        let tXX         = if isBot tB then Synth else Check tB
+        let tXX         = if isBot tB then Recon else Check tB
 
         -- Check the right of the binding.
         (x12', t12, effs12, clo12, ctx')  
@@ -260,7 +260,7 @@ checkLetsM !xx !table !ctx (LRec bxs)
         (xsRight', tsRight, _effssBinds, clossBinds, _)
                 <- liftM unzip5
                 $  mapM (\(b, x) -> let tB      = typeOfBind b
-                                        dXX     = if isBot tB then Synth else Check tB
+                                        dXX     = if isBot tB then Recon else Check tB
                                     in  tableCheckExp table table ctx1 x dXX) 
                 $  zip bs xs
 

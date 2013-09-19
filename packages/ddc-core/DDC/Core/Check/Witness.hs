@@ -9,6 +9,7 @@ module DDC.Core.Check.Witness
         , typeOfWbCon
 
         , CheckM
+        , newExists
         , checkWitnessM
 
         , checkTypeM
@@ -36,6 +37,14 @@ import qualified DDC.Type.Check                 as T
 -- | Type checker monad. 
 --   Used to manage type errors.
 type CheckM a n   = G.CheckM Int (Error a n)
+
+
+-- | Allocate a new exisistential.
+newExists :: CheckM a n (Type n)
+newExists
+ = do   ix      <- G.get
+        G.put (ix + 1)
+        return  $ TCon (TyConExists ix kData)
 
 
 -- Wrappers --------------------------------------------------------------------
