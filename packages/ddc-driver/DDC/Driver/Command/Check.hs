@@ -195,29 +195,43 @@ data ShowTypeMode
 
 
 -- | Show the type of an expression.
-cmdShowType :: Language -> ShowTypeMode -> Source -> String -> IO ()
-cmdShowType language mode source ss
+cmdShowType 
+        :: Language     -- ^ Language fragment.
+        -> ShowTypeMode -- ^ What part of the type to show.
+        -> Bool         -- ^ Type checker mode, Synth(True) or Recon(False)
+        -> Source       -- ^ Source of the program text.
+        -> String       -- ^ Program text.
+        -> IO ()
+
+cmdShowType language showMode checkMode source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- =   cmdParseCheckExp fragment modules True Recon source ss 
+ =   cmdParseCheckExp fragment modules True mode source ss 
  >>= goResult fragment
  where
+        -- Determine the checker mode based on the flag we're given.
+        -- We don't pass the mode directly because the Mode type is
+        -- also parameterised over the type of names.
+        mode    = case checkMode of
+                        True    -> Synth
+                        False   -> Recon
+
         goResult _ Nothing
          = return ()
 
         goResult fragment (Just x)
-         = let  annot   = annotOfExp x
-                t       = annotType annot
-                eff     = annotEffect annot
-                clo     = annotClosure annot
+         = let  annot    = annotOfExp x
+                t        = annotType annot
+                eff      = annotEffect annot
+                clo      = annotClosure annot
+                features = profileFeatures $ fragmentProfile fragment
 
-           in case mode of
+           in case showMode of
                 ShowTypeAll
                  -> do  outDocLn $ ppr x
                         outDocLn $ text ":*:" <+> ppr t
                         
-                        let features    = profileFeatures $ fragmentProfile fragment
                         when (featuresTrackedEffects  features)
                          $ outDocLn $ text ":!:" <+> ppr eff
 

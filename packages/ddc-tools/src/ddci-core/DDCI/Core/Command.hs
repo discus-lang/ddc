@@ -180,7 +180,8 @@ handleCmd state cmd source line
         return state'
 
 handleCmd1 state cmd source line
- = case cmd of
+ = let lang     = stateLanguage state
+   in case cmd of
         CommandBlank
          -> return state
 
@@ -206,54 +207,55 @@ handleCmd1 state cmd source line
                 return state
 
         CommandKind       
-         -> do  cmdShowKind  (stateLanguage state) source line
+         -> do  cmdShowKind  lang source line
                 return state
 
         CommandUniverse
-         -> do  cmdUniverse  (stateLanguage state) source line
+         -> do  cmdUniverse  lang source line
                 return state
 
         CommandUniverse1
-         -> do  cmdUniverse1 (stateLanguage state) source line
+         -> do  cmdUniverse1 lang source line
                 return state
 
         CommandUniverse2
-         -> do  cmdUniverse2 (stateLanguage state) source line
+         -> do  cmdUniverse2 lang source line
                 return state
 
         CommandUniverse3
-         -> do  cmdUniverse3 (stateLanguage state) source line
+         -> do  cmdUniverse3 lang source line
                 return state
 
         CommandEquivType
-         -> do  cmdTypeEquiv (stateLanguage state) source line
+         -> do  cmdTypeEquiv lang source line
                 return state
 
         CommandWitType    
-         -> do  cmdShowWType (stateLanguage state) source line
+         -> do  cmdShowWType lang source line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType  (stateLanguage state) ShowTypeAll source line
+         -> do  cmdShowType  lang ShowTypeAll     False source line
                 return state
 
-        CommandExpSynth
-         -> error "blerk"
-          
         CommandExpType  
-         -> do  cmdShowType  (stateLanguage state) ShowTypeValue source line
+         -> do  cmdShowType  lang ShowTypeValue   False source line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType  (stateLanguage state) ShowTypeEffect source line
+         -> do  cmdShowType  lang ShowTypeEffect  False source line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType  (stateLanguage state) ShowTypeClosure source line
+         -> do  cmdShowType  lang ShowTypeClosure False source line
+                return state
+
+        CommandExpSynth
+         -> do  cmdShowType  lang ShowTypeAll     True source line
                 return state
 
         CommandExpRecon
-         -> do  cmdExpRecon  (stateLanguage state) source line
+         -> do  cmdExpRecon  lang source line
                 return state
 
         CommandEval       
@@ -261,7 +263,7 @@ handleCmd1 state cmd source line
                 return state
 
         CommandAst
-         -> do  cmdAstExp (stateLanguage state) source line
+         -> do  cmdAstExp   lang source line
                 return state
 
         -- Generic transformations --------------
@@ -280,17 +282,17 @@ handleCmd1 state cmd source line
         -- Conversion to machine code -----------
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToSalt config (stateLanguage state) source line
+                runError $ cmdToSalt config lang source line
                 return    state
 
         CommandToC
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToC    config (stateLanguage state) source line
+                runError $ cmdToC    config lang source line
                 return state
 
         CommandToLlvm
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToLlvm config (stateLanguage state) source line
+                runError $ cmdToLlvm config lang source line
                 return state
 
 
