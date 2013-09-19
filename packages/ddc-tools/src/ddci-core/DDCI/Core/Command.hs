@@ -37,7 +37,7 @@ import Control.Monad.Trans.Error
 import Data.List
 
 
--- Command --------------------------------------------------------------------
+-- Command ----------------------------------------------------------------------------------------
 -- | The commands that the interpreter supports.
 data Command
         = CommandBlank          -- ^ No command was entered.
@@ -53,7 +53,7 @@ data Command
         | CommandEquivType      -- ^ Check if two types are equivalent.
         | CommandWitType        -- ^ Show the type of a witness.
         | CommandExpCheck       -- ^ Check the type of an expression.
-        | CommandExpSynth       -- ^ Synthesise the type of an expression, including existentials.
+        | CommandExpSynth       -- ^ Synthesize the type of an expression, including existentials.
         | CommandExpType        -- ^ Check an expression, showing its type.
         | CommandExpEffect      -- ^ Check an expression, showing its effect.
         | CommandExpClosure     -- ^ Check an expression, showing its closure.
@@ -77,20 +77,21 @@ data Command
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
 
         -- Core Flow passes 
-        | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
+        | CommandFlowPrep               -- ^ Prepare a Core Flow module for lowering.
         | CommandFlowLower Flow.Config  -- ^ Prepare and Lower a Core Flow module.
-        | CommandFlowConcretize -- ^ Convert operations on type level rates to concrete ones.
-        | CommandFlowMelt       -- ^ Melt compound data structures.
-        | CommandFlowWind       -- ^ Wind loop primops into tail recursive loops.
-        | CommandFlowThread     -- ^ Thread a world token through lowered code.
+        | CommandFlowConcretize         -- ^ Convert operations on type level rates to concrete ones.
+        | CommandFlowMelt               -- ^ Melt compound data structures.
+        | CommandFlowWind               -- ^ Wind loop primops into tail recursive loops.
+        | CommandFlowThread             -- ^ Thread a world token through lowered code.
 
         -- Inline control
-        | CommandWith           -- ^ Add a module to the inliner table.
+        | CommandWith                   -- ^ Add a module to the inliner table.
 	| CommandWithLite
 	| CommandWithSalt
         deriving (Eq, Show)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Names used to invoke each command.
 --   Short names that form prefixes of other ones must come later
 --   in the list. Eg ':with-lite' after ':with'
@@ -169,7 +170,7 @@ readCommand ss
         = Nothing
 
 
--- Commands -------------------------------------------------------------------
+-- Commands ---------------------------------------------------------------------------------------
 -- | Handle a single line of input.
 handleCmd :: State -> Command -> Source -> String -> IO State
 handleCmd state CommandBlank _ _
