@@ -29,35 +29,18 @@ pExp    :: Ord n => Context -> Parser n (Exp SourcePos n)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
-        -- \(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
+        -- \BIND.. . EXP
  [ do   sp      <- pTokSP KBackSlash
-
-        bs      <- liftM concat
-                $  P.many1 
-                $  do   pTok KRoundBra
-                        bs'     <- P.many1 pBinder
-                        pTok (KOp ":")
-                        t       <- pType c
-                        pTok KRoundKet
-                        return (map (\b -> T.makeBindFromBinder b t) bs')
-
+        bs      <- liftM concat $ P.many1 (pBinds c)
         pTok KDot
         xBody   <- pExp c
         return  $ foldr (XLam sp) xBody bs
 
+
         -- Level-1 lambda abstractions.
-        -- /\(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
+        -- /\BINDS.. . EXP
  , do   sp      <- pTokSP KBigLambda
-
-        bs      <- liftM concat
-                $  P.many1 
-                $  do   pTok KRoundBra
-                        bs'     <- P.many1 pBinder
-                        pTok (KOp ":")
-                        t       <- pType c
-                        pTok KRoundKet
-                        return (map (\b -> T.makeBindFromBinder b t) bs')
-
+        bs      <- liftM concat $ P.many1 (pBinds c)
         pTok KDot
         xBody   <- pExp c
         return  $ foldr (XLAM sp) xBody bs
@@ -162,15 +145,18 @@ pExp c
         x       <- pExp c
         return  $ XCast sp (CastForget w) x
 
+
         -- suspend EXP
  , do   sp      <- pTokSP KSuspend
         x       <- pExp c
         return  $ XCast sp CastSuspend x
 
+
         -- run EXP
  , do   sp      <- pTokSP KRun
         x       <- pExp c
         return  $ XCast sp CastRun x
+
 
         -- APP
  , do   pExpApp c
@@ -307,28 +293,28 @@ pPat c
 
         -- CON BIND BIND ...
  , do   nCon    <- pCon 
-        bs      <- P.many (pBindPat c)
+        bs      <- liftM concat $ P.many (pBinds c)
         return  $ PData (DaConBound nCon) bs]
 
 
 -- Binds in patterns can have no type annotation,
 -- or can have an annotation if the whole thing is in parens.
-pBindPat 
+pBinds
         :: Ord n 
-        => Context -> Parser n (Bind n)
-pBindPat c
+        => Context -> Parser n [Bind n]
+pBinds c
  = P.choice
         -- Plain binder.
- [ do   b       <- pBinder
-        return  $ T.makeBindFromBinder b (T.tBot T.kData)
+ [ do   bs      <- P.many1 pBinder
+        return  [T.makeBindFromBinder b (T.tBot T.kData) | b <- bs]
 
         -- Binder with type, wrapped in parens.
  , do   pTok KRoundBra
-        b       <- pBinder
+        bs      <- P.many1 pBinder
         pTok (KOp ":")
         t       <- pType c
         pTok KRoundKet
-        return  $ T.makeBindFromBinder b t
+        return  [T.makeBindFromBinder b t | b <- bs]
  ]
 
 
@@ -360,14 +346,17 @@ pLetsSP c
       --   letregions [BINDER] with { BINDER : TYPE ... } in EXP
       --   letregions [BINDER] in EXP
     , do sp     <- pTokSP KLetRegions
-         brs    <- P.manyTill pBinder (P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith])
+         brs    <- P.manyTill pBinder 
+                $  P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith]
+
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
+
          r      <- pLetWits c bs
          return (r, sp)
           
     , do sp     <- pTokSP KLetRegion
-         br    <- pBinder
-         let b =  T.makeBindFromBinder br T.kRegion
+         br     <- pBinder
+         let b  =  T.makeBindFromBinder br T.kRegion
          r      <- pLetWits c [b]
          return (r, sp)
          
