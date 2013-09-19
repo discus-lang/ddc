@@ -33,7 +33,7 @@ checkModule
         -> Either (Error a n) (Module (AnTEC a n) n)
 
 checkModule !config !xx 
-        = evalCheck ()
+        = evalCheck 0
         $ checkModuleM 
                 config 
                 (configPrimKinds config)

@@ -59,7 +59,7 @@ checkExp
                   , Closure n)
 
 checkExp !config !kenv !tenv !xx !tXX
- = evalCheck ()
+ = evalCheck 0
  $ do   (xx', t, effs, clos, _) 
                 <- checkExpM 
                         (makeTable config

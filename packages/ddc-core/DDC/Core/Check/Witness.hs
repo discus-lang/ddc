@@ -35,7 +35,7 @@ import qualified DDC.Type.Check                 as T
 
 -- | Type checker monad. 
 --   Used to manage type errors.
-type CheckM a n   = G.CheckM () (Error a n)
+type CheckM a n   = G.CheckM Int (Error a n)
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -64,7 +64,8 @@ checkWitness
                   , Type n)
 
 checkWitness config kenv tenv xx
-        = evalCheck () $ checkWitnessM config kenv tenv emptyContext xx
+        = evalCheck 0 
+        $ checkWitnessM config kenv tenv emptyContext xx
 
 
 -- | Like `checkWitness`, but check in an empty environment.
