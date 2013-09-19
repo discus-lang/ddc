@@ -8,13 +8,14 @@ module DDC.Core.Load
         , loadModuleFromFile
         , loadModuleFromString
         , loadModuleFromTokens
-        , loadExp
+        , loadExp,      Mode(..)
         , loadType
         , loadWitness)
 where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer.Tokens
+import DDC.Core.Check                           (Mode(..))
 import DDC.Core.Exp
 import DDC.Core.Annot.AnT                       (AnT)
 import DDC.Type.Transform.SpreadT
@@ -154,11 +155,12 @@ loadExp
                                 -- ^ Other modules currently in scope.
                                 --   We add their exports to the environment.
         -> FilePath             -- ^ Path to source file for error messages.
+        -> Mode n               -- ^ Type checker mode.
         -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
                   (Exp (C.AnTEC BP.SourcePos n) n)
 
-loadExp profile modules sourceName toks'
+loadExp profile modules sourceName mode toks'
  = goParse toks'
  where  
         -- Type checker profile, kind and type environments.
@@ -176,7 +178,7 @@ loadExp profile modules sourceName toks'
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp config kenv tenv x C.Synth of
+         = case C.checkExp config kenv tenv x mode of
                 Left err            -> Left  (ErrorCheckExp err)
                 Right (x', _, _, _) -> goCheckCompliance x'
 

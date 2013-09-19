@@ -38,7 +38,7 @@ cmdTrans state source str
  , simpl                <- bundleSimplifier bundle
  , zero                 <- bundleStateInit  bundle
  , profile              <- fragmentProfile  fragment
- =   cmdParseCheckExp fragment modules True source str 
+ =   cmdParseCheckExp fragment modules True Recon source str 
  >>= goStore profile modules zero simpl
  where
         -- Expression had a parse or type error.
@@ -78,7 +78,7 @@ cmdTransEval state source str
  , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
  , Just (modules :: ModuleMap (AnTEC () Eval.Name) Eval.Name)
 				       <- gcast modules0
- = do   result'  <- cmdParseCheckExp Eval.fragment modules False source str 
+ = do   result'  <- cmdParseCheckExp Eval.fragment modules False Recon source str 
         case result' of
          Nothing         -> return ()
          Just xx

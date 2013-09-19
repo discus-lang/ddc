@@ -52,7 +52,8 @@ data Command
         | CommandUniverse3      -- ^ Given a sort, show the universe of the original thing.
         | CommandEquivType      -- ^ Check if two types are equivalent.
         | CommandWitType        -- ^ Show the type of a witness.
-        | CommandExpCheck       -- ^ Check an expression.
+        | CommandExpCheck       -- ^ Check the type of an expression.
+        | CommandExpSynth       -- ^ Synthesise the type of an expression, including existentials.
         | CommandExpType        -- ^ Check an expression, showing its type.
         | CommandExpEffect      -- ^ Check an expression, showing its effect.
         | CommandExpClosure     -- ^ Check an expression, showing its closure.
@@ -109,6 +110,7 @@ commands
         , (":tequiv",           CommandEquivType)
         , (":wtype",            CommandWitType)
         , (":check",            CommandExpCheck)
+        , (":synth",            CommandExpSynth)
         , (":recon",            CommandExpRecon)
 
         , (":type",             CommandExpType)
@@ -235,6 +237,9 @@ handleCmd1 state cmd source line
          -> do  cmdShowType  (stateLanguage state) ShowTypeAll source line
                 return state
 
+        CommandExpSynth
+         -> error "blerk"
+          
         CommandExpType  
          -> do  cmdShowType  (stateLanguage state) ShowTypeValue source line
                 return state

@@ -38,7 +38,8 @@ cmdStep state source str
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 			<- gcast modules0
  , modules'		<- fromMaybe Map.empty modules
- = cmdParseCheckExp Eval.fragment modules' False source str >>= goStore 
+ =   cmdParseCheckExp Eval.fragment modules' False Recon source str 
+ >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -67,7 +68,8 @@ cmdEval state source str
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 			<- gcast modules0
  , modules'		<- fromMaybe Map.empty modules
- = cmdParseCheckExp Eval.fragment modules' False source str >>= goEval
+ =   cmdParseCheckExp Eval.fragment modules' False Recon source str 
+ >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing

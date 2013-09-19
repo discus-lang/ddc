@@ -12,7 +12,7 @@ module DDC.Driver.Command.Check
         , cmdCheckModuleFromFile
         , cmdCheckModuleFromString
         , cmdParseCheckType
-        , cmdParseCheckExp)
+        , cmdParseCheckExp,     Mode(..))
 where
 import DDC.Driver.Output
 import DDC.Interface.Source
@@ -200,7 +200,8 @@ cmdShowType language mode source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- = cmdParseCheckExp fragment modules True source ss >>= goResult fragment
+ =   cmdParseCheckExp fragment modules True Recon source ss 
+ >>= goResult fragment
  where
         goResult _ Nothing
          = return ()
@@ -240,7 +241,7 @@ cmdExpRecon language source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- =   cmdParseCheckExp fragment modules True source ss 
+ =   cmdParseCheckExp fragment modules True Recon source ss 
  >>= goResult
  where
         goResult Nothing
@@ -347,12 +348,13 @@ cmdParseCheckExp
         => Fragment n err       -- ^ The current language fragment.
         -> ModuleMap (AnTEC () n) n -- ^ Current modules
         -> Bool                 -- ^ Allow partial application of primitives.
+        -> Mode n               -- ^ Type checker mode.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
         -> IO (Maybe ( Exp (AnTEC BP.SourcePos n) n))
 
-cmdParseCheckExp frag modules permitPartialPrims source str
- = goLoad (fragmentLexExp frag (nameOfSource source) (lineStartOfSource source) str)
+cmdParseCheckExp frag modules permitPartialPrims mode source str
+ = goLex
  where
         -- Override profile to allow partially applied primitives if we were
         -- told to do so.
@@ -363,9 +365,15 @@ cmdParseCheckExp frag modules permitPartialPrims source str
         profile'  = profile  { profileFeatures  = features' }
         frag'     = frag     { fragmentProfile  = profile'  }
 
+        goLex 
+         = goLoad (fragmentLexExp frag'
+                        (nameOfSource source) 
+                        (lineStartOfSource source) 
+                        str)
+
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp (fragmentProfile frag') modules (nameOfSource source) toks of
+         = case loadExp profile' modules (nameOfSource source) mode toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing
@@ -382,3 +390,4 @@ cmdParseCheckExp frag modules permitPartialPrims source str
 
              Nothing  
               -> do     return (Just x)
+

@@ -110,9 +110,9 @@ help    = unlines
         , "  :to-llvm    MODULE        Convert module source code to LLVM."
         , ""
         , "Data Flow Fusion Transforms" 
-        , "   :flow-prep  MODULE       Prepare a module for lowering."
-        , "   :flow-lower MODULE       Lower a module to loop code."
-        , "   :flow-wind  MODULE       Wind loop primops into tail recursive loops."
-        , "   :flow-concretize MODULE  Rewrite primops to use concrete series lengths."
+        , "  :flow-prep  MODULE        Prepare a module for lowering."
+        , "  :flow-lower MODULE        Lower a module to loop code."
+        , "  :flow-wind  MODULE        Wind loop primops into tail recursive loops."
+        , "  :flow-concretize MODULE   Rewrite primops to use concrete series lengths."
         , ""
         ]

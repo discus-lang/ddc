@@ -42,7 +42,7 @@ cmdAstExp language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
  , modules              <- bundleModules  bundle
- =   cmdParseCheckExp fragment modules True source str 
+ =   cmdParseCheckExp fragment modules True Recon source str 
  >>= goShow
  where
         -- Expression had a parse or type error.
