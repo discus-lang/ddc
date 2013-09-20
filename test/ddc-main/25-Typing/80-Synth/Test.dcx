@@ -1,0 +1,7 @@
+
+-- Check we can produce existential vars.
+:synth \x. x
+
+
+-- Check order of existential vars.
+:synth \x. \y. \z. y

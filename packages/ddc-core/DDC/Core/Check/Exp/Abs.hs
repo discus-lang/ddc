@@ -2,6 +2,7 @@
 module DDC.Core.Check.Exp.Abs
         (checkAbs)
 where
+import DDC.Core.Check.Exp.Inst
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
@@ -130,12 +131,13 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
 
 
 -- When synthesizing the type of a lambda abstraction
---   we produce a type (?1 -> ?2) with new unification variables.       -- TODO.
---   TOOD: If there was a paramer type annot, then use that.
+--   we produce a type (?1 -> ?2) with new unification variables.
+--
+--   TOOD: If there was a parameter type annot, then use that instead,
+--         and just synthesize a type for the body.
+--
 checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let xx          = XLam a b1 x2
 
         -- Existential for the parameter type.
         tA      <- newExists
@@ -144,15 +146,10 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         -- Existential for the result type.
         tB      <- newExists
 
-        -- Synth a type for the body, under the extended environment.
+        -- Check the body against the existential for it.
         let (ctx1, pos1) = pushType b1' ctx
-        (x2', t2, e2, c2, ctx2)
-         <- tableCheckExp table table ctx1 x2 Synth
-
-        -- The body of a data abstraction must produce data.
-        (_, k2)         <- checkTypeM config kenv ctx2 t2
-        when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a xx b1' t2 k2 
+        (x2', _, e2, c2, ctx2)
+         <- tableCheckExp table table ctx1 x2 (Check tB)
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
@@ -176,19 +173,14 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
                 cResult
                 ctx'
 
--- When checking type type of a lambda abstraction against an exising type,
---   we allow the formal paramter to be missing its type annotation,
---   and in this case we replace it with the expected type.
+-- When checking type type of a lambda abstraction against an existing
+--   functional type we allow the formal paramter to be missing its
+--   type annotation, and in this case we replace it with the expected type.
 checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
+ | Just (tX1, tX2)      <- takeTFun tXX
  = do   let config      = tableConfig table
         let t1          = typeOfBind b1
         let xx          = XLam a b1 x2
-
-        -- Split the expected type into the part for the parameter and body.
-        (tX1, tX2)      
-            <- case takeTFun tXX of
-                Just (tX1, tX2) -> return (tX1, tX2)
-                _               -> throw $ ErrorLamUnexpected a xx tXX
 
         -- If the parameter has no type annotation then we can use the
         --   expected type we were passed down from above.
@@ -226,6 +218,9 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
                 (Sum.empty kEffect)
                 cResult
                 ctx'
+
+ | otherwise
+ = checkSub table a ctx (XLam a b1 x2) tXX
 
 
 -- | Construct a function type with the given effect and closure.
