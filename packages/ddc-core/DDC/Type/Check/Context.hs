@@ -4,8 +4,9 @@ module DDC.Type.Check.Context
         , Elem    (..)
         , Context (..)
         , emptyContext
-        , pushType, pushTypes, lookupType, memberType
-        , pushKind, pushKinds, lookupKind, memberKind, memberKindBind
+        , pushType,   pushTypes, lookupType, memberType
+        , pushKind,   pushKinds, lookupKind, memberKind, memberKindBind
+        , pushExists
         , popToPos
         , liftTypes
         , lowerTypes)
@@ -47,7 +48,8 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
   =   text "Context "
   <$> text "  length = " <> int len
   <$> indent 2 
-        (vcat [int i <> (indent 4 $ ppr e)
+        (vcat $ reverse
+              $ [int i <> (indent 4 $ ppr e)
                         | e <- es
                         | i <- [0..]])
 
@@ -61,8 +63,14 @@ data Pos
 -- Elem -----------------------------------------------------------------------
 -- | An element in the type checker context.
 data Elem n
-        = ElemKind (Bind n)
-        | ElemType (Bind n)
+        -- | Kind of some variable.
+        = ElemKind      (Bind n)
+
+        -- | Type of some variable.
+        | ElemType      (Bind n)
+
+        -- | Existential variable definition.
+        | ElemExists    Int
         deriving Show
 
 
@@ -78,6 +86,9 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
          -> ppr (binderOfBind b)
                 <+> text "::"
                 <+> (ppr $ typeOfBind b)
+
+        ElemExists n
+         -> text "?" <> int n
 
 
 -- Empty ----------------------------------------------------------------------
@@ -116,6 +127,16 @@ pushKinds bs (Context len ls)
  =      ( Context (len + length bs) 
                  ( reverse [ ElemKind b | b <- bs] ++ ls)
         , Pos len)
+
+
+-- | Push an existential onto the context.
+--   If this is not an existential then `error`.
+pushExists :: Type n -> Context n -> (Context n, Pos)
+pushExists tt (Context len ls)
+ = case tt of
+        TCon (TyConExists n _)
+          -> (Context (len + 1) (ElemExists n : ls), Pos len)
+        _ -> error "ddc-core.pushExists: not an existential."
 
 
 -- Pop ------------------------------------------------------------------------

@@ -147,7 +147,9 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         tB      <- newExists
 
         -- Check the body against the existential for it.
-        let (ctx1, pos1) = pushType b1' ctx
+        let (ctxA, _)    = pushExists tA ctx
+        let (ctxB, _)    = pushExists tB ctxA
+        let (ctx1, pos1) = pushType  b1' ctxB
         (x2', _, e2, c2, ctx2)
          <- tableCheckExp table table ctx1 x2 (Check tB)
 
