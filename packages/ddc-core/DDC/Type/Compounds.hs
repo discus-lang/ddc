@@ -64,6 +64,7 @@ module DDC.Type.Compounds
 
           -- * Variables
         , tIx
+        , takeTExists
 
           -- * Sort construction
         , sComp, sProp
@@ -222,6 +223,15 @@ replaceTypeOfBound t uu
 -- | Construct a deBruijn index.
 tIx :: Kind n -> Int -> Type n
 tIx _ i         = TVar (UIx i)
+
+
+-- Existentials ---------------------------------------------------------------
+-- | Take an existential variable from a type.
+takeTExists :: Type n -> Maybe Int
+takeTExists tt
+ = case tt of
+        TCon (TyConExists n _)  -> Just n
+        _                       -> Nothing
 
 
 -- Applications ---------------------------------------------------------------

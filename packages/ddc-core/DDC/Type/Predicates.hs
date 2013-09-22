@@ -10,6 +10,7 @@ module DDC.Type.Predicates
         , isTVar
         , isBot
         , isAtomT
+        , isTExists
 
           -- * Kinds
         , isDataKind
@@ -35,6 +36,7 @@ module DDC.Type.Predicates
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
+import Data.Maybe
 import qualified DDC.Type.Sum   as T
 
 
@@ -83,6 +85,12 @@ isAtomT tt
         TVar{}          -> True
         TCon{}          -> True
         _               -> isBot tt
+
+
+-- | Check whether this type is an existential variable.
+isTExists :: Type n -> Bool
+isTExists tt
+ = isJust $ takeTExists tt
 
 
 -- Kinds ----------------------------------------------------------------------

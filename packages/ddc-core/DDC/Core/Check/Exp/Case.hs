@@ -223,8 +223,9 @@ checkAltM !xx !table !tDiscrim !tsArgs !ctx
                             tsFields_ctor        
 
         -- Extend the environment with the field types.
-        let bsArg'           = zipWith replaceTypeOfBind tsFields bsArg
-        let (ctxArg, posArg) = pushTypes bsArg' ctx
+        let bsArg'         = zipWith replaceTypeOfBind tsFields bsArg
+        let (ctx', posArg) = markContext ctx
+        let ctxArg         = pushTypes bsArg' ctx'
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody, ctxBody)
@@ -238,7 +239,8 @@ checkAltM !xx !table !tDiscrim !tsArgs !ctx
                 $ Set.toList closBody
 
         -- Pop the argument types from the context.
-        let Just ctx' = popToPos posArg ctxBody
+        let ctx_cut 
+                = popToPos posArg ctxBody
 
         -- We're returning the new context for kicks,
         -- but the caller doesn't use it because we don't want the order of 
@@ -247,7 +249,7 @@ checkAltM !xx !table !tDiscrim !tsArgs !ctx
                 , tBody
                 , effsBody
                 , closBody_cut
-                , ctx')
+                , ctx_cut)
 
 
 -- | Merge a type annotation on a pattern field with a type we get by

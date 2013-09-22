@@ -59,17 +59,20 @@ checkExp
                   , Closure n)
 
 checkExp !config !kenv !tenv !xx !tXX
- = evalCheck 0
- $ do   (xx', t, effs, clos, _) 
+ = evalCheck (0, 0)
+ $ do   (xx', t, effs, clos, ctx) 
                 <- checkExpM 
                         (makeTable config
                                 (Env.union kenv (configPrimKinds config))
                                 (Env.union tenv (configPrimTypes config)))
                         emptyContext xx tXX
-        return  ( xx'
-                , t
-                , TSum effs
-                , closureOfTaggedSet clos)
+
+        -- TODO: update exp with types in context 
+        let t'  = applyContext ctx t
+        let e'  = applyContext ctx $ TSum effs
+        let c'  = applyContext ctx $ closureOfTaggedSet clos
+
+        return  ( xx', t', e', c')
 
 
 -- | Like `checkExp`, but only return the value type of an expression.
@@ -103,16 +106,19 @@ checkExpM
                 , Context n)            -- Output context.
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
-checkExpM !table !ctx !xx !dXX 
- = case xx of
-        XVar{}          -> tableCheckVarCon table table ctx xx dXX
-        XCon{}          -> tableCheckVarCon table table ctx xx dXX
-        XApp{}          -> tableCheckApp    table table ctx xx dXX
-        XLam{}          -> tableCheckAbs    table table ctx xx dXX
-        XLAM{}          -> tableCheckAbs    table table ctx xx dXX
-        XLet{}          -> tableCheckLet    table table ctx xx dXX
-        XCase{}         -> tableCheckCase   table table ctx xx dXX
-        XCast{}         -> tableCheckCast   table table ctx xx dXX
+checkExpM !table !ctx !xx !mode
+ =  -- trace (renderIndent $ vcat 
+    --            [ text "EXP" <+> ppr mode <+> ppr xx
+    --           , ppr ctx ]) $
+     case xx of
+        XVar{}          -> tableCheckVarCon table table ctx xx mode
+        XCon{}          -> tableCheckVarCon table table ctx xx mode
+        XApp{}          -> tableCheckApp    table table ctx xx mode
+        XLam{}          -> tableCheckAbs    table table ctx xx mode
+        XLAM{}          -> tableCheckAbs    table table ctx xx mode
+        XLet{}          -> tableCheckLet    table table ctx xx mode
+        XCase{}         -> tableCheckCase   table table ctx xx mode
+        XCast{}         -> tableCheckCast   table table ctx xx mode
         XType    a _    -> throw $ ErrorNakedType    a xx 
         XWitness a _    -> throw $ ErrorNakedWitness a xx
 

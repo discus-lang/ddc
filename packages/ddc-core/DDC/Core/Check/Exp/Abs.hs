@@ -53,10 +53,13 @@ checkAbsLAM !table !ctx a b1 x2
          $ throw $ ErrorLamShadow a xx b1
         
         -- Check the body of the abstraction.
-        let (ctx1, pos1) = pushKind b1' ctx
+        let (ctx', pos1) = markContext ctx
+        let ctx1         = pushKind b1' ctx'
         let ctx2         = liftTypes 1  ctx1
+
         (x2', t2, e2, c2, ctx3)
                 <- tableCheckExp table table ctx2 x2 Recon
+
         (_, k2) <- checkTypeM config kenv ctx3 t2
 
         -- The body of a spec abstraction must have data kind.
@@ -73,7 +76,7 @@ checkAbsLAM !table !ctx a b1 x2
                         $ Set.toList c2
 
         -- Cut the bound kind and elems under it from the context.
-        let Just ctx'   = liftM (lowerTypes 1)
+        let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx3
                                                                 
         returnX a
@@ -81,7 +84,7 @@ checkAbsLAM !table !ctx a b1 x2
                 (TForall b1' t2)
                 (Sum.empty kEffect)
                 c2_cut
-                ctx'
+                ctx_cut
 
 
 -- AbsLamData -----------------------------------------------------------------
@@ -98,7 +101,9 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
          $ throw $ ErrorLamParamTypeMissing a xx b1
 
         -- Reconstruct a type for the body, under the extended environment.
-        let (ctx1, pos1) = pushType b1 ctx
+        let (ctx', pos1) = markContext ctx
+        let ctx1         = pushType b1 ctx'
+
         (x2', t2, e2, c2, ctx2)
          <- tableCheckExp table table ctx1 x2 Recon
 
@@ -120,14 +125,14 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
          <- makeFunctionType config a xx t1 t2 e2 c2_cut
 
         -- Cut the bound type and elems under it from the context.
-        let Just ctx'   = popToPos pos1 ctx2
+        let ctx_cut     = popToPos pos1 ctx2
         
         returnX a
                 (\z -> XLam z b1 x2')
                 tResult 
                 (Sum.empty kEffect)
                 cResult
-                ctx'
+                ctx_cut
 
 
 -- When synthesizing the type of a lambda abstraction
@@ -140,16 +145,20 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
  = do   let config      = tableConfig table
 
         -- Existential for the parameter type.
-        tA      <- newExists
+        iA      <- newExists
+        let tA  = typeOfExists iA
         let b1' = replaceTypeOfBind tA b1
 
         -- Existential for the result type.
-        tB      <- newExists
+        iB      <- newExists
+        let tB  = typeOfExists iB
 
         -- Check the body against the existential for it.
-        let (ctxA, _)    = pushExists tA ctx
-        let (ctxB, _)    = pushExists tB ctxA
-        let (ctx1, pos1) = pushType  b1' ctxB
+        let (ctx', pos1) = markContext ctx
+        let ctx1         = pushType   b1' 
+                         $ pushExists iB
+                         $ pushExists iA ctx'
+
         (x2', _, e2, c2, ctx2)
          <- tableCheckExp table table ctx1 x2 (Check tB)
 
@@ -165,15 +174,25 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1 x2) tA tB e2 c2_cut
 
+        let tResult'    = applyContext ctx2 tResult
+
         -- Cut the bound type and elems under it from the context.
-        let Just ctx'   = popToPos pos1 ctx2
+        let ctx_cut     = popToPos pos1 ctx2
         
+        --trace (renderIndent $ vcat
+        --        [ text "* Lam Synth"
+        --        , text "  " <> ppr (XLam a b1 x2)
+        --        , text "  t   = " <> ppr tResult
+        --        , text "  t'  = " <> ppr tResult'
+        --        , indent 2 $ ppr ctx2]) $ return ()
+
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult 
+                tResult' 
                 (Sum.empty kEffect)
                 cResult
-                ctx'
+                ctx_cut
+
 
 -- When checking type type of a lambda abstraction against an existing
 --   functional type we allow the formal paramter to be missing its
@@ -195,7 +214,9 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
                else  throw $ ErrorLamParamUnexpected a xx b1 tX1
                         
         -- Check the body of the abstraction under the extended environment.
-        let (ctx1, pos1) = pushType b1' ctx
+        let (ctx', pos1) = markContext ctx
+        let ctx1         = pushType b1' ctx'
+
         (x2', t2, e2, c2, ctx2)
          <- tableCheckExp table table ctx1 x2 (Check tX2)
 
@@ -211,15 +232,23 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) t1 t2 e2 c2_cut
 
+        let tResult'    = applyContext ctx2 tResult
+
         -- Cut the bound type and elems under it from the context.
-        let Just ctx'   = popToPos pos1 ctx2
+        let ctx_cut     = popToPos pos1 ctx2
         
+        --trace (renderIndent $ vcat
+        --        [ text "Lam Check" <> ppr tXX
+        --        , ppr ctx2
+        --        , text " t    = " <> ppr tResult
+        --        , text " t'   = " <> ppr tResult' ]) $ return ()
+
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult 
+                tResult' 
                 (Sum.empty kEffect)
                 cResult
-                ctx'
+                ctx_cut
 
  | otherwise
  = checkSub table a ctx (XLam a b1 x2) tXX
@@ -290,7 +319,9 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
         let t1          = typeOfBind b1
 
         -- Check the body of the abstraction.
-        let (ctx1, pos1) = pushType b1 ctx
+        let ctx1'         = pushType b1 ctx
+        let (ctx1, pos1)  = markContext ctx1'
+
         (x2', t2, e2, c2, ctx2) 
                 <- tableCheckExp table table ctx1 x2 Recon
         (_, k2) <- checkTypeM config kenv ctx2 t2
@@ -304,7 +335,7 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
          $ throw $ ErrorLamBodyNotData  a (XLam a b1 x2) b1 t2 k2
 
         -- Cut the bound type and elems under it from the context.
-        let Just ctx'   = popToPos pos1 ctx2
+        let ctx'        = popToPos pos1 ctx2
 
         returnX a
                 (\z -> XLam z b1 x2')

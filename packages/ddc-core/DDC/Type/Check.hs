@@ -165,7 +165,7 @@ checkTypeM' config env _ctx tt@(TCon tc)
 
 -- Quantifiers ----------------
 checkTypeM' config env ctx tt@(TForall b1 t2)
- = do   let (ctx', _)  = pushKind b1 ctx
+ = do   let ctx'  = pushKind b1 ctx
         _         <- checkTypeM config env ctx  (typeOfBind b1)
         (t2', k2) <- checkTypeM config env ctx' t2
 

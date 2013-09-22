@@ -26,8 +26,8 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
                 <- checkLetsM xx table ctx lts
 
         -- Check the body expression.
-        let (ctx2, pos1) 
-                = pushTypes bs' ctx1
+        let (ctx1', pos1) = markContext ctx1
+        let ctx2          = pushTypes bs' ctx1'
 
         (x2', t2, effs2, c2, ctx3)
                 <- tableCheckExp table table ctx2 x2 tXX
@@ -47,10 +47,10 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
         let clos'       = clo12  `Set.union` c2_cut
 
         -- Pop the elements due to the let-bindings from the context.
-        let Just ctx'   = popToPos pos1 ctx
+        let ctx_cut     = popToPos pos1 ctx3
 
         returnX a (\z -> XLet z lts' x2')
-                t2 effs' clos' ctx'
+                t2 effs' clos' ctx_cut
 
 
 -- letregion --------------------------------------
@@ -78,17 +78,18 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
          $ throw $ ErrorLetRegionsRebound a xx rebounds
         
         -- Check the witness types.
-        let (ctx1, pos1)  = pushKinds bsRgn ctx
-        let ctx2          = liftTypes depth ctx1
-        (bsWit', _)       <- liftM unzip 
-                          $  mapM (checkBindM config kenv ctx2) bsWit
+        let (ctx', pos1) = markContext ctx
+        let ctx1         = pushKinds bsRgn ctx'
+        let ctx2         = liftTypes depth ctx1
+        (bsWit', _)      <- liftM unzip 
+                         $  mapM (checkBindM config kenv ctx2) bsWit
         
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
         checkWitnessBindsM a kenv ctx xx us bsWit'
 
         -- Check the body expression.
-        let (ctx3, _pos2) = pushTypes bsWit' ctx2
+        let ctx3        = pushTypes bsWit' ctx2
         (xBody', tBody, effs, clo, ctx4)  
                         <- tableCheckExp table table ctx3 x tXX
 
@@ -117,7 +118,7 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
 
         -- Cut stack back to the length we started with,
         --  remembering to lower to undo the lift we applied previously.
-        let Just ctx'   = liftM (lowerTypes depth)
+        let ctx_cut     = lowerTypes depth
                         $ popToPos pos1 ctx4
 
         returnX a
@@ -125,7 +126,7 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
                 (lowerT depth tBody)
                 (lowerT depth effs')
                 c2_cut
-                ctx'
+                ctx_cut
 
 
 -- withregion -----------------------------------
@@ -252,7 +253,8 @@ checkLetsM !xx !table !ctx (LRec bxs)
                 $ throw $ ErrorLetrecBindingNotLambda a xx x
 
         -- All variables are in scope in all right hand sides.
-        let (ctx1, pos1) = pushTypes bs' ctx
+        let (ctx', pos1) = markContext ctx
+        let ctx1         = pushTypes bs' ctx'
 
         -- Check the right hand sides.
         -- Ignore the returned contet because the order of alternatives should
@@ -279,13 +281,13 @@ checkLetsM !xx !table !ctx (LRec bxs)
                 $ Set.unions clossBinds
 
         -- Pop types of the bindings from the stack.
-        let Just ctx'   = popToPos pos1 ctx1
+        let ctx_cut = popToPos pos1 ctx1
 
         return  ( LRec (zip bs' xsRight')
                 , zipWith replaceTypeOfBind tsRight bs'
                 , Sum.empty kEffect
                 , clos_cut
-                , ctx')
+                , ctx_cut)
 
 checkLetsM _xx _config _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"

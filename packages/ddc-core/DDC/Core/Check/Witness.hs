@@ -9,8 +9,9 @@ module DDC.Core.Check.Witness
         , typeOfWbCon
 
         , CheckM
-        , newExists
         , checkWitnessM
+        , newExists
+        , newPos
 
         , checkTypeM
         , checkBindM)
@@ -36,15 +37,23 @@ import qualified DDC.Type.Check                 as T
 
 -- | Type checker monad. 
 --   Used to manage type errors.
-type CheckM a n   = G.CheckM Int (Error a n)
+type CheckM a n   = G.CheckM (Int, Int) (Error a n)
 
 
 -- | Allocate a new exisistential.
-newExists :: CheckM a n (Type n)
+newExists :: CheckM a n Exists
 newExists
- = do   ix      <- G.get
-        G.put (ix + 1)
-        return  $ TCon (TyConExists ix kData)
+ = do   (ix, pos)       <- G.get
+        G.put (ix + 1, pos)
+        return  (Exists ix)
+
+
+-- | Allocate a new stack position.
+newPos :: CheckM a n Pos
+newPos
+ = do   (ix, pos)       <- G.get
+        G.put (ix, pos + 1)
+        return  (Pos pos)
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -73,7 +82,7 @@ checkWitness
                   , Type n)
 
 checkWitness config kenv tenv xx
-        = evalCheck 0 
+        = evalCheck (0, 0)
         $ checkWitnessM config kenv tenv emptyContext xx
 
 
