@@ -26,6 +26,7 @@ import DDC.Core.Check.Exp.App
 import DDC.Core.Check.Exp.Let
 import DDC.Core.Check.Exp.Case
 import DDC.Core.Check.Exp.Cast
+import DDC.Core.Check.Exp.Witness
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Env           as Env
 
@@ -111,16 +112,16 @@ checkExpM !table !ctx !xx !mode
     --            [ text "EXP" <+> ppr mode <+> ppr xx
     --           , ppr ctx ]) $
      case xx of
-        XVar{}          -> tableCheckVarCon table table ctx xx mode
-        XCon{}          -> tableCheckVarCon table table ctx xx mode
-        XApp{}          -> tableCheckApp    table table ctx xx mode
-        XLam{}          -> tableCheckAbs    table table ctx xx mode
-        XLAM{}          -> tableCheckAbs    table table ctx xx mode
-        XLet{}          -> tableCheckLet    table table ctx xx mode
-        XCase{}         -> tableCheckCase   table table ctx xx mode
-        XCast{}         -> tableCheckCast   table table ctx xx mode
+        XVar{}          -> tableCheckVarCon  table table ctx xx mode
+        XCon{}          -> tableCheckVarCon  table table ctx xx mode
+        XApp{}          -> tableCheckApp     table table ctx xx mode
+        XLam{}          -> tableCheckAbs     table table ctx xx mode
+        XLAM{}          -> tableCheckAbs     table table ctx xx mode
+        XLet{}          -> tableCheckLet     table table ctx xx mode
+        XCase{}         -> tableCheckCase    table table ctx xx mode
+        XCast{}         -> tableCheckCast    table table ctx xx mode
+        XWitness{}      -> tableCheckWitness table table ctx xx mode
         XType    a _    -> throw $ ErrorNakedType    a xx 
-        XWitness a _    -> throw $ ErrorNakedWitness a xx
 
 
 -- Table ----------------------------------------------------------------------
@@ -136,5 +137,6 @@ makeTable config kenv tenv
         , tableCheckAbs         = checkAbs
         , tableCheckLet         = checkLet
         , tableCheckCase        = checkCase
-        , tableCheckCast        = checkCast }
+        , tableCheckCast        = checkCast 
+        , tableCheckWitness     = checkWit }
 

@@ -2,7 +2,6 @@
 module DDC.Core.Check.Exp.App
         (checkApp)
 where
-import DDC.Core.Transform.Reannotate
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
@@ -49,32 +48,6 @@ checkApp !table !ctx xx@(XApp a x1 (XType _ t2)) _
          _              -> throw $ ErrorAppNotFun   a xx t1 t2
 
 
--- value-witness application --------------------
-checkApp !table !ctx xx@(XApp a x1 (XWitness _ w2)) _
- = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let tenv        = tableTypeEnv table
-
-        -- Check the functional expression.
-        (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table ctx x1 Recon
-
-        -- Check the witness.
-        (w2', t2)       <- checkWitnessM config kenv tenv ctx1 w2
-        let w2TEC = reannotate fromAnT w2'
-
-        -- The type of the function must have an outer implication.
-        case t1 of
-         TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
-          | t11 `equivT` t2   
-          -> returnX a
-                (\z -> XApp z x1' (XWitness z w2TEC))
-                t12 effs1 clos1 ctx1
-
-          | otherwise   -> throw $ ErrorAppMismatch a xx t11 t2
-         _              -> throw $ ErrorAppNotFun   a xx t1 t2
-                 
-
 -- value-value application ----------------------
 checkApp !table !ctx xx@(XApp a x1 x2) _
  = do   
@@ -86,7 +59,17 @@ checkApp !table !ctx xx@(XApp a x1 x2) _
         (x2', t2, effs2, clos2, ctx2) 
          <- tableCheckExp table table ctx1 x2 Recon
 
+        let effs12      = effs1 `Sum.union` effs2
+        let clos12      = clos1 `Set.union` clos2
+
         case t1 of
+         -- Discharge an implication.
+         TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
+          | t11 `equivT` t2
+          -> returnX a 
+                (\z -> XApp z x1' x2')
+                t12 effs12 clos12 ctx2
+
          -- Oblivious application of a pure function.
          -- Computation of the function and argument may themselves have
          -- an effect, but the function application does not.
@@ -94,10 +77,7 @@ checkApp !table !ctx xx@(XApp a x1 x2) _
           | t11 `equivT` t2
           -> returnX a
                 (\z -> XApp z x1' x2')
-                t12
-                (effs1 `Sum.union` effs2)
-                (clos1 `Set.union` clos2)
-                ctx2
+                t12 effs12 clos12 ctx2
 
          -- Function with latent effect and closure.
          -- Note: we don't need to use the closure of the function because
@@ -107,13 +87,11 @@ checkApp !table !ctx xx@(XApp a x1 x2) _
           , effs    <- Sum.fromList kEffect  [eff]
           -> returnX a
                 (\z -> XApp z x1' x2')
-                t12
-                (effs1 `Sum.union` effs2 `Sum.union` effs)
-                (clos1 `Set.union` clos2)
-                ctx2
+                t12 (effs12 `Sum.union` effs) clos12 ctx2
 
           | otherwise   -> throw $ ErrorAppMismatch a xx t11 t2
          _              -> throw $ ErrorAppNotFun a xx t1 t2
+
 
 -- others ---------------------------------------
 checkApp _ _ _ _

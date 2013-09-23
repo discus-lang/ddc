@@ -96,7 +96,8 @@ data Table a n
         , tableCheckAbs         :: Checker a n
         , tableCheckLet         :: Checker a n
         , tableCheckCase        :: Checker a n
-        , tableCheckCast        :: Checker a n }
+        , tableCheckCast        :: Checker a n 
+        , tableCheckWitness     :: Checker a n }
 
 
 -- | Helper function for building the return value of checkExpM'
