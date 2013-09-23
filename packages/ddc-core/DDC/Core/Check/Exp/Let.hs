@@ -200,14 +200,15 @@ checkLetsM
 checkLetsM !xx !table !ctx (LLet b11 x12)
  = do   let a           = annotOfExp xx
 
-        -- If the type of the binding is not Bot then use that
-        -- as the expected type when checking the body.
-        let tB          = typeOfBind b11
-        let tXX         = if isBot tB then Recon else Check tB
+        -- TODO: If the type of the binding is not Bot then use that
+        --       as the expected type when checking the body.
+--      let tB          = typeOfBind b11
+--      let mode        = if isBot tB then Recon else Check tB
+        let mode        = Recon
 
         -- Check the right of the binding.
         (x12', t12, effs12, clo12, ctx')  
-         <- tableCheckExp table table ctx x12 tXX
+         <- tableCheckExp table table ctx x12 mode
 
         -- Check the annotation on the binder against the type of the
         -- bound expression.
@@ -261,9 +262,10 @@ checkLetsM !xx !table !ctx (LRec bxs)
         --  not matter for type inference.
         (xsRight', tsRight, _effssBinds, clossBinds, _)
                 <- liftM unzip5
-                $  mapM (\(b, x) -> let tB      = typeOfBind b
-                                        dXX     = if isBot tB then Recon else Check tB
-                                    in  tableCheckExp table table ctx1 x dXX) 
+                $  mapM (\(_b, x) -> let -- tB      = typeOfBind b
+                                        -- mode    = if isBot tB then Recon else Check tB
+                                        mode    = Recon
+                                    in  tableCheckExp table table ctx1 x mode) 
                 $  zip bs xs
 
         -- Check annots on binders against inferred types of the bindings.

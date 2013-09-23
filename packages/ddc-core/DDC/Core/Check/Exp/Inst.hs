@@ -58,20 +58,23 @@ makeSub table a ctx0 tL tR
 inst table !a ctx0 tL tR
 
  -- InstLReach
+ --  Both types are existentials, and the left is bound earlier in the stack.
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR
- , iL < iR                      -- iL bound earlier in the stack.
+ , iL < iR
  = do   let ctx1        = updateExists [] iR tL ctx0
         return ctx1
 
  -- InstRReach
+ --  Both types are existentials, and the right is bound earlier in the stack.
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR
- , iR < iL                      -- iR bound earlier in the stack.
+ , iR < iL
  = do   let !ctx1       = updateExists [] iL tR ctx0
         return ctx1
 
  -- InstRArr
+ --  Left is an function arrow, and right is an existential.
  | Just (tL1, tL2)      <- takeTFun tL
  , Just iR              <- takeExists tR
  = do   

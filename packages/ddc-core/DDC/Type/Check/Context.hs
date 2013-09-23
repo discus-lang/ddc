@@ -187,7 +187,7 @@ pushType b ctx
 -- | Push many types onto the context.
 pushTypes :: [Bind n] -> Context n -> Context n
 pushTypes bs ctx
- = foldr pushType ctx bs
+ = foldl (flip pushType) ctx bs
 
 
 -- | Push the kind of some type variable onto the context.
@@ -199,7 +199,7 @@ pushKind b ctx
 -- | Push many kinds onto the context.
 pushKinds :: [Bind n] -> Context n -> Context n
 pushKinds bs ctx
- = foldr pushKind ctx bs
+ = foldl (flip pushKind) ctx bs
 
 
 -- | Push an existential declaration onto the context.
