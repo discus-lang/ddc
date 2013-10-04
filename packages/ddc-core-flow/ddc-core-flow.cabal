@@ -50,6 +50,9 @@ Library
         DDC.Core.Flow.Transform.Concretize
         DDC.Core.Flow.Transform.Extract
         DDC.Core.Flow.Transform.Melt
+        DDC.Core.Flow.Transform.Rates.Constraints
+        DDC.Core.Flow.Transform.Rates.Fail
+        DDC.Core.Flow.Transform.Rates.SeriesOfVector
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Thread
