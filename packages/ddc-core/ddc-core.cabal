@@ -118,6 +118,7 @@ Library
 
         DDC.Core.Collect.Support
         DDC.Core.Collect.Free
+        DDC.Core.Collect.Free.Simple
 
         DDC.Core.Exp.WiCon
         DDC.Core.Exp.DaCon
