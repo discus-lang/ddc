@@ -12,6 +12,7 @@ import BuildBox.Data.Physical
 import BuildBox.Pretty
 import BuildBox
 import System.Directory
+import System.FilePath
 
 
 -- | Feed a file into DDCi-core        
@@ -56,13 +57,15 @@ build :: Spec -> Build Result
 build (Spec     srcDCX
 		buildDir testRunStdout testRunStderr)
 
- = do	needs srcDCX
-        needs "bin/ddci-core"
+ = do	let ddciExe = "bin/ddci-core" <.> exe
+
+        needs srcDCX
+        needs ddciExe
 
 	-- ensure the output directory exists
 	ensureDir buildDir
 
-	ddciBin' <- io $ canonicalizePath "bin/ddci-core"
+	ddciBin' <- io $ canonicalizePath ddciExe
 
 	(time, (code, strOut, strErr))
 	  <- timeBuild

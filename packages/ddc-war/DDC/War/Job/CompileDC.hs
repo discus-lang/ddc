@@ -87,8 +87,12 @@ build   (Spec   srcDC_ optionsDDC _fragment
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
- = do   needs srcDC_
-        needs "bin/ddc"
+ = do   let ddcExe = "bin/ddc" <.> exe
+
+        needs srcDC_
+        needs ddcExe
+
+        ddcBin  <- io $ canonicalizePath ddcExe
 
         -- Normalise the file name relative to the current directory
         -- so that error messages don't change between hosts.
@@ -122,7 +126,7 @@ build   (Spec   srcDC_ optionsDDC _fragment
                         -- Build the program.
                         timeBuild
                          $ systemTee False 
-                                ("bin/ddc"
+                                (ddcBin
                                 ++ " "               ++ intercalate " " optionsDDC
                                 ++ " -output "       ++ mainBin
                                 ++ " -output-dir "   ++ buildDir
@@ -133,7 +137,7 @@ build   (Spec   srcDC_ optionsDDC _fragment
                 | otherwise
                 = do    timeBuild
                          $ systemTee False
-                                ("bin/ddc"
+                                (ddcBin
                                 ++ " "               ++ intercalate " " optionsDDC
                                 ++ " -output-dir "   ++ buildDir
                                 ++ " -compile "      ++ srcDC)

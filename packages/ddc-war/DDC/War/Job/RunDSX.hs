@@ -12,6 +12,7 @@ import BuildBox.Data.Physical
 import BuildBox.Pretty
 import BuildBox
 import System.Directory
+import System.FilePath
 
 
 -- | Feed a file into DDCi-tetra
@@ -56,13 +57,15 @@ build :: Spec -> Build Result
 build (Spec     srcDSX
                 buildDir testRunStdout testRunStderr)
 
- = do   needs srcDSX
-        needs "bin/ddci-tetra"
+ = do   let ddciExe = "bin/ddci-tetra" <.> exe
+
+        needs srcDSX
+        needs ddciExe
 
         -- ensure the output directory exists
         ensureDir buildDir
 
-        ddciBin' <- io $ canonicalizePath "bin/ddci-tetra"
+        ddciBin' <- io $ canonicalizePath ddciExe
 
         (time, (code, strOut, strErr))
           <- timeBuild

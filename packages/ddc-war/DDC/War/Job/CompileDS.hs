@@ -74,8 +74,10 @@ build (Spec     srcDS optionsDDC optionsRTS
 		buildDir mainCompOut mainCompErr
 		mMainBin shouldSucceed)
 
- = do	needs srcDS
-        needs "bin/ddc-alpha"
+ = do	let ddcaExe = "bin/ddc-alpha" <.> exe
+
+        needs srcDS
+        needs ddcaExe
 	
 	-- The directory holding the Main.ds file.
 	let (srcDir, _srcFile)	= splitFileName srcDS
@@ -100,7 +102,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 			-- Build the program.
 	 		timeBuild 
 	 		 $ systemTee False 
-				("bin/ddc-alpha"
+				(ddcaExe
 				++ " -v -make "	  ++ srcDS
 				++ " -o "	  ++ mainBin
 				++ " -outputdir " ++ buildDir
@@ -113,7 +115,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 		| otherwise
 		= do	timeBuild
 	 		 $ systemTee False
-				("bin/ddc-alpha"
+				(ddcaExe
 				++ " -c "	  ++ srcDS
 				++ " -outputdir " ++ buildDir
 				++ " " 		  ++ intercalate " " optionsDDC

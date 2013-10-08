@@ -60,7 +60,7 @@ build (Spec fileRef fileOut fileDiff)
 	-- Run the binary.
 	(_code, strOut, _strErr)
 	 <- systemTee False 
-	 	(diffExe ++ " " ++ fileRef ++ " " ++ fileOut)
+	 	(diffExe ++ " --ignore-space-change " ++ fileRef ++ " " ++ fileOut)
 		""
 	
 	-- Write its output to file.
