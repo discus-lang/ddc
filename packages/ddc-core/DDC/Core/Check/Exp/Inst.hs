@@ -73,6 +73,39 @@ inst table !a ctx0 tL tR
  = do   let !ctx1       = updateExists [] iL tR ctx0
         return ctx1
 
+ -- InstLArr
+ --  Left is an existential, right is a function arrow.
+ | Just iL              <- takeExists tL
+ , Just (tR1, tR2)      <- takeTFun tR
+ = do
+        -- Make new existentials to match the function type and parameter.
+        iL1      <- newExists
+        let tL1  =  typeOfExists iL1 
+
+        iL2      <- newExists
+        let tL2  =  typeOfExists iL2
+
+        -- Update the context with the new constraint.
+        let ctx1 = updateExists [iL2, iL1] iL (tFun tL1 tL2) ctx0
+
+        -- Instantiate the parameter type.
+        ctx2     <- inst table a ctx1 tR1 tL1
+
+        -- Substitute into tR2
+        let tR2' =  applyContext ctx2 tR2
+
+        -- Instantiate the return type.
+        ctx3     <- inst table a ctx2 tL2 tR2'
+
+        --trace (renderIndent $ vcat
+        --        [ text "* InstLArr"
+        --        , text "  iL = " <> ppr iL
+        --        , text "  tR = " <> ppr tR
+        --        , indent 2 $ ppr ctx3 ]) $ return ()
+
+        return ctx3
+
+
  -- InstRArr
  --  Left is an function arrow, and right is an existential.
  | Just (tL1, tL2)      <- takeTFun tL
