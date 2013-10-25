@@ -79,8 +79,7 @@ data Error a n
         | ErrorAppNotFun
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
-        , errorNotFunType       :: Type n
-        , errorArgType          :: Type n }
+        , errorNotFunType       :: Type n } 
 
 
         -- Lambda -----------------------------------------

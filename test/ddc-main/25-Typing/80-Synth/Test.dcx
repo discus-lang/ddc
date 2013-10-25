@@ -5,3 +5,11 @@
 
 -- Check order of existential vars.
 :synth \x. \y. \z. y
+
+
+-- Function application.
+:synth \f. \x. f x
+
+
+-- Multiple use of argument.
+:synth \f. \x. f x x

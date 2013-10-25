@@ -12,7 +12,7 @@ checkSub table !a ctx0 xx tExpect
          <- tableCheckExp table table ctx0 xx Synth
 
         -- Substitute context into synthesised and expected types.
-        let tExpect'    = applyContext ctx0 tExpect
+        let tExpect'    = applyContext ctx0 tExpect                     -- TODO: wrong contexts.
         let tSynth'     = applyContext ctx0 tSynth
 
         ctx2    <- makeSub table a ctx1 tSynth' tExpect'
@@ -107,7 +107,7 @@ inst table !a ctx0 tL tR
 
  | otherwise
  = error $ renderIndent $ vcat
-        [ text "inst: blerk"
+        [ text "inst: not finished"
         , text "  tL: " <> ppr tL
         , text "  tR: " <> ppr tR ]
 

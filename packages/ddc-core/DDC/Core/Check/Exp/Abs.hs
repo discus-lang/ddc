@@ -6,6 +6,7 @@ import DDC.Core.Check.Exp.Inst
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
+import Debug.Trace
 
 
 -- Dispatch -------------------------------------------------------------------
@@ -237,11 +238,11 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
         
-        --trace (renderIndent $ vcat
-        --        [ text "Lam Check" <> ppr tXX
-        --        , ppr ctx2
-        --        , text " t    = " <> ppr tResult
-        --        , text " t'   = " <> ppr tResult' ]) $ return ()
+        trace (renderIndent $ vcat
+                [ text "Lam Check" <> ppr tXX
+                , ppr ctx2
+                , text " t    = " <> ppr tResult
+                , text " t'   = " <> ppr tResult' ]) $ return ()
 
         returnX a
                 (\z -> XLam z b1' x2')

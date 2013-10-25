@@ -80,11 +80,10 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
          
-        ErrorAppNotFun a xx t1 t2
+        ErrorAppNotFun a xx t1
          -> vcat [ ppr a
                  , text "Cannot apply non-function"
                  , text "              of type: "       <> ppr t1
-                 , text "  to argument of type: "       <> ppr t2 
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
