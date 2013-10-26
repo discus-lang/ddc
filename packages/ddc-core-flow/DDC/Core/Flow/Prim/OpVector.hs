@@ -25,7 +25,7 @@ instance Pretty OpVector where
 
         OpVectorFilter            -> text "vfilter"               <> text "#"
 
-        OpVectorFoldIndex         -> text "vfoldIndex"            <> text "#"
+        OpVectorReduce            -> text "vreduce"               <> text "#"
 
         OpVectorGenerate          -> text "vgenerate"             <> text "#"
         OpVectorLength            -> text "vlength"               <> text "#"
@@ -44,7 +44,7 @@ readOpVector str
         = case str of
                 "vmap#"         -> Just $ OpVectorMap   1
                 "vfilter#"      -> Just $ OpVectorFilter
-                "vfoldIndex#"   -> Just $ OpVectorFoldIndex
+                "vreduce#"      -> Just $ OpVectorReduce
                 "vgenerate#"    -> Just $ OpVectorGenerate
                 "vlength#"      -> Just $ OpVectorLength
                 _               -> Nothing
@@ -99,13 +99,13 @@ takeTypeOpVector op
                 `tFun` (tBool `tFun` tA)
                 `tFun` tVector tA
 
-        -- foldIndex :: [a b: Data]
-        --           .  (Nat# -> a -> b -> a) -> a -> Vector b -> a
-        OpVectorFoldIndex
-         -> Just $ tForalls [kData, kData] $ \[tA, tB]
-                 ->     (tNat `tFun` tA `tFun` tB `tFun` tA)
+        -- reduce#   :: [a: Data]
+        --           .  (a -> a -> a) -> a -> Vector a -> a
+        OpVectorReduce
+         -> Just $ tForalls [kData] $ \[tA]
+                 ->     (tA `tFun` tA `tFun` tA)
                  `tFun` tA
-                 `tFun` tVector tB
+                 `tFun` tVector tA
                  `tFun` tA
 
         -- Vector creation and filling ----------

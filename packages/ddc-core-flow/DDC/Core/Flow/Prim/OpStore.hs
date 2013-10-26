@@ -96,7 +96,7 @@ typeOpStore :: OpStore -> Type Name
 typeOpStore op
  = case op of
         -- Assignables ----------------
-        -- new#        :: [a : Data]. a -> Array# a
+        -- new#        :: [a : Data]. a -> Ref# a
         OpStoreNew
          -> tForall kData $ \tA -> tA `tFun` tRef tA
 

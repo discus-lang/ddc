@@ -257,8 +257,8 @@ data OpVector
         -- | Filter a vector according to a predicate.
         | OpVectorFilter
 
-        -- | Fold where the worker also takes the current index into the series.
-        | OpVectorFoldIndex
+        -- | Associative fold
+        | OpVectorReduce
 
         -- | Create a new vector from an index function.
         | OpVectorGenerate
