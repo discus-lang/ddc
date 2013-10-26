@@ -387,11 +387,15 @@ pipeFlow !mm !pp
                                         (Forward.Config isFloatable False)
                                         mm_namified
 
+                mm_rate
+                 = case C.checkModule (C.configOfProfile Flow.profile) mm_float of
                 -- TODO do something with the errors/warnings
-                (mm_rate, _errors)
-                                = Flow.seriesOfVectorModule mm_float
-
+                     Left _    -> mm
+                     Right mm' ->
+                       let mm_stripped = C.reannotate (const ()) mm'
+                       in  fst $ Flow.seriesOfVectorModule mm_stripped
             in  pipeCores mm_rate pipes
+
 
         PipeFlowLower !config !pipes 
          -> {-# SCC "PipeFlowLower" #-}

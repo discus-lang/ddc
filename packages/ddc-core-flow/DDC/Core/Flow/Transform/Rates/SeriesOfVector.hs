@@ -40,7 +40,9 @@ seriesOfVectorModule mm
                   $ xLets lets' xx
 
 
-   in  trace ("MODULE:" ++ show (ppr body')) (mm { moduleBody = body' }, errs)
+   in  trace ("ORIGINAL:"++ show (ppr $ moduleBody mm))
+     $ trace ("MODULE:" ++ show (ppr body'))
+       (mm { moduleBody = body' }, errs)
        
 
 
@@ -93,6 +95,7 @@ seriesOfVectorFunction fun
 
         binds'    <- orderBinds           binds loops
 
+        True <- trace ("TYMAP:" ++ show tymap) return True
         True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) return True
 
         let outputs = map snd loops
@@ -237,6 +240,7 @@ construct lams loops equivs tys xx
  where
   convert (binds, outputs) body
    = convertToSeries binds outputs equivs tys body
+
 
 -- TODO still missing the join of procs,
 -- split output procs into separate functions
