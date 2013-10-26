@@ -81,6 +81,6 @@ next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
 vmap# :: [^ ^ : Data].(^1 -> ^0) -> Vector# ^1 -> Vector# ^0
 vmap2# :: [^ ^ ^ : Data].(^2 -> ^1 -> ^0) -> Vector# ^2 -> Vector# ^1 -> Vector# ^0
 vfilter# :: [^ : Data].Vector# ^0 -> (Bool# -> ^0) -> Vector# ^0
-vfoldIndex# :: [^ ^ : Data].(Nat# -> ^1 -> ^0 -> ^1) -> ^1 -> Vector# ^0 -> ^1
+vreduce# :: [^ : Data].(^0 -> ^0 -> ^0) -> ^0 -> Vector# ^0 -> ^0
 vgenerate# :: [^ : Data].Nat# -> (Nat# -> ^0) -> Vector# ^0
 vlength# :: [^ : Data].Vector# ^0 -> Nat#

@@ -12,12 +12,14 @@ import Control.Monad
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
+
 -- | Constraint information
 -- An equal can have multiple - eg map3
 -- Filtered only has its source input
 data Constraint
  = ConEqual     [Name]
  | ConFiltered   Name
+ deriving (Eq,Show)
 
 type ConstraintMap = Map.Map Name Constraint
 type EquivClass    = [Set.Set Name]
@@ -58,7 +60,7 @@ checkBindConstraints binds
    -- Check for ill-formed constraints:
    --      Filter "a <= a" is bad, as restricts to a=a
    --      Filter "a <= b" and "a <= c" is bad because 'a' mentioned twice in lhs
-   in  checkFilters filts >> return (constrs, equivs)
+   in   checkFilters filts >> return (constrs, equivs)
 
 
 -- | Squash constraints into equivalence classes
@@ -123,39 +125,46 @@ getConstraints lets
  = foldl go Map.empty lets
  where
   go m (n,x)
-   | Just c <- getConstraint x 
-   = Map.insert n c m
+   | Just (n',c) <- getConstraint n x 
+   = Map.insert n' c m
    | otherwise
    = m
 
-getConstraint :: ExpF -> Maybe Constraint
-getConstraint xx
+getConstraint :: Name -> ExpF -> Maybe (Name, Constraint)
+getConstraint n xx
  | Just (f, args)                   <- takeXApps xx
  , XVar (UPrim (NameOpVector ov) _) <- f
  = case ov of
-   OpVectorMap n
+   OpVectorMap i
     -- Args:
     -- map1 :: [a b   : *]. (a -> b)      -> Vector a -> Vector b
     -- (drop 3)
     -- map2 :: [a b c : *]. (a -> b -> c) -> Vector a -> Vector b -> Vector c
     -- (drop 4)
-    | vecs         <- drop (n+2) args
+    | vecs         <- drop (i+2) args
     -- Must be fully applied
-    , length vecs  == n
+    , length vecs  == i
     , names        <- getNames vecs
     -- Each name must also be a bound variable
-    , length names == n
-    -> Just (ConEqual names)
+    , length names == i
+    -> Just (n, ConEqual names)
 
    OpVectorFilter
     | [_tyA, _p, XVar (UName vec)] <- args
-    -> Just (ConFiltered vec)
+    -> Just (n, ConFiltered vec)
 
    OpVectorGenerate
    -- Not really sure about this
-    -> Nothing
+    -> Just (n, ConEqual [])
 
-   -- foldIndex and length produce no constraints
+   OpVectorReduce
+    | [_tyA, _f, _z, XVar (UName vec)] <- args
+    -> Just (n, ConEqual [vec])
+
+   OpVectorLength
+    | [_tyA, XVar (UName vec)] <- args
+    -> Just (n, ConEqual [vec])
+
    _
     -> Nothing
 

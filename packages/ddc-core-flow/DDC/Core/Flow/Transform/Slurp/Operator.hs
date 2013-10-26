@@ -1,7 +1,8 @@
 
 module DDC.Core.Flow.Transform.Slurp.Operator
         ( slurpOperator
-        , isSeriesOperator)
+        , isSeriesOperator
+        , isVectorOperator)
 where
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Exp
@@ -125,6 +126,17 @@ isSeriesOperator xx
         Just (NameOpSeries OpSeriesFill)      -> True
         Just (NameOpSeries OpSeriesGather)    -> True
         Just (NameOpSeries OpSeriesScatter)   -> True
+        _                                     -> False
+
+
+-- | Check if some binding is a vector operator.
+isVectorOperator 
+        :: Exp () Name 
+        -> Bool
+
+isVectorOperator xx
+ = case liftM fst $ takeXPrimApps xx of
+        Just (NameOpVector _)                 -> True
         _                                     -> False
 
 

@@ -7,8 +7,9 @@ import DDC.Core.Collect.Free.Simple ()
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
-import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Constraints
+import DDC.Core.Flow.Transform.Rates.Fail
+import DDC.Core.Flow.Transform.Rates.Graph
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
@@ -16,10 +17,13 @@ import qualified DDC.Type.Env           as Env
 
 import           Control.Applicative
 import           Control.Monad
-import           Data.List              (nub)
+import           Data.List              (intersect, nub)
 import qualified Data.Map               as Map
 import           Data.Maybe             (catMaybes)
 import qualified Data.Set               as Set
+
+import DDC.Core.Pretty (ppr)
+import Debug.Trace
 
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
@@ -35,7 +39,9 @@ seriesOfVectorModule mm
        body'      = annotate ()
                   $ xLets lets' xx
 
-   in  (mm { moduleBody = body' }, errs)
+
+   in  trace ("MODULE:" ++ show (ppr body')) (mm { moduleBody = body' }, errs)
+       
 
 
 seriesOfVectorLets :: LetsF -> (LetsF, [(Name,Fail)])
@@ -43,6 +49,11 @@ seriesOfVectorLets ll
  | LLet b@(BName n _) x <- ll
  , (x',errs)  <- seriesOfVectorFunction x
  = (LLet b x', map (\f -> (n,f)) errs)
+
+ | LRec bxs             <- ll
+ , (bs,xs)              <- unzip bxs
+ , (xs',_errs)          <- unzip $ map seriesOfVectorFunction xs
+ = (LRec (bs `zip` xs'), []) -- TODO errors
 
  | otherwise
  = (ll, [])
@@ -53,11 +64,12 @@ seriesOfVectorFunction :: ExpF -> (ExpF, [Fail])
 seriesOfVectorFunction fun
  = run $ do
         -- Peel off the lambdas
-        let (_lams, body)  = takeXLamFlags_safe fun
+        let (lams, body)   = takeXLamFlags_safe fun
         -- TODO: Check that it's a-normal form
-            (lets, _xx)    = splitXLets         body
+            (lets, xx)     = splitXLets         body
         -- Split into name and values and warn for recursive bindings
         binds             <- takeLets           lets
+        let tymap          = takeTypes          lets
 
         -- TODO check that binds are only vector primitives,
         -- OR   if not vector primitives, do not refer to bound vectors
@@ -67,11 +79,25 @@ seriesOfVectorFunction fun
         when (length names /= length (nub names)) $
           warn FailNamesNotUnique
 
-        checkBindConstraints   binds
+        (_constrs, equivs)
+                  <- checkBindConstraints binds
 
-        _graph <- graphOfBinds binds
+        let graph  = graphOfBinds         binds
 
-        return fun
+        let rets   = catMaybes
+                   $ map takeNameOfBound
+                   $ Set.toList
+                   $ freeX Env.empty xx
+        
+        loops     <- schedule             graph equivs rets
+
+        binds'    <- orderBinds           binds loops
+
+        True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) return True
+
+        let outputs = map snd loops
+
+        return $ construct lams (binds' `zip` outputs) equivs tymap xx
 
 -- | Peel the lambdas off, or const if there are none
 takeXLamFlags_safe x
@@ -95,47 +121,245 @@ takeLets lets
 
   w err                    = warn err >> return []
 
-
-
--- | Graph for function
--- Each node is a binding, edges are dependencies, and the bool is whether the node's output can be fused or contracted.
--- For example, filter and map dependencies can be contracted,
--- but a fold cannot as it must consume the entire stream before producing output.
---
-
-type Graph = Map.Map Name (Set.Set Name, Bool)
-
-graphOfBinds :: [(Name,ExpF)] -> LogFailures Graph
-graphOfBinds binds
- = return
- $ Map.fromList
- $ map gen
- $ binds
+-- | Split into name and values and warn for recursive bindings
+takeTypes :: [LetsF] -> Map.Map Name TypeF
+takeTypes lets
+ = Map.fromList $ concat $ map get lets
  where
-  gen (k, xx)
-   = let free = Set.fromList
-              $ catMaybes
-              $ map takeNameOfBound
-              $ Set.toList
-              $ freeX Env.empty xx
-         refs = free `Set.intersection` names
-     in  (k, (refs, contractible xx))
+  get (LLet (BName n t) _) = [(n,t)]
+  get _                    = []
 
-  names = Set.fromList
-        $ map fst binds
 
-  contractible xx
-   | Just (f, _)                      <- takeXApps xx
-   , XVar (UPrim (NameOpVector ov) _) <- f
-   = case ov of
-     OpVectorFoldIndex
-      -> False
-     -- TODO length of `concrete rate' is known before iteration, so should be contractible.
-     OpVectorLength
-      -> False
-     _
-      -> True
+
+type Loop = [([Name], [Name])]
+
+schedule :: Graph -> EquivClass -> [Name] -> LogFailures Loop
+schedule graph equivs rets
+ = let type_order    = map (canonName equivs . Set.findMin) equivs
+       -- minimumBy length $ map scheduleTypes $ permutations type_order
+       (wts, graph') = scheduleTypes graph equivs type_order
+       loops         = scheduleAll (map snd wts) graph'
+       -- Use the original graph to find vars that cross loop boundaries
+       outputs       = scheduleOutputs loops graph rets
+   in  trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) return $ zip loops outputs
+
+scheduleTypes :: Graph -> EquivClass -> [Name] -> ([(Name, Map.Map Name Int)], Graph)
+scheduleTypes graph types type_order
+ = foldl go ([],graph) type_order
+ where
+  go (w,g) ty
+   = let w' = typedTraversal g types ty
+         g' = mergeWeights   g w'
+     in  ((ty,w') : w, g')
+
+
+scheduleAll :: [Map.Map Name Int] -> Graph -> [[Name]]
+scheduleAll weights graph
+ = loops
+ where
+  weights' = map invertMap  weights
+  topo     = graphTopoOrder graph
+  loops    = map getNames topo
+
+  getNames n
+   = find n (weights `zip` weights')
+
+  find _ []
+   = []
+
+  find n ((w,w') : rest)
+   | Just i  <- n `Map.lookup` w
+   , Just ns <- i `Map.lookup` w'
+   = ns
 
    | otherwise
-   = True
+   = find n rest
 
+-- Find any variables that cross loop boundaries - they must be reified
+scheduleOutputs :: [[Name]] -> Graph -> [Name] -> [[Name]]
+scheduleOutputs loops graph rets
+ = map output loops
+ where
+  output ns
+   = graphOuts ns ++ filter (`elem` ns) rets 
+
+  graphOuts ns
+   = concatMap (\(k,es) -> if   k `elem` ns
+                           then []
+                           else ns `intersect` map fst es)
+   $ Map.toList graph
+
+
+typedTraversal :: Graph -> EquivClass -> Name -> Map.Map Name Int
+typedTraversal graph types current_type
+ = restrictTypes types current_type
+ $ traversal graph w
+ where
+  w  u v = if w' u v then 1 else 0
+
+  w' (u, fusible) v
+   | canonName types u == current_type
+   = canonName types v /= current_type || fusible
+
+   | otherwise
+   = False
+
+
+restrictTypes :: EquivClass -> Name -> Map.Map Name Int -> Map.Map Name Int
+restrictTypes types current_type weights
+ = Map.filterWithKey restrict weights
+ where
+  restrict n _
+   = canonName types n == current_type
+
+
+orderBinds :: [(Name,ExpF)] -> Loop -> LogFailures [[(Name,ExpF)]]
+orderBinds binds loops
+ = let bindsM = Map.fromList binds
+       order  = map fst loops
+       get k  | Just v <- Map.lookup k bindsM
+              = [(k,v)]
+              | otherwise
+              = []
+   in  return $ map (\o -> concatMap get o) order
+
+
+construct
+        :: [(Bool, BindF)]
+        -> [([(Name, ExpF)], [Name])]
+        -> EquivClass
+        -> Map.Map Name TypeF
+        -> ExpF
+        -> ExpF
+construct lams loops equivs tys xx
+ = let body   = foldr convert xx loops
+   in  (trace $ "#LOOPS, loop binds" ++ show (length loops, map (length . fst) loops)) makeXLamFlags lams body
+ where
+  convert (binds, outputs) body
+   = convertToSeries binds outputs equivs tys body
+
+-- TODO still missing the join of procs,
+-- split output procs into separate functions
+convertToSeries :: [(Name,ExpF)] -> [Name] -> EquivClass -> Map.Map Name TypeF -> ExpF -> ExpF
+convertToSeries binds outputs equivs tys xx
+ = foldr wrap filled binds
+ where
+  wrap (n,x) body
+   = wrapSeriesX equivs n (tys Map.! n) x body
+
+  -- fill vectors and read references
+  filled
+   = foldr fill xx binds
+
+  fill (n,x) body
+   | n `elem` outputs
+   = fillSeriesX equivs n (tys Map.! n) x body
+   | otherwise
+   = body
+
+
+fillSeriesX :: EquivClass -> Name -> TypeF -> ExpF -> ExpF -> ExpF
+fillSeriesX equivs name ty xx wrap
+ | Just (f, _args)                       <- takeXApps xx
+ , XVar (UPrim (NameOpVector ov) _)     <- f
+ = case ov of
+   -- any folds MUST be known as outputs, so this is safe
+   OpVectorReduce
+    -> XLet (LLet (BName name ty) (xRead ty (XVar $ UName $ NameVarMod name "ref")))
+             wrap
+   _
+    | [_vec, tyR]                       <- takeTApps ty
+    -> let k  = canonName equivs name
+           s  = NameVarMod name "s"
+           op = xVarOpSeries OpSeriesFill
+       in  XLet (LLet (BNone tProcess)
+                 $ xApps op [XVar $ UName k, XType tyR, XVar $ UName name, XVar $ UName s])
+                 wrap
+   _
+    ->
+     wrap
+ | otherwise
+ = wrap
+
+
+wrapSeriesX :: EquivClass -> Name -> TypeF -> ExpF -> ExpF -> ExpF
+wrapSeriesX equivs name ty xx wrap
+ | Just (op, args)                      <- takeXApps xx
+ , XVar (UPrim (NameOpVector ov) _)     <- op
+ = case ov of
+   OpVectorReduce
+    | [_tA, f, z, vA]   <- args
+    , XVar (UName nvA)  <- vA
+    , Just kA           <- klok nvA
+    -> xLets [ LLet (BName (NameVarMod name "ref") (tRef ty)) (xNew ty z)
+             , LLet (BName (NameVarMod name "proc") tProcess)
+                   $ xApps (xVarOpSeries OpSeriesReduce)
+                           [kA, XType ty, f, modNameX "s" vA] ]
+             wrap
+
+   OpVectorMap n
+    | (tys, f : rest) <- splitAt (n+1) args
+    , length rest     == n
+    , Just kT         <- klok name
+    , Just tySer      <- tyS
+    , rest'           <- map (modNameX "s") rest
+    -> bind  (NameVarMod name "s") tySer
+     $ xApps (xVarOpSeries (OpSeriesMap n))
+             ([kT] ++ tys ++ [f] ++ rest')
+
+   OpVectorFilter
+    -> xx
+   _
+    -> xx
+ | otherwise
+ = xx
+
+ where
+  bind n t x
+   = XLet (LLet (BName n t) x) wrap
+
+  klok n
+   | n'      <- canonName equivs n
+   , kN      <- NameVarMod n' "k"
+   = Just $ XType $ TVar $ UName kN
+   | otherwise
+   = Nothing
+
+  tyS
+   | [_vec, tyR]        <- takeTApps ty
+   , Just (XType kS)    <- klok name
+   = Just $ tSeries kS tyR
+   | otherwise
+   = Nothing
+
+
+--  tySeries
+--   | Vector n
+
+xVarOpSeries n = XVar (UPrim (NameOpSeries n) (typeOpSeries n))
+
+modNameX :: String -> ExpF -> ExpF
+modNameX s xx
+ = case xx of
+    XVar (UName n)
+     -> XVar (UName (NameVarMod n s))
+    _
+     -> xx
+
+{-
+
+\as,bs...
+cs = map as
+ds = filter as
+n  = fold ds
+es = map3 bs cs
+return es
+
+==>
+schedule graph equivs [es]
+==>
+
+[ [ds, n]
+, [cs, es] ]
+
+-}

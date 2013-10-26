@@ -1,7 +1,8 @@
 module DDC.Core.Flow.Transform.Slurp
         ( slurpProcesses
         , slurpOperator
-        , isSeriesOperator)
+        , isSeriesOperator
+        , isVectorOperator)
 where
 import DDC.Core.Flow.Transform.Slurp.Alloc
 import DDC.Core.Flow.Transform.Slurp.Operator
