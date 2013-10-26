@@ -24,6 +24,7 @@ import qualified DDC.Core.Flow.Profile                  as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
+import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 
 import qualified DDC.Core.Lite                          as Lite
 
@@ -280,6 +281,11 @@ data PipeFlow a where
         :: [PipeCore () Flow.Name] 
         -> PipeFlow ()
 
+  -- Run rate inference to transform vector operations into loops of series expressions.
+  PipeFlowRate
+        :: [PipeCore () Flow.Name] 
+        -> PipeFlow ()
+
   -- Run the lowering transform on a module.
   --  It needs to be already prepped and have full type annotations.
   --  Lowering it kills the annotations.
@@ -348,6 +354,44 @@ pipeFlow !mm !pp
                                         mm_namified
 
             in  pipeCores mm_float pipes
+
+        PipeFlowRate  !pipes
+         -> {-# SCC "PipeFlowRate"   #-}
+            let 
+                -- Eta-expand so all workers have explicit parameter names.
+                mm_eta          = C.result $ Eta.etaModule Flow.profile
+                                        (Eta.configZero { Eta.configExpand = True})
+                                        mm
+
+                -- Snip program to expose intermediate bindings.
+                mm_snip         = Flatten.flatten 
+                                $ Snip.snip 
+                                        (Snip.configZero { Snip.configSnipLetBody = True })
+                                        mm_eta
+
+                -- The floater needs bindings to be fully named.
+                namifierT       = C.makeNamifier Flow.freshT Env.empty
+                namifierX       = C.makeNamifier Flow.freshX Env.empty
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
+
+                -- Float worker functions and initializers into their use sites, 
+                -- leaving only flow operators at the top-level.
+                isFloatable lts
+                 = case lts of
+                    C.LLet (C.BName _ _) x
+                      |  Flow.isVectorOperator (C.deannotate (const Nothing) x)
+                      -> Forward.FloatDeny
+                    _ -> Forward.FloatForce
+
+                mm_float        = C.result $ Forward.forwardModule Flow.profile 
+                                        (Forward.Config isFloatable False)
+                                        mm_namified
+
+                -- TODO do something with the errors/warnings
+                (mm_rate, _errors)
+                                = Flow.seriesOfVectorModule mm_float
+
+            in  pipeCores mm_rate pipes
 
         PipeFlowLower !config !pipes 
          -> {-# SCC "PipeFlowLower" #-}

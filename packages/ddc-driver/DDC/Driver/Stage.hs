@@ -13,6 +13,7 @@ module DDC.Driver.Stage
           -- * Flow stages
         , stageFlowLoad
         , stageFlowPrep
+        , stageFlowRate
         , stageFlowLower
         , stageFlowWind
 
@@ -136,6 +137,20 @@ stageFlowPrep config source pipesFlow
      ( PipeCoreOutput (dump config source "dump.flow-prep.dcf")
      : pipesFlow)]]
  
+-- | Perform rate inference to transform vector operations to series
+stageFlowRate
+        :: Config -> Source
+        -> [PipeCore () Flow.Name]
+        ->  PipeCore () Flow.Name
+
+stageFlowRate config source pipesFlow
+ = PipeCoreReannotate   (const ())
+ [ PipeCoreAsFlow
+   [ PipeFlowRate
+     ( PipeCoreOutput (dump config source "dump.flow-rate.dcf")
+     : pipesFlow)]]
+ 
+
 
 -------------------------------------------------------------------------------
 -- | Lower a Core Flow module.

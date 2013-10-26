@@ -25,6 +25,7 @@ import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 
 import DDC.Driver.Command.Flow.Prep
+import DDC.Driver.Command.Flow.Rate
 import DDC.Driver.Command.Flow.Lower
 import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Wind
@@ -77,6 +78,7 @@ data Command
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
 
         -- Core Flow passes 
+        | CommandFlowRate               -- ^ Perform rate inference
         | CommandFlowPrep               -- ^ Prepare a Core Flow module for lowering.
         | CommandFlowLower Flow.Config  -- ^ Prepare and Lower a Core Flow module.
         | CommandFlowConcretize         -- ^ Convert operations on type level rates to concrete ones.
@@ -133,6 +135,7 @@ commands
         , (":to-llvm",          CommandToLlvm) 
 
         -- Core Flow passes
+        , (":flow-rate",         CommandFlowRate)
         , (":flow-prep",         CommandFlowPrep)
         , (":flow-lower-kernel", CommandFlowLower Flow.defaultConfigKernel)
         , (":flow-lower-vector", CommandFlowLower Flow.defaultConfigVector)
@@ -298,6 +301,11 @@ handleCmd1 state cmd source line
 
 
         -- Core Flow passes ----------------------
+        CommandFlowRate
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdFlowRate config source line
+                return state
+
         CommandFlowPrep
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdFlowPrep config source line
