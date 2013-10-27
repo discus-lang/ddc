@@ -71,7 +71,7 @@ seriesOfVectorFunction fun
             (lets, xx)     = splitXLets         body
         -- Split into name and values and warn for recursive bindings
         binds             <- takeLets           lets
-        let tymap          = takeTypes          lets
+        let tymap          = takeTypes          (concatMap valwitBindsOfLets lets ++ map snd lams)
 
         -- TODO check that binds are only vector primitives,
         -- OR   if not vector primitives, do not refer to bound vectors
@@ -84,7 +84,9 @@ seriesOfVectorFunction fun
         (_constrs, equivs)
                   <- checkBindConstraints binds
 
-        let graph  = graphOfBinds         binds
+        let extras = catMaybes
+                   $ map (takeNameOfBind . snd) lams
+        let graph  = graphOfBinds         binds extras
 
         let rets   = catMaybes
                    $ map takeNameOfBound
@@ -98,9 +100,10 @@ seriesOfVectorFunction fun
         True <- trace ("TYMAP:" ++ show tymap) return True
         True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) return True
 
-        let outputs = map snd loops
+        let outputs = map lOutputs loops
+        let inputs  = map lInputs  loops
 
-        return $ construct lams (binds' `zip` outputs) equivs tymap xx
+        return $ construct lams (zip3 binds' outputs inputs) equivs tymap xx
 
 -- | Peel the lambdas off, or const if there are none
 takeXLamFlags_safe x
@@ -125,18 +128,22 @@ takeLets lets
   w err                    = warn err >> return []
 
 -- | Split into name and values and warn for recursive bindings
-takeTypes :: [LetsF] -> Map.Map Name TypeF
-takeTypes lets
- = Map.fromList $ concat $ map get lets
+takeTypes :: [Bind Name] -> Map.Map Name TypeF
+takeTypes binds
+ = Map.fromList $ concatMap get binds
  where
-  get (LLet (BName n t) _) = [(n,t)]
-  get _                    = []
+  get (BName n t) = [(n,t)]
+  get _           = []
 
 
+data Loop
+ = Loop 
+ { lBindings :: [Name]
+ , lOutputs  :: [Name]
+ , lInputs   :: [Name]
+ } deriving (Eq,Show)
 
-type Loop = [([Name], [Name])]
-
-schedule :: Graph -> EquivClass -> [Name] -> LogFailures Loop
+schedule :: Graph -> EquivClass -> [Name] -> LogFailures [Loop]
 schedule graph equivs rets
  = let type_order    = map (canonName equivs . Set.findMin) equivs
        -- minimumBy length $ map scheduleTypes $ permutations type_order
@@ -144,7 +151,8 @@ schedule graph equivs rets
        loops         = scheduleAll (map snd wts) graph'
        -- Use the original graph to find vars that cross loop boundaries
        outputs       = scheduleOutputs loops graph rets
-   in  trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) return $ zip loops outputs
+       inputs        = scheduleInputs  loops graph
+   in  trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) return $ zipWith3 Loop loops outputs inputs
 
 scheduleTypes :: Graph -> EquivClass -> [Name] -> ([(Name, Map.Map Name Int)], Graph)
 scheduleTypes graph types type_order
@@ -192,6 +200,17 @@ scheduleOutputs loops graph rets
                            else ns `intersect` map fst es)
    $ Map.toList graph
 
+-- Find any variables that cross loop boundaries - they must be reified
+scheduleInputs  :: [[Name]] -> Graph -> [[Name]]
+scheduleInputs  loops graph
+ = map input loops
+ where
+  input ns
+   = filter (\n -> not (n `elem` ns))
+   $ graphIns ns
+
+  graphIns ns
+   = concatMap (map fst . mlookup "graphIns" graph) ns
 
 typedTraversal :: Graph -> EquivClass -> Name -> Map.Map Name Int
 typedTraversal graph types current_type
@@ -216,10 +235,10 @@ restrictTypes types current_type weights
    = canonName types n == current_type
 
 
-orderBinds :: [(Name,ExpF)] -> Loop -> LogFailures [[(Name,ExpF)]]
+orderBinds :: [(Name,ExpF)] -> [Loop] -> LogFailures [[(Name,ExpF)]]
 orderBinds binds loops
  = let bindsM = Map.fromList binds
-       order  = map fst loops
+       order  = map lBindings loops
        get k  | Just v <- Map.lookup k bindsM
               = [(k,v)]
               | otherwise
@@ -229,27 +248,51 @@ orderBinds binds loops
 
 construct
         :: [(Bool, BindF)]
-        -> [([(Name, ExpF)], [Name])]
+        -> [([(Name, ExpF)], [Name], [Name])]
         -> EquivClass
         -> Map.Map Name TypeF
         -> ExpF
         -> ExpF
 construct lams loops equivs tys xx
  = let body   = foldr convert xx loops
-   in  (trace $ "#LOOPS, loop binds" ++ show (length loops, map (length . fst) loops)) makeXLamFlags lams body
+   in  makeXLamFlags lams body
  where
-  convert (binds, outputs) body
-   = convertToSeries binds outputs equivs tys body
+  convert (binds, outputs, inputs) body
+   = convertToSeries binds outputs inputs equivs tys body
 
 
 -- TODO still missing the join of procs,
 -- split output procs into separate functions
-convertToSeries :: [(Name,ExpF)] -> [Name] -> EquivClass -> Map.Map Name TypeF -> ExpF -> ExpF
-convertToSeries binds outputs equivs tys xx
- = foldr wrap filled binds
+convertToSeries :: [(Name,ExpF)] -> [Name] -> [Name] -> EquivClass -> Map.Map Name TypeF -> ExpF -> ExpF
+convertToSeries binds outputs inputs equivs tys xx
+ = kloked
  where
+  kloked
+   = Map.foldWithKey klokn wrapped klokMap
+
+  klokn :: Name -> [(Name,TypeF)] -> ExpF -> ExpF
+  klokn cn vecs body
+   = let kN     = NameVarMod cn "k"
+         vFlags = map (\(n,t) -> (False, BName (NameVarMod n "s") (tSeries (TVar (UName kN)) t))) vecs
+     in  xApps (xVarOpSeries (OpSeriesRunSeries $ length vecs))
+               (map (XType . snd) vecs
+               ++ [(makeXLamFlags ([(True, BName kN kRate)] ++ vFlags) body)])
+
+  klokMap :: Map.Map Name [(Name,TypeF)]
+  klokMap = foldl collectKloks Map.empty inputs
+  collectKloks m inp
+   | tyI <- mlookup "collectKloks" tys inp
+   , Just (_tcVec, [tyA]) <- takeTyConApps tyI
+   , tyI == tVector tyA
+   = Map.insertWith (++) (canonName equivs inp) [(inp, tyA)] m
+   | otherwise
+   = m
+
+  wrapped 
+   = foldr wrap filled binds
+
   wrap (n,x) body
-   = wrapSeriesX equivs n (tys Map.! n) x body
+   = wrapSeriesX equivs n (mlookup "wrap" tys n) x body
 
   -- fill vectors and read references
   filled
@@ -257,7 +300,7 @@ convertToSeries binds outputs equivs tys xx
 
   fill (n,x) body
    | n `elem` outputs
-   = fillSeriesX equivs n (tys Map.! n) x body
+   = fillSeriesX equivs n (mlookup "fill" tys n) x body
    | otherwise
    = body
 
@@ -298,7 +341,7 @@ wrapSeriesX equivs name ty xx wrap
     -> xLets [ LLet (BName (NameVarMod name "ref") (tRef ty)) (xNew ty z)
              , LLet (BName (NameVarMod name "proc") tProcess)
                    $ xApps (xVarOpSeries OpSeriesReduce)
-                           [kA, XType ty, f, modNameX "s" vA] ]
+                           [kA, XType ty, XVar (UName (NameVarMod name "ref")), f, z, modNameX "s" vA] ]
              wrap
 
    OpVectorMap n

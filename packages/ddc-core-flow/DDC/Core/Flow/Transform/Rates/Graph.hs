@@ -5,7 +5,8 @@ module DDC.Core.Flow.Transform.Rates.Graph
         , graphTopoOrder 
         , mergeWeights
         , traversal
-        , invertMap )
+        , invertMap
+        , mlookup )
 where
 import DDC.Core.Collect.Free
 import DDC.Core.Collect.Free.Simple ()
@@ -28,15 +29,18 @@ import qualified Data.Set               as Set
 type Edge  = (Name, Bool)
 type Graph = Map.Map Name [Edge]
 
-graphOfBinds :: [(Name,ExpF)] -> Graph
-graphOfBinds binds
+graphOfBinds :: [(Name,ExpF)] -> [Name] -> Graph
+graphOfBinds binds extra_names
  = Map.map mkEdges graph1
  where
   mkEdges (refs, _fusible)
    = map getFusible refs
   
   getFusible r
-   = (r, snd $ graph1 Map.! r)
+   | Just (_,f) <- Map.lookup r graph1
+   = (r, f)
+   | otherwise
+   = (r, True)
 
   graph1
    = Map.fromList
@@ -51,7 +55,7 @@ graphOfBinds binds
          refs = free `intersect` names
      in  (k, (refs, fusible xx))
 
-  names = map fst binds
+  names = map fst binds ++ extra_names
 
   fusible xx
    | Just (f, _)                      <- takeXApps xx
@@ -84,7 +88,7 @@ graphTopoOrder graph
 
   visit (l,s) m
    | Set.member m s
-   = let edges    = graph Map.! m
+   = let edges    = mlookup "visit" graph m
          pres     = map fst edges
          s'       = Set.delete m s
          (l',s'') = foldl visit (l,s') pres
@@ -101,10 +105,16 @@ traversal graph weight
  $ graphTopoOrder graph
  where
   go m node
-   = let pres  = graph Map.! node
+   = let pres  = mlookup "traversal" graph node
+
+         get e@(u,_)
+          | Just v <- Map.lookup u m
+          = v + weight e node
+          | otherwise
+          = 0
 
          w     = foldl max 0
-               $ map (\e@(u,_) -> m Map.! u + weight e node)
+               $ map get
                $ pres
 
      in  Map.insert node w m
@@ -143,5 +153,13 @@ invertMap m
  = Map.foldWithKey go Map.empty m
  where
   go k v m' = Map.insertWith (++) v [k] m'
+
+
+mlookup :: Ord k => String -> Map.Map k v -> k -> v
+mlookup str m k
+ | Just v <- Map.lookup k m
+ = v
+ | otherwise
+ = error ("mlookup: no key " ++ str)
 
 
