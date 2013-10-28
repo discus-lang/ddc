@@ -126,27 +126,31 @@ mergeWeights graph weights
  $ graphTopoOrder graph
  where
   go m node
-   | insertp node
-   , Just edges <- Map.lookup node graph
-   = Map.insert node (nub $ map (\(n,f) -> (name n, f)) edges) m
+   -- Merge if it's a weighted one
+   | Just k     <- name_maybe node
+   = merge node k    m
+   | otherwise
+   = merge node node m
+
+  merge node k m
+   | Just edges <- Map.lookup node graph
+   = let edges' = nub $ map (\(n,f) -> (name n, f)) edges
+     in  Map.insertWith (\x y -> nub $ x ++ y) k edges' m
    | otherwise
    = m
 
   weights' = invertMap weights
 
   name n
+   = maybe n id (name_maybe n)
+
+  name_maybe n
    | Just i      <- Map.lookup n weights
    , Just (v:_)  <- Map.lookup i weights'
-   = v
+   = Just v
    | otherwise
-   = n
+   = Nothing
 
-  insertp n
-   | Just i      <- Map.lookup n weights
-   , Just vs     <- Map.lookup i weights'
-   = n `elem` vs
-   | otherwise
-   = False
 
 invertMap :: (Ord k, Ord v) => Map.Map k v -> Map.Map v [k]
 invertMap m
