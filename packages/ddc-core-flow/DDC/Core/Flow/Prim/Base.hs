@@ -176,7 +176,7 @@ data OpSeries
         | OpSeriesScatter
 
         -- | Convert vector(s) into series, all with same length with runtime check.
-        | OpSeriesRunSeries Int
+        | OpSeriesRunProcess Int
 
         -- | Join two series processes.
         | OpSeriesJoin

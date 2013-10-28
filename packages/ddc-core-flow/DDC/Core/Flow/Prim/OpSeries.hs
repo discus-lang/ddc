@@ -46,8 +46,8 @@ instance Pretty OpSeries where
 
         OpSeriesJoin            -> text "pjoin"                 <> text "#"
 
-        OpSeriesRunSeries 1       -> text "runSeries"             <> text "#"
-        OpSeriesRunSeries n       -> text "runSeries"  <> int n   <> text "#"
+        OpSeriesRunProcess 1    -> text "runProcess"            <> text "#"
+        OpSeriesRunProcess n    -> text "runProcess" <> int n   <> text "#"
 
 
 -- | Read a data flow operator name.
@@ -78,11 +78,11 @@ readOpSeries str
         , arity == 1
         = Just $ OpSeriesMkSel arity
 
-        | Just rest     <- stripPrefix "runSeries" str
+        | Just rest     <- stripPrefix "runProcess" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , arity         <- read ds
-        = Just $ OpSeriesRunSeries arity
+        = Just $ OpSeriesRunProcess arity
 
 
         | otherwise
@@ -97,7 +97,7 @@ readOpSeries str
                 "sfill#"        -> Just $ OpSeriesFill
                 "sscatter#"     -> Just $ OpSeriesScatter
                 "pjoin#"        -> Just $ OpSeriesJoin
-                "runSeries#"    -> Just $ OpSeriesRunSeries 1
+                "runProcess#"   -> Just $ OpSeriesRunProcess 1
                 _               -> Nothing
 
 
@@ -220,25 +220,27 @@ takeTypeOpSeries op
                  -> tVector tA 
                  `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tProcess
 
-        -- runSeriesN# ::[k : Rate]. [r : Data]. [a0..aN : Data]
+        -- runProcessN# :: [a0..aN : Data]
         --          .  Vector    a0 .. Vector   aN 
-        --          -> (Series k a0 .. Series k aN -> r)
-        --          -> r
-        OpSeriesRunSeries n
-         | tK         <- TVar (UIx (n+1))
-         , tR         <- TVar (UIx n)
+        --          -> ([k : Rate]. RateNat k -> Series k a0 .. Series k aN -> Process)
+        --          -> Bool
+        OpSeriesRunProcess n
+         | tK         <- TVar (UIx 0)
 
          , Just tWork <- tFunOfList   
-                       $ [ tSeries tK (TVar (UIx i))
-                                | i <- reverse [0..n-1] ]
-                       ++[ tR ]
+                       $ [ tRateNat tK ]
+                       ++[ tSeries tK (TVar (UIx i))
+                                | i <- reverse [1..n] ]
+                       ++[ tProcess ]
+
+         , tWork'     <- TForall (BAnon kRate) tWork
 
          , Just tBody <- tFunOfList
-                         ([tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
-                         ++ [tWork, tR])
+                         $ [ tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
+                         ++[ tWork', tBool ]
 
          -> Just $ foldr TForall tBody
-                         [ BAnon k | k <- kRate : replicate (n + 1) kData ]
+                         [ BAnon k | k <- replicate n kData ]
 
         _ -> Nothing
 

@@ -274,7 +274,7 @@ convertToSeries binds outputs inputs equivs tys xx
   klokn cn vecs body
    = let kN     = NameVarMod cn "k"
          vFlags = map (\(n,t) -> (False, BName (NameVarMod n "s") (tSeries (TVar (UName kN)) t))) vecs
-     in  xApps (xVarOpSeries (OpSeriesRunSeries $ length vecs))
+     in  xApps (xVarOpSeries (OpSeriesRunProcess $ length vecs))
                (map (XType . snd) vecs
                ++ [(makeXLamFlags ([(True, BName kN kRate)] ++ vFlags) body)])
 
