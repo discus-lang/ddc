@@ -1,0 +1,67 @@
+
+ok
+
+-- Normalise - sum, then map. Requires two kernels
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Int#
+    = \(u1 : Vector# Int#).
+      let x3$ref : Ref# Int# = new# [Int#] 0i# in
+      let _ : Bool#
+            = runProcess# [Int#] u1
+                  (/\(u1$k : Rate).
+                    \(_ : RateNat# u1$k).\(u1$s : Series# u1$k Int#).
+                   let x3$proc : Process#
+                         = sreduce# [u1$k] [Int#] x3$ref
+                               (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
+                   x3$proc) in
+      let x3 : Int# = read# [Int#] x3$ref in
+      let x5 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] u1) in
+      let _ : Bool#
+            = runProcess# [Int#] u1
+                  (/\(u1$k : Rate).
+                    \(_ : RateNat# u1$k).\(u1$s : Series# u1$k Int#).
+                   let x5$s : Series# u1$k Int#
+                         = smap# [u1$k] [Int#] [Int#]
+                               (\(x : Int#). div# [Int#] x x3) u1$s in
+                   let x5$proc : Process# = sfill# [u1$k] [Int#] x5 x5$s in
+                   x5$proc) in
+      x5
+}
+
+-- Normalise with extra reduce
+module Test with
+letrec {
+  test : Vector# Int# -> Tuple2# (Vector# Int#) Int#
+    = \(u1 : Vector# Int#).
+      let x3$ref : Ref# Int# = new# [Int#] 0i# in
+      let x9$ref : Ref# Int# = new# [Int#] 1i# in
+      let _ : Bool#
+            = runProcess# [Int#] u1
+                  (/\(u1$k : Rate).
+                    \(_ : RateNat# u1$k).\(u1$s : Series# u1$k Int#).
+                   let x3$proc : Process#
+                         = sreduce# [u1$k] [Int#] x3$ref
+                               (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
+                   let x9$proc : Process#
+                         = sreduce# [u1$k] [Int#] x9$ref
+                               (\(x6 x7 : Int#). mul# [Int#] x6 x7) 1i# u1$s in
+                   pjoin# x3$proc x9$proc) in
+      let x3 : Int# = read# [Int#] x3$ref in
+      let x9 : Int# = read# [Int#] x9$ref in
+      let x5 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] u1) in
+      let _ : Bool#
+            = runProcess# [Int#] u1
+                  (/\(u1$k : Rate).
+                    \(_ : RateNat# u1$k).\(u1$s : Series# u1$k Int#).
+                   let x5$s : Series# u1$k Int#
+                         = smap# [u1$k] [Int#] [Int#]
+                               (\(x : Int#). div# [Int#] x x3) u1$s in
+                   let x5$proc : Process# = sfill# [u1$k] [Int#] x5 x5$s in
+                   x5$proc) in
+      T2# [Vector# Int#] [Int#] x5 x9
+}
+
+

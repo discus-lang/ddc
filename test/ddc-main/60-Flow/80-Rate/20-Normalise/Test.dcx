@@ -1,0 +1,24 @@
+
+:set lang Flow
+
+-- Normalise - sum, then map. Requires two kernels
+:flow-rate..
+module Test with letrec
+test    (u1 : Vector# Int#)
+        : Vector# Int#
+ =      let n = vreduce# [Int#] (add# [Int#]) 0i# u1
+        in  vmap# [Int#] [Int#] (\(x : Int#). div# [Int#] x n) u1
+;;
+
+-- Normalise with extra reduce
+:flow-rate..
+module Test with letrec
+test    (u1 : Vector# Int#)
+        : Tuple2# (Vector# Int#) Int#
+ =      let n  = vreduce# [Int#] (add# [Int#]) 0i# u1
+     in let xs = vmap#    [Int#] [Int#] (\(x : Int#). div# [Int#] x n) u1
+     in let y  = vreduce# [Int#] (mul# [Int#]) 1i# u1
+     in     T2# [Vector# Int#] [Int#] xs y
+;;
+
+
