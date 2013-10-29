@@ -210,7 +210,7 @@ scheduleInputs  loops graph
    $ graphIns ns
 
   graphIns ns
-   = concatMap (map fst . mlookup "graphIns" graph) ns
+   = nub $ concatMap (map fst . mlookup "graphIns" graph) ns
 
 typedTraversal :: Graph -> EquivClass -> Name -> Map.Map Name Int
 typedTraversal graph types current_type
@@ -221,7 +221,7 @@ typedTraversal graph types current_type
 
   w' (u, fusible) v
    | canonName types u == current_type
-   = canonName types v /= current_type || fusible
+   = canonName types v /= current_type || not fusible
 
    | otherwise
    = False
@@ -254,105 +254,129 @@ construct
         -> ExpF
         -> ExpF
 construct lams loops equivs tys xx
- = let body   = foldr convert xx loops
-   in  makeXLamFlags lams body
+ = let lets   = concatMap convert loops
+   in  makeXLamFlags lams
+     $ xLets lets
+     $ xx
  where
-  convert (binds, outputs, inputs) body
-   = convertToSeries binds outputs inputs equivs tys body
+  convert (binds, outputs, inputs)
+   = convertToSeries binds outputs inputs equivs tys
 
 
 -- TODO still missing the join of procs,
 -- split output procs into separate functions
-convertToSeries :: [(Name,ExpF)] -> [Name] -> [Name] -> EquivClass -> Map.Map Name TypeF -> ExpF -> ExpF
-convertToSeries binds outputs inputs equivs tys xx
- = kloked
+convertToSeries :: [(Name,ExpF)] -> [Name] -> [Name] -> EquivClass -> Map.Map Name TypeF -> [LetsF]
+convertToSeries binds outputs inputs equivs tys
+ =  concat setups
+ ++ [LLet (BNone tBool) (runprocs inputs' processes)]
+ ++ concat readrefs
  where
-  kloked
-   = Map.foldWithKey klokn wrapped klokMap
-
-  klokn :: Name -> [(Name,TypeF)] -> ExpF -> ExpF
-  klokn cn vecs body
-   = let kN     = NameVarMod cn "k"
+  runprocs :: [(Name,TypeF)] -> ExpF -> ExpF
+  runprocs vecs@((cn,_):_) body
+   = let cnn    = canonName equivs cn
+         kN     = NameVarMod cnn "k"
+         kFlags = [ (True,  BName kN kRate)
+                  , (False, BNone $ tRateNat $ TVar $ UName kN)]
          vFlags = map (\(n,t) -> (False, BName (NameVarMod n "s") (tSeries (TVar (UName kN)) t))) vecs
      in  xApps (xVarOpSeries (OpSeriesRunProcess $ length vecs))
-               (map (XType . snd) vecs
-               ++ [(makeXLamFlags ([(True, BName kN kRate)] ++ vFlags) body)])
+               (  map (XType .         snd) vecs
+               ++ map (XVar  . UName . fst) vecs
+               ++ [(makeXLamFlags (kFlags ++ vFlags) body)])
 
-  klokMap :: Map.Map Name [(Name,TypeF)]
-  klokMap = foldl collectKloks Map.empty inputs
-  collectKloks m inp
+  -- TODO introduce rate parameter for generates?
+  runprocs [] body
+   = body
+
+  inputs' :: [(Name,TypeF)]
+  inputs' = concatMap filterInputs inputs
+
+  filterInputs inp
    | tyI <- mlookup "collectKloks" tys inp
    , Just (_tcVec, [tyA]) <- takeTyConApps tyI
    , tyI == tVector tyA
-   = Map.insertWith (++) (canonName equivs inp) [(inp, tyA)] m
+   = [(inp, tyA)]
    | otherwise
-   = m
+   = []
 
-  wrapped 
-   = foldr wrap filled binds
+  processes 
+   = foldr wrap joins binds
 
   wrap (n,x) body
-   = wrapSeriesX equivs n (mlookup "wrap" tys n) x body
+   = wrapSeriesX equivs outputs n (mlookup "wrap" tys n) x body
+
+  -- TODO
+  joins
+   | not $ null outputs
+   = foldl1 mkJoin
+   $ map (\n -> XVar $ UName $ NameVarMod n "proc") outputs
+   | otherwise
+   = xUnit -- ???
+
+  mkJoin p q
+   = xApps (xVarOpSeries OpSeriesJoin) [p, q]
 
   -- fill vectors and read references
-  filled
-   = foldr fill xx binds
+  (setups, readrefs)
+   = unzip
+   $ map setread 
+   $ filter (flip elem outputs . fst) binds
 
-  fill (n,x) body
-   | n `elem` outputs
-   = fillSeriesX equivs n (mlookup "fill" tys n) x body
-   | otherwise
-   = body
+  setread (n,x)
+   = setreadSeriesX equivs n (mlookup "setread" tys n) x
 
 
-fillSeriesX :: EquivClass -> Name -> TypeF -> ExpF -> ExpF -> ExpF
-fillSeriesX equivs name ty xx wrap
- | Just (f, _args)                       <- takeXApps xx
+setreadSeriesX :: EquivClass -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
+setreadSeriesX equivs name ty xx
+ | Just (f, args)                       <- takeXApps xx
  , XVar (UPrim (NameOpVector ov) _)     <- f
  = case ov of
    -- any folds MUST be known as outputs, so this is safe
    OpVectorReduce
-    -> XLet (LLet (BName name ty) (xRead ty (XVar $ UName $ NameVarMod name "ref")))
-             wrap
+    | [_tA, _f, z, _vA]   <- args
+    -> ([ LLet (BName (nm "ref") (tRef ty)) (xNew  ty z) ]
+       ,[ LLet (BName  name       ty)       (xRead ty (vr $ nm "ref"))])
+
    _
     | [_vec, tyR]                       <- takeTApps ty
-    -> let k  = canonName equivs name
-           s  = NameVarMod name "s"
-           op = xVarOpSeries OpSeriesFill
-       in  XLet (LLet (BNone tProcess)
-                 $ xApps op [XVar $ UName k, XType tyR, XVar $ UName name, XVar $ UName s])
-                 wrap
+    -> let v  = canonName equivs name
+           vl = xApps (xVarOpVector OpVectorLength)
+                      [XType tyR, XVar $ UName v]
+       in  ([ LLet (BName name ty) $ xNewVector tyR vl ]
+           ,  [])
+
    _
-    ->
-     wrap
+    -> ([], [])
  | otherwise
- = wrap
+ = ([],[])
+ where
+  nm s = NameVarMod name s
+  vr n = XVar $ UName n
 
 
-wrapSeriesX :: EquivClass -> Name -> TypeF -> ExpF -> ExpF -> ExpF
-wrapSeriesX equivs name ty xx wrap
+wrapSeriesX :: EquivClass -> [Name] -> Name -> TypeF -> ExpF -> ExpF -> ExpF
+wrapSeriesX equivs outputs name ty xx wrap
  | Just (op, args)                      <- takeXApps xx
  , XVar (UPrim (NameOpVector ov) _)     <- op
  = case ov of
    OpVectorReduce
     | [_tA, f, z, vA]   <- args
     , XVar (UName nvA)  <- vA
-    , Just kA           <- klok nvA
-    -> xLets [ LLet (BName (NameVarMod name "ref") (tRef ty)) (xNew ty z)
-             , LLet (BName (NameVarMod name "proc") tProcess)
-                   $ xApps (xVarOpSeries OpSeriesReduce)
-                           [kA, XType ty, XVar (UName (NameVarMod name "ref")), f, z, modNameX "s" vA] ]
+    , kA                <- klok nvA
+    -> XLet (LLet (BName name'proc tProcess)
+                 $ xApps (xVarOpSeries OpSeriesReduce)
+                         [kA, XType ty, XVar (UName name'ref), f, z, modNameX "s" vA])
              wrap
 
    OpVectorMap n
     | (tys, f : rest) <- splitAt (n+1) args
     , length rest     == n
-    , Just kT         <- klok name
+    , kT              <- klok name
     , Just tySer      <- tyS
     , rest'           <- map (modNameX "s") rest
-    -> bind  (NameVarMod name "s") tySer
-     $ xApps (xVarOpSeries (OpSeriesMap n))
-             ([kT] ++ tys ++ [f] ++ rest')
+    -> XLet (LLet (BName name's tySer)
+                 $ xApps (xVarOpSeries (OpSeriesMap n))
+                         ([kT] ++ tys ++ [f] ++ rest'))
+             wrap'fill
 
    OpVectorFilter
     -> xx
@@ -362,28 +386,43 @@ wrapSeriesX equivs name ty xx wrap
  = xx
 
  where
-  bind n t x
-   = XLet (LLet (BName n t) x) wrap
+  name'proc = NameVarMod name "proc"
+  name'ref  = NameVarMod name "ref"
+  name's    = NameVarMod name "s"
 
+  klokT n
+   = let n'  = canonName equivs n
+         kN  = NameVarMod n' "k"
+     in  TVar $ UName kN
   klok n
-   | n'      <- canonName equivs n
-   , kN      <- NameVarMod n' "k"
-   = Just $ XType $ TVar $ UName kN
+   = XType $ klokT n
+
+  tyR
+   | [_vec, tyR']        <- takeTApps ty
+   = Just tyR'
    | otherwise
    = Nothing
 
   tyS
-   | [_vec, tyR]        <- takeTApps ty
-   , Just (XType kS)    <- klok name
-   = Just $ tSeries kS tyR
-   | otherwise
-   = Nothing
+   = fmap (tSeries $ klokT name) tyR
 
+  wrap'fill
+   | name `elem` outputs
+   , Just tyR' <- tyR
+   = XLet (LLet (BName name'proc tProcess) $ xApps fillV [klok name, XType tyR', vr name, vr name's])
+           wrap
+   | otherwise
+   = wrap
+
+  fillV = xVarOpSeries OpSeriesFill
+
+  vr n = XVar $ UName n
 
 --  tySeries
 --   | Vector n
 
 xVarOpSeries n = XVar (UPrim (NameOpSeries n) (typeOpSeries n))
+xVarOpVector n = XVar (UPrim (NameOpVector n) (typeOpVector n))
 
 modNameX :: String -> ExpF -> ExpF
 modNameX s xx
