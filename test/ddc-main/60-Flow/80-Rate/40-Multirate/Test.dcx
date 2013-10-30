@@ -1,0 +1,44 @@
+
+:set lang Flow
+
+-- Use both separately - no reason they should have same rate. Thus, two processes.
+:flow-rate..
+module Test with letrec
+test    (us vs : Vector# Int#) : Tuple3# (Vector# Int#) (Vector# Int#) Int#
+ =      let us' = vmap# [Int#] [Int#] (add# [Int#] 1i#) us
+     in let vs' = vmap# [Int#] [Int#] (add# [Int#] 2i#) vs
+     in let vr  = vreduce# [Int#] (add# [Int#]) 0i# vs'
+     in T3# [Vector# Int#] [Vector# Int#] [Int#] us' vs' vr
+;;
+
+-- Try the criss cross one
+:flow-rate..
+module Test with letrec
+test    (us vs : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
+ =      let us' = vmap# [Int#] [Int#] (add# [Int#] 1i#) us
+     in let ur  = vreduce# [Int#] (add# [Int#]) 0i# us'
+
+     in let vs' = vmap# [Int#] [Int#] (add# [Int#] 2i#) vs
+     in let vr  = vreduce# [Int#] (add# [Int#]) 0i# vs'
+
+     in let us'' = vmap# [Int#] [Int#] (add# [Int#] vr) us
+     in let vs'' = vmap# [Int#] [Int#] (add# [Int#] ur) vs
+
+     in T2# [Vector# Int#] [Vector# Int#] us'' vs''
+;;
+
+-- Criss cross, but manifest two more vectors
+:flow-rate..
+module Test with letrec
+test    (us vs : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
+ =      let us' = vmap# [Int#] [Int#] (add# [Int#] 1i#) us
+     in let ur  = vreduce# [Int#] (add# [Int#]) 0i# us'
+
+     in let vs' = vmap# [Int#] [Int#] (add# [Int#] 2i#) vs
+     in let vr  = vreduce# [Int#] (add# [Int#]) 0i# vs'
+
+     in let us'' = vmap# [Int#] [Int#] (add# [Int#] vr) us' -- changed
+     in let vs'' = vmap# [Int#] [Int#] (add# [Int#] ur) vs' -- changed
+
+     in T2# [Vector# Int#] [Vector# Int#] us'' vs''
+;;

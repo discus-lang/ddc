@@ -148,7 +148,7 @@ schedule graph equivs rets
  = let type_order    = map (canonName equivs . Set.findMin) equivs
        -- minimumBy length $ map scheduleTypes $ permutations type_order
        (wts, graph') = scheduleTypes graph equivs type_order
-       loops         = scheduleAll (map snd wts) graph'
+       loops         = scheduleAll (map snd wts) graph graph'
        -- Use the original graph to find vars that cross loop boundaries
        outputs       = scheduleOutputs loops graph rets
        inputs        = scheduleInputs  loops graph
@@ -164,16 +164,23 @@ scheduleTypes graph types type_order
      in  ((ty,w') : w, g')
 
 
-scheduleAll :: [Map.Map Name Int] -> Graph -> [[Name]]
-scheduleAll weights graph
+scheduleAll :: [Map.Map Name Int] -> Graph -> Graph -> [[Name]]
+scheduleAll weights graph graph'
  = loops
  where
   weights' = map invertMap  weights
-  topo     = graphTopoOrder graph
+  topo     = graphTopoOrder graph'
   loops    = map getNames topo
 
   getNames n
-   = find n (weights `zip` weights')
+   = sort $ find n (weights `zip` weights')
+
+  original_order = graphTopoOrder graph
+
+  -- Cheesy hack to get ns in same order as the original graph's topo:
+  -- filter topo to only those elements in ns
+  sort ns
+   = filter (flip elem ns) original_order
 
   find _ []
    = []
@@ -322,11 +329,11 @@ convertToSeries binds outputs inputs equivs tys
    $ filter (flip elem outputs . fst) binds
 
   setread (n,x)
-   = setreadSeriesX equivs n (mlookup "setread" tys n) x
+   = setreadSeriesX equivs tys n (mlookup "setread" tys n) x
 
 
-setreadSeriesX :: EquivClass -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
-setreadSeriesX equivs name ty xx
+setreadSeriesX :: EquivClass -> Map.Map Name TypeF -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
+setreadSeriesX equivs tys name ty xx
  | Just (f, args)                       <- takeXApps xx
  , XVar (UPrim (NameOpVector ov) _)     <- f
  = case ov of
@@ -337,11 +344,12 @@ setreadSeriesX equivs name ty xx
        ,[ LLet (BName  name       ty)       (xRead ty (vr $ nm "ref"))])
 
    _
-    | [_vec, tyR]                       <- takeTApps ty
-    -> let v  = canonName equivs name
-           vl = xApps (xVarOpVector OpVectorLength)
-                      [XType tyR, XVar $ UName v]
-       in  ([ LLet (BName name ty) $ xNewVector tyR vl ]
+    | [_vec, tyR]       <- takeTApps ty
+    , v                 <- canonName equivs name
+    , [_vec, tyCR]      <- takeTApps $ mlookup "setreadSeriesX" tys v
+    -> let vl = xApps (xVarOpVector OpVectorLength)
+                      [XType tyCR, XVar $ UName v]
+       in  ([ LLet (BName name $ tBot kData) $ xNewVector tyR vl ]
            ,  [])
 
    _
@@ -371,9 +379,8 @@ wrapSeriesX equivs outputs name ty xx wrap
     | (tys, f : rest) <- splitAt (n+1) args
     , length rest     == n
     , kT              <- klok name
-    , Just tySer      <- tyS
     , rest'           <- map (modNameX "s") rest
-    -> XLet (LLet (BName name's tySer)
+    -> XLet (LLet (BName name's $ tBot kData)
                  $ xApps (xVarOpSeries (OpSeriesMap n))
                          ([kT] ++ tys ++ [f] ++ rest'))
              wrap'fill
@@ -402,9 +409,6 @@ wrapSeriesX equivs outputs name ty xx wrap
    = Just tyR'
    | otherwise
    = Nothing
-
-  tyS
-   = fmap (tSeries $ klokT name) tyR
 
   wrap'fill
    | name `elem` outputs

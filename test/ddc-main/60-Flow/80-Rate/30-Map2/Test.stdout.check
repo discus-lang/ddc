@@ -1,0 +1,81 @@
+
+ok
+
+-- Simple map2
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Int# -> Vector# Int#
+    = \(u1 u2 : Vector# Int#).
+      let x3 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] u1) in
+      let _ : Bool#
+            = runProcess2# [Int#] [Int#] u1 u2
+                  (/\(u1$k : Rate).
+                    \(_ : RateNat# u1$k).\(u1$s u2$s : Series# u1$k Int#).
+                   let x3$s : Series# u1$k Int#
+                         = smap2# [u1$k] [Int#] [Int#] [Int#]
+                               (\(x0 x1 : Int#). add# [Int#] x0 x1) u1$s u2$s in
+                   let x3$proc : Process# = sfill# [u1$k] [Int#] x3 x3$s in
+                   x3$proc) in
+      x3
+}
+
+-- Different vector types
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Float32# -> Vector# Float32#
+    = \(us : Vector# Int#).\(vs : Vector# Float32#).
+      let x1 : Vector# Float32#
+            = vnew# [Float32#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess2# [Int#] [Float32#] us vs
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).\(vs$s : Series# us$k Float32#).
+                   let x1$s : Series# us$k Float32#
+                         = smap2# [us$k] [Int#] [Float32#] [Float32#]
+                               (\(u : Int#).\(v : Float32#). v) us$s vs$s in
+                   let x1$proc : Process# = sfill# [us$k] [Float32#] x1 x1$s in
+                   x1$proc) in
+      x1
+}
+
+
+-- Some other ops thrown in. Two processes, 'fs' and 'zs' are manifest
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Float32# -> Float32# -> Vector# Float32#
+    = \(us : Vector# Int#).\(vs : Vector# Float32#).\(z : Float32#).
+      let x3 : Vector# Float32#
+            = vnew# [Float32#] (vlength# [Int#] us) in
+      let x7$ref : Ref# Float32# = new# [Float32#] z in
+      let _ : Bool#
+            = runProcess2# [Int#] [Float32#] us vs
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).\(vs$s : Series# us$k Float32#).
+                   let x1$s : Series# us$k Int#
+                         = smap# [us$k] [Int#] [Int#]
+                               (\(u : Int#). u) us$s in
+                   let x3$s : Series# us$k Float32#
+                         = smap2# [us$k] [Int#] [Float32#] [Float32#]
+                               (\(u : Int#).\(v : Float32#). v) x1$s vs$s in
+                   let x3$proc : Process# = sfill# [us$k] [Float32#] x3 x3$s in
+                   let x7$proc : Process#
+                         = sreduce# [us$k] [Float32#] x7$ref
+                               (\(x4 x5 : Float32#). add# [Float32#] x4 x5) z x3$s in
+                   pjoin# x3$proc x7$proc) in
+      let x7 : Float32# = read# [Float32#] x7$ref in
+      let x9 : Vector# Float32#
+            = vnew# [Float32#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess3# [Int#] [Float32#] [Float32#] us vs x3
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).\(vs$s x3$s : Series# us$k Float32#).
+                   let x9$s : Series# us$k Float32#
+                         = smap3# [us$k] [Int#] [Float32#] [Float32#] [Float32#]
+                               (\(u : Int#).\(v ff : Float32#). add# [Float32#] ff x7) us$s vs$s x3$s in
+                   let x9$proc : Process# = sfill# [us$k] [Float32#] x9 x9$s in
+                   x9$proc) in
+      x9
+}
+
+

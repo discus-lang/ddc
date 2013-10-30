@@ -1,0 +1,30 @@
+
+:set lang Flow
+
+-- Simple map2
+:flow-rate..
+module Test with letrec
+test    (u1 u2 : Vector# Int#) : Vector# Int#
+ =      vmap2# [Int#] [Int#] [Int#] (add# [Int#]) u1 u2
+;;
+
+-- Different vector types
+:flow-rate..
+module Test with letrec
+test    (us : Vector# Int#) (vs : Vector# Float32#) : Vector# Float32#
+ =      vmap2# [Int#] [Float32#] [Float32#] (\(u : Int#) (v : Float32#). v) us vs
+;;
+
+
+-- Some other ops thrown in. Two processes, 'fs' and 'zs' are manifest
+:flow-rate..
+module Test with letrec
+test    (us : Vector# Int#) (vs : Vector# Float32#) (z : Float32#) : Vector# Float32#
+ =      let us' = vmap#  [Int#] [Int#]                (\(u : Int#). u) us
+     in let fs  = vmap2# [Int#] [Float32#] [Float32#] (\(u : Int#) (v : Float32#). v) us' vs
+     in let f   = vreduce# [Float32#] (add# [Float32#]) z fs
+     in let zs  = vmap3# [Int#] [Float32#] [Float32#] [Float32#] (\(u : Int#) (v : Float32#) (ff : Float32#). add# [Float32#] ff f) us vs fs
+     in zs
+;;
+
+
