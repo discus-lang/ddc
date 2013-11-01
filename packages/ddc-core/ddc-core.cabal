@@ -106,10 +106,12 @@ Library
         DDC.Core.Check.Exp.Abs
         DDC.Core.Check.Exp.App
         DDC.Core.Check.Exp.Base
-        DDC.Core.Check.Exp.Cast
         DDC.Core.Check.Exp.Case
+        DDC.Core.Check.Exp.Cast
+        DDC.Core.Check.Exp.Inst
         DDC.Core.Check.Exp.Let
         DDC.Core.Check.Exp.VarCon
+        DDC.Core.Check.Exp.Witness
         DDC.Core.Check.Module
         DDC.Core.Check.Witness
         DDC.Core.Check.ErrorMessage
