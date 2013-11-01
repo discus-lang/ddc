@@ -74,7 +74,6 @@ scheduleKernel
                                 , let uIndex            = UIx 0 
                                 , let Just tElem_lifted = liftType lifting tElem ]
 
-
         let nest0       = NestLoop 
                         { nestRate      = tDown c tK 
                         , nestStart     = []
@@ -83,7 +82,8 @@ scheduleKernel
                         , nestEnd       = []
                         , nestResult    = xUnit }
 
-        nest'   <- foldM (scheduleOperator lifting) nest0 operators
+        nest'   <- foldM (scheduleOperator lifting bsParamValues) 
+                         nest0 operators
 
 
         -- TODO: Add Down# constructor to types of series parameters.
@@ -98,11 +98,12 @@ scheduleKernel
 -- | Schedule a single series operator into a loop nest.
 scheduleOperator 
         :: Lifting
+        -> ScalarEnv
         -> Nest         -- ^ The current loop nest.
         -> Operator     -- ^ The operator to schedule.
         -> Either Fail Nest
 
-scheduleOperator lifting nest op
+scheduleOperator lifting envScalar nest op
  -- Map -----------------------------------------
  | OpMap{}      <- op
  = do   let c           = liftingFactor lifting
@@ -120,16 +121,10 @@ scheduleOperator lifting nest op
 
         -- Bounds for the worker parameters, along with the lifted versions.
         let bsParam     = opWorkerParams op
+        bsParam_lifted  <- mapM (liftTypeOfBindM lifting) bsParam
+        let envLift     = zip bsParam bsParam_lifted
 
-        let liftTypeOfBind' b
-                = case liftTypeOfBind lifting b of
-                        Just b' -> return b'
-                        _       -> Left $ FailCannotLiftType (typeOfBind b)
-
-        bsParam_lifted  <- mapM liftTypeOfBind' bsParam
-        let liftEnv     = zip bsParam bsParam_lifted
-
-        xWorker_lifted  <- liftWorker lifting liftEnv 
+        xWorker_lifted  <- liftWorker lifting envScalar envLift
                         $  opWorkerBody op
 
         -- Expression to apply the inputs to the worker.
@@ -204,15 +199,10 @@ scheduleOperator lifting nest op
 
         -- Lift the worker function.
         let bsParam     = [ opWorkerParamAcc op, opWorkerParamElem op ]
-        let liftTypeOfBind' b
-                = case liftTypeOfBind lifting b of
-                        Just b' -> return b'
-                        _       -> Left $ FailCannotLiftType (typeOfBind b)
+        bsParam_lifted  <- mapM (liftTypeOfBindM lifting) bsParam
+        let envLift     = zip bsParam bsParam_lifted
 
-        bsParam_lifted  <- mapM liftTypeOfBind' bsParam
-        let liftEnv     = zip bsParam bsParam_lifted
-
-        xWorker_lifted  <- liftWorker lifting liftEnv 
+        xWorker_lifted  <- liftWorker lifting envScalar envLift 
                         $  opWorkerBody op
 
         -- Read the current accumulator value and update it with the worker.
@@ -334,4 +324,9 @@ scheduleOperator lifting nest op
  = Left $ FailUnsupported op
 
 
+liftTypeOfBindM :: Lifting -> Bind Name -> Either Fail (Bind Name)
+liftTypeOfBindM lifting b
+  = case liftTypeOfBind lifting b of
+     Just b' -> return b'
+     _       -> Left $ FailCannotLiftType (typeOfBind b)
 

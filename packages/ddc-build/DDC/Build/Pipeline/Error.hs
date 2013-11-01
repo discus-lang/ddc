@@ -17,6 +17,9 @@ data Error
         -- | Error converting the module to Disciple Core Lite.
         | forall err. Pretty err => ErrorLiteConvert !err
 
+        -- | Error when transforming core program.
+        | forall err. Pretty err => ErrorCoreTransform !err
+
         -- | Error when loading a module.
         --   Blame it on the user.
         | forall err. Pretty err => ErrorLoad !err
@@ -35,6 +38,10 @@ instance Pretty Error where
 
         ErrorSaltConvert err'
          -> vcat [ text "Fragment violation when converting Salt module to C code."
+                 , indent 2 (ppr err') ]
+
+        ErrorCoreTransform err'
+         -> vcat [ text "Error transforming core program."
                  , indent 2 (ppr err') ]
 
         ErrorLiteConvert err'

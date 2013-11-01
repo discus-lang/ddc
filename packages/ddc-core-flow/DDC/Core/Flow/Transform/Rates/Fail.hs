@@ -3,28 +3,39 @@ module DDC.Core.Flow.Transform.Rates.Fail
         , LogFailures
         , warn, run)
 where
-
 import DDC.Core.Flow.Prim
+import DDC.Base.Pretty
 import Control.Monad.Writer
 import Data.List
+
 
 -- | Why can't rates be inferred?
 data Fail
         -- | Function is not in a-normal form
         = FailNotANormalForm
+
         -- | Bindings must be unique
         | FailNamesNotUnique
+
         -- | Bindings must be named
         | FailNoDeBruijnAllowed
+
         -- | Function contains letrec
         | FailRecursiveBindings
+
         -- | Function contains letregion
         | FailLetRegionNotHandled
+
         -- | The constraint would require a buffer. User must expicitly buffer.
         | FailConstraintFilteredLessFiltered Name Name
+
         -- | The constraint would require a buffer. User must expicitly buffer.
         | FailConstraintFilteredNotUnique    Name Name
         deriving (Show, Eq)
+
+
+instance Pretty Fail where
+ ppr fails = text (show fails)
 
 
 type LogFailures a = Writer [Fail] a

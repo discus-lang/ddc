@@ -5,6 +5,7 @@ where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Process.Operator
+import DDC.Base.Pretty
 
 
 -- | Reason a process kernel could not be scheduled into a procedure.
@@ -34,3 +35,6 @@ data Fail
         | FailUnsupported Operator
         deriving Show
 
+
+instance Pretty Fail where
+ ppr fails = text (show fails)

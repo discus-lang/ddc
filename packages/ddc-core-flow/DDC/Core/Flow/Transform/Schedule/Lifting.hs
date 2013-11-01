@@ -1,6 +1,7 @@
 
 module DDC.Core.Flow.Transform.Schedule.Lifting
         ( Lifting (..)
+        , ScalarEnv
         , LiftEnv
 
           -- * Lifting Types
@@ -26,6 +27,11 @@ data Lifting
         { -- How many elements to process for each loop iteration.
           liftingFactor         :: Int }
         deriving (Eq, Show)
+
+
+-- | Scalar values in scope.
+type ScalarEnv
+        = [BindF]
 
 -- | Map original variable to lifted version.
 type LiftEnv
@@ -61,22 +67,23 @@ liftTypeOfBind l b
 
 -- | Try to lift a first-order worker expression to so it operates on elements
 --   of vec type instead of scalars.
-liftWorker :: Lifting -> LiftEnv -> ExpF -> Either Fail ExpF
-liftWorker lifting env xx
- = let down     = liftWorker lifting env
+liftWorker :: Lifting -> ScalarEnv -> LiftEnv -> ExpF -> Either Fail ExpF
+liftWorker lifting envScalar envLift xx
+ = let down     = liftWorker lifting envScalar envLift
    in  case xx of
-        -- Replace vars by their vector version.
         XVar u
-         | Just (_, bL) 
-                    <- find (\(bS', _) -> boundMatchesBind u bS') env
-         , Just uL  <- takeSubstBoundOfBind bL
+         -- Replace vars by their vector version.
+         | Just (_, bL) <- find (\(bS', _) -> boundMatchesBind u bS') envLift
+         , Just uL      <- takeSubstBoundOfBind bL
          -> Right (XVar uL)
 
-        -- Replace scalar primops by vector versions.
-        XApp (XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
-         |  Just prim'  <- liftPrimArithToVec (liftingFactor lifting) prim
-         -> Right $ XApp (XVar (UPrim (NamePrimVec prim') (typePrimVec prim')))
-                         (XType tElem)
+         -- Replicate scalar vars.
+         | any (boundMatchesBind u) envScalar
+         , nPrim        <- PrimVecRep (liftingFactor lifting)
+         , tPrim        <- typePrimVec nPrim
+         -> Right $ XApp (XApp  (XVar (UPrim (NamePrimVec nPrim) tPrim))
+                                (XType $ tFloat 32))                      -- TODO: fix type
+                         xx
 
         -- Replicate literals.
         XCon dc
@@ -87,6 +94,13 @@ liftWorker lifting env xx
          -> Right $ XApp (XApp (XVar (UPrim (NamePrimVec nPrim) tPrim)) 
                                (XType $ tFloat 32))
                          xx
+
+        -- Replace scalar primops by vector versions.
+        XApp (XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
+         |  Just prim'  <- liftPrimArithToVec (liftingFactor lifting) prim
+         -> Right $ XApp (XVar (UPrim (NamePrimVec prim') (typePrimVec prim')))
+                         (XType tElem)
+
 
         -- Boiler plate application.
         XApp x1 x2      

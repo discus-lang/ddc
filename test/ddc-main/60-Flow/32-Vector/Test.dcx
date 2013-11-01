@@ -12,3 +12,26 @@ test    [k  : Rate] (n  : RateNat# k)
 
         sreduce# [k] [Float32#] x1 (add# [Float32#]) 0.0f32# s3
 ;;
+
+
+:flow-lower-vector..
+module Flow with letrec
+eatPoints 
+        [k : Rate]
+        (ox oy  : Float32#)
+        (v0     : Vector# Float32#) (r0 : Ref# Float32#)
+        (dsr    : RateNat# k) 
+        (s1 s2  : Series# k Float32#)
+        : Process#
+ = do   s     = smap2# [k] [Float32#] [Float32#] [Float32#]
+                        (\(x y : Float32#).
+                         add# [Float32#]
+                                (mul# [Float32#] (sub# [Float32#] x ox) 
+                                                 (sub# [Float32#] x ox))
+                                (mul# [Float32#] (sub# [Float32#] y oy) 
+                                                 (sub# [Float32#] y oy))) 
+                        s1 s2
+
+        pjoin#  (sfill#   [k] [Float32#] v0 s)
+                (sreduce# [k] [Float32#] r0 (add# [Float32#]) 0.0f32# s)
+;;
