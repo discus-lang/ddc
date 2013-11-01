@@ -2,8 +2,7 @@ module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
 where
-import DDC.Core.Collect.Free
-import DDC.Core.Collect.Free.Simple ()
+import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
