@@ -12,6 +12,7 @@ import DDC.Core.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
 import Control.Monad
+import Control.Applicative
 import Data.Maybe
 import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
@@ -361,6 +362,16 @@ reset context   = context { contextFunArgs = Nothing }
 -- | Compliance checking monad.
 data CheckM a n x
         = CheckM (Either (Error a n) x)
+
+
+instance Functor (CheckM s err) where
+ fmap   = liftM
+
+
+instance Applicative (CheckM s err) where
+ (<*>)  = ap
+ pure   = return
+
 
 instance Monad (CheckM a n) where
  return x   = CheckM (Right x)

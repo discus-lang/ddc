@@ -8,11 +8,22 @@ module DDC.Control.Monad.Check
         , get
         , put)
 where
+import Control.Applicative
+import Control.Monad
 
 
 -- | Checker monad maintains some state and manages errors during type checking.
 data CheckM s err a
         = CheckM (s -> (s, Either err a))
+
+
+instance Functor (CheckM s err) where
+ fmap   = liftM
+
+
+instance Applicative (CheckM s err) where
+ (<*>)  = ap
+ pure   = return
 
 
 instance Monad (CheckM s err) where
@@ -59,4 +70,5 @@ put :: s -> CheckM s err ()
 put s 
  =  CheckM $ \_ -> (s, Right ())
 {-# INLINE put #-}
+
 
