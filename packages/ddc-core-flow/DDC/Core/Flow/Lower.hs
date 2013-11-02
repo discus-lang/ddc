@@ -6,6 +6,7 @@ module DDC.Core.Flow.Lower
         , defaultConfigKernel
         , defaultConfigVector
         , Method        (..)
+        , Lifting       (..)
         , lowerModule)
 where
 import DDC.Core.Flow.Transform.Slurp
@@ -65,13 +66,13 @@ defaultConfigScalar
 defaultConfigKernel :: Config
 defaultConfigKernel
         = Config
-        { configMethod  = MethodKernel (Lifting 4)}
+        { configMethod  = MethodKernel (Lifting 8)}
 
 
 defaultConfigVector :: Config
 defaultConfigVector
         = Config
-        { configMethod  = MethodVector (Lifting 4)}
+        { configMethod  = MethodVector (Lifting 8)}
 
 
 -- Lower ----------------------------------------------------------------------

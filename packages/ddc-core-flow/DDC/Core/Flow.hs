@@ -7,6 +7,7 @@ module DDC.Core.Flow
           profile
 
           -- * Driver
+        , Lifting       (..)
         , Config        (..)
         , defaultConfigVector
         , defaultConfigKernel
