@@ -154,7 +154,7 @@ inst table !a ctx0 tL tR
         ctx3     <- inst table a ctx2 tL2' tR2 
 
         ctrace  $ vcat
-                [ text "InstRArr"
+                [ text "* InstRArr"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx3 
@@ -164,10 +164,11 @@ inst table !a ctx0 tL tR
 
  | otherwise
  = return ctx0 
-{- error $ renderIndent $ vcat
+{-
+ error $ renderIndent $ vcat
         [ text "inst: not finished"
         , text "  tL: " <> ppr tL
         , text "  tR: " <> ppr tR 
         , indent 2 $ ppr ctx0 ]
--}
 
+-}

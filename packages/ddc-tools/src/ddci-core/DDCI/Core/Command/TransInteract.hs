@@ -24,7 +24,7 @@ cmdTransInteract state source str
  | Language bundle      <- stateLanguage state
  , fragment             <- bundleFragment   bundle
  , modules              <- bundleModules    bundle
- =   cmdParseCheckExp fragment modules True Recon source str 
+ =   cmdParseCheckExp fragment modules Recon False False source str 
  >>= goStore bundle
  where
         -- Expression is well-typed.

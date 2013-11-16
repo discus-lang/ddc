@@ -208,7 +208,7 @@ cmdShowType language showMode checkMode shouldPrintTrace source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- =   cmdParseCheckExp fragment modules True mode source ss 
+ =   cmdParseCheckExp fragment modules mode shouldPrintTrace True source ss 
  >>= goResult fragment
  where
         -- Determine the checker mode based on the flag we're given.
@@ -260,7 +260,7 @@ cmdExpRecon language source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- =   cmdParseCheckExp fragment modules True Recon source ss 
+ =   cmdParseCheckExp fragment modules Recon False True source ss 
  >>= goResult
  where
         goResult (Nothing, _ct)
@@ -366,14 +366,18 @@ cmdParseCheckExp
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err       -- ^ The current language fragment.
         -> ModuleMap (AnTEC () n) n -- ^ Current modules
-        -> Bool                 -- ^ Allow partial application of primitives.
         -> Mode n               -- ^ Type checker mode.
+        -> Bool                 -- ^ Print type checker trace.
+        -> Bool                 -- ^ Allow partial application of primitives.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
         -> IO ( Maybe (Exp (AnTEC BP.SourcePos n) n)
               , Maybe CheckTrace)
 
-cmdParseCheckExp frag modules permitPartialPrims mode source str
+cmdParseCheckExp 
+        frag modules 
+        mode printTrace permitPartialPrims 
+        source str
  = goLex
  where
         -- Override profile to allow partially applied primitives if we were
@@ -394,12 +398,18 @@ cmdParseCheckExp frag modules permitPartialPrims mode source str
         -- Parse and type check the expression.
         goLoad toks
          = case loadExp profile' modules (nameOfSource source) mode toks of
-              (Left err, ct)
-               -> do    putStrLn $ renderIndent $ ppr err
-                        return (Nothing, ct)
+              (Left err, mct)
+               -> do    outDocLn $ ppr err
+                        
+                        case mct of
+                         Just ct 
+                          | printTrace  -> outDocLn $ ppr ct
+                         _              -> return ()
+                        
+                        return (Nothing, mct)
 
-              (Right result, ct)
-               -> goCheckFragment ct result
+              (Right result, mct)
+               -> goCheckFragment mct result
 
         -- Do fragment specific checks.
         goCheckFragment ct x

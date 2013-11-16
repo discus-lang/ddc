@@ -42,7 +42,7 @@ cmdAstExp language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
  , modules              <- bundleModules  bundle
- =   cmdParseCheckExp fragment modules True Recon source str 
+ =   cmdParseCheckExp fragment modules Recon False True source str 
  >>= goShow
  where
         -- Expression is well-typed.
@@ -54,7 +54,6 @@ cmdAstExp language source str
         goShow _
          = return ()
 
-	 
 	pretty x
 	 = case H.parseExp (show x) of
 		H.ParseOk parsed -> H.prettyPrint parsed

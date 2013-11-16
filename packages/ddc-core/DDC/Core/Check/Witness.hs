@@ -67,6 +67,9 @@ data CheckTrace
         = CheckTrace
         { checkTraceDoc :: Doc }
 
+instance Pretty CheckTrace where
+ ppr ct = checkTraceDoc ct
+
 instance Monoid CheckTrace where
  mempty = CheckTrace empty
  
