@@ -59,9 +59,11 @@ inst table !a ctx0 tL tR
 
  -- InstLReach
  --  Both types are existentials, and the left is bound earlier in the stack.
- | Just iL <- takeExists tL
- , Just iR <- takeExists tR
- , iL < iR                                            -- ** WRONG. need pos in stack
+ --  CAREFUL: The returned location is relative to the top of the stack,
+ --           hence we need lL > lR here.
+ | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
+ , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
+ , lL > lR
  = do   let ctx1        = updateExists [] iR tL ctx0
         
         ctrace  $ vcat 
@@ -75,15 +77,19 @@ inst table !a ctx0 tL tR
 
  -- InstRReach
  --  Both types are existentials, and the right is bound earlier in the stack.
- | Just iL <- takeExists tL
- , Just iR <- takeExists tR
- , iR < iL
+ --  CAREFUL: The returned location is relative to the top of the stack,
+ --           hence we need lR > lL here.
+ | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
+ , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
+ , lR > lL
  = do   let !ctx1       = updateExists [] iL tR ctx0
 
         ctrace  $ vcat 
                 [ text "* InstRReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
+                , text "  lL:    " <> ppr lL
+                , text "  lR:    " <> ppr lR
                 , indent 2 $ ppr ctx1
                 , empty ]
 
@@ -157,9 +163,11 @@ inst table !a ctx0 tL tR
         return ctx3
 
  | otherwise
- = error $ renderIndent $ vcat
+ = return ctx0 
+{- error $ renderIndent $ vcat
         [ text "inst: not finished"
         , text "  tL: " <> ppr tL
-        , text "  tR: " <> ppr tR ]
-
+        , text "  tR: " <> ppr tR 
+        , indent 2 $ ppr ctx0 ]
+-}
 

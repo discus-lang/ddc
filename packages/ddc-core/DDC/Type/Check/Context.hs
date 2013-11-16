@@ -13,19 +13,24 @@ module DDC.Type.Check.Context
 
         -- Positions
         , Pos     (..)
+        , markContext
+        , popToPos
 
+        -- Pushing
         , pushType,   pushTypes, memberType
         , pushKind,   pushKinds, memberKind, memberKindBind
         , pushExists
 
-        , markContext
-        , popToPos
-
+        -- Lookup
         , lookupType
         , lookupKind
         , lookupExistsEq
 
+        -- Existentials
+        , locationOfExists
         , updateExists
+
+
         , applyContext
 
         , liftTypes
@@ -70,7 +75,7 @@ instance (Eq n, Pretty n) => Pretty (Mode n) where
 -- | An existential variable.
 data Exists
         = Exists !Int
-        deriving (Show, Eq, Ord)
+        deriving (Show, Eq)
 
 
 instance Pretty Exists where
@@ -116,8 +121,10 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
                         | i <- [0..]])
 
 
--- Positions ------------------------------------------------------------------
+-- Positions -------------------------------------------------------------------
 -- | A position in the type checker context.
+--   A position is used to record a particular position in the context stack,
+--   so that we can pop elements higher than it.
 data Pos
         = Pos !Int
         deriving (Show, Eq)
@@ -130,8 +137,8 @@ instance Pretty Pos where
 -- Elem -----------------------------------------------------------------------
 -- | An element in the type checker context.
 data Elem n
-        -- | A context position.
-        = ElemMark       !Pos
+        -- | A context position marker.
+        = ElemPos       !Pos
 
         -- | Kind of some variable.
         | ElemKind      !(Bind n)
@@ -150,7 +157,7 @@ data Elem n
 instance (Pretty n, Eq n) => Pretty (Elem n) where
  ppr ll
   = case ll of
-        ElemMark p
+        ElemPos p
          -> ppr p
 
         ElemKind b      
@@ -216,7 +223,7 @@ markContext ctx
  = let  p       = contextGenPos ctx
         pos     = Pos p
    in   ( ctx   { contextGenPos = p + 1
-                , contextElems  = ElemMark pos : contextElems ctx }
+                , contextElems  = ElemPos pos : contextElems ctx }
         , pos )
 
 
@@ -227,7 +234,7 @@ popToPos pos ctx
  where
         go []                  = []
 
-        go (ElemMark pos' : ls)
+        go (ElemPos pos' : ls)
          | pos' == pos          = ls
          | otherwise            = go ls
 
@@ -313,7 +320,33 @@ memberKindBind b ctx
         _               -> False
 
 
--- Update ---------------------------------------------------------------------
+-- Existentials----------------------------------------------------------------
+
+-- | Get the numeric location of an existential in the context stack,
+--   or Nothing if it's not there. Returned value is relative to the TOP
+--   of the stack, so the top element has location 0.
+locationOfExists 
+        :: Exists
+        -> Context n
+        -> Maybe Int
+
+locationOfExists x ctx
+ = go 0 (contextElems ctx)
+ where  go !_ix []      = Nothing
+        
+        go !ix (ElemExistsDecl x'   : moar)
+         | x == x'      = Just ix
+         | otherwise    = go (ix + 1) moar
+
+        go !ix (ElemExistsEq   x' _ : moar)
+         | x == x'      = Just ix
+         | otherwise    = go (ix + 1) moar
+
+        go !ix  (_ : moar)
+         = go (ix + 1) moar
+
+
+-- | Update (solve) an existential in the context stack.
 updateExists 
         :: [Exists]     -- ^ Other existential declarations to  add before the
                         --   updated one.
@@ -328,7 +361,7 @@ updateExists isMore iEx tEx ctx
         go ls
          = case ls of
                 []                      -> []
-                l@ElemMark{}    : ls'   -> l : go ls'
+                l@ElemPos{}     : ls'   -> l : go ls'
                 l@ElemKind{}    : ls'   -> l : go ls'
                 l@ElemType{}    : ls'   -> l : go ls'
 
