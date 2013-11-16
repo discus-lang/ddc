@@ -9,11 +9,14 @@ module DDC.Core.Check
           Config(..)
         , configOfProfile
 
+          -- * Type checker trace
+        , CheckTrace (..)
+
           -- * Checking Modules
         , checkModule
-
+        
           -- * Checking Expressions
-        , Mode     (..)
+        , Mode       (..)
         , checkExp,     typeOfExp
 
           -- * Checking Witnesses

@@ -283,14 +283,14 @@ cmdCheckModuleFromFile fragment filePath
                         $ loadModuleFromFile 
                                 (fragmentProfile fragment) lexModule filePath
                 case mModule of
-                 Left  err      -> throwError (renderIndent $ ppr err)
-                 Right mm       -> goCheckFragment mm
+                 (Left  err, _ct) -> throwError (renderIndent $ ppr err)
+                 (Right mm,  _ct) -> goCheckFragment mm
 
         -- Do fragment specific checks.
         goCheckFragment mm
          = case fragmentCheckModule fragment mm of
-                Just err        -> throwError (renderIndent $ ppr err)
-                Nothing         -> return mm
+                Just err          -> throwError (renderIndent $ ppr err)
+                Nothing           -> return mm
 
 
 -- | Parse and type-check a core module from a string.
@@ -315,8 +315,8 @@ cmdCheckModuleFromString fragment source str
                                 str
 
             in  case mModule of
-                  Left err       -> throwError (renderIndent $ ppr err)
-                  Right mm       -> goCheckFragment mm
+                  (Left err, _ct) -> throwError (renderIndent $ ppr err)
+                  (Right mm, _ct) -> goCheckFragment mm
 
         goCheckFragment mm
          = case fragmentCheckModule fragment mm of
@@ -387,7 +387,7 @@ cmdParseCheckExp frag modules permitPartialPrims mode source str
 
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp profile' modules (nameOfSource source) mode toks of
+         = case fst $ loadExp profile' modules (nameOfSource source) mode toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing

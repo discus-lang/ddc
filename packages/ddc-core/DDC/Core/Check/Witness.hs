@@ -9,9 +9,11 @@ module DDC.Core.Check.Witness
         , typeOfWbCon
 
         , CheckM
+        , CheckTrace    (..)
         , checkWitnessM
         , newExists
         , newPos
+        , ctrace
 
         , checkTypeM
         , checkBindM)
@@ -26,34 +28,60 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Type.Check.Context
 import DDC.Type.Compounds
 import DDC.Type.Universe
-import DDC.Type.Sum                             as Sum
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check                  (throw, evalCheck)
 import DDC.Base.Pretty                          ()
+import Data.Monoid                              hiding ((<>))
 import qualified DDC.Control.Monad.Check        as G
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Check                 as T
+import qualified DDC.Type.Sum                   as Sum
 
 
 -- | Type checker monad. 
 --   Used to manage type errors.
-type CheckM a n   = G.CheckM (Int, Int) (Error a n)
+type CheckM a n   
+        = G.CheckM (CheckTrace, Int, Int) (Error a n)
+
 
 
 -- | Allocate a new exisistential.
 newExists :: CheckM a n Exists
 newExists
- = do   (ix, pos)       <- G.get
-        G.put (ix + 1, pos)
+ = do   (tr, ix, pos)       <- G.get
+        G.put (tr, ix + 1, pos)
         return  (Exists ix)
 
 
 -- | Allocate a new stack position.
 newPos :: CheckM a n Pos
 newPos
- = do   (ix, pos)       <- G.get
-        G.put (ix, pos + 1)
+ = do   (tr, ix, pos)       <- G.get
+        G.put (tr, ix, pos + 1)
         return  (Pos pos)
+
+
+-- CheckTrace -----------------------------------------------------------------
+-- Trace for the type checker.
+data CheckTrace 
+        = CheckTrace
+        { checkTraceDoc :: Doc }
+
+instance Monoid CheckTrace where
+ mempty = CheckTrace empty
+ 
+ mappend ct1 ct2
+        = CheckTrace 
+        { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
+
+
+-- | Append a doc to the checker trace.
+ctrace :: Doc -> CheckM a n ()
+ctrace doc'
+ = do   (tr, ix, pos)       <- G.get
+        let tr' = tr { checkTraceDoc = checkTraceDoc tr <> doc' }
+        G.put (tr', ix, pos)
+        return  ()
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -82,7 +110,7 @@ checkWitness
                   , Type n)
 
 checkWitness config kenv tenv xx
-        = evalCheck (0, 0)
+        = evalCheck (mempty, 0, 0)
         $ checkWitnessM config kenv tenv emptyContext xx
 
 

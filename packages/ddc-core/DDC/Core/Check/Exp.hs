@@ -16,6 +16,7 @@ module DDC.Core.Check.Exp
         , makeTable
         , CheckM
         , checkExpM
+        , CheckTrace    (..)
 
           -- * Tagged closures.
         , TaggedClosure(..))
@@ -28,6 +29,7 @@ import DDC.Core.Check.Exp.Case
 import DDC.Core.Check.Exp.Cast
 import DDC.Core.Check.Exp.Witness
 import DDC.Core.Check.Exp.Base
+import Data.Monoid                      hiding ((<>))
 import qualified DDC.Type.Env           as Env
 
 
@@ -53,27 +55,30 @@ checkExp
         -> TypeEnv n                    -- ^ Starting Type environment.
         -> Exp a n                      -- ^ Expression to check.
         -> Mode  n                      -- ^ Check mode.
-        -> Either (Error a n)
-                  ( Exp (AnTEC a n) n
-                  , Type n
-                  , Effect n
-                  , Closure n)
+        -> ( Either (Error a n)
+                    ( Exp (AnTEC a n) n
+                    , Type n
+                    , Effect n
+                    , Closure n)
+           , CheckTrace)
 
 checkExp !config !kenv !tenv !xx !tXX
- = evalCheck (0, 0)
- $ do   (xx', t, effs, clos, ctx) 
-                <- checkExpM 
+ = let  ((ct, _, _), result)
+         = runCheck (mempty, 0, 0)
+         $ do   (xx', t, effs, clos, ctx) 
+                 <- checkExpM 
                         (makeTable config
                                 (Env.union kenv (configPrimKinds config))
                                 (Env.union tenv (configPrimTypes config)))
                         emptyContext xx tXX
 
-        -- TODO: update exp with types in context 
-        let t'  = applyContext ctx t
-        let e'  = applyContext ctx $ TSum effs
-        let c'  = applyContext ctx $ closureOfTaggedSet clos
+                -- TODO: update exp with types in context 
+                let t'  = applyContext ctx t
+                let e'  = applyContext ctx $ TSum effs
+                let c'  = applyContext ctx $ closureOfTaggedSet clos
 
-        return  ( xx', t', e', c')
+                return  ( xx', t', e', c')
+  in    (result, ct)
 
 
 -- | Like `checkExp`, but only return the value type of an expression.
@@ -86,7 +91,7 @@ typeOfExp
         -> Either (Error a n) (Type n)
 
 typeOfExp !config !kenv !tenv !xx
- = case checkExp config kenv tenv xx Recon of
+ = case fst $ checkExp config kenv tenv xx Recon of
         Left err           -> Left err
         Right (_, t, _, _) -> Right t
 
@@ -108,10 +113,7 @@ checkExpM
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
 checkExpM !table !ctx !xx !mode
- =  -- trace (renderIndent $ vcat 
-    --            [ text "EXP" <+> ppr mode <+> ppr xx
-    --           , ppr ctx ]) $
-     case xx of
+ = case xx of
         XVar{}          -> tableCheckVarCon  table table ctx xx mode
         XCon{}          -> tableCheckVarCon  table table ctx xx mode
         XApp{}          -> tableCheckApp     table table ctx xx mode

@@ -14,22 +14,30 @@
 
 
 -- Function application.
-\(f : ?0).\(x : ?2). f x
+\(f : ?2 -> ?3).\(x : ?2). f x
 :*: (?2 -> ?3) -> ?2 -> ?3
 :!: Pure
 :$: Empty
 
 
 -- Multiple use of argument.
-\(f : ?0).\(x : ?2). f x x
+\(f : ?2 -> ?2 -> ?3).\(x : ?2). f x x
 :*: (?2 -> ?2 -> ?3) -> ?2 -> ?3
 :!: Pure
 :$: Empty
 
 
--- Higher order.
-\(f : ?0).\(g : ?2).\(x : ?4).
+-- Second order.
+\(f : ?6 -> ?5).\(g : ?4 -> ?6).\(x : ?4).
 f (g x)
 :*: (?6 -> ?5) -> (?4 -> ?6) -> ?4 -> ?5
+:!: Pure
+:$: Empty
+
+
+-- Third order.
+\(f : ?2 -> ?8 -> ?5).\(g : ?4 -> ?8).\(x : ?4).
+f g (g x)
+:*: (?2 -> ?8 -> ?5) -> (?4 -> ?8) -> ?4 -> ?5
 :!: Pure
 :$: Empty

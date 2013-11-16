@@ -12,8 +12,8 @@ checkSub table !a ctx0 xx tExpect
          <- tableCheckExp table table ctx0 xx Synth
 
         -- Substitute context into synthesised and expected types.
-        let tExpect'    = applyContext ctx0 tExpect                     -- TODO: wrong contexts.
-        let tSynth'     = applyContext ctx0 tSynth
+        let tExpect'    = applyContext ctx1 tExpect
+        let tSynth'     = applyContext ctx1 tSynth
 
         ctx2    <- makeSub table a ctx1 tSynth' tExpect'
 

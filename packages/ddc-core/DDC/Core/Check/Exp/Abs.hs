@@ -180,15 +180,18 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
         
-        --trace (renderIndent $ vcat
-        --        [ text "* Lam Synth"
-        --        , text "  " <> ppr (XLam a b1 x2)
-        --        , text "  t   = " <> ppr tResult
-        --        , text "  t'  = " <> ppr tResult'
-        --        , indent 2 $ ppr ctx2]) $ return ()
+        let b1''        = replaceTypeOfBind
+                                (applyContext ctx2 (typeOfBind b1')) b1'
+
+        trace (renderIndent $ vcat
+                [ text "* Lam Synth"
+                , text "  " <> ppr (XLam a b1 x2)
+                , text "  t   = " <> ppr tResult
+                , text "  t'  = " <> ppr tResult'
+                , indent 2 $ ppr ctx2]) $ return ()
 
         returnX a
-                (\z -> XLam z b1' x2')
+                (\z -> XLam z b1'' x2')
                 tResult' 
                 (Sum.empty kEffect)
                 cResult
@@ -238,11 +241,11 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
         
-        trace (renderIndent $ vcat
-                [ text "Lam Check" <> ppr tXX
-                , ppr ctx2
-                , text " t    = " <> ppr tResult
-                , text " t'   = " <> ppr tResult' ]) $ return ()
+        ctrace  $ vcat 
+                [ text "* Abs Lam Check"
+                , text "  t    = " <> ppr tXX
+                , text "  t'   = " <> ppr tResult'
+                , text "  " <> ppr ctx2 ]
 
         returnX a
                 (\z -> XLam z b1' x2')

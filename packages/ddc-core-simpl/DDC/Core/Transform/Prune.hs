@@ -114,7 +114,7 @@ pruneX profile kenv tenv xx
 -- deadCodeTrans to actually erase dead bindings.
 --
 transformTypeUsage profile kenv tenv trans xx
- = case checkExp (configOfProfile profile) kenv tenv xx Recon of
+ = case fst $ checkExp (configOfProfile profile) kenv tenv xx Recon of
         Right (xx1, _, _,_) 
          -> let xx2        = usageX xx1
                 (x', info) = runWriter (trans xx2)

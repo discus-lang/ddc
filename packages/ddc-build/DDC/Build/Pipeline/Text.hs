@@ -48,5 +48,5 @@ pipeText !srcName !srcLine !str !pp
          -> {-# SCC "PipeTextLoadCore" #-}
             let toks            = fragmentLexModule frag srcName srcLine str
             in case CL.loadModuleFromTokens (fragmentProfile frag) srcName toks of
-                 Left err -> return $ [ErrorLoad err]
-                 Right mm -> pipeCores mm pipes
+                 (Left err, _ct) -> return $ [ErrorLoad err]
+                 (Right mm, _ct) -> pipeCores mm pipes

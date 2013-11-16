@@ -153,13 +153,13 @@ pipeCore !mm !pp
 
                 goCheck mm1
                  = case C.checkModule (C.configOfProfile profile) mm1 of
-                        Left err   -> return [ErrorLint err]
-                        Right mm2  -> goComplies mm2
+                        (Left err,  _ct) -> return [ErrorLint err]
+                        (Right mm2, _ct) -> goComplies mm2
 
                 goComplies mm1
                  = case C.complies profile mm1 of
-                        Just err   -> return [ErrorLint err]
-                        Nothing    -> pipeCores mm1 pipes
+                        Just err         -> return [ErrorLint err]
+                        Nothing          -> pipeCores mm1 pipes
 
              in goCheck mm
 
@@ -390,14 +390,15 @@ pipeFlow !mm !pp
                 mm_rate
                  = case C.checkModule (C.configOfProfile Flow.profile) mm_float of
                 -- TODO do something with the errors/warnings
-                     Left _    -> mm
-                     Right mm' ->
+                     (Left _, _)    -> mm
+
+                     (Right mm', _) ->
                        let mm_stripped = C.reannotate (const ()) mm'
                            mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
                            -- Check again to synthesise types
                        in  case C.checkModule (C.configOfProfile Flow.profile) mm_flow of
-                            Left _         -> mm_flow
-                            Right mm_flow' -> C.reannotate (const ()) mm_flow'
+                            (Left _, _ct)         -> mm_flow
+                            (Right mm_flow', _ct) -> C.reannotate (const ()) mm_flow'
             in  pipeCores mm_rate pipes
 
 

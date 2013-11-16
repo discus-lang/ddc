@@ -12,8 +12,9 @@ import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
-import DDC.Control.Monad.Check  (evalCheck, throw)
+import DDC.Control.Monad.Check  (runCheck, throw)
 import Data.Map                 (Map)
+import Data.Monoid
 import qualified DDC.Type.Check as T
 import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map
@@ -30,15 +31,19 @@ checkModule
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> Module a n           -- ^ Module to check.
-        -> Either (Error a n) (Module (AnTEC a n) n)
+        -> ( Either (Error a n) (Module (AnTEC a n) n)
+           , CheckTrace )
 
 checkModule !config !xx 
-        = evalCheck (0, 0)
-        $ checkModuleM 
-                config 
-                (configPrimKinds config)
-                (configPrimTypes config)
-                xx
+ = let  (s, result)     = runCheck (mempty, 0, 0)
+                        $ checkModuleM 
+                                config 
+                                (configPrimKinds config)
+                                (configPrimTypes config)
+                                xx
+        (tr, _, _)      = s
+
+   in   (result, tr)
 
 
 -- checkModule ----------------------------------------------------------------

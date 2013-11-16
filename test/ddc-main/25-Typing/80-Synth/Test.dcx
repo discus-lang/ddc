@@ -15,5 +15,9 @@
 :synth \f. \x. f x x
 
 
--- Higher order.
+-- Second order.
 :synth \f. \g. \x. f (g x)
+
+
+-- Third order.
+:synth \f. \g. \x. f g (g x)

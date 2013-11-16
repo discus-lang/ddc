@@ -33,7 +33,7 @@ module DDC.Core.Check.Exp.Base
         -- * Re-exported things
         , Config (..)
         , Env, KindEnv, TypeEnv
-        , throw, evalCheck
+        , throw, runCheck
         , Set)
 where
 import DDC.Core.Check.TaggedClosure
@@ -62,7 +62,7 @@ import Control.Monad
 import Data.Maybe
 
 import DDC.Type.Env             (Env, KindEnv, TypeEnv)
-import DDC.Control.Monad.Check  (throw, evalCheck)
+import DDC.Control.Monad.Check  (throw, runCheck)
 import Data.Set                 (Set)
 
 

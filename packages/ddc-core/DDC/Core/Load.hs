@@ -15,7 +15,7 @@ where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer.Tokens
-import DDC.Core.Check                           (Mode(..))
+import DDC.Core.Check                           (Mode(..), CheckTrace)
 import DDC.Core.Exp
 import DDC.Core.Annot.AnT                       (AnT)
 import DDC.Type.Transform.SpreadT
@@ -74,15 +74,17 @@ loadModuleFromFile
         => Profile n                    -- ^ Language fragment profile.
         -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
         -> FilePath                     -- ^ File containing source code.
-        -> IO (Either (Error n)
-                      (Module (C.AnTEC BP.SourcePos n) n))
+        -> IO ( Either (Error n)
+                       (Module (C.AnTEC BP.SourcePos n) n)
+              , Maybe CheckTrace)
 
 loadModuleFromFile profile lexSource filePath
  = do   
         -- Check whether the file exists.
         exists  <- doesFileExist filePath
         if not exists 
-         then return $ Left $ ErrorRead "Cannot read file."
+         then return ( Left $ ErrorRead "Cannot read file."
+                     , Nothing)
          else do
                 -- Read the source file.
                 src     <- readFile filePath
@@ -100,8 +102,9 @@ loadModuleFromString
         -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
         -> FilePath                     -- ^ Path to source file for error messages.
         -> String                       -- ^ Program text.
-        -> Either (Error n) 
-                  (Module (C.AnTEC BP.SourcePos n) n)
+        -> ( Either (Error n) 
+                    (Module (C.AnTEC BP.SourcePos n) n)
+           , Maybe CheckTrace)
 
 loadModuleFromString profile lexSource filePath src
         = loadModuleFromTokens profile filePath (lexSource src)
@@ -113,8 +116,9 @@ loadModuleFromTokens
         => Profile n                    -- ^ Language fragment profile.
         -> FilePath                     -- ^ Path to source file for error messages.
         -> [Token (Tok n)]              -- ^ Source tokens.
-        -> Either (Error n) 
-                  (Module (C.AnTEC BP.SourcePos n) n)
+        -> ( Either (Error n) 
+                    (Module (C.AnTEC BP.SourcePos n) n)
+           , Maybe CheckTrace)
 
 loadModuleFromTokens profile sourceName toks'
  = goParse toks'
@@ -129,20 +133,20 @@ loadModuleFromTokens profile sourceName toks'
          = case BP.runTokenParser describeTok sourceName 
                         (C.pModule (C.contextOfProfile profile))
                         toks of
-                Left err  -> Left (ErrorParser err)
-                Right mm  -> goCheckType (spreadX kenv tenv mm)
+                Left err         -> (Left (ErrorParser err),     Nothing)
+                Right mm         -> goCheckType (spreadX kenv tenv mm)
 
         -- Check that the module is type sound.
         goCheckType mm
          = case C.checkModule config mm of
-                Left err  -> Left (ErrorCheckExp err)
-                Right mm' -> goCheckCompliance mm'
+                (Left err,  ct)  -> (Left (ErrorCheckExp err),   Just ct)
+                (Right mm', ct)  -> goCheckCompliance ct mm'
 
         -- Check that the module compiles with the language fragment.
-        goCheckCompliance mm
+        goCheckCompliance ct mm
          = case I.complies profile mm of
-                Just err  -> Left (ErrorCompliance err)
-                Nothing   -> Right mm
+                Just err         -> (Left (ErrorCompliance err), Just ct)
+                Nothing          -> (Right mm,                   Just ct)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -157,8 +161,9 @@ loadExp
         -> FilePath             -- ^ Path to source file for error messages.
         -> Mode n               -- ^ Type checker mode.
         -> [Token (Tok n)]      -- ^ Source tokens.
-        -> Either (Error n) 
-                  (Exp (C.AnTEC BP.SourcePos n) n)
+        -> ( Either (Error n) 
+                    (Exp (C.AnTEC BP.SourcePos n) n)
+           , Maybe CheckTrace)
 
 loadExp profile modules sourceName mode toks'
  = goParse toks'
@@ -173,20 +178,20 @@ loadExp profile modules sourceName mode toks'
          = case BP.runTokenParser describeTok sourceName 
                         (C.pExp (C.contextOfProfile profile))
                         toks of
-                Left err  -> Left (ErrorParser err)
-                Right t   -> goCheckType (spreadX kenv tenv t)
+                Left err              -> (Left (ErrorParser err),     Nothing)
+                Right t               -> goCheckType (spreadX kenv tenv t)
 
         -- Check the kind of the type.
         goCheckType x
          = case C.checkExp config kenv tenv x mode of
-                Left err            -> Left  (ErrorCheckExp err)
-                Right (x', _, _, _) -> goCheckCompliance x'
+            (Left err, ct)            -> (Left  (ErrorCheckExp err),  Just ct)
+            (Right (x', _, _, _), ct) -> goCheckCompliance ct x'
 
         -- Check that the module compiles with the language fragment.
-        goCheckCompliance x 
+        goCheckCompliance ct x 
          = case I.compliesWithEnvs profile kenv tenv x of
-                Just err  -> Left (ErrorCompliance err)
-                Nothing   -> Right x
+            Just err                  -> (Left (ErrorCompliance err), Just ct)
+            Nothing                   -> (Right x,                    Just ct)
 
 
 -- Type -----------------------------------------------------------------------
