@@ -4,6 +4,23 @@ ok
 -- The Tetra fragment uses the pure function type.
 (->) :: Data ~> Data ~> Data
 
+-- Base types.
+Bool# :: Data
+Nat# :: Data
+Int# :: Data
+Word8# :: Data
+Word16# :: Data
+Word32# :: Data
+Word64# :: Data
+
+-- Compuation type.
+S :: Effect ~> Data ~> Data
+
+-- Effect types.
+Read :: Region ~> Effect
+Write :: Region ~> Effect
+Alloc :: Region ~> Effect
+
 -- Primitive Arithmetic.
 neg# :: [^ : Data].^0 -> ^0
 add# :: [^ : Data].^0 -> ^0 -> ^0

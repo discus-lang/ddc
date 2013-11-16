@@ -4,6 +4,23 @@
 -- The Tetra fragment uses the pure function type.
 :kind (->)
 
+-- Base types.
+:kind Bool#
+:kind Nat#
+:kind Int#
+:kind Word8#
+:kind Word16#
+:kind Word32#
+:kind Word64#
+
+-- Compuation type.
+:kind S
+
+-- Effect types.
+:kind Read
+:kind Write
+:kind Alloc
+
 -- Primitive Arithmetic.
 :type neg#
 :type add#
