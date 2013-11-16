@@ -154,10 +154,10 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         let tB  = typeOfExists iB
 
         -- Check the body against the existential for it.
-        let (ctx', pos1) = markContext ctx
-        let ctx1         = pushType   b1' 
-                         $ pushExists iB
-                         $ pushExists iA ctx'
+        let ctxBA        = pushExists iB
+                         $ pushExists iA ctx
+        let (ctx', pos1) = markContext ctxBA
+        let ctx1         = pushType   b1' ctx'
 
         (x2', _, e2, c2, ctx2)
          <- tableCheckExp table table ctx1 x2 (Check tB)
@@ -174,7 +174,7 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1 x2) tA tB e2 c2_cut
 
-        let tResult'    = applyContext ctx2 tResult
+        -- let tResult'    = applyContext ctx2 tResult
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
@@ -185,13 +185,14 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         ctrace  $ vcat
                 [ text "* Lam Synth"
                 , indent 2 $ ppr (XLam a b1 x2)
-                , text "  OUT: " <> ppr tResult'
-                , indent 2 $ ppr ctx2 
+                , text "  OUT: " <> ppr tResult
+                , indent 2 $ ppr ctx
+                , indent 2 $ ppr ctx_cut 
                 , empty ]
 
         returnX a
                 (\z -> XLam z b1'' x2')
-                tResult' 
+                tResult
                 (Sum.empty kEffect)
                 cResult
                 ctx_cut
@@ -235,7 +236,7 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) t1 t2 e2 c2_cut
 
-        let tResult'    = applyContext ctx2 tResult
+        -- let tResult'    = applyContext ctx2 tResult
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
@@ -244,13 +245,14 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
                 [ text "* Lam Check"
                 , indent 2 $ ppr (XLam a b1 x2)
                 , text "  IN:  " <> ppr tXX
-                , text "  OUT: " <> ppr tResult'
-                , indent 2 $ ppr ctx2 
+                , text "  OUT: " <> ppr tResult
+                , indent 2 $ ppr ctx
+                , indent 2 $ ppr ctx_cut
                 , empty ]
 
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult' 
+                tResult
                 (Sum.empty kEffect)
                 cResult
                 ctx_cut

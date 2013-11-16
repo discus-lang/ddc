@@ -17,14 +17,17 @@ checkSub table !a ctx0 xx tExpect
 
         ctx2    <- makeSub table a ctx1 tSynth' tExpect'
 
-        --trace (renderIndent $ vcat
-        --        [ text "* Sub"
-        --        , text "  " <> ppr xx
-        --        , text "  tSynth   = " <> ppr tSynth
-        --        , text "  tExpect  = " <> ppr tExpect
-        --        , text "  tSynth'  = " <> ppr tSynth'
-        --        , text "  tExpect' = " <> ppr tExpect'
-        --        , indent 2 $ ppr ctx2 ]) $ return ()
+        ctrace  $ vcat
+                [ text "* Sub"
+                , indent 2 $ ppr xx
+                , text "  tExpect:  " <> ppr tExpect
+                , text "  tSynth:   " <> ppr tSynth
+                , text "  tExpect': " <> ppr tExpect'
+                , text "  tSynth':  " <> ppr tSynth'
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , indent 2 $ ppr ctx2 
+                , empty ]
 
         returnX a
                 (\_ -> xx')
@@ -40,12 +43,32 @@ makeSub table a ctx0 tL tR
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR
  , iL == iR
- = return ctx0
+ = do   
+        ctrace  $ vcat
+                [ text "* SubExVar"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0 
+                , empty ]
+
+        return ctx0
 
  -- SubInstantiateR
  --  TODO: do free variables check  tR /= FV(tL)
  | isTExists tR
- = inst table a ctx0 tL tR
+ = do
+
+        ctx1    <- inst table a ctx0 tL tR
+
+        ctrace  $ vcat
+                [ text "* SubInstantiateR"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1 
+                , empty ]
+
+        return ctx1
 
  | otherwise
  = error $ renderIndent $ vcat
@@ -70,6 +93,7 @@ inst table !a ctx0 tL tR
                 [ text "* InstLReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , empty ]
 
@@ -90,6 +114,7 @@ inst table !a ctx0 tL tR
                 , text "  RIGHT: " <> ppr tR
                 , text "  lL:    " <> ppr lL
                 , text "  lR:    " <> ppr lR
+                , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , empty ]
 
@@ -123,6 +148,7 @@ inst table !a ctx0 tL tR
                 [ text "* InstLArr"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx3 
                 , empty ]
 
@@ -157,18 +183,19 @@ inst table !a ctx0 tL tR
                 [ text "* InstRArr"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx3 
                 , empty ]
 
         return ctx3
 
  | otherwise
- = return ctx0 
-{-
- error $ renderIndent $ vcat
-        [ text "inst: not finished"
-        , text "  tL: " <> ppr tL
-        , text "  tR: " <> ppr tR 
-        , indent 2 $ ppr ctx0 ]
+ = do
+        ctrace  $ vcat
+                [ text "* BROKEN"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
 
--}
+        return ctx0

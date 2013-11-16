@@ -62,7 +62,7 @@ checkExp
                     , Closure n)
            , CheckTrace)
 
-checkExp !config !kenv !tenv !xx !tXX
+checkExp !config !kenv !tenv !xx !mode
  = let  ((ct, _, _), result)
          = runCheck (mempty, 0, 0)
          $ do   (xx', t, effs, clos, ctx) 
@@ -70,14 +70,23 @@ checkExp !config !kenv !tenv !xx !tXX
                         (makeTable config
                                 (Env.union kenv (configPrimKinds config))
                                 (Env.union tenv (configPrimTypes config)))
-                        emptyContext xx tXX
+                        emptyContext xx mode
+                
+                -- Apply the final context to the annotations in expressions.
+                let applyToAnnot (AnTEC t0 e0 c0 x0)
+                        = AnTEC (applyContext ctx t0)
+                                (applyContext ctx e0)
+                                (applyContext ctx c0)
+                                x0
+                let xx''    = reannotate applyToAnnot xx'
 
-                -- TODO: update exp with types in context 
+                -- Apply the final context to the overall types of the expression.
                 let t'  = applyContext ctx t
                 let e'  = applyContext ctx $ TSum effs
                 let c'  = applyContext ctx $ closureOfTaggedSet clos
 
-                return  ( xx', t', e', c')
+                return  (xx'', t', e', c')
+  
   in    (result, ct)
 
 

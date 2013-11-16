@@ -22,12 +22,19 @@ checkVarCon !table !ctx xx@(XVar a u) mode
         Check tEx
           -> checkSub table a ctx xx tEx
 
-        _ -> returnX a
-                (\z -> XVar z u)
-                t
-                (Sum.empty kEffect)
-                (Set.singleton $ taggedClosureOfValBound t u)
-                ctx
+        _ -> do ctrace  $ vcat
+                        [ text "* Var"
+                        , indent 2 $ ppr xx
+                        , text "  TYPE: " <> ppr t
+                        , indent 2 $ ppr ctx 
+                        , empty ]
+
+                returnX a
+                        (\z -> XVar z u)
+                        t
+                        (Sum.empty kEffect)
+                        (Set.singleton $ taggedClosureOfValBound t u)
+                        ctx
 
 
  -- Look in the global environment.
