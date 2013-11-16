@@ -56,12 +56,10 @@ makeSub table a ctx0 tL tR
  -- SubInstantiateR
  --  TODO: do free variables check  tR /= FV(tL)
  | isTExists tR
- = do
-
-        ctx1    <- inst table a ctx0 tL tR
+ = do   ctx1    <- inst table a ctx0 tL tR
 
         ctrace  $ vcat
-                [ text "* SubInstantiateR"
+                [ text "* SubInstR"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
@@ -70,9 +68,30 @@ makeSub table a ctx0 tL tR
 
         return ctx1
 
+ | Just (tL1, tL2)      <- takeTFun tL
+ , Just (tR1, tR2)      <- takeTFun tR
+ = do   
+        ctx1     <- makeSub table a ctx0 tR1 tL1
+
+        let tL2' = applyContext ctx1 tL2
+        let tR2' = applyContext ctx1 tR2
+
+        ctx2     <- makeSub table a ctx1 tL2' tR2'
+
+        ctrace  $ vcat
+                [ text "* SubInstArr"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , indent 2 $ ppr ctx2 ]
+
+        return ctx2
+        
+
  | otherwise
  = error $ renderIndent $ vcat
-        [ text "subInstR: no match" 
+        [ text "makeSub: no match" 
         , text "tL = " <> ppr tL
         , text "tR = " <> ppr tR ]
 

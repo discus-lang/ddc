@@ -1,4 +1,6 @@
 
+:set lang Tetra
+
 -- Check we can produce existential vars.
 :synth \x. x
 
@@ -21,3 +23,7 @@
 
 -- Third order.
 :synth \f. \g. \x. f g (g x)
+
+
+-- Application.
+:synth (\f. \g. \x. f g (g x)) (\x. x)

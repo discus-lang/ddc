@@ -234,16 +234,15 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (tResult, cResult)
-         <- makeFunctionType config a (XLam a b1' x2) t1 t2 e2 c2_cut
-
-        -- let tResult'    = applyContext ctx2 tResult
+         <- makeFunctionType config a (XLam a b1' x2) 
+                (typeOfBind b1') t2 e2 c2_cut
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
         
         ctrace  $ vcat 
                 [ text "* Lam Check"
-                , indent 2 $ ppr (XLam a b1 x2)
+                , indent 2 $ ppr (XLam a b1' x2)
                 , text "  IN:  " <> ppr tXX
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx

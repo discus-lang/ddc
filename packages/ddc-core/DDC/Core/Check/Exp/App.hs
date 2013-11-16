@@ -134,11 +134,10 @@ synthAppArg table a xx ctx0 xF tF effsF closF xArg
         let effsFA = effsF `Sum.union` effsA
         let closFA = closF `Set.union` closA
 
-        --trace (renderIndent $ vcat
-        --        [ text "* App Synth / Rule (^alpha App)"
-        --        , text "  " <> ppr xx
-        --        , indent 2 $ ppr ctx2 ])
-        --        $ return ()
+        ctrace  $ vcat
+                [ text "* App Synth (^alpha)"
+                , indent 2 $ ppr xx
+                , indent 2 $ ppr ctx2 ]
 
         returnX a
            (\z -> XApp z xF xArg')
@@ -147,18 +146,22 @@ synthAppArg table a xx ctx0 xF tF effsF closF xArg
  
  -- Rule (-> App)
  --  Function already has a concrete function type.
- | TApp (TApp (TCon (TyConSpec TcConFun)) t11) _t12 
-                <- tF
+ | Just (t11, _t12)   <- takeTFun tF
  = do   
         -- Check the argument.
-        (xArg', tArg, effsArg, closArg, ctx2) 
+        (xArg', tArg, effsArg, closArg, ctx1) 
          <- tableCheckExp table table ctx0 xArg (Check t11)
+
+        ctrace  $ vcat
+                [ text "* App Synth Elim"
+                , indent 2 $ ppr xx
+                , indent 2 $ ppr ctx1 ]
 
         applyFunctionType
                 a xx
                 xF    tF   effsF   closF
                 xArg' tArg effsArg closArg
-                ctx2
+                ctx1
 
  | otherwise
  = throw $ ErrorAppNotFun a xx tF

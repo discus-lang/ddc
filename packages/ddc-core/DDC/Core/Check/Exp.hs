@@ -29,6 +29,7 @@ import DDC.Core.Check.Exp.Case
 import DDC.Core.Check.Exp.Cast
 import DDC.Core.Check.Exp.Witness
 import DDC.Core.Check.Exp.Base
+import DDC.Core.Transform.MapT
 import Data.Monoid                      hiding ((<>))
 import qualified DDC.Type.Env           as Env
 
@@ -78,12 +79,14 @@ checkExp !config !kenv !tenv !xx !mode
                                 (applyContext ctx e0)
                                 (applyContext ctx c0)
                                 x0
-                let xx''    = reannotate applyToAnnot xx'
+
+                let xx'' = reannotate applyToAnnot 
+                         $ mapT (applyContext ctx) xx'
 
                 -- Apply the final context to the overall types of the expression.
-                let t'  = applyContext ctx t
-                let e'  = applyContext ctx $ TSum effs
-                let c'  = applyContext ctx $ closureOfTaggedSet clos
+                let t'   = applyContext ctx t
+                let e'   = applyContext ctx $ TSum effs
+                let c'   = applyContext ctx $ closureOfTaggedSet clos
 
                 return  (xx'', t', e', c')
   

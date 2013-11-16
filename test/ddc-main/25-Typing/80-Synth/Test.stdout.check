@@ -1,30 +1,28 @@
 
+ok
+
 -- Check we can produce existential vars.
 \(x : ?0). x
 :*: ?0 -> ?0
 :!: Pure
-:$: Empty
 
 
 -- Check order of existential vars.
 \(x : ?0).\(y : ?2).\(z : ?4). y
 :*: ?0 -> ?8 -> ?10 -> ?8
 :!: Pure
-:$: Empty
 
 
 -- Function application.
 \(f : ?4 -> ?5).\(x : ?4). f x
 :*: (?4 -> ?5) -> ?4 -> ?5
 :!: Pure
-:$: Empty
 
 
 -- Multiple use of argument.
 \(f : ?4 -> ?4 -> ?7).\(x : ?4). f x x
 :*: (?4 -> ?4 -> ?7) -> ?4 -> ?7
 :!: Pure
-:$: Empty
 
 
 -- Second order.
@@ -32,7 +30,6 @@
 f (g x)
 :*: (?6 -> ?7) -> (?14 -> ?6) -> ?14 -> ?7
 :!: Pure
-:$: Empty
 
 
 -- Third order.
@@ -40,4 +37,11 @@ f (g x)
 f g (g x)
 :*: ((?10 -> ?11) -> ?11 -> ?9) -> (?10 -> ?11) -> ?10 -> ?9
 :!: Pure
-:$: Empty
+
+
+-- Application.
+(\(f : (?10 -> ?10) -> ?10 -> ?10).\(g : ?10 -> ?10).\(x : ?10).
+ f g (g x))
+    (\(x : ?10 -> ?10). x)
+:*: (?10 -> ?10) -> ?10 -> ?10
+:!: Pure
