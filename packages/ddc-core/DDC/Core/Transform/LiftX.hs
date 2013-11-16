@@ -124,7 +124,7 @@ instance MapBoundX (Cast a) n where
 
         CastPurify w    -> CastPurify w
         CastForget w    -> CastForget w
-        CastSuspend     -> CastSuspend
+        CastBox         -> CastBox
         CastRun         -> CastRun
 
 

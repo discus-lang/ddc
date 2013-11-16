@@ -58,7 +58,7 @@ keywords
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
         , ("forget",     KA KForget)
-        , ("suspend",    KA KSuspend)
+        , ("box",        KA KBox)
         , ("run",        KA KRun)
         , ("weakeff",    KA KWeakEff)
         , ("weakclo",    KA KWeakClo)

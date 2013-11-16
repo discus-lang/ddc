@@ -172,7 +172,7 @@ instance SubstituteXX Cast where
         CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
         CastPurify w            -> CastPurify (into sub w)
         CastForget w            -> CastForget (into sub w)
-        CastSuspend             -> CastSuspend
+        CastBox                 -> CastBox
         CastRun                 -> CastRun
 
 

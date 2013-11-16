@@ -208,7 +208,7 @@ data TokAtom
         | KWeakClo
         | KPurify
         | KForget
-        | KSuspend
+        | KBox
         | KRun
 
         -----------------------------------------
@@ -313,7 +313,7 @@ describeTokAtom' ta
         KWeakClo                -> (Keyword, "weakclo")
         KPurify                 -> (Keyword, "purify")
         KForget                 -> (Keyword, "forget")
-        KSuspend                -> (Keyword, "suspend")
+        KBox                    -> (Keyword, "box")
         KRun                    -> (Keyword, "run")
 
         -- sugar keywords

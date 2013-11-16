@@ -174,7 +174,7 @@ instance SupportX (Cast a) where
         CastForget w
          -> support kenv tenv w
 
-        CastSuspend
+        CastBox
          -> mempty
 
         CastRun

@@ -113,9 +113,9 @@ data Cast a n
         -- | Purify the effect (action) of an expression.
         | CastPurify !(Witness a n)
 
-        -- | Suspend a computation, 
+        -- | Box a computation, 
         --   capturing its effects in the S computation type.
-        | CastSuspend 
+        | CastBox
 
         -- | Run a computation,
         --   releasing its effects into the environment.
@@ -147,7 +147,7 @@ instance (NFData a, NFData n) => NFData (Cast a n) where
   = case cc of
         CastWeakenEffect e      -> rnf e
         CastPurify w            -> rnf w
-        CastSuspend             -> ()
+        CastBox                 -> ()
         CastRun                 -> ()
 
 

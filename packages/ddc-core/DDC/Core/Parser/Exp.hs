@@ -146,10 +146,10 @@ pExp c
         return  $ XCast sp (CastForget w) x
 
 
-        -- suspend EXP
- , do   sp      <- pTokSP KSuspend
+        -- box EXP
+ , do   sp      <- pTokSP KBox
         x       <- pExp c
-        return  $ XCast sp CastSuspend x
+        return  $ XCast sp CastBox x
 
 
         -- run EXP

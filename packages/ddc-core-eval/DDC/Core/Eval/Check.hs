@@ -185,7 +185,7 @@ checkCapsCM cc
 
         CastPurify w    -> checkCapsWM w
         CastForget w    -> checkCapsWM w
-        CastSuspend     -> none 
+        CastBox         -> none 
         CastRun         -> none
 
 

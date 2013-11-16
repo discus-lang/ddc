@@ -110,9 +110,9 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
                 t1 effs clos' ctx1
 
 
--- Suspend a computation,
+-- Box a computation,
 -- capturing its effects in a computation type.
-checkCast !table ctx (XCast a CastSuspend x1) _
+checkCast !table ctx (XCast a CastBox x1) _
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx1) 
@@ -123,7 +123,7 @@ checkCast !table ctx (XCast a CastSuspend x1) _
         let tS  = tApps (TCon (TyConSpec TcConSusp))
                         [TSum effs, t1]
 
-        returnX a (\z -> XCast z CastSuspend x1')
+        returnX a (\z -> XCast z CastBox x1')
                 tS (Sum.empty kEffect) clos ctx1
 
 

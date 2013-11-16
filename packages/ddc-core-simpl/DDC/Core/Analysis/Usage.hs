@@ -241,7 +241,7 @@ usageCast cc
          | (used, w')   <- usageWitness w
          -> (used, CastForget w')
 
-        CastSuspend     -> (empty, CastSuspend)
+        CastBox         -> (empty, CastBox)
         CastRun         -> (empty, CastRun)
 
 

@@ -105,13 +105,13 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          <> line 
          <> rbrace
 
-        XCast _ CastSuspend x
+        XCast _ CastBox x
          -> pprParen' (d > 2)
-         $  text "suspend" <$> ppr x
+         $  text "box"  <$> ppr x
 
         XCast _ CastRun x
          -> pprParen' (d > 2)
-         $  text "run"     <+> ppr x
+         $  text "run"  <+> ppr x
 
         XCast _ cc x
          ->  pprParen' (d > 2)
@@ -148,8 +148,8 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
         CastPurify w
          -> text "purify"  <+> angles   (ppr w)
 
-        CastSuspend
-         -> text "suspend"
+        CastBox
+         -> text "box"
 
         CastRun
          -> text "run"

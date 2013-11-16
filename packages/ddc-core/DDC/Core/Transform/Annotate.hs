@@ -51,7 +51,7 @@ instance Annotate S.Cast A.Cast where
         S.CastWeakenClosure clo         -> A.CastWeakenClosure (map down clo)
         S.CastPurify w                  -> A.CastPurify        (down w)
         S.CastForget w                  -> A.CastForget        (down w)
-        S.CastSuspend                   -> A.CastSuspend
+        S.CastBox                       -> A.CastBox
         S.CastRun                       -> A.CastRun
 
 

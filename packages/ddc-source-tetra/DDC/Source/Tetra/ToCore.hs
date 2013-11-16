@@ -175,7 +175,7 @@ toCoreC cc
  = case cc of
         S.CastWeakenEffect eff  -> C.CastWeakenEffect (toCoreT eff)
         S.CastPurify   w        -> C.CastPurify       (toCoreW w)
-        S.CastSuspend           -> C.CastSuspend
+        S.CastBox               -> C.CastBox
         S.CastRun               -> C.CastRun
 
 

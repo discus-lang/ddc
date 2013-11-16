@@ -3,7 +3,7 @@
 
 -- don't look past lets normally
 :set.. rule unbox_box (s : Int r0#).
-    unbox (box s)
+    unboxi (boxi s)
     = s
 ;;
 :set trans Rewrite
@@ -11,16 +11,16 @@
 
 -- don't rewrite non-locals
 :trans..
-let x = box (5 [r0#] ())	in
-let y = unbox x			in
-let z = unbox x			in
-    unbox (box (addInt [:r0# r0# r0#:] y z))
+let x = boxi (5 [r0#] ())	in
+let y = unboxi x			in
+let z = unboxi x			in
+    unboxi (boxi (addInt [:r0# r0# r0#:] y z))
 ;;
 
 
 -- the {{ }} brackets indicate that the argument is cheap enough to be split across places
 :set.. rule unbox_box (s : Int r0#).
-    unbox _{box s}_
+    unboxi _{boxi s}_
     = s
 ;;
 :set trans Rewrite
@@ -28,36 +28,36 @@ let z = unbox x			in
 
 -- rewrite y and z
 :trans..
-let x = box (5 [r0#] ())	in
-let y = unbox x			in
-let z = unbox x			in
+let x = boxi (5 [r0#] ())	in
+let y = unboxi x		in
+let z = unboxi x	        in
     addInt [:r0# r0# r0#:] y z
 ;;
 
 
 -- shadowing, don't rewrite
 :trans..
-let x = box (5 [r0#] ())	in
+let x = boxi (5 [r0#] ())	in
 let x = 2 [r0#] ()		in
-    unbox x
+    unboxi x
 ;;
 
 
 -- shadowing with lambdas, don't rewrite
 :trans..
-let x = box (5 [r0#] ())	in
+let x = boxi (5 [r0#] ())	in
 \(x : Int r0#).
-    unbox x
+    unboxi x
 ;;
 
 
 -- some de bruijns. do rewrite
 :trans..
-let ^ = box (5 [r0#] ())	in
+let ^ = boxi (5 [r0#] ())	in
 let ^ = 2 [r0#] ()		in
-let b = unbox ^1		in
+let b = unboxi ^1		in
 let ^ = 3 [r0#] ()		in
-let c = unbox ^2		in
+let c = unboxi ^2		in
     ()
 ;;
 
@@ -65,9 +65,9 @@ let c = unbox ^2		in
 -- some surrounding de bruijns
 :trans..
 let ^ = 2 [r0#] ()		in
-let ^ = box (5 [r0#] ())	in
+let ^ = boxi (5 [r0#] ())	in
 let ^ = ^1	        	in
-let c = unbox ^1		in
+let c = unboxi ^1		in
     ()
 ;;
 
@@ -75,11 +75,11 @@ let c = unbox ^1		in
 -- some lambda-y de bruijns
 :trans..
 let ^ = 2 [r0#] ()		in
-let ^ = box (5 [r0#] ())	in
+let ^ = boxi (5 [r0#] ())	in
  (\(a : Unit).
   \(^ : Unit).
     let ^ = ^2	        	in
-    let c = unbox ^2		in
+    let c = unboxi ^2		in
 	()
  )
 ;;
@@ -88,7 +88,7 @@ let ^ = box (5 [r0#] ())	in
 -- now with a Const contraint and regions
 :set.. rule unbox_box [r : Region] (s : Int r).
     Const r =>
-    unbox_ [r] _{box_ [r] s}_
+    unboxi_ [r] _{boxi_ [r] s}_
     = s
 ;;
 :set trans Rewrite
@@ -96,14 +96,14 @@ let ^ = box (5 [r0#] ())	in
 
 -- don't do it: not const
 :trans..
-unbox_ [r0#] (box_ [r0#] (5 [r0#] ()))
+unboxi_ [r0#] (boxi_ [r0#] (5 [r0#] ()))
 ;;
 
 
 -- do it: const
 :trans..
 letregion r with {w : Const r}		in
-let x = unbox_ [r] (box_ [r] (5 [r] ()))	in
+let x = unboxi_ [r] (boxi_ [r] (5 [r] ()))	in
     ()
 ;;
 
@@ -111,8 +111,8 @@ let x = unbox_ [r] (box_ [r] (5 [r] ()))	in
 -- separated
 :trans..
 letregion r with {w : Const r}	in
-let x = box_ [r] (5 [r] ())	in
-let y = unbox_ [r] x		in
+let x = boxi_ [r] (5 [r] ())	in
+let y = unboxi_ [r] x		in
     ()
 ;;
 

@@ -104,7 +104,7 @@ eqCast lc rc
                 CastWeakenClosure clo   -> CastWeakenClosure $ map T.anonymizeX clo
                 CastPurify        wit   -> CastPurify        wit
                 CastForget        wit   -> CastForget wit
-                CastSuspend             -> CastSuspend
+                CastBox                 -> CastBox
                 CastRun                 -> CastRun
 
 

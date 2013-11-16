@@ -182,7 +182,7 @@ instance Namify (Cast a) where
 
         CastPurify w            -> liftM CastPurify (down w)
         CastForget w            -> liftM CastForget (down w)
-        CastSuspend             -> return CastSuspend
+        CastBox                 -> return CastBox
         CastRun                 -> return CastRun
 
 

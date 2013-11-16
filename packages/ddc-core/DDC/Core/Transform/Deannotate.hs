@@ -72,7 +72,7 @@ instance Deannotate A.Cast S.Cast where
         A.CastWeakenClosure xs  -> S.CastWeakenClosure (map down xs)
         A.CastPurify w          -> S.CastPurify (down w)
         A.CastForget w          -> S.CastForget (down w)
-        A.CastSuspend           -> S.CastSuspend
+        A.CastBox               -> S.CastBox
         A.CastRun               -> S.CastRun
 
 

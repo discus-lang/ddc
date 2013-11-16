@@ -65,7 +65,7 @@ instance Reannotate Cast where
         CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
         CastPurify w            -> CastPurify (down w)
         CastForget w            -> CastForget (down w)
-        CastSuspend             -> CastSuspend
+        CastBox                 -> CastBox
         CastRun                 -> CastRun
 
 

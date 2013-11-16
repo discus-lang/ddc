@@ -12,7 +12,7 @@ readRef# [r] [a] x
 -- is suspended.
 :check..
 /\(r : Region). /\(a : Data). \(x : Ref# r a). 
-suspend run readRef# [r] [a] x
+box run readRef# [r] [a] x
 ;;
 
 
@@ -26,7 +26,7 @@ run readRef# [r] [a] x
 -- Double the value in a reference.
 :check..
 /\(r : Region). \(ref : Ref# r Nat#).
-suspend do      
+box do      
         { x = run readRef# [:r Nat#:] ref
         ; run writeRef# [:r Nat#:] ref (add# [Nat#] x x) }
 ;;
@@ -50,7 +50,7 @@ fac (x : Nat#) : Nat#
    let acc = run allocRef# [:r Nat#:] 0# in
    letrec {
         loop (i : Nat#) : S (Read r + Write r) Nat#
-         = suspend 
+         = box
            case i of
             0# -> do    run readRef# [:r Nat#:] acc
 
@@ -71,11 +71,11 @@ fac (x : Nat#) : Nat#
    letrec {
         loop (i : Nat#) : S (Read r + Write r) Nat#
          = case i of
-            0# -> suspend
+            0# -> box
                   weakeff [Read r + Write r] in 
                   do    run readRef# [:r Nat#:] acc
 
-            _  -> suspend
+            _  -> box
                   do    x       = run readRef# [:r Nat#:] acc
                         x'      = add# [Nat#] x 1#
                         run writeRef# [:r Nat#:] acc x'
@@ -101,7 +101,7 @@ iterate [a : Data]
 module Test with letrec
 iterateS [e : Effect] [a : Data] 
          (f : a -> S e a) (i : Nat#) (x : a) : S e a
- = suspend 
+ = box
    case i of
     0#  -> x
     _   -> do   x'      = run f x
