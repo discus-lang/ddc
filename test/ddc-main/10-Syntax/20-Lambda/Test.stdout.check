@@ -1,0 +1,21 @@
+ok
+
+-- Simple lambda abstraction
+\(x : Unit). x
+:*: Unit -> Unit
+:!: Pure
+
+
+-- Lambda with multiple binders of the same type.
+/\(r1 r2 r3 : Region).
+ \(x : Int#). x
+:*: [r1 r2 r3 : Region].Int# -> Int#
+:!: Pure
+
+
+-- Lambda with multiple binders after the same lambda token.
+/\(r1 r2 : Region).
+ \(x : Int#). x
+:*: [r1 r2 : Region].Int# -> Int#
+:!: Pure
+

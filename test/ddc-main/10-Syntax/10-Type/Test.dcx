@@ -1,3 +1,5 @@
+:set lang Tetra
+
 -- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
 :kind (~>) Data Data
@@ -5,7 +7,7 @@
 
 -- Parse witness implication operator.
 -- This needs to be fully applied to have a sort.
-:kind (=>) (Const r0#) (Int r0#)
+:kind [r : Region]. (=>) (Const r) Int#
 
 
 -- Parse type function operator.

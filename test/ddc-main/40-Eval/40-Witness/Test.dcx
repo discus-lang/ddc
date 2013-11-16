@@ -1,3 +1,5 @@
+:set lang Eval
+
 -- Show the type of the mutable constructor.
 :wtype Mutable#
 

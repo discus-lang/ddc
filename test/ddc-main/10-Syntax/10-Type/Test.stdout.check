@@ -1,3 +1,5 @@
+ok
+
 -- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
 Data ~> Data :: Comp
@@ -5,8 +7,8 @@ Data ~> Data :: Comp
 
 -- Parse witness implication operator.
 -- This needs to be fully applied to have a sort.
-Const r0# => Int r0# :: Data
+[r : Region].Const r => Int# :: Data
 
 
 -- Parse type function operator.
-(->) :: Data ~> Effect ~> Closure ~> Data ~> Data
+(->) :: Data ~> Data ~> Data

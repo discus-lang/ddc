@@ -1,0 +1,50 @@
+:set lang Tetra
+
+-- Load a module definition.
+:load..
+module Main
+exports {
+        main    :: Unit -> Unit;
+        double  :: Nat# -> Nat#;
+}
+imports {
+        Thing.whatever 
+         with two :: Unit -> Nat#;
+}
+with
+letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
+let     one = 1# in
+letrec { 
+        main (_ : Unit) : Unit
+         = letregion r0 in
+           ();
+
+        double  (x : Nat#) : Nat#
+         = mul# [Nat#] x (two ());
+
+        thing   [r : Region] (x : Nat#) : Nat#
+         = add# [Nat#] x one;
+};;
+
+
+-- Load the same module using the offside rule.
+:load..
+module Main
+exports main    :: Unit -> Unit
+        double  :: Nat# -> Nat#
+imports Thing.whatever 
+         with two :: Unit -> Nat#
+with
+letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
+let     one = 1# in
+letrec 
+        main (_ : Unit) : Unit
+         = letregion r0 in
+           ()
+
+        double  (x : Nat#) : Nat#
+         = mul# [Nat#] x (two ())
+
+        thing   [r : Region] (x : Nat#) : Nat#
+         = add# [Nat#] x one
+;;
