@@ -10,14 +10,8 @@ import Data.Set                                 (Set)
 
 -- | DDCI mode flags.
 data Mode
-        -- | Display the expression at each step in the evaluation.
-        =  TraceEval
-
-        -- | Display the store state at each step in the evaluation.
-        |  TraceStore
-
         -- | Render expressions displayed to user using indenting.
-        |  Indent
+        =  Indent
 
         -- | Suppress import lists when printing modules
         |  SuppressImports
@@ -25,16 +19,25 @@ data Mode
         -- | Suppress type annotations on let-bindings.
         |  SuppressLetTypes
 
+        -- | Display type checker trace with check commands.
+        |  TraceCheck
+
+        -- | Display the expression at each step in the evaluation.
+        |  TraceEval
+
+        -- | Display the store state at each step in the evaluation.
+        |  TraceStore
+
+        -- | Display information about each transformation step
+        |  TraceTrans
+
         -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
         |  SaltPrelude
 
         -- | Dump all intermediate versions of the code during compilation.
         |  Dump
-
-	-- | Display information about each transformation step
-	|  TraceTrans
-
+	
         -- | Avoid type checking if possible.
         --   Helpful when debugging program transformations to see invalid
         --   code instead of an error message.
@@ -46,14 +49,15 @@ data Mode
 readMode :: String -> Maybe Mode
 readMode str
  = case str of
-        "TraceEval"             -> Just TraceEval
-        "TraceStore"            -> Just TraceStore
         "Indent"                -> Just Indent
         "SuppressImports"       -> Just SuppressImports
         "SuppressLetTypes"      -> Just SuppressLetTypes
+        "TraceCheck"            -> Just TraceCheck
+        "TraceEval"             -> Just TraceEval
+        "TraceStore"            -> Just TraceStore
+        "TraceTrans"            -> Just TraceTrans
         "SaltPrelude"           -> Just SaltPrelude
         "Dump"                  -> Just Dump
-        "TraceTrans"            -> Just TraceTrans
         "TaintAvoidTypeChecks"  -> Just TaintAvoidTypeChecks
         _                       -> Nothing
 

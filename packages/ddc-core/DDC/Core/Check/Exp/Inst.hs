@@ -61,8 +61,16 @@ inst table !a ctx0 tL tR
  --  Both types are existentials, and the left is bound earlier in the stack.
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR
- , iL < iR
+ , iL < iR                                            -- ** WRONG. need pos in stack
  = do   let ctx1        = updateExists [] iR tL ctx0
+        
+        ctrace  $ vcat 
+                [ text "* InstLReach"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx1
+                , empty ]
+
         return ctx1
 
  -- InstRReach
@@ -71,6 +79,14 @@ inst table !a ctx0 tL tR
  , Just iR <- takeExists tR
  , iR < iL
  = do   let !ctx1       = updateExists [] iL tR ctx0
+
+        ctrace  $ vcat 
+                [ text "* InstRReach"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx1
+                , empty ]
+
         return ctx1
 
  -- InstLArr
@@ -97,11 +113,12 @@ inst table !a ctx0 tL tR
         -- Instantiate the return type.
         ctx3     <- inst table a ctx2 tL2 tR2'
 
-        --trace (renderIndent $ vcat
-        --        [ text "* InstLArr"
-        --        , text "  iL = " <> ppr iL
-        --        , text "  tR = " <> ppr tR
-        --        , indent 2 $ ppr ctx3 ]) $ return ()
+        ctrace  $ vcat
+                [ text "* InstLArr"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx3 
+                , empty ]
 
         return ctx3
 
@@ -130,11 +147,12 @@ inst table !a ctx0 tL tR
         -- Instantiate the return type.
         ctx3     <- inst table a ctx2 tL2' tR2 
 
-        --trace (renderIndent $ vcat
-        --        [ text "* InstRArr"
-        --        , text "  tL = " <> ppr tL
-        --        , text "  iR = " <> ppr iR
-        --        , indent 2 $ ppr ctx3 ]) $ return ()
+        ctrace  $ vcat
+                [ text "InstRArr"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx3 
+                , empty ]
 
         return ctx3
 

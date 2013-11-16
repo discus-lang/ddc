@@ -6,7 +6,6 @@ import DDC.Core.Check.Exp.Inst
 import DDC.Core.Check.Exp.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
-import Debug.Trace
 
 
 -- Dispatch -------------------------------------------------------------------
@@ -183,12 +182,12 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         let b1''        = replaceTypeOfBind
                                 (applyContext ctx2 (typeOfBind b1')) b1'
 
-        trace (renderIndent $ vcat
+        ctrace  $ vcat
                 [ text "* Lam Synth"
-                , text "  " <> ppr (XLam a b1 x2)
-                , text "  t   = " <> ppr tResult
-                , text "  t'  = " <> ppr tResult'
-                , indent 2 $ ppr ctx2]) $ return ()
+                , indent 2 $ ppr (XLam a b1 x2)
+                , text "  OUT: " <> ppr tResult'
+                , indent 2 $ ppr ctx2 
+                , empty ]
 
         returnX a
                 (\z -> XLam z b1'' x2')
@@ -242,10 +241,12 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
         let ctx_cut     = popToPos pos1 ctx2
         
         ctrace  $ vcat 
-                [ text "* Abs Lam Check"
-                , text "  t    = " <> ppr tXX
-                , text "  t'   = " <> ppr tResult'
-                , text "  " <> ppr ctx2 ]
+                [ text "* Lam Check"
+                , indent 2 $ ppr (XLam a b1 x2)
+                , text "  IN:  " <> ppr tXX
+                , text "  OUT: " <> ppr tResult'
+                , indent 2 $ ppr ctx2 
+                , empty ]
 
         returnX a
                 (\z -> XLam z b1' x2')

@@ -27,12 +27,8 @@ cmdTransInteract state source str
  =   cmdParseCheckExp fragment modules True Recon source str 
  >>= goStore bundle
  where
-        -- Expression had a parse or type error.
-        goStore _ Nothing
-         = do   return state
-
         -- Expression is well-typed.
-        goStore bundle (Just xx)
+        goStore bundle (Just xx, _)
          = do   
                 let xx'         = reannotate (\a -> a { annotTail = () }) xx
                 let annot       = annotOfExp xx'
@@ -47,6 +43,10 @@ cmdTransInteract state source str
 
 		return state { stateTransInteract = Just hist }
 
+        -- Expression had a parse or type error.
+        goStore _ _
+         = do   return state
+        
 
 cmdTransInteractLoop :: State -> String -> IO State
 cmdTransInteractLoop state str

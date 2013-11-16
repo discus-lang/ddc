@@ -41,12 +41,8 @@ cmdTrans state source str
  =   cmdParseCheckExp fragment modules True Recon source str 
  >>= goStore profile modules zero simpl
  where
-        -- Expression had a parse or type error.
-        goStore _ _ _ _ Nothing
-         = do   return ()
-
         -- Expression is well-typed.
-        goStore profile modules zero simpl (Just x)
+        goStore profile modules zero simpl (Just x, _)
          = do   let kenv    = modulesExportKinds modules (profilePrimKinds profile)
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
@@ -56,6 +52,10 @@ cmdTrans state source str
                 case tr of
 		  Nothing -> return ()
 		  Just x' -> outDocLn state $ ppr x'
+
+        -- Expression had a parse or type error.
+        goStore _ _ _ _ _
+         = do   return ()
 
 
 -- TransEval ------------------------------------------------------------------
@@ -80,8 +80,7 @@ cmdTransEval state source str
 				       <- gcast modules0
  = do   result'  <- cmdParseCheckExp Eval.fragment modules False Recon source str 
         case result' of
-         Nothing         -> return ()
-         Just xx
+         (Just xx, _)
           -> do let kenv    = modulesExportKinds modules (profilePrimKinds profile)
                 let tenv    = modulesExportTypes modules (profilePrimTypes profile)
 
@@ -96,6 +95,9 @@ cmdTransEval state source str
                   -> do outDocLn state $ ppr x'
                         evalExp state x'
                         return ()
+        
+         _  -> return ()
+         
 
  | otherwise
  = outDocLn state $ text "Language must be set to Eval for :teval"

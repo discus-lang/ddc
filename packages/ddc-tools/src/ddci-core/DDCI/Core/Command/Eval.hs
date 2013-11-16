@@ -41,12 +41,8 @@ cmdStep state source str
  =   cmdParseCheckExp Eval.fragment modules' False Recon source str 
  >>= goStore 
  where
-        -- Expression had a parse or type error.
-        goStore Nothing
-         = return ()
-
         -- Expression is well-typed.
-        goStore (Just x)
+        goStore (Just x, _)
          = let  -- The evaluator doesn't accept any annotations
                 x_stripped = reannotate (const ()) x
 
@@ -55,6 +51,10 @@ cmdStep state source str
 
            in   goStep store x
 
+        -- Expression had a parse or type error.
+        goStore _
+         = return ()
+        
         goStep store x
          = do   _       <- forcePrint state store x
                 return ()
@@ -71,14 +71,15 @@ cmdEval state source str
  =   cmdParseCheckExp Eval.fragment modules' False Recon source str 
  >>= goEval
  where
-    -- Expression had a parse or type error.
-    goEval Nothing
-     =	return ()
-
     -- Expression is well-typed.
-    goEval (Just expr)
+    goEval (Just expr, _)
      =	evalExp state 
      $  reannotate (\a -> a { annotTail = ()} ) expr
+
+    -- Expression had a parse or type error.
+    goEval _
+     =  return ()
+
 
 
 -- | Evaluate an already parsed and type-checked expression.

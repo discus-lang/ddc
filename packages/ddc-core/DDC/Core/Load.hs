@@ -3,12 +3,14 @@
 --   This is the easiest way to turn source tokens into a type-checked 
 --   abstract syntax tree.
 module DDC.Core.Load
-        ( C.AnTEC (..)
-        , Error (..)
+        ( C.AnTEC       (..)
+        , Error         (..)
+        , Mode          (..)
+        , CheckTrace    (..)
         , loadModuleFromFile
         , loadModuleFromString
         , loadModuleFromTokens
-        , loadExp,      Mode(..)
+        , loadExp
         , loadType
         , loadWitness)
 where

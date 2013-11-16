@@ -32,6 +32,7 @@ import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
 import qualified DDC.Core.Flow          as Flow
+import qualified Data.Set               as Set
 
 import System.IO
 import Control.Monad.Trans.Error
@@ -184,7 +185,8 @@ handleCmd state cmd source line
         return state'
 
 handleCmd1 state cmd source line
- = let lang     = stateLanguage state
+ = let  lang            = stateLanguage state
+        traceCheck      = Set.member TraceCheck (stateModes state)
    in case cmd of
         CommandBlank
          -> return state
@@ -239,23 +241,23 @@ handleCmd1 state cmd source line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType  lang ShowTypeAll     False source line
+         -> do  cmdShowType  lang ShowTypeAll     False traceCheck source line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType  lang ShowTypeValue   False source line
+         -> do  cmdShowType  lang ShowTypeValue   False traceCheck source line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType  lang ShowTypeEffect  False source line
+         -> do  cmdShowType  lang ShowTypeEffect  False traceCheck source line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType  lang ShowTypeClosure False source line
+         -> do  cmdShowType  lang ShowTypeClosure False traceCheck source line
                 return state
 
         CommandExpSynth
-         -> do  cmdShowType  lang ShowTypeAll     True source line
+         -> do  cmdShowType  lang ShowTypeAll     True  traceCheck source line
                 return state
 
         CommandExpRecon

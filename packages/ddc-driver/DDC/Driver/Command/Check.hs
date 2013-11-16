@@ -199,11 +199,12 @@ cmdShowType
         :: Language     -- ^ Language fragment.
         -> ShowTypeMode -- ^ What part of the type to show.
         -> Bool         -- ^ Type checker mode, Synth(True) or Recon(False)
+        -> Bool         -- ^ Whether to display type checker trace.
         -> Source       -- ^ Source of the program text.
         -> String       -- ^ Program text.
         -> IO ()
 
-cmdShowType language showMode checkMode source ss
+cmdShowType language showMode checkMode shouldPrintTrace source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
@@ -217,10 +218,7 @@ cmdShowType language showMode checkMode source ss
                         True    -> Synth
                         False   -> Recon
 
-        goResult _ Nothing
-         = return ()
-
-        goResult fragment (Just x)
+        goResult fragment (Just x, Just ct)
          = let  annot    = annotOfExp x
                 t        = annotType annot
                 eff      = annotEffect annot
@@ -237,7 +235,11 @@ cmdShowType language showMode checkMode source ss
 
                         when (featuresTrackedClosures features)
                          $ outDocLn $ text ":$:" <+> ppr clo
-        
+
+                        when shouldPrintTrace 
+                         $ do   outDocLn $ checkTraceDoc ct
+                                outDoc (text "\n")
+
                 ShowTypeValue
                  ->     outDocLn $ ppr x <+> text "::" <+> ppr t
         
@@ -246,6 +248,9 @@ cmdShowType language showMode checkMode source ss
 
                 ShowTypeClosure
                  ->     outDocLn $ ppr x <+> text ":$:" <+> ppr clo
+
+        goResult _ _
+         = return ()
 
 
 -- Recon ----------------------------------------------------------------------
@@ -258,10 +263,10 @@ cmdExpRecon language source ss
  =   cmdParseCheckExp fragment modules True Recon source ss 
  >>= goResult
  where
-        goResult Nothing
+        goResult (Nothing, _ct)
          = return ()
 
-        goResult (Just x)
+        goResult (Just x,  _ct)
          = outDocLn $ ppr x
 
 
@@ -365,7 +370,8 @@ cmdParseCheckExp
         -> Mode n               -- ^ Type checker mode.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
-        -> IO (Maybe ( Exp (AnTEC BP.SourcePos n) n))
+        -> IO ( Maybe (Exp (AnTEC BP.SourcePos n) n)
+              , Maybe CheckTrace)
 
 cmdParseCheckExp frag modules permitPartialPrims mode source str
  = goLex
@@ -387,21 +393,21 @@ cmdParseCheckExp frag modules permitPartialPrims mode source str
 
         -- Parse and type check the expression.
         goLoad toks
-         = case fst $ loadExp profile' modules (nameOfSource source) mode toks of
-              Left err
+         = case loadExp profile' modules (nameOfSource source) mode toks of
+              (Left err, ct)
                -> do    putStrLn $ renderIndent $ ppr err
-                        return Nothing
+                        return (Nothing, ct)
 
-              Right result
-               -> goCheckFragment result
+              (Right result, ct)
+               -> goCheckFragment ct result
 
         -- Do fragment specific checks.
-        goCheckFragment x
+        goCheckFragment ct x
          = case fragmentCheckExp frag' x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
-                        return Nothing
+                        return (Nothing, ct)
 
              Nothing  
-              -> do     return (Just x)
+              -> do     return (Just x,  ct)
 

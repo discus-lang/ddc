@@ -79,7 +79,7 @@ instance Monoid CheckTrace where
 ctrace :: Doc -> CheckM a n ()
 ctrace doc'
  = do   (tr, ix, pos)       <- G.get
-        let tr' = tr { checkTraceDoc = checkTraceDoc tr <> doc' }
+        let tr' = tr { checkTraceDoc = checkTraceDoc tr <$> doc' }
         G.put (tr', ix, pos)
         return  ()
 

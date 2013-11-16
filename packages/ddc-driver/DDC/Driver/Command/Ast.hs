@@ -45,14 +45,15 @@ cmdAstExp language source str
  =   cmdParseCheckExp fragment modules True Recon source str 
  >>= goShow
  where
-        -- Expression had a parse or type error.
-        goShow Nothing
-         = return ()
-
         -- Expression is well-typed.
-        goShow (Just x)
+        goShow (Just x, _)
          = let p = pretty x in
 	   putStrLn p
+
+        -- Expression had a parse or type error.
+        goShow _
+         = return ()
+
 	 
 	pretty x
 	 = case H.parseExp (show x) of
