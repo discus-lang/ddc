@@ -1,0 +1,117 @@
+ok
+ok
+
+-- Check for fragment violations.
+-- The errors come from the Salt -> C or Salt -> LLVM conversion.
+
+-- Error: Unknown primop.
+When checking expression.
+  <batch>:8:2
+  Undefined value variable: foo#
+
+
+-- Error: Module does not have a top-level letrec.
+Fragment violation when converting Salt module to C code.
+  Module does not have a top-level letrec.
+
+
+-- Ok: Function finishes with a return statement.
+int_t foo (int_t _x)
+{
+        
+
+        return _x;
+}
+
+
+
+-- Ok: Statements in function.
+int_t foo (int_t _x)
+{
+        int_t _y = 0;
+
+        _y           = (_x + _x);
+        return _y;
+}
+
+
+
+-- Ok: Function explicitly fails.
+int_t foo (int_t _x)
+{
+        int_t _y = 0;
+
+        _y           = (_x + _x);
+        _FAIL();
+}
+
+
+
+-- Ok: assignment between variables.
+int_t foo (int_t _x)
+{
+        int_t _y = 0;
+
+        _y           = _x;
+        return _y;
+}
+
+
+
+-- Ok: assignment from a literal.
+nat_t foo (nat_t _x)
+{
+        nat_t _y = 0;
+
+        _y           = 5;
+        return _y;
+}
+
+
+
+-- Error: assignment from primop.
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: PartialPrims
+
+
+-- Error: name shadowing in function definition
+Error loading module
+  During fragment compliance check.
+    Binding shadows existing name: x
+
+
+-- Error: name shadowing in let-expression
+Error loading module
+  During fragment compliance check.
+    Binding shadows existing name: x
+
+
+-- Error: general application
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: GeneralApplication
+
+
+-- Error: partially applied primop
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: PartialPrims
+
+
+-- Error: partial application not supported in Salt.
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: PartialApplication
+
+
+-- Error: cannot instantiate a type variable at an unboxed type.
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: UnboxedInstantiation
+
+
+-- Error: nested functions
+Error loading module
+  During fragment compliance check.
+    Unsupported feature: NestedFunctions

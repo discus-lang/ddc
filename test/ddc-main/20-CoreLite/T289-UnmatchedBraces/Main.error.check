@@ -1,0 +1,6 @@
+Error loading module
+  While parsing.
+    Parse error in "test/ddc-main/20-CoreLite/T289-UnmatchedBraces/Main.dcl" (line 18, column 11)
+    Unexpected closing brace.
+    Expected a binder.
+    Expected an expression.

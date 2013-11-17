@@ -1,4 +1,0 @@
-
--- Check pretty printing of implication constructor.
--- The resulting function should not be wrapper in parens.
-updateInt :: [^ ^ : Region].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use ^1)> Unit

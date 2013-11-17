@@ -1,0 +1,20 @@
+ok
+
+-- Error: Junk ? symbol in program.
+While parsing.
+  Parse error in "<batch>" (line 9, column 25)
+  Unexpected variable "?".
+
+
+-- Error: Like above, but ensure the line number has advanced
+-- between interpreter commands.
+When checking expression.
+  <batch>:18:4
+  Undefined value variable: ?
+
+
+-- Ok: should allow variable named 'inc'.
+let inc : Unit = () in
+inc
+:*: Unit
+:!: Pure

@@ -1,0 +1,79 @@
+ok
+
+
+-- Literals
+5#
+:*: Nat#
+:!: Pure
+:$: Empty
+
+5i#
+:*: Int#
+:!: Pure
+:$: Empty
+
+
+-- Primitives
+add#
+:*: [^ : Data].^0 -> ^0 -> ^0
+:!: Pure
+:$: Empty
+
+Int :: Region ~> Data
+Bool :: Region ~> Data
+
+
+-- Boxing bools
+/\(r : Region).
+ \(x : Bool#). B# [r] x
+:*: [r : Region].Bool# -(Alloc r | Use r)> Bool r
+:!: Pure
+:$: Empty
+
+
+-- Unboxing bools.
+/\(r : Region).
+ \(x : Bool r).
+letcase B# (b : Bool#)  = x in
+b
+:*: [r : Region].Bool r -(Read r | Empty)> Bool#
+:!: Pure
+:$: Empty
+
+
+-- Boxing ints
+/\(r : Region).
+ \(x : Int#). I# [r] x
+:*: [r : Region].Int# -(Alloc r | Use r)> Int r
+:!: Pure
+:$: Empty
+
+
+-- Unboxing ints
+/\(r : Region).
+ \(x : Int r).
+letcase I# (i : Int#)  = x in
+i
+:*: [r : Region].Int r -(Read r | Empty)> Int#
+:!: Pure
+:$: Empty
+
+
+-- Boxed integer add
+let unboxInt : [r : Region].Int r -(Read r | Empty)> Int#
+      = /\(r : Region).
+         \(x : Int r).
+        letcase I# (i : Int#)  = x in
+        i in
+let addInt : [r1 r2 r3 : Region].Int r1 -(Pure | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3
+      = /\(r1 r2 r3 : Region).
+         \(x : Int r1).\(y : Int r2).
+        letcase I# (i1 : Int#)  = x in
+        letcase I# (i2 : Int#)  = y in
+        I# [r3] (add# [Int#] i1 i2) in
+letregion r1 in
+unboxInt [r1]
+    (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))
+:*: Int#
+:!: Pure
+:$: Empty

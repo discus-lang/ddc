@@ -1,0 +1,38 @@
+:set Indent
+:set lang Lite
+:set TraceTrans
+
+:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
+
+-- now with a Const contraint and regions
+:set.. rule unboxInt_boxInt [r : Region] (s : Int#).
+    Const r =>
+    unboxInt [r] _{boxInt [r] s}_
+    = s
+;;
+:set trans Rewrite
+
+
+-- do the factorial
+:tinteract..
+letrec
+main    [r : Region] 
+	{w : Const r}
+	(_ : Int#)
+	{ Read r + Alloc r | Use r }
+        : Int#
+ =     let x	= fac [r] {w} (boxInt [r] 1i#) (boxInt [r] 10i#)
+    in let show = (unboxInt [r] x)
+    in	   unboxInt [r] (boxInt [r] 0i#)
+
+in ()
+;;
+Inline Int-[boxInt, unboxInt]
+BetaLets; Forward
+Forward
+Rewrite
+:back
+:back
+Inline Int
+Rewrite
+:done

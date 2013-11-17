@@ -1,0 +1,14 @@
+:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/50-Modules/Module.dcs
+:set.. rule fromTo [r1 r2 r3 : Region]
+	(c : Int r3).
+    toInt [:r2 r1:] (fromInt [:r3 r2:] c)
+ =  copyInt [:r3 r1:] c
+;;
+
+:set Indent
+:set trans Rewrite
+
+:trans..
+toInt [:r0# r0#:] (fromInt [:r0# r0#:] (5 [r0#] ()))
+;;
+

@@ -1,0 +1,121 @@
+ok
+ok
+ok
+
+
+-- Integer boxing,
+--      packs a RawSmall Object.
+Obj* boxInt (int_t _i)
+{
+        Obj* _x0 = 0;
+        uint8_t* _x1 = 0;
+        int_t* _x2 = 0;
+
+        _x0          = allocRawSmall(0, 8);
+        _x1          = payloadOfRawSmall(_x0);
+        _x2          = _CASTPTR(int_t, uint8_t, _x1);
+        _POKE(int_t, _x2, 0, _i);
+        return _x0;
+}
+
+
+
+-- Integer unboxing,
+--      unpacks a RawSmall Object.
+int_t unboxInt (Obj* _x)
+{
+        tag_t _x0 = 0;
+        uint8_t* _x1 = 0;
+        int_t* _x2 = 0;
+        int_t _i = 0;
+
+        _x0          = getTag(_x);
+        if (_x0 != 0) _FAIL();
+        _x1          = payloadOfRawSmall(_x);
+        _x2          = _CASTPTR(int_t, uint8_t, _x1);
+        _i           = _PEEK(int_t, _x2, 0);
+        return _i;
+}
+
+
+
+-- Boxed addition
+Obj* addInt (Obj* _x, Obj* _y)
+{
+        tag_t _x1 = 0;
+        uint8_t* _x2 = 0;
+        int_t* _x3 = 0;
+        int_t _i1 = 0;
+        tag_t _x4 = 0;
+        uint8_t* _x5 = 0;
+        int_t* _x6 = 0;
+        int_t _i2 = 0;
+        int_t _x0 = 0;
+        Obj* _x7 = 0;
+        uint8_t* _x8 = 0;
+        int_t* _x9 = 0;
+
+        _x1          = getTag(_x);
+        if (_x1 != 0) _FAIL();
+        _x2          = payloadOfRawSmall(_x);
+        _x3          = _CASTPTR(int_t, uint8_t, _x2);
+        _i1          = _PEEK(int_t, _x3, 0);
+        _x4          = getTag(_y);
+        if (_x4 != 0) _FAIL();
+        _x5          = payloadOfRawSmall(_y);
+        _x6          = _CASTPTR(int_t, uint8_t, _x5);
+        _i2          = _PEEK(int_t, _x6, 0);
+        _x0          = (_i1 + _i2);
+        _x7          = allocRawSmall(0, 8);
+        _x8          = payloadOfRawSmall(_x7);
+        _x9          = _CASTPTR(int_t, uint8_t, _x8);
+        _POKE(int_t, _x9, 0, _x0);
+        return _x7;
+}
+
+
+
+-- Construct a singleton list,
+--      packs a Boxed objet.
+Obj* singleton (Obj* _x)
+{
+        Obj* _x1 = 0;
+        Obj* _x2 = 0;
+        Obj* _x0 = 0;
+        Obj* _x3 = 0;
+
+        _x1          = allocBoxed(0, 1);
+        _x2          = allocBoxed(0, 0);
+        setFieldOfBoxed(_x1, 0, _x2);
+        _x0          = _x1;
+        _x3          = allocBoxed(1, 2);
+        setFieldOfBoxed(_x3, 0, _x);
+        setFieldOfBoxed(_x3, 1, _x0);
+        return _x3;
+}
+
+
+
+-- #285: Case matches on unit arguments.
+module Test with
+letrec {
+  foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(r1 : Region).
+       \(x : Ptr# rT Obj).
+      letcase _  = getTag [rT] x in
+      allocBoxed [rT] TAG0# 0#
+}
+
+module Test with
+letrec {
+  foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(r1 : Region).
+       \(x : Ptr# rT Obj).
+      case getTag [rT] x of {
+        TAG0#  
+         -> allocBoxed [rT] TAG0# 0#;
+        _ 
+         -> fail# [Ptr# rT Obj]
+      }
+}
+

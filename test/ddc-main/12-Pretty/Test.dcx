@@ -1,4 +1,0 @@
-
--- Check pretty printing of implication constructor.
--- The resulting function should not be wrapper in parens.
-:type updateInt

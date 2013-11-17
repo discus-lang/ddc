@@ -1,0 +1,116 @@
+:set lang Salt
+:set +SuppressImports
+
+-- Check for fragment violations.
+-- The errors come from the Salt -> C or Salt -> LLVM conversion.
+
+-- Error: Unknown primop.
+:check foo#
+
+
+-- Error: Module does not have a top-level letrec.
+:to-c..
+module Main with let
+x = 5#;;
+
+
+-- Ok: Function finishes with a return statement.
+:to-c..
+module Main with letrec
+foo (x : Int#) : Int#   
+ = return# [Int#] x;;
+
+
+-- Ok: Statements in function.
+:to-c..
+module Main with letrec 
+foo (x : Int#) : Int#
+ = let  y       = add# [Int#]  x x
+   in   return# [Int#] y;;
+
+
+-- Ok: Function explicitly fails.
+:to-c..
+module Main with letrec
+foo (x : Int#) : Int#
+ = let  y       = add# [Int#]  x x
+   in   fail# [Int#];;
+
+
+-- Ok: assignment between variables.
+:to-c..
+module Main with letrec
+foo (x : Int#) : Int#
+ = let y        = x
+   in  return# [Int#] y;;
+
+
+-- Ok: assignment from a literal.
+:to-c..
+module Main with letrec
+foo (x : Nat#) : Nat#
+ = let  y       = 5#
+   in   return# [Nat#] y;;
+
+
+-- Error: assignment from primop.
+:to-c..
+module Main with letrec
+foo (x : Int#) : Int#
+ = let y        = add#
+   in  return# [Int#] x;;
+
+
+-- Error: name shadowing in function definition
+:to-c..
+module Main with letrec
+foo (x : Int#) (x : Int#) : Int#
+ = return# [Int#] x;;
+
+
+-- Error: name shadowing in let-expression
+:to-c..
+module Main with letrec
+foo (x : Int#) : Int#
+ = let x = 0i# 
+   in  return# [Int#] x;;
+
+
+-- Error: general application
+:to-c..
+module Main with letrec
+foo (^ : Int#) : Int#
+ = (case 0i# of {_ -> add# [Int#]})
+    ^0 ^0;;
+
+
+-- Error: partially applied primop
+:to-c..
+module Main with letrec
+foo (x : Int#) : Int#
+ = let f = add# [Int#] x
+   in  return# [Int#] (f x);;
+
+
+-- Error: partial application not supported in Salt.
+:to-c..
+module Main with letrec
+foo2 (x : Nat#) (y : Nat#) : Nat#
+ = let foo1     = foo2 2#
+   in  foo1 3#;;
+
+
+-- Error: cannot instantiate a type variable at an unboxed type.
+:to-c..
+module Main with letrec
+id  [a : Data] (x : a) : a    = x
+foo (x : Int#)      : Int# = id [Int#] x;;
+
+
+-- Error: nested functions
+:to-c..
+module Main with letrec
+
+thing [a : Data] (x : a) : a   
+ = let id (y : a) = y
+   in  id x;;

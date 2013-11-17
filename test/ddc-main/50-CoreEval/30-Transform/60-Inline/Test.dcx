@@ -1,0 +1,7 @@
+
+-- Check that the inliner does it's thing.
+:set  lang Lite
+:with packages/ddc-code/lite/base/Data/Numeric/Nat.dcl
+:set.. trans
+ Inline Nat; Beta; Bubble; Beta; Bubble; Beta; Bubble;;
+:load<  test/ddc-main/50-CoreEval/30-Transform/60-Inline/List.dcl

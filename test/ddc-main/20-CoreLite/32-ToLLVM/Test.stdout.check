@@ -1,0 +1,157 @@
+ok
+ok
+ok
+
+
+-- Boxed addition
+%s.Obj = type <{i64}>
+@_DDC_Runtime_heapTop = external global  i64
+@_DDC_Runtime_heapMax = external global  i64
+declare external ccc i64 @malloc(i64 ) align 8
+declare external ccc void @abort() align 8
+declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
+declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
+declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
+declare external ccc i32 @getTag(%s.Obj* ) align 8
+declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
+declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+
+define internal fastcc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
+{
+l8.entry:
+        %x1          = call ccc i32 @getTag (%s.Obj* %x) 
+        switch i32 %x1, label %l16.default [ i32 0,label %l9.alt ]
+l16.default:
+        call ccc void @abort () 
+        unreachable
+l9.alt:
+        %x2          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x) 
+        %x3          = bitcast i8* %x2 to i64*
+        %i1.addr1    = ptrtoint i64* %x3 to i64
+        %i1.addr2    = add i64 %i1.addr1, 0
+        %i1.ptr      = inttoptr i64 %i1.addr2 to i64*
+        %i1          = load i64* %i1.ptr,    !tbaa !7
+        %x4          = call ccc i32 @getTag (%s.Obj* %y) 
+        switch i32 %x4, label %l15.default [ i32 0,label %l10.alt ]
+l10.alt:
+        %x5          = call ccc i8* @payloadOfRawSmall (%s.Obj* %y) 
+        %x6          = bitcast i8* %x5 to i64*
+        %i2.addr1    = ptrtoint i64* %x6 to i64
+        %i2.addr2    = add i64 %i2.addr1, 0
+        %i2.ptr      = inttoptr i64 %i2.addr2 to i64*
+        %i2          = load i64* %i2.ptr,    !tbaa !4
+        %x0          = add i64 %i1, %i2
+        %x7          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x8          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x7) 
+        %x9          = bitcast i8* %x8 to i64*
+        %_v11.addr1  = ptrtoint i64* %x9 to i64
+        %_v12.addr2  = add i64 %_v11.addr1, 0
+        %_v13.ptr    = inttoptr i64 %_v12.addr2 to i64*
+        store i64 %x0, i64* %_v13.ptr,    !tbaa !3
+        ret %s.Obj* %x7
+l15.default:
+        call ccc void @abort () 
+        unreachable
+}
+
+
+
+!7 = metadata !{metadata !"addInt_r1", metadata !6, i32 0}
+!6 = metadata !{metadata !"addInt_ROOT_5", null, i32 1}
+!4 = metadata !{metadata !"addInt_r2", metadata !3, i32 0}
+!3 = metadata !{metadata !"addInt_r3", metadata !2, i32 0}
+!2 = metadata !{metadata !"addInt_ROOT_1", null, i32 1}
+
+
+
+-- None binders.
+%s.Obj = type <{i64}>
+@_DDC_Runtime_heapTop = external global  i64
+@_DDC_Runtime_heapMax = external global  i64
+declare external ccc i64 @malloc(i64 ) align 8
+declare external ccc void @abort() align 8
+declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
+declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
+declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
+declare external ccc i32 @getTag(%s.Obj* ) align 8
+declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
+declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+
+define internal fastcc %s.Obj* @thing(%s.Obj*  %z) align 8  
+{
+l4.entry:
+        %x0          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x1          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x0) 
+        %x2          = bitcast i8* %x1 to i64*
+        %_v5.addr1   = ptrtoint i64* %x2 to i64
+        %_v6.addr2   = add i64 %_v5.addr1, 0
+        %_v7.ptr     = inttoptr i64 %_v6.addr2 to i64*
+        store i64 5, i64* %_v7.ptr,    !tbaa !3
+        %_v9         = call ccc %s.Obj* @allocBoxed (i32 0, i64 0) 
+        ret %s.Obj* %_v9
+}
+
+
+
+!3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
+!2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
+
+
+
+-- Join points.
+%s.Obj = type <{i64}>
+@_DDC_Runtime_heapTop = external global  i64
+@_DDC_Runtime_heapMax = external global  i64
+declare external ccc i64 @malloc(i64 ) align 8
+declare external ccc void @abort() align 8
+declare external ccc %s.Obj* @addNat(%s.Obj* , %s.Obj* ) align 8
+declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
+declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
+declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
+declare external ccc i32 @getTag(%s.Obj* ) align 8
+declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
+declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+
+define internal fastcc %s.Obj* @thing(i1  %b) align 8  
+{
+l4.entry:
+        switch i1 %b, label %l13.alt [ i1 1,label %l8.alt ]
+l13.alt:
+        %x4          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x5          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x4) 
+        %x6          = bitcast i8* %x5 to i64*
+        %_v14.addr1  = ptrtoint i64* %x6 to i64
+        %_v15.addr2  = add i64 %_v14.addr1, 0
+        %_v16.ptr    = inttoptr i64 %_v15.addr2 to i64*
+        store i64 6, i64* %_v16.ptr,    !tbaa !3
+        br label %l6.join
+l6.join:
+        %x           = phi %s.Obj* [%x1, %l8.alt], [%x4, %l13.alt]
+        br label %l5.cont
+l5.cont:
+        %x7          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x8          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x7) 
+        %x9          = bitcast i8* %x8 to i64*
+        %_v17.addr1  = ptrtoint i64* %x9 to i64
+        %_v18.addr2  = add i64 %_v17.addr1, 0
+        %_v19.ptr    = inttoptr i64 %_v18.addr2 to i64*
+        store i64 1, i64* %_v19.ptr,    !tbaa !3
+        %_v20        = call ccc %s.Obj* @addNat (%s.Obj* %x, %s.Obj* %x7) 
+        ret %s.Obj* %_v20
+l8.alt:
+        %x1          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x2          = call ccc i8* @payloadOfRawSmall (%s.Obj* %x1) 
+        %x3          = bitcast i8* %x2 to i64*
+        %_v9.addr1   = ptrtoint i64* %x3 to i64
+        %_v10.addr2  = add i64 %_v9.addr1, 0
+        %_v11.ptr    = inttoptr i64 %_v10.addr2 to i64*
+        store i64 5, i64* %_v11.ptr,    !tbaa !3
+        br label %l6.join
+}
+
+
+
+!3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
+!2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
+
+

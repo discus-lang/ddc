@@ -1,0 +1,223 @@
+:set lang Lite
+:set +Indent +SuppressImports
+
+-- Set the builder explicitly so we get consistent object layouts.
+:set builder x86_64-darwin
+
+-- Unboxed literal patterns.
+:to-salt..
+module Test with letrec
+foo     (x : Word16#) : Word16#
+ = case x of
+        5w16#   -> 6w16#
+        7w16#   -> 8w16#
+        _       -> 0w16#;;
+
+
+:to-salt..
+module Test with letrec
+foo     (x : Word32#) : Word32#
+ = case x of
+        5w32#   -> 6w32#
+        7w32#   -> 8w32#
+        _       -> 0w32#;;
+
+:to-salt..
+module Test with letrec
+foo     (x : Word64#) : Word64#
+ = case x of
+        5w64#   -> 6w64#
+        7w64#   -> 8w64#
+        _       -> 0w64#;;
+
+
+-- Unboxed Bool pattern.
+:to-salt..
+module Test with letrec
+foo     (x : Bool#) : Bool#
+ = case x of
+       True#   -> False#
+       False#  -> True#;;
+
+
+-- Integer boxing,
+--      packs a RawSmall Object.
+:to-salt..
+module Test with letrec
+boxInt [r : Region] (i : Int#) { Alloc r | Use r } : Int r
+        = I# [r] i;;
+
+
+-- Integer unboxing,
+--      unpacks a RawSmall Object.
+:to-salt..
+module Test with letrec
+unboxInt [r : Region] (x : Int r) { Read r | Empty } : Int#
+ = case x of 
+        I# i  -> i;;
+
+
+-- Nested case-expressions.
+:to-salt..
+module Test with letrec
+addInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Empty } 
+        (y : Int r2) { Read r1 + Read r2 | Use r1 }
+        : Int#
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> add# [Int#] i1 i2 } };;
+
+
+-- Boxed addition
+:to-salt..
+module Test with letrec
+addInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r3 } 
+        (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
+        : Int r3
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> I# [r3] (add# [Int#] i1 i2) } };;
+
+
+-- Take the head of an Int list,
+--      unpacks a Boxed object.
+:to-salt..
+module Test with letrec
+head    [r : Region] (def : Int r) 
+        (xs : List r (Int r))   { Read r | Use r } 
+        : Int r
+ = case xs of 
+        Cons x xs'      -> x
+        _               -> def;;
+
+
+-- Take the tail of an Int list
+:to-salt..
+module Test with letrec
+tail   [r : Region] (def : List r (Int r))
+       (xs : List r (Int r))   { Read r | Use r }
+       : List r (Int r)
+ = case xs of
+        Cons x xs'      -> xs
+        _               -> def;;
+
+
+-- Take the head of a polymorphic list
+:to-salt..
+module Test with letrec
+head    [r : Region] [a : Data] (def : a)
+        (xs : List r a) {Read r | DeepUse a}
+        : a
+ = case xs of
+        Cons x xs'      -> x
+        _               -> def;;
+
+
+-- Construct a singleton list,
+--      packs a Boxed objet.
+:set trans Snip; Flatten; Namify
+:load..
+module Test with letrec
+singleton [r1 r2 : Region] (x : Int r2) { Alloc r1 | Use r1 } 
+        : List r1 (Int r2)
+ = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+
+
+-- Construct a singleton list,
+--      packs a Boxed object.
+:to-salt..
+module Test with letrec
+singleton [r1 r2 : Region] (x : Int r2) { Alloc r1 | Use r1 } 
+        : List r1 (Int r2)
+ = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+
+
+-- Full application.
+:to-salt..
+module Test with letrec
+addInt [r1 r2 r3 : Region] 
+        (x : Int r1) { Pure | Use r3 } 
+        (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
+        : Int r3
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> I# [r3] (add# [Int#] i1 i2) } }
+
+double [r1 r2 : Region]
+       (x : Int r1) { Read r1 + Alloc r2 | Use r1 + Use r2 }
+       : Int r2
+ = addInt [:r1 r1 r2:] x x;;
+
+
+-- Construct a lists of units.
+-- The head field of the Cons cells has no primary region.
+:to-salt..
+module Test with letrec
+singleton [r1 : Region] (x : Unit) { Alloc r1 | Use r1 }
+        : List r1 Unit
+ = Cons [r1] [Unit] x (Nil [r1] [Unit] ());;
+
+
+-- Destruct a list of units.
+-- The head field of the Cons cell has no primary region.
+:to-salt..
+module Test with letrec
+headUnit [r1 : Region] (xx : List r1 Unit) { Read r1 | Empty }
+        : Unit
+ = case xx of
+        Cons x _        -> x
+        Nil             -> ();;
+
+
+-- Construct a singleton unit list and take its head.
+:to-salt..
+module Test with letrec
+singleton [r1 : Region] (x : Unit) { Alloc r1 | Use r1 }
+        : List r1 Unit
+ = Cons [r1] [Unit] x (Nil [r1] [Unit] ())
+
+headUnit [r1 : Region] (xx : List r1 Unit) { Read r1 | Empty }
+        : Unit
+ = case xx of
+        Cons x _        -> x
+        Nil             -> ()
+
+foo (_ : Unit) : Unit
+ = letregion r in
+   do   list    = singleton [r] ()
+        headUnit [r] list;;
+
+
+-- Keep witnesses arguments
+:to-salt..
+module Test with letrec
+foo [r : Region] {w : Mutable r} (x : Unit) 
+        : Word64# = 42w64#;;
+
+
+-- Keep witnesses applications
+:to-salt..
+module Test with letrec
+foo     [r1 r2 r3 : Region] 
+        {w1 : Mutable r1} {w2 : Distinct r2 r3}
+        (x : Unit) 
+        : Word64# = 42w64#
+
+bar (_ : Unit) : Word64#
+ = letregion r1 with { w1 : Mutable r1 } in
+   letregion r2 in
+   letregion r3 with { w2 : Distinct r2 r3 } in
+   do   foo [:r1 r2 r3:] {w1} {w2} ();;
+
+
+-- Error: cannot instantiate a data type variable at an unboxed type.
+--  This produce a fragment error from the Salt compilance checker.
+--  We could compile this code by forcing specialisation for id before we
+--  convert it to Salt.
+:to-salt..
+module Test with letrec
+id  [a : Data] (x : a) : a    = x
+foo (x : Int#)      : Int# = id [Int#] x;;
+

@@ -1,0 +1,107 @@
+:set lang Salt
+:set +Indent +SuppressImports
+
+-- Convert a Core Salt module into raw C code.
+:to-c..
+module Main 
+imports {
+        allocRaw  :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj;
+        getTag    :: [r : Region]. Ptr# r Obj -> Tag#;
+        showInt   :: [r : Region]. Int# -> Ptr# r String#;
+        putStrLn  :: [r : Region]. Ptr# r String# -> Void#;
+}
+with letrec {
+addInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+        : Ptr# r3 Obj
+ =      let x'  = unboxInt [r1] x in
+        let y'  = unboxInt [r2] y in
+        let r   = add# [Int#] x' y' in
+        let z   = boxInt [r3] r in
+        return# [Ptr# r3 Obj] z;
+
+
+boxInt  [r : Region] (x : Int#) : Ptr# r Obj
+ = do { obj     = allocRaw [r] TAG0# 4#;
+        addr    = takePtr# [r] [Obj] obj;
+        write#  [Int#] addr 8# x;
+        return# [Ptr# r Obj] obj;
+      };
+
+
+unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
+ = do { addr    = takePtr# [r] [Obj] obj;
+        x       = read#    [Int#] addr 8#;
+        return# [Int#] x;
+      };
+
+
+main (argc : Nat#) (argv : Addr#) : Int#
+ =      letregion r in
+        let x   : Ptr# r Obj     = boxInt [r] 5i# in
+        let x2  : Ptr# r Obj     = addInt [:r r r:] x x in
+        let str : Ptr# r String# = showInt  [r] (unboxInt [r] x2) in
+        let _   : Void#          = putStrLn [r] str in
+        return# [Int#] 0i#;
+};;
+
+
+-- Discarding witness declaration and application when converting to C
+:set lang Salt
+:set +Indent +SuppressImports
+:to-c..
+module Main 
+imports {
+        allocRaw :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj;
+        getTag   :: [r : Region]. Ptr# r Obj -> Tag#;
+        showInt  :: [r : Region]. Int# -> Ptr# r String#;
+        putStrLn :: [r : Region]. Ptr# r String# -> Void#;
+}
+with letrec {
+addDistinct 
+        [r1 r2 r3 : Region] 
+        {w1 : Mutable r1}  {w2 : Distinct2 r1 r2}
+        (x  : Ptr# r1 Obj) (y  : Ptr# r2 Obj)
+    : Ptr# r3 Obj
+ =  let x'  = unboxInt [r1] x in
+    let y'  = unboxInt [r2] y in
+    let r   = add# [Int#] x' y' in
+    let z   = boxInt [r3] r in
+    return# [Ptr# r3 Obj] z;
+
+
+boxInt  [r : Region] (x : Int#) : Ptr# r Obj
+ = do { obj     = allocRaw [r] TAG0# 4#;
+    addr    = takePtr# [r] [Obj] obj;
+    write#  [Int#] addr 8# x;
+    return# [Ptr# r Obj] obj;
+    };
+
+
+unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
+ = do { addr    = takePtr# [r] [Obj] obj;
+        x       = read#    [Int#] addr 8#;
+        return# [Int#] x;
+      };
+
+
+main (argc : Nat#) (argv : Addr#) : Int#
+ =   letregion r1 with { w1 : Mutable r1 } in
+     letregion r2 with { w2 : Distinct r1 r2 } in
+     let x1  : Ptr# r1 Obj      = boxInt [r1] 5i# in
+     let x2  : Ptr# r2 Obj      = boxInt [r2] 7i# in
+     let ret : Ptr# r1 Obj      = addDistinct [:r1 r2 r1:] {w1} {w2} x1 x2 in
+     let str : Ptr# r1 String#  = showInt  [r1] (unboxInt [r1] ret) in
+     let _   : Void#            = putStrLn [r1] str in
+     return# [Int#] 0i#;
+};;
+
+
+-- Case expression that assignes to a BNone binder.
+:to-c..
+module Main with letrec
+thing (x : Nat#) : Nat#
+ = let  _       = case x of
+                        3#      -> 4#
+                        _       -> 5#
+   in   5#;;
+

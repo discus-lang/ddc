@@ -1,0 +1,5 @@
+Error loading module
+  While parsing.
+    Parse error in "test/ddc-main/20-CoreLite/T271-UnterminatedComment/Main.dcl" (line 18, column 1)
+    Unexpected unterminated block comment.
+    Expected a binder.

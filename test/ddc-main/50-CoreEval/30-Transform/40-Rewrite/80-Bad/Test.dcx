@@ -1,0 +1,54 @@
+:set Indent
+:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/80-Bad/Module.dcs
+
+-- Bad: rhs & lhs have different types
+:set.. rule bad_DifferentTypes
+    [r : Region].
+    5 [r] () = ()
+;;
+
+-- Bad: doesn't typecheck
+:set.. rule bad_BadType
+    [r : Region].
+    r [r] () = ()
+;;
+
+
+-- Bad: left-hand side shouldn't have binders
+:set.. rule bad_Binders
+    (x : Unit).
+    (\(x : Unit). x) x = x
+;;
+
+-- Bad: left-hand side shouldn't have foralls
+:set.. rule bad_Forall
+    (i : Int r0#).
+    (/\(a : Data). id [a]) [Int r0#] i = i
+;;
+
+-- ..Ok: right-hand side can have binders
+:set.. rule ok_BindersRhs
+    (x : Unit).
+    x = (\(x : Unit). x) ()
+;;
+
+-- Bad: no such constraint 'Mutz'
+:set.. rule bad_Constraint
+    [r : Region].
+    Mutz r =>
+    0 [r] () = 1 [r] ()
+;;
+
+-- Bad: constraint isn't a witness
+:set.. rule bad_Constraint2
+    [r : Region].
+    Int r =>
+    0 [r] () = 1 [r] ()
+;;
+
+-- Bad: not all variables mentioned in left-hand side
+:set.. rule bad_Unmentioned
+    [r : Region].
+    () = ()
+;;
+

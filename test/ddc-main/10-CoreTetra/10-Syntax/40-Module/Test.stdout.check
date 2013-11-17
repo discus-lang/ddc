@@ -1,0 +1,54 @@
+ok
+
+-- Load a module definition.
+module Main 
+exports {
+        double :: Nat# -> Nat#;
+        main :: Unit -> Unit;
+} 
+imports {
+        two :: Unit -> Nat#;
+} with
+letregion rt with {w1 : Const rt; w2 : Lazy rt}
+let one : Nat# = 1#
+letrec {
+  main : Unit -> Unit
+    = \(_ : Unit).
+      letregion r0 in
+      ();
+  
+  double : Nat# -> Nat#
+    = \(x : Nat#).
+      mul# [Nat#] x (two ());
+  
+  thing : [r : Region].Nat# -> Nat#
+    = /\(r : Region).
+       \(x : Nat#). add# [Nat#] x one
+}
+
+
+-- Load the same module using the offside rule.
+module Main 
+exports {
+        double :: Nat# -> Nat#;
+        main :: Unit -> Unit;
+} 
+imports {
+        two :: Unit -> Nat#;
+} with
+letregion rt with {w1 : Const rt; w2 : Lazy rt}
+let one : Nat# = 1#
+letrec {
+  main : Unit -> Unit
+    = \(_ : Unit).
+      letregion r0 in
+      ();
+  
+  double : Nat# -> Nat#
+    = \(x : Nat#).
+      mul# [Nat#] x (two ());
+  
+  thing : [r : Region].Nat# -> Nat#
+    = /\(r : Region).
+       \(x : Nat#). add# [Nat#] x one
+}

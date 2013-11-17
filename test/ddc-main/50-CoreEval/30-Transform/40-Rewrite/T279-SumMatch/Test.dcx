@@ -1,0 +1,33 @@
+:set Indent
+:set TraceTrans
+-- import a function with polymorphic effects
+:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/T279-SumMatch/Module.dcs
+
+-- silly rule with effect matching
+:set.. rule silly [ef : Effect]
+    (u : Unit).
+        effectful [Read r0# + Write r0# + ef] u
+        = u
+;;
+
+:set trans Rewrite
+
+-- match 'ef' with an Alloc
+:trans..
+effectful [Read r0# + Write r0# + Alloc r0#]
+    ()
+;;
+
+-- same length but doesn't include the Write
+:trans..
+effectful [Read r0# + Read r1# + Read r2#]
+    ()
+;;
+
+-- longer - could match but doesn't
+:trans..
+effectful [Read r0# + Write r0# + Read r1# + Write r1#]
+    ()
+;;
+
+
