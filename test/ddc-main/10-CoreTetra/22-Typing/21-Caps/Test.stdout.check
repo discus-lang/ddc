@@ -13,7 +13,7 @@ run writeRef# [r] [Nat#] x 5#
 let writeFive : [r : Region].Ref# r Nat# -> S (Write r) Unit
       = /\(r : Region).
          \(x : Ref# r Nat#). writeRef# [r] [Nat#] x 5# in
-letregion r1 with {_ : Alloc r1; _ : Write r1} in
+letregion r1 with {Alloc r1; Write r1} in
 let x : Ref# r1 Nat#
       = run allocRef# [r1] [Nat#] 0# in
 run writeFive [r1] x
@@ -22,7 +22,7 @@ run writeFive [r1] x
 
 
 -- Can use caps on concrete regions.
-letregion r with {_ : Alloc r; _ : Read r} in
+letregion r with {Alloc r; Read r} in
 let x : Ref# r Nat#
       = run allocRef# [r] [Nat#] 0# in
 run readRef# [r] [Nat#] x
@@ -31,7 +31,7 @@ run readRef# [r] [Nat#] x
 
 
 -- Can use caps on concrete regions.
-letregion r with {_ : Alloc r; _ : Read r} in
+letregion r with {Alloc r; Read r} in
 let x : Ref# r Nat#
       = run allocRef# [r] [Nat#] 0# in
 run readRef# [r] [Nat#] x

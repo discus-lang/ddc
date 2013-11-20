@@ -290,7 +290,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
          -> text "letregion"
                 <+> ppr (binderOfBind b)
                 <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
+                <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)
 
         LLetRegions b []
          -> text "letregions"
@@ -300,11 +300,20 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
          -> text "letregions"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
                 <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
+                <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)
 
         LWithRegion b
          -> text "withregion"
                 <+> ppr b
+
+
+-- | When we pretty print witness binders, 
+--   suppress the underscore when there is no name.
+pprWitBind :: (Eq n, Pretty n) => Bind n -> Doc
+pprWitBind b
+ = case b of
+        BNone t -> ppr t
+        _       -> ppr b
 
 
 -- Witness --------------------------------------------------------------------

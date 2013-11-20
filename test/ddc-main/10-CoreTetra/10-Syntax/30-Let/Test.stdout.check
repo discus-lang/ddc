@@ -64,7 +64,7 @@ let ^ : Unit = ^0 in
 :!: Pure
 
 -- Simple letregion.
-letregion r with {_ : Alloc r; _ : Read r} in
+letregion r with {Alloc r; Read r} in
 let x : Ref# r Nat#
       = run allocRef# [r] [Nat#] 4# in
 run readRef# [r] [Nat#] x
@@ -129,7 +129,7 @@ add# [Nat#] x1 x2
 
 
 -- Anonymous witness binders
-letregion r with {_ : Const r} in
+letregion r with {Const r} in
 ()
 :*: Unit
 :!: Pure
