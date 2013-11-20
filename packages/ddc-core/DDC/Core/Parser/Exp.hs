@@ -371,10 +371,14 @@ pLetWits c bs
     [ do   pTok KWith
            pTok KBraceBra
            wits    <- P.sepBy
-                      (do  b    <- pBinder
-                           pTok (KOp ":")
-                           t    <- pTypeApp c
-                           return  $ T.makeBindFromBinder b t)
+                      (P.choice
+                        [ do  b    <- pBinder
+                              pTok (KOp ":")
+                              t    <- pTypeApp c
+                              return  $ T.makeBindFromBinder b t
+                        
+                        , do  t    <- pTypeApp c
+                              return  $ BNone t ])
                       (pTok KSemiColon)
            pTok KBraceKet
            return (LLetRegions bs wits)

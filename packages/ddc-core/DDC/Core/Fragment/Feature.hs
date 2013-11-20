@@ -19,6 +19,9 @@ data Feature
         -- | Attach latent closures to function types.
         | FunctionalClosures
 
+        -- | Treat effects as capabilities.
+        | EffectCapabilities
+
         -- General features -------------------------------
         -- | Partially applied primitive operators.
         | PartialPrims

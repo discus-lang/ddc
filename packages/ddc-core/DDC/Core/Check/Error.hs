@@ -385,6 +385,11 @@ data Error a n
         , errorChecking         :: Exp a n
         , errorType             :: Type n }
 
+        -- | A run cast where the context does not support the suspended effect.
+        | ErrorRunNotSupported
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorEffect           :: Effect n }
 
         -- Types ------------------------------------------
         -- | Found a naked `XType` that wasn't the argument of an application.

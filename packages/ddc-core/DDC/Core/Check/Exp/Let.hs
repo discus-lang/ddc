@@ -79,14 +79,14 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
         
         -- Check the witness types.
         let (ctx', pos1) = markContext ctx
-        let ctx1         = pushKinds bsRgn ctx'
+        let ctx1         = pushKinds [(b, RoleConcrete) | b <- bsRgn] ctx'
         let ctx2         = liftTypes depth ctx1
         (bsWit', _)      <- liftM unzip 
                          $  mapM (checkBindM config kenv ctx2) bsWit
         
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM a kenv ctx xx us bsWit'
+        checkWitnessBindsM config a kenv ctx xx us bsWit'
 
         -- Check the body expression.
         let ctx3        = pushTypes bsWit' ctx2
@@ -137,7 +137,7 @@ checkLet !table !ctx xx@(XLet a (LWithRegion u) x) tXX
         -- The handle must have region kind.
         -- We need to look in the KindEnv as well as the Context here, 
         --  because the KindEnv knows the types of primitive variables.
-        (case listToMaybe  $ catMaybes [Env.lookup u kenv, lookupKind u ctx] of
+        (case listToMaybe  $ catMaybes [Env.lookup u kenv, liftM fst $ lookupKind u ctx] of
           Nothing -> throw $ ErrorUndefinedVar a u UniverseSpec
 
           Just k  |  not $ isRegionKind k
@@ -340,7 +340,8 @@ checkLetBindOfTypeM !a !xx !table !ctx !tRight b
 -- | Check the set of witness bindings bound in a letregion for conflicts.
 checkWitnessBindsM 
         :: (Show n, Ord n) 
-        => a                    -- ^ Annotation for error messages.
+        => Config n             -- ^ Type checker config.
+        -> a                    -- ^ Annotation for error messages.
         -> KindEnv n            -- ^ Kind Environment.
         -> Context n            -- ^ Context
         -> Exp a n              -- ^ The whole expression, for error messages.
@@ -348,12 +349,13 @@ checkWitnessBindsM
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> CheckM a n ()
 
-checkWitnessBindsM !a !kenv !ctx !xx !nRegions !bsWits
- = mapM_ (checkWitnessBindM a kenv ctx xx nRegions bsWits) bsWits
+checkWitnessBindsM !config !a !kenv !ctx !xx !nRegions !bsWits
+ = mapM_ (checkWitnessBindM config a kenv ctx xx nRegions bsWits) bsWits
 
 checkWitnessBindM 
         :: (Show n, Ord n)
-        => a                    -- ^ Annotation for error messages.
+        => Config n             -- ^ Type checker config.
+        -> a                    -- ^ Annotation for error messages.
         -> KindEnv n            -- ^ Kind environment.
         -> Context n
         -> Exp a n
@@ -362,7 +364,7 @@ checkWitnessBindM
         -> Bind  n              -- ^ The witness binding to check.
         -> CheckM a n ()
 
-checkWitnessBindM !a !kenv !ctx !xx !uRegions !bsWit !bWit
+checkWitnessBindM !config !a !kenv !ctx !xx !uRegions !bsWit !bWit
  = let  btsWit  = [(typeOfBind b, b) | b <- bsWit]
 
         -- Check the argument of a witness type is for the region we're
@@ -427,6 +429,18 @@ checkWitnessBindM !a !kenv !ctx !xx !uRegions !bsWit !bWit
 
         (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
           -> mapM_ checkWitnessArg ts
+
+        TApp (TCon (TyConSpec TcConRead)) t2
+         | configEffectCapabilities config
+         -> checkWitnessArg t2
+
+        TApp (TCon (TyConSpec TcConWrite)) t2
+         | configEffectCapabilities config
+         -> checkWitnessArg t2
+
+        TApp (TCon (TyConSpec TcConAlloc)) t2
+         | configEffectCapabilities config
+         -> checkWitnessArg t2
 
         _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
 

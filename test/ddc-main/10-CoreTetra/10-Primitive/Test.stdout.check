@@ -12,7 +12,7 @@ Word16# :: Data
 Word32# :: Data
 Word64# :: Data
 
--- Compuation type.
+-- Computation type.
 S :: Effect ~> Data ~> Data
 
 -- Effect types.

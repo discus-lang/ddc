@@ -8,6 +8,7 @@ module DDC.Type.Check.Context
         , takeExists
 
         , Elem    (..)
+        , Role    (..)
         , Context (..)
         , emptyContext
 
@@ -30,8 +31,8 @@ module DDC.Type.Check.Context
         , locationOfExists
         , updateExists
 
-
         , applyContext
+        , effectSupported
 
         , liftTypes
         , lowerTypes)
@@ -141,7 +142,7 @@ data Elem n
         = ElemPos       !Pos
 
         -- | Kind of some variable.
-        | ElemKind      !(Bind n)
+        | ElemKind      !(Bind n) !Role
 
         -- | Type of some variable.
         | ElemType      !(Bind n)
@@ -151,7 +152,22 @@ data Elem n
 
         -- | Existential variable solved to some monotype.
         | ElemExistsEq   !Exists !(Type n)
-        deriving Show
+        deriving (Show, Eq)
+
+
+-- | The role of some type variable.
+data Role
+        -- | Concrete type variables are region variables that have been introduced
+        --   in an enclosing lexical scope. All the capabilities for these will 
+        --   also be in the context.
+        = RoleConcrete
+        
+        -- | Abstract type variables are the ones that are bound by type abstraction
+        --   Inside the body of a type abstraction we can assume a region supports
+        --   any given capability. We only need to worry about if it really does
+        --   when we actually run the enclosed computation.
+        | RoleAbstract
+        deriving (Show, Eq)
 
 
 instance (Pretty n, Eq n) => Pretty (Elem n) where
@@ -160,10 +176,11 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
         ElemPos p
          -> ppr p
 
-        ElemKind b      
+        ElemKind b role  
          -> ppr (binderOfBind b) 
                 <+> text "::" 
                 <+> (ppr $ typeOfBind b)
+                <+> text "@" <> ppr role
 
         ElemType b
          -> ppr (binderOfBind b)
@@ -175,6 +192,13 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
 
         ElemExistsEq i t 
          -> ppr i <+> text "=" <+> ppr t
+
+
+instance Pretty Role where
+ ppr role
+  = case role of
+        RoleConcrete    -> text "Concrete"
+        RoleAbstract    -> text "Abstract"
 
 
 -- Empty ----------------------------------------------------------------------
@@ -198,16 +222,15 @@ pushTypes bs ctx
 
 
 -- | Push the kind of some type variable onto the context.
-pushKind :: Bind n -> Context n -> Context n
-pushKind b ctx
- = ctx { contextElems = ElemKind b : contextElems ctx }
+pushKind :: Bind n -> Role -> Context n -> Context n
+pushKind b role ctx
+ = ctx { contextElems = ElemKind b role : contextElems ctx }
 
 
 -- | Push many kinds onto the context.
-pushKinds :: [Bind n] -> Context n -> Context n
-pushKinds bs ctx
- = foldl (flip pushKind) ctx bs
-
+pushKinds :: [(Bind n, Role)] -> Context n -> Context n
+pushKinds brs ctx
+ = foldl (\ctx' (b, r) -> pushKind b r ctx') ctx brs
 
 -- | Push an existential declaration onto the context.
 --   If this is not an existential then `error`.
@@ -266,8 +289,8 @@ lookupType u ctx
          = goIx ix d ls
 
 
--- | Lookup the kind of some variable from the context.
-lookupKind :: Eq n => Bound n -> Context n -> Maybe (Kind n)
+-- | Lookup the kind and role of some type variable from the context.
+lookupKind :: Eq n => Bound n -> Context n -> Maybe (Kind n, Role)
 lookupKind u ctx
  = case u of
         UPrim{}         -> Nothing
@@ -275,16 +298,16 @@ lookupKind u ctx
         UIx   ix        -> goIx   ix 0 (contextElems ctx)
  where
         goName _n []    = Nothing
-        goName n  (ElemKind (BName n' t) : ls)
-         | n == n'      = Just t
+        goName n  (ElemKind (BName n' t) role : ls)
+         | n == n'      = Just (t, role)
          | otherwise    = goName n ls
         goName  n (_ : ls)
          = goName n ls
 
 
         goIx _ix _d []  = Nothing
-        goIx ix d  (ElemKind (BAnon t) : ls)
-         | ix == d      = Just t
+        goIx ix d  (ElemKind (BAnon t) role : ls)
+         | ix == d      = Just (t, role)
          | otherwise    = goIx   ix (d + 1) ls
         goIx ix d  (_ : ls)
          = goIx ix d ls
@@ -423,3 +446,36 @@ applyContext ctx tt
          $  map (applyContext ctx)
          $  Sum.toList ts
 
+
+-- Support --------------------------------------------------------------------
+-- | Check whether this effect is supported by the given context.
+--   This is used when effects are treated as capabilities.
+--
+--   The overall function can be passed a compound effect, 
+--    it returns `Nothing` if the effect is supported, 
+--    or `Just e`, where `e` is some unsuported atomic effect.
+--
+effectSupported 
+        :: Ord n 
+        => Effect n 
+        -> Context n 
+        -> Maybe (Effect n)
+
+effectSupported eff ctx
+        -- For an effect on an abstract region, we allow any capability.
+        --  We'll find out if it really has this capability when we try
+        --  to run the computation.
+        | TApp (TCon (TyConSpec tc)) (TVar u) <- eff
+        , elem tc [TcConRead, TcConWrite, TcConAlloc]
+        , Just (_, RoleAbstract) <- lookupKind u ctx
+        = Nothing
+
+        -- For an effect on a concrete region,
+        --   the capability needs to be in the lexical environment.
+        | TApp (TCon (TyConSpec tc)) _t2       <- eff
+        , elem tc [TcConRead, TcConWrite, TcConAlloc]
+        , elem (ElemType (BNone eff)) (contextElems ctx)
+        = Nothing
+
+        | otherwise
+        = Just eff

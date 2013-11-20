@@ -54,7 +54,7 @@ checkAbsLAM !table !ctx a b1 x2
         
         -- Check the body of the abstraction.
         let (ctx', pos1) = markContext ctx
-        let ctx1         = pushKind b1' ctx'
+        let ctx1         = pushKind b1' RoleAbstract ctx'
         let ctx2         = liftTypes 1  ctx1
 
         (x2', t2, e2, c2, ctx3)

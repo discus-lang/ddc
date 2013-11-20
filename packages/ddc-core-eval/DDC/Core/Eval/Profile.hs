@@ -31,6 +31,7 @@ evalFeatures
         , featuresTrackedClosures       = True
         , featuresFunctionalEffects     = True
         , featuresFunctionalClosures    = True
+        , featuresEffectCapabilities    = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

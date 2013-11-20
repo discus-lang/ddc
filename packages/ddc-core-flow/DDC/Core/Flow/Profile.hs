@@ -39,6 +39,7 @@ features
         , featuresTrackedClosures       = False
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
+        , featuresEffectCapabilities    = False
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

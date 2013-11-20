@@ -131,6 +131,8 @@ checkCast !table ctx (XCast a CastBox x1) _
 -- releasing its effects into the environment.
 checkCast !table !ctx xx@(XCast a CastRun x1) _
  = do   
+        let config      = tableConfig table
+
         -- Check the body.
         (x1', t1, effs, clos, ctx1) 
                 <- tableCheckExp table table ctx x1 Recon
@@ -139,12 +141,24 @@ checkCast !table !ctx xx@(XCast a CastRun x1) _
         --  and the result has type 'a' while unleashing effect 'eff'.
         case t1 of
          TApp (TApp (TCon (TyConSpec TcConSusp)) eff2) tA 
-          -> returnX a
-                (\z -> XCast z CastRun x1')
-                tA 
-                (Sum.union effs (Sum.singleton kEffect eff2))
-                clos
-                ctx1
+          -> do
+                -- Check that the context has the capability to support 
+                -- this effect.
+                checkEffectSupported config a xx ctx eff2
+
+                ctrace  $ vcat 
+                        [ text "* Run"
+                        , text "  eff = " <> ppr eff2
+                        , text "  t   = " <> ppr tA
+                        , indent 2 $ ppr ctx 
+                        , empty ]
+
+                returnX a
+                        (\z -> XCast z CastRun x1')
+                        tA 
+                        (Sum.union effs (Sum.singleton kEffect eff2))
+                        clos
+                        ctx1
 
          _ -> throw $ ErrorRunNotSuspension a xx t1
 
@@ -190,3 +204,18 @@ checkArgM !table !ctx !xx !dXX
                 return  (xx', clos, ctx')
                         
 
+-- Support --------------------------------------------------------------------
+checkEffectSupported 
+        :: Ord n 
+        => Config n 
+        -> a
+        -> Exp a n
+        -> Context n 
+        -> Effect n 
+        -> CheckM a n ()
+
+checkEffectSupported _config a xx ctx eff
+ = case effectSupported eff ctx of
+        Nothing         -> return ()
+        Just effBad     -> throw $ ErrorRunNotSupported a xx effBad
+ 

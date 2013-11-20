@@ -113,12 +113,12 @@ taggedClosureOfTyArg
 taggedClosureOfTyArg kenv ctx tt
  = case tt of
         TVar u
-         | Just k       <- Env.lookup u kenv
+         | Just k          <- Env.lookup u kenv
          -> if isRegionKind k 
                 then Just $ Set.singleton $ GBoundRgnVar u
                 else Just Set.empty
                  
-         | Just k       <- lookupKind u ctx
+         | Just (k, _role) <- lookupKind u ctx
          -> if isRegionKind k
                 then Just $ Set.singleton $ GBoundRgnVar u
                 else Just Set.empty

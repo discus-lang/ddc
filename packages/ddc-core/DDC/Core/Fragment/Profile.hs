@@ -69,6 +69,7 @@ data Features
         , featuresTrackedClosures       :: Bool
         , featuresFunctionalEffects     :: Bool
         , featuresFunctionalClosures    :: Bool
+        , featuresEffectCapabilities    :: Bool
         , featuresPartialPrims          :: Bool
         , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
@@ -90,6 +91,7 @@ zeroFeatures
         , featuresTrackedClosures       = False
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
+        , featuresEffectCapabilities    = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
@@ -110,6 +112,7 @@ setFeature feature val features
         TrackedClosures         -> features { featuresTrackedClosures      = val }
         FunctionalEffects       -> features { featuresFunctionalEffects    = val }
         FunctionalClosures      -> features { featuresFunctionalClosures   = val }
+        EffectCapabilities      -> features { featuresEffectCapabilities   = val }
         PartialPrims            -> features { featuresPartialPrims         = val }
         PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }

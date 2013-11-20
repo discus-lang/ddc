@@ -418,6 +418,12 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+        ErrorRunNotSupported a xx eff
+         -> vcat [ ppr a
+                 , text "Effect of computation not supported by context."
+                 , text "    Effect:  "                 <> ppr eff
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
 
         -- Type -------------------------------------------
         ErrorNakedType a xx

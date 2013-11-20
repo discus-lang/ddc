@@ -101,11 +101,11 @@ checkTypeM config env ctx tt
 -- Variables ------------------
 checkTypeM' config env ctx tt@(TVar u)
  -- Primitive type variable has its type directly attached.
- | UPrim _ k    <- u    
+ | UPrim _ k       <- u    
  = return (tt, k)
 
  -- Kind is in the local environment.
- | Just k       <- lookupKind u ctx
+ | Just (k, _role) <- lookupKind u ctx
  = return (tt, k)
  
  -- Kind is in the global environment.
@@ -165,7 +165,7 @@ checkTypeM' config env _ctx tt@(TCon tc)
 
 -- Quantifiers ----------------
 checkTypeM' config env ctx tt@(TForall b1 t2)
- = do   let ctx'  = pushKind b1 ctx
+ = do   let ctx'  = pushKind b1 RoleAbstract ctx
         _         <- checkTypeM config env ctx  (typeOfBind b1)
         (t2', k2) <- checkTypeM config env ctx' t2
 
