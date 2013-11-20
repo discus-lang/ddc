@@ -68,7 +68,7 @@ y
         Prune:
             Removed:        0
 
-letregion r with {w : Mutable r} in
+private r with {w : Mutable r} in
 weakeff [Alloc r] in
 weakclo {[r]} in
 ()
@@ -79,7 +79,7 @@ weakclo {[r]} in
         Prune:
             Removed:        0
 
-letregion r with {w : Mutable r} in
+private r with {w : Mutable r} in
 let x : Int r = 5 [r] () in
 let y : Unit
       = updateInt [r] [r] <w> x (2 [r] ()) in

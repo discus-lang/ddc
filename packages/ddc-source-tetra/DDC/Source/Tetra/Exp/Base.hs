@@ -89,11 +89,11 @@ data Exp a n
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Possibly recursive binding.
-        = LLet    !(Bind n) !(Exp a n)
+        = LLet     !(Bind n) !(Exp a n)
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LLetRegions ![Bind n] ![Bind n]
+        | LPrivate ![Bind n] ![Bind n]
         deriving (Show, Eq)
 
 
@@ -155,7 +155,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
  rnf lts
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
-        LLetRegions bs1 bs2     -> rnf bs1  `seq` rnf bs2
+        LPrivate bs1 bs2        -> rnf bs1  `seq` rnf bs2
 
 
 instance (NFData a, NFData n) => NFData (Alt a n) where

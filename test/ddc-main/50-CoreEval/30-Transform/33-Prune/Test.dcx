@@ -37,14 +37,14 @@ y
 
 -- Make mutable, but no update
 :trans..
-letregion r with {w : Mutable r} in
+private r with {w : Mutable r} in
 let x = 5 [r] ()		 in
 ()
 ;;
 
 -- Do an update - update name is unmentioned
 :trans..
-letregion r with {w : Mutable r}		in
+private r with {w : Mutable r}		in
 let x = 5 [r] ()				in
 let y = updateInt [:r r:] {w} x (2 [r] ())	in
 copyInt [:r r0#:] x

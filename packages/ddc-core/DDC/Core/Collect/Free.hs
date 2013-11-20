@@ -69,7 +69,7 @@ instance BindStruct (Exp a) where
                      (map fst bxs) 
                      (map snd bxs ++ [x2])]
         
-        XLet _ (LLetRegions b bs) x2
+        XLet _ (LPrivate b bs) x2
          -> [ BindDef  BindLetRegions b
              [bindDefX BindLetRegionWith bs [x2]]]
 

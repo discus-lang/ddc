@@ -9,7 +9,7 @@ addInt [:r1# r2# r3#:] (addInt [:r3# r4# r1#:] (20 [r3#] ()) (30 [r4#] ())) (40 
 
 -- Forget around integer to add.
 :eval..
-letregion r with {w : Global r} in
+private r with {w : Global r} in
 addInt [:r r2# r3#:] 
         (forget use [r] w in (2 [r] ()))
         (3 [r2#] ());;

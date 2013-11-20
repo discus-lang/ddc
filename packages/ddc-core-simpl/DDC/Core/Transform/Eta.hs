@@ -219,7 +219,7 @@ instance Eta Lets where
                           $  map snd bxs
                 return    $ LRec (zip bs xs')
 
-        LLetRegions{}   -> return lts
+        LPrivate{}      -> return lts
         LWithRegion{}   -> return lts
 
 

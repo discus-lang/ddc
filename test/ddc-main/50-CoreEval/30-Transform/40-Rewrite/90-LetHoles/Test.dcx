@@ -102,7 +102,7 @@ unboxi_ [r0#] (boxi_ [r0#] (5 [r0#] ()))
 
 -- do it: const
 :trans..
-letregion r with {w : Const r}		in
+private r with {w : Const r}		in
 let x = unboxi_ [r] (boxi_ [r] (5 [r] ()))	in
     ()
 ;;
@@ -110,7 +110,7 @@ let x = unboxi_ [r] (boxi_ [r] (5 [r] ()))	in
 
 -- separated
 :trans..
-letregion r with {w : Const r}	in
+private r with {w : Const r}	in
 let x = boxi_ [r] (5 [r] ())	in
 let y = unboxi_ [r] x		in
     ()

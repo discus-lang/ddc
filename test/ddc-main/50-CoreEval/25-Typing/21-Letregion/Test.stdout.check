@@ -1,21 +1,21 @@
--- Parse letregion with no witnesses
-letregion r1 in
+-- Parse private with no witnesses
+private r1 in
 ()
 :*: Unit
 :!: Pure
 :$: Empty
 
 
--- Parse letregion with one witness.
-letregion r1 with {w1 : Const r1} in
+-- Parse private with one witness.
+private r1 with {w1 : Const r1} in
 ()
 :*: Unit
 :!: Pure
 :$: Empty
 
 
--- Parse letregion with multiple witnesses.
-letregion r1 with {w1 : Const r1; w2 : Manifest r1} in
+-- Parse private with multiple witnesses.
+private r1 with {w1 : Const r1; w2 : Manifest r1} in
 ()
 :*: Unit
 :!: Pure
@@ -23,7 +23,7 @@ letregion r1 with {w1 : Const r1; w2 : Manifest r1} in
 
 
 -- Use the bound region in the body of the expression.
-letregion r1 in
+private r1 in
 addInt [r1] [r1] [r2#] (2 [r1] ()) (3 [r1] ())
 :*: Int r2#
 :!: Alloc r2#
@@ -31,7 +31,7 @@ addInt [r1] [r1] [r2#] (2 [r1] ()) (3 [r1] ())
 
 
 -- As above, but with debruijn indices.
-letregion ^ in
+private ^ in
 addInt [^0] [^0] [r2#] (2 [^0] ()) (3 [^0] ())
 :*: Int r2#
 :!: Alloc r2#
@@ -50,7 +50,7 @@ When checking expression.
         ()
 
 
--- Error: letregion cannot shadow region variables that are already in the
+-- Error: private cannot shadow region variables that are already in the
 -- environment because the new witnesses may conflict with the old ones.
 When checking expression.
   <batch>:30:1
@@ -58,11 +58,11 @@ When checking expression.
              Region variables: r1 : Region
        are already in environment
   
-  with: letregion r1 with {w1 : Mutable r1} in
+  with: private r1 with {w1 : Mutable r1} in
         updateInt [r1] [r1] <w1> x (0 [r1] ())
 
 
--- Error: letregion can't shadow region variables that are already in the
+-- Error: private can't shadow region variables that are already in the
 -- environment.
 When checking expression.
   <batch>:39:2
@@ -70,29 +70,29 @@ When checking expression.
              Region variables: r : Region
        are already in environment
   
-  with: letregion r with {w1 : Mutable r} in
+  with: private r with {w1 : Mutable r} in
         updateInt [r] [r] <w1> x (0 [r] ())
 
 
--- Error: bound region variable is free in the type of the body of a letregion.
+-- Error: bound region variable is free in the type of the body of a private.
 When checking expression.
   <batch>:44:2
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Int r1
   
-  with: letregion r1 in
+  with: private r1 in
         4 [r1] ()
 
 
 -- Error: bound region is free in the effect of a returned function.
 When checking expression.
   <batch>:49:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r2# | Use r1 + Use r2#)> Int r2#
   
-  with: letregion r1 with {w1 : Const r1} in
+  with: private r1 with {w1 : Const r1} in
         \(x : Unit).
         addInt [r1] [r1] [r2#] (2 [r1] ()) (3 [r1] ())
 
@@ -100,11 +100,11 @@ When checking expression.
 -- Error: region variable appears in closure term
 When checking expression.
   <batch>:55:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
-  with: letregion r1 in
+  with: private r1 in
         let z = 5 [r1] () in
         \(x : Unit).
         let xs
@@ -118,20 +118,20 @@ When checking expression.
         }
 
 
--- Error: witness types with a letregion must use explicit type constructors.
+-- Error: witness types with a private must use explicit type constructors.
 When checking expression.
   <batch>:68:1
-  Invalid witness type with letregion.
+  Invalid witness type with private.
             The witness: w : c r1
-    cannot be created with a letregion
+    cannot be created with a private
   
-  with: letregion r1 with {w : c r1} in
+  with: private r1 with {w : c r1} in
         ()
 
 
--- Parse letregion with witness for distinctness
-letregion r1 in
-letregion r2 with {w1 : Distinct2 r1 r2} in
+-- Parse private with witness for distinctness
+private r1 in
+private r2 with {w1 : Distinct2 r1 r2} in
 ()
 :*: Unit
 :!: Pure
@@ -139,38 +139,38 @@ letregion r2 with {w1 : Distinct2 r1 r2} in
 
 
 -- Error: distinct witness must have as one argument the region introduced with
--- this letregion, and a bound region variable in the environment for the other.
+-- this private, and a bound region variable in the environment for the other.
 When checking expression.
   <batch>:82:1
-  Invalid witness type with letregion.
+  Invalid witness type with private.
             The witness: w1 : Distinct2 r2 r2
-    cannot be created with a letregion
+    cannot be created with a private
   
-  with: letregion r2 with {w1 : Distinct2 r2 r2} in
+  with: private r2 with {w1 : Distinct2 r2 r2} in
         ()
 
 
--- Parse letregion with witness for multi-way distinctness
-letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
+-- Parse private with witness for multi-way distinctness
+private r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
 ()
 :*: Unit
 :!: Pure
 :$: Empty
 
 
--- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
+-- Error: distinct_n for n > 2 can only be used for regions introduced by the current privates
 When checking expression.
   <batch>:93:1
   Witness type is not for bound regions.
-        letregion binds: r2 r3
+          private binds: r2 r3
     but witness type is: w : Distinct3 r1 r2 r3
   
-  with: letregions r2 r3 with {w : Distinct3 r1 r2 r3} in
+  with: private r2 r3 with {w : Distinct3 r1 r2 r3} in
         ()
 
 
 -- #255: Letregions with deBruijn indices
-letregions ^ ^ with {w : Distinct2 ^1 ^0} in
+private ^ ^ with {w : Distinct2 ^1 ^0} in
 ()
 :*: Unit
 :!: Pure

@@ -75,7 +75,7 @@ letrec {
 :eval..
 let fac  [r1:Region] 
          (n   : Int r1) {Read r1 + Alloc r1 | Use r1} : Int r1
-     = letregion r2 with { w : Mutable r2 } in
+     = private r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
        let one = 1 [r2] () in
        letrec { 
@@ -101,7 +101,7 @@ in fac [r0#] (10 [r0#] ());;
 :eval..
 let fac  [r1:Region] [r3:Region]
          (n   : Int r1) {Read r1 + Alloc r1 + Alloc r3 | Use r1 + Use r3} : Int r3
-     = letregion r2 with { w : Mutable r2 } in
+     = private r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
        let one = 1 [r2] () in
        letrec { 
@@ -123,7 +123,7 @@ in fac [r1#] [r2#] (10 [r1#] ());;
 :eval..
 let fac  [r1:Region] [r3:Region]
          (n   : Int r1) {Read r1 + Alloc r1 + Alloc r3 | Use r1 + Use r3} : Int r3
-     = letregion r2 with { w : Mutable r2 } in
+     = private r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
        let one = 1 [r2] () in
        letrec { 
@@ -145,7 +145,7 @@ in fac [r1#] [r2#] (10 [r1#] ());;
 let fac  [r1:Region] [r3:Region]
          (n   : Int r1) { Read r1 + Alloc r3 
                         | Use r1  + Use r3} : Int r3
-     = letregion r2 with { w : Mutable r2 } in
+     = private r2 with { w : Mutable r2 } in
        letrec { 
         loop0 (i : Int r1) { Read r1 + Read r2 + Write r2 + Alloc r2 + Alloc r3
                            | Use r1  + Use r2  + Use r3 } : Int r3
@@ -172,19 +172,19 @@ in fac [r1#] [r2#] (10 [r1#] ());;
 
 -- Local objects cannot escape ------------------------------------------------
 -- Error: local region visible in return type.
-letregion r1 in 5 [r1] ()
+private r1 in 5 [r1] ()
 
 
 -- Error: local region visible in return type.
 :eval..
-letregion r1 in 
+private r1 in 
 let z = 5 [r1] () 
 in \(x : Unit). addInt [:r1 r1 r0#:] z (1 [r1] ());;
 
 
 -- Error: local region visible in return type.
 :eval..
-letregion r1 in
+private r1 in
 let z  = 5 [r1] () in
 \(x : Unit).
  let xs = Cons [r0#] [Int r1] z (Nil [r0#] [Int r1] ()) in
@@ -201,12 +201,12 @@ let z  = 5 [r1] () in
 :trans..
 let foo [r1 r2 : Region] (_ : Unit)
      = let x = 5 [r1] () in
-       let y = letregion r3 in
+       let y = private r3 in
                addInt [:r1 r3 r2:] x (1 [r3] ()) in
        Pr [r1] [Int r1] [Int r2] x y
 
-in  letregion r4 in
-    letregion r5 in
+in  private r4 in
+    private r5 in
     case foo [:r4 r5:] () of {
             Pr _ y -> copyInt [:r5 r0#:] y
     };;

@@ -8,8 +8,8 @@
 module Test with letrec
 
 bar (_ : Unit) : Unit
- = letregion r1 in
-   letregions r2 r3 with { w1 : Distinct r1 r2 } in ();;
+ = private r1 in
+   private r2 r3 with { w1 : Distinct r1 r2 } in ();;
 
 
 -- Observable optimisations: GVN

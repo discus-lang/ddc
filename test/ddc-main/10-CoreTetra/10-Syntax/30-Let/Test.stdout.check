@@ -63,8 +63,8 @@ let ^ : Unit = ^0 in
 :*: Unit
 :!: Pure
 
--- Simple letregion.
-letregion r with {Alloc r; Read r} in
+-- Simple private.
+private r with {Alloc r; Read r} in
 let x : Ref# r Nat#
       = run allocRef# [r] [Nat#] 4# in
 run readRef# [r] [Nat#] x
@@ -73,13 +73,13 @@ run readRef# [r] [Nat#] x
 
 
 -- Letregion with explicitly empty witness set.
-letregion r in
+private r in
 ()
 :*: Unit
 :!: Pure
 
--- Simple letregion with letrec using explicit type annotation
-letregion r in
+-- Simple private with letrec using explicit type annotation
+private r in
 letrec {
   f : Unit -> Nat#
     = \(x : Unit). 5#
@@ -89,8 +89,8 @@ f ()
 :!: Pure
 
 
--- Simple letregion with letrec using function syntax.
-letregion r in
+-- Simple private with letrec using function syntax.
+private r in
 letrec {
   f : Unit -> Nat#
     = \(u : Unit). 5#
@@ -101,7 +101,7 @@ add# [Nat#] (f ()) (f ())
 
 
 -- Letrec with a single binding and no braces around it.
-letregion r in
+private r in
 letrec {
   f : Unit -> Nat#
     = \(u : Unit). 5#
@@ -111,8 +111,8 @@ add# [Nat#] (f ()) (f ())
 :!: Pure
 
 
--- Multiple lets and letregion. 
-letregions r1 r2 in
+-- Multiple lets and private. 
+private r1 r2 in
 let x1 : Nat# = 2# in
 let x2 : Nat# = 3# in
 add# [Nat#] x1 x2
@@ -120,7 +120,7 @@ add# [Nat#] x1 x2
 :!: Pure
 
 -- As above, but no annots on binders.
-letregions r1 r2 in
+private r1 r2 in
 let x1 : Nat# = 2# in
 let x2 : Nat# = 3# in
 add# [Nat#] x1 x2
@@ -129,7 +129,7 @@ add# [Nat#] x1 x2
 
 
 -- Anonymous witness binders
-letregion r with {Const r} in
+private r with {Const r} in
 ()
 :*: Unit
 :!: Pure

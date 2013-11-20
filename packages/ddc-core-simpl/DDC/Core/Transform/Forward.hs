@@ -260,8 +260,8 @@ instance Forward Lets where
                           return (b, x')) 
             bxs
 
-        LLetRegions b bs -> return $ LLetRegions b bs
-        LWithRegion b    -> return $ LWithRegion b
+        LPrivate b bs   -> return $ LPrivate b bs
+        LWithRegion b   -> return $ LWithRegion b
 
 
 instance Forward Alt where

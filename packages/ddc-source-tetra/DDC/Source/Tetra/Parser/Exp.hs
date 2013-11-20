@@ -308,15 +308,15 @@ pLetsSP c
          return (LLet b1 x1, sp)
 
       -- Local region binding.
-      --   letregions [BINDER] with { BINDER : TYPE ... } in EXP
-      --   letregions [BINDER] in EXP
-    , do sp     <- pTokSP KLetRegions
+      --   private [BINDER] with { BINDER : TYPE ... } in EXP
+      --   private [BINDER] in EXP
+    , do sp     <- pTokSP KPrivate
          brs    <- P.manyTill pBinder (P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith])
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
          r      <- pLetWits c bs
          return (r, sp)
           
-    , do sp     <- pTokSP KLetRegion
+    , do sp     <- pTokSP KPrivate
          br    <- pBinder
          let b =  T.makeBindFromBinder br T.kRegion
          r      <- pLetWits c [b]
@@ -339,9 +339,9 @@ pLetWits c bs
                            return  $ T.makeBindFromBinder b t)
                       (pTok KSemiColon)
            pTok KBraceKet
-           return (LLetRegions bs wits)
+           return (LPrivate bs wits)
     
-    , do   return (LLetRegions bs [])
+    , do   return (LPrivate bs [])
     ]
 
 

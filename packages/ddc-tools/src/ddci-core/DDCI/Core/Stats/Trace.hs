@@ -50,7 +50,7 @@ traceStoreLs store entered ls
    in case ls of
         LLet b x        -> LLet b (down x)
         LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
-        LLetRegions{}   -> ls
+        LPrivate{}      -> ls
         LWithRegion{}   -> ls
 
 

@@ -1,5 +1,5 @@
 -- Global regions aren't deallocated as we leave the scope of the 
--- letregion that created it.
+-- private that created it.
 When checking expression.
   <batch>:6:16
   Type cannot apply non-constructor witness

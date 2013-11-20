@@ -34,7 +34,7 @@ letrec {
 :eval..
 let fac  [r1:Region] 
          (n   : Int r1) {Read r1 + Alloc r1 | Use r1} : Int r1
-     = letregion r2 with { w : Mutable r2 } in
+     = private r2 with { w : Mutable r2 } in
        let acc = 1 [r2] () in
        let one = 1 [r2] () in
        letrec { 

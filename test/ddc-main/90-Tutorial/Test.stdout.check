@@ -132,22 +132,22 @@ updateInt :: [^ ^ : Region].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 
 -- Error: local region visible in return type.
 When checking expression.
   <batch>:175:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Int r1
   
-  with: letregion r1 in
+  with: private r1 in
         5 [r1] ()
 
 
 -- Error: local region visible in return type.
 When checking expression.
   <batch>:180:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
-  with: letregion r1 in
+  with: private r1 in
         let z = 5 [r1] () in
         \(x : Unit).
         addInt [r1] [r1] [r0#] z (1 [r1] ())
@@ -156,11 +156,11 @@ When checking expression.
 -- Error: local region visible in return type.
 When checking expression.
   <batch>:187:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
-  with: letregion r1 in
+  with: private r1 in
         let z = 5 [r1] () in
         \(x : Unit).
         let xs
@@ -183,11 +183,11 @@ let ^ : [^ ^ : Region].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> 
          \(_ : Unit).
         let ^ : Int ^1 = 5 [^1] () in
         let ^ : Int ^0
-              = letregion ^ in
+              = private ^ in
                 addInt [^2] [^0] [^1] ^0 (1 [^0] ()) in
         Pr [^1] [Int ^1] [Int ^0] ^1 ^0 in
-letregion ^ in
-letregion ^ in
+private ^ in
+private ^ in
 letcase Pr (_ : Int ^1) (^ : Int ^0)  = ^0 [^1] [^0] () in
 copyInt [^0] [r0#] ^0
 

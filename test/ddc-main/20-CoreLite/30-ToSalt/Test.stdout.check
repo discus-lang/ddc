@@ -356,7 +356,7 @@ letrec {
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
     = \(_ : Ptr# rT Obj).
-      letregion r in
+      private r in
       let list : Ptr# r Obj
             = singleton [r] (allocBoxed [rT] TAG0# 0#) in
       headUnit [r] list
@@ -381,9 +381,9 @@ letrec {
   
   bar : Ptr# rT Obj -> Word64#
     = \(_ : Ptr# rT Obj).
-      letregion r1 with {w1 : Mutable r1} in
-      letregion r2 in
-      letregion r3 with {w2 : Distinct2 r2 r3} in
+      private r1 with {w1 : Mutable r1} in
+      private r2 in
+      private r3 with {w2 : Distinct2 r2 r3} in
       foo [r1] [r2] [r3] <w1> <w2> (allocBoxed [rT] TAG0# 0#)
 }
 

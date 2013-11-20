@@ -193,30 +193,30 @@ splitXLets xx
 bindsOfLets :: Lets a n -> ([Bind n], [Bind n])
 bindsOfLets ll
  = case ll of
-        LLet b _           -> ([],  [b])
-        LRec bxs           -> ([],  map fst bxs)
-        LLetRegions bs bbs -> (bs, bbs)
-        LWithRegion{}      -> ([],  [])
+        LLet b _         -> ([],  [b])
+        LRec bxs         -> ([],  map fst bxs)
+        LPrivate bs bbs  -> (bs, bbs)
+        LWithRegion{}    -> ([],  [])
 
 
 -- | Like `bindsOfLets` but only take the spec (level-1) binders.
 specBindsOfLets :: Lets a n -> [Bind n]
 specBindsOfLets ll
  = case ll of
-        LLet _ _         -> []
-        LRec _           -> []
-        LLetRegions bs _ -> bs
-        LWithRegion{}    -> []
+        LLet _ _        -> []
+        LRec _          -> []
+        LPrivate bs _   -> bs
+        LWithRegion{}   -> []
 
 
 -- | Like `bindsOfLets` but only take the value and witness (level-0) binders.
 valwitBindsOfLets :: Lets a n -> [Bind n]
 valwitBindsOfLets ll
  = case ll of
-        LLet b _         -> [b]
-        LRec bxs         -> map fst bxs
-        LLetRegions _ bs -> bs
-        LWithRegion{}    -> []
+        LLet b _        -> [b]
+        LRec bxs        -> map fst bxs
+        LPrivate _ bs   -> bs
+        LWithRegion{}   -> []
 
 
 -- Alternatives ---------------------------------------------------------------

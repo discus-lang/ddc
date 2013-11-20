@@ -92,7 +92,7 @@ fac [r1 r2 : Region] (x: Ptr# r1 Obj) : Ptr# r2 Obj
         }
       };
 
--- needs support for letregion
+-- needs support for private
 main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
  = do { create# 1000#;
         x       = boxWord32 [r1] 10w32#;

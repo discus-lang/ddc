@@ -74,14 +74,14 @@ data Exp a n
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive expression binding.
-        = LLet        !(Bind n) !(Exp a n)
+        = LLet     !(Bind n) !(Exp a n)
 
         -- | Recursive binding of lambda abstractions.
-        | LRec        ![(Bind n, Exp a n)]
+        | LRec     ![(Bind n, Exp a n)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LLetRegions ![Bind n] ![Bind n]
+        | LPrivate ![Bind n] ![Bind n]
         
         -- | Holds a region handle during evaluation.
         | LWithRegion !(Bound n)
@@ -179,7 +179,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
-        LLetRegions bs1 bs2     -> rnf bs1  `seq` rnf bs2
+        LPrivate bs1 bs2        -> rnf bs1  `seq` rnf bs2
         LWithRegion u           -> rnf u
 
 

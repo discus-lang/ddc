@@ -198,8 +198,7 @@ data TokAtom
         | KLet
         | KLetCase
         | KLetRec
-        | KLetRegions
-        | KLetRegion
+        | KPrivate
         | KWithRegion
         | KCase
         | KOf
@@ -303,8 +302,7 @@ describeTokAtom' ta
         KLet                    -> (Keyword, "let")
         KLetCase                -> (Keyword, "letcase")
         KLetRec                 -> (Keyword, "letrec")
-        KLetRegions             -> (Keyword, "letregions")
-        KLetRegion              -> (Keyword, "letregion")
+        KPrivate                -> (Keyword, "private")
         KWithRegion             -> (Keyword, "withregion")
         KCase                   -> (Keyword, "case")
         KOf                     -> (Keyword, "of")

@@ -131,11 +131,11 @@ instance SpreadX (Lets a) where
                 xs'      = map (spreadX kenv tenv') xs
              in LRec (zip bs' xs')
 
-        LLetRegions b bs
+        LPrivate b bs
          -> let b'       = map (spreadT kenv) b
                 kenv'    = Env.extends b' kenv
                 bs'      = map (spreadX kenv' tenv) bs
-            in  LLetRegions b' bs'
+            in  LPrivate b' bs'
 
         LWithRegion b
          -> LWithRegion (spreadX kenv tenv b)

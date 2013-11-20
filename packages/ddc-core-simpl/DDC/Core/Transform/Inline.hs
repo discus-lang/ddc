@@ -64,7 +64,7 @@ instance Inline Lets where
     in case lts of
         LLet b x        -> LLet b (enter b x)
         LRec bxs        -> LRec [(b, enter b x) | (b, x) <- bxs]
-        LLetRegions{}   -> lts
+        LPrivate{}      -> lts
         LWithRegion{}   -> lts
 
 

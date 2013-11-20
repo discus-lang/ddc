@@ -59,7 +59,7 @@ let x : Int r0# = 5 [r0#] () in
 
 -- Local region should not appear in the closure of the overall term.
 :check..
-letregion r1 with {w1 : Const r1} in
+private r1 with {w1 : Const r1} in
 purify read [r1] w1 in
 addInt [:r1 r0# r0#:] (5 [r1] ()) (5 [r0#] ());;
 
@@ -69,7 +69,7 @@ addInt [:r1 r0# r0#:] (5 [r1] ()) (5 [r0#] ());;
 -- that the function uses the region due to the Use term in the
 -- function's closure.
 :check..
-letregion r1 with {w1 : Const r1} in
+private r1 with {w1 : Const r1} in
 \(x:Unit). 
  purify read [r1] w1 & alloc [r1] w1 in
  addInt [:r1 r0# r0#:] (2 [r1] ()) (3 [r0#] ());;

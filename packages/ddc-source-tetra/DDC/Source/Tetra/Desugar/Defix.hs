@@ -71,7 +71,7 @@ instance Defix Lets where
   = let down = defix table
     in case lts of
         LLet b x        -> liftM (LLet b) (down x)
-        LLetRegions{}   -> return lts
+        LPrivate{}      -> return lts
 
 
 instance Defix Alt where

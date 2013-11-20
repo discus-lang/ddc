@@ -38,7 +38,7 @@ case 5 [r0#] () of {
 
 -- Handle forget cast around the discriminant.
 :eval..
-letregion r with {w : Global r} in
+private r with {w : Global r} in
 let xx = forget use [r] w in 
         Cons [r] [Int r] (5 [r] ()) (Nil [r] [Int r] ()) in
 case xx of {

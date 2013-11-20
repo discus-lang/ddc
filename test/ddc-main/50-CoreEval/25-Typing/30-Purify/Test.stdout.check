@@ -1,11 +1,11 @@
 -- Error: region is free in the return type of the returned function.
 When checking expression.
   <batch>:3:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Pure | Use r1)> Int r1
   
-  with: letregion r1 with {w1 : Const r1} in
+  with: private r1 with {w1 : Const r1} in
         \(x : Unit).
         purify <alloc [r1] w1> in
         5 [r1] ()
@@ -26,11 +26,11 @@ When checking expression.
 -- Error: region is visible in the effect of the returned function.
 When checking expression.
   <batch>:16:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r1 + Read r0# + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
-  with: letregion r1 with {w1 : Const r1} in
+  with: private r1 with {w1 : Const r1} in
         \(x : Unit).
         addInt [r1] [r0#] [r0#] (2 [r1] ()) (3 [r0#] ())
 
@@ -39,11 +39,11 @@ When checking expression.
 -- We've purified the read effect, but the alloc effect is still visible.
 When checking expression.
   <batch>:23:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r0# + Alloc r1 + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
-  with: letregion r1 with {w1 : Const r1} in
+  with: private r1 with {w1 : Const r1} in
         \(x : Unit).
         purify <read [r1] w1> in
         addInt [r1] [r0#] [r0#] (2 [r1] ()) (3 [r0#] ())
@@ -55,11 +55,11 @@ When checking expression.
 -- function's closure.
 When checking expression.
   <batch>:33:1
-  Region variables escape scope of letregion.
+  Region variables escape scope of private.
          The region variables: r1 : Region
      is free in the body type: Unit -(Read r0# + Alloc r0# | Use r1 + Use r0#)> Int r0#
   
-  with: letregion r1 with {w1 : Const r1} in
+  with: private r1 with {w1 : Const r1} in
         \(x : Unit).
         purify <read [r1] w1 & alloc [r1] w1> in
         addInt [r1] [r0#] [r0#] (2 [r1] ()) (3 [r0#] ())

@@ -1,7 +1,7 @@
 -- Global regions aren't deallocated as we leave the scope of the 
--- letregion that created it.
+-- private that created it.
 :eval..
-let f = letregion r1 with {w0 : Global r1; w1 : Const r1} in
+let f = private r1 with {w0 : Global r1; w1 : Const r1} in
         \(x:Unit).
         forget use [r1] w0 w1 in
         purify read [r1] w1 & alloc [r1] w1 in

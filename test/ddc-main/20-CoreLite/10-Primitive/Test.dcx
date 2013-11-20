@@ -45,5 +45,5 @@ let addInt [r1 r2 r3 : Region]
      =  case x of { I# i1 
      -> case y of { I# i2 
      -> I# [r3] (add# [Int#] i1 i2) } } in
-letregion r1 in
+private r1 in
 unboxInt [r1] (addInt [:r1 r1 r1:] (I# [r1] 2i#) (I# [r1] 3i#));;

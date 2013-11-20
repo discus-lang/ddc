@@ -53,8 +53,8 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
                 t2 effs' clos' ctx_cut
 
 
--- letregion --------------------------------------
-checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
+-- private --------------------------------------
+checkLet !table !ctx xx@(XLet a (LPrivate bsRgn bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table ctx x Recon
     us   -> do
@@ -122,7 +122,7 @@ checkLet !table !ctx xx@(XLet a (LLetRegions bsRgn bsWit) x) tXX
                         $ popToPos pos1 ctx4
 
         returnX a
-                (\z -> XLet z (LLetRegions bsRgn bsWit) xBody')
+                (\z -> XLet z (LPrivate bsRgn bsWit) xBody')
                 (lowerT depth tBody)
                 (lowerT depth effs')
                 c2_cut

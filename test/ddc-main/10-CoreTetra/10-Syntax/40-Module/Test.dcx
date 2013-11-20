@@ -12,11 +12,11 @@ imports {
          with two :: Unit -> Nat#;
 }
 with
-letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
+private rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = 1# in
 letrec { 
         main (_ : Unit) : Unit
-         = letregion r0 in
+         = private r0 in
            ();
 
         double  (x : Nat#) : Nat#
@@ -35,11 +35,11 @@ exports main    :: Unit -> Unit
 imports Thing.whatever 
          with two :: Unit -> Nat#
 with
-letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
+private rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = 1# in
 letrec 
         main (_ : Unit) : Unit
-         = letregion r0 in
+         = private r0 in
            ()
 
         double  (x : Nat#) : Nat#

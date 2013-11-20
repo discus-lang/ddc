@@ -126,7 +126,7 @@ checkModuleBinds !ksExports !tsExports !xx
                 env     <- checkModuleBinds ksExports tsExports x2
                 return  $ Env.extends (map fst bxs) env
 
-        XLet _ (LLetRegions _ _) x2
+        XLet _ (LPrivate _ _) x2
          ->     checkModuleBinds ksExports tsExports x2
 
         _ ->    return Env.empty

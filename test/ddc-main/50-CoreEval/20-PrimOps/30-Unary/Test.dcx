@@ -3,7 +3,7 @@ copyInt [:r0# r1#:] (5 [r0#] ())
 
 -- Copy int out of local region
 :eval..
-letregion r1 in
+private r1 in
 let x : Int r1 = 0 [r1] () in
 copyInt [:r1 r0#:] x;;
 

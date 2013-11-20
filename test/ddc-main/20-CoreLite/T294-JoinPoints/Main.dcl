@@ -32,7 +32,7 @@ letrec {
   replicate : [r1 r2 : Region].[a : Data].Nat r1 -(Pure | Use r1 + Use r2)> a -(Read r1 + Alloc r2 | Use r1 + Use r2)> List r2 a
     = /\(r1 r2 : Region)./\(a : Data).
        \(n : Nat r1).\(x : a).
-      letregion r3 in
+      private r3 in
       case n of {
         N# (n2 : Nat#) 
          -> let x4 : Bool# = eq# [Nat#] n2 0# in
@@ -114,7 +114,7 @@ letrec {
   main : [r : Region].Nat# -> Ptr# r String# -(Console | Empty)> Int#
     = /\(r : Region).
        \(argc : Nat#).\(argv : Ptr# r String#).
-      letregion r2 in
+      private r2 in
       let x25 : Nat r2 = N# [r2] 5# in
       let x26 : Nat r2 = N# [r2] 100# in
       let xs1 : List r2 (Nat r2)

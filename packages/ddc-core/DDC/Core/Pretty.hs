@@ -282,22 +282,22 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <$> rbrace
 
         
-        LLetRegions [b] []
-         -> text "letregion"
+        LPrivate [b] []
+         -> text "private"
                 <+> ppr (binderOfBind b)
         
-        LLetRegions [b] bs
-         -> text "letregion"
+        LPrivate [b] bs
+         -> text "private"
                 <+> ppr (binderOfBind b)
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)
 
-        LLetRegions b []
-         -> text "letregions"
+        LPrivate b []
+         -> text "private"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
 
-        LLetRegions b bs
-         -> text "letregions"
+        LPrivate b bs
+         -> text "private"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)

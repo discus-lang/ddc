@@ -168,21 +168,21 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
                                      <> text "=" <+> align (ppr x)))
         
-        LLetRegions [b] []
-         -> text "letregion"
+        LPrivate [b] []
+         -> text "private"
                 <+> ppr (binderOfBind b)
         
-        LLetRegions [b] bs
-         -> text "letregion"
+        LPrivate [b] bs
+         -> text "private"
                 <+> ppr (binderOfBind b)
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
 
-        LLetRegions b []
+        LPrivate b []
          -> text "letregions"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
 
-        LLetRegions b bs
+        LPrivate b bs
          -> text "letregions"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
                 <+> text "with"

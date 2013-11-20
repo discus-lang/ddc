@@ -5,7 +5,7 @@ letrec {
         (m : Int r) {Pure | Use r}
         (n : Int r) {Read r + Alloc r | Use r}
         : Int r
-  = letregion r2 in
+  = private r2 in
     let zero = 0 [r2] () in
     let one  = 1 [r2] () in
     case eqInt [:r r2 r:] m zero of {

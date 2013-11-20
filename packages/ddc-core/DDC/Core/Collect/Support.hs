@@ -193,7 +193,7 @@ instance SupportX (Lets a) where
          <> (let tenv' = Env.extends (map fst bxs) tenv
              in  mconcat $ map (support kenv tenv') $ map snd bxs)
 
-        LLetRegions bs ws
+        LPrivate bs ws
          -> (mconcat $ map (support kenv tenv) bs)
          <> (let kenv' = Env.extends bs kenv
              in  mconcat $ map (support kenv' tenv) ws)

@@ -185,7 +185,7 @@ headUnit [r1 : Region] (xx : List r1 Unit) { Read r1 | Empty }
         Nil             -> ()
 
 foo (_ : Unit) : Unit
- = letregion r in
+ = private r in
    do   list    = singleton [r] ()
         headUnit [r] list;;
 
@@ -206,9 +206,9 @@ foo     [r1 r2 r3 : Region]
         : Word64# = 42w64#
 
 bar (_ : Unit) : Word64#
- = letregion r1 with { w1 : Mutable r1 } in
-   letregion r2 in
-   letregion r3 with { w2 : Distinct r2 r3 } in
+ = private r1 with { w1 : Mutable r1 } in
+   private r2 in
+   private r3 with { w2 : Distinct r2 r3 } in
    do   foo [:r1 r2 r3:] {w1} {w2} ();;
 
 

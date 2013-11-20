@@ -23,15 +23,15 @@ let x = () in x;;
 let x = () in let y = 5 [r1#] () in x;;
 
 
--- letregion
+-- private
 :trans..
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 addInt [:r r r0#:] (2 [r] ()) (2 [r] ());;
 
 
--- letregion and lets
+-- private and lets
 :trans..
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 let x = 2 [r] () in
 let y = 3 [r] () in
 addInt [:r r r0#:] x y;;
@@ -64,12 +64,12 @@ letrec {
 :trans..
 let foo [r1 r2 : Region] (_ : Unit)
      = let x = 5 [r1] () in
-       let y = letregion r3 in
+       let y = private r3 in
                addInt [:r1 r3 r2:] x (1 [r3] ()) in
        Pr [r1] [Int r1] [Int r2] x y
 
-in  letregion r4 in
-    letregion r5 in
+in  private r4 in
+    private r5 in
     case foo [:r4 r5:] () of {
             Pr _ y -> copyInt [:r5 r0#:] y
     };;
@@ -85,12 +85,12 @@ let foo [r1 : Region] (wc1 : Const r1) (wg1 : Global r1)
        let y : Int r2  
              = purify read [r1] wc1 & alloc [r1] wc1 & alloc [r2] wc2 in
                forget use  [r1] wg1 & use   [r2] wg2 in
-               letregion r3 in 
+               private r3 in 
                addInt [:r1 r3 r2:] x (1 [r3] ()) in
        Pr [r1] [Int r1] [Int r2] x y
 
-in  letregion r4 with { wc4 : Const r4; wg4 : Global r4 } in
-    letregion r5 with { wc5 : Const r5; wg5 : Global r5; wl5 : Lazy  r5 } in
+in  private r4 with { wc4 : Const r4; wg4 : Global r4 } in
+    private r5 with { wc5 : Const r5; wg5 : Global r5; wl5 : Lazy  r5 } in
     case foo [r4] {:wc4 wg4:} [r5] {:wc5 wg5 wl5:} () of {
             Pr _ y -> copyInt [:r5 r0#:] y
     };;

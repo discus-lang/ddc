@@ -7,21 +7,21 @@
 
 -- don't do for any region
 :trans..
-letregion r in
+private r in
 (\(x : Int r). ())
     (copyInt [:r r:] (23 [r] ()))
 ;;
 
 -- do it for consts
 :trans..
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 (\(x : Int r). ())
     (copyInt [:r r:] (23 [r] ()))
 ;;
 
--- letregionS only do first one
+-- privateS only do first one
 :trans..
-letregions r1 r2 with {w : Const r1} in
+private r1 r2 with {w : Const r1} in
 (\(x : Int r1). ())
     (addInt [:r1 r2 r1:]
 	(copyInt [:r1 r1:] (23 [r1] ()))
@@ -30,23 +30,23 @@ letregions r1 r2 with {w : Const r1} in
 
 -- do it
 :trans..
-letregion ^ with {w : Const ^0} in
+private ^ with {w : Const ^0} in
 (\(x : Int ^0). ())
 	(copyInt [:^0 ^0:] (23 [^0] ()))
 ;;
 
 -- lift de bruijns: don't do it
 :trans..
-letregion ^ with {w : Const ^0} in
-letregion ^ in
+private ^ with {w : Const ^0} in
+private ^ in
 (\(x : Int ^0). ())
 	(copyInt [:^0 ^0:] (23 [^0] ()))
 ;;
 
 -- lift de bruijns: do it
 :trans..
-letregion ^ with {w : Const ^0} in
-letregion ^ in
+private ^ with {w : Const ^0} in
+private ^ in
 (\(x : Int ^1). ())
 	(copyInt [:^1 ^1:] (23 [^1] ()))
 ;;
@@ -91,7 +91,7 @@ addInt [:r0# r1# r0#:] (5 [r0#] ()) (3 [r1#] ())
 
 -- do: both concrete
 :trans..
-letregion ^ in
+private ^ in
 addInt [:r0# ^0 r0#:] (5 [r0#] ()) (3 [^0] ())
 ;;
 
@@ -101,15 +101,15 @@ addInt [:r0# ^0 r0#:] (5 [r0#] ()) (3 [^0] ())
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
 
--- do: known from letregions
+-- do: known from privates
 :trans..
-letregions r1 r2 with { w : Distinct r1 r2 } in
+private r1 r2 with { w : Distinct r1 r2 } in
 copyInt [:r1 r0#:]
     (addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ()))
 ;;
 
 -- do: subset of a Distinct3
--- this needs to be an argument because letregions are treated as 'concrete' & known to be distinct to other concretes as well.
+-- this needs to be an argument because privates are treated as 'concrete' & known to be distinct to other concretes as well.
 :trans..
 /\(r1 r2 r3 : Region). \(w : Distinct3 r1 r2 r3). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())

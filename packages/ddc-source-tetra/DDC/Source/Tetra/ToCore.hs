@@ -165,8 +165,8 @@ toCoreLts lts
         S.LLet b x
          -> C.LLet (toCoreB b) (toCoreX x)
         
-        S.LLetRegions bks bts
-         -> C.LLetRegions (map toCoreB bks) (map toCoreB bts)
+        S.LPrivate bks bts
+         -> C.LPrivate (map toCoreB bks) (map toCoreB bts)
 
 
 -- Cast -----------------------------------------------------------------------

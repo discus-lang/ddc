@@ -11,7 +11,7 @@ in  addInt [:r0# r0# r0#:] (weakclo {x} in (2 [r0#] ())) (3 [r0#] ());;
 
 -- Float cast out of inner let-binding, 
 :trans..
-letregion r in 
+private r in 
 let y = 6 [r] () in
 let x = 5 [r] () in
 addInt [:r r r0#:] (weakclo {y} in (2 [r] ())) (3 [r] ());;

@@ -159,7 +159,7 @@ instance Melt (Lets () Name) where
                 xs'      <- mapM melt xs
                 return   $  LRec $ zip bs xs'
 
-        LLetRegions{}   -> return lts
+        LPrivate{}      -> return lts
         LWithRegion{}   -> return lts
 
 

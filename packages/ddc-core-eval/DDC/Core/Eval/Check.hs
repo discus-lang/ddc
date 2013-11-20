@@ -195,7 +195,7 @@ checkCapsLM ll
    in case ll of
         LLet _ x        -> checkCapsXM x
         LRec bxs        -> liftM  concat (mapM checkCapsXM $ map snd bxs)
-        LLetRegions{}   -> none
+        LPrivate{}      -> none
         LWithRegion{}   -> none
 
 

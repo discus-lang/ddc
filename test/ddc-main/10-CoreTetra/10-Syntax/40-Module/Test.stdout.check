@@ -9,12 +9,12 @@ exports {
 imports {
         two :: Unit -> Nat#;
 } with
-letregion rt with {w1 : Const rt; w2 : Lazy rt}
+private rt with {w1 : Const rt; w2 : Lazy rt}
 let one : Nat# = 1#
 letrec {
   main : Unit -> Unit
     = \(_ : Unit).
-      letregion r0 in
+      private r0 in
       ();
   
   double : Nat# -> Nat#
@@ -36,12 +36,12 @@ exports {
 imports {
         two :: Unit -> Nat#;
 } with
-letregion rt with {w1 : Const rt; w2 : Lazy rt}
+private rt with {w1 : Const rt; w2 : Lazy rt}
 let one : Nat# = 1#
 letrec {
   main : Unit -> Unit
     = \(_ : Unit).
-      letregion r0 in
+      private r0 in
       ();
   
   double : Nat# -> Nat#

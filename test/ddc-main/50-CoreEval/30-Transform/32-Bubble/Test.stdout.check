@@ -10,7 +10,7 @@ addInt [r0#] [r0#] [r0#] (2 [r0#] ()) (3 [r0#] ())
 
 
 -- Float cast out of inner let-binding, 
-letregion r in
+private r in
 let y : Int r = 6 [r] () in
 weakclo {y} in
 let x : Int r = 5 [r] () in

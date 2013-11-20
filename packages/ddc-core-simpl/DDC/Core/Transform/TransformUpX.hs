@@ -128,8 +128,8 @@ instance Monad m => TransformUpMX m Lets where
                 xs'          <- mapM (transformUpMX f kenv tenv') xs
                 return       $ LRec $ zip bs xs'
 
-        LLetRegions{}    -> return xx
-        LWithRegion{}    -> return xx
+        LPrivate{}      -> return xx
+        LWithRegion{}   -> return xx
 
 
 instance Monad m => TransformUpMX m Alt where

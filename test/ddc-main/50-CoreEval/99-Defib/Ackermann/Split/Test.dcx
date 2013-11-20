@@ -6,7 +6,7 @@ letrec {
         (n : Int r2) { Read r1 + Read r2 + Alloc r3
                      | Use r1  + Use r2  + Use r3}
         : Int r3
-  = letregion r4 in
+  = private r4 in
     let zero = 0 [r4] () in
     let one  = 1 [r4] () in
     case eqInt [:r1 r4 r4:] m zero of {

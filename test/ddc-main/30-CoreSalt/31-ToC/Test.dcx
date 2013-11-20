@@ -36,7 +36,7 @@ unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
 
 
 main (argc : Nat#) (argv : Addr#) : Int#
- =      letregion r in
+ =      private r in
         let x   : Ptr# r Obj     = boxInt [r] 5i# in
         let x2  : Ptr# r Obj     = addInt [:r r r:] x x in
         let str : Ptr# r String# = showInt  [r] (unboxInt [r] x2) in
@@ -85,8 +85,8 @@ unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
 
 
 main (argc : Nat#) (argv : Addr#) : Int#
- =   letregion r1 with { w1 : Mutable r1 } in
-     letregion r2 with { w2 : Distinct r1 r2 } in
+ =   private r1 with { w1 : Mutable r1 } in
+     private r2 with { w2 : Distinct r1 r2 } in
      let x1  : Ptr# r1 Obj      = boxInt [r1] 5i# in
      let x2  : Ptr# r2 Obj      = boxInt [r2] 7i# in
      let ret : Ptr# r1 Obj      = addDistinct [:r1 r2 r1:] {w1} {w2} x1 x2 in

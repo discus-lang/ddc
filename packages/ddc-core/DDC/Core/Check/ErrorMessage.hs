@@ -215,7 +215,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
 
         ErrorLetRegionFree a xx bs t
          -> vcat [ ppr a
-                 , text "Region variables escape scope of letregion."
+                 , text "Region variables escape scope of private."
                  , text "       The region variables: "  <> (hcat $ map ppr bs)
                  , text "   is free in the body type: "   <> ppr t
                  , empty
@@ -223,15 +223,15 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         
         ErrorLetRegionWitnessInvalid a xx b
          -> vcat [ ppr a
-                 , text "Invalid witness type with letregion."
+                 , text "Invalid witness type with private."
                  , text "          The witness: "       <> ppr b
-                 , text "  cannot be created with a letregion"
+                 , text "  cannot be created with a private"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
         ErrorLetRegionWitnessConflict a xx b1 b2
          -> vcat [ ppr a
-                 , text "Conflicting witness types with letregion."
+                 , text "Conflicting witness types with private."
                  , text "      Witness binding: "       <> ppr b1
                  , text "       conflicts with: "       <> ppr b2 
                  , empty
@@ -240,7 +240,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorLetRegionsWitnessOther a xx bs1 b2
          -> vcat [ ppr a
                  , text "Witness type is not for bound regions."
-                 , text "      letregion binds: "       <> (hsep $ map ppr bs1)
+                 , text "        private binds: "       <> (hsep $ map ppr bs1)
                  , text "  but witness type is: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]

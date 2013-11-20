@@ -63,7 +63,7 @@ instance Suppress Lets where
          -> LLet b (down x)
 
         LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
-        LLetRegions{}   -> lts
+        LPrivate{}      -> lts
         LWithRegion{}   -> lts
 
 

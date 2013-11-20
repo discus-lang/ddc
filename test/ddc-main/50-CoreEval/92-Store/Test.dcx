@@ -1,5 +1,5 @@
 :set +TraceEval +TraceStore
 
 :eval..
-letregion r3 in
+private r3 in
 addInt [:r1# r3 r2#:] (5 [r1#] ()) (6 [r3] ());;

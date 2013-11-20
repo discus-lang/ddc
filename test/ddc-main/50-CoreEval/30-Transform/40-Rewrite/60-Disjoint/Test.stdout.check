@@ -18,7 +18,7 @@ map [r0#] [r0#] [Int r0#] [Int r0#] [Read r0# + Alloc r0#] [Use r0#]
               (Nil [r0#] [Int r0#] ())))
 
 -- a write and a read from same region, no rewrite.
-letregion rMut with {wMut : Mutable rMut} in
+private rMut with {wMut : Mutable rMut} in
 let mutabl : Int rMut = 5 [rMut] () in
 map [r0#] [r0#] [Int r0#] [Int r0#] [Read rMut + Alloc r0#] [Use rMut + Use r0#]
     (\(y : Int r0#). copyInt [rMut] [r0#] mutabl)
@@ -31,7 +31,7 @@ map [r0#] [r0#] [Int r0#] [Int r0#] [Read rMut + Alloc r0#] [Use rMut + Use r0#]
                    (Nil [r0#] [Int r0#] ()))))
 
 -- a write and a read from different regions - do rewrite
-letregion rMut with {wMut : Mutable rMut} in
+private rMut with {wMut : Mutable rMut} in
 let mutabl : Int rMut = 5 [rMut] () in
 weakeff [Read r0# + Write rMut + Alloc r0#] in
 weakclo {[r0#]} in

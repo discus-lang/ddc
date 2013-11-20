@@ -6,19 +6,19 @@ ok
 copyConst [r1 : Region] (x : Int r1) . Const r1 => copyInt [r1] [r1] x = x
 
 -- don't do for any region
-letregion r in
+private r in
 (\(x : Int r). ())
     (copyInt [r] [r] (23 [r] ()))
 
 -- do it for consts
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 (\(x : Int r). ())
     (weakeff [Read r + Alloc r] in
      weakclo {copyInt; [r]} in
      23 [r] ())
 
--- letregionS only do first one
-letregions r1 r2 with {w : Const r1} in
+-- privateS only do first one
+private r1 r2 with {w : Const r1} in
 (\(x : Int r1). ())
     (addInt [r1] [r2] [r1]
          (weakeff [Read r1 + Alloc r1] in
@@ -27,21 +27,21 @@ letregions r1 r2 with {w : Const r1} in
          (copyInt [r2] [r2] (5 [r2] ())))
 
 -- do it
-letregion ^ with {w : Const ^0} in
+private ^ with {w : Const ^0} in
 (\(x : Int ^0). ())
     (weakeff [Read ^0 + Alloc ^0] in
      weakclo {copyInt; [^0]} in
      23 [^0] ())
 
 -- lift de bruijns: don't do it
-letregion ^ with {w : Const ^0} in
-letregion ^ in
+private ^ with {w : Const ^0} in
+private ^ in
 (\(x : Int ^0). ())
     (copyInt [^0] [^0] (23 [^0] ()))
 
 -- lift de bruijns: do it
-letregion ^ with {w : Const ^0} in
-letregion ^ in
+private ^ with {w : Const ^0} in
+private ^ in
 (\(x : Int ^1). ())
     (weakeff [Read ^1 + Alloc ^1] in
      weakclo {copyInt; [^1]} in
@@ -79,7 +79,7 @@ weakclo {^0; ^1; addInt; [r1#]} in
 0 [r0#] ()
 
 -- do: both concrete
-letregion ^ in
+private ^ in
 let ^ : Int ^0 = 3 [^0] () in
 let ^ : Int r0# = 5 [r0#] () in
 weakeff [Read ^0 + Read r0# + Alloc r0#] in
@@ -95,8 +95,8 @@ weakeff [Read r1 + Read r2 + Alloc r1] in
 weakclo {^0; ^1; addInt; [r2]} in
 0 [r1] ()
 
--- do: known from letregions
-letregions r1 r2 with {w : Distinct2 r1 r2} in
+-- do: known from privates
+private r1 r2 with {w : Distinct2 r1 r2} in
 copyInt [r1] [r0#]
     (let ^ : Int r2 = 3 [r2] () in
      let ^ : Int r1 = 5 [r1] () in
@@ -105,7 +105,7 @@ copyInt [r1] [r0#]
      0 [r1] ())
 
 -- do: subset of a Distinct3
--- this needs to be an argument because letregions are treated as 'concrete' & known to be distinct to other concretes as well.
+-- this needs to be an argument because privates are treated as 'concrete' & known to be distinct to other concretes as well.
 /\(r1 r2 r3 : Region).
  \(w : Distinct3 r1 r2 r3).\(_ : Unit).
 let ^ : Int r2 = 3 [r2] () in

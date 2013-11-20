@@ -1,58 +1,58 @@
--- Parse letregion with no witnesses
-:check letregion r1 in ()
+-- Parse private with no witnesses
+:check private r1 in ()
 
 
--- Parse letregion with one witness.
-:check letregion r1 with { w1 : Const r1 } in ()
+-- Parse private with one witness.
+:check private r1 with { w1 : Const r1 } in ()
 
 
--- Parse letregion with multiple witnesses.
-:check letregion r1 with { w1 : Const r1; w2 : Manifest r1 } in ()
+-- Parse private with multiple witnesses.
+:check private r1 with { w1 : Const r1; w2 : Manifest r1 } in ()
 
 
 -- Use the bound region in the body of the expression.
-:check letregion r1 in addInt [:r1 r1 r2#:] (2 [r1] ()) (3 [r1] ())
+:check private r1 in addInt [:r1 r1 r2#:] (2 [r1] ()) (3 [r1] ())
 
 
 -- As above, but with debruijn indices.
-:check letregion ^  in addInt [:^0 ^0 r2#:] (2 [^0] ()) (3 [^0] ())
+:check private ^  in addInt [:^0 ^0 r2#:] (2 [^0] ()) (3 [^0] ())
 
 
 -- Error: withregion must contain a region variable or constructor.
 :check (/\(e:Effect). withregion e in ())
 
 
--- Error: letregion cannot shadow region variables that are already in the
+-- Error: private cannot shadow region variables that are already in the
 -- environment because the new witnesses may conflict with the old ones.
 :check..
-letregion r1 with {w1 : Const r1}   in
+private r1 with {w1 : Const r1}   in
 let x : Int r1 = 5 [r1] () in
-letregion r1 with {w1 : Mutable r1} in
+private r1 with {w1 : Mutable r1} in
 updateInt [:r1 r1:] {w1} x (0 [r1] ());;
 
 
--- Error: letregion can't shadow region variables that are already in the
+-- Error: private can't shadow region variables that are already in the
 -- environment.
 :check..
 /\(r : Region). 
  \(x : Int r).
- letregion r with {w1 : Mutable r} in
+ private r with {w1 : Mutable r} in
  updateInt [:r r:] {w1} x (0 [r] ());;
 
 
--- Error: bound region variable is free in the type of the body of a letregion.
-:check letregion r1 in 4 [r1] ()
+-- Error: bound region variable is free in the type of the body of a private.
+:check private r1 in 4 [r1] ()
 
 
 -- Error: bound region is free in the effect of a returned function.
 :check..
-letregion r1 with {w1 : Const r1} in
+private r1 with {w1 : Const r1} in
 \(x:Unit). (addInt [:r1 r1 r2#:] (2 [r1] ()) (3 [r1] ()));;
 
 
 -- Error: region variable appears in closure term
 :check..
-letregion r1 in
+private r1 in
 let z  = 5 [r1] () in
 \(x : Unit).
  let xs = Cons [r0#] [Int r1] z (Nil [r0#] [Int r1] ()) in
@@ -62,39 +62,39 @@ let z  = 5 [r1] () in
  };;
 
 
--- Error: witness types with a letregion must use explicit type constructors.
+-- Error: witness types with a private must use explicit type constructors.
 :check..
 /\(c : Region ~> Witness).
-letregion r1 with { w : c r1 } in
+private r1 with { w : c r1 } in
 ();;
 
 
--- Parse letregion with witness for distinctness
+-- Parse private with witness for distinctness
 :check..
-letregion r1                             in
-letregion r2 with { w1: Distinct2 r1 r2 } in ();;
+private r1                             in
+private r2 with { w1: Distinct2 r1 r2 } in ();;
 
 
 -- Error: distinct witness must have as one argument the region introduced with
--- this letregion, and a bound region variable in the environment for the other.
+-- this private, and a bound region variable in the environment for the other.
 :check..
-letregion r1                             in
-letregion r2 with { w1: Distinct2 r2 r2 } in ();;
+private r1                             in
+private r2 with { w1: Distinct2 r2 r2 } in ();;
 
 
--- Parse letregion with witness for multi-way distinctness
+-- Parse private with witness for multi-way distinctness
 :check..
-letregions r1 r2 r3 with { w : Distinct3 r1 r2 r3 } in ();;
+private r1 r2 r3 with { w : Distinct3 r1 r2 r3 } in ();;
 
 
--- Error: distinct_n for n > 2 can only be used for regions introduced by the current letregions
+-- Error: distinct_n for n > 2 can only be used for regions introduced by the current privates
 :check..
-letregion  r1 in
-letregions r2 r3 with {w : Distinct3 r1 r2 r3} in ();;
+private r1 in
+private r2 r3 with {w : Distinct3 r1 r2 r3} in ();;
 
 
 -- #255: Letregions with deBruijn indices
 :check..
-letregions ^ ^ with { w : Distinct ^1 ^0 } in ();;
+private ^ ^ with { w : Distinct ^1 ^0 } in ();;
 
 

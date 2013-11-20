@@ -14,14 +14,14 @@
 
 -- don't do it: not const
 :trans..
-letregion r				in
+private r				in
 unboxInt [r] (boxInt [r] 5i#)
 ;;
 
 
 -- do it: const
 :trans..
-letregion r with {w : Const r}		in
+private r with {w : Const r}		in
 let x = unboxInt [r] (boxInt [r] 5i#)	in
     ()
 ;;
@@ -29,7 +29,7 @@ let x = unboxInt [r] (boxInt [r] 5i#)	in
 
 -- separated
 :trans..
-letregion r with {w : Const r}	in
+private r with {w : Const r}	in
 let x = boxInt [r] 5i#		in
 let y = unboxInt [r] x		in
     ()

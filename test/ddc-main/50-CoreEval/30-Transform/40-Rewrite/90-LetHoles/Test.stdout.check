@@ -93,7 +93,7 @@ unboxi_ [r0#]
 
 
 -- do it: const
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 let x : Int r
       = weakclo {boxi_; unboxi_; [r]} in
         5 [r] () in
@@ -101,7 +101,7 @@ let x : Int r
 
 
 -- separated
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 let ^ : Int r = 5 [r] () in
 let x : Int r = boxi_ [r] ^0 in
 let y : Int r

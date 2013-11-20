@@ -75,7 +75,7 @@ flatten1 (XLet a1 (LLet b1
 --       Maybe use a follow on transform to reduce the lifetime again.
 --
 flatten1 (XLet a1 (LLet b1
-            inner@(XLet a2 (LLetRegions b2 bs2) x2))
+            inner@(XLet a2 (LPrivate b2 bs2) x2))
                x1)
  | all isBName b2
  = flatten1
@@ -86,7 +86,7 @@ flatten1 (XLet a1 (LLet b1
  | otherwise
  = let  x1'     = liftAcrossT []   b2
                 $ liftAcrossX [b1] bs2 x1
-   in   XLet a2 (LLetRegions b2 bs2) 
+   in   XLet a2 (LPrivate b2 bs2) 
       $ flatten1
       $ XLet a1 (LLet (zapX b1) x2) 
              x1'

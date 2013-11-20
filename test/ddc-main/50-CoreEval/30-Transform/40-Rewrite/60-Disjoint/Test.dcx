@@ -27,7 +27,7 @@ map [:r0# r0# (Int r0#) (Int r0#) (Read r0# + Alloc r0#) (Use r0#):]
 
 -- a write and a read from same region, no rewrite.
 :trans..
-letregion rMut with { wMut : Mutable rMut } in
+private rMut with { wMut : Mutable rMut } in
 let mutabl = 5 [rMut] () in
 
 map [:r0# r0# (Int r0#) (Int r0#) (Read rMut + Alloc r0#) (Use r0# + Use rMut):]
@@ -45,7 +45,7 @@ map [:r0# r0# (Int r0#) (Int r0#) (Read rMut + Alloc r0#) (Use r0# + Use rMut):]
 
 -- a write and a read from different regions - do rewrite
 :trans..
-letregion rMut with { wMut : Mutable rMut } in
+private rMut with { wMut : Mutable rMut } in
 let mutabl = 5 [rMut] () in
 
 map [:r0# r0# (Int r0#) (Int r0#) (Read r0# + Alloc r0#) (Use r0#):]

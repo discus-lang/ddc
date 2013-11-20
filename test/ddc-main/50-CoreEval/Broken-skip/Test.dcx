@@ -1,8 +1,8 @@
 
 -- Forget cast around lambda.
 :eval..
-letregion r0 with { w0g : Global r0; w0l : Lazy r0; w0c : Const r0 } in
-letregion r  with { w   : Global r;  wl  : Lazy r;   wc : Const r }  in
+private r0 with { w0g : Global r0; w0l : Lazy r0; w0c : Const r0 } in
+private r  with { w   : Global r;  wl  : Lazy r;   wc : Const r }  in
 let x   = purify <read [r]  wc   & alloc [r]  wc>  in
           purify <read [r0] w0c  & alloc [r0] w0c> in
           forget <use  [r0] w0g> in 
@@ -13,7 +13,7 @@ in addInt [:r0 r0 R0#:] x (1 [r0] ());;
 
 -- Forget cast around lambda.
 :eval..
-letregion r  with { w   : Global r;  wl  : Lazy r;   wc : Const r }  in
+private r  with { w   : Global r;  wl  : Lazy r;   wc : Const r }  in
 let x   = purify <read [r]  wc               & alloc [r]  wc>  in
           purify <read [R0#] (Const#  [R0#]) & alloc [R0#] (Const# [R0#])> in
           forget <use  [R0#] (Global# [R0#])> in 

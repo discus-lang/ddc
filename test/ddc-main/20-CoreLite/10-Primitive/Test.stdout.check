@@ -71,7 +71,7 @@ let addInt : [r1 r2 r3 : Region].Int r1 -(Pure | Use r3)> Int r2 -(Read r1 + Rea
         letcase I# (i1 : Int#)  = x in
         letcase I# (i2 : Int#)  = y in
         I# [r3] (add# [Int#] i1 i2) in
-letregion r1 in
+private r1 in
 unboxInt [r1]
     (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))
 :*: Int#

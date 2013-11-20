@@ -101,11 +101,11 @@ instance SubstituteWX Exp where
                 x2'             = down sub1 x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
-        XLet a (LLetRegions b bs) x2
+        XLet a (LPrivate b bs) x2
          -> let (sub1, b')      = bind1s sub b
                 (sub2, bs')     = bind0s sub1 bs
                 x2'             = down   sub2 x2
-            in  XLet a (LLetRegions b' bs') x2'
+            in  XLet a (LPrivate b' bs') x2'
 
         XLet a (LWithRegion uR) x2
          -> XLet a (LWithRegion uR) (down sub x2)

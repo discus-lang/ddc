@@ -24,7 +24,7 @@ replicate
         (n : Nat r1)            { Pure | Use r1 + Use r2 }
         (x : a)                 { Read r1 + Alloc r2 | Use r1 + Use r2}
         : List r2 a
- = letregion r3 in
+ = private r3 in
    case n of
         N# n2   
          -> case eq# [Nat#] n2 0# of
@@ -38,7 +38,7 @@ main    [r : Region]
         (argc : Nat#)
         (argv : Ptr# r String#)
         : Int#
- = letregion r2 in
+ = private r2 in
    do   xs1     = replicate  [:r2 r2:] [Nat r2] 
                         (N# [r2] 100000#) 
                         (N# [r2] 5#)

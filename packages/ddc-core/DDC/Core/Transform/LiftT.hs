@@ -76,10 +76,10 @@ mapBoundAtDepthTLets f d lts
          -> let bs' = [ (b, mapBoundAtDepthT f d x) | (b, x) <- bs ]
             in  (LRec bs', 0)
 
-        LLetRegions bsT bsX
+        LPrivate bsT bsX
          -> let inc  = countBAnons bsT
                 bsX' = map (mapBoundAtDepthT f (d + inc)) bsX
-            in  ( LLetRegions bsT bsX'
+            in  ( LPrivate bsT bsX'
                 , inc)
 
         LWithRegion _

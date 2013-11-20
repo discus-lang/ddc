@@ -78,7 +78,7 @@ elaborateLets us lts
         LLet b x   -> (us, LLet b (down x))
         LRec bs    -> (us, LRec $ map (second down) bs)
 
-        LLetRegions brs bws
+        LPrivate brs bws
          |  urs@(_:_) <- takeSubstBoundsOfBinds brs
          -> let 
                 -- Mutable regions bound here.
@@ -97,7 +97,7 @@ elaborateLets us lts
                                 ++ zip        urs  ursTail
 
             in  ( us ++ urs
-                , LLetRegions brs $ bws ++ distinctWits ++ constWits )
+                , LPrivate brs $ bws ++ distinctWits ++ constWits )
 
         _          -> (us, lts)
 

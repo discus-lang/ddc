@@ -12,7 +12,7 @@ letrec {
     = /\(r1 r2 : Region)./\(a : Data).
        \(n : Nat r1).\(x : a).
       weakclo {[r1]; n} in
-      letregion r3 in
+      private r3 in
       weakclo {[r3]} in
       letcase N# (n2 : Nat#)  = n in
       case eq# [Nat#] n2 0# of {

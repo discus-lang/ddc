@@ -1,6 +1,6 @@
 -- Suspend a single binding.
 :eval..
-letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+private r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x : Int r1 lazy <w2> 
      = purify <alloc [r1] w1>  in
        forget <use   [r1] w3> in
@@ -10,7 +10,7 @@ in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
 -- Suspend a single binding, without a type sig on the let-bound variable.
 :eval..
-letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+private r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x lazy <w2> 
      = purify <alloc [r1] w1>  in
        forget <use   [r1] w3> in
@@ -20,7 +20,7 @@ in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
 -- Take some elements from an infinite list.
 :eval..
-letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+private r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 letrec { 
  moar (_ : Unit) : List r1 (Int R0#)
   = let rest : List r1 (Int R0#) lazy <w2> 

@@ -9,12 +9,12 @@ ok
 
 
 -- don't do it: not const
-letregion r in
+private r in
 unboxInt [r] (boxInt [r] 5i#)
 
 
 -- do it: const
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 let x : Int#
       = weakeff [Read r + Alloc r] in
         weakclo {boxInt; unboxInt; [r]} in
@@ -23,7 +23,7 @@ let x : Int#
 
 
 -- separated
-letregion r with {w : Const r} in
+private r with {w : Const r} in
 let ^ : Int# = 5i# in
 let x : Int r = boxInt [r] ^0 in
 let y : Int#

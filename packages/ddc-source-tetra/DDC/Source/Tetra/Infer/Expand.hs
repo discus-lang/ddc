@@ -128,11 +128,11 @@ instance Expand Exp where
                 x'      = expand config kenv tenv' x
             in  XLam a b x'
 
-        XLet a (LLetRegions bts bxs) x2
+        XLet a (LPrivate bts bxs) x2
          -> let tenv'   = Env.extends bts kenv
                 kenv'   = Env.extends bxs tenv
                 x2'     = expand config kenv' tenv' x2
-            in  XLet a (LLetRegions bts bxs) x2'
+            in  XLet a (LPrivate bts bxs) x2'
 
         XCase a x alts  -> XCase a   (down x)   (map down alts)
         XCast a c x     -> XCast a c (down x)

@@ -59,7 +59,7 @@ module Test with
 letrec {
   fac : Nat# -> Nat#
     = \(x : Nat#).
-      letregion r with {Alloc r; Read r; Write r} in
+      private r with {Alloc r; Read r; Write r} in
       let acc : Ref# r Nat#
             = run allocRef# [r] [Nat#] 0# in
       letrec {
@@ -87,7 +87,7 @@ module Test with
 letrec {
   fac : Nat# -> Nat#
     = \(x : Nat#).
-      letregion r with {Alloc r; Read r; Write r} in
+      private r with {Alloc r; Read r; Write r} in
       let acc : Ref# r Nat#
             = run allocRef# [r] [Nat#] 0# in
       letrec {

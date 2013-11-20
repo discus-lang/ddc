@@ -61,7 +61,7 @@ instance Annotate S.Lets A.Lets where
     in case lts of
         S.LLet b x                      -> A.LLet b (down x)
         S.LRec bxs                      -> A.LRec [(b, down x) | (b, x) <- bxs]
-        S.LLetRegions bks bts           -> A.LLetRegions bks bts
+        S.LPrivate bks bts              -> A.LPrivate bks bts
         S.LWithRegion u                 -> A.LWithRegion u
 
 
