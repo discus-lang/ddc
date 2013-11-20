@@ -1,0 +1,59 @@
+ok
+
+-- Can use any cap on an abstract region.
+/\(r : Region).
+ \(x : Ref# r Nat#).
+box
+run writeRef# [r] [Nat#] x 5#
+:*: [r : Region].Ref# r Nat# -> S (Write r) Unit
+:!: Pure
+
+
+-- Can invoke region polymorphic function on private region.
+let writeFive : [r : Region].Ref# r Nat# -> S (Write r) Unit
+      = /\(r : Region).
+         \(x : Ref# r Nat#). writeRef# [r] [Nat#] x 5# in
+letregion r1 with {_ : Alloc r1; _ : Write r1} in
+let x : Ref# r1 Nat#
+      = run allocRef# [r1] [Nat#] 0# in
+run writeFive [r1] x
+:*: Unit
+:!: Pure
+
+
+-- Can use caps on concrete regions.
+letregion r with {_ : Alloc r; _ : Read r} in
+let x : Ref# r Nat#
+      = run allocRef# [r] [Nat#] 0# in
+run readRef# [r] [Nat#] x
+:*: Nat#
+:!: Pure
+
+
+-- Can use caps on concrete regions.
+letregion r with {_ : Alloc r; _ : Read r} in
+let x : Ref# r Nat#
+      = run allocRef# [r] [Nat#] 0# in
+run readRef# [r] [Nat#] x
+:*: Nat#
+:!: Pure
+
+
+-- Error: write effect not supported.
+When checking expression.
+  <batch>:40:9
+  Effect of computation not supported by context.
+      Effect:  Write r
+  
+  with: run writeRef# [r] [Nat#] x 5#
+
+
+-- Error: write effect not supported when invoked.
+When checking expression.
+  <batch>:50:9
+  Effect of computation not supported by context.
+      Effect:  Write r1
+  
+  with: run writeFive [r1] x
+
+

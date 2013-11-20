@@ -462,12 +462,22 @@ effectSupported
         -> Maybe (Effect n)
 
 effectSupported eff ctx
+        -- Check that all the components of a sum are supported.
+        | TSum ts       <- eff
+        = listToMaybe $ concat [ maybeToList $ effectSupported e ctx 
+                               | e <- Sum.toList ts ]
+
         -- For an effect on an abstract region, we allow any capability.
         --  We'll find out if it really has this capability when we try
         --  to run the computation.
         | TApp (TCon (TyConSpec tc)) (TVar u) <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
         , Just (_, RoleAbstract) <- lookupKind u ctx
+        = Nothing
+
+        -- Abstract effects are fine.
+        --  We'll find out if it is really supported once it's instantiated.
+        | TVar {} <- eff
         = Nothing
 
         -- For an effect on a concrete region,
