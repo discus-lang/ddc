@@ -20,7 +20,7 @@ letrec {
                                 ()) in
                    ()) in
       let x2 = read# [Nat#] k1$count in
-      let v = vslice# [a] x2 v in
+      let _ = vtrunc# [a] x2 v in
       ()
 }
 
@@ -44,7 +44,7 @@ letrec {
                                 ()) in
                    ()) in
       let x3 = read# [Nat#] k1$count in
-      let v = vslice# [a] x3 v in
+      let _ = vtrunc# [a] x3 v in
       ()
 }
 
@@ -69,7 +69,7 @@ letrec {
                                 ()) in
                    ()) in
       let x3 = read# [Nat#] k1$count in
-      let v1 = vslice# [a] x3 v1 in
+      let _ = vtrunc# [a] x3 v1 in
       ()
 }
 
@@ -100,7 +100,7 @@ letrec {
                                 ()) in
                    ()) in
       let x4 = read# [Nat#] k2$count in
-      let v = vslice# [a] x4 v in
+      let _ = vtrunc# [a] x4 v in
       ()
 }
 
@@ -132,9 +132,9 @@ letrec {
                                 ()) in
                    ()) in
       let x5 = read# [Nat#] k1$count in
-      let v1 = vslice# [a] x5 v1 in
+      let _ = vtrunc# [a] x5 v1 in
       let x6 = read# [Nat#] k2$count in
-      let v2 = vslice# [a] x6 v2 in
+      let _ = vtrunc# [a] x6 v2 in
       ()
 }
 

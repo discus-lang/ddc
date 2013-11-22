@@ -47,9 +47,9 @@ filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#
                              ()) in
                 ()) in
    let x4  : Nat#         = read# [Nat#] k2__count in
-   let x6  : Vector# Int# = vslice# [Int#] x4 x5 in
+   let _   : Unit         = vtrunc# [Int#] x4 x5 in
    let x9  : Int#         = read# [Int#] x9__acc 
-   in T2# [Vector# Int#] [Int#] x6 x9
+   in T2# [Vector# Int#] [Int#] x5 x9
 }
 ;;
 

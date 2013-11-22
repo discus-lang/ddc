@@ -244,8 +244,8 @@ data OpStore
         -- | Window a target vector to the tail of some rate.
         | OpStoreTailVector     Int
 
-        -- | Slice after a pack/filter (taking a @Nat@ for new length)
-        | OpStoreSliceVector    
+        -- | Truncate a vector to a smaller length.
+        | OpStoreTruncVector
         deriving (Eq, Ord, Show)
 
 
@@ -257,7 +257,7 @@ data OpVector
         -- | Filter a vector according to a predicate.
         | OpVectorFilter
 
-        -- | Associative fold
+        -- | Associative fold.
         | OpVectorReduce
 
         -- | Create a new vector from an index function.

@@ -8,7 +8,7 @@ module DDC.Core.Flow.Prim.OpStore
         , xReadVector,  xReadVectorC
         , xWriteVector, xWriteVectorC
         , xTailVector
-        , xSliceVector)
+        , xTruncVector)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -46,7 +46,7 @@ instance Pretty OpStore where
         OpStoreTailVector  1    -> text "vtail#"
         OpStoreTailVector  n    -> text "vtail"   <> int n <> text "#"
 
-        OpStoreSliceVector      -> text "vslice#"
+        OpStoreTruncVector      -> text "vtrunc#"
 
 
 -- | Read a store operator name.
@@ -85,7 +85,7 @@ readOpStore str
                 "vread#"        -> Just (OpStoreReadVector  1)
                 "vwrite#"       -> Just (OpStoreWriteVector 1)
                 "vtail#"        -> Just (OpStoreTailVector  1)
-                "vslice#"       -> Just OpStoreSliceVector
+                "vtrunc#"       -> Just OpStoreTruncVector
 
                 _               -> Nothing
 
@@ -143,15 +143,15 @@ typeOpStore op
          -> tForall kData 
          $  \tA -> tVector tA `tFun` tNat `tFun` tVec n tA `tFun` tUnit
 
-        -- vtail$N#  :: [k : Rate]. [a : Data]. RateNat (TailN k) -> Vector# a -> Vector# a
+        -- vtail$N# :: [k : Rate]. [a : Data]. RateNat (TailN k) -> Vector# a -> Vector# a
         OpStoreTailVector n
          -> tForalls [kRate, kData]
          $  \[tK, tA] -> tRateNat (tTail n tK) `tFun` tVector tA `tFun` tVector tA
 
-        -- vslice# :: [a : Data]. Nat# -> Vector# a -> Vector# a
-        OpStoreSliceVector
+        -- vtrunc#  :: [a : Data]. Nat# -> Vector# a -> Unit
+        OpStoreTruncVector
          -> tForall kData 
-         $  \tA -> tNat `tFun` tVector tA `tFun` tVector tA
+         $  \tA -> tNat `tFun` tVector tA `tFun` tUnit
 
 
 -- Compounds ------------------------------------------------------------------
@@ -221,9 +221,9 @@ xTailVector n tK tA xRN xVec
          [XType tK, XType tA, xRN, xVec]
 
 
-xSliceVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xSliceVector tElem xLen xArr
- = xApps (xVarOpStore OpStoreSliceVector)
+xTruncVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xTruncVector tElem xLen xArr
+ = xApps (xVarOpStore OpStoreTruncVector)
          [XType tElem, xLen, xArr]
 
 

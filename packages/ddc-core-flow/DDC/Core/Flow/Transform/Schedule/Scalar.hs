@@ -209,11 +209,14 @@ scheduleOperator nest0 op
                         (XVar (UIx 0))          -- index
                         (XVar uInput) ]         -- value
 
-        -- Slice target vector down to the final size.
+        -- If the length of the vector corresponds to a guarded rate then it
+        -- was constructed in a filter context. After the process completes, 
+        -- we know how many elements were written so we can truncate the
+        -- vector down to its final length.
         let Just nest2
                 | nestContainsGuardedRate nest1 tK
                 = insertEnds nest1 context
-                $ [ EndVecSlice 
+                $ [ EndVecTrunc 
                         nVec                    -- destination vector
                         (opElemType op)         -- series element type
                         tK ]                    -- rate of source series

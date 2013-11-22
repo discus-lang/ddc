@@ -172,8 +172,8 @@ extractStmtEnd se
          -> [LLet (BName n t) 
                   (xRead t (XVar (UName nAcc))) ]
 
-        -- Slice.
-        EndVecSlice nVec tElem tRate 
+        -- Truncate a vector down to its final size.
+        EndVecTrunc nVec tElem tRate 
          -> let 
                 -- Get the name of the counter.
                 TVar (UName nK) = tRate
@@ -182,9 +182,9 @@ extractStmtEnd se
                 xVec            = XVar (UName nVec)
 
                 -- Read the counter in a let since it will need to be threaded
-           in   [ LLet  (BAnon      tNat)
+           in   [ LLet  (BAnon tNat)
                         xCounter
 
-                , LLet  (BName nVec (tVector tElem)) 
-                        (xSliceVector tElem (XVar (UIx 0)) xVec) ]
+                , LLet  (BNone tUnit) 
+                        (xTruncVector tElem (XVar (UIx 0)) xVec) ]
 

@@ -55,7 +55,7 @@ module DDC.Core.Flow.Compounds
         , xReadVector,  xReadVectorC
         , xWriteVector, xWriteVectorC
         , xTailVector
-        , xSliceVector)
+        , xTruncVector)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow

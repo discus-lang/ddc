@@ -152,8 +152,8 @@ data StmtEnd
         , endType               :: Type Name
         , endAccName            :: Name }
 
-        -- | Destructively slice down a vector to its final size.
-        | EndVecSlice
+        -- | Destructively truncate a vector to its final size.
+        | EndVecTrunc
         { endVecName            :: Name
         , endVecType            :: Type Name
         , endVecRate            :: Type Name }

@@ -67,9 +67,9 @@ letrec {
       } in
       letcase T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = loop 0# k2__count$0 x9__acc$0 in
       let x4 : Nat# = k2__count$2 in
-      let x6 : Vector# Int# = vslice# [Int#] x4 x5 in
+      let _ : Unit = vtrunc# [Int#] x4 x5 in
       let x9 : Int# = x9__acc$2 in
-      T2# [Vector# Int#] [Int#] x6 x9
+      T2# [Vector# Int#] [Int#] x5 x9
 }
 
 

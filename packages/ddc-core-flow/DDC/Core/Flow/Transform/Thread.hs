@@ -152,12 +152,11 @@ threadType n _
                  $ \tA -> tA `tFun` tVector tA `tFun` tNat `tFun` tA
                         `tFun` tWorld `tFun` tWorld
 
-        -- vslice#   :: [a : Data]. Nat# -> Vector# a -> World# -> T2# World# (Vector# a)
-        NameOpStore OpStoreSliceVector
+        -- vtrunc# :: [a : Data]. Nat# -> Vector# a -> World# -> World#
+        NameOpStore OpStoreTruncVector
          -> Just $ tForall kData
                  $ \tA -> tNat `tFun` tVector tA
-                        `tFun` tWorld `tFun` (tTuple2 tWorld (tVector tA))
-
+                        `tFun` tWorld `tFun` tWorld
 
         -- Series ------------------------------
         -- next#  :: [k : Rate]. [a : Data]
