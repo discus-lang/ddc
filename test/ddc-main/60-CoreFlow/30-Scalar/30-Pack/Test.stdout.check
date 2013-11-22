@@ -19,6 +19,8 @@ letrec {
                                 let _ = vwrite# [a] v x1 s$elem in
                                 ()) in
                    ()) in
+      let x2 = read# [Nat#] k1$count in
+      let v = vslice# [a] x2 v in
       ()
 }
 
@@ -41,6 +43,8 @@ letrec {
                                 let _ = vwrite# [a] v x2 s$elem in
                                 ()) in
                    ()) in
+      let x3 = read# [Nat#] k1$count in
+      let v = vslice# [a] x3 v in
       ()
 }
 
@@ -64,6 +68,8 @@ letrec {
                                 let _ = vwrite# [a] v1 x2 s$elem in
                                 ()) in
                    ()) in
+      let x3 = read# [Nat#] k1$count in
+      let v1 = vslice# [a] x3 v1 in
       ()
 }
 
@@ -93,6 +99,8 @@ letrec {
                                              ()) in
                                 ()) in
                    ()) in
+      let x4 = read# [Nat#] k2$count in
+      let v = vslice# [a] x4 v in
       ()
 }
 
@@ -123,6 +131,10 @@ letrec {
                                 let _ = vwrite# [a] v2 x4 s0$elem in
                                 ()) in
                    ()) in
+      let x5 = read# [Nat#] k1$count in
+      let v1 = vslice# [a] x5 v1 in
+      let x6 = read# [Nat#] k2$count in
+      let v2 = vslice# [a] x6 v2 in
       ()
 }
 

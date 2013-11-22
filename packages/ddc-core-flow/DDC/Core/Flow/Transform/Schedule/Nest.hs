@@ -1,9 +1,14 @@
 
 module DDC.Core.Flow.Transform.Schedule.Nest
-        ( insertContext
+        ( -- * Insertion into a loop nest
+          insertContext
         , insertStarts
         , insertBody
-        , insertEnds)
+        , insertEnds
+
+          -- * Rate predicates
+        , nestContainsRate
+        , nestContainsGuardedRate)
 where
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
@@ -47,7 +52,6 @@ insertContext nest@NestIf{}   context@ContextSelect{}
  | nestInnerRate nest == contextOuterRate context
  = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
 
-
 insertContext _nest _context
  = Nothing
 
@@ -72,26 +76,6 @@ nestOfContext context
           , nestFlags           = contextFlags     context
           , nestBody            = [] 
           , nestInner           = NestEmpty }
-
-
--- | Check whether the top-level of this nest contains the given rate.
---   It might be in a nested context.
-nestContainsRate :: Nest -> TypeF -> Bool
-nestContainsRate nest tRate
- = case nest of
-        NestEmpty       
-         -> False
-
-        NestList ns     
-         -> any (flip nestContainsRate tRate) ns
-
-        NestLoop{}
-         ->  nestRate nest == tRate
-          || nestContainsRate (nestInner nest) tRate
-
-        NestIf{}
-         ->  nestInnerRate nest == tRate
-          || nestContainsRate (nestInner nest) tRate
 
 
 -- | For a select context make statements that initialise the counter of 
@@ -182,4 +166,43 @@ insertEnds nest@NestLoop{} (ContextRate tRate) ends'
  
 insertEnds _ _ _
  = Nothing
+
+
+-- Rate Predicates ------------------------------------------------------------
+-- | Check whether the top-level of this nest contains the given rate.
+--   It might be in a nested context.
+nestContainsRate :: Nest -> TypeF -> Bool
+nestContainsRate nest tRate
+ = case nest of
+        NestEmpty       
+         -> False
+
+        NestList ns     
+         -> any (flip nestContainsRate tRate) ns
+
+        NestLoop{}
+         ->  nestRate nest == tRate
+          || nestContainsRate (nestInner nest) tRate
+
+        NestIf{}
+         ->  nestInnerRate nest == tRate
+          || nestContainsRate (nestInner nest) tRate
+
+
+-- | Check whether the given rate is the inner rate of some NestIf constructor.
+nestContainsGuardedRate :: Nest -> TypeF -> Bool
+nestContainsGuardedRate nest tRate
+ = case nest of
+        NestEmpty
+         -> False
+
+        NestList ns
+         -> any (flip nestContainsRate tRate) ns
+
+        NestLoop{}
+         -> nestContainsGuardedRate (nestInner nest) tRate
+
+        NestIf{}
+         -> nestInnerRate nest == tRate
+         || nestContainsGuardedRate (nestInner nest) tRate
 

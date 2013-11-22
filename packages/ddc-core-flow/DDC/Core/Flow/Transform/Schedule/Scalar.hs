@@ -189,14 +189,7 @@ scheduleOperator nest0 op
                              (xWrite tAcc (XVar $ opTargetRef op)
                                           (XVar $ UName nAccRes)) ]
 
-        ---- Bind final unit value.
-        --let Just nest4
-        --        = insertEnds nest3 context
-        --        $ [ EndStmt     (opResultBind op)
-        --                        xUnit ]
-
         return nest3
-
 
  -- Fill -----------------------------------------
  | OpFill{} <- op
@@ -209,14 +202,26 @@ scheduleOperator nest0 op
         -- Write the current element to the vector.
         let UName nVec  = opTargetVector op
         let Just nest1      
-                = insertBody   nest0 context 
+                = insertBody nest0 context 
                 $ [ BodyVecWrite 
                         nVec                    -- destination vector
-                        (opElemType op)         -- elem type
+                        (opElemType op)         -- series elem type
                         (XVar (UIx 0))          -- index
                         (XVar uInput) ]         -- value
 
-        return nest1
+        -- Slice target vector down to the final size.
+        let Just nest2
+                | nestContainsGuardedRate nest1 tK
+                = insertEnds nest1 context
+                $ [ EndVecSlice 
+                        nVec                    -- destination vector
+                        (opElemType op)         -- series element type
+                        tK ]                    -- rate of source series
+
+                | otherwise
+                = Just nest1
+
+        return nest2
 
  -- Gather ---------------------------------------
  | OpGather{} <- op

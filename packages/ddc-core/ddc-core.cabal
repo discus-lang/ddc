@@ -65,6 +65,7 @@ Library
         DDC.Core.Transform.Deannotate
         DDC.Core.Transform.LiftT
         DDC.Core.Transform.LiftX
+        DDC.Core.Transform.MapT
         DDC.Core.Transform.Reannotate
         DDC.Core.Transform.Rename
         DDC.Core.Transform.SpreadX
