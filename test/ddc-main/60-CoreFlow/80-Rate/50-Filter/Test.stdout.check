@@ -1,0 +1,155 @@
+
+ok
+
+-- map2 with two filtered - should be outlawed!
+--:flow-rate..
+--module Test with letrec
+--test    (us : Vector# Int#) : Vector# Int#
+-- =      let us1  = vfilter# [Int#] (gt# [Int#] 1i#) us 
+--     in let us2  = vfilter# [Int#] (gt# [Int#] 2i#) us
+--     in let us'  = vmap2# [Int#] [Int#] [Int#] (add# [Int#]) us1 us2
+--     in     us'
+--;;
+
+
+-- Simple filter - return filtered
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Int#
+    = \(us : Vector# Int#).
+      let x2 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess# [Int#] us
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+                   let x2$flags : Series# us$k Bool#
+                         = smap# [us$k] [Int#] [Bool#]
+                               (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
+                   smkSel# [us$k] x2$flags
+                       (/\(x2$k : Rate).
+                         \(x2$sel : Sel1# us$k x2$k).
+                        let x2$s : Series# x2$k Int# = spack# [us$k] [x2$k] [Int#] x2$sel us$s in
+                        let x2$proc : Process# = sfill# [x2$k] [Int#] x2 x2$s in
+                        x2$proc)) in
+      x2
+}
+
+-- Map over a filter
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Int#
+    = \(us : Vector# Int#).
+      let x5 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess# [Int#] us
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+                   let x2$flags : Series# us$k Bool#
+                         = smap# [us$k] [Int#] [Bool#]
+                               (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
+                   smkSel# [us$k] x2$flags
+                       (/\(x2$k : Rate).
+                         \(x2$sel : Sel1# us$k x2$k).
+                        let x2$s : Series# x2$k Int# = spack# [us$k] [x2$k] [Int#] x2$sel us$s in
+                        let x5$s : Series# x2$k Int#
+                              = smap# [x2$k] [Int#] [Int#]
+                                    (\(x3 : Int#). add# [Int#] 2i# x3) x2$s in
+                        let x5$proc : Process# = sfill# [x2$k] [Int#] x5 x5$s in
+                        x5$proc)) in
+      x5
+}
+
+-- Filter of a filtered, return both. Should be single kernel
+module Test with
+letrec {
+  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
+    = \(us : Vector# Int#).
+      let x2 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess# [Int#] us
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+                   let x2$flags : Series# us$k Bool#
+                         = smap# [us$k] [Int#] [Bool#]
+                               (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
+                   smkSel# [us$k] x2$flags
+                       (/\(x2$k : Rate).
+                         \(x2$sel : Sel1# us$k x2$k).
+                        let x2$s : Series# x2$k Int# = spack# [us$k] [x2$k] [Int#] x2$sel us$s in
+                        let x2$proc : Process# = sfill# [x2$k] [Int#] x2 x2$s in
+                        pjoin# x2$proc x2$proc)) in
+      let x5 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess# [Int#] x2
+                  (/\(x2$k : Rate).
+                    \(_ : RateNat# x2$k).\(x2$s : Series# x2$k Int#).
+                   let x5$flags : Series# x2$k Bool#
+                         = smap# [x2$k] [Int#] [Bool#]
+                               (\(x3 : Int#). gt# [Int#] 2i# x3) x2$s in
+                   smkSel# [x2$k] x5$flags
+                       (/\(x5$k : Rate).
+                         \(x5$sel : Sel1# x2$k x5$k).
+                        let x5$s : Series# x5$k Int# = spack# [x2$k] [x5$k] [Int#] x5$sel x2$s in
+                        let x5$proc : Process# = sfill# [x5$k] [Int#] x5 x5$s in
+                        x5$proc)) in
+      T2# [Vector# Int#] [Vector# Int#] x2 x5
+}
+
+-- Filter and fold, then use fold value in map over original and filtered. Three kernels:
+-- 1- filter, fold
+-- 2- map original
+-- 3- map filtered
+module Test with
+letrec {
+  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
+    = \(orig : Vector# Int#).
+      let x2 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] orig) in
+      let x6$ref : Ref# Int# = new# [Int#] 0i# in
+      let _ : Bool#
+            = runProcess# [Int#] orig
+                  (/\(orig$k : Rate).
+                    \(_ : RateNat# orig$k).\(orig$s : Series# orig$k Int#).
+                   let x2$flags : Series# orig$k Bool#
+                         = smap# [orig$k] [Int#] [Bool#]
+                               (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
+                   smkSel# [orig$k] x2$flags
+                       (/\(x12$k : Rate).
+                         \(x2$sel : Sel1# orig$k x12$k).
+                        let x2$s : Series# x12$k Int# = spack# [orig$k] [x12$k] [Int#] x2$sel orig$s in
+                        let x2$proc : Process# = sfill# [x12$k] [Int#] x2 x2$s in
+                        let x6$proc : Process#
+                              = sreduce# [x12$k] [Int#] x6$ref
+                                    (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
+                        pjoin# (pjoin# x2$proc x6$proc) x6$proc)) in
+      let x6 : Int# = read# [Int#] x6$ref in
+      let x12 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] orig) in
+      let _ : Bool#
+            = runProcess# [Int#] x2
+                  (/\(x12$k : Rate).
+                    \(_ : RateNat# x12$k).\(x2$s : Series# x12$k Int#).
+                   let x12$s : Series# x12$k Int#
+                         = smap# [x12$k] [Int#] [Int#]
+                               (\(x10 : Int#). add# [Int#] x6 x10) x2$s in
+                   let x12$proc : Process# = sfill# [x12$k] [Int#] x12 x12$s in
+                   x12$proc) in
+      let x9 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] orig) in
+      let _ : Bool#
+            = runProcess# [Int#] orig
+                  (/\(orig$k : Rate).
+                    \(_ : RateNat# orig$k).\(orig$s : Series# orig$k Int#).
+                   let x9$s : Series# orig$k Int#
+                         = smap# [orig$k] [Int#] [Int#]
+                               (\(x7 : Int#). add# [Int#] x6 x7) orig$s in
+                   let x9$proc : Process# = sfill# [orig$k] [Int#] x9 x9$s in
+                   x9$proc) in
+      T2# [Vector# Int#] [Vector# Int#] x9 x12
+}
+
+

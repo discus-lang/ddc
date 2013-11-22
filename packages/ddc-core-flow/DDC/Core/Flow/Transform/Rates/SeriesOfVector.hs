@@ -39,8 +39,8 @@ seriesOfVectorModule mm
                   $ xLets lets' xx
 
 
-   in  trace ("ORIGINAL:"++ show (ppr $ moduleBody mm))
-     $ trace ("MODULE:" ++ show (ppr body'))
+   in  -- trace ("ORIGINAL:"++ show (ppr $ moduleBody mm))
+       trace ("MODULE:" ++ show (ppr body'))
        (mm { moduleBody = body' }, errs)
        
 
@@ -80,7 +80,7 @@ seriesOfVectorFunction fun
         when (length names /= length (nub names)) $
           warn FailNamesNotUnique
 
-        (_constrs, equivs)
+        (constrs, equivs)
                   <- checkBindConstraints binds
 
         let extras = catMaybes
@@ -96,13 +96,15 @@ seriesOfVectorFunction fun
 
         binds'    <- orderBinds           binds loops
 
-        True <- trace ("TYMAP:" ++ show tymap) return True
+         -- True <- trace ("TYMAP:" ++ show tymap) return True
         True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) return True
 
         let outputs = map lOutputs loops
         let inputs  = map lInputs  loops
 
-        return $ construct lams (zip3 binds' outputs inputs) equivs tymap xx
+        let getMax  = getMaxSize constrs equivs extras
+
+        return $ construct getMax lams (zip3 binds' outputs inputs) equivs tymap xx
 
 -- | Peel the lambdas off, or const if there are none
 takeXLamFlags_safe x
@@ -253,26 +255,27 @@ orderBinds binds loops
 
 
 construct
-        :: [(Bool, BindF)]
+        :: (Name -> Name)
+        -> [(Bool, BindF)]
         -> [([(Name, ExpF)], [Name], [Name])]
         -> EquivClass
         -> Map.Map Name TypeF
         -> ExpF
         -> ExpF
-construct lams loops equivs tys xx
+construct getMax lams loops equivs tys xx
  = let lets   = concatMap convert loops
    in  makeXLamFlags lams
      $ xLets lets
      $ xx
  where
   convert (binds, outputs, inputs)
-   = convertToSeries binds outputs inputs equivs tys
+   = convertToSeries getMax binds outputs inputs equivs tys
 
 
 -- TODO still missing the join of procs,
 -- split output procs into separate functions
-convertToSeries :: [(Name,ExpF)] -> [Name] -> [Name] -> EquivClass -> Map.Map Name TypeF -> [LetsF]
-convertToSeries binds outputs inputs equivs tys
+convertToSeries :: (Name -> Name) -> [(Name,ExpF)] -> [Name] -> [Name] -> EquivClass -> Map.Map Name TypeF -> [LetsF]
+convertToSeries getMax binds outputs inputs equivs tys
  =  concat setups
  ++ [LLet (BNone tBool) (runprocs inputs' processes)]
  ++ concat readrefs
@@ -328,11 +331,11 @@ convertToSeries binds outputs inputs equivs tys
    $ filter (flip elem outputs . fst) binds
 
   setread (n,x)
-   = setreadSeriesX equivs tys n (mlookup "setread" tys n) x
+   = setreadSeriesX getMax tys n (mlookup "setread" tys n) x
 
 
-setreadSeriesX :: EquivClass -> Map.Map Name TypeF -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
-setreadSeriesX equivs tys name ty xx
+setreadSeriesX :: (Name -> Name) -> Map.Map Name TypeF -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
+setreadSeriesX getMax tys name ty xx
  | Just (f, args)                       <- takeXApps xx
  , XVar (UPrim (NameOpVector ov) _)     <- f
  = case ov of
@@ -344,7 +347,7 @@ setreadSeriesX equivs tys name ty xx
 
    _
     | [_vec, tyR]       <- takeTApps ty
-    , v                 <- canonName equivs name
+    , v                 <- getMax name -- canonName equivs name
     , [_vec, tyCR]      <- takeTApps $ mlookup "setreadSeriesX" tys v
     -> let vl = xApps (xVarOpVector OpVectorLength)
                       [XType tyCR, XVar $ UName v]
@@ -385,16 +388,37 @@ wrapSeriesX equivs outputs name ty xx wrap
              wrap'fill
 
    OpVectorFilter
-    -> xx
+    | trace "Before args.." True
+    , [tA, p, vA]       <- args
+    , trace "Here I am!!!" True
+    , XVar (UName nvA)  <- vA
+    , tkA               <- klokT nvA
+    , kA                <- klok nvA
+    , TVar (UName nkT)  <- klokT name
+    , tkT               <- klokT name
+    -> XLet (LLet (BName name'flags (tBot kData))
+                 $ xApps (xVarOpSeries (OpSeriesMap 1))
+                         ([kA, tA, XType tBool, p, modNameX "s" vA]))
+     $ xApps (xVarOpSeries (OpSeriesMkSel 1))
+             ([kA, XVar (UName name'flags)
+              ,    XLAM (BName nkT       kRate)
+                 $ XLam (BName name'sel (tSel1 tkA tkT))
+                 $ XLet (LLet (BName name's (tBot kData))
+                             $ xApps (xVarOpSeries OpSeriesPack)
+                                     ([kA, XType tkT, tA, XVar (UName name'sel), modNameX "s" vA]))
+                         wrap'fill ])
+
    _
     -> xx
  | otherwise
  = xx
 
  where
+  name'flags= NameVarMod name "flags"
   name'proc = NameVarMod name "proc"
   name'ref  = NameVarMod name "ref"
   name's    = NameVarMod name "s"
+  name'sel  = NameVarMod name "sel"
 
   klokT n
    = let n'  = canonName equivs n

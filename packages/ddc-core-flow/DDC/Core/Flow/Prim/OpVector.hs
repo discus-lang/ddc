@@ -95,8 +95,8 @@ takeTypeOpVector op
         --            -> Vector a
         OpVectorFilter
          -> Just $ tForalls [kData] $ \[tA]
-                ->     tVector tA
-                `tFun` (tBool `tFun` tA)
+                ->     (tA `tFun` tBool)
+                `tFun` tVector tA
                 `tFun` tVector tA
 
         -- reduce#   :: [a: Data]

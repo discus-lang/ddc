@@ -2,7 +2,8 @@ module DDC.Core.Flow.Transform.Rates.Constraints
         ( Constraint(..)
         , ConstraintMap, EquivClass
         , canonName
-        , checkBindConstraints)
+        , checkBindConstraints
+        , getMaxSize )
 where
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
@@ -11,6 +12,7 @@ import DDC.Core.Flow.Transform.Rates.Fail
 import Control.Monad
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
+
 
 
 -- | Constraint information
@@ -29,17 +31,24 @@ type EquivClass    = [Set.Set Name]
 -- Return original if there is none
 -- (for example, a filter with no maps applied would have none since equiv classes are only built from maps)
 canonName :: EquivClass -> Name -> Name
-canonName equivs n = go equivs
+canonName equivs n
+ = case equivSet equivs n of
+    Nothing -> n
+    Just s  -> Set.findMin s
+
+
+-- | Get set of associated names in given equivalence class
+equivSet :: EquivClass -> Name -> Maybe (Set.Set Name)
+equivSet equivs n = go equivs
  where
   -- No classes left, not found
   go []
-   = n
+   = Nothing
 
-  -- If @n@ is a member of this class, get some arbitrary (but stable) element of the class
+  -- If @n@ is a member of this class, return it
   go (c:cs')
    | Set.member n c
-   , Just (elm, _) <- Set.minView c
-   = elm
+   = Just c
 
    -- Check the rest 
    | otherwise
@@ -63,6 +72,41 @@ checkBindConstraints binds
    in   checkFilters filts >> return (constrs, equivs)
 
 
+getMaxSize :: ConstraintMap -> EquivClass -> [Name] -> Name -> Name
+getMaxSize constrs equivs mans get
+ = let get' = upFiltered get
+   in  getFromMans get'
+ where
+  -- Keep moving up through filtered constraints until we hit the top
+  upFiltered g
+   | Just eqs <- equivSet equivs g
+   = upFiltered' g (Set.toList eqs)
+   | otherwise
+   = g
+
+  upFiltered' g []
+   = g
+  upFiltered' g (e:es)
+   | Just (ConFiltered g') <- Map.lookup e constrs
+   = upFiltered g'
+   | otherwise
+   = upFiltered' g es
+
+  -- Find a manifest vector in the same equivalence class
+  getFromMans g
+   = let e = canonName equivs g
+     in  getFromMans' e mans
+
+  getFromMans' g []
+   = g
+  getFromMans' g (m:ms)
+   | g == canonName equivs m
+   = m
+   | otherwise
+   = getFromMans' g ms
+   
+ 
+
 -- | Squash constraints into equivalence classes
 -- I'm sure this could be smarter.
 equivConstrs :: ConstraintMap -> EquivClass
@@ -76,8 +120,8 @@ equivConstrs m
   gen (k, (ConEqual eqs))
    = Set.fromList (k:eqs)
   -- Ignore filter constraints
-  gen _
-   = Set.empty
+  gen (k, (ConFiltered _from))
+   = Set.singleton k
 
   -- Squash constraint sets together
   squash []     acc
