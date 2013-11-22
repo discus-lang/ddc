@@ -141,8 +141,7 @@ data StmtBody
 
 -- | Statements that appear after a loop to cleanup.
 data StmtEnd
-        -- | Pure ending statements to produce the result of 
-        --   the overall process.
+        -- | Generic ending statements.
         = EndStmt
         { endBind               :: Bind Name
         , endExp                :: Exp () Name }

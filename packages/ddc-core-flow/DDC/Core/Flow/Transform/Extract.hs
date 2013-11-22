@@ -33,21 +33,18 @@ extractProcedure (Procedure n bsParam xsParam nest)
    in   ( BName n tQuant
         ,   xLAMs bsParam
           $ xLams xsParam
-          $ extractNest nest [] xUnit )
+          $ extractNest nest xUnit )
 
 
 -------------------------------------------------------------------------------
 -- | Extract code for a loop nest.
 extractNest 
         :: Nest                 -- ^ Loops to run in sequence.
-        -> [LetsF]              -- ^ Baseband statements from the source program
-                                --   that run after the loop operators.
         -> ExpF                 -- ^ Final result of procedure.
         -> ExpF
 
-extractNest nest _stmts xResult
- = let  stmts2  = extractLoop nest
-   in  xLets stmts2 xResult
+extractNest nest xResult
+ = xLets (extractLoop nest) xResult
 
 
 -------------------------------------------------------------------------------
