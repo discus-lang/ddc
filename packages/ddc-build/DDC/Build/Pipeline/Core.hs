@@ -179,7 +179,7 @@ pipeCore !mm !pp
                 primKindEnv     = C.profilePrimKinds      profile
                 primTypeEnv     = C.profilePrimTypes      profile
 
-                !mm'            = (flip S.evalState nameZero
+                !mm'            = (result . flip S.evalState nameZero
                                    $ applySimplifier profile primKindEnv primTypeEnv simpl mm)
 
                 !mm2            = C.reannotate (const ()) mm'

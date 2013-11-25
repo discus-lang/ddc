@@ -26,7 +26,6 @@ import DDC.Core.Transform.Elaborate
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
-import Control.DeepSeq
 import qualified DDC.Base.Pretty        as P
 import qualified Data.Set               as Set
 
@@ -41,30 +40,89 @@ import qualified Data.Set               as Set
 --      with the transform log, and we should get one for a module as well.
 --
 applySimplifier 
-        :: (Show a, Ord n, Show n, Pretty n, NFData a, NFData n) 
+        :: (Show a, Ord n, Show n, Pretty n) 
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
         -> Simplifier s a n     -- ^ Simplifier to apply
         -> Module a n           -- ^ Module to simplify
-        -> State s (Module a n)
+        -> State s (TransformResult (Module a n))
 
 applySimplifier !profile !kenv !tenv !spec !mm
- = case spec of
+ = let down = applySimplifier profile kenv tenv
+   in  case spec of
         Seq t1 t2
-         -> do  !mm'     <- applySimplifier profile kenv tenv t1 mm
-                applySimplifier profile kenv tenv t2 mm'
+         -> do  tm  <- down t1 mm
+                tm' <- down t2 (result tm)
+
+                let info =
+                        case (resultInfo tm, resultInfo tm') of
+                        (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
+                
+                let again    = resultAgain    tm || resultAgain    tm'
+                let progress = resultProgress tm || resultProgress tm'
+
+                return TransformResult
+                        { result         = result tm'
+                        , resultAgain    = again
+                        , resultProgress = progress
+                        , resultInfo     = TransformInfo info }
+
+        Fix i s
+         -> do  tm      <- applyFixpoint profile kenv tenv i s mm
+                let info =
+                        case resultInfo tm of
+                        TransformInfo info1 -> FixInfo i info1
+                
+                return TransformResult
+                        { result         = result tm
+                        , resultAgain    = resultAgain    tm
+                        , resultProgress = resultProgress tm
+                        , resultInfo     = TransformInfo info }
 
         Trans t1
          -> applyTransform profile kenv tenv t1 mm
-        
-        Fix 0 _
-         -> return mm
 
-        Fix !n !s
-         -> do  !mm' <- applySimplifier profile kenv tenv s mm
-                applySimplifier profile kenv tenv (Fix (n - 1) s) mm'
 
+-- | Apply a transform until it stops progressing, or a maximum number of times
+applyFixpoint
+        :: (Show a, Ord n, Show n, Pretty n)
+        => Profile n            -- ^ Profile of language we're working in
+        -> KindEnv n            -- ^ Kind environment
+        -> TypeEnv n            -- ^ Type environment
+        -> Int                  -- ^ Maximum number of times to apply
+        -> Simplifier s a n      -- ^ Transform to apply.
+        -> Module a n           -- ^ Module to simplify.
+        -> State s (TransformResult (Module a n))
+
+applyFixpoint !profile !kenv !tenv !i' !spec !mm'
+ = go i' mm' False
+ where
+  simp = applySimplifier profile kenv tenv spec
+
+  go 0 mm progress 
+   = do tm  <- simp mm
+        return tm { resultProgress = progress }
+
+  go i mm progress 
+   = do tm  <- simp mm
+        case resultAgain tm of
+         False 
+          ->    return tm { resultProgress = progress }
+
+         True  
+          -> do tm' <- go (i-1) (result tm) True
+
+                let info 
+                     = case (resultInfo tm, resultInfo tm') of
+                        (TransformInfo i1, TransformInfo i2)
+                          -> SeqInfo i1 i2
+
+                return TransformResult
+                        { result         = result tm'
+                        , resultAgain    = resultProgress tm'
+                        , resultProgress = resultProgress tm'
+                        , resultInfo     = TransformInfo info }
 
 -- | Apply a transform to a module.
 applyTransform
@@ -74,31 +132,32 @@ applyTransform
         -> TypeEnv n            -- ^ Type environment
         -> Transform s a n      -- ^ Transform to apply.
         -> Module a n           -- ^ Module to simplify.
-        -> State s (Module a n)
+        -> State s (TransformResult (Module a n))
 
 applyTransform !profile !_kenv !_tenv !spec !mm
- = case spec of
-        Id               -> return mm
-        Anonymize        -> return $ anonymizeX mm
-        Snip config      -> return $ snip config mm
-        Flatten          -> return $ flatten mm
+ = let  res x = return $ resultDone (show $ ppr spec) x
+   in case spec of
+        Id               -> res mm
+        Anonymize        -> res $ anonymizeX mm
+        Snip config      -> res $ snip config mm
+        Flatten          -> res $ flatten mm
 
         Beta config      
-         -> return $ result $ betaReduce    profile config mm
+         -> return $ betaReduce    profile config mm
 
         Eta  config      
-         -> return $ result $ Eta.etaModule profile config mm
+         -> return $ Eta.etaModule profile config mm
 
         Forward          
          -> let config  = Forward.Config (const FloatAllow) False
-            in  return $ result $ forwardModule profile config mm
+            in  return $ forwardModule profile config mm
 
-        Bubble           -> return $ bubbleModule mm
-        Namify namK namT -> namifyUnique namK namT mm
-        Inline getDef    -> return $ inline getDef Set.empty mm
-        Rewrite rules    -> return $ rewriteModule rules mm
-        Prune            -> return $ pruneModule profile mm
-        Elaborate        -> return $ elaborateModule mm
+        Bubble           -> res $ bubbleModule mm
+        Namify namK namT -> namifyUnique namK namT mm >>= res
+        Inline getDef    -> res $ inline getDef Set.empty mm
+        Rewrite rules    -> res $ rewriteModule rules mm
+        Prune            -> res $ pruneModule profile mm
+        Elaborate        -> res $ elaborateModule mm
 
 
 -- Expressions ----------------------------------------------------------------

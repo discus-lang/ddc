@@ -53,7 +53,7 @@ convertModule platform mm@(C.ModuleCore{})
 
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metat data.
-        mmElab   = evalState (Simp.applySimplifier 
+        mmElab   = Simp.result $ evalState (Simp.applySimplifier 
                                         A.profile Env.empty Env.empty 
                                         (Simp.Trans Simp.Elaborate) mm)
                           state

@@ -271,7 +271,7 @@ cleanModule mm
          M.<> C.Trans C.Flatten
 
         mm_cleaned      
-         = S.evalState
+         = C.result $ S.evalState
                 (C.applySimplifier profile Env.empty Env.empty
                         (C.Fix 4 clean) mm)
                 0
