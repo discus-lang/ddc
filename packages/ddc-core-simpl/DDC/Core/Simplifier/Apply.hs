@@ -34,10 +34,6 @@ import qualified Data.Set               as Set
 -- | Apply a simplifier to a module.
 --
 --   The state monad can be used by `Namifier` functions to generate fresh names.
----
---   ISSUE #277: Make 'applySimplifier' return a TransformResult
---      Applying a simplifier to an expression yields a TransformResult
---      with the transform log, and we should get one for a module as well.
 --
 applySimplifier 
         :: (Show a, Ord n, Show n, Pretty n) 
