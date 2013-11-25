@@ -168,10 +168,12 @@ runChainsWithControllerIO prefix spec chains
         -- on the console.
         (chanResult :: TChan Driver.Result)
                 <- atomically $ newTChan
+
+        tmp     <- getTemporaryDirectory
         
         -- Fork a gang to run all the job chains.
         gang    <- Driver.forkChainsIO 
-                        (specThreads spec) "/tmp"
+                        (specThreads spec) tmp
                         (Just chanResult) chains
 
         -- Fork the controller to display results and manage user input.

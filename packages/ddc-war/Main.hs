@@ -4,6 +4,7 @@ import DDC.War.Option
 import BuildBox.Pretty
 import BuildBox
 import System.Environment
+import System.Directory
 import qualified DDC.War.Task.Nightly           as N
 import qualified DDC.War.Task.Test              as T
 
@@ -26,9 +27,8 @@ main
 -- | Run tests from the provided directories
 mainTest :: T.Spec -> IO ()
 mainTest spec
- = let 
-   in do
-        result  <- runBuild "/tmp" $ T.build spec
+ = do   tmp     <- getTemporaryDirectory
+        result  <- runBuild tmp $ T.build spec
         case result of
          Left err       -> error    $ render $ ppr err
          Right _        -> return ()
@@ -37,7 +37,8 @@ mainTest spec
 -- | Run the nightly build.
 mainNightly :: N.Spec -> IO ()
 mainNightly spec
- = do   result  <- runBuild "/tmp"  $ N.build spec
+ = do   tmp     <- getTemporaryDirectory  
+        result  <- runBuild tmp  $ N.build spec
         case result of
          Left err       -> error    $ render $ ppr err
          Right result'  -> putStrLn $ render $ ppr result'
