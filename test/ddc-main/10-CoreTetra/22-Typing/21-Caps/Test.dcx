@@ -1,0 +1,53 @@
+:set lang Tetra
+
+-- Can use any cap on an abstract region.
+:check..
+/\(r : Region). \(x : Ref# r Nat#).
+box run writeRef# [r] [Nat#] x 5#
+;;
+
+
+-- Can invoke region polymorphic function on private region.
+:check..
+let writeFive [r : Region] (x : Ref# r Nat#) : S (Write r) Unit
+        = writeRef# [r] [Nat#] x 5# in
+private r1 with {Alloc r1; Write r1} in
+let     x   = run allocRef# [r1] [Nat#] 0# 
+in      run writeFive [r1] x
+;;
+
+
+-- Can use caps on concrete regions.
+:check..
+private r with { Alloc r; Read r } in
+let     x = run allocRef# [r] [Nat#] 0#
+in      run readRef# [r] [Nat#] x
+;;
+
+
+-- Can use caps on concrete regions.
+:check..
+private r with { Alloc r; Read r } in
+let     x = run allocRef# [r] [Nat#] 0#
+in      run readRef# [r] [Nat#] x
+;;
+
+
+-- Error: write effect not supported.
+:check..
+private r with { Alloc r; Read r } in
+let     x = run allocRef# [r] [Nat#] 0#
+in      run writeRef# [r] [Nat#] x 5#
+;;
+
+
+-- Error: write effect not supported when invoked.
+:check..
+let writeFive [r : Region] (x : Ref# r Nat#) : S (Write r) Unit
+        = writeRef# [r] [Nat#] x 5# in
+private r1 with {Alloc r1} in
+let     x   = run allocRef# [r1] [Nat#] 0# 
+in      run writeFive [r1] x
+;;
+
+
