@@ -72,6 +72,11 @@ lexString sourceName lineStart str
           tokA  = tok . KA
           tokN  = tok . KN
 
+          lexUpto pat rest
+           = case dropWhile (not . isPrefixOf pat) (tails rest) of
+                (x:_)   -> x
+                _       -> []
+
           lexMore n rest
            = lexWord line (column + n) rest
 
@@ -95,11 +100,10 @@ lexString sourceName lineStart str
          -> tokN (KLit ('-':c:body))    : lexMore (length (c:body)) rest
 
         -- Meta tokens
-        -- ISSUE #302: Don't try to lex body of a block comment.
-        '{'  : '-' : w'  
-         -> tokM KCommentBlockStart : lexMore 2 w'
+        '{'  : '-' : w'
+         -> tokM KCommentBlockStart : lexMore 2 (lexUpto "-}" w')
 
-        '-'  : '}' : w'  
+        '-'  : '}' : w'
          -> tokM KCommentBlockEnd   : lexMore 2 w'
 
         '-'  : '-' : w'  
