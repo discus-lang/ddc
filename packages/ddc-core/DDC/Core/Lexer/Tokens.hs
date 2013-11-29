@@ -199,6 +199,8 @@ data TokAtom
         | KLetCase
         | KLetRec
         | KPrivate
+        | KExtend
+        | KUsing
         | KWithRegion
         | KCase
         | KOf
@@ -303,6 +305,8 @@ describeTokAtom' ta
         KLetCase                -> (Keyword, "letcase")
         KLetRec                 -> (Keyword, "letrec")
         KPrivate                -> (Keyword, "private")
+        KExtend                 -> (Keyword, "extend")
+        KUsing                  -> (Keyword, "using")
         KWithRegion             -> (Keyword, "withregion")
         KCase                   -> (Keyword, "case")
         KOf                     -> (Keyword, "of")

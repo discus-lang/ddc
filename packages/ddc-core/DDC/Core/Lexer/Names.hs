@@ -52,6 +52,8 @@ keywords
         , ("letrec",     KA KLetRec)
         , ("letcase",    KA KLetCase)
         , ("private",    KA KPrivate)
+        , ("extend",     KA KExtend)
+        , ("using",      KA KUsing)
         , ("withregion", KA KWithRegion)
         , ("let",        KA KLet)
         , ("case",       KA KCase)

@@ -342,31 +342,47 @@ pLetsSP c
                  return (LRec [ll], sp)
           ]      
 
-      -- Local region binding.
-      --   private [BINDER] with { BINDER : TYPE ... } in EXP
-      --   private [BINDER] in EXP
+      -- Private region binding.
+      --   private BINDER+ (with { BINDER : TYPE ... })? in EXP
     , do sp     <- pTokSP KPrivate
+         
+         -- new private region names.
          brs    <- P.manyTill pBinder 
                 $  P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith]
 
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
 
-         r      <- pLetWits c bs
+         -- witness types.
+         r      <- pLetWits c bs Nothing
          return (r, sp)
-          
-    , do sp     <- pTokSP KPrivate
-         br     <- pBinder
-         let b  =  T.makeBindFromBinder br T.kRegion
-         r      <- pLetWits c [b]
-         return (r, sp)
+    
+      -- Extend an existing region.
+      --   extend BINDER+ using TYPE (with { BINDER : TYPE ...})? in EXP
+    , do sp     <- pTokSP KExtend
+
+         -- parent region
+         t      <- pType c
+         pTok KUsing
+
+         -- new private region names.
+         brs    <- P.manyTill pBinder 
+                $  P.try $ P.lookAhead 
+                         $ P.choice [pTok KUsing, pTok KWith, pTok KIn]
+
+         let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
          
+         -- witness types
+         r      <- pLetWits c bs (Just t)
+         return (r, sp)
     ]
     
     
 pLetWits :: Ord n 
-        => Context -> [Bind n] -> Parser n (Lets SourcePos n)
+        => Context 
+        -> [Bind n] -> Maybe (Type n) 
+        -> Parser n (Lets SourcePos n)
 
-pLetWits c bs
+pLetWits c bs mParent
  = P.choice 
     [ do   pTok KWith
            pTok KBraceBra
@@ -381,9 +397,9 @@ pLetWits c bs
                               return  $ BNone t ])
                       (pTok KSemiColon)
            pTok KBraceKet
-           return (LPrivate bs Nothing wits)
+           return (LPrivate bs mParent wits)
     
-    , do   return (LPrivate bs Nothing [])
+    , do   return (LPrivate bs mParent [])
     ]
 
 

@@ -281,26 +281,29 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                                $ map pprLetRecBind bxs)))
                 <$> rbrace
 
-        
-        LPrivate [b] _ []
-         -> text "private"
-                <+> ppr (binderOfBind b)
-        
-        LPrivate [b] _ bs
-         -> text "private"
-                <+> ppr (binderOfBind b)
-                <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)
+        LPrivate bs (Just parent) []
+         -> text "extend"
+                <+> ppr parent
+                <+> text "using"
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
 
-        LPrivate b _ []
-         -> text "private"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
-
-        LPrivate b _ bs
-         -> text "private"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
+        LPrivate bs (Just parent) bws
+         -> text "extend"
+                <+> ppr parent
+                <+> text "using"
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
                 <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)
+                <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bws)
+
+        LPrivate bs Nothing []
+         -> text "private"
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
+
+        LPrivate bs Nothing bws
+         -> text "private"
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
+                <+> text "with"
+                <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bws)
 
         LWithRegion b
          -> text "withregion"
