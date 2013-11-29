@@ -1,0 +1,14 @@
+ok
+
+/\(r1 : Region).
+ \(x : Unit).
+box
+extend r1 using r2 with {Alloc r2; Write r2} in
+let x : Ref# r2 Nat#
+      = run allocRef# [r2] [Nat#] 0# in
+let _ : Unit
+      = run writeRef# [r2] [Nat#] x 5# in
+x
+:*: [r1 : Region].Unit -> S (Alloc r1) (Ref# r1 Nat#)
+:!: Pure
+

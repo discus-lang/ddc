@@ -1,0 +1,10 @@
+:set lang Tetra
+
+:check..
+/\(r1 : Region). \(x : Unit). box
+extend r1 using r2 with {Alloc r2; Write r2} in
+let     x = run allocRef# [r2] [Nat#] 0# in
+let     _ = run writeRef# [r2] [Nat#] x 5# 
+in      x
+;;
+

@@ -98,17 +98,46 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody kBody
 
-        -- The bound region variable cannot be free in the body type.
-        let fvsT         = freeT Env.empty tBody
-        when (any (flip Set.member fvsT) us)
-         $ throw $ ErrorLetRegionFree a xx bsRgn tBody
-        
+        -- The final body type.
+        tBody'
+         <- case mtParent of
+                -- If the bound region variables are children of some parent
+                -- region then they are merged into the parent when the 
+                -- private/extend construct ends.
+                Just tParent
+                 -> do  return $ foldl  (\t b -> substituteTX b tParent t) 
+                                        tBody bsRgn
+
+                -- If the bound region variables have no parent then they are 
+                -- deallocated when the private construct ends.
+                -- The bound region variables cannot be free in the body type.
+                _
+                 -> do  let fvsT         = freeT Env.empty tBody
+                        when (any (flip Set.member fvsT) us)
+                         $ throw $ ErrorLetRegionFree a xx bsRgn tBody
+                        return $ lowerT depth tBody
+
         -- Delete effects on the bound region from the result.
         let delEff es u = Sum.delete (tRead  (TVar u))
                         $ Sum.delete (tWrite (TVar u))
                         $ Sum.delete (tAlloc (TVar u))
                         $ es
-        let effs'       = foldl delEff effs us 
+        
+        -- The final effect type.
+        tEffs'      
+         <- case mtParent of
+                -- If the bound region variables are children of some parent
+                -- region then the overall effect is to allocate into 
+                -- the parent.
+                Just tParent
+                  -> do  return $ (lowerT depth $ foldl delEff effs us)
+                                 `Sum.union` (Sum.singleton kEffect (tAlloc tParent))
+
+                -- If the bound region variables have no parent then they
+                -- are deallocated when the private construct ends and no
+                -- effect on these regions is visible.
+                _ -> do  return $ lowerT depth 
+                                $ foldl delEff effs us 
 
         -- Delete the bound region variable from the closure.
         -- Mask closure terms due to locally bound region vars.
@@ -123,10 +152,7 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
 
         returnX a
                 (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody')
-                (lowerT depth tBody)
-                (lowerT depth effs')
-                c2_cut
-                ctx_cut
+                tBody' tEffs' c2_cut ctx_cut
 
 
 -- withregion -----------------------------------

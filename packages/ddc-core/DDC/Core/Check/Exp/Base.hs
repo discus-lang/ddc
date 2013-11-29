@@ -10,6 +10,7 @@ module DDC.Core.Check.Exp.Base
         , module DDC.Core.Check.DaCon
         , module DDC.Core.Check.Error
         , module DDC.Core.Transform.Reannotate
+        , module DDC.Core.Transform.SubstituteTX
         , module DDC.Core.Annot.AnTEC
         , module DDC.Core.Collect
         , module DDC.Core.Predicates
@@ -41,6 +42,7 @@ import DDC.Core.Check.Witness
 import DDC.Core.Check.DaCon
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
+import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Collect
 import DDC.Core.Predicates
