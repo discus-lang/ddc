@@ -11,6 +11,8 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 import Data.Set                         (Set)
+import Data.Maybe
+import Control.Monad
 
 
 -- freeX ----------------------------------------------------------------------
@@ -69,8 +71,9 @@ instance BindStruct (Exp a) where
                      (map fst bxs) 
                      (map snd bxs ++ [x2])]
         
-        XLet _ (LPrivate b bs) x2
-         -> [ BindDef  BindLetRegions b
+        XLet _ (LPrivate b mT bs) x2
+         -> (concat $ liftM slurpBindTree $ maybeToList mT)
+         ++ [ BindDef  BindLetRegions b
              [bindDefX BindLetRegionWith bs [x2]]]
 
         XLet _ (LWithRegion u) x2

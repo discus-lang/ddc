@@ -435,7 +435,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
 
          -- Letregions ------------------------------------
-         C.XLet _ (C.LPrivate b _) x2
+         C.XLet _ (C.LPrivate b _mt _) x2
           -> do let kenv' = Env.extends b kenv
                 convBodyM context kenv' tenv mdsup blocks label instrs x2
 

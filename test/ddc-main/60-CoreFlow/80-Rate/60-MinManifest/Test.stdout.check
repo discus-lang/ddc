@@ -1,0 +1,39 @@
+
+ok
+
+-- Two possible schedules, but should be one with only one manifest array (ys)
+module Test with
+letrec {
+  test : Vector# Int# -> Vector# Int#
+    = \(us : Vector# Int#).
+      let x2 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let x6$ref : Ref# Int# = new# [Int#] 0i# in
+      let _ : Bool#
+            = runProcess# [Int#] us
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+                   let x2$s : Series# us$k Int#
+                         = smap# [us$k] [Int#] [Int#]
+                               (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
+                   let x2$proc : Process# = sfill# [us$k] [Int#] x2 x2$s in
+                   let x6$proc : Process#
+                         = sreduce# [us$k] [Int#] x6$ref
+                               (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# us$s in
+                   pjoin# x2$proc x6$proc) in
+      let x6 : Int# = read# [Int#] x6$ref in
+      let x9 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let _ : Bool#
+            = runProcess# [Int#] x2
+                  (/\(us$k : Rate).
+                    \(_ : RateNat# us$k).\(x2$s : Series# us$k Int#).
+                   let x9$s : Series# us$k Int#
+                         = smap# [us$k] [Int#] [Int#]
+                               (\(x7 : Int#). add# [Int#] x6 x7) x2$s in
+                   let x9$proc : Process# = sfill# [us$k] [Int#] x9 x9$s in
+                   x9$proc) in
+      x9
+}
+
+

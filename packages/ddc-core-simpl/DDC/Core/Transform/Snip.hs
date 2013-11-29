@@ -129,10 +129,10 @@ enterX config arities xx
             in  XLet a (LRec $ zip bs xs') x2' 
 
         -- private, just make sure we record bindings with dummy val.
-        XLet a (LPrivate b bs) x2
+        XLet a (LPrivate b mt bs) x2
          -> let ars     = zip bs (repeat 0)
                 x2'     = snipLetBody config a $ down ars x2
-            in  XLet a (LPrivate b bs) x2'
+            in  XLet a (LPrivate b mt bs) x2'
 
         -- withregion
         XLet a (LWithRegion b) x2

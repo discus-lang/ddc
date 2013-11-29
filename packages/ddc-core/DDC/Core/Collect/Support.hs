@@ -11,6 +11,7 @@ import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Data.Monoid
+import Data.Maybe
 
 
 data Support n
@@ -193,8 +194,9 @@ instance SupportX (Lets a) where
          <> (let tenv' = Env.extends (map fst bxs) tenv
              in  mconcat $ map (support kenv tenv') $ map snd bxs)
 
-        LPrivate bs ws
+        LPrivate bs t2 ws
          -> (mconcat $ map (support kenv tenv) bs)
+         <> (mconcat $ map (support kenv tenv) $ maybeToList t2)
          <> (let kenv' = Env.extends bs kenv
              in  mconcat $ map (support kenv' tenv) ws)
 

@@ -9,6 +9,7 @@ import DDC.Type.Transform.SpreadT
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
+import Control.Monad
 
 
 class SpreadX (c :: * -> *) where
@@ -131,11 +132,12 @@ instance SpreadX (Lets a) where
                 xs'      = map (spreadX kenv tenv') xs
              in LRec (zip bs' xs')
 
-        LPrivate b bs
+        LPrivate b mT bs
          -> let b'       = map (spreadT kenv) b
+                mT'      = liftM (spreadT kenv) mT
                 kenv'    = Env.extends b' kenv
                 bs'      = map (spreadX kenv' tenv) bs
-            in  LPrivate b' bs'
+            in  LPrivate b' mT' bs'
 
         LWithRegion b
          -> LWithRegion (spreadX kenv tenv b)

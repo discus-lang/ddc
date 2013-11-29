@@ -212,7 +212,7 @@ instance Complies Exp where
                 vUseds'           <- checkBinds profile tenv bs vUseds
                 return (tUseds, vUseds')
 
-        XLet _ (LPrivate rs bs) x2
+        XLet _ (LPrivate rs _ bs) x2
          -> do  (tUsed2, vUsed2) 
                  <- compliesX profile   (Env.extends rs  kenv) 
                                         (Env.extends bs tenv) 

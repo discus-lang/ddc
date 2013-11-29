@@ -3,6 +3,8 @@ module DDC.Core.Transform.MapT
         (mapT)
 where
 import DDC.Core.Exp
+import Control.Monad
+
 
 class MapT (c :: * -> *) where
  -- | Apply a function to all possibly open types in a thing.
@@ -43,10 +45,10 @@ instance MapT (Lets a) where
  mapT f lts
   = let down    = mapT f
     in case lts of
-        LLet b x        -> LLet (down b) (down x)
-        LRec bxs        -> LRec [ (down b, down x) | (b, x) <- bxs]
-        LPrivate bs ws  -> LPrivate (map down bs) (map down ws)
-        LWithRegion u   -> LWithRegion u
+        LLet b x          -> LLet (down b) (down x)
+        LRec bxs          -> LRec [ (down b, down x) | (b, x) <- bxs]
+        LPrivate bs mT ws -> LPrivate (map down bs) (liftM f mT) (map down ws)
+        LWithRegion u     -> LWithRegion u
 
 
 instance MapT (Alt a) where

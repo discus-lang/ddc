@@ -209,8 +209,8 @@ usageLets lts
          ,  used'         <- sumUsedMap useds'
          -> (used', LRec $ zip bs xs')
 
-        LPrivate b bs 
-         -> (empty, LPrivate b bs)
+        LPrivate b mt bs 
+         -> (empty, LPrivate b mt bs)
 
         LWithRegion b
          -> (empty, LWithRegion b)

@@ -143,11 +143,11 @@ instance Namify (Exp a) where
                 x2'             <- namify tnam xnam' x2
                 return $ XLet a (LRec (zip bs' xs')) x2'
 
-        XLet a (LPrivate b bs) x2
+        XLet a (LPrivate b mt bs) x2
          -> do  (tnam', b')     <- pushTs tnam b
                 (xnam', bs')    <- pushXs tnam' xnam bs
                 x2'             <- namify tnam' xnam' x2
-                return $ XLet a (LPrivate b' bs') x2'
+                return $ XLet a (LPrivate b' mt bs') x2'
 
         XLet a (LWithRegion u) x2
          -> do  u'              <- rewriteX tnam xnam u

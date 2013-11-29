@@ -385,11 +385,14 @@ convertLetsX pp defs kenv tenv lts
                 x1'             <- convertExpX ExpBind pp defs kenv tenv' x1
                 return  $ LLet b' x1'
 
-        LPrivate b bs
+        LPrivate b mt bs
          -> do  b'              <- mapM (convertB kenv) b
                 let kenv'       = Env.extends b kenv
                 bs'             <- mapM (convertB kenv') bs
-                return  $ LPrivate b' bs'
+                mt'             <- case mt of
+                                        Nothing -> return Nothing
+                                        Just t  -> liftM Just $ convertT kenv t
+                return  $ LPrivate b' mt' bs'
   
         LWithRegion{}
          ->     throw $ ErrorMalformed "LWithRegion should not appear in Lite code."

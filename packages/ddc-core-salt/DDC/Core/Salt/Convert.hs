@@ -332,7 +332,7 @@ convBlockM context pp kenv tenv xx
                         , x2' ]
 
         -- Ditch letregions.
-        XLet _ (LPrivate bs ws) x
+        XLet _ (LPrivate bs _mt ws) x
          -> let kenv'   = Env.extends bs kenv
                 tenv'   = Env.extends ws tenv
             in  convBlockM context pp kenv' tenv' x

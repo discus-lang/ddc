@@ -75,7 +75,7 @@ extend b env
 --   If it's a letregion, remember the region's name and any witnesses.
 --
 extendLets :: Ord n => Lets a n -> RewriteEnv a n -> RewriteEnv a n
-extendLets (LPrivate bs cs) renv
+extendLets (LPrivate bs _mt cs) renv
  = foldl (flip extend) (foldl extendB renv bs) cs
  where  
         extendB (env@RewriteEnv{witnesses = ws, letregions = rs}) b

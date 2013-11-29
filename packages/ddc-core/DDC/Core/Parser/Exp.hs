@@ -381,9 +381,9 @@ pLetWits c bs
                               return  $ BNone t ])
                       (pTok KSemiColon)
            pTok KBraceKet
-           return (LPrivate bs wits)
+           return (LPrivate bs Nothing wits)
     
-    , do   return (LPrivate bs [])
+    , do   return (LPrivate bs Nothing [])
     ]
 
 

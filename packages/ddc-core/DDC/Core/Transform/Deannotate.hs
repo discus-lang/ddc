@@ -40,7 +40,7 @@ instance Deannotate A.Lets S.Lets where
     in case lts of
         A.LLet b x              -> S.LLet b (down x)
         A.LRec bxs              -> S.LRec [(b, down x) | (b, x) <- bxs]
-        A.LPrivate bks bts      -> S.LPrivate bks bts
+        A.LPrivate bks mt bts   -> S.LPrivate bks mt bts
         A.LWithRegion u         -> S.LWithRegion u
 
 

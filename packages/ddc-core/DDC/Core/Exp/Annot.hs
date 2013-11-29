@@ -86,9 +86,9 @@ data Lets a n
         -- | Recursive binding of lambda abstractions.
         | LRec     ![(Bind n, Exp a n)]
 
-        -- | Bind a local region variable,
+        -- | Bind a private region variable,
         --   and witnesses to its properties.
-        | LPrivate ![Bind n] ![Bind n]
+        | LPrivate ![Bind n] !(Maybe (Type n)) ![Bind n]
         
         -- | Holds a region handle during evaluation.
         | LWithRegion !(Bound n)
@@ -181,7 +181,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
-        LPrivate bs1 bs2        -> rnf bs1  `seq` rnf bs2
+        LPrivate bs1 u2 bs3     -> rnf bs1 `seq` rnf u2 `seq` rnf bs3
         LWithRegion u           -> rnf u
 
 

@@ -166,7 +166,7 @@ toCoreLts lts
          -> C.LLet (toCoreB b) (toCoreX x)
         
         S.LPrivate bks bts
-         -> C.LPrivate (map toCoreB bks) (map toCoreB bts)
+         -> C.LPrivate (map toCoreB bks) Nothing (map toCoreB bts)
 
 
 -- Cast -----------------------------------------------------------------------

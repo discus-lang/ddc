@@ -197,10 +197,10 @@ pushAnonymizeLets keep kstack tstack lts
                 bxs'            = zip bs' xs'
             in  (kstack, tstack', LRec bxs')
 
-        LPrivate b bs
+        LPrivate b mt bs
          -> let (kstack', b')   = mapAccumL pushAnonymizeBindT kstack b
                 (tstack', bs')  = pushAnonymizeBindXs keep kstack' tstack bs
-            in  (kstack', tstack', LPrivate b' bs')
+            in  (kstack', tstack', LPrivate b' mt bs')
 
         LWithRegion{}
          -> (kstack, tstack, lts)

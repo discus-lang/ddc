@@ -123,7 +123,7 @@ takeLets lets
   get (LLet (BNone _)   _) = return []
   get (LLet (BAnon _)   _) = w      FailNoDeBruijnAllowed
   get (LRec        _     ) = w      FailRecursiveBindings
-  get (LPrivate _ _   )    = w      FailLetRegionNotHandled
+  get (LPrivate _ _ _)     = w      FailLetRegionNotHandled
   get (LWithRegion _     ) = w      FailLetRegionNotHandled
 
   w err                    = warn err >> return []

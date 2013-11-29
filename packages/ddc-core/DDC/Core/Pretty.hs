@@ -282,21 +282,21 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <$> rbrace
 
         
-        LPrivate [b] []
+        LPrivate [b] _ []
          -> text "private"
                 <+> ppr (binderOfBind b)
         
-        LPrivate [b] bs
+        LPrivate [b] _ bs
          -> text "private"
                 <+> ppr (binderOfBind b)
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bs)
 
-        LPrivate b []
+        LPrivate b _ []
          -> text "private"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
 
-        LPrivate b bs
+        LPrivate b _ bs
          -> text "private"
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
                 <+> text "with"

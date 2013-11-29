@@ -54,7 +54,7 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
 
 
 -- private --------------------------------------
-checkLet !table !ctx xx@(XLet a (LPrivate bsRgn bsWit) x) tXX
+checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table ctx x Recon
     us   -> do
@@ -122,7 +122,7 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn bsWit) x) tXX
                         $ popToPos pos1 ctx4
 
         returnX a
-                (\z -> XLet z (LPrivate bsRgn bsWit) xBody')
+                (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody')
                 (lowerT depth tBody)
                 (lowerT depth effs')
                 c2_cut

@@ -34,7 +34,7 @@ instance BindStruct (Exp a) where
                      (map fst bxs) 
                      (map snd bxs ++ [x2])]
         
-        XLet (LPrivate b bs) x2
+        XLet (LPrivate b _ bs) x2                               -- TODO: use mT
          -> [ BindDef  BindLetRegions b
              [bindDefX BindLetRegionWith bs [x2]]]
 
