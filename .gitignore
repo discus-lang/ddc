@@ -3,6 +3,7 @@
 *.o
 *.o-boot
 *.so
+*.dylib
 *.hi
 *.hi-boot
 *.di
