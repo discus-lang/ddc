@@ -12,3 +12,25 @@ x
 :*: [r1 : Region].Unit -> S (Alloc r1) (Ref# r1 Nat#)
 :!: Pure
 
+
+/\(r1 : Region).
+ \(x : Unit).
+box
+extend r1 using r2 with {Alloc r2; Write r2} in
+let x : Ref# r2 Nat#
+      = run allocRef# [r2] [Nat#] 0# in
+let f : Unit -> S (Write r2) Unit
+      = \(_ : Unit). writeRef# [r2] [Nat#] x 5# in
+T2# [Ref# r2 Nat#] [Unit -> S (Write r2) Unit] x f
+:*: [r1 : Region].Unit -> S (Alloc r1) (Tuple2# (Ref# r1 Nat#) (Unit -> S (Write r1) Unit))
+:!: Pure
+
+
+-- Error: 'Write r' effect not supported by context when we try to 
+--         apply the inner function.
+When checking expression.
+  <batch>:33:20
+  Effect of computation not supported by context.
+      Effect:  Write r
+  
+  with: run f ()

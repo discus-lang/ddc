@@ -8,3 +8,27 @@ let     _ = run writeRef# [r2] [Nat#] x 5#
 in      x
 ;;
 
+
+:check..
+/\(r1 : Region). \(x : Unit). box
+extend r1 using r2 with {Alloc r2; Write r2} in
+let     x = run allocRef# [r2] [Nat#] 0# in
+let     f = \(_ : Unit). writeRef# [r2] [Nat#] x 5# 
+in      T2# [Ref# r2 Nat#] [Unit -> S (Write r2) Unit] x f
+;;
+
+
+-- Error: 'Write r' effect not supported by context when we try to 
+--         apply the inner function.
+:check..
+let thing
+        = /\(r1 : Region). \(x : Unit). box
+          extend r1 using r2 with {Alloc r2; Write r2} in
+          let     x = run allocRef# [r2] [Nat#] 0# in
+          let     f = \(_ : Unit). writeRef# [r2] [Nat#] x 5# 
+          in      T2# [Ref# r2 Nat#] [Unit -> S (Write r2) Unit] x f
+in 
+private r with {Alloc r; Read r} in
+case run thing [r] () of
+{       T2# r f -> run f () }
+;;
