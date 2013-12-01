@@ -87,13 +87,6 @@ cleantotal :
 	@$(MAKE) total
 
 
-# -- Build the Coq proofs
-.PHONY: proof
-proof:
-	@$(MAKE) proofdeps
-	@$(MAKE) proof/Main.vo -j $(THREADS)
-
-
 # -- Build all dependencies
 .PHONY	: deps
 deps	: make/deps/Makefile-ddc-alpha.deps \
@@ -150,7 +143,6 @@ include make/targets/ddc-check.mk
 include make/targets/ddc-main.mk
 include make/targets/ddci-core.mk
 include make/targets/ddci-tetra.mk
-include make/targets/proof.mk
 include make/targets/helper.mk
 include make/targets/packages.mk
 
@@ -172,5 +164,4 @@ include make/rules.mk
 -include make/deps/Makefile-ddc-main.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/Makefile-ddci-tetra.deps.inc
--include make/deps/proof.deps.inc
 
