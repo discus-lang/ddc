@@ -3,7 +3,8 @@ module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
         , isNameHole
         
-        , TyConData     (..)
+        , TyConTetra    (..)
+        , DaConTetra    (..)
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
@@ -21,8 +22,11 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
-        -- Baked-in data types -----------------
-        | NameTyConData         TyConData
+        -- Baked-in type constructors ----------
+        | NameTyConTetra        TyConTetra
+
+        -- Baked-in data constructors ----------
+        | NameDaConTetra        DaConTetra
 
         -- Baked-in operators ------------------
         | NameOpStore           OpStore
@@ -61,11 +65,21 @@ isNameHole nn
         _               -> False
 
 
--- TyConData------------------------------------------------------------------
--- | Baked-in data types.
-data TyConData
-        -- | A mutable reference.
-        = TyConDataRef
+-- TyConTetra ----------------------------------------------------------------
+-- | Baked-in type constructors.
+data TyConTetra
+        -- | @Ref#@. A mutable reference.
+        = TyConTetraRef
+
+        -- | @TupleN#@. Tuples.
+        | TyConTetraTuple Int
+        deriving (Eq, Ord, Show)
+
+
+-- DaConTetra ----------------------------------------------------------------
+data DaConTetra
+        -- | @TN#@. Tuple data constructors.
+        = DaConTetraTuple Int
         deriving (Eq, Ord, Show)
 
 

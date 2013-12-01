@@ -1,6 +1,6 @@
 
-module DDC.Source.Tetra.Prim.TyConData
-        ( kindTyConData
+module DDC.Source.Tetra.Prim.TyConTetra
+        ( kindTyConTetra
         , tRef)
 where
 import DDC.Source.Tetra.Prim.Base
@@ -9,16 +9,17 @@ import DDC.Type.Exp
 
 
 -- | Take the kind of a baked-in data constructor.
-kindTyConData :: TyConData -> Type Name
-kindTyConData tc
+kindTyConTetra :: TyConTetra -> Type Name
+kindTyConTetra tc
  = case tc of
-        TyConDataRef    -> kRegion `kFun` kData `kFun` kData
+        TyConTetraRef     -> kRegion `kFun` kData `kFun` kData
+        TyConTetraTuple n -> foldr kFun kData (replicate n kData)
 
 
 -- Compounds ------------------------------------------------------------------
 -- | Primitive `Ref` type.
 tRef    :: Region Name -> Type Name -> Type Name
 tRef tR tA   
- = tApps (TCon (TyConBound (UPrim (NameTyConData TyConDataRef) k) k))
+ = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraRef) k) k))
                 [tR, tA]
  where k = kRegion `kFun` kData `kFun` kData

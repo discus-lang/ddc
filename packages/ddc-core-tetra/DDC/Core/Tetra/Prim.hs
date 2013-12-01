@@ -5,10 +5,15 @@ module DDC.Core.Tetra.Prim
         , isNameHole
         , readName
 
-          -- * Baked-in data type constructors.
-        , TyConData     (..)
-        , readTyConData
-        , kindTyConData
+          -- * Baked-in type constructors.
+        , TyConTetra     (..)
+        , readTyConTetra
+        , kindTyConTetra
+
+          -- * Baked-in data constructors.
+        , DaConTetra     (..)
+        , readDaConTetra
+        , typeDaConTetra
 
           -- * Baked-in store operators.
         , OpStore       (..)
@@ -26,8 +31,9 @@ module DDC.Core.Tetra.Prim
         , typePrimArith)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Tetra.Prim.TyConData
+import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.TyConPrim
+import DDC.Core.Tetra.Prim.DaConTetra
 import DDC.Core.Tetra.Prim.OpStore
 import DDC.Core.Tetra.Prim.OpArith
 import DDC.Core.Salt.Name 
@@ -46,7 +52,8 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
 
-        NameTyConData con       -> rnf con
+        NameTyConTetra con      -> rnf con
+        NameDaConTetra con      -> rnf con
         NameOpStore   con       -> rnf con
 
         NamePrimTyCon con       -> rnf con
@@ -66,7 +73,8 @@ instance Pretty Name where
         NameVar  v              -> text v
         NameCon  c              -> text c
 
-        NameTyConData tc        -> ppr tc
+        NameTyConTetra tc       -> ppr tc
+        NameDaConTetra dc       -> ppr dc
         NameOpStore op          -> ppr op
 
         NamePrimTyCon tc        -> ppr tc
@@ -85,8 +93,11 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Baked-in names.
-        | Just p <- readTyConData str
-        = Just $ NameTyConData p
+        | Just p <- readTyConTetra str
+        = Just $ NameTyConTetra p
+
+        | Just p <- readDaConTetra str
+        = Just $ NameDaConTetra p
 
         | Just p <- readOpStore   str
         = Just $ NameOpStore p

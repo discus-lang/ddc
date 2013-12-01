@@ -252,15 +252,15 @@ toCoreU uu
 toCoreN :: S.Name -> C.Name
 toCoreN nn
  = case nn of
-        S.NameVar       str -> C.NameVar        str
-        S.NameCon       str -> C.NameCon        str
-        S.NameTyConData tc  -> C.NameTyConData  tc
-        S.NameOpStore   tc  -> C.NameOpStore    tc
-        S.NamePrimTyCon p   -> C.NamePrimTyCon  p
-        S.NamePrimArith p   -> C.NamePrimArith  p
-        S.NameLitBool   b   -> C.NameLitBool    b
-        S.NameLitNat    n   -> C.NameLitNat     n
-        S.NameLitInt    i   -> C.NameLitInt     i  
-        S.NameLitWord   w b -> C.NameLitWord    w b
-        S.NameHole          -> C.NameHole
+        S.NameVar        str -> C.NameVar        str
+        S.NameCon        str -> C.NameCon        str
+        S.NameTyConTetra tc  -> C.NameTyConTetra tc
+        S.NameOpStore    tc  -> C.NameOpStore    tc
+        S.NamePrimTyCon  p   -> C.NamePrimTyCon  p
+        S.NamePrimArith  p   -> C.NamePrimArith  p
+        S.NameLitBool    b   -> C.NameLitBool    b
+        S.NameLitNat     n   -> C.NameLitNat     n
+        S.NameLitInt     i   -> C.NameLitInt     i  
+        S.NameLitWord    w b -> C.NameLitWord    w b
+        S.NameHole           -> C.NameHole
 

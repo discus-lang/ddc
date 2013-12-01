@@ -72,6 +72,7 @@ primDataDefs
 
         -- Tuple
         -- Hard-code maximum tuple arity to 32.
+        -- We don't have a way of avoiding the upper bound.
  ++     [ makeTupleDataDef arity
                 | arity <- [2..32] ]
 

@@ -3,7 +3,7 @@ module DDC.Core.Tetra.Prim.OpStore
         ( readOpStore
         , typeOpStore)
 where
-import DDC.Core.Tetra.Prim.TyConData
+import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.Base
 import DDC.Type.Compounds
 import DDC.Type.Exp

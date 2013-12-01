@@ -1,8 +1,8 @@
 
 module DDC.Source.Tetra.Prim
         ( Name          (..)
-        , TyConData     (..)
-        , kindTyConData
+        , TyConTetra    (..)
+        , kindTyConTetra
 
         , OpStore       (..)
         , typeOpStore
@@ -21,7 +21,7 @@ where
 import DDC.Source.Tetra.Lexer.Lit
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim
-import DDC.Source.Tetra.Prim.TyConData
+import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpStore
 import DDC.Source.Tetra.Prim.OpArith
 import DDC.Base.Pretty
@@ -34,7 +34,7 @@ instance Pretty Name where
         NameVar  v              -> text v
         NameCon  c              -> text c
 
-        NameTyConData p         -> ppr p
+        NameTyConTetra p        -> ppr p
         NameOpStore   p         -> ppr p
         NamePrimTyCon p         -> ppr p
         NamePrimArith p         -> ppr p
@@ -52,8 +52,8 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Baked-in names
-        | Just p <- readTyConData   str  
-        = Just $ NameTyConData p
+        | Just p <- readTyConTetra   str  
+        = Just $ NameTyConTetra p
 
         | Just p <- readOpStore   str  
         = Just $ NameOpStore   p

@@ -5,14 +5,16 @@ module DDC.Core.Tetra
 
           -- * Names
         , Name          (..)
-        , TyConData     (..)
+        , TyConTetra    (..)
+        , DaConTetra    (..)
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
 
           -- * Name Parsing
         , readName
-        , readTyConData
+        , readTyConTetra
+        , readDaConTetra
         , readOpStore
         , readPrimTyCon
         , readPrimArith

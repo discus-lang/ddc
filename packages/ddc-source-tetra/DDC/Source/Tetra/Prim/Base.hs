@@ -1,14 +1,14 @@
 
 module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
-        , TyConData     (..), readTyConData
+        , TyConTetra    (..), readTyConTetra
         , OpStore       (..), readOpStore
         , PrimTyCon     (..), readPrimTyCon
         , PrimArith     (..), readPrimArith)
 where
 import Control.DeepSeq
 import DDC.Core.Tetra    
-        ( TyConData     (..), readTyConData
+        ( TyConTetra    (..), readTyConTetra
         , OpStore       (..), readOpStore
         , PrimTyCon     (..), readPrimTyCon
         , PrimArith     (..), readPrimArith)
@@ -24,7 +24,7 @@ data Name
 
         -- Baked in things ----------------------
         -- | Baked in data type constructors.
-        | NameTyConData         TyConData
+        | NameTyConTetra        TyConTetra
 
         -- | Baked in store operators.
         | NameOpStore           OpStore
@@ -61,10 +61,10 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
 
-        NameTyConData p         -> rnf p
-        NameOpStore   p         -> rnf p
-        NamePrimTyCon p         -> rnf p
-        NamePrimArith p         -> rnf p
+        NameTyConTetra p        -> rnf p
+        NameOpStore    p        -> rnf p
+        NamePrimTyCon  p        -> rnf p
+        NamePrimArith  p        -> rnf p
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n

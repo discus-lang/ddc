@@ -28,7 +28,7 @@ primDataDefs
  = fromListDataDefs
         -- Primitive -----------------------------------------------
         -- Bool#
-        [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
+  $     [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
                 [] 
                 (Just   [ (NameLitBool True,  []) 
                         , (NameLitBool False, []) ])
@@ -46,8 +46,24 @@ primDataDefs
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
         -- Ref#
-        , makeDataDefAbs (NameTyConData TyConDataRef) []
+        , makeDataDefAbs (NameTyConTetra TyConTetraRef) []
         ]
+
+        -- Tuple
+        -- Hard-code maximum tuple arity to 32.
+        -- We don't have a way of avoiding the upper bound.
+ ++     [ makeTupleDataDef arity
+                | arity <- [2..32] ]
+ 
+
+ -- | Make a tuple data def for the given tuple arity.
+makeTupleDataDef :: Int -> DataDef Name
+makeTupleDataDef n
+        = makeDataDefAlg
+                (NameTyConTetra (TyConTetraTuple n))
+                (replicate n (BAnon kData))
+                (Just   [ ( NameDaConTetra (DaConTetraTuple n)
+                          , (reverse [tIx kData i | i <- [0..n - 1]]))])
 
 
 -- Sorts ---------------------------------------------------------------------
@@ -74,7 +90,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameTyConData tc        -> Just $ kindTyConData tc
+        NameTyConTetra tc       -> Just $ kindTyConTetra tc
         NamePrimTyCon tc        -> Just $ kindPrimTyCon tc
         _                       -> Nothing
 
@@ -90,8 +106,9 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NameOpStore   p         -> Just $ typeOpStore   p
-        NamePrimArith p         -> Just $ typePrimArith p
+        NameDaConTetra p        -> Just $ typeDaConTetra p
+        NameOpStore    p        -> Just $ typeOpStore    p
+        NamePrimArith  p        -> Just $ typePrimArith  p
 
         NameLitBool _           -> Just $ tBool
         NameLitNat  _           -> Just $ tNat
