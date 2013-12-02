@@ -29,7 +29,7 @@ T2# [Ref# r2 Nat#] [Unit -> S (Write r2) Unit] x f
 -- Error: 'Write r' effect not supported by context when we try to 
 --         apply the inner function.
 When checking expression.
-  <batch>:33:20
+  <batch>:36:20
   Effect of computation not supported by context.
       Effect:  Write r
   
