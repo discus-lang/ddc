@@ -21,14 +21,14 @@ Quick Start Guide
       $ make totalwar
 
  5) Build a single test program and run it.
-      $ bin/ddc test/ddc-main/60-Lite/99-Defib/03-Reverse/Main.dcl
-      $ test/ddc-main/60-Lite/99-Defib/03-Reverse/Main
+      $ bin/ddc test/ddc-main/20-CoreLite/99-Defib/03-Reverse/Main.dcl
+      $ test/ddc-main/20-CoreLite/99-Defib/03-Reverse/Main
 
       NOTE: You need to run tests from the top-level directory so that
             DDC can find its runtime system .so under code/
 
  6) Build that same program with optimisations and dump intermediate code.
-      $ bin/ddc test/ddc-main/60-Lite/99-Defib/03-Reverse/Main.dcl -O -dump
+      $ bin/ddc test/ddc-main/20-CoreLite/99-Defib/03-Reverse/Main.dcl -O -dump
 
-      Now look at the .dump files in test/ddc-main/60-Lite/99-Defib/03-Reverse
+      Now look at the .dump files in test/ddc-main/20-CoreLite/99-Defib/03-Reverse/
 
