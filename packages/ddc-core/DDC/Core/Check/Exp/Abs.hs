@@ -63,18 +63,18 @@ checkAbsLAM !table !ctx a b1 x2 mode
              Recon         -> return $ Recon
              Synth         -> return $ Synth
                 
-             -- We've got a type for the whole abstraction, and need
-             -- to decide what to check the body against.
+             -- We've got a type for the whole abstraction, and need to
+             -- decide what to check the body against.
              Check (TForall b tBody) 
               | isBot (typeOfBind b) 
               -> throw $ ErrorLAMParamUnannotated a xx
 
-              -- Annotation on type abstraction parameter does not match
-              -- the expected type.
+              -- Annotation on type abstraction parameter does not match the
+              -- expected type.
               | not $ equivT (typeOfBind b) (typeOfBind b1)
               -> throw $ ErrorLAMParamUnexpected a xx b1 (typeOfBind b)
 
-              | equivT (typeOfBind b) (typeOfBind b1)
+              | otherwise
               -> case takeSubstBoundOfBind b1 of
                   Nothing  -> return $ Check tBody
                   Just u1  -> return $ Check $ substituteT b (TVar u1) tBody
