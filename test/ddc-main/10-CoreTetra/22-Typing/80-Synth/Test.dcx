@@ -1,8 +1,11 @@
-
 :set lang Tetra
 
 -- Check we can produce existential vars.
 :synth \x. x
+
+
+-- Check existing type annots are not trashed during synth.
+:synth \(x : Unit). x
 
 
 -- Check order of existential vars.
@@ -27,3 +30,12 @@
 
 -- Application.
 :synth (\f. \g. \x. f g (g x)) (\x. x)
+
+
+-- Type abstraction.
+:synth /\(a : Data). \x. x
+
+
+-- Abstract type being used.
+:synth /\(a : Data). \(x : a). \y. x
+

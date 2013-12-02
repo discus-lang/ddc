@@ -99,6 +99,22 @@ makeSub table a ctx0 tL tR
 -- Inst ----------------------------------------------------------------------
 inst table !a ctx0 tL tR
 
+ -- InstLSolve
+ | Just iL <- takeExists tL
+ , not $ isTExists tR
+ = do   let ctx1        = updateExists [] iL tR ctx0
+
+        ctrace  $ vcat
+                [ text "* InstLSolve"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , empty ]
+
+        return ctx1
+
+
  -- InstLReach
  --  Both types are existentials, and the left is bound earlier in the stack.
  --  CAREFUL: The returned location is relative to the top of the stack,
@@ -172,6 +188,22 @@ inst table !a ctx0 tL tR
                 , empty ]
 
         return ctx3
+
+
+ -- InstRSolve
+ | Just iR <- takeExists tR
+ , not $ isTExists tL
+ = do   let ctx1        = updateExists [] iR tL ctx0
+
+        ctrace  $ vcat
+                [ text "* InstRSolve"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , empty ]
+
+        return ctx1
 
 
  -- InstRArr

@@ -136,10 +136,28 @@ data Error a n
         , errorExpected         :: Type n }
 
         -- | The expected type of a lambda abstraction is not a function.
-        | ErrorLamUnexpected
+        | ErrorLamExpectedFun
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorExpected         :: Type n }
+
+        -- | A type abstraction without a kind annotation on the parameter.
+        | ErrorLAMParamUnannotated
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n }
+
+        -- | A type abstraction parameter does not match the expected kind.
+        | ErrorLAMParamUnexpected
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorExpected         :: Type n}
+
+        -- | The expected type of a type lambda is not quantified.
+        | ErrorLAMExpectedForall
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorExpected         :: Type n}
 
         -- Let --------------------------------------------
         -- | A let-expression where the type of the binder does not match the right

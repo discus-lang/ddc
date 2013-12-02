@@ -10,13 +10,13 @@ import qualified Data.Set       as Set
 
 -- Dispatch -------------------------------------------------------------------
 checkAbs :: Checker a n
-checkAbs !table !ctx (XLAM a b1 x2) _
- = do   checkAbsLAM table ctx a b1 x2
+checkAbs !table !ctx (XLAM a b1 x2) mode
+ = do   checkAbsLAM table ctx a b1 x2 mode
          
-checkAbs !table !ctx xx@(XLam a b1 x2) dXX
+checkAbs !table !ctx xx@(XLam a b1 x2) mode
  -- If there is no annotation then assume it should be a data binding.
  | isBot (typeOfBind b1)
- = checkAbsLamData table a ctx b1 (tBot kData) x2 dXX
+ = checkAbsLamData table a ctx b1 (tBot kData) x2 mode
 
  -- Otherwise decide what to do based on the kind.
  --  TODO: merge checkAbsLamData and checkAbsLamWitness into same case.
@@ -29,9 +29,10 @@ checkAbs !table !ctx xx@(XLam a b1 x2) dXX
 
         case universeFromType2 k1 of
          Just UniverseData
-           -> checkAbsLamData    table a ctx b1' k1 x2 dXX
+           -> checkAbsLamData    table a ctx b1' k1 x2 mode
+         
          Just UniverseWitness
-           -> checkAbsLamWitness table a ctx b1' k1 x2 dXX
+           -> checkAbsLamWitness table a ctx b1' k1 x2 mode
          _ -> throw $ ErrorLamBindBadKind a xx (typeOfBind b1') k1
 
 checkAbs _ _ _ _
@@ -39,7 +40,7 @@ checkAbs _ _ _ _
 
 
 -- AbsLAM ---------------------------------------------------------------------
-checkAbsLAM !table !ctx a b1 x2
+checkAbsLAM !table !ctx a b1 x2 mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLAM a b1 x2
@@ -57,12 +58,36 @@ checkAbsLAM !table !ctx a b1 x2
         let ctx1         = pushKind b1' RoleAbstract ctx'
         let ctx2         = liftTypes 1  ctx1
 
+        modeBody     
+         <- case mode of
+             Recon         -> return $ Recon
+             Synth         -> return $ Synth
+                
+             -- We've got a type for the whole abstraction, and need
+             -- to decide what to check the body against.
+             Check (TForall b tBody) 
+              | isBot (typeOfBind b) 
+              -> throw $ ErrorLAMParamUnannotated a xx
+
+              -- Annotation on type abstraction parameter does not match
+              -- the expected type.
+              | not $ equivT (typeOfBind b) (typeOfBind b1)
+              -> throw $ ErrorLAMParamUnexpected a xx b1 (typeOfBind b)
+
+              | equivT (typeOfBind b) (typeOfBind b1)
+              -> case takeSubstBoundOfBind b1 of
+                  Nothing  -> return $ Check tBody
+                  Just u1  -> return $ Check $ substituteT b (TVar u1) tBody
+
+             -- Expected type is not quantified.
+             Check t
+              -> throw $ ErrorLAMExpectedForall a xx t
+
         (x2', t2, e2, c2, ctx3)
-                <- tableCheckExp table table ctx2 x2 Recon
-
-        (_, k2) <- checkTypeM config kenv ctx3 t2
-
+                <- tableCheckExp table table ctx2 x2 modeBody
+        
         -- The body of a spec abstraction must have data kind.
+        (_, k2) <- checkTypeM config kenv ctx3 t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
@@ -75,13 +100,32 @@ checkAbsLAM !table !ctx a b1 x2
                         $ mapMaybe (cutTaggedClosureT b1)
                         $ Set.toList c2
 
+        -- Apply context to synthesised type.
+        -- We're about to pop the context back to how it was before the 
+        -- type lambda, and will information gained from synthing the body.
+        let t2'
+             = case mode of
+                Recon   -> t2
+                Check _ -> t2
+                Synth   -> applyContext ctx3 t2 
+
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx3
-                                                                
+                                   
+        let tResult     = TForall b1' t2'
+
+        ctrace  $ vcat
+                [ text "* LAM"
+                , indent 2 $ ppr (XLAM a b1' x2)
+                , text "  OUT: " <> ppr tResult
+                , indent 2 $ ppr ctx
+                , indent 2 $ ppr ctx_cut 
+                , empty ]
+
         returnX a
                 (\z -> XLAM z b1' x2')
-                (TForall b1' t2)
+                tResult
                 (Sum.empty kEffect)
                 c2_cut
                 ctx_cut
@@ -138,24 +182,27 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
 -- When synthesizing the type of a lambda abstraction
 --   we produce a type (?1 -> ?2) with new unification variables.
 --
---   TOOD: If there was a parameter type annot, then use that instead,
---         and just synthesize a type for the body.
---
 checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
  = do   let config      = tableConfig table
 
-        -- Existential for the parameter type.
-        iA      <- newExists
-        let tA  = typeOfExists iA
-        let b1' = replaceTypeOfBind tA b1
-
+        -- New binder type.
+        -- If there isn't an existing annotation then make an existential.
+        (b1', ctxA)
+         <- if isBot (typeOfBind b1)
+             then do iA <- newExists
+                     let tA   = typeOfExists iA
+                     let b1'  = replaceTypeOfBind tA b1
+                     let ctxA = pushExists iA ctx
+                     return (b1', ctxA)
+                     
+             else return (b1, ctx)
+        
         -- Existential for the result type.
-        iB      <- newExists
-        let tB  = typeOfExists iB
-
+        iB              <- newExists
+        let tB          = typeOfExists iB
+        
         -- Check the body against the existential for it.
-        let ctxBA        = pushExists iB
-                         $ pushExists iA ctx
+        let ctxBA        = pushExists iB ctxA
         let (ctx', pos1) = markContext ctxBA
         let ctx1         = pushType   b1' ctx'
 
@@ -172,9 +219,8 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (tResult, cResult)
-         <- makeFunctionType config a (XLam a b1 x2) tA tB e2 c2_cut
-
-        -- let tResult'    = applyContext ctx2 tResult
+         <- makeFunctionType config a (XLam a b1' x2) 
+                (typeOfBind b1') tB e2 c2_cut
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
@@ -184,7 +230,7 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
 
         ctrace  $ vcat
                 [ text "* Lam Synth"
-                , indent 2 $ ppr (XLam a b1 x2)
+                , indent 2 $ ppr (XLam a b1'' x2)
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx
                 , indent 2 $ ppr ctx_cut 

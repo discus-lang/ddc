@@ -144,10 +144,31 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamUnexpected a xx tExpected
+        ErrorLamExpectedFun a xx tExpected
          -> vcat [ ppr a
                  , text "Context requires lambda abstraction to have a non-functional type."
-                 , text "             Expected type: " <> ppr tExpected
+                 , text "             Expected type: "  <> ppr tExpected
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+        ErrorLAMParamUnannotated a xx
+         -> vcat [ ppr a
+                 , text "Type abstraction is missing a kind annotation."
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+        ErrorLAMParamUnexpected a xx b1 t1'
+         -> vcat [ ppr a
+                 , text "Kind annotation of parameter does not match expected kind."
+                 , text "                  Parameter: " <> ppr b1
+                 , text "    does not match expected: " <> ppr t1'
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+        ErrorLAMExpectedForall a xx tExpected
+         -> vcat [ ppr a
+                 , text "Context requires type lambda to have a non-quantified type."
+                 , text "             Expected type: "  <> ppr tExpected
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
