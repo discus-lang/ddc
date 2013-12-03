@@ -53,7 +53,22 @@ makeSub table a ctx0 tL tR
 
         return ctx0
 
- -- SubInstantiateR
+ -- SubInstL
+ --  TODO: do free variablec check  tL /= FV(tR)
+ | isTExists tL
+ = do   ctx1    <- inst table a ctx0 tR tL
+
+        ctrace  $ vcat
+                [ text "* SubInstL"
+                , text "  LEFT:   " <> ppr tL
+                , text "  RIGHT:  " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , empty ]
+
+        return ctx1
+
+ -- SubInstR
  --  TODO: do free variables check  tR /= FV(tL)
  | isTExists tR
  = do   ctx1    <- inst table a ctx0 tL tR
@@ -68,6 +83,7 @@ makeSub table a ctx0 tL tR
 
         return ctx1
 
+ -- SubArr
  | Just (tL1, tL2)      <- takeTFun tL
  , Just (tR1, tR2)      <- takeTFun tR
  = do   
@@ -91,9 +107,9 @@ makeSub table a ctx0 tL tR
 
  | otherwise
  = error $ renderIndent $ vcat
-        [ text "makeSub: no match" 
-        , text "tL = " <> ppr tL
-        , text "tR = " <> ppr tR ]
+        [ text "DDC.Core.Check.Exp.Inst.makeSub: no match" 
+        , text "  LEFT:   " <> ppr tL
+        , text "  RIGHT:  " <> ppr tR ]
 
 
 -- Inst ----------------------------------------------------------------------
@@ -243,7 +259,7 @@ inst table !a ctx0 tL tR
  | otherwise
  = do
         ctrace  $ vcat
-                [ text "* BROKEN"
+                [ text "DDC.Core.Check.Exp.Inst.inst: no match" 
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0

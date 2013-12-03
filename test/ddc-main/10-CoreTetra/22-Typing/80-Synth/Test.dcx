@@ -36,6 +36,11 @@
 :synth /\(a : Data). \x. x
 
 
--- Abstract type being used.
+-- Abstract type being used as annotation.
 :synth /\(a : Data). \(x : a). \y. x
+
+
+-- Abstract type being used as type argument.
+-- Synthesizes annotation on lambda.
+:synth /\(r : Region). /\(a : Data). \x. readRef# [r] [a] x
 
