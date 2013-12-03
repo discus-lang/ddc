@@ -59,9 +59,17 @@ f g (g x)
 :!: Pure
 
 
--- Abstract type being used.
+-- Abstract type being used as annotation.
 /\(a : Data).
  \(x : a).\(y : ?1). x
 :*: [a : Data].a -> ?1 -> a
+:!: Pure
+
+
+-- Abstract type being used as type argument.
+-- Synthesizes annotation on lambda.
+/\(r : Region)./\(a : Data).
+ \(x : Ref# r a). readRef# [r] [a] x
+:*: [r : Region].[a : Data].Ref# r a -> S (Read r) a
 :!: Pure
 
