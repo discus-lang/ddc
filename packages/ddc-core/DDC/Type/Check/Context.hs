@@ -44,6 +44,8 @@ import DDC.Type.Compounds
 import DDC.Base.Pretty                  ()
 import Data.Maybe
 import qualified DDC.Type.Sum           as Sum
+import qualified Data.IntMap.Strict     as IntMap
+import Data.IntMap.Strict               (IntMap)
 
 
 -- Mode -----------------------------------------------------------------------
@@ -105,14 +107,26 @@ takeExists tt
 --
 data Context n
         = Context 
-        { contextGenPos         :: !Int
+        { -- | Fresh name generator for context positions.
+          contextGenPos         :: !Int
+
+          -- | Fresh name generator for existential variables.
         , contextGenExists      :: !Int 
-        , contextElems          :: ![Elem n] }
+
+          -- | The current context stack.
+        , contextElems          :: ![Elem n] 
+        
+          -- | Types of solved existentials.
+          --   When solved constraints are popped from the main context stack
+          --   they are added to this map. The map is used to fill in type 
+          --   annotations after type inference proper. It's not used as part
+          --   of the main algorithm.
+        , contextSolved         :: IntMap (Type n) }
         deriving Show
 
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
- ppr (Context genPos genExists ls)
+ ppr (Context genPos genExists ls _solved)
   =   text "Context "
   <$> text "  genPos    = " <> int genPos
   <$> text "  genExists = " <> int genExists
@@ -205,7 +219,7 @@ instance Pretty Role where
 -- | An empty context.
 emptyContext :: Context n
 emptyContext 
-        = Context 0 0 []
+        = Context 0 0 [] IntMap.empty
 
 
 -- Push -----------------------------------------------------------------------
@@ -231,6 +245,7 @@ pushKind b role ctx
 pushKinds :: [(Bind n, Role)] -> Context n -> Context n
 pushKinds brs ctx
  = foldl (\ctx' (b, r) -> pushKind b r ctx') ctx brs
+
 
 -- | Push an existential declaration onto the context.
 --   If this is not an existential then `error`.
