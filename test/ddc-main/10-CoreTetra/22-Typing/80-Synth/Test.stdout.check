@@ -85,3 +85,9 @@ f g (g x)
  \(x : Ref# r ?2). readRef# [r] [?2] x
 :*: [r : Region].Ref# r ?2 -> S (Read r) ?2
 :!: Pure
+
+
+-- Check existentials can be solved against a constructor type.
+(\(x y : Nat#). add# [Nat#] x y) 5#
+:*: Nat# -> Nat#
+:!: Pure

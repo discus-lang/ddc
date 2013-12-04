@@ -89,6 +89,8 @@ checkApp !table !ctx0 xx@(XApp a xFn xArg) Synth
         ctrace  $ vcat
                 [ text "* App Synth"
                 , indent 2 $ ppr xx
+                , text "  TFUN:  " <> ppr tFn'
+                , text "   ARG:  " <> ppr xArg
                 , text "  TYPE:  " <> ppr tResult
                 , ppr ctx0
                 , ppr ctx2
@@ -189,33 +191,38 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         -- Synthesise the result type of a function being applied to its 
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
-        (xFn', xArg', tResult, effsResult, closResult, ctx2)
+        (XApp _ xFn' (XType _ tA')
+         , xArg', tResult, effsResult, closResult, ctx2)
          <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn closFn xArg
+
+        let tA''  = applyContext ctx2 tA'
+        let xFn'' = XApp aFn xFn' (XType aArg tA'')
 
         ctrace  $ vcat
                 [ text "* App Synth Forall"
-                , indent 2 $ ppr xFn'
-                , text "  TFUN: "  <> ppr tFn
-                , text "  TYPE:  " <> ppr tResult
+                , text "      xFn:  " <> ppr xFn''
+                , text "     tArg:  " <> ppr xArg'
+                , text "      tFn:  " <> ppr tFn
+                , text "  tResult:  " <> ppr tResult
                 , indent 2 $ ppr ctx2
                 , empty ]
 
-        return  ( xFn'
+        return  ( xFn''
                 , xArg'
                 , tResult, effsResult, closResult, ctx2)
 
 
  -- Rule (App Synth Fun)
  --  Function already has a concrete function type.
- | Just (t11, _t12)   <- takeTFun tFn
+ | Just (tParam, tResult)   <- takeTFun tFn
  = do   
         -- Check the argument.
         (xArg', tArg, effsArg, closArg, ctx1) 
-         <- tableCheckExp table table ctx0 xArg (Check t11)
+         <- tableCheckExp table table ctx0 xArg (Check tParam)
 
         -- Get the type, effect and closure resulting from the application
         -- of a function of this type to its argument.
-        (tResult, effsResult, closResult)
+        (_, effsResult, closResult)
          <- applyFunctionType
                 a xx
                 tFn  effsFn   closFn
@@ -224,6 +231,9 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         ctrace  $ vcat
                 [ text "* App Synth Fun"
                 , indent 2 $ ppr xx
+                , text "      tFn: " <> ppr tFn
+                , text "     tArg: " <> ppr tArg
+                , text "  tResult: " <> ppr tResult
                 , indent 2 $ ppr ctx1 
                 , empty ]
 
@@ -262,8 +272,8 @@ applyFunctionType a xx
          -- Oblivious application of a pure function.
          -- Computation of the function and argument may themselves have
          -- an effect, but the function application does not.
-         TApp (TApp (TCon (TyConSpec TcConFun)) _t11) t12
---          | t11 `equivT` tArg
+         TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
+          | t11 `equivT` tArg
           -> return (t12, effsResult, closResult)
 
          -- Function with latent effect and closure.

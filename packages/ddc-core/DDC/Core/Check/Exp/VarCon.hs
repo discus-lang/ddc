@@ -19,8 +19,10 @@ checkVarCon !table !ctx xx@(XVar a u) mode
  -- Look in the local context.
  | Just t       <- lookupType u ctx
  = case mode of
-        Check tEx
-          -> checkSub table a ctx xx tEx
+        -- Check subsumption against an existing type.
+        -- This may instantiate existentials in the exising type.
+        Check tExpect
+         ->     checkSub table a ctx xx tExpect
 
         _ -> do ctrace  $ vcat
                         [ text "* Var Local"
@@ -36,30 +38,38 @@ checkVarCon !table !ctx xx@(XVar a u) mode
                         (Set.singleton $ taggedClosureOfValBound t u)
                         ctx
 
-
  -- Look in the global environment.
- |  Just t      <- Env.lookup u (tableTypeEnv table)
- = do   ctrace  $ vcat
-                [ text "* Var Global"
-                , indent 2 $ ppr xx
-                , text "  TYPE:  " <> ppr t
-                , indent 2 $ ppr ctx
-                , empty ]
+ | Just t      <- Env.lookup u (tableTypeEnv table)
+ = case mode of
+        -- Check subsumption against an existing type.
+        -- This may instantiate existentials in the exising type.
+        Check tExpect
+         ->     checkSub table a ctx xx tExpect
 
-        returnX a 
-                (\z -> XVar z u)
-                t
-                (Sum.empty kEffect)
-                (Set.singleton $ taggedClosureOfValBound t u)
-                ctx
+        _ -> do ctrace  $ vcat
+                        [ text "* Var Global"
+                        , indent 2 $ ppr xx
+                        , text "  TYPE:  " <> ppr t
+                        , indent 2 $ ppr ctx
+                        , empty ]
 
+                returnX a 
+                        (\z -> XVar z u)
+                        t
+                        (Sum.empty kEffect)
+                        (Set.singleton $ taggedClosureOfValBound t u)
+                        ctx
  
+ -- Can't find this variable name in the environment.
  | otherwise
  = throw $ ErrorUndefinedVar a u UniverseData
          
 
 -- constructors ---------------------------------
-checkVarCon !table !ctx xx@(XCon a dc) _
+checkVarCon !table !ctx xx@(XCon a dc) mode
+ -- For recon and synthesis we already know what type the constructor
+ -- should have, so we can use that.
+ | mode == Recon || mode == Synth 
  = do   let config      = tableConfig table
         let defs        = configDataDefs config
 
@@ -96,6 +106,14 @@ checkVarCon !table !ctx xx@(XCon a dc) _
                 Set.empty
                 ctx
 
+ -- Check subsumption against an existing type.
+ -- This may instantiate existentials in the exising type.
+ | otherwise
+ , Check tExpect    <- mode
+ = checkSub table a ctx xx tExpect
+
+
 -- others ---------------------------------------
 checkVarCon _ _ _ _
  = error "ddc-core.checkVarCon: no match"
+

@@ -61,7 +61,7 @@ data Mode n
         --   unify expected types into unification variables for bidirecional
         --   type inference.
         | Check (Type n)
-        deriving Show
+        deriving (Show, Eq)
 
 
 instance (Eq n, Pretty n) => Pretty (Mode n) where

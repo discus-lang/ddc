@@ -51,3 +51,7 @@
 
 -- Insert one missing type argument.
 :synth /\(r : Region). \x. readRef# [r] x
+
+
+-- Check existentials can be solved against a constructor type.
+:synth (\x. \y. add# x y) 5#
