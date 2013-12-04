@@ -53,5 +53,27 @@
 :synth /\(r : Region). \x. readRef# [r] x
 
 
--- Check existentials can be solved against a constructor type.
+-- Check existentials can be solved against a constructor type,
 :synth (\x. \y. add# x y) 5#
+
+
+-- Same thing without the eta expansion.
+:synth add# 5#
+
+
+-- Let bindings.
+:synth let x = 5# in add# x
+
+
+-- Functional let binding.
+:synth let f = \x. add# x 2# in f 3#
+
+
+-- Multiple let bindings.
+-- TODO: need to update annots on bindings before popping context.
+:synth..
+let f = \x. x in
+let g = \f. \z. f z in
+let h = \x. add# x 2# in
+h (g f 5#)
+;;

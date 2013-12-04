@@ -39,6 +39,20 @@ checkSub table !a ctx0 xx tExpect
 -- Make one type a subtype of another.
 makeSub table a ctx0 tL tR
 
+ -- SubCon
+ | TCon tc1     <- tL
+ , TCon tc2     <- tR
+ , tc1 == tc2
+ = do   
+        ctrace  $ vcat
+                [ text "* SubCon"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
+
+        return ctx0
+
  -- SubExvar
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR

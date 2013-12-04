@@ -12,7 +12,7 @@ import Data.List                        as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !ctx xx@(XLet a lts x2) tXX
+checkLet !table !ctx xx@(XLet a lts x2) mode
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -21,16 +21,26 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
  = do   let config  = tableConfig table
         let kenv    = tableKindEnv table
 
+        -- Decide whether to use bidirectional type inference in the types
+        -- of the bindings. If the current mode is 'Recon' then we're just
+        -- doing straight type reconstruction.
+        let useBidirChecking   
+                = case mode of
+                        Recon   -> False
+                        Check{} -> True
+                        Synth   -> True
+        
         -- Check the bindings
         (lts', bs', effs12, clo12, ctx1)
-                <- checkLetsM xx table ctx lts
+         <- checkLetsM useBidirChecking xx table ctx lts 
 
-        -- Check the body expression.
+        -- Check the body expression in a context
+        -- extended with the types of the bindings.
         let (ctx1', pos1) = markContext ctx1
         let ctx2          = pushTypes bs' ctx1'
 
         (x2', t2, effs2, c2, ctx3)
-                <- tableCheckExp table table ctx2 x2 tXX
+         <- tableCheckExp table table ctx2 x2 mode
 
         -- The body must have data kind.
         (_, k2) <- checkTypeM config kenv ctx3 t2
@@ -43,17 +53,27 @@ checkLet !table !ctx xx@(XLet a lts x2) tXX
                         $ Set.toList c2
 
         -- The new effect and closure.
-        let effs'       = effs12 `Sum.union` effs2
+        let tResult     = applyContext ctx3 t2
+        let effs'       = effs12 `Sum.union` effs2      -- TODO: apply context to effect
         let clos'       = clo12  `Set.union` c2_cut
 
         -- Pop the elements due to the let-bindings from the context.
         let ctx_cut     = popToPos pos1 ctx3
 
+        ctrace  $ vcat
+                [ text "* Let"
+                , indent 2 $ ppr xx
+                , text "  tResult:  " <> ppr tResult
+                , indent 2 $ ppr ctx3
+                , indent 2 $ ppr ctx_cut ]
+
         returnX a (\z -> XLet z lts' x2')
-                t2 effs' clos' ctx_cut
+                tResult effs' clos' ctx_cut
 
 
 -- private --------------------------------------
+-- TODO: when checking this we need to ensure there are no unsolved
+--       existentials in the type of the body expression.
 checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table ctx x Recon
@@ -212,9 +232,10 @@ checkLet _ _ _ _
 -- | Check some let bindings.
 checkLetsM 
         :: (Show n, Pretty n, Ord n)
-        => Exp a n              -- ^ Enclosing expression, for error messages.
-        -> Table a n            -- ^ Static config.
-        -> Context n            -- ^ Input context.
+        => Bool         -- ^ Allow synthesis when checking the types of bindings.
+        -> Exp a n      -- ^ Enclosing expression, for error messages.
+        -> Table a n    -- ^ Static config.
+        -> Context n    -- ^ Input context.
         -> Lets a n
         -> CheckM a n
                 ( Lets (AnTEC a n) n
@@ -223,37 +244,40 @@ checkLetsM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkLetsM !xx !table !ctx (LLet b11 x12)
+checkLetsM !bidir !xx !table !ctx (LLet b x12)
  = do   let a           = annotOfExp xx
 
-        -- TODO: If the type of the binding is not Bot then use that
-        --       as the expected type when checking the body.
---      let tB          = typeOfBind b11
---      let mode        = if isBot tB then Recon else Check tB
-        let mode        = Recon
+        -- If the type of the binding is Bot then use synthesis.
+        let tBind       = typeOfBind b
+        let mode        = if bidir && isBot tBind
+                                then Synth
+                                else Recon
+        
+        -- TODO: With bidir checking allow annotation on let-binding
+        -- to be a subtype of the inferred type.
 
         -- Check the right of the binding.
-        (x12', t12, effs12, clo12, ctx')  
+        (x12', t12, effs12, clo12, ctx') 
          <- tableCheckExp table table ctx x12 mode
 
         -- Check the annotation on the binder against the type of the
         -- bound expression.
-        (b11', k11')    
-         <- checkLetBindOfTypeM a xx table ctx t12 b11
+        (b', k11')    
+         <- checkLetBindOfTypeM a xx table ctx t12 b
 
         -- The right of the binding must have data kind.
         when (not $ isDataKind k11')
-         $ throw $ ErrorLetBindingNotData a xx b11' k11'
+         $ throw $ ErrorLetBindingNotData a xx b' k11'
           
-        return  ( LLet b11' x12'
-                , [b11']
+        return  ( LLet b' x12'
+                , [b']
                 , effs12
                 , clo12
                 , ctx')
 
 
 -- letrec ---------------------------------------
-checkLetsM !xx !table !ctx (LRec bxs)
+checkLetsM !_synthOK !xx !table !ctx (LRec bxs)
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let (bs, xs)    = unzip bxs
@@ -317,7 +341,7 @@ checkLetsM !xx !table !ctx (LRec bxs)
                 , clos_cut
                 , ctx_cut)
 
-checkLetsM _xx _config _ctx _lts
+checkLetsM _synthOK _xx _config _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"
 
 
@@ -339,7 +363,7 @@ checkLetBindOfTypeM
         => a                    -- ^ Annotation for error messages.
         -> Exp a n 
         -> Table a n
-        -> Context n            -- Local context
+        -> Context n            -- ^ Local context
         -> Type n 
         -> Bind n 
         -> CheckM a n (Bind n, Kind n)

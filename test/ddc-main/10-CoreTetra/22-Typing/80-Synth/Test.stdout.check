@@ -87,7 +87,41 @@ f g (g x)
 :!: Pure
 
 
--- Check existentials can be solved against a constructor type.
+-- Check existentials can be solved against a constructor type,
 (\(x y : Nat#). add# [Nat#] x y) 5#
 :*: Nat# -> Nat#
+:!: Pure
+
+
+-- Same thing without the eta expansion.
+add# [Nat#] 5#
+:*: Nat# -> Nat#
+:!: Pure
+
+
+-- Let bindings.
+let x : Nat# = 5# in
+add# [Nat#] x
+:*: Nat# -> Nat#
+:!: Pure
+
+
+-- Functional let binding.
+let f : Nat# -> Nat#
+      = \(x : Nat#). add# [Nat#] x 2# in
+f 3#
+:*: Nat#
+:!: Pure
+
+
+-- Multiple let bindings.
+-- TODO: need to update annots on bindings before popping context.
+let f : Nat# -> Nat#
+      = \(x : Nat#). x in
+let g : ?2 -> ?3
+      = \(f : ?6 -> ?7).\(z : ?6). f z in
+let h : ?8 -> ?9
+      = \(x : Nat#). add# [?8] x 2# in
+h (g f 5#)
+:*: Nat#
 :!: Pure
