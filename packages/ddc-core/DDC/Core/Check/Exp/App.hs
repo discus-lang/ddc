@@ -262,8 +262,8 @@ applyFunctionType a xx
          -- Oblivious application of a pure function.
          -- Computation of the function and argument may themselves have
          -- an effect, but the function application does not.
-         TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
-          | t11 `equivT` tArg
+         TApp (TApp (TCon (TyConSpec TcConFun)) _t11) t12
+--          | t11 `equivT` tArg
           -> return (t12, effsResult, closResult)
 
          -- Function with latent effect and closure.

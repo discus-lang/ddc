@@ -25,7 +25,7 @@ checkVarCon !table !ctx xx@(XVar a u) mode
         _ -> do ctrace  $ vcat
                         [ text "* Var Local"
                         , indent 2 $ ppr xx
-                        , text "  TYPE: " <> ppr t
+                        , text "  TYPE:  " <> ppr t
                         , indent 2 $ ppr ctx 
                         , empty ]
 
@@ -42,7 +42,7 @@ checkVarCon !table !ctx xx@(XVar a u) mode
  = do   ctrace  $ vcat
                 [ text "* Var Global"
                 , indent 2 $ ppr xx
-                , text "  TYPE: " <> ppr t
+                , text "  TYPE:  " <> ppr t
                 , indent 2 $ ppr ctx
                 , empty ]
 
@@ -80,6 +80,13 @@ checkVarCon !table !ctx xx@(XCon a dc) _
 
         -- Check that the constructor is in the data type declarations.
         checkDaConM config xx a dc
+
+        ctrace  $ vcat
+                [ text "* Con"
+                , indent 2 $ ppr xx
+                , text "  TYPE:  " <> ppr tCtor
+                , indent 2 $ ppr ctx
+                , empty ]
 
         -- Type of the data constructor.
         returnX a
