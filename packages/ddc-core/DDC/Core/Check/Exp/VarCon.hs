@@ -23,7 +23,7 @@ checkVarCon !table !ctx xx@(XVar a u) mode
           -> checkSub table a ctx xx tEx
 
         _ -> do ctrace  $ vcat
-                        [ text "* Var"
+                        [ text "* Var Local"
                         , indent 2 $ ppr xx
                         , text "  TYPE: " <> ppr t
                         , indent 2 $ ppr ctx 
@@ -39,12 +39,19 @@ checkVarCon !table !ctx xx@(XVar a u) mode
 
  -- Look in the global environment.
  |  Just t      <- Env.lookup u (tableTypeEnv table)
- = returnX a 
-        (\z -> XVar z u)
-        t
-        (Sum.empty kEffect)
-        (Set.singleton $ taggedClosureOfValBound t u)
-        ctx
+ = do   ctrace  $ vcat
+                [ text "* Var Global"
+                , indent 2 $ ppr xx
+                , text "  TYPE: " <> ppr t
+                , indent 2 $ ppr ctx
+                , empty ]
+
+        returnX a 
+                (\z -> XVar z u)
+                t
+                (Sum.empty kEffect)
+                (Set.singleton $ taggedClosureOfValBound t u)
+                ctx
 
  
  | otherwise

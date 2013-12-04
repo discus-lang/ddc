@@ -44,3 +44,10 @@
 -- Synthesizes annotation on lambda.
 :synth /\(r : Region). /\(a : Data). \x. readRef# [r] [a] x
 
+
+-- Insert two missing type arguments.
+:synth \x. readRef# x
+
+
+-- Insert one missing type argument.
+:synth /\(r : Region). \x. readRef# [r] x

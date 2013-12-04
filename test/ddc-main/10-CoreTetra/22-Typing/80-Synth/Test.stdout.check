@@ -73,3 +73,15 @@ f g (g x)
 :*: [r : Region].[a : Data].Ref# r a -> S (Read r) a
 :!: Pure
 
+
+-- Insert two missing type arguments.
+\(x : Ref# ?2 ?3). readRef# [?2] [?3] x
+:*: Ref# ?2 ?3 -> S (Read ?2) ?3
+:!: Pure
+
+
+-- Insert one missing type argument.
+/\(r : Region).
+ \(x : Ref# r ?2). readRef# [r] [?2] x
+:*: [r : Region].Ref# r ?2 -> S (Read r) ?2
+:!: Pure
