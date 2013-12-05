@@ -76,3 +76,12 @@ let g = \f. \z. f z in
 let h = \x. add# x 2# in
 h (g f 5#)
 ;;
+
+
+-- As above, but use function binding syntax.
+:synth..
+let f x   = x in
+let g f z = f z in
+let h x   = add# x 2# in
+h (g f 5#)
+;;

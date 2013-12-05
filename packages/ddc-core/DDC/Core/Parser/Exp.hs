@@ -36,7 +36,6 @@ pExp c
         xBody   <- pExp c
         return  $ foldr (XLam sp) xBody bs
 
-
         -- Level-1 lambda abstractions.
         -- /\BINDS.. . EXP
  , do   sp      <- pTokSP KBigLambda
@@ -45,13 +44,11 @@ pExp c
         xBody   <- pExp c
         return  $ foldr (XLAM sp) xBody bs
 
-
         -- let expression
  , do   (lts, sp) <- pLetsSP c
         pTok    KIn
         x2      <- pExp c
         return  $ XLet sp lts x2
-
 
         -- do { STMTS }
         --   Sugar for a let-expression.
@@ -60,7 +57,6 @@ pExp c
         xx      <- pStmts c
         pTok    KBraceKet
         return  $ xx
-
 
         -- withregion CON in EXP
  , do   sp      <- pTokSP KWithRegion
@@ -74,7 +70,6 @@ pExp c
         x       <- pExp c
         return  $ XLet sp (LWithRegion u) x
 
-
         -- case EXP of { ALTS }
  , do   sp      <- pTokSP KCase
         x       <- pExp c
@@ -83,7 +78,6 @@ pExp c
         alts    <- P.sepEndBy1 (pAlt c) (pTok KSemiColon)
         pTok KBraceKet
         return  $ XCase sp x alts
-
 
         -- letcase PAT = EXP in EXP
  , do   --  Sugar for a single-alternative case expression.
@@ -94,7 +88,6 @@ pExp c
         pTok KIn
         x2      <- pExp c
         return  $ XCase sp x1 [AAlt p x2]
-
 
         -- match PAT <- EXP else EXP in EXP
         --  Sugar for a case-expression.
@@ -108,7 +101,6 @@ pExp c
         x3      <- pExp c
         return  $ XCase sp x1 [AAlt p x3, AAlt PDefault x2]
 
-
         -- weakeff [TYPE] in EXP
  , do   sp      <- pTokSP KWeakEff
         pTok KSquareBra
@@ -117,7 +109,6 @@ pExp c
         pTok KIn
         x       <- pExp c
         return  $ XCast sp (CastWeakenEffect t) x
-
 
         -- weakclo {EXP;+} in EXP
  , do   sp      <- pTokSP KWeakClo
@@ -129,14 +120,12 @@ pExp c
         x       <- pExp c
         return  $ XCast sp (CastWeakenClosure xs) x
 
-
         -- purify WITNESS in EXP
  , do   sp      <- pTokSP KPurify
         w       <- pWitness c
         pTok KIn
         x       <- pExp c
         return  $ XCast sp (CastPurify w) x
-
 
         -- forget WITNESS in EXP
  , do   sp      <- pTokSP KForget
@@ -145,18 +134,15 @@ pExp c
         x       <- pExp c
         return  $ XCast sp (CastForget w) x
 
-
         -- box EXP
  , do   sp      <- pTokSP KBox
         x       <- pExp c
         return  $ XCast sp CastBox x
 
-
         -- run EXP
  , do   sp      <- pTokSP KRun
         x       <- pExp c
         return  $ XCast sp CastRun x
-
 
         -- APP
  , do   pExpApp c
@@ -439,7 +425,8 @@ pLetBinding c
         
                 P.choice
                  [ do   -- Function syntax with a return type.
-                        -- We can make the full type sig for the let-bound variable.
+                        -- We can make the full type sig for the let-bound
+                        -- variable.
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
                         pTok (KOp ":")
                         tBody   <- pType c
@@ -486,8 +473,9 @@ pLetRecBinding  c
 
          , do   -- Binding using function syntax.
                 --  BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
+                -- We require type annotations on function parameters in letrec.
                 ps      <- liftM concat 
-                        $  P.many (pBindParamSpec c)
+                        $  P.many (pBindParamSpecAnnot c)
         
                 pTok (KOp ":")
                 tBody   <- pType c

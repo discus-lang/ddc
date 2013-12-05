@@ -3,7 +3,8 @@ module DDC.Core.Parser.Param
         ( ParamSpec     (..)
         , funTypeOfParams
         , expOfParams
-        , pBindParamSpec)
+        , pBindParamSpecAnnot
+        , pBindParamSpec )
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Type
@@ -76,17 +77,37 @@ funTypeOfParams c (p:ps) tBody
                 $ funTypeOfParams c ps tBody
 
 
--- | Parse a parameter specification.
+-- | Parse a function parameter specification,
+--   with an optional type (or kind) annotation.
+--   Missing annotations are filled in with TBot.
+pBindParamSpec
+        :: Ord n
+        => Context -> Parser n [ParamSpec n]
+
+pBindParamSpec c
+ = P.choice
+ [      -- Value (or type) binder with a type (or kind) annotation.
+        pBindParamSpecAnnot c
+
+        -- Value binder without type annotations.
+  , do  b       <- pBinder
+        return  $  [ ParamValue (T.makeBindFromBinder b (T.tBot T.kData))
+                                (T.tBot T.kEffect) (T.tBot T.kClosure) ]
+ ]
+
+
+-- | Parse a function parameter specification,
+--   requiring a full type (or kind) annotation.
 --
 --       [BIND1 BIND2 .. BINDN : TYPE]
 --   or  (BIND : TYPE)
 --   or  (BIND : TYPE) { EFFECT | CLOSURE }
 --
-pBindParamSpec 
+pBindParamSpecAnnot 
         :: Ord n 
         => Context -> Parser n [ParamSpec n]
 
-pBindParamSpec c
+pBindParamSpecAnnot c
  = P.choice
         -- Type parameter
         -- [BIND1 BIND2 .. BINDN : TYPE]
@@ -98,7 +119,6 @@ pBindParamSpec c
         return  [ ParamType b 
                 | b <- zipWith T.makeBindFromBinder bs (repeat t)]
 
-
         -- Witness parameter
         -- {BIND : TYPE}
  , do   pTok KBraceBra
@@ -108,7 +128,7 @@ pBindParamSpec c
         pTok KBraceKet
         return  [ ParamWitness $ T.makeBindFromBinder b t]
 
-        -- Value parameter
+        -- Value parameter with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
         -- (BIND1 BIND2 .. BINDN : TYPE) { TYPE | TYPE }
  , do   pTok KRoundBra

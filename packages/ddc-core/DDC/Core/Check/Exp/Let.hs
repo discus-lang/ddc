@@ -151,14 +151,14 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
                 -- region then the overall effect is to allocate into 
                 -- the parent.
                 Just tParent
-                  -> do  return $ (lowerT depth $ foldl delEff effs us)
-                                 `Sum.union` (Sum.singleton kEffect (tAlloc tParent))
+                  -> return $ (lowerT depth $ foldl delEff effs us)
+                           `Sum.union` (Sum.singleton kEffect (tAlloc tParent))
 
                 -- If the bound region variables have no parent then they
                 -- are deallocated when the private construct ends and no
                 -- effect on these regions is visible.
-                _ -> do  return $ lowerT depth 
-                                $ foldl delEff effs us 
+                _ -> return $ lowerT depth 
+                            $ foldl delEff effs us 
 
         -- Delete the bound region variable from the closure.
         -- Mask closure terms due to locally bound region vars.
@@ -184,7 +184,9 @@ checkLet !table !ctx xx@(XLet a (LWithRegion u) x) tXX
         -- The handle must have region kind.
         -- We need to look in the KindEnv as well as the Context here, 
         --  because the KindEnv knows the types of primitive variables.
-        (case listToMaybe  $ catMaybes [Env.lookup u kenv, liftM fst $ lookupKind u ctx] of
+        (case listToMaybe  
+                $ catMaybes [ Env.lookup u kenv
+                            , liftM fst $ lookupKind u ctx] of
           Nothing -> throw $ ErrorUndefinedVar a u UniverseSpec
 
           Just k  |  not $ isRegionKind k

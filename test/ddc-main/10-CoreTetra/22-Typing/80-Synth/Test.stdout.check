@@ -124,3 +124,15 @@ let h : Nat# -> Nat#
 h (g f 5#)
 :*: Nat#
 :!: Pure
+
+
+-- As above, but use function binding syntax.
+let f : Nat# -> Nat#
+      = \(x : Nat#). x in
+let g : (Nat# -> Nat#) -> Nat# -> Nat#
+      = \(f : Nat# -> Nat#).\(z : Nat#). f z in
+let h : Nat# -> Nat#
+      = \(x : Nat#). add# [Nat#] x 2# in
+h (g f 5#)
+:*: Nat#
+:!: Pure
