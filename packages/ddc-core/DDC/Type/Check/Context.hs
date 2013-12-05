@@ -32,6 +32,7 @@ module DDC.Type.Check.Context
         , updateExists
 
         , applyContext
+        , applySolved
         , effectSupported
 
         , liftTypes
@@ -438,7 +439,12 @@ lowerTypes n ctx
 
 
 -- Apply ----------------------------------------------------------------------
--- | Apply a context to a type, updating any existentials in it.
+-- | Apply a context to a type, updating any existentials in the type. This
+--   uses just the solved constraints on the stack, but not in the solved set.
+--
+--   This function is used during the algorithm proper, whereas we use
+--   `applySolved` below to update annotations in the larger program after
+--   type inference has completed.
 applyContext :: Ord n => Context n -> Type n -> Type n
 applyContext ctx tt
  = case tt of
@@ -449,17 +455,41 @@ applyContext ctx tt
          -> applyContext ctx t
 
         TCon{}          -> tt
+        TForall b t     -> TForall b (applyContext ctx t)
+        TApp t1 t2      -> TApp (applyContext ctx t1) (applyContext ctx t2)
 
-        TForall b t
-         -> TForall b (applyContext ctx t)
+        TSum ts         
+         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
+                 $ map (applyContext ctx)
+                 $ Sum.toList ts
 
-        TApp t1 t2
-         -> TApp (applyContext ctx t1) (applyContext ctx t2)
+
+-- | Apply the solved constraints in a context to a type, updating any
+--   existentials in the type. This uses constraints on the stack as well
+--   as in the solved constraints set.
+--   
+--   This function is used after the algorithm proper, to update existentials
+--   in annotations in the larger program.
+applySolved :: Ord n => Context n -> Type n -> Type n
+applySolved ctx tt
+ = case tt of
+        TVar{}          -> tt
+
+        TCon (TyConExists i _)
+         | Just t       <- IntMap.lookup i (contextSolved ctx)
+         -> applySolved ctx t
+
+         | Just t       <- lookupExistsEq (Exists i) ctx
+         -> applySolved ctx t
+
+        TCon {}         -> tt
+        TForall b t     -> TForall b (applySolved ctx t)
+        TApp t1 t2      -> TApp (applySolved ctx t1) (applySolved ctx t2)
 
         TSum ts
-         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
-         $  map (applyContext ctx)
-         $  Sum.toList ts
+         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
+                 $ map (applySolved ctx)
+                 $ Sum.toList ts
 
 
 -- Support --------------------------------------------------------------------

@@ -75,18 +75,18 @@ checkExp !config !kenv !tenv !xx !mode
                 
                 -- Apply the final context to the annotations in expressions.
                 let applyToAnnot (AnTEC t0 e0 c0 x0)
-                        = AnTEC (applyContext ctx t0)
-                                (applyContext ctx e0)
-                                (applyContext ctx c0)
+                        = AnTEC (applySolved ctx t0)
+                                (applySolved ctx e0)
+                                (applySolved ctx c0)
                                 x0
 
                 let xx'' = reannotate applyToAnnot 
-                         $ mapT (applyContext ctx) xx'
+                         $ mapT (applySolved ctx) xx'
 
                 -- Apply the final context to the overall types of the expression.
-                let t'   = applyContext ctx t
-                let e'   = applyContext ctx $ TSum effs
-                let c'   = applyContext ctx $ closureOfTaggedSet clos
+                let t'   = applySolved ctx t
+                let e'   = applySolved ctx $ TSum effs
+                let c'   = applySolved ctx $ closureOfTaggedSet clos
 
                 return  (xx'', t', e', c')
   
