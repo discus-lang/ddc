@@ -115,13 +115,12 @@ f 3#
 
 
 -- Multiple let bindings.
--- TODO: need to update annots on bindings before popping context.
 let f : Nat# -> Nat#
       = \(x : Nat#). x in
-let g : ?2 -> ?3
-      = \(f : ?6 -> ?7).\(z : ?6). f z in
-let h : ?8 -> ?9
-      = \(x : Nat#). add# [?8] x 2# in
+let g : (Nat# -> Nat#) -> Nat# -> Nat#
+      = \(f : Nat# -> Nat#).\(z : Nat#). f z in
+let h : Nat# -> Nat#
+      = \(x : Nat#). add# [Nat#] x 2# in
 h (g f 5#)
 :*: Nat#
 :!: Pure

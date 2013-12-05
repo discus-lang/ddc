@@ -191,23 +191,19 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         -- Synthesise the result type of a function being applied to its 
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
-        (XApp _ xFn' (XType _ tA')
-         , xArg', tResult, effsResult, closResult, ctx2)
+        (  xFnTy', xArg', tResult, effsResult, closResult, ctx2)
          <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn closFn xArg
-
-        let tA''  = applyContext ctx2 tA'
-        let xFn'' = XApp aFn xFn' (XType aArg tA'')
 
         ctrace  $ vcat
                 [ text "* App Synth Forall"
-                , text "      xFn:  " <> ppr xFn''
+                , text "      xFn:  " <> ppr xFnTy'
                 , text "     tArg:  " <> ppr xArg'
                 , text "      tFn:  " <> ppr tFn
                 , text "  tResult:  " <> ppr tResult
                 , indent 2 $ ppr ctx2
                 , empty ]
 
-        return  ( xFn''
+        return  ( xFnTy'
                 , xArg'
                 , tResult, effsResult, closResult, ctx2)
 

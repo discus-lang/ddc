@@ -54,7 +54,7 @@ checkLet !table !ctx xx@(XLet a lts x2) mode
 
         -- The new effect and closure.
         let tResult     = applyContext ctx3 t2
-        let effs'       = effs12 `Sum.union` effs2      -- TODO: apply context to effect
+        let effs'       = effs12 `Sum.union` effs2
         let clos'       = clo12  `Set.union` c2_cut
 
         -- Pop the elements due to the let-bindings from the context.
@@ -72,8 +72,9 @@ checkLet !table !ctx xx@(XLet a lts x2) mode
 
 
 -- private --------------------------------------
--- TODO: when checking this we need to ensure there are no unsolved
---       existentials in the type of the body expression.
+-- TODO: when checking this we need to make sure to update the effect
+--       from the context before checking for escaping regions.
+--
 checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table ctx x Recon

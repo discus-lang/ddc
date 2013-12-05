@@ -70,7 +70,6 @@
 
 
 -- Multiple let bindings.
--- TODO: need to update annots on bindings before popping context.
 :synth..
 let f = \x. x in
 let g = \f. \z. f z in

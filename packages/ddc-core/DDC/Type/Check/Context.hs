@@ -394,8 +394,9 @@ updateExists
         -> Context n 
         -> Context n
 
-updateExists isMore iEx tEx ctx
- = ctx { contextElems = go $ contextElems ctx }
+updateExists isMore iEx@(Exists iEx') tEx ctx
+ = ctx  { contextElems  = go $ contextElems ctx 
+        , contextSolved = IntMap.insert iEx' tEx (contextSolved ctx) }
  where
         go ls
          = case ls of
