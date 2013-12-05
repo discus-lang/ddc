@@ -95,3 +95,9 @@ in  f 5#
 ;;
 
 
+-- Synthesis in the right of a letrec with a full annotation.
+:synth..
+letrec f (x : Nat#) : Nat# = (\z. z) x
+in  f 5#
+;;
+

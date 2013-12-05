@@ -251,23 +251,8 @@ checkLetsM !bidir !xx !table !ctx (LLet b xBody)
  = do   let a           = annotOfExp xx
 
         -- Decide how to check the right of the binding.
-        let mode        
-                -- If we're not doing bidirectional type inference then just
-                -- reconstruct the type.
-                | not bidir     
-                = Recon
-
-                -- With bidirectional type inferece, if we have an annotation
-                -- for the binder then use that as the expected type.
-                | tBind <- typeOfBind b
-                , not $ isBot tBind
-                = Check tBind
-
-                -- With bidirectional type inference, if there is no annotation
-                -- then we synthesise the type of the binding.
-                | otherwise
-                = Synth
-
+        let mode        = checkModeFromBind bidir b
+                
         -- Check the right of the binding.
         (xBody', tBody, effsBody, cloBody, ctx') 
          <- tableCheckExp table table ctx xBody mode
@@ -289,7 +274,7 @@ checkLetsM !bidir !xx !table !ctx (LLet b xBody)
 
 
 -- letrec ---------------------------------------
-checkLetsM !_synthOK !xx !table !ctx (LRec bxs)
+checkLetsM !bidir !xx !table !ctx (LRec bxs)
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let (bs, xs)    = unzip bxs
@@ -320,15 +305,11 @@ checkLetsM !_synthOK !xx !table !ctx (LRec bxs)
         let ctx1         = pushTypes bs' ctx'
 
         -- Check the right hand sides.
-        -- Ignore the returned contet because the order of alternatives should
-        --  not matter for type inference.
-        (xsRight', tsRight, _effssBinds, clossBinds, _)
-                <- liftM unzip5
-                $  mapM (\(_b, x) -> let -- tB      = typeOfBind b
-                                        -- mode    = if isBot tB then Recon else Check tB
-                                        mode    = Recon
-                                    in  tableCheckExp table table ctx1 x mode) 
-                $  zip bs xs
+        --   The context will not contain any more variable bindings,
+        --   but it may contain more solved existentials.
+        (results, ctx2) <- checkRecBinds bidir xx table ctx1 (zip bs xs)
+        let (_, xsRight', tsRight, _effssBinds, clossBinds)
+                        = unzip5 results
 
         -- Check annots on binders against inferred types of the bindings.
         zipWithM_ (\b t
@@ -345,7 +326,7 @@ checkLetsM !_synthOK !xx !table !ctx (LRec bxs)
                 $ Set.unions clossBinds
 
         -- Pop types of the bindings from the stack.
-        let ctx_cut = popToPos pos1 ctx1
+        let ctx_cut = popToPos pos1 ctx2
 
         return  ( LRec (zip bs' xsRight')
                 , zipWith replaceTypeOfBind tsRight bs'
@@ -355,6 +336,66 @@ checkLetsM !_synthOK !xx !table !ctx (LRec bxs)
 
 checkLetsM _synthOK _xx _config _ctx _lts
         = error "checkLetsM: case should have been handled in checkExpM"
+
+
+-------------------------------------------------------------------------------
+-- | Check some recursive bindings.
+--   Doing this won't push any more bindings onto the context,
+--   though it may solve some existentials in it.
+checkRecBinds 
+        :: (Pretty n, Show n, Ord n)
+        => Bool                         -- ^ Allow bidirectional checking.
+        -> Exp a n                      -- ^ Expression for error messages.
+        -> Table a n
+        -> Context n                    -- ^ Original context.
+        -> [(Bind n, Exp a n)]          -- ^ Bindings and exps for rec bindings.
+        -> CheckM a n 
+                ( [ ( Bind n                   -- Result bindiner.
+                    , Exp (AnTEC a n) n        -- Result expression.
+                    , Type n                   -- Result type.
+                    , TypeSum n                -- Result effect.
+                    , Set (TaggedClosure n))]  -- Result closure.
+                , Context n)
+
+checkRecBinds bidir _xx table ctx0 bxs0
+ = go bxs0 ctx0
+ where  go [] ctx       
+         =      return ([], ctx)
+        
+        go ((b, x) : bxs) ctx
+         = do   let mode  = checkModeFromBind bidir b
+
+                (x', t, effs, clos, ctx') 
+                 <- tableCheckExp table table ctx x mode
+
+                (moar, ctx'') <- go bxs ctx'
+
+                return $ ((b, x', t, effs, clos) : moar, ctx'')
+
+
+-- | Based on the annotation of a let-binding,
+--   decide how to type check the right of the binding.
+checkModeFromBind 
+        :: Bool         -- ^ Allow bi-directional type checking.
+        -> Bind n       -- ^ Binder of the let-binding.
+        -> Mode n
+
+checkModeFromBind bidir b 
+        -- If we're not doing bidirectional type inference then just
+        -- reconstruct the type.
+        | not bidir     
+        = Recon
+
+        -- With bidirectional type inferece, if we have an annotation
+        -- for the binder then use that as the expected type.
+        | tBind <- typeOfBind b
+        , not $ isBot tBind
+        = Check tBind
+
+        -- With bidirectional type inference, if there is no annotation
+        -- then we synthesise the type of the binding.
+        | otherwise
+        = Synth
 
 
 -- | Take elements of a list that have more than once occurrence.

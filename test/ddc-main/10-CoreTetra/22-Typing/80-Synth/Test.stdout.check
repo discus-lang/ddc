@@ -148,3 +148,13 @@ f 5#
 :!: Pure
 
 
+-- Synthesis in the right of a letrec with a full annotation.
+letrec {
+  f : Nat# -> Nat#
+    = \(x : Nat#).
+      (\(z : Nat#). z) x
+} in
+f 5#
+:*: Nat#
+:!: Pure
+
