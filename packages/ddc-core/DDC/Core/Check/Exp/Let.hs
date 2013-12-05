@@ -247,35 +247,44 @@ checkLetsM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkLetsM !bidir !xx !table !ctx (LLet b x12)
+checkLetsM !bidir !xx !table !ctx (LLet b xBody)
  = do   let a           = annotOfExp xx
 
-        -- If the type of the binding is Bot then use synthesis.
-        let tBind       = typeOfBind b
-        let mode        = if bidir && isBot tBind
-                                then Synth
-                                else Recon
-        
-        -- TODO: With bidir checking allow annotation on let-binding
-        -- to be a subtype of the inferred type.
+        -- Decide how to check the right of the binding.
+        let mode        
+                -- If we're not doing bidirectional type inference then just
+                -- reconstruct the type.
+                | not bidir     
+                = Recon
+
+                -- With bidirectional type inferece, if we have an annotation
+                -- for the binder then use that as the expected type.
+                | tBind <- typeOfBind b
+                , not $ isBot tBind
+                = Check tBind
+
+                -- With bidirectional type inference, if there is no annotation
+                -- then we synthesise the type of the binding.
+                | otherwise
+                = Synth
 
         -- Check the right of the binding.
-        (x12', t12, effs12, clo12, ctx') 
-         <- tableCheckExp table table ctx x12 mode
+        (xBody', tBody, effsBody, cloBody, ctx') 
+         <- tableCheckExp table table ctx xBody mode
 
         -- Check the annotation on the binder against the type of the
         -- bound expression.
-        (b', k11')    
-         <- checkLetBindOfTypeM a xx table ctx t12 b
+        (b', kBody')    
+         <- checkLetBindOfTypeM a xx table ctx tBody b
 
         -- The right of the binding must have data kind.
-        when (not $ isDataKind k11')
-         $ throw $ ErrorLetBindingNotData a xx b' k11'
+        when (not $ isDataKind kBody')
+         $ throw $ ErrorLetBindingNotData a xx b' kBody'
           
-        return  ( LLet b' x12'
+        return  ( LLet b' xBody'
                 , [b']
-                , effs12
-                , clo12
+                , effsBody
+                , cloBody
                 , ctx')
 
 

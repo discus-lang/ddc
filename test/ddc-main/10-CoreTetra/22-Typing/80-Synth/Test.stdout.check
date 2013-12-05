@@ -136,3 +136,15 @@ let h : Nat# -> Nat#
 h (g f 5#)
 :*: Nat#
 :!: Pure
+
+
+-- Synthesis still runs in the right of a binding with a 
+-- full type annotation.
+let f : Nat# -> Nat#
+      = \(x : Nat#).
+        (\(z : Nat#). z) x in
+f 5#
+:*: Nat#
+:!: Pure
+
+

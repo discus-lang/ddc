@@ -85,3 +85,13 @@ let g f z = f z in
 let h x   = add# x 2# in
 h (g f 5#)
 ;;
+
+
+-- Synthesis still runs in the right of a binding with a 
+-- full type annotation.
+:synth..
+let f (x : Nat#) : Nat# = (\z. z) x
+in  f 5#
+;;
+
+
