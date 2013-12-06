@@ -12,17 +12,20 @@ import Data.List                as L
 checkCase :: Checker a n
 
 -- case expression ------------------------------
-checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
+checkCase !table !ctx xx@(XCase a xDiscrim alts) mode
  = do   let config      = tableConfig table
+
+        -- Decide what mode to use when checking the discriminant.
+        modeDiscrim     <- takeDiscrimCheckModeFromAlts mode alts
 
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctxDiscrim) 
-         <- tableCheckExp table table ctx xDiscrim Recon
+         <- tableCheckExp table table ctx xDiscrim modeDiscrim
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
         -- type etc. 
-        (mmode, tsArgs)
+        (mDataMode, tsArgs)
          <- case takeTyConApps tDiscrim of
                 Just (tc, ts)
                  | TyConSpec TcConUnit         <- tc
@@ -47,8 +50,8 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
 
         -- Get the mode of the data type, 
         --   this tells us how many constructors there are.
-        mode    
-         <- case mmode of
+        dataMode    
+         <- case mDataMode of
              Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared a xx tDiscrim
              Just m  -> return m
 
@@ -57,12 +60,8 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
         --  should not matter for type inference.
         (alts', ts, effss, closs, _)
                 <- liftM unzip5
-                $  mapM (\alt -> checkAltM xx table tDiscrim tsArgs ctxDiscrim alt mtXX) 
+                $  mapM (\alt -> checkAltM xx table tDiscrim tsArgs ctxDiscrim alt mode) 
                 $  alts
-
-        -- There must be at least one alternative
-        when (null ts)
-         $ throw $ ErrorCaseNoAlternatives a xx
 
         -- All alternative result types must be identical.
         let (tAlt : _)  = ts
@@ -71,55 +70,10 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
              $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
-        let pats                = [p | AAlt p _ <- alts]
-        let psDefaults          = filter isPDefault pats
-        let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
-
-        -- Alts were overlapping because there are multiple defaults.
-        when (length psDefaults > 1)
-         $ throw $ ErrorCaseOverlapping a xx
-
-        -- Alts were overlapping because the same ctor is used multiple times.
-        when (length (nub nsCtorsMatched) /= length nsCtorsMatched )
-         $ throw $ ErrorCaseOverlapping a xx
-
-        -- Check for alts overlapping because a default is not last.
-        -- Also check there is at least one alternative.
-        (case pats of
-          [] -> throw $ ErrorCaseNoAlternatives a xx
-
-          _  |  Just patsInit <- takeInit pats
-             ,  or $ map isPDefault $ patsInit
-             -> throw $ ErrorCaseOverlapping a xx
-
-             |  otherwise
-             -> return ())
+        checkAltsOverlapping a xx alts
 
         -- Check that alternatives are exhaustive.
-        (case mode of
-
-          -- Small types have some finite number of constructors.
-          DataModeSmall nsCtors
-           -- If there is a default alternative then we've covered all the
-           -- possibiliies. We know this we've also checked for overlap.
-           | any isPDefault [p | AAlt p _ <- alts]
-           -> return ()
-
-           -- Look for unmatched constructors.
-           | nsCtorsMissing <- nsCtors \\ nsCtorsMatched
-           , not $ null nsCtorsMissing
-           -> throw $ ErrorCaseNonExhaustive a xx nsCtorsMissing
-
-           -- All constructors were matched.
-           | otherwise 
-           -> return ()
-
-          -- Large types have an effectively infinite number of constructors
-          -- (like integer literals), so there needs to be a default alt.
-          DataModeLarge 
-           | any isPDefault [p | AAlt p _ <- alts] -> return ()
-           | otherwise  
-           -> throw $ ErrorCaseNonExhaustiveLarge a xx)
+        checkAltsExhaustive a xx dataMode alts
 
         let effsMatch    
                 = Sum.singleton kEffect 
@@ -135,6 +89,27 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mtXX
 checkCase _ _ _ _
         = error "ddc-core.checkCase: no match"
 
+
+-- | Decide what type checker mode to use when checking the discriminant
+--   of a case expression. 
+--
+--   With plain type reconstruction then we also reconsruct the discrim type.
+--
+--   With bidirectional checking we use the type of the patterns as 
+--   the expected type when checking the discriminant.
+--
+takeDiscrimCheckModeFromAlts
+        :: Mode n               -- ^ Mode for checking enclosing case expression.
+        -> [Alt a n]            -- ^ Alternatives in the case expression.
+        -> CheckM a n (Mode n)
+
+takeDiscrimCheckModeFromAlts mode _alts
+ | Recon        <- mode
+ = return Recon
+
+ | otherwise
+ = return Recon
+        
 
 -------------------------------------------------------------------------------
 -- | Check a case alternative.
@@ -265,4 +240,86 @@ mergeAnnot !a !xx !tAnnot !tActual
         -- Annotation does not match actual type.
         | otherwise       
         = throw $ ErrorCaseFieldTypeMismatch a xx tAnnot tActual
+
+
+-- Checks ---------------------------------------------------------------------
+-- | Check for overlapping alternatives, 
+--   and throw an error in the `CheckM` monad if there are any.
+checkAltsOverlapping
+        :: Eq n
+        => a                    -- ^ Annotation for error messages.
+        -> Exp a n              -- ^ Expression for error messages.
+        -> [Alt a n]            -- ^ Alternatives to check.
+        -> CheckM a n ()
+
+checkAltsOverlapping a xx alts
+ = do   let pats                = [p | AAlt p _ <- alts]
+        let psDefaults          = filter isPDefault pats
+        let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
+
+        -- Alts were overlapping because there are multiple defaults.
+        when (length psDefaults > 1)
+         $ throw $ ErrorCaseOverlapping a xx
+
+        -- Alts were overlapping because the same ctor is used multiple times.
+        when (length (nub nsCtorsMatched) /= length nsCtorsMatched )
+         $ throw $ ErrorCaseOverlapping a xx
+
+        -- Check for alts overlapping because a default is not last.
+        -- Also check there is at least one alternative.
+        case pats of
+          [] -> throw $ ErrorCaseNoAlternatives a xx
+
+          _  |  Just patsInit <- takeInit pats
+             ,  or $ map isPDefault $ patsInit
+             -> throw $ ErrorCaseOverlapping a xx
+
+             |  otherwise
+             -> return ()
+
+
+-- | Check that the alternatives are exhaustive,
+--   and throw and error if they're not.
+checkAltsExhaustive
+        :: Eq n
+        => a                    -- ^ Annotation for error messages.
+        -> Exp a n              -- ^ Expression for error messages.
+        -> DataMode n           -- ^ Mode of data type.
+                                --   Tells us how many data constructors to expect.
+        -> [Alt a n]            -- ^ Alternatives to check.
+        -> CheckM a n ()
+
+checkAltsExhaustive a xx mode alts
+ = do   let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
+
+        -- There must be at least one alternative,
+        -- even if there are no data constructors.
+        when (null alts)
+         $ throw $ ErrorCaseNoAlternatives a xx
+        
+        -- Check that alternatives are exhaustive.
+        case mode of
+
+          -- Small types have some finite number of constructors.
+          DataModeSmall nsCtors
+           -- If there is a default alternative then we've covered all the
+           -- possibiliies. We know this we've also checked for overlap.
+           | any isPDefault [p | AAlt p _ <- alts]
+           -> return ()
+
+           -- Look for unmatched constructors.
+           | nsCtorsMissing <- nsCtors \\ nsCtorsMatched
+           , not $ null nsCtorsMissing
+           -> throw $ ErrorCaseNonExhaustive a xx nsCtorsMissing
+
+           -- All constructors were matched.
+           | otherwise 
+           -> return ()
+
+          -- Large types have an effectively infinite number of constructors
+          -- (like integer literals), so there needs to be a default alt.
+          DataModeLarge 
+           | any isPDefault [p | AAlt p _ <- alts] -> return ()
+           | otherwise  
+           -> throw $ ErrorCaseNonExhaustiveLarge a xx
 
