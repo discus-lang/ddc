@@ -109,7 +109,7 @@ takeDiscrimCheckModeFromAlts mode _alts
 
  | otherwise
  = return Recon
-        
+
 
 -------------------------------------------------------------------------------
 -- | Check a case alternative.
@@ -144,26 +144,11 @@ checkAltM !_xx !table !_tDiscrim !_tsArgs !ctx
 
 checkAltM !xx !table !tDiscrim !tsArgs !ctx 
           (AAlt (PData dc bsArg) xBody) dXX
- = do   let config      = tableConfig table
-        let a           = annotOfExp xx
+ = do   let a           = annotOfExp xx
 
-        -- If the data constructor isn't defined then the spread 
-        --  transform won't have given it a proper type.
-        --  Note that we can't simply check whether the constructor is in the
-        --  environment because literals like 42# never are.
-        tCtor
-         <- case dc of
-             DaConUnit   -> return tUnit
-             DaConPrim{} -> return $ daConType dc
-     
-             DaConBound n
-              -- Types of algebraic data ctors should be in the defs table.
-              |  Just ctor <- Map.lookup n (dataDefsCtors $ configDataDefs config)
-              -> return $ typeOfDataCtor ctor
-
-              | otherwise
-              -> throw  $ ErrorUndefinedCtor a $ XCon a dc
-
+        -- Get teh constructor type associated with this pattern.
+        Just tCtor <- ctorTypeOfPat a table (PData dc bsArg)
+         
         -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
         -- If the ctor type doesn't instantiate then it won't have enough foralls 
@@ -240,6 +225,38 @@ mergeAnnot !a !xx !tAnnot !tActual
         -- Annotation does not match actual type.
         | otherwise       
         = throw $ ErrorCaseFieldTypeMismatch a xx tAnnot tActual
+
+
+-- Ctor Types -----------------------------------------------------------------
+-- | Get the constructor type associated with a pattern, or Nothing for the
+--   default pattern. If the data constructor isn't defined then the spread 
+--   transform won't have given it a proper type.
+--   Note that we can't simply check whether the constructor is in the
+---  environment because literals like 42# never are.
+ctorTypeOfPat
+        :: Ord n 
+        => a
+        -> Table a n
+        -> Pat n
+        -> CheckM a n (Maybe (Type n))
+
+ctorTypeOfPat a table (PData dc _)
+ = case dc of
+        DaConUnit   -> return $ Just $ tUnit
+        DaConPrim{} -> return $ Just $ daConType dc
+     
+        DaConBound n
+         -- Types of algebraic data ctors should be in the defs table.
+         |  Just ctor <- Map.lookup n 
+                                $ dataDefsCtors 
+                                $ configDataDefs $ tableConfig table
+         -> return $ Just $ typeOfDataCtor ctor
+
+         | otherwise
+         -> throw  $ ErrorUndefinedCtor a $ XCon a dc
+
+ctorTypeOfPat _a _table PDefault
+ = return Nothing
 
 
 -- Checks ---------------------------------------------------------------------
