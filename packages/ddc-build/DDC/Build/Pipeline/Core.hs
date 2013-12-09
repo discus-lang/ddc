@@ -70,6 +70,7 @@ data PipeCore a n where
   PipeCoreCheck      
         :: Pretty a
         => !(Fragment n err)
+        -> !(C.Mode n)
         -> ![PipeCore (C.AnTEC a n) n]
         -> PipeCore a n
 
@@ -77,6 +78,7 @@ data PipeCore a n where
   PipeCoreReCheck
         :: (NFData a, Show a, Pretty a)
         => !(Fragment n err)
+        -> !(C.Mode n)
         -> ![PipeCore (C.AnTEC a n)  n]
         -> PipeCore  (C.AnTEC a n') n
 
@@ -147,12 +149,12 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreOutput" #-}
             pipeSink (renderIndent $ ppr mm) sink
 
-        PipeCoreCheck !fragment !pipes
+        PipeCoreCheck !fragment !mode !pipes
          -> {-# SCC "PipeCoreCheck" #-}
             let profile         = fragmentProfile fragment
 
                 goCheck mm1
-                 = case C.checkModule (C.configOfProfile profile) mm1 of
+                 = case C.checkModule (C.configOfProfile profile) mm1 mode of
                         (Left err,  _ct) -> return [ErrorLint err]
                         (Right mm2, _ct) -> goComplies mm2
 
@@ -163,10 +165,10 @@ pipeCore !mm !pp
 
              in goCheck mm
 
-        PipeCoreReCheck !fragment !pipes
+        PipeCoreReCheck !fragment !mode !pipes
          -> {-# SCC "PipeCoreReCheck" #-}
             pipeCore (C.reannotate C.annotTail mm)
-         $  PipeCoreCheck fragment pipes
+         $  PipeCoreCheck fragment mode pipes 
 
         PipeCoreReannotate f !pipes
          -> {-# SCC "PipeCoreStrip" #-}
@@ -388,7 +390,7 @@ pipeFlow !mm !pp
                                         mm_namified
 
                 mm_rate
-                 = case C.checkModule (C.configOfProfile Flow.profile) mm_float of
+                 = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
                 -- TODO do something with the errors/warnings
                      (Left _, _)    -> mm
 
@@ -396,7 +398,7 @@ pipeFlow !mm !pp
                        let mm_stripped = C.reannotate (const ()) mm'
                            mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
                            -- Check again to synthesise types
-                       in  case C.checkModule (C.configOfProfile Flow.profile) mm_flow of
+                       in  case C.checkModule (C.configOfProfile Flow.profile) mm_flow C.Recon of
                             (Left _, _ct)         -> mm_flow
                             (Right mm_flow', _ct) -> C.reannotate (const ()) mm_flow'
             in  pipeCores mm_rate pipes

@@ -12,6 +12,7 @@ import Control.Monad.IO.Class
 import Control.Monad
 import Data.List
 import qualified DDC.Core.Pretty        as P
+import qualified DDC.Core.Check         as C
 
 
 -- | Make a source module into an executable.
@@ -40,7 +41,7 @@ cmdMake config filePath
                 | isSuffixOf ".dcs" filePath
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  Salt.fragment pipesSalt
+                $ PipeTextLoadCore  Salt.fragment C.Recon pipesSalt 
 
                 -- Unrecognised.
                 | otherwise

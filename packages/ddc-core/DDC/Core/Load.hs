@@ -59,7 +59,6 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
          -> vcat [ text "When checking type."
                  , indent 2 $ ppr err' ]
 
-
         ErrorCheckExp   err'    
          -> vcat [ text "When checking expression."
                  , indent 2 $ ppr err' ]
@@ -76,11 +75,12 @@ loadModuleFromFile
         => Profile n                    -- ^ Language fragment profile.
         -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
         -> FilePath                     -- ^ File containing source code.
+        -> Mode n                       -- ^ Type checker mode.
         -> IO ( Either (Error n)
                        (Module (C.AnTEC BP.SourcePos n) n)
               , Maybe CheckTrace)
 
-loadModuleFromFile profile lexSource filePath
+loadModuleFromFile profile lexSource filePath mode
  = do   
         -- Check whether the file exists.
         exists  <- doesFileExist filePath
@@ -94,7 +94,7 @@ loadModuleFromFile profile lexSource filePath
                 -- Lex the source.
                 let toks = lexSource src
 
-                return $ loadModuleFromTokens profile filePath toks
+                return $ loadModuleFromTokens profile filePath mode toks
 
 
 -- | Parse and type check a core module from a string.
@@ -103,13 +103,14 @@ loadModuleFromString
         => Profile n                    -- ^ Language fragment profile.
         -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
         -> FilePath                     -- ^ Path to source file for error messages.
+        -> Mode n                       -- ^ Type checker mode.
         -> String                       -- ^ Program text.
         -> ( Either (Error n) 
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
-loadModuleFromString profile lexSource filePath src
-        = loadModuleFromTokens profile filePath (lexSource src)
+loadModuleFromString profile lexSource filePath mode src
+        = loadModuleFromTokens profile filePath mode (lexSource src)
 
 
 -- | Parse and type check a core module.
@@ -117,12 +118,13 @@ loadModuleFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
         => Profile n                    -- ^ Language fragment profile.
         -> FilePath                     -- ^ Path to source file for error messages.
+        -> Mode n                       -- ^ Type checker mode.
         -> [Token (Tok n)]              -- ^ Source tokens.
         -> ( Either (Error n) 
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
-loadModuleFromTokens profile sourceName toks'
+loadModuleFromTokens profile sourceName mode toks'
  = goParse toks'
  where  
         -- Type checker config kind and type environments.
@@ -140,7 +142,7 @@ loadModuleFromTokens profile sourceName toks'
 
         -- Check that the module is type sound.
         goCheckType mm
-         = case C.checkModule config mm of
+         = case C.checkModule config mm mode of
                 (Left err,  ct)  -> (Left (ErrorCheckExp err),   Just ct)
                 (Right mm', ct)  -> goCheckCompliance ct mm'
 

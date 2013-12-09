@@ -12,6 +12,7 @@ import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Core.Transform.Thread      as Thread
 import qualified DDC.Core.Flow.Transform.Thread as Flow
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Base.Pretty                as P
 
 
@@ -31,9 +32,9 @@ cmdFlowThread _config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  PipeTextLoadCore fragment
+                $  PipeTextLoadCore fragment C.Recon
                 [  PipeCoreReannotate (const ())
-                [  PipeCoreCheck    fragment
+                [  PipeCoreCheck    fragment C.Recon
                 [  PipeCoreHacks 
                    (Canned $ \m -> return 
                            $  Thread.thread Flow.threadConfig 

@@ -7,6 +7,7 @@ import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Base.Pretty                as P
 import qualified DDC.Build.Language.Flow        as Flow
 
@@ -26,7 +27,7 @@ cmdFlowPrep config source sourceText
                             sourceText
                 $  stageFlowLoad  config source
                 [  stageFlowPrep  config source
-                [  PipeCoreCheck Flow.fragment
+                [  PipeCoreCheck Flow.fragment C.Recon
                 [  PipeCoreOutput SinkStdout ]]]
 
         case errs of

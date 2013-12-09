@@ -15,6 +15,7 @@ import Control.Monad.IO.Class
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Base.Pretty                as P
+import qualified DDC.Core.Check                 as C
 import qualified Data.Map                       as Map
 
 
@@ -47,12 +48,12 @@ cmdToSalt config language source sourceText
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore Lite.fragment
+                $ PipeTextLoadCore Lite.fragment C.Recon
                 [ PipeCoreReannotate (const ())
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
                 [ stageSaltOpt     config source
-                [ PipeCoreCheck    Salt.fragment
+                [ PipeCoreCheck    Salt.fragment C.Recon
                 [ (if configSuppressCoreImports config
                         then PipeCoreHacks    (Canned (\x -> return $ eraseImports x))
                         else PipeCoreId)

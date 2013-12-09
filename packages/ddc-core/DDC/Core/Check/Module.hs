@@ -31,18 +31,18 @@ checkModule
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> Module a n           -- ^ Module to check.
+        -> Mode n               -- ^ Type checker mode.
         -> ( Either (Error a n) (Module (AnTEC a n) n)
            , CheckTrace )
 
-checkModule !config !xx 
+checkModule !config !xx !mode
  = let  (s, result)     = runCheck (mempty, 0, 0)
                         $ checkModuleM 
                                 config 
                                 (configPrimKinds config)
                                 (configPrimTypes config)
-                                xx
+                                xx mode
         (tr, _, _)      = s
-
    in   (result, tr)
 
 
@@ -54,9 +54,10 @@ checkModuleM
         -> KindEnv n            -- ^ Starting kind environment.
         -> TypeEnv n            -- ^ Starting type environment.
         -> Module a n           -- ^ Module to check.
+        -> Mode n               -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM !config !kenv !tenv mm@ModuleCore{}
+checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
         -- Convert the imported kind and type map to a list of binds.
         let bksImport  = [BName n k |  (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
@@ -74,7 +75,6 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
         mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportKinds mm
         mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportTypes mm
                 
-        
         -- TODO: Check the data type definitions.
         --       The constructor types need to return the defined data type.
         let defs'   = unionDataDefs
@@ -92,7 +92,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{}
         (x', _, _effs, _, _) 
                 <- checkExpM 
                         (makeTable config_data kenv_data tenv')
-                        emptyContext (moduleBody mm) Recon
+                        emptyContext (moduleBody mm) mode
 
         -- Check that each exported signature matches the type of its binding.
         envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'

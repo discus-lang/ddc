@@ -7,8 +7,9 @@ import DDC.Driver.Command.Check
 import DDC.Interface.Source
 import DDC.Build.Language
 import Control.Monad.Trans.Error
-import qualified Language.Haskell.Exts.Parser as H
-import qualified Language.Haskell.Exts.Pretty as H
+import qualified DDC.Core.Check                 as C
+import qualified Language.Haskell.Exts.Parser   as H
+import qualified Language.Haskell.Exts.Pretty   as H
 
 
 -- | Parse, check, and pretty print a module's internal representation.
@@ -17,7 +18,7 @@ cmdAstModule language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
  = do   mModule <- runErrorT 
-                $ cmdCheckModuleFromString fragment source str
+                $  cmdCheckModuleFromString fragment source str C.Recon
         goShow mModule
  where
         -- Expression had a parse or type error.

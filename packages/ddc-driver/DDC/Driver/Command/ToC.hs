@@ -12,6 +12,7 @@ import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Base.Pretty                as P
 
 
@@ -41,7 +42,7 @@ cmdToC config language source sourceText
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore Lite.fragment
+                $ PipeTextLoadCore Lite.fragment C.Recon
                 [ PipeCoreReannotate (const ())
                 [ stageLiteOpt     config source 
                 [ stageLiteToSalt  config source 
@@ -52,7 +53,7 @@ cmdToC config language source sourceText
                 | fragName == "Salt" || mSuffix == Just ".dcs"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore Salt.fragment
+                $ PipeTextLoadCore Salt.fragment C.Recon
                 [ PipeCoreReannotate (const ())
                 [ stageSaltOpt     config source
                 [ stageSaltToC     config source SinkStdout]]]

@@ -11,6 +11,7 @@ import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import Data.List
+import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Pretty        as P
 
 
@@ -41,7 +42,7 @@ cmdCompile config filePath
                 | isSuffixOf ".dcs" filePath
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  Salt.fragment pipesSalt
+                $ PipeTextLoadCore  Salt.fragment C.Recon pipesSalt 
 
                 -- Unrecognised.
                 | otherwise

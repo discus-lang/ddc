@@ -8,6 +8,7 @@ import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty                as P
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Flow        as Flow
 
 
@@ -25,7 +26,7 @@ cmdFlowWind config source sourceText
                     (lineStartOfSource source)
                     sourceText
          $  stageFlowLoad  config source
-         [  PipeCoreCheck  Flow.fragment
+         [  PipeCoreCheck  Flow.fragment C.Recon
          [  stageFlowWind config source [ pipeFinal ]]]
 
         pipeFinal
@@ -33,7 +34,7 @@ cmdFlowWind config source sourceText
          = PipeCoreOutput SinkStdout
 
          | otherwise
-         = PipeCoreCheck Flow.fragment
+         = PipeCoreCheck Flow.fragment C.Recon
          [ PipeCoreOutput SinkStdout ]
 
    in do        

@@ -32,6 +32,7 @@ import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check         as T
+import qualified DDC.Core.Check         as C
 import Control.Monad
 
 
@@ -286,7 +287,7 @@ cmdCheckModuleFromFile fragment filePath
         goLoad 
          = do   mModule <- liftIO 
                         $ loadModuleFromFile 
-                                (fragmentProfile fragment) lexModule filePath
+                                (fragmentProfile fragment) lexModule filePath C.Recon 
                 case mModule of
                  (Left  err, _ct) -> throwError (renderIndent $ ppr err)
                  (Right mm,  _ct) -> goCheckFragment mm
@@ -304,9 +305,10 @@ cmdCheckModuleFromString
         => Fragment n err
         -> Source
         -> String
+        -> C.Mode n
         -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
-cmdCheckModuleFromString fragment source str
+cmdCheckModuleFromString fragment source str mode
  = goLoad
  where  lexModule = fragmentLexModule fragment 
                         (nameOfSource source) 
@@ -316,8 +318,7 @@ cmdCheckModuleFromString fragment source str
         goLoad
          = let  mModule = loadModuleFromString
                                 (fragmentProfile fragment) lexModule
-                                (nameOfSource source)
-                                str
+                                (nameOfSource source) mode str
 
             in  case mModule of
                   (Left err, _ct) -> throwError (renderIndent $ ppr err)

@@ -13,9 +13,10 @@ import System.Directory
 import Control.Monad
 import Data.IORef
 import Data.Char
-import qualified Data.Map                       as Map
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Build.Language.Salt        as Salt
+import qualified Data.Map                       as Map
 
 
 -- | Add a module to the inliner table.
@@ -71,7 +72,7 @@ cmdWith_load frag str
 cmdWith_parse frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore frag
+                $  PipeTextLoadCore frag C.Recon
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                 [PipeCoreOutput SinkDiscard] ]]

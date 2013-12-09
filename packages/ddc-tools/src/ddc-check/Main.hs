@@ -12,7 +12,7 @@ import DDC.Build.Pipeline
 import DDC.Core.Pretty
 import System.IO
 import System.Environment
-
+import qualified DDC.Core.Check as C
 
 main :: IO ()
 main 
@@ -47,7 +47,7 @@ runLanguage config source sourceName language
         -- Loading the core code automatically check it
         -- against the provided fragment.
         errs    <- pipeText sourceName 1 source
-                $  PipeTextLoadCore  fragment
+                $  PipeTextLoadCore  fragment C.Recon
                 [  PipeCoreOutput    sink ]
 
         -- If the pipeline died with errors, 

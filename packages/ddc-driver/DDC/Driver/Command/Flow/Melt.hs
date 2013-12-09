@@ -8,7 +8,8 @@ import DDC.Driver.Stage
 import DDC.Interface.Source
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import qualified DDC.Base.Pretty                as P
+import qualified DDC.Core.Check         as C
+import qualified DDC.Base.Pretty        as P
 
 
 -- | Thread a state token through the given flow program.
@@ -28,10 +29,10 @@ cmdFlowMelt config source sourceText
                             (lineStartOfSource source)
                             sourceText
                 $  stageFlowLoad config source 
-                [  PipeCoreCheck fragment
+                [  PipeCoreCheck fragment C.Recon
                 [  PipeCoreAsFlow 
                 [  PipeFlowMelt
-                [  PipeCoreCheck fragment
+                [  PipeCoreCheck fragment C.Recon
                 [  PipeCoreOutput SinkStdout ]]]]]
 
         case errs of

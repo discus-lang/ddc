@@ -23,6 +23,7 @@ data PipeText n (err :: * -> *) where
   PipeTextLoadCore 
         :: (Ord n, Show n, Pretty n)
         => !(Fragment n err)
+        -> !(C.Mode n)
         -> ![PipeCore (C.AnTEC BP.SourcePos n) n]
         -> PipeText n err
 
@@ -44,9 +45,10 @@ pipeText !srcName !srcLine !str !pp
          -> {-# SCC "PipeTextOutput" #-}
             pipeSink str sink
 
-        PipeTextLoadCore !frag !pipes
+        PipeTextLoadCore !frag !mode !pipes
          -> {-# SCC "PipeTextLoadCore" #-}
-            let toks            = fragmentLexModule frag srcName srcLine str
-            in case CL.loadModuleFromTokens (fragmentProfile frag) srcName toks of
+            let toks    = fragmentLexModule frag srcName srcLine str in
+            let profile = fragmentProfile frag
+            in case CL.loadModuleFromTokens profile srcName mode toks of
                  (Left err, _ct) -> return $ [ErrorLoad err]
                  (Right mm, _ct) -> pipeCores mm pipes

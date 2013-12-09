@@ -117,8 +117,8 @@ stageFlowLoad
         -> PipeText Flow.Name Flow.Error
 
 stageFlowLoad config source pipesFlow
- = PipeTextLoadCore Flow.fragment
- [ PipeCoreReannotate (const ())
+ = PipeTextLoadCore Flow.fragment C.Recon
+ [ PipeCoreReannotate (const ()) 
         ( PipeCoreOutput (dump config source "dump.flow-load.dcf")
         : pipesFlow ) ]
 
@@ -190,7 +190,7 @@ stageLiteLoad
         -> PipeText Lite.Name Lite.Error
 
 stageLiteLoad config source pipesLite
- = PipeTextLoadCore Lite.fragment
+ = PipeTextLoadCore Lite.fragment C.Recon
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput (dump config source "dump.lite.dcl")
         : pipesLite ) ]
@@ -240,7 +240,7 @@ stageLiteToSalt
 
 stageLiteToSalt config source pipesSalt
  = PipeCoreSimplify       Lite.fragment 0 normalizeLite
-   [ PipeCoreCheck        Lite.fragment
+   [ PipeCoreCheck        Lite.fragment C.Recon
      [ PipeCoreOutput     (dump config source "dump.lite-normalized.dcl")
      , PipeCoreAsLite
        [ PipeLiteToSalt   (buildSpec $ configBuilder config) 
@@ -263,7 +263,7 @@ stageSaltToC
 
 stageSaltToC config source sink
  = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck        Salt.fragment
+   [ PipeCoreCheck        Salt.fragment C.Recon
      [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
@@ -297,7 +297,7 @@ stageCompileSalt config source filePath shouldLinkExe
         exePath        = fromMaybe exePathDefault (configOutputFile config)
    in
         PipeCoreSimplify        Salt.fragment 0 normalizeSalt
-         [ PipeCoreCheck        Salt.fragment
+         [ PipeCoreCheck        Salt.fragment C.Recon
            [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
            , PipeCoreAsSalt
              [ PipeSaltTransfer
@@ -327,7 +327,7 @@ stageSaltToLLVM
 
 stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck          Salt.fragment
+   [ PipeCoreCheck          Salt.fragment C.Recon
      [ PipeCoreOutput       (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer

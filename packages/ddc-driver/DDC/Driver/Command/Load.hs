@@ -24,6 +24,7 @@ import System.FilePath
 import System.IO
 import qualified Data.Map                       as Map
 import qualified DDC.Base.Parser                as BP
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
@@ -60,7 +61,7 @@ cmdReadModule' printErrors frag filePath
 cmdReadModule_parse printErrors filePath frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore frag
+                $  PipeTextLoadCore frag C.Recon
                    [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                      [PipeCoreOutput SinkDiscard] ]
 
@@ -168,10 +169,10 @@ cmdLoadFromString supp language source str
  , zero                 <- bundleStateInit  bundle
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
-                $  PipeTextLoadCore  fragment
+                $  PipeTextLoadCore  fragment C.Recon
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
-                [  PipeCoreCheck     fragment
+                [  PipeCoreCheck     fragment C.Recon
                 [  PipeCoreSuppress  supp 
                 [  PipeCoreOutput    SinkStdout ]]]]]
 

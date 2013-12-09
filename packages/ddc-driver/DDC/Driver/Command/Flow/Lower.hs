@@ -8,6 +8,7 @@ import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty                as P
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Core.Transform.Suppress    as Suppress
@@ -30,7 +31,7 @@ cmdFlowLower supp config lowerConfig source sourceText
                     sourceText
          $  stageFlowLoad  config source
          [  stageFlowPrep  config source
-         [  PipeCoreCheck  Flow.fragment
+         [  PipeCoreCheck  Flow.fragment C.Recon
          [  stageFlowLower config lowerConfig source [ pipeFinal ]]]]
 
         pipeFinal
@@ -39,7 +40,7 @@ cmdFlowLower supp config lowerConfig source sourceText
          [ PipeCoreOutput SinkStdout ]
 
          | otherwise
-         = PipeCoreCheck Flow.fragment
+         = PipeCoreCheck Flow.fragment C.Recon
          [ PipeCoreSuppress supp
          [ PipeCoreOutput SinkStdout ]]
 

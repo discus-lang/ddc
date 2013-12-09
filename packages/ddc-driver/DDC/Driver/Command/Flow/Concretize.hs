@@ -10,6 +10,7 @@ import DDC.Data.Canned
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Core.Flow.Transform.Concretize     as Concretize
+import qualified DDC.Core.Check                         as C
 import qualified DDC.Base.Pretty                        as P
 
 
@@ -26,7 +27,7 @@ cmdFlowConcretize _config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  PipeTextLoadCore fragment
+                $  PipeTextLoadCore fragment C.Recon
                 [  PipeCoreReannotate (const ())
                 [  PipeCoreHacks 
                    (Canned $ \m -> return 
