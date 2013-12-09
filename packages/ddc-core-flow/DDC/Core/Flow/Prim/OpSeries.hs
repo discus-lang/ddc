@@ -35,12 +35,16 @@ instance Pretty OpSeries where
         OpSeriesMkSel 1         -> text "smkSel"                <> text "#"
         OpSeriesMkSel n         -> text "smkSel"     <> int n   <> text "#"
 
+        OpSeriesMkSegd          -> text "smkSegd"               <> text "#"
+
         OpSeriesMap 1           -> text "smap"                  <> text "#"
         OpSeriesMap i           -> text "smap"       <> int i   <> text "#"
 
         OpSeriesPack            -> text "spack"                 <> text "#"
 
         OpSeriesReduce          -> text "sreduce"               <> text "#"
+        OpSeriesFolds           -> text "sfolds"                <> text "#"
+
         OpSeriesFill            -> text "sfill"                 <> text "#"
         OpSeriesScatter         -> text "sscatter"              <> text "#"
 
@@ -91,9 +95,11 @@ readOpSeries str
                 "sreps#"        -> Just $ OpSeriesReps
                 "sgather#"      -> Just $ OpSeriesGather
                 "smkSel#"       -> Just $ OpSeriesMkSel 1
+                "smkSegd#"      -> Just $ OpSeriesMkSegd
                 "smap#"         -> Just $ OpSeriesMap   1
                 "spack#"        -> Just $ OpSeriesPack
                 "sreduce#"      -> Just $ OpSeriesReduce
+                "sfolds#"       -> Just $ OpSeriesFolds
                 "sfill#"        -> Just $ OpSeriesFill
                 "sscatter#"     -> Just $ OpSeriesScatter
                 "pjoin#"        -> Just $ OpSeriesJoin
@@ -138,14 +144,6 @@ takeTypeOpSeries op
                 -> tSegd tK1 tK2 `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
 
 
-        -- Gather -------------------------------
-        -- gather#  :: [k : Rate]. [a : Data]
-        --          . Vector a -> Series k Nat# -> Series k a
-        OpSeriesGather
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                 -> tVector tA 
-                 `tFun` tSeries tK tNat `tFun` tSeries tK tA
-
         -- Maps ---------------------------------
         -- map   :: [k : Rate] [a b : Data]
         --       .  (a -> b) -> Series k a -> Series k b
@@ -187,10 +185,10 @@ takeTypeOpSeries op
          -> Just $ tProcess `tFun` tProcess `tFun` tProcess
 
 
-        -- mkSel1#    :: [k1 : Rate].
-        --            .  Series k1 Bool#
-        --            -> ([k2 : Rate]. Sel1 k1 k2 -> Process#)
-        --            -> Process#
+        -- mkSel1#  :: [k1 : Rate].
+        --          .  Series k1 Bool#
+        --          -> ([k2 : Rate]. Sel1 k1 k2 -> Process#)
+        --          -> Process#
         OpSeriesMkSel 1
          -> Just $ tForalls [kRate] $ \[tK1]
                 ->       tSeries tK1 tBool
@@ -198,27 +196,18 @@ takeTypeOpSeries op
                                 -> tSel1 (liftT 1 tK1) tK2 `tFun` tProcess)
                 `tFun` tProcess
 
-        -- reduce# :: [k : Rate]. [a : Data]
-        --        .  Ref a -> (a -> a -> a) -> a -> Series k a -> Process
-        OpSeriesReduce
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                 ->     tRef tA
-                 `tFun` (tA `tFun` tA `tFun` tA)
-                 `tFun` tA
-                 `tFun` tSeries tK tA
-                 `tFun` tProcess
 
-        -- fill#    :: [k : Rate]. [a : Data]. Vector a -> Series k a -> Process
-        OpSeriesFill
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
-                -> tVector tA `tFun` tSeries tK tA `tFun` tProcess
+        -- mkSegd#  :: [k1 : Rate]
+        --          .  Series# k1 Nat#
+        --          -> ([k2 : Rate]. Segd# k1 k2 -> Process#)
+        --          -> Process#
+        OpSeriesMkSegd
+         -> Just $ tForalls [kRate] $ \[tK1]
+                ->      tSeries tK1 tNat
+                `tFun` (tForall kRate $ \tK2
+                                -> tSegd (liftT 1 tK1) tK2 `tFun` tProcess)
+                `tFun` tProcess
 
-        -- scatter# :: [k : Rate]. [a : Data]
-        --          .  Vector a -> Series k Nat# -> Series k a -> Process
-        OpSeriesScatter
-         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
-                 -> tVector tA 
-                 `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tProcess
 
         -- runProcessN# :: [a0..aN : Data]
         --          .  Vector    a0 .. Vector   aN 
@@ -241,6 +230,48 @@ takeTypeOpSeries op
 
          -> Just $ foldr TForall tBody
                          [ BAnon k | k <- replicate n kData ]
+
+
+        -- Reductions -------------------------------
+        -- reduce# :: [k : Rate]. [a : Data]
+        --        .  Ref a -> (a -> a -> a) -> a -> Series k a -> Process
+        OpSeriesReduce
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 ->     tRef tA
+                 `tFun` (tA `tFun` tA `tFun` tA)
+                 `tFun` tA
+                 `tFun` tSeries tK tA
+                 `tFun` tProcess
+
+
+        -- folds#   :: [k1 k2 : Rate]. [a : Data]
+        --          .  Segd# k1 k2 -> Series k1 a -> Series k2 b
+        OpSeriesFolds
+         -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
+                 ->     tSegd tK1 tK2 `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
+
+
+        -- Store operators ---------------------------
+        -- scatter# :: [k : Rate]. [a : Data]
+        --          .  Vector a -> Series k Nat# -> Series k a -> Process
+        OpSeriesScatter
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 -> tVector tA 
+                 `tFun` tSeries tK tNat `tFun` tSeries tK tA `tFun` tProcess
+
+
+        -- gather#  :: [k : Rate]. [a : Data]
+        --          . Vector a -> Series k Nat# -> Series k a
+        OpSeriesGather
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 -> tVector tA 
+                 `tFun` tSeries tK tNat `tFun` tSeries tK tA
+
+
+        -- fill#    :: [k : Rate]. [a : Data]. Vector a -> Series k a -> Process
+        OpSeriesFill
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
+                -> tVector tA `tFun` tSeries tK tA `tFun` tProcess
 
         _ -> Nothing
 

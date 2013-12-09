@@ -159,6 +159,9 @@ data OpSeries
         -- | Make a selector.
         | OpSeriesMkSel Int
 
+        -- | Make a segment descriptor.
+        | OpSeriesMkSegd
+
         -- | Apply a worker to corresponding elements of some series.
         | OpSeriesMap Int
 
@@ -168,6 +171,9 @@ data OpSeries
         -- | Reduce a series with an associative operator,
         --   updating an existing accumulator.
         | OpSeriesReduce
+
+        -- | Segmented fold.
+        | OpSeriesFolds
 
         -- | Fill an existing vector from a series.
         | OpSeriesFill

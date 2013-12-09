@@ -43,11 +43,13 @@
 :type sreps#
 :type sgather#
 :type smkSel#
+:type smkSegd#
 :type smap#
 :type spack#
 :type runProcess#
 :type runProcess2#
 :type sreduce#
+:type sfolds#
 :type sfill#
 :type sscatter#
 :type pjoin#
