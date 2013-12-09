@@ -4,7 +4,6 @@ module DDC.Core.Flow.Transform.Slurp
         , isSeriesOperator
         , isVectorOperator)
 where
-import DDC.Core.Flow.Transform.Slurp.Alloc
 import DDC.Core.Flow.Transform.Slurp.Operator
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
@@ -72,9 +71,6 @@ slurpProcessLet (BName n _) xx
         (ctxLocal, ops, _ltss, _xResult)  
                         = slurpProcessX xBody
 
-        -- Decide what rates to use when allocating vectors.
-        ops_alloc       = patchAllocRates ops
-
    in   Just    $ Process
                 { processName          = n
                 , processParamTypes    = bts
@@ -85,7 +81,7 @@ slurpProcessLet (BName n _) xx
                 -- are inside 
                 , processContexts      = ctxParam ++ ctxLocal
 
-                , processOperators     = ops_alloc }
+                , processOperators     = ops }
 
 slurpProcessLet _ _
  = Nothing
