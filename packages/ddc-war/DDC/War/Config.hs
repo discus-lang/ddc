@@ -39,7 +39,7 @@ defaultTestSpec
         { T.specTestDirs                = []
         , T.specWays                    = []
         , T.specThreads                 = 1
-        , T.specFormatPathWidth         = 70
+        , T.specFormatPathWidth         = 80
         , T.specInteractive             = True
         , T.specResultsFileAll          = Nothing
         , T.specResultsFileFailed       = Nothing }
