@@ -41,7 +41,8 @@ cmdMake config filePath
                 | isSuffixOf ".dcs" filePath
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  Salt.fragment C.Recon pipesSalt 
+                $ PipeTextLoadCore  Salt.fragment 
+                        C.Recon SinkDiscard pipesSalt 
 
                 -- Unrecognised.
                 | otherwise

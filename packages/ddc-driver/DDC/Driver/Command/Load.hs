@@ -61,7 +61,8 @@ cmdReadModule' printErrors frag filePath
 cmdReadModule_parse printErrors filePath frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore frag C.Recon
+                $  PipeTextLoadCore frag 
+                        C.Recon SinkDiscard
                    [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                      [PipeCoreOutput SinkDiscard] ]
 
@@ -171,7 +172,9 @@ cmdLoadFromString bidir supp language source str
  , zero                 <- bundleStateInit  bundle
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
-                $  PipeTextLoadCore  fragment (if bidir then C.Synth else C.Recon)
+                $  PipeTextLoadCore  fragment 
+                        (if bidir then C.Synth else C.Recon) 
+                        SinkDiscard
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment C.Recon

@@ -42,7 +42,7 @@ cmdToLlvm config language source sourceText
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore Lite.fragment C.Recon
+                $ PipeTextLoadCore Lite.fragment C.Recon SinkDiscard
                 [ PipeCoreReannotate (const ())
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
@@ -54,7 +54,7 @@ cmdToLlvm config language source sourceText
                 | fragName == "Salt" || mSuffix == Just ".dcs"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) sourceText
-                $ PipeTextLoadCore Salt.fragment C.Recon
+                $ PipeTextLoadCore Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreReannotate (const ())
                 [ stageSaltOpt     config source
                 [ stageSaltToLLVM  config source

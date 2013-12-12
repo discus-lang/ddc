@@ -95,7 +95,7 @@ run config
 
         -- Parse, type check and transform a module.
         ModeLoad filePath
-         ->     runError $ cmdLoadFromFile
+         ->     runError $ cmdLoadFromFile False
                                 Suppress.configZero
                                 (configTrans config) 
                                 (configWith config) 
@@ -151,7 +151,7 @@ run config
         ModeFlowLower filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower 
+                runError $ cmdFlowLower False
                                 Suppress.configZero
                                 dconfig
                                 Flow.defaultConfigScalar (SourceFile filePath) str
@@ -160,7 +160,7 @@ run config
         ModeFlowLowerKernel filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower 
+                runError $ cmdFlowLower False
                                 Suppress.configZero
                                 dconfig Flow.defaultConfigKernel (SourceFile filePath) str
 
@@ -168,7 +168,7 @@ run config
         ModeFlowLowerVector filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower 
+                runError $ cmdFlowLower False
                                 Suppress.configZero
                                 dconfig Flow.defaultConfigVector (SourceFile filePath) str
 

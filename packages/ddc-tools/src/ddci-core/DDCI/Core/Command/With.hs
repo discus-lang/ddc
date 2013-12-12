@@ -72,7 +72,7 @@ cmdWith_load frag str
 cmdWith_parse frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore frag C.Recon
+                $  PipeTextLoadCore frag C.Recon SinkDiscard
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                 [PipeCoreOutput SinkDiscard] ]]

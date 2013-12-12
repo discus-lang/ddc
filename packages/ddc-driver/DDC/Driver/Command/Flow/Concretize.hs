@@ -27,7 +27,7 @@ cmdFlowConcretize _config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  PipeTextLoadCore fragment C.Recon
+                $  PipeTextLoadCore fragment C.Recon SinkDiscard
                 [  PipeCoreReannotate (const ())
                 [  PipeCoreHacks 
                    (Canned $ \m -> return 

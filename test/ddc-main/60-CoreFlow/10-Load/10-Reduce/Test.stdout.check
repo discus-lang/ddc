@@ -1,4 +1,6 @@
 ok
+ok
+
 
 -- Single series being eaten by two consumers.
 module Test with

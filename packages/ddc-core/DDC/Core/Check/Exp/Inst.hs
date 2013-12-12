@@ -35,6 +35,98 @@ checkSub table !a ctx0 xx tExpect
                 eff clo ctx2
 
 
+-- makeEq ---------------------------------------------------------------------
+-- Make one type equivalent to another.
+makeEq table a ctx0 tL tR
+
+ -- EqLSolve
+ | Just iL <- takeExists tL
+ , not $ isTExists tR
+ = do   let ctx1        = updateExists [] iL tR ctx0
+
+        ctrace  $ vcat
+                [ text "* EqLSolve"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , empty ]
+
+        return ctx1
+
+
+ -- EqRSolve
+ | Just iR <- takeExists tR
+ , not $ isTExists tL
+ = do   let ctx1        = updateExists [] iR tL ctx0
+
+        ctrace  $ vcat
+                [ text "* EqRSolve"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , empty ]
+
+        return ctx1
+
+
+ -- EqVar
+ | TVar u1      <- tL
+ , TVar u2      <- tR
+ , u1 == u2
+ = do   
+        ctrace  $ vcat
+                [ text "* EqVar"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
+
+        return ctx0
+
+
+ -- EqCon
+ | TCon tc1     <- tL
+ , TCon tc2     <- tR
+ , tc1 == tc2
+ = do   
+        ctrace  $ vcat
+                [ text "* EqCon"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
+
+        return ctx0
+
+ -- EqApp
+ | TApp tL1 tL2 <- tL
+ , TApp tR1 tR2 <- tR
+ = do
+        ctx1     <- makeEq table a ctx0 tL1 tR1
+        let tL2' = applyContext ctx1 tL2
+        let tR2' = applyContext ctx1 tR2
+        ctx2     <- makeEq table a ctx0 tL2' tR2'
+
+        ctrace  $ vcat
+                [ text "* EqApp"
+                , text "  LEFT:   " <> ppr tL
+                , text "  RIGHT:  " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx2
+                , empty ]
+
+        return ctx2
+
+ -- TODO: nice error message.
+ | otherwise
+ = error $ renderIndent $ vcat
+        [ text "DDC.Core.Check.Exp.Inst.makeEq: no match" 
+        , text "  LEFT:   " <> ppr tL
+        , text "  RIGHT:  " <> ppr tR ]
+
+
 -- makeSub --------------------------------------------------------------------
 -- Make one type a subtype of another.
 makeSub table a ctx0 tL tR
@@ -102,10 +194,8 @@ makeSub table a ctx0 tL tR
  , Just (tR1, tR2)      <- takeTFun tR
  = do   
         ctx1     <- makeSub table a ctx0 tR1 tL1
-
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
-
         ctx2     <- makeSub table a ctx1 tL2' tR2'
 
         ctrace  $ vcat
@@ -117,8 +207,30 @@ makeSub table a ctx0 tL tR
                 , indent 2 $ ppr ctx2 ]
 
         return ctx2
-        
 
+ -- SubApp 
+ -- Assumes non-function type constructors are invariant.
+ | TApp tL1 tL2 <- tL
+ , TApp tR1 tR2 <- tR
+ = do   
+        ctx1     <- makeEq table a ctx0 tL1 tR1
+        let tL2' = applyContext ctx1 tL2
+        let tR2' = applyContext ctx1 tR2
+        ctx2     <- makeEq table a ctx1 tL2' tR2'
+
+        ctrace  $ vcat
+                [ text "* SubApp"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , indent 2 $ ppr ctx2 ]
+
+        return ctx2
+
+
+ -- Error
+ -- TODO: nice error message.
  | otherwise
  = error $ renderIndent $ vcat
         [ text "DDC.Core.Check.Exp.Inst.makeSub: no match" 

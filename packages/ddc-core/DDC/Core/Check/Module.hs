@@ -7,6 +7,9 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Error
+import DDC.Core.Transform.Reannotate
+import DDC.Core.Transform.MapT
+import DDC.Type.Check.Context
 import DDC.Type.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Equiv
@@ -89,19 +92,30 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let config_data = config { configDataDefs = defs' }
 
         -- Check the body of the module.
-        (x', _, _effs, _, _) 
+        (x', _, _effs, _, ctx) 
                 <- checkExpM 
                         (makeTable config_data kenv_data tenv')
                         emptyContext (moduleBody mm) mode
 
+        -- Apply the final context to the annotations in expressions.
+        let applyToAnnot (AnTEC t0 e0 c0 x0)
+                = AnTEC (applySolved ctx t0)
+                        (applySolved ctx e0)
+                        (applySolved ctx c0)
+                        x0
+
+        let x'' = reannotate applyToAnnot 
+                $ mapT (applySolved ctx) x'
+
+
         -- Check that each exported signature matches the type of its binding.
-        envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x'
+        envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x''
 
         -- Check that all exported bindings are defined by the module.
         mapM_ (checkBindDefined envDef) $ Map.keys $ moduleExportTypes mm
 
         -- Return the checked bindings as they have explicit type annotations.
-        let mm'         = mm { moduleBody = x' }
+        let mm'         = mm { moduleBody = x'' }
         return mm'
 
 

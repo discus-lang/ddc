@@ -47,7 +47,7 @@ runLanguage config source sourceName language
         -- Loading the core code automatically check it
         -- against the provided fragment.
         errs    <- pipeText sourceName 1 source
-                $  PipeTextLoadCore  fragment C.Recon
+                $  PipeTextLoadCore  fragment C.Recon SinkDiscard
                 [  PipeCoreOutput    sink ]
 
         -- If the pipeline died with errors, 

@@ -117,7 +117,7 @@ stageFlowLoad
         -> PipeText Flow.Name Flow.Error
 
 stageFlowLoad config source pipesFlow
- = PipeTextLoadCore Flow.fragment C.Recon
+ = PipeTextLoadCore Flow.fragment C.Recon SinkDiscard
  [ PipeCoreReannotate (const ()) 
         ( PipeCoreOutput (dump config source "dump.flow-load.dcf")
         : pipesFlow ) ]
@@ -190,7 +190,7 @@ stageLiteLoad
         -> PipeText Lite.Name Lite.Error
 
 stageLiteLoad config source pipesLite
- = PipeTextLoadCore Lite.fragment C.Recon
+ = PipeTextLoadCore Lite.fragment C.Recon SinkDiscard
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput (dump config source "dump.lite.dcl")
         : pipesLite ) ]

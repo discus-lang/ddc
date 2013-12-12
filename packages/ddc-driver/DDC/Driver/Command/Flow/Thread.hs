@@ -32,7 +32,7 @@ cmdFlowThread _config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  PipeTextLoadCore fragment C.Recon
+                $  PipeTextLoadCore fragment C.Recon SinkDiscard
                 [  PipeCoreReannotate (const ())
                 [  PipeCoreCheck    fragment C.Recon
                 [  PipeCoreHacks 

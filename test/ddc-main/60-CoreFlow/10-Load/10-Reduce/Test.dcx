@@ -1,13 +1,12 @@
 :set lang Flow
+:set Synth
+
 
 -- Single series being eaten by two consumers.
 :load..
 module Test with letrec
-test    [k : Rate]
-        (u1 u2 : Ref# Int#)
-        (elems : Series# k Int#)
-        : Process#
- =      pjoin#  (sreduce#  [k] [Int#] u1 (add# [Int#]) 0i# elems)
-                (sreduce#  [k] [Int#] u2 (mul# [Int#]) 1i# elems)
-
+test    [k : Rate] (u1 u2 : Ref# Int#) 
+        (elems : Series# k Int#) : Process#
+ =      pjoin#  (sreduce# u1 (add# [Int#]) 0i# elems)
+                (sreduce# u2 (mul# [Int#]) 1i# elems)
 ;;
