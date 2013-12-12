@@ -50,6 +50,7 @@ help    = unlines
         , "  :with-salt PATH            ... use Salt module during -compile or -make cmds."
         , ""
         , " MODE    ::="
+        , "  Synth                     Use type synthesis when loading source."
         , "  Indent                    Pretty print expressions with indenting."
         , "  TraceEval                 Show the expression at every step when evaluating."
         , "  TraceStore                Show the store at every step when evaluating."

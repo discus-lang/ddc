@@ -80,21 +80,22 @@ cmdReadModule_parse printErrors filePath frag source src
 -- | Load and transform a module, printing the result to stdout.
 --   The current transform is set with the given string.
 cmdLoadFromFile
-        :: Suppress.Config      -- ^ Suppression config for output.
+        :: Bool                 -- ^ Use bidirectional type checking.
+        -> Suppress.Config      -- ^ Suppression config for output.
         -> Maybe String         -- ^ Simplifier specification.
         -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
         -> ErrorT String IO ()
 
-cmdLoadFromFile supp strSimpl fsTemplates filePath
+cmdLoadFromFile bidir supp strSimpl fsTemplates filePath
  = case languageOfExtension (takeExtension filePath) of
         Nothing       -> throwError $ "Unknown file extension."
-        Just language -> cmdLoad_language supp strSimpl fsTemplates filePath language
+        Just language -> cmdLoad_language bidir supp strSimpl fsTemplates filePath language
 
-cmdLoad_language supp Nothing _ filePath language
- = configLoad_simpl supp language filePath
+cmdLoad_language bidir supp Nothing _ filePath language
+ = configLoad_simpl bidir supp language filePath
 
-cmdLoad_language supp (Just strSimpl) fsTemplates filePath language
+cmdLoad_language bidir supp (Just strSimpl) fsTemplates filePath language
  | Language bundle      <- language
  , modules              <- bundleModules       bundle
  , rules                <- bundleRewriteRules  bundle
@@ -137,9 +138,9 @@ cmdLoad_language supp (Just strSimpl) fsTemplates filePath language
 
          Right simpl
           -> let bundle' = bundle { bundleSimplifier = simpl }
-             in  configLoad_simpl supp (Language bundle') filePath
+             in  configLoad_simpl bidir supp (Language bundle') filePath
 
-configLoad_simpl supp language filePath
+configLoad_simpl bidir supp language filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -149,27 +150,28 @@ configLoad_simpl supp language filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdLoadFromString supp language (SourceFile filePath) src
+        cmdLoadFromString bidir supp language (SourceFile filePath) src
 
 
 -------------------------------------------------------------------------------
 -- | Load and transform a module, 
 --   then print the result to @stdout@.
 cmdLoadFromString
-        :: Suppress.Config      -- ^ Suppression flags for output.
+        :: Bool                 -- ^ Use bidirectional type checking.
+        -> Suppress.Config      -- ^ Suppression flags for output.
         -> Language             -- ^ Language definition
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdLoadFromString supp language source str
+cmdLoadFromString bidir supp language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
  , simpl                <- bundleSimplifier bundle
  , zero                 <- bundleStateInit  bundle
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
-                $  PipeTextLoadCore  fragment C.Recon
+                $  PipeTextLoadCore  fragment (if bidir then C.Synth else C.Recon)
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment C.Recon

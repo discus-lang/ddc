@@ -10,8 +10,12 @@ import Data.Set                                 (Set)
 
 -- | DDCI mode flags.
 data Mode
+        -- | Use type synthesis / bidirectional type checking
+        --   when loading source code.
+        =  Synth
+
         -- | Render expressions displayed to user using indenting.
-        =  Indent
+        |  Indent
 
         -- | Suppress import lists when printing modules
         |  SuppressImports
@@ -49,6 +53,7 @@ data Mode
 readMode :: String -> Maybe Mode
 readMode str
  = case str of
+        "Synth"                 -> Just Synth
         "Indent"                -> Just Indent
         "SuppressImports"       -> Just SuppressImports
         "SuppressLetTypes"      -> Just SuppressLetTypes
