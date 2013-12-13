@@ -6,20 +6,20 @@ import DDC.Core.Check.Judge.Type.Base
 
 
 -- This is the subtyping rule for the type checking judgment.
-checkSub table !a ctx0 xx tExpect
+checkSub table !a ctx0 xx0 tExpect
  = do
-        (xx', tSynth, eff, clo, ctx1)
-         <- tableCheckExp table table ctx0 xx Synth
+        (xx1, tSynth, eff, clo, ctx1)
+         <- tableCheckExp table table ctx0 xx0 Synth
 
         -- Substitute context into synthesised and expected types.
         let tExpect'    = applyContext ctx1 tExpect
         let tSynth'     = applyContext ctx1 tSynth
 
-        ctx2    <- makeSub a ctx1 tSynth' tExpect'
+        (xx2, ctx2)     <- makeSub a ctx1 xx1 tSynth' tExpect'
 
         ctrace  $ vcat
                 [ text "* Sub"
-                , indent 2 $ ppr xx
+                , indent 2 $ ppr xx0
                 , text "  tExpect:  " <> ppr tExpect
                 , text "  tSynth:   " <> ppr tSynth
                 , text "  tExpect': " <> ppr tExpect'
@@ -30,6 +30,6 @@ checkSub table !a ctx0 xx tExpect
                 , empty ]
 
         returnX a
-                (\_ -> xx')
+                (\_ -> xx2)
                 tExpect
                 eff clo ctx2

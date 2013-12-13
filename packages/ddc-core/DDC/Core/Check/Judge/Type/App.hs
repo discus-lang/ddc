@@ -260,26 +260,39 @@ applyFunctionType a xx
  = let  effsResult      = effsFn `Sum.union` effsArg
         closResult      = closFn `Set.union` closArg
    in  case tFn of
-        -- Discharge an implication.
+         -- Discharge an implication.
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
+          -- Parameter and argument types match.
           | t11 `equivT` tArg
           -> return (t12, effsResult, closResult)
+
+          -- Argument type mismatch.
+          | otherwise   -> throw $ ErrorAppMismatch a xx t11 tArg
 
          -- Oblivious application of a pure function.
          -- Computation of the function and argument may themselves have
          -- an effect, but the function application does not.
          TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
+          -- Parameter and argument types match.
           | t11 `equivT` tArg
           -> return (t12, effsResult, closResult)
+
+          -- Argument type mismatch.
+          | otherwise   -> throw $ ErrorAppMismatch a xx t11 tArg
 
          -- Function with latent effect and closure.
          -- Note: we don't need to use the closure of the function because
          --       all of its components will already be part of clos1 above.
          TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t11) eff) _clo) t12
+          -- Paramter and argument types match.
           | t11 `equivT` tArg   
           , effs    <- Sum.fromList kEffect [eff]
           -> return (t12, effsResult `Sum.union` effs, closResult)
 
+          -- Argument type mismatch.
           | otherwise   -> throw $ ErrorAppMismatch a xx t11 tArg
+
+         -- The expression used in the left of an application
+         -- does not have a functional type.
          _              -> throw $ ErrorAppNotFun   a xx tFn
 

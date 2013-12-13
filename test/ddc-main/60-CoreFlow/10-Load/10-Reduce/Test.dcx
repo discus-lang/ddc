@@ -7,6 +7,6 @@
 module Test with letrec
 test    [k : Rate] (u1 u2 : Ref# Int#) 
         (elems : Series# k Int#) : Process#
- =      pjoin#  (sreduce# u1 (add# [Int#]) 0i# elems)
-                (sreduce# u2 (mul# [Int#]) 1i# elems)
+ =      pjoin#  (sreduce# u1 add# 0i# elems)
+                (sreduce# u2 mul# 1i# elems)
 ;;
