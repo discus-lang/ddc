@@ -1,71 +1,45 @@
 
-module DDC.Core.Check.Exp.Base 
+module DDC.Core.Check.Judge.Type.Base 
         ( Checker
         , Table (..)
         , returnX
 
         -- * Modules
+        , module DDC.Core.Check.Base
+
+        , module DDC.Core.Check.Judge.Inst
+        , module DDC.Core.Check.Judge.Sub
+        , module DDC.Core.Check.Judge.Eq
         , module DDC.Core.Check.TaggedClosure
         , module DDC.Core.Check.Witness
-        , module DDC.Core.Check.DaCon
         , module DDC.Core.Check.Error
         , module DDC.Core.Transform.Reannotate
         , module DDC.Core.Transform.SubstituteTX
         , module DDC.Core.Annot.AnTEC
-        , module DDC.Core.Collect
-        , module DDC.Core.Predicates
-        , module DDC.Core.Compounds
-        , module DDC.Core.Exp
+
         , module DDC.Type.Transform.SubstituteT
         , module DDC.Type.Transform.Instantiate
         , module DDC.Type.Transform.Crush
         , module DDC.Type.Transform.LiftT
-        , module DDC.Type.Transform.Trim
-        , module DDC.Type.Check.Context
-        , module DDC.Type.Predicates
-        , module DDC.Type.Universe
-        , module DDC.Type.DataDef
-        , module DDC.Type.Equiv
-        , module DDC.Data.ListUtils
-        , module DDC.Base.Pretty
-        , module Control.Monad
-        , module Data.Maybe
-
-        -- * Re-exported things
-        , Config (..)
-        , Env, KindEnv, TypeEnv
-        , throw, runCheck
-        , Set)
+        , module DDC.Type.Transform.Trim)
 where
+import DDC.Core.Check.Base
+
+import DDC.Core.Check.Judge.Inst
+import DDC.Core.Check.Judge.Sub
+import DDC.Core.Check.Judge.Eq
 import DDC.Core.Check.TaggedClosure
 import DDC.Core.Check.Witness
-import DDC.Core.Check.DaCon
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Annot.AnTEC
-import DDC.Core.Collect
-import DDC.Core.Predicates
-import DDC.Core.Compounds
-import DDC.Core.Exp
+
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Trim
-import DDC.Type.Check.Context
-import DDC.Type.Predicates
-import DDC.Type.Universe
-import DDC.Type.DataDef
-import DDC.Type.Equiv
-import DDC.Data.ListUtils
-import DDC.Base.Pretty
-import Control.Monad
-import Data.Maybe
-
-import DDC.Type.Env             (Env, KindEnv, TypeEnv)
-import DDC.Control.Monad.Check  (throw, runCheck)
-import Data.Set                 (Set)
 
 
 -- | Type of the function that checks some node of the core AST.

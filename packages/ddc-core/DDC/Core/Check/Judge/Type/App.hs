@@ -1,9 +1,9 @@
 
-module DDC.Core.Check.Exp.App
+module DDC.Core.Check.Judge.Type.App
         (checkApp)
 where
-import DDC.Core.Check.Exp.Base
-import DDC.Core.Check.Exp.Inst
+import DDC.Core.Check.Judge.Type.Sub
+import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 

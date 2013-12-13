@@ -34,4 +34,5 @@ import DDC.Core.Check.ErrorMessage      ()
 import DDC.Core.Check.Module
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Witness
+import DDC.Core.Check.Base
                 

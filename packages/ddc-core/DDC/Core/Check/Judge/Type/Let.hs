@@ -1,12 +1,12 @@
 
-module DDC.Core.Check.Exp.Let
+module DDC.Core.Check.Judge.Type.Let
         (checkLet)
 where
-import DDC.Core.Check.Exp.Base
+import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
-import Data.List                        as L
+import Data.List                as L
 
 
 checkLet :: Checker a n

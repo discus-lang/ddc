@@ -1,10 +1,10 @@
 
-module DDC.Core.Check.Exp.VarCon
+module DDC.Core.Check.Judge.Type.VarCon
         (checkVarCon)
 where
-import DDC.Core.Check.DaCon
-import DDC.Core.Check.Exp.Base
-import DDC.Core.Check.Exp.Inst
+import DDC.Core.Check.Judge.Type.DaCon
+import DDC.Core.Check.Judge.Type.Sub
+import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Map       as Map

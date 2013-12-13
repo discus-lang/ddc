@@ -21,14 +21,14 @@ module DDC.Core.Check.Exp
           -- * Tagged closures.
         , TaggedClosure(..))
 where
-import DDC.Core.Check.Exp.VarCon
-import DDC.Core.Check.Exp.Abs
-import DDC.Core.Check.Exp.App
-import DDC.Core.Check.Exp.Let
-import DDC.Core.Check.Exp.Case
-import DDC.Core.Check.Exp.Cast
-import DDC.Core.Check.Exp.Witness
-import DDC.Core.Check.Exp.Base
+import DDC.Core.Check.Judge.Type.VarCon
+import DDC.Core.Check.Judge.Type.Abs
+import DDC.Core.Check.Judge.Type.App
+import DDC.Core.Check.Judge.Type.Let
+import DDC.Core.Check.Judge.Type.Case
+import DDC.Core.Check.Judge.Type.Cast
+import DDC.Core.Check.Judge.Type.Witness
+import DDC.Core.Check.Judge.Type.Base
 import DDC.Core.Transform.MapT
 import Data.Monoid                      hiding ((<>))
 import qualified DDC.Type.Env           as Env

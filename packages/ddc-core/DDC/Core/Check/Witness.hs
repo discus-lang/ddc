@@ -1,90 +1,19 @@
 -- | Type checker for witness expressions.
 module DDC.Core.Check.Witness
-        ( Config(..)
-        , configOfProfile
-
-        , checkWitness
+        ( checkWitness
+        , checkWitnessM
         , typeOfWitness
         , typeOfWiCon
-        , typeOfWbCon
-
-        , CheckM
-        , CheckTrace    (..)
-        , checkWitnessM
-        , newExists
-        , newPos
-        , ctrace
-
-        , checkTypeM
-        , checkBindM)
+        , typeOfWbCon)
 where
-import DDC.Core.Exp
 import DDC.Core.Annot.AnT
-import DDC.Core.Pretty
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()
-import DDC.Type.Check                           (Config (..), configOfProfile)
+import DDC.Core.Check.Base
 import DDC.Type.Transform.SubstituteT
-import DDC.Type.Check.Context
-import DDC.Type.Compounds
-import DDC.Type.Universe
-import DDC.Type.Env                             (KindEnv, TypeEnv)
-import DDC.Control.Monad.Check                  (throw, evalCheck)
-import DDC.Base.Pretty                          ()
 import Data.Monoid                              hiding ((<>))
-import qualified DDC.Control.Monad.Check        as G
 import qualified DDC.Type.Env                   as Env
-import qualified DDC.Type.Check                 as T
 import qualified DDC.Type.Sum                   as Sum
-
-
--- | Type checker monad. 
---   Used to manage type errors.
-type CheckM a n   
-        = G.CheckM (CheckTrace, Int, Int) (Error a n)
-
-
-
--- | Allocate a new exisistential.
-newExists :: CheckM a n Exists
-newExists
- = do   (tr, ix, pos)       <- G.get
-        G.put (tr, ix + 1, pos)
-        return  (Exists ix)
-
-
--- | Allocate a new stack position.
-newPos :: CheckM a n Pos
-newPos
- = do   (tr, ix, pos)       <- G.get
-        G.put (tr, ix, pos + 1)
-        return  (Pos pos)
-
-
--- CheckTrace -----------------------------------------------------------------
--- Trace for the type checker.
-data CheckTrace 
-        = CheckTrace
-        { checkTraceDoc :: Doc }
-
-instance Pretty CheckTrace where
- ppr ct = checkTraceDoc ct
-
-instance Monoid CheckTrace where
- mempty = CheckTrace empty
- 
- mappend ct1 ct2
-        = CheckTrace 
-        { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
-
-
--- | Append a doc to the checker trace.
-ctrace :: Doc -> CheckM a n ()
-ctrace doc'
- = do   (tr, ix, pos)       <- G.get
-        let tr' = tr { checkTraceDoc = checkTraceDoc tr <$> doc' }
-        G.put (tr', ix, pos)
-        return  ()
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -237,37 +166,4 @@ typeOfWbCon wb
     WbConUse     -> tForall kRegion $ \r -> tGlobal r `tImpl` (tEmpty $ tUse r)
     WbConRead    -> tForall kRegion $ \r -> tConst  r `tImpl` (tPure  $ tRead r)
     WbConAlloc   -> tForall kRegion $ \r -> tConst  r `tImpl` (tPure  $ tAlloc r)
-
-
--- checkType ------------------------------------------------------------------
--- | Check a type in the exp checking monad.
-checkTypeM 
-        :: (Ord n, Show n, Pretty n) 
-        => Config n 
-        -> KindEnv n 
-        -> Context n 
-        -> Type n
-        -> CheckM a n (Type n, Kind n)
-
-checkTypeM config kenv ctx tt
- = case T.checkTypeWithContext config kenv ctx tt of
-        Left err        -> throw $ ErrorType err
-        Right (t, k)    -> return (t, k)
-
-
--- Bind -----------------------------------------------------------------------
--- | Check a bind.
-checkBindM
-        :: (Ord n, Show n, Pretty n)
-        => Config n
-        -> KindEnv n
-        -> Context n
-        -> Bind n
-        -> CheckM a n (Bind n, Kind n)
-
-checkBindM config kenv ctx bb
- = case T.checkTypeWithContext config kenv ctx (typeOfBind bb) of
-        Left err        -> throw $ ErrorType err
-        Right (t', k)   -> return (replaceTypeOfBind t' bb, k)
-
 

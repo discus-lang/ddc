@@ -1,11 +1,11 @@
 
-module DDC.Core.Check.Exp.Witness
+module DDC.Core.Check.Judge.Type.Witness
         (checkWit)
 where
-import DDC.Core.Transform.Reannotate
-import DDC.Core.Check.Exp.Base
-import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
+import DDC.Core.Check.Witness
+import DDC.Core.Check.Judge.Type.Base
+import qualified DDC.Type.Sum           as Sum
+import qualified Data.Set               as Set
 
 
 checkWit :: Checker a n

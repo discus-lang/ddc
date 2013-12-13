@@ -1,8 +1,8 @@
 
-module DDC.Core.Check.Exp.Case
+module DDC.Core.Check.Judge.Type.Case
         (checkCase)
 where
-import DDC.Core.Check.Exp.Base
+import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map

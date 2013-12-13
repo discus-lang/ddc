@@ -1,8 +1,8 @@
 
-module DDC.Core.Check.Exp.Cast
+module DDC.Core.Check.Judge.Type.Cast
         (checkCast)
 where
-import DDC.Core.Check.Exp.Base
+import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
