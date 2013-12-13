@@ -15,7 +15,7 @@ checkSub table !a ctx0 xx tExpect
         let tExpect'    = applyContext ctx1 tExpect
         let tSynth'     = applyContext ctx1 tSynth
 
-        ctx2    <- makeSub table a ctx1 tSynth' tExpect'
+        ctx2    <- makeSub a ctx1 tSynth' tExpect'
 
         ctrace  $ vcat
                 [ text "* Sub"
