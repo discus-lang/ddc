@@ -30,10 +30,9 @@ cmdFlowLower bidir supp config lowerConfig source sourceText
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
-         $  stageFlowLoad  config source
+         $  stageFlowLoad  config source bidir
          [  stageFlowPrep  config source
-         [  PipeCoreCheck  Flow.fragment 
-                           (if bidir then C.Synth else C.Recon)
+         [  PipeCoreCheck  Flow.fragment C.Recon
          [  stageFlowLower config lowerConfig source [ pipeFinal ]]]]
 
         pipeFinal

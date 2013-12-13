@@ -1,12 +1,10 @@
+:set Synth
 :set SuppressLetTypes
 
 -- | Single map over input series, writing into existing vector.
 :flow-lower..
 module Test with letrec
-test    [k : Rate] 
-        (v : Vector# Int#) (s : Series# k Int#) 
-        : Process#
- = sfill# [k] [Int#] v
-        (smap# [k] [Int#] [Int#]
-                (\(x : Int#). add# [Int#] (mul# [Int#] x 2i#) 1i#) s)
+test    [k : Rate] (v : Vector# Int#) 
+        (s : Series# k Int#) : Process#
+ = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) s)
 ;;

@@ -25,8 +25,8 @@ cmdFlowRate config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  stageFlowLoad  config source
-                [  stageFlowRate  config source
+                $  stageFlowLoad  config source False
+                [  stageFlowRate  config source 
                 [  PipeCoreCheck Flow.fragment C.Recon
                 [  PipeCoreOutput SinkStdout ]]]
 

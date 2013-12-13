@@ -28,7 +28,7 @@ cmdFlowMelt config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  stageFlowLoad config source 
+                $  stageFlowLoad config source False
                 [  PipeCoreCheck fragment C.Recon
                 [  PipeCoreAsFlow 
                 [  PipeFlowMelt

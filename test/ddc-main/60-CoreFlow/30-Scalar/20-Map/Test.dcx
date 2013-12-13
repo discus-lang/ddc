@@ -1,14 +1,12 @@
 :set SuppressLetTypes
+:set Synth
 
 -- Fuse map into fill.
 :flow-lower..
 module Test with letrec
 map     [k : Rate] (v : Vector# Int#)
         (s : Series# k Int#) : Process#
- = sfill# [k] [Int#] v
-        (smap# [k] [Int#] [Int#]
-                (\(x : Int#). add# [Int#] (mul# [Int#] x 2i#) 1i#)
-                s)
+ = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) s)
 ;;
 
 
@@ -17,11 +15,9 @@ map     [k : Rate] (v : Vector# Int#)
 module Test with letrec
 foldMap [k : Rate] (x : Ref# Int#)
         (s : Series# k Int#) : Process#
- = sreduce# [k] [Int#] x
-        (add# [Int#]) 0i#
-        (smap# [k] [Int#] [Int#]
-                (\(x : Int#). mul# [Int#] x 2i#) 
-                s)
+ = sreduce# x 
+        add# 0i#
+        (smap# (\x. mul# x 2i#) s)
 ;;
 
 
@@ -30,12 +26,10 @@ foldMap [k : Rate] (x : Ref# Int#)
 module Test with letrec
 map     [k : Rate] (v : Vector# Int#)
         (s : Series# k Int#) : Process#
- = sfill# [k] [Int#] v
-        (smap# [k] [Int#] [Int#]
-               (mul# [Int#] 2i#)
-               (smap1# [k] [Int#] [Int#]
-                      (add# [Int#] 1i#) 
-                      s))
+ = sfill# v
+        (smap# (mul# 2i#)
+               (smap1# (add# 1i#) 
+                       s))
 ;;
 
 

@@ -1,4 +1,5 @@
 ok
+ok
 
 -- | Single map over input series, writing into existing vector.
 module Test with

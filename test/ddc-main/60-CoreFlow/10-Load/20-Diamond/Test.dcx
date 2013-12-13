@@ -1,5 +1,5 @@
-
 :set lang Flow
+:set Synth
 
 -- Kernel of QuickHull algorithm.
 -- This has a diamond dependency on the points stream,

@@ -25,7 +25,7 @@ cmdFlowWind config source sourceText
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
-         $  stageFlowLoad  config source
+         $  stageFlowLoad  config source False
          [  PipeCoreCheck  Flow.fragment C.Recon
          [  stageFlowWind config source [ pipeFinal ]]]
 
