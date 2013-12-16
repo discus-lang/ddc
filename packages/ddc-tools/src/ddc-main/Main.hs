@@ -36,6 +36,7 @@ import System.Exit
 import System.FilePath
 import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage               as Driver
+import qualified DDC.Build.Pipeline.Sink        as Build
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Transform.Suppress    as Suppress
 
@@ -149,28 +150,36 @@ run config
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLower filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
+         -> do  configDriver    <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower False
-                                Suppress.configZero
-                                dconfig
-                                Flow.defaultConfigScalar (SourceFile filePath) str
+                runError 
+                 $ cmdFlowLower
+                        False Build.SinkDiscard
+                        Suppress.configZero
+                        configDriver Flow.defaultConfigScalar 
+                        (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerKernel filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
+         -> do  configDriver    <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower False
-                                Suppress.configZero
-                                dconfig Flow.defaultConfigKernel (SourceFile filePath) str
+                runError 
+                 $ cmdFlowLower
+                        False Build.SinkDiscard
+                        Suppress.configZero
+                        configDriver Flow.defaultConfigKernel
+                        (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerVector filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
+         -> do  configDriver    <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
-                runError $ cmdFlowLower False
-                                Suppress.configZero
-                                dconfig Flow.defaultConfigVector (SourceFile filePath) str
+                runError 
+                 $ cmdFlowLower 
+                        False Build.SinkDiscard
+                        Suppress.configZero
+                        configDriver Flow.defaultConfigVector 
+                        (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
         ModeFlowConcretize filePath

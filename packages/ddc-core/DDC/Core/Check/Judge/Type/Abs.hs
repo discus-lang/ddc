@@ -251,20 +251,21 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
  | Just (tX1, tX2)      <- takeTFun tXX
  = do   let config      = tableConfig table
         let t1          = typeOfBind b1
-        let xx          = XLam a b1 x2
 
         -- If the parameter has no type annotation then we can use the
         --   expected type we were passed down from above.
         -- If it does have an annotation, then it needs to match the
         --   expected type.
-        b1' <- if isBot t1             
-                then return (replaceTypeOfBind tX1 b1)
-               else if equivT t1 tX1   
-                then return b1
-               else  throw $ ErrorLamParamUnexpected a xx b1 tX1
+        (b1', ctx0) 
+         <- if isBot t1             
+             then 
+                return  (replaceTypeOfBind tX1 b1, ctx)
+             else do
+                ctx0    <- makeEq a ctx t1 tX1 
+                return  (b1, ctx0)
                         
         -- Check the body of the abstraction under the extended environment.
-        let (ctx', pos1) = markContext ctx
+        let (ctx', pos1) = markContext ctx0
         let ctx1         = pushType b1' ctx'
 
         (x2', t2, e2, c2, ctx2)

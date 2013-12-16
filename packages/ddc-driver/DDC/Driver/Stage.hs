@@ -113,14 +113,15 @@ data ViaBackend
 -- | Type check Core Flow.
 stageFlowLoad
         :: Config -> Source
-        -> Bool                         -- ^ Use bidirectional type inference.
+        -> Bool                 -- ^ Use bidirectional type inference.
+        -> Sink                 -- ^ Where to send the type checker trace.
         -> [PipeCore () Flow.Name]
         -> PipeText Flow.Name Flow.Error
 
-stageFlowLoad config source bidir pipesFlow
+stageFlowLoad config source bidir sinkTrace pipesFlow
  = PipeTextLoadCore Flow.fragment 
         (if bidir then C.Synth else C.Recon)
-        SinkDiscard
+        sinkTrace
  [ PipeCoreReannotate (const ()) 
         ( PipeCoreOutput (dump config source "dump.flow-load.dcf")
         : pipesFlow ) ]

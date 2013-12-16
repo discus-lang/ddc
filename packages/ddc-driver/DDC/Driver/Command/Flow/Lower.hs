@@ -17,32 +17,39 @@ import qualified DDC.Core.Transform.Suppress    as Suppress
 -- | Lower a flow program to loop code.
 cmdFlowLower
         :: Bool                 -- ^ Whether to do bidir type inference.
+        -> Sink                 -- ^ Where to send type checker trace.
         -> Suppress.Config      -- ^ Pretty printer suppression config.
-        -> Driver.Config        -- ^ Platform config.
+        -> Driver.Config        -- ^ Driver config.
         -> Flow.Config          -- ^ Config for the lowering transform.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowLower bidir supp config lowerConfig source sourceText
+cmdFlowLower 
+        useBidirChecking 
+        sinkCheckerTrace 
+        configSupp
+        configDriver
+        configLower
+        source sourceText
  = let  
         pipeLower
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
-         $  stageFlowLoad  config source bidir
-         [  stageFlowPrep  config source
+         $  stageFlowLoad  configDriver source useBidirChecking sinkCheckerTrace
+         [  stageFlowPrep  configDriver source
          [  PipeCoreCheck  Flow.fragment C.Recon
-         [  stageFlowLower config lowerConfig source [ pipeFinal ]]]]
+         [  stageFlowLower configDriver configLower source [ pipeFinal ]]]]
 
         pipeFinal
-         | configTaintAvoidTypeChecks config
-         = PipeCoreSuppress supp
+         | configTaintAvoidTypeChecks configDriver
+         = PipeCoreSuppress configSupp
          [ PipeCoreOutput SinkStdout ]
 
          | otherwise
          = PipeCoreCheck Flow.fragment C.Recon
-         [ PipeCoreSuppress supp
+         [ PipeCoreSuppress configSupp
          [ PipeCoreOutput SinkStdout ]]
 
    in do        

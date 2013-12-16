@@ -31,9 +31,10 @@ import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
-import qualified DDC.Core.Flow          as Flow
-import qualified Data.Set               as Set
 
+import qualified DDC.Build.Pipeline.Sink        as Build
+import qualified DDC.Core.Flow                  as Flow
+import qualified Data.Set                       as Set
 import System.IO
 import Control.Monad.Trans.Error
 import Data.List
@@ -314,12 +315,17 @@ handleCmd1 state cmd source line
                 runError $ cmdFlowPrep config source line
                 return state
 
-        CommandFlowLower lowerConfig
-         -> do  config  <- getDriverConfigOfState state
-                runError $ cmdFlowLower
-                                (Set.member Mode.Synth (stateModes state))
-                                (suppressConfigOfModes (stateModes state))
-                                config lowerConfig source line
+        CommandFlowLower configLower
+         -> do  configDriver  <- getDriverConfigOfState state
+                runError 
+                 $ cmdFlowLower
+                        (Set.member Mode.Synth (stateModes state))
+                        (if Set.member Mode.TraceCheck (stateModes state)
+                                then Build.SinkStdout
+                                else Build.SinkDiscard)
+                        (suppressConfigOfModes (stateModes state))
+                        configDriver configLower 
+                        source line
                 return state
 
         CommandFlowConcretize

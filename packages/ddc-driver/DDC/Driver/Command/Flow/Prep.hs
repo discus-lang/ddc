@@ -25,7 +25,7 @@ cmdFlowPrep config source sourceText
                 $  pipeText (nameOfSource source)
                             (lineStartOfSource source)
                             sourceText
-                $  stageFlowLoad  config source False
+                $  stageFlowLoad  config source False SinkDiscard
                 [  stageFlowPrep  config source
                 [  PipeCoreCheck Flow.fragment C.Recon
                 [  PipeCoreOutput SinkStdout ]]]
