@@ -216,20 +216,24 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         (xArg', tArg, effsArg, closArg, ctx1) 
          <- tableCheckExp table table ctx0 xArg (Check tParam)
 
+        let tFn1     = applyContext ctx1 tFn
+        let tArg1    = applyContext ctx1 tArg
+        let tResult1 = applyContext ctx1 tResult
+
         -- Get the type, effect and closure resulting from the application
         -- of a function of this type to its argument.
         (_, effsResult, closResult)
          <- applyFunctionType
                 a xx
-                tFn  effsFn   closFn
-                tArg effsArg closArg
+                tFn1  effsFn   closFn
+                tArg1 effsArg closArg
 
         ctrace  $ vcat
                 [ text "* App Synth Fun"
                 , indent 2 $ ppr xx
-                , text "      tFn: " <> ppr tFn
-                , text "     tArg: " <> ppr tArg
-                , text "  tResult: " <> ppr tResult
+                , text "      tFn: " <> ppr tFn1
+                , text "     tArg: " <> ppr tArg1
+                , text "  tResult: " <> ppr tResult1
                 , indent 2 $ ppr ctx1 
                 , empty ]
 

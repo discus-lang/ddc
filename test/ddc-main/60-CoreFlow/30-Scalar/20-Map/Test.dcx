@@ -44,15 +44,3 @@ foldMap [k : Rate] (v : Vector# Int#) (x : Ref# Int#)
         pjoin#  (sreduce# [k] [Int#] x (add# [Int#]) 0i# s)
                 (sfill#   [k] [Int#] v s3)
 ;;
-
-
--- Fuse map into fold.
-:flow-lower..
-module Test with letrec
-foldMap [k : Rate] (x : Ref# Int#)
-        (s : Series# k Int#) : Process#
- = sreduce# x 
-        add# 0i#
-        (smap# (\(x : Int#). mul# x 2i#) s)
-;;
-

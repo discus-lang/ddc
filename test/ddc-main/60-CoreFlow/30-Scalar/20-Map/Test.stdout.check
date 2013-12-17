@@ -1,6 +1,7 @@
 ok
 ok
 
+
 -- Fuse map into fill.
 module Test with
 letrec {
@@ -83,4 +84,3 @@ letrec {
       let _ = write# [Int#] x x$res in
       ()
 }
-
