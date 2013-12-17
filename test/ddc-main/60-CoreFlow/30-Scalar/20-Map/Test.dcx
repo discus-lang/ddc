@@ -39,8 +39,8 @@ map     [k : Rate] (v : Vector# Int#)
 module Test with letrec
 foldMap [k : Rate] (v : Vector# Int#) (x : Ref# Int#)
         (s : Series# k Int#) : Process#
- = do   s2      = smap# [k] [Int#] [Int#] (mul# [Int#] 2i#) s
-        s3      = smap# [k] [Int#] [Int#] (add# [Int#] 1i#) s2
-        pjoin#  (sreduce# [k] [Int#] x (add# [Int#]) 0i# s)
-                (sfill#   [k] [Int#] v s3)
+ = do   s2      = smap# (mul# 2i#) s
+        s3      = smap# (add# 1i#) s2
+        pjoin#  (sreduce# x add# 0i# s)
+                (sfill#   v s3)
 ;;
