@@ -68,11 +68,11 @@ type CheckM a n
         = G.CheckM (CheckTrace, Int, Int) (Error a n)
 
 -- | Allocate a new exisistential.
-newExists :: CheckM a n Exists
-newExists
+newExists :: Kind n -> CheckM a n (Exists n)
+newExists k
  = do   (tr, ix, pos)       <- G.get
         G.put (tr, ix + 1, pos)
-        return  (Exists ix)
+        return  (Exists ix k)
 
 
 -- | Allocate a new stack position.

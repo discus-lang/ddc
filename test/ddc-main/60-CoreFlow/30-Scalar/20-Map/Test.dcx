@@ -1,5 +1,5 @@
-:set SuppressLetTypes
 :set Synth
+:set SuppressLetTypes
 
 
 -- Fuse map into fill.

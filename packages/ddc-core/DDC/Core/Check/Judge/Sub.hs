@@ -41,6 +41,22 @@ makeSub a ctx0 xL tL tR
         return (xL, ctx0)
 
 
+ -- SubVar
+ --  Both sides are the same (rigid) type variable.
+ | TVar u1      <- tL
+ , TVar u2      <- tR
+ , u1 == u2
+ = do   
+        ctrace  $ vcat
+                [ text "* SubVar"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
+
+        return (xL, ctx0)
+
+
  -- SubExVar
  --  Both sides are the same existential.
  | Just iL <- takeExists tL
@@ -109,7 +125,8 @@ makeSub a ctx0 xL tL tR
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
-                , indent 2 $ ppr ctx2 ]
+                , indent 2 $ ppr ctx2 
+                , empty ]
 
         return (xL, ctx2)
 
@@ -131,7 +148,8 @@ makeSub a ctx0 xL tL tR
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
-                , indent 2 $ ppr ctx2 ]
+                , indent 2 $ ppr ctx2 
+                , empty ]
 
         return (xL, ctx2)
 
@@ -142,7 +160,7 @@ makeSub a ctx0 xL tL tR
  = do   
         -- Make a new existential to instantiate the quantified
         -- variable and substitute it into the body. 
-        iA        <- newExists
+        iA        <- newExists (typeOfBind b)
         let tA    = typeOfExists iA
         let t1'   = substituteT b tA t1
 
@@ -172,7 +190,7 @@ makeSub a ctx0 xL tL tR
         let AnTEC _ e0 c0 _    
                  = annotOfExp xL
         let aFn  = AnTEC t1' e0 c0 a
-        let aArg = AnTEC kData (tBot kEffect) (tBot kClosure) a
+        let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xL2  = XApp aFn xL1 (XType aArg tA) 
 
         return (xL2, ctx4)

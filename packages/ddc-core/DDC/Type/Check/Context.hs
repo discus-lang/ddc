@@ -77,26 +77,35 @@ instance (Eq n, Pretty n) => Pretty (Mode n) where
 
 -- Exists ---------------------------------------------------------------------
 -- | An existential variable.
-data Exists
-        = Exists !Int
-        deriving (Show, Eq)
+data Exists n
+        = Exists !Int !(Kind n)
+        deriving (Show)
+
+instance Eq (Exists n) where
+ (==)   (Exists i1 _) (Exists i2 _)     = i1 == i2
+ (/=)   (Exists i1 _) (Exists i2 _)     = i1 /= i2
 
 
-instance Pretty Exists where
- ppr (Exists i) = text "?" <> ppr i
+instance Ord (Exists n) where
+ compare (Exists i1 _) (Exists i2 _)
+        = compare i1 i2
+
+
+instance Pretty (Exists n) where
+ ppr (Exists i _) = text "?" <> ppr i
 
 
 -- | Wrap an existential variable into a type.
-typeOfExists :: Exists -> Type n
-typeOfExists (Exists n)
-        = TCon (TyConExists n kData)
+typeOfExists :: Exists n -> Type n
+typeOfExists (Exists n k)
+        = TCon (TyConExists n k)
 
 
 -- | Take an Exists from a type.
-takeExists :: Type n -> Maybe Exists
+takeExists :: Type n -> Maybe (Exists n)
 takeExists tt
  = case tt of
-        TCon (TyConExists n _)  -> Just (Exists n)
+        TCon (TyConExists n k)  -> Just (Exists n k)
         _                       -> Nothing
 
 
@@ -154,19 +163,19 @@ instance Pretty Pos where
 -- | An element in the type checker context.
 data Elem n
         -- | A context position marker.
-        = ElemPos       !Pos
+        = ElemPos        !Pos
 
         -- | Kind of some variable.
-        | ElemKind      !(Bind n) !Role
+        | ElemKind       !(Bind n) !Role
 
         -- | Type of some variable.
-        | ElemType      !(Bind n)
+        | ElemType       !(Bind n)
 
         -- | Existential variable declaration
-        | ElemExistsDecl !Exists
+        | ElemExistsDecl !(Exists n)
 
         -- | Existential variable solved to some monotype.
-        | ElemExistsEq   !Exists !(Type n)
+        | ElemExistsEq   !(Exists n) !(Type n)
         deriving (Show, Eq)
 
 
@@ -250,7 +259,7 @@ pushKinds brs ctx
 
 -- | Push an existential declaration onto the context.
 --   If this is not an existential then `error`.
-pushExists :: Exists -> Context n -> Context n
+pushExists :: Exists n -> Context n -> Context n
 pushExists i ctx
  = ctx { contextElems = ElemExistsDecl i : contextElems ctx }
 
@@ -330,7 +339,7 @@ lookupKind u ctx
 
 
 -- | Lookup the type bound to an existential, if any.
-lookupExistsEq :: Exists -> Context n -> Maybe (Type n)
+lookupExistsEq :: Exists n -> Context n -> Maybe (Type n)
 lookupExistsEq i ctx
  = go (contextElems ctx)
  where  go []                           = Nothing
@@ -365,7 +374,7 @@ memberKindBind b ctx
 --   or Nothing if it's not there. Returned value is relative to the TOP
 --   of the stack, so the top element has location 0.
 locationOfExists 
-        :: Exists
+        :: Exists n
         -> Context n
         -> Maybe Int
 
@@ -387,14 +396,14 @@ locationOfExists x ctx
 
 -- | Update (solve) an existential in the context stack.
 updateExists 
-        :: [Exists]     -- ^ Other existential declarations to  add before the
+        :: [Exists n]   -- ^ Other existential declarations to  add before the
                         --   updated one.
-        -> Exists       -- ^ Existential to update.
+        -> Exists n     -- ^ Existential to update.
         -> Type n       -- ^ New monotype.
         -> Context n 
         -> Context n
 
-updateExists isMore iEx@(Exists iEx') tEx ctx
+updateExists isMore iEx@(Exists iEx' _) tEx ctx
  = ctx  { contextElems  = go $ contextElems ctx 
         , contextSolved = IntMap.insert iEx' tEx (contextSolved ctx) }
  where
@@ -451,8 +460,8 @@ applyContext ctx tt
  = case tt of
         TVar{}          -> tt
 
-        TCon (TyConExists i _)  
-         |  Just t      <- lookupExistsEq (Exists i) ctx
+        TCon (TyConExists i k)  
+         |  Just t      <- lookupExistsEq (Exists i k) ctx
          -> applyContext ctx t
 
         TCon{}          -> tt
@@ -476,11 +485,11 @@ applySolved ctx tt
  = case tt of
         TVar{}          -> tt
 
-        TCon (TyConExists i _)
+        TCon (TyConExists i k)
          | Just t       <- IntMap.lookup i (contextSolved ctx)
          -> applySolved ctx t
 
-         | Just t       <- lookupExistsEq (Exists i) ctx
+         | Just t       <- lookupExistsEq (Exists i k) ctx
          -> applySolved ctx t
 
         TCon {}         -> tt

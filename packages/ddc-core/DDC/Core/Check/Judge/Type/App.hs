@@ -138,11 +138,11 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
  | Just iFn      <- takeExists tFn
  = do   
         -- New existential for the type of the function parameter.
-        iA1      <- newExists
+        iA1      <- newExists kData
         let tA1  = typeOfExists iA1
 
         -- New existential for the type of the function result.
-        iA2      <- newExists
+        iA2      <- newExists kData
         let tA2  = typeOfExists iA2
 
         -- Update the context with the new constraint.
@@ -173,7 +173,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
  = do   
         -- Make a new existential for the type of the argument,
         -- and push it onto the context.
-        iA         <- newExists
+        iA         <- newExists (typeOfBind b)
         let tA     = typeOfExists iA
         let ctx1   = pushExists iA ctx0
 
@@ -185,7 +185,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         --  and the type of the function was quantified, we know there should
         --  be a type application here.
         let aFn    = AnTEC tFn (TSum effsFn) (closureOfTaggedSet closFn) a
-        let aArg   = AnTEC kData (tBot kEffect) (tBot kClosure) a
+        let aArg   = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xFnTy  = XApp aFn xFn (XType aArg tA)
 
         -- Synthesise the result type of a function being applied to its 

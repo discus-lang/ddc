@@ -189,7 +189,7 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
         -- If there isn't an existing annotation then make an existential.
         (b1', ctxA)
          <- if isBot (typeOfBind b1)
-             then do iA <- newExists
+             then do iA <- newExists kData
                      let tA   = typeOfExists iA
                      let b1'  = replaceTypeOfBind tA b1
                      let ctxA = pushExists iA ctx
@@ -198,7 +198,7 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
              else return (b1, ctx)
         
         -- Existential for the result type.
-        iB              <- newExists
+        iB              <- newExists kData
         let tB          = typeOfExists iB
         
         -- Check the body against the existential for it.

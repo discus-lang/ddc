@@ -78,10 +78,10 @@ makeInst !a ctx0 tL tR
  , Just (tR1, tR2)      <- takeTFun tR
  = do
         -- Make new existentials to match the function type and parameter.
-        iL1      <- newExists
+        iL1      <- newExists kData
         let tL1  =  typeOfExists iL1 
 
-        iL2      <- newExists
+        iL2      <- newExists kData
         let tL2  =  typeOfExists iL2
 
         -- Update the context with the new constraint.
@@ -129,10 +129,10 @@ makeInst !a ctx0 tL tR
  , Just iR              <- takeExists tR
  = do   
         -- Make new existentials to match the function type and parameter.
-        iR1      <- newExists
+        iR1      <- newExists kData
         let tR1  =  typeOfExists iR1 
 
-        iR2      <- newExists
+        iR2      <- newExists kData
         let tR2  =  typeOfExists iR2
 
         -- Update the context with the new constraint.

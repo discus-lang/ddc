@@ -1,3 +1,4 @@
+:set Synth
 :set SuppressLetTypes
 
 
@@ -10,10 +11,10 @@ packMe  [k0 : Rate] [a : Data]
         (flags : Series# k0 Bool#)
         : Process#
 
- =      smkSel1# [k0] flags
+ =      smkSel1# flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-          let s2       = spack# [k0] [k1] [a] sel s
-          in  sfill# [k1] [a] v s2)
+          let s2       = spack# sel s
+          in  sfill# v s2)
 ;;
 
 
@@ -26,12 +27,12 @@ filter  [k0 : Rate] [a : Data]
         (s  : Series# k0 a)
         : Process#
  = do   
-        flags   = smap# [k0] [a] [Bool#] f s
+        flags   = smap# f s
 
-        smkSel1# [k0] flags
+        smkSel1# flags
          (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-          let  s2      =  spack# [k0] [k1] [a] sel s
-          in   sfill# [k1] [a] v s2)
+          let  s2      =  spack# sel s
+          in   sfill# v s2)
 ;;
 
 
@@ -44,13 +45,13 @@ filter  [k0 : Rate] [a : Data]
         (s : Series# k0 a)
         : Process#
  = do   
-        flags   = smap# [k0] [a] [Bool#] f s
+        flags   = smap# f s
 
-        pjoin#  (sfill# [k0] [a] v1 s)
-                (smkSel1# [k0] flags
+        pjoin#  (sfill# v1 s)
+                (smkSel1# flags
                  (/\(k1 : Rate). \(sel : Sel1# k0 k1).
-                  let  s2  = spack# [k0] [k1] [a] sel s
-                  in   sfill# [k1] [a] v1 s2))
+                  let  s2  = spack# sel s
+                  in   sfill# v1 s2))
 ;;
 
 
@@ -64,16 +65,16 @@ filter  [k0 : Rate] [a : Data]
         (s0 : Series# k0 a)
         : Process#
  = do   
-        flags1  = smap# [k0] [a] [Bool#] (\(x : a). f x) s0
+        flags1  = smap# (\(x : a). f x) s0
 
-        smkSel1# [k0] flags1
+        smkSel1# flags1
          (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
-          let  s1      = spack# [k0] [k1] [a] sel1 s0 in
-          let  flags2  = smap#  [k1] [a]  [Bool#] g s1 
-          in   smkSel1# [k1] flags2
+          let  s1      = spack# sel1 s0 in
+          let  flags2  = smap#  g s1 
+          in   smkSel1# flags2
                  (/\(k2 : Rate). \(sel2 : Sel1# k1 k2).
-                  let   s2 = spack# [k1] [k2] [a] sel2 s1
-                  in    sfill# [k2] [a] v s2 ))
+                  let   s2 = spack# sel2 s1
+                  in    sfill# v s2 ))
 ;;
 
 
@@ -87,17 +88,17 @@ filter  [k0 : Rate] [a : Data]
         (s0 : Series# k0 a)
         : Process#
  = do   
-        flags1  = smap# [k0] [a] [Bool#] f s0
-        flags2  = smap# [k0] [a] [Bool#] f s0
+        flags1  = smap# f s0
+        flags2  = smap# f s0
 
-        pjoin#  (smkSel# [k0] flags1
+        pjoin#  (smkSel# flags1
                  (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
-                  let  s1      = spack# [k0] [k1] [a] sel1 s0 
-                  in   sfill# [k1] [a] v1 s1))
+                  let  s1      = spack# sel1 s0 
+                  in   sfill# v1 s1))
 
-                (smkSel# [k0] flags2
+                (smkSel# flags2
                  (/\(k2 : Rate). \(sel2 : Sel1# k0 k2).
-                  let   s2      = spack# [k0] [k2] [a] sel2 s0
-                  in    sfill# [k2] [a] v2 s2))
+                  let   s2      = spack# sel2 s0
+                  in    sfill# v2 s2))
 ;;
 
