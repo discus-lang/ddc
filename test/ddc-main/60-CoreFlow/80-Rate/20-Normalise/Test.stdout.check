@@ -1,5 +1,5 @@
-
 ok
+
 
 -- Normalise - sum, then map. Requires two kernels
 module Test with
@@ -29,6 +29,7 @@ letrec {
                    x5$proc) in
       x5
 }
+
 
 -- Normalise with extra reduce
 module Test with

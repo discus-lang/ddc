@@ -1,12 +1,12 @@
+:set Synth
 
-:set lang Flow
 
 -- Simple fold over a vector
 :flow-rate..
 module Test with letrec
 test    (u1 : Vector# Int#)
         : Int#
- =      vreduce# [Int#] (add# [Int#]) 0i# u1
+ =      vreduce# add# 0i# u1
 ;;
 
 
@@ -15,7 +15,6 @@ test    (u1 : Vector# Int#)
 module Test with letrec
 test    (u1 : Vector# Int#)
         : Int#
- =      add# [Int#] (vreduce# [Int#] (add# [Int#]) 0i# u1) (vreduce# [Int#] (mul# [Int#]) 1i# u1)
+ =      add# (vreduce# add# 0i# u1) (vreduce# mul# 1i# u1)
 ;;
-
 

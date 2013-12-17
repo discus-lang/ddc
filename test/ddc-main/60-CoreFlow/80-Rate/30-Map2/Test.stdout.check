@@ -1,5 +1,5 @@
-
 ok
+
 
 -- Simple map2
 module Test with
@@ -19,6 +19,7 @@ letrec {
                    x3$proc) in
       x3
 }
+
 
 -- Different vector types
 module Test with
@@ -77,5 +78,4 @@ letrec {
                    x9$proc) in
       x9
 }
-
 

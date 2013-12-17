@@ -1,5 +1,4 @@
-
-:set lang Flow
+:set Synth
 
 -- map2 with two filtered - should be outlawed!
 --:flow-rate..
@@ -16,27 +15,30 @@
 :flow-rate..
 module Test with letrec
 test    (us : Vector# Int#) : Vector# Int#
- =      let us' = vfilter# [Int#] (gt# [Int#] 1i#) us 
-     in     us'
+ = do   us'     = vfilter# (gt# 1i#) us 
+        us'
 ;;
+
 
 -- Map over a filter
 :flow-rate..
 module Test with letrec
 test    (us : Vector# Int#) : Vector# Int#
- =      let us'  = vfilter# [Int#] (gt# [Int#] 1i#) us 
-     in let us'' = vmap# [Int#] [Int#] (add# [Int#] 2i#) us'
-     in     us''
+ = do   us'  = vfilter# (gt# 1i#) us 
+        us'' = vmap# (add# 2i#) us'
+        us''
 ;;
+
 
 -- Filter of a filtered, return both. Should be single kernel
 :flow-rate..
 module Test with letrec
 test    (us : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
- =      let us'  = vfilter# [Int#] (gt# [Int#] 1i#) us 
-     in let us'' = vfilter# [Int#] (gt# [Int#] 2i#) us'
-     in     T2# [Vector# Int#] [Vector# Int#] us' us''
+ = do   us'  = vfilter# (gt# 1i#) us 
+        us'' = vfilter# (gt# 2i#) us'
+        T2# us' us''
 ;;
+
 
 -- Filter and fold, then use fold value in map over original and filtered. Three kernels:
 -- 1- filter, fold
@@ -46,13 +48,15 @@ test    (us : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
 module Test with letrec
 test    (orig : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
         -- Kernel 1
- =      let filt = vfilter# [Int#] (gt#  [Int#] 1i#) orig 
-     in let fold = vreduce# [Int#] (add# [Int#]) 0i# filt
+ = do   filt  = vfilter# (gt#  1i#) orig 
+        fold  = vreduce#  add# 0i# filt
+
         -- Kernel 2
-     in let morig= vmap#    [Int#] [Int#] (add# [Int#] fold) orig
+        morig = vmap# (add# fold) orig
+
         -- Kernel 3
-     in let mfilt= vmap#    [Int#] [Int#] (add# [Int#] fold) filt
-     in     T2# [Vector# Int#] [Vector# Int#] morig mfilt
+        mfilt = vmap# (add# fold) filt
+        T2# morig mfilt
 ;;
 
 

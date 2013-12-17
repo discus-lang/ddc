@@ -1,5 +1,5 @@
-
 ok
+
 
 -- Simple fold over a vector
 module Test with
@@ -42,5 +42,4 @@ letrec {
       let x8 : Int# = read# [Int#] x8$ref in
       add# [Int#] x3 x8
 }
-
 

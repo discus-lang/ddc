@@ -1,4 +1,3 @@
-
 ok
 
 -- map2 with two filtered - should be outlawed!
@@ -35,6 +34,7 @@ letrec {
       x2
 }
 
+
 -- Map over a filter
 module Test with
 letrec {
@@ -60,6 +60,7 @@ letrec {
                         x5$proc)) in
       x5
 }
+
 
 -- Filter of a filtered, return both. Should be single kernel
 module Test with
@@ -98,6 +99,7 @@ letrec {
                         x5$proc)) in
       T2# [Vector# Int#] [Vector# Int#] x2 x5
 }
+
 
 -- Filter and fold, then use fold value in map over original and filtered. Three kernels:
 -- 1- filter, fold

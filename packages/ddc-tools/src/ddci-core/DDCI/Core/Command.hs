@@ -306,8 +306,15 @@ handleCmd1 state cmd source line
 
         -- Core Flow passes ----------------------
         CommandFlowRate
-         -> do  config  <- getDriverConfigOfState state
-                runError $ cmdFlowRate config source line
+         -> do  configDriver  <- getDriverConfigOfState state
+                runError 
+                 $ cmdFlowRate 
+                        (Set.member Mode.Synth (stateModes state))
+                        (if Set.member Mode.TraceCheck (stateModes state)
+                                then Build.SinkStdout
+                                else Build.SinkDiscard)
+                        configDriver 
+                        source line
                 return state
 
         CommandFlowPrep

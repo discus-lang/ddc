@@ -1,14 +1,14 @@
+:set Synth
 
-:set lang Flow
 
 -- Two possible schedules, but should be one with only one manifest array (ys)
 :flow-rate..
 module Test with letrec
 test    (us : Vector# Int#) : Vector# Int#
- =      let xs  = vmap# [Int#] [Int#] (add# [Int#] 1i#) us 
-     in let  y  = vreduce#     [Int#] (add# [Int#]) 0i# us 
-     in let ys  = vmap# [Int#] [Int#] (add# [Int#] y) xs 
-     in     ys
+ = do   xs  = vmap# (add# 1i#) us 
+        y   = vreduce# add# 0i# us 
+        ys  = vmap# (add# y) xs 
+        ys
 ;;
 
 

@@ -1,5 +1,5 @@
-
 ok
+
 
 -- Use both separately - no reason they should have same rate. Thus, two processes.
 module Test with
@@ -35,6 +35,7 @@ letrec {
       let x9 : Int# = read# [Int#] x9$ref in
       T3# [Vector# Int#] [Vector# Int#] [Int#] x2 x5 x9
 }
+
 
 -- Try the criss cross one
 module Test with
@@ -86,6 +87,7 @@ letrec {
                    x16$proc) in
       T2# [Vector# Int#] [Vector# Int#] x16 x19
 }
+
 
 -- Criss cross, but manifest two more vectors
 module Test with
