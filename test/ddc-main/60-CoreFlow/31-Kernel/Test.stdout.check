@@ -1,3 +1,5 @@
+-- Lowering to produce vectorised kernels.
+ok
 ok
 
 

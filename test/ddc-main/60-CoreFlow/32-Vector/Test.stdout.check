@@ -1,4 +1,7 @@
+-- Lowering to produce complete vector programs. 
 ok
+ok
+
 
 module Test with
 letrec {
