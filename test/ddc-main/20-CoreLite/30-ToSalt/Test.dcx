@@ -118,7 +118,7 @@ head    [r : Region] [a : Data] (def : a)
 -- Construct a singleton list,
 --      packs a Boxed objet.
 :set trans Snip; Flatten; Namify
-:load..
+:trans..
 module Test with letrec
 singleton [r1 r2 : Region] (x : Int r2) { Alloc r1 | Use r1 } 
         : List r1 (Int r2)

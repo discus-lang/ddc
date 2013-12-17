@@ -3,7 +3,7 @@
 :set +Indent
 :set trans Flatten
 
-:load..
+:trans..
 module Main with
 letrec {
 foo : [r : Region]. Int r -(Alloc r | Use r)> Unit

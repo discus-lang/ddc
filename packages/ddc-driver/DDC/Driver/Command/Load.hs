@@ -1,8 +1,6 @@
 
 module DDC.Driver.Command.Load
-        ( cmdReadModule
-        , cmdReadModule'
-        , cmdLoadFromFile
+        ( cmdLoadFromFile
         , cmdLoadFromString)
 where
 import DDC.Interface.Source
@@ -10,74 +8,23 @@ import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Module
-import DDC.Core.Load
+import DDC.Driver.Command.Read
+import DDC.Core.Annot.AnTEC
 import DDC.Core.Pretty
-import DDC.Data.Canned
-import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import Data.IORef
-import System.Directory
 import System.FilePath
-import System.IO
+import System.Directory
 import qualified Data.Map                       as Map
-import qualified DDC.Base.Parser                as BP
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
--- Read -----------------------------------------------------------------------
--- | Load and typecheck a module.
-cmdReadModule 
-        :: (Ord n, Show n, Pretty n, NFData n)
-        => Fragment n err       -- ^ Language fragment.
-        -> FilePath             -- ^ Path to the module.
-        -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
-cmdReadModule = cmdReadModule' True
+-- TODO: split out simplifier parser into different module.
+-- Don't mash simplifier parsing in with this command.
 
 
-cmdReadModule'
-        :: (Ord n, Show n, Pretty n, NFData n)
-        => Bool                 -- ^ If true, print errors out
-        -> Fragment n err       -- ^ Language fragment.
-        -> FilePath             -- ^ Path to the module.
-        -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
-
-cmdReadModule' printErrors frag filePath
- = do
-        -- Read in the source file.
-        exists  <- doesFileExist filePath
-        when (not exists)
-         $      error $ "No such file " ++ show filePath
-
-        src     <- readFile filePath
-        let source   = SourceFile filePath
-
-        cmdReadModule_parse printErrors filePath frag source src
-
-
-cmdReadModule_parse printErrors filePath frag source src
- = do   ref     <- newIORef Nothing
-        errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore frag 
-                        C.Recon SinkDiscard
-                   [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
-                     [PipeCoreOutput SinkDiscard] ]
-
-        case errs of
-         [] -> do
-                readIORef ref
-
-         _ -> do
-                when printErrors
-                 $ do putStrLn $ "When reading " ++ filePath
-                      mapM_ (hPutStrLn stderr . renderIndent . ppr) errs
-                return Nothing
-
-
--------------------------------------------------------------------------------
 -- | Load and transform a module, printing the result to stdout.
 --   The current transform is set with the given string.
 cmdLoadFromFile
@@ -155,8 +102,8 @@ configLoad_simpl bidir supp language filePath
 
 
 -------------------------------------------------------------------------------
--- | Load and transform a module, 
---   then print the result to @stdout@.
+-- | Load and type check a module, printing 
+--   the result to @stdout@.
 cmdLoadFromString
         :: Bool                 -- ^ Use bidirectional type checking.
         -> Suppress.Config      -- ^ Suppression flags for output.
@@ -168,18 +115,13 @@ cmdLoadFromString
 cmdLoadFromString bidir supp language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
- , simpl                <- bundleSimplifier bundle
- , zero                 <- bundleStateInit  bundle
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore  fragment 
                         (if bidir then C.Synth else C.Recon) 
                         SinkDiscard
-                [  PipeCoreReannotate (\a -> a { annotTail = ()})
-                [  PipeCoreSimplify  fragment zero simpl
-                [  PipeCoreCheck     fragment C.Recon
                 [  PipeCoreSuppress  supp 
-                [  PipeCoreOutput    SinkStdout ]]]]]
+                [  PipeCoreOutput    SinkStdout ]]
 
         case errs of
          [] -> return ()

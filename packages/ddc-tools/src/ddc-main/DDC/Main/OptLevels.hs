@@ -5,7 +5,7 @@ module DDC.Main.OptLevels
         , getSimplSaltOfConfig)
 where
 import DDC.Main.Config
-import DDC.Driver.Command.Load
+import DDC.Driver.Command.Read
 import DDC.Driver.Command.RewriteRules
 import DDC.Build.Builder
 import DDC.Build.Platform
