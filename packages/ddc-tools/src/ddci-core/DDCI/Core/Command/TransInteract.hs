@@ -2,10 +2,10 @@ module DDCI.Core.Command.TransInteract
         ( cmdTransInteract
 	, cmdTransInteractLoop)
 where
-import DDCI.Core.Command.Trans
 import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Driver.Command.Check
+import DDC.Driver.Command.Trans
 import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
@@ -14,7 +14,8 @@ import DDC.Core.Compounds
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Base.Pretty
-import qualified Data.Map                       as Map
+import qualified Data.Map       as Map
+import qualified Data.Set       as Set
 
 
 -- TransInteract --------------------------------------------------------------
@@ -104,8 +105,10 @@ cmdTransInteractLoop state str
                                 (bundleModules bundle) 
                                 (profilePrimTypes profile)
 
-		x_trans <- applyTransAndCheck state profile kenv tenv
-			    (bundleStateInit bundle) tr' x'
+		x_trans  <- transExp
+                                (Set.member TraceTrans $ stateModes state)
+                                profile kenv tenv
+			        (bundleStateInit bundle) tr' x'
 
 		case x_trans of
 		    Nothing -> return state

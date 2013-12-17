@@ -2,12 +2,14 @@
 module DDCI.Core.Command.Eval
         ( cmdStep
         , cmdEval
+        , cmdTransEval
         , evalExp)
 where
 import DDCI.Core.Stats.Trace
 import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Driver.Command.Check
+import DDC.Driver.Command.Trans
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
@@ -80,6 +82,37 @@ cmdEval state source str
     goEval _
      =  return ()
 
+
+cmdTransEval :: State -> Source -> String -> IO ()
+cmdTransEval state source str
+ = cmdTransExpCont
+        (Set.member TraceTrans $ stateModes state)
+        (stateLanguage state)
+        (evalExpCast state)
+        source
+        str
+
+
+-------------------------------------------------------------------------------
+evalExpCast 
+        :: Typeable n
+        => State -> Exp (AnTEC () n) n -> IO ()
+evalExpCast state xx
+
+ | (Just (ExpBox xx') :: Maybe (ExpBox Name)) 
+        <- gcast (ExpBox xx)
+ = evalExp state xx'
+
+ | otherwise
+ = error "ddci-core: evalExpCast failed"
+
+
+-- Proxies to help with type casting.
+--   The 'gcast' function will only cast the rightmost 'n' of a type,
+--   But there is also an 'n' attached to the annotation type of
+--   the simplifier. We use the proxy to cast both occurrences at once.
+data ExpBox n
+         = ExpBox (Exp (AnTEC () n) n)
 
 
 -- | Evaluate an already parsed and type-checked expression.

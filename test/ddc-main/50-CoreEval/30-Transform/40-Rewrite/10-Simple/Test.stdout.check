@@ -12,7 +12,8 @@ addInt [r1#] [r0#] [r2#] (2 [r1#] ()) (1 [r0#] ())
 addInt [r0#] [r0#] [r0#] (1 [r0#] ()) (2 [r0#] ())
 
 -- swap the whole whiz-bang
-addInt [r1#] [r0#] [r2#] (3 [r1#] ()) (addInt [r0#] [r0#] [r0#] (1 [r0#] ()) (2 [r0#] ()))
+addInt [r1#] [r0#] [r2#] (3 [r1#] ())
+    (addInt [r0#] [r0#] [r0#] (1 [r0#] ()) (2 [r0#] ()))
 
 -- don't rewrite if it's not an addInt
 mulInt [r0#] [r1#] [r2#] (1 [r0#] ()) (2 [r1#] ())

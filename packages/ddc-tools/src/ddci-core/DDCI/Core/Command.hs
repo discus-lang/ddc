@@ -8,7 +8,6 @@ where
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Set
 import DDCI.Core.Command.Eval
-import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
 import DDCI.Core.Command.With
 import DDCI.Core.State
@@ -17,6 +16,7 @@ import DDCI.Core.Mode                   as Mode
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
+import DDC.Driver.Command.Trans
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
 
@@ -276,7 +276,13 @@ handleCmd1 state cmd source line
 
         -- Generic transformations --------------
         CommandTrans
-         -> do  cmdTrans state source line
+         -> do  runError
+                 $ cmdTransDetect
+                        (stateLanguage state)
+                        (Set.member Mode.Synth      $ stateModes state)
+                        (suppressConfigOfModes (stateModes state))
+                        (Set.member Mode.TraceTrans $ stateModes state)
+                        source line
                 return state
         
         CommandTransEval
