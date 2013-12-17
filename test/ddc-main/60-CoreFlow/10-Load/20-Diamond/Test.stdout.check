@@ -1,6 +1,7 @@
 ok
 ok
 
+
 -- Kernel of QuickHull algorithm.
 -- This has a diamond dependency on the points stream,
 --  which is something that generic stream fusion can't fuse.

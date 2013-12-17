@@ -36,7 +36,9 @@ module DDC.Core.Compounds.Annot
           -- * Patterns
         , bindsOfPat
 
+
           -- * Alternatives
+        , patOfAlt
         , takeCtorNameOfAlt
 
           -- * Witnesses
@@ -269,6 +271,11 @@ valwitBindsOfLets ll
 
 
 -- Alternatives ---------------------------------------------------------------
+-- | Take the pattern of an alternative.
+patOfAlt :: Alt a n -> Pat n
+patOfAlt (AAlt pat _)   = pat
+
+
 -- | Take the constructor name of an alternative, if there is one.
 takeCtorNameOfAlt :: Alt a n -> Maybe n
 takeCtorNameOfAlt aa

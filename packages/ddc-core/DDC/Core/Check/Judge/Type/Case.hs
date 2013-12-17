@@ -12,15 +12,22 @@ import Data.List                as L
 checkCase :: Checker a n
 
 -- case expression ------------------------------
-checkCase !table !ctx xx@(XCase a xDiscrim alts) mode
+checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
  = do   let config      = tableConfig table
 
+        -- There must be at least one alternative, even if there are no data
+        -- constructors. The rest of the checking code assumes this, and will
+        -- throw an unhelpful error if there are no alternatives.
+        when (null alts)
+         $ throw $ ErrorCaseNoAlternatives a xx
+
         -- Decide what mode to use when checking the discriminant.
-        modeDiscrim     <- takeDiscrimCheckModeFromAlts mode alts
+        (modeDiscrim, ctx1)     
+         <- takeDiscrimCheckModeFromAlts a table ctx0 mode alts
 
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctxDiscrim) 
-         <- tableCheckExp table table ctx xDiscrim modeDiscrim
+         <- tableCheckExp table table ctx1 xDiscrim modeDiscrim
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -58,11 +65,9 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mode
         -- Check the alternatives.
         --  We ignore the returned context because the order of alternatives
         --  should not matter for type inference.
-        (alts', ts, effss, closs, _)
-                <- liftM unzip5
-                $  mapM (\alt -> checkAltM xx table tDiscrim tsArgs ctxDiscrim alt mode) 
-                $  alts
-
+        (alts', ts, effss, closs, ctx')
+                <- checkAltsM xx table tDiscrim tsArgs mode alts ctxDiscrim
+                
         -- All alternative result types must be identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
@@ -79,12 +84,18 @@ checkCase !table !ctx xx@(XCase a xDiscrim alts) mode
                 = Sum.singleton kEffect 
                 $ crushEffect $ tHeadRead tDiscrim
 
+        ctrace  $ vcat
+                [ text "* Case"
+                , text "  modeDiscrim" <+> ppr modeDiscrim
+                , indent 2 $ ppr ctxDiscrim 
+                , empty ]
+
         returnX a
                 (\z -> XCase z xDiscrim' alts')
                 tAlt
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
                 (Set.unions         (closDiscrim : closs))
-                ctxDiscrim
+                ctx'
 
 checkCase _ _ _ _
         = error "ddc-core.checkCase: no match"
@@ -99,19 +110,84 @@ checkCase _ _ _ _
 --   the expected type when checking the discriminant.
 --
 takeDiscrimCheckModeFromAlts
-        :: Mode n               -- ^ Mode for checking enclosing case expression.
+        :: Ord n
+        => a
+        -> Table a n
+        -> Context n
+        -> Mode n               -- ^ Mode for checking enclosing case expression.
         -> [Alt a n]            -- ^ Alternatives in the case expression.
-        -> CheckM a n (Mode n)
+        -> CheckM a n 
+                ( Mode n
+                , Context n)
 
-takeDiscrimCheckModeFromAlts mode _alts
+takeDiscrimCheckModeFromAlts a table ctx mode alts
  | Recon        <- mode
- = return Recon
+ = return (Recon, ctx)
 
  | otherwise
- = return Recon
+ = do
+        let pats     = map patOfAlt alts
+        tsPats       <- liftM catMaybes $ mapM (dataTypeOfPat a table) pats
+
+        -- TODO: check that multiple pattern types are equivalent.
+
+        case tsPats of
+         -- We only have a default pattern, 
+         -- so will need to synthesise the type of the discrim without
+         -- an expected type.
+         [] 
+          -> return (Synth, ctx)
+
+         tPat : _    
+          | Just (bs, tBody) <- takeTForalls tPat
+          -> do  
+                -- existentials for all of the type parameters.
+                is        <- mapM  (\_ -> newExists kData) bs
+                let ts     = map typeOfExists is
+                let ctx'   = foldl (flip pushExists) ctx is
+                let tBody' = substituteTs (zip bs ts) tBody
+                return (Check tBody', ctx')
+                
+          | otherwise
+          -> return (Check tPat, ctx)
 
 
 -------------------------------------------------------------------------------
+-- | Check some case alternatives.
+--   TODO: merge this into checkAltM so we don't duplicate the type sig noise.
+checkAltsM
+        :: (Show n, Pretty n, Ord n)
+        => Exp a n              -- ^ Whole case expression, for error messages.
+        -> Table a n            -- ^ Checker table.
+        -> Type n               -- ^ Type of discriminant.
+        -> [Type n]             -- ^ Args to type constructor of discriminant.
+        -> Mode n               -- ^ Check mode for the alternatives.
+        -> [Alt a n]            -- ^ Alternatives to check.
+        -> Context n            -- ^ Context to check the alternatives in.
+        -> CheckM a n
+                ( [Alt (AnTEC a n) n]      -- Checked alternatives.
+                , [Type n]                 -- Alternative result types.
+                , [TypeSum n]              -- Alternative effects.
+                , [Set (TaggedClosure n)]  -- Alternative closures
+                , Context n)
+
+checkAltsM _ _ _ _ _ [] ctx
+ = return ([], [], [], [], ctx)
+
+checkAltsM !xx !table !tDiscrim !tsArgs mode (alt : alts) ctx
+ = do   (alt',  tAlt, eAlt, cAlt, ctx')
+         <- checkAltM  xx table tDiscrim tsArgs mode alt ctx
+
+        (alts', tsAlts, esAlts, csAlts, ctx'')
+         <- checkAltsM xx table tDiscrim tsArgs mode alts ctx'
+
+        return  ( alt' : alts'
+                , tAlt : tsAlts
+                , eAlt : esAlts
+                , cAlt : csAlts
+                , ctx'')
+
+
 -- | Check a case alternative.
 checkAltM 
         :: (Show n, Pretty n, Ord n) 
@@ -119,9 +195,9 @@ checkAltM
         -> Table a n            -- ^ Checker table.
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
-        -> Context n            -- ^ Context for the right of the alt.
-        -> Alt a n              -- ^ Alternative to check.
         -> Mode n               -- ^ Check mode for right of alternative.
+        -> Alt a n              -- ^ Alternative to check.
+        -> Context n            -- ^ Context to check the expression in.
         -> CheckM a n 
                 ( Alt (AnTEC a n) n
                 , Type n
@@ -129,8 +205,8 @@ checkAltM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkAltM !_xx !table !_tDiscrim !_tsArgs !ctx 
-          (AAlt PDefault xBody) dXX
+checkAltM !_xx !table !_tDiscrim !_tsArgs
+          !dXX (AAlt PDefault xBody) !ctx
  = do   
         -- Check the right of the alternative.
         (xBody', tBody, effBody, cloBody, ctx')
@@ -142,11 +218,11 @@ checkAltM !_xx !table !_tDiscrim !_tsArgs !ctx
                 , cloBody
                 , ctx')
 
-checkAltM !xx !table !tDiscrim !tsArgs !ctx 
-          (AAlt (PData dc bsArg) xBody) dXX
+checkAltM !xx !table !tDiscrim !tsArgs
+          !dXX (AAlt (PData dc bsArg) xBody) !ctx
  = do   let a           = annotOfExp xx
 
-        -- Get teh constructor type associated with this pattern.
+        -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat a table (PData dc bsArg)
          
         -- Take the type of the constructor and instantiate it with the 
@@ -214,13 +290,18 @@ checkAltM !xx !table !tDiscrim !tsArgs !ctx
 
 -- | Merge a type annotation on a pattern field with a type we get by
 --   instantiating the constructor type.
-mergeAnnot :: Eq n => a -> Exp a n -> Type n -> Type n -> CheckM a n (Type n)
+mergeAnnot 
+        :: Eq n 
+        => a -> Exp a n -> Type n -> Type n -> CheckM a n (Type n)
+
 mergeAnnot !a !xx !tAnnot !tActual
-        -- Annotation is bottom, so just use the real type.
-        | isBot tAnnot      = return tActual
+        -- Annotation is bottom, so use the given type.
+        | isBot tAnnot      
+        = return tActual
 
         -- Annotation matches actual type, all good.
-        | tAnnot == tActual = return tActual
+        | tAnnot == tActual 
+        = return tActual
 
         -- Annotation does not match actual type.
         | otherwise       
@@ -257,6 +338,35 @@ ctorTypeOfPat a table (PData dc _)
 
 ctorTypeOfPat _a _table PDefault
  = return Nothing
+
+
+-- | Get the data type associated with a pattern,
+--   or Nothing for the default pattern.
+--
+--   Yields  the data type with outer quantifiers for its type parametrs.
+--    For example, given pattern (Cons x xs), return (forall [a : Data]. List a)
+--
+dataTypeOfPat 
+        :: Ord n 
+        => a
+        -> Table a n
+        -> Pat n
+        -> CheckM a n (Maybe (Type n))
+
+dataTypeOfPat a table pat
+ = do   mtCtor      <- ctorTypeOfPat a table pat
+
+        case mtCtor of
+         Nothing    -> return Nothing
+         Just tCtor -> return $ Just $ eat [] tCtor
+
+ where  eat bs tt
+         = case tt of  
+                TForall b t        -> eat (bs ++ [b]) t
+                TApp{}
+                 |  Just (_t1, t2) <- takeTFun tt
+                 -> eat bs t2
+                _                  -> foldr TForall tt bs
 
 
 -- Checks ---------------------------------------------------------------------
@@ -308,11 +418,6 @@ checkAltsExhaustive
 
 checkAltsExhaustive a xx mode alts
  = do   let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
-
-        -- There must be at least one alternative,
-        -- even if there are no data constructors.
-        when (null alts)
-         $ throw $ ErrorCaseNoAlternatives a xx
         
         -- Check that alternatives are exhaustive.
         case mode of

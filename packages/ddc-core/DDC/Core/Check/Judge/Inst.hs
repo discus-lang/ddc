@@ -13,7 +13,7 @@ makeInst :: (Eq n, Ord n, Pretty n)
         -> Type n
         -> CheckM a n (Context n)
 
-makeInst !a ctx0 tL tR
+makeInst !a !ctx0 !tL !tR
 
  -- InstLSolve
  | Just iL <- takeExists tL

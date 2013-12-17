@@ -141,10 +141,15 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
   <$> text "  genPos    = " <> int genPos
   <$> text "  genExists = " <> int genExists
   <$> indent 2 
-        (vcat $ [int i <> (indent 4 $ ppr l)
+        (vcat $ [int i  <> (indent 4 $ ppr l)
                         | l <- reverse ls
                         | i <- [0..]])
-
+{-
+  <$> indent 2
+        (vcat $ [text "?" <> int i
+                        <> (indent 4 $ ppr t)
+                        | (i, t) <- IntMap.toList solved])
+-}
 
 -- Positions -------------------------------------------------------------------
 -- | A position in the type checker context.

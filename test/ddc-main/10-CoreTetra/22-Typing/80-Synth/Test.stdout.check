@@ -158,3 +158,20 @@ f 5#
 :*: Nat#
 :!: Pure
 
+
+-- Simplest possible case expression.
+letcase ()   = () in
+()
+:*: Unit
+:!: Pure
+
+
+-- Needs synthesis in discrim to add type args.
+case T2# [Nat#] [Nat#] 2# 3# of {
+  T2# (a : Nat#) (b : Nat#) 
+   -> ();
+  _ 
+   -> ()
+}
+:*: Unit
+:!: Pure

@@ -101,3 +101,16 @@ letrec f (x : Nat#) : Nat# = (\z. z) x
 in  f 5#
 ;;
 
+
+-- Simplest possible case expression.
+:synth..
+case () of { () -> () }
+;;
+
+
+-- Needs synthesis in discrim to add type args.
+:synth..
+case T2# 2# 3# of 
+{ T2# a b -> ();
+  _       -> () }
+;;
