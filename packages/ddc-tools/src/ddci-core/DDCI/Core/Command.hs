@@ -280,7 +280,6 @@ handleCmd1 state cmd source line
                  $ cmdTransDetect
                         configDriver
                         (stateLanguage state)
-                        (suppressConfigOfModes (stateModes state))
                         (Set.member Mode.TraceTrans $ stateModes state)
                         source line
                 return state
@@ -323,9 +322,7 @@ handleCmd1 state cmd source line
 
         CommandFlowLower configLower
          -> do  configDriver   <- getDriverConfigOfState state
-                let configSupp = suppressConfigOfModes (stateModes state)
-                runError $ cmdFlowLower configDriver configLower configSupp
-                                source line
+                runError $ cmdFlowLower configDriver configLower source line
                 return state
 
         CommandFlowConcretize

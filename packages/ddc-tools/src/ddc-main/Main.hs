@@ -153,7 +153,7 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower
-                        configDriver Flow.defaultConfigScalar Suppress.configZero
+                        configDriver Flow.defaultConfigScalar
                         (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
@@ -162,7 +162,7 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower
-                        configDriver Flow.defaultConfigKernel Suppress.configZero
+                        configDriver Flow.defaultConfigKernel
                         (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
@@ -170,8 +170,7 @@ run config
          -> do  configDriver    <- getDriverConfig config (Just filePath)
                 str             <- readFile filePath
                 runError 
-                 $ cmdFlowLower 
-                        configDriver Flow.defaultConfigVector Suppress.configZero
+                 $ cmdFlowLower configDriver Flow.defaultConfigVector 
                         (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
@@ -233,6 +232,7 @@ getDriverConfig config filePath
 
                 , Driver.configRuntime                  = runtimeConfig
                 , Driver.configBuilder                  = builder
+                , Driver.configSuppressCore             = Suppress.configZero
                 , Driver.configSuppressCoreImports      = False
                 , Driver.configSuppressHashImports      = False
                 , Driver.configOutputFile               = configOutputFile config

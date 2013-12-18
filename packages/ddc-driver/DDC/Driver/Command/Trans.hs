@@ -30,7 +30,6 @@ import Control.Monad.IO.Class
 import DDC.Type.Env                             as Env
 import qualified DDC.Core.Check                 as C
 import qualified Control.Monad.State.Strict     as S
-import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
 -- Detect ---------------------------------------------------------------------
@@ -42,21 +41,20 @@ import qualified DDC.Core.Transform.Suppress    as Suppress
 cmdTransDetect 
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Language definition.
-        -> Suppress.Config      -- ^ Suppression flags for output.
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Input text.
         -> ErrorT String IO ()
 
-cmdTransDetect    config language configSupp shouldPrintInfo
+cmdTransDetect    config language shouldPrintInfo
         source str
 
  | "module" : _ <- words str
- = cmdTransModule config language configSupp shouldPrintInfo
+ = cmdTransModule config language shouldPrintInfo
         source str
 
  | otherwise
- = cmdTransExp    config language configSupp shouldPrintInfo
+ = cmdTransExp    config language shouldPrintInfo
         source str
 
 
@@ -65,14 +63,12 @@ cmdTransDetect    config language configSupp shouldPrintInfo
 cmdTransModule
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Language definition.
-        -> Suppress.Config      -- ^ Suppression flags for output.
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Input text.
         -> ErrorT String IO ()
 
-cmdTransModule config language configSupp _shouldPrintInfo
-        source str
+cmdTransModule config language _shouldPrintInfo source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
  , simpl                <- bundleSimplifier bundle
@@ -85,13 +81,12 @@ cmdTransModule config language configSupp _shouldPrintInfo
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment C.Recon
-                [  PipeCoreSuppress  configSupp
+                [  PipeCoreSuppress  (configSuppressCore config)
                 [  PipeCoreOutput    SinkStdout ]]]]]
 
         case errs of
          [] -> return ()
          es -> throwError $ renderIndent $ vcat $ map ppr es
-
 
 
 -- Exp ------------------------------------------------------------------------
@@ -100,13 +95,12 @@ cmdTransModule config language configSupp _shouldPrintInfo
 cmdTransExp
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Source language.
-        -> Suppress.Config      -- ^ Suppression flags for output.
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of input text.
         -> String               -- ^ Input text.
         -> ErrorT String IO ()
 
-cmdTransExp config language _configSupp traceTrans
+cmdTransExp config language traceTrans
         source str
  
  = liftIO 

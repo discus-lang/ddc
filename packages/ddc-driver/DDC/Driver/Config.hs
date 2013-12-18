@@ -6,6 +6,8 @@ where
 import DDC.Build.Builder                        
 import DDC.Core.Simplifier                      (Simplifier)
 
+import qualified DDC.Core.Transform.Suppress    as Suppress
+
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Salt                  as Salt
 
@@ -33,6 +35,9 @@ data Config
 
           -- | The builder to use for the target architecture
         , configBuilder                 :: Builder
+
+          -- | Suppress various things in output core modules.
+        , configSuppressCore            :: Suppress.Config
 
           -- | Suppress imports in Core modules
         , configSuppressCoreImports     :: Bool

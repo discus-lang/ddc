@@ -11,20 +11,18 @@ import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
-import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
 -- | Lower a flow program to loop code.
 cmdFlowLower
         :: Driver.Config        -- ^ Driver config.
         -> Flow.Config          -- ^ Config for the lowering transform.
-        -> Suppress.Config      -- ^ Pretty printer suppression config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
 cmdFlowLower
-        configDriver configLower configSupp
+        configDriver configLower
         source sourceText
  = let  
         pipeLower
@@ -38,12 +36,12 @@ cmdFlowLower
 
         pipeFinal
          | configTaintAvoidTypeChecks configDriver
-         = PipeCoreSuppress configSupp
+         = PipeCoreSuppress (configSuppressCore configDriver)
          [ PipeCoreOutput SinkStdout ]
 
          | otherwise
          = PipeCoreCheck Flow.fragment C.Recon
-         [ PipeCoreSuppress configSupp
+         [ PipeCoreSuppress (configSuppressCore configDriver)
          [ PipeCoreOutput SinkStdout ]]
 
    in do        

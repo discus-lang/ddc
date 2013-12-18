@@ -144,6 +144,7 @@ getDriverConfigOfState state
          , D.configSimplLite            = stateSimplLite  state
          , D.configSimplSalt            = stateSimplSalt  state
          , D.configBuilder              = builder
+         , D.configSuppressCore         = suppressConfigOfModes (stateModes state)
          , D.configSuppressCoreImports  = Set.member SuppressImports (stateModes state)
          , D.configSuppressHashImports  = not $ Set.member SaltPrelude (stateModes state) 
          , D.configKeepLlvmFiles        = False
