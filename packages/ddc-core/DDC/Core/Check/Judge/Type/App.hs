@@ -50,24 +50,34 @@ checkApp !table !ctx xx@(XApp a x1 (XType _ t2)) _
 
 
 -- value-value application ----------------------
-checkApp !table !ctx xx@(XApp a x1 x2) Recon
+checkApp !table !ctx xx@(XApp a xFn xArg) Recon
  = do   
         -- Check the functional expression.
-        (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table ctx  x1 Recon
+        (xFn',  tFn,  effsFn,  closFn,  ctx1) 
+         <- tableCheckExp table table ctx  xFn Recon
 
         -- Check the argument.
-        (x2', t2, effs2, clos2, ctx2) 
-         <- tableCheckExp table table ctx1 x2 Recon
+        (xArg', tArg, effsArg, closArg, ctx2) 
+         <- tableCheckExp table table ctx1 xArg Recon
 
-        (tResult, effsResult, closResult)
-         <- applyFunctionType
-                a xx
-                t1 effs1 clos1
-                t2 effs2 clos2
+        (tResult, effsLatent)
+         <- case splitFunType tFn of
+             Just (tParam, effs, _, tResult)
+              | tParam `equivT` tArg 
+              -> return (tResult, effs)
+
+              | otherwise           
+              -> throw  $ ErrorAppMismatch a xx tParam tArg
+
+             Nothing
+              -> throw  $ ErrorAppNotFun a xx tFn
+
+        let effsResult  = Sum.unions kEffect
+                        $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
+        let closResult  = Set.union  closFn closArg
 
         returnX a 
-                (\z -> XApp z x1' x2')
+                (\z -> XApp z xFn' xArg')
                 tResult effsResult closResult ctx2
 
 -- Rule (-> Elim)
@@ -222,11 +232,18 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
 
         -- Get the type, effect and closure resulting from the application
         -- of a function of this type to its argument.
-        (_, effsResult, closResult)
-         <- applyFunctionType
-                a xx
-                tFn1  effsFn   closFn
-                tArg1 effsArg closArg
+        effsLatent
+         <- case splitFunType tFn1 of
+             Just (_tParam, effsLatent, _closLatent, _tResult)
+              -> return effsLatent
+
+             Nothing
+              -> throw  $ ErrorAppNotFun a xx tFn1
+
+        let effsResult  = Sum.unions kEffect
+                        $ [ effsFn, effsArg, Sum.singleton kEffect effsLatent]
+        
+        let closResult  = Set.union closFn closArg
 
         ctrace  $ vcat
                 [ text "* App Synth Fun"
@@ -234,7 +251,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
                 , text "      tFn: " <> ppr tFn1
                 , text "     tArg: " <> ppr tArg1
                 , text "  tResult: " <> ppr tResult1
-                , indent 2 $ ppr ctx1 
+                , indent 2 $ ppr ctx1
                 , empty ]
 
         return  ( xFn, xArg'
@@ -245,58 +262,20 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
 
 
 -------------------------------------------------------------------------------
--- | Get the result type, effect and closure of an applied function.
---   The way we do this depends on what sort of function constructor we have.
-applyFunctionType 
-        :: Ord n
-        => a            -- Annotation, for error messages.
-        -> Exp a n      -- Original expression, for error messages.
-        -> Type n -> TypeSum n -> Set (TaggedClosure n)
-        -> Type n -> TypeSum n -> Set (TaggedClosure n)
-        -> CheckM a n 
-                ( Type n
-                , TypeSum n
-                , Set (TaggedClosure n))
+splitFunType 
+        :: Type n
+        -> Maybe (Type n, Effect n, Closure n, Type n)
 
-applyFunctionType a xx
-        tFn  effsFn  closFn
-        tArg effsArg closArg
- = let  effsResult      = effsFn `Sum.union` effsArg
-        closResult      = closFn `Set.union` closArg
-   in  case tFn of
-         -- Discharge an implication.
-         TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
-          -- Parameter and argument types match.
-          | t11 `equivT` tArg
-          -> return (t12, effsResult, closResult)
+splitFunType tt
+ = case tt of
+        TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
+          -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
-          -- Argument type mismatch.
-          | otherwise   -> throw $ ErrorAppMismatch a xx t11 tArg
+        TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
+          -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
-         -- Oblivious application of a pure function.
-         -- Computation of the function and argument may themselves have
-         -- an effect, but the function application does not.
-         TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
-          -- Parameter and argument types match.
-          | t11 `equivT` tArg
-          -> return (t12, effsResult, closResult)
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t11) eff) clo) t12
+          -> Just (t11, eff, clo, t12)
 
-          -- Argument type mismatch.
-          | otherwise   -> throw $ ErrorAppMismatch a xx t11 tArg
-
-         -- Function with latent effect and closure.
-         -- Note: we don't need to use the closure of the function because
-         --       all of its components will already be part of clos1 above.
-         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t11) eff) _clo) t12
-          -- Paramter and argument types match.
-          | t11 `equivT` tArg   
-          , effs    <- Sum.fromList kEffect [eff]
-          -> return (t12, effsResult `Sum.union` effs, closResult)
-
-          -- Argument type mismatch.
-          | otherwise   -> throw $ ErrorAppMismatch a xx t11 tArg
-
-         -- The expression used in the left of an application
-         -- does not have a functional type.
-         _              -> throw $ ErrorAppNotFun   a xx tFn
-
+        _ -> Nothing
+         

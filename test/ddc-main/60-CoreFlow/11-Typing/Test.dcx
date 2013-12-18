@@ -1,13 +1,10 @@
 
-
-
-
--- Multiply two series.
--- Combination of synth type arg and explicit type arg doesn't work.
-
 :set Synth
-:set TraceCheck
-:flow-lower-kernel..
+:set lang Flow
+
+-- This was once triggering an inferencer bug,
+-- due to having some type args, but not all of them.
+:load..
 module Test with letrec
 test    [k : Rate] (n  : RateNat# k)
         (v  : Vector# Float32#)
@@ -15,6 +12,5 @@ test    [k : Rate] (n  : RateNat# k)
         : Process#
  = do   
         s2      = smap2# (mul# [Float32#]) s1 s2
-
         sfill# [k] [Float32#] v s2
 ;;
