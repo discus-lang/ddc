@@ -36,7 +36,6 @@ import System.Exit
 import System.FilePath
 import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage               as Driver
-import qualified DDC.Build.Pipeline.Sink        as Build
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Transform.Suppress    as Suppress
 
@@ -154,7 +153,6 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower
-                        False Build.SinkDiscard
                         Suppress.configZero
                         configDriver Flow.defaultConfigScalar 
                         (SourceFile filePath) str
@@ -165,7 +163,6 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower
-                        False Build.SinkDiscard
                         Suppress.configZero
                         configDriver Flow.defaultConfigKernel
                         (SourceFile filePath) str
@@ -176,7 +173,6 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower 
-                        False Build.SinkDiscard
                         Suppress.configZero
                         configDriver Flow.defaultConfigVector 
                         (SourceFile filePath) str
@@ -233,6 +229,7 @@ getDriverConfig config filePath
 
         return  $ Driver.Config
                 { Driver.configDump                     = configDump config
+                , Driver.configInferTypes               = False
                 , Driver.configSimplLite                = simplLite
                 , Driver.configSimplSalt                = simplSalt
                 , Driver.configViaBackend               = configViaBackend config

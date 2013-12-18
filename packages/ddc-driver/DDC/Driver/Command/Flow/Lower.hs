@@ -16,9 +16,7 @@ import qualified DDC.Core.Transform.Suppress    as Suppress
 
 -- | Lower a flow program to loop code.
 cmdFlowLower
-        :: Bool                 -- ^ Whether to do bidirectional type inference.
-        -> Sink                 -- ^ Where to send type checker trace.
-        -> Suppress.Config      -- ^ Pretty printer suppression config.
+        :: Suppress.Config      -- ^ Pretty printer suppression config.
         -> Driver.Config        -- ^ Driver config.
         -> Flow.Config          -- ^ Config for the lowering transform.
         -> Source               -- ^ Source of the code.
@@ -26,8 +24,6 @@ cmdFlowLower
         -> ErrorT String IO ()
 
 cmdFlowLower 
-        useBidirChecking 
-        sinkCheckerTrace 
         configSupp
         configDriver
         configLower
@@ -38,7 +34,6 @@ cmdFlowLower
                     (lineStartOfSource source)
                     sourceText
          $  stageFlowLoad  configDriver source 
-                           useBidirChecking sinkCheckerTrace
          [  stageFlowPrep  configDriver source
          [  PipeCoreCheck  Flow.fragment C.Recon
          [  stageFlowLower configDriver configLower source [ pipeFinal ]]]]

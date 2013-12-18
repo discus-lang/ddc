@@ -21,16 +21,14 @@ import qualified DDC.Build.Language.Flow        as Flow
 -- | Type check Core Flow.
 stageFlowLoad
         :: Config -> Source
-        -> Bool                 -- ^ Use bidirectional type inference.
-        -> Sink                 -- ^ Where to send the type checker trace.
         -> [PipeCore () Flow.Name]
         -> PipeText Flow.Name Flow.Error
 
-stageFlowLoad config source bidir sinkTrace pipesFlow
+stageFlowLoad config source pipesFlow
  = PipeTextLoadCore Flow.fragment 
-        (if bidir then C.Synth else C.Recon)
-        sinkTrace
- [ PipeCoreReannotate (const ()) 
+                         (if configInferTypes config then C.Synth else C.Recon)
+                         (dump config source "dump.flow-check.txt")
+   [ PipeCoreReannotate  (const ()) 
         ( PipeCoreOutput (dump config source "dump.flow-load.dcf")
         : pipesFlow ) ]
 
@@ -93,3 +91,4 @@ stageFlowWind config source pipesFlow
      [ PipeFlowWind
        ( PipeCoreOutput    (dump config source "dump.flow-wind.dcf")
        : pipesFlow ) ]
+

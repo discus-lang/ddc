@@ -32,7 +32,6 @@ import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
 
-import qualified DDC.Build.Pipeline.Sink        as Build
 import qualified DDC.Core.Flow                  as Flow
 import qualified Data.Set                       as Set
 import System.IO
@@ -313,14 +312,7 @@ handleCmd1 state cmd source line
         -- Core Flow passes ----------------------
         CommandFlowRate
          -> do  configDriver  <- getDriverConfigOfState state
-                runError 
-                 $ cmdFlowRate 
-                        (Set.member Mode.Synth (stateModes state))
-                        (if Set.member Mode.TraceCheck (stateModes state)
-                                then Build.SinkStdout
-                                else Build.SinkDiscard)
-                        configDriver 
-                        source line
+                runError $ cmdFlowRate configDriver source line
                 return state
 
         CommandFlowPrep
@@ -332,10 +324,6 @@ handleCmd1 state cmd source line
          -> do  configDriver  <- getDriverConfigOfState state
                 runError 
                  $ cmdFlowLower
-                        (Set.member Mode.Synth (stateModes state))
-                        (if Set.member Mode.TraceCheck (stateModes state)
-                                then Build.SinkStdout
-                                else Build.SinkDiscard)
                         (suppressConfigOfModes (stateModes state))
                         configDriver configLower 
                         source line

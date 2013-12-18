@@ -14,16 +14,12 @@ import qualified DDC.Build.Language.Flow        as Flow
 
 -- | Perform rate inference to transform vector operations to series
 cmdFlowRate
-        :: Bool                 -- ^ Whether to use bidirectional type inference.
-        -> Sink                 -- ^ Where to send type checker trace.
-        -> Driver.Config        -- ^ Driver config.
+        :: Driver.Config        -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
 cmdFlowRate 
-        useBidirChecking
-        sinkCheckerTrace
         configDriver 
         source sourceText
  = do   
@@ -32,7 +28,6 @@ cmdFlowRate
                             (lineStartOfSource source)
                             sourceText
                 $  stageFlowLoad  configDriver source 
-                                  useBidirChecking sinkCheckerTrace
                 [  stageFlowRate  configDriver source 
                 [  PipeCoreCheck  Flow.fragment C.Recon
                 [  PipeCoreOutput SinkStdout ]]]

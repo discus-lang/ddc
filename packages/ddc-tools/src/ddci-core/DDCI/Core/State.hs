@@ -129,8 +129,9 @@ getDriverConfigOfState state
  = do   builder <- getActiveBuilder state
         return 
          $ D.Config
-         { D.configDump                  = Set.member Dump (stateModes state)
-         , D.configViaBackend            = D.ViaLLVM
+         { D.configDump                 = Set.member Dump  (stateModes state)
+         , D.configInferTypes           = Set.member Synth (stateModes state)
+         , D.configViaBackend           = D.ViaLLVM
 
          -- ISSUE #300: Allow the default heap size to be set when
          --   compiling the program.

@@ -18,6 +18,9 @@ data Config
         { -- | Dump intermediate code.
           configDump                    :: Bool
 
+          -- | Use bidirectional type inference on the input code.
+        , configInferTypes              :: Bool
+
           -- | Simplifiers to apply to intermediate code
         , configSimplLite               :: Simplifier Int () Lite.Name
         , configSimplSalt               :: Simplifier Int () Salt.Name
