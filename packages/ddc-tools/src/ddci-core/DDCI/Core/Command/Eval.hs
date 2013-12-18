@@ -85,12 +85,14 @@ cmdEval state source str
 
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- = cmdTransExpCont
-        (Set.member TraceTrans $ stateModes state)
-        (stateLanguage state)
-        (evalExpCast state)
-        source
-        str
+ = do   config  <- getDriverConfigOfState state
+        cmdTransExpCont
+                config
+                (Set.member TraceTrans $ stateModes state)
+                (stateLanguage state)
+                (evalExpCast state)
+                source
+                str
 
 
 -------------------------------------------------------------------------------

@@ -16,17 +16,15 @@ import qualified DDC.Core.Transform.Suppress    as Suppress
 
 -- | Lower a flow program to loop code.
 cmdFlowLower
-        :: Suppress.Config      -- ^ Pretty printer suppression config.
-        -> Driver.Config        -- ^ Driver config.
+        :: Driver.Config        -- ^ Driver config.
         -> Flow.Config          -- ^ Config for the lowering transform.
+        -> Suppress.Config      -- ^ Pretty printer suppression config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowLower 
-        configSupp
-        configDriver
-        configLower
+cmdFlowLower
+        configDriver configLower configSupp
         source sourceText
  = let  
         pipeLower

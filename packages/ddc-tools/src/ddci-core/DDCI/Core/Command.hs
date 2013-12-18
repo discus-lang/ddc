@@ -275,10 +275,11 @@ handleCmd1 state cmd source line
 
         -- Generic transformations --------------
         CommandTrans
-         -> do  runError
+         -> do  configDriver    <- getDriverConfigOfState state
+                runError
                  $ cmdTransDetect
+                        configDriver
                         (stateLanguage state)
-                        (Set.member Mode.Synth      $ stateModes state)
                         (suppressConfigOfModes (stateModes state))
                         (Set.member Mode.TraceTrans $ stateModes state)
                         source line
@@ -321,12 +322,10 @@ handleCmd1 state cmd source line
                 return state
 
         CommandFlowLower configLower
-         -> do  configDriver  <- getDriverConfigOfState state
-                runError 
-                 $ cmdFlowLower
-                        (suppressConfigOfModes (stateModes state))
-                        configDriver configLower 
-                        source line
+         -> do  configDriver   <- getDriverConfigOfState state
+                let configSupp = suppressConfigOfModes (stateModes state)
+                runError $ cmdFlowLower configDriver configLower configSupp
+                                source line
                 return state
 
         CommandFlowConcretize

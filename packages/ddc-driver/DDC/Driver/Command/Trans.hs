@@ -7,6 +7,7 @@ module DDC.Driver.Command.Trans
         , cmdTransExpCont
 	, transExp)
 where
+import DDC.Driver.Config
 import DDC.Driver.Output
 import DDC.Driver.Command.Check
 import DDC.Build.Language
@@ -16,7 +17,6 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Load
 import DDC.Core.Fragment
 import DDC.Core.Simplifier
-import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Equiv
@@ -40,42 +40,38 @@ import qualified DDC.Core.Transform.Suppress    as Suppress
 --   otherwise treat it as an expression.
 --
 cmdTransDetect 
-        :: Language             -- ^ Language definition.
-        -> Bool                 -- ^ Use bidirectional type checking.
+        :: Config               -- ^ Driver config.
+        -> Language             -- ^ Language definition.
         -> Suppress.Config      -- ^ Suppression flags for output.
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Input text.
         -> ErrorT String IO ()
 
-cmdTransDetect
-        language useBidirChecking configSupp shouldPrintInfo
+cmdTransDetect    config language configSupp shouldPrintInfo
         source str
 
  | "module" : _ <- words str
- = cmdTransModule 
-        language useBidirChecking configSupp shouldPrintInfo
+ = cmdTransModule config language configSupp shouldPrintInfo
         source str
 
  | otherwise
- = cmdTransExp
-       language useBidirChecking configSupp shouldPrintInfo
-       source str
+ = cmdTransExp    config language configSupp shouldPrintInfo
+        source str
 
 
 -- Module ---------------------------------------------------------------------
 -- | Load and transform a module, and print the result to @stdout@.
 cmdTransModule
-        :: Language             -- ^ Language definition.
-        -> Bool                 -- ^ Use bidirectional type checking.
+        :: Config               -- ^ Driver config.
+        -> Language             -- ^ Language definition.
         -> Suppress.Config      -- ^ Suppression flags for output.
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Input text.
         -> ErrorT String IO ()
 
-cmdTransModule 
-        language useBidirChecking configSupp _shouldPrintInfo
+cmdTransModule config language configSupp _shouldPrintInfo
         source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
@@ -84,7 +80,7 @@ cmdTransModule
  = do   errs    <- liftIO
                 $  pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore fragment 
-                        (if useBidirChecking then C.Synth else C.Recon) 
+                        (if configInferTypes config then C.Synth else C.Recon) 
                         SinkDiscard
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [  PipeCoreSimplify  fragment zero simpl
@@ -102,19 +98,19 @@ cmdTransModule
 -- | Load and transfrom an expression
 --   and print the result to @stdout@.
 cmdTransExp
-        :: Language             -- ^ Source language.
-        -> Bool                 -- ^ Use bidirectional type checking.
+        :: Config               -- ^ Driver config.
+        -> Language             -- ^ Source language.
         -> Suppress.Config      -- ^ Suppression flags for output.
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of input text.
         -> String               -- ^ Input text.
         -> ErrorT String IO ()
 
-cmdTransExp 
-        language _useBidirChecking _configSupp traceTrans
+cmdTransExp config language _configSupp traceTrans
         source str
  
- = liftIO $ cmdTransExpCont traceTrans language 
+ = liftIO 
+ $ cmdTransExpCont config traceTrans language 
         (\_ -> return ()) 
         source str
 
@@ -122,7 +118,8 @@ cmdTransExp
 -- Cont -----------------------------------------------------------------------
 -- | Load an expression and apply the current transformation.
 cmdTransExpCont
-        :: Bool 
+        :: Config       -- ^ Driver config.
+        -> Bool 
         -> Language 
         -> (forall n. Typeable n
               => Exp (AnTEC () n) n -> IO ())
@@ -130,7 +127,7 @@ cmdTransExpCont
         -> String 
         -> IO ()
 
-cmdTransExpCont traceTrans language eatExp source str
+cmdTransExpCont _config traceTrans language eatExp source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
  , modules              <- bundleModules    bundle
@@ -192,7 +189,7 @@ transExp traceTrans profile kenv tenv zero simpl xx
             $  text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text ""
 
         -- Check that the simplifier perserved the type of the expression.
-        case fst $ checkExp (configOfProfile profile) kenv tenv x' Recon of
+        case fst $ C.checkExp (C.configOfProfile profile) kenv tenv x' Recon of
           Right (x2, t2, eff2, clo2)
            |  equivT t1 t2
            ,  subsumesT kEffect  eff1 eff2

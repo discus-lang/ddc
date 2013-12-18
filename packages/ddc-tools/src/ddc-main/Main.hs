@@ -153,8 +153,7 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower
-                        Suppress.configZero
-                        configDriver Flow.defaultConfigScalar 
+                        configDriver Flow.defaultConfigScalar Suppress.configZero
                         (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
@@ -163,8 +162,7 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower
-                        Suppress.configZero
-                        configDriver Flow.defaultConfigKernel
+                        configDriver Flow.defaultConfigKernel Suppress.configZero
                         (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
@@ -173,8 +171,7 @@ run config
                 str             <- readFile filePath
                 runError 
                  $ cmdFlowLower 
-                        Suppress.configZero
-                        configDriver Flow.defaultConfigVector 
+                        configDriver Flow.defaultConfigVector Suppress.configZero
                         (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
