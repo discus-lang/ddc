@@ -5,15 +5,17 @@ where
 import DDC.Core.Check.Base
 
 
--- | Make two types equivalent to each other.
+-- | Make two types equivalent to each other,
+--   or throw the provided error if this is not possible.
 makeEq  :: (Eq n, Ord n, Pretty n)
         => a
+        -> Error a n
         -> Context n
         -> Type n
         -> Type n
         -> CheckM a n (Context n)
 
-makeEq a ctx0 tL tR
+makeEq a err ctx0 tL tR
 
  -- EqLSolve
  | Just iL <- takeExists tL
@@ -81,10 +83,10 @@ makeEq a ctx0 tL tR
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
-        ctx1     <- makeEq a ctx0 tL1 tR1
+        ctx1     <- makeEq a err ctx0 tL1 tR1
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
-        ctx2     <- makeEq a ctx0 tL2' tR2'
+        ctx2     <- makeEq a err ctx0 tL2' tR2'
 
         ctrace  $ vcat
                 [ text "* EqApp"
@@ -97,9 +99,11 @@ makeEq a ctx0 tL tR
         return ctx2
 
  -- Error
- -- TODO: nice error message.
  | otherwise
- = error $ renderIndent $ vcat
-        [ text "DDC.Core.Check.Exp.Inst.makeEq: no match" 
-        , text "  LEFT:   " <> ppr tL
-        , text "  RIGHT:  " <> ppr tR ]
+ = do   ctrace  $ vcat
+                [ text "DDC.Core.Check.Exp.Inst.makeEq: no match" 
+                , text "  LEFT:   " <> ppr tL
+                , text "  RIGHT:  " <> ppr tR ]
+
+        throw err
+

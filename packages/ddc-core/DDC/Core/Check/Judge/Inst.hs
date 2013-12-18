@@ -5,15 +5,17 @@ where
 import DDC.Core.Check.Base
 
 
--- | Make the left type an instantiation of the right type.
+-- | Make the left type an instantiation of the right type,
+--   or throw the provided error if this is not possible.
 makeInst :: (Eq n, Ord n, Pretty n)
         => a
+        -> Error a n
         -> Context n
         -> Type n
         -> Type n
         -> CheckM a n (Context n)
 
-makeInst !a !ctx0 !tL !tR
+makeInst !a !err !ctx0 !tL !tR
 
  -- InstLSolve
  | Just iL <- takeExists tL
@@ -88,13 +90,13 @@ makeInst !a !ctx0 !tL !tR
         let ctx1 = updateExists [iL2, iL1] iL (tFun tL1 tL2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2     <- makeInst a ctx1 tR1 tL1
+        ctx2     <- makeInst a err ctx1 tR1 tL1
 
         -- Substitute into tR2
         let tR2' =  applyContext ctx2 tR2
 
         -- Instantiate the return type.
-        ctx3     <- makeInst a ctx2 tL2 tR2'
+        ctx3     <- makeInst a err ctx2 tL2 tR2'
 
         ctrace  $ vcat
                 [ text "* InstLArr"
@@ -139,13 +141,13 @@ makeInst !a !ctx0 !tL !tR
         let ctx1 =  updateExists [iR2, iR1] iR (tFun tR1 tR2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2     <- makeInst a ctx1 tR1 tL1
+        ctx2     <- makeInst a err ctx1 tR1 tL1
 
         -- Substitute into tL2
         let tL2' = applyContext ctx2 tL2
 
         -- Instantiate the return type.
-        ctx3     <- makeInst a ctx2 tL2' tR2 
+        ctx3     <- makeInst a err ctx2 tL2' tR2 
 
         ctrace  $ vcat
                 [ text "* InstRArr"
@@ -158,7 +160,6 @@ makeInst !a !ctx0 !tL !tR
         return ctx3
 
  -- Error
- -- TODO: nice error message.
  | otherwise
  = do
         ctrace  $ vcat
@@ -168,4 +169,4 @@ makeInst !a !ctx0 !tL !tR
                 , indent 2 $ ppr ctx0
                 , empty ]
 
-        return ctx0
+        throw err

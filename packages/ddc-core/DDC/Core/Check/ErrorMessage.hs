@@ -15,9 +15,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorType err'  
          -> ppr err'
 
-        ErrorMalformedExp a xx
-         -> vcat [ ppr a
-                 , text "Malformed expression: "        <> align (ppr xx) ]
         
         ErrorMalformedType a xx tt
          -> vcat [ ppr a
@@ -29,39 +26,52 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorExportUndefined n
          -> vcat [ text "Exported value '" <> ppr n <> text "' is undefined." ]
 
-        ErrorExportMismatch n tExport tDef
+        ErrorExportMismatch n tExport tDef 
          -> vcat [ text "Type of exported value does not match type of definition."
                  , text "             with binding: "   <> ppr n
                  , text "           type of export: "   <> ppr tExport
                  , text "       type of definition: "   <> ppr tDef ]
 
 
+        -- Exp --------------------------------------------
+        ErrorMalformedExp a xx
+         -> vcat [ ppr a
+                 , text "Malformed expression: "        <> align (ppr xx) ]
+        
+        ErrorMismatch a tExpected tInferred xx
+         -> vcat [ ppr a
+                 , text "Type mismatch."
+                 , text "                Expected type: "       <> ppr tExpected
+                 , text " does not match inferred type: "       <> ppr tInferred
+                 , empty
+                 , text "with: "                                <> align (ppr xx) ]
+
         -- Variable ---------------------------------------
         ErrorUndefinedVar a u universe
          -> case universe of
              UniverseSpec
                -> vcat  [ ppr a
-                        , text "Undefined spec variable: "  <> ppr u ]
+                        , text "Undefined spec variable: "      <> ppr u ]
 
              UniverseData
                -> vcat  [ ppr a
-                        , text "Undefined value variable: " <> ppr u ]
+                        , text "Undefined value variable: "     <> ppr u ]
 
              UniverseWitness
                -> vcat  [ ppr a
-                        , text "Undefined witness variable: " <> ppr u ]
+                        , text "Undefined witness variable: "   <> ppr u ]
 
              -- Universes other than the above don't have variables,
              -- but let's not worry about that here.
              _ -> vcat  [ ppr a
-                        , text "Undefined variable: "    <> ppr u ]
+                        , text "Undefined variable: "           <> ppr u ]
 
         ErrorVarAnnotMismatch a u tEnv tAnnot
          -> vcat [ ppr a
                  , text "Type mismatch in annotation."
-                 , text "             Variable: "       <> ppr u
-                 , text "       has annotation: "       <> ppr tAnnot
-                 , text " which conflicts with: "       <> ppr tEnv
+                 , text "             Variable: "               <> ppr u
+                 , text "       has annotation: "               <> ppr tAnnot
+                 , text " which conflicts with: "               <> ppr tEnv
                  , text "     from environment." ]
 
 

@@ -261,7 +261,8 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !(Check tXX)
              then 
                 return  (replaceTypeOfBind tX1 b1, ctx)
              else do
-                ctx0    <- makeEq a ctx t1 tX1 
+                ctx0    <- makeEq a (ErrorMismatch a tX1 t1 (XLam a b1 x2))
+                                ctx t1 tX1 
                 return  (b1, ctx0)
                         
         -- Check the body of the abstraction under the extended environment.

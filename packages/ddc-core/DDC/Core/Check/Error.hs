@@ -43,6 +43,12 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
 
+        -- | Generic mismatch between expected and inferred types.
+        | ErrorMismatch
+        { errorAnnot            :: a
+        , errorExpected         :: Type n
+        , errorInferred         :: Type n
+        , errorChecking         :: Exp a n }
 
         -- Var --------------------------------------------
         -- | An undefined type variable.
