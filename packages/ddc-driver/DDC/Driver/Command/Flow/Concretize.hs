@@ -22,18 +22,18 @@ cmdFlowConcretize
         -> ErrorT String IO ()
 
 cmdFlowConcretize _config source sourceText
- = do   
-        errs    <- liftIO
-                $  pipeText (nameOfSource source)
-                            (lineStartOfSource source)
-                            sourceText
-                $  PipeTextLoadCore fragment C.Recon SinkDiscard
-                [  PipeCoreReannotate (const ())
-                [  PipeCoreHacks 
-                   (Canned $ \m -> return 
-                           $  Concretize.concretizeModule m)
-                [  PipeCoreOutput SinkStdout ]]]
-
+ = let  pipeConcretize
+         = pipeText (nameOfSource source)
+                    (lineStartOfSource source)
+                    sourceText
+         $ PipeTextLoadCore fragment C.Recon SinkDiscard
+         [ PipeCoreReannotate (const ())
+         [ PipeCoreHacks 
+                (Canned $ \m -> return 
+                        $  Concretize.concretizeModule m)
+         [ PipeCoreOutput SinkStdout ]]]
+   in do
+        errs    <- liftIO pipeConcretize
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es

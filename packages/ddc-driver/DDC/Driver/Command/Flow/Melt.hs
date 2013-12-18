@@ -17,24 +17,25 @@ import qualified DDC.Base.Pretty        as P
 --     need to provide a specific type to use for the world token,
 --     and new types for the effectful combinators.
 cmdFlowMelt
-        :: Config
-        -> Source       -- ^ Source of the code.
-        -> String       -- ^ Program module text.
+        :: Config               -- ^ Driver config.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
 cmdFlowMelt config source sourceText
- = do   
-        errs    <- liftIO
-                $  pipeText (nameOfSource source)
-                            (lineStartOfSource source)
-                            sourceText
-                $  stageFlowLoad config source 
-                [  PipeCoreCheck fragment C.Recon
-                [  PipeCoreAsFlow 
-                [  PipeFlowMelt
-                [  PipeCoreCheck fragment C.Recon
-                [  PipeCoreOutput SinkStdout ]]]]]
+ = let  pipeMelt
+         = pipeText (nameOfSource source)
+                    (lineStartOfSource source)
+                    sourceText
+         $ stageFlowLoad config source 
+         [ PipeCoreCheck fragment C.Recon
+         [ PipeCoreAsFlow 
+         [ PipeFlowMelt
+         [ PipeCoreCheck fragment C.Recon
+         [ PipeCoreOutput SinkStdout ]]]]]
 
+   in do
+        errs    <- liftIO pipeMelt
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es

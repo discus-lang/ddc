@@ -2,7 +2,7 @@
 module DDC.Driver.Command.Flow.Rate
         (cmdFlowRate)
 where
-import DDC.Driver.Stage                         as Driver
+import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
@@ -14,24 +14,23 @@ import qualified DDC.Build.Language.Flow        as Flow
 
 -- | Perform rate inference to transform vector operations to series
 cmdFlowRate
-        :: Driver.Config        -- ^ Driver config.
+        :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowRate 
-        configDriver 
-        source sourceText
- = do   
-        errs    <- liftIO
-                $  pipeText (nameOfSource source)
-                            (lineStartOfSource source)
-                            sourceText
-                $  stageFlowLoad  configDriver source 
-                [  stageFlowRate  configDriver source 
-                [  PipeCoreCheck  Flow.fragment C.Recon
-                [  PipeCoreOutput SinkStdout ]]]
-
+cmdFlowRate configDriver source sourceText
+ = let  pipeRate
+         = pipeText (nameOfSource source)
+                    (lineStartOfSource source)
+                    sourceText
+         $ stageFlowLoad  configDriver source 
+         [ stageFlowRate  configDriver source 
+         [ PipeCoreCheck  Flow.fragment C.Recon
+         [ PipeCoreOutput SinkStdout ]]]
+   
+   in do
+        errs    <- liftIO pipeRate
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es

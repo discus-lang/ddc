@@ -14,22 +14,22 @@ import qualified DDC.Build.Language.Flow        as Flow
 
 -- | Prepare a Disciple Core Flow module for lowering.
 cmdFlowPrep
-        :: Config
-        -> Source       -- ^ Source of the code.
-        -> String       -- ^ Program module text.
+        :: Config               -- ^ Driver config.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
 cmdFlowPrep config source sourceText
- = do   
-        errs    <- liftIO
-                $  pipeText (nameOfSource source)
-                            (lineStartOfSource source)
-                            sourceText
-                $  stageFlowLoad  config source 
-                [  stageFlowPrep  config source
-                [  PipeCoreCheck Flow.fragment C.Recon
-                [  PipeCoreOutput SinkStdout ]]]
-
+ = let  pipePrep
+         = pipeText (nameOfSource source)
+                     (lineStartOfSource source)
+                     sourceText
+         $ stageFlowLoad  config source 
+         [ stageFlowPrep  config source
+         [ PipeCoreCheck Flow.fragment C.Recon
+         [ PipeCoreOutput SinkStdout ]]]
+   in do
+        errs    <- liftIO pipePrep
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es

@@ -21,30 +21,29 @@ import qualified DDC.Base.Pretty                as P
 --     need to provide a specific type to use for the world token,
 --     and new types for the effectful combinators.
 cmdFlowThread
-        :: Config
-        -> Source       -- ^ Source of the code.
-        -> String       -- ^ Program module text.
+        :: Config               -- ^ Driver config.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
 cmdFlowThread _config source sourceText
- = do   
-        errs    <- liftIO
-                $  pipeText (nameOfSource source)
-                            (lineStartOfSource source)
-                            sourceText
-                $  PipeTextLoadCore fragment C.Recon SinkDiscard
-                [  PipeCoreReannotate (const ())
-                [  PipeCoreCheck    fragment C.Recon
-                [  PipeCoreHacks 
-                   (Canned $ \m -> return 
-                           $  Thread.thread Flow.threadConfig 
-                                (profilePrimKinds (fragmentProfile fragment))
-                                (profilePrimTypes (fragmentProfile fragment)) m)
-                [  PipeCoreOutput SinkStdout ]]]]
+ = let  pipeThread
+         = pipeText (nameOfSource source)
+                    (lineStartOfSource source)
+                    sourceText
+         $  PipeTextLoadCore fragment C.Recon SinkDiscard
+         [  PipeCoreReannotate (const ())
+         [  PipeCoreCheck    fragment C.Recon
+         [  PipeCoreHacks 
+            (Canned $ \m -> return 
+                    $  Thread.thread Flow.threadConfig 
+                        (profilePrimKinds (fragmentProfile fragment))
+                        (profilePrimTypes (fragmentProfile fragment)) m)
+         [  PipeCoreOutput SinkStdout ]]]]
 
+   in do
+        errs    <- liftIO pipeThread
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
-
-
 
