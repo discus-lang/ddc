@@ -1,8 +1,11 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Pretty printing for core modules and expressions.
 module DDC.Core.Pretty 
         ( module DDC.Type.Pretty
-        , module DDC.Base.Pretty)
+        , module DDC.Base.Pretty
+
+        , PrettyMode (..))
 where
 import DDC.Core.Compounds
 import DDC.Core.Predicates
@@ -23,7 +26,18 @@ instance Pretty ModuleName where
 
 -- Module ---------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
- ppr ModuleCore 
+ data PrettyMode (Module a n)
+        = PrettyModeModule
+        { modeModuleSuppressImports     :: Bool 
+        , modeModuleSuppressExports     :: Bool }
+
+ pprDefaultMode
+        = PrettyModeModule
+        { modeModuleSuppressImports     = False
+        , modeModuleSuppressExports     = False }
+
+ pprModePrec mode _
+        ModuleCore 
         { moduleName            = name
         , moduleExportKinds     = exportKinds
         , moduleExportTypes     = exportTypes
@@ -37,33 +51,43 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
         -- Exports --------------------
         docsExportKinds
-         | Map.null exportKinds        = empty
-         | otherwise  
+         | not $ Map.null exportKinds
+         , not $ modeModuleSuppressExports mode 
          = nest 8 $ line 
          <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
                   | (n, t)      <- Map.toList exportKinds ]
 
+         | otherwise                    = empty
+         
         docsExportTypes  
-         | Map.null exportTypes        = empty
-         | otherwise
+         | not $ Map.null exportTypes
+         , not $ modeModuleSuppressExports mode
          = nest 8 $ line
          <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
                   | (n, t)      <- Map.toList exportTypes ]
+         
+         | otherwise                    = empty
+         
 
         -- Imports --------------------
         docsImportKinds
-         | Map.null importKinds        = empty
-         | otherwise  
+         | not $ Map.null importKinds
+         , not $ modeModuleSuppressImports mode
          = nest 8 $ line 
          <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
                   | (n, (_, t)) <- Map.toList importKinds ]
 
+         | otherwise                    = empty
+         
         docsImportTypes  
-         | Map.null importTypes        = empty
-         | otherwise
+         | not $ Map.null importTypes
+         , not $ modeModuleSuppressImports mode
          = nest 8 $ line
          <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
                   | (n, (_, t)) <- Map.toList importTypes ]
+
+         | otherwise                    = empty
+         
 
         -- Local Data Definitions -----
         docsLocalData

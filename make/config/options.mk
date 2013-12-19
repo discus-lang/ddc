@@ -25,7 +25,7 @@ GHC_LANGUAGE	:= \
         -XStandaloneDeriving \
         -XDeriveDataTypeable \
         -XViewPatterns \
-        -XTupleSections
+        -XTupleSections \
 
 
 # -- Warnings -----------------------------------------------------------------

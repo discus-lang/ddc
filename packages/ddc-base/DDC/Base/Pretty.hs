@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Pretty printer utilities.
 --
@@ -29,28 +30,36 @@ pprParen b c
  = if b then parens c
         else c
 
+
 -- Pretty Class --------------------------------------------------------------
 class Pretty a where
- ppr     :: a   -> Doc
- ppr     = pprPrec 0 
+ data PrettyMode a 
+ pprDefaultMode  :: PrettyMode a
+ 
+ ppr            :: a   -> Doc
+ ppr            = pprPrec 0 
 
- pprPrec :: Int -> a -> Doc
- pprPrec _ = ppr
+ pprPrec        :: Int -> a -> Doc
+ pprPrec p      = pprModePrec pprDefaultMode p
 
+ pprModePrec    :: PrettyMode a -> Int -> a -> Doc
+ pprModePrec _ _ x = ppr x
+
+ 
 instance Pretty () where
- ppr = text . show
+ ppr                    = text . show
 
 instance Pretty Bool where
- ppr = text . show
+ ppr                    = text . show
 
 instance Pretty Int where
- ppr = text . show
+ ppr                    = text . show
 
 instance Pretty Integer where
- ppr = text . show
+ ppr                    = text . show
 
 instance Pretty Char where
- ppr = text . show
+ ppr                    = text . show
 
 instance Pretty a => Pretty [a] where
  ppr xs  = encloseSep lbracket rbracket comma 
