@@ -13,8 +13,6 @@ import DDC.Core.Simplifier                      (Simplifier)
 import DDC.Core.Pretty
 import DDC.Core.Module
 
-import qualified DDC.Core.Transform.Suppress    as Suppress
-
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Salt                  as Salt
 
@@ -46,12 +44,6 @@ data Config
           -- | Core langauge pretty printer configuration.
         , configPretty                  :: ConfigPretty
 
-          -- | Suppress various things in output core modules.
-        , configSuppressCore            :: Suppress.Config
-
-          -- | Suppress imports in Core modules
-        , configSuppressCoreImports     :: Bool
-
           -- | Suppress the #import prelude in C modules
         , configSuppressHashImports     :: Bool 
 
@@ -81,17 +73,26 @@ data Config
 -- | Core language pretty printer configuration.
 data ConfigPretty
         = ConfigPretty
-        { configPrettyUseLetCase        :: Bool }
+        { configPrettyUseLetCase        :: Bool 
+        , configPrettySuppressImports   :: Bool
+        , configPrettySuppressExports   :: Bool 
+        , configPrettySuppressLetTypes  :: Bool }
 
 
 -- | Default pretty printer configuration.
 defaultConfigPretty :: ConfigPretty
 defaultConfigPretty
         = ConfigPretty
-        { configPrettyUseLetCase        = False }
+        { configPrettyUseLetCase        = False 
+        , configPrettySuppressImports   = False
+        , configPrettySuppressExports   = False
+        , configPrettySuppressLetTypes  = False }
 
 
 -- | Convert a the pretty configuration into the mode to use to print a module.
+--   We keep the 'ConfigPretty' type separate from PrettyMode because the 
+--   former can be non-recursive with other types, and does not need to be
+--   parameterised by the annotation or name types.
 prettyModeOfConfig
         :: (Eq n, Pretty n) 
         => ConfigPretty -> PrettyMode (Module a n)
@@ -101,23 +102,24 @@ prettyModeOfConfig config
  where
         modeModule      
          = PrettyModeModule
-         { modeModuleLets                = modeLets
-         , modeModuleSuppressImports     = False
-         , modeModuleSuppressExports     = False }
+         { modeModuleLets               = modeLets
+         , modeModuleSuppressImports    = configPrettySuppressImports config
+         , modeModuleSuppressExports    = configPrettySuppressExports config }
 
         modeExp         
          = PrettyModeExp
-         { modeExpLets                   = modeLets
-         , modeExpAlt                    = modeAlt
-         , modeExpUseLetCase             = configPrettyUseLetCase config }
+         { modeExpLets                  = modeLets
+         , modeExpAlt                   = modeAlt
+         , modeExpUseLetCase            = configPrettyUseLetCase config }
 
         modeLets        
          = PrettyModeLets
-         { modeLetsExp                   = modeExp }
+         { modeLetsExp                  = modeExp 
+         , modeLetsSuppressTypes        = configPrettySuppressLetTypes config }
 
         modeAlt
          = PrettyModeAlt
-         { modeAltExp                    = modeExp }
+         { modeAltExp                   = modeExp }
         
 
 -- ViaBackend -----------------------------------------------------------------

@@ -146,8 +146,6 @@ getDriverConfigOfState state
          , D.configSimplSalt            = stateSimplSalt  state
          , D.configBuilder              = builder
          , D.configPretty               = configPretty
-         , D.configSuppressCore         = suppressConfigOfModes (stateModes state)
-         , D.configSuppressCoreImports  = Set.member SuppressImports (stateModes state)
          , D.configSuppressHashImports  = not $ Set.member SaltPrelude (stateModes state) 
          , D.configKeepLlvmFiles        = False
          , D.configKeepSeaFiles         = False
@@ -160,7 +158,10 @@ getDriverConfigOfState state
         
         configPretty   
          = D.ConfigPretty
-         { D.configPrettyUseLetCase     = Set.member PrettyUseLetCase modes }
+         { D.configPrettyUseLetCase             = Set.member PrettyUseLetCase modes 
+         , D.configPrettySuppressImports        = Set.member SuppressImports modes
+         , D.configPrettySuppressExports        = Set.member SuppressExports modes
+         , D.configPrettySuppressLetTypes       = Set.member SuppressLetTypes modes }
 
 
 -- | Holds platform independent builder info.

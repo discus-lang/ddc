@@ -39,13 +39,11 @@ cmdFlowLower
 
         pipeFinal
          | configTaintAvoidTypeChecks configDriver
-         = PipeCoreSuppress (configSuppressCore configDriver)
-         [ PipeCoreOutput   pmode SinkStdout ]
+         = PipeCoreOutput   pmode SinkStdout 
 
          | otherwise
          = PipeCoreCheck    Flow.fragment C.Recon
-         [ PipeCoreSuppress (configSuppressCore configDriver)
-         [ PipeCoreOutput   pmode SinkStdout ]]
+         [ PipeCoreOutput   pmode SinkStdout ]
 
    in do        
         errs    <- liftIO pipeLower

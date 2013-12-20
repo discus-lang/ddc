@@ -39,7 +39,6 @@ import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Eta                 as Eta
-import qualified DDC.Core.Transform.Suppress            as Suppress
 import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Fragment                      as C
@@ -97,12 +96,6 @@ data PipeCore a n where
         -> !s
         -> !(Simplifier s a n)
         -> ![PipeCore () n] 
-        -> PipeCore a n
-
-  -- Suppress some aspect of a module.
-  PipeCoreSuppress
-        :: Suppress.Config
-        -> ![PipeCore a n]
         -> PipeCore a n
 
   -- Treat a module as belonging to the Core Lite fragment from now on.
@@ -193,10 +186,6 @@ pipeCore !mm !pp
                 --       Because we've just applied reannotate, we also
                 --       release type annotations on the expression tree.
             in  mm2 `deepseq` pipeCores mm2 pipes
-
-        PipeCoreSuppress !config !pipes
-         -> {-# SCC "PipeCoreSuppress" #-}
-            pipeCores (Suppress.suppress config mm) pipes
 
         PipeCoreAsLite !pipes
          -> {-# SCC "PipeCoreAsLite" #-}

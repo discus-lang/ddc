@@ -71,6 +71,20 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | otherwise                    = empty
          
 
+        docsExports
+         -- If we're suppressing exports, are there are none, 
+         -- then don't display the export block.
+         |  modeModuleSuppressExports mode
+          || (Map.null exportKinds && Map.null exportTypes)
+         = empty
+
+         | otherwise
+         = line <> text "exports" <+> lbrace
+                <> docsExportKinds
+                <> docsExportTypes
+                <> line <> rbrace <> space
+
+
         -- Imports --------------------
         docsImportKinds
          | not $ Map.null importKinds
@@ -85,11 +99,24 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | not $ Map.null importTypes
          , not $ modeModuleSuppressImports mode
          = nest 8 $ line
-         <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
+         <> vcat  [ ppr n       <+> text "::" <+> ppr t <> semi
                   | (n, (_, t)) <- Map.toList importTypes ]
 
          | otherwise                    = empty
          
+        docsImports
+         -- If we're suppressing imports, or there are none,
+         -- then don't display the import block.
+         |   modeModuleSuppressImports mode       
+          || (Map.null importKinds && Map.null importTypes)
+         = empty
+         
+         | otherwise
+         = line <> text "imports" <+> lbrace
+                <> docsImportKinds
+                <> docsImportTypes
+                <> line <> rbrace <> space
+
 
         -- Local Data Definitions -----
         docsLocalData
@@ -102,25 +129,10 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         pprLts = pprModePrec (modeModuleLets mode) 0
 
     in  text "module" <+> ppr name 
-         <+> (if Map.null exportKinds && Map.null exportTypes
-                then empty
-                else line
-                        <> text "exports" <+> lbrace
-                        <> docsExportKinds
-                        <> docsExportTypes
-                        <> line 
-                        <> rbrace <> space)
-
-         <>  (if Map.null importKinds && Map.null importTypes
-                then empty
-                else line 
-                        <> text "imports" <+> lbrace 
-                        <> docsImportKinds
-                        <> docsImportTypes
-                        <> line 
-                        <> rbrace <> space)
-         <> docsLocalData
-         <> text "with" <$$> (vcat $ map pprLts lts)
+         <+> docsExports
+         <>  docsImports
+         <>  docsLocalData
+         <>  text "with" <$$> (vcat $ map pprLts lts)
 
 
 -- DataDef --------------------------------------------------------------------
@@ -309,17 +321,20 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  data PrettyMode (Lets a n)
         = PrettyModeLets
-        { modeLetsExp           :: PrettyMode (Exp a n) }
+        { modeLetsExp           :: PrettyMode (Exp a n) 
+        , modeLetsSuppressTypes :: Bool }
 
  pprDefaultMode
         = PrettyModeLets
-        { modeLetsExp           = pprDefaultMode }
+        { modeLetsExp           = pprDefaultMode 
+        , modeLetsSuppressTypes = False }
 
  pprModePrec mode _ lts
   = let pprX    = pprModePrec (modeLetsExp mode) 0
     in case lts of
         LLet b x
-         -> let dBind = if isBot (typeOfBind b)
+         -> let dBind = if  isBot (typeOfBind b)
+                         || modeLetsSuppressTypes mode
                           then ppr (binderOfBind b)
                           else ppr b
             in  text "let"

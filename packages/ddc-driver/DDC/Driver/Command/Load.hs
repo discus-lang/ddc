@@ -121,8 +121,7 @@ cmdLoadFromString config language source str
          $ PipeTextLoadCore  fragment 
                         (if configInferTypes config then C.Synth else C.Recon) 
                         SinkDiscard
-         [ PipeCoreSuppress  (configSuppressCore config)
-         [ PipeCoreOutput    pmode SinkStdout ]]
+         [ PipeCoreOutput    pmode SinkStdout ]
 
 
    in do

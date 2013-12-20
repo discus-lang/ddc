@@ -1,12 +1,9 @@
 
 module DDCI.Core.Mode
         ( Mode(..)
-        , readMode
-        , suppressConfigOfModes)
+        , readMode)
 where
-import qualified DDC.Core.Transform.Suppress    as Suppress
-import qualified Data.Set                       as Set
-import Data.Set                                 (Set)
+
 
 -- | DDCI mode flags.
 data Mode
@@ -17,6 +14,7 @@ data Mode
         -- | Render expressions displayed to user using indenting.
         |  Indent
 
+        -- Tracing --------------------
         -- | Display type checker trace with check commands.
         |  TraceCheck
 
@@ -29,15 +27,21 @@ data Mode
         -- | Display information about each transformation step
         |  TraceTrans
 
+        -- Pretty Printer Config ------
+        -- There is one mode here for each field in Driver.Config.ConfigPretty
         -- | Use 'letcase' when pretty printing core modules.
         |  PrettyUseLetCase
 
-        -- | Suppress import lists when printing modules
+        -- | Suppress import lists when printing modules.
         |  SuppressImports
+
+        -- | Suppress export lists when printing modules.
+        |  SuppressExports
 
         -- | Suppress type annotations on let-bindings.
         |  SuppressLetTypes
 
+        ------------------------------
         -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
         |  SaltPrelude
@@ -64,21 +68,10 @@ readMode str
         "TraceTrans"            -> Just TraceTrans
         "PrettyUseLetCase"      -> Just PrettyUseLetCase
         "SuppressImports"       -> Just SuppressImports
+        "SuppressExports"       -> Just SuppressExports
         "SuppressLetTypes"      -> Just SuppressLetTypes
         "SaltPrelude"           -> Just SaltPrelude
         "Dump"                  -> Just Dump
         "TaintAvoidTypeChecks"  -> Just TaintAvoidTypeChecks
         _                       -> Nothing
 
-
--- | Build a suppress config from any appropriate mode flags.
-suppressConfigOfModes :: Set Mode -> Suppress.Config
-suppressConfigOfModes mm'
- = go (Set.toList mm')
- where go mm
-        = case mm of
-                SuppressLetTypes : moar
-                 -> (go moar) { Suppress.configLetTypes = True }
-                _ : moar        -> go moar
-                []              -> Suppress.configZero
-        

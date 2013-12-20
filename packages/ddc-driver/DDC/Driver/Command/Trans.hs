@@ -84,8 +84,7 @@ cmdTransModule config language _shouldPrintInfo source str
          [  PipeCoreReannotate (\a -> a { annotTail = ()})
          [  PipeCoreSimplify  fragment zero simpl
          [  PipeCoreCheck     fragment C.Recon
-         [  PipeCoreSuppress  (configSuppressCore config)
-         [  PipeCoreOutput    pmode SinkStdout ]]]]]
+         [  PipeCoreOutput    pmode SinkStdout ]]]]
  
     in do
         errs    <- liftIO pipeTrans 

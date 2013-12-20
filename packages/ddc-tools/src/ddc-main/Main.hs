@@ -38,7 +38,6 @@ import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage               as Driver
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
-import qualified DDC.Core.Transform.Suppress    as Suppress
 
 
 main :: IO ()
@@ -234,8 +233,6 @@ getDriverConfig config filePath
          , Driver.configRuntime               = runtimeConfig
          , Driver.configBuilder               = builder
          , Driver.configPretty                = Driver.defaultConfigPretty
-         , Driver.configSuppressCore          = Suppress.configZero
-         , Driver.configSuppressCoreImports   = False
          , Driver.configSuppressHashImports   = False
          , Driver.configOutputFile            = configOutputFile config
          , Driver.configOutputDir             = configOutputDir  config 
