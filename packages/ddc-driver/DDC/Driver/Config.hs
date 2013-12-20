@@ -74,6 +74,8 @@ data Config
 data ConfigPretty
         = ConfigPretty
         { configPrettyUseLetCase        :: Bool 
+        , configPrettyVarTypes          :: Bool
+        , configPrettyConTypes          :: Bool
         , configPrettySuppressImports   :: Bool
         , configPrettySuppressExports   :: Bool 
         , configPrettySuppressLetTypes  :: Bool }
@@ -83,7 +85,9 @@ data ConfigPretty
 defaultConfigPretty :: ConfigPretty
 defaultConfigPretty
         = ConfigPretty
-        { configPrettyUseLetCase        = False 
+        { configPrettyUseLetCase        = False
+        , configPrettyVarTypes          = False
+        , configPrettyConTypes          = False 
         , configPrettySuppressImports   = False
         , configPrettySuppressExports   = False
         , configPrettySuppressLetTypes  = False }
@@ -110,6 +114,8 @@ prettyModeOfConfig config
          = PrettyModeExp
          { modeExpLets                  = modeLets
          , modeExpAlt                   = modeAlt
+         , modeExpConTypes              = configPrettyConTypes config
+         , modeExpVarTypes              = configPrettyVarTypes config
          , modeExpUseLetCase            = configPrettyUseLetCase config }
 
         modeLets        

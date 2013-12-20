@@ -168,6 +168,16 @@ case () of {
 :!: Pure
 
 
+-- Match against a single constructor.
+\(x : Tuple2# ?2 ?3).
+case x of {
+  T2# (a : ?2) (b : ?3) 
+   -> ()
+}
+:*: Tuple2# ?2 ?3 -> Unit
+:!: Pure
+
+
 -- Needs synthesis in discrim to add type args.
 case T2# [Nat#] [Nat#] 2# 3# of {
   T2# (a : Nat#) (b : Nat#) 

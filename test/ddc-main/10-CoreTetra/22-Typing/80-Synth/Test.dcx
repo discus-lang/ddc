@@ -108,6 +108,12 @@ case () of { () -> () }
 ;;
 
 
+-- Match against a single constructor.
+:synth..
+\x. case x of { T2# a b -> (); }
+;;
+
+
 -- Needs synthesis in discrim to add type args.
 :synth..
 case T2# 2# 3# of 

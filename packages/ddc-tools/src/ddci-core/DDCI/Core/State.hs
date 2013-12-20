@@ -158,9 +158,11 @@ getDriverConfigOfState state
         
         configPretty   
          = D.ConfigPretty
-         { D.configPrettyUseLetCase             = Set.member PrettyUseLetCase modes 
-         , D.configPrettySuppressImports        = Set.member SuppressImports modes
-         , D.configPrettySuppressExports        = Set.member SuppressExports modes
+         { D.configPrettyVarTypes               = Set.member PrettyVarTypes   modes
+         , D.configPrettyConTypes               = Set.member PrettyConTypes   modes
+         , D.configPrettyUseLetCase             = Set.member PrettyUseLetCase modes 
+         , D.configPrettySuppressImports        = Set.member SuppressImports  modes
+         , D.configPrettySuppressExports        = Set.member SuppressExports  modes
          , D.configPrettySuppressLetTypes       = Set.member SuppressLetTypes modes }
 
 

@@ -173,21 +173,49 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         = PrettyModeExp
         { modeExpLets           :: PrettyMode (Lets a n)
         , modeExpAlt            :: PrettyMode (Alt a n)
+        
+          -- Display types on primitive variables.
+        , modeExpVarTypes       :: Bool
+
+          -- Display types on primitive constructors.
+        , modeExpConTypes       :: Bool
+        
+          -- Use 'letcase' for single alternative case expressions.
         , modeExpUseLetCase     :: Bool }
+
 
  pprDefaultMode
         = PrettyModeExp
         { modeExpLets           = pprDefaultMode
         , modeExpAlt            = pprDefaultMode
+        , modeExpConTypes       = False
+        , modeExpVarTypes       = False
         , modeExpUseLetCase     = False }
+
 
  pprModePrec mode d xx
   = let pprX    = pprModePrec mode 0
         pprLts  = pprModePrec (modeExpLets mode) 0
         pprAlt  = pprModePrec (modeExpAlt  mode) 0
     in case xx of
-        XVar  _ u       -> ppr u
-        XCon  _ dc      -> ppr dc
+
+        XVar  _ u       
+         | modeExpVarTypes mode
+         , Just t       <- takeTypeOfBound u
+         -> parens $ ppr u <> text " :: " <> ppr t
+
+         | otherwise
+         -> ppr u
+
+
+        XCon  _ dc
+         | modeExpConTypes mode
+         , Just t       <- takeTypeOfDaCon dc
+         -> parens $ ppr dc <> text " :: " <> ppr t
+        
+         | otherwise
+         -> ppr dc
+        
         
         XLAM{}
          -> let Just (bs, xBody) = takeXLAMs xx
@@ -219,6 +247,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $   pprLts lts <+> text "in"
          <$> pprX x
 
+        -- Print single alternative case expressions as 'letcase'.
+        --    case x1 of { C v1 v2 -> x2 }
+        -- => letcase C v1 v2 <- x1 in x2
         XCase _ x1 [AAlt p x2]
          | modeExpUseLetCase mode
          ->  pprParen' (d > 2)

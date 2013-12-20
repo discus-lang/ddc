@@ -12,6 +12,7 @@ module DDC.Type.Compounds
         
           -- * Bounds
         , takeNameOfBound
+        , takeTypeOfBound
         , boundMatchesBind
         , namedBoundMatchesBind
         , takeSubstBoundOfBind
@@ -161,6 +162,15 @@ takeNameOfBound uu
  = case uu of
         UName n         -> Just n
         UPrim n _       -> Just n
+        UIx{}           -> Nothing
+
+
+-- | Get the attached type of a `Bound`, if any.
+takeTypeOfBound :: Bound n -> Maybe (Type n)
+takeTypeOfBound uu
+ = case uu of
+        UName{}         -> Nothing
+        UPrim _ t       -> Just t
         UIx{}           -> Nothing
 
 

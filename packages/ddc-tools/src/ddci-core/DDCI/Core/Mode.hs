@@ -29,8 +29,15 @@ data Mode
 
         -- Pretty Printer Config ------
         -- There is one mode here for each field in Driver.Config.ConfigPretty
+
         -- | Use 'letcase' when pretty printing core modules.
         |  PrettyUseLetCase
+
+        -- | Display types on primitive variables.
+        |  PrettyVarTypes
+
+        -- | Display types on primitive constructors.
+        |  PrettyConTypes
 
         -- | Suppress import lists when printing modules.
         |  SuppressImports
@@ -67,6 +74,8 @@ readMode str
         "TraceStore"            -> Just TraceStore
         "TraceTrans"            -> Just TraceTrans
         "PrettyUseLetCase"      -> Just PrettyUseLetCase
+        "PrettyVarTypes"        -> Just PrettyVarTypes
+        "PrettyConTypes"        -> Just PrettyConTypes
         "SuppressImports"       -> Just SuppressImports
         "SuppressExports"       -> Just SuppressExports
         "SuppressLetTypes"      -> Just SuppressLetTypes

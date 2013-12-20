@@ -176,7 +176,7 @@ checkAltsM _ _ _ _ _ [] ctx
 
 checkAltsM !xx !table !tDiscrim !tsArgs mode (alt : alts) ctx
  = do   (alt',  tAlt, eAlt, cAlt, ctx')
-         <- checkAltM  xx table tDiscrim tsArgs mode alt ctx
+         <- checkAltM  alt ctx
 
         (alts', tsAlts, esAlts, csAlts, ctx'')
          <- checkAltsM xx table tDiscrim tsArgs mode alts ctx'
@@ -187,40 +187,21 @@ checkAltsM !xx !table !tDiscrim !tsArgs mode (alt : alts) ctx
                 , cAlt : csAlts
                 , ctx'')
 
-
--- | Check a case alternative.
-checkAltM 
-        :: (Show n, Pretty n, Ord n) 
-        => Exp a n              -- ^ Whole case expression, for error messages.
-        -> Table a n            -- ^ Checker table.
-        -> Type n               -- ^ Type of discriminant.
-        -> [Type n]             -- ^ Args to type constructor of discriminant.
-        -> Mode n               -- ^ Check mode for right of alternative.
-        -> Alt a n              -- ^ Alternative to check.
-        -> Context n            -- ^ Context to check the expression in.
-        -> CheckM a n 
-                ( Alt (AnTEC a n) n
-                , Type n
-                , TypeSum n
-                , Set (TaggedClosure n)
-                , Context n)
-
-checkAltM !_xx !table !_tDiscrim !_tsArgs
-          !dXX (AAlt PDefault xBody) !ctx
- = do   
+ where 
+  checkAltM (AAlt PDefault xBody) !ctx0
+   = do   
         -- Check the right of the alternative.
-        (xBody', tBody, effBody, cloBody, ctx')
-                <- tableCheckExp table table ctx xBody dXX
+        (xBody', tBody, effBody, cloBody, ctx1)
+                <- tableCheckExp table table ctx0 xBody mode
 
         return  ( AAlt PDefault xBody'
                 , tBody
                 , effBody
                 , cloBody
-                , ctx')
+                , ctx1)
 
-checkAltM !xx !table !tDiscrim !tsArgs
-          !dXX (AAlt (PData dc bsArg) xBody) !ctx
- = do   let a           = annotOfExp xx
+  checkAltM (AAlt (PData dc bsArg) xBody) !ctx0
+   = do let a           = annotOfExp xx
 
         -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat a table (PData dc bsArg)
@@ -260,12 +241,12 @@ checkAltM !xx !table !tDiscrim !tsArgs
 
         -- Extend the environment with the field types.
         let bsArg'         = zipWith replaceTypeOfBind tsFields bsArg
-        let (ctx', posArg) = markContext ctx
-        let ctxArg         = pushTypes bsArg' ctx'
+        let (ctx1, posArg) = markContext ctx0
+        let ctxArg         = pushTypes bsArg' ctx1
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody, ctxBody)
-                <- tableCheckExp table table ctxArg xBody dXX
+                <- tableCheckExp table table ctxArg xBody mode
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
