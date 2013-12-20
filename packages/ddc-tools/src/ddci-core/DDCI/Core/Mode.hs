@@ -17,12 +17,6 @@ data Mode
         -- | Render expressions displayed to user using indenting.
         |  Indent
 
-        -- | Suppress import lists when printing modules
-        |  SuppressImports
-
-        -- | Suppress type annotations on let-bindings.
-        |  SuppressLetTypes
-
         -- | Display type checker trace with check commands.
         |  TraceCheck
 
@@ -34,6 +28,15 @@ data Mode
 
         -- | Display information about each transformation step
         |  TraceTrans
+
+        -- | Use 'letcase' when pretty printing core modules.
+        |  PrettyUseLetCase
+
+        -- | Suppress import lists when printing modules
+        |  SuppressImports
+
+        -- | Suppress type annotations on let-bindings.
+        |  SuppressLetTypes
 
         -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
@@ -55,12 +58,13 @@ readMode str
  = case str of
         "Synth"                 -> Just Synth
         "Indent"                -> Just Indent
-        "SuppressImports"       -> Just SuppressImports
-        "SuppressLetTypes"      -> Just SuppressLetTypes
         "TraceCheck"            -> Just TraceCheck
         "TraceEval"             -> Just TraceEval
         "TraceStore"            -> Just TraceStore
         "TraceTrans"            -> Just TraceTrans
+        "PrettyUseLetCase"      -> Just PrettyUseLetCase
+        "SuppressImports"       -> Just SuppressImports
+        "SuppressLetTypes"      -> Just SuppressLetTypes
         "SaltPrelude"           -> Just SaltPrelude
         "Dump"                  -> Just Dump
         "TaintAvoidTypeChecks"  -> Just TaintAvoidTypeChecks

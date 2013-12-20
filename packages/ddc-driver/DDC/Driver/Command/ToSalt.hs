@@ -57,7 +57,7 @@ cmdToSalt config language source sourceText
                 [ (if configSuppressCoreImports config
                         then PipeCoreHacks    (Canned (\x -> return $ eraseImports x))
                         else PipeCoreId)
-                [ PipeCoreOutput   SinkStdout]]]]]]]
+                [ PipeCoreOutput   P.pprDefaultMode SinkStdout]]]]]]]
 
                 -- Unrecognised.
                 | otherwise

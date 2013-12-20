@@ -1,5 +1,6 @@
 :set lang Flow
 :set Synth
+:set PrettyUseLetCase
 
 
 -- Kernel of QuickHull algorithm.

@@ -102,8 +102,10 @@ letrec {
   foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
     = /\(r1 : Region).
        \(x : Ptr# rT Obj).
-      letcase _  = getTag [rT] x in
-      allocBoxed [rT] TAG0# 0#
+      case getTag [rT] x of {
+        _ 
+         -> allocBoxed [rT] TAG0# 0#
+      }
 }
 
 module Test with

@@ -73,17 +73,22 @@ cmdTransModule config language _shouldPrintInfo source str
  , fragment             <- bundleFragment   bundle
  , simpl                <- bundleSimplifier bundle
  , zero                 <- bundleStateInit  bundle
- = do   errs    <- liftIO
-                $  pipeText (nameOfSource source) (lineStartOfSource source) str
-                $  PipeTextLoadCore fragment 
-                        (if configInferTypes config then C.Synth else C.Recon) 
-                        SinkDiscard
-                [  PipeCoreReannotate (\a -> a { annotTail = ()})
-                [  PipeCoreSimplify  fragment zero simpl
-                [  PipeCoreCheck     fragment C.Recon
-                [  PipeCoreSuppress  (configSuppressCore config)
-                [  PipeCoreOutput    SinkStdout ]]]]]
+ = let
+        pmode   = prettyModeOfConfig $ configPretty config
 
+        pipeTrans
+         = pipeText (nameOfSource source) (lineStartOfSource source) str
+         $ PipeTextLoadCore fragment 
+                (if configInferTypes config then C.Synth else C.Recon) 
+                SinkDiscard
+         [  PipeCoreReannotate (\a -> a { annotTail = ()})
+         [  PipeCoreSimplify  fragment zero simpl
+         [  PipeCoreCheck     fragment C.Recon
+         [  PipeCoreSuppress  (configSuppressCore config)
+         [  PipeCoreOutput    pmode SinkStdout ]]]]]
+ 
+    in do
+        errs    <- liftIO pipeTrans 
         case errs of
          [] -> return ()
          es -> throwError $ renderIndent $ vcat $ map ppr es

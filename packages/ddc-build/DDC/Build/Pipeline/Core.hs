@@ -44,6 +44,7 @@ import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
+import qualified DDC.Core.Pretty                        as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Exp                           as C
 
@@ -63,7 +64,8 @@ data PipeCore a n where
 
   -- Output a module to console or file.
   PipeCoreOutput    
-        :: !Sink 
+        :: !(C.PrettyMode (C.Module a n))
+        -> !Sink 
         -> PipeCore a n
 
   -- Type check a module.
@@ -145,9 +147,9 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreId" #-}
             pipeCores mm pipes
 
-        PipeCoreOutput !sink
+        PipeCoreOutput !mode !sink
          -> {-# SCC "PipeCoreOutput" #-}
-            pipeSink (renderIndent $ ppr mm) sink
+            pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
 
         PipeCoreCheck !fragment !mode !pipes
          -> {-# SCC "PipeCoreCheck" #-}

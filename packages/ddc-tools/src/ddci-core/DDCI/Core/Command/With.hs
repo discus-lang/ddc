@@ -40,18 +40,20 @@ cmdWithLite state _source str
  = do   res <- cmdWith_load Lite.fragment str
 	case res of
 	  Nothing  -> return state
-	  Just mdl ->
-		return $ state
-		       { stateWithLite = Map.insert (moduleName mdl) mdl (stateWithLite state) }
+	  Just mdl 
+           -> return $ state
+		     { stateWithLite = Map.insert (moduleName mdl) mdl 
+                                                  (stateWithLite state) }
 
 cmdWithSalt :: State -> Source -> String -> IO State
 cmdWithSalt state _source str
  = do   res <- cmdWith_load Salt.fragment str
 	case res of
 	  Nothing  -> return state
-	  Just mdl ->
-		return $ state
-		       { stateWithSalt = Map.insert (moduleName mdl) mdl (stateWithSalt state) }
+	  Just mdl 
+           -> return $ state
+		     { stateWithSalt = Map.insert (moduleName mdl) mdl 
+                                                  (stateWithSalt state) }
 
 
 cmdWith_load frag str
@@ -75,7 +77,7 @@ cmdWith_parse frag source src
                 $  PipeTextLoadCore frag C.Recon SinkDiscard
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
                 [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
-                [PipeCoreOutput SinkDiscard] ]]
+                [ PipeCoreOutput pprDefaultMode SinkDiscard] ]]
 
         case errs of
          [] -> do

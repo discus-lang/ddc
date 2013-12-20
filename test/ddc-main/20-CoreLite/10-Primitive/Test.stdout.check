@@ -34,8 +34,10 @@ Bool :: Region ~> Data
 -- Unboxing bools.
 /\(r : Region).
  \(x : Bool r).
-letcase B# (b : Bool#)  = x in
-b
+case x of {
+  B# (b : Bool#) 
+   -> b
+}
 :*: [r : Region].Bool r -(Read r | Empty)> Bool#
 :!: Pure
 :$: Empty
@@ -52,8 +54,10 @@ b
 -- Unboxing ints
 /\(r : Region).
  \(x : Int r).
-letcase I# (i : Int#)  = x in
-i
+case x of {
+  I# (i : Int#) 
+   -> i
+}
 :*: [r : Region].Int r -(Read r | Empty)> Int#
 :!: Pure
 :$: Empty
@@ -63,14 +67,20 @@ i
 let unboxInt : [r : Region].Int r -(Read r | Empty)> Int#
       = /\(r : Region).
          \(x : Int r).
-        letcase I# (i : Int#)  = x in
-        i in
+        case x of {
+          I# (i : Int#) 
+           -> i
+        } in
 let addInt : [r1 r2 r3 : Region].Int r1 -(Pure | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3
       = /\(r1 r2 r3 : Region).
          \(x : Int r1).\(y : Int r2).
-        letcase I# (i1 : Int#)  = x in
-        letcase I# (i2 : Int#)  = y in
-        I# [r3] (add# [Int#] i1 i2) in
+        case x of {
+          I# (i1 : Int#) 
+           -> case y of {
+                I# (i2 : Int#) 
+                 -> I# [r3] (add# [Int#] i1 i2)
+              }
+        } in
 private r1 in
 unboxInt [r1]
     (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))

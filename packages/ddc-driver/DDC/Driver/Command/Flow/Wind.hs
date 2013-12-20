@@ -3,6 +3,7 @@ module DDC.Driver.Command.Flow.Wind
         (cmdFlowWind)
 where
 import DDC.Driver.Stage
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
@@ -20,22 +21,23 @@ cmdFlowWind
         -> ErrorT String IO ()
 
 cmdFlowWind config source sourceText
- = let  
+ = let  pmode   = prettyModeOfConfig $ configPretty config
+
         pipeLower
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
          $  stageFlowLoad  config source 
          [  PipeCoreCheck  Flow.fragment C.Recon
-         [  stageFlowWind config source [ pipeFinal ]]]
+         [  stageFlowWind  config source [ pipeFinal ]]]
 
         pipeFinal
          | configTaintAvoidTypeChecks config
-         = PipeCoreOutput SinkStdout
+         = PipeCoreOutput pmode SinkStdout
 
          | otherwise
          = PipeCoreCheck Flow.fragment C.Recon
-         [ PipeCoreOutput SinkStdout ]
+         [ PipeCoreOutput pmode SinkStdout ]
 
    in do        
         errs    <- liftIO pipeLower

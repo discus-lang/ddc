@@ -160,8 +160,10 @@ f 5#
 
 
 -- Simplest possible case expression.
-letcase ()   = () in
-()
+case () of {
+  ()  
+   -> ()
+}
 :*: Unit
 :!: Pure
 

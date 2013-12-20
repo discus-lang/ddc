@@ -12,6 +12,7 @@ import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify
+import DDC.Base.Pretty
 import System.FilePath
 import Data.Maybe
 
@@ -34,7 +35,8 @@ stageSaltOpt config source pipes
         Salt.fragment
         (0 :: Int) 
         (configSimplSalt config)        
-        ( PipeCoreOutput  (dump config source "dump.salt-opt.dcl")
+        ( PipeCoreOutput  pprDefaultMode 
+                          (dump config source "dump.salt-opt.dcl")
         : pipes )
 
 
@@ -48,7 +50,8 @@ stageSaltToC
 stageSaltToC config source sink
  = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
    [ PipeCoreCheck        Salt.fragment C.Recon
-     [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
+     [ PipeCoreOutput     pprDefaultMode
+                          (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
          [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")
@@ -72,7 +75,8 @@ stageSaltToLLVM
 stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
    [ PipeCoreCheck          Salt.fragment C.Recon
-     [ PipeCoreOutput       (dump config source "dump.salt-normalized.dcs")
+     [ PipeCoreOutput       pprDefaultMode
+                            (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
          [ PipeSaltOutput   (dump config source "dump.salt-transfer.dcs")
@@ -104,7 +108,8 @@ stageCompileSalt config source filePath shouldLinkExe
    in
         PipeCoreSimplify        Salt.fragment 0 normalizeSalt
          [ PipeCoreCheck        Salt.fragment C.Recon
-           [ PipeCoreOutput     (dump config source "dump.salt-normalized.dcs")
+           [ PipeCoreOutput     pprDefaultMode
+                                (dump config source "dump.salt-normalized.dcs")
            , PipeCoreAsSalt
              [ PipeSaltTransfer
                [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")

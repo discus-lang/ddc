@@ -3,6 +3,7 @@ module DDC.Driver.Command.Flow.Rate
         (cmdFlowRate)
 where
 import DDC.Driver.Stage
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
@@ -19,15 +20,17 @@ cmdFlowRate
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowRate configDriver source sourceText
- = let  pipeRate
+cmdFlowRate config source sourceText
+ = let  pmode   = prettyModeOfConfig $ configPretty config
+        
+        pipeRate
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
-         $ stageFlowLoad  configDriver source 
-         [ stageFlowRate  configDriver source 
+         $ stageFlowLoad  config source 
+         [ stageFlowRate  config source 
          [ PipeCoreCheck  Flow.fragment C.Recon
-         [ PipeCoreOutput SinkStdout ]]]
+         [ PipeCoreOutput pmode SinkStdout ]]]
    
    in do
         errs    <- liftIO pipeRate

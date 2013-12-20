@@ -48,7 +48,7 @@ runLanguage config source sourceName language
         -- against the provided fragment.
         errs    <- pipeText sourceName 1 source
                 $  PipeTextLoadCore  fragment C.Recon SinkDiscard
-                [  PipeCoreOutput    sink ]
+                [  PipeCoreOutput    pprDefaultMode sink ]
 
         -- If the pipeline died with errors, 
         --  then print them.

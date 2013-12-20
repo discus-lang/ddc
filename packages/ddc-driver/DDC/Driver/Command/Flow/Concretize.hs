@@ -5,6 +5,7 @@ where
 import DDC.Build.Pipeline
 import DDC.Build.Language.Flow
 import DDC.Driver.Stage
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Data.Canned
 import Control.Monad.Trans.Error
@@ -21,8 +22,10 @@ cmdFlowConcretize
         -> String       -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowConcretize _config source sourceText
- = let  pipeConcretize
+cmdFlowConcretize config source sourceText
+ = let  pmode   = prettyModeOfConfig $ configPretty config
+
+        pipeConcretize
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
@@ -31,7 +34,7 @@ cmdFlowConcretize _config source sourceText
          [ PipeCoreHacks 
                 (Canned $ \m -> return 
                         $  Concretize.concretizeModule m)
-         [ PipeCoreOutput SinkStdout ]]]
+         [ PipeCoreOutput pmode SinkStdout ]]]
    in do
         errs    <- liftIO pipeConcretize
         case errs of

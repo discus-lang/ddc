@@ -72,8 +72,10 @@ let ^ : [^ ^ : Region].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> 
         Pr [^1] [Int ^1] [Int ^0] ^1 ^0 in
 private ^ in
 private ^ in
-letcase Pr (_ : Int ^1) (^ : Int ^0)  = ^0 [^1] [^0] () in
-copyInt [^0] [r0#] ^0
+case ^0 [^1] [^0] () of {
+  Pr (_ : Int ^1) (^ : Int ^0) 
+   -> copyInt [^0] [r0#] ^0
+}
 
 
 -- Mixed spec and value and witness binders, 
@@ -92,8 +94,10 @@ let ^ : [^ : Region].Const ^0 => Global ^0 => [^ : Region].Const ^0 => Global ^0
         Pr [^1] [Int ^1] [Int ^0] ^1 ^0 in
 private ^ with {^ : Const ^0; ^ : Global ^0} in
 private ^ with {^ : Const ^0; ^ : Global ^0; ^ : Lazy ^0} in
-letcase Pr (_ : Int ^1) (^ : Int ^0)  = ^5 [^1] <^4> <^3> [^0] <^2> <^1> <^0> () in
-copyInt [^0] [r0#] ^0
+case ^5 [^1] <^4> <^3> [^0] <^2> <^1> <^0> () of {
+  Pr (_ : Int ^1) (^ : Int ^0) 
+   -> copyInt [^0] [r0#] ^0
+}
 
 
 -- Mixed spec and value binders.

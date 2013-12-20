@@ -36,6 +36,7 @@ import System.Exit
 import System.FilePath
 import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage               as Driver
+import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Transform.Suppress    as Suppress
 
@@ -83,8 +84,8 @@ run config
          -> do  language        <- languageFromFilePath filePath
                 case language of 
                  Language bundle
-                  -> do  mm      <- runErrorT 
-                                 $ cmdCheckModuleFromFile (bundleFragment bundle) filePath
+                  -> do  mm <- runErrorT 
+                            $ cmdCheckModuleFromFile (bundleFragment bundle) filePath
                          case mm of
                           Left err        
                            -> do putStrLn err
@@ -95,8 +96,8 @@ run config
 
         -- Parse, type check and transform a module.
         ModeLoad filePath
-         ->     runError $ cmdLoadFromFile False
-                                Suppress.configZero
+         -> do  dconfig  <- getDriverConfig config (Just filePath)
+                runError $ cmdLoadFromFile dconfig
                                 (configTrans config) 
                                 (configWith config) 
                                 filePath
@@ -220,27 +221,28 @@ getDriverConfig config filePath
              = Runtime.Config
              { Runtime.configHeapSize = configRuntimeHeapSize config }
 
-        simplLite       <- getSimplLiteOfConfig config builder               filePath
-        simplSalt       <- getSimplSaltOfConfig config builder runtimeConfig filePath
+        simplLite <- getSimplLiteOfConfig config builder               filePath
+        simplSalt <- getSimplSaltOfConfig config builder runtimeConfig filePath
 
-        return  $ Driver.Config
-                { Driver.configDump                     = configDump config
-                , Driver.configInferTypes               = False
-                , Driver.configSimplLite                = simplLite
-                , Driver.configSimplSalt                = simplSalt
-                , Driver.configViaBackend               = configViaBackend config
-
-                , Driver.configRuntime                  = runtimeConfig
-                , Driver.configBuilder                  = builder
-                , Driver.configSuppressCore             = Suppress.configZero
-                , Driver.configSuppressCoreImports      = False
-                , Driver.configSuppressHashImports      = False
-                , Driver.configOutputFile               = configOutputFile config
-                , Driver.configOutputDir                = configOutputDir  config 
-                , Driver.configKeepLlvmFiles            = configKeepLlvmFiles config
-                , Driver.configKeepSeaFiles             = configKeepSeaFiles  config
-                , Driver.configKeepAsmFiles             = configKeepAsmFiles  config 
-                , Driver.configTaintAvoidTypeChecks     = configTaintAvoidTypeChecks config }
+        return  
+         $ Driver.Config
+         { Driver.configDump                  = configDump config
+         , Driver.configInferTypes            = False
+         , Driver.configSimplLite             = simplLite
+         , Driver.configSimplSalt             = simplSalt
+         , Driver.configViaBackend            = configViaBackend config
+         , Driver.configRuntime               = runtimeConfig
+         , Driver.configBuilder               = builder
+         , Driver.configPretty                = Driver.defaultConfigPretty
+         , Driver.configSuppressCore          = Suppress.configZero
+         , Driver.configSuppressCoreImports   = False
+         , Driver.configSuppressHashImports   = False
+         , Driver.configOutputFile            = configOutputFile config
+         , Driver.configOutputDir             = configOutputDir  config 
+         , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config
+         , Driver.configKeepSeaFiles          = configKeepSeaFiles  config
+         , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
+         , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config }
 
 
 -- | Determine the current language based on the file extension of this path, 

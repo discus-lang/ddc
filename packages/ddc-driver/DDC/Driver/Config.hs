@@ -1,10 +1,17 @@
 
 module DDC.Driver.Config
         ( Config        (..)
+        
+        , ConfigPretty  (..)
+        , defaultConfigPretty
+        , prettyModeOfConfig
+        
         , ViaBackend    (..))
 where
 import DDC.Build.Builder                        
 import DDC.Core.Simplifier                      (Simplifier)
+import DDC.Core.Pretty
+import DDC.Core.Module
 
 import qualified DDC.Core.Transform.Suppress    as Suppress
 
@@ -35,6 +42,9 @@ data Config
 
           -- | The builder to use for the target architecture
         , configBuilder                 :: Builder
+
+          -- | Core langauge pretty printer configuration.
+        , configPretty                  :: ConfigPretty
 
           -- | Suppress various things in output core modules.
         , configSuppressCore            :: Suppress.Config
@@ -67,6 +77,50 @@ data Config
         }
 
 
+-- ConfigPretty ---------------------------------------------------------------
+-- | Core language pretty printer configuration.
+data ConfigPretty
+        = ConfigPretty
+        { configPrettyUseLetCase        :: Bool }
+
+
+-- | Default pretty printer configuration.
+defaultConfigPretty :: ConfigPretty
+defaultConfigPretty
+        = ConfigPretty
+        { configPrettyUseLetCase        = False }
+
+
+-- | Convert a the pretty configuration into the mode to use to print a module.
+prettyModeOfConfig
+        :: (Eq n, Pretty n) 
+        => ConfigPretty -> PrettyMode (Module a n)
+
+prettyModeOfConfig config
+ = modeModule
+ where
+        modeModule      
+         = PrettyModeModule
+         { modeModuleLets                = modeLets
+         , modeModuleSuppressImports     = False
+         , modeModuleSuppressExports     = False }
+
+        modeExp         
+         = PrettyModeExp
+         { modeExpLets                   = modeLets
+         , modeExpAlt                    = modeAlt
+         , modeExpUseLetCase             = configPrettyUseLetCase config }
+
+        modeLets        
+         = PrettyModeLets
+         { modeLetsExp                   = modeExp }
+
+        modeAlt
+         = PrettyModeAlt
+         { modeAltExp                    = modeExp }
+        
+
+-- ViaBackend -----------------------------------------------------------------
 data ViaBackend
         -- | Compile via the C backend.
         = ViaC

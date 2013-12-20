@@ -38,6 +38,7 @@ import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Driver.Stage               as D
+import qualified DDC.Driver.Config              as D
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 
@@ -144,6 +145,7 @@ getDriverConfigOfState state
          , D.configSimplLite            = stateSimplLite  state
          , D.configSimplSalt            = stateSimplSalt  state
          , D.configBuilder              = builder
+         , D.configPretty               = configPretty
          , D.configSuppressCore         = suppressConfigOfModes (stateModes state)
          , D.configSuppressCoreImports  = Set.member SuppressImports (stateModes state)
          , D.configSuppressHashImports  = not $ Set.member SaltPrelude (stateModes state) 
@@ -153,6 +155,12 @@ getDriverConfigOfState state
 
          , D.configTaintAvoidTypeChecks 
                 = Set.member TaintAvoidTypeChecks (stateModes state) }
+
+ where  modes   = stateModes state
+        
+        configPretty   
+         = D.ConfigPretty
+         { D.configPrettyUseLetCase     = Set.member PrettyUseLetCase modes }
 
 
 -- | Holds platform independent builder info.

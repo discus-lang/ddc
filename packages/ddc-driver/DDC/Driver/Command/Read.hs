@@ -55,7 +55,7 @@ cmdReadModule_parse printErrors filePath frag source src
                 $  PipeTextLoadCore frag 
                         C.Recon SinkDiscard
                    [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
-                     [PipeCoreOutput SinkDiscard] ]
+                     [PipeCoreOutput pprDefaultMode SinkDiscard] ]
 
         case errs of
          [] -> do

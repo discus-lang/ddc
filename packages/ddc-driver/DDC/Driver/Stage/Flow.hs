@@ -10,6 +10,7 @@ import DDC.Driver.Dump
 import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
+import DDC.Base.Pretty
 
 import qualified DDC.Core.Check                 as C
 
@@ -29,7 +30,8 @@ stageFlowLoad config source pipesFlow
                          (if configInferTypes config then C.Synth else C.Recon)
                          (dump config source "dump.flow-check.txt")
    [ PipeCoreReannotate  (const ()) 
-        ( PipeCoreOutput (dump config source "dump.flow-load.dcf")
+        ( PipeCoreOutput pprDefaultMode
+                         (dump config source "dump.flow-load.dcf")
         : pipesFlow ) ]
 
 
@@ -44,7 +46,8 @@ stageFlowPrep config source pipesFlow
  = PipeCoreReannotate   (const ())
  [ PipeCoreAsFlow
    [ PipeFlowPrep
-     ( PipeCoreOutput (dump config source "dump.flow-prep.dcf")
+     ( PipeCoreOutput   pprDefaultMode
+                        (dump config source "dump.flow-prep.dcf")
      : pipesFlow)]]
 
 
@@ -59,7 +62,8 @@ stageFlowRate config source pipesFlow
  = PipeCoreReannotate   (const ())
  [ PipeCoreAsFlow
    [ PipeFlowRate
-     ( PipeCoreOutput (dump config source "dump.flow-rate.dcf")
+     ( PipeCoreOutput   pprDefaultMode
+                        (dump config source "dump.flow-rate.dcf")
      : pipesFlow)]]
  
 
@@ -75,7 +79,8 @@ stageFlowLower
 stageFlowLower config lowerConfig source pipesFlow 
  = PipeCoreAsFlow
      [ PipeFlowLower lowerConfig
-       ( PipeCoreOutput    (dump config source "dump.flow-lower.dcf")
+       ( PipeCoreOutput pprDefaultMode
+                        (dump config source "dump.flow-lower.dcf")
        : pipesFlow ) ]
 
 
@@ -89,6 +94,7 @@ stageFlowWind
 stageFlowWind config source pipesFlow
  = PipeCoreAsFlow
      [ PipeFlowWind
-       ( PipeCoreOutput    (dump config source "dump.flow-wind.dcf")
+       ( PipeCoreOutput pprDefaultMode
+                        (dump config source "dump.flow-wind.dcf")
        : pipesFlow ) ]
 

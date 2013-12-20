@@ -1,3 +1,5 @@
+:set PrettyUseLetCase
+
 
 -- Simple loop with no scalar results.
 :flow-wind..

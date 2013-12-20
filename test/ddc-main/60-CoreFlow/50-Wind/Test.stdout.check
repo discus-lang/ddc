@@ -1,3 +1,5 @@
+ok
+
 
 -- Simple loop with no scalar results.
 module Main with

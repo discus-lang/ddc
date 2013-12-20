@@ -2,11 +2,12 @@
 module DDC.Driver.Command.Flow.Thread
         (cmdFlowThread)
 where
+import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language.Flow
-import DDC.Core.Fragment
 import DDC.Driver.Stage
-import DDC.Interface.Source
+import DDC.Driver.Config
+import DDC.Core.Fragment
 import DDC.Data.Canned
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
@@ -26,8 +27,10 @@ cmdFlowThread
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdFlowThread _config source sourceText
- = let  pipeThread
+cmdFlowThread config source sourceText
+ = let  pmode   = prettyModeOfConfig $ configPretty config
+        
+        pipeThread
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
                     sourceText
@@ -39,7 +42,7 @@ cmdFlowThread _config source sourceText
                     $  Thread.thread Flow.threadConfig 
                         (profilePrimKinds (fragmentProfile fragment))
                         (profilePrimTypes (fragmentProfile fragment)) m)
-         [  PipeCoreOutput SinkStdout ]]]]
+         [  PipeCoreOutput pmode SinkStdout ]]]]
 
    in do
         errs    <- liftIO pipeThread

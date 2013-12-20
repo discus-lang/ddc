@@ -207,10 +207,11 @@ handleCmd1 state cmd source line
                 return state'
 
         CommandLoad
-         -> do  runError $ cmdLoadFromString
-                                (Set.member Mode.Synth (stateModes state)) 
-                                (suppressConfigOfModes (stateModes state))
-                                (stateLanguage state) source line
+         -> do  configDriver    <- getDriverConfigOfState state
+                runError 
+                 $ cmdLoadFromString 
+                        configDriver
+                        (stateLanguage state) source line
                 return state
 
         CommandKind       

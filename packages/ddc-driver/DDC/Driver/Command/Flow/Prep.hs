@@ -3,6 +3,7 @@ module DDC.Driver.Command.Flow.Prep
         (cmdFlowPrep)
 where
 import DDC.Driver.Stage
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
@@ -20,14 +21,16 @@ cmdFlowPrep
         -> ErrorT String IO ()
 
 cmdFlowPrep config source sourceText
- = let  pipePrep
+ = let  pmode   = prettyModeOfConfig $ configPretty config
+        
+        pipePrep
          = pipeText (nameOfSource source)
                      (lineStartOfSource source)
                      sourceText
          $ stageFlowLoad  config source 
          [ stageFlowPrep  config source
-         [ PipeCoreCheck Flow.fragment C.Recon
-         [ PipeCoreOutput SinkStdout ]]]
+         [ PipeCoreCheck  Flow.fragment C.Recon
+         [ PipeCoreOutput pmode SinkStdout ]]]
    in do
         errs    <- liftIO pipePrep
         case errs of

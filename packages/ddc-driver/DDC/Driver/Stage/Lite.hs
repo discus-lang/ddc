@@ -10,6 +10,7 @@ import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify
+import DDC.Base.Pretty
 
 import qualified DDC.Core.Salt.Name             as Salt
 
@@ -30,7 +31,8 @@ stageLiteLoad
 stageLiteLoad config source pipesLite
  = PipeTextLoadCore Lite.fragment C.Recon SinkDiscard
  [ PipeCoreReannotate (const ())
-        ( PipeCoreOutput (dump config source "dump.lite.dcl")
+        ( PipeCoreOutput pprDefaultMode
+                         (dump config source "dump.lite.dcl")
         : pipesLite ) ]
 
 
@@ -46,7 +48,8 @@ stageLiteOpt config source pipes
         Lite.fragment
         (0 :: Int) 
         (configSimplLite config)
-        ( PipeCoreOutput (dump config source "dump.lite-opt.dcl") 
+        ( PipeCoreOutput pprDefaultMode
+                         (dump config source "dump.lite-opt.dcl") 
         : pipes)
 
 
@@ -63,11 +66,13 @@ stageLiteToSalt
 stageLiteToSalt config source pipesSalt
  = PipeCoreSimplify       Lite.fragment 0 normalizeLite
    [ PipeCoreCheck        Lite.fragment C.Recon
-     [ PipeCoreOutput     (dump config source "dump.lite-normalized.dcl")
+     [ PipeCoreOutput     pprDefaultMode
+                          (dump config source "dump.lite-normalized.dcl")
      , PipeCoreAsLite
        [ PipeLiteToSalt   (buildSpec $ configBuilder config) 
                           (configRuntime config)
-         ( PipeCoreOutput (dump config source "dump.salt.dcs")
+         ( PipeCoreOutput pprDefaultMode
+                          (dump config source "dump.salt.dcs")
          : pipesSalt)]]]
            
  where  normalizeLite

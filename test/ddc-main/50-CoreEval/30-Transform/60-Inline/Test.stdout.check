@@ -14,16 +14,22 @@ letrec {
       weakclo {[r1]; n} in
       private r3 in
       weakclo {[r3]} in
-      letcase N# (n2 : Nat#)  = n in
-      case eq# [Nat#] n2 0# of {
-        True#  
-         -> Nil [r2] [a] ();
-        False#  
-         -> Cons [r2] [a] x
-                (replicate [r3] [r2] [a]
-                     ((\(^ : Nat r3).
-                       letcase N# (^ : Nat#)  = n in
-                       letcase N# (^ : Nat#)  = ^1 in
-                       N# [r3] (sub# [Nat#] ^1 ^0)) (N# [r3] 1#)) x)
+      case n of {
+        N# (n2 : Nat#) 
+         -> case eq# [Nat#] n2 0# of {
+              True#  
+               -> Nil [r2] [a] ();
+              False#  
+               -> Cons [r2] [a] x
+                      (replicate [r3] [r2] [a]
+                           ((\(^ : Nat r3).
+                             case n of {
+                               N# (^ : Nat#) 
+                                -> case ^1 of {
+                                     N# (^ : Nat#) 
+                                      -> N# [r3] (sub# [Nat#] ^1 ^0)
+                                   }
+                             }) (N# [r3] 1#)) x)
+            }
       }
 }

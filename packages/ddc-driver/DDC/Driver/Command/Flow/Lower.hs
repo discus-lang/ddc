@@ -3,6 +3,7 @@ module DDC.Driver.Command.Flow.Lower
         (cmdFlowLower)
 where
 import DDC.Driver.Stage                         as Driver
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Error
@@ -25,6 +26,8 @@ cmdFlowLower
         configDriver configLower
         source sourceText
  = let  
+        pmode   = prettyModeOfConfig $ configPretty configDriver
+
         pipeLower
          = pipeText (nameOfSource source)
                     (lineStartOfSource source)
@@ -37,12 +40,12 @@ cmdFlowLower
         pipeFinal
          | configTaintAvoidTypeChecks configDriver
          = PipeCoreSuppress (configSuppressCore configDriver)
-         [ PipeCoreOutput SinkStdout ]
+         [ PipeCoreOutput   pmode SinkStdout ]
 
          | otherwise
-         = PipeCoreCheck Flow.fragment C.Recon
+         = PipeCoreCheck    Flow.fragment C.Recon
          [ PipeCoreSuppress (configSuppressCore configDriver)
-         [ PipeCoreOutput SinkStdout ]]
+         [ PipeCoreOutput   pmode SinkStdout ]]
 
    in do        
         errs    <- liftIO pipeLower

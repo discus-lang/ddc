@@ -28,12 +28,14 @@ instance Pretty ModuleName where
 instance (Pretty n, Eq n) => Pretty (Module a n) where
  data PrettyMode (Module a n)
         = PrettyModeModule
-        { modeModuleSuppressImports     :: Bool 
+        { modeModuleLets                :: PrettyMode (Lets a n)
+        , modeModuleSuppressImports     :: Bool 
         , modeModuleSuppressExports     :: Bool }
 
  pprDefaultMode
         = PrettyModeModule
-        { modeModuleSuppressImports     = False
+        { modeModuleLets                = pprDefaultMode
+        , modeModuleSuppressImports     = False
         , modeModuleSuppressExports     = False }
 
  pprModePrec mode _
@@ -97,6 +99,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          <> vsep  [ ppr def
                   | def <- Map.elems localData ]
 
+        pprLts = pprModePrec (modeModuleLets mode) 0
+
     in  text "module" <+> ppr name 
          <+> (if Map.null exportKinds && Map.null exportTypes
                 then empty
@@ -116,7 +120,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
                         <> line 
                         <> rbrace <> space)
          <> docsLocalData
-         <> text "with" <$$> (vcat $ map ppr lts)
+         <> text "with" <$$> (vcat $ map pprLts lts)
 
 
 -- DataDef --------------------------------------------------------------------
@@ -153,9 +157,23 @@ instance (Pretty n, Eq n) => Pretty (DataCtor n) where
 
 -- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
- pprPrec d xx
-  = {-# SCC "ppr[Exp]" #-}
-    case xx of
+ data PrettyMode (Exp a n)
+        = PrettyModeExp
+        { modeExpLets           :: PrettyMode (Lets a n)
+        , modeExpAlt            :: PrettyMode (Alt a n)
+        , modeExpUseLetCase     :: Bool }
+
+ pprDefaultMode
+        = PrettyModeExp
+        { modeExpLets           = pprDefaultMode
+        , modeExpAlt            = pprDefaultMode
+        , modeExpUseLetCase     = False }
+
+ pprModePrec mode d xx
+  = let pprX    = pprModePrec mode 0
+        pprLts  = pprModePrec (modeExpLets mode) 0
+        pprAlt  = pprModePrec (modeExpAlt  mode) 0
+    in case xx of
         XVar  _ u       -> ppr u
         XCon  _ dc      -> ppr dc
         
@@ -168,7 +186,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
                       else if isXLam    xBody then line <> space
                       else if isSimpleX xBody then space
                       else    line)
-                 <>  ppr xBody
+                 <>  pprX xBody
 
         XLam{}
          -> let Just (bs, xBody) = takeXLams xx
@@ -176,46 +194,47 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
             in  pprParen' (d > 1)
                  $  (cat $ map (pprBinderGroup (text "\\")) groups) 
                  <> breakWhen (not $ isSimpleX xBody)
-                 <> ppr xBody
+                 <> pprX xBody
 
         XApp _ x1 x2
          -> pprParen' (d > 10)
-         $  pprPrec 10 x1 
+         $  pprModePrec mode 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
-                           <> pprPrec 11 x2)
+                          <> pprModePrec mode 11 x2)
 
         XLet _ lts x
          ->  pprParen' (d > 2)
-         $   ppr lts <+> text "in"
-         <$> ppr x
+         $   pprLts lts <+> text "in"
+         <$> pprX x
 
         XCase _ x1 [AAlt p x2]
+         | modeExpUseLetCase mode
          ->  pprParen' (d > 2)
          $   text "letcase" <+> ppr p 
                 <+> nest 2 (breakWhen (not $ isSimpleX x1)
-                            <> text "=" <+> align (ppr x1))
+                            <> text "=" <+> align (pprX x1))
                 <+> text "in"
-         <$> ppr x2
+         <$> pprX x2
 
         XCase _ x alts
          -> pprParen' (d > 2) 
          $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
-                <> (vcat $ punctuate semi $ map ppr alts))
+                <> (vcat $ punctuate semi $ map pprAlt alts))
          <> line 
          <> rbrace
 
         XCast _ CastBox x
          -> pprParen' (d > 2)
-         $  text "box"  <$> ppr x
+         $  text "box"  <$> pprX x
 
         XCast _ CastRun x
          -> pprParen' (d > 2)
-         $  text "run"  <+> ppr x
+         $  text "run"  <+> pprX x
 
         XCast _ cc x
          ->  pprParen' (d > 2)
          $   ppr cc <+> text "in"
-         <$> ppr x
+         <$> pprX x
 
         XType    _ t    -> text "[" <> ppr t <> text "]"
         XWitness _ w    -> text "<" <> ppr w <> text ">"
@@ -239,8 +258,17 @@ pprPatBind b
 
 -- Alt ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
- ppr (AAlt p x)
-  = ppr p <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
+ data PrettyMode (Alt a n)
+        = PrettyModeAlt
+        { modeAltExp            :: PrettyMode (Exp a n) }
+
+ pprDefaultMode
+        = PrettyModeAlt
+        { modeAltExp            = pprDefaultMode }
+
+ pprModePrec mode _ (AAlt p x)
+  = let pprX    = pprModePrec (modeAltExp mode) 0
+    in  ppr p <+> nest 1 (line <> nest 3 (text "->" <+> pprX x))
 
 
 -- DaCon ----------------------------------------------------------------------
@@ -279,8 +307,17 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
 
 -- Lets -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
- ppr lts
-  = case lts of
+ data PrettyMode (Lets a n)
+        = PrettyModeLets
+        { modeLetsExp           :: PrettyMode (Exp a n) }
+
+ pprDefaultMode
+        = PrettyModeLets
+        { modeLetsExp           = pprDefaultMode }
+
+ pprModePrec mode _ lts
+  = let pprX    = pprModePrec (modeLetsExp mode) 0
+    in case lts of
         LLet b x
          -> let dBind = if isBot (typeOfBind b)
                           then ppr (binderOfBind b)
@@ -288,7 +325,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
             in  text "let"
                  <+> align (  dBind
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
-                                     <> text "=" <+> align (ppr x)))
+                                     <> text "=" <+> align (pprX x)))
 
         LRec bxs
          -> let pprLetRecBind (b, x)
@@ -296,7 +333,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                  <+> text ":"
                  <+> ppr (typeOfBind b)
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
-                            <> text "=" <+> align (ppr x))
+                            <> text "=" <+> align (pprX x))
         
            in   (nest 2 $ text "letrec"
                   <+> lbrace 
@@ -391,7 +428,9 @@ pprBinderGroup
         => Doc -> ([Binder n], Type n) -> Doc
 
 pprBinderGroup lam (rs, t)
-        = lam <> parens ((hsep $ map pprBinder rs) <+> text ":" <+> ppr t) <> dot
+        =  lam 
+        <> parens ((hsep $ map pprBinder rs) <+> text ":" <+> ppr t) 
+        <> dot
 
 
 -- Utils ----------------------------------------------------------------------
