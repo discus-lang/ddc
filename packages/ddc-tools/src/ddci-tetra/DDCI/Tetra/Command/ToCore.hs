@@ -10,15 +10,20 @@ import DDC.Source.Tetra.Lexer
 import DDC.Source.Tetra.Parser
 import DDC.Source.Tetra.Pretty          ()
 import DDC.Source.Tetra.Desugar.Defix
-import DDC.Source.Tetra.Infer.Expand    as Expand
-import DDC.Source.Tetra.ToCore          as ToCore
-import qualified DDC.Core.Lexer         as C
-import qualified DDC.Base.Parser        as BP
-import qualified DDC.Data.SourcePos     as SP
+import DDC.Source.Tetra.Infer.Expand            as Expand
+import DDC.Source.Tetra.ToCore                  as ToCore
+import qualified DDC.Core.Transform.SpreadX     as C
+import qualified DDC.Core.Tetra.Env             as C
+import qualified DDC.Core.Tetra                 as C
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Lexer                 as C
+import qualified DDC.Base.Parser                as BP
+import qualified DDC.Data.SourcePos             as SP
+import Control.Monad
 
 
 cmdToCore :: State -> Source -> String -> IO ()
-cmdToCore _state source str
+cmdToCore state source str
  = goLex
  where  goLex 
          = let  tokens  = lexModuleString (nameOfSource source) 1 str
@@ -46,8 +51,31 @@ cmdToCore _state source str
                                 primKindEnv primTypeEnv mm
                 goToCore mm'
 
+
         goToCore mm
-         = do   let sp  = SP.SourcePos "<top level>" 1 1
-                let mm' = ToCore.toCoreModule sp mm
-                putStrLn (renderIndent $ ppr mm')
+         = do   let sp          = SP.SourcePos "<top level>" 1 1
+                
+                -- Convert Source Tetra into Core Tetra.
+                let mm_core     = ToCore.toCoreModule sp mm
+
+                -- Spread types of data constructors into uses.
+                let mm_spread   = C.spreadX C.primKindEnv C.primTypeEnv mm_core
+                
+                goSynth mm_spread
+
+
+        goSynth mm
+         = let  config                  = C.configOfProfile C.profile
+                (mResult, _docTrace)    = C.checkModule config mm C.Synth
+           in do
+                when (stateDumpCore state)
+                 $ writeFile "dump.tetra-core.dct" (renderIndent $ ppr mm)
+                
+                case mResult of
+                 Left err       
+                  -> putStrLn (renderIndent $ ppr err)
+                 
+                 Right mm'      
+                  -> putStrLn (renderIndent $ ppr mm')
+
 

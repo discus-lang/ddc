@@ -43,7 +43,10 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
                         --  DaCons instead of names, as we don't have a name
                         --  for Unit.
 
-                 | TyConBound (UName nTyCon) k <- tc
+                 | TyConBound (UName nTyCon) _ <- tc
+                 , Just dataType        <- Map.lookup nTyCon
+                                        $  dataDefsTypes $ configDataDefs config
+                 , k                    <- kindOfDataType dataType
                  , takeResultKind k == kData
                  -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
                            , ts )

@@ -328,23 +328,23 @@ instance Eq n => Eq (TypeSum n) where
 
 
 instance Ord n => Ord (Bound n) where
- compare (UName n1)     (UName n2)      = compare n1 n2
- compare (UIx   i1)     (UIx   i2)      = compare i1 i2
- compare (UPrim n1 _)   (UPrim n2 _)    = compare n1 n2
- compare UIx{}          _               = LT
- compare UName{}        UIx{}           = GT
- compare UName{}        UPrim{}         = LT
- compare UPrim{}        _               = GT
+ compare (UName n1)     (UName n2)              = compare n1 n2
+ compare (UIx   i1)     (UIx   i2)              = compare i1 i2
+ compare (UPrim n1 _)   (UPrim n2 _)            = compare n1 n2
+ compare UIx{}          _                       = LT
+ compare UName{}        UIx{}                   = GT
+ compare UName{}        UPrim{}                 = LT
+ compare UPrim{}        _                       = GT
 
 
 instance Eq n => Eq (TypeSumVarCon n) where
- (==) (TypeSumVar u1)   (TypeSumVar u2)     = u1 == u2
- (==) (TypeSumCon u1 _) (TypeSumCon u2 _)   = u1 == u2
- (==) _ _                                   = False
+ (==) (TypeSumVar u1)      (TypeSumVar u2)      = u1 == u2
+ (==) (TypeSumCon u1 _)    (TypeSumCon u2 _)    = u1 == u2
+ (==) _ _                                       = False
 
 instance Ord n => Ord (TypeSumVarCon n) where
- compare (TypeSumVar u1)   (TypeSumVar u2)    = compare u1 u2
- compare (TypeSumCon u1 _) (TypeSumCon u2 _)  = compare u1 u2
- compare (TypeSumVar _)    _                  = LT
- compare (TypeSumCon _ _)  _                  = GT
+ compare (TypeSumVar u1)   (TypeSumVar u2)      = compare u1 u2
+ compare (TypeSumCon u1 _) (TypeSumCon u2 _)    = compare u1 u2
+ compare (TypeSumVar _)    _                    = LT
+ compare (TypeSumCon _ _)  _                    = GT
 

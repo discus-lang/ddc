@@ -19,31 +19,42 @@ checkApp :: Checker a n
 --       the bound type variable is not visible outside the abstraction.
 --       thus we can't be sharing objects that have it in its type.
 --
-checkApp !table !ctx xx@(XApp a x1 (XType _ t2)) _
+checkApp !table !ctx0 xx@(XApp a x1 (XType _ t2)) _
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
 
         -- Check the functional expression.
         (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table ctx x1 Recon
+         <- tableCheckExp table table ctx0 x1 Recon
 
         -- Check the type argument.
-        (_, k2)         <- checkTypeM config kenv ctx1 t2
+        (t2', k2, ctx2)       
+         <- case t2 of
+                TVar (UPrim n k2)
+                 |  Just isHole <- configNameIsHole config 
+                 ,  isHole n
+                 -> do  i2        <- newExists k2
+                        let t2'   = typeOfExists i2
+                        let ctx2  = pushExists i2 ctx1
+                        return  (t2', k2, ctx2)
+                _
+                 -> do  (t2', k2) <- checkTypeM config kenv ctx1 t2
+                        return  (t2', k2, ctx1)
 
         -- Take any Use annots from a region arg.
         --   This always matches because we just checked 't2'
-        let Just t2_clo = taggedClosureOfTyArg kenv ctx1 t2
+        let Just t2_clo = taggedClosureOfTyArg kenv ctx2 t2'
 
         -- The type of the function must have an outer forall quantifier.
         case t1 of
          TForall b11 t12
           | typeOfBind b11 == k2
           -> returnX a
-                (\z -> XApp z x1' (XType z t2))
-                (substituteT b11 t2 t12)
+                (\z -> XApp z x1' (XType z t2'))
+                (substituteT b11 t2' t12)
                 effs1   
                 (clos1 `Set.union` t2_clo)
-                ctx1
+                ctx2
 
           | otherwise   -> throw $ ErrorAppMismatch a xx (typeOfBind b11) t2
          _              -> throw $ ErrorAppNotFun   a xx t1

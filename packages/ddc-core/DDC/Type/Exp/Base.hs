@@ -118,7 +118,7 @@ data TyConHash
 -- | Wraps a variable or constructor that can be added the `typeSumElems` array.
 data TypeSumVarCon n
         = TypeSumVar !(Bound n)
-        | TypeSumCon !(Bound n) !(Type n)
+        | TypeSumCon !(Bound n) !(Kind n)
         deriving Show
 
 
@@ -141,14 +141,12 @@ data TyCon n
         -- | (level 1) Builtin Spec constructors for types of other kinds.
         | TyConSpec     !TcCon
 
-        -- | User defined and primitive constructors.
-        --   TODO: split this into TyConPrim with a type and
-        --         TyConBound with no type (and get type from env when checking)
-        | TyConBound    !(Bound n) !(Type n)
+        -- | User defined type constructor.
+        | TyConBound    !(Bound n) !(Kind n)
 
         -- | An existentially quantified name, with its kind.
         --   Used during type checking, but not accepted in source programs.
-        | TyConExists   !Int !(Kind n)
+        | TyConExists   !Int       !(Kind n)
         deriving Show
 
 

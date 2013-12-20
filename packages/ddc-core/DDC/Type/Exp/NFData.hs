@@ -60,9 +60,9 @@ instance NFData TyConHash where
 instance NFData n => NFData (TypeSumVarCon n) where
  rnf ts
   = case ts of
-        TypeSumVar u    -> rnf u
-        TypeSumCon u t  -> rnf u `seq` rnf t
-
+        TypeSumVar u            -> rnf u
+        TypeSumCon u k          -> rnf u `seq` rnf k
+        
 
 instance NFData n => NFData (TyCon n) where
  rnf tc

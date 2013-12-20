@@ -296,11 +296,7 @@ takeDataTyConApps :: Type n -> Maybe (TyCon n, [Type n])
 takeDataTyConApps tt
  = case takeTApps tt of
         TCon tc : args  
-         | TyConBound (UName _) k       <- tc
-         , TCon (TyConKind KiConData)   <- takeResultKind k
-         -> Just (tc, args)
-
-         | TyConBound  UPrim{}  k       <- tc
+         | TyConBound (UName{}) k       <- tc
          , TCon (TyConKind KiConData)   <- takeResultKind k
          -> Just (tc, args)
 
