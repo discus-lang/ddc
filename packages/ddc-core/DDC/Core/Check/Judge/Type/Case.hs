@@ -65,14 +65,8 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
         -- Check the alternatives.
         --  We ignore the returned context because the order of alternatives
         --  should not matter for type inference.
-        (alts', ts, effss, closs, ctx')
-                <- checkAltsM xx table tDiscrim tsArgs mode alts ctxDiscrim
-                
-        -- All alternative result types must be identical.
-        let (tAlt : _)  = ts
-        forM_ ts $ \tAlt' 
-         -> when (not $ equivT tAlt tAlt') 
-             $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
+        (alts', tAlt, effss, closs, ctx')
+         <- checkAltsM a xx table tDiscrim tsArgs mode alts ctxDiscrim
 
         -- Check for overlapping alternatives.
         checkAltsOverlapping a xx alts
@@ -157,7 +151,8 @@ takeDiscrimCheckModeFromAlts a table ctx mode alts
 --   TODO: merge this into checkAltM so we don't duplicate the type sig noise.
 checkAltsM
         :: (Show n, Pretty n, Ord n)
-        => Exp a n              -- ^ Whole case expression, for error messages.
+        => a
+        -> Exp a n              -- ^ Whole case expression, for error messages.
         -> Table a n            -- ^ Checker table.
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
@@ -166,29 +161,38 @@ checkAltsM
         -> Context n            -- ^ Context to check the alternatives in.
         -> CheckM a n
                 ( [Alt (AnTEC a n) n]      -- Checked alternatives.
-                , [Type n]                 -- Alternative result types.
+                , Type n                   -- Type of alternative results.
                 , [TypeSum n]              -- Alternative effects.
                 , [Set (TaggedClosure n)]  -- Alternative closures
                 , Context n)
 
-checkAltsM _ _ _ _ _ [] ctx
- = return ([], [], [], [], ctx)
-
-checkAltsM !xx !table !tDiscrim !tsArgs mode (alt : alts) ctx
- = do   (alt',  tAlt, eAlt, cAlt, ctx')
-         <- checkAltM  alt ctx
-
-        (alts', tsAlts, esAlts, csAlts, ctx'')
-         <- checkAltsM xx table tDiscrim tsArgs mode alts ctx'
-
-        return  ( alt' : alts'
-                , tAlt : tsAlts
-                , eAlt : esAlts
-                , cAlt : csAlts
-                , ctx'')
-
+checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
+ = checkAltsM1 alts0 ctx
+ 
  where 
-  checkAltM (AAlt PDefault xBody) !ctx0
+  checkAltsM1 [] ctx0
+   = do iA       <- newExists kData
+        let tA   =  typeOfExists iA        
+        let ctx1 =  pushExists iA ctx0
+        return ([], tA, [], [], ctx1)
+
+  checkAltsM1 (alt : alts) ctx0
+   = do (alt',  tAlt,  eAlt, cAlt, ctx1)
+         <- checkAltM   alt ctx0
+
+        (alts', tAlts, esAlts, csAlts, ctx2)
+         <- checkAltsM1 alts ctx1
+
+        ctx3    <- makeEq a (ErrorCaseAltResultMismatch a xx tAlt tAlts)
+                            ctx2 tAlt tAlts
+
+        return  ( alt'  : alts'
+                , tAlt
+                , eAlt  : esAlts
+                , cAlt  : csAlts
+                , ctx3)
+
+  checkAltM   (AAlt PDefault xBody) !ctx0
    = do   
         -- Check the right of the alternative.
         (xBody', tBody, effBody, cloBody, ctx1)
@@ -201,9 +205,7 @@ checkAltsM !xx !table !tDiscrim !tsArgs mode (alt : alts) ctx
                 , ctx1)
 
   checkAltM (AAlt (PData dc bsArg) xBody) !ctx0
-   = do let a           = annotOfExp xx
-
-        -- Get the constructor type associated with this pattern.
+   = do -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat a table (PData dc bsArg)
          
         -- Take the type of the constructor and instantiate it with the 

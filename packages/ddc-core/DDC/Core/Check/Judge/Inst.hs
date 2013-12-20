@@ -65,8 +65,6 @@ makeInst !a !err !ctx0 !tL !tR
                 [ text "* InstRReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
-                , text "  lL:    " <> ppr lL
-                , text "  lR:    " <> ppr lR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , empty ]

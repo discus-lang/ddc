@@ -187,3 +187,14 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 }
 :*: Unit
 :!: Pure
+
+
+-- Unify types of alternatives.
+case T2# [Nat#] [Nat#] 2# 3# of {
+  T2# (a : Nat#) (b : Nat#) 
+   -> a;
+  _ 
+   -> 5#
+}
+:*: Nat#
+:!: Pure

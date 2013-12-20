@@ -120,3 +120,11 @@ case T2# 2# 3# of
 { T2# a b -> ();
   _       -> () }
 ;;
+
+
+-- Unify types of alternatives.
+:synth..
+case T2# 2# 3# of
+{ T2# a b -> a;
+  _       -> 5#; }
+;;
