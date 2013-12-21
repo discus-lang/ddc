@@ -80,8 +80,8 @@ instance Pretty Name where
         NamePrimTyCon tc        -> ppr tc
         NamePrimArith op        -> ppr op
 
-        NameLitBool True        -> text "True"
-        NameLitBool False       -> text "False"
+        NameLitBool True        -> text "True#"
+        NameLitBool False       -> text "False#"
         NameLitNat  i           -> integer i <> text "#"
         NameLitInt  i           -> integer i <> text "i" <> text "#"
         NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
@@ -110,8 +110,8 @@ readName str
         = Just $ NamePrimArith p
 
         -- Literal Bools
-        | str == "True"  = Just $ NameLitBool True
-        | str == "False" = Just $ NameLitBool False
+        | str == "True#"  = Just $ NameLitBool True
+        | str == "False#" = Just $ NameLitBool False
 
         -- Literal Nat
         | Just val <- readLitPrimNat str

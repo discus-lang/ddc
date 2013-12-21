@@ -1,0 +1,23 @@
+:set lang Tetra
+
+
+-- Error: sorts don't have a higher classification
+:kind Prop
+
+
+-- Error: can't sort-check the naked kind function, 
+-- because its sort depends on how it's instantiated, 
+-- and we don't have sort polymorphism.
+:kind (~>)
+
+
+-- Error: body of a forall must have data or witness kind.
+:kind [r : Region]. Read r
+
+
+-- Error: invalid kind for type sum.
+:kind [r : Region]. (Const + Const)
+
+
+-- #242 Error: Undefined type constructor ().
+:kind [r : Region]. (() + ())

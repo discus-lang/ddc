@@ -56,13 +56,13 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
          -> vcat [ text "Invalid kind for type sum."
                  , text "         the type sum: " <> ppr ts
                  , text "             has kind: " <> ppr k
-                 , text "  but it must be ! or $" ]
+                 , text "  but it must be Effect or Closure" ]
 
         ErrorForallKindInvalid tt t k
          -> vcat [ text "Invalid kind for body of quantified type."
                  , text "        the body type: " <> ppr t
                  , text "             has kind: " <> ppr k
-                 , text "  but it must be * or @" 
+                 , text "  but it must be Data or Prop" 
                  , text "        when checking: " <> ppr tt ]
         
         ErrorWitnessImplInvalid tt t1 k1 t2 k2

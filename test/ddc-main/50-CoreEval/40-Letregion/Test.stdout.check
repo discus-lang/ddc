@@ -28,7 +28,7 @@ When checking expression.
   Withregion handle does not have region kind.
      Region var or ctor: e
                has kind: Effect
-         but it must be: %
+         but it must be: Region
   
   with: withregion e in
         ()

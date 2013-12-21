@@ -232,7 +232,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "Letregion binders do not have region kind."
                  , text "        Region binders: "       <> (hcat $ map ppr bs)
                  , text "             has kinds: "       <> (hcat $ map ppr ks)
-                 , text "       but they must all be: %" 
+                 , text "       but they must all be: Region" 
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
 
@@ -298,7 +298,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "Withregion handle does not have region kind."
                  , text "   Region var or ctor: "       <> ppr u
                  , text "             has kind: "       <> ppr k
-                 , text "       but it must be: %"
+                 , text "       but it must be: Region"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
