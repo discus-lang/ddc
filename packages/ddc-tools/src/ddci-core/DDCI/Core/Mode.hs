@@ -5,7 +5,7 @@ module DDCI.Core.Mode
 where
 
 
--- | DDCI mode flags.
+-- | ddci-core mode flags.
 data Mode
         -- | Use type synthesis / bidirectional type checking
         --   when loading source code.

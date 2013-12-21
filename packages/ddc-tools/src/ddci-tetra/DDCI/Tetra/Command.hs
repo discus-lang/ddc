@@ -10,6 +10,7 @@ import Data.List
 
 import DDCI.Tetra.State
 import DDCI.Tetra.Command.Help
+import DDCI.Tetra.Command.Set
 import DDCI.Tetra.Command.Parse
 import DDCI.Tetra.Command.Desugar
 import DDCI.Tetra.Command.Infer
@@ -21,6 +22,7 @@ data Command
         = CommandBlank          -- ^ No command was entered.
         | CommandUnknown        -- ^ Some unknown (invalid) command.
         | CommandHelp           -- ^ Display the interpreter help.
+        | CommandSet            -- ^ Set an interpreter mode.
         | CommandParse          -- ^ Parse a Tetra source module.
         | CommandDesugar        -- ^ Desugar a Tetra source module.
         | CommandInfer          -- ^ Perform type inference.
@@ -33,6 +35,7 @@ commands :: [(String, Command)]
 commands
  =      [ (":help",     CommandHelp)
         , (":?",        CommandHelp) 
+        , (":set",      CommandSet)
         , (":parse",    CommandParse) 
         , (":desugar",  CommandDesugar)
         , (":infer",    CommandInfer) 
@@ -78,6 +81,10 @@ handleCommand1 state cmd source line
         CommandHelp
          -> do  putStrLn help
                 return state
+
+        CommandSet
+         -> do  state'  <- cmdSet state line
+                return state'
 
         CommandParse
          -> do  cmdParse state source line

@@ -2,8 +2,9 @@
 module DDCI.Tetra.Command.ToCore
         (cmdToCore)
 where
-import DDC.Interface.Source
 import DDCI.Tetra.State
+import DDCI.Tetra.Mode
+import DDC.Interface.Source
 import DDC.Base.Pretty
 import DDC.Source.Tetra.Env
 import DDC.Source.Tetra.Lexer
@@ -19,6 +20,7 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
 import qualified DDC.Data.SourcePos             as SP
+import qualified Data.Set                       as Set
 import Control.Monad
 
 
@@ -68,7 +70,7 @@ cmdToCore state source str
          = let  config                  = C.configOfProfile C.profile
                 (mResult, _docTrace)    = C.checkModule config mm C.Synth
            in do
-                when (stateDumpCore state)
+                when (Set.member Dump $ stateModes state)
                  $ writeFile "dump.tetra-core.dct" (renderIndent $ ppr mm)
                 
                 case mResult of
