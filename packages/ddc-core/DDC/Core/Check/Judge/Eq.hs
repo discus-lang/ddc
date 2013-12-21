@@ -21,7 +21,7 @@ makeEq a err ctx0 tL tR
  -- EqLSolve
  | Just iL <- takeExists tL
  , not $ isTExists tR
- = do   let ctx1        = updateExists [] iL tR ctx0
+ = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
                 [ text "* EqLSolve"
@@ -37,7 +37,7 @@ makeEq a err ctx0 tL tR
  -- EqRSolve
  | Just iR <- takeExists tR
  , not $ isTExists tL
- = do   let ctx1        = updateExists [] iR tL ctx0
+ = do   let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
                 [ text "* EqRSolve"
@@ -57,7 +57,7 @@ makeEq a err ctx0 tL tR
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lL > lR
- = do   let ctx1        = updateExists [] iR tL ctx0
+ = do   let Just ctx1   = updateExists [] iR tL ctx0
         
         ctrace  $ vcat 
                 [ text "* EqLReach"
@@ -76,7 +76,7 @@ makeEq a err ctx0 tL tR
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lR > lL
- = do   let !ctx1       = updateExists [] iL tR ctx0
+ = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat 
                 [ text "* EqRReach"

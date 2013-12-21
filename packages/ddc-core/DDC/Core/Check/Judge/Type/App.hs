@@ -10,7 +10,7 @@ import qualified Data.Set       as Set
 
 checkApp :: Checker a n
 
--- value-type application -----------------------
+-- value-type application -----------------------------------------------------
 --
 -- Note: We don't need to substitute into the effect of x1 (effs1)
 --       because the body of a type abstraction is required to be pure.
@@ -19,48 +19,88 @@ checkApp :: Checker a n
 --       the bound type variable is not visible outside the abstraction.
 --       thus we can't be sharing objects that have it in its type.
 --
-checkApp !table !ctx0 xx@(XApp a x1 (XType _ t2)) _
+checkApp !table !ctx0 xx@(XApp a1 xFn (XType a2 tArg)) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
 
         -- Check the functional expression.
-        (x1', t1, effs1, clos1, ctx1) 
-         <- tableCheckExp table table ctx0 x1 Recon
+        --  TODO: Allow synthesis in the functional expression.
+        --        Maybe we want to refactor this type application case to behave
+        --        more like the value application case, and have a separate
+        --        synthAPPArg function to handle type applications.
+        (xFn', tFn, effsFn, closFn, ctx1) 
+         <- tableCheckExp table table ctx0 xFn Recon
 
         -- Check the type argument.
-        (t2', k2, ctx2)       
-         <- case t2 of
-                TVar (UPrim n k2)
+        -- If it's a hole then create a new existential for it.
+        (tArg', kArg, ctx2)       
+         <- case tArg of
+                TVar (UPrim n kArg)
                  |  Just isHole <- configNameIsHole config 
                  ,  isHole n
-                 -> do  i2        <- newExists k2
-                        let t2'   = typeOfExists i2
+                 -> do  i2        <- newExists kArg
+                        let tArg' = typeOfExists i2
                         let ctx2  = pushExists i2 ctx1
-                        return  (t2', k2, ctx2)
+                        return  (tArg', kArg, ctx2)
                 _
-                 -> do  (t2', k2) <- checkTypeM config kenv ctx1 t2
-                        return  (t2', k2, ctx1)
+                 -> do  (tArg', kArg) <- checkTypeM config kenv ctx1 tArg
+                        return  (tArg', kArg, ctx1)
 
         -- Take any Use annots from a region arg.
         --   This always matches because we just checked 't2'
-        let Just t2_clo = taggedClosureOfTyArg kenv ctx2 t2'
+        let Just t2_clo = taggedClosureOfTyArg kenv ctx2 tArg'
 
-        -- The type of the function must have an outer forall quantifier.
-        case t1 of
-         TForall b11 t12
-          | typeOfBind b11 == k2
-          -> returnX a
-                (\z -> XApp z x1' (XType z t2'))
-                (substituteT b11 t2' t12)
-                effs1   
-                (clos1 `Set.union` t2_clo)
-                ctx2
+        -- Determine the type of the result.
+        --  The type of the function must have an outer forall quantifier,
+        --  and we instantiate the quantified with the type argument.
+        tSynth
+         <- case tFn of
+                TForall b11 t12
+                 | typeOfBind b11 == kArg
+                 -> return $ substituteT b11 tArg' t12
 
-          | otherwise   -> throw $ ErrorAppMismatch a xx (typeOfBind b11) t2
-         _              -> throw $ ErrorAppNotFun   a xx t1
+                 | otherwise
+                 ->  throw $ ErrorAppMismatch a1 xx (typeOfBind b11) tArg'
+
+                _ -> throw $ ErrorAppNotFun   a1 xx tFn
+
+        -- Build an annotated version of the type application.
+        let aFn    = AnTEC tSynth (TSum effsFn)  (closureOfTaggedSet closFn) a1  
+        let aArg   = AnTEC kArg   (tBot kEffect) (tBot kClosure) a2
+        let xx2    = XApp aFn xFn' (XType aArg tArg')
+
+        -- If we have an expected type then force the synthesised type
+        -- to be a subtype of it.
+        (xx3, tResult, ctx3)
+         <- case mode of
+                Recon   -> return (xx2, tSynth, ctx2)
+                Synth   -> return (xx2, tSynth, ctx2)
+                Check tExpect
+                 -> do  let tSynth'     = applyContext ctx2 tSynth
+                        let tExpect'    = applyContext ctx2 tExpect
+                        (xx3, ctx3)     <- makeSub a1 (ErrorMismatch a1 tExpect tSynth xx) 
+                                                ctx2 xx2 tSynth' tExpect'
+                        return (xx3, tExpect', ctx3)
+
+        ctrace  $ vcat
+                [ text "* APP"
+                , text "  mode:    " <+> ppr mode
+                , text "  inX:     " <+> ppr xx
+                , text "  outX:    " <+> ppr xx3
+                , text "  tResult: " <+> ppr tResult
+                , indent 2 $ ppr ctx3
+                , empty ]
+
+        returnX a1 
+                (\z -> XApp z xFn' (XType z tArg'))
+                tResult
+                effsFn
+                (closFn `Set.union` t2_clo)
+                ctx3
 
 
--- value-value application ----------------------
+
+-- value-value application ----------------------------------------------------
 checkApp !table !ctx xx@(XApp a xFn xArg) Recon
  = do   
         -- Check the functional expression.
@@ -167,7 +207,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         let tA2  = typeOfExists iA2
 
         -- Update the context with the new constraint.
-        let ctx1 = updateExists [iA2, iA1] iFn (tFun tA1 tA2) ctx0
+        let Just ctx1 = updateExists [iA2, iA1] iFn (tFun tA1 tA2) ctx0
 
         -- Check the argument under the new context.
         (xArg', _, effsArg, closArg, ctx2)

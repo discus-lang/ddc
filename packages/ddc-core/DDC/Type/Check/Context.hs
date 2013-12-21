@@ -144,12 +144,7 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
         (vcat $ [int i  <> (indent 4 $ ppr l)
                         | l <- reverse ls
                         | i <- [0..]])
-{-
-  <$> indent 2
-        (vcat $ [text "?" <> int i
-                        <> (indent 4 $ ppr t)
-                        | (i, t) <- IntMap.toList solved])
--}
+
 
 -- Positions -------------------------------------------------------------------
 -- | A position in the type checker context.
@@ -400,35 +395,44 @@ locationOfExists x ctx
 
 
 -- | Update (solve) an existential in the context stack.
+--
+--   If the existential is not part of the context then `Nothing`.
 updateExists 
         :: [Exists n]   -- ^ Other existential declarations to  add before the
                         --   updated one.
         -> Exists n     -- ^ Existential to update.
         -> Type n       -- ^ New monotype.
         -> Context n 
-        -> Context n
+        -> Maybe (Context n)
 
 updateExists isMore iEx@(Exists iEx' _) tEx ctx
- = ctx  { contextElems  = go $ contextElems ctx 
-        , contextSolved = IntMap.insert iEx' tEx (contextSolved ctx) }
+ = case go $ contextElems ctx of
+    Just elems'     
+     -> Just $ ctx { contextElems  = elems'
+                   , contextSolved = IntMap.insert iEx' tEx (contextSolved ctx) }
+    Nothing -> Nothing
  where
-        go ls
-         = case ls of
-                []                      -> []
-                l@ElemPos{}     : ls'   -> l : go ls'
-                l@ElemKind{}    : ls'   -> l : go ls'
-                l@ElemType{}    : ls'   -> l : go ls'
+        go ll
+         = case ll of
+                l@ElemPos{}     : ls
+                 | Just ls'     <- go ls        -> Just (l : ls')
 
-                l@(ElemExistsDecl i) : ls'
+                l@ElemKind{}    : ls   
+                 | Just ls'     <- go ls        -> Just (l : ls')
+
+                l@ElemType{}    : ls
+                 | Just ls'     <- go ls        -> Just (l : ls')
+
+                l@(ElemExistsDecl i) : ls
                  | i == iEx             
-                 -> (ElemExistsEq i tEx : [ElemExistsDecl n' | n' <- isMore])
-                        ++ ls'
+                 -> Just $ (ElemExistsEq i tEx : [ElemExistsDecl n' | n' <- isMore]) ++ ls
 
-                 | otherwise
-                 -> l : go ls'
+                 | Just ls'     <- go ls        -> Just (l : ls')
 
-                l@ElemExistsEq{} : ls'
-                 -> l : go ls'
+                l@ElemExistsEq{} : ls
+                 | Just ls'     <- go ls        -> Just (l : ls')
+
+                _ -> Just ll  -- Nothing
 
 
 -- Lifting --------------------------------------------------------------------

@@ -1,5 +1,5 @@
 
--- List length function.
+-- List length using infix addition.
 :to-core..
 module Test where
 data List (a : Data) where
@@ -15,3 +15,29 @@ length (xx : List a) : Nat#
         Cons x xs -> 1 + length xs
 ;;
 
+
+-- More list functions.
+:to-core..
+module Test where
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+singleton (x : a) : List a
+ = Cons x Nil
+
+append  (xx : List a) (yy : List a) : List a
+ = case xx of
+        Nil       -> yy
+        Cons x xs -> Cons x (append xs yy)
+
+reverse (xx : List a) : List a
+ = case xx of
+        Nil       -> Nil
+        Cons x xs -> append (reverse xs) (singleton x)
+
+map     (f : a -> b) (xx : List a) : List b
+ = case xx of
+        Nil       -> Nil
+        Cons x xs -> Cons (f x) (map f xs)
+;;

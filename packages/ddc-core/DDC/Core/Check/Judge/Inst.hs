@@ -20,7 +20,7 @@ makeInst !a !err !ctx0 !tL !tR
  -- InstLSolve
  | Just iL <- takeExists tL
  , not $ isTExists tR
- = do   let ctx1        = updateExists [] iL tR ctx0
+ = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
                 [ text "* InstLSolve"
@@ -40,7 +40,7 @@ makeInst !a !err !ctx0 !tL !tR
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lL > lR
- = do   let ctx1        = updateExists [] iR tL ctx0
+ = do   let Just ctx1   = updateExists [] iR tL ctx0
         
         ctrace  $ vcat 
                 [ text "* InstLReach"
@@ -59,7 +59,7 @@ makeInst !a !err !ctx0 !tL !tR
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lR > lL
- = do   let !ctx1       = updateExists [] iL tR ctx0
+ = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat 
                 [ text "* InstRReach"
@@ -78,23 +78,23 @@ makeInst !a !err !ctx0 !tL !tR
  , Just (tR1, tR2)      <- takeTFun tR
  = do
         -- Make new existentials to match the function type and parameter.
-        iL1      <- newExists kData
-        let tL1  =  typeOfExists iL1 
+        iL1             <- newExists kData
+        let tL1         =  typeOfExists iL1 
 
-        iL2      <- newExists kData
-        let tL2  =  typeOfExists iL2
+        iL2             <- newExists kData
+        let tL2         =  typeOfExists iL2
 
         -- Update the context with the new constraint.
-        let ctx1 = updateExists [iL2, iL1] iL (tFun tL1 tL2) ctx0
+        let Just ctx1   = updateExists [iL2, iL1] iL (tFun tL1 tL2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2     <- makeInst a err ctx1 tR1 tL1
+        ctx2            <- makeInst a err ctx1 tR1 tL1
 
         -- Substitute into tR2
-        let tR2' =  applyContext ctx2 tR2
+        let tR2'        =  applyContext ctx2 tR2
 
         -- Instantiate the return type.
-        ctx3     <- makeInst a err ctx2 tL2 tR2'
+        ctx3            <- makeInst a err ctx2 tL2 tR2'
 
         ctrace  $ vcat
                 [ text "* InstLArr"
@@ -110,7 +110,7 @@ makeInst !a !err !ctx0 !tL !tR
  -- InstRSolve
  | Just iR <- takeExists tR
  , not $ isTExists tL
- = do   let ctx1        = updateExists [] iR tL ctx0
+ = do   let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
                 [ text "* InstRSolve"
@@ -129,23 +129,23 @@ makeInst !a !err !ctx0 !tL !tR
  , Just iR              <- takeExists tR
  = do   
         -- Make new existentials to match the function type and parameter.
-        iR1      <- newExists kData
-        let tR1  =  typeOfExists iR1 
+        iR1             <- newExists kData
+        let tR1         =  typeOfExists iR1 
 
-        iR2      <- newExists kData
-        let tR2  =  typeOfExists iR2
+        iR2             <- newExists kData
+        let tR2         =  typeOfExists iR2
 
         -- Update the context with the new constraint.
-        let ctx1 =  updateExists [iR2, iR1] iR (tFun tR1 tR2) ctx0
+        let Just ctx1   =  updateExists [iR2, iR1] iR (tFun tR1 tR2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2     <- makeInst a err ctx1 tR1 tL1
+        ctx2            <- makeInst a err ctx1 tR1 tL1
 
         -- Substitute into tL2
-        let tL2' = applyContext ctx2 tL2
+        let tL2'        = applyContext ctx2 tL2
 
         -- Instantiate the return type.
-        ctx3     <- makeInst a err ctx2 tL2' tR2 
+        ctx3            <- makeInst a err ctx2 tL2' tR2 
 
         ctrace  $ vcat
                 [ text "* InstRArr"

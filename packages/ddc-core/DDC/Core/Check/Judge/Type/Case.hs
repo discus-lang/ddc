@@ -26,7 +26,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
          <- takeDiscrimCheckModeFromAlts a table ctx0 mode alts
 
         -- Check the discriminant.
-        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctxDiscrim) 
+        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctx2) 
          <- tableCheckExp table table ctx1 xDiscrim modeDiscrim
 
         -- Split the type into the type constructor names and type parameters.
@@ -65,11 +65,31 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
              Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared a xx tDiscrim
              Just m  -> return m
 
+        -- If we're doing type synthesis then we don't to infer a separate type
+        -- for each alternative. Instead, pass down the same existential.
+        (modeAlts, ctx3)
+         <- case mode of
+                Recon   -> return (mode, ctx2)
+                Check{} -> return (mode, ctx2)
+                Synth   
+                 -> do  iA       <- newExists kData
+                        let tA   = typeOfExists iA
+                        let ctx3 = pushExists iA ctx2
+                        return (Check tA, ctx3)
+
         -- Check the alternatives.
-        --  We ignore the returned context because the order of alternatives
-        --  should not matter for type inference.
-        (alts', tAlt, effss, closs, ctx')
-         <- checkAltsM a xx table tDiscrim tsArgs mode alts ctxDiscrim
+        (alts', tsAlts, effss, closs, ctx4)
+         <- checkAltsM a xx table tDiscrim tsArgs modeAlts alts ctx3
+
+        -- Check that all the alternatives have the same type.
+        --   In Synth mode this is enforced by passing down an existential to 
+        --   unifify against, but with Recon and Check modes we might get
+        --   a different type for each alternative.
+        let tsAlts'     = map (applyContext ctx4) tsAlts
+        let tAlt : _    = tsAlts'
+        forM_ tsAlts' $ \tAlt'
+            -> when (not $ equivT tAlt tAlt')
+                $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
         checkAltsOverlapping a xx alts
@@ -83,8 +103,12 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
 
         ctrace  $ vcat
                 [ text "* Case"
-                , text "  modeDiscrim" <+> ppr modeDiscrim
-                , indent 2 $ ppr ctxDiscrim 
+                , text "  modeDiscrim"  <+> ppr modeDiscrim
+                , text "  tAlt = "      <+> ppr tAlt
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx1
+                , indent 2 $ ppr ctx2
+                , indent 2 $ ppr ctx4
                 , empty ]
 
         returnX a
@@ -92,7 +116,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
                 tAlt
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
                 (Set.unions         (closDiscrim : closs))
-                ctx'
+                ctx4
 
 checkCase _ _ _ _
         = error "ddc-core.checkCase: no match"
@@ -164,7 +188,7 @@ checkAltsM
         -> Context n            -- ^ Context to check the alternatives in.
         -> CheckM a n
                 ( [Alt (AnTEC a n) n]      -- Checked alternatives.
-                , Type n                   -- Type of alternative results.
+                , [Type n]                 -- Type of alternative results.
                 , [TypeSum n]              -- Alternative effects.
                 , [Set (TaggedClosure n)]  -- Alternative closures
                 , Context n)
@@ -174,26 +198,20 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
  
  where 
   checkAltsM1 [] ctx0
-   = do iA       <- newExists kData
-        let tA   =  typeOfExists iA        
-        let ctx1 =  pushExists iA ctx0
-        return ([], tA, [], [], ctx1)
+   =    return ([], [], [], [], ctx0)
 
   checkAltsM1 (alt : alts) ctx0
    = do (alt',  tAlt,  eAlt, cAlt, ctx1)
          <- checkAltM   alt ctx0
 
-        (alts', tAlts, esAlts, csAlts, ctx2)
+        (alts', tsAlts, esAlts, csAlts, ctx2)
          <- checkAltsM1 alts ctx1
 
-        ctx3    <- makeEq a (ErrorCaseAltResultMismatch a xx tAlt tAlts)
-                            ctx2 tAlt tAlts
-
         return  ( alt'  : alts'
-                , tAlt
+                , tAlt  : tsAlts
                 , eAlt  : esAlts
                 , cAlt  : csAlts
-                , ctx3)
+                , ctx2)
 
   checkAltM   (AAlt PDefault xBody) !ctx0
    = do   
@@ -207,7 +225,7 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
                 , cloBody
                 , ctx1)
 
-  checkAltM (AAlt (PData dc bsArg) xBody) !ctx0
+  checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
    = do -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat a table (PData dc bsArg)
          
@@ -260,15 +278,28 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
                 $ mapMaybe (cutTaggedClosureXs bsArg')
                 $ Set.toList closBody
 
+        let tBody'      = applyContext ctxBody tBody
+
         -- Pop the argument types from the context.
         let ctx_cut 
                 = popToPos posArg ctxBody
+
+
+        ctrace  $ vcat
+                [ text "* Alt"
+                , ppr alt
+                , text "  MODE:   " <+> ppr mode
+                , text "  tBody': " <+> ppr tBody'
+                , ppr ctx0
+                , ppr ctxBody
+                , ppr ctx_cut
+                , empty ]
 
         -- We're returning the new context for kicks,
         -- but the caller doesn't use it because we don't want the order of 
         -- alternatives to matter for type inference.
         return  ( AAlt (PData dc bsArg') xBody'
-                , tBody
+                , tBody'
                 , effsBody
                 , closBody_cut
                 , ctx_cut)
