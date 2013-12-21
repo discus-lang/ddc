@@ -3,7 +3,8 @@ module DDCI.Core.State
         ( State         (..)
         , Bundle        (..)
         , initState
-        , getDriverConfigOfState
+        , Mode          (..)
+        , adjustMode
 
         , TransHistory	(..)
 
@@ -11,11 +12,11 @@ module DDCI.Core.State
 
         , Language      (..)
         , languages
-        , getDefaultBuilderConfig
-        , getActiveBuilder
 
-        , Mode          (..)
-        , adjustMode)
+        -- Driver config.
+        , getDriverConfigOfState
+        , getDefaultBuilderConfig
+        , getActiveBuilder)
 where
 import DDCI.Core.Mode
 import DDC.Code.Config

@@ -1,11 +1,11 @@
-
+:set Dump
 :to-core..
 module Test where
 data List (a : Data) where
         Nil     : List a
         Cons    : a -> List a -> List a
 
-singleton [x : a] : List a
+singleton (x : a) : List a
  = Cons x Nil
 
 append  (xx : List a) (yy : List a) : List a

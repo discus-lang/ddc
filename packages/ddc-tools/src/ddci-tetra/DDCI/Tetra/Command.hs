@@ -5,9 +5,6 @@ module DDCI.Tetra.Command
         , readCommand
         , handleCommand)
 where
-import DDC.Interface.Source
-import Data.List
-
 import DDCI.Tetra.State
 import DDCI.Tetra.Command.Help
 import DDCI.Tetra.Command.Set
@@ -15,6 +12,8 @@ import DDCI.Tetra.Command.Parse
 import DDCI.Tetra.Command.Desugar
 import DDCI.Tetra.Command.Infer
 import DDCI.Tetra.Command.ToCore
+import DDC.Interface.Source
+import Data.List
 
 
 -- | Commands accepted by ddci-tetra.
@@ -99,6 +98,7 @@ handleCommand1 state cmd source line
                 return state
 
         CommandToCore
-         -> do  cmdToCore state source line
+         -> do  config  <- getDriverConfigOfState state
+                cmdToCore state config source line
                 return state
 
