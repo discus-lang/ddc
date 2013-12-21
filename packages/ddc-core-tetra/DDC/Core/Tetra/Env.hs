@@ -3,7 +3,8 @@ module DDC.Core.Tetra.Env
         ( primDataDefs
         , primSortEnv
         , primKindEnv
-        , primTypeEnv)
+        , primTypeEnv
+        , isBoxedType)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
@@ -117,3 +118,20 @@ typeOfPrimName dc
 
         _                       -> Nothing
 
+
+-- Boxing ---------------------------------------------------------------------
+-- | Check if a type represents a boxed data type, 
+--   where type variables are treated as boxed.
+isBoxedType :: Type Name -> Bool
+isBoxedType tt
+        | TVar _        <- tt   = True
+        | TForall _ t   <- tt   = isBoxedType t
+        | TSum{}        <- tt   = False
+
+        | otherwise
+        = case takeTyConApps tt of
+           Nothing                                              -> False
+           Just (TyConSpec  TcConUnit, _)                       -> True
+           Just (TyConBound (UName (NameDaConTetra _))   _, _)  -> True
+           Just (TyConBound (UPrim (NameDaConTetra _) _) _, _)  -> True
+           _                                                    -> False
