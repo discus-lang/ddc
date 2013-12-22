@@ -17,13 +17,17 @@ module DDC.Build.Pipeline
         , PipeCore        (..)
         , pipeCore
 
-          -- * Core Flow modules
-        , PipeFlow        (..)
-        , pipeFlow
+          -- * Core Tetra modules
+        , PipeTetra       (..)
+        , pipeTetra
 
           -- * Core Lite modules
         , PipeLite        (..)
         , pipeLite
+
+          -- * Core Flow modules
+        , PipeFlow        (..)
+        , pipeFlow
 
           -- * Core Salt modules
         , PipeSalt        (..)

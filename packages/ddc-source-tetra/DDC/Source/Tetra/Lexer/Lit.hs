@@ -54,7 +54,7 @@ readLitInt str1
 -- | Read a word with an explicit format speficier.
 readLitWordOfBits :: String -> Maybe (Integer, Int)
 readLitWordOfBits str1
-        -- binary like 0b01001w32#
+        -- binary like 0b01001w32
         | Just str2     <- stripPrefix "0b" str1
         , (ds, str3)    <- span (\c -> c == '0' || c == '1') str2
         , not $ null ds
@@ -65,7 +65,7 @@ readLitWordOfBits str1
         , length ds     <= bits
         = Just (readBinary ds, bits)
 
-        -- decimal like 1234w32#
+        -- decimal like 1234w32
         | (ds, str2)    <- span isDigit str1
         , not $ null ds
         , Just str3     <- stripPrefix "w" str2

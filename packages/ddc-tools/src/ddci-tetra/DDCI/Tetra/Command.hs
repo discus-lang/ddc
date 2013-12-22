@@ -12,6 +12,7 @@ import DDCI.Tetra.Command.Parse
 import DDCI.Tetra.Command.Desugar
 import DDCI.Tetra.Command.Infer
 import DDCI.Tetra.Command.ToCore
+import DDCI.Tetra.Command.ToSalt
 import DDC.Interface.Source
 import Data.List
 
@@ -26,6 +27,7 @@ data Command
         | CommandDesugar        -- ^ Desugar a Tetra source module.
         | CommandInfer          -- ^ Perform type inference.
         | CommandToCore         -- ^ Convert to Core Tetra.
+        | CommandToSalt         -- ^ Convert to Core Salt.
         deriving (Eq, Show)
 
 
@@ -38,7 +40,8 @@ commands
         , (":parse",    CommandParse) 
         , (":desugar",  CommandDesugar)
         , (":infer",    CommandInfer) 
-        , (":to-core",  CommandToCore) ]
+        , (":to-core",  CommandToCore) 
+        , (":to-salt",  CommandToSalt) ]
 
 
 -- | Read the command from the front of a string.
@@ -100,5 +103,10 @@ handleCommand1 state cmd source line
         CommandToCore
          -> do  config  <- getDriverConfigOfState state
                 cmdToCore state config source line
+                return state
+
+        CommandToSalt
+         -> do  config  <- getDriverConfigOfState state
+                cmdToSalt state config source line
                 return state
 

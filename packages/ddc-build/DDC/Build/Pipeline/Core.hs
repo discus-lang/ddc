@@ -103,6 +103,11 @@ data PipeCore a n where
         -> ![PipeCore () n] 
         -> PipeCore a n
 
+  -- Treat a module as belonging to the Core Tetra fragment from now on.
+  PipeCoreAsTetra
+        :: ![PipeTetra]
+        -> PipeCore (C.AnTEC () Tetra.Name) Tetra.Name
+
   -- Treat a module as belonging to the Core Lite fragment from now on.
   PipeCoreAsLite
         :: ![PipeLite]
@@ -191,6 +196,10 @@ pipeCore !mm !pp
                 --       Because we've just applied reannotate, we also
                 --       release type annotations on the expression tree.
             in  mm2 `deepseq` pipeCores mm2 pipes
+
+        PipeCoreAsTetra !pipes
+         -> {-# SCC "PipeCoreAsTetra" #-}
+            liftM concat $ mapM (pipeTetra mm) pipes
 
         PipeCoreAsLite !pipes
          -> {-# SCC "PipeCoreAsLite" #-}
