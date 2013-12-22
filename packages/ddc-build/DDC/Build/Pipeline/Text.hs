@@ -8,9 +8,25 @@ import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
 import DDC.Base.Pretty
-import qualified DDC.Base.Parser        as BP
-import qualified DDC.Core.Check         as C
-import qualified DDC.Core.Load          as CL
+
+import qualified DDC.Source.Tetra.ToCore        as SE
+import qualified DDC.Source.Tetra.Desugar.Defix as SE
+import qualified DDC.Source.Tetra.Infer.Expand  as SE
+import qualified DDC.Source.Tetra.Parser        as SE
+import qualified DDC.Source.Tetra.Lexer         as SE
+import qualified DDC.Source.Tetra.Env           as SE
+
+import qualified DDC.Build.Language.Tetra       as CE
+import qualified DDC.Core.Tetra                 as CE
+import qualified DDC.Core.Tetra.Env             as CE
+
+import qualified DDC.Core.Parser.Context        as C
+import qualified DDC.Core.Transform.SpreadX     as C
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Load                  as C
+import qualified DDC.Core.Lexer                 as C
+import qualified DDC.Base.Parser                as BP
+import qualified DDC.Data.SourcePos             as SP
 import Control.DeepSeq
 
 
@@ -26,6 +42,10 @@ data PipeText n (err :: * -> *) where
         -> !(C.Mode n)
         -> !Sink
         -> ![PipeCore (C.AnTEC BP.SourcePos n) n]
+        -> PipeText n err
+
+  PipeTextLoadSourceTetra
+        :: ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
 
@@ -50,7 +70,7 @@ pipeText !srcName !srcLine !str !pp
          -> {-# SCC "PipeTextLoadCore" #-}
             let toks    = fragmentLexModule frag srcName srcLine str in
             let profile = fragmentProfile frag
-            in case CL.loadModuleFromTokens profile srcName mode toks of
+            in case C.loadModuleFromTokens profile srcName mode toks of
                  (Left err, mct) 
                   -> do sinkCheckTrace mct sink
                         return $ [ErrorLoad err]
@@ -59,9 +79,56 @@ pipeText !srcName !srcLine !str !pp
                   -> do sinkCheckTrace mct sink
                         pipeCores mm pipes
 
+        PipeTextLoadSourceTetra pipes
+         -> {-# SCC "PipeTextLoadSourceTetra" #-}
+            let goParse
+                 = let  -- Lex the input text into source tokens.
+                        tokens  = SE.lexModuleString srcName srcLine str
+
+                        -- Parse the source tokens.
+                        context = C.Context
+                                { C.contextTrackedEffects         = True
+                                , C.contextTrackedClosures        = True
+                                , C.contextFunctionalEffects      = False
+                                , C.contextFunctionalClosures     = False }
+
+                    in  case BP.runTokenParser C.describeTok srcName
+                                (SE.pModule context) tokens of
+                         Left err -> error $ show err    -- TODO: throw errorLoad instead.
+                         Right mm -> goDesugar mm
+
+                goDesugar mm
+                 = case SE.defix SE.defaultFixTable mm of
+                        Left err  -> error $ show err    -- TODO: return errorLoad instead.
+                        Right mm' -> goToCore mm'
+
+                goToCore mm
+                 = let  -- Expand missing quantifiers in signatures.
+                        mm_expand = SE.expand SE.configDefault 
+                                        SE.primKindEnv SE.primTypeEnv mm
+
+                        -- Convert Source Tetra to Core Tetra.
+                        -- TODO get proper source location.
+                        sp        = SP.SourcePos "<top level>" 1 1
+                        mm_core   = SE.toCoreModule sp mm_expand
+
+                        -- Spread types of data constructors into uses.
+                        mm_spread = C.spreadX 
+                                        CE.primKindEnv CE.primTypeEnv mm_core
+
+                        -- Use the existing checker pipeline to Synthesise
+                        -- missing type annotations.
+                    in  pipeCore mm_spread
+                         $ PipeCoreCheck CE.fragment C.Synth pipes
+
+            in goParse
 
  where  sinkCheckTrace mct sink
          = case mct of
-                Nothing                  -> return []
-                Just (CL.CheckTrace doc) -> pipeSink (renderIndent doc) sink
+                Nothing                 -> return []
+                Just (C.CheckTrace doc) -> pipeSink (renderIndent doc) sink
+
+
+
+
 

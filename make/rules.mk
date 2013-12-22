@@ -105,6 +105,7 @@ packages/ddc-build/%.o : packages/ddc-build/%.hs
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
+                      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build
 
 packages/ddc-driver/%.o : packages/ddc-driver/%.hs
@@ -118,6 +119,7 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
+                      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-interface \
 		      -ipackages/ddc-driver
@@ -145,6 +147,7 @@ packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
+                      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-tools/src/ddc-check
 
@@ -160,6 +163,7 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
+                      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \
@@ -197,6 +201,7 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra \
+                      -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \

@@ -13,9 +13,9 @@ import DDC.Build.Language.Base
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
-import DDC.Core.Tetra                   as Tetra
-import DDC.Core.Tetra.Profile           as Tetra
 import DDC.Base.Pretty
+import qualified DDC.Core.Tetra         as E
+import qualified DDC.Core.Tetra.Profile as E
 import qualified Data.Map               as Map
 
 
@@ -25,27 +25,27 @@ language    = Language bundle
 
 
 -- | Language bundle for Disciple Core Tetra.
-bundle  :: Bundle Int Name Error
+bundle  :: Bundle Int E.Name Error
 bundle
         = Bundle
         { bundleFragment        = fragment
         , bundleModules         = Map.empty
         , bundleStateInit       = 0 :: Int
         , bundleSimplifier      = Trans Id
-        , bundleMakeNamifierT   = makeNamifier freshT 
-        , bundleMakeNamifierX   = makeNamifier freshX 
+        , bundleMakeNamifierT   = makeNamifier E.freshT 
+        , bundleMakeNamifierX   = makeNamifier E.freshX 
         , bundleRewriteRules    = Map.empty }
 
 
 -- | Fragement definition for Disciple Core Tetra.
-fragment :: Fragment Name Error
+fragment :: Fragment E.Name Error
 fragment
         = Fragment
-        { fragmentProfile       = profile 
+        { fragmentProfile       = E.profile 
         , fragmentExtension     = "dct"
-        , fragmentReadName      = readName
-        , fragmentLexModule     = lexModuleString
-        , fragmentLexExp        = lexExpString
+        , fragmentReadName      = E.readName
+        , fragmentLexModule     = E.lexModuleString
+        , fragmentLexExp        = E.lexExpString
         , fragmentCheckModule   = const Nothing
         , fragmentCheckExp      = const Nothing }
 

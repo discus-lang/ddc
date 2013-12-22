@@ -10,6 +10,9 @@ module DDC.Driver.Stage
         ( Config        (..)
         , ViaBackend    (..)
 
+          -- * Tetra stages
+        , stageSourceTetraLoad
+
           -- * Flow stages
         , stageFlowLoad
         , stageFlowPrep
@@ -32,6 +35,7 @@ module DDC.Driver.Stage
         , stageCompileLLVM)
 where
 import DDC.Driver.Config
+import DDC.Driver.Stage.Tetra
 import DDC.Driver.Stage.Flow
 import DDC.Driver.Stage.Lite
 import DDC.Driver.Stage.Salt

@@ -21,8 +21,13 @@ module DDC.Core.Tetra
 
           -- * Program Lexing
         , lexModuleString
-        , lexExpString)
+        , lexExpString
+
+          -- * Conversion
+        , saltOfTetraModule
+        , Error         (..))
 
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Profile
+import DDC.Core.Tetra.Convert

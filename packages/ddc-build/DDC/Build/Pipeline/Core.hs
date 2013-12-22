@@ -4,6 +4,9 @@ module DDC.Build.Pipeline.Core
         , pipeCore
         , pipeCores
 
+        , PipeTetra (..)
+        , pipeTetra
+
         , PipeLite (..)
         , pipeLite
 
@@ -25,6 +28,8 @@ import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
+
+import qualified DDC.Core.Tetra                         as Tetra
 
 import qualified DDC.Core.Lite                          as Lite
 
@@ -216,6 +221,42 @@ pipeCores !mm !pipes
         go !errs (pipe : rest)
          = do   !err     <- pipeCore mm pipe
                 go (errs ++ err) rest
+
+
+-- PipeTetra ------------------------------------------------------------------
+-- | Process a Core Tetra module.
+data PipeTetra
+        -- | Output the module in core language syntax.
+        = PipeTetraOutput !Sink
+
+        -- | Convert the module to the Core Salt Fragment.
+        | PipeTetraToSalt !Salt.Platform 
+                          !Salt.Config
+                          ![PipeCore () Salt.Name]
+
+
+-- | Process a Core Lite module.
+pipeTetra 
+        :: C.Module (C.AnTEC () Tetra.Name) Tetra.Name
+        -> PipeTetra
+        -> IO [Error]
+
+pipeTetra !mm !pp
+ = case pp of
+        PipeTetraOutput !sink
+         -> {-# SCC "PipeTetraOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
+
+        PipeTetraToSalt !platform !runConfig !pipes
+         -> {-# SCC "PipeTetraToSalt" #-}
+            case Tetra.saltOfTetraModule platform runConfig 
+                        (C.profilePrimDataDefs Tetra.profile) 
+                        (C.profilePrimKinds    Tetra.profile)
+                        (C.profilePrimTypes    Tetra.profile)
+                        mm 
+             of  Left  err  -> return [ErrorTetraConvert err]
+                 Right mm'  -> pipeCores mm' pipes 
+
 
 
 -- PipeLite -------------------------------------------------------------------
