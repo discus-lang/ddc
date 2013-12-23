@@ -19,8 +19,10 @@ instance NFData TyConTetra
 instance Pretty TyConTetra where
  ppr tc
   = case tc of
-        TyConTetraRef     -> text "Ref#"
-        TyConTetraTuple n -> text "Tuple" <> int n <> text "#"
+        TyConTetraRef           -> text "Ref#"
+        TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
+        TyConTetraB             -> text "B#"
+        TyConTetraU             -> text "U#"
 
 
 -- | Read the name of a baked-in type constructor.
@@ -35,6 +37,8 @@ readTyConTetra str
         | otherwise
         = case str of
                 "Ref#"          -> Just TyConTetraRef
+                "B#"            -> Just TyConTetraB
+                "U#"            -> Just TyConTetraU
                 _               -> Nothing
 
 
@@ -44,6 +48,8 @@ kindTyConTetra tc
  = case tc of
         TyConTetraRef     -> kRegion `kFun` kData `kFun` kData
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
+        TyConTetraB       -> kData   `kFun` kData
+        TyConTetraU       -> kData   `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------

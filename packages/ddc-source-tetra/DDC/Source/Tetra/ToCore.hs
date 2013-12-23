@@ -254,7 +254,7 @@ toCoreN nn
  = case nn of
         S.NameVar        str -> C.NameVar        str
         S.NameCon        str -> C.NameCon        str
-        S.NameTyConTetra tc  -> C.NameTyConTetra tc
+        S.NameTyConTetra tc  -> C.NameTyConTetra (toCoreTyConTetra tc)
         S.NameOpStore    tc  -> C.NameOpStore    tc
         S.NamePrimTyCon  p   -> C.NamePrimTyCon  p
         S.NamePrimArith  p   -> C.NamePrimArith  p
@@ -263,4 +263,11 @@ toCoreN nn
         S.NameLitInt     i   -> C.NameLitInt     i  
         S.NameLitWord    w b -> C.NameLitWord    w b
         S.NameHole           -> C.NameHole
+
+
+toCoreTyConTetra :: S.TyConTetra -> C.TyConTetra
+toCoreTyConTetra tc
+ = case tc of
+        S.TyConTetraRef      -> C.TyConTetraRef
+        S.TyConTetraTuple n  -> C.TyConTetraTuple n
 

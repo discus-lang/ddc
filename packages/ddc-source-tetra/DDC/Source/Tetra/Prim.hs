@@ -25,7 +25,32 @@ import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpStore
 import DDC.Source.Tetra.Prim.OpArith
 import DDC.Base.Pretty
+import Control.DeepSeq
 import Data.Char
+
+import DDC.Core.Tetra   
+        ( readPrimTyCon
+        , readPrimArith
+        , readOpStore)
+
+
+instance NFData Name where
+ rnf nn
+  = case nn of
+        NameVar s               -> rnf s
+        NameCon s               -> rnf s
+
+        NameTyConTetra p        -> rnf p
+        NameOpStore    p        -> rnf p
+        NamePrimTyCon  p        -> rnf p
+        NamePrimArith  p        -> rnf p
+
+        NameLitBool b           -> rnf b
+        NameLitNat  n           -> rnf n
+        NameLitInt  i           -> rnf i
+        NameLitWord i bits      -> rnf i `seq` rnf bits
+
+        NameHole                -> ()
 
 
 instance Pretty Name where

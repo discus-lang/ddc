@@ -68,11 +68,19 @@ isNameHole nn
 -- TyConTetra ----------------------------------------------------------------
 -- | Baked-in type constructors.
 data TyConTetra
-        -- | @Ref#@. A mutable reference.
+        -- | @Ref#@.    Mutable reference.
         = TyConTetraRef
 
         -- | @TupleN#@. Tuples.
         | TyConTetraTuple Int
+
+        -- | @B#@.      Boxing type constructor. 
+        --   Used to represent boxed numeric values.
+        | TyConTetraB
+
+        -- | @U#@.      Unboxed type constructor.
+        --   Used to represent unboxed numeric values.
+        | TyConTetraU
         deriving (Eq, Ord, Show)
 
 

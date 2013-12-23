@@ -1,17 +1,15 @@
 
 module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
-        , TyConTetra    (..), readTyConTetra
-        , OpStore       (..), readOpStore
-        , PrimTyCon     (..), readPrimTyCon
-        , PrimArith     (..), readPrimArith)
+        , TyConTetra    (..)
+        , OpStore       (..)
+        , PrimTyCon     (..)
+        , PrimArith     (..))
 where
-import Control.DeepSeq
 import DDC.Core.Tetra    
-        ( TyConTetra    (..), readTyConTetra
-        , OpStore       (..), readOpStore
-        , PrimTyCon     (..), readPrimTyCon
-        , PrimArith     (..), readPrimArith)
+        ( OpStore       (..)
+        , PrimTyCon     (..)
+        , PrimArith     (..))
 
 
 -- | Names of things used in Disciple Source Tetra.
@@ -55,21 +53,15 @@ data Name
         deriving (Eq, Ord, Show)
 
 
-instance NFData Name where
- rnf nn
-  = case nn of
-        NameVar s               -> rnf s
-        NameCon s               -> rnf s
+-- TyConTetra ----------------------------------------------------------------
+-- | Baked-in type constructors.
+data TyConTetra
+        -- | @Ref#@.    Mutable reference.
+        = TyConTetraRef
 
-        NameTyConTetra p        -> rnf p
-        NameOpStore    p        -> rnf p
-        NamePrimTyCon  p        -> rnf p
-        NamePrimArith  p        -> rnf p
+        -- | @TupleN#@. Tuples.
+        | TyConTetraTuple Int
+        deriving (Eq, Ord, Show)
 
-        NameLitBool b           -> rnf b
-        NameLitNat  n           -> rnf n
-        NameLitInt  i           -> rnf i
-        NameLitWord i bits      -> rnf i `seq` rnf bits
 
-        NameHole                -> ()
 
