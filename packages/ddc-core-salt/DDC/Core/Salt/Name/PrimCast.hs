@@ -18,20 +18,25 @@ import Control.DeepSeq
 --   system. On a 64-bit system the @Nat\#@ type is 64-bits wide, so casting it
 --   to a @Word32\#@ would be a truncation.
 data PrimCast
+        -- | Convert a value to a new representation with the same precision.
+        = PrimCastConvert
+
         -- | Promote a value to one of similar or larger width,
         --   without loss of precision.
-        = PrimCastPromote
+        | PrimCastPromote
 
         -- | Truncate a value to a new width, 
         --   possibly losing precision.
         | PrimCastTruncate
         deriving (Eq, Ord, Show)
 
+
 instance NFData PrimCast
 
 instance Pretty PrimCast where
  ppr c
   = case c of
+        PrimCastConvert         -> text "convert#"
         PrimCastPromote         -> text "promote#"
         PrimCastTruncate        -> text "truncate#"
 
@@ -39,6 +44,7 @@ instance Pretty PrimCast where
 readPrimCast :: String -> Maybe PrimCast
 readPrimCast str
  = case str of
+        "convert#"              -> Just PrimCastConvert
         "promote#"              -> Just PrimCastPromote
         "truncate#"             -> Just PrimCastTruncate
         _                       -> Nothing
@@ -64,7 +70,7 @@ primCastPromoteIsValid pp src dst
         , primTyConWidth pp dst >= primTyConWidth pp src
         = True
 
-        -- Promote unsigned to a strictly larger unsigned width.
+        -- Promote unsigned to a strictly larger signed width.
         | primTyConIsIntegral src, primTyConIsIntegral dst
         , primTyConIsUnsigned src, primTyConIsSigned   dst
         , primTyConWidth pp dst >  primTyConWidth pp src

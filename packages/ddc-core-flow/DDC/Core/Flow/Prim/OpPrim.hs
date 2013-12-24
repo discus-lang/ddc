@@ -21,6 +21,9 @@ import DDC.Core.Exp.Simple
 typePrimCast :: PrimCast -> Type Name
 typePrimCast cc
  = case cc of
+        PrimCastConvert
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
+
         PrimCastPromote
          -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
 

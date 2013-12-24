@@ -170,6 +170,9 @@ typeOfPrimArith op
 typeOfPrimCast :: PrimCast -> Type Name
 typeOfPrimCast cc
  = case cc of
+        PrimCastConvert
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
+
         PrimCastPromote
          -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
 
