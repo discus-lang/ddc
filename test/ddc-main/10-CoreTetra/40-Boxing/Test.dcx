@@ -1,0 +1,7 @@
+:set lang Tetra
+
+:tetra-boxing..
+module Test with letrec
+f (x : Nat#) : Nat#
+ = add# [Nat#] x 1#
+;;
