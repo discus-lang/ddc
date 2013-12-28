@@ -26,10 +26,14 @@ cmdTetraBoxing config source sourceText
         pipeBoxing
          = pipeText     (nameOfSource source) 
                         (lineStartOfSource source) sourceText
-         $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard  
-         [ PipeCoreOutput pmode SinkStdout ]
+         $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard
+         [ PipeCoreAsTetra
+         [ PipeTetraBoxing
+         [ PipeCoreOutput pmode SinkStdout ]]]
    in do
         errs    <- liftIO pipeBoxing
         case errs of
          []     -> return ()
          es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+
+

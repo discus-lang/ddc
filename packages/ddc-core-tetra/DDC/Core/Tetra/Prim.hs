@@ -3,12 +3,14 @@ module DDC.Core.Tetra.Prim
         ( -- * Names and lexing.
           Name          (..)
         , isNameHole
+        , isNameLit
         , readName
 
           -- * Baked-in type constructors.
         , TyConTetra     (..)
         , readTyConTetra
         , kindTyConTetra
+        , takeTypeOfLitName
 
           -- * Baked-in data constructors.
         , DaConTetra     (..)
@@ -28,7 +30,12 @@ module DDC.Core.Tetra.Prim
           -- * Primitive arithmetic operators.
         , PrimArith     (..)
         , readPrimArith
-        , typePrimArith)
+        , typePrimArith
+
+          -- * Primitive numeric casts.
+        , PrimCast      (..)
+        , readPrimCast
+        , typePrimCast)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConTetra
@@ -36,6 +43,7 @@ import DDC.Core.Tetra.Prim.TyConPrim
 import DDC.Core.Tetra.Prim.DaConTetra
 import DDC.Core.Tetra.Prim.OpStore
 import DDC.Core.Tetra.Prim.OpArith
+import DDC.Core.Tetra.Prim.OpCast
 import DDC.Core.Salt.Name 
         ( readLitPrimNat
         , readLitPrimInt
@@ -54,10 +62,12 @@ instance NFData Name where
 
         NameTyConTetra con      -> rnf con
         NameDaConTetra con      -> rnf con
-        NameOpStore   con       -> rnf con
 
-        NamePrimTyCon con       -> rnf con
-        NamePrimArith con       -> rnf con
+        NameOpStore    op       -> rnf op
+
+        NamePrimTyCon  op       -> rnf op
+        NamePrimArith  op       -> rnf op
+        NamePrimCast   op       -> rnf op
 
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
@@ -75,10 +85,11 @@ instance Pretty Name where
 
         NameTyConTetra tc       -> ppr tc
         NameDaConTetra dc       -> ppr dc
-        NameOpStore op          -> ppr op
+        NameOpStore    op       -> ppr op
 
-        NamePrimTyCon tc        -> ppr tc
-        NamePrimArith op        -> ppr op
+        NamePrimTyCon  op       -> ppr op
+        NamePrimArith  op       -> ppr op
+        NamePrimCast   op       -> ppr op
 
         NameLitBool True        -> text "True#"
         NameLitBool False       -> text "False#"
@@ -108,6 +119,9 @@ readName str
 
         | Just p <- readPrimArith str  
         = Just $ NamePrimArith p
+
+        | Just p <- readPrimCast  str
+        = Just $ NamePrimCast  p
 
         -- Literal Bools
         | str == "True#"  = Just $ NameLitBool True

@@ -110,6 +110,7 @@ typeOfPrimName dc
         NameDaConTetra p        -> Just $ typeDaConTetra p
         NameOpStore    p        -> Just $ typeOpStore    p
         NamePrimArith  p        -> Just $ typePrimArith  p
+        NamePrimCast   p        -> Just $ typePrimCast   p
 
         NameLitBool _           -> Just $ tBool
         NameLitNat  _           -> Just $ tNat

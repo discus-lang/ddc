@@ -22,8 +22,12 @@
 -- primop. 
 --
 module DDC.Core.Transform.Boxing
-        ( Config        (..))
+        ( Rep           (..)
+        , Config        (..)
+        , Boxing        (..))
 where
+import DDC.Core.Module
+import DDC.Core.Exp.DaCon
 import DDC.Core.Exp
 
 
@@ -43,7 +47,7 @@ data Rep
         deriving (Eq, Ord, Show)
 
 
-data Config n
+data Config a n
         = Config
         { -- | Get the representation of some type.
           configTypeRep         :: Type n -> Rep
@@ -52,14 +56,25 @@ data Config n
         , configTypeBoxed       :: Type n -> Maybe (Type n) 
 
           -- | Get the unboxed version of some type.
-        , configTypeUnboxed     :: Type n -> Maybe (Type n) }
+        , configTypeUnboxed     :: Type n -> Maybe (Type n) 
+
+          -- | Check if the name of this constructor is a literal.
+        , configNameIsLiteral   :: n -> Bool 
+
+          -- | Box a literal expression.
+        , configBoxLiteral      :: n -> Exp a n }
 
 
 class Boxing (c :: * -> * -> *) where
  boxing :: Ord n
-        => Config n
+        => Config a n
         -> c a n
         -> c a n
+
+
+instance Boxing Module where
+ boxing config mm
+  = mm  { moduleBody    = boxing config (moduleBody mm) }
 
 
 instance Boxing Exp where
@@ -67,7 +82,14 @@ instance Boxing Exp where
   = let down = boxing config
     in case xx of
         XVar{}  -> xx
-        XCon{}  -> xx
+
+        XCon _ dc
+         |  Just dcn    <- takeNameOfDaCon dc
+         ,  configNameIsLiteral config dcn
+         -> configBoxLiteral config dcn
+
+         |  otherwise
+         -> xx
 
         XLAM a b x
          -> let x'      = down x

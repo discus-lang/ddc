@@ -30,6 +30,7 @@ import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 
 import qualified DDC.Core.Tetra                         as Tetra
+import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
 
 import qualified DDC.Core.Lite                          as Lite
 
@@ -105,8 +106,8 @@ data PipeCore a n where
 
   -- Treat a module as belonging to the Core Tetra fragment from now on.
   PipeCoreAsTetra
-        :: ![PipeTetra]
-        -> PipeCore (C.AnTEC () Tetra.Name) Tetra.Name
+        :: ![PipeTetra (C.AnTEC a Tetra.Name)]
+        -> PipeCore (C.AnTEC a Tetra.Name) Tetra.Name
 
   -- Treat a module as belonging to the Core Lite fragment from now on.
   PipeCoreAsLite
@@ -234,20 +235,31 @@ pipeCores !mm !pipes
 
 -- PipeTetra ------------------------------------------------------------------
 -- | Process a Core Tetra module.
-data PipeTetra
+data PipeTetra a where
         -- | Output the module in core language syntax.
-        = PipeTetraOutput !Sink
+        PipeTetraOutput 
+         :: !Sink
+         -> PipeTetra a
+
+        -- | Manage boxing of numeric values.
+        PipeTetraBoxing
+         :: (NFData a, Show a)
+         => ![PipeCore a Tetra.Name]
+         -> PipeTetra a
 
         -- | Convert the module to the Core Salt Fragment.
-        | PipeTetraToSalt !Salt.Platform 
-                          !Salt.Config
-                          ![PipeCore () Salt.Name]
+        PipeTetraToSalt 
+         :: (NFData a, Show a)
+         => !Salt.Platform 
+         -> !Salt.Config
+         -> ![PipeCore a Salt.Name]
+         -> PipeTetra  (C.AnTEC a Tetra.Name)
 
 
--- | Process a Core Lite module.
+-- | Process a Core Tetra module.
 pipeTetra 
-        :: C.Module (C.AnTEC () Tetra.Name) Tetra.Name
-        -> PipeTetra
+        :: C.Module a Tetra.Name
+        -> PipeTetra a
         -> IO [Error]
 
 pipeTetra !mm !pp
@@ -255,6 +267,10 @@ pipeTetra !mm !pp
         PipeTetraOutput !sink
          -> {-# SCC "PipeTetraOutput" #-}
             pipeSink (renderIndent $ ppr mm) sink
+
+        PipeTetraBoxing !pipes
+         -> {-# SCC "PipeTetraBoxing" #-}
+            pipeCores (Tetra.boxingModule mm) pipes
 
         PipeTetraToSalt !platform !runConfig !pipes
          -> {-# SCC "PipeTetraToSalt" #-}

@@ -2,16 +2,19 @@
 module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
         , isNameHole
+        , isNameLit
         
         , TyConTetra    (..)
         , DaConTetra    (..)
         , OpStore       (..)
         , PrimTyCon     (..)
-        , PrimArith     (..))
+        , PrimArith     (..)
+        , PrimCast      (..))
 where
 import Data.Typeable
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimArith
+import DDC.Core.Salt.Name.PrimCast
 
 
 -- | Names of things used in Disciple Core Tetra.
@@ -38,6 +41,9 @@ data Name
         -- | Primitive arithmetic, logic, comparison and bit-wise operators.
         | NamePrimArith         PrimArith
 
+        -- | Primitive numeric casting operators.
+        | NamePrimCast          PrimCast
+
         -- Literals -----------------------------
         -- | A boolean literal.
         | NameLitBool           Bool
@@ -62,6 +68,17 @@ isNameHole :: Name -> Bool
 isNameHole nn
  = case nn of
         NameHole        -> True
+        _               -> False
+
+
+-- | Check whether a name represents some literal value.
+isNameLit :: Name -> Bool
+isNameLit nn
+ = case nn of
+        NameLitBool{}   -> True
+        NameLitNat{}    -> True
+        NameLitInt{}    -> True
+        NameLitWord{}   -> True
         _               -> False
 
 

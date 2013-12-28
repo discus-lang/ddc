@@ -3,6 +3,7 @@ module DDC.Core.Tetra.Prim.TyConPrim
         ( PrimTyCon     (..)
         , readPrimTyCon
         , kindPrimTyCon
+        , takeTypeOfLitName
         , tBool
         , tNat
         , tInt
@@ -29,6 +30,17 @@ kindPrimTyCon tc
         PrimTyConPtr{}    -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag{}    -> kData
         PrimTyConString{} -> kRegion `kFun` kData
+
+
+-- | Get the type associated with a literal name.
+takeTypeOfLitName :: Name -> Maybe (Type Name)
+takeTypeOfLitName nn
+ = case nn of
+        NameLitBool{}           -> Just tBool
+        NameLitNat{}            -> Just tNat
+        NameLitInt{}            -> Just tInt
+        NameLitWord _ bits      -> Just (tWord bits)
+        _                       -> Nothing
 
 
 -- Compounds ------------------------------------------------------------------
