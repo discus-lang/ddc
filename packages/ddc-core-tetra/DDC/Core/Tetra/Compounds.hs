@@ -8,9 +8,13 @@ module DDC.Core.Tetra.Compounds
         , tInt
         , tWord
 
+        , tBoxed
+        , tUnboxed
+
           -- * Expressions
         , xCastConvert)
 where
+import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.TyConPrim
 import DDC.Core.Tetra.Prim
 import DDC.Core.Compounds.Annot

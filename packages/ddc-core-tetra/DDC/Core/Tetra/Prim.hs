@@ -5,6 +5,7 @@ module DDC.Core.Tetra.Prim
         , isNameHole
         , isNameLit
         , readName
+        , takeTypeOfPrimOpName
 
           -- * Baked-in type constructors.
         , TyConTetra     (..)
@@ -49,6 +50,7 @@ import DDC.Core.Salt.Name
         , readLitPrimInt
         , readLitPrimWordOfBits)
 
+import DDC.Type.Exp
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char        
@@ -156,3 +158,14 @@ readName str
 
         | otherwise
         = Nothing
+
+
+-- | Take the type of a primitive operator.
+takeTypeOfPrimOpName :: Name -> Maybe (Type Name)
+takeTypeOfPrimOpName nn
+ = case nn of
+        NameOpStore     op -> Just (typeOpStore   op)
+        NamePrimArith   op -> Just (typePrimArith op)
+        NamePrimCast    op -> Just (typePrimCast  op)
+        _                  -> Nothing
+

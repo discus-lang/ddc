@@ -5,13 +5,12 @@ module DDC.Type.Transform.Instantiate
 where
 import DDC.Type.Exp
 import DDC.Type.Transform.SubstituteT
-import DDC.Base.Pretty          (Pretty)
 
 
 -- | Instantiate a type with an argument.
 --   The type to be instantiated must have an outer forall, else `Nothing`.
 instantiateT 
-        :: (Ord n, Pretty n) 
+        :: Ord n
         => Type n               -- ^ Type to instantiate.
         -> Type n               -- ^ Argument type.
         -> Maybe (Type n)
@@ -24,7 +23,7 @@ instantiateT _ _                  = Nothing
 --   The type to be instantiated must have at least as many outer foralls 
 --   as provided type arguments, else `Nothing`.
 instantiateTs 
-        :: (Ord n, Pretty n) 
+        :: Ord n
         => Type n               -- ^ Type to instantiate.
         -> [Type n]             -- ^ Argument types.
         -> Maybe (Type n)

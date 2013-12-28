@@ -12,7 +12,6 @@ import Control.DeepSeq
 import Data.List
 
 
--- OpStore --------------------------------------------------------------------
 instance NFData OpStore
 
 instance Pretty OpStore where

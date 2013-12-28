@@ -3,7 +3,9 @@ module DDC.Core.Tetra.Prim.TyConTetra
         ( kindTyConTetra
         , readTyConTetra
         , tRef
-        , tTupleN)
+        , tTupleN
+        , tBoxed
+        , tUnboxed)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
@@ -62,6 +64,14 @@ tRef tR tA
 
 tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConTetra (TyConTetraTuple (length tys))) tys
+
+
+tBoxed  :: Type Name -> Type Name
+tBoxed t        = tApp (tConTyConTetra TyConTetraB) t
+
+
+tUnboxed :: Type Name -> Type Name
+tUnboxed t      = tApp (tConTyConTetra TyConTetraU) t
 
 
 -- Utils ----------------------------------------------------------------------
