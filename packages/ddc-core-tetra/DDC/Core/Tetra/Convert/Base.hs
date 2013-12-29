@@ -38,7 +38,10 @@ data Error a
         | ErrorInvalidBinder E.Name
 
         -- | An invalid name used in a bound position
-        | ErrorInvalidBound  (Bound E.Name)
+        | ErrorInvalidBound (Bound E.Name)
+
+        -- | An invalid data constructor name.
+        | ErrorInvalidDaCon (DaCon E.Name)
 
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
@@ -70,6 +73,9 @@ instance Show a => Pretty (Error a) where
 
         ErrorInvalidBound n
          -> vcat [ text "Invalid name used in bound occurrence " <> ppr n <> text "."]
+
+        ErrorInvalidDaCon n
+         -> vcat [ text "Invalid data constructor name " <> ppr n <> text "." ]
 
         ErrorInvalidAlt
          -> vcat [ text "Invalid alternative." ]

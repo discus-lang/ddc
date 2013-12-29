@@ -9,9 +9,10 @@ module DDC.Core.Tetra.Convert.Layout
         , payloadSizeOfDataCtor
         , fieldOffsetsOfDataCtor)
 where
+import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Prim
-import DDC.Core.Tetra.Env
 import DDC.Core.Salt.Platform
+import DDC.Type.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import Control.Monad
@@ -39,15 +40,15 @@ heapObjectOfDataCtor pp ctor
 
         -- If all the fields are boxed objects then used a Boxed heap object,
         -- as these just contain pointer fields.
-        | tsFields              <- dataCtorFieldTypes ctor
-        , all isBoxedType tsFields
+        | tsFields                 <- dataCtorFieldTypes ctor
+        , all isBoxedRepType tsFields
         = Just HeapObjectBoxed
 
         -- All of the fixed size primitive types will fit in a RawSmall object.
         --   Each field needs to be non-abstract, and have a real width.
-        | [TCon tc]                <- dataCtorFieldTypes ctor
-        , TyConBound (UPrim n _) _ <- tc
-        , NamePrimTyCon ptc        <- n
+        | [t1]                                    <- dataCtorFieldTypes ctor
+        , Just (NameTyConTetra TyConTetraU, [tp]) <- takePrimTyConApps t1
+        , Just (NamePrimTyCon  ptc,         [])   <- takePrimTyConApps tp
         , isJust $ A.primTyConWidth pp ptc
         = Just HeapObjectRawSmall
 

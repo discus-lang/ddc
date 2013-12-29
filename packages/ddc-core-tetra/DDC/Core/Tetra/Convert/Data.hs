@@ -33,20 +33,19 @@ constructData
         -> DataCtor E.Name              -- ^ Constructor definition of object.
         -> Type     A.Name              -- ^ Prime region variable.
         -> [Exp a   A.Name]             -- ^ Field values.
-        -> [Maybe (Type A.Name)]        -- ^ Field types.
+        -> [Type    A.Name]             -- ^ Field types.
         -> ConvertM a (Exp a A.Name)
 
 constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs 
- | Just HeapObjectBoxed         <- heapObjectOfDataCtor pp ctorDef
+ | Just HeapObjectBoxed <- heapObjectOfDataCtor pp ctorDef
  = do
         -- We want to write the fields into the newly allocated object.
         -- As xsArgs list also contains type arguments, 
         --   we need to drop these off first.
-        let xsFields            = drop (length $ dataTypeParams dataDef) xsArgs
+        let xsFields    = drop (length $ dataTypeParams dataDef) xsArgs
 
         -- Get the regions each of the objects are in.
-        let Just tsFields       = sequence 
-                                $ drop (length $ dataTypeParams dataDef) tsArgs
+        let tsFields    = drop (length $ dataTypeParams dataDef) tsArgs
 
         -- Allocate the object.
         let arity       = length tsFields
@@ -119,17 +118,21 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
 -- Destruct -------------------------------------------------------------------
 -- | Wrap a expression in let-bindings that bind each of the fields of
 --   of a data object. This is used when pattern matching in a case expression.
+--
+--   We take a `Bound` for the scrutinee instead of a general expression because
+--   we refer to it several times, and don't want to recompute it each time.
+--
 destructData 
         :: Platform 
         -> a
-        -> Bound A.Name         -- ^ Bound of Scruitinee.
         -> DataCtor E.Name      -- ^ Definition of the data constructor to unpack.
+        -> Bound A.Name         -- ^ Bound of Scruitinee.
         -> Type  A.Name         -- ^ Prime region.
         -> [Bind A.Name]        -- ^ Binders for each of the fields.
         -> Exp a A.Name         -- ^ Body expression that uses the field binders.
         -> ConvertM a (Exp a A.Name)
 
-destructData pp a uScrut ctorDef trPrime bsFields xBody
+destructData pp a ctorDef uScrut trPrime bsFields xBody
  | Just HeapObjectBoxed         <- heapObjectOfDataCtor pp ctorDef
  = do   
         -- Bind pattern variables to each of the fields.

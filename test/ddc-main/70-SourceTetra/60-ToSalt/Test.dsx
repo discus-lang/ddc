@@ -1,10 +1,10 @@
 :set SuppressImports
-
+:set Dump
 
 -- Simple Functions.
-:to-core..
+:to-salt..
 module Test where
-foo     (x : Nat#) : Nat#
+foo (x : Nat#) : Nat#
  = add# 2 3
 ;;
 

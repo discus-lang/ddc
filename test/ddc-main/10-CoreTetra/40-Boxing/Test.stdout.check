@@ -4,9 +4,9 @@ module Test with
 letrec {
   f : B# Nat# -> B# Nat#
     = \(x : B# Nat#).
-      convert# [B# Nat#] [U# Nat#]
+      convert# [U# Nat#] [B# Nat#]
           (add# [U# Nat#]
-               (convert# [U# Nat#] [B# Nat#] x)
-               (convert# [U# Nat#] [B# Nat#]
-                    (convert# [B# Nat#] [Nat#] 1#)))
+               (convert# [B# Nat#] [U# Nat#] x)
+               (convert# [B# Nat#] [U# Nat#]
+                    (convert# [Nat#] [B# Nat#] 1#)))
 }

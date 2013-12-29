@@ -4,11 +4,13 @@ module DDC.Core.Tetra.Convert
         ( saltOfTetraModule
         , Error(..))
 where
+import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Data
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Base
 import DDC.Core.Salt.Convert.Init
 import DDC.Core.Salt.Platform
+import DDC.Core.Transform.LiftX
 import DDC.Core.Module
 import DDC.Core.Compounds
 import DDC.Core.Predicates
@@ -210,9 +212,9 @@ convertExpX ctx pp defs kenv tenv xx
                 xx'     <- convertCtor pp defs kenv tenv a' u
                 return  xx'
 
-
         -- Type abstractions can only appear at the top-level of a function.
-        --   Keep region and data type lambdas, but ditch the others.
+        --   We keep region and data type lambdas, but ditch the others
+        --   as they're not needed in Core Salt code.
         XLAM a b x
          | ExpFun       <- ctx
          ,   (isRegionKind $ typeOfBind b)
@@ -234,7 +236,7 @@ convertExpX ctx pp defs kenv tenv xx
                   $ "Cannot convert XLAM in this context " ++ show ctx
 
 
-        -- Value abstractions can only appear at the top-level of a fucntion.
+        -- Function abstractions can only appear at the top-level of a fucntion.
         XLam a b x
          | ExpFun       <- ctx
          -> let tenv'   = Env.extend b tenv
@@ -257,27 +259,93 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorMalformed 
                   $ "Cannot convert XLam in this context " ++ show ctx
 
+        
+        -- Boxing of literal values.
+        -- We fake-up a data-type declaration so we can use the same data layout
+        -- code as for used-defined types.
+        XApp a _ _
+         | Just ( E.NamePrimCast E.PrimCastConvert
+                , [XType _ tBIx, XType _ tBx, XCon _ u]) <- takeXPrimApps xx
+         , isBoxableIndexType tBIx
+         , isBoxedRepType     tBx
+         , Just dt      <- makeDataTypeForBoxableIndexType tBIx
+         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
+         -> do  
+                let a'  = annotTail a
+                xArg'   <- convertCtor pp defs kenv tenv a' u
+                tBIx'   <- convertT kenv tBIx
+
+                constructData pp kenv tenv a'
+                        dt dc A.rTop [xArg'] [tBIx']
+
+
+        -- Boxing of unboxed values.
+        -- We fake-up a data-type declaration so we can use the same data layout
+        -- code as for user-defined types.
+        XApp a _ _
+         | Just ( E.NamePrimCast E.PrimCastConvert
+                , [XType _ tUx, XType _ tBx, xArg])      <- takeXPrimApps xx
+         , isUnboxedRepType tUx
+         , isBoxedRepType   tBx
+         , Just tBIx    <- takeIndexOfBoxedRepType tBx
+         , Just dt      <- makeDataTypeForBoxableIndexType tBIx
+         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
+         -> do  
+                let a'  = annotTail a
+                xArg'   <- downArgX xArg
+                tBIx'   <- convertT kenv tBIx
+
+                constructData pp kenv tenv a'
+                        dt dc A.rTop [xArg'] [tBIx']
+
+
+        -- Unboxing of boxed values.
+        -- We fake-up a data-type declaration so we can use the same data layout
+        -- code as for used-defined types.
+        XApp a _ _
+         | Just ( E.NamePrimCast E.PrimCastConvert
+                , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
+         , isBoxedRepType   tBx
+         , isUnboxedRepType tUx
+         , Just tBIx    <- takeIndexOfBoxedRepType tBx
+         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
+         -> do
+                let a'  = annotTail a
+                xArg'   <- downArgX xArg
+                tBIx'   <- convertT kenv tBIx
+                tBx'    <- convertT kenv tBx
+
+                x'      <- destructData pp a' dc
+                                (UIx 0) A.rTop 
+                                [BAnon tBIx'] (XVar a' (UIx 0))
+
+                return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
+                                  x'
 
         -- Data constructor applications.
+        -- TODO: check that data constructors are fully applied.
         XApp a xa xb
          | (x1, xsArgs)         <- takeXApps1 xa xb
          , XCon _ dc <- x1
          -> downCtorAppX a dc xsArgs
 
+
         -- Primitive operations.
+        -- TODO: check that primops are fully applied.
         XApp a xa xb
          | (x1, xsArgs)          <- takeXApps1 xa xb
          , XVar _ UPrim{}        <- x1
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downArgX xsArgs
-
                 return $ xApps (annotTail a) x1' xsArgs'
 
-        -- ISSUE #283: Lite to Salt transform doesn't check for partial application
-        --    This only works for full application. 
-        --    At least check for the other cases.
-        --
+
         -- Function application.
+        --  This only works for full application. 
+        --  At least check for the other cases.
+        --
+        --  ISSUE #283: Lite to Salt transform doesn't check for partial application
+        --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          -> do  x1'     <- downArgX x1
@@ -341,9 +409,9 @@ convertExpX ctx pp defs kenv tenv xx
 
 
         -- Trying to matching against something that isn't primitive or
-        --  algebraic data.
+        -- algebraic data.
         XCase{} 
-         -> throw $ ErrorNotNormalized ("Invalid case expression.")
+         -> throw $ ErrorNotNormalized "Invalid case expression."
 
 
         -- Casts.
@@ -357,7 +425,7 @@ convertExpX ctx pp defs kenv tenv xx
          -> liftM (XType a')    (convertT kenv t)
 
          | otherwise      
-         -> throw $ ErrorNotNormalized ("Unexpected type expresison.")
+         -> throw $ ErrorNotNormalized "Unexpected type expresison."
 
 
         -- Witnesses can only appear as the arguments to function applications.
@@ -366,7 +434,7 @@ convertExpX ctx pp defs kenv tenv xx
          -> liftM (XWitness a') (convertWitnessX kenv w)
          
          | otherwise      
-         -> throw $ ErrorNotNormalized ("Unexpected witness expression.")
+         -> throw $ ErrorNotNormalized "Unexpected witness expression."
 
 
 -------------------------------------------------------------------------------
@@ -451,11 +519,14 @@ convertCtorAppX
         -> KindEnv  E.Name              -- ^ Kind environment.
         -> TypeEnv  E.Name              -- ^ Type environment.
         -> AnTEC a  E.Name              -- ^ Annot from deconstructed app node.
-        -> DaCon E.Name                 -- ^ Data constructor being applied.
+        -> DaCon    E.Name              -- ^ Data constructor being applied.
         -> [Exp (AnTEC a E.Name) E.Name]
         -> ConvertM a (Exp a A.Name)
 
 convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
+        -- Handle the unit constructor.
+        | DaConUnit     <- dc
+        = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
 
         -- Pass through unboxed literals.
         | Just (E.NameLitBool b)        <- takeNameOfDaCon dc
@@ -473,10 +544,6 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
         | Just (E.NameLitWord i bits)   <- takeNameOfDaCon dc
         , []                            <- xsArgs
         = return $ A.xWord a i bits
-
-        -- Handle the unit constructor.
-        | DaConUnit     <- dc
-        = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
 
         -- Construct algbraic data that has a finite number of data constructors.
         | Just nCtor    <- takeNameOfDaCon dc
@@ -506,7 +573,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                 -- Convert the types of each field.
                 let makeFieldType x
                         = let a' = annotOfExp x 
-                          in  liftM Just $ convertT kenv (annotType a')
+                          in  convertT kenv (annotType a')
 
                 xsArgs' <- mapM (convertExpX ExpArg pp defs kenv tenv) xsArgs
                 tsArgs' <- mapM makeFieldType xsArgs
@@ -587,7 +654,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 -- Add let bindings to unpack the constructor.
                 tScrut'         <- convertT kenv tScrut
                 let Just trPrime = takePrimeRegion tScrut'
-                xBody2           <- destructData pp a uScrut' ctorDef trPrime
+                xBody2           <- destructData pp a ctorDef uScrut' trPrime
                                                  bsFields' xBody1
                 return  $ AAlt (PData dcTag []) xBody2
 
@@ -597,6 +664,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
 
 -- Data Constructor -----------------------------------------------------------
 -- | Expand out code to build a data constructor.
+--   TODO: fold this into convertCtorAppX
 convertCtor 
         :: Show a
         => Platform             -- ^ Platform specification.

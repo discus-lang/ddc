@@ -51,7 +51,7 @@ convertT'
         -> Type    E.Name       -- ^ Type to convert.
         -> ConvertM a (Type A.Name)
 
-convertT' isPrimType kenv tt
+convertT' isPrimType kenv tt                                    -- TODO: isPrimType is unused.
  = let down = convertT' isPrimType kenv
    in case tt of
         -- Convert type variables and constructors.
@@ -62,10 +62,10 @@ convertT' isPrimType kenv tt
               -> liftM TVar $ convertU u
 
               | otherwise
-              -> error $ "convertT': unexpected var kind " ++ show tt
+              -> error $ "convertT': unexpected var kind " ++ show tt           -- TODO: real error
 
              Nothing 
-              -> error $ "convertT': type var not in kind environment " ++ show tt
+              -> error $ "convertT': type var not in kind environment " ++ show tt -- TODO: real error
 
 
         -- Convert unapplied type constructors.
@@ -103,7 +103,19 @@ convertT' isPrimType kenv tt
                 tArg'   <- down tArg
                 return  $ A.tPtr tR' tArg'
 
-         -- Boxed data values are represented in generic form.
+         -- Explicitly Boxed numeric types.
+         |  Just ( E.NameTyConTetra E.TyConTetraB 
+                 , _tNum)                        <- takePrimTyConApps tt
+         ->     return  $ A.tPtr A.rTop A.tObj       
+                                                                        -- TODO: check tNum numeric
+         -- Explicitly Unboxed numeric types.
+         |  Just ( E.NameTyConTetra E.TyConTetraU
+                 , [tNum])                       <- takePrimTyConApps tt
+         -> do  tNum'   <- down tNum
+                return tNum'                                            -- TODO: check tNum numeric
+
+         -- Generic data types are represented in boxed form.   
+         -- TODO: ensure tR is a region var before using it as one.
          |  Just (_, tR : _args)                <- takeTyConApps tt
          -> do  tR'     <- down tR
                 return  $ A.tPtr tR' A.tObj
@@ -135,7 +147,7 @@ convertTyCon tc
          ->     convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        _ -> error "convertTyCon: cannot convert type"
+        _ -> error "convertTyCon: cannot convert type"                          -- TODO: real error
 
 
 -- | Convert a primitive type constructor to Salt form.
@@ -144,9 +156,48 @@ convertTyConPrim n
  = case n of
         E.NamePrimTyCon pc      
           -> return $ TCon $ TyConBound (UPrim (A.NamePrimTyCon pc) kData) kData
-        _ -> error $ "convertTyConPrim: unknown prim name " ++ show n
+        _ -> error $ "convertTyConPrim: unknown prim name " ++ show n           -- TODO: real error
 
 
+-- Binds ----------------------------------------------------------------------
+-- | Convert a Bind.
+convertB :: KindEnv E.Name -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertB kenv bb
+  = case bb of
+        BNone t         -> liftM  BNone (convertT kenv t)        
+        BAnon t         -> liftM  BAnon (convertT kenv t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertT kenv t)
+
+
+-- | Convert the name of a Bind.
+convertBindNameM :: E.Name -> ConvertM a A.Name
+convertBindNameM nn
+ = case nn of
+        E.NameVar str   -> return $ A.NameVar str
+        _               -> throw $ ErrorInvalidBinder nn
+
+
+-- Bounds ---------------------------------------------------------------------
+-- | Convert a Bound.
+convertU :: Bound E.Name -> ConvertM a (Bound A.Name)
+convertU uu
+  = case uu of
+        UIx i           -> liftM  UIx   (return i)
+        UName n         -> liftM  UName (convertBoundNameM uu n)
+        UPrim n t       -> liftM2 UPrim (convertBoundNameM uu n) (convertPrimT t)
+
+
+-- | Convert the name of a Bound.
+convertBoundNameM :: Bound E.Name -> E.Name -> ConvertM a A.Name
+convertBoundNameM u nn
+ = case nn of
+        E.NameVar str           -> return $ A.NameVar str
+        E.NamePrimArith op      -> return $ A.NamePrimOp (A.PrimArith op)
+        E.NamePrimCast  op      -> return $ A.NamePrimOp (A.PrimCast  op)
+        _                       -> throw  $ ErrorInvalidBound u
+
+
+-- DaCon ----------------------------------------------------------------------
 -- | Convert a data constructor definition.
 convertDC 
         :: KindEnv E.Name 
@@ -159,53 +210,24 @@ convertDC kenv dc
          -> return DaConUnit
 
         DaConPrim n t
-         -> do  n'      <- convertBoundNameM n
+         -> do  n'      <- convertDaConNameM dc n
                 t'      <- convertT kenv t
                 return  $ DaConPrim
                         { daConName             = n'
                         , daConType             = t' }
 
         DaConBound n
-         -> do  n'      <- convertBoundNameM n
+         -> do  n'      <- convertDaConNameM dc n
                 return  $ DaConBound
                         { daConName             = n' }
 
 
--- | Convert a Bind.
-convertB :: KindEnv E.Name -> Bind E.Name -> ConvertM a (Bind A.Name)
-convertB kenv bb
-  = case bb of
-        BNone t         -> liftM  BNone (convertT kenv t)        
-        BAnon t         -> liftM  BAnon (convertT kenv t)
-        BName n t       -> liftM2 BName (convertBindNameM n) (convertT kenv t)
-
-
--- | Convert a Bound.
-convertU :: Bound E.Name -> ConvertM a (Bound A.Name)
-convertU uu
-  = case uu of
-        UIx i           -> liftM  UIx   (return i)
-        UName n         -> liftM  UName (convertBoundNameM n)
-        UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
-
-
--- | Convert the name of a Bind.
-convertBindNameM :: E.Name -> ConvertM a A.Name
-convertBindNameM nn
+-- | Convert the name of a data constructor.
+convertDaConNameM :: DaCon E.Name -> E.Name -> ConvertM a A.Name
+convertDaConNameM dc nn
  = case nn of
-        E.NameVar str   -> return $ A.NameVar str
-        _               -> throw $ ErrorInvalidBinder nn
-
-
--- | Convert the name of a Bound.
-convertBoundNameM :: E.Name -> ConvertM a A.Name
-convertBoundNameM nn
- = case nn of
-        E.NameVar str           -> return $ A.NameVar str
-        E.NamePrimArith op      -> return $ A.NamePrimOp  (A.PrimArith op)
         E.NameLitBool val       -> return $ A.NameLitBool val
         E.NameLitNat  val       -> return $ A.NameLitNat  val
         E.NameLitInt  val       -> return $ A.NameLitInt  val
         E.NameLitWord val bits  -> return $ A.NameLitWord val bits
-        _                       -> error  $ "convertBoundNameM: cannot convert name"
-
+        _                       -> throw $ ErrorInvalidDaCon dc

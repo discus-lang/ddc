@@ -40,6 +40,8 @@ stageSourceTetraLoad config source pipesTetra
 
 -------------------------------------------------------------------------------
 -- | Convert Core Tetra to Core Salt.
+--
+--   This includes performing the Boxing transform.
 ---
 --   The Tetra to Salt transform requires the program to be normalised,
 --   and have type annotations.
@@ -49,19 +51,34 @@ stageTetraToSalt
         -> PipeCore  () CE.Name
 
 stageTetraToSalt config source pipesSalt
- = PipeCoreSimplify       BE.fragment 0 normalize
-   [ PipeCoreCheck        BE.fragment C.Recon
-     [ PipeCoreOutput     pprDefaultMode
-                          (dump config source "dump.tetra-normalized.dcl")
-     , PipeCoreAsTetra
-       [ PipeTetraToSalt  (B.buildSpec $ configBuilder config) 
-                          (configRuntime config)
-         ( PipeCoreOutput pprDefaultMode
-                          (dump config source "dump.salt.dcs")
-         : pipesSalt)]]]
-           
- where  normalize
+ = pipe_norm
+ where
+        pipe_norm
+         = PipeCoreSimplify     BE.fragment 0 normalize
+           [ PipeCoreCheck      BE.fragment C.Recon
+           [ PipeCoreOutput     pprDefaultMode
+                                (dump config source "dump.tetra-normalized.dct")
+           , pipe_boxing ]]
+
+        normalize
          = C.anormalize
                 (C.makeNamifier CE.freshT)      
                 (C.makeNamifier CE.freshX)
 
+        pipe_boxing
+         = PipeCoreAsTetra      
+           [ PipeTetraBoxing
+           [ PipeCoreSimplify   BE.fragment 0 normalize
+           [ PipeCoreCheck      BE.fragment C.Recon
+             [ PipeCoreOutput   pprDefaultMode
+                                (dump config source "dump.tetra-boxing.dct")
+             , pipe_toSalt]]]]
+
+        pipe_toSalt
+         = PipeCoreAsTetra
+           [ PipeTetraToSalt    (B.buildSpec $ configBuilder config) 
+                                (configRuntime config)
+           ( PipeCoreOutput     pprDefaultMode
+                                (dump config source "dump.salt.dcs")
+           : pipesSalt)]
+           

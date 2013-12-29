@@ -29,8 +29,7 @@ config  = Config
         , configUnboxExp                = unboxExp }
 
 
--- | Get the representation of some type of kind Data.
---
+-- | Get the representation of some type of data type.
 --   If the type does not have kind Data then you'll get a bogus result.
 repOfType :: Type Name -> Rep
 repOfType tt
@@ -106,8 +105,8 @@ boxLiteral a nLit
         , Just tResult <- takeTypeBoxed tLit
         = Just 
         $ xCastConvert a
-                tResult tLit 
-                (XVar a (UPrim nLit tLit))
+                tLit tResult
+                (XCon a (DaConPrim nLit tLit))
 
         | otherwise
         = Nothing
@@ -118,7 +117,7 @@ boxExp   :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 boxExp a xx tt
         | Just tBx      <- takeTypeBoxed tt
         , Just tUx      <- takeTypeUnboxed tt
-        = Just $ xCastConvert a tBx tUx xx
+        = Just $ xCastConvert a tUx tBx xx
 
         | otherwise     = Nothing
 
@@ -128,7 +127,7 @@ unboxExp :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 unboxExp a xx tt
         | Just tBx      <- takeTypeBoxed tt
         , Just tUx      <- takeTypeUnboxed tt
-        = Just $ xCastConvert a tUx tBx xx
+        = Just $ xCastConvert a tBx tUx xx
 
         | otherwise     = Nothing
 
