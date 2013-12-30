@@ -88,7 +88,7 @@ convertT' isPrimType kenv tt                                    -- TODO: isPrimT
         -- Convert applications.
         TApp{}  
          -- Strip off effect and closure information.
-         |  Just (t1, _, _, t2)                 <- takeTFunEC tt
+         |  Just (t1, t2)                       <- takeTFun tt
          -> liftM2 tFunPE (down t1) (down t2)
 
          -- Witness application are passed through to Salt.
