@@ -2,6 +2,6 @@
 :to-salt..
 module Test where
 foo (x : Nat#) : Nat#
- = add# 2 3
+ = add# 2 (add# 3 x)
 ;;
 

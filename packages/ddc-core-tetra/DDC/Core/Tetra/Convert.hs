@@ -39,7 +39,9 @@ import Data.Maybe
 --      fully named with no deBruijn indices,
 --      have all functions defined at top-level,
 --      have type annotations on every bound variable and constructor,
---      be a-normalised. 
+--      be a-normalised,
+--      have saturated function applications,
+--      not have over-applied function applications.
 --      If not then `Error`.
 --
 --   The output code contains:
@@ -334,19 +336,22 @@ convertExpX ctx pp defs kenv tenv xx
                 return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
                                   x'
 
-        -- Data constructor applications.
-        -- TODO: check that data constructors are fully applied.
+        
+        -- Fully applied data constructor applications.
+        -- TODO: handle user defined constructors.
         XApp a xa xb
          | (x1, xsArgs)         <- takeXApps1 xa xb
-         , XCon _ dc <- x1
+         , XCon _ dc            <- x1
+         , Just tCon            <- takeTypeOfDaCon dc
+         , length xsArgs == arityOfType tCon
          -> downCtorAppX a dc xsArgs
 
 
         -- Primitive operations.
-        -- TODO: check that primops are fully applied.
         XApp a xa xb
-         | (x1, xsArgs)          <- takeXApps1 xa xb
-         , XVar _ UPrim{}        <- x1
+         | (x1, xsArgs)           <- takeXApps1 xa xb
+         , XVar _ (UPrim _ tPrim) <- x1
+         , length xsArgs == arityOfType tPrim
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downPrimArgX xsArgs
                 return $ xApps (annotTail a) x1' xsArgs'
@@ -358,12 +363,19 @@ convertExpX ctx pp defs kenv tenv xx
         --
         --  ISSUE #283: Lite to Salt transform doesn't check for partial application
         --
-        --  TODO: ditch type arguments that don't have region kind.
-        --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
-         -> do  x1'     <- downArgX x1
-                xsArgs' <- mapM downArgX xsArgs
+         -> do  
+                let keepArg x
+                        = case x of
+                           XType a _   -> isRegionKind (annotType a)
+                           XWitness{}  -> False
+                           _           -> True 
+
+                x1'     <- downArgX x1
+                xsArgs' <- mapM downArgX 
+                        $  filter keepArg xsArgs
+                
                 return  $ xApps a' x1' xsArgs'
 
 
@@ -439,12 +451,9 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorNotNormalized "Unexpected type argument."
 
 
-        -- Witnesses can only appear as the arguments to function applications.
-        XWitness (AnTEC _ _ _ a') w      
-         | ExpArg <- ctx  
-         -> liftM (XWitness a') (convertWitnessX kenv w)
-         
-         | otherwise      
+        -- We shouldn't find any naked types.
+        -- TODO: handle these in the XApp case above.
+        XWitness{}
          -> throw $ ErrorNotNormalized "Unexpected witness expression."
 
 
@@ -467,7 +476,12 @@ convertPrimArgX ctx pp defs kenv tenv xx
          -> do  t'      <- convertRepableT kenv t
                 return  $ XType (annotTail a) t'
 
+        XWitness a w
+         -> do  w'      <- convertWitnessX kenv w
+                return  $ XWitness (annotTail a) w'
+
         _ -> convertExpX ctx pp defs kenv tenv xx
+
 
 -------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.

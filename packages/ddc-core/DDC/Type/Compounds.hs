@@ -566,6 +566,9 @@ takeTFunAllArgResult tt
 
 -- | Determine the arity of an expression by looking at its type.
 --   Count all the function arrows, and foralls.
+--
+--   This assumes the type is in prenex form, meaning that all the quantifiers
+--   are at the front.
 arityOfType :: Type n -> Int
 arityOfType tt
  = case tt of
