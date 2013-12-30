@@ -1,6 +1,3 @@
-:set SuppressImports
-:set Dump
-
 -- Simple Functions.
 :to-salt..
 module Test where

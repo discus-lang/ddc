@@ -141,7 +141,7 @@ convertExportM
 
 convertExportM (n, t)
  = do   n'      <- convertBindNameM n
-        t'      <- convertT Env.empty t
+        t'      <- convertRepableT Env.empty t
         return  (n', t')
 
 
@@ -153,7 +153,7 @@ convertImportM
 convertImportM (n, (qn, t))
  = do   n'      <- convertBindNameM n
         qn'     <- convertQualNameM qn
-        t'      <- convertT Env.empty t
+        t'      <- convertRepableT Env.empty t
         return  (n', (qn', t'))
 
 
@@ -195,6 +195,7 @@ convertExpX
 
 convertExpX ctx pp defs kenv tenv xx
  = let downArgX     = convertExpX     ExpArg pp defs kenv tenv
+       downPrimArgX = convertPrimArgX ExpArg pp defs kenv tenv
        downCtorAppX = convertCtorAppX pp defs kenv tenv
    in case xx of
 
@@ -204,7 +205,7 @@ convertExpX ctx pp defs kenv tenv xx
 
         XVar a u
          -> do  let a'  = annotTail a
-                u'      <- convertU u
+                u'      <- convertValueU u
                 return  $  XVar a' u'
 
         XCon a u
@@ -212,18 +213,18 @@ convertExpX ctx pp defs kenv tenv xx
                 xx'     <- convertCtor pp defs kenv tenv a' u
                 return  xx'
 
-        -- Type abstractions can only appear at the top-level of a function.
-        --   We keep region and data type lambdas, but ditch the others
-        --   as they're not needed in Core Salt code.
+        -- Type lambdas can only appear at the top-level of a function.
+        --   We keep region lambdas but ditch the others. Polymorphic values
+        --   are represented in generic boxed form, so we never need to 
+        --   build a type abstraction of some other kind.
         XLAM a b x
          | ExpFun       <- ctx
-         ,   (isRegionKind $ typeOfBind b)
-          || (isDataKind   $ typeOfBind b)
+         , isRegionKind $ typeOfBind b
          -> do  let a'    =  annotTail a
-                b'        <- convertB kenv b
+                b'        <- convertTypeB b
 
                 let kenv' =  Env.extend b kenv
-                x'        <- convertExpX ctx pp defs kenv' tenv x
+                x'        <- convertExpX  ctx pp defs kenv' tenv x
 
                 return $ XLAM a' b' x'
 
@@ -244,14 +245,14 @@ convertExpX ctx pp defs kenv tenv xx
                 Just UniverseData    
                  -> liftM3 XLam 
                         (return $ annotTail a) 
-                        (convertB kenv b) 
-                        (convertExpX ctx pp defs kenv tenv' x)
+                        (convertValueB kenv b) 
+                        (convertExpX   ctx pp defs kenv tenv' x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
-                        (convertB kenv b)
-                        (convertExpX ctx pp defs kenv tenv' x)
+                        (convertValueB kenv b)
+                        (convertExpX   ctx pp defs kenv tenv' x)
 
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
@@ -259,10 +260,21 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorMalformed 
                   $ "Cannot convert XLam in this context " ++ show ctx
 
-        
+
+        -- Region application.
+        --   These are passed through to the Salt language.
+        XApp a1 x1 (XType a2@(AnTEC k _ _ _) t2)
+         | isRegionKind k
+         -> do  
+                x1'     <- downArgX x1
+                t2'     <- convertRegionT kenv t2
+                return  $ XApp (annotTail a1) x1' 
+                               (XType (annotTail a2) t2')
+
+
         -- Boxing of literal values.
-        -- We fake-up a data-type declaration so we can use the same data layout
-        -- code as for used-defined types.
+        --   We fake-up a data-type declaration so we can use the same data layout
+        --   code as for used-defined types.
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tBIx, XType _ tBx, XCon _ u]) <- takeXPrimApps xx
@@ -272,16 +284,16 @@ convertExpX ctx pp defs kenv tenv xx
          , Just dc      <- makeDataCtorForBoxableIndexType tBIx
          -> do  
                 let a'  = annotTail a
-                xArg'   <- convertCtor pp defs kenv tenv a' u
-                tBIx'   <- convertT kenv tBIx
+                xArg'   <- convertCtor   pp defs kenv tenv a' u
+                tBIx'   <- convertIndexT tBIx
 
                 constructData pp kenv tenv a'
                         dt dc A.rTop [xArg'] [tBIx']
 
 
         -- Boxing of unboxed values.
-        -- We fake-up a data-type declaration so we can use the same data layout
-        -- code as for user-defined types.
+        --   We fake-up a data-type declaration so we can use the same data layout
+        --   code as for user-defined types.
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tUx, XType _ tBx, xArg])      <- takeXPrimApps xx
@@ -293,15 +305,15 @@ convertExpX ctx pp defs kenv tenv xx
          -> do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertT kenv tBIx
+                tBIx'   <- convertIndexT tBIx
 
                 constructData pp kenv tenv a'
                         dt dc A.rTop [xArg'] [tBIx']
 
 
         -- Unboxing of boxed values.
-        -- We fake-up a data-type declaration so we can use the same data layout
-        -- code as for used-defined types.
+        --   We fake-up a data-type declaration so we can use the same data layout
+        --   code as for used-defined types.
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
@@ -312,8 +324,8 @@ convertExpX ctx pp defs kenv tenv xx
          -> do
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertT kenv tBIx
-                tBx'    <- convertT kenv tBx
+                tBIx'   <- convertIndexT   tBIx
+                tBx'    <- convertRepableT kenv tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
@@ -336,7 +348,7 @@ convertExpX ctx pp defs kenv tenv xx
          | (x1, xsArgs)          <- takeXApps1 xa xb
          , XVar _ UPrim{}        <- x1
          -> do  x1'     <- downArgX x1
-                xsArgs' <- mapM downArgX xsArgs
+                xsArgs' <- mapM downPrimArgX xsArgs
                 return $ xApps (annotTail a) x1' xsArgs'
 
 
@@ -345,6 +357,8 @@ convertExpX ctx pp defs kenv tenv xx
         --  At least check for the other cases.
         --
         --  ISSUE #283: Lite to Salt transform doesn't check for partial application
+        --
+        --  TODO: ditch type arguments that don't have region kind.
         --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
@@ -387,8 +401,8 @@ convertExpX ctx pp defs kenv tenv xx
         --   The branch is against the constructor tag.
         XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon _ : _                           <- takeTApps tScrut
-         -> do  x'      <- convertExpX ExpArg pp defs kenv tenv xScrut
-                tX'     <- convertT kenv tX
+         -> do  x'      <- convertExpX     ExpArg pp defs kenv tenv xScrut
+                tX'     <- convertRepableT kenv tX
                 alts'   <- mapM (convertAlt (min ctx ExpBody) pp 
                                         defs kenv tenv a' uScrut tScrut) 
                                 alts
@@ -400,7 +414,7 @@ convertExpX ctx pp defs kenv tenv xx
                         | otherwise     
                         = [AAlt PDefault (A.xFail a' tX')]
 
-                tScrut'    <- convertT kenv tScrut
+                tScrut'    <- convertRepableT kenv tScrut
                 let tPrime = fromMaybe A.rTop
                            $ takePrimeRegion tScrut'
 
@@ -419,13 +433,10 @@ convertExpX ctx pp defs kenv tenv xx
          -> convertExpX (min ctx ExpBody) pp defs kenv tenv x
 
 
-        -- Types can only appear as the arguments in function applications.
-        XType    (AnTEC _ _ _ a') t
-         | ExpArg <- ctx  
-         -> liftM (XType a')    (convertT kenv t)
-
-         | otherwise      
-         -> throw $ ErrorNotNormalized "Unexpected type expresison."
+        -- We shouldn't find any naked types.
+        -- These are handled above in the XApp case.
+        XType{}
+         -> throw $ ErrorNotNormalized "Unexpected type argument."
 
 
         -- Witnesses can only appear as the arguments to function applications.
@@ -436,6 +447,27 @@ convertExpX ctx pp defs kenv tenv xx
          | otherwise      
          -> throw $ ErrorNotNormalized "Unexpected witness expression."
 
+
+-- | Although we ditch type arguments when applied to general functions,
+--   we need to convert the ones applied directly to primops, 
+--   as the primops are specified polytypically.
+convertPrimArgX 
+        :: Show a 
+        => ExpContext                   -- ^ What context we're converting in.
+        -> Platform                     -- ^ Platform specification.
+        -> DataDefs E.Name              -- ^ Data type definitions.
+        -> KindEnv  E.Name              -- ^ Kind environment.
+        -> TypeEnv  E.Name              -- ^ Type environment.
+        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
+        -> ConvertM a (Exp a A.Name)
+
+convertPrimArgX ctx pp defs kenv tenv xx
+ = case xx of
+        XType a t
+         -> do  t'      <- convertRepableT kenv t
+                return  $ XType (annotTail a) t'
+
+        _ -> convertExpX ctx pp defs kenv tenv xx
 
 -------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.
@@ -451,26 +483,27 @@ convertLetsX
 convertLetsX pp defs kenv tenv lts
  = case lts of
         LRec bxs
-         -> do  let tenv'       = Env.extends (map fst bxs) tenv
-                let (bs, xs)    = unzip bxs
-                bs'             <- mapM (convertB kenv) bs
-                xs'             <- mapM (convertExpX ExpFun pp defs kenv tenv') xs
+         -> do  let tenv'    = Env.extends (map fst bxs) tenv
+                let (bs, xs) = unzip bxs
+                bs'          <- mapM (convertValueB kenv) bs
+                xs'          <- mapM (convertExpX ExpFun pp defs kenv tenv') xs
                 return  $ LRec $ zip bs' xs'
 
         LLet b x1
-         -> do  let tenv'       = Env.extend b tenv
-                b'              <- convertB       kenv b
-                x1'             <- convertExpX ExpBind pp defs kenv tenv' x1
+         -> do  let tenv'    = Env.extend b tenv
+                b'           <- convertValueB kenv b
+                x1'          <- convertExpX  ExpBind pp defs kenv tenv' x1
                 return  $ LLet b' x1'
 
-        LPrivate b mt bs
-         -> do  b'              <- mapM (convertB kenv) b
-                let kenv'       = Env.extends b kenv
-                bs'             <- mapM (convertB kenv') bs
-                mt'             <- case mt of
-                                        Nothing -> return Nothing
-                                        Just t  -> liftM Just $ convertT kenv t
-                return  $ LPrivate b' mt' bs'
+        -- TODO: convert witness bindings
+        LPrivate b mt _bs
+         -> do  b'           <- mapM convertTypeB b
+--              let kenv'    = Env.extends b kenv
+--              bs'          <- mapM (convertTypeB kenv') bs    
+                mt'          <- case mt of
+                                 Nothing -> return Nothing
+                                 Just t  -> liftM Just $ convertRegionT kenv t
+                return  $ LPrivate b' mt' [] 
   
         LWithRegion{}
          ->     throw $ ErrorMalformed "Cannot convert LWithRegion construct."
@@ -478,6 +511,8 @@ convertLetsX pp defs kenv tenv lts
 
 -------------------------------------------------------------------------------
 -- | Convert a witness expression to Salt
+--   TODO: Witness conversion is currently broken.
+--         We need to handle conversion of witness types.
 convertWitnessX
         :: Show a
         => KindEnv E.Name                   -- ^ Kind enviornment
@@ -487,11 +522,11 @@ convertWitnessX
 convertWitnessX kenv ww
  = let down = convertWitnessX kenv
    in  case ww of
-            WVar  a n     -> liftM  (WVar  $ annotTail a) (convertU n)
+            WVar  a n     -> liftM  (WVar  $ annotTail a) (convertValueU n)
             WCon  a wc    -> liftM  (WCon  $ annotTail a) (convertWiConX kenv wc)
             WApp  a w1 w2 -> liftM2 (WApp  $ annotTail a) (down w1) (down w2)
             WJoin a w1 w2 -> liftM2 (WApp  $ annotTail a) (down w1) (down w2)
-            WType a t     -> liftM  (WType $ annotTail a) (convertT kenv t)
+            WType a t     -> liftM  (WType $ annotTail a) (convertK t)
 
 
 -- | Conert a witness constructor to Salt.
@@ -507,7 +542,7 @@ convertWiConX kenv wicon
          -> return $ WiConBuiltin w
 
         WiConBound n t 
-         -> liftM2 WiConBound (convertU n) (convertT kenv t)
+         -> liftM2 WiConBound (convertTypeU n) (convertRepableT kenv t)
 
 
 -------------------------------------------------------------------------------
@@ -562,7 +597,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                      XType _ (TVar u) : _
                       | Just tu      <- Env.lookup u kenv
                       -> if isRegionKind tu
-                          then do u'      <- convertU u
+                          then do u'      <- convertTypeU u
                                   return  $ TVar u'
                           else return A.rTop
 
@@ -573,7 +608,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                 -- Convert the types of each field.
                 let makeFieldType x
                         = let a' = annotOfExp x 
-                          in  convertT kenv (annotType a')
+                          in  convertRepableT kenv (annotType a')
 
                 xsArgs' <- mapM (convertExpX ExpArg pp defs kenv tenv) xsArgs
                 tsArgs' <- mapM makeFieldType xsArgs
@@ -619,8 +654,8 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 E.NameLitBool{} -> True
                 _               -> False
 
-         -> do  dc'     <- convertDC kenv dc
-                xBody1  <- convertExpX ctx pp defs kenv tenv x
+         -> do  dc'     <- convertDaCon kenv dc
+                xBody1  <- convertExpX  ctx pp defs kenv tenv x
                 return  $ AAlt (PData dc' []) xBody1
 
         -- Match against the unit constructor.
@@ -639,20 +674,20 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
          , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 let tenv'       = Env.extends bsFields tenv 
-                uScrut'         <- convertU uScrut
+                uScrut'         <- convertValueU uScrut
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
                 let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertB kenv) bsFields
+                bsFields'       <- mapM (convertValueB kenv) bsFields
 
                 -- Convert the right of the alternative.
                 xBody1          <- convertExpX ctx pp defs kenv tenv' x
 
                 -- Add let bindings to unpack the constructor.
-                tScrut'         <- convertT kenv tScrut
+                tScrut'         <- convertRepableT kenv tScrut
                 let Just trPrime = takePrimeRegion tScrut'
                 xBody2           <- destructData pp a ctorDef uScrut' trPrime
                                                  bsFields' xBody1

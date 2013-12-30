@@ -81,7 +81,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
                         $ XVar a (UIx 0)
 
         -- Convert the field types.
-        tsFields        <- mapM (convertT kenv) 
+        tsFields        <- mapM (convertRepableT kenv) 
                         $  dataCtorFieldTypes ctorDef
 
         -- We want to write the fields into the newly allocated object.
