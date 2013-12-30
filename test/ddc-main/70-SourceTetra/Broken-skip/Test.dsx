@@ -1,5 +1,17 @@
 
 
+
+-- Case expressions on literals.
+-- Need to unbox scrutinee.
+:to-salt..
+module Test where
+swap (x : Nat#) : Nat#
+ = case x of
+        0       -> 1
+        _       -> 0
+;;
+
+
 -- List map using the S computation type.
 :to-core..
 module Test where
@@ -13,3 +25,5 @@ mapS    [a b : Data] [e : Effect]
         Nil       -> box Nil
         Cons x xs -> Cons (f x) (run mapS f xs)
 ;;
+
+
