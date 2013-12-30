@@ -12,6 +12,21 @@ swap (x : Nat#) : Nat#
 ;;
 
 
+:to-salt..
+module Test where
+
+data Bool where
+        True  : Bool
+        False : Bool
+
+neg (x : Bool) : Bool
+ = case x of
+        True    -> False
+        False   -> True
+;;
+
+
+
 -- List map using the S computation type.
 :to-core..
 module Test where

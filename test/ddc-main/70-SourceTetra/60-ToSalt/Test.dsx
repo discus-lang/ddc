@@ -6,3 +6,13 @@ foo (x : Nat#) : Nat#
  = add# 2 (add# 3 x)
 ;;
 
+
+
+
+:to-salt..
+module Test where
+neg (x : Bool#) : Bool#
+ = case x of
+        True#   -> False#
+        False#  -> True#
+;;
