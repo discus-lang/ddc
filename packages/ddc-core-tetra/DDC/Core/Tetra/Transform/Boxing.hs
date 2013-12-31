@@ -18,46 +18,55 @@ boxingModule mm
 -- | Tetra-specific configuration for boxing transform.
 config :: Config a Name
 config  = Config
-        { configRepOfType               = repOfType
+        { configTypeNeedsBoxing         = typeNeedsBoxing
         , configTakeTypeBoxed           = takeTypeBoxed
         , configTakeTypeUnboxed         = takeTypeUnboxed
-        , configNameIsLiteral           = isNameLit
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
+        , configTypeOfLitName           = takeTypeOfLitName
         , configTypeOfPrimOpName        = takeTypeOfPrimOpName 
-        , configBoxLiteral              = boxLiteral
-        , configBoxExp                  = boxExp
-        , configUnboxExp                = unboxExp }
+        , configBoxedOfValue            = boxedOfValue
+        , configValueOfBoxed            = valueOfBoxed
+        , configBoxedOfUnboxed          = boxedOfUnboxed
+        , configUnboxedOfBoxed          = unboxedOfBoxed }
 
 
--- | Get the representation of some type of data type.
---   If the type does not have kind Data then you'll get a bogus result.
-repOfType :: Type Name -> Rep
-repOfType tt
+-- | Check whether a value of this type needs boxing to make the 
+--   program representational.
+typeNeedsBoxing :: Type Name -> Bool
+typeNeedsBoxing tt
+        -- These types are listed out in full so anyone who adds more 
+        -- constructors to the PrimTyCon type is forced to say whether
+        -- those types refer to unboxed values or not.
+        --
         | Just (NamePrimTyCon n, _)     <- takePrimTyConApps tt
         = case n of
-                PrimTyConVoid           -> RepNone
-                PrimTyConBool           -> RepUnboxed
-                PrimTyConNat            -> RepUnboxed
-                PrimTyConInt            -> RepUnboxed
-                PrimTyConWord{}         -> RepUnboxed
-                PrimTyConFloat{}        -> RepUnboxed
-                PrimTyConVec{}          -> RepNone
-                PrimTyConAddr{}         -> RepUnboxed
-                PrimTyConPtr{}          -> RepNone
-                PrimTyConTag{}          -> RepUnboxed
-                PrimTyConString{}       -> RepUnboxed
+                -- There should never be any value of type Void# being passed
+                -- around, but say they don't need boxing anyway so we don't 
+                -- complicate an already broken program.
+                PrimTyConVoid           -> False
+
+                PrimTyConBool           -> True
+                PrimTyConNat            -> True
+                PrimTyConInt            -> True
+                PrimTyConWord{}         -> True
+                PrimTyConFloat{}        -> True
+                PrimTyConVec{}          -> True
+                PrimTyConAddr{}         -> True
+                PrimTyConPtr{}          -> True
+                PrimTyConTag{}          -> True
+                PrimTyConString{}       -> True
 
         -- These are all higher-kinded type constructors,
         -- with don't have a value-level representation.
         | Just (NameTyConTetra n, _)    <- takePrimTyConApps tt
         = case n of
-                TyConTetraRef{}         -> RepNone
-                TyConTetraTuple{}       -> RepNone
-                TyConTetraB{}           -> RepNone
-                TyConTetraU{}           -> RepNone
+                TyConTetraRef{}         -> False
+                TyConTetraTuple{}       -> False
+                TyConTetraB{}           -> False
+                TyConTetraU{}           -> False
 
         | otherwise
-        = RepBoxed
+        = False
 
 
 -- | Get the boxed version of some type of kind Data.
@@ -98,23 +107,27 @@ isNameOfUnboxedOp nn
         _               -> False
 
 
--- | Convert a literal name to a boxed representation.
-boxLiteral :: a -> Name -> Maybe (Exp a Name)
-boxLiteral a nLit
-        | Just tLit    <- takeTypeOfLitName nLit
-        , Just tResult <- takeTypeBoxed tLit
-        = Just 
-        $ xCastConvert a
-                tLit tResult
-                (XCon a (DaConPrim nLit tLit))
+-- | Wrap a pure value into its boxed representation.
+boxedOfValue :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
+boxedOfValue a xx tt
+        | Just tBx      <- takeTypeBoxed tt
+        = Just $ xCastConvert a tt tBx xx
 
-        | otherwise
-        = Nothing
+        | otherwise     = Nothing
+
+
+-- | Unwrap a boxed value.
+valueOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
+valueOfBoxed a xx tt
+        | Just tBx      <- takeTypeBoxed tt
+        = Just $ xCastConvert a tBx tt xx
+
+        | otherwise     = Nothing
 
 
 -- | Box an expression of the given type.
-boxExp   :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
-boxExp a xx tt
+boxedOfUnboxed  :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
+boxedOfUnboxed a xx tt
         | Just tBx      <- takeTypeBoxed tt
         , Just tUx      <- takeTypeUnboxed tt
         = Just $ xCastConvert a tUx tBx xx
@@ -123,8 +136,8 @@ boxExp a xx tt
 
 
 -- | Unbox an expression of the given type.
-unboxExp :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
-unboxExp a xx tt
+unboxedOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
+unboxedOfBoxed a xx tt
         | Just tBx      <- takeTypeBoxed tt
         , Just tUx      <- takeTypeUnboxed tt
         = Just $ xCastConvert a tBx tUx xx

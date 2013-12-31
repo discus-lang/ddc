@@ -8,8 +8,8 @@ foo (x : Nat#) : Nat#
 
 
 
-
-:to-salt..
+:set Dump
+:to-core..
 module Test where
 neg (x : Bool#) : Bool#
  = case x of

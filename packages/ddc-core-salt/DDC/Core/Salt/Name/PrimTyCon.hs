@@ -25,11 +25,15 @@ data PrimTyCon
         | PrimTyConBool
 
         -- | @Nat#@ natural numbers.
-        --   Enough precision to count every object in the heap.
+        --   Enough precision to count every object in the heap,
+        --   but NOT enough precision to count every byte of memory.
         | PrimTyConNat
 
         -- | @Int#@ signed integers.
-        --   Enough precision to count every object in the heap.
+        --   Enough precision to count every object in the heap,
+        --   but NOT enough precision to count every byte of memory.
+        --   If N is the total number of objects that can exist in the heap,
+        --   then the range of @Int#@ is at least (-N .. +N) inclusive.
         | PrimTyConInt
 
         -- | @WordN#@ machine words of the given width.
@@ -39,13 +43,14 @@ data PrimTyCon
         | PrimTyConFloat  Int
 
         -- | @VecN#@ a packed vector of N values.
-        --   The acceptable values for 'N' and the types this constructor
-        --   can be applied to are implementation dependent.
+        --   This is intended to have kind (Data -> Data), 
+        --   so we use concrete vector types like @Vec4# Word32#@.
         | PrimTyConVec    Int
 
-        -- | @Addr#@ raw machine addresses. Unlike pointers below,
-        --   a raw @Addr#@ need not to refer to memory owned 
-        --   by the current process.
+        -- | @Addr#@ a relative or absolute machine address.
+        --   Enough precision to count every byte of memory.
+        --   Unlike pointers below, an absolute @Addr#@ need not refer to 
+        --   memory owned by the current process.
         | PrimTyConAddr
 
         -- | @Ptr#@ should point to a well-formed object owned by the
@@ -53,6 +58,8 @@ data PrimTyCon
         | PrimTyConPtr
 
         -- | @Tag#@ data constructor tags.
+        --   Enough precision to count every possible alternative of an 
+        --   enumerated type.
         | PrimTyConTag
 
         -- | @String#@ of UTF8 characters.

@@ -1,13 +1,34 @@
--- | Manage boxing in a module.
+-- | Manage representation of numeric values in a module.
 --
---   Given a module that uses primitive types like Nat#, rewrite it to use the
---   explicitly boxed and unboxed versions, like (B# Nat#) and (U# Nat#)
---   respectively. This transform does just enough to make the code well-formed
---   with respect to boxing. Demand-driven optimisations like local unboxing
---   should be done somewhere else.
+--   We use three seprate versions of each numeric type.
+--      Nat#            Numeric index type.
+--      B# Nat#         Boxed representation type.
+--      U# Nat#         Unboxed representation type.
 --
---   Wrap numeric literals:
---       23# 
+--   A numeric index type is the type of pure values like 23#, where "pure value"
+--   means the mathematical value, free from any considerations about how that 
+--   might be represented at runtime in the physical machine.
+--
+--   The Boxed and Unboxed representation types commit to a specific runtime
+--   representation, and have implications for runtime performance and space 
+--   usage of the compiled program.
+--
+--   The boxing transform takes an input program using just pure values and
+--   numeric index types, and refines it to a program that commits to particular
+--   representations of those values. In particular, we commit to a particular
+--   representation for function arguments and results, which makes the program
+--   adhere to a function calling convention that follow-on transformations
+--   to lower level languages (like Core Salt) can deal with.
+--
+--   This Boxing transform should do  just enough to make the code well-formed
+--   with respect to runtime representation. Demand-driven optimisations like
+--   local unboxing should be done in follow-on transformations.
+--
+--   We make the following representation commitments, so that the default
+--   representation is boxed.
+--
+--   Literal values are wrapped into their boxed representation:
+--        23# 
 --     => convert# [B# Nat#] [Nat#] 23#
 --
 --   Use unboxed versions of primitive operators:
@@ -16,27 +37,25 @@
 --                 (add# [U# Nat#] (convert# [U# Nat#] [B# Nat#] x)
 --                                 (convert# [U# Nat#] [B# Nat#] y))
 --
---   All other occurrences of primitive types such as Nat# are converted to their
---   boxed versions (like (B# Nat)).
+--   Case scrutinees are unwrapped when matching against literal patterns:
+--        case x of { 0# -> ... }
+--     => case convert [B# Nat#] [Nat#] x of { 0# -> ... }
 --
--- [Note: Boxed vs Unboxed vs Unrepresented]
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- A boxed (B# Nat#) is represented as a heap allocated object, which can be
--- referred to generically by a pointer. An unboxed (U# Nat#) is a primitive 
--- value that is passed around directly (like in a register), but does not 
--- appear naked in the heap. An unrepresented Nat# is a pure value that can 
--- be manipulated in the core program but does not exist directly at runtime.
--- When we wrap literals like (convert# [B# Nat#] [Nat#] 23#) we choose a 
--- representation for the pure literal value.
+--   After performing this transformation the program is said
+--   to "use representational types", or be in "representational form".
 --
--- [Note: Boxing and Partial Application]
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- We do not allow unboxed types in the source program because we don't want to
--- deal with partial applications of functions to unboxed values. With our
--- current setup we always have a version of each function that accepts boxed
--- values, so we never need to do generic application involving unboxed values.
--- Fast-path function specialisations that take unboxed parameters should be
--- created separately, and not replace the existing slow-path, fully boxed version.
+--  [Note: Boxing and Partial Application]
+--  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--  Unlike in Haskell, we do not allow explictly unboxed types in the source
+--  program because we don't want to deal with partial applications of
+--  functions to unboxed values. With our current setup we always have a version
+--  of each function that accepts boxed values, so we never need to do generic
+--  application involving unboxed values. Fast-path function specialisations
+--  that take unboxed parameters should be created separately, and not replace
+--  the existing slow-path, fully boxed version. Taking this approach is possible
+--  in a strict language because the boxed and unboxed values have the same 
+--  semantic meaning. Boxing of values does not imply "lifting" of the associated
+--  semantic domain.
 --
 module DDC.Core.Transform.Boxing
         ( Rep           (..)
@@ -68,36 +87,45 @@ data Rep
 
 data Config a n
         = Config
-        { -- | Get the representation of some type.
-          --   This only needs to work for types of kind Data.
-          configRepOfType        :: Type n -> Rep
+        { -- | Values of this type needs boxing to make the program
+          --   representational. This will only be passed types of kind Data.
+          configTypeNeedsBoxing :: Type n -> Bool
 
           -- | Get the boxed version of some data type, if any.
-        , configTakeTypeBoxed    :: Type n -> Maybe (Type n) 
+          --   This will only be passed types where typeNeedsBoxing returns True.
+        , configTakeTypeBoxed   :: Type n -> Maybe (Type n) 
 
           -- | Get the unboxed version of some data type, if any.
-        , configTakeTypeUnboxed  :: Type n -> Maybe (Type n) 
-
-          -- | Check if the constructor with this name is a literal.
-        , configNameIsLiteral    :: n -> Bool 
+          --   This will only be passed types where typeNeedsBoxing returns True.
+        , configTakeTypeUnboxed :: Type n -> Maybe (Type n) 
 
           -- | Check if the primop with this name works on unboxed values
           --   directly. Operators where this function returns False are assumed
           --   to take boxed values for every argument.
-        , configNameIsUnboxedOp  :: n -> Bool 
+        , configNameIsUnboxedOp :: n -> Bool 
 
-          -- | Take the type of a primitive operator, if it is one.
+          -- | Take the type of a literal name, if there is one.
+        , configTypeOfLitName   :: n -> Maybe (Type n)
+
+          -- | Take the type of a primitive operator name, if it is one.
           --   The primops can be polytypic, but must have prenex rank-1 types.
         , configTypeOfPrimOpName :: n -> Maybe (Type n) 
 
-          -- | Box a literal expression.
-        , configBoxLiteral       :: a -> n -> Maybe (Exp a n) 
+          -- | Wrap a value of the given index type.
+          --   This will only be passed types where typeNeedsBoxing returns True.
+        , configBoxedOfValue    :: a -> Exp a n -> Type n -> Maybe (Exp a n) 
 
-          -- | Box an expression of the given type.
-        , configBoxExp           :: a -> Exp a n -> Type n -> Maybe (Exp a n)
+          -- | Unwrap a boxed value of the given index type.
+          --   This will only be passed types where typeNeedsBoxing returns True.
+        , configValueOfBoxed    :: a -> Exp a n -> Type n -> Maybe (Exp a n)
 
-          -- | Unbox an expression of the given type.
-        , configUnboxExp         :: a -> Exp a n -> Type n -> Maybe (Exp a n) }
+          -- | Box an unboxed value of the given index type.
+          --   This will only be passed types where typeNeedsBoxing returns True.
+        , configBoxedOfUnboxed  :: a -> Exp a n -> Type n -> Maybe (Exp a n)
+
+          -- | Unbox a boxed value of the given index type.
+          --   This will only be passed types where typeNeedsBoxing returns True.
+        , configUnboxedOfBoxed  :: a -> Exp a n -> Type n -> Maybe (Exp a n) }
 
 
 class Boxing (c :: * -> * -> *) where
@@ -121,12 +149,13 @@ instance Boxing Exp where
         -- Convert literals to their boxed representations.
         XCon a dc
          |  Just dcn    <- takeNameOfDaCon dc
-         ,  configNameIsLiteral config dcn
-         ,  Just xx'    <- configBoxLiteral config a dcn
+         ,  Just tLit   <- configTypeOfLitName config dcn
+         ,  configTypeNeedsBoxing config tLit
+         ,  Just xx'    <- configBoxedOfValue  config a xx tLit
          -> xx'
 
-        -- Wrap primops in conversions to unbox the arguments and box
-        -- up the result.
+        -- When applying a primop that works on unboxed values, 
+        -- unbox its arguments and then rebox the result.
         XApp a _ _
          -- Split the application of a primop into its name and arguments.
          -- The arguments here include type arguments as well.
@@ -143,30 +172,35 @@ instance Boxing Exp where
          , Just tPrimInst       <- instantiateTs tPrim tsArgs
          , (tsArgsInst, tResultInst)
                                 <- takeTFunArgResult tPrimInst
-
            -- We must end up with a type of each argument.
          , length xsArgs == length tsArgsInst
          -> let 
                 -- Unbox arguments as nessesary.
                 xsArgs' 
-                 = [ case configRepOfType config tArg of
-                        RepNone    -> xArg
-                        RepBoxed   -> xArg
-                        RepUnboxed -> fromMaybe xArg 
-                                       (configUnboxExp config a xArg tArg)
+                 = [ if configTypeNeedsBoxing config tArg 
+                        then fromMaybe xArg 
+                                       (configUnboxedOfBoxed config a xArg tArg)
+                        else xArg
                         | xArg <- xsArgs
                         | tArg <- tsArgsInst ]
 
                 -- Rebox the result as nessesary.
                 fResult x
-                 = case configRepOfType config tResultInst of
-                        RepNone    -> x
-                        RepBoxed   -> x
-                        RepUnboxed -> fromMaybe x
-                                        (configBoxExp  config a x tResultInst)
+                 = if configTypeNeedsBoxing config tResultInst
+                        then fromMaybe x
+                                       (configBoxedOfUnboxed  config a x tResultInst)
+                        else x
             in  fResult 
                  $ xApps a xFn  (  [XType a t | t <- tsArgsUnboxed] 
                                 ++ map down xsArgs')
+
+        -- Unrap scrutinees when matching against literal patterns.
+        XCase a xScrut alts
+         | p : _        <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
+         , Just tLit    <- configTypeOfLitName config (daConName p)
+         , configTypeNeedsBoxing config tLit
+         , Just xScrut' <- configValueOfBoxed  config a (down xScrut) tLit
+         -> XCase a xScrut' (map down alts)
 
         -- Boilerplate
         XVar{}          -> xx
@@ -221,7 +255,7 @@ boxingB config bb
 -- | Manage boxing in a Type.
 boxingT :: Config a n -> Type n -> Type n
 boxingT config tt
-  | RepUnboxed          <- configRepOfType     config tt
+  | configTypeNeedsBoxing config tt
   , Just tResult        <- configTakeTypeBoxed config tt
   = tResult
 

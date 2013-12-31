@@ -5,13 +5,13 @@ module DDC.Core.Tetra.Prim
         , isNameHole
         , isNameLit
         , readName
+        , takeTypeOfLitName
         , takeTypeOfPrimOpName
 
           -- * Baked-in type constructors.
         , TyConTetra     (..)
         , readTyConTetra
         , kindTyConTetra
-        , takeTypeOfLitName
 
           -- * Baked-in data constructors.
         , DaConTetra     (..)
@@ -158,6 +158,17 @@ readName str
 
         | otherwise
         = Nothing
+
+
+-- | Get the type associated with a literal name.
+takeTypeOfLitName :: Name -> Maybe (Type Name)
+takeTypeOfLitName nn
+ = case nn of
+        NameLitBool{}           -> Just tBool
+        NameLitNat{}            -> Just tNat
+        NameLitInt{}            -> Just tInt
+        NameLitWord _ bits      -> Just (tWord bits)
+        _                       -> Nothing
 
 
 -- | Take the type of a primitive operator.
