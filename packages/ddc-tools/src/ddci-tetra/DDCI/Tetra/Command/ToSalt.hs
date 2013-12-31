@@ -6,7 +6,9 @@ import DDC.Interface.Source
 import DDC.Driver.Stage
 import DDC.Build.Pipeline   
 import DDC.Base.Pretty
-import qualified DDC.Driver.Config      as D
+import qualified DDC.Build.Language.Salt        as BA
+import qualified DDC.Driver.Config              as D
+import qualified DDC.Core.Check                 as C
 
 
 -- Convert Disciple Core Tetra to Disciple Core Salt.
@@ -22,7 +24,8 @@ cmdToSalt _state config source str
          $ stageSourceTetraLoad config source
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
-         [ PipeCoreOutput pmode SinkStdout ]]]
+         [ PipeCoreCheck        BA.fragment C.Recon
+         [ PipeCoreOutput pmode SinkStdout ]]]]
 
    in do
         errs    <- pipeLoad

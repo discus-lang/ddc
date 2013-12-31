@@ -1,3 +1,6 @@
+:set SuppressLetTypes
+:set SuppressImports
+
 
 -- Simple Functions.
 :to-salt..
@@ -7,12 +10,46 @@ foo (x : Nat#) : Nat#
 ;;
 
 
-
-:set Dump
-:to-core..
+-- Match aginst literal Bools.
+:to-salt..
 module Test where
 neg (x : Bool#) : Bool#
  = case x of
-        True#   -> False#
-        False#  -> True#
+        True    -> False
+        False   -> True
 ;;
+
+
+-- Match against literal Nat.
+:to-salt..
+module Test where
+foo (x : Nat#) : Nat#
+ = case x of
+        5       -> 6
+        6       -> 7
+        _       -> 0
+;;
+
+
+-- Nested case expression.
+:to-salt..
+module Test where
+foo (x : Nat#) (y : Nat#) : Nat#
+ = case x of
+        0       -> case y of
+                        0       -> 1
+                        _       -> 0
+        _       -> 0
+;;
+
+
+-- Full application of top-level function.
+:to-salt..
+module Test where
+add (x : Nat#) (y : Nat#) : Nat#
+ = add# x y
+
+foo (x : Nat#) : Nat#
+ = add x 5
+;;
+

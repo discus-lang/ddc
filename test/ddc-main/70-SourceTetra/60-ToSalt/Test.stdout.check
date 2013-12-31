@@ -1,0 +1,201 @@
+ok
+ok
+
+
+-- Simple Functions.
+module Test with
+letrec {
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      let x1
+            = let ^ = allocRawSmall [rT] TAG0# 4# in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 3# in
+              ^1 in
+      let x2
+            = let ^ = x1 in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      let x3
+            = let ^ = x in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      let x4 = add# [Nat#] x2 x3 in
+      let x0
+            = let ^ = allocRawSmall [rT] TAG0# 4# in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x4 in
+              ^1 in
+      let x5
+            = let ^ = allocRawSmall [rT] TAG0# 4# in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 2# in
+              ^1 in
+      let x6
+            = let ^ = x5 in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      let x7
+            = let ^ = x0 in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      let x8 = add# [Nat#] x6 x7 in
+      let ^ = allocRawSmall [rT] TAG0# 4# in
+      let ^ = payloadOfRawSmall [rT] ^0 in
+      let _
+            = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x8 in
+      ^1
+}
+
+
+-- Match aginst literal Bools.
+module Test with
+letrec {
+  neg : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      let x0
+            = let ^ = x in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# in
+              ^0 in
+      case x0 of {
+        True#  
+         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
+            ^1;
+        False#  
+         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# True# in
+            ^1
+      }
+}
+
+
+-- Match against literal Nat.
+module Test with
+letrec {
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      let x0
+            = let ^ = x in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      case x0 of {
+        5#  
+         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 6# in
+            ^1;
+        6#  
+         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 7# in
+            ^1;
+        _ 
+         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+            ^1
+      }
+}
+
+
+-- Nested case expression.
+module Test with
+letrec {
+  foo : Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = \(x y : Ptr# rT Obj).
+      let x0
+            = let ^ = x in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      case x0 of {
+        0#  
+         -> let x1
+                  = let ^ = y in
+                    let ^ = payloadOfRawSmall [rT] ^0 in
+                    let ^
+                          = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    ^0 in
+            case x1 of {
+              0#  
+               -> let ^ = allocRawSmall [rT] TAG0# 4# in
+                  let ^ = payloadOfRawSmall [rT] ^0 in
+                  let _
+                        = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+                  ^1;
+              _ 
+               -> let ^ = allocRawSmall [rT] TAG0# 4# in
+                  let ^ = payloadOfRawSmall [rT] ^0 in
+                  let _
+                        = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                  ^1
+            };
+        _ 
+         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+            ^1
+      }
+}
+
+
+-- Full application of top-level function.
+module Test with
+letrec {
+  add : Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = \(x y : Ptr# rT Obj).
+      let x0
+            = let ^ = x in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      let x1
+            = let ^ = y in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      let x2 = add# [Nat#] x0 x1 in
+      let ^ = allocRawSmall [rT] TAG0# 4# in
+      let ^ = payloadOfRawSmall [rT] ^0 in
+      let _
+            = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x2 in
+      ^1;
+  
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      let x3
+            = let ^ = allocRawSmall [rT] TAG0# 4# in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
+              ^1 in
+      add x x3
+}
+

@@ -14,7 +14,8 @@
 --   data types.
 --
 module DDC.Core.Tetra.Convert.Boxing
-        ( isBoxedRepType
+        ( isSomeRepType
+        , isBoxedRepType
         , isUnboxedRepType
         , isBoxableIndexType
         , takeIndexOfBoxedRepType
@@ -28,6 +29,13 @@ import DDC.Type.Exp
 
 
 -- Predicates -----------------------------------------------------------------
+-- | Check if this is a representable type.
+--   This is the union of `isBoxedRepType` and `isUnboxedRepType`.
+isSomeRepType :: Type Name -> Bool
+isSomeRepType tt
+        = isBoxedRepType tt || isUnboxedRepType tt
+
+
 -- | Check if some representation type is boxed.
 --   The type must have kind Data, otherwise bogus result.
 --
@@ -35,6 +43,7 @@ import DDC.Type.Exp
 --   Boxing transform, which works out how to represent everything.
 --
 --   The boxed representation types are:
+--      1) 'a -> b'     -- the function type
 --      1) 'a'          -- polymorphic types.
 --      2) 'forall ...' -- abstract types.
 --      3) '()'         -- the unit data type.
@@ -43,6 +52,9 @@ import DDC.Type.Exp
 --
 isBoxedRepType :: Type Name -> Bool
 isBoxedRepType tt
+        | Just _        <- takeTFun tt
+        = True
+
         | TVar{}        <- tt   = True
         | TForall{}     <- tt   = True
 
@@ -100,6 +112,7 @@ isBoxableIndexType :: Type Name -> Bool
 isBoxableIndexType tt
  | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
  = case n of
+        PrimTyConBool           -> True
         PrimTyConNat            -> True
         PrimTyConInt            -> True
         PrimTyConWord  _        -> True

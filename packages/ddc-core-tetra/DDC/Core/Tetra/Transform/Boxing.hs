@@ -126,7 +126,7 @@ valueOfBoxed a xx tt
 
 
 -- | Box an expression of the given type.
-boxedOfUnboxed  :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
+boxedOfUnboxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 boxedOfUnboxed a xx tt
         | Just tBx      <- takeTypeBoxed tt
         , Just tUx      <- takeTypeUnboxed tt

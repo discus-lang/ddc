@@ -31,6 +31,7 @@ import qualified Data.Map                as Map
 import Control.Monad
 import Data.Maybe
 
+import DDC.Base.Pretty
 
 -- | Convert a Core Tetra module to Core Salt.
 --
@@ -201,6 +202,7 @@ convertExpX ctx pp defs kenv tenv xx
        downCtorAppX = convertCtorAppX pp defs kenv tenv
    in case xx of
 
+        ---------------------------------------------------
         XVar _ UIx{}
          -> throw $ ErrorMalformed 
                   $ "Cannot convert program with anonymous value binders."
@@ -215,6 +217,7 @@ convertExpX ctx pp defs kenv tenv xx
                 xx'     <- convertCtor pp defs kenv tenv a' u
                 return  xx'
 
+        ---------------------------------------------------
         -- Type lambdas can only appear at the top-level of a function.
         --   We keep region lambdas but ditch the others. Polymorphic values
         --   are represented in generic boxed form, so we never need to 
@@ -239,6 +242,7 @@ convertExpX ctx pp defs kenv tenv xx
                   $ "Cannot convert XLAM in this context " ++ show ctx
 
 
+        ---------------------------------------------------
         -- Function abstractions can only appear at the top-level of a fucntion.
         XLam a b x
          | ExpFun       <- ctx
@@ -247,13 +251,13 @@ convertExpX ctx pp defs kenv tenv xx
                 Just UniverseData    
                  -> liftM3 XLam 
                         (return $ annotTail a) 
-                        (convertValueB kenv b) 
+                        (convertRepableB kenv b) 
                         (convertExpX   ctx pp defs kenv tenv' x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
-                        (convertValueB kenv b)
+                        (convertRepableB kenv b)
                         (convertExpX   ctx pp defs kenv tenv' x)
 
                 _  -> throw $ ErrorMalformed 
@@ -263,6 +267,7 @@ convertExpX ctx pp defs kenv tenv xx
                   $ "Cannot convert XLam in this context " ++ show ctx
 
 
+        ---------------------------------------------------
         -- Region application.
         --   These are passed through to the Salt language.
         XApp a1 x1 (XType a2@(AnTEC k _ _ _) t2)
@@ -274,7 +279,8 @@ convertExpX ctx pp defs kenv tenv xx
                                (XType (annotTail a2) t2')
 
 
-        -- Boxing of literal values.
+        ---------------------------------------------------
+        -- Wrapping of pure values into boxed values.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for used-defined types.
         XApp a _ _
@@ -293,6 +299,30 @@ convertExpX ctx pp defs kenv tenv xx
                         dt dc A.rTop [xArg'] [tBIx']
 
 
+        ---------------------------------------------------
+        -- Unwrapping of boxed values into pure values.
+        --   We fake-up a data-type declaration so we can use the same data layout
+        --   code as for used-defined types.
+        XApp a _ _
+         | Just ( E.NamePrimCast E.PrimCastConvert
+                , [XType _ tBx, XType _ tBIx, xArg])    <- takeXPrimApps xx
+         , isBoxedRepType     tBx
+         , isBoxableIndexType tBIx
+         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
+         -> do  
+                let a'  = annotTail a
+                xArg'   <- downArgX xArg
+                tBIx'   <- convertIndexT tBIx
+                tBx'    <- convertRepableT kenv tBx
+
+                x'      <- destructData pp a' dc
+                                (UIx 0) A.rTop 
+                                [BAnon tBIx'] (XVar a' (UIx 0))
+
+                return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
+                                  x'
+
+        ---------------------------------------------------
         -- Boxing of unboxed values.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for user-defined types.
@@ -313,6 +343,7 @@ convertExpX ctx pp defs kenv tenv xx
                         dt dc A.rTop [xArg'] [tBIx']
 
 
+        ---------------------------------------------------
         -- Unboxing of boxed values.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for used-defined types.
@@ -337,6 +368,7 @@ convertExpX ctx pp defs kenv tenv xx
                                   x'
 
         
+        ---------------------------------------------------
         -- Fully applied data constructor applications.
         -- TODO: handle user defined constructors.
         XApp a xa xb
@@ -347,24 +379,44 @@ convertExpX ctx pp defs kenv tenv xx
          -> downCtorAppX a dc xsArgs
 
 
-        -- Primitive operations.
+        ---------------------------------------------------
+        -- Saturated application of a primitive operator.
         XApp a xa xb
          | (x1, xsArgs)           <- takeXApps1 xa xb
          , XVar _ (UPrim _ tPrim) <- x1
+
+         -- The primop is saturated.
          , length xsArgs == arityOfType tPrim
+
+         -- All the value arguments have representatable types.
+         , all isSomeRepType
+                $  map (annotType . annotOfExp)
+                $  filter (not . isXType) xsArgs
+
+         -- The result is representable.
+         , isSomeRepType (annotType a)
+
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downPrimArgX xsArgs
                 return $ xApps (annotTail a) x1' xsArgs'
 
 
-        -- Function application.
-        --  This only works for full application. 
-        --  At least check for the other cases.
+        ---------------------------------------------------
+        -- Saturated application of a user-defined function.
+        --  This does not cover application of primops, the above case should fire for these.
         --
         --  ISSUE #283: Lite to Salt transform doesn't check for partial application
+        --  TODO: check the thing being applied is a named super defined at top-level.
         --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
+         
+         -- The thing being applied is a named function.
+         , XVar _ UName{} <- x1
+
+         -- The function is saturated.
+         , length xsArgs == arityOfType (annotType $ annotOfExp x1)
+
          -> do  
                 let keepArg x
                         = case x of
@@ -379,6 +431,7 @@ convertExpX ctx pp defs kenv tenv xx
                 return  $ xApps a' x1' xsArgs'
 
 
+        ---------------------------------------------------
         -- let-expressions.
         XLet a lts x2
          | ctx <= ExpBind
@@ -397,6 +450,7 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorNotNormalized "Unexpected let-expression."
 
 
+        ---------------------------------------------------
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
@@ -409,10 +463,12 @@ convertExpX ctx pp defs kenv tenv xx
                 return  $  XCase a' xScrut' alts'
 
 
+        ---------------------------------------------------
         -- Match against finite algebraic data.
         --   The branch is against the constructor tag.
         XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
-         | TCon _ : _                           <- takeTApps tScrut
+         | TCon _ : _   <- takeTApps tScrut
+         , isSomeRepType tScrut
          -> do  x'      <- convertExpX     ExpArg pp defs kenv tenv xScrut
                 tX'     <- convertRepableT kenv tX
                 alts'   <- mapM (convertAlt (min ctx ExpBody) pp 
@@ -434,12 +490,14 @@ convertExpX ctx pp defs kenv tenv xx
                         $ alts' ++ asDefault
 
 
+        ---------------------------------------------------
         -- Trying to matching against something that isn't primitive or
         -- algebraic data.
         XCase{} 
          -> throw $ ErrorNotNormalized "Invalid case expression."
 
 
+        ---------------------------------------------------
         -- Casts.
         XCast _ _ x
          -> convertExpX (min ctx ExpBody) pp defs kenv tenv x
@@ -448,13 +506,19 @@ convertExpX ctx pp defs kenv tenv xx
         -- We shouldn't find any naked types.
         -- These are handled above in the XApp case.
         XType{}
-         -> throw $ ErrorNotNormalized "Unexpected type argument."
+          -> throw $ ErrorNotNormalized "Unexpected type argument."
 
 
         -- We shouldn't find any naked types.
         -- TODO: handle these in the XApp case above.
         XWitness{}
-         -> throw $ ErrorNotNormalized "Unexpected witness expression."
+          -> throw $ ErrorNotNormalized "Unexpected witness expression."
+
+
+        _ -> throw $ ErrorNotNormalized 
+                   $ "Cannot convert expression.\n"
+                   ++ (renderIndent $ ppr xx)
+
 
 
 -- | Although we ditch type arguments when applied to general functions,
@@ -506,7 +570,7 @@ convertLetsX pp defs kenv tenv lts
         LLet b x1
          -> do  let tenv'    = Env.extend b tenv
                 b'           <- convertValueB kenv b
-                x1'          <- convertExpX  ExpBind pp defs kenv tenv' x1
+                x1'          <- convertExpX   ExpBind pp defs kenv tenv' x1
                 return  $ LLet b' x1'
 
         -- TODO: convert witness bindings
@@ -663,9 +727,10 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
         AAlt (PData dc []) x
          | Just nCtor           <- takeNameOfDaCon dc
          , case nCtor of
+                E.NameLitBool{} -> True
+                E.NameLitNat{}  -> True
                 E.NameLitInt{}  -> True
                 E.NameLitWord{} -> True
-                E.NameLitBool{} -> True
                 _               -> False
 
          -> do  dc'     <- convertDaCon kenv dc
@@ -695,7 +760,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertValueB kenv) bsFields
+                bsFields'       <- mapM (convertRepableB kenv) bsFields
 
                 -- Convert the right of the alternative.
                 xBody1          <- convertExpX ctx pp defs kenv tenv' x

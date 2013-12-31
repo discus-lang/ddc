@@ -2,6 +2,7 @@
 module DDC.Core.Tetra.Convert.Type
         ( -- * Kind conversion.
           convertK
+        , convertT
 
           -- * Type conversion.
         , convertRepableT
@@ -12,8 +13,12 @@ module DDC.Core.Tetra.Convert.Type
         , convertDaCon
 
           -- * Bind and Bound conversion.
-        , convertTypeB,  convertTypeU
-        , convertValueB, convertValueU
+        , convertTypeB
+        , convertTypeU
+
+        , convertValueB
+        , convertRepableB
+        , convertValueU
 
           -- * Names
         , convertBindNameM)
@@ -33,6 +38,7 @@ import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Type.Env                   as Env
 import Control.Monad
 
+import DDC.Base.Pretty
 
 -------------------------------------------------------------------------------
 -- | Convert a kind from Core Tetra to Core Salt.
@@ -45,14 +51,36 @@ convertK kk
 
 
 -- Type -----------------------------------------------------------------------
--- | Convert a representable type from Core Tetra to its Core Salt.
+-- | Convert a data type from Core Tetra to Core Salt.
 --
---   These types have kind Data and their values can be represented directly
---   in the Salt language.
+--   This version can be used to convert both representational 
+--   and non-representational types.
 --
---   Numeric types must be explicitly boxed or unboxed, that is, using 
---   (B# Nat#) or (U# Nat#), and not plain Nat#. The former two are
---   representable types, but the plain Nat# is an index type.
+--   In the input program, all function parameters and arguments must 
+--   be representational, but we may have let-bindings that bind pure values
+--   of non-representational type.
+--
+convertT :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
+convertT kenv tt
+        | Just (E.NamePrimTyCon n, [])    <- takePrimTyConApps tt
+        = case n of
+                E.PrimTyConBool         -> return $ A.tBool
+                E.PrimTyConNat          -> return $ A.tNat
+                E.PrimTyConInt          -> return $ A.tInt
+                E.PrimTyConWord  bits   -> return $ A.tWord bits
+                _ -> throw $ ErrorMalformed "Cannot convert type."
+
+        | otherwise
+        = convertRepableT kenv tt
+
+
+-- | Convert a representable type from Core Tetra to Core Salt.
+--
+--   Representable numeric types must be explicitly boxed (like B# Nat) or
+--   unboxed (U# Nat#), and not plain Nat#.
+--
+--   Function paramters and arguments cannot have non-representaional 
+--   types because this doesn't tell us what calling convention to use.
 --
 convertRepableT :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
 convertRepableT kenv tt
@@ -125,7 +153,9 @@ convertTyConApp kenv tt
                 return  $ A.tPtr tR' A.tObj
          
          | otherwise
-         =      throw $ ErrorMalformed $ "Invalid type constructor application."
+         =      throw   $ ErrorMalformed 
+                        $  "Invalid type constructor application "
+                        ++ (renderIndent $ ppr tt)
         
 
 -- | Convert an index type from Tetra to Salt.
@@ -137,11 +167,12 @@ convertIndexT :: Type E.Name -> ConvertM a (Type A.Name)
 convertIndexT tt
         | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
         = case n of
+                E.PrimTyConBool         -> return $ A.tBool
                 E.PrimTyConNat          -> return $ A.tNat
                 E.PrimTyConInt          -> return $ A.tInt
                 E.PrimTyConWord  bits   -> return $ A.tWord bits
                 E.PrimTyConFloat bits   -> return $ A.tWord bits
-                _ -> throw  $ ErrorMalformed "Invalid numeric index type."
+                _ -> throw $ ErrorMalformed "Invalid numeric index type."
 
         | otherwise
         = throw $ ErrorMalformed "Invalid numeric index type."
@@ -156,7 +187,7 @@ convertRegionT kenv tt
         = liftM TVar $ convertTypeU u
 
         | otherwise
-        = throw $ ErrorMalformed "Invalid region type."
+        = throw $ ErrorMalformed $ "Invalid region type " ++ (renderIndent $ ppr tt)
 
 
 -- Binds ----------------------------------------------------------------------
@@ -170,16 +201,32 @@ convertTypeB bb
         BName n k       -> liftM2 BName (convertBindNameM n) (convertK k)
 
 
--- | Convert the value binder.
---   These are used to bind function arguments, for let-bindings,
---   and hence must have representable types.
+-- | Convert a value binder.
+--   This uses `convertT` on the attached type, so works for representational
+--   or non-representational types. The latter is used for let-binders which 
+--   don't need to be representational becaues the values only exist 
+--   internally to a function.
 convertValueB   :: KindEnv E.Name -> Bind E.Name -> ConvertM a (Bind A.Name)
 convertValueB kenv bb
+ = case bb of
+        BNone t         -> liftM  BNone (convertT kenv t)
+        BAnon t         -> liftM  BAnon (convertT kenv t)
+        BName n t       -> liftM2 BName (convertBindNameM n)
+                                        (convertT kenv t)
+
+
+-- | Convert a value binder with a representable type.
+--   This is used for the binders of function arguments, which must have
+--   representatable types to adhere to some calling convention. 
+convertRepableB :: KindEnv E.Name -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertRepableB kenv bb
   = case bb of
         BNone t         -> liftM  BNone (convertRepableT kenv t)        
         BAnon t         -> liftM  BAnon (convertRepableT kenv t)
         BName n t       -> liftM2 BName (convertBindNameM n) 
                                         (convertRepableT kenv t)
+
+
 
 -- | Convert the name of a Bind.
 convertBindNameM :: E.Name -> ConvertM a A.Name
@@ -246,7 +293,7 @@ convertDaCon kenv dc
 
         DaConPrim n t
          -> do  n'      <- convertDaConNameM dc n
-                t'      <- convertRepableT   kenv t
+                t'      <- convertT kenv t
                 return  $ DaConPrim
                         { daConName             = n'
                         , daConType             = t' }
