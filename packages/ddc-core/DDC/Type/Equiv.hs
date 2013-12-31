@@ -1,7 +1,8 @@
 
 module DDC.Type.Equiv
         ( equivT
-        , equivWithBindsT)
+        , equivWithBindsT
+        , equivTyCon)
 where
 import DDC.Type.Transform.Crush
 import DDC.Type.Compounds

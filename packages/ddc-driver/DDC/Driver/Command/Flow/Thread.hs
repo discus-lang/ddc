@@ -36,7 +36,7 @@ cmdFlowThread config source sourceText
                     sourceText
          $  PipeTextLoadCore fragment C.Recon SinkDiscard
          [  PipeCoreReannotate (const ())
-         [  PipeCoreCheck    fragment C.Recon
+         [  PipeCoreCheck    fragment C.Recon SinkDiscard
          [  PipeCoreHacks 
             (Canned $ \m -> return 
                     $  Thread.thread Flow.threadConfig 

@@ -54,7 +54,7 @@ cmdToSalt config language source sourceText
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
                 [ stageSaltOpt     config source
-                [ PipeCoreCheck    Salt.fragment C.Recon
+                [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreOutput   pmode SinkStdout]]]]]]
 
                 -- Unrecognised fragment name or file extension.

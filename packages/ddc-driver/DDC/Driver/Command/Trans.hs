@@ -83,7 +83,7 @@ cmdTransModule config language _shouldPrintInfo source str
                 SinkDiscard
          [  PipeCoreReannotate (\a -> a { annotTail = ()})
          [  PipeCoreSimplify  fragment zero simpl
-         [  PipeCoreCheck     fragment C.Recon
+         [  PipeCoreCheck     fragment C.Recon SinkDiscard
          [  PipeCoreOutput    pmode SinkStdout ]]]]
  
     in do

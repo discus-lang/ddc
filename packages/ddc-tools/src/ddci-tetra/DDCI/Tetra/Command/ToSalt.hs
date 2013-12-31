@@ -24,7 +24,7 @@ cmdToSalt _state config source str
          $ stageSourceTetraLoad config source
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
-         [ PipeCoreCheck        BA.fragment C.Recon
+         [ PipeCoreCheck        BA.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]]
 
    in do

@@ -55,7 +55,6 @@ foo (x : Nat#) : Nat#
 
 
 -- Flip an enumerated value.
-:set TaintAvoidTypeChecks
 :set Dump
 :to-core..
 module Test where

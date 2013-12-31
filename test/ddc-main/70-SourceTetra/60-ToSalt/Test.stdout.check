@@ -199,3 +199,22 @@ letrec {
       add x x3
 }
 
+
+-- Flip an enumerated value.
+ok
+module Test 
+data Blerk  where {
+        Hot : Blerk;
+        Cold : Blerk;
+}
+with
+letrec {
+  flipit : Blerk -> Blerk
+    = \(x : Blerk).
+      case x of {
+        Hot  
+         -> Cold;
+        Cold  
+         -> Hot
+      }
+}

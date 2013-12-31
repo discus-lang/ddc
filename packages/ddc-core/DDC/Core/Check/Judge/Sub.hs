@@ -11,7 +11,7 @@ import DDC.Core.Check.Base
 
 -- | Make the left type a subtype of the right type,
 --   or throw the provided error if this is not possible.
-makeSub :: (Eq n, Ord n, Pretty n)
+makeSub :: (Eq n, Ord n, Show n, Pretty n)
         => a
         -> Error a n
         -> Context n
@@ -31,7 +31,7 @@ makeSub a err ctx0 xL tL tR
  --  Both sides are the same type constructor.
  | TCon tc1     <- tL
  , TCon tc2     <- tR
- , tc1 == tc2
+ , equivTyCon tc1 tc2
  = do   
         ctrace  $ vcat
                 [ text "* SubCon"
@@ -202,8 +202,8 @@ makeSub a err ctx0 xL tL tR
  | otherwise
  = do   ctrace  $ vcat
                 [ text "DDC.Core.Check.Exp.Inst.makeSub: no match" 
-                , text "  LEFT:   " <> ppr tL
-                , text "  RIGHT:  " <> ppr tR ]
+                , text "  LEFT:   " <> text (show tL)
+                , text "  RIGHT:  " <> text (show tR) ]
 
         throw err
 

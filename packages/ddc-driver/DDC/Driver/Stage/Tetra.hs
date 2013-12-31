@@ -34,6 +34,7 @@ stageSourceTetraLoad
 stageSourceTetraLoad config source pipesTetra
  = PipeTextLoadSourceTetra
                     (dump config source "dump-tetra-load-raw.dct")
+                    (dump config source "dump-tetra-load-trace.txt")
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.tetra-load.dct")
    : pipesTetra ) 
@@ -56,7 +57,7 @@ stageTetraToSalt config source pipesSalt
  where
         pipe_norm
          = PipeCoreSimplify     BE.fragment 0 normalize
-           [ PipeCoreCheck      BE.fragment C.Recon
+           [ PipeCoreCheck      BE.fragment C.Recon SinkDiscard
            [ PipeCoreOutput     pprDefaultMode
                                 (dump config source "dump.tetra-normalized.dct")
            , pipe_boxing ]]
@@ -70,7 +71,7 @@ stageTetraToSalt config source pipesSalt
          = PipeCoreAsTetra      
            [ PipeTetraBoxing
            [ PipeCoreSimplify   BE.fragment 0 normalize
-           [ PipeCoreCheck      BE.fragment C.Recon
+           [ PipeCoreCheck      BE.fragment C.Recon SinkDiscard
              [ PipeCoreOutput   pprDefaultMode
                                 (dump config source "dump.tetra-boxing.dct")
              , pipe_toSalt]]]]

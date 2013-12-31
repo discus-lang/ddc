@@ -29,7 +29,7 @@ cmdFlowPrep config source sourceText
                      sourceText
          $ stageFlowLoad  config source 
          [ stageFlowPrep  config source
-         [ PipeCoreCheck  Flow.fragment C.Recon
+         [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]
    in do
         errs    <- liftIO pipePrep

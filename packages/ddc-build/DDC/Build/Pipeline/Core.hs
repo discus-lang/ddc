@@ -76,9 +76,10 @@ data PipeCore a n where
   -- Type check a module.
   PipeCoreCheck      
         :: Pretty a
-        => !(Fragment n err)
-        -> !(C.Mode n)
-        -> ![PipeCore (C.AnTEC a n) n]
+        => !(Fragment n err)            -- Language fragment to check against.
+        -> !(C.Mode n)                  -- Checker mode.
+        -> !Sink                        -- Sink for checker trace.
+        -> ![PipeCore (C.AnTEC a n) n]  -- Pipes for result.
         -> PipeCore a n
 
   -- Type check a module, discarding previous per-node type annotations.
@@ -155,14 +156,19 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreOutput" #-}
             pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
 
-        PipeCoreCheck !fragment !mode !pipes
+        PipeCoreCheck !fragment !mode !sinkTrace !pipes
          -> {-# SCC "PipeCoreCheck" #-}
             let profile         = fragmentProfile fragment
 
                 goCheck mm1
                  = case C.checkModule (C.configOfProfile profile) mm1 mode of
-                        (Left err,  _ct) -> return [ErrorLint err]
-                        (Right mm2, _ct) -> goComplies mm2
+                        (Left err,  C.CheckTrace doc) 
+                         -> do  pipeSink (renderIndent doc) sinkTrace
+                                return [ErrorLint err]
+                        
+                        (Right mm2, C.CheckTrace doc) 
+                         -> do  pipeSink (renderIndent doc) sinkTrace
+                                goComplies mm2
 
                 goComplies mm1
                  = case C.complies profile mm1 of
@@ -174,7 +180,7 @@ pipeCore !mm !pp
         PipeCoreReCheck !fragment !mode !pipes
          -> {-# SCC "PipeCoreReCheck" #-}
             pipeCore (C.reannotate C.annotTail mm)
-         $  PipeCoreCheck fragment mode pipes 
+         $  PipeCoreCheck fragment mode SinkDiscard pipes 
 
         PipeCoreReannotate f !pipes
          -> {-# SCC "PipeCoreStrip" #-}

@@ -107,7 +107,7 @@ makeEq a err ctx0 tL tR
  -- EqCon
  | TCon tc1     <- tL
  , TCon tc2     <- tR
- , tc1 == tc2
+ , equivTyCon tc1 tc2
  = do   
         ctrace  $ vcat
                 [ text "* EqCon"

@@ -65,7 +65,7 @@ stageLiteToSalt
 
 stageLiteToSalt config source pipesSalt
  = PipeCoreSimplify       Lite.fragment 0 normalizeLite
-   [ PipeCoreCheck        Lite.fragment C.Recon
+   [ PipeCoreCheck        Lite.fragment C.Recon SinkDiscard
      [ PipeCoreOutput     pprDefaultMode
                           (dump config source "dump.lite-normalized.dcl")
      , PipeCoreAsLite

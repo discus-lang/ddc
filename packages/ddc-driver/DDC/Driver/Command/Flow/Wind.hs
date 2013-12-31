@@ -28,7 +28,7 @@ cmdFlowWind config source sourceText
                     (lineStartOfSource source)
                     sourceText
          $  stageFlowLoad  config source 
-         [  PipeCoreCheck  Flow.fragment C.Recon
+         [  PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
          [  stageFlowWind  config source [ pipeFinal ]]]
 
         pipeFinal
@@ -36,7 +36,7 @@ cmdFlowWind config source sourceText
          = PipeCoreOutput pmode SinkStdout
 
          | otherwise
-         = PipeCoreCheck Flow.fragment C.Recon
+         = PipeCoreCheck Flow.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]
 
    in do        

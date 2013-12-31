@@ -49,7 +49,7 @@ stageSaltToC
 
 stageSaltToC config source sink
  = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck        Salt.fragment C.Recon
+   [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
      [ PipeCoreOutput     pprDefaultMode
                           (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
@@ -74,7 +74,7 @@ stageSaltToLLVM
 
 stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck          Salt.fragment C.Recon
+   [ PipeCoreCheck          Salt.fragment C.Recon SinkDiscard
      [ PipeCoreOutput       pprDefaultMode
                             (dump config source "dump.salt-normalized.dcs")
      , PipeCoreAsSalt
@@ -107,7 +107,7 @@ stageCompileSalt config source filePath shouldLinkExe
         exePath        = fromMaybe exePathDefault (configOutputFile config)
    in
         PipeCoreSimplify        Salt.fragment 0 normalizeSalt
-         [ PipeCoreCheck        Salt.fragment C.Recon
+         [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
            [ PipeCoreOutput     pprDefaultMode
                                 (dump config source "dump.salt-normalized.dcs")
            , PipeCoreAsSalt

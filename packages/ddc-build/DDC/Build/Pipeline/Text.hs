@@ -46,6 +46,7 @@ data PipeText n (err :: * -> *) where
 
   PipeTextLoadSourceTetra
         :: !Sink                        -- Sink for core code before final type checking.
+        -> !Sink                        -- Sink for type checker trace.
         -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
@@ -80,7 +81,7 @@ pipeText !srcName !srcLine !str !pp
                   -> do sinkCheckTrace mct sink
                         pipeCores mm pipes
 
-        PipeTextLoadSourceTetra sinkPreCheck pipes
+        PipeTextLoadSourceTetra sinkPreCheck sinkCheckerTrace pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let goParse
                  = let  -- Lex the input text into source tokens.
@@ -123,7 +124,7 @@ pipeText !srcName !srcLine !str !pp
                         -- Use the existing checker pipeline to Synthesise
                         -- missing type annotations.
                         pipeCore mm_spread
-                           $ PipeCoreCheck CE.fragment C.Synth pipes
+                           $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes
 
             in goParse
 
