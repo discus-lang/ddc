@@ -2,10 +2,12 @@
 module DDC.Type.Transform.SpreadT
         (SpreadT(..))
 where
+import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Type.Env                     (TypeEnv)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as T
+import qualified Data.Map               as Map
 
 
 class SpreadT (c :: * -> *) where
@@ -68,4 +70,35 @@ instance SpreadT TyCon where
                 Just t  -> TyConBound (UPrim n t) t
 
         _               -> tc
+
+
+instance SpreadT DataDef where
+ spreadT kenv def@DataDef{}
+  = def
+  { dataDefCtors   
+     = case dataDefCtors def of
+        Nothing         -> Nothing
+        Just ctors      -> Just (map (spreadT kenv) ctors) }
+
+
+-- TODO: the data defs are recursive.
+-- The kinds form the types need to go in the env for the ctors.
+-- Also in the module which just contains a flat map of defs, 
+-- maybe change this to a DataDefs to highlight recursiveness.
+instance SpreadT DataDefs where
+ spreadT kenv defs
+  = defs
+  { dataDefsTypes  = Map.map (spreadT kenv) (dataDefsTypes defs)
+  , dataDefsCtors  = Map.map (spreadT kenv) (dataDefsCtors defs) }
+
+
+instance SpreadT DataType where
+ spreadT _kenv dt  = dt
+
+
+instance SpreadT DataCtor where
+ spreadT kenv dc@DataCtor{}
+  = dc
+  { dataCtorFieldTypes  = map (spreadT kenv) (dataCtorFieldTypes dc)
+  , dataCtorResultType  = spreadT kenv (dataCtorResultType dc) }
 

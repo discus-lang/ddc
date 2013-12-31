@@ -201,20 +201,38 @@ letrec {
 
 
 -- Flip an enumerated value.
-ok
-module Test 
-data Blerk  where {
-        Hot : Blerk;
-        Cold : Blerk;
-}
-with
+module Test with
 letrec {
-  flipit : Blerk -> Blerk
-    = \(x : Blerk).
-      case x of {
-        Hot  
-         -> Cold;
-        Cold  
-         -> Hot
+  flipit : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      case getTag [rT] x of {
+        TAG0#  
+         -> let ^ = allocBoxed [rT] TAG1# 0# in
+            ^0;
+        TAG1#  
+         -> let ^ = allocBoxed [rT] TAG0# 0# in
+            ^0;
+        _ 
+         -> fail# [Ptr# rT Obj]
+      }
+}
+
+
+-- Take the head of a monomorphic list.
+module Test with
+letrec {
+  head : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      case getTag [rT] x of {
+        TAG0#  
+         -> let h
+                  = getFieldOfBoxed [rT] [Ptr# rT Obj] x 0# in
+            h;
+        _ 
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+            ^1
       }
 }

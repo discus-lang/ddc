@@ -66,7 +66,10 @@ import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.Instantiate
+import DDC.Type.DataDef
 import Data.Maybe
+import Control.Monad
+import qualified Data.Map       as Map
 
 
 -- | Representation of the values of some type.
@@ -136,9 +139,11 @@ class Boxing (c :: * -> * -> *) where
         -> c a n
 
 
+-- TODO: also apply to imported and exported type sigs.
 instance Boxing Module where
  boxing config mm
-  = mm  { moduleBody    = boxing config (moduleBody mm) }
+  = mm  { moduleBody            = boxing config (moduleBody mm) 
+        , moduleDataDefsLocal   = Map.map (boxingDataDef config) (moduleDataDefsLocal mm) }
 
 
 instance Boxing Exp where
@@ -268,3 +273,16 @@ boxingT config tt
         TApp t1 t2      -> TApp (down t1) (down t2)
         TSum{}          -> tt
 
+
+-- | Manage boxing in a data type definition.
+boxingDataDef :: Config a n -> DataDef n -> DataDef n
+boxingDataDef config def@DataDef{}
+ = def { dataDefCtors = liftM (map (boxingDataCtor config)) (dataDefCtors def) }
+
+
+-- | Manage boxing in a data constructor definition.
+boxingDataCtor :: Config a n -> DataCtor n -> DataCtor n    
+boxingDataCtor config ctor@DataCtor{}
+ = ctor 
+ { dataCtorFieldTypes   = map (boxingT config) (dataCtorFieldTypes ctor)
+ , dataCtorResultType   = boxingT config (dataCtorResultType ctor) }

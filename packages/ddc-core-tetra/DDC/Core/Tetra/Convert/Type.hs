@@ -125,7 +125,7 @@ convertRepableT kenv tt
 convertTyConApp :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
 convertTyConApp kenv tt
          -- Convert Tetra function types to Salt function types.
-         | Just (t1, t2)                       <- takeTFun tt
+         | Just (t1, t2)        <- takeTFun tt
          = do   t1'     <- convertRepableT kenv t1
                 t2'     <- convertRepableT kenv t2
                 return  $ tFunPE t1' t2'
@@ -134,7 +134,7 @@ convertTyConApp kenv tt
          --   In Salt, boxed numeric values are represented in generic form,
          --   as pointers to objects in the top-level region.
          | Just ( E.NameTyConTetra E.TyConTetraB 
-                , [tBIx])                      <- takePrimTyConApps tt
+                , [tBIx])       <- takePrimTyConApps tt
          , isBoxableIndexType tBIx
          =      return  $ A.tPtr A.rTop A.tObj       
 
@@ -142,16 +142,25 @@ convertTyConApp kenv tt
          --   In Salt, unboxed numeric values are represented directly as 
          --   values of the corresponding machine type.
          | Just ( E.NameTyConTetra E.TyConTetraU
-                , [tBIx])                      <- takePrimTyConApps tt
+                , [tBIx])       <- takePrimTyConApps tt
          , isBoxableIndexType tBIx
          = do   tBIx'   <- convertIndexT tBIx
                 return tBIx'
 
-         -- Generic data types are represented in boxed form.   
-         | Just (_, tR : _args)                <- takeTyConApps tt
+         -- A user-defined data type with a primary region.
+         --   These are converted to generic boxed objects in the same region.
+         | Just (_, tR : _args) <- takeTyConApps tt
+         , TVar u       <- tR
+         , Just k       <- Env.lookup u kenv
+         , isRegionKind k
          = do   tR'     <- convertRegionT kenv tR
                 return  $ A.tPtr tR' A.tObj
          
+         -- A user-defined data type without a primary region.
+         --   These are converted to generic boxed objects in the top-level region.
+         | Just (_, _)          <- takeTyConApps tt
+         = do   return  $ A.tPtr A.rTop A.tObj
+
          | otherwise
          =      throw   $ ErrorMalformed 
                         $  "Invalid type constructor application "

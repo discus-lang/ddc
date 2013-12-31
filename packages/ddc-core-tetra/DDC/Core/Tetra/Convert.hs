@@ -97,7 +97,10 @@ convertM pp runConfig defs kenv tenv mm
                    = [(BName n t) | (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
         let tenv'  = Env.extends ntsImports tenv
         
-        x1         <- convertExpX ExpTop pp defs kenv tenv' 
+        let defs'  = unionDataDefs defs
+                   $ fromListDataDefs (Map.elems $ moduleDataDefsLocal mm)
+
+        x1         <- convertExpX ExpTop pp defs' kenv tenv' 
                    $  moduleBody mm
 
         -- Converting the body will also expand out code to construct,
@@ -123,7 +126,7 @@ convertM pp runConfig defs kenv tenv mm
                   -- Data constructors and pattern matches should have been
                   -- flattenedinto primops, so we don't need the data type
                   -- definitions.
-                , moduleDataDefsLocal  = Map.empty
+                , moduleDataDefsLocal  = Map.empty 
 
                 , moduleBody           = x2 }
 

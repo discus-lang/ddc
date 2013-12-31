@@ -55,8 +55,7 @@ foo (x : Nat#) : Nat#
 
 
 -- Flip an enumerated value.
-:set Dump
-:to-core..
+:to-salt..
 module Test where
 data Blerk where
         Hot  : Blerk
@@ -65,4 +64,17 @@ flipit (x : Blerk) : Blerk
  = case x of
         Hot     -> Cold
         Cold    -> Hot
+;;
+
+
+-- Take the head of a monomorphic list.
+:to-salt..
+module Test where
+data ListNat where
+        Cons    : Nat# -> ListNat -> ListNat
+        Nil     : ListNat
+head (x : ListNat) : Nat#
+ = case x of
+        Cons h _        -> h
+        _               -> 0
 ;;
