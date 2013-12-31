@@ -53,3 +53,17 @@ foo (x : Nat#) : Nat#
  = add x 5
 ;;
 
+
+-- Flip an enumerated value.
+:set TaintAvoidTypeChecks
+:set Dump
+:to-core..
+module Test where
+data Blerk where
+        Hot  : Blerk
+        Cold : Blerk
+flipit (x : Blerk) : Blerk
+ = case x of
+        Hot     -> Cold
+        Cold    -> Hot
+;;

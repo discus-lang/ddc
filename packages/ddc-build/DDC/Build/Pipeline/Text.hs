@@ -45,7 +45,8 @@ data PipeText n (err :: * -> *) where
         -> PipeText n err
 
   PipeTextLoadSourceTetra
-        :: ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
+        :: !Sink                        -- Sink for core code before final type checking.
+        -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
 
@@ -79,7 +80,7 @@ pipeText !srcName !srcLine !str !pp
                   -> do sinkCheckTrace mct sink
                         pipeCores mm pipes
 
-        PipeTextLoadSourceTetra pipes
+        PipeTextLoadSourceTetra sinkPreCheck pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let goParse
                  = let  -- Lex the input text into source tokens.
@@ -103,23 +104,26 @@ pipeText !srcName !srcLine !str !pp
                         Right mm' -> goToCore mm'
 
                 goToCore mm
-                 = let  -- Expand missing quantifiers in signatures.
-                        mm_expand = SE.expand SE.configDefault 
-                                        SE.primKindEnv SE.primTypeEnv mm
+                 = do   -- Expand missing quantifiers in signatures.
+                        let mm_expand = SE.expand SE.configDefault 
+                                            SE.primKindEnv SE.primTypeEnv mm
 
                         -- Convert Source Tetra to Core Tetra.
                         -- TODO get proper source location.
-                        sp        = SP.SourcePos "<top level>" 1 1
-                        mm_core   = SE.toCoreModule sp mm_expand
+                        let sp        = SP.SourcePos "<top level>" 1 1
+                        let mm_core   = SE.toCoreModule sp mm_expand
 
                         -- Spread types of data constructors into uses.
-                        mm_spread = C.spreadX 
-                                        CE.primKindEnv CE.primTypeEnv mm_core
+                        let mm_spread = C.spreadX 
+                                          CE.primKindEnv CE.primTypeEnv mm_core
+
+                        -- Dump code before checking for debugging purposes.
+                        pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck
 
                         -- Use the existing checker pipeline to Synthesise
                         -- missing type annotations.
-                    in  pipeCore mm_spread
-                         $ PipeCoreCheck CE.fragment C.Synth pipes
+                        pipeCore mm_spread
+                           $ PipeCoreCheck CE.fragment C.Synth pipes
 
             in goParse
 

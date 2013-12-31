@@ -33,11 +33,12 @@ stageSourceTetraLoad
 
 stageSourceTetraLoad config source pipesTetra
  = PipeTextLoadSourceTetra
+                    (dump config source "dump-tetra-load-raw.dct")
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.tetra-load.dct")
    : pipesTetra ) 
 
-
+ 
 -------------------------------------------------------------------------------
 -- | Convert Core Tetra to Core Salt.
 --

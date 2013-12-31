@@ -8,7 +8,7 @@ letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
     = \(x : Ptr# rT Obj).
       let x1
-            = let ^ = allocRawSmall [rT] TAG0# 4# in
+            = let ^ = allocRawSmall [rT] TAG0# 8# in
               let ^ = payloadOfRawSmall [rT] ^0 in
               let _
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 3# in
@@ -27,13 +27,13 @@ letrec {
               ^0 in
       let x4 = add# [Nat#] x2 x3 in
       let x0
-            = let ^ = allocRawSmall [rT] TAG0# 4# in
+            = let ^ = allocRawSmall [rT] TAG0# 8# in
               let ^ = payloadOfRawSmall [rT] ^0 in
               let _
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x4 in
               ^1 in
       let x5
-            = let ^ = allocRawSmall [rT] TAG0# 4# in
+            = let ^ = allocRawSmall [rT] TAG0# 8# in
               let ^ = payloadOfRawSmall [rT] ^0 in
               let _
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 2# in
@@ -51,7 +51,7 @@ letrec {
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
       let x8 = add# [Nat#] x6 x7 in
-      let ^ = allocRawSmall [rT] TAG0# 4# in
+      let ^ = allocRawSmall [rT] TAG0# 8# in
       let ^ = payloadOfRawSmall [rT] ^0 in
       let _
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x8 in
@@ -72,13 +72,13 @@ letrec {
               ^0 in
       case x0 of {
         True#  
-         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
             ^1;
         False#  
-         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# True# in
@@ -100,19 +100,19 @@ letrec {
               ^0 in
       case x0 of {
         5#  
-         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 6# in
             ^1;
         6#  
-         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 7# in
             ^1;
         _ 
-         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
@@ -142,20 +142,20 @@ letrec {
                     ^0 in
             case x1 of {
               0#  
-               -> let ^ = allocRawSmall [rT] TAG0# 4# in
+               -> let ^ = allocRawSmall [rT] TAG0# 8# in
                   let ^ = payloadOfRawSmall [rT] ^0 in
                   let _
                         = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
                   ^1;
               _ 
-               -> let ^ = allocRawSmall [rT] TAG0# 4# in
+               -> let ^ = allocRawSmall [rT] TAG0# 8# in
                   let ^ = payloadOfRawSmall [rT] ^0 in
                   let _
                         = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
                   ^1
             };
         _ 
-         -> let ^ = allocRawSmall [rT] TAG0# 4# in
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
@@ -182,7 +182,7 @@ letrec {
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
       let x2 = add# [Nat#] x0 x1 in
-      let ^ = allocRawSmall [rT] TAG0# 4# in
+      let ^ = allocRawSmall [rT] TAG0# 8# in
       let ^ = payloadOfRawSmall [rT] ^0 in
       let _
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x2 in
@@ -191,7 +191,7 @@ letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
     = \(x : Ptr# rT Obj).
       let x3
-            = let ^ = allocRawSmall [rT] TAG0# 4# in
+            = let ^ = allocRawSmall [rT] TAG0# 8# in
               let ^ = payloadOfRawSmall [rT] ^0 in
               let _
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
