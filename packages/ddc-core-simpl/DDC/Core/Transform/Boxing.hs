@@ -216,7 +216,7 @@ instance Boxing Exp where
         XLet a lts x    -> XLet  a (down lts) (down x)
         XCase a x alts  -> XCase a (down x)   (map down alts)
         XCast a c x     -> XCast a c (down x)
-        XType{}         -> xx
+        XType a t       -> XType a (boxingT config t)
         XWitness{}      -> xx
 
 

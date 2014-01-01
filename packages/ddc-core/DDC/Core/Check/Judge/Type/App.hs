@@ -92,7 +92,7 @@ checkApp !table !ctx0 xx@(XApp a1 xFn (XType a2 tArg)) mode
                 , empty ]
 
         returnX a1 
-                (\z -> XApp z xFn' (XType z tArg'))
+                (\z -> XApp z xFn' (XType aArg tArg'))
                 tResult
                 effsFn
                 (closFn `Set.union` t2_clo)

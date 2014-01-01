@@ -2,12 +2,6 @@
 :set SuppressImports
 
 
--- Simple Functions.
-:to-salt..
-module Test where
-foo (x : Nat#) : Nat#
- = add# 2 (add# 3 x)
-;;
 
 
 -- Match aginst literal Bools.
@@ -67,14 +61,57 @@ flipit (x : Blerk) : Blerk
 ;;
 
 
--- Take the head of a monomorphic list.
+-- Function to take the head of a monomorphic list.
 :to-salt..
 module Test where
 data ListNat where
         Cons    : Nat# -> ListNat -> ListNat
         Nil     : ListNat
-head (x : ListNat) : Nat#
- = case x of
-        Cons h _        -> h
+head (xx : ListNat) : Nat#
+ = case xx of
+        Cons x _        -> x
         _               -> 0
+;;
+
+
+-- Function to take the head of a polymorphic list.
+:to-salt..
+module Test where
+data List (a : Data) where
+        Cons    : a -> List a -> List a
+        Nil     : List a
+head (def : a) (xx : List a) : a
+ = case xx of
+        Cons x _        -> x
+        _               -> def
+;;
+
+
+-- Polymorphically take the head of a list, where the element
+-- is in the top-level region. In the Salt code the head function
+-- is passed the top level region as the location of the element.
+:to-salt..
+module Test where
+data List (a : Data) where
+        Cons    : a -> List a -> List a
+        Nil     : List a
+
+head (def : a) (xx : List a) : a
+ = case xx of
+        Cons x _        -> x
+        _               -> def
+
+foo  (_ : Unit) : Nat#
+ = head 0 (Cons 1 Nil)
+;;
+
+
+
+
+-- Simple Functions.
+:set Dump
+:to-salt..
+module Test where
+foo (x : Nat#) : Nat#
+ = add# 2 (add# 3 x)
 ;;

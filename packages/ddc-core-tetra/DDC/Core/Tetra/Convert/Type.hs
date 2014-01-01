@@ -88,12 +88,18 @@ convertRepableT kenv tt
         -- Convert type variables and constructors.
         TVar u
          -> case Env.lookup u kenv of
-             Just t
-              | isDataKind t 
-              -> liftM TVar $ convertTypeU u
+             Just k
+              -- Parametric data types are represented as generic objects,
+              -- where the region those objects are in is named after the
+              -- original type name.
+              | isDataKind k
+              , UName (E.NameVar str)  <- u
+              , str'    <- str ++ "$r"
+              , u'      <- UName (A.NameVar str')
+              -> return $ A.tPtr (TVar u') A.tObj
 
               | otherwise    
-              -> throw $ ErrorMalformed "Repable type does not have kind Data."
+              -> throw $ ErrorMalformed "Repable var type has invalid kind or bound."
 
              Nothing 
               -> throw $ ErrorInvalidBound u
@@ -101,12 +107,22 @@ convertRepableT kenv tt
         -- Convert unapplied type constructors.
         TCon{}  -> convertTyConApp kenv tt
 
-        -- We pass quantifiers of Data and Region variables to the Salt
-        -- language, but strip off the rest.
+        -- We pass exising quantifiers of Region variables to the Salt language,
+        -- and convert quantifiers of data types to the punned name of
+        -- their top-level region.s
         TForall b t     
-         | isDataKind (typeOfBind b) || isRegionKind (typeOfBind b)
+         | isRegionKind (typeOfBind b)
          -> do  let kenv' = Env.extend b kenv
                 b'      <- convertTypeB    b
+                t'      <- convertRepableT kenv' t
+                return  $ TForall b' t'
+
+         | isDataKind   (typeOfBind b)
+         , BName (E.NameVar str) _   <- b
+         , str'         <- str ++ "$r"
+         , b'           <- BName (A.NameVar str') kRegion
+         -> do
+                let kenv' = Env.extend b kenv
                 t'      <- convertRepableT kenv' t
                 return  $ TForall b' t'
 

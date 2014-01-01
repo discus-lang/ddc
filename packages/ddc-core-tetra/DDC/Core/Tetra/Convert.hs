@@ -33,6 +33,7 @@ import Data.Maybe
 
 import DDC.Base.Pretty
 
+
 -- | Convert a Core Tetra module to Core Salt.
 --
 --   The input module needs to be:
@@ -237,6 +238,18 @@ convertExpX ctx pp defs kenv tenv xx
                 return $ XLAM a' b' x'
 
          | ExpFun       <- ctx
+         , BName (E.NameVar str) k <- b
+         , isDataKind k
+         , str'         <- str ++ "$r"
+         , b'           <- BName (A.NameVar str') kRegion
+         -> do  let a'  = annotTail a
+                
+                let kenv' = Env.extend b kenv
+                x'      <- convertExpX ctx pp defs kenv' tenv x
+
+                return $ XLAM a' b' x'
+
+         | ExpFun       <- ctx
          -> do  let kenv'       = Env.extend b kenv
                 convertExpX ctx pp defs kenv' tenv x
 
@@ -372,13 +385,26 @@ convertExpX ctx pp defs kenv tenv xx
 
         
         ---------------------------------------------------
-        -- Fully applied data constructor applications.
-        -- TODO: handle user defined constructors.
+        -- Saturated application of a primitive data constructor,
+        --   including the Unit data constructor.
+        --   The types of these are directly attached.
         XApp a xa xb
-         | (x1, xsArgs)         <- takeXApps1 xa xb
-         , XCon _ dc            <- x1
-         , Just tCon            <- takeTypeOfDaCon dc
+         | (x1, xsArgs)            <- takeXApps1 xa xb
+         , XCon _ dc               <- x1
+         , Just tCon               <- takeTypeOfDaCon dc
          , length xsArgs == arityOfType tCon
+         -> downCtorAppX a dc xsArgs
+
+        -- Fully applied user-defined data constructor application.
+        --   The types of these are in the defs list.
+        XApp a xa xb
+         | (x1, xsArgs   )          <- takeXApps1 xa xb
+         , XCon _ dc@(DaConBound n) <- x1
+         , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
+         , length xsArgs 
+                == length (dataCtorTypeParams dataCtor)
+                +  length (dataCtorFieldTypes dataCtor)
+
          -> downCtorAppX a dc xsArgs
 
 
@@ -406,10 +432,13 @@ convertExpX ctx pp defs kenv tenv xx
 
         ---------------------------------------------------
         -- Saturated application of a user-defined function.
-        --  This does not cover application of primops, the above case should fire for these.
+        --  This does not cover application of primops, the above case should
+        --  fire for these.
         --
         --  ISSUE #283: Lite to Salt transform doesn't check for partial application
-        --  TODO: check the thing being applied is a named super defined at top-level.
+        --
+        --  TODO: check the thing being applied is a named super defined
+        --  at top-level.
         --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
@@ -421,16 +450,31 @@ convertExpX ctx pp defs kenv tenv xx
          , length xsArgs == arityOfType (annotType $ annotOfExp x1)
 
          -> do  
-                let keepArg x
-                        = case x of
-                           XType a _   -> isRegionKind (annotType a)
-                           XWitness{}  -> False
-                           _           -> True 
+                -- Convert Region and Data type arguments to Salt.
+                -- See [Note: Higher kinded type arguments]
+                let makeArg x
+                     = case x of
+                        XType a t
+                          | isRegionKind (annotType a)
+                          -> do t'      <- convertRegionT kenv t
+                                return $ Just (XType a' t')
+
+                          | otherwise
+                          , isDataKind   (annotType a)
+                          ->    return $ Just (XType a' A.rTop)
+
+                          | otherwise
+                          ->    throw $ ErrorMalformed "Invalid kind for type arg."
+
+                        XWitness{}  
+                          -> return Nothing
+
+                        _ -> do x'      <- downArgX x
+                                return  $ Just x'
 
                 x1'     <- downArgX x1
-                xsArgs' <- mapM downArgX 
-                        $  filter keepArg xsArgs
-                
+                xsArgs' <- liftM catMaybes $ mapM makeArg xsArgs
+                        
                 return  $ xApps a' x1' xsArgs'
 
 
@@ -509,7 +553,10 @@ convertExpX ctx pp defs kenv tenv xx
         -- We shouldn't find any naked types.
         -- These are handled above in the XApp case.
         XType{}
-          -> throw $ ErrorNotNormalized "Unexpected type argument."
+          -> throw $ ErrorNotNormalized 
+                   $ (renderIndent $ vcat
+                        [ text "Unexpected type argument"
+                        , ppr xx])
 
 
         -- We shouldn't find any naked types.
@@ -670,28 +717,30 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
                 -- Get the prime region variable that holds the outermost
                 -- constructor. For types like Unit, there is no prime region,
                 -- so put them in the top-level region of the program.
+                let tsArgs  = [t | XType _ t <- xsArgs]
                 rPrime
-                 <- case xsArgs of
-                     [] 
-                      -> return A.rTop
+                 <- case tsArgs of
+                     [] -> return A.rTop
 
-                     XType _ (TVar u) : _
+                     TVar u : _
                       | Just tu      <- Env.lookup u kenv
                       -> if isRegionKind tu
                           then do u'      <- convertTypeU u
                                   return  $ TVar u'
                           else return A.rTop
+                      | otherwise
+                      -> throw $ ErrorMalformed "Prime region variable is not in scope."
 
-                     _ -> throw 
-                       $ ErrorMalformed "Prime region variable is not in scope."
-
+                     _  -> return A.rTop
 
                 -- Convert the types of each field.
                 let makeFieldType x
                         = let a' = annotOfExp x 
                           in  convertRepableT kenv (annotType a')
 
-                xsArgs' <- mapM (convertExpX ExpArg pp defs kenv tenv) xsArgs
+                xsArgs' <- mapM (convertExpX ExpArg pp defs kenv tenv) 
+                        $  filter (not . isXType) xsArgs
+                
                 tsArgs' <- mapM makeFieldType xsArgs
                 constructData pp kenv tenv a
                         dataDef ctorDef
@@ -818,3 +867,22 @@ convertCtor pp defs kenv tenv a dc
  | otherwise
  = throw $ ErrorMalformed "Invalid constructor."
 
+
+-- [Note: Higher Kinded Type Arguments]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- If a type argument has a higher kind then there may also be a value argument
+-- where we cannot determine the primary region. For example:
+--
+--   foo :: /\(c : Data -> Data). \(x : c Nat). x
+-- 
+--   foo [List r1] (Nil [r1] [Nat])
+--
+-- When converting the definition of 'foo' to Salt, we don't know what region
+-- the 'x' object is in. In future we'll need to implement a region subtyping
+-- system so that 'x' can be given a type like  (Ptr# Any Obj).
+--
+-- TODO: For now, make a function getPrimeRegion that will return Nothing when
+-- given the type (c Nat). Refuse to produce Salt code in this case. Just look
+-- at the type constructor in the type application. Disallow value parameters
+-- where we can't determine the prime region, and type parameters of higher kind.
+--
