@@ -46,7 +46,7 @@ isSomeRepType tt
 --      1) 'a -> b'     -- the function type
 --      1) 'a'          -- polymorphic types.
 --      2) 'forall ...' -- abstract types.
---      3) '()'         -- the unit data type.
+--      3) 'Unit'       -- the unit data type.
 --      4) 'B# T'       -- boxed numeric types, where T is a boxable type.
 --      5) User defined data types.
 --

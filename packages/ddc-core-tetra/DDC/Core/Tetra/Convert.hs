@@ -33,7 +33,6 @@ import Data.Maybe
 
 import DDC.Base.Pretty
 
-
 -- | Convert a Core Tetra module to Core Salt.
 --
 --   The input module needs to be:
@@ -437,9 +436,6 @@ convertExpX ctx pp defs kenv tenv xx
         --
         --  ISSUE #283: Lite to Salt transform doesn't check for partial application
         --
-        --  TODO: check the thing being applied is a named super defined
-        --  at top-level.
-        --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          
@@ -449,31 +445,14 @@ convertExpX ctx pp defs kenv tenv xx
          -- The function is saturated.
          , length xsArgs == arityOfType (annotType $ annotOfExp x1)
 
-         -> do  
-                -- Convert Region and Data type arguments to Salt.
-                -- See [Note: Higher kinded type arguments]
-                let makeArg x
-                     = case x of
-                        XType a t
-                          | isRegionKind (annotType a)
-                          -> do t'      <- convertRegionT kenv t
-                                return $ Just (XType a' t')
-
-                          | otherwise
-                          , isDataKind   (annotType a)
-                          ->    return $ Just (XType a' A.rTop)
-
-                          | otherwise
-                          ->    throw $ ErrorMalformed "Invalid kind for type arg."
-
-                        XWitness{}  
-                          -> return Nothing
-
-                        _ -> do x'      <- downArgX x
-                                return  $ Just x'
-
+         -> do  -- Convert the functional part.
+                -- TODO: Check this is a named function defined at top-level.
                 x1'     <- downArgX x1
-                xsArgs' <- liftM catMaybes $ mapM makeArg xsArgs
+
+                -- Convert the arguments.
+                -- Effect type and witness arguments are discarded here.
+                xsArgs' <- liftM catMaybes 
+                        $  mapM (convertOrDiscardSuperArgX pp defs kenv tenv) xsArgs
                         
                 return  $ xApps a' x1' xsArgs'
 
@@ -597,6 +576,48 @@ convertPrimArgX ctx pp defs kenv tenv xx
         _ -> convertExpX ctx pp defs kenv tenv xx
 
 
+-- | Given an argument to a function or data constructor, either convert
+--   it to the corresponding argument to use in the Salt program, or 
+--   return Nothing which indicates it should be discarded.
+convertOrDiscardSuperArgX
+        :: Show a                       
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs E.Name              -- ^ Data type definitions.
+        -> KindEnv  E.Name              -- ^ Kind environment.
+        -> TypeEnv  E.Name              -- ^ Type environment.
+        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
+        -> ConvertM a (Maybe (Exp a A.Name))
+
+convertOrDiscardSuperArgX pp defs kenv tenv xx
+
+        -- Region type arguments get passed through directly.
+        | XType a t     <- xx
+        , isRegionKind (annotType a)
+        = do    t'      <- convertRegionT kenv t
+                return  $ Just (XType (annotTail a) t')
+
+        -- If we have a data type argument where the type is boxed, then we pass
+        -- the region the corresponding Salt object is in.
+        | XType a t     <- xx
+        , isDataKind   (annotType a)
+        , isBoxedRepType t
+        = do    t'      <- saltPrimeRegionOfDataType kenv t
+                return  $ Just (XType (annotTail a) t')
+
+        -- Some type that we don't know how to convert to Salt.
+        | XType{}       <- xx
+        =       throw $ ErrorMalformed "Invalid type argument to super or ctor."
+
+        -- Witness arguments are discarded.
+        | XWitness{}    <- xx
+        =       return  $ Nothing
+
+        -- Expression arguments.
+        | otherwise
+        = do    x'      <- convertExpX ExpArg pp defs kenv tenv xx
+                return  $ Just x'
+
+
 -------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.
 convertLetsX 
@@ -712,7 +733,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
         | Just nCtor    <- takeNameOfDaCon dc
         , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors defs
         , Just dataDef  <- Map.lookup (dataCtorTypeName ctorDef) 
-                        $ dataDefsTypes defs
+                        $  dataDefsTypes defs
         = do    
                 -- Get the prime region variable that holds the outermost
                 -- constructor. For types like Unit, there is no prime region,
@@ -868,21 +889,3 @@ convertCtor pp defs kenv tenv a dc
  = throw $ ErrorMalformed "Invalid constructor."
 
 
--- [Note: Higher Kinded Type Arguments]
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- If a type argument has a higher kind then there may also be a value argument
--- where we cannot determine the primary region. For example:
---
---   foo :: /\(c : Data -> Data). \(x : c Nat). x
--- 
---   foo [List r1] (Nil [r1] [Nat])
---
--- When converting the definition of 'foo' to Salt, we don't know what region
--- the 'x' object is in. In future we'll need to implement a region subtyping
--- system so that 'x' can be given a type like  (Ptr# Any Obj).
---
--- TODO: For now, make a function getPrimeRegion that will return Nothing when
--- given the type (c Nat). Refuse to produce Salt code in this case. Just look
--- at the type constructor in the type application. Disallow value parameters
--- where we can't determine the prime region, and type parameters of higher kind.
---

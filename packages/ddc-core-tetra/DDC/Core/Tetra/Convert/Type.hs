@@ -21,7 +21,11 @@ module DDC.Core.Tetra.Convert.Type
         , convertValueU
 
           -- * Names
-        , convertBindNameM)
+        , convertBindNameM
+
+          -- * Prime regions
+        , saltPrimeRegionOfDataType
+        , saltDataTypeOfArgType)
 where
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Base
@@ -81,6 +85,10 @@ convertT kenv tt
 --
 --   Function paramters and arguments cannot have non-representaional 
 --   types because this doesn't tell us what calling convention to use.
+--
+--   TODO: this is really conversion for super types, not arg types.
+--   For a super type we convert function and foralls as-is, but 
+--   for arg types functions are represented in boxed form.
 --
 convertRepableT :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
 convertRepableT kenv tt
@@ -339,3 +347,123 @@ convertDaConNameM dc nn
         E.NameLitWord val bits  -> return $ A.NameLitWord val bits
         _                       -> throw $ ErrorInvalidDaCon dc
 
+
+-- Prime Region ---------------------------------------------------------------
+-- | Given the type of some data value, determine what prime region to use 
+--   for the object in the Salt language. The supplied type must have kind
+--   Data, else you'll get a bogus result.
+--
+--   Boxed data types whose first parameter is a region, by convention that
+--   region is the prime one.
+--     List r1 a  =>  r1 
+--
+--   Boxed data types that do not have a region as the first parameter,
+--   these are allocated into the top-level region.
+--     Unit       => rTop
+--     B# Nat#    => rTop
+--     
+--   Functions are also allocated into the top-level region.
+--     a -> b     => rTop
+--     forall ... => rTop
+--
+--   For completely parametric data types we use a region named after the
+--   associated type variable.
+--     a          => a$r
+--
+--   For types with an abstract constructor, we currently reject them outright.
+--   There's no way to tell what region an object of such a type should be 
+--   allocated into. In future we should add a supertype of regions, and treat
+--   such objects as belong to the Any region.
+--   See [Note: Salt Conversion of Abstract Constructors]
+--     c a b      => ** NOTHING **
+--   
+--   Unboxed and index types don't refer to boxed objects, so they don't have
+--   associated prime regions.
+--     Nat#       => ** NOTHING **
+--     U# Nat#    => ** NOTHING **
+--
+saltPrimeRegionOfDataType
+        :: KindEnv E.Name 
+        -> Type E.Name 
+        -> ConvertM a (Type A.Name)
+
+saltPrimeRegionOfDataType kenv tt
+        -- Boxed data types with an attached primary region variable.
+        | TCon _ : TVar u : _   <- takeTApps tt
+        , Just k                <- Env.lookup u kenv
+        , isRegionKind k
+        , isBoxedRepType tt
+        = do    u'      <- convertTypeU u
+                return  $ TVar u'
+
+        -- Boxed data types without an attached primary region variable.
+        -- This also covers the function case.
+        | TCon _ : _           <- takeTApps tt
+        , isBoxedRepType tt
+        = do    return  A.rTop
+
+        -- Quantified types.
+        | TForall{}     <- tt
+        = do    return  A.rTop
+
+        -- Completely parametric data types.
+        | TVar u        <- tt
+        , Just k        <- Env.lookup u kenv
+        , isDataKind k
+        , UName (E.NameVar str) <- u
+        , str'          <- str ++ "$r"
+        , u'            <- UName (A.NameVar str')
+        = do    return  $ TVar u'
+
+        -- TODO: error for data types using an abstract constructor.
+        | otherwise
+        = error "saltPrimeRegionOfDataType: fark"
+
+
+-- | Given the type of some function parameters or return value, produce the
+--   Salt type used to represent it. The supplied type must have kind data, 
+--   and a boxed or unboxed representation. As this is used for function
+--   parameters and return values, functions and quantified typesare represented
+---  as generic boxed objects. 
+saltDataTypeOfArgType
+        :: KindEnv E.Name
+        -> Type E.Name
+        -> ConvertM a (Type A.Name)
+
+saltDataTypeOfArgType kenv tt
+        -- Boxed values are represented as pointers to generic objects.
+        | isBoxedRepType tt
+        = do    trPrime <- saltPrimeRegionOfDataType kenv tt
+                return  $ A.tPtr trPrime A.tObj
+
+        -- Explicitly unboxed types.
+        | isUnboxedRepType tt
+        , Just ( E.NameTyConTetra E.TyConTetraU
+               , [tBIx])             <- takePrimTyConApps tt
+        , isBoxableIndexType tBIx
+        = do    tBIx'   <- convertIndexT tBIx
+                return tBIx'
+
+        | otherwise
+        = error "saltObjecTypeOfArgType: fark"
+
+
+-- [Note: Salt Conversion of Abstract Constructors]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- If the type of some function parameter has a higher kind then there is no
+-- way to determine what the primary region is locally in that function.
+-- For example:
+--
+--   data List (r : Region) (a : Data) where ...
+--
+--   foo :: /\(c : Data -> Data). \(x : c Nat). ...
+-- 
+--   foo [List r1] (Nil [r1] [Nat])
+--
+-- When converting the definition of 'foo' to Salt, we don't know what region
+-- the 'x' object is in, and hence don't know where it's allocated or what 
+-- other objects it might alias with.
+-- For the moment we just reject such types outright, though in future we want
+-- to use a Salt type like (Ptr# Any Obj), where Any indicates that the object
+-- could belong to any region.
+--
