@@ -106,7 +106,7 @@ convertM pp runConfig defs kenv tenv mm
         let penv   = TopEnv
                    { topEnvPlatform     = pp
                    , topEnvDataDefs     = defs'
-                   , topEnvSupers       = Set.empty }
+                   , topEnvSupers       = moduleTopBinds mm }
 
         x1         <- convertExpX penv kenv tenv' ExpTop
                    $  moduleBody mm
@@ -185,8 +185,13 @@ convertQualNameM (QualName mn n)
 -- | Information about the top-level environment.
 data TopEnv
         = TopEnv
-        { topEnvPlatform        :: Platform
+        { -- Platform we're converting to.
+          topEnvPlatform        :: Platform
+
+          -- Data type definitions.
         , topEnvDataDefs        :: DataDefs E.Name
+
+          -- Names of top-level supercombinators that are directly callable.
         , topEnvSupers          :: Set E.Name }
 
 
@@ -454,23 +459,21 @@ convertExpX penv kenv tenv ctx xx
 
 
         ---------------------------------------------------
-        -- Saturated application of a user-defined function.
+        -- Saturated application of a top-level supercombinator.
         --  This does not cover application of primops, the above case should
         --  fire for these.
-        --
-        --  ISSUE #283: Lite to Salt transform doesn't check for partial application
-        --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          
-         -- The thing being applied is a named function.
-         , XVar _ UName{} <- x1
+         -- The thing being applied is a named function that is defined
+         -- at top-level.
+         , XVar _ (UName n) <- x1
+         , Set.member n (topEnvSupers penv)
 
          -- The function is saturated.
          , length xsArgs == arityOfType (annotType $ annotOfExp x1)
 
          -> do  -- Convert the functional part.
-                -- TODO: Check this is a named function defined at top-level.
                 x1'     <- downArgX x1
 
                 -- Convert the arguments.
