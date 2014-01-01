@@ -285,7 +285,7 @@ letrec {
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
               ^1 in
       let x1
-            = let ^ = allocBoxed [rT] TAG0# 2# in
+            = let ^ = allocBoxed [rT] TAG0# 1# in
               let _
                     = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 0# x0 in
               ^0 in

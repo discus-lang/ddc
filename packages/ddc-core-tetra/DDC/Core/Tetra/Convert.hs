@@ -665,7 +665,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
 
                 -- Add let bindings to unpack the constructor.
                 tScrut'         <- convertRepableT kenv tScrut
-                let Just trPrime = takePrimeRegion tScrut'
+                let Just trPrime = takePrimeRegion tScrut'                      -- TODO: fix this
                 xBody2           <- destructData pp a ctorDef uScrut' trPrime
                                                  bsFields' xBody1
                 return  $ AAlt (PData dcTag []) xBody2
@@ -728,48 +728,37 @@ convertCtorAppX
         -> [Exp (AnTEC a E.Name) E.Name]
         -> ConvertM a (Exp a A.Name)
 
-convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
-        -- Handle the unit constructor.
-        | DaConUnit     <- dc
-        = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
+convertCtorAppX pp defs kenv tenv (AnTEC tResult _ _ a) dc xsArgsAll
+ -- Handle the unit constructor.
+ | DaConUnit     <- dc
+ = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
 
-        -- Construct algbraic data that has a finite number of data constructors.
-        | Just nCtor    <- takeNameOfDaCon dc
-        , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors defs
-        , Just dataDef  <- Map.lookup (dataCtorTypeName ctorDef) 
-                        $  dataDefsTypes defs
-        = do    
-                -- Get the prime region variable that holds the outermost
-                -- constructor. For types like Unit, there is no prime region,
-                -- so put them in the top-level region of the program.
-                let tsArgs  = [t | XType _ t <- xsArgs]
-                rPrime
-                 <- case tsArgs of
-                     [] -> return A.rTop
+ -- Construct algbraic data that has a finite number of data constructors.
+ | Just nCtor    <- takeNameOfDaCon dc
+ , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors defs
+ , Just dataDef  <- Map.lookup (dataCtorTypeName ctorDef) 
+                 $  dataDefsTypes defs
+ = do    
+        -- Get the prime region variable.
+        -- The prime region holds the outermost constructor of the object.
+        trPrime         <- saltPrimeRegionOfDataType kenv tResult
 
-                     TVar u : _
-                      | Just tu      <- Env.lookup u kenv
-                      -> if isRegionKind tu
-                          then do u'      <- convertTypeU u
-                                  return  $ TVar u'
-                          else return A.rTop
-                      | otherwise
-                      -> throw $ ErrorMalformed "Prime region variable is not in scope."
+        -- Split the constructor arguments into the type and value args.
+        let xsArgsTypes   = [x | x@XType{} <- xsArgsAll]
+        let xsArgsValues  = drop (length xsArgsTypes) xsArgsAll
 
-                     _  -> return A.rTop
+        -- Convert all the constructor arguments to Salt.
+        xsArgsValues'   <- mapM (convertExpX ExpArg pp defs kenv tenv) 
+                        $  xsArgsValues
 
-                -- Convert the types of each field.
-                let makeFieldType x
-                        = let a' = annotOfExp x 
-                          in  convertRepableT kenv (annotType a')
+        -- Determine the Salt type for each of the arguments.
+        tsArgsValues'   <- mapM (saltDataTypeOfArgType kenv) 
+                        $  map (annotType . annotOfExp) xsArgsValues
 
-                xsArgs' <- mapM (convertExpX ExpArg pp defs kenv tenv) 
-                        $  filter (not . isXType) xsArgs
-                
-                tsArgs' <- mapM makeFieldType xsArgs
-                constructData pp kenv tenv a
-                        dataDef ctorDef
-                        rPrime xsArgs' tsArgs'
+        constructData pp kenv tenv a
+                dataDef ctorDef
+                trPrime xsArgsValues' tsArgsValues'
+
 
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
