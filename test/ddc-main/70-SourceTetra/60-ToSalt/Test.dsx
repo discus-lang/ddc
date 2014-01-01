@@ -96,7 +96,6 @@ head (def : a) (xx : List a) : a
 -- Polymorphically take the head of a list, where the element
 -- is in the top-level region. In the Salt code the head function
 -- is passed the top level region as the location of the element.
-:set Dump
 :to-salt..
 module Test where
 data List (a : Data) where

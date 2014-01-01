@@ -258,7 +258,6 @@ letrec {
 -- Polymorphically take the head of a list, where the element
 -- is in the top-level region. In the Salt code the head function
 -- is passed the top level region as the location of the element.
-ok
 module Test with
 letrec {
   head : [a$r : Region].Ptr# a$r Obj -> Ptr# rT Obj -> Ptr# a$r Obj

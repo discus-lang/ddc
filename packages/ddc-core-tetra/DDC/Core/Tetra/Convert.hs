@@ -33,6 +33,7 @@ import Data.Maybe
 
 import DDC.Base.Pretty
 
+
 -- | Convert a Core Tetra module to Core Salt.
 --
 --   The input module needs to be:
@@ -663,11 +664,15 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
                 let tenv'       = Env.extends bsFields tenv 
                 xBody1          <- convertExpX ctx pp defs kenv tenv' x
 
-                -- Add let bindings to unpack the constructor.
-                tScrut'         <- convertRepableT kenv tScrut
-                let Just trPrime = takePrimeRegion tScrut'                      -- TODO: fix this
-                xBody2           <- destructData pp a ctorDef uScrut' trPrime
-                                                 bsFields' xBody1
+                -- Determine the prime region of the scrutinee.
+                -- This is the region the associated Salt object is in.
+                trPrime         <- saltPrimeRegionOfDataType kenv tScrut
+
+                -- Wrap the body expression with let-bindings that bind
+                -- each of the fields of the data constructor.
+                xBody2          <- destructData pp a ctorDef uScrut' trPrime
+                                        bsFields' xBody1
+
                 return  $ AAlt (PData dcTag []) xBody2
 
         -- Default alternative.
@@ -719,13 +724,13 @@ convertWiConX kenv wicon
 -- | Convert a data constructor application to Salt.
 convertCtorAppX 
         :: Show a
-        => Platform                     -- ^ Platform specification.
-        -> DataDefs E.Name              -- ^ Data type definitions.
-        -> KindEnv  E.Name              -- ^ Kind environment.
-        -> TypeEnv  E.Name              -- ^ Type environment.
-        -> AnTEC a  E.Name              -- ^ Annot from deconstructed app node.
-        -> DaCon    E.Name              -- ^ Data constructor being applied.
-        -> [Exp (AnTEC a E.Name) E.Name]
+        => Platform                       -- ^ Platform specification.
+        -> DataDefs E.Name                -- ^ Data type definitions.
+        -> KindEnv  E.Name                -- ^ Kind environment.
+        -> TypeEnv  E.Name                -- ^ Type environment.
+        -> AnTEC a  E.Name                -- ^ Annot from deconstructed app node.
+        -> DaCon    E.Name                -- ^ Data constructor being applied.
+        -> [Exp (AnTEC a E.Name) E.Name]  -- ^ Data constructor arguments.
         -> ConvertM a (Exp a A.Name)
 
 convertCtorAppX pp defs kenv tenv (AnTEC tResult _ _ a) dc xsArgsAll
@@ -733,7 +738,7 @@ convertCtorAppX pp defs kenv tenv (AnTEC tResult _ _ a) dc xsArgsAll
  | DaConUnit     <- dc
  = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
 
- -- Construct algbraic data that has a finite number of data constructors.
+ -- Construct algebraic data.
  | Just nCtor    <- takeNameOfDaCon dc
  , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors defs
  , Just dataDef  <- Map.lookup (dataCtorTypeName ctorDef) 
@@ -796,6 +801,7 @@ convertOrDiscardSuperArgX pp defs kenv tenv xx
                 return  $ Just (XType (annotTail a) t')
 
         -- Some type that we don't know how to convert to Salt.
+        -- We don't handle type args with higher kinds.
         | XType{}       <- xx
         =       throw $ ErrorMalformed "Invalid type argument to super or ctor."
 
