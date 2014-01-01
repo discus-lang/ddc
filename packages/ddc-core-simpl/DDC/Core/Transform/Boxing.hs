@@ -171,7 +171,7 @@ instance Boxing Exp where
            -- Instantiate the type of the primop to work out which arguments
            -- need to be unboxed, and which we can leave as-is.
          , Just tPrim           <- configTypeOfPrimOpName config n
-         , tsArgs               <- [t | XType _ t <- xsArgsAll]
+         , (asArgs, tsArgs)     <- unzip $ [(a', t) | XType a' t <- xsArgsAll]
          , Just tsArgsUnboxed   <- sequence $ map (configTakeTypeUnboxed config) tsArgs
          , xsArgs               <- drop (length tsArgs) xsArgsAll
          , Just tPrimInst       <- instantiateTs tPrim tsArgs
@@ -183,8 +183,8 @@ instance Boxing Exp where
                 -- Unbox arguments as nessesary.
                 xsArgs' 
                  = [ if configTypeNeedsBoxing config tArg 
-                        then fromMaybe xArg 
-                                       (configUnboxedOfBoxed config a xArg tArg)
+                        then fromMaybe (down xArg)
+                                       (configUnboxedOfBoxed config a (down xArg) tArg)
                         else xArg
                         | xArg <- xsArgs
                         | tArg <- tsArgsInst ]
@@ -196,8 +196,9 @@ instance Boxing Exp where
                                        (configBoxedOfUnboxed  config a x tResultInst)
                         else x
             in  fResult 
-                 $ xApps a xFn  (  [XType a t | t <- tsArgsUnboxed] 
-                                ++ map down xsArgs')
+                 $ xApps a xFn  (  [XType a' t  | t  <- tsArgsUnboxed
+                                                | a' <- asArgs]
+                                ++ xsArgs')
 
         -- Unrap scrutinees when matching against literal patterns.
         XCase a xScrut alts

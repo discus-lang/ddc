@@ -1,0 +1,9 @@
+:set lang Tetra
+:set Dump
+
+-- Simple addition of literal.
+:tetra-boxing..
+module Test with letrec
+f (x : Nat#) : Nat#
+ = add# [Nat#] x 1#
+;;

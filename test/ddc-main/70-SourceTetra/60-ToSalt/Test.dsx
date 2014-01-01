@@ -2,6 +2,12 @@
 :set SuppressImports
 
 
+-- Simple Functions.
+:to-salt..
+module Test where
+foo (x : Nat#) : Nat#
+ = add# 2 (add# 3 x)
+;;
 
 
 -- Match aginst literal Bools.
@@ -105,13 +111,3 @@ foo  (_ : Unit) : Nat#
  = head 0 (Cons 1 Nil)
 ;;
 
-
-
-
--- Simple Functions.
-:set Dump
-:to-salt..
-module Test where
-foo (x : Nat#) : Nat#
- = add# 2 (add# 3 x)
-;;
