@@ -43,7 +43,8 @@ checkApp !table !ctx0 xx@(XApp a1 xFn (XType a2 tArg)) mode
                         let ctx2  = pushExists i2 ctx1
                         return  (tArg', kArg, ctx2)
                 _
-                 -> do  (tArg', kArg) <- checkTypeM config kenv ctx1 tArg
+                 -> do  (tArg', kArg, _)                                        -- TODO: ctx
+                                <- checkTypeM config kenv ctx1 tArg
                         return  (tArg', kArg, ctx1)
 
         -- Take any Use annots from a region arg.

@@ -25,7 +25,7 @@ checkAbs !table !ctx xx@(XLam a b1 x2) mode
         let kenv        = tableKindEnv table
 
         -- The rule we use depends on the kind of the binder.
-        (b1', k1)       <- checkBindM config kenv ctx b1
+        (b1', k1, _)    <- checkBindM config kenv ctx b1                        -- TODO: ctx
 
         case universeFromType2 k1 of
          Just UniverseData
@@ -46,7 +46,7 @@ checkAbsLAM !table !ctx a b1 x2 mode
         let xx          = XLAM a b1 x2
         
         -- Check the type of the binder.
-        (b1', _)        <- checkBindM config kenv ctx b1
+        (b1', _, _)     <- checkBindM config kenv ctx b1                        -- TODO: ctx
 
         -- If the bound variable is named then it cannot shadow
         -- shadow others in the environment.
@@ -84,10 +84,10 @@ checkAbsLAM !table !ctx a b1 x2 mode
               -> throw $ ErrorLAMExpectedForall a xx t
 
         (x2', t2, e2, c2, ctx3)
-                <- tableCheckExp table table ctx2 x2 modeBody
+                        <- tableCheckExp table table ctx2 x2 modeBody
         
         -- The body of a spec abstraction must have data kind.
-        (_, k2) <- checkTypeM config kenv ctx3 t2
+        (_, k2, _)      <- checkTypeM config kenv ctx3 t2                               -- TODO: ctx
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
@@ -152,7 +152,7 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
          <- tableCheckExp table table ctx1 x2 Recon
 
         -- The body of the function must produce data.
-        (_, k2)         <- checkTypeM config kenv ctx2 t2
+        (_, k2, _)      <- checkTypeM config kenv ctx2 t2                       -- TODO: ctx
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2 k2 
 
@@ -376,9 +376,9 @@ checkAbsLamWitness !table !a !ctx !b1 !_k1 !x2 !_dXX
         let ctx1'         = pushType b1 ctx
         let (ctx1, pos1)  = markContext ctx1'
 
-        (x2', t2, e2, c2, ctx2) 
-                <- tableCheckExp table table ctx1 x2 Recon
-        (_, k2) <- checkTypeM config kenv ctx2 t2
+        (x2', t2, e2, c2, ctx2)                                                 -- TODO: ctx
+                        <- tableCheckExp table table ctx1 x2 Recon
+        (_, k2, _)      <- checkTypeM config kenv ctx2 t2
 
         -- The body of a witness abstraction must be pure.
         when (e2 /= Sum.empty kEffect)

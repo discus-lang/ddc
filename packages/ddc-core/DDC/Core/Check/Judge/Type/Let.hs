@@ -43,7 +43,7 @@ checkLet !table !ctx xx@(XLet a lts x2) mode
          <- tableCheckExp table table ctx2 x2 mode
 
         -- The body must have data kind.
-        (_, k2) <- checkTypeM config kenv ctx3 t2
+        (_, k2, _)      <- checkTypeM config kenv ctx3 t2                       -- TODO: ctx
         when (not $ isDataKind k2)
          $ throw $ ErrorLetBodyNotData a xx t2 k2
 
@@ -84,8 +84,8 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
         let depth       = length $ map isBAnon bsRgn
 
         -- Check the type on the region binders.
-        (bsRgn', _)     <- liftM unzip 
-                        $ mapM (checkBindM config kenv ctx) bsRgn
+        (bsRgn', _, _)  <- liftM unzip3                                         -- TODO: ctx
+                        $  mapM (checkBindM config kenv ctx) bsRgn
         let ksRgn       = map typeOfBind bsRgn'
         
         -- The binders must have region kind.
@@ -102,7 +102,7 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushKinds [(b, RoleConcrete) | b <- bsRgn] ctx'
         let ctx2         = liftTypes depth ctx1
-        (bsWit', _)      <- liftM unzip 
+        (bsWit', _, _)   <- liftM unzip3                                        -- TODO: ctx
                          $  mapM (checkBindM config kenv ctx2) bsWit
         
         -- Check that the witnesses bound here are for the region,
@@ -115,7 +115,7 @@ checkLet !table !ctx xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
                         <- tableCheckExp table table ctx3 x tXX
 
         -- The body type must have data kind.
-        (_, kBody)      <- checkTypeM config kenv ctx4 tBody
+        (_, kBody, _)   <- checkTypeM config kenv ctx4 tBody                    -- TODO: ctx
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody kBody
 
@@ -199,7 +199,7 @@ checkLet !table !ctx xx@(XLet a (LWithRegion u) x) tXX
                         <- tableCheckExp table table ctx x tXX
 
         -- The body type must have data kind.
-        (tBody', kBody) <- checkTypeM config kenv ctx tBody
+        (tBody', kBody, _) <- checkTypeM config kenv ctx tBody                  -- TODO: ctx
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody' kBody
         
@@ -286,7 +286,7 @@ checkLetsM !bidir !xx !table !ctx (LRec bxs)
           b : _ -> throw $ ErrorLetrecRebound a xx b)
 
         -- Check the types on all the binders.
-        (bs', ks)       <- liftM unzip
+        (bs', ks, _)    <- liftM unzip3                                 -- TODO: use ctx
                         $  mapM (checkBindM config kenv ctx) bs
                         
         -- Check all the binders have data kind.
@@ -426,7 +426,7 @@ checkLetBindOfTypeM !a !xx !table !ctx !tRight b
         | isBot (typeOfBind b)
         = do    let config = tableConfig table
                 let kenv   = tableKindEnv table
-                (_, k)  <- checkTypeM config kenv ctx tRight
+                (_, k, _)  <- checkTypeM config kenv ctx tRight                 -- TODO: ctx
                 return (replaceTypeOfBind tRight b, k)
 
         -- The type of the binder must match that of the right of the binding.
@@ -436,7 +436,8 @@ checkLetBindOfTypeM !a !xx !table !ctx !tRight b
         | otherwise
         = do    let config = tableConfig table
                 let kenv   = tableKindEnv table
-                checkBindM config kenv ctx b
+                (b', k, _)  <- checkBindM config kenv ctx b                      -- TODO: ctx
+                return (b', k)
         
 
 -------------------------------------------------------------------------------

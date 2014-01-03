@@ -4,8 +4,7 @@ module DDC.Type.Check
         , configOfProfile
 
           -- * Kinds of Types
-        , checkType
-        , checkTypeWithContext
+        , checkType, checkTypeM
         , kindOfType
 
           -- * Kinds of Constructors
@@ -30,7 +29,6 @@ import DDC.Control.Monad.Check           (evalCheck)
 import qualified DDC.Type.Env            as Env
 
 
--- Wrappers -------------------------------------------------------------------
 -- | Check a type in the given environment,
 --   returning an error or its kind.
 checkType  :: (Ord n, Show n, Pretty n) 
@@ -40,11 +38,11 @@ checkType  :: (Ord n, Show n, Pretty n)
            -> Either (Error n) (Type n, Kind n)
 
 checkType defs env tt 
- = evalCheck () 
+ = evalCheck (0, 0)
  $ do   (t, k, _)       <- checkTypeM defs env emptyContext tt
         return (t, k)
 
-
+{-
 -- | Check a type in the given environment and local context,
 --   returning an error or its kind.
 checkTypeWithContext 
@@ -56,10 +54,10 @@ checkTypeWithContext
         -> Either (Error n) (Type n, Kind n)
 
 checkTypeWithContext defs env ctx tt 
- = evalCheck () 
+ = evalCheck (0, 0)
  $ do   (t, k, _)       <- checkTypeM defs env ctx tt
         return (t, k)
-
+-}
 
 -- | Check a type in an empty environment, returning an error or its kind.
 kindOfType
@@ -69,9 +67,7 @@ kindOfType
         -> Either (Error n) (Kind n)
 
 kindOfType defs tt
- = evalCheck () 
+ = evalCheck (0, 0)
  $ do   (_, k, _)       <- checkTypeM defs Env.empty emptyContext tt
         return k
-
-
 
