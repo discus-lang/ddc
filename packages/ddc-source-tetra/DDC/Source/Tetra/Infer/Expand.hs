@@ -167,7 +167,7 @@ expandQuant
         => a                    -- ^ Annotation to use on new type lambdas.
         -> Config a n           -- ^ Expander configuration.
         -> KindEnv  n           -- ^ Current kind environment.
-        -> (Bind n, Exp a n)    -- ^ Binder and expression of bining.
+        -> (Bind n, Exp a n)    -- ^ Binder and expression of binding.
         -> (Bind n, Exp a n)
 
 expandQuant a _config kenv (b, x)

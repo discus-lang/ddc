@@ -41,3 +41,25 @@ map     (f : a -> b) (xx : List a) : List b
         Nil       -> Nil
         Cons x xs -> Cons (f x) (map f xs)
 ;;
+
+
+-- Polymorphically take the head of a polymorphic list where
+-- the element type has a primary region variable.
+:infer..
+module Test where
+data List (a : Data) where
+        Cons    : a -> List a -> List a
+        Nil     : List a
+
+data Blerk (r : Region) where
+        Hot     : Blerk r
+        Cold    : Blerk r
+
+head (def : a) (xx : List a) : a
+ = case xx of
+        Cons x _        -> x
+        _               -> def
+
+foo (_ : Unit) : Blerk r
+ = head Hot (Cons Cold Nil)
+;;

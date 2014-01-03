@@ -290,7 +290,8 @@ popToPos pos ctx
 
 
 -- Lookup ---------------------------------------------------------------------
--- | Lookup the type of some variable from the context.
+-- | Given a bound level-0 (value) variable, lookup its type (level-1) 
+--   from the context.
 lookupType :: Eq n => Bound n -> Context n -> Maybe (Type n)
 lookupType u ctx
  = case u of
@@ -314,7 +315,8 @@ lookupType u ctx
          = goIx ix d ls
 
 
--- | Lookup the kind and role of some type variable from the context.
+-- | Given a bound level-1 (type) variable, lookup its kind (level-2) from
+--   the context.
 lookupKind :: Eq n => Bound n -> Context n -> Maybe (Kind n, Role)
 lookupKind u ctx
  = case u of

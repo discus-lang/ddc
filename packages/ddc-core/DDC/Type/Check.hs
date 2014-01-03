@@ -50,7 +50,9 @@ checkType  :: (Ord n, Show n, Pretty n)
            -> Either (Error n) (Type n, Kind n)
 
 checkType defs env tt 
-        = evalCheck () $ checkTypeM defs env emptyContext tt
+ = evalCheck () 
+ $ do   (t, k, _)       <- checkTypeM defs env emptyContext tt
+        return (t, k)
 
 
 -- | Check a type in the given environment and local context,
@@ -64,7 +66,9 @@ checkTypeWithContext
         -> Either (Error n) (Type n, Kind n)
 
 checkTypeWithContext defs env ctx tt 
-        = evalCheck () $ checkTypeM defs env ctx tt
+ = evalCheck () 
+ $ do   (t, k, _)       <- checkTypeM defs env ctx tt
+        return (t, k)
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
@@ -75,7 +79,9 @@ kindOfType
         -> Either (Error n) (Kind n)
 
 kindOfType defs tt
- = liftM snd $ evalCheck () $ checkTypeM defs Env.empty emptyContext tt
+ = evalCheck () 
+ $ do   (_, k, _)       <- checkTypeM defs Env.empty emptyContext tt
+        return k
 
 
 -- checkType ------------------------------------------------------------------
@@ -91,26 +97,26 @@ checkTypeM
         -> KindEnv n
         -> Context n   
         -> Type n 
-        -> CheckM n (Type n, Kind n)
+        -> CheckM n 
+                ( Type n
+                , Kind n
+                , Context n)
 
 checkTypeM config env ctx tt
-        = -- trace (renderPlain $ text "checkTypeM:" <+> text (show tt)) $
-          {-# SCC checkTypeM #-}
+        = {-# SCC checkTypeM #-}
           checkTypeM' config env ctx tt
 
 -- Variables ------------------
 checkTypeM' config env ctx tt@(TVar u)
- -- Primitive type variable has its type directly attached.
- | UPrim _ k       <- u    
- = return (tt, k)
 
- -- Kind is in the local environment.
- | Just (k, _role) <- lookupKind u ctx
- = return (tt, k)
- 
- -- Kind is in the global environment.
- | Just k       <- Env.lookup u env
- = return (tt, k)
+ -- Look in the local context.
+ | Just (k, _role)      <- lookupKind u ctx
+ =      return (tt, k, ctx)
+
+
+ -- Look in the global environment.
+ | Just k               <- Env.lookup u env
+ =      return (tt, k, ctx)
 
  -- This was some type we were supposed to infer.
  | UName n      <- u
@@ -118,13 +124,20 @@ checkTypeM' config env ctx tt@(TVar u)
  , isHole n
  = throw $ ErrorCannotInfer tt
 
+ -- A primitive type variable with its kind directly attached, but is not in
+ -- the kind environment. This is a hack used for static used for static region
+ -- variables in the evaluator.
+ -- TODO: Why aren't these constructors instead of variables?
+ | UPrim _ k    <- u
+ = return (tt, k, ctx)
+
  -- Type variable is nowhere to be found.
  | otherwise
  = throw $ ErrorUndefined u
 
 
 -- Constructors ---------------
-checkTypeM' config env _ctx tt@(TCon tc)
+checkTypeM' config env ctx tt@(TCon tc)
  = case tc of
         -- Sorts don't have a higher classification.
         TyConSort _      -> throw $ ErrorNakedSort tt
@@ -133,11 +146,11 @@ checkTypeM' config env _ctx tt@(TCon tc)
         -- because the sort depends on the argument kinds.
         TyConKind kc
          -> case takeSortOfKiCon kc of
-                Just s   -> return (tt, s)
+                Just s   -> return (tt, s, ctx)
                 Nothing  -> throw $ ErrorUnappliedKindFun
 
-        TyConWitness tcw -> return (tt, kindOfTwCon tcw)
-        TyConSpec    tcc -> return (tt, kindOfTcCon tcc)
+        TyConWitness tcw -> return (tt, kindOfTwCon tcw, ctx)
+        TyConSpec    tcc -> return (tt, kindOfTcCon tcc, ctx)
 
         -- User defined type constructors need to be in the set of data defs.
         TyConBound u k
@@ -146,75 +159,86 @@ checkTypeM' config env _ctx tt@(TCon tc)
                  | Just def <- Map.lookup n 
                             $  dataDefsTypes $ configDataDefs config
                  -> let k'   = kindOfDataType def
-                    in  return (TCon (TyConBound u k'), k')
+                    in  return (TCon (TyConBound u k'), k', ctx)
 
                  | Just s <- Env.lookupName n
                           $  configPrimSupers config
-                 -> return (tt, s)
+                 -> return (tt, s, ctx)
 
                  | Just s <- Env.lookupName n env
-                 -> return (tt, s)
+                 -> return (tt, s, ctx)
 
                  | otherwise
                  -> throw $ ErrorUndefinedTypeCtor u
 
-                UPrim{} -> return (tt, k)
+                UPrim{} -> return (tt, k, ctx)
                 UIx{}   -> throw $ ErrorUndefinedTypeCtor u
 
-        TyConExists _ k -> return (tt, k)
+        TyConExists _ k -> return (tt, k, ctx)
 
 -- Quantifiers ----------------
 checkTypeM' config env ctx tt@(TForall b1 t2)
- = do   let ctx'  = pushKind b1 RoleAbstract ctx
-        _         <- checkTypeM config env ctx  (typeOfBind b1)
-        (t2', k2) <- checkTypeM config env ctx' t2
+ = do   
+        -- Check the binder has a valid kind.
+        -- Kinds don't have any variables, so we don't need to do anything
+        -- with the returned context.
+        _               <- checkTypeM config env ctx  (typeOfBind b1)
+
+        -- Check the body with the binder in scope.
+        let (ctx1, pos1) = markContext ctx
+        let ctx2         = pushKind b1 RoleAbstract ctx1
+        (t2', k2, ctx3)  <- checkTypeM config env ctx2 t2
+
+        let ctx_cut     = popToPos pos1 ctx3
 
         -- The body must have data or witness kind.
         when (  (not $ isDataKind k2)
              && (not $ isWitnessKind k2))
          $ throw $ ErrorForallKindInvalid tt t2 k2
 
-        return (TForall b1 t2', k2)
+        return (TForall b1 t2', k2, ctx_cut)
 
 
 -- Applications ---------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
 checkTypeM' config env ctx tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
- = do   _       <- checkTypeM config env ctx k1
-        (_, s2) <- checkTypeM config env ctx k2
-        return  (tt, s2)
+ = do   _          <- checkTypeM config env ctx k1
+        (_, s2, _) <- checkTypeM config env ctx k2
+        return  (tt, s2, ctx)
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness implication.
 --   (=>) :: @ ~> * ~> *,  for a context.
 checkTypeM' config env ctx tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
- = do   (t1', k1) <- checkTypeM config env ctx t1
-        (t2', k2) <- checkTypeM config env ctx t2
+ = do   (t1', k1, ctx1) <- checkTypeM config env ctx  t1
+        (t2', k2, ctx2) <- checkTypeM config env ctx1 t2
 
         let tt' = TApp (TApp tC t1') t2'
 
         if      isWitnessKind k1 && isWitnessKind k2
-         then     return (tt', kWitness)
+         then     return (tt', kWitness, ctx2)
         else if isWitnessKind k1 && isDataKind k2
-         then     return (tt', kData)
+         then     return (tt', kData, ctx2)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 -- Type application.
 checkTypeM' config env ctx tt@(TApp t1 t2)
- = do   (t1', k1)       <- checkTypeM config env ctx t1
-        (t2', k2)       <- checkTypeM config env ctx t2
+ = do   (t1', k1, ctx1) <- checkTypeM config env ctx  t1
+        (t2', k2, ctx2) <- checkTypeM config env ctx1 t2
         case k1 of
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
-          | k11 == k2   -> return (TApp t1' t2', k12)
+          | k11 == k2   -> return (TApp t1' t2', k12, ctx2)
           | otherwise   -> throw $ ErrorAppArgMismatch tt k1 k2
                   
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
 -- Sums -----------------------
 checkTypeM' config env ctx (TSum ts)
- = do   (ts', ks)       <- liftM unzip 
+ = do   
+        -- TODO: handle contexts properly.
+        (ts', ks, _)    <- liftM unzip3 
                         $  mapM (checkTypeM config env ctx) $ TS.toList ts
 
         -- Check that all the types in the sum have a single kind, 
@@ -228,6 +252,6 @@ checkTypeM' config env ctx (TSum ts)
         -- Check that the kind of the elements is a valid one.
         -- Only effects and closures can be summed.
         if (k == kEffect || k == kClosure)
-         then return (TSum (TS.fromList k ts'), k)
+         then return (TSum (TS.fromList k ts'), k, ctx)
          else throw $ ErrorSumKindInvalid ts k
 

@@ -75,3 +75,21 @@ length : [a : Data].List a -> Nat
        -> add [?] 1 (length [?] xs)
     }
 
+
+-- Data type used in function signature has a region variable.
+-- During elaboration we add a region parameter to the front of flipit.
+module Test where
+data Blerk (r : Region) where {
+        Hot : Blerk r;
+        Cold : Blerk r;
+}
+flipit : [r : Data].Blerk r -> Blerk r
+  = /\(r : Data).
+     \(x : Blerk r).
+    case x of {
+      Hot  
+       -> Cold [?];
+      Cold  
+       -> Hot [?]
+    }
+

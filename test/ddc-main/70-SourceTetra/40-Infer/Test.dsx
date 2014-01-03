@@ -63,3 +63,18 @@ length (xx : List a) : Nat
         Cons x xs -> 1 + length xs
 ;;
 
+
+-- Data type used in function signature has a region variable.
+-- During elaboration we add a region parameter to the front of flipit.
+:infer..
+module Test where
+data Blerk (r : Region) where
+        Hot     : Blerk r
+        Cold    : Blerk r
+
+flipit (x : Blerk r) : Blerk r
+ = case x of
+        Hot     -> Cold
+        Cold    -> Hot
+;;
+
