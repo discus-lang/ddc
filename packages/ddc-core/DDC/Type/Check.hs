@@ -21,6 +21,7 @@ import DDC.Type.Check.Error
 import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
+import DDC.Type.Universe
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import DDC.Type.Pretty                   ()
@@ -29,8 +30,8 @@ import DDC.Control.Monad.Check           (evalCheck)
 import qualified DDC.Type.Env            as Env
 
 
--- | Check a type in the given environment,
---   returning an error or its kind.
+-- | Check a type in the given environment, returning an error or its kind.
+--   The provided type is assumed to be in the Spec universe.
 checkType  :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> KindEnv n 
@@ -39,27 +40,12 @@ checkType  :: (Ord n, Show n, Pretty n)
 
 checkType defs env tt 
  = evalCheck (0, 0)
- $ do   (t, k, _)       <- checkTypeM defs env emptyContext tt
+ $ do   (t, k, _)       <- checkTypeM defs env emptyContext UniverseSpec tt
         return (t, k)
 
-{-
--- | Check a type in the given environment and local context,
---   returning an error or its kind.
-checkTypeWithContext 
-        :: (Ord n, Show n, Pretty n) 
-        => Config n 
-        -> KindEnv n 
-        -> Context n
-        -> Type n
-        -> Either (Error n) (Type n, Kind n)
-
-checkTypeWithContext defs env ctx tt 
- = evalCheck (0, 0)
- $ do   (t, k, _)       <- checkTypeM defs env ctx tt
-        return (t, k)
--}
 
 -- | Check a type in an empty environment, returning an error or its kind.
+--   The provided type is assumed to be in the Spec universe.
 kindOfType
         :: (Ord n, Show n, Pretty n) 
         => Config n
@@ -68,6 +54,6 @@ kindOfType
 
 kindOfType defs tt
  = evalCheck (0, 0)
- $ do   (_, k, _)       <- checkTypeM defs Env.empty emptyContext tt
+ $ do   (_, k, _)       <- checkTypeM defs Env.empty emptyContext UniverseSpec tt
         return k
 

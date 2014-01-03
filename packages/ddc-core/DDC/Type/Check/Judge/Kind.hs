@@ -8,6 +8,7 @@ import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
 import DDC.Type.Check.Base
+import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Exp
@@ -22,30 +23,37 @@ import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
 
--- checkType ------------------------------------------------------------------
 -- | Check a type, returning its kind.
+--
+--   We track what universe the provided kind is in for defence against
+--   transform bugs. Types like ([a : [b : Data]. b]. a -> a), should not be
+--   accepted by the source parser, but may be created by bogus program
+--   transformations. Quantifiers cannot be used at the kind level, so it's 
+--   better to fail early.
 ---
 --   Note that when comparing kinds, we can just use plain equality
 --   (==) instead of equivT. This is because kinds do not contain quantifiers
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
+--
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
-        => Config  n
-        -> KindEnv n
-        -> Context n   
-        -> Type n 
+        => Config n             -- ^ Type checker configuration.
+        -> KindEnv n            -- ^ Top-level kind environment.
+        -> Context n            -- ^ Local context.
+        -> Universe             -- ^ What universe the type to check is in.
+        -> Type n               -- ^ The type to check (can be a Spec or Kind)
         -> CheckM n 
                 ( Type n
                 , Kind n
                 , Context n)
 
-checkTypeM config env ctx tt
+checkTypeM config env ctx uni tt
         = {-# SCC checkTypeM #-}
-          checkTypeM' config env ctx tt
+          checkTypeM' config env ctx uni tt
 
 -- Variables ------------------
-checkTypeM' config env ctx tt@(TVar u)
+checkTypeM' config env ctx UniverseSpec tt@(TVar u)
 
  -- Look in the local context.
  | Just (k, _role)      <- lookupKind u ctx
@@ -56,6 +64,7 @@ checkTypeM' config env ctx tt@(TVar u)
  =      return (tt, k, ctx)
 
  -- This was some type we were supposed to infer.
+ -- TODO: For holes at the kind level we also need to infer their sorts.
  | UName n      <- u
  , Just isHole  <- configNameIsHole config
  , isHole n
@@ -74,7 +83,7 @@ checkTypeM' config env ctx tt@(TVar u)
 
 
 -- Constructors ---------------
-checkTypeM' config env ctx tt@(TCon tc)
+checkTypeM' config env ctx _uni tt@(TCon tc)
  = case tc of
         -- Sorts don't have a higher classification.
         TyConSort _      -> throw $ ErrorNakedSort tt
@@ -113,18 +122,19 @@ checkTypeM' config env ctx tt@(TCon tc)
 
         TyConExists _ k -> return (tt, k, ctx)
 
+
 -- Quantifiers ----------------
-checkTypeM' config env ctx tt@(TForall b1 t2)
+checkTypeM' config env ctx UniverseSpec tt@(TForall b1 t2)
  = do   
         -- Check the binder has a valid kind.
         -- Kinds don't have any variables, so we don't need to do anything
         -- with the returned context.
-        _               <- checkTypeM config env ctx  (typeOfBind b1)
+        _               <- checkTypeM config env ctx UniverseSpec (typeOfBind b1)
 
         -- Check the body with the binder in scope.
         let (ctx1, pos1) = markContext ctx
         let ctx2         = pushKind b1 RoleAbstract ctx1
-        (t2', k2, ctx3)  <- checkTypeM config env ctx2 t2
+        (t2', k2, ctx3)  <- checkTypeM config env ctx2 UniverseSpec t2
 
         let ctx_cut     = popToPos pos1 ctx3
 
@@ -139,18 +149,20 @@ checkTypeM' config env ctx tt@(TForall b1 t2)
 -- Applications ---------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
-checkTypeM' config env ctx tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
- = do   _          <- checkTypeM config env ctx k1
-        (_, s2, _) <- checkTypeM config env ctx k2
+checkTypeM' config env ctx UniverseKind 
+        tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
+ = do   _          <- checkTypeM config env ctx UniverseKind k1
+        (_, s2, _) <- checkTypeM config env ctx UniverseKind k2
         return  (tt, s2, ctx)
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness implication.
 --   (=>) :: @ ~> * ~> *,  for a context.
-checkTypeM' config env ctx tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
- = do   (t1', k1, ctx1) <- checkTypeM config env ctx  t1
-        (t2', k2, ctx2) <- checkTypeM config env ctx1 t2
+checkTypeM' config env ctx UniverseSpec 
+        tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
+ = do   (t1', k1, ctx1) <- checkTypeM config env ctx  UniverseSpec t1
+        (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2
 
         let tt' = TApp (TApp tC t1') t2'
 
@@ -161,9 +173,9 @@ checkTypeM' config env ctx tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 -- Type application.
-checkTypeM' config env ctx tt@(TApp t1 t2)
- = do   (t1', k1, ctx1) <- checkTypeM config env ctx  t1
-        (t2', k2, ctx2) <- checkTypeM config env ctx1 t2
+checkTypeM' config env ctx uni tt@(TApp t1 t2)
+ = do   (t1', k1, ctx1) <- checkTypeM config env ctx  uni t1
+        (t2', k2, ctx2) <- checkTypeM config env ctx1 uni t2
         case k1 of
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
           | k11 == k2   -> return (TApp t1' t2', k12, ctx2)
@@ -171,12 +183,14 @@ checkTypeM' config env ctx tt@(TApp t1 t2)
                   
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
+
 -- Sums -----------------------
-checkTypeM' config env ctx (TSum ts)
+checkTypeM' config env ctx UniverseSpec (TSum ts)
  = do   
         -- TODO: handle contexts properly.
         (ts', ks, _)    <- liftM unzip3 
-                        $  mapM (checkTypeM config env ctx) $ TS.toList ts
+                        $  mapM (checkTypeM config env ctx UniverseSpec) 
+                        $  TS.toList ts
 
         -- Check that all the types in the sum have a single kind, 
         -- and return that kind.
@@ -191,3 +205,6 @@ checkTypeM' config env ctx (TSum ts)
         if (k == kEffect || k == kClosure)
          then return (TSum (TS.fromList k ts'), k, ctx)
          else throw $ ErrorSumKindInvalid ts k
+
+checkTypeM' _ _ _ _ _
+        = error "checkTypeM': Universe malfunction"                             -- TODO: real error

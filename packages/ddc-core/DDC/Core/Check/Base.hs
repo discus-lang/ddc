@@ -142,7 +142,7 @@ checkTypeM config kenv ctx tt
         (tr, ix, pos)   <- G.get
         let ((ix', pos'), result)
                 = G.runCheck (ix, pos)
-                $ T.checkTypeM config kenv ctx tt
+                $ T.checkTypeM config kenv ctx UniverseSpec tt
         G.put (tr, ix', pos')
         
         -- If the type/kind checker returns an error then wrap it 
