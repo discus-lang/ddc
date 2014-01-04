@@ -157,59 +157,30 @@ enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
 
 -- Error: binding must have data kind.
 When checking expression.
-  <batch>:121:2
-  Function parameter has invalid kind.
-      The function parameter: Effect
-                    has kind: Comp
-              but it must be: Data or Witness
-  
-  with: \(e1 : Effect).
-        let e2 : Effect = e1 in
-        ()
+  Universe malfunction.
+                 Type: Effect
+   is not in universe: Spec
 
 
 -- Error: binding must have data kind.
 When checking expression.
-  <batch>:128:2
-  Function parameter has invalid kind.
-      The function parameter: Effect
-                    has kind: Comp
-              but it must be: Data or Witness
-  
-  with: \(e1 : Effect).
-        letrec {
-          e2 : Effect = e1
-        } in
-        ()
+  Universe malfunction.
+                 Type: Effect
+   is not in universe: Spec
 
 
 -- Error: body must have data kind.
 When checking expression.
-  <batch>:135:2
-  Function parameter has invalid kind.
-      The function parameter: Effect
-                    has kind: Comp
-              but it must be: Data or Witness
-  
-  with: \(e1 : Effect).
-        let x : Unit = () in
-        e1
+  Universe malfunction.
+                 Type: Effect
+   is not in universe: Spec
 
 
 -- Error: body must have data kind.
 When checking expression.
-  <batch>:142:2
-  Function parameter has invalid kind.
-      The function parameter: Effect
-                    has kind: Comp
-              but it must be: Data or Witness
-  
-  with: \(e1 : Effect).
-        letrec {
-          foo : Unit -> Unit
-            = \(x : Unit). ()
-        } in
-        e1
+  Universe malfunction.
+                 Type: Effect
+   is not in universe: Spec
 
 
 -- Error: right of letrec binding must be a lambda

@@ -113,14 +113,16 @@ ctrace doc'
 -- | Check a bind.
 checkBindM
         :: (Ord n, Show n, Pretty n)
-        => Config n
-        -> KindEnv n
-        -> Context n
-        -> Bind n
-        -> CheckM a n (Bind n, Kind n, Context n)
+        => Config n             -- ^ Checker configuration.
+        -> KindEnv n            -- ^ Global kind environment.
+        -> Context n            -- ^ Local context.
+        -> Universe             -- ^ Universe for the type of the bind.
+        -> Bind n               -- ^ Check this bind.
+        -> CheckM a n (Bind n, Type n, Context n)
 
-checkBindM config kenv ctx bb
- = do   (t', k, ctx')  <- checkTypeM config kenv ctx (typeOfBind bb)
+checkBindM config kenv ctx uni bb
+ = do   (t', k, ctx')   <- checkTypeM config kenv ctx uni 
+                        $  typeOfBind bb
         return (replaceTypeOfBind t' bb, k, ctx')
 
 
@@ -128,13 +130,14 @@ checkBindM config kenv ctx bb
 -- | Check a type in the exp checking monad, returning its kind.
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
-        => Config n 
-        -> KindEnv n 
-        -> Context n 
-        -> Type n
+        => Config n             -- ^ Checker configuration.
+        -> KindEnv n            -- ^ Global kind environment.
+        -> Context n            -- ^ Local context.
+        -> Universe             -- ^ Universe the type is supposed to be in.
+        -> Type n               -- ^ Check this type.
         -> CheckM a n (Type n, Kind n, Context n)
 
-checkTypeM config kenv ctx tt
+checkTypeM config kenv ctx uni tt
  = do   
         -- Run the inner type/kind checker computation, 
         -- giving it our current values for the existential and position 
@@ -142,7 +145,7 @@ checkTypeM config kenv ctx tt
         (tr, ix, pos)   <- G.get
         let ((ix', pos'), result)
                 = G.runCheck (ix, pos)
-                $ T.checkTypeM config kenv ctx UniverseSpec tt
+                $ T.checkTypeM config kenv ctx uni tt
         G.put (tr, ix', pos')
         
         -- If the type/kind checker returns an error then wrap it 

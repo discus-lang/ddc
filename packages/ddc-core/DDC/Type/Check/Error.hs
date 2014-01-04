@@ -3,18 +3,31 @@
 module DDC.Type.Check.Error
         (Error(..))
 where
+import DDC.Type.Universe
 import DDC.Type.Exp
 
 
 -- | Things that can go wrong when checking the kind of at type.
 data Error n
+        -- | Tried to check a type using the wrong universe, 
+        --   for example: asking for the kind of a kind.
+        = ErrorUniverseMalfunction
+        { errorType             :: Type n
+        , errorUniverse         :: Universe }
 
-        -- | An undefined type variable.
-        = ErrorUndefined        
-        { errorBound            :: Bound n }
+        -- | Found an unapplied kind function constructor.
+        | ErrorUnappliedKindFun 
+
+        -- | Found a naked sort constructor.
+        | ErrorNakedSort
+        { errorSort             :: Sort n }
 
         -- | An undefined type constructor.
         | ErrorUndefinedTypeCtor
+        { errorBound            :: Bound n }
+
+        -- | An undefined type variable.
+        | ErrorUndefined        
         { errorBound            :: Bound n }
 
         -- | The kind annotation on the variables does not match the one in the
@@ -22,13 +35,6 @@ data Error n
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n
         , errorTypeEnv          :: Type n }
-
-        -- | Found a naked sort constructor.
-        | ErrorNakedSort
-        { errorSort             :: Sort n }
-
-        -- | Found an unapplied kind function constructor.
-        | ErrorUnappliedKindFun 
 
         -- | A type application where the parameter and argument kinds don't match.
         | ErrorAppArgMismatch   

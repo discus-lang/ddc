@@ -13,6 +13,7 @@ import DDC.Type.Check.Context
 import DDC.Type.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Equiv
+import DDC.Type.Universe
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
@@ -68,15 +69,15 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Check the imported kinds and types.
         --  The imported types are in scope in both imported and exported signatures.
-        mapM_ (checkTypeM config kenv) $ map typeOfBind bksImport
+        mapM_ (checkTypeM config kenv  UniverseKind) $ map typeOfBind bksImport
         let kenv' = Env.union kenv $ Env.fromList bksImport
 
-        mapM_ (checkTypeM config kenv') $ map typeOfBind btsImport
+        mapM_ (checkTypeM config kenv' UniverseSpec) $ map typeOfBind btsImport
         let tenv' = Env.union tenv $ Env.fromList btsImport
 
         -- Check the sigs for exported things.
-        mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportKinds mm
-        mapM_ (checkTypeM config kenv') $ Map.elems $ moduleExportTypes mm
+        mapM_ (checkTypeM config kenv' UniverseKind) $ Map.elems $ moduleExportKinds mm
+        mapM_ (checkTypeM config kenv' UniverseSpec) $ Map.elems $ moduleExportTypes mm
                 
         -- TODO: Check the data type definitions.
         --       The constructor types need to return the defined data type.
@@ -183,15 +184,15 @@ checkBindDefined env n
 
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
---   The type is assumed to be in the spec universe.
 checkTypeM :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> KindEnv n 
+           -> Universe
            -> Type n 
            -> CheckM a n (Type n, Kind n)
 
-checkTypeM !config !kenv !tt
- = case T.checkSpec config kenv tt of
+checkTypeM !config !kenv !uni !tt
+ = case T.checkType config kenv uni tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

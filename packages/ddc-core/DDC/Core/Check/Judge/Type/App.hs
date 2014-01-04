@@ -44,7 +44,7 @@ checkApp !table !ctx0 xx@(XApp a1 xFn (XType a2 tArg)) mode
                         return  (tArg', kArg, ctx2)
                 _
                  -> do  (tArg', kArg, _)                                        -- TODO: ctx
-                                <- checkTypeM config kenv ctx1 tArg
+                                <- checkTypeM config kenv ctx1 UniverseSpec tArg
                         return  (tArg', kArg, ctx1)
 
         -- Take any Use annots from a region arg.

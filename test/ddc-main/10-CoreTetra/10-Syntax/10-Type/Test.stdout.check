@@ -1,5 +1,6 @@
 ok
 
+
 -- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
 Data ~> Data :: Comp

@@ -1,13 +1,15 @@
 :set lang Lite
 
 -- Error: sorts don't have a higher classification
+:sort Prop
+
 :kind Prop
 
 
 -- Error: can't sort-check the naked kind function, 
 -- because its sort depends on how it's instantiated, 
 -- and we don't have sort polymorphism.
-:kind (~>)
+:sort (~>)
 
 
 -- Error: body of a forall must have data or witness kind.

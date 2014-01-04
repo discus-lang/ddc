@@ -10,18 +10,23 @@ import DDC.Type.Pretty
 instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
+        ErrorUniverseMalfunction t u
+         -> vcat [ text "Universe malfunction."
+                 , text "               Type: " <> ppr t
+                 , text " is not in universe: " <> ppr u ]
+
+        ErrorUnappliedKindFun 
+         -> text "Can't take sort of unapplied kind function constructor."
+
+        ErrorNakedSort s
+         -> text "Can't check a naked sort: " <> ppr s
+                
         ErrorUndefined u
          -> text "Undefined type variable: " <> ppr u
 
         ErrorUndefinedTypeCtor u
          -> text "Undefined type constructor: " <> ppr u
 
-        ErrorUnappliedKindFun 
-         -> text "Can't take sort of unapplied kind function constructor."
-        
-        ErrorNakedSort s
-         -> text "Can't check a naked sort: " <> ppr s
-        
         ErrorVarAnnotMismatch u t
          -> vcat [ text "Type mismatch in annotation."
                  , text "             Variable: "       <> ppr u

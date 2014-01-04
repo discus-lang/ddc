@@ -2,7 +2,14 @@ ok
 
 -- Error: sorts don't have a higher classification
 When checking type.
-  Can't check a naked sort: Prop
+  Universe malfunction.
+                 Type: Prop
+   is not in universe: Kind
+
+When checking type.
+  Universe malfunction.
+                 Type: Prop
+   is not in universe: Spec
 
 
 -- Error: can't sort-check the naked kind function, 
@@ -58,6 +65,6 @@ When checking type.
 
 -- #242 Error: Undefined type constructor ().
 While parsing.
-  Parse error in "<batch>" (line 34, column 17)
+  Parse error in "<batch>" (line 36, column 17)
   Unexpected constructor "()".
   Expected a type.

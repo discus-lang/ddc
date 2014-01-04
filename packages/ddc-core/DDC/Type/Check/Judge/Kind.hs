@@ -23,7 +23,10 @@ import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
 
--- | Check a type, returning its kind.
+-- | Check a type returning its kind, or a kind returning its sort.
+--
+--   The unverse of the thing to check is directly specified, and if the 
+--   thing is not actually in this universe they you'll get an error.
 --
 --   We track what universe the provided kind is in for defence against
 --   transform bugs. Types like ([a : [b : Data]. b]. a -> a), should not be
@@ -48,12 +51,8 @@ checkTypeM
                 , Kind n
                 , Context n)
 
-checkTypeM config env ctx uni tt
-        = {-# SCC checkTypeM #-}
-          checkTypeM' config env ctx uni tt
-
 -- Variables ------------------
-checkTypeM' config env ctx UniverseSpec tt@(TVar u)
+checkTypeM config env ctx UniverseSpec tt@(TVar u)
 
  -- Look in the local context.
  | Just (k, _role)      <- lookupKind u ctx
@@ -83,60 +82,85 @@ checkTypeM' config env ctx UniverseSpec tt@(TVar u)
 
 
 -- Constructors ---------------
-checkTypeM' config env ctx _uni tt@(TCon tc)
- = case tc of
+checkTypeM config env ctx uni tt@(TCon tc)
         -- Sorts don't have a higher classification.
-        TyConSort _      -> throw $ ErrorNakedSort tt
+        | TyConSort _           <- tc
+        , UniverseSort          <- uni
+        = throw $ ErrorNakedSort tt
 
         -- Can't sort check a naked kind function
         -- because the sort depends on the argument kinds.
-        TyConKind kc
-         -> case takeSortOfKiCon kc of
+        | TyConKind kc          <- tc
+        , UniverseKind          <- uni
+        = case takeSortOfKiCon kc of
                 Just s   -> return (tt, s, ctx)
                 Nothing  -> throw $ ErrorUnappliedKindFun
 
-        TyConWitness tcw -> return (tt, kindOfTwCon tcw, ctx)
-        TyConSpec    tcc -> return (tt, kindOfTcCon tcc, ctx)
+        -- Baked-in witness type constructors.
+        | TyConWitness tcw      <- tc
+        , UniverseSpec          <- uni
+        = return (tt, kindOfTwCon tcw, ctx)
 
-        -- User defined type constructors need to be in the set of data defs.
-        TyConBound u k
-         -> case u of
-                UName n
-                 | Just def <- Map.lookup n 
-                            $  dataDefsTypes $ configDataDefs config
-                 -> let k'   = kindOfDataType def
-                    in  return (TCon (TyConBound u k'), k', ctx)
+        -- Baked-in spec type constructors.
+        | TyConSpec    tcc      <- tc
+        , UniverseSpec          <- uni
+        = return (tt, kindOfTcCon tcc, ctx)
 
-                 | Just s <- Env.lookupName n
-                          $  configPrimSupers config
-                 -> return (tt, s, ctx)
+        -- Fragment specific, or user defined constructors.
+        | TyConBound u k        <- tc
+        = case u of
+           UName n
+            -- User defined data type constructors must be in the set of
+            -- data defs.
+            | Just def <- Map.lookup n 
+                      $  dataDefsTypes $ configDataDefs config
+            , UniverseSpec <- uni
+            -> let k'   = kindOfDataType def
+               in  return (TCon (TyConBound u k'), k', ctx)
 
-                 | Just s <- Env.lookupName n env
-                 -> return (tt, s, ctx)
+            -- The kinds of abstract imported type constructors are in the
+            -- kind environment.
+            | Just s   <- Env.lookupName n env
+            , UniverseSpec <- uni
+            -> return (tt, s, ctx)
 
-                 | otherwise
-                 -> throw $ ErrorUndefinedTypeCtor u
+            -- We don't have a type for this constructor.
+            | otherwise
+            -> throw $ ErrorUndefinedTypeCtor u
 
-                UPrim{} -> return (tt, k, ctx)
-                UIx{}   -> throw $ ErrorUndefinedTypeCtor u
+           -- The kinds of primitive type constructors are directly attached.
+           UPrim{} -> return (tt, k, ctx)
 
-        TyConExists _ k -> return (tt, k, ctx)
+           -- Type constructors are always defined at top-level and not
+           -- by anonymous debruijn binding.
+           UIx{}   -> throw $ ErrorUndefinedTypeCtor u
+
+        -- Existentials can be either in the Spec or Kind universe.
+        | TyConExists _ k       <- tc
+        , uni == UniverseSpec || uni == UniverseKind
+        = return (tt, k, ctx)
+
+        -- Whatever constructor we were given wasn't in the expected universe.
+        | otherwise
+        = throw $ ErrorUniverseMalfunction tt uni
 
 
 -- Quantifiers ----------------
-checkTypeM' config env ctx UniverseSpec tt@(TForall b1 t2)
+checkTypeM config env ctx0 UniverseSpec 
+        tt@(TForall b1 t2)
  = do   
         -- Check the binder has a valid kind.
-        -- Kinds don't have any variables, so we don't need to do anything
-        -- with the returned context.
-        _               <- checkTypeM config env ctx UniverseSpec (typeOfBind b1)
+        -- Kinds don't have any variables, which is enforced by the fact that
+        -- the Var rule above only applies in the Spec universe.
+        -- The returned context will be the same as the provided one.
+        let t1          = typeOfBind b1
+        _               <- checkTypeM config env ctx0  UniverseKind t1
 
         -- Check the body with the binder in scope.
-        let (ctx1, pos1) = markContext ctx
+        let (ctx1, pos1) = markContext ctx0
         let ctx2         = pushKind b1 RoleAbstract ctx1
-        (t2', k2, ctx3)  <- checkTypeM config env ctx2 UniverseSpec t2
-
-        let ctx_cut     = popToPos pos1 ctx3
+        (t2', k2, ctx3) <- checkTypeM config env ctx2 UniverseSpec t2
+        let ctx_cut      = popToPos pos1 ctx3
 
         -- The body must have data or witness kind.
         when (  (not $ isDataKind k2)
@@ -149,19 +173,24 @@ checkTypeM' config env ctx UniverseSpec tt@(TForall b1 t2)
 -- Applications ---------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
-checkTypeM' config env ctx UniverseKind 
+checkTypeM config env ctx UniverseKind 
         tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
- = do   _          <- checkTypeM config env ctx UniverseKind k1
+ = do   
+        -- Kinds don't have any variables.
+        -- The returned context will be the same as the provided one.
+        _          <- checkTypeM config env ctx UniverseKind k1
         (_, s2, _) <- checkTypeM config env ctx UniverseKind k2
+
         return  (tt, s2, ctx)
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness implication.
 --   (=>) :: @ ~> * ~> *,  for a context.
-checkTypeM' config env ctx UniverseSpec 
+checkTypeM config env ctx0 UniverseSpec 
         tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
- = do   (t1', k1, ctx1) <- checkTypeM config env ctx  UniverseSpec t1
+ = do   
+        (t1', k1, ctx1) <- checkTypeM config env ctx0 UniverseSpec t1
         (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2
 
         let tt' = TApp (TApp tC t1') t2'
@@ -173,19 +202,23 @@ checkTypeM' config env ctx UniverseSpec
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 -- Type application.
-checkTypeM' config env ctx uni tt@(TApp t1 t2)
- = do   (t1', k1, ctx1) <- checkTypeM config env ctx  uni t1
-        (t2', k2, ctx2) <- checkTypeM config env ctx1 uni t2
+checkTypeM config env ctx0 UniverseSpec 
+        tt@(TApp t1 t2)
+ = do   
+        (t1', k1, ctx1) <- checkTypeM config env ctx0 UniverseSpec t1
+        (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2
+
         case k1 of
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
           | k11 == k2   -> return (TApp t1' t2', k12, ctx2)
+
           | otherwise   -> throw $ ErrorAppArgMismatch tt k1 k2
                   
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
 
 -- Sums -----------------------
-checkTypeM' config env ctx UniverseSpec (TSum ts)
+checkTypeM config env ctx UniverseSpec (TSum ts)
  = do   
         -- TODO: handle contexts properly.
         (ts', ks, _)    <- liftM unzip3 
@@ -206,5 +239,5 @@ checkTypeM' config env ctx UniverseSpec (TSum ts)
          then return (TSum (TS.fromList k ts'), k, ctx)
          else throw $ ErrorSumKindInvalid ts k
 
-checkTypeM' _ _ _ _ _
-        = error "checkTypeM': Universe malfunction"                             -- TODO: real error
+checkTypeM _ _ _ uni tt
+        = throw $ ErrorUniverseMalfunction tt uni

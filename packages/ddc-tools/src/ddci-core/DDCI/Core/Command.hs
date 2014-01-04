@@ -34,6 +34,8 @@ import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
 
+import DDC.Type.Universe
+
 import qualified DDC.Core.Flow                  as Flow
 import qualified Data.Set                       as Set
 import System.IO
@@ -49,7 +51,8 @@ data Command
         | CommandHelp           -- ^ Display the interpreter help.
         | CommandSet            -- ^ Set a mode.
         | CommandLoad           -- ^ Load a module.
-        | CommandKind           -- ^ Show the kind of a type.
+        | CommandSort           -- ^ Show the sort of a kind.
+        | CommandKind           -- ^ Show the kind of a spec.
         | CommandEquivType      -- ^ Check if two types are equivalent.
         | CommandWitType        -- ^ Show the type of a witness.
         | CommandExpCheck       -- ^ Check the type of an expression.
@@ -105,8 +108,8 @@ commands
         , (":?",                CommandHelp)
         , (":set",              CommandSet)
         , (":load",             CommandLoad)
+        , (":sort",             CommandSort)
         , (":kind",             CommandKind)
-
         , (":tequiv",           CommandEquivType)
         , (":wtype",            CommandWitType)
         , (":check",            CommandExpCheck)
@@ -213,8 +216,12 @@ handleCmd1 state cmd source line
                         (stateLanguage state) source line
                 return state
 
+        CommandSort
+         -> do  cmdShowType  lang UniverseKind source line
+                return state
+
         CommandKind       
-         -> do  cmdShowKind  lang source line
+         -> do  cmdShowType  lang UniverseSpec source line
                 return state
 
         CommandEquivType
@@ -226,23 +233,23 @@ handleCmd1 state cmd source line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType  lang ShowTypeAll     False traceCheck source line
+         -> do  cmdShowSpec  lang ShowSpecAll     False traceCheck source line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType  lang ShowTypeValue   False traceCheck source line
+         -> do  cmdShowSpec  lang ShowSpecData    False traceCheck source line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType  lang ShowTypeEffect  False traceCheck source line
+         -> do  cmdShowSpec  lang ShowSpecEffect  False traceCheck source line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType  lang ShowTypeClosure False traceCheck source line
+         -> do  cmdShowSpec  lang ShowSpecClosure False traceCheck source line
                 return state
 
         CommandExpSynth
-         -> do  cmdShowType  lang ShowTypeAll     True  traceCheck source line
+         -> do  cmdShowSpec  lang ShowSpecAll     True  traceCheck source line
                 return state
 
         CommandExpRecon

@@ -1,8 +1,9 @@
 :set lang Tetra
 
+
 -- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
-:kind (~>) Data Data
+:sort (~>) Data Data
 
 
 -- Parse witness implication operator.
