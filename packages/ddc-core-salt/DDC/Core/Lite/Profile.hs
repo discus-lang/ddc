@@ -10,7 +10,6 @@ import DDC.Core.Lite.Name
 import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Data.Token
-import qualified DDC.Type.Env           as Env
 
 
 -- | Profile for Disciple Core Lite.
@@ -20,7 +19,6 @@ profile
         { profileName                   = "Lite"
         , profileFeatures               = features
         , profilePrimDataDefs           = primDataDefs
-        , profilePrimSupers             = Env.empty
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
         , profileTypeIsUnboxed          = const False 

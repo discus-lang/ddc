@@ -24,7 +24,6 @@ profile
         { profileName                   = "Tetra"
         , profileFeatures               = features
         , profilePrimDataDefs           = primDataDefs
-        , profilePrimSupers             = primSortEnv
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
         , profileTypeIsUnboxed          = const False 

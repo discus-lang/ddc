@@ -239,5 +239,9 @@ checkTypeM config env ctx UniverseSpec (TSum ts)
          then return (TSum (TS.fromList k ts'), k, ctx)
          else throw $ ErrorSumKindInvalid ts k
 
+
+-- Whatever type we were given wasn't in the specified universe.
 checkTypeM _ _ _ uni tt
         = throw $ ErrorUniverseMalfunction tt uni
+
+

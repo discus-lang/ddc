@@ -10,7 +10,6 @@ import DDC.Core.Salt.Name
 import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Data.Token
-import qualified DDC.Type.Env           as Env
 
 
 -- | Language profile for Disciple Core Salt.
@@ -20,7 +19,6 @@ profile
         { profileName                   = "Salt"
         , profileFeatures               = features
         , profilePrimDataDefs           = primDataDefs
-        , profilePrimSupers             = Env.empty
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv 
         , profileTypeIsUnboxed          = typeIsUnboxed 
