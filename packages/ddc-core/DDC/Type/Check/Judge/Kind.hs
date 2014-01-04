@@ -70,8 +70,8 @@ checkTypeM config env ctx UniverseSpec tt@(TVar u)
  = throw $ ErrorCannotInfer tt
 
  -- A primitive type variable with its kind directly attached, but is not in
- -- the kind environment. This is a hack used for static used for static region
- -- variables in the evaluator.
+ -- the kind environment. This is a hack used for static used for static
+ -- region variables in the evaluator.
  -- TODO: Why aren't these constructors instead of variables?
  | UPrim _ k    <- u
  = return (tt, k, ctx)
@@ -209,6 +209,9 @@ checkTypeM config env ctx0 UniverseSpec
         (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2
 
         case k1 of
+         -- Type constructor application.
+         -- The constructor must have the function kind and its parameter
+         -- kind match with the kind of the argument.
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
           | k11 == k2   -> return (TApp t1' t2', k12, ctx2)
 
@@ -218,30 +221,51 @@ checkTypeM config env ctx0 UniverseSpec
 
 
 -- Sums -----------------------
-checkTypeM config env ctx UniverseSpec (TSum ts)
+checkTypeM config kenv ctx0 UniverseSpec (TSum ts)
  = do   
-        -- TODO: handle contexts properly.
-        (ts', ks, _)    <- liftM unzip3 
-                        $  mapM (checkTypeM config env ctx UniverseSpec) 
-                        $  TS.toList ts
+        -- Check all the types, chaining the context from left to right.
+        (ts', ks, ctx1) 
+                <- checkTypesM config kenv ctx0 UniverseSpec
+                $  TS.toList ts
 
-        -- Check that all the types in the sum have a single kind, 
-        -- and return that kind.
-        k <- case nub ks of     
-                 []     -> return $ TS.kindOfSum ts
-                 [k]    -> return k
-                 _      -> throw $ ErrorSumKindMismatch 
-                                        (TS.kindOfSum ts) ts ks
+        -- Check that all the types in the sum have the same kind.
+        let kExpect = TS.kindOfSum ts
+        k'      <- case nub ks of     
+                     []     -> return $ TS.kindOfSum ts
+                     [k]    -> return k
+                     _      -> throw $ ErrorSumKindMismatch kExpect ts ks
         
         -- Check that the kind of the elements is a valid one.
         -- Only effects and closures can be summed.
-        if (k == kEffect || k == kClosure)
-         then return (TSum (TS.fromList k ts'), k, ctx)
-         else throw $ ErrorSumKindInvalid ts k
+        if (k' == kEffect || k' == kClosure)
+         then return (TSum (TS.fromList k' ts'), k', ctx1)
+         else throw $ ErrorSumKindInvalid ts k'
 
 
 -- Whatever type we were given wasn't in the specified universe.
 checkTypeM _ _ _ uni tt
         = throw $ ErrorUniverseMalfunction tt uni
 
+
+-------------------------------------------------------------------------------
+-- | Like `checkTypeM` but do several, chaining the contexts appropriately.
+checkTypesM 
+        :: (Ord n, Show n, Pretty n) 
+        => Config n             -- ^ Type checker configuration.
+        -> KindEnv n            -- ^ Top-level kind environment.
+        -> Context n            -- ^ Local context.
+        -> Universe             -- ^ What universe the types to check are in.
+        -> [Type n]             -- ^ The types to check.
+        -> CheckM n 
+                ( [Type n]
+                , [Kind n]
+                , Context n)
+
+checkTypesM _ _ ctx0 _ []
+ = return ([], [], ctx0)
+
+checkTypesM config kenv ctx0 uni (t : ts)
+ = do   (t',  k',  ctx1)  <- checkTypeM  config kenv ctx0 uni t
+        (ts', ks', ctx')  <- checkTypesM config kenv ctx1 uni ts
+        return  (t' : ts', k' : ks', ctx')
 
