@@ -52,29 +52,42 @@ checkTypeM
                 , Context n)
 
 -- Variables ------------------
-checkTypeM config env ctx UniverseSpec tt@(TVar u)
+checkTypeM config env ctx uni tt@(TVar u)
 
  -- Look in the local context.
  | Just (k, _role)      <- lookupKind u ctx
+ , UniverseSpec         <- uni
  =      return (tt, k, ctx)
 
  -- Look in the global environment.
  | Just k               <- Env.lookup u env
+ , UniverseSpec         <- uni
  =      return (tt, k, ctx)
-
- -- This was some type we were supposed to infer.
- -- TODO: For holes at the kind level we also need to infer their sorts.
- | UName n      <- u
- , Just isHole  <- configNameIsHole config
- , isHole n
- = throw $ ErrorCannotInfer tt
 
  -- A primitive type variable with its kind directly attached, but is not in
  -- the kind environment. This is a hack used for static used for static
  -- region variables in the evaluator.
  -- TODO: Why aren't these constructors instead of variables?
- | UPrim _ k    <- u
+ | UPrim _ k            <- u
+ , UniverseSpec         <- uni
  = return (tt, k, ctx)
+
+ -- Type holes.
+ -- This is some type or kind that we are supposed to infer, so just make
+ -- a new existential for it.
+ --
+ -- TODO: Also handle in Spec uni, but will also need to infer kind. 
+ --       Allocate two existentials at once.
+ | UName n      <- u
+ , Just isHole  <- configNameIsHole config
+ , isHole n
+ , UniverseKind <- uni          
+ = do   
+        i        <- newExists
+        let t    =  typeOfExists i
+        let ctx' =  pushExists i ctx
+
+        return  (t, sComp, ctx')
 
  -- Type variable is nowhere to be found.
  | otherwise

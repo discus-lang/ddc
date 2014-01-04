@@ -36,9 +36,9 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  
         ErrorAppArgMismatch tt t1 t2
          -> vcat [ text "Core type mismatch in application."
-                 , text "             type: " <> ppr t1
-                 , text "   does not match: " <> ppr t2
-                 , text "   in application: " <> ppr tt ]
+                 , text " Cannot apply type with kind: " <> ppr t1
+                 , text "       to argument with kind: " <> ppr t2
+                 , text "         in type application: " <> ppr tt ]
          
         ErrorAppNotFun tt t1 k1 t2 k2
          -> vcat [ text "Core type mismatch in application."
