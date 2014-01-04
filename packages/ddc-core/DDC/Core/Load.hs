@@ -21,6 +21,7 @@ import DDC.Core.Check                           (Mode(..), CheckTrace)
 import DDC.Core.Exp
 import DDC.Core.Annot.AnT                       (AnT)
 import DDC.Type.Transform.SpreadT
+import DDC.Type.Universe
 import DDC.Core.Module
 import DDC.Base.Pretty
 import DDC.Data.Token
@@ -204,12 +205,13 @@ loadExp profile modules sourceName mode toks'
 loadType
         :: (Eq n, Ord n, Show n, Pretty n)
         => Profile n            -- ^ Language fragment profile.
+        -> Universe             -- ^ Universe this type is supposed to be in.
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
                   (Type n, Kind n)
 
-loadType profile sourceName toks'
+loadType profile uni sourceName toks'
  = goParse toks'
  where  
         -- Parse the tokens.
@@ -222,7 +224,7 @@ loadType profile sourceName toks'
 
         -- Check the kind of the type.
         goCheckType t
-         = case T.checkType (T.configOfProfile profile) Env.empty t of
+         = case T.checkType (T.configOfProfile profile) Env.empty uni t of
                 Left err      -> Left (ErrorCheckType err)
                 Right (t', k) -> Right (t', k)
         

@@ -1,9 +1,5 @@
 module DDC.Driver.Command.Check
-        ( cmdUniverse
-        , cmdUniverse1
-        , cmdUniverse2
-        , cmdUniverse3
-        , cmdShowKind
+        ( cmdShowKind
         , cmdTypeEquiv
         , cmdShowWType
         , cmdShowType
@@ -36,83 +32,8 @@ import qualified DDC.Core.Check         as C
 import Control.Monad
 
 
--- universe -------------------------------------------------------------------
--- | Show the universe of some type.
-cmdUniverse :: Language -> Source -> String -> IO ()
-cmdUniverse language source str
- | Language bundle      <- language
- , fragment             <- bundleFragment bundle
- , profile              <- fragmentProfile fragment
- = do   result          <- cmdParseCheckType source fragment str
-        case result of
-         Just (t, _)
-          | Just u      <- universeOfType (profilePrimKinds profile) t
-          ->    outDocLn $ ppr u
-
-         _ ->   outDocLn $ text "no universe"
-
-
--- | Given the type of some thing (up one level)
---   show the universe of the thing.
-cmdUniverse1 :: Language -> Source -> String -> IO ()
-cmdUniverse1 language source str
- | Language bundle      <- language
- , fragment             <- bundleFragment bundle
- , profile              <- fragmentProfile fragment
- = do   result          <- cmdParseCheckType source fragment str
-        case result of
-         Just (t, _)
-          | Just u      <- universeFromType1 (profilePrimKinds profile) t
-          ->    outDocLn $ ppr u
-
-         _ ->   outDocLn $ text "no universe"
-
-
--- | Given the kind of some thing (up two levels)
---   show the universe of the thing.
-cmdUniverse2 :: Language -> Source -> String -> IO ()
-cmdUniverse2 language source str
- | Language bundle      <- language
- , fragment             <- bundleFragment bundle
- = do   result          <- cmdParseCheckType source fragment str
-        case result of
-         Just (t, _)
-          | Just u      <- universeFromType2 t
-          ->    outDocLn $ ppr u
-
-         _ ->   outDocLn $ text "no universe"
-
-
--- | Given the sort of some thing (up three levels)
---   show the universe of the thing.
---   We can't type check naked sorts, so just parse them.
-cmdUniverse3 :: Language -> Source -> String -> IO ()
-cmdUniverse3 language source str
- | Language bundle      <- language
- , fragment             <- bundleFragment  bundle
- , profile              <- fragmentProfile fragment
- = let  srcName = nameOfSource source
-        srcLine = lineStartOfSource source
-        kenv    = profilePrimKinds profile
-
-        -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeTok srcName 
-                        (pType (contextOfProfile profile))
-                        toks of
-            Left err    -> outDocLn $ ppr err
-            Right t     -> goUniverse3 (spreadT kenv t)
-
-        goUniverse3 tt
-         = case universeFromType3 tt of
-            Just u      -> outDocLn $ ppr u
-            Nothing     -> outDocLn $ text "no universe"
-
-   in   goParse (fragmentLexExp fragment srcName srcLine str)
-
-
 -- kind ------------------------------------------------------------------------
--- | Show the kind of a type.
+-- | Show the kind of a spec.
 cmdShowKind :: Language -> Source -> String -> IO ()
 cmdShowKind language source str
  | Language bundle      <- language
@@ -121,7 +42,7 @@ cmdShowKind language source str
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp fragment srcName srcLine str
-        eTK     = loadType profile srcName toks
+        eTK     = loadType profile UniverseSpec srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
          Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
@@ -158,7 +79,7 @@ cmdTypeEquiv language source ss
         kenv    = profilePrimKinds    profile
 
         checkT t
-         = case T.checkType config kenv (spreadT kenv t) of
+         = case T.checkSpec config kenv (spreadT kenv t) of
                 Left err 
                  -> do  outDocLn $ ppr err
                         return False
@@ -302,10 +223,10 @@ cmdCheckModuleFromFile fragment filePath
 -- | Parse and type-check a core module from a string.
 cmdCheckModuleFromString
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
-        => Fragment n err
-        -> Source
-        -> String
-        -> C.Mode n
+        => Fragment n err       -- ^ Language fragment.
+        -> Source               -- ^ Source of the program text.
+        -> String               -- ^ Program text.
+        -> C.Mode n             -- ^ Type checker mode.
         -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckModuleFromString fragment source str mode
@@ -330,19 +251,20 @@ cmdCheckModuleFromString fragment source str mode
                 Nothing         -> return mm
 
 
--- | Parse a core type, and check its kind.
+-- | Parse a core spec, and return its kind.
 cmdParseCheckType 
         :: (Ord n, Show n, Pretty n)
-        => Source
-        -> Fragment n err
-        -> String 
+        => Source               -- ^ Source of the program text.
+        -> Fragment n err       -- ^ Language fragment.
+        -> Universe             -- ^ Universe this type is supposed to be in.
+        -> String               -- ^ Program text.
         -> IO (Maybe (Type n, Kind n))
 
-cmdParseCheckType source frag str
+cmdParseCheckType source frag uni str
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp frag srcName srcLine str
-        eTK     = loadType (fragmentProfile frag) srcName toks
+        eTK     = loadType (fragmentProfile frag) uni srcName toks
    in   case eTK of
          Left err       
           -> do outDocLn $ ppr err

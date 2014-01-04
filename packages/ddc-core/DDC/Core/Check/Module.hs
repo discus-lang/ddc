@@ -183,6 +183,7 @@ checkBindDefined env n
 
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
+--   The type is assumed to be in the spec universe.
 checkTypeM :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> KindEnv n 
@@ -190,7 +191,7 @@ checkTypeM :: (Ord n, Show n, Pretty n)
            -> CheckM a n (Type n, Kind n)
 
 checkTypeM !config !kenv !tt
- = case T.checkType config kenv tt of
+ = case T.checkSpec config kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 
