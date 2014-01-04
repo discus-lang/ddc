@@ -7,3 +7,7 @@ module Test with letrec
 f (x : Nat#) : Nat#
  = add# [Nat#] x 1#
 ;;
+
+
+-- Get kind inference working.
+:synth /\(a : ?). \(x : Ref# a Int#). x

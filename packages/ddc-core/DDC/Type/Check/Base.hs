@@ -2,13 +2,27 @@
 module DDC.Type.Check.Base
         ( CheckM (..)
         , newExists
-        , newPos)
+        , newPos
 
+        , throw
+
+        , module DDC.Type.Check.Context
+        , module DDC.Type.Check.Error
+        , module DDC.Type.Predicates
+        , module DDC.Type.Compounds
+        , module DDC.Type.Equiv
+        , module DDC.Type.Exp
+        , module DDC.Base.Pretty)
 where
 import DDC.Type.Check.Context
 import DDC.Type.Check.Error
+import DDC.Type.Predicates
 import DDC.Type.Compounds
+import DDC.Type.Equiv
+import DDC.Type.Exp
+import DDC.Base.Pretty
 import qualified DDC.Control.Monad.Check as G
+import DDC.Control.Monad.Check           (throw)
 
 
 -- | The type checker monad.

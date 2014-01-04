@@ -476,8 +476,17 @@ applyContext ctx tt
          -> applyContext ctx t
 
         TCon{}          -> tt
-        TForall b t     -> TForall b (applyContext ctx t)
-        TApp t1 t2      -> TApp (applyContext ctx t1) (applyContext ctx t2)
+
+        TForall b t     
+         -> let tb'     = applySolved ctx (typeOfBind b)
+                b'      = replaceTypeOfBind tb' b
+                t'      = applySolved ctx t
+            in  TForall b' t'
+
+        TApp t1 t2
+         -> let t1'     = applySolved ctx t1
+                t2'     = applySolved ctx t2
+            in  TApp t1' t2'
 
         TSum ts         
          -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
@@ -504,8 +513,16 @@ applySolved ctx tt
          -> applySolved ctx t
 
         TCon {}         -> tt
-        TForall b t     -> TForall b (applySolved ctx t)
-        TApp t1 t2      -> TApp (applySolved ctx t1) (applySolved ctx t2)
+        TForall b t
+         -> let tb'     = applySolved ctx (typeOfBind b)     
+                b'      = replaceTypeOfBind tb' b
+                t'      = applySolved ctx t
+             in TForall b' t'
+
+        TApp t1 t2      
+         -> let t1'     = applySolved ctx t1
+                t2'     = applySolved ctx t2
+            in  TApp t1' t2'
 
         TSum ts
          -> TSum $ Sum.fromList (Sum.kindOfSum ts)

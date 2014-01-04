@@ -8,20 +8,15 @@ import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
 import DDC.Type.Check.Base
+import DDC.Type.Check.Judge.Eq
 import DDC.Type.Universe
-import DDC.Type.Compounds
-import DDC.Type.Predicates
-import DDC.Type.Exp
-import DDC.Base.Pretty
 import Data.List
 import Control.Monad
 import DDC.Type.Pretty                   ()
 import DDC.Type.Env                      (KindEnv)
-import DDC.Control.Monad.Check           (throw)
 import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
-
 
 -- | Check a type returning its kind, or a kind returning its sort.
 --
@@ -38,6 +33,14 @@ import qualified Data.Map                as Map
 --   (==) instead of equivT. This is because kinds do not contain quantifiers
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
+--
+--   NOTE: The type/kinder isn't bidirectional because we haven't thought
+--   of a reason to make it so. We don't have quantifiers at the kind level,
+--   so and don't have subkinding, so don't need the full power of the exp/type
+--   checker. Making it bidirectional would allow us to infer the missing kind
+--   in types like  (/\(a : ?). \(x : Int). x), when used in a context with an 
+--   expected type which constraints the kind of 'a' ... but handling situations
+--   like this isn't a good enough reason.
 --
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
@@ -225,10 +228,14 @@ checkTypeM config env ctx0 UniverseSpec
          -- Type constructor application.
          -- The constructor must have the function kind and its parameter
          -- kind match with the kind of the argument.
+         --
+         -- TODO: don't unify with existentials in Recon mode because
+         -- the caller may not expect the context to change. Say that we 
+         -- never solve constraints in Recon mode.
+         --
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
-          | k11 == k2   -> return (TApp t1' t2', k12, ctx2)
-
-          | otherwise   -> throw $ ErrorAppArgMismatch tt k1 k2
+          -> do ctx3    <- makeEq (ErrorAppArgMismatch tt k1 k2) ctx2 k11 k2
+                return  (TApp t1' t2', k12, ctx3)
                   
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
