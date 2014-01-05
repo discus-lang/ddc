@@ -8,13 +8,13 @@ import DDC.Type.Check.Base
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
 makeEq  :: (Eq n, Ord n, Pretty n)
-        => Error n
-        -> Context n
+        => Context n
         -> Type n
         -> Type n
+        -> Error n
         -> CheckM n (Context n)
 
-makeEq err ctx0 tL tR
+makeEq ctx0 tL tR err
 
  -- EqLSolve
  | Just iL <- takeExists tL
@@ -22,13 +22,11 @@ makeEq err ctx0 tL tR
  = do   let Just ctx1   = updateExists [] iL tR ctx0
         return ctx1
 
-
  -- EqRSolve
  | Just iR <- takeExists tR
  , not $ isTExists tL
  = do   let Just ctx1   = updateExists [] iR tL ctx0
         return ctx1
-
 
  -- EqLReach
  --  Both types are existentials, and the left is bound earlier in the stack.
@@ -40,7 +38,6 @@ makeEq err ctx0 tL tR
  = do   let Just ctx1   = updateExists [] iR tL ctx0
         return ctx1
 
-
  -- EqRReach
  --  Both types are existentials, and the right is bound earlier in the stack.
  --  CAREFUL: The returned location is relative to the top of the stack,
@@ -51,13 +48,11 @@ makeEq err ctx0 tL tR
  = do   let Just ctx1   = updateExists [] iL tR ctx0
         return ctx1
 
-
  -- EqVar
  | TVar u1      <- tL
  , TVar u2      <- tR
  , u1 == u2
  =      return ctx0
-
 
  -- EqCon
  | TCon tc1     <- tL
@@ -65,15 +60,14 @@ makeEq err ctx0 tL tR
  , equivTyCon tc1 tc2
  =      return ctx0
 
-
  -- EqApp
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
-        ctx1     <- makeEq err ctx0 tL1 tR1
+        ctx1     <- makeEq ctx0 tL1  tR1  err
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
-        ctx2     <- makeEq err ctx0 tL2' tR2'
+        ctx2     <- makeEq ctx0 tL2' tR2' err
 
         return ctx2
 

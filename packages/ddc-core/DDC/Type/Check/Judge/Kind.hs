@@ -59,41 +59,28 @@ checkTypeM
 -- Variables ------------------
 checkTypeM config env ctx0 uni tt@(TVar u) mode
 
- -- Look in the local context.
- | UniverseSpec         <- uni
- , Just (k, _role)      <- lookupKind u ctx0
+ -- A variable in the local context.
+ | UniverseSpec          <- uni
+ , Just (kActual, _role) <- lookupKind u ctx0
  = case mode of
         Check kExpect
-          -> do ctx1    <- makeEq (ErrorMismatch uni kExpect k tt) 
-                                ctx0 k kExpect
-                return (tt, k, ctx1)
+          -> do ctx1    <- makeEq ctx0 kActual kExpect
+                        $  ErrorMismatch uni kExpect kActual tt         -- TODO: swap order of args around
+                                                                        -- for kExpect <-> kActual
+                return (tt, kActual, ctx1)
 
-        _ ->    return (tt, k, ctx0)
+        _ ->    return (tt, kActual, ctx0)
 
- -- Look in the global environment.
+ -- A variable in the global environment.
  | UniverseSpec         <- uni
- , Just k               <- Env.lookup u env
+ , Just kActual         <- Env.lookup u env
  = case mode of
         Check kExpect
-          -> do ctx1    <- makeEq (ErrorMismatch uni kExpect k tt) 
-                                ctx0 k kExpect
-                return (tt, k, ctx1)
+          -> do ctx1    <- makeEq ctx0 kActual kExpect
+                        $  ErrorMismatch uni kExpect kActual tt
+                return (tt, kActual, ctx1)
 
-        _ ->    return (tt, k, ctx0)
-
- -- A primitive type variable with its kind directly attached, but is not in
- -- the kind environment. This is a hack used for static used for static
- -- region variables in the evaluator.
- -- TODO: Why aren't these constructors instead of variables?
- | UPrim _ k            <- u
- , UniverseSpec         <- uni
- = case mode of
-        Check kExpect 
-          -> do ctx1    <- makeEq (ErrorMismatch uni kExpect k tt)
-                                ctx0 k kExpect
-                return (tt, k, ctx1)
-
-        _ ->    return (tt, k, ctx0)
+        _ ->    return (tt, kActual, ctx0)
 
  -- Type holes.
  -- This is some type or kind that we are supposed to infer.
@@ -101,10 +88,10 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  -- TODO: Also handle holes in the spec universe, 
  --       but we will need to infer the kind as well in synth mode.
  --       Allocate two existentials at once.
- | UName n      <- u
- , Just isHole  <- configNameIsHole config
+ | UName n              <- u
+ , Just isHole          <- configNameIsHole config
  , isHole n
- , UniverseKind <- uni          
+ , UniverseKind         <- uni          
  = case mode of
         -- We don't infer kind holes in recon mode.
         -- We should have been given a program with complete kind annotations.
@@ -120,6 +107,23 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
                 let ctx' =  pushExists i ctx0
                 return  (t, sComp, ctx')
 
+
+ -- A primitive variable with its kind directly attached, but where the
+ -- variable is not also in the kind environment. This is a hack used
+ -- for static used for static region variables in the evaluator.
+ -- We make them constructors rather than variables so that we don't need
+ -- to have a data constructor definition for each one.
+ | UPrim _ kActual      <- u
+ , UniverseSpec         <- uni
+ = case mode of
+        Check kExpect 
+          -> do ctx1    <- makeEq ctx0 kActual kExpect
+                        $  ErrorMismatch uni kExpect kActual tt
+                return (tt, kActual, ctx1)
+
+        _ ->    return (tt, kActual, ctx0)
+
+
  -- Type variable is nowhere to be found.
  | otherwise
  = throw $ ErrorUndefined u
@@ -127,14 +131,19 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
 
 -- Constructors ---------------
 checkTypeM config env ctx0 uni tt@(TCon tc) mode
- = let  getActual
-         -- Sorts don't have a higher classification.
+ = let  
+        -- Get the actual kind of the constructor, according to the 
+        -- constructor definition.
+        getActual
+         -- Sort constructors don't have a higher classification.
+         -- We should never try to check these.
          | TyConSort _           <- tc
          , UniverseSort          <- uni
          = throw $ ErrorNakedSort tt
 
-         -- Can't sort check a naked kind function
-         -- because the sort depends on the argument kinds.
+         -- Baked-in kind constructors.
+         -- We can't sort-check a naked kind function constructor because
+         -- the sort of a fully applied one depends on the argument kind.
          | TyConKind kc          <- tc
          , UniverseKind          <- uni
          = case takeSortOfKiCon kc of
@@ -157,16 +166,16 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
             UName n
              -- User defined data type constructors must be in the set of
              -- data defs.
-             | Just def <- Map.lookup n 
-                        $  dataDefsTypes $ configDataDefs config
-             , UniverseSpec <- uni
+             | Just def         <- Map.lookup n 
+                                $  dataDefsTypes $ configDataDefs config
+             , UniverseSpec     <- uni
              -> let k'   = kindOfDataType def
                 in  return (TCon (TyConBound u k'), k')
 
              -- The kinds of abstract imported type constructors are in the
-             -- kind environment.
-             | Just s   <- Env.lookupName n env
-             , UniverseSpec <- uni
+             -- global kind environment.
+             | Just s           <- Env.lookupName n env
+             , UniverseSpec     <- uni
              -> return (tt, s)
 
              -- We don't have a type for this constructor.
@@ -180,26 +189,28 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
             -- by anonymous debruijn binding.
             UIx{}   -> throw $ ErrorUndefinedTypeCtor u
 
-         -- Existentials can be either in the Spec or Kind universe.
-         | TyConExists _ k       <- tc
+         -- Existentials can be either in the Spec or Kind universe,
+         -- and their kinds/sorts are directly attached.
+         | TyConExists _ t       <- tc
          , uni == UniverseSpec || uni == UniverseKind
-         = return (tt, k)
+         = return (tt, t)
 
          -- Whatever constructor we were given wasn't in the expected universe.
          | otherwise
          = throw $ ErrorUniverseMalfunction tt uni
  in do
-        (tt', kActual) <- getActual
+        -- Get the actual kind/sort of the constructor according to the 
+        -- constructor definition.
+        (tt', tActual) <- getActual
         case mode of
-         -- If we have an expected kind then make the actual kind the 
-         -- same as it.
-         Check kExpect
-           -> do ctx1    <- makeEq (ErrorMismatch uni kExpect kActual tt)
-                                 ctx0 kExpect kActual
-                 return (tt', kActual, ctx1)
+         -- If we have an expected kind then make the actual kind the same.
+         Check tExpect
+           -> do ctx1   <- makeEq ctx0 tActual tExpect
+                        $  ErrorMismatch uni tExpect tActual tt
+                 return (tt', tActual, ctx1)
 
-         -- In Recon and Synth mode return the actual kind of the constructor.
-         _ ->    return (tt', kActual, ctx0)
+         -- In Recon and Synth mode just return the actual kind.
+         _ ->    return (tt', tActual, ctx0)
 
 
 -- Quantifiers ----------------
@@ -277,7 +288,8 @@ checkTypeM config env ctx0 UniverseSpec
          -- never solve constraints in Recon mode.
          --
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
-          -> do ctx3    <- makeEq (ErrorAppArgMismatch tt k1 k2) ctx2 k11 k2
+          -> do ctx3    <- makeEq ctx2 k11 k2
+                        $  ErrorAppArgMismatch tt k1 k2
                 return  (TApp t1' t2', k12, ctx3)
                   
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
