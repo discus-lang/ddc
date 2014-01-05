@@ -3,6 +3,7 @@
 module DDC.Type.Check.ErrorMessage
 where
 import DDC.Type.Check.Error
+import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Pretty
 
@@ -26,6 +27,22 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 
         ErrorUndefinedTypeCtor u
          -> text "Undefined type constructor: " <> ppr u
+
+        ErrorMismatch uni tExpected tInferred tt
+         -> let (thing, thing')   
+                 = case uni of
+                        UniverseSpec    -> ("Kind", "kind")
+                        UniverseKind    -> ("Sort", "sort")
+                        _               -> ("Type", "type")
+            in vcat 
+                [ text thing <+> text "mismatch."
+                , text "                Expected"
+                        <+> text thing' <+> text ":"    <+> ppr tExpected
+                , text " does not match inferred"
+                        <+> text thing' <+> text ":"    <+> ppr tInferred
+                , empty
+                , text "with: "                         <> align (ppr tt) ]
+
 
         ErrorVarAnnotMismatch u t
          -> vcat [ text "Type mismatch in annotation."

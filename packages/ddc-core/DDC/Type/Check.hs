@@ -44,7 +44,8 @@ checkType  :: (Ord n, Show n, Pretty n)
 
 checkType config env uni tt
  = evalCheck (0, 0)
- $ do   (t, k, _) <- checkTypeM config env emptyContext uni tt
+ $ do   (t, k, _) <- checkTypeM config env emptyContext 
+                        uni tt Recon
         return (t, k)
 
 
@@ -55,7 +56,8 @@ checkSpec  :: (Ord n, Show n, Pretty n)
 
 checkSpec config env tt 
  = evalCheck (0, 0)
- $ do   (t, k, _) <- checkTypeM config env emptyContext UniverseSpec tt
+ $ do   (t, k, _) <- checkTypeM config env emptyContext 
+                        UniverseSpec tt Recon
         return (t, k)
 
 
@@ -67,7 +69,8 @@ kindOfSpec
 
 kindOfSpec config tt
  = evalCheck (0, 0)
- $ do   (_, k, _) <- checkTypeM config Env.empty emptyContext UniverseSpec tt
+ $ do   (_, k, _) <- checkTypeM config Env.empty emptyContext 
+                        UniverseSpec tt Recon
         return k
 
 
@@ -79,5 +82,6 @@ sortOfKind
 
 sortOfKind config tt
  = evalCheck (0, 0)
- $ do   (_, s, _) <- checkTypeM config Env.empty emptyContext UniverseKind tt
+ $ do   (_, s, _) <- checkTypeM config Env.empty emptyContext 
+                        UniverseKind tt Recon
         return s

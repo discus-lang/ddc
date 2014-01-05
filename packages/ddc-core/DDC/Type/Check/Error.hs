@@ -30,6 +30,13 @@ data Error n
         | ErrorUndefined        
         { errorBound            :: Bound n }
 
+        -- | Generic kind mismatch
+        | ErrorMismatch
+        { errorUniverse         :: Universe
+        , errorExpected         :: Type n
+        , errorInferred         :: Type n
+        , errorChecking         :: Type n }
+
         -- | The kind annotation on the variables does not match the one in the
         --   environment.
         | ErrorVarAnnotMismatch

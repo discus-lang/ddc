@@ -145,7 +145,7 @@ checkTypeM config kenv ctx uni tt
         (tr, ix, pos)   <- G.get
         let ((ix', pos'), result)
                 = G.runCheck (ix, pos)
-                $ T.checkTypeM config kenv ctx uni tt
+                $ T.checkTypeM config kenv ctx uni tt Recon
         G.put (tr, ix', pos')
         
         -- If the type/kind checker returns an error then wrap it 
