@@ -18,6 +18,7 @@ import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
+
 -- | Check a type returning its kind, or a kind returning its sort.
 --
 --   The unverse of the thing to check is directly specified, and if the 

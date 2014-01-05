@@ -128,3 +128,12 @@ case T2# 2# 3# of
 { T2# a b -> a;
   _       -> 5#; }
 ;;
+
+
+-- Kind inference.
+-- Kind of variable is constrained by 
+:synth..
+/\r. \(x : Ref# r Nat#). x
+;;
+
+

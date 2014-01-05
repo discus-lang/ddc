@@ -198,3 +198,13 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 }
 :*: Nat#
 :!: Pure
+
+
+-- Kind inference.
+-- Kind of variable is constrained by 
+/\(r : Region).
+ \(x : Ref# r Nat#). x
+:*: [r : Region].Ref# r Nat# -> Ref# r Nat#
+:!: Pure
+
+

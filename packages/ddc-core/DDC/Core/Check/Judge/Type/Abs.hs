@@ -40,23 +40,41 @@ checkAbs _ _ _ _
 
 
 -- AbsLAM ---------------------------------------------------------------------
-checkAbsLAM !table !ctx a b1 x2 mode
+checkAbsLAM !table !ctx0 a b1 x2 mode                   
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLAM a b1 x2
-        
-        -- Check the kind annotation on the binder.
-        (b1', _, _)     <- checkBindM config kenv ctx UniverseKind b1           -- TODO: ctx
 
         -- If the bound variable is named then it cannot shadow
         -- shadow others in the environment.
-        when (memberKindBind b1' ctx)
+        when (memberKindBind b1 ctx0)
          $ throw $ ErrorLamShadow a xx b1
-        
+
+        -- Check the binder kind.
+        --   If there isn't an existing kind annotaiton then make an existential,
+        --   otherwise check it's kind.
+        -- TODO: only make an existential in Synth/Check mode.
+        -- TODO: if expected type is a forall then we know the kind.
+        (b1', ctx1)
+         <- if isBot (typeOfBind b1)
+             then do
+                iA       <- newExists sComp
+                let tA   = typeOfExists iA
+                let b1'  = replaceTypeOfBind tA b1
+                let ctxA = pushExists iA ctx0
+                return (b1', ctxA)
+             else do
+                -- TODO: check k2 has sort Comp or Prop
+                (tA', _k2, ctxA)
+                        <- checkTypeM config kenv ctx0 UniverseKind 
+                        $  typeOfBind b1
+                let b1' = replaceTypeOfBind tA' b1
+                return (b1', ctxA)
+
         -- Check the body of the abstraction.
-        let (ctx', pos1) = markContext ctx
-        let ctx1         = pushKind b1' RoleAbstract ctx'
-        let ctx2         = liftTypes 1  ctx1
+        let (ctx2, pos1) = markContext ctx1
+        let ctx3         = pushKind b1' RoleAbstract ctx2
+        let ctx4         = liftTypes 1  ctx3
 
         modeBody     
          <- case mode of
@@ -83,11 +101,13 @@ checkAbsLAM !table !ctx a b1 x2 mode
              Check t
               -> throw $ ErrorLAMExpectedForall a xx t
 
-        (x2', t2, e2, c2, ctx3)
-                        <- tableCheckExp table table ctx2 x2 modeBody
+        (x2', t2, e2, c2, ctx5)
+                        <- tableCheckExp table table ctx4 x2 modeBody
         
         -- The body of a spec abstraction must have data kind.
-        (_, k2, _)      <- checkTypeM config kenv ctx3 UniverseSpec t2           -- TODO: ctx
+        --   Checking won't solve any more constraints so we can discard the
+        --   returned context. 
+        (_, k2, _ctx)      <- checkTypeM config kenv ctx5 UniverseSpec t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
@@ -107,11 +127,11 @@ checkAbsLAM !table !ctx a b1 x2 mode
              = case mode of
                 Recon   -> t2
                 Check _ -> t2
-                Synth   -> applyContext ctx3 t2 
+                Synth   -> applyContext ctx5 t2 
 
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
-                        $ popToPos pos1 ctx3
+                        $ popToPos pos1 ctx5
                                    
         let tResult     = TForall b1' t2'
 
@@ -119,7 +139,7 @@ checkAbsLAM !table !ctx a b1 x2 mode
                 [ text "* LAM"
                 , indent 2 $ ppr (XLAM a b1' x2)
                 , text "  OUT: " <> ppr tResult
-                , indent 2 $ ppr ctx
+                , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx_cut 
                 , empty ]
 
@@ -183,19 +203,30 @@ checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Recon
 --   we produce a type (?1 -> ?2) with new unification variables.
 --
 checkAbsLamData !table !a !ctx !b1 !_k1 !x2 !Synth
- = do   let config      = tableConfig table
+ = do   let config      = tableConfig table     
+        let kenv        = tableKindEnv table
 
-        -- New binder type.
-        -- If there isn't an existing annotation then make an existential.
+        -- Check the binder type.
+        --  If there isn't an existing annotation then make an existential.
+        --  Otherwise check it's kind.
         (b1', ctxA)
          <- if isBot (typeOfBind b1)
-             then do iA <- newExists kData
-                     let tA   = typeOfExists iA
-                     let b1'  = replaceTypeOfBind tA b1
-                     let ctxA = pushExists iA ctx
-                     return (b1', ctxA)
+             then do 
+                iA <- newExists kData
+                let tA   = typeOfExists iA
+                let b1'  = replaceTypeOfBind tA b1
+                let ctxA = pushExists iA ctx
+                return (b1', ctxA)
                      
-             else return (b1, ctx)
+             else do
+                -- TODO: check k2 is Data. 
+                -- TODO: use expected kind
+                --       /\a. \(x : a). x  -- a has kind data.
+                (tA, _k2, ctxA)         
+                        <- checkTypeM config kenv ctx UniverseSpec 
+                        $  typeOfBind b1
+                let b1' = replaceTypeOfBind tA b1
+                return (b1', ctxA)
         
         -- Existential for the result type.
         iB              <- newExists kData
