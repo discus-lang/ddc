@@ -200,11 +200,9 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 :!: Pure
 
 
--- Kind inference.
--- Kind of variable is constrained by 
+-- Kind of variable is constrained by type application.
 /\(r : Region).
  \(x : Ref# r Nat#). x
 :*: [r : Region].Ref# r Nat# -> Ref# r Nat#
 :!: Pure
-
 

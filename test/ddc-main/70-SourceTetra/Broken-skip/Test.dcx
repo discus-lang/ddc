@@ -11,3 +11,23 @@ f (x : Nat#) : Nat#
 
 -- Get kind inference working.
 :synth /\(a : ?). \(x : Ref# a Int#). x
+
+
+-- Kind of variable is constrained by its use as the type of a value parameter.
+:synth..
+/\a. \(x : a). a
+;;
+
+
+-- Kind of variable is constrained by its use in the result of a forall.
+:synth..
+/\a. \(x : [b : Data]. a). x
+;;
+
+
+-- Kind of 'e' variable is constrained by its use in a type sum,
+-- and kind of 'r' is constrained by its used in an effect in a sum.
+:synth..
+/\e. /\r. \(x : S (e + Read r) Nat#). x
+;;
+
