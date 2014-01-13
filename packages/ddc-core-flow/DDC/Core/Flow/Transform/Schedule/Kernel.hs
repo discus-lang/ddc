@@ -1,11 +1,11 @@
 
 module DDC.Core.Flow.Transform.Schedule.Kernel
         ( scheduleKernel
-        , Fail          (..)
+        , Error         (..)
         , Lifting       (..))
 where
 import DDC.Core.Flow.Transform.Schedule.Nest
-import DDC.Core.Flow.Transform.Schedule.Fail
+import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Transform.Schedule.Lifting
 import DDC.Core.Flow.Transform.Schedule.Base
 import DDC.Core.Flow.Process
@@ -32,7 +32,7 @@ import Data.Maybe
 --    create -- use fill instead.
 --    pack   -- we don't support SIMD masks.
 --
-scheduleKernel :: Lifting -> Process -> Either Fail Procedure
+scheduleKernel :: Lifting -> Process -> Either Error Procedure
 scheduleKernel 
        lifting
        (Process { processName           = name
@@ -45,11 +45,11 @@ scheduleKernel
 
         -- Check the primary rate variable matches the rates of the series.
         (case bsParamTypes of
-          []            -> Left FailNoRateParameters
+          []            -> Left ErrorNoRateParameters
           BName n k : _ 
            | k == kRate
            , TVar (UName n) == tK -> return ()
-          _             -> Left FailPrimaryRateMismatch)
+          _             -> Left ErrorPrimaryRateMismatch)
 
         -- Lower rates of series parameters.
         let bsParamValues_lowered
@@ -101,7 +101,7 @@ scheduleOperator
         -> ScalarEnv
         -> Nest         -- ^ The current loop nest.
         -> Operator     -- ^ The operator to schedule.
-        -> Either Fail Nest
+        -> Either Error Nest
 
 scheduleOperator lifting envScalar nest op
  -- Map -----------------------------------------
@@ -321,12 +321,12 @@ scheduleOperator lifting envScalar nest op
 
  -- Unsupported ---------------------------------
  | otherwise
- = Left $ FailUnsupported op
+ = Left $ ErrorUnsupported op
 
 
-liftTypeOfBindM :: Lifting -> Bind Name -> Either Fail (Bind Name)
+liftTypeOfBindM :: Lifting -> Bind Name -> Either Error (Bind Name)
 liftTypeOfBindM lifting b
   = case liftTypeOfBind lifting b of
      Just b' -> return b'
-     _       -> Left $ FailCannotLiftType (typeOfBind b)
+     _       -> Left $ ErrorCannotLiftType (typeOfBind b)
 

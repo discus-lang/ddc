@@ -76,16 +76,23 @@ defaultConfigVector
 
 
 -- Lower ----------------------------------------------------------------------
-lowerModule :: Config -> ModuleF -> Either Fail ModuleF
+-- | Take a module that contains only well formed series processes defined
+--   at top-level, and lower them all into procedures. 
+lowerModule :: Config -> ModuleF -> Either Error ModuleF
 lowerModule config mm
- = do 
-        -- Slurp out series processes.
-        let processes   = slurpProcesses mm
+ = case slurpProcesses mm of
+    -- Can't slurp a process definition from one of the top level series
+    -- processes. 
+    Left  err   
+     -> Left (ErrorSlurpError err)
 
-        -- Schedule processeses into procedures.
-        lets            <- mapM (lowerProcess config) processes
+    -- We've got a process definition for all of then.
+    Right procs
+     -> do      
+        -- Schedule the processeses into procedures.
+        lets            <- mapM (lowerProcess config) procs
 
-        -- Stash all the processes into a module.
+        -- Wrap all the procedures into a new module.
         let mm_lowered  = mm
                         { moduleBody    = annotate ()
                                         $ XLet (LRec lets) xUnit }
@@ -96,7 +103,7 @@ lowerModule config mm
 
 
 -- | Lower a single series process into fused code.
-lowerProcess :: Config -> Process -> Either Fail (BindF, ExpF)
+lowerProcess :: Config -> Process -> Either Error (BindF, ExpF)
 lowerProcess config process
  
  -- Scalar lowering ------------------------------

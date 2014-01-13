@@ -3,7 +3,7 @@
 :set SuppressLetTypes
 
 -- TODO: We don't have lowering implemented for segmented ops yet.
-:load..
+:flow-lower..
 module Test with letrec
 repsme  [k1 : Rate]
         (lens : Series# k1 Nat#)

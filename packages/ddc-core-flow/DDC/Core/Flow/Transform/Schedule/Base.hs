@@ -8,7 +8,7 @@ module DDC.Core.Flow.Transform.Schedule.Base
 
         , elemTypeOfVectorType)
 where
-import DDC.Core.Flow.Transform.Schedule.Fail
+import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
@@ -64,14 +64,14 @@ rateTypeOfSeriesType tSeries'
 
 -- | Given the type of the process parameters, 
 --   yield the rate of the overall process.
-slurpRateOfParamTypes :: [Type Name] -> Either Fail (Type Name)
+slurpRateOfParamTypes :: [Type Name] -> Either Error (Type Name)
 slurpRateOfParamTypes tsParam
  = case mapMaybe rateTypeOfSeriesType tsParam of
-        []                      -> Left FailNoSeriesParameters
+        []                      -> Left ErrorNoSeriesParameters
         [tK]                    -> Right tK
         (tK : ts)
          | all (== tK) ts       -> Right tK
-         | otherwise            -> Left FailMultipleRates
+         | otherwise            -> Left ErrorMultipleRates
 
 
 -- Vector ---------------------------------------------------------------------

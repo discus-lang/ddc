@@ -12,7 +12,7 @@ module DDC.Core.Flow.Transform.Schedule.Lifting
           -- * Lowering Types
         , lowerSeriesRate)
 where
-import DDC.Core.Flow.Transform.Schedule.Fail
+import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
@@ -67,7 +67,7 @@ liftTypeOfBind l b
 
 -- | Try to lift a first-order worker expression to so it operates on elements
 --   of vec type instead of scalars.
-liftWorker :: Lifting -> ScalarEnv -> LiftEnv -> ExpF -> Either Fail ExpF
+liftWorker :: Lifting -> ScalarEnv -> LiftEnv -> ExpF -> Either Error ExpF
 liftWorker lifting envScalar envLift xx
  = let down     = liftWorker lifting envScalar envLift
    in  case xx of
@@ -109,7 +109,7 @@ liftWorker lifting envScalar envLift xx
                 return  $  XApp x1' x2'
 
 
-        _ -> Left (FailCannotLiftExp xx)
+        _ -> Left (ErrorCannotLiftExp xx)
 
 
 -- Down -----------------------------------------------------------------------

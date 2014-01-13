@@ -3,7 +3,7 @@ module DDC.Core.Flow.Transform.Schedule.Scalar
         (scheduleScalar)
 where
 import DDC.Core.Flow.Transform.Schedule.Nest
-import DDC.Core.Flow.Transform.Schedule.Fail
+import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Transform.Schedule.Base
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
@@ -14,7 +14,7 @@ import Control.Monad
 
 
 -- | Schedule a process into a procedure, producing scalar code.
-scheduleScalar :: Process -> Either Fail Procedure
+scheduleScalar :: Process -> Either Error Procedure
 scheduleScalar 
        (Process { processName           = name
                 , processParamTypes     = bsParamTypes
@@ -29,11 +29,11 @@ scheduleScalar
 
         -- Check the primary rate variable matches the rates of the series.
         (case bsParamTypes of
-          []            -> Left FailNoRateParameters
+          []            -> Left ErrorNoRateParameters
           BName n k : _ 
            | k == kRate
            , TVar (UName n) == tK -> return ()
-          _             -> Left FailPrimaryRateMismatch)
+          _             -> Left ErrorPrimaryRateMismatch)
 
         -- Create the initial loop nest of the process rate.
         let bsSeries    = [ b   | b <- bsParamValues
@@ -76,7 +76,7 @@ scheduleScalar
 scheduleOperator 
         :: Nest         -- ^ The current loop nest.
         -> Operator     -- ^ Operator to schedule.
-        -> Either Fail Nest
+        -> Either Error Nest
 
 scheduleOperator nest0 op
 
@@ -278,5 +278,5 @@ scheduleOperator nest0 op
 
  -- Unsupported ----------------------------------
  | otherwise
- = Left $ FailUnsupported op
+ = Left $ ErrorUnsupported op
 

@@ -4,7 +4,7 @@ module DDC.Core.Flow.Transform.Schedule
 
          -- * Scheduling process kernels
         , scheduleKernel
-        , Fail          (..)
+        , Error         (..)
         , Lifting       (..))
 where
 import DDC.Core.Flow.Transform.Schedule.Kernel
