@@ -9,8 +9,12 @@ f (x : Nat#) : Nat#
 ;;
 
 
--- Get kind inference working.
-:synth /\(a : ?). \(x : Ref# a Int#). x
+-- Type variable kind constrained by type application.
+:synth /\r. \(x : Ref# r Int#). x
+
+
+-- Type variable with an explicit hole kind.
+:synth /\(r : ?). \(x : Ref# r Int#). x
 
 
 -- Kind of variable is constrained by its use as the type of a value parameter.

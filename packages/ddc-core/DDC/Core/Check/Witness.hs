@@ -97,7 +97,7 @@ checkWitnessM !_config !_kenv !_tenv !_ctx (WCon a wc)
 -- witness-type application
 checkWitnessM !config !kenv !tenv !ctx ww@(WApp a1 w1 (WType a2 t2))
  = do   (w1', t1)       <- checkWitnessM  config kenv tenv ctx w1
-        (t2', k2, _)    <- checkTypeM     config kenv ctx UniverseSpec t2
+        (t2', k2, _)    <- checkTypeM     config kenv ctx UniverseSpec t2 Recon
         case t1 of
          TForall b11 t12
           |  typeOfBind b11 == k2
@@ -144,7 +144,7 @@ checkWitnessM !config !kenv !tenv !ctx ww@(WJoin a w1 w2)
 
 -- embedded types
 checkWitnessM !config !kenv !_tenv !ctx (WType a t)
- = do   (t', k, _)  <- checkTypeM config kenv ctx UniverseSpec t
+ = do   (t', k, _)  <- checkTypeM config kenv ctx UniverseSpec t Recon
         return  ( WType (AnT k a) t'
                 , k)
         
