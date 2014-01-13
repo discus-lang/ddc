@@ -5,7 +5,8 @@ module DDCI.Tetra.State
         , adjustMode
 
         -- * Driver Config
-        , getDriverConfigOfState)
+        , getDriverConfigOfState
+        , getDefaultBuilderConfig)
 where
 import DDCI.Tetra.Mode
 import DDC.Code.Config

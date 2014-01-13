@@ -1,6 +1,6 @@
+:set builder x86_64-darwin
 :set SuppressLetTypes
 :set SuppressImports
-
 
 -- Simple Functions.
 :to-salt..

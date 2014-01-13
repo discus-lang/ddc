@@ -4,8 +4,10 @@ module DDCI.Tetra.Command.Set
 where
 import DDCI.Tetra.State
 import DDCI.Tetra.Mode
+import DDC.Build.Builder
 import DDC.Base.Pretty
 import Data.Char
+import Data.List
 import qualified Data.Set               as Set
 
 
@@ -19,6 +21,18 @@ cmdSet state []
         return state
 
 cmdSet state cmd
+ | "builder" : name : []        <- words cmd
+ = do   config <- getDefaultBuilderConfig
+        case find (\b -> builderName b == name) (builders config) of
+         Nothing
+          -> do putStrLn "unknown builder"
+                return state
+
+         Just builder
+          -> do putStrLn "ok"
+                return state { stateBuilder = Just builder }
+
+ | otherwise
  = case parseModeChanges cmd of
         Just changes
          -> do  let state'      = foldr (uncurry adjustMode) state changes
