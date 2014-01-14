@@ -2,7 +2,6 @@
 :set Synth
 :set SuppressLetTypes
 
-
 -- Fill a vector with segmentedly replicated elements.
 :flow-lower..
 module Test with letrec

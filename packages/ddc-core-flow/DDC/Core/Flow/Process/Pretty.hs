@@ -33,6 +33,13 @@ instance Pretty Operator where
         , text " segd:        " <> ppr (opSegdBound     op)
         , text " input:       " <> ppr (opInputSeries   op) ]
  
+ ppr op@OpIndices{}
+        = vcat
+        [ text "Indices"
+        , text " result:      " <> ppr (opResultSeries  op)
+        , text " input rate:  " <> ppr (opInputRate     op)
+        , text " output rate: " <> ppr (opOutputRate    op) ]
+
  ppr op@OpFill{}
         = vcat
         [ text "Fill"

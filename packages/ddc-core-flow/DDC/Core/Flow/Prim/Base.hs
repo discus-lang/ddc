@@ -153,6 +153,9 @@ data OpSeries
         -- | Segmented replicate.
         | OpSeriesReps
 
+        -- | Segmented indices
+        | OpSeriesIndices
+
         -- | Gather  (read) elements from a vector.
         | OpSeriesGather
 

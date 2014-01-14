@@ -2,7 +2,6 @@ ok
 ok
 ok
 
-
 -- Fill a vector with segmentedly replicated elements.
 module Test with
 letrec {
@@ -17,9 +16,9 @@ letrec {
                    let s1$elem = next# [Float32#] [k1] s1 x1 in
                    let _
                          = segment# k2$count lens$elem
-                               (\(x2 : Nat#).
+                               (\(x2 x3 : Nat#).
                                 let x2$elem = mul# [Float32#] 2.0f32# s1$elem in
-                                let _ = vwrite# [Float32#] v x2 x2$elem in
+                                let _ = vwrite# [Float32#] v x3 x2$elem in
                                 ()) in
                    ()) in
       ()
@@ -42,9 +41,9 @@ letrec {
                    let s2$elem = next# [Float32#] [k1] s2 x2 in
                    let _
                          = segment# k2$count lens$elem
-                               (\(x3 : Nat#).
+                               (\(x3 x4 : Nat#).
                                 let x3$elem = mul# [Float32#] s1$elem s2$elem in
-                                let _ = vwrite# [Float32#] v x3 x3$elem in
+                                let _ = vwrite# [Float32#] v x4 x3$elem in
                                 ()) in
                    ()) in
       ()

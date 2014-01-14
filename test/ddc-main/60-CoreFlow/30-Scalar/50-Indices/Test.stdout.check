@@ -1,0 +1,77 @@
+ok
+ok
+ok
+
+
+-- Fill a vector with segment indices.
+module Test with
+letrec {
+  test : [k1 : Rate].Series# k1 Nat# -> Vector# Nat# -> Unit
+    = /\(k1 : Rate).
+       \(lens : Series# k1 Nat#).\(v : Vector# Nat#).
+      let k2$count = new# [Nat#] 0# in
+      let _
+            = loop# [k1]
+                  (\(x0 : Nat#).
+                   let lens$elem = next# [Nat#] [k1] lens x0 in
+                   let _
+                         = segment# k2$count lens$elem
+                               (\(x1 x2 : Nat#).
+                                let _ = vwrite# [Nat#] v x2 x1 in
+                                ()) in
+                   ()) in
+      ()
+}
+
+
+-- Fuse reps with indices.
+module Test with
+letrec {
+  test : [k1 : Rate].Series# k1 Nat# -> Series# k1 Nat# -> Vector# Nat# -> Unit
+    = /\(k1 : Rate).
+       \(lens things : Series# k1 Nat#).\(v : Vector# Nat#).
+      let k2$count = new# [Nat#] 0# in
+      let _
+            = loop# [k1]
+                  (\(x2 : Nat#).
+                   let lens$elem = next# [Nat#] [k1] lens x2 in
+                   let things$elem = next# [Nat#] [k1] things x2 in
+                   let _
+                         = segment# k2$count lens$elem
+                               (\(x3 x4 : Nat#).
+                                let x3$elem = add# [Nat#] x3 things$elem in
+                                let _ = vwrite# [Nat#] v x4 x3$elem in
+                                ()) in
+                   ()) in
+      ()
+}
+
+
+-- Gather chunks of some shared things vector.
+-- We write ranges of the things vector to the first output, 
+-- and copies of the first elemenet of the range to the second output.
+-- The copies are replicated separately so the first element of the range
+-- does not get read for each of the inner iterations.
+module Test with
+letrec {
+  test : [k1 : Rate].Series# k1 Nat# -> Series# k1 Nat# -> Vector# Float32# -> Vector# Float32# -> Vector# Float32# -> Unit
+    = /\(k1 : Rate).
+       \(lens base : Series# k1 Nat#).\(things out1 out2 : Vector# Float32#).
+      let k2$count = new# [Nat#] 0# in
+      let _
+            = loop# [k1]
+                  (\(x2 : Nat#).
+                   let lens$elem = next# [Nat#] [k1] lens x2 in
+                   let base$elem = next# [Nat#] [k1] base x2 in
+                   let firsts$elem = vread# [Float32#] things base$elem in
+                   let _
+                         = segment# k2$count lens$elem
+                               (\(x3 x4 : Nat#).
+                                let x3$elem = add# [Nat#] base$elem x3 in
+                                let results$elem = vread# [Float32#] things x3$elem in
+                                let _ = vwrite# [Float32#] out1 x4 results$elem in
+                                let _ = vwrite# [Float32#] out2 x4 firsts$elem in
+                                ()) in
+                   ()) in
+      ()
+}

@@ -30,6 +30,7 @@ instance Pretty OpSeries where
 
         OpSeriesRep             -> text "srep"                  <> text "#"
         OpSeriesReps            -> text "sreps"                 <> text "#"
+        OpSeriesIndices         -> text "sindices"              <> text "#"
         OpSeriesGather          -> text "sgather"               <> text "#"
 
         OpSeriesMkSel 1         -> text "smkSel"                <> text "#"
@@ -93,6 +94,7 @@ readOpSeries str
         = case str of
                 "srep#"         -> Just $ OpSeriesRep
                 "sreps#"        -> Just $ OpSeriesReps
+                "sindices#"     -> Just $ OpSeriesIndices
                 "sgather#"      -> Just $ OpSeriesGather
                 "smkSel#"       -> Just $ OpSeriesMkSel 1
                 "smkSegd#"      -> Just $ OpSeriesMkSegd
@@ -136,12 +138,18 @@ takeTypeOpSeries op
                 -> tA `tFun` tSeries tR tA
 
         -- reps  :: [k1 k2 : Rate]. [a : Data]
-        --       .  Segd   k1 k2 
-        --       -> Series k1 a
-        --       -> Series k2 a
+        --       .  Segd k1 k2 -> Series k1 a -> Series k2 a
         OpSeriesReps 
          -> Just $ tForalls [kRate, kRate, kData] $ \[tK1, tK2, tA]
                 -> tSegd tK1 tK2 `tFun` tSeries tK1 tA `tFun` tSeries tK2 tA
+
+
+        -- Indices ------------------------------
+        -- indices :: [k1 k2 : Rate]. 
+        --         .  Segd k1 k2 -> Series k2 Nat
+        OpSeriesIndices
+         -> Just $ tForalls [kRate, kRate] $ \[tK1, tK2]
+                 -> tSegd tK1 tK2 `tFun` tSeries tK2 tNat
 
 
         -- Maps ---------------------------------

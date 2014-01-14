@@ -41,6 +41,7 @@
 -- Flow operators
 :type srep#
 :type sreps#
+:type sindices#
 :type sgather#
 :type smkSel#
 :type smkSegd#
@@ -62,9 +63,12 @@
 :type down$8#
 :type tail$8#
 
+
 -- Control operators
 :type loop#
 :type loopn#
+:type segment#
+:type guard#
 :type split$8#
 
 

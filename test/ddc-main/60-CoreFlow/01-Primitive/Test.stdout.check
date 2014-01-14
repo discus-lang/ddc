@@ -41,6 +41,7 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 -- Flow operators
 srep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
 sreps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
+sindices# :: [^ ^ : Rate].Segd# ^1 ^0 -> Series# ^0 Nat#
 sgather# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 Nat# -> Series# ^1 ^0
 smkSel# :: [^ : Rate].Series# ^0 Bool# -> ([^ : Rate].Sel1# ^1 ^0 -> Process#) -> Process#
 smkSegd# :: [^ : Rate].Series# ^0 Nat# -> ([^ : Rate].Segd# ^1 ^0 -> Process#) -> Process#
@@ -62,9 +63,12 @@ next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Nat# -> Vec8# ^1
 down$8# :: [^ : Rate].[^ : Data].RateNat# (Down8# ^1) -> Series# ^1 ^0 -> Series# (Down8# ^1) ^0
 tail$8# :: [^ : Rate].[^ : Data].RateNat# (Tail8# ^1) -> Series# ^1 ^0 -> Series# (Tail8# ^1) ^0
 
+
 -- Control operators
 loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
 loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
+segment# :: Ref# Nat# -> Nat# -> (Nat# -> Nat# -> Unit) -> Unit
+guard# :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
 split$8# :: [^ : Rate].RateNat# ^0 -> (RateNat# (Down8# ^0) -> Unit) -> (RateNat# (Tail8# ^0) -> Unit) -> Unit
 
 

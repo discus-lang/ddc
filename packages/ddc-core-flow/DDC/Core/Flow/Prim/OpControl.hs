@@ -73,11 +73,14 @@ typeOpControl op
                 `tFun` (tNat `tFun` tUnit)
                 `tFun` tUnit
 
-        -- segment# :: Ref Nat# -> Nat#  -> (Nat# -> Unit) -> Unit
+        -- segment# :: Ref Nat# -> Nat#  -> (Nat# -> Nat# -> Unit) -> Unit
+        --   In the worker the first parameter is the index of the current
+        --   element in the segment, and the second is the index into the 
+        --   overall series.
         OpControlSegment
          -> tRef tNat
                 `tFun` tNat
-                `tFun` (tNat `tFun` tUnit)
+                `tFun` (tNat `tFun` tNat `tFun` tUnit)
                 `tFun` tUnit
 
         -- split#  :: [k : Rate]. RateNat# k

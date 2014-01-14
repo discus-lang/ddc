@@ -117,7 +117,8 @@ extractLoop (NestSegment _tRateOuter tRateInner uLengths stmtsBody nested)
         uCounter        = UName (NameVarMod nK "count")
 
         xBody           = xSegment (XVar uCounter) xLength 
-                        (  XLam (BAnon tNat)
+                        (  XLam (BAnon tNat)    -- Index into current segment.
+                        $  XLam (BAnon tNat)    -- Index into overall result series.
                         $ xLets (lsBody ++ lsNested) xUnit)
 
         -- Statements in the segment context.

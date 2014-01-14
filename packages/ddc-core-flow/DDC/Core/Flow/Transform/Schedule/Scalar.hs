@@ -109,6 +109,19 @@ scheduleOperator nest0 op
 
         return nest1
 
+ -- Indices --------------------------------------
+ | OpIndices{}  <- op
+ = do   
+        -- In a segment context the variable ^1 is the index into
+        -- the current segment.
+        let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
+
+        let Just nest1
+                = insertBody nest0 (opOutputRate op)
+                $ [ BodyStmt    bResult
+                                (XVar (UIx 1)) ]
+
+        return nest1
 
  -- Maps -----------------------------------------
  | OpMap{} <- op

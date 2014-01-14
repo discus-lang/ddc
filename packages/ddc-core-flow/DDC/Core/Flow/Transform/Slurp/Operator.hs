@@ -33,6 +33,16 @@ slurpOperator bResult xx
         , opSegdBound           = uSegd
         , opInputSeries         = uS }
 
+ -- Indices -------------------------------------
+ | Just ( NameOpSeries OpSeriesIndices
+        , [ XType tK1, XType tK2, XVar uSegd])
+                                <- takeXPrimApps xx
+ = Just $ OpIndices
+        { opResultSeries        = bResult
+        , opInputRate           = tK1
+        , opOutputRate          = tK2 
+        , opSegdBound           = uSegd }
+
  -- Gather --------------------------------------
  | Just ( NameOpSeries OpSeriesGather
         , [ XType tK, XType tA, XVar uV, XVar uS ])
@@ -127,27 +137,14 @@ slurpOperator bResult xx
 isSeriesOperator :: Exp () Name -> Bool
 isSeriesOperator xx
  = case liftM fst $ takeXPrimApps xx of
-        Just (NameOpSeries OpSeriesRep)         -> True
-        Just (NameOpSeries OpSeriesReps)        -> True
-        Just (NameOpSeries OpSeriesGather)      -> True
-
-        Just (NameOpSeries (OpSeriesMkSel _))   -> True
-        Just (NameOpSeries OpSeriesMkSegd)      -> True
-
-        Just (NameOpSeries (OpSeriesMap _))     -> True
-        Just (NameOpSeries OpSeriesPack)        -> True
-        Just (NameOpSeries OpSeriesReduce)      -> True
-        Just (NameOpSeries OpSeriesFolds)       -> True
-
-        Just (NameOpSeries OpSeriesFill)        -> True
-        Just (NameOpSeries OpSeriesScatter)     -> True
-        _                                       -> False
+        Just (NameOpSeries _)   -> True
+        _                       -> False
 
 
 -- | Check if some binding is a vector operator.
 isVectorOperator :: Exp () Name -> Bool
 isVectorOperator xx
  = case liftM fst $ takeXPrimApps xx of
-        Just (NameOpVector _)                   -> True
-        _                                       -> False
+        Just (NameOpVector _)   -> True
+        _                       -> False
 

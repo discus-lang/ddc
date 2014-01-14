@@ -46,8 +46,23 @@ data Operator
           -- | Bound for the segment descriptor.
         , opSegdBound           :: BoundF
 
-          -- | Bound fo the input series.
+          -- | Bound for the input series.
         , opInputSeries         :: BoundF }
+
+        -----------------------------------------
+        -- | Segmented indices.
+        | OpIndices
+        { -- Binder for result series.
+          opResultSeries        :: BindF
+
+          -- Rate of input series.
+        , opInputRate           :: TypeF
+
+          -- Rate of output series.
+        , opOutputRate          :: TypeF
+
+          -- Bound for the segment descriptor.
+        , opSegdBound           :: BoundF }
 
         -----------------------------------------
         -- | Apply a function to corresponding elements in several input series
