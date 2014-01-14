@@ -2,6 +2,7 @@
 :set Synth
 :set SuppressLetTypes
 
+
 -- Fill a vector with segmentedly replicated elements.
 :flow-lower..
 module Test with letrec
@@ -16,4 +17,20 @@ repsme  [k1 : Rate]
      in  sfill# v s3)
 ;;
 
+
+-- Multiply two series created by reps.
+-- In the lowered code the multiply ends up in the segment context.
+:flow-lower..
+module Test with letrec
+repsme  [k1 : Rate]
+        (lens : Series# k1 Nat#) (s1 s2 : Series# k1 Float32#)
+        (v    : Vector# Float32#)
+        : Process#
+ = smkSegd# lens
+   (/\(k2 : Rate). \(segd : Segd# k1 k2).
+     let s1r = sreps# segd s1 in
+     let s2r = sreps# segd s2 in
+     let s3  = smap2# mul# s1r s2r
+     in  sfill# v s3)
+;;
 
