@@ -214,3 +214,10 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 :!: Pure
 
 
+-- Kind of variable is constrained by its use as a data value.
+/\(a : Data).
+ \(x : a). x
+:*: [a : Data].a -> a
+:!: Pure
+
+

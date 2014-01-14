@@ -9,11 +9,6 @@ f (x : Nat#) : Nat#
 ;;
 
 
--- Kind of variable is constrained by its use as a data value.
-:synth..
-/\a. \(x : a). x
-;;
-
 
 -- Kind of variable is constrained by its use in the result of a forall.
 :synth..
@@ -26,4 +21,5 @@ f (x : Nat#) : Nat#
 :synth..
 /\e. /\r. \(x : S (e + Read r) Nat#). x
 ;;
+
 
