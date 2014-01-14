@@ -21,6 +21,16 @@ slurpOperator
 
 slurpOperator bResult xx
  
+ -- Rep -----------------------------------------
+ | Just ( NameOpSeries OpSeriesRep
+        , [ XType tK1, XType tA, xVal])
+                                <- takeXPrimApps xx
+ = Just $ OpRep
+        { opResultSeries        = bResult
+        , opOutputRate          = tK1
+        , opElemType            = tA
+        , opInputExp            = xVal }
+
  -- Reps ----------------------------------------
  | Just ( NameOpSeries OpSeriesReps
         , [ XType tK1, XType tK2, XType tA, XVar uSegd, XVar uS ])
@@ -43,6 +53,18 @@ slurpOperator bResult xx
         , opOutputRate          = tK2 
         , opSegdBound           = uSegd }
 
+ -- Fill ----------------------------------------
+ | Just ( NameOpSeries OpSeriesFill
+        , [ XType tK, XType tA, XVar uV, XVar uS ])
+                                <- takeXPrimApps xx
+ = Just $ OpFill
+        { opResultBind          = bResult
+        , opTargetVector        = uV
+        , opInputRate           = tK 
+        , opInputSeries         = uS
+        , opElemType            = tA }
+
+
  -- Gather --------------------------------------
  | Just ( NameOpSeries OpSeriesGather
         , [ XType tK, XType tA, XVar uV, XVar uS ])
@@ -53,6 +75,20 @@ slurpOperator bResult xx
         , opSourceIndices       = uS
         , opInputRate           = tK
         , opElemType            = tA }
+
+
+ -- Scatter -------------------------------------
+ | Just ( NameOpSeries OpSeriesScatter
+        , [ XType tK, XType tA, XVar uV, XVar uIndices, XVar uElems ])
+                                <- takeXPrimApps xx
+ = Just $ OpScatter
+        { opResultBind          = bResult
+        , opTargetVector        = uV
+        , opSourceIndices       = uIndices
+        , opSourceElems         = uElems
+        , opInputRate           = tK
+        , opElemType            = tA }
+
 
  -- Map -----------------------------------------
  | Just (NameOpSeries (OpSeriesMap n), xs) 
@@ -103,31 +139,6 @@ slurpOperator bResult xx
         , opWorkerParamAcc      = bAcc
         , opWorkerParamElem     = bElem
         , opWorkerBody          = xBody }
-
-
- -- Fill ----------------------------------------
- | Just ( NameOpSeries OpSeriesFill
-        , [ XType tK, XType tA, XVar uV, XVar uS ])
-                                <- takeXPrimApps xx
- = Just $ OpFill
-        { opResultBind          = bResult
-        , opTargetVector        = uV
-        , opInputRate           = tK 
-        , opInputSeries         = uS
-        , opElemType            = tA }
-
-
- -- Scatter -------------------------------------
- | Just ( NameOpSeries OpSeriesScatter
-        , [ XType tK, XType tA, XVar uV, XVar uIndices, XVar uElems ])
-                                <- takeXPrimApps xx
- = Just $ OpScatter
-        { opResultBind          = bResult
-        , opTargetVector        = uV
-        , opSourceIndices       = uIndices
-        , opSourceElems         = uElems
-        , opInputRate           = tK
-        , opElemType            = tA }
 
  | otherwise
  = Nothing

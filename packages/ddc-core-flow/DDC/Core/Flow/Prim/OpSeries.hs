@@ -30,8 +30,13 @@ instance Pretty OpSeries where
 
         OpSeriesRep             -> text "srep"                  <> text "#"
         OpSeriesReps            -> text "sreps"                 <> text "#"
+
         OpSeriesIndices         -> text "sindices"              <> text "#"
+
+        OpSeriesFill            -> text "sfill"                 <> text "#"
+
         OpSeriesGather          -> text "sgather"               <> text "#"
+        OpSeriesScatter         -> text "sscatter"              <> text "#"
 
         OpSeriesMkSel 1         -> text "smkSel"                <> text "#"
         OpSeriesMkSel n         -> text "smkSel"     <> int n   <> text "#"
@@ -45,9 +50,6 @@ instance Pretty OpSeries where
 
         OpSeriesReduce          -> text "sreduce"               <> text "#"
         OpSeriesFolds           -> text "sfolds"                <> text "#"
-
-        OpSeriesFill            -> text "sfill"                 <> text "#"
-        OpSeriesScatter         -> text "sscatter"              <> text "#"
 
         OpSeriesJoin            -> text "pjoin"                 <> text "#"
 
@@ -131,10 +133,10 @@ takeTypeOpSeries op
 
 
         -- Replicates -------------------------
-        -- rep  :: [a : Data] [k : Rate]
+        -- rep  :: [k : Rate] [a : Data] 
         --      .  a -> Series k a
         OpSeriesRep 
-         -> Just $ tForalls [kData, kRate] $ \[tA, tR]
+         -> Just $ tForalls [kRate, kData] $ \[tR, tA]
                 -> tA `tFun` tSeries tR tA
 
         -- reps  :: [k1 k2 : Rate]. [a : Data]

@@ -29,6 +29,21 @@ data Operator
         }
 
         -----------------------------------------
+        -- | Flat replicate.
+        | OpRep
+        { -- | Binder for result series.
+          opResultSeries        :: BindF
+
+          -- | Rate of output series.
+        , opOutputRate          :: TypeF
+
+          -- | Type of the elements.
+        , opElemType            :: TypeF
+
+          -- | Exp to compute the element to be replicated.
+        , opInputExp            :: ExpF }
+
+        -----------------------------------------
         -- | Segmented replicate.
         | OpReps
         { -- | Binder for result series.
@@ -63,6 +78,65 @@ data Operator
 
           -- Bound for the segment descriptor.
         , opSegdBound           :: BoundF }
+
+        -----------------------------------------
+        -- | Fill a vector with elements from a series.
+        | OpFill
+        { -- | Binder for result value (a Unit)
+          opResultBind          :: BindF
+
+          -- | Bound of target vector.
+        , opTargetVector        :: BoundF
+
+          -- | Rate of input series.
+        , opInputRate           :: TypeF
+
+          -- | Bound of input series.
+        , opInputSeries         :: BoundF 
+
+          -- | Type of the elements.
+        , opElemType            :: TypeF }
+
+        -----------------------------------------
+        -- | Gather elements from a vector into a series.
+        | OpGather
+        { -- | Binder for result series.
+          opResultBind          :: BindF
+
+          -- | Bound  of source elem vector.
+        , opSourceVector        :: BoundF
+
+          -- | Bound  of source index series.
+        , opSourceIndices       :: BoundF
+
+          -- | Rate of input and output series.
+        , opInputRate           :: TypeF
+
+          -- | Type of gathered elements.
+        , opElemType            :: TypeF 
+        }
+
+        -----------------------------------------
+        -- | Scatter elements from a series into a vector.
+        | OpScatter
+        { -- | Binder for result value (a Unit)
+          opResultBind          :: BindF
+
+          -- | Bound of target vector.
+        , opTargetVector        :: BoundF
+
+          -- | Bound of source index series.
+        , opSourceIndices       :: BoundF
+
+          -- | Bound of source element series.
+        , opSourceElems         :: BoundF
+
+          -- | Rate of input serieses.
+        , opInputRate           :: TypeF
+
+          -- | Type of elements.
+        , opElemType            :: TypeF
+        }
 
         -----------------------------------------
         -- | Apply a function to corresponding elements in several input series
@@ -133,65 +207,6 @@ data Operator
 
           -- | Worker body.
         , opWorkerBody          :: ExpF
-        }
-
-        -----------------------------------------
-        -- | Fill a vector with elements from a series.
-        | OpFill
-        { -- | Binder for result value (a Unit)
-          opResultBind          :: BindF
-
-          -- | Bound of target vector.
-        , opTargetVector        :: BoundF
-
-          -- | Rate of input series.
-        , opInputRate           :: TypeF
-
-          -- | Bound of input series.
-        , opInputSeries         :: BoundF 
-
-          -- | Type of the elements.
-        , opElemType            :: TypeF }
-
-        -----------------------------------------
-        -- | Gather elements from a vector into a series.
-        | OpGather
-        { -- | Binder for result series.
-          opResultBind          :: BindF
-
-          -- | Bound  of source elem vector.
-        , opSourceVector        :: BoundF
-
-          -- | Bound  of source index series.
-        , opSourceIndices       :: BoundF
-
-          -- | Rate of input and output series.
-        , opInputRate           :: TypeF
-
-          -- | Type of gathered elements.
-        , opElemType            :: TypeF 
-        }
-
-        -----------------------------------------
-        -- | Scatter elements from a series into a vector.
-        | OpScatter
-        { -- | Binder for result value (a Unit)
-          opResultBind          :: BindF
-
-          -- | Bound of target vector.
-        , opTargetVector        :: BoundF
-
-          -- | Bound of source index series.
-        , opSourceIndices       :: BoundF
-
-          -- | Bound of source element series.
-        , opSourceElems         :: BoundF
-
-          -- | Rate of input serieses.
-        , opInputRate           :: TypeF
-
-          -- | Type of elements.
-        , opElemType            :: TypeF
         }
         deriving Show
 

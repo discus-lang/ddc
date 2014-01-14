@@ -2,6 +2,19 @@
 :set Synth
 :set SuppressLetTypes
 
+
+-- Multiply a parameter series by one created with replication.
+:flow-lower..
+module Test with letrec
+repsme  [k1 : Rate]
+        (s  : Series# k1 Float32#)
+        (v  : Vector# Float32#)
+        : Process#
+ = sfill# [k1] v 
+        (smap2# mul# (srep# 23.0f32#) s)
+;;
+
+
 -- Fill a vector with segmentedly replicated elements.
 :flow-lower..
 module Test with letrec
@@ -33,3 +46,17 @@ repsme  [k1 : Rate]
         sfill# v s3)
 ;;
 
+
+-- As above, but do the multiplication before replication.
+:flow-lower..
+module Test with letrec
+repsme  [k1 : Rate]
+        (lens : Series# k1 Nat#) (s1 s2 : Series# k1 Float32#)
+        (v    : Vector# Float32#)
+        : Process#
+ = smkSegd# lens
+    (/\(k2 : Rate). \(segd : Segd# k1 k2).
+     do s3  = smap2# mul# s1 s2
+        s3r = sreps# segd s3
+        sfill# v s3r)
+;;

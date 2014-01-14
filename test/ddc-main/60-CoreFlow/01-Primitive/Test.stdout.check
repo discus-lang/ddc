@@ -39,7 +39,7 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 
 -- Flow operators
-srep# :: [^ : Data].[^ : Rate].^1 -> Series# ^0 ^1
+srep# :: [^ : Rate].[^ : Data].^0 -> Series# ^1 ^0
 sreps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
 sindices# :: [^ ^ : Rate].Segd# ^1 ^0 -> Series# ^0 Nat#
 sgather# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 Nat# -> Series# ^1 ^0

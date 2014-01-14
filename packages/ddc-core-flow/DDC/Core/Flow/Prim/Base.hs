@@ -156,8 +156,14 @@ data OpSeries
         -- | Segmented indices
         | OpSeriesIndices
 
+        -- | Fill an existing vector from a series.
+        | OpSeriesFill
+
         -- | Gather  (read) elements from a vector.
         | OpSeriesGather
+
+        -- | Scatter (write) elements into a vector.
+        | OpSeriesScatter
 
         -- | Make a selector.
         | OpSeriesMkSel Int
@@ -177,12 +183,6 @@ data OpSeries
 
         -- | Segmented fold.
         | OpSeriesFolds
-
-        -- | Fill an existing vector from a series.
-        | OpSeriesFill
-
-        -- | Scatter (write) elements into a vector.
-        | OpSeriesScatter
 
         -- | Convert vector(s) into series, all with same length with runtime check.
         | OpSeriesRunProcess Int

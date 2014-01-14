@@ -94,6 +94,32 @@ scheduleOperator nest0 op
 
         return nest1
 
+ -- Rep -----------------------------------------
+ | OpRep{}      <- op
+ = do   let tK          = opOutputRate op
+
+        -- Make a binder for the replicated element.
+        let BName nResult _ = opResultSeries op
+        let nVal        = NameVarMod nResult "val"
+        let uVal        = UName nVal
+        let bVal        = BName nVal (opElemType op)
+
+        -- Get the binder for the use of it in the replicated context.
+        let Just bResult = elemBindOfSeriesBind (opResultSeries op)
+
+        -- Evaluate the expression to be replicated once, 
+        -- before the main loop.
+        let Just nest1
+                = insertStarts nest0 tK
+                $ [ StartStmt bVal (opInputExp op) ]
+
+        -- Use the expression for each iteration of the loop.
+        let Just nest2
+                = insertBody nest1 tK
+                $ [ BodyStmt bResult (XVar uVal) ]
+
+        return nest2
+
  -- Reps ----------------------------------------
  | OpReps{}     <- op
  = do   -- Lookup binder for the input element.
@@ -122,6 +148,87 @@ scheduleOperator nest0 op
                                 (XVar (UIx 1)) ]
 
         return nest1
+
+ -- Fill -----------------------------------------
+ | OpFill{} <- op
+ = do   let tK          = opInputRate op
+
+        -- Get bound of the input element.
+        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
+
+        -- Write the current element to the vector.
+        let UName nVec  = opTargetVector op
+        let Just nest1      
+                = insertBody nest0 tK 
+                $ [ BodyVecWrite 
+                        nVec                    -- destination vector
+                        (opElemType op)         -- series elem type
+                        (XVar (UIx 0))          -- index
+                        (XVar uInput) ]         -- value
+
+        -- If the length of the vector corresponds to a guarded rate then it
+        -- was constructed in a filter context. After the process completes, 
+        -- we know how many elements were written so we can truncate the
+        -- vector down to its final length.
+        let Just nest2
+                | nestContainsGuardedRate nest1 tK
+                = insertEnds nest1 tK
+                $ [ EndVecTrunc 
+                        nVec                    -- destination vector
+                        (opElemType op)         -- series element type
+                        tK ]                    -- rate of source series
+
+                | otherwise
+                = Just nest1
+
+        return nest2
+
+ -- Gather ---------------------------------------
+ | OpGather{} <- op
+ = do   
+        let tK          = opInputRate op
+
+        -- Bind for result element.
+        let Just bResult = elemBindOfSeriesBind (opResultBind op)
+
+        -- Bound of source index.
+        let Just uIndex  = elemBoundOfSeriesBound (opSourceIndices op)
+
+        -- Read from the vector.
+        let Just nest1  = insertBody nest0 tK
+                        $ [ BodyStmt bResult
+                                (xReadVector 
+                                        (opElemType op)
+                                        (XVar $ opSourceVector op)
+                                        (XVar $ uIndex)) ]
+
+        return nest1
+ 
+ -- Scatter --------------------------------------
+ | OpScatter{} <- op
+ = do   
+        let tK          = opInputRate op
+
+        -- Bound of source index.
+        let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
+
+        -- Bound of source elements.
+        let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
+
+        -- Read from vector.
+        let Just nest1  = insertBody nest0 tK
+                        $ [ BodyStmt (BNone tUnit)
+                                (xWriteVector
+                                        (opElemType op)
+                                        (XVar $ opTargetVector op)
+                                        (XVar $ uIndex) (XVar $ uElem)) ]
+
+        -- Bind final unit value.
+        let Just nest2  = insertEnds nest1 tK
+                        $ [ EndStmt     (opResultBind op)
+                                        xUnit ]
+
+        return nest2
 
  -- Maps -----------------------------------------
  | OpMap{} <- op
@@ -216,88 +323,6 @@ scheduleOperator nest0 op
                                           (XVar $ UName nAccRes)) ]
 
         return nest3
-
- -- Fill -----------------------------------------
- | OpFill{} <- op
- = do   let tK          = opInputRate op
-
-        -- Get bound of the input element.
-        let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
-
-        -- Write the current element to the vector.
-        let UName nVec  = opTargetVector op
-        let Just nest1      
-                = insertBody nest0 tK 
-                $ [ BodyVecWrite 
-                        nVec                    -- destination vector
-                        (opElemType op)         -- series elem type
-                        (XVar (UIx 0))          -- index
-                        (XVar uInput) ]         -- value
-
-        -- If the length of the vector corresponds to a guarded rate then it
-        -- was constructed in a filter context. After the process completes, 
-        -- we know how many elements were written so we can truncate the
-        -- vector down to its final length.
-        let Just nest2
-                | nestContainsGuardedRate nest1 tK
-                = insertEnds nest1 tK
-                $ [ EndVecTrunc 
-                        nVec                    -- destination vector
-                        (opElemType op)         -- series element type
-                        tK ]                    -- rate of source series
-
-                | otherwise
-                = Just nest1
-
-        return nest2
-
- -- Gather ---------------------------------------
- | OpGather{} <- op
- = do   
-        let tK          = opInputRate op
-
-        -- Bind for result element.
-        let Just bResult = elemBindOfSeriesBind (opResultBind op)
-
-        -- Bound of source index.
-        let Just uIndex  = elemBoundOfSeriesBound (opSourceIndices op)
-
-        -- Read from the vector.
-        let Just nest1  = insertBody nest0 tK
-                        $ [ BodyStmt bResult
-                                (xReadVector 
-                                        (opElemType op)
-                                        (XVar $ opSourceVector op)
-                                        (XVar $ uIndex)) ]
-
-        return nest1
- 
- -- Scatter --------------------------------------
- | OpScatter{} <- op
- = do   
-        let tK          = opInputRate op
-
-        -- Bound of source index.
-        let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
-
-        -- Bound of source elements.
-        let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
-
-        -- Read from vector.
-        let Just nest1  = insertBody nest0 tK
-                        $ [ BodyStmt (BNone tUnit)
-                                (xWriteVector
-                                        (opElemType op)
-                                        (XVar $ opTargetVector op)
-                                        (XVar $ uIndex) (XVar $ uElem)) ]
-
-        -- Bind final unit value.
-        let Just nest2  = insertEnds nest1 tK
-                        $ [ EndStmt     (opResultBind op)
-                                        xUnit ]
-
-        return nest2
-
 
  -- Unsupported ----------------------------------
  | otherwise
