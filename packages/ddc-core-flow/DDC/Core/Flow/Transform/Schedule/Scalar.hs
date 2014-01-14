@@ -95,7 +95,23 @@ scheduleOperator nest0 op
 
         return nest1
 
--- Maps -----------------------------------------
+ -- Reps ----------------------------------------
+ | OpReps{}     <- op
+ = do   -- Lookup binder for the input element.
+        let Just uInput  = elemBoundOfSeriesBound (opInputSeries op)
+
+        -- Set the result to point to the input element.
+        let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
+
+        let Just nest1
+                = insertBody nest0 (ContextRate (opOutputRate op))
+                $ [ BodyStmt    bResult
+                                (XVar uInput)]
+
+        return nest1
+
+
+ -- Maps -----------------------------------------
  | OpMap{} <- op
  = do   let tK          = opInputRate op
         let context     = ContextRate tK

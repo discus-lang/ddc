@@ -33,6 +33,7 @@ data Nest
         | NestList
         { nestList              :: [Nest]}
 
+        -- Used to define the outer loop of a process.
         | NestLoop
         { nestRate              :: Type Name
         , nestStart             :: [StmtStart]
@@ -41,11 +42,22 @@ data Nest
         , nestEnd               :: [StmtEnd] 
         , nestResult            :: Exp () Name }
 
-        | NestIf
+        -- Guarded context, 
+        -- used when lowering pack-like operations.
+        | NestGuard
         { nestOuterRate         :: Type Name
         , nestInnerRate         :: Type Name
         , nestFlags             :: Bound Name
         , nestBody              :: [StmtBody] 
+        , nestInner             :: Nest }
+
+        -- Segmented context,
+        -- used when lowering segmented operations.
+        | NestSegment
+        { nestOuterRate         :: Type Name
+        , nestInnerRate         :: Type Name
+        , nestLength            :: Bound Name
+        , nestBody              :: [StmtBody]
         , nestInner             :: Nest }
         deriving Show
 

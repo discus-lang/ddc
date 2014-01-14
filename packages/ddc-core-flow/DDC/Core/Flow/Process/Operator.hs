@@ -29,6 +29,27 @@ data Operator
         }
 
         -----------------------------------------
+        -- | Segmented replicate.
+        | OpReps
+        { -- | Binder for result series.
+          opResultSeries        :: BindF
+
+          -- | Rate of input series.
+        , opInputRate           :: TypeF
+
+          -- | Rate of output series.
+        , opOutputRate          :: TypeF
+
+          -- | Type of the elements.
+        , opElemType            :: TypeF
+
+          -- | Bound for the segment descriptor.
+        , opSegdBound           :: BoundF
+
+          -- | Bound fo the input series.
+        , opInputSeries         :: BoundF }
+
+        -----------------------------------------
         -- | Apply a function to corresponding elements in several input series
         --   of the same rate, producing a new series. This subsumes the regular
         --   'map' operator as well as 'zipWith' like operators where the input

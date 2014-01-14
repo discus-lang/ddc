@@ -51,7 +51,7 @@ extractNest nest xResult
 -- | Extract code for a possibly nested loop.
 extractLoop      :: Nest -> [LetsF]
 
--- Code in a loop context.
+-- Code in the top-level loop context.
 extractLoop (NestLoop tRate starts bodys inner ends _result)
  = let  
         -- Starting statements.
@@ -80,29 +80,53 @@ extractLoop (NestLoop tRate starts bodys inner ends _result)
 
    in   lsStart ++ [lLoop] ++ lsEnd
 
--- Code in a select / if context.
-extractLoop (NestIf _tRateOuter tRateInner uFlags stmtsBody nested)
+-- Code in a guard context.
+extractLoop (NestGuard _tRateOuter tRateInner uFlags stmtsBody nested)
  = let
         -- Get the name of a single flag from the series of flags.
         UName nFlags    = uFlags
         nFlag           = NameVarMod nFlags "elem"
         xFlag           = XVar (UName nFlag)
 
-        -- Make a name for the counter.
+        -- Get the name of the entry counter.
         TVar (UName nK) = tRateInner
         uCounter        = UName (NameVarMod nK "count")
 
-        xBody           = xGuard xFlag (XVar uCounter)
+        xBody           = xGuard (XVar uCounter) xFlag 
                           (  XLam (BAnon tNat)
                           $ xLets (lsBody ++ lsNested) xUnit)
 
-        -- Selector context.
-        lsBody   = concatMap extractStmtBody stmtsBody
+        -- Statements in the guard context.
+        lsBody          = concatMap extractStmtBody stmtsBody
 
         -- Nested contexts.
-        lsNested = extractLoop nested
+        lsNested        = extractLoop nested
 
   in    [LLet (BNone tUnit) xBody]
+
+-- Code in a segment context.
+extractLoop (NestSegment _tRateOuter tRateInner uLengths stmtsBody nested)
+ = let
+        -- Get the name of a single segment length from the series of lengths.
+        UName nLengths  = uLengths
+        nLength         = NameVarMod nLengths "elem"
+        xLength         = XVar (UName nLength)
+
+        -- Get the name of the entry counter.
+        TVar (UName nK) = tRateInner
+        uCounter        = UName (NameVarMod nK "count")
+
+        xBody           = xSegment (XVar uCounter) xLength 
+                        (  XLam (BAnon tNat)
+                        $ xLets (lsBody ++ lsNested) xUnit)
+
+        -- Statements in the segment context.
+        lsBody          = concatMap extractStmtBody stmtsBody           
+
+        -- Nested contexts.
+        lsNested        = extractLoop nested
+
+   in   [LLet (BNone tUnit) xBody]
 
 
 extractLoop NestEmpty

@@ -179,6 +179,7 @@ slurpBindingX
                 ( [Context]     --   Nested contexts created by this binding.
                 , [Operator])   --   Series operators in this binding.
 
+
 -- Decend into more let bindings.
 -- We get these when entering into a nested context.
 slurpBindingX tenv b1 xx
@@ -197,6 +198,7 @@ slurpBindingX tenv b1 xx
 
         return  ( ctxHere ++ ctxMore
                 , opsHere ++ opsMore)
+
 
 -- Slurp a mkSel1#
 -- This creates a nested selector context.
@@ -235,7 +237,41 @@ slurpBindingX tenv b
 
         return (context : ctxInner, opId : osInner)
 
--- Slurp an operator that doesn't introduce a new context.
+
+-- Slurp a mkSegd#.
+-- This creates a segmented context.
+slurpBindingX tenv b
+ (   takeXPrimApps 
+  -> Just ( NameOpSeries OpSeriesMkSegd
+          , [ XType tK1
+            , XVar  uLens
+            , XLAM  (BName nK2 kR) (XLam bSegd xBody)]))
+ | kR == kRate
+ = do   
+        (ctxInner, osInner)
+                <- slurpBindingX tenv b xBody
+
+        let UName nLens = uLens
+        let nLensUse    = NameVarMod nLens "use"
+        let uLensUse    = UName nLensUse
+        let bLensUse    = BName nLensUse (tSeries tK1 tNat)
+
+        let opId        = OpId
+                        { opResultSeries        = bLensUse
+                        , opInputRate           = tK1
+                        , opInputSeries         = uLens
+                        , opElemType            = tNat }
+
+        let context     = ContextSegment
+                        { contextOuterRate      = tK1
+                        , contextInnerRate      = TVar (UName nK2)
+                        , contextLens           = uLensUse
+                        , contextSegd           = bSegd }
+
+        return (context : ctxInner, opId : osInner)
+
+
+-- Slurp a series operator that doesn't introduce a new context.
 slurpBindingX _ b xx
  | Just op      <- slurpOperator b xx
  = return ([], [op])

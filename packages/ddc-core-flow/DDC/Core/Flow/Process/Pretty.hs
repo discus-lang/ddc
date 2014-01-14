@@ -22,6 +22,17 @@ instance Pretty Operator where
         , text " input:   "     <> ppr (opInputSeries   op)
         , text " result:  "     <> ppr (opResultSeries  op) ]
 
+
+ ppr op@OpReps{}
+        = vcat
+        [ text "Reps"
+        , text " result:      " <> ppr (opResultSeries  op)
+        , text " input rate:  " <> ppr (opInputRate     op)
+        , text " output rate: " <> ppr (opOutputRate    op)
+        , text " type:        " <> ppr (opElemType      op)
+        , text " segd:        " <> ppr (opSegdBound     op)
+        , text " input:       " <> ppr (opInputSeries   op) ]
+ 
  ppr op@OpFill{}
         = vcat
         [ text "Fill"

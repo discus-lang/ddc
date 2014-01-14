@@ -11,11 +11,19 @@ data Context
         = ContextRate
         { contextRate           :: Type Name }
 
-        -- | A nested context created by a mkSel function.
+        -- | A nested context created by a mkSel1# function.
         | ContextSelect
         { contextOuterRate      :: Type  Name
         , contextInnerRate      :: Type  Name
         , contextFlags          :: Bound Name
         , contextSelector       :: Bind  Name }
+
+
+        -- | A nested context created by a mkSegd# function.
+        | ContextSegment
+        { contextOuterRate      :: Type  Name
+        , contextInnerRate      :: Type  Name
+        , contextLens           :: Bound Name
+        , contextSegd           :: Bind  Name }
         deriving (Show, Eq)
 

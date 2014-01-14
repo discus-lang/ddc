@@ -5,6 +5,7 @@ module DDC.Core.Flow.Prim.OpControl
         , typeOpControl
         , xLoopN
         , xGuard
+        , xSegment
         , xSplit)
 where
 import DDC.Core.Flow.Prim.KiConFlow
@@ -25,10 +26,11 @@ instance NFData OpControl
 instance Pretty OpControl where
  ppr fo
   = case fo of
-        OpControlLoop     -> text "loop#"
-        OpControlLoopN    -> text "loopn#"
-        OpControlGuard    -> text "guard#"
-        OpControlSplit n  -> text "split$" <> int n <> text "#"
+        OpControlLoop           -> text "loop#"
+        OpControlLoopN          -> text "loopn#"
+        OpControlGuard          -> text "guard#"
+        OpControlSegment        -> text "segment#"
+        OpControlSplit n        -> text "split$" <> int n <> text "#"
 
 
 -- | Read a control operator name.
@@ -42,10 +44,11 @@ readOpControl str
 
         | otherwise
         = case str of
-                "loop#"           -> Just $ OpControlLoop
-                "loopn#"          -> Just $ OpControlLoopN
-                "guard#"          -> Just $ OpControlGuard
-                _                 -> Nothing
+                "loop#"         -> Just $ OpControlLoop
+                "loopn#"        -> Just $ OpControlLoopN
+                "guard#"        -> Just $ OpControlGuard
+                "segment#"      -> Just $ OpControlSegment
+                _               -> Nothing
 
 
 -- Types ----------------------------------------------------------------------
@@ -53,20 +56,27 @@ readOpControl str
 typeOpControl  :: OpControl -> Type Name
 typeOpControl op
  = case op of
-        -- loop#  :: [k : Rate]. (Nat# -> Unit) -> Unit
+        -- loop#   :: [k : Rate]. (Nat# -> Unit) -> Unit
         OpControlLoop
          -> tForall kRate 
          $  \_ -> (tNat `tFun` tUnit) `tFun` tUnit
 
-        -- loopn#  :: [k : Rate]. RateNat# k -> (Nat# -> Unit) -> Unit
+        -- loopn#   :: [k : Rate]. RateNat# k -> (Nat# -> Unit) -> Unit
         OpControlLoopN
          -> tForall kRate 
          $  \kR -> tRateNat kR `tFun` (tNat `tFun` tUnit) `tFun` tUnit
 
-        -- guard#  :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
+        -- guard#   :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
         OpControlGuard 
          -> tRef tNat
                 `tFun` tBool
+                `tFun` (tNat `tFun` tUnit)
+                `tFun` tUnit
+
+        -- segment# :: Ref Nat# -> Nat#  -> (Nat# -> Unit) -> Unit
+        OpControlSegment
+         -> tRef tNat
+                `tFun` tNat
                 `tFun` (tNat `tFun` tUnit)
                 `tFun` tUnit
 
@@ -86,24 +96,27 @@ typeOpControl op
 type TypeF      = Type Name
 type ExpF       = Exp () Name
 
-xLoopN  :: TypeF -> ExpF -> ExpF -> ExpF
+
+xLoopN   :: TypeF -> ExpF -> ExpF -> ExpF
 xLoopN tR xRN xF 
-        = xApps (xVarOpControl OpControlLoopN) [XType tR, xRN, xF]
+        = xApps (xVarOpControl OpControlLoopN) 
+                [XType tR, xRN, xF]
 
 
-xGuard  :: ExpF         -- ^ Reference to guard counter.
-        -> ExpF         -- ^ Boolean flag to test.
-        -> ExpF         -- ^ Body of guard.
-        -> ExpF
-
-xGuard xB xCount xF
-        = xApps (xVarOpControl OpControlGuard) [xCount, xB, xF]
+xGuard   :: ExpF -> ExpF -> ExpF -> ExpF
+xGuard xCount xFlag xFun
+        = xApps (xVarOpControl OpControlGuard) 
+                [xCount, xFlag, xFun]
 
 
-xSplit  :: Int 
-        -> TypeF
-        -> ExpF
-        -> ExpF -> ExpF -> ExpF
+xSegment :: ExpF -> ExpF -> ExpF -> ExpF
+xSegment xCount xIters xFun
+        = xApps (xVarOpControl OpControlSegment)
+                [xCount, xIters, xFun]
+
+
+xSplit  :: Int  -> TypeF -> ExpF
+        -> ExpF -> ExpF  -> ExpF
 xSplit n tK xRN xDownFn xTailFn 
         = xApps (xVarOpControl $ OpControlSplit n)
                 [ XType tK, xRN, xDownFn, xTailFn ]

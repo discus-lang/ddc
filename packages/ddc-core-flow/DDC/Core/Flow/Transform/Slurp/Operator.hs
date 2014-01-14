@@ -20,6 +20,29 @@ slurpOperator
         -> Maybe Operator
 
 slurpOperator bResult xx
+ 
+ -- Reps ----------------------------------------
+ | Just ( NameOpSeries OpSeriesReps
+        , [ XType tK1, XType tK2, XType tA, XVar uSegd, XVar uS ])
+                                <- takeXPrimApps xx
+ = Just $ OpReps
+        { opResultSeries        = bResult
+        , opInputRate           = tK1
+        , opOutputRate          = tK2
+        , opElemType            = tA
+        , opSegdBound           = uSegd
+        , opInputSeries         = uS }
+
+ -- Gather --------------------------------------
+ | Just ( NameOpSeries OpSeriesGather
+        , [ XType tK, XType tA, XVar uV, XVar uS ])
+                                <- takeXPrimApps xx
+ = Just $ OpGather
+        { opResultBind          = bResult
+        , opSourceVector        = uV
+        , opSourceIndices       = uS
+        , opInputRate           = tK
+        , opElemType            = tA }
 
  -- Map -----------------------------------------
  | Just (NameOpSeries (OpSeriesMap n), xs) 
@@ -84,18 +107,6 @@ slurpOperator bResult xx
         , opElemType            = tA }
 
 
- -- Gather --------------------------------------
- | Just ( NameOpSeries OpSeriesGather
-        , [ XType tK, XType tA, XVar uV, XVar uS ])
-                                <- takeXPrimApps xx
- = Just $ OpGather
-        { opResultBind          = bResult
-        , opSourceVector        = uV
-        , opSourceIndices       = uS
-        , opInputRate           = tK
-        , opElemType            = tA }
-
-
  -- Scatter -------------------------------------
  | Just ( NameOpSeries OpSeriesScatter
         , [ XType tK, XType tA, XVar uV, XVar uIndices, XVar uElems ])
@@ -112,31 +123,31 @@ slurpOperator bResult xx
  = Nothing
 
 
--- | Check if some binding is a flow operator.
-isSeriesOperator 
-        :: Exp () Name 
-        -> Bool
-
+-- | Check if some binding is a series operator.
+isSeriesOperator :: Exp () Name -> Bool
 isSeriesOperator xx
  = case liftM fst $ takeXPrimApps xx of
-        Just (NameOpSeries (OpSeriesMap _))   -> True
-        Just (NameOpSeries OpSeriesReduce)    -> True
-        Just (NameOpSeries OpSeriesPack)      -> True
-        Just (NameOpSeries (OpSeriesMkSel _)) -> True
-        Just (NameOpSeries OpSeriesFill)      -> True
-        Just (NameOpSeries OpSeriesGather)    -> True
-        Just (NameOpSeries OpSeriesScatter)   -> True
-        _                                     -> False
+        Just (NameOpSeries OpSeriesRep)         -> True
+        Just (NameOpSeries OpSeriesReps)        -> True
+        Just (NameOpSeries OpSeriesGather)      -> True
+
+        Just (NameOpSeries (OpSeriesMkSel _))   -> True
+        Just (NameOpSeries OpSeriesMkSegd)      -> True
+
+        Just (NameOpSeries (OpSeriesMap _))     -> True
+        Just (NameOpSeries OpSeriesPack)        -> True
+        Just (NameOpSeries OpSeriesReduce)      -> True
+        Just (NameOpSeries OpSeriesFolds)       -> True
+
+        Just (NameOpSeries OpSeriesFill)        -> True
+        Just (NameOpSeries OpSeriesScatter)     -> True
+        _                                       -> False
 
 
 -- | Check if some binding is a vector operator.
-isVectorOperator 
-        :: Exp () Name 
-        -> Bool
-
+isVectorOperator :: Exp () Name -> Bool
 isVectorOperator xx
  = case liftM fst $ takeXPrimApps xx of
-        Just (NameOpVector _)                 -> True
-        _                                     -> False
-
+        Just (NameOpVector _)                   -> True
+        _                                       -> False
 

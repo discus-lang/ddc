@@ -212,9 +212,19 @@ data OpConcrete
 
 -- | Control operators.
 data OpControl
+        -- Top level loop, indexed by a rate type.
         = OpControlLoop
+
+        -- Top level loop, taking a RateNat.
         | OpControlLoopN
+
+        -- Evaluate some function when a flag is true.
         | OpControlGuard
+
+        -- Evaluate some function a given number of times.
+        | OpControlSegment
+
+        -- Used for producing SIMD code.
         | OpControlSplit Int
         deriving (Eq, Ord, Show)
 
@@ -255,7 +265,7 @@ data OpStore
         deriving (Eq, Ord, Show)
 
 
--- | Fusable Flow operators that work on Vectors.
+-- | Fusable flow operators that work on Vectors.
 data OpVector
         -- | Apply worker function to @n@ vectors zipped.
         = OpVectorMap Int

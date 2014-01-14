@@ -21,6 +21,11 @@ import Data.Monoid
 -- | Insert a skeleton context into a nest.
 --    The new context doesn't contain any statements, it just provides
 --    the infrastructure to execute statements at the new rate.
+--
+--   TODO: what are the possible relationships between contexts?
+--         Write examples that have NestGuards inside NestSegment
+--         and vice versa.
+--
 insertContext :: Nest -> Context -> Maybe Nest
 
 -- Context already exists, don't bother.
@@ -32,66 +37,44 @@ insertContext nest            context@ContextRate{}
 insertContext  NestEmpty      context@ContextRate{}
  = Just $ nestOfContext context
 
--- Selector context inside loop context.
+
+-- Drop Selector Context ------------------------
+-- Selector context goes at this level in the loop nest.
 insertContext nest@NestLoop{} context@ContextSelect{}
  | nestRate nest == contextOuterRate context
+ , Just starts  <- startsForContext context
  = Just $ nest 
         { nestInner = nestInner nest <> nestOfContext context 
-        , nestStart = nestStart nest ++ startsForSelect context }
+        , nestStart = nestStart nest ++ starts }
 
--- Selector context needs to be inserted deeper in this nest.
+-- Selector context need to be inserted deeper in the nest.
 insertContext nest@NestLoop{} context@ContextSelect{}
  | nestContainsRate nest (contextOuterRate context)
  , Just inner'  <- insertContext (nestInner nest) context
+ , Just starts  <- startsForContext context
  = Just $ nest 
         { nestInner = inner' 
-        , nestStart = nestStart nest ++ startsForSelect context }
+        , nestStart = nestStart nest ++ starts }
 
--- Nested selector context inside selector context.
-insertContext nest@NestIf{}   context@ContextSelect{}
+-- Selector context inserted inside an existing selector context.
+insertContext nest@NestGuard{}   context@ContextSelect{}
  | nestInnerRate nest == contextOuterRate context
  = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
 
+
+-- Drop Segment Context -------------------------
+-- Selector context goes at this level in the loop nest.
+insertContext nest@NestLoop{} context@ContextSegment{}
+ | nestRate nest == contextOuterRate context
+ , Just starts  <- startsForContext context
+ = Just $ nest
+        { nestInner = nestInner nest <> nestOfContext context
+        , nestStart = nestStart nest ++ starts }
+
+-- TODO: do we allow segment contexts inside guards, and vice versa?
+
 insertContext _nest _context
  = Nothing
-
-
--- | Yield a skeleton nest for a given context.
-nestOfContext :: Context -> Nest
-nestOfContext context
- = case context of
-        ContextRate tRate
-         -> NestLoop
-          { nestRate            = tRate
-          , nestStart           = []
-          , nestBody            = []
-          , nestInner           = NestEmpty
-          , nestEnd             = []
-          , nestResult          = xUnit }
-
-        ContextSelect{}
-         -> NestIf
-          { nestOuterRate       = contextOuterRate context
-          , nestInnerRate       = contextInnerRate context
-          , nestFlags           = contextFlags     context
-          , nestBody            = [] 
-          , nestInner           = NestEmpty }
-
-
--- | For a select context make statements that initialise the counter of 
---   how many times the inner context has been entered.
-startsForSelect :: Context -> [StmtStart]
-startsForSelect context'
- = let  Just context    = case context' of
-                                ContextSelect{} -> Just context'
-                                _               -> Nothing
-
-        TVar (UName nK) = contextInnerRate context
-        nCounter        = NameVarMod nK "count"
-   in   [StartAcc 
-         { startAccName = nCounter
-         , startAccType = tNat
-         , startAccExp  = xNat 0 }]
 
 
 -------------------------------------------------------------------------------
@@ -127,12 +110,22 @@ insertBody nest@NestLoop{} context@(ContextRate tRate) body'
  | Just inner'  <- insertBody (nestInner nest) context body'
  = Just $ nest { nestInner = inner' }
 
-insertBody nest@NestIf{}   context@(ContextRate tRate) body'
+
+insertBody nest@NestGuard{} context@(ContextRate tRate) body'
  | tRate == nestInnerRate nest
  = Just $ nest { nestBody = nestBody nest ++ body' }
 
  | Just inner'  <- insertBody (nestInner nest) context body'
  = Just $ nest { nestInner = inner' }
+
+
+insertBody nest@NestSegment{} context@(ContextRate tRate) body'
+ | tRate == nestInnerRate nest
+ = Just $ nest { nestBody = nestBody nest ++ body' }
+
+ | Just inner' <- insertBody (nestInner nest) context body'
+ = Just $ nest { nestInner = inner' }
+
 
 insertBody (NestList (n:ns)) context body'
  | Just n'  <- insertBody n context body'
@@ -184,12 +177,17 @@ nestContainsRate nest tRate
          ->  nestRate nest == tRate
           || nestContainsRate (nestInner nest) tRate
 
-        NestIf{}
+        NestGuard{}
+         ->  nestInnerRate nest == tRate
+          || nestContainsRate (nestInner nest) tRate
+
+        NestSegment{}
          ->  nestInnerRate nest == tRate
           || nestContainsRate (nestInner nest) tRate
 
 
--- | Check whether the given rate is the inner rate of some NestIf constructor.
+-- | Check whether the given rate is the inner rate of some 
+--  `NestGuard` constructor.
 nestContainsGuardedRate :: Nest -> TypeF -> Bool
 nestContainsGuardedRate nest tRate
  = case nest of
@@ -202,7 +200,66 @@ nestContainsGuardedRate nest tRate
         NestLoop{}
          -> nestContainsGuardedRate (nestInner nest) tRate
 
-        NestIf{}
+        NestGuard{}
          -> nestInnerRate nest == tRate
          || nestContainsGuardedRate (nestInner nest) tRate
+
+        NestSegment{}
+         -> nestContainsGuardedRate (nestInner nest) tRate
+
+
+-- Skeleton nests -------------------------------------------------------------
+-- | Yield a skeleton nest for a given context.
+nestOfContext :: Context -> Nest
+nestOfContext context
+ = case context of
+        ContextRate tRate
+         -> NestLoop
+          { nestRate            = tRate
+          , nestStart           = []
+          , nestBody            = []
+          , nestInner           = NestEmpty
+          , nestEnd             = []
+          , nestResult          = xUnit }
+
+        ContextSelect{}
+         -> NestGuard
+          { nestOuterRate       = contextOuterRate context
+          , nestInnerRate       = contextInnerRate context
+          , nestFlags           = contextFlags     context
+          , nestBody            = [] 
+          , nestInner           = NestEmpty }
+
+        ContextSegment{}
+         -> NestSegment
+          { nestOuterRate       = contextOuterRate context
+          , nestInnerRate       = contextInnerRate context
+          , nestLength          = contextLens      context
+          , nestBody            = []
+          , nestInner           = NestEmpty }
+
+
+-- | For selector and segment contexts, make statements that initialize a 
+--   counter for how many times the context has been entered.
+startsForContext :: Context -> Maybe [StmtStart]
+startsForContext context
+ = case context of
+        ContextSelect{}
+         -> let TVar (UName nK) = contextInnerRate context
+                nCounter        = NameVarMod nK "count"
+            in  Just [ StartAcc 
+                        { startAccName = nCounter
+                        , startAccType = tNat
+                        , startAccExp  = xNat 0 }]
+
+        ContextSegment{}
+         -> let TVar (UName nK) = contextInnerRate context
+                nCounter        = NameVarMod nK "count"
+            in  Just [ StartAcc 
+                        { startAccName = nCounter
+                        , startAccType = tNat
+                        , startAccExp  = xNat 0 }]
+
+        _  -> Nothing
+
 
