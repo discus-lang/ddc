@@ -19,106 +19,155 @@ data Lexeme n
         | LexemeStartBlock      Int
         deriving (Eq, Show)
 
+
+-- | Parenthesis that we're currently inside. 
+data Paren
+        = ParenRound
+        | ParenBrace
+        deriving Show
+
+-- | What column number the current layout context started in.
 type Context
         = Int
 
 -- | Apply the offside rule to this token stream.
---   It should have been processed with addStarts first to add the
---   LexemeStartLine/LexemeStartLine tokens.
 --
+--    It should have been processed with addStarts first to add the
+--    LexemeStartLine/LexemeStartLine tokens.
+--
+--    Unlike the definition in the Haskell 98 report, we explicitly track
+--    which parenthesis we're inside. We use these to partly implement
+--    the poorly formulated layout rule that says we much check for entire
+--    parse errors to perform the offside rule.
+--    
 applyOffside 
         :: (Eq n, Show n) 
-        => [Context] 
-        -> [Lexeme n] 
+        => [Paren]              -- ^ What parenthesis we're inside.
+        -> [Context]            -- ^ Current layout context.
+        -> [Lexeme n]           -- ^ Input lexemes.
         -> [Token (Tok n)]
 
 -- Wait for the module header before we start applying the real offside rule. 
 -- This allows us to write 'module Name with letrec' all on the same line.
-applyOffside [] (LexemeToken t : ts) 
+applyOffside ps [] (LexemeToken t : ts) 
         |   isToken t (KA KModule)
          || isKNToken t
-        = t : applyOffside [] ts
+        = t : applyOffside ps [] ts
 
 -- When we see the top-level letrec then enter into the outer-most context.
-applyOffside [] (LexemeToken t1 : (LexemeStartBlock n) : ls)
+applyOffside ps [] (LexemeToken t1 : (LexemeStartBlock n) : ls)
         |   isToken t1 (KA KLetRec)
          || isToken t1 (KA KWhere)
          || isToken t1 (KA KExports)
          || isToken t1 (KA KImports)
-        = t1 : newCBra ls : applyOffside [n] ls 
+        = t1 : newCBra ls : applyOffside (ParenBrace : ps) [n] ls 
 
 -- At top level without a context.
 -- Skip over everything until we get the 'with' in 'module Name with ...''
-applyOffside [] (LexemeStartLine _  : ts)
-        = applyOffside [] ts 
+applyOffside ps [] (LexemeStartLine _  : ts)
+        = applyOffside ps [] ts 
 
-applyOffside [] (LexemeStartBlock _ : ts)
-        = applyOffside [] ts
+applyOffside ps [] (LexemeStartBlock _ : ts)
+        = applyOffside ps [] ts
 
 
 -- line start
-applyOffside mm@(m : ms) (t@(LexemeStartLine n) : ts)
+applyOffside ps mm@(m : ms) (t@(LexemeStartLine n) : ts)
         -- add semicolon to get to the next statement in this block
         | m == n
-        = newSemiColon ts : applyOffside mm ts
+        = newSemiColon ts : applyOffside ps mm ts
 
         -- end a block
-        -- we keep the StartLine token in the recursion in case we're ending
-        -- multiple blocks difference from Haskell98: add a semicolon as well
-        | n < m 
-        = newSemiColon ts : newCKet ts : applyOffside ms (t : ts)
+        | n <= m 
+        = case ps of
+                -- Closed a block that we're inside, ok.
+                ParenBrace : ps'
+                  -> newCKet ts : applyOffside ps' ms (t : ts)
+
+                -- We're supposed to close the block we're inside, but we're 
+                -- still inside an open '(' context. Just keep passing the
+                -- tokens through, and let the parser give its error when 
+                -- it gets to it.
+                ParenRound : _
+                  -> applyOffside ps ms ts
+
+                -- We always push an element of the layout context
+                -- at the same time as a paren context, so this shouldn't happen.
+                _ -> error $ "ddc-core: paren / layout context mismatch."
 
         -- indented continuation of this statement
         | otherwise
-        = applyOffside mm ts
+        = applyOffside ps mm ts
 
 
 -- block start
-applyOffside mm@(m : ms) (LexemeStartBlock n : ts)
+applyOffside ps mm@(m : ms) (LexemeStartBlock n : ts)
         -- enter into a nested context
         | n > m
-        = newCBra ts : applyOffside (n : m : ms) ts 
+        = newCBra ts : applyOffside (ParenBrace : ps) (n : m : ms) ts 
 
         -- new context starts less than the current one.
-        --   This should never happen, 
-        --     provided addStarts works.
+        --  This should never happen, 
+        --    provided addStarts works.
         | tNext : _    <- dropNewLinesLexeme ts
-        = error $ "DDC.Core.Lexer.Tokens.Offside: layout error on " ++ show tNext ++ "."
+        = error $ "ddc-core: layout error on " ++ show tNext ++ "."
 
         -- new context cannot be less indented than outer one
-        --   This should never happen,
-        --      as there is no lexeme to start a new context at the end of the file
+        --  This should never happen,
+        --   as there is no lexeme to start a new context at the end of the file.
         | []            <- dropNewLinesLexeme ts
-        = error "DDC.Core.Lexer.Tokens.Offside: tried to start new context at end of file."
+        = error "ddc-core: tried to start new context at end of file."
 
         -- an empty block
         | otherwise
-        = newCBra ts : newCKet ts : applyOffside mm (LexemeStartLine n : ts)
+        = newCBra ts : newCKet ts : applyOffside ps mm (LexemeStartLine n : ts)
 
 
--- pop contexts from explicit close braces
-applyOffside mm (LexemeToken t@Token { tokenTok = KA KBraceKet } : ts) 
+-- push context for explicit open brace
+applyOffside ps ms 
+        (LexemeToken t@Token { tokenTok = KA KBraceBra } : ts)
+        = t : applyOffside (ParenBrace : ps) (0 : ms) ts
+
+-- pop context from explicit close brace
+applyOffside ps mm 
+        (LexemeToken t@Token { tokenTok = KA KBraceKet } : ts) 
 
         -- make sure that explict open braces match explicit close braces
-        | 0 : ms        <- mm
-        = t : applyOffside ms ts
+        | 0 : ms                <- mm
+        , ParenBrace : ps'      <- ps
+        = t : applyOffside ps' ms ts
 
         -- nup
         | _tNext : _     <- dropNewLinesLexeme ts
         = [newOffsideClosingBrace ts]
 
 
--- push contexts for explicit open braces
-applyOffside ms (LexemeToken t@Token { tokenTok = KA KBraceBra } : ts)
-        = t : applyOffside (0 : ms) ts
+-- push context for explict open paren.
+applyOffside ps ms 
+        (LexemeToken t@Token { tokenTok = KA KRoundBra } : ts)
+        = t : applyOffside (ParenRound : ps) ms ts
 
-applyOffside ms (LexemeToken t : ts) 
-        = t : applyOffside ms ts
+-- force close of block on close paren.
+-- This partially handles the crazy (Note 5) rule from the Haskell98 standard.
+applyOffside (ParenBrace : ps) (m : ms)
+        (lt@(LexemeToken Token { tokenTok = KA KRoundKet }) : ts)
+ | m /= 0
+ = newCKet ts : applyOffside ps ms (lt : ts)
 
-applyOffside [] []          = []
+-- pop context for explicit close paren.
+applyOffside (ParenRound : ps) ms 
+        (LexemeToken t@Token { tokenTok = KA KRoundKet } : ts)
+        = t : applyOffside ps ms ts
+
+-- pass over tokens.
+applyOffside ps ms (LexemeToken t : ts) 
+        = t : applyOffside ps ms ts
+
+applyOffside _ [] []        = []
 
 -- close off remaining contexts once we've reached the end of the stream.
-applyOffside (_ : ms) []    = newCKet [] : applyOffside ms []
+applyOffside ps (_ : ms) []    
+        = newCKet [] : applyOffside ps ms []
 
 
 -- addStarts ------------------------------------------------------------------

@@ -1,0 +1,17 @@
+:set SuppressLetTypes
+:set Synth
+
+-- Fuse reps with indices.
+:flow-lower..
+module Test with letrec
+test    [k1 : Rate]
+        (lens : Series# k1 Nat#) (things : Series# k1 Nat#)
+        (v    : Vector# Nat#)
+        : Process#
+ = smkSegd# lens
+   (/\(k2 : Rate). \(segd : Segd# k1 k2). 
+    do  s2     = sindices# segd 
+        s3     = sreps# segd things
+        s4     = smap2# add# s2 s3
+        sfill# v s4)
+;;

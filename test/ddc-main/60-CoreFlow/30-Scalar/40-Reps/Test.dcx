@@ -10,10 +10,10 @@ repsme  [k1 : Rate]
         (v    : Vector# Float32#)
         : Process#
  = smkSegd# lens
-   (/\(k2 : Rate). \(segd : Segd# k1 k2). 
-     let s2 = sreps# segd s1 in
-     let s3 = smap#  (mul# 2.0f32#) s2 
-     in  sfill# v s3)
+    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
+     do s2 = sreps# segd s1
+        s3 = smap#  (mul# 2.0f32#) s2 
+        sfill# v s3)
 ;;
 
 
@@ -26,10 +26,10 @@ repsme  [k1 : Rate]
         (v    : Vector# Float32#)
         : Process#
  = smkSegd# lens
-   (/\(k2 : Rate). \(segd : Segd# k1 k2).
-     let s1r = sreps# segd s1 in
-     let s2r = sreps# segd s2 in
-     let s3  = smap2# mul# s1r s2r
-     in  sfill# v s3)
+    (/\(k2 : Rate). \(segd : Segd# k1 k2).
+     do s1r = sreps# segd s1
+        s2r = sreps# segd s2
+        s3  = smap2# mul# s1r s2r
+        sfill# v s3)
 ;;
 

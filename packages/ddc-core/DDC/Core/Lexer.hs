@@ -37,7 +37,7 @@ lexModuleWithOffside
 
 lexModuleWithOffside sourceName lineStart str
  = {-# SCC lexWithOffside #-}
-        applyOffside [] 
+        applyOffside [] []
         $ addStarts
         $ dropComments 
         $ lexString sourceName lineStart str

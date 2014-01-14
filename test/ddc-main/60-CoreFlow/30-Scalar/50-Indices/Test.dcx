@@ -12,8 +12,8 @@ test    [k1 : Rate]
         : Process#
  = smkSegd# lens
    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
-     let s2 = sindices# segd 
-     in  sfill# v s2)
+    do  s2 = sindices# segd 
+        sfill# v s2)
 ;;
 
 
@@ -26,10 +26,10 @@ test    [k1 : Rate]
         : Process#
  = smkSegd# lens
    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
-     let s2     = sindices# segd        in
-     let s3     = sreps# segd things    in
-     let s4     = smap2# add# s2 s3
-     in  sfill# v s4)
+    do  s2     = sindices# segd
+        s3     = sreps# segd things
+        s4     = smap2# add# s2 s3
+        sfill# v s4)
 ;;
 
 
@@ -41,19 +41,17 @@ test    [k1 : Rate]
 :flow-lower..
 module Test with letrec
 test    [k1 : Rate]
-        (lens      : Series# k1 Nat#) 
-        (base      : Series# k1 Nat#)
-        (things    : Vector# Float32#)
-        (out1 out2 : Vector# Float32#)
+        (lens      : Series# k1 Nat#)  (base      : Series# k1 Nat#)
+        (things    : Vector# Float32#) (out1 out2 : Vector# Float32#)
         : Process#
  = smkSegd# lens
    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
-     let bases   = sreps#    segd base          in
-     let offsets = sindices# segd               in
-     let ixs     = smap2#    add# bases offsets in
-     let results = sgather#  things ixs         in
-     let firsts  = sgather#  things base        in
-     let firstsr = sreps#    segd firsts 
-     in  pjoin# (sfill# out1 results)
+    do  bases   = sreps#    segd base
+        offsets = sindices# segd
+        ixs     = smap2#    add# bases offsets
+        results = sgather#  things ixs
+        firsts  = sgather#  things base
+        firstsr = sreps#    segd firsts 
+        pjoin#  (sfill# out1 results)
                 (sfill# out2 firstsr))
 ;;
