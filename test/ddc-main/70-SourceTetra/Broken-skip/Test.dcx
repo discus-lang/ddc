@@ -9,13 +9,9 @@ f (x : Nat#) : Nat#
 ;;
 
 
--- Get kind inference working.
-:synth /\(a : ?). \(x : Ref# a Int#). x
-
-
--- Kind of variable is constrained by its use as the type of a value parameter.
+-- Kind of variable is constrained by its use as a data value.
 :synth..
-/\a. \(x : a). a
+/\a. \(x : a). x
 ;;
 
 

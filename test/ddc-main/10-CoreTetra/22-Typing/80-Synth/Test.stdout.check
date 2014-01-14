@@ -200,9 +200,17 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 :!: Pure
 
 
--- Kind of variable is constrained by type application.
+-- Kind of type parameter is constrained by type application.
 /\(r : Region).
  \(x : Ref# r Nat#). x
 :*: [r : Region].Ref# r Nat# -> Ref# r Nat#
 :!: Pure
+
+
+-- Kind of type parameter is an explicit hole.
+/\(r : Region).
+ \(x : Ref# r Int#). x
+:*: [r : Region].Ref# r Int# -> Ref# r Int#
+:!: Pure
+
 

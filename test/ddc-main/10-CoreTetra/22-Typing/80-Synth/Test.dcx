@@ -130,8 +130,13 @@ case T2# 2# 3# of
 ;;
 
 
--- Kind of variable is constrained by type application.
+-- Kind of type parameter is constrained by type application.
 :synth..
 /\r. \(x : Ref# r Nat#). x
 ;;
+
+
+-- Kind of type parameter is an explicit hole.
+:synth /\(r : ?). \(x : Ref# r Int#). x
+
 

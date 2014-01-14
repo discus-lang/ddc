@@ -16,7 +16,7 @@ checkCast !table !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
         let kenv        = tableKindEnv table
 
         -- Check the effect term.
-        (eff', kEff, _) <- checkTypeM config kenv ctx UniverseSpec eff          -- TODO: use ctx
+        (eff', kEff, _) <- checkTypeM config kenv ctx UniverseSpec eff Recon -- TODO: use ctx
 
         -- Check the body.
         (x1', t1, effs, clo, ctx1)
@@ -185,7 +185,7 @@ checkArgM !table !ctx !xx !dXX
         kenv    = tableKindEnv table
    in case xx of
         XType a t
-         -> do  (t', k, _) <- checkTypeM config kenv ctx UniverseSpec t    -- TODO: use ctx
+         -> do  (t', k, _) <- checkTypeM config kenv ctx UniverseSpec t Recon   -- TODO: use ctx
                 let Just clo = taggedClosureOfTyArg kenv ctx t
                 let a'   = AnTEC k (tBot kEffect) (tBot kClosure) a
                 return  ( XType a' t'

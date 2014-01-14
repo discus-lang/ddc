@@ -110,7 +110,7 @@ ctrace doc'
 
 
 -- Bind -----------------------------------------------------------------------
--- | Check a bind.
+-- | Check the type of a bind.
 checkBindM
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Checker configuration.
@@ -118,11 +118,12 @@ checkBindM
         -> Context n            -- ^ Local context.
         -> Universe             -- ^ Universe for the type of the bind.
         -> Bind n               -- ^ Check this bind.
+        -> Mode n               -- ^ Mode for bidirectional checking.
         -> CheckM a n (Bind n, Type n, Context n)
 
-checkBindM config kenv ctx uni bb
+checkBindM config kenv ctx uni bb mode
  = do   (t', k, ctx')   <- checkTypeM config kenv ctx uni 
-                        $  typeOfBind bb
+                                (typeOfBind bb) mode
         return (replaceTypeOfBind t' bb, k, ctx')
 
 
@@ -135,17 +136,20 @@ checkTypeM
         -> Context n            -- ^ Local context.
         -> Universe             -- ^ Universe the type is supposed to be in.
         -> Type n               -- ^ Check this type.
+        -> Mode n               -- ^ Mode for bidirectional checking
         -> CheckM a n (Type n, Kind n, Context n)
 
-checkTypeM config kenv ctx uni tt
+checkTypeM config kenv ctx uni tt mode
  = do   
         -- Run the inner type/kind checker computation, 
         -- giving it our current values for the existential and position 
         -- generators.
         (tr, ix, pos)   <- G.get
+        
         let ((ix', pos'), result)
                 = G.runCheck (ix, pos)
-                $ T.checkTypeM config kenv ctx uni tt Recon
+                $ T.checkTypeM config kenv ctx uni tt mode
+        
         G.put (tr, ix', pos')
         
         -- If the type/kind checker returns an error then wrap it 
