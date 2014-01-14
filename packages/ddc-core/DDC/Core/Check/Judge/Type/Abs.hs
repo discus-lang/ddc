@@ -73,6 +73,7 @@ checkAbsLAM !table !ctx0 a b1 x2 Recon
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
                                    
+        -- Build the result type.
         let tResult     = TForall b1' t2'
 
         ctrace  $ vcat
@@ -143,7 +144,8 @@ checkAbsLAM !table !ctx0 a b1 x2 Synth
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
-                                   
+        
+        -- Build the result type.
         let tResult     = TForall b1' t2
 
         ctrace  $ vcat
@@ -236,7 +238,8 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
-                                   
+        
+        -- Build the result type.
         let tResult     = TForall b1' t2_sub
 
         ctrace  $ vcat
@@ -325,7 +328,6 @@ checkAbsLam !table !a !ctx !b1 !x2 !Synth
         let t1          = typeOfBind b1
 
         -- If there isn't an existing annotation then make an existential.
-        -- Otherwise check it's kind.
         (b1', t1', ctx1)
          <- if isBot t1
              then do 
@@ -383,8 +385,6 @@ checkAbsLam !table !a !ctx !b1 !x2 !Synth
                         $ Set.toList c2
 
         -- Build the resulting function type.
-        --   The way the effect and closure term is captured depends on
-        --   the configuration flags.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) 
                 t1' (applyContext ctx5 k1) 
@@ -452,7 +452,6 @@ checkAbsLam !table !a !ctx !b1 !x2 !(Check tXX)
         -- Determine the kind of the parameter.
         (_, k1, _)      <- checkTypeM config kenv ctx3 UniverseSpec t1' Recon
 
-
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
         let c2_cut      = Set.fromList
@@ -460,8 +459,6 @@ checkAbsLam !table !a !ctx !b1 !x2 !(Check tXX)
                         $ Set.toList c2
 
         -- Build the resulting function type.
-        --   The way the effect and closure term is captured depends on
-        --   the configuration flags.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) 
                 t1' (applyContext ctx3 k1) 
@@ -484,12 +481,20 @@ checkAbsLam !table !a !ctx !b1 !x2 !(Check tXX)
                 cResult
                 ctx_cut
 
- | otherwise
- = checkSub table a ctx (XLam a b1 x2) tXX
+checkAbsLam !table !a !ctx !b1 !x2 !(Check tExpected)
+ = checkSub table a ctx (XLam a b1 x2) tExpected
 
 
--- | Construct a function type with the given effect and closure.
---   The way the effect and closure is handled depends on the Config.
+-------------------------------------------------------------------------------
+-- | Construct a function-like type with the given effect and closure.
+--
+--   Whether this is a witness or data abstraction depends on the kind
+--   of the parameter type.
+--
+--   For data abstractions, the way the effect and closure is handled
+--   is set by the Config, which depends on the specific language fragment
+--   that we're checking.
+--
 makeFunctionType 
         :: (Show n, Ord n)
         => Config n              -- ^ Type checker config.
@@ -511,6 +516,7 @@ makeFunctionType config a xx t1 k1 t2 e2 c2
 
  | otherwise
  = do   
+        -- Get the universe the parameter value belongs to.
         let Just uniParam    = universeFromType2 k1
 
         -- Trim the closure before we annotate the returned function

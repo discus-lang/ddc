@@ -21,6 +21,3 @@ f (x : Nat#) : Nat#
 :synth..
 /\e. /\r. \(x : S (e + Read r) Nat#). x
 ;;
-
-
-
