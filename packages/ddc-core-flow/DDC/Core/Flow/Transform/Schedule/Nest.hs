@@ -80,17 +80,19 @@ insertContext _nest _context
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
 insertStarts :: Nest -> Context -> [StmtStart] -> Maybe Nest
+insertStarts nest (ContextRate tRate) starts'
+ = case nest of
+        NestLoop{}
+         -- Desired context is right here.
+         |  tRate == nestRate nest
+         -> Just $ nest { nestStart = nestStart nest ++ starts' }
 
--- The starts are for this loop.
-insertStarts nest@NestLoop{} (ContextRate tRate) starts'
- | tRate == nestRate nest
- = Just $ nest { nestStart = nestStart nest ++ starts' }
+         -- Desired context is deeper in the nest.
+         -- The starting statements run before all interations of it.
+         |  nestContainsRate nest tRate
+         -> Just $ nest { nestStart = nestStart nest ++ starts' }
 
--- The starts are for some inner context contained by this loop, 
--- so we can still drop them here.
-insertStarts nest@NestLoop{} (ContextRate tRate) starts'
- | nestContainsRate nest tRate
- = Just $ nest { nestStart = nestStart nest ++ starts' }
+        _ -> Nothing
 
 insertStarts _ _ _
  = Nothing
@@ -99,45 +101,45 @@ insertStarts _ _ _
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
 insertBody :: Nest -> Context -> [StmtBody] -> Maybe Nest
+insertBody nest context@(ContextRate tRate) body'               -- TODO: make this take a plain rate.
+ = case nest of
+        NestLoop{}
+         -- Desired context is right here.
+         |  tRate == nestRate nest
+         -> Just $ nest { nestBody = nestBody nest ++ body' }
 
-insertBody nest@NestLoop{} context@(ContextRate tRate) body'
- -- If the desired context is the same as the loop then we can drop
- -- the statements right here.
- | tRate == nestRate nest
- = Just $ nest { nestBody = nestBody nest ++ body' }
+         -- Desired context is deeper in the nest.
+         |  Just inner' <- insertBody (nestInner nest) context body'
+         -> Just $ nest { nestInner = inner' }
 
- -- Try and insert them in an inner context.
- | Just inner'  <- insertBody (nestInner nest) context body'
- = Just $ nest { nestInner = inner' }
+        NestGuard{}
+         -- Desired context is right here.
+         |  tRate == nestInnerRate nest
+         -> Just $ nest { nestBody = nestBody nest ++ body' }
+
+         -- Desired context is deeper in the nest.
+         |  Just inner' <- insertBody (nestInner nest) context body'
+         -> Just $ nest { nestInner = inner' }
+
+        NestSegment{}
+         -- Desired context is right here.
+         |  tRate == nestInnerRate nest
+         -> Just $ nest { nestBody = nestBody nest ++ body' }
+
+         -- Desired context is deeper in the nest.
+         |  Just inner' <- insertBody (nestInner nest) context body'
+         -> Just $ nest { nestInner = inner' }
+
+        NestList (n : ns)
+         |  Just n'             <- insertBody n context body'
+         -> Just $ NestList (n':ns)
+
+         |  Just (NestList ns') <- insertBody (NestList ns) context body'
+         -> Just $ NestList (n:ns')
 
 
-insertBody nest@NestGuard{} context@(ContextRate tRate) body'
- | tRate == nestInnerRate nest
- = Just $ nest { nestBody = nestBody nest ++ body' }
+        _ -> Nothing
 
- | Just inner'  <- insertBody (nestInner nest) context body'
- = Just $ nest { nestInner = inner' }
-
-
-insertBody nest@NestSegment{} context@(ContextRate tRate) body'
- | tRate == nestInnerRate nest
- = Just $ nest { nestBody = nestBody nest ++ body' }
-
- | Just inner' <- insertBody (nestInner nest) context body'
- = Just $ nest { nestInner = inner' }
-
-
-insertBody (NestList (n:ns)) context body'
- | Just n'  <- insertBody n context body'
- = Just $ NestList (n':ns)
-
-insertBody (NestList (n:ns)) context body'
- | Just (NestList ns') <- insertBody (NestList ns) context body'
- = Just $ NestList (n:ns')
-
-insertBody (NestList []) _ _
- = Nothing
- 
 insertBody _ _ _
  = Nothing
 
@@ -145,20 +147,22 @@ insertBody _ _ _
 -------------------------------------------------------------------------------
 -- | Insert ending statements in the given context.
 insertEnds :: Nest -> Context -> [StmtEnd] -> Maybe Nest
+insertEnds nest (ContextRate tRate) ends'
+ = case nest of
+        NestLoop{}
+         -- Desired context is right here.
+         |  tRate == nestRate nest
+         -> Just $ nest { nestEnd = nestEnd nest ++ ends' }
 
--- The ends are for this loop.
-insertEnds nest@NestLoop{} (ContextRate tRate) ends'
- | tRate == nestRate nest
- = Just $ nest { nestEnd = nestEnd nest ++ ends' }
-
--- The ends are for some inner context contained by this loop,
--- so we can still drop them here.
-insertEnds nest@NestLoop{} (ContextRate tRate) ends'
- | nestContainsRate nest tRate
- = Just $ nest { nestEnd = nestEnd nest ++ ends' }
+         -- Desired context is deeper in the nest.
+         -- The ending statements run before all iterations of it.
+         |  nestContainsRate nest tRate
+         -> Just $ nest { nestEnd = nestEnd nest ++ ends' }
  
+        _ -> Nothing
+        
 insertEnds _ _ _
- = Nothing
+ = Nothing 
 
 
 -- Rate Predicates ------------------------------------------------------------
@@ -261,5 +265,4 @@ startsForContext context
                         , startAccExp  = xNat 0 }]
 
         _  -> Nothing
-
 
