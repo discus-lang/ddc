@@ -108,7 +108,7 @@ scheduleOperator lifting envScalar nest op
  | OpMap{}      <- op
  = do   let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate (tDown c tK)
+        let tK_down     = tDown c tK
 
         -- Bind for the result element.
         let Just bResultE =   elemBindOfSeriesBind (opResultSeries op)
@@ -134,7 +134,7 @@ scheduleOperator lifting envScalar nest op
                                         | b <- bsParam_lifted
                                         | u <- usInput ]
 
-        let Just nest2  = insertBody nest context
+        let Just nest2  = insertBody nest tK_down
                         $ [ BodyStmt bResultE xBody ]
 
         return nest2
@@ -143,14 +143,14 @@ scheduleOperator lifting envScalar nest op
  | OpFill{}     <- op
  = do   let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate (tDown c tK)
+        let tK_down     = tDown c tK
 
         -- Bound for input element.
         let Just uInput = elemBoundOfSeriesBound 
                         $ opInputSeries op
 
         -- Write to target vector.
-        let Just nest2  = insertBody nest context
+        let Just nest2  = insertBody nest tK_down
                         $ [ BodyStmt (BNone tUnit)
                                      (xWriteVectorC c
                                         (opElemType op)
@@ -159,7 +159,7 @@ scheduleOperator lifting envScalar nest op
                                         (XVar $ uInput)) ]
 
         -- Bind final unit value.
-        let Just nest3  = insertEnds nest2 context
+        let Just nest3  = insertEnds nest2 tK_down
                         $ [ EndStmt  (opResultBind op)
                                      xUnit ]
 
@@ -169,7 +169,7 @@ scheduleOperator lifting envScalar nest op
  | OpReduce{}   <- op
  = do   let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate (tDown c tK)
+        let tK_down     = tDown c tK
         let tA          = typeOfBind $ opWorkerParamElem op
 
         -- Evaluate the zero value and initialize the vector accumulator.
@@ -182,7 +182,7 @@ scheduleOperator lifting envScalar nest op
         let uAccVec     = UName nAccVec
 
         let Just nest2  
-                = insertStarts nest context
+                = insertStarts nest tK_down
                 $ [ StartStmt   bAccZero    (opZero op)
                   , StartAcc    nAccVec
                                 (tVec c tA)
@@ -214,7 +214,7 @@ scheduleOperator lifting envScalar nest op
                         x2
 
         let Just nest3  
-                = insertBody nest2 context
+                = insertBody nest2 tK_down
                 $ [ BodyAccRead  nAccVec (tVec c tA) bAccVal
                   , BodyAccWrite nAccVec (tVec c tA) 
                                  (xBody_lifted (XVar uAccVal) (XVar uInput)) ]
@@ -236,7 +236,7 @@ scheduleOperator lifting envScalar nest op
                         x2
 
         let Just nest4  
-                =  insertEnds nest3 context
+                =  insertEnds nest3 tK_down
                 $  [ EndStmt    bAccResult
                                 (xRead (tVec c tA) (XVar uAccVec))
 
@@ -253,13 +253,13 @@ scheduleOperator lifting envScalar nest op
                                 | i <- [1.. c - 1]]
 
         -- Write final value to destination.
-        let Just nest5  = insertEnds nest4 context
+        let Just nest5  = insertEnds nest4 tK_down
                         $ [ EndStmt    (BNone tUnit)
                                        (xWrite tA (XVar $ opTargetRef op)
                                                   (XVar $ uPart (c - 1))) ]
         -- Bind final unit value.
         let Just nest6  
-                = insertEnds nest5 context
+                = insertEnds nest5 tK_down
                 $ [ EndStmt     (opResultBind op)
                                 xUnit ]
 
@@ -272,7 +272,7 @@ scheduleOperator lifting envScalar nest op
  = do   
         let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate (tDown c tK)
+        let tK_down     = tDown c tK
 
         -- Bind for result element.
         let Just bResultE =   elemBindOfSeriesBind (opResultBind op)
@@ -282,7 +282,7 @@ scheduleOperator lifting envScalar nest op
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
 
         -- Read from vector.
-        let Just nest2  = insertBody nest context
+        let Just nest2  = insertBody nest tK_down
                         $ [ BodyStmt bResultE
                                 (xvGather c 
                                         (opElemType      op)
@@ -296,7 +296,7 @@ scheduleOperator lifting envScalar nest op
  = do   
         let c           = liftingFactor lifting
         let tK          = opInputRate op
-        let context     = ContextRate (tDown c tK)
+        let tK_down     = tDown c tK
 
         -- Bound of source index.
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
@@ -305,7 +305,7 @@ scheduleOperator lifting envScalar nest op
         let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
 
         -- Read from vector.
-        let Just nest2  = insertBody nest context
+        let Just nest2  = insertBody nest tK_down
                         $ [ BodyStmt (BNone tUnit)
                                 (xvScatter c
                                         (opElemType op)
@@ -313,7 +313,7 @@ scheduleOperator lifting envScalar nest op
                                         (XVar $ uIndex) (XVar $ uElem)) ]
 
         -- Bind final unit value.
-        let Just nest3  = insertEnds nest2 context
+        let Just nest3  = insertEnds nest2 tK_down
                         $ [ EndStmt     (opResultBind op)
                                         xUnit ]
 

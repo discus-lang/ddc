@@ -83,14 +83,13 @@ scheduleOperator nest0 op
  -- Id -------------------------------------------
  | OpId{}     <- op
  = do   let tK          = opInputRate op
-        let context     = ContextRate tK
 
         -- Get binders for the input elements.
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
         let Just uInput  = elemBoundOfSeriesBound (opInputSeries  op)
 
         let Just nest1   
-                = insertBody nest0 context
+                = insertBody nest0 tK
                 $ [ BodyStmt bResult (XVar uInput) ]
 
         return nest1
@@ -104,7 +103,7 @@ scheduleOperator nest0 op
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
 
         let Just nest1
-                = insertBody nest0 (ContextRate (opOutputRate op))
+                = insertBody nest0 (opOutputRate op)
                 $ [ BodyStmt    bResult
                                 (XVar uInput)]
 
@@ -114,7 +113,6 @@ scheduleOperator nest0 op
  -- Maps -----------------------------------------
  | OpMap{} <- op
  = do   let tK          = opInputRate op
-        let context     = ContextRate tK
 
         -- Bind for the result element.
         let Just bResult = elemBindOfSeriesBind (opResultSeries op)
@@ -133,7 +131,7 @@ scheduleOperator nest0 op
                                 | u <- usInput ]
 
         let Just nest1  
-                = insertBody nest0 context
+                = insertBody nest0 tK
                 $ [ BodyStmt bResult xBody ]
 
         return nest1
@@ -147,7 +145,7 @@ scheduleOperator nest0 op
         let Just bResult = elemBindOfSeriesBind  (opResultSeries op)
 
         let Just nest1
-                = insertBody nest0 (ContextRate (opOutputRate op))
+                = insertBody nest0 (opOutputRate op)
                 $ [ BodyStmt    bResult
                                 (XVar uInput)]
 
@@ -156,7 +154,6 @@ scheduleOperator nest0 op
 -- Reduce --------------------------------------
  | OpReduce{} <- op
  = do   let tK          = opInputRate op
-        let context     = ContextRate tK
 
         -- Initialize the accumulator.
         let UName nResult = opTargetRef op
@@ -166,7 +163,7 @@ scheduleOperator nest0 op
         let nAccInit      = NameVarMod nResult "init"
 
         let Just nest1
-                = insertStarts nest0 context
+                = insertStarts nest0 tK
                 $ [ StartStmt (BName nAccInit tAcc)
                               (xRead tAcc (XVar $ opTargetRef op))
                   , StartAcc   nAcc tAcc (XVar (UName nAccInit)) ]
@@ -189,7 +186,7 @@ scheduleOperator nest0 op
                        
         -- Update the accumulator in the loop body.
         let Just nest2
-                = insertBody nest1 context
+                = insertBody nest1 tK
                 $ [ BodyAccRead  nAcc tAcc bAccVal
                   , BodyAccWrite nAcc tAcc 
                         (xBody  (XVar uAccVal) 
@@ -199,7 +196,7 @@ scheduleOperator nest0 op
         -- write it to the destination.
         let nAccRes     = NameVarMod nResult "res"
         let Just nest3      
-                = insertEnds nest2 context
+                = insertEnds nest2 tK
                 $ [ EndAcc   nAccRes tAcc nAcc 
                   , EndStmt  (BNone tUnit)
                              (xWrite tAcc (XVar $ opTargetRef op)
@@ -210,7 +207,6 @@ scheduleOperator nest0 op
  -- Fill -----------------------------------------
  | OpFill{} <- op
  = do   let tK          = opInputRate op
-        let context     = ContextRate tK
 
         -- Get bound of the input element.
         let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
@@ -218,7 +214,7 @@ scheduleOperator nest0 op
         -- Write the current element to the vector.
         let UName nVec  = opTargetVector op
         let Just nest1      
-                = insertBody nest0 context 
+                = insertBody nest0 tK 
                 $ [ BodyVecWrite 
                         nVec                    -- destination vector
                         (opElemType op)         -- series elem type
@@ -231,7 +227,7 @@ scheduleOperator nest0 op
         -- vector down to its final length.
         let Just nest2
                 | nestContainsGuardedRate nest1 tK
-                = insertEnds nest1 context
+                = insertEnds nest1 tK
                 $ [ EndVecTrunc 
                         nVec                    -- destination vector
                         (opElemType op)         -- series element type
@@ -246,7 +242,6 @@ scheduleOperator nest0 op
  | OpGather{} <- op
  = do   
         let tK          = opInputRate op
-        let context     = ContextRate tK
 
         -- Bind for result element.
         let Just bResult = elemBindOfSeriesBind (opResultBind op)
@@ -255,7 +250,7 @@ scheduleOperator nest0 op
         let Just uIndex  = elemBoundOfSeriesBound (opSourceIndices op)
 
         -- Read from the vector.
-        let Just nest1  = insertBody nest0 context
+        let Just nest1  = insertBody nest0 tK
                         $ [ BodyStmt bResult
                                 (xReadVector 
                                         (opElemType op)
@@ -268,7 +263,6 @@ scheduleOperator nest0 op
  | OpScatter{} <- op
  = do   
         let tK          = opInputRate op
-        let context     = ContextRate tK
 
         -- Bound of source index.
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
@@ -277,7 +271,7 @@ scheduleOperator nest0 op
         let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
 
         -- Read from vector.
-        let Just nest1  = insertBody nest0 context
+        let Just nest1  = insertBody nest0 tK
                         $ [ BodyStmt (BNone tUnit)
                                 (xWriteVector
                                         (opElemType op)
@@ -285,7 +279,7 @@ scheduleOperator nest0 op
                                         (XVar $ uIndex) (XVar $ uElem)) ]
 
         -- Bind final unit value.
-        let Just nest2  = insertEnds nest1 context
+        let Just nest2  = insertEnds nest1 tK
                         $ [ EndStmt     (opResultBind op)
                                         xUnit ]
 
