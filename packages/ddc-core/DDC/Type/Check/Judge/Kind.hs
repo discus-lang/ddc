@@ -35,14 +35,6 @@ import qualified Data.Map                as Map
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
 --
---   NOTE: The type/kinder isn't bidirectional because we haven't thought
---   of a reason to make it so. We don't have quantifiers at the kind level,
---   so and don't have subkinding, so don't need the full power of the exp/type
---   checker. Making it bidirectional would allow us to infer the missing kind
---   in types like  (/\(a : ?). \(x : Int). x), when used in a context with an 
---   expected type which constraints the kind of 'a' ... but handling situations
---   like this isn't a good enough reason.
---
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
         => Config n             -- ^ Type checker configuration.
@@ -231,11 +223,12 @@ checkTypeM config env ctx0 UniverseSpec
         let ctx_cut      = popToPos pos1 ctx3
 
         -- The body must have data or witness kind.
-        when (  (not $ isDataKind k2)
-             && (not $ isWitnessKind k2))
-         $ throw $ ErrorForallKindInvalid tt t2 k2
+        let k2'         = applyContext ctx3 k2
+        when (  (not $ isDataKind k2')
+             && (not $ isWitnessKind k2'))
+         $ throw $ ErrorForallKindInvalid tt t2 k2'
 
-        return (TForall b1 t2', k2, ctx_cut)
+        return (TForall b1 t2', k2', ctx_cut)
 
 
 -- Applications ---------------

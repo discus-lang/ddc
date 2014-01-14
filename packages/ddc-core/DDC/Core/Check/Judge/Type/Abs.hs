@@ -126,9 +126,10 @@ checkAbsLAM !table !ctx0 a b1 x2 Synth
         (x2', t2, e2, c2, ctx5)
          <- tableCheckExp table table ctx4 x2 Synth
         
-        -- The type of the body must have data kind.
-        (t2', _, ctx6) 
-         <- checkTypeM config kenv ctx5 UniverseSpec t2 (Check kData)
+        -- Force the kind of the body to be data.
+        (_, _, ctx6) 
+         <- checkTypeM config kenv ctx5 UniverseSpec 
+                (applyContext ctx5 t2) (Check kData)
         
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
@@ -143,7 +144,7 @@ checkAbsLAM !table !ctx0 a b1 x2 Synth
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
                                    
-        let tResult     = TForall b1' t2'
+        let tResult     = TForall b1' t2
 
         ctrace  $ vcat
                 [ text "* LAM Synth"
@@ -253,10 +254,8 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
                 c2_cut
                 ctx_cut
 
-
-checkAbsLAM _table _ctx0 a b1 x2 (Check tExpected)
- = do   let xx          = XLAM a b1 x2
-        throw $ ErrorLAMExpectedForall a xx tExpected
+checkAbsLAM table ctx0 a b1 x2 (Check tExpected)
+ = checkSub table a ctx0 (XLAM a b1 x2) tExpected
 
         
 -- AbsLam -----------------------------------------------------------------

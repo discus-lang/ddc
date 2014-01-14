@@ -140,9 +140,16 @@ case T2# 2# 3# of
 :synth /\(r : ?). \(x : Ref# r Int#). x
 
 
--- Kind of variable is constrained by its use as a data value.
+-- Kind of 'a' variable is constrained by its use as the type
+-- of the body of a data abstraction.
 :synth..
 /\a. \(x : a). x
 ;;
 
+
+-- Kind of 'a' variable is constrained by its use as the type
+-- of the body of a type abstraction.
+:synth..
+/\a. \(x : a). /\(b : Data). x
+;;
 

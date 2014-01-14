@@ -214,10 +214,19 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 :!: Pure
 
 
--- Kind of variable is constrained by its use as a data value.
+-- Kind of 'a' variable is constrained by its use as the type
+-- of the body of a data abstraction.
 /\(a : Data).
  \(x : a). x
 :*: [a : Data].a -> a
 :!: Pure
 
+
+-- Kind of 'a' variable is constrained by its use as the type
+-- of the body of a type abstraction.
+/\(a : Data).
+ \(x : a).
+/\(b : Data). x
+:*: [a : Data].a -> [b : Data].a
+:!: Pure
 
