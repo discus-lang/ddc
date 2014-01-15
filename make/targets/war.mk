@@ -1,11 +1,23 @@
 
-# -- The driver program ---------------------------------------------------------------------------
-war_hs	= $(shell find packages/ddc-war -name "*.hs") \
-          $(shell find packages/ddc-alpha/src/Util -name "*.hs")
+# -- Find Source Files ----------------------------------------------------------------------------
+war_src_hs_all  = $(shell find packages/ddc-war -name "*.hs" -follow)
 
-bin/war : $(war_hs)
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -Wall -fno-warn-unused-do-bind -O2 -threaded  \
-		-ipackages/ddc-war --make packages/ddc-war/Main.hs -o bin/war
+
+# -- Dependencies ---------------------------------------------------------------------------------
+make/deps/Makefile-war.deps : $(war_src_hs_all)
+	@echo "* Building dependencies (war)"
+	@$(GHC) -M $^ -dep-makefile -optdepmake/deps/Makefile-war.deps \
+                -dep-suffix "" $(GHC_INCDIRS)
+	@rm -f make/deps/Makefile-war.deps.bak
+	@cp make/deps/Makefile-war.deps make/deps/Makefile-war.deps.inc
+
+
+# -- Link war -------------------------------------------------------------------------------------
+war_obj         = $(patsubst %.hs,%.o,$(war_src_hs_all))
+
+bin/war : $(war_obj)
+	@echo "* Linking war"
+	@$(GHC) -o bin/war $(GHC_FLAGS) -O2 -threaded $(DDC_PACKAGES) $(war_obj)
 
 
 # -- Running tests --------------------------------------------------------------------------------

@@ -209,6 +209,12 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 		      -ipackages/ddc-tools/src/ddc-main
 
 
+packages/ddc-war/%.o : packages/ddc-war/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) -O2 -threaded $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-war
+
+
 # -- Generic Rules ------------------------------------------------------------
 %.hs : %.x
 	@echo "* Preprocessing $<"
