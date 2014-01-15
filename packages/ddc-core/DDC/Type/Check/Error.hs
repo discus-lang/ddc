@@ -33,8 +33,8 @@ data Error n
         -- | Generic kind mismatch
         | ErrorMismatch
         { errorUniverse         :: Universe
-        , errorExpected         :: Type n
         , errorInferred         :: Type n
+        , errorExpected         :: Type n
         , errorChecking         :: Type n }
 
         -- | The kind annotation on the variables does not match the one in the

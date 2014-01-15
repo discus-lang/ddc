@@ -57,8 +57,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  = case mode of
         Check kExpect
           -> do ctx1    <- makeEq ctx0 kActual kExpect
-                        $  ErrorMismatch uni kExpect kActual tt         -- TODO: swap order of args around
-                                                                        -- for kExpect <-> kActual
+                        $  ErrorMismatch uni kActual kExpect tt
                 return (tt, kActual, ctx1)
 
         _ ->    return (tt, kActual, ctx0)
@@ -69,35 +68,72 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  = case mode of
         Check kExpect
           -> do ctx1    <- makeEq ctx0 kActual kExpect
-                        $  ErrorMismatch uni kExpect kActual tt
+                        $  ErrorMismatch uni kActual kExpect tt
                 return (tt, kActual, ctx1)
 
         _ ->    return (tt, kActual, ctx0)
 
- -- Type holes.
- -- This is some type or kind that we are supposed to infer.
- --
- -- TODO: Also handle holes in the spec universe, 
- --       but we will need to infer the kind as well in synth mode.
- --       Allocate two existentials at once.
- | UName n              <- u
+ -- Kind holes.
+ --   This is some kind that we were explicitly told to infer,
+ --   so make a new existential for it.
+ | UniverseKind         <- uni
+ , UName n              <- u
  , Just isHole          <- configNameIsHole config
  , isHole n
- , UniverseKind         <- uni          
  = case mode of
         -- We don't infer kind holes in recon mode.
-        -- We should have been given a program with complete kind annotations.
+        -- The program should have complete kind annotations.
         Recon
-          -> do  throw $ ErrorUndefined u
+         -> do  throw $ ErrorUndefined u
 
-        -- With bidirectional checking, make a new existential.
-        -- TODO: if we were given an expected sort then use that instead of
-        --       forcing inferred kinds to the Comp sort.
-        _ -> do
-                i       <- newExists
-                let t    =  typeOfExists i
-                let ctx' =  pushExists i ctx0
-                return  (t, sComp, ctx')
+        -- Synthesised kinds are assumed to have sort Comp.
+        Synth
+         -> do  i        <- newExists sComp
+                let t    = typeOfExists i
+                let ctx' = pushExists i ctx0
+                return (t, sComp, ctx')
+
+        -- We have an expected sort for the existential,
+        -- so use that.
+        Check sExpected
+         -> do  i        <- newExists sExpected
+                let t    = typeOfExists i
+                let ctx' = pushExists i ctx0
+                return (t, sExpected, ctx')
+
+ -- Spec holes.
+ --   This is some spec that we were explicitly told to infer,
+ --   so make an existential for it.
+ | UniverseSpec         <- uni
+ , UName n              <- u
+ , Just isHole          <- configNameIsHole config
+ , isHole n
+ = case mode of
+        -- We don't infer spec holes in recon mode.
+        -- The program should have complete spec annotations.
+        Recon
+         -> do  throw $ ErrorUndefined u
+
+        -- Synthesised types could have an arbitrary kind, 
+        -- so we need to make two existentials.
+        Synth
+         -> do  iK       <- newExists sComp
+                let k    =  typeOfExists iK
+                let ctx1 =  pushExists iK ctx0
+
+                iT       <- newExists k
+                let t    =  typeOfExists iT
+                let ctx2 =  pushExists iT ctx1
+
+                return  (t, k, ctx2)
+
+        -- We have an expected kind for the existential,
+        -- so use that.
+        Check kExpected
+         -> do  iT       <- newExists kExpected
+                let t    =  typeOfExists iT
+                let ctx1 =  pushExists iT ctx0
+                return  (t, kExpected, ctx1)
 
 
  -- A primitive variable with its kind directly attached, but where the
@@ -110,7 +146,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  = case mode of
         Check kExpect 
           -> do ctx1    <- makeEq ctx0 kActual kExpect
-                        $  ErrorMismatch uni kExpect kActual tt
+                        $  ErrorMismatch uni kActual kExpect tt
                 return (tt, kActual, ctx1)
 
         _ ->    return (tt, kActual, ctx0)
@@ -198,7 +234,7 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
          -- If we have an expected kind then make the actual kind the same.
          Check tExpect
            -> do ctx1   <- makeEq ctx0 tActual tExpect
-                        $  ErrorMismatch uni tExpect tActual tt
+                        $  ErrorMismatch uni tActual tExpect tt
                  return (tt', tActual, ctx1)
 
          -- In Recon and Synth mode just return the actual kind.

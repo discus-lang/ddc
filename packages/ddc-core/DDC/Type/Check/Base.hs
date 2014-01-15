@@ -33,11 +33,11 @@ type CheckM n   = G.CheckM (Int, Int) (Error n)
 --   Kind inference is only useful for type variables of kind Comp, 
 --   because we don't write functions that have polymorphic witness
 --   type variables.
-newExists :: CheckM n (Exists n)
-newExists 
+newExists :: Sort n -> CheckM n (Exists n)
+newExists s
  = do   (ix, pos)       <- G.get
         G.put (ix + 1, pos)
-        return  (Exists ix sComp)
+        return  (Exists ix s)
 
 
 -- Allocate a new context stack position.

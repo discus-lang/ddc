@@ -28,7 +28,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
         ErrorUndefinedTypeCtor u
          -> text "Undefined type constructor: " <> ppr u
 
-        ErrorMismatch uni tExpected tInferred tt
+        ErrorMismatch uni tInferred tExpected tt
          -> let (thing, thing')   
                  = case uni of
                         UniverseSpec    -> ("Kind", "kind")
