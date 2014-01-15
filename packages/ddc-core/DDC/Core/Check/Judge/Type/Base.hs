@@ -68,7 +68,8 @@ data Table a n
         , tableTypeEnv          :: TypeEnv n
         , tableCheckExp         :: Checker a n
         , tableCheckVarCon      :: Checker a n
-        , tableCheckApp         :: Checker a n
+        , tableCheckAppT        :: Checker a n
+        , tableCheckAppX        :: Checker a n
         , tableCheckLamT        :: Checker a n
         , tableCheckLamX        :: Checker a n
         , tableCheckLet         :: Checker a n

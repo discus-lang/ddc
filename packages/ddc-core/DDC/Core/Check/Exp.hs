@@ -24,7 +24,8 @@ where
 import DDC.Core.Check.Judge.Type.VarCon
 import DDC.Core.Check.Judge.Type.LamT
 import DDC.Core.Check.Judge.Type.LamX
-import DDC.Core.Check.Judge.Type.App
+import DDC.Core.Check.Judge.Type.AppT
+import DDC.Core.Check.Judge.Type.AppX
 import DDC.Core.Check.Judge.Type.Let
 import DDC.Core.Check.Judge.Type.Case
 import DDC.Core.Check.Judge.Type.Cast
@@ -127,16 +128,17 @@ checkExpM
 -- Dispatch to the checker table based on what sort of AST node we're at.
 checkExpM !table !ctx !xx !mode
  = case xx of
-        XVar{}          -> tableCheckVarCon  table table ctx xx mode
-        XCon{}          -> tableCheckVarCon  table table ctx xx mode
-        XApp{}          -> tableCheckApp     table table ctx xx mode
-        XLAM{}          -> tableCheckLamT    table table ctx xx mode
-        XLam{}          -> tableCheckLamX    table table ctx xx mode
-        XLet{}          -> tableCheckLet     table table ctx xx mode
-        XCase{}         -> tableCheckCase    table table ctx xx mode
-        XCast{}         -> tableCheckCast    table table ctx xx mode
-        XWitness{}      -> tableCheckWitness table table ctx xx mode
-        XType    a _    -> throw $ ErrorNakedType    a xx 
+        XVar{}           -> tableCheckVarCon  table table ctx xx mode
+        XCon{}           -> tableCheckVarCon  table table ctx xx mode
+        XApp _ _ XType{} -> tableCheckAppT    table table ctx xx mode
+        XApp{}           -> tableCheckAppX    table table ctx xx mode
+        XLAM{}           -> tableCheckLamT    table table ctx xx mode
+        XLam{}           -> tableCheckLamX    table table ctx xx mode
+        XLet{}           -> tableCheckLet     table table ctx xx mode
+        XCase{}          -> tableCheckCase    table table ctx xx mode
+        XCast{}          -> tableCheckCast    table table ctx xx mode
+        XWitness{}       -> tableCheckWitness table table ctx xx mode
+        XType    a _     -> throw $ ErrorNakedType    a xx 
 
 
 -- Table ----------------------------------------------------------------------
@@ -148,7 +150,8 @@ makeTable config kenv tenv
         , tableTypeEnv          = tenv
         , tableCheckExp         = checkExpM
         , tableCheckVarCon      = checkVarCon
-        , tableCheckApp         = checkApp
+        , tableCheckAppT        = checkAppT
+        , tableCheckAppX        = checkAppX
         , tableCheckLamT        = checkLamT
         , tableCheckLamX        = checkLamX
         , tableCheckLet         = checkLet
