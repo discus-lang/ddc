@@ -175,6 +175,14 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+        ErrorLAMParamBadSort a xx b s
+         -> vcat [ ppr a
+                 , text "Kind annotation of type parameter has a bad sort."
+                 , text "                  Parameter: " <> ppr b
+                 , text "                   has sort: " <> ppr s
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
         ErrorLAMExpectedForall a xx tExpected
          -> vcat [ ppr a
                  , text "Context requires type lambda to have a non-quantified type."

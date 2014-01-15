@@ -27,7 +27,8 @@ checkAbsLAM !table !ctx0 a b1 x2 Recon
         let xx          = XLAM a b1 x2
 
         -- Check the parameter ------------------
-        -- The parameter cannot shadow others.
+        -- If the bound variable is named then it cannot shadow
+        -- shadow others in the environment.
         when (memberKindBind b1 ctx0)
          $ throw $ ErrorLamShadow a xx b1
 
@@ -36,19 +37,22 @@ checkAbsLAM !table !ctx0 a b1 x2 Recon
         when (isBot kA)
          $ throw $ ErrorLAMParamUnannotated a xx
 
-        (kA', _sA, ctxA)
+        -- Check the kind annotation is well-sorted.
+        (kA', sA, ctxA)
          <- checkTypeM config kenv ctx0 UniverseKind kA Recon
 
-        -- TODO: check kA has sort Comp or Prop
         let b1'         = replaceTypeOfBind kA' b1
 
-        -- Push the type parameter onto the context.
+        -- The kind annotation must have sort Comp or Prop.
+        when (not (sA == sComp) && not (sA == sProp))
+         $ throw $ ErrorLAMParamBadSort a xx b1 sA
+
+        
+        -- Check the body -----------------------
         let (ctx2, pos1) = markContext ctxA
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
-        
-        -- Check the body -----------------------
         (x2', t2, e2, c2, ctx5)
          <- tableCheckExp table table ctx4 x2 Recon
         
@@ -86,9 +90,7 @@ checkAbsLAM !table !ctx0 a b1 x2 Recon
 
         returnX a
                 (\z -> XLAM z b1' x2')
-                tResult
-                (Sum.empty kEffect)
-                c2_cut
+                tResult (Sum.empty kEffect) c2_cut
                 ctx_cut
 
 
@@ -98,13 +100,14 @@ checkAbsLAM !table !ctx0 a b1 x2 Synth
         let xx          = XLAM a b1 x2
 
         -- Check the parameter ------------------
-        -- The parameter cannot shadow others.
+        -- If the bound variable is named then it cannot shadow
+        -- shadow others in the environment.
         when (memberKindBind b1 ctx0)
          $ throw $ ErrorLamShadow a xx b1
 
         -- If the annotation is missing then make a new existential for it.
         let kA  = typeOfBind b1
-        (kA', _sA, ctxA)
+        (kA', sA, ctxA)
          <- if isBot kA 
              then do   
                 iA       <- newExists sComp
@@ -115,19 +118,24 @@ checkAbsLAM !table !ctx0 a b1 x2 Synth
              else
                 checkTypeM config kenv ctx0 UniverseKind kA Synth
 
-        -- TODO: check kA has sort Comp or Prop
         let b1'         = replaceTypeOfBind kA' b1
 
-        -- Push the type parameter onto the context.
+        -- The kind annotation must have sort Comp or Prop.
+        when (not (sA == sComp) && not (sA == sProp))
+         $ throw $ ErrorLAMParamBadSort a xx b1 sA
+
+
+        -- Check the body -----------------------
         let (ctx2, pos1) = markContext ctxA
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
-        -- Check the body -----------------------
         (x2', t2, e2, c2, ctx5)
          <- tableCheckExp table table ctx4 x2 Synth
         
         -- Force the kind of the body to be data.
+        --  This is needed when the type of the body is an existential
+        --  which doesn't yet have a resolved kind.
         (_, _, ctx6) 
          <- checkTypeM config kenv ctx5 UniverseSpec 
                 (applyContext ctx5 t2) (Check kData)
@@ -158,9 +166,7 @@ checkAbsLAM !table !ctx0 a b1 x2 Synth
 
         returnX a
                 (\z -> XLAM z b1' x2')
-                tResult
-                (Sum.empty kEffect)
-                c2_cut
+                tResult (Sum.empty kEffect) c2_cut
                 ctx_cut
 
 
@@ -176,7 +182,7 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
          $ throw $ ErrorLamShadow a xx b1
 
         -- If we have an expected kind for the parameter then it needs
-        -- to be the same as the one we already have.
+        -- to be the same as any existing annotation.
         let kA  = typeOfBind b1
         when (  (not $ isBot kA)
              && (not $ equivT kA (typeOfBind  b)))
@@ -184,7 +190,7 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         -- If both the kind annotation is missing and there is no
         -- expected kind then we need to make an existential for it.
-        (kA', _sA, ctxA)
+        (kA', sA, ctxA)
          <- if (isBot kA && isBot (typeOfBind b)) 
              then do
                 iA       <- newExists sComp
@@ -198,17 +204,22 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
               else do
                 checkTypeM config kenv ctx0 UniverseKind kA Synth 
-                        -- TODO: check against sort of b
 
-        -- TODO: check kA has sort Comp or Prop
         let b1' = replaceTypeOfBind kA' b1
 
-        -- Push the type parameter onto the context.
+        -- The kind annotation must have sort Comp or Prop.
+        when (not (sA == sComp) && not (sA == sProp))
+         $ throw $ ErrorLAMParamBadSort a xx b1 sA
+
+
+        -- Check the body -----------------------
         let (ctx2, pos1) = markContext ctxA
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
-        -- Check the body -----------------------
+        -- As the names used on the spec abstraction and quantifier are
+        -- probably different, we use the binder name to instantiate
+        -- the expected type.
         tBody_skol
          <- case takeSubstBoundOfBind b1 of
                 Nothing -> return tBody
@@ -217,7 +228,9 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         (x2', t2, e2, c2, ctx5)
          <- tableCheckExp table table ctx4 x2 (Check tBody_skol)
         
-         -- The body of a spec abstraction must have data kind.
+        -- Force the body of the spec abstraction must have data kind.
+        --  This is needed when the type of the body is an existential
+        --  which doesn't yet have a resolved kind.
         (t2', _k2, ctx6)
          <- checkTypeM config kenv ctx5 UniverseSpec t2 (Check kData)
 
@@ -232,7 +245,8 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         -- Apply context to synthesised type.
         -- We're about to pop the context back to how it was before the 
-        -- type lambda, and will information gained from synthing the body.
+        -- type lambda, and want to keep information gained from synthing
+        -- the body.
         let t2_sub      = applyContext ctx6 t2'
 
         -- Cut the bound kind and elems under it from the context.
@@ -252,9 +266,7 @@ checkAbsLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         returnX a
                 (\z -> XLAM z b1' x2')
-                tResult
-                (Sum.empty kEffect)
-                c2_cut
+                tResult (Sum.empty kEffect) c2_cut
                 ctx_cut
 
 checkAbsLAM table ctx0 a b1 x2 (Check tExpected)
@@ -312,9 +324,7 @@ checkAbsLam !table !a !ctx !b1 !x2 !Recon
         
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult 
-                (Sum.empty kEffect)
-                cResult
+                tResult (Sum.empty kEffect) cResult
                 ctx_cut
 
 
@@ -401,9 +411,7 @@ checkAbsLam !table !a !ctx !b1 !x2 !Synth
 
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult
-                (Sum.empty kEffect)
-                cResult
+                tResult (Sum.empty kEffect) cResult
                 ctx_cut
 
 
@@ -476,9 +484,7 @@ checkAbsLam !table !a !ctx !b1 !x2 !(Check tXX)
 
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult
-                (Sum.empty kEffect)
-                cResult
+                tResult (Sum.empty kEffect) cResult
                 ctx_cut
 
 checkAbsLam !table !a !ctx !b1 !x2 !(Check tExpected)

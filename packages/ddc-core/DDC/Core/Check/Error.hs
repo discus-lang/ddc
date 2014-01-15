@@ -159,6 +159,13 @@ data Error a n
         , errorBind             :: Bind n
         , errorExpected         :: Type n}
 
+        -- | A type abstraction parameter with a bad sort.
+        | ErrorLAMParamBadSort
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorSort             :: Sort n }
+
         -- | The expected type of a type lambda is not quantified.
         | ErrorLAMExpectedForall
         { errorAnnot            :: a
