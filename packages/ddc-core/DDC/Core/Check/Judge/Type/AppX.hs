@@ -11,6 +11,7 @@ import qualified Data.Set       as Set
 -------------------------------------------------------------------------------
 -- | Check an application.
 checkAppX :: Checker a n
+
 checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
  = do   
         -- Check the functional expression.
@@ -21,6 +22,7 @@ checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
         (xArg', tArg, effsArg, closArg, ctx2) 
          <- tableCheckExp table table ctx1 xArg Recon
 
+        -- The type of the parameter must match that of the argument.
         (tResult, effsLatent)
          <- case splitFunType tFn of
              Just (tParam, effs, _, tResult)
@@ -33,15 +35,19 @@ checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
              Nothing
               -> throw  $ ErrorAppNotFun a xx tFn
 
+        -- Effect of the overall application.
         let effsResult  = Sum.unions kEffect
                         $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
+
+        -- Closure of the overall application.
         let closResult  = Set.union  closFn closArg
 
         returnX a 
                 (\z -> XApp z xFn' xArg')
-                tResult effsResult closResult ctx2
+                tResult effsResult closResult 
+                ctx2
 
--- Rule (-> Elim)
+
 checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
  = do   
         -- Synth a type for the functional expression.
@@ -60,19 +66,22 @@ checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
         ctrace  $ vcat
                 [ text "* App Synth"
                 , indent 2 $ ppr xx
-                , text "  TFUN:  " <> ppr tFn'
-                , text "   ARG:  " <> ppr xArg
-                , text "  TYPE:  " <> ppr tResult
+                , text "      tFn:  " <> ppr tFn'
+                , text "     xArg:  " <> ppr xArg
+                , text "  tResult:  " <> ppr tResult
                 , ppr ctx0
                 , ppr ctx2
                 , empty ]
 
         returnX a 
                 (\z -> XApp z xFn'' xArg')
-                tResult effsResult closResult ctx2
+                tResult effsResult closResult 
+                ctx2
+
 
 checkAppX !table !ctx xx@(XApp a _ _) (Check tEx)
  =      checkSub table a ctx xx tEx
+
 
 checkAppX _ _ _ _
  = error "ddc-core.checkApp: no match"
@@ -198,9 +207,11 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
              Nothing
               -> throw  $ ErrorAppNotFun a xx tFn1
 
+        -- Effect of the overall application.
         let effsResult  = Sum.unions kEffect
                         $ [ effsFn, effsArg, Sum.singleton kEffect effsLatent]
         
+        -- Closure of the overall application.
         let closResult  = Set.union closFn closArg
 
         ctrace  $ vcat
@@ -220,10 +231,10 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
 
 
 -------------------------------------------------------------------------------
-splitFunType 
-        :: Type n
-        -> Maybe (Type n, Effect n, Closure n, Type n)
-
+-- | Split a function-ish type into its parts.
+--   This works for implications, as well as the function constructor
+--   with and without a latent effect.
+splitFunType :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
 splitFunType tt
  = case tt of
         TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
