@@ -9,7 +9,7 @@ import qualified Data.Set       as Set
 
 
 -------------------------------------------------------------------------------
--- | Check an application.
+-- | Check a value expression application.
 checkAppX :: Checker a n
 
 checkAppX !table !ctx xx@(XApp a xFn xArg) Recon

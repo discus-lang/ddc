@@ -7,7 +7,7 @@ import qualified Data.Set       as Set
 
 
 -------------------------------------------------------------------------------
--- | Check a spec application.
+-- | Check a spec expression application.
 --
 --   Note: We don't need to substitute into the effect of x1 (effs1)
 --         because the body of a type abstraction is required to be pure.
