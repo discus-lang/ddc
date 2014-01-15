@@ -22,7 +22,8 @@ module DDC.Core.Check.Exp
         , TaggedClosure(..))
 where
 import DDC.Core.Check.Judge.Type.VarCon
-import DDC.Core.Check.Judge.Type.Abs
+import DDC.Core.Check.Judge.Type.LamT
+import DDC.Core.Check.Judge.Type.LamX
 import DDC.Core.Check.Judge.Type.App
 import DDC.Core.Check.Judge.Type.Let
 import DDC.Core.Check.Judge.Type.Case
@@ -129,8 +130,8 @@ checkExpM !table !ctx !xx !mode
         XVar{}          -> tableCheckVarCon  table table ctx xx mode
         XCon{}          -> tableCheckVarCon  table table ctx xx mode
         XApp{}          -> tableCheckApp     table table ctx xx mode
-        XLam{}          -> tableCheckAbs     table table ctx xx mode
-        XLAM{}          -> tableCheckAbs     table table ctx xx mode
+        XLAM{}          -> tableCheckLamT    table table ctx xx mode
+        XLam{}          -> tableCheckLamX    table table ctx xx mode
         XLet{}          -> tableCheckLet     table table ctx xx mode
         XCase{}         -> tableCheckCase    table table ctx xx mode
         XCast{}         -> tableCheckCast    table table ctx xx mode
@@ -148,7 +149,8 @@ makeTable config kenv tenv
         , tableCheckExp         = checkExpM
         , tableCheckVarCon      = checkVarCon
         , tableCheckApp         = checkApp
-        , tableCheckAbs         = checkAbs
+        , tableCheckLamT        = checkLamT
+        , tableCheckLamX        = checkLamX
         , tableCheckLet         = checkLet
         , tableCheckCase        = checkCase
         , tableCheckCast        = checkCast 

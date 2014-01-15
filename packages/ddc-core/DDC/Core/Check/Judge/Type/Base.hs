@@ -69,7 +69,8 @@ data Table a n
         , tableCheckExp         :: Checker a n
         , tableCheckVarCon      :: Checker a n
         , tableCheckApp         :: Checker a n
-        , tableCheckAbs         :: Checker a n
+        , tableCheckLamT        :: Checker a n
+        , tableCheckLamX        :: Checker a n
         , tableCheckLet         :: Checker a n
         , tableCheckCase        :: Checker a n
         , tableCheckCast        :: Checker a n 
