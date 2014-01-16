@@ -21,9 +21,7 @@ GHCI		= ghci
 
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 
-ifeq "$(GHC_VERSION)" "7"
 GHC_VERSION_FLAGS = -rtsopts
-endif
 
 
 # Coq Config ------------------------------------------------------------------

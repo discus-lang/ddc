@@ -116,7 +116,7 @@ DDC_PACKAGES	:= \
 	-package haskell-src-exts \
 	-package wl-pprint \
 	-package transformers \
-        -package hashable \
-        -package hashtables \
-        -package deepseq
+	-package hashable \
+	-package hashtables \
+	-package deepseq
 
