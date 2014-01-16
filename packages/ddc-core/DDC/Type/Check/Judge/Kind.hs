@@ -245,8 +245,8 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
 
 
 -- Quantifiers ----------------
-checkTypeM config env ctx0 UniverseSpec 
-        tt@(TForall b1 t2) _mode
+checkTypeM config env ctx0 uni@UniverseSpec 
+        tt@(TForall b1 t2) mode
  = do   
         -- Check the binder has a valid kind.
         -- Kinds don't have any variables, which is enforced by the fact that
@@ -259,15 +259,67 @@ checkTypeM config env ctx0 UniverseSpec
         let (ctx1, pos1) = markContext ctx0
         let ctx2         = pushKind b1 RoleAbstract ctx1
         (t2', k2, ctx3) <- checkTypeM config env ctx2 UniverseSpec t2 Recon
-        let ctx_cut      = popToPos pos1 ctx3
 
         -- The body must have data or witness kind.
+        -- In Recon mode we check for this fact directly.
+        -- In Synth and Check mode if the kind has not been constrained
+        -- then we default it to Data. This is ok because only the types of 
+        -- witness constructors have Witness mode, and we don't check them
+        -- bidirectionally.
+        --
+        -- We need this to handle examples like the following:
+        --   /\a. \(x : [b : Data]. a). ()
+        -- Here the kind of 'a' must be Data because 'x' is used as a parameter
+        -- for a function abstraction, but is otherwise unconstrained.
+        --
         let k2'         = applyContext ctx3 k2
-        when (  (not $ isDataKind k2')
-             && (not $ isWitnessKind k2'))
+        (k2'', ctx4)
+         <- case mode of
+                -- In Recon mode the kind of the body won't be an exitential,
+                -- so we don't need to worry about it.
+                Recon   
+                 -> return (k2', ctx3)
+
+                -- In Synth mode if the kind of the body is an existential,
+                -- then force it to be Data right now.
+                Synth
+                 |  isTExists k2'
+                 -> do  ctx4    <- makeEq config ctx3 k2' kData
+                                $  ErrorMismatch uni k2' kData tt
+                        return (applyContext ctx4 k2', ctx4)
+
+                 | otherwise
+                 ->     return (k2', ctx3)
+
+                -- In Check mode if *both* the current kind of the body and
+                -- the expected kind are existentials then force them both
+                -- to be data. Otherwise make the kind of the body the same
+                -- as the expected kind.
+                Check kExpected
+                 |  isTExists k2'
+                 ,  isTExists kExpected
+                 -> do
+                        ctx'    <- makeEq config ctx3 k2' kExpected
+                                $  ErrorMismatch uni  k2' kExpected tt
+
+                        ctx4    <- makeEq config ctx' k2' kData 
+                                $  ErrorMismatch uni  k2' kData  tt
+                        return (applyContext ctx4 k2', ctx4)
+
+                 | otherwise
+                 -> do  ctx4    <- makeEq config ctx3 k2' kExpected
+                                $  ErrorMismatch uni k2'  kExpected tt
+                        return (applyContext ctx4 k2', ctx4)
+
+        -- The above horror show needs to have worked.
+        when ( not (isDataKind k2'')
+            && not (isWitnessKind k2''))
          $ throw $ ErrorForallKindInvalid tt t2 k2'
 
-        return (TForall b1 t2', k2', ctx_cut)
+        -- Pop the quantified type off the context.
+        let ctx_cut      = popToPos pos1 ctx4
+
+        return (TForall b1 t2', k2'', ctx_cut)
 
 
 -- Applications ---------------

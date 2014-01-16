@@ -168,3 +168,15 @@ case T2# 2# 3# of
 \(f : [a : Data]. a). f [Unit]
 ;;
 
+
+-- Kind of 'a' is defaulted to Data because its used in the type of
+-- a function parameter.
+:synth..
+/\a. \(x : [b : Data]. a). ()
+;;
+
+
+-- As above but also return the function parameter.
+:synth..
+/\a. \(x : [b : Data]. a). x
+;;
