@@ -187,3 +187,15 @@ case T2# 2# 3# of
 /\a. \(x : [b : Data]. a). x
 ;;
 
+
+-- Result kind of 'f' is defaulted to Data because the result is used
+-- as the type of a function parameter.
+:synth..
+/\f. \(a : f Int#). ()
+;;
+
+
+-- As above, but with an explicit hole.
+:synth..
+/\(f : ?). \(a : f Int#). ()
+;;

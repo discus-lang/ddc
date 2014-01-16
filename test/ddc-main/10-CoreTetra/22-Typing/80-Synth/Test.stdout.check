@@ -270,3 +270,17 @@ When checking expression.
 :*: [a : Data].([b : Data].a) -> [b : Data].a
 :!: Pure
 
+
+-- Result kind of 'f' is defaulted to Data because the result is used
+-- as the type of a function parameter.
+/\(f : Data ~> Data).
+ \(a : f Int#). ()
+:*: [f : Data ~> Data].f Int# -> Unit
+:!: Pure
+
+
+-- As above, but with an explicit hole.
+/\(f : Data ~> Data).
+ \(a : f Int#). ()
+:*: [f : Data ~> Data].f Int# -> Unit
+:!: Pure

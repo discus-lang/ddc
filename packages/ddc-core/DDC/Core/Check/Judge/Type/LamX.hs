@@ -55,7 +55,6 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
         
-
         -- Build result type --------------------
         -- Build the resulting function type.
         --   The way the effect and closure term is captured depends on
@@ -74,6 +73,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 checkLam !table !a !ctx !b1 !x2 !Synth
  = do   let config      = tableConfig table     
         let kenv        = tableKindEnv table
+        let xx          = XLam a b1 x2
 
         -- Check the parameter ------------------
         let t1          = typeOfBind b1
@@ -100,7 +100,6 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 let b1' = replaceTypeOfBind t1' b1
                 return (b1', t1', k1, ctx1)
 
-
         -- Check the body -----------------------        
         -- Make an existential for the result type.
         -- The type of a function abstraction has kind Data.
@@ -112,7 +111,6 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         let (ctx2, pos1) = markContext 
                          $ pushExists i2 ctx1
         let ctx3         = pushType   b1' ctx2
-
 
         -- Check the body against the existential for it.
         (x2', t2', e2, c2, ctx4)
@@ -126,25 +124,37 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                                 (applyContext ctx4 t2')
                                 (Check kData)
 
-        -- Cut the bound type and elems under it from the context.
-        let ctx_cut     = popToPos pos1 ctx5
-
-        
         -- Build the result type -------------
+        -- If the kind of the parameter is unconstrained then default it
+        -- to Data. This handles  "/\f. \(a : f Int#). ()"
+        let k1'        = applyContext ctx5 k1
+        (k1'', ctx6)
+         <- if isTExists k1'
+             then do
+                ctx6    <- makeEq config a ctx5 k1' kData
+                        $  ErrorMismatch a k1' kData xx
+                return (applyContext ctx6 k1', ctx6)
+
+             else do
+                return (k1', ctx5)
+
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
         let c2_cut      = Set.fromList
                         $ mapMaybe (cutTaggedClosureX b1')
                         $ Set.toList c2
+ 
+        -- Cut the bound type and elems under it from the context.
+        let ctx_cut     = popToPos pos1 ctx6
 
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) 
-                t1' (applyContext ctx5 k1) 
+                t1' k1''
                 t2' e2 c2_cut
- 
+
         ctrace  $ vcat
                 [ text "* Lam Synth"
                 , indent 2 $ ppr (XLam a b1' x2)
@@ -166,7 +176,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
  | Just (tX1, tX2)      <- takeTFun tXX
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
-        
+        let xx          = XLam a b1 x2
+
         -- Check the parameter ------------------
         let t1          = typeOfBind b1
 
@@ -199,26 +210,36 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
                                 (applyContext ctx2 t2) 
                                 (Check kData)
 
-        -- Cut the bound type and elems under it from the context.
-        let ctx_cut     = popToPos pos1 ctx3
-        
-
         -- Make the result type -----------------
-        -- Determine the kind of the parameter.
+        -- If the kind of the parameter is unconstrained then default it
+        -- to Data. This handles  "/\f. \(a : f Int#). ()"
         (_, k1, _)      <- checkTypeM config kenv ctx3 UniverseSpec t1' Synth
+        let k1'         = applyContext ctx3 k1
+        (k1'', ctx4)
+         <- if isTExists k1'
+             then do
+                ctx4    <- makeEq config a ctx3 k1' kData
+                        $  ErrorMismatch a k1' kData xx
+                return (applyContext ctx4 k1', ctx4)
+
+             else do
+                return (k1', ctx3)
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
         let c2_cut      = Set.fromList
                         $ mapMaybe (cutTaggedClosureX b1)
                         $ Set.toList c2
+        
+        -- Cut the bound type and elems under it from the context.
+        let ctx_cut     = popToPos pos1 ctx4
 
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) 
-                t1' (applyContext ctx3 k1) 
+                t1' k1''
                 t2 e2 c2_cut
 
         ctrace  $ vcat 

@@ -287,7 +287,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
         -- See [Note: Defaulting the kind of quantified types]
         let k2' = applyContext ctx4 k2
         (k2'', ctx5)
-         <- if (isTExists k2')
+         <- if isTExists k2'
              then do
                 ctx5    <- makeEq config ctx4 k2' kData
                         $  ErrorMismatch uni k2' kData tt
@@ -356,6 +356,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 checkTypeM config env ctx UniverseKind 
         tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
         _mode
+                                                -- TODO: handle Synth and Check modes.
  = do   
         -- Kinds don't have any variables.
         -- The returned context will be the same as the provided one.
@@ -371,6 +372,7 @@ checkTypeM config env ctx UniverseKind
 checkTypeM config env ctx0 UniverseSpec 
         tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
         _mode
+                                                -- TODO: handle Synth and Check modes.
  = do   
         (t1', k1, ctx1) <- checkTypeM config env ctx0 UniverseSpec t1 Recon
         (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2 Recon
@@ -384,7 +386,7 @@ checkTypeM config env ctx0 UniverseSpec
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 
--- Type application.
+-- General type application.
 checkTypeM config kenv ctx0 UniverseSpec 
         tt@(TApp tFn tArg) mode
  = case mode of
@@ -417,7 +419,6 @@ checkTypeM config kenv ctx0 UniverseSpec
          <- synthTAppArg config kenv ctx1 tFn' kFn tArg
 
         return (TApp tFn' tArg', kResult, ctx2)
-
 
     Check kExpected
      -> do
@@ -499,6 +500,27 @@ synthTAppArg
                 , Context n)    -- Result context.
 
 synthTAppArg config kenv ctx0 tFn kFn tArg
+
+ | Just iFn     <- takeExists kFn
+ = do  
+        -- New existential for the kind of the function parameter.
+        iParam          <- newExists sComp
+        let kParam      = typeOfExists iParam
+
+        -- New existential for the kind of the function body
+        iBody           <- newExists sComp
+        let kBody       = typeOfExists iBody
+
+        -- Update the context with the new constraint.
+        let Just ctx1   = updateExists [iBody, iParam] iFn 
+                                (kFun kParam kBody) ctx0
+
+        -- Check the argument under the new contet.
+        (tArg', _kArg, ctx2)
+         <- checkTypeM config kenv ctx1 UniverseSpec tArg (Check kParam)
+
+        return (kBody, tArg', ctx2)
+
 
  | TApp (TApp (TCon (TyConKind KiConFun)) kParam) kBody <- kFn
  = do   
