@@ -57,14 +57,12 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                  , text "       to argument with kind: " <> ppr t2
                  , text "         in type application: " <> ppr tt ]
          
-        ErrorAppNotFun tt t1 k1 t2 k2
+        ErrorAppNotFun t1 k1 t2
          -> vcat [ text "Core type mismatch in application."
-                 , text "     cannot apply type: " <> ppr t2
-                 , text "               of kind: " <> ppr k2
-                 , text "  to non-function type: " <> ppr t1
-                 , text "               of kind: " <> ppr k1
-                 , text "         in appliction: " <> ppr tt]
-                
+                 , text "  cannot apply type: " <> ppr t1
+                 , text "            of kind: " <> ppr k1
+                 , text "            to type: " <> ppr t2 ]
+                    
         ErrorSumKindMismatch k ts ks
          -> vcat 
               $  [ text "Core type mismatch in sum."

@@ -275,8 +275,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
         (k1', _s1, ctx1) <- checkTypeM config kenv ctx0 UniverseKind k1 Synth
-                -- TODO: check sort.
-
+                
         let b1' = replaceTypeOfBind k1' b1
 
         -- Check the body with the binder in scope.
@@ -312,7 +311,6 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
         (k1', _s1, ctx1) <- checkTypeM config kenv ctx0 UniverseKind k1 Synth
-                -- TODO: check sort.
 
         let b1' = replaceTypeOfBind k1' b1
 
@@ -385,28 +383,53 @@ checkTypeM config env ctx0 UniverseSpec
          then     return (tt', kData, ctx2)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
--- Type application.
-checkTypeM config env ctx0 UniverseSpec 
-        tt@(TApp t1 t2) _mode
- = do   
-        (t1', k1, ctx1) <- checkTypeM config env ctx0 UniverseSpec t1 Recon
-        (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2 Recon
 
-        case k1 of
-         -- Type constructor application.
-         -- The constructor must have the function kind and its parameter
-         -- kind match with the kind of the argument.
-         --
-         -- TODO: don't unify with existentials in Recon mode because
-         -- the caller may not expect the context to change. Say that we 
-         -- never solve constraints in Recon mode.
-         --
-         TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
-          -> do ctx3    <- makeEq config ctx2 k11 k2
-                        $  ErrorAppArgMismatch tt k1 k2
-                return  (TApp t1' t2', k12, ctx3)
-                  
-         _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
+-- Type application.
+checkTypeM config kenv ctx0 UniverseSpec 
+        tt@(TApp tFn tArg) mode
+ = case mode of
+    Recon
+     -> do
+        -- Check the kind of the functional part.
+        (tFn',  kFn,  ctx1) 
+         <- checkTypeM config kenv ctx0 UniverseSpec tFn Recon
+        
+        -- Check the kind of the argument.
+        (tArg', kArg, ctx2) 
+         <- checkTypeM config kenv ctx1 UniverseSpec tArg Recon
+
+        -- The kind of the parameter must match that of the argument
+        case kFn of
+         TApp (TApp (TCon (TyConKind KiConFun)) kParam) kBody
+           |    equivT kParam kArg
+           ->   return (tApp tFn' tArg', kBody, ctx2)
+
+         _ ->   throw $ ErrorAppNotFun tFn' kFn tArg'
+
+    Synth
+     -> do
+        -- Synthesise a kind for the functional part.
+        (tFn', kFn, ctx1) 
+         <- checkTypeM config kenv ctx0 UniverseSpec tFn Synth
+
+        -- Apply the argument to the function.
+        (kResult, tArg', ctx2)
+         <- synthTAppArg config kenv ctx1 tFn' kFn tArg
+
+        return (TApp tFn' tArg', kResult, ctx2)
+
+
+    Check kExpected
+     -> do
+        -- Synthesise a kind for the overall type.
+        (t1', k1, ctx1) 
+         <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
+
+        -- Force the synthesised kind to be the same as the expected one.
+        ctx2    <- makeEq config ctx1 k1 kExpected
+                $  ErrorMismatch UniverseKind k1 kExpected tt
+
+        return (t1', k1, ctx2)
 
 
 -- Sums -----------------------------------------
@@ -458,6 +481,35 @@ checkTypesM config kenv ctx0 uni mode (t : ts)
  = do   (t',  k',  ctx1)  <- checkTypeM  config kenv ctx0 uni t Recon
         (ts', ks', ctx')  <- checkTypesM config kenv ctx1 uni mode ts
         return  (t' : ts', k' : ks', ctx')
+
+
+-------------------------------------------------------------------------------
+-- | Synthesise the type of a kind function applied to its argument.
+synthTAppArg
+        :: (Show n, Ord n, Pretty n)
+        => Config n
+        -> KindEnv n
+        -> Context n
+        -> Type n               -- Type function.
+        -> Kind n               -- Kind of functional part.
+        -> Type n               -- Type argument.
+        -> CheckM n
+                ( Kind n        -- Kind of result.
+                , Type n        -- Checked type argument.
+                , Context n)    -- Result context.
+
+synthTAppArg config kenv ctx0 tFn kFn tArg
+
+ | TApp (TApp (TCon (TyConKind KiConFun)) kParam) kBody <- kFn
+ = do   
+        -- The kind of the argument must match the parameter kind
+        (tArg', _kArg, ctx1) 
+         <- checkTypeM config kenv ctx0 UniverseSpec tArg (Check kParam)
+
+        return (kBody, tArg', ctx1)
+
+ | otherwise
+ = throw $ ErrorAppNotFun tFn kFn tArg 
 
 
 -- [Note: Defaulting the kind of quantified types]

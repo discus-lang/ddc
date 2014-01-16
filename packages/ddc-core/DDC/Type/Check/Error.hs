@@ -51,11 +51,9 @@ data Error n
 
         -- | A type application where the thing being applied is not a function.
         | ErrorAppNotFun
-        { errorChecking         :: Type n
-        , errorFunType          :: Type n
+        { errorFunType          :: Type n
         , errorFunTypeKind      :: Kind n
-        , errorArgType          :: Type n
-        , errorArgTypeKind      :: Kind n }
+        , errorArgType          :: Type n }
 
         -- | A type sum where the components have differing kinds.
         | ErrorSumKindMismatch
