@@ -55,7 +55,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  --   This is some kind that we were explicitly told to infer,
  --   so make a new existential for it.
  | UniverseKind         <- uni
- , UName n              <- u
+ , Just n               <- takeNameOfBound u
  , Just isHole          <- configNameIsHole config
  , isHole n
  = case mode of
@@ -83,7 +83,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  --   This is some spec that we were explicitly told to infer,
  --   so make an existential for it.
  | UniverseSpec         <- uni
- , UName n              <- u
+ , Just n               <- takeNameOfBound u
  , Just isHole          <- configNameIsHole config
  , isHole n
  = case mode of
