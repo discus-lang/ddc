@@ -104,8 +104,8 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
                 TForall b11 t12
                  -> do  -- The kind of the argument must match the annotation on the quantifier.
                         ctx3    <- makeEq config aApp 
-                                        (ErrorAppMismatch aApp xx (typeOfBind b11) tArg')
                                         ctx2 (typeOfBind b11) kArg
+                                $  ErrorAppMismatch aApp xx (typeOfBind b11) tArg'
 
                         let tResult = substituteT b11 tArg' t12
                         return (tResult, ctx3)
