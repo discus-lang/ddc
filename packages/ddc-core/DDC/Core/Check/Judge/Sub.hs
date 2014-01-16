@@ -12,7 +12,8 @@ import DDC.Core.Check.Base
 -- | Make the left type a subtype of the right type,
 --   or throw the provided error if this is not possible.
 makeSub :: (Eq n, Ord n, Show n, Pretty n)
-        => a
+        => Config n
+        -> a
         -> Error a n
         -> Context n
         -> Exp  (AnTEC a n) n
@@ -25,7 +26,7 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
 -- NOTE: The order of cases matters here.
 --       For example, we do something different when both sides are
 --       existentials, vs the case when only one side is an existential.
-makeSub a err ctx0 xL tL tR
+makeSub config a err ctx0 xL tL tR
 
  -- SubCon
  --  Both sides are the same type constructor.
@@ -79,7 +80,7 @@ makeSub a err ctx0 xL tL tR
  --  Left is an existential.
  --  TODO: do free variables check  tL /= FV(tR)
  | isTExists tL
- = do   ctx1    <- makeInst a err ctx0 tR tL
+ = do   ctx1    <- makeInst config a err ctx0 tR tL
 
         ctrace  $ vcat
                 [ text "* SubInstL"
@@ -96,7 +97,7 @@ makeSub a err ctx0 xL tL tR
  --  Right is an existential.
  --  TODO: do free variables check  tR /= FV(tL)
  | isTExists tR
- = do   ctx1    <- makeInst a err ctx0 tL tR
+ = do   ctx1    <- makeInst config a err ctx0 tL tR
 
         ctrace  $ vcat
                 [ text "* SubInstR"
@@ -116,10 +117,10 @@ makeSub a err ctx0 xL tL tR
  = do   
         -- TODO: will need to eta-expand to pass type applications
         --       when instantiating higher ranked types.
-        (_, ctx1)   <- makeSub a err ctx0 xL tR1 tL1
+        (_, ctx1)   <- makeSub config a err ctx0 xL tR1 tL1
         let tL2'    =  applyContext  ctx1    tL2
         let tR2'    =  applyContext  ctx1    tR2
-        (_, ctx2)   <- makeSub a err ctx1 xL tL2' tR2'
+        (_, ctx2)   <- makeSub config a err ctx1 xL tL2' tR2'
 
         ctrace  $ vcat
                 [ text "* SubArr"
@@ -139,10 +140,10 @@ makeSub a err ctx0 xL tL tR
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do   
-        ctx1     <- makeEq a err ctx0 tL1 tR1
+        ctx1     <- makeEq config a err ctx0 tL1 tR1
         let tL2' =  applyContext ctx1 tL2
         let tR2' =  applyContext ctx1 tR2
-        ctx2     <- makeEq a err ctx1 tL2' tR2'
+        ctx2     <- makeEq config a err ctx1 tL2' tR2'
 
         ctrace  $ vcat
                 [ text "* SubApp"
@@ -171,7 +172,7 @@ makeSub a err ctx0 xL tL tR
         -- to match the right.
         let (ctx1, pos1) =  markContext ctx0
         let ctx2         =  pushExists  iA ctx1
-        (xL1, ctx3)      <- makeSub a err ctx2 xL t1' tR
+        (xL1, ctx3)      <- makeSub config a err ctx2 xL t1' tR
 
         -- Pop the existential and constraints above it back off
         -- the stack.

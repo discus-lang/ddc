@@ -7,7 +7,8 @@ import DDC.Core.Check.Judge.Type.Base
 
 -- This is the subtyping rule for the type checking judgment.
 checkSub table !a ctx0 xx0 tExpect
- = do
+ = do   let config      = tableConfig table
+ 
         (xx1, tSynth, eff, clo, ctx1)
          <- tableCheckExp table table ctx0 xx0 Synth
 
@@ -15,7 +16,7 @@ checkSub table !a ctx0 xx0 tExpect
         let tExpect'    = applyContext ctx1 tExpect
         let tSynth'     = applyContext ctx1 tSynth
 
-        (xx2, ctx2)     <- makeSub a (ErrorMismatch a tExpect' tSynth' xx0)
+        (xx2, ctx2)     <- makeSub config a (ErrorMismatch a tExpect' tSynth' xx0)
                                 ctx1 xx1 tSynth' tExpect'
 
         ctrace  $ vcat

@@ -9,14 +9,15 @@ import DDC.Type.Transform.Trim
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
 makeEq  :: (Eq n, Ord n, Pretty n)
-        => a
+        => Config n
+        -> a
         -> Error a n
         -> Context n
         -> Type n
         -> Type n
         -> CheckM a n (Context n)
 
-makeEq a err ctx0 tL tR
+makeEq config a err ctx0 tL tR
 
  -- EqLSolve
  | Just iL <- takeExists tL
@@ -126,14 +127,14 @@ makeEq a err ctx0 tL tR
  | Just (tL1, tEffL, tCloL, tL2) <- takeTFunEC tL
  , Just (tR1, tEffR, tCloR, tR2) <- takeTFunEC tR
  = do   
-        ctx1    <- makeEq a err ctx0 tL1 tR1
-        ctx2    <- makeEq a err ctx1 (crushEffect tEffL) (crushEffect tEffR) 
+        ctx1    <- makeEq config a err ctx0 tL1 tR1
+        ctx2    <- makeEq config a err ctx1 (crushEffect tEffL) (crushEffect tEffR) 
         
         let Just tCloL' = trimClosure tCloL
         let Just tCloR' = trimClosure tCloR
-        ctx3    <- makeEq a err ctx2  tCloL' tCloR'
+        ctx3    <- makeEq config a err ctx2  tCloL' tCloR'
 
-        ctx4    <- makeEq a err ctx3 tL2 tR2
+        ctx4    <- makeEq config a err ctx3 tL2 tR2
         return ctx4
 
 
@@ -141,10 +142,10 @@ makeEq a err ctx0 tL tR
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
-        ctx1     <- makeEq a err ctx0 tL1 tR1
+        ctx1     <- makeEq config a err ctx0 tL1 tR1
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
-        ctx2     <- makeEq a err ctx0 tL2' tR2'
+        ctx2     <- makeEq config a err ctx0 tL2' tR2'
 
         ctrace  $ vcat
                 [ text "* EqApp"
