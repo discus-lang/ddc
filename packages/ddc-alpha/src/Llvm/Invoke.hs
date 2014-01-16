@@ -6,7 +6,7 @@ where
 import Main.Util
 
 import Util
-import System.Cmd
+import System.Process
 import System.Exit
 import DDC.Main.Error
 

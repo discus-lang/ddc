@@ -2,7 +2,7 @@ module Sea.Invoke
 	(invokeSeaCompiler)
 where
 import Util
-import System.Cmd
+import System.Process
 import System.Exit
 import System.Directory
 import DDC.Main.Error

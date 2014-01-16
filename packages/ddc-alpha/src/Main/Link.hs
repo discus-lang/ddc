@@ -5,7 +5,7 @@ where
 import Main.BuildFile
 import Util
 import System.Exit
-import System.Cmd
+import System.Process
 import DDC.Module.Error
 import DDC.Main.Setup
 import DDC.Main.Error
