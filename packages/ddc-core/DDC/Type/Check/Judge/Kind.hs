@@ -249,13 +249,13 @@ checkTypeM config env ctx0 uni@UniverseSpec
         tt@(TForall b1 t2) mode
  = do   
         -- Check the binder has a valid kind.
-        -- Kinds don't have any variables, which is enforced by the fact that
-        -- the Var rule above only applies in the Spec universe.
-        -- The returned context will be the same as the provided one.
+        -- TODO: Allow the parameter to have an unknown kind.
         let t1          = typeOfBind b1
         _               <- checkTypeM config env ctx0 UniverseKind t1 Recon
 
         -- Check the body with the binder in scope.
+        -- TODO: The body of a quantified type cannot be an existential because
+        --       we won't have able to instantiate it...
         let (ctx1, pos1) = markContext ctx0
         let ctx2         = pushKind b1 RoleAbstract ctx1
         (t2', k2, ctx3) <- checkTypeM config env ctx2 UniverseSpec t2 Recon
