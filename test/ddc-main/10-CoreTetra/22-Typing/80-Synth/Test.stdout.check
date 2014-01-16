@@ -230,3 +230,21 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 :*: [a : Data].a -> [b : Data].a
 :!: Pure
 
+
+-- Error: Can't infer the type of a polymorphic expression.
+-- This is an inherent limitation of the inference algorithm, as we can't
+-- represent a delayed substitution of the type argument into the body
+-- of the type for 'f'.
+When checking expression.
+  <batch>:162:7
+  Cannot infer the type of a polymorphic expression.
+    Please supply type annotations to constrain the functional
+    part to have a quantified type.
+  with: f [Unit]
+
+
+-- As above, but we've given a type for functional parameter.
+\(f : [a : Data].a). f [Unit]
+:*: ([a : Data].a) -> Unit
+:!: Pure
+

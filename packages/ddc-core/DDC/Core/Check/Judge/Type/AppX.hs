@@ -168,7 +168,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         -- Synthesise the result type of a function being applied to its 
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
-        (  xFnTy', xArg', tResult, effsResult, closResult, ctx2)
+        (xFnTy', xArg', tResult, effsResult, closResult, ctx2)
          <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn closFn xArg
 
         ctrace  $ vcat
@@ -204,8 +204,11 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
              Just (_tParam, effsLatent, _closLatent, _tResult)
               -> return effsLatent
 
+             -- This shouldn't happen because this rule (App Synth Fun) only
+             -- applies when 'tFn' is has a functional type, and applying 
+             -- the current context to it as above should not change this.
              Nothing
-              -> throw  $ ErrorAppNotFun a xx tFn1
+              -> error "ddc-core.synthAppArg: unexpected type of function."
 
         -- Effect of the overall application.
         let effsResult  = Sum.unions kEffect

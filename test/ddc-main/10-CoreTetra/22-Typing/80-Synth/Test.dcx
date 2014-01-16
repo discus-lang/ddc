@@ -153,3 +153,18 @@ case T2# 2# 3# of
 /\a. \(x : a). /\(b : Data). x
 ;;
 
+
+-- Error: Can't infer the type of a polymorphic expression.
+-- This is an inherent limitation of the inference algorithm, as we can't
+-- represent a delayed substitution of the type argument into the body
+-- of the type for 'f'.
+:synth..
+\f. f [Unit]
+;;
+
+
+-- As above, but we've given a type for functional parameter.
+:synth..
+\(f : [a : Data]. a). f [Unit]
+;;
+

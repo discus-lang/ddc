@@ -97,6 +97,12 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+        ErrorAppCannotInferPolymorphic a xx
+         -> vcat [ ppr a
+                 , text "Cannot infer the type of a polymorphic expression."
+                 , text "  Please supply type annotations to constrain the functional"
+                 , text "  part to have a quantified type."
+                 , text "with: "                        <> align (ppr xx) ]
 
         -- Lambda -----------------------------------------
         ErrorLamShadow a xx b

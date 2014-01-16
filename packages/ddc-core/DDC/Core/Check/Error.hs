@@ -87,6 +87,10 @@ data Error a n
         , errorChecking         :: Exp a n
         , errorNotFunType       :: Type n } 
 
+        -- | Cannot infer type of polymorphic expression.
+        | ErrorAppCannotInferPolymorphic
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n }
 
         -- Lambda -----------------------------------------
         -- | A type abstraction that tries to shadow a type variable that is

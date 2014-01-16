@@ -126,7 +126,8 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         
         -- Build the result type -------------
         -- Determine the kind of the parameter.
-        (_, k1, _)      <- checkTypeM config kenv ctx5 UniverseSpec t1' Synth
+        (_, k1, _)      <- checkTypeM config kenv ctx5 UniverseSpec t1' Synth   
+                -- TODO: should get this from above.
         
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.

@@ -7,15 +7,7 @@ import DDC.Core.Check.Judge.Type.Base
 import qualified Data.Set       as Set
 
 
--- | Check a spec expression application.
---
---   Note: We don't need to substitute into the effect of x1 (effs1)
---         because the body of a type abstraction is required to be pure.
--- 
---         We don't need to substitute into the closure either, because
---         the bound type variable is not visible outside the abstraction.
---         thus we can't be sharing objects that have it in its type.
---
+-- | Check a spec application.
 checkAppT :: Checker a n
 
 checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
@@ -47,6 +39,13 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
                  ->  throw $ ErrorAppMismatch aApp xx (typeOfBind b11) tArg'
 
                 _ -> throw $ ErrorAppNotFun   aApp xx tFn
+
+        -- We don't need to substitute into the effect of x1 (effs1)
+        -- because the body of a type abstraction is required to be pure.
+
+        -- We don't need to substitute into the closure either, because
+        -- the bound type variable is not visible outside the abstraction.
+        -- thus we can't be sharing objects that have it in its type.
 
         -- Build an annotated version of the type application.
         let aApp'  = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
@@ -130,6 +129,25 @@ synthAppArgT
 
 synthAppArgT table a xx ctx0 tFn tArg
 
+ -- Rule (AppT Synth exists)
+ --  Functional type is an existential.
+ --
+ --  Although we know the functional part should have a quantified type, 
+ --  we can't infer a type for the result because we would need to represent
+ --  a delayed substitution of a type into an existential. The rule would be
+ --  as follows:
+ --
+ --    Env0[?2, ?1, ?0 = [a : ?1]. ?2] |- t2 <= ?1 -| Env1
+ --   -----------------------------------------------------
+ --      Env0[?0] |- ?0 * t2 => ?2 [t2/a] -| Env1
+ --
+ --  .. but we can't represent the (?2 [t2/a]) part. This is an inherent 
+ --  limitation of our type inference algorithm.
+ --
+ | Just _               <- takeExists tFn
+ = do   throw $ ErrorAppCannotInferPolymorphic a xx
+
+
  -- Rule (AppT Synth Forall)
  --  The function already has a quantified type, so we can instantiate it 
  --  with the supplied type argument.
@@ -147,7 +165,7 @@ synthAppArgT table a xx ctx0 tFn tArg
 
         return (tResult, tArg', kArg, ctx1)
 
+
  | otherwise
  = throw $ ErrorAppNotFun a xx tFn
-
 
