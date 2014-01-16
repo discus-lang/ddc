@@ -97,19 +97,21 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
         --  This always matches because we just checked tArg.
         let Just t2_clo = taggedClosureOfTyArg kenv ctx2 tArg'
 
-        -- Determine the type of the result.
         --  The function must have a quantified type, which we then instantiate
         --  with the type argument.
-        tResult
+        (tResult, ctx3)    
          <- case tFn of
                 TForall b11 t12
-                 | typeOfBind b11 == kArg
-                 -> return $ substituteT b11 tArg' t12
+                 -> do  -- The kind of the argument must match the annotation on the quantifier.
+                        ctx3    <- makeEq config aApp 
+                                        (ErrorAppMismatch aApp xx (typeOfBind b11) tArg')
+                                        ctx2 (typeOfBind b11) kArg
 
-                 | otherwise
-                 ->  throw $ ErrorAppMismatch aApp xx (typeOfBind b11) tArg'
+                        let tResult = substituteT b11 tArg' t12
+                        return (tResult, ctx3)
 
-                _ -> throw $ ErrorAppNotFun   aApp xx tFn
+                _ -> throw $ ErrorAppNotFun aApp xx tFn
+
 
         -- Build an annotated version of the type application.
         let aApp'  = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
@@ -123,13 +125,13 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
                 , text "      tFn: " <+> ppr tFn
                 , text "     tArg: " <+> ppr tArg
                 , text "  tResult: " <+> ppr tResult
-                , indent 2 $ ppr ctx2
+                , indent 2 $ ppr ctx3
                 , empty ]
 
         returnX aApp
                 (\z -> XApp z xFn' (XType aArg' tArg'))
                 tResult effsFn (closFn `Set.union` t2_clo)
-                ctx2
+                ctx3
 
 
 checkAppT !table !ctx0 xx@(XApp aApp _ (XType _ _)) (Check tExpected)

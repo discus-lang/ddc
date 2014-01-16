@@ -51,28 +51,6 @@ checkTypeM
 -- Variables ------------------
 checkTypeM config env ctx0 uni tt@(TVar u) mode
 
- -- A variable in the local context.
- | UniverseSpec          <- uni
- , Just (kActual, _role) <- lookupKind u ctx0
- = case mode of
-        Check kExpect
-          -> do ctx1    <- makeEq ctx0 kActual kExpect
-                        $  ErrorMismatch uni kActual kExpect tt
-                return (tt, kActual, ctx1)
-
-        _ ->    return (tt, kActual, ctx0)
-
- -- A variable in the global environment.
- | UniverseSpec         <- uni
- , Just kActual         <- Env.lookup u env
- = case mode of
-        Check kExpect
-          -> do ctx1    <- makeEq ctx0 kActual kExpect
-                        $  ErrorMismatch uni kActual kExpect tt
-                return (tt, kActual, ctx1)
-
-        _ ->    return (tt, kActual, ctx0)
-
  -- Kind holes.
  --   This is some kind that we were explicitly told to infer,
  --   so make a new existential for it.
@@ -136,6 +114,30 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
                 return  (t, kExpected, ctx1)
 
 
+ -- A variable in the local context.
+ | UniverseSpec          <- uni
+ , Just (kActual, _role) <- lookupKind u ctx0
+ = case mode of
+        Check kExpect
+          -> do ctx1    <- makeEq config ctx0 kActual kExpect
+                        $  ErrorMismatch uni kActual kExpect tt
+                return (tt, kActual, ctx1)
+
+        _ ->    return (tt, kActual, ctx0)
+
+ -- A variable in the global environment.
+ | UniverseSpec         <- uni
+ , Just kActual         <- Env.lookup u env
+ = case mode of
+        Check kExpect
+          -> do ctx1    <- makeEq config ctx0 kActual kExpect
+                        $  ErrorMismatch uni kActual kExpect tt
+                return (tt, kActual, ctx1)
+
+        _ ->    return (tt, kActual, ctx0)
+
+
+
  -- A primitive variable with its kind directly attached, but where the
  -- variable is not also in the kind environment. This is a hack used
  -- for static used for static region variables in the evaluator.
@@ -145,7 +147,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  , UniverseSpec         <- uni
  = case mode of
         Check kExpect 
-          -> do ctx1    <- makeEq ctx0 kActual kExpect
+          -> do ctx1    <- makeEq config ctx0 kActual kExpect
                         $  ErrorMismatch uni kActual kExpect tt
                 return (tt, kActual, ctx1)
 
@@ -233,7 +235,7 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
         case mode of
          -- If we have an expected kind then make the actual kind the same.
          Check tExpect
-           -> do ctx1   <- makeEq ctx0 tActual tExpect
+           -> do ctx1   <- makeEq config ctx0 tActual tExpect
                         $  ErrorMismatch uni tActual tExpect tt
                  return (tt', tActual, ctx1)
 
@@ -317,7 +319,7 @@ checkTypeM config env ctx0 UniverseSpec
          -- never solve constraints in Recon mode.
          --
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
-          -> do ctx3    <- makeEq ctx2 k11 k2
+          -> do ctx3    <- makeEq config ctx2 k11 k2
                         $  ErrorAppArgMismatch tt k1 k2
                 return  (TApp t1' t2', k12, ctx3)
                   

@@ -2,19 +2,21 @@
 module DDC.Type.Check.Judge.Eq
         (makeEq)
 where
+import DDC.Type.Check.Config
 import DDC.Type.Check.Base
 
 
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
 makeEq  :: (Eq n, Ord n, Pretty n)
-        => Context n
+        => Config n
+        -> Context n
         -> Type n
         -> Type n
         -> Error n
         -> CheckM n (Context n)
 
-makeEq ctx0 tL tR err
+makeEq config ctx0 tL tR err
 
  -- EqLSolve
  | Just iL <- takeExists tL
@@ -64,10 +66,10 @@ makeEq ctx0 tL tR err
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
-        ctx1     <- makeEq ctx0 tL1  tR1  err
+        ctx1     <- makeEq config ctx0 tL1  tR1  err
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
-        ctx2     <- makeEq ctx0 tL2' tR2' err
+        ctx2     <- makeEq config ctx0 tL2' tR2' err
 
         return ctx2
 
