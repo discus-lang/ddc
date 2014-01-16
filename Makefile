@@ -93,14 +93,16 @@ deps	: make/deps/Makefile-ddc-alpha.deps \
           make/deps/Makefile-ddc-check.deps \
           make/deps/Makefile-ddc-main.deps \
           make/deps/Makefile-ddci-core.deps \
-          make/deps/Makefile-ddci-tetra.deps
+          make/deps/Makefile-ddci-tetra.deps \
+          make/deps/Makefile-war.deps
 
 # -- Build all dependencies related to the new compiler
 .PHONY	 : deps-new
 deps-new : make/deps/Makefile-ddc-check.deps \
            make/deps/Makefile-ddc-main.deps \
            make/deps/Makefile-ddci-core.deps \
-           make/deps/Makefile-ddci-tetra.deps
+           make/deps/Makefile-ddci-tetra.deps \
+           make/deps/Makefile-war.deps
 
 
 # -- What to do during the nightly builds
@@ -164,4 +166,5 @@ include make/rules.mk
 -include make/deps/Makefile-ddc-main.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/Makefile-ddci-tetra.deps.inc
+-include make/deps/Makefile-war.deps.inc
 
