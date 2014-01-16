@@ -114,56 +114,57 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
                 return  (t, kExpected, ctx1)
 
 
- -- A variable in the local context.
+ -- Some variable defined in an environment, 
+ -- or a primitive variable with its kind directly attached.
  | UniverseSpec          <- uni
- , Just (kActual, _role) <- lookupKind u ctx0
- = case mode of
-        Check kExpect
-          -> do ctx1    <- makeEq config ctx0 kActual kExpect
-                        $  ErrorMismatch uni kActual kExpect tt
-                return (tt, kActual, ctx1)
+ = let  
+        -- Get the actual kind of the variable,
+        -- according to the kind environment.
+        getActual
+         -- A variable in the local environment.
+         | Just (k, _role) <- lookupKind u ctx0
+         = return k
 
-        _ ->    return (tt, kActual, ctx0)
+         -- A variable in the global environment.
+         | Just k          <- Env.lookup u env
+         = return k
 
- -- A variable in the global environment.
- | UniverseSpec         <- uni
- , Just kActual         <- Env.lookup u env
- = case mode of
-        Check kExpect
-          -> do ctx1    <- makeEq config ctx0 kActual kExpect
-                        $  ErrorMismatch uni kActual kExpect tt
-                return (tt, kActual, ctx1)
+         -- A primitive type variable with its kind directly attached, but where
+         -- the variable is not also in the kind environment. This is a hack used
+         -- for static used for static region variables in the evaluator.
+         -- We make them constructors rather than variables so that we don't need
+         -- to have a data constructor definition for each one.
+         | UPrim _ k       <- u
+         = return k
 
-        _ ->    return (tt, kActual, ctx0)
+         -- Type variable is no where to be found.
+         | otherwise
+         = throw $ ErrorUndefined u
 
+   in do
+        kActual <- getActual
 
+        -- In Check mode we check the expected kind against the actual
+        -- kind from the environment.
+        case mode of
+         Check kExpect
+          -> do  ctx1    <- makeEq config ctx0 kActual kExpect
+                         $  ErrorMismatch uni kActual kExpect tt
 
- -- A primitive variable with its kind directly attached, but where the
- -- variable is not also in the kind environment. This is a hack used
- -- for static used for static region variables in the evaluator.
- -- We make them constructors rather than variables so that we don't need
- -- to have a data constructor definition for each one.
- | UPrim _ kActual      <- u
- , UniverseSpec         <- uni
- = case mode of
-        Check kExpect 
-          -> do ctx1    <- makeEq config ctx0 kActual kExpect
-                        $  ErrorMismatch uni kActual kExpect tt
-                return (tt, kActual, ctx1)
+                 return (tt, kActual, ctx1)
+ 
+         _ ->    return (tt, kActual, ctx0)
 
-        _ ->    return (tt, kActual, ctx0)
-
-
- -- Type variable is nowhere to be found.
+ -- Type variables are not a part of this universe.
  | otherwise
- = throw $ ErrorUndefined u
+ = throw $ ErrorUniverseMalfunction tt uni
 
 
 -- Constructors ---------------
 checkTypeM config env ctx0 uni tt@(TCon tc) mode
  = let  
-        -- Get the actual kind of the constructor, according to the 
-        -- constructor definition.
+        -- Get the actual kind of the constructor, 
+        -- according to the constructor definition.
         getActual
          -- Sort constructors don't have a higher classification.
          -- We should never try to check these.
@@ -195,7 +196,7 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
          = case u of
             UName n
              -- User defined data type constructors must be in the set of
-             -- data defs.
+             -- data defs. Attach the real kind why we're here.
              | Just def         <- Map.lookup n 
                                 $  dataDefsTypes $ configDataDefs config
              , UniverseSpec     <- uni
