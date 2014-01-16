@@ -48,7 +48,7 @@ checkTypeM
                 , Kind n
                 , Context n)
 
--- Variables ------------------
+-- Variables ------------------------------------
 checkTypeM config env ctx0 uni tt@(TVar u) mode
 
  -- Kind holes.
@@ -160,7 +160,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
  = throw $ ErrorUniverseMalfunction tt uni
 
 
--- Constructors ---------------
+-- Constructors ---------------------------------
 checkTypeM config env ctx0 uni tt@(TCon tc) mode
  = let  
         -- Get the actual kind of the constructor, 
@@ -244,72 +244,102 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
          _ ->    return (tt', tActual, ctx0)
 
 
--- Quantifiers ----------------
-checkTypeM config env ctx0 uni@UniverseSpec 
+-- Quantifiers ----------------------------------
+checkTypeM config kenv ctx0 uni@UniverseSpec 
         tt@(TForall b1 t2) mode
- = do   
-        -- Check the binder has a valid kind.
-        -- TODO: Allow the parameter to have an unknown kind.
-        let t1          = typeOfBind b1
-        _               <- checkTypeM config env ctx0 UniverseKind t1 Recon
+ = case mode of
+    Recon
+     -> do
+        -- Check the binder is well sorted.
+        let t1  = typeOfBind b1
+        _       <- checkTypeM config kenv ctx0 UniverseKind t1 Recon
 
         -- Check the body with the binder in scope.
-        -- TODO: The body of a quantified type cannot be an existential because
-        --       we won't have able to instantiate it...
         let (ctx1, pos1) = markContext ctx0
         let ctx2         = pushKind b1 RoleAbstract ctx1
-        (t2', k2, ctx3) <- checkTypeM config env ctx2 UniverseSpec t2 Recon
+        (t2', k2, ctx3) <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
 
-        -- The body must have data or witness kind.
-        -- In Recon mode we check for this fact directly.
-        -- In Synth and Check mode if the kind has not been constrained
-        -- then we default it to Data. This is ok because only the types of 
-        -- witness constructors have Witness mode, and we don't check them
-        -- bidirectionally.
-        --
-        -- We need this to handle examples like the following:
-        --   /\a. \(x : [b : Data]. a). ()
-        -- Here the kind of 'a' must be Data because 'x' is used as a parameter
-        -- for a function abstraction, but is otherwise unconstrained.
-        --
+        -- The body must have kind Data or Witness.
         let k2'         = applyContext ctx3 k2
-        (k2'', ctx4)
-         <- case mode of
-                -- In Recon mode the kind of the body won't be an exitential,
-                -- so we don't need to worry about it.
-                Recon   
-                 -> return (k2', ctx3)
+        when ( not (isDataKind k2')
+            && not (isWitnessKind k2'))
+         $ throw $ ErrorForallKindInvalid tt t2 k2'
 
-                -- In Synth mode if the kind of the body is an existential,
-                -- then force it to be Data right now.
-                Synth
-                 |  isTExists k2'
-                 -> do  ctx4    <- makeEq config ctx3 k2' kData
-                                $  ErrorMismatch uni k2' kData tt
-                        return (applyContext ctx4 k2', ctx4)
+        -- Pop the quantified type off the context.
+        let ctx_cut      = popToPos pos1 ctx3
 
-                 | otherwise
-                 ->     return (k2', ctx3)
+        return (TForall b1 t2', k2', ctx_cut)
 
-                -- In Check mode if *both* the current kind of the body and
-                -- the expected kind are existentials then force them both
-                -- to be data. Otherwise make the kind of the body the same
-                -- as the expected kind.
-                Check kExpected
-                 |  isTExists k2'
-                 ,  isTExists kExpected
-                 -> do
-                        ctx'    <- makeEq config ctx3 k2' kExpected
-                                $  ErrorMismatch uni  k2' kExpected tt
+    Synth
+     -> do
+        -- Synthesise a sort for the binder.
+        let k1  = typeOfBind b1
+        (k1', _s1, ctx1) <- checkTypeM config kenv ctx0 UniverseKind k1 Synth
+                -- TODO: check sort.
 
-                        ctx4    <- makeEq config ctx' k2' kData 
-                                $  ErrorMismatch uni  k2' kData  tt
-                        return (applyContext ctx4 k2', ctx4)
+        let b1' = replaceTypeOfBind k1' b1
 
-                 | otherwise
-                 -> do  ctx4    <- makeEq config ctx3 k2' kExpected
-                                $  ErrorMismatch uni k2'  kExpected tt
-                        return (applyContext ctx4 k2', ctx4)
+        -- Check the body with the binder in scope.
+        let (ctx2, pos1) = markContext ctx1
+        let ctx3         = pushKind b1' RoleAbstract ctx2
+        (t2', k2, ctx4) <- checkTypeM config kenv ctx3 UniverseSpec t2 Synth
+
+        -- If the kind of the body is unconstrained then default it to Data.
+        -- See [Note: Defaulting the kind of quantified types]
+        let k2' = applyContext ctx4 k2
+        (k2'', ctx5)
+         <- if (isTExists k2')
+             then do
+                ctx5    <- makeEq config ctx4 k2' kData
+                        $  ErrorMismatch uni k2' kData tt
+                return (applyContext ctx5 k2', ctx5)
+
+             else do
+                return (k2', ctx4)
+
+        -- The above horror show needs to have worked.
+        when ( not (isDataKind k2'')
+            && not (isWitnessKind k2''))
+         $ throw $ ErrorForallKindInvalid tt t2 k2''
+
+        -- Pop the quantified type off the context.
+        let ctx_cut      = popToPos pos1 ctx5
+
+        return (TForall b1' t2', k2'', ctx_cut)
+
+    Check kExpected 
+     -> do
+        -- Synthesise a sort for the binder.
+        let k1  = typeOfBind b1
+        (k1', _s1, ctx1) <- checkTypeM config kenv ctx0 UniverseKind k1 Synth
+                -- TODO: check sort.
+
+        let b1' = replaceTypeOfBind k1' b1
+
+        -- Check the body with the binder in scope.
+        let (ctx2, pos1) = markContext ctx1
+        let ctx3         = pushKind b1' RoleAbstract ctx2
+        (t2', k2, ctx4) <- checkTypeM config kenv ctx3 UniverseSpec t2 Synth
+
+        -- In Check mode if *both* the current kind of the body and the expected
+        -- kind are existentials then force them both to be data. Otherwise make
+        -- the kind of the body the same as the expected kind.
+        -- See [Note: Defaulting the kind of quantified types]
+        let k2' = applyContext ctx4 k2
+        (k2'', ctx5)
+         <- if isTExists k2' && isTExists kExpected
+             then do
+                ctx'    <- makeEq config ctx4 k2' kExpected
+                        $  ErrorMismatch uni  k2' kExpected tt
+
+                ctx5    <- makeEq config ctx' k2' kData 
+                        $  ErrorMismatch uni  k2' kData  tt
+                return (applyContext ctx5 k2', ctx5)
+
+             else do
+                ctx5    <- makeEq config ctx4 k2' kExpected
+                        $  ErrorMismatch uni k2'  kExpected tt
+                return (applyContext ctx5 k2', ctx4)
 
         -- The above horror show needs to have worked.
         when ( not (isDataKind k2'')
@@ -317,12 +347,12 @@ checkTypeM config env ctx0 uni@UniverseSpec
          $ throw $ ErrorForallKindInvalid tt t2 k2'
 
         -- Pop the quantified type off the context.
-        let ctx_cut      = popToPos pos1 ctx4
+        let ctx_cut      = popToPos pos1 ctx5
 
         return (TForall b1 t2', k2'', ctx_cut)
 
 
--- Applications ---------------
+-- Applications ---------------------------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
 checkTypeM config env ctx UniverseKind 
@@ -379,7 +409,7 @@ checkTypeM config env ctx0 UniverseSpec
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
 
--- Sums -----------------------
+-- Sums -----------------------------------------
 checkTypeM config kenv ctx0 UniverseSpec (TSum ts) _mode
  = do   
         -- Check all the types, chaining the context from left to right.
@@ -429,3 +459,18 @@ checkTypesM config kenv ctx0 uni mode (t : ts)
         (ts', ks', ctx')  <- checkTypesM config kenv ctx1 uni mode ts
         return  (t' : ts', k' : ks', ctx')
 
+
+-- [Note: Defaulting the kind of quantified types]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- For expressions like:
+--   /\a. \(x : [b : Data]. a). ()
+--  
+-- The kind of 'a' must be Data because 'x' is used as a parameter of a function 
+-- abstraction. If the kind of the body of a quantified type is unconstrained 
+-- then we default it to data.
+--
+-- Although the types of witness constructors have quantified types, 
+-- those types are primitive, so we never need to do type inference for them.
+-- There aren't any cases where defaulting the kind of a quantified type to 
+-- Data would be the wrong thing to do.
+--

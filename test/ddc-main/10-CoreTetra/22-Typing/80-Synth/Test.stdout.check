@@ -257,8 +257,16 @@ When checking expression.
 :!: Pure
 
 
+-- As above but synthesise the kind parameter.
+/\(a : Data).
+ \(x : [b : ?1].a). ()
+:*: [a : Data].([b : ?1].a) -> Unit
+:!: Pure
+
+
 -- As above but also return the function parameter.
 /\(a : Data).
  \(x : [b : Data].a). x
 :*: [a : Data].([b : Data].a) -> [b : Data].a
 :!: Pure
+

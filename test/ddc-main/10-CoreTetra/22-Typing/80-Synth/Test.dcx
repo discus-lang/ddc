@@ -176,7 +176,14 @@ case T2# 2# 3# of
 ;;
 
 
+-- As above but synthesise the kind parameter.
+:synth..
+/\a. \(x : [b : ?]. a). ()
+;;
+
+
 -- As above but also return the function parameter.
 :synth..
 /\a. \(x : [b : Data]. a). x
 ;;
+
