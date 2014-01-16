@@ -1,4 +1,19 @@
 -- | Type checker for the Disciple Core language.
+--
+--   The algorithm is based on:
+--    Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism.
+--    Joshua Dunfield, Neelakantan R. Krishnaswami, ICFP 2013.
+--  
+--   Extensions include:
+--    * Check let bindings and case expressions.
+--    * Allow type annotations on function parameters.
+--    * Allow explicit type abstraction and application.
+--    * Infer the kinds of type abstration parameters.
+--    * Insert type applications in the checked expression, so that the 
+--      resulting program can be checked by the standard bottom-up algorithm.
+--    * Allow explicit hole '?' annotations to indicate a type or kind 
+--      that should be inferred.
+-- 
 module DDC.Core.Check.Exp
         ( -- * Checker configuation.
           Config (..)

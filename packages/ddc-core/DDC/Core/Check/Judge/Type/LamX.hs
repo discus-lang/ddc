@@ -78,7 +78,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         let t1          = typeOfBind b1
 
         -- If there isn't an existing annotation then make an existential.
-        (b1', t1', ctx1)
+        (b1', t1', k1, ctx1)
          <- if isBot t1
              then do 
                 -- There is no annotation at all, 
@@ -88,15 +88,15 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 let t1'  = typeOfExists i1
                 let b1'  = replaceTypeOfBind t1' b1
                 let ctx1 = pushExists i1 ctx
-                return (b1', t1', ctx1)
+                return (b1', t1', kData, ctx1)
                      
              else do
                 -- Check the existing annotation.
                 --   This also turns explit holes ? into existentials.
-                (t1', _, ctx1)
+                (t1', k1, ctx1)
                         <- checkTypeM config kenv ctx UniverseSpec t1 Synth
                 let b1' = replaceTypeOfBind t1' b1
-                return (b1', t1', ctx1)
+                return (b1', t1', k1, ctx1)
 
 
         -- Check the body -----------------------        
@@ -125,10 +125,6 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         
         -- Build the result type -------------
-        -- Determine the kind of the parameter.
-        (_, k1, _)      <- checkTypeM config kenv ctx5 UniverseSpec t1' Synth   
-                -- TODO: should get this from above.
-        
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
         let c2_cut      = Set.fromList
