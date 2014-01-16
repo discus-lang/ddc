@@ -8,6 +8,7 @@ import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
 
+-- | Check a lambda abstraction.
 checkLamX :: Checker a n
 checkLamX !table !ctx xx mode
  = case xx of
@@ -26,7 +27,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         
         -- The formal parameter must have a type annotation.
         when (isBot t1)
-         $ throw $ ErrorLamParamTypeMissing a xx b1
+         $ throw $ ErrorLamParamUnannotated a xx b1
 
         -- Determine the kind of the parameter.
         (t1', k1, _)    <- checkTypeM config kenv ctx UniverseSpec t1 Recon
@@ -81,8 +82,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         (b1', t1', k1, ctx1)
          <- if isBot t1
              then do 
-                -- There is no annotation at all, 
-                --   so make an existential.
+                -- There is no annotation at all, so make an existential.
                 -- Missing anotations are assumed to have kind Data.
                 i1      <- newExists kData
                 let t1'  = typeOfExists i1
@@ -93,6 +93,8 @@ checkLam !table !a !ctx !b1 !x2 !Synth
              else do
                 -- Check the existing annotation.
                 --   This also turns explit holes ? into existentials.
+                --   The parameter must have Data or Witness kind,
+                --   which is checked by 'makeFunctionType' below.
                 (t1', k1, ctx1)
                         <- checkTypeM config kenv ctx UniverseSpec t1 Synth
                 let b1' = replaceTypeOfBind t1' b1
@@ -101,6 +103,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         -- Check the body -----------------------        
         -- Make an existential for the result type.
+        -- The type of a function abstraction has kind Data.
         i2              <- newExists kData
         let t2          = typeOfExists i2
         
@@ -116,6 +119,9 @@ checkLam !table !a !ctx !b1 !x2 !Synth
          <- tableCheckExp table table ctx3 x2 (Check t2)
 
         -- Force the kind of the body to be Data.
+        --   This constrains the kind of polymorpic variables that are used
+        --   as the result of a function, like with (\x. x). 
+        --   We know \x. can't bind a witness here.
         (_, _, ctx5)    <- checkTypeM config kenv ctx4 UniverseSpec 
                                 (applyContext ctx4 t2')
                                 (Check kData)
@@ -132,12 +138,13 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                         $ Set.toList c2
 
         -- Build the resulting function type.
+        --  This switches on the kind of the argument, so we need to apply
+        --  the context to 'k1' to ensure it has all available information.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) 
                 t1' (applyContext ctx5 k1) 
                 t2' e2 c2_cut
-
-                        
+ 
         ctrace  $ vcat
                 [ text "* Lam Synth"
                 , indent 2 $ ppr (XLam a b1' x2)
@@ -163,7 +170,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
         -- Check the parameter ------------------
         let t1          = typeOfBind b1
 
-        -- If the parameter has no type annotation then we can use the
+        -- If the parameter has no type annotation at all then we can use the
         --   expected type we were passed down from above.
         -- If it does have an annotation, then it needs to match the
         --   expected type.
@@ -185,6 +192,9 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
          <- tableCheckExp table table ctx1 x2 (Check tX2)
 
         -- Force the kind of the body to be Data.
+        --   This constrains the kind of polymorpic variables that are used
+        --   as the result of a function, like with (\x. x). 
+        --   We know \x. can't bind a witness here.
         (_, _, ctx3)    <- checkTypeM config kenv ctx2 UniverseSpec 
                                 (applyContext ctx2 t2) 
                                 (Check kData)
@@ -204,12 +214,13 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
                         $ Set.toList c2
 
         -- Build the resulting function type.
+        --  This switches on the kind of the argument, so we need to apply
+        --  the context to 'k1' to ensure it has all available information.
         (tResult, cResult)
          <- makeFunctionType config a (XLam a b1' x2) 
                 t1' (applyContext ctx3 k1) 
                 t2 e2 c2_cut
 
-       
         ctrace  $ vcat 
                 [ text "* Lam Check"
                 , indent 2 $ ppr (XLam a b1' x2)

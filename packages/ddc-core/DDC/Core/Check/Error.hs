@@ -132,8 +132,8 @@ data Error a n
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
-        -- | Type annotation on function parameter is missing.
-        | ErrorLamParamTypeMissing
+        -- | A function abstraction without a type annotation on the parameter.
+        | ErrorLamParamUnannotated
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }

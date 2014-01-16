@@ -8,13 +8,15 @@ import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
 
+-- Check a spec abstraction.
 checkLamT :: Checker a n
 checkLamT !table !ctx xx mode
  = case xx of
         XLAM a b1 x2    -> checkLAM table ctx a b1 x2 mode
         _               -> error "ddc-core.checkLamT: no match."
 
-
+-- When reconstructing the type of a type abstraction,
+--  the formal parameter must have a kind annotation: eg (/\v : K. x2)
 checkLAM !table !ctx0 a b1 x2 Recon
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table

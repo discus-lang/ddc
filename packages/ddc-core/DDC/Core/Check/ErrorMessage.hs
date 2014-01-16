@@ -147,10 +147,12 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamParamTypeMissing a _xx b1
+        ErrorLamParamUnannotated a xx b1
          -> vcat [ ppr a
                  , text "Missing type annotation on function parameter."
-                 , text "             With paramter: " <> ppr b1 ]
+                 , text "             With paramter: " <> ppr b1 
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
 
         ErrorLamParamUnexpected a xx b1 t1'
          -> vcat [ ppr a

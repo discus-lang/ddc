@@ -64,6 +64,8 @@ When checking expression.
   <batch>:39:2
   Missing type annotation on function parameter.
                With paramter: x : Bot
+  
+  with: \(x : Bot). x
 
 
 -- Error: cannot shadow spec binders.
