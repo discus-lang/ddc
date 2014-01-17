@@ -516,10 +516,15 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
                 let k'  = applyContext ctx2 k
                 return  (TSum (TS.fromList k' ts''), k', ctx2)
 
-         -- If the sum contains no elements then we don't know what kind
-         -- it's supposed to be. This shouldn't happen in a well formed program,
-         -- so just default it to the Effect kind.
-         [] ->  return  (TSum (TS.fromList kEffect []), kEffect, ctx0)
+         -- If the sum does not contain an attached kind, and there are no elements
+         -- then default it to Effect kind. This shouldn't happen in a well formed
+         -- program, but might in a generated one.
+         [] |  isBot (TS.kindOfSum ss)
+            -> return   ( TSum (TS.fromList kEffect [])
+                        , kEffect, ctx0)
+            | otherwise
+            -> return   ( TSum (TS.empty (TS.kindOfSum ss))
+                        , TS.kindOfSum ss, ctx0)
 
     Check kExpected
      -> do

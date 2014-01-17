@@ -12,7 +12,7 @@ import Data.List                as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !ctx xx@(XLet a lts x2) mode
+checkLet !table !ctx xx@(XLet a lts xBody) mode
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -21,44 +21,53 @@ checkLet !table !ctx xx@(XLet a lts x2) mode
  = do   let config  = tableConfig table
         let kenv    = tableKindEnv table
 
-        -- Decide whether to use bidirectional type inference in the types
-        -- of the bindings. If the current mode is 'Recon' then we're just
-        -- doing straight type reconstruction.
+        -- Check the bindings -------------------
+        -- Decide whether to use bidirectional type inference when checking
+        -- the types of the bindings.
         let useBidirChecking   
                 = case mode of
                         Recon   -> False
                         Check{} -> True
                         Synth   -> True
         
-        -- Check the bindings
-        (lts', bs', effs12, clo12, ctx1)
+        (lts', bs', effsBinds, closBinds, ctx1)
          <- checkLetsM useBidirChecking xx table ctx lts 
 
+        
+        -- Check the body -----------------------
         -- Check the body expression in a context
         -- extended with the types of the bindings.
         let (ctx1', pos1) = markContext ctx1
         let ctx2          = pushTypes bs' ctx1'
 
-        (x2', t2, effs2, c2, ctx3)
-         <- tableCheckExp table table ctx2 x2 mode
+        (xBody', tBody, effsBody, closBody, ctx3)
+         <- tableCheckExp table table ctx2 xBody mode
 
         -- The body must have data kind.
-        (_, k2, _)      <- checkTypeM config kenv ctx3 UniverseSpec t2 Recon            -- TODO: ctx
-        when (not $ isDataKind k2)
-         $ throw $ ErrorLetBodyNotData a xx t2 k2
+        (tBody', kBody, ctx4)      
+         <- checkTypeM config kenv ctx3 UniverseSpec tBody
+         $  case mode of
+                Recon   -> Recon
+                _       -> Check kData
+        
+        let kBody' = applyContext ctx4 kBody
+        when (not $ isDataKind kBody')
+         $ throw $ ErrorLetBodyNotData a xx tBody kBody'
 
+
+        -- Build the result ---------------------
         -- Mask closure terms due to locally bound value vars.
-        let c2_cut      = Set.fromList
+        let clos_cut    = Set.fromList
                         $ mapMaybe (cutTaggedClosureXs bs')
-                        $ Set.toList c2
+                        $ Set.toList closBody
 
         -- The new effect and closure.
-        let tResult     = applyContext ctx3 t2
-        let effs'       = effs12 `Sum.union` effs2
-        let clos'       = clo12  `Set.union` c2_cut
+        let tResult     = applyContext ctx4 tBody'
+        let effs'       = effsBinds `Sum.union` effsBody
+        let clos'       = closBinds `Set.union` clos_cut
 
         -- Pop the elements due to the let-bindings from the context.
-        let ctx_cut     = popToPos pos1 ctx3
+        let ctx_cut     = popToPos pos1 ctx4
 
         ctrace  $ vcat
                 [ text "* Let"
@@ -67,7 +76,7 @@ checkLet !table !ctx xx@(XLet a lts x2) mode
                 , indent 2 $ ppr ctx3
                 , indent 2 $ ppr ctx_cut ]
 
-        returnX a (\z -> XLet z lts' x2')
+        returnX a (\z -> XLet z lts' xBody')
                 tResult effs' clos' ctx_cut
 
 
@@ -247,30 +256,74 @@ checkLetsM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkLetsM !bidir !xx !table !ctx (LLet b xBody)
- = do   let a           = annotOfExp xx
+checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
+ 
+ -- Reconstruct the type of a non-recursive let-binding.
+ | False  <- bidir
+ = do   
+        let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        let a           = annotOfExp xx
 
-        -- Decide how to check the right of the binding.
-        let mode        = checkModeFromBind bidir b
-                
-        -- Check the right of the binding.
-        (xBody', tBody, effsBody, cloBody, ctx') 
-         <- tableCheckExp table table ctx xBody mode
+        -- Reconstruct the type of the binding.
+        (xBind', tBind, effsBind, closBind, ctx1) 
+         <- tableCheckExp table table ctx0 xBind Recon
+        
+        -- The reconstructed kind of the binding must be Data.
+        (_, kBind', _) <- checkTypeM config kenv ctx1 UniverseSpec tBind Recon
+        when (not $ isDataKind kBind')
+         $ throw $ ErrorLetBindingNotData a xx b kBind'
+        
+        -- If there is a type annotation on the binding then this
+        -- must match the reconstructed type.
+        when (not $ isBot (typeOfBind b))
+         $ if equivT (typeOfBind b) tBind
+                then return ()
+                else (throw $ ErrorLetMismatch a xx b tBind)          
+        
+        -- Update the annotation on the binder with the actual type of
+        -- the binding.
+        let b'  = replaceTypeOfBind tBind b
 
-        -- Check the annotation on the binder against the type of the
-        -- bound expression.
-        (b', kBody')    
-         <- checkLetBindOfTypeM a xx table ctx tBody b
-
-        -- The right of the binding must have data kind.
-        when (not $ isDataKind kBody')
-         $ throw $ ErrorLetBindingNotData a xx b' kBody'
-          
-        return  ( LLet b' xBody'
+        return  ( LLet b' xBind'
                 , [b']
-                , effsBody
-                , cloBody
-                , ctx')
+                , effsBind, closBind
+                , ctx1)
+
+ -- Synthesise the type of a non-recursive let-binding,
+ -- using any annotation on the binder as the expected type.
+ | True   <- bidir
+ = do   
+        let config      = tableConfig table
+        let kenv        = tableKindEnv table
+        
+        -- If the binder has a type annotation then we use that as the expected
+        -- type when checking the binding. Any annotation must also have kind
+        -- Data, which we check for here.
+        let tAnnot      = typeOfBind b
+        (modeCheck, ctx1)
+         <- if isBot tAnnot
+             -- There is no annotation on the binder.
+             then return (Synth, ctx0)
+             
+             -- We have an annotation on the binder, so check it's kind.
+             else do
+                (tAnnot', _kAnnot, ctx1)
+                 <- checkTypeM config kenv ctx0 UniverseSpec tAnnot (Check kData)
+                return (Check tAnnot', ctx1)
+
+        -- Check the binding itself.
+        (xBind', tBind, effsBind, closBind, ctx2)
+         <- tableCheckExp table table ctx1 xBind modeCheck
+
+        -- Update the annotation on the binder with the actual type of
+        -- the binding.
+        let b'  = replaceTypeOfBind tBind b
+
+        return  ( LLet b' xBind'
+                , [b']
+                , effsBind, closBind
+                , ctx2)
 
 
 -- letrec ---------------------------------------
@@ -404,40 +457,6 @@ duplicates []           = []
 duplicates (x : xs)
         | L.elem x xs   = x : duplicates (filter (/= x) xs)
         | otherwise     = duplicates xs
-
-
--------------------------------------------------------------------------------
--- | Check the type annotation of a let bound variable against the type
---   inferred for the right of the binding.
---   If the annotation is Bot then we just replace the annotation,
---   otherwise it must match that for the right of the binding.
-checkLetBindOfTypeM 
-        :: (Ord n, Show n, Pretty n) 
-        => a                    -- ^ Annotation for error messages.
-        -> Exp a n 
-        -> Table a n
-        -> Context n            -- ^ Local context
-        -> Type n 
-        -> Bind n 
-        -> CheckM a n (Bind n, Kind n)
-
-checkLetBindOfTypeM !a !xx !table !ctx !tRight b
-        -- If the binder just has type Bot then replace it
-        | isBot (typeOfBind b)
-        = do    let config = tableConfig table
-                let kenv   = tableKindEnv table
-                (_, k, _)  <- checkTypeM config kenv ctx UniverseSpec tRight Recon    -- TODO: ctx
-                return (replaceTypeOfBind tRight b, k)
-
-        -- The type of the binder must match that of the right of the binding.
-        | not $ equivT (typeOfBind b) tRight
-        = throw $ ErrorLetMismatch a xx b tRight
-
-        | otherwise
-        = do    let config = tableConfig table
-                let kenv   = tableKindEnv table
-                (b', k, _)  <- checkBindM config kenv ctx UniverseSpec b Recon         -- TODO: ctx
-                return (b', k)
         
 
 -------------------------------------------------------------------------------

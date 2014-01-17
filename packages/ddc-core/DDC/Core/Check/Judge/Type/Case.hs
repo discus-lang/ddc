@@ -281,8 +281,7 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
         let tBody'      = applyContext ctxBody tBody
 
         -- Pop the argument types from the context.
-        let ctx_cut 
-                = popToPos posArg ctxBody
+        let ctx_cut     = popToPos posArg ctxBody
 
 
         ctrace  $ vcat

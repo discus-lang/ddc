@@ -220,7 +220,7 @@ ok
 weakeff [Read r0# + Read r1# + Alloc r0# + Alloc r1#] in
 weakclo {[r0#]; [r1#]} in
 let num : Int r0# = 10 [r0#] () in
-let v7 : [t0 : Data].[t1 t2 t3 : Effect].[t4 t5 t6 : Closure].(Int r0# -(t1 | t4)> t0 -(t2 | t5)> t0) -(Pure | Use r0#)> (Unit -(t3 | t6)> t0) -(Read r0# + Alloc r0# + t1 + t2 + t3 | Use r0# + t4)> t0 = count' num in
+let v7 : [b : Data].[ec1 ec2 en : Effect].[cc1 cc2 cn : Closure].(Int r0# -(ec1 | cc1)> b -(ec2 | cc2)> b) -(Pure | Use r0#)> (Unit -(en | cn)> b) -(Read r0# + Alloc r0# + ec1 + ec2 + en | Use r0# + cc1)> b = count' num in
 weakclo {[r0#]; [r1#]; double; even; v7} in
 let v33 : Int r0# -(Pure | Use r0#)> Int r0# -(Read r0# + Alloc r0# | Use r0#)> Int r0#
       = \(v30 v31 : Int r0#).

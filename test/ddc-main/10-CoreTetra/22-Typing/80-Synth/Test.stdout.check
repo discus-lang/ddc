@@ -359,3 +359,31 @@ f
 :*: (?4 -> ?5) -> S Pure ?4 -> S Pure ?5
 :!: Pure
 
+
+-- Kind of 'a' is constrained by its use as the type of a let-binding.
+/\(a : Data).
+ \(x : a).
+let y : a = x in
+()
+:*: [a : Data].a -> Unit
+:!: Pure
+
+
+-- As above, but with transitive let-bindings.
+/\(a : Data).
+ \(x : a).
+let y : a = x in
+let z : a = y in
+z
+:*: [a : Data].a -> a
+:!: Pure
+
+
+-- Kind of 'a' is constrained by its use as the type of the body
+-- of a let-binding. 
+/\(a : Data).
+ \(x : a).
+let y : Unit = () in
+x
+:*: [a : Data].a -> a
+:!: Pure

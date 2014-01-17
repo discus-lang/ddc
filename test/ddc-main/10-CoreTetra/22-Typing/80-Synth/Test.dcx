@@ -254,3 +254,21 @@ case T2# 2# 3# of
 \f. \(c : S Pure ?). box f (run c)
 ;;
 
+
+-- Kind of 'a' is constrained by its use as the type of a let-binding.
+:synth..
+/\a. \(x : a). let y = x in ()
+;;
+
+
+-- As above, but with transitive let-bindings.
+:synth..
+/\a. \(x : a). let y = x in let z = y in z
+;;
+
+
+-- Kind of 'a' is constrained by its use as the type of the body
+-- of a let-binding. 
+:synth..
+/\a. \(x : a). let y = () in x
+;;

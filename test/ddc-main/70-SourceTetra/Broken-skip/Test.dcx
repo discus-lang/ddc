@@ -2,7 +2,7 @@
 :set Dump
 
 
--- Run constrains a type to be a boxed computation.
+-- Use of 'x' as the right of a binding constraints it to have kind Data.
 :synth..
-\(c : S Pure Int#). box (run c)
+/\a. \(x : a). let y = x in y
 ;;
