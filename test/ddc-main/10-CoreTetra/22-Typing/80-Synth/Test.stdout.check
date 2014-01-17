@@ -313,6 +313,7 @@ When checking expression.
 :*: [e : Effect].[r : Region].S (Write r + e) Nat# -> S (Write r + e) Nat#
 :!: Pure
 
+
 -- Error: kind mismatch for 'e'
 When checking expression.
   Kind mismatch.
@@ -320,4 +321,5 @@ When checking expression.
    does not match inferred kind: Region
   
   with: e
+
 

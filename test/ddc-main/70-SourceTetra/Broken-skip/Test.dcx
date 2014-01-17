@@ -2,6 +2,8 @@
 :set Dump
 
 
+-- Synthesis works through weakeff
 :synth..
-/\e. /\r. \(x : S (e + Read e) Nat#). x
+/\r. \f. \x. weakeff (Read r) f x
 ;;
+

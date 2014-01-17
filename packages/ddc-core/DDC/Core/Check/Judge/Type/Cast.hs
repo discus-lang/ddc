@@ -9,20 +9,23 @@ import qualified Data.Set       as Set
 
 checkCast :: Checker a n
 
--- type cast -------------------------------------
 -- Weaken an effect, adding in the given terms.
-checkCast !table !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
+checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
  = do   let config      = tableConfig  table
         let kenv        = tableKindEnv table
 
         -- Check the effect term.
-        (eff', kEff, _) <- checkTypeM config kenv ctx UniverseSpec eff Recon -- TODO: use ctx
+        (eff', kEff, ctx1) 
+         <- checkTypeM config kenv ctx0 UniverseSpec eff 
+          $ case mode of
+                Recon   -> Recon
+                Synth   -> Check kEffect
+                Check _ -> Check kEffect
 
         -- Check the body.
-        (x1', t1, effs, clo, ctx1)
-                        <- tableCheckExp table table ctx x1 dXX
+        (x1', t1, effs, clo, ctx2)
+         <- tableCheckExp table table ctx1 x1 mode
 
-        
         -- The effect term must have Effect kind.
         when (not $ isEffectKind kEff)
          $ throw $ ErrorWeakEffNotEff a xx eff' kEff
@@ -31,22 +34,22 @@ checkCast !table !ctx xx@(XCast a (CastWeakenEffect eff) x1) dXX
         let effs'  = Sum.insert eff' effs
 
         returnX a (\z -> XCast z c' x1')
-                t1 effs' clo ctx1
+                t1 effs' clo ctx2
                 
 
 -- Weaken a closure, adding in the given terms.
-checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) dXX
+checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) mode
  = do   
         -- Check the contained expressions.
         --  Just ditch the resulting contexts because they shouldn't
         --  contain expression that need types infered.
         (xs', closs, _ctx)
                 <- liftM unzip3
-                $ mapM (\x -> checkArgM table ctx x Recon) xs
+                $   mapM (\x -> checkArgM table ctx x Recon) xs
 
         -- Check the body.
         (x1', t1, effs, clos, ctx1)
-                <- tableCheckExp table table ctx x1 dXX
+                <- tableCheckExp table table ctx x1 mode
         
         let c'     = CastWeakenClosure xs'
         let closs' = Set.unions (clos : closs)
@@ -56,7 +59,7 @@ checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) dXX
 
 
 -- Purify an effect, given a witness that it is pure.
-checkCast !table !ctx xx@(XCast a (CastPurify w) x1) dXX
+checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
@@ -67,7 +70,7 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) dXX
 
         -- Check the body.
         (x1', t1, effs, clo, ctx1)
-                  <- tableCheckExp table table ctx x1 dXX
+         <- tableCheckExp table table ctx x1 mode
 
         -- The witness must have type (Pure e), for some effect e.
         effs' <- case tW of
@@ -76,13 +79,12 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) dXX
                   _ -> throw  $ ErrorWitnessNotPurity a xx w tW
 
         let c'  = CastPurify wTEC
-
         returnX a (\z -> XCast z c' x1')
                 t1 effs' clo ctx1
 
 
 -- Forget a closure, given a witness that it is empty.
-checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
+checkCast !table !ctx xx@(XCast a (CastForget w) x1) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
@@ -93,7 +95,7 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
 
         -- Check the body.
         (x1', t1, effs, clos, ctx1)  
-                  <- tableCheckExp table table ctx x1 dXX
+         <- tableCheckExp table table ctx x1 mode
 
         -- The witness must have type (Empty c), for some closure c.
         clos' <- case tW of
@@ -105,18 +107,21 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) dXX
                   _ -> throw $ ErrorWitnessNotEmpty a xx w tW
 
         let c'  = CastForget wTEC
-
         returnX a (\z -> XCast z c' x1')
                 t1 effs clos' ctx1
 
 
 -- Box a computation,
 -- capturing its effects in a computation type.
-checkCast !table ctx (XCast a CastBox x1) _
+checkCast !table ctx (XCast a CastBox x1) mode
  = do   
         -- Check the body.
         (x1', t1, effs, clos, ctx1) 
-                <- tableCheckExp table table ctx x1 Recon
+         <- tableCheckExp table table ctx x1 
+         $  case mode of
+                Recon   -> Recon
+                Synth   -> Synth
+                Check _ -> Synth        -- FIXME
 
         -- The result type is (S effs a),
         --  where effs is the type of the body.
@@ -134,7 +139,7 @@ checkCast !table !ctx xx@(XCast a CastRun x1) _
         let config      = tableConfig table
 
         -- Check the body.
-        (x1', t1, effs, clos, ctx1) 
+        (x1', t1, effs, clos, ctx1)
                 <- tableCheckExp table table ctx x1 Recon
 
         -- The body must have type (S eff a),
@@ -179,30 +184,30 @@ checkArgM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkArgM !table !ctx !xx !dXX
+checkArgM !table !ctx0 !xx !dXX
  = let  config  = tableConfig  table
         tenv    = tableTypeEnv table
         kenv    = tableKindEnv table
    in case xx of
         XType a t
-         -> do  (t', k, _) <- checkTypeM config kenv ctx UniverseSpec t Recon   -- TODO: use ctx
-                let Just clo = taggedClosureOfTyArg kenv ctx t
+         -> do  (t', k, ctx1) <- checkTypeM config kenv ctx0 UniverseSpec t Recon
+                let Just clo = taggedClosureOfTyArg kenv ctx1 t
                 let a'   = AnTEC k (tBot kEffect) (tBot kClosure) a
                 return  ( XType a' t'
                         , clo
-                        , ctx)
+                        , ctx1)
 
         XWitness a w
-         -> do  (w', t)  <- checkWitnessM config kenv tenv ctx w
+         -> do  (w', t)  <- checkWitnessM config kenv tenv ctx0 w
                 let a'   = AnTEC t (tBot kEffect) (tBot kClosure) a
                 return  ( XWitness a' (reannotate fromAnT w')
                         , Set.empty
-                        , ctx)
+                        , ctx0)
 
         _ -> do
-                (xx', _, _, clos, ctx') 
-                        <- tableCheckExp table table ctx xx dXX
-                return  (xx', clos, ctx')
+                (xx', _, _, clos, ctx1) 
+                        <- tableCheckExp table table ctx0 xx dXX
+                return  (xx', clos, ctx1)
                         
 
 -- Support --------------------------------------------------------------------
