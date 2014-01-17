@@ -18,7 +18,6 @@ import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
-
 -- | Check a type returning its kind, or a kind returning its sort.
 --
 --   The unverse of the thing to check is directly specified, and if the 
@@ -235,9 +234,9 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
         (tt', tActual) <- getActual
         case mode of
          -- If we have an expected kind then make the actual kind the same.
-         Check tExpect
-           -> do ctx1   <- makeEq config ctx0 tActual tExpect
-                        $  ErrorMismatch uni tActual tExpect tt
+         Check tExpected
+           -> do ctx1   <- makeEq config ctx0 tActual tExpected
+                        $  ErrorMismatch uni  tActual tExpected tt
                  return (tt', tActual, ctx1)
 
          -- In Recon and Synth mode just return the actual kind.
@@ -441,7 +440,9 @@ checkTypeM config kenv ctx0 UniverseSpec
 
         -- Apply the argument to the function.
         (kResult, tArg', ctx2)
-         <- synthTAppArg config kenv ctx1 tFn' kFn tArg
+         <- synthTAppArg config kenv ctx1 
+                tFn' (applyContext ctx1 kFn )
+                tArg
 
         return (TApp tFn' tArg', kResult, ctx2)
 
@@ -522,7 +523,7 @@ synthTAppArg
         -> CheckM n
                 ( Kind n        -- Kind of result.
                 , Type n        -- Checked type argument.
-                , Context n)    -- Result context.
+                , Context n)    -- Result context. 
 
 synthTAppArg config kenv ctx0 tFn kFn tArg
 
@@ -540,7 +541,7 @@ synthTAppArg config kenv ctx0 tFn kFn tArg
         let Just ctx1   = updateExists [iBody, iParam] iFn 
                                 (kFun kParam kBody) ctx0
 
-        -- Check the argument under the new contet.
+        -- Check the argument under the new context.
         (tArg', _kArg, ctx2)
          <- checkTypeM config kenv ctx1 UniverseSpec tArg (Check kParam)
 

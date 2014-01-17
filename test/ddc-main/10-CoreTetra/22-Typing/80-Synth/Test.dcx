@@ -211,3 +211,9 @@ case T2# 2# 3# of
 :synth..
 /\r. \(w : Const r). ()
 ;;
+
+
+-- Kind of 'a' is unconstrained, but kind of 'x' is defaulted to Data.
+:synth..
+/\f. /\a. \(x : f a). ()
+;;

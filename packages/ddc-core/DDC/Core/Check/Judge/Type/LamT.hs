@@ -120,7 +120,6 @@ checkLAM !table !ctx0 a b1 x2 Synth
         when (not (sA == sComp) && not (sA == sProp))
          $ throw $ ErrorLAMParamBadSort a xx b1 sA
 
-
         -- Check the body -----------------------
         let (ctx2, pos1) = markContext ctxA
         let ctx3         = pushKind b1' RoleAbstract ctx2

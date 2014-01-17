@@ -298,3 +298,10 @@ When checking expression.
  \(w : Const r). ()
 :*: [r : Region].Const r => Unit
 :!: Pure
+
+
+-- Kind of 'a' is unconstrained, but kind of 'x' is defaulted to Data.
+/\(f : ?2 ~> Data)./\(a : ?2).
+ \(x : f a). ()
+:*: [f : ?2 ~> Data].[a : ?2].f a -> Unit
+:!: Pure
