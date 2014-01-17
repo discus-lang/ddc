@@ -427,10 +427,13 @@ checkTypeM config kenv ctx0 UniverseSpec
         -- The kind of the parameter must match that of the argument
         case kFn of
          TApp (TApp (TCon (TyConKind KiConFun)) kParam) kBody
-           |    equivT kParam kArg
-           ->   return (tApp tFn' tArg', kBody, ctx2)
+           |  equivT kParam kArg
+           -> return (tApp tFn' tArg', kBody, ctx2)
 
-         _ ->   throw $ ErrorAppNotFun tFn' kFn tArg'
+           | otherwise
+           -> throw $ ErrorAppArgMismatch tt tFn' kFn tArg' kArg
+
+         _ -> throw $ ErrorAppNotFun tt tFn' kFn tArg'
 
     Synth
      -> do
@@ -440,7 +443,7 @@ checkTypeM config kenv ctx0 UniverseSpec
 
         -- Apply the argument to the function.
         (kResult, tArg', ctx2)
-         <- synthTAppArg config kenv ctx1 
+         <- synthTAppArg config kenv ctx1
                 tFn' (applyContext ctx1 kFn )
                 tArg
 
@@ -557,7 +560,7 @@ synthTAppArg config kenv ctx0 tFn kFn tArg
         return (kBody, tArg', ctx1)
 
  | otherwise
- = throw $ ErrorAppNotFun tFn kFn tArg 
+ = throw $ ErrorAppNotFun (TApp tFn tArg) tFn kFn tArg 
 
 
 -- [Note: Defaulting the kind of quantified types]
