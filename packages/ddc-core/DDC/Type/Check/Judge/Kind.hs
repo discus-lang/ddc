@@ -17,7 +17,7 @@ import DDC.Type.Env                      (KindEnv)
 import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
-import Debug.Trace
+
 
 -- | Check a type returning its kind, or a kind returning its sort.
 --
@@ -297,7 +297,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
          <- if isTExists k2'
              then do
                 ctx5    <- makeEq config ctx4 k2' kData
-                        $  ErrorMismatch uni k2' kData tt
+                        $  ErrorMismatch uni  k2' kData tt
                 return (applyContext ctx5 k2', ctx5)
 
              else do
@@ -343,7 +343,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 
              else do
                 ctx5    <- makeEq config ctx4 k2' kExpected
-                        $  ErrorMismatch uni k2'  kExpected tt
+                        $  ErrorMismatch uni  k2' kExpected tt
                 return (applyContext ctx5 k2', ctx4)
 
         -- The above horror show needs to have worked.
@@ -464,10 +464,12 @@ checkTypeM config kenv ctx0 UniverseSpec
          <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to be the same as the expected one.
-        ctx2    <- makeEq config ctx1 k1 kExpected
-                $  ErrorMismatch UniverseKind k1 kExpected tt
+        let k1'         = applyContext ctx1 k1
+        let kExpected'  = applyContext ctx1 kExpected
+        ctx2    <- makeEq config ctx1         k1' kExpected'
+                $  ErrorMismatch UniverseKind k1' kExpected' tt
 
-        return (t1', k1, ctx2)
+        return (t1', k1', ctx2)
 
 
 -- Sums -----------------------------------------
@@ -508,17 +510,8 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
          -- so we can't use that directly.
          k : _ksMore
           -> do 
---                let ts' = map (applyContext ctx1) ts
-                (ts'', ks', ctx2)
+                (ts'', _, ctx2)
                  <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts
-
-                trace (renderIndent $ vcat
-                        [ text "** Sum kinds"
-                        , ppr k
-                        , ppr ts''
-                        , ppr ks'
-                        , ppr ctx2 ])
-                 $ return ()
 
                 let k'  = applyContext ctx2 k
                 return  (TSum (TS.fromList k' ts''), k', ctx2)
@@ -535,8 +528,10 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
                 <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to match the expected one.
-        ctx2    <- makeEq config ctx1 k1 kExpected
-                $  ErrorMismatch UniverseKind k1 kExpected tt
+        let k1'         = applyContext ctx1 k1
+        let kExpected'  = applyContext ctx1 kExpected
+        ctx2    <- makeEq config ctx1         k1' kExpected'
+                $  ErrorMismatch UniverseKind k1' kExpected' tt
 
         return  (t1', k1, ctx2)
 
