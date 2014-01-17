@@ -18,6 +18,7 @@ import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 
+
 -- | Check a type returning its kind, or a kind returning its sort.
 --
 --   The unverse of the thing to check is directly specified, and if the 
@@ -463,9 +464,12 @@ checkTypeM config kenv ctx0 UniverseSpec
 
 
 -- Sums -----------------------------------------
-checkTypeM config kenv ctx0 UniverseSpec (TSum ts) _mode
- = do   
-        -- Check all the types, chaining the context from left to right.
+checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ts) mode
+ = case mode of
+    Recon
+     -> do   
+        -- Check all the elements,
+        --  threading the context from left to right.
         (ts', ks, ctx1) 
                 <- checkTypesM config kenv ctx0 UniverseSpec Recon
                 $  TS.toList ts
@@ -476,12 +480,48 @@ checkTypeM config kenv ctx0 UniverseSpec (TSum ts) _mode
                      []     -> return $ TS.kindOfSum ts
                      [k]    -> return k
                      _      -> throw $ ErrorSumKindMismatch kExpect ts ks
-        
+
         -- Check that the kind of the elements is a valid one.
         -- Only effects and closures can be summed.
         if (k' == kEffect || k' == kClosure)
          then return (TSum (TS.fromList k' ts'), k', ctx1)
          else throw $ ErrorSumKindInvalid ts k'
+
+    Synth
+     -> do
+        -- Synthesise a kind for all the elements,
+        --  threading the context from left to right.
+        (ts', ks, ctx1)
+                <- checkTypesM config kenv ctx0 UniverseSpec Synth
+                $  TS.toList ts
+
+        case ks of
+         -- Force all elements to have the same kind as the first one.
+         -- Note that (TS.kindOfSum ts) will be Bot in an unannotated program,
+         -- so we can't use that directly.
+         k : _ksMore
+          -> do (ts'', _, ctx2)
+                 <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts'
+
+                let k'  = applyContext ctx2 k
+                return  (TSum (TS.fromList k' ts''), k', ctx2)
+
+         -- If the sum contains no elements then we don't know what kind
+         -- it's supposed to be. This shouldn't happen in a well formed program,
+         -- so just default it to the Effect kind.
+         [] ->  return  (TSum (TS.fromList kEffect []), kEffect, ctx0)
+
+    Check kExpected
+     -> do
+        -- Synthesise a kind for the overall type.
+        (t1', k1, ctx1)
+                <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
+
+        -- Force the synthesised kind to match the expected one.
+        ctx2    <- makeEq config ctx1 k1 kExpected
+                $  ErrorMismatch UniverseKind k1 kExpected tt
+
+        return  (t1', k1, ctx2)
 
 
 -- Whatever type we were given wasn't in the specified universe.
@@ -508,7 +548,7 @@ checkTypesM _ _ ctx0 _ _ []
  = return ([], [], ctx0)
 
 checkTypesM config kenv ctx0 uni mode (t : ts)
- = do   (t',  k',  ctx1)  <- checkTypeM  config kenv ctx0 uni t Recon
+ = do   (t',  k',  ctx1)  <- checkTypeM  config kenv ctx0 uni t mode
         (ts', ks', ctx')  <- checkTypesM config kenv ctx1 uni mode ts
         return  (t' : ts', k' : ks', ctx')
 

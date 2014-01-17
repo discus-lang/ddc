@@ -305,3 +305,11 @@ When checking expression.
  \(x : f a). ()
 :*: [f : ?2 ~> Data].[a : ?2].f a -> Unit
 :!: Pure
+
+
+-- Kinds of 'e' and 'r' are constrained via the type sum. 
+/\(e : Effect)./\(r : Region).
+ \(x : S (Write r + e) Nat#). x
+:*: [e : Effect].[r : Region].S (Write r + e) Nat# -> S (Write r + e) Nat#
+:!: Pure
+

@@ -8,7 +8,6 @@ import DDC.Type.Compounds
 import DDC.Base.Pretty
 import qualified DDC.Type.Sum           as Sum
 
-stage   = "DDC.Type.Pretty"
 
 -- Bind -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Bind n) where
@@ -113,7 +112,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          -> text "Bot"
 
          | isBot tt, otherwise  
-         -> error $ stage ++ ": malformed sum"
+         -> parens $ text "Bot : " <> ppr (Sum.kindOfSum ts)
          
          | otherwise
          -> pprParen (d > 9) $  ppr ts
@@ -125,7 +124,9 @@ instance (Pretty n, Eq n) => Pretty (TypeSum n) where
       [] | isEffectKind  $ Sum.kindOfSum ss -> text "Pure"
          | isClosureKind $ Sum.kindOfSum ss -> text "Empty"
          | isDataKind    $ Sum.kindOfSum ss -> text "Bot"
-         | otherwise     -> error $ stage ++ ": malformed sum"
+
+         | otherwise
+         -> parens $ text "Bot : " <> ppr (Sum.kindOfSum ss)
          
       ts  -> sep $ punctuate (text " +") (map ppr ts)
 

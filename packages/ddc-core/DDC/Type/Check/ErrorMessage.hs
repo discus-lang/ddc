@@ -26,9 +26,9 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
             in vcat 
                 [ text thing <+> text "mismatch."
                 , text "                Expected"
-                        <+> text thing' <+> text ":"    <+> ppr tExpected
+                        <+> text thing' <> text ":"    <+> ppr tExpected
                 , text " does not match inferred"
-                        <+> text thing' <+> text ":"    <+> ppr tInferred
+                        <+> text thing' <> text ":"    <+> ppr tInferred
                 , empty
                 , text "with: "                         <> align (ppr tt) ]
 

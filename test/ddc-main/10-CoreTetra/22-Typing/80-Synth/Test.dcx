@@ -217,3 +217,10 @@ case T2# 2# 3# of
 :synth..
 /\f. /\a. \(x : f a). ()
 ;;
+
+
+-- Kinds of 'e' and 'r' are constrained via the type sum. 
+:synth..
+/\e. /\r. \(x : S (e + Write r) Nat#). x
+;;
+

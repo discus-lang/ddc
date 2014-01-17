@@ -2,11 +2,6 @@
 :set Dump
 
 
-
--- Kind of 'e' variable is constrained by its use in a type sum,
--- and kind of 'r' is constrained by its used in an effect in a sum.
 :synth..
-/\e. /\r. \(x : S (e + Read r) Nat#). x
+/\e. /\r. \(x : S (e + Read e) Nat#). x
 ;;
-
-
