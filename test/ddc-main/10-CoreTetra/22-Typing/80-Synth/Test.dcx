@@ -224,3 +224,8 @@ case T2# 2# 3# of
 /\e. /\r. \(x : S (e + Write r) Nat#). x
 ;;
 
+-- Error: kind mismatch for 'e'
+:synth..
+/\e. \(x : S (e + Read e) Nat#). x
+;;
+

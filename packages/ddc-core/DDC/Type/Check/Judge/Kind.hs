@@ -17,7 +17,7 @@ import DDC.Type.Env                      (KindEnv)
 import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
-
+import Debug.Trace
 
 -- | Check a type returning its kind, or a kind returning its sort.
 --
@@ -143,17 +143,20 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
 
    in do
         kActual <- getActual
+        let kActual'    = applyContext ctx0 kActual
 
         -- In Check mode we check the expected kind against the actual
         -- kind from the environment.
         case mode of
-         Check kExpect
-          -> do  ctx1    <- makeEq config ctx0 kActual kExpect
-                         $  ErrorMismatch uni kActual kExpect tt
+         Check kExpected
+          -> do 
+                let kExpected'  = applyContext ctx0 kExpected
+                ctx1    <- makeEq config ctx0 kActual' kExpected'
+                        $  ErrorMismatch uni  kActual' kExpected' tt
 
-                 return (tt, kActual, ctx1)
+                return (tt, kActual', ctx1)
  
-         _ ->    return (tt, kActual, ctx0)
+         _ ->   return (tt, kActual', ctx0)
 
  -- Type variables are not a part of this universe.
  | otherwise
@@ -232,16 +235,20 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
  in do
         -- Get the actual kind/sort of the constructor according to the 
         -- constructor definition.
-        (tt', tActual) <- getActual
+        (tt', kActual)  <- getActual
+        let kActual'    =  applyContext ctx0 kActual
+
         case mode of
          -- If we have an expected kind then make the actual kind the same.
-         Check tExpected
-           -> do ctx1   <- makeEq config ctx0 tActual tExpected
-                        $  ErrorMismatch uni  tActual tExpected tt
-                 return (tt', tActual, ctx1)
+         Check kExpected
+           -> do 
+                 let kExpected' = applyContext ctx0 kExpected
+                 ctx1   <- makeEq config ctx0 kActual' kExpected'
+                        $  ErrorMismatch uni  kActual' kExpected' tt
+                 return (tt', kActual', ctx1)
 
          -- In Recon and Synth mode just return the actual kind.
-         _ ->    return (tt', tActual, ctx0)
+         _ ->    return (tt', kActual', ctx0)
 
 
 -- Quantifiers ----------------------------------
@@ -464,7 +471,7 @@ checkTypeM config kenv ctx0 UniverseSpec
 
 
 -- Sums -----------------------------------------
-checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ts) mode
+checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
  = case mode of
     Recon
      -> do   
@@ -472,36 +479,46 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ts) mode
         --  threading the context from left to right.
         (ts', ks, ctx1) 
                 <- checkTypesM config kenv ctx0 UniverseSpec Recon
-                $  TS.toList ts
+                $  TS.toList ss
 
         -- Check that all the types in the sum have the same kind.
-        let kExpect = TS.kindOfSum ts
+        let kExpect = TS.kindOfSum ss
         k'      <- case nub ks of     
-                     []     -> return $ TS.kindOfSum ts
+                     []     -> return $ TS.kindOfSum ss
                      [k]    -> return k
-                     _      -> throw $ ErrorSumKindMismatch kExpect ts ks
+                     _      -> throw $ ErrorSumKindMismatch kExpect ss ks
 
         -- Check that the kind of the elements is a valid one.
         -- Only effects and closures can be summed.
         if (k' == kEffect || k' == kClosure)
          then return (TSum (TS.fromList k' ts'), k', ctx1)
-         else throw $ ErrorSumKindInvalid ts k'
+         else throw $ ErrorSumKindInvalid ss k'
 
     Synth
      -> do
         -- Synthesise a kind for all the elements,
         --  threading the context from left to right.
-        (ts', ks, ctx1)
+        (ts, ks, ctx1)
                 <- checkTypesM config kenv ctx0 UniverseSpec Synth
-                $  TS.toList ts
+                $  TS.toList ss
 
         case ks of
          -- Force all elements to have the same kind as the first one.
          -- Note that (TS.kindOfSum ts) will be Bot in an unannotated program,
          -- so we can't use that directly.
          k : _ksMore
-          -> do (ts'', _, ctx2)
-                 <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts'
+          -> do 
+--                let ts' = map (applyContext ctx1) ts
+                (ts'', ks', ctx2)
+                 <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts
+
+                trace (renderIndent $ vcat
+                        [ text "** Sum kinds"
+                        , ppr k
+                        , ppr ts''
+                        , ppr ks'
+                        , ppr ctx2 ])
+                 $ return ()
 
                 let k'  = applyContext ctx2 k
                 return  (TSum (TS.fromList k' ts''), k', ctx2)
