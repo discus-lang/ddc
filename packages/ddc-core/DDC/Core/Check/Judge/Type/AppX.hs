@@ -88,7 +88,7 @@ checkAppX _ _ _ _
 
 
 -------------------------------------------------------------------------------
--- | Synthesise the type of a function applied to its argument.
+-- | Synthesize the type of a function applied to its argument.
 synthAppArg 
         :: (Show n, Ord n, Pretty n)
         => Table a n
@@ -229,8 +229,10 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         return  ( xFn, xArg'
                 , tResult, effsResult, closResult, ctx1)
 
+ 
+ -- Applied expression is not a function.
  | otherwise
- = throw $ ErrorAppNotFun a xx tFn
+ =      throw $ ErrorAppNotFun a xx tFn
 
 
 -------------------------------------------------------------------------------

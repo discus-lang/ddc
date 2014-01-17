@@ -247,3 +247,10 @@ case T2# 2# 3# of
 :synth..
 /\r. /\e. /\g. \f. \x. box weakeff [e + Read r + g r] in f x
 ;;
+
+
+-- Synthesis works through boxings.
+:synth..
+\f. \(c : S Pure ?). box f (run c)
+;;
+

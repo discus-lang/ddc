@@ -426,6 +426,12 @@ data Error a n
         , errorChecking         :: Exp a n
         , errorEffect           :: Effect n }
 
+        -- | A run cast where we cannot infer the type of the suspended computation
+        --   and thus cannot check if its effects are suppored by the context.
+        | ErrorRunCannotInfer
+        { errorAnnot            :: a
+        , errorExp              :: Exp a n }
+
         -- Types ------------------------------------------
         -- | Found a naked `XType` that wasn't the argument of an application.
         | ErrorNakedType

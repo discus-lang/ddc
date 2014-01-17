@@ -472,6 +472,12 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+        ErrorRunCannotInfer a xx
+         -> vcat [ ppr a
+                 , text "Cannot infer type of suspended computation."
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
         -- Type -------------------------------------------
         ErrorNakedType a xx
          -> vcat [ ppr a

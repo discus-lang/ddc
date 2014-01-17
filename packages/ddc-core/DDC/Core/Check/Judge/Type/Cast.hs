@@ -2,6 +2,7 @@
 module DDC.Core.Check.Judge.Type.Cast
         (checkCast)
 where
+import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
@@ -173,42 +174,93 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
 -- Run ------------------------------------------------------------------------
 -- Run a suspended computation,
 -- releasing its effects into the environment.
-checkCast !table !ctx xx@(XCast a CastRun x1) _
- = do   
-        let config      = tableConfig table
-
+checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
+ = case mode of
+    Recon
+     -> do
         -- Check the body.
-        (x1', t1, effs, clos, ctx1)
-                <- tableCheckExp table table ctx x1 Recon
+        (xBody', tBody, effs, clos, ctx1)
+         <- tableCheckExp table table ctx0 xBody Recon
 
         -- The body must have type (S eff a),
         --  and the result has type 'a' while unleashing effect 'eff'.
-        case t1 of
-         TApp (TApp (TCon (TyConSpec TcConSusp)) eff2) tA 
+        case tBody of
+         TApp (TApp (TCon (TyConSpec TcConSusp)) eff2) tResult
           -> do
                 -- Check that the context has the capability to support 
                 -- this effect.
-                checkEffectSupported config a xx ctx eff2
-
-                ctrace  $ vcat 
-                        [ text "* Run"
-                        , text "  eff = " <> ppr eff2
-                        , text "  t   = " <> ppr tA
-                        , indent 2 $ ppr ctx 
-                        , empty ]
+                let config      = tableConfig table
+                checkEffectSupported config a xx ctx0 eff2
 
                 returnX a
-                        (\z -> XCast z CastRun x1')
-                        tA 
+                        (\z -> XCast z CastRun xBody')
+                        tResult 
                         (Sum.union effs (Sum.singleton kEffect eff2))
-                        clos
-                        ctx1
+                        clos ctx1
 
-         _ -> throw $ ErrorRunNotSuspension a xx t1
+         _ -> throw $ ErrorRunNotSuspension a xx tBody
+
+    Synth
+     -> do
+        -- Synthesize a type for the body.
+        (xBody', tBody, effs, clos, ctx1)
+         <- tableCheckExp table table ctx0 xBody Synth
+
+        -- Run the body,
+        -- which needs to have been resolved to a computation type.
+        let tBody'      = applyContext ctx1 tBody
+        (tResult, effsSusp, ctx2)
+         <- synthRunSusp table a xx ctx1 tBody'
+
+        returnX a 
+                (\z -> XCast z CastRun xBody')
+                tResult
+                (Sum.union effs (Sum.singleton kEffect effsSusp))
+                clos ctx2
+
+    Check tExpected
+     -> checkSub table a ctx0 xx tExpected
 
 checkCast _ _ _ _
         = error "ddc-core.checkCast: no match"
 
+
+-------------------------------------------------------------------------------
+-- | Synthesize the type of a run computation.
+synthRunSusp
+        :: (Show n, Ord n, Pretty n)
+        => Table a n
+        -> a                    -- Annot for error messages.
+        -> Exp a n              -- Cast expression for error messages.
+        -> Context n            -- Current context.
+        -> Type n               -- Type of suspended computation.
+        -> CheckM a n
+                ( Type n        -- Type of result value.
+                , Effect n      -- Effects unleashed by running the computation.
+                , Context n)    -- Result context.
+
+synthRunSusp table a xx ctx0 tt 
+ 
+ -- Rule (Run Synth exists)
+ -- If the type of the suspension has not been resolved then we don't know
+ -- what effects it has, and thus cannot check if running them is supported
+ -- by the context.
+ | Just _iFn     <- takeExists tt
+ =      throw $ ErrorRunCannotInfer a xx
+
+ -- Rule (Run Synth Susp)
+ | TApp (TApp (TCon (TyConSpec TcConSusp)) eff) tResult <- tt
+ = do
+        -- Check that the context has the capability to support this effect.
+        let config      = tableConfig table
+        checkEffectSupported config a xx ctx0 eff
+
+        return (tResult, eff, ctx0)
+
+ -- Run expression is not a suspension.
+ | otherwise
+ =      throw $ ErrorRunNotSuspension a xx tt
+ 
 
 -- Arg ------------------------------------------------------------------------
 -- | Like `checkExp` but we allow naked types and witnesses.
@@ -250,13 +302,15 @@ checkArgM !table !ctx0 !xx !mode
                         
 
 -- Support --------------------------------------------------------------------
+-- | Check if the provided effect is supported by the context, 
+--   if not then throw an error.
 checkEffectSupported 
         :: Ord n 
-        => Config n 
-        -> a
-        -> Exp a n
-        -> Context n 
-        -> Effect n 
+        => Config n             -- ^ Static config.
+        -> a                    -- ^ Annotation for error messages.
+        -> Exp a n              -- ^ Expression for error messages.
+        -> Context n            -- ^ Input context.
+        -> Effect n             -- ^ Effect to check
         -> CheckM a n ()
 
 checkEffectSupported _config a xx ctx eff

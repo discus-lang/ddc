@@ -349,3 +349,13 @@ weakeff [Read r + e + g r] in
 f x
 :*: [r : Region].[e : Effect].[g : Region ~> Effect].(?9 -> ?10) -> ?9 -> S (Read r + e + g r) ?10
 :!: Pure
+
+
+-- Synthesis works through boxings.
+\(f : ?4 -> ?5).\(c : S Pure ?4).
+box
+f
+    (run c)
+:*: (?4 -> ?5) -> S Pure ?4 -> S Pure ?5
+:!: Pure
+

@@ -2,8 +2,7 @@
 :set Dump
 
 
--- Synthesis works through weakeff
+-- Run constrains a type to be a boxed computation.
 :synth..
-/\r. \f. \x. weakeff (Read r) f x
+\(c : S Pure Int#). box (run c)
 ;;
-
