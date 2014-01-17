@@ -284,3 +284,11 @@ When checking expression.
  \(a : f Int#). ()
 :*: [f : Data ~> Data].f Int# -> Unit
 :!: Pure
+
+
+-- As above, but with a more specific kind.
+/\(f : Data ~> Data).
+ \(a : f Int#). ()
+:*: [f : Data ~> Data].f Int# -> Unit
+:!: Pure
+

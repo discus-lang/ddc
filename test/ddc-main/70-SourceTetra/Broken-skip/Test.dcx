@@ -9,9 +9,6 @@
 /\e. /\r. \(x : S (e + Read r) Nat#). x
 ;;
 
-:synth..
-/\(f : ? ~> ?). \(a : f Int#). ()
-;;
 
 
 

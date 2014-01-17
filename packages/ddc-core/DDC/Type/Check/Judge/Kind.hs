@@ -353,17 +353,28 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 -- Applications ---------------------------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
-checkTypeM config env ctx UniverseKind 
-        tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
-        _mode
-                                                -- TODO: handle Synth and Check modes.
- = do   
-        -- Kinds don't have any variables.
-        -- The returned context will be the same as the provided one.
-        _          <- checkTypeM config env ctx UniverseKind k1 Recon
-        (_, s2, _) <- checkTypeM config env ctx UniverseKind k2 Recon
+-- The sort of a kind function is the sort of the result.
+checkTypeM config kenv ctx0 uni@UniverseKind 
+        tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2) mode
+ = case mode of
+    Recon
+     -> do
+        _               <- checkTypeM config kenv ctx0 uni k1 Recon
+        (_, s2, _)      <- checkTypeM config kenv ctx0 uni k2 Recon
+        return  (tt, s2, ctx0)
 
-        return  (tt, s2, ctx)
+    Synth
+     -> do
+        (k1',  _, ctx1) <- checkTypeM config kenv ctx0 uni k1 Synth
+        (k2', s2, ctx2) <- checkTypeM config kenv ctx1 uni k2 Synth
+        return  (kFun k1' k2', s2, ctx2)
+
+    Check sExpected
+     -> do
+        (k1',  _, ctx1) <- checkTypeM config kenv ctx0 uni k1 Synth
+        (k2', s2, ctx2) <- checkTypeM config kenv ctx1 uni k2 (Check sExpected)
+        return  (kFun k1' k2', s2, ctx2)
+
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:

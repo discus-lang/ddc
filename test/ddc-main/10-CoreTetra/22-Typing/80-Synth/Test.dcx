@@ -199,3 +199,10 @@ case T2# 2# 3# of
 :synth..
 /\(f : ?). \(a : f Int#). ()
 ;;
+
+
+-- As above, but with a more specific kind.
+:synth..
+/\(f : ? ~> ?). \(a : f Int#). ()
+;;
+
