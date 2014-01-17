@@ -378,15 +378,15 @@ checkTypeM config kenv ctx0 uni@UniverseKind
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:
---   (=>) :: @ ~> @ ~> @,  for witness implication.
---   (=>) :: @ ~> * ~> *,  for a context.
-checkTypeM config env ctx0 UniverseSpec 
-        tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2)
-        _mode
-                                                -- TODO: handle Synth and Check modes.
- = do   
-        (t1', k1, ctx1) <- checkTypeM config env ctx0 UniverseSpec t1 Recon
-        (t2', k2, ctx2) <- checkTypeM config env ctx1 UniverseSpec t2 Recon
+--   (=>) :: @ ~> @ ~> @,  for witness constructors.
+--   (=>) :: @ ~> * ~> *,  for functions that take witnesses.
+checkTypeM config env ctx0 uni@UniverseSpec 
+        tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2) mode
+ = case mode of
+    Recon
+     -> do
+        (t1', k1, ctx1) <- checkTypeM config env ctx0 uni t1 Recon
+        (t2', k2, ctx2) <- checkTypeM config env ctx1 uni t2 Recon
 
         let tt' = TApp (TApp tC t1') t2'
 
@@ -395,6 +395,20 @@ checkTypeM config env ctx0 UniverseSpec
         else if isWitnessKind k1 && isDataKind k2
          then     return (tt', kData, ctx2)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
+
+    Synth
+     -> do
+        (t1', _k1, ctx1) <- checkTypeM config env ctx0 uni t1 Synth
+        (t2', k2,  ctx2) <- checkTypeM config env ctx1 uni t2 Synth
+
+        return (tImpl t1' t2', k2, ctx2)
+
+    Check kExpected
+     -> do
+        (t1', _k1, ctx1) <- checkTypeM config env ctx0 uni t1 Synth
+        (t2', k2,  ctx2) <- checkTypeM config env ctx1 uni t2 (Check kExpected)
+
+        return (tImpl t1' t2', k2, ctx2)
 
 
 -- General type application.

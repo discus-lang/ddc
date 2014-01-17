@@ -206,3 +206,8 @@ case T2# 2# 3# of
 /\(f : ? ~> ?). \(a : f Int#). ()
 ;;
 
+
+-- Kind of 'r' is constrained within a witness abstraction.
+:synth..
+/\r. \(w : Const r). ()
+;;

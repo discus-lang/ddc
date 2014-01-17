@@ -292,3 +292,9 @@ When checking expression.
 :*: [f : Data ~> Data].f Int# -> Unit
 :!: Pure
 
+
+-- Kind of 'r' is constrained within a witness abstraction.
+/\(r : Region).
+ \(w : Const r). ()
+:*: [r : Region].Const r => Unit
+:!: Pure

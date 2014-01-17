@@ -11,5 +11,7 @@
 
 
 
-
-
+-- Default kind of lambda to Data
+:synth..
+/\f. /\r. \(w : f r). ()
+;;
