@@ -340,17 +340,6 @@ f x
 :*: [r : Region].(?5 -> ?6) -> ?5 -> S (Read r) ?6
 :!: Pure
 
-
--- Some complicated thing.
-/\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
- \(f : ?9 -> ?10).\(x : ?9).
-box
-weakeff [Read r + e + g r] in
-f x
-:*: [r : Region].[e : Effect].[g : Region ~> Effect].(?9 -> ?10) -> ?9 -> S (Read r + e + g r) ?10
-:!: Pure
-
-
 -- Synthesis works through boxings.
 \(f : ?4 -> ?5).\(c : S Pure ?4).
 box
@@ -386,4 +375,35 @@ z
 let y : Unit = () in
 x
 :*: [a : Data].a -> a
+:!: Pure
+
+
+-- Combo 1.
+/\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
+ \(f : ?9 -> ?10).\(x : ?9).
+box
+weakeff [Read r + e + g r] in
+f x
+:*: [r : Region].[e : Effect].[g : Region ~> Effect].(?9 -> ?10) -> ?9 -> S (Read r + e + g r) ?10
+:!: Pure
+
+
+-- Combo 2.
+/\(f : ?3 ~> Data)./\(a : ?3).
+ \(x : [w : Data].f a).\(g : f a -> Nat# -> ?11).
+let y : Nat# -> ?11
+      = g (x [Nat#]) in
+y 5#
+:*: [f : ?3 ~> Data].[a : ?3].([w : Data].f a) -> (f a -> Nat# -> ?11) -> ?11
+:!: Pure
+
+
+-- Combo 3.
+/\(f : Data ~> Region)./\(a : Data).
+ \(x : [w : Region].a).\(g : a -> Nat# -> ?10).
+let y : Nat# -> ?10
+      = g
+            (x [f a]) in
+y 5#
+:*: [f : Data ~> Region].[a : Data].([w : Region].a) -> (a -> Nat# -> ?10) -> ?10
 :!: Pure

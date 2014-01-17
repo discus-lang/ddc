@@ -242,13 +242,6 @@ case T2# 2# 3# of
 /\r. \f. \x. box weakeff [Read r] in f x
 ;;
 
-
--- Some complicated thing.
-:synth..
-/\r. /\e. /\g. \f. \x. box weakeff [e + Read r + g r] in f x
-;;
-
-
 -- Synthesis works through boxings.
 :synth..
 \f. \(c : S Pure ?). box f (run c)
@@ -271,4 +264,22 @@ case T2# 2# 3# of
 -- of a let-binding. 
 :synth..
 /\a. \(x : a). let y = () in x
+;;
+
+
+-- Combo 1.
+:synth..
+/\r. /\e. /\g. \f. \x. box weakeff [e + Read r + g r] in f x
+;;
+
+
+-- Combo 2.
+:synth..
+/\f. /\a. \(x : [w : ?]. f a). \g. let y = g (x [Nat#]) in y 5#
+;;
+
+
+-- Combo 3.
+:synth..
+/\f. /\a. \(x : [w : Region]. a). \g. let y = g (x [f a]) in y 5#
 ;;
