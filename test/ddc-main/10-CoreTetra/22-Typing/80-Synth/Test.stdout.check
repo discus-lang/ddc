@@ -323,3 +323,29 @@ When checking expression.
   with: e
 
 
+-- Synthesis works through box casts.
+\(f : ?4 -> ?5).\(x : ?4).
+box
+f x
+:*: (?4 -> ?5) -> ?4 -> S Pure ?5
+:!: Pure
+
+
+-- Synthesis works through effect weakenings.
+/\(r : Region).
+ \(f : ?5 -> ?6).\(x : ?5).
+box
+weakeff [Read r] in
+f x
+:*: [r : Region].(?5 -> ?6) -> ?5 -> S (Read r) ?6
+:!: Pure
+
+
+-- Some complicated thing.
+/\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
+ \(f : ?9 -> ?10).\(x : ?9).
+box
+weakeff [Read r + e + g r] in
+f x
+:*: [r : Region].[e : Effect].[g : Region ~> Effect].(?9 -> ?10) -> ?9 -> S (Read r + e + g r) ?10
+:!: Pure

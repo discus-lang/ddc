@@ -231,3 +231,19 @@ case T2# 2# 3# of
 ;;
 
 
+-- Synthesis works through box casts.
+:synth..
+\f. \x. box f x
+;;
+
+
+-- Synthesis works through effect weakenings.
+:synth..
+/\r. \f. \x. box weakeff [Read r] in f x
+;;
+
+
+-- Some complicated thing.
+:synth..
+/\r. /\e. /\g. \f. \x. box weakeff [e + Read r + g r] in f x
+;;

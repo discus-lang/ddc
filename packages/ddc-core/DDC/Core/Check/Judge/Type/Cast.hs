@@ -9,7 +9,8 @@ import qualified Data.Set       as Set
 
 checkCast :: Checker a n
 
--- Weaken an effect, adding in the given terms.
+-- WeakenEffect ---------------------------------------------------------------
+-- Weaken the effect of an expression.
 checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
  = do   let config      = tableConfig  table
         let kenv        = tableKindEnv table
@@ -37,7 +38,13 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
                 t1 effs' clo ctx2
                 
 
--- Weaken a closure, adding in the given terms.
+-- WeakenClosure --------------------------------------------------------------
+-- Weaken the closure of an expression.
+--
+-- DEPRECATED: Closures are being removed in the next version,
+--             so we don't bother doing proper type inference for closure
+--             weakenings.
+--
 checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) mode
  = do   
         -- Check the contained expressions.
@@ -58,7 +65,12 @@ checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) mode
                 t1 effs closs' ctx1
 
 
--- Purify an effect, given a witness that it is pure.
+-- Purify ---------------------------------------------------------------------
+-- Purify the effect of an expression.
+-- 
+-- EXPERIMENTAL: The Tetra language doesn't have purification casts yet,
+--               so proper type inference isn't implemented.
+-- 
 checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -83,7 +95,12 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
                 t1 effs' clo ctx1
 
 
--- Forget a closure, given a witness that it is empty.
+-- Forget ---------------------------------------------------------------------
+-- Forget the closure of an expression.
+--
+-- DEPRECATED: Closures are being removed in the next version,
+--             so we don't bother doing proper type inference for forget casts.
+-- 
 checkCast !table !ctx xx@(XCast a (CastForget w) x1) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -111,20 +128,41 @@ checkCast !table !ctx xx@(XCast a (CastForget w) x1) mode
                 t1 effs clos' ctx1
 
 
+-- Box ------------------------------------------------------------------------
 -- Box a computation,
 -- capturing its effects in a computation type.
-checkCast !table ctx (XCast a CastBox x1) mode
- = do   
+checkCast !table ctx0 xx@(XCast a CastBox x1) mode
+ = case mode of
+    Check tExpected
+     -> do      
+        let config      = tableConfig table
+
+        -- Check the body.
+        (x1', tBody, effs, clos, ctx1)     
+         <- tableCheckExp table table ctx0 x1 Synth
+
+        -- The actual type is (S eff tBody).
+        let tBody'      = applyContext ctx1 tBody
+        let tActual     = tApps (TCon (TyConSpec TcConSusp)) [TSum effs, tBody']
+
+        -- The actual type needs to match the expected type.
+        -- We're treating the S constructor as invariant in both positions,
+        --  so we use 'makeEq' here instead of 'makeSub'
+        let tExpected'  = applyContext ctx1 tExpected
+        ctx2    <- makeEq config a ctx1 tActual tExpected'
+                $  ErrorMismatch a      tActual tExpected' xx
+
+        returnX a (\z -> XCast z CastBox x1')
+                tExpected (Sum.empty kEffect) clos ctx2
+
+    -- Recon and Synth mode.
+    _
+     -> do
         -- Check the body.
         (x1', t1, effs, clos, ctx1) 
-         <- tableCheckExp table table ctx x1 
-         $  case mode of
-                Recon   -> Recon
-                Synth   -> Synth
-                Check _ -> Synth        -- FIXME
+         <- tableCheckExp table table ctx0 x1 mode
 
-        -- The result type is (S effs a),
-        --  where effs is the type of the body.
+        -- The result type is (S effs a).
         let tS  = tApps (TCon (TyConSpec TcConSusp))
                         [TSum effs, t1]
 
@@ -132,6 +170,7 @@ checkCast !table ctx (XCast a CastBox x1) mode
                 tS (Sum.empty kEffect) clos ctx1
 
 
+-- Run ------------------------------------------------------------------------
 -- Run a suspended computation,
 -- releasing its effects into the environment.
 checkCast !table !ctx xx@(XCast a CastRun x1) _
@@ -184,7 +223,7 @@ checkArgM
                 , Set (TaggedClosure n)
                 , Context n)
 
-checkArgM !table !ctx0 !xx !dXX
+checkArgM !table !ctx0 !xx !mode
  = let  config  = tableConfig  table
         tenv    = tableTypeEnv table
         kenv    = tableKindEnv table
@@ -198,7 +237,7 @@ checkArgM !table !ctx0 !xx !dXX
                         , ctx1)
 
         XWitness a w
-         -> do  (w', t)  <- checkWitnessM config kenv tenv ctx0 w
+         -> do  (w', t) <- checkWitnessM config kenv tenv ctx0 w
                 let a'   = AnTEC t (tBot kEffect) (tBot kClosure) a
                 return  ( XWitness a' (reannotate fromAnT w')
                         , Set.empty
@@ -206,7 +245,7 @@ checkArgM !table !ctx0 !xx !dXX
 
         _ -> do
                 (xx', _, _, clos, ctx1) 
-                        <- tableCheckExp table table ctx0 xx dXX
+                        <- tableCheckExp table table ctx0 xx mode
                 return  (xx', clos, ctx1)
                         
 
