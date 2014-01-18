@@ -80,6 +80,7 @@ checkLet !table !ctx xx@(XLet a lts xBody) mode
 
 
 -- others ---------------------------------------
+-- The dispatcher should only call checkLet with a XLet AST node.
 checkLet _ _ _ _
         = error "ddc-core.checkLet: no match"        
 
@@ -186,52 +187,55 @@ checkLetsM !bidir !xx !table !ctx (LRec bxs)
         -- All right hand sides must be syntactic abstractions.
         checkSyntacticLambdas a xx xs
 
-        -- Check the types on all the binders.
-        (bs', ks, _)    <- liftM unzip3                                 -- TODO: use ctx
-                        $  mapM (\b -> checkBindM config kenv ctx UniverseSpec b Recon) bs
-                        
-        -- Check all the binders have data kind.
-        zipWithM_ (\b k
-         -> when (not $ isDataKind k)
-                $ throw $ ErrorLetBindingNotData a xx b k)
-                bs' ks
+        -- Check the type annotations on all the binders.
+        bs' <- forM bs $ \b
+            -> do  
+                -- Check the type on the binder.
+                (b', k, _) <- checkBindM config kenv ctx UniverseSpec b Recon
+
+                -- The type on the binder must have kind Data.
+                when (not $ isDataKind k)
+                 $ throw $ ErrorLetBindingNotData a xx b' k
+                                        
+                return b'
 
         -- All variables are in scope in all right hand sides.
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushTypes bs' ctx'
 
         -- Check the right hand sides.
-        --   The context will not contain any more variable bindings,
-        --   but it may contain more solved existentials.
         (results, ctx2) <- checkRecBinds bidir xx table ctx1 (zip bs xs)
         let (_, xsRight', tsRight, _effssBinds, clossBinds)
                         = unzip5 results
 
         -- Check annots on binders against inferred types of the bindings.
-        zipWithM_ (\b t
-                -> if not $ equivT (typeOfBind b) t
-                        then throw $ ErrorLetMismatch a xx b t
-                        else return ())
-                bs tsRight
+        forM_ (zip bs tsRight) $ \(b, t) 
+         -> when (not $ equivT (typeOfBind b) t)
+                $ throw $ ErrorLetMismatch a xx b t
+
+        -- Reconstructing the types of binders adds missing kind info to
+        -- constructors etc, so update the binders with this new info.
+        let bs'' = zipWith replaceTypeOfBind tsRight bs'
 
         -- Cut closure terms due to locally bound value vars.
         let clos_cut 
-                = Set.fromList
-                $ mapMaybe (cutTaggedClosureXs bs)
-                $ Set.toList 
-                $ Set.unions clossBinds
+                 = Set.fromList
+                 $ mapMaybe (cutTaggedClosureXs bs)
+                 $ Set.toList $ Set.unions clossBinds
 
         -- Pop types of the bindings from the stack.
         let ctx_cut = popToPos pos1 ctx2
 
         return  ( LRec (zip bs' xsRight')
-                , zipWith replaceTypeOfBind tsRight bs'
-                , Sum.empty kEffect
-                , clos_cut
+                , bs''
+                , Sum.empty kEffect, clos_cut
                 , ctx_cut)
 
-checkLetsM _synthOK _xx _config _ctx _lts
-        = error "checkLetsM: case should have been handled in checkExpM"
+-- others ---------------------------------------
+-- The dispatcher should only call checkLet with LLet and LRec AST nodes, 
+-- so we should not see the others here.
+checkLetsM _ _ _ _ _
+        = error "checkLetsM: no match"
 
 
 -------------------------------------------------------------------------------
