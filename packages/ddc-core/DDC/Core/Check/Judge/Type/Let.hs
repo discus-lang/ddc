@@ -181,9 +181,10 @@ checkLetsM !bidir !xx !table !ctx (LRec bxs)
         let a           = annotOfExp xx
 
         -- Named binders cannot be multiply defined.
-        (case duplicates $ filter isBName bs of
-          []    -> return ()
-          b : _ -> throw $ ErrorLetrecRebound a xx b)
+        checkNoDuplicateBindings a xx bs
+
+        -- All right hand sides must be syntactic abstractions.
+        checkSyntacticLambdas a xx xs
 
         -- Check the types on all the binders.
         (bs', ks, _)    <- liftM unzip3                                 -- TODO: use ctx
@@ -194,11 +195,6 @@ checkLetsM !bidir !xx !table !ctx (LRec bxs)
          -> when (not $ isDataKind k)
                 $ throw $ ErrorLetBindingNotData a xx b k)
                 bs' ks
-
-        -- All right hand sides must be syntactic abstractions.
-        forM_ xs $ \x 
-         -> when (not $ (isXLam x || isXLAM x))
-                $ throw $ ErrorLetrecBindingNotLambda a xx x
 
         -- All variables are in scope in all right hand sides.
         let (ctx', pos1) = markContext ctx
@@ -298,6 +294,23 @@ checkModeFromBind bidir b
         = Synth
 
 
+-------------------------------------------------------------------------------
+-- | Check that the given list of binds does not contain duplicates
+--   that would conflict if we added them to the environment
+--   at the same level. If so, then throw and error.
+checkNoDuplicateBindings
+        :: Eq n
+        => a                    -- ^ Annotation for error messages.
+        -> Exp a n              -- ^ Expression for error messages.
+        -> [Bind n]             -- ^ List of bindings to check.
+        -> CheckM a n ()
+
+checkNoDuplicateBindings a xx bs
+ = case duplicates $ filter isBName bs of
+        []    -> return ()
+        b : _ -> throw $ ErrorLetrecRebound a xx b
+
+
 -- | Take elements of a list that have more than once occurrence.
 duplicates :: Eq a => [a] -> [a]
 duplicates []           = []
@@ -305,4 +318,19 @@ duplicates (x : xs)
         | L.elem x xs   = x : duplicates (filter (/= x) xs)
         | otherwise     = duplicates xs
         
+
+-------------------------------------------------------------------------------
+-- | Check that all the bindings in a recursive let are syntactic lambdas.
+--   We don't support value recursion, so can only define recursive functions.
+--   If one of the expression is not a lambda then throw an error.
+checkSyntacticLambdas
+        :: a                    -- ^ Annotation for error messages.
+        -> Exp a n              -- ^ Expression for error message.
+        -> [Exp a n]            -- ^ Expressions to check.
+        -> CheckM a n ()
+
+checkSyntacticLambdas a xx xs
+ = forM_ xs $ \x 
+        -> when (not $ (isXLam x || isXLAM x))
+        $ throw $ ErrorLetrecBindingNotLambda a xx x
 
