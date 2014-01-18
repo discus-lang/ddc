@@ -88,17 +88,17 @@ checkLet _ _ _ _
 -- | Check some let bindings.
 checkLetsM 
         :: (Show n, Pretty n, Ord n)
-        => Bool         -- ^ Allow synthesis when checking the types of bindings.
-        -> Exp a n      -- ^ Enclosing expression, for error messages.
-        -> Table a n    -- ^ Static config.
-        -> Context n    -- ^ Input context.
-        -> Lets a n
+        => Bool                         -- ^ Use bidirectional inference.
+        -> Exp a n                      -- ^ Expression for error messages.
+        -> Table a n                    -- ^ Static configuration.
+        -> Context n                    -- ^ Input context.
+        -> Lets a n                     -- ^ Let-bindings to check.
         -> CheckM a n
-                ( Lets (AnTEC a n) n
-                , [Bind n]
-                , TypeSum n
-                , Set (TaggedClosure n)
-                , Context n)
+                ( Lets (AnTEC a n) n    --   Let-bindings annotated with types.
+                , [Bind n]              --   Binding occs of vars, with types.
+                , TypeSum n             --   Effect of evaluating all the bindings.
+                , Set (TaggedClosure n) --   Closure of all the bindings.
+                , Context n)            --   Output context.
 
 checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
  
@@ -113,8 +113,10 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         (xBind', tBind, effsBind, closBind, ctx1) 
          <- tableCheckExp table table ctx0 xBind Recon
         
-        -- The reconstructed kind of the binding must be Data.
-        (_, kBind', _) <- checkTypeM config kenv ctx1 UniverseSpec tBind Recon
+        -- The kind of the binding must be Data.
+        (_, kBind', _) 
+         <- checkTypeM config kenv ctx1 UniverseSpec tBind Recon
+
         when (not $ isDataKind kBind')
          $ throw $ ErrorLetBindingNotData a xx b kBind'
         
@@ -143,20 +145,21 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         
         -- If the binder has a type annotation then we use that as the expected
         -- type when checking the binding. Any annotation must also have kind
-        -- Data, which we check for here.
+        -- Data, which we verify here.
         let tAnnot      = typeOfBind b
         (modeCheck, ctx1)
          <- if isBot tAnnot
              -- There is no annotation on the binder.
              then return (Synth, ctx0)
              
-             -- We have an annotation on the binder, so check it's kind.
+             -- Check the type annotation on the binder,
+             -- expecting the kind to be Data.
              else do
                 (tAnnot', _kAnnot, ctx1)
                  <- checkTypeM config kenv ctx0 UniverseSpec tAnnot (Check kData)
                 return (Check tAnnot', ctx1)
 
-        -- Check the binding itself.
+        -- Check the expression in the right of the binding.
         (xBind', tBind, effsBind, closBind, ctx2)
          <- tableCheckExp table table ctx1 xBind modeCheck
 
