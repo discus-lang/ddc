@@ -34,21 +34,17 @@ When checking expression.
                     has type: [r : Region].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
        but the body has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
   
-  with: letrec {
-          fac : [r : Region].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
-            = /\(r : Region).
-               \(acc n : Int r).
-              case n of {
-                0  
-                 -> acc;
-                1  
-                 -> acc;
-                _ 
-                 -> fac [r] (mulInt [r] [r] [r] acc n)
-                        (subInt [r] [r] [r] n (1 [r] ()))
-              }
-        } in
-        fac [r1#] (1 [r1#] ()) (5 [r1#] ())
+  with: /\(r : Region).
+         \(acc n : Int r).
+        case n of {
+          0  
+           -> acc;
+          1  
+           -> acc;
+          _ 
+           -> fac [r] (mulInt [r] [r] [r] acc n)
+                  (subInt [r] [r] [r] n (1 [r] ()))
+        }
 
 
 -- Error: inner function is missing an Alloc effect.
@@ -59,21 +55,17 @@ When checking expression.
                     has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r | Use r)> Int r
        but the body has type: [r : Region].Int r -(Pure | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
   
-  with: letrec {
-          fac : [r : Region].Int r -(Pure | Use r)> Int r -(Read r | Use r)> Int r
-            = /\(r : Region).
-               \(acc n : Int r).
-              case n of {
-                0  
-                 -> acc;
-                1  
-                 -> acc;
-                _ 
-                 -> fac [r] (mulInt [r] [r] [r] acc n)
-                        (subInt [r] [r] [r] n (1 [r] ()))
-              }
-        } in
-        fac [r1#] (1 [r1#] ()) (5 [r1#] ())
+  with: /\(r : Region).
+         \(acc n : Int r).
+        case n of {
+          0  
+           -> acc;
+          1  
+           -> acc;
+          _ 
+           -> fac [r] (mulInt [r] [r] [r] acc n)
+                  (subInt [r] [r] [r] n (1 [r] ()))
+        }
 
 
 -- Error: region var on the Int return type should be r1.
@@ -96,21 +88,17 @@ When checking expression.
                     has type: [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
        but the body has type: [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
   
-  with: letrec {
-          enumFromTo : [r1 r2 : Region].Int r1 -(Pure | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-            = /\(r1 r2 : Region).
-               \(m n : Int r1).
-              case eqInt [r1] [r1] [r1] m n of {
-                0  
-                 -> Cons [r2] [Int r1] m
-                        (enumFromTo [r1] [r2]
-                             (addInt [r1] [r1] [r1] m (1 [r1] ())) n);
-                _ 
-                 -> Cons [r2] [Int r1] m
-                        (Nil [r2] [Int r1] ())
-              }
-        } in
-        enumFromTo [r1#] [r2#] (5 [r1#] ()) (9 [r1#] ())
+  with: /\(r1 r2 : Region).
+         \(m n : Int r1).
+        case eqInt [r1] [r1] [r1] m n of {
+          0  
+           -> Cons [r2] [Int r1] m
+                  (enumFromTo [r1] [r2]
+                       (addInt [r1] [r1] [r1] m (1 [r1] ())) n);
+          _ 
+           -> Cons [r2] [Int r1] m
+                  (Nil [r2] [Int r1] ())
+        }
 
 
 -- Should be ok.

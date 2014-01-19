@@ -378,6 +378,18 @@ x
 :!: Pure
 
 
+-- Synthesis works through recursive let-bindings.
+/\(a : Data).
+ \(x : a).
+letrec {
+  f : Unit -> Unit
+    = \(y : Unit). y
+} in
+x
+:*: [a : Data].a -> a
+:!: Pure
+
+
 -- Combo 1.
 /\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
  \(f : ?9 -> ?10).\(x : ?9).

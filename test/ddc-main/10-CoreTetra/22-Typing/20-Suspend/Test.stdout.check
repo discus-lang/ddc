@@ -131,7 +131,7 @@ letrec {
 -- Effectful iteration function.
 module Test with
 letrec {
-  iterateS : [e : Effect].[a : Data].(a -> S e a) -> Nat# -> a -> S e a
+  iterateS : [e : Effect].[a : Data].(a -> S e a) -> Nat# -> a -> S (e) a
     = /\(e : Effect)./\(a : Data).
        \(f : a -> S e a).\(i : Nat#).\(x : a).
       box

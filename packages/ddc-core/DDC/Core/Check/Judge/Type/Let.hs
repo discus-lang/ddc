@@ -175,10 +175,8 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
 
 
 -- letrec ---------------------------------------
-checkLetsM !bidir !xx !table !ctx (LRec bxs)
- = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let (bs, xs)    = unzip bxs
+checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
+ = do   let (bs, xs)    = unzip bxs
         let a           = annotOfExp xx
 
         -- Named binders cannot be multiply defined.
@@ -187,35 +185,18 @@ checkLetsM !bidir !xx !table !ctx (LRec bxs)
         -- All right hand sides must be syntactic abstractions.
         checkSyntacticLambdas a xx xs
 
-        -- Check the type annotations on all the binders.
-        bs' <- forM bs $ \b
-            -> do  
-                -- Check the type on the binder.
-                (b', k, _) <- checkBindM config kenv ctx UniverseSpec b Recon
-
-                -- The type on the binder must have kind Data.
-                when (not $ isDataKind k)
-                 $ throw $ ErrorLetBindingNotData a xx b' k
-                                        
-                return b'
+        -- Check the type annotations on all the binders.       
+        (bs', ctx1)      <- checkRecBinds table bidir a xx ctx0 bs
 
         -- All variables are in scope in all right hand sides.
-        let (ctx', pos1) = markContext ctx
-        let ctx1         = pushTypes bs' ctx'
+        let (ctx2, pos1) =  markContext ctx1
+        let ctx3         =  pushTypes bs' ctx2
 
         -- Check the right hand sides.
-        (results, ctx2) <- checkRecBindExps table bidir xx ctx1 (zip bs' xs)
-        let (_, xsRight', tsRight, _effssBinds, clossBinds)
-                        = unzip5 results
+        (results, ctx4)  <- checkRecBindExps table bidir a ctx3 (zip bs' xs)
 
-        -- Check annots on binders against inferred types of the bindings.
-        forM_ (zip bs tsRight) $ \(b, t) 
-         -> when (not $ equivT (typeOfBind b) t)
-                $ throw $ ErrorLetMismatch a xx b t
-
-        -- Reconstructing the types of binders adds missing kind info to
-        -- constructors etc, so update the binders with this new info.
-        let bs'' = zipWith replaceTypeOfBind tsRight bs'
+        let (bs'', xsRight', clossBinds)
+                = unzip3 results
 
         -- Cut closure terms due to locally bound value vars.
         let clos_cut 
@@ -224,9 +205,9 @@ checkLetsM !bidir !xx !table !ctx (LRec bxs)
                  $ Set.toList $ Set.unions clossBinds
 
         -- Pop types of the bindings from the stack.
-        let ctx_cut = popToPos pos1 ctx2
+        let ctx_cut = popToPos pos1 ctx4
 
-        return  ( LRec (zip bs' xsRight')
+        return  ( LRec (zip bs'' xsRight')
                 , bs''
                 , Sum.empty kEffect, clos_cut
                 , ctx_cut)
@@ -240,6 +221,57 @@ checkLetsM _ _ _ _ _
 
 
 -------------------------------------------------------------------------------
+-- | Check the annotations on a group of recursive binders.
+checkRecBinds
+        :: (Pretty n, Show n, Ord n)
+        => Table a n
+        -> Bool                         -- ^ Use bidirectional checking.
+        -> a                            -- ^ Annotation for error messages.
+        -> Exp a n                      -- ^ Expression for error messages.
+        -> Context n                    -- ^ Original context.                     
+        -> [Bind n]                     -- ^ Input binding group.
+        -> CheckM a n 
+                ( [Bind n]              --   Result binding group.
+                ,  Context n)           --   Output context.
+
+checkRecBinds table bidir a xx ctx0 bs0
+ = go bs0 ctx0
+ where
+        go [] ctx
+         = return ([], ctx)
+
+        go (b : bs) ctx
+         = do   (b', ctx')      <- checkRecBind b ctx
+                (moar, ctx'')   <- go bs ctx'
+                return (b' : moar, ctx'')
+
+        config  = tableConfig  table
+        kenv    = tableKindEnv table
+
+        checkRecBind b ctx
+         = case bidir of
+            False
+             -> do      
+                -- Check the type on the binder.
+                (b', k, ctx') 
+                 <- checkBindM config kenv ctx UniverseSpec b Recon
+
+                -- The type on the binder must have kind Data.
+                when (not $ isDataKind k)
+                 $ throw $ ErrorLetBindingNotData a xx b' k
+
+                return (b', ctx')
+
+            True
+             -> do
+                -- Check the type on the binder, expecting it to have kind Data.
+                (b', _k, ctx') 
+                 <- checkBindM config kenv ctx UniverseSpec b (Check kData)
+
+                return (b', ctx')
+
+
+-------------------------------------------------------------------------------
 -- | Check some recursive bindings.
 --   Doing this won't push any more bindings onto the context,
 --   though it may solve some existentials in it.
@@ -247,42 +279,60 @@ checkRecBindExps
         :: (Pretty n, Show n, Ord n)
         => Table a n
         -> Bool                         -- ^ Use bidirectional checking.
-        -> Exp a n                      -- ^ Expression for error messages.
+        -> a                            -- ^ Annotation for error messages.
         -> Context n                    -- ^ Original context.
         -> [(Bind n, Exp a n)]          -- ^ Bindings and exps for rec bindings.
         -> CheckM a n 
                 ( [ ( Bind n                   -- Result bindiner.
                     , Exp (AnTEC a n) n        -- Result expression.
-                    , Type n                   -- Result type.
-                    , TypeSum n                -- Result effect.
                     , Set (TaggedClosure n))]  -- Result closure.
                 , Context n)
 
-checkRecBindExps table bidir _xx ctx0 bxs0
+checkRecBindExps table bidir a ctx0 bxs0
  = go bxs0 ctx0
  where  
-        go [] ctx       = return ([], ctx)
+        go [] ctx       
+         = return ([], ctx)
         
         go ((b, x) : bxs) ctx
-         = do   (result, ctx')  <- checkRecBind b x ctx
+         = do   (result, ctx')  <- checkRecBindExp b x ctx
                 (moar,   ctx'') <- go bxs ctx'
                 return (result : moar, ctx'')
 
-        checkRecBind b x ctx
+        checkRecBindExp b x ctx
          = case bidir of
             False 
              -> do
-                (x', t, effs, clos, ctx')
+                -- Check the right of the binding.
+                --  We checked that the expression is a syntactic lambda
+                --  abstraction in checkLetsM, so we know the effect is pure.
+                (x', t, _effs, clos, ctx')
                  <- tableCheckExp table table ctx x Recon
 
-                return ( (b, x', t, effs, clos), ctx')
+                -- Check the annotation on the binder matches the reconstructed
+                -- type of the binding.
+                when (not $ equivT (typeOfBind b) t)
+                 $ throw $ ErrorLetMismatch a x b t
+
+                -- Reconstructing the types of binders adds missing kind info to
+                -- constructors etc, so update the binders with this new info.
+                let b'  = replaceTypeOfBind t b
+
+                return ( (b', x', clos), ctx')
 
             True
              -> do
-                (x', t, effs, clos, ctx')
+                -- Check the right of the binding.
+                --  We checked that the expression is a syntactic lambda
+                --  abstraction in checkLetsM, so we know the effect is pure.
+                (x', t, _effs, clos, ctx')
                  <- tableCheckExp table table ctx x (Check (typeOfBind b))
 
-                return ((b, x', t, effs, clos), ctx')
+                -- Reconstructing the types of binders adds missing kind info to
+                -- constructors etc, so update the binders with this new info.
+                let b'  = replaceTypeOfBind t b
+
+                return ((b', x', clos), ctx')
 
 
 -------------------------------------------------------------------------------

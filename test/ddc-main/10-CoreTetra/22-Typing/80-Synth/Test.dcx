@@ -267,6 +267,12 @@ case T2# 2# 3# of
 ;;
 
 
+-- Synthesis works through recursive let-bindings.
+:synth..
+/\a. \(x : a). letrec f : Unit -> Unit = \y. y in x
+;;
+
+
 -- Combo 1.
 :synth..
 /\r. /\e. /\g. \f. \x. box weakeff [e + Read r + g r] in f x
