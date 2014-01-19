@@ -208,6 +208,12 @@ data Error a n
         , errorChecking         :: Exp a n 
         , errorExp              :: Exp a n }
 
+        -- | A recursive let-binding with a missing type annotation.
+        | ErrorLetrecMissingAnnot
+        { errorAnnot            :: a
+        , errorBind             :: Bind n
+        , errorExp              :: Exp a n }
+
         -- | A recursive let-expression that has more than one binding
         --   with the same name.
         | ErrorLetrecRebound

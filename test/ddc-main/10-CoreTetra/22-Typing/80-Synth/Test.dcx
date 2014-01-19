@@ -273,6 +273,12 @@ case T2# 2# 3# of
 ;;
 
 
+-- Mutually recursive bindings with no type annotations.
+:synth..
+/\a. \(x : a). letrec {f = \y. g y; g = \z. f z} in f x
+;;
+
+
 -- Combo 1.
 :synth..
 /\r. /\e. /\g. \f. \x. box weakeff [e + Read r + g r] in f x

@@ -115,6 +115,8 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         -- Reconstruct the type of the binding.
         (xBind', tBind, effsBind, closBind, ctx1) 
          <- tableCheckExp table table ctx0 xBind Recon
+
+        -- TODO: check for missing annotation on binder.
         
         -- The kind of the binding must be Data.
         (_, kBind', _) 
@@ -259,6 +261,8 @@ checkRecBinds table bidir a xx ctx0 bs0
          = case bidir of
             False
              -> do      
+                -- TODO: Check for missing annotation on binder.
+
                 -- Check the type on the binder.
                 (b', k, ctx') 
                  <- checkBindM config kenv ctx UniverseSpec b Recon
@@ -270,8 +274,19 @@ checkRecBinds table bidir a xx ctx0 bs0
                 return (b', ctx')
 
             True
+             -- Recursive let-binding is missing a type annotation,
+             -- so make a new existential.
+             | isBot (typeOfBind b)
+             -> do i        <- newExists kData
+                   let t    = typeOfExists i
+                   let ctx' = pushExists i ctx
+                   let b'   = replaceTypeOfBind t b
+                   return (b', ctx')
+
+             -- Recursive let-binding has a type annotation, 
+             -- so check it, expecting it to have kind Data.
+             | otherwise
              -> do
-                -- Check the type on the binder, expecting it to have kind Data.
                 (b', _k, ctx') 
                  <- checkBindM config kenv ctx UniverseSpec b (Check kData)
 

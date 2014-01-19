@@ -390,6 +390,21 @@ x
 :!: Pure
 
 
+-- Mutually recursive bindings with no type annotations.
+/\(a : Data).
+ \(x : a).
+letrec {
+  f : a -> ?1
+    = \(y : a). g y;
+  
+  g : a -> ?1
+    = \(z : a). f z
+} in
+f x
+:*: [a : Data].a -> ?1
+:!: Pure
+
+
 -- Combo 1.
 /\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
  \(f : ?9 -> ?10).\(x : ?9).

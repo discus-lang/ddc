@@ -319,12 +319,12 @@ pLetsSP c
          P.choice
           -- Multiple bindings in braces
           [ do   pTok KBraceBra
-                 lets    <- P.sepEndBy1 (pLetRecBinding c) (pTok KSemiColon)
+                 lets    <- P.sepEndBy1 (pLetBinding c) (pTok KSemiColon)
                  pTok KBraceKet
                  return (LRec lets, sp)
 
           -- A single binding without braces.
-          , do   ll      <- pLetRecBinding c
+          , do   ll      <- pLetBinding c
                  return (LRec [ll], sp)
           ]      
 
@@ -449,43 +449,6 @@ pLetBinding c
                         let t   = T.tBot T.kData
                         return  (T.makeBindFromBinder b t, x) ]
          ]
-
--- | Letrec bindings must have a full type signature, 
---   or use function syntax with a return type so that we can make one.
-pLetRecBinding 
-        :: Ord n 
-        => Context
-        -> Parser n (Bind n, Exp SourcePos n)
-
-pLetRecBinding  c
- = do   b       <- pBinder
-
-        P.choice
-         [ do   -- Binding with full type signature.
-                --  BINDER : TYPE = EXP
-                pTok (KOp ":")
-                t       <- pType c
-                pTok (KOp "=")
-                xBody   <- pExp c
-
-                return  $ (T.makeBindFromBinder b t, xBody) 
-
-
-         , do   -- Binding using function syntax.
-                --  BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
-                -- We require type annotations on function parameters in letrec.
-                ps      <- liftM concat 
-                        $  P.many (pBindParamSpecAnnot c)
-        
-                pTok (KOp ":")
-                tBody   <- pType c
-                let t   = funTypeOfParams c ps tBody
-
-                sp      <- pTokSP (KOp "=")
-                xBody   <- pExp c
-                let x   = expOfParams sp ps xBody
-
-                return  (T.makeBindFromBinder b t, x) ]
 
 
 -- Statements -----------------------------------------------------------------

@@ -229,16 +229,23 @@ instance (Pretty a, Show n, Eq n, Pretty n)
 
 
         -- Letrec -----------------------------------------
+        ErrorLetrecRebound a xx b
+         -> vcat [ ppr a
+                 , text "Redefined binder '" <> ppr b <> text "' in letrec."
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
+        ErrorLetrecMissingAnnot a xx b
+         -> vcat [ ppr a
+                 , text "Missing type annotation on recursive let-binding '" 
+                        <> ppr b <> text "'"
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+
         ErrorLetrecBindingNotLambda a xx x
          -> vcat [ ppr a
                  , text "Letrec can only bind lambda abstractions."
                  , text "      This is not one: "       <> ppr x
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorLetrecRebound a xx b
-         -> vcat [ ppr a
-                 , text "Redefined binder '" <> ppr b <> text "' in letrec."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
