@@ -115,8 +115,6 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         -- Reconstruct the type of the binding.
         (xBind', tBind, effsBind, closBind, ctx1) 
          <- tableCheckExp table table ctx0 xBind Recon
-
-        -- TODO: check for missing annotation on binder.
         
         -- The kind of the binding must be Data.
         (_, kBind', _) 
@@ -261,7 +259,10 @@ checkRecBinds table bidir a xx ctx0 bs0
          = case bidir of
             False
              -> do      
-                -- TODO: Check for missing annotation on binder.
+                -- In Recon mode, all recursive let-bindings must have full
+                -- type annotations.
+                when (isBot $ typeOfBind b)
+                 $ throw $ ErrorLetrecMissingAnnot a b xx
 
                 -- Check the type on the binder.
                 (b', k, ctx') 
