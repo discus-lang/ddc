@@ -11,7 +11,7 @@ import Data.List                as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !ctx xx@(XLet a lts xBody) mode
+checkLet !table !ctx0 xx@(XLet a lts xBody) mode
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -29,27 +29,27 @@ checkLet !table !ctx xx@(XLet a lts xBody) mode
                         Check{} -> True
                         Synth   -> True
         
-        (lts', bs', effsBinds, closBinds, ctx1)
-         <- checkLetsM useBidirChecking xx table ctx lts 
+        (lts', bs', effsBinds, closBinds, pos1, ctx1)
+         <- checkLetsM useBidirChecking xx table ctx0 lts 
 
         
         -- Check the body -----------------------
-        -- Check the body expression in a context
-        -- extended with the types of the bindings.
-        let (ctx1', pos1) = markContext ctx1
-        let ctx2          = pushTypes bs' ctx1'
+        -- -- Check the body expression in a context
+        -- -- extended with the types of the bindings.
+        -- let (ctx1', pos1) = markContext ctx1
+        -- let ctx2          = pushTypes bs' ctx1'
 
-        (xBody', tBody, effsBody, closBody, ctx3)
-         <- tableCheckExp table table ctx2 xBody mode
+        (xBody', tBody, effsBody, closBody, ctx2)
+         <- tableCheckExp table table ctx1 xBody mode
 
         -- The body must have data kind.
-        (tBody', kBody, ctx4)      
-         <- checkTypeM config kenv ctx3 UniverseSpec tBody
+        (tBody', kBody, ctx3)      
+         <- checkTypeM config kenv ctx2 UniverseSpec tBody
          $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
         
-        let kBody' = applyContext ctx4 kBody
+        let kBody' = applyContext ctx3 kBody
         when (not $ isDataKind kBody')
          $ throw $ ErrorLetBodyNotData a xx tBody kBody'
 
@@ -61,12 +61,12 @@ checkLet !table !ctx xx@(XLet a lts xBody) mode
                         $ Set.toList closBody
 
         -- The new effect and closure.
-        let tResult     = applyContext ctx4 tBody'
+        let tResult     = applyContext ctx3 tBody'
         let effs'       = effsBinds `Sum.union` effsBody
         let clos'       = closBinds `Set.union` clos_cut
 
         -- Pop the elements due to the let-bindings from the context.
-        let ctx_cut     = popToPos pos1 ctx4
+        let ctx_cut     = popToPos pos1 ctx3
 
         ctrace  $ vcat
                 [ text "* Let"
@@ -86,7 +86,8 @@ checkLet _ _ _ _
 
 
 -------------------------------------------------------------------------------
--- | Check some let bindings.
+-- | Check some let bindings,
+--   and push their binders onto the context.
 checkLetsM 
         :: (Show n, Pretty n, Ord n)
         => Bool                         -- ^ Use bidirectional inference.
@@ -99,6 +100,7 @@ checkLetsM
                 , [Bind n]              --   Binding occs of vars, with types.
                 , TypeSum n             --   Effect of evaluating all the bindings.
                 , Set (TaggedClosure n) --   Closure of all the bindings.
+                , Pos                   --   Context position with bindings pushed.
                 , Context n)            --   Output context.
 
 checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
@@ -132,10 +134,14 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         -- the binding.
         let b'  = replaceTypeOfBind tBind b
 
+        -- Push the binder on the context.
+        let (ctx2, pos1) =  markContext ctx1
+        let ctx3         =  pushType b' ctx2
+
         return  ( LLet b' xBind'
                 , [b']
                 , effsBind, closBind
-                , ctx1)
+                , pos1, ctx3)
 
  -- Synthesise the type of a non-recursive let-binding,
  -- using any annotation on the binder as the expected type.
@@ -168,10 +174,14 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         -- the binding.
         let b'  = replaceTypeOfBind tBind b
 
+        -- Push the binder on the context.
+        let (ctx3, pos1) =  markContext ctx2
+        let ctx4         =  pushType b' ctx3
+
         return  ( LLet b' xBind'
                 , [b']
                 , effsBind, closBind
-                , ctx2)
+                , pos1, ctx4)
 
 
 -- letrec ---------------------------------------
@@ -204,13 +214,10 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
                  $ mapMaybe (cutTaggedClosureXs bs)
                  $ Set.toList $ Set.unions clossBinds
 
-        -- Pop types of the bindings from the stack.
-        let ctx_cut = popToPos pos1 ctx4
-
         return  ( LRec (zip bs'' xsRight')
                 , bs''
                 , Sum.empty kEffect, clos_cut
-                , ctx_cut)
+                , pos1, ctx4)
 
 
 -- others ---------------------------------------
