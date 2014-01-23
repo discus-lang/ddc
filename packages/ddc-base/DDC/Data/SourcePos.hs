@@ -1,4 +1,4 @@
-
+{-# LANGUAGE TypeFamilies #-}
 module DDC.Data.SourcePos
         (SourcePos (..))
 where

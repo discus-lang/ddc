@@ -1,6 +1,6 @@
 
 module DDC.Type.Check.Base
-        ( CheckM (..)
+        ( CheckM
         , newExists
         , newPos
 

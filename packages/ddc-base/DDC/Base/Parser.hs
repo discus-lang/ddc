@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Parser utilities.
 module DDC.Base.Parser
@@ -107,12 +108,16 @@ pTokMaybeSP f
 
 -------------------------------------------------------------------------------
 instance Pretty P.ParseError where
+ data PrettyMode P.ParseError   = PrettyParseError
+ pprDefaultMode                 = PrettyParseError
  ppr err
   = vcat $  [  text "Parse error in" <+> text (show (P.errorPos err)) ]
          ++ (map ppr $ packMessages $ P.errorMessages err)
          
          
 instance Pretty P.Message where
+ data PrettyMode P.Message      = PrettyMessage
+ pprDefaultMode                 = PrettyMessage
  ppr msg
   = case msg of
         SysUnExpect str -> text "Unexpected" <+> text str <> text "."

@@ -38,6 +38,8 @@ Library
   GHC-options:
         -Wall
         -fno-warn-orphans
+        -fno-warn-type-defaults
+        -fno-warn-missing-methods
 
   Extensions:
         ParallelListComp

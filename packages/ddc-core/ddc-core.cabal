@@ -35,24 +35,14 @@ Library
         DDC.Core.Annot.AnT
         DDC.Core.Annot.AnTEC
 
-        DDC.Core.Check
-        DDC.Core.Collect
-
         DDC.Core.Compounds.Annot
         DDC.Core.Compounds.Simple
-        DDC.Core.Compounds
 
-        DDC.Core.Exp.Simple
         DDC.Core.Exp.Annot
-        DDC.Core.Exp
-
-        DDC.Core.Fragment
+        DDC.Core.Exp.Simple
 
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Tokens
-        DDC.Core.Lexer
-
-        DDC.Core.Parser
         DDC.Core.Parser.Base
         DDC.Core.Parser.Context
         DDC.Core.Parser.Exp
@@ -72,11 +62,17 @@ Library
         DDC.Core.Transform.SubstituteTX
         DDC.Core.Transform.SubstituteWX
         DDC.Core.Transform.SubstituteXX
-        DDC.Core.Transform.Suppress
         DDC.Core.Transform.Trim
 
+        DDC.Core.Check
+        DDC.Core.Collect
+        DDC.Core.Compounds
+        DDC.Core.Exp
+        DDC.Core.Fragment
+        DDC.Core.Lexer
         DDC.Core.Load
         DDC.Core.Module
+        DDC.Core.Parser
         DDC.Core.Predicates
         DDC.Core.Pretty
 
@@ -87,6 +83,7 @@ Library
         DDC.Type.Transform.SpreadT
         DDC.Type.Transform.SubstituteT
         DDC.Type.Transform.Trim
+        
         DDC.Type.Bind
         DDC.Type.Check
         DDC.Type.Collect
@@ -102,31 +99,38 @@ Library
         DDC.Type.Universe
 
   Other-modules:
-        DDC.Core.Check.DaCon
-        DDC.Core.Check.Exp
-        DDC.Core.Check.Exp.Abs
-        DDC.Core.Check.Exp.App
-        DDC.Core.Check.Exp.Base
-        DDC.Core.Check.Exp.Case
-        DDC.Core.Check.Exp.Cast
-        DDC.Core.Check.Exp.Inst
-        DDC.Core.Check.Exp.Let
-        DDC.Core.Check.Exp.VarCon
-        DDC.Core.Check.Exp.Witness
-        DDC.Core.Check.Module
-        DDC.Core.Check.Witness
-        DDC.Core.Check.ErrorMessage
+        DDC.Core.Check.Judge.Type.AppT
+        DDC.Core.Check.Judge.Type.AppX
+        DDC.Core.Check.Judge.Type.Base
+        DDC.Core.Check.Judge.Type.Case
+        DDC.Core.Check.Judge.Type.Cast
+        DDC.Core.Check.Judge.Type.DaCon
+        DDC.Core.Check.Judge.Type.LamT
+        DDC.Core.Check.Judge.Type.LamX
+        DDC.Core.Check.Judge.Type.Let
+        DDC.Core.Check.Judge.Type.LetPrivate
+        DDC.Core.Check.Judge.Type.Sub
+        DDC.Core.Check.Judge.Type.VarCon
+        DDC.Core.Check.Judge.Type.Witness
+        DDC.Core.Check.Judge.Eq
+        DDC.Core.Check.Judge.Inst
+        DDC.Core.Check.Judge.Sub
+        DDC.Core.Check.Base
         DDC.Core.Check.Error
+        DDC.Core.Check.ErrorMessage
+        DDC.Core.Check.Exp
+        DDC.Core.Check.Module
         DDC.Core.Check.TaggedClosure
+        DDC.Core.Check.Witness
 
-        DDC.Core.Collect.Support
         DDC.Core.Collect.Free
         DDC.Core.Collect.Free.Simple
-
-        DDC.Core.Exp.WiCon
+        DDC.Core.Collect.Support
+        
         DDC.Core.Exp.DaCon
         DDC.Core.Exp.Pat
-
+        DDC.Core.Exp.WiCon
+        
         DDC.Core.Fragment.Compliance
         DDC.Core.Fragment.Error
         DDC.Core.Fragment.Feature
@@ -135,12 +139,15 @@ Library
         DDC.Core.Lexer.Comments
         DDC.Core.Lexer.Offside
 
-        DDC.Type.Check.Context
+        DDC.Type.Check.Judge.Eq
+        DDC.Type.Check.Judge.Kind
+        DDC.Type.Check.Base
         DDC.Type.Check.CheckCon
+        DDC.Type.Check.Config
+        DDC.Type.Check.Context
         DDC.Type.Check.Error
         DDC.Type.Check.ErrorMessage
-        DDC.Type.Check.Config
-
+        
         DDC.Type.Collect.FreeT
 
         DDC.Type.Exp.Base
@@ -152,6 +159,7 @@ Library
         -fno-warn-orphans
         -fno-warn-missing-signatures
         -fno-warn-unused-do-bind
+        -fno-warn-missing-methods
 
   Extensions:
         BangPatterns

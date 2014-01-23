@@ -4,7 +4,7 @@ module DDC.Core.Check.Base
           Config (..)
         , configOfProfile
 
-        , CheckM (..)
+        , CheckM
         , newExists
         , newPos
 
