@@ -1,2 +1,0 @@
--- Before this bug was fixed, this would segfault.
-main () = Ref 0 #= 1 

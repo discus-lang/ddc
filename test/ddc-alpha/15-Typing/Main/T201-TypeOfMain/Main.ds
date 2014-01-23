@@ -1,5 +1,0 @@
--- The 'main' function should have a type of:
---
---     main :: () -> ()
-
-main () = [ 1, 2, 3 ]

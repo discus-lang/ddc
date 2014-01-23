@@ -1,6 +1,0 @@
-
--- no constraint is placed on the return type of main
-main _
- = do	putStr "dude"
- 	putStr
-	

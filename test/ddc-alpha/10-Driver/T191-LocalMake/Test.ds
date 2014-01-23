@@ -1,2 +1,0 @@
-identInt :: Int -> Int
-identInt a = a

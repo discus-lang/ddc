@@ -1,5 +1,0 @@
-{-# OPTIONS -no-implicit-prelude #-}
-
-import B
-
-data A = A1 | A2

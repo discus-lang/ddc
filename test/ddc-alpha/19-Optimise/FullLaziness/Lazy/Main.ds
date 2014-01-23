@@ -1,9 +1,0 @@
-
-main ()
- = do {	x	= 1 + 2 * 3;
- 	
-	y	= x + 5;
-	
-	print	$ show y % "\n";
- };
- 	

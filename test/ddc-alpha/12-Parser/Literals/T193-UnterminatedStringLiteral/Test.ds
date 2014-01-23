@@ -1,2 +1,0 @@
-
-main () = println $ "two => % show 2

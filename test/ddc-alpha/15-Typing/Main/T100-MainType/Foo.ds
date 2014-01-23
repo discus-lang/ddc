@@ -1,4 +1,0 @@
-
-
-main = println $ show [ 1 .. 6 ]
-

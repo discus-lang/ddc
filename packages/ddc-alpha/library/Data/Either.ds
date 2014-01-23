@@ -1,7 +1,0 @@
-{-# OPTIONS -no-implicit-prelude #-}
-
-module	Data.Either
-
-data Either a b
-	= Left a
-	| Right b

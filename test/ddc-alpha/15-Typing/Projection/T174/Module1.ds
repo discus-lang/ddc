@@ -1,8 +1,0 @@
-
-data Thing
-
-z	= 5
-
-project Thing where
-	fun1 :: Int -> Int
-	fun1 x = x + z

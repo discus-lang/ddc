@@ -1,8 +1,0 @@
-
-
-data Foo
-
-project Foo where
-  f True  = 4
-  f False = 5
-

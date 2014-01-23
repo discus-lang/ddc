@@ -57,10 +57,9 @@ include make/build.mk
 # now that we have the configuration included above.
 .PHONY	: allWithConfig
 allWithConfig :
-	@$(MAKE) packages/ddc-alpha/src/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
-		 runtime external libs bin/war -j $(THREADS)
+	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
+		 runtime bin/war -j $(THREADS)
 
 
 # Build everything related to the new compiler, 
@@ -69,7 +68,7 @@ allWithConfig :
 newWithConfig :
 	@$(MAKE) deps-new
 	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
-		 runtime-new bin/war -j $(THREADS)
+		 runtime bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -89,8 +88,7 @@ cleantotal :
 
 # -- Build all dependencies
 .PHONY	: deps
-deps	: make/deps/Makefile-ddc-alpha.deps \
-          make/deps/Makefile-ddc-check.deps \
+deps	: make/deps/Makefile-ddc-check.deps \
           make/deps/Makefile-ddc-main.deps \
           make/deps/Makefile-ddci-core.deps \
           make/deps/Makefile-ddci-tetra.deps \
@@ -134,13 +132,11 @@ nightly :
 include make/targets/plate.mk
 include make/targets/external.mk
 include make/targets/runtime.mk
-include make/targets/libs.mk
 include make/targets/docs.mk
 include make/targets/war.mk
 include make/targets/lint.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
-include make/targets/ddc-alpha.mk
 include make/targets/ddc-check.mk
 include make/targets/ddc-main.mk
 include make/targets/ddci-core.mk
@@ -161,7 +157,6 @@ include make/rules.mk
 #   This behavior is different to the documentation which says
 #   that missing -included files should be ignored.
 #
--include make/deps/Makefile-ddc-alpha.deps.inc
 -include make/deps/Makefile-ddc-check.deps.inc
 -include make/deps/Makefile-ddc-main.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc

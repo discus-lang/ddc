@@ -1,9 +1,0 @@
-
-module Graphics
-import	Graphics.Frame
-import	Graphics.Primitive
-import	Graphics.Render
-import	Graphics.Raster.Bresenham
-import	Graphics.Shape
-import	Graphics.TinyPTC
-import	Graphics.Window

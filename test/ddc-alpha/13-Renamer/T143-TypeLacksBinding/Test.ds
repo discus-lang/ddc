@@ -1,3 +1,0 @@
-whatever :: Int -> Float
-
-main = println "Hello"

@@ -1,9 +1,0 @@
-Some appended string.
-length = 22
-Some merged string.
-strMerged isFlat  = True
-True
-wibble wobble wabble
-ab
-True
-copy = wibble wobble wabble

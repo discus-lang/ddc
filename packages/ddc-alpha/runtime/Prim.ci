@@ -1,9 +1,0 @@
-
-#ifndef _DDC_Prim_ci
-#define _DDC_Prim_ci
-
-#include "Prim/ArrayU.ci"
-#include "Prim/Boxing.ci"
-#include "Prim/Store.ci"
-
-#endif

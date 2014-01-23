@@ -1,7 +1,0 @@
-
-
--- Check that we can generate proper type error messages when 
---	there are multiple conflict sources in the type graph.
-
-hero xx
- =  5 + "erk" + True

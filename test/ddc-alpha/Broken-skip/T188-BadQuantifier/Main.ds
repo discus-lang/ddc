@@ -1,4 +1,0 @@
-
-import Thing
-
-main () = putStrLn "foo"

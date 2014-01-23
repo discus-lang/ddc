@@ -1,4 +1,0 @@
-
--- type inferencer should complain if main does not have type () -> ()
-
-main = "fool"
