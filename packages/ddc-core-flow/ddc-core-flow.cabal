@@ -44,16 +44,17 @@ Library
   Exposed-modules:
 
         DDC.Core.Flow.Process.Operator
-        DDC.Core.Flow.Process.Process
         DDC.Core.Flow.Process.Pretty
+        DDC.Core.Flow.Process.Process
 
-        DDC.Core.Flow.Transform.Concretize
-        DDC.Core.Flow.Transform.Extract
-        DDC.Core.Flow.Transform.Melt
         DDC.Core.Flow.Transform.Rates.Constraints
         DDC.Core.Flow.Transform.Rates.Fail
         DDC.Core.Flow.Transform.Rates.Graph
         DDC.Core.Flow.Transform.Rates.SeriesOfVector
+
+        DDC.Core.Flow.Transform.Concretize
+        DDC.Core.Flow.Transform.Extract
+        DDC.Core.Flow.Transform.Melt
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Thread
@@ -85,13 +86,13 @@ Library
         DDC.Core.Flow.Prim.TyConPrim
 
         DDC.Core.Flow.Transform.Schedule.Base
-        DDC.Core.Flow.Transform.Schedule.Fail
+        DDC.Core.Flow.Transform.Schedule.Error
         DDC.Core.Flow.Transform.Schedule.Kernel
         DDC.Core.Flow.Transform.Schedule.Lifting
         DDC.Core.Flow.Transform.Schedule.Nest
         DDC.Core.Flow.Transform.Schedule.Scalar
 
-        DDC.Core.Flow.Transform.Slurp.Alloc
+        DDC.Core.Flow.Transform.Slurp.Error
         DDC.Core.Flow.Transform.Slurp.Operator
 
 
@@ -99,6 +100,7 @@ Library
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
   Extensions:

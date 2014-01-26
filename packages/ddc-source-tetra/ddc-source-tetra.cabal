@@ -29,17 +29,23 @@ Library
         DDC.Source.Tetra.Desugar.Defix.Error
         DDC.Source.Tetra.Desugar.Defix.FixTable
         DDC.Source.Tetra.Desugar.Defix
+        
         DDC.Source.Tetra.Exp.Base
+        
         DDC.Source.Tetra.Infer.Expand
+        
         DDC.Source.Tetra.Lexer.Lit
-        DDC.Source.Tetra.Prim.Base
-        DDC.Source.Tetra.Prim.OpArith
-        DDC.Source.Tetra.Prim.OpStore
-        DDC.Source.Tetra.Prim.TyConData
-        DDC.Source.Tetra.Prim.TyConPrim
+        
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module
         DDC.Source.Tetra.Parser.Param
+        
+        DDC.Source.Tetra.Prim.Base
+        DDC.Source.Tetra.Prim.OpArith
+        DDC.Source.Tetra.Prim.OpStore
+        DDC.Source.Tetra.Prim.TyConPrim
+        DDC.Source.Tetra.Prim.TyConTetra
+        
         DDC.Source.Tetra.Compounds
         DDC.Source.Tetra.DataDef
         DDC.Source.Tetra.Env
@@ -56,6 +62,7 @@ Library
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
   Extensions:

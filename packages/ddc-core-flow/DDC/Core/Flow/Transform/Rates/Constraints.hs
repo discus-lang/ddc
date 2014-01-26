@@ -230,8 +230,9 @@ getNames vs
 
 
 -- | Check for ill-formed constraints:
---      Filter "a <= a" is bad, as restricts to a=a
---      Filter "a <= b" and "a <= c" is bad because 'a' mentioned twice in lhs
+---
+--      Filter 'a <= a' is bad, as restricts to 'a=a'
+--      Filter 'a <= b' and 'a <= c' is bad because a mentioned twice in lhs
 -- For some filter
 -- > bs = filter p as
 -- the arguments are

@@ -65,4 +65,5 @@ Executable ddc-war
   ghc-options:
         -Wall -O2
         -fno-warn-unused-do-bind
+        -fno-warn-missing-methods
         -threaded

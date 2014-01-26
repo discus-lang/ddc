@@ -28,28 +28,29 @@ Library
         ddc-core-salt   == 0.3.3.*,
         ddc-core-llvm   == 0.3.3.*,
         ddc-core-flow   == 0.3.3.*,
-        ddc-core-tetra  == 0.3.3.*
+        ddc-core-tetra  == 0.3.3.*,
+        ddc-source-tetra == 0.3.3.*
   
   Exposed-modules:
-        DDC.Build.Language.Tetra
         DDC.Build.Language.Eval
+        DDC.Build.Language.Flow
         DDC.Build.Language.Lite
         DDC.Build.Language.Salt
-        DDC.Build.Language.Flow
+        DDC.Build.Language.Tetra
         DDC.Build.Language.Zero
-        DDC.Build.Language
-
+        
         DDC.Build.Pipeline.Core
         DDC.Build.Pipeline.Error
         DDC.Build.Pipeline.Llvm
         DDC.Build.Pipeline.Salt
         DDC.Build.Pipeline.Sink
         DDC.Build.Pipeline.Text
-        DDC.Build.Pipeline
-
+        
         DDC.Build.Builder
+        DDC.Build.Language
+        DDC.Build.Pipeline
         DDC.Build.Platform
-
+        
   Other-modules:
         DDC.Build.Language.Base
 
@@ -68,4 +69,5 @@ Library
   ghc-options:
         -Wall
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind

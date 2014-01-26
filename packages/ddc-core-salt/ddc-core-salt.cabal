@@ -24,11 +24,10 @@ Library
         ddc-core        == 0.3.3.*
 
   Exposed-modules:
-        DDC.Core.Salt.Transfer
-        DDC.Core.Salt.Platform
-        DDC.Core.Salt.Compounds
-        DDC.Core.Salt.Runtime
-        DDC.Core.Salt.Name
+        DDC.Core.Salt.Convert.Type
+        DDC.Core.Salt.Convert.Init
+        DDC.Core.Salt.Convert.Prim
+
         DDC.Core.Salt.Name.Lit
         DDC.Core.Salt.Name.PrimArith
         DDC.Core.Salt.Name.PrimCall
@@ -37,12 +36,20 @@ Library
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Name.PrimVec
+        DDC.Core.Salt.Compounds
+        DDC.Core.Salt.Convert
         DDC.Core.Salt.Env
+        DDC.Core.Salt.Name
+        DDC.Core.Salt.Platform
+        DDC.Core.Salt.Profile
+        DDC.Core.Salt.Runtime
+        DDC.Core.Salt.Transfer
         DDC.Core.Salt
 
         DDC.Core.Lite.Compounds
         DDC.Core.Lite.Layout
         DDC.Core.Lite.Env
+
         DDC.Core.Lite
 
   Other-modules:
@@ -54,18 +61,15 @@ Library
         DDC.Core.Lite.Profile
 
         DDC.Core.Salt.Convert.Base
-        DDC.Core.Salt.Convert.Type
-        DDC.Core.Salt.Convert.Init
-        DDC.Core.Salt.Convert.Prim
         DDC.Core.Salt.Name.Sanitize
-        DDC.Core.Salt.Convert
-        DDC.Core.Salt.Profile
+        
 
                   
   GHC-options:
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
   Extensions:

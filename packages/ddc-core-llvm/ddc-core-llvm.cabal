@@ -68,6 +68,7 @@ Library
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
   Extensions:

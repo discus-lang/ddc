@@ -27,24 +27,36 @@ Library
         ddc-core-simpl  == 0.3.3.*
 
   Exposed-modules:
+        DDC.Core.Tetra.Transform.Boxing
         DDC.Core.Tetra.Compounds
+        DDC.Core.Tetra.Convert
         DDC.Core.Tetra.Env
         DDC.Core.Tetra.Prim
         DDC.Core.Tetra.Profile
         DDC.Core.Tetra
 
   Other-modules:
+        DDC.Core.Tetra.Convert.Base
+        DDC.Core.Tetra.Convert.Boxing
+        DDC.Core.Tetra.Convert.Data
+        DDC.Core.Tetra.Convert.Layout
+        DDC.Core.Tetra.Convert.Type
+
         DDC.Core.Tetra.Prim.Base
+        DDC.Core.Tetra.Prim.DaConTetra
         DDC.Core.Tetra.Prim.OpArith
+        DDC.Core.Tetra.Prim.OpCast
         DDC.Core.Tetra.Prim.OpStore
-        DDC.Core.Tetra.Prim.TyConData
         DDC.Core.Tetra.Prim.TyConPrim
+        DDC.Core.Tetra.Prim.TyConTetra
+
 
 
   GHC-options:
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
   Extensions:

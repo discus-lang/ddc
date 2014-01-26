@@ -33,6 +33,7 @@ Library
         ddc-core-salt   == 0.3.3.*,
         ddc-core-llvm   == 0.3.3.*,
         ddc-core-flow   == 0.3.3.*,
+        ddc-core-tetra  == 0.3.3.*,
         ddc-build       == 0.3.3.*,
         ddc-interface   == 0.3.3.*
   
@@ -45,6 +46,8 @@ Library
         DDC.Driver.Command.Flow.Thread
         DDC.Driver.Command.Flow.Wind
 
+        DDC.Driver.Command.Tetra.Boxing
+
         DDC.Driver.Command.Ast
         DDC.Driver.Command.BaseBuild
         DDC.Driver.Command.Check
@@ -52,21 +55,30 @@ Library
         DDC.Driver.Command.Load
         DDC.Driver.Command.Make
         DDC.Driver.Command.Parse
+        DDC.Driver.Command.Read
         DDC.Driver.Command.RewriteRules
         DDC.Driver.Command.ToC
         DDC.Driver.Command.ToLlvm
         DDC.Driver.Command.ToSalt
+        DDC.Driver.Command.Trans
 
-        DDC.Driver.Stage
+        DDC.Driver.Stage.Flow
+        DDC.Driver.Stage.Lite
+        DDC.Driver.Stage.Salt
+        DDC.Driver.Stage.Tetra
 
-  Other-modules:
+        DDC.Driver.Config
+        DDC.Driver.Dump
         DDC.Driver.Output
-
+        DDC.Driver.Stage
+      
   Extensions:
         ExistentialQuantification
+        RankNTypes
         PatternGuards
 
   ghc-options:
         -Wall
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind

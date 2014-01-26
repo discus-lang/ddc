@@ -56,7 +56,7 @@ primDataDefs
                 | arity <- [2..32] ]
  
 
- -- | Make a tuple data def for the given tuple arity.
+-- | Make a tuple data def for the given tuple arity.
 makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
         = makeDataDefAlg

@@ -100,13 +100,15 @@ Executable ddci-core
         DDCI.Core.Command.Eval
         DDCI.Core.Command.Help
         DDCI.Core.Command.Set
-        DDCI.Core.Command.Trans
         DDCI.Core.Command.TransInteract
         DDCI.Core.Command.With
+
         DDCI.Core.Interface.Args
         DDCI.Core.Interface.Batch
         DDCI.Core.Interface.Interactive
+
         DDCI.Core.Stats.Trace
+
         DDCI.Core.Command
         DDCI.Core.Input
         DDCI.Core.Mode
@@ -132,6 +134,7 @@ Executable ddci-core
     ghc-options:
         -Wall
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
 
@@ -166,12 +169,21 @@ Executable ddci-tetra
         Main.hs
   
     Other-modules:
+        DDCI.Tetra.Command.Desugar
         DDCI.Tetra.Command.Help
+        DDCI.Tetra.Command.Infer
+        DDCI.Tetra.Command.Parse
+        DDCI.Tetra.Command.Set
+        DDCI.Tetra.Command.ToCore
+        DDCI.Tetra.Command.ToSalt
+
         DDCI.Tetra.Interface.Args
         DDCI.Tetra.Interface.Batch
         DDCI.Tetra.Interface.Interactive
+
         DDCI.Tetra.Command
         DDCI.Tetra.Input
+        DDCI.Tetra.Mode
         DDCI.Tetra.Output
         DDCI.Tetra.State
 
@@ -193,4 +205,5 @@ Executable ddci-tetra
     ghc-options:
         -Wall
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind

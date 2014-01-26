@@ -26,9 +26,11 @@ Library
   Exposed-modules:
         DDC.Core.Analysis.Arity
         DDC.Core.Analysis.Usage
+
         DDC.Core.Simplifier.Recipe
         DDC.Core.Simplifier.Parser
         DDC.Core.Simplifier.Result
+
         DDC.Core.Transform.Rewrite.Disjoint
         DDC.Core.Transform.Rewrite.Env
         DDC.Core.Transform.Rewrite.Match
@@ -36,6 +38,7 @@ Library
         DDC.Core.Transform.Rewrite.Rule
         DDC.Core.Transform.AnonymizeX
         DDC.Core.Transform.Beta
+        DDC.Core.Transform.Boxing
         DDC.Core.Transform.Bubble
         DDC.Core.Transform.Prune
         DDC.Core.Transform.Elaborate
@@ -49,6 +52,7 @@ Library
         DDC.Core.Transform.Thread
         DDC.Core.Transform.TransformUpX
         DDC.Core.Transform.TransformDownX
+
         DDC.Core.Simplifier
 
         DDC.Type.Transform.Alpha
@@ -67,6 +71,7 @@ Library
         -Wall
         -fno-warn-orphans
         -fno-warn-missing-signatures
+        -fno-warn-missing-methods
         -fno-warn-unused-do-bind
 
   Extensions:

@@ -1,41 +1,41 @@
 # The DDC build system.
 
+# -----------------------------------------------------------------------------
 # (Build targets)
 #   all                 -- build the compiler and libs (default)
 #
-#   total               -- build the compiler, libs, docs and run all the tests in all ways (slow)
-#   cleantotal          -- same as above, but do a full clean first (slowest)
+#   total               -- build the compiler, libs, docs and run all the tests.
+#   cleantotal          -- same as above, but do a full clean first.
 #
-#   deps                -- build dependencies (should be automatic with the 'all' target)
-#   bin/ddc             -- build the compiler binary
-#   bin/ddci-core       -- build the interactive shell for the Core languages
-#   bin/ddci-tetra	-- build the interactive shell for the Tetra language
-#   bin/war             -- build the test driver
-#   bin/plate           -- build the boilerplate generator
-#   runtime		-- build the runtime system
-#   external	     	-- build external libraries
-#   libs		-- build base libraries
-#   docs		-- build Haddock docks
+#   deps                -- build dependencies.
+#   runtime		-- build the runtime system.
+#   libs		-- build base libraries.
+#   docs		-- build Haddock docks.
+#   bin/ddc             -- build the compiler binary.
+#   bin/ddci-core       -- build the interactive shell for the Core languages.
+#   bin/ddci-tetra	-- build the interactive shell for the Tetra language.
+#   bin/war             -- build the test driver.
+#   bin/plate           -- build the boilerplate generator.
 #
-# (Running just the quickcheck and regression tests)
-#   war			-- run the minimal testing required before pushing patches (interactive)
-#   llvmwar		-- llvm backend only version of the 'war' target, (interactive)
-#   totalwar        	-- run tests in all possible ways                 (slow, interactive)
-#   logwar          	-- same as above, logging failures to war.failed  (non-interative)
-#   batchwar            -- run all tests in all ways                      (slow, non-interactive)
+# (Running just the regression tests)
+#   (interactive versions)
+#   war			-- run the minimal testing required before pushing patches.
+#   llvmwar		-- llvm backend only version of the 'war' target. 
+#   totalwar       	-- run tests in all possible ways. 
 #
-# (Running code quality tools)
-#   hlint		-- run hlint
+#   (non-interactive versions)
+#   logwar         	-- same as above, logging failures to war.failed.
+#   batchwar       	-- run all tests in all ways.
 #
 # (Working with Cabal)
-#   packages            -- build and install all the Cabal packages
+#   packages            -- build and install all the Cabal packages.
 #   packages-unregister -- unregister all the Cabal packages.
 #
 # (Cleaning up)
-#   clean               -- clean everything
-#   cleanWar            -- clean libraries and tests
-#   cleanRuntime        -- clean the runtime system
-#   cleanLibrary        -- clean out the libraries
+#   clean               -- clean everything.
+#   cleanWar            -- clean libraries and tests.
+#   cleanRuntime        -- clean the runtime system.
+#   cleanLibrary        -- clean out the libraries.
 #
 
 # -- Meta Targets -------------------------------------------------------------

@@ -242,18 +242,18 @@ pipeCores !mm !pipes
 -- PipeTetra ------------------------------------------------------------------
 -- | Process a Core Tetra module.
 data PipeTetra a where
-        -- | Output the module in core language syntax.
+        -- Output the module in core language syntax.
         PipeTetraOutput 
          :: !Sink
          -> PipeTetra a
 
-        -- | Manage boxing of numeric values.
+        -- Manage boxing of numeric values.
         PipeTetraBoxing
          :: (NFData a, Show a)
          => ![PipeCore a Tetra.Name]
          -> PipeTetra a
 
-        -- | Convert the module to the Core Salt Fragment.
+        -- Convert the module to the Core Salt Fragment.
         PipeTetraToSalt 
          :: (NFData a, Show a)
          => !Salt.Platform 
