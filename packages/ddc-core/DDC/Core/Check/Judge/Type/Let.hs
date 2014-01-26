@@ -36,9 +36,6 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
         -- Check the body -----------------------
         -- -- Check the body expression in a context
         -- -- extended with the types of the bindings.
-        -- let (ctx1', pos1) = markContext ctx1
-        -- let ctx2          = pushTypes bs' ctx1'
-
         (xBody', tBody, effsBody, closBody, ctx2)
          <- tableCheckExp table table ctx1 xBody mode
 
