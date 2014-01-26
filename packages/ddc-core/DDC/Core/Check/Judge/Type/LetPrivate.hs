@@ -16,7 +16,7 @@ checkLetPrivate :: Checker a n
 --       from the context before checking for escaping regions.
 --
 checkLetPrivate !table !ctx 
-        xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) tXX
+        xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) mode
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table ctx x Recon
     us   -> do
@@ -24,9 +24,11 @@ checkLetPrivate !table !ctx
         let kenv        = tableKindEnv table
         let depth       = length $ map isBAnon bsRgn
 
-        -- Check the type on the region binders.
-        (bsRgn', _, _)  <- liftM unzip3                                         -- TODO: ctx
-                        $  mapM (\b -> checkBindM config kenv ctx UniverseKind b Recon) bsRgn
+        -- Check the kinds of the region binders.
+        -- These must already set to kind Region.
+        (bsRgn', _, _)  <- liftM unzip3
+                        $  mapM (\b -> checkBindM config kenv ctx UniverseKind b Recon) 
+                                bsRgn
         let ksRgn       = map typeOfBind bsRgn'
         
         -- The binders must have region kind.
@@ -39,12 +41,15 @@ checkLetPrivate !table !ctx
         when (not $ null rebounds)
          $ throw $ ErrorLetRegionsRebound a xx rebounds
         
-        -- Check the witness types.
+        -- Check the witness binders.
+        -- These must have full type annotations, as we don't infer
+        -- the types of introduced witnesses.
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushKinds [(b, RoleConcrete) | b <- bsRgn] ctx'
         let ctx2         = liftTypes depth ctx1
-        (bsWit', _, _)   <- liftM unzip3                                        -- TODO: ctx
-                         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon) bsWit
+        (bsWit', _, _)   <- liftM unzip3
+                         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon) 
+                                 bsWit
         
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
@@ -53,22 +58,28 @@ checkLetPrivate !table !ctx
         -- Check the body expression.
         let ctx3        = pushTypes bsWit' ctx2
         (xBody', tBody, effs, clo, ctx4)  
-                        <- tableCheckExp table table ctx3 x tXX
+                        <- tableCheckExp table table ctx3 x mode
 
         -- The body type must have data kind.
-        (_, kBody, _)   <- checkTypeM config kenv ctx4 UniverseSpec tBody Recon        -- TODO: ctx
-        when (not $ isDataKind kBody)
-         $ throw $ ErrorLetBodyNotData a xx tBody kBody
+        (tBody', kBody, ctx5)   
+         <- checkTypeM config kenv ctx4 UniverseSpec tBody
+         $  case mode of
+                Recon   -> Recon
+                _       -> Check kData
+
+        let kBody'      = applyContext ctx5 kBody
+        when (not $ isDataKind kBody')
+         $ throw $ ErrorLetBodyNotData a xx tBody kBody'
 
         -- The final body type.
-        tBody'
+        tBody_final
          <- case mtParent of
                 -- If the bound region variables are children of some parent
                 -- region then they are merged into the parent when the 
                 -- private/extend construct ends.
                 Just tParent
                  -> do  return $ foldl  (\t b -> substituteTX b tParent t) 
-                                        tBody bsRgn
+                                        tBody' bsRgn
 
                 -- If the bound region variables have no parent then they are 
                 -- deallocated when the private construct ends.
@@ -76,7 +87,7 @@ checkLetPrivate !table !ctx
                 _
                  -> do  let fvsT         = freeT Env.empty tBody
                         when (any (flip Set.member fvsT) us)
-                         $ throw $ ErrorLetRegionFree a xx bsRgn tBody
+                         $ throw $ ErrorLetRegionFree a xx bsRgn tBody'
                         return $ lowerT depth tBody
 
         -- Delete effects on the bound region from the result.
@@ -110,11 +121,11 @@ checkLetPrivate !table !ctx
         -- Cut stack back to the length we started with,
         --  remembering to lower to undo the lift we applied previously.
         let ctx_cut     = lowerTypes depth
-                        $ popToPos pos1 ctx4
+                        $ popToPos pos1 ctx5
 
         returnX a
                 (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody')
-                tBody' tEffs' c2_cut ctx_cut
+                tBody_final tEffs' c2_cut ctx_cut
 
 
 -- withregion -----------------------------------

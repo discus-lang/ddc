@@ -405,6 +405,15 @@ f x
 :!: Pure
 
 
+-- Synthesis works through private region introduction.
+/\(a : Data).
+ \(x : a).
+private r in
+x
+:*: [a : Data].a -> a
+:!: Pure
+
+
 -- Combo 1.
 /\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
  \(f : ?9 -> ?10).\(x : ?9).
