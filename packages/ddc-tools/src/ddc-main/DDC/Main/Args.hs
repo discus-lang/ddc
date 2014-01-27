@@ -171,10 +171,6 @@ parseArgs args config
         = parseArgs rest
         $ config { configDump   = True }
 
-        | "-ast"   : file : rest  <- args
-        = parseArgs rest
-        $ setMode config $ ModeAST file
-
         | "-print-builder" : rest <- args
         = parseArgs rest
         $ setMode config ModePrintBuilder
@@ -240,7 +236,6 @@ flagOfMode mode
         ModeLoad{}                      -> Just "-load"
         ModeCompile{}                   -> Just "-compile"
         ModeMake{}                      -> Just "-make"
-        ModeAST{}                       -> Just "-ast"
         ModeToSalt{}                    -> Just "-to-salt"
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"

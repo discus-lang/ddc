@@ -63,7 +63,6 @@ GHC_WARNINGS	:= \
 	-fno-spec-constr
 endif
 
-
 # Warnings that are enabled manually in the DDC tree
 #	-fwarn-unused-matches
 #	-fwarn-incomplete-patterns
@@ -74,49 +73,38 @@ endif
 #	-fwarn-wrong-do-bind
 
 # Warnings I'm not sure about.
-#	-fwarn-orphans  			# not sure if this is a problem
+#	-fwarn-orphans
 
 # Warnings we would add if they had a better implementation.
-#	-fwarn-incomplete-record-updates 	# this isn't smart enough to be useful
+#	-fwarn-incomplete-record-updates
 
 # Warnings that enforce programming styles that we don't use.
-# 	-fwarn-missing-methods			# we don't usually define coarbitrary in the Arbitrary class
-#	-fwarn-missing-signatures		# I use this all the time.
-#	-fwarn-simple-patterns			# I use this all the time.
-#	-fwarn-tabs				# heresy!
+# 	-fwarn-missing-methods
+#	-fwarn-missing-signatures
+#	-fwarn-simple-patterns
 
 
 # -- Packages -----------------------------------------------------------------
 #
-#    Don't add unix or posix packages.
-#    They're not supported natively by the Haskell platform on Windows, and when
-#    I tried to cabal install the unix package under cygwin I got a boatload of
-#    problems that looked like Cabal bugs. This might change in the future though.
-#    -- BL 2010/10
+#    Don't add unix or posix packages, as there can be problems building 
+#    them under windows.
 #
 DDC_PACKAGES	:= \
 	-hide-all-packages \
-	-package base \
-	-package array \
-	-package containers \
-	-package mtl \
-	-package directory \
-	-package filepath \
-	-package process \
-	-package old-time \
-	-package time \
-	-package haskell-src \
-	-package parsec \
-	-package QuickCheck \
-	-package buildbox \
-	-package text \
-	-package stm \
-	-package random \
-	-package haskeline \
-	-package haskell-src-exts \
-	-package wl-pprint \
-	-package transformers \
-	-package hashable \
-	-package hashtables \
-	-package deepseq
-
+        -package base \
+        -package stm \
+        -package mtl \
+        -package array \
+        -package random \
+        -package deepseq \
+        -package process \
+        -package filepath \
+        -package haskeline \
+        -package directory \
+        -package containers \
+        -package transformers \
+        -package text \
+        -package parsec \
+        -package buildbox \
+        -package wl-pprint \
+        

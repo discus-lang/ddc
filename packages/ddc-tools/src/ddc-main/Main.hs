@@ -12,7 +12,6 @@ import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
-import DDC.Driver.Command.Ast
 import DDC.Driver.Command.BaseBuild
 
 import DDC.Driver.Command.Flow.Prep
@@ -110,15 +109,6 @@ run config
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdMake    dconfig filePath
-
-        -- Pretty print the AST of a module.
-        ModeAST filePath
-         -> do  language        <- languageFromFilePath filePath
-                str             <- readFile filePath
-                cmdAstModule 
-                        language
-                        (SourceFile filePath) 
-                        str
 
         -- Convert a module to Salt.
         ModeToSalt filePath

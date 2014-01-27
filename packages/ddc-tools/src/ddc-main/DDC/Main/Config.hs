@@ -42,9 +42,6 @@ data Mode
         -- | Compile a .dcl or .dce into an executable file.
         | ModeMake      FilePath
 
-        -- | Pretty print a module's AST.
-        | ModeAST       FilePath
-
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath
 

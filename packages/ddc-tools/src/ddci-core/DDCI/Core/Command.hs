@@ -13,7 +13,6 @@ import DDCI.Core.Command.With
 import DDCI.Core.State
 import DDCI.Core.Mode                   as Mode
 
-import DDC.Driver.Command.Ast
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Trans
@@ -62,8 +61,6 @@ data Command
         | CommandExpClosure     -- ^ Check an expression, showing its closure.
         | CommandExpRecon       -- ^ Reconstruct type annotations on binders.
         | CommandEval           -- ^ Evaluate an expression.
-
-        | CommandAst            -- ^ Show the AST of an expression.
 
         -- Generic transformations
         | CommandTrans          -- ^ Transform an expression.
@@ -121,8 +118,6 @@ commands
         , (":closure",          CommandExpClosure)
 
         , (":eval",             CommandEval)
-
-        , (":ast",              CommandAst) 
 
         -- Generic transformations
         , (":trun",             CommandTransEval)
@@ -258,10 +253,6 @@ handleCmd1 state cmd source line
 
         CommandEval       
          -> do  cmdEval state source line
-                return state
-
-        CommandAst
-         -> do  cmdAstExp   lang source line
                 return state
 
         -- Generic transformations --------------
