@@ -25,7 +25,7 @@ bin/war : $(war_obj)
 
 # Run the testsuite in just the standard way.
 .PHONY 	: war
-war : newWithConfig
+war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
 	@bin/war test/ddc-main \
                 -j $(THREADS) \
@@ -92,18 +92,14 @@ cleanWar :
 	@find test \
 			-name "*.dump-*" \
                 -o      -name "dump.*" \
-		-o	-name "*.graph-*.dot" \
 		-o	-name "*.hi"    \
-		-o	-name "build.mk" \
 		-o	-name "*.di"    \
-		-o	-name "*.di-new" \
 		-o	-name "*.gdl"   \
 		-o	-name "*.o"     \
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
 		-o	-name "*.ddc.ll" \
 		-o	-name "*.ddc.s" \
-		-o	-type f -name "*.bin" \
 		-o	-name "*.out"   \
 		-o 	-name "*.diff"  \
 		-o	-name "*.tix"   \
@@ -111,6 +107,8 @@ cleanWar :
 		-o	-name "*.compile.stdout" \
 		-o	-name "*.stdout" \
 		-o	-name "*.stderr" \
-		-o	-name "war-*" \
-		-follow | xargs -n 1 rm -Rf
+		-o      -name "build.mk" \
+                -o	-name "war-*" \
+		-o    -type f -name "*.bin" \
+                -follow | xargs -n 1 rm -Rf
 

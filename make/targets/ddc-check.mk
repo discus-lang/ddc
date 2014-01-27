@@ -14,10 +14,10 @@ ddc-check_packages = \
 	packages/ddc-build/DDC \
         packages/ddc-interface/DDC
 
-
 ddc-check_src_hs_all = \
 	$(shell find $(ddc-check_packages)            -name "*.hs" -follow) \
 	$(shell find packages/ddc-tools/src/ddc-check -name "*.hs" -follow)
+
 
 # -- Dependencies -------------------------------------------------------------
 make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)

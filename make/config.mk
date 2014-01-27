@@ -14,23 +14,15 @@ BUILDFLAVOUR	= distro
 # Number of jobs to use during make.
 THREADS		= 1
 
+
 # GHC Config ------------------------------------------------------------------
 # GHC binary to use when building.
 GHC		= ghc
 GHCI		= ghci
-
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
-
 GHC_VERSION_FLAGS = -rtsopts
 
-
-# Coq Config ------------------------------------------------------------------
-# Coq binaries to use when building
-COQDEP		= coqdep
-COQC		= coqc
-
-
-# Override the above config.
+# Override default config with local config.
 -include make/config-override.mk
 
 

@@ -21,6 +21,5 @@ clean  : cleanWar cleanRuntime
 
 	@rm -f  doc/haddock/*
 	@rm -f  doc/haddock-core/*
-	@rm -f  packages/ddc-alpha/Config/Config.hs package/ddc-alpha/Source/Lexer.hs
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak

@@ -3,23 +3,21 @@
 # -----------------------------------------------------------------------------
 # (Build targets)
 #   all                 -- build the compiler and libs (default)
-#
-#   total               -- build the compiler, libs, docs and run all the tests.
-#   cleantotal          -- same as above, but do a full clean first.
+#   war			-- as above, but also run regression tests.
+#   total		-- as above, but also build docs.
+#   cleantotal          -- as above, but do a full clean first.
 #
 #   deps                -- build dependencies.
+#   docs		-- build Haddock docs.
 #   runtime		-- build the runtime system.
-#   libs		-- build base libraries.
-#   docs		-- build Haddock docks.
+#
 #   bin/ddc             -- build the compiler binary.
 #   bin/ddci-core       -- build the interactive shell for the Core languages.
 #   bin/ddci-tetra	-- build the interactive shell for the Tetra language.
 #   bin/war             -- build the test driver.
-#   bin/plate           -- build the boilerplate generator.
 #
 # (Running just the regression tests)
 #   (interactive versions)
-#   war			-- run the minimal testing required before pushing patches.
 #   llvmwar		-- llvm backend only version of the 'war' target. 
 #   totalwar       	-- run tests in all possible ways. 
 #
@@ -35,7 +33,6 @@
 #   clean               -- clean everything.
 #   cleanWar            -- clean libraries and tests.
 #   cleanRuntime        -- clean the runtime system.
-#   cleanLibrary        -- clean out the libraries.
 #
 
 # -- Meta Targets -------------------------------------------------------------
@@ -62,15 +59,6 @@ allWithConfig :
 		 runtime bin/war -j $(THREADS)
 
 
-# Build everything related to the new compiler, 
-# now that we have the configuration included above.
-.PHONY	: newWithConfig
-newWithConfig :
-	@$(MAKE) deps-new
-	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
-		 runtime bin/war -j $(THREADS)
-
-
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
 .PHONY  : total
 total	:
@@ -93,14 +81,6 @@ deps	: make/deps/Makefile-ddc-check.deps \
           make/deps/Makefile-ddci-core.deps \
           make/deps/Makefile-ddci-tetra.deps \
           make/deps/Makefile-war.deps
-
-# -- Build all dependencies related to the new compiler
-.PHONY	 : deps-new
-deps-new : make/deps/Makefile-ddc-check.deps \
-           make/deps/Makefile-ddc-main.deps \
-           make/deps/Makefile-ddci-core.deps \
-           make/deps/Makefile-ddci-tetra.deps \
-           make/deps/Makefile-war.deps
 
 
 # -- What to do during the nightly builds
@@ -129,12 +109,9 @@ nightly :
 # -- Real Targets -------------------------------------------------------------
 #    These don't recursively invoke make.
 #
-include make/targets/plate.mk
-include make/targets/external.mk
 include make/targets/runtime.mk
 include make/targets/docs.mk
 include make/targets/war.mk
-include make/targets/lint.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
 include make/targets/ddc-check.mk
@@ -162,4 +139,3 @@ include make/rules.mk
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/Makefile-ddci-tetra.deps.inc
 -include make/deps/Makefile-war.deps.inc
-
