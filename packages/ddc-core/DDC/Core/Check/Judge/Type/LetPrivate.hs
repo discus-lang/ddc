@@ -125,12 +125,13 @@ checkLetPrivate !table !ctx
 
         returnX a
                 (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody')
-                tBody_final tEffs' c2_cut ctx_cut
+                tBody_final tEffs' c2_cut
+                ctx_cut
 
 
 -- withregion -----------------------------------
 checkLetPrivate !table !ctx 
-        xx@(XLet a (LWithRegion u) x) tXX
+        xx@(XLet a (LWithRegion u) x) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
 
@@ -149,10 +150,15 @@ checkLetPrivate !table !ctx
         
         -- Check the body expression.
         (xBody', tBody, effs, clo, ctx') 
-                        <- tableCheckExp table table ctx x tXX
+                        <- tableCheckExp table table ctx x mode
 
         -- The body type must have data kind.
-        (tBody', kBody, _) <- checkTypeM config kenv ctx UniverseSpec tBody Recon      -- TODO: ctx
+        (tBody', kBody, _) 
+         <- checkTypeM config kenv ctx UniverseSpec tBody
+         $  case mode of
+                Recon   -> Recon
+                _       -> Check kData
+
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData a xx tBody' kBody
         
@@ -174,8 +180,8 @@ checkLetPrivate !table !ctx
 
         returnX a
                 (\z -> XLet z (LWithRegion u) xBody')
-                tBody
-                effs' clo_masked ctx'
+                tBody' effs' clo_masked
+                ctx'
 
 checkLetPrivate _ _ _ _
         = error "ddc-core.checkLetPrivate: no match"        
@@ -183,6 +189,7 @@ checkLetPrivate _ _ _ _
 
 -------------------------------------------------------------------------------
 -- | Check the set of witness bindings bound in a letregion for conflicts.
+--   TODO: squash duplicated sigs.
 checkWitnessBindsM 
         :: (Show n, Ord n) 
         => Config n             -- ^ Type checker config.
