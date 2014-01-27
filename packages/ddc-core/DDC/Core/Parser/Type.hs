@@ -201,7 +201,7 @@ pTypeAtom c
                 return  $  TVar (UName v)
 
         , do    i       <- pIndex
-                return  $  TVar (UIx (fromIntegral i))
+                return  $  TVar (UIx i)
         ]
  <?> "an atomic type"
 

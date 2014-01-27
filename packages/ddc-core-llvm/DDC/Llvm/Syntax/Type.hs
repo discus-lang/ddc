@@ -144,7 +144,7 @@ isPointer tt
 takeBytesOfType :: Integer -> Type -> Maybe Integer
 takeBytesOfType bytesPtr tt
  = case tt of
-        TInt bits       -> Just $ fromIntegral $ div bits 8
+        TInt bits       -> Just $ div bits 8
         TFloat          -> Just 4
         TDouble         -> Just 8
         TFloat80        -> Just 10

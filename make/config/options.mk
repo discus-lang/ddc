@@ -4,84 +4,60 @@
 
 # -- Language features --------------------------------------------------------
 GHC_LANGUAGE	:= \
-	-XPatternGuards \
-	-XImplicitParams \
-	-XUnboxedTuples \
-	-XParallelListComp \
-	-XScopedTypeVariables \
-	-XMultiParamTypeClasses \
-	-XFlexibleInstances \
-	-XFlexibleContexts \
-	-XFunctionalDependencies \
-	-XScopedTypeVariables \
-	-XKindSignatures \
-	-XUndecidableInstances \
-	-XTypeSynonymInstances \
-	-XNamedFieldPuns \
-	-XExistentialQuantification \
 	-XBangPatterns \
-	-XRankNTypes \
+        -XPatternGuards \
+        -XParallelListComp \
+        -XKindSignatures \
+        -XScopedTypeVariables \
+        -XFlexibleInstances \
+	-XFlexibleContexts \
+	-XMultiParamTypeClasses \
+        -XFunctionalDependencies \
+	-XTypeSynonymInstances \
+	-XExistentialQuantification \
 	-XNoMonomorphismRestriction \
-        -XStandaloneDeriving \
+        -XRankNTypes \
+	-XStandaloneDeriving \
         -XDeriveDataTypeable \
         -XViewPatterns \
-        -XTupleSections \
+        -XTupleSections
 
 
 # -- Warnings -----------------------------------------------------------------
 # -- There's no point turning warnings on without -Werror.
 GHC_WARNINGS	:= \
 	-Werror \
-	-fwarn-deprecations \
+	-fwarn-unrecognised-pragmas \
+        -fwarn-deprecations \
 	-fwarn-duplicate-exports \
 	-fwarn-hi-shadowing \
-	-fwarn-missing-fields \
+        -fwarn-identities \
+	-fwarn-incomplete-patterns \
+        -fwarn-missing-fields \
+        -fwarn-name-shadowing \
 	-fwarn-overlapping-patterns \
 	-fwarn-type-defaults \
-	-fwarn-unused-binds \
-	-fwarn-unused-imports \
-	-fno-warn-missing-methods
-
-# These are turned on for all code under the DDC tree,
-#  Other code will have this enabled when it is moved there.
-GHC_WARNINGS2	:= \
-	-fwarn-unused-matches \
-	-fwarn-incomplete-patterns \
-	-fwarn-name-shadowing
-
-
-# -- Warnings for GHC 7.0.1
-#
-#    -fspec-constr-count is just to shut up internal compiler warnings in 7.0.1,
-#        I don't know how many specilisations we actually need.
-#
-ifeq "$(GHC_VERSION)" "7"
-GHC_WARNINGS	:= \
-	$(GHC_WARNINGS) \
 	-fwarn-monomorphism-restriction \
-	-fwarn-unrecognised-pragmas \
-	-fno-spec-constr
-endif
-
-# Warnings that are enabled manually in the DDC tree
-#	-fwarn-unused-matches
-#	-fwarn-incomplete-patterns
-#	-fwarn-name-shadowing
-
-# Warnings we should probably enable
-#	-fwarn-unused-do-bind
-#	-fwarn-wrong-do-bind
-
-# Warnings I'm not sure about.
-#	-fwarn-orphans
-
-# Warnings we would add if they had a better implementation.
-#	-fwarn-incomplete-record-updates
+        -fwarn-name-shadowing \
+        -fwarn-unused-binds \
+	-fwarn-unused-imports \
+        -fwarn-unused-matches \
+        -fwarn-wrong-do-bind \
+        -fno-warn-missing-methods \
+        -fno-warn-missing-signatures \
+        -fno-warn-missing-local-sigs \
+        -fno-warn-orphans
 
 # Warnings that enforce programming styles that we don't use.
 # 	-fwarn-missing-methods
 #	-fwarn-missing-signatures
-#	-fwarn-simple-patterns
+#       -fwarn-missing-local-sigs
+#       -fwarn-incomplete-uni-patterns
+#       -fwarn-unused-do-bind 
+#       -fwarn-incomplete-record-updates 
+
+# Warning flags that are deprecated in GHC 7.6.
+#       -fwarn-lazy-unlifted-bindings
 
 
 # -- Packages -----------------------------------------------------------------
