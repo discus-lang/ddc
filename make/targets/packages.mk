@@ -22,9 +22,9 @@ packages :
 	for package in ${PACKAGES} ddc-tools; do \
 		cd packages/$${package}; \
 		 cabal clean; \
-		 cabal configure; \
+		 cabal configure --enable-shared; \
 		 cabal build; \
-		 cabal install --enable-documentation --force-reinstalls; \
+		 cabal install --enable-shared --enable-documentation --force-reinstalls; \
 		cd ../..; \
 	done;
 
