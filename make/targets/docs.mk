@@ -1,28 +1,13 @@
 # Build haddock docs
 
-# We leave these out to break import loops.
-nodoc	= \
-	packages/ddc-alpha/src/Source/Lexer.hs \
-	packages/ddc-alpha/src/Util/Tunnel.hs \
-	packages/ddc-alpha/src/Source/Type/SlurpA.hs \
-	packages/ddc-alpha/src/Source/Type/SlurpX.hs
-
 .PHONY	: docs
-
 
 # Building docs is split between the main compiler and ddci-core because some of the 
 # names are shared. When the ddc-core package is ready we can make the main compiler
 # use it and eliminate the duplication.
 docs	:
 	@echo "* Building haddock documentation ---------------------------------------------------"
-	@$(MAKE) docs-alpha
 	@$(MAKE) docs-core
-
-docs-alpha :
-	@haddock -w -h -o doc/haddock-alpha --optghc=-ipackages/ddc-alpha/src \
-		$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
-		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
-		$(filter-out $(nodoc),$(ddc-alpha_src_hs_all))
 
 docs-core :
 	@haddock -w -h -o doc/haddock-core \
@@ -40,20 +25,13 @@ docs-core :
                         --optghc=-ipackages/ddc-interface \
 			--optghc=-ipackages/ddci-core \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
+                $(patsubst %,--optghc=%,$(GHC_WARNINGS)) \
 		$(ddci-core_src_hs_all)
 
 # Build hoogle docs
 docs-hoogle	:
 	@echo "* Building hoogle documentation ---------------------------------------------------"
-	@$(MAKE) docs-hoogle-alpha
 	@$(MAKE) docs-hoogle-core
-
-docs-hoogle-alpha :
-	@haddock --hoogle -w -o doc/hoogle-alpha
-			--optghc=-ipackages/ddc-alpha/src \
-			$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
-		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
-		$(filter-out $(nodoc),$(ddc-main_src_hs_all))
 
 docs-hoogle-core :
 	@haddock --hoogle -w -o doc/hoogle-core \
@@ -70,4 +48,5 @@ docs-hoogle-core :
 			--optghc=-ipackages/ddc-driver \
                         --optghc=-ipackages/ddc-interface \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
+                $(patsubst %,--optghc=%,$(GHC_WARNINGS)) \
 		$(ddci-core_src_hs_all)
