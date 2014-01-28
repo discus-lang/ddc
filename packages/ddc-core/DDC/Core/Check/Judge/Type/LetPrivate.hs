@@ -195,7 +195,6 @@ checkLetPrivate _ _ _ _
 
 -------------------------------------------------------------------------------
 -- | Check the set of witness bindings bound in a letregion for conflicts.
---   TODO: squash duplicated sigs.
 checkWitnessBindsM 
         :: (Show n, Ord n) 
         => Config n             -- ^ Type checker config.
@@ -207,28 +206,28 @@ checkWitnessBindsM
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> CheckM a n ()
 
-checkWitnessBindsM !config !a !kenv !ctx !xx !nRegions !bsWits
- = mapM_ (checkWitnessBindM config a kenv ctx xx nRegions bsWits) bsWits
+checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
+ = mapM_ checkWitnessBindM  bsWit
+ where
+        -- Check if some type variable or constructor is already in the
+        -- environment. NOTE: The constructor case is for region handles
+        -- when using the Eval fragment.
+        inEnv tt
+         = case tt of
+             TVar u'                
+                | Env.member u' kenv    -> True
+                | memberKind u' ctx     -> True
+             
+             TCon (TyConBound u' _) 
+                | Env.member u' kenv    -> True
+                | memberKind u' ctx     -> True
+             _                          -> False 
 
-checkWitnessBindM 
-        :: (Show n, Ord n)
-        => Config n             -- ^ Type checker config.
-        -> a                    -- ^ Annotation for error messages.
-        -> KindEnv n            -- ^ Kind environment.
-        -> Context n
-        -> Exp a n
-        -> [Bound n]            -- ^ Region variables bound in the letregion.
-        -> [Bind n]             -- ^ Other witness bindings in the same set.
-        -> Bind  n              -- ^ The witness binding to check.
-        -> CheckM a n ()
-
-checkWitnessBindM !config !a !kenv !ctx !xx !uRegions !bsWit !bWit
- = let  btsWit  = [(typeOfBind b, b) | b <- bsWit]
 
         -- Check the argument of a witness type is for the region we're
         -- introducing here.
-        checkWitnessArg t
-         = case t of
+        checkWitnessArg bWit t2
+         = case t2 of
             TVar u'
              |  all (/= u') uRegions 
                          -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
@@ -242,64 +241,56 @@ checkWitnessBindM !config !a !kenv !ctx !xx !uRegions !bsWit !bWit
             -- The parser should ensure the right of a witness is a 
             -- constructor or variable.
             _            -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
-            
-        inEnv t
-         = case t of
-             TVar u'                
-                | Env.member u' kenv    -> True
-                | memberKind u' ctx     -> True
-             
+    
+        -- Associate each witness binder with its type.
+        btsWit  = [(typeOfBind b, b) | b <- bsWit]
+  
+        -- Check a single witness binder for conflicts with other witnesses.7
+        checkWitnessBindM bWit
+         = case typeOfBind bWit of
+            TApp (TCon (TyConWitness TwConGlobal))   t2
+             -> checkWitnessArg bWit t2
 
-             TCon (TyConBound u' _) 
-                | Env.member u' kenv    -> True
-                | memberKind u' ctx     -> True
-             _                          -> False 
-       
-   in  case typeOfBind bWit of
-        TApp (TCon (TyConWitness TwConGlobal))  t2
-         -> checkWitnessArg t2
+            TApp (TCon (TyConWitness TwConConst))    t2
+             | Just bConflict <- L.lookup (tMutable t2) btsWit
+             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
+             | otherwise    -> checkWitnessArg bWit t2
 
-        TApp (TCon (TyConWitness TwConConst))   t2
-         | Just bConflict <- L.lookup (tMutable t2) btsWit
-         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
-         | otherwise    -> checkWitnessArg t2
+            TApp (TCon (TyConWitness TwConMutable))  t2
+             | Just bConflict <- L.lookup (tConst t2)    btsWit
+             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
+             | otherwise    -> checkWitnessArg bWit t2
 
-        TApp (TCon (TyConWitness TwConMutable)) t2
-         | Just bConflict <- L.lookup (tConst t2)   btsWit
-         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
-         | otherwise    -> checkWitnessArg t2
+            TApp (TCon (TyConWitness TwConLazy))     t2
+             | Just bConflict <- L.lookup (tManifest t2) btsWit
+             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
+             | otherwise    -> checkWitnessArg bWit t2
 
-        TApp (TCon (TyConWitness TwConLazy))    t2
-         | Just bConflict <- L.lookup (tManifest t2)  btsWit
-         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
-         | otherwise    -> checkWitnessArg t2
-
-        TApp (TCon (TyConWitness TwConManifest))  t2
-         | Just bConflict <- L.lookup (tLazy t2)    btsWit
-         -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
-         | otherwise    -> checkWitnessArg t2
+            TApp (TCon (TyConWitness TwConManifest)) t2
+             | Just bConflict <- L.lookup (tLazy t2)     btsWit
+             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
+             | otherwise    -> checkWitnessArg bWit t2
          
-        (takeTyConApps -> Just (TyConWitness (TwConDistinct 2), [t1, t2]))
-         | inEnv t1  -> checkWitnessArg t2
-         | inEnv t2  -> checkWitnessArg t1
-         | t1 /= t2  -> mapM_ checkWitnessArg [t1, t2]
-         | otherwise -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
+            (takeTyConApps -> Just (TyConWitness (TwConDistinct 2), [t1, t2]))
+             | inEnv t1  -> checkWitnessArg bWit t2
+             | inEnv t2  -> checkWitnessArg bWit t1
+             | t1 /= t2  -> mapM_ (checkWitnessArg bWit) [t1, t2]
+             | otherwise -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
 
-        (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
-          -> mapM_ checkWitnessArg ts
+            (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
+             -> mapM_ (checkWitnessArg bWit) ts
 
-        TApp (TCon (TyConSpec TcConRead)) t2
-         | configEffectCapabilities config
-         -> checkWitnessArg t2
+            TApp (TCon (TyConSpec TcConRead))  t2
+             | configEffectCapabilities config
+             -> checkWitnessArg bWit t2
 
-        TApp (TCon (TyConSpec TcConWrite)) t2
-         | configEffectCapabilities config
-         -> checkWitnessArg t2
+            TApp (TCon (TyConSpec TcConWrite)) t2
+             | configEffectCapabilities config
+             -> checkWitnessArg bWit t2
 
-        TApp (TCon (TyConSpec TcConAlloc)) t2
-         | configEffectCapabilities config
-         -> checkWitnessArg t2
+            TApp (TCon (TyConSpec TcConAlloc)) t2
+             | configEffectCapabilities config
+             -> checkWitnessArg bWit t2
 
-        _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
-
+            _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
 
