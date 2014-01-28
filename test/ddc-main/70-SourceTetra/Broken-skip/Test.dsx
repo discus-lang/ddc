@@ -1,4 +1,19 @@
 
+-- Effectful List map with implicit effect management.
+:to-core..
+module Test where
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+mapS    [a b : Data] [e : Effect]
+        (f : a -> S e b) (xx : List a) : S e (List b)
+ = case xx of
+        Nil       -> Nil
+        Cons x xs -> Cons (f x) (mapS f xs)
+;;
+
+
 :to-salt..
 module Test where
 
@@ -53,3 +68,5 @@ head (def : a) (xx : List a) : a
 foo  (_ : Unit) : Blerk r
  = head Hot (Cons Cold Nil)
 ;;
+
+
