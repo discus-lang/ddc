@@ -65,8 +65,8 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
              Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared a xx tDiscrim
              Just m  -> return m
 
-        -- If we're doing type synthesis then we don't to infer a separate type
-        -- for each alternative. Instead, pass down the same existential.
+        -- If we're doing bidirectional checking then we don't infer a separate
+        -- type for each alternative. Instead, pass down the same existential.
         (modeAlts, ctx3)
          <- case mode of
                 Recon   -> return (mode, ctx2)
@@ -148,7 +148,7 @@ takeDiscrimCheckModeFromAlts a table ctx mode alts
  | otherwise
  = do
         let pats     = map patOfAlt alts
-        tsPats       <- liftM catMaybes $ mapM (dataTypeOfPat a table) pats
+        tsPats       <- liftM catMaybes $ mapM (dataTypeOfPat table a) pats
 
         -- TODO: check that multiple pattern types are equivalent.
 
@@ -175,7 +175,6 @@ takeDiscrimCheckModeFromAlts a table ctx mode alts
 
 -------------------------------------------------------------------------------
 -- | Check some case alternatives.
---   TODO: merge this into checkAltM so we don't duplicate the type sig noise.
 checkAltsM
         :: (Show n, Pretty n, Ord n)
         => a
@@ -227,7 +226,7 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
 
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
    = do -- Get the constructor type associated with this pattern.
-        Just tCtor <- ctorTypeOfPat a table (PData dc bsArg)
+        Just tCtor <- ctorTypeOfPat table a (PData dc bsArg)
          
         -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
@@ -283,7 +282,6 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
         -- Pop the argument types from the context.
         let ctx_cut     = popToPos posArg ctxBody
 
-
         ctrace  $ vcat
                 [ text "* Alt"
                 , ppr alt
@@ -332,12 +330,12 @@ mergeAnnot !a !xx !tAnnot !tActual
 ---  environment because literals like 42# never are.
 ctorTypeOfPat
         :: Ord n 
-        => a
-        -> Table a n
-        -> Pat n
+        => Table a n            -- ^ Checker table.
+        -> a                    -- ^ Annotation for error messages.
+        -> Pat n                -- ^ Pattern.
         -> CheckM a n (Maybe (Type n))
 
-ctorTypeOfPat a table (PData dc _)
+ctorTypeOfPat table a (PData dc _)
  = case dc of
         DaConUnit   -> return $ Just $ tUnit
         DaConPrim{} -> return $ Just $ daConType dc
@@ -352,7 +350,7 @@ ctorTypeOfPat a table (PData dc _)
          | otherwise
          -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 
-ctorTypeOfPat _a _table PDefault
+ctorTypeOfPat _table _a PDefault
  = return Nothing
 
 
@@ -360,17 +358,17 @@ ctorTypeOfPat _a _table PDefault
 --   or Nothing for the default pattern.
 --
 --   Yields  the data type with outer quantifiers for its type parametrs.
---    For example, given pattern (Cons x xs), return (forall [a : Data]. List a)
+--   For example, given pattern (Cons x xs), return (forall [a : Data]. List a)
 --
 dataTypeOfPat 
         :: Ord n 
-        => a
-        -> Table a n
-        -> Pat n
+        => Table a n            -- ^ Checker table.
+        -> a                    -- ^ Annotation for error messages.
+        -> Pat n                -- ^ Pattern.
         -> CheckM a n (Maybe (Type n))
 
-dataTypeOfPat a table pat
- = do   mtCtor      <- ctorTypeOfPat a table pat
+dataTypeOfPat table a pat
+ = do   mtCtor      <- ctorTypeOfPat table a pat
 
         case mtCtor of
          Nothing    -> return Nothing
@@ -385,7 +383,7 @@ dataTypeOfPat a table pat
                 _                  -> foldr TForall tt bs
 
 
--- Checks ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Check for overlapping alternatives, 
 --   and throw an error in the `CheckM` monad if there are any.
 checkAltsOverlapping
@@ -421,8 +419,9 @@ checkAltsOverlapping a xx alts
              -> return ()
 
 
+-------------------------------------------------------------------------------
 -- | Check that the alternatives are exhaustive,
---   and throw and error if they're not.
+--   and throw and error in the `CheckM` monad if they're not.
 checkAltsExhaustive
         :: Eq n
         => a                    -- ^ Annotation for error messages.
