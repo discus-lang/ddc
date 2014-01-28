@@ -43,9 +43,24 @@ map     (f : a -> b) (xx : List a) : List b
 ;;
 
 
+-- Effectful List map with explicit effect management.
+:to-core..
+module Test where
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+mapS    [a b : Data] [e : Effect]
+        (f : a -> S e b) (xx : List a) : S e (List b)
+ = case xx of
+        Nil       -> box (weakeff [e] in Nil)
+        Cons x xs -> box (Cons (run f x) (run mapS f xs))
+;;
+
+
 -- Polymorphically take the head of a polymorphic list where
 -- the element type has a primary region variable.
-:infer..
+:to-core..
 module Test where
 data List (a : Data) where
         Cons    : a -> List a -> List a

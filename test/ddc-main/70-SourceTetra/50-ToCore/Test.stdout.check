@@ -68,28 +68,59 @@ letrec {
 }
 
 
+-- Effectful List map with explicit effect management.
+module Test 
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
+with
+letrec {
+  mapS : [a b : Data].[e : Effect].(a -> S e b) -> List a -> S e (List b)
+    = /\(a b : Data)./\(e : Effect).
+       \(f : a -> S e b).\(xx : List a).
+      case xx of {
+        Nil  
+         -> box
+            weakeff [e] in
+            Nil [b];
+        Cons (x : a) (xs : List a) 
+         -> box
+            Cons [b]
+                (run f x)
+                (run mapS [a] [b] [e] f xs)
+      }
+}
+
+
 -- Polymorphically take the head of a polymorphic list where
 -- the element type has a primary region variable.
-module Test where
-data List (a : Data) where {
-        Cons : a -> List a -> List a;
-        Nil : List a;
-}
+module Test 
 data Blerk (r : Region) where {
         Hot : Blerk r;
         Cold : Blerk r;
 }
-head : [a : Data].a -> List a -> a
-  = /\(a : Data).
-     \(def : a).\(xx : List a).
-    case xx of {
-      Cons x _ 
-       -> x;
-      _ 
-       -> def
-    }
-foo : [r : Data].Unit -> Blerk r
-  = /\(r : Data).
-     \(_ : Unit).
-    head [?] (Hot [?])
-        (Cons [?] (Cold [?]) (Nil [?]))
+
+data List (a : Data) where {
+        Cons : a -> List a -> List a;
+        Nil : List a;
+}
+with
+letrec {
+  head : [a : Data].a -> List a -> a
+    = /\(a : Data).
+       \(def : a).\(xx : List a).
+      case xx of {
+        Cons (x : a) (_ : List a) 
+         -> x;
+        _ 
+         -> def
+      };
+  
+  foo : [r : Region].Unit -> Blerk r
+    = /\(r : Region).
+       \(_ : Unit).
+      head [Blerk r] (Hot [r])
+          (Cons [Blerk r] (Cold [r])
+               (Nil [Blerk r]))
+}
