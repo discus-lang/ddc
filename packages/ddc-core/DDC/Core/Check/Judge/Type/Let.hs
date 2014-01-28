@@ -164,12 +164,13 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
                 return (Check tAnnot', ctx1)
 
         -- Check the expression in the right of the binding.
-        (xBind', tBind, effsBind, closBind, ctx2)
+        (xBind', tBind1, effsBind, closBind, ctx2)
          <- tableCheckExp table table ctx1 xBind modeCheck
 
         -- Update the annotation on the binder with the actual type of
         -- the binding.
-        let b'  = replaceTypeOfBind tBind b
+        let tBind2      = applyContext ctx2 tBind1
+        let b'          = replaceTypeOfBind tBind2 b
 
         -- Push the binder on the context.
         let (ctx3, pos1) =  markContext ctx2
@@ -285,10 +286,14 @@ checkRecBinds table bidir a xx ctx0 bs0
              -- so check it, expecting it to have kind Data.
              | otherwise
              -> do
-                (b', _k, ctx') 
+                (b0, _k, ctx1) 
                  <- checkBindM config kenv ctx UniverseSpec b (Check kData)
 
-                return (b', ctx')
+                let t0  = typeOfBind b0
+                let t1  = applyContext ctx1 t0
+                let b1  = replaceTypeOfBind t1 b0
+
+                return (b1, ctx1)
 
 
 -------------------------------------------------------------------------------

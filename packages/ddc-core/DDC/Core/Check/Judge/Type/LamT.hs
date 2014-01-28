@@ -170,6 +170,12 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         let kenv        = tableKindEnv table
         let xx          = XLAM a b1 x2
 
+        ctrace  $ vcat
+                [ text "* LAM Check start"
+                , ppr b
+                , ppr tBody
+                , ppr ctx0 ]
+
         -- Check the parameter ------------------
         -- If the bound variable is named then it cannot shadow
         -- shadow others in the environment.
@@ -178,15 +184,16 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         -- If we have an expected kind for the parameter then it needs
         -- to be the same as any existing annotation.
-        let kA  = typeOfBind b1
-        when (  (not $ isBot kA)
-             && (not $ equivT kA (typeOfBind  b)))
-         $ throw $ ErrorLAMParamUnexpected a xx b1 kA
+        let kParam      = typeOfBind b1
+        let kExpected   = typeOfBind b
+        when (  (not $ isBot  kParam)
+             && (not $ equivT kParam kExpected))
+         $ throw $ ErrorLAMParamUnexpected a xx b1 kExpected
 
         -- If both the kind annotation is missing and there is no
         -- expected kind then we need to make an existential for it.
         (kA', sA, ctxA)
-         <- if (isBot kA && isBot (typeOfBind b)) 
+         <- if (isBot kParam && isBot kExpected) 
              then do
                 iA       <- newExists sComp
                 let kA'  = typeOfExists iA
@@ -195,10 +202,10 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
              else if isBot (typeOfBind b) 
               then do
-                checkTypeM config kenv ctx0 UniverseKind kA Synth
+                checkTypeM config kenv ctx0 UniverseKind kParam Synth
 
               else do
-                checkTypeM config kenv ctx0 UniverseKind kA Synth 
+                checkTypeM config kenv ctx0 UniverseKind kParam Synth 
 
         let b1' = replaceTypeOfBind kA' b1
 

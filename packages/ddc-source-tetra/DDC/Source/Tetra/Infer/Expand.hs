@@ -170,17 +170,18 @@ expandQuant
         -> (Bind n, Exp a n)    -- ^ Binder and expression of binding.
         -> (Bind n, Exp a n)
 
-expandQuant a _config kenv (b, x)
+expandQuant a config kenv (b, x)
  | fvs  <- freeVarsT kenv (typeOfBind b)
  , not $ Set.null fvs
  = let  
-        -- Make binders for each of the free variables.
-        -- TODO: Do kind inference here instead of just defaulting
-        --       the kind of each variable to Data.
+        -- Make binders for each of the free type variables.
+        --   We set these to holes so the Core type inferencer will determine
+        --   their kinds for us.
+        kHole   = configMakeTypeHole config sComp
         makeBind u
          = case u of 
-                UName n         -> Just (BName n kData)
-                UIx{}           -> Just (BAnon kData)
+                UName n         -> Just $ BName n kHole
+                UIx{}           -> Just $ BAnon kHole
                 _               -> Nothing
 
         Just bsNew = sequence $ map makeBind $ Set.toList fvs

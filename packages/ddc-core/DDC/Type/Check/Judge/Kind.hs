@@ -354,7 +354,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
         -- Pop the quantified type off the context.
         let ctx_cut      = popToPos pos1 ctx5
 
-        return (TForall b1 t2', k2'', ctx_cut)
+        return (TForall b1' t2', k2'', ctx_cut)
 
 
 -- Applications ---------------------------------

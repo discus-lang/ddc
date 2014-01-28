@@ -44,8 +44,8 @@ data List (a : Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
 }
-map : [a b : Data].(a -> b) -> List a -> List b
-  = /\(a b : Data).
+map : [a b : ?].(a -> b) -> List a -> List b
+  = /\(a b : ?).
      \(f : a -> b).\(xx : List a).
     case xs of {
       Nil  
@@ -62,11 +62,11 @@ data List (a : Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
 }
-add : [a : Data].a -> a -> a
-  = /\(a : Data).
+add : [a : ?].a -> a -> a
+  = /\(a : ?).
      \(x y : a). add# [a] x y
-length : [a : Data].List a -> Nat
-  = /\(a : Data).
+length : [a : ?].List a -> Nat
+  = /\(a : ?).
      \(xx : List a).
     case xx of {
       Nil  
@@ -83,8 +83,8 @@ data Blerk (r : Region) where {
         Hot : Blerk r;
         Cold : Blerk r;
 }
-flipit : [r : Data].Blerk r -> Blerk r
-  = /\(r : Data).
+flipit : [r : ?].Blerk r -> Blerk r
+  = /\(r : ?).
      \(x : Blerk r).
     case x of {
       Hot  
