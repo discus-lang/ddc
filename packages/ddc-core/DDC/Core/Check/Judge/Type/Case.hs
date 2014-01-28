@@ -23,7 +23,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
 
         -- Decide what mode to use when checking the discriminant.
         (modeDiscrim, ctx1)     
-         <- takeDiscrimCheckModeFromAlts a table ctx0 mode alts
+         <- takeDiscrimCheckModeFromAlts table a ctx0 mode alts
 
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctx2) 
@@ -132,25 +132,26 @@ checkCase _ _ _ _
 --
 takeDiscrimCheckModeFromAlts
         :: Ord n
-        => a
-        -> Table a n
-        -> Context n
+        => Table a n            -- ^ Checker table.
+        -> a                    -- ^ Annotation for error messages.
+        -> Context n            -- ^ Current context.
         -> Mode n               -- ^ Mode for checking enclosing case expression.
         -> [Alt a n]            -- ^ Alternatives in the case expression.
         -> CheckM a n 
                 ( Mode n
                 , Context n)
 
-takeDiscrimCheckModeFromAlts a table ctx mode alts
+takeDiscrimCheckModeFromAlts table a ctx mode alts
  | Recon        <- mode
  = return (Recon, ctx)
 
  | otherwise
- = do
+ = do   -- Get the result type associated with each of the patterns.
+        -- NOTE: We don't bother checking the result types match here.
+        --       This will be done by checkAltsM when we check each individual
+        --       pattern type against the type of the scrutinee.
         let pats     = map patOfAlt alts
         tsPats       <- liftM catMaybes $ mapM (dataTypeOfPat table a) pats
-
-        -- TODO: check that multiple pattern types are equivalent.
 
         case tsPats of
          -- We only have a default pattern, 
@@ -159,6 +160,9 @@ takeDiscrimCheckModeFromAlts a table ctx mode alts
          [] 
           -> return (Synth, ctx)
 
+         -- We have at least one non-default pattern, which we can use to
+         -- determine how many existentials are needed to instantiate
+         -- the quantifiers of its type.
          tPat : _    
           | Just (bs, tBody) <- takeTForalls tPat
           -> do  
