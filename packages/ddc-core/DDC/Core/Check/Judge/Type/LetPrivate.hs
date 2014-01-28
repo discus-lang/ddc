@@ -12,9 +12,6 @@ import Data.List                as L
 checkLetPrivate :: Checker a n
 
 -- private --------------------------------------
--- TODO: when checking this we need to make sure to update the effect
---       from the context before checking for escaping regions.
---
 checkLetPrivate !table !ctx 
         xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) mode
  = case takeSubstBoundsOfBinds bsRgn of
@@ -26,9 +23,10 @@ checkLetPrivate !table !ctx
 
         -- Check the kinds of the region binders.
         -- These must already set to kind Region.
-        (bsRgn', _, _)  <- liftM unzip3
-                        $  mapM (\b -> checkBindM config kenv ctx UniverseKind b Recon) 
-                                bsRgn
+        (bsRgn', _, _)  
+         <- liftM unzip3
+         $  mapM (\b -> checkBindM config kenv ctx UniverseKind b Recon)
+                 bsRgn
         let ksRgn       = map typeOfBind bsRgn'
         
         -- The binders must have region kind.
@@ -47,9 +45,10 @@ checkLetPrivate !table !ctx
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushKinds [(b, RoleConcrete) | b <- bsRgn] ctx'
         let ctx2         = liftTypes depth ctx1
-        (bsWit', _, _)   <- liftM unzip3
-                         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon) 
-                                 bsWit
+        (bsWit', _, _)   
+         <- liftM unzip3
+         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon) 
+                 bsWit
         
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
@@ -57,19 +56,21 @@ checkLetPrivate !table !ctx
 
         -- Check the body expression.
         let ctx3        = pushTypes bsWit' ctx2
-        (xBody', tBody, effs, clo, ctx4)  
-                        <- tableCheckExp table table ctx3 x mode
+        (xBody3, tBody3, effs3, clo, ctx4)  
+          <- tableCheckExp table table ctx3 x mode
 
         -- The body type must have data kind.
-        (tBody', kBody, ctx5)   
-         <- checkTypeM config kenv ctx4 UniverseSpec tBody
+        (tBody4, kBody4, ctx5)   
+         <- checkTypeM config kenv ctx4 UniverseSpec tBody3
          $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
 
-        let kBody'      = applyContext ctx5 kBody
-        when (not $ isDataKind kBody')
-         $ throw $ ErrorLetBodyNotData a xx tBody kBody'
+        let tBody5      = applyContext ctx5 tBody4
+        let kBody5      = applyContext ctx5 kBody4
+        let TSum effs5  = applyContext ctx5 (TSum effs3)
+        when (not $ isDataKind kBody5)
+         $ throw $ ErrorLetBodyNotData a xx tBody5 kBody5
 
         -- The final body type.
         tBody_final
@@ -79,16 +80,16 @@ checkLetPrivate !table !ctx
                 -- private/extend construct ends.
                 Just tParent
                  -> do  return $ foldl  (\t b -> substituteTX b tParent t) 
-                                        tBody' bsRgn
+                                        tBody5 bsRgn
 
                 -- If the bound region variables have no parent then they are 
                 -- deallocated when the private construct ends.
                 -- The bound region variables cannot be free in the body type.
                 _
-                 -> do  let fvsT         = freeT Env.empty tBody
+                 -> do  let fvsT         = freeT Env.empty tBody5
                         when (any (flip Set.member fvsT) us)
-                         $ throw $ ErrorLetRegionFree a xx bsRgn tBody'
-                        return $ lowerT depth tBody
+                         $ throw $ ErrorLetRegionFree a xx bsRgn tBody5
+                        return $ lowerT depth tBody5
 
         -- Delete effects on the bound region from the result.
         let delEff es u = Sum.delete (tRead  (TVar u))
@@ -97,25 +98,25 @@ checkLetPrivate !table !ctx
                         $ es
         
         -- The final effect type.
-        tEffs'      
+        effs_cut
          <- case mtParent of
                 -- If the bound region variables are children of some parent
                 -- region then the overall effect is to allocate into 
                 -- the parent.
                 Just tParent
-                  -> return $ (lowerT depth $ foldl delEff effs us)
+                  -> return $ (lowerT depth $ foldl delEff effs5 us)
                            `Sum.union` (Sum.singleton kEffect (tAlloc tParent))
 
                 -- If the bound region variables have no parent then they
                 -- are deallocated when the private construct ends and no
                 -- effect on these regions is visible.
                 _ -> return $ lowerT depth 
-                            $ foldl delEff effs us 
+                            $ foldl delEff effs5 us 
 
         -- Delete the bound region variable from the closure.
         -- Mask closure terms due to locally bound region vars.
         let cutClo c r  = mapMaybe (cutTaggedClosureT r) c
-        let c2_cut      = Set.fromList 
+        let clos_cut    = Set.fromList 
                         $ foldl cutClo (Set.toList clo) bsRgn
 
         -- Cut stack back to the length we started with,
@@ -124,13 +125,13 @@ checkLetPrivate !table !ctx
                         $ popToPos pos1 ctx5
 
         returnX a
-                (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody')
-                tBody_final tEffs' c2_cut
+                (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody3)
+                tBody_final effs_cut clos_cut
                 ctx_cut
 
 
 -- withregion -----------------------------------
-checkLetPrivate !table !ctx 
+checkLetPrivate !table !ctx0
         xx@(XLet a (LWithRegion u) x) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -140,7 +141,7 @@ checkLetPrivate !table !ctx
         --  because the KindEnv knows the types of primitive variables.
         (case listToMaybe  
                 $ catMaybes [ Env.lookup u kenv
-                            , liftM fst $ lookupKind u ctx] of
+                            , liftM fst $ lookupKind u ctx0] of
           Nothing -> throw $ ErrorUndefinedVar a u UniverseSpec
 
           Just k  |  not $ isRegionKind k
@@ -149,39 +150,44 @@ checkLetPrivate !table !ctx
           _       -> return ())
         
         -- Check the body expression.
-        (xBody', tBody, effs, clo, ctx') 
-                        <- tableCheckExp table table ctx x mode
+        (xBody0, tBody0, effs0, clo, ctx1) 
+         <- tableCheckExp table table ctx0 x mode
 
         -- The body type must have data kind.
-        (tBody', kBody, _) 
-         <- checkTypeM config kenv ctx UniverseSpec tBody
+        (tBody1, kBody1, ctx2) 
+         <- checkTypeM config kenv ctx1 UniverseSpec tBody0
          $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
 
-        when (not $ isDataKind kBody)
-         $ throw $ ErrorLetBodyNotData a xx tBody' kBody
+        let tBody2      = applyContext ctx2 tBody1
+        let kBody2      = applyContext ctx2 kBody1
+        let TSum effs2  = applyContext ctx2 (TSum effs0)
+        
+        when (not $ isDataKind kBody2)
+         $ throw $ ErrorLetBodyNotData a xx tBody2 kBody2
         
         -- The bound region variable cannot be free in the body type.
         let tcs         = supportTyCon
-                        $ support Env.empty Env.empty tBody'
+                        $ support Env.empty Env.empty tBody2
+        
         when (Set.member u tcs)
-         $ throw $ ErrorWithRegionFree a xx u tBody'
+         $ throw $ ErrorWithRegionFree a xx u tBody2
 
         -- Delete effects on the bound region from the result.
         let tu          = TVar u
-        let effs'       = Sum.delete (tRead  tu)
+        let effs_cut    = Sum.delete (tRead  tu)
                         $ Sum.delete (tWrite tu)
                         $ Sum.delete (tAlloc tu)
-                        $ effs
+                        $ effs2
         
         -- Delete the bound region handle from the closure.
-        let clo_masked  = Set.delete (GBoundRgnCon u) clo
+        let clos_cut    = Set.delete (GBoundRgnCon u) clo
 
         returnX a
-                (\z -> XLet z (LWithRegion u) xBody')
-                tBody' effs' clo_masked
-                ctx'
+                (\z -> XLet z (LWithRegion u) xBody0)
+                tBody2 effs_cut clos_cut
+                ctx2
 
 checkLetPrivate _ _ _ _
         = error "ddc-core.checkLetPrivate: no match"        
@@ -295,4 +301,5 @@ checkWitnessBindM !config !a !kenv !ctx !xx !uRegions !bsWit !bWit
          -> checkWitnessArg t2
 
         _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
+
 
