@@ -112,5 +112,16 @@ foo  (_ : Unit) : Nat#
 ;;
 
 
+-- Case expressions on literals.
+-- Need to unbox scrutinee.
+:to-salt..
+module Test where
+swap (x : Nat#) : Nat#
+ = case x of
+        0       -> 1
+        _       -> 0
+;;
+
+
 
 

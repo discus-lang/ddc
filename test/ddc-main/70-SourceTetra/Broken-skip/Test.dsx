@@ -1,17 +1,6 @@
 
 
 
--- Case expressions on literals.
--- Need to unbox scrutinee.
-:to-salt..
-module Test where
-swap (x : Nat#) : Nat#
- = case x of
-        0       -> 1
-        _       -> 0
-;;
-
-
 :to-salt..
 module Test where
 
@@ -41,6 +30,23 @@ mapS    [a b : Data] [e : Effect]
         Cons x xs -> Cons (f x) (run mapS f xs)
 ;;
 
+
+:to-core..
+module Test where
+
+data Blerk where
+        Foo     : Blerk
+        Bar     : Blerk
+
+data Blerk2 where
+        Foo     : Blerk2
+        Bar     : Blerk2
+
+foo (x : Blerk) : Blerk
+ = case x of
+        Foo     -> Bar
+        Bar     -> Foo
+;;
 
 
 -- Polymorphically take the head of a list, where the element

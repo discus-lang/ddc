@@ -298,5 +298,34 @@ letrec {
 }
 
 
+-- Case expressions on literals.
+-- Need to unbox scrutinee.
+module Test with
+letrec {
+  swap : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      let x0
+            = let ^ = x in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let ^
+                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+              ^0 in
+      case x0 of {
+        0#  
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+            ^1;
+        _ 
+         -> let ^ = allocRawSmall [rT] TAG0# 8# in
+            let ^ = payloadOfRawSmall [rT] ^0 in
+            let _
+                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+            ^1
+      }
+}
+
+
 
 
