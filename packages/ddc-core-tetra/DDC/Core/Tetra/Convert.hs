@@ -312,18 +312,6 @@ convertExpX penv kenv tenv ctx xx
 
 
         ---------------------------------------------------
-        -- Region application.
-        --   These are passed through to the Salt language.
-        XApp a1 x1 (XType a2@(AnTEC k _ _ _) t2)
-         | isRegionKind k
-         -> do  
-                x1'     <- downArgX x1
-                t2'     <- convertRegionT kenv t2
-                return  $ XApp (annotTail a1) x1' 
-                               (XType (annotTail a2) t2')
-
-
-        ---------------------------------------------------
         -- Wrapping of pure values into boxed values.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for used-defined types.
@@ -483,7 +471,7 @@ convertExpX penv kenv tenv ctx xx
                         
                 return  $ xApps a' x1' xsArgs'
 
-
+        
         ---------------------------------------------------
         -- let-expressions.
         XLet a lts x2

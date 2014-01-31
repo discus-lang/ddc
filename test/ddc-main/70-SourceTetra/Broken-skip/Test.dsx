@@ -50,8 +50,13 @@ foo (x : Blerk) : Blerk
 -- Polymorphically take the head of a list, where the element
 -- has its own primary region annotation. In the Salt code the head
 -- function is passed the top level region as the location of the element.
+--
+-- TODO: result is broken, not all objects are linked into result.
+--
+:set Dump
 :to-salt..
 module Test where
+
 data List (a : Data) where
         Cons    : a -> List a -> List a
         Nil     : List a
