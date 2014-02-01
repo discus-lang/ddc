@@ -255,49 +255,6 @@ letrec {
 }
 
 
--- Polymorphically take the head of a list, where the element
--- is in the top-level region. In the Salt code the head function
--- is passed the top level region as the location of the element.
-module Test with
-letrec {
-  head : [a$r : Region].Ptr# a$r Obj -> Ptr# rT Obj -> Ptr# a$r Obj
-    = /\(a$r : Region).
-       \(def : Ptr# a$r Obj).\(xx : Ptr# rT Obj).
-      case getTag [rT] xx of {
-        TAG0#  
-         -> let x
-                  = getFieldOfBoxed [rT] [Ptr# a$r Obj] xx 0# in
-            x;
-        _ 
-         -> def
-      };
-  
-  foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(_ : Ptr# rT Obj).
-      let x0
-            = let ^ = allocBoxed [rT] TAG1# 0# in
-              ^0 in
-      let x2
-            = let ^ = allocRawSmall [rT] TAG0# 8# in
-              let ^ = payloadOfRawSmall [rT] ^0 in
-              let _
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
-              ^1 in
-      let x1
-            = let ^ = allocBoxed [rT] TAG0# 1# in
-              let _
-                    = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 0# x0 in
-              ^0 in
-      let x3
-            = let ^ = allocRawSmall [rT] TAG0# 8# in
-              let ^ = payloadOfRawSmall [rT] ^0 in
-              let _
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
-              ^1 in
-      head [rT] x3 x1
-}
-
-
 -- Case expressions on literals.
 -- Need to unbox scrutinee.
 module Test with
@@ -327,5 +284,87 @@ letrec {
 }
 
 
+-- Polymorphically take the head of a list, where the element
+-- is in the top-level region. In the Salt code the head function
+-- is passed the top level region as the location of the element.
+module Test with
+letrec {
+  head : [a$r : Region].Ptr# a$r Obj -> Ptr# rT Obj -> Ptr# a$r Obj
+    = /\(a$r : Region).
+       \(def : Ptr# a$r Obj).\(xx : Ptr# rT Obj).
+      case getTag [rT] xx of {
+        TAG0#  
+         -> let x
+                  = getFieldOfBoxed [rT] [Ptr# a$r Obj] xx 0# in
+            x;
+        _ 
+         -> def
+      };
+  
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(_ : Ptr# rT Obj).
+      let x0
+            = let ^ = allocBoxed [rT] TAG1# 0# in
+              ^0 in
+      let x2
+            = let ^ = allocRawSmall [rT] TAG0# 8# in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+              ^1 in
+      let x1
+            = let ^ = allocBoxed [rT] TAG0# 2# in
+              let _
+                    = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 0# x2 in
+              let _
+                    = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 1# x0 in
+              ^0 in
+      let x3
+            = let ^ = allocRawSmall [rT] TAG0# 8# in
+              let ^ = payloadOfRawSmall [rT] ^0 in
+              let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+              ^1 in
+      head [rT] x3 x1
+}
 
+
+-- Polymorphically take the head of a list, where the element
+-- has its own primary region annotation. In the Salt code the head
+-- function is passed the top level region as the location of the element.
+module Test with
+letrec {
+  head : [a$r : Region].Ptr# a$r Obj -> Ptr# rT Obj -> Ptr# a$r Obj
+    = /\(a$r : Region).
+       \(def : Ptr# a$r Obj).\(xx : Ptr# rT Obj).
+      case getTag [rT] xx of {
+        TAG0#  
+         -> let x
+                  = getFieldOfBoxed [rT] [Ptr# a$r Obj] xx 0# in
+            x;
+        _ 
+         -> def
+      };
+  
+  foo : [r : Region].Ptr# rT Obj -> Ptr# r Obj
+    = /\(r : Region).
+       \(_ : Ptr# rT Obj).
+      let x0
+            = let ^ = allocBoxed [r] TAG0# 0# in
+              ^0 in
+      let x1
+            = let ^ = allocBoxed [r] TAG1# 0# in
+              ^0 in
+      let x2
+            = let ^ = allocBoxed [rT] TAG1# 0# in
+              ^0 in
+      let x3
+            = let ^ = allocBoxed [rT] TAG0# 2# in
+              let _
+                    = setFieldOfBoxed [rT] [Ptr# r Obj] ^0 0# x1 in
+              let _
+                    = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 1# x2 in
+              ^0 in
+      head [r] x0 x3
+}
 

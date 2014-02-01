@@ -3,7 +3,6 @@ module DDC.Core.Tetra.Convert.Data
         ( constructData
         , destructData)
 where
-import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Base
 import DDC.Core.Tetra.Convert.Layout
 import DDC.Core.Salt.Platform
@@ -36,17 +35,9 @@ constructData
         -> [Type    A.Name]             -- ^ Field types.
         -> ConvertM a (Exp a A.Name)
 
-constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs 
+constructData pp _kenv _tenv a _dataDef ctorDef rPrime xsFields tsFields
  | Just HeapObjectBoxed <- heapObjectOfDataCtor pp ctorDef
  = do
-        -- We want to write the fields into the newly allocated object.
-        -- As xsArgs list also contains type arguments, 
-        --   we need to drop these off first.
-        let xsFields    = drop (length $ dataTypeParams dataDef) xsArgs
-
-        -- Get the regions each of the objects are in.
-        let tsFields    = drop (length $ dataTypeParams dataDef) tsArgs
-
         -- Allocate the object.
         let arity       = length tsFields
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
@@ -79,15 +70,6 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         let bPayload    = BAnon (A.tPtr rPrime (A.tWord 8))
         let xPayload    = A.xPayloadOfRawSmall a rPrime
                         $ XVar a (UIx 0)
-
-        -- Convert the field types.
-        tsFields        <- mapM (convertRepableT kenv) 
-                        $  dataCtorFieldTypes ctorDef
-
-        -- We want to write the fields into the newly allocated object.
-        -- The xsArgs list also contains type arguments, so we need to
-        --  drop these off first.
-        let xsFields    = drop (length $ dataTypeParams dataDef) xsArgs
 
         -- Get the offset of each field.
         let Just offsets = fieldOffsetsOfDataCtor pp ctorDef

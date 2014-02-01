@@ -56,11 +56,14 @@ data Mode n
         --   on parameters  as well as type applications to already be present.
         = Recon
         
-        -- | Synthesise the type of the expression, producing unification
-        ---  variables for bidirectional type inference.
+        -- | The ascending smoke of incense.
+        --   Synthesise the type of the expression, producing unification
+        --   variables for bidirectional type inference.
+        --   
         | Synth
 
-        -- | heck the type of an expression against this expected type, and
+        -- | The descending tongue of flame.
+        --   Check the type of an expression against this expected type, and
         --   unify expected types into unification variables for bidirecional
         --   type inference.
         | Check (Type n)
