@@ -15,6 +15,8 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorType err'  
          -> ppr err'
 
+        ErrorData err'
+         -> ppr err'
         
         ErrorMalformedType a xx tt
          -> vcat [ ppr a

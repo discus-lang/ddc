@@ -3,13 +3,14 @@ module DDC.Core.Check.Module
         ( checkModule
         , checkModuleM)
 where
-import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
+import DDC.Core.Module
+import DDC.Core.Exp
 import DDC.Type.Check.Context
+import DDC.Type.Check.Data
 import DDC.Type.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Equiv
@@ -79,18 +80,21 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         mapM_ (checkTypeM config kenv' UniverseKind) $ Map.elems $ moduleExportKinds mm
         mapM_ (checkTypeM config kenv' UniverseSpec) $ Map.elems $ moduleExportTypes mm
                 
-        -- TODO: Check the data type definitions.
-        --       The constructor types need to return the defined data type.
-        let defs'   = unionDataDefs
-                        (configDataDefs config)
-                        (fromListDataDefs (Map.elems (moduleDataDefsLocal mm)))
+        -- Check the locally defined data type definitions.
+        defs'        
+         <- case checkDataDefs config (Map.elems (moduleDataDefsLocal mm)) of
+                (err : _, _)   -> throw $ ErrorData err
+                ([], defs')    -> return defs'
 
+        let defs_all =  unionDataDefs (configDataDefs config) 
+                                      (fromListDataDefs defs')
+                                      
         -- Binders for the data type constructors defined by the data defs.
         let bsData  = [BName (dataDefTypeName def) (kindOfDataDef def)
-                                | def <- Map.elems (moduleDataDefsLocal mm) ]
+                                | def <- defs' ]
         
         let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
-        let config_data = config { configDataDefs = defs' }
+        let config_data = config { configDataDefs = defs_all }
 
         -- Check the body of the module.
         (x', _, _effs, _, ctx) 

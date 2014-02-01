@@ -18,7 +18,8 @@ module DDC.Type.Check
         , kindOfTcCon
         
           -- * Errors
-        , Error(..))
+        , Error         (..)
+        , ErrorData     (..))
 where
 import DDC.Type.Check.Judge.Kind
 import DDC.Type.Check.Context

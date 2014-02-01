@@ -1,7 +1,8 @@
 
 -- | Errors produced when checking types.
 module DDC.Type.Check.Error
-        (Error(..))
+        ( Error         (..)
+        , ErrorData     (..))
 where
 import DDC.Type.Universe
 import DDC.Type.Exp
@@ -100,3 +101,10 @@ data Error n
         , errorKind             :: Kind n }
         deriving Show
 
+
+-- | Things that can go wrong when checking data type definitions.
+data ErrorData n
+        = ErrorDataBadCtorType
+        { errorDataCtorName     :: n
+        , errorError            :: Error n }
+        deriving Show

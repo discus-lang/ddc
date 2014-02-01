@@ -27,7 +27,7 @@ module DDC.Core.Check
         , AnTEC(..)
 
           -- * Error messages
-        , Error(..))
+        , Error         (..))
 where
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage      ()

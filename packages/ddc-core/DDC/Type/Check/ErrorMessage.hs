@@ -112,3 +112,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                  , text "             has kind: " <> ppr k
                  , text "  but it must be Effect or Closure" ]
 
+
+instance (Eq n, Show n, Pretty n) => Pretty (ErrorData n) where
+ ppr _err
+  = error "ErrorData pretty it"

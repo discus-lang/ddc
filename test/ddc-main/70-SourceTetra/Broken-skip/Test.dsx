@@ -14,6 +14,7 @@ mapS    [a b : Data] [e : Effect]
 ;;
 
 
+-- Error: primitive data constructor re-used.
 :to-salt..
 module Test where
 

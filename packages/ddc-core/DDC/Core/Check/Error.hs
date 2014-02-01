@@ -15,6 +15,10 @@ data Error a n
         = ErrorType
         { errorTypeError        :: T.Error n }
 
+        -- | Found an error in the data type definitions.
+        | ErrorData
+        { errorData             :: T.ErrorData n }
+
         -- | Found a malformed type,
         --   and we don't have a more specific diagnosis.
         | ErrorMalformedType
