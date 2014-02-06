@@ -14,19 +14,5 @@ mapS    [a b : Data] [e : Effect]
 ;;
 
 
--- Error: primitive data constructor re-used.
-:to-salt..
-module Test where
-
-data Bool where
-        True  : Bool
-        False : Bool
-
-neg (x : Bool) : Bool
- = case x of
-        True    -> False
-        False   -> True
-;;
-
 
 

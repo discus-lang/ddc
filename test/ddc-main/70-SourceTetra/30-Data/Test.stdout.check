@@ -43,9 +43,15 @@ data Void where {
      A constructor with name: Foo
      is already defined.]
 
--- Error: data constructor name reused in a different type.
+-- Error: data constructor redefined in a different type.
 [Error in transformed module.
   Duplicate data constructor definition.
      A constructor with name: Bar
      is already defined.]
 
+
+-- Error: primitive data constructor redefined in a different type.
+[Error in transformed module.
+  Duplicate data constructor definition.
+     A constructor with name: False#
+     is already defined.]

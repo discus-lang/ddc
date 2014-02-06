@@ -15,8 +15,8 @@ foo (x : Nat#) : Nat#
 module Test where
 neg (x : Bool#) : Bool#
  = case x of
-        True    -> False
-        False   -> True
+        True#   -> False#
+        False#  -> True#
 ;;
 
 
@@ -86,6 +86,7 @@ module Test where
 data List (a : Data) where
         Cons    : a -> List a -> List a
         Nil     : List a
+
 head (def : a) (xx : List a) : a
  = case xx of
         Cons x _        -> x

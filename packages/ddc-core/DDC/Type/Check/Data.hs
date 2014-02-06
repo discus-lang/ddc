@@ -8,8 +8,9 @@ import DDC.Type.DataDef
 import DDC.Base.Pretty
 import Data.Maybe
 import Data.Set                 (Set)
+import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
-
+import qualified Data.Map       as Map
 
 -- | Check some data type definitions.
 checkDataDefs 
@@ -18,10 +19,31 @@ checkDataDefs
         -> [DataDef n]
         -> ([ErrorData n], [DataDef n])
 
-checkDataDefs _config defs 
- = checkDataDefs' 
-        Set.empty Set.empty [] []
-        defs
+checkDataDefs config defs 
+ = let
+        -- Get the list of type and data constructors which the module
+        -- cannot re-define locally.
+
+        -- Primitive type constructors.
+        primTypeCtors
+                = Set.fromList
+                $ Map.keys $ Env.envMap $ configPrimKinds config
+
+        -- Primitive data type constructors
+        primDataTypeCtors  
+                = Set.fromList 
+                $ Map.keys $ dataDefsTypes $ configDataDefs config
+
+        -- Primitive data constructors
+        primDataCtors   
+                = Set.fromList 
+                $ Map.keys $ dataDefsCtors $ configDataDefs config
+
+   in   checkDataDefs' 
+                (Set.union primTypeCtors primDataTypeCtors)
+                primDataCtors
+                [] []
+                defs
 
 
 checkDataDefs'

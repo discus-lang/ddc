@@ -60,7 +60,7 @@ foo (x : Blerk) : Blerk
 ;;
         
 
--- Error: data constructor name reused in a different type.
+-- Error: data constructor redefined in a different type.
 :to-core..
 module Test where
 
@@ -78,3 +78,17 @@ foo (x : Blerk) : Blerk
         Bar     -> Foo
 ;;
 
+
+-- Error: primitive data constructor redefined in a different type.
+:to-salt..
+module Test where
+
+data Bool where
+        True#  : Bool
+        False# : Bool
+
+neg (x : Bool) : Bool
+ = case x of
+        True#    -> False#
+        False#   -> True#
+;;
