@@ -4,6 +4,7 @@ module DDC.Type.DataDef
         ( DataDef    (..)
         , kindOfDataDef
         , dataTypeOfDataDef
+        , dataCtorNamesOfDataDef
         , makeDataDefAlg
         , makeDataDefAbs
 
@@ -68,7 +69,7 @@ kindOfDataDef def
    in   kFuns ksParam kData
    
 
--- | Get the the type associated with a data definition, 
+-- | Get the type associated with a data definition, 
 --   that is, the type produced by the constructors.
 dataTypeOfDataDef :: DataDef n -> Type n
 dataTypeOfDataDef def
@@ -77,7 +78,16 @@ dataTypeOfDataDef def
         tc      = TyConBound (UName (dataDefTypeName def))
                              (kFuns ksParam kData)
    in   tApps (TCon tc) (map TVar usParam)
-                                        
+
+
+-- | Get the list of data constructor names that this type defines,
+--   or Nothing if there are too many to list.
+dataCtorNamesOfDataDef :: DataDef n -> Maybe [n]
+dataCtorNamesOfDataDef def
+ = case dataDefCtors def of
+        Nothing         -> Nothing 
+        Just ctors      -> Just $ map dataCtorName ctors
+
 
 -- | Shortcut for constructing a `DataDef` for an algebraic type.
 --

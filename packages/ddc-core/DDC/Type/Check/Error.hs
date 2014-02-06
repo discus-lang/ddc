@@ -104,7 +104,12 @@ data Error n
 
 -- | Things that can go wrong when checking data type definitions.
 data ErrorData n
-        = ErrorDataBadCtorType
+        -- A duplicate data constructor name.
+        = ErrorDataDupCtorName
+        { errorDataCtorName     :: n }
+
+        -- A data constructor where the type is mis-kinded.
+        | ErrorDataBadCtorType
         { errorDataCtorName     :: n
         , errorError            :: Error n }
         deriving Show

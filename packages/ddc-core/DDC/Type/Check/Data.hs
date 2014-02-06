@@ -6,6 +6,7 @@ import DDC.Type.Check.Error
 import DDC.Type.Check.Config
 import DDC.Type.DataDef
 import DDC.Base.Pretty
+import Data.Maybe
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
@@ -37,18 +38,23 @@ checkDataDefs' nsTypes nsCtors errs dsChecked ds
  | []   <- ds
  = (reverse errs, reverse dsChecked)
  
- -- Keep checking defs
+ -- Keep checking defs.
  | d : ds' <- ds
  = case checkDataDef nsTypes nsCtors d of
-        Left errs' -> checkDataDefs'
-                        (Set.insert (dataDefTypeName d) nsTypes)
-                        (Set.empty)                             -- TODO: add ctor names
-                        (errs ++ errs') dsChecked ds'
 
-        Right d'   -> checkDataDefs'
-                        (Set.insert (dataDefTypeName d') nsTypes)
-                        (Set.empty)                             -- TODO: add ctor names
-                        errs (d' : dsChecked) ds'
+    -- There are errors in this def.
+    Left errs' 
+     -> checkDataDefs'
+                (Set.insert (dataDefTypeName d) nsTypes)
+                (Set.fromList $ fromMaybe [] $ dataCtorNamesOfDataDef d)
+                (errs ++ errs') dsChecked ds'
+
+    -- This def is ok.
+    Right d'   
+     -> checkDataDefs'
+                (Set.insert (dataDefTypeName d') nsTypes)
+                (Set.fromList $ fromMaybe [] $ dataCtorNamesOfDataDef d)
+                errs (d' : dsChecked) ds'
 
  | otherwise
  = error "ddc-core.checkDataDefs: bogus warning suppression"
@@ -129,7 +135,7 @@ checkDataCtor nsCtors ctor
         
         -- Check the constructor name is not already defined.
         | Set.member (dataCtorName ctor) nsCtors 
-        = error "checkDataCtor: dup type name"
+        = Left error "checkDataCtor: dup ctor name"
 
         -- This constructor looks ok.
         | otherwise
