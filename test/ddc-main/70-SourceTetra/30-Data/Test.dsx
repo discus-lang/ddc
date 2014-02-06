@@ -33,7 +33,34 @@ data Void
 ;;
 
 
--- Error: data constructor reused in a different data type.
+-- Error: duplicate data type definition.
+:to-salt..
+module Test where
+
+data Blerk where Foo : Blerk
+data Blerk where Bar : Blerk
+
+next (x : Blerk) : Blerk
+ = case x of
+        Foo     -> Foo
+;;
+
+
+-- Error: data constructor name reused in the same type.
+:to-core..
+module Test where
+
+data Blerk where
+        Foo     : Int# -> Blerk
+        Foo     : Blerk
+
+foo (x : Blerk) : Blerk
+ = case x of
+        Foo     -> 5
+;;
+        
+
+-- Error: data constructor name reused in a different type.
 :to-core..
 module Test where
 
@@ -50,3 +77,4 @@ foo (x : Blerk) : Blerk
         Foo     -> Bar
         Bar     -> Foo
 ;;
+

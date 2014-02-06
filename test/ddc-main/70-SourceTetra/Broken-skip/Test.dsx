@@ -29,14 +29,4 @@ neg (x : Bool) : Bool
 ;;
 
 
-:to-salt..
-module Test where
-
-data Blerk where Foo : Blerk
-data Blerk where Bar : Blerk
-
-next (x : Blerk) : Blerk
- = case x of
-        Foo     -> Foo
-;;
 

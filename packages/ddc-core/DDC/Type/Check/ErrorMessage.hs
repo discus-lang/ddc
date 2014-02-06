@@ -115,9 +115,14 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 instance (Eq n, Show n, Pretty n) => Pretty (ErrorData n) where
  ppr err
   = case err of
+        ErrorDataDupTypeName n
+         -> vcat [ text "Duplicate data type definition."
+                 , text "   A constructor with name: " <> ppr n
+                 , text "   is already defined." ]
+
         ErrorDataDupCtorName n
          -> vcat [ text "Duplicate data constructor definition."
-                 , text "   A data constructor named: " <> ppr n
+                 , text "   A constructor with name: " <> ppr n
                  , text "   is already defined." ]
 
         ErrorDataBadCtorType n err'

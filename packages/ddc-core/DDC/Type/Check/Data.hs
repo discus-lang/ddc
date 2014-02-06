@@ -73,7 +73,7 @@ checkDataDef nsTypes nsCtors def
         
  -- Check the data type name is not already defined.
  | Set.member (dataDefTypeName def) nsTypes
- = error "checkDef: dup type name"
+ = Left [ErrorDataDupTypeName (dataDefTypeName def)]
 
  -- No data constructors to check.
  | Nothing      <- dataDefCtors def
@@ -133,11 +133,11 @@ checkDataCtor
 
 checkDataCtor nsCtors ctor
         
-        -- Check the constructor name is not already defined.
-        | Set.member (dataCtorName ctor) nsCtors 
-        = Left $ ErrorDataDupCtorName (dataCtorName ctor)
+ -- Check the constructor name is not already defined.
+ | Set.member (dataCtorName ctor) nsCtors 
+ = Left $ ErrorDataDupCtorName (dataCtorName ctor)
 
-        -- This constructor looks ok.
-        | otherwise
-        = Right ctor
+ -- This constructor looks ok.
+ | otherwise
+ = Right ctor
 

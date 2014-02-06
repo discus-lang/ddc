@@ -30,8 +30,22 @@ data Void where {
 }
 
 
--- Error: data constructor reused in a different data type.
+-- Error: duplicate data type definition.
+[Error in transformed module.
+  Duplicate data type definition.
+     A constructor with name: Blerk
+     is already defined.]
+
+
+-- Error: data constructor name reused in the same type.
 [Error in transformed module.
   Duplicate data constructor definition.
-     A data constructor named: Bar
+     A constructor with name: Foo
      is already defined.]
+
+-- Error: data constructor name reused in a different type.
+[Error in transformed module.
+  Duplicate data constructor definition.
+     A constructor with name: Bar
+     is already defined.]
+
