@@ -45,11 +45,9 @@ toCoreModule a mm
         , C.moduleImportKinds   = Map.empty
         , C.moduleImportTypes   = Map.empty
         
-        , C.moduleDataDefsLocal
-                = Map.fromList
-                $ [ ( toCoreN $ S.dataDefTypeName def
-                    , toCoreDataDef def) 
-                        | S.TopData _ def <- S.moduleTops mm ]
+        , C.moduleDataDefsLocal 
+                = [ toCoreDataDef def
+                  | S.TopData _ def <- S.moduleTops mm ]
 
         , C.moduleBody          
                 = C.XLet  a (letsOfTops (S.moduleTops mm))

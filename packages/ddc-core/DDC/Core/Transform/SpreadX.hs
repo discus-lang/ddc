@@ -31,10 +31,11 @@ instance SpreadX (Module a) where
   , moduleExportTypes   = Map.map (spreadT kenv)  (moduleExportTypes mm)
   , moduleImportKinds   = Map.map (liftSnd (spreadT kenv)) (moduleImportKinds mm)
   , moduleImportTypes   = Map.map (liftSnd (spreadT kenv)) (moduleImportTypes mm)
-  , moduleDataDefsLocal = Map.map (spreadT kenv)  (moduleDataDefsLocal mm)
+  , moduleDataDefsLocal = map     (spreadT kenv)  (moduleDataDefsLocal mm)
   , moduleBody          = spreadX kenv tenv (moduleBody mm) }
 
   where liftSnd f (x, y) = (x, f y)
+
 
 -------------------------------------------------------------------------------
 instance SpreadX (Exp a) where

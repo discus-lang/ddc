@@ -96,14 +96,14 @@ letrec {
 -- Polymorphically take the head of a polymorphic list where
 -- the element type has a primary region variable.
 module Test 
-data Blerk (r : Region) where {
-        Hot : Blerk r;
-        Cold : Blerk r;
-}
-
 data List (a : Data) where {
         Cons : a -> List a -> List a;
         Nil : List a;
+}
+
+data Blerk (r : Region) where {
+        Hot : Blerk r;
+        Cold : Blerk r;
 }
 with
 letrec {

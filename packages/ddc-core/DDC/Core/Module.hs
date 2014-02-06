@@ -56,7 +56,7 @@ data Module a n
 
           -- Local --------------------
           -- | Data types defined in this module.
-        , moduleDataDefsLocal   :: !(Map n (DataDef n))
+        , moduleDataDefsLocal   :: ![DataDef n]
 
           -- | The module body consists of some let-bindings wrapping a unit
           --   data constructor. We're only interested in the bindings, with

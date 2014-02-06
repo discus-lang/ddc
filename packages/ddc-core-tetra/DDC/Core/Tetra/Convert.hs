@@ -101,7 +101,7 @@ convertM pp runConfig defs kenv tenv mm
         let tenv'  = Env.extends ntsImports tenv
         
         let defs'  = unionDataDefs defs
-                   $ fromListDataDefs (Map.elems $ moduleDataDefsLocal mm)
+                   $ fromListDataDefs (moduleDataDefsLocal mm)
 
         let penv   = TopEnv
                    { topEnvPlatform     = pp
@@ -134,7 +134,7 @@ convertM pp runConfig defs kenv tenv mm
                   -- Data constructors and pattern matches should have been
                   -- flattenedinto primops, so we don't need the data type
                   -- definitions.
-                , moduleDataDefsLocal  = Map.empty 
+                , moduleDataDefsLocal  = []
 
                 , moduleBody           = x2 }
 

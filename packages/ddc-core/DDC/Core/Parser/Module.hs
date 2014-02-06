@@ -72,11 +72,7 @@ pModule c
                 , moduleExportTypes     = Map.fromList tExports
                 , moduleImportKinds     = Map.fromList tImportKinds
                 , moduleImportTypes     = Map.fromList tImportTypes
-                
-                , moduleDataDefsLocal   
-                        = Map.fromList [ (dataDefTypeName def, def)
-                                       | def <- dataDefsLocal]
-
+                , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 
 

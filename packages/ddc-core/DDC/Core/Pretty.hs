@@ -120,12 +120,11 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
         -- Local Data Definitions -----
         docsLocalData
-         | Map.null localData = empty
+         | null localData = empty
          | otherwise
          = line
-         <> vsep  [ ppr def
-                  | def <- Map.elems localData ]
-
+         <> vsep  (map ppr localData)
+                  
         pprLts = pprModePrec (modeModuleLets mode) 0
 
     in  text "module" <+> ppr name 

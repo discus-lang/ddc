@@ -69,7 +69,6 @@ import DDC.Type.Transform.Instantiate
 import DDC.Type.DataDef
 import Data.Maybe
 import Control.Monad
-import qualified Data.Map       as Map
 
 
 -- | Representation of the values of some type.
@@ -143,7 +142,7 @@ class Boxing (c :: * -> * -> *) where
 instance Boxing Module where
  boxing config mm
   = mm  { moduleBody            = boxing config (moduleBody mm) 
-        , moduleDataDefsLocal   = Map.map (boxingDataDef config) (moduleDataDefsLocal mm) }
+        , moduleDataDefsLocal   = map (boxingDataDef config) (moduleDataDefsLocal mm) }
 
 
 instance Boxing Exp where

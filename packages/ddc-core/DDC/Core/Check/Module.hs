@@ -82,7 +82,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                 
         -- Check the locally defined data type definitions.
         defs'        
-         <- case checkDataDefs config (Map.elems (moduleDataDefsLocal mm)) of
+         <- case checkDataDefs config (moduleDataDefsLocal mm) of
                 (err : _, _)   -> throw $ ErrorData err
                 ([], defs')    -> return defs'
 
