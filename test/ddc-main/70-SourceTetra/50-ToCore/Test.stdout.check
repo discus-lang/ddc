@@ -69,6 +69,8 @@ letrec {
 
 
 -- Effectful List map with explicit effect management.
+--  The result computation is boxed in both alternatives,
+--  which means we must weaken the effect of the first alternative.
 module Test 
 data List (a : Data) where {
         Nil : List a;
@@ -87,6 +89,30 @@ letrec {
         Cons (x : a) (xs : List a) 
          -> box
             Cons [b]
+                (run f x)
+                (run mapS [a] [b] [e] f xs)
+      }
+}
+
+
+-- Effectful List map with explicit effect management.
+--  The result computation is boxed just inside the outer lambda.
+module Test 
+data List (a : Data) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
+}
+with
+letrec {
+  mapS : [a b : Data].[e : Effect].(a -> S e b) -> List a -> S e (List b)
+    = /\(a b : Data)./\(e : Effect).
+       \(f : a -> S e b).\(xx : List a).
+      box
+      case xx of {
+        Nil  
+         -> Nil [b];
+        Cons (x : a) (xs : List a) 
+         -> Cons [b]
                 (run f x)
                 (run mapS [a] [b] [e] f xs)
       }
