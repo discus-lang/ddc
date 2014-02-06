@@ -34,29 +34,28 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
         -- type etc. 
         (mDataMode, tsArgs)
          <- case takeTyConApps tDiscrim of
-                Just (tc, ts)
-                 | TyConSpec TcConUnit         <- tc
-                 -> return ( Just (DataModeSmall [])
-                           , [] )
-                        -- ISSUE #269: Refactor DataModeSmall to hold DaCons
-                        --  instead of names. The DataModeSmall should hold
-                        --  DaCons instead of names, as we don't have a name
-                        --  for Unit.
-
-                 | TyConBound (UName nTyCon) _ <- tc
-                 , Just dataType        <- Map.lookup nTyCon
-                                        $  dataDefsTypes $ configDataDefs config
-                 , k                    <- kindOfDataType dataType
-                 , takeResultKind k == kData
-                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
-                           , ts )
+             Just (tc, ts)
+              | TyConSpec TcConUnit         <- tc
+              -> return ( Just (DataModeSmall [])
+                        , [] )
+                 -- ISSUE #269: Refactor DataModeSmall to hold DaCons
+                 --  instead of names. The DataModeSmall should hold
+                 --  DaCons instead of names, as we don't have a name
+                 --  for Unit.
+              | TyConBound (UName nTyCon) _ <- tc
+              , Just dataType  <- Map.lookup nTyCon
+                               $  dataDefsTypes $ configDataDefs config
+              , k              <- kindOfDataType dataType
+              , takeResultKind k == kData
+              -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+                        , ts )
                       
-                 | TyConBound (UPrim nTyCon _) k <- tc
-                 , takeResultKind k == kData
-                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
-                           , ts )
+              | TyConBound (UPrim nTyCon _) k <- tc
+              , takeResultKind k == kData
+              -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+                        , ts )
 
-                _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
+             _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
 
         -- Get the mode of the data type, 
         --   this tells us how many constructors there are.
@@ -88,8 +87,8 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
         let tsAlts'     = map (applyContext ctx4) tsAlts
         let tAlt : _    = tsAlts'
         forM_ tsAlts' $ \tAlt'
-            -> when (not $ equivT tAlt tAlt')
-                $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
+         -> when (not $ equivT tAlt tAlt')
+          $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
         checkAltsOverlapping a xx alts
@@ -132,11 +131,11 @@ checkCase _ _ _ _
 --
 takeDiscrimCheckModeFromAlts
         :: Ord n
-        => Table a n            -- ^ Checker table.
-        -> a                    -- ^ Annotation for error messages.
-        -> Context n            -- ^ Current context.
-        -> Mode n               -- ^ Mode for checking enclosing case expression.
-        -> [Alt a n]            -- ^ Alternatives in the case expression.
+        => Table a n          -- ^ Checker table.
+        -> a                  -- ^ Annotation for error messages.
+        -> Context n          -- ^ Current context.
+        -> Mode n             -- ^ Mode for checking enclosing case expression.
+        -> [Alt a n]          -- ^ Alternatives in the case expression.
         -> CheckM a n 
                 ( Mode n
                 , Context n)
@@ -233,9 +232,9 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
         Just tCtor <- ctorTypeOfPat table a (PData dc bsArg)
          
         -- Take the type of the constructor and instantiate it with the 
-        -- type arguments we got from the discriminant. 
-        -- If the ctor type doesn't instantiate then it won't have enough foralls 
-        -- on the front, which should have been checked by the def checker.
+        -- type arguments we got from the discriminant. If the ctor type 
+        -- doesn't instantiate then it won't have enough foralls on the front, 
+        -- which should have been checked by the def checker.
         tCtor_inst      
          <- case instantiateTs tCtor tsArgs of
              Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
@@ -246,8 +245,8 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
                         = takeTFunArgResult tCtor_inst
 
         -- The result type of the constructor must match the discriminant type.
-        --  If it doesn't then the constructor in the pattern probably isn't for
-        --  the discriminant type.
+        -- If it doesn't then the constructor in the pattern probably isn't for
+        -- the discriminant type.
         when (not $ equivT tDiscrim tResult)
          $ throw $ ErrorCaseScrutineeTypeMismatch a xx tDiscrim tResult
 
@@ -428,11 +427,11 @@ checkAltsOverlapping a xx alts
 --   and throw and error in the `CheckM` monad if they're not.
 checkAltsExhaustive
         :: Eq n
-        => a                    -- ^ Annotation for error messages.
-        -> Exp a n              -- ^ Expression for error messages.
-        -> DataMode n           -- ^ Mode of data type.
-                                --   Tells us how many data constructors to expect.
-        -> [Alt a n]            -- ^ Alternatives to check.
+        => a                -- ^ Annotation for error messages.
+        -> Exp a n          -- ^ Expression for error messages.
+        -> DataMode n       -- ^ Mode of data type.
+                            --   Tells us how many data constructors to expect.
+        -> [Alt a n]        -- ^ Alternatives to check.
         -> CheckM a n ()
 
 checkAltsExhaustive a xx mode alts

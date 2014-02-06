@@ -230,12 +230,12 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
          = case t2 of
             TVar u'
              |  all (/= u') uRegions 
-                         -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
+             -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 
             TCon (TyConBound u' _)
              | all (/= u') uRegions 
-                         -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
+             -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
              | otherwise -> return ()
             
             -- The parser should ensure the right of a witness is a 
@@ -245,7 +245,7 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
         -- Associate each witness binder with its type.
         btsWit  = [(typeOfBind b, b) | b <- bsWit]
   
-        -- Check a single witness binder for conflicts with other witnesses.7
+        -- Check a single witness binder for conflicts with other witnesses.
         checkWitnessBindM bWit
          = case typeOfBind bWit of
             TApp (TCon (TyConWitness TwConGlobal))   t2

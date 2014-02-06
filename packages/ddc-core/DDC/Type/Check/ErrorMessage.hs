@@ -98,8 +98,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 
         -- Sums ---------------------------------                    
         ErrorSumKindMismatch k ts ks
-         -> vcat 
-              $  [ text "Kind mismatch in type sum."
+         -> vcat $ [ text "Kind mismatch in type sum."
                  , text " found multiple types: " <> ppr ts
                  , text " with differing kinds: " <> ppr ks ]
                  ++ (if k /= tBot sComp
@@ -114,5 +113,13 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 
 
 instance (Eq n, Show n, Pretty n) => Pretty (ErrorData n) where
- ppr _err
-  = error "ErrorData pretty it"
+ ppr err
+  = case err of
+        ErrorDataDupCtorName n
+         -> vcat [ text "Duplicate data constructor definition."
+                 , text "   A data constructor named: " <> ppr n
+                 , text "   is already defined." ]
+
+        ErrorDataBadCtorType n err'
+         -> vcat [ text "Bad type for data constructor '" <> ppr n <> text "'"
+                 , ppr err' ]

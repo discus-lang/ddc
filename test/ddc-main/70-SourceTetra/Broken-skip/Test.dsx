@@ -29,20 +29,14 @@ neg (x : Bool) : Bool
 ;;
 
 
--- Error: data constructor reused in a different data type.
-:to-core..
+:to-salt..
 module Test where
 
-data Blerk where
-        Foo     : Blerk
-        Bar     : Blerk
+data Blerk where Foo : Blerk
+data Blerk where Bar : Blerk
 
-data Blerk2 where
-        Foo     : Blerk2
-        Bar     : Blerk2
-
-foo (x : Blerk) : Blerk
+next (x : Blerk) : Blerk
  = case x of
-        Foo     -> Bar
-        Bar     -> Foo
+        Foo     -> Foo
 ;;
+

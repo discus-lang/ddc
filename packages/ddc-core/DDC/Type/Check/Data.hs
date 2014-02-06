@@ -135,7 +135,7 @@ checkDataCtor nsCtors ctor
         
         -- Check the constructor name is not already defined.
         | Set.member (dataCtorName ctor) nsCtors 
-        = Left error "checkDataCtor: dup ctor name"
+        = Left $ ErrorDataDupCtorName (dataCtorName ctor)
 
         -- This constructor looks ok.
         | otherwise

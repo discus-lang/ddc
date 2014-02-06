@@ -29,3 +29,9 @@ data Void where {
         
 }
 
+
+-- Error: data constructor reused in a different data type.
+[Error in transformed module.
+  Duplicate data constructor definition.
+     A data constructor named: Bar
+     is already defined.]

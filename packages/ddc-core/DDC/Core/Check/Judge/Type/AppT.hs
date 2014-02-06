@@ -48,9 +48,9 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
         -- thus we can't be sharing objects that have it in its type.
 
         -- Build an annotated version of the type application.
-        let aApp'  = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
-        let aArg'  = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
-        let xx'    = XApp aApp' xFn' (XType aArg' tArg')
+        let aApp' = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
+        let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
+        let xx'   = XApp aApp' xFn' (XType aArg' tArg')
 
         ctrace  $ vcat
                 [ text "* APP Recon"
@@ -84,9 +84,9 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
         let Just t2_clo = taggedClosureOfTyArg kenv ctx2 tArg'
 
         -- Build an annotated version of the type application.
-        let aApp'  = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
-        let aArg'  = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
-        let xx'    = XApp aApp' xFn' (XType aArg' tArg')
+        let aApp' = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
+        let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
+        let xx'   = XApp aApp' xFn' (XType aArg' tArg')
 
         ctrace  $ vcat
                 [ text "* APP Synth"

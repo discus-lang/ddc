@@ -32,3 +32,21 @@ module Test where
 data Void
 ;;
 
+
+-- Error: data constructor reused in a different data type.
+:to-core..
+module Test where
+
+data Blerk where
+        Foo     : Blerk
+        Bar     : Blerk
+
+data Blerk2 where
+        Foo     : Blerk2
+        Bar     : Blerk2
+
+foo (x : Blerk) : Blerk
+ = case x of
+        Foo     -> Bar
+        Bar     -> Foo
+;;
