@@ -15,7 +15,7 @@ cmdParseModule config source str
  | SourceFile filePath  <- source
  = case takeExtension filePath of
         ".dst"  -> cmdParseModule_tetra config filePath str
-        _       -> throwError "Unknown file extension."
+        ext     -> throwError $ "Cannot parse '" ++ ext ++ "' files."
 
  | otherwise
  = throwError "Cannot detect language."

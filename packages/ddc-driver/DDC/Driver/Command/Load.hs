@@ -35,8 +35,9 @@ cmdLoadFromFile
         -> ErrorT String IO ()
 
 cmdLoadFromFile config strSimpl fsTemplates filePath
- = case languageOfExtension (takeExtension filePath) of
-        Nothing         -> throwError $ "Unknown file extension."
+ = let ext      = takeExtension filePath
+   in case languageOfExtension ext of
+        Nothing         -> throwError $ "Cannot load '" ++ ext ++ "' files."
         Just language   -> cmdLoad_language config strSimpl fsTemplates filePath language
 
 cmdLoad_language config Nothing _ filePath language
