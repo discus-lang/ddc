@@ -74,8 +74,7 @@ run config
         -- Parse a module.
         ModeParse filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                str     <- readFile filePath
-                runError $ cmdParseModule dconfig (SourceFile filePath) str
+                runError $ cmdParseFromFile dconfig filePath
 
         -- Parse and type check a module.
         ModeCheck filePath

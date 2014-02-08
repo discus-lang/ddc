@@ -51,6 +51,11 @@ import System.Directory
 -- Module ---------------------------------------------------------------------
 -- | Parse and type-check a core module from a file, 
 --   printing any errors to @stdout@.
+--
+--   This function handle fragments of Disciple Core, as well as Source Tetra
+--   modules. The language to use is determined by inspecting the file name
+--   extension.
+--
 cmdCheckFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
