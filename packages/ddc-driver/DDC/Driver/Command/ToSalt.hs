@@ -92,8 +92,9 @@ cmdToSaltSourceTetraFromString config source str
          $ stageSourceTetraLoad config source
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
+         [ stageSaltOpt         config source
          [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
-         [ PipeCoreOutput pmode SinkStdout ]]]]
+         [ PipeCoreOutput pmode SinkStdout ]]]]]
 
    in do
         errs    <- liftIO pipeLoad
