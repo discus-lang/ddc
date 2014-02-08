@@ -287,7 +287,7 @@ handleCmd1 state cmd source line
 
         CommandToLlvm
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToLlvm config lang source line
+                runError $ cmdToLlvmCoreFromString config lang source line
                 return state
 
         -- Core Tetra specific passes -----------

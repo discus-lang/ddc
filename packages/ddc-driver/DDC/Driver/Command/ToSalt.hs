@@ -73,7 +73,7 @@ cmdToSaltSourceTetraFromFile config filePath
 
 
 -------------------------------------------------------------------------------
--- | Convert Disciple Core Tetra to Disciple Core Salt.
+-- | Convert Disciple Source Tetra to Disciple Core Salt.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 cmdToSaltSourceTetraFromString
