@@ -89,10 +89,8 @@ cmdToLlvmSourceTetraFromString config source str
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
          [ stageSaltOpt         config source
-         [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
-         [ PipeCoreReannotate (const ())
          [ stageSaltToLLVM      config source
-         [ PipeLlvmPrint SinkStdout]]]]]]]
+         [ PipeLlvmPrint SinkStdout]]]]]
    
    in do
         errs    <- liftIO pipeLoad
@@ -157,10 +155,8 @@ cmdToLlvmCoreFromString config language source str
                 [ PipeCoreReannotate (const ())
                 [ stageTetraToSalt   config source
                 [ stageSaltOpt       config source
-                [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
                 [ stageSaltToLLVM    config source
-                [ PipeLlvmPrint      SinkStdout]]]]]]]
+                [ PipeLlvmPrint      SinkStdout]]]]]
 
                 -- Convert a Core Lite module to LLVM.
                 | fragName == "Lite"
@@ -171,10 +167,8 @@ cmdToLlvmCoreFromString config language source str
                 [ stageLiteOpt       config source
                 [ stageLiteToSalt    config source
                 [ stageSaltOpt       config source
-                [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
                 [ stageSaltToLLVM    config source 
-                [ PipeLlvmPrint SinkStdout]]]]]]]]
+                [ PipeLlvmPrint SinkStdout]]]]]]
 
                 -- Convert a Core Salt module to LLVM.
                 | fragName == "Salt"
@@ -183,10 +177,8 @@ cmdToLlvmCoreFromString config language source str
                 $ PipeTextLoadCore Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreReannotate (const ())
                 [ stageSaltOpt       config source
-                [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
                 [ stageSaltToLLVM    config source
-                [ PipeLlvmPrint      SinkStdout]]]]]]
+                [ PipeLlvmPrint      SinkStdout]]]]
 
                 -- Unrecognised.
                 | otherwise

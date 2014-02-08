@@ -12,6 +12,7 @@ module DDC.Driver.Stage
 
           -- * Tetra stages
         , stageSourceTetraLoad
+        , stageTetraLoad
         , stageTetraToSalt
 
           -- * Flow stages

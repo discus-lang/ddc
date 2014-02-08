@@ -1,6 +1,7 @@
 
 module DDC.Driver.Stage.Tetra
         ( stageSourceTetraLoad
+        , stageTetraLoad
         , stageTetraToSalt)
 where
 import DDC.Driver.Dump
@@ -25,7 +26,7 @@ import qualified DDC.Base.Parser                as BP
 
 
 -------------------------------------------------------------------------------
--- | Load and type check a source tetra file.
+-- | Load and type check a Source Tetra module.
 stageSourceTetraLoad
         :: Config -> Source
         -> [PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
@@ -33,15 +34,30 @@ stageSourceTetraLoad
 
 stageSourceTetraLoad config source pipesTetra
  = PipeTextLoadSourceTetra
-                    (dump config source "dump-tetra-load-raw.dct")
-                    (dump config source "dump-tetra-load-trace.txt")
+                    (dump config source "dump.tetra-load-raw.dct")
+                    (dump config source "dump.tetra-load-trace.txt")
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.tetra-load.dct")
    : pipesTetra ) 
 
- 
+
 -------------------------------------------------------------------------------
--- | Convert Core Tetra to Core Salt.
+-- | Load and type check a Core Tetra module.
+stageTetraLoad
+        :: Config -> Source
+        -> [PipeCore () CE.Name]
+        -> PipeText CE.Name BE.Error
+
+stageTetraLoad config source pipesLite
+ = PipeTextLoadCore BE.fragment C.Recon SinkDiscard
+ [ PipeCoreReannotate (const ())
+        ( PipeCoreOutput pprDefaultMode
+                         (dump config source "dump.tetra.dcl")
+        : pipesLite ) ]
+ 
+
+-------------------------------------------------------------------------------
+-- | Convert a Core Tetra module to Core Salt.
 --
 --   This includes performing the Boxing transform.
 ---

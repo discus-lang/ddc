@@ -6,11 +6,11 @@ import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language.Salt          as Salt
+import System.FilePath
 import System.Directory
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import Control.Monad
-import Data.List
 import qualified DDC.Core.Pretty        as P
 import qualified DDC.Core.Check         as C
 
@@ -25,12 +25,28 @@ cmdMake config filePath
          $ throwError $ "No such file " ++ show filePath
 
         src             <- liftIO $ readFile filePath
+        let ext         = takeExtension filePath
         let source      = SourceFile filePath
 
         -- Decide what to do based on file extension.
         let make
+                -- Make a Source Tetra module.
+                | ext == ".dst"
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ stageSourceTetraLoad config source
+                [ PipeCoreReannotate  (const ())
+                [ stageTetraToSalt     config source pipesSalt ]]
+
+                -- Make a Core Tetra module.
+                | ext == ".dct"
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ stageTetraLoad    config source
+                [ stageTetraToSalt  config source pipesSalt ]
+
                 -- Make a Core Lite module.
-                | isSuffixOf ".dcl" filePath
+                | ext == ".dcl"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageLiteLoad     config source
@@ -38,15 +54,14 @@ cmdMake config filePath
                 [ stageLiteToSalt   config source pipesSalt ]]
 
                 -- Make a Core Salt module.
-                | isSuffixOf ".dcs" filePath
+                | ext == ".dcs"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  Salt.fragment 
-                        C.Recon SinkDiscard pipesSalt 
+                $ PipeTextLoadCore  Salt.fragment C.Recon SinkDiscard pipesSalt 
 
                 -- Unrecognised.
                 | otherwise
-                = throwError $ "Don't know how to make " ++ filePath
+                = throwError $ "Cannot make '" ++ filePath ++ "' files into executables."
 
             pipesSalt
              = case configViaBackend config of

@@ -89,9 +89,7 @@ cmdToSeaSourceTetraFromString config source str
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt   config source 
          [ stageSaltOpt       config source
-         [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-         [ PipeCoreReannotate (const ())
-         [ stageSaltToC       config source SinkStdout]]]]]]
+         [ stageSaltToC       config source SinkStdout]]]]
          
    in do
         errs    <- liftIO pipeLoad
@@ -154,9 +152,7 @@ cmdToSeaCoreFromString config language source str
                 [ PipeCoreReannotate (const ())
                 [ stageTetraToSalt   config source
                 [ stageSaltOpt       config source
-                [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
-                [ stageSaltToC       config source SinkStdout]]]]]]
+                [ stageSaltToC       config source SinkStdout]]]]
                 
                 -- Convert a Core Lite module to C.
                 | fragName == "Lite"
@@ -167,9 +163,7 @@ cmdToSeaCoreFromString config language source str
                 [ stageLiteOpt       config source 
                 [ stageLiteToSalt    config source 
                 [ stageSaltOpt       config source
-                [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
-                [ stageSaltToC       config source SinkStdout]]]]]]]
+                [ stageSaltToC       config source SinkStdout]]]]]
 
                 -- Convert a Core Lite module to Salt.
                 | fragName == "Salt"
@@ -178,9 +172,7 @@ cmdToSeaCoreFromString config language source str
                 $ PipeTextLoadCore   Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreReannotate (const ())
                 [ stageSaltOpt       config source
-                [ PipeCoreCheck      Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
-                [ stageSaltToC       config source SinkStdout]]]]]
+                [ stageSaltToC       config source SinkStdout]]]
 
                 -- Unrecognised.
                 | otherwise

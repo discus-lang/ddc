@@ -6,17 +6,16 @@ import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language.Salt          as Salt
+import System.FilePath
 import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import Data.List
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Pretty        as P
 
 
 -- | Compile a source module into a @.o@ file.
--- 
 cmdCompile :: Config -> FilePath -> ErrorT String IO ()
 cmdCompile config filePath
  = do   
@@ -26,27 +25,43 @@ cmdCompile config filePath
          $ throwError $ "No such file " ++ show filePath
 
         src             <- liftIO $ readFile filePath
+        let ext         = takeExtension filePath
         let source      = SourceFile filePath
 
         -- Decide what to do based on file extension.
         let make
-                -- Make a Core Lite module.
-                | isSuffixOf ".dcl" filePath
+                -- Compile a Source Tetra module.
+                | ext == ".dst"
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ stageSourceTetraLoad config source
+                [ PipeCoreReannotate  (const ())
+                [ stageTetraToSalt     config source pipesSalt ]]
+
+                -- Compile a Core Tetra module.
+                | ext == ".dct"
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ stageTetraLoad    config source
+                [ stageTetraToSalt  config source pipesSalt ]
+
+                -- Compile a Core Lite module.
+                | ext == ".dcl"
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageLiteLoad     config source
                 [ stageLiteOpt      config source  
                 [ stageLiteToSalt   config source pipesSalt ]]
 
-                -- Make a Core Salt module.
-                | isSuffixOf ".dcs" filePath
+                -- Compile a Core Salt module.
+                | ext == ".dcs"
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  Salt.fragment C.Recon SinkDiscard pipesSalt 
 
                 -- Unrecognised.
                 | otherwise
-                = throwError $ "Don't know how to compile " ++ filePath
+                = throwError $ "Cannot compile '" ++ ext ++ "' files."
 
             pipesSalt
              = case configViaBackend config of

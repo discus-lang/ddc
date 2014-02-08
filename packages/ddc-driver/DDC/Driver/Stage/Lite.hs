@@ -22,7 +22,7 @@ import qualified DDC.Core.Simplifier.Recipe     as S
 
 
 -------------------------------------------------------------------------------
--- | Type check Core Lite.
+-- | Load and type check Core Lite.
 stageLiteLoad
         :: Config -> Source
         -> [PipeCore () Lite.Name]
