@@ -12,9 +12,11 @@ import DDCI.Tetra.Command.Parse
 import DDCI.Tetra.Command.Desugar
 import DDCI.Tetra.Command.Infer
 import DDCI.Tetra.Command.ToCore
-import DDCI.Tetra.Command.ToSalt
 import DDC.Interface.Source
+import DDC.Driver.Command.ToSalt       
+import Control.Monad.Trans.Error
 import Data.List
+import System.IO
 
 
 -- | Commands accepted by ddci-tetra.
@@ -107,6 +109,15 @@ handleCommand1 state cmd source line
 
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
-                cmdToSalt state config source line
+                runError $ cmdToSaltSourceTetraFromString config source line
                 return state
+
+
+-- | Just print errors to stdout and continue the session.
+runError :: ErrorT String IO () -> IO ()
+runError m
+ = do   result  <- runErrorT m
+        case result of
+         Left err       -> hPutStrLn stdout err
+         Right _        -> return ()
 

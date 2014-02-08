@@ -1,6 +1,7 @@
 
 module DDC.Driver.Command.ToSalt
         ( cmdToSaltFromFile
+        , cmdToSaltSourceTetraFromString
         , cmdToSaltCoreFromFile
         , cmdToSaltCoreFromString)
 where
@@ -10,6 +11,7 @@ import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment
+import DDC.Base.Pretty
 import System.FilePath
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
@@ -17,7 +19,6 @@ import System.Directory
 import Control.Monad
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
-import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Check                 as C
 
 
@@ -41,6 +42,36 @@ cmdToSaltFromFile config filePath
  | otherwise
  = let  ext     = takeExtension filePath
    in   throwError $ "Cannot load '" ++ ext ++ "' files."
+
+
+-------------------------------------------------------------------------------
+-- |  Convert Disciple Core Tetra to Disciple Core Salt.
+--    The result is printer to @stdout@.
+--    Any errors are thrown in the `ErrorT` monad.
+cmdToSaltSourceTetraFromString
+        :: Config               -- ^ Driver config.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
+        -> ErrorT String IO ()
+
+cmdToSaltSourceTetraFromString config source str
+ = let  
+        pmode   = prettyModeOfConfig $ configPretty config
+
+        pipeLoad
+         = pipeText (nameOfSource source)
+                    (lineStartOfSource source) str
+         $ stageSourceTetraLoad config source
+         [ PipeCoreReannotate (const ())
+         [ stageTetraToSalt     config source 
+         [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
+         [ PipeCoreOutput pmode SinkStdout ]]]]
+
+   in do
+        errs    <- liftIO pipeLoad
+        case errs of
+         []     -> return ()
+         es     -> throwError $ renderIndent $ vcat $ map ppr es
 
 
 -------------------------------------------------------------------------------
@@ -114,5 +145,5 @@ cmdToSaltCoreFromString config language source str
         errs <- compile
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwError $ renderIndent $ vcat $ map ppr es
 

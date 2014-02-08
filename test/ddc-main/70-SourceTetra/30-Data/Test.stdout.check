@@ -31,10 +31,10 @@ data Void where {
 
 
 -- Error: duplicate data type definition.
-[Error in transformed module.
+Error in transformed module.
   Duplicate data type definition.
      A constructor with name: Blerk
-     is already defined.]
+     is already defined.
 
 
 -- Error: data constructor name reused in the same type.
@@ -51,7 +51,7 @@ data Void where {
 
 
 -- Error: primitive data constructor redefined in a different type.
-[Error in transformed module.
+Error in transformed module.
   Duplicate data constructor definition.
      A constructor with name: False#
-     is already defined.]
+     is already defined.
