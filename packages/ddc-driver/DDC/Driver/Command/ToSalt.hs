@@ -14,12 +14,13 @@ import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Base.Pretty
 import System.FilePath
+import System.Directory
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import System.Directory
 import Control.Monad
-import qualified DDC.Build.Language.Salt        as Salt
+import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Build.Language.Lite        as Lite
+import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 
 
@@ -46,7 +47,7 @@ cmdToSaltFromFile config filePath
  -- Don't know how to convert this file.
  | otherwise
  = let  ext     = takeExtension filePath
-   in   throwError $ "Cannot load '" ++ ext ++ "' files."
+   in   throwError $ "Cannot convert '" ++ ext ++ "' files to Salt."
 
 
 -------------------------------------------------------------------------------
@@ -152,7 +153,18 @@ cmdToSaltCoreFromString config language source str
 
         -- Decide what to do based on the fragment name.
         let compile
-                -- Compile a Core Lite module.
+                -- Compile a Core Tetra module to Salt.
+                | fragName == "Tetra"
+                = liftIO
+                $ pipeText (nameOfSource source) (lineStartOfSource source) str
+                $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard
+                [ PipeCoreReannotate (const ())
+                [ stageTetraToSalt config source
+                [ stageSaltOpt     config source
+                [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
+                [ PipeCoreOutput   pmode SinkStdout]]]]]
+                
+                -- Convert a Core Lite module to Salt.
                 | fragName == "Lite" 
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str

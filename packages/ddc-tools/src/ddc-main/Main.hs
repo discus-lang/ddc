@@ -120,10 +120,8 @@ run config
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
-         -> do  language        <- languageFromFilePath filePath
-                dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
-                runError $ cmdToLlvm dconfig language (SourceFile filePath) str
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                runError $ cmdToLlvmFromFile dconfig filePath
 
         -- Prepare a Disciple Core Flow program for lowering.
         ModeFlowPrep filePath
