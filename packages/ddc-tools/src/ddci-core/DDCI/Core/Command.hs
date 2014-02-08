@@ -206,7 +206,7 @@ handleCmd1 state cmd source line
         CommandLoad
          -> do  configDriver    <- getDriverConfigOfState state
                 runError 
-                 $ cmdLoadFromString 
+                 $ cmdLoadCoreFromString 
                         configDriver
                         (stateLanguage state) source line
                 return state
