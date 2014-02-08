@@ -36,6 +36,58 @@ import qualified DDC.Core.Check         as C
 import Control.Monad
 
 
+-- Module ---------------------------------------------------------------------
+-- | Parse and type-check a core module from a file.
+cmdCheckModuleFromFile
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
+        => Fragment n err
+        -> FilePath
+        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
+
+cmdCheckModuleFromFile fragment filePath
+ = goLoad 
+ where  -- Load and type-check the module.
+        goLoad 
+         = do   mModule <- liftIO 
+                        $ loadModuleFromFile fragment filePath C.Recon 
+                case mModule of
+                 (Left  err, _ct) -> throwError (renderIndent $ ppr err)
+                 (Right mm,  _ct) -> goCheckFragment mm
+
+        -- Do fragment specific checks.
+        goCheckFragment mm
+         = case fragmentCheckModule fragment mm of
+                Just err          -> throwError (renderIndent $ ppr err)
+                Nothing           -> return mm
+
+
+-- | Parse and type-check a core module from a string.
+cmdCheckModuleFromString
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
+        => Fragment n err       -- ^ Language fragment.
+        -> Source               -- ^ Source of the program text.
+        -> String               -- ^ Program text.
+        -> C.Mode n             -- ^ Type checker mode.
+        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
+
+cmdCheckModuleFromString fragment source str mode
+ = goLoad
+ where  -- Load and type-check the module.
+        goLoad
+         = let  mModule = loadModuleFromString fragment
+                                (nameOfSource source) (lineStartOfSource source)
+                                mode str
+
+            in  case mModule of
+                  (Left err, _ct) -> throwError (renderIndent $ ppr err)
+                  (Right mm, _ct) -> goCheckFragment mm
+
+        goCheckFragment mm
+         = case fragmentCheckModule fragment mm of
+                Just err        -> throwError  (renderIndent $ ppr err)
+                Nothing         -> return mm
+
+
 -- Type -----------------------------------------------------------------------
 -- | Parse a core spec, and return its kind.
 cmdParseCheckType 
@@ -46,11 +98,11 @@ cmdParseCheckType
         -> String               -- ^ Program text.
         -> IO (Maybe (Type n, Kind n))
 
-cmdParseCheckType frag uni source str
+cmdParseCheckType fragment uni source str
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
-        toks    = fragmentLexExp frag srcName srcLine str
-        eTK     = loadType (fragmentProfile frag) uni srcName toks
+        toks    = fragmentLexExp fragment srcName srcLine str
+        eTK     = loadTypeFromTokens fragment uni srcName toks
    in   case eTK of
          Left err       
           -> do outDocLn $ ppr err
@@ -65,11 +117,10 @@ cmdShowType :: Language -> Universe -> Source -> String -> IO ()
 cmdShowType language uni source str
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
- , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp fragment srcName srcLine str
-        eTK     = loadType profile uni srcName toks
+        eTK     = loadTypeFromTokens fragment uni srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
          Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
@@ -117,65 +168,6 @@ cmdTypeEquiv language source ss
    in goParse (fragmentLexExp fragment srcName srcLine ss)
 
 
--- Module ---------------------------------------------------------------------
--- | Parse and type-check a core module from a file.
-cmdCheckModuleFromFile
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
-        => Fragment n err
-        -> FilePath
-        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
-
-cmdCheckModuleFromFile fragment filePath
- = goLoad 
- where  lexModule =  fragmentLexModule fragment filePath 1
-
-        -- Load and type-check the module.
-        goLoad 
-         = do   mModule <- liftIO 
-                        $ loadModuleFromFile 
-                                (fragmentProfile fragment) lexModule filePath C.Recon 
-                case mModule of
-                 (Left  err, _ct) -> throwError (renderIndent $ ppr err)
-                 (Right mm,  _ct) -> goCheckFragment mm
-
-        -- Do fragment specific checks.
-        goCheckFragment mm
-         = case fragmentCheckModule fragment mm of
-                Just err          -> throwError (renderIndent $ ppr err)
-                Nothing           -> return mm
-
-
--- | Parse and type-check a core module from a string.
-cmdCheckModuleFromString
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
-        => Fragment n err       -- ^ Language fragment.
-        -> Source               -- ^ Source of the program text.
-        -> String               -- ^ Program text.
-        -> C.Mode n             -- ^ Type checker mode.
-        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
-
-cmdCheckModuleFromString fragment source str mode
- = goLoad
- where  lexModule = fragmentLexModule fragment 
-                        (nameOfSource source) 
-                        (lineStartOfSource source)
-
-        -- Load and type-check the module.
-        goLoad
-         = let  mModule = loadModuleFromString
-                                (fragmentProfile fragment) lexModule
-                                (nameOfSource source) mode str
-
-            in  case mModule of
-                  (Left err, _ct) -> throwError (renderIndent $ ppr err)
-                  (Right mm, _ct) -> goCheckFragment mm
-
-        goCheckFragment mm
-         = case fragmentCheckModule fragment mm of
-                Just err        -> throwError  (renderIndent $ ppr err)
-                Nothing         -> return mm
-
-
 -- Exp ------------------------------------------------------------------------
 -- | Parse the given core expression, 
 --   and return it, along with its type, effect and closure.
@@ -201,29 +193,30 @@ cmdParseCheckExp
               , Maybe CheckTrace)
 
 cmdParseCheckExp 
-        frag modules 
+        fragment modules 
         mode printTrace permitPartialPrims 
         source str
  = goLex
  where
         -- Override profile to allow partially applied primitives if we were
         -- told to do so.
-        profile   = fragmentProfile frag
+        profile   = fragmentProfile fragment
         features  = profileFeatures profile
         features' = features { featuresPartialPrims 
                              = featuresPartialPrims features || permitPartialPrims}
         profile'  = profile  { profileFeatures  = features' }
-        frag'     = frag     { fragmentProfile  = profile'  }
+        fragment' = fragment     { fragmentProfile  = profile'  }
 
         goLex 
-         = goLoad (fragmentLexExp frag'
+         = goLoad (fragmentLexExp fragment'
                         (nameOfSource source) 
                         (lineStartOfSource source) 
                         str)
 
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp profile' modules (nameOfSource source) mode toks of
+         = case loadExpFromTokens fragment' modules 
+                        (nameOfSource source) mode toks of
               (Left err, mct)
                -> do    outDocLn $ ppr err
                         
@@ -239,7 +232,7 @@ cmdParseCheckExp
 
         -- Do fragment specific checks.
         goCheckFragment ct x
-         = case fragmentCheckExp frag' x of
+         = case fragmentCheckExp fragment' x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
                         return (Nothing, ct)
@@ -339,11 +332,10 @@ cmdShowWType :: Language -> Source -> String -> IO ()
 cmdShowWType language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
- , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp fragment srcName srcLine str
-        eTK     = loadWitness profile srcName toks
+        eTK     = loadWitnessFromTokens fragment srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
          Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k

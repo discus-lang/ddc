@@ -7,12 +7,16 @@ module DDC.Core.Load
         , Error         (..)
         , Mode          (..)
         , CheckTrace    (..)
+
+        -- * Loading modules.
         , loadModuleFromFile
         , loadModuleFromString
         , loadModuleFromTokens
-        , loadExp
-        , loadType
-        , loadWitness)
+        
+        -- * Loading individual expressions, types and witnesses.
+        , loadExpFromTokens
+        , loadTypeFromTokens
+        , loadWitnessFromTokens)
 where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
@@ -25,7 +29,8 @@ import DDC.Type.Universe
 import DDC.Core.Module
 import DDC.Base.Pretty
 import DDC.Data.Token
-import qualified DDC.Core.Fragment              as I
+import DDC.Core.Fragment                        (Fragment)
+import qualified DDC.Core.Fragment              as F
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
@@ -41,7 +46,7 @@ data Error n
         | ErrorParser     !BP.ParseError
         | ErrorCheckType  !(T.Error n)      
         | ErrorCheckExp   !(C.Error BP.SourcePos n)
-        | ErrorCompliance !(I.Error (C.AnTEC BP.SourcePos n) n)
+        | ErrorCompliance !(F.Error (C.AnTEC BP.SourcePos n) n)
         deriving Show
 
 
@@ -68,20 +73,24 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
          -> vcat [ text "During fragment compliance check."
                  , indent 2 $ ppr err' ]
 
+--        ErrorFragment err'
+--         -> vcat [ text "During fragment specific check."
+--                 , indent 2 $ ppr err' ]
+
+
 
 -- Module ---------------------------------------------------------------------
 -- | Parse and type check a core module from a file.
 loadModuleFromFile 
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n                    -- ^ Language fragment profile.
-        -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
+        => Fragment n err               -- ^ Language fragment definition.
         -> FilePath                     -- ^ File containing source code.
         -> Mode n                       -- ^ Type checker mode.
         -> IO ( Either (Error n)
                        (Module (C.AnTEC BP.SourcePos n) n)
               , Maybe CheckTrace)
 
-loadModuleFromFile profile lexSource filePath mode
+loadModuleFromFile fragment filePath mode
  = do   
         -- Check whether the file exists.
         exists  <- doesFileExist filePath
@@ -93,31 +102,32 @@ loadModuleFromFile profile lexSource filePath mode
                 src     <- readFile filePath
 
                 -- Lex the source.
-                let toks = lexSource src
+                let toks = (F.fragmentLexModule fragment) filePath 1 src
 
-                return $ loadModuleFromTokens profile filePath mode toks
+                return $ loadModuleFromTokens fragment filePath mode toks
 
 
 -- | Parse and type check a core module from a string.
 loadModuleFromString
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n                    -- ^ Language fragment profile.
-        -> (String -> [Token (Tok n)])  -- ^ Function to lex the source file.
+        => Fragment n err               -- ^ Language fragment definition.
         -> FilePath                     -- ^ Path to source file for error messages.
+        -> Int                          -- ^ Starting line number for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> String                       -- ^ Program text.
         -> ( Either (Error n) 
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
-loadModuleFromString profile lexSource filePath mode src
-        = loadModuleFromTokens profile filePath mode (lexSource src)
+loadModuleFromString fragment filePath lineStart mode src
+ = do   let toks = F.fragmentLexModule fragment filePath lineStart src
+        loadModuleFromTokens fragment filePath mode toks
 
 
 -- | Parse and type check a core module.
 loadModuleFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n                    -- ^ Language fragment profile.
+        => Fragment n err               -- ^ Language fragment definition.s
         -> FilePath                     -- ^ Path to source file for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> [Token (Tok n)]              -- ^ Source tokens.
@@ -125,13 +135,14 @@ loadModuleFromTokens
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
-loadModuleFromTokens profile sourceName mode toks'
+loadModuleFromTokens fragment sourceName mode toks'
  = goParse toks'
  where  
         -- Type checker config kind and type environments.
-        config  = C.configOfProfile  profile
-        kenv    = profilePrimKinds profile
-        tenv    = profilePrimTypes profile
+        profile = F.fragmentProfile fragment
+        config  = C.configOfProfile profile
+        kenv    = profilePrimKinds  profile
+        tenv    = profilePrimTypes  profile
 
         -- Parse the tokens.
         goParse toks                
@@ -141,7 +152,7 @@ loadModuleFromTokens profile sourceName mode toks'
                 Left err         -> (Left (ErrorParser err),     Nothing)
                 Right mm         -> goCheckType (spreadX kenv tenv mm)
 
-        -- Check that the module is type sound.
+        -- Check that the module is type well-typed.
         goCheckType mm
          = case C.checkModule config mm mode of
                 (Left err,  ct)  -> (Left (ErrorCheckExp err),   Just ct)
@@ -149,17 +160,19 @@ loadModuleFromTokens profile sourceName mode toks'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance ct mm
-         = case I.complies profile mm of
+         = case F.complies profile mm of
                 Just err         -> (Left (ErrorCompliance err), Just ct)
                 Nothing          -> (Right mm,                   Just ct)
+
+        -- TODO: do fragment-specific checks
 
 
 -- Exp ------------------------------------------------------------------------
 -- | Parse and check an expression
 --   returning it along with its spec, effect and closure
-loadExp
+loadExpFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n            -- ^ Language fragment profile.
+        => Fragment n err       -- ^ Language fragment definition.
         -> Map ModuleName (Module (C.AnTEC () n) n)
                                 -- ^ Other modules currently in scope.
                                 --   We add their exports to the environment.
@@ -170,10 +183,11 @@ loadExp
                     (Exp (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
-loadExp profile modules sourceName mode toks'
+loadExpFromTokens fragment modules sourceName mode toks'
  = goParse toks'
  where  
         -- Type checker profile, kind and type environments.
+        profile = F.fragmentProfile fragment
         config  = C.configOfProfile  profile
         kenv    = modulesExportKinds modules $ profilePrimKinds profile
         tenv    = modulesExportTypes modules $ profilePrimTypes profile
@@ -194,7 +208,7 @@ loadExp profile modules sourceName mode toks'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance ct x 
-         = case I.compliesWithEnvs profile kenv tenv x of
+         = case F.compliesWithEnvs profile kenv tenv x of
             Just err                  -> (Left (ErrorCompliance err), Just ct)
             Nothing                   -> (Right x,                    Just ct)
 
@@ -202,18 +216,20 @@ loadExp profile modules sourceName mode toks'
 -- Type -----------------------------------------------------------------------
 -- | Parse and check a type,
 --   returning it along with its kind.
-loadType
+loadTypeFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n            -- ^ Language fragment profile.
+        => Fragment n err       -- ^ Language fragment definition.
         -> Universe             -- ^ Universe this type is supposed to be in.
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
                   (Type n, Kind n)
 
-loadType profile uni sourceName toks'
+loadTypeFromTokens fragment uni sourceName toks'
  = goParse toks'
  where  
+        profile = F.fragmentProfile fragment
+
         -- Parse the tokens.
         goParse toks                
          = case BP.runTokenParser describeTok sourceName 
@@ -233,20 +249,21 @@ loadType profile uni sourceName toks'
 -- Witness --------------------------------------------------------------------
 -- | Parse and check a witness,
 --   returning it along with its type.
-loadWitness
+loadWitnessFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Profile n            -- ^ Language fragment profile.
+        => Fragment n err       -- ^ Language fragment profile.
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Token (Tok n)]      -- ^ Source tokens.
         -> Either (Error n) 
                   (Witness (AnT BP.SourcePos n) n, Type n)
 
-loadWitness profile sourceName toks'
+loadWitnessFromTokens fragment sourceName toks'
  = goParse toks'
  where  -- Type checker config, kind and type environments.
-        config  = C.configOfProfile  profile
-        kenv    = profilePrimKinds profile
-        tenv    = profilePrimTypes profile
+        profile = F.fragmentProfile fragment
+        config  = C.configOfProfile profile
+        kenv    = profilePrimKinds  profile
+        tenv    = profilePrimTypes  profile
 
         -- Parse the tokens.
         goParse toks                

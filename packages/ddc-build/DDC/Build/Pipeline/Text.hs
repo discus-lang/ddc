@@ -68,11 +68,10 @@ pipeText !srcName !srcLine !str !pp
          -> {-# SCC "PipeTextOutput" #-}
             pipeSink str sink
 
-        PipeTextLoadCore !frag !mode !sink !pipes
+        PipeTextLoadCore !fragment !mode !sink !pipes
          -> {-# SCC "PipeTextLoadCore" #-}
-            let toks    = fragmentLexModule frag srcName srcLine str in
-            let profile = fragmentProfile frag
-            in case C.loadModuleFromTokens profile srcName mode toks of
+            let toks    = fragmentLexModule fragment srcName srcLine str 
+            in case C.loadModuleFromTokens fragment srcName mode toks of
                  (Left err, mct) 
                   -> do sinkCheckTrace mct sink
                         return $ [ErrorLoad err]
