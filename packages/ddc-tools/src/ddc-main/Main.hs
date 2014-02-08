@@ -27,12 +27,10 @@ import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Interface.Source
 import DDC.Build.Builder
-import DDC.Build.Language
 import DDC.Base.Pretty
 import System.Environment
 import System.IO
 import System.Exit
-import System.FilePath
 import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage               as Driver
 import qualified DDC.Driver.Config              as Driver
@@ -113,10 +111,8 @@ run config
 
         -- Convert a module to C
         ModeToC filePath
-         -> do  language        <- languageFromFilePath filePath
-                dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
-                runError $ cmdToC dconfig language (SourceFile filePath) str
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                runError $ cmdToSeaFromFile  dconfig filePath
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
@@ -222,19 +218,6 @@ getDriverConfig config filePath
          , Driver.configKeepSeaFiles          = configKeepSeaFiles  config
          , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
          , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config }
-
-
--- | Determine the current language based on the file extension of this path, 
---   and slurp out a bundle of stuff specific to that language from the config.
-languageFromFilePath :: FilePath -> IO Language
-languageFromFilePath filePath
- = case languageOfExtension (takeExtension filePath) of
-        Nothing 
-         -> do  hPutStrLn stderr "Unknown file extension."
-                exitWith $ ExitFailure 1
-
-        Just ext 
-         -> return ext
 
 
 -- | Print errors to stderr and set the exit code.

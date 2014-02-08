@@ -72,7 +72,7 @@ cmdToLlvmSourceTetraFromFile config filePath
 
 
 -------------------------------------------------------------------------------
--- | Convert Disciple Source Tetra to Disciple Core Salt.
+-- | Convert Disciple Source Tetra to LLVM.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 cmdToLlvmSourceTetraFromString
@@ -103,7 +103,7 @@ cmdToLlvmSourceTetraFromString config source str
 
 -------------------------------------------------------------------------------
 -- | Parse, check and convert a Core module to LLVM.
---   Works for the 'Lite' and 'Salt' fragments.
+--   Works for the 'Tetra', 'Lite' and 'Salt' fragments.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 --
@@ -128,7 +128,7 @@ cmdToLlvmCoreFromFile config language filePath
 
 -------------------------------------------------------------------------------
 -- | Parse, check and convert a Core module to LLVM.
---   Works for the 'Lite' and 'Salt' fragments.
+--   Works for the 'Tetra', 'Lite' and 'Salt' fragments.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 --

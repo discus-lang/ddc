@@ -282,7 +282,7 @@ handleCmd1 state cmd source line
 
         CommandToC
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToC    config lang source line
+                runError $ cmdToSeaCoreFromString  config lang source line
                 return state
 
         CommandToLlvm
