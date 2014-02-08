@@ -71,7 +71,7 @@ run config
         ModeHelp
          ->     putStrLn help
 
-        -- Parser a module.
+        -- Parse a module.
         ModeParse filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
@@ -79,25 +79,22 @@ run config
 
         -- Parse and type check a module.
         ModeCheck filePath
-         -> do  language        <- languageFromFilePath filePath
-                case language of 
-                 Language bundle
-                  -> do  mm <- runErrorT 
-                            $ cmdCheckModuleFromFile (bundleFragment bundle) filePath
-                         case mm of
-                          Left err        
-                           -> do putStrLn err
-                                 exitWith $ ExitFailure 1
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                result  <- runErrorT $  cmdCheckFromFile dconfig filePath
+                
+                case result of
+                 Left err        
+                  -> do putStrLn err
+                        exitWith $ ExitFailure 1
 
-                          Right _
-                           -> return ()
+                 Right ()
+                  -> return ()
 
         -- Parse, type check and transform a module.
         ModeLoad filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdLoadFromFile dconfig
-                                (configTrans config) 
-                                (configWith config) 
+                                (configTrans config) (configWith config) 
                                 filePath
 
         -- Compile a module to object code.

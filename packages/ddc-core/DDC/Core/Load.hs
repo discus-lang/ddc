@@ -98,7 +98,7 @@ loadModuleFromFile fragment filePath mode
         -- Check whether the file exists.
         exists  <- doesFileExist filePath
         if not exists 
-         then return ( Left $ ErrorRead "Cannot read file."
+         then return ( Left $ ErrorRead $ "No such file '" ++ filePath ++ "'"
                      , Nothing)
          else do
                 -- Read the source file.

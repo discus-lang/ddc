@@ -1,22 +1,32 @@
 module DDC.Driver.Command.Check
-        ( cmdShowType
+        ( -- * Checking modules. 
+          cmdCheckFromFile
+        , cmdCheckSourceTetraFromFile
+        , cmdCheckSourceTetraFromString
+        , cmdCheckCoreFromFile
+        , cmdCheckCoreFromString
+
+          -- * Checking types.
+        , cmdShowType
         , cmdTypeEquiv
+        , cmdParseCheckType
 
-        , cmdShowWType
-
-        , cmdExpRecon
-
+          -- * Checking expressions.
+        , Mode(..)
         , ShowSpecMode(..)
         , cmdShowSpec
+        , cmdExpRecon
+        , cmdParseCheckExp
 
-        , cmdCheckModuleFromFile
-        , cmdCheckModuleFromString
-        , cmdParseCheckType
-        , cmdParseCheckExp,     Mode(..))
+          -- * Checking witnesses.
+        , cmdShowWType)
 where
+import DDC.Driver.Stage
 import DDC.Driver.Output
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Language
+import DDC.Build.Pipeline
 import DDC.Core.Fragment
 import DDC.Core.Load
 import DDC.Core.Parser
@@ -34,28 +44,100 @@ import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check         as T
 import qualified DDC.Core.Check         as C
 import Control.Monad
+import System.FilePath
+import System.Directory
 
 
 -- Module ---------------------------------------------------------------------
--- | Parse and type-check a core module from a file.
-cmdCheckModuleFromFile
-        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
-        => Fragment n err
-        -> FilePath
-        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
+-- | Parse and type-check a core module from a file, 
+--   printing any errors to @stdout@.
+cmdCheckFromFile
+        :: Config               -- ^ Driver config.
+        -> FilePath             -- ^ Module file path.
+        -> ErrorT String IO ()
 
-cmdCheckModuleFromFile fragment filePath
- = do   
+cmdCheckFromFile config filePath
+ 
+ -- Check a Disciple Source Tetra module.
+ | ".dst"       <- takeExtension filePath
+ =      cmdCheckSourceTetraFromFile config filePath
+
+ -- Check a module in some fragment of Disciple Core.
+ | Just language <- languageOfExtension (takeExtension filePath)
+ =      cmdCheckCoreFromFile config language filePath
+
+ -- Don't know how to check this file.
+ | otherwise
+ = let  ext     = takeExtension filePath
+   in   throwError $ "Cannot check '" ++ ext ++ "'files."
+
+
+------------------------------------------------------------------------------
+-- | Check a Disciple Source Tetra module from a file.
+cmdCheckSourceTetraFromFile
+        :: Config               -- ^ Driver config.
+        -> FilePath             -- ^ Module file path.
+        -> ErrorT String IO ()
+
+cmdCheckSourceTetraFromFile config filePath
+ = do
+        -- Check that the file exists.
+        exists <- liftIO $ doesFileExist filePath
+        when (not exists)
+         $ throwError $ "No such file " ++ show filePath
+
+        -- Read in the source file.
+        src     <- liftIO $ readFile filePath
+
+        cmdCheckSourceTetraFromString config (SourceFile filePath) src
+
+
+------------------------------------------------------------------------------
+-- | Check a Disciple Source Tetra module from a string.
+--   Any errors are thrown in the `ErrorT` monad.
+cmdCheckSourceTetraFromString
+        :: Config               -- ^ Driver config.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
+        -> ErrorT String IO ()
+
+cmdCheckSourceTetraFromString config source str
+ = let
+        pmode   = prettyModeOfConfig $ configPretty config
+
+        pipeLoad
+         = pipeText     (nameOfSource source) (lineStartOfSource source) str
+         $ stageSourceTetraLoad config source
+         [ PipeCoreOutput pmode SinkDiscard ]
+   in do
+        errs    <- liftIO pipeLoad
+        case errs of
+         [] -> return ()
+         es -> throwError $ renderIndent $ vcat $ map ppr es
+ 
+
+------------------------------------------------------------------------------
+-- | Check some fragment of Disciple core from a file.
+cmdCheckCoreFromFile
+        :: Config               -- ^ Driver config.
+        -> Language             -- ^ Core language definition.
+        -> FilePath             -- ^ Module file path.
+        -> ErrorT String IO ()
+
+cmdCheckCoreFromFile _config language filePath
+ | Language bundle      <- language
+ , fragment             <- bundleFragment bundle
+ = do
         mModule <- liftIO
-                $  loadModuleFromFile fragment filePath C.Recon 
+                $  loadModuleFromFile fragment filePath C.Recon
         
         case mModule of
                 (Left  err, _ct) -> throwError (renderIndent $ ppr err)
-                (Right mm,  _ct) -> return mm
+                (Right _,   _ct) -> return ()
 
 
 -- | Parse and type-check a core module from a string.
-cmdCheckModuleFromString
+cmdCheckCoreFromString
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err       -- ^ Language fragment.
         -> Source               -- ^ Source of the program text.
@@ -63,7 +145,7 @@ cmdCheckModuleFromString
         -> C.Mode n             -- ^ Type checker mode.
         -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
-cmdCheckModuleFromString fragment source str mode
+cmdCheckCoreFromString fragment source str mode
  = do   
         let mModule = loadModuleFromString fragment
                         (nameOfSource source) (lineStartOfSource source)

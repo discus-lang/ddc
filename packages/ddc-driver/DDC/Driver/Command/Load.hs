@@ -27,16 +27,18 @@ import qualified DDC.Core.Check                 as C
 
 
 -------------------------------------------------------------------------------
--- | Load and transform a module, printing the result to stdout.
+-- | Load and transform a module.
+--   The result is printed to @stdout@.
+--   Any errors are thrown in the `ErrorT` monad.
 --
---   Handle fragments of Disciple Core, where the current fragment is determined
---   by expecting the file name extension.
+--   This function handle fragments of Disciple Core, as well as Source Tetra
+--   modules. The language to use is determined by inspecting the file name
+--   extension.
 --      
---   This function also takes a textual description of the simplifier to apply
---   to the module.
+--   We also take the specification of a simplifier to apply to the module.
 --
 cmdLoadFromFile
-        :: Config
+        :: Config               -- ^ Driver config.
         -> Maybe String         -- ^ Simplifier specification.
         -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
@@ -67,8 +69,9 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
 -------------------------------------------------------------------------------
 -- | Load a Disciple Source Tetra module from a file.
 --   The result is printed to @stdout@.
+--   Any errors are thrown in the `ErrorT` monad.
 cmdLoadSourceTetraFromFile
-        :: Config
+        :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
         -> ErrorT String IO ()
 
@@ -86,8 +89,11 @@ cmdLoadSourceTetraFromFile config filePath
 
 
 -------------------------------------------------------------------------------
+-- | Load a Disciple Source Tetra module from a string.
+--   The result is printed to @stdout@.
+--   Any errors are thrown in the `ErrorT` monad.
 cmdLoadSourceTetraFromString
-        :: Config
+        :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ErrorT String IO ()
