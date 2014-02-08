@@ -1,0 +1,10 @@
+
+module Test where
+
+fac (acc: Nat#) (n: Nat#) : Nat#
+ = case n of
+        0       -> acc
+        1       -> acc
+        _       -> fac (add# acc n) (sub# n 1)
+
+ 
