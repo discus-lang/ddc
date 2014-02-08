@@ -1,6 +1,8 @@
 
 module DDC.Driver.Command.Load
         ( cmdLoadFromFile
+        , cmdLoadSourceTetraFromFile
+        , cmdLoadSourceTetraFromString
         , cmdLoadCoreFromFile
         , cmdLoadCoreFromString
         , cmdLoadSimplifier)
@@ -11,6 +13,7 @@ import DDC.Build.Language
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
 import DDC.Driver.Command.Read
+import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Pretty
@@ -23,6 +26,7 @@ import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
 
 
+-------------------------------------------------------------------------------
 -- | Load and transform a module, printing the result to stdout.
 --
 --   Handle fragments of Disciple Core, where the current fragment is determined
@@ -40,7 +44,11 @@ cmdLoadFromFile
 
 cmdLoadFromFile config mStrSimpl fsTemplates filePath
 
- -- Load some fragment of Disciple Core.
+ -- Load a Disciple Source Tetra module.
+ | ".dst"        <- takeExtension filePath
+ =      cmdLoadSourceTetraFromFile config filePath
+
+ -- Load a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
  = case mStrSimpl of
         Nothing 
@@ -50,15 +58,58 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
          -> do  language' <- cmdLoadSimplifier language strSimpl fsTemplates
                 cmdLoadCoreFromFile config language' filePath
 
- -- Can't load this sort of file.
+ -- Don't know how to load this file.
  | otherwise
  = let  ext     = takeExtension filePath
    in   throwError $ "Cannot load '" ++ ext ++ "' files."
 
- 
+
 -------------------------------------------------------------------------------
--- | Load some fragment of Disciple core from a file,
---   printing the result to @stdout@.
+-- | Load a Disciple Source Tetra module from a file.
+--   The result is printed to @stdout@.
+cmdLoadSourceTetraFromFile
+        :: Config
+        -> FilePath             -- ^ Module file path.
+        -> ErrorT String IO ()
+
+cmdLoadSourceTetraFromFile config filePath
+ = do   
+        -- Check that the file exists.
+        exists  <- liftIO $ doesFileExist filePath
+        when (not exists)
+         $ throwError $ "No such file " ++ show filePath
+
+        -- Read in the source file.
+        src     <- liftIO $ readFile filePath
+
+        cmdLoadSourceTetraFromString config (SourceFile filePath) src
+
+
+-------------------------------------------------------------------------------
+cmdLoadSourceTetraFromString
+        :: Config
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
+        -> ErrorT String IO ()
+
+cmdLoadSourceTetraFromString config source str
+ = let
+        pmode   = prettyModeOfConfig $ configPretty config
+
+        pipeLoad
+         = pipeText     (nameOfSource source) (lineStartOfSource source) str
+         $ stageSourceTetraLoad config source
+         [ PipeCoreOutput pmode SinkStdout ]
+   in do
+        errs    <- liftIO pipeLoad
+        case errs of
+         [] -> return ()
+         es -> throwError $ renderIndent $ vcat $ map ppr es
+ 
+
+-------------------------------------------------------------------------------
+-- | Load some fragment of Disciple core from a file.
+--   The result is printed to @stdout@.
 cmdLoadCoreFromFile
         :: Config
         -> Language             -- ^ Core language definition.
@@ -79,7 +130,8 @@ cmdLoadCoreFromFile config language filePath
 
 
 -------------------------------------------------------------------------------
--- | Load and type check a Disciple Core module, printing the result to @stdout@.
+-- | Load a Disciple Core module from a string.
+--   The result it printed to @stdout@.
 cmdLoadCoreFromString
         :: Config
         -> Language             -- ^ Language definition
@@ -135,7 +187,7 @@ cmdLoadSimplifier language strSimpl fsTemplates
 
         modules_annot
          <- case mModules of
-                 Nothing -> throwError $ "Cannot load inlined modules."
+                 Nothing -> throwError $ "Cannot load inlined module."
                  Just ms -> return     $ ms
 
         -- Zap annotations on the loaded modules.
