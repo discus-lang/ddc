@@ -45,20 +45,13 @@ cmdCheckModuleFromFile
         -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckModuleFromFile fragment filePath
- = goLoad 
- where  -- Load and type-check the module.
-        goLoad 
-         = do   mModule <- liftIO 
-                        $ loadModuleFromFile fragment filePath C.Recon 
-                case mModule of
-                 (Left  err, _ct) -> throwError (renderIndent $ ppr err)
-                 (Right mm,  _ct) -> goCheckFragment mm
-
-        -- Do fragment specific checks.
-        goCheckFragment mm
-         = case fragmentCheckModule fragment mm of
-                Just err          -> throwError (renderIndent $ ppr err)
-                Nothing           -> return mm
+ = do   
+        mModule <- liftIO
+                $  loadModuleFromFile fragment filePath C.Recon 
+        
+        case mModule of
+                (Left  err, _ct) -> throwError (renderIndent $ ppr err)
+                (Right mm,  _ct) -> return mm
 
 
 -- | Parse and type-check a core module from a string.
@@ -71,27 +64,20 @@ cmdCheckModuleFromString
         -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckModuleFromString fragment source str mode
- = goLoad
- where  -- Load and type-check the module.
-        goLoad
-         = let  mModule = loadModuleFromString fragment
-                                (nameOfSource source) (lineStartOfSource source)
-                                mode str
+ = do   
+        let mModule = loadModuleFromString fragment
+                        (nameOfSource source) (lineStartOfSource source)
+                        mode str
 
-            in  case mModule of
-                  (Left err, _ct) -> throwError (renderIndent $ ppr err)
-                  (Right mm, _ct) -> goCheckFragment mm
-
-        goCheckFragment mm
-         = case fragmentCheckModule fragment mm of
-                Just err        -> throwError  (renderIndent $ ppr err)
-                Nothing         -> return mm
+        case mModule of
+                (Left err, _ct) -> throwError (renderIndent $ ppr err)
+                (Right mm, _ct) -> return mm
 
 
 -- Type -----------------------------------------------------------------------
 -- | Parse a core spec, and return its kind.
 cmdParseCheckType 
-        :: (Ord n, Show n, Pretty n)
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err       -- ^ Language fragment.
         -> Universe             -- ^ Universe this type is supposed to be in.
         -> Source               -- ^ Source of the program text.
@@ -228,19 +214,10 @@ cmdParseCheckExp
                         return (Nothing, mct)
 
               (Right result, mct)
-               -> goCheckFragment mct result
-
-        -- Do fragment specific checks.
-        goCheckFragment ct x
-         = case fragmentCheckExp fragment' x of
-             Just err 
-              -> do     putStrLn $ renderIndent $ ppr err
-                        return (Nothing, ct)
-
-             Nothing  
-              -> do     return (Just x,  ct)
+               -> return (Just result, mct)
 
 
+-------------------------------------------------------------------------------
 -- | What components of the checked type to display.
 data ShowSpecMode
         = ShowSpecAll

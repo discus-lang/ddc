@@ -22,7 +22,7 @@ import qualified DDC.Core.Check                 as C
 -- Read -----------------------------------------------------------------------
 -- | Load and typecheck a module.
 cmdReadModule 
-        :: (Ord n, Show n, Pretty n, NFData n)
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)), NFData n)
         => Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
@@ -30,7 +30,7 @@ cmdReadModule = cmdReadModule' True
 
 
 cmdReadModule'
-        :: (Ord n, Show n, Pretty n, NFData n)
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)), NFData n)
         => Bool                 -- ^ If true, print errors out
         -> Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.

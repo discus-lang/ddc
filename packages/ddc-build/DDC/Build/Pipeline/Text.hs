@@ -37,7 +37,7 @@ data PipeText n (err :: * -> *) where
         -> PipeText n err
 
   PipeTextLoadCore 
-        :: (Ord n, Show n, Pretty n)
+        :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
         => !(Fragment n err)
         -> !(C.Mode n)
         -> !Sink

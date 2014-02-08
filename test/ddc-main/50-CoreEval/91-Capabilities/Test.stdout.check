@@ -1,16 +1,19 @@
 -- Error: Partially applied capablity constructor.
-Partially applied capability constructor.
-with: Mutable#
+During fragment specific check.
+  Partially applied capability constructor.
+  with: Mutable#
 
 
 -- Error: Capability constructor applied to a non-constructor.
-Capability constructor applied to a non-region handle.
-with: Mutable# [r]
+During fragment specific check.
+  Capability constructor applied to a non-region handle.
+  with: Mutable# [r]
 
 
 -- Error: conflicting capabilities in program.
-Conflicting capabilities in core program.
-        region: r0#
- can't be both: Const#
-           and: Mutable#
+During fragment specific check.
+  Conflicting capabilities in core program.
+          region: r0#
+   can't be both: Const#
+             and: Mutable#
 

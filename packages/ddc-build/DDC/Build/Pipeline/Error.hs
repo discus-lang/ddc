@@ -3,6 +3,7 @@ module DDC.Build.Pipeline.Error
         (Error (..)) 
 where
 import DDC.Base.Pretty
+import DDC.Data.SourcePos
 import qualified DDC.Core.Salt          as Salt
 import qualified DDC.Core.Load          as CL
 import Control.DeepSeq
@@ -17,7 +18,8 @@ data Error
         --   Blame it on the compiler.
         | forall err. Pretty err => ErrorLint !err
 
-        | ErrorSaltLoad    (CL.Error Salt.Name)
+        | forall err. Pretty (err (CL.AnTEC SourcePos Salt.Name))
+        => ErrorSaltLoad  (CL.Error Salt.Name err)
 
         -- | Error converting the module to Salt to Sea.
         | forall err. Pretty err => ErrorSaltConvert !err
