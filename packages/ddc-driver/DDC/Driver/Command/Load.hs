@@ -114,7 +114,7 @@ cmdLoadSourceTetraFromString config source str
  
 
 -------------------------------------------------------------------------------
--- | Load some fragment of Disciple core from a file.
+-- | Load a Disciple Core module from a file.
 --   The result is printed to @stdout@.
 cmdLoadCoreFromFile
         :: Config
