@@ -1,6 +1,7 @@
 
 module DDC.Driver.Command.ToSalt
         ( cmdToSaltFromFile
+        , cmdToSaltSourceTetraFromFile
         , cmdToSaltSourceTetraFromString
         , cmdToSaltCoreFromFile
         , cmdToSaltCoreFromString)
@@ -33,9 +34,13 @@ cmdToSaltFromFile
         -> ErrorT String IO ()
 
 cmdToSaltFromFile config filePath
+
+ -- Convert a Disciple Source Tetra module.
+ | ".dst"        <- takeExtension filePath
+ =      cmdToSaltSourceTetraFromFile config filePath
  
- -- Load a module in some fragment of Disciple Core.
- | Just language        <- languageOfExtension (takeExtension filePath)
+ -- Convert a module in some fragment of Disciple Core.
+ | Just language <- languageOfExtension (takeExtension filePath)
  =      cmdToSaltCoreFromFile config language filePath
 
  -- Don't know how to convert this file.
@@ -45,9 +50,31 @@ cmdToSaltFromFile config filePath
 
 
 -------------------------------------------------------------------------------
--- |  Convert Disciple Core Tetra to Disciple Core Salt.
---    The result is printer to @stdout@.
---    Any errors are thrown in the `ErrorT` monad.
+-- | Convert Disciple Core Tetra to Disciple Core Salt.
+--   The result is printed to @stdout@.
+--   Any errors are thrown in the `ErrorT` monad.
+cmdToSaltSourceTetraFromFile
+        :: Config               -- ^ Driver config.
+        -> FilePath             -- ^ Module file path.
+        -> ErrorT String IO ()
+
+cmdToSaltSourceTetraFromFile config filePath
+ = do
+        -- Check that the file exists.
+        exists  <- liftIO $ doesFileExist filePath
+        when (not exists)
+         $ throwError $ "No such file " ++ show filePath
+
+        -- Read in the source file.
+        src     <- liftIO $ readFile filePath
+
+        cmdToSaltSourceTetraFromString config (SourceFile filePath) src
+
+
+-------------------------------------------------------------------------------
+-- | Convert Disciple Core Tetra to Disciple Core Salt.
+--   The result is printed to @stdout@.
+--   Any errors are thrown in the `ErrorT` monad.
 cmdToSaltSourceTetraFromString
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
@@ -139,7 +166,8 @@ cmdToSaltCoreFromString config language source str
 
                 -- Unrecognised fragment name or file extension.
                 | otherwise
-                = throwError $ "Cannot convert '" ++ fragName ++ "' modules to Salt."
+                = throwError 
+                $ "Cannot convert '" ++ fragName ++ "' modules to Salt."
 
         -- Throw any errors that arose during compilation
         errs <- compile
