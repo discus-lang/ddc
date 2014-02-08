@@ -108,10 +108,8 @@ run config
 
         -- Convert a module to Salt.
         ModeToSalt filePath
-         -> do  language        <- languageFromFilePath filePath
-                dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
-                runError $ cmdToSalt dconfig language (SourceFile filePath) str
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                runError $ cmdToSaltFromFile dconfig filePath
 
         -- Convert a module to C
         ModeToC filePath

@@ -117,7 +117,7 @@ cmdLoadSourceTetraFromString config source str
 -- | Load a Disciple Core module from a file.
 --   The result is printed to @stdout@.
 cmdLoadCoreFromFile
-        :: Config
+        :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path
         -> ErrorT String IO ()
@@ -139,7 +139,7 @@ cmdLoadCoreFromFile config language filePath
 -- | Load a Disciple Core module from a string.
 --   The result it printed to @stdout@.
 cmdLoadCoreFromString
-        :: Config
+        :: Config               -- ^ Driver config.
         -> Language             -- ^ Language definition
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
@@ -169,7 +169,7 @@ cmdLoadCoreFromString config language source str
 -- | Parse the simplifier defined in this string, 
 --   and load it and all the inliner templates into the language bundle.
 cmdLoadSimplifier 
-        :: Language
+        :: Language             -- ^ Language definition.
         -> String               -- ^ Simplifier specification.
         -> [FilePath]           -- ^ Modules to use as inliner templates.
         -> ErrorT String IO Language

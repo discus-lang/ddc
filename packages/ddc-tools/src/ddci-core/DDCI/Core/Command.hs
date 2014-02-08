@@ -277,7 +277,7 @@ handleCmd1 state cmd source line
         -- Conversion to machine code -----------
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToSalt config lang source line
+                runError $ cmdToSaltCoreFromString config lang source line
                 return    state
 
         CommandToC
