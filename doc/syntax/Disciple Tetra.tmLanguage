@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>  
         <key>scopeName</key>
-        <string>source.disciplecore</string>
+        <string>source.discipletetra</string>
 
         <key>fileTypes</key>
-	<array> <string>dcx, dcl, dcs, dce, dct</string>
+	<array> <string>dst, dsx</string>
 	</array>
 
 	<key>keyEquivalent</key>
 	<string>^~H</string>
 
 	<key>name</key>
-	<string>Disciple Core</string>
+	<string>Disciple Tetra</string>
 
 	<key>patterns</key>
 	<array>
@@ -25,7 +25,7 @@
 
                 <dict>  <key>name</key> <string>keyword.disciple.core</string>
                         <key>match</key>
-                        <string>\b(module|imports|exports|with|let|letrec|in|private|extend|using|withregion|case|of|weakeff|weakclo|purify|forget|do)\b</string>
+                        <string>\b(module|imports|exports|with|where|data|let|letrec|in|private|extend|using|case|of|weakeff|weakclo|purify|forget|do)\b</string>
                 </dict>
 
 
