@@ -16,9 +16,7 @@ cmdToCore _state config source str
         pmode   = D.prettyModeOfConfig $ D.configPretty config
 
         pipeLoad
-         = pipeText (nameOfSource source)
-                    (lineStartOfSource source)
-                    str
+         = pipeText (nameOfSource source) (lineStartOfSource source) str
          $ stageSourceTetraLoad config source
          [ PipeCoreOutput pmode SinkStdout ]
 
