@@ -57,7 +57,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
          ->     cmdLoadCoreFromFile config language filePath
         
         Just strSimpl
-         -> do  language' <- cmdLoadSimplifier language strSimpl fsTemplates
+         -> do  language' <- cmdLoadSimplifier config language strSimpl fsTemplates
                 cmdLoadCoreFromFile config language' filePath
 
  -- Don't know how to load this file.
@@ -169,12 +169,13 @@ cmdLoadCoreFromString config language source str
 -- | Parse the simplifier defined in this string, 
 --   and load it and all the inliner templates into the language bundle.
 cmdLoadSimplifier 
-        :: Language             -- ^ Language definition.
+        :: Config               -- ^ Driver config.
+        -> Language             -- ^ Language definition.
         -> String               -- ^ Simplifier specification.
         -> [FilePath]           -- ^ Modules to use as inliner templates.
         -> ErrorT String IO Language
 
-cmdLoadSimplifier language strSimpl fsTemplates
+cmdLoadSimplifier config language strSimpl fsTemplates
  | Language bundle      <- language
  , modules_bundle       <- bundleModules bundle
  , mkNamT               <- bundleMakeNamifierT bundle
@@ -188,7 +189,7 @@ cmdLoadSimplifier language strSimpl fsTemplates
         --  will display the errors.
         mModules
          <- liftM sequence
-         $  mapM (liftIO . cmdReadModule fragment)
+         $  mapM (liftIO . cmdReadModule config fragment)
                  fsTemplates
 
         modules_annot

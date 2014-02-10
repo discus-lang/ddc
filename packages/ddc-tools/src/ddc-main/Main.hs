@@ -35,7 +35,7 @@ import Control.Monad.Trans.Error
 import qualified DDC.Driver.Stage               as Driver
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
-
+import qualified DDC.Core.Simplifier.Recipe     as Simplifier
 
 main :: IO ()
 main
@@ -198,26 +198,37 @@ getDriverConfig config filePath
              = Runtime.Config
              { Runtime.configHeapSize = configRuntimeHeapSize config }
 
-        simplLite <- getSimplLiteOfConfig config builder               filePath
-        simplSalt <- getSimplSaltOfConfig config builder runtimeConfig filePath
+        let dconfig
+             = Driver.Config
+             { Driver.configDump                  = configDump config
+             , Driver.configInferTypes            = configInferTypes config
+             , Driver.configSimplLite             = Simplifier.idsimp
+             , Driver.configSimplSalt             = Simplifier.idsimp
+             , Driver.configViaBackend            = configViaBackend config
+             , Driver.configRuntime               = runtimeConfig
+             , Driver.configBuilder               = builder
+             , Driver.configPretty                = Driver.defaultConfigPretty
+             , Driver.configSuppressHashImports   = False
+             , Driver.configOutputFile            = configOutputFile config
+             , Driver.configOutputDir             = configOutputDir  config 
+             , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config
+             , Driver.configKeepSeaFiles          = configKeepSeaFiles  config
+             , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
+             , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config }
 
-        return  
-         $ Driver.Config
-         { Driver.configDump                  = configDump config
-         , Driver.configInferTypes            = False
-         , Driver.configSimplLite             = simplLite
-         , Driver.configSimplSalt             = simplSalt
-         , Driver.configViaBackend            = configViaBackend config
-         , Driver.configRuntime               = runtimeConfig
-         , Driver.configBuilder               = builder
-         , Driver.configPretty                = Driver.defaultConfigPretty
-         , Driver.configSuppressHashImports   = False
-         , Driver.configOutputFile            = configOutputFile config
-         , Driver.configOutputDir             = configOutputDir  config 
-         , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config
-         , Driver.configKeepSeaFiles          = configKeepSeaFiles  config
-         , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
-         , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config }
+        simplLite <- getSimplLiteOfConfig config 
+                        dconfig 
+                        builder               filePath
+        
+        -- We need to force -infer on because the inliner templates may not
+        -- have full type annotations.
+        simplSalt <- getSimplSaltOfConfig config 
+                        dconfig { Driver.configInferTypes = True }
+                        builder runtimeConfig filePath
+
+        return  $ dconfig        
+                { Driver.configSimplLite        = simplLite
+                , Driver.configSimplSalt        = simplSalt }
 
 
 -- | Print errors to stderr and set the exit code.

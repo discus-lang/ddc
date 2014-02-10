@@ -49,7 +49,9 @@ stageTetraLoad
         -> PipeText CE.Name BE.Error
 
 stageTetraLoad config source pipesTetra
- = PipeTextLoadCore BE.fragment C.Recon SinkDiscard
+ = PipeTextLoadCore BE.fragment 
+        (if configInferTypes config then C.Synth else C.Recon)
+                         (dump config source "dump.tetra-check.dct")
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode
                          (dump config source "dump.tetra-load.dct")

@@ -5,13 +5,11 @@ where
 import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Build.Language.Salt          as Salt
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
-import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Pretty        as P
 
 
@@ -57,7 +55,7 @@ cmdCompile config filePath
                 | ext == ".dcs"
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  Salt.fragment C.Recon SinkDiscard pipesSalt 
+                $ stageSaltLoad     config source pipesSalt
 
                 -- Unrecognised.
                 | otherwise

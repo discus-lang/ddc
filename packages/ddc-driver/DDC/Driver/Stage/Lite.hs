@@ -29,10 +29,12 @@ stageLiteLoad
         -> PipeText Lite.Name Lite.Error
 
 stageLiteLoad config source pipesLite
- = PipeTextLoadCore Lite.fragment C.Recon SinkDiscard
+ = PipeTextLoadCore Lite.fragment 
+        (if configInferTypes config then C.Synth else C.Recon)
+                         (dump config source "dump.lite-check.txt")
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode
-                         (dump config source "dump.lite.dcl")
+                         (dump config source "dump.lite-load.dcl")
         : pipesLite ) ]
 
 

@@ -103,6 +103,10 @@ data Config
         { -- | The main compilation mode.
           configMode            :: Mode 
 
+          -- Language -----------------
+          -- | Infer type annotations for Disciple Core files.
+        , configInferTypes      :: Bool
+
           -- Compilation --------------
           -- | Directory holding the runtime and base library code.
         , configBaseDir         :: FilePath
@@ -161,6 +165,9 @@ getDefaultConfig
         return $ Config
           { configMode            = ModeNone 
  
+            -- Language -----------------
+          , configInferTypes      = False
+
             -- Compilation --------------
           , configBaseDir         = baseDir
           , configOutputFile      = Nothing

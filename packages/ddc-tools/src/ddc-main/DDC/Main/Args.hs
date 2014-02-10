@@ -26,14 +26,15 @@ parseArgs args config
         = return 
         $ config { configMode   = ModeHelp }
 
-        | flag : file : rest    <- args
-        , elem flag ["-make", "--make" ]
+        -- Language -----------------------------
+        | "-infer" : rest           <- args
         = parseArgs rest
-        $ setMode config $ ModeMake file
+        $ config { configInferTypes = True }
 
-        | "-basebuild" : rest   <- args
+        | flag : rest           <- args
+        , elem flag ["-recon", "-no-infer"]
         = parseArgs rest
-        $ setMode config $ ModeBaseBuild
+        $ config { configInferTypes = False }
 
         -- Compilation --------------------------
         | flag : file : rest <- args
@@ -41,14 +42,18 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeCompile file
 
+        | flag : file : rest    <- args
+        , elem flag ["-make", "--make" ]
+        = parseArgs rest
+        $ setMode config $ ModeMake file
+
         | "-basedir" : path : rest <- args
         = parseArgs rest
         $ config { configBaseDir = path }
 
-        | flag         : file : rest     <- args
-        , elem flag    ["-o", "-output"]
+        | "-basebuild" : rest   <- args
         = parseArgs rest
-        $ config { configOutputFile = Just file }
+        $ setMode config $ ModeBaseBuild
 
         | "-fvia-c"    : rest      <- args
         = parseArgs rest
@@ -57,6 +62,11 @@ parseArgs args config
         | "-fvia-llvm" : rest   <- args
         = parseArgs rest
         $ config { configViaBackend = ViaLLVM }
+
+        | flag         : file : rest     <- args
+        , elem flag    ["-o", "-output"]
+        = parseArgs rest
+        $ config { configOutputFile = Just file }
 
         | flag : dir : rest     <- args
         , elem flag    ["-output-dir"]

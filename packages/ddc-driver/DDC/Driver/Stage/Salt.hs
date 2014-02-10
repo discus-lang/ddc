@@ -33,7 +33,9 @@ stageSaltLoad
         -> PipeText Salt.Name Salt.Error
 
 stageSaltLoad config source pipesSalt
- = PipeTextLoadCore Salt.fragment C.Recon SinkDiscard
+ = PipeTextLoadCore Salt.fragment 
+        (if configInferTypes config then C.Synth else C.Recon)
+        SinkDiscard
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode
                          (dump config source "dump.salt-load.dcl")

@@ -230,5 +230,5 @@ packages/ddc-war/%.o : packages/ddc-war/%.hs
 
 %.o : %.dcs bin/ddc
 	@echo "* Compiling $<"
-	@bin/ddc -c $<
+	@bin/ddc -infer -c $<
 

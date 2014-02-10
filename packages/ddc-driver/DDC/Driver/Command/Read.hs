@@ -4,6 +4,7 @@ module DDC.Driver.Command.Read
         , cmdReadModule')
 where
 import DDC.Interface.Source
+import DDC.Driver.Config
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Module
@@ -23,7 +24,8 @@ import qualified DDC.Core.Check                 as C
 -- | Load and typecheck a module.
 cmdReadModule 
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)), NFData n)
-        => Fragment n err       -- ^ Language fragment.
+        => Config               -- ^ Driver config.
+        -> Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
 cmdReadModule = cmdReadModule' True
@@ -32,11 +34,12 @@ cmdReadModule = cmdReadModule' True
 cmdReadModule'
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)), NFData n)
         => Bool                 -- ^ If true, print errors out
+        -> Config               -- ^ Driver config
         -> Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
 
-cmdReadModule' printErrors frag filePath
+cmdReadModule' printErrors config frag filePath
  = do
         -- Read in the source file.
         exists  <- doesFileExist filePath
@@ -46,14 +49,15 @@ cmdReadModule' printErrors frag filePath
         src     <- readFile filePath
         let source   = SourceFile filePath
 
-        cmdReadModule_parse printErrors filePath frag source src
+        cmdReadModule_parse printErrors config filePath frag source src
 
 
-cmdReadModule_parse printErrors filePath frag source src
+cmdReadModule_parse printErrors config filePath frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore frag 
-                        C.Recon SinkDiscard
+                        (if configInferTypes config then C.Synth else C.Recon)
+                        SinkDiscard
                    [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                      [PipeCoreOutput pprDefaultMode SinkDiscard] ]
 
