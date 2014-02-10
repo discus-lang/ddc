@@ -1,6 +1,7 @@
 
 module DDC.Driver.Stage.Salt
-        ( stageSaltOpt
+        ( stageSaltLoad
+        , stageSaltOpt
         , stageSaltToC
         , stageSaltToLLVM
         , stageCompileSalt
@@ -18,9 +19,25 @@ import Data.Maybe
 
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Salt.Name             as Salt
+import qualified DDC.Core.Salt.Convert          as Salt
 
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as S
+
+
+-------------------------------------------------------------------------------
+-- | Load and type check a Core Salt module.
+stageSaltLoad
+        :: Config -> Source
+        -> [PipeCore () Salt.Name]
+        -> PipeText Salt.Name Salt.Error
+
+stageSaltLoad config source pipesSalt
+ = PipeTextLoadCore Salt.fragment C.Recon SinkDiscard
+ [ PipeCoreReannotate (const ())
+        ( PipeCoreOutput pprDefaultMode
+                         (dump config source "dump.salt-load.dcl")
+        : pipesSalt ) ]
 
 
 -------------------------------------------------------------------------------

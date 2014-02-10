@@ -18,8 +18,6 @@ import System.Directory
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import Control.Monad
-import qualified DDC.Build.Language.Tetra       as Tetra
-import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 
@@ -158,24 +156,22 @@ cmdToSaltCoreFromString config language source str
                 | fragName == "Tetra"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
+                $ stageTetraLoad   config source
                 [ stageTetraToSalt config source
                 [ stageSaltOpt     config source
                 [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreOutput   pmode SinkStdout]]]]]
+                [ PipeCoreOutput   pmode SinkStdout]]]]
                 
                 -- Convert a Core Lite module to Salt.
                 | fragName == "Lite" 
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ PipeTextLoadCore Lite.fragment C.Recon SinkDiscard
-                [ PipeCoreReannotate (const ())
+                $ stageLiteLoad    config source
                 [ stageLiteOpt     config source
                 [ stageLiteToSalt  config source
                 [ stageSaltOpt     config source
                 [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreOutput   pmode SinkStdout]]]]]]
+                [ PipeCoreOutput   pmode SinkStdout]]]]]
 
                 -- Unrecognised fragment name or file extension.
                 | otherwise

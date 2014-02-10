@@ -28,6 +28,7 @@ module DDC.Driver.Stage
         , stageLiteToSalt
 
           -- * Salt stages
+        , stageSaltLoad
         , stageSaltOpt
         , stageSaltToC
         , stageSaltToLLVM

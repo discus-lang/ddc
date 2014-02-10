@@ -48,12 +48,12 @@ stageTetraLoad
         -> [PipeCore () CE.Name]
         -> PipeText CE.Name BE.Error
 
-stageTetraLoad config source pipesLite
+stageTetraLoad config source pipesTetra
  = PipeTextLoadCore BE.fragment C.Recon SinkDiscard
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode
-                         (dump config source "dump.tetra.dcl")
-        : pipesLite ) ]
+                         (dump config source "dump.tetra-load.dct")
+        : pipesTetra ) ]
  
 
 -------------------------------------------------------------------------------
