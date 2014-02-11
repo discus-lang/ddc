@@ -1,12 +1,12 @@
 
--- | Int primitives for 64-bit machines.
-module Int
+-- | Nat primitives for 64-bit machines.
+module Nat
 exports
-        boxInt    :: [r : Region]. Int#   -> Ptr# r Obj
-        unboxInt  :: [r : Region]. Ptr# r Obj -> Int#
-        addInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        subInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        mulInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        boxNat    :: [r : Region]. Nat#   -> Ptr# r Obj
+        unboxNat  :: [r : Region]. Ptr# r Obj -> Nat#
+        addNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        subNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        mulNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
 
 imports
         allocRawSmall :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
@@ -14,26 +14,26 @@ imports
 with letrec 
 
 
-boxInt [r : Region] (x : Int#) : Ptr# r Obj
- = do   obj     = allocRawSmall [r] TAG0# 8#
-        addr    = takePtr# [r] [Obj] obj
-        write#  [Int#] addr 4# x
+boxNat [r : Region] (x : Nat#) : Ptr# r Obj
+ = do   obj     = allocRawSmall TAG0# 8#
+        addr    = takePtr# obj
+        write# addr 4# x
         obj
 
 
-unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
- = do   addr    = takePtr# [r] [Obj] obj
-        read#   [Int#] addr 4#
+unboxNat [r : Region] (obj : Ptr# r Obj) : Nat#
+ = do   addr    = takePtr# obj
+        read#  addr 4#
 
 
-addInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+addNat [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = boxNat (add# (unboxNat x) (unboxNat y))
 
 
-subInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+subNat [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = boxNat (sub# (unboxNat x) (unboxNat y))
 
 
-mulInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+mulNat [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = boxNat (mul# (unboxNat x) (unboxNat y))
 

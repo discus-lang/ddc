@@ -15,24 +15,24 @@ with letrec
 
 
 boxInt [r : Region] (x : Int#) : Ptr# r Obj
- = do   obj     = allocRawSmall [r] TAG0# 4#
-        addr    = takePtr# [r] [Obj] obj
-        write#  [Int#] addr 4# x
+ = do   obj     = allocRawSmall TAG0# 4#
+        addr    = takePtr# obj
+        write# addr 4# x
         obj
 
 
 unboxInt [r : Region] (obj : Ptr# r Obj) : Int#
- = do   addr    = takePtr# [r] [Obj] obj
-        read#   [Int#] addr 4#
+ = do   addr    = takePtr# obj
+        read#  addr 4#
 
 
 addInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+ = boxInt (add# (unboxInt x) (unboxInt y))
 
 
 subInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+ = boxInt (sub# (unboxInt x) (unboxInt y))
 
 
 mulInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
+ = boxInt (mul# (unboxInt x) (unboxInt y))

@@ -88,9 +88,9 @@ with letrec
 -- | Get the constructor tag of an object.
 getTag [r : Region] (obj : Ptr# r Obj) : Tag#
  = do   
-        ptr     = castPtr# obj
-        header  = peek# ptr 0#
-        tag32   = shr#  header 8w32#
+        ptr             = castPtr# obj
+        header          = peek# ptr 0#
+        tag32           = shr#  header 8w32#
         promote# tag32
  
 
@@ -116,8 +116,7 @@ allocBoxed
         -- Multiple arity by 8 bytes-per-pointer to get size of payload.
         bytesPayload    = shl# arity (size2# [Addr#])
         bytesObj        = add# (size# [Word32#])
-                         (add# (size# [Word32#])
-                                       bytesPayload)
+                         (add# (size# [Word32#]) bytesPayload)
 
         case check# bytesObj of
          True#  -> allocBoxed_ok tag arity bytesObj

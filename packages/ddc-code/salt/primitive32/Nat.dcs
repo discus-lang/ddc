@@ -3,35 +3,36 @@
 module Nat
 exports
         boxNat    :: [r : Region]. Nat#   -> Ptr# r Obj
-        unboxNAt  :: [r : Region]. Ptr# r Obj -> Nat#
-        addNAt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        subNAt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        mulNAt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        unboxNat  :: [r : Region]. Ptr# r Obj -> Nat#
+        addNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        subNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        mulNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
 
 imports 
         allocRawSmall :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
 
 with letrec
 
+
 boxNat [r : Region] (x : Nat#) : Ptr# r Obj
- = do   obj     = allocRawSmall [r] TAG0# 4#
-        addr    = takePtr# [r] [Obj] obj
-        write#  [Nat#] addr 4# x
+ = do   obj     = allocRawSmall TAG0# 4#
+        addr    = takePtr# obj
+        write# addr 4# x
         obj
 
 
 unboxNat [r : Region] (obj : Ptr# r Obj) : Nat#
- = do   addr    = takePtr# [r] [Obj] obj
-        read#   [Nat#] addr 4#
+ = do   addr    = takePtr# obj
+        read#  addr 4#
 
 
 addNat [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxNat [r3] (add# [Nat#] (unboxNat [r1] x) (unboxNat [r2] y))
+ = boxNat (add# (unboxNat x) (unboxNat y))
 
 
 subInt [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxNat [r3] (sub# [Nat#] (unboxNat [r1] x) (unboxNat [r2] y))
+ = boxNat (sub# (unboxNat x) (unboxNat y))
 
 
 mulNat [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = boxNat [r3] (mul# [Nat#] (unboxNat [r1] x) (unboxNat [r2] y))
+ = boxNat (mul# (unboxNat x) (unboxNat y))

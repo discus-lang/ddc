@@ -88,10 +88,10 @@ with letrec
 -- | Get the constructor tag of an object.
 getTag [r : Region] (obj : Ptr# r Obj) : Tag#
  = do   
-        ptr             = castPtr# [r] [Word32#] [Obj] obj
-        header          = peek# [r] [Word32#] ptr 0#
-        tag32           = shr#  [Word32#] header 8w32#
-        promote# [Tag#] [Word32#] tag32
+        ptr             = castPtr# obj
+        header          = peek# ptr 0#
+        tag32           = shr#  header 8w32#
+        promote# tag32
  
 
 -- Boxed ----------------------------------------------------------------------
@@ -106,52 +106,45 @@ getTag [r : Region] (obj : Ptr# r Obj) : Tag#
 --   } DataBoxed;
 --    
 allocBoxed 
-        [r : Region]
-        (tag : Tag#) (arity : Nat#) : Ptr# r Obj
+        [r : Region] (tag : Tag#) (arity : Nat#) : Ptr# r Obj
  = do   
         -- multiply arity by 4 bytes-per-pointer to get size of payload.
-        bytesPayload    = shl# [Nat#] arity (size2# [Ptr# r Obj])
+        bytesPayload    = shl# arity (size2# [Ptr# r Obj])
         
-        bytesObj        = add# [Nat#] 8# bytesPayload
+        bytesObj        = add# 8# bytesPayload
         case check# bytesObj of
-         True#  -> allocBoxed_ok [r] tag arity bytesObj
-         False# -> fail# [Ptr# r Obj]
+         True#  -> allocBoxed_ok tag arity bytesObj
+         False# -> fail#
 
 allocBoxed_ok
-        [r : Region]
-        (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) : Ptr# r Obj
+        [r : Region] (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do   
         addr            = alloc# bytesObj
 
-        tag32           = promote# [Word32#] [Tag#] tag
+        tag32           = promote# tag
         format          = 0b00100001w32#
-        header          = bor# [Word32#] (shl# [Word32#] tag32 8w32#) format
+        header          = bor# (shl# tag32 8w32#) format
         write# [Word32#] addr 0# header
 
-        arity32         = promote# [Word32#] [Nat#] arity
+        arity32         = promote# arity
         write# [Word32#] addr 4# arity32
 
-        makePtr# [r] [Obj] addr
+        makePtr# addr
 
 
 ---- | Get one of the pointers from a boxed data object.
 getFieldOfBoxed 
-        [r1 : Region] [a : Data] 
-        (obj : Ptr# r1 Obj) (index : Nat#) 
-        : a
- =      read# [a]  (takePtr# [r1] [Obj] obj)
-                   (add# [Nat#] 8# (shl# [Nat#] index 2#))
+        [r1 : Region] [a : Data] (obj : Ptr# r1 Obj) (index : Nat#) : a
+ =      read# [a]  (takePtr# obj)
+                   (add# 8# (shl# index 2#))
 
 
 -- | Set one of the pointers from a boxed data object.
 setFieldOfBoxed 
         [r1 : Region] [a : Data]
-        (obj : Ptr# r1 Obj) (index : Nat#) 
-        (val : a) 
-        : Void#
- =      write# [a] (takePtr# [r1] [Obj] obj)
-                   (add# [Nat#] 8# (shl# [Nat#] index 2#))
-                   val
+        (obj : Ptr# r1 Obj) (index : Nat#) (val : a) : Void#
+ =      write# (takePtr# obj)
+               (add# 8# (shl# index 2#)) val
 
 
 -- Mixed ----------------------------------------------------------------------
@@ -167,14 +160,13 @@ setFieldOfBoxed
 --   } DataMixed;
 --
 allocMixed
-        [r : Region]
-        (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
+        [r : Region] (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
  = do   
-        bytesPtrs       = shl# [Nat#] arity 2#
-        bytesObj        = add# [Nat#] 16# (add# [Nat#] bytesPtrs bytesRaw)
+        bytesPtrs       = shl# arity 2#
+        bytesObj        = add# 16# (add# bytesPtrs bytesRaw)
         case check# bytesObj of
-         True#  -> allocMixed_ok [r] tag arity bytesRaw bytesObj
-         False# -> fail# [Ptr# r Obj]
+         True#  -> allocMixed_ok tag arity bytesRaw bytesObj
+         False# -> fail#
 
 allocMixed_ok 
         [r : Region]
@@ -182,16 +174,16 @@ allocMixed_ok
  = do
         addr            = alloc# bytesObj
 
-        tag32           = promote# [Word32#] [Tag#] tag
+        tag32           = promote# tag
         format          = 0b01000001w32#
-        header          = bor# [Word32#] (shl# [Word32#] tag32 8w32#) format
+        header          = bor# (shl# tag32 8w32#) format
         write# [Word32#] addr 0# header
         write# [Word32#] addr 4# 0w32#
 
-        bytesObj32      = promote# [Word32#] [Nat#] bytesObj
+        bytesObj32      = promote# bytesObj
         write# [Word32#] addr 8# bytesObj32
 
-        arity32         = promote# [Word32#] [Nat#] arity
+        arity32         = promote# arity
         write# [Word32#] addr 12# arity32
 
         makePtr# [r] [Obj] addr
@@ -200,13 +192,13 @@ allocMixed_ok
 -- | Get one of the pointers from a mixed data object.
 fieldOfMixed [r : Region] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
  = do   
-        offset          = add# [Nat#] 16# (shl# [Nat#] index 2#)
-        plusPtr# [r] [Obj] obj offset
+        offset  = add# 16# (shl# index 2#)
+        plusPtr# obj offset
       
 
 -- | Get the address of the raw data payload from a mixed object.
 payloadOfMixed [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
- =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 16#
+ =      plusPtr# (castPtr# obj) 16#
 
 
 -- Raw ------------------------------------------------------------------------
@@ -220,35 +212,32 @@ payloadOfMixed [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 --           uint8_t   payload[];    // Raw data that does not contain heap pointers.
 --   } DataRaw;
 --
-allocRaw
-        [r : Region]
-        (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
+allocRaw [r : Region] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
-        bytesObj        = add# [Nat#] 8# bytesPayload
+        bytesObj        = add# 8# bytesPayload
         case check# bytesObj of
          True#  -> allocRaw_ok [r] tag bytesPayload bytesObj
-         False# -> fail# [Ptr# r Obj]
+         False# -> fail#
 
 allocRaw_ok 
-        [r : Region] 
-        (tag : Tag#) (bytesPayload : Nat#) (bytesObj : Nat#) : Ptr# r Obj
+         [r : Region] (tag : Tag#) (bytesPayload : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do
         addr            = alloc# bytesObj
 
-        tag32           = promote# [Word32#] [Tag#] tag
+        tag32           = promote# tag
         format          = 0b00110001w32#
-        header          = bor# [Word32#] (shl# [Word32#] tag32 8w32#) format
+        header          = bor# (shl# tag32 8w32#) format
         write# [Word32#] addr 0# header
 
-        bytesObj32      = promote# [Word32#] [Nat#] bytesObj
+        bytesObj32      = promote# bytesObj
         write# [Word32#] addr 4# bytesObj32
 
-        makePtr# [r] [Obj] addr
+        makePtr# addr
 
 
 -- | Get the payload data from a raw object.
 payloadOfRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
- =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 8#
+ =      plusPtr# (castPtr# obj) 8#
 
 
 -- RawSmall -------------------------------------------------------------------
@@ -262,13 +251,12 @@ payloadOfRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 --   } DataRawSmall;
 --
 allocRawSmall 
-        [r : Region] 
-        (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
+        [r : Region] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
-        bytesObj        = add# [Nat#] 4# bytesPayload
+        bytesObj        = add# 4# bytesPayload
         case check# bytesObj of
-         True#  -> allocRawSmall_ok [r] tag bytesPayload bytesObj
-         False# -> fail# [Ptr# r Obj]
+         True#  -> allocRawSmall_ok tag bytesPayload bytesObj
+         False# -> fail#
 
 allocRawSmall_ok
         [r : Region] 
@@ -276,18 +264,17 @@ allocRawSmall_ok
  = do
         addr            = alloc# bytesObj
 
-        tag32           = promote#  [Word32#] [Tag#] tag
-        bytesPayload32  = truncate# [Word32#] [Nat#] bytesPayload
-        wordsPayload32  = shr# [Word32#] bytesPayload32 2w32#
+        tag32           = promote#  tag
+        bytesPayload32  = truncate# bytesPayload
+        wordsPayload32  = shr# bytesPayload32 2w32#
         format          = 0b0011w32#
-        header          =  bor# [Word32#] (shl# [Word32#] tag32          8w32#) 
-                          (bor# [Word32#] (shl# [Word32#] wordsPayload32 4w32#) 
-                                                          format)
+        header          =  bor# (shl# tag32          8w32#) 
+                          (bor# (shl# wordsPayload32 4w32#) format)
         write# [Word32#] addr 0# header
 
-        makePtr# [r] [Obj] addr
+        makePtr# addr
 
 
 -- | Get the payload data from a raw small object.
 payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
- =      plusPtr# [r] [Word8#] (castPtr# [r] [Word8#] [Obj] obj) 4#
+ =      plusPtr# (castPtr# obj) 4#
