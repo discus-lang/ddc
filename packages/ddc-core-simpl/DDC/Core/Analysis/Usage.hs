@@ -81,19 +81,19 @@ usageModule
 usageModule
         (ModuleCore
                 { moduleName            = name
-                , moduleExportKinds     = exportKinds
                 , moduleExportTypes     = exportTypes
-                , moduleImportKinds     = importKinds
+                , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
+                , moduleImportValues    = importValues
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body })
 
  =       ModuleCore
                 { moduleName            = name
-                , moduleExportKinds     = exportKinds
                 , moduleExportTypes     = exportTypes
-                , moduleImportKinds     = importKinds
+                , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
+                , moduleImportValues    = importValues
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = usageX body }
 

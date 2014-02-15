@@ -81,13 +81,13 @@ convertM pp runConfig defs kenv tenv mm
                 <- liftM Map.fromList
                 $  mapM convertExportM 
                 $  Map.toList 
-                $  moduleExportTypes mm
+                $  moduleExportValues mm
 
         -- Convert signatures of imported functions.
         tsImports'
                 <- liftM Map.fromList
                 $  mapM convertImportM  
-                $  moduleImportTypes mm
+                $  moduleImportValues mm
 
         -- Convert the body of the module to Salt.
         let ntsImports  = [(BName n t) | (n, (_, t)) <- moduleImportTypes mm]
@@ -108,11 +108,11 @@ convertM pp runConfig defs kenv tenv mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.
-                , moduleExportKinds    = Map.empty
-                , moduleExportTypes    = tsExports'
+                , moduleExportTypes    = Map.empty
+                , moduleExportValues   = tsExports'
 
-                , moduleImportKinds    = Map.toList S.runtimeImportKinds
-                , moduleImportTypes    = Map.toList $ Map.union  S.runtimeImportTypes tsImports'
+                , moduleImportTypes    = Map.toList S.runtimeImportKinds
+                , moduleImportValues   = Map.toList $ Map.union  S.runtimeImportTypes tsImports'
 
                   -- Data constructors and pattern matches should have been flattened
                   -- into primops, so we don't need the data type definitions.
@@ -143,24 +143,32 @@ convertExportM (n, t)
 
 -- | Convert an import spec.
 convertImportM
-        :: (L.Name, (QualName L.Name, Type L.Name))
-        -> ConvertM a (S.Name, (QualName S.Name, Type S.Name))
+        :: (L.Name, (ImportSource L.Name, Type L.Name))
+        -> ConvertM a (S.Name, (ImportSource S.Name, Type S.Name))
 
-convertImportM (n, (qn, t))
+convertImportM (n, (isrc, t))
  = do   n'      <- convertBindNameM n
-        qn'     <- convertQualNameM qn
+        isrc'   <- convertImportSourceM isrc
         t'      <- convertT Env.empty t
-        return  (n', (qn', t'))
+        return  (n', (isrc', t'))
 
 
--- | Convert a qualified name.
-convertQualNameM
-        :: QualName L.Name 
-        -> ConvertM a (QualName S.Name)
+-- | Convert an import source specifier.
+convertImportSourceM
+        :: ImportSource L.Name 
+        -> ConvertM a (ImportSource S.Name)
 
-convertQualNameM (QualName mn n)
- = do   n'      <- convertBindNameM n
-        return  $ QualName mn n'
+convertImportSourceM isrc
+ = case isrc of
+        ImportSourceAbstract
+         ->     return ImportSourceAbstract
+
+        ImportSourceModule mn n 
+         -> do  n'      <- convertBindNameM n
+                return  $ ImportSourceModule mn n'
+
+        ImportSourceSea str
+         ->     return $ ImportSourceSea str
 
 
 -- Exp -------------------------------------------------------------------------

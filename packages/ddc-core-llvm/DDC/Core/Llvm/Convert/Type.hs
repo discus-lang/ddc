@@ -116,11 +116,11 @@ importedFunctionDeclOfType
         :: Platform
         -> KindEnv Name
         -> Linkage 
-        -> C.QualName Name 
+        -> C.ImportSource Name
         -> C.Type Name 
         -> Maybe FunctionDecl
 
-importedFunctionDeclOfType pp kenv linkage (C.QualName _ (NameVar n)) tt
+importedFunctionDeclOfType pp kenv linkage (C.ImportSourceModule _ (NameVar n)) tt
  = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl

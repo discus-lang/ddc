@@ -60,7 +60,7 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , empty ]
 
         -- Import external symbols ----
-        let nts = map snd $ C.moduleImportTypes mm
+        let nts = map snd $ C.moduleImportValues mm
         docs    <- mapM (uncurry $ convFunctionTypeM Env.empty) nts
         let cExterns
                 |  not withPrelude
@@ -87,8 +87,8 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , empty ]
 
         -- Super-combinator definitions.
-        let kenv = Env.fromList $ [BName n k | (n, (_, k)) <- moduleImportKinds mm]
-        let tenv = Env.fromList $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
+        let kenv = Env.fromList $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
+        let tenv = Env.fromList $ [BName n k | (n, (_, k)) <- moduleImportValues mm]
         cSupers <- mapM (uncurry (convSuperM pp kenv tenv)) bxs
 
         -- Paste everything together

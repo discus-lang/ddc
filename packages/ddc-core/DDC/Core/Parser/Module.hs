@@ -38,19 +38,19 @@ pModule c
             ,   return []]
 
         -- imports { SIG;+ }
-        tImportKindsTypes
+        tImportTypesValues
          <- P.choice
             [do pTok KImports
                 pTok KBraceBra
-                importKinds     <- P.sepEndBy (pImportKindSpec c) (pTok KSemiColon)
-                importTypes     <- P.sepEndBy (pImportTypeSpec c) (pTok KSemiColon)
+                importTypes     <- P.sepEndBy (pImportTypeSpec c)  (pTok KSemiColon)
+                importValues    <- P.sepEndBy (pImportValueSpec c) (pTok KSemiColon)
                 pTok KBraceKet
-                return (importKinds, importTypes)
+                return (importTypes, importValues)
 
             ,   return ([], [])]
 
-        let (tImportKinds, tImportTypes)
-                = tImportKindsTypes
+        let (tImportTypes, tImportValues)
+                = tImportTypesValues
 
         dataDefsLocal   <- P.many (pDataDef c)
 
@@ -68,10 +68,10 @@ pModule c
         --  name will replace earlier ones.
         return  $ ModuleCore
                 { moduleName            = name
-                , moduleExportKinds     = Map.empty
-                , moduleExportTypes     = Map.fromList tExports
-                , moduleImportKinds     = tImportKinds
+                , moduleExportTypes     = Map.empty
+                , moduleExportValues    = Map.fromList tExports
                 , moduleImportTypes     = tImportTypes
+                , moduleImportValues    = tImportValues
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 
@@ -90,49 +90,31 @@ pTypeSig c
 
 -- Imports --------------------------------------------------------------------
 -- | Parse the type signature of an imported variable.
-pImportKindSpec 
+pImportTypeSpec 
         :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, (QualName n, Kind n))
+        => Context -> Parser n (n, (ImportSource n, Kind n))
 
-pImportKindSpec c
+pImportTypeSpec c
  =   pTok KType
  >>  P.choice
- [      -- Import with an explicit external name.
-        -- Module.varExternal with varLocal
-   do   qn      <- pQualName
-        pTok KWith
-        n       <- pName
+ [ do   n       <- pName
         pTok KColonColon
         k       <- pType c
-        return  (n, (qn, k))
-
- , do   n       <- pName
-        pTok KColonColon
-        k       <- pType c
-        return  (n, (QualName (ModuleName []) n, k))
- ]        
+        return  (n, (ImportSourceModule (ModuleName []) n, k))
+ ]
 
 
 -- | Parse the type signature of an imported variable.
-pImportTypeSpec 
+pImportValueSpec 
         :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, (QualName n, Type n))
+        => Context -> Parser n (n, (ImportSource n, Type n))
 
-pImportTypeSpec c
+pImportValueSpec c
  = P.choice
- [      -- Import with an explicit external name.
-        -- Module.varExternal with varLocal
-   do   qn      <- pQualName
-        pTok KWith
-        n       <- pName
+ [ do   n       <- pName
         pTok KColonColon
         t       <- pType c
-        return  (n, (qn, t))
-
- , do   n       <- pName
-        pTok KColonColon
-        t       <- pType c
-        return  (n, (QualName (ModuleName []) n, t))
+        return  (n, (ImportSourceModule (ModuleName []) n, t))
  ]        
 
 

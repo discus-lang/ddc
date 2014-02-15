@@ -40,11 +40,11 @@ toCoreModule :: a -> S.Module a S.Name -> C.Module a C.Name
 toCoreModule a mm
         = C.ModuleCore
         { C.moduleName          = S.moduleName mm
-        , C.moduleExportKinds   = Map.empty
         , C.moduleExportTypes   = Map.empty
+        , C.moduleExportValues  = Map.empty
         
-        , C.moduleImportKinds   = []
         , C.moduleImportTypes   = []
+        , C.moduleImportValues  = []
         
         , C.moduleDataDefsLocal 
                 = [ toCoreDataDef def

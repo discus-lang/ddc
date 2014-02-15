@@ -86,13 +86,13 @@ convModuleM mm@(C.ModuleCore{})
 
         -- Names of exported functions.
         --   We use a different linkage for exported functions.
-        let nsExports   = Set.fromList $ Map.keys $ C.moduleExportTypes mm
+        let nsExports   = Set.fromList $ Map.keys $ C.moduleExportValues mm
 
         -- Forward declarations for imported functions.
         let Just importDecls 
                 = sequence
                 $ [ importedFunctionDeclOfType platform kenv External n t
-                  | (n, t)   <- map snd $ C.moduleImportTypes mm ]
+                  | (n, t)   <- map snd $ C.moduleImportValues mm ]
 
         -- Add RTS def -------------------------------------------------
         -- If this is the main module then we need to declare

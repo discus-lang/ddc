@@ -10,13 +10,16 @@ module DDC.Core.Module
 
 	  -- * Module maps
 	, ModuleMap
-	, modulesExportKinds
 	, modulesExportTypes
+	, modulesExportValues
 
-         -- * Module Names.
+         -- * Module Names
         , QualName      (..)
         , ModuleName    (..)
-        , isMainModuleName)
+        , isMainModuleName
+
+        -- * Import Sources
+        , ImportSource  (..))
 where
 import DDC.Core.Exp
 import DDC.Type.DataDef
@@ -31,37 +34,37 @@ import Control.DeepSeq
 import Data.Maybe
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | A module can be mutually recursive with other modules.
 data Module a n
         = ModuleCore
         { -- | Name of this module.
-          moduleName            :: !ModuleName
+          moduleName                    :: !ModuleName
 
           -- Exports ------------------
           -- | Kinds of exported types.
-        , moduleExportKinds     :: !(Map n (Kind n))
+        , moduleExportTypes             :: !(Map n (Kind n))
 
           -- | Types of exported values.
-        , moduleExportTypes     :: !(Map n (Type n))
+        , moduleExportValues            :: !(Map n (Type n))
 
           -- Imports ------------------
-          -- | Kinds of imported types,
-          --   along with the name of the module they are from.
-        , moduleImportKinds     :: ![(n, (QualName n, Kind n))]
+          -- | Kinds of imported types,  along with the name of the module they are from.
+          --   These imports come from a Disciple module, that we've compiled ourself.
+        , moduleImportTypes             :: ![(n, (ImportSource n, Kind n))]
 
-          -- | Types of imported values,
-          --   along with the name of the module they are from.
-        , moduleImportTypes     :: ![(n, (QualName n, Type n))]
+          -- | Types of imported values, along with the name of the module they are from.
+          --   These imports come from a Disciple module, that we've compiled ourself.
+        , moduleImportValues            :: ![(n, (ImportSource n, Type n))]
 
           -- Local --------------------
           -- | Data types defined in this module.
-        , moduleDataDefsLocal   :: ![DataDef n]
+        , moduleDataDefsLocal           :: ![DataDef n]
 
           -- | The module body consists of some let-bindings wrapping a unit
           --   data constructor. We're only interested in the bindings, with
           --   the unit being just a place-holder.
-        , moduleBody            :: !(Exp a n)
+        , moduleBody                    :: !(Exp a n)
         }
         deriving (Show, Typeable)
 
@@ -69,10 +72,10 @@ data Module a n
 instance (NFData a, NFData n) => NFData (Module a n) where
  rnf !mm
         =     rnf (moduleName mm)
-        `seq` rnf (moduleExportKinds   mm)
         `seq` rnf (moduleExportTypes   mm)
-        `seq` rnf (moduleImportKinds   mm)
+        `seq` rnf (moduleExportValues  mm)
         `seq` rnf (moduleImportTypes   mm)
+        `seq` rnf (moduleImportValues  mm)
         `seq` rnf (moduleDataDefsLocal mm)
         `seq` rnf (moduleBody mm)
 
@@ -89,7 +92,7 @@ isMainModule mm
 moduleKindEnv :: Ord n => Module a n -> KindEnv n
 moduleKindEnv mm
         = Env.fromList 
-        $ [BName n k | (n, (_, k)) <- moduleImportKinds mm]
+        $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
 
 
 -- | Get the top-level type environment of a module,
@@ -97,7 +100,7 @@ moduleKindEnv mm
 moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
         = Env.fromList 
-        $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
+        $ [BName n k | (n, (_, k)) <- moduleImportValues mm]
 
 
 -- | Get the set of top-level value bindings in a module.
@@ -119,7 +122,7 @@ moduleTopBinds mm
                 _ -> Set.empty
 
 
--- ModuleMap ------------------------------------------------------------------
+-- ModuleMap --------------------------------------------------------------------------------------
 -- | Map of module names to modules.
 type ModuleMap a n 
         = Map ModuleName (Module a n)
@@ -129,21 +132,20 @@ modulesGetBinds m
 
 
 -- | Add the kind environment exported by all these modules to the given one.
-modulesExportKinds :: Ord n => ModuleMap a n -> KindEnv n -> KindEnv n
-modulesExportKinds mods base
-        = foldl Env.union base 
-        $ map (modulesGetBinds.moduleExportKinds) (Map.elems mods)
-
-
--- | Add the type environment exported by all these modules to the given one.
-modulesExportTypes :: Ord n => ModuleMap a n -> TypeEnv n -> TypeEnv n
-
+modulesExportTypes :: Ord n => ModuleMap a n -> KindEnv n -> KindEnv n
 modulesExportTypes mods base
         = foldl Env.union base 
         $ map (modulesGetBinds.moduleExportTypes) (Map.elems mods)
 
 
--- ModuleName -----------------------------------------------------------------
+-- | Add the type environment exported by all these modules to the given one.
+modulesExportValues :: Ord n => ModuleMap a n -> TypeEnv n -> TypeEnv n
+modulesExportValues mods base
+        = foldl Env.union base 
+        $ map (modulesGetBinds.moduleExportValues) (Map.elems mods)
+
+
+-- ModuleName -------------------------------------------------------------------------------------
 -- | A hierarchical module name.
 data ModuleName
         = ModuleName [String]
@@ -171,4 +173,30 @@ isMainModuleName mn
  = case mn of
         ModuleName ["Main"]     -> True
         _                       -> False
+
+
+-- ImportSource -----------------------------------------------------------------------------------
+-- | Source of some imported thing.
+data ImportSource n
+        -- | A type imported abstractly.
+        --   It may be defined in a foreign language, but the Disciple program
+        --   treats it abstractly.
+        = ImportSourceAbstract
+
+        -- | Something imported from a Disciple module that we compiled ourself.
+        | ImportSourceModule
+        { importSourceModuleName        :: ModuleName 
+        , importSourceModuleVar         :: n }
+
+        -- | Something imported via the C calling convention.
+        | ImportSourceSea
+        { importSourceSeaVar            :: String }
+        deriving (Show, Eq)
+
+instance NFData n => NFData (ImportSource n) where
+ rnf is
+  = case is of
+        ImportSourceAbstract    -> ()
+        ImportSourceModule mn n -> rnf mn `seq` rnf n
+        ImportSourceSea v       -> rnf v
 

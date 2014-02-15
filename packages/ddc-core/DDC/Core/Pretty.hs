@@ -41,10 +41,10 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
  pprModePrec mode _
         ModuleCore 
         { moduleName            = name
-        , moduleExportKinds     = exportKinds
         , moduleExportTypes     = exportTypes
-        , moduleImportKinds     = importKinds
+        , moduleExportValues    = exportValues
         , moduleImportTypes     = importTypes
+        , moduleImportValues    = importValues
         , moduleDataDefsLocal   = localData
         , moduleBody            = body }
   = {-# SCC "ppr[Module]" #-}
@@ -52,21 +52,21 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         (lts, _)         = splitXLets body
 
         -- Exports --------------------
-        docsExportKinds
-         | not $ Map.null exportKinds
+        docsExportTypes
+         | not $ Map.null exportTypes
          , not $ modeModuleSuppressExports mode 
          = nest 8 $ line 
          <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, t)      <- Map.toList exportKinds ]
+                  | (n, t)      <- Map.toList exportTypes ]
 
          | otherwise                    = empty
          
-        docsExportTypes  
-         | not $ Map.null exportTypes
+        docsExportValues  
+         | not $ Map.null exportValues
          , not $ modeModuleSuppressExports mode
          = nest 8 $ line
          <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
-                  | (n, t)      <- Map.toList exportTypes ]
+                  | (n, t)      <- Map.toList exportValues ]
          
          | otherwise                    = empty
          
@@ -75,32 +75,32 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          -- If we're suppressing exports, are there are none, 
          -- then don't display the export block.
          |  modeModuleSuppressExports mode
-          || (Map.null exportKinds && Map.null exportTypes)
+          || (Map.null exportTypes && Map.null exportValues)
          = empty
 
          | otherwise
          = line <> text "exports" <+> lbrace
-                <> docsExportKinds
                 <> docsExportTypes
+                <> docsExportValues
                 <> line <> rbrace <> space
 
 
         -- Imports --------------------
-        docsImportKinds
-         | not $ null importKinds
+        docsImportTypes
+         | not $ null importTypes
          , not $ modeModuleSuppressImports mode
          = nest 8 $ line 
          <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- importKinds ]
+                  | (n, (_, t)) <- importTypes ]
 
          | otherwise                    = empty
          
-        docsImportTypes  
-         | not $ null importTypes
+        docsImportValues
+         | not $ null importValues
          , not $ modeModuleSuppressImports mode
          = nest 8 $ line
          <> vcat  [ ppr n       <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- importTypes ]
+                  | (n, (_, t)) <- importValues ]
 
          | otherwise                    = empty
          
@@ -108,13 +108,13 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          -- If we're suppressing imports, or there are none,
          -- then don't display the import block.
          |   modeModuleSuppressImports mode       
-          || (null importKinds && null importTypes)
+          || (null importTypes && null importValues)
          = empty
          
          | otherwise
          = line <> text "imports" <+> lbrace
-                <> docsImportKinds
                 <> docsImportTypes
+                <> docsImportValues
                 <> line <> rbrace <> space
 
 

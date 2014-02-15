@@ -196,8 +196,8 @@ loadExpFromTokens fragment modules sourceName mode toks'
         -- Type checker profile, kind and type environments.
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile  profile
-        kenv    = modulesExportKinds modules $ profilePrimKinds profile
-        tenv    = modulesExportTypes modules $ profilePrimTypes profile
+        kenv    = modulesExportTypes  modules $ profilePrimKinds profile
+        tenv    = modulesExportValues modules $ profilePrimTypes profile
 
         -- Parse the tokens.
         goParse toks                

@@ -8,8 +8,7 @@ exports {
         double  :: Nat# -> Nat#;
 }
 imports {
-        Thing.whatever 
-         with two :: Unit -> Nat#;
+        two :: Unit -> Nat#;
 }
 with
 private rt with { w1 : Const rt ; w2 : Lazy rt} in
@@ -32,8 +31,7 @@ letrec {
 module Main
 exports main    :: Unit -> Unit
         double  :: Nat# -> Nat#
-imports Thing.whatever 
-         with two :: Unit -> Nat#
+imports two :: Unit -> Nat#
 with
 private rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = 1# in

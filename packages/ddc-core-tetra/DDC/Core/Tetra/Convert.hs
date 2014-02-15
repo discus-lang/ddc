@@ -124,11 +124,11 @@ convertM pp runConfig defs kenv tenv mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.
-                , moduleExportKinds    = Map.empty
-                , moduleExportTypes    = tsExports'
+                , moduleExportTypes    = Map.empty
+                , moduleExportValues   = tsExports'
 
-                , moduleImportKinds    = Map.toList $ A.runtimeImportKinds
-                , moduleImportTypes    = Map.toList $ Map.union A.runtimeImportTypes tsImports'
+                , moduleImportTypes    = Map.toList $ A.runtimeImportKinds
+                , moduleImportValues   = Map.toList $ Map.union A.runtimeImportTypes tsImports'
 
                   -- Data constructors and pattern matches should have been
                   -- flattenedinto primops, so we don't need the data type
@@ -160,24 +160,32 @@ convertExportM (n, t)
 
 -- | Convert an import spec.
 convertImportM
-        :: (E.Name, (QualName E.Name, Type E.Name))
-        -> ConvertM a (A.Name, (QualName A.Name, Type A.Name))
+        :: (E.Name, (ImportSource E.Name, Type E.Name))
+        -> ConvertM a (A.Name, (ImportSource A.Name, Type A.Name))
 
-convertImportM (n, (qn, t))
+convertImportM (n, (isrc, t))
  = do   n'      <- convertBindNameM n
-        qn'     <- convertQualNameM qn
+        isrc'   <- convertImportSourceM isrc
         t'      <- convertRepableT Env.empty t
-        return  (n', (qn', t'))
+        return  (n', (isrc', t'))
 
 
--- | Convert a qualified name.
-convertQualNameM
-        :: QualName E.Name 
-        -> ConvertM a (QualName A.Name)
+-- | Convert an import source.
+convertImportSourceM 
+        :: ImportSource E.Name
+        -> ConvertM a (ImportSource A.Name)
 
-convertQualNameM (QualName mn n)
- = do   n'      <- convertBindNameM n
-        return  $ QualName mn n'
+convertImportSourceM isrc
+ = case isrc of
+        ImportSourceAbstract
+         ->     return ImportSourceAbstract
+
+        ImportSourceModule mn n
+         -> do  n'      <- convertBindNameM n
+                return  $ ImportSourceModule mn n'
+
+        ImportSourceSea str
+         ->     return  $ ImportSourceSea str
 
 
 -- Exp -------------------------------------------------------------------------

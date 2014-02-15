@@ -42,7 +42,6 @@ convTypeM kenv tt
          | TCon (TyConBound (UPrim NameObjTyCon _) _)       <- tt
          -> return  $ text "Obj"
 
-
         TApp{}
          | Just (NamePrimTyCon PrimTyConPtr, [_, t2])   <- takePrimTyConApps tt
          -> do  t2'     <- convTypeM kenv t2
@@ -56,18 +55,19 @@ convTypeM kenv tt
 
 -- | Convert a Salt function type to a C source prototype.
 convFunctionTypeM
-        :: KindEnv  Name
-        -> QualName Name        -- ^ Function name.
-        -> Type     Name        -- ^ Function type.
+        :: KindEnv      Name
+        -> ImportSource Name
+        -> Type         Name    -- ^ Function type.
         -> ConvertM a Doc
 
-convFunctionTypeM kenv nFunc tFunc
+convFunctionTypeM kenv isrc tFunc
  | TForall b t' <- tFunc
- = convFunctionTypeM (Env.extend b kenv) nFunc t'
+ = convFunctionTypeM (Env.extend b kenv) isrc t'
 
  | otherwise
- = do   -- Qualifiers aren't supported yet.
-        let QualName _ n = nFunc        
+ = case isrc of
+    ImportSourceModule _mn n
+     -> do
         let nFun'        = text $ sanitizeGlobal (renderPlain $ ppr n)
 
         let (tsArgs, tResult) = takeTFunArgResult tFunc
@@ -77,6 +77,8 @@ convFunctionTypeM kenv nFunc tFunc
 
         return $ tResult' <+> nFun' <+> parenss tsArgs'
 
+    _ -> error "TODO: convFunctionTypeM from diff source"
 
+ 
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs

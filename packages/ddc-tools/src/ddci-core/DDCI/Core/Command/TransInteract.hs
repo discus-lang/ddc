@@ -97,11 +97,11 @@ cmdTransInteractLoop state str
                 return state
 
 	    Right tr' -> do
-                let kenv    = modulesExportKinds
+                let kenv    = modulesExportTypes
                                 (bundleModules bundle) 
                                 (profilePrimKinds profile)
 
-                let tenv    = modulesExportTypes
+                let tenv    = modulesExportValues
                                 (bundleModules bundle) 
                                 (profilePrimTypes profile)
 

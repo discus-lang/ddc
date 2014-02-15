@@ -76,8 +76,8 @@ parse fragment modu source str
     kindsImp = moduleKindEnv modu
     typesImp = moduleTypeEnv modu
 
-    kindsExp = modulesGetBinds $ moduleExportKinds modu
-    typesExp = modulesGetBinds $ moduleExportTypes modu
+    kindsExp = modulesGetBinds $ moduleExportTypes modu
+    typesExp = modulesGetBinds $ moduleExportValues modu
 
     -- Final kind and type environments
     kinds'	 = kinds `Env.union` kindsImp `Env.union` kindsExp

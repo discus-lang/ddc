@@ -87,8 +87,8 @@ parseAdd fragment modules str
 	kinds	 = profilePrimKinds  (fragmentProfile fragment)
 	types	 = profilePrimTypes  (fragmentProfile fragment)
 
-	kinds'	 = modulesExportKinds modules kinds
-	types'	 = modulesExportTypes modules types
+	kinds'	 = modulesExportTypes  modules kinds
+	types'	 = modulesExportValues modules types
 
 
 -- | Display rule

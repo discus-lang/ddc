@@ -137,8 +137,8 @@ cmdTransExpCont _config traceTrans language eatExp source str
  where
         -- Expression is well-typed.
         goStore profile modules zero simpl (Just x, _)
-         = do   let kenv    = modulesExportKinds modules (profilePrimKinds profile)
-                let tenv    = modulesExportTypes modules (profilePrimTypes profile)
+         = do   let kenv    = modulesExportTypes  modules (profilePrimKinds profile)
+                let tenv    = modulesExportValues modules (profilePrimTypes profile)
 
                 tr      <- transExp traceTrans profile kenv tenv zero simpl 
                         $  reannotate (\a -> a { annotTail = ()}) x

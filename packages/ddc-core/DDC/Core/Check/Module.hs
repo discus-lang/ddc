@@ -65,8 +65,8 @@ checkModuleM
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
         -- Convert the imported kind and type map to a list of binds.
-        let bksImport  = [BName n k |  (n, (_, k)) <- moduleImportKinds mm]
-        let btsImport  = [BName n t |  (n, (_, t)) <- moduleImportTypes mm]
+        let bksImport  = [BName n k |  (n, (_, k)) <- moduleImportTypes mm]
+        let btsImport  = [BName n t |  (n, (_, t)) <- moduleImportValues mm]
 
         -- Check the imported kinds and types.
         --  The imported types are in scope in both imported and exported signatures.
@@ -77,8 +77,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let tenv' = Env.union tenv $ Env.fromList btsImport
 
         -- Check the sigs for exported things.
-        mapM_ (checkTypeM config kenv' UniverseKind) $ Map.elems $ moduleExportKinds mm
-        mapM_ (checkTypeM config kenv' UniverseSpec) $ Map.elems $ moduleExportTypes mm
+        mapM_ (checkTypeM config kenv' UniverseKind) $ Map.elems $ moduleExportTypes mm
+        mapM_ (checkTypeM config kenv' UniverseSpec) $ Map.elems $ moduleExportValues mm
                 
         -- Check the locally defined data type definitions.
         defs'        
@@ -114,10 +114,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
 
         -- Check that each exported signature matches the type of its binding.
-        envDef  <- checkModuleBinds (moduleExportKinds mm) (moduleExportTypes mm) x''
+        envDef  <- checkModuleBinds (moduleExportTypes mm) (moduleExportValues mm) x''
 
         -- Check that all exported bindings are defined by the module.
-        mapM_ (checkBindDefined envDef) $ Map.keys $ moduleExportTypes mm
+        mapM_ (checkBindDefined envDef) $ Map.keys $ moduleExportValues mm
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm'         = mm { moduleBody = x'' }

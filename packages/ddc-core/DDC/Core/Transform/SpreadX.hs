@@ -27,14 +27,14 @@ class SpreadX (c :: * -> *) where
 instance SpreadX (Module a) where
  spreadX kenv tenv mm@ModuleCore{}
   = mm
-  { moduleExportKinds   = Map.map (spreadT kenv)  (moduleExportKinds mm)
-  , moduleExportTypes   = Map.map (spreadT kenv)  (moduleExportTypes mm)
+  { moduleExportTypes   = Map.map (spreadT kenv)  (moduleExportTypes mm)
+  , moduleExportValues  = Map.map (spreadT kenv)  (moduleExportValues mm)
   
-  , moduleImportKinds   
-        = map (liftSnd $ liftSnd (spreadT kenv))  (moduleImportKinds mm)
-  
-  , moduleImportTypes   
+  , moduleImportTypes  
         = map (liftSnd $ liftSnd (spreadT kenv))  (moduleImportTypes mm)
+  
+  , moduleImportValues  
+        = map (liftSnd $ liftSnd (spreadT kenv))  (moduleImportValues mm)
   
   , moduleDataDefsLocal = map     (spreadT kenv)  (moduleDataDefsLocal mm)
   
