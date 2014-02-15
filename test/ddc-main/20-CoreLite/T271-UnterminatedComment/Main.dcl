@@ -3,7 +3,7 @@
 -- which the offside rule code needs to give a sensible error for.
 
 module Main 
-exports {
+export {
         main    :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec

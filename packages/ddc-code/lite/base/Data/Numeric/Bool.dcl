@@ -1,5 +1,5 @@
 module Bool
-exports
+export
  boxBool
   ::    [r : Region].
         Bool# -(Alloc r | Use r)>

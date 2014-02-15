@@ -3,11 +3,11 @@
 -- Load a module definition.
 :load..
 module Main
-exports {
+export {
         main    :: Unit -> Unit;
         double  :: Nat# -> Nat#;
 }
-imports {
+import {
         two :: Unit -> Nat#;
 }
 with
@@ -28,10 +28,10 @@ letrec {
 
 -- Load the same module using the offside rule.
 :load..
-module Main
-exports main    :: Unit -> Unit
+module  Main
+export  main    :: Unit -> Unit
         double  :: Nat# -> Nat#
-imports two :: Unit -> Nat#
+import  two :: Unit -> Nat#
 with
 private rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = 1# in

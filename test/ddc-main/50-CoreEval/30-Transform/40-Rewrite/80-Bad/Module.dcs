@@ -1,5 +1,5 @@
 module Module
-exports {
+export {
     id :: [a : Data]. a -> a;
 } with letrec
 

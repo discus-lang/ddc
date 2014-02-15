@@ -1,5 +1,5 @@
 module Module
-exports {
+export {
 map :: [r1 r2 : Region]. [a b : Data]. [e : Effect]. [c : Closure].
 	(a -(e|c)> b) -(Pure | Use r1 + Use r2)>
 	(List r1 a)   -(Read r1 + e + Alloc r2 | Use r1 + Use r2 + c)>

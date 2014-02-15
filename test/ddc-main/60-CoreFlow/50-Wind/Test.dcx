@@ -24,7 +24,7 @@ lower_map_map_rq2 : [k_d : Rate].Series# k_d Int# -> Vector# Int#
 -- Loop with a guard and a scalar result.
 :flow-wind..
 module Main
-imports {
+import {
         maxx :: Int# -> Int# -> Int#;
 } with
 letrec {

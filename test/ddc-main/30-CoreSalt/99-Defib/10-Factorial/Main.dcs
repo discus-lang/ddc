@@ -1,9 +1,9 @@
 
 module Main
-exports {
+export {
         main      :: [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
-imports {
+import {
         boxInt    :: [r : Region]. Int#   -> Ptr# r Obj;
         unboxInt  :: [r : Region]. Ptr# r Obj -> Int#;
         subInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;

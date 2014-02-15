@@ -25,7 +25,7 @@
 
                 <dict>  <key>name</key> <string>keyword.disciple.core</string>
                         <key>match</key>
-                        <string>\b(module|imports|exports|with|let|letrec|in|private|extend|using|withregion|case|of|weakeff|weakclo|purify|forget|do)\b</string>
+                        <string>\b(module|import|export|foreign|with|let|letrec|in|private|extend|using|withregion|case|of|weakeff|weakclo|purify|forget|do)\b</string>
                 </dict>
 
 

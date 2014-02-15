@@ -1,16 +1,13 @@
 
 -- | Nat primitives for 32-bit machines.
-module Nat
-exports
-        boxNat    :: [r : Region]. Nat#   -> Ptr# r Obj
+module  Nat
+export  boxNat    :: [r : Region]. Nat#   -> Ptr# r Obj
         unboxNat  :: [r : Region]. Ptr# r Obj -> Nat#
         addNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
         subNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
         mulNat    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
 
-imports 
-        allocRawSmall :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-
+import  allocRawSmall :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
 with letrec
 
 

@@ -1,5 +1,5 @@
 module FoldBuild
-exports {
+export {
 
 foldr   :: [a b : Data]. [r : Region].
         [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].

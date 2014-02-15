@@ -1,11 +1,11 @@
 
 module Test 
-exports main
+export main
 
-imports foreign abstract type
+import foreign abstract type
  console  :: Effect
 
-imports foreign c value
+import foreign c value
  putStrLn :: [r: Region]. String# r -> S console Unit
  showNat  :: [r: Region]. Nat#      -> String# r
 

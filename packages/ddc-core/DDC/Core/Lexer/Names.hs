@@ -43,8 +43,8 @@ import Data.List
 keywords :: [(String, Tok n)]
 keywords
  =      [ ("module",     KA KModule)
-        , ("imports",    KA KImports)
-        , ("exports",    KA KExports)
+        , ("import",     KA KImport)
+        , ("export",     KA KExport)
         , ("foreign",    KA KForeign)
         , ("type",       KA KType)
         , ("value",      KA KValue)

@@ -65,9 +65,8 @@
 --   that can load them typically suffer a penalty, so it is good to align heap
 --   objects anyway.
 --
-module Object 
-exports
-        getTag            :: [r : Region]. Ptr# r Obj -> Tag#
+module  Object 
+export  getTag            :: [r : Region]. Ptr# r Obj -> Tag#
 
         allocBoxed        :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
         getFieldOfBoxed   :: [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a

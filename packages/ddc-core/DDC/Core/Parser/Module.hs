@@ -26,10 +26,10 @@ pModule c
  = do   sp      <- pTokSP KModule
         name    <- pModuleName
 
-        -- exports { SIG;+ }
+        -- export { SIG;+ }
         tExports 
          <- P.choice
-            [do pTok KExports
+            [do pTok KExport
                 pTok KBraceBra
                 sigs    <- P.sepEndBy1 (pTypeSig c) (pTok KSemiColon)
                 pTok KBraceKet
@@ -37,10 +37,10 @@ pModule c
 
             ,   return []]
 
-        -- imports { SIG;+ }
+        -- import { SIG;+ }
         tImportTypesValues
          <- P.choice
-            [do pTok KImports
+            [do pTok KImport
                 pTok KBraceBra
                 importTypes     <- P.sepEndBy (pImportTypeSpec c)  (pTok KSemiColon)
                 importValues    <- P.sepEndBy (pImportValueSpec c) (pTok KSemiColon)

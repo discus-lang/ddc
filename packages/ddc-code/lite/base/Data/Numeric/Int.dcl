@@ -1,5 +1,5 @@
 module Int 
-exports
+export
  boxInt  
   ::    [r : Region].
         Int# -(Alloc r | Use r)>

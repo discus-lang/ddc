@@ -26,7 +26,7 @@ thing [r1 : Region] (z : Unit) { Alloc r1 | Use r1 } : Unit
 -- Join points.
 :to-llvm..
 module Test 
-imports { 
+import { 
         addNat  :: [r1 r2 r3 : Region]
                 . Nat r1 
                 -(Pure | Use r3)> Nat r2 

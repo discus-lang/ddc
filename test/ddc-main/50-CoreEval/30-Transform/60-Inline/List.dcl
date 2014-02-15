@@ -1,6 +1,6 @@
 
 module List
-imports {
+import {
         subNat  :: [r1 r2 r3 : Region]
                 . Nat r1 
                 -(Pure | Use r3)> Nat r2 

@@ -1,5 +1,5 @@
 module List
-exports {
+export {
 
 compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
        (b -(ef|cf)> c)
@@ -59,7 +59,7 @@ count ::
     List r1# (Int r0#);
 
 }
-imports {
+import {
 foldr  :: [a b : Data]. [r : Region].
     [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
 	(a -(ek1|ck1)> b -(ek2|ck2)> b)

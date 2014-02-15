@@ -1,12 +1,11 @@
 
-module Main
-exports 
-        main    :: [r : Region]
+module  Main
+export  main    :: [r : Region]
                 .  Nat# 
                 -(Pure | Use r)> Ptr# r String# 
                 -(Read r + Alloc r + Console | Use r)> Int#
-imports 
-        showInt   :: [r : Region]. Int# -> Ptr# r String#
+
+import  showInt   :: [r : Region]. Int# -> Ptr# r String#
         putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
 with letrec

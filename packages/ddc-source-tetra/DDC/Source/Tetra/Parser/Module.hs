@@ -30,10 +30,10 @@ pModule c
  = do   _sp     <- pTokSP KModule
         name    <- pModuleName
 
-        -- exports { VAR;+ }
+        -- export { VAR;+ }
         tExports 
          <- P.choice
-            [do pTok KExports
+            [do pTok KExport
                 pTok KBraceBra
                 vars    <- P.sepEndBy1 pVar (pTok KSemiColon)
                 pTok KBraceKet
@@ -41,7 +41,7 @@ pModule c
 
             ,   return []]
 
-        -- imports { SIG;+ }
+        -- import { SIG;+ }
         tImports
          <- liftM concat $ P.many (pImportSpecs c)
 
@@ -97,7 +97,7 @@ pImportSpecs
         => Context -> Parser n [ImportSpec n]
 
 pImportSpecs c
- = do   pTok KImports
+ = do   pTok KImport
         pTok KForeign
         src    <- liftM (renderIndent . ppr) pName
 

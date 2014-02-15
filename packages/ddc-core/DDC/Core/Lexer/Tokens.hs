@@ -189,8 +189,8 @@ data TokAtom
         -----------------------------------------
         -- core keywords
         | KModule
-        | KImports
-        | KExports
+        | KImport
+        | KExport
         | KForeign
         | KType
         | KValue
@@ -297,8 +297,8 @@ describeTokAtom' ta
         
         -- expression keywords
         KModule                 -> (Keyword, "module")
-        KImports                -> (Keyword, "imports")
-        KExports                -> (Keyword, "exports")
+        KImport                 -> (Keyword, "import")
+        KExport                 -> (Keyword, "export")
         KForeign                -> (Keyword, "foreign")
         KType                   -> (Keyword, "type")
         KValue                  -> (Keyword, "value")

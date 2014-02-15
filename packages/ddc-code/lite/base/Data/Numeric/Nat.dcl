@@ -1,5 +1,5 @@
 module Nat 
-exports
+export
  boxNat
   ::    [r : Region].
         Nat# -(Alloc r | Use r)>

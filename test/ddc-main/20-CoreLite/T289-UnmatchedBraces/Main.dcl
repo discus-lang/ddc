@@ -6,7 +6,7 @@
 -- brace after the 'do' but there is a manifest user-written one after it.
 
 module Main 
-exports {
+export {
         main    :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec

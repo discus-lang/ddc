@@ -1,6 +1,6 @@
 
 module Main
-exports {
+export {
         main      :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec

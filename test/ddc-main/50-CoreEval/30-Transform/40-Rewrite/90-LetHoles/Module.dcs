@@ -1,5 +1,5 @@
 module Module
-exports {
+export {
     boxi    :: Int r0# -> Int r0#;
     unboxi  :: Int r0# -> Int r0#;
 

@@ -2,7 +2,7 @@
 -- | Construct a list of 1M elements.
 --   With a small fixed sized heap this will run out of space.
 module Main 
-exports {
+export {
         main      :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec

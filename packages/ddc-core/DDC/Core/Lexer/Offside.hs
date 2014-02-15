@@ -62,8 +62,8 @@ applyOffside ps [] (LexemeToken t : ts)
 applyOffside ps [] ls
         | LexemeToken t1 
                 : (LexemeStartBlock n) : ls' <- ls
-        ,   isToken t1 (KA KExports)
-         || isToken t1 (KA KImports)
+        ,   isToken t1 (KA KExport)
+         || isToken t1 (KA KImport)
          || isToken t1 (KA KLetRec)
          || isToken t1 (KA KWhere)
         = t1 : newCBra ls' 
@@ -71,7 +71,7 @@ applyOffside ps [] ls
 
         | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 : LexemeToken t4
                 : (LexemeStartBlock n) : ls' <- ls
-        ,   isToken t1 (KA KImports) 
+        ,   isToken t1 (KA KImport) 
         ,   isToken t2 (KA KForeign)
         ,   isToken t4 (KA KType) || isToken t4 (KA KValue)
         = t1 : t2 : t3 : t4 : newCBra ls' 
@@ -288,14 +288,14 @@ splitBlockStart
 splitBlockStart toks
 
  -- imports foreign type
- |  t1@Token { tokenTok = KA KImports } 
+ |  t1@Token { tokenTok = KA KImport } 
   : t2@Token { tokenTok = KA KForeign }
   : t3
   : t4@Token { tokenTok = KA KType }    : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- imports foreign value
- |  t1@Token { tokenTok = KA KImports} 
+ |  t1@Token { tokenTok = KA KImport} 
   : t2@Token { tokenTok = KA KForeign}
   : t3
   : t4@Token { tokenTok = KA KValue}    : ts    
@@ -305,8 +305,8 @@ splitBlockStart toks
  |  t1@Token { tokenTok = KA KOf }      : ts    <- toks = Just ([t1], ts)
  |  t1@Token { tokenTok = KA KLetRec }  : ts    <- toks = Just ([t1], ts)
  |  t1@Token { tokenTok = KA KWhere }   : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KExports } : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KImports } : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KExport }  : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KImport }  : ts    <- toks = Just ([t1], ts)
 
  | otherwise                                             
  = Nothing
