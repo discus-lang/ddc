@@ -37,11 +37,10 @@ type Context
 --
 --    Unlike the definition in the Haskell 98 report, we explicitly track
 --    which parenthesis we're inside. We use these to partly implement
---    the poorly formulated layout rule that says we much check for entire
---    parse errors to perform the offside rule.
---    
+--    the layout rule that says we much check for entire parse errors to
+--    perform the offside rule.
 applyOffside 
-        :: (Eq n, Show n) 
+        :: (Eq n, Show n)
         => [Paren]              -- ^ What parenthesis we're inside.
         -> [Context]            -- ^ Current layout context.
         -> [Lexeme n]           -- ^ Input lexemes.
@@ -54,13 +53,29 @@ applyOffside ps [] (LexemeToken t : ts)
          || isKNToken t
         = t : applyOffside ps [] ts
 
--- When we see the top-level letrec then enter into the outer-most context.
-applyOffside ps [] (LexemeToken t1 : (LexemeStartBlock n) : ls)
-        |   isToken t1 (KA KLetRec)
-         || isToken t1 (KA KWhere)
-         || isToken t1 (KA KExports)
+-- Enter into a top-level block in the module, and start applying the 
+-- offside rule within it.
+-- The blocks are introduced by:
+--      'exports' 'imports' 'letrec' 'where'
+--      'import foreign type'
+--      'import foreign value'
+applyOffside ps [] ls
+        | LexemeToken t1 
+                : (LexemeStartBlock n) : ls' <- ls
+        ,   isToken t1 (KA KExports)
          || isToken t1 (KA KImports)
-        = t1 : newCBra ls : applyOffside (ParenBrace : ps) [n] ls 
+         || isToken t1 (KA KLetRec)
+         || isToken t1 (KA KWhere)
+        = t1 : newCBra ls' 
+                : applyOffside (ParenBrace : ps) [n] ls'
+
+        | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 
+                : (LexemeStartBlock n) : ls' <- ls
+        ,   isToken t1 (KA KImports) 
+        ,   isToken t2 (KA KForeign)
+        ,   isToken t3 (KA KType) || isToken t3 (KA KValue)
+        = t1 : t2 : t3 : newCBra ls' 
+                : applyOffside (ParenBrace : ps) [n] ls'
 
 -- At top level without a context.
 -- Skip over everything until we get the 'with' in 'module Name with ...''
@@ -172,8 +187,11 @@ applyOffside ps (_ : ms) []
 
 -- addStarts ------------------------------------------------------------------
 -- | Add block and line start tokens to this stream.
---      This is lifted straight from the Haskell98 report.
-addStarts :: Eq n => [Token (Tok n)] -> [Lexeme n]
+--
+--   This is identical to the definition in the Haskell98 report,
+--   except that we also use multi-token starting strings like
+--   'imports' 'foreign' 'type'.
+addStarts :: (Eq n, Show n) => [Token (Tok n)] -> [Lexeme n]
 addStarts ts
  = case dropNewLines ts of
 
@@ -190,45 +208,55 @@ addStarts ts
 
 
 addStarts'  :: Eq n => [Token (Tok n)] -> [Lexeme n]
-addStarts' []           = []
-addStarts' (t1 : ts) 
+addStarts' ts
+        -- Block started at end of input.
+        | Just (ts1, ts2)       <- splitBlockStart ts
+        , []                    <- dropNewLines ts2
+        = [LexemeToken t | t <- ts1] 
+                ++ [LexemeStartBlock 0]
 
-        -- We're starting a block
-        | isBlockStart t1
-        , []            <- dropNewLines ts
-        = LexemeToken t1    : [LexemeStartBlock 0]
-
-        | isBlockStart t1
-        , t2 : tsRest   <- dropNewLines ts
+        -- Standard block start.
+        --  If there is not an open brace after a block start sequence then
+        --  insert a new one.
+        | Just (ts1, ts2)       <- splitBlockStart ts
+        , t2 : tsRest           <- dropNewLines ts2
         , not $ isToken t2 (KA KBraceBra)
-        = LexemeToken t1    : LexemeStartBlock (tokenColumn t2)
-                            : addStarts' (t2 : tsRest)
+        = [LexemeToken t | t <- ts1]
+                ++ [LexemeStartBlock (tokenColumn t2)]
+                ++ addStarts' (t2 : tsRest)
 
         -- check for start of list
-        | isToken t1 (KA KBraceBra)
-        = LexemeToken t1    : addStarts' ts
+        | t1 : ts'              <- ts
+        , isToken t1 (KA KBraceBra)
+        = LexemeToken t1    : addStarts' ts'
 
         -- check for end of list
-        | isToken t1 (KA KBraceKet)
-        = LexemeToken t1    : addStarts' ts
+        | t1 : ts'              <- ts
+        , isToken t1 (KA KBraceKet)
+        = LexemeToken t1    : addStarts' ts'
 
         -- check for start of new line
-        | isToken t1 (KM KNewLine)
-        , t2 : tsRest   <- dropNewLines ts
+        | t1 : ts'              <- ts
+        , isToken t1 (KM KNewLine)
+        , t2 : tsRest   <- dropNewLines ts'
         , not $ isToken t2 (KA KBraceBra)
         = LexemeStartLine (tokenColumn t2) 
                 : addStarts' (t2 : tsRest)
 
         -- eat up trailine newlines
-        | isToken t1 (KM KNewLine)
-        = addStarts' ts
+        | t1 : ts'              <- ts
+        , isToken t1 (KM KNewLine)
+        = addStarts' ts'
 
         -- a regular token
+        | t1 : ts'              <- ts
+        = LexemeToken t1    : addStarts' ts'
+
+        -- end of input
         | otherwise
-        = LexemeToken t1    : addStarts' ts
+        = []
 
-
--- | Drop newline tokens at the front fo this stream.
+-- | Drop newline tokens at the front of this stream.
 dropNewLines :: Eq n => [Token (Tok n)] -> [Token (Tok n)]
 dropNewLines []              = []
 dropNewLines (t1:ts)
@@ -239,7 +267,7 @@ dropNewLines (t1:ts)
         = t1 : ts
 
 
--- | Drop newline tokens at the front fo this stream.
+-- | Drop newline tokens at the front of this stream.
 dropNewLinesLexeme :: Eq n => [Lexeme n] -> [Lexeme n]
 dropNewLinesLexeme ll
  = case ll of
@@ -253,16 +281,31 @@ dropNewLinesLexeme ll
 
 
 -- | Check if a token is one that starts a block of statements.
-isBlockStart :: Token (Tok n) -> Bool
-isBlockStart Token { tokenTok = tok }
- = case tok of
-        KA KDo          -> True
-        KA KOf          -> True
-        KA KLetRec      -> True
-        KA KWhere       -> True
-        KA KExports     -> True
-        KA KImports     -> True
-        _               -> False
+splitBlockStart 
+        :: [Token (Tok n)] 
+        -> Maybe ([Token (Tok n)], [Token (Tok n)])
+
+splitBlockStart toks
+
+ -- imports foreign type
+ |  t1@Token { tokenTok = KA KImports } 
+  : t2@Token { tokenTok = KA KForeign }
+  : t3@Token { tokenTok = KA KType }    : ts    <- toks = Just ([t1, t2, t3], ts)
+
+ -- imports foreign value
+ |  t1@Token { tokenTok = KA KImports} 
+  : t2@Token { tokenTok = KA KForeign}
+  : t3@Token { tokenTok = KA KValue}    : ts    <- toks = Just ([t1, t2, t3], ts)
+ 
+ |  t1@Token { tokenTok = KA KDo }      : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KOf }      : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KLetRec }  : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KWhere }   : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KExports } : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KImports } : ts    <- toks = Just ([t1], ts)
+
+ | otherwise                                             
+ = Nothing
 
 
 -- Utils ----------------------------------------------------------------------

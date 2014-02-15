@@ -29,18 +29,24 @@ import DDC.Core.Module
 data Module a n
         = Module
         { -- | Name of this module
-          moduleName            :: !ModuleName
+          moduleName                    :: !ModuleName
 
           -- Exports ----------------------------
           -- | Names of exported types  (level-1).
-        , moduleExportedTypes   :: [n]
+        , moduleExportedTypes           :: [n]
 
           -- | Names of exported values (level-0).
-        , moduleExportedValues  :: [n]
+        , moduleExportedValues          :: [n]
 
           -- Imports ----------------------------
           -- | Imported modules.
-        , moduleImportedModules :: [ModuleName]
+        , moduleImportedModules         :: [ModuleName]
+
+          -- | Kinds of imported foreign types.
+        , moduleImportedForeignTypes    :: [(n, Kind n)]
+
+          -- | Types of imported foreign values.
+        , moduleImportedForeignValues   :: [(n, Type n)]
 
           -- Local ------------------------------
           -- | Top-level things

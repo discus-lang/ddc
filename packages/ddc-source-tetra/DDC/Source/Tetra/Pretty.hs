@@ -18,12 +18,40 @@ import DDC.Base.Pretty
 -- Module ---------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
  ppr Module
-        { moduleName            = name
-        , moduleExportedTypes   = _exportedTypes
-        , moduleExportedValues  = _exportedValues
-        , moduleImportedModules = _importedModules
-        , moduleTops            = tops }
-  =  text "module" <+> ppr name <+> text "where" <$$> (vcat $ map ppr tops)
+        { moduleName                    = name
+        , moduleExportedTypes           = _exportedTypes
+        , moduleExportedValues          = _exportedValues
+        , moduleImportedModules         = _importedModules
+        , moduleImportedForeignTypes    = ksForeignTypes
+        , moduleImportedForeignValues   = tsForeignValues
+        , moduleTops                    = tops }
+  =  text "module" 
+        <+> ppr name 
+        <>  sForeignTypes
+        <>  sForeignValues
+        <>   (if null ksForeignTypes && null tsForeignValues
+                then space <> text "where" 
+                else text "where")
+        <$$> (vcat $ map ppr tops)
+
+  where sForeignTypes
+         | null ksForeignTypes  = empty
+         | otherwise
+         =  line
+         <> text "import foreign type" <+> lbrace <> line
+                <> (indent 8 $ vcat 
+                        [ppr n <+> text "::" <+> ppr t <> semi
+                                | (n, t) <- ksForeignTypes])
+                <> line <> rbrace <> line
+
+        sForeignValues
+         | null tsForeignValues = empty
+         | otherwise
+         = text "import foreign value" <+> lbrace <> line
+                <> (indent 8 $ vcat 
+                        [ppr n <+> text "::" <+> ppr t <> semi
+                                | (n, t) <- tsForeignValues])
+                <> line <> rbrace <> line
 
 
 -- Top ------------------------------------------------------------------------

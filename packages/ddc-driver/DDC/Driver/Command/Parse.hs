@@ -13,6 +13,7 @@ import DDC.Core.Fragment                as C
 import DDC.Core.Parser                  as C
 import DDC.Core.Lexer                   as C
 import DDC.Base.Parser                  as BP
+import DDC.Data.Token                   as Token
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import System.FilePath
@@ -59,7 +60,7 @@ cmdParseSourceTetraFromFile
         -> FilePath             -- ^ Module file path.
         -> ErrorT String IO ()
 
-cmdParseSourceTetraFromFile _config filePath
+cmdParseSourceTetraFromFile config filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -71,6 +72,14 @@ cmdParseSourceTetraFromFile _config filePath
 
         -- Lex the source string.
         let toks    = ST.lexModuleString filePath 1 src
+
+        when (configDump config)
+         $ liftIO $ writeFile "dump.tetra-parse.tokens-sp" 
+                  $ unlines $ map show toks
+
+        when (configDump config)
+         $ liftIO $ writeFile "dump.tetra-parse.tokens" 
+                  $ unlines $ map show $ map Token.tokenTok toks
 
         let context = ST.Context
                     { ST.contextTrackedEffects          = True

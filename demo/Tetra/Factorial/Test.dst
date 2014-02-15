@@ -1,10 +1,24 @@
 
-module Test where
+module Test 
+exports main
 
-fac (acc: Nat#) (n: Nat#) : Nat#
+imports foreign type
+ console  :: Effect
+
+imports foreign value 
+ putStrLn :: [r: Region]. String# r -> S console Unit
+ showNat  :: [r: Region]. Nat#      -> String# r
+
+where
+fac (acc: Nat#) (n: Nat#): Nat#
  = case n of
         0       -> acc
         1       -> acc
         _       -> fac (add# acc n) (sub# n 1)
+
+main [r: Region] (argc: Nat#) (argv: String# r): Nat#
+ = do   x        = fac 1 10
+        putStrLn (showNat [r] x)
+        0
 
  

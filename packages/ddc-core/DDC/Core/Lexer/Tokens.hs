@@ -191,6 +191,9 @@ data TokAtom
         | KModule
         | KImports
         | KExports
+        | KForeign
+        | KType
+        | KValue
         | KData
         | KWith
         | KWhere
@@ -204,7 +207,6 @@ data TokAtom
         | KWithRegion
         | KCase
         | KOf
-        | KType
         | KWeakEff
         | KWeakClo
         | KPurify
@@ -297,6 +299,9 @@ describeTokAtom' ta
         KModule                 -> (Keyword, "module")
         KImports                -> (Keyword, "imports")
         KExports                -> (Keyword, "exports")
+        KForeign                -> (Keyword, "foreign")
+        KType                   -> (Keyword, "type")
+        KValue                  -> (Keyword, "value")
         KData                   -> (Keyword, "data")
         KWith                   -> (Keyword, "with")
         KWhere                  -> (Keyword, "where")
@@ -310,7 +315,6 @@ describeTokAtom' ta
         KWithRegion             -> (Keyword, "withregion")
         KCase                   -> (Keyword, "case")
         KOf                     -> (Keyword, "of")
-        KType                   -> (Keyword, "type")
         KWeakEff                -> (Keyword, "weakeff")
         KWeakClo                -> (Keyword, "weakclo")
         KPurify                 -> (Keyword, "purify")

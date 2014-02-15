@@ -3,9 +3,7 @@ module DDC.Source.Tetra.Parser.Module
         ( -- * Modules
           pModule
         , pTypeSig
-        , pImportKindSpec
-        , pImportTypeSpec
-
+        
           -- * Top-level things
         , pTop)
 where
@@ -32,31 +30,20 @@ pModule c
  = do   _sp     <- pTokSP KModule
         name    <- pModuleName
 
-        -- -- exports { SIG;+ }
-        -- tExports 
-        -- <- P.choice
-        --    [do pTok KExports
-        --        pTok KBraceBra
-        --        sigs    <- P.sepEndBy1 (pTypeSig c) (pTok KSemiColon)
-        --        pTok KBraceKet
-        --        return sigs
+        -- exports { VAR;+ }
+        tExports 
+         <- P.choice
+            [do pTok KExports
+                pTok KBraceBra
+                vars    <- P.sepEndBy1 pVar (pTok KSemiColon)
+                pTok KBraceKet
+                return vars
 
-        --    ,   return []]
+            ,   return []]
 
-        -- -- imports { SIG;+ }
-        -- tImportKindsTypes
-        -- <- P.choice
-        --    [do pTok KImports
-        --        pTok KBraceBra
-        --        importKinds     <- P.sepEndBy (pImportKindSpec c) (pTok KSemiColon)
-        --        importTypes     <- P.sepEndBy (pImportTypeSpec c) (pTok KSemiColon)
-        --        pTok KBraceKet
-        --        return (importKinds, importTypes)
-
-        --    ,   return ([], [])]
-
-        --let (tImportKinds, tImportTypes)
-        --        = tImportKindsTypes
+        -- imports { SIG;+ }
+        tImports
+         <- liftM concat $ P.many (pImportSpecs c)
 
         pTok KWhere
         pTok KBraceBra
@@ -70,11 +57,19 @@ pModule c
         --  The names are added to a unique map, so later ones with the same
         --  name will replace earlier ones.
         return  $ Module
-                { moduleName            = name
-                , moduleExportedTypes   = []
-                , moduleExportedValues  = []
-                , moduleImportedModules = []
-                , moduleTops            = tops }
+                { moduleName                    = name
+                , moduleExportedTypes           = []
+                , moduleExportedValues          = tExports
+                
+                , moduleImportedModules         = []
+                
+                , moduleImportedForeignTypes
+                        = [(n, k) | ImportForeignType  n k <- tImports]
+
+                , moduleImportedForeignValues
+                        = [(n, t) | ImportForeignValue n t <- tImports]
+                
+                , moduleTops                    = tops }
 
 
 -- | Parse a type signature.
@@ -89,51 +84,56 @@ pTypeSig c
         return  (var, t)
 
 
--- | Parse the type signature of an imported variable.
-pImportKindSpec 
-        :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, (QualName n, Kind n))
+-------------------------------------------------------------------------------
+-- | An imported foreign type or foreign value.
+data ImportSpec n
+        = ImportForeignType 
+        { _importForeignTypeName         :: n
+        , _importForeignTypeKind         :: Kind n }
 
-pImportKindSpec c
- =   pTok KType
- >>  P.choice
- [      -- Import with an explicit external name.
-        -- Module.varExternal with varLocal
-   do   qn      <- pQualName
-        pTok KWith
-        n       <- pName
-        pTok KColonColon
-        k       <- pType c
-        return  (n, (qn, k))
-
- , do   n       <- pName
-        pTok KColonColon
-        k       <- pType c
-        return  (n, (QualName (ModuleName []) n, k))
- ]        
+        | ImportForeignValue
+        { _importForeignValueName        :: n
+        , _importForeignValueType        :: Type n }
 
 
--- | Parse the type signature of an imported variable.
-pImportTypeSpec 
-        :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, (QualName n, Type n))
+-- | Parse some import specs.
+pImportSpecs
+        :: (Ord n, Pretty n)
+        => Context -> Parser n [ImportSpec n]
 
-pImportTypeSpec c
- = P.choice
- [      -- Import with an explicit external name.
-        -- Module.varExternal with varLocal
-   do   qn      <- pQualName
-        pTok KWith
-        n       <- pName
-        pTok KColonColon
-        t       <- pType c
-        return  (n, (qn, t))
+pImportSpecs c
+ = do   pTok KImports
+        pTok KForeign
 
- , do   n       <- pName
-        pTok KColonColon
-        t       <- pType c
-        return  (n, (QualName (ModuleName []) n, t))
- ]        
+        P.choice
+         [      -- imports foreign type (NAME :: TYPE)+ 
+          do    pTok KType
+                pTok KBraceBra
+
+                sigs <- P.sepEndBy1 
+                        (do n       <- pName
+                            pTok KColonColon
+                            k       <- pType c
+                            return  (n, k))
+                        (pTok KSemiColon)
+                pTok KBraceKet
+
+                return [ImportForeignType n k | (n, k) <- sigs]
+
+                -- imports foreign value (NAME :: TYPE)+
+         , do   pTok KValue
+                pTok KBraceBra
+
+                sigs <- P.sepEndBy1
+                        (do n   <- pName
+                            pTok KColonColon
+                            t   <- pType c
+                            return (n, t))
+                        (pTok KSemiColon)
+
+                pTok KBraceKet
+                return [ImportForeignValue n k | (n, k) <- sigs]
+         ]
 
 
 -- Top Level -----------------------------------------------------------------
