@@ -37,12 +37,15 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
   where sImportedTypes
          | null importedTypes   = empty
          | otherwise
-         = vcat $ map pprImportType importedTypes
+         = line 
+         <> (vcat $ map pprImportType importedTypes) 
+         <> line
 
         sImportedValues
          | null importedValues  = empty
          | otherwise
-         = vcat $ map pprImportValue importedValues
+         = (vcat $ map pprImportValue importedValues)
+         <> line
 
                 
 pprImportType 
@@ -59,9 +62,9 @@ pprImportType (n, (isrc, k))
          -> text "imports foreign abstract type" <> line
          <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
 
-        ImportSourceSea var
+        ImportSourceSea _var
          -> text "imports foreign c type" <> line
-         <> indent 8 (text (show var) <+> text "as" <+> ppr n 
+         <> indent 8 (ppr n 
                      <+> text "::" <+> ppr k <> semi)
 
 
@@ -79,9 +82,9 @@ pprImportValue (n, (isrc, k))
          -> text "imports foreign abstract value" <> line
          <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
 
-        ImportSourceSea var
+        ImportSourceSea _var
          -> text "imports foreign c value" <> line
-         <> indent 8 (text (show var) <+> text "as" <+> ppr n 
+         <> indent 8 (ppr n 
                      <+> text "::" <+> ppr k <> semi)
 
 

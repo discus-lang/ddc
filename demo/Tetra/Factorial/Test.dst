@@ -3,10 +3,10 @@ module Test
 export main
 
 import foreign abstract type
- console  :: Effect
+ Console  :: Effect
 
 import foreign c value
- putStrLn :: [r: Region]. String# r -> S console Unit
+ putStrLn :: [r: Region]. String# r -> S Console Unit
  showNat  :: [r: Region]. Nat#      -> String# r
 
 where
