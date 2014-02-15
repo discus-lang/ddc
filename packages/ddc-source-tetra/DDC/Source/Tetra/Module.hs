@@ -31,24 +31,24 @@ import DDC.Core.Module
 data Module a n
         = Module
         { -- | Name of this module
-          moduleName                    :: !ModuleName
+          moduleName            :: !ModuleName
 
           -- Exports ----------------------------
           -- | Names of exported types  (level-1).
-        , moduleExportedTypes           :: [n]
+        , moduleExportTypes     :: [n]
 
           -- | Names of exported values (level-0).
-        , moduleExportedValues          :: [n]
+        , moduleExportValues    :: [n]
 
           -- Imports ----------------------------
           -- | Imported modules.
-        , moduleImportedModules         :: [ModuleName]
+        , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportedTypes           :: [(n, (ImportSource n, Kind n))]
+        , moduleImportTypes     :: [(n, (ImportSource n, Kind n))]
 
           -- | Types of imported foreign values.
-        , moduleImportedValues          :: [(n, (ImportSource n, Type n))]
+        , moduleImportValues    :: [(n, (ImportSource n, Type n))]
 
           -- Local ------------------------------
           -- | Top-level things
@@ -59,12 +59,12 @@ data Module a n
 instance (NFData a, NFData n) => NFData (Module a n) where
  rnf !mm
         =     rnf (moduleName mm)
-        `seq` rnf (moduleExportedTypes   mm)
-        `seq` rnf (moduleExportedValues  mm)
-        `seq` rnf (moduleImportedModules mm)
-        `seq` rnf (moduleImportedTypes   mm)
-        `seq` rnf (moduleImportedValues  mm)
-        `seq` rnf (moduleTops            mm)
+        `seq` rnf (moduleExportTypes   mm)
+        `seq` rnf (moduleExportValues  mm)
+        `seq` rnf (moduleImportModules mm)
+        `seq` rnf (moduleImportTypes   mm)
+        `seq` rnf (moduleImportValues  mm)
+        `seq` rnf (moduleTops          mm)
         
 
 -- | Check if this is the `Main` module.

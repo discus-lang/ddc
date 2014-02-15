@@ -17,7 +17,6 @@ import qualified DDC.Type.Sum                   as Sum
 import qualified Data.Map                       as Map
 import Data.Maybe
 
-
 -- Things shared between both Source and Core languages.
 import DDC.Core.Exp
         ( Bind          (..)
@@ -28,6 +27,9 @@ import DDC.Core.Exp
         , DaCon         (..)
         , Witness       (..)
         , WiCon         (..))
+
+import DDC.Core.Module 
+        ( ImportSource  (..))
 
 
 -- Module ---------------------------------------------------------------------
@@ -43,8 +45,13 @@ toCoreModule a mm
         , C.moduleExportTypes   = Map.empty
         , C.moduleExportValues  = Map.empty
         
-        , C.moduleImportTypes   = []
-        , C.moduleImportValues  = []
+        , C.moduleImportTypes   
+                = [ (toCoreN n, (toCoreImportSource iSrc, toCoreT k))
+                        | (n, (iSrc, k)) <- S.moduleImportTypes mm ]
+
+        , C.moduleImportValues  
+                = [ (toCoreN n, (toCoreImportSource iSrc, toCoreT t))
+                        | (n, (iSrc, t)) <- S.moduleImportValues mm ]
         
         , C.moduleDataDefsLocal 
                 = [ toCoreDataDef def
@@ -70,6 +77,15 @@ bindOfTop
 bindOfTop (S.TopBind _ b x) 
                 = Just (toCoreB b, toCoreX x)
 bindOfTop _     = Nothing
+
+
+-- ImportSource ---------------------------------------------------------------
+toCoreImportSource :: ImportSource S.Name -> ImportSource C.Name
+toCoreImportSource src
+ = case src of
+        ImportSourceAbstract    -> ImportSourceAbstract
+        ImportSourceModule mn n -> ImportSourceModule mn (toCoreN n)
+        ImportSourceSea v       -> ImportSourceSea v
 
 
 -- Type -----------------------------------------------------------------------

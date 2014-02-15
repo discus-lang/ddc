@@ -18,13 +18,13 @@ import DDC.Base.Pretty
 -- Module ---------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
  ppr Module
-        { moduleName                    = name
-        , moduleExportedTypes           = _exportedTypes
-        , moduleExportedValues          = _exportedValues
-        , moduleImportedModules         = _importedModules
-        , moduleImportedTypes           = importedTypes
-        , moduleImportedValues          = importedValues
-        , moduleTops                    = tops }
+        { moduleName            = name
+        , moduleExportTypes     = _exportedTypes
+        , moduleExportValues    = _exportedValues
+        , moduleImportModules   = _importedModules
+        , moduleImportTypes     = importedTypes
+        , moduleImportValues    = importedValues
+        , moduleTops            = tops }
   =  text "module" 
         <+> ppr name 
         <>  sImportedTypes
@@ -37,19 +37,19 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
   where sImportedTypes
          | null importedTypes   = empty
          | otherwise
-         = vcat $ map pprImportedType importedTypes
+         = vcat $ map pprImportType importedTypes
 
         sImportedValues
          | null importedValues  = empty
          | otherwise
-         = vcat $ map pprImportedValue importedValues
+         = vcat $ map pprImportValue importedValues
 
                 
-pprImportedType 
+pprImportType 
         :: (Pretty n, Eq n)
         => (n, (ImportSource n, Kind n)) -> Doc
 
-pprImportedType (n, (isrc, k))
+pprImportType (n, (isrc, k))
  = case isrc of
         ImportSourceModule _mn _nSrc
          -> text "imports type" 
@@ -65,11 +65,11 @@ pprImportedType (n, (isrc, k))
                      <+> text "::" <+> ppr k <> semi)
 
 
-pprImportedValue
+pprImportValue
         :: (Pretty n, Eq n)
         => (n, (ImportSource n, Kind n)) -> Doc
 
-pprImportedValue (n, (isrc, k))
+pprImportValue (n, (isrc, k))
  = case isrc of
         ImportSourceModule _mn _nSrc
          -> text "imports value" 

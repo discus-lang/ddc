@@ -57,16 +57,16 @@ pModule c
         --  The names are added to a unique map, so later ones with the same
         --  name will replace earlier ones.
         return  $ Module
-                { moduleName                    = name
-                , moduleExportedTypes           = []
-                , moduleExportedValues          = tExports
+                { moduleName            = name
+                , moduleExportTypes     = []
+                , moduleExportValues    = tExports
                 
-                , moduleImportedModules         = []
+                , moduleImportModules   = []
                 
-                , moduleImportedTypes
+                , moduleImportTypes
                         = [(n, (s, k)) | ImportType  n s k <- tImports]
 
-                , moduleImportedValues
+                , moduleImportValues
                         = [(n, (s, t)) | ImportValue n s t <- tImports]
                 
                 , moduleTops                    = tops }
