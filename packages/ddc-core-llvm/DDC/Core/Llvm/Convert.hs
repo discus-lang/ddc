@@ -92,7 +92,7 @@ convModuleM mm@(C.ModuleCore{})
         let Just importDecls 
                 = sequence
                 $ [ importedFunctionDeclOfType platform kenv External n t
-                  | (n, t)   <- Map.elems $ C.moduleImportTypes mm ]
+                  | (n, t)   <- map snd $ C.moduleImportTypes mm ]
 
         -- Add RTS def -------------------------------------------------
         -- If this is the main module then we need to declare

@@ -48,11 +48,11 @@ data Module a n
           -- Imports ------------------
           -- | Kinds of imported types,
           --   along with the name of the module they are from.
-        , moduleImportKinds     :: !(Map n (QualName n, Kind n))
+        , moduleImportKinds     :: ![(n, (QualName n, Kind n))]
 
           -- | Types of imported values,
           --   along with the name of the module they are from.
-        , moduleImportTypes     :: !(Map n (QualName n, Type n))
+        , moduleImportTypes     :: ![(n, (QualName n, Type n))]
 
           -- Local --------------------
           -- | Data types defined in this module.
@@ -89,7 +89,7 @@ isMainModule mm
 moduleKindEnv :: Ord n => Module a n -> KindEnv n
 moduleKindEnv mm
         = Env.fromList 
-        $ [BName n k | (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
+        $ [BName n k | (n, (_, k)) <- moduleImportKinds mm]
 
 
 -- | Get the top-level type environment of a module,
@@ -97,7 +97,7 @@ moduleKindEnv mm
 moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
         = Env.fromList 
-        $ [BName n k | (n, (_, k)) <- Map.toList $ moduleImportTypes mm]
+        $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
 
 
 -- | Get the set of top-level value bindings in a module.

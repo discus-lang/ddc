@@ -42,8 +42,9 @@ toCoreModule a mm
         { C.moduleName          = S.moduleName mm
         , C.moduleExportKinds   = Map.empty
         , C.moduleExportTypes   = Map.empty
-        , C.moduleImportKinds   = Map.empty
-        , C.moduleImportTypes   = Map.empty
+        
+        , C.moduleImportKinds   = []
+        , C.moduleImportTypes   = []
         
         , C.moduleDataDefsLocal 
                 = [ toCoreDataDef def

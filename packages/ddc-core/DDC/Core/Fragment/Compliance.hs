@@ -18,7 +18,6 @@ import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
-import qualified Data.Map.Strict        as Map
 
 
 -- | Check whether a core thing complies with a language fragment profile.
@@ -76,8 +75,7 @@ class Complies (c :: * -> * -> *) where
 
 instance Complies Module where
  compliesX profile kenv tenv context mm
-  = do  let bs          = [ BName n t 
-                                | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
+  = do  let bs          = [ BName n t | (n, (_, t)) <- moduleImportTypes mm ]
         let tenv'       = Env.extends bs tenv
         compliesX profile kenv tenv' context (moduleBody mm)
 

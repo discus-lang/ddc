@@ -26,7 +26,6 @@ import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw, evalCheck)
 import qualified DDC.Type.Env                   as Env
-import qualified Data.Map                       as Map
 import Control.Monad
 import Data.Maybe
 
@@ -61,7 +60,7 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , empty ]
 
         -- Import external symbols ----
-        let nts = Map.elems $ C.moduleImportTypes mm
+        let nts = map snd $ C.moduleImportTypes mm
         docs    <- mapM (uncurry $ convFunctionTypeM Env.empty) nts
         let cExterns
                 |  not withPrelude
@@ -88,8 +87,8 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , empty ]
 
         -- Super-combinator definitions.
-        let kenv = Env.fromTypeMap $ Map.map snd $ moduleImportKinds mm
-        let tenv = Env.fromTypeMap $ Map.map snd $ moduleImportTypes mm
+        let kenv = Env.fromList $ [BName n k | (n, (_, k)) <- moduleImportKinds mm]
+        let tenv = Env.fromList $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
         cSupers <- mapM (uncurry (convSuperM pp kenv tenv)) bxs
 
         -- Paste everything together

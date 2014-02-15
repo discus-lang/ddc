@@ -20,5 +20,3 @@ main [r: Region] (argc: Nat#) (argv: String# r): Nat#
  = do   x        = fac 1 10
         putStrLn (showNat [r] x)
         0
-
- 

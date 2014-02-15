@@ -70,8 +70,8 @@ pModule c
                 { moduleName            = name
                 , moduleExportKinds     = Map.empty
                 , moduleExportTypes     = Map.fromList tExports
-                , moduleImportKinds     = Map.fromList tImportKinds
-                , moduleImportTypes     = Map.fromList tImportTypes
+                , moduleImportKinds     = tImportKinds
+                , moduleImportTypes     = tImportTypes
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 

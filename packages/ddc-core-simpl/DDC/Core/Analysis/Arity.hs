@@ -81,7 +81,7 @@ aritiesOfModule mm
          $ [ case arityFromType t of
                 Just a  -> Just (BName n t, a)
                 Nothing -> Nothing
-           | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
+           | (n, (_, t)) <- moduleImportTypes mm ]
 
     in  emptyArities
         `extendsArities` aritiesImports

@@ -45,8 +45,9 @@ data PipeText n (err :: * -> *) where
         -> PipeText n err
 
   PipeTextLoadSourceTetra
-        :: !Sink                        -- Sink for core code before final type checking.
-        -> !Sink                        -- Sink for type checker trace.
+        :: !Sink                -- Sink for source tokens.
+        -> !Sink                -- Sink for core code before final type checking.
+        -> !Sink                -- Sink for type checker trace.
         -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
@@ -80,20 +81,25 @@ pipeText !srcName !srcLine !str !pp
                   -> do sinkCheckTrace mct sink
                         pipeCores mm pipes
 
-        PipeTextLoadSourceTetra sinkPreCheck sinkCheckerTrace pipes
+        PipeTextLoadSourceTetra 
+                sinkTokens
+                sinkPreCheck 
+                sinkCheckerTrace pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let goParse
-                 = let  -- Lex the input text into source tokens.
-                        tokens  = SE.lexModuleString srcName srcLine str
+                 = do   -- Lex the input text into source tokens.
+                        let tokens  = SE.lexModuleString srcName srcLine str
+
+                        pipeSink (unlines $ map show $ tokens) sinkTokens
 
                         -- Parse the source tokens.
-                        context = C.Context
+                        let context = C.Context
                                 { C.contextTrackedEffects         = True
                                 , C.contextTrackedClosures        = True
                                 , C.contextFunctionalEffects      = False
                                 , C.contextFunctionalClosures     = False }
 
-                    in  case BP.runTokenParser C.describeTok srcName
+                        case BP.runTokenParser C.describeTok srcName
                                 (SE.pModule context) tokens of
                          Left err -> error $ show err    -- TODO: throw errorLoad instead.
                          Right mm -> goDesugar mm

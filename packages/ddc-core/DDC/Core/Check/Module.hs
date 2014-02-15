@@ -65,8 +65,8 @@ checkModuleM
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
         -- Convert the imported kind and type map to a list of binds.
-        let bksImport  = [BName n k |  (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
-        let btsImport  = [BName n t |  (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
+        let bksImport  = [BName n k |  (n, (_, k)) <- moduleImportKinds mm]
+        let btsImport  = [BName n t |  (n, (_, t)) <- moduleImportTypes mm]
 
         -- Check the imported kinds and types.
         --  The imported types are in scope in both imported and exported signatures.

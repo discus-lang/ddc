@@ -87,20 +87,20 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
         -- Imports --------------------
         docsImportKinds
-         | not $ Map.null importKinds
+         | not $ null importKinds
          , not $ modeModuleSuppressImports mode
          = nest 8 $ line 
          <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- Map.toList importKinds ]
+                  | (n, (_, t)) <- importKinds ]
 
          | otherwise                    = empty
          
         docsImportTypes  
-         | not $ Map.null importTypes
+         | not $ null importTypes
          , not $ modeModuleSuppressImports mode
          = nest 8 $ line
          <> vcat  [ ppr n       <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- Map.toList importTypes ]
+                  | (n, (_, t)) <- importTypes ]
 
          | otherwise                    = empty
          
@@ -108,7 +108,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          -- If we're suppressing imports, or there are none,
          -- then don't display the import block.
          |   modeModuleSuppressImports mode       
-          || (Map.null importKinds && Map.null importTypes)
+          || (null importKinds && null importTypes)
          = empty
          
          | otherwise

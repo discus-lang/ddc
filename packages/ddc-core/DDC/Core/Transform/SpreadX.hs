@@ -29,9 +29,15 @@ instance SpreadX (Module a) where
   = mm
   { moduleExportKinds   = Map.map (spreadT kenv)  (moduleExportKinds mm)
   , moduleExportTypes   = Map.map (spreadT kenv)  (moduleExportTypes mm)
-  , moduleImportKinds   = Map.map (liftSnd (spreadT kenv)) (moduleImportKinds mm)
-  , moduleImportTypes   = Map.map (liftSnd (spreadT kenv)) (moduleImportTypes mm)
+  
+  , moduleImportKinds   
+        = map (liftSnd $ liftSnd (spreadT kenv))  (moduleImportKinds mm)
+  
+  , moduleImportTypes   
+        = map (liftSnd $ liftSnd (spreadT kenv))  (moduleImportTypes mm)
+  
   , moduleDataDefsLocal = map     (spreadT kenv)  (moduleDataDefsLocal mm)
+  
   , moduleBody          = spreadX kenv tenv (moduleBody mm) }
 
   where liftSnd f (x, y) = (x, f y)

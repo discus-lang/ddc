@@ -87,11 +87,10 @@ convertM pp runConfig defs kenv tenv mm
         tsImports'
                 <- liftM Map.fromList
                 $  mapM convertImportM  
-                $  Map.toList
                 $  moduleImportTypes mm
 
         -- Convert the body of the module to Salt.
-        let ntsImports  = [(BName n t) | (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
+        let ntsImports  = [(BName n t) | (n, (_, t)) <- moduleImportTypes mm]
         let tenv'       = Env.extends ntsImports tenv
         x1              <- convertExpX ExpTop pp defs kenv tenv' $ moduleBody mm
 
@@ -112,8 +111,8 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleExportKinds    = Map.empty
                 , moduleExportTypes    = tsExports'
 
-                , moduleImportKinds    = S.runtimeImportKinds
-                , moduleImportTypes    = Map.union S.runtimeImportTypes tsImports'
+                , moduleImportKinds    = Map.toList S.runtimeImportKinds
+                , moduleImportTypes    = Map.toList $ Map.union  S.runtimeImportTypes tsImports'
 
                   -- Data constructors and pattern matches should have been flattened
                   -- into primops, so we don't need the data type definitions.
