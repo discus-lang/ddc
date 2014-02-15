@@ -1,8 +1,9 @@
 
 module DDC.Source.Tetra.Module
         ( -- * Modules
-          Module (..)
+          Module        (..)
         , isMainModule
+        , ImportSource  (..)
 
           -- * Module Names
         , QualName      (..)
@@ -22,7 +23,8 @@ import Control.DeepSeq
 import DDC.Core.Module          
         ( QualName      (..)
         , ModuleName    (..)
-        , isMainModuleName)
+        , isMainModuleName
+        , ImportSource  (..))
         
 
 -- Module ---------------------------------------------------------------------
@@ -43,10 +45,10 @@ data Module a n
         , moduleImportedModules         :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportedForeignTypes    :: [(n, Kind n)]
+        , moduleImportedTypes           :: [(n, (ImportSource n, Kind n))]
 
           -- | Types of imported foreign values.
-        , moduleImportedForeignValues   :: [(n, Type n)]
+        , moduleImportedValues          :: [(n, (ImportSource n, Type n))]
 
           -- Local ------------------------------
           -- | Top-level things
@@ -60,6 +62,8 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleExportedTypes   mm)
         `seq` rnf (moduleExportedValues  mm)
         `seq` rnf (moduleImportedModules mm)
+        `seq` rnf (moduleImportedTypes   mm)
+        `seq` rnf (moduleImportedValues  mm)
         `seq` rnf (moduleTops            mm)
         
 

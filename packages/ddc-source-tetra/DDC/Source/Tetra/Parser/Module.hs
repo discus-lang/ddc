@@ -63,11 +63,11 @@ pModule c
                 
                 , moduleImportedModules         = []
                 
-                , moduleImportedForeignTypes
-                        = [(n, k) | ImportForeignType  n k <- tImports]
+                , moduleImportedTypes
+                        = [(n, (s, k)) | ImportType  n s k <- tImports]
 
-                , moduleImportedForeignValues
-                        = [(n, t) | ImportForeignValue n t <- tImports]
+                , moduleImportedValues
+                        = [(n, (s, t)) | ImportValue n s t <- tImports]
                 
                 , moduleTops                    = tops }
 
@@ -87,14 +87,9 @@ pTypeSig c
 -------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
 data ImportSpec n
-        = ImportForeignType 
-        { _importForeignTypeName         :: n
-        , _importForeignTypeKind         :: Kind n }
-
-        | ImportForeignValue
-        { _importForeignValueName        :: n
-        , _importForeignValueType        :: Type n }
-
+        = ImportType    n (ImportSource n) (Kind n)
+        | ImportValue   n (ImportSource n) (Type n)
+        
 
 -- | Parse some import specs.
 pImportSpecs
@@ -104,36 +99,59 @@ pImportSpecs
 pImportSpecs c
  = do   pTok KImports
         pTok KForeign
+        src    <- liftM (renderIndent . ppr) pName
 
         P.choice
-         [      -- imports foreign type (NAME :: TYPE)+ 
+         [      -- imports foreign X type (NAME :: TYPE)+ 
           do    pTok KType
                 pTok KBraceBra
 
-                sigs <- P.sepEndBy1 
-                        (do n       <- pName
-                            pTok KColonColon
-                            k       <- pType c
-                            return  (n, k))
-                        (pTok KSemiColon)
+                sigs <- P.sepEndBy1 (pImportType c src) (pTok KSemiColon)
                 pTok KBraceKet
+                return sigs
 
-                return [ImportForeignType n k | (n, k) <- sigs]
-
-                -- imports foreign value (NAME :: TYPE)+
+                -- imports foreign X value (NAME :: TYPE)+
          , do   pTok KValue
                 pTok KBraceBra
 
-                sigs <- P.sepEndBy1
-                        (do n   <- pName
-                            pTok KColonColon
-                            t   <- pType c
-                            return (n, t))
-                        (pTok KSemiColon)
-
+                sigs <- P.sepEndBy1 (pImportValue c src) (pTok KSemiColon)
                 pTok KBraceKet
-                return [ImportForeignValue n k | (n, k) <- sigs]
+                return sigs
          ]
+
+
+-- | Parse a type import spec.
+pImportType
+        :: (Ord n, Pretty n)
+        => Context -> String -> Parser n (ImportSpec n)
+pImportType c src
+        | "abstract"    <- src
+        = do    n       <- pName
+                pTok KColonColon
+                k       <- pType c
+                return  (ImportType n ImportSourceAbstract k)
+
+        | otherwise
+        = P.unexpected "import mode for foreign type"
+
+
+-- | Parse a value import spec.
+pImportValue 
+        :: (Ord n, Pretty n)
+        => Context -> String -> Parser n (ImportSpec n)
+pImportValue c src
+        | "c"           <- src
+        = do    n       <- pName
+                pTok KColonColon
+                k       <- pType c
+
+                -- TODO: allow def of foreign symbol
+                let symbol = renderIndent (ppr n)
+
+                return  (ImportValue n (ImportSourceSea symbol) k)
+
+        | otherwise
+        = P.unexpected "import mode for foreign value"
 
 
 -- Top Level -----------------------------------------------------------------

@@ -57,8 +57,8 @@ applyOffside ps [] (LexemeToken t : ts)
 -- offside rule within it.
 -- The blocks are introduced by:
 --      'exports' 'imports' 'letrec' 'where'
---      'import foreign type'
---      'import foreign value'
+--      'import foreign X type'
+--      'import foreign X value'
 applyOffside ps [] ls
         | LexemeToken t1 
                 : (LexemeStartBlock n) : ls' <- ls
@@ -69,12 +69,12 @@ applyOffside ps [] ls
         = t1 : newCBra ls' 
                 : applyOffside (ParenBrace : ps) [n] ls'
 
-        | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 
+        | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 : LexemeToken t4
                 : (LexemeStartBlock n) : ls' <- ls
         ,   isToken t1 (KA KImports) 
         ,   isToken t2 (KA KForeign)
-        ,   isToken t3 (KA KType) || isToken t3 (KA KValue)
-        = t1 : t2 : t3 : newCBra ls' 
+        ,   isToken t4 (KA KType) || isToken t4 (KA KValue)
+        = t1 : t2 : t3 : t4 : newCBra ls' 
                 : applyOffside (ParenBrace : ps) [n] ls'
 
 -- At top level without a context.
@@ -290,12 +290,16 @@ splitBlockStart toks
  -- imports foreign type
  |  t1@Token { tokenTok = KA KImports } 
   : t2@Token { tokenTok = KA KForeign }
-  : t3@Token { tokenTok = KA KType }    : ts    <- toks = Just ([t1, t2, t3], ts)
+  : t3
+  : t4@Token { tokenTok = KA KType }    : ts
+ <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- imports foreign value
  |  t1@Token { tokenTok = KA KImports} 
   : t2@Token { tokenTok = KA KForeign}
-  : t3@Token { tokenTok = KA KValue}    : ts    <- toks = Just ([t1, t2, t3], ts)
+  : t3
+  : t4@Token { tokenTok = KA KValue}    : ts    
+ <- toks = Just ([t1, t2, t3, t4], ts)
  
  |  t1@Token { tokenTok = KA KDo }      : ts    <- toks = Just ([t1], ts)
  |  t1@Token { tokenTok = KA KOf }      : ts    <- toks = Just ([t1], ts)

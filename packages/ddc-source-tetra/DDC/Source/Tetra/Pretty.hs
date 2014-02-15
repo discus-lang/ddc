@@ -22,36 +22,67 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleExportedTypes           = _exportedTypes
         , moduleExportedValues          = _exportedValues
         , moduleImportedModules         = _importedModules
-        , moduleImportedForeignTypes    = ksForeignTypes
-        , moduleImportedForeignValues   = tsForeignValues
+        , moduleImportedTypes           = importedTypes
+        , moduleImportedValues          = importedValues
         , moduleTops                    = tops }
   =  text "module" 
         <+> ppr name 
-        <>  sForeignTypes
-        <>  sForeignValues
-        <>   (if null ksForeignTypes && null tsForeignValues
+        <>  sImportedTypes
+        <>  sImportedValues
+        <>   (if null importedTypes && null importedValues
                 then space <> text "where" 
                 else text "where")
         <$$> (vcat $ map ppr tops)
 
-  where sForeignTypes
-         | null ksForeignTypes  = empty
+  where sImportedTypes
+         | null importedTypes   = empty
          | otherwise
-         =  line
-         <> text "import foreign type" <+> lbrace <> line
-                <> (indent 8 $ vcat 
-                        [ppr n <+> text "::" <+> ppr t <> semi
-                                | (n, t) <- ksForeignTypes])
-                <> line <> rbrace <> line
+         = vcat $ map pprImportedType importedTypes
 
-        sForeignValues
-         | null tsForeignValues = empty
+        sImportedValues
+         | null importedValues  = empty
          | otherwise
-         = text "import foreign value" <+> lbrace <> line
-                <> (indent 8 $ vcat 
-                        [ppr n <+> text "::" <+> ppr t <> semi
-                                | (n, t) <- tsForeignValues])
-                <> line <> rbrace <> line
+         = vcat $ map pprImportedValue importedValues
+
+                
+pprImportedType 
+        :: (Pretty n, Eq n)
+        => (n, (ImportSource n, Kind n)) -> Doc
+
+pprImportedType (n, (isrc, k))
+ = case isrc of
+        ImportSourceModule _mn _nSrc
+         -> text "imports type" 
+                <> ppr n <+> text "::" <+> ppr k <> semi
+
+        ImportSourceAbstract
+         -> text "imports foreign abstract type" <> line
+         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+
+        ImportSourceSea var
+         -> text "imports foreign c type" <> line
+         <> indent 8 (text (show var) <+> text "as" <+> ppr n 
+                     <+> text "::" <+> ppr k <> semi)
+
+
+pprImportedValue
+        :: (Pretty n, Eq n)
+        => (n, (ImportSource n, Kind n)) -> Doc
+
+pprImportedValue (n, (isrc, k))
+ = case isrc of
+        ImportSourceModule _mn _nSrc
+         -> text "imports value" 
+                <> ppr n <+> text "::" <+> ppr k <> semi
+
+        ImportSourceAbstract
+         -> text "imports foreign abstract value" <> line
+         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+
+        ImportSourceSea var
+         -> text "imports foreign c value" <> line
+         <> indent 8 (text (show var) <+> text "as" <+> ppr n 
+                     <+> text "::" <+> ppr k <> semi)
 
 
 -- Top ------------------------------------------------------------------------
