@@ -553,6 +553,11 @@ effectSupported eff ctx
         = listToMaybe $ concat [ maybeToList $ effectSupported e ctx 
                                | e <- Sum.toList ts ]
 
+        -- Abstract effects are fine.
+        --  We'll find out if it is really supported once it's instantiated.
+        | TVar {} <- eff
+        = Nothing
+
         -- For an effect on an abstract region, we allow any capability.
         --  We'll find out if it really has this capability when we try
         --  to run the computation.
@@ -561,16 +566,15 @@ effectSupported eff ctx
         , Just (_, RoleAbstract) <- lookupKind u ctx
         = Nothing
 
-        -- Abstract effects are fine.
-        --  We'll find out if it is really supported once it's instantiated.
-        | TVar {} <- eff
-        = Nothing
-
         -- For an effect on a concrete region,
         --   the capability needs to be in the lexical environment.
         | TApp (TCon (TyConSpec tc)) _t2       <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
         , elem (ElemType (BNone eff)) (contextElems ctx)
+        = Nothing
+
+        | TCon (TyConBound _ _k)                <- eff
+        -- , k == kEffect       -- TODO: spread imported kind to effects
         = Nothing
 
         | otherwise
