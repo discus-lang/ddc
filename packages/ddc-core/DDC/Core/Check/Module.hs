@@ -43,8 +43,7 @@ checkModule
 
 checkModule !config !xx !mode
  = let  (s, result)     = runCheck (mempty, 0, 0)
-                        $ checkModuleM 
-                                config 
+                        $ checkModuleM config 
                                 (configPrimKinds config)
                                 (configPrimTypes config)
                                 xx mode
@@ -65,71 +64,33 @@ checkModuleM
 
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
-        -- TODO: split into separate fn.
         -- Check kinds of imported types ------------------
-        --  The imported types are in scope in both imported and exported signatures.
-        
-        -- Checker mode to use.
-        let modeCheckImportKinds
-             = case mode of
-                Recon   -> Recon
-                _       -> Synth
-
-        -- Check all the kinds in an empty context.
-        (ksImport', _, _)
-         <- liftM unzip3 
-         $  mapM (\k -> checkTypeM config Env.empty emptyContext UniverseKind 
-                                   k modeCheckImportKinds) 
-         $  [k | (_, (_, k)) <- moduleImportTypes mm]
-        
-        -- Update the original import list with the checked kinds.
-        let nksImport'
-                  = [ (n, (isrc, k')) | (n, (isrc, _)) <- moduleImportTypes mm
-                                      | k'             <- ksImport' ]
+        nksImport'      <- checkImportTypes config mode (moduleImportTypes mm)
 
         -- Build the initial kind environment.
-        let kenv' = Env.union kenv 
-                  $ Env.fromList [BName n k | (n, (_, k)) <- nksImport']
+        let kenv'       = Env.union kenv 
+                        $ Env.fromList [BName n k | (n, (_, k)) <- nksImport']
 
 
-        -- TODO: split into seprate fn.
         -- Check types of imported values -----------------
-        -- Checker mode to use.
-        -- We expect all these to have kind Data.
-        let modeCheckImportTypes
-             = case mode of
-                Recon   -> Recon
-                _       -> Check kData
-
-        -- Check all the types in an empty context.
-        (tsImport', _, _)
-         <- liftM unzip3
-         $  mapM (\t -> checkTypeM config kenv' emptyContext UniverseSpec
-                                   t modeCheckImportTypes)
-         $  [t | (_, (_, t)) <- moduleImportValues mm]
-
-        -- Update the original import list with the checked types.
-        let ntsImport'
-                = [ (n, (isrc, t')) | (n, (isrc, _)) <- moduleImportValues mm
-                                    | t'             <- tsImport' ]
-
+        ntsImport'      <- checkImportValues config kenv' mode (moduleImportValues mm)        
+        
         -- Build the initial type environment.
-        let tenv' = Env.union tenv 
-                  $ Env.fromList [BName n k | (n, (_, k)) <- ntsImport' ]
-
-        -- TODO: post-check for data kind in Recon mode.
+        let tenv'       = Env.union tenv 
+                        $ Env.fromList [BName n k | (n, (_, k)) <- ntsImport' ]
 
 
         -- Check the sigs of exported types ---------------
         mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseKind k Recon) 
                 $ Map.elems $ moduleExportTypes mm
         
+
         -- Check the sigs of exported values --------------
         mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseSpec k Recon) 
                 $ Map.elems $ moduleExportValues mm
                 
         
-        -- Check the locally defined data type definitions.
+        -- Check the local data type defs -----------------
         defs'        
          <- case checkDataDefs config (moduleDataDefsLocal mm) of
                 (err : _, _)   -> throw $ ErrorData err
@@ -171,11 +132,75 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm'         = mm    { moduleImportTypes     = nksImport'
+                                , moduleImportValues    = ntsImport'
                                 , moduleBody            = x'' }
 
         return mm'
 
+---------------------------------------------------------------------------------------------------
+-- | Check kinds of imported types.
+checkImportTypes
+        :: (Ord n, Show n, Pretty n)
+        => Config n -> Mode n
+        -> [(n, (ImportSource n, Kind n))]
+        -> CheckM a n [(n, (ImportSource n, Kind n))]
 
+checkImportTypes config mode nksImport
+ = do
+        -- Checker mode to use.
+        let modeCheckImportTypes
+                = case mode of
+                        Recon   -> Recon
+                        _       -> Synth
+
+        -- Check all the kinds in an empty context.
+        (ksImport', _, _)
+                <- liftM unzip3 
+                $  mapM (\k -> checkTypeM config Env.empty emptyContext UniverseKind 
+                                          k modeCheckImportTypes) 
+                $  [k | (_, (_, k)) <- nksImport]
+        
+        -- Update the original import list with the checked kinds.
+        let nksImport'
+                  = [ (n, (isrc, k')) | (n, (isrc, _)) <- nksImport
+                                      | k'             <- ksImport' ]
+        return nksImport'
+
+
+---------------------------------------------------------------------------------------------------
+-- | Check types of imported values.
+checkImportValues
+        :: (Ord n, Show n, Pretty n)
+        => Config n -> KindEnv n -> Mode n
+        -> [(n, (ImportSource n, Type n))]
+        -> CheckM a n [(n, (ImportSource n, Type n))]
+
+checkImportValues config kenv mode ntsImport
+ = do
+        -- Checker mode to use.
+        let modeCheckImportTypes
+                = case mode of
+                        Recon   -> Recon
+                        _       -> Check kData
+
+        -- Check all the types in an empty context.
+        (tsImport', _, _)
+                <- liftM unzip3
+                $  mapM (\t -> checkTypeM config kenv emptyContext UniverseSpec
+                                          t modeCheckImportTypes)
+                $  [t | (_, (_, t)) <- ntsImport]
+
+        -- Update the original import list with the checked types.
+        let ntsImport'
+                = [ (n, (isrc, t')) | (n, (isrc, _)) <- ntsImport
+                                    | t'             <- tsImport' ]
+
+        -- TODO: post-check for data kind in Recon mode.
+
+        return ntsImport'
+
+
+---------------------------------------------------------------------------------------------------
 -- | Check that the exported signatures match the types of their bindings.
 checkModuleBinds 
         :: Ord n
@@ -225,6 +250,7 @@ checkModuleBind !_ksExports !tsExports !b
  = return ()
 
 
+---------------------------------------------------------------------------------------------------
 -- | Check that a top-level binding is actually defined by the module.
 checkBindDefined 
         :: Ord n
