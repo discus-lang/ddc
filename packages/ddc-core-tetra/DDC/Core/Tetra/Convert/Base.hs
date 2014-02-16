@@ -69,7 +69,7 @@ instance Show a => Pretty (Error a) where
          -> vcat [ text "Unexpected type sum."]
 
         ErrorInvalidBinder n
-         -> vcat [ text "Invalid name used in binder " <> ppr n <> text "."]
+         -> vcat [ text "Invalid name used in binder '" <> ppr n <> text "'."]
 
         ErrorInvalidBound n
          -> vcat [ text "Invalid name used in bound occurrence " <> ppr n <> text "."]

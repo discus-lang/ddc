@@ -149,7 +149,7 @@ class Boxing (c :: * -> * -> *) where
 instance Boxing Module where
  boxing config mm
   = let 
-        -- Handle boxing in the typex of exported values.
+        -- Handle boxing in the types of exported values.
         exportValues'
          = Map.fromList
          $ [(n, boxingT config t)
@@ -157,17 +157,18 @@ instance Boxing Module where
 
         -- Handle boxing in the types of imported values.
         importValues'
-         = [(n, (isrc, boxingT config t)) 
-                | (n, (isrc, t)) <- moduleImportValues mm ]
+         = map (boxingImportValue config) $ moduleImportValues mm
 
         -- Add locally imported foreign functions to the foreign function detector.
+        --  We want the original type here, before it has been passed through
+        --  the boxing transform.
         typeOfForeignName n
          -- The provided config already says this is foreign.
          | Just t       <- configTypeOfForeignName config n  = Just t
 
          -- This is a locally imported C function.
          | Just (ImportSourceSea _, t)
-                        <- lookup n importValues'  = Just t
+                        <- lookup n (moduleImportValues mm)  = Just t
 
          | otherwise
          = Nothing
@@ -182,6 +183,27 @@ instance Boxing Module where
             , moduleExportValues    = exportValues'
             , moduleImportValues    = importValues'
             , moduleDataDefsLocal   = map (boxingDataDef config') (moduleDataDefsLocal mm) }
+
+
+--  | Manage boxing in the type of an imported value.
+boxingImportValue 
+        :: Config a n
+        => (n, (ImportSource n, Type n))
+        -> (n, (ImportSource n, Type n))
+
+boxingImportValue config (n, (isrc, t))
+ = case isrc of
+        -- This shouldn't happen for values, but just pass it through.
+        ImportSourceAbstract    
+         -> (n, (isrc, t))
+
+        -- Function imported from a DDC compiled module.
+        ImportSourceModule{}
+         -> (n, (isrc, boxingT config t))
+
+        -- Value imported using the standard C calling convention.
+        ImportSourceSea{}
+         -> (n, (isrc, boxingSeaT config t))
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -335,9 +357,9 @@ instance Boxing Alt where
 boxingB :: Config a n -> Bind n -> Bind n
 boxingB config bb
  = case bb of
-        BAnon t         -> BAnon (boxingT config t)
+        BAnon t         -> BAnon   (boxingT config t)
         BName n t       -> BName n (boxingT config t)
-        BNone t         -> BNone (boxingT config t)
+        BNone t         -> BNone   (boxingT config t)
 
 
 -- | Manage boxing in a Type.
@@ -356,6 +378,22 @@ boxingT config tt
         TApp t1 t2      -> TApp (down t1) (down t2)
         TSum{}          -> tt
 
+
+-- | Manage boxing in the type of a C value.
+boxingSeaT :: Config a n -> Type n -> Type n
+boxingSeaT config tt
+  | configTypeNeedsBoxing config tt
+  , Just tResult        <- configTakeTypeUnboxed config tt
+  = tResult
+
+  | otherwise
+  = let down = boxingSeaT config
+    in case tt of
+        TVar{}          -> tt
+        TCon{}          -> tt
+        TForall b t     -> TForall b (down t)
+        TApp t1 t2      -> TApp (down t1) (down t2)
+        TSum{}          -> tt
 
 -- | Manage boxing in a data type definition.
 boxingDataDef :: Config a n -> DataDef n -> DataDef n

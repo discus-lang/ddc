@@ -86,17 +86,17 @@ convertM pp runConfig defs kenv tenv mm
                 <- liftM Map.fromList
                 $  mapM convertExportM 
                 $  Map.toList 
-                $  moduleExportTypes mm
+                $  moduleExportValues mm
 
         -- Convert signatures of imported functions.
         tsImports'
                 <- liftM Map.fromList
                 $  mapM convertImportM  
-                $  moduleImportTypes mm
+                $  moduleImportValues mm
 
         -- Convert the body of the module to Salt.
         let ntsImports  
-                   = [(BName n t) | (n, (_, t)) <- moduleImportTypes mm]
+                   = [(BName n t) | (n, (_, t)) <- moduleImportValues mm]
         let tenv'  = Env.extends ntsImports tenv
         
         let defs'  = unionDataDefs defs
@@ -105,7 +105,8 @@ convertM pp runConfig defs kenv tenv mm
         let penv   = TopEnv
                    { topEnvPlatform     = pp
                    , topEnvDataDefs     = defs'
-                   , topEnvSupers       = moduleTopBinds mm }
+                   , topEnvSupers       = moduleTopBinds mm 
+                   , topEnvImportValues = Set.fromList $ map fst $ moduleImportValues mm }
 
         x1         <- convertExpX penv kenv tenv' ExpTop
                    $  moduleBody mm
@@ -164,10 +165,21 @@ convertImportM
         -> ConvertM a (A.Name, (ImportSource A.Name, Type A.Name))
 
 convertImportM (n, (isrc, t))
- = do   n'      <- convertBindNameM n
+ = do   n'      <- convertImportNameM n
         isrc'   <- convertImportSourceM isrc
         t'      <- convertRepableT Env.empty t
         return  (n', (isrc', t'))
+
+
+-- | Convert an imported name.
+--   These can be variable names for values, 
+--   or variable or constructor names for type imports.
+convertImportNameM :: E.Name -> ConvertM a A.Name
+convertImportNameM n
+ = case n of
+        E.NameVar str   -> return $ A.NameVar str
+        E.NameCon str   -> return $ A.NameCon str
+        _               -> throw  $ ErrorInvalidBinder n
 
 
 -- | Convert an import source.
@@ -199,7 +211,10 @@ data TopEnv
         , topEnvDataDefs        :: DataDefs E.Name
 
           -- Names of top-level supercombinators that are directly callable.
-        , topEnvSupers          :: Set E.Name }
+        , topEnvSupers          :: Set E.Name 
+
+          -- Names of imported values that can be refered to directly.
+        , topEnvImportValues    :: Set E.Name }
 
 
 -- | The context we're converting the expression in.
@@ -454,16 +469,17 @@ convertExpX penv kenv tenv ctx xx
 
 
         ---------------------------------------------------
-        -- Saturated application of a top-level supercombinator.
+        -- Saturated application of a top-level supercombinator or imported function.
         --  This does not cover application of primops, the above case should
         --  fire for these.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          
          -- The thing being applied is a named function that is defined
-         -- at top-level.
+         -- at top-level, or imported directly.
          , XVar _ (UName n) <- x1
-         , Set.member n (topEnvSupers penv)
+         ,   Set.member n (topEnvSupers       penv)
+          || Set.member n (topEnvImportValues penv)
 
          -- The function is saturated.
          , length xsArgs == arityOfType (annotType $ annotOfExp x1)

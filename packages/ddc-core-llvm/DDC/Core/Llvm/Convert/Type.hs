@@ -120,7 +120,20 @@ importedFunctionDeclOfType
         -> C.Type Name 
         -> Maybe FunctionDecl
 
-importedFunctionDeclOfType pp kenv linkage (C.ImportSourceModule _ (NameVar n)) tt
+importedFunctionDeclOfType pp kenv linkage isrc tt
+ | C.ImportSourceModule _ (NameVar n) <- isrc
+ = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
+        mkParam t                 = Param t []
+   in   Just $ FunctionDecl
+             { declName           = A.sanitizeGlobal n
+             , declLinkage        = linkage
+             , declCallConv       = CC_Ccc
+             , declReturnType     = tResult
+             , declParamListType  = FixedArgs
+             , declParams         = map mkParam tsArgs
+             , declAlign          = AlignBytes (platformAlignBytes pp) }
+
+ | C.ImportSourceSea n  <- isrc
  = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
