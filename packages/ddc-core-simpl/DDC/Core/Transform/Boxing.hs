@@ -138,7 +138,7 @@ data Config a n
 ---------------------------------------------------------------------------------------------------
 class Boxing (c :: * -> * -> *) where
  -- | Rewrite a module to use explitit boxed and unboxed types.
- boxing :: Ord n
+ boxing :: (Show n, Show a, Ord n)
         => Config a n
         -> c a n
         -> c a n
@@ -192,20 +192,35 @@ instance Boxing Exp where
          -- The arguments here include type arguments as well.
          | Just (xFn, tPrim, xsArgsAll) 
                 <- splitUnboxedOpApp config xx
-
-           -- Instantiate the type to work out which arguments
-           -- need to be unboxed, and which we can leave as-is.
-         , (asArgs, tsArgs)     <- unzip $ [(a', t) | XType a' t <- xsArgsAll]
-         , Just tsArgsUnboxed   <- sequence $ map (configTakeTypeUnboxed config) tsArgs
-         , xsArgs               <- drop (length tsArgs) xsArgsAll
-         , Just tPrimInst       <- instantiateTs tPrim tsArgs
-         , (tsArgsInst, tResultInst)
-                                <- takeTFunArgResult tPrimInst
-           -- We must end up with a type of each argument.
-         , length xsArgs == length tsArgsInst
          -> let 
-                -- Unbox arguments as nessesary.
+                -- Split off the type arguments.
+                (asArgs, tsArgs) = unzip $ [(a', t) | XType a' t <- xsArgsAll]
+                
+                -- For each type argument, if we know how to create the unboxed version
+                -- then do so. If this is wrong then the type checker will catch it later.
+                getTypeUnboxed t
+                 | Just t'      <- configTakeTypeUnboxed config t  
+                                = t'                
+                 | otherwise    = t 
+
+                tsArgsUnboxed   = map getTypeUnboxed tsArgs
+                
+                -- Instantiate the type to work out which arguments
+                -- need to be unboxed, and which we can leave as-is.
+                xsArgs          = drop (length tsArgs) xsArgsAll
+                Just tPrimInst  = instantiateTs tPrim tsArgs
+                
+                (tsArgsInst, tResultInst)
+                                = takeTFunArgResult tPrimInst
+                
+                -- Unboxing arguments to the function.
                 xsArgs' 
+                 -- We must end up with a type of each argument.
+                 | not (length xsArgs == length tsArgsInst)
+                 = error "ddc-core.boxing: transform failed."
+
+                 -- Unbox arguments as nessesary.
+                 | otherwise
                  = [ if configTypeNeedsBoxing config tArg 
                         then fromMaybe (down xArg)
                                        (configUnboxedOfBoxed config a (down xArg) tArg)
