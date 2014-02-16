@@ -3,6 +3,7 @@ module DDC.Core.Check.Module
         ( checkModule
         , checkModuleM)
 where
+import DDC.Core.Check.Base      (checkTypeM)
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
@@ -20,12 +21,12 @@ import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
 import Data.Map                 (Map)
 import Data.Monoid
-import qualified DDC.Type.Check as T
+import Control.Monad
 import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map
 
 
--- Wrappers -------------------------------------------------------------------
+-- Wrappers ---------------------------------------------------------------------------------------
 -- | Type check a module.
 --
 --   If it's good, you get a new version with types attached to all the bound
@@ -51,7 +52,7 @@ checkModule !config !xx !mode
    in   (result, tr)
 
 
--- checkModule ----------------------------------------------------------------
+-- checkModule ------------------------------------------------------------------------------------
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM 
         :: (Ord n, Show n, Pretty n)
@@ -64,22 +65,70 @@ checkModuleM
 
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
-        -- Convert the imported kind and type map to a list of binds.
-        let bksImport  = [BName n k |  (n, (_, k)) <- moduleImportTypes mm]
-        let btsImport  = [BName n t |  (n, (_, t)) <- moduleImportValues mm]
-
-        -- Check the imported kinds and types.
+        -- TODO: split into separate fn.
+        -- Check kinds of imported types ------------------
         --  The imported types are in scope in both imported and exported signatures.
-        mapM_ (checkTypeM config kenv  UniverseKind) $ map typeOfBind bksImport
-        let kenv' = Env.union kenv $ Env.fromList bksImport
+        
+        -- Checker mode to use.
+        let modeCheckImportKinds
+             = case mode of
+                Recon   -> Recon
+                _       -> Synth
 
-        mapM_ (checkTypeM config kenv' UniverseSpec) $ map typeOfBind btsImport
-        let tenv' = Env.union tenv $ Env.fromList btsImport
+        -- Check all the kinds in an empty context.
+        (ksImport', _, _)
+         <- liftM unzip3 
+         $  mapM (\k -> checkTypeM config Env.empty emptyContext UniverseKind 
+                                   k modeCheckImportKinds) 
+         $  [k | (_, (_, k)) <- moduleImportTypes mm]
+        
+        -- Update the original import list with the checked kinds.
+        let nksImport'
+                  = [ (n, (isrc, k')) | (n, (isrc, _)) <- moduleImportTypes mm
+                                      | k'             <- ksImport' ]
 
-        -- Check the sigs for exported things.
-        mapM_ (checkTypeM config kenv' UniverseKind) $ Map.elems $ moduleExportTypes mm
-        mapM_ (checkTypeM config kenv' UniverseSpec) $ Map.elems $ moduleExportValues mm
+        -- Build the initial kind environment.
+        let kenv' = Env.union kenv 
+                  $ Env.fromList [BName n k | (n, (_, k)) <- nksImport']
+
+
+        -- TODO: split into seprate fn.
+        -- Check types of imported values -----------------
+        -- Checker mode to use.
+        -- We expect all these to have kind Data.
+        let modeCheckImportTypes
+             = case mode of
+                Recon   -> Recon
+                _       -> Check kData
+
+        -- Check all the types in an empty context.
+        (tsImport', _, _)
+         <- liftM unzip3
+         $  mapM (\t -> checkTypeM config kenv' emptyContext UniverseSpec
+                                   t modeCheckImportTypes)
+         $  [t | (_, (_, t)) <- moduleImportValues mm]
+
+        -- Update the original import list with the checked types.
+        let ntsImport'
+                = [ (n, (isrc, t')) | (n, (isrc, _)) <- moduleImportValues mm
+                                    | t'             <- tsImport' ]
+
+        -- Build the initial type environment.
+        let tenv' = Env.union tenv 
+                  $ Env.fromList [BName n k | (n, (_, k)) <- ntsImport' ]
+
+        -- TODO: post-check for data kind in Recon mode.
+
+
+        -- Check the sigs of exported types ---------------
+        mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseKind k Recon) 
+                $ Map.elems $ moduleExportTypes mm
+        
+        -- Check the sigs of exported values --------------
+        mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseSpec k Recon) 
+                $ Map.elems $ moduleExportValues mm
                 
+        
         -- Check the locally defined data type definitions.
         defs'        
          <- case checkDataDefs config (moduleDataDefsLocal mm) of
@@ -96,7 +145,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
         let config_data = config { configDataDefs = defs_all }
 
-        -- Check the body of the module.
+        
+        -- Check the body of the module -------------------
         (x', _, _effs, _, ctx) 
                 <- checkExpM 
                         (makeTable config_data kenv_data tenv')
@@ -120,7 +170,9 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         mapM_ (checkBindDefined envDef) $ Map.keys $ moduleExportValues mm
 
         -- Return the checked bindings as they have explicit type annotations.
-        let mm'         = mm { moduleBody = x'' }
+        let mm'         = mm    { moduleImportTypes     = nksImport'
+                                , moduleBody            = x'' }
+
         return mm'
 
 
@@ -184,19 +236,4 @@ checkBindDefined env n
  = case Env.lookup (UName n) env of
         Just _  -> return ()
         _       -> throw $ ErrorExportUndefined n
-
-
--------------------------------------------------------------------------------
--- | Check a type in the exp checking monad.
-checkTypeM :: (Ord n, Show n, Pretty n) 
-           => Config n 
-           -> KindEnv n 
-           -> Universe
-           -> Type n 
-           -> CheckM a n (Type n, Kind n)
-
-checkTypeM !config !kenv !uni !tt
- = case T.checkType config kenv uni tt of
-        Left err        -> throw $ ErrorType err
-        Right k         -> return k
 

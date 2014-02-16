@@ -573,8 +573,9 @@ effectSupported eff ctx
         , elem (ElemType (BNone eff)) (contextElems ctx)
         = Nothing
 
-        | TCon (TyConBound _ _k)                <- eff
-        -- , k == kEffect       -- TODO: spread imported kind to effects
+        -- Abstract global effects are always supported.
+        | TCon (TyConBound _ k)                <- eff
+        , k == kEffect
         = Nothing
 
         | otherwise

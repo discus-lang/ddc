@@ -208,9 +208,9 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
 
              -- The kinds of abstract imported type constructors are in the
              -- global kind environment.
-             | Just s           <- Env.lookupName n env
+             | Just k'          <- Env.lookupName n env
              , UniverseSpec     <- uni
-             -> return (tt, s)
+             -> return (TCon (TyConBound u k'), k')
 
              -- We don't have a type for this constructor.
              | otherwise

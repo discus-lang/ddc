@@ -36,7 +36,7 @@ instance SpreadX (Module a) where
   , moduleImportValues  
         = map (liftSnd $ liftSnd (spreadT kenv))  (moduleImportValues mm)
   
-  , moduleDataDefsLocal = map     (spreadT kenv)  (moduleDataDefsLocal mm)
+  , moduleDataDefsLocal = map    (spreadT kenv)   (moduleDataDefsLocal mm)
   
   , moduleBody          = spreadX kenv tenv (moduleBody mm) }
 
