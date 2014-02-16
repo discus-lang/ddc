@@ -69,6 +69,7 @@ import DDC.Type.Transform.Instantiate
 import DDC.Type.DataDef
 import Data.Maybe
 import Control.Monad
+import qualified Data.Map       as Map
 
 
 ---------------------------------------------------------------------------------------------------
@@ -145,10 +146,20 @@ class Boxing (c :: * -> * -> *) where
 
 
 -- Module -----------------------------------------------------------------------------------------
--- TODO: also apply to imported and exported type sigs.
 instance Boxing Module where
  boxing config mm
   = let 
+        -- Handle boxing in the typex of exported values.
+        exportValues'
+         = Map.fromList
+         $ [(n, boxingT config t)
+                | (n, t)         <- Map.toList $ moduleExportValues mm ]
+
+        -- Handle boxing in the types of imported values.
+        importValues'
+         = [(n, (isrc, boxingT config t)) 
+                | (n, (isrc, t)) <- moduleImportValues mm ]
+
         -- Add locally imported foreign functions to the foreign function detector.
         typeOfForeignName n
          -- The provided config already says this is foreign.
@@ -156,7 +167,7 @@ instance Boxing Module where
 
          -- This is a locally imported C function.
          | Just (ImportSourceSea _, t)
-                        <- lookup n (moduleImportValues mm)  = Just t
+                        <- lookup n importValues'  = Just t
 
          | otherwise
          = Nothing
@@ -168,6 +179,8 @@ instance Boxing Module where
 
         -- Do the boxing transform.
     in  mm  { moduleBody            = boxing config' (moduleBody mm) 
+            , moduleExportValues    = exportValues'
+            , moduleImportValues    = importValues'
             , moduleDataDefsLocal   = map (boxingDataDef config') (moduleDataDefsLocal mm) }
 
 
