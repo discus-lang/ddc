@@ -24,6 +24,7 @@ config  = Config
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
         , configTypeOfLitName           = takeTypeOfLitName
         , configTypeOfPrimOpName        = takeTypeOfPrimOpName 
+        , configTypeOfForeignName       = const Nothing
         , configBoxedOfValue            = boxedOfValue
         , configValueOfBoxed            = valueOfBoxed
         , configBoxedOfUnboxed          = boxedOfUnboxed

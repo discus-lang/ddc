@@ -1,9 +1,8 @@
 
 module Test 
-imports {
-        addInt :: Int# -> Int# -> Int#;
-        minIx :: Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
-} with
+import value addInt :: Int# -> Int# -> Int#;
+import value minIx :: Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+with
 letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
     = /\(k : Rate).

@@ -47,46 +47,6 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          = (vcat $ map pprImportValue importedValues)
          <> line
 
-                
-pprImportType 
-        :: (Pretty n, Eq n)
-        => (n, (ImportSource n, Kind n)) -> Doc
-
-pprImportType (n, (isrc, k))
- = case isrc of
-        ImportSourceModule _mn _nSrc
-         -> text "imports type" 
-                <> ppr n <+> text "::" <+> ppr k <> semi
-
-        ImportSourceAbstract
-         -> text "imports foreign abstract type" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
-
-        ImportSourceSea _var
-         -> text "imports foreign c type" <> line
-         <> indent 8 (ppr n 
-                     <+> text "::" <+> ppr k <> semi)
-
-
-pprImportValue
-        :: (Pretty n, Eq n)
-        => (n, (ImportSource n, Kind n)) -> Doc
-
-pprImportValue (n, (isrc, k))
- = case isrc of
-        ImportSourceModule _mn _nSrc
-         -> text "imports value" 
-                <> ppr n <+> text "::" <+> ppr k <> semi
-
-        ImportSourceAbstract
-         -> text "imports foreign abstract value" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
-
-        ImportSourceSea _var
-         -> text "imports foreign c value" <> line
-         <> indent 8 (ppr n 
-                     <+> text "::" <+> ppr k <> semi)
-
 
 -- Top ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Top a n) where

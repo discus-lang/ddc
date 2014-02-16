@@ -4,8 +4,11 @@
 module DDC.Core.Pretty 
         ( module DDC.Type.Pretty
         , module DDC.Base.Pretty
-
-        , PrettyMode (..))
+        , PrettyMode (..)
+        , pprExportType
+        , pprExportValue
+        , pprImportType
+        , pprImportValue)
 where
 import DDC.Core.Compounds
 import DDC.Core.Predicates
@@ -18,13 +21,13 @@ import Data.List
 import qualified Data.Map.Strict        as Map
 
 
--- ModuleName -----------------------------------------------------------------
+-- ModuleName -------------------------------------------------------------------------------------
 instance Pretty ModuleName where
  ppr (ModuleName parts)
         = text $ intercalate "." parts
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
  data PrettyMode (Module a n)
         = PrettyModeModule
@@ -41,100 +44,113 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
  pprModePrec mode _
         ModuleCore 
         { moduleName            = name
-        , moduleExportTypes     = exportTypes
-        , moduleExportValues    = exportValues
+        , moduleExportTypes     = mExportTypes
+        , moduleExportValues    = mExportValues
         , moduleImportTypes     = importTypes
         , moduleImportValues    = importValues
         , moduleDataDefsLocal   = localData
         , moduleBody            = body }
   = {-# SCC "ppr[Module]" #-}
     let 
-        (lts, _)         = splitXLets body
-
+        (lts, _)                = splitXLets body
+        
         -- Exports --------------------
-        docsExportTypes
-         | not $ Map.null exportTypes
-         , not $ modeModuleSuppressExports mode 
-         = nest 8 $ line 
-         <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, t)      <- Map.toList exportTypes ]
+        exportTypes             = Map.toList mExportTypes
+        exportValues            = Map.toList mExportValues
 
-         | otherwise                    = empty
-         
-        docsExportValues  
-         | not $ Map.null exportValues
-         , not $ modeModuleSuppressExports mode
-         = nest 8 $ line
-         <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
-                  | (n, t)      <- Map.toList exportValues ]
-         
-         | otherwise                    = empty
-         
+        dExportTypes
+         | null $ exportTypes   = empty
+         | otherwise            = (vcat $ map pprExportType exportTypes)   <> line
 
-        docsExports
-         -- If we're suppressing exports, are there are none, 
-         -- then don't display the export block.
-         |  modeModuleSuppressExports mode
-          || (Map.null exportTypes && Map.null exportValues)
-         = empty
-
-         | otherwise
-         = line <> text "exports" <+> lbrace
-                <> docsExportTypes
-                <> docsExportValues
-                <> line <> rbrace <> space
-
+        dExportValues
+         | null $ exportValues  = empty
+         | otherwise            = (vcat $ map pprExportValue exportValues) <> line
 
         -- Imports --------------------
-        docsImportTypes
-         | not $ null importTypes
-         , not $ modeModuleSuppressImports mode
-         = nest 8 $ line 
-         <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- importTypes ]
+        dImportTypes
+         | null $ importTypes   = empty
+         | otherwise            = (vcat $ map pprImportType importTypes)   <> line
 
-         | otherwise                    = empty
-         
-        docsImportValues
-         | not $ null importValues
-         , not $ modeModuleSuppressImports mode
-         = nest 8 $ line
-         <> vcat  [ ppr n       <+> text "::" <+> ppr t <> semi
-                  | (n, (_, t)) <- importValues ]
+        dImportValues
+         | null $ importValues  = empty
+         | otherwise            = (vcat $ map pprImportValue importValues) <> line
 
-         | otherwise                    = empty
-         
-        docsImports
+        docsImportsExports
          -- If we're suppressing imports, or there are none,
          -- then don't display the import block.
          |   modeModuleSuppressImports mode       
           || (null importTypes && null importValues)
-         = empty
-         
-         | otherwise
-         = line <> text "imports" <+> lbrace
-                <> docsImportTypes
-                <> docsImportValues
-                <> line <> rbrace <> space
-
-
+                                = empty
+         | otherwise            
+         = line <> dExportTypes <> dExportValues <> dImportTypes <> dImportValues
+                
         -- Local Data Definitions -----
         docsLocalData
          | null localData = empty
          | otherwise
-         = line
-         <> vsep  (map ppr localData)
+         = line <> vsep  (map ppr localData)
                   
         pprLts = pprModePrec (modeModuleLets mode) 0
 
     in  text "module" <+> ppr name 
-         <+> docsExports
-         <>  docsImports
+         <+> docsImportsExports
          <>  docsLocalData
          <>  text "with" <$$> (vcat $ map pprLts lts)
 
 
--- DataDef --------------------------------------------------------------------
+-- Exports ----------------------------------------------------------------------------------------
+-- | Pretty print an exported type definition.
+pprExportType :: (Pretty n, Eq n) => (n, Kind n) -> Doc
+pprExportType (n, k)
+ =      text "export type"  <+> ppr n <+> text "::" <+> ppr k <> semi
+
+
+-- | Pretty print an exported value definition.
+pprExportValue :: (Pretty n, Eq n) => (n, Type n) -> Doc
+pprExportValue (n, k)
+ =      text "export value" <+> ppr n <+> text "::" <+> ppr k <> semi
+
+
+-- Imports ----------------------------------------------------------------------------------------
+-- | Pretty print an imported type definition.                
+pprImportType 
+        :: (Pretty n, Eq n)
+        => (n, (ImportSource n, Kind n)) -> Doc
+
+pprImportType (n, (isrc, k))
+ = case isrc of
+        ImportSourceModule _mn _nSrc
+         -> text "import type" <+> ppr n <+> text "::" <+> ppr k <> semi
+
+        ImportSourceAbstract
+         -> text "import foreign abstract type" <> line
+         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+
+        ImportSourceSea _var
+         -> text "import foreign c type" <> line
+         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+
+
+-- Pretty print an imported value definition.
+pprImportValue
+        :: (Pretty n, Eq n)
+        => (n, (ImportSource n, Kind n)) -> Doc
+
+pprImportValue (n, (isrc, k))
+ = case isrc of
+        ImportSourceModule _mn _nSrc
+         -> text "import value" <+> ppr n <+> text "::" <+> ppr k <> semi
+
+        ImportSourceAbstract
+         -> text "import foreign abstract value" <> line
+         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+
+        ImportSourceSea _var
+         -> text "import foreign c value" <> line
+         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+
+
+-- DataDef ----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DataDef n) where
  pprPrec _ def
   = {-# SCC "ppr[DataDef]" #-}
@@ -155,7 +171,7 @@ instance (Pretty n, Eq n) => Pretty (DataDef n) where
   <> line
 
 
--- DataCtor -------------------------------------------------------------------
+-- DataCtor ---------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DataCtor n) where
  pprPrec _ ctor
         =   ppr (dataCtorName ctor)
@@ -166,7 +182,7 @@ instance (Pretty n, Eq n) => Pretty (DataCtor n) where
                         ++ [dataCtorResultType ctor])))
   
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  data PrettyMode (Exp a n)
         = PrettyModeExp
@@ -282,7 +298,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XWitness _ w    -> text "<" <> ppr w <> text ">"
 
 
--- Pat ------------------------------------------------------------------------
+-- Pat --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Pat n) where
  ppr pp
   = case pp of
@@ -298,7 +314,7 @@ pprPatBind b
         | otherwise             = parens $ ppr b
 
 
--- Alt ------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
  data PrettyMode (Alt a n)
         = PrettyModeAlt
@@ -313,7 +329,7 @@ instance (Pretty n, Eq n) => Pretty (Alt a n) where
     in  ppr p <+> nest 1 (line <> nest 3 (text "->" <+> pprX x))
 
 
--- DaCon ----------------------------------------------------------------------
+-- DaCon ------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DaCon n) where
  ppr dc
   = case dc of
@@ -322,7 +338,7 @@ instance (Pretty n, Eq n) => Pretty (DaCon n) where
         DaConBound n    -> ppr n
 
 
--- Cast -----------------------------------------------------------------------
+-- Cast -------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Cast a n) where
  ppr cc
   = case cc of
@@ -347,7 +363,7 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
          -> text "run"
 
 
--- Lets -----------------------------------------------------------------------
+-- Lets -------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  data PrettyMode (Lets a n)
         = PrettyModeLets
@@ -425,7 +441,7 @@ pprWitBind b
         _       -> ppr b
 
 
--- Witness --------------------------------------------------------------------
+-- Witness ----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Witness a n) where
  pprPrec d ww
   = case ww of
@@ -458,7 +474,7 @@ instance Pretty WbCon where
         WbConAlloc      -> text "alloc"
 
 
--- Binder ---------------------------------------------------------------------
+-- Binder -----------------------------------------------------------------------------------------
 pprBinder   :: Pretty n => Binder n -> Doc
 pprBinder bb
  = case bb of
@@ -478,7 +494,7 @@ pprBinderGroup lam (rs, t)
         <> dot
 
 
--- Utils ----------------------------------------------------------------------
+-- Utils ------------------------------------------------------------------------------------------
 breakWhen :: Bool -> Doc
 breakWhen True   = line
 breakWhen False  = space

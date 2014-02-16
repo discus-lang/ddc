@@ -71,6 +71,7 @@ import Data.Maybe
 import Control.Monad
 
 
+---------------------------------------------------------------------------------------------------
 -- | Representation of the values of some type.
 data Rep
         -- | Values of this type cannot be directly represented in the target
@@ -113,6 +114,10 @@ data Config a n
           --   The primops can be polytypic, but must have prenex rank-1 types.
         , configTypeOfPrimOpName :: n -> Maybe (Type n) 
 
+          -- | Take the type of a foreign function name, if it is one.
+          --   The function can be polymorphic, but must have a prenex rank-1 type.
+        , configTypeOfForeignName :: n -> Maybe (Type n)
+
           -- | Wrap a value of the given index type.
           --   This will only be passed types where typeNeedsBoxing returns True.
         , configBoxedOfValue    :: a -> Exp a n -> Type n -> Maybe (Exp a n) 
@@ -130,6 +135,7 @@ data Config a n
         , configUnboxedOfBoxed  :: a -> Exp a n -> Type n -> Maybe (Exp a n) }
 
 
+---------------------------------------------------------------------------------------------------
 class Boxing (c :: * -> * -> *) where
  -- | Rewrite a module to use explitit boxed and unboxed types.
  boxing :: Ord n
@@ -138,13 +144,34 @@ class Boxing (c :: * -> * -> *) where
         -> c a n
 
 
+-- Module -----------------------------------------------------------------------------------------
 -- TODO: also apply to imported and exported type sigs.
 instance Boxing Module where
  boxing config mm
-  = mm  { moduleBody            = boxing config (moduleBody mm) 
-        , moduleDataDefsLocal   = map (boxingDataDef config) (moduleDataDefsLocal mm) }
+  = let 
+        -- Add locally imported foreign functions to the foreign function detector.
+        typeOfForeignName n
+         -- The provided config already says this is foreign.
+         | Just t       <- configTypeOfForeignName config n  = Just t
+
+         -- This is a locally imported C function.
+         | Just (ImportSourceSea _, t)
+                        <- lookup n (moduleImportValues mm)  = Just t
+
+         | otherwise
+         = Nothing
+
+        -- Use our new foreign function detector in the config.
+        config'
+         = config
+         { configTypeOfForeignName  = typeOfForeignName }
+
+        -- Do the boxing transform.
+    in  mm  { moduleBody            = boxing config' (moduleBody mm) 
+            , moduleDataDefsLocal   = map (boxingDataDef config') (moduleDataDefsLocal mm) }
 
 
+-- Exp --------------------------------------------------------------------------------------------
 instance Boxing Exp where
  boxing config xx
   = let down = boxing config
@@ -163,13 +190,11 @@ instance Boxing Exp where
         XApp a _ _
          -- Split the application of a primop into its name and arguments.
          -- The arguments here include type arguments as well.
-         | Just (n, xsArgsAll)  <- takeXPrimApps xx
-         , Just (xFn, _)        <- takeXApps     xx
-         , configNameIsUnboxedOp config n
+         | Just (xFn, tPrim, xsArgsAll) 
+                <- splitUnboxedOpApp config xx
 
-           -- Instantiate the type of the primop to work out which arguments
+           -- Instantiate the type to work out which arguments
            -- need to be unboxed, and which we can leave as-is.
-         , Just tPrim           <- configTypeOfPrimOpName config n
          , (asArgs, tsArgs)     <- unzip $ [(a', t) | XType a' t <- xsArgsAll]
          , Just tsArgsUnboxed   <- sequence $ map (configTakeTypeUnboxed config) tsArgs
          , xsArgs               <- drop (length tsArgs) xsArgsAll
@@ -220,6 +245,34 @@ instance Boxing Exp where
         XWitness{}      -> xx
 
 
+-- | If this is an application of some primitive operator or foreign function that 
+--   works on unboxed values then split it into the function and arguments.
+--
+--   The arguments returned include type arguments as well.
+splitUnboxedOpApp
+        :: Config a n
+        -> Exp a n 
+        -> Maybe (Exp a n, Type n, [Exp a n])
+
+splitUnboxedOpApp config xx
+ = case xx of
+        XApp{}
+         | Just (n, xsArgsAll)  <- takeXPrimApps xx
+         , Just (xFn, _)        <- takeXApps     xx
+         , configNameIsUnboxedOp config n
+         , Just tPrim           <- configTypeOfPrimOpName config n
+         -> Just (xFn, tPrim, xsArgsAll)
+
+        XApp{}
+         | Just (xFn@(XVar _ (UName n)), xsArgsAll)
+                                <- takeXApps xx
+         , Just tForeign        <- configTypeOfForeignName config n
+         -> Just (xFn, tForeign, xsArgsAll)
+
+        _ -> Nothing
+
+
+-- Lets -------------------------------------------------------------------------------------------
 instance Boxing Lets where
  boxing config lts
   = let down    = boxing config
@@ -238,6 +291,7 @@ instance Boxing Lets where
         LWithRegion{}   -> lts
 
 
+-- Alt --------------------------------------------------------------------------------------------
 instance Boxing Alt where
  boxing config alt
   = case alt of
@@ -248,6 +302,7 @@ instance Boxing Alt where
          -> AAlt (PData dc (map (boxingB config) bs)) (boxing config x)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Manage boxing in a Bind.
 boxingB :: Config a n -> Bind n -> Bind n
 boxingB config bb

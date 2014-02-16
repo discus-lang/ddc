@@ -2,13 +2,10 @@ ok
 
 -- Load a module definition.
 module Main 
-exports {
-        double :: Nat# -> Nat#;
-        main :: Unit -> Unit;
-} 
-imports {
-        two :: Unit -> Nat#;
-} with
+export value double :: Nat# -> Nat#;
+export value main :: Unit -> Unit;
+import value two :: Unit -> Nat#;
+with
 private rt with {w1 : Const rt; w2 : Lazy rt}
 let one : Nat# = 1#
 letrec {
@@ -29,13 +26,10 @@ letrec {
 
 -- Load the same module using the offside rule.
 module Main 
-exports {
-        double :: Nat# -> Nat#;
-        main :: Unit -> Unit;
-} 
-imports {
-        two :: Unit -> Nat#;
-} with
+export value double :: Nat# -> Nat#;
+export value main :: Unit -> Unit;
+import value two :: Unit -> Nat#;
+with
 private rt with {w1 : Const rt; w2 : Lazy rt}
 let one : Nat# = 1#
 letrec {
