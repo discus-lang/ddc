@@ -167,7 +167,7 @@ instance Boxing Module where
          | Just t       <- configTypeOfForeignName config n  = Just t
 
          -- This is a locally imported C function.
-         | Just (ImportSourceSea _, t)
+         | Just (ImportSourceSea _ t)
                         <- lookup n (moduleImportValues mm)  = Just t
 
          | otherwise
@@ -188,22 +188,22 @@ instance Boxing Module where
 --  | Manage boxing in the type of an imported value.
 boxingImportValue 
         :: Config a n
-        => (n, (ImportSource n, Type n))
-        -> (n, (ImportSource n, Type n))
+        => (n, ImportSource n)
+        -> (n, ImportSource n)
 
-boxingImportValue config (n, (isrc, t))
+boxingImportValue config (n, isrc)
  = case isrc of
         -- This shouldn't happen for values, but just pass it through.
-        ImportSourceAbstract    
-         -> (n, (isrc, t))
+        ImportSourceAbstract _
+         -> (n, isrc)
 
         -- Function imported from a DDC compiled module.
-        ImportSourceModule{}
-         -> (n, (isrc, boxingT config t))
+        ImportSourceModule mn n' t
+         -> (n, ImportSourceModule mn n' (boxingT config t))
 
         -- Value imported using the standard C calling convention.
-        ImportSourceSea{}
-         -> (n, (isrc, boxingSeaT config t))
+        ImportSourceSea str t
+         -> (n, ImportSourceSea str (boxingSeaT config t))
 
 
 -- Exp --------------------------------------------------------------------------------------------

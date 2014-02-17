@@ -75,7 +75,8 @@ class Complies (c :: * -> * -> *) where
 
 instance Complies Module where
  compliesX profile kenv tenv context mm
-  = do  let bs          = [ BName n t | (n, (_, t)) <- moduleImportValues mm ]
+  = do  let bs          = [ BName n (typeOfImportSource isrc) 
+                                | (n, isrc) <- moduleImportValues mm ]
         let tenv'       = Env.extends bs tenv
         compliesX profile kenv tenv' context (moduleBody mm)
 

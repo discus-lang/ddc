@@ -90,7 +90,8 @@ convertM pp runConfig defs kenv tenv mm
                 $  moduleImportValues mm
 
         -- Convert the body of the module to Salt.
-        let ntsImports  = [(BName n t) | (n, (_, t)) <- moduleImportTypes mm]
+        let ntsImports  = [BName n (typeOfImportSource isrc) 
+                                | (n, isrc) <- moduleImportTypes mm]
         let tenv'       = Env.extends ntsImports tenv
         x1              <- convertExpX ExpTop pp defs kenv tenv' $ moduleBody mm
 
@@ -143,14 +144,13 @@ convertExportM (n, t)
 
 -- | Convert an import spec.
 convertImportM
-        :: (L.Name, (ImportSource L.Name, Type L.Name))
-        -> ConvertM a (S.Name, (ImportSource S.Name, Type S.Name))
+        :: (L.Name, ImportSource L.Name)
+        -> ConvertM a (S.Name, ImportSource S.Name)
 
-convertImportM (n, (isrc, t))
+convertImportM (n, isrc)
  = do   n'      <- convertBindNameM n
         isrc'   <- convertImportSourceM isrc
-        t'      <- convertT Env.empty t
-        return  (n', (isrc', t'))
+        return  (n', isrc')
 
 
 -- | Convert an import source specifier.
@@ -160,15 +160,18 @@ convertImportSourceM
 
 convertImportSourceM isrc
  = case isrc of
-        ImportSourceAbstract
-         ->     return ImportSourceAbstract
+        ImportSourceAbstract t
+         -> do  t'      <- convertT Env.empty t
+                return $ ImportSourceAbstract t'
 
-        ImportSourceModule mn n 
-         -> do  n'      <- convertBindNameM n
-                return  $ ImportSourceModule mn n'
+        ImportSourceModule mn n t
+         -> do  t'      <- convertT Env.empty t
+                n'      <- convertBindNameM n
+                return  $ ImportSourceModule mn n' t'
 
-        ImportSourceSea str
-         ->     return $ ImportSourceSea str
+        ImportSourceSea str t
+         -> do  t'      <- convertT Env.empty t
+                return $ ImportSourceSea str t'
 
 
 -- Exp -------------------------------------------------------------------------

@@ -92,7 +92,7 @@ pTypeSig c
 -- | Parse the type signature of an imported variable.
 pImportTypeSpec 
         :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, (ImportSource n, Kind n))
+        => Context -> Parser n (n, ImportSource n)
 
 pImportTypeSpec c
  =   pTok KType
@@ -100,21 +100,21 @@ pImportTypeSpec c
  [ do   n       <- pName
         pTok KColonColon
         k       <- pType c
-        return  (n, (ImportSourceModule (ModuleName []) n, k))
+        return  (n, ImportSourceModule (ModuleName []) n k)
  ]
 
 
 -- | Parse the type signature of an imported variable.
 pImportValueSpec 
         :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, (ImportSource n, Type n))
+        => Context -> Parser n (n, ImportSource n)
 
 pImportValueSpec c
  = P.choice
  [ do   n       <- pName
         pTok KColonColon
         t       <- pType c
-        return  (n, (ImportSourceModule (ModuleName []) n, t))
+        return  (n, ImportSourceModule (ModuleName []) n t)
  ]        
 
 

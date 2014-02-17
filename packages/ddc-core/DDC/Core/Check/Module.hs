@@ -69,7 +69,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Build the initial kind environment.
         let kenv'       = Env.union kenv 
-                        $ Env.fromList [BName n k | (n, (_, k)) <- nksImport']
+                        $ Env.fromList  [ BName n (typeOfImportSource isrc)
+                                                | (n, isrc) <- nksImport' ]
 
 
         -- Check types of imported values -----------------
@@ -77,7 +78,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         
         -- Build the initial type environment.
         let tenv'       = Env.union tenv 
-                        $ Env.fromList [BName n k | (n, (_, k)) <- ntsImport' ]
+                        $ Env.fromList  [ BName n (typeOfImportSource isrc)
+                                                | (n, isrc) <- ntsImport' ]
 
 
         -- Check the sigs of exported types ---------------
@@ -142,8 +144,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n -> Mode n
-        -> [(n, (ImportSource n, Kind n))]
-        -> CheckM a n [(n, (ImportSource n, Kind n))]
+        -> [(n, ImportSource n)]
+        -> CheckM a n [(n, ImportSource n)]
 
 checkImportTypes config mode nksImport
  = do
@@ -158,12 +160,13 @@ checkImportTypes config mode nksImport
                 <- liftM unzip3 
                 $  mapM (\k -> checkTypeM config Env.empty emptyContext UniverseKind 
                                           k modeCheckImportTypes) 
-                $  [k | (_, (_, k)) <- nksImport]
+                $  [typeOfImportSource isrc | (_, isrc) <- nksImport]
         
         -- Update the original import list with the checked kinds.
         let nksImport'
-                  = [ (n, (isrc, k')) | (n, (isrc, _)) <- nksImport
-                                      | k'             <- ksImport' ]
+                = [ (n, mapTypeOfImportSource (const k') isrc)
+                                | (n, isrc)     <- nksImport
+                                | k'            <- ksImport' ]
         return nksImport'
 
 
@@ -172,8 +175,8 @@ checkImportTypes config mode nksImport
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n -> KindEnv n -> Mode n
-        -> [(n, (ImportSource n, Type n))]
-        -> CheckM a n [(n, (ImportSource n, Type n))]
+        -> [(n, ImportSource n)]
+        -> CheckM a n [(n, ImportSource n)]
 
 checkImportValues config kenv mode ntsImport
  = do
@@ -188,12 +191,13 @@ checkImportValues config kenv mode ntsImport
                 <- liftM unzip3
                 $  mapM (\t -> checkTypeM config kenv emptyContext UniverseSpec
                                           t modeCheckImportTypes)
-                $  [t | (_, (_, t)) <- ntsImport]
+                $  map (typeOfImportSource . snd) ntsImport
 
         -- Update the original import list with the checked types.
         let ntsImport'
-                = [ (n, (isrc, t')) | (n, (isrc, _)) <- ntsImport
-                                    | t'             <- tsImport' ]
+                = [ (n, mapTypeOfImportSource (const t') isrc) 
+                        | (n, isrc)     <- ntsImport
+                        | t'            <- tsImport' ]
 
         -- TODO: post-check for data kind in Recon mode.
 

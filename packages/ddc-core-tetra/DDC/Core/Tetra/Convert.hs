@@ -96,7 +96,8 @@ convertM pp runConfig defs kenv tenv mm
 
         -- Convert the body of the module to Salt.
         let ntsImports  
-                   = [(BName n t) | (n, (_, t)) <- moduleImportValues mm]
+                   = [BName n (typeOfImportSource src) 
+                        | (n, src) <- moduleImportValues mm]
         let tenv'  = Env.extends ntsImports tenv
         
         let defs'  = unionDataDefs defs
@@ -161,14 +162,13 @@ convertExportM (n, t)
 
 -- | Convert an import spec.
 convertImportM
-        :: (E.Name, (ImportSource E.Name, Type E.Name))
-        -> ConvertM a (A.Name, (ImportSource A.Name, Type A.Name))
+        :: (E.Name, ImportSource E.Name)
+        -> ConvertM a (A.Name, ImportSource A.Name)
 
-convertImportM (n, (isrc, t))
+convertImportM (n, isrc)
  = do   n'      <- convertImportNameM n
         isrc'   <- convertImportSourceM isrc
-        t'      <- convertRepableT Env.empty t
-        return  (n', (isrc', t'))
+        return  (n', isrc')
 
 
 -- | Convert an imported name.
@@ -189,15 +189,18 @@ convertImportSourceM
 
 convertImportSourceM isrc
  = case isrc of
-        ImportSourceAbstract
-         ->     return ImportSourceAbstract
+        ImportSourceAbstract t
+         -> do  t'      <- convertRepableT Env.empty t
+                return $ ImportSourceAbstract t'
 
-        ImportSourceModule mn n
+        ImportSourceModule mn n t
          -> do  n'      <- convertBindNameM n
-                return  $ ImportSourceModule mn n'
+                t'      <- convertRepableT Env.empty t
+                return  $ ImportSourceModule mn n' t'
 
-        ImportSourceSea str
-         ->     return  $ ImportSourceSea str
+        ImportSourceSea str t
+         -> do  t'      <- convertRepableT Env.empty t 
+                return  $ ImportSourceSea str t'
 
 
 -- Exp -------------------------------------------------------------------------

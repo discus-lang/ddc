@@ -47,16 +47,16 @@ data Config
 
 
 -- | Kind signatures for runtime types that we use when converting to Salt.
-runtimeImportKinds :: Map Name (ImportSource Name, Kind Name)
+runtimeImportKinds :: Map Name (ImportSource Name)
 runtimeImportKinds
  = Map.fromList
    [ rn ukTop ]
- where   rn (UName n, t)  = (n, (ImportSourceModule (ModuleName ["Runtime"]) n, t))
+ where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t)
          rn _   = error "runtimeImportKinds: all runtime bindings must be named."
 
 
 -- | Type signatures for runtime funtions that we use when converting to Salt.
-runtimeImportTypes :: Map Name (ImportSource Name, Type Name)
+runtimeImportTypes :: Map Name (ImportSource Name)
 runtimeImportTypes
  = Map.fromList 
    [ rn utGetTag
@@ -65,7 +65,7 @@ runtimeImportTypes
    , rn utSetFieldOfBoxed
    , rn utAllocRawSmall
    , rn utPayloadOfRawSmall ]
- where   rn (UName n, t)  = (n, (ImportSourceModule (ModuleName ["Runtime"]) n, t))
+ where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t)
          rn _   = error "runtimeImportTypes: all runtime bindings must be named."
 
 

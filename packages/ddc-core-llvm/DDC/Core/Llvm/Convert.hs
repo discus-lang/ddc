@@ -91,8 +91,9 @@ convModuleM mm@(C.ModuleCore{})
         -- Forward declarations for imported functions.
         let Just importDecls 
                 = sequence
-                $ [ importedFunctionDeclOfType platform kenv External n t
-                  | (n, t)   <- map snd $ C.moduleImportValues mm ]
+                $ [ importedFunctionDeclOfType platform kenv External 
+                        src (C.typeOfImportSource src)
+                  | (_, src)    <- C.moduleImportValues mm ]
 
         -- Add RTS def -------------------------------------------------
         -- If this is the main module then we need to declare

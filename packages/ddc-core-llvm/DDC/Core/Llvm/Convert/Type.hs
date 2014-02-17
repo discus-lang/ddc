@@ -121,7 +121,7 @@ importedFunctionDeclOfType
         -> Maybe FunctionDecl
 
 importedFunctionDeclOfType pp kenv linkage isrc tt
- | C.ImportSourceModule _ (NameVar n) <- isrc
+ | C.ImportSourceModule _ (NameVar n) _ <- isrc
  = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
@@ -133,7 +133,7 @@ importedFunctionDeclOfType pp kenv linkage isrc tt
              , declParams         = map mkParam tsArgs
              , declAlign          = AlignBytes (platformAlignBytes pp) }
 
- | C.ImportSourceSea n  <- isrc
+ | C.ImportSourceSea n _ <- isrc
  = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl

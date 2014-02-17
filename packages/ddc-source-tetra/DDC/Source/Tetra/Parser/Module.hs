@@ -60,16 +60,10 @@ pModule c
                 { moduleName            = name
                 , moduleExportTypes     = []
                 , moduleExportValues    = tExports
-                
                 , moduleImportModules   = []
-                
-                , moduleImportTypes
-                        = [(n, (s, k)) | ImportType  n s k <- tImports]
-
-                , moduleImportValues
-                        = [(n, (s, t)) | ImportValue n s t <- tImports]
-                
-                , moduleTops                    = tops }
+                , moduleImportTypes     = [(n, s) | ImportType  n s  <- tImports]
+                , moduleImportValues    = [(n, s) | ImportValue n s  <- tImports]
+                , moduleTops            = tops }
 
 
 -- | Parse a type signature.
@@ -87,8 +81,8 @@ pTypeSig c
 -------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
 data ImportSpec n
-        = ImportType    n (ImportSource n) (Kind n)
-        | ImportValue   n (ImportSource n) (Type n)
+        = ImportType    n (ImportSource n)
+        | ImportValue   n (ImportSource n)
         
 
 -- | Parse some import specs.
@@ -129,7 +123,7 @@ pImportType c src
         = do    n       <- pName
                 pTok KColonColon
                 k       <- pType c
-                return  (ImportType n ImportSourceAbstract k)
+                return  (ImportType n (ImportSourceAbstract k))
 
         | otherwise
         = P.unexpected "import mode for foreign type"
@@ -148,7 +142,7 @@ pImportValue c src
                 -- TODO: allow def of foreign symbol
                 let symbol = renderIndent (ppr n)
 
-                return  (ImportValue n (ImportSourceSea symbol) k)
+                return  (ImportValue n (ImportSourceSea symbol k))
 
         | otherwise
         = P.unexpected "import mode for foreign value"

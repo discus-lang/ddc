@@ -66,7 +66,7 @@ convFunctionTypeM kenv isrc tFunc
 
  | otherwise
  = case isrc of
-    ImportSourceModule _mn n
+    ImportSourceModule _mn n _
      -> do
         let nFun'        = text $ sanitizeGlobal (renderPlain $ ppr n)
 

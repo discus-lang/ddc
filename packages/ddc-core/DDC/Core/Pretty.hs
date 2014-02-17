@@ -115,18 +115,18 @@ pprExportValue (n, k)
 -- | Pretty print an imported type definition.                
 pprImportType 
         :: (Pretty n, Eq n)
-        => (n, (ImportSource n, Kind n)) -> Doc
+        => (n, ImportSource n) -> Doc
 
-pprImportType (n, (isrc, k))
+pprImportType (n, isrc)
  = case isrc of
-        ImportSourceModule _mn _nSrc
+        ImportSourceModule _mn _nSrc k
          -> text "import type" <+> ppr n <+> text "::" <+> ppr k <> semi
 
-        ImportSourceAbstract
+        ImportSourceAbstract k
          -> text "import foreign abstract type" <> line
          <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
 
-        ImportSourceSea _var
+        ImportSourceSea _var k
          -> text "import foreign c type" <> line
          <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
 
@@ -134,20 +134,20 @@ pprImportType (n, (isrc, k))
 -- Pretty print an imported value definition.
 pprImportValue
         :: (Pretty n, Eq n)
-        => (n, (ImportSource n, Kind n)) -> Doc
+        => (n, ImportSource n) -> Doc
 
-pprImportValue (n, (isrc, k))
+pprImportValue (n, isrc)
  = case isrc of
-        ImportSourceModule _mn _nSrc
-         -> text "import value" <+> ppr n <+> text "::" <+> ppr k <> semi
+        ImportSourceModule _mn _nSrc t
+         -> text "import value" <+> ppr n <+> text "::" <+> ppr t <> semi
 
-        ImportSourceAbstract
+        ImportSourceAbstract t
          -> text "import foreign abstract value" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+         <> indent 8 (ppr n <+> text "::" <+> ppr t <> semi)
 
-        ImportSourceSea _var
+        ImportSourceSea _var t
          -> text "import foreign c value" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+         <> indent 8 (ppr n <+> text "::" <+> ppr t <> semi)
 
 
 -- DataDef ----------------------------------------------------------------------------------------

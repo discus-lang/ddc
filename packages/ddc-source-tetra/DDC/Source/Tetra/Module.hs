@@ -45,10 +45,10 @@ data Module a n
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     :: [(n, (ImportSource n, Kind n))]
+        , moduleImportTypes     :: [(n, ImportSource n)]
 
           -- | Types of imported foreign values.
-        , moduleImportValues    :: [(n, (ImportSource n, Type n))]
+        , moduleImportValues    :: [(n, ImportSource n)]
 
           -- Local ------------------------------
           -- | Top-level things

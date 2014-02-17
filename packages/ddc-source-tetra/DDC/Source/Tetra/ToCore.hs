@@ -46,16 +46,16 @@ toCoreModule a mm
         , C.moduleExportValues  = Map.empty
         
         , C.moduleImportTypes   
-                = [ (toCoreN n, (toCoreImportSource iSrc, toCoreT k))
-                        | (n, (iSrc, k)) <- S.moduleImportTypes mm ]
+                = [ (toCoreN n, toCoreImportSource isrc)
+                        | (n, isrc) <- S.moduleImportTypes mm ]
 
         , C.moduleImportValues  
-                = [ (toCoreN n, (toCoreImportSource iSrc, toCoreT t))
-                        | (n, (iSrc, t)) <- S.moduleImportValues mm ]
+                = [ (toCoreN n, toCoreImportSource isrc)
+                        | (n, isrc) <- S.moduleImportValues mm ]
         
         , C.moduleDataDefsLocal 
                 = [ toCoreDataDef def
-                  | S.TopData _ def <- S.moduleTops mm ]
+                        | S.TopData _ def <- S.moduleTops mm ]
 
         , C.moduleBody          
                 = C.XLet  a (letsOfTops (S.moduleTops mm))
@@ -83,9 +83,14 @@ bindOfTop _     = Nothing
 toCoreImportSource :: ImportSource S.Name -> ImportSource C.Name
 toCoreImportSource src
  = case src of
-        ImportSourceAbstract    -> ImportSourceAbstract
-        ImportSourceModule mn n -> ImportSourceModule mn (toCoreN n)
-        ImportSourceSea v       -> ImportSourceSea v
+        ImportSourceAbstract t    
+         -> ImportSourceAbstract (toCoreT t)
+
+        ImportSourceModule mn n t 
+         -> ImportSourceModule mn (toCoreN n) (toCoreT t)
+
+        ImportSourceSea v t      
+         -> ImportSourceSea v (toCoreT t)
 
 
 -- Type -----------------------------------------------------------------------

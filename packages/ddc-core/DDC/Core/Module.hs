@@ -19,7 +19,9 @@ module DDC.Core.Module
         , isMainModuleName
 
         -- * Import Sources
-        , ImportSource  (..))
+        , ImportSource  (..)
+        , typeOfImportSource
+        , mapTypeOfImportSource)
 where
 import DDC.Core.Exp
 import DDC.Type.DataDef
@@ -51,11 +53,11 @@ data Module a n
           -- Imports ------------------
           -- | Kinds of imported types,  along with the name of the module they are from.
           --   These imports come from a Disciple module, that we've compiled ourself.
-        , moduleImportTypes             :: ![(n, (ImportSource n, Kind n))]
+        , moduleImportTypes             :: ![(n, ImportSource n)]
 
           -- | Types of imported values, along with the name of the module they are from.
           --   These imports come from a Disciple module, that we've compiled ourself.
-        , moduleImportValues            :: ![(n, (ImportSource n, Type n))]
+        , moduleImportValues            :: ![(n, ImportSource n)]
 
           -- Local --------------------
           -- | Data types defined in this module.
@@ -92,7 +94,7 @@ isMainModule mm
 moduleKindEnv :: Ord n => Module a n -> KindEnv n
 moduleKindEnv mm
         = Env.fromList 
-        $ [BName n k | (n, (_, k)) <- moduleImportTypes mm]
+        $ [BName n (typeOfImportSource isrc) | (n, isrc) <- moduleImportTypes mm]
 
 
 -- | Get the top-level type environment of a module,
@@ -100,7 +102,7 @@ moduleKindEnv mm
 moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
         = Env.fromList 
-        $ [BName n k | (n, (_, k)) <- moduleImportValues mm]
+        $ [BName n (typeOfImportSource isrc) | (n, isrc) <- moduleImportValues mm]
 
 
 -- | Get the set of top-level value bindings in a module.
@@ -182,21 +184,44 @@ data ImportSource n
         --   It may be defined in a foreign language, but the Disciple program
         --   treats it abstractly.
         = ImportSourceAbstract
+        { importSourceAbstractType      :: Type n }
 
         -- | Something imported from a Disciple module that we compiled ourself.
         | ImportSourceModule
         { importSourceModuleName        :: ModuleName 
-        , importSourceModuleVar         :: n }
+        , importSourceModuleVar         :: n 
+        , importSourceModuleType        :: Type n }
 
         -- | Something imported via the C calling convention.
         | ImportSourceSea
-        { importSourceSeaVar            :: String }
+        { importSourceSeaVar            :: String 
+        , importSourceSeaType           :: Type n }
         deriving (Show, Eq)
+
 
 instance NFData n => NFData (ImportSource n) where
  rnf is
   = case is of
-        ImportSourceAbstract    -> ()
-        ImportSourceModule mn n -> rnf mn `seq` rnf n
-        ImportSourceSea v       -> rnf v
+        ImportSourceAbstract t          -> rnf t
+        ImportSourceModule mn n t       -> rnf mn `seq` rnf n `seq` rnf t
+        ImportSourceSea v t             -> rnf v  `seq` rnf t
+
+
+-- | Take the type of an imported thing.
+typeOfImportSource :: ImportSource n -> Type n
+typeOfImportSource src
+ = case src of
+        ImportSourceAbstract   t        -> t
+        ImportSourceModule _ _ t        -> t
+        ImportSourceSea      _ t        -> t
+
+
+-- | Apply a function to the type in an ImportSource.
+mapTypeOfImportSource :: (Type n -> Type n) -> ImportSource n -> ImportSource n
+mapTypeOfImportSource f isrc
+ = case isrc of
+        ImportSourceAbstract  t         -> ImportSourceAbstract (f t)
+        ImportSourceModule mn n t       -> ImportSourceModule mn n (f t)
+        ImportSourceSea s t             -> ImportSourceSea s (f t)
+
 
