@@ -14,7 +14,6 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.DataDef               as C
 
 import qualified DDC.Type.Sum                   as Sum
-import qualified Data.Map                       as Map
 import Data.Maybe
 
 -- Things shared between both Source and Core languages.
@@ -42,8 +41,8 @@ toCoreModule :: a -> S.Module a S.Name -> C.Module a C.Name
 toCoreModule a mm
         = C.ModuleCore
         { C.moduleName          = S.moduleName mm
-        , C.moduleExportTypes   = Map.empty
-        , C.moduleExportValues  = Map.empty
+        , C.moduleExportTypes   = []
+        , C.moduleExportValues  = []
         
         , C.moduleImportTypes   
                 = [ (toCoreN n, toCoreImportSource isrc)

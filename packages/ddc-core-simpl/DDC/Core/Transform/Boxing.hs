@@ -69,7 +69,6 @@ import DDC.Type.Transform.Instantiate
 import DDC.Type.DataDef
 import Data.Maybe
 import Control.Monad
-import qualified Data.Map       as Map
 
 
 ---------------------------------------------------------------------------------------------------
@@ -151,10 +150,8 @@ instance Boxing Module where
   = let 
         -- Handle boxing in the types of exported values.
         exportValues'
-         = Map.fromList
-         $ [(n, boxingT config t)
-                | (n, t)         <- Map.toList $ moduleExportValues mm ]
-
+         = map (boxingExportValue config) $ moduleExportValues mm
+         
         -- Handle boxing in the types of imported values.
         importValues'
          = map (boxingImportValue config) $ moduleImportValues mm
@@ -185,7 +182,22 @@ instance Boxing Module where
             , moduleDataDefsLocal   = map (boxingDataDef config') (moduleDataDefsLocal mm) }
 
 
---  | Manage boxing in the type of an imported value.
+-- | Manage boxing in the type of an exported value.
+boxingExportValue
+        :: Config a n
+        -> (n, ExportSource n)
+        -> (n, ExportSource n)
+
+boxingExportValue config (n, esrc)
+ = case esrc of
+        ExportSourceLocal n' t
+         -> (n, ExportSourceLocal n' (boxingT config t))
+
+        ExportSourceLocalNoType{}
+         -> (n, esrc)
+
+
+-- | Manage boxing in the type of an imported value.
 boxingImportValue 
         :: Config a n
         => (n, ImportSource n)

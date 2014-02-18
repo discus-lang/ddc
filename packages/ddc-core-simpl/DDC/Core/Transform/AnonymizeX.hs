@@ -12,7 +12,7 @@ import DDC.Type.Compounds
 import Data.List
 import Data.Set                         (Set)
 import qualified Data.Set               as Set
-import qualified Data.Map               as Map
+
 
 -- | Rewrite all binders in a thing to anonymous form.
 anonymizeX :: (Ord n, AnonymizeX c) => c n -> c n
@@ -41,7 +41,7 @@ instance AnonymizeX (Module a) where
         -- because the export list can't deal with anonymous binders.
         keep'   = Set.union keep
                         $ Set.fromList
-                        $ Map.keys $ moduleExportTypes mm
+                        $ map fst $ moduleExportTypes mm
 
         x'      = anonymizeWithX keep' kstack tstack (moduleBody mm)
 

@@ -19,11 +19,10 @@ import DDC.Type.Universe
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
-import Data.Map                 (Map)
+import Data.Maybe
 import Data.Monoid
 import Control.Monad
 import qualified DDC.Type.Env   as Env
-import qualified Data.Map       as Map
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -84,13 +83,13 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Check the sigs of exported types ---------------
         mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseKind k Recon) 
-                $ Map.elems $ moduleExportTypes mm
-        
+                $ mapMaybe (takeTypeOfExportSource . snd) $ moduleExportTypes mm
+
 
         -- Check the sigs of exported values --------------
         mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseSpec k Recon) 
-                $ Map.elems $ moduleExportValues mm
-                
+                $ mapMaybe (takeTypeOfExportSource . snd) $ moduleExportValues mm                
+
         
         -- Check the local data type defs -----------------
         defs'        
@@ -130,7 +129,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         envDef  <- checkModuleBinds (moduleExportTypes mm) (moduleExportValues mm) x''
 
         -- Check that all exported bindings are defined by the module.
-        mapM_ (checkBindDefined envDef) $ Map.keys $ moduleExportValues mm
+        mapM_ (checkBindDefined envDef) 
+                $ map fst $ moduleExportValues mm
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm'         = mm    { moduleImportTypes     = nksImport'
@@ -208,8 +208,8 @@ checkImportValues config kenv mode ntsImport
 -- | Check that the exported signatures match the types of their bindings.
 checkModuleBinds 
         :: Ord n
-        => Map n (Kind n)               -- ^ Kinds of exported types.
-        -> Map n (Type n)               -- ^ Types of exported values.
+        => [(n, ExportSource n)]        -- ^ Exported types.
+        -> [(n, ExportSource n)]        -- ^ Exported values
         -> Exp (AnTEC a n) n
         -> CheckM a n (TypeEnv n)       -- ^ Environment of top-level bindings
                                         --   defined by the module
@@ -235,14 +235,14 @@ checkModuleBinds !ksExports !tsExports !xx
 -- | If some bind is exported, then check that it matches the exported version.
 checkModuleBind 
         :: Ord n
-        => Map n (Kind n)       -- ^ Kinds of exported types.
-        -> Map n (Type n)       -- ^ Types of exported values.
+        => [(n, ExportSource n)]        -- ^ Exported types.
+        -> [(n, ExportSource n)]        -- ^ Exported values.
         -> Bind n
         -> CheckM a n ()
 
 checkModuleBind !_ksExports !tsExports !b
  | BName n tDef <- b
- = case Map.lookup n tsExports of
+ = case join $ liftM takeTypeOfExportSource $ lookup n tsExports of
         Nothing                 -> return ()
         Just tExport 
          | equivT tDef tExport  -> return ()
@@ -258,8 +258,8 @@ checkModuleBind !_ksExports !tsExports !b
 -- | Check that a top-level binding is actually defined by the module.
 checkBindDefined 
         :: Ord n
-        => TypeEnv n            -- ^ Types defined by the module.
-        -> n                    -- ^ Name of an exported binding.
+        => TypeEnv n                    -- ^ Types defined by the module.
+        -> n                            -- ^ Name of an exported binding.
         -> CheckM a n ()
 
 checkBindDefined env n

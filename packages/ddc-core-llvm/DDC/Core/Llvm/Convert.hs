@@ -86,7 +86,7 @@ convModuleM mm@(C.ModuleCore{})
 
         -- Names of exported functions.
         --   We use a different linkage for exported functions.
-        let nsExports   = Set.fromList $ Map.keys $ C.moduleExportValues mm
+        let nsExports   = Set.fromList $ map fst $ C.moduleExportValues mm
 
         -- Forward declarations for imported functions.
         let Just importDecls 

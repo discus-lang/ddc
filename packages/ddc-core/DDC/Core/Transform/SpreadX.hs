@@ -6,10 +6,9 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
+import Control.Monad
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
-import qualified Data.Map               as Map
-import Control.Monad
 
 
 class SpreadX (c :: * -> *) where
@@ -23,25 +22,34 @@ class SpreadX (c :: * -> *) where
          => Env n -> Env n -> c n -> c n
 
 
--- Module ---------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 instance SpreadX (Module a) where
  spreadX kenv tenv mm@ModuleCore{}
-  = mm
-  { moduleExportTypes   = Map.map (spreadT kenv)            (moduleExportTypes   mm)
-  , moduleExportValues  = Map.map (spreadT kenv)            (moduleExportValues  mm)
+        = mm
+        { moduleExportTypes   = map (liftSnd $ spreadT kenv)      (moduleExportTypes   mm)
+        , moduleExportValues  = map (liftSnd $ spreadT kenv)      (moduleExportValues  mm)
+          
+        , moduleImportTypes   = map (liftSnd $ spreadX kenv tenv) (moduleImportTypes   mm)
+        , moduleImportValues  = map (liftSnd $ spreadX kenv tenv) (moduleImportValues  mm)
   
-  , moduleImportTypes   = map (liftSnd $ spreadX kenv tenv) (moduleImportTypes   mm)
+        , moduleDataDefsLocal = map    (spreadT kenv)             (moduleDataDefsLocal mm)
   
-  , moduleImportValues  = map (liftSnd $ spreadX kenv tenv) (moduleImportValues  mm)
-  
-  , moduleDataDefsLocal = map    (spreadT kenv)             (moduleDataDefsLocal mm)
-  
-  , moduleBody          = spreadX kenv tenv (moduleBody mm) }
-
-  where liftSnd f (x, y) = (x, f y)
+        , moduleBody          = spreadX kenv tenv (moduleBody mm) }
+        where liftSnd f (x, y) = (x, f y)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+instance SpreadT ExportSource where
+ spreadT kenv esrc
+  = case esrc of
+        ExportSourceLocal n t
+         -> ExportSourceLocal n (spreadT kenv t)
+
+        ExportSourceLocalNoType n
+         -> ExportSourceLocalNoType n
+
+
+---------------------------------------------------------------------------------------------------
 instance SpreadX ImportSource where
  spreadX kenv _tenv isrc
   = case isrc of
@@ -55,7 +63,7 @@ instance SpreadX ImportSource where
          -> ImportSourceSea n (spreadT kenv t)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 instance SpreadX (Exp a) where
  spreadX kenv tenv xx 
   = {-# SCC spreadX #-}
@@ -85,6 +93,7 @@ instance SpreadX (Exp a) where
         XWitness a w    -> XWitness a (down w)
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX DaCon where
  spreadX _kenv tenv dc
   = case dc of
@@ -108,6 +117,7 @@ instance SpreadX DaCon where
          -> DaConBound n
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX (Cast a) where
  spreadX kenv tenv cc
   = let down x = spreadX kenv tenv x
@@ -120,6 +130,7 @@ instance SpreadX (Cast a) where
         CastRun                 -> CastRun
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX Pat where
  spreadX kenv tenv pat
   = let down x   = spreadX kenv tenv x
@@ -128,6 +139,7 @@ instance SpreadX Pat where
         PData u bs      -> PData (down u) (map down bs)
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX (Alt a) where
  spreadX kenv tenv alt
   = case alt of
@@ -137,6 +149,7 @@ instance SpreadX (Alt a) where
             in  AAlt p' (spreadX kenv tenv' x)
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX (Lets a) where
  spreadX kenv tenv lts
   = let down x = spreadX kenv tenv x
@@ -162,6 +175,7 @@ instance SpreadX (Lets a) where
          -> LWithRegion (spreadX kenv tenv b)
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX (Witness a) where
  spreadX kenv tenv ww
   = let down = spreadX kenv tenv 
@@ -173,6 +187,7 @@ instance SpreadX (Witness a) where
         WType a t1       -> WType a (spreadT kenv t1)
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX WiCon where
  spreadX kenv tenv wc
   = case wc of
@@ -186,6 +201,7 @@ instance SpreadX WiCon where
         _                -> wc
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX Bind where
  spreadX kenv _tenv bb
   = case bb of
@@ -194,6 +210,7 @@ instance SpreadX Bind where
         BNone t          -> BNone (spreadT kenv t)
 
 
+---------------------------------------------------------------------------------------------------
 instance SpreadX Bound where
  spreadX kenv tenv uu
   | Just t'     <- Env.lookup uu tenv

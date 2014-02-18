@@ -6,7 +6,6 @@ module DDC.Core.Module
 	, moduleKindEnv
         , moduleTypeEnv
         , moduleTopBinds
-        , modulesGetBinds
 
 	  -- * Module maps
 	, ModuleMap
@@ -17,6 +16,11 @@ module DDC.Core.Module
         , QualName      (..)
         , ModuleName    (..)
         , isMainModuleName
+
+        -- * Export Sources
+        , ExportSource  (..)
+        , takeTypeOfExportSource
+        , mapTypeOfExportSource
 
         -- * Import Sources
         , ImportSource  (..)
@@ -45,10 +49,10 @@ data Module a n
 
           -- Exports ------------------
           -- | Kinds of exported types.
-        , moduleExportTypes             :: !(Map n (Kind n))
+        , moduleExportTypes             :: ![(n, ExportSource n)]
 
           -- | Types of exported values.
-        , moduleExportValues            :: !(Map n (Type n))
+        , moduleExportValues            :: ![(n, ExportSource n)]
 
           -- Imports ------------------
           -- | Kinds of imported types,  along with the name of the module they are from.
@@ -129,22 +133,31 @@ moduleTopBinds mm
 type ModuleMap a n 
         = Map ModuleName (Module a n)
 
-modulesGetBinds m 
-        = Env.fromList $ map (uncurry BName) (Map.assocs m)
-
 
 -- | Add the kind environment exported by all these modules to the given one.
 modulesExportTypes :: Ord n => ModuleMap a n -> KindEnv n -> KindEnv n
 modulesExportTypes mods base
-        = foldl Env.union base 
-        $ map (modulesGetBinds.moduleExportTypes) (Map.elems mods)
+ = let  envOfModule m
+         = Env.fromList
+         $ [BName n t   |  (n, Just t) 
+                        <- map (liftSnd takeTypeOfExportSource) $ moduleExportTypes m]
 
+        liftSnd f (x, y) = (x, f y)
+
+   in   Env.unions $ base : (map envOfModule $ Map.elems mods)
+         
 
 -- | Add the type environment exported by all these modules to the given one.
 modulesExportValues :: Ord n => ModuleMap a n -> TypeEnv n -> TypeEnv n
 modulesExportValues mods base
-        = foldl Env.union base 
-        $ map (modulesGetBinds.moduleExportValues) (Map.elems mods)
+ = let  envOfModule m
+         = Env.fromList
+         $ [BName n t   | (n, Just t)
+                        <- map (liftSnd takeTypeOfExportSource) $ moduleExportValues m] 
+
+        liftSnd f (x, y) = (x, f y)
+
+   in   Env.unions $ base : (map envOfModule $ Map.elems mods)
 
 
 -- ModuleName -------------------------------------------------------------------------------------
@@ -175,6 +188,44 @@ isMainModuleName mn
  = case mn of
         ModuleName ["Main"]     -> True
         _                       -> False
+
+
+-- ExportSource -----------------------------------------------------------------------------------
+data ExportSource n
+        -- | A name defined in this module, with an explicit type.
+        = ExportSourceLocal   
+        { exportSourceLocalName         :: n 
+        , exportSourceLocalType         :: Type n }
+
+        -- | A named defined in this module, without a type attached.
+        --   We use this version for source language where we infer the type of
+        --   the exported thing.
+        | ExportSourceLocalNoType
+        { exportSourceLocalName         :: n }
+        deriving (Show, Eq)
+
+
+instance NFData n => NFData (ExportSource n) where
+ rnf es
+  = case es of
+        ExportSourceLocal n t           -> rnf n `seq` rnf t
+        ExportSourceLocalNoType n       -> rnf n
+
+
+-- | Take the type of an imported thing, if there is one.
+takeTypeOfExportSource :: ExportSource n -> Maybe (Type n)
+takeTypeOfExportSource es
+ = case es of
+        ExportSourceLocal _ t           -> Just t
+        ExportSourceLocalNoType{}       -> Nothing
+
+
+-- | Apply a function to any type in an ExportSource.
+mapTypeOfExportSource :: (Type n -> Type n) -> ExportSource n -> ExportSource n
+mapTypeOfExportSource f esrc
+ = case esrc of
+        ExportSourceLocal n t           -> ExportSourceLocal n (f t)
+        ExportSourceLocalNoType n       -> ExportSourceLocalNoType n
 
 
 -- ImportSource -----------------------------------------------------------------------------------

@@ -36,6 +36,7 @@ import Data.Maybe
 import DDC.Base.Pretty
 
 
+---------------------------------------------------------------------------------------------------
 -- | Convert a Core Tetra module to Core Salt.
 --
 --   The input module needs to be:
@@ -68,7 +69,7 @@ saltOfTetraModule platform runConfig defs kenv tenv mm
    evalCheck () $ convertM platform runConfig defs kenv tenv mm
 
 
--- Module ---------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 convertM 
         :: Show a
         => Platform
@@ -82,17 +83,10 @@ convertM
 convertM pp runConfig defs kenv tenv mm
   = do  
         -- Convert signatures of exported functions.
-        tsExports'
-                <- liftM Map.fromList
-                $  mapM convertExportM 
-                $  Map.toList 
-                $  moduleExportValues mm
+        tsExports' <- mapM convertExportM $ moduleExportValues mm
 
         -- Convert signatures of imported functions.
-        tsImports'
-                <- liftM Map.fromList
-                $  mapM convertImportM  
-                $  moduleImportValues mm
+        tsImports' <- mapM convertImportM $ moduleImportValues mm
 
         -- Convert the body of the module to Salt.
         let ntsImports  
@@ -126,11 +120,11 @@ convertM pp runConfig defs kenv tenv mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.
-                , moduleExportTypes    = Map.empty
+                , moduleExportTypes    = []
                 , moduleExportValues   = tsExports'
 
                 , moduleImportTypes    = Map.toList $ A.runtimeImportKinds
-                , moduleImportValues   = Map.toList $ Map.union A.runtimeImportTypes tsImports'
+                , moduleImportValues   = (Map.toList A.runtimeImportTypes) ++ tsImports'
 
                   -- Data constructors and pattern matches should have been
                   -- flattenedinto primops, so we don't need the data type
@@ -149,17 +143,36 @@ convertM pp runConfig defs kenv tenv mm
         return $ mm_init
 
 
+---------------------------------------------------------------------------------------------------
 -- | Convert an export spec.
 convertExportM
-        :: (E.Name, Type E.Name)                
-        -> ConvertM a (A.Name, Type A.Name)
+        :: (E.Name, ExportSource E.Name)                
+        -> ConvertM a (A.Name, ExportSource A.Name)
 
-convertExportM (n, t)
+convertExportM (n, esrc)
  = do   n'      <- convertBindNameM n
-        t'      <- convertRepableT Env.empty t
-        return  (n', t')
+        esrc'   <- convertExportSourceM esrc
+        return  (n', esrc')
 
 
+-- Convert an export source.
+convertExportSourceM 
+        :: ExportSource E.Name
+        -> ConvertM a (ExportSource A.Name)
+
+convertExportSourceM esrc
+ = case esrc of
+        ExportSourceLocal n t
+         -> do  n'      <- convertBindNameM n
+                t'      <- convertRepableT Env.empty t
+                return  $ ExportSourceLocal n' t'
+
+        ExportSourceLocalNoType n
+         -> do  n'      <- convertBindNameM n
+                return  $ ExportSourceLocalNoType n'
+
+
+---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertImportM
         :: (E.Name, ImportSource E.Name)
@@ -203,7 +216,7 @@ convertImportSourceM isrc
                 return  $ ImportSourceSea str t'
 
 
--- Exp -------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Information about the top-level environment.
 data TopEnv
         = TopEnv
@@ -604,7 +617,7 @@ convertExpX penv kenv tenv ctx xx
                    ++ (renderIndent $ ppr xx)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.
 convertLetsX 
         :: Show a 
@@ -643,7 +656,7 @@ convertLetsX penv kenv tenv lts
          ->     throw $ ErrorMalformed "Cannot convert LWithRegion construct."
 
 
--- Alt ------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a Lite alternative to Salt.
 convertAlt 
         :: Show a
@@ -718,7 +731,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
          -> throw ErrorInvalidAlt
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a witness expression to Salt
 --   TODO: Witness conversion is currently broken.
 --         We need to handle conversion of witness types.
@@ -754,7 +767,7 @@ convertWiConX kenv wicon
          -> liftM2 WiConBound (convertTypeU n) (convertRepableT kenv t)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a data constructor application to Salt.
 convertCtorAppX 
         :: Show a
@@ -806,7 +819,7 @@ convertCtorAppX _ _ _ _ _ _
         = throw $ ErrorMalformed "Invalid constructor application."
 
 
--- Args -----------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Given an argument to a function or data constructor, either convert
 --   it to the corresponding argument to use in the Salt program, or 
 --   return Nothing which indicates it should be discarded.
@@ -874,7 +887,7 @@ convertPrimArgX penv kenv tenv ctx xx
         _ -> convertExpX penv kenv tenv ctx xx
 
 
--- Literals -------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a literal constructor to Salt.
 --   These are values that have boxable index types like Bool# and Nat#.
 convertLitCtorX

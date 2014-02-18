@@ -9,6 +9,7 @@ import DDC.Core.Simplifier
 import DDC.Core.Module
 import DDC.Core.Lexer
 import DDC.Core.Pretty
+import DDC.Core.Exp
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
@@ -69,18 +70,27 @@ parse fragment modu source str
      = do r' <- checkRewriteRule config kinds' types' r
           return (show n, reannotate (const ()) r')
 
-    config   = C.configOfProfile (fragmentProfile fragment)
-    kinds    = profilePrimKinds  (fragmentProfile fragment)
-    types    = profilePrimTypes  (fragmentProfile fragment)
+    config      = C.configOfProfile (fragmentProfile fragment)
+    kinds       = profilePrimKinds  (fragmentProfile fragment)
+    types       = profilePrimTypes  (fragmentProfile fragment)
 
-    kindsImp = moduleKindEnv modu
-    typesImp = moduleTypeEnv modu
+    kindsImp    = moduleKindEnv modu
+    typesImp    = moduleTypeEnv modu
 
-    kindsExp = modulesGetBinds $ moduleExportTypes modu
-    typesExp = modulesGetBinds $ moduleExportValues modu
+    kindsExp    = Env.fromList 
+                $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportSource)
+                                           $  moduleExportTypes  modu ]
+    
+    typesExp    = Env.fromList
+                $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportSource)
+                                           $  moduleExportValues modu ]
+
+    liftSnd f (x, y) = (x, f y)
 
     -- Final kind and type environments
-    kinds'	 = kinds `Env.union` kindsImp `Env.union` kindsExp
-    types'	 = types `Env.union` typesImp `Env.union` typesExp
+    kinds'	= kinds `Env.union` kindsImp `Env.union` kindsExp
+    types'	= types `Env.union` typesImp `Env.union` typesExp
 
     source'  = nameOfSource source
+
+

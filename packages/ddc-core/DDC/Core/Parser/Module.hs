@@ -14,7 +14,6 @@ import DDC.Type.DataDef
 import DDC.Base.Pretty
 import Control.Monad
 import qualified DDC.Base.Parser        as P
-import qualified Data.Map               as Map
 
 
 -- Module ---------------------------------------------------------------------
@@ -68,8 +67,8 @@ pModule c
         --  name will replace earlier ones.
         return  $ ModuleCore
                 { moduleName            = name
-                , moduleExportTypes     = Map.empty
-                , moduleExportValues    = Map.fromList tExports
+                , moduleExportTypes     = []
+                , moduleExportValues    = [ (n, ExportSourceLocal n t) | (n, t) <- tExports ]
                 , moduleImportTypes     = tImportTypes
                 , moduleImportValues    = tImportValues
                 , moduleDataDefsLocal   = dataDefsLocal

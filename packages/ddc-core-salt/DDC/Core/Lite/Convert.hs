@@ -63,7 +63,7 @@ saltOfLiteModule platform runConfig defs kenv tenv mm
    evalCheck () $ convertM platform runConfig defs kenv tenv mm
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 convertM 
         :: Show a
         => Platform
@@ -77,18 +77,11 @@ convertM
 convertM pp runConfig defs kenv tenv mm
   = do  
         -- Convert signatures of exported functions.
-        tsExports'
-                <- liftM Map.fromList
-                $  mapM convertExportM 
-                $  Map.toList 
-                $  moduleExportValues mm
+        tsExports'      <- mapM convertExportM $ moduleExportValues mm
 
         -- Convert signatures of imported functions.
-        tsImports'
-                <- liftM Map.fromList
-                $  mapM convertImportM  
-                $  moduleImportValues mm
-
+        tsImports'      <- mapM convertImportM $ moduleImportValues mm
+                
         -- Convert the body of the module to Salt.
         let ntsImports  = [BName n (typeOfImportSource isrc) 
                                 | (n, isrc) <- moduleImportTypes mm]
@@ -109,11 +102,11 @@ convertM pp runConfig defs kenv tenv mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.
-                , moduleExportTypes    = Map.empty
+                , moduleExportTypes    = []
                 , moduleExportValues   = tsExports'
 
                 , moduleImportTypes    = Map.toList S.runtimeImportKinds
-                , moduleImportValues   = Map.toList $ Map.union  S.runtimeImportTypes tsImports'
+                , moduleImportValues   = (Map.toList S.runtimeImportTypes) ++ tsImports'
 
                   -- Data constructors and pattern matches should have been flattened
                   -- into primops, so we don't need the data type definitions.
@@ -131,17 +124,36 @@ convertM pp runConfig defs kenv tenv mm
         return $ mm_init
 
 
+-- Exports ----------------------------------------------------------------------------------------
 -- | Convert an export spec.
 convertExportM
-        :: (L.Name, Type L.Name)                
-        -> ConvertM a (S.Name, Type S.Name)
+        :: (L.Name, ExportSource L.Name)                
+        -> ConvertM a (S.Name, ExportSource S.Name)
 
-convertExportM (n, t)
+convertExportM (n, esrc)
  = do   n'      <- convertBindNameM n
-        t'      <- convertT Env.empty t
-        return  (n', t')
+        esrc'   <- convertExportSourceM esrc
+        return  (n', esrc')
 
 
+-- | Convert an export source specifier.
+convertExportSourceM 
+        :: ExportSource L.Name
+        -> ConvertM a (ExportSource S.Name)
+
+convertExportSourceM isrc
+ = case isrc of
+        ExportSourceLocal n t
+         -> do  n'      <- convertBindNameM n
+                t'      <- convertT Env.empty t
+                return  $ ExportSourceLocal n' t'
+
+        ExportSourceLocalNoType n
+         -> do  n'      <- convertBindNameM n
+                return  $ ExportSourceLocalNoType n'
+
+
+-- Imports ----------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertImportM
         :: (L.Name, ImportSource L.Name)
@@ -174,7 +186,7 @@ convertImportSourceM isrc
                 return $ ImportSourceSea str t'
 
 
--- Exp -------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 -- | The context we're converting the expression in.
 --     We keep track of this during conversion to ensure we don't produce
 --     code outside the Salt language fragment. For example, in Salt we can only
@@ -369,7 +381,7 @@ convertExpX ctx pp defs kenv tenv xx
 
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.
 convertLetsX 
         :: Show a 
@@ -408,7 +420,7 @@ convertLetsX pp defs kenv tenv lts
          ->     throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a witness expression to Salt
 convertWitnessX
         :: Show a
@@ -443,7 +455,7 @@ convertWiConX kenv wicon
                         (convertT kenv t)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a data constructor application to Salt.
 convertCtorAppX 
         :: Show a
@@ -520,7 +532,7 @@ convertCtorAppX _ _ _ _ _ _nCtor _xsArgs
         = throw $ ErrorMalformed "Invalid constructor application."
 
 
--- Alt ------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 -- | Convert a Lite alternative to Salt.
 convertAlt 
         :: Show a
@@ -593,7 +605,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
          -> throw ErrorInvalidAlt
 
 
--- Data Constructor -----------------------------------------------------------
+-- Data Constructor -------------------------------------------------------------------------------
 -- | Expand out code to build a data constructor.
 convertCtor 
         :: Show a

@@ -18,7 +18,6 @@ import DDC.Type.DataDef
 import DDC.Type.Pretty
 import DDC.Base.Pretty
 import Data.List
-import qualified Data.Map.Strict        as Map
 
 
 -- ModuleName -------------------------------------------------------------------------------------
@@ -44,8 +43,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
  pprModePrec mode _
         ModuleCore 
         { moduleName            = name
-        , moduleExportTypes     = mExportTypes
-        , moduleExportValues    = mExportValues
+        , moduleExportTypes     = exportTypes
+        , moduleExportValues    = exportValues
         , moduleImportTypes     = importTypes
         , moduleImportValues    = importValues
         , moduleDataDefsLocal   = localData
@@ -55,9 +54,6 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         (lts, _)                = splitXLets body
         
         -- Exports --------------------
-        exportTypes             = Map.toList mExportTypes
-        exportValues            = Map.toList mExportValues
-
         dExportTypes
          | null $ exportTypes   = empty
          | otherwise            = (vcat $ map pprExportType exportTypes)   <> line
@@ -100,23 +96,30 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
 -- Exports ----------------------------------------------------------------------------------------
 -- | Pretty print an exported type definition.
-pprExportType :: (Pretty n, Eq n) => (n, Kind n) -> Doc
-pprExportType (n, k)
- =      text "export type"  <+> ppr n <+> text "::" <+> ppr k <> semi
+pprExportType :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
+pprExportType (n, esrc)
+ = case esrc of
+        ExportSourceLocal _n k
+         -> text "export type" <+> ppr n  <+> text "::" <+> ppr k <> semi
+
+        ExportSourceLocalNoType _n 
+         -> text "export type" <+> ppr n  <> semi
 
 
 -- | Pretty print an exported value definition.
-pprExportValue :: (Pretty n, Eq n) => (n, Type n) -> Doc
-pprExportValue (n, k)
- =      text "export value" <+> ppr n <+> text "::" <+> ppr k <> semi
+pprExportValue :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
+pprExportValue (n, esrc)
+ = case esrc of
+        ExportSourceLocal _n t
+         -> text "export value" <+> ppr n  <+> text "::" <+> ppr t <> semi
+
+        ExportSourceLocalNoType _n
+         -> text "export value" <+> ppr n  <> semi
 
 
 -- Imports ----------------------------------------------------------------------------------------
 -- | Pretty print an imported type definition.                
-pprImportType 
-        :: (Pretty n, Eq n)
-        => (n, ImportSource n) -> Doc
-
+pprImportType :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportType (n, isrc)
  = case isrc of
         ImportSourceModule _mn _nSrc k
@@ -132,10 +135,7 @@ pprImportType (n, isrc)
 
 
 -- Pretty print an imported value definition.
-pprImportValue
-        :: (Pretty n, Eq n)
-        => (n, ImportSource n) -> Doc
-
+pprImportValue :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
         ImportSourceModule _mn _nSrc t
