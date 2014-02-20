@@ -3,6 +3,7 @@ module DDC.Source.Tetra.Module
         ( -- * Modules
           Module        (..)
         , isMainModule
+        , ExportSource  (..)
         , ImportSource  (..)
 
           -- * Module Names
@@ -24,6 +25,7 @@ import DDC.Core.Module
         ( QualName      (..)
         , ModuleName    (..)
         , isMainModuleName
+        , ExportSource  (..)
         , ImportSource  (..))
         
 

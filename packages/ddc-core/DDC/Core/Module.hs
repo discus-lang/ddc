@@ -6,6 +6,7 @@ module DDC.Core.Module
 	, moduleKindEnv
         , moduleTypeEnv
         , moduleTopBinds
+        , moduleTopBindTypes
 
 	  -- * Module maps
 	, ModuleMap
@@ -122,10 +123,28 @@ moduleTopBinds mm
                  -> go x2
 
                 XLet _ (LRec bxs) x2    
-                 ->          Set.fromList (mapMaybe takeNameOfBind $ map fst bxs)
+                 ->     Set.fromList (mapMaybe takeNameOfBind $ map fst bxs)
                  `Set.union` go x2
 
                 _ -> Set.empty
+
+
+-- | Get a map of named top-level bindings to their types.
+moduleTopBindTypes :: Ord n => Module a n -> Map n (Type n)
+moduleTopBindTypes mm
+ = go Map.empty (moduleBody mm)
+ where  go acc xx
+         = case xx of
+                XLet _ (LLet (BName n t) _) x2
+                  -> go (Map.insert n t acc) x2
+
+                XLet _ (LLet _ _) x2
+                  -> go acc x2
+
+                XLet _ (LRec bxs) x2
+                  -> go (Map.union acc (Map.fromList [(n, t) | BName n t <- map fst bxs])) x2
+                 
+                _ -> acc
 
 
 -- ModuleMap --------------------------------------------------------------------------------------

@@ -28,7 +28,8 @@ import DDC.Core.Exp
         , WiCon         (..))
 
 import DDC.Core.Module 
-        ( ImportSource  (..))
+        ( ExportSource  (..)
+        , ImportSource  (..))
 
 
 -- Module ---------------------------------------------------------------------
@@ -41,9 +42,15 @@ toCoreModule :: a -> S.Module a S.Name -> C.Module a C.Name
 toCoreModule a mm
         = C.ModuleCore
         { C.moduleName          = S.moduleName mm
-        , C.moduleExportTypes   = []
-        , C.moduleExportValues  = []
-        
+
+        , C.moduleExportTypes   
+                = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))
+                        | n <- S.moduleExportTypes mm ]
+
+        , C.moduleExportValues
+                = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))
+                        | n <- S.moduleExportValues mm ]
+
         , C.moduleImportTypes   
                 = [ (toCoreN n, toCoreImportSource isrc)
                         | (n, isrc) <- S.moduleImportTypes mm ]

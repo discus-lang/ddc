@@ -23,6 +23,7 @@ import Data.Maybe
 import Data.Monoid
 import Control.Monad
 import qualified DDC.Type.Env   as Env
+import qualified Data.Map       as Map
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -100,15 +101,13 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let defs_all =  unionDataDefs (configDataDefs config) 
                                       (fromListDataDefs defs')
                                       
-        -- Binders for the data type constructors defined by the data defs.
-        let bsData  = [BName (dataDefTypeName def) (kindOfDataDef def)
-                                | def <- defs' ]
-        
-        let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
-        let config_data = config { configDataDefs = defs_all }
 
         
         -- Check the body of the module -------------------
+        let bsData      = [BName (dataDefTypeName def) (kindOfDataDef def) | def <- defs' ]
+        let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
+        let config_data = config { configDataDefs = defs_all }
+
         (x', _, _effs, _, ctx) 
                 <- checkExpM 
                         (makeTable config_data kenv_data tenv')
@@ -132,10 +131,26 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         mapM_ (checkBindDefined envDef) 
                 $ map fst $ moduleExportValues mm
 
+        -- If exported names are missing types then fill them in.
+        let tsTop       = moduleTopBindTypes mm
+
+        let updateExportSource e
+                | ExportSourceLocalNoType n <- e
+                , Just t  <- Map.lookup n tsTop   
+                = ExportSourceLocal n t
+                
+                | otherwise = e
+
+        let ntsExport'
+                = [ (n, updateExportSource e) | (n, e) <- moduleExportValues mm ]
+
+                                 
         -- Return the checked bindings as they have explicit type annotations.
-        let mm'         = mm    { moduleImportTypes     = nksImport'
-                                , moduleImportValues    = ntsImport'
-                                , moduleBody            = x'' }
+        let mm' = mm    
+                { moduleExportValues    = ntsExport'
+                , moduleImportTypes     = nksImport'
+                , moduleImportValues    = ntsImport'
+                , moduleBody            = x'' }
 
         return mm'
 
@@ -266,4 +281,5 @@ checkBindDefined env n
  = case Env.lookup (UName n) env of
         Just _  -> return ()
         _       -> throw $ ErrorExportUndefined n
+
 
