@@ -67,7 +67,6 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.Instantiate
 import DDC.Type.DataDef
-import Data.Maybe
 import Control.Monad
 
 
@@ -92,31 +91,45 @@ data Config a n
         = Config
         { -- | Values of this type needs boxing to make the program
           --   representational. This will only be passed types of kind Data.
-          configTypeNeedsBoxing :: Type n -> Bool
+          configIsValueIndexType        :: Type n -> Bool
+
+          -- | Check if this is a boxed representation type.
+        , configIsBoxedType             :: Type n -> Bool
+
+          -- | Check if this is an unboxed representation type.
+        , configIsUnboxedType           :: Type n -> Bool
 
           -- | Get the boxed version of some data type, if any.
           --   This will only be passed types where typeNeedsBoxing returns True.
-        , configTakeTypeBoxed   :: Type n -> Maybe (Type n) 
+        , configBoxedOfIndexType        :: Type n -> Maybe (Type n) 
 
           -- | Get the unboxed version of some data type, if any.
           --   This will only be passed types where typeNeedsBoxing returns True.
-        , configTakeTypeUnboxed :: Type n -> Maybe (Type n) 
+        , configUnboxedOfIndexType      :: Type n -> Maybe (Type n) 
+
+          -- | Take the index type from a boxed type, if it is one.
+          --   TODO: derive isBoxedType from this.
+        , configIndexTypeOfBoxed        :: Type n -> Maybe (Type n)
+
+          -- | Take the index type from an unboxed type, if it is one.
+          --   TODO: derive isUnboxedType from this.
+        , configIndexTypeOfUnboxed      :: Type n -> Maybe (Type n)
+
+          -- | Take the type of a literal name, if there is one.
+        , configValueTypeOfLitName      :: n -> Maybe (Type n)
+
+          -- | Take the type of a primitive operator name, if it is one.
+          --   The primops can be polytypic, but must have prenex rank-1 types.
+        , configValueTypeOfPrimOpName   :: n -> Maybe (Type n) 
+
+          -- | Take the type of a foreign function name, if it is one.
+          --   The function can be polymorphic, but must have a prenex rank-1 type.
+        , configValueTypeOfForeignName  :: n -> Maybe (Type n)
 
           -- | Check if the primop with this name works on unboxed values
           --   directly. Operators where this function returns False are assumed
           --   to take boxed values for every argument.
-        , configNameIsUnboxedOp :: n -> Bool 
-
-          -- | Take the type of a literal name, if there is one.
-        , configTypeOfLitName   :: n -> Maybe (Type n)
-
-          -- | Take the type of a primitive operator name, if it is one.
-          --   The primops can be polytypic, but must have prenex rank-1 types.
-        , configTypeOfPrimOpName :: n -> Maybe (Type n) 
-
-          -- | Take the type of a foreign function name, if it is one.
-          --   The function can be polymorphic, but must have a prenex rank-1 type.
-        , configTypeOfForeignName :: n -> Maybe (Type n)
+        , configNameIsUnboxedOp         :: n -> Bool 
 
           -- | Wrap a value of the given index type.
           --   This will only be passed types where typeNeedsBoxing returns True.
@@ -161,11 +174,13 @@ instance Boxing Module where
         --  the boxing transform.
         typeOfForeignName n
          -- The provided config already says this is foreign.
-         | Just t       <- configTypeOfForeignName config n  = Just t
+         | Just t       <- configValueTypeOfForeignName config n  
+         = Just t
 
          -- This is a locally imported C function.
          | Just (ImportSourceSea _ t)
-                        <- lookup n (moduleImportValues mm)  = Just t
+                        <- lookup n (moduleImportValues mm)  
+         = Just t
 
          | otherwise
          = Nothing
@@ -173,7 +188,7 @@ instance Boxing Module where
         -- Use our new foreign function detector in the config.
         config'
          = config
-         { configTypeOfForeignName  = typeOfForeignName }
+         { configValueTypeOfForeignName  = typeOfForeignName }
 
         -- Do the boxing transform.
     in  mm  { moduleBody            = boxing config' (moduleBody mm) 
@@ -227,8 +242,8 @@ instance Boxing Exp where
         -- Convert literals to their boxed representations.
         XCon a dc
          |  Just dcn    <- takeNameOfDaCon dc
-         ,  Just tLit   <- configTypeOfLitName config dcn
-         ,  configTypeNeedsBoxing config tLit
+         ,  Just tLit   <- configValueTypeOfLitName config dcn
+         ,  configIsValueIndexType config tLit
          ,  Just xx'    <- configBoxedOfValue  config a xx tLit
          -> xx'
 
@@ -246,42 +261,36 @@ instance Boxing Exp where
                 -- For each type argument, if we know how to create the unboxed version
                 -- then do so. If this is wrong then the type checker will catch it later.
                 getTypeUnboxed t
-                 | Just t'      <- configTakeTypeUnboxed config t  
+                 | Just t'      <- configUnboxedOfIndexType config t  
                                 = t'                
                  | otherwise    = t 
 
                 tsArgsUnboxed   = map getTypeUnboxed tsArgs
                 
-                -- Instantiate the type to work out which arguments
-                -- need to be unboxed, and which we can leave as-is.
-                xsArgs          = drop (length tsArgs) xsArgsAll
-                Just tPrimInst  = instantiateTs tPrim tsArgs
+                -- Instantiate the type to work out which arguments need to be unboxed,
+                -- and which we can leave as-is. We instantiate this with both the 
+                -- original type args and the unboxed version. 
+--                Just tPrimInst             = instantiateTs tPrim tsArgs
+--                (tsArgsInst, tResultInst)  = takeTFunArgResult tPrimInst
                 
-                (tsArgsInst, tResultInst)
-                                = takeTFunArgResult tPrimInst
-                
+                Just tPrimInstUnboxed      = instantiateTs tPrim tsArgsUnboxed
+                (tsArgsInstUnboxed, tResultInstUnboxed)
+                                           = takeTFunArgResult tPrimInstUnboxed
+
                 -- Unboxing arguments to the function.
+                xsArgs  = drop (length tsArgs) xsArgsAll
                 xsArgs' 
                  -- We must end up with a type of each argument.
-                 | not (length xsArgs == length tsArgsInst)
+                 | not (length xsArgs == length tsArgsInstUnboxed)
                  = error "ddc-core.boxing: transform failed."
 
                  -- Unbox arguments as nessesary.
                  | otherwise
-                 = [ if configTypeNeedsBoxing config tArg 
-                        then fromMaybe (down xArg)
-                                       (configUnboxedOfBoxed config a (down xArg) tArg)
-                        else xArg
-                        | xArg <- xsArgs
-                        | tArg <- tsArgsInst ]
+                 = [ unboxExp config a tArgInst (down xArg)
+                        | xArg              <- xsArgs
+                        | tArgInst          <- tsArgsInstUnboxed ]
 
-                -- Rebox the result as nessesary.
-                fResult x
-                 = if configTypeNeedsBoxing config tResultInst
-                        then fromMaybe x
-                                       (configBoxedOfUnboxed  config a x tResultInst)
-                        else x
-            in  fResult 
+            in  boxExp config a tResultInstUnboxed
                  $ xApps a xFn  (  [XType a' t  | t  <- tsArgsUnboxed
                                                 | a' <- asArgs]
                                 ++ xsArgs')
@@ -289,8 +298,8 @@ instance Boxing Exp where
         -- Unrap scrutinees when matching against literal patterns.
         XCase a xScrut alts
          | p : _        <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
-         , Just tLit    <- configTypeOfLitName config (daConName p)
-         , configTypeNeedsBoxing config tLit
+         , Just tLit    <- configValueTypeOfLitName config (daConName p)
+         , configIsValueIndexType config tLit
          , Just xScrut' <- configValueOfBoxed  config a (down xScrut) tLit
          -> XCase a xScrut' (map down alts)
 
@@ -305,6 +314,38 @@ instance Boxing Exp where
         XCast a c x     -> XCast a c (down x)
         XType a t       -> XType a (boxingT config t)
         XWitness{}      -> xx
+
+
+-- | Box an expression that produces a value.
+boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
+boxExp config a t xx
+ | configIsValueIndexType config t
+ , Just x'      <- configBoxedOfValue config a xx t
+ = x'
+
+ | configIsUnboxedType config t
+ , Just tIdx    <- configIndexTypeOfUnboxed config t
+ , Just x'      <- configBoxedOfUnboxed config a xx tIdx
+ = x'
+
+ | otherwise
+ = xx
+
+
+-- | Unbox an expression that produces a boxed value.
+unboxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
+unboxExp config a t xx
+ | configIsValueIndexType config t
+ , Just x'      <- configUnboxedOfBoxed     config a xx t
+ = x'
+
+ | configIsUnboxedType config t
+ , Just tIdx    <- configIndexTypeOfUnboxed config t
+ , Just x'      <- configUnboxedOfBoxed     config a xx tIdx
+ = x'
+
+ | otherwise
+ = xx
 
 
 -- | If this is an application of some primitive operator or foreign function that 
@@ -322,13 +363,13 @@ splitUnboxedOpApp config xx
          | Just (n, xsArgsAll)  <- takeXPrimApps xx
          , Just (xFn, _)        <- takeXApps     xx
          , configNameIsUnboxedOp config n
-         , Just tPrim           <- configTypeOfPrimOpName config n
+         , Just tPrim           <- configValueTypeOfPrimOpName config n
          -> Just (xFn, tPrim, xsArgsAll)
 
         XApp{}
          | Just (xFn@(XVar _ (UName n)), xsArgsAll)
                                 <- takeXApps xx
-         , Just tForeign        <- configTypeOfForeignName config n
+         , Just tForeign        <- configValueTypeOfForeignName config n
          -> Just (xFn, tForeign, xsArgsAll)
 
         _ -> Nothing
@@ -377,8 +418,8 @@ boxingB config bb
 -- | Manage boxing in a Type.
 boxingT :: Config a n -> Type n -> Type n
 boxingT config tt
-  | configTypeNeedsBoxing config tt
-  , Just tResult        <- configTakeTypeBoxed config tt
+  | configIsValueIndexType config tt
+  , Just tResult        <- configBoxedOfIndexType config tt
   = tResult
 
   | otherwise
@@ -394,8 +435,8 @@ boxingT config tt
 -- | Manage boxing in the type of a C value.
 boxingSeaT :: Config a n -> Type n -> Type n
 boxingSeaT config tt
-  | configTypeNeedsBoxing config tt
-  , Just tResult        <- configTakeTypeUnboxed config tt
+  | configIsValueIndexType config tt
+  , Just tResult        <- configUnboxedOfIndexType config tt
   = tResult
 
   | otherwise

@@ -18,13 +18,17 @@ boxingModule mm
 -- | Tetra-specific configuration for boxing transform.
 config :: Config a Name
 config  = Config
-        { configTypeNeedsBoxing         = typeNeedsBoxing
-        , configTakeTypeBoxed           = takeTypeBoxed
-        , configTakeTypeUnboxed         = takeTypeUnboxed
+        { configIsValueIndexType        = isValueIndexType
+        , configIsBoxedType             = isBoxedType
+        , configIsUnboxedType           = isUnboxedType
+        , configBoxedOfIndexType        = boxedOfIndexType
+        , configUnboxedOfIndexType      = unboxedOfIndexType
+        , configIndexTypeOfBoxed        = indexTypeOfBoxed
+        , configIndexTypeOfUnboxed      = indexTypeOfUnboxed
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
-        , configTypeOfLitName           = takeTypeOfLitName
-        , configTypeOfPrimOpName        = takeTypeOfPrimOpName 
-        , configTypeOfForeignName       = const Nothing
+        , configValueTypeOfLitName      = takeTypeOfLitName
+        , configValueTypeOfPrimOpName   = takeTypeOfPrimOpName
+        , configValueTypeOfForeignName  = const Nothing
         , configBoxedOfValue            = boxedOfValue
         , configValueOfBoxed            = valueOfBoxed
         , configBoxedOfUnboxed          = boxedOfUnboxed
@@ -33,8 +37,8 @@ config  = Config
 
 -- | Check whether a value of this type needs boxing to make the 
 --   program representational.
-typeNeedsBoxing :: Type Name -> Bool
-typeNeedsBoxing tt
+isValueIndexType :: Type Name -> Bool
+isValueIndexType tt
         -- These types are listed out in full so anyone who adds more 
         -- constructors to the PrimTyCon type is forced to say whether
         -- those types refer to unboxed values or not.
@@ -70,9 +74,51 @@ typeNeedsBoxing tt
         = False
 
 
+-- | Check whether this is a boxed representation type.
+isBoxedType :: Type Name -> Bool
+isBoxedType tt
+        | Just (n, _)   <- takePrimTyConApps tt
+        , NameTyConTetra TyConTetraB    <- n
+        = True
+
+        | otherwise = False
+
+
+-- | Check whether this is a boxed representation type.
+isUnboxedType :: Type Name -> Bool
+isUnboxedType tt
+        | Just (n, _)   <- takePrimTyConApps tt
+        , NameTyConTetra TyConTetraU    <- n
+        = True
+
+        | otherwise = False
+
+
+-- | Take the index type from a boxed type, if it is one.
+indexTypeOfBoxed :: Type Name -> Maybe (Type Name)
+indexTypeOfBoxed tt
+        | Just (n, [t]) <- takePrimTyConApps tt
+        , NameTyConTetra TyConTetraB    <- n
+        = Just t
+
+        | otherwise
+        = Nothing
+
+
+-- | Take the index type from an unboxed type, if it is one.
+indexTypeOfUnboxed :: Type Name -> Maybe (Type Name)
+indexTypeOfUnboxed tt
+        | Just (n, [t]) <- takePrimTyConApps tt
+        , NameTyConTetra TyConTetraU    <- n
+        = Just t
+
+        | otherwise
+        = Nothing
+
+
 -- | Get the boxed version of some type of kind Data.
-takeTypeBoxed :: Type Name -> Maybe (Type Name)
-takeTypeBoxed tt
+boxedOfIndexType :: Type Name -> Maybe (Type Name)
+boxedOfIndexType tt
         | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tBoxed tBool
@@ -85,8 +131,8 @@ takeTypeBoxed tt
 
 
 -- | Get the unboxed version of some type of kind Data.
-takeTypeUnboxed :: Type Name -> Maybe (Type Name)
-takeTypeUnboxed tt
+unboxedOfIndexType :: Type Name -> Maybe (Type Name)
+unboxedOfIndexType tt
         | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tUnboxed tBool
@@ -111,7 +157,7 @@ isNameOfUnboxedOp nn
 -- | Wrap a pure value into its boxed representation.
 boxedOfValue :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 boxedOfValue a xx tt
-        | Just tBx      <- takeTypeBoxed tt
+        | Just tBx      <- boxedOfIndexType tt
         = Just $ xCastConvert a tt tBx xx
 
         | otherwise     = Nothing
@@ -120,7 +166,7 @@ boxedOfValue a xx tt
 -- | Unwrap a boxed value.
 valueOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 valueOfBoxed a xx tt
-        | Just tBx      <- takeTypeBoxed tt
+        | Just tBx      <- boxedOfIndexType tt
         = Just $ xCastConvert a tBx tt xx
 
         | otherwise     = Nothing
@@ -129,8 +175,8 @@ valueOfBoxed a xx tt
 -- | Box an expression of the given type.
 boxedOfUnboxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 boxedOfUnboxed a xx tt
-        | Just tBx      <- takeTypeBoxed tt
-        , Just tUx      <- takeTypeUnboxed tt
+        | Just tBx      <- boxedOfIndexType tt
+        , Just tUx      <- unboxedOfIndexType tt
         = Just $ xCastConvert a tUx tBx xx
 
         | otherwise     = Nothing
@@ -139,8 +185,8 @@ boxedOfUnboxed a xx tt
 -- | Unbox an expression of the given type.
 unboxedOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 unboxedOfBoxed a xx tt
-        | Just tBx      <- takeTypeBoxed tt
-        , Just tUx      <- takeTypeUnboxed tt
+        | Just tBx      <- boxedOfIndexType tt
+        , Just tUx      <- unboxedOfIndexType tt
         = Just $ xCastConvert a tBx tUx xx
 
         | otherwise     = Nothing
