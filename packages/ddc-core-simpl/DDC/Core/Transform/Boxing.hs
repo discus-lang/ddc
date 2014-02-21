@@ -268,14 +268,10 @@ instance Boxing Exp where
                 tsArgsUnboxed   = map getTypeUnboxed tsArgs
                 
                 -- Instantiate the type to work out which arguments need to be unboxed,
-                -- and which we can leave as-is. We instantiate this with both the 
-                -- original type args and the unboxed version. 
---                Just tPrimInst             = instantiateTs tPrim tsArgs
---                (tsArgsInst, tResultInst)  = takeTFunArgResult tPrimInst
-                
-                Just tPrimInstUnboxed      = instantiateTs tPrim tsArgsUnboxed
+                -- and which we can leave as-is. 
+                Just tPrimInstUnboxed   = instantiateTs tPrim tsArgsUnboxed
                 (tsArgsInstUnboxed, tResultInstUnboxed)
-                                           = takeTFunArgResult tPrimInstUnboxed
+                                        = takeTFunArgResult tPrimInstUnboxed
 
                 -- Unboxing arguments to the function.
                 xsArgs  = drop (length tsArgs) xsArgsAll
@@ -320,7 +316,7 @@ instance Boxing Exp where
 boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 boxExp config a t xx
  | configIsValueIndexType config t
- , Just x'      <- configBoxedOfValue config a xx t
+ , Just x'      <- configBoxedOfUnboxed config a xx t
  = x'
 
  | configIsUnboxedType config t

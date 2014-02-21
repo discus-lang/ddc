@@ -31,7 +31,7 @@ replicate (n : Nat#) (x : a) : List a
 
 -- | Construct a range of values.
 enumFromTo (start : Nat#) (end : Nat#)
- = case gt# start end of
+ = case ge# start end of
         True#           -> singleton start
         False#          -> Cons start (enumFromTo (add# start 1) end)
 
@@ -53,10 +53,20 @@ length (xx : List a) : Nat#
 
 -- Transforms -------------------------------------------------------------------------------------
 -- | Reverse the elements of a list.
+--   This is a naive O(n^2) version for testing purposes.
 reverse (xx : List a) : List a
  = case xx of
         Nil             -> Nil
         Cons x xs       -> append (reverse xs) (singleton x)
+
+
+reverseAcc (xx : List a) : List a
+ = reverseAcc2 Nil xx
+
+reverseAcc2 (acc xx : List a) : List a
+ = case xx of
+        Nil             -> acc
+        Cons x xs       -> reverseAcc2 (Cons x acc) xs
 
 
 -- IO ---------------------------------------------------------------------------------------------
@@ -75,9 +85,9 @@ main [r : Region] (argc : Nat#) (argv : String# r) : S Console Nat#
         xs1     = replicate 5 100
         xs2     = enumFromTo 10 20
         zs      = append xs1 xs2
-        zs2     = reverse zs
-
-        run dumpListNat zs2
+        
+        run dumpListNat (reverse zs)
+        run dumpListNat (reverseAcc zs)
         0
 
 

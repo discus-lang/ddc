@@ -465,8 +465,8 @@ convertExpX penv kenv tenv ctx xx
         ---------------------------------------------------
         -- Saturated application of a primitive operator.
         XApp a xa xb
-         | (x1, xsArgs)           <- takeXApps1 xa xb
-         , XVar _ (UPrim _ tPrim) <- x1
+         | (x1, xsArgs)               <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim tPrim) <- x1
 
          -- The primop is saturated.
          , length xsArgs == arityOfType tPrim
@@ -481,7 +481,19 @@ convertExpX penv kenv tenv ctx xx
 
          -> do  x1'     <- downArgX x1
                 xsArgs' <- mapM downPrimArgX xsArgs
-                return $ xApps (annotTail a) x1' xsArgs'
+                
+                case nPrim of
+                 -- The Tetra type of these is also parameterised by the type of the
+                 -- boolean result, so that we can choose between value type and unboxed
+                 -- versions. In the Salt version we only need the first type parameter.
+                 E.NamePrimArith o
+                  |  elem o [ E.PrimArithEq, E.PrimArithNeq
+                            , E.PrimArithGt, E.PrimArithLt
+                            , E.PrimArithLe, E.PrimArithGe ]
+                  ,  [t1, _t2, z1, z2] <- xsArgs'
+                  -> return $ xApps (annotTail a) x1' [t1, z1, z2]
+
+                 _ -> return $ xApps (annotTail a) x1' xsArgs'
 
 
         ---------------------------------------------------
