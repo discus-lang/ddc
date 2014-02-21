@@ -50,8 +50,8 @@ data Error a n
         -- | Generic mismatch between expected and inferred types.
         | ErrorMismatch
         { errorAnnot            :: a
-        , errorExpected         :: Type n
         , errorInferred         :: Type n
+        , errorExpected         :: Type n
         , errorChecking         :: Exp a n }
 
         -- Var --------------------------------------------

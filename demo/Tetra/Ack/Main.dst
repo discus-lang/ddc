@@ -9,7 +9,7 @@ import foreign c value
  showNat  :: [r : Region]. Nat#      -> String# r
 
 where
-ack (m n : Nat#) : Nat#
+ack (m : Nat#) (n : Nat#) : Nat#
  = case m of
         0       -> add# n 1
         _       -> case n of

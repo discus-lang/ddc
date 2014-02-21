@@ -40,11 +40,11 @@ instance (Pretty a, Show n, Eq n, Pretty n)
          -> vcat [ ppr a
                  , text "Malformed expression: "        <> align (ppr xx) ]
         
-        ErrorMismatch a tExpected tInferred xx
+        ErrorMismatch a tInferred tExpected xx
          -> vcat [ ppr a
                  , text "Type mismatch."
-                 , text "                Expected type: "       <> ppr tExpected
-                 , text " does not match inferred type: "       <> ppr tInferred
+                 , text "                Inferred type: "       <> ppr tInferred
+                 , text " does not match expected type: "       <> ppr tExpected
                  , empty
                  , text "with: "                                <> align (ppr xx) ]
 

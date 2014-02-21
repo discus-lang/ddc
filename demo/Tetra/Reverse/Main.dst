@@ -1,0 +1,83 @@
+module Main 
+export main
+
+import foreign abstract type
+ Console  :: Effect
+
+import foreign c value
+ putStrLn :: [r : Region]. String# r -> S Console Unit
+ showNat  :: [r : Region]. Nat#      -> String# r
+
+where
+
+-- | Cons lists.
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+
+-- Constructors -----------------------------------------------------------------------------------
+-- | Construct a list containing a single element.
+singleton (x : a) : List a
+ = Cons x Nil
+
+
+-- | Construct a list containing of the given length where all elements are the same value.
+replicate (n : Nat#) (x : a) : List a
+ = case n of
+        0               -> Nil
+        _               -> Cons x (replicate (sub# n 1) x)
+
+
+-- | Construct a range of values.
+enumFromTo (start : Nat#) (end : Nat#)
+ = case gt# start end of
+        True#           -> singleton start
+        False#          -> Cons start (enumFromTo (add# start 1) end)
+
+
+-- | Append two lists.
+append (xx yy : List a) : List a
+ = case xx of
+        Nil             -> yy
+        Cons x xs       -> Cons x (append xs yy)
+
+
+-- Projections ------------------------------------------------------------------------------------
+-- | Take the length of a list.
+length (xx : List a) : Nat#
+ = case xx of
+        Nil             -> 0
+        Cons x xs       -> add# 1 (length xs)
+
+
+-- Transforms -------------------------------------------------------------------------------------
+-- | Reverse the elements of a list.
+reverse (xx : List a) : List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs       -> append (reverse xs) (singleton x)
+
+
+-- IO ---------------------------------------------------------------------------------------------
+dumpListNat (xx : List Nat#) : S Console Unit
+ = private r in
+   box case xx of
+        Nil             -> ()
+        Cons x xs       
+         -> do  run putStrLn [r] (showNat x)
+                run dumpListNat xs
+
+
+---------------------------------------------------------------------------------------------------
+main [r : Region] (argc : Nat#) (argv : String# r) : S Console Nat#
+ = box do
+        xs1     = replicate 5 100
+        xs2     = enumFromTo 10 20
+        zs      = append xs1 xs2
+        zs2     = reverse zs
+
+        run dumpListNat zs2
+        0
+
+
