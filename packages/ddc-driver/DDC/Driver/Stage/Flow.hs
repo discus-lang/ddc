@@ -11,14 +11,12 @@ import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Base.Pretty
-
 import qualified DDC.Core.Check                 as C
-
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Build.Language.Flow        as Flow
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Type check Core Flow.
 stageFlowLoad
         :: Config -> Source
@@ -35,7 +33,7 @@ stageFlowLoad config source pipesFlow
         : pipesFlow ) ]
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Prepare a Core Flow module for lowering.
 stageFlowPrep
         :: Config -> Source
@@ -51,7 +49,7 @@ stageFlowPrep config source pipesFlow
      : pipesFlow)]]
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Perform rate inference to transform vector operations to series
 stageFlowRate
         :: Config -> Source
@@ -67,7 +65,7 @@ stageFlowRate config source pipesFlow
      : pipesFlow)]]
  
 
- -------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Lower a Core Flow module.
 --   Is needs to already be prepped,
 --   and have full type annotations.
@@ -84,7 +82,7 @@ stageFlowLower config lowerConfig source pipesFlow
        : pipesFlow ) ]
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Wind loop primops into tail recursive loops in a Core Flow module.
 stageFlowWind
         :: Config -> Source

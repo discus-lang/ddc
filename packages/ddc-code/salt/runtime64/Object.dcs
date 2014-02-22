@@ -66,7 +66,8 @@
 --   objects anyway.
 --
 module  Object 
-export  getTag            :: [r : Region]. Ptr# r Obj -> Tag#
+export value
+        getTag            :: [r : Region]. Ptr# r Obj -> Tag#
 
         allocBoxed        :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
         getFieldOfBoxed   :: [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a

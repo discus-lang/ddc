@@ -1,0 +1,8 @@
+ok
+
+-- Error: Main module does not export main function.
+module Main with
+letrec {
+  blerk : Nat# -> Nat#
+    = \(x : Nat#). 27#
+}

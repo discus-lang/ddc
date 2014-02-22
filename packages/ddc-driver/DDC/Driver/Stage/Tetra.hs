@@ -9,23 +9,19 @@ import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Base.Pretty
-
 import qualified DDC.Build.Language.Tetra       as BE
 import qualified DDC.Build.Builder              as B
-
 import qualified DDC.Core.Tetra.Profile         as CE
+import qualified DDC.Core.Tetra.Error           as CE
 import qualified DDC.Core.Tetra                 as CE
-
 import qualified DDC.Core.Salt                  as CS
-
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as C
 import qualified DDC.Core.Transform.Namify      as C
-
 import qualified DDC.Base.Parser                as BP
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load and type check a Source Tetra module.
 stageSourceTetraLoad
         :: Config -> Source
@@ -42,12 +38,12 @@ stageSourceTetraLoad config source pipesTetra
    : pipesTetra ) 
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load and type check a Core Tetra module.
 stageTetraLoad
         :: Config -> Source
         -> [PipeCore () CE.Name]
-        -> PipeText CE.Name BE.Error
+        -> PipeText CE.Name CE.Error
 
 stageTetraLoad config source pipesTetra
  = PipeTextLoadCore BE.fragment 
@@ -59,7 +55,7 @@ stageTetraLoad config source pipesTetra
         : pipesTetra ) ]
  
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a Core Tetra module to Core Salt.
 --
 --   This includes performing the Boxing transform.

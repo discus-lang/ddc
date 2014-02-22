@@ -22,7 +22,7 @@ import qualified DDC.Base.Parser        as P
 
 
 -- Module ---------------------------------------------------------------------
--- | Parse a core module.
+-- | Parse a source tetra module.
 pModule :: (Ord n, Pretty n) 
         => Context
         -> Parser n (Module P.SourcePos n)

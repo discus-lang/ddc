@@ -16,7 +16,7 @@ import Control.Monad
 import qualified DDC.Base.Parser        as P
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Parse a core module.
 pModule :: (Ord n, Pretty n) 
         => Context
@@ -25,32 +25,13 @@ pModule c
  = do   sp      <- pTokSP KModule
         name    <- pModuleName
 
-        -- export { SIG;+ }
-        tExports 
-         <- P.choice
-            [do pTok KExport
-                pTok KBraceBra
-                sigs    <- P.sepEndBy1 (pTypeSig c) (pTok KSemiColon)
-                pTok KBraceKet
-                return sigs
+        -- Export definitions.
+        tExports        <- liftM concat $ P.many (pExportSpecs c)
 
-            ,   return []]
+        -- Import definitions.
+        tImports        <- liftM concat $ P.many (pImportSpecs c)
 
-        -- import { SIG;+ }
-        tImportTypesValues
-         <- P.choice
-            [do pTok KImport
-                pTok KBraceBra
-                importTypes     <- P.sepEndBy (pImportTypeSpec c)  (pTok KSemiColon)
-                importValues    <- P.sepEndBy (pImportValueSpec c) (pTok KSemiColon)
-                pTok KBraceKet
-                return (importTypes, importValues)
-
-            ,   return ([], [])]
-
-        let (tImportTypes, tImportValues)
-                = tImportTypesValues
-
+        -- Data definitions.
         dataDefsLocal   <- P.many (pDataDef c)
 
         pTok KWith
@@ -68,60 +49,155 @@ pModule c
         return  $ ModuleCore
                 { moduleName            = name
                 , moduleExportTypes     = []
-                , moduleExportValues    = [ (n, ExportSourceLocal n t) | (n, t) <- tExports ]
-                , moduleImportTypes     = tImportTypes
-                , moduleImportValues    = tImportValues
+                , moduleExportValues    = [(n, s) | ExportValue n s <- tExports]
+                , moduleImportTypes     = [(n, s) | ImportType  n s <- tImports]
+                , moduleImportValues    = [(n, s) | ImportValue n s <- tImports]
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 
 
--- | Parse a type signature.
-pTypeSig 
-        :: Ord n 
-        => Context -> Parser n (n, Type n)        
+---------------------------------------------------------------------------------------------------
+data ExportSpec n
+        = ExportValue   n (ExportSource n)
 
-pTypeSig c
- = do   var     <- pVar
+
+-- | Parse some export specs.
+pExportSpecs
+        :: (Ord n, Pretty n)
+        => Context -> Parser n [ExportSpec n]
+
+pExportSpecs c
+ = do   pTok KExport
+
+        P.choice 
+         [      -- export value { (NAME :: TYPE)+ }
+           do   P.choice [ pTok KValue, return () ]
+                pTok KBraceBra
+                specs   <- P.sepEndBy1 (pExportValue c) (pTok KSemiColon)
+                pTok KBraceKet 
+                return specs
+
+                -- export foreign X value { (NAME :: TYPE)+ }
+         , do   pTok KForeign
+                dst     <- liftM (renderIndent . ppr) pName
+                pTok KValue
+                pTok KBraceBra
+                specs   <- P.sepEndBy1 (pExportForeignValue c dst) (pTok KSemiColon)
+                pTok KBraceKet
+                return specs
+         ]
+
+
+-- | Parse an export spec.
+pExportValue
+        :: (Ord n, Pretty n)
+        => Context -> Parser n (ExportSpec n)
+pExportValue c 
+ = do   
+        n       <- pName
         pTok KColonColon
         t       <- pType c
-        return  (var, t)
+        return  (ExportValue n (ExportSourceLocal n t))
 
 
--- Imports --------------------------------------------------------------------
--- | Parse the type signature of an imported variable.
-pImportTypeSpec 
+-- | Parse a foreign value export spec.
+pExportForeignValue    
+        :: (Ord n, Pretty n)
+        => Context -> String -> Parser n (ExportSpec n)
+pExportForeignValue c dst
+        | "c"           <- dst
+        = do    n       <- pName
+                pTok KColonColon
+                k       <- pType c
+
+                -- TODO: allow def of foreign symbol
+                return  (ExportValue n (ExportSourceLocal n k))
+
+        | otherwise
+        = P.unexpected "export mode for foreign value."
+
+
+---------------------------------------------------------------------------------------------------
+-- | An imported foreign type or foreign value.
+data ImportSpec n
+        = ImportType    n (ImportSource n)
+        | ImportValue   n (ImportSource n)
+        
+
+-- | Parse some import specs.
+pImportSpecs    :: (Ord n, Pretty n)
+                => Context -> Parser n [ImportSpec n]
+pImportSpecs c
+ = do   pTok KImport
+
+        P.choice
+         [ do   pTok KForeign
+                src    <- liftM (renderIndent . ppr) pName
+
+                P.choice
+                 [      -- import foreign X type { (NAME :: TYPE)+ }
+                  do    pTok KType
+                        pTok KBraceBra
+                        sigs <- P.sepEndBy1 (pImportForeignType c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+        
+                                -- imports foreign X value { (NAME :: TYPE)+ }
+                 , do   pTok KValue
+                        pTok KBraceBra
+                        sigs <- P.sepEndBy1 (pImportForeignValue c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+                 ]
+         ]
+
+-- | Parse a foreign type import spec.
+pImportForeignType
         :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, ImportSource n)
+        => Context -> String -> Parser n (ImportSpec n)
+pImportForeignType c src
+        | "abstract"    <- src
+        = do    n       <- pName
+                pTok KColonColon
+                k       <- pType c
+                return  (ImportType n (ImportSourceAbstract k))
 
-pImportTypeSpec c
- =   pTok KType
- >>  P.choice
- [ do   n       <- pName
-        pTok KColonColon
-        k       <- pType c
-        return  (n, ImportSourceModule (ModuleName []) n k)
- ]
+        | otherwise
+        = P.unexpected "import mode for foreign type."
 
 
--- | Parse the type signature of an imported variable.
-pImportValueSpec 
-        :: (Ord n, Pretty n) 
-        => Context -> Parser n (n, ImportSource n)
-
-pImportValueSpec c
- = P.choice
- [ do   n       <- pName
+-- | Parse a value import spec.
+pImportValue        *** parse through to import value, make export value similar.
+        :: (Ord n, Pretty n)
+        => Context -> Parser n (ImportSpec n)
+pImportSpec c
+ = do   n       <- pName
         pTok KColonColon
         t       <- pType c
-        return  (n, ImportSourceModule (ModuleName []) n t)
- ]        
+        return  (ExportValue n (ImportSourceDDC t))
 
 
--- DataDef --------------------------------------------------------------------
-pDataDef 
-        :: Ord n
-        => Context -> Parser n (DataDef n)
+-- | Parse a foreign value import spec.
+pImportForeignValue    
+        :: (Ord n, Pretty n)
+        => Context -> String -> Parser n (ImportSpec n)
+pImportForeignValue c src
+        | "c"           <- src
+        = do    n       <- pName
+                pTok KColonColon
+                k       <- pType c
 
+                -- TODO: allow def of foreign symbol
+                let symbol = renderIndent (ppr n)
+
+                return  (ImportValue n (ImportSourceSea symbol k))
+
+        | otherwise
+        = P.unexpected "import mode for foreign value."
+
+
+-- DataDef ----------------------------------------------------------------------------------------
+pDataDef :: Ord n => Context -> Parser n (DataDef n)
 pDataDef c
  = do   pTokSP KData
         nData   <- pName 

@@ -16,16 +16,14 @@ import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import System.FilePath
 import Data.Maybe
-
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Salt.Convert          as Salt
-
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as S
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load and type check a Core Salt module.
 stageSaltLoad
         :: Config -> Source
@@ -42,7 +40,7 @@ stageSaltLoad config source pipesSalt
         : pipesSalt ) ]
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Optimise Core Salt.
 stageSaltOpt
         :: Config -> Source
@@ -59,7 +57,7 @@ stageSaltOpt config source pipes
         : pipes )
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert Core Salt to C code.
 stageSaltToC
         :: Config -> Source
@@ -84,7 +82,7 @@ stageSaltToC config source sink
                         (makeNamifier Salt.freshX)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert Core Salt to LLVM.
 stageSaltToLLVM
         :: Config -> Source
@@ -107,7 +105,7 @@ stageSaltToLLVM config source pipesLLVM
                         (makeNamifier Salt.freshX)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Compile Core Salt via C code.
 stageCompileSalt
         :: Config -> Source
@@ -148,7 +146,7 @@ stageCompileSalt config source filePath shouldLinkExe
                         (makeNamifier Salt.freshX)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Compile LLVM code.
 stageCompileLLVM 
         :: Config -> Source

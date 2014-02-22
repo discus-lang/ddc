@@ -69,13 +69,23 @@ applyOffside ps [] ls
         = t1 : newCBra ls' 
                 : applyOffside (ParenBrace : ps) [n] ls'
 
+        -- (import | export) (type | value) { ... }
+        | LexemeToken t1 : LexemeToken t2 
+                : LexemeStartBlock n : ls' <- ls
+        , isToken t1 (KA KImport)   || isToken t1 (KA KExport)
+        , isToken t2 (KA KType)     || isToken t2 (KA KValue)
+        = t1 : t2 : newCBra ls'
+                : applyOffside (ParenBrace : ps) [n] ls'
+
+        -- (import | export) foreign X (type | value) { ... }
         | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 : LexemeToken t4
-                : (LexemeStartBlock n) : ls' <- ls
-        ,   isToken t1 (KA KImport) 
-        ,   isToken t2 (KA KForeign)
-        ,   isToken t4 (KA KType) || isToken t4 (KA KValue)
+                : LexemeStartBlock n : ls' <- ls
+        , isToken t1 (KA KImport)  || isToken t1 (KA KExport)
+        , isToken t2 (KA KForeign)
+        , isToken t4 (KA KType)    || isToken t4 (KA KValue)
         = t1 : t2 : t3 : t4 : newCBra ls' 
                 : applyOffside (ParenBrace : ps) [n] ls'
+
 
 -- At top level without a context.
 -- Skip over everything until we get the 'with' in 'module Name with ...''
@@ -287,18 +297,27 @@ splitBlockStart
 
 splitBlockStart toks
 
- -- imports foreign type
- |  t1@Token { tokenTok = KA KImport } 
-  : t2@Token { tokenTok = KA KForeign }
-  : t3
-  : t4@Token { tokenTok = KA KType }    : ts
+ -- export value
+ |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KValue }   : ts
+ <- toks = Just ([t1, t2], ts)
+
+ -- export foreign X value
+ |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KForeign }
+  : t3                                  : t4@Token { tokenTok = KA KValue }   : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
- -- imports foreign value
- |  t1@Token { tokenTok = KA KImport} 
-  : t2@Token { tokenTok = KA KForeign}
-  : t3
-  : t4@Token { tokenTok = KA KValue}    : ts    
+ -- import value
+ |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KValue }   : ts
+ <- toks = Just ([t1, t2], ts)
+
+ -- import foreign X type
+ |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KForeign }
+  : t3                                  : t4@Token { tokenTok = KA KType }    : ts
+ <- toks = Just ([t1, t2, t3, t4], ts)
+
+ -- import foreign X value
+ |  t1@Token { tokenTok = KA KImport}   : t2@Token { tokenTok = KA KForeign}
+  : t3                                  : t4@Token { tokenTok = KA KValue }   : ts    
  <- toks = Just ([t1, t2, t3, t4], ts)
  
  |  t1@Token { tokenTok = KA KDo }      : ts    <- toks = Just ([t1], ts)

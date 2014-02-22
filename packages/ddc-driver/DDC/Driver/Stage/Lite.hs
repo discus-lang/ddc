@@ -11,17 +11,14 @@ import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
-
 import qualified DDC.Core.Salt.Name             as Salt
-
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Lite                  as Lite
-
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as S
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load and type check Core Lite.
 stageLiteLoad
         :: Config -> Source
@@ -38,7 +35,7 @@ stageLiteLoad config source pipesLite
         : pipesLite ) ]
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Optimise Core Lite.
 stageLiteOpt 
         :: Config -> Source
@@ -55,7 +52,7 @@ stageLiteOpt config source pipes
         : pipes)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert Core Lite to Core Salt.
 ---
 --   The Lite to Salt transform requires the program to be normalised,

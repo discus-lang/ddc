@@ -1,5 +1,5 @@
 module Bool
-export
+export foreign c value
  boxBool
   ::    [r : Region].
         Bool# -(Alloc r | Use r)>

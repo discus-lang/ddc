@@ -1,5 +1,5 @@
 module Int 
-export
+export foreign c value
  boxInt  
   ::    [r : Region].
         Int# -(Alloc r | Use r)>

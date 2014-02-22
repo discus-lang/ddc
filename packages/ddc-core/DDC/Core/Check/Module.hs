@@ -101,7 +101,6 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let defs_all =  unionDataDefs (configDataDefs config) 
                                       (fromListDataDefs defs')
                                       
-
         
         -- Check the body of the module -------------------
         let bsData      = [BName (dataDefTypeName def) (kindOfDataDef def) | def <- defs' ]
@@ -281,5 +280,4 @@ checkBindDefined env n
  = case Env.lookup (UName n) env of
         Just _  -> return ()
         _       -> throw $ ErrorExportUndefined n
-
 

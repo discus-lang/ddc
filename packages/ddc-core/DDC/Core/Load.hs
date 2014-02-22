@@ -81,7 +81,6 @@ instance ( Eq n, Show n, Pretty n
                  , indent 2 $ ppr err' ]
 
 
-
 -- Module ---------------------------------------------------------------------
 -- | Parse and type check a core module from a file.
 loadModuleFromFile 

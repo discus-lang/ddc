@@ -1,0 +1,9 @@
+:set lang Tetra
+
+-- Error: Main module does not export main function.
+:load..
+module Main 
+export main :: Nat# -> Nat#
+with letrec
+main (x : Nat#) : Nat# = 27#
+;;

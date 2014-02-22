@@ -24,9 +24,7 @@ module DDC.Core.Tetra
         , lexExpString
 
           -- * Conversion
-        , saltOfTetraModule
-        , Error         (..))
-
+        , saltOfTetraModule)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Profile

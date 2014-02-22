@@ -1,20 +1,19 @@
 
 -- | The `Tetra` fragment has four base kinds: 
---   `Data`, `Region`, `Effect`, `Witness` and uses the `S`
---   computation type to represent effects.
+--   `Data`, `Region`, `Effect`, `Witness`,
+--   and uses the `S` computation type to represent effects.
 module DDC.Build.Language.Tetra
         ( language
         , bundle
-        , fragment
-
-        , Error (..))
+        , fragment)
 where
 import DDC.Build.Language.Base
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
-import DDC.Base.Pretty
 import qualified DDC.Core.Tetra         as E
+import qualified DDC.Core.Tetra.Check   as E
+import qualified DDC.Core.Tetra.Error   as E
 import qualified DDC.Core.Tetra.Profile as E
 import qualified Data.Map               as Map
 
@@ -25,7 +24,7 @@ language    = Language bundle
 
 
 -- | Language bundle for Disciple Core Tetra.
-bundle  :: Bundle Int E.Name Error
+bundle  :: Bundle Int E.Name E.Error
 bundle
         = Bundle
         { bundleFragment        = fragment
@@ -38,7 +37,7 @@ bundle
 
 
 -- | Fragement definition for Disciple Core Tetra.
-fragment :: Fragment E.Name Error
+fragment :: Fragment E.Name E.Error
 fragment
         = Fragment
         { fragmentProfile       = E.profile 
@@ -46,14 +45,6 @@ fragment
         , fragmentReadName      = E.readName
         , fragmentLexModule     = E.lexModuleString
         , fragmentLexExp        = E.lexExpString
-        , fragmentCheckModule   = const Nothing
+        , fragmentCheckModule   = E.checkModule
         , fragmentCheckExp      = const Nothing }
-
-
-data Error a
-        = Error
-        deriving Show
-
-instance Pretty (Error a) where
- ppr Error  = text (show Error)
 

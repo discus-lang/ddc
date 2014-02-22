@@ -1,5 +1,5 @@
 module List
-import
+import foreign c value
  addNat 
   ::    [r1 r2 r3 : Region].
         Nat r1 -(Pure | Use r3)>

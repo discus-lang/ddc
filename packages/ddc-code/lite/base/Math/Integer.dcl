@@ -1,16 +1,15 @@
 
 module Integer 
-import {
+import foreign c value
         subInt  :: [r1 r2 r3 : Region]
                 . Int r1 -(Pure | Use r3)> 
                   Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> 
-                  Int r3;
+                  Int r3
 
         mulInt  :: [r1 r2 r3 : Region]
                 . Int r1 -(Pure | Use r3)> 
                   Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> 
-                  Int r3;
-}
+                  Int r3
 with letrec
 
 fac    [r : Region] 
