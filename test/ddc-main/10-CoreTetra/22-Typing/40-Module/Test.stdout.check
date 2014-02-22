@@ -23,5 +23,5 @@ Error loading module
 Error loading module
   During fragment specific check.
     Invalid type of main function in Main module.
-                       Type: Nat# -> Nat# -> S Pure Unit
+      Type of main function: Nat# -> Nat# -> S Pure Unit
       is not an instance of: [e : Effect]. Unit -> S e Unit

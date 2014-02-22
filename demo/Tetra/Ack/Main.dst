@@ -17,7 +17,8 @@ ack (m : Nat#) (n : Nat#) : Nat#
                         _       -> ack (sub# m 1) (ack m (sub# n 1))
 
 
-main [r : Region] (argc : Nat#) (argv : String# r) : S Console Nat#
- = box do
+main (_ : Unit) : S Console Unit
+ = private r in
+   box do
         run putStrLn (showNat [r] (ack 3 2))
-        0
+

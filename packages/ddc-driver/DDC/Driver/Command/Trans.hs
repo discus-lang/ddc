@@ -32,7 +32,7 @@ import qualified DDC.Core.Check                 as C
 import qualified Control.Monad.State.Strict     as S
 
 
--- Detect ---------------------------------------------------------------------
+-- Detect -----------------------------------------------------------------------------------------
 -- | Load and transform a module or expression, and print the result to @stdout@.
 --  
 --   If the source starts with the 'module' keyword then treat it as one,
@@ -58,7 +58,7 @@ cmdTransDetect    config language shouldPrintInfo
         source str
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Load and transform a module, and print the result to @stdout@.
 cmdTransModule
         :: Config               -- ^ Driver config.
@@ -93,7 +93,7 @@ cmdTransModule config language _shouldPrintInfo source str
          es -> throwError $ renderIndent $ vcat $ map ppr es
 
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 -- | Load and transfrom an expression
 --   and print the result to @stdout@.
 cmdTransExp
@@ -113,7 +113,7 @@ cmdTransExp config language traceTrans
         source str
 
 
--- Cont -----------------------------------------------------------------------
+-- Cont -------------------------------------------------------------------------------------------
 -- | Load an expression and apply the current transformation.
 cmdTransExpCont
         :: Config       -- ^ Driver config.
@@ -154,7 +154,7 @@ cmdTransExpCont _config traceTrans language eatExp source str
          = do   return ()
 
 
--- Trans ----------------------------------------------------------------------
+-- Trans ------------------------------------------------------------------------------------------
 -- | Transform an expression, or display errors
 transExp
         :: (Eq n, Ord n, Pretty n, Show n)

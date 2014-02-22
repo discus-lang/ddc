@@ -75,7 +75,7 @@ data PipeCore a n where
 
   -- Type check a module.
   PipeCoreCheck      
-        :: Pretty a
+        :: (Pretty a, Pretty (err (C.AnTEC a n)))
         => !(Fragment n err)            -- Language fragment to check against.
         -> !(C.Mode n)                  -- Checker mode.
         -> !Sink                        -- Sink for checker trace.
@@ -84,7 +84,7 @@ data PipeCore a n where
 
   -- Type check a module, discarding previous per-node type annotations.
   PipeCoreReCheck
-        :: (NFData a, Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a, Pretty (err (C.AnTEC a n)))
         => !(Fragment n err)
         -> !(C.Mode n)
         -> ![PipeCore (C.AnTEC a n)  n]
@@ -160,6 +160,8 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreCheck" #-}
             let profile         = fragmentProfile fragment
 
+                -- Check the module is type correct, 
+                --  using the generic core type checker.
                 goCheck mm1
                  = case C.checkModule (C.configOfProfile profile) mm1 mode of
                         (Left err,  C.CheckTrace doc) 
@@ -170,8 +172,15 @@ pipeCore !mm !pp
                          -> do  pipeSink (renderIndent doc) sinkTrace
                                 goComplies mm2
 
+                -- Check the module compiles with the language profile.
                 goComplies mm1
                  = case C.complies profile mm1 of
+                        Just err         -> return [ErrorLint err]
+                        Nothing          -> goFragment mm1
+
+                -- Check the module satisfies fragment specific checks.
+                goFragment mm1
+                 = case fragmentCheckModule fragment mm1 of
                         Just err         -> return [ErrorLint err]
                         Nothing          -> pipeCores mm1 pipes
 

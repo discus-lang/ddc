@@ -29,5 +29,5 @@ instance Pretty (Error a) where
 
  ppr (ErrorMainInvalidType t)
   = vcat [ text "Invalid type of main function in Main module."
-         , text "                   Type: "  <> ppr t
+         , text "  Type of main function: "  <> ppr t
          , text "  is not an instance of: [e : Effect]. Unit -> S e Unit" ]

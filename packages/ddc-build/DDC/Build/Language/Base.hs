@@ -26,6 +26,7 @@ data Language
           , Show n
           , Pretty n
           , Pretty (err (AnTEC BP.SourcePos n))
+          , Pretty (err (AnTEC () n))
           , NFData n)
         => Language (Bundle s n err)
 
