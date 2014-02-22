@@ -8,11 +8,12 @@ import DDC.Core.Salt.Runtime
 import DDC.Core.Salt.Name
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import Data.List
 
 
--- | If this it the Main module, 
---   then add code to the 'main' function to initialise the runtime system.
+-- | If this it the Main module, then insert a main function for the posix
+--   entry point that initialises the runtime system and calls the real main function.
 --
 --   Returns Nothing if this is the Main module, 
 --      but there is no main function.
@@ -22,46 +23,66 @@ initRuntime
         -> Maybe (Module a Name)
 
 initRuntime config mm@ModuleCore{}
-        | isMainModule mm
-        = case initRuntimeTopX config (moduleBody mm) of
-                Nothing -> Nothing
-                Just x' -> Just $ mm { moduleBody = x'}
+ | isMainModule mm
+ = case initRuntimeTopX config (moduleBody mm) of
+        Nothing -> Nothing
+        Just x' -> Just 
+                $ mm    { moduleExportValues    = patchMainExports (moduleExportValues mm)
+                        , moduleBody            = x'}
 
-        | otherwise     
-        = Just mm
+ | otherwise     
+ = Just mm
 
 
+-- | Type of the POSIX main function.
+posixMainType :: Type Name
+posixMainType
+        = tFunPE tInt (tFunPE (tPtr rTop tString) tInt)
+
+
+-- | Patch the list of export definitions to export our wrapper instead
+--   of the original main function.
+patchMainExports 
+        ::  [(Name, ExportSource Name)] 
+        ->  [(Name, ExportSource Name)]
+
+patchMainExports xx
+ = case xx of
+        []      -> []
+        (x : xs)
+         |  (NameVar "main", ExportSourceLocal n _) <- x
+         -> (NameVar "main", ExportSourceLocal n posixMainType) : xs
+
+         |  otherwise
+         -> x : patchMainExports xs
+
+ 
 -- | Takes the top-level let-bindings of amodule
 --      and add code to initialise the runtime system.
 initRuntimeTopX :: Config -> Exp a Name -> Maybe (Exp a Name)
 initRuntimeTopX config xx
         | XLet a (LRec bxs) x2  <- xx
-        , Just (bMain, xMain)   <- find   (isMainBind . fst) bxs
-        , bxs_cut               <- filter (not . isMainBind . fst) bxs
-        = let   
-                -- Initial size of the heap.
-                bytes   = configHeapSize config
+        , Just (bMainOrig, xMainOrig)   <- find   (isMainBind . fst) bxs
+        , bxs_cut                       <- filter (not . isMainBind . fst) bxs
+        , BName _ tMainOrig             <- bMainOrig
+        =  let  bMainOrig'      = BName (NameVar "_ddc_main") 
+                                $ tMainOrig
 
-                xMain'  = hackBodyX (XLet a (LLet (BNone tVoid) 
-                                                  (xCreate a bytes))) 
-                                    xMain
+                bMainEntry      = BName (NameVar "main") 
+                                $ posixMainType
+                
+                xMainEntry      = makeMainEntryX config a
 
-          in    Just $ XLet a (LRec $ bxs_cut ++ [(bMain, xMain')]) x2
+           in   Just $ XLet a 
+                        (LRec $ bxs_cut 
+                                ++ [ (bMainOrig', xMainOrig)
+                                   , (bMainEntry, xMainEntry)])
+                        x2
 
         -- This was supposed to be the main Module,
         -- but there was no 'main' function for the program entry point.
         | otherwise
         = Nothing
-
-
--- | Apply a worker to the body of some function.
---   Enters into enclosing lambdas.
-hackBodyX :: (Exp a n -> Exp a n) -> Exp a n -> Exp a n
-hackBodyX f xx
- = case xx of
-        XLAM a b x      -> XLAM a b $ hackBodyX f x
-        XLam a b x      -> XLam a b $ hackBodyX f x
-        _               -> f xx
 
 
 -- | Check whether this is the bind for the 'main' function.
@@ -70,4 +91,17 @@ isMainBind bb
   = case bb of
         (BName (NameVar "main") _)      -> True
         _                               -> False
+
+
+-- | Make the posix main function,
+--   which is the entry point to the executable.
+makeMainEntryX :: Config -> a -> Exp a Name
+makeMainEntryX config a
+ = XLam a  (BName (NameVar "argc")         tInt)
+ $ XLam a  (BName (NameVar "argv")         (tPtr rTop tString))
+ $ XLet a  (LLet  (BNone tVoid)            (xCreate a (configHeapSize config)))
+ $ XLet a  (LLet  (BNone (tPtr rTop tObj)) 
+                  (xApps a (XVar a (UName (NameVar "_ddc_main"))) 
+                           [xAllocBoxed a rTop 0 (xNat a 0)]))
+           (xInt a 0)
 

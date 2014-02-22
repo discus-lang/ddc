@@ -80,7 +80,7 @@ dumpListNat (xx : List Nat#) : S Console Unit
 
 
 ---------------------------------------------------------------------------------------------------
-main (_ : Unit) : S Console Unit
+main (u : Unit) : S Console Unit
  = box do
         xs1     = replicate 5 100
         xs2     = enumFromTo 10 20
@@ -89,5 +89,3 @@ main (_ : Unit) : S Console Unit
         run dumpListNat (reverse zs)
         run dumpListNat (reverseAcc zs)
         
-
-

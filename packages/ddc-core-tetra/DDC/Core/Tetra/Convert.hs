@@ -97,12 +97,14 @@ convertM pp runConfig defs kenv tenv mm
         let defs'  = unionDataDefs defs
                    $ fromListDataDefs (moduleDataDefsLocal mm)
 
+        -- Top-level context for the conversion.
         let penv   = TopEnv
                    { topEnvPlatform     = pp
                    , topEnvDataDefs     = defs'
                    , topEnvSupers       = moduleTopBinds mm 
                    , topEnvImportValues = Set.fromList $ map fst $ moduleImportValues mm }
 
+        -- Conver the body of the module itself.
         x1         <- convertExpX penv kenv tenv' ExpTop
                    $  moduleBody mm
 

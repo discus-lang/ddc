@@ -1,6 +1,6 @@
 
 module  Main
-export  main      :: [r : Region]. Nat# -> Ptr# r String# -(Console | Empty)> Int#
+export  main      :: Unit -(Console | Empty)> Unit
 
 import  showNat   :: [r : Region]. Nat# -> Ptr# r String#
         putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
@@ -125,10 +125,7 @@ dumpNats
 
 
 -- | Construct a list of length 23 then take its length.
-main    [r : Region] 
-        (argc : Nat#)
-        (argv : Ptr# r String#) { Console | Empty }
-        : Int#
+main    (u : Unit) { Console | Empty } : Unit
  = private r2 in
    do
         xs1     = replicate  [:r2 r2:] [Nat r2] (N# [r2] 5#) (N# [r2] 100#)
@@ -138,6 +135,6 @@ main    [r : Region]
         zs2     = reverse    [:r2 r2:] [Nat r2] zs
 
         dumpNats [:r2 r2:] zs2
-        0i#
+        ()
 
 

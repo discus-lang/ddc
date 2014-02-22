@@ -1,10 +1,6 @@
 
 module  Main
-export  main    :: [r : Region]
-                .  Nat# 
-                -(Pure | Use r)> Ptr# r String# 
-                -(Read r + Alloc r + Console | Use r)> Int#
-
+export  main    :: Unit -(Console | Empty)> Unit
 import  showInt   :: [r : Region]. Int# -> Ptr# r String#
         putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
@@ -49,10 +45,9 @@ fac     [r : Region]
  }
 
 
-main    [r : Region] 
-        (argc : Nat#)           {Pure                             | Use r} 
-        (argv : Ptr# r String#) {Read r + Alloc r + Console     | Use r} 
-        : Int#
- = do   x        = fac [r] (I# [r] 1i#) (I# [r] 10i#)
+main    (u : Unit) {Console     | Empty} : Unit
+ = private r in
+   do   x        = fac [r] (I# [r] 1i#) (I# [r] 10i#)
         putStrLn [r] (showInt [r] (unboxInt [r] x))
-        unboxInt [r] (I# [r] 0i#)
+        ()
+

@@ -1,6 +1,6 @@
 module Main 
 export {
-        main :: [r : Region].Nat# -> Ptr# r String# -(Console | Empty)> Int#;
+        main :: Unit -(Console | Empty)> Unit
 } 
 import {
         addNat :: [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
@@ -111,9 +111,9 @@ letrec {
             }
       };
   
-  main : [r : Region].Nat# -> Ptr# r String# -(Console | Empty)> Int#
-    = /\(r : Region).
-       \(argc : Nat#).\(argv : Ptr# r String#).
+  main : Unit -(Console | Empty)> Unit
+    = \(u : Unit).
+      private r in
       private r2 in
       let x25 : Nat r2 = N# [r2] 5# in
       let x26 : Nat r2 = N# [r2] 100# in
@@ -134,5 +134,5 @@ letrec {
       let zs2 : List r2 (Nat r2)
             = reverse [r2] [r2] [Nat r2] zs in
       let _ : Unit = dumpNats [r2] [r2] zs2 in
-      0i#
+      ()
 }

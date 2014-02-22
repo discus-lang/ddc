@@ -3,7 +3,7 @@
 --   With a small fixed sized heap this will run out of space.
 module Main 
 export {
-        main      :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
+        main      :: Unit -> Unit;
 }
 with letrec
 
@@ -34,13 +34,10 @@ replicate
                                         (subNat [:r1 r3 r3:] n (N# [r3] 1#))
                                         x)
 
-main    [r : Region] 
-        (argc : Nat#)
-        (argv : Ptr# r String#)
-        : Int#
+main    (u : Unit) : Unit
  = private r2 in
    do   xs1     = replicate  [:r2 r2:] [Nat r2] 
                         (N# [r2] 100000#) 
                         (N# [r2] 5#)
-        0i#
+        ()
 
