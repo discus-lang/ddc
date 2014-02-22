@@ -131,8 +131,22 @@ pImportSpecs c
  = do   pTok KImport
 
         P.choice
-         [ do   pTok KForeign
-                src    <- liftM (renderIndent . ppr) pName
+         [      -- import type  { (NAME :: TYPE)+ }
+           do   pTok KType
+                pTok KBraceBra
+                specs   <- P.sepEndBy1 (pImportType c) (pTok KSemiColon)
+                pTok KBraceKet
+                return specs
+
+                -- import value { (NAME :: TYPE)+ }
+         , do   P.choice [ pTok KValue, return () ]
+                pTok KBraceBra
+                specs   <- P.sepEndBy1 (pImportValue c) (pTok KSemiColon)
+                pTok KBraceKet
+                return specs
+
+         , do   pTok KForeign
+                src     <- liftM (renderIndent . ppr) pName
 
                 P.choice
                  [      -- import foreign X type { (NAME :: TYPE)+ }
@@ -142,7 +156,7 @@ pImportSpecs c
                         pTok KBraceKet
                         return sigs
         
-                                -- imports foreign X value { (NAME :: TYPE)+ }
+                        -- imports foreign X value { (NAME :: TYPE)+ }
                  , do   pTok KValue
                         pTok KBraceBra
                         sigs <- P.sepEndBy1 (pImportForeignValue c src) (pTok KSemiColon)
@@ -150,6 +164,18 @@ pImportSpecs c
                         return sigs
                  ]
          ]
+
+
+-- | Parse a type import spec.
+pImportType
+        :: (Ord n, Pretty n)
+        => Context -> Parser n (ImportSpec n)
+pImportType c
+ = do   n       <- pName
+        pTok KColonColon
+        k       <- pType c
+        return  $ ImportType n (ImportSourceModule (ModuleName []) n k)
+
 
 -- | Parse a foreign type import spec.
 pImportForeignType
@@ -167,14 +193,14 @@ pImportForeignType c src
 
 
 -- | Parse a value import spec.
-pImportValue        *** parse through to import value, make export value similar.
+pImportValue
         :: (Ord n, Pretty n)
         => Context -> Parser n (ImportSpec n)
-pImportSpec c
+pImportValue c
  = do   n       <- pName
         pTok KColonColon
         t       <- pType c
-        return  (ExportValue n (ImportSourceDDC t))
+        return  (ImportValue n (ImportSourceModule (ModuleName []) n t))
 
 
 -- | Parse a foreign value import spec.

@@ -2,15 +2,16 @@ ok
 
 -- Load a module definition.
 module Main 
-export value main :: Unit -> Unit;
+export value main :: Unit -> S Pure Unit;
 export value double :: Nat# -> Nat#;
 import value two :: Unit -> Nat#;
 with
 private rt with {w1 : Const rt; w2 : Lazy rt}
 let one : Nat# = 1#
 letrec {
-  main : Unit -> Unit
+  main : Unit -> S Pure Unit
     = \(_ : Unit).
+      box
       private r0 in
       ();
   
@@ -26,15 +27,16 @@ letrec {
 
 -- Load the same module using the offside rule.
 module Main 
-export value main :: Unit -> Unit;
+export value main :: Unit -> S Pure Unit;
 export value double :: Nat# -> Nat#;
 import value two :: Unit -> Nat#;
 with
 private rt with {w1 : Const rt; w2 : Lazy rt}
 let one : Nat# = 1#
 letrec {
-  main : Unit -> Unit
+  main : Unit -> S Pure Unit
     = \(_ : Unit).
+      box
       private r0 in
       ();
   

@@ -1,9 +1,31 @@
 :set lang Tetra
 
--- Error: Main module does not export main function.
+
+-- Main module exports main function of the correct type.
 :load..
 module Main 
-export main :: Nat# -> Nat#
+export main :: Unit -> S Pure Unit
 with letrec
-main (x : Nat#) : Nat# = 27#
+main (x : Unit) : S Pure Unit
+ = box ()
+;;
+
+
+-- Error: No main function.
+:load..
+module Main 
+export blerk :: Unit -> S Pure Unit
+with letrec
+blerk (x : Unit) : S Pure Unit
+ = box ()
+;;
+
+
+-- Error: Main function has invalid type.
+:load..
+module Main 
+export main :: Nat# -> Nat# -> S Pure Unit
+with letrec
+main (x y : Nat#) : S Pure Unit
+ = box ()
 ;;

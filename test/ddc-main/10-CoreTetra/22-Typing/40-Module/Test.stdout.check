@@ -1,8 +1,27 @@
 ok
 
--- Error: Main module does not export main function.
-module Main with
+
+-- Main module exports main function of the correct type.
+module Main 
+export value main :: Unit -> S Pure Unit;
+with
 letrec {
-  blerk : Nat# -> Nat#
-    = \(x : Nat#). 27#
+  main : Unit -> S Pure Unit
+    = \(x : Unit).
+      box
+      ()
 }
+
+
+-- Error: No main function.
+Error loading module
+  During fragment specific check.
+    Main module does not export a 'main' function.
+
+
+-- Error: Main function has invalid type.
+Error loading module
+  During fragment specific check.
+    Invalid type of main function in Main module.
+                       Type: Nat# -> Nat# -> S Pure Unit
+      is not an instance of: [e : Effect]. Unit -> S e Unit

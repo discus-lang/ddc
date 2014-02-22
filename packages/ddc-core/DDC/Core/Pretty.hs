@@ -56,7 +56,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         -- Exports --------------------
         dExportTypes
          | null $ exportTypes   = empty
-         | otherwise            = (vcat $ map pprExportType exportTypes)   <> line
+         | otherwise            = (vcat $ map pprExportType  exportTypes)   <> line
 
         dExportValues
          | null $ exportValues  = empty
@@ -72,11 +72,14 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | otherwise            = (vcat $ map pprImportValue importValues) <> line
 
         docsImportsExports
-         -- If we're suppressing imports, or there are none,
-         -- then don't display the import block.
-         |   modeModuleSuppressImports mode       
-          || (null importTypes && null importValues)
-                                = empty
+         -- If we're suppressing imports, then don't print it.
+         | modeModuleSuppressImports mode 
+         = empty
+         
+         -- If there are no imports or exports then suppress printint.
+         | null exportTypes, null exportValues, null importTypes, null importValues
+         = empty
+
          | otherwise            
          = line <> dExportTypes <> dExportValues <> dImportTypes <> dImportValues
                 

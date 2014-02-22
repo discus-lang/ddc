@@ -10,6 +10,7 @@ import DDC.Data.SourcePos
 import DDC.Data.Token
 
 
+---------------------------------------------------------------------------------------------------
 -- | Holds a real token or start symbol which is used to apply the offside rule.
 data Lexeme n
         = LexemeToken           (Token (Tok n))
@@ -195,7 +196,7 @@ applyOffside ps (_ : ms) []
         = newCKet [] : applyOffside ps ms []
 
 
--- addStarts ------------------------------------------------------------------
+-- addStarts --------------------------------------------------------------------------------------
 -- | Add block and line start tokens to this stream.
 --
 --   This is identical to the definition in the Haskell98 report,
@@ -297,6 +298,10 @@ splitBlockStart
 
 splitBlockStart toks
 
+ -- export type
+ |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KType }    : ts
+ <- toks = Just ([t1, t2], ts)
+
  -- export value
  |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KValue }   : ts
  <- toks = Just ([t1, t2], ts)
@@ -305,6 +310,10 @@ splitBlockStart toks
  |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KForeign }
   : t3                                  : t4@Token { tokenTok = KA KValue }   : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
+
+ -- import type
+ |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KType  }   : ts
+ <- toks = Just ([t1, t2], ts)
 
  -- import value
  |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KValue }   : ts
@@ -331,7 +340,7 @@ splitBlockStart toks
  = Nothing
 
 
--- Utils ----------------------------------------------------------------------
+-- Utils ------------------------------------------------------------------------------------------
 -- | Test whether this wrapper token matches.
 isToken :: Eq n => Token (Tok n) -> Tok n -> Bool
 isToken (Token tok _) tok2 = tok == tok2
