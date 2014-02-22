@@ -18,12 +18,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorData err'
          -> ppr err'
         
-        ErrorMalformedType a xx tt
-         -> vcat [ ppr a
-                 , text "Found malformed type: "        <> ppr tt
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
         -- Modules ---------------------------------------
         ErrorExportUndefined n
          -> vcat [ text "Exported value '" <> ppr n <> text "' is undefined." ]
@@ -36,10 +30,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
 
 
         -- Exp --------------------------------------------
-        ErrorMalformedExp a xx
-         -> vcat [ ppr a
-                 , text "Malformed expression: "        <> align (ppr xx) ]
-        
         ErrorMismatch a tInferred tExpected xx
          -> vcat [ ppr a
                  , text "Type mismatch."
@@ -47,6 +37,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text " does not match expected type: "       <> ppr tExpected
                  , empty
                  , text "with: "                                <> align (ppr xx) ]
+
 
         -- Variable ---------------------------------------
         ErrorUndefinedVar a u universe
@@ -67,14 +58,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
              -- but let's not worry about that here.
              _ -> vcat  [ ppr a
                         , text "Undefined variable: "           <> ppr u ]
-
-        ErrorVarAnnotMismatch a u tEnv tAnnot
-         -> vcat [ ppr a
-                 , text "Type mismatch in annotation."
-                 , text "             Variable: "               <> ppr u
-                 , text "       has annotation: "               <> ppr tAnnot
-                 , text " which conflicts with: "               <> ppr tEnv
-                 , text "     from environment." ]
 
 
         -- Constructor ------------------------------------
@@ -105,6 +88,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "  Please supply type annotations to constrain the functional"
                  , text "  part to have a quantified type."
                  , text "with: "                        <> align (ppr xx) ]
+
 
         -- Lambda -----------------------------------------
         ErrorLamShadow a xx b
@@ -156,32 +140,9 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamParamUnexpected a xx b1 t1'
-         -> vcat [ ppr a
-                 , text "Type annotation of parameter does not match expected type."
-                 , text "                  Parameter: " <> ppr b1
-                 , text "    does not match expected: " <> ppr t1'
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorLamExpectedFun a xx tExpected
-         -> vcat [ ppr a
-                 , text "Context requires lambda abstraction to have a non-functional type."
-                 , text "             Expected type: "  <> ppr tExpected
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
         ErrorLAMParamUnannotated a xx
          -> vcat [ ppr a
                  , text "Type abstraction is missing a kind annotation."
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorLAMParamUnexpected a xx b1 t1'
-         -> vcat [ ppr a
-                 , text "Kind annotation of parameter does not match expected kind."
-                 , text "                  Parameter: " <> ppr b1
-                 , text "    does not match expected: " <> ppr t1'
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -193,12 +154,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLAMExpectedForall a xx tExpected
-         -> vcat [ ppr a
-                 , text "Context requires type lambda to have a non-quantified type."
-                 , text "             Expected type: "  <> ppr tExpected
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
 
         -- Let --------------------------------------------
         ErrorLetMismatch a xx b t
@@ -251,6 +206,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
+
         -- Letregion --------------------------------------
         ErrorLetRegionsNotRegion a xx bs ks
          -> vcat [ ppr a
@@ -301,14 +257,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
                  
-        ErrorLetRegionWitnessFree a xx b
-         -> vcat [ ppr a
-                 , text "Witness type references a free region variable."
-                 , text "  the binding: "               <> ppr b 
-                 , text "  contains free region variables."
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-                 
+
         -- Withregion -------------------------------------
         ErrorWithRegionFree a xx u t
          -> vcat [ ppr a
@@ -326,6 +275,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "       but it must be: Region"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
+
 
         -- Witnesses --------------------------------------
         ErrorWAppMismatch a ww t1 t2
@@ -486,6 +436,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "Cannot infer type of suspended computation."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
+
 
         -- Type -------------------------------------------
         ErrorNakedType a xx

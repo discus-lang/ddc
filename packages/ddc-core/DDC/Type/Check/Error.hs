@@ -24,21 +24,11 @@ data Error n
         , errorExpected         :: Type n
         , errorChecking         :: Type n }
 
-        -- | Cannot infer a type.
-        | ErrorCannotInfer
-        { errorChecking         :: Type n }
-
 
         -- Variables ----------------------------
         -- | An undefined type variable.
         | ErrorUndefined        
         { errorBound            :: Bound n }
-
-        -- | The kind annotation on the variables does not match the one in the
-        --   environment.
-        | ErrorVarAnnotMismatch
-        { errorBound            :: Bound n
-        , errorTypeEnv          :: Type n }
 
 
         -- Constructors -------------------------
@@ -111,9 +101,4 @@ data ErrorData n
         -- A duplicate data constructor name.
         | ErrorDataDupCtorName
         { errorDataCtorName     :: n }
-
-        -- A data constructor where the type is mis-kinded.
-        | ErrorDataBadCtorType
-        { errorDataCtorName     :: n
-        , errorError            :: Error n }
         deriving Show

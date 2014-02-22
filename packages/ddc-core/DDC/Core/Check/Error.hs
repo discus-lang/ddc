@@ -19,13 +19,6 @@ data Error a n
         | ErrorData
         { errorData             :: T.ErrorData n }
 
-        -- | Found a malformed type,
-        --   and we don't have a more specific diagnosis.
-        | ErrorMalformedType
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorType             :: Type n }
-
 
         -- Module -----------------------------------------
         -- | Exported value is undefined.
@@ -41,12 +34,6 @@ data Error a n
 
 
         -- Exp --------------------------------------------
-        -- | Found a malformed expression, 
-        --   and we don't have a more specific diagnosis.
-        | ErrorMalformedExp
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n }
-
         -- | Generic mismatch between expected and inferred types.
         | ErrorMismatch
         { errorAnnot            :: a
@@ -54,20 +41,13 @@ data Error a n
         , errorExpected         :: Type n
         , errorChecking         :: Exp a n }
 
+
         -- Var --------------------------------------------
         -- | An undefined type variable.
         | ErrorUndefinedVar
         { errorAnnot            :: a
         , errorBound            :: Bound n 
         , errorUniverse         :: Universe }
-
-        -- | A bound occurrence of a variable whose type annotation does not match
-        --   the corresponding annotation in the environment.
-        | ErrorVarAnnotMismatch
-        { errorAnnot            :: a
-        , errorBound            :: Bound n
-        , errorTypeAnnot        :: Type n
-        , errorTypeEnv          :: Type n }
 
 
         -- Con --------------------------------------------
@@ -142,30 +122,10 @@ data Error a n
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
         
-        -- | An abstraction parameter does not match the expected type.
-        | ErrorLamParamUnexpected
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorExpected         :: Type n }
-
-        -- | The expected type of a lambda abstraction is not a function.
-        | ErrorLamExpectedFun
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorExpected         :: Type n }
-
         -- | A type abstraction without a kind annotation on the parameter.
         | ErrorLAMParamUnannotated
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
-
-        -- | A type abstraction parameter does not match the expected kind.
-        | ErrorLAMParamUnexpected
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorExpected         :: Type n}
 
         -- | A type abstraction parameter with a bad sort.
         | ErrorLAMParamBadSort
@@ -174,11 +134,6 @@ data Error a n
         , errorBind             :: Bind n
         , errorSort             :: Sort n }
 
-        -- | The expected type of a type lambda is not quantified.
-        | ErrorLAMExpectedForall
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorExpected         :: Type n}
 
         -- Let --------------------------------------------
         -- | A let-expression where the type of the binder does not match the right
@@ -272,13 +227,6 @@ data Error a n
         , errorBoundRegions     :: [Bound n]
         , errorBindWitness      :: Bind  n }
 
-        -- | A letregion-expression where the witness binding references some
-        --   free region variable that is not the one being introduced.
-        | ErrorLetRegionWitnessFree
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBindWitness      :: Bind n }
-        
 
         -- Withregion -------------------------------------
         -- | A withregion-expression where the handle does not have region kind.

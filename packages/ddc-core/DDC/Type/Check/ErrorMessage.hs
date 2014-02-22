@@ -1,7 +1,6 @@
 
 -- | Errors produced when checking types.
-module DDC.Type.Check.ErrorMessage
-where
+module DDC.Type.Check.ErrorMessage where
 import DDC.Type.Check.Error
 import DDC.Type.Universe
 import DDC.Type.Compounds
@@ -32,21 +31,10 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                 , empty
                 , text "with: "                         <> align (ppr tt) ]
 
-        ErrorCannotInfer tt
-         -> vcat [ text "Cannot infer type"
-                 , text "     with placeholder: " <> ppr tt ]
-
 
         -- Variables ----------------------------
         ErrorUndefined u
          -> text "Undefined type variable: " <> ppr u
-
-        ErrorVarAnnotMismatch u t
-         -> vcat [ text "Kind mismatch in annotation."
-                 , text "             Variable: "       <> ppr u
-                 , text "       has annotation: "       <> ppr u
-                 , text " which conflicts with: "       <> ppr t
-                 , text "     from environment." ]
 
 
         -- Constructors -------------------------
@@ -56,7 +44,6 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
         ErrorNakedSort s
          -> text "Can't check a naked sort: " <> ppr s
                 
-
         ErrorUndefinedTypeCtor u
          -> text "Undefined type constructor: " <> ppr u
 
@@ -125,6 +112,4 @@ instance (Eq n, Show n, Pretty n) => Pretty (ErrorData n) where
                  , text "   A constructor with name: " <> ppr n
                  , text "   is already defined." ]
 
-        ErrorDataBadCtorType n err'
-         -> vcat [ text "Bad type for data constructor '" <> ppr n <> text "'"
-                 , ppr err' ]
+
