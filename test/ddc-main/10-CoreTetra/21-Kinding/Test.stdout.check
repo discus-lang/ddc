@@ -7,6 +7,8 @@ When checking type.
                  Type: Prop
    is not in universe: Spec
 
+
+-- Error: sorts don't have a higher classification
 When checking type.
   Universe malfunction.
                  Type: Prop
@@ -29,6 +31,26 @@ When checking type.
           when checking: [r : Region].Read r
 
 
+-- Error: witness implication is invalid.
+When checking type.
+  Invalid args for witness implication.
+              left type: r
+               has kind: Region
+             right type: String# r
+               has kind: Data
+          when checking: r => String# r
+
+
+-- Error: witness implication is invalid.
+When checking type.
+  Invalid args for witness implication.
+              left type: r
+               has kind: Region
+             right type: Mutable r
+               has kind: Witness
+          when checking: r => Mutable r
+
+
 -- Error: invalid kind for type sum.
 When checking type.
   Invalid kind for type sum.
@@ -37,8 +59,8 @@ When checking type.
     but it must be Effect or Closure
 
 
--- #242 Error: Undefined type constructor ().
+-- #242 Error: Unexpected constructor ().
 While parsing.
-  Parse error in "<batch>" (line 25, column 17)
+  Parse error in "<batch>" (line 35, column 17)
   Unexpected constructor "()".
   Expected a type.

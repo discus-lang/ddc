@@ -4,6 +4,8 @@
 -- Error: sorts don't have a higher classification
 :kind Prop
 
+
+-- Error: sorts don't have a higher classification
 :sort Prop
 
 
@@ -17,9 +19,17 @@
 :kind [r : Region]. Read r
 
 
+-- Error: witness implication is invalid.
+:kind [r : Region]. r => String# r
+
+
+-- Error: witness implication is invalid.
+:kind [r : Region]. r => Mutable r
+
+
 -- Error: invalid kind for type sum.
 :kind [r : Region]. (Const + Const)
 
 
--- #242 Error: Undefined type constructor ().
+-- #242 Error: Unexpected constructor ().
 :kind [r : Region]. (() + ())

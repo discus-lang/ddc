@@ -1,0 +1,9 @@
+ok
+
+-- Error: partial application at unboxed types.
+--   We allow this in the Tetra language, and generate the Salt code for it, 
+--   but this is not part of the Salt language.
+Fragment violation when converting Tetra module to Salt module.
+  Module is not in a-normal form.
+  Cannot convert expression.
+foo2 x0
