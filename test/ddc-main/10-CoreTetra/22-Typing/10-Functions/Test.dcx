@@ -1,0 +1,9 @@
+:set lang Tetra
+
+
+-- Check types of primitive arithmetic functions use the correct function constructor.
+:load..
+module Test with letrec
+addInt (x : Int#) : Int# -> Int# 
+ = add# [Int#] x
+;;

@@ -1,0 +1,9 @@
+ok
+
+
+-- Check types of primitive arithmetic functions use the correct function constructor.
+module Test with
+letrec {
+  addInt : Int# -> Int# -> Int#
+    = \(x : Int#). add# [Int#] x
+}
