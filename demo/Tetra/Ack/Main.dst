@@ -16,7 +16,7 @@ ack (m : Nat#) (n : Nat#) : Nat#
                         0       -> ack (sub# m 1) 1
                         _       -> ack (sub# m 1) (ack m (sub# n 1))
 
-main (x : Unit) : S Console Unit
+main (_ : Unit) : S Console Unit
  = private r in
    box do
         run putStrLn (showNat [r] (ack 3 2))

@@ -14,7 +14,6 @@ import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Type.Env                             (KindEnv, TypeEnv)
-import DDC.Type.Predicates
 import DDC.Base.Pretty                          hiding (align)
 import DDC.Data.ListUtils
 import Control.Monad.State.Strict               (evalState)
@@ -234,7 +233,9 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
         -- Build the function.
         return  $ ( Function
                     { funDecl     = decl
-                    , funParams   = map nameOfParam $ filter (not . isBNone) bsParamValue
+                    , funParams   = [nameOfParam i b 
+                                        | i <- [0..]
+                                        | b <- bsParamValue]
                     , funAttrs    = [] 
                     , funSection  = SectionAuto
                     , funBlocks   = Seq.toList blocks }
@@ -246,11 +247,14 @@ convSuperM _ _ _ _ _
 
 
 -- | Take the string name to use for a function parameter.
-nameOfParam :: C.Bind A.Name -> String
-nameOfParam bb
+nameOfParam :: Int -> C.Bind A.Name -> String
+nameOfParam i bb
  = case bb of
         C.BName (A.NameVar n) _ 
            -> A.sanitizeName n
+
+        C.BNone _
+           -> "_arg" ++ show i
 
         _  -> die $ "Invalid parameter name: " ++ show bb
 

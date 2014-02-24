@@ -15,7 +15,7 @@ fac (acc : Nat#) (n : Nat#) : Nat#
         1       -> acc
         _       -> fac (add# acc n) (sub# n 1)
 
-main (u: Unit) : S Console Unit
+main (_ : Unit) : S Console Unit
  = private r in
    box do
         run putStrLn (showNat [r] (fac 1 10))

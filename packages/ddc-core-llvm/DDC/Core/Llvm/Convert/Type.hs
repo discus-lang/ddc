@@ -154,6 +154,9 @@ importedFunctionDeclOfType _ _ _ _ _
 convTyCon :: Platform -> C.TyCon Name -> Type
 convTyCon platform tycon
  = case tycon of
+        C.TyConSpec  C.TcConUnit
+         -> tObj platform
+
         C.TyConBound (C.UPrim NameObjTyCon _) _
          -> tObj platform
 
@@ -178,7 +181,7 @@ convTyCon platform tycon
 
                 _               -> die "Invalid primitive type constructor."
 
-        _ -> die "Invalid type constructor."
+        _ -> die $ "Invalid type constructor '" ++ show tycon ++ "'"
 
 
 -- | Type of Heap objects.

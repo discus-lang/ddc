@@ -44,3 +44,11 @@ module Test with letrec
 
  tag (_ : Unit) : Nat#
   = size2# [Tag#];;
+
+
+-- Function arguments without names still need to appear in the generated code.
+:to-llvm..
+module Test with letrec
+ blerk (_ : Unit) : Nat#
+   = 3#
+;;
