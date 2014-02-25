@@ -28,13 +28,17 @@ data Error a
         -- | Binder has BNone form, binds no variable.
         | ErrorBindNone
 
-        -- | Modules must contain a top-level letrec.
-        | ErrorNoTopLevelLetrec
-        { errorModule   :: Module a Name }
+        -- | Invalid import.
+        | ErrorImportInvalid
+        { errorImportSource :: ImportSource Name }
 
         -- | A local variable has an invalid type.
         | ErrorTypeInvalid 
         { errorType     :: Type Name }
+
+        -- | Modules must contain a top-level letrec.
+        | ErrorNoTopLevelLetrec
+        { errorModule   :: Module a Name }
 
         -- | An invalid function definition.
         | ErrorFunctionInvalid
@@ -92,6 +96,9 @@ instance (Show a, Pretty a) => Pretty (Error a) where
                  , empty
                  , text "with:"                                 <+> align (ppr tt) ]
 
+        ErrorImportInvalid _isrc
+         -> vcat [ text "Invalid import spec." ]
+                 
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."
                  , empty

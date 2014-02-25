@@ -66,19 +66,39 @@ convFunctionTypeM kenv isrc tFunc
 
  | otherwise
  = case isrc of
+    -- Import a value from a DDC compiled module.
     ImportSourceModule _mn n _
      -> do
-        let nFun'        = text $ sanitizeGlobal (renderPlain $ ppr n)
+        -- Symbol name for the function.
+        let nFun'       = text $ sanitizeGlobal (renderPlain $ ppr n)
 
+        -- Convert the argument and return types.
         let (tsArgs, tResult) = takeTFunArgResult tFunc
-
         tsArgs'          <- mapM (convTypeM kenv) tsArgs
         tResult'         <- convTypeM kenv tResult
 
         return $ tResult' <+> nFun' <+> parenss tsArgs'
 
-    _ -> error "TODO: convFunctionTypeM from diff source"
+    -- Import a value using the C calling convention.
+    ImportSourceSea nFun _
+     -> do
+        -- Convert the argument and return types.
+        let (tsArgs, tResult) = takeTFunArgResult tFunc
+        tsArgs'          <- mapM (convTypeM kenv) tsArgs
+        tResult'         <- convTypeM kenv tResult
 
+        return $ tResult' <+> text nFun <+> parenss tsArgs'
+
+    ImportSourceAbstract{}
+     -> throw $ ErrorImportInvalid isrc
+
+    
  
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs
+
+
+
+
+
+

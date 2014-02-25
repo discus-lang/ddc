@@ -68,6 +68,7 @@ convertT :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
 convertT kenv tt
         | Just (E.NamePrimTyCon n, [])    <- takePrimTyConApps tt
         = case n of
+                E.PrimTyConVoid         -> return $ A.tVoid
                 E.PrimTyConBool         -> return $ A.tBool
                 E.PrimTyConNat          -> return $ A.tNat
                 E.PrimTyConInt          -> return $ A.tInt
@@ -148,47 +149,62 @@ convertRepableT kenv tt
 -- | Convert the application of a type constructor to Salt form.
 convertTyConApp :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
 convertTyConApp kenv tt
-         -- Convert Tetra function types to Salt function types.
-         | Just (t1, t2)        <- takeTFun tt
-         = do   t1'     <- convertRepableT kenv t1
-                t2'     <- convertRepableT kenv t2
-                return  $ tFunPE t1' t2'
-         
-         -- Explicitly Boxed numeric types.
-         --   In Salt, boxed numeric values are represented in generic form,
-         --   as pointers to objects in the top-level region.
-         | Just ( E.NameTyConTetra E.TyConTetraB 
-                , [tBIx])       <- takePrimTyConApps tt
-         , isBoxableIndexType tBIx
-         =      return  $ A.tPtr A.rTop A.tObj       
+        -- Convert Tetra function types to Salt function types.
+        | Just (t1, t2)        <- takeTFun tt
+        = do   t1'     <- convertRepableT kenv t1
+               t2'     <- convertRepableT kenv t2
+               return  $ tFunPE t1' t2'
 
-         -- Explicitly Unboxed numeric types.
-         --   In Salt, unboxed numeric values are represented directly as 
-         --   values of the corresponding machine type.
-         | Just ( E.NameTyConTetra E.TyConTetraU
-                , [tBIx])       <- takePrimTyConApps tt
-         , isBoxableIndexType tBIx
-         = do   tBIx'   <- convertIndexT tBIx
-                return tBIx'
+        -- The Void# type.
+        | Just ( E.NamePrimTyCon E.PrimTyConVoid, [])     <- takePrimTyConApps tt
+        =      return A.tVoid
 
-         -- A user-defined data type with a primary region.
-         --   These are converted to generic boxed objects in the same region.
-         | Just (_, tR : _args) <- takeTyConApps tt
-         , TVar u       <- tR
-         , Just k       <- Env.lookup u kenv
-         , isRegionKind k
-         = do   tR'     <- convertRegionT kenv tR
-                return  $ A.tPtr tR' A.tObj
-         
-         -- A user-defined data type without a primary region.
-         --   These are converted to generic boxed objects in the top-level region.
-         | Just (_, _)          <- takeTyConApps tt
-         = do   return  $ A.tPtr A.rTop A.tObj
+        -- The String# type.
+        | Just ( E.NamePrimTyCon E.PrimTyConString, [tR]) <- takePrimTyConApps tt
+        , TVar u        <- tR
+        , Just k        <- Env.lookup u kenv
+        , isRegionKind k
+        =       return A.tString
 
-         | otherwise
-         =      throw   $ ErrorMalformed 
-                        $  "Invalid type constructor application "
-                        ++ (renderIndent $ ppr tt)
+        -- Computation types.
+        | Just (TyConSpec TcConSusp, [_tEff, tResult])    <- takeTyConApps tt
+        = do   convertRepableT kenv tResult
+        
+        -- Explicitly Boxed numeric types.
+        --   In Salt, boxed numeric values are represented in generic form,
+        --   as pointers to objects in the top-level region.
+        | Just ( E.NameTyConTetra E.TyConTetraB 
+               , [tBIx])       <- takePrimTyConApps tt
+        , isBoxableIndexType tBIx
+        =      return  $ A.tPtr A.rTop A.tObj       
+
+        -- Explicitly Unboxed numeric types.
+        --   In Salt, unboxed numeric values are represented directly as 
+        --   values of the corresponding machine type.
+        | Just ( E.NameTyConTetra E.TyConTetraU
+               , [tBIx])       <- takePrimTyConApps tt
+        , isBoxableIndexType tBIx
+        = do   tBIx'   <- convertIndexT tBIx
+               return tBIx'
+
+        -- A user-defined data type with a primary region.
+        --   These are converted to generic boxed objects in the same region.
+        | Just (_, tR : _args) <- takeTyConApps tt
+        , TVar u       <- tR
+        , Just k       <- Env.lookup u kenv
+        , isRegionKind k
+        = do   tR'     <- convertRegionT kenv tR
+               return  $ A.tPtr tR' A.tObj
+
+        -- A user-defined data type without a primary region.
+        --   These are converted to generic boxed objects in the top-level region.
+        | Just (_, _)          <- takeTyConApps tt
+        = do   return  $ A.tPtr A.rTop A.tObj
+
+        | otherwise
+        =      throw   $ ErrorMalformed 
+                       $  "Invalid type constructor application "
+                       ++ (renderIndent $ ppr tt)
         
 
 -- | Convert an index type from Tetra to Salt.

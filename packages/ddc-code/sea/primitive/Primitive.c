@@ -6,6 +6,7 @@
 
 
 // Show an integer.
+// This leaks the space for the string, but nevermind until we get a GC.
 string_t* showInt (int i)
 {       string_t* str = malloc(32);
         snprintf(str, 32, "%d", i);
@@ -14,6 +15,7 @@ string_t* showInt (int i)
 
 
 // Show a natural number.
+// This leaks the space for the string, but nevermind until we get a GC.
 string_t* showNat (nat_t i)
 {       string_t* str = malloc(32);
         snprintf(str, 32, "%u", (unsigned int)i);

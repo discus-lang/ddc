@@ -5,7 +5,7 @@ import foreign abstract type
  Console  :: Effect
 
 import foreign c value
- putStrLn :: [r : Region]. String# r -> S Console Unit
+ putStrLn :: [r : Region]. String# r -> S Console Void#
  showNat  :: [r : Region]. Nat#      -> String# r
 
 where

@@ -23,6 +23,7 @@ import qualified DDC.Core.Salt.Compounds as A
 
 import DDC.Type.Universe
 import DDC.Type.DataDef
+import DDC.Base.Pretty
 import DDC.Type.Env                      (KindEnv, TypeEnv)
 import qualified DDC.Type.Env            as Env
 
@@ -32,8 +33,6 @@ import qualified Data.Map                as Map
 import qualified Data.Set                as Set
 import Control.Monad
 import Data.Maybe
-
-import DDC.Base.Pretty
 
 
 ---------------------------------------------------------------------------------------------------
