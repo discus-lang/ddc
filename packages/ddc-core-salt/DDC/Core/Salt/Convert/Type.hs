@@ -15,6 +15,7 @@ import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Type.Env                   as Env
 
+import Debug.Trace
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to C source text.
@@ -87,7 +88,8 @@ convFunctionTypeM kenv isrc tFunc
         tsArgs'          <- mapM (convTypeM kenv) tsArgs
         tResult'         <- convTypeM kenv tResult
 
-        return $ tResult' <+> text nFun <+> parenss tsArgs'
+        trace (renderIndent $ hcat (map ppr tsArgs) <+> text "|" <+> hcat tsArgs')
+         $ return $ tResult' <+> text nFun <+> parenss tsArgs'
 
     ImportSourceAbstract{}
      -> throw $ ErrorImportInvalid isrc

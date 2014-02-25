@@ -44,7 +44,7 @@ import Control.Monad
 
 import DDC.Base.Pretty
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Convert a kind from Core Tetra to Core Salt.
 convertK :: Kind E.Name -> ConvertM a (Kind A.Name)
 convertK kk
@@ -54,7 +54,7 @@ convertK kk
         _ -> throw $ ErrorMalformed "Invalid kind."
 
 
--- Type -----------------------------------------------------------------------
+-- Type ------------------------------------------------------------------------------------------
 -- | Convert a data type from Core Tetra to Core Salt.
 --
 --   This version can be used to convert both representational 
@@ -73,6 +73,7 @@ convertT kenv tt
                 E.PrimTyConNat          -> return $ A.tNat
                 E.PrimTyConInt          -> return $ A.tInt
                 E.PrimTyConWord  bits   -> return $ A.tWord bits
+                E.PrimTyConString       -> return $ A.tString
                 _ -> throw $ ErrorMalformed "Cannot convert type."
 
         | otherwise
@@ -155,20 +156,23 @@ convertTyConApp kenv tt
                t2'     <- convertRepableT kenv t2
                return  $ tFunPE t1' t2'
 
-        -- The Void# type.
-        | Just ( E.NamePrimTyCon E.PrimTyConVoid, [])     <- takePrimTyConApps tt
-        =      return A.tVoid
-
-        -- The String# type.
-        | Just ( E.NamePrimTyCon E.PrimTyConString, [tR]) <- takePrimTyConApps tt
-        , TVar u        <- tR
-        , Just k        <- Env.lookup u kenv
-        , isRegionKind k
-        =       return A.tString
-
         -- Computation types.
         | Just (TyConSpec TcConSusp, [_tEff, tResult])    <- takeTyConApps tt
         = do   convertRepableT kenv tResult
+        
+        -- The Void# type.
+        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])    <- takePrimTyConApps tt
+        =      return A.tVoid
+
+        -- The String# type.
+        | Just (E.NamePrimTyCon E.PrimTyConString, [])    <- takePrimTyConApps tt
+        =      return A.tString
+
+        -- Unboxed pointer types.
+        | Just (E.NamePrimTyCon E.PrimTyConPtr, [tR, tX]) <- takePrimTyConApps tt
+        = do    tR'     <- convertRegionT kenv tR
+                tX'     <- convertT kenv tX
+                return  $ A.tPtr tR' tX'
         
         -- Explicitly Boxed numeric types.
         --   In Salt, boxed numeric values are represented in generic form,
@@ -189,6 +193,7 @@ convertTyConApp kenv tt
 
         -- A user-defined data type with a primary region.
         --   These are converted to generic boxed objects in the same region.
+        --   TODO: check really user defined.
         | Just (_, tR : _args) <- takeTyConApps tt
         , TVar u       <- tR
         , Just k       <- Env.lookup u kenv
@@ -198,6 +203,7 @@ convertTyConApp kenv tt
 
         -- A user-defined data type without a primary region.
         --   These are converted to generic boxed objects in the top-level region.
+        --   TODO: check really user defined.
         | Just (_, _)          <- takeTyConApps tt
         = do   return  $ A.tPtr A.rTop A.tObj
 
@@ -239,7 +245,7 @@ convertRegionT kenv tt
         = throw $ ErrorMalformed $ "Invalid region type " ++ (renderIndent $ ppr tt)
 
 
--- Binds ----------------------------------------------------------------------
+-- Binds ------------------------------------------------------------------------------------------
 -- | Convert a type binder.
 --   These are formal type parameters.
 convertTypeB    :: Bind E.Name -> ConvertM a (Bind A.Name)
@@ -285,7 +291,7 @@ convertBindNameM nn
         _               -> throw $ ErrorInvalidBinder nn
 
 
--- Bounds ---------------------------------------------------------------------
+-- Bounds -----------------------------------------------------------------------------------------
 -- | Convert a type bound.
 --   These are bound by formal type parametrs.
 convertTypeU    :: Bound E.Name -> ConvertM a (Bound A.Name)
@@ -332,7 +338,7 @@ convertValueU uu
         _ -> throw $ ErrorInvalidBound uu
 
 
--- DaCon ----------------------------------------------------------------------
+-- DaCon ------------------------------------------------------------------------------------------
 -- | Convert a data constructor definition.
 convertDaCon :: KindEnv E.Name -> DaCon E.Name -> ConvertM a (DaCon A.Name)
 convertDaCon kenv dc
@@ -364,7 +370,7 @@ convertDaConNameM dc nn
         _                       -> throw $ ErrorInvalidDaCon dc
 
 
--- Prime Region ---------------------------------------------------------------
+-- Prime Region -----------------------------------------------------------------------------------
 -- | Given the type of some data value, determine what prime region to use 
 --   for the object in the Salt language. The supplied type must have kind
 --   Data, else you'll get a bogus result.

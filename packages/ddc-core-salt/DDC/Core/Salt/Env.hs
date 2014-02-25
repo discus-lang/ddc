@@ -93,7 +93,7 @@ kindOfPrimTyCon tc
         PrimTyConWord  _ -> kData
         PrimTyConFloat _ -> kData
         PrimTyConAddr    -> kData
-        PrimTyConPtr     -> (kRegion `kFun` kData `kFun` kData)
+        PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag     -> kData
         PrimTyConString  -> kData
         PrimTyConVec   _ -> kData `kFun` kData

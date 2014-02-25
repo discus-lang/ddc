@@ -28,7 +28,7 @@ kindPrimTyCon tc
         PrimTyConAddr{}   -> kData
         PrimTyConPtr{}    -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag{}    -> kData
-        PrimTyConString{} -> kRegion `kFun` kData
+        PrimTyConString{} -> kData
 
 
 -- Compounds ------------------------------------------------------------------

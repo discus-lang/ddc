@@ -20,7 +20,7 @@
 
 
 -- Error: witness implication is invalid.
-:kind [r : Region]. r => String# r
+:kind [r : Region]. r => String#
 
 
 -- Error: witness implication is invalid.
