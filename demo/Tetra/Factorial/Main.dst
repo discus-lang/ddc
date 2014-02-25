@@ -5,8 +5,8 @@ import foreign abstract type
  Console  :: Effect
 
 import foreign c value
- putStrLn :: [r : Region]. String# r -> S Console Unit
- showNat  :: [r : Region]. Nat#      -> String# r
+ putStrLn :: [r : Region]. Ptr# r String# -> S Console Void#
+ showNat  :: [r : Region]. Nat#           -> Ptr# r String#
 
 where
 fac (acc : Nat#) (n : Nat#) : Nat#
@@ -20,4 +20,5 @@ main (_ : Unit) : S Console Unit
    box do
         run putStrLn (showNat [r] (fac 1 10))
         run putStrLn (showNat [r] (fac 1 11))
+        ()
         

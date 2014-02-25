@@ -15,7 +15,6 @@ import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Type.Env                   as Env
 
-import Debug.Trace
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to C source text.
@@ -75,7 +74,7 @@ convFunctionTypeM kenv isrc tFunc
 
         -- Convert the argument and return types.
         let (tsArgs, tResult) = takeTFunArgResult tFunc
-        tsArgs'          <- mapM (convTypeM kenv) tsArgs
+        tsArgs'          <- mapM (convTypeM kenv) $ filter keepParamOfType tsArgs
         tResult'         <- convTypeM kenv tResult
 
         return $ tResult' <+> nFun' <+> parenss tsArgs'
@@ -85,16 +84,23 @@ convFunctionTypeM kenv isrc tFunc
      -> do
         -- Convert the argument and return types.
         let (tsArgs, tResult) = takeTFunArgResult tFunc
-        tsArgs'          <- mapM (convTypeM kenv) tsArgs
+        tsArgs'          <- mapM (convTypeM kenv) $ filter keepParamOfType tsArgs
         tResult'         <- convTypeM kenv tResult
 
-        trace (renderIndent $ hcat (map ppr tsArgs) <+> text "|" <+> hcat tsArgs')
-         $ return $ tResult' <+> text nFun <+> parenss tsArgs'
+        return $ tResult' <+> text nFun <+> parenss tsArgs'
 
     ImportSourceAbstract{}
      -> throw $ ErrorImportInvalid isrc
 
-    
+
+keepParamOfType :: Type Name -> Bool
+keepParamOfType tt
+ | tc : _       <- takeTApps tt
+ , isWitnessType tc
+                = False
+
+ | otherwise    = True
+
  
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs

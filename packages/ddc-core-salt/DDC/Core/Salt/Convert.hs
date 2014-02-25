@@ -60,15 +60,12 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , empty ]
 
         -- Import external symbols ----
-        let nts = map snd $ C.moduleImportValues mm
+        let nts =  map snd $ C.moduleImportValues mm
         docs    <- mapM (uncurry $ convFunctionTypeM Env.empty) 
                         [(src, typeOfImportSource src) | src <- nts]
         let cExterns
-                |  not withPrelude
-                = []
-
-                | otherwise
-                =  [ text "extern " <> doc <> semi | doc <- docs ]
+                | not withPrelude = []
+                | otherwise       = [ text "extern " <> doc <> semi | doc <- docs ]
 
         -- RTS def --------------------
         -- If this is the main module then we need to declare
@@ -87,6 +84,15 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , text "extern addr_t _DDC_Runtime_heapMax;"
                   , empty ]
 
+        -- Function prototypes --------
+        let srcsProto
+                = [ImportSourceSea (renderPlain (ppr n)) t | (BName n t, _) <- bxs]
+        dsProto <- mapM (uncurry $ convFunctionTypeM Env.empty)
+                        [(src, typeOfImportSource src) | src <- srcsProto]
+        let cProtos
+                | not withPrelude = []
+                | otherwise       = [ doc <> semi | doc <- dsProto ]
+
         -- Super-combinator definitions.
         let kenv = Env.fromList [ BName n (typeOfImportSource isrc) 
                                 | (n, isrc) <- moduleImportTypes mm ]
@@ -100,7 +106,8 @@ convModuleM withPrelude pp mm@(ModuleCore{})
         return  $  vcat 
                 $  cIncludes 
                 ++ cExterns
-                ++ cGlobals 
+                ++ cGlobals
+                ++ cProtos
                 ++ cSupers
 
  | otherwise
@@ -141,8 +148,11 @@ convSuperM' pp kenv tenv bTop bsParam xx
         let (_, tResult) = takeTFunArgResult $ eraseTForalls tTop 
 
         -- Convert function parameters.
-        bsParam'        <- mapM (convBind kenv tenv) $ filter keepBind bsParam
-
+        bsParam'        <- sequence
+                        $ [ convBind kenv tenv i b
+                                | b     <- filter keepBind bsParam
+                                | i     <- [0..] ]
+                                        
         -- Convert result type.
         tResult'        <- convTypeM kenv  $ eraseWitArg tResult
 
@@ -209,20 +219,23 @@ keepBind bb
          ,  isWitnessType tc
          -> False
          
-        BNone{} -> False         
         _       -> True
 
 
 -- | Convert a function parameter binding to C source text.
-convBind :: KindEnv Name -> TypeEnv Name -> Bind Name -> ConvertM a Doc
-convBind kenv _tenv b
+convBind :: KindEnv Name -> TypeEnv Name -> Int -> Bind Name -> ConvertM a Doc
+convBind kenv _tenv iPos b
  = case b of 
-   
         -- Named variables binders.
         BName (NameVar str) t
-         -> do   t'      <- convTypeM kenv t
-                 return  $ t' <+> (text $ sanitizeLocal str)
-                 
+         -> do  t'      <- convTypeM kenv t
+                return  $ t' <+> (text $ sanitizeLocal str)
+        
+        -- Anonymous arguments.
+        BNone t
+         -> do  t'      <- convTypeM kenv t
+                return  $ t' <+> (text $ "_arg" ++ show iPos)
+
         _       -> throw $ ErrorParameterInvalid b
 
 
