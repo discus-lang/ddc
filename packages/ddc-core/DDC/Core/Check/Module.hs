@@ -19,7 +19,6 @@ import DDC.Type.Universe
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
-import Data.Maybe
 import Data.Monoid
 import Control.Monad
 import qualified DDC.Type.Env   as Env
@@ -83,14 +82,12 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
 
         -- Check the sigs of exported types ---------------
-        mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseKind k Recon) 
-                $ mapMaybe (takeTypeOfExportSource . snd) $ moduleExportTypes mm
+        esrcsType'      <- checkExportTypes config        $ moduleExportTypes mm
 
 
         -- Check the sigs of exported values --------------
-        mapM_ (\k -> checkTypeM config kenv' emptyContext UniverseSpec k Recon) 
-                $ mapMaybe (takeTypeOfExportSource . snd) $ moduleExportValues mm                
-
+        esrcsValue'     <- checkExportValues config kenv' $ moduleExportValues mm
+        
         
         -- Check the local data type defs -----------------
         defs'        
@@ -140,21 +137,64 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                 
                 | otherwise = e
 
-        let ntsExport'
-                = [ (n, updateExportSource e) | (n, e) <- moduleExportValues mm ]
+        let esrcsValue_updated
+                = [ (n, updateExportSource e) | (n, e) <- esrcsValue' ]
 
                                  
         -- Return the checked bindings as they have explicit type annotations.
         let mm' = mm    
-                { moduleExportValues    = ntsExport'
+                { moduleExportTypes     = esrcsType'
+                , moduleExportValues    = esrcsValue_updated
                 , moduleImportTypes     = nksImport'
                 , moduleImportValues    = ntsImport'
                 , moduleBody            = x'' }
 
         return mm'
 
+
+---------------------------------------------------------------------------------------------------
+-- | Check exported types.
+checkExportTypes
+        :: (Show n, Pretty n, Ord n)
+        => Config n
+        -> [(n, ExportSource n)]
+        -> CheckM a n [(n, ExportSource n)]
+
+checkExportTypes config nesrcs
+ = let  check (n, esrc)
+         | Just k          <- takeTypeOfExportSource esrc
+         = do   (k', _, _) <- checkTypeM config Env.empty emptyContext UniverseKind k Recon
+                return  $ (n, mapTypeOfExportSource (const k') esrc)
+
+         | otherwise
+         = return (n, esrc)
+   in do
+        mapM check nesrcs
+
+ 
+
+-- | Check exported types.
+checkExportValues
+        :: (Show n, Pretty n, Ord n)
+        => Config n -> KindEnv n
+        -> [(n, ExportSource n)]
+        -> CheckM a n [(n, ExportSource n)]
+
+checkExportValues config kenv nesrcs
+ = let  check (n, esrc)
+         | Just t          <- takeTypeOfExportSource esrc
+         = do   (t', _, _) <- checkTypeM config kenv emptyContext UniverseSpec t Recon
+                return  $ (n, mapTypeOfExportSource (const t') esrc)
+
+         | otherwise
+         = return (n, esrc)
+
+   in do
+        mapM check nesrcs
+
 ---------------------------------------------------------------------------------------------------
 -- | Check kinds of imported types.
+--   TODO: also check for duplicates.
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n -> Mode n
@@ -184,8 +224,8 @@ checkImportTypes config mode nksImport
         return nksImport'
 
 
----------------------------------------------------------------------------------------------------
 -- | Check types of imported values.
+--   TODO: also check for duplicates.
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n -> KindEnv n -> Mode n

@@ -29,3 +29,15 @@ with letrec
 main (x y : Nat#) : S Pure Unit
  = box ()
 ;;
+
+
+-- Error: duplicate export of name.
+-- #295: Check for duplicate exported names in module parser.
+:load..
+module Main 
+export main :: Unit -> S Pure Unit
+export main :: Unit -> S Pure Unit
+with letrec
+main (x : Unit) : S Pure Unit
+ = box ()
+;;
