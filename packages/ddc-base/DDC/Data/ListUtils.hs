@@ -7,8 +7,10 @@ module DDC.Data.ListUtils
         , takeTail
         , takeInit
         , takeMaximum
-        , index)
+        , index
+        , findDuplicates)
 where
+import qualified Data.Set as Set
 
 
 -- | Take the head of a list, or `Nothing` if it's empty.
@@ -49,3 +51,14 @@ index :: [a] -> Int -> Maybe a
 index [] _              = Nothing
 index (x : _)  0        = Just x
 index (_ : xs) i        = index xs (i - 1)
+
+
+
+-- | Fine the duplicate values in a list.
+findDuplicates :: Ord n => [n] -> [n]
+findDuplicates xx
+ = go (Set.fromList xx) xx
+ where  go _  []            = []
+        go ss (x : xs)
+         | Set.member x ss  =     go (Set.delete x ss) xs
+         | otherwise        = x : go ss xs

@@ -25,3 +25,10 @@ Error loading module
     Invalid type of main function in Main module.
       Type of main function: Nat# -> Nat# -> S Pure Unit
       is not an instance of: [e : Effect]. Unit -> S e Unit
+
+
+-- Error: duplicate export of name.
+-- #295: Check for duplicate exported names in module parser.
+Error loading module
+  When checking expression.
+    Duplicate exported name 'main'.

@@ -20,6 +20,7 @@ import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
 import Data.Monoid
+import DDC.Data.ListUtils
 import Control.Monad
 import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map
@@ -64,7 +65,8 @@ checkModuleM
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
         -- Check kinds of imported types ------------------
-        nksImport'      <- checkImportTypes config mode (moduleImportTypes mm)
+        nksImport'      <- checkImportTypes config mode   
+                        $  moduleImportTypes mm
 
         -- Build the initial kind environment.
         let kenv'       = Env.union kenv 
@@ -73,7 +75,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
 
         -- Check types of imported values -----------------
-        ntsImport'      <- checkImportValues config kenv' mode (moduleImportValues mm)        
+        ntsImport'      <- checkImportValues config kenv' mode 
+                        $  moduleImportValues mm
         
         -- Build the initial type environment.
         let tenv'       = Env.union tenv 
@@ -82,11 +85,12 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
 
         -- Check the sigs of exported types ---------------
-        esrcsType'      <- checkExportTypes config        $ moduleExportTypes mm
-
+        esrcsType'      <- checkExportTypes config        
+                        $ moduleExportTypes mm
 
         -- Check the sigs of exported values --------------
-        esrcsValue'     <- checkExportValues config kenv' $ moduleExportValues mm
+        esrcsValue'     <- checkExportValues config kenv' 
+                        $ moduleExportValues mm
         
         
         -- Check the local data type defs -----------------
@@ -169,10 +173,18 @@ checkExportTypes config nesrcs
          | otherwise
          = return (n, esrc)
    in do
-        mapM check nesrcs
+        -- Check for duplicate exports.
+        let dups = findDuplicates $ map fst nesrcs
+        (case takeHead dups of
+          Just n -> throw $ ErrorExportDuplicate n
+          _      -> return ())
+        
 
+        -- Check the kinds of the export specs.
+        mapM check nesrcs
  
 
+---------------------------------------------------------------------------------------------------
 -- | Check exported types.
 checkExportValues
         :: (Show n, Pretty n, Ord n)
@@ -190,11 +202,18 @@ checkExportValues config kenv nesrcs
          = return (n, esrc)
 
    in do
+        -- Check for duplicate exports.
+        let dups = findDuplicates $ map fst nesrcs
+        (case takeHead dups of
+          Just n -> throw $ ErrorExportDuplicate n
+          _      -> return ())
+
+        -- Check the types of the exported values.
         mapM check nesrcs
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Check kinds of imported types.
---   TODO: also check for duplicates.
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n -> Mode n
@@ -221,11 +240,18 @@ checkImportTypes config mode nksImport
                 = [ (n, mapTypeOfImportSource (const k') isrc)
                                 | (n, isrc)     <- nksImport
                                 | k'            <- ksImport' ]
+        
+        -- Check for duplicate imports.
+        let dups = findDuplicates $ map fst nksImport'
+        (case takeHead dups of
+          Just n -> throw $ ErrorImportDuplicate n
+          _      -> return ())
+
         return nksImport'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Check types of imported values.
---   TODO: also check for duplicates.
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n -> KindEnv n -> Mode n
@@ -252,6 +278,12 @@ checkImportValues config kenv mode ntsImport
                 = [ (n, mapTypeOfImportSource (const t') isrc) 
                         | (n, isrc)     <- ntsImport
                         | t'            <- tsImport' ]
+
+        -- Check for duplicate imports.
+        let dups = findDuplicates $ map fst ntsImport'
+        (case takeHead dups of
+          Just n -> throw $ ErrorImportDuplicate n
+          _      -> return ())
 
         -- TODO: post-check for data kind in Recon mode.
 

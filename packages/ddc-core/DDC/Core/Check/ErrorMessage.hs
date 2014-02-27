@@ -20,13 +20,19 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         
         -- Modules ---------------------------------------
         ErrorExportUndefined n
-         -> vcat [ text "Exported value '" <> ppr n <> text "' is undefined." ]
+         -> vcat [ text "Exported name '" <> ppr n <> text "' is undefined." ]
+
+        ErrorExportDuplicate n
+         -> vcat [ text "Duplicate exported name '" <> ppr n <> text "'."]
 
         ErrorExportMismatch n tExport tDef 
-         -> vcat [ text "Type of exported value does not match type of definition."
+         -> vcat [ text "Type of exported name does not match type of definition."
                  , text "             with binding: "   <> ppr n
                  , text "           type of export: "   <> ppr tExport
                  , text "       type of definition: "   <> ppr tDef ]
+
+        ErrorImportDuplicate n
+         -> vcat [ text "Duplicate imported name '" <> ppr n <> text "'."]
 
 
         -- Exp --------------------------------------------

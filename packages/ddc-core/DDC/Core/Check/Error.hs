@@ -25,6 +25,10 @@ data Error a n
         | ErrorExportUndefined
         { errorName             :: n }
 
+        -- | Exported name is exported multiple times.
+        | ErrorExportDuplicate
+        { errorName             :: n }
+
         -- | Type signature of exported binding does not match the type at
         --   the definition site.
         | ErrorExportMismatch
@@ -32,6 +36,10 @@ data Error a n
         , errorExportType       :: Type n
         , errorDefType          :: Type n }
 
+
+        -- | Imported name is imported multiple times.
+        | ErrorImportDuplicate
+        { errorName             :: n }
 
         -- Exp --------------------------------------------
         -- | Generic mismatch between expected and inferred types.
