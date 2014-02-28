@@ -48,7 +48,7 @@ import System.FilePath
 import System.Directory
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Parse and type-check a core module from a file, 
 --   printing any errors to @stdout@.
 --
@@ -77,7 +77,7 @@ cmdCheckFromFile config filePath
    in   throwError $ "Cannot check '" ++ ext ++ "'files."
 
 
-------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check a Disciple Source Tetra module from a file.
 cmdCheckSourceTetraFromFile
         :: Config               -- ^ Driver config.
@@ -97,7 +97,7 @@ cmdCheckSourceTetraFromFile config filePath
         cmdCheckSourceTetraFromString config (SourceFile filePath) src
 
 
-------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check a Disciple Source Tetra module from a string.
 --   Any errors are thrown in the `ErrorT` monad.
 cmdCheckSourceTetraFromString
@@ -121,7 +121,7 @@ cmdCheckSourceTetraFromString config source str
          es -> throwError $ renderIndent $ vcat $ map ppr es
  
 
-------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check some fragment of Disciple core from a file.
 cmdCheckCoreFromFile
         :: Config               -- ^ Driver config.
@@ -129,12 +129,13 @@ cmdCheckCoreFromFile
         -> FilePath             -- ^ Module file path.
         -> ErrorT String IO ()
 
-cmdCheckCoreFromFile _config language filePath
+cmdCheckCoreFromFile config language filePath
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
  = do
-        mModule <- liftIO
-                $  loadModuleFromFile fragment filePath C.Recon
+        mModule <- liftIO 
+                $ loadModuleFromFile fragment filePath 
+                $ (if configInferTypes config then C.Synth else C.Recon)
         
         case mModule of
                 (Left  err, _ct) -> throwError (renderIndent $ ppr err)
@@ -161,7 +162,7 @@ cmdCheckCoreFromString fragment source str mode
                 (Right mm, _ct) -> return mm
 
 
--- Type -----------------------------------------------------------------------
+-- Type -------------------------------------------------------------------------------------------
 -- | Parse a core spec, and return its kind.
 cmdParseCheckType 
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
@@ -199,7 +200,7 @@ cmdShowType language uni source str
          Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
 
 
--- tequiv ---------------------------------------------------------------------
+-- tequiv -----------------------------------------------------------------------------------------
 -- | Check if two types are equivlant.
 cmdTypeEquiv :: Language -> Source -> String -> IO ()
 cmdTypeEquiv language source ss
@@ -241,7 +242,7 @@ cmdTypeEquiv language source ss
    in goParse (fragmentLexExp fragment srcName srcLine ss)
 
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 -- | Parse the given core expression, 
 --   and return it, along with its type, effect and closure.
 --
@@ -304,7 +305,7 @@ cmdParseCheckExp
                -> return (Just result, mct)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | What components of the checked type to display.
 data ShowSpecMode
         = ShowSpecAll
@@ -373,7 +374,7 @@ cmdShowSpec language showMode checkMode shouldPrintTrace source ss
          = return ()
 
 
--- Recon ----------------------------------------------------------------------
+-- Recon ------------------------------------------------------------------------------------------
 -- | Check expression and reconstruct type annotations on binders.
 cmdExpRecon :: Language -> Source -> String -> IO ()
 cmdExpRecon language source ss
@@ -390,7 +391,7 @@ cmdExpRecon language source ss
          = outDocLn $ ppr x
 
 
--- wtype ----------------------------------------------------------------------
+-- wtype ------------------------------------------------------------------------------------------
 -- | Show the type of a witness.
 cmdShowWType :: Language -> Source -> String -> IO ()
 cmdShowWType language source str
