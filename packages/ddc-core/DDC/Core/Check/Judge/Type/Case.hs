@@ -8,10 +8,8 @@ import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 import Data.List                as L
 
-
+---------------------------------------------------------------------------------------------------
 checkCase :: Checker a n
-
--- case expression ------------------------------
 checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
  = do   let config      = tableConfig table
 
@@ -78,7 +76,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
 
         -- Check the alternatives.
         (alts', tsAlts, effss, closs, ctx4)
-         <- checkAltsM a xx table tDiscrim tsArgs modeAlts alts ctx3
+         <- checkAltsM table a xx tDiscrim tsArgs modeAlts alts ctx3
 
         -- Check that all the alternatives have the same type.
         --   In Synth mode this is enforced by passing down an existential to 
@@ -121,6 +119,7 @@ checkCase _ _ _ _
         = error "ddc-core.checkCase: no match"
 
 
+---------------------------------------------------------------------------------------------------
 -- | Decide what type checker mode to use when checking the discriminant
 --   of a case expression. 
 --
@@ -176,13 +175,13 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
           -> return (Check tPat, ctx)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check some case alternatives.
 checkAltsM
         :: (Show n, Pretty n, Ord n)
-        => a
+        => Table a n            -- ^ Checker table.
+        -> a                    -- ^ Annotation for error messages.
         -> Exp a n              -- ^ Whole case expression, for error messages.
-        -> Table a n            -- ^ Checker table.
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Mode n               -- ^ Check mode for the alternatives.
@@ -195,10 +194,17 @@ checkAltsM
                 , [Set (TaggedClosure n)]  -- Alternative closures
                 , Context n)
 
-checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
+checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
  = checkAltsM1 alts0 ctx
  
  where 
+  -- Whether we're doing bidirectional type inference.
+  bidir
+   = case mode of
+        Recon   -> False
+        _       -> True
+
+  -- Check all the alternatives monadically.
   checkAltsM1 [] ctx0
    =    return ([], [], [], [], ctx0)
 
@@ -215,6 +221,7 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
                 , cAlt  : csAlts
                 , ctx2)
 
+  -- Check a single alternative.
   checkAltM   (AAlt PDefault xBody) !ctx0
    = do   
         -- Check the right of the alternative.
@@ -228,7 +235,8 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
                 , ctx1)
 
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
-   = do -- Get the constructor type associated with this pattern.
+   = do 
+        -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat table a (PData dc bsArg)
          
         -- Take the type of the constructor and instantiate it with the 
@@ -237,41 +245,42 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
         -- which should have been checked by the def checker.
         tCtor_inst      
          <- case instantiateTs tCtor tsArgs of
-             Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
-             Just t  -> return t
+                Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
+                Just t  -> return t
         
         -- Split the constructor type into the field and result types.
         let (tsFields_ctor, tResult) 
-                        = takeTFunArgResult tCtor_inst
+                = takeTFunArgResult tCtor_inst
 
         -- The result type of the constructor must match the discriminant type.
         -- If it doesn't then the constructor in the pattern probably isn't for
         -- the discriminant type.
         when (not $ equivT tDiscrim tResult)
-         $ throw $ ErrorCaseScrutineeTypeMismatch a xx tDiscrim tResult
+         $ throw $ ErrorCaseScrutineeTypeMismatch a xx 
+                        tDiscrim tResult
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
         when (length tsFields_ctor < length bsArg)
          $ throw $ ErrorCaseTooManyBinders a xx dc
-                        (length tsFields_ctor)
-                        (length bsArg)
+                        (length tsFields_ctor) (length bsArg)
 
         -- Merge the field types we get by instantiating the constructor
         -- type with possible annotations from the source program.
         -- If the annotations don't match, then we throw an error.
-        tsFields        <- zipWithM (mergeAnnot a xx)
-                            (map typeOfBind bsArg)
-                            tsFields_ctor        
+        (tsFields, ctx1) 
+                <- checkFieldAnnots table bidir a xx       
+                        (zip tsFields_ctor (map typeOfBind bsArg))
+                        ctx0
 
         -- Extend the environment with the field types.
         let bsArg'         = zipWith replaceTypeOfBind tsFields bsArg
-        let (ctx1, posArg) = markContext ctx0
-        let ctxArg         = pushTypes bsArg' ctx1
+        let (ctx2, posArg) = markContext ctx1
+        let ctxArg         = pushTypes bsArg' ctx2
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody, ctxBody)
-                <- tableCheckExp table table ctxArg xBody mode
+                 <- tableCheckExp table table ctxArg xBody mode
 
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
@@ -305,27 +314,54 @@ checkAltsM !a !xx !table !tDiscrim !tsArgs !mode !alts0 !ctx
                 , ctx_cut)
 
 
--- | Merge a type annotation on a pattern field with a type we get by
---   instantiating the constructor type.
-mergeAnnot 
-        :: Eq n 
-        => a -> Exp a n -> Type n -> Type n -> CheckM a n (Type n)
+-- Fields -----------------------------------------------------------------------------------------
+-- | Check the inferred type for a field against any annotation for it.
+checkFieldAnnots 
+        :: (Ord n, Pretty n)
+        => Table a n            -- ^ Checker table.
+        -> Bool                 -- ^ Use bi directional type inference.
+        -> a                    -- ^ Annotation for error messages.
+        -> Exp a n              -- ^ Whole case expression for error messages.
+        -> [(Type n, Type n)]   -- ^ List of inferred and annotation types.
+        -> Context n
+        -> CheckM a n 
+                ( [Type n]      --   Final types for each field.
+                , Context n)    --   Result context.
 
-mergeAnnot !a !xx !tAnnot !tActual
-        -- Annotation is bottom, so use the given type.
+checkFieldAnnots table bidir a xx tts ctx0
+ = case tts of
+        [] -> return ([], ctx0)
+        (tActual, tAnnot) : tts'
+           -> do (tField,   ctx1)  <- checkFieldAnnot tActual tAnnot ctx0
+                 (tsFields, ctx')  <- checkFieldAnnots table bidir a xx tts' ctx1
+                 return (tField : tsFields, ctx')
+                 
+ where checkFieldAnnot tActual tAnnot ctx
+        -- Annotation is bottom, so use the inferred type of the field.
         | isBot tAnnot      
-        = return tActual
+        = return (tActual, ctx)
 
-        -- Annotation matches actual type, all good.
-        | tAnnot == tActual 
-        = return tActual
+        -- With bidirectional checking, annotations on fields can refine the 
+        -- inferred type for the overal expression.
+        | bidir
+        = do    ctx'    <- makeEq (tableConfig table) a ctx tAnnot tActual
+                        $  ErrorCaseFieldTypeMismatch a xx tAnnot tActual
+
+                let tField = applyContext ctx' tActual
+                return  (tField, ctx')
+
+        -- In Recon mode, if there is an annotation on the field then it needs
+        -- to exactly match the inferred type of the field.
+        | not bidir
+        , equivT tActual tAnnot
+        = return (tAnnot, ctx)
 
         -- Annotation does not match actual type.
         | otherwise       
         = throw $ ErrorCaseFieldTypeMismatch a xx tAnnot tActual
 
 
--- Ctor Types -----------------------------------------------------------------
+-- Ctor Types -------------------------------------------------------------------------------------
 -- | Get the constructor type associated with a pattern, or Nothing for the
 --   default pattern. If the data constructor isn't defined then the spread 
 --   transform won't have given it a proper type.
@@ -386,7 +422,7 @@ dataTypeOfPat table a pat
                 _                  -> foldr TForall tt bs
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check for overlapping alternatives, 
 --   and throw an error in the `CheckM` monad if there are any.
 checkAltsOverlapping
@@ -422,7 +458,7 @@ checkAltsOverlapping a xx alts
              -> return ()
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check that the alternatives are exhaustive,
 --   and throw and error in the `CheckM` monad if they're not.
 checkAltsExhaustive

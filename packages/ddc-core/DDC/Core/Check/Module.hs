@@ -94,10 +94,9 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         
         
         -- Check the local data type defs -----------------
-        defs'        
-         <- case checkDataDefs config (moduleDataDefsLocal mm) of
-                (err : _, _)   -> throw $ ErrorData err
-                ([], defs')    -> return defs'
+        defs'           <- case checkDataDefs config (moduleDataDefsLocal mm) of
+                                (err : _, _)   -> throw $ ErrorData err
+                                ([], defs')    -> return defs'
 
         let defs_all =  unionDataDefs (configDataDefs config) 
                                       (fromListDataDefs defs')
