@@ -35,13 +35,12 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
         (mDataMode, tsArgs)
          <- case takeTyConApps tDiscrim of
              Just (tc, ts)
+              -- The unit data type.
               | TyConSpec TcConUnit         <- tc
               -> return ( Just (DataModeSmall [])
                         , [] )
-                 -- ISSUE #269: Refactor DataModeSmall to hold DaCons
-                 --  instead of names. The DataModeSmall should hold
-                 --  DaCons instead of names, as we don't have a name
-                 --  for Unit.
+
+              -- User defined or imported data types.
               | TyConBound (UName nTyCon) _ <- tc
               , Just dataType  <- Map.lookup nTyCon
                                $  dataDefsTypes $ configDataDefs config
@@ -50,6 +49,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
               -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
                         , ts )
                       
+              -- Primitive data types.
               | TyConBound (UPrim nTyCon _) k <- tc
               , takeResultKind k == kData
               -> return ( lookupModeOfDataType nTyCon (configDataDefs config)

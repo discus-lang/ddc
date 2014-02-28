@@ -34,6 +34,7 @@ import Control.Monad
 import Control.DeepSeq
 
 
+---------------------------------------------------------------------------------------------------
 -- | The definition of a single data type.
 data DataDef n
         = DataDef
@@ -137,7 +138,7 @@ makeDataDefAbs nData bsParam
         , dataDefIsAlgebraic    = False }
 
 
--- DataDefs -------------------------------------------------------------------
+-- DataDefs ---------------------------------------------------------------------------------------
 -- | A table of data type definitions,
 --   unpacked into type and data constructors so we can find them easily.
 data DataDefs n
