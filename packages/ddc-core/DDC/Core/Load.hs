@@ -9,14 +9,21 @@ module DDC.Core.Load
         , Mode          (..)
         , CheckTrace    (..)
 
-        -- * Loading modules.
+        -- * Loading modules
         , loadModuleFromFile
         , loadModuleFromString
         , loadModuleFromTokens
         
-        -- * Loading individual expressions, types and witnesses.
+        -- * Loading expressions
+        , loadExpFromString
         , loadExpFromTokens
+        
+        -- * Loading types
+        , loadTypeFromString
         , loadTypeFromTokens
+
+        -- * Loading witnesses
+        , loadWitnessFromString
         , loadWitnessFromTokens)
 where
 import DDC.Core.Transform.SpreadX
@@ -41,6 +48,7 @@ import Data.Map.Strict                          (Map)
 import System.Directory
 
 
+-- Error ------------------------------------------------------------------------------------------
 -- | Things that can go wrong when loading a core thing.
 data Error n err
         = ErrorRead       !String
@@ -81,7 +89,7 @@ instance ( Eq n, Show n, Pretty n
                  , indent 2 $ ppr err' ]
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Parse and type check a core module from a file.
 loadModuleFromFile 
         :: (Eq n, Ord n, Show n, Pretty n)
@@ -173,7 +181,26 @@ loadModuleFromTokens fragment sourceName mode toks'
                 Nothing         -> (Right mm,                   Just ct)
 
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
+-- | Parse and type-check and expression from a string.
+loadExpFromString
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Fragment n err       -- ^ Language fragment definition.
+        -> Map ModuleName (Module (C.AnTEC () n) n)
+                                -- ^ Other modules currently in scope.
+                                --   We add their exports to the environment.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> Mode n               -- ^ Type checker mode.
+        -> String               -- ^ Source string.
+        -> ( Either (Error n err) 
+                    (Exp (C.AnTEC BP.SourcePos n) n)
+           , Maybe CheckTrace)
+
+loadExpFromString fragment modules sourceName mode src
+ = do  let toks = F.fragmentLexExp fragment sourceName 1 src
+       loadExpFromTokens fragment modules sourceName mode toks
+
+
 -- | Parse and check an expression
 --   returning it along with its spec, effect and closure
 loadExpFromTokens
@@ -225,9 +252,23 @@ loadExpFromTokens fragment modules sourceName mode toks'
             Nothing                   -> (Right x,                    Just ct)
 
 
--- Type -----------------------------------------------------------------------
--- | Parse and check a type,
---   returning it along with its kind.
+-- Type -------------------------------------------------------------------------------------------
+-- | Parse and check a type from a string, returning it along with its kind.
+loadTypeFromString
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Fragment n err       -- ^ Language fragment definition.
+        -> Universe             -- ^ Universe this type is supposed to be in.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> String               -- ^ Source string.
+        -> Either (Error n err) 
+                  (Type n, Kind n)
+
+loadTypeFromString fragment uni sourceName str
+ = do  let toks = F.fragmentLexExp fragment sourceName 1 str
+       loadTypeFromTokens fragment uni sourceName toks
+
+
+-- | Parse and check a type from some tokens, returning it along with its kind.
 loadTypeFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
         => Fragment n err       -- ^ Language fragment definition.
@@ -257,10 +298,22 @@ loadTypeFromTokens fragment uni sourceName toks'
                 Right (t', k) -> Right (t', k)
         
 
+-- Witness ----------------------------------------------------------------------------------------
+-- | Parse and check a witness from a string, returning it along with its kind.
+loadWitnessFromString
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Fragment n err       -- ^ Language fragment profile.
+        -> FilePath             -- ^ Path to source file for error messages.
+        -> String               -- ^ Source string.
+        -> Either (Error n err) 
+                  (Witness (AnT BP.SourcePos n) n, Type n)
 
--- Witness --------------------------------------------------------------------
--- | Parse and check a witness,
---   returning it along with its type.
+loadWitnessFromString fragment sourceName str
+ = do  let toks = F.fragmentLexExp fragment sourceName 1 str
+       loadWitnessFromTokens fragment sourceName toks
+
+
+-- | Parse and check a witness, returning it along with its type.
 loadWitnessFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
         => Fragment n err       -- ^ Language fragment profile.
