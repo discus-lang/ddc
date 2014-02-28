@@ -1,0 +1,6 @@
+
+-- #309: Don't assume :eval fragment after :set lang.
+-- The flow fragment doesn't have an evaluator.
+ok
+Cannot evaluate 'Flow' expressions.
+

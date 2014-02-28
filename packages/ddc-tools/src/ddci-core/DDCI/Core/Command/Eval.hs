@@ -14,6 +14,7 @@ import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
 import DDC.Core.Transform.Reannotate
+import DDC.Core.Fragment
 import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
@@ -32,11 +33,17 @@ import DDC.Core.Module (ModuleMap)
 import Data.Maybe (fromMaybe)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Source -> String -> IO ()
 cmdStep state source str
  | Language bundle      <- stateLanguage state
- , modules0             <- bundleModules bundle
+ = case profileName $ fragmentProfile $ bundleFragment bundle of
+        "Eval"  -> cmdStep_eval state source bundle str
+        lang    -> do   putStrLn $ "Cannot step '" ++ lang ++ "' expressions."
+                        
+cmdStep_eval state source bundle str
+ | modules0             <- bundleModules bundle
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 			<- gcast modules0
  , modules'		<- fromMaybe Map.empty modules
@@ -62,11 +69,17 @@ cmdStep state source str
                 return ()
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Source -> String -> IO ()
 cmdEval state source str
  | Language bundle      <- stateLanguage state
- , modules0             <- bundleModules bundle
+ = case profileName $ fragmentProfile $ bundleFragment bundle of
+        "Eval"  -> cmdEval_eval state source bundle str
+        lang    -> do   putStrLn $ "Cannot evaluate '" ++ lang ++ "' expressions."
+    
+cmdEval_eval state source bundle str
+ | modules0             <- bundleModules bundle
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 			<- gcast modules0
  , modules'		<- fromMaybe Map.empty modules
@@ -95,7 +108,7 @@ cmdTransEval state source str
                 str
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 evalExpCast 
         :: Typeable n
         => State -> Exp (AnTEC () n) n -> IO ()
