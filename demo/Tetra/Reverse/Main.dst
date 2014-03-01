@@ -10,30 +10,38 @@ import foreign c value
 
 where
 
+-- Define configurable syntax.
+add x y = add# [Nat#] x y       -- used for (+)
+sub x y = sub# [Nat#] x y       -- used for (-)
+ge  x y = ge#  [Nat#] x y       -- used for (>=)
+
+
+-------------------------------------------------------------------------------
 -- | Cons lists.
 data List (a : Data) where
         Nil     : List a
         Cons    : a -> List a -> List a
 
 
--- Constructors -----------------------------------------------------------------------------------
+-- Constructors ---------------------------------------------------------------
 -- | Construct a list containing a single element.
 singleton (x : a) : List a
  = Cons x Nil
 
 
--- | Construct a list containing of the given length where all elements are the same value.
+-- | Construct a list containing of the given length where all elements are
+--   the same value.
 replicate (n : Nat#) (x : a) : List a
  = case n of
         0               -> Nil
-        _               -> Cons x (replicate (sub# n 1) x)
+        _               -> Cons x (replicate (n - 1) x)
 
 
 -- | Construct a range of values.
 enumFromTo (start : Nat#) (end : Nat#)
- = case ge# start end of
+ = case start >= end of
         True#           -> singleton start
-        False#          -> Cons start (enumFromTo (add# start 1) end)
+        False#          -> Cons start (enumFromTo (start + 1) end)
 
 
 -- | Append two lists.
@@ -43,15 +51,15 @@ append (xx yy : List a) : List a
         Cons x xs       -> Cons x (append xs yy)
 
 
--- Projections ------------------------------------------------------------------------------------
+-- Projections ----------------------------------------------------------------
 -- | Take the length of a list.
 length (xx : List a) : Nat#
  = case xx of
         Nil             -> 0
-        Cons x xs       -> add# 1 (length xs)
+        Cons x xs       -> 1 + length xs
 
 
--- Transforms -------------------------------------------------------------------------------------
+-- Transforms -----------------------------------------------------------------
 -- | Reverse the elements of a list.
 --   This is a naive O(n^2) version for testing purposes.
 reverse (xx : List a) : List a
@@ -69,7 +77,7 @@ reverseAcc2 (acc xx : List a) : List a
         Cons x xs       -> reverseAcc2 (Cons x acc) xs
 
 
--- IO ---------------------------------------------------------------------------------------------
+-- IO -------------------------------------------------------------------------
 dumpListNat (xx : List Nat#) : S Console Unit
  = private r in
    box case xx of
@@ -79,7 +87,7 @@ dumpListNat (xx : List Nat#) : S Console Unit
                 run dumpListNat xs
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 main (_ : Unit) : S Console Unit
  = box do
         xs1     = replicate 5 100

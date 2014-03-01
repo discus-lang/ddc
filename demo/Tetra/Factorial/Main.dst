@@ -9,11 +9,18 @@ import foreign c value
  showNat  :: [r : Region]. Nat#           -> Ptr# r String#
 
 where
+
+-- Define configurable syntax.
+add x y = add# [Nat#] x y       -- used for (+)
+sub x y = sub# [Nat#] x y       -- used for (-)
+
+
+-------------------------------------------------------------------------------
 fac (acc : Nat#) (n : Nat#) : Nat#
  = case n of
         0       -> acc
         1       -> acc
-        _       -> fac (add# acc n) (sub# n 1)
+        _       -> fac (acc + n) (n - 1)
 
 main (_ : Unit) : S Console Unit
  = private r in
