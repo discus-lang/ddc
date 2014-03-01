@@ -2,9 +2,11 @@
 module DDC.Core.Salt.Convert.Name
         ( sanitizeName
         , sanitizeGlobal
+        , seaNameOfSuper
         , seaNameOfLocal)
 where
 import DDC.Core.Salt.Name
+import DDC.Core.Module
 import DDC.Base.Pretty
 import Data.Maybe
 
@@ -14,9 +16,30 @@ import Data.Maybe
 --   globally.
 sanitizeGlobal :: String -> String
 sanitizeGlobal = sanitizeName
-        
 
--- | Convert a Salt name to a string we can use for a local variable in the 
+
+-- | Convert the Salt name of a supercombinator to a name we can use when
+--   defining the C function.
+seaNameOfSuper 
+        :: Maybe (ExportSource Name)    -- ^ How the super is exported.
+        -> Name                         -- ^ Name of the super.
+        -> Maybe Doc
+
+seaNameOfSuper mExport nSuper
+        | Just _        <- mExport
+        , NameVar str   <- nSuper
+        = Just $ text $ sanitizeName str
+
+        | Nothing       <- mExport
+        , NameVar str   <- nSuper
+        -- = Just $ text $ "_DDC_" ++ sanitizeName str
+        = Just $ text $ sanitizeName str
+
+        | otherwise
+        = Nothing
+
+
+-- | Convert the Salt name of a local variable to a name we can use in the
 --   body of a C function.
 seaNameOfLocal :: Name -> Maybe Doc
 seaNameOfLocal nn

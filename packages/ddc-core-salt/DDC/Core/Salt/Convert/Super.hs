@@ -10,6 +10,7 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Collect
 import DDC.Core.Predicates
 import DDC.Core.Compounds
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Base.Pretty
@@ -22,74 +23,74 @@ import Data.Maybe
 -- | Convert a supercombinator definition to C source text.
 convSuperM 
         :: Show a 
-        => Platform             -- ^ Target platform specifiction.
-        -> KindEnv Name         -- ^ Top-level kind environment.
-        -> TypeEnv Name         -- ^ Top-level type environment.
-        -> Bind Name            -- ^ Binder for the supercombinator.
-        -> Exp a Name           -- ^ Body expression of the supercombiantor.
+        => Platform                     -- ^ Target platform specifiction.
+        -> KindEnv Name                 -- ^ Top-level kind environment.
+        -> TypeEnv Name                 -- ^ Top-level type environment.
+        -> Maybe (ExportSource Name)    -- ^ ExportSource if this super is exported.
+        -> Name                         -- ^ Name of the supercombinator.
+        -> Type Name                    -- ^ Type of the supercombinator.
+        -> Exp a Name                   -- ^ Body expression of the supercombiantor.
         -> ConvertM a Doc
 
-convSuperM     pp kenv0 tenv0 bTop xx
- = convSuperM' pp kenv0 tenv0 bTop [] xx
+convSuperM     pp kenv0 tenv0 esrcSuper nSuper tSuper xx
+ = convSuperM' pp kenv0 tenv0 esrcSuper nSuper tSuper [] xx
 
-convSuperM' pp kenv tenv bTop bsParam xx
+convSuperM'    pp kenv  tenv  esrcSuper nSuper tSuper bsParam xx
  
  -- Enter into type abstractions,
  --  adding the bound name to the environment.
  | XLAM _ b x   <- xx
- = convSuperM' pp (Env.extend b kenv) tenv bTop bsParam x
+ = convSuperM' pp (Env.extend b kenv) tenv 
+        esrcSuper nSuper tSuper bsParam x
 
  -- Enter into value abstractions,
  --  remembering that we're now in a function that has this parameter.
  | XLam _ b x   <- xx
- = convSuperM' pp kenv (Env.extend b tenv) bTop (bsParam ++ [b]) x
+ = convSuperM' pp kenv (Env.extend b tenv) 
+        esrcSuper nSuper tSuper (bsParam ++ [b]) x
 
  -- Convert the function body.
- | BName (NameVar nTop) tTop <- bTop
+ | otherwise
  = do   
-
         -- Convert the function name.
-        let nTop'        = text $ sanitizeGlobal nTop
-        let (_, tResult) = takeTFunArgResult $ eraseTForalls tTop 
+        let Just nSuper' = seaNameOfSuper esrcSuper nSuper
+        let (_, tResult) = takeTFunArgResult $ eraseTForalls tSuper
 
-        -- Convert function parameters.
+        -- Convert the function parameters.
         bsParam'        <- sequence
                         $ [ convBind kenv tenv i b
                                 | b     <- filter keepBind bsParam
                                 | i     <- [0..] ]
-                                        
-        -- Convert result type.
+
+        -- Convert the result type.
         tResult'        <- convTypeM kenv  $ eraseWitArg tResult
 
-        -- Emit variable definitions for all the value binders in the code.
+        -- Emit automatic variable definitions for all the local variables
+        -- used in the body of the function.
         let (_, bsVal)  = collectBinds xx
         dsVal           <- liftM catMaybes $ mapM (makeVarDecl kenv) 
                         $  filter keepBind bsVal
 
         -- Convert the body of the function.
-        --  We pass in ContextTop to say we're at the top-level
-        --  of the function, so the block must explicitly pass
-        --  control in the final statement.
+        --   We pass in ContextTop to say we're at the top-level of the function,
+        ---  so the block must explicitly pass control in the final statement.
         xBody'          <- convBlockM ContextTop pp kenv tenv xx
 
+        -- Paste everything together.
         return  $ vcat
                 [ -- Function header.
-                  tResult'                        
-                         <+> nTop'
-                         <+> parenss bsParam'
+                  tResult'                      -- Result type.
+                         <+> nSuper'            -- Function name.
+                         <+> parenss bsParam'   -- Argument list.
+                  
+                  -- Function body.
                 , lbrace
-                        -- Variable declarations.
-                ,       indent 8 $ vcat dsVal     
+                ,       indent 8 $ vcat dsVal   -- Local variable definitions.
                 ,       empty
-
-                         -- Function body.
-                ,       indent 8 xBody'
-                ,       rbrace
+                ,       indent 8 xBody'         -- Statements that do some things.
+                , rbrace
                 , empty]
         
- | otherwise    
- = throw $ ErrorFunctionInvalid xx
-
 
 -- | Convert a function parameter binding to C source text.
 convBind :: KindEnv Name -> TypeEnv Name -> Int -> Bind Name -> ConvertM a Doc
