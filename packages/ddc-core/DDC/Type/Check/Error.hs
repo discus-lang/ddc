@@ -94,11 +94,17 @@ data Error n
 
 -- | Things that can go wrong when checking data type definitions.
 data ErrorData n
-        -- A duplicate data type constructor name.
+        -- | A duplicate data type constructor name.
         = ErrorDataDupTypeName 
-        { errorDataDupTypeName  :: n }
+        { errorDataDupTypeName          :: n }
 
-        -- A duplicate data constructor name.
+        -- | A duplicate data constructor name.
         | ErrorDataDupCtorName
-        { errorDataCtorName     :: n }
+        { errorDataCtorName             :: n }
+
+        -- | A data constructor with the wrong result type.
+        | ErrorDataWrongResult
+        { errorDataCtorName             :: n
+        , errorDataCtorResultActual     :: Type n
+        , errorDataCtorResultExpected   :: Type n }
         deriving Show

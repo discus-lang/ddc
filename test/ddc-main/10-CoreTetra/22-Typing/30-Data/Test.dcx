@@ -57,3 +57,15 @@ thing (b : Box)
         Box f   -> f 5#
 ;;
 
+
+-- Error: constructor does not produce the data type.
+:set Synth..
+:load.. 
+module Test
+data TheThing where
+        C : Nat# -> NotTheThing
+with letrec
+eatThing (x : TheThing)
+ = case x of
+        C y     -> y
+;;

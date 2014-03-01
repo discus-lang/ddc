@@ -4,6 +4,7 @@ module DDC.Type.Check.Data
 where
 import DDC.Type.Check.Error
 import DDC.Type.Check.Config
+import DDC.Type.Equiv
 import DDC.Type.DataDef
 import DDC.Base.Pretty
 import Data.Maybe
@@ -12,6 +13,7 @@ import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 
+-------------------------------------------------------------------------------
 -- | Check some data type definitions.
 checkDataDefs 
         :: (Ord n, Show n, Pretty n)
@@ -103,7 +105,7 @@ checkDataDef nsTypes nsCtors def
 
  -- Check the data constructors.
  | Just ctors   <- dataDefCtors def
- = case checkDataCtors nsCtors [] [] ctors of
+ = case checkDataCtors nsCtors [] def [] ctors of
         Left errs       -> Left errs
         Right ctors'    -> Right $ def { dataDefCtors = Just ctors' }
 
@@ -117,11 +119,12 @@ checkDataCtors
         :: (Ord n, Show n, Pretty n)
         => Set n                -- ^ Names of existing data constructors.
         -> [ErrorData n]        -- ^ Errors found so far.
+        -> DataDef n            -- ^ The DataDef these constructors relate to.
         -> [DataCtor  n]        -- ^ Checked constructor defs.
         -> [DataCtor  n]        -- ^ Constructor defs still to check.
         -> Either [ErrorData n] [DataCtor n]
 
-checkDataCtors nsCtors errs csChecked cs
+checkDataCtors nsCtors errs def csChecked cs
  -- We've checked all the constructors and there were no errors.
  | []   <- cs, []   <- errs
  = Right (reverse csChecked)
@@ -132,14 +135,14 @@ checkDataCtors nsCtors errs csChecked cs
 
  -- Keep checking constructors.
  | c : cs' <- cs
- = case checkDataCtor nsCtors c of
+ = case checkDataCtor nsCtors def c of
         Left  err -> checkDataCtors 
                         (Set.insert (dataCtorName c) nsCtors)
-                        (err : errs) csChecked cs'
+                        (err : errs) def csChecked cs'
         
         Right c'  -> checkDataCtors 
                         (Set.insert (dataCtorName c') nsCtors)
-                        errs (c' : csChecked) cs'
+                        errs         def (c' : csChecked) cs'
 
  | otherwise
  = error "ddc-core.checkDataCtors: bogus warning suppression"
@@ -150,16 +153,28 @@ checkDataCtors nsCtors errs csChecked cs
 checkDataCtor 
         :: (Ord n, Show n, Pretty n)
         => Set n                -- ^ Names of existing data constructors.
+        -> DataDef  n           -- ^ Def of data type for this constructor.
         -> DataCtor n           -- ^ Data constructor to check.
         -> Either (ErrorData n) (DataCtor n)
 
-checkDataCtor nsCtors ctor
+checkDataCtor nsCtors def ctor
         
  -- Check the constructor name is not already defined.
  | Set.member (dataCtorName ctor) nsCtors 
  = Left $ ErrorDataDupCtorName (dataCtorName ctor)
 
+ -- Check that the constructor produces a value of the associated data type.
+ | not $ equivT (dataTypeOfDataDef def)   (dataCtorResultType ctor)
+ = Left $ ErrorDataWrongResult 
+                (dataCtorName ctor)
+                (dataCtorResultType ctor) (dataTypeOfDataDef def)
+
  -- This constructor looks ok.
  | otherwise
  = Right ctor
+
+
+
+
+
 

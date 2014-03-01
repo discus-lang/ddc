@@ -61,3 +61,12 @@ letrec {
       }
 }
 
+
+-- Error: constructor does not produce the data type.
+mode parse error
+Error loading module
+  When checking expression.
+    Invalid result type for data constructor.
+           The data constructor: C
+                has result type: NotTheThing
+      but the enclosing type is: TheThing
