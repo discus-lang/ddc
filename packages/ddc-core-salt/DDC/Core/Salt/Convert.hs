@@ -56,22 +56,6 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                    , text "#include \"Primitive.h\"" 
                    , line ]
 
-        -- Import external symbols --------------
-        dsImport
-         <- mapM (\(misrc, nSuper, tSuper)
-                        -> convSuperTypeM Env.empty misrc Nothing nSuper tSuper)
-                 [ (Just isrc, nSuper, tSuper)
-                        | (nSuper, isrc) <- C.moduleImportValues mm
-                        , let tSuper     =  typeOfImportSource isrc ]
-
-        let cExterns
-                | not withPrelude       = empty
-                | otherwise             
-                = vcat  
-                $  [ text "// External definitions for imported symbols. -------------------------"]
-                ++ [ text "extern " <> doc <> semi | doc <- dsImport ]
-                ++ [ line ]
-                
 
         -- Globals for the Runtime system -------
         --   If this is the main module then we define the globals for the
@@ -92,6 +76,24 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                    , text "extern addr_t _DDC__heapTop;"
                    , text "extern addr_t _DDC__heapMax;" 
                    , line ]
+
+
+        -- Import external symbols --------------
+        dsImport
+         <- mapM (\(misrc, nSuper, tSuper)
+                        -> convSuperTypeM Env.empty misrc Nothing nSuper tSuper)
+                 [ (Just isrc, nSuper, tSuper)
+                        | (nSuper, isrc) <- C.moduleImportValues mm
+                        , let tSuper     =  typeOfImportSource isrc ]
+
+        let cExterns
+                | not withPrelude       = empty
+                | otherwise             
+                = vcat  
+                $  [ text "// External definitions for imported symbols. -------------------------"]
+                ++ [ text "extern " <> doc <> semi | doc <- dsImport ]
+                ++ [ line ]
+                
 
         -- Function prototypes ------------------
         --   These are for the supers defined in this module, so that they
@@ -142,8 +144,8 @@ convModuleM withPrelude pp mm@(ModuleCore{})
 
         -- Paste everything together ------------
         return  $  cIncludes    -- Includes for helper macros and the runtime system.
-                <> cExterns     -- External definitions for imported symbols.
                 <> cGlobals     -- Definitions of the runtime system variables.
+                <> cExterns     -- External definitions for imported symbols.
                 <> cProtos      -- Function prototypes for locally defined supers.
                 <> cSupers      -- Code for locally defined supers.
 
