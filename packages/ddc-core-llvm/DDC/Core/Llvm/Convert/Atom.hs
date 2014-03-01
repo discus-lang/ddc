@@ -7,11 +7,11 @@ where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
-import DDC.Type.Env                     (KindEnv, TypeEnv)
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Exp           as C
+import DDC.Type.Env                             (KindEnv, TypeEnv)
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Convert.Name     as A
+import qualified DDC.Core.Exp                   as C
 
 
 -- Atoms ----------------------------------------------------------------------

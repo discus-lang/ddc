@@ -5,6 +5,7 @@ module DDC.Core.Salt.Convert.Exp
         , convRValueM
         , convPrimCallM)
 where
+import DDC.Core.Salt.Convert.Name
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Convert.Type
@@ -44,8 +45,8 @@ isContextNest cc
 -- Block ------------------------------------------------------------------------------------------
 -- | Convert an expression to a block of statements.
 --
---   If this expression defines a top-level function then the block
---     must end with a control transfer primop like return# or tailcall#.
+--   If this is the body of a top-level function then all code paths
+--   must end with a control transfer primop like return# or tailcall#.
 --    
 --   The `Context` tells us what do do when we get to the end of the block.
 --
@@ -60,8 +61,8 @@ convBlockM context pp kenv tenv xx
  = case xx of
 
         XApp{}
-         -- If we're at the top-level of a function body then the 
-         -- last statement must explicitly pass control.
+         -- At the top-level of a function body then the last statement
+         -- expliticlty passes control.
          | ContextTop      <- context
          -> case takeXPrimApps xx of
                 Just (NamePrimOp p, xs)
@@ -71,11 +72,12 @@ convBlockM context pp kenv tenv xx
 
                 _ -> throw $ ErrorBodyMustPassControl xx
 
-         -- If we're in a nested context but the primop we're 
-         -- calling doesn't return, and doesn't return a value,
-         -- then we can't assign it to the result var.
-         | ContextNest{}         <- context
-         , Just (NamePrimOp p, xs) <- takeXPrimApps xx
+
+         -- When we're in a nested context, and the primop we're calling
+         -- passes control then it doesn't produce a value to assign to 
+         -- any result var.
+         | ContextNest{}            <- context
+         , Just (NamePrimOp p, xs)  <- takeXPrimApps xx
          , isControlPrim p || isCallPrim p
          -> do  x1      <- convPrimCallM pp kenv tenv p xs
                 return  $ x1 <> semi

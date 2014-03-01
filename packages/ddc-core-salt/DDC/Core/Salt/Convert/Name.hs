@@ -1,5 +1,5 @@
 
-module DDC.Core.Salt.Name.Sanitize
+module DDC.Core.Salt.Convert.Name
         ( sanitizeName
         , sanitizeGlobal
         , sanitizeLocal)

@@ -40,14 +40,8 @@ module DDC.Core.Salt.Name
         , readLitPrimFloatOfBits
 
           -- * Name Parsing
-        , readName
-
-          -- * Name Sanitisation
-        , sanitizeName
-        , sanitizeGlobal
-        , sanitizeLocal)
+        , readName)
 where
-import DDC.Core.Salt.Name.Sanitize
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimArith
 import DDC.Core.Salt.Name.PrimCall

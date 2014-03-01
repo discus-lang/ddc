@@ -1,9 +1,10 @@
 module DDC.Core.Salt.Convert.Super
         (convSuperM)
 where
-import DDC.Core.Salt.Convert.Base
-import DDC.Core.Salt.Convert.Type
 import DDC.Core.Salt.Convert.Exp
+import DDC.Core.Salt.Convert.Type
+import DDC.Core.Salt.Convert.Name
+import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Platform
 import DDC.Core.Collect

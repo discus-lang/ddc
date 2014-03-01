@@ -5,6 +5,7 @@ module DDC.Core.Salt.Convert.Type
 where
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
+import DDC.Core.Salt.Convert.Name
 import DDC.Core.Salt.Name
 import DDC.Core.Predicates
 import DDC.Core.Compounds
