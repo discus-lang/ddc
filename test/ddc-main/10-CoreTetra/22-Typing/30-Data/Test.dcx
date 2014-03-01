@@ -100,8 +100,8 @@ thing (_ : Unit)
 ;;
 
 
--- Error: constructor does not produce the data type.
-:set Synth..
+-- Error: constructor does not produce enclosing data type.
+:set Synth
 :load.. 
 module Test
 data TheThing where
@@ -110,5 +110,21 @@ with letrec
 eatThing (x : TheThing)
  = case x of
         C y     -> y
+;;
+
+
+-- Error: constructor does not produce enclosing data type.
+--   In future work this could be handled by treating [b : Data] as an
+--   existential quantifier, but for now we're happy with an inoffensive
+--   error message.
+:set Synth
+:load..
+module Test 
+data Foo (a : Data) where
+        C : [b : Data]. a -> b -> Foo a
+with letrec
+eatFoo [a : Data] (x : Foo a)
+ = case x of
+        C x y -> x
 ;;
 
