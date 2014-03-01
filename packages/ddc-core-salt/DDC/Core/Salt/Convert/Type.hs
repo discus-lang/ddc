@@ -16,7 +16,7 @@ import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Type.Env                   as Env
 
 
--- Type -----------------------------------------------------------------------
+-- Type -------------------------------------------------------------------------------------------
 -- | Convert a Salt type to C source text.
 --   This is used to convert the types of function parameters and locally
 --   defined variables. It only handles non-function types, as we don't
@@ -53,6 +53,7 @@ convTypeM kenv tt
         _ -> throw $ ErrorTypeInvalid tt
 
 
+---------------------------------------------------------------------------------------------------
 -- | Convert a Salt function type to a C source prototype.
 convFunctionTypeM
         :: KindEnv      Name
@@ -104,9 +105,5 @@ keepParamOfType tt
  
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs
-
-
-
-
 
 

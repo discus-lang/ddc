@@ -13,13 +13,13 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Type.Env                             (KindEnv, TypeEnv)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Base.Pretty
-import DDC.Control.Monad.Check                  (throw)
-import qualified DDC.Type.Env                   as Env
+import DDC.Control.Monad.Check          (throw)
+import qualified DDC.Type.Env           as Env
 
 
--- Blocks ---------------------------------------------------------------------
+-- Context ----------------------------------------------------------------------------------------
 -- | What context we're doing this conversion in.
 data Context
         -- | Conversion at the top-level of a function.
@@ -41,6 +41,7 @@ isContextNest cc
         _               -> False
 
 
+-- Block ------------------------------------------------------------------------------------------
 -- | Convert an expression to a block of statements.
 --
 --   If this expression defines a top-level function then the block
@@ -50,10 +51,8 @@ isContextNest cc
 --
 convBlockM 
         :: Show a
-        => Context
-        -> Platform
-        -> KindEnv Name
-        -> TypeEnv Name
+        => Context      -> Platform
+        -> KindEnv Name -> TypeEnv Name
         -> Exp a Name
         -> ConvertM a Doc
 
@@ -209,14 +208,12 @@ isFailX (XApp _ (XVar _ (UPrim (NamePrimOp (PrimControl PrimControlFail)) _)) _)
 isFailX _ = False
 
 
--- Alt ------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 -- | Convert a case alternative to C source text.
 convAltM 
         :: Show a 
-        => Context
-        -> Platform
-        -> KindEnv Name
-        -> TypeEnv Name
+        => Context      -> Platform
+        -> KindEnv Name -> TypeEnv Name
         -> Alt a Name 
         -> ConvertM a Doc
 
@@ -224,6 +221,7 @@ convAltM context pp kenv tenv aa
  = let end 
         | isContextNest context = line <> text "break;"
         | otherwise             = empty
+   
    in case aa of
         AAlt PDefault x1 
          -> do  x1'     <- convBlockM context pp kenv tenv x1
@@ -270,13 +268,12 @@ convDaConName nn
         _                  -> Nothing
 
 
--- RValue ---------------------------------------------------------------------
--- | Convert an r-value to C source text.
+-- RValue -----------------------------------------------------------------------------------------
+-- | Convert an Right-value to C source text.
 convRValueM 
         :: Show a 
         => Platform
-        -> KindEnv Name 
-        -> TypeEnv Name 
+        -> KindEnv Name -> TypeEnv Name 
         -> Exp a Name 
         -> ConvertM a Doc
 
@@ -353,15 +350,14 @@ keepFunArgX xx
         _               -> True
 
 
--- PrimCalls ------------------------------------------------------------------
+-- PrimCalls --------------------------------------------------------------------------------------
 -- | Convert a call to a primitive operator to C source text.
 convPrimCallM 
         :: Show a 
         => Platform
-        -> KindEnv Name
-        -> TypeEnv Name
-        -> PrimOp
-        -> [Exp a Name] -> ConvertM a Doc
+        -> KindEnv Name -> TypeEnv Name
+        -> PrimOp       -> [Exp a Name] 
+        -> ConvertM a Doc
 
 convPrimCallM pp kenv tenv p xs
  = case p of
@@ -431,7 +427,7 @@ convPrimCallM pp kenv tenv p xs
         _ -> throw $ ErrorPrimCallInvalid p xs
 
 
--- | Ditch away region arguments.
+-- | Ditch region arguments.
 keepPrimArgX :: KindEnv Name -> Exp a Name -> Bool
 keepPrimArgX kenv xx
  = case xx of

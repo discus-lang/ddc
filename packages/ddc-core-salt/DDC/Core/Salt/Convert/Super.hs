@@ -18,21 +18,21 @@ import Control.Monad
 import Data.Maybe
 
 
--- Super definition -----------------------------------------------------------
--- | Convert a super to C source text.
+-- | Convert a supercombinator definition to C source text.
 convSuperM 
         :: Show a 
-        => Platform
-        -> KindEnv Name 
-        -> TypeEnv Name
-        -> Bind Name 
-        -> Exp a Name 
+        => Platform             -- ^ Target platform specifiction.
+        -> KindEnv Name         -- ^ Top-level kind environment.
+        -> TypeEnv Name         -- ^ Top-level type environment.
+        -> Bind Name            -- ^ Binder for the supercombinator.
+        -> Exp a Name           -- ^ Body expression of the supercombiantor.
         -> ConvertM a Doc
 
 convSuperM     pp kenv0 tenv0 bTop xx
  = convSuperM' pp kenv0 tenv0 bTop [] xx
 
 convSuperM' pp kenv tenv bTop bsParam xx
+ 
  -- Enter into type abstractions,
  --  adding the bound name to the environment.
  | XLAM _ b x   <- xx
@@ -72,18 +72,39 @@ convSuperM' pp kenv tenv bTop bsParam xx
         xBody'          <- convBlockM ContextTop pp kenv tenv xx
 
         return  $ vcat
-                [ tResult'                        -- Function header.
+                [ -- Function header.
+                  tResult'                        
                          <+> nTop'
                          <+> parenss bsParam'
                 , lbrace
-                ,       indent 8 $ vcat dsVal     -- Variable declarations.
+                        -- Variable declarations.
+                ,       indent 8 $ vcat dsVal     
                 ,       empty
-                ,       indent 8 xBody' -- Function body.
+
+                         -- Function body.
+                ,       indent 8 xBody'
                 ,       rbrace
                 , empty]
         
  | otherwise    
  = throw $ ErrorFunctionInvalid xx
+
+
+-- | Convert a function parameter binding to C source text.
+convBind :: KindEnv Name -> TypeEnv Name -> Int -> Bind Name -> ConvertM a Doc
+convBind kenv _tenv iPos b
+ = case b of 
+        -- Named variables binders.
+        BName (NameVar str) t
+         -> do  t'      <- convTypeM kenv t
+                return  $ t' <+> (text $ sanitizeLocal str)
+        
+        -- Anonymous arguments.
+        BNone t
+         -> do  t'      <- convTypeM kenv t
+                return  $ t' <+> (text $ "_arg" ++ show iPos)
+
+        _       -> throw $ ErrorParameterInvalid b
 
 
 -- | Make a variable declaration for this binder.
@@ -126,24 +147,6 @@ keepBind bb
         _       -> True
 
 
--- | Convert a function parameter binding to C source text.
-convBind :: KindEnv Name -> TypeEnv Name -> Int -> Bind Name -> ConvertM a Doc
-convBind kenv _tenv iPos b
- = case b of 
-        -- Named variables binders.
-        BName (NameVar str) t
-         -> do  t'      <- convTypeM kenv t
-                return  $ t' <+> (text $ sanitizeLocal str)
-        
-        -- Anonymous arguments.
-        BNone t
-         -> do  t'      <- convTypeM kenv t
-                return  $ t' <+> (text $ "_arg" ++ show iPos)
-
-        _       -> throw $ ErrorParameterInvalid b
-
-
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs
-
 

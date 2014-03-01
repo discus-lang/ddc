@@ -18,7 +18,7 @@ import qualified DDC.Control.Monad.Check        as G
 type ConvertM a x = G.CheckM () (Error a) x
 
 
--- | Things that can go wrong when converting Disciple Core Salt to
+-- | Things that can go wrong when converting a Disciple Core Salt module
 --   to C source text.
 data Error a
         -- | Variable is not in scope.

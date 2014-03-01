@@ -39,35 +39,36 @@ seaOfSaltModule withPrelude pp mm
    evalCheck () $ convModuleM withPrelude pp mm
 
 
--- | Convert a Salt module to C source text.
+-- | Convert a Disciple Core Salt module to C source text.
 convModuleM :: Show a => Bool -> Platform -> Module a Name -> ConvertM a Doc
 convModuleM withPrelude pp mm@(ModuleCore{})
  | ([LRec bxs], _) <- splitXLets $ moduleBody mm
  = do   
-        -- Top-level includes ---------
+        -- Top-level includes -------------------
+        -- These include runtime system functions and macro definitions that
+        -- the generated code refers to directly.
         let cIncludes
-                | not withPrelude
-                = []
-
+                | not withPrelude       = []
                 | otherwise
                 = [ text "#include \"Runtime.h\""
                   , text "#include \"Primitive.h\""
                   , empty ]
 
-        -- Import external symbols ----
-        let nts =  map snd $ C.moduleImportValues mm
-        docs    <- mapM (uncurry $ convFunctionTypeM Env.empty) 
-                        [(src, typeOfImportSource src) | src <- nts]
-        let cExterns
-                | not withPrelude = []
-                | otherwise       = [ text "extern " <> doc <> semi | doc <- docs ]
 
-        -- RTS def --------------------
-        -- If this is the main module then we need to declare
-        -- the global RTS state.
+        -- Import external symbols --------------
+        let nts         =  map snd $ C.moduleImportValues mm
+        docs            <- mapM (uncurry $ convFunctionTypeM Env.empty) 
+                                [(src, typeOfImportSource src) | src <- nts]
+        let cExterns
+                | not withPrelude       = []
+                | otherwise             = [ text "extern " <> doc <> semi | doc <- docs ]
+
+
+        -- Globals for the Runtime system -------
+        --   If this is the main module then we define the globals for the
+        --   runtime system at top-level.
         let cGlobals
-                | not withPrelude
-                = []
+                | not withPrelude       = []
 
                 | isMainModule mm
                 = [ text "addr_t _DDC_Runtime_heapTop = 0;"
@@ -79,31 +80,49 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                   , text "extern addr_t _DDC_Runtime_heapMax;"
                   , empty ]
 
-        -- Function prototypes --------
-        let srcsProto
-                = [ImportSourceSea (renderPlain (ppr n)) t | (BName n t, _) <- bxs]
-        dsProto <- mapM (uncurry $ convFunctionTypeM Env.empty)
-                        [(src, typeOfImportSource src) | src <- srcsProto]
-        let cProtos
-                | not withPrelude = []
-                | otherwise       = [ doc <> semi | doc <- dsProto ]
 
-        -- Super-combinator definitions.
-        let kenv = Env.fromList [ BName n (typeOfImportSource isrc) 
+        -- Function prototypes ------------------
+        --   These are for the supers defined in this module, so that they
+        --   can be recursive, and the function definitions don't need to
+        --   be emitted in a particular order.
+        
+        -- We reuse the same code that generates imports for external
+        -- symbols, so construct some intermediate 'ImportSourceSea' to re-import
+        -- our locally defined functions.
+        let srcsProto   = [ImportSourceSea (renderPlain (ppr n)) t 
+                                | (BName n t, _) <- bxs]
+        
+        dsProto         <- mapM (uncurry $ convFunctionTypeM Env.empty)
+                                [(src, typeOfImportSource src) | src <- srcsProto]
+        let cProtos
+                | not withPrelude       = []
+                | otherwise             = [ doc <> semi | doc <- dsProto ]
+
+
+        -- Super-combinator definitions ---------
+        --   This is the code for locally defined functions.
+        
+        -- Build the top-level kind environment.
+        let kenv        = Env.fromList 
+                        $ [ BName n (typeOfImportSource isrc) 
                                 | (n, isrc) <- moduleImportTypes mm ]
 
-        let tenv = Env.fromList [ BName n (typeOfImportSource isrc)
+        -- Build the top-level type environment.
+        let tenv        = Env.fromList 
+                        $ [ BName n (typeOfImportSource isrc)
                                 | (n, isrc) <- moduleImportValues mm ]
 
+        -- Convert all the super definitions to C code.
         cSupers <- mapM (uncurry (convSuperM pp kenv tenv)) bxs
 
-        -- Paste everything together
+
+        -- Paste everything together ------------
         return  $  vcat 
-                $  cIncludes 
-                ++ cExterns
-                ++ cGlobals
-                ++ cProtos
-                ++ cSupers
+                $  cIncludes    -- Includes for the Runtime and helper macros.
+                ++ cExterns     -- Externs for imported symbols.
+                ++ cGlobals     -- Globals for the runtime system.
+                ++ cProtos      -- Function prototypes for locally defined supers.
+                ++ cSupers      -- C code for locally defined supers.
 
  | otherwise
  = throw $ ErrorNoTopLevelLetrec mm
