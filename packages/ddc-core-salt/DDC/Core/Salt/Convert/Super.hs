@@ -95,15 +95,16 @@ convSuperM' pp kenv tenv bTop bsParam xx
 convBind :: KindEnv Name -> TypeEnv Name -> Int -> Bind Name -> ConvertM a Doc
 convBind kenv _tenv iPos b
  = case b of 
-        -- Named variables binders.
-        BName (NameVar str) t
-         -> do  t'      <- convTypeM kenv t
-                return  $ t' <+> (text $ sanitizeLocal str)
-        
         -- Anonymous arguments.
         BNone t
          -> do  t'      <- convTypeM kenv t
                 return  $ t' <+> (text $ "_arg" ++ show iPos)
+
+        -- Named variables binders.
+        BName n t
+         | Just n'      <- seaNameOfLocal n
+         -> do  t'      <- convTypeM kenv t
+                return  $ t' <+> n'
 
         _       -> throw $ ErrorParameterInvalid b
 
@@ -115,12 +116,12 @@ makeVarDecl kenv bb
         BNone{} 
          -> return Nothing
 
-        BName (NameVar n) t
+        BName n t
+         | Just n'      <- seaNameOfLocal n
          -> do  t'      <- convTypeM kenv t
-                let n'  = text $ sanitizeLocal n
                 return  $ Just (t' <+> n' <+> equals <+> text "0" <> semi)
 
-        _ -> throw $ ErrorParameterInvalid bb
+        _       -> throw $ ErrorParameterInvalid bb
 
 
 -- | Remove witness arguments from the return type

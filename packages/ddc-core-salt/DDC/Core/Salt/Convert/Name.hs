@@ -2,35 +2,41 @@
 module DDC.Core.Salt.Convert.Name
         ( sanitizeName
         , sanitizeGlobal
-        , sanitizeLocal)
+        , seaNameOfLocal)
 where
+import DDC.Core.Salt.Name
+import DDC.Base.Pretty
 import Data.Maybe
 
-
--- | Rewrite the symbols in a name to make it safe to export as an external
---   symbol. For example, a names containing a '&' is prefixed with '_sym_'
---   and the '&' replzced by 'ZAn'. Literal 'Z's in a symbolic name are doubled
---   to 'ZZ'.
-sanitizeName :: String -> String
-sanitizeName str
- = let  hasSymbols      = any isJust $ map convertSymbol str
-   in   if hasSymbols
-         then "_sym_" ++ concatMap rewriteChar str
-         else str
 
 
 -- | Like 'sanitizeGlobal' but indicate that the name is going to be visible
 --   globally.
 sanitizeGlobal :: String -> String
 sanitizeGlobal = sanitizeName
+        
+
+-- | Convert a Salt name to a string we can use for a local variable in the 
+--   body of a C function.
+seaNameOfLocal :: Name -> Maybe Doc
+seaNameOfLocal nn
+ = case nn of
+        NameVar str     -> Just $ text $ "_" ++ sanitizeGlobal str
+        _               -> Nothing
 
 
--- | Like 'sanitizeName' but at add an extra '_' prefix.
---   This is used for function-local names so that they do not conflict 
---   with globally-visible ones.
-sanitizeLocal  :: String -> String
-sanitizeLocal str
- = "_" ++ sanitizeGlobal str
+-- Sanitize ---------------------------------------------------------------------------------------
+-- | Rewrite a name to make it safe to export as an external C symbol.
+--
+--   Names containing unfriendly characters like '&' are prefixed with '_sym_'
+--   and the '&' is replaced by 'ZAn'. Literal 'Z's such a name are doubled to 'ZZ'.
+--
+sanitizeName :: String -> String
+sanitizeName str
+ = let  hasSymbols      = any isJust $ map convertSymbol str
+   in   if hasSymbols
+         then "_sym_" ++ concatMap rewriteChar str
+         else str
 
 
 -- | Get the encoded version of a character.

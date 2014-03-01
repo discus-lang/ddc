@@ -87,8 +87,8 @@ convBlockM context pp kenv tenv xx
          --   assign the result value to the provided variable.
          | isRValue xx
          , ContextNest (BName n _)  <- context
+         , Just n'                  <- seaNameOfLocal n
          -> do  xx'     <- convRValueM pp kenv tenv xx
-                let n'  = text $ sanitizeLocal (renderPlain $ ppr n)
                 return  $ vcat 
                        [ fill 12 n' <+> equals <+> xx' <> semi ]
 
@@ -121,8 +121,9 @@ convBlockM context pp kenv tenv xx
                 x2'     <- convBlockM  context pp kenv tenv x2
 
                 let dst = case b of
-                           BName (NameVar n) _ 
-                             -> fill 12 (text $ sanitizeLocal n) <+> equals <> space
+                           BName n@NameVar{} _
+                            | Just n'   <- seaNameOfLocal n
+                            -> fill 12 n' <+> equals <> space
                            _ -> empty
 
                 return  $ vcat
@@ -284,8 +285,8 @@ convRValueM pp kenv tenv xx
 
         -- Plain variable.
         XVar _ (UName n)
-         | NameVar str  <- n
-         -> return $ text $ sanitizeLocal str
+         |  Just n' <- seaNameOfLocal n
+         -> return $ n'
 
         -- Literals
         XCon _ dc
