@@ -7,3 +7,48 @@ module Test with letrec
 addInt (x : Int#) : Int# -> Int# 
  = add# [Int#] x
 ;;
+
+
+-- Rank-1, non-prenex type. From GHC #1634. 
+-- Issue #323: Insert type lambdas during inference with higher ranked types.
+--  This works only if we insert our own lambda to perform the inner generalisation.
+:set Synth
+:load..
+module Test 
+data Tuple2 (a : Data) (b : Data) where
+ T2 : a -> b -> Tuple2 a b
+
+with letrec
+t1 [a : Data] (x : a) : [b : Data]. b -> Tuple2 a b
+ = /\(b : Data). T2 [a] [b] x
+;;
+
+
+-- Rank-2 type.
+:set Synth
+:load..
+module Test with letrec
+thing (id : [a : Data]. a -> a) 
+ = do   id 5#
+        id ()
+        ()
+
+foo (x : Unit)
+ = thing (/\a. \(x : a). x)
+;;
+
+
+-- Rank-3 type.
+:set Synth
+:load..
+module Test with letrec
+
+id [a : Data] (x : a) : a
+ = x
+
+thing1 (blerk : ([a : Data]. a -> a) -> Nat#) : Nat#
+ = blerk (/\a. \(x : a). x)
+
+thing2 (u : Unit)
+ = thing1 (\(f : [a : Data]. a -> a). f 5#)
+;;

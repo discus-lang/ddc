@@ -39,8 +39,8 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorMismatch a tInferred tExpected xx
          -> vcat [ ppr a
                  , text "Type mismatch."
-                 , text "                Inferred type: "       <> ppr tInferred
-                 , text " does not match expected type: "       <> ppr tExpected
+                 , text "  inferred type: "                     <> ppr tInferred
+                 , text "  expected type: "                     <> ppr tExpected
                  , empty
                  , text "with: "                                <> align (ppr xx) ]
 
