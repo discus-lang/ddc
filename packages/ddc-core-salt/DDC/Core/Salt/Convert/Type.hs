@@ -1,7 +1,7 @@
 
 module DDC.Core.Salt.Convert.Type
         ( convTypeM
-        , convFunctionTypeM)
+        , convSuperTypeM)
 where
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
@@ -56,45 +56,31 @@ convTypeM kenv tt
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a Salt function type to a C source prototype.
-convFunctionTypeM
+convSuperTypeM
         :: KindEnv      Name
-        -> ImportSource Name
+        -> Maybe (ImportSource Name)
+        -> Maybe (ExportSource Name)
+        -> Name                 -- ^ Local name of super.
         -> Type         Name    -- ^ Function type.
         -> ConvertM a Doc
 
-convFunctionTypeM kenv isrc tFunc
- | TForall b t' <- tFunc
- = convFunctionTypeM (Env.extend b kenv) isrc t'
+convSuperTypeM kenv misrc mesrc nSuper tSuper
+ | TForall b t' <- tSuper
+ = convSuperTypeM (Env.extend b kenv) misrc mesrc nSuper t'
 
- | otherwise
- = case isrc of
-    -- Import a value from a DDC compiled module.
-    ImportSourceModule _mn n _
-     -> do
-        -- Symbol name for the function.
-        let nFun'       = text $ sanitizeGlobal (renderPlain $ ppr n)
-
+ | Just nFun'   <- seaNameOfSuper misrc mesrc nSuper
+ = do
         -- Convert the argument and return types.
-        let (tsArgs, tResult) = takeTFunArgResult tFunc
-        tsArgs'          <- mapM (convTypeM kenv) $ filter keepParamOfType tsArgs
-        tResult'         <- convTypeM kenv tResult
+        let (tsArgs, tResult) = takeTFunArgResult tSuper
+        tsArgs'         <- mapM (convTypeM kenv) $ filter keepParamOfType tsArgs
+        tResult'        <- convTypeM kenv tResult
 
         return $ tResult' <+> nFun' <+> parenss tsArgs'
 
-    -- Import a value using the C calling convention.
-    ImportSourceSea nFun _
-     -> do
-        -- Convert the argument and return types.
-        let (tsArgs, tResult) = takeTFunArgResult tFunc
-        tsArgs'          <- mapM (convTypeM kenv) $ filter keepParamOfType tsArgs
-        tResult'         <- convTypeM kenv tResult
+ | otherwise
+ = throw $ ErrorImportInvalid nSuper
 
-        return $ tResult' <+> text nFun <+> parenss tsArgs'
-
-    ImportSourceAbstract{}
-     -> throw $ ErrorImportInvalid isrc
-
-
+    
 keepParamOfType :: Type Name -> Bool
 keepParamOfType tt
  | tc : _       <- takeTApps tt

@@ -16,7 +16,8 @@ Fragment violation when converting Salt module to C code.
 
 
 -- Ok: Function finishes with a return statement.
-int_t foo (int_t _x)
+// Code for locally defined supers. -----------------------------------
+int_t _DDC_foo (int_t _x)
 {
         
 
@@ -26,7 +27,8 @@ int_t foo (int_t _x)
 
 
 -- Ok: Statements in function.
-int_t foo (int_t _x)
+// Code for locally defined supers. -----------------------------------
+int_t _DDC_foo (int_t _x)
 {
         int_t _y = 0;
 
@@ -37,7 +39,8 @@ int_t foo (int_t _x)
 
 
 -- Ok: Function explicitly fails.
-int_t foo (int_t _x)
+// Code for locally defined supers. -----------------------------------
+int_t _DDC_foo (int_t _x)
 {
         int_t _y = 0;
 
@@ -48,7 +51,8 @@ int_t foo (int_t _x)
 
 
 -- Ok: assignment between variables.
-int_t foo (int_t _x)
+// Code for locally defined supers. -----------------------------------
+int_t _DDC_foo (int_t _x)
 {
         int_t _y = 0;
 
@@ -59,7 +63,8 @@ int_t foo (int_t _x)
 
 
 -- Ok: assignment from a literal.
-nat_t foo (nat_t _x)
+// Code for locally defined supers. -----------------------------------
+nat_t _DDC_foo (nat_t _x)
 {
         nat_t _y = 0;
 

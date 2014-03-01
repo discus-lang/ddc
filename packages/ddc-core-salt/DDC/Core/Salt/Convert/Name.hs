@@ -21,21 +21,42 @@ sanitizeGlobal = sanitizeName
 -- | Convert the Salt name of a supercombinator to a name we can use when
 --   defining the C function.
 seaNameOfSuper 
-        :: Maybe (ExportSource Name)    -- ^ How the super is exported.
+        :: Maybe (ImportSource Name)    -- ^ How the super is imported
+        -> Maybe (ExportSource Name)    -- ^ How the super is exported
         -> Name                         -- ^ Name of the super.
         -> Maybe Doc
 
-seaNameOfSuper mExport nSuper
-        | Just _        <- mExport
-        , NameVar str   <- nSuper
+seaNameOfSuper mImport mExport (NameVar str)
+
+        -- Super is defined in this module and not exported.
+        | Nothing                               <- mImport
+        , Nothing                               <- mExport
+        = Just $ text $ "_DDC_" ++ sanitizeName str
+
+        -- Super is defined in this module and exported to C land.
+        | Nothing                               <- mImport
+        , Just _                                <- mExport
         = Just $ text $ sanitizeName str
 
-        | Nothing       <- mExport
-        , NameVar str   <- nSuper
-        -- = Just $ text $ "_DDC_" ++ sanitizeName str
-        = Just $ text $ sanitizeName str
+        -- Super is imported from another module and not exported.
+        | Just (ImportSourceModule _ _ _)       <- mImport
+        , Nothing                               <- mExport
+        = Just $ text $ "_DDC_" ++ sanitizeName str
+        
+        -- Super is imported from C-land and not exported.
+        | Just (ImportSourceSea strSea _)       <- mImport
+        , Nothing                               <- mExport
+        = Just $ text strSea
 
+        -- ISSUE #320: Handle all the import/export combinations.
+        --
+        -- We don't handle the other cases because we would need to
+        -- produce a wrapper to conver the names.
         | otherwise
+        = Nothing
+        
+
+seaNameOfSuper _ _ _
         = Nothing
 
 

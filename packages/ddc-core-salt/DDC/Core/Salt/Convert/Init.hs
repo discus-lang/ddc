@@ -65,11 +65,12 @@ initRuntimeTopX config xx
         , Just (bMainOrig, xMainOrig)   <- find   (isMainBind . fst) bxs
         , bxs_cut                       <- filter (not . isMainBind . fst) bxs
         , BName _ tMainOrig             <- bMainOrig
-        =  let  bMainOrig'      = BName (NameVar "_ddc_main") 
-                                $ tMainOrig
+        =  let  
+                -- Rename the old main function to '_main'
+                bMainOrig'      = BName (NameVar "_main") $ tMainOrig
 
-                bMainEntry      = BName (NameVar "main") 
-                                $ posixMainType
+                -- The new entry point of the program is called 'main'.
+                bMainEntry      = BName (NameVar "main")  $ posixMainType
                 
                 xMainEntry      = makeMainEntryX config a
 
@@ -101,7 +102,7 @@ makeMainEntryX config a
  $ XLam a  (BName (NameVar "argv")         (tPtr rTop tString))
  $ XLet a  (LLet  (BNone tVoid)            (xCreate a (configHeapSize config)))
  $ XLet a  (LLet  (BNone (tPtr rTop tObj)) 
-                  (xApps a (XVar a (UName (NameVar "_ddc_main"))) 
+                  (xApps a (XVar a (UName (NameVar "_main"))) 
                            [xAllocBoxed a rTop 0 (xNat a 0)]))
            (xInt a 0)
 

@@ -55,6 +55,7 @@ convSuperM'    pp mm kenv  tenv  nSuper tSuper bsParam xx
  = do   
         -- Convert the function name.
         let Just nSuper' = seaNameOfSuper 
+                                (lookup nSuper (moduleImportValues mm))
                                 (lookup nSuper (moduleExportValues mm))
                                 nSuper
         

@@ -30,7 +30,7 @@ data Error a
 
         -- | Invalid import.
         | ErrorImportInvalid
-        { errorImportSource :: ImportSource Name }
+        { errorImportName ::  Name }
 
         -- | A local variable has an invalid type.
         | ErrorTypeInvalid 
@@ -96,8 +96,8 @@ instance (Show a, Pretty a) => Pretty (Error a) where
                  , empty
                  , text "with:"                                 <+> align (ppr tt) ]
 
-        ErrorImportInvalid _isrc
-         -> vcat [ text "Invalid import spec." ]
+        ErrorImportInvalid n
+         -> vcat [ text "Invalid import spec for '" <> ppr n <> text "'" ]
                  
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."

@@ -48,62 +48,77 @@ convModuleM withPrelude pp mm@(ModuleCore{})
         -- These include runtime system functions and macro definitions that
         -- the generated code refers to directly.
         let cIncludes
-                | not withPrelude       = []
+                | not withPrelude       = empty
                 | otherwise
-                = [ text "#include \"Runtime.h\""
-                  , text "#include \"Primitive.h\""
-                  , empty ]
-
+                = vcat    
+                $  [ text "// Includes for helper macros and the runtime system. -----------------"
+                   , text "#include \"Runtime.h\""
+                   , text "#include \"Primitive.h\"" 
+                   , line ]
 
         -- Import external symbols --------------
-        let nts         =  map snd $ C.moduleImportValues mm
-        docs            <- mapM (uncurry $ convFunctionTypeM Env.empty) 
-                                [(src, typeOfImportSource src) | src <- nts]
-        let cExterns
-                | not withPrelude       = []
-                | otherwise             = [ text "extern " <> doc <> semi | doc <- docs ]
+        dsImport
+         <- mapM (\(misrc, nSuper, tSuper)
+                        -> convSuperTypeM Env.empty misrc Nothing nSuper tSuper)
+                 [ (Just isrc, nSuper, tSuper)
+                        | (nSuper, isrc) <- C.moduleImportValues mm
+                        , let tSuper     =  typeOfImportSource isrc ]
 
+        let cExterns
+                | not withPrelude       = empty
+                | otherwise             
+                = vcat  
+                $  [ text "// External definitions for imported symbols. -------------------------"]
+                ++ [ text "extern " <> doc <> semi | doc <- dsImport ]
+                ++ [ line ]
+                
 
         -- Globals for the Runtime system -------
         --   If this is the main module then we define the globals for the
         --   runtime system at top-level.
         let cGlobals
-                | not withPrelude       = []
+                | not withPrelude       = empty
 
                 | isMainModule mm
-                = [ text "addr_t _DDC_Runtime_heapTop = 0;"
-                  , text "addr_t _DDC_Runtime_heapMax = 0;"
-                  , empty ]
+                = vcat  
+                $  [ text "// Definitions of the runtime system variables. -----------------------"
+                   , text "addr_t _DDC_Runtime_heapTop = 0;"
+                   , text "addr_t _DDC_Runtime_heapMax = 0;" 
+                   , line ]
 
                 | otherwise
-                = [ text "extern addr_t _DDC_Runtime_heapTop;"
-                  , text "extern addr_t _DDC_Runtime_heapMax;"
-                  , empty ]
-
+                = vcat  
+                $  [ text "// External definitions for the runtime system variables. -------------"
+                   , text "extern addr_t _DDC_Runtime_heapTop;"
+                   , text "extern addr_t _DDC_Runtime_heapMax;" 
+                   , line ]
 
         -- Function prototypes ------------------
         --   These are for the supers defined in this module, so that they
         --   can be recursive, and the function definitions don't need to
         --   be emitted in a particular order.
-        
-        -- We reuse the same code that generates imports for external
-        -- symbols, so construct some intermediate 'ImportSourceSea' to re-import
-        -- our locally defined functions.
-        let srcsProto   = [ImportSourceSea (renderPlain (ppr n)) t 
-                                | (BName n t, _) <- bxs]
-        
-        dsProto         <- mapM (uncurry $ convFunctionTypeM Env.empty)
-                                [(src, typeOfImportSource src) | src <- srcsProto]
+                
+        dsProto         
+         <- mapM (\(mesrc, nSuper, tSuper) 
+                        -> convSuperTypeM Env.empty Nothing mesrc nSuper tSuper)
+                 [ (mesrc, nSuper, tSuper) 
+                        | (BName nSuper tSuper, _) <- bxs
+                        , let mesrc     = lookup nSuper (moduleExportValues mm) ]
+                                         
         let cProtos
-                | not withPrelude       = []
-                | otherwise             = [ doc <> semi | doc <- dsProto ]
+                | not withPrelude       = empty
+                | otherwise
+                = vcat 
+                $  [ text "// Function prototypes for locally defined supers. --------------------"]
+                ++ [ doc <> semi | doc <- dsProto ]
+                ++ [ line ]
 
 
         -- Super-combinator definitions ---------
         --   This is the code for locally defined functions.
         
         -- Build the top-level kind environment.
-        let kenv        = Env.fromList 
+        let kenv        = Env.fromList
                         $ [ BName n (typeOfImportSource isrc) 
                                 | (n, isrc) <- moduleImportTypes mm ]
 
@@ -119,16 +134,18 @@ convModuleM withPrelude pp mm@(ModuleCore{})
             convSuperM' _ x
                 = throw $ ErrorFunctionInvalid x
 
-        cSupers <- mapM (uncurry convSuperM') bxs
-
+        dsSupers <- mapM (uncurry convSuperM') bxs
+        let cSupers     
+                = vcat  
+                $  [ text "// Code for locally defined supers. -----------------------------------"]
+                ++ dsSupers
 
         -- Paste everything together ------------
-        return  $  vcat 
-                $  cIncludes    -- Includes for the Runtime and helper macros.
-                ++ cExterns     -- Externs for imported symbols.
-                ++ cGlobals     -- Globals for the runtime system.
-                ++ cProtos      -- Function prototypes for locally defined supers.
-                ++ cSupers      -- C code for locally defined supers.
+        return  $  cIncludes    -- Includes for helper macros and the runtime system.
+                <> cExterns     -- External definitions for imported symbols.
+                <> cGlobals     -- Definitions of the runtime system variables.
+                <> cProtos      -- Function prototypes for locally defined supers.
+                <> cSupers      -- Code for locally defined supers.
 
  | otherwise
  = throw $ ErrorNoTopLevelLetrec mm

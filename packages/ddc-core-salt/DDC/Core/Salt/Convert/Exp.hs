@@ -315,20 +315,27 @@ convRValueM config kenv tenv xx
 
         -- Primop application.
         XApp{}
-         |  Just (NamePrimOp p, args)      <- takeXPrimApps xx
+         |  Just (NamePrimOp p, args)   <- takeXPrimApps xx
          -> convPrimCallM config kenv tenv p args
 
         -- Super application.
         XApp{}
-         |  Just (XVar _ (UName n), args)  <- takeXApps xx
-         ,  NameVar nTop <- n
-         -> do  let nTop' = sanitizeGlobal nTop
+         |  Just (XVar _ (UName nSuper), args)  
+                                        <- takeXApps xx
+         -> do  
+                -- Get the C name to use when calling the super, 
+                -- which depends on how it's imported and exported.
+                let Just nSuper' 
+                        = seaNameOfSuper 
+                           (lookup nSuper $ moduleImportValues $ configModule config)
+                           (lookup nSuper $ moduleExportValues $ configModule config)
+                           nSuper
 
                 -- Ditch type and witness arguments
                 args'   <- mapM (convRValueM config kenv tenv) 
                         $  filter keepFunArgX args
 
-                return  $ text nTop' <> parenss args'
+                return  $ nSuper' <> parenss args'
 
         -- Type argument.
         XType _ t
@@ -422,13 +429,20 @@ convPrimCallM config kenv tenv p xs
         --   For straight tail-recursion we need to overwrite the parameters
         --   with the new arguments and jump back to the start of the function.
         PrimCall (PrimCallTail arity)
-         | xFunTys : xsArgs     <- drop (arity + 1) xs
-         , Just (xFun, _)       <- takeXApps xFunTys
-         , XVar _ (UName n)     <- xFun
-         , NameVar nTop         <- n
-         -> do  let nFun'       = text $ sanitizeGlobal nTop
+         | xFunTys : xsArgs      <- drop (arity + 1) xs
+         , Just (xFun, _)        <- takeXApps xFunTys
+         , XVar _ (UName nSuper) <- xFun
+         -> do  
+                -- Get the C name to use when calling the super, 
+                -- which depends on how it's imported and exported.
+                let Just nSuper' 
+                        = seaNameOfSuper 
+                           (lookup nSuper $ moduleImportValues $ configModule config)
+                           (lookup nSuper $ moduleExportValues $ configModule config)
+                           nSuper
+
                 xsArgs'         <- mapM (convRValueM config kenv tenv) xsArgs
-                return  $  text "return" <+> nFun' <> parenss xsArgs'
+                return  $  text "return" <+> nSuper' <> parenss xsArgs'
 
 
         -- Store primops.
