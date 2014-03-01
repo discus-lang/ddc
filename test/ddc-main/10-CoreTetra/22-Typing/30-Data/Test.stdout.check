@@ -1,7 +1,7 @@
 ok
 
 
--- Flip it.
+-- Hot or not.
 module Test 
 data Hotness  where {
         Hot : Hotness;
@@ -20,7 +20,7 @@ letrec {
 }
 
 
--- List data type.
+-- Standard List data type.
 module Test 
 data List (a : Data) where {
         Nil : List a;
@@ -45,7 +45,7 @@ letrec {
 
 
 -- Data type containing a polymorphic function.
---   This makes the constructor type rank-2
+--   The data constructor has a rank-2 type.
 ok
 module Test 
 data Box  where {
@@ -62,6 +62,62 @@ letrec {
 }
 
 
+-- Nested data type.
+--   From 'Nested Data Types', Bird and Meertens 1998.
+ok
+module Test 
+data Tuple2 (a : Data) (b : Data) where {
+        T2 : a -> b -> Tuple2 a b;
+}
+
+data Nest (a : Data) where {
+        NilN : Nest a;
+        ConsN : a -> Nest (Tuple2 a a) -> Nest a;
+}
+with
+letrec {
+  thing : Unit -> Nest Nat#
+    = \(_ : Unit).
+      ConsN [Nat#] 7#
+          (ConsN [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 1# 2#)
+               (ConsN [Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)]
+                    (T2 [Tuple2 Nat# Nat#] [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 6# 7#) (T2 [Nat#] [Nat#] 7# 4#))
+                    (NilN [Tuple2 (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)) (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#))])))
+}
+
+
+-- Nested data type.
+--   From 'Nested Data Types', Bird and Meertens 1998.
+ok
+module Test 
+data Tuple2 (a : Data) (b : Data) where {
+        T2 : a -> b -> Tuple2 a b;
+}
+
+data Bush (a : Data) where {
+        NilB : Bush a;
+        ConsB : a -> Bush (Bush a) -> Bush a;
+}
+with
+letrec {
+  thing : Unit -> Bush Nat#
+    = \(_ : Unit).
+      ConsB [Nat#] 4#
+          (ConsB [Bush Nat#]
+               (ConsB [Nat#] 8#
+                    (ConsB [Bush Nat#]
+                         (ConsB [Nat#] 5#
+                              (NilB [Bush Nat#]))
+                         (ConsB [Bush (Bush Nat#)]
+                              (ConsB [Bush Nat#]
+                                   (ConsB [Nat#] 3#
+                                        (NilB [Bush Nat#]))
+                                   (NilB [Bush (Bush Nat#)]))
+                              (NilB [Bush (Bush (Bush Nat#))]))))
+               (NilB [Bush (Bush Nat#)]))
+}
+
+
 -- Error: constructor does not produce the data type.
 mode parse error
 Error loading module
@@ -70,3 +126,4 @@ Error loading module
            The data constructor: C
                 has result type: NotTheThing
       but the enclosing type is: TheThing
+

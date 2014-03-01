@@ -1,7 +1,7 @@
 :set lang Tetra
 
 
--- Flip it.
+-- Hot or not.
 :load..
 module Test 
 data Hotness where
@@ -16,7 +16,7 @@ flip (x : Hotness) : Hotness
 ;;
 
 
--- List data type.
+-- Standard List data type.
 :load..
 module Test 
 data List (a : Data) where 
@@ -43,7 +43,7 @@ letrec {
 
 
 -- Data type containing a polymorphic function.
---   This makes the constructor type rank-2
+--   The data constructor has a rank-2 type.
 :set Synth
 :load..
 module Test
@@ -58,6 +58,48 @@ thing (b : Box)
 ;;
 
 
+-- Nested data type.
+--   From 'Nested Data Types', Bird and Meertens 1998.
+:set Synth
+:load..
+module Test
+data Tuple2 (a b : Data) where
+        T2      : a -> b -> Tuple2 a b
+
+data Nest (a : Data) where
+        NilN    : Nest a
+        ConsN   : a -> Nest (Tuple2 a a) -> Nest a
+
+with letrec
+thing (_ : Unit)
+ = ConsN 7# (ConsN (T2 1# 2#) (ConsN (T2 (T2 6# 7#) (T2 7# 4#)) NilN))
+;;
+
+
+-- Nested data type.
+--   From 'Nested Data Types', Bird and Meertens 1998.
+:set Synth
+:load..
+module Test
+data Tuple2 (a b : Data) where
+        T2      : a -> b -> Tuple2 a b
+
+data Bush (a : Data) where
+        NilB    : Bush a
+        ConsB   : a -> Bush (Bush a) -> Bush a
+
+with letrec
+thing (_ : Unit)
+ = ConsB 4# 
+  (ConsB (ConsB 8# 
+                (ConsB  (ConsB 5# NilB) 
+                        (ConsB (ConsB (ConsB 3# NilB) 
+                                      NilB) 
+                               NilB)))
+         NilB)
+;;
+
+
 -- Error: constructor does not produce the data type.
 :set Synth..
 :load.. 
@@ -69,3 +111,4 @@ eatThing (x : TheThing)
  = case x of
         C y     -> y
 ;;
+
