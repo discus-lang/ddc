@@ -44,3 +44,20 @@ letrec {
 }
 
 
+-- Data type containing a polymorphic function.
+--   This makes the constructor type rank-2
+ok
+module Test 
+data Box  where {
+        Box : ([a : Data].a -> a) -> Box;
+}
+with
+letrec {
+  thing : Box -> Nat#
+    = \(b : Box).
+      case b of {
+        Box (f : [a : Data].a -> a) 
+         -> f [Nat#] 5#
+      }
+}
+
