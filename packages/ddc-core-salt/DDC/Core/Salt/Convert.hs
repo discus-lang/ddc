@@ -82,15 +82,15 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                 | isMainModule mm
                 = vcat  
                 $  [ text "// Definitions of the runtime system variables. -----------------------"
-                   , text "addr_t _DDC_Runtime_heapTop = 0;"
-                   , text "addr_t _DDC_Runtime_heapMax = 0;" 
+                   , text "addr_t _DDC__heapTop = 0;"
+                   , text "addr_t _DDC__heapMax = 0;" 
                    , line ]
 
                 | otherwise
                 = vcat  
                 $  [ text "// External definitions for the runtime system variables. -------------"
-                   , text "extern addr_t _DDC_Runtime_heapTop;"
-                   , text "extern addr_t _DDC_Runtime_heapMax;" 
+                   , text "extern addr_t _DDC__heapTop;"
+                   , text "extern addr_t _DDC__heapMax;" 
                    , line ]
 
         -- Function prototypes ------------------

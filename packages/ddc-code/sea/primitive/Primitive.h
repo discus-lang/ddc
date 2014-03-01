@@ -17,16 +17,16 @@ void _FAIL(void)
 
 
 // Store Primops --------------------------------------------------------------
-extern addr_t _DDC_Runtime_heapTop;
-extern addr_t _DDC_Runtime_heapMax;
+extern addr_t _DDC__heapTop;
+extern addr_t _DDC__heapMax;
 
 
 // Create the initial store.
 static inline
 void    _CREATE (nat_t bytes)
 {
-        _DDC_Runtime_heapTop    = malloc (bytes);
-        _DDC_Runtime_heapMax    = _DDC_Runtime_heapTop + bytes;        
+        _DDC__heapTop   = malloc (bytes);
+        _DDC__heapMax   = _DDC__heapTop + bytes;        
 }
 
 
@@ -34,8 +34,8 @@ void    _CREATE (nat_t bytes)
 static inline 
 addr_t _ALLOC (nat_t bytes) 
 {       
-        addr_t obj              = _DDC_Runtime_heapTop;
-        _DDC_Runtime_heapTop    = _DDC_Runtime_heapTop + bytes;
+        addr_t obj      = _DDC__heapTop;
+        _DDC__heapTop   = _DDC__heapTop + bytes;
         return obj;
 }       
 
@@ -45,7 +45,7 @@ addr_t _ALLOC (nat_t bytes)
 static inline
 bool_t  _CHECK (nat_t bytes)
 {
-        return (_DDC_Runtime_heapTop + bytes < _DDC_Runtime_heapMax);
+        return (_DDC__heapTop + bytes < _DDC__heapMax);
 }
 
 
