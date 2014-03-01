@@ -114,14 +114,10 @@ convModuleM withPrelude pp mm@(ModuleCore{})
 
         -- Convert all the super definitions to C code.
         let convSuperM' (BName n t) x
-                = convSuperM pp kenv tenv 
-                        (lookup n (moduleExportValues mm))
-                        n t x
+                = convSuperM pp mm kenv tenv n t x
 
             convSuperM' _ x
                 = throw $ ErrorFunctionInvalid x
-
-
 
         cSupers <- mapM (uncurry convSuperM') bxs
 

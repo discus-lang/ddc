@@ -20,40 +20,44 @@ import Control.Monad
 import Data.Maybe
 
 
+
 -- | Convert a supercombinator definition to C source text.
 convSuperM 
         :: Show a 
         => Platform                     -- ^ Target platform specifiction.
+        -> Module a Name                -- ^ Enclosing module.
         -> KindEnv Name                 -- ^ Top-level kind environment.
         -> TypeEnv Name                 -- ^ Top-level type environment.
-        -> Maybe (ExportSource Name)    -- ^ ExportSource if this super is exported.
         -> Name                         -- ^ Name of the supercombinator.
         -> Type Name                    -- ^ Type of the supercombinator.
         -> Exp a Name                   -- ^ Body expression of the supercombiantor.
         -> ConvertM a Doc
 
-convSuperM     pp kenv0 tenv0 esrcSuper nSuper tSuper xx
- = convSuperM' pp kenv0 tenv0 esrcSuper nSuper tSuper [] xx
+convSuperM     pp mm kenv0 tenv0 nSuper tSuper xx
+ = convSuperM' pp mm kenv0 tenv0 nSuper tSuper [] xx
 
-convSuperM'    pp kenv  tenv  esrcSuper nSuper tSuper bsParam xx
+convSuperM'    pp mm kenv  tenv  nSuper tSuper bsParam xx
  
  -- Enter into type abstractions,
  --  adding the bound name to the environment.
  | XLAM _ b x   <- xx
- = convSuperM' pp (Env.extend b kenv) tenv 
-        esrcSuper nSuper tSuper bsParam x
+ = convSuperM' pp mm (Env.extend b kenv) tenv 
+        nSuper tSuper bsParam x
 
  -- Enter into value abstractions,
  --  remembering that we're now in a function that has this parameter.
  | XLam _ b x   <- xx
- = convSuperM' pp kenv (Env.extend b tenv) 
-        esrcSuper nSuper tSuper (bsParam ++ [b]) x
+ = convSuperM' pp mm kenv (Env.extend b tenv) 
+        nSuper tSuper (bsParam ++ [b]) x
 
  -- Convert the function body.
  | otherwise
  = do   
         -- Convert the function name.
-        let Just nSuper' = seaNameOfSuper esrcSuper nSuper
+        let Just nSuper' = seaNameOfSuper 
+                                (lookup nSuper (moduleExportValues mm))
+                                nSuper
+        
         let (_, tResult) = takeTFunArgResult $ eraseTForalls tSuper
 
         -- Convert the function parameters.
@@ -74,7 +78,11 @@ convSuperM'    pp kenv  tenv  esrcSuper nSuper tSuper bsParam xx
         -- Convert the body of the function.
         --   We pass in ContextTop to say we're at the top-level of the function,
         ---  so the block must explicitly pass control in the final statement.
-        xBody'          <- convBlockM ContextTop pp kenv tenv xx
+        let config      = Config
+                        { configPlatform = pp
+                        , configModule   = mm }
+        
+        xBody'          <- convBlockM config ContextTop kenv tenv xx
 
         -- Paste everything together.
         return  $ vcat

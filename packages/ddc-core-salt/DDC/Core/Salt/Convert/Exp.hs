@@ -1,5 +1,6 @@
 module DDC.Core.Salt.Convert.Exp
-        ( Context(..)
+        ( Config        (..)
+        , Context       (..)
         , convBlockM
         , convAltM
         , convRValueM
@@ -13,11 +14,20 @@ import DDC.Core.Salt.Name
 import DDC.Core.Salt.Platform
 import DDC.Core.Predicates
 import DDC.Core.Compounds
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check          (throw)
 import qualified DDC.Type.Env           as Env
+
+
+-- Config -----------------------------------------------------------------------------------------
+-- | Static configuration that doesn't change when we descend into the tree.
+data Config a
+        = Config
+        { configPlatform        :: Platform
+        , configModule          :: Module a Name }
 
 
 -- Context ----------------------------------------------------------------------------------------
@@ -52,12 +62,12 @@ isContextNest cc
 --
 convBlockM 
         :: Show a
-        => Context      -> Platform
-        -> KindEnv Name -> TypeEnv Name
+        => Config a
+        -> Context -> KindEnv Name -> TypeEnv Name
         -> Exp a Name
         -> ConvertM a Doc
 
-convBlockM context pp kenv tenv xx
+convBlockM config context kenv tenv xx
  = case xx of
 
         XApp{}
@@ -67,7 +77,7 @@ convBlockM context pp kenv tenv xx
          -> case takeXPrimApps xx of
                 Just (NamePrimOp p, xs)
                  |  isControlPrim p || isCallPrim p
-                 -> do  x1      <- convPrimCallM pp kenv tenv p xs
+                 -> do  x1      <- convPrimCallM config kenv tenv p xs
                         return  $ x1 <> semi
 
                 _ -> throw $ ErrorBodyMustPassControl xx
@@ -79,7 +89,7 @@ convBlockM context pp kenv tenv xx
          | ContextNest{}            <- context
          , Just (NamePrimOp p, xs)  <- takeXPrimApps xx
          , isControlPrim p || isCallPrim p
-         -> do  x1      <- convPrimCallM pp kenv tenv p xs
+         -> do  x1      <- convPrimCallM config kenv tenv p xs
                 return  $ x1 <> semi
 
         _ 
@@ -88,7 +98,7 @@ convBlockM context pp kenv tenv xx
          | isRValue xx
          , ContextNest (BName n _)  <- context
          , Just n'                  <- seaNameOfLocal n
-         -> do  xx'     <- convRValueM pp kenv tenv xx
+         -> do  xx'     <- convRValueM config kenv tenv xx
                 return  $ vcat 
                        [ fill 12 n' <+> equals <+> xx' <> semi ]
 
@@ -96,7 +106,7 @@ convBlockM context pp kenv tenv xx
          --   just drop the result on the floor.
          | isRValue xx
          , ContextNest  (BNone _)   <- context
-         -> do  xx'     <- convRValueM pp kenv tenv xx
+         -> do  xx'     <- convRValueM config kenv tenv xx
                 return  $ vcat 
                        [ xx' <> semi ]
 
@@ -105,11 +115,11 @@ convBlockM context pp kenv tenv xx
          -> do  
                 -- Convert the right hand side in a nested context.
                 --  The ContextNext holds the var to assign the result to.
-                x1'     <- convBlockM (ContextNest b) pp kenv tenv x1
+                x1'     <- convBlockM config (ContextNest b) kenv tenv x1
 
                 -- Convert the rest of the function.
                 let tenv' = Env.extend b tenv 
-                x2'     <- convBlockM context         pp kenv tenv' x2
+                x2'     <- convBlockM config context         kenv tenv' x2
 
                 return  $ vcat
                         [ x1'
@@ -117,8 +127,8 @@ convBlockM context pp kenv tenv xx
 
         -- Binding from an r-value.
         XLet _ (LLet b x1) x2
-         -> do  x1'     <- convRValueM pp kenv tenv x1
-                x2'     <- convBlockM  context pp kenv tenv x2
+         -> do  x1'     <- convRValueM config kenv tenv x1
+                x2'     <- convBlockM  config context kenv tenv x2
 
                 let dst = case b of
                            BName n@NameVar{} _
@@ -134,7 +144,7 @@ convBlockM context pp kenv tenv xx
         XLet _ (LPrivate bs _mt ws) x
          -> let kenv'   = Env.extends bs kenv
                 tenv'   = Env.extends ws tenv
-            in  convBlockM context pp kenv' tenv' x
+            in  convBlockM config context kenv' tenv' x
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
@@ -144,9 +154,9 @@ convBlockM context pp kenv tenv xx
          , Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
          -> do  
-                x'      <- convRValueM pp kenv tenv x
-                x1'     <- convBlockM  context pp kenv tenv x1
-                xFail'  <- convBlockM  context pp kenv tenv xFail
+                x'      <- convRValueM config kenv tenv x
+                x1'     <- convBlockM  config context kenv tenv x1
+                xFail'  <- convBlockM  config context kenv tenv xFail
 
                 return  $ vcat
                         [ text "if"
@@ -160,9 +170,9 @@ convBlockM context pp kenv tenv xx
                   , AAlt (PData dc2 []) x2 ]
          | Just (NameLitBool True)  <- takeNameOfDaCon dc1
          , Just (NameLitBool False) <- takeNameOfDaCon dc2
-         -> do  x'      <- convRValueM pp kenv tenv x
-                x1'     <- convBlockM context pp kenv tenv x1
-                x2'     <- convBlockM context pp kenv tenv x2
+         -> do  x'      <- convRValueM config kenv tenv x
+                x1'     <- convBlockM  config context kenv tenv x1
+                x2'     <- convBlockM  config context kenv tenv x2
 
                 return  $ vcat
                         [ text "if" <> parens x'
@@ -173,8 +183,8 @@ convBlockM context pp kenv tenv xx
         -- Case-expression.
         --   In the general case we use the C-switch statement.
         XCase _ x alts
-         -> do  x'      <- convRValueM pp kenv tenv x
-                alts'   <- mapM (convAltM context pp kenv tenv) alts
+         -> do  x'      <- convRValueM config kenv tenv x
+                alts'   <- mapM (convAltM config context kenv tenv) alts
 
                 return  $ vcat
                         [ text "switch" <+> parens x'
@@ -183,7 +193,7 @@ convBlockM context pp kenv tenv xx
 
         -- Ditch casts.
         XCast _ _ x
-         -> convBlockM context pp kenv tenv x
+         -> convBlockM config context kenv tenv x
 
         _ -> throw $ ErrorBodyInvalid xx
 
@@ -215,19 +225,19 @@ isFailX _ = False
 -- | Convert a case alternative to C source text.
 convAltM 
         :: Show a 
-        => Context      -> Platform
-        -> KindEnv Name -> TypeEnv Name
+        => Config a
+        -> Context      -> KindEnv Name -> TypeEnv Name
         -> Alt a Name 
         -> ConvertM a Doc
 
-convAltM context pp kenv tenv aa
+convAltM config context kenv tenv aa
  = let end 
         | isContextNest context = line <> text "break;"
         | otherwise             = empty
    
    in case aa of
         AAlt PDefault x1 
-         -> do  x1'     <- convBlockM context pp kenv tenv x1
+         -> do  x1'     <- convBlockM config context kenv tenv x1
                 return  $ vcat
                         [ text "default:" 
                         , lbrace <> indent 5 (x1' <> end)
@@ -237,7 +247,7 @@ convAltM context pp kenv tenv aa
         AAlt (PData dc []) x1
          | Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
-         -> do  x1'     <- convBlockM context pp kenv tenv x1
+         -> do  x1'     <- convBlockM config context kenv tenv x1
                 return  $ vcat
                         [ text "case" <+> n' <> colon
                         , lbrace <> indent 5 (x1' <> end)
@@ -275,12 +285,12 @@ convDaConName nn
 -- | Convert an Right-value to C source text.
 convRValueM 
         :: Show a 
-        => Platform
+        => Config a
         -> KindEnv Name -> TypeEnv Name 
         -> Exp a Name 
         -> ConvertM a Doc
 
-convRValueM pp kenv tenv xx
+convRValueM config kenv tenv xx
  = case xx of
 
         -- Plain variable.
@@ -306,7 +316,7 @@ convRValueM pp kenv tenv xx
         -- Primop application.
         XApp{}
          |  Just (NamePrimOp p, args)      <- takeXPrimApps xx
-         -> convPrimCallM pp kenv tenv p args
+         -> convPrimCallM config kenv tenv p args
 
         -- Super application.
         XApp{}
@@ -315,7 +325,7 @@ convRValueM pp kenv tenv xx
          -> do  let nTop' = sanitizeGlobal nTop
 
                 -- Ditch type and witness arguments
-                args'   <- mapM (convRValueM pp kenv tenv) 
+                args'   <- mapM (convRValueM config kenv tenv) 
                         $  filter keepFunArgX args
 
                 return  $ text nTop' <> parenss args'
@@ -327,7 +337,7 @@ convRValueM pp kenv tenv xx
 
         -- Ditch casts.
         XCast _ _ x
-         -> convRValueM pp kenv tenv x
+         -> convRValueM config kenv tenv x
 
         _ -> throw $ ErrorRValueInvalid xx
 
@@ -357,20 +367,21 @@ keepFunArgX xx
 -- | Convert a call to a primitive operator to C source text.
 convPrimCallM 
         :: Show a 
-        => Platform
+        => Config a
         -> KindEnv Name -> TypeEnv Name
         -> PrimOp       -> [Exp a Name] 
         -> ConvertM a Doc
 
-convPrimCallM pp kenv tenv p xs
- = case p of
+convPrimCallM config kenv tenv p xs
+ = let pp       = configPlatform config
+   in case p of
 
         -- Binary arithmetic primops.
         PrimArith op
          | [XType _ _, x1, x2]  <- xs
          , Just op'             <- convPrimArith2 op
-         -> do  x1'     <- convRValueM pp kenv tenv x1
-                x2'     <- convRValueM pp kenv tenv x2
+         -> do  x1'     <- convRValueM config kenv tenv x1
+                x2'     <- convRValueM config kenv tenv x2
                 return  $ parens (x1' <+> op' <+> x2')
 
 
@@ -381,7 +392,7 @@ convPrimCallM pp kenv tenv p xs
          , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
          , primCastPromoteIsValid pp tcSrc tcDst
          -> do  tDst'   <- convTypeM   kenv tDst
-                x1'     <- convRValueM pp kenv tenv x1
+                x1'     <- convRValueM config kenv tenv x1
                 return  $  parens tDst' <> parens x1'
 
         PrimCast PrimCastTruncate
@@ -390,14 +401,14 @@ convPrimCallM pp kenv tenv p xs
          , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
          , primCastTruncateIsValid pp tcSrc tcDst
          -> do  tDst'   <- convTypeM   kenv tDst
-                x1'     <- convRValueM pp kenv tenv x1
+                x1'     <- convRValueM config kenv tenv x1
                 return  $  parens tDst' <> parens x1'
 
 
         -- Control primops.
         PrimControl PrimControlReturn
          | [XType _ _, x1]       <- xs
-         -> do  x1'     <- convRValueM pp kenv tenv x1
+         -> do  x1'     <- convRValueM config kenv tenv x1
                 return  $ text "return" <+> x1'
 
         PrimControl PrimControlFail
@@ -416,14 +427,14 @@ convPrimCallM pp kenv tenv p xs
          , XVar _ (UName n)     <- xFun
          , NameVar nTop         <- n
          -> do  let nFun'       = text $ sanitizeGlobal nTop
-                xsArgs'         <- mapM (convRValueM pp kenv tenv) xsArgs
+                xsArgs'         <- mapM (convRValueM config kenv tenv) xsArgs
                 return  $  text "return" <+> nFun' <> parenss xsArgs'
 
 
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM (convRValueM pp kenv tenv) 
+                xs'     <- mapM (convRValueM config kenv tenv) 
                         $  filter (keepPrimArgX kenv) xs
                 return  $ op' <> parenss xs'
 
