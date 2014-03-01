@@ -5,8 +5,8 @@ ok
 -- Include elaborated witnesses in metadata tree
 ok
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
@@ -16,7 +16,7 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define internal fastcc %s.Obj* @bar(%s.Obj*  %_arg0) align 8  
+define internal fastcc %s.Obj* @_DDC_bar(%s.Obj*  %_arg0) align 8  
 {
 l6.entry:
         %_v7         = call ccc %s.Obj* @allocBoxed (i32 0, i64 0) 
@@ -25,10 +25,10 @@ l6.entry:
 
 
 
-!5 = metadata !{metadata !"bar_r3", metadata !2, i32 1}
-!4 = metadata !{metadata !"bar_r2", metadata !2, i32 1}
-!3 = metadata !{metadata !"bar_r1", metadata !2, i32 1}
-!2 = metadata !{metadata !"bar_ROOT_1", null, i32 1}
+!5 = metadata !{metadata !"_DDC_bar_r3", metadata !2, i32 1}
+!4 = metadata !{metadata !"_DDC_bar_r2", metadata !2, i32 1}
+!3 = metadata !{metadata !"_DDC_bar_r1", metadata !2, i32 1}
+!2 = metadata !{metadata !"_DDC_bar_ROOT_1", null, i32 1}
 
 
 
@@ -40,12 +40,12 @@ l6.entry:
 --
 ok
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @x_plus_y_square(i64*  %x, i64*  %y, i64*  %z) align 8  
+define internal fastcc i64 @_DDC_x_plus_y_square(i64*  %x, i64*  %y, i64*  %z) align 8  
 {
 l6.entry:
         %xval1.addr1 = ptrtoint i64* %x to i64
@@ -76,27 +76,27 @@ l6.entry:
 
 
 
-!5 = metadata !{metadata !"x_plus_y_square_rz", metadata !2, i32 0}
-!4 = metadata !{metadata !"x_plus_y_square_rx", metadata !3, i32 0}
-!3 = metadata !{metadata !"x_plus_y_square_ry", metadata !2, i32 0}
-!2 = metadata !{metadata !"x_plus_y_square_ROOT_1", null, i32 1}
+!5 = metadata !{metadata !"_DDC_x_plus_y_square_rz", metadata !2, i32 0}
+!4 = metadata !{metadata !"_DDC_x_plus_y_square_rx", metadata !3, i32 0}
+!3 = metadata !{metadata !"_DDC_x_plus_y_square_ry", metadata !2, i32 0}
+!2 = metadata !{metadata !"_DDC_x_plus_y_square_ROOT_1", null, i32 1}
 
 
 -- Observable optimisations: GVN - constprop behaviour
 ok
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @nothing(i64*  %x) align 8  
+define internal fastcc i64 @_DDC_nothing(i64*  %x) align 8  
 {
 l4.entry:
         ret i64 42
 }
 
-define internal fastcc i64 @three_x_plus_one(i64*  %x) align 8  
+define internal fastcc i64 @_DDC_three_x_plus_one(i64*  %x) align 8  
 {
 l9.entry:
         %a.addr1     = ptrtoint i64* %x to i64
@@ -104,7 +104,7 @@ l9.entry:
         %a.ptr       = inttoptr i64 %a.addr2 to i64*
         %a           = load i64* %a.ptr,    !tbaa !8
         %b           = add i64 %a, 1
-        %_dummy10    = call fastcc i64 @nothing (i64* %x) 
+        %_dummy10    = call fastcc i64 @_DDC_nothing (i64* %x) 
         %c.addr1     = ptrtoint i64* %x to i64
         %c.addr2     = add i64 %c.addr1, 0
         %c.ptr       = inttoptr i64 %c.addr2 to i64*
@@ -116,21 +116,21 @@ l9.entry:
 
 
 
-!3 = metadata !{metadata !"nothing_rx", metadata !2, i32 0}
-!2 = metadata !{metadata !"nothing_ROOT_1", null, i32 1}
-!8 = metadata !{metadata !"three_x_plus_one_rx", metadata !7, i32 1}
-!7 = metadata !{metadata !"three_x_plus_one_ROOT_6", null, i32 1}
+!3 = metadata !{metadata !"_DDC_nothing_rx", metadata !2, i32 0}
+!2 = metadata !{metadata !"_DDC_nothing_ROOT_1", null, i32 1}
+!8 = metadata !{metadata !"_DDC_three_x_plus_one_rx", metadata !7, i32 1}
+!7 = metadata !{metadata !"_DDC_three_x_plus_one_ROOT_6", null, i32 1}
 
 
 -- Observarble optimisations: LICM
 ok
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @go(i64*  %a, i64*  %x, i64*  %y, i64  %i) align 8  
+define internal fastcc i64 @_DDC_go(i64*  %a, i64*  %x, i64*  %y, i64  %i) align 8  
 {
 l6.entry:
         switch i64 %i, label %l9.default [ i64 42,label %l7.alt ]
@@ -151,16 +151,16 @@ l9.default:
         %_v15.ptr    = inttoptr i64 %_v14.addr2 to i64*
         store i64 %i, i64* %_v15.ptr,    !tbaa !3
         %nexti       = add i64 %i, 1
-        %_v16        = tail call fastcc i64 @go (i64* %a, i64* %x, i64* %y, i64 %nexti) 
+        %_v16        = tail call fastcc i64 @_DDC_go (i64* %a, i64* %x, i64* %y, i64 %nexti) 
         ret i64 %_v16
 }
 
 
 
-!5 = metadata !{metadata !"go_ry", metadata !2, i32 0}
-!4 = metadata !{metadata !"go_rx", metadata !2, i32 0}
-!3 = metadata !{metadata !"go_ra", metadata !2, i32 0}
-!2 = metadata !{metadata !"go_ROOT_1", null, i32 1}
+!5 = metadata !{metadata !"_DDC_go_ry", metadata !2, i32 0}
+!4 = metadata !{metadata !"_DDC_go_rx", metadata !2, i32 0}
+!3 = metadata !{metadata !"_DDC_go_ra", metadata !2, i32 0}
+!2 = metadata !{metadata !"_DDC_go_ROOT_1", null, i32 1}
 
 
 

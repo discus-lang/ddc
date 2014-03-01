@@ -22,7 +22,6 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Simplifier            as Simp
 import qualified Data.Map                       as Map
-import qualified Data.Set                       as Set
 
 
 -- | Convert a Salt module to LLVM.
@@ -35,19 +34,22 @@ convertModule platform mm@(C.ModuleCore{})
  = {-# SCC convertModule #-}
    let  
         prims   = primDeclsMap platform
-        state   = llvmStateInit platform prims
+        state   = llvmStateInit platform mm prims
 
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metat data.
-        mmElab   = Simp.result $ evalState (Simp.applySimplifier 
-                                        A.profile Env.empty Env.empty 
-                                        (Simp.Trans Simp.Elaborate) mm)
-                          state
+        mmElab  = Simp.result 
+                $ evalState (Simp.applySimplifier 
+                                A.profile Env.empty Env.empty 
+                                (Simp.Trans Simp.Elaborate) mm)
+                        state
+
+        stateElab = state { llvmStateModule = mmElab }
 
         -- Convert to LLVM.
         --  The result contains ISet and INop meta instructions that need to be 
         --  cleaned out. We also need to fixup the labels in IPhi instructions.
-        mmRaw    = evalState (convModuleM mmElab) state
+        mmRaw    = evalState (convModuleM mmElab) stateElab
 
         -- Inline the ISet meta instructions and drop INops.
         --  This gives us code that the LLVM compiler will accept directly.
@@ -66,53 +68,53 @@ convModuleM mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   platform        <- gets llvmStatePlatform
 
-        -- The initial environments due to imported names.
-        let kenv        = C.moduleKindEnv mm
-        let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
-
-        -- Names of exported functions.
-        --   We use a different linkage for exported functions.
-        let nsExports   = Set.fromList $ map fst $ C.moduleExportValues mm
-
-        -- Forward declarations for imported functions.
-        let Just importDecls 
-                = sequence
-                $ [ importedFunctionDeclOfType platform kenv External 
-                        src (C.typeOfImportSource src)
-                  | (_, src)    <- C.moduleImportValues mm ]
-
-        -- Add RTS def -------------------------------------------------
-        -- If this is the main module then we need to declare
-        -- the global RTS state.
-        let isMainModule 
-                = C.moduleName mm == C.ModuleName ["Main"]
+        -- Globals for the runtime --------------
+        --   If this is the main module then we define the globals
+        --   for the runtime system at top-level.
 
         -- Holds the pointer to the current top of the heap.
         --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop    = Var (NameGlobal "_DDC_Runtime_heapTop") (tAddr platform)
+        let vHeapTop    = Var (NameGlobal "_DDC__heapTop") (tAddr platform)
 
         -- Holds the pointer to the maximum heap.
         --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax    = Var (NameGlobal "_DDC_Runtime_heapMax") (tAddr platform)
+        let vHeapMax    = Var (NameGlobal "_DDC__heapMax") (tAddr platform)
 
-        let rtsGlobals
-                | isMainModule
+        let globalsRts
+                | C.moduleName mm == C.ModuleName ["Main"]
                 = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr platform) 0))
                   , GlobalStatic   vHeapMax (StaticLit (LitInt (tAddr platform) 0)) ]
 
                 | otherwise
                 = [ GlobalExternal vHeapTop 
                   , GlobalExternal vHeapMax ]
+        
+        -- Import external symbols --------------
+        let kenv        = C.moduleKindEnv mm
+        let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
 
-        ---------------------------------------------------------------
+        let Just importDecls 
+                = sequence
+                $ [ importedFunctionDeclOfType platform kenv 
+                        isrc
+                        (lookup n (C.moduleExportValues mm))
+                        n
+                        (C.typeOfImportSource isrc)
+                  | (n, isrc)    <- C.moduleImportValues mm ]
+
+
+        -- Super-combinator definitions ---------
+        --   This is the code for locally defined functions.
         (functions, mdecls)
                 <- liftM unzip 
-                $ mapM (uncurry (convSuperM nsExports kenv tenv)) bxs
+                $ mapM (uncurry (convSuperM kenv tenv)) bxs
         
+
+        -- Paste everything together ------------
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
-                , modGlobals    = rtsGlobals
+                , modGlobals    = globalsRts
                 , modFwdDecls   = primDecls platform ++ importDecls 
                 , modFuncs      = functions 
                 , modMDecls     = concat mdecls }
@@ -120,7 +122,8 @@ convModuleM mm@(C.ModuleCore{})
  | otherwise    = die "Invalid module"
 
 
--- | Global variables used directly by the converted code.
+-- | C library functions that are used directly by the generated code without
+--   having an import declaration in the header of the converted module.
 primDeclsMap :: Platform -> Map String FunctionDecl
 primDeclsMap pp 
         = Map.fromList

@@ -1,7 +1,9 @@
 
 module  Main 
 export  main      :: Unit -(Console | Empty)> Unit
-import  showNat   :: [r : Region]. Nat# -> Ptr# r String#
+
+import foreign c value
+        showNat   :: [r : Region]. Nat# -> Ptr# r String#
         putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
 with letrec

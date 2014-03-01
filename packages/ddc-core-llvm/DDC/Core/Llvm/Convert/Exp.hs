@@ -54,6 +54,7 @@ convBodyM
 
 convBodyM context kenv tenv mdsup blocks label instrs xx
  = do   pp      <- gets llvmStatePlatform
+        mm      <- gets llvmStateModule
         case xx of
 
          -- Control transfer instructions -----------------
@@ -128,7 +129,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  _tsArgs                               <- take arity args
           ,  C.XType _ tResult : xFunTys : xsArgs  <- drop arity args
           ,  Just (xFun, _xsTys)        <- takeXApps xFunTys
-          ,  Just (Var nFun _)          <- takeGlobalV pp kenv tenv xFun
+          ,  Just (Var nFun _)          <- takeGlobalV pp mm kenv tenv xFun
           ,  Just xsArgs'               <- sequence $ map (mconvAtom pp kenv tenv) xsArgs
           -> if isVoidT tResult
               -- Tailcalled function returns void.
@@ -272,19 +273,20 @@ convExpM
         -> LlvmM (Seq AnnotInstr)
 
 convExpM context pp kenv tenv mdsup xx
- = case xx of
-        C.XVar _ u@(C.UName (A.NameVar n))
-         | Just t               <- Env.lookup u tenv
-         , ExpAssign vDst       <- context
-         -> do  let n'  = A.sanitizeName n
+ = do   mm      <- gets llvmStateModule 
+        case xx of
+         C.XVar _ u@(C.UName (A.NameVar n))
+          | Just t               <- Env.lookup u tenv
+          , ExpAssign vDst       <- context
+          -> do let n'  = A.sanitizeName n
                 let t'  = convertType pp kenv t
                 return  $ Seq.singleton $ annotNil
                         $ ISet vDst (XVar (Var (NameLocal n') t'))
         
-        C.XCon _ dc
-         | Just n               <- takeNameOfDaCon dc
-         , ExpAssign vDst       <- context
-         -> case n of
+         C.XCon _ dc
+          | Just n               <- takeNameOfDaCon dc
+          , ExpAssign vDst       <- context
+          -> case n of
                 A.NameLitNat i
                  -> return $ Seq.singleton $ annotNil
                            $ ISet vDst (XLit (LitInt (tNat pp) i))
@@ -299,28 +301,28 @@ convExpM context pp kenv tenv mdsup xx
 
                 _ -> die "Invalid literal"
 
-        C.XApp{}
-         -- Call to primop.
-         | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
-         -> convPrimCallM pp kenv tenv mdsup
-                        (varOfExpContext context)
-                        p tPrim args
+         C.XApp{}
+          -- Call to primop.
+          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
+          -> convPrimCallM pp kenv tenv mdsup
+                         (varOfExpContext context)
+                         p tPrim args
 
-         -- Call to top-level super.
-         | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
-         , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
-         , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
-                                 $  eraseTypeWitArgs xsArgs
-         , Just tSuper           <- Env.lookup u tenv
-         -> let (_, tResult)    = convertSuperType pp kenv tSuper
-            in  return $ Seq.singleton $ annotNil
-                       $ ICall  (varOfExpContext context) CallTypeStd Nothing
-                                tResult nFun xsArgs_value' []
+          -- Call to top-level super.
+          | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
+          , Just (Var nFun _)                <- takeGlobalV pp mm kenv tenv xFun
+          , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
+                                  $  eraseTypeWitArgs xsArgs
+          , Just tSuper           <- Env.lookup u tenv
+          -> let (_, tResult)    = convertSuperType pp kenv tSuper
+             in  return $ Seq.singleton $ annotNil
+                        $ ICall  (varOfExpContext context) CallTypeStd Nothing
+                                 tResult nFun xsArgs_value' []
 
-        C.XCast _ _ x
-         -> convExpM context pp kenv tenv mdsup x
+         C.XCast _ _ x
+          -> convExpM context pp kenv tenv mdsup x
 
-        _ -> die $ "Invalid expression " ++ show xx
+         _ -> die $ "Invalid expression " ++ show xx
 
 
 -- Case -------------------------------------------------------------------------------------------

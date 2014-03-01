@@ -5,16 +5,17 @@ where
 import DDC.Core.Llvm.Convert.Exp
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Erase
-import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
+import DDC.Base.Pretty                          hiding (align)
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import Control.Monad.State.Strict               (gets)
-import Data.Set                                 (Set)
+import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert.Name     as A
+import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Set                       as Set
@@ -25,21 +26,26 @@ import qualified Data.Foldable                  as Seq
 -- | Convert a top-level supercombinator to a LLVM function.
 --   Region variables are completely stripped out.
 convSuperM 
-        :: Set A.Name           -- ^ Names exported from this module.
-        -> KindEnv A.Name
+        :: KindEnv A.Name
         -> TypeEnv A.Name
         -> C.Bind  A.Name       -- ^ Bind of the top-level super.
         -> C.Exp () A.Name      -- ^ Super body.
         -> LlvmM (Function, [MDecl])
 
-convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
+convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
  | Just (bfsParam, xBody)  <- takeXLamFlags x
  = do   
-        platform         <- gets llvmStatePlatform
+        platform        <- gets llvmStatePlatform
+        mm              <- gets llvmStateModule
+
+        let nsExports    = Set.fromList $ map fst $ C.moduleExportValues mm
 
         -- Sanitise the super name so we can use it as a symbol
         -- in the object code.
-        let nTop'       = A.sanitizeGlobal strTop
+        let Just nSuper' = A.seaNameOfSuper
+                                (lookup nSuper (C.moduleImportValues mm))
+                                (lookup nSuper (C.moduleExportValues mm))
+                                nSuper
 
         -- Add parameters to environments.
         let bfsParam'    = eraseWitBinds bfsParam
@@ -48,7 +54,7 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
 
         let kenv'       =  Env.extends bsParamType  kenv
         let tenv'       =  Env.extends (bSuper : bsParamValue) tenv
-        mdsup           <- deriveMD nTop' x
+        mdsup           <- Tbaa.deriveMD (renderPlain nSuper') x
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
@@ -60,15 +66,14 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
         -- Declaration of the super.
         let decl 
                 = FunctionDecl 
-                { declName               = nTop'
+                { declName              = renderPlain nSuper'
 
                   -- Set internal linkage for non-exported functions so that they
                   -- they won't conflict with functions of the same name that
                   -- might be defined in other modules.
-                , declLinkage
-                        = if Set.member nTop nsExports
-                                then External
-                                else Internal
+                , declLinkage           = if Set.member nSuper nsExports
+                                                then External
+                                                else Internal
 
                   -- ISSUE #266: Tailcall optimisation doesn't work for exported functions.
                   --   Using fast calls for non-exported functions enables the
@@ -77,10 +82,9 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
                   --   generated functions and functions from the C libararies in 
                   --   our import specifications. We need a proper FFI system so that
                   --   we can get tailcalls for exported functions as well.
-                , declCallConv           
-                        = if Set.member nTop nsExports
-                                then CC_Ccc
-                                else CC_Fastcc
+                , declCallConv          = if Set.member nSuper nsExports
+                                                then CC_Ccc
+                                                else CC_Fastcc
 
                 , declReturnType         = tResult
                 , declParamListType      = FixedArgs
@@ -100,10 +104,10 @@ convSuperM nsExports kenv tenv bSuper@(C.BName nTop@(A.NameVar strTop) tSuper) x
                     , funAttrs    = [] 
                     , funSection  = SectionAuto
                     , funBlocks   = Seq.toList blocks }
-                  , decls mdsup )
+                  , Tbaa.decls mdsup )
                   
 
-convSuperM _ _ _ _ _
+convSuperM _ _ _ _
         = die "Invalid super"
 
 

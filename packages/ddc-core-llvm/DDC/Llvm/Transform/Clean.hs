@@ -6,6 +6,7 @@ module DDC.Llvm.Transform.Clean
         (clean)
 where
 import DDC.Llvm.Syntax
+import Data.Maybe
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import qualified Data.Foldable  as Seq
@@ -158,7 +159,8 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
         ICall  (Just v) ct mcc t n xs ats
          |  defs'        <- Map.insert v label defs
          -> let NameGlobal str  = n
-                Just cc2        = lookupCallConv str mm
+                cc2             = fromMaybe (error $ "ddc-core-llvm: no forward decl for " ++ str)
+                                $ lookupCallConv str mm
                 cc'             = mergeCallConvs mcc cc2
                 
             in  next binds defs' 
@@ -167,7 +169,8 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
 
         ICall  Nothing ct mcc t n xs ats
          -> let NameGlobal str  = n
-                Just cc2        = lookupCallConv str mm
+                cc2             = fromMaybe (error $ "ddc-core-llvm: no forward decl for " ++ str)
+                                $ lookupCallConv str mm
                 cc'             = mergeCallConvs mcc cc2
             in  next binds defs 
                         $ (reAnnot $ ICall Nothing  ct (Just cc') t n (map sub xs) ats) 

@@ -18,8 +18,10 @@ module DDC.Core.Llvm.LlvmM
 where
 import DDC.Core.Salt.Platform
 import DDC.Llvm.Syntax
-import Data.Map                 (Map)
-import qualified Data.Map       as Map
+import Data.Map                         (Map)
+import qualified DDC.Core.Salt.Name     as A
+import qualified DDC.Core.Module        as C
+import qualified Data.Map               as Map
 import Control.Monad.State.Strict
 import DDC.Base.Pretty
 
@@ -48,6 +50,9 @@ data LlvmState
           -- The current platform.
         , llvmStatePlatform     :: Platform 
 
+          -- The module being converted.
+        , llvmStateModule       :: C.Module () A.Name
+
           -- Primitives in the global environment.
         , llvmStatePrimDecls    :: Map String FunctionDecl }
 
@@ -55,13 +60,15 @@ data LlvmState
 -- | Initial LLVM state.
 llvmStateInit 
         :: Platform 
+        -> C.Module () A.Name
         -> Map String FunctionDecl 
         -> LlvmState
 
-llvmStateInit platform prims
+llvmStateInit platform mm prims
         = LlvmState
         { llvmStateUnique       = 1 
         , llvmStatePlatform     = platform
+        , llvmStateModule       = mm
         , llvmStatePrimDecls    = prims }
 
 

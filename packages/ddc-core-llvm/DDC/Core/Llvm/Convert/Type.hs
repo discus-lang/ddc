@@ -28,12 +28,14 @@ import DDC.Core.Llvm.Convert.Erase
 import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
+import DDC.Base.Pretty
 import DDC.Core.Salt                    as A
 import DDC.Core.Salt.Name               as A
 import DDC.Core.Salt.Convert.Name       as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
+import Control.Monad
 
 
 -- Type -----------------------------------------------------------------------
@@ -116,37 +118,42 @@ convertSuperType pp kenv tt
 importedFunctionDeclOfType 
         :: Platform
         -> KindEnv Name
-        -> Linkage 
         -> C.ImportSource Name
+        -> Maybe (C.ExportSource Name)
+        -> Name
         -> C.Type Name 
         -> Maybe FunctionDecl
 
-importedFunctionDeclOfType pp kenv linkage isrc tt
- | C.ImportSourceModule _ (NameVar n) _ <- isrc
- = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
+importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
+ 
+ | C.ImportSourceModule{} <- isrc
+ = let  Just strName = liftM renderPlain 
+                     $ seaNameOfSuper (Just isrc) mesrc nSuper
+        
+        (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
-             { declName           = A.sanitizeGlobal n
-             , declLinkage        = linkage
+             { declName           = A.sanitizeGlobal strName
+             , declLinkage        = External
              , declCallConv       = CC_Ccc
              , declReturnType     = tResult
              , declParamListType  = FixedArgs
              , declParams         = map mkParam tsArgs
              , declAlign          = AlignBytes (platformAlignBytes pp) }
 
- | C.ImportSourceSea n _ <- isrc
+ | C.ImportSourceSea strName _ <- isrc
  = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
-             { declName           = A.sanitizeGlobal n
-             , declLinkage        = linkage
+             { declName           = A.sanitizeGlobal strName
+             , declLinkage        = External
              , declCallConv       = CC_Ccc
              , declReturnType     = tResult
              , declParamListType  = FixedArgs
              , declParams         = map mkParam tsArgs
              , declAlign          = AlignBytes (platformAlignBytes pp) }
 
-importedFunctionDeclOfType _ _ _ _ _
+importedFunctionDeclOfType _ _ _ _ _ _
         = Nothing
 
 

@@ -3,7 +3,7 @@ module Main
 export {
         main      :: [r1 r2 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
-import {
+import foreign c value {
         showInt   :: [r : Region].Int# -> Ptr# r String#;
         putStrLn  :: [r : Region].Ptr# r String# -> Void#;
 }

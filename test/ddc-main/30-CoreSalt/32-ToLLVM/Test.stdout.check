@@ -10,30 +10,30 @@ size2# :: [^ : Data].Nat#
 
 -- Get the size of prim types.
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @nat(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_nat(%s.Obj  %_arg0) align 8  
 {
 l1.entry:
         ret i64 8
 }
 
-define internal fastcc i64 @int(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_int(%s.Obj  %_arg0) align 8  
 {
 l3.entry:
         ret i64 8
 }
 
-define internal fastcc i64 @word16(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_word16(%s.Obj  %_arg0) align 8  
 {
 l5.entry:
         ret i64 2
 }
 
-define internal fastcc i64 @tag(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_tag(%s.Obj  %_arg0) align 8  
 {
 l7.entry:
         ret i64 4
@@ -47,42 +47,42 @@ l7.entry:
 
 -- Get the log2 size of prim types.
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @nat(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_nat(%s.Obj  %_arg0) align 8  
 {
 l1.entry:
         ret i64 3
 }
 
-define internal fastcc i64 @int(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_int(%s.Obj  %_arg0) align 8  
 {
 l3.entry:
         ret i64 3
 }
 
-define internal fastcc i64 @word8(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_word8(%s.Obj  %_arg0) align 8  
 {
 l5.entry:
         ret i64 0
 }
 
-define internal fastcc i64 @word16(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_word16(%s.Obj  %_arg0) align 8  
 {
 l7.entry:
         ret i64 1
 }
 
-define internal fastcc i64 @ptr(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_ptr(%s.Obj  %_arg0) align 8  
 {
 l12.entry:
         ret i64 3
 }
 
-define internal fastcc i64 @tag(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_tag(%s.Obj  %_arg0) align 8  
 {
 l14.entry:
         ret i64 2
@@ -90,19 +90,19 @@ l14.entry:
 
 
 
-!11 = metadata !{metadata !"ptr_r", metadata !10, i32 0}
-!10 = metadata !{metadata !"ptr_ROOT_9", null, i32 1}
+!11 = metadata !{metadata !"_DDC_ptr_r", metadata !10, i32 0}
+!10 = metadata !{metadata !"_DDC_ptr_ROOT_9", null, i32 1}
 
 
 
 -- Function arguments without names still need to appear in the generated code.
 %s.Obj = type <{i64}>
-@_DDC_Runtime_heapTop = external global  i64
-@_DDC_Runtime_heapMax = external global  i64
+@_DDC__heapTop = external global  i64
+@_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @blerk(%s.Obj  %_arg0) align 8  
+define internal fastcc i64 @_DDC_blerk(%s.Obj  %_arg0) align 8  
 {
 l1.entry:
         ret i64 3

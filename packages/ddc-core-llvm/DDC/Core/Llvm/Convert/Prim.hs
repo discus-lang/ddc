@@ -124,8 +124,8 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
          | Just [xBytes']         <- mconvAtoms pp kenv tenv xs
          -> do  vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
                 vMax    <- newUniqueNamedVar "max"  (tAddr pp)
-                let vTopPtr = Var (NameGlobal "_DDC_Runtime_heapTop") (TPointer (tAddr pp))
-                let vMaxPtr = Var (NameGlobal "_DDC_Runtime_heapMax") (TPointer (tAddr pp))
+                let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
+                let vMaxPtr = Var (NameGlobal "_DDC__heapMax") (TPointer (tAddr pp))
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ICall (Just vAddr) CallTypeStd Nothing
@@ -146,8 +146,8 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
          -> do  let vTop    = Var (bumpName nDst "top") (tAddr pp)
                 let vMin    = Var (bumpName nDst "min") (tAddr pp)
                 let vMax    = Var (bumpName nDst "max") (tAddr pp)
-                let vTopPtr = Var (NameGlobal "_DDC_Runtime_heapTop") (TPointer (tAddr pp))
-                let vMaxPtr = Var (NameGlobal "_DDC_Runtime_heapMax") (TPointer (tAddr pp))
+                let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
+                let vMaxPtr = Var (NameGlobal "_DDC__heapMax") (TPointer (tAddr pp))
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ILoad vTop (XVar vTopPtr)
@@ -159,7 +159,7 @@ convPrimCallM pp kenv tenv mdsup mdst p _tPrim xs
          | Just vDst@(Var nDst _) <- mdst
          , Just [xBytes']         <- mconvAtoms pp kenv tenv xs
          -> do  let vBump   = Var (bumpName nDst "bump") (tAddr pp)
-                let vTopPtr = Var (NameGlobal "_DDC_Runtime_heapTop") (TPointer (tAddr pp))
+                let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ILoad  vDst  (XVar vTopPtr)

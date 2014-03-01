@@ -57,7 +57,7 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                    , line ]
 
 
-        -- Globals for the Runtime system -------
+        -- Globals for the runtime system -------
         --   If this is the main module then we define the globals for the
         --   runtime system at top-level.
         let cGlobals

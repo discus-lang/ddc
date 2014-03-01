@@ -33,6 +33,7 @@ import DDC.Core.Salt.Env
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Base.Pretty
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
@@ -65,7 +66,7 @@ runtimeImportTypes
    , rn utSetFieldOfBoxed
    , rn utAllocRawSmall
    , rn utPayloadOfRawSmall ]
- where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t)
+ where   rn (UName n, t)  = (n, ImportSourceSea (renderPlain $ ppr n) t)
          rn _   = error "runtimeImportTypes: all runtime bindings must be named."
 
 
