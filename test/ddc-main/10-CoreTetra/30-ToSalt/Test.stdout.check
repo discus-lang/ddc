@@ -5,6 +5,7 @@ ok
 ok
 
 
+-------------------------------------------------------------------------------
 -- Unboxed literal patterns.
 module Test with
 letrec {
@@ -237,4 +238,28 @@ Fragment violation when converting Tetra module to Salt module.
     Higher order functions are not yet supported.
   
     with: nil [B# Nat#]
+
+
+-------------------------------------------------------------------------------
+-- Ok: we should be able to convert the Alloc, Read, Write caps,
+-- even though conversion for the Ref primops isn't implemented yet.
+module Test with
+letrec {
+  blerk : Ptr# rT Obj -> Ptr# rT Obj
+    = \(_ : Ptr# rT Obj).
+      private r with {Alloc r; Read r; Write r} in
+      let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
+      let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+      let _ : Void#
+            = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
+      ^1
+}
+
+
+-- Error: the mutable ref primops aren't implement yet.
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Unrecognised expression form.
+  
+    with: allocRef# [r] [B# Nat#] x0
 

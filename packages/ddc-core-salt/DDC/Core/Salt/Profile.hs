@@ -32,7 +32,8 @@ features = zeroFeatures
         { featuresFunctionalEffects     = True
         , featuresFunctionalClosures    = True
         , featuresDebruijnBinders       = True
-        , featuresUnusedBindings        = True }
+        , featuresUnusedBindings        = True 
+        , featuresEffectCapabilities    = True }
 
 
 -- | Lex a string to tokens, using primitive names.

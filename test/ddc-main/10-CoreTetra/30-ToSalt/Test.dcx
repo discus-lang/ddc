@@ -5,6 +5,7 @@
 :set builder x86_64-darwin
 
 
+-------------------------------------------------------------------------------
 -- Unboxed literal patterns.
 :to-salt..
 module Test with letrec
@@ -149,5 +150,27 @@ data List (a : Data) where
 with letrec
 blerk (nil : [a : Data]. List a) : List Nat#
  = nil
+;;
+
+
+-------------------------------------------------------------------------------
+-- Ok: we should be able to convert the Alloc, Read, Write caps,
+-- even though conversion for the Ref primops isn't implemented yet.
+:to-salt..
+module Test with letrec
+blerk (_ : Unit) : Nat#
+ = private r with { Alloc r; Read r; Write r } in
+   do   5#
+;;
+
+
+-- Error: the mutable ref primops aren't implement yet.
+:to-salt..
+module Test with letrec
+blerk (_ : Unit) : Nat#
+ = private r with { Alloc r; Read r; Write r } in
+   do   ref     = run allocRef# [r] 5#
+        run writeRef# ref 6#
+        run readRef#  ref
 ;;
 

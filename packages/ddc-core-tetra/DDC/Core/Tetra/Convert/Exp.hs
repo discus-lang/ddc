@@ -504,15 +504,15 @@ convertLetsX penv kenv tenv lts
                 x1'          <- convertExpX   penv kenv tenv' ExpBind x1
                 return  $ LLet b' x1'
 
-        -- TODO: convert witness bindings
-        LPrivate b mt _bs
+        LPrivate b mt bs
          -> do  b'           <- mapM convertTypeB b
---              let kenv'    = Env.extends b kenv
---              bs'          <- mapM (convertTypeB kenv') bs    
+                let kenv'    = Env.extends b kenv
+                
+                bs'          <- mapM (convertCapabilityB kenv') bs
                 mt'          <- case mt of
                                  Nothing -> return Nothing
                                  Just t  -> liftM Just $ convertRegionT kenv t
-                return  $ LPrivate b' mt' [] 
+                return  $ LPrivate b' mt' bs'
   
         LWithRegion{}
          ->     throw $ ErrorMalformed "Cannot convert LWithRegion construct."
@@ -777,8 +777,8 @@ convertLitCtorX a dc
 
 
 ---------------------------------------------------------------------------------------------------
--- Note: Salt conversion for higher kinded type arguments
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- [Note: Salt conversion for higher kinded type arguments]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Converting functions that use higher kinded types to Salt is problematic
 -- because we can't directly see what region is being used to represent
 -- each object.
