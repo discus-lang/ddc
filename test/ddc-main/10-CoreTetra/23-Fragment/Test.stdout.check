@@ -5,4 +5,6 @@ ok
 --   but this is not part of the Salt language.
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
-  with: foo2 x0
+    Unrecognised expression form.
+  
+    with: foo2 x0

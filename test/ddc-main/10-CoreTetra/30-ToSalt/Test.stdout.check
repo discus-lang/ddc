@@ -133,10 +133,49 @@ letrec {
 }
 
 
--- Error: higher order functions not yet supported.
+-------------------------------------------------------------------------------
+-- Trigger errors about unsupported features in the Tetra to Salt conversion.
 ok
+
+-- OK: Anonymous binders are not supported by the conversion, but they get
+-- auto-namified on the way in.
+module Test with
+letrec {
+  id : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x0 : Ptr# rT Obj). x0
+}
+
+
+-- Error: cannot convert type abstraction in this context.
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
-  Higher order functions are not yet supported.
-with: f x
+    Cannot convert type abstraction in this context.
+    The program must be lambda-lifted before conversion.
+  
+    with: /\(a : Data).
+     \(x : a). x
 
+
+-- Error: cannot convert function application in this context.
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Cannot convert function abstraction in this context.
+    The program must be lambda-lifted before conversion.
+  
+    with: \(x : B# Nat#). x
+
+
+-- Error: partial application of primitive data constructors is not supported.
+-- :to-salt..
+-- module Test with letrec
+-- thing (_ : Unit) : Nat# -> Nat#
+-- = add# [Nat#] 5#
+-- ;;
+
+
+-- Error: higher order functions not yet supported.
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Higher order functions are not yet supported.
+  
+    with: f x

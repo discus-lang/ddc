@@ -20,9 +20,9 @@ import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A
 
+import DDC.Base.Pretty
 import DDC.Type.Universe
 import DDC.Type.DataDef
-import DDC.Base.Pretty
 import DDC.Type.Env                      (KindEnv, TypeEnv)
 import qualified DDC.Type.Env            as Env
 
@@ -86,8 +86,9 @@ convertExpX penv kenv tenv ctx xx
 
         ---------------------------------------------------
         XVar _ UIx{}
-         -> throw $ ErrorMalformed 
-                  $ "Cannot convert program with anonymous value binders."
+         -> throw $ ErrorUnsupported xx
+                  $ vcat [ text "Cannot convert program with anonymous value binders."
+                         , text "The program must be namified before conversion." ]
 
         XVar a u
          -> do  let a'  = annotTail a
@@ -138,8 +139,9 @@ convertExpX penv kenv tenv ctx xx
 
          -- A type abstraction that we can't convert to Salt.
          | otherwise
-         -> throw $ ErrorMalformed
-                  $ "Cannot convert XLAM in this context " ++ show ctx
+         -> throw $ ErrorUnsupported xx
+                  $ vcat [ text "Cannot convert type abstraction in this context."
+                         , text "The program must be lambda-lifted before conversion." ]
 
 
         ---------------------------------------------------
@@ -163,8 +165,9 @@ convertExpX penv kenv tenv ctx xx
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
          | otherwise
-         -> throw $ ErrorMalformed 
-                  $ "Cannot convert XLam in this context " ++ show ctx
+         -> throw $ ErrorUnsupported xx
+                  $ vcat [ text "Cannot convert function abstraction in this context."
+                         , text "The program must be lambda-lifted before conversion." ]
 
 
         ---------------------------------------------------
@@ -264,10 +267,11 @@ convertExpX penv kenv tenv ctx xx
          | (x1, xsArgs)         <- takeXApps1 xa xb
          , XCon _ dc            <- x1
          , Just tCon            <- takeTypeOfDaCon dc
-         -> if  length xsArgs == arityOfType tCon
-                then downCtorAppX a dc xsArgs
-                else throw $ ErrorUnsupported 
-                           $ "Partial application of primitive data constructor"
+         -> if -- Check that the constructor is saturated.
+               length xsArgs == arityOfType tCon
+               then downCtorAppX a dc xsArgs
+               else throw $ ErrorUnsupported xx
+                     $ text "Partial application of primitive data constructors is not supported."
 
 
         -- Fully applied user-defined data constructor application.
@@ -276,12 +280,13 @@ convertExpX penv kenv tenv ctx xx
          | (x1, xsArgs   )          <- takeXApps1 xa xb
          , XCon _ dc@(DaConBound n) <- x1
          , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
-         -> if  length xsArgs 
-                        == length (dataCtorTypeParams dataCtor)
-                        +  length (dataCtorFieldTypes dataCtor)
-                then downCtorAppX a dc xsArgs
-                else throw $ ErrorUnsupported 
-                           $ "Partial application of user-defined data constructor"
+         -> if -- Check that the constructor is saturated.
+               length xsArgs 
+                       == length (dataCtorTypeParams dataCtor)
+                       +  length (dataCtorFieldTypes dataCtor)
+               then downCtorAppX a dc xsArgs
+               else throw $ ErrorUnsupported xx
+                     $ text "Partial application of user-defined data constructors is not supported."
 
 
         ---------------------------------------------------
@@ -289,9 +294,6 @@ convertExpX penv kenv tenv ctx xx
         XApp a xa xb
          | (x1, xsArgs)               <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim tPrim) <- x1
-
-         -- The primop is saturated.
-         , length xsArgs == arityOfType tPrim
 
          -- All the value arguments have representatable types.
          , all isSomeRepType
@@ -301,7 +303,10 @@ convertExpX penv kenv tenv ctx xx
          -- The result is representable.
          , isSomeRepType (annotType a)
 
-         -> do  x1'     <- downArgX x1
+         -> if -- Check that the primop is saturated.
+             length xsArgs == arityOfType tPrim
+             then do
+                x1'     <- downArgX x1
                 xsArgs' <- mapM downPrimArgX xsArgs
                 
                 case nPrim of
@@ -316,6 +321,9 @@ convertExpX penv kenv tenv ctx xx
                   -> return $ xApps (annotTail a) x1' [t1, z1, z2]
 
                  _ -> return $ xApps (annotTail a) x1' xsArgs'
+
+             else throw $ ErrorUnsupported xx
+                   $ text "Partial application of primitive operators is not supported."
 
 
         ---------------------------------------------------
@@ -346,8 +354,8 @@ convertExpX penv kenv tenv ctx xx
 
 
         ---------------------------------------------------
-        -- Unsupported: Application of some function that is not a top-level
-        -- supercombinator or imported function. 
+        -- Application of some function that is not a top-level supercombinator
+        -- or imported function. 
         XApp _ xa xb
          | (x1, _xsArgs) <- takeXApps1 xa xb
 
@@ -356,9 +364,8 @@ convertExpX penv kenv tenv ctx xx
          , XVar _ (UName n) <- x1
          , not $ Set.member n (topEnvSupers       penv)
          , not $ Set.member n (topEnvImportValues penv)
-         ->     throw   $ ErrorUnsupported 
-                        $  "Higher order functions are not yet supported."
-                        ++ "\nwith: " ++ (renderIndent $ ppr xx)
+         -> throw $ ErrorUnsupported xx
+                  $ text "Higher order functions are not yet supported."
 
         
         ---------------------------------------------------
@@ -377,7 +384,9 @@ convertExpX penv kenv tenv ctx xx
                 return $ XLet (annotTail a) lts' x2'
 
         XLet{}
-         -> throw $ ErrorUnsupported "Unexpected let-expression."
+         -> throw $ ErrorUnsupported xx 
+                  $ vcat [ text "Cannot convert a let-expression in this context."
+                         , text "The program must be a-normalized before conversion." ]
 
 
         ---------------------------------------------------
@@ -442,8 +451,8 @@ convertExpX penv kenv tenv ctx xx
         -- scrutinee isn't constrained to be an algebraic data type. These dummy
         -- expressions need to be eliminated before conversion.
         XCase{} 
-         -> throw $ ErrorUnsupported "Cannot convert case expression."
-
+         -> throw $ ErrorUnsupported xx  
+                  $ text "Unsupported form of case expression" 
 
         ---------------------------------------------------
         -- Casts.
@@ -454,15 +463,16 @@ convertExpX penv kenv tenv ctx xx
         -- We shouldn't find any naked types.
         -- These are handled above in the XApp case.
         XType{}
-          -> throw $ ErrorMalformed "Found a naked type argument."
+          -> throw $ ErrorMalformed      "Found a naked type argument."
 
 
         -- We shouldn't find any naked witnesses.
         XWitness{}
-          -> throw $ ErrorMalformed "Found a naked witness."
+          -> throw $ ErrorMalformed      "Found a naked witness."
 
         -- Expression can't be converted.
-        _ -> throw $ ErrorUnsupported ("with: " ++ (renderIndent $ ppr xx))
+        _ -> throw $ ErrorUnsupported xx 
+                   $ text "Unrecognised expression form."
 
 
 ---------------------------------------------------------------------------------------------------

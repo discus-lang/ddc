@@ -26,7 +26,7 @@ data Error a
         | ErrorMistyped  (Exp (AnTEC a E.Name) E.Name)
 
         -- | The program wasn't normalised, or we don't support the feature.
-        | ErrorUnsupported String
+        | ErrorUnsupported (Exp (AnTEC a E.Name) E.Name) Doc
 
         -- | The program has bottom (missing) type annotations.
         | ErrorBotAnnot
@@ -57,9 +57,11 @@ instance Show a => Pretty (Error a) where
         ErrorMistyped xx
          -> vcat [ text "Module is mistyped."           <> (text $ show xx) ]
 
-        ErrorUnsupported str
+        ErrorUnsupported xx doc
          -> vcat [ text "Cannot convert expression."
-                 , text str ]
+                 , indent 2 $ doc
+                 , empty
+                 , indent 2 $ text "with:" <+> ppr xx ]
 
         ErrorBotAnnot
          -> vcat [ text "Found bottom type annotation."

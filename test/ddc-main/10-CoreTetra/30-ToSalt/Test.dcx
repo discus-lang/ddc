@@ -42,11 +42,54 @@ foo     (x : Bool#) : Bool#
        False#  -> True#;;
 
 
--- Error: higher order functions not yet supported.
+-------------------------------------------------------------------------------
+-- Trigger errors about unsupported features in the Tetra to Salt conversion.
 :set Synth
-:to-c..
+
+-- OK: Anonymous binders are not supported by the conversion, but they get
+-- auto-namified on the way in.
+:to-salt..
+module Test with letrec
+id (^ : Nat#) : Nat#
+ = ^0
+ ;;
+
+
+-- Error: cannot convert type abstraction in this context.
+:to-salt..
+module Test with letrec
+id [a : Data] (x : a) : a
+ = x
+
+foo (_ : Unit) : Unit
+ = do   id (/\a. \(x : a). x)
+        ()
+;;
+
+
+-- Error: cannot convert function application in this context.
+:to-salt..
+module Test with letrec
+id [a : Data] (x : a) : a
+ = x
+
+foo (_ : Unit) : Unit
+ = do   id (\(x : Nat#). x)
+        ()
+;;
+
+
+-- Error: partial application of primitive data constructors is not supported.
+-- :to-salt..
+-- module Test with letrec
+-- thing (_ : Unit) : Nat# -> Nat#
+-- = add# [Nat#] 5#
+-- ;;
+
+
+-- Error: higher order functions not yet supported.
+:to-salt..
 module Test with letrec
 app [a b : Data] (f : a -> b) (x : a) : b
  = f x
 ;;
-
