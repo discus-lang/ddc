@@ -75,7 +75,7 @@ pipeText !srcName !srcLine !str !pp
             in case C.loadModuleFromTokens fragment srcName mode toks of
                  (Left err, mct) 
                   -> do sinkCheckTrace mct sink
-                        return $ [ErrorLoad err]
+                        return [ErrorLoad err]
 
                  (Right mm, mct) 
                   -> do sinkCheckTrace mct sink
@@ -101,12 +101,12 @@ pipeText !srcName !srcLine !str !pp
 
                         case BP.runTokenParser C.describeTok srcName
                                 (SE.pModule context) tokens of
-                         Left err -> error $ show err    -- TODO: throw errorLoad instead.
+                         Left err -> return [ErrorLoad err]
                          Right mm -> goDesugar mm
 
                 goDesugar mm
                  = case SE.defix SE.defaultFixTable mm of
-                        Left err  -> error $ show err    -- TODO: return errorLoad instead.
+                        Left err  -> return [ErrorLoad err]
                         Right mm' -> goToCore mm'
 
                 goToCore mm
@@ -115,7 +115,8 @@ pipeText !srcName !srcLine !str !pp
                                             SE.primKindEnv SE.primTypeEnv mm
 
                         -- Convert Source Tetra to Core Tetra.
-                        -- TODO get proper source location.
+                        -- This source position is used to annotate the let expression
+                        -- that holds all the top-level bindings.
                         let sp        = SP.SourcePos "<top level>" 1 1
                         let mm_core   = SE.toCoreModule sp mm_expand
 

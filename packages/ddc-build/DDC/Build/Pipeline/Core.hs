@@ -461,19 +461,24 @@ pipeFlow !mm !pp
                                         (Forward.Config isFloatable False)
                                         mm_namified
 
-                mm_rate
+                goRate
                  = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
-                -- TODO do something with the errors/warnings
-                     (Left _, _)    -> mm
+                     (Left err, _)    
+                      -> return [ErrorCoreTransform err]
 
-                     (Right mm', _) ->
-                       let mm_stripped = C.reannotate (const ()) mm'
-                           mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
-                           -- Check again to synthesise types
-                       in  case C.checkModule (C.configOfProfile Flow.profile) mm_flow C.Recon of
-                            (Left _, _ct)         -> mm_flow
-                            (Right mm_flow', _ct) -> C.reannotate (const ()) mm_flow'
-            in  pipeCores mm_rate pipes
+                     (Right mm', _) 
+                      -> let mm_stripped = C.reannotate (const ()) mm'
+                             mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
+                           
+                             -- Check again to synthesise types
+                         in case C.checkModule (C.configOfProfile Flow.profile) mm_flow C.Recon of
+                             (Left err, _ct)         
+                              -> return [ErrorCoreTransform err]
+                            
+                             (Right mm_flow', _ct) 
+                              -> let mm_reannot' = C.reannotate (const ()) mm_flow'
+                                 in pipeCores mm_reannot' pipes
+            in  goRate
 
 
         PipeFlowLower !config !pipes 
