@@ -81,10 +81,6 @@ instance SpreadT DataDef where
         Just ctors      -> Just (map (spreadT kenv) ctors) }
 
 
--- TODO: the data defs are recursive.
--- The kinds form the types need to go in the env for the ctors.
--- Also in the module which just contains a flat map of defs, 
--- maybe change this to a DataDefs to highlight recursiveness.
 instance SpreadT DataDefs where
  spreadT kenv defs
   = defs

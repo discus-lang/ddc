@@ -34,9 +34,12 @@ instance BindStruct (Exp a) where
                      (map fst bxs) 
                      (map snd bxs ++ [x2])]
         
-        XLet (LPrivate b _ bs) x2                               -- TODO: use mT
-         -> [ BindDef  BindLetRegions b
-             [bindDefX BindLetRegionWith bs [x2]]]
+        XLet (LPrivate bsR mtExtend bs) x2                         
+         -> (case mtExtend of
+                Nothing -> []
+                Just tR -> slurpBindTree tR)
+         ++ [ BindDef  BindLetRegions bsR
+             [bindDefX BindLetRegionWith bs [x2]] ]
 
         XLet (LWithRegion u) x2
          -> BindUse BoundExp u : slurpBindTree x2
