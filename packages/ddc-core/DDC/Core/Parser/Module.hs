@@ -110,7 +110,8 @@ pExportForeignValue c dst
                 pTok KColonColon
                 k       <- pType c
 
-                -- TODO: allow def of foreign symbol
+                -- ISSUE #327: Allow external symbol to be specified 
+                --             with foreign C imports and exports.
                 return  (ExportValue n (ExportSourceLocal n k))
 
         | otherwise
@@ -213,7 +214,8 @@ pImportForeignValue c src
                 pTok KColonColon
                 k       <- pType c
 
-                -- TODO: allow def of foreign symbol
+                -- ISSUE #327: Allow external symbol to be specified 
+                --             with foreign C imports and exports.
                 let symbol = renderIndent (ppr n)
 
                 return  (ImportValue n (ImportSourceSea symbol k))
@@ -265,14 +267,13 @@ pDataParam c
 
 
 -- | Parse a data constructor declaration.
---   TODO: More restructive parsing to reject extra quantifiers
---   on the front of data constructor types.
 pDataCtor 
         :: Ord n 
         => Context 
         -> n                    -- ^ Name of data type constructor.
         -> [Bind n]             -- ^ Type parameters of data type constructor.
         -> Parser n (DataCtor n)
+
 pDataCtor c nData bsParam
  = do   n       <- pName
         pTokSP (KOp ":")
