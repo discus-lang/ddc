@@ -135,19 +135,6 @@ slurpProcessX tenv xx
         return  ( ctxHere ++ ctxMore
                 , opsHere ++ opsMore)
 
- -- Only handle very simple cases with one alt for now.                 -- TODO: why do we accept
- -- 'Invert' the case and create a let binding for each binder.         ---    case in the middle of
- -- We can safely duplicate xScrut since it's in ANF.                   --     a process??
- | XCase xScrut [AAlt (PData dc bs) x]  <- xx
- , bs'  <- takeSubstBoundsOfBinds bs
- , length bs == length bs'
- , lets <- zipWith
-              (\b b' -> LLet b
-                (XCase xScrut
-                 [AAlt (PData dc bs)
-                       (XVar b')])) bs bs'
- = slurpProcessX tenv (xLets lets x)
-
 -- Slurp a process ending.
 slurpProcessX tenv xx
  -- The process ends with a variable that has Process# type.
