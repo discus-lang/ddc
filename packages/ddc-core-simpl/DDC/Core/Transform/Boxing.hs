@@ -249,7 +249,7 @@ instance Boxing Exp where
 
         -- When applying a primop that works on unboxed values, 
         -- unbox its arguments and then rebox the result.
-        XApp a _ _
+        XApp a x1 x2
          -- Split the application of a primop into its name and arguments.
          -- The arguments here include type arguments as well.
          | Just (xFn, tPrim, xsArgsAll) 
@@ -275,21 +275,24 @@ instance Boxing Exp where
 
                 -- Unboxing arguments to the function.
                 xsArgs  = drop (length tsArgs) xsArgsAll
-                xsArgs' 
-                 -- We must end up with a type of each argument.
-                 | not (length xsArgs == length tsArgsInstUnboxed)
-                 = error "ddc-core.boxing: transform failed."
 
-                 -- Unbox arguments as nessesary.
-                 | otherwise
-                 = [ unboxExp config a tArgInst (down xArg)
-                        | xArg              <- xsArgs
-                        | tArgInst          <- tsArgsInstUnboxed ]
+            in if -- We must end up with a type of each argument.
+                  -- If not then the primop is partially applied or something else is wrong.
+                  -- The Tetra to Salt conversion will give a proper error message
+                  -- if the primop is indeed partially applied.
+                  not (length xsArgs == length tsArgsInstUnboxed)
+                   then XApp a (down x1) (down x2)
 
-            in  boxExp config a tResultInstUnboxed
-                 $ xApps a xFn  (  [XType a' t  | t  <- tsArgsUnboxed
-                                                | a' <- asArgs]
-                                ++ xsArgs')
+                   -- We got a type for each argument, so the primop is fully applied
+                   -- and we can do the boxing/unboxing transform.
+                   else let xsArgs' 
+                             = [ unboxExp config a tArgInst (down xArg)
+                                  | xArg      <- xsArgs
+                                  | tArgInst  <- tsArgsInstUnboxed ]
+                        in  boxExp config a tResultInstUnboxed
+                                $ xApps a xFn  (  [XType a' t  | t  <- tsArgsUnboxed
+                                                        | a' <- asArgs]
+                                                ++ xsArgs')
 
         -- Unrap scrutinees when matching against literal patterns.
         XCase a xScrut alts
@@ -315,33 +318,33 @@ instance Boxing Exp where
 -- | Box an expression that produces a value.
 boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 boxExp config a t xx
- | configIsValueIndexType config t
- , Just x'      <- configBoxedOfUnboxed config a xx t
- = x'
+        | configIsValueIndexType config t
+        , Just x'      <- configBoxedOfUnboxed config a xx t
+        = x'
 
- | configIsUnboxedType config t
- , Just tIdx    <- configIndexTypeOfUnboxed config t
- , Just x'      <- configBoxedOfUnboxed config a xx tIdx
- = x'
+        | configIsUnboxedType config t
+        , Just tIdx    <- configIndexTypeOfUnboxed config t
+        , Just x'      <- configBoxedOfUnboxed config a xx tIdx
+        = x'
 
- | otherwise
- = xx
+        | otherwise
+        = xx
 
 
 -- | Unbox an expression that produces a boxed value.
 unboxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 unboxExp config a t xx
- | configIsValueIndexType config t
- , Just x'      <- configUnboxedOfBoxed     config a xx t
- = x'
+        | configIsValueIndexType config t
+        , Just x'      <- configUnboxedOfBoxed     config a xx t
+        = x'
 
- | configIsUnboxedType config t
- , Just tIdx    <- configIndexTypeOfUnboxed config t
- , Just x'      <- configUnboxedOfBoxed     config a xx tIdx
- = x'
+        | configIsUnboxedType config t
+        , Just tIdx    <- configIndexTypeOfUnboxed config t
+        , Just x'      <- configUnboxedOfBoxed     config a xx tIdx
+        = x'
 
- | otherwise
- = xx
+        | otherwise
+        = xx
 
 
 -- | If this is an application of some primitive operator or foreign function that 
@@ -447,12 +450,12 @@ boxingSeaT config tt
 -- | Manage boxing in a data type definition.
 boxingDataDef :: Config a n -> DataDef n -> DataDef n
 boxingDataDef config def@DataDef{}
- = def { dataDefCtors = liftM (map (boxingDataCtor config)) (dataDefCtors def) }
+        = def { dataDefCtors = liftM (map (boxingDataCtor config)) (dataDefCtors def) }
 
 
 -- | Manage boxing in a data constructor definition.
 boxingDataCtor :: Config a n -> DataCtor n -> DataCtor n    
 boxingDataCtor config ctor@DataCtor{}
- = ctor 
- { dataCtorFieldTypes   = map (boxingT config) (dataCtorFieldTypes ctor)
- , dataCtorResultType   = boxingT config (dataCtorResultType ctor) }
+        = ctor 
+        { dataCtorFieldTypes   = map (boxingT config) (dataCtorFieldTypes ctor)
+        , dataCtorResultType   = boxingT config (dataCtorResultType ctor) }

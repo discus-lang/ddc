@@ -166,11 +166,11 @@ Fragment violation when converting Tetra module to Salt module.
 
 
 -- Error: partial application of primitive data constructors is not supported.
--- :to-salt..
--- module Test with letrec
--- thing (_ : Unit) : Nat# -> Nat#
--- = add# [Nat#] 5#
--- ;;
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Partial application of primitive operators is not supported.
+  
+    with: add# [B# Nat#] x0
 
 
 -- Error: higher order functions not yet supported.
