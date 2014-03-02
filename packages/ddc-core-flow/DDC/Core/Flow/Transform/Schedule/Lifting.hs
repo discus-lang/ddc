@@ -78,14 +78,16 @@ liftWorker lifting envScalar envLift xx
          -> Right (XVar uL)
 
          -- Replicate scalar vars.
+         -- ISSUE #328: Element type for rep opretora is hard coded to Float32
          | any (boundMatchesBind u) envScalar
          , nPrim        <- PrimVecRep (liftingFactor lifting)
          , tPrim        <- typePrimVec nPrim
          -> Right $ XApp (XApp  (XVar (UPrim (NamePrimVec nPrim) tPrim))
-                                (XType $ tFloat 32))                      -- TODO: fix type
+                                (XType $ tFloat 32))
                          xx
 
         -- Replicate literals.
+        -- ISSUE #328: Element type for rep opretora is hard coded to Float32
         XCon dc
          | DaConPrim (NameLitFloat _ 32) _
                     <- dc

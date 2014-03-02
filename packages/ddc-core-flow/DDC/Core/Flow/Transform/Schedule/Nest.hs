@@ -22,10 +22,6 @@ import Data.Monoid
 --    The new context doesn't contain any statements, it just provides
 --    the infrastructure to execute statements at the new rate.
 --
---   TODO: what are the possible relationships between contexts?
---         Write examples that have NestGuards inside NestSegment
---         and vice versa.
---
 insertContext :: Nest -> Context -> Maybe Nest
 
 -- Context already exists, don't bother.
@@ -70,8 +66,6 @@ insertContext nest@NestLoop{} context@ContextSegment{}
  = Just $ nest
         { nestInner = nestInner nest <> nestOfContext context
         , nestStart = nestStart nest ++ starts }
-
--- TODO: do we allow segment contexts inside guards, and vice versa?
 
 insertContext _nest _context
  = Nothing

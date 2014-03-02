@@ -63,8 +63,8 @@ scheduleKernel
                                 , isSeriesType (typeOfBind b) ]
 
         -- Body expressions that take the next vec of elements from each
-        -- input series.
-        -- TODO: throw error if type can't be lifted.
+        -- input series. If the type can't be lifted this will just throw
+        -- a pattern match error.
         let c           = liftingFactor lifting
         let ssBody      = [ BodyStmt 
                                 (BName (NameVarMod nS "elem") tElem_lifted)
@@ -85,8 +85,6 @@ scheduleKernel
         nest'   <- foldM (scheduleOperator lifting bsParamValues) 
                          nest0 operators
 
-
-        -- TODO: Add Down# constructor to types of series parameters.
         return  $ Procedure
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
@@ -207,7 +205,7 @@ scheduleOperator lifting envScalar nest op
 
         -- Read the current accumulator value and update it with the worker.
         let xBody_lifted x1 x2
-                = XApp (XApp ( XLam (opWorkerParamAcc   op)     -- TODO: wrong types
+                = XApp (XApp ( XLam (opWorkerParamAcc   op)
                              $ XLam (opWorkerParamElem  op)
                                     (xWorker_lifted))
                              x1)

@@ -20,9 +20,10 @@ import           Data.Maybe             (catMaybes)
 import qualified Data.Set               as Set
 
 -- | Graph for function
--- Each node is a binding, edges are dependencies, and the bool is whether the node's output can be fused or contracted.
--- For example, filter and map dependencies can be contracted,
--- but a fold cannot as it must consume the entire stream before producing output.
+--   Each node is a binding, edges are dependencies, and the bool is whether the node's output
+--   can be fused or contracted.
+--   For example, filter and map dependencies can be contracted,
+--   but a fold cannot as it must consume the entire stream before producing output.
 --
 
 type Edge  = (Name, Bool)
@@ -62,7 +63,8 @@ graphOfBinds binds extra_names
    = case ov of
      OpVectorReduce
       -> False
-     -- TODO length of `concrete rate' is known before iteration, so should be contractible.
+     
+     -- Length of `concrete rate' is known before iteration, so should be contractible.
      OpVectorLength
       -> False
      _

@@ -472,8 +472,6 @@ windBodyX refMap context xx
 
 
 -------------------------------------------------------------------------------
--- TODO: rewrite to use Simple version of Core language and reuse
---       standard flow compounds.
 type TypeF      = Type Name
 type ExpF       = Exp () Name
 

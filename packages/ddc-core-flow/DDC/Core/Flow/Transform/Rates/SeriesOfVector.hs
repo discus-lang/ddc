@@ -54,7 +54,8 @@ seriesOfVectorLets ll
  | LRec bxs             <- ll
  , (bs,xs)              <- unzip bxs
  , (xs',_errs)          <- unzip $ map seriesOfVectorFunction xs
- = (LRec (bs `zip` xs'), []) -- TODO errors
+ = (LRec (bs `zip` xs'), []) 
+        -- We still need to produce errors if this doesn't work.
 
  | otherwise
  = (ll, [])
@@ -66,13 +67,15 @@ seriesOfVectorFunction fun
  = run $ do
         -- Peel off the lambdas
         let (lams, body)   = takeXLamFlags_safe fun
-        -- TODO: Check that it's a-normal form
+        
+            -- This assumes the body is already in a-normal form.
             (lets, xx)     = splitXLets         body
+        
         -- Split into name and values and warn for recursive bindings
         binds             <- takeLets           lets
         let tymap          = takeTypes          (concatMap valwitBindsOfLets lets ++ map snd lams)
 
-        -- TODO check that binds are only vector primitives,
+        -- Assumes the binds only use vector primitives,
         -- OR   if not vector primitives, do not refer to bound vectors
 
         let names = map fst binds
@@ -97,7 +100,8 @@ seriesOfVectorFunction fun
         binds'    <- orderBinds           binds loops
 
          -- True <- trace ("TYMAP:" ++ show tymap) return True
-        True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) return True
+        True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) 
+                return True
 
         let outputs = map lOutputs loops
         let inputs  = map lInputs  loops
@@ -153,7 +157,8 @@ schedule graph equivs rets
        -- Use the original graph to find vars that cross loop boundaries
        outputs       = scheduleOutputs loops graph rets
        inputs        = scheduleInputs  loops graph
-   in  trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) return $ zipWith3 Loop loops outputs inputs
+   in  trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) 
+        return $ zipWith3 Loop loops outputs inputs
 
 scheduleTypes :: Graph -> EquivClass -> [Name] -> ([(Name, Map.Map Name Int)], Graph)
 scheduleTypes graph types type_order
@@ -272,9 +277,12 @@ construct getMax lams loops equivs tys xx
    = convertToSeries getMax binds outputs inputs equivs tys
 
 
--- TODO still missing the join of procs,
+-- We still need to join procs,
 -- split output procs into separate functions
-convertToSeries :: (Name -> Name) -> [(Name,ExpF)] -> [Name] -> [Name] -> EquivClass -> Map.Map Name TypeF -> [LetsF]
+convertToSeries 
+        :: (Name -> Name) -> [(Name,ExpF)] -> [Name] -> [Name] 
+        -> EquivClass -> Map.Map Name TypeF -> [LetsF]
+
 convertToSeries getMax binds outputs inputs equivs tys
  =  concat setups
  ++ [LLet (BNone tBool) (runprocs inputs' processes)]
@@ -286,13 +294,14 @@ convertToSeries getMax binds outputs inputs equivs tys
          kN     = NameVarMod cnn "k"
          kFlags = [ (True,  BName kN kRate)
                   , (False, BNone $ tRateNat $ TVar $ UName kN)]
-         vFlags = map (\(n,t) -> (False, BName (NameVarMod n "s") (tSeries (TVar (UName kN)) t))) vecs
+         vFlags = map (\(n,t) -> (False, BName (NameVarMod n "s") (tSeries (TVar (UName kN)) t)))
+                        vecs
      in  xApps (xVarOpSeries (OpSeriesRunProcess $ length vecs))
                (  map (XType .         snd) vecs
                ++ map (XVar  . UName . fst) vecs
                ++ [(makeXLamFlags (kFlags ++ vFlags) body)])
 
-  -- TODO introduce rate parameter for generates?
+  -- Should we introduce a rate parameter for generates?
   runprocs [] body
    = body
 
@@ -313,7 +322,6 @@ convertToSeries getMax binds outputs inputs equivs tys
   wrap (n,x) body
    = wrapSeriesX equivs outputs n (mlookup "wrap" tys n) x body
 
-  -- TODO
   joins
    | not $ null outputs
    = foldl1 mkJoin
@@ -334,7 +342,8 @@ convertToSeries getMax binds outputs inputs equivs tys
    = setreadSeriesX getMax tys n (mlookup "setread" tys n) x
 
 
-setreadSeriesX :: (Name -> Name) -> Map.Map Name TypeF -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
+setreadSeriesX 
+        :: (Name -> Name) -> Map.Map Name TypeF -> Name -> TypeF -> ExpF -> ([LetsF], [LetsF])
 setreadSeriesX getMax tys name ty xx
  | Just (f, args)                       <- takeXApps xx
  , XVar (UPrim (NameOpVector ov) _)     <- f
