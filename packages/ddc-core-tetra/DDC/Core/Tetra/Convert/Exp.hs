@@ -157,13 +157,13 @@ convertExpX penv kenv tenv ctx xx
                 Just UniverseData
                  -> liftM3 XLam 
                         (return $ annotTail a) 
-                        (convertRepableB kenv b) 
+                        (convertRepableB defs kenv b) 
                         (convertExpX penv kenv tenv' ctx x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
-                        (convertRepableB kenv b)
+                        (convertRepableB defs kenv b)
                         (convertExpX penv kenv tenv' ctx x)
 
                 _  -> throw $ ErrorMalformed 
@@ -207,8 +207,8 @@ convertExpX penv kenv tenv ctx xx
          -> do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT tBIx
-                tBx'    <- convertRepableT kenv tBx
+                tBIx'   <- convertIndexT   tBIx
+                tBx'    <- convertRepableT defs kenv tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
@@ -253,7 +253,7 @@ convertExpX penv kenv tenv ctx xx
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
                 tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertRepableT kenv tBx
+                tBx'    <- convertRepableT defs kenv tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
@@ -420,9 +420,9 @@ convertExpX penv kenv tenv ctx xx
          -> do  
                 -- Convert scrutinee, and determine its prime region.
                 x'      <- convertExpX     penv kenv tenv ExpArg xScrut
-                tX'     <- convertRepableT kenv tX
+                tX'     <- convertRepableT defs kenv tX
 
-                tScrut' <- convertRepableT kenv tScrut
+                tScrut' <- convertRepableT defs kenv tScrut
                 let tPrime = fromMaybe A.rTop
                            $ takePrimeRegion tScrut'
 
@@ -490,17 +490,18 @@ convertLetsX
         -> ConvertM a (Lets a A.Name)
 
 convertLetsX penv kenv tenv lts
- = case lts of
+ = let defs     = topEnvDataDefs penv
+   in case lts of
         LRec bxs
          -> do  let tenv'    = Env.extends (map fst bxs) tenv
                 let (bs, xs) = unzip bxs
-                bs'          <- mapM (convertValueB kenv) bs
+                bs'          <- mapM (convertValueB defs kenv) bs
                 xs'          <- mapM (convertExpX penv kenv tenv' ExpFun) xs
                 return  $ LRec $ zip bs' xs'
 
         LLet b x1
          -> do  let tenv'    = Env.extend b tenv
-                b'           <- convertValueB kenv b
+                b'           <- convertValueB defs kenv b
                 x1'          <- convertExpX   penv kenv tenv' ExpBind x1
                 return  $ LLet b' x1'
 
@@ -549,7 +550,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
         AAlt (PData dc []) x
          | Just nCtor           <- takeNameOfDaCon dc
          , E.isNameLit nCtor
-         -> do  dc'             <- convertDaCon kenv dc
+         -> do  dc'             <- convertDaCon defs kenv dc
                 xBody1          <- convertExpX penv kenv tenv ctx x
                 return  $ AAlt (PData dc' []) xBody1
 
@@ -566,7 +567,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
                 let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertRepableB kenv) bsFields
+                bsFields'       <- mapM (convertRepableB defs kenv) bsFields
 
                 -- Convert the right of the alternative, 
                 -- with all all the pattern variables in scope.
@@ -591,42 +592,6 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
 
         AAlt{}          
          -> throw ErrorInvalidAlt
-
-
----------------------------------------------------------------------------------------------------
--- | Convert a witness expression to Salt
---   TODO: Witness conversion is currently broken.
---         We need to handle conversion of witness types.
-convertWitnessX
-        :: Show a
-        => KindEnv E.Name                   -- ^ Kind enviornment
-        -> Witness (AnTEC a E.Name) E.Name  -- ^ Witness to convert.
-        -> ConvertM a (Witness a A.Name)
-
-convertWitnessX kenv ww
- = let down = convertWitnessX kenv
-   in  case ww of
-            WVar  a n     -> liftM  (WVar  $ annotTail a) (convertValueU n)
-            WCon  a wc    -> liftM  (WCon  $ annotTail a) (convertWiConX kenv wc)
-            WApp  a w1 w2 -> liftM2 (WApp  $ annotTail a) (down w1) (down w2)
-            WJoin a w1 w2 -> liftM2 (WApp  $ annotTail a) (down w1) (down w2)
-            WType a t     -> liftM  (WType $ annotTail a) (convertK t)
-
-
--- | Conert a witness constructor to Salt.
-convertWiConX
-        :: Show a
-        => KindEnv E.Name               -- ^ Kind environment. 
-        -> WiCon   E.Name               -- ^ Witness constructor to convert.
-        -> ConvertM a (WiCon A.Name)    
-
-convertWiConX kenv wicon            
- = case wicon of
-        WiConBuiltin w
-         -> return $ WiConBuiltin w
-
-        WiConBound n t 
-         -> liftM2 WiConBound (convertTypeU n) (convertRepableT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -743,14 +708,15 @@ convertPrimArgX
         -> ConvertM a (Exp a A.Name)
 
 convertPrimArgX penv kenv tenv ctx xx
- = case xx of
+ = let defs     = topEnvDataDefs penv
+   in case xx of
         XType a t
-         -> do  t'      <- convertRepableT kenv t
+         -> do  t'      <- convertRepableT defs kenv t
                 return  $ XType (annotTail a) t'
 
-        XWitness a w
-         -> do  w'      <- convertWitnessX kenv w
-                return  $ XWitness (annotTail a) w'
+        XWitness{}
+         -> throw $ ErrorUnsupported xx
+                  $ text "Witness expressions are not part of the Tetra language."
 
         _ -> convertExpX penv kenv tenv ctx xx
 
