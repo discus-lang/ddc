@@ -223,9 +223,18 @@ Fragment violation when converting Tetra module to Salt module.
     Unsupported type argument to function or constructor.
     In particular, we don't yet handle higher kinded type arguments.
     
-    See [Note: Salt conversion for higher kinded type arguments] in 
+    See [Note: Salt conversion for higher kinded type arguments] in
     the implementation of the Tetra to Salt conversion.
   
     with: [List]
 
+
+-- Error: higher order functions are not yet supported.
+-- blerk is a higher order function, though it's a type function rather
+-- than a value function.
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Higher order functions are not yet supported.
+  
+    with: nil [B# Nat#]
 

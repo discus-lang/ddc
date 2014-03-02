@@ -139,3 +139,15 @@ foo (_ : Unit) : Nat#
 ;;
 
 
+-- Error: higher order functions are not yet supported.
+-- blerk is a higher order function, though it's a type function rather
+-- than a value function.
+:to-salt..
+module Test
+data List (a : Data) where
+        Nil : a -> List a
+with letrec
+blerk (nil : [a : Data]. List a) : List Nat#
+ = nil
+;;
+
