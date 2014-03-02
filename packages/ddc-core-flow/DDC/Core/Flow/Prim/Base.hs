@@ -142,13 +142,8 @@ data DaConFlow
 
 -- | Fusable Flow operators that work on Series.
 data OpSeries
-        -- | Project out a component of a tuple,
-        --   given the tuple arity and index of the desired component.
-        --   TODO: shift this somewhere else.
-        = OpSeriesProj Int Int
-
         -- | Replicate a single element into a series.
-        | OpSeriesRep
+        = OpSeriesRep
 
         -- | Segmented replicate.
         | OpSeriesReps
@@ -196,8 +191,12 @@ data OpSeries
 --   These operators work on series after the code has been fused.
 --   They do not appear in the source program.
 data OpConcrete
+        -- | Project out a component of a tuple,
+        --   given the tuple arity and index of the desired component.
+        = OpConcreteProj Int Int
+
         -- | Take the rate of a series.
-        = OpConcreteRateOfSeries
+        | OpConcreteRateOfSeries
 
         -- | Take the underlying @Nat@ of a @RateNat@.
         | OpConcreteNatOfRateNat

@@ -4,6 +4,7 @@ module DDC.Core.Flow.Prim.OpConcrete
         , typeOpConcrete
 
         -- * Compounds
+        , xProj
         , xRateOfSeries
         , xNatOfRateNat
         , xNext
@@ -30,6 +31,10 @@ instance NFData OpConcrete
 instance Pretty OpConcrete where
  ppr pf
   = case pf of
+        OpConcreteProj arity ix   -> text "proj" 
+                                        <> int arity <> text "_" <> int ix
+                                        <> text "#"
+
         OpConcreteRateOfSeries    -> text "rateOfSeries"  <> text "#"
         OpConcreteNatOfRateNat    -> text "natOfRateNat"  <> text "#"
 
@@ -43,6 +48,19 @@ instance Pretty OpConcrete where
 -- | Read a series operator name.
 readOpConcrete :: String -> Maybe OpConcrete
 readOpConcrete str
+        | Just rest         <- stripPrefix "proj" str
+        , (ds, '_' : rest2) <- span isDigit rest
+        , not $ null ds
+        , arity             <- read ds
+        , arity >= 1
+        , (ds2, "#")        <- span isDigit rest2
+        , not $ null ds2
+        , ix                <- read ds2
+        , ix >= 1
+        , ix <= arity
+        = Just $ OpConcreteProj arity ix
+
+
         | Just rest     <- stripPrefix "next$" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
@@ -76,6 +94,13 @@ readOpConcrete str
 typeOpConcrete :: OpConcrete -> Type Name
 typeOpConcrete op
  = case op of
+        -- Tuple projections --------------------
+        OpConcreteProj a ix
+         -> tForalls (replicate a kData) 
+         $ \_ -> tFun   (tTupleN [TVar (UIx i) | i <- reverse [0..a-1]])
+                        (TVar (UIx (a - ix)))
+
+
         -- rateOfSeries#   :: [k : Rate]. [a : Data]
         --                 .  Series k a -> RateNat k
         OpConcreteRateOfSeries 
@@ -116,6 +141,12 @@ typeOpConcrete op
 -- Compounds ------------------------------------------------------------------
 type TypeF      = Type Name
 type ExpF       = Exp () Name
+
+xProj :: [Type Name] -> Int -> Exp () Name -> Exp () Name
+xProj ts ix  x
+        = xApps   (xVarOpConcrete (OpConcreteProj (length ts) ix))
+                  ([XType t | t <- ts] ++ [x])
+
 
 xRateOfSeries :: TypeF -> TypeF -> ExpF -> ExpF
 xRateOfSeries tK tA xS 
