@@ -36,10 +36,14 @@ data Error a n
         , errorExportType       :: Type n
         , errorDefType          :: Type n }
 
-
         -- | Imported name is imported multiple times.
         | ErrorImportDuplicate
         { errorName             :: n }
+
+        -- | An imported value that doesn't have kind Data.
+        | ErrorImportValueNotData
+        { errorName             :: n }
+
 
         -- Exp --------------------------------------------
         -- | Generic mismatch between expected and inferred types.

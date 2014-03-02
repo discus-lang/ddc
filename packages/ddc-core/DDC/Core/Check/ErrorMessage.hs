@@ -34,6 +34,9 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorImportDuplicate n
          -> vcat [ text "Duplicate imported name '" <> ppr n <> text "'."]
 
+        ErrorImportValueNotData n
+         -> vcat [ text "Imported value '" <> ppr n <> text "' does not have kind Data." ]
+
 
         -- Exp --------------------------------------------
         ErrorMismatch a tInferred tExpected xx

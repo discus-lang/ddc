@@ -13,6 +13,7 @@ import DDC.Core.Exp
 import DDC.Type.Check.Context
 import DDC.Type.Check.Data
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Type.Universe
@@ -219,34 +220,27 @@ checkImportTypes
         -> [(n, ImportSource n)]
         -> CheckM a n [(n, ImportSource n)]
 
-checkImportTypes config mode nksImport
- = do
+checkImportTypes config mode nisrcs
+ = let  
         -- Checker mode to use.
-        let modeCheckImportTypes
-                = case mode of
-                        Recon   -> Recon
-                        _       -> Synth
+        modeCheckImportTypes
+         = case mode of
+                Recon   -> Recon
+                _       -> Synth
 
-        -- Check all the kinds in an empty context.
-        (ksImport', _, _)
-                <- liftM unzip3 
-                $  mapM (\k -> checkTypeM config Env.empty emptyContext UniverseKind 
-                                          k modeCheckImportTypes) 
-                $  [typeOfImportSource isrc | (_, isrc) <- nksImport]
-        
-        -- Update the original import list with the checked kinds.
-        let nksImport'
-                = [ (n, mapTypeOfImportSource (const k') isrc)
-                                | (n, isrc)     <- nksImport
-                                | k'            <- ksImport' ]
-        
+        check (n, isrc)
+         = do   let k           =  typeOfImportSource isrc
+                (k', _, _)      <- checkTypeM config Env.empty emptyContext UniverseKind
+                                        k modeCheckImportTypes
+                return  (n, mapTypeOfImportSource (const k') isrc)
+   in do
         -- Check for duplicate imports.
-        let dups = findDuplicates $ map fst nksImport'
+        let dups = findDuplicates $ map fst nisrcs
         (case takeHead dups of
           Just n -> throw $ ErrorImportDuplicate n
           _      -> return ())
 
-        return nksImport'
+        mapM check nisrcs
 
 
 ---------------------------------------------------------------------------------------------------
@@ -257,36 +251,34 @@ checkImportValues
         -> [(n, ImportSource n)]
         -> CheckM a n [(n, ImportSource n)]
 
-checkImportValues config kenv mode ntsImport
- = do
+checkImportValues config kenv mode nisrcs
+ = let
         -- Checker mode to use.
-        let modeCheckImportTypes
-                = case mode of
-                        Recon   -> Recon
-                        _       -> Check kData
+        modeCheckImportTypes
+         = case mode of
+                Recon   -> Recon
+                _       -> Check kData
 
-        -- Check all the types in an empty context.
-        (tsImport', _, _)
-                <- liftM unzip3
-                $  mapM (\t -> checkTypeM config kenv emptyContext UniverseSpec
-                                          t modeCheckImportTypes)
-                $  map (typeOfImportSource . snd) ntsImport
+        check (n, isrc)
+         = do   let t           = typeOfImportSource isrc
+                (t', k, _)      <- checkTypeM config kenv emptyContext UniverseSpec
+                                        t modeCheckImportTypes
 
-        -- Update the original import list with the checked types.
-        let ntsImport'
-                = [ (n, mapTypeOfImportSource (const t') isrc) 
-                        | (n, isrc)     <- ntsImport
-                        | t'            <- tsImport' ]
+                -- In Recon mode we need to post-check that the imported
+                -- value really has kind data. In inference mode the expected
+                -- kind we pass down will handle this.
+                when (not $ isDataKind k)
+                 $ throw $ ErrorImportValueNotData n
 
+                return  (n, mapTypeOfImportSource (const t') isrc)
+   in do
         -- Check for duplicate imports.
-        let dups = findDuplicates $ map fst ntsImport'
+        let dups = findDuplicates $ map fst nisrcs
         (case takeHead dups of
           Just n -> throw $ ErrorImportDuplicate n
           _      -> return ())
 
-        -- TODO: post-check for data kind in Recon mode.
-
-        return ntsImport'
+        mapM check nisrcs        
 
 
 ---------------------------------------------------------------------------------------------------
