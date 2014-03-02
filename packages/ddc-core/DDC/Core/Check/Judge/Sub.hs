@@ -78,7 +78,10 @@ makeSub config a ctx0 xL tL tR err
 
  -- SubInstL
  --  Left is an existential.
- --  TODO: do free variables check  tL /= FV(tR)
+ --
+ --  ISSUE #326: Do free variables check in new inferencer.
+ --    check  tL /= FV(tR)
+ --
  | isTExists tL
  = do   ctx1    <- makeInst config a ctx0 tR tL err
 
@@ -95,7 +98,10 @@ makeSub config a ctx0 xL tL tR err
 
  -- SubInstR
  --  Right is an existential.
- --  TODO: do free variables check  tR /= FV(tL)
+ --
+ --  ISSUE #326: Do free variables check in new inferencer.
+ --     check  tR /= FV(tL)
+ --
  | isTExists tR
  = do   ctx1    <- makeInst config a ctx0 tL tR err
 
@@ -112,11 +118,9 @@ makeSub config a ctx0 xL tL tR err
 
  -- SubArr
  --  Both sides are arrow types.
- | Just (tL1, tL2)      <- takeTFun tL
- , Just (tR1, tR2)      <- takeTFun tR
+ | Just (tL1, tL2)  <- takeTFun tL
+ , Just (tR1, tR2)  <- takeTFun tR
  = do   
-        -- TODO: will need to eta-expand to pass type applications
-        --       when instantiating higher ranked types.
         (_, ctx1)   <- makeSub config a ctx0 xL tR1 tL1 err
         let tL2'    =  applyContext  ctx1    tL2
         let tR2'    =  applyContext  ctx1    tR2
@@ -188,11 +192,9 @@ makeSub config a ctx0 xL tL tR err
 
         -- Wrap the expression with a type application to cause
         -- the instantiation.
-        -- TODO: Substitute into e0 and c0. 
-        -- We've added a type application here.
         let AnTEC _ e0 c0 _    
                  = annotOfExp xL
-        let aFn  = AnTEC t1' e0 c0 a
+        let aFn  = AnTEC t1' (substituteT b tA e0) (substituteT b tA c0) a
         let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xL2  = XApp aFn xL1 (XType aArg tA) 
 

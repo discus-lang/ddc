@@ -121,9 +121,6 @@ makeEq config a ctx0 tL tR err
 
 
  -- EqFun
- -- TODO: need to crush effects inline with equality tester.
- --       If an effect is a parameter to a data type then this case
- --       will not fire.
  | Just (tL1, tEffL, tCloL, tL2) <- takeTFunEC tL
  , Just (tR1, tEffR, tCloR, tR2) <- takeTFunEC tR
  = do   
@@ -158,7 +155,6 @@ makeEq config a ctx0 tL tR err
         return ctx2
 
  -- EqEquiv
- -- TODO: Handle equiv of quantified types properly.
  | equivT tL tR
  =      return ctx0
 
