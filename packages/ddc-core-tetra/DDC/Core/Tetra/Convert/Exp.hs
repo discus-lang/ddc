@@ -1,5 +1,4 @@
 -- | Conversion of Disciple Lite to Disciple Salt.
---
 module DDC.Core.Tetra.Convert.Exp
         ( TopEnv        (..)
         , ExpContext    (..)
@@ -20,18 +19,18 @@ import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A
 
-import DDC.Base.Pretty
 import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Env                      (KindEnv, TypeEnv)
 import qualified DDC.Type.Env            as Env
 
-import Data.Set                          (Set)
-import DDC.Control.Monad.Check           (throw)
-import qualified Data.Map                as Map
-import qualified Data.Set                as Set
 import Control.Monad
 import Data.Maybe
+import DDC.Base.Pretty
+import DDC.Control.Monad.Check           (throw)
+import Data.Set                          (Set)
+import qualified Data.Map                as Map
+import qualified Data.Set                as Set
 
 
 ---------------------------------------------------------------------------------------------------
@@ -760,8 +759,8 @@ convertPrimArgX penv kenv tenv ctx xx
 -- | Convert a literal constructor to Salt.
 --   These are values that have boxable index types like Bool# and Nat#.
 convertLitCtorX
-        :: a 
-        -> DaCon E.Name
+        :: a                            -- ^ Annot from deconstructed XCon node.
+        -> DaCon E.Name                 -- ^ Data constructor of literal.
         -> ConvertM a (Exp a A.Name)
 
 convertLitCtorX a dc
