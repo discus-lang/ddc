@@ -43,9 +43,6 @@ pModule c
         -- around a unit constructor place-holder.
         let body = xLetsAnnot lts (xUnit sp)
 
-        -- ISSUE #295: Check for duplicate exported names in module parser.
-        --  The names are added to a unique map, so later ones with the same
-        --  name will replace earlier ones.
         return  $ ModuleCore
                 { moduleName            = name
                 , moduleExportTypes     = []
