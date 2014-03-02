@@ -184,7 +184,6 @@ toCoreX xx
 
 
 -- Lets -----------------------------------------------------------------------
--- TODO: Split local bindings into recursive groups.
 toCoreLts :: S.Lets a S.Name -> C.Lets a C.Name
 toCoreLts lts
  = case lts of

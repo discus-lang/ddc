@@ -108,11 +108,9 @@ data Config a n
         , configUnboxedOfIndexType      :: Type n -> Maybe (Type n) 
 
           -- | Take the index type from a boxed type, if it is one.
-          --   TODO: derive isBoxedType from this.
         , configIndexTypeOfBoxed        :: Type n -> Maybe (Type n)
 
           -- | Take the index type from an unboxed type, if it is one.
-          --   TODO: derive isUnboxedType from this.
         , configIndexTypeOfUnboxed      :: Type n -> Maybe (Type n)
 
           -- | Take the type of a literal name, if there is one.

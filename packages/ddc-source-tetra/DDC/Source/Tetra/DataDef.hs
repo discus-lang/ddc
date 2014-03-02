@@ -52,7 +52,6 @@ data DataCtor n
         , dataCtorFieldTypes    :: ![Type n]
 
           -- | Result type of the constructor.
-          --   TODO: Check that this is the same as the type being defined.
         , dataCtorResultType    :: !(Type n) }
         deriving Show
 
