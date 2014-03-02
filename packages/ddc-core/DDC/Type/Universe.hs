@@ -101,9 +101,13 @@ universeFromType1 kenv tt
         TCon (TyConSort _)         -> Just UniverseKind
         TCon (TyConKind _)         -> Just UniverseSpec
         TCon (TyConWitness _)      -> Just UniverseWitness
-        TCon (TyConSpec TcConFunEC)-> Just UniverseData
+        
         TCon (TyConSpec TcConUnit) -> Just UniverseData
+        TCon (TyConSpec TcConFun)  -> Just UniverseData
+        TCon (TyConSpec TcConFunEC)-> Just UniverseData
+        TCon (TyConSpec TcConSusp) -> Just UniverseData
         TCon (TyConSpec _)         -> Nothing
+        
         TCon (TyConBound  _ k)     -> universeFromType2 k
         TCon (TyConExists _ k)     -> universeFromType2 k
         TForall b t2               -> universeFromType1 (Env.extend b kenv) t2

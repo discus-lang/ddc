@@ -331,7 +331,7 @@ convertExpX penv kenv tenv ctx xx
          | ExpFun       <- ctx
          -> let tenv'   = Env.extend b tenv
             in case universeFromType1 kenv (typeOfBind b) of
-                Just UniverseData    
+                Just UniverseData
                  -> liftM3 XLam 
                         (return $ annotTail a) 
                         (convertRepableB kenv b) 
@@ -523,6 +523,23 @@ convertExpX penv kenv tenv ctx xx
                         
                 return  $ xApps a' x1' xsArgs'
 
+
+        ---------------------------------------------------
+        -- Application of some function that is not a top-level supercombinator
+        -- or imported function. We don't support this yet, but give a specific error.
+        XApp _ xa xb
+         | (x1, _xsArgs) <- takeXApps1 xa xb
+
+         -- The thing being applied is a named function but is not defined
+         -- at top level, or imported directly.
+         , XVar _ (UName n) <- x1
+         , not $ Set.member n (topEnvSupers       penv)
+         , not $ Set.member n (topEnvImportValues penv)
+
+         ->     throw   $ ErrorUnsupported 
+                        $  "Higher order functions are not yet supported."
+                        ++ "\nwith: " ++ (renderIndent $ ppr xx)
+
         
         ---------------------------------------------------
         -- let-expressions.
@@ -540,7 +557,7 @@ convertExpX penv kenv tenv ctx xx
                 return $ XLet (annotTail a) lts' x2'
 
         XLet{}
-         -> throw $ ErrorNotNormalized "Unexpected let-expression."
+         -> throw $ ErrorUnsupported "Unexpected let-expression."
 
 
         ---------------------------------------------------
@@ -605,7 +622,7 @@ convertExpX penv kenv tenv ctx xx
         -- scrutinee isn't constrained to be an algebraic data type. These dummy
         -- expressions need to be eliminated before conversion.
         XCase{} 
-         -> throw $ ErrorNotNormalized "Invalid case expression."
+         -> throw $ ErrorUnsupported "Cannot convert case expression."
 
 
         ---------------------------------------------------
@@ -617,17 +634,15 @@ convertExpX penv kenv tenv ctx xx
         -- We shouldn't find any naked types.
         -- These are handled above in the XApp case.
         XType{}
-          -> throw $ ErrorNotNormalized "Unexpected type argument."
+          -> throw $ ErrorMalformed "Found a naked type argument."
 
 
         -- We shouldn't find any naked witnesses.
         XWitness{}
-          -> throw $ ErrorNotNormalized "Unexpected witness expression."
+          -> throw $ ErrorMalformed "Found a naked witness."
 
         -- Expression can't be converted.
-        _ -> throw $ ErrorNotNormalized 
-                   $ "Cannot convert expression.\n"
-                   ++ (renderIndent $ ppr xx)
+        _ -> throw $ ErrorUnsupported ("with: " ++ (renderIndent $ ppr xx))
 
 
 ---------------------------------------------------------------------------------------------------

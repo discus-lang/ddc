@@ -198,10 +198,11 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetrecMissingAnnot a xx b
+        ErrorLetrecMissingAnnot a b xx
          -> vcat [ ppr a
-                 , text "Missing type annotation on recursive let-binding '" 
-                        <> ppr b <> text "'"
+                 , text "Missing or incomplete type annotation on recursive let-binding '" 
+                        <> ppr (binderOfBind b) <> text "'."
+                 , text "Recursive functions must have full type annotations."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 

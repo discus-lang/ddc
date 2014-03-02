@@ -25,8 +25,8 @@ data Error a
         -- | The program is definately not well typed.
         | ErrorMistyped  (Exp (AnTEC a E.Name) E.Name)
 
-        -- | The program wasn't in a-normal form.
-        | ErrorNotNormalized String
+        -- | The program wasn't normalised, or we don't support the feature.
+        | ErrorUnsupported String
 
         -- | The program has bottom (missing) type annotations.
         | ErrorBotAnnot
@@ -57,13 +57,13 @@ instance Show a => Pretty (Error a) where
         ErrorMistyped xx
          -> vcat [ text "Module is mistyped."           <> (text $ show xx) ]
 
-        ErrorNotNormalized str
-         -> vcat [ text "Module is not in a-normal form."
+        ErrorUnsupported str
+         -> vcat [ text "Cannot convert expression."
                  , text str ]
 
         ErrorBotAnnot
          -> vcat [ text "Found bottom type annotation."
-                 , text "  Code should be type-checked before conversion." ]
+                 , text "Program should be type-checked before conversion." ]
 
         ErrorUnexpectedSum
          -> vcat [ text "Unexpected type sum."]

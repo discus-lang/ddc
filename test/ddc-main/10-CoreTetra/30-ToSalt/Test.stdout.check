@@ -71,6 +71,7 @@ letrec {
       }
 }
 
+
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
@@ -130,4 +131,12 @@ letrec {
             ^1
       }
 }
+
+
+-- Error: higher order functions not yet supported.
+ok
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+  Higher order functions are not yet supported.
+with: f x
 

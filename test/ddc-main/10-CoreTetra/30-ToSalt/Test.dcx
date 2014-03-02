@@ -23,6 +23,7 @@ foo     (x : Word32#) : Word32#
         7w32#   -> 8w32#
         _       -> 0w32#;;
 
+
 :to-salt..
 module Test with letrec
 foo     (x : Word64#) : Word64#
@@ -39,4 +40,13 @@ foo     (x : Bool#) : Bool#
  = case x of
        True#   -> False#
        False#  -> True#;;
+
+
+-- Error: higher order functions not yet supported.
+:set Synth
+:to-c..
+module Test with letrec
+app [a b : Data] (f : a -> b) (x : a) : b
+ = f x
+;;
 
