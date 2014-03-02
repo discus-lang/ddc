@@ -46,8 +46,7 @@ foo     (x : Bool#) : Bool#
 -- Trigger errors about unsupported features in the Tetra to Salt conversion.
 :set Synth
 
--- OK: Anonymous binders are not supported by the conversion, but they get
--- auto-namified on the way in.
+-- OK: Anonymous binders are namified on the way into the conversion.
 :to-salt..
 module Test with letrec
 id (^ : Nat#) : Nat#
@@ -87,9 +86,55 @@ thing (_ : Unit) : Nat# -> Nat#
 ;;
 
 
+-- Error: partial application if user defined data constructors is not supported.
+:to-salt..
+module Test 
+data Thing where
+        Thing : Nat# -> Nat# -> Thing
+with letrec
+thing (_ : Unit) : Nat# -> Thing
+ = Thing 5#
+;;
+
+
+-- Error: partial application of primitive operators is not supported.
+:to-salt..
+module Test with letrec
+thing (_ : Unit) : Nat# -> Nat#
+ = add# [Nat#] 5#
+;;
+
+
 -- Error: higher order functions not yet supported.
 :to-salt..
 module Test with letrec
 app [a b : Data] (f : a -> b) (x : a) : b
  = f x
 ;;
+
+
+-- OK: let expressions in nested contexts are normalized on the way in to
+-- the conversion.
+:to-salt..
+module Test with letrec
+id [a : Data] (x : a) : a
+ = x
+
+foo (_ : Unit) : Nat#
+ = id (let x = 5# in x)
+;;
+
+
+:to-salt..
+module Test 
+data List (a : Data) where
+        Nil : a -> List a
+with letrec
+nothin [a : Data ~> Data] [b : Data] (x : b) : b
+ = x
+
+foo (_ : Unit) : Nat#
+ = nothin [List] [Nat#] 5#
+;;
+
+

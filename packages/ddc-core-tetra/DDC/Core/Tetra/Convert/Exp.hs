@@ -119,7 +119,6 @@ convertExpX penv kenv tenv ctx xx
          -- then the type lambda Tetra is converted to a region lambda in Salt
          -- which binds the region the object is in.
          | ExpFun       <- ctx
-         , isDataKind $ typeOfBind b
          , BName (E.NameVar str) k <- b
          , isDataKind k
          , str'         <- str ++ "$r"
@@ -130,6 +129,7 @@ convertExpX penv kenv tenv ctx xx
                 x'      <- convertExpX penv kenv' tenv ctx x
 
                 return $ XLAM a' b' x'
+                
 
          -- Erase effect lambdas.
          | ExpFun       <- ctx
@@ -463,12 +463,12 @@ convertExpX penv kenv tenv ctx xx
         -- We shouldn't find any naked types.
         -- These are handled above in the XApp case.
         XType{}
-          -> throw $ ErrorMalformed      "Found a naked type argument."
+          -> throw $ ErrorMalformed "Found a naked type argument."
 
 
         -- We shouldn't find any naked witnesses.
         XWitness{}
-          -> throw $ ErrorMalformed      "Found a naked witness."
+          -> throw $ ErrorMalformed "Found a naked witness."
 
         -- Expression can't be converted.
         _ -> throw $ ErrorUnsupported xx 

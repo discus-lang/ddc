@@ -137,8 +137,7 @@ letrec {
 -- Trigger errors about unsupported features in the Tetra to Salt conversion.
 ok
 
--- OK: Anonymous binders are not supported by the conversion, but they get
--- auto-namified on the way in.
+-- OK: Anonymous binders are namified on the way into the conversion.
 module Test with
 letrec {
   id : Ptr# rT Obj -> Ptr# rT Obj
@@ -173,9 +172,57 @@ Fragment violation when converting Tetra module to Salt module.
     with: add# [B# Nat#] x0
 
 
+-- Error: partial application if user defined data constructors is not supported.
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Partial application of user-defined data constructors is not supported.
+  
+    with: Thing x0
+
+
+-- Error: partial application of primitive operators is not supported.
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Partial application of primitive operators is not supported.
+  
+    with: add# [B# Nat#] x0
+
+
 -- Error: higher order functions not yet supported.
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Higher order functions are not yet supported.
   
     with: f x
+
+
+-- OK: let expressions in nested contexts are normalized on the way in to
+-- the conversion.
+module Test with
+letrec {
+  id : [a$r : Region].Ptr# a$r Obj -> Ptr# a$r Obj
+    = /\(a$r : Region).
+       \(x : Ptr# a$r Obj). x;
+  
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(_ : Ptr# rT Obj).
+      let x0 : Ptr# rT Obj
+            = let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
+              let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+              let _ : Void#
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
+              ^1 in
+      let x1 : Ptr# rT Obj = x0 in
+      id [rT] x1
+}
+
+
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Cannot convert type abstraction in this context.
+    The program must be lambda-lifted before conversion.
+  
+    with: /\(a : Data ~> Data)./\(b : Data).
+     \(x : b). x
+
+
