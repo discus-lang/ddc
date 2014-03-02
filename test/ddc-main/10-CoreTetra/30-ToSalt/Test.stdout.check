@@ -217,12 +217,15 @@ letrec {
 }
 
 
+-- Error: higher kinded type arguments are not yet supported.
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
-    Cannot convert type abstraction in this context.
-    The program must be lambda-lifted before conversion.
+    Unsupported type argument to function or constructor.
+    In particular, we don't yet handle higher kinded type arguments.
+    
+    See [Note: Salt conversion for higher kinded type arguments] in 
+    the implementation of the Tetra to Salt conversion.
   
-    with: /\(a : Data ~> Data)./\(b : Data).
-     \(x : b). x
+    with: [List]
 
 

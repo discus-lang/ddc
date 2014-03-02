@@ -116,8 +116,8 @@ convertExpX penv kenv tenv ctx xx
                 return $ XLAM a' b' x'
 
          -- When a function is fully polymorphic in some boxed data type,
-         -- then the type lambda Tetra is converted to a region lambda in Salt
-         -- which binds the region the object is in.
+         -- then the type lambda in Tetra is converted to a region lambda in
+         -- Salt which binds the region the object is in.
          | ExpFun       <- ctx
          , BName (E.NameVar str) k <- b
          , isDataKind k
@@ -129,11 +129,16 @@ convertExpX penv kenv tenv ctx xx
                 x'      <- convertExpX penv kenv' tenv ctx x
 
                 return $ XLAM a' b' x'
-                
 
          -- Erase effect lambdas.
          | ExpFun       <- ctx
          , isEffectKind $ typeOfBind b
+         -> do  let kenv'       = Env.extend b kenv
+                convertExpX penv kenv' tenv ctx x
+
+         -- Erase higher kinded type lambdas.
+         | ExpFun       <- ctx
+         , Just _       <- takeKFun $ typeOfBind b
          -> do  let kenv'       = Env.extend b kenv
                 convertExpX penv kenv' tenv ctx x
 
@@ -707,8 +712,14 @@ convertOrDiscardSuperArgX penv kenv tenv xx
 
         -- Some type that we don't know how to convert to Salt.
         -- We don't handle type args with higher kinds.
+        -- See [Note: Salt conversion for higher kinded type arguments]
         | XType{}       <- xx
-        =       throw $ ErrorMalformed "Invalid type argument to super or ctor."
+        = throw $ ErrorUnsupported xx
+                $ vcat [ text "Unsupported type argument to function or constructor."
+                       , text "In particular, we don't yet handle higher kinded type arguments."
+                       , empty
+                       , text "See [Note: Salt conversion for higher kinded type arguments] in"
+                       , text "the implementation of the Tetra to Salt conversion." ]
 
         -- Witness arguments are discarded.
         | XWitness{}    <- xx
@@ -765,3 +776,30 @@ convertLitCtorX a dc
  | otherwise    
  = throw $ ErrorMalformed "Invalid literal."
 
+
+---------------------------------------------------------------------------------------------------
+-- Note: Salt conversion for higher kinded type arguments
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Converting functions that use higher kinded types to Salt is problematic
+-- because we can't directly see what region is being used to represent
+-- each object.
+--
+--   data List (r : Region) (a : Data) where ...
+--
+--   idf [c : Data ~> Data] [a : Data] (x : c a) : Nat# ...
+--
+--   f = ... idf [List r1] [Nat] (...)
+--
+-- At the call-site, the value argument to idf is in region r1, but that
+-- information is not available when converting the body of 'idf'.
+-- When converting the body of 'idf' we can't assume the value bound to 
+-- 'x' is in rTop.
+--
+-- We need some simple subtyping in region types, to have a DontKnow region
+-- that can be used to indicate that the region an object is in is unknown.
+--
+-- For now we just don't convert functions using higher kinded types, 
+-- and leave this to future work. Higher kinding isn't particularly 
+-- useful without a type clasing system with constructor classes,
+-- so we'll fix it later.
+--

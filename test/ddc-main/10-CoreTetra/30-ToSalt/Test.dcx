@@ -125,6 +125,7 @@ foo (_ : Unit) : Nat#
 ;;
 
 
+-- Error: higher kinded type arguments are not yet supported.
 :to-salt..
 module Test 
 data List (a : Data) where
