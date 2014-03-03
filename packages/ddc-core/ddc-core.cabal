@@ -145,6 +145,7 @@ Library
         DDC.Type.Check.CheckCon
         DDC.Type.Check.Config
         DDC.Type.Check.Context
+        DDC.Type.Check.Data
         DDC.Type.Check.Error
         DDC.Type.Check.ErrorMessage
         

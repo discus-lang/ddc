@@ -172,7 +172,6 @@ Executable ddci-tetra
         DDCI.Tetra.Command.Parse
         DDCI.Tetra.Command.Set
         DDCI.Tetra.Command.ToCore
-        DDCI.Tetra.Command.ToSalt
 
         DDCI.Tetra.Interface.Args
         DDCI.Tetra.Interface.Batch

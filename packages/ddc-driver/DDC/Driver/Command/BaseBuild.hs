@@ -37,7 +37,7 @@ cmdBaseBuild :: Config  -> ErrorT String IO ()
 cmdBaseBuild config
  = do   let builder     = configBuilder config
         let target      = buildTarget builder
-
+        
         -- Ensure the lib dir exists.
         exists   <- liftIO $ doesDirectoryExist $ buildBaseLibDir builder
         when (not exists)
@@ -49,9 +49,10 @@ cmdBaseBuild config
         mapM_ (cmdCompile config) srcLiteFiles
 
         -- Build all the .dcs files.
+        let config'      = config { configInferTypes = True }
         let srcSaltFiles = map (buildBaseSrcDir builder </>) (baseSaltFiles builder)
         let objSaltFiles = map (flip replaceExtension "o")   srcSaltFiles
-        mapM_ (cmdCompile config) srcSaltFiles
+        mapM_ (cmdCompile config') srcSaltFiles
 
         -- Build all the .c files.
         let srcSeaFiles  = map (buildBaseSrcDir builder </>) (baseSeaFiles builder)

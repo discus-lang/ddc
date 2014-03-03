@@ -42,7 +42,6 @@ foo (x : Unit)
 :set Synth
 :load..
 module Test with letrec
-
 id [a : Data] (x : a) : a
  = x
 
