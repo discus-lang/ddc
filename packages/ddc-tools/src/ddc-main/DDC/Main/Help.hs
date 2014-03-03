@@ -3,7 +3,7 @@ module DDC.Main.Help where
 
 -- | The version identifier string.
 version :: String
-version = "The Disciplined Disciple Compiler, version 0.3.3"
+version = "The Disciplined Disciple Compiler, version 0.4.0"
 
 
 -- | What to print when we have no input files.
@@ -21,7 +21,6 @@ hello   = unlines
 --     -taint-avoid-type-checks    Avoid type checking if possible.
 --                                 Exactly how much checking is avoided depends
 --                                 on the compilation mode. 
---  
 help :: String
 help    = unlines
         [ version
