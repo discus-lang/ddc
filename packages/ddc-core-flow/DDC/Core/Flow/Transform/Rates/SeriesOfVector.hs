@@ -21,9 +21,6 @@ import qualified Data.Map               as Map
 import           Data.Maybe             (catMaybes)
 import qualified Data.Set               as Set
 
-import DDC.Core.Pretty (ppr)
-import Debug.Trace
-
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
  = let body       = deannotate (const Nothing)
@@ -40,7 +37,7 @@ seriesOfVectorModule mm
 
 
    in  -- trace ("ORIGINAL:"++ show (ppr $ moduleBody mm))
-       trace ("MODULE:" ++ show (ppr body'))
+       -- trace ("MODULE:" ++ show (ppr body'))
        (mm { moduleBody = body' }, errs)
        
 
@@ -99,9 +96,9 @@ seriesOfVectorFunction fun
 
         binds'    <- orderBinds           binds loops
 
-         -- True <- trace ("TYMAP:" ++ show tymap) return True
-        True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) 
-                return True
+        -- True <- trace ("TYMAP:" ++ show tymap) return True
+        -- True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) 
+        --         return True
 
         let outputs = map lOutputs loops
         let inputs  = map lInputs  loops
@@ -157,8 +154,8 @@ schedule graph equivs rets
        -- Use the original graph to find vars that cross loop boundaries
        outputs       = scheduleOutputs loops graph rets
        inputs        = scheduleInputs  loops graph
-   in  trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) 
-        return $ zipWith3 Loop loops outputs inputs
+   in  -- trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) 
+       return $ zipWith3 Loop loops outputs inputs
 
 scheduleTypes :: Graph -> EquivClass -> [Name] -> ([(Name, Map.Map Name Int)], Graph)
 scheduleTypes graph types type_order
@@ -397,9 +394,7 @@ wrapSeriesX equivs outputs name ty xx wrap
              wrap'fill
 
    OpVectorFilter
-    | trace "Before args.." True
-    , [tA, p, vA]       <- args
-    , trace "Here I am!!!" True
+    | [tA, p, vA]       <- args
     , XVar (UName nvA)  <- vA
     , tkA               <- klokT nvA
     , kA                <- klok nvA
