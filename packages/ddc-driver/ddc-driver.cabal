@@ -17,24 +17,25 @@ Description:
 
 Library
   Build-depends:
-        base            >= 4.6 && < 4.8,
-        process         >= 1.1 && < 1.3,
-        deepseq         == 1.3.*,
-        containers      == 0.5.*,
-        filepath        == 1.3.*,
-        mtl             == 2.1.*,
-        directory       == 1.2.*,
-        transformers    == 0.3.*,
-        ddc-base        == 0.3.3.*,
-        ddc-core        == 0.3.3.*,
-        ddc-core-eval   == 0.3.3.*,
-        ddc-core-simpl  == 0.3.3.*,
-        ddc-core-salt   == 0.3.3.*,
-        ddc-core-llvm   == 0.3.3.*,
-        ddc-core-flow   == 0.3.3.*,
-        ddc-core-tetra  == 0.3.3.*,
-        ddc-build       == 0.3.3.*,
-        ddc-interface   == 0.3.3.*
+        base             >= 4.6 && < 4.8,
+        process          >= 1.1 && < 1.3,
+        deepseq          == 1.3.*,
+        containers       == 0.5.*,
+        filepath         == 1.3.*,
+        mtl              == 2.1.*,
+        directory        == 1.2.*,
+        transformers     == 0.3.*,
+        ddc-base         == 0.3.3.*,
+        ddc-core         == 0.3.3.*,
+        ddc-core-eval    == 0.3.3.*,
+        ddc-core-simpl   == 0.3.3.*,
+        ddc-core-salt    == 0.3.3.*,
+        ddc-core-llvm    == 0.3.3.*,
+        ddc-core-flow    == 0.3.3.*,
+        ddc-core-tetra   == 0.3.3.*,
+        ddc-source-tetra == 0.3.3.*,
+        ddc-build        == 0.3.3.*,
+        ddc-interface    == 0.3.3.*
   
   Exposed-modules:
         DDC.Driver.Command.Flow.Concretize

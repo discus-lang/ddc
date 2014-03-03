@@ -42,7 +42,9 @@ Library
   Other-modules:
         DDC.Core.Llvm.Convert.Atom
         DDC.Core.Llvm.Convert.Erase
+        DDC.Core.Llvm.Convert.Exp
         DDC.Core.Llvm.Convert.Prim
+        DDC.Core.Llvm.Convert.Super
         DDC.Core.Llvm.Convert.Type
         DDC.Core.Llvm.LlvmM
 
