@@ -1,5 +1,5 @@
 Name:           ddc-source-tetra
-Version:        0.3.3.0
+Version:        0.4.0.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -20,10 +20,10 @@ Library
         containers       == 0.5.*,
         transformers     == 0.3.*,
         mtl              == 2.1.*,
-        ddc-base         == 0.3.3.*,
-        ddc-core         == 0.3.3.*,
-        ddc-core-salt    == 0.3.3.*,
-        ddc-core-tetra   == 0.3.3.*
+        ddc-base         == 0.4.0.*,
+        ddc-core         == 0.4.0.*,
+        ddc-core-salt    == 0.4.0.*,
+        ddc-core-tetra   == 0.4.0.*
 
   Exposed-modules:
         DDC.Source.Tetra.Desugar.Defix.Error
