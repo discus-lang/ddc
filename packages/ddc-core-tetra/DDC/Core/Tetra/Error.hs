@@ -3,7 +3,7 @@ module DDC.Core.Tetra.Error
         (Error (..))
 where
 import DDC.Core.Tetra.Prim
-import DDC.Type.Pretty
+import DDC.Core.Pretty
 import DDC.Type.Exp
 
 

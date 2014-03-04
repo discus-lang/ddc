@@ -9,9 +9,9 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , tWord)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Compounds.Annot
 import DDC.Core.Exp.Simple
+import DDC.Core.Salt.Name       (readPrimTyCon)
 
 
 -- | Yield the kind of a type constructor.

@@ -4,9 +4,9 @@ module DDC.Core.Tetra.Prim.OpCast
         , typePrimCast)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Salt.Name.PrimCast
 import DDC.Type.Compounds
 import DDC.Type.Exp
+import DDC.Core.Salt.Name       (readPrimCast)
 
 
 -- | Take the type of a primitive numeric cast operator.

@@ -17,7 +17,7 @@ import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
--- | Language profile for Disciple Core Flow.
+-- | Language profile for Disciple Core Tetra.
 profile :: Profile Name 
 profile
         = Profile

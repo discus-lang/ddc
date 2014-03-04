@@ -1,8 +1,7 @@
 
 -- | Pretty printing for Tetra modules and expressions.
 module DDC.Source.Tetra.Pretty
-        ( module DDC.Type.Pretty
-        , module DDC.Core.Pretty
+        ( module DDC.Core.Pretty
         , module DDC.Base.Pretty )
 where
 import DDC.Source.Tetra.Compounds
@@ -11,7 +10,6 @@ import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Core.Pretty
-import DDC.Type.Pretty
 import DDC.Base.Pretty
 
 

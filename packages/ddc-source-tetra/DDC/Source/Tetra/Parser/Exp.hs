@@ -14,7 +14,7 @@ import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Compounds
 
 import DDC.Core.Parser
-        ( Parser (..)
+        ( Parser
         , Context(..)
         , pBinder
         , pWitness

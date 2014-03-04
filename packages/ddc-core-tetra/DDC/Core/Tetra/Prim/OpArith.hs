@@ -4,9 +4,10 @@ module DDC.Core.Tetra.Prim.OpArith
         , typePrimArith)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Salt.Name.PrimArith
 import DDC.Type.Compounds
 import DDC.Type.Exp
+import DDC.Core.Salt.Name       (readPrimArith)
+
 
 
 -- | Take the type of a primitive arithmetic operator.

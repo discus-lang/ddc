@@ -12,9 +12,10 @@ module DDC.Core.Tetra.Prim.Base
         , PrimCast      (..))
 where
 import Data.Typeable
-import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimArith
-import DDC.Core.Salt.Name.PrimCast
+import DDC.Core.Salt.Name
+        ( PrimTyCon     (..)
+        , PrimArith     (..)
+        , PrimCast      (..))
 
 
 -- | Names of things used in Disciple Core Tetra.
@@ -25,13 +26,13 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
-        -- Baked-in type constructors ----------
+        -- | Baked-in type constructors.
         | NameTyConTetra        TyConTetra
 
-        -- Baked-in data constructors ----------
+        -- | Baked-in data constructors.
         | NameDaConTetra        DaConTetra
 
-        -- Baked-in operators ------------------
+        -- | Baked-in operators.
         | NameOpStore           OpStore
 
         -- Machine primitives ------------------
@@ -102,6 +103,7 @@ data TyConTetra
 
 
 -- DaConTetra ----------------------------------------------------------------
+-- | Data Constructors.
 data DaConTetra
         -- | @TN#@. Tuple data constructors.
         = DaConTetraTuple Int

@@ -62,14 +62,17 @@ tRef tR tA
  where k = kRegion `kFun` kData `kFun` kData
 
 
+-- | Construct a tuple type.
 tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConTetra (TyConTetraTuple (length tys))) tys
 
 
+-- | Construct a boxed representation type.
 tBoxed  :: Type Name -> Type Name
 tBoxed t        = tApp (tConTyConTetra TyConTetraB) t
 
 
+-- | Construct an unboxed representation type.
 tUnboxed :: Type Name -> Type Name
 tUnboxed t      = tApp (tConTyConTetra TyConTetraU) t
 

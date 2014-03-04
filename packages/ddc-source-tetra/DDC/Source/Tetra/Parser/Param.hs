@@ -6,7 +6,7 @@ module DDC.Source.Tetra.Parser.Param
         , expOfParams)
 where
 import DDC.Source.Tetra.Exp
-import DDC.Core.Parser.Param    
+import DDC.Core.Parser
         ( ParamSpec(..)
         , funTypeOfParams
         , pBindParamSpec)

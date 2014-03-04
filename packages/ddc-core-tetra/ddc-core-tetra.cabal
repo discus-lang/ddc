@@ -28,16 +28,17 @@ Library
 
   Exposed-modules:
         DDC.Core.Tetra.Transform.Boxing
-        DDC.Core.Tetra.Check
         DDC.Core.Tetra.Compounds
         DDC.Core.Tetra.Convert
         DDC.Core.Tetra.Env
-        DDC.Core.Tetra.Error
         DDC.Core.Tetra.Prim
-        DDC.Core.Tetra.Profile
         DDC.Core.Tetra
 
   Other-modules:
+        DDC.Core.Tetra.Check
+        DDC.Core.Tetra.Error
+        DDC.Core.Tetra.Profile
+        
         DDC.Core.Tetra.Convert.Base
         DDC.Core.Tetra.Convert.Boxing
         DDC.Core.Tetra.Convert.Data

@@ -4,18 +4,26 @@ module DDC.Core.Parser
         , Context       (..)
         , contextOfProfile
 
-        -- * Modules
-        , pModule
-
-          -- * Expressions
-        , pExp
-        , pExpApp
-        , pExpAtom
-
           -- * Types
         , pType
         , pTypeApp
         , pTypeAtom
+
+        -- * Modules
+        , pModule
+        , pModuleName
+
+        -- * Expressions
+        , pExp
+        , pExpApp
+        , pExpAtom
+
+        -- * Function Parameters
+        , ParamSpec(..)
+        , funTypeOfParams
+        , expOfParams
+        , pBindParamSpecAnnot
+        , pBindParamSpec
 
           -- * Witnesses
         , pWitness
@@ -47,4 +55,4 @@ import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Exp
 import DDC.Core.Parser.Module
-
+import DDC.Core.Parser.Param

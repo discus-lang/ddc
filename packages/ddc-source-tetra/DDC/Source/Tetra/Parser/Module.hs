@@ -12,13 +12,18 @@ import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
-import DDC.Core.Parser.Type
-import DDC.Core.Parser.Context
-import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Pretty
 import Control.Monad
 import qualified DDC.Base.Parser        as P
+
+import DDC.Core.Parser
+        ( Parser
+        , Context       (..)
+        , pModuleName
+        , pName
+        , pVar
+        , pTok,         pTokSP)
 
 
 -- Module ---------------------------------------------------------------------

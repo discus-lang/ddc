@@ -35,11 +35,20 @@ module DDC.Source.Tetra.Parser
         , pTok
         , pTokAs)
 where
-import DDC.Core.Parser.Base
-import DDC.Core.Parser.Context
-import DDC.Core.Parser.Witness
-import DDC.Core.Parser.Type
 import DDC.Source.Tetra.Parser.Exp
 import DDC.Source.Tetra.Parser.Module
 
+import DDC.Core.Parser
+        ( Parser
+        , Context       (..)
+        , pWitness
+        , pWitnessApp
+        , pWitnessAtom
+        , pVar
+        , pCon
+        , pName
+        , pBinder
+        , pIndex        
+        , pLit
+        , pTok, pTokAs)
         

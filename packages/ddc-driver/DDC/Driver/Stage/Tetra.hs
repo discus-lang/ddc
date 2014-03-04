@@ -11,8 +11,6 @@ import DDC.Build.Pipeline
 import DDC.Base.Pretty
 import qualified DDC.Build.Language.Tetra       as BE
 import qualified DDC.Build.Builder              as B
-import qualified DDC.Core.Tetra.Profile         as CE
-import qualified DDC.Core.Tetra.Error           as CE
 import qualified DDC.Core.Tetra                 as CE
 import qualified DDC.Core.Salt                  as CS
 import qualified DDC.Core.Check                 as C

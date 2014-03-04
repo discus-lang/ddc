@@ -20,7 +20,7 @@ import qualified DDC.Build.Language.Tetra       as CE
 import qualified DDC.Core.Tetra                 as CE
 import qualified DDC.Core.Tetra.Env             as CE
 
-import qualified DDC.Core.Parser.Context        as C
+import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Transform.SpreadX     as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Load                  as C

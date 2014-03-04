@@ -3,6 +3,16 @@ module DDC.Core.Tetra
         ( -- * Language profile
           profile
 
+          -- * Program Lexing
+        , lexModuleString
+        , lexExpString
+
+          -- * Checking
+        , checkModule
+
+          -- * Conversion
+        , saltOfTetraModule
+
           -- * Names
         , Name          (..)
         , TyConTetra    (..)
@@ -19,13 +29,16 @@ module DDC.Core.Tetra
         , readPrimTyCon
         , readPrimArith
 
-          -- * Program Lexing
-        , lexModuleString
-        , lexExpString
+        -- * Name Generation
+        , freshT
+        , freshX
 
-          -- * Conversion
-        , saltOfTetraModule)
+        -- * Errors
+        , Error(..))
+
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Profile
-import DDC.Core.Tetra.Convert
+import DDC.Core.Tetra.Convert   hiding (Error(..))
+import DDC.Core.Tetra.Check
+import DDC.Core.Tetra.Error

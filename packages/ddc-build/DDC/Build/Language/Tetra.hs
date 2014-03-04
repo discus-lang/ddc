@@ -12,9 +12,6 @@ import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
 import qualified DDC.Core.Tetra         as E
-import qualified DDC.Core.Tetra.Check   as E
-import qualified DDC.Core.Tetra.Error   as E
-import qualified DDC.Core.Tetra.Profile as E
 import qualified Data.Map               as Map
 
 
