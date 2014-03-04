@@ -57,18 +57,24 @@ data Method
         deriving (Eq, Show)
 
 
+-- | Config for producing code with just scalar operations.
 defaultConfigScalar :: Config
 defaultConfigScalar
         = Config
         { configMethod  = MethodScalar }
 
 
+-- | Config for producing code with vector operations, 
+--   where the loops just handle a size of data which is an even multiple
+--   of the vector width.
 defaultConfigKernel :: Config
 defaultConfigKernel
         = Config
         { configMethod  = MethodKernel (Lifting 8)}
 
 
+-- | Config for producing code with vector operations, 
+--   where the loops handle arbitrary data sizes, of any number of elements.
 defaultConfigVector :: Config
 defaultConfigVector
         = Config

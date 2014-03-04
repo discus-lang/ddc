@@ -31,37 +31,37 @@ data Operator
         -----------------------------------------
         -- | Flat replicate.
         | OpRep
-        { -- | Binder for result series.
+        { -- Binder for result series.
           opResultSeries        :: BindF
 
-          -- | Rate of output series.
+          -- Rate of output series.
         , opOutputRate          :: TypeF
 
-          -- | Type of the elements.
+          -- Type of the elements.
         , opElemType            :: TypeF
 
-          -- | Exp to compute the element to be replicated.
+          -- Exp to compute the element to be replicated.
         , opInputExp            :: ExpF }
 
         -----------------------------------------
         -- | Segmented replicate.
         | OpReps
-        { -- | Binder for result series.
+        { -- Binder for result series.
           opResultSeries        :: BindF
 
-          -- | Rate of input series.
+          -- Rate of input series.
         , opInputRate           :: TypeF
 
-          -- | Rate of output series.
+          -- Rate of output series.
         , opOutputRate          :: TypeF
 
-          -- | Type of the elements.
+          -- Type of the elements.
         , opElemType            :: TypeF
 
-          -- | Bound for the segment descriptor.
+          -- Bound for the segment descriptor.
         , opSegdBound           :: BoundF
 
-          -- | Bound for the input series.
+          -- Bound for the input series.
         , opInputSeries         :: BoundF }
 
         -----------------------------------------
@@ -82,59 +82,59 @@ data Operator
         -----------------------------------------
         -- | Fill a vector with elements from a series.
         | OpFill
-        { -- | Binder for result value (a Unit)
+        { -- Binder for result value (a Unit)
           opResultBind          :: BindF
 
-          -- | Bound of target vector.
+          -- Bound of target vector.
         , opTargetVector        :: BoundF
 
-          -- | Rate of input series.
+          -- Rate of input series.
         , opInputRate           :: TypeF
 
-          -- | Bound of input series.
+          -- Bound of input series.
         , opInputSeries         :: BoundF 
 
-          -- | Type of the elements.
+          -- Type of the elements.
         , opElemType            :: TypeF }
 
         -----------------------------------------
         -- | Gather elements from a vector into a series.
         | OpGather
-        { -- | Binder for result series.
+        { -- Binder for result series.
           opResultBind          :: BindF
 
-          -- | Bound  of source elem vector.
+          -- Bound  of source elem vector.
         , opSourceVector        :: BoundF
 
-          -- | Bound  of source index series.
+          -- Bound  of source index series.
         , opSourceIndices       :: BoundF
 
-          -- | Rate of input and output series.
+          -- Rate of input and output series.
         , opInputRate           :: TypeF
 
-          -- | Type of gathered elements.
+          -- Type of gathered elements.
         , opElemType            :: TypeF 
         }
 
         -----------------------------------------
         -- | Scatter elements from a series into a vector.
         | OpScatter
-        { -- | Binder for result value (a Unit)
+        { -- Binder for result value (a Unit)
           opResultBind          :: BindF
 
-          -- | Bound of target vector.
+          -- Bound of target vector.
         , opTargetVector        :: BoundF
 
-          -- | Bound of source index series.
+          -- Bound of source index series.
         , opSourceIndices       :: BoundF
 
-          -- | Bound of source element series.
+          -- Bound of source element series.
         , opSourceElems         :: BoundF
 
-          -- | Rate of input serieses.
+          -- Rate of input serieses.
         , opInputRate           :: TypeF
 
-          -- | Type of elements.
+          -- Type of elements.
         , opElemType            :: TypeF
         }
 
@@ -144,68 +144,68 @@ data Operator
         --   'map' operator as well as 'zipWith' like operators where the input
         --   lengths are identical.
         | OpMap
-        { -- | Arity of map, number of input streams.
+        { -- Arity of map, number of input streams.
           opArity               :: Int
 
-          -- | Binder for result series.
+          -- Binder for result series.
         , opResultSeries        :: BindF
 
-          -- | Rate of all input series.
+          -- Rate of all input series.
         , opInputRate           :: TypeF
 
-          -- | Names for input series.
+          -- Names for input series.
         , opInputSeriess        :: [BoundF]
 
-          -- | Worker input parameters
+          -- Worker input parameters
         , opWorkerParams        :: [BindF]
 
-          -- | Worker body
+          -- Worker body
         , opWorkerBody          :: ExpF
         }
 
         -----------------------------------------
         -- | Pack a series according to a selector.
         | OpPack
-        { -- | Binder for result series.
+        { -- Binder for result series.
           opResultSeries        :: BindF
 
-          -- | Rate of input series.
+          -- Rate of input series.
         , opInputRate           :: TypeF
 
-          -- | Bound of input series.
+          -- Bound of input series.
         , opInputSeries         :: BoundF
 
-          -- | Rate of output series.
+          -- Rate of output series.
         , opOutputRate          :: TypeF
 
-          -- | Type of a series element.
+          -- Type of a series element.
         , opElemType            :: TypeF }
 
         -----------------------------------------
         -- | Reduce the elements of a series into a reference.
         | OpReduce
-        { -- | Binder for result value (a Unit)
+        { -- Binder for result value (a Unit)
           opResultBind          :: BindF
 
-          -- | Bound of target Ref.
+          -- Bound of target Ref.
         , opTargetRef           :: BoundF
 
-          -- | Rate of input series.
+          -- Rate of input series.
         , opInputRate           :: TypeF
 
-          -- | Bound of input series.
+          -- Bound of input series.
         , opInputSeries         :: BoundF
 
-          -- | Neutral element.
+          -- Neutral element.
         , opZero                :: ExpF
 
-          -- | Worker parameter for accumulator input.
+          -- Worker parameter for accumulator input.
         , opWorkerParamAcc      :: BindF
 
-          -- | Worker parameter for element input.
+          -- Worker parameter for element input.
         , opWorkerParamElem     :: BindF
 
-          -- | Worker body.
+          -- Worker body.
         , opWorkerBody          :: ExpF
         }
         deriving Show

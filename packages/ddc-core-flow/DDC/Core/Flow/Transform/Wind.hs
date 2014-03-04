@@ -205,6 +205,7 @@ xSubInt a x1 x2
 
 
 -------------------------------------------------------------------------------
+-- | Apply the wind transform to a single module.
 windModule :: Module () Name -> Module () Name
 windModule m
  = let  body'   = windModuleBodyX (moduleBody m)

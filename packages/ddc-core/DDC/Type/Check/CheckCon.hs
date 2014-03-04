@@ -1,4 +1,4 @@
-{-# OPTIONS_HADDOCK hide #-}
+
 module DDC.Type.Check.CheckCon
         ( takeKindOfTyCon
         , takeSortOfKiCon
