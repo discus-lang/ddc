@@ -137,7 +137,7 @@ pprImportType (n, isrc)
          <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
 
 
--- Pretty print an imported value definition.
+-- | Pretty print an imported value definition.
 pprImportValue :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportValue (n, isrc)
  = case isrc of

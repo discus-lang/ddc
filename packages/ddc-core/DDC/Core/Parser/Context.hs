@@ -16,7 +16,7 @@ data Context
         , contextFunctionalClosures     :: Bool }
 
 
--- | Slurp an initital Context from a Profile
+-- | Slurp an initital `Context` from a language `Profile`.
 contextOfProfile :: Profile n -> Context
 contextOfProfile profile
         = Context

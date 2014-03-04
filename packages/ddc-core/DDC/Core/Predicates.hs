@@ -99,6 +99,7 @@ isXApp xx
 
 
 -- Let Bindings ---------------------------------------------------------------
+-- | Check whether an expression is a `XLet`.
 isXLet :: Exp a n -> Bool
 isXLet xx
  = case xx of
@@ -107,7 +108,7 @@ isXLet xx
         
 
 -- Type and Witness -----------------------------------------------------------
--- | Check whether an expression is an `XType`
+-- | Check whether an expression is an `XType`.
 isXType :: Exp a n -> Bool
 isXType xx
  = case xx of
@@ -115,7 +116,7 @@ isXType xx
         _               -> False
 
 
--- | Check whether an expression is an `XWitness`
+-- | Check whether an expression is an `XWitness`.
 isXWitness :: Exp a n -> Bool
 isXWitness xx
  = case xx of

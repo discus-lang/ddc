@@ -134,10 +134,10 @@ loadModuleFromString fragment filePath lineStart mode src
         loadModuleFromTokens fragment filePath mode toks
 
 
--- | Parse and type check a core module.
+-- | Parse and type check a core module from some tokens.
 loadModuleFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
-        => Fragment n err               -- ^ Language fragment definition.s
+        => Fragment n err               -- ^ Language fragment definition.
         -> FilePath                     -- ^ Path to source file for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> [Token (Tok n)]              -- ^ Source tokens.
@@ -313,7 +313,7 @@ loadWitnessFromString fragment sourceName str
        loadWitnessFromTokens fragment sourceName toks
 
 
--- | Parse and check a witness, returning it along with its type.
+-- | Parse and check a witness from some tokens, returning it along with its type.
 loadWitnessFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
         => Fragment n err       -- ^ Language fragment profile.

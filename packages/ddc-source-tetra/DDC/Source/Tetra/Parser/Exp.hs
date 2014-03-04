@@ -13,15 +13,27 @@ import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Compounds
 
-import DDC.Core.Parser.Witness
-import DDC.Core.Parser.Type
-        ( pBinder
+import DDC.Core.Parser
+        ( Parser (..)
+        , Context(..)
+        , pBinder
+        , pWitness
+        , pWitnessAtom
         , pType
         , pTypeAtom
-        , pTypeApp)
+        , pTypeApp
+        , pCon
+        , pConSP
+        , pLit
+        , pLitSP
+        , pIndexSP
+        , pOpSP
+        , pOpVarSP
+        , pVarSP
+        , pTok
+        , pTokSP)
 
-import DDC.Core.Parser.Context          (Context (..))
-import DDC.Core.Parser.Base
+
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P

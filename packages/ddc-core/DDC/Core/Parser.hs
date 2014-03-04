@@ -23,21 +23,21 @@ module DDC.Core.Parser
         , pWitnessAtom
 
           -- * Constructors
-        , pCon
-        , pLit
+        , pCon, pConSP
+        , pLit, pLitSP
 
           -- * Variables
+        , pIndex,       pIndexSP
+        , pVar,         pVarSP
         , pBinder
-        , pIndex
-        , pVar
         , pName
-
+        
           -- * Infix operators
         , pOpSP
         , pOpVarSP
 
           -- * Raw Tokens
-        , pTok
+        , pTok,         pTokSP
         , pTokAs)
 
 where

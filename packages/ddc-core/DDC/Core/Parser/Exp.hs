@@ -151,7 +151,7 @@ pExp c
  <?> "an expression"
 
 
--- Applications.
+-- | Parse a function application.
 pExpApp :: Ord n => Context -> Parser n (Exp SourcePos n)
 pExpApp c
   = do  (x1, _)        <- pExpAtomSP c
@@ -305,6 +305,8 @@ pBinds c
 
 
 -- Bindings -------------------------------------------------------------------
+-- | Parse some `Lets`, also returning the source position where they
+--   started.
 pLetsSP :: Ord n 
         => Context -> Parser n (Lets SourcePos n, SourcePos)
 pLetsSP c

@@ -84,7 +84,7 @@ newPos
 
 
 -- CheckTrace -----------------------------------------------------------------
--- Trace for the type checker.
+-- | Human readable trace of the type checker.
 data CheckTrace 
         = CheckTrace
         { checkTraceDoc :: Doc }

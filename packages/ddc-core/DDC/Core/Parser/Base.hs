@@ -80,7 +80,7 @@ pConSP    = P.pTokMaybeSP f
         f _             = Nothing
 
 
--- | Parse a literal
+-- | Parse a literal.
 pLit :: Parser n n
 pLit    = P.pTokMaybe f
  where  f (KN (KLit n)) = Just n
@@ -110,7 +110,7 @@ pVarSP  =   P.pTokMaybeSP f
         f _                     = Nothing
 
 
--- | Parse a deBruijn index
+-- | Parse a deBruijn index.
 pIndex :: Parser n Int
 pIndex  =   P.pTokMaybe f
         <?> "an index"

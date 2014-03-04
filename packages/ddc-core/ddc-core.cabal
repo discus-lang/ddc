@@ -43,14 +43,7 @@ Library
 
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Tokens
-        DDC.Core.Parser.Base
-        DDC.Core.Parser.Context
-        DDC.Core.Parser.Exp
-        DDC.Core.Parser.Module
-        DDC.Core.Parser.Param
-        DDC.Core.Parser.Type
-        DDC.Core.Parser.Witness
-
+        
         DDC.Core.Transform.Annotate
         DDC.Core.Transform.Deannotate
         DDC.Core.Transform.LiftT
@@ -131,6 +124,14 @@ Library
         DDC.Core.Exp.Pat
         DDC.Core.Exp.WiCon
         
+        DDC.Core.Parser.Base
+        DDC.Core.Parser.Context
+        DDC.Core.Parser.Exp
+        DDC.Core.Parser.Module
+        DDC.Core.Parser.Param
+        DDC.Core.Parser.Type
+        DDC.Core.Parser.Witness
+
         DDC.Core.Fragment.Compliance
         DDC.Core.Fragment.Error
         DDC.Core.Fragment.Feature
