@@ -3,7 +3,7 @@ module DDC.Core.Flow.Process.Pretty where
 import DDC.Core.Flow.Process.Process
 import DDC.Core.Flow.Process.Operator
 import DDC.Base.Pretty
-import DDC.Type.Pretty          ()
+import DDC.Core.Pretty          ()
 
 
 instance Pretty Process where

@@ -75,12 +75,22 @@ import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpVector
 import DDC.Core.Flow.Prim.OpPrim
 
-import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimArith
-import DDC.Core.Salt.Name.PrimVec
-import DDC.Core.Salt.Name.PrimCast
-import DDC.Core.Salt.Name.Lit
-
+import DDC.Core.Salt.Name
+        ( readPrimTyCon
+        
+        , readPrimArith
+        
+        , readPrimVec
+        , multiOfPrimVec
+        , liftPrimArithToVec
+        , lowerPrimVecToArith
+        
+        , readPrimCast
+        , readLitPrimNat
+        , readLitPrimInt
+        , readLitPrimWordOfBits
+        , readLitPrimFloatOfBits)
+        
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char        

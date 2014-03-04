@@ -24,20 +24,6 @@ Library
         ddc-core        == 0.4.0.*
 
   Exposed-modules:
-        DDC.Core.Salt.Convert.Exp
-        DDC.Core.Salt.Convert.Init
-        DDC.Core.Salt.Convert.Name
-        DDC.Core.Salt.Convert.Prim
-        DDC.Core.Salt.Convert.Super
-        DDC.Core.Salt.Convert.Type
-        DDC.Core.Salt.Name.Lit
-        DDC.Core.Salt.Name.PrimArith
-        DDC.Core.Salt.Name.PrimCall
-        DDC.Core.Salt.Name.PrimCast
-        DDC.Core.Salt.Name.PrimControl
-        DDC.Core.Salt.Name.PrimStore
-        DDC.Core.Salt.Name.PrimTyCon
-        DDC.Core.Salt.Name.PrimVec
         DDC.Core.Salt.Compounds
         DDC.Core.Salt.Convert
         DDC.Core.Salt.Env
@@ -54,6 +40,22 @@ Library
         DDC.Core.Lite
 
   Other-modules:
+        DDC.Core.Salt.Convert.Exp
+        DDC.Core.Salt.Convert.Init
+        DDC.Core.Salt.Convert.Name
+        DDC.Core.Salt.Convert.Prim
+        DDC.Core.Salt.Convert.Super
+        DDC.Core.Salt.Convert.Type
+        
+        DDC.Core.Salt.Name.Lit
+        DDC.Core.Salt.Name.PrimArith
+        DDC.Core.Salt.Name.PrimCall
+        DDC.Core.Salt.Name.PrimCast
+        DDC.Core.Salt.Name.PrimControl
+        DDC.Core.Salt.Name.PrimStore
+        DDC.Core.Salt.Name.PrimTyCon
+        DDC.Core.Salt.Name.PrimVec
+        
         DDC.Core.Lite.Convert.Base
         DDC.Core.Lite.Convert.Data
         DDC.Core.Lite.Convert.Type

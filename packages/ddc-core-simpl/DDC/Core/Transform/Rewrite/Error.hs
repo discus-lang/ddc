@@ -4,7 +4,7 @@ module DDC.Core.Transform.Rewrite.Error
 where
 import DDC.Core.Exp
 import DDC.Core.Check                   ()
-import DDC.Type.Pretty
+import DDC.Core.Pretty
 import qualified DDC.Core.Check         as C
 
 

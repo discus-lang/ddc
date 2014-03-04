@@ -31,7 +31,7 @@ import DDC.Type.Predicates
 import DDC.Base.Pretty
 import DDC.Core.Salt                    as A
 import DDC.Core.Salt.Name               as A
-import DDC.Core.Salt.Convert.Name       as A
+import DDC.Core.Salt.Convert            as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
@@ -133,7 +133,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
         (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
-             { declName           = A.sanitizeGlobal strName
+             { declName           = A.sanitizeName strName
              , declLinkage        = External
              , declCallConv       = CC_Ccc
              , declReturnType     = tResult
@@ -145,7 +145,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
  = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
         mkParam t                 = Param t []
    in   Just $ FunctionDecl
-             { declName           = A.sanitizeGlobal strName
+             { declName           = A.sanitizeName strName
              , declLinkage        = External
              , declCallConv       = CC_Ccc
              , declReturnType     = tResult

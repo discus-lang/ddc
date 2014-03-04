@@ -21,7 +21,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty                          ()
 import DDC.Core.Collect
 import DDC.Core.Compounds
-import DDC.Type.Pretty                          ()
+import DDC.Core.Pretty                          ()
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import qualified DDC.Core.Analysis.Usage        as U

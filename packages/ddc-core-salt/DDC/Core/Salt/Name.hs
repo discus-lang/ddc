@@ -15,23 +15,35 @@ module DDC.Core.Salt.Name
           -- * Primitive Operators
         , PrimOp        (..)
 
+          -- * Primative Arithmetic
         , PrimArith     (..)
         , readPrimArith
 
+          -- * Primitive Calls
+        , PrimCall      (..)
+        , readPrimCall
+
+          -- * Primitive Casts
         , PrimCast      (..)
         , readPrimCast
         , primCastPromoteIsValid
         , primCastTruncateIsValid
 
-        , PrimStore     (..)
-        , readPrimStore
-
-        , PrimCall      (..)
-        , readPrimCall
-
+          -- * Primitive Control
         , PrimControl   (..)
         , readPrimControl
 
+          -- * Primitive Store
+        , PrimStore     (..)
+        , readPrimStore
+
+          -- * Primitive Vector
+        , PrimVec       (..)
+        , readPrimVec
+        , multiOfPrimVec
+        , liftPrimArithToVec
+        , lowerPrimVecToArith
+    
           -- * Primitive Literals
         , readLitInteger
         , readLitPrimNat
@@ -42,12 +54,13 @@ module DDC.Core.Salt.Name
           -- * Name Parsing
         , readName)
 where
-import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimArith
 import DDC.Core.Salt.Name.PrimCall
 import DDC.Core.Salt.Name.PrimCast
 import DDC.Core.Salt.Name.PrimControl
 import DDC.Core.Salt.Name.PrimStore
+import DDC.Core.Salt.Name.PrimTyCon
+import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Data.Typeable

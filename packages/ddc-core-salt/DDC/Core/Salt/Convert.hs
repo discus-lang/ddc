@@ -9,11 +9,18 @@
 --        (these are added by DDC.Core.Salt.Convert.Transfer)
 --      
 module DDC.Core.Salt.Convert
-        ( Error (..)
-        , seaOfSaltModule)
+        ( seaOfSaltModule
+        , initRuntime
+        , seaNameOfSuper
+        , seaNameOfLocal
+        , sanitizeName
+        , Error (..))
+
 where
-import DDC.Core.Salt.Convert.Super
 import DDC.Core.Salt.Convert.Type
+import DDC.Core.Salt.Convert.Init
+import DDC.Core.Salt.Convert.Name
+import DDC.Core.Salt.Convert.Super
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Platform

@@ -15,10 +15,11 @@ module DDC.Core.Flow.Prim.Base
         , PrimCast      (..))
 where
 import Data.Typeable
-import DDC.Core.Salt.Name.PrimTyCon
-import DDC.Core.Salt.Name.PrimArith
-import DDC.Core.Salt.Name.PrimVec
-import DDC.Core.Salt.Name.PrimCast
+import DDC.Core.Salt.Name
+        ( PrimTyCon     (..)
+        , PrimArith     (..)
+        , PrimVec       (..)
+        , PrimCast      (..))
 
 
 -- | Names of things used in Disciple Core Flow.

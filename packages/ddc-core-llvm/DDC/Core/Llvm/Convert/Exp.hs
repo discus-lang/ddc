@@ -20,7 +20,7 @@ import Control.Monad
 import Data.Maybe
 import Data.Sequence                            (Seq, (<|), (|>), (><))
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Convert.Name     as A
+import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq

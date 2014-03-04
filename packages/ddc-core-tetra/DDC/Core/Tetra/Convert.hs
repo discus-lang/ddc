@@ -7,7 +7,7 @@ where
 import DDC.Core.Tetra.Convert.Exp
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Base
-import DDC.Core.Salt.Convert.Init
+import DDC.Core.Salt.Convert             (initRuntime)
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
 import DDC.Core.Compounds

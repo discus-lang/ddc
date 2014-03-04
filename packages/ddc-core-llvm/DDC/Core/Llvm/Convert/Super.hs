@@ -14,7 +14,7 @@ import DDC.Type.Env                             (KindEnv, TypeEnv)
 import Control.Monad.State.Strict               (gets)
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Convert.Name     as A
+import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env

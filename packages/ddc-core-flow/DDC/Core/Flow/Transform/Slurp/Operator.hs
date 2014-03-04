@@ -8,7 +8,7 @@ import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds.Simple
-import DDC.Type.Pretty                  ()
+import DDC.Core.Pretty                  ()
 import Control.Monad
 
 
