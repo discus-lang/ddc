@@ -123,7 +123,7 @@ transformTypeUsage profile kenv tenv trans xx
 
         Left _
          -> error $  renderIndent
-         $  vcat [ text "DDC.Core.Transform.Prune: core type error" ]
+         $  vcat [ text "ddc-coe-simpl.Prune: core type error" ]
 
 
 -------------------------------------------------------------------------------

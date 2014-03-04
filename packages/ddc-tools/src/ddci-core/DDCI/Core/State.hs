@@ -188,7 +188,7 @@ getActiveBuilder state
          -> do  config   <- getDefaultBuilderConfig 
                 mBuilder <- determineDefaultBuilder config
                 case mBuilder of
-                 Nothing      -> error "getActiveBuilder unrecognised host platform"
+                 Nothing      -> error "ddci-core.getActiveBuilder: unrecognised host platform"
                  Just builder -> return builder
 
 

@@ -53,7 +53,7 @@ runtimeImportKinds
  = Map.fromList
    [ rn ukTop ]
  where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t)
-         rn _   = error "runtimeImportKinds: all runtime bindings must be named."
+         rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 
 -- | Type signatures for runtime funtions that we use when converting to Salt.
@@ -67,7 +67,7 @@ runtimeImportTypes
    , rn utAllocRawSmall
    , rn utPayloadOfRawSmall ]
  where   rn (UName n, t)  = (n, ImportSourceSea (renderPlain $ ppr n) t)
-         rn _   = error "runtimeImportTypes: all runtime bindings must be named."
+         rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 
 -- Regions ----------------------------

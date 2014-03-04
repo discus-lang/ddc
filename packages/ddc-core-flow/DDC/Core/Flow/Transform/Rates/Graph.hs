@@ -165,6 +165,6 @@ mlookup str m k
  | Just v <- Map.lookup k m
  = v
  | otherwise
- = error ("mlookup: no key " ++ str)
+ = error ("ddc-core-flow.mlookup: no key " ++ str)
 
 

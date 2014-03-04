@@ -42,7 +42,7 @@ instance Pretty Lit where
  ppr ll
   = case ll of
         LitInt   t i    -> ppr t <+> integer i
-        LitFloat{}      -> error "ppr[Lit]: floats aren't handled yet"
+        LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
         LitNull  _      -> text "null"
         LitUndef _      -> text "undef"
 
@@ -52,7 +52,7 @@ pprPlainL :: Lit -> Doc
 pprPlainL ll
  = case ll of
         LitInt _ i      -> integer i
-        LitFloat{}      -> error "ppr[Lit]: floats aren't handled yet"
+        LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
         LitNull  _      -> text "null"
         LitUndef _      -> text "undef"
 

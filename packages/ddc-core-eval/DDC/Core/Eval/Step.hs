@@ -165,7 +165,7 @@ step store xx
               --  This should never error, as we took as many args
               --  as we had wnf flags.
               stepArg _          []     
-               = error "stepArg: no more args"
+               = error "ddc-core-eval.stepArg: no more args"
 
               stepArg []         xs
                = Right (store, xs)

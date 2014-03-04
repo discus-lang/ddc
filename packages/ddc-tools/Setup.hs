@@ -33,5 +33,5 @@ hookPostInstall _args _flags desc buildInfo
         -- Run the basebuild command, which builds the library.
         code            <- system $ ddcExe ++ " -basebuild -O"
         case code of
-         ExitFailure _  -> error "Failed!"
+         ExitFailure _  -> error "ddc-tools.postHookInstall: Failed!"
          ExitSuccess    -> return ()

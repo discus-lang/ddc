@@ -226,7 +226,7 @@ setMode config newMode
  | otherwise
  = case flagOfMode newMode of
     Nothing     
-     -> error "DDC.Main.Args.setMode: not setting mode to ModeNone"
+     -> error "ddc-main.setMode: not setting mode to ModeNone"
 
     Just newFlag
      -> case flagOfMode $ configMode config of

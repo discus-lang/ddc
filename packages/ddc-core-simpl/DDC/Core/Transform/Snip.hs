@@ -97,7 +97,7 @@ enterX config arities xx
    in case xx of
         -- The snipX function shouldn't have called us with an XApp.
         XApp{}           
-         -> error "DDC.Core.Transform.Snip: snipX shouldn't give us an XApp"
+         -> error "ddc-core-simpl.Snip: snipX shouldn't give us an XApp"
 
         -- leafy constructors
         XVar{}           -> xx

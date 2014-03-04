@@ -222,7 +222,7 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
 -- The dispatcher should only call checkLet with LLet and LRec AST nodes, 
 -- so we should not see the others here.
 checkLetsM _ _ _ _ _
-        = error "checkLetsM: no match"
+        = error "ddc-core.checkLetsM: no match"
 
 
 -------------------------------------------------------------------------------

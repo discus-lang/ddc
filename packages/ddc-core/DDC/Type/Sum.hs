@@ -244,7 +244,7 @@ unhashTyCon (TyConHash i)
 
         -- This should never happen, because we only produce hashes
         -- with the above 'hashTyCon' function.
-        _ -> error $ "DDC.Type.Sum: bad TyConHash " ++ show i
+        _ -> error $ "ddc-core.unhashTyCon: bad TyConHash " ++ show i
 
 
 -- | If this type can be put in one of our arrays then split it

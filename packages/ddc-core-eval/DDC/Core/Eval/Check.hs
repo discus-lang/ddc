@@ -86,7 +86,7 @@ mustInsertCap ww caps
  = caps { capsDistinct = Set.insert (catMaybes ws') (capsDistinct caps) }
  
  | otherwise
- = error "mustInsertCap: not a capability"
+ = error "ddc-core-eval.mustInsertCap: not a capability"
 
 
 -- | Take a region name from a witness argument.

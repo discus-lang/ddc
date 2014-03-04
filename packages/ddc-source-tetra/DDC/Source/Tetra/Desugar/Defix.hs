@@ -150,7 +150,7 @@ defixExps a table xx
  = case xx of
         -- If there are no elements then we're screwed.
         -- Maybe the parser is wrong or defixInfix has lost them.
-        []      ->  error "ddc-source-tetra.defixExps: no expressions"
+        []      -> error "ddc-source-tetra.defixExps: no expressions"
 
         -- If there is only one element then we're done.
         [x]     -> Right x

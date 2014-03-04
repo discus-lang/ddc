@@ -167,7 +167,7 @@ handleResult config gang chainsTotal
 
  -- Bogus pattern match to avoid warning.
  | otherwise
- = error "DDC.War.Interface.Controller.handleResult: no match"
+ = error "ddc-war.handleResult: no match"
 
 
 handleResult_askDiff :: FilePath -> FilePath -> FilePath -> IO Bool

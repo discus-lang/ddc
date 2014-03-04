@@ -122,7 +122,9 @@ data Static
 typeOfStatic :: Static -> Type
 typeOfStatic ss
  = case ss of
-        StaticComment{}         -> error "Can't call getStatType on LMComment!"
+        StaticComment{}         
+         -> error "ddc-core-llvm.typeOfStatic: can't call getStatType on LMComment!"
+        
         StaticLit   l           -> typeOfLit l
         StaticUninitType t      -> t
         StaticStr    _ t        -> t

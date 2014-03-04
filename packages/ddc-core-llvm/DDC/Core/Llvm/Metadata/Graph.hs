@@ -99,7 +99,7 @@ lexBFS (UG (vertices, f)) = refine [] [vertices]
 
         pivot acc ([vertex]:classes)    = refine (vertex:acc) $ classes      `splitAllOn` vertex
         pivot acc ((vertex:vs):classes) = refine (vertex:acc) $ (vs:classes) `splitAllOn` vertex
-        pivot _   _                     = error "impossible!"
+        pivot _   _    = error "ddc-core-llvm.lexBFS: bogus warning suppression."
 
         splitAllOn [] _ = []
         splitAllOn (cl:classes) vertex
@@ -218,7 +218,7 @@ sources x (Tree (d, r)) = [y | y <- d, r y x]
 partitionDG :: Eq a => DG a -> [Tree a]
 partitionDG (DG (d,g))
  = let mkGraph  g' nodes = (nodes, fromList [ (x,y) | x <- nodes, y <- nodes, g' x y ])
-   in map Tree $ fromMaybe (error "partitionDG: no partition found!") 
+   in map Tree $ fromMaybe (error "ddc-core-llvm.partitionDG: no partition found!") 
                $ find (all $ uncurry isTree) 
                $ map (map (mkGraph g)) 
                $ sortBy (comparing (aliasMeasure g))

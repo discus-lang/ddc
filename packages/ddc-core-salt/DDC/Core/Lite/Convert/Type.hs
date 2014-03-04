@@ -73,10 +73,10 @@ convertT' isPrimType kenv tt
               -> liftM TVar $ convertU u
 
               | otherwise
-              -> error $ "convertT': unexpected var kind " ++ show tt
+              -> error $ "ddc-core-salt.convertT: unexpected var kind " ++ show tt
 
              Nothing 
-              -> error $ "convertT': type var not in kind environment " ++ show tt
+              -> error $ "ddc-core-salt.convertT: type var not in kind environment " ++ show tt
 
 
         -- Convert unapplied type constructors.
@@ -145,7 +145,7 @@ convertTyCon tc
          ->     convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        _ -> error "convertTyCon: cannot convert type"
+        _ -> error "ddc-core-salt.convertTyCon: cannot convert type"
 
 
 -- | Convert a primitive type constructor to Salt form.
@@ -154,7 +154,7 @@ convertTyConPrim n
  = case n of
         L.NamePrimTyCon pc      
           -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData) kData
-        _ -> error $ "convertTyConPrim: unknown prim name " ++ show n
+        _ -> error $ "ddc-core-salt.convertTyConPrim: unknown prim name " ++ show n
 
 
 -- Names ----------------------------------------------------------------------
@@ -214,5 +214,5 @@ convertBoundNameM nn
         L.NameLitNat  val       -> return $ O.NameLitNat  val
         L.NameLitInt  val       -> return $ O.NameLitInt  val
         L.NameLitWord val bits  -> return $ O.NameLitWord val bits
-        _                       -> error $ "convertBoundNameM: cannot convert name"
+        _ -> error $ "ddc-core-salt.convertBoundNameM: cannot convert name " ++ show nn
 
