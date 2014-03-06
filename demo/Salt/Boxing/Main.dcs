@@ -1,0 +1,110 @@
+
+-- Demostration of how to write low level heap management code in Disciple Core Salt. 
+-- We define boxed versions of arithmetic operations, and a version of the factorial
+-- function that uses boxed arithmetic.
+--
+module Main 
+export main       :: [r1 r2 : Region]. Nat# -> Ptr# r1 String# -> Int#
+
+import foreign c value 
+        showInt   :: [r : Region].Int# -> Ptr# r String#
+        putStrLn  :: [r : Region].Ptr# r String# -> Void#
+
+with letrec 
+
+-- | Allocate a boxed object to hold a raw unboxed value.
+allocRaw [r : Region] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
+ = do   
+        -- Size of the heap object.
+        -- For general objects we use a 64-bit header so that a 64-bit 
+        -- payload will still be aligned.
+        bytesObj        = add# (size# [Word64#]) bytesPayload
+        
+        -- Check there is enough space available on the heap.
+        -- If not, invoke fail# which will abort the program.
+        case check# bytesObj of
+         True#  -> allocRaw_ok tag bytesObj
+         False# -> fail#
+
+allocRaw_ok [r : Region] (tag : Tag#) (bytesObj : Nat#) : Ptr# r Obj
+ = do   
+        -- Allocate the object.
+        --  This returns a raw Addr#.
+        addr            = alloc# bytesObj
+
+        -- Write the header word.
+        tag32           = promote# [Word32#] [Tag#] tag
+        format          = 0b00110001w32#
+        tagShift        = shl# tag32 8w32#
+        header          = bor# tagShift format
+        write# addr 0# header
+
+        -- Truncate the provided Nat to 32bit and write it into the object.
+        bytesObj32      = truncate# [Word32#] [Nat#] bytesObj
+        write# addr 4# bytesObj32
+
+        -- Return a pointer to the new object.
+        ptr             = makePtr# addr
+        return# ptr
+
+
+-- | Box a Word32.
+boxWord32 [r : Region] (x : Word32#) : Ptr# r Obj
+ = do   obj     = allocRaw TAG0# 4#
+        addr    = takePtr# obj
+        write#  addr 8# x
+        return# obj
+
+
+-- | Unbox a Word32.
+unboxWord32 [r : Region] (obj : Ptr# r Obj) : Word32#
+ =      return# (read# (takePtr# obj) 8#)
+
+
+-- | Boxed Word32 addition.
+addWord32 [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ =      return# (boxWord32 (add# (unboxWord32 x) (unboxWord32 y)))
+
+
+-- | Boxed Word32 substraction.
+subWord32 [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ =      return# (boxWord32 (sub# (unboxWord32 x) (unboxWord32 y)))
+
+
+-- | Boxed Word32 multiplication.
+mulWord32 [r1 r2 r3 : Region] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ =      return# (boxWord32 (mul# (unboxWord32 x) (unboxWord32 y)))
+
+
+-- | Boxed factorial function.
+fac [r1 r2 : Region] (x: Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   x2      = unboxWord32 x
+        cc      = eq# x2 0w32#
+        case cc of 
+         True# 
+          -> do r       = boxWord32 1w32#
+                return# r
+
+         False# 
+          -> do n2      = boxWord32 1w32#
+                n3      = subWord32 x n2
+                n4      = fac n3
+                n5      = mulWord32 x n4
+                return# n5
+
+
+main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
+ = do   
+        -- Create an initial heap of size 4k.
+        create# 4096#
+
+        -- Apply the factorial function.
+        x2      = fac (boxWord32 10w32#)
+        
+        -- Print out the result.
+        x2u     = unboxWord32 x2
+        str     = showInt (truncate# [Int#] [Word32#] x2u)
+        putStrLn str
+
+        return# 0i#
+      
