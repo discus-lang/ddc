@@ -1,5 +1,5 @@
 
-module DDC.Source.Tetra.Infer.Expand
+module DDC.Source.Tetra.Transform.Expand
         ( Config        (..)
         , configDefault
         , Expand        (..))
@@ -33,6 +33,8 @@ configDefault
 
 -------------------------------------------------------------------------------
 class Expand (c :: * -> * -> *) where
+ -- | Add quantifiers to the types of binders. Also add holes for missing
+ --   type arguments.
  expand
         :: Ord n 
         => Config a n
@@ -43,7 +45,7 @@ class Expand (c :: * -> * -> *) where
 instance Expand Module where
  expand config kenv tenv mm
   = let 
-        -- Add quantifiers to the types of type level bindings, and also slurp
+        -- Add quantifiers to the types of bindings, and also slurp
         -- out the contribution to the top-level environment from each binding.
         --   We need to do this in an initial binding because each top-level
         --   thing is in-scope of all the others.

@@ -1,5 +1,5 @@
 
-module DDC.Source.Tetra.Desugar.Defix
+module DDC.Source.Tetra.Transform.Defix
         ( FixTable      (..)
         , FixDef        (..)
         , InfixAssoc    (..)
@@ -7,8 +7,8 @@ module DDC.Source.Tetra.Desugar.Defix
         , Error         (..)
         , Defix         (..))
 where
-import DDC.Source.Tetra.Desugar.Defix.FixTable
-import DDC.Source.Tetra.Desugar.Defix.Error
+import DDC.Source.Tetra.Transform.Defix.FixTable
+import DDC.Source.Tetra.Transform.Defix.Error
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
@@ -20,6 +20,7 @@ import Data.Maybe
 
 -- Defix ----------------------------------------------------------------------
 class Defix (c :: * -> * -> *) where
+ -- | Resolve infix expressions in a thing.
  defix  :: FixTable a n
         -> c a n
         -> Either (Error a n) (c a n)

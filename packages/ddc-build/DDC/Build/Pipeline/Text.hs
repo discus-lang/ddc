@@ -9,24 +9,24 @@ import DDC.Build.Pipeline.Core
 import DDC.Build.Language
 import DDC.Base.Pretty
 
-import qualified DDC.Source.Tetra.ToCore        as SE
-import qualified DDC.Source.Tetra.Desugar.Defix as SE
-import qualified DDC.Source.Tetra.Infer.Expand  as SE
-import qualified DDC.Source.Tetra.Parser        as SE
-import qualified DDC.Source.Tetra.Lexer         as SE
-import qualified DDC.Source.Tetra.Env           as SE
+import qualified DDC.Source.Tetra.ToCore           as SE
+import qualified DDC.Source.Tetra.Transform.Defix  as SE
+import qualified DDC.Source.Tetra.Transform.Expand as SE
+import qualified DDC.Source.Tetra.Parser           as SE
+import qualified DDC.Source.Tetra.Lexer            as SE
+import qualified DDC.Source.Tetra.Env              as SE
 
-import qualified DDC.Build.Language.Tetra       as CE
-import qualified DDC.Core.Tetra                 as CE
-import qualified DDC.Core.Tetra.Env             as CE
+import qualified DDC.Build.Language.Tetra          as CE
+import qualified DDC.Core.Tetra                    as CE
+import qualified DDC.Core.Tetra.Env                as CE
 
-import qualified DDC.Core.Parser                as C
-import qualified DDC.Core.Transform.SpreadX     as C
-import qualified DDC.Core.Check                 as C
-import qualified DDC.Core.Load                  as C
-import qualified DDC.Core.Lexer                 as C
-import qualified DDC.Base.Parser                as BP
-import qualified DDC.Data.SourcePos             as SP
+import qualified DDC.Core.Parser                   as C
+import qualified DDC.Core.Transform.SpreadX        as C
+import qualified DDC.Core.Check                    as C
+import qualified DDC.Core.Load                     as C
+import qualified DDC.Core.Lexer                    as C
+import qualified DDC.Base.Parser                   as BP
+import qualified DDC.Data.SourcePos                as SP
 import Control.DeepSeq
 
 

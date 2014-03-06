@@ -98,6 +98,7 @@ isXApp xx
 
 
 -- Let Bindings ---------------------------------------------------------------
+-- | Check whether an expression is a `XLet`.
 isXLet :: Exp a n -> Bool
 isXLet xx
  = case xx of

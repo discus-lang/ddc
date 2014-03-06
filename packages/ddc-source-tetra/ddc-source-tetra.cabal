@@ -10,7 +10,10 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Synopsis:       Disciplined Disciple Compiler source language.
-Description:    Disciplined Disciple Compiler source language.
+Description:    Disciplined Disciple Compiler Tetra source language.
+                Disciple Tetra is the main source language of DDC. 
+                The word Tetra refers to the four base kinds: 
+                'Data', 'Region', 'Effect' and 'Witness'.
                 
 Library
   Build-Depends: 
@@ -26,25 +29,8 @@ Library
         ddc-core-tetra   == 0.4.0.*
 
   Exposed-modules:
-        DDC.Source.Tetra.Desugar.Defix.Error
-        DDC.Source.Tetra.Desugar.Defix.FixTable
-        DDC.Source.Tetra.Desugar.Defix
-        
-        DDC.Source.Tetra.Exp.Base
-        
-        DDC.Source.Tetra.Infer.Expand
-        
-        DDC.Source.Tetra.Lexer.Lit
-        
-        DDC.Source.Tetra.Parser.Exp
-        DDC.Source.Tetra.Parser.Module
-        DDC.Source.Tetra.Parser.Param
-        
-        DDC.Source.Tetra.Prim.Base
-        DDC.Source.Tetra.Prim.OpArith
-        DDC.Source.Tetra.Prim.OpStore
-        DDC.Source.Tetra.Prim.TyConPrim
-        DDC.Source.Tetra.Prim.TyConTetra
+        DDC.Source.Tetra.Transform.Expand
+        DDC.Source.Tetra.Transform.Defix
         
         DDC.Source.Tetra.Compounds
         DDC.Source.Tetra.DataDef
@@ -57,6 +43,21 @@ Library
         DDC.Source.Tetra.Pretty
         DDC.Source.Tetra.Prim
         DDC.Source.Tetra.ToCore
+
+  Other-modules:
+        DDC.Source.Tetra.Exp.Base
+        DDC.Source.Tetra.Lexer.Lit
+        DDC.Source.Tetra.Parser.Exp
+        DDC.Source.Tetra.Parser.Module
+        DDC.Source.Tetra.Parser.Param
+        DDC.Source.Tetra.Prim.Base
+        DDC.Source.Tetra.Prim.OpArith
+        DDC.Source.Tetra.Prim.OpStore
+        DDC.Source.Tetra.Prim.TyConPrim
+        DDC.Source.Tetra.Prim.TyConTetra
+        DDC.Source.Tetra.Transform.Defix.Error
+        DDC.Source.Tetra.Transform.Defix.FixTable
+        
 
   GHC-options:
         -Wall

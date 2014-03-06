@@ -1,5 +1,5 @@
 
-module DDC.Source.Tetra.Desugar.Defix.FixTable
+module DDC.Source.Tetra.Transform.Defix.FixTable
         ( FixTable      (..)
         , FixDef        (..)
         , InfixAssoc    (..)
@@ -8,7 +8,7 @@ module DDC.Source.Tetra.Desugar.Defix.FixTable
         , getInfixDefOfSymbol
         , defaultFixTable)
 where
-import DDC.Source.Tetra.Desugar.Defix.Error
+import DDC.Source.Tetra.Transform.Defix.Error
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import Data.List
@@ -24,26 +24,26 @@ data FixTable a n
 data FixDef a n
         -- A prefix operator
         = FixDefPrefix
-        { -- | String of the operator
+        { -- String of the operator
           fixDefSymbol  :: String
 
-          -- | Expression to rewrite the operator to, 
-          --   given the annotation of the original symbol.
+          -- Expression to rewrite the operator to, 
+          -- given the annotation of the original symbol.
         , fixDefExp     :: a -> Exp a n }
 
         -- An infix operator.
         | FixDefInfix
-        { -- | String of the operator.
+        { -- String of the operator.
           fixDefSymbol  :: String
         
-          -- | Expression to rewrite the operator to, 
-          --   given the annotation of the original symbol.
+          -- Expression to rewrite the operator to, 
+          -- given the annotation of the original symbol.
         , fixDefExp     :: a -> Exp a n
 
-          -- | Associativity of infix operator.
+          -- Associativity of infix operator.
         , fixDefAssoc   :: InfixAssoc
         
-          -- | Precedence of infix operator.
+          -- Precedence of infix operator.
         , fixDefPrec    :: Int }
 
 
@@ -51,14 +51,17 @@ data FixDef a n
 -- | Infix associativity.
 data InfixAssoc
         -- | Left associative.
+        ---
         --      x * y * z => * (* x y) z
         = InfixLeft
 
         -- | Right associative.
+        ---
         --      x * y * z => * x (* y z)
         | InfixRight
 
         -- | Non associative.
+        ---
         --      x * y * z => error
         | InfixNone
         deriving (Show, Eq)

@@ -1,5 +1,5 @@
 
-module DDC.Source.Tetra.Desugar.Defix.Error
+module DDC.Source.Tetra.Transform.Defix.Error
         (Error (..))
 where
 import DDC.Source.Tetra.Exp
