@@ -467,7 +467,7 @@ checkTypeM config kenv ctx0 UniverseSpec
         let k1'         = applyContext ctx1 k1
         let kExpected'  = applyContext ctx1 kExpected
         ctx2    <- makeEq config ctx1         k1' kExpected'
-                $  ErrorMismatch UniverseKind k1' kExpected' tt
+                $  ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return (t1', k1', ctx2)
 
@@ -536,7 +536,7 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
         let k1'         = applyContext ctx1 k1
         let kExpected'  = applyContext ctx1 kExpected
         ctx2    <- makeEq config ctx1         k1' kExpected'
-                $  ErrorMismatch UniverseKind k1' kExpected' tt
+                $  ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return  (t1', k1, ctx2)
 
