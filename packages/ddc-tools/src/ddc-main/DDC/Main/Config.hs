@@ -166,7 +166,7 @@ getDefaultConfig
           { configMode            = ModeNone 
  
             -- Language -----------------
-          , configInferTypes      = False
+          , configInferTypes      = True
 
             -- Compilation --------------
           , configBaseDir         = baseDir

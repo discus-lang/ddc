@@ -5,14 +5,12 @@ where
 import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Build.Language.Salt          as Salt
 import System.FilePath
 import System.Directory
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import Control.Monad
 import qualified DDC.Core.Pretty        as P
-import qualified DDC.Core.Check         as C
 
 
 -- | Make a source module into an executable.
@@ -57,11 +55,11 @@ cmdMake config filePath
                 | ext == ".dcs"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  Salt.fragment C.Recon SinkDiscard pipesSalt 
+                $ stageSaltLoad     config source pipesSalt 
 
                 -- Unrecognised.
                 | otherwise
-                = throwError $ "Cannot make '" ++ filePath ++ "' files into executables."
+                = throwError $ "Cannot make '" ++ filePath ++ "' files."
 
             pipesSalt
              = case configViaBackend config of

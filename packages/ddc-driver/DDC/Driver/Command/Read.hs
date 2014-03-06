@@ -39,8 +39,13 @@ cmdReadModule'
         -> FilePath             -- ^ Path to the module.
         -> IO (Maybe (Module (AnTEC BP.SourcePos n) n))
 
-cmdReadModule' printErrors config frag filePath
+cmdReadModule' printErrors config fragment filePath
  = do
+        -- The inferencer doesn't work with the Lite fragment.
+        let config'     = if fragmentExtension fragment == "dcl"
+                                then config { configInferTypes = False }
+                                else config
+
         -- Read in the source file.
         exists  <- doesFileExist filePath
         when (not exists)
@@ -49,13 +54,13 @@ cmdReadModule' printErrors config frag filePath
         src     <- readFile filePath
         let source   = SourceFile filePath
 
-        cmdReadModule_parse printErrors config filePath frag source src
+        cmdReadModule_parse printErrors config' filePath fragment source src
 
 
-cmdReadModule_parse printErrors config filePath frag source src
+cmdReadModule_parse printErrors config filePath fragment source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore frag 
+                $  PipeTextLoadCore fragment
                         (if configInferTypes config then C.Synth else C.Recon)
                         SinkDiscard
                    [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
