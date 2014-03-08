@@ -52,13 +52,13 @@ mapS (f : a -> S e b) (xx : List a) : S e (List b)
 
 -- | Apply a function to all elements of a list, 
 --   yielding nothing.
-eatS (f : a -> S e Unit) (xx : List a) : S e Unit
+forS (xx : List a) (f : a -> S e Unit) : S e Unit
  = box case xx of
         Nil     -> ()
 
         Cons x xs       
          -> do  run f x
-                run eatS f xs
+                run forS xs f
 
 
 -- | Reduce a list to a single value.
@@ -84,7 +84,10 @@ filterS (f : a -> S e Bool#) (xx : List a) : S e (List a)
 main (_ : Unit) : S Pure Unit
  = box do
         xx      = enumFromTo 0 10
-        run eatS (\(x : Nat#). 
-                putStrLn (showNat x)) xx
-        ()
+        
+        run forS xx (\(x : Nat#).
+         box do run putStrLn (showNat x)
+                ())
+        
+
 

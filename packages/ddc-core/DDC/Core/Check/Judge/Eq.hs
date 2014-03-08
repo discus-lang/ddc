@@ -142,7 +142,7 @@ makeEq config a ctx0 tL tR err
         ctx1     <- makeEq config a ctx0 tL1 tR1 err
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
-        ctx2     <- makeEq config a ctx0 tL2' tR2' err
+        ctx2     <- makeEq config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "* EqApp"
