@@ -111,6 +111,9 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          | isBot tt, isDataKind    $ Sum.kindOfSum ts 
          -> text "Bot"
 
+         | [TCon{}] <- Sum.toList ts
+         -> ppr ts
+
          | isBot tt, otherwise  
          -> parens $ text "Bot : " <> ppr (Sum.kindOfSum ts)
          
