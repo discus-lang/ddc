@@ -1,9 +1,11 @@
 module Main 
 export main
 
+-- We assign the Console effect to computations that affect stdin or stdout.
 import foreign abstract type
  Console  : Effect
 
+-- Import basic functions from C land.
 import foreign c value
  putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
  showNat  : [r : Region]. Nat#           -> Ptr# r String#
@@ -11,21 +13,20 @@ import foreign c value
 where
 
 -- Define configurable syntax.
-add x y = add# [Nat#] x y       -- used for (+)
+mul x y = mul# [Nat#] x y       -- used for (*)
 sub x y = sub# [Nat#] x y       -- used for (-)
 
 
--------------------------------------------------------------------------------
+-- Compute the factorial of some number.
 fac (acc : Nat#) (n : Nat#) : Nat#
  = case n of
         0       -> acc
         1       -> acc
-        _       -> fac (acc + n) (n - 1)
+        _       -> fac (acc * n) (n - 1)
 
 main (_ : Unit) : S Console Unit
  = private r in
    box do
         run putStrLn (showNat [r] (fac 1 10))
-        run putStrLn (showNat [r] (fac 1 11))
         ()
         
