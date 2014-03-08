@@ -10,7 +10,7 @@ actual problems...        (unless you're looking for a compiler to hack on).
 
 DDC compiles several related languages. 
 
- * Disciple Tetra (Module.dst)
+ * Disciple Tetra (.dst)
 
    An implicitly typed strict functional language with region and effect
    typing. Uses effect reification (`box`) and reflection (`run`) casts to
@@ -20,33 +20,33 @@ DDC compiles several related languages.
    abstractions and applications when needed. Higher ranked types are supported
    with annotations.
 
- * Disciple Core Tetra (Module.dct)
+ * Disciple Core Tetra (.dct)
 
    The desugared version of Disciple Tetra. All function application is in
    prefix form. This language also supports type inference, though the
    inferencer does not insert additional type quantifiers. 
 
- * Disciple Core Lite
+ * Disciple Core Lite (.dcl)
 
    Uses a Lucassen and Gifford style polymorphic effect system rather than
    one using reification and reflection. Effectful computations are classified
    by a function type with a latent effect annotation. This language also
    includes an experimental closure typing system.
 
- * Disciple Core Flow
+ * Disciple Core Flow (.dcf)
 
    Application specific language with built-in support for Series expressions
    and Data Flow Fusion. This language and its associated transforms is used by
    the repa-plugin available on Hackage.
 
- * Disciple Core Salt
+ * Disciple Core Salt (.dcs)
 
    A fragment of Disciple Core that can be easily mapped onto C or LLVM code.
    The Salt language is first-order and does not support partial application.
    DDC transforms the higher level languages onto this one during code
    generation, though we can also write programs in it directly.
 
- * Disciple Core Eval (deprecated)
+ * Disciple Core Eval (.dce) (deprecated)
 
    Similar to Disciple Core Lite, except without unboxed primitive types.
    This language is accepted by the interpreter. In future work we will
