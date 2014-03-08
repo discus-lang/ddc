@@ -1,15 +1,15 @@
 
 module Main
 export {
-        main      :: [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
+        main      : [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
 import foreign c value {
-        boxInt    :: [r : Region]. Int#   -> Ptr# r Obj;
-        unboxInt  :: [r : Region]. Ptr# r Obj -> Int#;
-        subInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-        mulInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
-        showInt   :: [r1 : Region]. Int# -> Ptr# r1 String#;
-        putStrLn  :: [r1 : Region]. Ptr# r1 String# -> Void#;
+        boxInt    : [r : Region]. Int#   -> Ptr# r Obj;
+        unboxInt  : [r : Region]. Ptr# r Obj -> Int#;
+        subInt    : [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
+        mulInt    : [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
+        showInt   : [r1 : Region]. Int# -> Ptr# r1 String#;
+        putStrLn  : [r1 : Region]. Ptr# r1 String# -> Void#;
 }
 with letrec 
 

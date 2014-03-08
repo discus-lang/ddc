@@ -1,14 +1,14 @@
 module Main 
 export {
-        main :: Unit -(Console | Empty)> Unit
+        main : Unit -(Console | Empty)> Unit
 } 
 import foreign c value {
-        addNat :: [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
-        boxNat :: [r : Region].Nat# -(Alloc r | Use r)> Nat r;
-        putStrLn :: [r : Region].Ptr# r String# -(Console | Empty)> Void#;
-        showNat :: [r : Region].Nat# -> Ptr# r String#;
-        subNat :: [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
-        unboxNat :: [r : Region].Nat r -(Read r | Empty)> Nat#;
+        addNat   : [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+        boxNat   : [r : Region].Nat# -(Alloc r | Use r)> Nat r;
+        putStrLn : [r : Region].Ptr# r String# -(Console | Empty)> Void#;
+        showNat  : [r : Region].Nat# -> Ptr# r String#;
+        subNat   : [r1 r2 r3 : Region].Nat r1 -(Pure | Use r3)> Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;
+        unboxNat : [r : Region].Nat r -(Read r | Empty)> Nat#;
 } with
 letrec {
   singleton : [r : Region].[a : Data].a -(Alloc r | Use r)> List r a

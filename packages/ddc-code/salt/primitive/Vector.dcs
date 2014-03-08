@@ -2,8 +2,8 @@
 -- | Vectors are arrays of unboxed values.
 module Vector
 import value
-        allocRaw     :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-        payloadOfRaw :: [r : Region]. Ptr# r Obj -> Addr#
+        allocRaw     : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+        payloadOfRaw : [r : Region]. Ptr# r Obj -> Addr#
 
 with letrec
 

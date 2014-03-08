@@ -25,7 +25,7 @@ lower_map_map_rq2 : [k_d : Rate].Series# k_d Int# -> Vector# Int#
 :flow-wind..
 module Main
 import {
-        maxx :: Int# -> Int# -> Int#;
+        maxx : Int# -> Int# -> Int#;
 } with
 letrec {
 filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#

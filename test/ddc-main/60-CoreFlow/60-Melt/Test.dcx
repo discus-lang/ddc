@@ -2,8 +2,8 @@
 :flow-melt..
 module Test 
 import {
-        addInt :: Int# -> Int# -> Int#;
-        minIx :: Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
+        addInt : Int# -> Int# -> Int#;
+        minIx  : Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
 } with
 letrec {
   foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#

@@ -134,7 +134,6 @@ lexString sourceName lineStart str
         '='  : '>'  : w' -> tokA KArrowEquals    : lexMore 2 w'
 
         -- Compound symbols
-        ':'  : ':'  : w' -> tokA KColonColon     : lexMore 2 w'
         '/'  : '\\' : w' -> tokA KBigLambda      : lexMore 2 w'
 
         -- Debruijn indices

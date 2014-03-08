@@ -1,7 +1,7 @@
 
 module Main
 export {
-        main      :: [r : Region]. Nat# -> Ptr# r String# -> Int#;
+        main      : [r : Region]. Nat# -> Ptr# r String# -> Int#;
 }
 with letrec
 

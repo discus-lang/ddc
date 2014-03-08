@@ -1,10 +1,10 @@
 
 module  Main
-export  main    :: Unit -(Console | Empty)> Unit
+export  main    : Unit -(Console | Empty)> Unit
 
 import foreign c value
-        showInt   :: [r : Region]. Int# -> Ptr# r String#
-        putStrLn  :: [r : Region]. Ptr# r String# -(Console | Empty)> Void#
+        showInt   : [r : Region]. Int# -> Ptr# r String#
+        putStrLn  : [r : Region]. Ptr# r String# -(Console | Empty)> Void#
 
 with letrec
 

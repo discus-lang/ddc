@@ -103,7 +103,7 @@ pprExportType :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
 pprExportType (n, esrc)
  = case esrc of
         ExportSourceLocal _n k
-         -> text "export type" <+> ppr n  <+> text "::" <+> ppr k <> semi
+         -> text "export type" <+> ppr n  <+> text ":" <+> ppr k <> semi
 
         ExportSourceLocalNoType _n 
          -> text "export type" <+> ppr n  <> semi
@@ -114,7 +114,7 @@ pprExportValue :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
 pprExportValue (n, esrc)
  = case esrc of
         ExportSourceLocal _n t
-         -> text "export value" <+> ppr n  <+> text "::" <+> ppr t <> semi
+         -> text "export value" <+> ppr n  <+> text ":" <+> ppr t <> semi
 
         ExportSourceLocalNoType _n
          -> text "export value" <+> ppr n  <> semi
@@ -126,15 +126,15 @@ pprImportType :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportType (n, isrc)
  = case isrc of
         ImportSourceModule _mn _nSrc k
-         -> text "import type" <+> ppr n <+> text "::" <+> ppr k <> semi
+         -> text "import type" <+> ppr n <+> text ":" <+> ppr k <> semi
 
         ImportSourceAbstract k
          -> text "import foreign abstract type" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+         <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
 
         ImportSourceSea _var k
          -> text "import foreign c type" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr k <> semi)
+         <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
 
 
 -- | Pretty print an imported value definition.
@@ -142,15 +142,15 @@ pprImportValue :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
         ImportSourceModule _mn _nSrc t
-         -> text "import value" <+> ppr n <+> text "::" <+> ppr t <> semi
+         -> text "import value" <+> ppr n <+> text ":" <+> ppr t <> semi
 
         ImportSourceAbstract t
          -> text "import foreign abstract value" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr t <> semi)
+         <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
 
         ImportSourceSea _var t
          -> text "import foreign c value" <> line
-         <> indent 8 (ppr n <+> text "::" <+> ppr t <> semi)
+         <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
 
 
 -- DataDef ----------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XVar  _ u       
          | modeExpVarTypes mode
          , Just t       <- takeTypeOfBound u
-         -> parens $ ppr u <> text " :: " <> ppr t
+         -> parens $ ppr u <> text " : " <> ppr t
 
          | otherwise
          -> ppr u
@@ -229,7 +229,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XCon  _ dc
          | modeExpConTypes mode
          , Just t       <- takeTypeOfDaCon dc
-         -> parens $ ppr dc <> text " :: " <> ppr t
+         -> parens $ ppr dc <> text " : " <> ppr t
         
          | otherwise
          -> ppr dc

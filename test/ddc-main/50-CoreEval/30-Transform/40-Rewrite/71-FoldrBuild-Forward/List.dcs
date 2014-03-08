@@ -1,7 +1,7 @@
 module List
 export {
 
-compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
+compose : [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
        (b -(ef|cf)> c)
     -> (a -(eg|cg)> b)
     -(Pure      | cf)>
@@ -9,24 +9,24 @@ compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
     -(ef + eg | cf + cg)>
 	c;
 
-plus ::
+plus :
     Int r0#
     -( Pure | Use r0#)>
     Int r0#
     -(Read r0# + Alloc r0# | Use r0#)>
     Int r0#;
 
-zero ::
+zero :
     Unit
     -(Alloc r0# | Use r0#)>
     Int r0#;
 
-pred ::
+pred :
     Int r0#
     -(Read r0# + Alloc r0# | Use r0#)>
     Int r0#;
 
-count' ::
+count' :
     Int r0#
     -(Pure | Use r0#)>
     ([b : Data].
@@ -38,29 +38,29 @@ count' ::
     -(Read r0# + Alloc r0# + ec1 + ec2 + en | cc1 + Use r0#)>
     b);
 
-double ::
+double :
     Int r0#
     -(Alloc r0# + Read r0# | Use r0#)>
     Int r0#;
 
-even ::
+even :
     Int r0#
     -(Alloc r0# + Read r0# | Use r0# )>
     Int r0#;
 
-sum ::
+sum :
     List r1# (Int r0#)
     -(Read r0# + Read r1# + Alloc r0# | Use r0# + Use r1#)>
     Int r0#;
 
-count ::
+count :
     Int r0#
     -(Read r0# + Alloc r0# + Alloc r1# | Use r0# + Use r1#)>
     List r1# (Int r0#);
 
 }
 import {
-foldr  :: [a b : Data]. [r : Region].
+foldr  : [a b : Data]. [r : Region].
     [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
 	(a -(ek1|ck1)> b -(ek2|ck2)> b)
     ->	(Unit -(ez|cz)> b)
@@ -68,7 +68,7 @@ foldr  :: [a b : Data]. [r : Region].
     -(Read r + ek1 + ek2 + ez | ck1 + ck2 + cz + Use r)>
 	b;
 
-build :: [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
+build : [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
     ([b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>

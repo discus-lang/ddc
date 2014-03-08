@@ -1,7 +1,7 @@
 module Module
 export {
 
-effectful :: [ef : Effect].
+effectful : [ef : Effect].
     Unit -> Unit;
 
 }

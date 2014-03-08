@@ -1,40 +1,37 @@
 module Bool
 export foreign c value
  boxBool
-  ::    [r : Region].
+  :     [r : Region].
         Bool# -(Alloc r | Use r)>
         Bool r
 
  unboxBool
-  ::    [r : Region].
+  :     [r : Region].
         Bool r -(Read r | Empty)>
         Bool#
 
  addBool
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Bool r1 -(Pure | Use r3)>
         Bool r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Bool r3
 
  mulBool
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Bool r1 -(Pure | Use r3)>
         Bool r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Bool r3
 
- not    
-  ::    [r1 r2 : Region].
+ not :  [r1 r2 : Region].
         Bool r1 -(Read r1 + Alloc r2 | Use r1 + Use r2)>
         Bool r2
 
- and    
-  ::    [r1 r2 r3 : Region].
+ and :  [r1 r2 r3 : Region].
         Bool r1 -(Pure | Use r1 + Use r2)>
         Bool r2 -(Read r1 + Alloc r2 | Use r1 + Use r2)>
         Bool r2
 
- or
-  ::    [r1 r2 r3 : Region].
+ or  :  [r1 r2 r3 : Region].
         Bool r1 -(Pure | Use r1 + Use r2)>
         Bool r2 -(Read r1 + Alloc r2 | Use r1 + Use r2)>
         Bool r2

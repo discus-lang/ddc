@@ -1,41 +1,41 @@
 module Nat 
 export foreign c value
  boxNat
-  ::    [r : Region].
+  :     [r : Region].
         Nat# -(Alloc r | Use r)>
         Nat r
 
  unboxNat 
-  ::    [r : Region].
+  :     [r : Region].
         Nat r -(Read r | Empty)>
         Nat#
 
  addNat 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Nat r3
 
  subNat 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Nat r3
 
  mulNat
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Nat r3
 
  eqNat 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Bool r3
 
  neqNat 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Nat r1 -(Pure | Use r3)>
         Nat r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Bool r3

@@ -1,7 +1,7 @@
 
 module List
 import {
-        subNat  :: [r1 r2 r3 : Region]
+        subNat  : [r1 r2 r3 : Region]
                 . Nat r1 
                 -(Pure | Use r3)> Nat r2 
                 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Nat r3;

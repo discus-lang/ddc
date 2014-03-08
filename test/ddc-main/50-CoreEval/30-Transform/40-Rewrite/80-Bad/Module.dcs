@@ -1,6 +1,6 @@
 module Module
 export {
-    id :: [a : Data]. a -> a;
+    id : [a : Data]. a -> a;
 } with letrec
 
 id [a : Data]

@@ -171,7 +171,6 @@ data TokAtom
         
         -----------------------------------------
         -- Compound symbols.
-        | KColonColon
         | KBigLambda
 
         -----------------------------------------
@@ -282,7 +281,6 @@ describeTokAtom' ta
         KSemiColon              -> (Symbol, ";")
         KUnderscore             -> (Symbol, "_")
         KBackSlash              -> (Symbol, "\\")
-        KColonColon             -> (Symbol, "::")
         KBigLambda              -> (Symbol, "/\\")
 
         -- symbolic constructors

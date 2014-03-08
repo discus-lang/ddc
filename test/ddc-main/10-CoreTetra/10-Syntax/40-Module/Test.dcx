@@ -4,11 +4,11 @@
 :load..
 module Main
 export {
-        main    :: Unit -> S Pure Unit;
-        double  :: Nat# -> Nat#;
+        main    : Unit -> S Pure Unit;
+        double  : Nat# -> Nat#;
 }
 import {
-        two :: Unit -> Nat#;
+        two : Unit -> Nat#;
 }
 with
 private rt with { w1 : Const rt ; w2 : Lazy rt} in
@@ -29,9 +29,9 @@ letrec {
 -- Load the same module using the offside rule.
 :load..
 module  Main
-export  main    :: Unit -> S Pure Unit
-        double  :: Nat# -> Nat#
-import  two :: Unit -> Nat#
+export  main    : Unit -> S Pure Unit
+        double  : Nat# -> Nat#
+import  two : Unit -> Nat#
 with
 private rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = 1# in

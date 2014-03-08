@@ -32,7 +32,7 @@ letrec {
 
 -- Loop with a guard and a scalar result.
 module Main 
-import value maxx :: Int# -> Int# -> Int#;
+import value maxx : Int# -> Int# -> Int#;
 with
 letrec {
   filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#

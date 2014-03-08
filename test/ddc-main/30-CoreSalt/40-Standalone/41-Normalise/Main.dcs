@@ -1,11 +1,11 @@
 
 module Main
 export {
-         main     :: [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
+         main     : [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
 }
 import foreign c value {
-        showInt   :: [r : Region]. Int# -> Ptr# r String#;
-        putStrLn  :: [r : Region]. Ptr# r String# -> Void#;
+        showInt   : [r : Region]. Int# -> Ptr# r String#;
+        putStrLn  : [r : Region]. Ptr# r String# -> Void#;
 }
 with letrec {
 

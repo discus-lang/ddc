@@ -1,29 +1,29 @@
 module Int 
 export foreign c value
  boxInt  
-  ::    [r : Region].
+  :     [r : Region].
         Int# -(Alloc r | Use r)>
         Int r
 
  unboxInt 
-  ::    [r : Region].
+  :     [r : Region].
         Int r -(Read r | Empty)>
         Int#
 
  addInt 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Int r1 -(Pure | Use r3)>
         Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Int r3
 
  subInt 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Int r1 -(Pure | Use r3)>
         Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Int r3
 
  mulInt 
-  ::    [r1 r2 r3 : Region].
+  :     [r1 r2 r3 : Region].
         Int r1 -(Pure | Use r3)>
         Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
         Int r3

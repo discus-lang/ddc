@@ -92,7 +92,7 @@ pExportValue
 pExportValue c 
  = do   
         n       <- pName
-        pTok KColonColon
+        pTokSP (KOp ":")
         t       <- pType c
         return  (ExportValue n (ExportSourceLocal n t))
 
@@ -104,7 +104,7 @@ pExportForeignValue
 pExportForeignValue c dst
         | "c"           <- dst
         = do    n       <- pName
-                pTok KColonColon
+                pTokSP (KOp ":")
                 k       <- pType c
 
                 -- ISSUE #327: Allow external symbol to be specified 
@@ -170,7 +170,7 @@ pImportType
         => Context -> Parser n (ImportSpec n)
 pImportType c
  = do   n       <- pName
-        pTok KColonColon
+        pTokSP (KOp ":")
         k       <- pType c
         return  $ ImportType n (ImportSourceModule (ModuleName []) n k)
 
@@ -182,7 +182,7 @@ pImportForeignType
 pImportForeignType c src
         | "abstract"    <- src
         = do    n       <- pName
-                pTok KColonColon
+                pTokSP (KOp ":")
                 k       <- pType c
                 return  (ImportType n (ImportSourceAbstract k))
 
@@ -196,7 +196,7 @@ pImportValue
         => Context -> Parser n (ImportSpec n)
 pImportValue c
  = do   n       <- pName
-        pTok KColonColon
+        pTokSP (KOp ":")
         t       <- pType c
         return  (ImportValue n (ImportSourceModule (ModuleName []) n t))
 
@@ -208,7 +208,7 @@ pImportForeignValue
 pImportForeignValue c src
         | "c"           <- src
         = do    n       <- pName
-                pTok KColonColon
+                pTokSP (KOp ":")
                 k       <- pType c
 
                 -- ISSUE #327: Allow external symbol to be specified 

@@ -1,35 +1,35 @@
 module Int 
 export {
 
-boxInt  ::
+boxInt  :
     [r : Region].
     Int# -(Alloc r | Use r)>
     Int r;
 
-unboxInt ::
+unboxInt :
     [r : Region].
     Int r -(Read r | Empty)>
     Int#;
 
-addInt ::
+addInt :
     [r1 r2 r3 : Region].
     Int r1 -(Pure | Use r1 + Use r2 + Use r3)>
     Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3)>
     Int r3;
 
-subInt ::
+subInt :
     [r1 r2 r3 : Region].
     Int r1 -(Pure | Use r1 + Use r2 + Use r3)>
     Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3)>
     Int r3;
 
-mulInt ::
+mulInt :
     [r1 r2 r3 : Region].
     Int r1 -(Pure | Use r1 + Use r2 + Use r3)>
     Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r2 + Use r3)>
     Int r3;
 
-fac     ::
+fac    :
     [r : Region].
     Const r =>
     Int r -(Pure | Use r)>

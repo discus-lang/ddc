@@ -2,11 +2,11 @@
 -- | Int primitives for 32-bit machines.
 module  Int
 export value 
-        boxInt    :: [r : Region]. Int#   -> Ptr# r Obj
-        unboxInt  :: [r : Region]. Ptr# r Obj -> Int#
-        addInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        subInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
-        mulInt    :: [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        boxInt    : [r : Region]. Int#   -> Ptr# r Obj
+        unboxInt  : [r : Region]. Ptr# r Obj -> Int#
+        addInt    : [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        subInt    : [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+        mulInt    : [r1 r2 r3 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
 
 import value
         allocRawSmall :: [r : Region]. Tag# -> Nat# -> Ptr# r Obj

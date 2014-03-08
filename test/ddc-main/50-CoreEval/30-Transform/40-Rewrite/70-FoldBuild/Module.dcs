@@ -1,7 +1,7 @@
 module Module
 export {
 
-foldr   :: [a b : Data]. [r : Region].
+foldr   : [a b : Data]. [r : Region].
         [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
         (a -(ek1|ck1)> b -(ek2|ck2)> b) -(Pure | Use r)> 
         (Unit -(ez|cz)> b)              -(Pure | Use r + ck1)>
@@ -9,7 +9,7 @@ foldr   :: [a b : Data]. [r : Region].
         b;
 
 
-build :: [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
+build : [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
     ([b : Data]. [ec1 ec2 en : Effect]. [cc1 cc2 cn : Closure].
 	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
 	-(eg1|cg1)>
@@ -18,7 +18,7 @@ build :: [a : Data]. [r : Region]. [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
 	 b)
     -(eg1+eg2 + Alloc r | Use r)> List r a;
 
-foldrAndBuild ::
+foldrAndBuild :
     [a b : Data]. [r : Region].
     [ek1 ek2 ez : Effect]. [ck1 ck2 cz : Closure].
     [eg1 eg2 : Effect]. [cg1 cg2 : Closure].
@@ -36,7 +36,7 @@ foldrAndBuild ::
     -(Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + cz + Use r)>
     b;
 
-compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
+compose : [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
        (b -(ef|cf)> c)
     -> (a -(eg|cg)> b)
     -(Pure      | cf)>
@@ -44,24 +44,24 @@ compose :: [a b c : Data]. [ef eg : Effect]. [cf cg : Closure].
     -(ef + eg | cf + cg)>
 	c;
 
-plus ::
+plus :
     Int r0#
     -( Pure | Use r0#)>
     Int r0#
     -(Read r0# + Alloc r0# | Use r0#)>
     Int r0#;
 
-zero ::
+zero :
     Unit
     -(Alloc r0# | Use r0#)>
     Int r0#;
 
-pred ::
+pred :
     Int r0#
     -(Read r0# + Alloc r0# | Use r0#)>
     Int r0#;
 
-countZ ::
+countZ :
     Int r0#
     -(Pure | Use r0#)>
     ([b : Data].
@@ -73,12 +73,12 @@ countZ ::
     -(Read r0# + Alloc r0# + ec1 + ec2 + en | cc1 + Use r0#)>
     b);
 
-double ::
+double :
     Int r0#
     -(Alloc r0# + Read r0# | Use r0#)>
     Int r0#;
 
-even ::
+even :
     Int r0#
     -(Alloc r0# + Read r0# | Use r0# )>
     Int r0#;

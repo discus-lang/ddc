@@ -78,7 +78,7 @@ pTypeSig
 
 pTypeSig c
  = do   var     <- pVar
-        pTok KColonColon
+        pTokSP (KOp ":")
         t       <- pType c
         return  (var, t)
 
@@ -126,7 +126,7 @@ pImportType
 pImportType c src
         | "abstract"    <- src
         = do    n       <- pName
-                pTok KColonColon
+                pTokSP (KOp ":")
                 k       <- pType c
                 return  (ImportType n (ImportSourceAbstract k))
 
@@ -141,7 +141,7 @@ pImportValue
 pImportValue c src
         | "c"           <- src
         = do    n       <- pName
-                pTok KColonColon
+                pTokSP (KOp ":")
                 k       <- pType c
 
                 -- ISSUE #327: Allow external symbol to be specified 

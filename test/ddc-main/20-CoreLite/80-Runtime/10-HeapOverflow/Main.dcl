@@ -3,7 +3,7 @@
 --   With a small fixed sized heap this will run out of space.
 module Main 
 export {
-        main      :: Unit -> Unit;
+        main      : Unit -> Unit;
 }
 with letrec
 

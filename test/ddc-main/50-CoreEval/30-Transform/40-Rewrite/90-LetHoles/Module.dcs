@@ -1,10 +1,10 @@
 module Module
 export {
-    boxi    :: Int r0# -> Int r0#;
-    unboxi  :: Int r0# -> Int r0#;
+    boxi    : Int r0# -> Int r0#;
+    unboxi  : Int r0# -> Int r0#;
 
-    boxi_   :: [r : Region]. Int r -> Int r;
-    unboxi_ :: [r : Region]. Int r -> Int r;
+    boxi_   : [r : Region]. Int r -> Int r;
+    unboxi_ : [r : Region]. Int r -> Int r;
 } with letrec
 
 boxi (x : Int r0#) : Int r0#
