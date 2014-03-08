@@ -72,6 +72,12 @@ instance Defix Lets where
   = let down = defix table
     in case lts of
         LLet b x        -> liftM (LLet b) (down x)
+
+        LRec bxs    
+         -> do  let (bs, xs)    = unzip bxs
+                xs'     <- mapM (defix table) xs
+                return $ LRec (zip bs xs')
+
         LPrivate{}      -> return lts
 
 

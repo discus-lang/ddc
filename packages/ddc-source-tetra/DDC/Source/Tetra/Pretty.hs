@@ -187,7 +187,23 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                  <+> align (  dBind
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
                                      <> text "=" <+> align (ppr x)))
+        LRec bxs
+         -> let pprLetRecBind (b, x)
+                 =   ppr (binderOfBind b)
+                 <+> text ":"
+                 <+> ppr (typeOfBind b)
+                 <>  nest 2 (  breakWhen (not $ isSimpleX x)
+                            <> text "=" <+> align (ppr x))
         
+           in   (nest 2 $ text "letrec"
+                  <+> lbrace 
+                  <>  (  line 
+                      <> (vcat $ punctuate (semi <> line)
+                               $ map pprLetRecBind bxs)))
+                <$> rbrace
+
+
+
         LPrivate [b] []
          -> text "private"
                 <+> ppr (binderOfBind b)

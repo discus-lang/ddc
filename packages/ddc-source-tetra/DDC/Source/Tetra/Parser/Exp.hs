@@ -314,10 +314,17 @@ pLetsSP :: Ord n
         => Context -> Parser n (Lets SourcePos n, SourcePos)
 pLetsSP c
  = P.choice
-    [ -- possibly recursive let.
+    [ -- non-recursive let
       do sp       <- pTokSP KLet
          (b1, x1) <- pLetBinding c
          return (LLet b1 x1, sp)
+
+      -- recursive let
+    , do sp       <- pTokSP KLetRec
+         pTok KBraceBra
+         lets     <- P.sepEndBy1 (pLetBinding c) (pTok KSemiColon)
+         pTok KBraceKet
+         return (LRec lets, sp)
 
       -- Local region binding.
       --   private [BINDER] with { BINDER : TYPE ... } in EXP

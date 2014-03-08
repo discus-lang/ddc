@@ -119,6 +119,18 @@ instance Expand Exp where
                 x2'     = expand config kenv tenv' x2
             in  XLet a (LLet b x1') x2'
 
+        XLet a (LRec bxs) x2
+         -> let 
+                (bs_quant, xs_quant)
+                        = unzip
+                        $ [expandQuant a config kenv (b, x) | (b, x) <- bxs]
+
+                tenv'   = Env.extends bs_quant tenv
+                xs'     = map (expand config kenv tenv') xs_quant
+                x2'     = expand config kenv tenv' x2
+            in  XLet a (LRec (zip bs_quant xs')) x2'
+
+
         -- Boilerplate ----------------
         XLAM a b x
          -> let kenv'   = Env.extend b kenv

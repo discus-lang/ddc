@@ -190,6 +190,9 @@ toCoreLts lts
         S.LLet b x
          -> C.LLet (toCoreB b) (toCoreX x)
         
+        S.LRec bxs
+         -> C.LRec [(toCoreB b, toCoreX x) | (b, x) <- bxs ]
+
         S.LPrivate bks bts
          -> C.LPrivate (map toCoreB bks) Nothing (map toCoreB bts)
 

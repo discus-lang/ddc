@@ -88,8 +88,11 @@ data Exp a n
 
 -- | Possibly recursive bindings.
 data Lets a n
-        -- | Possibly recursive binding.
+        -- | Non-recursive let-binding.
         = LLet     !(Bind n) !(Exp a n)
+
+        -- | Recursive let bindings.
+        | LRec     ![(Bind n, Exp a n)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
@@ -155,6 +158,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
  rnf lts
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
+        LRec bxs                -> rnf bxs
         LPrivate bs1 bs2        -> rnf bs1  `seq` rnf bs2
 
 
