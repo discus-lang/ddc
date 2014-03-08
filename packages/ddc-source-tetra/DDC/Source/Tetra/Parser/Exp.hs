@@ -41,7 +41,7 @@ import qualified DDC.Type.Compounds     as T
 import Control.Monad.Error
 
 
--- Expressions ----------------------------------------------------------------
+-- Expressions ------------------------------------------------------------------------------------
 -- | Parse a core language expression.
 pExp    :: Ord n => Context -> Parser n (Exp SourcePos n)
 pExp c
@@ -255,7 +255,7 @@ pExpAtomSP c
  <?> "a variable, constructor, or parenthesised type"
 
 
--- Alternatives ---------------------------------------------------------------
+-- Alternatives -----------------------------------------------------------------------------------
 -- Case alternatives.
 pAlt    :: Ord n => Context -> Parser n (Alt SourcePos n)
 pAlt c
@@ -309,7 +309,7 @@ pBindPat c
  ]
 
 
--- Bindings -------------------------------------------------------------------
+-- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Ord n 
         => Context -> Parser n (Lets SourcePos n, SourcePos)
 pLetsSP c
@@ -351,11 +351,17 @@ pLetWits c bs
  = P.choice 
     [ do   pTok KWith
            pTok KBraceBra
-           wits    <- P.sepBy
-                      (do  b    <- pBinder
+           wits    <- P.sepBy (P.choice
+                      [ -- Named witness binder.
+                        do b    <- pBinder
                            pTok (KOp ":")
                            t    <- pTypeApp c
-                           return  $ T.makeBindFromBinder b t)
+                           return  $ T.makeBindFromBinder b t
+
+                        -- Ambient witness binding, used for capabilities.
+                      , do t    <- pTypeApp c
+                           return  $ BNone t
+                      ])
                       (pTok KSemiColon)
            pTok KBraceKet
            return (LPrivate bs wits)
@@ -425,7 +431,7 @@ pLetBinding c
          ]
 
 
--- Statements -----------------------------------------------------------------
+-- Statements -------------------------------------------------------------------------------------
 data Stmt n
         = StmtBind  SourcePos (Bind n) (Exp SourcePos n)
         | StmtMatch SourcePos (Pat n)  (Exp SourcePos n) (Exp SourcePos n)

@@ -1,15 +1,18 @@
 
--- This module can be type-checked  
---   with "ddc -load <file>" 
---   and  "ddc -check <file>"
--- but will not compile to object code yet as support for higher order
+-- Demonstration of list combinators and combining commutable effects.
+-- 
+-- This module can be type-checked with "ddc -check <file>" but will not
+-- compile to object code yet because back-end support for higher order
 -- functions is not complete.
+--
 module Main 
 export main 
 
+-- | We assign the Console effect to computations that affect stdin or stdout.
 import foreign abstract type
  Console  :: Effect
 
+-- | Import basic functions from C land.
 import foreign c value
  putStrLn :: [r : Region]. Ptr# r String# -> S Console Void#
  putStr   :: [r : Region]. Ptr# r String# -> S Console Void#
@@ -20,6 +23,7 @@ where
 -- Define configurable syntax.
 add x y = add# [Nat#] x y       -- used for (+)
 sub x y = sub# [Nat#] x y       -- used for (-)
+eq  x y = eq#  [Nat#] x y       -- used for (==)
 ge  x y = ge#  [Nat#] x y       -- used for (>=)
 
 
@@ -81,13 +85,26 @@ filterS (f : a -> S e Bool#) (xx : List a) : S e (List a)
                 False#  -> run filterS f xs
 
 
-main (_ : Unit) : S Pure Unit
- = box do
-        xx      = enumFromTo 0 10
-        
-        run forS xx (\(x : Nat#).
-         box do run putStrLn (showNat x)
+main (_ : Unit) : S Console Unit
+ = box private r with { Alloc r; Read r; Write r } in 
+   do
+        -- Create a demo list.
+        xx      = enumFromTo 0 100
+
+        -- Select only the even elements
+        xx'     = run filterS (\(x : Nat#). box mod# x 2 == 0) xx
+
+        -- Mutable reference to hold list length.
+        ref     = run allocRef# [r] 0
+
+        -- Eat the list, updating the mutable counter while printing
+        -- the elements to the console.
+        run forS xx' (\(x : Nat#).
+         box do run writeRef# ref ((run readRef# ref) + 1)
+                run putStrLn (showNat [r] x)
                 ())
         
-
+        -- Print out the final list length.
+        run putStrLn (showNat [r] (run readRef# ref))
+        ()
 

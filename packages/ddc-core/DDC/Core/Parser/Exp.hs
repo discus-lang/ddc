@@ -374,13 +374,14 @@ pLetWits c bs mParent
  = P.choice 
     [ do   pTok KWith
            pTok KBraceBra
-           wits    <- P.sepBy
-                      (P.choice
-                        [ do  b    <- pBinder
+           wits    <- P.sepBy (P.choice
+                        [ -- Named witness binder.
+                          do  b    <- pBinder
                               pTok (KOp ":")
                               t    <- pTypeApp c
                               return  $ T.makeBindFromBinder b t
                         
+                          -- Ambient witness binding, use for capabilities.
                         , do  t    <- pTypeApp c
                               return  $ BNone t ])
                       (pTok KSemiColon)
