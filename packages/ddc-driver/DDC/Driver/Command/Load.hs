@@ -161,7 +161,10 @@ cmdLoadCoreFromString config language source str
          $ PipeTextLoadCore  fragment 
                         (if configInferTypes config' then C.Synth else C.Recon) 
                         SinkDiscard
-         [ PipeCoreOutput    pmode SinkStdout ]
+         [ PipeCoreReannotate (\a -> a { annotTail = () })
+         [ PipeCoreSimplify  fragment (bundleStateInit bundle)
+                                      (bundleSimplifier bundle)
+         [ PipeCoreOutput    pmode SinkStdout ]]]
 
    in do
         errs    <- liftIO pipeLoad
