@@ -1,5 +1,5 @@
 Name:           ddc-tools
-Version:        0.4.0.1
+Version:        0.4.1.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -18,7 +18,7 @@ Executable ddc-check
 
     Build-depends:
         base            >= 4.6 && < 4.8,
-        ddc-core        == 0.4.0.*
+        ddc-core        == 0.4.1.*
 
     Main-is:
         Main.hs
@@ -42,17 +42,17 @@ Executable ddc
         directory       == 1.2.*,
         mtl             == 2.1.*,
         transformers    == 0.3.*,
-        ddc-base        == 0.4.0.*,
-        ddc-core        == 0.4.0.*,
-        ddc-core-eval   == 0.4.0.*,
-        ddc-core-simpl  == 0.4.0.*,
-        ddc-core-salt   == 0.4.0.*,
-        ddc-core-llvm   == 0.4.0.*,
-        ddc-core-tetra  == 0.4.0.*,
-        ddc-code        == 0.4.0.*,
-        ddc-build       == 0.4.0.*,
-        ddc-driver      == 0.4.0.*,
-        ddc-interface   == 0.4.0.*
+        ddc-base        == 0.4.1.*,
+        ddc-core        == 0.4.1.*,
+        ddc-core-eval   == 0.4.1.*,
+        ddc-core-simpl  == 0.4.1.*,
+        ddc-core-salt   == 0.4.1.*,
+        ddc-core-llvm   == 0.4.1.*,
+        ddc-core-tetra  == 0.4.1.*,
+        ddc-code        == 0.4.1.*,
+        ddc-build       == 0.4.1.*,
+        ddc-driver      == 0.4.1.*,
+        ddc-interface   == 0.4.1.*
 
     Main-is:
         Main.hs
@@ -78,18 +78,18 @@ Executable ddci-core
         haskeline       == 0.7.*,
         directory       == 1.2.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.4.0.*,
-        ddc-core        == 0.4.0.*,
-        ddc-core-eval   == 0.4.0.*,
-        ddc-core-simpl  == 0.4.0.*,
-        ddc-core-salt   == 0.4.0.*,
-        ddc-core-llvm   == 0.4.0.*,
-        ddc-core-flow   == 0.4.0.*,
-        ddc-core-tetra  == 0.4.0.*,
-        ddc-code        == 0.4.0.*,
-        ddc-build       == 0.4.0.*,
-        ddc-driver      == 0.4.0.*,
-        ddc-interface   == 0.4.0.*
+        ddc-base        == 0.4.1.*,
+        ddc-core        == 0.4.1.*,
+        ddc-core-eval   == 0.4.1.*,
+        ddc-core-simpl  == 0.4.1.*,
+        ddc-core-salt   == 0.4.1.*,
+        ddc-core-llvm   == 0.4.1.*,
+        ddc-core-flow   == 0.4.1.*,
+        ddc-core-tetra  == 0.4.1.*,
+        ddc-code        == 0.4.1.*,
+        ddc-build       == 0.4.1.*,
+        ddc-driver      == 0.4.1.*,
+        ddc-interface   == 0.4.1.*
 
     Main-is:
         Main.hs
@@ -148,19 +148,19 @@ Executable ddci-tetra
         haskeline        == 0.7.*,
         directory        == 1.2.*,
         mtl              == 2.1.*,
-        ddc-base         == 0.4.0.*,
-        ddc-core         == 0.4.0.*,
-        ddc-core-eval    == 0.4.0.*,
-        ddc-core-simpl   == 0.4.0.*,
-        ddc-core-salt    == 0.4.0.*,
-        ddc-core-llvm    == 0.4.0.*,
-        ddc-core-flow    == 0.4.0.*,
-        ddc-core-tetra   == 0.4.0.*,
-        ddc-source-tetra == 0.4.0.*,
-        ddc-code         == 0.4.0.*,
-        ddc-build        == 0.4.0.*,
-        ddc-driver       == 0.4.0.*,
-        ddc-interface    == 0.4.0.*
+        ddc-base         == 0.4.1.*,
+        ddc-core         == 0.4.1.*,
+        ddc-core-eval    == 0.4.1.*,
+        ddc-core-simpl   == 0.4.1.*,
+        ddc-core-salt    == 0.4.1.*,
+        ddc-core-llvm    == 0.4.1.*,
+        ddc-core-flow    == 0.4.1.*,
+        ddc-core-tetra   == 0.4.1.*,
+        ddc-source-tetra == 0.4.1.*,
+        ddc-code         == 0.4.1.*,
+        ddc-build        == 0.4.1.*,
+        ddc-driver       == 0.4.1.*,
+        ddc-interface    == 0.4.1.*
 
     Main-is:
         Main.hs
