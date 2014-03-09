@@ -1,5 +1,5 @@
 Name:           ddc-tools
-Version:        0.4.0.1
+Version:        0.4.2.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -18,7 +18,7 @@ Executable ddc-check
 
     Build-depends:
         base            >= 4.6 && < 4.8,
-        ddc-core        == 0.4.0.*
+        ddc-core        == 0.4.2.*
 
     Main-is:
         Main.hs
@@ -42,17 +42,17 @@ Executable ddc
         directory       == 1.2.*,
         mtl             == 2.1.*,
         transformers    == 0.3.*,
-        ddc-base        == 0.4.0.*,
-        ddc-core        == 0.4.0.*,
-        ddc-core-eval   == 0.4.0.*,
-        ddc-core-simpl  == 0.4.0.*,
-        ddc-core-salt   == 0.4.0.*,
-        ddc-core-llvm   == 0.4.0.*,
-        ddc-core-tetra  == 0.4.0.*,
-        ddc-code        == 0.4.0.*,
-        ddc-build       == 0.4.0.*,
-        ddc-driver      == 0.4.0.*,
-        ddc-interface   == 0.4.0.*
+        ddc-base        == 0.4.2.*,
+        ddc-core        == 0.4.2.*,
+        ddc-core-eval   == 0.4.2.*,
+        ddc-core-simpl  == 0.4.2.*,
+        ddc-core-salt   == 0.4.2.*,
+        ddc-core-llvm   == 0.4.2.*,
+        ddc-core-tetra  == 0.4.2.*,
+        ddc-code        == 0.4.2.*,
+        ddc-build       == 0.4.2.*,
+        ddc-driver      == 0.4.2.*,
+        ddc-interface   == 0.4.2.*
 
     Main-is:
         Main.hs

@@ -1,5 +1,5 @@
 Name:           ddc-core-tetra
-Version:        0.4.0.1
+Version:        0.4.2.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -21,10 +21,10 @@ Library
         containers      == 0.5.*,
         transformers    == 0.3.*,
         mtl             == 2.1.*,
-        ddc-base        == 0.4.0.*,
-        ddc-core        == 0.4.0.*,
-        ddc-core-salt   == 0.4.0.*,
-        ddc-core-simpl  == 0.4.0.*
+        ddc-base        == 0.4.2.*,
+        ddc-core        == 0.4.2.*,
+        ddc-core-salt   == 0.4.2.*,
+        ddc-core-simpl  == 0.4.2.*
 
   Exposed-modules:
         DDC.Core.Tetra.Transform.Boxing
