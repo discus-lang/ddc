@@ -193,8 +193,13 @@ toCoreLts lts
         S.LRec bxs
          -> C.LRec [(toCoreB b, toCoreX x) | (b, x) <- bxs ]
 
-        S.LPrivate bks bts
+        S.LPrivate bks Nothing bts
          -> C.LPrivate (map toCoreB bks) Nothing (map toCoreB bts)
+
+        S.LPrivate bks (Just tParent) bts
+         -> C.LPrivate  (map toCoreB bks) 
+                        (Just $ toCoreT tParent) (map toCoreB bts)
+
 
 
 -- Cast -----------------------------------------------------------------------

@@ -13,7 +13,7 @@ import DDC.Core.Pretty
 import DDC.Base.Pretty
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
  ppr Module
         { moduleName            = name
@@ -46,7 +46,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          <> line
 
 
--- Top ------------------------------------------------------------------------
+-- Top --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Top a n) where
  ppr (TopBind _ b x)
   = let dBind = if isBot (typeOfBind b)
@@ -72,7 +72,7 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
   <> line
   <> rbrace
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx
   = {-# SCC "ppr[Exp]" #-}
@@ -152,13 +152,13 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> parens $ text "INFIXVAR" <+> text "\"" <> text str <> text "\""
 
 
--- Alt ------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
  ppr (AAlt p x)
   = ppr p <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
 
 
--- Cast -----------------------------------------------------------------------
+-- Cast -------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Cast a n) where
  ppr cc
   = case cc of
@@ -175,7 +175,7 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
          -> text "run"
 
 
--- Lets -----------------------------------------------------------------------
+-- Lets -------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
@@ -202,30 +202,32 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                                $ map pprLetRecBind bxs)))
                 <$> rbrace
 
-
-
-        LPrivate [b] []
+        LPrivate bs Nothing []
          -> text "private"
-                <+> ppr (binderOfBind b)
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
         
-        LPrivate [b] bs
+        LPrivate bs Nothing bsWit
          -> text "private"
-                <+> ppr (binderOfBind b)
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
                 <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
+                <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
-        LPrivate b []
-         -> text "letregions"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
+        LPrivate bs (Just parent) []
+         -> text "extend"
+                <+> ppr parent
+                <+> text "using"
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
 
-        LPrivate b bs
-         -> text "letregions"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
+        LPrivate bs (Just parent) bsWit
+         -> text "extend"
+                <+> ppr parent
+                <+> text "using"
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
                 <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
+                <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
 
--- Binder ---------------------------------------------------------------------
+-- Binder -----------------------------------------------------------------------------------------
 pprBinder   :: Pretty n => Binder n -> Doc
 pprBinder bb
  = case bb of
@@ -243,7 +245,7 @@ pprBinderGroup lam (rs, t)
         = lam <> parens ((hsep $ map pprBinder rs) <+> text ":" <+> ppr t) <> dot
 
 
--- Utils ----------------------------------------------------------------------
+-- Utils ------------------------------------------------------------------------------------------
 breakWhen :: Bool -> Doc
 breakWhen True   = line
 breakWhen False  = space

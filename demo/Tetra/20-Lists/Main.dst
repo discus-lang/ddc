@@ -1,9 +1,9 @@
 
 -- Demonstration of list combinators and combining commutable effects.
 -- 
--- This module can be type-checked with "ddc -check <file>" but will not
--- compile to object code yet because back-end support for higher order
--- functions is not complete.
+-- This module can be type-checked with "ddc -check" and "ddc -load"
+-- but will not compile to object code yet because back-end support for
+-- higher order functions is not complete.
 --
 module Main 
 export main 

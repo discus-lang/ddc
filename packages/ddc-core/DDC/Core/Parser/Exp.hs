@@ -23,7 +23,7 @@ import qualified DDC.Type.Compounds     as T
 import Control.Monad.Error
 
 
--- Expressions ----------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 -- | Parse a core language expression.
 pExp    :: Ord n => Context -> Parser n (Exp SourcePos n)
 pExp c
@@ -248,7 +248,7 @@ pExpAtomSP c
  <?> "a variable, constructor, or parenthesised type"
 
 
--- Alternatives ---------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 -- Case alternatives.
 pAlt    :: Ord n => Context -> Parser n (Alt SourcePos n)
 pAlt c
@@ -304,7 +304,7 @@ pBinds c
  ]
 
 
--- Bindings -------------------------------------------------------------------
+-- Bindings ---------------------------------------------------------------------------------------
 -- | Parse some `Lets`, also returning the source position where they
 --   started.
 pLetsSP :: Ord n 
@@ -454,7 +454,7 @@ pLetBinding c
          ]
 
 
--- Statements -----------------------------------------------------------------
+-- Stmt -------------------------------------------------------------------------------------------
 data Stmt n
         = StmtBind  SourcePos (Bind n) (Exp SourcePos n)
         | StmtMatch SourcePos (Pat n)  (Exp SourcePos n) (Exp SourcePos n)

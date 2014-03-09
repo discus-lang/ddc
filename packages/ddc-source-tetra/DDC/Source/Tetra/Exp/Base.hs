@@ -96,7 +96,7 @@ data Lets a n
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![Bind n] ![Bind n]
+        | LPrivate ![Bind n] !(Maybe (Type n)) ![Bind n]
         deriving (Show, Eq)
 
 
@@ -159,7 +159,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
-        LPrivate bs1 bs2        -> rnf bs1  `seq` rnf bs2
+        LPrivate bs1 mR bs2     -> rnf bs1  `seq` rnf mR `seq` rnf bs2
 
 
 instance (NFData a, NFData n) => NFData (Alt a n) where
