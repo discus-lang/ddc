@@ -172,8 +172,8 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 -- When checking type type of a lambda abstraction against an existing
 --   functional type we allow the formal paramter to be missing its
 --   type annotation, and in this case we replace it with the expected type.
-checkLam !table !a !ctx !b1 !x2 !(Check tXX)
- | Just (tX1, tX2)      <- takeTFun tXX
+checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
+ | Just (tX1, tX2)      <- takeTFun tExpected
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
@@ -191,7 +191,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
                 return  (replaceTypeOfBind tX1 b1, tX1, ctx)
              else do
                 ctx0    <- makeEq config a ctx t1 tX1 
-                        $  ErrorMismatch a tX1 t1 (XLam a b1 x2)
+                        $  ErrorMismatch a t1 tExpected (XLam a b1 x2)
                 return  (b1, t1, ctx0)
                         
         -- Check the body ----------------------
@@ -245,7 +245,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tXX)
         ctrace  $ vcat 
                 [ text "* Lam Check"
                 , indent 2 $ ppr (XLam a b1' x2)
-                , text "  IN:  " <> ppr tXX
+                , text "  IN:  " <> ppr tExpected
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx
                 , indent 2 $ ppr ctx_cut
