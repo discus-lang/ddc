@@ -57,10 +57,11 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
                           <> text "=" <+> align (ppr x)))
 
  ppr (TopData _ (DataDef name params ctors))
-  = hsep
-        (  [ text "data", ppr name]
-        ++ [parens $ ppr b | b <- params]
-        ++ [text "where" <+> lbrace])
+  = (text "data"
+        <+> hsep ( ppr name
+                 : map (parens . ppr) params)
+        <+> text "where"
+        <+> lbrace)
   <$> indent 8
         (vcat [ ppr (dataCtorName ctor) 
                 <+> text ":" 

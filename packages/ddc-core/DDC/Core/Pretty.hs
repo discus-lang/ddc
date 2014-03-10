@@ -158,8 +158,8 @@ instance (Pretty n, Eq n) => Pretty (DataDef n) where
  pprPrec _ def
   = {-# SCC "ppr[DataDef]" #-}
       (text "data" 
-        <+> ppr (dataDefTypeName def)
-        <+> hsep (map (parens . ppr) (dataDefParams def))
+        <+> hsep ( ppr (dataDefTypeName def)
+                 : map (parens . ppr) (dataDefParams def))
         <+> text "where"
         <+>  lbrace)
   <$> (case dataDefCtors def of

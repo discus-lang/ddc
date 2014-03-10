@@ -1,0 +1,27 @@
+
+:set lang Tetra
+
+-- Check that type and value name spaces are distinct.
+:load..
+module Test 
+data Foo where
+        Foo : Foo
+        Bar : Foo
+with letrec
+foo (x : Foo) : Foo
+ = case x of
+        Foo -> Bar
+        Bar -> Bar
+;;
+
+
+-- Error: undefined data constructor Foo
+:load..
+module Test
+data Foo where
+        Bar : Foo
+with letrec
+foo (x : Foo) : Foo
+ = case x of
+        Foo -> Bar
+;;
