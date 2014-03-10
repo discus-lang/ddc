@@ -1,5 +1,7 @@
 
 ok
+
+-- Check that type and value name spaces are distinct.
 module Test 
 data Foo where {
         Foo : Foo;
@@ -16,3 +18,10 @@ letrec {
          -> Bar
       }
 }
+
+
+-- Error: undefined data constructor Foo
+Error loading module
+  When checking expression.
+    <batch>:25:4
+    Undefined data constructor: Foo
