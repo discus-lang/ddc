@@ -12,17 +12,18 @@ import DDC.Core.Exp
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.AnonymizeX
-import DDC.Core.Transform.Snip          as Snip
-import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
-import DDC.Core.Transform.Eta           as Eta
-import DDC.Core.Transform.Prune
-import DDC.Core.Transform.Forward       as Forward
 import DDC.Core.Transform.Bubble
-import DDC.Core.Transform.Inline
-import DDC.Core.Transform.Namify
-import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Elaborate
+import DDC.Core.Transform.Eta           as Eta
+import DDC.Core.Transform.Flatten
+import DDC.Core.Transform.Forward       as Forward
+import DDC.Core.Transform.Inline
+import DDC.Core.Transform.Lambdas
+import DDC.Core.Transform.Namify
+import DDC.Core.Transform.Prune
+import DDC.Core.Transform.Rewrite
+import DDC.Core.Transform.Snip          as Snip
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
@@ -134,26 +135,23 @@ applyTransform !profile !_kenv !_tenv !spec !mm
  = let  res x = return $ resultDone (show $ ppr spec) x
    in case spec of
         Id               -> res mm
-        Anonymize        -> res $ anonymizeX mm
-        Snip config      -> res $ snip config mm
-        Flatten          -> res $ flatten mm
-
-        Beta config      
-         -> return $ betaReduce    profile config mm
-
-        Eta  config      
-         -> return $ Eta.etaModule profile config mm
+        Anonymize        -> res    $ anonymizeX mm
+        Beta config      -> return $ betaReduce    profile config mm
+        Bubble           -> res    $ bubbleModule mm
+        Elaborate        -> res    $ elaborateModule mm
+        Eta  config      -> return $ Eta.etaModule profile config mm
+        Flatten          -> res    $ flatten mm
 
         Forward          
          -> let config  = Forward.Config (const FloatAllow) False
             in  return $ forwardModule profile config mm
 
-        Bubble           -> res $ bubbleModule mm
+        Inline getDef    -> res    $ inline getDef Set.empty mm
+        Lambdas          -> res    $ lambdasModule mm
         Namify namK namT -> namifyUnique namK namT mm >>= res
-        Inline getDef    -> res $ inline getDef Set.empty mm
-        Rewrite rules    -> res $ rewriteModule rules mm
-        Prune            -> res $ pruneModule profile mm
-        Elaborate        -> res $ elaborateModule mm
+        Prune            -> res    $ pruneModule profile mm
+        Rewrite rules    -> res    $ rewriteModule rules mm
+        Snip config      -> res    $ snip config mm
 
 
 -- Expressions ----------------------------------------------------------------
@@ -288,25 +286,24 @@ applyTransformX !profile !kenv !tenv !spec !xx
    in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
-        Snip config       -> res    $ snip config xx
+        Beta config       -> return $ betaReduce profile config xx
+        Bubble            -> res    $ bubbleX kenv tenv xx
+        Elaborate{}       -> res    $ elaborateX xx
+        Eta  config       -> return $ Eta.etaX   profile config kenv tenv xx
         Flatten           -> res    $ flatten xx
-        Inline  getDef    -> res    $ inline getDef Set.empty xx
-
-        Beta config       
-         -> return $ betaReduce profile config xx
-
-        Eta  config       
-         -> return $ Eta.etaX   profile config kenv tenv xx
-
-        Prune             
-         -> return $ pruneX     profile kenv tenv xx
 
         Forward          
          -> let config  = Forward.Config (const FloatAllow) False
             in  return $ forwardX profile config xx
 
-        Bubble            -> res    $ bubbleX kenv tenv xx
+        Inline  getDef    -> res    $ inline getDef Set.empty xx
+
+        -- TODO: Make this work for single expressions.
+        -- Attach the lifted bindings to an outer letrec.
+        Lambdas           -> res    $ xx
+
         Namify  namK namT -> namifyUnique namK namT xx >>= res
+        Prune             -> return $ pruneX     profile kenv tenv xx
         Rewrite rules     -> return $ rewriteX rules xx
-        Elaborate{}       -> res    $ elaborateX xx
-    
+        Snip config       -> res    $ snip config xx
+

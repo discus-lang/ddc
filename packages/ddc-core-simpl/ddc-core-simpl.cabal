@@ -46,6 +46,7 @@ Library
         DDC.Core.Transform.Flatten
         DDC.Core.Transform.Forward
         DDC.Core.Transform.Inline
+        DDC.Core.Transform.Lambdas
         DDC.Core.Transform.Namify
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Snip

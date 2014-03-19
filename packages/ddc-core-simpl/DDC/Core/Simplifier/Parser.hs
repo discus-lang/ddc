@@ -21,7 +21,7 @@ import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Auxilliary information that may be used by a simplifier.
 data SimplifierDetails s a n
         = SimplifierDetails
@@ -40,7 +40,7 @@ data SimplifierDetails s a n
         , simplifierTemplates           :: [Module a n] }
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | A parser of simplifier specifications.
 type Parser n a
         = P.Parser (Tok n) a
@@ -192,21 +192,17 @@ readTransformAtomic kk
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
-
-        "Snip"          -> Just (Snip Snip.configZero)
-        "SnipOver"      -> Just (Snip Snip.configZero { Snip.configSnipOverApplied = True })
-
-        "Eta"           -> Just (Eta  Eta.configZero  { Eta.configExpand = True })
-
-        "Flatten"       -> Just Flatten
-
         "Beta"          -> Just (Beta Beta.configZero)
         "BetaLets"      -> Just (Beta Beta.configZero { Beta.configBindRedexes    = True })
-
-        "Prune"         -> Just Prune
-        "Forward"       -> Just Forward
         "Bubble"        -> Just Bubble
         "Elaborate"     -> Just Elaborate
+        "Eta"           -> Just (Eta  Eta.configZero  { Eta.configExpand = True })
+        "Flatten"       -> Just Flatten
+        "Forward"       -> Just Forward
+        "Lambdas"       -> Just Lambdas
+        "Prune"         -> Just Prune
+        "Snip"          -> Just (Snip Snip.configZero)
+        "SnipOver"      -> Just (Snip Snip.configZero { Snip.configSnipOverApplied = True })
         _               -> Nothing
 
  | otherwise
@@ -232,5 +228,4 @@ pModuleName :: Parser n ModuleName
 pModuleName = P.pTokMaybe f
  where  f (KCon n) = Just $ ModuleName [n]
         f _        = Nothing
-
 

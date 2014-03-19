@@ -21,10 +21,10 @@ import foreign c value
 where
 
 -- Define configurable syntax.
-add x y = add# [Nat#] x y       -- used for (+)
-sub x y = sub# [Nat#] x y       -- used for (-)
-eq  x y = eq#  [Nat#] x y       -- used for (==)
-ge  x y = ge#  [Nat#] x y       -- used for (>=)
+add x y = add# [Nat#] x y           -- used for (+)
+sub x y = sub# [Nat#] x y           -- used for (-)
+eq  x y = eq#  [Nat#] [Bool#] x y   -- used for (==)
+ge  x y = ge#  [Nat#] x y           -- used for (>=)
 
 
 -------------------------------------------------------------------------------

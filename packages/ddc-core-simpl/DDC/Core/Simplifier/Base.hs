@@ -68,23 +68,8 @@ data Transform s a n
         -- | Rewrite named binders to anonymous deBruijn binders.
         | Anonymize
 
-        -- | Introduce let-bindings for nested applications.
-        | Snip  Snip.Config
-
-        -- | Flatten nested let and case expressions.
-        | Flatten
-
         -- | Perform beta reduction when the argument is not a redex.
         | Beta  Beta.Config
-
-        -- | Perform eta expansion and reduction.
-        | Eta    Eta.Config
-
-        -- | Remove unused, pure let bindings.
-        | Prune
-
-        -- | Float single-use bindings forward into their use sites.
-        | Forward
 
         -- | Float casts outwards.
         | Bubble
@@ -93,15 +78,22 @@ data Transform s a n
         --   otherwise in the program.
         | Elaborate
 
+        -- | Perform eta expansion and reduction.
+        | Eta    Eta.Config
+
+        -- | Flatten nested let and case expressions.
+        | Flatten
+
+        -- | Float single-use bindings forward into their use sites.
+        | Forward
+
         -- | Inline definitions into their use sites.
         | Inline
                 { -- | Get the unfolding for a named variable.
                   transInlineDef   :: InlinerTemplates a n }
 
-        -- | Apply general rule-based rewrites.
-        | Rewrite
-                { -- | List of rewrite rules along with their names.
-                  transRules       :: NamedRewriteRules a n }
+        -- | Perform lambda lifting.
+        | Lambdas
 
         -- | Rewrite anonymous binders to fresh named binders.
         | Namify
@@ -114,6 +106,17 @@ data Transform s a n
                   --   names that don't conflict with any already in this
                   --   environment.
                 , transMkNamifierX :: Env n -> Namifier s n }
+
+        -- | Remove unused, pure let bindings.
+        | Prune
+
+        -- | Apply general rule-based rewrites.
+        | Rewrite
+                { -- | List of rewrite rules along with their names.
+                  transRules       :: NamedRewriteRules a n }
+
+        -- | Introduce let-bindings for nested applications.
+        | Snip  Snip.Config
 
 
 -- | Function to get the inliner template (unfolding) for the given name.
@@ -130,15 +133,16 @@ instance Pretty (Transform s a n) where
   = case ss of
         Id              -> text "Id"
         Anonymize       -> text "Anonymize"
-        Snip{}          -> text "Snip"
-        Flatten         -> text "Flatten"
         Beta{}          -> text "Beta"
-        Eta{}           -> text "Eta"
-        Prune           -> text "Prune"
-        Forward         -> text "Forward"
         Bubble          -> text "Bubble"
-        Inline{}        -> text "Inline"
-        Namify{}        -> text "Namify"
-        Rewrite{}       -> text "Rewrite"
         Elaborate       -> text "Elaborate"
+        Eta{}           -> text "Eta"
+        Flatten         -> text "Flatten"
+        Forward         -> text "Forward"
+        Inline{}        -> text "Inline"
+        Lambdas{}       -> text "Lambdas"
+        Namify{}        -> text "Namify"
+        Prune           -> text "Prune"
+        Rewrite{}       -> text "Rewrite"
+        Snip{}          -> text "Snip"
 
