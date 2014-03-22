@@ -9,16 +9,15 @@ module DDC.Driver.Config
         , ViaBackend    (..))
 where
 import DDC.Build.Builder                        
-import DDC.Core.Simplifier                      (Simplifier)
+import DDC.Core.Simplifier              (Simplifier)
 import DDC.Core.Pretty
 import DDC.Core.Module
-
-import qualified DDC.Core.Salt.Runtime          as Salt
-import qualified DDC.Core.Salt                  as Salt
-
-import qualified DDC.Core.Lite                  as Lite
+import qualified DDC.Core.Salt.Runtime  as Salt
+import qualified DDC.Core.Salt          as Salt
+import qualified DDC.Core.Lite          as Lite
 
 
+---------------------------------------------------------------------------------------------------
 -- | Configuration for main compiler stages.
 data Config
         = Config
@@ -69,7 +68,7 @@ data Config
         }
 
 
--- ConfigPretty ---------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Core language pretty printer configuration.
 data ConfigPretty
         = ConfigPretty
@@ -128,7 +127,7 @@ prettyModeOfConfig config
          { modeAltExp                   = modeExp }
         
 
--- ViaBackend -----------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 data ViaBackend
         -- | Compile via the C backend.
         = ViaC

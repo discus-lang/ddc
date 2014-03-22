@@ -5,7 +5,8 @@ module DDC.Driver.Command.Load
         , cmdLoadSourceTetraFromString
         , cmdLoadCoreFromFile
         , cmdLoadCoreFromString
-        , cmdLoadSimplifier)
+        , cmdLoadSimplifier
+        , cmdLoadSimplifierIntoBundle)
 where
 import DDC.Interface.Source
 import DDC.Build.Pipeline
@@ -17,16 +18,20 @@ import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Pretty
+import DDC.Data.SourcePos
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
+import Control.DeepSeq
 import System.FilePath
 import System.Directory
 import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
+import qualified DDC.Build.Language.Tetra       as Tetra
+import qualified DDC.Core.Tetra                 as Tetra
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load and transform a module.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
@@ -48,7 +53,14 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
 
  -- Load a Disciple Source Tetra module.
  | ".dst"        <- takeExtension filePath
- =      cmdLoadSourceTetraFromFile config filePath
+ = case mStrSimpl of
+        Nothing
+         ->     cmdLoadSourceTetraFromFile config Tetra.bundle filePath
+
+        Just strSimpl
+         -> do  bundle' <- cmdLoadSimplifierIntoBundle config 
+                                Tetra.bundle strSimpl fsTemplates
+                cmdLoadSourceTetraFromFile config bundle' filePath
 
  -- Load a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
@@ -66,16 +78,17 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
    in   throwError $ "Cannot load '" ++ ext ++ "' files."
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Source Tetra module from a file.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 cmdLoadSourceTetraFromFile
-        :: Config               -- ^ Driver config.
-        -> FilePath             -- ^ Module file path.
+        :: Config                               -- ^ Driver config.
+        -> Bundle Int Tetra.Name Tetra.Error     -- ^ Tetra language bundle.
+        -> FilePath                             -- ^ Module file path.
         -> ErrorT String IO ()
 
-cmdLoadSourceTetraFromFile config filePath
+cmdLoadSourceTetraFromFile config bundle filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -85,27 +98,32 @@ cmdLoadSourceTetraFromFile config filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdLoadSourceTetraFromString config (SourceFile filePath) src
+        cmdLoadSourceTetraFromString config bundle (SourceFile filePath) src
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Source Tetra module from a string.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 cmdLoadSourceTetraFromString
-        :: Config               -- ^ Driver config.
-        -> Source               -- ^ Source of the code.
-        -> String               -- ^ Program module text.
+        :: Config                               -- ^ Driver config.
+        -> Bundle Int Tetra.Name Tetra.Error     -- ^ Tetra language bundle.
+        -> Source                               -- ^ Source of the code.
+        -> String                               -- ^ Program module text.
         -> ErrorT String IO ()
 
-cmdLoadSourceTetraFromString config source str
+cmdLoadSourceTetraFromString config bundle source str
  = let
         pmode   = prettyModeOfConfig $ configPretty config
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
          $ stageSourceTetraLoad config source
-         [ PipeCoreOutput pmode SinkStdout ]
+         [ PipeCoreReannotate (\a -> a { annotTail = () })
+         [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
+                                                (bundleSimplifier bundle)
+         [ PipeCoreOutput pmode SinkStdout ]]]
+
    in do
         errs    <- liftIO pipeLoad
         case errs of
@@ -113,7 +131,7 @@ cmdLoadSourceTetraFromString config source str
          es -> throwError $ renderIndent $ vcat $ map ppr es
  
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Core module from a file.
 --   The result is printed to @stdout@.
 cmdLoadCoreFromFile
@@ -135,7 +153,7 @@ cmdLoadCoreFromFile config language filePath
         cmdLoadCoreFromString config language (SourceFile filePath) src
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Core module from a string.
 --   The result it printed to @stdout@.
 cmdLoadCoreFromString
@@ -173,7 +191,7 @@ cmdLoadCoreFromString config language source str
          es -> throwError $ renderIndent $ vcat $ map ppr es
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Parse the simplifier defined in this string, 
 --   and load it and all the inliner templates into the language bundle.
 cmdLoadSimplifier 
@@ -185,7 +203,22 @@ cmdLoadSimplifier
 
 cmdLoadSimplifier config language strSimpl fsTemplates
  | Language bundle      <- language
- , modules_bundle       <- bundleModules bundle
+ = do   bundle' <- cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
+        return  $ Language bundle'
+
+
+-- | Parse the simplifier defined in this string,
+--   and load it and all the inliner templates into the bundle
+cmdLoadSimplifierIntoBundle
+        :: (Ord n, Show n, NFData n, Pretty n, Pretty (err (AnTEC SourcePos n)))
+        => Config               -- ^ Driver config.
+        -> Bundle s n err       -- ^ Language bundle
+        -> String               -- ^ Simplifier specification.
+        -> [FilePath]           -- ^ Modules to use as inliner templates.
+        -> ErrorT String IO (Bundle s n err)
+
+cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
+ | modules_bundle       <- bundleModules bundle
  , mkNamT               <- bundleMakeNamifierT bundle
  , mkNamX               <- bundleMakeNamifierX bundle
  , rules                <- bundleRewriteRules bundle
@@ -231,5 +264,5 @@ cmdLoadSimplifier config language strSimpl fsTemplates
           -> throwError $ renderIndent $ ppr err
 
          Right simpl
-          -> return $ Language $ bundle { bundleSimplifier = simpl }
+          -> return $ bundle { bundleSimplifier = simpl }
 
