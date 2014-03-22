@@ -27,6 +27,7 @@ Library
   Exposed-modules:
         DDC.Base.Parser
         DDC.Base.Pretty
+        DDC.Base.CompoundName
 
         DDC.Control.Monad.Check
 

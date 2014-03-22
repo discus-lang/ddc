@@ -26,6 +26,9 @@ data Name
         -- | A user defined constructor.
         | NameCon               String
 
+        -- | An extended name.
+        | NameExt               Name String
+
         -- | Baked-in type constructors.
         | NameTyConTetra        TyConTetra
 

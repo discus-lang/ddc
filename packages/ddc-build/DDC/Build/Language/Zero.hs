@@ -13,6 +13,7 @@ import DDC.Build.Language.Base
 import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
+import DDC.Base.Name
 import DDC.Data.Token
 import DDC.Type.Exp
 import Data.Typeable
@@ -65,14 +66,29 @@ instance Pretty (Error a) where
 -- Wrap the names we use for the zero fragment, 
 -- so they get pretty printed properly.
 data Name 
-        = Name String
+        = Name    String
+        | NameExt Name String
         deriving (Eq, Ord, Show, Typeable)
 
+
 instance NFData Name where
- rnf (Name str) = rnf str
+ rnf (Name str)         = rnf str
+ rnf (NameExt n str)    = rnf n `seq` rnf str
+
 
 instance Pretty Name where
- ppr (Name str) = text str
+ ppr (Name str)         = text str
+ ppr (NameExt n str)    = ppr n <> text "$" <> text str
+
+
+instance CompoundName Name where
+ extendName n str       
+  = NameExt n str
+ 
+ splitName nn
+  = case nn of
+        NameExt n str   -> Just (n, str)
+        _               -> Nothing
 
 
 -- | Lex a string to tokens, using primitive names.

@@ -52,6 +52,7 @@ import DDC.Core.Salt.Name
 
 import DDC.Type.Exp
 import DDC.Base.Pretty
+import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
 
@@ -61,7 +62,8 @@ instance NFData Name where
   = case nn of
         NameVar s               -> rnf s
         NameCon s               -> rnf s
-
+        NameExt n s             -> rnf n `seq` rnf s
+        
         NameTyConTetra con      -> rnf con
         NameDaConTetra con      -> rnf con
 
@@ -84,6 +86,7 @@ instance Pretty Name where
   = case nn of
         NameVar  v              -> text v
         NameCon  c              -> text c
+        NameExt  n s            -> ppr n <> text "$" <> text s
 
         NameTyConTetra tc       -> ppr tc
         NameDaConTetra dc       -> ppr dc
@@ -100,6 +103,16 @@ instance Pretty Name where
         NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
 
         NameHole                -> text "?"
+
+
+instance CompoundName Name where
+ extendName n str       
+  = NameExt n str
+ 
+ splitName nn
+  = case nn of
+        NameExt n str   -> Just (n, str)
+        _                -> Nothing
 
 
 -- | Read the name of a variable, constructor or literal.

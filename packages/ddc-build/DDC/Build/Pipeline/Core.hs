@@ -19,6 +19,7 @@ import DDC.Build.Pipeline.Salt
 import DDC.Build.Language
 import DDC.Core.Simplifier
 import DDC.Base.Pretty
+import DDC.Base.Name
 import DDC.Data.Canned
 import DDC.Llvm.Pretty                                  ()
 
@@ -99,7 +100,8 @@ data PipeCore a n where
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
-        :: !(Fragment n err)
+        :: CompoundName n
+        => !(Fragment n err)
         -> !s
         -> !(Simplifier s a n)
         -> ![PipeCore () n] 

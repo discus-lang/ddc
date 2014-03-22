@@ -22,6 +22,7 @@ import DDC.Core.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty
+import DDC.Base.Name
 import DDC.Core.Module
 import Data.Typeable
 import Control.Monad
@@ -157,7 +158,7 @@ cmdTransExpCont _config traceTrans language eatExp source str
 -- Trans ------------------------------------------------------------------------------------------
 -- | Transform an expression, or display errors
 transExp
-        :: (Eq n, Ord n, Pretty n, Show n)
+        :: (Eq n, Ord n, Pretty n, Show n, CompoundName n)
         => Bool                         -- ^ Trace transform information.
         -> Profile n                    -- ^ Language profile.
         -> KindEnv n                    -- ^ Kind Environment.

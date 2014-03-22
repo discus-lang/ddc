@@ -28,6 +28,7 @@ import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
 import DDC.Base.Pretty                          hiding ((</>))
+import DDC.Base.Name
 import Data.Typeable
 import System.FilePath
 import Data.Map                                 (Map)
@@ -82,7 +83,7 @@ data State
 
 data TransHistory
 	= forall s n err
-        .  (Typeable n, Ord n, Show n, Pretty n)
+        .  (Typeable n, Ord n, Show n, Pretty n, CompoundName n)
 	=> TransHistory
 	{ -- | Original expression and its types
 	  historyExp		:: (Exp (AnTEC () n) n, Type n, Effect n, Closure n) 

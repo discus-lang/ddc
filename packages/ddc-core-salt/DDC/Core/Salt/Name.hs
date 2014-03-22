@@ -63,6 +63,7 @@ import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
+import DDC.Base.Name
 import Data.Typeable
 import Data.Char
 import Data.List
@@ -75,6 +76,9 @@ data Name
 
         -- | Constructor names.
         | NameCon       String
+
+        -- | An extended name.
+        | NameExt       Name String
 
         -- | The abstract heap object type constructor.
         | NameObjTyCon
@@ -109,6 +113,7 @@ instance NFData Name where
  rnf name
   = case name of
         NameVar s               -> rnf s
+        NameExt n s             -> rnf n `seq` rnf s
         NameCon s               -> rnf s
         NameObjTyCon            -> ()
         NamePrimTyCon con       -> rnf con
@@ -126,6 +131,7 @@ instance Pretty Name where
   = case nn of
         NameVar  n              -> text n
         NameCon  n              -> text n
+        NameExt  n ext          -> ppr n <> text "$" <> text ext
         NameObjTyCon            -> text "Obj"
         NamePrimTyCon tc        -> ppr tc
         NamePrimOp p            -> ppr p
@@ -136,6 +142,16 @@ instance Pretty Name where
         NameLitInt  i           -> integer i  <> text "i#"
         NameLitTag  i           -> text "TAG" <> integer i <> text "#"
         NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+
+
+instance CompoundName Name where
+ extendName n str       
+  = NameExt n str
+ 
+ splitName nn
+  = case nn of
+        NameExt n str   -> Just (n, str)
+        _               -> Nothing
 
 
 -- | Read the name of a variable, constructor or literal.

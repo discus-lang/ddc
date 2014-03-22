@@ -12,6 +12,7 @@ module DDC.Core.Eval.Name
 where
 import DDC.Core.Lexer
 import DDC.Base.Pretty
+import DDC.Base.Name
 import DDC.Data.Token
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -24,19 +25,32 @@ import Data.List
 -- | Names of things recognised by the evaluator.
 -- 
 data Name 
-        -- Names whose types are bound in the environments.
-        = NameVar     String     -- ^ User variables.
-        | NameCon     String     -- ^ User constructors.
+        -- | User Variables.
+        = NameVar     String
+        
+        -- | User Constructors.
+        | NameCon     String
 
-        -- Names whose types are baked in, and should be attached to 
-        -- the `Bound` constructor that they appear in.
-        | NameInt     Integer    -- ^ Integer literals (which data constructors).
-        | NamePrimCon PrimCon    -- ^ Primitive constructors (eg @List, Nil@).
-        | NamePrimOp  PrimOp     -- ^ Primitive operators    (eg @addInt, subInt@).
+        -- | Extended names.
+        | NameExt     Name String
 
-        | NameLoc     Loc        -- ^ Store locations.
-        | NameRgn     Rgn        -- ^ Region handles.
-        | NameCap     Cap        -- ^ Store capabilities.
+        -- | Integer literals (which data constructors).
+        | NameInt     Integer
+        
+        -- | Primitive constructors (eg @List, Nil@).
+        | NamePrimCon PrimCon
+
+        -- | Primitive operators    (eg @addInt, subInt@).
+        | NamePrimOp  PrimOp
+
+        -- | Store locations.
+        | NameLoc     Loc
+        
+        -- | Region handles.
+        | NameRgn     Rgn
+        
+        -- | Store capabilities.
+        | NameCap     Cap
         deriving (Show, Eq, Ord, Typeable)
 
 
@@ -45,6 +59,7 @@ instance NFData Name where
   = case nn of
         NameVar s       -> rnf s
         NameCon s       -> rnf s
+        NameExt n s     -> rnf n `seq` rnf s
         NameInt i       -> rnf i
         NamePrimCon pc  -> rnf pc
         NamePrimOp  po  -> rnf po
@@ -58,12 +73,23 @@ instance Pretty Name where
   = case nn of
         NameVar     v   -> text v
         NameCon     c   -> text c
+        NameExt     n s -> ppr n <> text "$" <> text s
         NameInt     i   -> text (show i)
         NamePrimCon c   -> ppr c
         NamePrimOp  op  -> ppr op
         NameLoc     l   -> ppr l
         NameRgn     r   -> ppr r
         NameCap     p   -> ppr p
+
+
+instance CompoundName Name where
+ extendName n str       
+  = NameExt n str
+ 
+ splitName nn
+  = case nn of
+        NameExt n str   -> Just (n, str)
+        _               -> Nothing
 
 
 -- Locations ------------------------------------------------------------------

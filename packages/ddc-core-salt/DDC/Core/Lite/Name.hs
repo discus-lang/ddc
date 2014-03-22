@@ -24,6 +24,7 @@ import DDC.Core.Salt.Name.PrimArith
 import DDC.Core.Salt.Name.PrimCast
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
+import DDC.Base.Name
 import Control.DeepSeq
 import Data.Typeable
 import Data.Char
@@ -36,6 +37,9 @@ data Name
 
         -- | A user defined constructor.
         | NameCon               String
+
+        -- | An extended name.
+        | NameExt               Name String
 
         -- | Baked in effect type constructors.
         | NameEffectTyCon       EffectTyCon
@@ -74,6 +78,7 @@ instance NFData Name where
   = case nn of
         NameVar s               -> rnf s
         NameCon s               -> rnf s
+        NameExt n s             -> rnf n `seq` rnf s
         NameEffectTyCon con     -> rnf con
         NameDataTyCon con       -> rnf con
         NamePrimDaCon con       -> rnf con
@@ -89,8 +94,9 @@ instance NFData Name where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  v              -> text v
-        NameCon  c              -> text c
+        NameVar v               -> text v
+        NameCon c               -> text c
+        NameExt n s             -> ppr n <> text "$" <> text s
         NameEffectTyCon con     -> ppr con
         NameDataTyCon dc        -> ppr dc
         NamePrimTyCon tc        -> ppr tc
@@ -102,6 +108,16 @@ instance Pretty Name where
         NameLitNat  i           -> integer i <> text "#"
         NameLitInt  i           -> integer i <> text "i" <> text "#"
         NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+
+
+instance CompoundName Name where
+ extendName n str       
+  = NameExt n str
+ 
+ splitName nn
+  = case nn of
+        NameExt n str   -> Just (n, str)
+        _               -> Nothing
 
 
 -- | Read the name of a variable, constructor or literal.

@@ -92,6 +92,7 @@ import DDC.Core.Salt.Name
         , readLitPrimFloatOfBits)
         
 import DDC.Base.Pretty
+import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
 
@@ -151,6 +152,16 @@ instance Pretty Name where
         NameLitInt      i       -> integer  i <> text "i" <> text "#"
         NameLitWord     i bits  -> integer  i <> text "w" <> int bits <> text "#"
         NameLitFloat    r bits  -> double (fromRational r) <> text "f" <> int bits <> text "#"
+
+
+instance CompoundName Name where
+ extendName n str       
+  = NameVarMod n str
+ 
+ splitName nn
+  = case nn of
+        NameVarMod n str   -> Just (n, str)
+        _                  -> Nothing
 
 
 -- | Read the name of a variable, constructor or literal.

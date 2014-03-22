@@ -27,6 +27,7 @@ import DDC.Core.Transform.Snip          as Snip
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
+import DDC.Base.Name
 import qualified DDC.Base.Pretty        as P
 import qualified Data.Set               as Set
 
@@ -37,7 +38,7 @@ import qualified Data.Set               as Set
 --   The state monad can be used by `Namifier` functions to generate fresh names.
 --
 applySimplifier 
-        :: (Show a, Ord n, Show n, Pretty n) 
+        :: (Show a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -83,7 +84,7 @@ applySimplifier !profile !kenv !tenv !spec !mm
 
 -- | Apply a transform until it stops progressing, or a maximum number of times
 applyFixpoint
-        :: (Show a, Ord n, Show n, Pretty n)
+        :: (Show a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -123,7 +124,7 @@ applyFixpoint !profile !kenv !tenv !i' !spec !mm'
 
 -- | Apply a transform to a module.
 applyTransform
-        :: (Show a, Ord n, Show n, Pretty n)
+        :: (Show a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -160,7 +161,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
 --   The state monad can be used by `Namifier` functions to generate fresh names.
 --
 applySimplifierX 
-        :: (Show a, Show n, Ord n, Pretty n)
+        :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -206,7 +207,7 @@ applySimplifierX !profile !kenv !tenv !spec !xx
 
 -- | Apply a simplifier until it stops progressing, or a maximum number of times
 applyFixpointX
-        :: (Show a, Show n, Ord n, Pretty n)
+        :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment

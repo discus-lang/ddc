@@ -10,6 +10,7 @@ import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Base.Pretty
+import DDC.Base.Name
 import Control.DeepSeq
 import Data.Typeable
 import Data.Map                         (Map)
@@ -27,7 +28,8 @@ data Language
           , Pretty n
           , Pretty (err (AnTEC BP.SourcePos n))
           , Pretty (err (AnTEC () n))
-          , NFData n)
+          , NFData n
+          , CompoundName n)
         => Language (Bundle s n err)
 
 
