@@ -24,6 +24,18 @@ import Data.List
 --   This would be a generally useful thing to have.
 --   Rebake this into a snoc list.
 --
+--   Could build context object that also contained kenv and tenv
+--   along with the zipper.
+-- 
+--   CLAM a b 
+--   CLam a b
+--   CAppLeft a x
+--   CAppRight a x
+--   CCaseScrut a alts
+--   CCastAlt   a x
+--   etc.
+--      
+--
 data Context n
         = ContextLAM      (Bind n)
         | ContextLam      (Bind n)
