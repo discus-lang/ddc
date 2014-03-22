@@ -25,3 +25,13 @@ Error loading module
   When checking expression.
     <batch>:25:4
     Undefined data constructor: Foo
+
+
+-- ISSUE #303: Allow builtin type names to be reused as data constructor names.
+-- It might be best to leave this as unsupported, at least until we 
+-- come across a good reason to change it.
+Error loading module
+  While parsing.
+    Parse error in "<batch>" (line 36, column 9)
+    Unexpected constructor "Region".
+    Expected a variable.

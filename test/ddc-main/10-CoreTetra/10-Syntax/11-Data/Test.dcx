@@ -25,3 +25,19 @@ foo (x : Foo) : Foo
  = case x of
         Foo -> Bar
 ;;
+
+
+-- ISSUE #303: Allow builtin type names to be reused as data constructor names.
+-- It might be best to leave this as unsupported, at least until we 
+-- come across a good reason to change it.
+:load..
+module Test
+data Foo where
+        Region : Foo
+        Effect : Foo
+with letrec
+foo (x : Foo) : Foo
+ = case x of
+        Region -> Effect
+        Effect -> Region
+;;
