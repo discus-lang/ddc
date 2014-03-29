@@ -39,6 +39,7 @@ Library
         DDC.Core.Compounds.Simple
 
         DDC.Core.Exp.Annot
+        DDC.Core.Exp.AnnotCtx
         DDC.Core.Exp.Simple
 
         DDC.Core.Lexer.Names
