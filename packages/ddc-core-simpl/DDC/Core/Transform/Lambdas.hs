@@ -13,89 +13,11 @@ import DDC.Core.Exp
 import DDC.Type.Collect
 import DDC.Base.Pretty
 import DDC.Base.Name
-import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Debug.Trace
 import Data.Monoid
-
----------------------------------------------------------------------------------------------------
--- TODO
---   data Context n
---      contextCtx
---      contextKEnv     
---      contextTEnv      
---
-
--- | Check if this is a context that we should lift lambda abstractions out of.
-isLiftyContext :: Ctx a n -> Bool
-isLiftyContext ctx
- = case ctx of
-        -- Can't lift out of the top-level context.
-        CtxTop          -> False
-        
-        -- Don't lift if we're inside more lambdas.
-        --  We want to lift the whole binding group together.
-        CtxLAM{}        -> False
-        CtxLam{}        -> False
-
-        -- Don't lift out of the top-level context.
-        -- There's nowhere else to lift to.
-        -- TODO: handle chain of let bindings from top-level
-        CtxLetLLet CtxTop _ _ _         -> False
-        CtxLetLRec CtxTop _ _ _ _ _     -> False
-
-        -- Abstraction was let-bound, but not at top-level.
-        CtxLetLLet{}    -> True
-        CtxLetLRec{}    -> True
-        
-        -- We can't do code generation for abstractions in these contexts.
-        CtxAppLeft{}    -> True
-        CtxAppRight{}   -> True
-        CtxLetBody{}    -> True
-        CtxCaseScrut{}  -> True
-        CtxCaseAlt{}    -> True
-        CtxCast{}       -> True
-        
-
--- | Convert a context to a name extension that we can use for an abstraction 
---   lifted out of there. These names are long and ugly, but we'll fix them
---   up once we find all the things that need lifting. 
---
---   We use these contextual names instead of simply generating a globally
---   fresh integer so that they don't change when other bindings are added
---   to the top-level environment,
-encodeCtx :: Ctx a n -> String
-encodeCtx _ = "do_encode_context"
-
-
--- | Produce a unique string from a Bind.
-encodeBind :: Pretty n => Bind n -> String
-encodeBind b
- = case b of
-        BNone _          -> "z"
-        BName n _        -> "a" ++ (renderPlain $ ppr n)
-        BAnon _          -> "n"
-
-
-topNameOfCtx :: Ctx a n -> Maybe n
-topNameOfCtx ctx0
- = eat ctx0
- where  eat ctx
-         = case ctx of
-                CtxTop
-                 -> Nothing
-                
-                CtxLetLLet CtxTop _ (BName n _) _
-                 -> Just n
-
-                CtxLetLRec CtxTop _ _ (BName n _) _ _
-                 -> Just n
-
-                _ -> case takeEnclosingCtx ctx of
-                        Nothing   -> Nothing
-                        Just ctx' -> eat ctx'
 
 
 ---------------------------------------------------------------------------------------------------
@@ -138,32 +60,16 @@ instance Ord n => Monoid (Result a n) where
 --        eg on the types of lambda and let binders.
 --        might have \(x : Thing a). ()
 --
--- TODO: factor out entering context and mantaining environment into separate code
---       can we make some higher order functions to enter each level.
---  
---       enterLAM 
---              :: Context a n  
---              -> a -> Bind n  -> Exp a n
---              -> (Context a n -> Exp a n -> b) -> b
---
---      enterLAM ctx a0 b0 x0
---       $ \ctx x
---
---      (xR, mR)  = enterAppLeft  context a0 xL xR lambdas
---      (xL, mL)  = enterAppRight context a0 xL xR lambdas
---      ...
-
 lambdasX :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
-         => Context a n
-         -> Exp a n 
-         -> ( Exp a n               -- Replacement expression
-            , Result a n)           -- Lifter result passed up
+         => Context a n         -- ^ Enclosing context.
+         -> Exp a n             -- ^ Expression to perform lambda lifting on.
+         -> ( Exp a n           -- Replacement expression
+            , Result a n)       -- Lifter result.
          
 lambdasX c xx
  = case xx of
         XVar _ u
          -> let tenv    = contextTypeEnv c
-
                 usFree  
                  | Env.member u tenv    = Set.singleton (False, u)
                  | otherwise            = Set.empty
@@ -208,35 +114,22 @@ lambdasX c xx
                 , mappend r1 r2)
                 
         XLet a lts x
-         -> let kenv            = contextKindEnv c
-                tenv            = contextTypeEnv c
-                ctx             = contextCtx     c
-                (lts', r1)      = lambdasLets   kenv tenv ctx a x lts
-                
-                (x',   r2)      = enterLetBody  c a lts x lambdasX
+         -> let (lts', r1)      = lambdasLets  c a x lts 
+                (x',   r2)      = enterLetBody c a lts x lambdasX
             in  ( XLet a lts' x'
                 , mappend r1 r2)
                 
         XCase a x alts
          -> let (x',    r1)     = enterCaseScrut c a x alts lambdasX
-
-                kenv            = contextKindEnv c
-                tenv            = contextTypeEnv c
-                ctx             = contextCtx c
-                (alts', r2)     = lambdasAlts kenv tenv ctx a x [] alts
+                (alts', r2)     = lambdasAlts c a x [] alts
             in  ( XCase a x' alts'
                 , mappend r1 r2)
 
         XCast a cc x
-         -> let 
-                kenv            = contextKindEnv c
-                tenv            = contextTypeEnv c
-                ctx             = contextCtx c
-            in  lambdasCast kenv tenv ctx a cc x
+         ->     lambdasCast c a cc x
                 
         XType _ t
-         -> let 
-                kenv    = contextKindEnv c
+         -> let kenv    = contextKindEnv c
 
                 -- Get the free variables in this type.
                 us      = Set.map (\u -> (True, u))  $ freeVarsT kenv t
@@ -261,29 +154,29 @@ lambdasX c xx
 -- Lets -------------------------------------------------------------------------------------------
 lambdasLets
         :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
-        => KindEnv n -> TypeEnv n -> Ctx a n   
+        => Context a n
         -> a -> Exp a n
         -> Lets a n
         -> (Lets a n, Result a n)
            
-lambdasLets kenv tenv ctx a xBody lts
+lambdasLets c a xBody lts
  = case lts of
         LLet b x
-         -> let tenv'     = Env.extend b tenv
-                c'        = Context kenv tenv' (CtxLetLLet ctx a b xBody)
-                (x', r)   = lambdasX c' x
+         -> let (x', r)   = enterLetLLet c a b x xBody lambdasX
             in  (LLet b x', r)
 
         LRec bxs
-         -> let tenv'     = Env.extends (map fst bxs) tenv
+         -> let kenv      = contextKindEnv c
+                tenv'     = Env.extends (map fst bxs) (contextTypeEnv c)
+                ctx       = contextCtx c
                 (bxs', r) = lambdasLetRec kenv tenv' ctx a xBody [] bxs
             in  (LRec bxs', r)
                 
         LPrivate bsR mParent bsW
-         -> let 
-                kenv'   = Env.extends bsR kenv
-
+         -> let kenv    = contextKindEnv c
+                
                 -- Free type variables in the witness bindings.
+                kenv'   = Env.extends bsR kenv
                 usW     = Set.unions 
                         $ map (freeVarsT kenv')
                         $ map typeOfBind bsW
@@ -295,7 +188,6 @@ lambdasLets kenv tenv ctx a xBody lts
 
                 us      = Set.map (\u -> (True, u)) 
                         $ Set.union usW usParent
-
             in  (lts, Result us [])
 
         LWithRegion _
@@ -322,22 +214,26 @@ lambdasLetRec kenv tenv ctx a xBody
 -- Alts -------------------------------------------------------------------------------------------
 lambdasAlts 
         :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
-        => KindEnv n -> TypeEnv n -> Ctx a n   
+        => Context a n
         -> a -> Exp a n
         -> [Alt a n] -> [Alt a n]
         -> ([Alt a n], Result a n)
            
-lambdasAlts _ _ _ _ _ _ []
+lambdasAlts _ _ _ _ []
         = ([], Result Set.empty [])
 
-lambdasAlts kenv tenv ctx a xScrut
+lambdasAlts c a xScrut
         altsAcc (AAlt w x : altsMore)
  = let
+        kenv     = contextKindEnv c
+        tenv     = contextTypeEnv c
+        ctx      = contextCtx c
         c'       = Context kenv tenv (CtxCaseAlt ctx a xScrut altsAcc w altsMore)
+        
         (x', r1) = lambdasX c' x
 
         (alts', r2)
-         = lambdasAlts kenv tenv ctx a xScrut
+         = lambdasAlts c a xScrut
                 (AAlt w x' : altsAcc) altsMore
 
    in   ( AAlt w x' : alts'
@@ -345,12 +241,21 @@ lambdasAlts kenv tenv ctx a xScrut
 
 
 -- Cast -------------------------------------------------------------------------------------------
-lambdasCast kenv tenv ctx a cc x
+lambdasCast
+        :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
+        => Context a n
+        -> a -> Cast a n -> Exp a n
+        -> (Exp a n, Result a n)
+
+lambdasCast c a cc x
   = case cc of
         CastWeakenEffect eff    
          -> let us      = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
-                
-                c'      = Context kenv tenv (CtxCast ctx a cc)
+             
+                kenv    = contextKindEnv c
+                tenv    = contextTypeEnv c
+                ctx     = contextCtx c   
+                c'      = Context kenv tenv (CtxCastBody ctx a cc)
                 (x', r2) = lambdasX c' x
             in  ( XCast a cc x'
                 , mappend (Result us []) r2)
@@ -359,43 +264,113 @@ lambdasCast kenv tenv ctx a cc x
          ->    error "ddc-core-simpl.lambdas: closures not handled."
 
         CastPurify w
-         -> let -- Get the free variables in this witness.
+         -> let -- Get the free variables in the witness.
+                kenv    = contextKindEnv c
+                tenv    = contextTypeEnv c
                 supp    = support kenv tenv w
-
                 us      = Set.unions
                           [ Set.map (\u -> (True,  u)) $ supportSpVar supp
                           , Set.map (\u -> (False, u)) $ supportWiVar supp
                           , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
-                c'       = Context kenv tenv (CtxCast ctx a cc)
-                (x', r2) = lambdasX c' x
-
+                -- Enter into the body.
+                (x', r) = enterCastBody c a cc x lambdasX
+                
             in  ( XCast a cc x'
-                , mappend (Result us []) r2)
+                , mappend (Result us []) r)
 
         CastForget w
-         -> let -- Get the free variables in this witness.
+         -> let -- Get the free variables in the witness.
+                kenv    = contextKindEnv c
+                tenv    = contextTypeEnv c
                 supp    = support kenv tenv w
-
                 us      = Set.unions
                         [ Set.map (\u -> (True,  u)) $ supportSpVar supp
                         , Set.map (\u -> (False, u)) $ supportWiVar supp
                         , Set.map (\u -> (False, u)) $ supportDaVar supp ]
-
-                c'       = Context kenv tenv (CtxCast ctx a cc)
-                (x', r2) = lambdasX c' x
+                
+                -- Enter into the body.
+                (x', r) = enterCastBody  c a cc x lambdasX
 
             in  ( XCast a cc x'
-                , mappend (Result us []) r2)
+                , mappend (Result us []) r)
 
         CastBox 
-         -> let c'      = Context kenv tenv (CtxCast ctx a cc)
-                (x', r) = lambdasX c' x
+         -> let (x', r) = enterCastBody  c a cc x lambdasX
             in  (XCast a cc x', r)
         
 
         CastRun 
-         -> let c'      = Context kenv tenv (CtxCast ctx a cc)
-                (x', r) = lambdasX c' x
+         -> let (x', r)  = enterCastBody c a cc x lambdasX
             in  (XCast a cc x', r)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Check if this is a context that we should lift lambda abstractions out of.
+isLiftyContext :: Ctx a n -> Bool
+isLiftyContext ctx
+ = case ctx of
+        -- Don't lift out of the top-level context.
+        -- There's nowhere else to lift to.
+        --   TODO: handle chain of let bindings from top-level
+        CtxTop                          -> False
+        CtxLetLLet CtxTop _ _ _         -> False
+        CtxLetLRec CtxTop _ _ _ _ _     -> False
+
+        -- Don't lift if we're inside more lambdas.
+        --  We want to lift the whole binding group together.
+        CtxLAM{}        -> False
+        CtxLam{}        -> False
+
+        
+        -- Abstraction was let-bound, but not at top-level.
+        CtxLetLLet{}    -> True
+        CtxLetLRec{}    -> True
+        
+        -- We can't do code generation for abstractions in these contexts.
+        CtxAppLeft{}    -> True
+        CtxAppRight{}   -> True
+        CtxLetBody{}    -> True
+        CtxCaseScrut{}  -> True
+        CtxCaseAlt{}    -> True
+        CtxCastBody{}   -> True
+        
+
+-- | Convert a context to a name extension that we can use for an abstraction 
+--   lifted out of there. These names are long and ugly, but we'll fix them
+--   up once we find all the things that need lifting. 
+--
+--   We use these contextual names instead of simply generating a globally
+--   fresh integer so that they don't change when other bindings are added
+--   to the top-level environment,
+encodeCtx :: Ctx a n -> String
+encodeCtx _ = "do_encode_context"
+
+
+-- | Produce a unique string from a Bind.
+encodeBind :: Pretty n => Bind n -> String
+encodeBind b
+ = case b of
+        BNone _          -> "z"
+        BName n _        -> "a" ++ (renderPlain $ ppr n)
+        BAnon _          -> "n"
+
+
+topNameOfCtx :: Ctx a n -> Maybe n
+topNameOfCtx ctx0
+ = eat ctx0
+ where  eat ctx
+         = case ctx of
+                CtxTop
+                 -> Nothing
+                
+                CtxLetLLet CtxTop _ (BName n _) _
+                 -> Just n
+
+                CtxLetLRec CtxTop _ _ (BName n _) _ _
+                 -> Just n
+
+                _ -> case takeEnclosingCtx ctx of
+                        Nothing   -> Nothing
+                        Just ctx' -> eat ctx'
 

@@ -51,7 +51,7 @@ data Ctx a n
                         ![Alt a n] !(Pat n) ![Alt a n]
 
         -- | Body of a type cast
-        | CtxCast       !(Ctx a n) !a   -- context of let-expression.
+        | CtxCastBody   !(Ctx a n) !a   -- context of let-expression.
                         !(Cast a n)
         deriving (Show, Eq)
 
@@ -70,7 +70,7 @@ takeEnclosingCtx ctx
         CtxLetLRec   c _ _ _ _ _ -> Just c
         CtxCaseScrut c _ _       -> Just c
         CtxCaseAlt   c _ _ _ _ _ -> Just c
-        CtxCast      c _ _       -> Just c
+        CtxCastBody  c _ _       -> Just c
 
 
 

@@ -6,7 +6,9 @@ module DDC.Core.Context
         , enterAppLeft
         , enterAppRight
         , enterLetBody
-        , enterCaseScrut)
+        , enterLetLLet
+        , enterCaseScrut
+        , enterCastBody)
 where
 import DDC.Core.Exp.Annot
 import DDC.Core.Exp.AnnotCtx
@@ -83,6 +85,17 @@ enterLetBody c a lts x f
    in   f c' x
 
 
+-- | Enter the binding of a LLet
+enterLetLLet
+        :: Context a n
+        -> a -> Bind n -> Exp a n -> Exp a n
+        -> (Context a n -> Exp a n -> b) -> b
+
+enterLetLLet c a b x xBody f
+ = let  c' = c  { contextCtx    = CtxLetLLet (contextCtx c) a b xBody }
+   in   f c' x
+
+
 -- | Enter the scrutinee of a case-expression.
 enterCaseScrut
         :: Context a n
@@ -94,4 +107,12 @@ enterCaseScrut c a x alts f
    in   f c' x
 
 
+-- | Enter the body of a cast
+enterCastBody
+        :: Context a n
+        -> a -> Cast a n -> Exp a n
+        -> (Context a n -> Exp a n -> b) -> b
 
+enterCastBody c a cc x f
+ = let  c' = c  { contextCtx    = CtxCastBody (contextCtx c) a cc }
+   in   f c' x
