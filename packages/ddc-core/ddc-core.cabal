@@ -61,6 +61,7 @@ Library
         DDC.Core.Check
         DDC.Core.Collect
         DDC.Core.Compounds
+        DDC.Core.Context
         DDC.Core.Exp
         DDC.Core.Fragment
         DDC.Core.Lexer
