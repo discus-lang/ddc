@@ -54,6 +54,7 @@ instance Ord n => Monoid (Result a n) where
 
 
 -- Exp --------------------------------------------------------------------------------------------
+-- | Perform lambda lifting in an expression.
 -- When leaving a lambda abs, when leaving inner most one then chop it.
 --
 --  TODO: pass up free type variables in type sigs,
@@ -152,6 +153,7 @@ lambdasX c xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
+-- | Perform lambda lifting in some let-bindings.
 lambdasLets
         :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
         => Context a n
@@ -166,10 +168,7 @@ lambdasLets c a xBody lts
             in  (LLet b x', r)
 
         LRec bxs
-         -> let kenv      = contextKindEnv c
-                tenv'     = Env.extends (map fst bxs) (contextTypeEnv c)
-                ctx       = contextCtx c
-                (bxs', r) = lambdasLetRec kenv tenv' ctx a xBody [] bxs
+         -> let (bxs', r) = lambdasLetRec c a [] bxs xBody
             in  (LRec bxs', r)
                 
         LPrivate bsR mParent bsW
@@ -194,53 +193,44 @@ lambdasLets c a xBody lts
          ->     (lts, Result Set.empty [])
 
 
-lambdasLetRec _ _ _ _ _ _ []
+-- LetRec -----------------------------------------------------------------------------------------
+-- | Perform lambda lifting in the right of a single let-rec binding.
+lambdasLetRec 
+        :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
+        => Context a n
+        -> a -> [(Bind n, Exp a n)] -> [(Bind n, Exp a n)] -> Exp a n
+        -> ([(Bind n, Exp a n)], Result a n)
+
+lambdasLetRec _ _ _ [] _
         = ([], Result Set.empty [])
 
-lambdasLetRec kenv tenv ctx a xBody 
-        bxsAcc ((b, x) : bxsMore)
- = let 
-        c'       = Context kenv tenv (CtxLetLRec ctx a bxsAcc b bxsMore xBody)
-        (x', r1) = lambdasX c' x
-        
-        (bxs', r2)
-         = lambdasLetRec kenv tenv ctx a xBody 
-                ((b, x') : bxsAcc) bxsMore
-
+lambdasLetRec c a bxsAcc ((b, x) : bxsMore) xBody
+ = let  (x',   r1) = enterLetLRec  c a bxsAcc b x bxsMore xBody lambdasX
+        (bxs', r2) = lambdasLetRec c a ((b, x') : bxsAcc) bxsMore xBody
    in   ( (b, x') : bxs'
         , mappend r1 r2)
 
 
 -- Alts -------------------------------------------------------------------------------------------
+-- | Perform lambda lifting in the right of a single alternative.
 lambdasAlts 
         :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
         => Context a n
-        -> a -> Exp a n
-        -> [Alt a n] -> [Alt a n]
+        -> a -> Exp a n -> [Alt a n] -> [Alt a n]
         -> ([Alt a n], Result a n)
            
 lambdasAlts _ _ _ _ []
         = ([], Result Set.empty [])
 
-lambdasAlts c a xScrut
-        altsAcc (AAlt w x : altsMore)
- = let
-        kenv     = contextKindEnv c
-        tenv     = contextTypeEnv c
-        ctx      = contextCtx c
-        c'       = Context kenv tenv (CtxCaseAlt ctx a xScrut altsAcc w altsMore)
-        
-        (x', r1) = lambdasX c' x
-
-        (alts', r2)
-         = lambdasAlts c a xScrut
-                (AAlt w x' : altsAcc) altsMore
-
+lambdasAlts c a xScrut altsAcc (AAlt w x : altsMore)
+ = let  (x', r1)    = enterCaseAlt c a xScrut altsAcc w x altsMore lambdasX
+        (alts', r2) = lambdasAlts  c a xScrut (AAlt w x' : altsAcc) altsMore
    in   ( AAlt w x' : alts'
         , mappend r1 r2)
 
 
 -- Cast -------------------------------------------------------------------------------------------
+-- | Perform lambda lifting in the body of a Cast expression.
 lambdasCast
         :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
         => Context a n
@@ -250,16 +240,15 @@ lambdasCast
 lambdasCast c a cc x
   = case cc of
         CastWeakenEffect eff    
-         -> let us      = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
-             
-                kenv    = contextKindEnv c
-                tenv    = contextTypeEnv c
-                ctx     = contextCtx c   
-                c'      = Context kenv tenv (CtxCastBody ctx a cc)
-                (x', r2) = lambdasX c' x
+         -> let kenv    = contextKindEnv c
+                us      = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
+                (x', r) = enterCastBody c a cc x lambdasX
             in  ( XCast a cc x'
-                , mappend (Result us []) r2)
+                , mappend (Result us []) r)
 
+        -- TODO: The closure typing system is a mess, and doing this
+        --       properly would be be hard work, so we just don't bother.
+        --       Lambda lifting won't work with the Eval or Lite fragments.
         CastWeakenClosure{}
          ->    error "ddc-core-simpl.lambdas: closures not handled."
 

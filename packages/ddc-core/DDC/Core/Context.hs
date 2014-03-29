@@ -7,7 +7,9 @@ module DDC.Core.Context
         , enterAppRight
         , enterLetBody
         , enterLetLLet
+        , enterLetLRec
         , enterCaseScrut
+        , enterCaseAlt
         , enterCastBody)
 where
 import DDC.Core.Exp.Annot
@@ -96,6 +98,23 @@ enterLetLLet c a b x xBody f
    in   f c' x
 
 
+-- | Enter a binding of a LRec group.
+enterLetLRec
+        :: Ord n => Context a n
+        -> a -> [(Bind n, Exp a n)] -> Bind n -> Exp a n -> [(Bind n, Exp a n)] -> Exp a n
+        -> (Context a n -> Exp a n -> b) -> b
+
+enterLetLRec c a bxsBefore b x bxsAfter xBody f
+ = let  bsBefore = map fst bxsBefore
+        bsAfter  = map fst bxsAfter
+        c' = c  { contextTypeEnv = Env.extends (bsBefore ++ [b] ++ bsAfter)
+                                        (contextTypeEnv c) 
+                , contextCtx     = CtxLetLRec (contextCtx c) a 
+                                        bxsBefore b bxsAfter xBody 
+                }
+   in   f c' x
+
+
 -- | Enter the scrutinee of a case-expression.
 enterCaseScrut
         :: Context a n
@@ -104,6 +123,20 @@ enterCaseScrut
 
 enterCaseScrut c a x alts f
  = let  c' = c  { contextCtx     = CtxCaseScrut (contextCtx c) a alts }
+   in   f c' x
+
+
+-- | Enter the right of an alternative.
+enterCaseAlt 
+        :: Ord n => Context a n
+        -> a -> Exp a n -> [Alt a n] -> Pat n -> Exp a n -> [Alt a n]
+        -> (Context a n -> Exp a n -> b) -> b
+
+enterCaseAlt c a xScrut altsBefore w x altsAfter f
+ = let  bs      = bindsOfPat w
+        c' = c  { contextTypeEnv = Env.extends bs (contextTypeEnv c)
+                , contextCtx     = CtxCaseAlt (contextCtx c) a
+                                        xScrut altsBefore w altsAfter }
    in   f c' x
 
 
