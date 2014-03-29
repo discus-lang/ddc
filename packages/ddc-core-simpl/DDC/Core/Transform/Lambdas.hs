@@ -1,7 +1,6 @@
 
 module DDC.Core.Transform.Lambdas
         ( lambdasModule
-        , lambdas 
         , encodeBind
         , topNameOfCtx)
 where
@@ -111,25 +110,13 @@ lambdasModule mm
         kenv    = moduleKindEnv mm
         tenv    = moduleTypeEnv mm
 
-        (x', _) = lambdas kenv tenv CtxTop
+        (x', _) = lambdasX kenv tenv CtxTop
                 $ moduleBody mm
 
    in   mm { moduleBody = x' }
 
 
 ---------------------------------------------------------------------------------------------------
-class Lambdas (c :: * -> * -> *) where
- 
- -- | Perform lambda lifting in a thing.
- lambdas :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
-         => KindEnv n               -- ^ Kind environment.
-         -> TypeEnv n               -- ^ Type environment.
-         -> Ctx a n                 -- ^ Current context.
-         -> c a n 
-         -> ( c a n                 -- Replacement expression
-            , Result a n)           -- Lifter result passed up
-            
-
 -- | Result of lambda lifter recursion.
 data Result a n
         = Result (Set (Bool, Bound n))  -- Free variables
@@ -165,10 +152,14 @@ instance Ord n => Monoid (Result a n) where
 --      (xL, mL)  = enterAppRight context a0 xL xR lambdas
 --      ...
 
-
-instance Lambdas Exp where
- lambdas kenv tenv ctx xx
-  = case xx of
+lambdasX :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
+         => KindEnv n -> TypeEnv n -> Ctx a n
+         -> Exp a n 
+         -> ( Exp a n               -- Replacement expression
+            , Result a n)           -- Lifter result passed up
+         
+lambdasX kenv tenv ctx xx
+ = case xx of
         XVar _ u
          -> let usFree  
                  | Env.member u tenv    = Set.singleton (False, u)
@@ -181,7 +172,7 @@ instance Lambdas Exp where
 
         XLAM a b x      
          -> let kenv'   = Env.extend b kenv
-                (x', r) = lambdas kenv' tenv (CtxLAM ctx a b) x
+                (x', r) = lambdasX kenv' tenv (CtxLAM ctx a b) x
                 xx'     = XLAM a b x'
 
                 liftMe  = isLiftyContext ctx
@@ -196,7 +187,7 @@ instance Lambdas Exp where
         XLam a b x
          -> let tenv'   = Env.extend b tenv
 
-                (x', r) = lambdas kenv tenv' (CtxLam ctx a b) x
+                (x', r) = lambdasX kenv tenv' (CtxLam ctx a b) x
 
                 xx'     = XLam a b x'
                 liftMe  = isLiftyContext ctx
@@ -209,8 +200,8 @@ instance Lambdas Exp where
                   else (xx', r)
 
         XApp a x1 x2
-         -> let (x1', r1)       = lambdas kenv tenv   (CtxAppLeft  ctx a x2) x1
-                (x2', r2)       = lambdas kenv tenv   (CtxAppRight ctx a x1) x2
+         -> let (x1', r1)       = lambdasX kenv tenv (CtxAppLeft  ctx a x2) x1
+                (x2', r2)       = lambdasX kenv tenv (CtxAppRight ctx a x1) x2
             in  ( XApp a x1' x2'
                 , mappend r1 r2)
                 
@@ -219,12 +210,12 @@ instance Lambdas Exp where
                 (bs1, bs0)      = bindsOfLets lts
                 kenv'           = Env.extends bs1 kenv
                 tenv'           = Env.extends bs0 tenv
-                (x',   r2)      = lambdas kenv' tenv' (CtxLetBody ctx a lts) x
+                (x',   r2)      = lambdasX    kenv' tenv' (CtxLetBody ctx a lts) x
             in  ( XLet a lts' x'
                 , mappend r1 r2)
                 
         XCase a x alts
-         -> let (x',    r1)     = lambdas     kenv tenv (CtxCaseScrut ctx a alts) x
+         -> let (x',    r1)     = lambdasX    kenv tenv (CtxCaseScrut ctx a alts) x
                 (alts', r2)     = lambdasAlts kenv tenv ctx a x [] alts
             in  ( XCase a x' alts'
                 , mappend r1 r2)
@@ -261,7 +252,7 @@ lambdasLets kenv tenv ctx a xBody lts
  = case lts of
         LLet b x
          -> let tenv'     = Env.extend b tenv
-                (x', r)   = lambdas kenv tenv' (CtxLetLLet ctx a b xBody) x
+                (x', r)   = lambdasX kenv tenv' (CtxLetLLet ctx a b xBody) x
             in  (LLet b x', r)
 
         LRec bxs
@@ -299,7 +290,7 @@ lambdasLetRec kenv tenv ctx a xBody
         bxsAcc ((b, x) : bxsMore)
  = let 
         (x', r1)   
-         = lambdas kenv tenv 
+         = lambdasX kenv tenv 
                 (CtxLetLRec ctx a bxsAcc b bxsMore xBody) 
                 x
         
@@ -326,7 +317,7 @@ lambdasAlts kenv tenv ctx a xScrut
         altsAcc (AAlt w x : altsMore)
  = let
         (x', r1)
-         = lambdas kenv tenv 
+         = lambdasX kenv tenv 
                 (CtxCaseAlt ctx a xScrut altsAcc w altsMore)
                 x
 
@@ -343,7 +334,7 @@ lambdasCast kenv tenv ctx a cc x
   = case cc of
         CastWeakenEffect eff    
          -> let us      = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
-                (x', r2) = lambdas kenv tenv (CtxCast ctx a cc) x
+                (x', r2) = lambdasX kenv tenv (CtxCast ctx a cc) x
             in  ( XCast a cc x'
                 , mappend (Result us []) r2)
 
@@ -359,7 +350,7 @@ lambdasCast kenv tenv ctx a cc x
                           , Set.map (\u -> (False, u)) $ supportWiVar supp
                           , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
-                (x', r2) = lambdas kenv tenv (CtxCast ctx a cc) x
+                (x', r2) = lambdasX kenv tenv (CtxCast ctx a cc) x
 
             in  ( XCast a cc x'
                 , mappend (Result us []) r2)
@@ -373,17 +364,17 @@ lambdasCast kenv tenv ctx a cc x
                         , Set.map (\u -> (False, u)) $ supportWiVar supp
                         , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
-                (x', r2) = lambdas kenv tenv (CtxCast ctx a cc) x
+                (x', r2) = lambdasX kenv tenv (CtxCast ctx a cc) x
 
             in  ( XCast a cc x'
                 , mappend (Result us []) r2)
 
         CastBox 
-         -> let (x', r) = lambdas kenv tenv (CtxCast ctx a cc) x
+         -> let (x', r) = lambdasX kenv tenv (CtxCast ctx a cc) x
             in  (XCast a cc x', r)
         
 
         CastRun 
-         -> let (x', r) = lambdas kenv tenv (CtxCast ctx a cc) x
+         -> let (x', r) = lambdasX kenv tenv (CtxCast ctx a cc) x
             in  (XCast a cc x', r)
 
