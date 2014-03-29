@@ -18,6 +18,7 @@ import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Debug.Trace
+import Data.Monoid
 
 ---------------------------------------------------------------------------------------------------
 -- TODO
@@ -110,8 +111,8 @@ lambdasModule mm
         kenv    = moduleKindEnv mm
         tenv    = moduleTypeEnv mm
 
-        (x', _us, _lts) = lambdas kenv tenv CtxTop
-                        $ moduleBody mm
+        (x', _) = lambdas kenv tenv CtxTop
+                $ moduleBody mm
 
    in   mm { moduleBody = x' }
 
@@ -125,9 +126,21 @@ class Lambdas (c :: * -> * -> *) where
          -> TypeEnv n               -- ^ Type environment.
          -> Ctx a n                 -- ^ Current context.
          -> c a n 
-         -> ( c a n                 -- ^ Replacement expression.
-            , Set (Bool, Bound n)   -- ^ Free variables.
-            , [Lets a n])           -- ^ Lifted bindings
+         -> ( c a n                 -- Replacement expression
+            , Result a n)           -- Lifter result passed up
+            
+
+-- | Result of lambda lifter recursion.
+data Result a n
+        = Result (Set (Bool, Bound n))  -- Free variables
+                 [Lets a n]             -- Lifted bindings
+
+instance Ord n => Monoid (Result a n) where
+ mempty
+  = Result Set.empty []
+ 
+ mappend (Result s1 lts1) (Result s2 lts2)
+  = Result (Set.union s1 s2) (lts1 ++ lts2)
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -137,8 +150,7 @@ class Lambdas (c :: * -> * -> *) where
 --        eg on the types of lambda and let binders.
 --        might have \(x : Thing a). ()
 --
--- TODO: factor out usFree, lts into a monoid, use <> to combine them 
---       factor out entering context and mantaining environment into separate code
+-- TODO: factor out entering context and mantaining environment into separate code
 --       can we make some higher order functions to enter each level.
 --  
 --       enterLAM 
@@ -162,66 +174,60 @@ instance Lambdas Exp where
                  | Env.member u tenv    = Set.singleton (False, u)
                  | otherwise            = Set.empty
 
-            in  (xx, usFree, [])
+            in  (xx, Result usFree [])
 
         XCon{}          
-         ->     (xx, Set.empty, [])
+         ->     (xx, mempty)
 
         XLAM a b x      
-         -> let kenv'           = Env.extend b kenv
-                (x', us, lts)   = lambdas kenv' tenv (CtxLAM ctx a b) x
-                xx'             = XLAM a b x'
+         -> let kenv'   = Env.extend b kenv
+                (x', r) = lambdas kenv' tenv (CtxLAM ctx a b) x
+                xx'     = XLAM a b x'
 
-                liftMe          = isLiftyContext ctx
+                liftMe  = isLiftyContext ctx
 
-            in trace (unlines
-                       $ [ "* LAM LEAVE " ++ show liftMe ])
+            in trace (unlines [ "* LAM LEAVE " ++ show liftMe ])
                 $ if liftMe
                   then let Just n  = topNameOfCtx ctx
                            u       = UName (extendName n (encodeCtx ctx))
-                       in  (XVar a u, us, lts)
-                  else (xx', us, lts)
+                       in  (XVar a u, r)
+                  else (xx', r)
 
         XLam a b x
-         -> let tenv'           = Env.extend b tenv
+         -> let tenv'   = Env.extend b tenv
 
-                (x', us, lts)   = lambdas kenv tenv' (CtxLam ctx a b) x
+                (x', r) = lambdas kenv tenv' (CtxLam ctx a b) x
 
-                xx'             = XLam a b x'
-                liftMe          = isLiftyContext ctx
+                xx'     = XLam a b x'
+                liftMe  = isLiftyContext ctx
 
-            in  trace (unlines
-                        $  [ "* Lam LEAVE " ++ show (isLiftyContext ctx)])
-                        
+            in trace (unlines [ "* Lam LEAVE " ++ show (isLiftyContext ctx)])
                 $ if liftMe
                   then let Just n  = topNameOfCtx ctx
                            u       = UName (extendName n (encodeCtx ctx))
-                       in  (XVar a u, us, lts)
-                  else (xx', us, lts)
+                       in  (XVar a u, r)
+                  else (xx', r)
 
         XApp a x1 x2
-         -> let (x1', us1, lts1)   = lambdas kenv tenv   (CtxAppLeft  ctx a x2) x1
-                (x2', us2, lts2)   = lambdas kenv tenv   (CtxAppRight ctx a x1) x2
+         -> let (x1', r1)       = lambdas kenv tenv   (CtxAppLeft  ctx a x2) x1
+                (x2', r2)       = lambdas kenv tenv   (CtxAppRight ctx a x1) x2
             in  ( XApp a x1' x2'
-                , Set.union us1 us2
-                , lts1 ++ lts2)
-
+                , mappend r1 r2)
+                
         XLet a lts x
-         -> let (lts', usA, ltsA)  = lambdasLets kenv tenv ctx a x lts
-                (bs1, bs0)         = bindsOfLets lts
-                kenv'              = Env.extends bs1 kenv
-                tenv'              = Env.extends bs0 tenv
-                (x',   usB, ltsB)  = lambdas kenv' tenv' (CtxLetBody ctx a lts) x
+         -> let (lts', r1)      = lambdasLets kenv tenv ctx a x lts
+                (bs1, bs0)      = bindsOfLets lts
+                kenv'           = Env.extends bs1 kenv
+                tenv'           = Env.extends bs0 tenv
+                (x',   r2)      = lambdas kenv' tenv' (CtxLetBody ctx a lts) x
             in  ( XLet a lts' x'
-                , Set.union usA usB
-                , ltsA ++ ltsB)
-
+                , mappend r1 r2)
+                
         XCase a x alts
-         -> let (x',    usA, ltsA) = lambdas     kenv tenv (CtxCaseScrut ctx a alts) x
-                (alts', usB, ltsB) = lambdasAlts kenv tenv ctx a x [] alts
+         -> let (x',    r1)     = lambdas     kenv tenv (CtxCaseScrut ctx a alts) x
+                (alts', r2)     = lambdasAlts kenv tenv ctx a x [] alts
             in  ( XCase a x' alts'
-                , Set.union usA usB
-                , ltsA ++ ltsB)
+                , mappend r1 r2)
 
         XCast a c x
          -> lambdasCast kenv tenv ctx a c x
@@ -229,8 +235,7 @@ instance Lambdas Exp where
         XType _ t
          -> let -- Get the free variables in this type.
                 us      = Set.map (\u -> (True, u))  $ freeVarsT kenv t
-
-            in  (xx, us, [])
+            in  (xx, Result us [])
 
         XWitness _ w
          -> let -- Get the free variables in this witness.
@@ -241,7 +246,7 @@ instance Lambdas Exp where
                         , Set.map (\u -> (False, u)) $ supportWiVar supp
                         , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
-            in  (xx, us, [])
+            in  (xx, Result us [])
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -250,21 +255,19 @@ lambdasLets
         => KindEnv n -> TypeEnv n -> Ctx a n   
         -> a -> Exp a n
         -> Lets a n
-        -> ( Lets a n
-           , Set (Bool, Bound n) 
-           , [Lets a n])         
-
+        -> (Lets a n, Result a n)
+           
 lambdasLets kenv tenv ctx a xBody lts
  = case lts of
         LLet b x
-         -> let tenv'             = Env.extend b tenv
-                (x', us', lts')   = lambdas kenv tenv' (CtxLetLLet ctx a b xBody) x
-            in  (LLet b x', us', lts')
+         -> let tenv'     = Env.extend b tenv
+                (x', r)   = lambdas kenv tenv' (CtxLetLLet ctx a b xBody) x
+            in  (LLet b x', r)
 
         LRec bxs
-         -> let tenv'             = Env.extends (map fst bxs) tenv
-                (bxs', us', lts') = lambdasLetRec kenv tenv' ctx a xBody [] bxs
-            in  (LRec bxs', us', lts')
+         -> let tenv'     = Env.extends (map fst bxs) tenv
+                (bxs', r) = lambdasLetRec kenv tenv' ctx a xBody [] bxs
+            in  (LRec bxs', r)
                 
         LPrivate bsR mParent bsW
          -> let 
@@ -283,30 +286,29 @@ lambdasLets kenv tenv ctx a xBody lts
                 us      = Set.map (\u -> (True, u)) 
                         $ Set.union usW usParent
 
-            in (lts, us, [])
+            in  (lts, Result us [])
 
         LWithRegion _
-         ->     (lts, Set.empty, [])
+         ->     (lts, Result Set.empty [])
 
 
 lambdasLetRec _ _ _ _ _ _ []
-        = ([], Set.empty, [])
+        = ([], Result Set.empty [])
 
 lambdasLetRec kenv tenv ctx a xBody 
         bxsAcc ((b, x) : bxsMore)
  = let 
-        (x',   usA, ltsA)   
+        (x', r1)   
          = lambdas kenv tenv 
                 (CtxLetLRec ctx a bxsAcc b bxsMore xBody) 
                 x
         
-        (bxs', usB, ltsB)
+        (bxs', r2)
          = lambdasLetRec kenv tenv ctx a xBody 
                 ((b, x') : bxsAcc) bxsMore
 
    in   ( (b, x') : bxs'
-        , Set.union usA usB
-        , ltsA ++ ltsB)
+        , mappend r1 r2)
 
 
 -- Alts -------------------------------------------------------------------------------------------
@@ -315,39 +317,35 @@ lambdasAlts
         => KindEnv n -> TypeEnv n -> Ctx a n   
         -> a -> Exp a n
         -> [Alt a n] -> [Alt a n]
-        -> ( [Alt a n]   
-           , Set (Bool, Bound n) 
-           , [Lets a n])         
-
+        -> ([Alt a n], Result a n)
+           
 lambdasAlts _ _ _ _ _ _ []
-        = ([], Set.empty, [])
+        = ([], Result Set.empty [])
 
 lambdasAlts kenv tenv ctx a xScrut
         altsAcc (AAlt w x : altsMore)
  = let
-        (x',    usA, ltsA)
+        (x', r1)
          = lambdas kenv tenv 
                 (CtxCaseAlt ctx a xScrut altsAcc w altsMore)
                 x
 
-        (alts', usB, ltsB)
+        (alts', r2)
          = lambdasAlts kenv tenv ctx a xScrut
                 (AAlt w x' : altsAcc) altsMore
 
    in   ( AAlt w x' : alts'
-        , Set.union usA usB
-        , ltsA ++ ltsB)
-
+        , mappend r1 r2)
 
 
 -- Cast -------------------------------------------------------------------------------------------
-
 lambdasCast kenv tenv ctx a cc x
   = case cc of
         CastWeakenEffect eff    
-         -> let usA             = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
-                (x', usB, ltsB) = lambdas kenv tenv (CtxCast ctx a cc) x
-            in  (XCast a cc x', Set.union usA usB, ltsB)
+         -> let us      = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
+                (x', r2) = lambdas kenv tenv (CtxCast ctx a cc) x
+            in  ( XCast a cc x'
+                , mappend (Result us []) r2)
 
         CastWeakenClosure{}
          ->    error "ddc-core-simpl.lambdas: closures not handled."
@@ -356,35 +354,36 @@ lambdasCast kenv tenv ctx a cc x
          -> let -- Get the free variables in this witness.
                 supp    = support kenv tenv w
 
-                usA     = Set.unions
-                        [ Set.map (\u -> (True,  u)) $ supportSpVar supp
-                        , Set.map (\u -> (False, u)) $ supportWiVar supp
-                        , Set.map (\u -> (False, u)) $ supportDaVar supp ]
+                us      = Set.unions
+                          [ Set.map (\u -> (True,  u)) $ supportSpVar supp
+                          , Set.map (\u -> (False, u)) $ supportWiVar supp
+                          , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
-                (x', usB, ltsB) = lambdas kenv tenv (CtxCast ctx a cc) x
+                (x', r2) = lambdas kenv tenv (CtxCast ctx a cc) x
 
-            in  (XCast a cc x', Set.union usA usB, ltsB)
+            in  ( XCast a cc x'
+                , mappend (Result us []) r2)
 
         CastForget w
          -> let -- Get the free variables in this witness.
                 supp    = support kenv tenv w
 
-                usA     = Set.unions
+                us      = Set.unions
                         [ Set.map (\u -> (True,  u)) $ supportSpVar supp
                         , Set.map (\u -> (False, u)) $ supportWiVar supp
                         , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
-                (x', usB, ltsB) = lambdas kenv tenv (CtxCast ctx a cc) x
+                (x', r2) = lambdas kenv tenv (CtxCast ctx a cc) x
 
-            in  (XCast a cc x', Set.union usA usB, ltsB)
+            in  ( XCast a cc x'
+                , mappend (Result us []) r2)
 
         CastBox 
-         -> let (x', us, lts)   = lambdas kenv tenv (CtxCast ctx a cc) x
-            in  (XCast a cc x', us, lts)
+         -> let (x', r) = lambdas kenv tenv (CtxCast ctx a cc) x
+            in  (XCast a cc x', r)
         
 
         CastRun 
-         -> let (x', us, lts)   = lambdas kenv tenv (CtxCast ctx a cc) x
-            in  (XCast a cc x', us, lts)
-
+         -> let (x', r) = lambdas kenv tenv (CtxCast ctx a cc) x
+            in  (XCast a cc x', r)
 
