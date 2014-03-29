@@ -1,8 +1,6 @@
 
 module DDC.Core.Transform.Lambdas
-        ( lambdasModule
-        , encodeBind
-        , topNameOfCtx)
+        (lambdasModule)
 where
 import DDC.Core.Collect.Support
 import DDC.Core.Exp.AnnotCtx
@@ -19,6 +17,10 @@ import qualified Data.Set       as Set
 import Debug.Trace
 import Data.Monoid
 
+-- TODO Normalize names of lifted bindings.
+--      Add free vars as parameters to lifted binding, and at call site.
+--      Fix type of lifted binding, will need to take AnTEC version of AST
+--      Test for multiply nested lambdas.
 
 ---------------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in a module.
@@ -43,7 +45,7 @@ lambdasModule mm
 -- | Result of lambda lifter recursion.
 data Result a n
         = Result (Set (Bool, Bound n))  -- Free variables
-                 [Lets a n]             -- Lifted bindings
+                 [(Bind n, Exp a n)]    -- Lifted bindings
 
 instance Ord n => Monoid (Result a n) where
  mempty
@@ -83,15 +85,19 @@ lambdasX c xx
         XLAM a b x0
          -> enterLAM c a b x0 $ \c' x
          -> let (x', r) = lambdasX c' x
-                xx'     = XLam a b x'
+                xx'     = XLAM a b x'
                 liftMe  = isLiftyContext (contextCtx c)
 
             in trace (unlines ["* LAM LEAVE " ++ show liftMe])
                 $ if liftMe
                   then let ctx     = contextCtx c
-                           Just n  = topNameOfCtx ctx
-                           u       = UName (extendName n (encodeCtx ctx))
-                       in  (XVar a u, r)
+                           Just n  = takeTopNameOfCtx ctx
+                           nLifted = extendName n (encodeCtx ctx)
+                           uLifted = UName nLifted
+                           bLifted = BName nLifted tUnit        -- TODO: real type
+                           Result us bxs = r
+                       in  ( XVar a uLifted
+                           , Result us (bxs ++ [(bLifted, XLAM a b x')]) )
                   else (xx', r)
 
         XLam a b x0
@@ -103,9 +109,13 @@ lambdasX c xx
             in trace (unlines ["* Lam LEAVE " ++ show liftMe])
                 $ if liftMe
                   then let ctx     = contextCtx c
-                           Just n  = topNameOfCtx ctx
-                           u       = UName (extendName n (encodeCtx ctx))
-                       in  (XVar a u, r)
+                           Just n  = takeTopNameOfCtx ctx
+                           nLifted = extendName n (encodeCtx ctx)
+                           uLifted = UName nLifted
+                           bLifted = BName nLifted tUnit      -- TODO: real type
+                           Result us bxs = r
+                       in  ( XVar a uLifted
+                           , Result us (bxs ++ [(bLifted, XLam a b x')]) )
                   else (xx', r)
 
         XApp a x1 x2
@@ -206,9 +216,19 @@ lambdasLetRec _ _ _ [] _
 
 lambdasLetRec c a bxsAcc ((b, x) : bxsMore) xBody
  = let  (x',   r1) = enterLetLRec  c a bxsAcc b x bxsMore xBody lambdasX
-        (bxs', r2) = lambdasLetRec c a ((b, x') : bxsAcc) bxsMore xBody
-   in   ( (b, x') : bxs'
-        , mappend r1 r2)
+
+   in   case contextCtx c of
+         -- If we're at top-level then drop lifted bindings here.
+         CtxTop 
+          -> let  (bxs', r2) = lambdasLetRec c a ((b, x') : bxsAcc) bxsMore xBody
+                  Result _ bxsLifted = r1
+             in   ( bxsLifted ++ ((b, x') : bxs')
+                  , r2)
+
+         _
+          -> let  (bxs', r2) = lambdasLetRec c a ((b, x') : bxsAcc) bxsMore xBody
+             in   ( (b, x') : bxs'
+                  , mappend r1 r2)
 
 
 -- Alts -------------------------------------------------------------------------------------------
@@ -323,43 +343,5 @@ isLiftyContext ctx
         CtxCaseScrut{}  -> True
         CtxCaseAlt{}    -> True
         CtxCastBody{}   -> True
-        
 
--- | Convert a context to a name extension that we can use for an abstraction 
---   lifted out of there. These names are long and ugly, but we'll fix them
---   up once we find all the things that need lifting. 
---
---   We use these contextual names instead of simply generating a globally
---   fresh integer so that they don't change when other bindings are added
---   to the top-level environment,
-encodeCtx :: Ctx a n -> String
-encodeCtx _ = "do_encode_context"
-
-
--- | Produce a unique string from a Bind.
-encodeBind :: Pretty n => Bind n -> String
-encodeBind b
- = case b of
-        BNone _          -> "z"
-        BName n _        -> "a" ++ (renderPlain $ ppr n)
-        BAnon _          -> "n"
-
-
-topNameOfCtx :: Ctx a n -> Maybe n
-topNameOfCtx ctx0
- = eat ctx0
- where  eat ctx
-         = case ctx of
-                CtxTop
-                 -> Nothing
-                
-                CtxLetLLet CtxTop _ (BName n _) _
-                 -> Just n
-
-                CtxLetLRec CtxTop _ _ (BName n _) _ _
-                 -> Just n
-
-                _ -> case takeEnclosingCtx ctx of
-                        Nothing   -> Nothing
-                        Just ctx' -> eat ctx'
 

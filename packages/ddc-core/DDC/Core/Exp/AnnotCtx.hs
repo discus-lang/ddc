@@ -1,7 +1,9 @@
 
 module DDC.Core.Exp.AnnotCtx   
         ( Ctx (..)
-        , takeEnclosingCtx)
+        , takeEnclosingCtx
+        , takeTopNameOfCtx
+        , encodeCtx)
 where
 import DDC.Core.Exp.Annot
 
@@ -73,5 +75,66 @@ takeEnclosingCtx ctx
         CtxCastBody  c _ _       -> Just c
 
 
+-- | Take the name of the top-level enclosing let-binding in this context, 
+--   if there is one.
+takeTopNameOfCtx :: Ctx a n -> Maybe n
+takeTopNameOfCtx ctx0
+ = eat ctx0
+ where  eat ctx
+         = case ctx of
+                CtxTop
+                 -> Nothing
+                
+                CtxLetLLet CtxTop _ (BName n _) _
+                 -> Just n
+
+                CtxLetLRec CtxTop _ _ (BName n _) _ _
+                 -> Just n
+
+                _ -> case takeEnclosingCtx ctx of
+                        Nothing   -> Nothing
+                        Just ctx' -> eat ctx'
+
+
+-- | Encode a context into a unique string.
+--   This is a name for a particlar program context, which is guaranteed
+--   to be from names of other contexts. This encoding can be used as 
+--   a fresh name generator if you can base the names on the context they
+--   are created in.
+encodeCtx :: Ctx a n -> String
+encodeCtx ctx0
+ = go 1 ctx0
+ where
+  
+  -- We indicate simulilar encosing contexts with by using an integer prefix
+  -- for each component. We encode the position of particular alternatives
+  -- and let-bindings with an integer suffix.
+  go (n :: Int) ctx
+   = let sn     = if n == 1
+                        then "x" 
+                        else "x" ++ show n
+     in case ctx of
+        CtxTop                          -> "Tt"
+        
+        CtxLAM       c@CtxLAM{} _ _     -> go (n + 1) c
+        CtxLAM       c _ _              -> go 1 c ++ sn ++ "Lt"
+        
+        CtxLam       c@CtxLam{} _ _     -> go (n + 1) c
+        CtxLam       c _ _              -> go 1 c ++ sn ++ "Lv"
+        
+        CtxAppLeft   c _ _              -> go 1 c ++ sn ++ "Al"
+        CtxAppRight  c _ _              -> go 1 c ++ sn ++ "Ar"
+
+        CtxLetBody   c@CtxLetBody{} _ _ -> go (n + 1) c
+        CtxLetBody   c _ _              -> go 1 c ++ sn ++ "Eb"
+
+        CtxLetLLet   c _ _ _            -> go 1 c ++ sn ++ "El"
+        CtxLetLRec   c _ bxs  _ _ _     -> go 1 c ++ sn ++ "Er" ++ show (length bxs + 1)
+
+        CtxCaseScrut c _ _              -> go 1 c ++ sn ++ "Cs"
+        
+        CtxCaseAlt   c _ _ alts _ _     -> go 1 c ++ sn ++ "Ca" ++ show (length alts + 1)
+        
+        CtxCastBody  c _ _              -> go 1 c ++ sn ++ "Sb"
 
 
