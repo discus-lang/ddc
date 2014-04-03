@@ -58,13 +58,14 @@ instance Ord n => Monoid (Result a n) where
 -- Exp --------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in an expression.
 --   When leaving a lambda abs, when leaving inner most one then chop it.
+--
 --   TODO: handle case where free vars in a lambda have anonymous names
 --         When passing up free vars, also pass up the type so we can use
 --         it at the binding position.
 --
---  TODO: pass up free type variables in type sigs,
---        eg on the types of lambda and let binders.
---        might have \(x : Thing a). ()
+--   TODO: pass up free type variables in type sigs,
+--         eg on the types of lambda and let binders.
+--         might have \(x : Thing a). ()
 --
 lambdasX :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
          => Context a n         -- ^ Enclosing context.
@@ -93,29 +94,11 @@ lambdasX c xx
 
             in trace (unlines ["* LAM LEAVE " ++ show liftMe])
                 $ if liftMe
-                  then let 
-
-                        -- Make a binder for the new top-level function.
-                        --  TODO: get the real type 
-                        ctx       = contextCtx c
-                        Just nTop = takeTopNameOfCtx ctx
-                        nLifted   = extendName nTop (encodeCtx ctx)
-                        uLifted   = UName nLifted
-                        bLifted   = BName nLifted tUnit        -- TODO: real type
-                           
-                        -- Wrap the lifted expression in new lambdas to bind
-                        -- all of the free variables.
-                        Just nB   = takeNameOfBind b
-                        Result us bxs = r
-                        makeBind (True,  UName n) = (True,  BName n tUnit)
-                        makeBind (False, UName n) = (False, BName n tUnit)
-                        makeBind _                = error "makeBind: nope"
-                        bs      = map makeBind $ Set.toList 
-                                $ Set.delete (True, UName nB) us
-                        xFun    = makeXLamFlags a bs (XLAM a b x')
- 
-                       in  ( XVar a uLifted
-                           , Result us (bxs ++ [(bLifted, xFun)]) )
+                  then  let Result us bxs = r
+                            (xCall, bLifted, xLifted)
+                                = liftLambda c r True a b x'
+                        in  ( xCall
+                            , Result us (bxs ++ [(bLifted, xLifted)]))
                   else (xx', r)
 
         XLam a b x0
@@ -126,36 +109,11 @@ lambdasX c xx
 
             in trace (unlines ["* Lam LEAVE " ++ show liftMe])
                 $ if liftMe
-                  then let 
-
-                           -- TODO: shift this shared stuff into own funtion.
-                           ctx       = contextCtx c
-                           Just nTop = takeTopNameOfCtx ctx
-                           nLifted   = extendName nTop (encodeCtx ctx)
-                           uLifted   = UName nLifted
-                           bLifted   = BName nLifted tUnit      -- TODO: real type
-                           
-                           -- Wrap the lifted expression in new lambdas to bind
-                           -- all of the free variables.
-                           Just nB   = takeNameOfBind b
-                           Result us bxs = r
-                           usFree    = Set.delete (False, UName nB) us
-
-                           -- TODO: we're in the scope of the free vars, so can look up 
-                           -- their types here.
-                           makeBind (True,  UName n) = (True,  BName n tUnit)
-                           makeBind (False, UName n) = (False, BName n tUnit)
-                           makeBind _                = error "makeBind: nope"
-                           bsParam   = map makeBind $ Set.toList usFree
-                           xFun      = makeXLamFlags a bsParam (XLam a b x')
-
-                           makeArg  (True,  u)  = XType a (TVar u)
-                           makeArg  (False, u)  = XVar a u
-                           xsArg     = map makeArg $ Set.toList usFree
-                           xApp      = xApps a (XVar a uLifted) xsArg
-
-                       in  ( xApp
-                           , Result us (bxs ++ [(bLifted, xFun)]) )
+                  then  let Result us bxs = r
+                            (xCall, bLifted, xLifted)
+                                = liftLambda c r False a b x'
+                        in  ( xCall
+                            , Result us (bxs ++ [(bLifted, xLifted)]))
                   else (xx', r)
 
         XApp a x1 x2
@@ -200,6 +158,56 @@ lambdasX c xx
                         , Set.map (\u -> (False, u)) $ supportDaVar supp ]
 
             in  (xx, Result us [])
+
+
+liftLambda 
+        :: (Ord n, CompoundName n)
+        => Context a n
+        -> Result a n
+        -> Bool
+        -> a -> Bind n -> Exp a n
+        -> (  Exp a n
+            , Bind n, Exp a n)
+liftLambda c r isTypeLam a b x
+ = let  ctx       = contextCtx c
+        
+        -- Name of the enclosing top-level binding.
+        Just nTop = takeTopNameOfCtx ctx
+
+        -- Name of the new lifted binding/
+        nLifted   = extendName nTop (encodeCtx ctx)
+        uLifted   = UName nLifted
+        bLifted   = BName nLifted tUnit      -- TODO: real type
+
+        -- When binding free varaibles, we don't want to include the one
+        -- bound by the current abstraction.
+        Just nB     = takeNameOfBind b
+        Result us _ = r
+        usFree      = Set.delete (isTypeLam, UName nB) us
+
+        -- At the call site, apply all the free variables of the lifted
+        -- function as new arguments.    
+        makeArg  (True,  u)       = XType a (TVar u)
+        makeArg  (False, u)       = XVar a u
+        
+        xsArg     = map makeArg $ Set.toList usFree
+        xCall     = xApps a (XVar a uLifted) xsArg
+
+        -- For the lifted abstraction, wrap it in new lambdas to bind
+        -- all of its free variables.
+        makeBind (True,  UName n) = (True,  BName n tUnit)
+        makeBind (False, UName n) = (False, BName n tUnit)
+        makeBind _                = error "makeBind: nope"
+
+        bsParam   = map makeBind $ Set.toList usFree
+        xInner    = if isTypeLam 
+                        then XLAM a b x
+                        else XLam a b x
+
+        xLifted   = makeXLamFlags a bsParam xInner
+
+    in  ( xCall
+        , bLifted, xLifted)
 
 
 -- Lets -------------------------------------------------------------------------------------------
