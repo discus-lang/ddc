@@ -44,7 +44,7 @@ lambdasModule mm
 ---------------------------------------------------------------------------------------------------
 -- | Result of lambda lifter recursion.
 data Result a n
-        = Result (Set (Bool, Bound n))  -- Free variables
+        = Result (Set (Bool, Bound n))  -- Free variables.
                  [(Bind n, Exp a n)]    -- Lifted bindings
 
 instance Ord n => Monoid (Result a n) where
@@ -92,14 +92,18 @@ lambdasX c xx
                 xx'     = XLAM a b x'
                 liftMe  = isLiftyContext (contextCtx c)
 
-            in trace (unlines ["* LAM LEAVE " ++ show liftMe])
-                $ if liftMe
-                  then  let Result us bxs = r
-                            (xCall, bLifted, xLifted)
-                                = liftLambda c r True a b x'
-                        in  ( xCall
-                            , Result us (bxs ++ [(bLifted, xLifted)]))
-                  else (xx', r)
+                -- TODO: refactor this to an operation on the result.
+                Result us bxs = r
+                Just uB       = takeSubstBoundOfBind b
+                usFree'       = Set.delete (True, uB) us
+                r'            = Result usFree' bxs
+                            
+            in if liftMe
+                then  let (xCall, bLifted, xLifted)
+                              = liftLambda c usFree' True a b x'
+                      in  ( xCall
+                            , Result usFree' (bxs ++ [(bLifted, xLifted)]))
+                else (xx', r')
 
         XLam a b x0
          -> enterLam c a b x0 $ \c' x
@@ -107,14 +111,18 @@ lambdasX c xx
                 xx'     = XLam a b x'
                 liftMe  = isLiftyContext (contextCtx c)
 
-            in trace (unlines ["* Lam LEAVE " ++ show liftMe])
-                $ if liftMe
-                  then  let Result us bxs = r
-                            (xCall, bLifted, xLifted)
-                                = liftLambda c r False a b x'
-                        in  ( xCall
-                            , Result us (bxs ++ [(bLifted, xLifted)]))
-                  else (xx', r)
+                -- TODO: refactor this to an operation on the result.
+                Result us bxs = r
+                Just uB       = takeSubstBoundOfBind b
+                usFree'       = Set.delete (False, uB) us
+                r'            = Result usFree' bxs
+
+            in if liftMe
+                then  let (xCall, bLifted, xLifted)
+                              = liftLambda c usFree' False a b x'
+                      in  ( xCall
+                          , Result usFree' (bxs ++ [(bLifted, xLifted)]))
+                else (xx', r')
 
         XApp a x1 x2
          -> let (x1', r1)       = enterAppLeft  c a x1 x2 lambdasX
@@ -165,12 +173,12 @@ lambdasX c xx
 liftLambda 
         :: (Show n, Ord n, CompoundName n)
         => Context a n          -- ^ Context of the original abstraction.
-        -> Result a n           -- ^ Result of lambda lifting the abstraction.
+        -> Set (Bool, Bound n)  -- ^ Free variables in the body of the abstraction.
         -> Bool                 -- ^ Whether this is a type-abstraction.
         -> a -> Bind n -> Exp a n
         -> (  Exp a n
             , Bind n, Exp a n)
-liftLambda c r isTypeLam a b x
+liftLambda c usFree isTypeLam a b x
  = let  ctx         = contextCtx c
         
         -- Name of the enclosing top-level binding.
@@ -183,22 +191,20 @@ liftLambda c r isTypeLam a b x
 
         -- When binding free varaibles, we don't want to include the one bound
         -- by the current abstraction, or other supers bound at top-level.
-        Just nB     = takeNameOfBind b
-        Result us _ = r
         nsSuper     = takeTopLetEnvNamesOfCtx ctx
-        usFree      = Set.filter
+        Just uB     = takeSubstBoundOfBind b
+        usFree'     = Set.filter
                         (\(_, u) -> case u of
                                 UName n -> not $ Set.member n nsSuper
                                 _       -> True)
-                    $ Set.delete (isTypeLam, UName nB) us
-
+                    $ Set.delete (isTypeLam, uB) usFree
 
         -- At the call site, apply all the free variables of the lifted
         -- function as new arguments.    
         makeArg  (True,  u)       = XType a (TVar u)
         makeArg  (False, u)       = XVar a u
         
-        xsArg       = map makeArg $ Set.toList usFree
+        xsArg       = map makeArg $ Set.toList usFree'
         xCall       = xApps a (XVar a uLifted) xsArg
 
         -- For the lifted abstraction, wrap it in new lambdas to bind
@@ -207,7 +213,7 @@ liftLambda c r isTypeLam a b x
         makeBind (False, UName n) = (False, BName n tUnit)
         makeBind _                = error "makeBind: nope"
 
-        bsParam     = map makeBind $ Set.toList usFree
+        bsParam     = map makeBind $ Set.toList usFree'
         xInner      = if isTypeLam 
                         then XLAM a b x
                         else XLam a b x
@@ -230,14 +236,18 @@ lambdasLets
            
 lambdasLets c a xBody lts
  = case lts of
+ 
+        -- TODO: cut bound vars from free ones.
         LLet b x
          -> let (x', r)   = enterLetLLet c a b x xBody lambdasX
             in  (LLet b x', r)
 
+        -- TODO: cut bound vars from free ones.
         LRec bxs
          -> let (bxs', r) = lambdasLetRec c a [] bxs xBody
             in  (LRec bxs', r)
                 
+        -- TODO: cut bound vars from free ones.
         LPrivate bsR mParent bsW
          -> let kenv    = contextKindEnv c
                 
@@ -300,10 +310,16 @@ lambdasAlts _ _ _ _ []
         = ([], Result Set.empty [])
 
 lambdasAlts c a xScrut altsAcc (AAlt w x : altsMore)
- = let  (x', r1)    = enterCaseAlt c a xScrut altsAcc w x altsMore lambdasX
+ = let  (x', r1)        = enterCaseAlt c a xScrut altsAcc w x altsMore lambdasX
+        
+        Result us1 lts1 = r1
+        Just usBound    = sequence $ map takeSubstBoundOfBind $ bindsOfPat w
+        us1'            = Set.difference us1 (Set.fromList [(False, u) | u <- usBound])
+        r1'             = Result us1' lts1
+
         (alts', r2) = lambdasAlts  c a xScrut (AAlt w x' : altsAcc) altsMore
    in   ( AAlt w x' : alts'
-        , mappend r1 r2)
+        , mappend r1' r2)
 
 
 -- Cast -------------------------------------------------------------------------------------------
