@@ -3,14 +3,21 @@ module DDC.Core.Exp.AnnotCtx
         ( Ctx (..)
         , takeEnclosingCtx
         , takeTopNameOfCtx
+        , takeTopLetEnvNamesOfCtx
         , encodeCtx)
 where
 import DDC.Core.Exp.Annot
+import DDC.Type.Env             (KindEnv, TypeEnv)
+import Data.Set                 (Set)
+import qualified DDC.Type.Env   as Env
+import qualified Data.Set       as Set
+import qualified Data.Map       as Map
 
 
 data Ctx a n
         -- | The top-level context.
-        = CtxTop
+        = CtxTop        !(KindEnv n)
+                        !(TypeEnv n)
 
         -- | Body of a type abstraction.
         | CtxLAM        !(Ctx a n) !a
@@ -55,14 +62,13 @@ data Ctx a n
         -- | Body of a type cast
         | CtxCastBody   !(Ctx a n) !a   -- context of let-expression.
                         !(Cast a n)
-        deriving (Show, Eq)
-
+        
 
 -- | Take the enclosing context from a nested one.
 takeEnclosingCtx :: Ctx a n -> Maybe (Ctx a n)
 takeEnclosingCtx ctx
  = case ctx of
-        CtxTop                   -> Nothing
+        CtxTop{}                 -> Nothing
         CtxLAM       c _ _       -> Just c
         CtxLam       c _ _       -> Just c
         CtxAppLeft   c _ _       -> Just c
@@ -82,18 +88,65 @@ takeTopNameOfCtx ctx0
  = eat ctx0
  where  eat ctx
          = case ctx of
-                CtxTop
+                CtxTop{}
                  -> Nothing
                 
-                CtxLetLLet CtxTop _ (BName n _) _
+                CtxLetLLet CtxTop{} _ (BName n _) _
                  -> Just n
 
-                CtxLetLRec CtxTop _ _ (BName n _) _ _
+                CtxLetLRec CtxTop{} _ _ (BName n _) _ _
                  -> Just n
 
                 _ -> case takeEnclosingCtx ctx of
                         Nothing   -> Nothing
                         Just ctx' -> eat ctx'
+
+
+-- | Get the set of names defined at top-level, including top-level
+--   let bindings and the top level type environment.
+takeTopLetEnvNamesOfCtx :: Ord n => Ctx a n -> Set n
+takeTopLetEnvNamesOfCtx ctx0
+ = eatCtx ctx0
+ where  eatCtx ctx
+         = case ctx of
+                CtxTop _ tenv
+                 -> Set.fromList
+                 $  Map.keys $ Env.envMap tenv
+
+                CtxLetLLet (CtxTop _ tenv) _ b xBody
+                 -> Set.unions
+                        [ Set.fromList $ Map.keys $ Env.envMap tenv
+                        , eatBind b
+                        , eatExp xBody]
+
+                CtxLetLRec (CtxTop _ tenv) _ bxsBefore b bxsAfter xBody
+                 -> Set.unions
+                        [ Set.fromList  $ Map.keys $ Env.envMap tenv
+                        , Set.unions    $ map (eatBind . fst) bxsBefore
+                        , eatBind b
+                        , Set.unions    $ map (eatBind . fst) bxsAfter
+                        , eatExp xBody]
+
+                _ -> case takeEnclosingCtx ctx of
+                        Nothing   -> Set.empty
+                        Just ctx' -> eatCtx ctx'
+
+        eatExp xx
+         = case xx of
+                XLet _ (LLet b _) xBody
+                 -> Set.unions
+                        [ eatBind  b
+                        , eatExp xBody ]
+
+                XLet _ (LRec bxs) xBody
+                 -> Set.unions
+                        [ Set.unions $ map (eatBind . fst) bxs
+                        , eatExp xBody ]
+
+                _ -> Set.empty
+
+        eatBind (BName n _) = Set.singleton n
+        eatBind _           = Set.empty
 
 
 -- | Encode a context into a unique string.
@@ -114,7 +167,7 @@ encodeCtx ctx0
                         then "x" 
                         else "x" ++ show n
      in case ctx of
-        CtxTop                          -> "Tt"
+        CtxTop{}                        -> "Tt"
         
         CtxLAM       c@CtxLAM{} _ _     -> go (n + 1) c
         CtxLAM       c _ _              -> go 1 c ++ sn ++ "Lt"

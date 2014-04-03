@@ -34,7 +34,7 @@ lambdasModule mm
         -- Take the top-level environment of the module.
         kenv    = moduleKindEnv mm
         tenv    = moduleTypeEnv mm
-        c       = Context kenv tenv CtxTop
+        c       = Context kenv tenv (CtxTop kenv tenv)
 
         (x', _) = lambdasX c $ moduleBody mm
 
@@ -160,38 +160,46 @@ lambdasX c xx
             in  (xx, Result us [])
 
 
+-- | Construct the call site, and new lifted binding for a lambda lifted
+--   abstraction.
 liftLambda 
-        :: (Ord n, CompoundName n)
-        => Context a n
-        -> Result a n
-        -> Bool
+        :: (Show n, Ord n, CompoundName n)
+        => Context a n          -- ^ Context of the original abstraction.
+        -> Result a n           -- ^ Result of lambda lifting the abstraction.
+        -> Bool                 -- ^ Whether this is a type-abstraction.
         -> a -> Bind n -> Exp a n
         -> (  Exp a n
             , Bind n, Exp a n)
 liftLambda c r isTypeLam a b x
- = let  ctx       = contextCtx c
+ = let  ctx         = contextCtx c
         
         -- Name of the enclosing top-level binding.
-        Just nTop = takeTopNameOfCtx ctx
+        Just nTop   = takeTopNameOfCtx ctx
 
         -- Name of the new lifted binding/
-        nLifted   = extendName nTop (encodeCtx ctx)
-        uLifted   = UName nLifted
-        bLifted   = BName nLifted tUnit      -- TODO: real type
+        nLifted     = extendName nTop (encodeCtx ctx)
+        uLifted     = UName nLifted
+        bLifted     = BName nLifted tUnit      -- TODO: real type
 
-        -- When binding free varaibles, we don't want to include the one
-        -- bound by the current abstraction.
+        -- When binding free varaibles, we don't want to include the one bound
+        -- by the current abstraction, or other supers bound at top-level.
         Just nB     = takeNameOfBind b
         Result us _ = r
-        usFree      = Set.delete (isTypeLam, UName nB) us
+        nsSuper     = takeTopLetEnvNamesOfCtx ctx
+        usFree      = Set.filter
+                        (\(_, u) -> case u of
+                                UName n -> not $ Set.member n nsSuper
+                                _       -> True)
+                    $ Set.delete (isTypeLam, UName nB) us
+
 
         -- At the call site, apply all the free variables of the lifted
         -- function as new arguments.    
         makeArg  (True,  u)       = XType a (TVar u)
         makeArg  (False, u)       = XVar a u
         
-        xsArg     = map makeArg $ Set.toList usFree
-        xCall     = xApps a (XVar a uLifted) xsArg
+        xsArg       = map makeArg $ Set.toList usFree
+        xCall       = xApps a (XVar a uLifted) xsArg
 
         -- For the lifted abstraction, wrap it in new lambdas to bind
         -- all of its free variables.
@@ -199,15 +207,16 @@ liftLambda c r isTypeLam a b x
         makeBind (False, UName n) = (False, BName n tUnit)
         makeBind _                = error "makeBind: nope"
 
-        bsParam   = map makeBind $ Set.toList usFree
-        xInner    = if isTypeLam 
+        bsParam     = map makeBind $ Set.toList usFree
+        xInner      = if isTypeLam 
                         then XLAM a b x
                         else XLam a b x
 
-        xLifted   = makeXLamFlags a bsParam xInner
+        xLifted     = makeXLamFlags a bsParam xInner
 
-    in  ( xCall
-        , bLifted, xLifted)
+    in  trace (show nsSuper)
+         $ ( xCall
+           , bLifted, xLifted)
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -267,7 +276,7 @@ lambdasLetRec c a bxsAcc ((b, x) : bxsMore) xBody
 
    in   case contextCtx c of
          -- If we're at top-level then drop lifted bindings here.
-         CtxTop 
+         CtxTop{}
           -> let  (bxs', r2) = lambdasLetRec c a ((b, x') : bxsAcc) bxsMore xBody
                   Result _ bxsLifted = r1
              in   ( bxsLifted ++ ((b, x') : bxs')
@@ -370,9 +379,9 @@ isLiftyContext ctx
         -- Don't lift out of the top-level context.
         -- There's nowhere else to lift to.
         --   TODO: handle chain of let bindings from top-level
-        CtxTop                          -> False
-        CtxLetLLet CtxTop _ _ _         -> False
-        CtxLetLRec CtxTop _ _ _ _ _     -> False
+        CtxTop{}                        -> False
+        CtxLetLLet CtxTop{} _ _ _       -> False
+        CtxLetLRec CtxTop{} _ _ _ _ _   -> False
 
         -- Don't lift if we're inside more lambdas.
         --  We want to lift the whole binding group together.
