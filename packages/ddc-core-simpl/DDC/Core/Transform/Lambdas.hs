@@ -55,6 +55,26 @@ instance Ord n => Monoid (Result a n) where
   = Result (Set.union s1 s2) (lts1 ++ lts2)
 
 
+-- | Cut the free variables out of this result corresponding to the
+--   given binders.
+cutBindOfResult :: Ord n => Bool -> Bind n -> Result a n -> Result a n
+cutBindOfResult isType b (Result us bxs)
+ = let  Just uB = takeSubstBoundOfBind b
+        usFree' = Set.delete (isType, uB) us
+   in   Result usFree' bxs
+
+
+-- | Cut the free variables out of this result corresponding to the
+--   given binders.
+cutBindsOfResult :: Ord n => [(Bool, Bind n)] -> Result a n -> Result a n
+cutBindsOfResult fbs (Result usFree bxs)
+ = let  (fs, bs)  = unzip fbs
+        Just us'  = sequence $ map takeSubstBoundOfBind bs
+        fus       = zip fs us'      
+        usFree'   = Set.difference usFree (Set.fromList fus)
+   in   Result usFree' bxs
+
+
 -- Exp --------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in an expression.
 --   When leaving a lambda abs, when leaving inner most one then chop it.
@@ -91,18 +111,13 @@ lambdasX c xx
          -> let (x', r) = lambdasX c' x
                 xx'     = XLAM a b x'
                 liftMe  = isLiftyContext (contextCtx c)
-
-                -- TODO: refactor this to an operation on the result.
-                Result us bxs = r
-                Just uB       = takeSubstBoundOfBind b
-                usFree'       = Set.delete (True, uB) us
-                r'            = Result usFree' bxs
+                r'@(Result us' bxs) = cutBindOfResult True b r
                             
             in if liftMe
                 then  let (xCall, bLifted, xLifted)
-                              = liftLambda c usFree' True a b x'
+                                    = liftLambda c us' True a b x'
                       in  ( xCall
-                            , Result usFree' (bxs ++ [(bLifted, xLifted)]))
+                          , Result us' (bxs ++ [(bLifted, xLifted)]))
                 else (xx', r')
 
         XLam a b x0
@@ -110,18 +125,13 @@ lambdasX c xx
          -> let (x', r) = lambdasX c' x
                 xx'     = XLam a b x'
                 liftMe  = isLiftyContext (contextCtx c)
-
-                -- TODO: refactor this to an operation on the result.
-                Result us bxs = r
-                Just uB       = takeSubstBoundOfBind b
-                usFree'       = Set.delete (False, uB) us
-                r'            = Result usFree' bxs
+                r'@(Result us' bxs) = cutBindOfResult False b r
 
             in if liftMe
                 then  let (xCall, bLifted, xLifted)
-                              = liftLambda c usFree' False a b x'
+                                    = liftLambda c us' False a b x'
                       in  ( xCall
-                          , Result usFree' (bxs ++ [(bLifted, xLifted)]))
+                          , Result us' (bxs ++ [(bLifted, xLifted)]))
                 else (xx', r')
 
         XApp a x1 x2
@@ -310,13 +320,8 @@ lambdasAlts _ _ _ _ []
         = ([], Result Set.empty [])
 
 lambdasAlts c a xScrut altsAcc (AAlt w x : altsMore)
- = let  (x', r1)        = enterCaseAlt c a xScrut altsAcc w x altsMore lambdasX
-        
-        Result us1 lts1 = r1
-        Just usBound    = sequence $ map takeSubstBoundOfBind $ bindsOfPat w
-        us1'            = Set.difference us1 (Set.fromList [(False, u) | u <- usBound])
-        r1'             = Result us1' lts1
-
+ = let  (x', r1)    = enterCaseAlt c a xScrut altsAcc w x altsMore lambdasX
+        r1'         = cutBindsOfResult [(False, b) | b <- bindsOfPat w] r1
         (alts', r2) = lambdasAlts  c a xScrut (AAlt w x' : altsAcc) altsMore
    in   ( AAlt w x' : alts'
         , mappend r1' r2)
