@@ -8,7 +8,6 @@ import DDC.Core.Context
 import DDC.Core.Module
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Type.Collect
 import DDC.Base.Pretty
 import DDC.Base.Name
 import Data.Set                 (Set)
@@ -44,35 +43,14 @@ lambdasModule mm
 ---------------------------------------------------------------------------------------------------
 -- | Result of lambda lifter recursion.
 data Result a n
-        = Result (Set (Bool, Bound n))  -- Free variables.
-                 [(Bind n, Exp a n)]    -- Lifted bindings
+        = Result [(Bind n, Exp a n)]    -- Lifted bindings
 
 instance Ord n => Monoid (Result a n) where
  mempty
-  = Result Set.empty []
+  = Result []
  
- mappend (Result s1 lts1) (Result s2 lts2)
-  = Result (Set.union s1 s2) (lts1 ++ lts2)
-
-
--- | Cut the free variables out of this result corresponding to the
---   given binders.
-cutBindOfResult :: Ord n => Bool -> Bind n -> Result a n -> Result a n
-cutBindOfResult isType b (Result us bxs)
- = let  Just uB = takeSubstBoundOfBind b
-        usFree' = Set.delete (isType, uB) us
-   in   Result usFree' bxs
-
-
--- | Cut the free variables out of this result corresponding to the
---   given binders.
-cutBindsOfResult :: Ord n => [(Bool, Bind n)] -> Result a n -> Result a n
-cutBindsOfResult fbs (Result usFree bxs)
- = let  (fs, bs)  = unzip fbs
-        Just us'  = sequence $ map takeSubstBoundOfBind bs
-        fus       = zip fs us'      
-        usFree'   = Set.difference usFree (Set.fromList fus)
-   in   Result usFree' bxs
+ mappend (Result lts1) (Result lts2)
+  = Result (lts1 ++ lts2)
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -83,10 +61,6 @@ cutBindsOfResult fbs (Result usFree bxs)
 --         When passing up free vars, also pass up the type so we can use
 --         it at the binding position.
 --
---   TODO: pass up free type variables in type sigs,
---         eg on the types of lambda and let binders.
---         might have \(x : Thing a). ()
---
 lambdasX :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
          => Context a n         -- ^ Enclosing context.
          -> Exp a n             -- ^ Expression to perform lambda lifting on.
@@ -95,44 +69,59 @@ lambdasX :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
          
 lambdasX c xx
  = case xx of
-        XVar _ u
-         -> let tenv    = contextTypeEnv c
-                usFree  
-                 | Env.member u tenv    = Set.singleton (False, u)
-                 | otherwise            = Set.empty
-
-            in  (xx, Result usFree [])
-
-        XCon{}          
-         ->     (xx, mempty)
-
+        XVar{}  -> (xx, mempty)
+        XCon{}  -> (xx, mempty)
+         
         XLAM a b x0
          -> enterLAM c a b x0 $ \c' x
-         -> let (x', r) = lambdasX c' x
-                xx'     = XLAM a b x'
-                liftMe  = isLiftyContext (contextCtx c)
-                r'@(Result us' bxs) = cutBindOfResult True b r
-                            
+         -> let (x', r)    = lambdasX c' x
+                xx'        = XLAM a b x'
+                liftMe     = isLiftyContext (contextCtx c)
+                Result bxs = r
+
             in if liftMe
-                then  let (xCall, bLifted, xLifted)
+                then  let supp  = support Env.empty Env.empty (XLAM a b x')
+                          
+                          -- TODO: make a fn for this in DDC.Type.Env
+                          us1   = Set.map   (\u -> (True,  u)) $ supportSpVar supp
+                          
+                          us0   = Set.unions 
+                                  [ Set.map (\u -> (False, u)) $ supportDaVar supp
+                                  , Set.map (\u -> (False, u)) $ supportWiVar supp]
+                          
+                          us'   = Set.union us1 us0
+
+                          (xCall, bLifted, xLifted)
                                     = liftLambda c us' True a b x'
                       in  ( xCall
-                          , Result us' (bxs ++ [(bLifted, xLifted)]))
-                else (xx', r')
+                          , Result (bxs ++ [(bLifted, xLifted)]))
+
+                else (xx', r)
 
         XLam a b x0
          -> enterLam c a b x0 $ \c' x
-         -> let (x', r) = lambdasX c' x
-                xx'     = XLam a b x'
-                liftMe  = isLiftyContext (contextCtx c)
-                r'@(Result us' bxs) = cutBindOfResult False b r
+         -> let (x', r)    = lambdasX c' x
+                xx'        = XLam a b x'
+                liftMe     = isLiftyContext (contextCtx c)
+                Result bxs = r
 
             in if liftMe
-                then  let (xCall, bLifted, xLifted)
+                then  let supp  = support Env.empty Env.empty (XLam a b x')
+
+                          -- TODO: make a fn for this in DDC.Type.Env
+                          us1   = Set.map  (\u -> (True,  u)) $ supportSpVar supp
+
+                          us0   = Set.unions
+                                [ Set.map  (\u -> (False, u)) $ supportDaVar supp
+                                , Set.map  (\u -> (False, u)) $ supportWiVar supp]
+
+                          us'   = Set.union us1 us0
+
+                          (xCall, bLifted, xLifted)
                                     = liftLambda c us' False a b x'
                       in  ( xCall
-                          , Result us' (bxs ++ [(bLifted, xLifted)]))
-                else (xx', r')
+                          , Result (bxs ++ [(bLifted, xLifted)]))
+                else (xx', r)
 
         XApp a x1 x2
          -> let (x1', r1)       = enterAppLeft  c a x1 x2 lambdasX
@@ -155,27 +144,11 @@ lambdasX c xx
         XCast a cc x
          ->     lambdasCast c a cc x
                 
-        XType _ t
-         -> let kenv    = contextKindEnv c
+        XType{}
+         ->     (xx, Result [])
 
-                -- Get the free variables in this type.
-                us      = Set.map (\u -> (True, u))  $ freeVarsT kenv t
-            in  (xx, Result us [])
-
-        XWitness _ w
-         -> let 
-                kenv    = contextKindEnv c
-                tenv    = contextTypeEnv c
-
-                -- Get the free variables in this witness.
-                supp    = support kenv tenv w
-
-                us      = Set.unions
-                        [ Set.map (\u -> (True,  u)) $ supportSpVar supp
-                        , Set.map (\u -> (False, u)) $ supportWiVar supp
-                        , Set.map (\u -> (False, u)) $ supportDaVar supp ]
-
-            in  (xx, Result us [])
+        XWitness{}
+         ->     (xx, Result [])
 
 
 -- | Construct the call site, and new lifted binding for a lambda lifted
@@ -221,9 +194,15 @@ liftLambda c usFree isTypeLam a b x
         -- all of its free variables.
         makeBind (True,  UName n) = (True,  BName n tUnit)
         makeBind (False, UName n) = (False, BName n tUnit)
-        makeBind _                = error "makeBind: nope"
+        makeBind (f, b')          = error $ "makeBind: nope " ++ show (f, b')
 
-        bsParam     = map makeBind $ Set.toList usFree'
+        bsParam     = map makeBind 
+                    $ Set.toList 
+                    $ Set.filter (\(_, u) -> case u of
+                                                UPrim{} -> False
+                                                _       -> True)
+                    $ usFree'
+        
         xInner      = if isTypeLam 
                         then XLAM a b x
                         else XLam a b x
@@ -247,37 +226,19 @@ lambdasLets
 lambdasLets c a xBody lts
  = case lts of
  
-        -- TODO: cut bound vars from free ones.
         LLet b x
          -> let (x', r)   = enterLetLLet c a b x xBody lambdasX
             in  (LLet b x', r)
 
-        -- TODO: cut bound vars from free ones.
         LRec bxs
          -> let (bxs', r) = lambdasLetRec c a [] bxs xBody
             in  (LRec bxs', r)
                 
-        -- TODO: cut bound vars from free ones.
-        LPrivate bsR mParent bsW
-         -> let kenv    = contextKindEnv c
-                
-                -- Free type variables in the witness bindings.
-                kenv'   = Env.extends bsR kenv
-                usW     = Set.unions 
-                        $ map (freeVarsT kenv')
-                        $ map typeOfBind bsW
+        LPrivate{}
+         ->     (lts, Result [])
 
-                usParent 
-                 = case mParent of
-                        Nothing -> Set.empty
-                        Just t  -> freeVarsT kenv t
-
-                us      = Set.map (\u -> (True, u)) 
-                        $ Set.union usW usParent
-            in  (lts, Result us [])
-
-        LWithRegion _
-         ->     (lts, Result Set.empty [])
+        LWithRegion{}
+         ->     (lts, Result [])
 
 
 -- LetRec -----------------------------------------------------------------------------------------
@@ -289,16 +250,17 @@ lambdasLetRec
         -> ([(Bind n, Exp a n)], Result a n)
 
 lambdasLetRec _ _ _ [] _
-        = ([], Result Set.empty [])
+        = ([], Result [])
 
 lambdasLetRec c a bxsAcc ((b, x) : bxsMore) xBody
  = let  (x',   r1) = enterLetLRec  c a bxsAcc b x bxsMore xBody lambdasX
 
    in   case contextCtx c of
+
          -- If we're at top-level then drop lifted bindings here.
          CtxTop{}
           -> let  (bxs', r2) = lambdasLetRec c a ((b, x') : bxsAcc) bxsMore xBody
-                  Result _ bxsLifted = r1
+                  Result bxsLifted = r1
              in   ( bxsLifted ++ ((b, x') : bxs')
                   , r2)
 
@@ -317,14 +279,13 @@ lambdasAlts
         -> ([Alt a n], Result a n)
            
 lambdasAlts _ _ _ _ []
-        = ([], Result Set.empty [])
+        = ([], Result [])
 
 lambdasAlts c a xScrut altsAcc (AAlt w x : altsMore)
  = let  (x', r1)    = enterCaseAlt c a xScrut altsAcc w x altsMore lambdasX
-        r1'         = cutBindsOfResult [(False, b) | b <- bindsOfPat w] r1
         (alts', r2) = lambdasAlts  c a xScrut (AAlt w x' : altsAcc) altsMore
    in   ( AAlt w x' : alts'
-        , mappend r1' r2)
+        , mappend r1 r2)
 
 
 -- Cast -------------------------------------------------------------------------------------------
@@ -337,12 +298,10 @@ lambdasCast
 
 lambdasCast c a cc x
   = case cc of
-        CastWeakenEffect eff    
-         -> let kenv    = contextKindEnv c
-                us      = Set.map (\u -> (True, u)) $ freeVarsT kenv eff
-                (x', r) = enterCastBody c a cc x lambdasX
+        CastWeakenEffect{}    
+         -> let (x', r) = enterCastBody c a cc x lambdasX
             in  ( XCast a cc x'
-                , mappend (Result us []) r)
+                , mappend (Result []) r)
 
         -- TODO: The closure typing system is a mess, and doing this
         --       properly would be be hard work, so we just don't bother.
@@ -350,37 +309,15 @@ lambdasCast c a cc x
         CastWeakenClosure{}
          ->    error "ddc-core-simpl.lambdas: closures not handled."
 
-        CastPurify w
-         -> let -- Get the free variables in the witness.
-                kenv    = contextKindEnv c
-                tenv    = contextTypeEnv c
-                supp    = support kenv tenv w
-                us      = Set.unions
-                          [ Set.map (\u -> (True,  u)) $ supportSpVar supp
-                          , Set.map (\u -> (False, u)) $ supportWiVar supp
-                          , Set.map (\u -> (False, u)) $ supportDaVar supp ]
-
-                -- Enter into the body.
-                (x', r) = enterCastBody c a cc x lambdasX
-                
+        CastPurify{}
+         -> let (x', r) = enterCastBody c a cc x lambdasX
             in  ( XCast a cc x'
-                , mappend (Result us []) r)
+                , mappend (Result []) r)
 
-        CastForget w
-         -> let -- Get the free variables in the witness.
-                kenv    = contextKindEnv c
-                tenv    = contextTypeEnv c
-                supp    = support kenv tenv w
-                us      = Set.unions
-                        [ Set.map (\u -> (True,  u)) $ supportSpVar supp
-                        , Set.map (\u -> (False, u)) $ supportWiVar supp
-                        , Set.map (\u -> (False, u)) $ supportDaVar supp ]
-                
-                -- Enter into the body.
-                (x', r) = enterCastBody  c a cc x lambdasX
-
+        CastForget{}
+         -> let (x', r) = enterCastBody  c a cc x lambdasX
             in  ( XCast a cc x'
-                , mappend (Result us []) r)
+                , mappend (Result []) r)
 
         CastBox 
          -> let (x', r) = enterCastBody  c a cc x lambdasX
