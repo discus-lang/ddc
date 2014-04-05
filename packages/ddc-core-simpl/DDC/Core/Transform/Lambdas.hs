@@ -134,11 +134,8 @@ lambdasX p c xx
         XCast a cc x
          ->     lambdasCast p c a cc x
                 
-        XType{}
-         ->     (xx, Result [])
-
-        XWitness{}
-         ->     (xx, Result [])
+        XType{}         -> (xx, Result [])
+        XWitness{}      -> (xx, Result [])
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -161,11 +158,8 @@ lambdasLets p c a xBody lts
          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
             in  (LRec bxs', r)
                 
-        LPrivate{}
-         ->     (lts, Result [])
-
-        LWithRegion{}
-         ->     (lts, Result [])
+        LPrivate{}      -> (lts, Result [])
+        LWithRegion{}   -> (lts, Result [])
 
 
 -- LetRec -----------------------------------------------------------------------------------------
@@ -195,6 +189,7 @@ lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
           -> let  (bxs', r2) = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
              in   ( (b, x') : bxs'
                   , mappend r1 r2)
+
 
 -- Alts -------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in the right of a single alternative.
@@ -263,23 +258,17 @@ isLiftyContext ctx
  = case ctx of
         -- Don't lift out of the top-level context.
         -- There's nowhere else to lift to.
-
-        -- TODO: handle chain of let bindings from top-level
-        CtxTop{}                        -> False
-        CtxLetLLet CtxTop{} _ _ _       -> False
-        CtxLetLRec CtxTop{} _ _ _ _ _   -> False
+        CtxTop{}        -> False
+        CtxLetLLet{}    -> not $ isTopLetCtx ctx
+        CtxLetLRec{}    -> not $ isTopLetCtx ctx
 
         -- Don't lift if we're inside more lambdas.
         --  We want to lift the whole binding group together.
         CtxLAM{}        -> False
         CtxLam{}        -> False
-
-        
-        -- Abstraction was let-bound, but not at top-level.
-        CtxLetLLet{}    -> True
-        CtxLetLRec{}    -> True
-        
-        -- We can't do code generation for abstractions in these contexts.
+   
+        -- We can't do code generation for abstractions in these contexts,
+        -- so they need to be lifted.
         CtxAppLeft{}    -> True
         CtxAppRight{}   -> True
         CtxLetBody{}    -> True
@@ -442,7 +431,6 @@ liftLambda p c fusFree isTypeLam a bParam xBody
 --    fun$L0, fun$L1 etc, where 'fun' is the name of the top-level binding
 --   it was lifted out of.
 --
-
 beautifyModule 
         :: forall a n. (Ord n, Show n, CompoundName n)
         => Module a n -> Module a n

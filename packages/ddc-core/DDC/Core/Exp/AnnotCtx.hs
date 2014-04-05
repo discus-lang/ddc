@@ -1,6 +1,7 @@
 
 module DDC.Core.Exp.AnnotCtx   
         ( Ctx (..)
+        , isTopLetCtx
         , topOfCtx
         , takeEnclosingCtx
         , takeTopNameOfCtx
@@ -66,6 +67,23 @@ data Ctx a n
         -- | Body of a type cast
         | CtxCastBody   !(Ctx a n) !a   -- context of let-expression.
                         !(Cast a n)
+
+
+-- | Check if the context is a top-level let-binding.
+--   All bindings in the top-level chain of lets and letrecs are included.
+isTopLetCtx :: Ctx a n -> Bool
+isTopLetCtx ctx
+ = case ctx of
+        CtxLetLLet CtxTop{} _ _ _        -> True
+        CtxLetLRec CtxTop{} _ _ _ _ _    -> True
+
+        CtxLetLLet (CtxLetBody ctx' _ _) _ _ _ 
+           -> isTopLetCtx ctx'
+        
+        CtxLetLRec (CtxLetBody ctx' _ _) _ _ _ _ _
+           -> isTopLetCtx ctx'
+
+        _  -> False
 
 
 -- | Get the top level of a context.
