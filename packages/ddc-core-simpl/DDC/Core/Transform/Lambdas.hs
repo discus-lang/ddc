@@ -441,67 +441,75 @@ liftLambda p c fusFree isTypeLam a bParam xBody
 
 ---------------------------------------------------------------------------------------------------
 -- | Beautify the names of lifted lamdba abstractions.
---   The lifted itself names them after the context they come from, 
---   but these names are too verbose to show to users.
+--   The lifter itself names new abstractions after the context they come from.
+--   This is an easy way of generating unique names, but the names are too
+--   verbose to want to show to users, or put in the symbol table of the
+--   resulting binary.
+--   
+--   The beautifier renames the bindings of lifted abstractions to
+--    fun$L0, fun$L1 etc, where 'fun' is the name of the top-level binding
+--   it was lifted out of.
+--
+
 beautifyModule 
-        :: (Ord n, Show n, CompoundName n)
+        :: forall a n. (Ord n, Show n, CompoundName n)
         => Module a n -> Module a n
 
 beautifyModule mm
  = mm { moduleBody = beautifyX $ moduleBody mm }
 
-beautifyX 
-        :: forall a n
-        .  (Ord n, Show n, CompoundName n) 
-        => Exp a n -> Exp a n
-beautifyX xx
- = case xx of
-    XLet a (LRec bxs) xBody
-     -> let 
-            makeRenamer acc b
-             | BName n t         <- b
-             , Just (nBase, str) <- splitName n
-             , isPrefixOf "Lift_" str
-             = case Map.lookup nBase acc of
-                Nothing -> ( Map.insert nBase 0 acc
-                           , Just (  extendName nBase str
-                                  , (extendName nBase ("L" ++ show (0 :: Int)), t)))
+ where
+  -- If the given binder is for an abstraction that we have lifted, 
+  -- then produce a new nice name for it.
+  makeRenamer 
+        :: Map n Int -> Bind n 
+        -> (Map n Int, Maybe (n, (n, Type n)))
+  makeRenamer acc b
+        | BName n t         <- b
+        , Just (nBase, str) <- splitName n
+        , isPrefixOf "Lift_" str
+        = case Map.lookup nBase acc of
+           Nothing  -> ( Map.insert nBase 0 acc
+                       , Just (  extendName nBase str
+                              , (extendName nBase ("L" ++ show (0 :: Int)), t)))
 
-                Just n' -> ( Map.insert nBase (n' + 1) acc
-                           , Just (  extendName nBase str
-                                  , (extendName nBase ("L" ++ show (n' + 1)),   t)))
+           Just n'  -> ( Map.insert nBase (n' + 1) acc
+                       , Just (  extendName nBase str
+                              , (extendName nBase ("L" ++ show (n' + 1)),   t)))
 
-             | otherwise
-             = (acc, Nothing)
-            
-            bsRenames  :: [(n, (n, Type n))]
-            bsRenames
-                = catMaybes $ snd
-                $ mapAccumL makeRenamer
-                        (Map.empty :: Map n Int)
-                        $ map fst bxs
+        | otherwise = (acc, Nothing)
 
-            -- annot is rubbish make substXX a mapper
-            bxsSubsts :: [(Bind n, Exp a n)]
-            bxsSubsts
-                = [ (BName n t, XVar a (UName n'))
-                        | (n, (n', t))  <- bsRenames]   
+  -- Beautify bindings.
+  beautifyBXs a bxs
+   = let bsRenames   :: [(n, (n, Type n))]
+         bsRenames   = catMaybes $ snd
+                     $ mapAccumL makeRenamer (Map.empty :: Map n Int)
+                     $ map fst bxs
 
-            renameBind (b, x)
-             | BName n t     <- b
-             , Just  (n', _) <- lookup n bsRenames
-             = (BName n' t, x)
+         bxsSubsts   :: [(Bind n, Exp a n)]
+         bxsSubsts   =  [ (BName n t, XVar a (UName n'))
+                                | (n, (n', t))  <- bsRenames]   
+
+         renameBind (b, x)
+                | BName n t     <- b
+                , Just  (n', _) <- lookup n bsRenames
+                = (BName n' t, x)
                 
-             | otherwise
-             = (b, x)
+                | otherwise = (b, x)
             
-            bxs' = map (\(b, x) -> (b, substituteXXs bxsSubsts x))
-                 $ map renameBind bxs
+     in  map (\(b, x) -> (b, substituteXXs bxsSubsts x))
+          $ map renameBind bxs
 
-        in  XLet a (LRec bxs') (beautifyX xBody)
+  -- Beautify bindings in top-level let-expressions.
+  beautifyX xx
+   = case xx of
+        XLet a (LRec bxs) xBody
+         -> let bxs'    = beautifyBXs a bxs
+            in  XLet a (LRec bxs')  (beautifyX xBody)
 
-    _ -> xx
+        XLet a (LLet b x) xBody
+         -> let [(b', x')] = beautifyBXs a [(b, x)]
+            in  XLet a (LLet b' x') (beautifyX xBody)
 
-
-
+        _ -> xx
 
