@@ -41,6 +41,9 @@ data Config n
           -- | Treat effects as capabilities.
         , configEffectCapabilities      :: Bool 
 
+          -- | Allow general let-rec
+        , configGeneralLetRec           :: Bool
+
           -- | This name represents some hole in the expression that needs
           --   to be filled in by the type checker.
         , configNameIsHole              :: Maybe (n -> Bool) }
@@ -69,6 +72,9 @@ configOfProfile profile
                                    $ F.profileFeatures profile 
 
         , configEffectCapabilities = F.featuresEffectCapabilities
+                                   $ F.profileFeatures profile
+
+        , configGeneralLetRec      = F.featuresGeneralLetRec
                                    $ F.profileFeatures profile
 
         , configNameIsHole         = F.profileNameIsHole profile }

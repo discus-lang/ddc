@@ -191,7 +191,7 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
         checkNoDuplicateBindings a xx bs
 
         -- All right hand sides must be syntactic abstractions.
-        checkSyntacticLambdas a xx xs
+        checkSyntacticLambdas table a xx xs
 
         -- Check the type annotations on all the binders.       
         (bs', ctx1)      <- checkRecBinds table bidir a xx ctx0 bs
@@ -390,13 +390,20 @@ duplicates (x : xs)
 --   We don't support value recursion, so can only define recursive functions.
 --   If one of the expression is not a lambda then throw an error.
 checkSyntacticLambdas
-        :: a                    -- ^ Annotation for error messages.
+        :: Table a n
+        -> a                    -- ^ Annotation for error messages.
         -> Exp a n              -- ^ Expression for error message.
         -> [Exp a n]            -- ^ Expressions to check.
         -> CheckM a n ()
 
-checkSyntacticLambdas a xx xs
+checkSyntacticLambdas table a xx xs
+ | configGeneralLetRec $ tableConfig table
+ = return ()
+
+ | otherwise
  = forM_ xs $ \x 
         -> when (not $ (isXLam x || isXLAM x))
-        $ throw $ ErrorLetrecBindingNotLambda a xx x
+        $  throw $ ErrorLetrecBindingNotLambda a xx x
+
+
 

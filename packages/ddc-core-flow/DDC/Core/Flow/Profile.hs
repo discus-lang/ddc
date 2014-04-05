@@ -43,6 +43,7 @@ features
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
+        , featuresGeneralLetRec         = False
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
         , featuresUnboxedInstantiation  = True

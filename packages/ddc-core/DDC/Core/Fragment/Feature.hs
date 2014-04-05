@@ -38,6 +38,10 @@ data Feature
         --   The output of the lambda-lifter should not contain these.
         | NestedFunctions
 
+        -- | Recursive let-expressions where the right hand sides
+        --   are not lambda abstractions.
+        | GeneralLetRec
+
         -- | Debruijn binders.
         --   Most backends will want to use real names, instead of indexed
         --   binders.

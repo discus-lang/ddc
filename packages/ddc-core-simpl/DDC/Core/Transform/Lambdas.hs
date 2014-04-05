@@ -269,7 +269,8 @@ isLiftyContext ctx
  = case ctx of
         -- Don't lift out of the top-level context.
         -- There's nowhere else to lift to.
-        --   TODO: handle chain of let bindings from top-level
+
+        -- TODO: handle chain of let bindings from top-level
         CtxTop{}                        -> False
         CtxLetLLet CtxTop{} _ _ _       -> False
         CtxLetLRec CtxTop{} _ _ _ _ _   -> False
