@@ -4,6 +4,7 @@ module DDC.Core.Transform.Lambdas
 where
 import DDC.Core.Fragment
 import DDC.Core.Collect.Support
+import DDC.Type.Collect.FreeT
 import DDC.Core.Exp.AnnotCtx
 import DDC.Core.Context
 import DDC.Core.Module
@@ -305,33 +306,71 @@ liftLambda
         -> (  Exp a n
             , Bind n, Exp a n)
 
-liftLambda p c usFree isTypeLam a bParam xBody
- = let  ctx       = contextCtx c
+liftLambda p c fusFree isTypeLam a bParam xBody
+ = let  ctx     = contextCtx c
+        kenv    = contextKindEnv c
+        tenv    = contextTypeEnv c
         
         -- Name of the enclosing top-level binding.
         Just nTop = takeTopNameOfCtx ctx
 
-        -- Name of the new lifted binding.
-        nLifted   = extendName nTop (encodeCtx ctx)
-        uLifted   = UName nLifted
+        -- Bound corresponding to the parameter of the abstraction.
+        Just uParam = takeSubstBoundOfBind bParam
 
-
-        -- For the new super, we bind the free variables of the nested
-        -- abstraction as new parameters. However, we don't want to include
-        -- the one bound by the abstraction itself, or other supers bound at
-        -- top-level. We also sort the free variables so that the binders
-        -- for type variables end up out the front.
+        -- Names of other supers bound at top-level.
         nsSuper = takeTopLetEnvNamesOfCtx ctx
-        Just uB = takeSubstBoundOfBind bParam
-        
-        usFree' = sortBy (compare `on` (not . fst))
-                $ Set.toList
-                $ Set.filter
-                        (\fu -> case fu of
-                                 (False, UName n) -> not $ Set.member n nsSuper
-                                 (_,     UPrim{}) -> False
-                                 _                -> True)
-                $ Set.delete (isTypeLam, uB) usFree
+
+        -- Name of the new lifted binding.
+        nLifted = extendName nTop (encodeCtx ctx)
+        uLifted = UName nLifted
+
+
+        -- Decide whether we want to bind the given variable as a new parameter
+        -- on the lifted super. We don't need to bind primitives, other supers,
+        -- or the variable bound by the abstraction itself.
+        keepVar fu@(f, u)
+         | (False, UName n) <- fu      = not $ Set.member n nsSuper
+         | (_,     UPrim{}) <- fu      = False
+         | f == isTypeLam, u == uParam = False
+         | otherwise                   = True
+
+        fusFree_filtered
+                = filter keepVar
+                $ Set.toList fusFree
+
+
+        -- Join in the types of the free variables.
+        joinType (f, u)
+         = case f of
+            True    | Just t <- Env.lookup u kenv
+                    -> ((f, u), t)
+
+            False   | Just t <- Env.lookup u tenv
+                    -> ((f, u), t)
+                
+            _       -> error $ "ddc-core-simpl.joinType: cannot find type of free var."
+                    ++ show (f, u)
+
+        futsFree_types
+                = map joinType fusFree_filtered
+
+
+        -- Add in type variables that are free in the types of value variables.
+        -- We need to bind these as well in the new super.
+        expandFree ((f, u), t)
+         | False <- f   = [(True, ut) | ut <- Set.toList $ freeVarsT kenv t]
+         | otherwise    = [(f, u)]
+    
+        futsFree_expanded
+                = map joinType
+                $ concatMap expandFree
+                $ futsFree_types
+
+
+        -- Sort free vars so the type variables come out the front.
+        futsFree
+                = sortBy (compare `on` (not . fst . fst))
+                $ futsFree_expanded
 
 
         -- At the call site, apply all the free variables of the lifted
@@ -340,26 +379,19 @@ liftLambda p c usFree isTypeLam a bParam xBody
         makeArg  (False, u) = XVar a u
         
         xCall   = xApps a (XVar a uLifted)
-                $ map makeArg usFree'
+                $ map makeArg $ map fst futsFree
 
 
         -- For the lifted abstraction, wrap it in new lambdas to bind all of
         -- its free variables. 
         -- TODO: this only works for named free variables, not anonymous ones.
-        makeBind (True,  u@(UName n))
-                | Just t       <- Env.lookup u (contextKindEnv c)
-                = (True,  BName n t)
-        
-        makeBind (False, u@(UName n))
-                | Just t       <- Env.lookup u (contextTypeEnv c)
-                = (False, BName n t)
-
-        makeBind (f, b')
-                = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show (f, b')
-
+        makeBind ((True,  (UName n)), t) = (True,  BName n t)
+        makeBind ((False, (UName n)), t) = (False, BName n t)
+        makeBind fut
+                = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show fut
         
         -- Make the new super.
-        bsParam = map makeBind $ usFree'
+        bsParam = map makeBind futsFree
 
         xLambda = if isTypeLam 
                         then XLAM a bParam xBody
