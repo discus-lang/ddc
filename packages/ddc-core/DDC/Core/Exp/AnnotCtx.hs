@@ -1,11 +1,13 @@
 
 module DDC.Core.Exp.AnnotCtx   
         ( Ctx (..)
+        , topOfCtx
         , takeEnclosingCtx
         , takeTopNameOfCtx
         , takeTopLetEnvNamesOfCtx
         , encodeCtx)
 where
+import DDC.Type.DataDef
 import DDC.Core.Exp.Annot
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Set                 (Set)
@@ -14,9 +16,11 @@ import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 
 
+-- | A one-hole context for `Exp`.
 data Ctx a n
         -- | The top-level context.
-        = CtxTop        !(KindEnv n)
+        = CtxTop        !(DataDefs n)
+                        !(KindEnv n)
                         !(TypeEnv n)
 
         -- | Body of a type abstraction.
@@ -62,9 +66,29 @@ data Ctx a n
         -- | Body of a type cast
         | CtxCastBody   !(Ctx a n) !a   -- context of let-expression.
                         !(Cast a n)
-        
 
--- | Take the enclosing context from a nested one.
+
+-- | Get the top level of a context.
+topOfCtx :: Ctx a n 
+         -> (DataDefs n, KindEnv n, TypeEnv n)
+
+topOfCtx ctx
+ = case ctx of
+        CtxTop defs kenv tenv    -> (defs, kenv, tenv)
+        CtxLAM       c _ _       -> topOfCtx c
+        CtxLam       c _ _       -> topOfCtx c
+        CtxAppLeft   c _ _       -> topOfCtx c
+        CtxAppRight  c _ _       -> topOfCtx c
+        CtxLetBody   c _ _       -> topOfCtx c
+        CtxLetLLet   c _ _ _     -> topOfCtx c
+        CtxLetLRec   c _ _ _ _ _ -> topOfCtx c
+        CtxCaseScrut c _ _       -> topOfCtx c
+        CtxCaseAlt   c _ _ _ _ _ -> topOfCtx c
+        CtxCastBody  c _ _       -> topOfCtx c
+
+
+-- | Take the enclosing context from a nested one,
+--   or `Nothing` if this is the top-level context.
 takeEnclosingCtx :: Ctx a n -> Maybe (Ctx a n)
 takeEnclosingCtx ctx
  = case ctx of
@@ -81,7 +105,7 @@ takeEnclosingCtx ctx
         CtxCastBody  c _ _       -> Just c
 
 
--- | Take the name of the top-level enclosing let-binding in this context, 
+-- | Take the name of the outer-most enclosing let-binding of this context,
 --   if there is one.
 takeTopNameOfCtx :: Ctx a n -> Maybe n
 takeTopNameOfCtx ctx0
@@ -102,24 +126,24 @@ takeTopNameOfCtx ctx0
                         Just ctx' -> eat ctx'
 
 
--- | Get the set of names defined at top-level, including top-level
---   let bindings and the top level type environment.
+-- | Get the set of value names defined at top-level, including top-level 
+--   let-bindings and the top level type environment.
 takeTopLetEnvNamesOfCtx :: Ord n => Ctx a n -> Set n
 takeTopLetEnvNamesOfCtx ctx0
  = eatCtx ctx0
  where  eatCtx ctx
          = case ctx of
-                CtxTop _ tenv
+                CtxTop _ _ tenv
                  -> Set.fromList
                  $  Map.keys $ Env.envMap tenv
 
-                CtxLetLLet (CtxTop _ tenv) _ b xBody
+                CtxLetLLet (CtxTop _ _ tenv) _ b xBody
                  -> Set.unions
                         [ Set.fromList $ Map.keys $ Env.envMap tenv
                         , eatBind b
                         , eatExp xBody]
 
-                CtxLetLRec (CtxTop _ tenv) _ bxsBefore b bxsAfter xBody
+                CtxLetLRec (CtxTop _ _ tenv) _ bxsBefore b bxsAfter xBody
                  -> Set.unions
                         [ Set.fromList  $ Map.keys $ Env.envMap tenv
                         , Set.unions    $ map (eatBind . fst) bxsBefore
@@ -189,5 +213,4 @@ encodeCtx ctx0
         CtxCaseAlt   c _ _ alts _ _     -> go 1 c ++ sn ++ "Ca" ++ show (length alts + 1)
         
         CtxCastBody  c _ _              -> go 1 c ++ sn ++ "Sb"
-
 

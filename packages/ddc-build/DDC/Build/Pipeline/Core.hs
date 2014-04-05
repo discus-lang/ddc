@@ -100,7 +100,7 @@ data PipeCore a n where
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
-        :: CompoundName n
+        :: (Pretty a, CompoundName n)
         => !(Fragment n err)
         -> !s
         -> !(Simplifier s a n)

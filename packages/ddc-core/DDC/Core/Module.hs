@@ -3,6 +3,7 @@ module DDC.Core.Module
         ( -- * Modules
           Module        (..)
         , isMainModule
+        , moduleDataDefs
 	, moduleKindEnv
         , moduleTypeEnv
         , moduleTopBinds
@@ -29,7 +30,7 @@ module DDC.Core.Module
         , mapTypeOfImportSource)
 where
 import DDC.Core.Exp
-import DDC.Type.DataDef
+import DDC.Type.DataDef                 
 import DDC.Type.Compounds
 import Data.Typeable
 import Data.Map.Strict                  (Map)
@@ -92,6 +93,13 @@ isMainModule :: Module a n -> Bool
 isMainModule mm
         = isMainModuleName 
         $ moduleName mm
+
+
+-- | Get the data type definitions visible in a module.
+moduleDataDefs :: Ord n => Module a n -> DataDefs n
+moduleDataDefs mm
+        = fromListDataDefs 
+        $ moduleDataDefsLocal mm
 
 
 -- | Get the top-level kind environment of a module,

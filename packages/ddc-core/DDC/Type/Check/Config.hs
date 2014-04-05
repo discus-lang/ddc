@@ -47,7 +47,7 @@ data Config n
 
 
 
--- | Convert a langage profile to a type checker configuration.
+-- | Convert a language profile to a type checker configuration.
 configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
         = Config

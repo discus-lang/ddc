@@ -38,7 +38,7 @@ import qualified Data.Set               as Set
 --   The state monad can be used by `Namifier` functions to generate fresh names.
 --
 applySimplifier 
-        :: (Show a, Ord n, Show n, Pretty n, CompoundName n)
+        :: (Show a, Pretty a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -84,7 +84,7 @@ applySimplifier !profile !kenv !tenv !spec !mm
 
 -- | Apply a transform until it stops progressing, or a maximum number of times
 applyFixpoint
-        :: (Show a, Ord n, Show n, Pretty n, CompoundName n)
+        :: (Show a, Pretty a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -124,7 +124,7 @@ applyFixpoint !profile !kenv !tenv !i' !spec !mm'
 
 -- | Apply a transform to a module.
 applyTransform
-        :: (Show a, Ord n, Show n, Pretty n, CompoundName n)
+        :: (Show a, Pretty a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -148,7 +148,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
             in  return $ forwardModule profile config mm
 
         Inline getDef    -> res    $ inline getDef Set.empty mm
-        Lambdas          -> res    $ lambdasModule mm
+        Lambdas          -> res    $ lambdasModule profile mm
         Namify namK namT -> namifyUnique namK namT mm >>= res
         Prune            -> res    $ pruneModule profile mm
         Rewrite rules    -> res    $ rewriteModule rules mm
@@ -161,7 +161,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
 --   The state monad can be used by `Namifier` functions to generate fresh names.
 --
 applySimplifierX 
-        :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
+        :: (Show a, Pretty a, Show n, Ord n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
@@ -207,7 +207,7 @@ applySimplifierX !profile !kenv !tenv !spec !xx
 
 -- | Apply a simplifier until it stops progressing, or a maximum number of times
 applyFixpointX
-        :: (Show a, Show n, Ord n, Pretty n, CompoundName n)
+        :: (Show a, Pretty a, Show n, Ord n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
         -> TypeEnv n            -- ^ Type environment
