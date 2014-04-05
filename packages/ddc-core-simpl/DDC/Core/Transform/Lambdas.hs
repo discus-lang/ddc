@@ -4,6 +4,7 @@ module DDC.Core.Transform.Lambdas
 where
 import DDC.Core.Fragment
 import DDC.Core.Collect.Support
+import DDC.Core.Transform.SubstituteXX
 import DDC.Type.Collect.FreeT
 import DDC.Core.Exp.AnnotCtx
 import DDC.Core.Context
@@ -15,13 +16,14 @@ import DDC.Base.Name
 import Data.Function
 import Data.List
 import Data.Set                         (Set)
+import Data.Map                         (Map)
 import qualified DDC.Core.Check         as Check
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
+import qualified Data.Map               as Map
 import Data.Monoid
+import Data.Maybe
 
--- TODO: Normalize names of lifted bindings.
---       Test for multiply nested lambdas.
 --
 -- TODO: handle case where free vars in a lambda have anonymous names
 --       When passing up free vars, also pass up the type so we can use
@@ -50,7 +52,8 @@ lambdasModule profile mm
 
         (x', _) = lambdasX profile c $ moduleBody mm
 
-   in   mm { moduleBody = x' }
+   in   beautifyModule
+         $ mm { moduleBody = x' }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -202,7 +205,6 @@ lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
              in   ( (b, x') : bxs'
                   , mappend r1 r2)
 
-
 -- Alts -------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in the right of a single alternative.
 lambdasAlts 
@@ -318,17 +320,17 @@ liftLambda p c fusFree isTypeLam a bParam xBody
                         else XLam a bParam xBody
 
         -- Name of the enclosing top-level binding.
-        Just nTop = takeTopNameOfCtx ctx
+        Just nTop   = takeTopNameOfCtx ctx
 
         -- Bound corresponding to the parameter of the abstraction.
         Just uParam = takeSubstBoundOfBind bParam
 
         -- Names of other supers bound at top-level.
-        nsSuper = takeTopLetEnvNamesOfCtx ctx
+        nsSuper     = takeTopLetEnvNamesOfCtx ctx
 
         -- Name of the new lifted binding.
-        nLifted = extendName nTop (encodeCtx ctx)
-        uLifted = UName nLifted
+        nLifted     = extendName nTop ("Lift_" ++ encodeCtx ctx)
+        uLifted     = UName nLifted
 
 
         -- Build the type checker configuration for this context.
@@ -435,3 +437,71 @@ liftLambda p c fusFree isTypeLam a bParam xBody
         
     in  ( xCall
         , bLifted, xLifted)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Beautify the names of lifted lamdba abstractions.
+--   The lifted itself names them after the context they come from, 
+--   but these names are too verbose to show to users.
+beautifyModule 
+        :: (Ord n, Show n, CompoundName n)
+        => Module a n -> Module a n
+
+beautifyModule mm
+ = mm { moduleBody = beautifyX $ moduleBody mm }
+
+beautifyX 
+        :: forall a n
+        .  (Ord n, Show n, CompoundName n) 
+        => Exp a n -> Exp a n
+beautifyX xx
+ = case xx of
+    XLet a (LRec bxs) xBody
+     -> let 
+            makeRenamer acc b
+             | BName n t         <- b
+             , Just (nBase, str) <- splitName n
+             , isPrefixOf "Lift_" str
+             = case Map.lookup nBase acc of
+                Nothing -> ( Map.insert nBase 0 acc
+                           , Just (  extendName nBase str
+                                  , (extendName nBase ("L" ++ show (0 :: Int)), t)))
+
+                Just n' -> ( Map.insert nBase (n' + 1) acc
+                           , Just (  extendName nBase str
+                                  , (extendName nBase ("L" ++ show (n' + 1)),   t)))
+
+             | otherwise
+             = (acc, Nothing)
+            
+            bsRenames  :: [(n, (n, Type n))]
+            bsRenames
+                = catMaybes $ snd
+                $ mapAccumL makeRenamer
+                        (Map.empty :: Map n Int)
+                        $ map fst bxs
+
+            -- annot is rubbish make substXX a mapper
+            bxsSubsts :: [(Bind n, Exp a n)]
+            bxsSubsts
+                = [ (BName n t, XVar a (UName n'))
+                        | (n, (n', t))  <- bsRenames]   
+
+            renameBind (b, x)
+             | BName n t     <- b
+             , Just  (n', _) <- lookup n bsRenames
+             = (BName n' t, x)
+                
+             | otherwise
+             = (b, x)
+            
+            bxs' = map (\(b, x) -> (b, substituteXXs bxsSubsts x))
+                 $ map renameBind bxs
+
+        in  XLet a (LRec bxs') (beautifyX xBody)
+
+    _ -> xx
+
+
+
+
