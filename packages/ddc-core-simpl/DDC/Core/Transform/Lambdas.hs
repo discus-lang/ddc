@@ -10,6 +10,8 @@ import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Base.Name
+import Data.Function
+import Data.List
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
@@ -303,37 +305,49 @@ liftLambda
         -> (  Exp a n
             , Bind n, Exp a n)
 
-liftLambda c usFree isTypeLam a b x
+liftLambda c usFree isTypeLam a bParam xBody
  = let  ctx     = contextCtx c
         
         -- Name of the enclosing top-level binding.
         Just nTop   = takeTopNameOfCtx ctx
 
-        -- Name of the new lifted binding/
+        -- Name of the new lifted binding.
         nLifted = extendName nTop (encodeCtx ctx)
         uLifted = UName nLifted
-        bLifted = BName nLifted tUnit      -- TODO: real type
+
 
         -- When binding free varaibles, we don't want to include the one bound
         -- by the current abstraction, or other supers bound at top-level.
+        -- We also sort the free variables so that the type variables are 
+        -- out the front.
         nsSuper = takeTopLetEnvNamesOfCtx ctx
-        Just uB = takeSubstBoundOfBind b
-        usFree' = Set.filter
+        Just uB = takeSubstBoundOfBind bParam
+        
+        usFree' = sortBy (compare `on` (not . fst))
+                $ Set.toList
+                $ Set.filter
                         (\(_, u) -> case u of
                                 UName n -> not $ Set.member n nsSuper
+                                UPrim{} -> False
                                 _       -> True)
                 $ Set.delete (isTypeLam, uB) usFree
 
+
         -- At the call site, apply all the free variables of the lifted
         -- function as new arguments.    
-        makeArg  (True,  u)       = XType a (TVar u)
-        makeArg  (False, u)       = XVar a u
+        makeArg  (True,  u)       
+                = XType a (TVar u)
         
-        xsArg   = map makeArg $ Set.toList usFree'
+        makeArg  (False, u)       
+                = XVar a u
+        
+        xsArg   = map makeArg usFree'
         xCall   = xApps a (XVar a uLifted) xsArg
 
-        -- For the lifted abstraction, wrap it in new lambdas to bind
-        -- all of its free variables.
+
+        -- For the lifted abstraction, wrap it in new lambdas to bind all of
+        -- its free variables. 
+        -- TODO: this only works for named free variables, not anonymous ones.
         makeBind (True,  u@(UName n))
                 | Just t       <- Env.lookup u (contextKindEnv c)
                 = (True,  BName n t)
@@ -343,23 +357,31 @@ liftLambda c usFree isTypeLam a b x
                 = (False, BName n t)
 
         makeBind (f, b')
-                = error $ "makeBind: nope " ++ show (f, b')
+                = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show (f, b')
 
-        bsParam = map makeBind 
-                $ Set.toList 
-                $ Set.filter (\(_, u) -> case u of
-                                            UPrim{} -> False
-                                            _       -> True)
-                $ usFree'
         
-        xInner  = if isTypeLam 
-                        then XLAM a b x
-                        else XLam a b x
+        -- Make the new super.
+        bsParam = map makeBind $ usFree'
 
-        xLifted = makeXLamFlags a bsParam xInner
+        xLambda = if isTypeLam 
+                        then XLAM a bParam xBody
+                        else XLam a bParam xBody
 
-    in  trace (show nsSuper)
+        xLifted = makeXLamFlags a bsParam xLambda
+
+
+        -- Make the top-level binder for the new super.
+        --  We know the type params in bsParam come before the value params
+        --  because we sorted usFree above.
+        bsParamT        = [b | (True,  b) <- bsParam]
+        bsParamX        = [b | (False, b) <- bsParam]
+
+        Just tLifted1   = tFunOfList $ map typeOfBind bsParamX ++ [tUnit]
+        tLifted         = foldr TForall tLifted1 bsParamT
+        
+        bLifted         = BName nLifted tLifted
+        
+    in  trace (show bsParam)
          $ ( xCall
            , bLifted, xLifted)
-
 
