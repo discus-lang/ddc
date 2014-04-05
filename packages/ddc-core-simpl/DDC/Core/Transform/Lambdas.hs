@@ -41,7 +41,7 @@ lambdasModule profile mm
         tenv    = moduleTypeEnv  mm
         c       = Context kenv tenv (CtxTop defs kenv tenv)
 
-        (x', _) = lambdasX profile c $ moduleBody mm
+        x'      = lambdasLoopX profile c $ moduleBody mm
 
    in   beautifyModule
          $ mm { moduleBody = x' }
@@ -50,20 +50,32 @@ lambdasModule profile mm
 ---------------------------------------------------------------------------------------------------
 -- | Result of lambda lifter recursion.
 data Result a n
-        = Result [(Bind n, Exp a n)]    -- Lifted bindings
+        = Result 
+           Bool                 -- Whether we've made progress in this pass.
+           [(Bind n, Exp a n)]  -- Lifted bindings
 
 instance Ord n => Monoid (Result a n) where
  mempty
-  = Result []
+  = Result False []
  
- mappend (Result lts1) (Result lts2)
-  = Result (lts1 ++ lts2)
+ mappend (Result p1 lts1) (Result p2 lts2)
+  = Result (p1 || p2) (lts1 ++ lts2)
 
 
 -- Exp --------------------------------------------------------------------------------------------
--- | Perform lambda lifting in an expression.
---   When leaving a lambda abs, when leaving inner most one then chop it.
---
+lambdasLoopX
+         :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
+         => Profile n           -- ^ Language profile.
+         -> Context a n         -- ^ Enclosing context.
+         -> Exp a n             -- ^ Expression to perform lambda lifting on.
+         -> Exp a n             --   Replacement expression.
+        
+lambdasLoopX p c xx
+ = let  (xx1, Result progress _)   = lambdasX p c xx
+   in   if progress then lambdasLoopX p c xx1
+                    else xx1
+
+-- | Perform a single pass of lambda lifting in an expression.
 lambdasX :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
          => Profile n           -- ^ Language profile.
          -> Context a n         -- ^ Enclosing context.
@@ -78,11 +90,16 @@ lambdasX p c xx
          
         XLAM a b x0
          -> enterLAM c a b x0 $ \c' x
-         -> let (x', r)    = lambdasX p c' x
-                xx'        = XLAM a b x'
-                liftMe     = isLiftyContext (contextCtx c)
-                Result bxs = r
-
+         -> let (x', r)      = lambdasX p c' x
+                xx'          = XLAM a b x'
+                Result _ bxs = r
+                
+                -- Decide whether to lift this lambda to top-level.
+                -- We lifted nexted lambdas in multiple passes, 
+                --  doing it all at once would take more work.
+                liftMe       =  isLiftyContext (contextCtx c) 
+                             && null bxs
+                
             in if liftMe
                 then  let us'   = supportEnvFlags
                                 $ support Env.empty Env.empty (XLAM a b x')
@@ -91,16 +108,21 @@ lambdasX p c xx
                                 = liftLambda p c us' True a b x'
 
                       in  ( xCall
-                          , Result (bxs ++ [(bLifted, xLifted)]))
+                          , Result True (bxs ++ [(bLifted, xLifted)]))
 
                 else (xx', r)
 
         XLam a b x0
          -> enterLam c a b x0 $ \c' x
-         -> let (x', r)    = lambdasX p c' x
-                xx'        = XLam a b x'
-                liftMe     = isLiftyContext (contextCtx c)
-                Result bxs = r
+         -> let (x', r)      = lambdasX p c' x
+                xx'          = XLam a b x'
+                Result _ bxs = r
+                
+                -- Decide whether to lift this lambda to top-level.
+                -- We lifted nexted lambdas in multiple passes, 
+                --  doing it all at once would take more work.
+                liftMe       =  isLiftyContext (contextCtx c)
+                             && null bxs
 
             in if liftMe
                 then  let us'   = supportEnvFlags
@@ -110,7 +132,7 @@ lambdasX p c xx
                                 = liftLambda p c us' False a b x'
                       
                       in  ( xCall
-                          , Result (bxs ++ [(bLifted, xLifted)]))
+                          , Result True (bxs ++ [(bLifted, xLifted)]))
                 else (xx', r)
 
         XApp a x1 x2
@@ -134,8 +156,8 @@ lambdasX p c xx
         XCast a cc x
          ->     lambdasCast p c a cc x
                 
-        XType{}         -> (xx, Result [])
-        XWitness{}      -> (xx, Result [])
+        XType{}         -> (xx, mempty)
+        XWitness{}      -> (xx, mempty)
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -158,8 +180,8 @@ lambdasLets p c a xBody lts
          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
             in  (LRec bxs', r)
                 
-        LPrivate{}      -> (lts, Result [])
-        LWithRegion{}   -> (lts, Result [])
+        LPrivate{}      -> (lts, mempty)
+        LWithRegion{}   -> (lts, mempty)
 
 
 -- LetRec -----------------------------------------------------------------------------------------
@@ -171,7 +193,7 @@ lambdasLetRec
         -> ([(Bind n, Exp a n)], Result a n)
 
 lambdasLetRec _ _ _ _ [] _
-        = ([], Result [])
+        = ([], mempty)
 
 lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
  = let  (x',   r1) = enterLetLRec  c a bxsAcc b x bxsMore xBody (lambdasX p)
@@ -180,10 +202,11 @@ lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
 
          -- If we're at top-level then drop lifted bindings here.
          CtxTop{}
-          -> let  (bxs', r2) = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
-                  Result bxsLifted = r1
+          -> let  (bxs', Result p2 bxs2) 
+                        = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
+                  Result p1 bxsLifted = r1
              in   ( bxsLifted ++ ((b, x') : bxs')
-                  , r2)
+                  , Result (p1 || p2) bxs2)
 
          _
           -> let  (bxs', r2) = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
@@ -200,7 +223,7 @@ lambdasAlts
         -> ([Alt a n], Result a n)
            
 lambdasAlts _ _ _ _ _ []
-        = ([], Result [])
+        = ([], mempty)
 
 lambdasAlts p c a xScrut altsAcc (AAlt w x : altsMore)
  = let  (x', r1)    = enterCaseAlt   c a xScrut altsAcc w x altsMore (lambdasX p)
@@ -221,8 +244,7 @@ lambdasCast p c a cc x
   = case cc of
         CastWeakenEffect{}    
          -> let (x', r) = enterCastBody c a cc x  (lambdasX p)
-            in  ( XCast a cc x'
-                , mappend (Result []) r)
+            in  ( XCast a cc x', r)
 
         -- ISSUE #331: Lambda lifter doesn't work with closure typing.
         -- The closure typing system is a mess, and doing this
@@ -233,22 +255,20 @@ lambdasCast p c a cc x
 
         CastPurify{}
          -> let (x', r) = enterCastBody c a cc x  (lambdasX p)
-            in  ( XCast a cc x'
-                , mappend (Result []) r)
+            in  ( XCast a cc x', r)
 
         CastForget{}
          -> let (x', r) = enterCastBody  c a cc x (lambdasX p)
-            in  ( XCast a cc x'
-                , mappend (Result []) r)
+            in  ( XCast a cc x', r)
 
         CastBox 
          -> let (x', r) = enterCastBody  c a cc x (lambdasX p)
-            in  (XCast a cc x', r)
+            in  (XCast a cc x',  r)
         
 
         CastRun 
          -> let (x', r)  = enterCastBody c a cc x (lambdasX p)
-            in  (XCast a cc x', r)
+            in  (XCast a cc x',  r)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -358,8 +378,9 @@ liftLambda p c fusFree isTypeLam a bParam xBody
             False   | Just t <- Env.lookup u tenv
                     -> ((f, u), t)
                 
-            _       -> error $ "ddc-core-simpl.joinType: cannot find type of free var."
-                    ++ show (f, u)
+            _       -> error $ unlines
+                        [ "ddc-core-simpl.joinType: cannot find type of free var."
+                        , show (f, u) ]
 
         futsFree_types
                 = map joinType fusFree_filtered

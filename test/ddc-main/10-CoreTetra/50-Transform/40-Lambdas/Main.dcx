@@ -1,0 +1,51 @@
+:set lang Tetra
+:set Synth
+:set trans Lambdas
+
+
+-- Simple lifting with just one free variable.
+:load..
+module Test with letrec
+test (_ : Unit) : Nat#
+ = do   a       = 23#
+        f       = \(x : Nat#). add# a 1#
+        f 5#
+;;
+
+
+-- Two free variables.
+:load..
+module Test with letrec
+test (_ : Unit) : Nat#
+ = do   a1      = 10#
+        a2      = 11#
+
+        f2      = \(x : Nat#).
+                  do    b1      = 21#
+                        b2      = 32#
+
+                        add# a1 (add# a2 (add# b1 (add# x b2)))
+
+        f2 a2
+;;
+
+
+-- Three nested lambda abstractions.
+:load..
+module Test with letrec
+test (_ : Unit) : Nat#
+ = do   a1      = 10#
+        a2      = 11#
+
+        f2      = \(x : Nat#).
+                  do    b1      = 21#
+                        b2      = 32#
+
+                        f3      = \(y : Nat#).
+                                  do    c1      = 42#
+                                        add# c1 x
+
+                        add# (f3 b1) (add# b2 x)
+
+        f2 a2
+;;
