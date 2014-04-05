@@ -1,7 +1,8 @@
 
 module DDC.Core.Collect.Support
         ( Support       (..)
-        , SupportX      (..))
+        , SupportX      (..)
+        , supportEnvFlags)
 where
 import DDC.Core.Compounds
 import DDC.Core.Exp
@@ -14,6 +15,7 @@ import Data.Monoid
 import Data.Maybe
 
 
+---------------------------------------------------------------------------------------------------
 data Support n
         = Support
         { -- | Type constructors used in the expression.
@@ -57,6 +59,26 @@ instance Ord n => Monoid (Support n) where
         , supportDaVar          = Set.unions [supportDaVar sp1,     supportDaVar sp2] }
 
 
+---------------------------------------------------------------------------------------------------
+-- | Get a description of the type and value environment from a Support.
+--   Type (level-1) variables are tagged with True, while
+--   value and witness (level-0) variables are tagged with False.
+supportEnvFlags
+        :: Ord n => Support n 
+        -> Set (Bool, Bound n)
+
+supportEnvFlags supp
+ = let  
+        us1   = Set.map  (\u -> (True,  u)) $ supportSpVar supp
+
+        us0   = Set.unions
+                [ Set.map  (\u -> (False, u)) $ supportDaVar supp
+                , Set.map  (\u -> (False, u)) $ supportWiVar supp]
+
+   in   Set.union us1 us0
+
+
+---------------------------------------------------------------------------------------------------
 class SupportX (c :: * -> *) where
  support
         :: Ord n

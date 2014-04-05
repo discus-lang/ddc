@@ -61,11 +61,15 @@ instance Ord n => Monoid (Result a n) where
 --         When passing up free vars, also pass up the type so we can use
 --         it at the binding position.
 --
+--   TODO: lifting multiple nested lambdas all at once might be a headache as we
+--         need to add the new top-level super to the environment.
+--         If problematic then just call the single level lifter multiple times.
+--
 lambdasX :: (Show n, Show a, Pretty n, CompoundName n, Ord n)
          => Context a n         -- ^ Enclosing context.
          -> Exp a n             -- ^ Expression to perform lambda lifting on.
-         -> ( Exp a n           -- Replacement expression
-            , Result a n)       -- Lifter result.
+         -> ( Exp a n           --   Replacement expression
+            , Result a n)       --   Lifter result.
          
 lambdasX c xx
  = case xx of
@@ -80,19 +84,12 @@ lambdasX c xx
                 Result bxs = r
 
             in if liftMe
-                then  let supp  = support Env.empty Env.empty (XLAM a b x')
+                then  let us'   = supportEnvFlags
+                                $ support Env.empty Env.empty (XLAM a b x')
                           
-                          -- TODO: make a fn for this in DDC.Type.Env
-                          us1   = Set.map   (\u -> (True,  u)) $ supportSpVar supp
-                          
-                          us0   = Set.unions 
-                                  [ Set.map (\u -> (False, u)) $ supportDaVar supp
-                                  , Set.map (\u -> (False, u)) $ supportWiVar supp]
-                          
-                          us'   = Set.union us1 us0
-
                           (xCall, bLifted, xLifted)
-                                    = liftLambda c us' True a b x'
+                                = liftLambda c us' True a b x'
+
                       in  ( xCall
                           , Result (bxs ++ [(bLifted, xLifted)]))
 
@@ -106,19 +103,12 @@ lambdasX c xx
                 Result bxs = r
 
             in if liftMe
-                then  let supp  = support Env.empty Env.empty (XLam a b x')
-
-                          -- TODO: make a fn for this in DDC.Type.Env
-                          us1   = Set.map  (\u -> (True,  u)) $ supportSpVar supp
-
-                          us0   = Set.unions
-                                [ Set.map  (\u -> (False, u)) $ supportDaVar supp
-                                , Set.map  (\u -> (False, u)) $ supportWiVar supp]
-
-                          us'   = Set.union us1 us0
+                then  let us'   = supportEnvFlags
+                                $ support Env.empty Env.empty (XLam a b x')
 
                           (xCall, bLifted, xLifted)
-                                    = liftLambda c us' False a b x'
+                                = liftLambda c us' False a b x'
+                      
                       in  ( xCall
                           , Result (bxs ++ [(bLifted, xLifted)]))
                 else (xx', r)
@@ -149,69 +139,6 @@ lambdasX c xx
 
         XWitness{}
          ->     (xx, Result [])
-
-
--- | Construct the call site, and new lifted binding for a lambda lifted
---   abstraction.
-liftLambda 
-        :: (Show n, Ord n, CompoundName n)
-        => Context a n          -- ^ Context of the original abstraction.
-        -> Set (Bool, Bound n)  -- ^ Free variables in the body of the abstraction.
-        -> Bool                 -- ^ Whether this is a type-abstraction.
-        -> a -> Bind n -> Exp a n
-        -> (  Exp a n
-            , Bind n, Exp a n)
-liftLambda c usFree isTypeLam a b x
- = let  ctx         = contextCtx c
-        
-        -- Name of the enclosing top-level binding.
-        Just nTop   = takeTopNameOfCtx ctx
-
-        -- Name of the new lifted binding/
-        nLifted     = extendName nTop (encodeCtx ctx)
-        uLifted     = UName nLifted
-        bLifted     = BName nLifted tUnit      -- TODO: real type
-
-        -- When binding free varaibles, we don't want to include the one bound
-        -- by the current abstraction, or other supers bound at top-level.
-        nsSuper     = takeTopLetEnvNamesOfCtx ctx
-        Just uB     = takeSubstBoundOfBind b
-        usFree'     = Set.filter
-                        (\(_, u) -> case u of
-                                UName n -> not $ Set.member n nsSuper
-                                _       -> True)
-                    $ Set.delete (isTypeLam, uB) usFree
-
-        -- At the call site, apply all the free variables of the lifted
-        -- function as new arguments.    
-        makeArg  (True,  u)       = XType a (TVar u)
-        makeArg  (False, u)       = XVar a u
-        
-        xsArg       = map makeArg $ Set.toList usFree'
-        xCall       = xApps a (XVar a uLifted) xsArg
-
-        -- For the lifted abstraction, wrap it in new lambdas to bind
-        -- all of its free variables.
-        makeBind (True,  UName n) = (True,  BName n tUnit)
-        makeBind (False, UName n) = (False, BName n tUnit)
-        makeBind (f, b')          = error $ "makeBind: nope " ++ show (f, b')
-
-        bsParam     = map makeBind 
-                    $ Set.toList 
-                    $ Set.filter (\(_, u) -> case u of
-                                                UPrim{} -> False
-                                                _       -> True)
-                    $ usFree'
-        
-        xInner      = if isTypeLam 
-                        then XLAM a b x
-                        else XLam a b x
-
-        xLifted     = makeXLamFlags a bsParam xInner
-
-    in  trace (show nsSuper)
-         $ ( xCall
-           , bLifted, xLifted)
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -358,5 +285,81 @@ isLiftyContext ctx
         CtxCaseScrut{}  -> True
         CtxCaseAlt{}    -> True
         CtxCastBody{}   -> True
+
+
+---------------------------------------------------------------------------------------------------
+-- | Construct the call site, and new lifted binding for a lambda lifted
+--   abstraction.
+--
+--   TODO: get types of free vars from the current context.
+--   TODO: put new type binders first.
+
+liftLambda 
+        :: (Show n, Ord n, CompoundName n)
+        => Context a n          -- ^ Context of the original abstraction.
+        -> Set (Bool, Bound n)  -- ^ Free variables in the body of the abstraction.
+        -> Bool                 -- ^ Whether this is a type-abstraction.
+        -> a -> Bind n -> Exp a n
+        -> (  Exp a n
+            , Bind n, Exp a n)
+
+liftLambda c usFree isTypeLam a b x
+ = let  ctx     = contextCtx c
+        
+        -- Name of the enclosing top-level binding.
+        Just nTop   = takeTopNameOfCtx ctx
+
+        -- Name of the new lifted binding/
+        nLifted = extendName nTop (encodeCtx ctx)
+        uLifted = UName nLifted
+        bLifted = BName nLifted tUnit      -- TODO: real type
+
+        -- When binding free varaibles, we don't want to include the one bound
+        -- by the current abstraction, or other supers bound at top-level.
+        nsSuper = takeTopLetEnvNamesOfCtx ctx
+        Just uB = takeSubstBoundOfBind b
+        usFree' = Set.filter
+                        (\(_, u) -> case u of
+                                UName n -> not $ Set.member n nsSuper
+                                _       -> True)
+                $ Set.delete (isTypeLam, uB) usFree
+
+        -- At the call site, apply all the free variables of the lifted
+        -- function as new arguments.    
+        makeArg  (True,  u)       = XType a (TVar u)
+        makeArg  (False, u)       = XVar a u
+        
+        xsArg   = map makeArg $ Set.toList usFree'
+        xCall   = xApps a (XVar a uLifted) xsArg
+
+        -- For the lifted abstraction, wrap it in new lambdas to bind
+        -- all of its free variables.
+        makeBind (True,  u@(UName n))
+                | Just t       <- Env.lookup u (contextKindEnv c)
+                = (True,  BName n t)
+        
+        makeBind (False, u@(UName n))
+                | Just t       <- Env.lookup u (contextTypeEnv c)
+                = (False, BName n t)
+
+        makeBind (f, b')
+                = error $ "makeBind: nope " ++ show (f, b')
+
+        bsParam = map makeBind 
+                $ Set.toList 
+                $ Set.filter (\(_, u) -> case u of
+                                            UPrim{} -> False
+                                            _       -> True)
+                $ usFree'
+        
+        xInner  = if isTypeLam 
+                        then XLAM a b x
+                        else XLam a b x
+
+        xLifted = makeXLamFlags a bsParam xInner
+
+    in  trace (show nsSuper)
+         $ ( xCall
+           , bLifted, xLifted)
 
 
