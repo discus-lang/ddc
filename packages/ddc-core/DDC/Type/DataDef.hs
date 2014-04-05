@@ -27,6 +27,7 @@ module DDC.Type.DataDef
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
+import Data.Monoid
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
 import Data.Maybe
@@ -212,12 +213,25 @@ instance NFData n => NFData (DataCtor n) where
   = rnf n `seq` rnf t `seq` rnf fs `seq` rnf tR `seq` rnf nT `seq` rnf bsParam
 
 
+instance Ord n => Monoid (DataDefs n) where
+ mempty  = emptyDataDefs
+ mappend = unionDataDefs
+
+
 -- | An empty table of data type definitions.
 emptyDataDefs :: DataDefs n
 emptyDataDefs
         = DataDefs
         { dataDefsTypes = Map.empty
         , dataDefsCtors = Map.empty }
+
+
+-- | Union two `DataDef` tables.
+unionDataDefs :: Ord n => DataDefs n -> DataDefs n -> DataDefs n
+unionDataDefs defs1 defs2
+        = DataDefs
+        { dataDefsTypes = Map.union (dataDefsTypes defs1) (dataDefsTypes defs2)
+        , dataDefsCtors = Map.union (dataDefsCtors defs1) (dataDefsCtors defs2) }
 
 
 -- | Insert a data type definition into some DataDefs.
@@ -238,15 +252,6 @@ insertDataDef (DataDef nType bsParam mCtors isAlg) dataDefs
          , dataDefsCtors = Map.union (dataDefsCtors dataDefs)
                          $ Map.fromList [(n, def) 
                                 | def@(DataCtor n _ _ _ _ _) <- concat $ maybeToList mCtors ]}
-
-
--- | Union two `DataDef` tables.
-unionDataDefs :: Ord n => DataDefs n -> DataDefs n -> DataDefs n
-unionDataDefs defs1 defs2
-        = DataDefs
-        { dataDefsTypes = Map.union (dataDefsTypes defs1) (dataDefsTypes defs2)
-        , dataDefsCtors = Map.union (dataDefsCtors defs1) (dataDefsCtors defs2) }
-
 
 
 -- | Build a `DataDefs` table from a list of `DataDef`

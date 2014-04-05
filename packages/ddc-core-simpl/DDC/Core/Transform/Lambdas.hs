@@ -16,21 +16,26 @@ import Data.List
 import Data.Set                         (Set)
 import qualified DDC.Core.Check         as Check
 import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.DataDef       as DataDef
 import qualified Data.Set               as Set
-import Debug.Trace
 import Data.Monoid
 
--- TODO Normalize names of lifted bindings.
---      Add free vars as parameters to lifted binding, and at call site.
---      Fix type of lifted binding, will need to take AnTEC version of AST
---      Test for multiply nested lambdas.
+-- TODO: Normalize names of lifted bindings.
+--       Test for multiply nested lambdas.
+--
+-- TODO: handle case where free vars in a lambda have anonymous names
+--       When passing up free vars, also pass up the type so we can use
+--       it at the binding position.
+--
+-- TODO: lifting multiple nested lambdas all at once might be a headache as we
+--       need to add the new top-level super to the environment.
+--       If problematic then just call the single level lifter multiple times.
+--
 
 ---------------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in a module.
---   TODO: Split 'StringName' from Pretty .. should not require full pretty printer.
 lambdasModule 
-        :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
+        :: ( Show a, Pretty a
+           , Show n, Pretty n, Ord n, CompoundName n)
         => Profile n
         -> Module a n -> Module a n
 
@@ -63,14 +68,6 @@ instance Ord n => Monoid (Result a n) where
 -- Exp --------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in an expression.
 --   When leaving a lambda abs, when leaving inner most one then chop it.
---
---   TODO: handle case where free vars in a lambda have anonymous names
---         When passing up free vars, also pass up the type so we can use
---         it at the binding position.
---
---   TODO: lifting multiple nested lambdas all at once might be a headache as we
---         need to add the new top-level super to the environment.
---         If problematic then just call the single level lifter multiple times.
 --
 lambdasX :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
          => Profile n           -- ^ Language profile.
@@ -298,10 +295,6 @@ isLiftyContext ctx
 ---------------------------------------------------------------------------------------------------
 -- | Construct the call site, and new lifted binding for a lambda lifted
 --   abstraction.
---
---   TODO: get types of free vars from the current context.
---   TODO: put new type binders first.
-
 liftLambda 
         :: (Show n, Pretty n, Ord n, CompoundName n, Pretty a)
         => Profile n            -- ^ Language profile.
@@ -313,43 +306,41 @@ liftLambda
             , Bind n, Exp a n)
 
 liftLambda p c usFree isTypeLam a bParam xBody
- = let  ctx     = contextCtx c
+ = let  ctx       = contextCtx c
         
         -- Name of the enclosing top-level binding.
-        Just nTop   = takeTopNameOfCtx ctx
+        Just nTop = takeTopNameOfCtx ctx
 
         -- Name of the new lifted binding.
-        nLifted = extendName nTop (encodeCtx ctx)
-        uLifted = UName nLifted
+        nLifted   = extendName nTop (encodeCtx ctx)
+        uLifted   = UName nLifted
 
 
-        -- When binding free varaibles, we don't want to include the one bound
-        -- by the current abstraction, or other supers bound at top-level.
-        -- We also sort the free variables so that the type variables are 
-        -- out the front.
+        -- For the new super, we bind the free variables of the nested
+        -- abstraction as new parameters. However, we don't want to include
+        -- the one bound by the abstraction itself, or other supers bound at
+        -- top-level. We also sort the free variables so that the binders
+        -- for type variables end up out the front.
         nsSuper = takeTopLetEnvNamesOfCtx ctx
         Just uB = takeSubstBoundOfBind bParam
         
         usFree' = sortBy (compare `on` (not . fst))
                 $ Set.toList
                 $ Set.filter
-                        (\(_, u) -> case u of
-                                UName n -> not $ Set.member n nsSuper
-                                UPrim{} -> False
-                                _       -> True)
+                        (\fu -> case fu of
+                                 (False, UName n) -> not $ Set.member n nsSuper
+                                 (_,     UPrim{}) -> False
+                                 _                -> True)
                 $ Set.delete (isTypeLam, uB) usFree
 
 
         -- At the call site, apply all the free variables of the lifted
         -- function as new arguments.    
-        makeArg  (True,  u)       
-                = XType a (TVar u)
+        makeArg  (True,  u) = XType a (TVar u)
+        makeArg  (False, u) = XVar a u
         
-        makeArg  (False, u)       
-                = XVar a u
-        
-        xsArg   = map makeArg usFree'
-        xCall   = xApps a (XVar a uLifted) xsArg
+        xCall   = xApps a (XVar a uLifted)
+                $ map makeArg usFree'
 
 
         -- For the lifted abstraction, wrap it in new lambdas to bind all of
@@ -379,26 +370,28 @@ liftLambda p c usFree isTypeLam a bParam xBody
 
         -- Get the type of the bound expression, which we need when building
         -- the type of the new super.
-
-        -- TODO: declunkify this.
         (defs, _, _)    = topOfCtx (contextCtx c)
-        config          = Check.configOfProfile p
-        config'         = config { Check.configDataDefs
-                                        = DataDef.unionDataDefs 
-                                                (Check.configDataDefs config)
-                                                defs }
+        
+        config  = Check.configOfProfile p
+        config' = config { Check.configDataDefs
+                                    = mappend defs (Check.configDataDefs config) }
         rLambda = Check.typeOfExp 
                         config'
                         (contextKindEnv c) (contextTypeEnv c)
                         xLifted
         
         tLifted = case rLambda of
-                        Left err        -> error $ renderIndent $ ppr err
-                        Right t         -> t
+                   -- If there are type errors in the input program then some 
+                   -- either the lambda lifter is broken or some other transform
+                   -- has messed up.
+                   Left err 
+                    -> error $ renderIndent $ vcat
+                             [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
+                             , ppr err]
+
+                   Right t   -> t
 
         bLifted = BName nLifted tLifted
         
-    in  trace (show bsParam)
-         $ ( xCall
-           , bLifted, xLifted)
-
+    in  ( xCall
+        , bLifted, xLifted)
