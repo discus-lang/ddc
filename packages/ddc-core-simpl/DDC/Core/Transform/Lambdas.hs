@@ -24,15 +24,6 @@ import qualified Data.Map               as Map
 import Data.Monoid
 import Data.Maybe
 
---
--- TODO: handle case where free vars in a lambda have anonymous names
---       When passing up free vars, also pass up the type so we can use
---       it at the binding position.
---
--- TODO: lifting multiple nested lambdas all at once might be a headache as we
---       need to add the new top-level super to the environment.
---       If problematic then just call the single level lifter multiple times.
---
 
 ---------------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in a module.
@@ -238,9 +229,10 @@ lambdasCast p c a cc x
             in  ( XCast a cc x'
                 , mappend (Result []) r)
 
-        -- TODO: The closure typing system is a mess, and doing this
-        --       properly would be be hard work, so we just don't bother.
-        --       Lambda lifting won't work with the Eval or Lite fragments.
+        -- ISSUE #331: Lambda lifter doesn't work with closure typing.
+        -- The closure typing system is a mess, and doing this
+        -- properly would be be hard work, so we just don't bother.
+        -- Lambda lifting won't work with the Eval or Lite fragments.
         CastWeakenClosure{}
          ->    error "ddc-core-simpl.lambdas: closures not handled."
 
@@ -416,9 +408,9 @@ liftLambda p c fusFree isTypeLam a bParam xBody
                 $ map makeArg $ map fst futsFree
 
 
+        -- ISSUE #330: Lambda lifter doesn't work with anonymous binders.
         -- For the lifted abstraction, wrap it in new lambdas to bind all of
         -- its free variables. 
-        -- TODO: this only works for named free variables, not anonymous ones.
         makeBind ((True,  (UName n)), t) = (True,  BName n t)
         makeBind ((False, (UName n)), t) = (False, BName n t)
         makeBind fut
