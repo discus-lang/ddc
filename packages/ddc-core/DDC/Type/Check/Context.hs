@@ -558,25 +558,27 @@ effectSupported eff ctx
         | TVar {} <- eff
         = Nothing
 
-        -- For an effect on an abstract region, we allow any capability.
-        --  We'll find out if it really has this capability when we try
-        --  to run the computation.
-        | TApp (TCon (TyConSpec tc)) (TVar u) <- eff
-        , elem tc [TcConRead, TcConWrite, TcConAlloc]
-        , Just (_, RoleAbstract) <- lookupKind u ctx
+        -- Abstract global effects are always supported.
+        | TCon (TyConBound _ k)                <- eff
+        , k == kEffect
         = Nothing
 
-        -- For an effect on a concrete region,
-        --   the capability needs to be in the lexical environment.
+        -- For an effects on concrete region,
+        -- the capability is supported if it's in the lexical environment.
         | TApp (TCon (TyConSpec tc)) _t2       <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
         , elem (ElemType (BNone eff)) (contextElems ctx)
         = Nothing
 
-        -- Abstract global effects are always supported.
-        | TCon (TyConBound _ k)                <- eff
-        , k == kEffect
-        = Nothing
+        -- For an effect on an abstract region, we allow any capability.
+        --  We'll find out if it really has this capability when we try
+        --  to run the computation.
+        | TApp (TCon (TyConSpec tc)) (TVar u) <- eff
+        , elem tc [TcConRead, TcConWrite, TcConAlloc]
+        = case lookupKind u ctx of
+                Just (_, RoleConcrete)  -> Just eff
+                Just (_, RoleAbstract)  -> Nothing
+                Nothing                 -> Nothing
 
         | otherwise
         = Just eff

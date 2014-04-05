@@ -310,7 +310,12 @@ liftLambda p c fusFree isTypeLam a bParam xBody
  = let  ctx     = contextCtx c
         kenv    = contextKindEnv c
         tenv    = contextTypeEnv c
-        
+
+        -- The complete abstraction that we're lifting out.
+        xLambda = if isTypeLam 
+                        then XLAM a bParam xBody
+                        else XLam a bParam xBody
+
         -- Name of the enclosing top-level binding.
         Just nTop = takeTopNameOfCtx ctx
 
@@ -323,6 +328,27 @@ liftLambda p c fusFree isTypeLam a bParam xBody
         -- Name of the new lifted binding.
         nLifted = extendName nTop (encodeCtx ctx)
         uLifted = UName nLifted
+
+
+        -- Build the type checker configuration for this context.
+        (defs, _, _)    = topOfCtx (contextCtx c)        
+        config          = Check.configOfProfile p
+        config'         = config { Check.configDataDefs
+                                        = mappend defs (Check.configDataDefs config) }
+
+        -- Function to get the type of an expression in this context.
+        -- If there are type errors in the input program then some 
+        -- either the lambda lifter is broken or some other transform
+        -- has messed up.
+        typeOfExp x
+         = case Check.typeOfExp 
+                        config' (contextKindEnv c) (contextTypeEnv c)
+                        x
+            of  Left err
+                 -> error $ renderIndent $ vcat
+                          [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
+                          , ppr err]
+                Right t -> t
 
 
         -- Decide whether we want to bind the given variable as a new parameter
@@ -355,22 +381,27 @@ liftLambda p c fusFree isTypeLam a bParam xBody
                 = map joinType fusFree_filtered
 
 
-        -- Add in type variables that are free in the types of value variables.
+        -- Add in type variables that are free in the types of free value variables.
         -- We need to bind these as well in the new super.
         expandFree ((f, u), t)
-         | False <- f   = [(True, ut) | ut <- Set.toList $ freeVarsT kenv t]
-         | otherwise    = [(f, u)]
+         | False <- f   =  [(f, u)]
+                        ++ [(True, ut) | ut  <- Set.toList
+                                             $  freeVarsT Env.empty t]
+         | otherwise    =  [(f, u)]
     
-        futsFree_expanded
-                = map joinType
-                $ concatMap expandFree
-                $ futsFree_types
+        fusFree_body    =  [(True, ut) | ut  <- Set.toList 
+                                             $  freeVarsT Env.empty $ typeOfExp xLambda]
 
+        futsFree_expandFree
+                =  map joinType
+                $  Set.toList $ Set.fromList
+                $  (concatMap expandFree $ futsFree_types)
+                ++ fusFree_body
 
         -- Sort free vars so the type variables come out the front.
         futsFree
                 = sortBy (compare `on` (not . fst . fst))
-                $ futsFree_expanded
+                $ futsFree_expandFree
 
 
         -- At the call site, apply all the free variables of the lifted
@@ -393,36 +424,12 @@ liftLambda p c fusFree isTypeLam a bParam xBody
         -- Make the new super.
         bsParam = map makeBind futsFree
 
-        xLambda = if isTypeLam 
-                        then XLAM a bParam xBody
-                        else XLam a bParam xBody
-
         xLifted = makeXLamFlags a bsParam xLambda
 
 
         -- Get the type of the bound expression, which we need when building
         -- the type of the new super.
-        (defs, _, _)    = topOfCtx (contextCtx c)
-        
-        config  = Check.configOfProfile p
-        config' = config { Check.configDataDefs
-                                    = mappend defs (Check.configDataDefs config) }
-        rLambda = Check.typeOfExp 
-                        config'
-                        (contextKindEnv c) (contextTypeEnv c)
-                        xLifted
-        
-        tLifted = case rLambda of
-                   -- If there are type errors in the input program then some 
-                   -- either the lambda lifter is broken or some other transform
-                   -- has messed up.
-                   Left err 
-                    -> error $ renderIndent $ vcat
-                             [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
-                             , ppr err]
-
-                   Right t   -> t
-
+        tLifted = typeOfExp xLifted
         bLifted = BName nLifted tLifted
         
     in  ( xCall
