@@ -38,7 +38,7 @@
 :kind Alloc
 
 
--- Primitive Arithmetic.
+-- Arithmetic operators.
 :type neg#
 :type add#
 :type sub#
@@ -61,7 +61,25 @@
 :type bxor#
 
 
--- Mutable References.
+-- Function operators.
+:type reify#
+
+:type curry0#
+:type curry1#
+:type curry2#
+:type curry5#
+
+:type apply1#
+:type apply2#
+:type apply5#
+
+:type eval0#
+:type eval1#
+:type eval2#
+:type eval5#
+
+
+-- Store operators
 :type allocRef#
 :type readRef#
 :type writeRef#

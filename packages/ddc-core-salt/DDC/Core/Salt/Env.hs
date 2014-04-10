@@ -185,12 +185,13 @@ typeOfPrimCast cc
 typeOfPrimCall :: PrimCall -> Type Name
 typeOfPrimCall cc
  = case cc of
-        PrimCallTail    arity       -> makePrimCallType    arity
-
+        PrimCallTail arity       
+         -> makePrimCallTailType    arity
+        
 
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.
-makePrimCallType :: Int -> Type Name
-makePrimCallType arity
+makePrimCallTailType :: Int -> Type Name
+makePrimCallTailType arity
  = let  tSuper   = foldr tFunPE 
                          (TVar (UIx 0))
                          (reverse [TVar (UIx i) | i <- [1..arity]])

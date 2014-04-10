@@ -7,6 +7,7 @@ module DDC.Core.Tetra.Prim.Base
         , TyConTetra    (..)
         , DaConTetra    (..)
         , OpStore       (..)
+        , OpFun         (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimCast      (..))
@@ -35,7 +36,10 @@ data Name
         -- | Baked-in data constructors.
         | NameDaConTetra        DaConTetra
 
-        -- | Baked-in operators.
+        -- | Baked-in function operators.
+        | NameOpFun             OpFun
+
+        -- | Baked-in store operators.
         | NameOpStore           OpStore
 
         -- Machine primitives ------------------
@@ -102,6 +106,12 @@ data TyConTetra
         -- | @U#@.      Unboxed type constructor.
         --   Used to represent unboxed numeric values.
         | TyConTetraU
+
+        -- | @F#@.      Reified function value.
+        | TyConTetraF
+
+        -- | @C#@.      Reified function closure.
+        | TyConTetraC
         deriving (Eq, Ord, Show)
 
 
@@ -119,5 +129,24 @@ data OpStore
         = OpStoreAllocRef     -- ^ Allocate a reference.
         | OpStoreReadRef      -- ^ Read a reference.
         | OpStoreWriteRef     -- ^ Write to a reference.
+        deriving (Eq, Ord, Show)
+
+
+-- OpFun ----------------------------------------------------------------------
+-- | Operators for building function values and closures.
+data OpFun
+        -- | Reify a function into a functional value.
+        = OpFunReify
+
+        -- | Attach arguments to a functional value, producing a closure.
+        | OpFunCurry Int
+
+        -- | Apply more arguments to a closure.
+        | OpFunApply Int
+
+        -- | Provide the remaining arguments to a closure and evaluate
+        --   the contained function. The result needs to be a non-functional
+        --   value, otherwise you'll get a runtime error.
+        | OpFunEval  Int
         deriving (Eq, Ord, Show)
 

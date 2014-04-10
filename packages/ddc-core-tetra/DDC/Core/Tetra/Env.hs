@@ -107,6 +107,7 @@ typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
         NameDaConTetra p        -> Just $ typeDaConTetra p
+        NameOpFun      p        -> Just $ typeOpFun      p
         NameOpStore    p        -> Just $ typeOpStore    p
         NamePrimArith  p        -> Just $ typePrimArith  p
         NamePrimCast   p        -> Just $ typePrimCast   p

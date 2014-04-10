@@ -5,7 +5,9 @@ module DDC.Core.Tetra.Prim.TyConTetra
         , tRef
         , tTupleN
         , tBoxed
-        , tUnboxed)
+        , tUnboxed
+        , tFunValue
+        , tCloValue)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
@@ -25,6 +27,8 @@ instance Pretty TyConTetra where
         TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
         TyConTetraB             -> text "B#"
         TyConTetraU             -> text "U#"
+        TyConTetraF             -> text "F#"
+        TyConTetraC             -> text "C#"
 
 
 -- | Read the name of a baked-in type constructor.
@@ -41,6 +45,8 @@ readTyConTetra str
                 "Ref#"          -> Just TyConTetraRef
                 "B#"            -> Just TyConTetraB
                 "U#"            -> Just TyConTetraU
+                "F#"            -> Just TyConTetraF
+                "C#"            -> Just TyConTetraC
                 _               -> Nothing
 
 
@@ -52,6 +58,8 @@ kindTyConTetra tc
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
         TyConTetraB       -> kData   `kFun` kData
         TyConTetraU       -> kData   `kFun` kData
+        TyConTetraF       -> kData   `kFun` kData
+        TyConTetraC       -> kData   `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -75,6 +83,16 @@ tBoxed t        = tApp (tConTyConTetra TyConTetraB) t
 -- | Construct an unboxed representation type.
 tUnboxed :: Type Name -> Type Name
 tUnboxed t      = tApp (tConTyConTetra TyConTetraU) t
+
+
+-- | Construct a reified function type.
+tFunValue :: Type Name -> Type Name
+tFunValue t     = tApp (tConTyConTetra TyConTetraF) t
+
+
+-- | Construct a reified closure type.
+tCloValue :: Type Name -> Type Name
+tCloValue t     = tApp (tConTyConTetra TyConTetraC) t
 
 
 -- Utils ----------------------------------------------------------------------

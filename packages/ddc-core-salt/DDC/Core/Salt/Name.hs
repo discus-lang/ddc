@@ -15,7 +15,7 @@ module DDC.Core.Salt.Name
           -- * Primitive Operators
         , PrimOp        (..)
 
-          -- * Primative Arithmetic
+          -- * Primitive Arithmetic
         , PrimArith     (..)
         , readPrimArith
 

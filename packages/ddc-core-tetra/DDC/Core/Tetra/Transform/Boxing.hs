@@ -69,6 +69,8 @@ isValueIndexType tt
                 TyConTetraTuple{}       -> False
                 TyConTetraB{}           -> False
                 TyConTetraU{}           -> False
+                TyConTetraF{}           -> False
+                TyConTetraC{}           -> False
 
         | otherwise
         = False

@@ -49,8 +49,8 @@ Library
         
         DDC.Core.Salt.Name.Lit
         DDC.Core.Salt.Name.PrimArith
-        DDC.Core.Salt.Name.PrimCall
         DDC.Core.Salt.Name.PrimCast
+        DDC.Core.Saly.Name.PrimCall
         DDC.Core.Salt.Name.PrimControl
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon
