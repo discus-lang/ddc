@@ -2,12 +2,14 @@
 module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
         , TyConTetra    (..)
+        , OpFun         (..)
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
 where
 import DDC.Core.Tetra    
-        ( OpStore       (..)
+        ( OpFun         (..)
+        , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
 
@@ -23,6 +25,9 @@ data Name
         -- Baked in things ----------------------
         -- | Baked in data type constructors.
         | NameTyConTetra        TyConTetra
+
+        -- | Baked in functional operators.
+        | NameOpFun             OpFun
 
         -- | Baked in store operators.
         | NameOpStore           OpStore
@@ -61,7 +66,12 @@ data TyConTetra
 
         -- | @TupleN#@. Tuples.
         | TyConTetraTuple Int
-        deriving (Eq, Ord, Show)
+        
+        -- | @F#@.      Reified function values.
+        | TyConTetraF
 
+        -- | @C#@.      Reified function closures.
+        | TyConTetraC
+        deriving (Eq, Ord, Show)
 
 

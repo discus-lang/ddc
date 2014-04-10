@@ -17,6 +17,7 @@ module DDC.Core.Tetra
         , Name          (..)
         , TyConTetra    (..)
         , DaConTetra    (..)
+        , OpFun         (..)
         , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
@@ -25,6 +26,7 @@ module DDC.Core.Tetra
         , readName
         , readTyConTetra
         , readDaConTetra
+        , readOpFun
         , readOpStore
         , readPrimTyCon
         , readPrimArith

@@ -31,6 +31,7 @@ import Data.Char
 import DDC.Core.Tetra   
         ( readPrimTyCon
         , readPrimArith
+        , readOpFun
         , readOpStore)
 
 
@@ -41,6 +42,7 @@ instance NFData Name where
         NameCon s               -> rnf s
 
         NameTyConTetra p        -> rnf p
+        NameOpFun      p        -> rnf p
         NameOpStore    p        -> rnf p
         NamePrimTyCon  p        -> rnf p
         NamePrimArith  p        -> rnf p
@@ -60,6 +62,7 @@ instance Pretty Name where
         NameCon  c              -> text c
 
         NameTyConTetra p        -> ppr p
+        NameOpFun     p         -> ppr p
         NameOpStore   p         -> ppr p
         NamePrimTyCon p         -> ppr p
         NamePrimArith p         -> ppr p
@@ -79,6 +82,9 @@ readName str
         -- Baked-in names
         | Just p <- readTyConTetra   str  
         = Just $ NameTyConTetra p
+
+        | Just p <- readOpFun     str
+        = Just $ NameOpFun     p
 
         | Just p <- readOpStore   str  
         = Just $ NameOpStore   p

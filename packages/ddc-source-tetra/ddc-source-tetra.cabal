@@ -52,6 +52,7 @@ Library
         DDC.Source.Tetra.Parser.Param
         DDC.Source.Tetra.Prim.Base
         DDC.Source.Tetra.Prim.OpArith
+        DDC.Source.Tetra.Prim.OpFun
         DDC.Source.Tetra.Prim.OpStore
         DDC.Source.Tetra.Prim.TyConPrim
         DDC.Source.Tetra.Prim.TyConTetra

@@ -2,7 +2,9 @@
 module DDC.Source.Tetra.Prim.TyConTetra
         ( kindTyConTetra
         , readTyConTetra
-        , tRef)
+        , tRef
+        , tFunValue
+        , tCloValue)
 where
 import DDC.Source.Tetra.Prim.Base
 import DDC.Type.Compounds
@@ -19,6 +21,9 @@ instance Pretty TyConTetra where
   = case tc of
         TyConTetraRef           -> text "Ref#"
         TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
+        TyConTetraF             -> text "F#"
+        TyConTetraC             -> text "C#"
+
 
 
 -- | Read the name of a baked-in type constructor.
@@ -33,6 +38,8 @@ readTyConTetra str
         | otherwise
         = case str of
                 "Ref#"          -> Just TyConTetraRef
+                "F#"            -> Just TyConTetraF
+                "C#"            -> Just TyConTetraC
                 _               -> Nothing
 
 
@@ -42,6 +49,8 @@ kindTyConTetra tc
  = case tc of
         TyConTetraRef     -> kRegion `kFun` kData `kFun` kData
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
+        TyConTetraF       -> kData `kFun` kData
+        TyConTetraC       -> kData `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -52,3 +61,14 @@ tRef tR tA
                 [tR, tA]
  where k = kRegion `kFun` kData `kFun` kData
 
+
+tFunValue :: Type Name -> Type Name
+tFunValue tA
+ = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraF) k) k)) [tA]
+ where k = kData `kFun` kData
+
+
+tCloValue :: Type Name -> Type Name
+tCloValue tA
+ = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraC) k) k)) [tA]
+ where k = kData `kFun` kData
