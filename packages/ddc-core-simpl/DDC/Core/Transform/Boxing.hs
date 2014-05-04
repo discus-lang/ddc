@@ -213,7 +213,7 @@ boxingExportValue config (n, esrc)
 -- | Manage boxing in the type of an imported value.
 boxingImportValue 
         :: Config a n
-        => (n, ImportSource n)
+        -> (n, ImportSource n)
         -> (n, ImportSource n)
 
 boxingImportValue config (n, isrc)
