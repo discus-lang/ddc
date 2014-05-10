@@ -1,0 +1,31 @@
+% Disciple-BD.tex
+\begin{hcarentry}[section]{Disciple}
+\report{Ben Lippmeier}%05/13
+\status{experimental, active development}
+\participants{Ben Lippmeier, Amos Robinson, Erik de Castro Lopo, Kyle van Berendonck}
+\makeheader
+
+The Disciplined Disciple Compiler (DDC) is a research compiler used to investigate program transformation in the presence of computational effects. It compiles a family of strict functional core languages and supports region, effect and closure typing. This extra information provides a handle on the operational behaviour of code that isn't available in other languages. Programs can be written in either a pure/functional or effectful/imperative style, and one of our goals is to provide both styles coherently in the same language.
+
+\WhatsNew
+
+DDC is in an experimental, pre-alpha state, though parts of it do work. In March this year we released DDC 0.4.1, with the following new features:
+
+\begin{itemize}
+\item Added a bi-directional type inferencer based on Joshua Dunﬁeld and Neelakantan Krishnaswami's recent ICFP paper.
+\item Added a region extension language construct, and coeffect system.
+\item Added the Disciple Tetra language which includes infix operators and desugars into Disciple Core Tetra.
+\item Compilation of Tetra and Core Tetra programs to C and LLVM.
+\item Early support for rate inference in Core Flow.
+\item Flow fusion now generates vector primops for maps and folds.
+\item Support for user-defined algebraic data types.
+\item Civilized error messages for unsupported or incomplete features.
+\item Most type error messages now give source locations.
+\item Building on Windows platforms.
+\item Better support for foreign imported types and values.
+\item Changed to Git for version control.
+\end{itemize}
+
+\FurtherReading
+  \url{http://disciple.ouroborus.net}
+\end{hcarentry}
