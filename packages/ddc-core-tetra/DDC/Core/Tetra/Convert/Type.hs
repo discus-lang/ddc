@@ -275,6 +275,16 @@ convertRepableTyConApp defs kenv tt
         = do   tBIx'   <- convertIndexT tBIx
                return tBIx'
 
+        -- The F# type (reified function)
+        | Just  ( E.NameTyConTetra E.TyConTetraF
+                , [_])          <- takePrimTyConApps tt
+        =       return  $ A.tPtr A.rTop A.tObj
+
+        -- The C# type (reified function)
+        | Just  ( E.NameTyConTetra E.TyConTetraC
+                , [_])          <- takePrimTyConApps tt
+        =       return  $ A.tPtr A.rTop A.tObj
+
 
         -- User defined TyCons ------------------
         -- A user-defined data type with a primary region.
