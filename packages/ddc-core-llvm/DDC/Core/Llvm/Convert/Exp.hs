@@ -272,7 +272,7 @@ convExpM context pp kenv tenv mdsup xx
           -- Call to primop.
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
           -> convPrimCallM pp context kenv tenv mdsup
-                         (takeVarOfContext context)
+                         (takeNonVoidVarOfContext context)
                          p tPrim args
 
           -- Call to top-level super.
@@ -281,9 +281,14 @@ convExpM context pp kenv tenv mdsup xx
           , Just xsArgs_value'    <- sequence $ map (mconvAtom pp context kenv tenv) 
                                   $  eraseTypeWitArgs xsArgs
           , Just tSuper           <- Env.lookup u tenv
-          -> let (_, tResult)    = convertSuperType pp kenv tSuper
+          -> let (_, tResult)   = convertSuperType pp kenv tSuper
+
+                 mv             = case tResult of
+                                        TVoid   -> Nothing
+                                        _       -> takeNonVoidVarOfContext context
+
              in  return $ Seq.singleton $ annotNil
-                        $ ICall  (takeVarOfContext context) CallTypeStd Nothing
+                        $ ICall  mv CallTypeStd Nothing
                                  tResult nFun xsArgs_value' []
 
          C.XCast _ _ x
