@@ -46,6 +46,7 @@ Library
         DDC.Core.Llvm.Convert.Prim
         DDC.Core.Llvm.Convert.Super
         DDC.Core.Llvm.Convert.Type
+        DDC.Core.Llvm.Convert.Context
         DDC.Core.Llvm.LlvmM
 
         DDC.Llvm.Pretty.Attr

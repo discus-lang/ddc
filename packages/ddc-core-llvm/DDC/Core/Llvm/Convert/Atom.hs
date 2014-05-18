@@ -7,6 +7,7 @@ module DDC.Core.Llvm.Convert.Atom
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Salt.Platform
 import DDC.Base.Pretty
 import Control.Monad
@@ -23,12 +24,13 @@ import qualified DDC.Core.Exp                   as C
 --   These can be used directly in instructions.
 mconvAtom 
         :: Platform
+        -> Context
         -> KindEnv A.Name
         -> TypeEnv A.Name
         -> C.Exp a A.Name
         -> Maybe Exp
 
-mconvAtom pp kenv tenv xx
+mconvAtom pp context kenv tenv xx
  = case xx of
 
         -- Variables. Their names need to be sanitized before we write
@@ -38,7 +40,14 @@ mconvAtom pp kenv tenv xx
          |  Just t      <- Env.lookup u tenv
          -> let n'      = A.sanitizeName n
                 t'      = convertType pp kenv t
-            in  Just $ XVar (Var (NameLocal n') t')
+
+                mm      = coreModuleOfContext context
+                (kenvTop, tenvTop) = topEnvOfContext context
+
+            in  case takeGlobalV pp mm kenvTop tenvTop xx of
+                 Just var       -> Just $ XVar var
+                 _              -> Just $ XVar (Var (NameLocal n') t')
+
 
         -- Literals. 
         C.XCon _ dc
@@ -61,13 +70,14 @@ mconvAtom pp kenv tenv xx
 -- | Convert several atoms to core.
 mconvAtoms 
         :: Platform
+        -> Context
         -> KindEnv A.Name
         -> TypeEnv A.Name
         -> [C.Exp a A.Name]
         -> Maybe [Exp]
 
-mconvAtoms pp kenv tenv xs
-        = sequence $ map (mconvAtom pp kenv tenv) xs
+mconvAtoms pp context kenv tenv xs
+        = sequence $ map (mconvAtom pp context kenv tenv) xs
 
 
 -- Utils ----------------------------------------------------------------------

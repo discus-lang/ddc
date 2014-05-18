@@ -93,7 +93,8 @@ convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
 
         -- Convert function body to basic blocks.
         label   <- newUniqueLabel "entry"
-        blocks  <- convBodyM BodyTop kenv' tenv' mdsup Seq.empty label Seq.empty xBody
+        blocks  <- convBodyM (ContextTop mm kenv tenv) kenv' tenv' mdsup 
+                        Seq.empty label Seq.empty xBody
 
         -- Build the function.
         return  $ ( Function

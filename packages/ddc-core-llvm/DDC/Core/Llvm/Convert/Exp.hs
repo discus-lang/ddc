@@ -1,12 +1,13 @@
 
 module DDC.Core.Llvm.Convert.Exp
-        ( BodyContext (..)
+        ( Context (..)
         , convBodyM)
 where
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
@@ -25,24 +26,10 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
 
-
--- Body -------------------------------------------------------------------------------------------
--- | What context we're doing this conversion in.
-data BodyContext
-        -- | Conversion at the top-level of a function.
-        --   The expresison being converted must eventually pass control.
-        = BodyTop
-
-        -- | In a nested context, like in the right of a let-binding.
-        --   The expression should produce a value that we assign to this
-        --   variable, then jump to the provided label to continue evaluation.
-        | BodyNest Var Label
-        deriving Show
-
-
+---------------------------------------------------------------------------------------------------
 -- | Convert a function body to LLVM blocks.
 convBodyM 
-        :: BodyContext          -- ^ Context of this conversion.
+        :: Context              -- ^ Context of this conversion.
         -> KindEnv A.Name
         -> TypeEnv A.Name
         -> MDSuper
@@ -61,7 +48,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- Void return applied to a literal void constructor.
          --   We must be at the top-level of the function.
          C.XApp{}
-          |  BodyTop                            <- context
+          |  ContextTop{}                       <- context
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType{}, C.XCon _ dc]           <- xs
@@ -74,12 +61,12 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          --   We still have to eval the expression, but it returns no value.
          --   We must be at the top-level of the function.
          C.XApp{}
-          |  BodyTop                            <- context
+          |  ContextTop{}                       <- context
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _ t, x2]                  <- xs
           ,  isVoidT t
-          -> do instrs2 <- convExpM ExpTop pp kenv tenv mdsup x2
+          -> do instrs2 <- convExpM context pp kenv tenv mdsup x2
                 return  $  blocks
                         |> Block label 
                                  (instrs >< (instrs2 |> (annotNil $ IReturn Nothing)))
@@ -87,13 +74,13 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- Return a value.
          --   We must be at the top-level of the function.
          C.XApp{}
-          |  BodyTop                            <- context
+          |  ContextTop{}                       <- context
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _ t, x]                   <- xs
           -> do let t'  =  convertType pp kenv t
                 vDst    <- newUniqueVar t'
-                is      <- convExpM (ExpAssign vDst) pp kenv tenv mdsup x
+                is      <- convExpM (ContextAssign context vDst) pp kenv tenv mdsup x
                 return  $   blocks 
                         |>  Block label 
                                   (instrs >< (is |> (annotNil $ IReturn (Just (XVar vDst)))))
@@ -101,15 +88,16 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- Fail and abort the program.
          --   Allow this inside an expression as well as from the top level.
          C.XApp{}
-          |  Just (A.NamePrimOp p, xs)         <- takeXPrimApps xx
-          ,  A.PrimControl A.PrimControlFail   <- p
-          ,  [C.XType _ _tResult]              <- xs
+          |  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlFail    <- p
+          ,  [C.XType _ _tResult]               <- xs
           -> let iFail  = ICall Nothing CallTypeStd Nothing 
                                 TVoid (NameGlobal "abort") [] []
 
                  iSet   = case context of
-                                BodyTop         -> INop
-                                BodyNest vDst _ -> ISet vDst (XUndef (typeOfVar vDst))
+                           ContextTop{}           -> INop
+                           ContextNest _ vDst _   -> ISet vDst (XUndef (typeOfVar vDst))
+                           ContextAssign _ vDst   -> ISet vDst (XUndef (typeOfVar vDst))
 
                  block  = Block label
                         $ instrs |> annotNil iSet
@@ -130,7 +118,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  C.XType _ tResult : xFunTys : xsArgs  <- drop arity args
           ,  Just (xFun, _xsTys)        <- takeXApps xFunTys
           ,  Just (Var nFun _)          <- takeGlobalV pp mm kenv tenv xFun
-          ,  Just xsArgs'               <- sequence $ map (mconvAtom pp kenv tenv) xsArgs
+          ,  Just xsArgs'               <- sequence $ map (mconvAtom pp context kenv tenv) xsArgs
           -> if isVoidT tResult
               -- Tailcalled function returns void.
               then do return $ blocks
@@ -154,7 +142,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          -- A statement of type void does not produce a value.
          C.XLet _ (C.LLet (C.BNone t) x1) x2
           | isVoidT t
-          -> do instrs'   <- convExpM ExpTop pp kenv tenv mdsup x1
+          -> do instrs'   <- convExpM context pp kenv tenv mdsup x1
                 convBodyM context kenv tenv mdsup blocks label
                         (instrs >< instrs') x2
 
@@ -185,7 +173,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                 -- Label to jump to continue evaluating 'x1'
                 lCont   <- newUniqueLabel "cont"
 
-                let context'    = BodyNest vCont lCont
+                let context'    = ContextNest context vCont lCont
                 blocksCase      <- convCaseM context' pp kenv tenv mdsup 
                                         label instrs xScrut alts
 
@@ -203,7 +191,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
                 let t'    = convertType pp kenv t
                 let dst   = Var (NameLocal n') t'
-                instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
+                instrs'   <- convExpM (ContextAssign context dst) pp kenv tenv mdsup x1
                 convBodyM context kenv tenv' mdsup blocks label (instrs >< instrs') x2
 
 
@@ -224,8 +212,8 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           -> convBodyM context kenv tenv mdsup blocks label instrs x
 
          _ 
-          | BodyNest vDst label' <- context
-          -> do instrs'  <- convExpM (ExpAssign vDst) pp kenv tenv mdsup xx
+          | ContextNest _ vDst label' <- context
+          -> do instrs'  <- convExpM (ContextAssign context vDst) pp kenv tenv mdsup xx
                 return  $ blocks >< Seq.singleton (Block label 
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
@@ -236,27 +224,6 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
  
 
 -- Exp --------------------------------------------------------------------------------------------
--- | What context we're doing this conversion in.
-data ExpContext
-        -- | Conversion at the top-level of the function.
-        --   We don't have a variable to assign the result to, 
-        --    so this must be a statement that transfers control
-        = ExpTop        
-
-        -- | Conversion in a context that expects a value.
-        --   We evaluate the expression and assign the result to this variable.
-        | ExpAssign Var
-        deriving Show
-
-
--- | Take any assignable variable from an `ExpContext`.
-varOfExpContext :: ExpContext -> Maybe Var
-varOfExpContext xc
- = case xc of
-        ExpTop          -> Nothing
-        ExpAssign var   -> Just var
-
-
 -- | Convert a simple Core expression to LLVM instructions.
 --
 --   This only works for variables, literals, and full applications of
@@ -264,7 +231,7 @@ varOfExpContext xc
 --   before converting it. The result is just a sequence of instructions,
  --  so there are no new labels to jump to.
 convExpM
-        :: ExpContext
+        :: Context
         -> Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
@@ -277,7 +244,7 @@ convExpM context pp kenv tenv mdsup xx
         case xx of
          C.XVar _ u@(C.UName (A.NameVar n))
           | Just t               <- Env.lookup u tenv
-          , ExpAssign vDst       <- context
+          , ContextAssign _ vDst <- context
           -> do let n'  = A.sanitizeName n
                 let t'  = convertType pp kenv t
                 return  $ Seq.singleton $ annotNil
@@ -285,7 +252,7 @@ convExpM context pp kenv tenv mdsup xx
         
          C.XCon _ dc
           | Just n               <- takeNameOfDaCon dc
-          , ExpAssign vDst       <- context
+          , ContextAssign _ vDst <- context
           -> case n of
                 A.NameLitNat i
                  -> return $ Seq.singleton $ annotNil
@@ -304,19 +271,19 @@ convExpM context pp kenv tenv mdsup xx
          C.XApp{}
           -- Call to primop.
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
-          -> convPrimCallM pp kenv tenv mdsup
-                         (varOfExpContext context)
+          -> convPrimCallM pp context kenv tenv mdsup
+                         (takeVarOfContext context)
                          p tPrim args
 
           -- Call to top-level super.
           | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
           , Just (Var nFun _)                <- takeGlobalV pp mm kenv tenv xFun
-          , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
+          , Just xsArgs_value'    <- sequence $ map (mconvAtom pp context kenv tenv) 
                                   $  eraseTypeWitArgs xsArgs
           , Just tSuper           <- Env.lookup u tenv
           -> let (_, tResult)    = convertSuperType pp kenv tSuper
              in  return $ Seq.singleton $ annotNil
-                        $ ICall  (varOfExpContext context) CallTypeStd Nothing
+                        $ ICall  (takeVarOfContext context) CallTypeStd Nothing
                                  tResult nFun xsArgs_value' []
 
          C.XCast _ _ x
@@ -327,7 +294,7 @@ convExpM context pp kenv tenv mdsup xx
 
 -- Case -------------------------------------------------------------------------------------------
 convCaseM 
-        :: BodyContext
+        :: Context
         -> Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
@@ -375,7 +342,7 @@ convCaseM _ _ _ _ _ _ _ _ _
 
 -- Alts -------------------------------------------------------------------------------------------
 convAlts 
-        :: BodyContext
+        :: Context
         -> Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
@@ -384,17 +351,17 @@ convAlts
         -> LlvmM ([AltResult], Seq Block)
 
 -- Alternatives are at top level.
-convAlts BodyTop 
+convAlts context@ContextTop{} 
          _pp kenv tenv mdsup alts
  = do   
-        alts'   <- mapM (convAltM BodyTop kenv tenv mdsup) alts
+        alts'   <- mapM (convAltM context kenv tenv mdsup) alts
         return  (alts', Seq.empty)
 
 
 -- If we're doing a branch inside a let-binding we need to add a join
 -- point to collect the results from each altenative before continuing
 -- on to evaluate the rest.
-convAlts (BodyNest vDst lCont)
+convAlts (ContextNest ctx vDst lCont)
          _pp kenv tenv mdsup alts
  = do
         let tDst'       = typeOfVar vDst
@@ -408,7 +375,7 @@ convAlts (BodyNest vDst lCont)
                 <- liftM unzip 
                 $  mapM (\alt -> do
                         vDst'   <- newUniqueNamedVar "alt" tDst'
-                        alt'    <- convAltM (BodyNest vDst' lJoin) kenv tenv mdsup alt
+                        alt'    <- convAltM (ContextNest ctx vDst' lJoin) kenv tenv mdsup alt
                         return (vDst', alt'))
                 $  alts
 
@@ -426,6 +393,9 @@ convAlts (BodyNest vDst lCont)
 
         return (alts', Seq.singleton blockJoin)
 
+convAlts (ContextAssign{}) _ _ _ _ _
+ = die "Cannot convert alts in this context."
+
 
 -- Alt --------------------------------------------------------------------------------------------
 -- | Holds the result of converting an alternative.
@@ -439,7 +409,7 @@ data AltResult
 --   This only works for zero-arity constructors.
 --   The client should extrac the fields of algebraic data objects manually.
 convAltM 
-        :: BodyContext          -- ^ Context we're converting in.
+        :: Context              -- ^ Context we're converting in.
         -> KindEnv  A.Name      -- ^ Kind environment.
         -> TypeEnv  A.Name      -- ^ Type environment.
         -> MDSuper              -- ^ Meta-data for the enclosing super.

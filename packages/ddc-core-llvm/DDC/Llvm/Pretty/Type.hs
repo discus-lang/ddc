@@ -66,7 +66,7 @@ instance Pretty Type where
                 -- by default we don't print param attributes
                 args    = hcat $ punctuate comma $ map ppr params
 
-            in ppr r <> brackets (args <> varg')
+            in ppr r <> parens (args <> varg')
 
 
 
