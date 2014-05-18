@@ -97,7 +97,7 @@ instance Complies Exp where
          |  args        <- fromMaybe 0 $ contextFunArgs context
          ,  Just t      <- Env.lookup u tenv
          ,  arity       <- arityOfType t
-         ,  args < arity
+         ,  args >= 1 && args < arity
          ,  not $ has featuresPartialApplication
          -> throw $ ErrorUnsupported PartialApplication
 

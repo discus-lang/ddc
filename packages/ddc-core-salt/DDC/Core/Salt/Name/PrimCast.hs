@@ -94,3 +94,4 @@ primCastTruncateIsValid _pp src dst
 
         | otherwise
         = False
+

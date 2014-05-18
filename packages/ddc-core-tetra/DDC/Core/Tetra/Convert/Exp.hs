@@ -17,6 +17,7 @@ import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
+import qualified DDC.Core.Salt.Env       as A
 import qualified DDC.Core.Salt.Compounds as A
 
 import DDC.Type.Universe
@@ -331,9 +332,35 @@ convertExpX penv kenv tenv ctx xx
 
 
         ---------------------------------------------------
+        -- Reify a top-level super.
+        XApp (AnTEC _t _ _ a)  xa xb
+         | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim _tPrim)    <- x1
+         , E.NameOpFun E.OpFunReify       <- nPrim
+         -> do
+                let bObject     = BAnon (A.tPtr A.rTop A.tObj)
+                xF'     <- downArgX xF
+                tF'     <- convertRepableT defs kenv (tFun t1 t2)
+
+                return  
+                 $ XLet a  
+                        ( LLet bObject 
+                        $ A.xAllocRawSmall a A.rTop 0 (A.xNat a 12))    -- TODO: fix size
+
+                 $ XLet a  
+                        ( LLet (BNone A.tVoid)
+                        $ A.xWrite a tF'
+                                (xTakePtr a A.rTop (A.tWord 8)
+                                        (A.xPayloadOfRawSmall a A.rTop (XVar a $ UIx 0)))
+                                4                                       -- TODO: fix offset
+                                xF')
+                 $ (XVar a $ UIx 0)
+
+
+        ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.
         --  This does not cover application of primops, the above case should
-        --  fire for these.
+        --  fire for those.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          
@@ -478,6 +505,12 @@ convertExpX penv kenv tenv ctx xx
         _ -> throw $ ErrorUnsupported xx 
                    $ text "Unrecognised expression form."
 
+
+xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
+xTakePtr a t1 t2 x1
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore $ A.PrimStoreTakePtr)
+                                  (A.typeOfPrimStore A.PrimStoreTakePtr)))
+                  [ XType a t1, XType a t2, x1]
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.
