@@ -69,6 +69,19 @@ readLitPrimWordOfBits str1
         , length ds     <= bits
         = Just (readBinary ds, bits)
 
+        -- hex like 0x0ffw32#
+        | Just str2     <- stripPrefix "0x" str1
+        , (ds, str3)    <- span (\c -> elem c ['0' .. '9']
+                                    || elem c ['A' .. 'F']
+                                    || elem c ['a' .. 'f']) str2
+        , not $ null ds
+        , Just str4     <- stripPrefix "w" str3
+        , (bs, "#")     <- span isDigit str4
+        , not $ null bs
+        , bits          <- read bs
+        , length ds     <= bits
+        = Just (readHex ds, bits)
+
         -- decimal like 1234w32#
         | (ds, str2)    <- span isDigit str1
         , not $ null ds
@@ -103,8 +116,21 @@ readLitPrimFloatOfBits str1
 
 
 -- | Read a binary string as a number.
-readBinary :: (Num a, Read a) => String -> a
+readBinary :: Num a => String -> a
 readBinary digits
-        = foldl' (\ acc b -> if b then 2 * acc + 1 else 2 * acc) 0
+        = foldl' (\acc b -> if b then 2 * acc + 1 else 2 * acc) 0
         $ map (/= '0') digits
+
+
+-- | Read a hex string as a number.
+readHex    :: (Enum a, Num a) => String -> a
+readHex digits
+        = foldl' (\acc d -> let Just v = lookup d table
+                            in  16 * acc + v) 0
+        $ digits
+
+ where table
+        =  zip ['0' .. '9'] [0  .. 9]
+        ++ zip ['a' .. 'f'] [10 .. 15]
+        ++ zip ['A' .. 'F'] [10 .. 15]
 

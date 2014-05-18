@@ -69,6 +69,12 @@ module  Object
 export value
         getTag            : [r : Region]. Ptr# r Obj -> Tag#
 
+        allocThunk        : [r : Region]. Addr# -> Nat# -> Nat# -> Ptr# r Obj
+        arityOfThunk      : [r : Region]. Ptr# r Obj -> Nat#
+        availOfThunk      : [r : Region]. Ptr# r Obj -> Nat#
+        getFieldOfThunk   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
+        setFieldOfThunk   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a -> Void#
+
         allocBoxed        : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
         getFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
         setFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a -> Void#
@@ -93,6 +99,85 @@ getTag [r : Region] (obj : Ptr# r Obj) : Tag#
         tag32           = shr#  header 8w32#
         promote# tag32
  
+
+-- Thunk ----------------------------------------------------------------------
+-- | Allocate a Thunk
+--   The payload contains a code pointer to the top-level supercombinator,
+--   along with pointers to any available arguments.
+--
+--   typedef struct
+--   {   uint32_t  tagFormat;     // Constructor tag and format field.
+--       uint16_t  arity;         // Arity of the supecombinator.
+--       uint16_t  avail;         // Available arguments.
+--       Fun*      fun;           // Function pointer.
+--       Obj*      payload[];     // Pointers to available arguments.
+--   } Thunk;
+--
+allocThunk
+        [r : Region] (fun : Addr#) (arity : Nat#) (avail : Nat#) : Ptr# r Obj
+ = do
+        -- Multiply arity by 8 bytes-per-pointer to get size of payload.
+        bytesPayload    = shl# arity (size2# [Addr#])
+        bytesObj        = add# (size# [Word32#])
+                         (add# (size# [Word32#]) bytesPayload)
+        case check# bytesObj of
+         True#  -> allocThunk_ok fun arity avail bytesObj
+         False# -> fail#
+
+allocThunk_ok
+        [r : Region] (fun : Addr#) (arity : Nat#) (avail : Nat#)
+                     (bytesObj : Nat#)
+        : Ptr# r Obj
+ = do   
+        addr            = alloc# bytesObj
+
+        -- The tag of thunks is set to all 1 bits to make them easy to identify.
+        tag32           = 0xffffff00w32#
+        format          = 0b00010001w32#
+        header          = bor# tag32 format
+        write# addr 0# header
+
+        -- Truncate arity to 16-bits and write to object.
+        arity16         = truncate# [Word16#] [Nat#] arity
+        write# addr 4# arity16
+
+        -- Truncate avail count to 16-bits and write to object.
+        avail16         = truncate# [Word16#] [Nat#] arity
+        write# addr 6# avail16
+
+        -- Write the function pointer.
+        write# addr 8# fun
+
+        makePtr# addr
+
+
+-- | Get the arity of the function in a thunk.
+arityOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word16#] (takePtr# obj) 4#)
+
+
+-- | Get the count of available arguments in a thunk.
+availOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word16#] (takePtr# obj) 6#)
+
+
+-- | Get one of the pointers from a boxed data object.
+getFieldOfThunk
+        [r1 : Region] [a : Data]
+        (obj : Ptr# r1 Obj) (index : Nat#) 
+        : a
+ =      read#  (takePtr# obj)
+               (add# 8# (shl# index (size2# [Addr#])))
+
+
+-- | Set one of the pointers in a thunk.
+setFieldOfThunk
+        [r1 : Region] [a : Data] 
+        (obj : Ptr# r1 Obj) (index : Nat#) (val : a) : Void#
+ =      write# (takePtr# obj)
+               (add# 8# (shl# index (size2# [Addr#])))
+               val
+
 
 -- Boxed ----------------------------------------------------------------------
 -- | Allocate a Boxed Data Object.
