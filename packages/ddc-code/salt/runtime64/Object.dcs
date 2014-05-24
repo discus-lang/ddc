@@ -69,11 +69,14 @@ module  Object
 export value
         getTag            : [r : Region]. Ptr# r Obj -> Tag#
 
-        allocThunk        : [r : Region]. Addr# -> Nat# -> Nat# -> Ptr# r Obj
-        setFieldOfThunk   : [r : Region]. Ptr# r Obj -> Nat# -> Addr# -> Void#
-        arityOfThunk      : [r : Region]. Ptr# r Obj -> Nat#
-        availOfThunk      : [r : Region]. Ptr# r Obj -> Nat#
-        fieldOfThunk      : [r : Region]. Ptr# r Obj -> Nat# -> Addr#
+        allocThunk        : [r : Region].     Addr# -> Nat# -> Nat# -> Ptr# r Obj
+        setFieldOfThunk   : [r : Region].     Ptr# r Obj  -> Nat# -> Nat# -> Addr# -> Void#
+        arityOfThunk      : [r : Region].     Ptr# r Obj  -> Nat#
+        availOfThunk      : [r : Region].     Ptr# r Obj  -> Nat#
+        fieldOfThunk      : [r : Region].     Ptr# r Obj  -> Nat# -> Addr#
+        extendThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+        copyAvailOfThunk  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj 
+                                                          -> Nat# -> Nat# -> Ptr# r2 Obj
 
         allocBoxed        : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
         getFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
@@ -103,7 +106,8 @@ getTag [r : Region] (obj : Ptr# r Obj) : Tag#
 -- Thunk ----------------------------------------------------------------------
 -- | Allocate a Thunk
 --   The payload contains a code pointer to the top-level supercombinator,
---   along with pointers to any available arguments.
+--   along with pointers to any available arguments. The actual pointer values
+--   for the arguments are undefined.
 --
 --   typedef struct
 --   {   uint32_t  tagFormat;     // Constructor tag and format field.
@@ -152,11 +156,16 @@ allocThunk_ok
 
 
 -- | Set one of the pointers in a thunk.
+--   The value is just a plain Addr# because we don't know what region the
+--   original pointer in the Thunk was pointing to. Also, when setting these
+--   pointers for the first time the pointer values in the thunk are undefined.
+--   This takes a 'base' and 'offset' parameter separately to allow for easier
+--   code generation.
 setFieldOfThunk
-        [r1 : Region] 
-        (obj : Ptr# r1 Obj) (index : Nat#) (val : Addr#) : Void#
+        [r : Region] 
+        (obj : Ptr# r Obj) (base : Nat#) (offset : Nat#) (val : Addr#) : Void#
  =      write# (takePtr# obj)
-               (add# 8# (shl# index (size2# [Addr#])))
+               (add# 8# (shl# (add# base offset) (size2# [Addr#])))
                val
 
 
@@ -198,24 +207,25 @@ extendThunk
         avail   = availOfThunk src
         avail'  = add# avail more
 
-        -- Allocate a new thunk with the orignal function and arity
+        -- Allocate a new thunk with the orignal function and arity.
         dst     = allocThunk [rDst] (funOfThunk src) arity avail'
 
         -- Copy argument pointers from the source into the new thunk.
-        extendThunk_copy src dst 0# avail
+        copyAvailOfThunk src dst 0# avail
 
 
-extendThunk_copy 
+-- | Copy the available arguments from one thunk to another.
+copyAvailOfThunk
         [rSrc rDst : Region]
         (src   : Ptr# rSrc Obj) (dst : Ptr# rDst Obj) 
-        (index : Nat#)          (avail : Nat#)
+        (index : Nat#)          (len : Nat#)
         : Ptr# rDst Obj
- = case ge# index avail of
-        True#   ->dst
+ = case ge# index len of
+        True#   -> dst
         False# 
          -> do  ptr     = fieldOfThunk src index
-                setFieldOfThunk dst index ptr
-                extendThunk_copy src dst (add# index 1#) avail
+                setFieldOfThunk  dst 0#  index ptr
+                copyAvailOfThunk src dst (add# index 1#) len
 
 
 -- Boxed ----------------------------------------------------------------------
@@ -290,10 +300,10 @@ setFieldOfBoxed
 --   The payload can have length up to 2^64.
 --
 --   typedef struct 
---   {       uint32_t  tagFormat;
---           uint32_t  ptrCount;     // Number of pointers at the start of the payload.
---           uint64_t  size;         // Size of the whole object, in bytes.
---           ObjData      payload[];    // Contains ptrCount pointers, then raw data.
+--   { uint32_t  tagFormat;
+--     uint32_t  ptrCount;  // Number of pointers at the start of the payload.
+--     uint64_t  size;      // Size of the whole object, in bytes.
+--     ObjData   payload[]; // Contains ptrCount pointers, then raw data.
 --   } DataMixed;
 --
 allocMixed 
@@ -352,9 +362,9 @@ payloadOfMixed [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 --   The payload size must be no greater than (2^32 - 8), else undefined.
 -- 
 --   typedef struct 
---   {       uint32_t  tagFormat;    // Constructor tag and format field.
---           uint32_t  size;         // Size of the whole object, in bytes.
---           uint8_t   payload[];    // Raw data that does not contain heap pointers.
+--   { uint32_t  tagFormat;  // Constructor tag and format field.
+--     uint32_t  size;       // Size of the whole object, in bytes.
+--     uint8_t   payload[];  // Raw data that does not contain heap pointers.
 --   } DataRaw;
 --
 allocRaw
@@ -396,8 +406,8 @@ payloadOfRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 --   The payload size must be no greater than 16, else undefined. 
 --
 --   typedef struct 
---   {       uint32_t  tagFormat;    // Constructor tag and format field.
---           uint8_t   payload[];    // Raw data that does not contain heap pointers.
+--   { uint32_t  tagFormat;  // Constructor tag and format field.
+--     uint8_t   payload[];  // Raw data that does not contain heap pointers.
 --   } DataRawSmall;
 --
 allocRawSmall

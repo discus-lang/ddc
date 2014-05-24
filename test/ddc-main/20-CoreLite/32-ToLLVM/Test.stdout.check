@@ -12,10 +12,14 @@ declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
+declare external ccc i64 @availOfThunk(%s.Obj* ) align 8
+declare external ccc %s.Obj* @copyAvailOfThunk(%s.Obj* , %s.Obj* , i64 , i64 ) align 8
+declare external ccc %s.Obj* @extendThunk(%s.Obj* , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
 
 define internal fastcc %s.Obj* @_DDC_addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
 {
@@ -74,10 +78,14 @@ declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
+declare external ccc i64 @availOfThunk(%s.Obj* ) align 8
+declare external ccc %s.Obj* @copyAvailOfThunk(%s.Obj* , %s.Obj* , i64 , i64 ) align 8
+declare external ccc %s.Obj* @extendThunk(%s.Obj* , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
 
 define internal fastcc %s.Obj* @_DDC_thing(%s.Obj*  %z) align 8  
 {
@@ -109,10 +117,14 @@ declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
+declare external ccc i64 @availOfThunk(%s.Obj* ) align 8
+declare external ccc %s.Obj* @copyAvailOfThunk(%s.Obj* , %s.Obj* , i64 , i64 ) align 8
+declare external ccc %s.Obj* @extendThunk(%s.Obj* , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
 declare external ccc %s.Obj* @_DDC_addNat(%s.Obj* , %s.Obj* ) align 8
 
 define internal fastcc %s.Obj* @_DDC_thing(i1  %b) align 8  

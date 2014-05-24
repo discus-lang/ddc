@@ -277,6 +277,63 @@ convertExpX penv kenv tenv ctx xx
                 return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
                                   x'
 
+
+        ---------------------------------------------------
+        -- Reify a top-level super.
+        XApp (AnTEC _t _ _ a)  xa xb
+         | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim _tPrim)  <- x1
+         , E.NameOpFun E.OpFunReify     <- nPrim
+         , XVar _ uF                    <- xF
+         -> do
+                xF'     <- downArgX xF
+                tF'     <- convertRepableT defs kenv (tFun t1 t2)
+                let Just arity = superDataArity penv tenv uF
+
+                return  $ A.xAllocThunk a A.rTop 
+                                (xConvert a A.tAddr tF' xF')
+                                (A.xNat a $ fromIntegral arity)
+                                (A.xNat a 0)
+
+
+        ---------------------------------------------------
+        -- Curry arguments onto a reified function.
+        XApp (AnTEC _t _ _ a) xa xb
+         | (x1, xs)                     <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim _tPrim)  <- x1
+
+         , Just nArgs   
+            <- case nPrim of 
+                E.NameOpFun (E.OpFunCurry nArgs) -> Just nArgs
+                E.NameOpFun (E.OpFunApply nArgs) -> Just nArgs
+                _                                -> Nothing
+
+         , (xThunk : xsArg)   <- drop (nArgs + 1) xs
+         , nArgs == length xsArg
+         -> do  
+                xThunk'         <- downArgX xThunk
+                xsArg'          <- mapM downArgX xsArg
+                let bObject     = BAnon (A.tPtr A.rTop A.tObj)
+                let bAvail      = BAnon A.tNat
+
+                return 
+                 $ XLet  a (LLet bObject 
+                                 (A.xExtendThunk     a A.rTop A.rTop xThunk' 
+                                        (A.xNat a $ fromIntegral nArgs)))
+                 $ XLet  a (LLet bAvail
+                                 (A.xAvailOfThunk    a A.rTop xThunk'))
+
+                 $ xLets a [LLet (BNone A.tVoid)
+                                 (A.xSetFieldOfThunk a A.rTop 
+                                        (XVar a (UIx 1))                 -- new thunk
+                                        (XVar a (UIx 0))                 -- base index
+                                        (A.xNat a ix)                    -- offset
+                                        (xTakePtr a A.tObj A.rTop xArg)) -- value
+                                 | ix   <- [0..]
+                                 | xArg <- xsArg' ]
+
+                 $ XVar a (UIx 1)
+
         
         ---------------------------------------------------
         -- Saturated application of a primitive data constructor,
@@ -343,24 +400,6 @@ convertExpX penv kenv tenv ctx xx
 
              else throw $ ErrorUnsupported xx
                    $ text "Partial application of primitive operators is not supported."
-
-
-        ---------------------------------------------------
-        -- Reify a top-level super.
-        XApp (AnTEC _t _ _ a)  xa xb
-         | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)    <- x1
-         , E.NameOpFun E.OpFunReify       <- nPrim
-         , XVar _ uF                      <- xF
-         -> do
-                xF'     <- downArgX xF
-                tF'     <- convertRepableT defs kenv (tFun t1 t2)
-                let Just arity = superDataArity penv tenv uF
-
-                return  $ A.xAllocThunk a A.rTop 
-                                (xConvert a A.tAddr tF' xF')
-                                (A.xNat a $ fromIntegral arity)
-                                (A.xNat a 0)
 
 
         ---------------------------------------------------
@@ -517,6 +556,13 @@ xConvert a t1 t2 x1
         = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)
                                   (A.typeOfPrimCast A.PrimCastConvert)))
                   [ XType a t1, XType a t2, x1 ]
+
+
+xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
+xTakePtr a tA t1 x1
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)
+                                  (A.typeOfPrimStore A.PrimStoreTakePtr)))
+                  [ XType a t1, XType a tA, x1 ]
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.
