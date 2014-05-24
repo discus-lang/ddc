@@ -185,8 +185,18 @@ typeOfPrimCast cc
 typeOfPrimCall :: PrimCall -> Type Name
 typeOfPrimCall cc
  = case cc of
+        PrimCallStd  arity
+         -> makePrimCallStdType  arity
+
         PrimCallTail arity       
-         -> makePrimCallTailType    arity
+         -> makePrimCallTailType arity
+
+
+-- | Make the type of the @callN#@ and @tailcallN@ primitives.
+makePrimCallStdType :: Int -> Type Name
+makePrimCallStdType arity
+ = let Just t   = tFunOfListPE ([tAddr] ++ replicate arity tAddr ++ [tAddr])
+   in  t
         
 
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.

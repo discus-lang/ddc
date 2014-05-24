@@ -207,7 +207,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
                 return  $ blocks >< blocks'
 
-        -- Cast -------------------------------------------
+         -- Cast -------------------------------------------
          C.XCast _ _ x
           -> convBodyM context kenv tenv mdsup blocks label instrs x
 
@@ -269,7 +269,24 @@ convExpM context pp kenv tenv mdsup xx
                 _ -> die "Invalid literal"
 
          C.XApp{}
-          -- Call to primop.
+          -- Call to unknown function.
+          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) _tPrim), xsArgs) 
+                                        <- takeXApps xx
+          , A.PrimCall (A.PrimCallStd arity) <- p
+          , Just (xFun' : xsArgs')      <- sequence 
+                                        $  map (mconvAtom pp context kenv tenv) xsArgs
+          -> do let mv  = takeNonVoidVarOfContext context
+
+                vFun@(Var nFun _) 
+                        <- newUniqueNamedVar "fun" 
+                        $  TPointer $ tFunction (replicate arity (tAddr pp)) (tAddr pp)
+
+                return  $ Seq.fromList $ map annotNil
+                        [ IConv vFun (ConvInttoptr) xFun'
+                        , ICall mv  CallTypeStd Nothing
+                                    (tAddr pp) nFun xsArgs' []]
+
+          -- Call to other primop.
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
           -> convPrimCallM pp context kenv tenv mdsup
                          (takeNonVoidVarOfContext context)
@@ -296,6 +313,18 @@ convExpM context pp kenv tenv mdsup xx
 
          _ -> die $ "Invalid expression " ++ show xx
 
+
+tFunction :: [Type] -> Type -> Type
+tFunction tsArgs tResult
+        = TFunction
+        $ FunctionDecl
+        { declName              = "anon"
+        , declLinkage           = External
+        , declCallConv          = CC_Ccc
+        , declReturnType        = tResult
+        , declParamListType     = FixedArgs
+        , declParams            = [ Param t [] | t <- tsArgs ]
+        , declAlign             = AlignNone }
 
 -- Case -------------------------------------------------------------------------------------------
 convCaseM 

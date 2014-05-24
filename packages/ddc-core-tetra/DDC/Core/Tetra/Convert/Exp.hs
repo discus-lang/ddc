@@ -280,6 +280,8 @@ convertExpX penv kenv tenv ctx xx
 
         ---------------------------------------------------
         -- Reify a top-level super.
+        --  TODO: Check that we're only reifying functions that will have
+        --        the standard calling convention.
         XApp (AnTEC _t _ _ a)  xa xb
          | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)  <- x1

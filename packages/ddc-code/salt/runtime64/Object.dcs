@@ -182,26 +182,41 @@ setFieldOfThunk
 
 
 -- | Get the function pointer from a thunk.
-funOfThunk   [r : Region] (obj : Ptr# r Obj) : Addr#
- =      read# [Addr#] (takePtr# obj) 8#
+funOfThunk       [r : Region] (obj : Ptr# r Obj) : Addr#
+ =      read#    [Addr#] (takePtr# obj) 8#
+
+
+-- | Get the function pointer from a thunk.
+--   We really want an Any region here, instead of having to cast this to 
+--   and Addr# when we don't know what region the thunk is in.
+funOfThunkA      [r : Region] (obj : Addr#) : Addr#
+ =      read#   [Addr#] obj 8#
 
 
 -- | Get the arity of the function in a thunk.
-arityOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
+arityOfThunk     [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word16#] (takePtr# obj) 4#)
 
 
+-- | Get the arity of the function in a thunk.
+arityOfThunkA    [r : Region] (obj : Addr#) : Nat#
+ =      promote# (read# [Word16#] obj 4#)
+
+
 -- | Get the count of available arguments in a thunk.
-availOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
+availOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word16#] (takePtr# obj) 6#)
 
 
 -- | Get one of the arguments from a thunk.
-fieldOfThunk
-        [r1 : Region] 
-        (obj : Ptr# r1 Obj) (index : Nat#) 
-        : Addr#
+fieldOfThunk    [r1 : Region] (obj : Ptr# r1 Obj) (index : Nat#) : Addr#
  =      read#  (takePtr# obj)
+               (add# 8# (shl# index (size2# [Addr#])))
+
+
+-- | Get one of the arguments from a thunk.
+fieldOfThunkA   [r1 : Region] (obj : Addr#) (index : Nat#) : Addr#
+ =      read#   obj
                (add# 8# (shl# index (size2# [Addr#])))
 
 
@@ -469,62 +484,59 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 -- cache with code for too many evaluators.
 
 -- | Evaluate a thunk, given no more arguments.
-eval0   [r : Region] (t : Ptr# r Obj) 
-        : Ptr# r Obj
+eval0   (t : Addr#) : Addr#
  = do   
-        f       = funOfThunk   t
-        a       = arityOfThunk t
+        f       = funOfThunkA   t
+        a       = arityOfThunkA t
         case a of
          0#     -> call0# f
 
-         1#     -> call1# f        (fieldOfThunk t 0#)
+         1#     -> call1# f        (fieldOfThunkA t 0#)
 
-         2#     -> call2# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+         2#     -> call2# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
 
-         3#     -> call3# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#) 
-                                   (fieldOfThunk t 2#) 
+         3#     -> call3# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
+                                   (fieldOfThunkA t 2#) 
 
-         4#     -> call4# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#) 
-                                   (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+         4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
+                                   (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
 
-         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 4#))
-                                   (fieldOfThunk t (sub# a 3#))
-                                   (fieldOfThunk t (sub# a 2#))
-                                   (fieldOfThunk t (sub# a 1#))
+         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 4#))
+                                   (fieldOfThunkA t (sub# a 3#))
+                                   (fieldOfThunkA t (sub# a 2#))
+                                   (fieldOfThunkA t (sub# a 1#))
 
 
 -- | Evaluate a thunk, given one more argument.
-eval1   [r : Region] (t : Ptr# r Obj) (arg0 : Ptr# r Obj)
-        : Ptr# r Obj
+eval1   (t : Addr#) (arg0 : Addr#) : Addr#
  = do   
-        f       = funOfThunk   t
-        a       = arityOfThunk t
+        f       = funOfThunkA   t
+        a       = arityOfThunkA t
         case a of
          0#     -> eval1 (call0# f) arg0
 
          1#     -> call1# f         arg0
 
-         2#     -> call2# f        (fieldOfThunk t 0#)    
+         2#     -> call2# f        (fieldOfThunkA t 0#)    
                                     arg0
 
-         3#     -> call3# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#) 
+         3#     -> call3# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
                                     arg0
 
-         4#     -> call4# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                   (fieldOfThunk t 2#)  arg0
+         4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                   (fieldOfThunkA t 2#)  arg0
 
-         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 3#))
-                                   (fieldOfThunk t (sub# a 2#))
-                                   (fieldOfThunk t (sub# a 1#))
+         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 3#))
+                                   (fieldOfThunkA t (sub# a 2#))
+                                   (fieldOfThunkA t (sub# a 1#))
                                     arg0
 
 
 -- | Evaluate a thunk, given two more arguments.
-eval2   [r : Region] (t : Ptr# r Obj) (arg0 arg1 : Ptr# r Obj)
-        : Ptr# r Obj
+eval2   (t : Addr#) (arg0 arg1 : Addr#) : Addr#
  = do   
-        f       = funOfThunk   t
-        a       = arityOfThunk t
+        f       = funOfThunkA   t
+        a       = arityOfThunkA t
         case a of
          0#     -> eval2 (call0# f) arg0  arg1
 
@@ -532,23 +544,22 @@ eval2   [r : Region] (t : Ptr# r Obj) (arg0 arg1 : Ptr# r Obj)
 
          2#     -> call2# f         arg0  arg1
 
-         3#     -> call3# f        (fieldOfThunk t 0#)
+         3#     -> call3# f        (fieldOfThunkA t 0#)
                                     arg0  arg1
 
-         4#     -> call4# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+         4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
                                     arg0  arg1
 
-         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 2#))
-                                   (fieldOfThunk t (sub# a 1#))
+         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 2#))
+                                   (fieldOfThunkA t (sub# a 1#))
                                     arg0  arg1
 
 
 -- | Evaluate a thunk, given three more arguments.
-eval3   [r : Region] (t : Ptr# r Obj) (arg0 arg1 arg2 : Ptr# r Obj)
-        : Ptr# r Obj
+eval3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
  = do   
-        f       = funOfThunk   t
-        a       = arityOfThunk t
+        f       = funOfThunkA   t
+        a       = arityOfThunkA t
         case a of
          0#     -> eval3 (call0# f) arg0  arg1  arg2
 
@@ -558,19 +569,18 @@ eval3   [r : Region] (t : Ptr# r Obj) (arg0 arg1 arg2 : Ptr# r Obj)
 
          3#     -> call3# f         arg0  arg1  arg2
 
-         4#     -> call4# f        (fieldOfThunk t 0#)
+         4#     -> call4# f        (fieldOfThunkA t 0#)
                                     arg0  arg1  arg2
 
-         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 1#))
+         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 1#))
                                     arg0  arg1  arg2
 
 
 -- | Evaluate a thunk, given four more arguments.
-eval4   [r : Region] (t : Ptr# r Obj) (arg0 arg1 arg2 arg3 : Ptr# r Obj)
-        : Ptr# r Obj
+eval4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
  = do   
-        f       = funOfThunk   t
-        a       = arityOfThunk t
+        f       = funOfThunkA   t
+        a       = arityOfThunkA t
         case a of
          0#     -> eval4 (call0# f) arg0  arg1  arg2  arg3
 
@@ -605,46 +615,47 @@ eval4   [r : Region] (t : Ptr# r Obj) (arg0 arg1 arg2 arg3 : Ptr# r Obj)
 -- arity here to 12 is probably enough.
 --
 evalZ   [r : Region]
-        (t : Ptr# r Obj) (fun : Addr#) (arity : Nat#)
-        (argL3 argL2 argL1 argL0 : Ptr# r Obj)
+        (t : Addr#) (fun : Addr#) (arity : Nat#)
+        (argL3 argL2 argL1 argL0 : Addr#) 
+        : Addr#
 
  = case arity of
          4#     -> call4# fun   argL3 argL2 argL1 argL0
 
-         5#     -> call5# fun   (fieldOfThunk t 0#) 
+         5#     -> call5# fun   (fieldOfThunkA t 0#) 
                                 argL3 argL2 argL1 argL0
 
-         6#     -> call6# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+         6#     -> call6# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
                                 argL3 argL2 argL1 argL0
 
-         7#     -> call7# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                (fieldOfThunk t 2#)
+         7#     -> call7# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                (fieldOfThunkA t 2#)
                                 argL3 argL2 argL1 argL0
 
-         8#     -> call8# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+         8#     -> call8# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
                                 argL3 argL2 argL1 argL0
 
-         9#     -> call9# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
-                                (fieldOfThunk t 4#)
+         9#     -> call9# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
+                                (fieldOfThunkA t 4#)
                                 argL3 argL2 argL1 argL0
 
-         10#    -> call10# fun  (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
-                                (fieldOfThunk t 4#) (fieldOfThunk t 5#)
+         10#    -> call10# fun  (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
+                                (fieldOfThunkA t 4#) (fieldOfThunkA t 5#)
                                 argL3 argL2 argL1 argL0
 
-         11#    -> call11# fun  (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
-                                (fieldOfThunk t 4#) (fieldOfThunk t 5#)
-                                (fieldOfThunk t 6#)
+         11#    -> call11# fun  (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
+                                (fieldOfThunkA t 4#) (fieldOfThunkA t 5#)
+                                (fieldOfThunkA t 6#)
                                 argL3 argL2 argL1 argL0
 
-         12#    -> call12# fun  (fieldOfThunk t 0#) (fieldOfThunk t 1#)
-                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
-                                (fieldOfThunk t 4#) (fieldOfThunk t 5#)
-                                (fieldOfThunk t 6#) (fieldOfThunk t 7#)
+         12#    -> call12# fun  (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
+                                (fieldOfThunkA t 4#) (fieldOfThunkA t 5#)
+                                (fieldOfThunkA t 6#) (fieldOfThunkA t 7#)
                                 argL3 argL2 argL1 argL0
 
          _      -> fail#
