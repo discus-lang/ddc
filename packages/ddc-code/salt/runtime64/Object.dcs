@@ -92,6 +92,13 @@ export value
         allocRawSmall     : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
         payloadOfRawSmall : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
+        eval0             : Addr# -> Addr#
+        eval1             : Addr# -> Addr# -> Addr#
+        eval2             : Addr# -> Addr# -> Addr# -> Addr#
+        eval3             : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
+        eval4             : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
+
+
 with letrec
 
 -- | Get the constructor tag of an object.
