@@ -11,6 +11,7 @@ declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
+declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
