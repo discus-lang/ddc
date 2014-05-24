@@ -1,0 +1,81 @@
+
+Reified functions
+~~~~~~~~~~~~~~~~~
+
+  type F# : Data -> Data -> Data
+
+  A reified function contains the address of the function in instruction memory.
+  In future it will also contain a reference to the AST of the core for the function.
+
+Primops:
+
+  reify# : [a b : Data]. (a -> b) -> F# (a -> b)
+
+  Takes a function and reifies it. This can only be applied to functional values that
+  do not capture other values in their closures. In Core this is enforced by only allowing
+  top-level supercombinators to be reified.
+
+
+Curried functions
+~~~~~~~~~~~~~~~~~
+
+ type C#  : Data -> Data -> Data
+
+ A curried function is like a reified function, except that it may also refer to other
+ values. This is used to represent partially applied functions.
+
+
+Currying
+~~~~~~~~
+
+ curry0#   : [a : Data].     F# a                       -> C# a
+ curry1#   : [a b : Data].   F# (a -> b)      -> a      -> C# b
+ curry2#   : [a b c : Data]. F# (a -> b -> c) -> a -> b -> C# c
+
+ The curry0# op should be free at runtime, as the F# and C# values are represented by
+ the same heap object. The primop performs a user-level type cast, where the result
+ type does not guarantee that the value does not refer to other heap values.
+
+ INVARIANT: The parameter types must be instantiated by a non-functional type.
+
+ The curry1# and curry2# ops aren't stricly nessesary, as we can always apply curry0# 
+ then add the remaining arguments with apply2# etc. However the naive implementation
+ would allocate two separate heap objects -- one for the result of curry0# and one for
+ the result of the application. As F# and C# are implemented by the same heap objects
+ we can share the code that performs both curryN# and applyN#, so it's not a large
+ implementation burden to have both.
+
+
+Application
+~~~~~~~~~~~
+
+ apply1#   : [a b : Data].   C# (a -> b)      -> a      -> C# b
+ apply2#   : [a b c : Data]. C# (a -> b -> c) -> a -> b -> C# c
+
+ Builds a new C# object that also refers to the provided argument value
+
+ INVARIANT: The parameter types must be instantiated by a non-functional type.
+
+
+Evaluation
+~~~~~~~~~~
+
+ eval0#    : [a : Data].     C# a                       -> a
+ eval1#    : [a b : Data].   C# (a -> b)      -> a      -> b
+ eval2#    : [a b c : Data]. C# (a -> b -> c) -> a -> b -> c
+
+ Provides the remaining arguments to a partially applied function, and then
+ evaluates it. 
+
+ INVARIANT: The parameter and return types must be instantiated by non-functional types.
+
+
+Invariants
+~~~~~~~~~~
+
+The invariants are there so we know the primops are given real heap objects.
+After performing the curring transform, we should have not have any values of raw 
+(a -> b) functional type left in the program.
+
+
+
