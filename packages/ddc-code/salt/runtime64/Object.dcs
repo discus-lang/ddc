@@ -107,7 +107,19 @@ getTag [r : Region] (obj : Ptr# r Obj) : Tag#
 -- | Allocate a Thunk
 --   The payload contains a code pointer to the top-level supercombinator,
 --   along with pointers to any available arguments. The actual pointer values
---   for the arguments are undefined.
+--   for the arguments are undefined. 
+--
+--   Note that unlike the GHC runtime we don't use a separate PAP 
+--   (Partial Application) object type to store partially applied arguments.
+--   To perform a partial application we just create a new Thunk, copy the old
+--   arguments into it, and write the extra partially applied arguments into the
+--   new thunk. This is done to keep the implementation complexity down, and we
+--   performed any concrete performance comparisons between the two approaches.
+--   
+--   For the GHC approach see: 
+--    How to make a fast curry, push/enter vs eval apply.
+--    Simon Marlow and Simon Peyton Jones.
+--    Journal of Functional Programming, 2006.
 --
 --   typedef struct
 --   {   uint32_t  tagFormat;     // Constructor tag and format field.
@@ -439,4 +451,201 @@ allocRawSmall_ok
 -- | Get the payload data from a raw small object.
 payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 4#
+
+
+-- Eval -----------------------------------------------------------------------
+-- These evaluators work out how call the function in a thunk.
+-- Some arguments come from in the thunk itself, while some can be provided
+-- directly to the evaluators.
+-- 
+-- The hard limits are:
+--   - The maximum arity for the function in a thunk is 12. 
+--     See the comment on evalZ.
+--   - The maximum number of directly applied arguments is 4, 
+--     because we only have eval0 - eval4.
+--
+-- The choice of where to set the limit is a balance between being able to 
+-- enumerate all possible calling conventions, and polluting the instruction
+-- cache with code for too many evaluators.
+
+-- | Evaluate a thunk, given no more arguments.
+eval0   [r : Region] (t : Ptr# r Obj) 
+        : Ptr# r Obj
+ = do   
+        f       = funOfThunk   t
+        a       = arityOfThunk t
+        case a of
+         0#     -> call0# f
+
+         1#     -> call1# f        (fieldOfThunk t 0#)
+
+         2#     -> call2# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+
+         3#     -> call3# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#) 
+                                   (fieldOfThunk t 2#) 
+
+         4#     -> call4# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#) 
+                                   (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+
+         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 4#))
+                                   (fieldOfThunk t (sub# a 3#))
+                                   (fieldOfThunk t (sub# a 2#))
+                                   (fieldOfThunk t (sub# a 1#))
+
+
+-- | Evaluate a thunk, given one more argument.
+eval1   [r : Region] (t : Ptr# r Obj) (arg0 : Ptr# r Obj)
+        : Ptr# r Obj
+ = do   
+        f       = funOfThunk   t
+        a       = arityOfThunk t
+        case a of
+         0#     -> eval1 (call0# f) arg0
+
+         1#     -> call1# f         arg0
+
+         2#     -> call2# f        (fieldOfThunk t 0#)    
+                                    arg0
+
+         3#     -> call3# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#) 
+                                    arg0
+
+         4#     -> call4# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                   (fieldOfThunk t 2#)  arg0
+
+         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 3#))
+                                   (fieldOfThunk t (sub# a 2#))
+                                   (fieldOfThunk t (sub# a 1#))
+                                    arg0
+
+
+-- | Evaluate a thunk, given two more arguments.
+eval2   [r : Region] (t : Ptr# r Obj) (arg0 arg1 : Ptr# r Obj)
+        : Ptr# r Obj
+ = do   
+        f       = funOfThunk   t
+        a       = arityOfThunk t
+        case a of
+         0#     -> eval2 (call0# f) arg0  arg1
+
+         1#     -> eval1 (call1# f  arg0) arg1
+
+         2#     -> call2# f         arg0  arg1
+
+         3#     -> call3# f        (fieldOfThunk t 0#)
+                                    arg0  arg1
+
+         4#     -> call4# f        (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                    arg0  arg1
+
+         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 2#))
+                                   (fieldOfThunk t (sub# a 1#))
+                                    arg0  arg1
+
+
+-- | Evaluate a thunk, given three more arguments.
+eval3   [r : Region] (t : Ptr# r Obj) (arg0 arg1 arg2 : Ptr# r Obj)
+        : Ptr# r Obj
+ = do   
+        f       = funOfThunk   t
+        a       = arityOfThunk t
+        case a of
+         0#     -> eval3 (call0# f) arg0  arg1  arg2
+
+         1#     -> eval2 (call1# f  arg0) arg1  arg2
+
+         2#     -> eval1 (call2# f  arg0  arg1) arg2
+
+         3#     -> call3# f         arg0  arg1  arg2
+
+         4#     -> call4# f        (fieldOfThunk t 0#)
+                                    arg0  arg1  arg2
+
+         _      -> evalZ  t f a    (fieldOfThunk t (sub# a 1#))
+                                    arg0  arg1  arg2
+
+
+-- | Evaluate a thunk, given four more arguments.
+eval4   [r : Region] (t : Ptr# r Obj) (arg0 arg1 arg2 arg3 : Ptr# r Obj)
+        : Ptr# r Obj
+ = do   
+        f       = funOfThunk   t
+        a       = arityOfThunk t
+        case a of
+         0#     -> eval4 (call0# f) arg0  arg1  arg2  arg3
+
+         1#     -> eval3 (call1# f  arg0) arg1  arg2  arg3
+
+         2#     -> eval2 (call2# f  arg0  arg1) arg2  arg3
+
+         3#     -> eval1 (call3# f  arg0  arg1  arg2) arg3
+
+         4#     -> call4# f         arg0  arg1  arg2  arg3
+
+         _      -> evalZ  t f a     arg0  arg1  arg2  arg3
+
+
+-- Evaluate a thunk, given its last four arguments. 
+-- We read the first (n-4) arguments directly from the thunk.
+--
+-- In the object code, this function serves to enumerate the function calling
+-- conventions for functions of 4-12 parameters. The fact that it stops at 12
+-- places a hard limit on the arity of the core programs that we're prepared
+-- to compile. Supers higher than this arity need to be transformed to take
+-- some of their arguments from a tuple instead of as direct parameters.
+--
+-- In terms of the generated object program, we don't want to add more
+-- alternatives here anyway because the underlying machine is unlikely to have
+-- good calling convention when the object function has > 12 arguments. It
+-- isn't useful for the 'arity' here to be more than the number of general
+-- purpose registers we're likely to have in the machine. 
+-- 
+-- Note that some registers will also be needed for the stack pointer etc.
+-- If the machine has 16 general purpose registers, then setting the maximum
+-- arity here to 12 is probably enough.
+--
+evalZ   [r : Region]
+        (t : Ptr# r Obj) (fun : Addr#) (arity : Nat#)
+        (argL3 argL2 argL1 argL0 : Ptr# r Obj)
+
+ = case arity of
+         4#     -> call4# fun   argL3 argL2 argL1 argL0
+
+         5#     -> call5# fun   (fieldOfThunk t 0#) 
+                                argL3 argL2 argL1 argL0
+
+         6#     -> call6# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                argL3 argL2 argL1 argL0
+
+         7#     -> call7# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                (fieldOfThunk t 2#)
+                                argL3 argL2 argL1 argL0
+
+         8#     -> call8# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+                                argL3 argL2 argL1 argL0
+
+         9#     -> call9# fun   (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+                                (fieldOfThunk t 4#)
+                                argL3 argL2 argL1 argL0
+
+         10#    -> call10# fun  (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+                                (fieldOfThunk t 4#) (fieldOfThunk t 5#)
+                                argL3 argL2 argL1 argL0
+
+         11#    -> call11# fun  (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+                                (fieldOfThunk t 4#) (fieldOfThunk t 5#)
+                                (fieldOfThunk t 6#)
+                                argL3 argL2 argL1 argL0
+
+         12#    -> call12# fun  (fieldOfThunk t 0#) (fieldOfThunk t 1#)
+                                (fieldOfThunk t 2#) (fieldOfThunk t 3#)
+                                (fieldOfThunk t 4#) (fieldOfThunk t 5#)
+                                (fieldOfThunk t 6#) (fieldOfThunk t 7#)
+                                argL3 argL2 argL1 argL0
+
+         _      -> fail#
 
