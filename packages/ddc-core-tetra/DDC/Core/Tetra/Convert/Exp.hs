@@ -51,6 +51,20 @@ data TopEnv
         , topEnvImportValues    :: Set E.Name }
 
 
+-- | Get the value arity of a supercombinator. 
+--   This is how many data arguments it needs when we call it.
+superDataArity :: TopEnv -> TypeEnv E.Name -> Bound E.Name -> Maybe Int
+superDataArity env tenv u
+        | UName n  <- u
+        , Just  t  <- Env.lookup u tenv
+        , Set.member n (topEnvSupers env)
+        = Just $ dataArityOfType t
+
+        | otherwise
+        = Nothing
+
+
+---------------------------------------------------------------------------------------------------
 -- | The context we're converting the expression in.
 --     We keep track of this during conversion to ensure we don't produce
 --     code outside the Salt language fragment. For example, in Salt a function
@@ -337,24 +351,16 @@ convertExpX penv kenv tenv ctx xx
          | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)    <- x1
          , E.NameOpFun E.OpFunReify       <- nPrim
+         , XVar _ uF                      <- xF
          -> do
-                let bObject     = BAnon (A.tPtr A.rTop A.tObj)
                 xF'     <- downArgX xF
                 tF'     <- convertRepableT defs kenv (tFun t1 t2)
+                let Just arity = superDataArity penv tenv uF
 
-                return  
-                 $ XLet a  
-                        ( LLet bObject 
-                        $ A.xAllocRawSmall a A.rTop 0 (A.xNat a 12))    -- TODO: fix size
-
-                 $ XLet a  
-                        ( LLet (BNone A.tVoid)
-                        $ A.xWrite a tF'
-                                (xTakePtr a A.rTop (A.tWord 8)
-                                        (A.xPayloadOfRawSmall a A.rTop (XVar a $ UIx 0)))
-                                4                                       -- TODO: fix offset
-                                xF')
-                 $ (XVar a $ UIx 0)
+                return  $ A.xAllocThunk a A.rTop 
+                                (xConvert a A.tAddr tF' xF')
+                                (A.xNat a $ fromIntegral arity)
+                                (A.xNat a 0)
 
 
         ---------------------------------------------------
@@ -506,11 +512,11 @@ convertExpX penv kenv tenv ctx xx
                    $ text "Unrecognised expression form."
 
 
-xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
-xTakePtr a t1 t2 x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore $ A.PrimStoreTakePtr)
-                                  (A.typeOfPrimStore A.PrimStoreTakePtr)))
-                  [ XType a t1, XType a t2, x1]
+xConvert :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
+xConvert a t1 t2 x1
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)
+                                  (A.typeOfPrimCast A.PrimCastConvert)))
+                  [ XType a t1, XType a t2, x1 ]
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.

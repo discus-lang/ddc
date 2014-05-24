@@ -12,11 +12,16 @@ module DDC.Core.Salt.Runtime
 
           -- * Functions defined in the runtime system.
         , xGetTag
+
         , xAllocBoxed
         , xGetFieldOfBoxed
         , xSetFieldOfBoxed
+
         , xAllocRawSmall
         , xPayloadOfRawSmall
+
+        , xAllocThunk
+        , xSetFieldOfThunk
 
           -- * Calls to primops.
         , xCreate
@@ -65,7 +70,8 @@ runtimeImportTypes
    , rn utGetFieldOfBoxed
    , rn utSetFieldOfBoxed
    , rn utAllocRawSmall
-   , rn utPayloadOfRawSmall ]
+   , rn utPayloadOfRawSmall 
+   , rn utAllocThunk ]
  where   rn (UName n, t)  = (n, ImportSourceSea (renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
@@ -169,9 +175,7 @@ utSetFieldOfBoxed
 xAllocRawSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocRawSmall a tR tag x2
  = xApps a (XVar a $ fst utAllocRawSmall)
-        [ XType a tR
-        , xTag a tag
-        , x2]
+        [ XType a tR, xTag a tag, x2]
 
 utAllocRawSmall :: (Bound Name, Type Name)
 utAllocRawSmall
@@ -189,6 +193,39 @@ utPayloadOfRawSmall :: (Bound Name, Type Name)
 utPayloadOfRawSmall
  =      ( UName (NameVar "payloadOfRawSmall")
         , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) (tPtr r (tWord 8))))
+
+
+-- Thunk ------------------------------
+-- | Allocate a Thunk object.
+xAllocThunk  
+        :: a -> Type Name 
+        -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
+
+xAllocThunk a tR xFun xArity xAvail
+ = xApps a (XVar a $ fst utAllocThunk)
+        [ XType a tR, xFun, xArity, xAvail]
+
+utAllocThunk :: (Bound Name, Type Name)
+utAllocThunk
+ =      ( UName (NameVar "allocThunk")
+        , tForall kRegion 
+           $ \tR -> (tAddr `tFunPE` tNat `tFunPE` tNat `tFunPE` tPtr tR tObj))
+
+
+-- | Set one of the argument pointers in a thunk.
+xSetFieldOfThunk 
+        :: a -> Type Name -> Type Name
+        -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
+
+xSetFieldOfThunk a tR tA xObj xIndex xVal
+ = xApps a (XVar a $ fst utSetFieldOfThunk)
+        [ XType a tR, XType a tA, xObj, xIndex, xVal]
+
+utSetFieldOfThunk :: (Bound Name, Type Name)
+utSetFieldOfThunk
+ =      ( UName (NameVar "setFieldOfThunk")
+        , tForalls [kRegion, kData]
+           $ \[tR, tA] -> (tPtr tR tObj `tFunPE` tNat `tFunPE` tA `tFunPE` tVoid))
 
 
 -- Primops --------------------------------------------------------------------

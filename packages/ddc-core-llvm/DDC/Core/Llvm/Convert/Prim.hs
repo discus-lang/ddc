@@ -57,6 +57,18 @@ convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
            in   return $ Seq.singleton (annotNil result)
 
         -- Cast primops ---------------
+        A.PrimCast A.PrimCastConvert
+         | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
+         , Just xSrc'           <- atom xSrc
+         , Just vDst            <- mdst
+         , minstr               <- convPrimConvert pp kenv tDst vDst tSrc xSrc'
+         -> case minstr of
+                Just instr      -> return $ Seq.singleton (annotNil instr)
+                Nothing         -> dieDoc $ vcat
+                                [ text "Invalid conversion."
+                                , text "  from type: " <> ppr tSrc
+                                , text "    to type: " <> ppr tDst ]
+
         A.PrimCast A.PrimCastPromote
          | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
          , Just xSrc'           <- atom xSrc
@@ -65,9 +77,9 @@ convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
          -> case minstr of
                 Just instr      -> return $ Seq.singleton (annotNil instr)
                 Nothing         -> dieDoc $ vcat
-                                [ text "Invalid promotion of numeric value."
+                                [ text "Invalid promotion."
                                 , text "  from type: " <> ppr tSrc
-                                , text "    to type: " <> ppr tDst]
+                                , text "    to type: " <> ppr tDst ]
 
         A.PrimCast A.PrimCastTruncate
          | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
@@ -77,7 +89,7 @@ convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
          -> case minstr of
                 Just instr      -> return $ Seq.singleton (annotNil instr)
                 Nothing         -> dieDoc $ vcat
-                                [ text "Invalid truncation of numeric value."
+                                [ text "Invalid truncation."
                                 , text " from type: " <> ppr tSrc
                                 , text "   to type: " <> ppr tDst ]
 
@@ -340,7 +352,29 @@ convPrimArith2 op t
 
 
 -- Cast -----------------------------------------------------------------------
--- | Convert a primitive promotion to LLVM,
+-- | Convert a primitive conversion operator to LLVM,
+--   or `Nothing` for an invalid conversion.
+convPrimConvert
+        :: Platform
+        -> KindEnv A.Name
+        -> C.Type A.Name -> Var
+        -> C.Type A.Name -> Exp
+        -> Maybe Instr
+
+convPrimConvert pp kenv tDst vDst tSrc xSrc
+
+ -- Take the instruction address of a function.
+ | tSrc'        <- convertType pp kenv tSrc
+ , TPointer TFunction{}  <- tSrc'
+ , tDst'        <- convertType pp kenv tDst
+ , tDst'        == TInt (8 * platformAddrBytes pp)
+ = Just $ IConv vDst ConvPtrtoint xSrc
+
+ | otherwise
+ = Nothing
+
+
+-- | Convert a primitive promotion operator to LLVM,
 --   or `Nothing` for an invalid promotion.
 convPrimPromote
         :: Platform

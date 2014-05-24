@@ -53,6 +53,7 @@ module DDC.Type.Compounds
         , takeTFunWitArgResult
         , takeTFunAllArgResult
         , arityOfType
+        , dataArityOfType
 
           -- * Suspensions
         , tSusp
@@ -574,6 +575,28 @@ arityOfType tt
  = case tt of
         TForall _ t     -> 1 + arityOfType t
         t               -> length $ fst $ takeTFunArgResult t
+
+
+-- | The data arity of a type is the number of data values it takes. 
+--   Unlike `arityOfType` we ignore type and witness parameters.
+dataArityOfType :: Type n -> Int
+dataArityOfType tt
+ = case tt of
+        TVar{}          -> 0
+        TCon{}          -> 0
+
+        TForall _ t     -> dataArityOfType t
+
+        TApp (TApp (TCon (TyConSpec TcConFun)) _) t2
+         -> 1 + dataArityOfType t2
+
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) _) _eff) _clo) t2
+         -> 1 + dataArityOfType t2
+
+        TApp (TApp (TCon (TyConWitness TwConImpl)) _) t2
+         -> dataArityOfType t2
+
+        _ -> 0
 
 
 -- Implications ---------------------------------------------------------------
