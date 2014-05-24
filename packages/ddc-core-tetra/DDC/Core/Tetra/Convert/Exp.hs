@@ -300,6 +300,8 @@ convertExpX penv kenv tenv ctx xx
 
         ---------------------------------------------------
         -- Curry arguments onto a reified function.
+        --   This works for both the 'curryN#' and 'applyN#' primops, as they 
+        --   differ only in the Tetra type.
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, xs)                     <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)  <- x1
@@ -330,11 +332,26 @@ convertExpX penv kenv tenv ctx xx
                                         (XVar a (UIx 1))                 -- new thunk
                                         (XVar a (UIx 0))                 -- base index
                                         (A.xNat a ix)                    -- offset
-                                        (xTakePtr a A.tObj A.rTop xArg)) -- value
+                                        (xTakePtr a A.rTop A.tObj xArg)) -- value
                                  | ix   <- [0..]
                                  | xArg <- xsArg' ]
 
                  $ XVar a (UIx 1)
+
+
+        ---------------------------------------------------
+        -- Evaluate a thunk.
+        XApp (AnTEC _t _ _ a) xa xb
+         | (x1, xs)                     <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim _tPrim)  <- x1
+         , E.NameOpFun (E.OpFunEval arity) <- nPrim
+         , xF : xsArgs                  <- drop (arity + 1) xs
+         -> do
+                xF'     <- downArgX xF
+                xsArgs' <- mapM downArgX xsArgs
+                return $ (xMakePtr a A.rTop A.tObj
+                          $ A.xEvalThunk a arity 
+                                (map (xTakePtr a A.rTop A.tObj) $ xF' : xsArgs'))
 
         
         ---------------------------------------------------
@@ -561,10 +578,19 @@ xConvert a t1 t2 x1
 
 
 xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
-xTakePtr a tA t1 x1
+xTakePtr a tR tA x1
         = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)
                                   (A.typeOfPrimStore A.PrimStoreTakePtr)))
-                  [ XType a t1, XType a tA, x1 ]
+                  [ XType a tR, XType a tA, x1 ]
+
+
+xMakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
+xMakePtr a tR tA x1
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)
+                                  (A.typeOfPrimStore A.PrimStoreMakePtr)))
+                  [ XType a tR, XType a tA, x1 ]
+
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a let-binding to Salt.

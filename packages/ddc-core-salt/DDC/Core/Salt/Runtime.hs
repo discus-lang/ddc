@@ -25,6 +25,7 @@ module DDC.Core.Salt.Runtime
         , xSetFieldOfThunk
         , xExtendThunk
         , xCopyAvailOfThunk
+        , xEvalThunk
 
           -- * Calls to primops.
         , xCreate
@@ -78,7 +79,13 @@ runtimeImportTypes
    , rn utAvailOfThunk
    , rn utSetFieldOfThunk
    , rn utExtendThunk
-   , rn utCopyAvailOfThunk ]
+   , rn utCopyAvailOfThunk 
+   , rn (utEvalThunk 0)
+   , rn (utEvalThunk 1)
+   , rn (utEvalThunk 2)
+   , rn (utEvalThunk 3)
+   , rn (utEvalThunk 4) ]
+
  where   rn (UName n, t)  = (n, ImportSourceSea (renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
@@ -265,6 +272,7 @@ utExtendThunk
            $ \[tR1, tR2] -> (tPtr tR1 tObj `tFunPE` tNat `tFunPE` tPtr tR2 tObj))
 
 
+
 -- | Copy the available arguments from one thunk to another.
 xCopyAvailOfThunk
         :: a -> Type Name -> Type Name
@@ -283,6 +291,22 @@ utCopyAvailOfThunk
                                 `tFunPE` tPtr tR2 tObj
                                 `tFunPE` tNat `tFunPE` tNat 
                                 `tFunPE` tPtr tR2 tObj))
+
+
+-- | Evaluate a thunk, given some more arguments.
+xEvalThunk
+        :: a -> Int
+        -> [Exp a Name] -> Exp a Name
+
+xEvalThunk a arity xsArgs
+ = xApps a (XVar a $ fst (utEvalThunk arity)) xsArgs
+
+
+utEvalThunk :: Int -> (Bound Name, Type Name)
+utEvalThunk arity
+ = let  Just t = tFunOfListPE ([tAddr] ++ replicate arity tAddr ++ [tAddr])
+   in   ( UName (NameVar $ "eval" ++ show arity)
+        , t )
 
 
 -- Primops --------------------------------------------------------------------
