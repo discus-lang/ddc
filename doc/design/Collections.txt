@@ -1,0 +1,40 @@
+
+
+Collections
+~~~~~~~~~~~
+
+Using lists as the default collection is bad news. We want a way of specifying a literal sequence of values that isn't bound to cons-lists. We also want to avoid [] for lists, because this is used for type application in the core language.
+
+ data List a = Nil | Cons a (List a)
+
+
+Sequences 
+~~~~~~~~~
+
+Defining sequences as functions
+
+ data Seq  a = Seq Int (Int -> a)
+
+Outfix sugar:
+
+ type {a}    = Seq Int
+
+ {}          : {a}
+ {1}         : {Int}
+ {1, 2, 3}   : {Int}
+
+
+Initializers
+~~~~~~~~~~~~
+
+For other concrete data types, prefix the sequence with a builder function.
+
+ list {1, 2, 3}
+
+ set  {1, 2, 3}
+
+ tree {<1, "foo">, <2, "bar">, <3, "baz">}
+
+ Haskell Syntax:
+ tree [(1, "foo"), (2, "bar"), (3, "baz")]
+

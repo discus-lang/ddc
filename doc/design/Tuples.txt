@@ -1,0 +1,94 @@
+
+
+Product Types
+~~~~~~~~~~~~~
+
+In Haskell we have:
+
+  ()         :: ()
+  (1)        :: Int
+  (1, "foo") :: (Int, String)
+
+There is no 1-element tuple, and the Tuple and Unit types are unrelated. It
+would be cleaner if there was an internal Tuple type that worked for arity
+zero and up, and the unit type was just a synonym for the zero arity tuple.
+We also want a different syntax so parenthesis don't conflict with the Tuple
+constructor.
+
+  data Tup0        = Tup0
+  data Tup1 a      = Tup1 a 
+  data Tup2 a b    = Tup2 a b
+  data Tup3 a b c  = Tup3 a b c
+
+  Tup0             :: Tup0
+  Tup1             :: Tup1 Int
+  Tup2 1 "foo"     :: Tup2 Int String
+  Tup3 a "foo" 4.0 :: Tup3 Int String Float
+
+Outfix sugar:
+
+  type <>          = Tup0
+  type <a>         = Tup1 a
+  type <a, b>      = Tup2 a b
+  type <a, b, c>   = Tup3 a b c
+
+  <>               = Tup0
+  <x>              = Tup1 x
+  <x, y>           = Tup2 x y
+  <x, y, z>        = Tup3 x y z
+
+Infix sugar:
+  Treating '*' as a binary type operator.
+
+  type a * b       = Tup2 a b
+  type a * b * c   = Tup2 a (Tup2 b c)
+
+Unit synonym.
+  type Unit        = Tup0
+
+
+Sum Types
+~~~~~~~~~
+
+If product types are baked into the language we should bake in sum types as well.
+
+  data Alt0
+  data Alt1 a       = Alt1_1 a
+  data Alt2 a b     = Alt2_1 a | Alt2_2 b
+  data Alt3 a b c   = Alt3_1 a | Alt3_2 b | Alt3_3 c
+
+  Alt2_1 "foo"      = Alt2 String b c
+
+Outfix sugar:
+
+  type ||           = Alt0
+  type |a|          = Alt1 a
+  type |a, b|       = Alt2 a b
+  type |a, b, c|    = Alt3 a b c
+
+  Question: is there a standard syntax for arbitrary sized alternatives?
+  This sort of works:
+
+  | 1, 1 : "foo" |  = Alt1_1 String
+  | 3, 2 : "foo" |  = Alt3_2 a String b
+
+Infix sugar:
+  Treating '+' as a binary type operator.
+
+  type a + b        = Alt2 a b
+  type a + b + c    = Alt2 a (Alt2 b c) 
+
+Void synonym:
+ 
+  type Void         = Alt0
+
+Either synonyms:
+
+  type Either a b   = Alt2 a b
+
+  Left x            = Alt2_1 x
+  Right x           = Alt2_2 x
+
+  pattern Left x    = Alt2_1 x
+  pattern Right x   = Alt2_2 x
+
