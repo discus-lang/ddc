@@ -165,7 +165,7 @@ allocThunk_ok
         write# addr 4# arity16
 
         -- Truncate avail count to 16-bits and write to object.
-        avail16         = truncate# [Word16#] [Nat#] arity
+        avail16         = truncate# [Word16#] [Nat#] avail
         write# addr 6# avail16
 
         -- Write the function pointer.
@@ -184,7 +184,7 @@ setFieldOfThunk
         [r : Region] 
         (obj : Ptr# r Obj) (base : Nat#) (offset : Nat#) (val : Addr#) : Void#
  =      write# (takePtr# obj)
-               (add# 8# (shl# (add# base offset) (size2# [Addr#])))
+               (add# 16# (shl# (add# base offset) (size2# [Addr#])))
                val
 
 
@@ -218,13 +218,13 @@ availOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
 -- | Get one of the arguments from a thunk.
 fieldOfThunk    [r1 : Region] (obj : Ptr# r1 Obj) (index : Nat#) : Addr#
  =      read#  (takePtr# obj)
-               (add# 8# (shl# index (size2# [Addr#])))
+               (add# 16# (shl# index (size2# [Addr#])))
 
 
 -- | Get one of the arguments from a thunk.
 fieldOfThunkA   [r1 : Region] (obj : Addr#) (index : Nat#) : Addr#
  =      read#   obj
-               (add# 8# (shl# index (size2# [Addr#])))
+               (add# 16# (shl# index (size2# [Addr#])))
 
 
 -- | Copy a thunk while extending the number of available argument slots.

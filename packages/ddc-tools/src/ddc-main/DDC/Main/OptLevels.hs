@@ -178,9 +178,16 @@ opt1_salt config dconfig builder runtimeConfig filePath
                 $ fromMaybe (error "Imported modules do not parse.")
                             minlineModules
 
+        -- Inline everything from the Object module, except the listed functions. 
+        -- We don't want these because they blow out the program size too much.
         let inlineSpec
                 = Map.fromList
-                [ (ModuleName ["Object"], InlineSpecAll (ModuleName ["Int"]) Set.empty) ]
+                [ ( ModuleName ["Object"]
+                  , InlineSpecAll (ModuleName ["Object"]) 
+                     $ Set.fromList 
+                     $ map Salt.NameVar
+                        [ "eval0", "eval1", "eval2", "eval3", "eval4", "evalZ"
+                        , "copyAvailOfThunk"])]
 
         -- Optionally load the rewrite rules for each 'with' module
         rules <- mapM (\(m,file) -> cmdTryReadRules Salt.fragment (file ++ ".rules") m)
