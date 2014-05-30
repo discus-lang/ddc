@@ -67,37 +67,36 @@
 --
 module  Object 
 export value
-        getTag            : [r : Region]. Ptr# r Obj -> Tag#
+  getTag            : [r : Region]. Ptr# r Obj -> Tag#
 
-        allocThunk        : [r : Region].     Addr# -> Nat# -> Nat# -> Ptr# r Obj
-        setFieldOfThunk   : [r : Region].     Ptr# r Obj  -> Nat# -> Nat# -> Addr# -> Void#
-        arityOfThunk      : [r : Region].     Ptr# r Obj  -> Nat#
-        availOfThunk      : [r : Region].     Ptr# r Obj  -> Nat#
-        fieldOfThunk      : [r : Region].     Ptr# r Obj  -> Nat# -> Addr#
-        extendThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
-        copyAvailOfThunk  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj 
-                                                          -> Nat# -> Nat# -> Ptr# r2 Obj
+  allocThunk        : [r : Region]. Addr# -> Nat# -> Nat# -> Ptr# r Obj
+  setFieldOfThunk   : [r : Region]. Ptr# r Obj  -> Nat# -> Nat# -> Addr# -> Void#
+  arityOfThunk      : [r : Region]. Ptr# r Obj  -> Nat#
+  availOfThunk      : [r : Region]. Ptr# r Obj  -> Nat#
+  fieldOfThunk      : [r : Region]. Ptr# r Obj  -> Nat# -> Addr#
+  extendThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+  copyAvailOfThunk  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj 
+                                                    -> Nat# -> Nat# -> Ptr# r2 Obj
 
-        allocBoxed        : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-        getFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
-        setFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a -> Void#
+  allocBoxed        : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+  getFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
+  setFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a -> Void#
 
-        allocMixed        : [r : Region]. Tag# -> Nat# -> Nat# -> Ptr# r Obj
-        fieldOfMixed      : [r : Region]. Ptr# r Obj -> Nat# -> Ptr# r Obj
-        payloadOfMixed    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+  allocMixed        : [r : Region]. Tag# -> Nat# -> Nat# -> Ptr# r Obj
+  fieldOfMixed      : [r : Region]. Ptr# r Obj -> Nat# -> Ptr# r Obj
+  payloadOfMixed    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
-        allocRaw          : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-        payloadOfRaw      : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+  allocRaw          : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+  payloadOfRaw      : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
-        allocRawSmall     : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-        payloadOfRawSmall : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+  allocRawSmall     : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
+  payloadOfRawSmall : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
-        eval0             : Addr# -> Addr#
-        eval1             : Addr# -> Addr# -> Addr#
-        eval2             : Addr# -> Addr# -> Addr# -> Addr#
-        eval3             : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
-        eval4             : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
-
+  eval0             : Addr# -> Addr#
+  eval1             : Addr# -> Addr# -> Addr#
+  eval2             : Addr# -> Addr# -> Addr# -> Addr#
+  eval3             : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
+  eval4             : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
 
 with letrec
 
