@@ -137,7 +137,7 @@ cmdToSaltCoreFromString
         -> Language             -- ^ Language definition.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ErrorT String IO ()               -- TODO: drop dump files even when there is an error.
 
 cmdToSaltCoreFromString config language source str
  | Language bundle      <- language

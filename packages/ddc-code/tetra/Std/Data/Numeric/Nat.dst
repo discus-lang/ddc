@@ -1,0 +1,31 @@
+
+module Nat
+
+export  { add; sub
+        ; eq;  neq 
+        ; lt;  le
+        ; gt;  ge } 
+
+where
+
+-------------------------------------------------------------------------------
+-- Define infix operators.
+add x y = add# [Nat#] x y
+sub x y = sub# [Nat#] x y
+
+mul x y = mul# [Nat#] x y
+div x y = div# [Nat#] x y
+
+neg x   = neg# [Nat#] x
+
+eq  x y = eq#  [Nat#] [Bool#] x y
+neq x y = neq# [Nat#] [Bool#] x y
+
+lt  x y = lt#  [Nat#] [Bool#] x y
+le  x y = le#  [Nat#] [Bool#] x y
+
+gt  x y = gt#  [Nat#] [Bool#] x y
+ge  x y = ge#  [Nat#] [Bool#] x y
+
+
+

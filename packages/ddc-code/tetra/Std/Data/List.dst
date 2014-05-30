@@ -1,0 +1,149 @@
+
+module List
+where
+
+
+-- | Standard Cons-lists.
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+
+-- Constructors ---------------------------------------------------------------
+-- | Construct a list containing a single element.
+singleton (x : a) : List a
+ = Cons x Nil
+
+
+-- | Construct a list of the given length where all elements are
+--   the same value.
+replicate (n : Nat#) (x : a) : List a
+ = case n of
+        0               -> Nil
+        _               -> Cons x (replicate (n - 1) x)
+
+
+-- | Construct a range of values.
+enumFromTo (start : Nat#) (end : Nat#)
+ = case start >= end of
+        True#           -> singleton start
+        False#          -> Cons start (enumFromTo (start + 1) end)
+
+
+-- | Append two lists.
+append (xx yy : List a) : List a
+ = case xx of
+        Nil             -> yy
+        Cons x xs       -> Cons x (append xs yy)
+
+
+-- Projections ----------------------------------------------------------------
+-- | Take the length of a list.
+length (xx : List a) : Nat#
+ = case xx of
+        Nil             -> 0
+        Cons x xs       -> 1 + length xs
+
+
+-- | Take the head of a list, if there is one.
+head (xx : List a) : Maybe a
+ = case xx of
+        Nil             -> Nothing
+        Cons x xs       -> Just x
+
+
+-- | Take the tail of a list, if there is one.
+tail (xx : List a) : Maybe (List a)
+ = case xx of
+        Nil             -> Nothing
+        Cons x xs       -> Just xs
+
+
+-- | Take the last element of a list, if there is one.
+last (xx : List a) : Maybe a
+ = case xx of
+        Nil                     -> Nothing
+        Cons x xs
+         -> case xs of
+                Nil             -> Just x
+                Cons y ys       -> last xs
+
+
+-- Transforms -----------------------------------------------------------------
+-- | Reverse the elements of a list.
+--   This is a naive O(n^2) version for testing purposes.
+reverse (xx : List a) : List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs       -> append (reverse xs) (singleton x)
+
+
+-- Combinators ----------------------------------------------------------------
+-- | Apply a worker function to every element of a list, yielding a new list.
+map (f : a -> b) (xx : List a) : List b
+ = case xx of
+        Nil             -> Nil
+        Cons x xs       -> Cons (f x) (map f xs)
+
+
+-- | Apply a stateful worker function to every element of a list,
+--   yielding a new list. 
+--   The worker is applied to the source elements left-to-right.
+mapS (f : a -> S e b) (xx : List a) : S e (List b)
+ = box case xx of
+        Nil             -> Nil
+        Cons x xs       -> Cons (run f x) (run mapS f xs)
+
+
+-- | Reduce a list with a binary function and zero value, 
+--   from left to right.
+foldl (f : b -> a -> b) (z : b) (xx : List a) : b
+ = case xx of
+        Nil             -> z
+        Cons x xs       -> foldl f (f z x) xs
+
+
+-- | Reduce a list with a stateful binary function and zero value, 
+--   from left to right.
+foldlS (f : b -> a -> S e b) (z : b) (xx : List a) : S e b
+ = box case xx of
+        Nil             -> z
+        Cons x xs       -> run foldl f (run f z x) xs
+
+
+-- | Reduce a list with a binary function and zero value, 
+--   from right to left.
+foldr (f : a -> b -> b) (z : b) (xx : List a) : b
+ = case xx of
+        Nil             -> z
+        Cons x xs       -> f x (foldr f z xs)
+
+
+-- | Reduce a list with a stateful binary function and zero value, 
+--   from right to left.
+foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
+ = box case xx of
+        Nil             -> z
+        Cons x xs       -> run f x (run foldr f z xs)
+
+
+-- | Keep only those elements that match the given predicate.
+filter (p : a -> Bool) (xx : List a) : List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs  
+         -> case p x of
+                True    -> Cons x (filter p xs)
+                False   -> filter p xs
+
+
+-- | Keep only those elements that match the given stateful predicate.
+--   The predicate is applied to the list elements from left to right.
+filterS (p : a -> S e Bool) (xx : List a) : S e (List a)
+ = box case xx of
+        Nil             -> Nil
+        Cons x xs  
+         -> case run p x of
+                True    -> Cons x (run filter p xs)
+                False   -> run filter p xs
+
