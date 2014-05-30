@@ -312,11 +312,13 @@ convertExpX penv kenv tenv ctx xx
                 E.NameOpFun (E.OpFunApply nArgs) -> Just nArgs
                 _                                -> Nothing
 
+         , tsArg              <- [tArg | XType _ tArg <- take nArgs xs]
          , (xThunk : xsArg)   <- drop (nArgs + 1) xs
          , nArgs == length xsArg
          -> do  
                 xThunk'         <- downArgX xThunk
                 xsArg'          <- mapM downArgX xsArg
+                tsArg'          <- mapM (convertRepableT defs kenv) tsArg
                 let bObject     = BAnon (A.tPtr A.rTop A.tObj)
                 let bAvail      = BAnon A.tNat
 
@@ -332,9 +334,12 @@ convertExpX penv kenv tenv ctx xx
                                         (XVar a (UIx 1))                 -- new thunk
                                         (XVar a (UIx 0))                 -- base index
                                         (A.xNat a ix)                    -- offset
-                                        (xTakePtr a A.rTop A.tObj xArg)) -- value
+                                        (xTakePtr a tPrime A.tObj xArg)) -- value
                                  | ix   <- [0..]
-                                 | xArg <- xsArg' ]
+                                 | xArg <- xsArg'
+                                 | tArg <- tsArg'
+                                 , let tPrime   = fromMaybe A.rTop
+                                                $ takePrimeRegion tArg ]
 
                  $ XVar a (UIx 1)
 
@@ -343,15 +348,33 @@ convertExpX penv kenv tenv ctx xx
         -- Evaluate a thunk.
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, xs)                     <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)  <- x1
-         , E.NameOpFun (E.OpFunEval arity) <- nPrim
-         , xF : xsArgs                  <- drop (arity + 1) xs
+         , XVar _ (UPrim nPrim _tPrim)          <- x1
+         , E.NameOpFun (E.OpFunEval nArgs)      <- nPrim
+         , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
+         , XType _ tResult : _  <- drop  nArgs xs
+         , xF : xsArgs          <- drop (nArgs + 1) xs
          -> do
-                xF'     <- downArgX xF
-                xsArgs' <- mapM downArgX xsArgs
-                return $ (xMakePtr a A.rTop A.tObj
-                          $ A.xEvalThunk a arity 
-                                (map (xTakePtr a A.rTop A.tObj) $ xF' : xsArgs'))
+                -- Functional expression.
+                xF'             <- downArgX xF
+
+                -- Arguments and theit ypes.
+                xsArg'          <- mapM downArgX xsArgs
+                tsArg'          <- mapM (convertRepableT defs kenv) tsArg
+
+                -- Result and its type.
+                tResult'        <- convertRepableT defs kenv tResult
+                let tPrimeResult' = fromMaybe A.rTop $ takePrimeRegion tResult'
+
+                -- Evaluate a thunk, returning the resulting Addr#, 
+                -- then cast it back to a pointer of the appropriate type
+                return  $ xMakePtr a tPrimeResult' A.tObj
+                        $ A.xEvalThunk a nArgs 
+                                $  [ xTakePtr a A.rTop A.tObj xF' ]
+                                ++ [ xTakePtr a tPrime A.tObj xArg'
+                                        | xArg'         <- xsArg'
+                                        | tArg'         <- tsArg'
+                                        , let tPrime    = fromMaybe A.rTop
+                                                        $ takePrimeRegion tArg' ]
 
         
         ---------------------------------------------------
