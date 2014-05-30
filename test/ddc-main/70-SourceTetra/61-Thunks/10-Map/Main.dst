@@ -1,0 +1,42 @@
+
+module Main 
+export main
+
+import foreign abstract type
+ Console  : Effect
+
+import foreign c value
+ putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
+ showNat  : [r : Region]. Nat#           -> Ptr# r String#
+
+where
+
+add x y = add# [Nat#] x y
+
+
+data List (a : Data) where
+        Nil  : List a
+        Cons : a -> List a -> List a
+
+
+map [a b : Data] (f : C# (a -> b)) (xx : List a) : List b
+ = case xx of
+        Nil             -> Nil
+        Cons x xs       -> Cons (eval1# f x) (map f xs)
+
+
+sum (xx : List Nat#) : Nat#
+ = case xx of
+        Nil             -> 0
+        Cons x xs       -> x + sum xs
+
+
+main (_ : Unit) : S Console Unit
+ = private r in
+   box do
+        
+        add1    = curry1# (reify# add) 1
+        result  = sum (map add1 (Cons 1 (Cons 2 (Cons 3 Nil))))
+
+        run putStrLn (showNat [r] result)
+        ()
