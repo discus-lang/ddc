@@ -85,15 +85,6 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                                                 | (n, isrc) <- ntsImport' ]
 
 
-        -- Check the sigs of exported types ---------------
-        esrcsType'      <- checkExportTypes config        
-                        $ moduleExportTypes mm
-
-        -- Check the sigs of exported values --------------
-        esrcsValue'     <- checkExportValues config kenv' 
-                        $ moduleExportValues mm
-        
-        
         -- Check the local data type defs -----------------
         defs'           <- case checkDataDefs config (moduleDataDefsLocal mm) of
                                 (err : _, _)   -> throw $ ErrorData err
@@ -101,12 +92,22 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         let defs_all =  unionDataDefs (configDataDefs config) 
                                       (fromListDataDefs defs')
+
+        let config_data = config { configDataDefs = defs_all }
+
+
+        -- Check the sigs of exported types ---------------
+        esrcsType'      <- checkExportTypes  config_data
+                        $  moduleExportTypes mm
+
+        -- Check the sigs of exported values --------------
+        esrcsValue'     <- checkExportValues config_data kenv' 
+                        $  moduleExportValues mm
                                       
         
         -- Check the body of the module -------------------
         let bsData      = [BName (dataDefTypeName def) (kindOfDataDef def) | def <- defs' ]
         let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
-        let config_data = config { configDataDefs = defs_all }
 
         (x', _, _effs, _, ctx) 
                 <- checkExpM 

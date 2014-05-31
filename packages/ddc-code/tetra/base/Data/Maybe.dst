@@ -3,7 +3,7 @@ module Data.Maybe
 
 export  isNothing
         isJust
-        fromJust
+        fromMaybe
         maybe
 
 where
