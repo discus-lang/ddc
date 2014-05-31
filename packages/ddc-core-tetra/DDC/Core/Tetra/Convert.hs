@@ -72,11 +72,15 @@ convertM
 
 convertM pp runConfig defs kenv tenv mm
   = do  
-        -- Convert signatures of exported functions.
-        tsExports' <- mapM (convertExportM defs) $ moduleExportValues mm
-
         -- Convert signatures of imported functions.
         tsImports' <- mapM (convertImportM defs) $ moduleImportValues mm
+
+        let defs'  = unionDataDefs defs
+                   $ fromListDataDefs (moduleDataDefsLocal mm)
+
+        -- Convert signatures of exported functions.
+        tsExports' <- mapM (convertExportM defs') $ moduleExportValues mm
+
 
         -- Convert the body of the module to Salt.
         let ntsImports  
@@ -84,8 +88,6 @@ convertM pp runConfig defs kenv tenv mm
                         | (n, src) <- moduleImportValues mm]
         let tenv'  = Env.extends ntsImports tenv
         
-        let defs'  = unionDataDefs defs
-                   $ fromListDataDefs (moduleDataDefsLocal mm)
 
         -- Top-level context for the conversion.
         let penv   = TopEnv
