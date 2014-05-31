@@ -1,0 +1,44 @@
+
+module Data.Maybe
+
+export  isNothing
+        isJust
+        fromJust
+        maybe
+
+where
+
+
+-- | A `Maybe` may contain a value, or not.
+data Maybe (a : Data) where
+        Nothing : Maybe a
+        Just    : a -> Maybe a
+
+
+-- | Check if the given value is a `Nothing`.
+isNothing (m : Maybe a) : Bool#
+ = case m of
+        Nothing -> True#
+        Just x  -> False#
+
+
+-- | Check if the given value is a `Just`.
+isJust (m : Maybe a) : Bool#
+ = case m of
+        Nothing -> False#
+        Just x  -> True#
+
+
+-- | Take the value from a `Just`, or return a default value.
+fromMaybe (def : a) (m : Maybe a) : a
+ = case m of
+        Nothing -> def
+        Just x  -> x
+
+
+-- | Apply a function to the value in a `Just`, or return a default value.
+maybe (def : b) (f : C# (a -> b)) (m : Maybe a) : b
+ = case m of
+        Nothing -> def
+        Just x  -> eval1# f x
+
