@@ -1,5 +1,5 @@
 
-module Nat
+module Data.Numeric.Nat
 
 export  { add; sub
         ; eq;  neq

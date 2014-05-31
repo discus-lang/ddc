@@ -1,5 +1,5 @@
 
-module List
+module Data.List
 where
 
 

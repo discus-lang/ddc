@@ -1,5 +1,5 @@
 
-module  Console 
+module IO.Console 
 
 
 import foreign abstract type
