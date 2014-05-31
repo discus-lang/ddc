@@ -123,16 +123,26 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let x'' = reannotate applyToAnnot 
                 $ mapT (applySolved ctx) x'
 
+        -- Build new module with infered annotations ------
+        let mm_inferred
+                = mm    
+                { moduleExportTypes     = esrcsType'
+                , moduleImportTypes     = nksImport'
+                , moduleImportValues    = ntsImport'
+                , moduleBody            = x'' }
+
 
         -- Check that each exported signature matches the type of its binding.
-        envDef  <- checkModuleBinds (moduleExportTypes mm) (moduleExportValues mm) x''
+        envDef  <- checkModuleBinds 
+                        (moduleExportTypes  mm_inferred) 
+                        (moduleExportValues mm_inferred) x''
 
         -- Check that all exported bindings are defined by the module.
         mapM_ (checkBindDefined envDef) 
-                $ map fst $ moduleExportValues mm
+                $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.
-        let tsTop       = moduleTopBindTypes mm
+        let tsTop       = moduleTopBindTypes mm_inferred
 
         let updateExportSource e
                 | ExportSourceLocalNoType n <- e
@@ -146,14 +156,11 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
                                  
         -- Return the checked bindings as they have explicit type annotations.
-        let mm' = mm    
-                { moduleExportTypes     = esrcsType'
-                , moduleExportValues    = esrcsValue_updated
-                , moduleImportTypes     = nksImport'
-                , moduleImportValues    = ntsImport'
-                , moduleBody            = x'' }
+        let mm_final
+                = mm_inferred
+                { moduleExportValues    = esrcsValue_updated }
 
-        return mm'
+        return mm_final
 
 
 ---------------------------------------------------------------------------------------------------

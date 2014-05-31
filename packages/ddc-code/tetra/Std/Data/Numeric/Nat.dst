@@ -2,14 +2,13 @@
 module Nat
 
 export  { add; sub
-        ; eq;  neq 
+        ; eq;  neq
         ; lt;  le
         ; gt;  ge } 
 
 where
 
--------------------------------------------------------------------------------
--- Define infix operators.
+-- Infix operators.
 add x y = add# [Nat#] x y
 sub x y = sub# [Nat#] x y
 
