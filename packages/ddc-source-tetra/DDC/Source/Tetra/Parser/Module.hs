@@ -16,6 +16,7 @@ import DDC.Core.Lexer.Tokens
 import DDC.Base.Pretty
 import Control.Monad
 import qualified DDC.Base.Parser        as P
+import DDC.Base.Parser                  ((<?>))
 
 import DDC.Core.Parser
         ( Parser
@@ -33,7 +34,7 @@ pModule :: (Ord n, Pretty n)
         -> Parser n (Module P.SourcePos n)
 pModule c
  = do   _sp     <- pTokSP KModule
-        name    <- pModuleName
+        name    <- pModuleName <?> "a module name"
 
         -- export { VAR;+ }
         tExports 

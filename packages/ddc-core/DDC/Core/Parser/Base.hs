@@ -28,14 +28,27 @@ type Parser n a
 
 
 -- | Parse a module name.                               
---   
----  ISSUE #273: Handle hierarchical module names.
---      Accept hierachical names, and reject hashes at the end of a name.
---      Hashes can be at the end of constructor name, but not module names.
 pModuleName :: Pretty n => Parser n ModuleName
-pModuleName = P.pTokMaybe f
- where  f (KN (KCon n)) = Just $ ModuleName [renderPlain $ ppr n]
-        f _             = Nothing
+pModuleName 
+ = do   ms      <- P.sepBy1 pModuleName1 (pTok KDot)
+        return  $  ModuleName 
+                $  concat
+                $  map (\(ModuleName ss) -> ss) ms
+
+
+-- | Parse a single component module name.
+pModuleName1 :: Pretty n => Parser n ModuleName
+pModuleName1 = P.pTokMaybe f
+ where  f (KN (KCon n))           = Just $ ModuleName [ renderPlain $ ppr n ]
+
+        -- These names are lexed as constructors
+        -- but can be part of a module name.
+        f (KA (KSoConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KKiConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KTwConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KWbConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KTcConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f _                       = Nothing
 
 
 -- | Parse a qualified variable or constructor name.
