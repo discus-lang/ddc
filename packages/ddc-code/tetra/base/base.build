@@ -1,13 +1,15 @@
 ddc build 0.4.2
 
 library
- name:                  base
- version:               0.4.2
- author:                The Disciplined Disciple Compiler Strike Force
- maintainer:            Ben Lippmeier <benl@ouroborus.net>
- homepage:              http://disciple.ouroborus.net
- license:               MIT
- synopsis:              Disciple Tetra base library
+ name:          base   
+ version:       0.4.2
+ author:        The Disciplined Disciple Compiler Strike Force
+ maintainer:    Ben Lippmeier <benl@ouroborus.net>
+ homepage:      http://disciple.ouroborus.net
+
+ license:       MIT
+
+ synopsis:      Disciple Tetra base library
  
  tetra-modules:
         Data.Numeric.Nat

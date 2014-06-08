@@ -10,8 +10,8 @@ where
 --   and is equivalent to a Haskell Cabal file.
 data Spec
         = Spec
-        { -- | Where the spec file lives on disk.
-          specFilePath                  :: FilePath
+        { -- | Version number set by the first line of the file.
+          specVersion                   :: String
 
           -- | Components in this build specification.
         , specComponents                :: [Component] }
