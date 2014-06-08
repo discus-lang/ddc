@@ -28,6 +28,7 @@ import System.Directory
 import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Tetra       as Tetra
+import qualified DDC.Build.Spec.Parser          as Spec
 import qualified DDC.Core.Tetra                 as Tetra
 
 
@@ -50,6 +51,15 @@ cmdLoadFromFile
         -> ErrorT String IO ()
 
 cmdLoadFromFile config mStrSimpl fsTemplates filePath
+
+ -- Load a Build file.
+ | ".build"      <- takeExtension filePath
+ = do   
+        str     <- liftIO $ readFile filePath
+        case Spec.parseBuildSpec str of
+         Left err       -> throwError $ show err
+         Right spec     -> liftIO $ putStrLn $ show spec
+
 
  -- Load a Disciple Source Tetra module.
  | ".dst"        <- takeExtension filePath

@@ -1,0 +1,56 @@
+
+module DDC.Build.Spec.Base
+        ( Spec          (..)
+        , Component     (..)
+        , specFieldsLibrary)
+where
+
+-- | A build specification.
+--   This specifies how to build a particular library or exectutable,
+--   and is equivalent to a Haskell Cabal file.
+data Spec
+        = Spec
+        { -- | Where the spec file lives on disk.
+          specFilePath                  :: FilePath
+
+          -- | Components in this build specification.
+        , specComponents                :: [Component] }
+        deriving Show
+
+
+-- | A build component.
+data Component
+        = SpecLibrary
+        { -- | Name of the library.
+          specLibraryName               :: String
+
+          -- | Library version.
+        , specLibraryVersion            :: String
+
+          -- | Tetra modules to build, in dependency order.
+        , specLibraryTetraModules       :: [String] 
+
+          -- | Optional library meta-data.
+          --   These fields are for informational purposes and are not 
+          --   nessesary to build the library itself.
+        , specLibraryMeta               :: [(String, String)] }
+        deriving Show
+
+
+-------------------------------------------------------------------------------
+
+-- | Names of all allowable fields in library metadata, and whether each
+--   field is nessesary or optional.
+specFieldsLibrary :: [(String, Bool)]
+specFieldsLibrary
+ =  [ (str, True)  | str <- 
+        [ "name"
+        , "version"
+        , "tetra-modules" ]]
+
+ ++ [ (str, False) | str <-
+        [ "author"
+        , "maintainer"
+        , "homepage"
+        , "license"
+        , "synopsis" ]]
