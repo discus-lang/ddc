@@ -8,9 +8,8 @@ import DDC.Base.Pretty
 import Control.Monad.Writer
 import Data.List
 
-
--- | Why can't rates be inferred?
-data Fail
+-- | Why couldn't it be converted to CNF?
+data ConversionError
         -- | Function is not in a-normal form
         = FailNotANormalForm
 
@@ -20,12 +19,20 @@ data Fail
         -- | Bindings must be named
         | FailNoDeBruijnAllowed
 
+        -- | Bindings cannot be anonymous _.
+        | FailNoAnonAllowed
+
         -- | Function contains letrec
         | FailRecursiveBindings
 
         -- | Function contains letregion
         | FailLetRegionNotHandled
 
+
+-- | Why can't rates be inferred?
+data Fail
+        -- | The function couldn't be converted to combinator form
+        = FailCannotConvert ConversionError
         -- | The constraint would require a buffer. User must expicitly buffer.
         | FailConstraintFilteredLessFiltered Name Name
 
