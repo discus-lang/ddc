@@ -4,11 +4,14 @@ module DDC.Driver.Build.Main
         , buildComponent
         , buildModule)
 where
-import DDC.Build.Spec
+import DDC.Driver.Command.Compile
 import DDC.Driver.Config
+import DDC.Build.Spec
+import System.FilePath
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
+
 
 -- | Build all the components defined by a spec.
 buildSpec  
@@ -50,9 +53,33 @@ buildModule
         -> String       -- ^ Module name.
         -> ErrorT String IO ()
 
-buildModule config _pathSpec _spec _component name
+buildModule config pathSpec _spec _component name
  = do   
         when (configLogBuild config)
-         $ liftIO $ putStrLn $ "  - compiling " ++ name
+         $ liftIO 
+         $ do   putStrLn $ "  - compiling " ++ name
+
+        cmdCompile config 
+                (resolvePathOfModule pathSpec "dst" name)
 
         return ()
+
+
+-- | Given the path of a .build spec, and a module name, yield the path where
+--   the source of the module should be.
+resolvePathOfModule 
+        :: FilePath             -- Path to build spec.
+        -> String               -- Source file extension.
+        -> String               -- Module name.
+        -> FilePath
+
+resolvePathOfModule pathSpec ext name
+ = takeDirectory pathSpec </> go name
+ where  go str 
+         | elem '.' str
+         , (n, '.' : rest)      <- span (/= '.') str
+         = n   </> go rest
+
+         | otherwise
+         = str <.> ext
+
