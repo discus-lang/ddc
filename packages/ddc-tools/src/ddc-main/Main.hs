@@ -12,6 +12,7 @@ import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
+import DDC.Driver.Command.Build
 import DDC.Driver.Command.BaseBuild
 
 import DDC.Driver.Command.Flow.Prep
@@ -103,6 +104,11 @@ run config
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
                 runError $ cmdMake    dconfig filePath
+
+        -- Build libraries or executables following a .spec file.
+        ModeBuild filePath
+         -> do  dconfig  <- getDriverConfig config (Just filePath)
+                runError $ cmdBuild   dconfig filePath
 
         -- Convert a module to Salt.
         ModeToSalt filePath
@@ -200,7 +206,8 @@ getDriverConfig config filePath
 
         let dconfig
              = Driver.Config
-             { Driver.configDump                  = configDump config
+             { Driver.configLogBuild              = True
+             , Driver.configDump                  = configDump config
              , Driver.configInferTypes            = configInferTypes config
              , Driver.configSimplLite             = Simplifier.idsimp
              , Driver.configSimplSalt             = Simplifier.idsimp

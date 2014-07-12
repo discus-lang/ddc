@@ -36,11 +36,14 @@ data Mode
         -- | Parse, type-check and transform a module.
         | ModeLoad      FilePath
 
-        -- | Compile a .dcl or .dce into an object file.
+        -- | Compile source code into an object code.
         | ModeCompile   FilePath
 
-        -- | Compile a .dcl or .dce into an executable file.
+        -- | Compile source code into an executable.
         | ModeMake      FilePath
+
+        -- | Build libraries or executables following a build .spec file.
+        | ModeBuild     FilePath
 
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath

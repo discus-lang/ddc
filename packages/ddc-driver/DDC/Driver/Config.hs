@@ -21,8 +21,11 @@ import qualified DDC.Core.Lite          as Lite
 -- | Configuration for main compiler stages.
 data Config
         = Config
-        { -- | Dump intermediate code.
-          configDump                    :: Bool
+        { -- | Print status to console during builds.
+          configLogBuild                :: Bool
+
+          -- | Dump intermediate code.
+        , configDump                    :: Bool
 
           -- | Use bidirectional type inference on the input code.
         , configInferTypes              :: Bool

@@ -13,5 +13,6 @@ library
  
  tetra-modules:
         Data.Numeric.Nat
+        Data.Maybe
         Data.List
         IO.Console

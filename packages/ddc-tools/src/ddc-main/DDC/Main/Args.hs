@@ -47,6 +47,11 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeMake file
 
+        | flag : file : rest    <- args
+        , elem flag ["-build", "--build"]
+        = parseArgs rest
+        $ setMode config $ ModeBuild file
+
         | "-basedir" : path : rest <- args
         = parseArgs rest
         $ config { configBaseDir = path }
@@ -246,6 +251,7 @@ flagOfMode mode
         ModeLoad{}                      -> Just "-load"
         ModeCompile{}                   -> Just "-compile"
         ModeMake{}                      -> Just "-make"
+        ModeBuild{}                     -> Just "-build"
         ModeToSalt{}                    -> Just "-to-salt"
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
