@@ -1,9 +1,6 @@
 
 module DDC.Main.Help where
-
--- | The version identifier string.
-version :: String
-version = "The Disciplined Disciple Compiler, version 0.4.2"
+import qualified DDC.Version    as Version
 
 
 -- | What to print when we have no input files.
@@ -23,7 +20,7 @@ hello   = unlines
 --                                 on the compilation mode. 
 help :: String
 help    = unlines
-        [ version
+        [ Version.splash
         , ""
         , "General"
         , "     -help                  Display this help."
@@ -36,6 +33,7 @@ help    = unlines
         , "Compilation"
         , "     -make       FILE       Compile a module into an executable file."
         , " -c, -compile    FILE       Compile a module into an object file."
+        , "     -build      FILE       Build a library or executable defined in a .build file"
         , ""
         , " -o, -output     FILE       Redirect output to this file."
         , "     -output-dir DIR        Redirect output to this directory."

@@ -35,6 +35,8 @@ Library
         DDC.Data.SourcePos
         DDC.Data.Token
         DDC.Data.ListUtils
+
+        DDC.Version
         
   GHC-options:
         -Wall

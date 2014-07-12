@@ -132,7 +132,8 @@ getDriverConfigOfState state
  = do   builder <- getActiveBuilder state
         return 
          $ D.Config
-         { D.configDump                 = Set.member Dump  (stateModes state)
+         { D.configLogBuild             = True
+         , D.configDump                 = Set.member Dump  (stateModes state)
          , D.configInferTypes           = Set.member Synth (stateModes state)
          , D.configViaBackend           = D.ViaLLVM
 

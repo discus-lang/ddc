@@ -37,6 +37,7 @@ import qualified DDC.Driver.Stage               as Driver
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Simplifier.Recipe     as Simplifier
+import qualified DDC.Version                    as Version
 
 main :: IO ()
 main
@@ -64,7 +65,7 @@ run config
 
         -- Display the version string.
         ModeVersion
-         ->     putStrLn version
+         ->     putStrLn Version.splash
 
         -- Display the help page.
         ModeHelp

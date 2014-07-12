@@ -94,7 +94,9 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
     in  text "module" <+> ppr name 
          <+> docsImportsExports
          <>  docsLocalData
-         <>  text "with" <$$> (vcat $ map pprLts lts)
+         <>  (case lts of
+                []      -> empty
+                _       -> text "with" <$$> (vcat $ map pprLts lts))
 
 
 -- Exports ----------------------------------------------------------------------------------------
