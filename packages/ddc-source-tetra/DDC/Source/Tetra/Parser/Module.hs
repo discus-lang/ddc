@@ -66,7 +66,7 @@ pModule c
                 { moduleName            = name
                 , moduleExportTypes     = []
                 , moduleExportValues    = tExports
-                , moduleImportModules   = []
+                , moduleImportModules   = [mn     | ImportModule mn  <- tImports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s  <- tImports]
                 , moduleImportValues    = [(n, s) | ImportValue n s  <- tImports]
                 , moduleTops            = tops }
@@ -87,7 +87,8 @@ pTypeSig c
 -------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
 data ImportSpec n
-        = ImportType    n (ImportSource n)
+        = ImportModule  ModuleName
+        | ImportType    n (ImportSource n)
         | ImportValue   n (ImportSource n)
         
 
@@ -98,25 +99,35 @@ pImportSpecs
 
 pImportSpecs c
  = do   pTok KImport
-        pTok KForeign
-        src    <- liftM (renderIndent . ppr) pName
 
         P.choice
-         [      -- imports foreign X type (NAME :: TYPE)+ 
-          do    pTok KType
-                pTok KBraceBra
+                -- import foreign ...
+         [ do   pTok KForeign
+                src    <- liftM (renderIndent . ppr) pName
 
-                sigs <- P.sepEndBy1 (pImportType c src) (pTok KSemiColon)
+                P.choice
+                 [      -- import foreign X type (NAME :: TYPE)+ 
+                  do    pTok KType
+                        pTok KBraceBra
+
+                        sigs <- P.sepEndBy1 (pImportType c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+
+                        -- import foreign X value (NAME :: TYPE)+
+                 , do   pTok KValue
+                        pTok KBraceBra
+
+                        sigs <- P.sepEndBy1 (pImportValue c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+                 ]
+
+         , do   pTok KBraceBra
+                names   <- P.sepEndBy1 pModuleName (pTok KSemiColon) 
+                                <?> "module names"
                 pTok KBraceKet
-                return sigs
-
-                -- imports foreign X value (NAME :: TYPE)+
-         , do   pTok KValue
-                pTok KBraceBra
-
-                sigs <- P.sepEndBy1 (pImportValue c src) (pTok KSemiColon)
-                pTok KBraceKet
-                return sigs
+                return  [ImportModule n | n <- names]
          ]
 
 
