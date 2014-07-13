@@ -2,7 +2,6 @@
 module DDC.Core.Transform.Resolve
         ( resolveNamesInModule )
 where
-import DDC.Core.Collect.Support
 import DDC.Core.Module
 import Data.Map                 (Map)
 
