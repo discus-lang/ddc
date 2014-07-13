@@ -1,7 +1,7 @@
 
--- | Parser for DDC interface files.
-module DDC.Build.Interface.Parser
-        ( parseInterface
+-- | Loader for DDC interface files.
+module DDC.Build.Interface.Load
+        ( loadInterface
         , Error (..))
 where
 import DDC.Build.Interface.Base
@@ -19,7 +19,7 @@ import qualified Data.List                      as List
 
 
 ---------------------------------------------------------------------------------------------------
--- | Problems that can arise when parsing an interface file.
+-- | Problems that can arise when loading an interface file.
 data Error
         -- | Empty Interface file.
         = ErrorEmpty
@@ -40,6 +40,22 @@ data Error
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Load an interface file.
+loadInterface 
+        :: FilePath     -- ^ File path of interface file, for error messages.
+        -> String       -- ^ Interface file source.
+        -> Either Error 
+                  (Interface (AnTEC BP.SourcePos Tetra.Name) 
+                             (AnTEC BP.SourcePos Salt.Name))
+
+loadInterface pathInterface str
+ = let  -- Attach line numbers to ach line
+        ls      = lines str
+        lsNum   = zip [1..] ls
+   in   pInterface pathInterface lsNum
+
+
+
 -- | Line numbers.
 type LineNumber  = Int
 
@@ -52,21 +68,6 @@ type Parser a
 type InterfaceAA 
         = Interface (AnTEC BP.SourcePos Tetra.Name) 
                     (AnTEC BP.SourcePos Salt.Name)
-
-
--- | Parse an interface file.
-parseInterface 
-        :: FilePath     -- ^ File path of interface file, for error messages.
-        -> String       -- ^ Interface file source.
-        -> Either Error 
-                  (Interface (AnTEC BP.SourcePos Tetra.Name) 
-                             (AnTEC BP.SourcePos Salt.Name))
-
-parseInterface pathInterface str
- = let  -- Attach line numbers to ach line
-        ls      = lines str
-        lsNum   = zip [1..] ls
-   in   pInterface pathInterface lsNum
 
 
 -- | Parse an interface file.

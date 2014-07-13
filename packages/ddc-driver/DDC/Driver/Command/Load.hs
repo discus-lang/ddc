@@ -29,7 +29,7 @@ import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Build.Spec.Parser          as Spec
-import qualified DDC.Build.Interface.Parser     as Interface
+import qualified DDC.Build.Interface.Load       as Interface
 import qualified DDC.Core.Tetra                 as Tetra
 
 
@@ -66,7 +66,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  | ".di"        <- takeExtension filePath
  = do
         str     <- liftIO $ readFile filePath
-        case Interface.parseInterface filePath str of
+        case Interface.loadInterface filePath str of
          Left err        -> throwError $ show err
          Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
 

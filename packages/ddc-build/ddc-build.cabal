@@ -33,6 +33,7 @@ Library
   
   Exposed-modules:
         DDC.Build.Interface.Base
+        DDC.Build.Interface.Load
 
         DDC.Build.Language.Eval
         DDC.Build.Language.Flow
