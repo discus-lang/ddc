@@ -139,7 +139,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                         (moduleExportValues mm_inferred) x''
 
         -- Check that all exported bindings are defined by the module.
-        mapM_ (checkBindDefined envDef) 
+        --   Header modules don't need to contain the complete set of bindings,
+        --   but all other modules do.
+        when (not $ moduleIsHeader mm_inferred)
+                $ mapM_ (checkBindDefined envDef) 
                 $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.

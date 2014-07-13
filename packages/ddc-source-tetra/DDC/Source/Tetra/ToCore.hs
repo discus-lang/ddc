@@ -42,6 +42,7 @@ toCoreModule :: a -> S.Module a S.Name -> C.Module a C.Name
 toCoreModule a mm
         = C.ModuleCore
         { C.moduleName          = S.moduleName mm
+        , C.moduleIsHeader      = False
 
         , C.moduleExportTypes   
                 = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))

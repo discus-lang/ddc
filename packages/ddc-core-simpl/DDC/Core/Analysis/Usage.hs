@@ -81,6 +81,7 @@ usageModule
 usageModule
         (ModuleCore
                 { moduleName            = name
+                , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
@@ -90,6 +91,7 @@ usageModule
 
  =       ModuleCore
                 { moduleName            = name
+                , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes

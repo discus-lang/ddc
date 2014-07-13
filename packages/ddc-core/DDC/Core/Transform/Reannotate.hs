@@ -13,12 +13,12 @@ class Reannotate c where
 
 instance Reannotate Module where
  reannotate f
-     (ModuleCore name 
+     (ModuleCore name isHeader
                  exportKinds  exportTypes 
                  importKinds  importTypes
                  dataDefsLocal
                  body)
-  =   ModuleCore name
+  =   ModuleCore name isHeader
                  exportKinds  exportTypes
                  importKinds  importTypes
                  dataDefsLocal

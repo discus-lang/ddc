@@ -99,6 +99,7 @@ convertM pp runConfig defs kenv tenv mm
         let mm_salt 
                 = ModuleCore
                 { moduleName           = moduleName mm
+                , moduleIsHeader       = moduleIsHeader mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.

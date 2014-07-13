@@ -49,6 +49,11 @@ data Module a n
         { -- | Name of this module.
           moduleName                    :: !ModuleName
 
+          -- | Whether this is a module header only.
+          --   Module headers contain type definitions, as well as imports and exports, 
+          --   but no function definitions. Module headers are used in interface files.
+        , moduleIsHeader                :: !Bool
+
           -- Exports ------------------
           -- | Kinds of exported types.
         , moduleExportTypes             :: ![(n, ExportSource n)]
@@ -80,6 +85,7 @@ data Module a n
 instance (NFData a, NFData n) => NFData (Module a n) where
  rnf !mm
         =     rnf (moduleName mm)
+        `seq` rnf (moduleIsHeader      mm)
         `seq` rnf (moduleExportTypes   mm)
         `seq` rnf (moduleExportValues  mm)
         `seq` rnf (moduleImportTypes   mm)
