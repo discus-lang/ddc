@@ -28,7 +28,7 @@ data Error
         | ErrorNoMeta
 
         -- | Duplicate module information.
-        | ErrorDuplicateCore
+        | ErrorDuplicate
 
         -- | Parse error in Interface file.
         | ErrorParse
@@ -36,7 +36,52 @@ data Error
 
         -- | Parser error at end of input.
         | ErrorParseEnd
-        deriving Show
+
+        -- | Error when loading a tetra core module from the interface file.
+        | ErrorLoadTetra (Load.Error Tetra.Name Tetra.Error)
+
+        -- | Error when loading a salt  core module from the interface file.
+        | ErrorLoadSalt  (Load.Error  Salt.Name  Salt.Error)
+
+
+instance Pretty Error where
+ ppr ErrorEmpty
+  = vcat [ text "Empty interface file." ]
+
+ ppr ErrorNoMeta
+  = vcat [ text "No metadata section in interface file." ]
+
+ ppr ErrorDuplicate
+  = vcat [ text "Duplicate section in interface file." ]
+
+ ppr (ErrorParse _)
+  = vcat [ text "Parse error in interface file." ]
+
+ ppr ErrorParseEnd
+  = vcat [ text "Parse error at end of interface file." ]
+
+ ppr (ErrorLoadTetra err)
+  = vcat [ text "Error when loading Tetra module from interface file."
+         , indent 2 $ ppr err ]
+
+ ppr (ErrorLoadSalt err)
+  = vcat [ text "Error when loading Salt module from interface file."
+         , indent 2 $ ppr err ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Line numbers.
+type LineNumber  = Int
+
+-- | Parser for some thing.
+type Parser a    
+        =  [(LineNumber, String)]
+        -> Either Error a
+
+-- | Type of annotated interface.
+type InterfaceAA 
+        = Interface (AnTEC BP.SourcePos Tetra.Name) 
+                    (AnTEC BP.SourcePos Salt.Name)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -53,21 +98,6 @@ loadInterface pathInterface str
         ls      = lines str
         lsNum   = zip [1..] ls
    in   pInterface pathInterface lsNum
-
-
-
--- | Line numbers.
-type LineNumber  = Int
-
--- | Parser for some thing.
-type Parser a    
-        =  [(LineNumber, String)]
-        -> Either Error a
-
--- | Type of annotated interface.
-type InterfaceAA 
-        = Interface (AnTEC BP.SourcePos Tetra.Name) 
-                    (AnTEC BP.SourcePos Salt.Name)
 
 
 -- | Parse an interface file.
@@ -93,13 +123,13 @@ pInterface pathInterface ((n, str) : rest)
                 mTetra  <- case [m | m@ComponentTetraModule{} <- cs] of
                                 []      -> return Nothing
                                 [m]     -> return $ Just $ componentTetraModule m
-                                _       -> Left ErrorDuplicateCore
+                                _       -> Left ErrorDuplicate
 
                 -- Accept a salt module in the interface file.
                 mSalt   <- case [m | m@ComponentSaltModule{}  <- cs] of
                                 []      -> return Nothing
                                 [m]     -> return $ Just $ componentSaltModule m
-                                _       -> Left ErrorDuplicateCore
+                                _       -> Left ErrorDuplicate
 
                 return  $ Interface
                         { interfaceVersion      = version
@@ -126,50 +156,63 @@ data Component
         deriving Show
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse some components of an interface file.
 pComponents :: FilePath -> Parser [Component]
 pComponents _ []
         = return []
 
-pComponents pathInterface ls
- = do   let (ls', rest) 
-                = List.break
-                        (\(_, l) -> l == interfaceTearLine) ls
+pComponents pathInterface (l : ls)
+        -- skip blank lines
+        | all Char.isSpace (snd l)
+        = pComponents pathInterface ls
 
-        c       <- pComponent  pathInterface ls'
+        -- parse a single section
+        | isInterfaceTearLine (snd l)
+        = do   let (ls', rest) = List.break (isInterfaceTearLine . snd) ls
+               c       <- pComponent  pathInterface (l : ls')
+               cs      <- pComponents pathInterface rest
+               return  $ c : cs
 
-        cs      <- pComponents pathInterface 
-                        (dropWhile (\(_, l) -> l == interfaceTearLine) rest)
-
-        return  $ c : cs
+        | otherwise
+        = Left $ ErrorParse (fst l)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse a single component of an interface file.
 pComponent :: FilePath -> Parser Component
 pComponent _ []   
  = Left $ ErrorParseEnd
 
-pComponent pathInterface nls@((n, _) : _)
+pComponent pathInterface ((n, l) : rest)
+        -- skip blank lines
+        | all Char.isSpace l
+        = pComponent pathInterface rest
 
- = case words $ concatMap snd nls of
-    "module-meta" : _         
-      -> pComponentMeta nls
+        -- load a module meta-data section.
+        | Just "Meta"  <- takeInterfaceTearLine l
+        = pComponentMeta rest
 
-    "tetra" : sm@"module" : rest
-      -> case Load.loadModuleFromString Tetra.fragment pathInterface n 
-                Load.Recon (unwords $ sm : rest) of
-           (Left err, _)  -> error  $ renderIndent $ ppr err
-           (Right m,  _)  -> return $ ComponentTetraModule m
+        -- load a Tetra core module section.
+        | Just "Tetra" <- takeInterfaceTearLine l
+        = case Load.loadModuleFromString Tetra.fragment pathInterface n 
+                       Load.Recon (unlines $ map snd rest) of
+                (Left err, _)   -> Left $ ErrorLoadTetra  err
+                (Right m,  _)   -> return $ ComponentTetraModule m
 
-    "salt"  : sm@"module" : rest    
-      -> case Load.loadModuleFromString Salt.fragment pathInterface n
-                Load.Recon (unwords $ sm : rest) of
-           (Left err, _)  -> error  $ renderIndent $ ppr err
-           (Right m,  _)  -> return $ ComponentSaltModule  m
+        -- load a Salt core module section.
+        | Just "Salt"  <- takeInterfaceTearLine l
+        = case Load.loadModuleFromString Salt.fragment pathInterface n
+                       Load.Recon (unlines $ map snd rest) of
+               (Left err, _)   -> Left $ ErrorLoadSalt err 
+               (Right m,  _)   -> return $ ComponentSaltModule  m
 
-    _ -> Left $ ErrorParse n
+        -- this thing didn't parse.
+        | otherwise
+        = Left $ ErrorParse n
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse module meta data from an interface file.
 pComponentMeta :: Parser Component
 pComponentMeta [] 
@@ -186,6 +229,7 @@ pComponentMeta nls@((n, _) : _)
         = Left   $ ErrorParse n
 
 
+---------------------------------------------------------------------------------------------------
 -- | Tokenise the interface header containing module meta data.
 tokenize :: String -> [String]
 tokenize str

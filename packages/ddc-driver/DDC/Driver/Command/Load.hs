@@ -67,7 +67,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  = do
         str     <- liftIO $ readFile filePath
         case Interface.loadInterface filePath str of
-         Left err        -> throwError $ show err
+         Left err        -> throwError $ renderIndent $ ppr err
          Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
 
  -- Load a Disciple Source Tetra module.
