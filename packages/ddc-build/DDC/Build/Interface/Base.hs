@@ -5,22 +5,20 @@ where
 import DDC.Core.Module
 import DDC.Core.Pretty
 import DDC.Core.Compounds
-import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Tetra         as Tetra
 import qualified DDC.Core.Salt          as Salt
-import qualified DDC.Base.Parser        as BP
 
 
 -- | Module interface.
-data Interface
+data Interface ta sa
         = Interface
         { interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
-        , interfaceTetraModule  :: Maybe (Module (C.AnTEC BP.SourcePos Tetra.Name) Tetra.Name)
-        , interfaceSaltModule   :: Maybe (Module () Salt.Name) }
+        , interfaceTetraModule  :: Maybe (Module ta Tetra.Name)
+        , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
 
 
-instance Pretty Interface where
+instance Pretty (Interface ta sa) where
  ppr i
   = vcat [ text "ddc interface" <+> text (interfaceVersion i)
 
@@ -37,7 +35,7 @@ instance Pretty Interface where
         --   to reason about the overall compilation process.
         <> (case interfaceTetraModule i of
                 Just m  -> vcat [ line 
-                                , text $ replicate 80 '-'
+                                , text tearLine
                                 , text "tetra" <+> ppr m ]
                 Nothing -> empty)
 
@@ -49,7 +47,12 @@ instance Pretty Interface where
                  -- zap the module body so we don't get the function definitions.
                  let m' = m { moduleBody = xUnit (annotOfExp $ moduleBody m) }
                  in  vcat [ line
-                          , text $ replicate 80 '-'
+                          , text tearLine
                           , text "salt"  <+> ppr m' ]
                 Nothing -> empty)
 
+
+-- | Tear line to separate sections of the interface file. 
+--   We use '~' because it's not used in the core language syntax.
+tearLine :: String
+tearLine = replicate 80 '~'

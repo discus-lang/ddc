@@ -1,13 +1,14 @@
 
 module DDC.Build.Spec.Parser
-        ( Error(..)
-        , parseBuildSpec)
+        ( parseBuildSpec
+        , Error(..) )
 where
 import DDC.Build.Spec.Base
 import Data.List
 import Data.Char
 
 
+---------------------------------------------------------------------------------------------------
 -- | Problems that can arise when parsing a build spec file.
 data Error 
         -- | Empty Spec file.
@@ -44,15 +45,15 @@ parseBuildSpec str
 -- | Parse a build specification.
 pBuildSpec :: Parser Spec
 pBuildSpec  []
-        = Left $ ErrorEmpty
+        = Left ErrorEmpty
 
 pBuildSpec ((n, _s, str) : rest)
-        -- skip over blank lines
+        -- Skip over blank lines
         | all (\c -> isSpace c || c == '\n') str
         = pBuildSpec rest
 
         -- The build spec needs to start with the magic words and version number.
-        | ["ddc", "build", version]     <- words str
+        | ["ddc", "build", version] <- words str
         = do    cs    <- pComponents rest
                 return  $ Spec
                         { specVersion           = version
