@@ -38,7 +38,14 @@ import DDC.Core.Module
 --   The Source code needs to already have been desugared and cannot contain,
 --   and `XDefix`, `XInfixOp`, or `XInfixVar` nodes, else `error`.
 --
-toCoreModule :: a -> S.Module a S.Name -> C.Module a C.Name
+--   We use the map of core headers to add imports for all the names that this
+--   module uses from its environment.
+-- 
+toCoreModule 
+        :: a 
+        -> S.Module a S.Name 
+        -> C.Module a C.Name
+
 toCoreModule a mm
         = C.ModuleCore
         { C.moduleName          = S.moduleName mm

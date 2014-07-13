@@ -21,14 +21,16 @@ import qualified DDC.Core.Tetra                    as CE
 import qualified DDC.Core.Tetra.Env                as CE
 
 import qualified DDC.Core.Parser                   as C
+import qualified DDC.Core.Transform.Resolve        as C
 import qualified DDC.Core.Transform.SpreadX        as C
 import qualified DDC.Core.Check                    as C
 import qualified DDC.Core.Load                     as C
 import qualified DDC.Core.Lexer                    as C
 import qualified DDC.Base.Parser                   as BP
 import qualified DDC.Data.SourcePos                as SP
-import Control.DeepSeq
 
+import qualified Data.Map                          as Map
+import Control.DeepSeq
 
 -- | Process program text.
 data PipeText n (err :: * -> *) where
@@ -120,9 +122,11 @@ pipeText !srcName !srcLine !str !pp
                         let sp        = SP.SourcePos "<top level>" 1 1
                         let mm_core   = SE.toCoreModule sp mm_expand
 
+                        -- Resolve references to imported types and bindings.
+                        let mm_resolve = C.resolveNamesInModule Map.empty mm_core
+
                         -- Spread types of data constructors into uses.
-                        let mm_spread = C.spreadX 
-                                          CE.primKindEnv CE.primTypeEnv mm_core
+                        let mm_spread  = C.spreadX CE.primKindEnv CE.primTypeEnv mm_resolve
 
                         -- Dump code before checking for debugging purposes.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck
@@ -130,7 +134,7 @@ pipeText !srcName !srcLine !str !pp
                         -- Use the existing checker pipeline to Synthesise
                         -- missing type annotations.
                         pipeCore mm_spread
-                           $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes
+                          $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes
 
             in goParse
 
