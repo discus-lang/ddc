@@ -1,6 +1,7 @@
 
 module DDC.Build.Interface.Base 
-        (Interface (..))
+        ( Interface (..)
+        , interfaceTearLine )
 where
 import DDC.Core.Module
 import DDC.Core.Pretty
@@ -16,6 +17,7 @@ data Interface ta sa
         , interfaceModuleName   :: ModuleName
         , interfaceTetraModule  :: Maybe (Module ta Tetra.Name)
         , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
+        deriving Show
 
 
 instance Pretty (Interface ta sa) where
@@ -35,7 +37,7 @@ instance Pretty (Interface ta sa) where
         --   to reason about the overall compilation process.
         <> (case interfaceTetraModule i of
                 Just m  -> vcat [ line 
-                                , text tearLine
+                                , text interfaceTearLine
                                 , text "tetra" <+> ppr m ]
                 Nothing -> empty)
 
@@ -47,12 +49,12 @@ instance Pretty (Interface ta sa) where
                  -- zap the module body so we don't get the function definitions.
                  let m' = m { moduleBody = xUnit (annotOfExp $ moduleBody m) }
                  in  vcat [ line
-                          , text tearLine
+                          , text interfaceTearLine
                           , text "salt"  <+> ppr m' ]
                 Nothing -> empty)
 
 
 -- | Tear line to separate sections of the interface file. 
 --   We use '~' because it's not used in the core language syntax.
-tearLine :: String
-tearLine = replicate 80 '~'
+interfaceTearLine :: String
+interfaceTearLine = replicate 80 '~'

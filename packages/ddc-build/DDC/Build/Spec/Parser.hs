@@ -1,4 +1,5 @@
 
+-- | Parser for DDC build spec files.
 module DDC.Build.Spec.Parser
         ( parseBuildSpec
         , Error(..) )
