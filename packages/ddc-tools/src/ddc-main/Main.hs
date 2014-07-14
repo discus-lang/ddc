@@ -99,7 +99,7 @@ run config
         -- Compile a module to object code.
         ModeCompile filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompile dconfig filePath
+                runError $ cmdCompile dconfig [] filePath
 
         -- Compile a module into an executable.
         ModeMake filePath
@@ -240,7 +240,7 @@ getDriverConfig config filePath
 
 
 -- | Print errors to stderr and set the exit code.
-runError :: ErrorT String IO () -> IO ()
+runError :: ErrorT String IO a -> IO ()
 runError m
  = do   result  <- runErrorT m
         case result of

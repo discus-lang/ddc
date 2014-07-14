@@ -50,7 +50,7 @@ main
 
 
 -- | Just print errors to stdout and continue the session.
-runError :: ErrorT String IO () -> IO ()
+runError :: ErrorT String IO a -> IO ()
 runError m
  = do   result  <- runErrorT m
         case result of

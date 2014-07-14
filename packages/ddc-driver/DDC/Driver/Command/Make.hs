@@ -32,7 +32,7 @@ cmdMake config filePath
                 | ext == ".dst"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSourceTetraLoad config source
+                $ stageSourceTetraLoad config source []
                 [ PipeCoreReannotate  (const ())
                 [ stageTetraToSalt     config source pipesSalt ]]
 

@@ -23,14 +23,16 @@ import qualified DDC.Base.Parser                as BP
 -- | Load and type check a Source Tetra module.
 stageSourceTetraLoad
         :: Config -> Source
+        -> [InterfaceAA]
         -> [PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText CE.Name CE.Error
 
-stageSourceTetraLoad config source pipesTetra
+stageSourceTetraLoad config source interfaces pipesTetra
  = PipeTextLoadSourceTetra
                     (dump config source "dump.tetra-load-tokens.txt")
                     (dump config source "dump.tetra-load-raw.dct")
                     (dump config source "dump.tetra-load-trace.txt")
+                    interfaces
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.tetra-load.dct")
    : pipesTetra ) 

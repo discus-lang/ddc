@@ -1,13 +1,16 @@
 {-# LANGUAGE GADTs #-}
 module DDC.Build.Pipeline.Text
-        ( PipeText (..)
+        ( InterfaceAA
+        , PipeText (..)
         , pipeText)
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
+import DDC.Build.Interface.Base
 import DDC.Base.Pretty
+import Data.Maybe
 
 import qualified DDC.Source.Tetra.ToCore           as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
@@ -32,6 +35,9 @@ import qualified DDC.Data.SourcePos                as SP
 import qualified Data.Map                          as Map
 import Control.DeepSeq
 
+type InterfaceAA        
+        = Interface (C.AnTEC BP.SourcePos CE.Name) ()
+
 -- | Process program text.
 data PipeText n (err :: * -> *) where
   PipeTextOutput 
@@ -50,6 +56,7 @@ data PipeText n (err :: * -> *) where
         :: !Sink                -- Sink for source tokens.
         -> !Sink                -- Sink for core code before final type checking.
         -> !Sink                -- Sink for type checker trace.
+        -> ![InterfaceAA]       -- Interfaces for modules upon which this one depends.
         -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
@@ -84,9 +91,9 @@ pipeText !srcName !srcLine !str !pp
                         pipeCores mm pipes
 
         PipeTextLoadSourceTetra 
-                sinkTokens
-                sinkPreCheck 
-                sinkCheckerTrace pipes
+                sinkTokens sinkPreCheck sinkCheckerTrace 
+                interfaces
+                pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let goParse
                  = do   -- Lex the input text into source tokens.
@@ -123,10 +130,22 @@ pipeText !srcName !srcLine !str !pp
                         let mm_core   = SE.toCoreModule sp mm_expand
 
                         -- Resolve references to imported types and bindings.
-                        let mm_resolve = C.resolveNamesInModule Map.empty mm_core
+                        let deps      = Map.fromList
+                                      $ catMaybes
+                                      $ [ case interfaceTetraModule i of
+                                                Nothing -> Nothing
+                                                Just tm -> Just (interfaceModuleName i, tm)
+                                        | i <- interfaces ]
+                        let mm_resolve 
+                                = C.resolveNamesInModule 
+                                        CE.primKindEnv CE.primTypeEnv
+                                        deps mm_core
 
                         -- Spread types of data constructors into uses.
-                        let mm_spread  = C.spreadX CE.primKindEnv CE.primTypeEnv mm_resolve
+                        let mm_spread  
+                                = C.spreadX
+                                        CE.primKindEnv CE.primTypeEnv
+                                        mm_resolve
 
                         -- Dump code before checking for debugging purposes.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck

@@ -3,7 +3,6 @@ module Data.List
 import Data.Maybe
 where
 
-
 -- | Standard Cons-lists.
 data List (a : Data) where
         Nil     : List a
@@ -80,6 +79,7 @@ reverse (xx : List a) : List a
 
 
 -- Combinators ----------------------------------------------------------------
+{-
 -- | Apply a worker function to every element of a list, yielding a new list.
 map (f : a -> b) (xx : List a) : List b
  = case xx of
@@ -109,7 +109,7 @@ foldl (f : b -> a -> b) (z : b) (xx : List a) : b
 foldlS (f : b -> a -> S e b) (z : b) (xx : List a) : S e b
  = box case xx of
         Nil             -> z
-        Cons x xs       -> run foldl f (run f z x) xs
+        Cons x xs       -> run foldlS f (run f z x) xs
 
 
 -- | Reduce a list with a binary function and zero value, 
@@ -125,26 +125,26 @@ foldr (f : a -> b -> b) (z : b) (xx : List a) : b
 foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
  = box case xx of
         Nil             -> z
-        Cons x xs       -> run f x (run foldr f z xs)
+        Cons x xs       -> run f x (run foldrS f z xs)
 
 
 -- | Keep only those elements that match the given predicate.
-filter (p : a -> Bool) (xx : List a) : List a
+filter (p : a -> Bool#) (xx : List a) : List a
  = case xx of
         Nil             -> Nil
         Cons x xs  
          -> case p x of
-                True    -> Cons x (filter p xs)
-                False   -> filter p xs
+                True#   -> Cons x (filter p xs)
+                False#  -> filter p xs
 
 
 -- | Keep only those elements that match the given stateful predicate.
 --   The predicate is applied to the list elements from left to right.
-filterS (p : a -> S e Bool) (xx : List a) : S e (List a)
+filterS (p : a -> S e Bool#) (xx : List a) : S e (List a)
  = box case xx of
         Nil             -> Nil
         Cons x xs  
          -> case run p x of
-                True    -> Cons x (run filter p xs)
-                False   -> run filter p xs
-
+                True#   -> Cons x (run filterS p xs)
+                False#  -> run filterS p xs
+-}

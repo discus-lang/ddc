@@ -137,7 +137,7 @@ cmdLoadSourceTetraFromString config bundle source str
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreReannotate (\a -> a { annotTail = () })
          [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
                                                 (bundleSimplifier bundle)

@@ -112,7 +112,7 @@ cmdCheckSourceTetraFromString config source str
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreOutput pmode SinkDiscard ]
    in do
         errs    <- liftIO pipeLoad

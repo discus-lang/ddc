@@ -335,7 +335,7 @@ handleCmd1 state cmd source line
         -- Make and Compile ---------------------
         CommandCompile
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdCompile config line
+                runError $ cmdCompile config [] line
                 return state
 
         CommandMake
@@ -356,7 +356,7 @@ handleCmd1 state cmd source line
 
 
 -- | Just print errors to stdout and continue the session.
-runError :: ErrorT String IO () -> IO ()
+runError :: ErrorT String IO a -> IO ()
 runError m
  = do   result  <- runErrorT m
         case result of

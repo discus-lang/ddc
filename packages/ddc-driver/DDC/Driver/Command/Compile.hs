@@ -19,8 +19,20 @@ import qualified DDC.Version            as Version
 
 
 -- | Compile a source module into a @.o@ file.
-cmdCompile :: Config -> FilePath -> ErrorT String IO ()
-cmdCompile config filePath
+--
+--   This produces an @.o@ file next to the source file, and may also produce
+--   a @.di@ interface, depending on what sort of source file we're compiling.
+-- 
+--   Returns any interface files loaded or constructed during compilation,
+--   so we don't have to re-load them during multi-module builds.
+--
+cmdCompile 
+        :: Config               -- ^ Build driver config.
+        -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
+        -> FilePath             -- ^ Path to file to compile.
+        -> ErrorT String IO [InterfaceAA]
+
+cmdCompile config interfaces filePath
  = do   
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
@@ -41,12 +53,10 @@ cmdCompile config filePath
                 | ext == ".dst"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSourceTetraLoad config source
-                [ PipeCoreHacks       (Canned $ \m -> do
-                                        writeIORef refTetra (Just m)
-                                        return m)
-                [ PipeCoreReannotate  (const ())
-                [ stageTetraToSalt     config source pipesSalt ]]]
+                $ stageSourceTetraLoad config source interfaces
+                [ PipeCoreHacks      (Canned $ \m -> writeIORef refTetra (Just m) >> return m)
+                [ PipeCoreReannotate (const ())
+                [ stageTetraToSalt    config source pipesSalt ]]]
 
                 -- Compile a Core Tetra module.
                 | ext == ".dct"
@@ -77,17 +87,15 @@ cmdCompile config filePath
              = case configViaBackend config of
                 ViaLLVM
                  -> [ PipeCoreReannotate (const ())
-                    [ stageSaltOpt      config source
-                    [ PipeCoreHacks     (Canned $ \m -> do
-                                          writeIORef refSalt (Just m)
-                                          return m)
-                    [ stageSaltToLLVM   config source 
-                    [ stageCompileLLVM  config source filePath False ]]]]]
+                    [ stageSaltOpt     config source
+                    [ PipeCoreHacks    (Canned $ \m -> writeIORef refSalt (Just m) >> return m)
+                    [ stageSaltToLLVM  config source 
+                    [ stageCompileLLVM config source filePath False ]]]]]
 
                 ViaC
                  -> [ PipeCoreReannotate (const ())
-                    [ stageSaltOpt      config source
-                    [ stageCompileSalt  config source filePath False ]]]
+                    [ stageSaltOpt     config source
+                    [ stageCompileSalt config source filePath False ]]]
 
         -- Run the compilation pipeline.
         errs <- make
@@ -123,10 +131,10 @@ cmdCompile config filePath
                 liftIO  $ writeFile pathInterface 
                         $ P.renderIndent $ P.ppr int
 
-                return ()
+                return [int]
 
           -- Compilation was successful,
           --  but we didn't get enough build products to produce an interface file.
           | otherwise
-          -> return ()
+          -> return []
 

@@ -82,7 +82,7 @@ cmdToSeaSourceTetraFromString config source str
  = let  
         pipeLoad
          = pipeText (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt   config source 
          [ stageSaltOpt       config source
