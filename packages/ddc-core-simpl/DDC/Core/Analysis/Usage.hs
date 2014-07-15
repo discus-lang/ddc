@@ -86,6 +86,7 @@ usageModule
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
                 , moduleImportValues    = importValues
+                , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body })
 
@@ -96,6 +97,7 @@ usageModule
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
                 , moduleImportValues    = importValues
+                , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = usageX body }
 

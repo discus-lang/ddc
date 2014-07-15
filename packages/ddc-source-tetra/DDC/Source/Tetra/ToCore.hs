@@ -71,6 +71,9 @@ toCoreModule a mm
                 = [ toCoreDataDef def
                         | S.TopData _ def <- S.moduleTops mm ]
 
+        , C.moduleImportDataDefs
+                = []
+
         , C.moduleBody          
                 = C.XLet  a (letsOfTops (S.moduleTops mm))
                                         (C.xUnit a) }

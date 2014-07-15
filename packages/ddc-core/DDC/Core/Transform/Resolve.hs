@@ -33,7 +33,6 @@ resolveNamesInModule kenv tenv deps mm
         daVars  = Map.unions 
                 $ map exportedDaVars $ Map.elems deps
 
-
         moreImportTypes
          = catMaybes
          $ [ case Map.lookup n tyCons of
@@ -49,14 +48,15 @@ resolveNamesInModule kenv tenv deps mm
            | UName n         <- Set.toList $ supportDaVar sp ]
 
    in   mm { moduleImportTypes   
-                = moduleImportTypes  mm ++ moreImportTypes
+                =  moduleImportTypes  mm ++ moreImportTypes
 
            , moduleImportValues  
-                = moduleImportValues mm ++ moreImportValues  
+                =  moduleImportValues mm ++ moreImportValues  
 
-           , moduleDataDefsLocal 
-                =  moduleDataDefsLocal mm 
-                ++ (concat $ map moduleDataDefsLocal $ Map.elems deps) }
+           , moduleImportDataDefs
+                =  moduleImportDataDefs mm 
+                ++ [(def, moduleName m) | m   <- Map.elems deps
+                                        , def <- moduleDataDefsLocal m ] }
 
 
 exportedTyCons

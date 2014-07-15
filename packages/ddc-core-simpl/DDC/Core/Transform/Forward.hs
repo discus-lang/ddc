@@ -136,6 +136,7 @@ instance Forward Module where
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
                 , moduleImportValues    = importValues
+                , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body })
 
@@ -147,6 +148,7 @@ instance Forward Module where
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
                 , moduleImportValues    = importValues
+                , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body' }
 

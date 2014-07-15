@@ -1,7 +1,6 @@
 
 module IO.Console 
 
-
 import foreign abstract type
  Console : Effect
 

@@ -70,7 +70,10 @@ data Module a n
           --   These imports come from a Disciple module, that we've compiled ourself.
         , moduleImportValues            :: ![(n, ImportSource n)]
 
-          -- Local --------------------
+          -- | Data defs imported from other modules.
+        , moduleImportDataDefs          :: ![(DataDef n, ModuleName)]
+
+          -- Local defs ---------------
           -- | Data types defined in this module.
         , moduleDataDefsLocal           :: ![DataDef n]
 
@@ -84,14 +87,15 @@ data Module a n
 
 instance (NFData a, NFData n) => NFData (Module a n) where
  rnf !mm
-        =     rnf (moduleName mm)
-        `seq` rnf (moduleIsHeader      mm)
-        `seq` rnf (moduleExportTypes   mm)
-        `seq` rnf (moduleExportValues  mm)
-        `seq` rnf (moduleImportTypes   mm)
-        `seq` rnf (moduleImportValues  mm)
-        `seq` rnf (moduleDataDefsLocal mm)
-        `seq` rnf (moduleBody mm)
+        =     rnf (moduleName           mm)
+        `seq` rnf (moduleIsHeader       mm)
+        `seq` rnf (moduleExportTypes    mm)
+        `seq` rnf (moduleExportValues   mm)
+        `seq` rnf (moduleImportTypes    mm)
+        `seq` rnf (moduleImportValues   mm)
+        `seq` rnf (moduleImportDataDefs mm)
+        `seq` rnf (moduleDataDefsLocal  mm)
+        `seq` rnf (moduleBody           mm)
 
 
 -- | Check if this is the `Main` module.
@@ -105,7 +109,7 @@ isMainModule mm
 moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
         = fromListDataDefs 
-        $ moduleDataDefsLocal mm
+        $ (moduleDataDefsLocal mm ++ map fst (moduleImportDataDefs mm))
 
 
 -- | Get the top-level kind environment of a module,

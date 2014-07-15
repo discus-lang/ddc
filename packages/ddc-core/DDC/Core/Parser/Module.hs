@@ -57,6 +57,7 @@ pModule c
                 , moduleExportValues    = [(n, s) | ExportValue n s <- tExports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s <- tImports]
                 , moduleImportValues    = [(n, s) | ImportValue n s <- tImports]
+                , moduleImportDataDefs  = []
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 

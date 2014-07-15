@@ -106,8 +106,9 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleExportTypes    = []
                 , moduleExportValues   = tsExports'
 
-                , moduleImportTypes    = Map.toList S.runtimeImportKinds
+                , moduleImportTypes    =  Map.toList S.runtimeImportKinds
                 , moduleImportValues   = (Map.toList S.runtimeImportTypes) ++ tsImports'
+                , moduleImportDataDefs = []
 
                   -- Data constructors and pattern matches should have been flattened
                   -- into primops, so we don't need the data type definitions.
