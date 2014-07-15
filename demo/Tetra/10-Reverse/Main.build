@@ -3,6 +3,8 @@ ddc build 0.4.2
 executable
  name:  reverse
 
- tetra-modules:
-        Data.Numeric.Nat
+ tetra-main:
         Main
+
+ tetra-other:
+        Data.Numeric.Nat

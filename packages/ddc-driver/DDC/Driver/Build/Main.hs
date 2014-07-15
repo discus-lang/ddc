@@ -16,15 +16,17 @@ import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Tetra         as Tetra
 import qualified DDC.Data.SourcePos     as BP
 
+-- | Annotated interface type.
 type InterfaceAA
         = Interface (C.AnTEC BP.SourcePos Tetra.Name) ()
 
 
--- | Build all the components defined by a spec.
+---------------------------------------------------------------------------------------------------
+-- | Build all the components defined by a build spec.
 buildSpec  
-        :: Config       -- ^ Build config.
-        -> FilePath     -- ^ File path of build spec.
-        -> Spec         -- ^ Build spec.
+        :: Config               -- ^ Build config.
+        -> FilePath             -- ^ File path of build spec.
+        -> Spec                 -- ^ Build spec.
         -> ErrorT String IO ()
 
 buildSpec config pathSpec spec
@@ -32,12 +34,13 @@ buildSpec config pathSpec spec
                 (specComponents spec)
 
 
--- | Build a single component in a build spec.
+---------------------------------------------------------------------------------------------------
+-- | Build a single component of a build spec.
 buildComponent 
-        :: Config       -- ^ Build config.
-        -> FilePath     -- ^ File path of build spec.
-        -> Spec         -- ^ Build spec that mentions the module.
-        -> Component    -- ^ Component to build.
+        :: Config               -- ^ Build config.
+        -> FilePath             -- ^ File path of build spec.
+        -> Spec                 -- ^ Build spec that mentions the module.
+        -> Component            -- ^ Component to build.
         -> ErrorT String IO ()
 
 buildComponent config pathSpec spec component@SpecLibrary{}
@@ -50,8 +53,20 @@ buildComponent config pathSpec spec component@SpecLibrary{}
 
         return ()
 
+buildComponent config pathSpec spec component@SpecExecutable{}
+ = do   
+        when (configLogBuild config)
+         $ liftIO $ putStrLn $ "* Building " ++ specExecutableName component
 
--- | Build a library, consisting of several modules.
+        buildExecutable config pathSpec spec component [] 
+                (specExecutableTetraMain         component)
+                (specExecutableTetraOther component)
+
+        return ()
+
+
+---------------------------------------------------------------------------------------------------
+-- | Build a library consisting of several modules.
 buildLibrary 
         :: Config               -- ^ Build config
         -> FilePath             -- ^ File path of build spec.
@@ -61,17 +76,47 @@ buildLibrary
         -> [String]             -- ^ Names of modules still to build
         -> ErrorT String IO ()
 
-buildLibrary _config _pathSpec _spec _component _ []
-        = return ()
+buildLibrary config pathSpec spec component interfaces0 ms0
+ = go interfaces0 ms0
+ where
+        go _interfaces []
+         = return ()
 
-buildLibrary config pathSpec spec component interfaces (m : more)
- = do
-        moreInterfaces  <- buildModule config pathSpec spec component interfaces m
+        go interfaces (m : more)
+         = do   
+                moreInterfaces  <- buildModule config pathSpec spec component interfaces m
 
-        let interfaces' = interfaces ++ moreInterfaces
-        buildLibrary config pathSpec spec component interfaces' more
+                let interfaces' = interfaces ++ moreInterfaces
+                go  interfaces' more
 
 
+---------------------------------------------------------------------------------------------------
+-- | Build an executable consisting of several modules.
+buildExecutable
+        :: Config               -- ^ Build config.
+        -> FilePath             -- ^ File path of build spec.
+        -> Spec                 -- ^ Build spec that mentions the module.
+        -> Component            -- ^ Build component that mentions the module.
+        -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
+        -> String               -- ^ Name  of main module.
+        -> [String]             -- ^ Names of dependency modules
+        -> ErrorT String IO ()
+
+buildExecutable config pathSpec spec component interfaces0 _mMain msOther0
+ = go interfaces0 msOther0
+ where  
+        go _interfaces [] 
+         = return ()
+
+        go interfaces (m : more)
+         = do   
+                moreInterfaces  <- buildModule config pathSpec spec component interfaces m
+
+                let interfaces' =  interfaces ++ moreInterfaces
+                go  interfaces' more
+
+
+---------------------------------------------------------------------------------------------------
 -- | Build a single module.
 buildModule
         :: Config               -- ^ Build config.
@@ -95,9 +140,9 @@ buildModule config pathSpec _spec _component interfaces name
 -- | Given the path of a .build spec, and a module name, yield the path where
 --   the source of the module should be.
 resolvePathOfModule 
-        :: FilePath             -- Path to build spec.
-        -> String               -- Source file extension.
-        -> String               -- Module name.
+        :: FilePath             -- ^ Path to build spec.
+        -> String               -- ^ Source file extension.
+        -> String               -- ^ Module name.
         -> FilePath
 
 resolvePathOfModule pathSpec ext name

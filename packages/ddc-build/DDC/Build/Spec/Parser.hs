@@ -6,9 +6,10 @@ module DDC.Build.Spec.Parser
 where
 import DDC.Build.Spec.Base
 import DDC.Base.Pretty
+import Control.Monad
 import Data.List
 import Data.Char
-
+import Data.Maybe
 
 ---------------------------------------------------------------------------------------------------
 -- | Problems that can arise when parsing a build spec file.
@@ -95,42 +96,58 @@ pComponents path ((n, start, str) : rest)
         = pComponents path rest
 
         -- parse a library specification
-        | isPrefixOf str "library"
+        | str == "library"
         , (lsLibrary, lsMore) 
                 <- span (\(_, start', _) -> start' == 0 || start' > start) rest
-        = do    lib     <- pLibraryFields path lsLibrary
+        = do    fs      <- pLibraryFields path lsLibrary
                 more    <- pComponents    path lsMore
-                return  $ lib : more
+                return  $ fs : more
+
+        -- parse an executable specification
+        | str == "executable"
+        , (lsExecutable, lsMore)
+                <- span (\(_, start', _) -> start' == 0 || start' > start) rest
+        = do    fs      <- pExecutableFields path lsExecutable
+                more    <- pComponents       path lsMore
+                return  $ fs : more
 
         | otherwise
         = Left $ ErrorParse path n
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse the fields of a library specification.
 pLibraryFields :: FilePath -> Parser Component
 pLibraryFields path str
- = do   fs                           <- pFields path str
-        (sName,         fs_name)     <- takeField path "name"          fs
-        (sVersion,      fs_version)  <- takeField path "version"       fs_name
-        (sTetraModules, fs_modules)  <- takeField path "tetra-modules" fs_version
+ = do   fs                          <- pFields path str
+        (sName,         fs_name)    <- takeField path "name"             fs
+        (sVersion,      fs_version) <- takeField path "version"          fs_name
+        (sTetraModules, fs_modules) <- takeField path "tetra-modules"    fs_version
 
         return  $ SpecLibrary 
-                { specLibraryName         = sName
-                , specLibraryVersion      = sVersion
-                , specLibraryTetraModules = words $ sTetraModules
-                , specLibraryMeta         = fs_modules }
+                { specLibraryName          = sName
+                , specLibraryVersion       = sVersion
+                , specLibraryTetraModules  = words $ sTetraModules
+                , specLibraryMeta          = fs_modules }
 
 
--- | Take a named field from this list of fields.
-takeField :: FilePath
-          -> String -> [(String, String)] 
-          -> Either Error (String, [(String, String)])
-takeField path name fs
- = case lookup name fs of
-        Nothing -> Left $ ErrorMissingField path name
-        Just s  -> return (s, delete (name, s) fs)
+---------------------------------------------------------------------------------------------------
+-- | Parse the fields of an executable specification.
+pExecutableFields :: FilePath -> Parser Component
+pExecutableFields path str
+ = do   fs                          <- pFields path str
+        (sName,           fs_name)  <- takeField      path "name"        fs
+        (sTetraMain,      fs_main)  <- takeField      path "tetra-main"  fs_name
+        let (sTetraOther, fs_other) =  takeFieldMaybe path "tetra-other" fs_main
+
+        return  $ SpecExecutable
+                { specExecutableName       = sName
+                , specExecutableTetraMain  = sTetraMain
+                , specExecutableTetraOther = concat $ maybeToList $ liftM words sTetraOther 
+                , specExecutableMeta       = fs_other }
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse fields of a build specification.
 pFields  :: FilePath -> Parser [(String, String)]
 pFields _path []
@@ -155,6 +172,29 @@ pFields path ((n, start, str) : rest)
 
         | otherwise
         = Left $ ErrorParse path n
+
+
+-- | Take a named field from this list of fields.
+takeField :: FilePath
+          -> String -> [(String, String)] 
+          -> Either Error (String, [(String, String)])
+
+takeField path name fs
+ = case lookup name fs of
+        Nothing -> Left $ ErrorMissingField path name
+        Just s  -> return (s, delete (name, s) fs)
+
+
+-- | Take a named field from this list of fields.
+takeFieldMaybe 
+        :: FilePath
+        -> String -> [(String, String)] 
+        -> (Maybe String, [(String, String)])
+
+takeFieldMaybe _path name fs
+ = case lookup name fs of
+        Nothing -> (Nothing, fs)
+        Just s  -> (Just s,  delete (name, s) fs)
 
 
 ---------------------------------------------------------------------------------------------------

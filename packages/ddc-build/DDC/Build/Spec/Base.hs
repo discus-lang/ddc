@@ -34,6 +34,21 @@ data Component
           --   These fields are for informational purposes and are not 
           --   nessesary to build the library itself.
         , specLibraryMeta               :: [(String, String)] }
+
+
+        | SpecExecutable
+        { -- | Name of executable
+          specExecutableName            :: String
+
+        , specExecutableTetraMain       :: String
+
+          -- | Tetra modules to build, in dependency order.
+        , specExecutableTetraOther      :: [String] 
+
+          -- | Optional library meta-data.
+          --   These fields are for informational purposes and are not 
+          --   nessesary to build the executable itself.
+        , specExecutableMeta            :: [(String, String)] }
         deriving Show
 
 
