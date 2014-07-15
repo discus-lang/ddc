@@ -1,0 +1,8 @@
+ddc build 0.4.2
+
+executable
+ name:  ack
+
+ tetra-modules:
+        Data.Numeric.Nat
+        Main

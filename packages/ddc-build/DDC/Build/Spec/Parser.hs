@@ -5,6 +5,7 @@ module DDC.Build.Spec.Parser
         , Error(..) )
 where
 import DDC.Build.Spec.Base
+import DDC.Base.Pretty
 import Data.List
 import Data.Char
 
@@ -14,15 +15,34 @@ import Data.Char
 data Error 
         -- | Empty Spec file.
         = ErrorEmpty
+        { errorFilePath :: FilePath }
 
         -- | Parse error in Spec file.
         | ErrorParse
-        { errorLine     :: Int }
+        { errorFilePath :: FilePath 
+        , errorLine     :: Int }
 
         -- | Required field is missing.
         | ErrorMissingField
-        { errorMissing  :: String }
+        { errorFilePath :: FilePath
+        , errorMissing  :: String }
         deriving Show
+
+
+instance Pretty Error where
+ ppr err
+  = case err of
+        ErrorEmpty filePath
+         -> vcat [ text filePath
+                 , text "Empty file" ]
+
+        ErrorParse filePath n
+         -> vcat [ text filePath <> text ":" <> int n
+                 , text "Parse error" ]
+
+        ErrorMissingField filePath field
+         -> vcat [ text filePath
+                 , text "Missing field '" <> text field <> text "'" ]
 
 
 ---------------------------------------------------------------------------------------------------
@@ -34,91 +54,92 @@ type Parser a   = [(LineNumber, StartCol, String)]
 
 
 -- | Parse a build specification.
-parseBuildSpec :: String -> Either Error Spec
-parseBuildSpec str
+parseBuildSpec :: FilePath -> String -> Either Error Spec
+parseBuildSpec path str
  = let  -- Attach line numbers and starting column to each line.
         ls              = lines str
         lsNum           = zip [1..]  ls
         lsNumCols       = attachCols lsNum
-   in   pBuildSpec lsNumCols
+   in   pBuildSpec path lsNumCols
 
 
 -- | Parse a build specification.
-pBuildSpec :: Parser Spec
-pBuildSpec  []
-        = Left ErrorEmpty
+pBuildSpec :: FilePath -> Parser Spec
+pBuildSpec path []
+        = Left $ ErrorEmpty path
 
-pBuildSpec ((n, _s, str) : rest)
+pBuildSpec path ((n, _s, str) : rest)
         -- Skip over blank lines
         | all (\c -> isSpace c || c == '\n') str
-        = pBuildSpec rest
+        = pBuildSpec path rest
 
         -- The build spec needs to start with the magic words and version number.
         | ["ddc", "build", version] <- words str
-        = do    cs    <- pComponents rest
+        = do    cs    <- pComponents path rest
                 return  $ Spec
                         { specVersion           = version
                         , specComponents        = cs }
 
         | otherwise
-        = Left $ ErrorParse n
+        = Left $ ErrorParse path n
 
 
 -- | Parse a build component specification.
-pComponents :: Parser [Component]
-pComponents []
+pComponents :: FilePath -> Parser [Component]
+pComponents _path []
         = return []
 
-pComponents ((n, start, str) : rest)
+pComponents path ((n, start, str) : rest)
         -- skip over blank lines
         | all (\c -> isSpace c || c == '\n') str
-        = pComponents rest
+        = pComponents path rest
 
         -- parse a library specification
         | isPrefixOf str "library"
         , (lsLibrary, lsMore) 
                 <- span (\(_, start', _) -> start' == 0 || start' > start) rest
-        = do    lib     <- pLibraryFields    lsLibrary
-                more    <- pComponents lsMore
+        = do    lib     <- pLibraryFields path lsLibrary
+                more    <- pComponents    path lsMore
                 return  $ lib : more
 
         | otherwise
-        = Left $ ErrorParse n
+        = Left $ ErrorParse path n
 
 
 -- | Parse the fields of a library specification.
-pLibraryFields :: Parser Component
-pLibraryFields str
- = do   fs                           <- pFields str
-        (sName,         fs_name)     <- takeField "name"          fs
-        (sVersion,      fs_version)  <- takeField "version"       fs_name
-        (sTetraModules, fs_modules)  <- takeField "tetra-modules" fs_version
+pLibraryFields :: FilePath -> Parser Component
+pLibraryFields path str
+ = do   fs                           <- pFields path str
+        (sName,         fs_name)     <- takeField path "name"          fs
+        (sVersion,      fs_version)  <- takeField path "version"       fs_name
+        (sTetraModules, fs_modules)  <- takeField path "tetra-modules" fs_version
 
         return  $ SpecLibrary 
-                { specLibraryName               = sName
-                , specLibraryVersion            = sVersion
-                , specLibraryTetraModules       = words $ sTetraModules
-                , specLibraryMeta               = fs_modules }
+                { specLibraryName         = sName
+                , specLibraryVersion      = sVersion
+                , specLibraryTetraModules = words $ sTetraModules
+                , specLibraryMeta         = fs_modules }
 
 
 -- | Take a named field from this list of fields.
-takeField :: String -> [(String, String)] 
+takeField :: FilePath
+          -> String -> [(String, String)] 
           -> Either Error (String, [(String, String)])
-takeField name fs
+takeField path name fs
  = case lookup name fs of
-        Nothing -> Left $ ErrorMissingField name
+        Nothing -> Left $ ErrorMissingField path name
         Just s  -> return (s, delete (name, s) fs)
 
 
 -- | Parse fields of a build specification.
-pFields  :: Parser [(String, String)]
-pFields []
+pFields  :: FilePath -> Parser [(String, String)]
+pFields _path []
         = return []
 
-pFields ((n, start, str) : rest)
+pFields path ((n, start, str) : rest)
         -- skip over blank lines
         | all (\c -> isSpace c || c == '\n') str
-        = pFields rest
+        = pFields path rest
         
         -- parse a single field.
         | (lsField, lsMore)      
@@ -129,11 +150,11 @@ pFields ((n, start, str) : rest)
                 $  str ++ concat [ s | (_, _, s) <- lsField]
 
         = do    let f   =  (chomp fieldName, chomp fieldValue)
-                more    <- pFields lsMore
+                more    <- pFields path lsMore
                 return  $ f : more
 
         | otherwise
-        = Left $ ErrorParse n
+        = Left $ ErrorParse path n
 
 
 ---------------------------------------------------------------------------------------------------

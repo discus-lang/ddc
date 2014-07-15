@@ -1,0 +1,9 @@
+ddc build 0.4.2
+
+executable
+ name:  factorial
+
+ tetra-modules:
+        Data.Numeric.Nat
+        Main
+        

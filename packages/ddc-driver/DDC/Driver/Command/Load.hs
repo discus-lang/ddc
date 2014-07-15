@@ -58,7 +58,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  | ".build"     <- takeExtension filePath
  = do   
         str     <- liftIO $ readFile filePath
-        case Spec.parseBuildSpec str of
+        case Spec.parseBuildSpec filePath str of
          Left err       -> throwError $ show err
          Right spec     -> liftIO $ putStrLn $ show spec
 
