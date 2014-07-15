@@ -89,7 +89,7 @@ buildModule config pathSpec _spec _component interfaces name
          $ do   putStrLn $ "  - compiling " ++ name
 
         cmdCompile config interfaces
-                (resolvePathOfModule pathSpec "dst" name)
+                (resolvePathOfModule pathSpec "ds" name)
 
 
 -- | Given the path of a .build spec, and a module name, yield the path where

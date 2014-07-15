@@ -29,7 +29,7 @@ cmdMake config filePath
         -- Decide what to do based on file extension.
         let make
                 -- Make a Source Tetra module.
-                | ext == ".dst"
+                | ext == ".ds"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageSourceTetraLoad config source []

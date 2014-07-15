@@ -71,7 +71,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
          Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
 
  -- Load a Disciple Source Tetra module.
- | elem (takeExtension filePath) [".ds", ".dst"]
+ | ".ds"        <- takeExtension filePath
  = case mStrSimpl of
         Nothing
          ->     cmdLoadSourceTetraFromFile config Tetra.bundle filePath

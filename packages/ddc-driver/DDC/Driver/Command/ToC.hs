@@ -33,7 +33,7 @@ cmdToSeaFromFile
 cmdToSeaFromFile config filePath
  
  -- Convert a Disciple Source Tetra module.
- | ".dst"         <- takeExtension filePath
+ | ".ds"          <- takeExtension filePath
  =      cmdToSeaSourceTetraFromFile config filePath
 
  -- Convert a module in some fragment of Disciple Core.

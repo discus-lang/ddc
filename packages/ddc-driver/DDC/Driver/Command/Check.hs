@@ -64,7 +64,7 @@ cmdCheckFromFile
 cmdCheckFromFile config filePath
  
  -- Check a Disciple Source Tetra module.
- | ".dst"       <- takeExtension filePath
+ | ".ds"       <- takeExtension filePath
  =      cmdCheckSourceTetraFromFile config filePath
 
  -- Check a module in some fragment of Disciple Core.

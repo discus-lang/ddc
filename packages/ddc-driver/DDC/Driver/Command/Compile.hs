@@ -50,7 +50,7 @@ cmdCompile config interfaces filePath
         -- Use the file extension to decide what compilation pipeline to use.
         let make
                 -- Compile a Source Tetra module.
-                | ext == ".dst"
+                | ext == ".ds"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageSourceTetraLoad config source interfaces
