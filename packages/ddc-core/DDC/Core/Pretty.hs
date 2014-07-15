@@ -95,8 +95,9 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          <+> docsImportsExports
          <>  docsLocalData
          <>  (case lts of
-                []      -> empty
-                _       -> text "with" <$$> (vcat $ map pprLts lts))
+                []       -> empty
+                [LRec[]] -> empty
+                _        -> text "with" <$$> (vcat $ map pprLts lts))
 
 
 -- Exports ----------------------------------------------------------------------------------------

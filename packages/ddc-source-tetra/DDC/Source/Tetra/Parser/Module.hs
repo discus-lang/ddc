@@ -51,13 +51,20 @@ pModule c
         tImports
          <- liftM concat $ P.many (pImportSpecs c)
 
-        pTok KWhere
-        pTok KBraceBra
+        -- top-level declarations.
+        tops    <- P.choice
+                [ do    
+                        pTok KWhere
+                        pTok KBraceBra
 
-        -- TOP;+
-        tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
+                        -- TOP;+
+                        tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
 
-        pTok KBraceKet
+                        pTok KBraceKet
+                        return tops
+
+                , do    return [] ]
+
 
         -- ISSUE #295: Check for duplicate exported names in module parser.
         --  The names are added to a unique map, so later ones with the same

@@ -1,6 +1,13 @@
 
-module Data.List
-import Data.Maybe
+module Data.List 
+
+export  { singleton;    replicate
+        ; enumFromTo
+        ; append
+        ; length
+        ; head;         tail;           last
+        ; reverse }
+
 where
 
 -- | Standard Cons-lists.

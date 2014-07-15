@@ -2,9 +2,8 @@
 module IO.Console 
 
 import foreign abstract type
- Console : Effect
+ Console  : Effect
 
 import foreign c value
  putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
 
-where
