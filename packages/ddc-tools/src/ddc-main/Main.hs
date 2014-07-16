@@ -104,7 +104,7 @@ run config
         -- Compile a module into an executable.
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdMake    dconfig filePath
+                runError $ cmdMake    dconfig [] filePath
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath
@@ -217,6 +217,7 @@ getDriverConfig config filePath
              , Driver.configBuilder               = builder
              , Driver.configPretty                = Driver.defaultConfigPretty
              , Driver.configSuppressHashImports   = False
+             , Driver.configModuleBaseDirectories = []
              , Driver.configOutputFile            = configOutputFile config
              , Driver.configOutputDir             = configOutputDir  config 
              , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config

@@ -132,27 +132,28 @@ getDriverConfigOfState state
  = do   builder <- getActiveBuilder state
         return 
          $ D.Config
-         { D.configLogBuild             = True
-         , D.configDump                 = Set.member Dump  (stateModes state)
-         , D.configInferTypes           = Set.member Synth (stateModes state)
-         , D.configViaBackend           = D.ViaLLVM
+         { D.configLogBuild               = True
+         , D.configDump                   = Set.member Dump  (stateModes state)
+         , D.configInferTypes             = Set.member Synth (stateModes state)
+         , D.configViaBackend             = D.ViaLLVM
 
          -- ISSUE #300: Allow the default heap size to be set when
          --   compiling the program.
          , D.configRuntime
                 = Runtime.Config
-                { Runtime.configHeapSize = 65536 }
+                { Runtime.configHeapSize  = 65536 }
 
-         , D.configOutputFile           = stateOutputFile state
-         , D.configOutputDir            = stateOutputDir  state
-         , D.configSimplLite            = stateSimplLite  state
-         , D.configSimplSalt            = stateSimplSalt  state
-         , D.configBuilder              = builder
-         , D.configPretty               = configPretty
-         , D.configSuppressHashImports  = not $ Set.member SaltPrelude (stateModes state) 
-         , D.configKeepLlvmFiles        = False
-         , D.configKeepSeaFiles         = False
-         , D.configKeepAsmFiles         = False 
+         , D.configModuleBaseDirectories  = []
+         , D.configOutputFile             = stateOutputFile state
+         , D.configOutputDir              = stateOutputDir  state
+         , D.configSimplLite              = stateSimplLite  state
+         , D.configSimplSalt              = stateSimplSalt  state
+         , D.configBuilder                = builder
+         , D.configPretty                 = configPretty
+         , D.configSuppressHashImports    = not $ Set.member SaltPrelude (stateModes state) 
+         , D.configKeepLlvmFiles          = False
+         , D.configKeepSeaFiles           = False
+         , D.configKeepAsmFiles           = False 
 
          , D.configTaintAvoidTypeChecks 
                 = Set.member TaintAvoidTypeChecks (stateModes state) }
@@ -161,12 +162,12 @@ getDriverConfigOfState state
         
         configPretty   
          = D.ConfigPretty
-         { D.configPrettyVarTypes               = Set.member PrettyVarTypes   modes
-         , D.configPrettyConTypes               = Set.member PrettyConTypes   modes
-         , D.configPrettyUseLetCase             = Set.member PrettyUseLetCase modes 
-         , D.configPrettySuppressImports        = Set.member SuppressImports  modes
-         , D.configPrettySuppressExports        = Set.member SuppressExports  modes
-         , D.configPrettySuppressLetTypes       = Set.member SuppressLetTypes modes }
+         { D.configPrettyVarTypes         = Set.member PrettyVarTypes   modes
+         , D.configPrettyConTypes         = Set.member PrettyConTypes   modes
+         , D.configPrettyUseLetCase       = Set.member PrettyUseLetCase modes 
+         , D.configPrettySuppressImports  = Set.member SuppressImports  modes
+         , D.configPrettySuppressExports  = Set.member SuppressExports  modes
+         , D.configPrettySuppressLetTypes = Set.member SuppressLetTypes modes }
 
 
 -- | Holds platform independent builder info.

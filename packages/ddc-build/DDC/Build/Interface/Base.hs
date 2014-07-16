@@ -18,7 +18,8 @@ import qualified DDC.Core.Salt          as Salt
 -- | Module interface.
 data Interface ta sa
         = Interface
-        { interfaceVersion      :: String
+        { interfaceFilePath     :: FilePath
+        , interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
         , interfaceTetraModule  :: Maybe (Module ta Tetra.Name)
         , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }

@@ -10,12 +10,6 @@ import foreign c value
 
 where
 
--- Define configurable syntax.
-add x y = add# [Nat#] x y       -- used for (+)
-sub x y = sub# [Nat#] x y       -- used for (-)
-
-
--------------------------------------------------------------------------------
 ack (m : Nat#) (n : Nat#) : Nat#
  = case m of
         0       -> n + 1

@@ -77,6 +77,7 @@ getDriverConfigOfState state
                 = Runtime.Config
                 { Runtime.configHeapSize = 65536 }
 
+         , D.configModuleBaseDirectories        = []
          , D.configOutputFile                   = Nothing
          , D.configOutputDir                    = Nothing
          , D.configSimplLite                    = S.Trans S.Id

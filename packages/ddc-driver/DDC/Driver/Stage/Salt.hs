@@ -152,10 +152,10 @@ stageCompileLLVM
         :: Config -> Source
         -> FilePath             -- ^ Path of original source file.
                                 --   Build products are placed into the same dir.
-        -> Bool                 -- ^ Should we link this into an executable
+        -> Maybe [FilePath]     -- ^ If True then link with these other .os into an executable.
         -> PipeLlvm
 
-stageCompileLLVM config _source filePath shouldLinkExe
+stageCompileLLVM config _source filePath mOtherExeObjs
  = let  -- Decide where to place the build products.
         outputDir      = fromMaybe (takeDirectory filePath) (configOutputDir config)
         outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
@@ -170,9 +170,8 @@ stageCompileLLVM config _source filePath shouldLinkExe
           , pipeFileLlvm          = llPath
           , pipeFileAsm           = sPath
           , pipeFileObject        = oPath
-          , pipeFileExe           = if shouldLinkExe 
-                                        then Just exePath 
-                                        else Nothing 
+          , pipeFileExe           = if isJust $ mOtherExeObjs then Just exePath else Nothing 
+          , pipeLinkOtherObjects  = concat $ maybeToList mOtherExeObjs
           , pipeKeepLlvmFiles     = configKeepLlvmFiles config
           , pipeKeepAsmFiles      = configKeepAsmFiles  config }
 

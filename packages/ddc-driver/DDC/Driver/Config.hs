@@ -49,6 +49,9 @@ data Config
           -- | Suppress the #import prelude in C modules
         , configSuppressHashImports     :: Bool 
 
+          -- | Base directories to look for modules sources during build.
+        , configModuleBaseDirectories   :: [FilePath]
+
           -- | Override output file
         , configOutputFile              :: Maybe FilePath
 

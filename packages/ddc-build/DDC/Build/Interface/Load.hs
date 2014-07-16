@@ -133,6 +133,7 @@ pInterface pathInterface ((n, str) : rest)
 
                 return  $ Interface
                         { interfaceVersion      = version
+                        , interfaceFilePath     = pathInterface
                         , interfaceModuleName   = modName
                         , interfaceTetraModule  = mTetra
                         , interfaceSaltModule   = mSalt }

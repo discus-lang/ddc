@@ -340,7 +340,7 @@ handleCmd1 state cmd source line
 
         CommandMake
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdMake config line
+                runError $ cmdMake config [] line
                 return state
 
 

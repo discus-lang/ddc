@@ -22,7 +22,8 @@ data PipeLlvm
         , pipeFileLlvm          :: FilePath
         , pipeFileAsm           :: FilePath
         , pipeFileObject        :: FilePath
-        , pipeFileExe           :: Maybe FilePath 
+        , pipeFileExe           :: Maybe FilePath
+        , pipeLinkOtherObjects  :: [FilePath]
         , pipeKeepLlvmFiles     :: Bool 
         , pipeKeepAsmFiles      :: Bool }
         deriving (Show)
@@ -43,7 +44,7 @@ pipeLlvm !mm !pp
             pipeSink (renderIndent $ ppr mm) sink
 
         PipeLlvmCompile 
-                !builder !llPath !sPath !oPath !mExePath
+                !builder !llPath !sPath !oPath !mExePath !osLinkOther
                 !keepLlvmFiles !keepAsmFiles
          -> {-# SCC "PipeLlvmCompile" #-}
             do  -- Write out the LLVM source file.
@@ -62,7 +63,7 @@ pipeLlvm !mm !pp
                    -> return ()
 
                   Just exePath
-                   -> do buildLdExe builder oPath exePath
+                   -> do buildLdExe builder (oPath : osLinkOther) exePath
                          return ())
 
                 -- Remove LLVM IR files if we weren't asked for them.

@@ -124,7 +124,7 @@ pipeSalt !mm !pp
                     (case mExePath of
                       Nothing -> return ()
                       Just exePath
-                       -> do buildLdExe builder oPath exePath
+                       -> do buildLdExe builder [oPath] exePath
                              return ())
 
                     -- Remove intermediate .c files if we weren't asked for them.

@@ -37,7 +37,7 @@ main
          ["--make",  filePath]
           -> do let state       = initState (InputInterfaceBatch filePath)
                 config          <- getDriverConfigOfState state
-                runError $ cmdMake config filePath
+                runError $ cmdMake config [] filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]

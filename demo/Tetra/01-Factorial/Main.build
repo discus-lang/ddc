@@ -8,4 +8,5 @@ executable
 
  tetra-other:
         Data.Numeric.Nat
+        IO.Console
         

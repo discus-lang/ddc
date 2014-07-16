@@ -90,7 +90,7 @@ cmdCompile config interfaces filePath
                     [ stageSaltOpt     config source
                     [ PipeCoreHacks    (Canned $ \m -> writeIORef refSalt (Just m) >> return m)
                     [ stageSaltToLLVM  config source 
-                    [ stageCompileLLVM config source filePath False ]]]]]
+                    [ stageCompileLLVM config source filePath Nothing ]]]]]
 
                 ViaC
                  -> [ PipeCoreReannotate (const ())
@@ -120,13 +120,13 @@ cmdCompile config interfaces filePath
                         , liftM C.moduleName modSalt ]
           -> do
                 -- write out the interface file.
+                let pathInterface   = replaceExtension filePath "di"
                 let int = Interface
                         { interfaceVersion      = Version.version
+                        , interfaceFilePath     = pathInterface
                         , interfaceModuleName   = mn
                         , interfaceTetraModule  = modTetra 
                         , interfaceSaltModule   = modSalt }
-
-                let pathInterface   = replaceExtension filePath "di"
 
                 liftIO  $ writeFile pathInterface 
                         $ P.renderIndent $ P.ppr int

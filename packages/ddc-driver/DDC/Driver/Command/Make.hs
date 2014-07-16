@@ -5,6 +5,7 @@ where
 import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
+import DDC.Build.Interface.Base
 import System.FilePath
 import System.Directory
 import Control.Monad.Trans.Error
@@ -14,9 +15,18 @@ import qualified DDC.Core.Pretty        as P
 
 
 -- | Make a source module into an executable.
-cmdMake :: Config -> FilePath -> ErrorT String IO ()
-cmdMake config filePath
+cmdMake :: Config               -- ^ Build driver config.
+        -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
+        -> FilePath             -- ^ Path to file to compile.
+        -> ErrorT String IO ()
+
+cmdMake config interfaces filePath
  = do
+        -- Paths of other object files to link with
+        let pathOtherObjs   
+                = map (\i -> replaceExtension (interfaceFilePath i) "o")
+                $ interfaces
+
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -32,7 +42,7 @@ cmdMake config filePath
                 | ext == ".ds"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSourceTetraLoad config source []
+                $ stageSourceTetraLoad config source interfaces
                 [ PipeCoreReannotate  (const ())
                 [ stageTetraToSalt     config source pipesSalt ]]
 
@@ -67,7 +77,7 @@ cmdMake config filePath
                  -> [ PipeCoreReannotate (const ())
                     [ stageSaltOpt      config source
                     [ stageSaltToLLVM   config source 
-                    [ stageCompileLLVM  config source filePath True ]]]]
+                    [ stageCompileLLVM  config source filePath (Just pathOtherObjs) ]]]]
 
                 ViaC
                  -> [ PipeCoreReannotate (const ())
