@@ -1,5 +1,6 @@
 module DDC.Core.Flow.Transform.Rates.Fail
         ( Fail (..)
+        , ConversionError (..)
         , LogFailures
         , warn, run)
 where
@@ -27,6 +28,7 @@ data ConversionError
 
         -- | Function contains letregion
         | FailLetRegionNotHandled
+        deriving (Show, Eq)
 
 
 -- | Why can't rates be inferred?

@@ -9,6 +9,7 @@ import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Transform.Rates.Constraints
 import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Graph
+import DDC.Core.Flow.Transform.Rates.SizeInference
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
@@ -478,5 +479,89 @@ schedule graph equivs [es]
 
 [ [ds, n]
 , [cs, es] ]
+
+-}
+
+{-
+-----------------------------------
+-- = Conversion from ExpF to CNF.
+--
+-- | Convert a given expression function to CNF.
+-- For this to succeed, the function must:
+--      - be in A-normal form
+--      - all bindings are named, not de Bruijn indices
+--      - names must be unique
+--      - no recursive bindings
+--      - no @letregion@s
+--
+-- If it succeeds, it should be true that
+-- >>> expOfCnf . right . cnfOfExp = id
+-- at least semantically, if not syntactically
+-- 
+cnfOfExp :: ExpF -> Either ConversionError (Program Name Name)
+cnfOfExp x
+ = do   -- Peel off the lambdas
+        let (lams, body)   = takeXLamFlags_safe fun
+        -- Assuming the body is already in a-normal form.
+            (lets, xx)     = splitXLets         body
+        -- TODO check that xx is a-normal?
+
+        -- Split into name and values and warn for recursive bindings
+        binds             <- takeLets           lets
+
+        let names = map fst binds
+        -- Make sure names are unique
+        when (length names /= length (nub names)) $
+          Left FailNamesNotUnique
+
+        -- For each value-level lambda binder, decide whether it's scalar or vector based on type
+        let inputs  = mconcat $ map getInput lams
+            getInput (False, BName n ty)
+             | isTypeArray ty
+             = ([],[n])
+             | otherwise
+             = ([n],[])
+            getInput (_,_) = ([],[])
+
+        -- For each binding, classify it as either array, scalar or external.
+        --
+        -- We must be careful about creating externals, though: if a binding is just a
+        -- worker function, we don't really need that as an external.
+        -- However, if we assume that all scalars will be fusion-preventing (they currently are),
+        -- then creating externals for these will not affect scheduling.
+        -- But what of worker functions referencing vectors? It becomes harder to outlaw if the
+        -- worker function is not inlined into the combinator binding.
+        -- Tuples are another potential problem here: looking at the tuple's type, it would not be
+        -- an array binding.
+
+        -- TODO
+        return (Program inputs [] ([],[]))
+
+-- | Check if type is an array type, so we know whether variables are scalar or array.
+-- This is perhaps a crude way to test, as what if the result of a fold is actually a vector?
+-- Well, let's not worry about that right now.
+isTypeArray :: TypeF -> Bool
+isTypeArray = isVectorType
+
+
+-- | Peel the lambdas off, or leave it alone if there are none
+takeXLamFlags_safe x
+ | Just (binds, body) <- takeXLamFlags x
+ = (binds, body)
+ | otherwise
+ = ([],    x)
+
+
+-- | Split into name and values and error for outlawed bindings
+takeLets :: [LetsF] -> Either ConversionError [(Name, ExpF)]
+takeLets lets
+ = mapM get lets
+ where
+  get (LLet (BName n _) x) = return (n,x)
+  get (LLet (BNone _)   _) = Left   FailNoAnonAllowed
+  get (LLet (BAnon _)   _) = Left   FailNoDeBruijnAllowed
+  get (LRec        _     ) = Left   FailRecursiveBindings
+  get (LPrivate _ _ _)     = Left   FailLetRegionNotHandled
+  get (LWithRegion _     ) = Left   FailLetRegionNotHandled
 
 -}
