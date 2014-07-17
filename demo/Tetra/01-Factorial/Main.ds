@@ -2,12 +2,14 @@ module Main
 export main
 where
 
+
 -- Compute the factorial of some number.
 fac (acc : Nat#) (n : Nat#) : Nat#
  = case n of
         0       -> acc
         1       -> acc
         _       -> fac (acc * n) (n - 1)
+
 
 main (_ : Unit) : S Console Unit
  = private r in

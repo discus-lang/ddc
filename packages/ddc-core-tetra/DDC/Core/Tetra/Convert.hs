@@ -72,13 +72,14 @@ convertM
 
 convertM pp runConfig defs kenv tenv mm
   = do  
-        -- Convert signatures of imported functions.
-        tsImports' <- mapM (convertImportM defs) $ moduleImportValues mm
-
         -- All the data type definitions visible in the module.
         let defs'  = unionDataDefs defs
                    $ fromListDataDefs 
                    $ moduleDataDefsLocal mm ++ (map fst $ moduleImportDataDefs mm)
+
+        -- Convert signatures of imported functions.
+        tsImports' <- mapM (convertImportM defs') 
+                   $ moduleImportValues mm
 
         -- Convert signatures of exported functions.
         tsExports' <- mapM (convertExportM defs') $ moduleExportValues mm
