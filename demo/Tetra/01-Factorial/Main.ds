@@ -1,15 +1,5 @@
 module Main 
 export main
-
--- We assign the Console effect to computations that affect stdin or stdout.
-import foreign abstract type
- Console  : Effect
-
--- Import basic functions from C land.
-import foreign c value
- putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
- showNat  : [r : Region]. Nat#           -> Ptr# r String#
- 
 where
 
 -- Compute the factorial of some number.

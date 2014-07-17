@@ -27,31 +27,13 @@ resolveNamesInModule kenv tenv deps mm
  = let
         sp      = support kenv tenv mm
 
-        tyCons  = Map.unions 
-                $ map exportedTyCons $ Map.elems deps
-
-        daVars  = Map.unions 
-                $ map exportedDaVars $ Map.elems deps
-
-        moreImportTypes
-         = catMaybes
-         $ [ case Map.lookup n tyCons of
-                Just (_modName, k) -> Just (n, ImportSourceAbstract k)
-                _                 -> Nothing
-           | UName n         <- Set.toList $ supportTyCon sp ]
-
-        moreImportValues
-         = catMaybes
-         $ [ case Map.lookup n daVars of
-                Just (modName, t) -> Just (n, ImportSourceModule modName n t)
-                _                 -> Nothing
-           | UName n         <- Set.toList $ supportDaVar sp ]
-
    in   mm { moduleImportTypes   
-                =  moduleImportTypes  mm ++ moreImportTypes
+                =  moduleImportTypes  mm 
+                ++ importsForTyCons deps (Set.toList $ supportTyCon sp)
 
            , moduleImportValues  
-                =  moduleImportValues mm ++ moreImportValues  
+                =  moduleImportValues mm 
+                ++ importsForDaVars deps (Set.toList $ supportDaVar sp)
 
            , moduleImportDataDefs
                 =  moduleImportDataDefs mm 
@@ -59,21 +41,106 @@ resolveNamesInModule kenv tenv deps mm
                                         , def <- moduleDataDefsLocal m ] }
 
 
-exportedTyCons
+---------------------------------------------------------------------------------------------------
+-- | Build import statements for the given list of unbound type constructors.
+--
+--   We look in the dependency modules for a matching export,
+--   and produce the correspondig import statement to use it.
+--
+importsForTyCons
         :: Ord n
-        => Module b n -> Map n (ModuleName, Kind n)
+        => Map ModuleName (Module b n)  -- ^ Modules which this one depends on.
+        -> [Bound n]                    -- ^ Unbound type constructors to find imports for.
+        -> [(n, ImportSource n)]
 
-exportedTyCons mm
+importsForTyCons deps tyCons
+ = let
+        -- Type constructors defined locally by each module and exported.
+        tyConsLocal
+         = Map.unions $ map exportedTyConsLocal $ Map.elems deps
+
+        -- Type constructors imported abstractly by each module and exported.
+        tyConsAbs
+         = Map.unions $ map importedTyConsAbs   $ Map.elems deps
+
+        findImport n
+         | Just (_, k)      <- Map.lookup n tyConsLocal
+         = Just (n, ImportSourceAbstract k)
+
+         | Just k           <- Map.lookup n tyConsAbs
+         = Just (n, ImportSourceAbstract k)
+
+         | otherwise
+         = Nothing
+
+   in   catMaybes [ findImport n | UName n <- tyCons ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Build import statements for the given list of unbound value variables.
+--
+--   We look in dependency modules for a matching export, 
+--   and produce the corresponding import statement to use it.
+--
+importsForDaVars 
+        :: Ord n
+        => Map ModuleName (Module b n)  -- ^ Modules which this one depends on.
+        -> [Bound n]                    -- ^ Unbound type constructors to find imports for.
+        -> [(n, ImportSource n)]
+
+importsForDaVars deps daVars
+ = let
+        -- Variables defined locally by each module and exported.
+        daVarsLocal     
+         = Map.unions $ map exportedDaVarsLocal $ Map.elems deps
+
+        -- Variables imported by each module via the C calling convention.
+        -- TODO: Don't auto-export all foreign imported values.
+        daVarsForeign
+         = Map.unions $ map importedDaVarsSea   $ Map.elems deps
+
+        findImport n
+         | Just (modName, t) <- Map.lookup n daVarsLocal
+         = Just (n, ImportSourceModule modName n t)
+
+         | Just (s, t)       <- Map.lookup n daVarsForeign
+         = Just (n, ImportSourceSea    s t)
+
+         | otherwise
+         = Nothing
+
+   in   catMaybes [ findImport n | UName n <- daVars ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Get the tycons that are locally defined, then exported by a module.
+exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
+exportedTyConsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t)) 
                 | (n, ExportSourceLocal _ t) <- moduleExportTypes mm ]
 
 
-exportedDaVars 
-        :: Ord n
-        => Module b n -> Map n (ModuleName, Type n)
-
-exportedDaVars mm
+-- | Get the data variable names that are locally defined, then exported by a module.
+exportedDaVarsLocal :: Ord n => Module b n -> Map n (ModuleName, Type n)
+exportedDaVarsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t)) 
                 | (n, ExportSourceLocal _ t) <- moduleExportValues mm ]
+
+
+-- | Get the type constructors that are imported abstractly by a module.
+importedTyConsAbs  :: Ord n => Module b n -> Map n (Type n)
+importedTyConsAbs mm
+        = Map.fromList
+        $ [ (n, k)
+                | (n, ImportSourceAbstract k)  <- moduleImportTypes mm ]
+
+
+-- | Get the data variables that are imported from C land by a module.
+importedDaVarsSea  :: Ord n => Module b n -> Map n (String, Type n)
+importedDaVarsSea mm
+        = Map.fromList
+        $ [ (n, (s, t))
+                | (n, ImportSourceSea s t)     <- moduleImportValues mm ]
+

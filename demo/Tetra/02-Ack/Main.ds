@@ -1,13 +1,5 @@
 module Main 
 export main
-
-import foreign abstract type
- Console  : Effect
-
-import foreign c value
- putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
- showNat  : [r : Region]. Nat#           -> Ptr# r String#
-
 where
 
 ack (m : Nat#) (n : Nat#) : Nat#

@@ -6,3 +6,4 @@ import foreign abstract type
 
 import foreign c value
  putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
+ showNat  : [r : Region]. Nat#           -> Ptr# r String#
