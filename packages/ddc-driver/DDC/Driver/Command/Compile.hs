@@ -45,9 +45,17 @@ cmdCompileRecursive
         -> FilePath                             -- ^ Path to file to compile
         -> ErrorT String IO [InterfaceAA]       -- ^ All loaded interfaces files.
 
-cmdCompileRecursive config buildExe interfaces0 filePath
- | takeExtension filePath == ".ds"
- = do
+cmdCompileRecursive config buildExe0 interfaces0 filePath0
+ | takeExtension filePath0 == ".ds"
+ = loop buildExe0 interfaces0 filePath0 []
+
+ | otherwise
+ = cmdCompile config buildExe0 interfaces0 filePath0
+
+ where 
+  loop  buildExe interfaces filePath 
+        modNamesPath
+   = do
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -62,10 +70,10 @@ cmdCompileRecursive config buildExe interfaces0 filePath
 
         -- Recursively compile modules until we have all the interfaces required
         -- for the current one.
-        let chase interfaces = do
+        let chase intsHave = do
                 -- Names of all the modules that we have interfaces for.
                 let modsNamesHave   
-                                = map interfaceModuleName interfaces
+                        = map interfaceModuleName intsHave
 
                 -- Names of modules that we are missing interfaces for.
                 let missing     = filter (\m -> not $ elem m modsNamesHave) 
@@ -73,9 +81,9 @@ cmdCompileRecursive config buildExe interfaces0 filePath
 
                 case missing of
                  -- If there are no missing interfaces then we're good to go.
-                 []     -> return interfaces
+                 []     -> return intsHave
 
-                 -- Otherwise compile one of the missing ones and try again.
+                 -- Otherwise compile the first of the missing modules and try again.
                  m : _  -> do
 
                         -- Automatically look for modules in the base library.
@@ -86,21 +94,24 @@ cmdCompileRecursive config buildExe interfaces0 filePath
 
                         mfilePath   <- Locate.locateModuleFromPaths baseDirs m ".ds"
 
-                        -- TODO: check for import loops.
-                        interfaces' <- cmdCompileRecursive config False interfaces mfilePath
+                        -- Check that we haven't tried to compile this module before
+                        -- on a recursive path. This detects module import loops.
+                        when (elem m modNamesPath)
+                         $ throwError $ unlines
+                         $  [ "! Cannot build recursive modules:" ]
+                         ++ [ "    " ++ (P.renderIndent $ P.ppr mm) | mm <- modNamesPath ]
 
+                        -- Compile the first of the dependencies.
+                        interfaces' <- loop False intsHave mfilePath (modNamesPath ++ [m])
+
+                        -- See if we've got them all.
                         chase interfaces'
 
-        interfaces'     <- chase interfaces0
+        interfaces'     <- chase interfaces
 
         -- At this point we should have all the interfaces needed
         -- for the current module.
         cmdCompile config buildExe interfaces' filePath
-
-
- | otherwise
- = cmdCompile config buildExe interfaces0 filePath
-
 
 
 ---------------------------------------------------------------------------------------------------
