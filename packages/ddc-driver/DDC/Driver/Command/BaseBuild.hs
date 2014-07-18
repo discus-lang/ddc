@@ -46,13 +46,13 @@ cmdBaseBuild config
         -- Build all the .dcl files.
         let srcLiteFiles = map (buildBaseSrcDir builder </>) (baseLiteFiles builder)
         let objLiteFiles = map (flip replaceExtension "o")   srcLiteFiles
-        mapM_ (cmdCompile config []) srcLiteFiles
+        mapM_ (cmdCompile config False []) srcLiteFiles
 
         -- Build all the .dcs files.
         let config'      = config { configInferTypes = True }
         let srcSaltFiles = map (buildBaseSrcDir builder </>) (baseSaltFiles builder)
         let objSaltFiles = map (flip replaceExtension "o")   srcSaltFiles
-        mapM_ (cmdCompile config' []) srcSaltFiles
+        mapM_ (cmdCompile config' False []) srcSaltFiles
 
         -- Build all the .c files.
         let srcSeaFiles  = map (buildBaseSrcDir builder </>) (baseSeaFiles builder)

@@ -17,7 +17,6 @@ import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Trans
 import DDC.Driver.Command.Compile
-import DDC.Driver.Command.Make
 
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
@@ -335,12 +334,12 @@ handleCmd1 state cmd source line
         -- Make and Compile ---------------------
         CommandCompile
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdCompile config [] line
+                runError $ cmdCompile config False [] line
                 return state
 
         CommandMake
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdMake config [] line
+                runError $ cmdCompile config True [] line
                 return state
 
 

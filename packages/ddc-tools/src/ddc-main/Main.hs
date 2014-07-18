@@ -11,7 +11,6 @@ import DDC.Driver.Command.Parse
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
-import DDC.Driver.Command.Make
 import DDC.Driver.Command.Build
 import DDC.Driver.Command.BaseBuild
 
@@ -99,12 +98,12 @@ run config
         -- Compile a module to object code.
         ModeCompile filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompileRecursive dconfig [] filePath
+                runError $ cmdCompileRecursive dconfig False [] filePath
 
         -- Compile a module into an executable.
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdMake    dconfig [] filePath
+                runError $ cmdCompileRecursive dconfig True  [] filePath
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath

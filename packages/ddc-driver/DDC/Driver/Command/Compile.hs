@@ -47,11 +47,12 @@ import qualified DDC.Version                    as Version
 --
 cmdCompileRecursive
         :: Config                               -- ^ Build driver config.
+        -> Bool                                 -- ^ Build an exectable.
         -> [InterfaceAA]                        -- ^ Currently loaded interfaces.
         -> FilePath                             -- ^ Path to file to compile
         -> ErrorT String IO [InterfaceAA]       -- ^ All loaded interfaces files.
 
-cmdCompileRecursive config interfaces0 filePath
+cmdCompileRecursive config buildExe interfaces0 filePath
  | takeExtension filePath == ".ds"
  = do
         -- Check that the source file exists.
@@ -92,11 +93,11 @@ cmdCompileRecursive config interfaces0 filePath
 
                         mfilePath   <- Locate.locateModuleFromPaths 
                                         baseDirs
-                                        (P.renderIndent $ P.ppr m)              -- uncrapify
+                                        (P.renderIndent $ P.ppr m)      -- TODO: uncrapify
                                         ".ds"
 
                         -- TODO: check for import loops.
-                        interfaces' <- cmdCompileRecursive config interfaces mfilePath
+                        interfaces' <- cmdCompileRecursive config False interfaces mfilePath
 
                         chase interfaces'
 
@@ -104,11 +105,11 @@ cmdCompileRecursive config interfaces0 filePath
 
         -- At this point we should have all the interfaces needed
         -- for the current module.
-        cmdCompile config interfaces' filePath
+        cmdCompile config buildExe interfaces' filePath
 
 
  | otherwise
- = cmdCompile config interfaces0 filePath
+ = cmdCompile config buildExe interfaces0 filePath
 
 
 
@@ -122,13 +123,16 @@ cmdCompileRecursive config interfaces0 filePath
 --
 cmdCompile
         :: Config               -- ^ Build driver config.
+        -> Bool                 -- ^ Build an executable.
         -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
         -> FilePath             -- ^ Path to file to compile
         -> ErrorT String IO [InterfaceAA]
 
-cmdCompile config interfaces filePath
+cmdCompile config buildExe interfaces filePath
  = do   
-        liftIO $ putStrLn $ "* Compiling " ++ filePath
+        if buildExe 
+         then liftIO $ putStrLn $ "* Compiling " ++ filePath ++ " as executable"
+         else liftIO $ putStrLn $ "* Compiling " ++ filePath
 
         let ext         = takeExtension filePath
         let source      = SourceFile filePath
@@ -140,8 +144,18 @@ cmdCompile config interfaces filePath
 
         src             <- liftIO $ readFile filePath
 
-        -- During complation of this module the intermediate code will be stashed in these refs.
-        -- We will use the intermediate code to build the interface for this module.
+        -- If we're building an executable, then get paths to the other object
+        -- files that we need to link with.
+        let otherObjs
+                | buildExe
+                = Just $ map (\i -> replaceExtension (interfaceFilePath i) "o") interfaces
+
+                | otherwise
+                = Nothing
+
+        -- During complation of this module the intermediate code will be
+        -- stashed in these refs. We will use the intermediate code to build
+        -- the interface for this module.
         refTetra        <- liftIO $ newIORef Nothing
         refSalt         <- liftIO $ newIORef Nothing
 
@@ -188,7 +202,7 @@ cmdCompile config interfaces filePath
                     [ stageSaltOpt     config source
                     [ PipeCoreHacks    (Canned $ \m -> writeIORef refSalt (Just m) >> return m)
                     [ stageSaltToLLVM  config source 
-                    [ stageCompileLLVM config source filePath Nothing ]]]]]
+                    [ stageCompileLLVM config source filePath otherObjs ]]]]]
 
                 ViaC
                  -> [ PipeCoreReannotate (const ())
@@ -263,7 +277,7 @@ tasteNeeded filePath src
 
                 case BP.runTokenParser C.describeTok filePath
                         (SE.pModule True context) tokens of
-                 Left  _err -> error "nope" -- return [ErrorLoad err]
+                 Left  _err -> error "nope" -- return [ErrorLoad err]           -- TODO: real error
 
                  Right mm   -> return $ SE.moduleImportModules mm
 

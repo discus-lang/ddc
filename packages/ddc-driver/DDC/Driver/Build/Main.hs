@@ -5,7 +5,6 @@ module DDC.Driver.Build.Main
         , buildModule)
 where
 import DDC.Driver.Command.Compile
-import DDC.Driver.Command.Make
 import DDC.Driver.Build.Locate
 import DDC.Driver.Config
 import DDC.Build.Spec
@@ -93,7 +92,7 @@ buildExecutable
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
         -> String               -- ^ Name  of main module.
         -> [String]             -- ^ Names of dependency modules
-        -> ErrorT String IO ()
+        -> ErrorT String IO [InterfaceAA]
 
 buildExecutable config interfaces0 mMain msOther0
  = go interfaces0 msOther0
@@ -103,11 +102,7 @@ buildExecutable config interfaces0 mMain msOther0
                 let dirs        = configModuleBaseDirectories config
                 path            <- locateModuleFromPaths dirs mMain "ds"
 
-                when (configLogBuild config)
-                 $ liftIO 
-                 $ do   putStrLn $ "  - compiling " ++ mMain
-
-                cmdMake config interfaces path
+                cmdCompile config True interfaces path
 
         go interfaces (m : more)
          = do   
@@ -127,13 +122,9 @@ buildModule
 
 buildModule config interfaces name
  = do   
-        when (configLogBuild config)
-         $ liftIO 
-         $ do   putStrLn $ "  - compiling " ++ name
-
         let dirs = configModuleBaseDirectories config
         path     <- locateModuleFromPaths dirs name "ds"
 
-        cmdCompile config interfaces path
+        cmdCompile config False interfaces path
 
 
