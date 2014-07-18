@@ -8,6 +8,7 @@ export  { singleton;    replicate
         ; head;         tail;           last
         ; reverse }
 
+import  Data.Numeric.Nat
 where
 
 -- | Standard Cons-lists.

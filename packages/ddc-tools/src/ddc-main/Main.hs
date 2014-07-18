@@ -99,7 +99,7 @@ run config
         -- Compile a module to object code.
         ModeCompile filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompile dconfig [] filePath
+                runError $ cmdCompileRecursive dconfig [] filePath
 
         -- Compile a module into an executable.
         ModeMake filePath

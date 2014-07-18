@@ -28,7 +28,7 @@ cmdDesugar _state source str
                         , contextFunctionalClosures     = False }
 
            in   case BP.runTokenParser C.describeTok (nameOfSource source)
-                        (pModule context) tokens of
+                        (pModule False context) tokens of
                  Left err        -> error $ show err
                  Right mm        -> goDesugar mm
 

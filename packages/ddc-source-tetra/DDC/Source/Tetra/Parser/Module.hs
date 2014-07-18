@@ -27,13 +27,16 @@ import DDC.Core.Parser
         , pTok,         pTokSP)
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
 pModule :: (Ord n, Pretty n) 
-        => Context
+        => Bool         -- ^ Just parse the module header, not including the top-level bindings.
+        -> Context      -- ^ Parser context.
         -> Parser n (Module P.SourcePos n)
-pModule c
- = do   _sp     <- pTokSP KModule
+
+pModule justHeader c
+ = do   
+        _sp     <- pTokSP KModule
         name    <- pModuleName <?> "a module name"
 
         -- export { VAR;+ }
@@ -52,7 +55,10 @@ pModule c
          <- liftM concat $ P.many (pImportSpecs c)
 
         -- top-level declarations.
-        tops    <- P.choice
+        tops    
+         <- if justHeader 
+             then return []
+             else P.choice
                 [ do    
                         pTok KWhere
                         pTok KBraceBra
@@ -91,7 +97,7 @@ pTypeSig c
         return  (var, t)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
 data ImportSpec n
         = ImportModule  ModuleName
@@ -173,7 +179,7 @@ pImportValue c src
         = P.unexpected "import mode for foreign value"
 
 
--- Top Level -----------------------------------------------------------------
+-- Top Level --------------------------------------------------------------------------------------
 pTop    :: Ord n 
         => Context -> Parser n (Top P.SourcePos n)
 pTop c
@@ -188,7 +194,7 @@ pTop c
  ]
 
 
--- Data -----------------------------------------------------------------------
+-- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
 pData   :: Ord n
         => Context -> Parser n (Top P.SourcePos n)

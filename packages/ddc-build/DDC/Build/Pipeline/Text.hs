@@ -109,7 +109,7 @@ pipeText !srcName !srcLine !str !pp
                                 , C.contextFunctionalClosures     = False }
 
                         case BP.runTokenParser C.describeTok srcName
-                                (SE.pModule context) tokens of
+                                (SE.pModule False context) tokens of
                          Left err -> return [ErrorLoad err]
                          Right mm -> goDesugar mm
 

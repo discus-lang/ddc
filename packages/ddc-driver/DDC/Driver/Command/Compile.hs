@@ -5,8 +5,6 @@ module DDC.Driver.Command.Compile
 where
 import DDC.Driver.Stage
 import DDC.Interface.Source
-import DDC.Build.Pipeline
-import DDC.Build.Interface.Base
 import DDC.Core.Module
 import DDC.Data.Canned
 import System.FilePath
@@ -15,29 +13,28 @@ import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import Data.IORef
-import qualified DDC.Core.Pretty        as P
-import qualified DDC.Core.Module        as C
-import qualified DDC.Version            as Version
+
+import DDC.Build.Pipeline
+import DDC.Build.Interface.Base
+import qualified DDC.Build.Builder              as Builder
+
+import qualified DDC.Driver.Build.Locate        as Locate
+
+import qualified DDC.Source.Tetra.Module        as SE
+import qualified DDC.Source.Tetra.Lexer         as SE
+import qualified DDC.Source.Tetra.Parser        as SE
+
+import qualified DDC.Core.Pretty                as P
+import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Parser                as C
+import qualified DDC.Core.Lexer                 as C
+
+import qualified DDC.Base.Parser                as BP
+
+import qualified DDC.Version                    as Version
 
 
--- | Compile a source module into a @.o@ file.
---
---   This produces an @.o@ file next to the source file, and may also produce
---   a @.di@ interface, depending on what sort of source file we're compiling.
--- 
---   Returns any interface files loaded or constructed during compilation,
---   so we don't have to re-load them during multi-module builds.
---
-cmdCompile 
-        :: Config               -- ^ Build driver config.
-        -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
-        -> FilePath             -- ^ Path to file to compile.
-        -> ErrorT String IO [InterfaceAA]
-
-cmdCompile config interfaces filePath 
- = cmdCompileRecursive config interfaces filePath Nothing
-
-
+---------------------------------------------------------------------------------------------------
 -- | Recursively compile source modules into @.o@ files.
 --
 --   Like `cmdCompile`, but if the interface for a needed module is not already 
@@ -45,26 +42,106 @@ cmdCompile config interfaces filePath
 --   make process can be constructed by looking up the file the corresponds
 --   to the module, and calling cmdCompileRecursive again -- tying the knot.
 --
+--   Returns the interfaces that were provided, plus any that were constructed
+--   or loaded when compiling this module.
+--
 cmdCompileRecursive
+        :: Config                               -- ^ Build driver config.
+        -> [InterfaceAA]                        -- ^ Currently loaded interfaces.
+        -> FilePath                             -- ^ Path to file to compile
+        -> ErrorT String IO [InterfaceAA]       -- ^ All loaded interfaces files.
+
+cmdCompileRecursive config interfaces0 filePath
+ | takeExtension filePath == ".ds"
+ = do
+        -- Check that the source file exists.
+        exists  <- liftIO $ doesFileExist filePath
+        when (not exists)
+         $ throwError $ "No such file " ++ show filePath
+
+        -- Read in the source file.
+        src             <- liftIO $ readFile filePath
+
+        -- Parse just the header of the module to determine what other modules
+        -- it imports.
+        modNamesNeeded  <- tasteNeeded filePath src
+
+        -- Recursively compile modules until we have all the interfaces required
+        -- for the current one.
+        let chase interfaces = do
+                -- Names of all the modules that we have interfaces for.
+                let modsNamesHave   
+                                = map interfaceModuleName interfaces
+
+                -- Names of modules that we are missing interfaces for.
+                let missing     = filter (\m -> not $ elem m modsNamesHave) 
+                                $ modNamesNeeded
+
+                case missing of
+                 -- If there are no missing interfaces then we're good to go.
+                 []     -> return interfaces
+
+                 -- Otherwise compile one of the missing ones and try again.
+                 m : _  -> do
+
+                        -- Automatically look for modules in the base library.
+                        let baseDirs 
+                                =  configModuleBaseDirectories config
+                                ++ [Builder.buildBaseSrcDir (configBuilder config)
+                                        </> "tetra" </> "base"]
+
+                        mfilePath   <- Locate.locateModuleFromPaths 
+                                        baseDirs
+                                        (P.renderIndent $ P.ppr m)              -- uncrapify
+                                        ".ds"
+
+                        -- TODO: check for import loops.
+                        interfaces' <- cmdCompileRecursive config interfaces mfilePath
+
+                        chase interfaces'
+
+        interfaces'     <- chase interfaces0
+
+        -- At this point we should have all the interfaces needed
+        -- for the current module.
+        cmdCompile config interfaces' filePath
+
+
+ | otherwise
+ = cmdCompile config interfaces0 filePath
+
+
+
+---------------------------------------------------------------------------------------------------
+-- | Compile a source module into a @.o@ file.
+--
+--   This produces an @.o@ file next to the source file, and may also produce
+--   a @.di@ interface, depending on what sort of source file we're compiling.
+-- 
+--   Returns the same interfaces files provides, plus the new one for this module.
+--
+cmdCompile
         :: Config               -- ^ Build driver config.
         -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
         -> FilePath             -- ^ Path to file to compile
-        -> Maybe (ModuleName -> ErrorT String IO [InterfaceAA])
-                                -- ^ Function to load/compile module dependencies.
         -> ErrorT String IO [InterfaceAA]
 
-cmdCompileRecursive config interfaces filePath _mMakeDep
+cmdCompile config interfaces filePath
  = do   
+        liftIO $ putStrLn $ "* Compiling " ++ filePath
+
+        let ext         = takeExtension filePath
+        let source      = SourceFile filePath
+
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
          $ throwError $ "No such file " ++ show filePath
 
         src             <- liftIO $ readFile filePath
-        let ext         = takeExtension filePath
-        let source      = SourceFile filePath
 
-        -- During complation, intermediate code will be stashed in these refs.
+        -- During complation of this module the intermediate code will be stashed in these refs.
+        -- We will use the intermediate code to build the interface for this module.
         refTetra        <- liftIO $ newIORef Nothing
         refSalt         <- liftIO $ newIORef Nothing
 
@@ -121,11 +198,14 @@ cmdCompileRecursive config interfaces filePath _mMakeDep
         -- Run the compilation pipeline.
         errs <- make
 
+
         -- Read back intermediate code from our refs.
         --   This will be written out as part of the interface file for this module.
         modTetra  <- liftIO $ readIORef refTetra
         modSalt   <- liftIO $ readIORef refSalt
 
+
+        -- Handle errors ------------------------
         case errs of
          -- There was some error during compilation.
          es@(_:_)     
@@ -152,10 +232,41 @@ cmdCompileRecursive config interfaces filePath _mMakeDep
                 liftIO  $ writeFile pathInterface 
                         $ P.renderIndent $ P.ppr int
 
-                return [int]
+                return (interfaces ++ [int])
 
           -- Compilation was successful,
           --  but we didn't get enough build products to produce an interface file.
           | otherwise
           -> return []
+
+
+---------------------------------------------------------------------------------------------------
+-- Taste the header of the module to see what other modules it depends on.
+--  Only Source modules can import other modules.
+--  For core modules, all the required information is listed explicitly 
+--  in the module itself.
+tasteNeeded
+        :: FilePath             -- ^ Path of module.
+        -> String               -- ^ Module source.
+        -> ErrorT String IO [ModuleName]
+
+tasteNeeded filePath src 
+        | takeExtension filePath == ".ds"
+        = do    let tokens      = SE.lexModuleString filePath 1 src
+
+                let context 
+                        = C.Context
+                        { C.contextTrackedEffects         = True
+                        , C.contextTrackedClosures        = True
+                        , C.contextFunctionalEffects      = False
+                        , C.contextFunctionalClosures     = False }
+
+                case BP.runTokenParser C.describeTok filePath
+                        (SE.pModule True context) tokens of
+                 Left  _err -> error "nope" -- return [ErrorLoad err]
+
+                 Right mm   -> return $ SE.moduleImportModules mm
+
+        | otherwise
+        = return []
 
