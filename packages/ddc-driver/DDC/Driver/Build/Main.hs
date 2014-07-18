@@ -17,7 +17,6 @@ import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Tetra         as Tetra
 import qualified DDC.Data.SourcePos     as BP
 
-
 -- | Annotated interface type.
 type InterfaceAA
         = Interface (C.AnTEC BP.SourcePos Tetra.Name) ()
@@ -45,7 +44,7 @@ buildComponent
 buildComponent config component@SpecLibrary{}
  = do
         when (configLogBuild config)
-         $ liftIO $ putStrLn $ "* Building " ++ specLibraryName component
+         $ liftIO $ putStrLn $ "* Building library " ++ specLibraryName component
 
         buildLibrary config []
          $ specLibraryTetraModules component
@@ -55,7 +54,7 @@ buildComponent config component@SpecLibrary{}
 buildComponent config component@SpecExecutable{}
  = do   
         when (configLogBuild config)
-         $ liftIO $ putStrLn $ "* Building " ++ specExecutableName component
+         $ liftIO $ putStrLn $ "* Building executable " ++ specExecutableName component
 
         buildExecutable config [] 
                 (specExecutableTetraMain  component)
@@ -79,10 +78,7 @@ buildLibrary config interfaces0 ms0
          = return ()
 
         go interfaces (m : more)
-         = do   
-                moreInterfaces  <- buildModule config interfaces m
-
-                let interfaces' = interfaces ++ moreInterfaces
+         = do   interfaces'     <- buildModule config interfaces m
                 go  interfaces' more
 
 
@@ -102,14 +98,10 @@ buildExecutable config interfaces0 mMain msOther0
          = do   
                 let dirs        = configModuleBaseDirectories config
                 path            <- locateModuleFromPaths dirs mMain "ds"
-
                 cmdCompile config True interfaces path
 
         go interfaces (m : more)
-         = do   
-                moreInterfaces  <- buildModule config interfaces m
-
-                let interfaces' =  interfaces ++ moreInterfaces
+         = do   interfaces'     <- buildModule config interfaces m
                 go  interfaces' more
 
 

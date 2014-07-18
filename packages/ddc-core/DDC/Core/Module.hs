@@ -219,7 +219,7 @@ readModuleName str
  where
         go s
          | elem '.' s
-         , (n, '.' : rest)      <- span (/= '.') str
+         , (n, '.' : rest)      <- span (/= '.') s
          = n : go rest
 
          | otherwise
