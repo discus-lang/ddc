@@ -10,6 +10,8 @@ import Control.Monad
 import Data.List
 import Data.Char
 import Data.Maybe
+import qualified DDC.Core.Module        as C
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Problems that can arise when parsing a build spec file.
@@ -124,10 +126,15 @@ pLibraryFields path str
         (sVersion,      fs_version) <- takeField path "version"          fs_name
         (sTetraModules, fs_modules) <- takeField path "tetra-modules"    fs_version
 
+        let Just msTetra
+                = sequence
+                $ map C.readModuleName
+                $ words $ sTetraModules
+
         return  $ SpecLibrary 
                 { specLibraryName          = sName
                 , specLibraryVersion       = sVersion
-                , specLibraryTetraModules  = words $ sTetraModules
+                , specLibraryTetraModules  = msTetra
                 , specLibraryMeta          = fs_modules }
 
 
@@ -140,10 +147,17 @@ pExecutableFields path str
         (sTetraMain,      fs_main)  <- takeField      path "tetra-main"  fs_name
         let (sTetraOther, fs_other) =  takeFieldMaybe path "tetra-other" fs_main
 
+        let Just mTetraMain
+                = C.readModuleName sTetraMain
+
+        let Just msTetra
+                = sequence $ map C.readModuleName
+                $ concat   $ maybeToList $ liftM words sTetraOther 
+
         return  $ SpecExecutable
                 { specExecutableName       = sName
-                , specExecutableTetraMain  = sTetraMain
-                , specExecutableTetraOther = concat $ maybeToList $ liftM words sTetraOther 
+                , specExecutableTetraMain  = mTetraMain
+                , specExecutableTetraOther = msTetra
                 , specExecutableMeta       = fs_other }
 
 

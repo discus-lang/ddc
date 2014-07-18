@@ -2,6 +2,8 @@
 module DDC.Driver.Build.Locate
         (locateModuleFromPaths)
 where
+import DDC.Core.Module
+import qualified DDC.Core.Pretty        as P
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
@@ -16,7 +18,7 @@ import qualified System.Directory       as Directory
 --
 locateModuleFromPaths
         :: [FilePath]           -- ^ Base paths.
-        -> String               -- ^ Module name.
+        -> ModuleName           -- ^ Module name.
         -> String               -- ^ Source file extension
         -> ErrorT String IO FilePath
 
@@ -28,13 +30,17 @@ locateModuleFromPaths pathsBase name ext
 
         case mPaths of
          []        -> throwError $ unlines 
-                   $  [ "Cannot locate source for module '" ++ name  ++ "' from base directories:" ]
+                   $  [ "Cannot locate source for module '" 
+                                ++ (P.renderIndent $ P.ppr name)  
+                                ++ "' from base directories:" ]
                    ++ ["    " ++ dir | dir <- pathsBase]
 
          [path]    -> return path
 
          paths     -> throwError $ unlines
-                   $  [ "Source for module '" ++ name ++ "' found at multiple paths:" ]
+                   $  [ "Source for module '" 
+                                ++ (P.renderIndent $ P.ppr name )
+                                ++ "' found at multiple paths:" ]
                    ++ ["    " ++ dir | dir <- paths]
 
 
@@ -42,21 +48,18 @@ locateModuleFromPaths pathsBase name ext
 --   the source of the module should be.
 locateModuleFromPath 
         :: FilePath             -- ^ Base path.
-        -> String               -- ^ Module name.
+        -> ModuleName           -- ^ Module name.
         -> String               -- ^ Source file extension.
         -> IO (Maybe FilePath)
 
-locateModuleFromPath pathBase name ext
- = let  go str 
-         | elem '.' str
-         , (n, '.' : rest)      <- span (/= '.') str
-         = n   </> go rest
-
-         | otherwise
-         = str <.> ext
+locateModuleFromPath pathBase (ModuleName parts) ext
+ = let  
+        go []           = ext
+        go [p]          = p <.> ext
+        go (p : ps)     = p </> go ps
 
    in do
-        let pathFile    = pathBase </> go name
+        let pathFile    = pathBase </> go parts
         exists          <- Directory.doesFileExist pathFile
         if exists 
          then return $ Just pathFile

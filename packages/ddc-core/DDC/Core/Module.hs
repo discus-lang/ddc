@@ -15,16 +15,19 @@ module DDC.Core.Module
 	, modulesExportValues
 
          -- * Module Names
-        , QualName      (..)
         , ModuleName    (..)
+        , readModuleName
         , isMainModuleName
 
-        -- * Export Sources
+         -- * Qualified names.
+        , QualName      (..)
+
+         -- * Export Sources
         , ExportSource  (..)
         , takeTypeOfExportSource
         , mapTypeOfExportSource
 
-        -- * Import Sources
+         -- * Import Sources
         , ImportSource  (..)
         , typeOfImportSource
         , mapTypeOfImportSource)
@@ -206,8 +209,32 @@ data ModuleName
 instance NFData ModuleName where
  rnf (ModuleName ss)
         = rnf ss
- 
 
+
+-- | Read a string like 'M1.M2.M3' as a module name.
+readModuleName :: String -> Maybe ModuleName
+readModuleName []       = Nothing
+readModuleName str
+ = Just $ ModuleName $ go str
+ where
+        go s
+         | elem '.' s
+         , (n, '.' : rest)      <- span (/= '.') str
+         = n : go rest
+
+         | otherwise
+         = [s]
+
+
+-- | Check whether this is the name of the \"Main\" module.
+isMainModuleName :: ModuleName -> Bool
+isMainModuleName mn
+ = case mn of
+        ModuleName ["Main"]     -> True
+        _                       -> False
+
+
+-- QualName ---------------------------------------------------------------------------------------
 -- | A fully qualified name, 
 --   including the name of the module it is from.
 data QualName n
@@ -217,14 +244,6 @@ data QualName n
 instance NFData n => NFData (QualName n) where
  rnf (QualName mn n)
         = rnf mn `seq` rnf n
-
-
--- | Check whether this is the name of the \"Main\" module.
-isMainModuleName :: ModuleName -> Bool
-isMainModuleName mn
- = case mn of
-        ModuleName ["Main"]     -> True
-        _                       -> False
 
 
 -- ExportSource -----------------------------------------------------------------------------------

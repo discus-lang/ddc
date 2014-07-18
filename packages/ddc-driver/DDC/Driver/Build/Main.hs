@@ -13,6 +13,7 @@ import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Core.Check         as C
+import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Tetra         as Tetra
 import qualified DDC.Data.SourcePos     as BP
 
@@ -68,7 +69,7 @@ buildComponent config component@SpecExecutable{}
 buildLibrary 
         :: Config               -- ^ Build config
         -> [InterfaceAA]        -- ^ Interfaces that we've already loaded.
-        -> [String]             -- ^ Names of modules still to build
+        -> [C.ModuleName]       -- ^ Names of modules still to build
         -> ErrorT String IO ()
 
 buildLibrary config interfaces0 ms0
@@ -90,8 +91,8 @@ buildLibrary config interfaces0 ms0
 buildExecutable
         :: Config               -- ^ Build config.
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
-        -> String               -- ^ Name  of main module.
-        -> [String]             -- ^ Names of dependency modules
+        -> C.ModuleName         -- ^ Name  of main module.
+        -> [C.ModuleName]       -- ^ Names of dependency modules
         -> ErrorT String IO [InterfaceAA]
 
 buildExecutable config interfaces0 mMain msOther0
@@ -117,7 +118,7 @@ buildExecutable config interfaces0 mMain msOther0
 buildModule
         :: Config               -- ^ Build config.
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
-        -> String               -- ^ Module name.
+        -> C.ModuleName         -- ^ Module name.
         -> ErrorT String IO [InterfaceAA]
 
 buildModule config interfaces name

@@ -5,32 +5,25 @@ module DDC.Driver.Command.Compile
 where
 import DDC.Driver.Stage
 import DDC.Interface.Source
-import DDC.Core.Module
 import DDC.Data.Canned
+import DDC.Build.Pipeline
+import DDC.Build.Interface.Base
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import Data.IORef
-
-import DDC.Build.Pipeline
-import DDC.Build.Interface.Base
-import qualified DDC.Build.Builder              as Builder
-
 import qualified DDC.Driver.Build.Locate        as Locate
-
+import qualified DDC.Build.Builder              as Builder
 import qualified DDC.Source.Tetra.Module        as SE
 import qualified DDC.Source.Tetra.Lexer         as SE
 import qualified DDC.Source.Tetra.Parser        as SE
-
 import qualified DDC.Core.Pretty                as P
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Lexer                 as C
-
 import qualified DDC.Base.Parser                as BP
-
 import qualified DDC.Version                    as Version
 
 
@@ -91,10 +84,7 @@ cmdCompileRecursive config buildExe interfaces0 filePath
                                 ++ [Builder.buildBaseSrcDir (configBuilder config)
                                         </> "tetra" </> "base"]
 
-                        mfilePath   <- Locate.locateModuleFromPaths 
-                                        baseDirs
-                                        (P.renderIndent $ P.ppr m)      -- TODO: uncrapify
-                                        ".ds"
+                        mfilePath   <- Locate.locateModuleFromPaths baseDirs m ".ds"
 
                         -- TODO: check for import loops.
                         interfaces' <- cmdCompileRecursive config False interfaces mfilePath
@@ -262,7 +252,7 @@ cmdCompile config buildExe interfaces filePath
 tasteNeeded
         :: FilePath             -- ^ Path of module.
         -> String               -- ^ Module source.
-        -> ErrorT String IO [ModuleName]
+        -> ErrorT String IO [C.ModuleName]
 
 tasteNeeded filePath src 
         | takeExtension filePath == ".ds"
@@ -277,8 +267,7 @@ tasteNeeded filePath src
 
                 case BP.runTokenParser C.describeTok filePath
                         (SE.pModule True context) tokens of
-                 Left  _err -> error "nope" -- return [ErrorLoad err]           -- TODO: real error
-
+                 Left  err  -> throwError $ P.renderIndent $ P.ppr err
                  Right mm   -> return $ SE.moduleImportModules mm
 
         | otherwise
