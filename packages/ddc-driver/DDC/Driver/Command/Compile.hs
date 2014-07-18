@@ -1,11 +1,13 @@
 
 module DDC.Driver.Command.Compile
-        (cmdCompile)
+        ( cmdCompile
+        , cmdCompileRecursive )
 where
 import DDC.Driver.Stage
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Interface.Base
+import DDC.Core.Module
 import DDC.Data.Canned
 import System.FilePath
 import System.Directory
@@ -32,7 +34,26 @@ cmdCompile
         -> FilePath             -- ^ Path to file to compile.
         -> ErrorT String IO [InterfaceAA]
 
-cmdCompile config interfaces filePath
+cmdCompile config interfaces filePath 
+ = cmdCompileRecursive config interfaces filePath Nothing
+
+
+-- | Recursively compile source modules into @.o@ files.
+--
+--   Like `cmdCompile`, but if the interface for a needed module is not already 
+--   loaded then use the provided command to load or compile it. A recursive
+--   make process can be constructed by looking up the file the corresponds
+--   to the module, and calling cmdCompileRecursive again -- tying the knot.
+--
+cmdCompileRecursive
+        :: Config               -- ^ Build driver config.
+        -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
+        -> FilePath             -- ^ Path to file to compile
+        -> Maybe (ModuleName -> ErrorT String IO [InterfaceAA])
+                                -- ^ Function to load/compile module dependencies.
+        -> ErrorT String IO [InterfaceAA]
+
+cmdCompileRecursive config interfaces filePath _mMakeDep
  = do   
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath

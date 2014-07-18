@@ -31,7 +31,7 @@ buildSpec
         -> ErrorT String IO ()
 
 buildSpec config spec
- = do   mapM_   (buildComponent config spec) 
+ = do   mapM_   (buildComponent config) 
                 (specComponents spec)
 
 
@@ -39,26 +39,25 @@ buildSpec config spec
 -- | Build a single component of a build spec.
 buildComponent 
         :: Config               -- ^ Build config.
-        -> Spec                 -- ^ Build spec that mentions the module.
         -> Component            -- ^ Component to build.
         -> ErrorT String IO ()
 
-buildComponent config spec component@SpecLibrary{}
+buildComponent config component@SpecLibrary{}
  = do
         when (configLogBuild config)
          $ liftIO $ putStrLn $ "* Building " ++ specLibraryName component
 
-        buildLibrary config spec component []
+        buildLibrary config []
          $ specLibraryTetraModules component
 
         return ()
 
-buildComponent config spec component@SpecExecutable{}
+buildComponent config component@SpecExecutable{}
  = do   
         when (configLogBuild config)
          $ liftIO $ putStrLn $ "* Building " ++ specExecutableName component
 
-        buildExecutable config spec component [] 
+        buildExecutable config [] 
                 (specExecutableTetraMain  component)
                 (specExecutableTetraOther component)
 
@@ -69,13 +68,11 @@ buildComponent config spec component@SpecExecutable{}
 -- | Build a library consisting of several modules.
 buildLibrary 
         :: Config               -- ^ Build config
-        -> Spec                 -- ^ Build spec for the library
-        -> Component            -- ^ Component defining the library
         -> [InterfaceAA]        -- ^ Interfaces that we've already loaded.
         -> [String]             -- ^ Names of modules still to build
         -> ErrorT String IO ()
 
-buildLibrary config spec component interfaces0 ms0
+buildLibrary config interfaces0 ms0
  = go interfaces0 ms0
  where
         go _interfaces []
@@ -83,7 +80,7 @@ buildLibrary config spec component interfaces0 ms0
 
         go interfaces (m : more)
          = do   
-                moreInterfaces  <- buildModule config spec component interfaces m
+                moreInterfaces  <- buildModule config interfaces m
 
                 let interfaces' = interfaces ++ moreInterfaces
                 go  interfaces' more
@@ -93,14 +90,12 @@ buildLibrary config spec component interfaces0 ms0
 -- | Build an executable consisting of several modules.
 buildExecutable
         :: Config               -- ^ Build config.
-        -> Spec                 -- ^ Build spec that mentions the module.
-        -> Component            -- ^ Build component that mentions the module.
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
         -> String               -- ^ Name  of main module.
         -> [String]             -- ^ Names of dependency modules
         -> ErrorT String IO ()
 
-buildExecutable config spec component interfaces0 mMain msOther0
+buildExecutable config interfaces0 mMain msOther0
  = go interfaces0 msOther0
  where  
         go interfaces [] 
@@ -116,7 +111,7 @@ buildExecutable config spec component interfaces0 mMain msOther0
 
         go interfaces (m : more)
          = do   
-                moreInterfaces  <- buildModule config spec component interfaces m
+                moreInterfaces  <- buildModule config interfaces m
 
                 let interfaces' =  interfaces ++ moreInterfaces
                 go  interfaces' more
@@ -126,13 +121,11 @@ buildExecutable config spec component interfaces0 mMain msOther0
 -- | Build a single module.
 buildModule
         :: Config               -- ^ Build config.
-        -> Spec                 -- ^ Build spec that mentions the module.
-        -> Component            -- ^ Build component that mentions the module.
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
         -> String               -- ^ Module name.
         -> ErrorT String IO [InterfaceAA]
 
-buildModule config _spec _component interfaces name
+buildModule config interfaces name
  = do   
         when (configLogBuild config)
          $ liftIO 
