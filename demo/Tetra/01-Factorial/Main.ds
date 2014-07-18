@@ -1,5 +1,6 @@
 module Main 
 export main
+import IO.Console
 where
 
 

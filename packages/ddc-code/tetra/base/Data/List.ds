@@ -22,7 +22,7 @@ singleton (x : a) : List a
  = Cons x Nil
 
 
--- | Construct a list of the given length where all elements are
+-- | Construct a list of the given length where all elements are'
 --   the same value.
 replicate (n : Nat#) (x : a) : List a
  = case n of

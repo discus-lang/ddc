@@ -6,18 +6,16 @@ module DDC.Driver.Build.Main
 where
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
+import DDC.Driver.Build.Locate
 import DDC.Driver.Config
 import DDC.Build.Spec
 import DDC.Build.Interface.Base
-import System.FilePath
-import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans.Error
 import Control.Monad.IO.Class
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Tetra         as Tetra
 import qualified DDC.Data.SourcePos     as BP
-import qualified System.Directory       as Directory
 
 
 -- | Annotated interface type.
@@ -144,59 +142,5 @@ buildModule config _spec _component interfaces name
         path     <- locateModuleFromPaths dirs name "ds"
 
         cmdCompile config interfaces path
-
-
----------------------------------------------------------------------------------------------------
-locateModuleFromPaths
-        :: [FilePath]           -- ^ Base paths.
-        -> String               -- ^ Module name.
-        -> String               -- ^ Source file extension
-        -> ErrorT String IO FilePath
-
-locateModuleFromPaths pathsBase name ext
- = do
-        mPaths  <- liftIO 
-                $  liftM catMaybes
-                $  mapM  (\d -> locateModuleFromPath d name ext) pathsBase
-
-        case mPaths of
-         []        -> throwError $ unlines 
-                   $  [ "Cannot locate source for module '" ++ name  ++ "' from base directories:" ]
-                   ++ ["    " ++ dir | dir <- pathsBase]
-
-         [path]    -> return path
-
-         paths     -> throwError $ unlines
-                   $  [ "Source for module '" ++ name ++ "' found at multiple paths:" ]
-                   ++ ["    " ++ dir | dir <- paths]
-
-
--- | Given the path of a .build spec, and a module name, yield the path where
---   the source of the module should be.
-locateModuleFromPath 
-        :: FilePath             -- ^ Base path.
-        -> String               -- ^ Module name.
-        -> String               -- ^ Source file extension.
-        -> IO (Maybe FilePath)
-
-locateModuleFromPath pathBase name ext
- = let  go str 
-         | elem '.' str
-         , (n, '.' : rest)      <- span (/= '.') str
-         = n   </> go rest
-
-         | otherwise
-         = str <.> ext
-
-   in do
-        let pathFile    = pathBase </> go name
-        exists          <- Directory.doesFileExist pathFile
-        if exists 
-         then return $ Just pathFile
-         else return Nothing
-
-
- 
-
 
 
