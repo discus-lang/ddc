@@ -1,10 +1,13 @@
 -- | Performing size inference on a program in Combinator Normal Form
-module DDC.Core.Flow.Transform.Rates.SizeInference where
+module DDC.Core.Flow.Transform.Rates.SizeInference
+    ( generate ) where
 import DDC.Core.Flow.Transform.Rates.Combinators
 
-import Data.List     (sortBy)
+import Data.List
 import Data.Function (on)
+import Data.Maybe    (catMaybes)
 import Control.Applicative
+import Control.Monad
 
 -----------------------------------
 -- = Size types, constraints and schemes
@@ -63,8 +66,8 @@ unflatten = ands . map (uncurry CEqual)
 -- There is no point mentioning unification variables in this solved form.
 data Scheme v
  = Scheme
- { _forall :: [v]
- , _exists :: [v]
+ { _forall :: [K v]
+ , _exists :: [K v]
  , _from   :: [(v, Type v)]
  , _to     :: [(v, Type v)]
  }
@@ -80,7 +83,7 @@ type Env v = [Scope v]
 -- | Gamma ::= ...
 data Scope v
  -- | v : k
- = EVar v (K v)
+ = EVar v (Type v)
  -- | k
  | EUnify (K v)
  -- | exists k
@@ -88,26 +91,42 @@ data Scope v
 
 evar :: v -> Scope v
 evar v
- = EVar v (KV v)
+ = EVar v $ TVar $ KV v
 
 
 -- | Search for first (should be only) mention of k in environment, along with its index
-lookupK :: Eq v => Env v -> K v -> Maybe (Int, Scope v)
-lookupK es k
- = go es 0
+lookupV :: Eq v => Env v -> v -> Maybe (Type v)
+lookupV es v
+ = go es
  where
-  go [] _ = Nothing
-  go (e@(EVar _ k') : _) i
+  go [] = Nothing
+  go (EVar v' t : _)
+     | v == v'
+     = Just t
+  go (_:es')
+   = go es'
+
+-- | Search for first (should be only) mention of k in environment, along with its index
+isUnify :: Eq v => Env v -> K v -> Bool
+isUnify es k
+ = go es
+ where
+  go [] = False
+  go (EUnify k' : _)
      | k == k'
-     = Just (i, e)
-  go (e@(EUnify k') : _) i
-     | k == k'
-     = Just (i, e)
-  go (e@(ERigid k') : _) i
-     | k == k'
-     = Just (i, e)
-  go (_:es') i
-   = go es' (i+1)
+     = True
+  go (_:es')
+   = go es'
+
+
+-- | Find all free variables in types of environment
+freeE :: Env a -> [K a]
+freeE es
+ = concatMap go es
+ where
+  go (EVar _ t) = freeT t
+  go  _         = []
+
 
 -- == Generation of constraints
 -- For example, the program
@@ -128,12 +147,52 @@ lookupK es k
 -- >         ∧ kxs  = k2 ∧ kys1 = k2 ∧ kxs = k3 ∧ kys2 = k3
 --
 -- | program :_s sigma
-generate :: Ord a => Program s a -> Maybe (Scheme a)
-generate (Program (_inSs,inAs) binds _outs)
+generate :: Ord a => Program s a -> Maybe (Env a, Scheme a)
+generate program@(Program (_inSs,inAs) _binds (_outSs,outAs))
+ = do   e <- generateEnv program
+        let fvs = freeE e
+
+        let alls  x = case x of
+                        EUnify v | v `elem` fvs -> [v]
+                        _                       -> []
+        let exis  x = case x of
+                        ERigid v | v `elem` fvs -> [v]
+                        _                       -> []
+
+        let us = concatMap alls e
+        let rs = concatMap exis e
+
+        let inTs = catMaybes $ map (lookupV e) inAs
+        let ouTs = catMaybes $ map (lookupV e) outAs
+
+        let fvIn = concatMap freeT inTs
+        let fvOu = concatMap freeT ouTs
+
+        -- check if there are any rigids mentioned in input types:
+        -- this means we'd have an existential input, which is nonsense.
+        when (any (flip elem rs) fvIn)
+            Nothing
+
+        let sch = Scheme
+                { _forall = fvIn  `intersect` us
+                , _exists = fvOu  `intersect` rs
+                , _from   = inAs  `zip` inTs
+                , _to     = outAs `zip` ouTs
+                }
+        return (e, sch)
+
+
+-- | Get environment
+generateEnv :: Ord a => Program s a -> Maybe (Env a)
+generateEnv (Program (_inSs,inAs) binds _outs)
  = do   let e         = concatMap (\i -> [EUnify (KV i), evar i]) inAs
         let (e',  c') = generateLets e binds
-        c''        <- solve e' c'
-        return undefined
+        -- If solve succeeds, there will be no duplicate left-hand sides in c''.
+        (e'', c'')   <- solve e' c'
+        -- Now, we must group the variables into equivalence classes.
+        -- Take all the leftover constraints and substitute them into the environment
+        return $ substEAll c'' e''
+
 
 -- | Gamma |- lets ~> Gamma |- C
 generateLets :: Ord a => Env a -> [Bind s a] -> (Env a, Constraint a)
@@ -203,52 +262,30 @@ generateBind env b
 -- For some duplicate left hand side, such as
 -- >              kxs = k2, kxs = k3
 -- the k2 and k3 must be unified in Env.
-
-solve :: Ord a => Env a -> Constraint a -> Maybe (Constraint a)
+solve :: Ord a => Env a -> Constraint a -> Maybe (Env a, Constraint a)
 solve e c
  = let cs   = flatten c
-   in  unflatten <$> go cs cs
+   in  go cs e cs
  where
-  go [ ] c' = return c'
-  go [_] c' = return c'
+  go [ ] e' c' = return (e', unflatten c')
+  go [_] e' c' = return (e', unflatten c')
 
-  go ((x,a):(y,b):rs) c'
+  go ((x,a):(y,b):rs) e' c'
    | x == y
    = do  sub <- unify e a b
          -- Substitute into both the full constraint set,
          -- and just those remaining to check
+         let e'' = substE  sub e'
          let c'' = substCs sub c'
          let rest= substCs sub ((y,b) : rs)
-         go rest c''
+         go rest e'' c''
    | otherwise
-   = go ((y,b) : rs) c'
+   = go ((y,b) : rs) e' c'
 
-
--- | Check that environment binds all variables before being mentioned in types etc.
--- For example,...
-{-
-checkE :: Ord a => Env a -> Bool
-checkE env = go env []
- where
-  go [] _
-   = True
-  go (e:es) bound
-   = case e of
-     EVar x t
-      -> checkT t bound && elem (KV x) bound && go es bound
-     ERigid x
-      -> go es (x : bound)
-     EUnify x
-      -> go es (x : bound)
-
-  checkT (TVar x) bound
-   = elem x bound
-  checkT (TCross a b) bound
-   = checkT a bound && checkT b bound
--}
 
 -- | A substitution, mapping some variable to a type
 type Subst a = [(K a, Type a)]
+
 
 -- | Perform substitution over types
 substT :: Ord a => Subst a -> Type a -> Type a
@@ -260,88 +297,55 @@ substT sub t@(TVar a)
 substT sub (TCross a b)
  = TCross (substT sub a) (substT sub b)
 
+
 -- | Perform substitution over already-flattened constraints
 substCs :: Ord a => Subst a -> [(a, Type a)] -> [(a, Type a)]
 substCs sub cs
  = map (\(v,t) -> (v, substT sub t)) cs
 
+
 -- | Perform substitution over environment
-{-
 substE :: Ord a => Subst a -> Env a -> Env a
 substE sub es
  = map go es
  where
   go (EVar v t) = EVar v (substT sub t)
   go e          = e
--}
+
+
+-- | Take all constraints, treat them as substitutions
+substEAll :: Ord a => Constraint a -> Env a -> Env a
+substEAll cs es
+ = substE (map mkSub $ flatten cs) es
+ where
+  mkSub (v,t) = (KV v, t)
+
 
 -- | Given two types, find a substitution that unifies the two together
--- The only tricky thing is, given a choice between unifying two variables, set to the variable that is bound first in the environment.
--- This makes it that no matter which order substitutions are applied, the result will still be valid according to 'checkE'.
---
--- For example, consider
--- > E: forall k1, x : k1, forall k2, y : k2
--- > C: x = k1 /\ x = k2 /\ y = k2
--- if we substitute k1 with k2 in the environment, we would get
--- > E: forall k1, x : k2, forall k2, y : k2
--- which is not valid, but substituting k2 with k1 works fine.
---
+-- The substitution may only change the value of unifier variables
 unify :: Ord a => Env a -> Type a -> Type a -> Maybe (Subst a)
 unify e l r
- = let subs = go l r
-   in  if   all check subs
-       then Just subs
-       else Nothing
+ = go l r
  where
   go (TVar a) (TVar b)
-   | a == b       = []
-   | otherwise    = [(a, TVar b)]
+   | a == b       = Just []
+   | isUnify e a  = Just [(a, TVar b)]
+   | isUnify e b  = Just [(b, TVar a)]
+   -- Neither variables are unifiers. It cannot be done.
+   | otherwise    = Nothing
 
   go (TCross a1 a2) (TCross b1 b2)
-   = go a1 b1 ++ go a2 b2
+   = (++) <$> go a1 b1 <*> go a2 b2
 
   go (TVar a) b@(TCross _ _)
-   = [(a, b)]
+   | isUnify e a
+   = Just [(a, b)]
+   | otherwise
+   = Nothing
 
   go a@(TCross _ _) (TVar b)
-   = [(b, a)]
-
-  check (v,t)
-   | Just (vi, ve)  <- lookupK e v
-   , Just  ts       <- mapM (lookupK e) (freeT t)
-   -- We are only interested in existentials (rigids):
-   -- two rigids cannot be unified together,
-   -- and a rigid can only be unified with a unify if the unify is bound *after* the rigid
-   = all (good (vi,ve)) ts
-
+   | isUnify e b
+   = Just [(b, a)]
    | otherwise
-   = False
-
-  good (vi,ve) (ti,te)
-   = case (ve,te) of
-     (ERigid _, ERigid _) -> False
-     -- Because we add to the front of the env, later ones with higher indices are bound first
-     (ERigid _, EUnify _) -> vi > ti
-     (EUnify _, ERigid _) -> ti > vi
-     _                    -> True
-     
-
--- | Check whether first var is bound before second in Env.
-{-
-firstE :: Ord a => Env a -> K a -> K a -> Bool
-firstE []     _ _ = False
-firstE (e:es) a b =
- case e of
-  ERigid x -> check x
-  EUnify x -> check x
-  _        -> firstE es a b
- where
-  check x
-   | x == a
-   = True
-   | x == b
-   = False
-   | otherwise
-   = firstE es a b
--}
+   = Nothing
 
