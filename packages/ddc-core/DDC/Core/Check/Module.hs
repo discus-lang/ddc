@@ -66,52 +66,77 @@ checkModuleM
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
  = do   
         -- Check kinds of imported types ------------------
-        nksImport'      <- checkImportTypes config mode   
-                        $  moduleImportTypes mm
+        nksImported'     
+                <- checkImportTypes config mode   
+                $  moduleImportTypes mm
 
-        -- Build the initial kind environment.
-        let kenv'       = Env.union kenv 
-                        $ Env.fromList  [ BName n (typeOfImportSource isrc)
-                                                | (n, isrc) <- nksImport' ]
+
+        -- Check imported data type defs ------------------
+        let defsImported = map fst $ moduleImportDataDefs mm
+        defsImported'    
+                <- case checkDataDefs config defsImported of
+                        (err : _, _)      -> throw $ ErrorData err
+                        ([], defsImported') -> return defsImported'
+
+
+        -- Build the imported defs and kind environment.
+        --  This contains kinds of type visible in the imported values.
+        let config_import 
+                = config 
+                { configDataDefs = unionDataDefs (configDataDefs config)
+                                                 (fromListDataDefs defsImported') }
+        let kenv_import   
+                = Env.union kenv
+                $ Env.fromList  [ BName n (typeOfImportSource isrc)
+                                        | (n, isrc) <- nksImported' ]
 
 
         -- Check types of imported values -----------------
-        ntsImport'      <- checkImportValues config kenv' mode 
-                        $  moduleImportValues mm
-        
-        -- Build the initial type environment.
-        let tenv'       = Env.union tenv 
-                        $ Env.fromList  [ BName n (typeOfImportSource isrc)
-                                                | (n, isrc) <- ntsImport' ]
+        ntsImported'      
+                <- checkImportValues config_import kenv_import mode 
+                $  moduleImportValues mm
 
 
         -- Check the local data type defs -----------------
-        defs'           <- case checkDataDefs config (moduleDataDefsLocal mm) of
-                                (err : _, _)   -> throw $ ErrorData err
-                                ([], defs')    -> return defs'
+        let defsLocal   =  moduleDataDefsLocal mm 
+        defsLocal'
+                <- case checkDataDefs config defsLocal of
+                        (err : _, _)     -> throw $ ErrorData err
+                        ([], defsLocal') -> return defsLocal'
 
-        let defs_all =  unionDataDefs (configDataDefs config) 
-                                      (fromListDataDefs defs')
 
-        let config_data = config { configDataDefs = defs_all }
+        -- Build the top-level config, defs and environments.
+        --  These contain names that are visible to bindings in the module.
+        let defs_top
+                = unionDataDefs (configDataDefs config) 
+                $ unionDataDefs (fromListDataDefs defsImported')
+                                (fromListDataDefs defsLocal')
+
+        let config_top
+                = config { configDataDefs = defs_top }
+
+        let kenv_top   
+                = kenv_import
+
+        let tenv_top
+                = Env.union tenv 
+                $ Env.fromList  [ BName n (typeOfImportSource isrc)
+                                        | (n, isrc) <- ntsImported' ]
 
 
         -- Check the sigs of exported types ---------------
-        esrcsType'      <- checkExportTypes  config_data
+        esrcsType'      <- checkExportTypes  config_top
                         $  moduleExportTypes mm
 
         -- Check the sigs of exported values --------------
-        esrcsValue'     <- checkExportValues config_data kenv' 
+        esrcsValue'     <- checkExportValues config_top kenv_top
                         $  moduleExportValues mm
                                       
         
         -- Check the body of the module -------------------
-        let bsData      = [BName (dataDefTypeName def) (kindOfDataDef def) | def <- defs' ]
-        let kenv_data   = Env.union kenv' (Env.fromList bsData)                    
-
         (x', _, _effs, _, ctx) 
                 <- checkExpM 
-                        (makeTable config_data kenv_data tenv')
+                        (makeTable config_top kenv_top tenv_top)
                         emptyContext (moduleBody mm) mode
 
         -- Apply the final context to the annotations in expressions.
@@ -128,8 +153,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let mm_inferred
                 = mm    
                 { moduleExportTypes     = esrcsType'
-                , moduleImportTypes     = nksImport'
-                , moduleImportValues    = ntsImport'
+                , moduleImportTypes     = nksImported'
+                , moduleImportValues    = ntsImported'
                 , moduleBody            = x'' }
 
 
@@ -139,7 +164,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                         (moduleExportValues mm_inferred) x''
 
         -- Check that all exported bindings are defined by the module.
-        mapM_ (checkBindDefined envDef) 
+        --   Header modules don't need to contain the complete set of bindings,
+        --   but all other modules do.
+        when (not $ moduleIsHeader mm_inferred)
+                $ mapM_ (checkBindDefined envDef) 
                 $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.

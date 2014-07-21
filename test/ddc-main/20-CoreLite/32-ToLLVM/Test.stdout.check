@@ -26,7 +26,7 @@ declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
 
-define internal fastcc %s.Obj* @_DDC_addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
+define internal fastcc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
 {
 l8.entry:
         %x1          = call ccc i32 @getTag (%s.Obj* %x) 
@@ -66,11 +66,11 @@ l15.default:
 
 
 
-!7 = metadata !{metadata !"_DDC_addInt_r1", metadata !6, i32 0}
-!6 = metadata !{metadata !"_DDC_addInt_ROOT_5", null, i32 1}
-!4 = metadata !{metadata !"_DDC_addInt_r2", metadata !3, i32 0}
-!3 = metadata !{metadata !"_DDC_addInt_r3", metadata !2, i32 0}
-!2 = metadata !{metadata !"_DDC_addInt_ROOT_1", null, i32 1}
+!7 = metadata !{metadata !"addInt_r1", metadata !6, i32 0}
+!6 = metadata !{metadata !"addInt_ROOT_5", null, i32 1}
+!4 = metadata !{metadata !"addInt_r2", metadata !3, i32 0}
+!3 = metadata !{metadata !"addInt_r3", metadata !2, i32 0}
+!2 = metadata !{metadata !"addInt_ROOT_1", null, i32 1}
 
 
 
@@ -97,7 +97,7 @@ declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
 
-define internal fastcc %s.Obj* @_DDC_thing(%s.Obj*  %z) align 8  
+define internal fastcc %s.Obj* @thing(%s.Obj*  %z) align 8  
 {
 l4.entry:
         %x0          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
@@ -113,8 +113,8 @@ l4.entry:
 
 
 
-!3 = metadata !{metadata !"_DDC_thing_r1", metadata !2, i32 0}
-!2 = metadata !{metadata !"_DDC_thing_ROOT_1", null, i32 1}
+!3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
+!2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
 
 
 
@@ -140,9 +140,9 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc i8* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
-declare external ccc %s.Obj* @_DDC_addNat(%s.Obj* , %s.Obj* ) align 8
+declare external ccc %s.Obj* @addNat(%s.Obj* , %s.Obj* ) align 8
 
-define internal fastcc %s.Obj* @_DDC_thing(i1  %b) align 8  
+define internal fastcc %s.Obj* @thing(i1  %b) align 8  
 {
 l4.entry:
         switch i1 %b, label %l13.alt [ i1 1,label %l8.alt ]
@@ -166,7 +166,7 @@ l5.cont:
         %_v18.addr2  = add i64 %_v17.addr1, 0
         %_v19.ptr    = inttoptr i64 %_v18.addr2 to i64*
         store i64 1, i64* %_v19.ptr,    !tbaa !3
-        %_v20        = call ccc %s.Obj* @_DDC_addNat (%s.Obj* %x, %s.Obj* %x7) 
+        %_v20        = call ccc %s.Obj* @addNat (%s.Obj* %x, %s.Obj* %x7) 
         ret %s.Obj* %_v20
 l8.alt:
         %x1          = call ccc %s.Obj* @allocRawSmall (i32 0, i64 8) 
@@ -181,7 +181,7 @@ l8.alt:
 
 
 
-!3 = metadata !{metadata !"_DDC_thing_r1", metadata !2, i32 0}
-!2 = metadata !{metadata !"_DDC_thing_ROOT_1", null, i32 1}
+!3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
+!2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
 
 

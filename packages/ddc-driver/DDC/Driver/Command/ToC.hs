@@ -33,7 +33,7 @@ cmdToSeaFromFile
 cmdToSeaFromFile config filePath
  
  -- Convert a Disciple Source Tetra module.
- | ".dst"         <- takeExtension filePath
+ | ".ds"          <- takeExtension filePath
  =      cmdToSeaSourceTetraFromFile config filePath
 
  -- Convert a module in some fragment of Disciple Core.
@@ -82,7 +82,7 @@ cmdToSeaSourceTetraFromString config source str
  = let  
         pipeLoad
          = pipeText (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt   config source 
          [ stageSaltOpt       config source

@@ -9,6 +9,7 @@ module DDC.Build.Builder
 where
 import DDC.Build.Platform
 import DDC.Base.Pretty                          hiding ((</>))
+import Data.List
 import System.FilePath                         
 import System.Exit
 import System.Process
@@ -63,7 +64,7 @@ data Builder
         , buildAs               :: FilePath -> FilePath -> IO ()
 
           -- | Link an executable.
-        , buildLdExe            :: FilePath -> FilePath -> IO () 
+        , buildLdExe            :: [FilePath] -> FilePath -> IO () 
 
           -- | Link a static library.
         , buildLdLibStatic      :: [FilePath] -> FilePath -> IO ()
@@ -201,11 +202,11 @@ builder_X8632_Darwin config
                 ,       sFile ]
 
         , buildLdExe
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m32" 
                 , "-o", binFile
-                , oFile
+                , intercalate " " oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
@@ -256,11 +257,11 @@ builder_X8664_Darwin config
                 ,       sFile ]
 
         , buildLdExe  
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m64" 
                 , "-o", binFile
-                , oFile
+                , intercalate " " oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
@@ -311,11 +312,11 @@ builder_X8632_Linux config
                 ,       sFile ]
 
         , buildLdExe  
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m32" 
                 , "-o", binFile
-                , oFile
+                , intercalate " " oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.so" ]
 
         , buildLdLibStatic
@@ -365,11 +366,11 @@ builder_X8664_Linux config
                 , sFile ] 
 
         , buildLdExe  
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m64"
                 , "-o", binFile
-                , oFile
+                , intercalate " " oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.so" ]
 
         , buildLdLibStatic
@@ -418,11 +419,11 @@ builder_PPC32_Linux config
                 , sFile ]
 
         , buildLdExe  
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m32" 
                 , "-o", binFile
-                , oFile
+                , intercalate " " $ map normalise oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.so" ]
 
         , buildLdLibStatic
@@ -473,11 +474,11 @@ builder_X8632_Cygwin config
     -- Note on Cygwin we need to use 'gcc-4' explicitly because plain 'gcc'
     -- is a symlink, which Windows doesn't really support.
         , buildLdExe  
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc-4 -m32" 
                 , "-o", normalise binFile
-                , normalise oFile
+                , intercalate " " $ map normalise oFiles
                 , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ]
 
         , buildLdLibStatic
@@ -526,11 +527,11 @@ builder_X8632_Mingw config
                 , normalise sFile ]
 
         , buildLdExe  
-                = \oFile binFile
+                = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m32" 
                 , "-o", normalise binFile
-                , normalise oFile
+                , intercalate " " $ map normalise oFiles
                 , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ]
 
         , buildLdLibStatic

@@ -99,14 +99,16 @@ convertM pp runConfig defs kenv tenv mm
         let mm_salt 
                 = ModuleCore
                 { moduleName           = moduleName mm
+                , moduleIsHeader       = moduleIsHeader mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.
                 , moduleExportTypes    = []
                 , moduleExportValues   = tsExports'
 
-                , moduleImportTypes    = Map.toList S.runtimeImportKinds
+                , moduleImportTypes    =  Map.toList S.runtimeImportKinds
                 , moduleImportValues   = (Map.toList S.runtimeImportTypes) ++ tsImports'
+                , moduleImportDataDefs = []
 
                   -- Data constructors and pattern matches should have been flattened
                   -- into primops, so we don't need the data type definitions.

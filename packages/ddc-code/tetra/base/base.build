@@ -6,12 +6,11 @@ library
  author:        The Disciplined Disciple Compiler Strike Force
  maintainer:    Ben Lippmeier <benl@ouroborus.net>
  homepage:      http://disciple.ouroborus.net
-
  license:       MIT
-
  synopsis:      Disciple Tetra base library
  
  tetra-modules:
         Data.Numeric.Nat
+        Data.Maybe
         Data.List
         IO.Console

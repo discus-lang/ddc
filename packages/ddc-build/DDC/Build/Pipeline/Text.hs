@@ -1,13 +1,16 @@
 {-# LANGUAGE GADTs #-}
 module DDC.Build.Pipeline.Text
-        ( PipeText (..)
+        ( InterfaceAA
+        , PipeText (..)
         , pipeText)
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
+import DDC.Build.Interface.Base
 import DDC.Base.Pretty
+import Data.Maybe
 
 import qualified DDC.Source.Tetra.ToCore           as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
@@ -21,14 +24,19 @@ import qualified DDC.Core.Tetra                    as CE
 import qualified DDC.Core.Tetra.Env                as CE
 
 import qualified DDC.Core.Parser                   as C
+import qualified DDC.Core.Transform.Resolve        as C
 import qualified DDC.Core.Transform.SpreadX        as C
 import qualified DDC.Core.Check                    as C
 import qualified DDC.Core.Load                     as C
 import qualified DDC.Core.Lexer                    as C
 import qualified DDC.Base.Parser                   as BP
 import qualified DDC.Data.SourcePos                as SP
+
+import qualified Data.Map                          as Map
 import Control.DeepSeq
 
+type InterfaceAA        
+        = Interface (C.AnTEC BP.SourcePos CE.Name) ()
 
 -- | Process program text.
 data PipeText n (err :: * -> *) where
@@ -48,6 +56,7 @@ data PipeText n (err :: * -> *) where
         :: !Sink                -- Sink for source tokens.
         -> !Sink                -- Sink for core code before final type checking.
         -> !Sink                -- Sink for type checker trace.
+        -> ![InterfaceAA]       -- Interfaces for modules upon which this one depends.
         -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
@@ -82,9 +91,9 @@ pipeText !srcName !srcLine !str !pp
                         pipeCores mm pipes
 
         PipeTextLoadSourceTetra 
-                sinkTokens
-                sinkPreCheck 
-                sinkCheckerTrace pipes
+                sinkTokens sinkPreCheck sinkCheckerTrace 
+                interfaces
+                pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let goParse
                  = do   -- Lex the input text into source tokens.
@@ -100,7 +109,7 @@ pipeText !srcName !srcLine !str !pp
                                 , C.contextFunctionalClosures     = False }
 
                         case BP.runTokenParser C.describeTok srcName
-                                (SE.pModule context) tokens of
+                                (SE.pModule False context) tokens of
                          Left err -> return [ErrorLoad err]
                          Right mm -> goDesugar mm
 
@@ -120,9 +129,23 @@ pipeText !srcName !srcLine !str !pp
                         let sp        = SP.SourcePos "<top level>" 1 1
                         let mm_core   = SE.toCoreModule sp mm_expand
 
+                        -- Resolve references to imported types and bindings.
+                        let deps      = Map.fromList
+                                      $ catMaybes
+                                      $ [ case interfaceTetraModule i of
+                                                Nothing -> Nothing
+                                                Just tm -> Just (interfaceModuleName i, tm)
+                                        | i <- interfaces ]
+                        let mm_resolve 
+                                = C.resolveNamesInModule 
+                                        CE.primKindEnv CE.primTypeEnv
+                                        deps mm_core
+
                         -- Spread types of data constructors into uses.
-                        let mm_spread = C.spreadX 
-                                          CE.primKindEnv CE.primTypeEnv mm_core
+                        let mm_spread  
+                                = C.spreadX
+                                        CE.primKindEnv CE.primTypeEnv
+                                        mm_resolve
 
                         -- Dump code before checking for debugging purposes.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck
@@ -130,7 +153,7 @@ pipeText !srcName !srcLine !str !pp
                         -- Use the existing checker pipeline to Synthesise
                         -- missing type annotations.
                         pipeCore mm_spread
-                           $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes
+                          $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes
 
             in goParse
 

@@ -31,7 +31,7 @@ seaNameOfSuper mImport mExport (NameVar str)
         -- Super is defined in this module and not exported.
         | Nothing                               <- mImport
         , Nothing                               <- mExport
-        = Just $ text $ "_DDC_" ++ sanitizeName str
+        = Just $ text $ {- "_DDC_" ++ -} sanitizeName str
 
         -- Super is defined in this module and exported to C land.
         | Nothing                               <- mImport
@@ -41,7 +41,7 @@ seaNameOfSuper mImport mExport (NameVar str)
         -- Super is imported from another module and not exported.
         | Just (ImportSourceModule _ _ _)       <- mImport
         , Nothing                               <- mExport
-        = Just $ text $ "_DDC_" ++ sanitizeName str
+        = Just $ text $ {- "_DDC_" ++ -} sanitizeName str
         
         -- Super is imported from C-land and not exported.
         | Just (ImportSourceSea strSea _)       <- mImport

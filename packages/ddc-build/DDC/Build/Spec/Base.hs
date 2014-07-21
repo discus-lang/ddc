@@ -4,6 +4,7 @@ module DDC.Build.Spec.Base
         , Component     (..)
         , specFieldsLibrary)
 where
+import DDC.Core.Module  (ModuleName)
 
 -- | A build specification.
 --   This specifies how to build a particular library or exectutable,
@@ -28,12 +29,28 @@ data Component
         , specLibraryVersion            :: String
 
           -- | Tetra modules to build, in dependency order.
-        , specLibraryTetraModules       :: [String] 
+        , specLibraryTetraModules       :: [ModuleName] 
 
           -- | Optional library meta-data.
           --   These fields are for informational purposes and are not 
           --   nessesary to build the library itself.
         , specLibraryMeta               :: [(String, String)] }
+
+
+        | SpecExecutable
+        { -- | Name of executable
+          specExecutableName            :: String
+
+          -- | Name of main module.
+        , specExecutableTetraMain       :: ModuleName
+
+          -- | Tetra modules to build, in dependency order.
+        , specExecutableTetraOther      :: [ModuleName] 
+
+          -- | Optional library meta-data.
+          --   These fields are for informational purposes and are not 
+          --   nessesary to build the executable itself.
+        , specExecutableMeta            :: [(String, String)] }
         deriving Show
 
 

@@ -37,7 +37,26 @@ convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
  = let  atom    = mconvAtom  pp context kenv tenv
         atoms   = mconvAtoms pp context kenv tenv 
    in case p of
-        -- Binary operations ----------
+        -- Unary operators ------------
+        A.PrimArith op
+         | C.XType _ t : args   <- xs
+         , Just [x1']           <- atoms args
+         , Just dst             <- mdst
+         -> let t'      = convertType pp kenv t
+                result
+                 | A.PrimArithNeg <- op
+                 , isIntegralT t
+                 = IOp dst OpSub (XLit $ LitInt t' 0) x1'
+
+                 | A.PrimArithNeg <- op
+                 , isFloatingT t
+                 = IOp dst OpSub (XLit $ LitFloat t' 0) x1'
+
+                 | otherwise
+                 = die $ "Invalid unary primop."
+            in  return $ Seq.singleton (annotNil result)
+
+        -- Binary operators -----------
         A.PrimArith op
          | C.XType _ t : args   <- xs
          , Just [x1', x2']      <- atoms args

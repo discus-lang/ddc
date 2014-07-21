@@ -52,6 +52,7 @@ Library
         DDC.Core.Transform.MapT
         DDC.Core.Transform.Reannotate
         DDC.Core.Transform.Rename
+        DDC.Core.Transform.Resolve
         DDC.Core.Transform.SpreadX
         DDC.Core.Transform.SubstituteTX
         DDC.Core.Transform.SubstituteWX

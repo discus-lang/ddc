@@ -5,6 +5,7 @@ module DDC.Core.Collect.Support
         , supportEnvFlags)
 where
 import DDC.Core.Compounds
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Collect.FreeT
 import Data.Set                 (Set)
@@ -94,10 +95,11 @@ instance SupportX Type where
                 , supportSpVar  = fvs1 }
 
 
-instance SupportX Bind where
- support kenv tenv b
-  = support kenv tenv 
-  $ typeOfBind b
+instance SupportX (Module a) where
+ support kenv tenv mm
+  = let kenv'   = Env.union kenv (moduleKindEnv mm)
+        tenv'   = Env.union tenv (moduleTypeEnv mm)
+    in  support kenv' tenv' (moduleBody mm)
 
 
 instance SupportX (Exp a) where
@@ -225,4 +227,11 @@ instance SupportX (Lets a) where
         LWithRegion u
          | Env.member u kenv    -> mempty
          | otherwise            -> mempty { supportSpVar = Set.singleton u }
+
+
+instance SupportX Bind where
+ support kenv tenv b
+  = support kenv tenv 
+  $ typeOfBind b
+
 

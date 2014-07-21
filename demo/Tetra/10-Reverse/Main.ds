@@ -1,0 +1,33 @@
+module Main 
+export main
+import Data.Maybe; Data.List; Data.Numeric.Nat
+import IO.Console
+where
+
+-- Reverse the elements of a list, using an accumulator.
+reverseAcc (xx : List a) : List a
+ = reverseAcc2 Nil xx
+
+reverseAcc2 (acc xx : List a) : List a
+ = case xx of
+        Nil             -> acc
+        Cons x xs       -> reverseAcc2 (Cons x acc) xs
+
+
+dumpListNat (xx : List Nat#) : S Console Unit
+ = private r in
+   box case xx of
+        Nil             -> ()
+        Cons x xs       
+         -> do  run putStrLn [r] (showNat x)
+                run dumpListNat xs
+
+
+main (_ : Unit) : S Console Unit
+ = box do
+        xs1     = replicate  5 100
+        xs2     = enumFromTo 10 20
+        zs      = append xs1 xs2
+        
+        run dumpListNat (reverseAcc zs)
+        

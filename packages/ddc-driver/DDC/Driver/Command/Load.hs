@@ -29,11 +29,13 @@ import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Build.Spec.Parser          as Spec
+import qualified DDC.Build.Interface.Load       as Interface
 import qualified DDC.Core.Tetra                 as Tetra
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load and transform a module.
+-- | Load and transform source code, interface, or build file.
+--
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ErrorT` monad.
 --
@@ -52,17 +54,24 @@ cmdLoadFromFile
 
 cmdLoadFromFile config mStrSimpl fsTemplates filePath
 
- -- Load a Build file.
- | ".build"      <- takeExtension filePath
+ -- Load build file.
+ | ".build"     <- takeExtension filePath
  = do   
         str     <- liftIO $ readFile filePath
-        case Spec.parseBuildSpec str of
+        case Spec.parseBuildSpec filePath str of
          Left err       -> throwError $ show err
          Right spec     -> liftIO $ putStrLn $ show spec
 
+ -- Load an interface file.
+ | ".di"        <- takeExtension filePath
+ = do
+        str     <- liftIO $ readFile filePath
+        case Interface.loadInterface filePath str of
+         Left err        -> throwError $ renderIndent $ ppr err
+         Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
 
  -- Load a Disciple Source Tetra module.
- | ".dst"        <- takeExtension filePath
+ | ".ds"        <- takeExtension filePath
  = case mStrSimpl of
         Nothing
          ->     cmdLoadSourceTetraFromFile config Tetra.bundle filePath
@@ -128,7 +137,7 @@ cmdLoadSourceTetraFromString config bundle source str
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreReannotate (\a -> a { annotTail = () })
          [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
                                                 (bundleSimplifier bundle)

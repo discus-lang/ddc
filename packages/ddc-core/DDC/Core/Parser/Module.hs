@@ -34,10 +34,17 @@ pModule c
         -- Data definitions.
         dataDefsLocal   <- P.many (pDataDef c)
 
-        pTok KWith
+        -- Function definitions.
+        --  If there is a 'with' keyword then this is a standard module with bindings.
+        --  If not, then it is a module header, which doesn't need bindings.
+        (lts, isHeader) <- P.choice
+                        [ do  pTok KWith
 
-        -- LET;+
-        lts             <- P.sepBy1 (pLetsSP c) (pTok KIn)
+                              -- LET;+
+                              lts  <- P.sepBy1 (pLetsSP c) (pTok KIn)
+                              return (lts, False)
+
+                        , do  return ([],  True) ]
 
         -- The body of the module consists of the top-level bindings wrapped
         -- around a unit constructor place-holder.
@@ -45,10 +52,12 @@ pModule c
 
         return  $ ModuleCore
                 { moduleName            = name
+                , moduleIsHeader        = isHeader
                 , moduleExportTypes     = []
                 , moduleExportValues    = [(n, s) | ExportValue n s <- tExports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s <- tImports]
                 , moduleImportValues    = [(n, s) | ImportValue n s <- tImports]
+                , moduleImportDataDefs  = []
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 

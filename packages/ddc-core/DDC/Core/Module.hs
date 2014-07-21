@@ -15,16 +15,19 @@ module DDC.Core.Module
 	, modulesExportValues
 
          -- * Module Names
-        , QualName      (..)
         , ModuleName    (..)
+        , readModuleName
         , isMainModuleName
 
-        -- * Export Sources
+         -- * Qualified names.
+        , QualName      (..)
+
+         -- * Export Sources
         , ExportSource  (..)
         , takeTypeOfExportSource
         , mapTypeOfExportSource
 
-        -- * Import Sources
+         -- * Import Sources
         , ImportSource  (..)
         , typeOfImportSource
         , mapTypeOfImportSource)
@@ -49,6 +52,11 @@ data Module a n
         { -- | Name of this module.
           moduleName                    :: !ModuleName
 
+          -- | Whether this is a module header only.
+          --   Module headers contain type definitions, as well as imports and exports, 
+          --   but no function definitions. Module headers are used in interface files.
+        , moduleIsHeader                :: !Bool
+
           -- Exports ------------------
           -- | Kinds of exported types.
         , moduleExportTypes             :: ![(n, ExportSource n)]
@@ -65,7 +73,10 @@ data Module a n
           --   These imports come from a Disciple module, that we've compiled ourself.
         , moduleImportValues            :: ![(n, ImportSource n)]
 
-          -- Local --------------------
+          -- | Data defs imported from other modules.
+        , moduleImportDataDefs          :: ![(DataDef n, ModuleName)]
+
+          -- Local defs ---------------
           -- | Data types defined in this module.
         , moduleDataDefsLocal           :: ![DataDef n]
 
@@ -79,13 +90,15 @@ data Module a n
 
 instance (NFData a, NFData n) => NFData (Module a n) where
  rnf !mm
-        =     rnf (moduleName mm)
-        `seq` rnf (moduleExportTypes   mm)
-        `seq` rnf (moduleExportValues  mm)
-        `seq` rnf (moduleImportTypes   mm)
-        `seq` rnf (moduleImportValues  mm)
-        `seq` rnf (moduleDataDefsLocal mm)
-        `seq` rnf (moduleBody mm)
+        =     rnf (moduleName           mm)
+        `seq` rnf (moduleIsHeader       mm)
+        `seq` rnf (moduleExportTypes    mm)
+        `seq` rnf (moduleExportValues   mm)
+        `seq` rnf (moduleImportTypes    mm)
+        `seq` rnf (moduleImportValues   mm)
+        `seq` rnf (moduleImportDataDefs mm)
+        `seq` rnf (moduleDataDefsLocal  mm)
+        `seq` rnf (moduleBody           mm)
 
 
 -- | Check if this is the `Main` module.
@@ -99,7 +112,7 @@ isMainModule mm
 moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
         = fromListDataDefs 
-        $ moduleDataDefsLocal mm
+        $ (moduleDataDefsLocal mm ++ map fst (moduleImportDataDefs mm))
 
 
 -- | Get the top-level kind environment of a module,
@@ -196,8 +209,32 @@ data ModuleName
 instance NFData ModuleName where
  rnf (ModuleName ss)
         = rnf ss
- 
 
+
+-- | Read a string like 'M1.M2.M3' as a module name.
+readModuleName :: String -> Maybe ModuleName
+readModuleName []       = Nothing
+readModuleName str
+ = Just $ ModuleName $ go str
+ where
+        go s
+         | elem '.' s
+         , (n, '.' : rest)      <- span (/= '.') s
+         = n : go rest
+
+         | otherwise
+         = [s]
+
+
+-- | Check whether this is the name of the \"Main\" module.
+isMainModuleName :: ModuleName -> Bool
+isMainModuleName mn
+ = case mn of
+        ModuleName ["Main"]     -> True
+        _                       -> False
+
+
+-- QualName ---------------------------------------------------------------------------------------
 -- | A fully qualified name, 
 --   including the name of the module it is from.
 data QualName n
@@ -207,14 +244,6 @@ data QualName n
 instance NFData n => NFData (QualName n) where
  rnf (QualName mn n)
         = rnf mn `seq` rnf n
-
-
--- | Check whether this is the name of the \"Main\" module.
-isMainModuleName :: ModuleName -> Bool
-isMainModuleName mn
- = case mn of
-        ModuleName ["Main"]     -> True
-        _                       -> False
 
 
 -- ExportSource -----------------------------------------------------------------------------------

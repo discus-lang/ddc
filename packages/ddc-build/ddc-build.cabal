@@ -32,6 +32,9 @@ Library
         ddc-source-tetra == 0.4.2.*
   
   Exposed-modules:
+        DDC.Build.Interface.Base
+        DDC.Build.Interface.Load
+
         DDC.Build.Language.Eval
         DDC.Build.Language.Flow
         DDC.Build.Language.Lite

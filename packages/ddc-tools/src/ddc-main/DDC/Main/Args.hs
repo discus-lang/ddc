@@ -47,6 +47,11 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeMake file
 
+        | flag : file : rest    <- args
+        , elem flag ["-build", "--build"]
+        = parseArgs rest
+        $ setMode config $ ModeBuild file
+
         | "-basedir" : path : rest <- args
         = parseArgs rest
         $ config { configBaseDir = path }
@@ -129,6 +134,15 @@ parseArgs args config
         | "-with"  : file  : rest       <- args
         = parseArgs rest
         $ config { configWith  = configWith config ++ [file] }
+
+        -- Tetra --------------------------------
+        | "-tetra-boxing" : file : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeTetraBoxing file
+
+        | "-tetra-curry"  : file : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeTetraCurry  file
 
         -- Flow ---------------------------------
         | "-flow-prep" : file : rest    <- args
@@ -246,9 +260,12 @@ flagOfMode mode
         ModeLoad{}                      -> Just "-load"
         ModeCompile{}                   -> Just "-compile"
         ModeMake{}                      -> Just "-make"
+        ModeBuild{}                     -> Just "-build"
         ModeToSalt{}                    -> Just "-to-salt"
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
+        ModeTetraCurry{}                -> Just "-tetra-curry"
+        ModeTetraBoxing{}               -> Just "-tetra-boxing"
         ModeFlowPrep{}                  -> Just "-flow-prep"
         ModeFlowLower{}                 -> Just "-flow-lower"
         ModeFlowLowerKernel{}           -> Just "-flow-lower-kernel"

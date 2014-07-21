@@ -131,20 +131,24 @@ instance Forward Module where
  forwardWith profile config bindings 
         (ModuleCore
                 { moduleName            = name
+                , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
                 , moduleImportValues    = importValues
+                , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body })
 
   = do  body' <- forwardWith profile config bindings body
         return ModuleCore
                 { moduleName            = name
+                , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
                 , moduleImportValues    = importValues
+                , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body' }
 

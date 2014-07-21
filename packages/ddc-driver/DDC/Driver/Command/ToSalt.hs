@@ -35,7 +35,7 @@ cmdToSaltFromFile
 cmdToSaltFromFile config filePath
 
  -- Convert a Disciple Source Tetra module.
- | ".dst"        <- takeExtension filePath
+ | ".ds"         <- takeExtension filePath
  =      cmdToSaltSourceTetraFromFile config filePath
  
  -- Convert a module in some fragment of Disciple Core.
@@ -87,7 +87,7 @@ cmdToSaltSourceTetraFromString config source str
         pipeLoad
          = pipeText (nameOfSource source)
                     (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
          [ stageSaltOpt         config source

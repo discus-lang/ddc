@@ -6,7 +6,7 @@ ok
 -- Integer boxing,
 --      packs a RawSmall Object.
 // Code for locally defined supers. -----------------------------------
-Obj* _DDC_boxInt (int_t _i)
+Obj* boxInt (int_t _i)
 {
         Obj* _x0 = 0;
         uint8_t* _x1 = 0;
@@ -24,7 +24,7 @@ Obj* _DDC_boxInt (int_t _i)
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 // Code for locally defined supers. -----------------------------------
-int_t _DDC_unboxInt (Obj* _x)
+int_t unboxInt (Obj* _x)
 {
         tag_t _x0 = 0;
         uint8_t* _x1 = 0;
@@ -43,7 +43,7 @@ int_t _DDC_unboxInt (Obj* _x)
 
 -- Boxed addition
 // Code for locally defined supers. -----------------------------------
-Obj* _DDC_addInt (Obj* _x, Obj* _y)
+Obj* addInt (Obj* _x, Obj* _y)
 {
         tag_t _x1 = 0;
         uint8_t* _x2 = 0;
@@ -81,7 +81,7 @@ Obj* _DDC_addInt (Obj* _x, Obj* _y)
 -- Construct a singleton list,
 --      packs a Boxed objet.
 // Code for locally defined supers. -----------------------------------
-Obj* _DDC_singleton (Obj* _x)
+Obj* singleton (Obj* _x)
 {
         Obj* _x1 = 0;
         Obj* _x2 = 0;

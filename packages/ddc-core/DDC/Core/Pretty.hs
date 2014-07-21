@@ -47,6 +47,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleExportValues    = exportValues
         , moduleImportTypes     = importTypes
         , moduleImportValues    = importValues
+        , moduleImportDataDefs  = importData
         , moduleDataDefsLocal   = localData
         , moduleBody            = body }
   = {-# SCC "ppr[Module]" #-}
@@ -83,8 +84,13 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | otherwise            
          = line <> dExportTypes <> dExportValues <> dImportTypes <> dImportValues
                 
-        -- Local Data Definitions -----
-        docsLocalData
+        -- Data Definitions -----
+        docsDataImport
+         | null importData = empty
+         | otherwise
+         = line <> vsep  (map (\i -> text "import" <+> (ppr $ fst i)) $ importData)
+
+        docsDataLocal
          | null localData = empty
          | otherwise
          = line <> vsep  (map ppr localData)
@@ -93,8 +99,12 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
     in  text "module" <+> ppr name 
          <+> docsImportsExports
-         <>  docsLocalData
-         <>  text "with" <$$> (vcat $ map pprLts lts)
+         <>  docsDataImport
+         <>  docsDataLocal
+         <>  (case lts of
+                []       -> empty
+                [LRec[]] -> empty
+                _        -> text "with" <$$> (vcat $ map pprLts lts))
 
 
 -- Exports ----------------------------------------------------------------------------------------

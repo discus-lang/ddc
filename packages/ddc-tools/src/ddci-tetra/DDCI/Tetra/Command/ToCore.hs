@@ -17,7 +17,7 @@ cmdToCore _state config source str
 
         pipeLoad
          = pipeText (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source
+         $ stageSourceTetraLoad config source []
          [ PipeCoreOutput pmode SinkStdout ]
 
    in do

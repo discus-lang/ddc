@@ -36,11 +36,14 @@ data Mode
         -- | Parse, type-check and transform a module.
         | ModeLoad      FilePath
 
-        -- | Compile a .dcl or .dce into an object file.
+        -- | Compile source code into an object code.
         | ModeCompile   FilePath
 
-        -- | Compile a .dcl or .dce into an executable file.
+        -- | Compile source code into an executable.
         | ModeMake      FilePath
+
+        -- | Build libraries or executables following a build .spec file.
+        | ModeBuild     FilePath
 
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath
@@ -50,6 +53,13 @@ data Mode
 
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
+
+        -- Disciple Core Tetra specific ---------
+        -- | Manage higher order functions in a module.
+        | ModeTetraCurry  FilePath
+
+        -- | Manage boxing in a module.
+        | ModeTetraBoxing FilePath
 
         -- Disciple Core Flow specific ----------
         -- | Prepare a Flow program for lowering.

@@ -8,8 +8,8 @@ import DDCI.Core.Interface.Args
 import DDCI.Core.Interface.Batch
 import DDCI.Core.Interface.Interactive
 import DDCI.Core.State
+import DDC.Driver.Command.Compile
 import DDC.Interface.Input
-import DDC.Driver.Command.Make
 import System.Environment
 import System.IO
 import Control.Monad.Trans.Error
@@ -37,7 +37,7 @@ main
          ["--make",  filePath]
           -> do let state       = initState (InputInterfaceBatch filePath)
                 config          <- getDriverConfigOfState state
-                runError $ cmdMake config filePath
+                runError $ cmdCompileRecursive config True [] filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]
@@ -50,7 +50,7 @@ main
 
 
 -- | Just print errors to stdout and continue the session.
-runError :: ErrorT String IO () -> IO ()
+runError :: ErrorT String IO a -> IO ()
 runError m
  = do   result  <- runErrorT m
         case result of

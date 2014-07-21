@@ -27,13 +27,16 @@ import DDC.Core.Parser
         , pTok,         pTokSP)
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
 pModule :: (Ord n, Pretty n) 
-        => Context
+        => Bool         -- ^ Just parse the module header, not including the top-level bindings.
+        -> Context      -- ^ Parser context.
         -> Parser n (Module P.SourcePos n)
-pModule c
- = do   _sp     <- pTokSP KModule
+
+pModule justHeader c
+ = do   
+        _sp     <- pTokSP KModule
         name    <- pModuleName <?> "a module name"
 
         -- export { VAR;+ }
@@ -51,13 +54,23 @@ pModule c
         tImports
          <- liftM concat $ P.many (pImportSpecs c)
 
-        pTok KWhere
-        pTok KBraceBra
+        -- top-level declarations.
+        tops    
+         <- if justHeader 
+             then return []
+             else P.choice
+                [ do    
+                        pTok KWhere
+                        pTok KBraceBra
 
-        -- TOP;+
-        tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
+                        -- TOP;+
+                        tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
 
-        pTok KBraceKet
+                        pTok KBraceKet
+                        return tops
+
+                , do    return [] ]
+
 
         -- ISSUE #295: Check for duplicate exported names in module parser.
         --  The names are added to a unique map, so later ones with the same
@@ -66,7 +79,7 @@ pModule c
                 { moduleName            = name
                 , moduleExportTypes     = []
                 , moduleExportValues    = tExports
-                , moduleImportModules   = []
+                , moduleImportModules   = [mn     | ImportModule mn  <- tImports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s  <- tImports]
                 , moduleImportValues    = [(n, s) | ImportValue n s  <- tImports]
                 , moduleTops            = tops }
@@ -84,10 +97,11 @@ pTypeSig c
         return  (var, t)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
 data ImportSpec n
-        = ImportType    n (ImportSource n)
+        = ImportModule  ModuleName
+        | ImportType    n (ImportSource n)
         | ImportValue   n (ImportSource n)
         
 
@@ -98,25 +112,35 @@ pImportSpecs
 
 pImportSpecs c
  = do   pTok KImport
-        pTok KForeign
-        src    <- liftM (renderIndent . ppr) pName
 
         P.choice
-         [      -- imports foreign X type (NAME :: TYPE)+ 
-          do    pTok KType
-                pTok KBraceBra
+                -- import foreign ...
+         [ do   pTok KForeign
+                src    <- liftM (renderIndent . ppr) pName
 
-                sigs <- P.sepEndBy1 (pImportType c src) (pTok KSemiColon)
+                P.choice
+                 [      -- import foreign X type (NAME :: TYPE)+ 
+                  do    pTok KType
+                        pTok KBraceBra
+
+                        sigs <- P.sepEndBy1 (pImportType c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+
+                        -- import foreign X value (NAME :: TYPE)+
+                 , do   pTok KValue
+                        pTok KBraceBra
+
+                        sigs <- P.sepEndBy1 (pImportValue c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+                 ]
+
+         , do   pTok KBraceBra
+                names   <- P.sepEndBy1 pModuleName (pTok KSemiColon) 
+                                <?> "module names"
                 pTok KBraceKet
-                return sigs
-
-                -- imports foreign X value (NAME :: TYPE)+
-         , do   pTok KValue
-                pTok KBraceBra
-
-                sigs <- P.sepEndBy1 (pImportValue c src) (pTok KSemiColon)
-                pTok KBraceKet
-                return sigs
+                return  [ImportModule n | n <- names]
          ]
 
 
@@ -155,7 +179,7 @@ pImportValue c src
         = P.unexpected "import mode for foreign value"
 
 
--- Top Level -----------------------------------------------------------------
+-- Top Level --------------------------------------------------------------------------------------
 pTop    :: Ord n 
         => Context -> Parser n (Top P.SourcePos n)
 pTop c
@@ -170,7 +194,7 @@ pTop c
  ]
 
 
--- Data -----------------------------------------------------------------------
+-- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
 pData   :: Ord n
         => Context -> Parser n (Top P.SourcePos n)

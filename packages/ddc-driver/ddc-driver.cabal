@@ -38,6 +38,9 @@ Library
         ddc-interface    == 0.4.2.*
   
   Exposed-modules:
+        DDC.Driver.Build.Config
+        DDC.Driver.Build.Main
+
         DDC.Driver.Command.Flow.Concretize
         DDC.Driver.Command.Flow.Lower
         DDC.Driver.Command.Flow.Melt
@@ -45,9 +48,7 @@ Library
         DDC.Driver.Command.Flow.Rate
         DDC.Driver.Command.Flow.Thread
         DDC.Driver.Command.Flow.Wind
-
         DDC.Driver.Command.Tetra.Boxing
-
         DDC.Driver.Command.BaseBuild
         DDC.Driver.Command.Check
         DDC.Driver.Command.Compile

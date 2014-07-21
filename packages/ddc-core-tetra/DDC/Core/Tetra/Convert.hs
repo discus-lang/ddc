@@ -72,11 +72,14 @@ convertM
 
 convertM pp runConfig defs kenv tenv mm
   = do  
-        -- Convert signatures of imported functions.
-        tsImports' <- mapM (convertImportM defs) $ moduleImportValues mm
-
+        -- All the data type definitions visible in the module.
         let defs'  = unionDataDefs defs
-                   $ fromListDataDefs (moduleDataDefsLocal mm)
+                   $ fromListDataDefs 
+                   $ moduleDataDefsLocal mm ++ (map fst $ moduleImportDataDefs mm)
+
+        -- Convert signatures of imported functions.
+        tsImports' <- mapM (convertImportM defs') 
+                   $ moduleImportValues mm
 
         -- Convert signatures of exported functions.
         tsExports' <- mapM (convertExportM defs') $ moduleExportValues mm
@@ -111,6 +114,7 @@ convertM pp runConfig defs kenv tenv mm
         let mm_salt 
                 = ModuleCore
                 { moduleName           = moduleName mm
+                , moduleIsHeader       = moduleIsHeader mm
 
                   -- None of the types imported by Lite modules are relevant
                   -- to the Salt language.
@@ -119,6 +123,7 @@ convertM pp runConfig defs kenv tenv mm
 
                 , moduleImportTypes    = Map.toList $ A.runtimeImportKinds
                 , moduleImportValues   = (Map.toList A.runtimeImportTypes) ++ tsImports'
+                , moduleImportDataDefs = []
 
                   -- Data constructors and pattern matches should have been
                   -- flattenedinto primops, so we don't need the data type

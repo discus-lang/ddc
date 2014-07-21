@@ -66,7 +66,8 @@ getDriverConfigOfState state
  = do   builder <- getActiveBuilder state
         return 
          $ D.Config
-         { D.configDump                         = Set.member Dump  (stateModes state)
+         { D.configLogBuild                     = True
+         , D.configDump                         = Set.member Dump  (stateModes state)
          , D.configInferTypes                   = False
          , D.configViaBackend                   = D.ViaLLVM
 
@@ -76,6 +77,7 @@ getDriverConfigOfState state
                 = Runtime.Config
                 { Runtime.configHeapSize = 65536 }
 
+         , D.configModuleBaseDirectories        = []
          , D.configOutputFile                   = Nothing
          , D.configOutputDir                    = Nothing
          , D.configSimplLite                    = S.Trans S.Id
