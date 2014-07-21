@@ -1,11 +1,13 @@
 -- | Performing size inference on a program in Combinator Normal Form
 module DDC.Core.Flow.Transform.Rates.SizeInference
-    ( generate ) where
+    ( generate
+    , iter
+    , parents ) where
 import DDC.Core.Flow.Transform.Rates.Combinators
 
 import Data.List
 import Data.Function (on)
-import Data.Maybe    (catMaybes)
+import Data.Maybe
 import Control.Applicative
 import Control.Monad
 
@@ -27,6 +29,7 @@ data Type v
  = TVar   (K v)
  -- | tau * tau
  | TCross (Type v) (Type v)
+ deriving (Eq, Ord)
 
 -- | Find all variables in type
 freeT :: Type a -> [K a]
@@ -353,6 +356,66 @@ unify e l r
 -- = Iteration size and transducers
 
 -- | Find iteration size of given combinator
-iter :: Ord a => Env a -> Bound s a -> Maybe (Type a)
-iter
+iter :: (Eq a, Eq s) => Program s a -> Env a -> Name s a -> Maybe (Type a)
+iter program e nm
+ | NameScalar  nm' <- nm
+ = do   b <- lookupS program nm'
+        case b of
+         Fold _ n -> get n 
+ | NameArray   nm' <- nm
+ = do   b <- lookupA program nm'
+        case b of
+         MapN{}         -> get nm'
+         Filter _ as    -> get as
+         Generate _ _   -> get nm'
+         Gather is _d   -> get is
+         Cross  as bs   -> TCross <$> get as <*> get bs
+ -- Otherwise, it's external.
+ | otherwise
+ = Nothing
+ where
+  get = lookupV e
 
+
+-- | Find a bindings' transducer.
+-- Only array bindings can have transducers.
+trans :: (Eq a) => Program s a -> a -> Maybe a
+trans bs o'
+ | Just (Filter _ n) <- lookupA bs o' = trans' n
+ | otherwise                          = trans' o'
+ where
+  trans' o
+   = case lookupA bs o of
+     Just (Filter _ n)
+      -> Just n
+
+     Just (MapN _ ns)
+      -> listToMaybe $ catMaybes $ map trans' ns
+     Just (Gather i _d)
+      -> trans' i
+
+     Just (Generate _ _)
+      -> Nothing
+     Just (Cross _ _)
+      -> Nothing
+
+     Nothing
+      -> Nothing
+
+-- | Find pair of parent transducers with same iteration size
+parents :: (Eq a, Eq s) => Program s a -> Env a -> Name s a -> Name s a -> Maybe (Name s a, Name s a)
+parents bs e a b
+ | (NameArray a', NameArray b') <- (a,b)
+ = if   itsz a == itsz b
+   then Just (a,b)
+   else let pas = trans bs a' >>= \a'' -> parents bs e (NameArray a'') b
+            pbs = trans bs b' >>= \b'' -> parents bs e a   (NameArray b'')
+        in listToMaybe $ catMaybes [pas, pbs]
+        
+ -- Otherwise, one binding is scalar or external, so they don't have transducers.
+ | otherwise
+ = Nothing
+
+ where
+  itsz = iter bs e
+ 

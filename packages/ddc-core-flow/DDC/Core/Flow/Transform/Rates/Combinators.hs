@@ -2,6 +2,8 @@
 module DDC.Core.Flow.Transform.Rates.Combinators
         ( Fun(..), Bind(..), ABind(..), SBind(..)
         , Program(..)
+        , lookupA, lookupS, lookupB
+        , Name(..)
         ) where
 import DDC.Core.Flow.Exp (ExpF)
 import Control.Applicative
@@ -61,6 +63,13 @@ data Program s a
    }
    deriving Show
 
+-- | Name of a combinator.
+-- This will also be the name of the corresponding node of the graph.
+data Name s a
+ = NameScalar s
+ | NameArray a
+ | NameExt ([s],[a])
+
 
 lookupA :: Eq a => Program s a -> a -> Maybe (ABind s a)
 lookupA p a
@@ -85,7 +94,7 @@ lookupS p s
    = go bs
 
 
-lookup :: (Eq (Bound s a)) => Program s a -> Either s a -> Maybe (Either (ABind s a) (SBind s a))
-lookup p (Left  s) = Left  <$> lookupS p s
-lookup p (Right a) = Right <$> lookupA p a
+lookupB :: (Eq s, Eq a) => Program s a -> Either s a -> Maybe (Either (SBind s a) (ABind s a))
+lookupB p (Left  s) = Left  <$> lookupS p s
+lookupB p (Right a) = Right <$> lookupA p a
 
