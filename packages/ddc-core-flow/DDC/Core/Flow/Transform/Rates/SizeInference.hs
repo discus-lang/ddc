@@ -349,3 +349,10 @@ unify e l r
    | otherwise
    = Nothing
 
+
+-- = Iteration size and transducers
+
+-- | Find iteration size of given combinator
+iter :: Ord a => Env a -> Bound s a -> Maybe (Type a)
+iter
+

@@ -4,6 +4,7 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , Program(..)
         ) where
 import DDC.Core.Flow.Exp (ExpF)
+import Control.Applicative
 
 -----------------------------------
 -- = Combinator normal form.
@@ -45,7 +46,7 @@ data ABind s a
  | Cross                 a a
    deriving Show
 
--- A scalar-valued binding
+-- | A scalar-valued binding
 data SBind s a
  -- | fold      :: (a -> a -> a) -> a -> Array a                 -> a
  = Fold       (Fun s a)  a
@@ -59,4 +60,32 @@ data Program s a
    , _outs  :: ([s], [a])
    }
    deriving Show
+
+
+lookupA :: Eq a => Program s a -> a -> Maybe (ABind s a)
+lookupA p a
+ = go $ _binds p
+ where
+  go [] = Nothing
+  go (ABind a' b : _)
+   | a == a'
+   = Just b
+  go (_ : bs)
+   = go bs
+
+lookupS :: Eq s => Program s a -> s -> Maybe (SBind s a)
+lookupS p s
+ = go $ _binds p
+ where
+  go [] = Nothing
+  go (SBind s' b : _)
+   | s == s'
+   = Just b
+  go (_ : bs)
+   = go bs
+
+
+lookup :: (Eq (Bound s a)) => Program s a -> Either s a -> Maybe (Either (ABind s a) (SBind s a))
+lookup p (Left  s) = Left  <$> lookupS p s
+lookup p (Right a) = Right <$> lookupA p a
 
