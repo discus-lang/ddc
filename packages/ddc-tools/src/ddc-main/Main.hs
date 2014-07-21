@@ -14,6 +14,9 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Build
 import DDC.Driver.Command.BaseBuild
 
+import DDC.Driver.Command.Tetra.Curry
+import DDC.Driver.Command.Tetra.Boxing
+
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Lower
 import DDC.Driver.Command.Flow.Concretize
@@ -125,6 +128,18 @@ run config
          -> do  dconfig         <- getDriverConfig config (Just filePath)
                 runError $ cmdToLlvmFromFile dconfig filePath
 
+        -- Tetra specific -----------------------------------------------------
+        ModeTetraCurry filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdTetraCurry dconfig (SourceFile filePath) str
+
+        ModeTetraBoxing filePath
+         -> do  dconfig         <- getDriverConfig config (Just filePath)
+                str             <- readFile filePath
+                runError $ cmdTetraBoxing dconfig (SourceFile filePath) str
+
+        -- Flow specific ------------------------------------------------------
         -- Prepare a Disciple Core Flow program for lowering.
         ModeFlowPrep filePath
          -> do  dconfig         <- getDriverConfig config (Just filePath)
@@ -181,11 +196,13 @@ run config
                 str             <- readFile filePath
                 runError $ cmdFlowThread dconfig (SourceFile filePath) str
 
+        -- Build --------------------------------------------------------------
         -- Build the runtime and base libraries.
         ModeBaseBuild
          -> do  dconfig         <- getDriverConfig config Nothing
                 runError $ cmdBaseBuild dconfig
 
+        -- Print --------------------------------------------------------------
         -- Print the external builder info for this platform.
         ModePrintBuilder
          -> do  dconfig         <- getDriverConfig config Nothing

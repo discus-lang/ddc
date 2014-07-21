@@ -54,6 +54,13 @@ data Mode
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
 
+        -- Disciple Core Tetra specific ---------
+        -- | Manage higher order functions in a module.
+        | ModeTetraCurry  FilePath
+
+        -- | Manage boxing in a module.
+        | ModeTetraBoxing FilePath
+
         -- Disciple Core Flow specific ----------
         -- | Prepare a Flow program for lowering.
         | ModeFlowPrep  FilePath

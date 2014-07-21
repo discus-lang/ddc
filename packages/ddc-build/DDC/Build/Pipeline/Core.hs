@@ -30,8 +30,9 @@ import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 
-import qualified DDC.Core.Tetra                         as Tetra
+import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
+import qualified DDC.Core.Tetra                         as Tetra
 
 import qualified DDC.Core.Lite                          as Lite
 
@@ -109,8 +110,8 @@ data PipeCore a n where
 
   -- Treat a module as belonging to the Core Tetra fragment from now on.
   PipeCoreAsTetra
-        :: ![PipeTetra (C.AnTEC a Tetra.Name)]
-        -> PipeCore (C.AnTEC a Tetra.Name) Tetra.Name
+        :: ![PipeTetra a]
+        -> PipeCore a Tetra.Name
 
   -- Treat a module as belonging to the Core Lite fragment from now on.
   PipeCoreAsLite
@@ -258,6 +259,12 @@ data PipeTetra a where
          :: !Sink
          -> PipeTetra a
 
+        -- Manage currying of functions.
+        PipeTetraCurry
+         :: (NFData a, Show a)
+         => ![PipeCore a Tetra.Name]
+         -> PipeTetra a
+
         -- Manage boxing of numeric values.
         PipeTetraBoxing
          :: (NFData a, Show a)
@@ -283,11 +290,15 @@ pipeTetra !mm !pp
  = case pp of
         PipeTetraOutput !sink
          -> {-# SCC "PipeTetraOutput" #-}
-            pipeSink (renderIndent $ ppr mm) sink
+            pipeSink (renderIndent $ ppr mm)  sink
 
         PipeTetraBoxing !pipes
          -> {-# SCC "PipeTetraBoxing" #-}
             pipeCores (Tetra.boxingModule mm) pipes
+
+        PipeTetraCurry  !pipes
+         -> {-# SCC "PipeTetraCurry"  #-}
+            pipeCores (Tetra.curryModule mm)  pipes
 
         PipeTetraToSalt !platform !runConfig !pipes
          -> {-# SCC "PipeTetraToSalt" #-}
