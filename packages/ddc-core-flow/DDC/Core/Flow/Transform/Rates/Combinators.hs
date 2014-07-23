@@ -2,8 +2,9 @@
 module DDC.Core.Flow.Transform.Rates.Combinators
         ( Fun(..), Bind(..), ABind(..), SBind(..)
         , Program(..)
+        , CName(..)
         , lookupA, lookupS, lookupB
-        , Name(..)
+        , envOfBind
         ) where
 import DDC.Core.Flow.Exp (ExpF)
 import Control.Applicative
@@ -51,7 +52,7 @@ data ABind s a
 -- | A scalar-valued binding
 data SBind s a
  -- | fold      :: (a -> a -> a) -> a -> Array a                 -> a
- = Fold       (Fun s a)  a
+ = Fold       (Fun s a) s  a
    deriving Show
 
 -- | An entire program/function to find a fusion clustering for
@@ -65,7 +66,7 @@ data Program s a
 
 -- | Name of a combinator.
 -- This will also be the name of the corresponding node of the graph.
-data Name s a
+data CName s a
  = NameScalar s
  | NameArray a
  | NameExt ([s],[a])
@@ -97,4 +98,10 @@ lookupS p s
 lookupB :: (Eq s, Eq a) => Program s a -> Either s a -> Maybe (Either (SBind s a) (ABind s a))
 lookupB p (Left  s) = Left  <$> lookupS p s
 lookupB p (Right a) = Right <$> lookupA p a
+
+
+envOfBind :: Bind s a -> ([s], [a])
+envOfBind (SBind s _) = ([s], [])
+envOfBind (ABind a _) = ([] , [a])
+envOfBind (Ext outs _ _) = outs
 

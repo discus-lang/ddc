@@ -222,7 +222,7 @@ generateBind env b
            con  = CEqual z (TVar u)
        in (env', con)
 
-   SBind _ (Fold _ _)
+   SBind _ (Fold _ _ _)
     -> (env, CTrue)
 
    ABind z (Generate _ _)
@@ -356,12 +356,12 @@ unify e l r
 -- = Iteration size and transducers
 
 -- | Find iteration size of given combinator
-iter :: (Eq a, Eq s) => Program s a -> Env a -> Name s a -> Maybe (Type a)
+iter :: (Eq a, Eq s) => Program s a -> Env a -> CName s a -> Maybe (Type a)
 iter program e nm
  | NameScalar  nm' <- nm
  = do   b <- lookupS program nm'
         case b of
-         Fold _ n -> get n 
+         Fold _ _ n -> get n 
  | NameArray   nm' <- nm
  = do   b <- lookupA program nm'
         case b of
@@ -403,7 +403,7 @@ trans bs o'
       -> Nothing
 
 -- | Find pair of parent transducers with same iteration size
-parents :: (Eq a, Eq s) => Program s a -> Env a -> Name s a -> Name s a -> Maybe (Name s a, Name s a)
+parents :: (Eq a, Eq s) => Program s a -> Env a -> CName s a -> CName s a -> Maybe (CName s a, CName s a)
 parents bs e a b
  | (NameArray a', NameArray b') <- (a,b)
  = if   itsz a == itsz b
