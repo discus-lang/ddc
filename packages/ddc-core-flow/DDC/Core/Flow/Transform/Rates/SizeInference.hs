@@ -172,8 +172,8 @@ generate program@(Program (_inSs,inAs) _binds (_outSs,outAs))
         let inTs = catMaybes $ map (lookupV e) inAs
         let ouTs = catMaybes $ map (lookupV e) outAs
 
-        let fvIn = concatMap freeT inTs
-        let fvOu = concatMap freeT ouTs
+        let fvIn = nub $ concatMap freeT inTs
+        let fvOu = nub $ concatMap freeT ouTs
 
         -- check if there are any rigids mentioned in input types:
         -- this means we'd have an existential input, which is nonsense.
