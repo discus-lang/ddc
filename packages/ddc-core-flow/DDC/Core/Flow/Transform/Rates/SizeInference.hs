@@ -3,12 +3,13 @@ module DDC.Core.Flow.Transform.Rates.SizeInference
     ( generate
     , iter
     , parents ) where
+import DDC.Base.Pretty
 import DDC.Core.Flow.Transform.Rates.Combinators
 
 import Data.List
 import Data.Function (on)
 import Data.Maybe
-import Control.Applicative
+import qualified Control.Applicative as A
 import Control.Monad
 
 -----------------------------------
@@ -341,7 +342,7 @@ unify e l r
    | otherwise    = Nothing
 
   go (TCross a1 a2) (TCross b1 b2)
-   = (++) <$> go a1 b1 <*> go a2 b2
+   = (++) A.<$> go a1 b1 A.<*> go a2 b2
 
   go (TVar a) b@(TCross _ _)
    | isUnify e a
@@ -372,7 +373,7 @@ iter program e nm
          Filter _ as    -> get as
          Generate _ _   -> get nm'
          Gather is _d   -> get is
-         Cross  as bs   -> TCross <$> get as <*> get bs
+         Cross  as bs   -> TCross A.<$> get as A.<*> get bs
  -- Otherwise, it's external.
  | otherwise
  = Nothing
@@ -422,3 +423,35 @@ parents bs e a b
  where
   itsz = iter bs e
  
+
+-----------------------------------
+-- == Pretty printing
+
+instance (Pretty v) => Pretty (K v) where
+ ppr (KV v) = ppr v
+ ppr (K' v) = ppr v <> squote
+
+instance (Pretty v) => Pretty (Type v) where
+ ppr (TVar   v)   = ppr v
+ ppr (TCross a b) = ppr a <+> text "*" <+> ppr b
+
+instance (Pretty v) => Pretty (Scope v) where
+ ppr (EVar v t)   = ppr v <+> text ":" <+> ppr t
+ ppr (EUnify v)   = text "∀" <> ppr v
+ ppr (ERigid v)   = text "∃" <> ppr v
+
+{-
+instance (Pretty v) => Pretty (Env v) where
+ ppr = hcat . map ppr
+-}
+
+instance (Pretty v) => Pretty (Scheme v) where
+ ppr (Scheme foralls exists from to)
+  =   text "∀" <> hcat (map ppr foralls) <> text ". "
+  <+> text "∃" <> hcat (map ppr exists)  <> text ". "
+  <+> tupled (map tppr from) <+> text "→"
+  <+> tupled (map tppr to)
+  where
+   tppr (v,t) = ppr v <+> text ":" <+> ppr t
+
+

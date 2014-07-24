@@ -6,8 +6,9 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , lookupA, lookupS, lookupB
         , envOfBind
         ) where
+import DDC.Base.Pretty
 import DDC.Core.Flow.Exp (ExpF)
-import Control.Applicative
+import qualified Control.Applicative as A
 
 -----------------------------------
 -- = Combinator normal form.
@@ -96,12 +97,63 @@ lookupS p s
 
 
 lookupB :: (Eq s, Eq a) => Program s a -> Either s a -> Maybe (Either (SBind s a) (ABind s a))
-lookupB p (Left  s) = Left  <$> lookupS p s
-lookupB p (Right a) = Right <$> lookupA p a
+lookupB p (Left  s) = Left  A.<$> lookupS p s
+lookupB p (Right a) = Right A.<$> lookupA p a
 
 
 envOfBind :: Bind s a -> ([s], [a])
 envOfBind (SBind s _) = ([s], [])
 envOfBind (ABind a _) = ([] , [a])
 envOfBind (Ext outs _ _) = outs
+
+
+-----------------------------------
+-- == Pretty printing
+-- This is just the notation I used in the prototype.
+
+instance (Pretty s, Pretty a) => Pretty (Fun s a) where
+ ppr (Fun _ ss)
+  = encloseSep lbrace rbrace space
+  $ map ppr ss
+
+instance (Pretty s, Pretty a) => Pretty (Bind s a) where
+ ppr (SBind n (Fold f i a))
+  = bind (ppr n) "reduce" (ppr f <+> ppr i <+> ppr a)
+
+ ppr (ABind n (MapN f as))
+  = bind (ppr n) "mapN"   (ppr f <+> hsep (map ppr as))
+
+ ppr (ABind n (Filter f a))
+  = bind (ppr n) "filter" (ppr f <+> ppr a)
+
+ ppr (ABind n (Gather a b))
+  = bind (ppr n) "gather" (ppr a <+> ppr b)
+
+ ppr (ABind n (Generate sz f))
+  = bind (ppr n) "generate" (ppr sz <+> ppr f)
+
+ ppr (ABind n (Cross a b))
+  = bind (ppr n) "cross"    (ppr a <+> ppr b)
+
+ ppr (Ext outs _ ins)
+  = bind (binds outs) "external" (binds ins)
+  where
+   binds (ss,as)
+    = encloseSep lbrace rbrace space (map ppr ss) <+> hcat (map ppr as)
+
+bind :: Doc -> String -> Doc -> Doc
+bind nm com args
+ = nm <+> nest 4 (equals <+> text com <+> args)
+
+instance (Pretty s, Pretty a) => Pretty (Program s a) where
+ ppr (Program ins binds outs)
+  = params <$> vcat (map ppr binds) <$> returns
+  where
+   params
+    =   vcat (map (\i -> text "param scalar" <+> ppr i) (fst ins))
+    <$> vcat (map (\i -> text "param array"  <+> ppr i) (snd ins))
+
+   returns
+    =   vcat (map (\i -> text "return"       <+> ppr i) (fst outs))
+    <$> vcat (map (\i -> text "return"       <+> ppr i) (snd outs))
 

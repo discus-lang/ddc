@@ -15,7 +15,6 @@ import           Data.Monoid
 import qualified Data.Set               as Set
 
 
-
 -----------------------------------
 -- = Conversion from ExpF to CNF.
 --
@@ -102,10 +101,11 @@ getBind (nm,(t,x)) env
  -- Try to match against a known vector combinator.
  | Just (f, args) <- takeXApps x
  , XVar (UPrim (NameOpVector ov) _) <- f
- = case (ov, args) of
+ -- throw away that pesky type information
+ , args' <- filter ((==Nothing) . takeXType) args
+ = case (ov, args') of
    (OpVectorReduce, [worker, seed, arr])
     | Just fun     <- getFun worker
-    -- TODO: Oh, no! What if the seed is a literal - XCon?
     , Just i       <- name seed
     , Just a       <- name arr
     -> SBind nm (Fold fun i a)
@@ -148,6 +148,10 @@ getBind (nm,(t,x)) env
 
   name xx
    | XVar (UName n) <- xx
+   = Just n
+    -- TODO: This isn't quite right..
+   | XCon  dc       <- xx
+   , Just  n        <- takeNameOfDaCon dc
    = Just n
    | otherwise
    = Nothing

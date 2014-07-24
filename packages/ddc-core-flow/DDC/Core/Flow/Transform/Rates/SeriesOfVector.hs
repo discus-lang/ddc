@@ -59,21 +59,17 @@ seriesOfVectorLets ll
 -- | Takes a single function body. Function body must be in a-normal form.
 seriesOfVectorFunction :: ExpF -> (ExpF, [Fail])
 seriesOfVectorFunction fun
- | True <- trace ("1Exp: " ++ show (ppr fun) ++ "\n") True
  = case cnfOfExp fun of
    Left err
     -> trace ("Error: " ++ show err)
              (fun, [FailCannotConvert err])
    Right prog
-    -> trace ("2Converted: " ++ show prog) $
+    -> trace ("2Converted: " ++ renderIndent (ppr prog)) $
           case SizeInf.generate prog of
            Nothing
             -> trace ("3Error: can't perform size inference") (fun, [])
            Just s
-            -> trace ("3SizeInf: " ++ show s) (fun, [])
-
- | otherwise
- = error "no"
+            -> trace ("3SizeInf: " ++ renderIndent (ppr s)) (fun, [])
 
 {-
 data Loop

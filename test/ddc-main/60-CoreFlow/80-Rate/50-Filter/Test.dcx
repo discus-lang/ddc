@@ -1,14 +1,14 @@
 :set Synth
 
 -- map2 with two filtered - should be outlawed!
---:flow-rate..
---module Test with letrec
---test    (us : Vector# Int#) : Vector# Int#
--- =      let us1  = vfilter# [Int#] (gt# [Int#] 1i#) us 
---     in let us2  = vfilter# [Int#] (gt# [Int#] 2i#) us
---     in let us'  = vmap2# [Int#] [Int#] [Int#] (add# [Int#]) us1 us2
---     in     us'
---;;
+:flow-rate..
+module Test with letrec
+test    (us : Vector# Int#) : Vector# Int#
+ =      let us1  = vfilter# [Int#] (gt# [Int#] 1i#) us 
+     in let us2  = vfilter# [Int#] (gt# [Int#] 2i#) us
+     in let us'  = vmap2# [Int#] [Int#] [Int#] (add# [Int#]) us1 us2
+     in     us'
+;;
 
 
 -- Simple filter - return filtered
