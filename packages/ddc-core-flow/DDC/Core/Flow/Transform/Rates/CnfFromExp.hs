@@ -37,7 +37,6 @@ cnfOfExp fun
         let (lams, body)   = takeXLamFlags_safe fun
         -- Assuming the body is already in a-normal form.
             (lets, xx)     = splitXLets         body
-        -- TODO check that xx is a-normal?
 
         -- Split into name and values and warn for recursive bindings
         binds             <- takeLets           lets
@@ -71,7 +70,6 @@ cnfOfExp fun
         let (binds', env') = getBinds binds inputs 
         let outs           = localEnv env'  xx
 
-        -- TODO
         return (Program inputs binds' outs)
 
 -- | Check if type is an array type, so we know whether variables are scalar or array.

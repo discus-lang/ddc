@@ -20,7 +20,7 @@ import Control.Monad
 data K v
  = KV v
  | K' (K v)
- deriving (Eq,Ord)
+ deriving (Eq,Ord,Show)
 
 
 -- | tau ::=
@@ -29,7 +29,7 @@ data Type v
  = TVar   (K v)
  -- | tau * tau
  | TCross (Type v) (Type v)
- deriving (Eq, Ord)
+ deriving (Eq, Ord,Show)
 
 -- | Find all variables in type
 freeT :: Type a -> [K a]
@@ -45,6 +45,7 @@ data Constraint v
  | CEqual v (Type v)
  -- | C /\ C
  | CAnd (Constraint v) (Constraint v)
+ deriving (Show)
 
 -- | Big conjunction. Join a bunch of constraints together
 ands :: [Constraint v] -> Constraint v
@@ -74,6 +75,7 @@ data Scheme v
  , _from   :: [(v, Type v)]
  , _to     :: [(v, Type v)]
  }
+ deriving (Show)
 
 
 -----------------------------------
@@ -91,6 +93,7 @@ data Scope v
  | EUnify (K v)
  -- | exists k
  | ERigid (K v)
+ deriving (Show)
 
 evar :: v -> Scope v
 evar v

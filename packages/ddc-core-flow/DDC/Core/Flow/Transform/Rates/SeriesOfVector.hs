@@ -2,27 +2,22 @@ module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
 where
-import DDC.Core.Collect
+import DDC.Core.Pretty
+-- import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
-import DDC.Core.Flow.Transform.Rates.Combinators
+-- import DDC.Core.Flow.Transform.Rates.Combinators
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
-import DDC.Core.Flow.Transform.Rates.Constraints
 import DDC.Core.Flow.Transform.Rates.Fail
-import DDC.Core.Flow.Transform.Rates.Graph
-import DDC.Core.Flow.Transform.Rates.SizeInference
+-- import DDC.Core.Flow.Transform.Rates.Graph
+import DDC.Core.Flow.Transform.Rates.SizeInference as SizeInf
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
-import qualified DDC.Type.Env           as Env
 
-import           Control.Applicative
-import           Control.Monad
-import           Data.List              (intersect, nub)
-import qualified Data.Map               as Map
-import           Data.Maybe             (catMaybes)
-import qualified Data.Set               as Set
+
+import Debug.Trace
 
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
@@ -64,83 +59,23 @@ seriesOfVectorLets ll
 -- | Takes a single function body. Function body must be in a-normal form.
 seriesOfVectorFunction :: ExpF -> (ExpF, [Fail])
 seriesOfVectorFunction fun
- = run $ do
-        -- Peel off the lambdas
-        let (lams, body)   = takeXLamFlags_safe fun
-        
-            -- This assumes the body is already in a-normal form.
-            (lets, xx)     = splitXLets         body
-        
-        -- Split into name and values and warn for recursive bindings
-        binds             <- takeLets           lets
-        let tymap          = takeTypes          (concatMap valwitBindsOfLets lets ++ map snd lams)
+ | True <- trace ("1Exp: " ++ show (ppr fun) ++ "\n") True
+ = case cnfOfExp fun of
+   Left err
+    -> trace ("Error: " ++ show err)
+             (fun, [FailCannotConvert err])
+   Right prog
+    -> trace ("2Converted: " ++ show prog) $
+          case SizeInf.generate prog of
+           Nothing
+            -> trace ("3Error: can't perform size inference") (fun, [])
+           Just s
+            -> trace ("3SizeInf: " ++ show s) (fun, [])
 
-        -- Assumes the binds only use vector primitives,
-        -- OR   if not vector primitives, do not refer to bound vectors
-
-        let names = map fst binds
-        -- Make sure names are unique
-        when (length names /= length (nub names)) $
-          warn FailNamesNotUnique
-
-        (constrs, equivs)
-                  <- checkBindConstraints binds
-
-        let extras = catMaybes
-                   $ map (takeNameOfBind . snd) lams
-        let graph  = graphOfBinds         binds extras
-
-        let rets   = catMaybes
-                   $ map takeNameOfBound
-                   $ Set.toList
-                   $ freeX Env.empty xx
-        
-        loops     <- schedule             graph equivs rets
-
-        binds'    <- orderBinds           binds loops
-
-        -- True <- trace ("TYMAP:" ++ show tymap) return True
-        -- True <- trace ("NAMES,LOOPS,NAMES':" ++ show (names, loops, map (map fst) binds')) 
-        --         return True
-
-        let outputs = map lOutputs loops
-        let inputs  = map lInputs  loops
-
-        let getMax  = getMaxSize constrs equivs extras
-
-        return $ construct getMax lams (zip3 binds' outputs inputs) equivs tymap xx
-
--- | Peel the lambdas off, or const if there are none
-takeXLamFlags_safe x
- | Just (binds, body) <- takeXLamFlags x
- = (binds, body)
  | otherwise
- = ([],    x)
+ = error "no"
 
-
--- | Split into name and values and warn for recursive bindings
-takeLets :: [LetsF] -> LogFailures [(Name, ExpF)]
-takeLets lets
- = concat <$> mapM get lets
- where
-  get (LLet (BName n _) x) = return [(n,x)]
-  get (LLet (BNone _)   _) = return []
-  get (LLet (BAnon _)   _) = w      FailNoDeBruijnAllowed
-  get (LRec        _     ) = w      FailRecursiveBindings
-  get (LPrivate _ _ _)     = w      FailLetRegionNotHandled
-  get (LWithRegion _     ) = w      FailLetRegionNotHandled
-
-  w err                    = warn err >> return []
-
--- | Split into name and values and warn for recursive bindings
-takeTypes :: [Bind Name] -> Map.Map Name TypeF
-takeTypes binds
- = Map.fromList $ concatMap get binds
- where
-  get (BName n t) = [(n,t)]
-  get _           = []
-
-
+{-
 data Loop
  = Loop 
  { lBindings :: [Name]
@@ -466,6 +401,7 @@ modNameX s xx
     _
      -> xx
 
+-}
 {-
 
 \as,bs...
