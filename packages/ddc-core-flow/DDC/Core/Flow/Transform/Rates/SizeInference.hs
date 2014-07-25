@@ -1,6 +1,7 @@
 -- | Performing size inference on a program in Combinator Normal Form
 module DDC.Core.Flow.Transform.Rates.SizeInference
-    ( generate
+    ( Type(..), K(..), Env(..), Scope(..), Scheme(..)
+    , generate
     , iter
     , parents ) where
 import DDC.Base.Pretty

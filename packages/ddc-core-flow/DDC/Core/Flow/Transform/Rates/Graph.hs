@@ -1,23 +1,20 @@
 module DDC.Core.Flow.Transform.Rates.Graph
-        ( Graph
-        , Edge
+        ( Graph(..)
+        , Edge(..)
         , graphOfBinds
         , graphTopoOrder 
         , mergeWeights
-        , traversal
-        , invertMap
-        , mlookup )
+        , invertMap)
 where
-import DDC.Core.Collect
-import DDC.Core.Flow.Compounds
-import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Exp
-import qualified DDC.Type.Env           as Env
+import DDC.Core.Flow.Transform.Rates.Combinators
+import DDC.Core.Flow.Transform.Rates.SizeInference
 
-import           Data.List              (intersect, nub)
+import           Data.List              (nub)
 import qualified Data.Map               as Map
 import           Data.Maybe             (catMaybes)
 import qualified Data.Set               as Set
+
+import Control.Applicative
 
 -- | Graph for function
 --   Each node is a binding, edges are dependencies, and the bool is whether the node's output
@@ -26,58 +23,66 @@ import qualified Data.Set               as Set
 --   but a fold cannot as it must consume the entire stream before producing output.
 --
 
-type Edge  = (Name, Bool)
-type Graph = Map.Map Name [Edge]
+type Edge  n   = (n, Bool)
+data Graph n t = Graph (Map.Map n (t, [Edge n]))
 
-graphOfBinds :: [(Name,ExpF)] -> [Name] -> Graph
-graphOfBinds binds extra_names
- = Map.map mkEdges graph1
+
+graphOfBinds :: (Ord s, Ord a) => Program s a -> Env a -> Graph (CName s a) (Maybe (Type a))
+graphOfBinds prog env
+ = Graph $ graph
  where
-  mkEdges (refs, _fusible)
-   = map getFusible refs
-  
-  getFusible r
-   | Just (_,f) <- Map.lookup r graph1
-   = (r, f)
-   | otherwise
-   = (r, True)
-
-  graph1
+  graph
    = Map.fromList
    $ map gen
-   $ binds
+   $ _binds prog
 
-  gen (k, xx)
-   = let free = catMaybes
-              $ map takeNameOfBound
-              $ Set.toList
-              $ freeX Env.empty xx
-         refs = free `intersect` names
-     in  (k, (refs, fusible xx))
+  gen b
+   = let n    = cnameOfBind b
+         ty   = iter prog env n
+         es   = edges n b
+     in (n, (ty, es))
 
-  names = map fst binds ++ extra_names
+  edges n (ABind _ (Gather a b))
+   = let a' = mkedge (const False) a
+         b' = mkedge (inedge n)    b
+     in catMaybes [a', b']
 
-  fusible xx
-   | Just (f, _)                      <- takeXApps xx
-   , XVar (UPrim (NameOpVector ov) _) <- f
-   = case ov of
-     OpVectorReduce
-      -> False
-     
-     -- Length of `concrete rate' is known before iteration, so should be contractible.
-     OpVectorLength
-      -> False
-     _
-      -> True
+  edges n (ABind _ (Cross a b))
+   = let a' = mkedge (inedge n)    a
+         b' = mkedge (const False) b
+     in catMaybes [a', b']
 
+  edges n b
+   = let fs   = freeOfBind  b
+         fs'  = catMaybes
+              $ map (cnameOfEither prog) fs
+         fs'' = map (pairon (inedge n)) fs'
+     in  fs''
+
+  mkedge f a
+   = pairon f <$> cnameOfEither prog (Right a)
+
+  pairon f x
+   = (x, f x)
+
+  inedge to from
+   -- scalar output:
+   | NameScalar _ <- from
+   = False
+   | NameExt _    <- from
+   = False
+   | NameExt _    <- to
+   = False
    | otherwise
    = True
 
 
+
+
 -- | Find topological ordering of DAG
 -- Does not check for cycles - really must be a DAG!
-graphTopoOrder :: Graph -> [Name]
-graphTopoOrder graph
+graphTopoOrder :: Ord n => Graph n t -> [n]
+graphTopoOrder (Graph graph)
  = reverse $ go ([], Map.keysSet graph)
  where
   go (l, s)
@@ -89,8 +94,8 @@ graphTopoOrder graph
 
   visit (l,s) m
    | Set.member m s
-   = let edges    = mlookup "visit" graph m
-         pres     = map fst edges
+   , (_ty, edges) <- graph Map.! m
+   = let pres     = map fst edges
          s'       = Set.delete m s
          (l',s'') = foldl visit (l,s') pres
      in (m : l', s'')
@@ -100,31 +105,15 @@ graphTopoOrder graph
 
 
 
-traversal :: Graph -> (Edge -> Name -> Int) -> Map.Map Name Int
-traversal graph weight
- = foldl go Map.empty
- $ graphTopoOrder graph
- where
-  go m node
-   = let pres  = mlookup "traversal" graph node
-
-         get e@(u,_)
-          | Just v <- Map.lookup u m
-          = v + weight e node
-          | otherwise
-          = 0
-
-         w     = foldl max 0
-               $ map get
-               $ pres
-
-     in  Map.insert node w m
-
-
-mergeWeights :: Graph -> Map.Map Name Int -> Graph
-mergeWeights graph weights
- = foldl go Map.empty
- $ graphTopoOrder graph
+-- | Merge nodes together with same value in weight map.
+-- Type information of each node is thrown away.
+-- It is, perhaps surprisingly, legal to merge nodes of different types (eg filtered data),
+-- so the only sensible thing is to choose () for all new types.
+mergeWeights :: Ord n => Graph n t -> Map.Map n Int -> Graph n ()
+mergeWeights g@(Graph graph) weights
+ = Graph
+ $ foldl go Map.empty
+ $ graphTopoOrder g
  where
   go m node
    -- Merge if it's a weighted one
@@ -134,17 +123,21 @@ mergeWeights graph weights
    = merge node node m
 
   merge node k m
-   | Just edges <- Map.lookup node graph
+   | Just (_ty,edges) <- Map.lookup node graph
    = let edges' = nub $ map (\(n,f) -> (name n, f)) edges
-     in  Map.insertWith (\x y -> nub $ x ++ y) k edges' m
+     in  Map.insertWith ins k ((),edges') m
    | otherwise
    = m
+
+  ins (_, e1) (_, e2)
+   = ((), nub $ e1 ++ e2)
 
   weights' = invertMap weights
 
   name n
    = maybe n id (name_maybe n)
 
+  -- If this node is mentioned in the weights map, then find some canonical name for it.
   name_maybe n
    | Just i      <- Map.lookup n weights
    , Just (v:_)  <- Map.lookup i weights'
@@ -158,13 +151,5 @@ invertMap m
  = Map.foldWithKey go Map.empty m
  where
   go k v m' = Map.insertWith (++) v [k] m'
-
-
-mlookup :: Ord k => String -> Map.Map k v -> k -> v
-mlookup str m k
- | Just v <- Map.lookup k m
- = v
- | otherwise
- = error ("ddc-core-flow.mlookup: no key " ++ str)
 
 

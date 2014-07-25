@@ -5,6 +5,7 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , CName(..)
         , lookupA, lookupS, lookupB
         , envOfBind
+        , freeOfBind, cnameOfEither, cnameOfBind
         ) where
 import DDC.Base.Pretty
 import DDC.Core.Flow.Exp (ExpF)
@@ -71,6 +72,7 @@ data CName s a
  = NameScalar s
  | NameArray a
  | NameExt ([s],[a])
+ deriving (Eq, Ord, Show)
 
 
 lookupA :: Eq a => Program s a -> a -> Maybe (ABind s a)
@@ -106,6 +108,58 @@ envOfBind (SBind s _) = ([s], [])
 envOfBind (ABind a _) = ([] , [a])
 envOfBind (Ext outs _ _) = outs
 
+
+cnameOfBind :: Bind s a -> CName s a
+cnameOfBind (SBind s _)    = NameScalar s
+cnameOfBind (ABind a _)    = NameArray  a
+cnameOfBind (Ext outs _ _) = NameExt    outs
+
+freeOfBind :: Bind s a -> [Either s a]
+freeOfBind b
+ = case b of
+   SBind _ (Fold fun i a)
+    -> ffun fun ++ [fs i] ++ [fa a]
+   ABind _ (MapN fun as)
+    -> ffun fun ++ map fa as
+   ABind _ (Filter fun a)
+    -> ffun fun ++ [fa a]
+   ABind _ (Generate s fun)
+    -> ffun fun ++ [fs s]
+   ABind _ (Gather x y)
+    -> [fa x, fa y]
+   ABind _ (Cross x y)
+    -> [fa x, fa y]
+   Ext _ _ (inS,inA)
+    -> map fs inS ++ map fa inA
+ where
+  ffun (Fun _ f) = map fs f
+  fs             = Left
+  fa             = Right
+
+-- | get the name of the binding that provides this value.
+-- this is made trickier because externals can bind multiple.
+cnameOfEither :: (Eq s, Eq a) => Program s a -> Either s a -> Maybe (CName s a)
+cnameOfEither prog esa
+ | Left  s <- esa
+ , Just  _ <- lookupS prog s
+ = Just $ NameScalar s
+ | Right a <- esa
+ , Just  _ <- lookupA prog a
+ = Just $ NameArray  a
+ -- Otherwise, try to find an external
+ | otherwise
+ = go (_binds prog)
+ where
+  go [] = Nothing
+  go (Ext (ss,as) _ _ : _)
+   | Left  s <- esa
+   , s `elem` ss
+   = Just $ NameExt (ss,as)
+   | Right a <- esa
+   , a `elem` as
+   = Just $ NameExt (ss,as)
+  go (_ : bs)
+   = go bs
 
 -----------------------------------
 -- == Pretty printing
