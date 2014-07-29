@@ -74,7 +74,8 @@ seriesOfVectorFunction fun
            Just (env,s)
             -> trace ("3SizeInf: " ++ renderIndent (ppr (env, s))) $
                  let g          = graphOfBinds prog env
-                     clustering = solve_linear g (parents prog env)
+                     tmap a b   = parents prog env a b
+                     clustering = solve_linear g tmap
                  in  trace ("4Graph: " ++ renderIndent (ppr (listOfGraph g))) $
                      trace ("5Clust: " ++ renderIndent (ppr (Map.toList clustering))) (fun, [])
 

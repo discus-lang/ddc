@@ -3,7 +3,8 @@ module DDC.Core.Flow.Transform.Rates.SizeInference
     ( Type(..), K(..), Env(..), Scope(..), Scheme(..)
     , generate
     , iter
-    , parents ) where
+    , parents
+    , trans ) where
 import DDC.Base.Pretty
 import DDC.Core.Flow.Transform.Rates.Combinators
 
@@ -384,20 +385,28 @@ iter program e nm
 
 -- | Find a bindings' transducer.
 -- Only array bindings can have transducers.
-trans :: (Eq a) => Program s a -> a -> Maybe a
-trans bs o'
- | Just (Filter _ n) <- lookupA bs o' = trans' n
- | otherwise                          = trans' o'
+trans :: (Eq a, Eq s) => Program s a -> CName s a -> Maybe (CName s a)
+trans bs nm
+ | NameArray nm' <- nm
+ , Just (Filter _ n) <- lookupA bs nm' = trans' (NameArray n)
+ | otherwise                           = trans' nm
  where
-  trans' o
+  trans' (NameScalar o)
+   = case lookupS bs o of
+     Just (Fold _ _ n)
+      -> trans' (NameArray n)
+     Nothing
+      -> Nothing
+
+  trans' (NameArray o)
    = case lookupA bs o of
-     Just (Filter _ n)
-      -> Just n
+     Just (Filter _ _n)
+      -> Just (NameArray o)
 
      Just (MapN _ ns)
-      -> listToMaybe $ catMaybes $ map trans' ns
+      -> listToMaybe $ catMaybes $ map (trans' . NameArray) ns
      Just (Gather i _d)
-      -> trans' i
+      -> trans' (NameArray i)
 
      Just (Generate _ _)
       -> Nothing
@@ -407,19 +416,20 @@ trans bs o'
      Nothing
       -> Nothing
 
+  trans' (NameExt _)
+   = Nothing
+
+
 -- | Find pair of parent transducers with same iteration size
 parents :: (Eq a, Eq s) => Program s a -> Env a -> CName s a -> CName s a -> Maybe (CName s a, CName s a)
 parents bs e a b
- | (NameArray a', NameArray b') <- (a,b)
- = if   itsz a == itsz b
-   then Just (a,b)
-   else let pas = trans bs a' >>= \a'' -> parents bs e (NameArray a'') b
-            pbs = trans bs b' >>= \b'' -> parents bs e a   (NameArray b'')
-        in listToMaybe $ catMaybes [pas, pbs]
-        
- -- Otherwise, one binding is scalar or external, so they don't have transducers.
+ | itsz a == itsz b
+ = Just (a,b)
+
  | otherwise
- = Nothing
+ = let pas = trans bs a >>= \a'' -> parents bs e a'' b
+       pbs = trans bs b >>= \b'' -> parents bs e a   b''
+   in  listToMaybe $ catMaybes [pas, pbs]
 
  where
   itsz = iter bs e
