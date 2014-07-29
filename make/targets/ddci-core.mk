@@ -52,6 +52,6 @@ ddci-core-ghci :
 ddci-core-tags :
 	@echo "* Generating tags"
 	@$(GHC) $(patsubst -O2,,$(GHC_FLAGS)) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) \
-		$(patsubst %,-i%,$(ddci-core_packages_root)) packages/ddc-tools/src/ddci-core/Main.hs -e ':ctags'
+		$(patsubst %,-i%,$(ddci-core_packages_root)) -Wwarn packages/ddc-tools/src/ddci-core/Main.hs -e ':ctags'
 	@echo "* Copying into packages/"
 	@sed "s/packages\///" tags > packages/tags
