@@ -10,11 +10,14 @@ import DDC.Core.Flow.Exp
 -- import DDC.Core.Flow.Transform.Rates.Combinators
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
--- import DDC.Core.Flow.Transform.Rates.Graph
+import DDC.Core.Flow.Transform.Rates.Graph
 import DDC.Core.Flow.Transform.Rates.SizeInference as SizeInf
+import DDC.Core.Flow.Transform.Rates.Linear
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
+
+import qualified Data.Map as Map
 
 
 import Debug.Trace
@@ -68,8 +71,12 @@ seriesOfVectorFunction fun
           case SizeInf.generate prog of
            Nothing
             -> trace ("3Error: can't perform size inference") (fun, [])
-           Just s
-            -> trace ("3SizeInf: " ++ renderIndent (ppr s)) (fun, [])
+           Just (env,s)
+            -> trace ("3SizeInf: " ++ renderIndent (ppr (env, s))) $
+                 let g          = graphOfBinds prog env
+                     clustering = solve_linear g (parents prog env)
+                 in  trace ("4Graph: " ++ renderIndent (ppr (listOfGraph g))) $
+                     trace ("5Clust: " ++ renderIndent (ppr (Map.toList clustering))) (fun, [])
 
 {-
 data Loop

@@ -4,7 +4,12 @@ module DDC.Core.Flow.Transform.Rates.Graph
         , graphOfBinds
         , graphTopoOrder 
         , mergeWeights
-        , invertMap)
+        , invertMap
+        , numNodes, numEdges
+        , hasNode, hasEdge
+        , nodeInputs, nodeInEdges
+        , nodeType
+        , listOfGraph, graphOfList )
 where
 import DDC.Core.Flow.Transform.Rates.Combinators
 import DDC.Core.Flow.Transform.Rates.SizeInference
@@ -152,4 +157,75 @@ invertMap m
  where
   go k v m' = Map.insertWith (++) v [k] m'
 
+
+-- | Number of nodes in graph
+numNodes :: Graph n t -> Int
+numNodes (Graph g)
+ = Map.size g
+
+-- | Total number of edges in graph
+numEdges :: Graph n t -> Int
+numEdges (Graph g)
+ = Map.fold (+)            0
+ $ Map.map  (length . snd) g
+
+
+hasNode :: Ord n => Graph n t -> n -> Bool
+hasNode (Graph gmap) k
+ = k `Map.member` gmap
+
+hasEdge :: Ord n => Graph n t -> (n,n) -> Bool
+hasEdge g (i,j)
+ = i `elem` nodeInputs g j
+
+nodeInputs :: Ord n => Graph n t -> n -> [n]
+nodeInputs g k
+ = map fst
+ $ nodeInEdges g k
+
+nodeInEdges :: Ord n => Graph n t -> n -> [(n,Bool)]
+nodeInEdges (Graph gmap) k
+ | Just (_,es) <- Map.lookup k gmap
+ = es
+ | otherwise
+ = []
+
+
+nodeType :: Ord n => Graph n t -> n -> Maybe t
+nodeType (Graph gmap) k
+ | Just (na,_) <- Map.lookup k gmap
+ = Just na
+ | otherwise
+ = Nothing
+
+-- TODO nodeOutputs, nodeOutEdges
+
+-- | Convert @Graph@ to a lists of nodes and a list of edges
+listOfGraph :: Ord n => Graph n t -> ([(n,t)], [((n,n),Bool)])
+listOfGraph (Graph g)
+ = (nodes, edges)
+ where
+  gl = Map.toList g
+
+  nodes = map       (\(k,(na,_)) -> (k,na)) gl
+  edges = concatMap (\(k,(_,es)) -> map (\(k',ea) -> ((k,k'),ea)) es) gl
+
+
+-- | Convert lists of nodes and list of edges to a @Graph@
+graphOfList :: Ord n => ([(n,t)], [((n,n),Bool)]) -> Graph n t
+graphOfList (nodes, edges)
+ = Graph
+ $ addEdges nodeMap
+ where
+  nodeMap
+   = Map.fromList
+   $ map (\(k,na) -> (k,(na,[])))
+   $ nodes
+
+  addEdges g
+   = foldl insE g edges
+
+  insE g ((k,k'),ea)
+   = Map.adjust (\(na,es) -> (na, (k',ea):es))
+     k g
 

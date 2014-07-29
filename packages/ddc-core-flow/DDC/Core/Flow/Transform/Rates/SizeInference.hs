@@ -424,7 +424,6 @@ parents bs e a b
  where
   itsz = iter bs e
  
-
 -----------------------------------
 -- == Pretty printing
 
@@ -435,6 +434,11 @@ instance (Pretty v) => Pretty (K v) where
 instance (Pretty v) => Pretty (Type v) where
  ppr (TVar   v)   = ppr v
  ppr (TCross a b) = ppr a <+> text "*" <+> ppr b
+
+
+instance (Pretty v) => Pretty (Maybe (Type v)) where
+ ppr (Just t)     = ppr t
+ ppr Nothing      = text "(no type)"
 
 instance (Pretty v) => Pretty (Scope v) where
  ppr (EVar v t)   = ppr v <+> text ":" <+> ppr t

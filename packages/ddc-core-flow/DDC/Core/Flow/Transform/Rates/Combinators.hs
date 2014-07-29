@@ -211,3 +211,7 @@ instance (Pretty s, Pretty a) => Pretty (Program s a) where
     =   vcat (map (\i -> text "return"       <+> ppr i) (fst outs))
     <$> vcat (map (\i -> text "return"       <+> ppr i) (snd outs))
 
+instance (Pretty s, Pretty a) => Pretty (CName s a) where
+ ppr (NameScalar s) = text "{" <> ppr s <> text "}"
+ ppr (NameArray  a) =             ppr a
+ ppr (NameExt (ss,aa)) = text "ext{" <> ppr ss <+> ppr aa <> text "}"
