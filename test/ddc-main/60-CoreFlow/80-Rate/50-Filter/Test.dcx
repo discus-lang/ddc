@@ -60,3 +60,25 @@ test    (orig : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
 ;;
 
 
+
+-- Filter and two folds, then use fold values in map over original and filtered. Three kernels:
+-- 1- filter, fold, fold
+-- 2- map original
+-- 3- map filtered
+:flow-rate..
+module Test with letrec
+test    (orig : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
+        -- Kernel 1
+ = do   filt  = vfilter# (gt#  1i#) orig 
+        fold  = vreduce#  add# 0i# filt
+        fold2 = vreduce#  add# 0i# orig
+
+        -- Kernel 2
+        morig = vmap# (add# fold) orig
+
+        -- Kernel 3
+        mfilt = vmap# (add# fold2) filt
+        T2# morig mfilt
+;;
+
+

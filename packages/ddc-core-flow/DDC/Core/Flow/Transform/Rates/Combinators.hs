@@ -6,10 +6,14 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , lookupA, lookupS, lookupB
         , envOfBind
         , freeOfBind, cnameOfEither, cnameOfBind
+        , outputsOfCluster, inputsOfCluster
         ) where
 import DDC.Base.Pretty
 import DDC.Core.Flow.Exp (ExpF)
 import qualified Control.Applicative as A
+
+import Data.Maybe (catMaybes)
+import Data.List  (nub)
 
 -----------------------------------
 -- = Combinator normal form.
@@ -104,9 +108,19 @@ lookupS p s
    = go bs
 
 
-lookupB :: (Eq s, Eq a) => Program s a -> Either s a -> Maybe (Either (SBind s a) (ABind s a))
-lookupB p (Left  s) = Left  A.<$> lookupS p s
-lookupB p (Right a) = Right A.<$> lookupA p a
+lookupB :: (Eq s, Eq a) => Program s a -> CName s a -> Maybe (Bind s a)
+lookupB p (NameScalar s) = SBind s A.<$> lookupS p s
+lookupB p (NameArray  a) = ABind a A.<$> lookupA p a
+lookupB p (NameExt    e)
+ = go (_binds p)
+ where
+  go [] = Nothing
+  go (ext@(Ext e' _ _) : _)
+   | e == e'
+   = Just $ ext
+  go (_ : bs)
+   = go bs
+
 
 
 envOfBind :: Bind s a -> ([s], [a])
@@ -158,7 +172,7 @@ cnameOfEither prog esa
  | otherwise
  = go (_binds prog)
  where
-  go [] = Nothing
+  go [] = justgo
   go (Ext (ss,as) _ _ : _)
    | Left  s <- esa
    , s `elem` ss
@@ -168,6 +182,53 @@ cnameOfEither prog esa
    = Just $ NameExt (ss,as)
   go (_ : bs)
    = go bs
+
+  justgo
+   = case esa of
+     Left s -> Just $ NameScalar s
+     Right a -> Just $ NameArray a
+
+
+-- | For a given program and list of nodes that will be clustered together,
+-- find a list of the nodes that are used afterwards.
+-- Only these nodes must be made manifest.
+-- The output nodes is a subset of the input cluster nodes.
+outputsOfCluster :: (Eq s, Eq a) => Program s a -> [CName s a] -> [CName s a]
+outputsOfCluster prog cluster
+       -- Get all bindings in the program that aren't in this cluster
+ = let notin   = filter (not . flip elem cluster . cnameOfBind) (_binds prog)
+       -- And find their free variables
+       frees   = catMaybes
+               $ map      (cnameOfEither prog)
+               $ concatMap freeOfBind          notin
+
+       -- Convert the returns of the program to CNames
+       (ss,as) = _outs prog
+       pouts   = map NameScalar ss ++ map NameArray as
+
+       -- We want to look in both returns and free variables of bindings
+       alls    = frees ++ pouts
+       -- Now search through and find those in the cluster
+       found   = filter (flip elem cluster) alls
+   in  nub $ found
+
+
+-- | For a given program and list of nodes that will be clustered together,
+-- find a list of the nodes that are used as inputs.
+-- The input nodes will not mention any of the cluster nodes.
+inputsOfCluster :: (Eq s, Eq a) => Program s a -> [CName s a] -> [CName s a]
+inputsOfCluster prog cluster
+       -- Get bindings of clusters
+ = let binds   = catMaybes
+               $ map (lookupB prog) cluster
+       -- And find the free variables
+       frees   = catMaybes
+               $ map      (cnameOfEither prog)
+               $ concatMap freeOfBind          binds
+
+       -- Ignore the ones in the cluster
+       found   = filter (not . flip elem cluster) frees
+   in  nub $ found
 
 
 -----------------------------------

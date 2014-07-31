@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wwarn #-}
 module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
@@ -7,17 +8,18 @@ import DDC.Core.Pretty
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
--- import DDC.Core.Flow.Transform.Rates.Combinators
+import DDC.Core.Flow.Transform.Rates.Combinators   as Com
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Graph
-import DDC.Core.Flow.Transform.Rates.SizeInference as SizeInf
+import qualified DDC.Core.Flow.Transform.Rates.SizeInference as SI
 import DDC.Core.Flow.Transform.Rates.Linear
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
 
 import qualified Data.Map as Map
+import Data.Maybe (catMaybes)
 
 
 import Debug.Trace
@@ -37,9 +39,7 @@ seriesOfVectorModule mm
                   $ xLets lets' xx
 
 
-   in  -- trace ("ORIGINAL:"++ show (ppr $ moduleBody mm))
-       -- trace ("MODULE:" ++ show (ppr body'))
-       (mm { moduleBody = body' }, errs)
+   in  (mm { moduleBody = body' }, errs)
        
 
 
@@ -68,154 +68,189 @@ seriesOfVectorFunction fun
              (fun, [FailCannotConvert err])
    Right prog
     -> trace ("2Converted: " ++ renderIndent (ppr prog)) $
-          case SizeInf.generate prog of
+          case SI.generate prog of
            Nothing
             -> trace ("3Error: can't perform size inference") (fun, [])
            Just (env,s)
             -> trace ("3SizeInf: " ++ renderIndent (ppr (env, s))) $
                  let g          = graphOfBinds prog env
-                     tmap a b   = parents prog env a b
+                     tmap a b   = SI.parents prog env a b
                      clustering = solve_linear g tmap
-                 in  trace ("4Graph: " ++ renderIndent (ppr (listOfGraph g))) $
-                     trace ("5Clust: " ++ renderIndent (ppr (Map.toList clustering))) (fun, [])
+                     clusters   = map snd $ Map.toList clustering
+                     re         = reconstruct fun prog env clusters
+                 in  trace ("4Graph: " ++ renderIndent (ppr (listOfGraph g)))
+                   $ trace ("5Clust: " ++ renderIndent (ppr (Map.toList clustering)))
+                   $ trace ("6OUT:   " ++ renderIndent (ppr $ annotate () re))
+                   $ (re, [])
 
-{-
-data Loop
- = Loop 
- { lBindings :: [Name]
- , lOutputs  :: [Name]
- , lInputs   :: [Name]
- } deriving (Eq,Show)
-
-schedule :: Graph -> EquivClass -> [Name] -> LogFailures [Loop]
-schedule graph equivs rets
- = let type_order    = map (canonName equivs . Set.findMin) equivs
-       -- minimumBy length $ map scheduleTypes $ permutations type_order
-       (wts, graph') = scheduleTypes graph equivs type_order
-       loops         = scheduleAll (map snd wts) graph graph'
-       -- Use the original graph to find vars that cross loop boundaries
-       outputs       = scheduleOutputs loops graph rets
-       inputs        = scheduleInputs  loops graph
-   in  -- trace ("GRAPH,GRAPH',WTS,EQUIVS:" ++ show (graph, graph', wts, equivs)) 
-       return $ zipWith3 Loop loops outputs inputs
-
-scheduleTypes :: Graph -> EquivClass -> [Name] -> ([(Name, Map.Map Name Int)], Graph)
-scheduleTypes graph types type_order
- = foldl go ([],graph) type_order
- where
-  go (w,g) ty
-   = let w' = typedTraversal g types ty
-         g' = mergeWeights   g w'
-     in  ((ty,w') : w, g')
-
-
-scheduleAll :: [Map.Map Name Int] -> Graph -> Graph -> [[Name]]
-scheduleAll weights graph graph'
- = loops
- where
-  weights' = map invertMap  weights
-  topo     = graphTopoOrder graph'
-  loops    = map getNames topo
-
-  getNames n
-   = sort $ find n (weights `zip` weights')
-
-  original_order = graphTopoOrder graph
-
-  -- Cheesy hack to get ns in same order as the original graph's topo:
-  -- filter topo to only those elements in ns
-  sort ns
-   = filter (flip elem ns) original_order
-
-  find _ []
-   = []
-
-  find n ((w,w') : rest)
-   | Just i  <- n `Map.lookup` w
-   , Just ns <- i `Map.lookup` w'
-   = ns
-
-   | otherwise
-   = find n rest
-
--- Find any variables that cross loop boundaries - they must be reified
-scheduleOutputs :: [[Name]] -> Graph -> [Name] -> [[Name]]
-scheduleOutputs loops graph rets
- = map output loops
- where
-  output ns
-   = graphOuts ns ++ filter (`elem` ns) rets 
-
-  graphOuts ns
-   = concatMap (\(k,es) -> if   k `elem` ns
-                           then []
-                           else ns `intersect` map fst es)
-   $ Map.toList graph
-
--- Find any variables that cross loop boundaries - they must be reified
-scheduleInputs  :: [[Name]] -> Graph -> [[Name]]
-scheduleInputs  loops graph
- = map input loops
- where
-  input ns
-   = filter (\n -> not (n `elem` ns))
-   $ graphIns ns
-
-  graphIns ns
-   = nub $ concatMap (map fst . mlookup "graphIns" graph) ns
-
-typedTraversal :: Graph -> EquivClass -> Name -> Map.Map Name Int
-typedTraversal graph types current_type
- = restrictTypes types current_type
- $ traversal graph w
- where
-  w  u v = if w' u v then 1 else 0
-
-  w' (u, fusible) v
-   | canonName types u == current_type
-   = canonName types v /= current_type || not fusible
-
-   | otherwise
-   = False
-
-
-restrictTypes :: EquivClass -> Name -> Map.Map Name Int -> Map.Map Name Int
-restrictTypes types current_type weights
- = Map.filterWithKey restrict weights
- where
-  restrict n _
-   = canonName types n == current_type
-
-
-orderBinds :: [(Name,ExpF)] -> [Loop] -> LogFailures [[(Name,ExpF)]]
-orderBinds binds loops
- = let bindsM = Map.fromList binds
-       order  = map lBindings loops
-       get k  | Just v <- Map.lookup k bindsM
-              = [(k,v)]
-              | otherwise
-              = []
-   in  return $ map (\o -> concatMap get o) order
-
-
-construct
-        :: (Name -> Name)
-        -> [(Bool, BindF)]
-        -> [([(Name, ExpF)], [Name], [Name])]
-        -> EquivClass
-        -> Map.Map Name TypeF
+reconstruct
+        :: ExpF
+        -> Program Name Name
+        -> SI.Env Name
+        -> [[CName Name Name]]
         -> ExpF
-        -> ExpF
-construct getMax lams loops equivs tys xx
- = let lets   = concatMap convert loops
+reconstruct fun prog env clusters
+ = let lets   = concatMap convert clusters
+       (lams, body)   = takeXLamFlags_safe fun
+       (_,    xx)     = splitXLets         body
    in  makeXLamFlags lams
      $ xLets lets
-     $ xx
+     $ snd $ splitXLets body -- xx
  where
-  convert (binds, outputs, inputs)
-   = convertToSeries getMax binds outputs inputs equivs tys
+  convert c
+   = let outputs = outputsOfCluster prog c
+         inputs  = inputsOfCluster prog c
+
+         justArray (NameArray a) = [a]
+         justArray _             = []
+
+         arrIns  = concatMap justArray inputs
+
+         binds   = catMaybes
+                 $ map (lookupB prog) c
+         binds'  = zipWith (\a a' -> (a, a' `elem` outputs)) binds c
+     in  process arrIns binds'
 
 
+process :: [Name]
+        -> [(Com.Bind Name Name, Bool)]
+        -> [LetsF]
+process arrIns bs
+ = let pres  = concatMap  getPre  bs
+       mid   = runProcs  (mkProcs $ map fst bs)
+       posts = concatMap  getPost bs
+   in pres ++ [LLet (BNone tBool) mid] ++ posts
+ where
+  getPre b
+   -- There is no point of having a reduce that isn't returned.
+   | (SBind s (Fold _ (Seed z _) _), _) <- b
+   = [LLet (bind $ NameVarMod s "ref") (xNew tYPE z)]
+
+   -- For other bindings, if it isn't returned we needn't allocate anything
+   | (_, False) <- b
+   = []
+
+   -- Returned vectors
+   | (ABind v _, _) <- b
+   = [LLet (bind v) (xNewVector tYPE allocSize)]
+
+   | (Ext _ _ _, _) <- b
+   = []
+
+
+  getPost b
+   | (SBind s (Fold _ (Seed z _) _), _) <- b
+   = [ LLet (bind s) (xRead tYPE (var $ NameVarMod s "ref")) ]
+
+   -- Ignore anything else
+   | (_, _) <- b
+   = []
+
+  runProcs body
+   = let kFlags = [ (True,  BName klok kRate)
+                  , (False, BNone $ tRateNat $ TVar $ UName klok) ]
+         vFlags = map (\n -> (False, BName (NameVarMod n "s") tYPE)) arrIns
+     in  xApps (xVarOpSeries (OpSeriesRunProcess $ length arrIns))
+               (  map (const $ xtYPE) arrIns
+               ++ map (XVar  . UName)      arrIns
+               ++ [(makeXLamFlags (kFlags ++ vFlags) body)])
+
+
+  mkProcs (b:rs)
+   | SBind s (Fold (Fun xf _) (Seed xs _) ain) <- b
+   = let rest = mkProcs rs
+     in  XLet (LLet   (bind $ NameVarMod s "proc")
+              $ xApps (xVarOpSeries OpSeriesReduce)
+                      [klokT, xtYPE, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
+         rest
+
+   | ABind n abind <- b
+   = let rest   = mkProcs rs
+         n'proc = NameVarMod n "proc"
+         n's    = NameVarMod n "s"
+         n'flag = NameVarMod n "flags"
+         n'k    = NameVarMod n "k"
+         n'sel  = NameVarMod n "sel"
+
+         go ll  = XLet ll rest
+
+     in  case abind of
+         MapN (Fun xf _) ains
+          -> go $ LLet  (bind n's)
+                $ xApps (xVarOpSeries (OpSeriesMap (length ains)))
+                        ([klokT] ++ (replicate (length ains) $ xtYPE) ++ map var ains)
+
+         Filter (Fun xf _) ain
+          -> XLet (LLet (bind n'flag)
+                      $  xApps (xVarOpSeries (OpSeriesMap 1))
+                               [klokT, xtYPE, xtYPE, xf, var $ NameVarMod ain "s"])
+           $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
+                   [ klokT, var n'flag
+                   ,        XLAM (BName n'k kRate)
+                          $ XLam (bind n'sel)
+                          $ XLet (LLet (bind n's)
+                                     $ xApps (xVarOpSeries OpSeriesPack)
+                                       [xtYPE, xtYPE, xtYPE, var n'sel, var $ NameVarMod ain "s"])
+                          $ rest]
+
+
+
+
+  mkProcs []
+   -- bs cannot be empty: there's no point of an empty cluster.
+   = foldl1 mkJoin $ concatMap getProc bs
+
+  mkJoin p q
+   = xApps (xVarOpSeries OpSeriesJoin) [p, q]
+
+  getProc (SBind s _, _)
+   = [var $ NameVarMod s "proc"]
+  getProc (ABind a _, True)
+   = [xApps (xVarOpSeries OpSeriesFill) [xtYPE, xtYPE, var $ a, var $ NameVarMod a "s"]]
+  getProc _
+   = []
+
+     
+  allocSize
+   -- If there are any inputs, use the size of one of those
+   | (i:_) <- arrIns
+   = xApps (xVarOpVector OpVectorLength) [xtYPE, var i]
+   -- Or if it's a generate, find the size of the generate expression.
+   | (sz:_) <- concatMap findGenerateSize bs
+   = var sz
+   -- XXX Otherwise it must be an external, and this won't be called...
+   | otherwise
+   = error ("ddc-core-flow: allocSize, but no size known" ++ show arrIns ++ "\n" ++ show bs)
+
+  klok
+   -- The name doesn't matter, we just need to choose one
+   | ((ABind n _, _) :_) <- bs
+   = NameVarMod n "k"
+   | ((SBind n _, _) :_) <- bs
+   = NameVarMod n "k"
+   -- Otherwise it must be an external. It shouldn't reach here.
+   | otherwise
+   = error "ddc-core-flow: klok"
+
+  klokT = XType $ TVar $ UName klok
+
+  findGenerateSize (ABind _ (Generate sz _), _)
+   = [sz]
+  findGenerateSize _
+   = []
+
+
+  tYPE    = tBot kData
+  xtYPE   = XType tYPE
+  bind n  = BName n tYPE
+  mod n s = NameVarMod
+  var n   = XVar $ UName n
+
+
+xVarOpSeries n = XVar (UPrim (NameOpSeries n) (typeOpSeries n))
+xVarOpVector n = XVar (UPrim (NameOpVector n) (typeOpVector n))
+
+{-
 -- We still need to join procs,
 -- split output procs into separate functions
 convertToSeries 
@@ -394,9 +429,6 @@ wrapSeriesX equivs outputs name ty xx wrap
 --  tySeries
 --   | Vector n
 
-xVarOpSeries n = XVar (UPrim (NameOpSeries n) (typeOpSeries n))
-xVarOpVector n = XVar (UPrim (NameOpVector n) (typeOpVector n))
-
 modNameX :: String -> ExpF -> ExpF
 modNameX s xx
  = case xx of
@@ -406,20 +438,4 @@ modNameX s xx
      -> xx
 
 -}
-{-
 
-\as,bs...
-cs = map as
-ds = filter as
-n  = fold ds
-es = map3 bs cs
-return es
-
-==>
-schedule graph equivs [es]
-==>
-
-[ [ds, n]
-, [cs, es] ]
-
--}
