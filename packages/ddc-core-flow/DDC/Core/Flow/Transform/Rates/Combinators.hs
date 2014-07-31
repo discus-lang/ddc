@@ -1,6 +1,6 @@
 -- | Converting DDC expressions to and from Combinator Normal Form.
 module DDC.Core.Flow.Transform.Rates.Combinators
-        ( Fun(..), Bind(..), ABind(..), SBind(..)
+        ( Fun(..), Bind(..), ABind(..), SBind(..), Seed(..)
         , Program(..)
         , CName(..)
         , lookupA, lookupS, lookupB
@@ -51,10 +51,16 @@ data ABind s a
  | Cross                 a a
    deriving Show
 
+-- | Seed / initial value for a fold.
+-- This can either be a literal such as "0", or a named scalar reference
+data Seed s a
+ = Seed ExpF (Maybe s)
+   deriving Show
+
 -- | A scalar-valued binding
 data SBind s a
  -- | fold      :: (a -> a -> a) -> a -> Array a                 -> a
- = Fold       (Fun s a) s  a
+ = Fold       (Fun s a) (Seed s a) a
    deriving Show
 
 -- | An entire program/function to find a fusion clustering for
@@ -118,7 +124,7 @@ freeOfBind :: Bind s a -> [Either s a]
 freeOfBind b
  = case b of
    SBind _ (Fold fun i a)
-    -> ffun fun ++ [fs i] ++ [fa a]
+    -> ffun fun ++ fseed i ++ [fa a]
    ABind _ (MapN fun as)
     -> ffun fun ++ map fa as
    ABind _ (Filter fun a)
@@ -132,9 +138,11 @@ freeOfBind b
    Ext _ _ (inS,inA)
     -> map fs inS ++ map fa inA
  where
-  ffun (Fun _ f) = map fs f
-  fs             = Left
-  fa             = Right
+  ffun  (Fun _ f)               = map fs f
+  fseed (Seed _ Nothing)        = []
+  fseed (Seed _ (Just s))       = [Left s]
+  fs                            = Left
+  fa                            = Right
 
 -- | get the name of the binding that provides this value.
 -- this is made trickier because externals can bind multiple.
@@ -161,6 +169,7 @@ cnameOfEither prog esa
   go (_ : bs)
    = go bs
 
+
 -----------------------------------
 -- == Pretty printing
 -- This is just the notation I used in the prototype.
@@ -169,6 +178,12 @@ instance (Pretty s, Pretty a) => Pretty (Fun s a) where
  ppr (Fun _ ss)
   = encloseSep lbrace rbrace space
   $ map ppr ss
+
+instance (Pretty s, Pretty a) => Pretty (Seed s a) where
+ ppr (Seed _ Nothing)
+  = text "-"
+ ppr (Seed _ (Just s))
+  = ppr s
 
 instance (Pretty s, Pretty a) => Pretty (Bind s a) where
  ppr (SBind n (Fold f i a))

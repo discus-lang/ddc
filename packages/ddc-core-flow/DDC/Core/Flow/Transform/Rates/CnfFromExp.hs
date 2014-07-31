@@ -106,9 +106,9 @@ getBind (nm,(t,x)) env
  = case (ov, args') of
    (OpVectorReduce, [worker, seed, arr])
     | Just fun     <- getFun worker
-    , Just i       <- name seed
+    , snm          <- name seed
     , Just a       <- name arr
-    -> SBind nm (Fold fun i a)
+    -> SBind nm (Fold fun (Seed seed snm) a)
 
    (OpVectorMap n, worker : arrs)
     | Just fun       <- getFun worker
@@ -148,10 +148,6 @@ getBind (nm,(t,x)) env
 
   name xx
    | XVar (UName n) <- xx
-   = Just n
-    -- TODO: This isn't quite right..
-   | XCon  dc       <- xx
-   , Just  n        <- takeNameOfDaCon dc
    = Just n
    | otherwise
    = Nothing
