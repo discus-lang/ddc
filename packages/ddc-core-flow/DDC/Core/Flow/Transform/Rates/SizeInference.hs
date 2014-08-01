@@ -252,10 +252,13 @@ generateBind env b
                        , CEqual y (TVar u') ]
        in (env', con)
 
-   Ext (_outS, outA) _ (_inS, _inA)
-    -> let env' = concatMap (\a -> [evar a, ERigid $ K' $ KV a]) outA ++ env
-           con  = ands $ map(\a -> CEqual a $ TVar $ K' $ KV a) outA
+   Ext (NameArray  a) _ (_, _)
+    -> let env' = [evar a, ERigid $ K' $ KV a] ++ env
+           con  = CEqual a $ TVar $ K' $ KV a
        in (env', con)
+
+   Ext (NameScalar _) _ (_, _)
+    -> (env, CTrue)
 
 
 
@@ -395,6 +398,8 @@ trans bs nm
    = case lookupS bs o of
      Just (Fold _ _ n)
       -> trans' (NameArray n)
+
+     -- Not a binding, or an external
      Nothing
       -> Nothing
 
@@ -413,11 +418,9 @@ trans bs nm
      Just (Cross _ _)
       -> Nothing
 
+     -- Not a binding, or an external
      Nothing
       -> Nothing
-
-  trans' (NameExt _)
-   = Nothing
 
 
 -- | Find pair of parent transducers with same iteration size

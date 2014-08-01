@@ -5,12 +5,11 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , CName(..)
         , lookupA, lookupS, lookupB
         , envOfBind
-        , freeOfBind, cnameOfEither, cnameOfBind
+        , freeOfBind, cnameOfBind
         , outputsOfCluster, inputsOfCluster
         ) where
 import DDC.Base.Pretty
 import DDC.Core.Flow.Exp (ExpF)
-import qualified Control.Applicative as A
 
 import Data.Maybe (catMaybes)
 import Data.List  (nub)
@@ -35,7 +34,7 @@ data Bind s a
  = ABind a (ABind s a)
  | SBind s (SBind s a)
  | Ext
-   { _beOuts :: ([s], [a])
+   { _beOut  :: CName s a
    , _beExp  :: ExpF
    , _beIns  :: ([s], [a])
    }
@@ -81,7 +80,6 @@ data Program s a
 data CName s a
  = NameScalar s
  | NameArray a
- | NameExt ([s],[a])
  deriving (Eq, Ord, Show)
 
 
@@ -109,32 +107,38 @@ lookupS p s
 
 
 lookupB :: (Eq s, Eq a) => Program s a -> CName s a -> Maybe (Bind s a)
-lookupB p (NameScalar s) = SBind s A.<$> lookupS p s
-lookupB p (NameArray  a) = ABind a A.<$> lookupA p a
-lookupB p (NameExt    e)
- = go (_binds p)
+lookupB p nm = go (_binds p)
  where
   go [] = Nothing
-  go (ext@(Ext e' _ _) : _)
-   | e == e'
-   = Just $ ext
+  go (b@(ABind a _) : _)
+   | NameArray a' <- nm
+   , a == a'
+   = Just b
+  go (b@(SBind s _) : _)
+   | NameScalar s' <- nm
+   , s == s'
+   = Just b
+  go (b@(Ext nm' _ _) : _)
+   | nm == nm'
+   = Just $ b
   go (_ : bs)
    = go bs
 
 
 
 envOfBind :: Bind s a -> ([s], [a])
-envOfBind (SBind s _) = ([s], [])
-envOfBind (ABind a _) = ([] , [a])
-envOfBind (Ext outs _ _) = outs
+envOfBind (SBind s _)              = ([s], [])
+envOfBind (ABind a _)              = ([], [a])
+envOfBind (Ext (NameScalar s) _ _) = ([s], [])
+envOfBind (Ext (NameArray  a) _ _) = ([], [a])
 
 
 cnameOfBind :: Bind s a -> CName s a
-cnameOfBind (SBind s _)    = NameScalar s
-cnameOfBind (ABind a _)    = NameArray  a
-cnameOfBind (Ext outs _ _) = NameExt    outs
+cnameOfBind (SBind s _) = NameScalar s
+cnameOfBind (ABind a _) = NameArray  a
+cnameOfBind (Ext n _ _) = n
 
-freeOfBind :: Bind s a -> [Either s a]
+freeOfBind :: Bind s a -> [CName s a]
 freeOfBind b
  = case b of
    SBind _ (Fold fun i a)
@@ -154,39 +158,9 @@ freeOfBind b
  where
   ffun  (Fun _ f)               = map fs f
   fseed (Seed _ Nothing)        = []
-  fseed (Seed _ (Just s))       = [Left s]
-  fs                            = Left
-  fa                            = Right
-
--- | get the name of the binding that provides this value.
--- this is made trickier because externals can bind multiple.
-cnameOfEither :: (Eq s, Eq a) => Program s a -> Either s a -> Maybe (CName s a)
-cnameOfEither prog esa
- | Left  s <- esa
- , Just  _ <- lookupS prog s
- = Just $ NameScalar s
- | Right a <- esa
- , Just  _ <- lookupA prog a
- = Just $ NameArray  a
- -- Otherwise, try to find an external
- | otherwise
- = go (_binds prog)
- where
-  go [] = justgo
-  go (Ext (ss,as) _ _ : _)
-   | Left  s <- esa
-   , s `elem` ss
-   = Just $ NameExt (ss,as)
-   | Right a <- esa
-   , a `elem` as
-   = Just $ NameExt (ss,as)
-  go (_ : bs)
-   = go bs
-
-  justgo
-   = case esa of
-     Left s -> Just $ NameScalar s
-     Right a -> Just $ NameArray a
+  fseed (Seed _ (Just s))       = [NameScalar s]
+  fs                            = NameScalar
+  fa                            = NameArray
 
 
 -- | For a given program and list of nodes that will be clustered together,
@@ -198,9 +172,7 @@ outputsOfCluster prog cluster
        -- Get all bindings in the program that aren't in this cluster
  = let notin   = filter (not . flip elem cluster . cnameOfBind) (_binds prog)
        -- And find their free variables
-       frees   = catMaybes
-               $ map      (cnameOfEither prog)
-               $ concatMap freeOfBind          notin
+       frees   = concatMap freeOfBind          notin
 
        -- Convert the returns of the program to CNames
        (ss,as) = _outs prog
@@ -222,9 +194,7 @@ inputsOfCluster prog cluster
  = let binds   = catMaybes
                $ map (lookupB prog) cluster
        -- And find the free variables
-       frees   = catMaybes
-               $ map      (cnameOfEither prog)
-               $ concatMap freeOfBind          binds
+       frees   = concatMap freeOfBind          binds
 
        -- Ignore the ones in the cluster
        found   = filter (not . flip elem cluster) frees
@@ -265,8 +235,8 @@ instance (Pretty s, Pretty a) => Pretty (Bind s a) where
  ppr (ABind n (Cross a b))
   = bind (ppr n) "cross"    (ppr a <+> ppr b)
 
- ppr (Ext outs _ ins)
-  = bind (binds outs) "external" (binds ins)
+ ppr (Ext out _ ins)
+  = bind (ppr out) "external" (binds ins)
   where
    binds (ss,as)
     = encloseSep lbrace rbrace space (map ppr ss) <+> hcat (map ppr as)
@@ -290,4 +260,3 @@ instance (Pretty s, Pretty a) => Pretty (Program s a) where
 instance (Pretty s, Pretty a) => Pretty (CName s a) where
  ppr (NameScalar s) = text "{" <> ppr s <> text "}"
  ppr (NameArray  a) =             ppr a
- ppr (NameExt (ss,aa)) = text "ext{" <> ppr ss <+> ppr aa <> text "}"

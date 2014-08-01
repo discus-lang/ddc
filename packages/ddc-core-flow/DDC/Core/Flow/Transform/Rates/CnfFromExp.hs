@@ -135,8 +135,8 @@ getBind (nm,(t,x)) env
  where
   external
    = let ins = localEnv env x
-         out | isTypeArray t = ([], [nm])
-             | otherwise     = ([nm], [])
+         out | isTypeArray t = NameArray  nm
+             | otherwise     = NameScalar nm
      in  Ext out x ins
 
   names as

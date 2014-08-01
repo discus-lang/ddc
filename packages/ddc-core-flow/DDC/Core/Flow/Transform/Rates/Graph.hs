@@ -16,10 +16,8 @@ import DDC.Core.Flow.Transform.Rates.SizeInference
 
 import           Data.List              (nub)
 import qualified Data.Map               as Map
-import           Data.Maybe             (catMaybes)
 import qualified Data.Set               as Set
 
-import Control.Applicative
 
 -- | Graph for function
 --   Each node is a binding, edges are dependencies, and the bool is whether the node's output
@@ -48,24 +46,22 @@ graphOfBinds prog env
      in (n, (ty, es))
 
   edges n (ABind _ (Gather a b))
-   = let a' = mkedge (const False) a
-         b' = mkedge (inedge n)    b
-     in catMaybes [a', b']
+   = let a' = mkedgeA (const False) a
+         b' = mkedgeA (inedge n)    b
+     in [a', b']
 
   edges n (ABind _ (Cross a b))
-   = let a' = mkedge (inedge n)    a
-         b' = mkedge (const False) b
-     in catMaybes [a', b']
+   = let a' = mkedgeA (inedge n)    a
+         b' = mkedgeA (const False) b
+     in [a', b']
 
   edges n b
    = let fs   = freeOfBind  b
-         fs'  = catMaybes
-              $ map (cnameOfEither prog) fs
-         fs'' = map (pairon (inedge n)) fs'
-     in  fs''
+         fs' = map (pairon (inedge n)) fs
+     in  fs'
 
-  mkedge f a
-   = pairon f <$> cnameOfEither prog (Right a)
+  mkedgeA f a
+   = (pairon f (NameArray a))
 
   pairon f x
    = (x, f x)
@@ -74,9 +70,9 @@ graphOfBinds prog env
    -- scalar output:
    | NameScalar _ <- from
    = False
-   | NameExt _    <- from
+   | Just (Ext{}) <- lookupB prog from
    = False
-   | NameExt _    <- to
+   | Just (Ext{}) <- lookupB prog to
    = False
    | otherwise
    = True
