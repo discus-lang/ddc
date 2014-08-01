@@ -19,135 +19,91 @@ letrec {
 
 
 -- Simple filter - return filtered
-module Test with
-letrec {
-  test : Vector# Int# -> Vector# Int#
-    = \(us : Vector# Int#).
-      let x2 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let _ : Bool#
-            = runProcess# [Int#] us
-                  (/\(us$k : Rate).
-                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
-                   let x2$flags : Series# us$k Bool#
-                         = smap# [us$k] [Int#] [Bool#]
-                               (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
-                   smkSel# [us$k] x2$flags
-                       (/\(x2$'$k : Rate).
-                         \(x2$sel : Sel1# us$k x2$'$k).
-                        let x2$s : Series# x2$'$k Int# = spack# [us$k] [x2$'$k] [Int#] x2$sel us$s in
-                        sfill# [x2$'$k] [Int#] x2 x2$s)) in
-      x2
-}
+Error transforming core program.
+  ()
+  Type mismatch in let-binding.
+                  The binder: x2$flags
+                    has type: Series# us$k Int#
+       but the body has type: Series# us$k Bool#
+  
+  with: let x2$flags : Series# us$k Int#
+              = smap# [us$k] [Int#] [Bool#]
+                    (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
+        smkSel# [us$k] x2$flags
+            (/\(x2$'$k : Rate).
+              \(x2$sel : Sel1# us$k x2$'$k).
+             let x2$s : Series# x2$'$k Int# = spack# [us$k] [x2$'$k] [Int#] x2$sel us$s in
+             sfill# [x2$'$k] [Int#] x2 x2$s)
 
 
 -- Map over a filter
-module Test with
-letrec {
-  test : Vector# Int# -> Vector# Int#
-    = \(us : Vector# Int#).
-      let x5 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let _ : Bool#
-            = runProcess# [Int#] us
-                  (/\(us$k : Rate).
-                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
-                   let x2$flags : Series# us$k Bool#
-                         = smap# [us$k] [Int#] [Bool#]
-                               (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
-                   smkSel# [us$k] x2$flags
-                       (/\(x2$'$k : Rate).
-                         \(x2$sel : Sel1# us$k x2$'$k).
-                        let x2$s : Series# x2$'$k Int# = spack# [us$k] [x2$'$k] [Int#] x2$sel us$s in
-                        let x5$s : Series# x2$'$k Int#
-                              = smap# [x2$'$k] [Int#] [Int#]
-                                    (\(x3 : Int#). add# [Int#] 2i# x3) x2$s in
-                        sfill# [x2$'$k] [Int#] x5 x5$s)) in
-      x5
-}
+Error transforming core program.
+  ()
+  Type mismatch in let-binding.
+                  The binder: x2$flags
+                    has type: Series# us$k Int#
+       but the body has type: Series# us$k Bool#
+  
+  with: let x2$flags : Series# us$k Int#
+              = smap# [us$k] [Int#] [Bool#]
+                    (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
+        smkSel# [us$k] x2$flags
+            (/\(x2$'$k : Rate).
+              \(x2$sel : Sel1# us$k x2$'$k).
+             let x2$s : Series# x2$'$k Int# = spack# [us$k] [x2$'$k] [Int#] x2$sel us$s in
+             let x5$s : Series# x2$'$k Int#
+                   = smap# [x2$'$k] [Int#] [Int#]
+                         (\(x3 : Int#). add# [Int#] 2i# x3) x2$s in
+             sfill# [x2$'$k] [Int#] x5 x5$s)
 
 
 -- Filter of a filtered, return both. Should be single kernel
-module Test with
-letrec {
-  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(us : Vector# Int#).
-      let x2 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let x5 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let _ : Bool#
-            = runProcess# [Int#] us
-                  (/\(us$k : Rate).
-                    \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
-                   let x2$flags : Series# us$k Bool#
-                         = smap# [us$k] [Int#] [Bool#]
-                               (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
-                   smkSel# [us$k] x2$flags
-                       (/\(x2$'$k : Rate).
-                         \(x2$sel : Sel1# us$k x2$'$k).
-                        let x2$s : Series# x2$'$k Int# = spack# [us$k] [x2$'$k] [Int#] x2$sel us$s in
-                        let x5$flags : Series# x2$'$k Bool#
-                              = smap# [x2$'$k] [Int#] [Bool#]
-                                    (\(x3 : Int#). gt# [Int#] 2i# x3) x2$s in
-                        smkSel# [x2$'$k] x5$flags
-                            (/\(x5$'$k : Rate).
-                              \(x5$sel : Sel1# x2$'$k x5$'$k).
-                             let x5$s : Series# x5$'$k Int# = spack# [x2$'$k] [x5$'$k] [Int#] x5$sel x2$s in
-                             pjoin# (sfill# [x2$'$k] [Int#] x2 x2$s) (sfill# [x5$'$k] [Int#] x5 x5$s)))) in
-      T2# [Vector# Int#] [Vector# Int#] x2 x5
-}
+Error transforming core program.
+  ()
+  Type mismatch in let-binding.
+                  The binder: x2$flags
+                    has type: Series# us$k Int#
+       but the body has type: Series# us$k Bool#
+  
+  with: let x2$flags : Series# us$k Int#
+              = smap# [us$k] [Int#] [Bool#]
+                    (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
+        smkSel# [us$k] x2$flags
+            (/\(x2$'$k : Rate).
+              \(x2$sel : Sel1# us$k x2$'$k).
+             let x2$s : Series# x2$'$k Int# = spack# [us$k] [x2$'$k] [Int#] x2$sel us$s in
+             let x5$flags : Series# x2$'$k Int#
+                   = smap# [x2$'$k] [Int#] [Bool#]
+                         (\(x3 : Int#). gt# [Int#] 2i# x3) x2$s in
+             smkSel# [x2$'$k] x5$flags
+                 (/\(x5$'$k : Rate).
+                   \(x5$sel : Sel1# x2$'$k x5$'$k).
+                  let x5$s : Series# x5$'$k Int# = spack# [x2$'$k] [x5$'$k] [Int#] x5$sel x2$s in
+                  pjoin# (sfill# [x2$'$k] [Int#] x2 x2$s) (sfill# [x5$'$k] [Int#] x5 x5$s)))
 
 
 -- Filter and fold, then use fold value in map over original and filtered. Three kernels:
 -- 1- filter, fold
 -- 2- map original
 -- 3- map filtered
-module Test with
-letrec {
-  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(orig : Vector# Int#).
-      let x2 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let x6$ref : Ref# Int# = new# [Int#] 0i# in
-      let _ : Bool#
-            = runProcess# [Int#] orig
-                  (/\(x9$'$k : Rate).
-                    \(_ : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
-                   let x2$flags : Series# x9$'$k Bool#
-                         = smap# [x9$'$k] [Int#] [Bool#]
-                               (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
-                   smkSel# [x9$'$k] x2$flags
-                       (/\(x2$'$k : Rate).
-                         \(x2$sel : Sel1# x9$'$k x2$'$k).
-                        let x2$s : Series# x2$'$k Int# = spack# [x9$'$k] [x2$'$k] [Int#] x2$sel orig$s in
-                        let x6$proc : Process#
-                              = sreduce# [x2$'$k] [Int#] x6$ref
-                                    (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
-                        pjoin# (sfill# [x2$'$k] [Int#] x2 x2$s) x6$proc)) in
-      let x6 : Int# = read# [Int#] x6$ref in
-      let x9 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let _ : Bool#
-            = runProcess# [Int#] orig
-                  (/\(x9$'$k : Rate).
-                    \(_ : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
-                   let x9$s : Series# x9$'$k Int#
-                         = smap# [x9$'$k] [Int#] [Int#]
-                               (\(x7 : Int#). add# [Int#] x6 x7) orig$s in
-                   sfill# [x9$'$k] [Int#] x9 x9$s) in
-      let x12 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] x2) in
-      let _ : Bool#
-            = runProcess# [Int#] x2
-                  (/\(x2$'$k : Rate).
-                    \(_ : RateNat# x2$'$k).\(x2$s : Series# x2$'$k Int#).
-                   let x12$s : Series# x2$'$k Int#
-                         = smap# [x2$'$k] [Int#] [Int#]
-                               (\(x10 : Int#). add# [Int#] x6 x10) x2$s in
-                   sfill# [x2$'$k] [Int#] x12 x12$s) in
-      T2# [Vector# Int#] [Vector# Int#] x9 x12
-}
+Error transforming core program.
+  ()
+  Type mismatch in let-binding.
+                  The binder: x2$flags
+                    has type: Series# x9$'$k Int#
+       but the body has type: Series# x9$'$k Bool#
+  
+  with: let x2$flags : Series# x9$'$k Int#
+              = smap# [x9$'$k] [Int#] [Bool#]
+                    (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
+        smkSel# [x9$'$k] x2$flags
+            (/\(x2$'$k : Rate).
+              \(x2$sel : Sel1# x9$'$k x2$'$k).
+             let x2$s : Series# x2$'$k Int# = spack# [x9$'$k] [x2$'$k] [Int#] x2$sel orig$s in
+             let x6$proc : Process#
+                   = sreduce# [x2$'$k] [Int#] x6$ref
+                         (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
+             pjoin# (sfill# [x2$'$k] [Int#] x2 x2$s) x6$proc)
 
 
 
@@ -155,53 +111,26 @@ letrec {
 -- 1- filter, fold, fold
 -- 2- map original
 -- 3- map filtered
-module Test with
-letrec {
-  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(orig : Vector# Int#).
-      let x10$ref : Ref# Int# = new# [Int#] 0i# in
-      let _ : Bool#
-            = runProcess# [Int#] orig
-                  (/\(x13$'$k : Rate).
-                    \(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
-                   let x10$proc : Process#
-                         = sreduce# [x13$'$k] [Int#] x10$ref
-                               (\(x7 x8 : Int#). add# [Int#] x7 x8) 0i# orig$s in
-                   x10$proc) in
-      let x10 : Int# = read# [Int#] x10$ref in
-      let x6$ref : Ref# Int# = new# [Int#] 0i# in
-      let x16 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let _ : Bool#
-            = runProcess# [Int#] orig
-                  (/\(x13$'$k : Rate).
-                    \(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
-                   let x2$flags : Series# x13$'$k Bool#
-                         = smap# [x13$'$k] [Int#] [Bool#]
-                               (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
-                   smkSel# [x13$'$k] x2$flags
-                       (/\(x2$'$k : Rate).
-                         \(x2$sel : Sel1# x13$'$k x2$'$k).
-                        let x2$s : Series# x2$'$k Int# = spack# [x13$'$k] [x2$'$k] [Int#] x2$sel orig$s in
-                        let x6$proc : Process#
-                              = sreduce# [x2$'$k] [Int#] x6$ref
-                                    (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
-                        let x16$s : Series# x2$'$k Int#
-                              = smap# [x2$'$k] [Int#] [Int#]
-                                    (\(x14 : Int#). add# [Int#] x10 x14) x2$s in
-                        pjoin# x6$proc (sfill# [x2$'$k] [Int#] x16 x16$s))) in
-      let x6 : Int# = read# [Int#] x6$ref in
-      let x13 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let _ : Bool#
-            = runProcess# [Int#] orig
-                  (/\(x13$'$k : Rate).
-                    \(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
-                   let x13$s : Series# x13$'$k Int#
-                         = smap# [x13$'$k] [Int#] [Int#]
-                               (\(x11 : Int#). add# [Int#] x6 x11) orig$s in
-                   sfill# [x13$'$k] [Int#] x13 x13$s) in
-      T2# [Vector# Int#] [Vector# Int#] x13 x16
-}
+Error transforming core program.
+  ()
+  Type mismatch in let-binding.
+                  The binder: x2$flags
+                    has type: Series# x13$'$k Int#
+       but the body has type: Series# x13$'$k Bool#
+  
+  with: let x2$flags : Series# x13$'$k Int#
+              = smap# [x13$'$k] [Int#] [Bool#]
+                    (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
+        smkSel# [x13$'$k] x2$flags
+            (/\(x2$'$k : Rate).
+              \(x2$sel : Sel1# x13$'$k x2$'$k).
+             let x2$s : Series# x2$'$k Int# = spack# [x13$'$k] [x2$'$k] [Int#] x2$sel orig$s in
+             let x6$proc : Process#
+                   = sreduce# [x2$'$k] [Int#] x6$ref
+                         (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
+             let x16$s : Series# x2$'$k Int#
+                   = smap# [x2$'$k] [Int#] [Int#]
+                         (\(x14 : Int#). add# [Int#] x10 x14) x2$s in
+             pjoin# x6$proc (sfill# [x2$'$k] [Int#] x16 x16$s))
 
 

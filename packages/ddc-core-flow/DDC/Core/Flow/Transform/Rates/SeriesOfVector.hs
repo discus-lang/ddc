@@ -4,7 +4,7 @@ module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         ,seriesOfVectorFunction)
 where
 import DDC.Core.Pretty
--- import DDC.Core.Collect
+import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp                           as DDC
@@ -17,10 +17,14 @@ import DDC.Core.Flow.Transform.Rates.Linear
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
+import qualified DDC.Type.Env           as Env
 
 import qualified Data.Map as Map
 import           Data.Map   (Map)
+import qualified Data.Set as Set
+import           Data.Set   (Set)
 import Data.Maybe (catMaybes)
+import Data.Monoid (mappend)
 
 
 import Debug.Trace
@@ -33,7 +37,7 @@ seriesOfVectorModule mm
        (lets, xx) = splitXLets body
        letsErrs   = map seriesOfVectorLets lets
 
-       lets'      = map       fst letsErrs
+       lets'      = concatMap fst letsErrs
        errs       = concatMap snd letsErrs
 
        body'      = annotate ()
@@ -44,45 +48,47 @@ seriesOfVectorModule mm
        
 
 
-seriesOfVectorLets :: LetsF -> (LetsF, [(Name,Fail)])
+seriesOfVectorLets :: LetsF -> ([LetsF], [(Name,Fail)])
 seriesOfVectorLets ll
  | LLet b@(BName n _) x <- ll
- , (x',errs)  <- seriesOfVectorFunction x
- = (LLet b x', map (\f -> (n,f)) errs)
+ , (x',ls',errs)  <- seriesOfVectorFunction x
+ = ( ls' ++ [LLet b x']
+   , map (\f -> (n,f)) errs)
 
  | LRec bxs             <- ll
  , (bs,xs)              <- unzip bxs
- , (xs',_errs)          <- unzip $ map seriesOfVectorFunction xs
- = (LRec (bs `zip` xs'), []) 
+ , (xs',ls', _errs)          <- unzip3 $ map seriesOfVectorFunction xs
+ = ( concat ls' ++ [LRec (bs `zip` xs')]
+   , []) 
         -- We still need to produce errors if this doesn't work.
 
  | otherwise
- = (ll, [])
+ = ([ll], [])
 
 
 -- | Takes a single function body. Function body must be in a-normal form.
-seriesOfVectorFunction :: ExpF -> (ExpF, [Fail])
+seriesOfVectorFunction :: ExpF -> (ExpF, [LetsF], [Fail])
 seriesOfVectorFunction fun
  = case cnfOfExp fun of
    Left err
     -> trace ("Error: " ++ show err)
-             (fun, [FailCannotConvert err])
+             (fun, [], [FailCannotConvert err])
    Right prog
     -> trace ("2Converted: " ++ renderIndent (ppr prog)) $
           case SI.generate prog of
            Nothing
-            -> trace ("3Error: can't perform size inference") (fun, [])
+            -> trace ("3Error: can't perform size inference") (fun, [], [])
            Just (env,s)
             -> trace ("3SizeInf: " ++ renderIndent (ppr (env, s))) $
                  let g          = graphOfBinds prog env
                      tmap a b   = SI.parents prog env a b
                      clustering = solve_linear g tmap
                      clusters   = map snd $ Map.toList clustering
-                     re         = reconstruct fun prog env clusters
+                     (re,ls)    = reconstruct fun prog env clusters
                  in  trace ("4Graph: " ++ renderIndent (ppr (listOfGraph g)))
                    $ trace ("5Clust: " ++ renderIndent (ppr (Map.toList clustering)))
                    $ trace ("6OUT:   " ++ renderIndent (ppr $ annotate () re))
-                   $ (re, [])
+                   $ (re, ls, [])
 
 
 reconstruct
@@ -90,10 +96,11 @@ reconstruct
         -> Program Name Name
         -> SI.Env Name
         -> [[CName Name Name]]
-        -> ExpF
+        -> (ExpF, [LetsF])
 reconstruct fun prog env clusters
- = makeXLamFlags lams
- $ xLets lets xx
+ = (makeXLamFlags lams
+   $ xLets lets' xx
+   , procs)
  where
 
   (lams, body)   = takeXLamFlags_safe fun
@@ -102,6 +109,7 @@ reconstruct fun prog env clusters
   types          = takeTypes          (concatMap valwitBindsOfLets olds ++ map snd lams)
 
   lets           = concatMap convert clusters
+  (lets', procs) = extractProcs lets (map snd lams)
 
   convert c
    = let outputs = outputsOfCluster prog c
@@ -119,6 +127,50 @@ reconstruct fun prog env clusters
      in  trace ("7outputs: " ++ show outputs ++ "\n") 
        $ mkLets types env arrIns binds'
 
+
+-- | Extract processes out so they can be made into separate bindings
+extractProcs :: [LetsF] -> [DDC.Bind Name] -> ([LetsF], [LetsF])
+extractProcs lets env
+ = go lets $ env
+ where
+  go [] _
+   = ([], [])
+
+  go (l:ls) e
+   -- Actually, we know they're all LLets. Maybe it should just be (Name,ExpF)
+   | LLet b x <- l
+   , BName nm _ <- b
+   = let this = go1 b nm x e
+         rest = go ls (b : e)
+     in this `mappend` rest
+
+   | otherwise
+   = ([l],[]) `mappend` go ls e
+
+  go1 b nm x e
+   | Just (op, args)                                      <- takeXApps x
+   , XVar (UPrim (NameOpSeries (OpSeriesRunProcess n)) _) <- op
+   , (xs, [lam])                                          <- splitAt (n*2) args
+
+   = let fs = freeX Env.empty lam
+
+         isMentioned b
+          | Just b' <- takeSubstBoundOfBind b
+          = Set.member b' fs
+          | otherwise
+          = False
+
+         os = filter isMentioned e
+
+         nm' = NameVarMod nm "process"
+
+         x' = xApps op (xs ++ [xApps (XVar $ UName nm') (map XVar (takeSubstBoundsOfBinds os))])
+
+         p' = makeXLamFlags (map (\o -> (False, o)) os) lam
+     in ([LLet b x'], [LLet (BName nm' (tBot kData)) p'])
+
+   | otherwise
+   = ([LLet b x], [])
 
 -- | Make "lets" for a cluster.
 -- If it's external, this is trivial.
@@ -157,6 +209,11 @@ mkLets types env arrIns bs
 
 -- | Create a process for a cluster of array and scalar bindings.
 -- No externals.
+--
+-- TODO: 
+--  1. filter arrIns to only those that must be series; first args of gather, cross etc.
+--  2. what about generate?  
+--  3. lift/raise Processes to their own top-level binding
 process :: Map Name TypeF
         -> SI.Env Name
         -> [Name]
@@ -166,16 +223,16 @@ process types env arrIns bs
  = let pres  = concatMap  getPre  bs
        mid   = runProcs  (mkProcs $ map fst bs)
        posts = concatMap  getPost bs
-   in pres ++ [LLet (BNone tBool) mid] ++ posts
+   in pres ++ [LLet (BName (NameVarMod outname "runproc") tBool) mid] ++ posts
  where
   getPre b
    -- There is no point of having a reduce that isn't returned.
    | ((s, Left (Fold _ (Seed z _) _)), _)       <- b
-   = [LLet (bind $ NameVarMod s "ref") (xNew (tyOf s) z)]
+   = [LLet (BName (NameVarMod s "ref") $ tRef $ tyOf s) (xNew (tyOf s) z)]
 
    -- Returned vectors
    | ((v, Right _), True)                       <- b
-   = [LLet (bind v) (xNewVector (sctyOf v) allocSize)]
+   = [LLet (BName v $ tVector $ sctyOf v) (xNewVector (sctyOf v) allocSize)]
 
    -- Otherwise, it's not returned or we needn't allocate anything
    | _                                          <- b
@@ -184,7 +241,7 @@ process types env arrIns bs
 
   getPost b
    | ((s, Left (Fold _ (Seed _ _) _)), _)       <- b
-   = [ LLet (bind s) (xRead (tyOf s) (var $ NameVarMod s "ref")) ]
+   = [ LLet (BName s $ sctyOf s) (xRead (tyOf s) (var $ NameVarMod s "ref")) ]
 
    -- Ignore anything else
    | _                                          <- b
@@ -203,7 +260,7 @@ process types env arrIns bs
   mkProcs (b:rs)
    | (s, Left (Fold (Fun xf _) (Seed xs _) ain))        <- b
    = let rest = mkProcs rs
-     in  XLet (LLet   (bind $ NameVarMod s "proc")
+     in  XLet (LLet   (BName (NameVarMod s "proc") $ tProcess)
               $ xApps (xVarOpSeries OpSeriesReduce)
                       [klokX ain, xtyOf s, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
          rest
@@ -219,19 +276,19 @@ process types env arrIns bs
 
      in  case abind of
          MapN (Fun xf _) ains
-          -> go $ LLet  (bind n's)
+          -> go $ LLet  (BName n's $ tSeries (klokT n) $ sctyOf n)
                 $ xApps (xVarOpSeries (OpSeriesMap (length ains)))
                         ([klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains)
 
          Filter (Fun xf _) ain
-          -> XLet (LLet (bind n'flag)
+          -> XLet (LLet (BName n'flag $ tSeries (klokT ain) $ sctyOf n)
                       $  xApps (xVarOpSeries (OpSeriesMap 1))
                                [klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"])
            $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
                    [ klokX ain, var n'flag
                    ,        XLAM (BName (klokV n) kRate)
                           $ XLam (BName n'sel (tSel1 (klokT ain) (klokT n)))
-                          $ XLet (LLet (bind n's)
+                          $ XLet (LLet (BName n's $ tSeries (klokT n) $ sctyOf n)
                                      $ xApps (xVarOpSeries OpSeriesPack)
                                        [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"])
                           $ rest]
@@ -290,12 +347,15 @@ process types env arrIns bs
    = []
 
 
+  -- We just need to find the name of any binding
+  outname
+   = fst $ fst $ head bs
+
   tyOf n  = types Map.! n
   sctyOf  = getScalarType . tyOf
   xtyOf   = XType . tyOf
   xsctyOf = XType . sctyOf
 
-  bind n  = BName n (tBot kData)
   var n   = XVar $ UName n
 
 
