@@ -83,6 +83,7 @@ seriesOfVectorFunction fun
                    $ trace ("6OUT:   " ++ renderIndent (ppr $ annotate () re))
                    $ (re, [])
 
+
 reconstruct
         :: ExpF
         -> Program Name Name
@@ -95,7 +96,7 @@ reconstruct fun prog env clusters
        (_,    xx)     = splitXLets         body
    in  makeXLamFlags lams
      $ xLets lets
-     $ snd $ splitXLets body -- xx
+     $ xx
  where
   convert c
    = let outputs = outputsOfCluster prog c
@@ -109,11 +110,40 @@ reconstruct fun prog env clusters
          binds   = catMaybes
                  $ map (lookupB prog) c
          binds'  = zipWith (\a a' -> (a, a' `elem` outputs)) binds c
-     in  process arrIns binds'
+     in  mkLets arrIns binds'
 
 
+-- | Make lets for a cluster.
+-- If it's external, this is trivial.
+-- If not, make a runProcess# etc
+mkLets :: [Name] -> [(Com.Bind Name Name, Bool)] -> [LetsF]
+mkLets arrIns bs
+ | any isExt (map fst bs)
+ = case bs of
+    [(Ext (NameArray  b) xx _, _)] -> [LLet (BName b (tBot kData)) xx]
+    [(Ext (NameScalar b) xx _, _)] -> [LLet (BName b (tBot kData)) xx]
+    _         -> error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
+                        "an external node has been clustered with another node.\n" ++
+                        "this means there must be a bug in the clustering algorithm.\n" ++
+                        show bs)
+
+ | otherwise
+ = process arrIns
+ $ map toEither bs
+
+ where
+  isExt (Ext{}) = True
+  isExt _       = False
+
+  toEither (SBind s b, out) = ((s, Left  b), out)
+  toEither (ABind a b, out) = ((a, Right b), out)
+  toEither (Ext{},     _)   = error "impossible"
+
+
+-- | Create a process for a cluster of array and scalar bindings.
+-- No externals.
 process :: [Name]
-        -> [(Com.Bind Name Name, Bool)]
+        -> [((Name, Either (SBind Name Name) (ABind Name Name)), Bool)]
         -> [LetsF]
 process arrIns bs
  = let pres  = concatMap  getPre  bs
@@ -123,27 +153,24 @@ process arrIns bs
  where
   getPre b
    -- There is no point of having a reduce that isn't returned.
-   | (SBind s (Fold _ (Seed z _) _), _) <- b
+   | ((s, Left (Fold _ (Seed z _) _)), _)       <- b
    = [LLet (bind $ NameVarMod s "ref") (xNew tYPE z)]
 
-   -- For other bindings, if it isn't returned we needn't allocate anything
-   | (_, False) <- b
-   = []
-
    -- Returned vectors
-   | (ABind v _, _) <- b
+   | ((v, Right _), True)                       <- b
    = [LLet (bind v) (xNewVector tYPE allocSize)]
 
-   | (Ext _ _ _, _) <- b
+   -- Otherwise, it's not returned or we needn't allocate anything
+   | _                                          <- b
    = []
 
 
   getPost b
-   | (SBind s (Fold _ (Seed z _) _), _) <- b
+   | ((s, Left (Fold _ (Seed _ _) _)), _)       <- b
    = [ LLet (bind s) (xRead tYPE (var $ NameVarMod s "ref")) ]
 
    -- Ignore anything else
-   | (_, _) <- b
+   | _                                          <- b
    = []
 
   runProcs body
@@ -157,14 +184,14 @@ process arrIns bs
 
 
   mkProcs (b:rs)
-   | SBind s (Fold (Fun xf _) (Seed xs _) ain) <- b
+   | (s, Left (Fold (Fun xf _) (Seed xs _) ain))        <- b
    = let rest = mkProcs rs
      in  XLet (LLet   (bind $ NameVarMod s "proc")
               $ xApps (xVarOpSeries OpSeriesReduce)
                       [klokT, xtYPE, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
          rest
 
-   | ABind n abind <- b
+   | (n, Right abind)                                   <- b
    = let rest   = mkProcs rs
          n'proc = NameVarMod n "proc"
          n's    = NameVarMod n "s"
@@ -178,7 +205,7 @@ process arrIns bs
          MapN (Fun xf _) ains
           -> go $ LLet  (bind n's)
                 $ xApps (xVarOpSeries (OpSeriesMap (length ains)))
-                        ([klokT] ++ (replicate (length ains) $ xtYPE) ++ map var ains)
+                        ([klokT] ++ (replicate (length ains) $ xtYPE) ++ [xf] ++ map var ains)
 
          Filter (Fun xf _) ain
           -> XLet (LLet (bind n'flag)
@@ -198,14 +225,17 @@ process arrIns bs
 
   mkProcs []
    -- bs cannot be empty: there's no point of an empty cluster.
-   = foldl1 mkJoin $ concatMap getProc bs
+   = let procs = concatMap getProc bs
+     in  case procs of
+         (_:_)  -> foldl1 mkJoin $ concatMap getProc bs
+         []     -> error "cluster with no outputs?"
 
   mkJoin p q
    = xApps (xVarOpSeries OpSeriesJoin) [p, q]
 
-  getProc (SBind s _, _)
+  getProc ((s, Left _), _)
    = [var $ NameVarMod s "proc"]
-  getProc (ABind a _, True)
+  getProc ((a, _), True)
    = [xApps (xVarOpSeries OpSeriesFill) [xtYPE, xtYPE, var $ a, var $ NameVarMod a "s"]]
   getProc _
    = []
@@ -224,17 +254,14 @@ process arrIns bs
 
   klok
    -- The name doesn't matter, we just need to choose one
-   | ((ABind n _, _) :_) <- bs
+   | (((n, _), _) :_) <- bs
    = NameVarMod n "k"
-   | ((SBind n _, _) :_) <- bs
-   = NameVarMod n "k"
-   -- Otherwise it must be an external. It shouldn't reach here.
    | otherwise
-   = error "ddc-core-flow: klok"
+   = error "empty cluster!"
 
   klokT = XType $ TVar $ UName klok
 
-  findGenerateSize (ABind _ (Generate sz _), _)
+  findGenerateSize ((_, Right (Generate sz _)), _)
    = [sz]
   findGenerateSize _
    = []
@@ -243,7 +270,6 @@ process arrIns bs
   tYPE    = tBot kData
   xtYPE   = XType tYPE
   bind n  = BName n tYPE
-  mod n s = NameVarMod
   var n   = XVar $ UName n
 
 
