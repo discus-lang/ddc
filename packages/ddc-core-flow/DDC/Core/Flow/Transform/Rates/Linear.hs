@@ -259,9 +259,9 @@ solve_linear g trans
  | otherwise
  = let opts'= mipDefaults { msgLev = MsgOff, brTech = DrTom, btTech = LocBound, cuts = [Cov] }
        res  = unsafePerformIO $ do
-                let pre = "lps/lp-" ++ (show $ length $ constraints lp') ++ "-"
+                -- let pre = "lps/lp-" ++ (show $ length $ constraints lp') ++ "-"
                 -- writeLP (pre ++ "unopt.lp") lp'unopt
-                writeLP (pre ++ "simp.lp") lp'simp
+                -- writeLP (pre ++ "simp.lp") lp'simp
                 -- writeFile (pre ++ "prog.p") (prettyProgram p)
                 glpSolveVars opts' $ {-trace (pprLP lp')-} lp'
    in  case res of
