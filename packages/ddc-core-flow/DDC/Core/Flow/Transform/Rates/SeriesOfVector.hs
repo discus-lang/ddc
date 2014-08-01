@@ -7,7 +7,7 @@ import DDC.Core.Pretty
 -- import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Exp
+import DDC.Core.Flow.Exp                           as DDC
 import DDC.Core.Flow.Transform.Rates.Combinators   as Com
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
@@ -19,6 +19,7 @@ import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
 
 import qualified Data.Map as Map
+import           Data.Map   (Map)
 import Data.Maybe (catMaybes)
 
 
@@ -91,13 +92,17 @@ reconstruct
         -> [[CName Name Name]]
         -> ExpF
 reconstruct fun prog env clusters
- = let lets   = concatMap convert clusters
-       (lams, body)   = takeXLamFlags_safe fun
-       (_,    xx)     = splitXLets         body
-   in  makeXLamFlags lams
-     $ xLets lets
-     $ xx
+ = makeXLamFlags lams
+ $ xLets lets xx
  where
+
+  (lams, body)   = takeXLamFlags_safe fun
+  (olds, xx)     = splitXLets         body
+
+  types          = takeTypes          (concatMap valwitBindsOfLets olds ++ map snd lams)
+
+  lets           = concatMap convert clusters
+
   convert c
    = let outputs = outputsOfCluster prog c
          inputs  = inputsOfCluster prog c
@@ -107,28 +112,38 @@ reconstruct fun prog env clusters
 
          arrIns  = concatMap justArray inputs
 
-         binds   = catMaybes
-                 $ map (lookupB prog) c
-         binds'  = zipWith (\a a' -> (a, a' `elem` outputs)) binds c
-     in  mkLets arrIns binds'
+         -- Map over the list of all binds and find only those that we want.
+         -- This way is better than mapping lookup over c, as we get them in program order.
+         binds   = filter (flip elem c . cnameOfBind) (_binds prog)
+         binds'  = map (\a -> (a, cnameOfBind a `elem` outputs)) binds
+     in  trace ("7outputs: " ++ show outputs ++ "\n") 
+       $ mkLets types env arrIns binds'
 
 
--- | Make lets for a cluster.
+-- | Make "lets" for a cluster.
 -- If it's external, this is trivial.
 -- If not, make a runProcess# etc
-mkLets :: [Name] -> [(Com.Bind Name Name, Bool)] -> [LetsF]
-mkLets arrIns bs
+mkLets :: Map Name TypeF -> SI.Env Name -> [Name] -> [(Com.Bind Name Name, Bool)] -> [LetsF]
+mkLets types env arrIns bs
  | any isExt (map fst bs)
  = case bs of
-    [(Ext (NameArray  b) xx _, _)] -> [LLet (BName b (tBot kData)) xx]
-    [(Ext (NameScalar b) xx _, _)] -> [LLet (BName b (tBot kData)) xx]
+    [(Ext (NameArray  b) xx _, _)] -> [LLet (BName b (types Map.! b)) xx]
+    [(Ext (NameScalar b) xx _, _)] -> [LLet (BName b (types Map.! b)) xx]
+
     _         -> error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
                         "an external node has been clustered with another node.\n" ++
                         "this means there must be a bug in the clustering algorithm.\n" ++
                         show bs)
 
+ -- We *could* just return an empty list in this case, but I don't think that's a good idea.
+ | [] <- bs
+ =               error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
+                        "a cluster was created with no bindings.\n" ++
+                        "this means there must be a bug in the clustering algorithm.\n" ++
+                        show bs)
+
  | otherwise
- = process arrIns
+ = process types env arrIns
  $ map toEither bs
 
  where
@@ -142,10 +157,12 @@ mkLets arrIns bs
 
 -- | Create a process for a cluster of array and scalar bindings.
 -- No externals.
-process :: [Name]
+process :: Map Name TypeF
+        -> SI.Env Name
+        -> [Name]
         -> [((Name, Either (SBind Name Name) (ABind Name Name)), Bool)]
         -> [LetsF]
-process arrIns bs
+process types env arrIns bs
  = let pres  = concatMap  getPre  bs
        mid   = runProcs  (mkProcs $ map fst bs)
        posts = concatMap  getPost bs
@@ -154,11 +171,11 @@ process arrIns bs
   getPre b
    -- There is no point of having a reduce that isn't returned.
    | ((s, Left (Fold _ (Seed z _) _)), _)       <- b
-   = [LLet (bind $ NameVarMod s "ref") (xNew tYPE z)]
+   = [LLet (bind $ NameVarMod s "ref") (xNew (tyOf s) z)]
 
    -- Returned vectors
    | ((v, Right _), True)                       <- b
-   = [LLet (bind v) (xNewVector tYPE allocSize)]
+   = [LLet (bind v) (xNewVector (sctyOf v) allocSize)]
 
    -- Otherwise, it's not returned or we needn't allocate anything
    | _                                          <- b
@@ -167,7 +184,7 @@ process arrIns bs
 
   getPost b
    | ((s, Left (Fold _ (Seed _ _) _)), _)       <- b
-   = [ LLet (bind s) (xRead tYPE (var $ NameVarMod s "ref")) ]
+   = [ LLet (bind s) (xRead (tyOf s) (var $ NameVarMod s "ref")) ]
 
    -- Ignore anything else
    | _                                          <- b
@@ -176,10 +193,10 @@ process arrIns bs
   runProcs body
    = let kFlags = [ (True,  BName klok kRate)
                   , (False, BNone $ tRateNat $ TVar $ UName klok) ]
-         vFlags = map (\n -> (False, BName (NameVarMod n "s") tYPE)) arrIns
+         vFlags = map (\n -> (False, BName (NameVarMod n "s") (tSeries (klokT n) (sctyOf n)))) arrIns
      in  xApps (xVarOpSeries (OpSeriesRunProcess $ length arrIns))
-               (  map (const $ xtYPE) arrIns
-               ++ map (XVar  . UName)      arrIns
+               (  map xsctyOf arrIns
+               ++ map var    arrIns
                ++ [(makeXLamFlags (kFlags ++ vFlags) body)])
 
 
@@ -188,7 +205,7 @@ process arrIns bs
    = let rest = mkProcs rs
      in  XLet (LLet   (bind $ NameVarMod s "proc")
               $ xApps (xVarOpSeries OpSeriesReduce)
-                      [klokT, xtYPE, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
+                      [klokX ain, xtyOf s, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
          rest
 
    | (n, Right abind)                                   <- b
@@ -196,7 +213,6 @@ process arrIns bs
          n'proc = NameVarMod n "proc"
          n's    = NameVarMod n "s"
          n'flag = NameVarMod n "flags"
-         n'k    = NameVarMod n "k"
          n'sel  = NameVarMod n "sel"
 
          go ll  = XLet ll rest
@@ -205,19 +221,19 @@ process arrIns bs
          MapN (Fun xf _) ains
           -> go $ LLet  (bind n's)
                 $ xApps (xVarOpSeries (OpSeriesMap (length ains)))
-                        ([klokT] ++ (replicate (length ains) $ xtYPE) ++ [xf] ++ map var ains)
+                        ([klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains)
 
          Filter (Fun xf _) ain
           -> XLet (LLet (bind n'flag)
                       $  xApps (xVarOpSeries (OpSeriesMap 1))
-                               [klokT, xtYPE, xtYPE, xf, var $ NameVarMod ain "s"])
+                               [klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"])
            $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
-                   [ klokT, var n'flag
-                   ,        XLAM (BName n'k kRate)
-                          $ XLam (bind n'sel)
+                   [ klokX ain, var n'flag
+                   ,        XLAM (BName (klokV n) kRate)
+                          $ XLam (BName n'sel (tSel1 (klokT ain) (klokT n)))
                           $ XLet (LLet (bind n's)
                                      $ xApps (xVarOpSeries OpSeriesPack)
-                                       [xtYPE, xtYPE, xtYPE, var n'sel, var $ NameVarMod ain "s"])
+                                       [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"])
                           $ rest]
 
 
@@ -236,7 +252,7 @@ process arrIns bs
   getProc ((s, Left _), _)
    = [var $ NameVarMod s "proc"]
   getProc ((a, _), True)
-   = [xApps (xVarOpSeries OpSeriesFill) [xtYPE, xtYPE, var $ a, var $ NameVarMod a "s"]]
+   = [xApps (xVarOpSeries OpSeriesFill) [klokX a, xsctyOf a, var $ a, var $ NameVarMod a "s"]]
   getProc _
    = []
 
@@ -244,7 +260,7 @@ process arrIns bs
   allocSize
    -- If there are any inputs, use the size of one of those
    | (i:_) <- arrIns
-   = xApps (xVarOpVector OpVectorLength) [xtYPE, var i]
+   = xApps (xVarOpVector OpVectorLength) [xsctyOf i, var i]
    -- Or if it's a generate, find the size of the generate expression.
    | (sz:_) <- concatMap findGenerateSize bs
    = var sz
@@ -252,14 +268,21 @@ process arrIns bs
    | otherwise
    = error ("ddc-core-flow: allocSize, but no size known" ++ show arrIns ++ "\n" ++ show bs)
 
+
+  -- | Find the *original* klok of the first input.
   klok
-   -- The name doesn't matter, we just need to choose one
+   -- If there are any inputs, use the size of one of those. They should all be the same?
+   | (i:_) <- arrIns
+   = klokV i
+   -- Otherwise, just choose one
    | (((n, _), _) :_) <- bs
-   = NameVarMod n "k"
+   = klokV n
    | otherwise
    = error "empty cluster!"
 
-  klokT = XType $ TVar $ UName klok
+  klokV = getKlok env
+  klokT = TVar . UName . klokV
+  klokX = XType . klokT
 
   findGenerateSize ((_, Right (Generate sz _)), _)
    = [sz]
@@ -267,14 +290,55 @@ process arrIns bs
    = []
 
 
-  tYPE    = tBot kData
-  xtYPE   = XType tYPE
-  bind n  = BName n tYPE
+  tyOf n  = types Map.! n
+  sctyOf  = getScalarType . tyOf
+  xtyOf   = XType . tyOf
+  xsctyOf = XType . sctyOf
+
+  bind n  = BName n (tBot kData)
   var n   = XVar $ UName n
 
 
 xVarOpSeries n = XVar (UPrim (NameOpSeries n) (typeOpSeries n))
 xVarOpVector n = XVar (UPrim (NameOpVector n) (typeOpVector n))
+
+
+-- | Get underlying scalar of a vector type - or just return original type if it's not a vector.
+getScalarType :: TypeF -> TypeF
+getScalarType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowVector, [sc])      -> sc
+        _                                               -> tt
+
+
+-- | Create map of types of binders
+takeTypes :: [DDC.Bind Name] -> Map Name TypeF
+takeTypes binds
+ = Map.fromList $ concatMap get binds
+ where
+  get (BName n t) = [(n,t)]
+  get _           = []
+
+
+getKlok :: SI.Env Name -> Name -> Name
+getKlok e n
+ | Just t <- SI.lookupV e n
+ = ty $ goT t
+ | otherwise
+ = ty n
+ where
+  ty = flip NameVarMod "k"
+
+  goT (SI.TVar kv)
+   = goKV kv
+  -- This doesn't matter much..
+  goT (SI.TCross ta tb)
+   = NameVarMod (goT ta) (show tb)
+
+  goKV (SI.KV v)
+   = v
+  goKV (SI.K' kv)
+   = NameVarMod (goKV kv) "'"
 
 {-
 -- We still need to join procs,

@@ -2,6 +2,7 @@
 module DDC.Core.Flow.Transform.Rates.SizeInference
     ( Type(..), K(..), Env(..), Scope(..), Scheme(..)
     , generate
+    , lookupV
     , iter
     , parents
     , trans ) where
