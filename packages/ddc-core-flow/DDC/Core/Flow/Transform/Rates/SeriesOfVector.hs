@@ -281,7 +281,7 @@ process types env arrIns bs
                         ([klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains)
 
          Filter (Fun xf _) ain
-          -> XLet (LLet (BName n'flag $ tSeries (klokT ain) $ sctyOf n)
+          -> XLet (LLet (BName n'flag $ tSeries (klokT ain) tBool)
                       $  xApps (xVarOpSeries (OpSeriesMap 1))
                                [klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"])
            $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
