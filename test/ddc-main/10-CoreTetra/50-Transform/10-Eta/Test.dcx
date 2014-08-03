@@ -1,0 +1,7 @@
+:set Synth
+:set trans Eta
+:trans..
+let fun         = /\(c : Data). \(v : c). v in
+let something   = \(f : [d : Data]. d -> d). f [Unit] () in
+something fun
+;;

@@ -22,6 +22,7 @@ import DDC.Core.Simplifier.Result
 import DDC.Core.Compounds
 import DDC.Core.Pretty
 import DDC.Type.Env             (TypeEnv, KindEnv)
+import DDC.Type.Transform.AnonymizeT
 import Control.Monad.Writer     (Writer, tell, runWriter)
 import Data.Monoid              (Monoid, mempty, mappend)
 import qualified DDC.Type.Env   as Env
@@ -243,7 +244,9 @@ etaExpand
         -> Writer Info (Exp a n)
 
 etaExpand a tX xx
- = do   let btsMore     = expandableArgs tX
+        -- Anonymize the type, so any references to foralls will become anonymous.
+        -- Then, when we add the anonymous bindings, it will work out.
+ = do   let btsMore     = expandableArgs $ anonymizeT tX
         xx'             <- etaExpand' a 0 0 [] btsMore xx
         return xx'
 
