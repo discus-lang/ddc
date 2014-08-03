@@ -1,0 +1,23 @@
+:set lang Tetra
+:set Synth
+
+-- This was causing a type error, because the types aren't alpha equivalent.
+:load..
+module Test with letrec
+f = /\(a : Data). \(v : a). v
+
+com = \(g : [^ : Data]. ^0 -> ^0). g 0i#
+
+uuse _ = com f
+;;
+
+
+:load..
+module Test with letrec
+f = /\(a : Data). \(v : a). v
+
+com = \(g : [b : Data]. b -> b). g 0i#
+
+uuse _ = com f
+;;
+

@@ -76,6 +76,20 @@ makeSub config a ctx0 xL tL tR err
         return (xL, ctx0)
 
 
+ -- SubEquiv
+ --  Both sides are equivalent
+ | equivT tL tR
+ = do   
+        ctrace  $ vcat
+                [ text "* SubEquiv"
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0 
+                , empty ]
+
+        return (xL, ctx0)
+
+
  -- SubInstL
  --  Left is an existential.
  --
