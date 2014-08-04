@@ -25,6 +25,7 @@ import DDC.Llvm.Pretty                                  ()
 
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
+import qualified DDC.Core.Flow.Transform.Forward        as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
@@ -429,16 +430,7 @@ pipeFlow !mm !pp
 
                 -- Float worker functions and initializers into their use sites, 
                 -- leaving only flow operators at the top-level.
-                isFloatable lts
-                 = case lts of
-                    C.LLet (C.BName _ _) x
-                      |  Flow.isSeriesOperator (C.deannotate (const Nothing) x)
-                      -> Forward.FloatDeny
-                    _ -> Forward.FloatForce
-
-                mm_float        = C.result $ Forward.forwardModule Flow.profile 
-                                        (Forward.Config isFloatable False)
-                                        mm_namified
+                mm_float        = Flow.forwardProcesses mm_namified
 
             in  pipeCores mm_float pipes
 
