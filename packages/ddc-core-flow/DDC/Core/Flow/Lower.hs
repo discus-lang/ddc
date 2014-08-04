@@ -82,8 +82,8 @@ defaultConfigVector
 
 
 -- Lower ----------------------------------------------------------------------
--- | Take a module that contains only well formed series processes defined
---   at top-level, and lower them all into procedures. 
+-- | Take a module that contains some well formed series processes defined
+--   at top-level, and lower them into procedures. 
 lowerModule :: Config -> ModuleF -> Either Error ModuleF
 lowerModule config mm
  = case slurpProcesses mm of
@@ -96,7 +96,7 @@ lowerModule config mm
     Right procs
      -> do      
         -- Schedule the processeses into procedures.
-        lets            <- mapM (lowerProcess config) procs
+        lets            <- mapM (lowerEither config) procs
 
         -- Wrap all the procedures into a new module.
         let mm_lowered  = mm
@@ -107,6 +107,14 @@ lowerModule config mm
         let mm_clean        = cleanModule mm_lowered
         return mm_clean
 
+
+-- | Look at slurped result, and if it's a process lower it, otherwise leave it alone
+lowerEither  :: Config -> (Either Process (Bind Name, Exp () Name)) -> Either Error (BindF, ExpF)
+lowerEither  config (Left process)
+ = lowerProcess config process
+lowerEither _config (Right (b,xx))
+ = return (b, xx)
+ 
 
 -- | Lower a single series process into fused code.
 lowerProcess :: Config -> Process -> Either Error (BindF, ExpF)

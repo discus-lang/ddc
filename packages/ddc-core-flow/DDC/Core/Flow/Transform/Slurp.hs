@@ -19,14 +19,14 @@ import Data.List
 
 
 -- | Slurp stream processes from the top level of a module.
-slurpProcesses :: Module () Name -> Either Error [Process]
+slurpProcesses :: Module () Name -> Either Error [Either Process (Bind Name, Exp () Name)]
 slurpProcesses mm
  = slurpProcessesX (deannotate (const Nothing) $ moduleBody mm)
 
 
 -- | Slurp stream processes from a module body.
 --   A module consists of some let-bindings wrapping a unit data constructor.
-slurpProcessesX :: Exp () Name   -> Either Error [Process]
+slurpProcessesX :: Exp () Name   -> Either Error [Either Process (Bind Name, Exp () Name)]
 slurpProcessesX xx
  = case xx of
         -- Slurp processes definitions from the let-bindings.
@@ -42,7 +42,7 @@ slurpProcessesX xx
 
 
 -- | Slurp stream processes from the top-level let expressions.
-slurpProcessesLts :: Lets () Name -> Either Error [Process]
+slurpProcessesLts :: Lets () Name -> Either Error [Either Process (Bind Name, Exp () Name)]
 slurpProcessesLts (LRec binds)
  = sequence [slurpProcessLet b x | (b, x) <- binds]
 
@@ -58,7 +58,7 @@ slurpProcessesLts _
 slurpProcessLet 
         :: Bind Name            -- ^ Binder for the whole process.
         -> Exp () Name          -- ^ Expression of body.
-        -> Either Error Process
+        -> Either Error (Either Process (Bind Name, Exp () Name))
 
 slurpProcessLet (BName n t) xx
 
@@ -86,7 +86,8 @@ slurpProcessLet (BName n t) xx
         (ctxLocal, ops) 
                 <- slurpProcessX Env.empty xBody
 
-        return  $ Process
+        return  $ Left
+                $ Process
                 { processName          = n
                 , processParamTypes    = bts
                 , processParamValues   = bvs
@@ -98,8 +99,8 @@ slurpProcessLet (BName n t) xx
 
                 , processOperators     = ops }
 
-slurpProcessLet _ xx
- = Left (ErrorBadProcess xx)
+slurpProcessLet b xx
+ = return $ Right (b, xx)
 
 
 -------------------------------------------------------------------------------
