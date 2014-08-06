@@ -20,7 +20,7 @@ import DDC.Core.Compounds
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
-import Control.Monad.Error
+import Control.Monad.Except
 
 
 -- Exp --------------------------------------------------------------------------------------------
