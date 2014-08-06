@@ -98,17 +98,17 @@ pTypeFun c
         P.choice 
          [ -- T1 ~> T2
            do   pTok KArrowTilde
-                t2      <- pTypeFun c
+                t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
 
            -- T1 => T2
          , do   pTok KArrowEquals
-                t2      <- pTypeFun c
+                t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
 
            -- T1 -> T2
          , do   pTok KArrowDash
-                t2      <- pTypeFun c
+                t2      <- pTypeForall c
                 if (  contextFunctionalEffects c
                    && contextFunctionalClosures c)
                    then return $ t1 `tFunPE` t2
@@ -122,7 +122,7 @@ pTypeFun c
                 clo     <- pTypeSum c
                 pTok KRoundKet
                 pTok (KOp ">")
-                t2      <- pTypeFun c
+                t2      <- pTypeForall c
                 return  $ tFunEC t1 eff clo t2
 
 

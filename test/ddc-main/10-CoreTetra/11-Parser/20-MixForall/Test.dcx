@@ -1,0 +1,14 @@
+:set lang Tetra
+
+-- It may seem strange to have a type lambda *after* a value lambda, but transforms can produce this
+-- and it can be pretty printed, so we should be able to parse it.
+:check..
+letrec {
+  foo : Nat# -> [a : Data]. a -> Nat#
+   = \(n : Nat#).
+    /\(a : Data).
+     \(o : a).
+        n
+}
+in ()
+;;
