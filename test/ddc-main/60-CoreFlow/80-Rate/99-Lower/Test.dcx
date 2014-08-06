@@ -1,0 +1,80 @@
+:set Synth
+:set lang Flow
+
+-- This is a slightly cleaned up result of rate inference. Lower it.
+:flow-lower..
+module Test with letrec
+x2runprocprocess
+  = \(x2 : Vector# Int#).  /\(k0 : Rate).
+    \(_ : RateNat# k0).\(uss : Series# k0 Int#).
+    let flags : Series# k0 Bool# = smap# (\(x0 : Int#). gt# 1i# x0) uss in
+    smkSel# [k0] flags
+        (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+         let x2s : Series# k1 Int# = spack# sel uss in
+             sfill# x2 x2s)
+
+
+test (us : Vector# Int#)
+    = do x2 = vnew# (vlength# us)
+         x2runproc = runProcess# us (x2runprocprocess x2)
+         x2
+;;
+
+
+-- Now try the real thing
+:flow-lower..
+module Test with letrec
+x9$runproc$process 
+      = \(x13$ref : Ref# Int#).\(x9 : Vector# Int#).
+        /\(x19$'$k : Rate).
+         \(_ : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
+        let x9$s : Series# x19$'$k Int#
+              = smap# [x19$'$k] [Int#] [Int#]
+                    (\(x7 : Int#). add# [Int#] 2i# x7) vs$s in
+        let x13$proc : Process#
+              = sreduce# [x19$'$k] [Int#] x13$ref
+                    (\(x10 x11 : Int#). add# [Int#] x10 x11) 0i# x9$s in
+        pjoin# (sfill# [x19$'$k] [Int#] x9 x9$s) x13$proc
+x2$runproc$process 
+      = \(x16 : Vector# Int#).\(x6$ref : Ref# Int#).\(x13 : Int#).
+        /\(x16$'$k : Rate).
+         \(_ : RateNat# x16$'$k).\(us$s : Series# x16$'$k Int#).
+        let x2$s : Series# x16$'$k Int#
+              = smap# [x16$'$k] [Int#] [Int#]
+                    (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
+        let x6$proc : Process#
+              = sreduce# [x16$'$k] [Int#] x6$ref
+                    (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
+        let x16$s : Series# x16$'$k Int#
+              = smap# [x16$'$k] [Int#] [Int#]
+                    (\(x14 : Int#). add# [Int#] x13 x14) x2$s in
+        pjoin# x6$proc (sfill# [x16$'$k] [Int#] x16 x16$s)
+x19$runproc$process 
+      = \(x19 : Vector# Int#).\(x6 : Int#).
+        /\(x19$'$k : Rate).
+         \(_ : RateNat# x19$'$k).\(x9$s : Series# x19$'$k Int#).
+        let x19$s : Series# x19$'$k Int#
+              = smap# [x19$'$k] [Int#] [Int#]
+                    (\(x17 : Int#). add# [Int#] x6 x17) x9$s in
+        sfill# [x19$'$k] [Int#] x19 x19$s
+test 
+    = \(us vs : Vector# Int#).
+      let x9 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] vs) in
+      let x13$ref : Ref# Int# = new# [Int#] 0i# in
+      let x9$runproc : Bool#
+            = runProcess# [Int#] vs (x9$runproc$process x13$ref x9) in
+      let x13 : Int# = read# [Int#] x13$ref in
+      let x6$ref : Ref# Int# = new# [Int#] 0i# in
+      let x16 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] us) in
+      let x2$runproc : Bool#
+            = runProcess# [Int#] us (x2$runproc$process x16 x6$ref x13) in
+      let x6 : Int# = read# [Int#] x6$ref in
+      let x19 : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] x9) in
+      let x19$runproc : Bool#
+            = runProcess# [Int#] x9 (x19$runproc$process x19 x6) in
+      T2# [Vector# Int#] [Vector# Int#] x16 x19
+}
+;;
