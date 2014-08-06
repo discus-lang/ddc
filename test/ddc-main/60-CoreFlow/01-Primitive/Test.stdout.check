@@ -70,6 +70,8 @@ loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
 segment# :: Ref# Nat# -> Nat# -> (Nat# -> Nat# -> Unit) -> Unit
 guard# :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
 split$8# :: [^ : Rate].RateNat# ^0 -> (RateNat# (Down8# ^0) -> Unit) -> (RateNat# (Tail8# ^0) -> Unit) -> Unit
+runKernel# :: [^ : Data].Vector# ^0 -> ([^ : Rate].RateNat# ^0 -> Series# ^0 ^1 -> Unit) -> Bool#
+runKernel2# :: [^ ^ : Data].Vector# ^1 -> Vector# ^0 -> ([^ : Rate].RateNat# ^0 -> Series# ^0 ^2 -> Series# ^0 ^1 -> Unit) -> Bool#
 
 
 -- Store operators

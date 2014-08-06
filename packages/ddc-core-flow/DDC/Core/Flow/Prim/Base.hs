@@ -210,6 +210,9 @@ data OpConcrete
 
         -- | Take the tail rate of a decimated series.
         | OpConcreteTail Int
+
+        -- | Convert Vectors to Series, and execute a kernel
+        | OpConcreteRunKernel Int
         deriving (Eq, Ord, Show)
 
 

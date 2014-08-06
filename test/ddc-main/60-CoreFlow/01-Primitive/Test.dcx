@@ -70,6 +70,8 @@
 :type segment#
 :type guard#
 :type split$8#
+:type runKernel#
+:type runKernel2#
 
 
 -- Store operators

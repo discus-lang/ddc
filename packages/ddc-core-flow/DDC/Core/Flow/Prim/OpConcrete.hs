@@ -44,6 +44,9 @@ instance Pretty OpConcrete where
         OpConcreteDown n          -> text "down$"         <> int n <> text "#"
         OpConcreteTail n          -> text "tail$"         <> int n <> text "#"
 
+        OpConcreteRunKernel 1     -> text "runKernel"              <> text "#"
+        OpConcreteRunKernel n     -> text "runKernel"     <> int n <> text "#"
+
 
 -- | Read a series operator name.
 readOpConcrete :: String -> Maybe OpConcrete
@@ -82,11 +85,19 @@ readOpConcrete str
         , n >= 1
         = Just $ OpConcreteTail n
 
+        | Just rest     <- stripPrefix "runKernel" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpConcreteRunKernel n
+
         | otherwise
         = case str of
                 "rateOfSeries#" -> Just $ OpConcreteRateOfSeries
                 "natOfRateNat#" -> Just $ OpConcreteNatOfRateNat
                 "next#"         -> Just $ OpConcreteNext 1
+                "runKernel#"    -> Just $ OpConcreteRunKernel 1
                 _               -> Nothing
 
 
@@ -136,6 +147,24 @@ typeOpConcrete op
          -> tForalls [kRate, kData]
          $  \[tK, tA] -> tRateNat (tTail n tK)
                         `tFun` tSeries tK tA `tFun` tSeries (tTail n tK) tA
+
+        -- runKernelN# :: [a0..aN : Data]
+        --          .  Vector    a0 .. Vector   aN 
+        --          -> ([k : Rate]. RateNat k -> Series k a0 .. Series k aN -> Unit)
+        --          -> Bool
+        OpConcreteRunKernel n
+         -> let tK     = TVar (UIx 0)
+                tWork  = foldr tFun tUnit
+                       $ [ tRateNat tK ]
+                       ++[ tSeries tK (TVar (UIx i))
+                                | i <- reverse [1..n] ]
+
+                tWork' = TForall (BAnon kRate) tWork
+                
+                tBody  = foldr tFun tBool
+                       $ [ tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
+                       ++[ tWork' ]
+            in  foldr TForall tBody [ BAnon k | k <- replicate n kData ]
 
 
 -- Compounds ------------------------------------------------------------------
