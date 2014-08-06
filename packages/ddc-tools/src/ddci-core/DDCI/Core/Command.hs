@@ -80,6 +80,7 @@ data Command
 
         -- Core Flow specific passes 
         | CommandFlowRate               -- ^ Perform rate inference
+        | CommandFlowRateLower Flow.Config -- ^ Perform rate inference, followed by lowering
         | CommandFlowPrep               -- ^ Prepare a Core Flow module for lowering.
         | CommandFlowLower Flow.Config  -- ^ Prepare and Lower a Core Flow module.
         | CommandFlowConcretize         -- ^ Convert operations on type level rates to concrete ones.
@@ -132,6 +133,7 @@ commands
         , (":tetra-boxing",     CommandTetraBoxing)
 
         -- Core Flow specific passes
+        , (":flow-rate-lower",   CommandFlowRateLower Flow.defaultConfigScalar)
         , (":flow-rate",         CommandFlowRate)
         , (":flow-prep",         CommandFlowPrep)
         , (":flow-lower-kernel", CommandFlowLower Flow.defaultConfigKernel)
@@ -299,6 +301,11 @@ handleCmd1 state cmd source line
         CommandFlowRate
          -> do  configDriver  <- getDriverConfigOfState state
                 runError $ cmdFlowRate configDriver source line
+                return state
+
+        CommandFlowRateLower configLower
+         -> do  configDriver  <- getDriverConfigOfState state
+                runError $ cmdFlowRateLower configDriver configLower source line
                 return state
 
         CommandFlowPrep
