@@ -11,7 +11,8 @@ module DDC.Core.Flow.Prim.OpConcrete
         , xNextC
 
         , xDown
-        , xTail)
+        , xTail
+        , xRunKernel)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -211,6 +212,11 @@ xTail  :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
 xTail n tR tE xRN xS
  = xApps (xVarOpConcrete (OpConcreteTail n))
          [XType tR, XType tE, xRN, xS]
+
+
+xRunKernel  :: Int -> ExpF
+xRunKernel n
+ = xVarOpConcrete (OpConcreteRunKernel n)
 
 
 -- Utils -----------------------------------------------------------------------

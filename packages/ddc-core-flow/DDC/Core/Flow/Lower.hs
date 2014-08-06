@@ -18,10 +18,13 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Prim.OpConcrete
 import DDC.Core.Flow.Exp
 import DDC.Core.Module
 
 import DDC.Core.Transform.Annotate
+import DDC.Core.Transform.Deannotate
+import DDC.Core.Transform.TransformUpX
 
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
@@ -95,8 +98,14 @@ lowerModule config mm
     -- We've got a process definition for all of then.
     Right procs
      -> do      
+        -- Find names of all process bindings
+        let procname (Left  p) = [processName p]
+            procname (Right _) = []
+
+            procnames   = concatMap procname procs
+
         -- Schedule the processeses into procedures.
-        lets            <- mapM (lowerEither config) procs
+        lets            <- mapM (lowerEither config procnames) procs
 
         -- Wrap all the procedures into a new module.
         let mm_lowered  = mm
@@ -108,12 +117,12 @@ lowerModule config mm
         return mm_clean
 
 
--- | Look at slurped result, and if it's a process lower it, otherwise leave it alone
-lowerEither  :: Config -> (Either Process (Bind Name, Exp () Name)) -> Either Error (BindF, ExpF)
-lowerEither  config (Left process)
+-- | Look at slurped result, and if it's a process lower it, otherwise remove any runProcess# inside expressions
+lowerEither  :: Config -> [Name] -> (Either Process (Bind Name, Exp () Name)) -> Either Error (BindF, ExpF)
+lowerEither  config _ (Left process)
  = lowerProcess config process
-lowerEither _config (Right (b,xx))
- = return (b, xx)
+lowerEither _config procnames (Right (b,xx))
+ = return (b, runProcessToRunKernel procnames xx)
  
 
 -- | Lower a single series process into fused code.
@@ -274,6 +283,35 @@ lowerProcess config process
  | otherwise
  = error $  "ddc-core-flow.lowerProcess: invalid lowering method"
          
+
+runProcessToRunKernel :: [Name] -> ExpF -> ExpF
+runProcessToRunKernel procnames
+ = deannotate (const Nothing)
+ . transformUpX' (annotate () . go . deannotate (const Nothing))
+ . annotate ()
+ where
+  go xx
+   | Just (prim, args) <- takeXPrimApps xx
+   , NameOpSeries (OpSeriesRunProcess n) <- prim
+   = xApps (xRunKernel n) args
+
+  -- the lower transform subtly changes the type of processes,
+  -- by moving all type lambdas to the front.
+  -- if the Process was partially applied, we must modify it in the same way.
+   | Just (x, args)     <- takeXApps xx
+   , XVar (UName n)     <- x
+   , n `elem` procnames
+   = xApps x (filter isTy args ++ filter (not . isTy) args)
+
+   | otherwise
+   = xx
+
+  isTy xx
+   | XType _ <- xx
+   = True
+   | otherwise
+   = False
+
 
 -- Clean ----------------------------------------------------------------------
 -- | Do some beta-reductions to ensure that arguments to worker functions
