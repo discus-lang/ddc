@@ -27,8 +27,6 @@ import Data.Maybe (catMaybes)
 import Data.Monoid (mappend)
 
 
-import Debug.Trace
-
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
  = let body       = deannotate (const Nothing)
@@ -71,24 +69,18 @@ seriesOfVectorFunction :: ExpF -> (ExpF, [LetsF], [Fail])
 seriesOfVectorFunction fun
  = case cnfOfExp fun of
    Left err
-    -> trace ("Error: " ++ show err)
-             (fun, [], [FailCannotConvert err])
+    -> (fun, [], [FailCannotConvert err])
    Right prog
-    -> trace ("2Converted: " ++ renderIndent (ppr prog)) $
-          case SI.generate prog of
+    -> case SI.generate prog of
            Nothing
-            -> trace ("3Error: can't perform size inference") (fun, [], [])
+            -> (fun, [], [])
            Just (env,s)
-            -> trace ("3SizeInf: " ++ renderIndent (ppr (env, s))) $
-                 let g          = graphOfBinds prog env
-                     tmap a b   = SI.parents prog env a b
-                     clustering = solve_linear g tmap
-                     clusters   = map snd $ Map.toList clustering
-                     (re,ls)    = reconstruct fun prog env clusters
-                 in  trace ("4Graph: " ++ renderIndent (ppr (listOfGraph g)))
-                   $ trace ("5Clust: " ++ renderIndent (ppr (Map.toList clustering)))
-                   $ trace ("6OUT:   " ++ renderIndent (ppr $ annotate () re))
-                   $ (re, ls, [])
+            -> let g          = graphOfBinds prog env
+                   tmap a b   = SI.parents prog env a b
+                   clustering = solve_linear g tmap
+                   clusters   = map snd $ Map.toList clustering
+                   (re, ls)   = reconstruct fun prog env clusters
+               in  (re, ls, [])
 
 
 reconstruct
@@ -124,8 +116,7 @@ reconstruct fun prog env clusters
          -- This way is better than mapping lookup over c, as we get them in program order.
          binds   = filter (flip elem c . cnameOfBind) (_binds prog)
          binds'  = map (\a -> (a, cnameOfBind a `elem` outputs)) binds
-     in  trace ("7outputs: " ++ show outputs ++ "\n") 
-       $ mkLets types env arrIns binds'
+     in  mkLets types env arrIns binds'
 
 
 -- | Extract processes out so they can be made into separate bindings
@@ -221,7 +212,7 @@ process :: Map Name TypeF
         -> [LetsF]
 process types env arrIns bs
  = let pres  = concatMap  getPre  bs
-       mid   = runProcs  (mkProcs $ map fst bs)
+       mid   = runProcs   (mkProcs bs)
        posts = concatMap  getPost bs
    in pres ++ [LLet (BName (NameVarMod outname "runproc") tBool) mid] ++ posts
  where
@@ -258,40 +249,49 @@ process types env arrIns bs
 
 
   mkProcs (b:rs)
-   | (s, Left (Fold (Fun xf _) (Seed xs _) ain))        <- b
+   | ((s, Left (Fold (Fun xf _) (Seed xs _) ain)), _)   <- b
    = let rest = mkProcs rs
      in  XLet (LLet   (BName (NameVarMod s "proc") $ tProcess)
               $ xApps (xVarOpSeries OpSeriesReduce)
                       [klokX ain, xtyOf s, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
          rest
 
-   | (n, Right abind)                                   <- b
+   | ((n, Right abind), out)                            <- b
    = let rest   = mkProcs rs
          n'proc = NameVarMod n "proc"
          n's    = NameVarMod n "s"
          n'flag = NameVarMod n "flags"
          n'sel  = NameVarMod n "sel"
 
-         go ll  = XLet ll rest
+         llet nm t x1
+                = XLet (LLet (BName nm t) x1)
+
+         go     | out
+                = llet n'proc tProcess
+                ( xApps (xVarOpSeries OpSeriesFill) [klokX n, xsctyOf n, var $ n, var $ n's] )
+                  rest
+                | otherwise
+                = rest
 
      in  case abind of
          MapN (Fun xf _) ains
-          -> go $ LLet  (BName n's $ tSeries (klokT n) $ sctyOf n)
-                $ xApps (xVarOpSeries (OpSeriesMap (length ains)))
-                        ([klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains)
+          -> llet n's (tSeries (klokT n) $ sctyOf n)
+           ( xApps (xVarOpSeries (OpSeriesMap (length ains)))
+                   ([klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains) )
+             go
 
          Filter (Fun xf _) ain
-          -> XLet (LLet (BName n'flag $ tSeries (klokT ain) tBool)
-                      $  xApps (xVarOpSeries (OpSeriesMap 1))
-                               [klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"])
+          -> llet n'flag (tSeries (klokT ain) tBool)
+           ( xApps (xVarOpSeries (OpSeriesMap 1))
+                   [ klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"] )
            $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
                    [ klokX ain, var n'flag
                    ,        XLAM (BName (klokV n) kRate)
                           $ XLam (BName n'sel (tSel1 (klokT ain) (klokT n)))
-                          $ XLet (LLet (BName n's $ tSeries (klokT n) $ sctyOf n)
-                                     $ xApps (xVarOpSeries OpSeriesPack)
-                                       [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"])
-                          $ rest]
+                          $ llet n's (tSeries (klokT n) $ sctyOf n)
+                          ( xApps (xVarOpSeries OpSeriesPack)
+                                  [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"] )
+                            go ]
 
 
 
@@ -309,7 +309,7 @@ process types env arrIns bs
   getProc ((s, Left _), _)
    = [var $ NameVarMod s "proc"]
   getProc ((a, _), True)
-   = [xApps (xVarOpSeries OpSeriesFill) [klokX a, xsctyOf a, var $ a, var $ NameVarMod a "s"]]
+   = [var $ NameVarMod a "proc"]
   getProc _
    = []
 

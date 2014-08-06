@@ -18,7 +18,8 @@ let x5$runproc$process : Vector# Int# -> Int# -> [x5$'$k : Rate].RateNat# x5$'$k
         let x5$s : Series# x5$'$k Int#
               = smap# [x5$'$k] [Int#] [Int#]
                     (\(x : Int#). div# [Int#] x x3) u1$s in
-        sfill# [x5$'$k] [Int#] x5 x5$s
+        let x5$proc : Process# = sfill# [x5$'$k] [Int#] x5 x5$s in
+        x5$proc
 letrec {
   test : Vector# Int# -> Vector# Int#
     = \(u1 : Vector# Int#).
@@ -54,7 +55,8 @@ let x5$runproc$process : Vector# Int# -> Int# -> [x5$'$k : Rate].RateNat# x5$'$k
         let x5$s : Series# x5$'$k Int#
               = smap# [x5$'$k] [Int#] [Int#]
                     (\(x : Int#). div# [Int#] x x3) u1$s in
-        sfill# [x5$'$k] [Int#] x5 x5$s
+        let x5$proc : Process# = sfill# [x5$'$k] [Int#] x5 x5$s in
+        x5$proc
 letrec {
   test : Vector# Int# -> Tuple2# (Vector# Int#) Int#
     = \(u1 : Vector# Int#).

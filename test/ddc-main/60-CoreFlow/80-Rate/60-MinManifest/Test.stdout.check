@@ -21,7 +21,8 @@ let x2$runproc$process : Vector# Int# -> Int# -> [x9$'$k : Rate].RateNat# x9$'$k
         let x9$s : Series# x9$'$k Int#
               = smap# [x9$'$k] [Int#] [Int#]
                     (\(x7 : Int#). add# [Int#] x6 x7) x2$s in
-        sfill# [x9$'$k] [Int#] x9 x9$s
+        let x9$proc : Process# = sfill# [x9$'$k] [Int#] x9 x9$s in
+        x9$proc
 letrec {
   test : Vector# Int# -> Vector# Int#
     = \(us : Vector# Int#).

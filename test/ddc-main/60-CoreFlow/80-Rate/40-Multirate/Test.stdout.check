@@ -10,10 +10,11 @@ let x5$runproc$process : Ref# Int# -> Vector# Int# -> [x5$'$k : Rate].RateNat# x
         let x5$s : Series# x5$'$k Int#
               = smap# [x5$'$k] [Int#] [Int#]
                     (\(x3 : Int#). add# [Int#] 2i# x3) vs$s in
+        let x5$proc : Process# = sfill# [x5$'$k] [Int#] x5 x5$s in
         let x9$proc : Process#
               = sreduce# [x5$'$k] [Int#] x9$ref
                     (\(x6 x7 : Int#). add# [Int#] x6 x7) 0i# x5$s in
-        pjoin# (sfill# [x5$'$k] [Int#] x5 x5$s) x9$proc
+        pjoin# x5$proc x9$proc
 let x2$runproc$process : Vector# Int# -> [x2$'$k : Rate].RateNat# x2$'$k -> Series# x2$'$k Int# -> Process#
       = \(x2 : Vector# Int#).
         /\(x2$'$k : Rate).
@@ -21,7 +22,8 @@ let x2$runproc$process : Vector# Int# -> [x2$'$k : Rate].RateNat# x2$'$k -> Seri
         let x2$s : Series# x2$'$k Int#
               = smap# [x2$'$k] [Int#] [Int#]
                     (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
-        sfill# [x2$'$k] [Int#] x2 x2$s
+        let x2$proc : Process# = sfill# [x2$'$k] [Int#] x2 x2$s in
+        x2$proc
 letrec {
   test : Vector# Int# -> Vector# Int# -> Tuple3# (Vector# Int#) (Vector# Int#) Int#
     = \(us vs : Vector# Int#).
@@ -65,7 +67,8 @@ let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].R
         let x16$s : Series# x16$'$k Int#
               = smap# [x16$'$k] [Int#] [Int#]
                     (\(x14 : Int#). add# [Int#] x13 x14) us$s in
-        pjoin# x6$proc (sfill# [x16$'$k] [Int#] x16 x16$s)
+        let x16$proc : Process# = sfill# [x16$'$k] [Int#] x16 x16$s in
+        pjoin# x6$proc x16$proc
 let x19$runproc$process : Vector# Int# -> Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Series# x19$'$k Int# -> Process#
       = \(x19 : Vector# Int#).\(x6 : Int#).
         /\(x19$'$k : Rate).
@@ -73,7 +76,8 @@ let x19$runproc$process : Vector# Int# -> Int# -> [x19$'$k : Rate].RateNat# x19$
         let x19$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x17 : Int#). add# [Int#] x6 x17) vs$s in
-        sfill# [x19$'$k] [Int#] x19 x19$s
+        let x19$proc : Process# = sfill# [x19$'$k] [Int#] x19 x19$s in
+        x19$proc
 letrec {
   test : Vector# Int# -> Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
     = \(us vs : Vector# Int#).
@@ -104,10 +108,11 @@ let x9$runproc$process : Ref# Int# -> Vector# Int# -> [x19$'$k : Rate].RateNat# 
         let x9$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x7 : Int#). add# [Int#] 2i# x7) vs$s in
+        let x9$proc : Process# = sfill# [x19$'$k] [Int#] x9 x9$s in
         let x13$proc : Process#
               = sreduce# [x19$'$k] [Int#] x13$ref
                     (\(x10 x11 : Int#). add# [Int#] x10 x11) 0i# x9$s in
-        pjoin# (sfill# [x19$'$k] [Int#] x9 x9$s) x13$proc
+        pjoin# x9$proc x13$proc
 let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].RateNat# x16$'$k -> Series# x16$'$k Int# -> Process#
       = \(x16 : Vector# Int#).\(x6$ref : Ref# Int#).\(x13 : Int#).
         /\(x16$'$k : Rate).
@@ -121,7 +126,8 @@ let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].R
         let x16$s : Series# x16$'$k Int#
               = smap# [x16$'$k] [Int#] [Int#]
                     (\(x14 : Int#). add# [Int#] x13 x14) x2$s in
-        pjoin# x6$proc (sfill# [x16$'$k] [Int#] x16 x16$s)
+        let x16$proc : Process# = sfill# [x16$'$k] [Int#] x16 x16$s in
+        pjoin# x6$proc x16$proc
 let x19$runproc$process : Vector# Int# -> Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Series# x19$'$k Int# -> Process#
       = \(x19 : Vector# Int#).\(x6 : Int#).
         /\(x19$'$k : Rate).
@@ -129,7 +135,8 @@ let x19$runproc$process : Vector# Int# -> Int# -> [x19$'$k : Rate].RateNat# x19$
         let x19$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x17 : Int#). add# [Int#] x6 x17) x9$s in
-        sfill# [x19$'$k] [Int#] x19 x19$s
+        let x19$proc : Process# = sfill# [x19$'$k] [Int#] x19 x19$s in
+        x19$proc
 letrec {
   test : Vector# Int# -> Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
     = \(us vs : Vector# Int#).
