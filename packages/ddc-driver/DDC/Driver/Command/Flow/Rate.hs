@@ -58,9 +58,11 @@ cmdFlowRateLower config configLower source sourceText
                     sourceText
          $ stageFlowLoad  config source 
          [ stageFlowRate  config source 
+         [ stageFlowPrep  config source
          [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
          [ stageFlowLower config configLower source
-         [ PipeCoreOutput pmode SinkStdout ]]]]
+         [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+         [ PipeCoreOutput pmode SinkStdout ]]]]]]
    
    in do
         errs    <- liftIO pipeRate
