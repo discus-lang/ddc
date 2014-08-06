@@ -22,7 +22,7 @@ Library
         deepseq          == 1.3.*,
         containers       == 0.5.*,
         filepath         == 1.3.*,
-        mtl              == 2.1.*,
+        mtl              == 2.2.1.*,
         directory        == 1.2.*,
         transformers     == 0.3.*,
         ddc-base         == 0.4.2.*,

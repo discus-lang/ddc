@@ -18,7 +18,7 @@ Library
         array           >= 0.4 && < 0.6,
         containers      == 0.5.*,
         transformers    == 0.3.*,
-        mtl             == 2.1.*,
+        mtl             == 2.2.1.*,
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*,
         ddc-core-simpl  == 0.4.2.*,
