@@ -1,17 +1,13 @@
 module DDC.Core.Flow.Transform.Forward
         ( forwardProcesses )
 where
-import DDC.Core.Flow.Transform.Slurp
 import DDC.Core.Flow.Compounds (tProcess)
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Prim
--- import DDC.Core.Flow.Exp
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Module
 import qualified DDC.Core.Simplifier                    as C
-
-import DDC.Core.Transform.Deannotate
 
 import qualified DDC.Core.Transform.Forward             as Forward
 
@@ -46,7 +42,7 @@ forwardBind
 
 forwardBind b@(BName _ t) xx
  -- We assume that all type params come before the value params.
- | (snd $ takeTFunAllArgResult t) == tProcess
+ | True || (snd $ takeTFunAllArgResult t) == tProcess
  = (b, forwardX xx)
 
 forwardBind b             xx
@@ -62,7 +58,14 @@ forwardX xx
   isFloatable lts
      = case lts of
         LLet (BName _ _) x
-          |  isSeriesOperator (deannotate (const Nothing) x)
-          -> Forward.FloatDeny
+          | Just (n,_) <- takeXPrimApps x
+          -> case n of
+             NameOpConcrete _   -> Forward.FloatDeny
+             NameOpControl  _   -> Forward.FloatDeny
+             NameOpSeries   _   -> Forward.FloatDeny
+             NameOpStore    _   -> Forward.FloatDeny
+             NameOpVector   _   -> Forward.FloatDeny
+
+             _                  -> Forward.FloatForce
         _ -> Forward.FloatForce
 
