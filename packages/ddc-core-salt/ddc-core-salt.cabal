@@ -18,7 +18,7 @@ Library
         array           >= 0.4 && < 0.6,
         deepseq         == 1.3.*,
         containers      == 0.5.*,
-        transformers    == 0.3.*,
+        transformers    == 0.4.*,
         mtl             == 2.2.1.*,
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*
@@ -50,7 +50,7 @@ Library
         DDC.Core.Salt.Name.Lit
         DDC.Core.Salt.Name.PrimArith
         DDC.Core.Salt.Name.PrimCast
-        DDC.Core.Saly.Name.PrimCall
+        DDC.Core.Salt.Name.PrimCall
         DDC.Core.Salt.Name.PrimControl
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon

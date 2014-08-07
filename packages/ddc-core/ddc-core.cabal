@@ -27,7 +27,7 @@ Library
         deepseq         == 1.3.*,
         containers      == 0.5.*,
         directory       == 1.2.*,
-        transformers    == 0.3.*,
+        transformers    == 0.4.*,
         mtl             == 2.2.1.*,
         ddc-base        == 0.4.2.*
 
@@ -61,6 +61,7 @@ Library
 
         DDC.Core.Check
         DDC.Core.Collect
+        DDC.Core.Collect.Support
         DDC.Core.Compounds
         DDC.Core.Context
         DDC.Core.Exp
@@ -120,7 +121,6 @@ Library
 
         DDC.Core.Collect.Free
         DDC.Core.Collect.Free.Simple
-        DDC.Core.Collect.Support
         
         DDC.Core.Exp.DaCon
         DDC.Core.Exp.Pat

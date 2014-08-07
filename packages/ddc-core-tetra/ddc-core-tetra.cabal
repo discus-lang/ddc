@@ -19,7 +19,7 @@ Library
         array           >= 0.4 && < 0.6,
         deepseq         == 1.3.*,
         containers      == 0.5.*,
-        transformers    == 0.3.*,
+        transformers    == 0.4.*,
         mtl             == 2.2.1.*,
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*,
@@ -28,6 +28,7 @@ Library
 
   Exposed-modules:
         DDC.Core.Tetra.Transform.Boxing
+        DDC.Core.Tetra.Transform.Curry
         DDC.Core.Tetra.Compounds
         DDC.Core.Tetra.Convert
         DDC.Core.Tetra.Env
@@ -52,7 +53,6 @@ Library
         DDC.Core.Tetra.Prim.OpCast
         DDC.Core.Tetra.Prim.OpFun
         DDC.Core.Tetra.Prim.OpStore
-        DDC.Core.Tetra.Prim.TyConFun
         DDC.Core.Tetra.Prim.TyConPrim
         DDC.Core.Tetra.Prim.TyConTetra
 

@@ -19,7 +19,7 @@ Library
   Build-Depends: 
         base            >= 4.6 && < 4.8,
         deepseq         == 1.3.*,
-        transformers    == 0.3.*,
+        transformers    == 0.4.*,
         containers      == 0.5.*,
         wl-pprint       == 1.1.*,
         parsec          == 3.1.*
@@ -27,7 +27,7 @@ Library
   Exposed-modules:
         DDC.Base.Parser
         DDC.Base.Pretty
-        DDC.Base.CompoundName
+        DDC.Base.Name
 
         DDC.Control.Monad.Check
 

@@ -24,7 +24,7 @@ Library
         filepath         == 1.3.*,
         mtl              == 2.2.1.*,
         directory        == 1.2.*,
-        transformers     == 0.3.*,
+        transformers     == 0.4.*,
         ddc-base         == 0.4.2.*,
         ddc-core         == 0.4.2.*,
         ddc-core-eval    == 0.4.2.*,
@@ -38,7 +38,7 @@ Library
         ddc-interface    == 0.4.2.*
   
   Exposed-modules:
-        DDC.Driver.Build.Config
+        DDC.Driver.Build.Locate
         DDC.Driver.Build.Main
 
         DDC.Driver.Command.Flow.Concretize
@@ -49,11 +49,12 @@ Library
         DDC.Driver.Command.Flow.Thread
         DDC.Driver.Command.Flow.Wind
         DDC.Driver.Command.Tetra.Boxing
+        DDC.Driver.Command.Tetra.Curry
         DDC.Driver.Command.BaseBuild
+        DDC.Driver.Command.Build
         DDC.Driver.Command.Check
         DDC.Driver.Command.Compile
         DDC.Driver.Command.Load
-        DDC.Driver.Command.Make
         DDC.Driver.Command.Parse
         DDC.Driver.Command.Read
         DDC.Driver.Command.RewriteRules

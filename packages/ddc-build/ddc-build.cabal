@@ -49,13 +49,18 @@ Library
         DDC.Build.Pipeline.Sink
         DDC.Build.Pipeline.Text
         
+        DDC.Build.Spec.Check
+        DDC.Build.Spec.Parser
+
         DDC.Build.Builder
         DDC.Build.Language
         DDC.Build.Pipeline
         DDC.Build.Platform
+        DDC.Build.Spec
         
   Other-modules:
         DDC.Build.Language.Base
+        DDC.Build.Spec.Base
 
   Extensions:
         BangPatterns
