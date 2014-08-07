@@ -8,7 +8,7 @@ import DDC.Build.Builder
 import DDC.Driver.Command.Compile
 import System.FilePath
 import System.Directory
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 
@@ -33,7 +33,7 @@ baseSeaFiles _builder
 
 
 -- Buid the base libraries and runtime system.
-cmdBaseBuild :: Config  -> ErrorT String IO ()
+cmdBaseBuild :: Config  -> ExceptT String IO ()
 cmdBaseBuild config
  = do   let builder     = configBuilder config
         let target      = buildTarget builder

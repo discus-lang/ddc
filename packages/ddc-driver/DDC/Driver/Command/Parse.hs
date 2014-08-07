@@ -14,7 +14,7 @@ import DDC.Core.Parser                  as C
 import DDC.Core.Lexer                   as C
 import DDC.Base.Parser                  as BP
 import DDC.Data.Token                   as Token
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import System.FilePath
 import System.Directory
@@ -24,7 +24,7 @@ import Control.Monad
 -------------------------------------------------------------------------------
 -- | Parse a module.
 --   The result AST is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 --   This function handle fragments of Disciple Core, as well as Source Tetra
 --   modules. The language to use is determined by inspecting the file name
@@ -33,7 +33,7 @@ import Control.Monad
 cmdParseFromFile 
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file name.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdParseFromFile config filePath
  
@@ -48,24 +48,24 @@ cmdParseFromFile config filePath
  -- Don't know how to parse this file.
  | otherwise
  = let  ext     = takeExtension filePath
-   in   throwError $ "Cannot parse '" ++ ext ++ "' files."
+   in   throwE $ "Cannot parse '" ++ ext ++ "' files."
 
 
 -------------------------------------------------------------------------------
 -- | Parse a Disciple Source Tetra module from a file.
 --   The result AST is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdParseSourceTetraFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdParseSourceTetraFromFile config filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -91,7 +91,7 @@ cmdParseSourceTetraFromFile config filePath
                 C.describeTok filePath 
                 (ST.pModule False context) toks of
          Left err 
-          ->    throwError (renderIndent $ ppr err)
+          ->    throwE (renderIndent $ ppr err)
          
          Right mm
           ->    liftIO $ putStrLn (renderIndent $ ppr mm)
@@ -100,12 +100,12 @@ cmdParseSourceTetraFromFile config filePath
 -------------------------------------------------------------------------------
 -- | Parse a Disciple Core module from a file.
 --   The AST is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdParseCoreFromFile
         :: Config               -- ^ Driver config
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdParseCoreFromFile _config language filePath
  | Language bundle      <- language
@@ -115,7 +115,7 @@ cmdParseCoreFromFile _config language filePath
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -127,7 +127,7 @@ cmdParseCoreFromFile _config language filePath
                 C.describeTok filePath 
                 (C.pModule (C.contextOfProfile profile)) toks of
          Left err
-          ->    throwError (renderIndent $ ppr err)
+          ->    throwE (renderIndent $ ppr err)
 
          Right mm
           ->    liftIO $ putStrLn (renderIndent $ ppr mm)

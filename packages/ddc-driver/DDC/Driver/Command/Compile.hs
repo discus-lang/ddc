@@ -11,7 +11,7 @@ import DDC.Build.Interface.Base
 import System.FilePath
 import System.Directory
 import Control.Monad
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.IORef
 import qualified DDC.Driver.Build.Locate        as Locate
@@ -43,7 +43,7 @@ cmdCompileRecursive
         -> Bool                                 -- ^ Build an exectable.
         -> [InterfaceAA]                        -- ^ Currently loaded interfaces.
         -> FilePath                             -- ^ Path to file to compile
-        -> ErrorT String IO [InterfaceAA]       -- ^ All loaded interfaces files.
+        -> ExceptT String IO [InterfaceAA]       -- ^ All loaded interfaces files.
 
 cmdCompileRecursive config buildExe0 interfaces0 filePath0
  | takeExtension filePath0 == ".ds"
@@ -59,7 +59,7 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src             <- liftIO $ readFile filePath
@@ -97,7 +97,7 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
                         -- Check that we haven't tried to compile this module before
                         -- on a recursive path. This detects module import loops.
                         when (elem m modNamesPath)
-                         $ throwError $ unlines
+                         $ throwE $ unlines
                          $  [ "! Cannot build recursive modules:" ]
                          ++ [ "    " ++ (P.renderIndent $ P.ppr mm) | mm <- modNamesPath ]
 
@@ -127,7 +127,7 @@ cmdCompile
         -> Bool                 -- ^ Build an executable.
         -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
         -> FilePath             -- ^ Path to file to compile
-        -> ErrorT String IO [InterfaceAA]
+        -> ExceptT String IO [InterfaceAA]
 
 cmdCompile config buildExe interfaces filePath
  = do   
@@ -141,7 +141,7 @@ cmdCompile config buildExe interfaces filePath
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         src             <- liftIO $ readFile filePath
 
@@ -194,7 +194,7 @@ cmdCompile config buildExe interfaces filePath
 
                 -- Unrecognised.
                 | otherwise
-                = throwError $ "Cannot compile '" ++ ext ++ "' files."
+                = throwE $ "Cannot compile '" ++ ext ++ "' files."
 
             pipesSalt
              = case configViaBackend config of
@@ -224,7 +224,7 @@ cmdCompile config buildExe interfaces filePath
         case errs of
          -- There was some error during compilation.
          es@(_:_)     
-          -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+          -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 
          -- Compilation was successful, 
          --  but we need to have produced at least a Tetra or Salt module
@@ -263,7 +263,7 @@ cmdCompile config buildExe interfaces filePath
 tasteNeeded
         :: FilePath             -- ^ Path of module.
         -> String               -- ^ Module source.
-        -> ErrorT String IO [C.ModuleName]
+        -> ExceptT String IO [C.ModuleName]
 
 tasteNeeded filePath src 
         | takeExtension filePath == ".ds"
@@ -278,7 +278,7 @@ tasteNeeded filePath src
 
                 case BP.runTokenParser C.describeTok filePath
                         (SE.pModule True context) tokens of
-                 Left  err  -> throwError $ P.renderIndent $ P.ppr err
+                 Left  err  -> throwE $ P.renderIndent $ P.ppr err
                  Right mm   -> return $ SE.moduleImportModules mm
 
         | otherwise

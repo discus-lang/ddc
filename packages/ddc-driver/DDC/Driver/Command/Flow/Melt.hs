@@ -7,7 +7,7 @@ import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Build.Pipeline
 import DDC.Build.Language.Flow
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Core.Check         as C
 import qualified DDC.Base.Pretty        as P
@@ -21,7 +21,7 @@ cmdFlowMelt
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdFlowMelt config source sourceText
  = let  pmode   = prettyModeOfConfig $ configPretty config
@@ -41,7 +41,7 @@ cmdFlowMelt config source sourceText
         errs    <- liftIO pipeMelt
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 
 
 

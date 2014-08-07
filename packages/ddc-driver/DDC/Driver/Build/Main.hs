@@ -10,7 +10,7 @@ import DDC.Driver.Config
 import DDC.Build.Spec
 import DDC.Build.Interface.Base
 import Control.Monad
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Module        as C
@@ -27,7 +27,7 @@ type InterfaceAA
 buildSpec  
         :: Config               -- ^ Build config.
         -> Spec                 -- ^ Build spec.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 buildSpec config spec
  = do   mapM_   (buildComponent config) 
@@ -39,7 +39,7 @@ buildSpec config spec
 buildComponent 
         :: Config               -- ^ Build config.
         -> Component            -- ^ Component to build.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 buildComponent config component@SpecLibrary{}
  = do
@@ -69,7 +69,7 @@ buildLibrary
         :: Config               -- ^ Build config
         -> [InterfaceAA]        -- ^ Interfaces that we've already loaded.
         -> [C.ModuleName]       -- ^ Names of modules still to build
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 buildLibrary config interfaces0 ms0
  = go interfaces0 ms0
@@ -89,7 +89,7 @@ buildExecutable
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
         -> C.ModuleName         -- ^ Name  of main module.
         -> [C.ModuleName]       -- ^ Names of dependency modules
-        -> ErrorT String IO [InterfaceAA]
+        -> ExceptT String IO [InterfaceAA]
 
 buildExecutable config interfaces0 mMain msOther0
  = go interfaces0 msOther0
@@ -111,7 +111,7 @@ buildModule
         :: Config               -- ^ Build config.
         -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
         -> C.ModuleName         -- ^ Module name.
-        -> ErrorT String IO [InterfaceAA]
+        -> ExceptT String IO [InterfaceAA]
 
 buildModule config interfaces name
  = do   

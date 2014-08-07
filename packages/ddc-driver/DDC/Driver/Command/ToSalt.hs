@@ -15,7 +15,7 @@ import DDC.Core.Fragment
 import DDC.Base.Pretty
 import System.FilePath
 import System.Directory
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 import qualified DDC.Build.Language.Salt        as Salt
@@ -25,12 +25,12 @@ import qualified DDC.Core.Check                 as C
 -------------------------------------------------------------------------------
 -- | Convert a module to Core Salt.
 --   The output is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToSaltFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSaltFromFile config filePath
 
@@ -45,24 +45,24 @@ cmdToSaltFromFile config filePath
  -- Don't know how to convert this file.
  | otherwise
  = let  ext     = takeExtension filePath
-   in   throwError $ "Cannot convert '" ++ ext ++ "' files to Salt."
+   in   throwE $ "Cannot convert '" ++ ext ++ "' files to Salt."
 
 
 -------------------------------------------------------------------------------
 -- | Convert Disciple Core Tetra to Disciple Core Salt.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltSourceTetraFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSaltSourceTetraFromFile config filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -73,12 +73,12 @@ cmdToSaltSourceTetraFromFile config filePath
 -------------------------------------------------------------------------------
 -- | Convert Disciple Source Tetra to Disciple Core Salt.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltSourceTetraFromString
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSaltSourceTetraFromString config source str
  = let  
@@ -98,27 +98,27 @@ cmdToSaltSourceTetraFromString config source str
         errs    <- liftIO pipeLoad
         case errs of
          []     -> return ()
-         es     -> throwError $ renderIndent $ vcat $ map ppr es
+         es     -> throwE $ renderIndent $ vcat $ map ppr es
 
 
 -------------------------------------------------------------------------------
 -- | Convert some fragment of Disciple Core to Core Salt.
 --   Works for the 'Lite' and 'Tetra' fragments.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToSaltCoreFromFile
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()  
+        -> ExceptT String IO ()  
 
 cmdToSaltCoreFromFile config language filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -130,14 +130,14 @@ cmdToSaltCoreFromFile config language filePath
 -- | Convert some fragment of Disciple Core to Core Salt.
 --   Works for the 'Lite' and 'Tetra' fragments.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToSaltCoreFromString
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Language definition.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()               -- TODO: drop dump files even when there is an error.
+        -> ExceptT String IO ()               -- TODO: drop dump files even when there is an error.
 
 cmdToSaltCoreFromString config language source str
  | Language bundle      <- language
@@ -175,12 +175,12 @@ cmdToSaltCoreFromString config language source str
 
                 -- Unrecognised fragment name or file extension.
                 | otherwise
-                = throwError 
+                = throwE 
                 $ "Cannot convert '" ++ fragName ++ "' modules to Salt."
 
         -- Throw any errors that arose during compilation
         errs <- compile
         case errs of
          []     -> return ()
-         es     -> throwError $ renderIndent $ vcat $ map ppr es
+         es     -> throwE $ renderIndent $ vcat $ map ppr es
 

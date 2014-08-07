@@ -20,7 +20,7 @@ import DDC.Core.Annot.AnTEC
 import DDC.Core.Pretty
 import DDC.Data.SourcePos
 import Control.Monad
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.DeepSeq
 import System.FilePath
@@ -37,7 +37,7 @@ import qualified DDC.Core.Tetra                 as Tetra
 -- | Load and transform source code, interface, or build file.
 --
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 --   This function handle fragments of Disciple Core, as well as Source Tetra
 --   modules. The language to use is determined by inspecting the file name
@@ -50,7 +50,7 @@ cmdLoadFromFile
         -> Maybe String         -- ^ Simplifier specification.
         -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdLoadFromFile config mStrSimpl fsTemplates filePath
 
@@ -59,7 +59,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  = do   
         str     <- liftIO $ readFile filePath
         case Spec.parseBuildSpec filePath str of
-         Left err       -> throwError $ show err
+         Left err       -> throwE $ show err
          Right spec     -> liftIO $ putStrLn $ show spec
 
  -- Load an interface file.
@@ -67,7 +67,7 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  = do
         str     <- liftIO $ readFile filePath
         case Interface.loadInterface filePath str of
-         Left err        -> throwError $ renderIndent $ ppr err
+         Left err        -> throwE $ renderIndent $ ppr err
          Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
 
  -- Load a Disciple Source Tetra module.
@@ -94,25 +94,25 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  -- Don't know how to load this file.
  | otherwise
  = let  ext     = takeExtension filePath
-   in   throwError $ "Cannot load '" ++ ext ++ "' files."
+   in   throwE $ "Cannot load '" ++ ext ++ "' files."
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Source Tetra module from a file.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdLoadSourceTetraFromFile
         :: Config                               -- ^ Driver config.
         -> Bundle Int Tetra.Name Tetra.Error     -- ^ Tetra language bundle.
         -> FilePath                             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdLoadSourceTetraFromFile config bundle filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -123,13 +123,13 @@ cmdLoadSourceTetraFromFile config bundle filePath
 ---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Source Tetra module from a string.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdLoadSourceTetraFromString
         :: Config                               -- ^ Driver config.
         -> Bundle Int Tetra.Name Tetra.Error     -- ^ Tetra language bundle.
         -> Source                               -- ^ Source of the code.
         -> String                               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdLoadSourceTetraFromString config bundle source str
  = let
@@ -147,7 +147,7 @@ cmdLoadSourceTetraFromString config bundle source str
         errs    <- liftIO pipeLoad
         case errs of
          [] -> return ()
-         es -> throwError $ renderIndent $ vcat $ map ppr es
+         es -> throwE $ renderIndent $ vcat $ map ppr es
  
 
 ---------------------------------------------------------------------------------------------------
@@ -157,14 +157,14 @@ cmdLoadCoreFromFile
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdLoadCoreFromFile config language filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -180,7 +180,7 @@ cmdLoadCoreFromString
         -> Language             -- ^ Language definition
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdLoadCoreFromString config language source str
  | Language bundle      <- language
@@ -207,7 +207,7 @@ cmdLoadCoreFromString config language source str
         errs    <- liftIO pipeLoad
         case errs of
          [] -> return ()
-         es -> throwError $ renderIndent $ vcat $ map ppr es
+         es -> throwE $ renderIndent $ vcat $ map ppr es
 
 
 ---------------------------------------------------------------------------------------------------
@@ -218,7 +218,7 @@ cmdLoadSimplifier
         -> Language             -- ^ Language definition.
         -> String               -- ^ Simplifier specification.
         -> [FilePath]           -- ^ Modules to use as inliner templates.
-        -> ErrorT String IO Language
+        -> ExceptT String IO Language
 
 cmdLoadSimplifier config language strSimpl fsTemplates
  | Language bundle      <- language
@@ -234,7 +234,7 @@ cmdLoadSimplifierIntoBundle
         -> Bundle s n err       -- ^ Language bundle
         -> String               -- ^ Simplifier specification.
         -> [FilePath]           -- ^ Modules to use as inliner templates.
-        -> ErrorT String IO (Bundle s n err)
+        -> ExceptT String IO (Bundle s n err)
 
 cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
  | modules_bundle       <- bundleModules bundle
@@ -254,7 +254,7 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
 
         modules_annot
          <- case mModules of
-                 Nothing -> throwError $ "Cannot load inlined module."
+                 Nothing -> throwE $ "Cannot load inlined module."
                  Just ms -> return     $ ms
 
         -- Zap annotations on the loaded modules.
@@ -280,7 +280,7 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
         -- Parse the simplifer string.
         case parseSimplifier readName details strSimpl of
          Left err
-          -> throwError $ renderIndent $ ppr err
+          -> throwE $ renderIndent $ ppr err
 
          Right simpl
           -> return $ bundle { bundleSimplifier = simpl }

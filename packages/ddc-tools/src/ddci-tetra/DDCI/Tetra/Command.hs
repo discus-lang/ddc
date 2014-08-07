@@ -14,7 +14,7 @@ import DDCI.Tetra.Command.Infer
 import DDCI.Tetra.Command.ToCore
 import DDC.Interface.Source
 import DDC.Driver.Command.ToSalt       
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Data.List
 import System.IO
 
@@ -114,9 +114,9 @@ handleCommand1 state cmd source line
 
 
 -- | Just print errors to stdout and continue the session.
-runError :: ErrorT String IO () -> IO ()
+runError :: ExceptT String IO () -> IO ()
 runError m
- = do   result  <- runErrorT m
+ = do   result  <- runExceptT m
         case result of
          Left err       -> hPutStrLn stdout err
          Right _        -> return ()

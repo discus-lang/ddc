@@ -6,7 +6,7 @@ import DDC.Driver.Stage                         as Driver
 import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Check                 as C
@@ -20,7 +20,7 @@ cmdFlowLower
         -> Flow.Config          -- ^ Config for the lowering transform.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdFlowLower
         configDriver configLower
@@ -49,5 +49,5 @@ cmdFlowLower
         errs    <- liftIO pipeLower
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 

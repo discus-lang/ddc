@@ -9,7 +9,7 @@ import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Core.Fragment
 import DDC.Data.Canned
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Core.Transform.Thread      as Thread
 import qualified DDC.Core.Flow.Transform.Thread as Flow
@@ -25,7 +25,7 @@ cmdFlowThread
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdFlowThread config source sourceText
  = let  pmode   = prettyModeOfConfig $ configPretty config
@@ -48,5 +48,5 @@ cmdFlowThread config source sourceText
         errs    <- liftIO pipeThread
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 

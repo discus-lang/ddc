@@ -7,7 +7,7 @@ import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Check                 as C
@@ -20,7 +20,7 @@ cmdFlowRate
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdFlowRate config source sourceText
  = let  pmode   = prettyModeOfConfig $ configPretty config
@@ -38,7 +38,7 @@ cmdFlowRate config source sourceText
         errs    <- liftIO pipeRate
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 
 
 -- | Perform rate inference, then lower
@@ -47,7 +47,7 @@ cmdFlowRateLower
         -> Flow.Config          -- ^ Config for the lowering transform.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdFlowRateLower config configLower source sourceText
  = let  pmode   = prettyModeOfConfig $ configPretty config
@@ -68,5 +68,5 @@ cmdFlowRateLower config configLower source sourceText
         errs    <- liftIO pipeRate
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 

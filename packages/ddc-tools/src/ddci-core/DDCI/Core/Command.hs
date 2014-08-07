@@ -37,7 +37,7 @@ import DDC.Type.Universe
 import qualified DDC.Core.Flow                  as Flow
 import qualified Data.Set                       as Set
 import System.IO
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Data.List
 
 
@@ -362,9 +362,9 @@ handleCmd1 state cmd source line
 
 
 -- | Just print errors to stdout and continue the session.
-runError :: ErrorT String IO a -> IO ()
+runError :: ExceptT String IO a -> IO ()
 runError m
- = do   result  <- runErrorT m
+ = do   result  <- runExceptT m
         case result of
          Left err       -> hPutStrLn stdout err
          Right _        -> return ()

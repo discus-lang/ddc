@@ -26,7 +26,7 @@ import DDC.Base.Name
 import DDC.Core.Module
 import Data.Typeable
 import Control.Monad
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import DDC.Type.Env                             as Env
 import qualified DDC.Core.Check                 as C
@@ -45,7 +45,7 @@ cmdTransDetect
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Input text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdTransDetect    config language shouldPrintInfo
         source str
@@ -67,7 +67,7 @@ cmdTransModule
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Input text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdTransModule config language _shouldPrintInfo source str
  | Language bundle      <- language
@@ -91,7 +91,7 @@ cmdTransModule config language _shouldPrintInfo source str
         errs    <- liftIO pipeTrans 
         case errs of
          [] -> return ()
-         es -> throwError $ renderIndent $ vcat $ map ppr es
+         es -> throwE $ renderIndent $ vcat $ map ppr es
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ cmdTransExp
         -> Bool                 -- ^ Print transform info.
         -> Source               -- ^ Source of input text.
         -> String               -- ^ Input text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdTransExp config language traceTrans
         source str

@@ -5,7 +5,7 @@ where
 import DDC.Core.Module
 import qualified DDC.Core.Pretty        as P
 import Control.Monad
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.Maybe
 import System.FilePath
@@ -20,7 +20,7 @@ locateModuleFromPaths
         :: [FilePath]           -- ^ Base paths.
         -> ModuleName           -- ^ Module name.
         -> String               -- ^ Source file extension
-        -> ErrorT String IO FilePath
+        -> ExceptT String IO FilePath
 
 locateModuleFromPaths pathsBase name ext
  = do
@@ -29,7 +29,7 @@ locateModuleFromPaths pathsBase name ext
                 $  mapM  (\d -> locateModuleFromPath d name ext) pathsBase
 
         case mPaths of
-         []        -> throwError $ unlines 
+         []        -> throwE $ unlines 
                    $  [ "Cannot locate source for module '" 
                                 ++ (P.renderIndent $ P.ppr name)  
                                 ++ "' from base directories:" ]
@@ -37,7 +37,7 @@ locateModuleFromPaths pathsBase name ext
 
          [path]    -> return path
 
-         paths     -> throwError $ unlines
+         paths     -> throwE $ unlines
                    $  [ "Source for module '" 
                                 ++ (P.renderIndent $ P.ppr name )
                                 ++ "' found at multiple paths:" ]

@@ -6,7 +6,7 @@ import DDC.Driver.Config
 import DDC.Driver.Build.Main
 import DDC.Driver.Command.Compile
 import DDC.Base.Pretty
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified System.FilePath        as FilePath
 import qualified DDC.Build.Spec.Parser  as Spec
@@ -15,7 +15,7 @@ import qualified Data.List              as List
 
 
 -- Perform a build following a build specification.
-cmdBuild :: Config -> FilePath -> ErrorT String IO ()
+cmdBuild :: Config -> FilePath -> ExceptT String IO ()
 cmdBuild config filePath
 
  -- Build from a build spec file
@@ -36,7 +36,7 @@ cmdBuild config filePath
         -- Parse the spec file.
         str     <- liftIO $ readFile filePath
         case Spec.parseBuildSpec filePath str of
-         Left err       -> throwError $ renderIndent $ ppr err
+         Left err       -> throwE $ renderIndent $ ppr err
          Right spec     -> buildSpec config' spec
 
 
@@ -49,5 +49,5 @@ cmdBuild config filePath
  -- Don't know how to build from this file.
  | otherwise
  = let  ext     = FilePath.takeExtension  filePath
-   in   throwError $ "Cannot build from '" ++ ext ++ "' files."
+   in   throwE $ "Cannot build from '" ++ ext ++ "' files."
 

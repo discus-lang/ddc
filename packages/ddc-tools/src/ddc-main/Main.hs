@@ -34,7 +34,7 @@ import DDC.Base.Pretty
 import System.Environment
 import System.IO
 import System.Exit
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import qualified DDC.Driver.Stage               as Driver
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
@@ -81,7 +81,7 @@ run config
         -- Parse and type check a module.
         ModeCheck filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                result  <- runErrorT $  cmdCheckFromFile dconfig filePath
+                result  <- runExceptT $  cmdCheckFromFile dconfig filePath
                 
                 case result of
                  Left err        
@@ -257,9 +257,9 @@ getDriverConfig config filePath
 
 
 -- | Print errors to stderr and set the exit code.
-runError :: ErrorT String IO a -> IO ()
+runError :: ExceptT String IO a -> IO ()
 runError m
- = do   result  <- runErrorT m
+ = do   result  <- runExceptT m
         case result of
          Left err       
           -> do hPutStrLn stderr err

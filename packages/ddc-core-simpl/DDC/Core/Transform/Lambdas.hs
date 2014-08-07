@@ -5,7 +5,7 @@ where
 import DDC.Core.Fragment
 import DDC.Core.Collect.Support
 import DDC.Core.Transform.SubstituteXX
-import DDC.Type.Collect.FreeT
+import DDC.Type.Collect
 import DDC.Core.Exp.AnnotCtx
 import DDC.Core.Context
 import DDC.Core.Module

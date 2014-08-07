@@ -38,7 +38,7 @@ import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Type.Equiv
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check         as T
@@ -59,7 +59,7 @@ import System.Directory
 cmdCheckFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdCheckFromFile config filePath
  
@@ -74,7 +74,7 @@ cmdCheckFromFile config filePath
  -- Don't know how to check this file.
  | otherwise
  = let  ext     = takeExtension filePath
-   in   throwError $ "Cannot check '" ++ ext ++ "'files."
+   in   throwE $ "Cannot check '" ++ ext ++ "'files."
 
 
 ---------------------------------------------------------------------------------------------------
@@ -82,14 +82,14 @@ cmdCheckFromFile config filePath
 cmdCheckSourceTetraFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdCheckSourceTetraFromFile config filePath
  = do
         -- Check that the file exists.
         exists <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -99,12 +99,12 @@ cmdCheckSourceTetraFromFile config filePath
 
 ---------------------------------------------------------------------------------------------------
 -- | Check a Disciple Source Tetra module from a string.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdCheckSourceTetraFromString
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdCheckSourceTetraFromString config source str
  = let
@@ -118,7 +118,7 @@ cmdCheckSourceTetraFromString config source str
         errs    <- liftIO pipeLoad
         case errs of
          [] -> return ()
-         es -> throwError $ renderIndent $ vcat $ map ppr es
+         es -> throwE $ renderIndent $ vcat $ map ppr es
  
 
 ---------------------------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ cmdCheckCoreFromFile
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdCheckCoreFromFile config language filePath
  | Language bundle      <- language
@@ -138,7 +138,7 @@ cmdCheckCoreFromFile config language filePath
                 $ (if configInferTypes config then C.Synth else C.Recon)
         
         case mModule of
-                (Left  err, _ct) -> throwError (renderIndent $ ppr err)
+                (Left  err, _ct) -> throwE (renderIndent $ ppr err)
                 (Right _,   _ct) -> return ()
 
 
@@ -149,7 +149,7 @@ cmdCheckCoreFromString
         -> Source               -- ^ Source of the program text.
         -> String               -- ^ Program text.
         -> C.Mode n             -- ^ Type checker mode.
-        -> ErrorT String IO (Module (AnTEC BP.SourcePos n) n)
+        -> ExceptT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckCoreFromString fragment source str mode
  = do   
@@ -158,7 +158,7 @@ cmdCheckCoreFromString fragment source str mode
                         mode str
 
         case mModule of
-                (Left err, _ct) -> throwError (renderIndent $ ppr err)
+                (Left err, _ct) -> throwE (renderIndent $ ppr err)
                 (Right mm, _ct) -> return mm
 
 

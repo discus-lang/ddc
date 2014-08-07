@@ -6,7 +6,7 @@ import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import System.FilePath
 import qualified DDC.Core.Check                 as C
@@ -19,7 +19,7 @@ cmdTetraCurry
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdTetraCurry config source sourceText
 
@@ -27,7 +27,7 @@ cmdTetraCurry config source sourceText
  | SourceFile filePath  <- source
  , ext  <- takeExtension filePath 
  , ext /= ".dct"
- = throwError $ "The Curry transform only works for Core Tetra (.dct) modules."
+ = throwE $ "The Curry transform only works for Core Tetra (.dct) modules."
 
  | otherwise
  = let  pmode   = prettyModeOfConfig $ configPretty config
@@ -45,5 +45,5 @@ cmdTetraCurry config source sourceText
         errs    <- liftIO pipeCurry
         case errs of
          []     -> return ()
-         es     -> throwError $ P.renderIndent $ P.vcat $ map P.ppr es
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 

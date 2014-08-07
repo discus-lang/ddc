@@ -14,7 +14,7 @@ import DDC.Core.Fragment
 import DDC.Base.Pretty
 import System.FilePath
 import System.Directory
-import Control.Monad.Trans.Error
+import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 
 import Control.Monad
@@ -23,12 +23,12 @@ import Control.Monad
 -------------------------------------------------------------------------------
 -- | Convert a module to C.
 --   The output is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToSeaFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Core language definition.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSeaFromFile config filePath
  
@@ -43,24 +43,24 @@ cmdToSeaFromFile config filePath
  -- Don't know how to convert this file.
  | otherwise
  = let  ext     = takeExtension filePath
-   in   throwError $ "Cannot convert '" ++ ext ++ "' files to C."
+   in   throwE $ "Cannot convert '" ++ ext ++ "' files to C."
 
 
 -------------------------------------------------------------------------------
 -- | Convert Disciple Source Tetra to C.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdToSeaSourceTetraFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSeaSourceTetraFromFile config filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -71,12 +71,12 @@ cmdToSeaSourceTetraFromFile config filePath
 -------------------------------------------------------------------------------
 -- | Convert Disciple Source Tetra to C.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 cmdToSeaSourceTetraFromString
         :: Config               -- ^ Driver config.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSeaSourceTetraFromString config source str
  = let  
@@ -92,27 +92,27 @@ cmdToSeaSourceTetraFromString config source str
         errs    <- liftIO pipeLoad
         case errs of
          []     -> return ()
-         es     -> throwError $ renderIndent $ vcat $ map ppr es
+         es     -> throwE $ renderIndent $ vcat $ map ppr es
 
 
 -------------------------------------------------------------------------------
 -- | Parse, check and convert a Core module to Sea.
 --   Works for the 'Tetra', 'Lite' and 'Salt' fragments.
 --   The result is printed to @stdout@.
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToSeaCoreFromFile
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSeaCoreFromFile config language filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwError $ "No such file " ++ show filePath
+         $ throwE $ "No such file " ++ show filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -123,14 +123,14 @@ cmdToSeaCoreFromFile config language filePath
 -------------------------------------------------------------------------------
 -- | Parse, check, and convert a module to C.
 --   The output is printed to @stdout@. 
---   Any errors are thrown in the `ErrorT` monad.
+--   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToSeaCoreFromString  
         :: Config       -- ^ Compiler configuration.
         -> Language     -- ^ Language definition.
         -> Source       -- ^ Source of the code.
         -> String       -- ^ Program module text.
-        -> ErrorT String IO ()
+        -> ExceptT String IO ()
 
 cmdToSeaCoreFromString config language source str
  | Language bundle      <- language
@@ -170,12 +170,12 @@ cmdToSeaCoreFromString config language source str
 
                 -- Unrecognised.
                 | otherwise
-                = throwError $ "Cannot convert '" ++ fragName ++ "'modules to C."
+                = throwE $ "Cannot convert '" ++ fragName ++ "'modules to C."
 
 
         -- Throw any errors that arose during compilation
         errs <- compile
         case errs of
          []     -> return ()
-         es     -> throwError $ renderIndent $ vcat $ map ppr es
+         es     -> throwE $ renderIndent $ vcat $ map ppr es
 
