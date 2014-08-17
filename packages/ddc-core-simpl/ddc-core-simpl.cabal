@@ -53,6 +53,7 @@ Library
         DDC.Core.Transform.Thread
         DDC.Core.Transform.TransformUpX
         DDC.Core.Transform.TransformDownX
+        DDC.Core.Transform.TransformModX
 
         DDC.Core.Simplifier
 
