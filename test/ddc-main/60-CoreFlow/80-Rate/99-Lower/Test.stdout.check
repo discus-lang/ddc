@@ -5,82 +5,82 @@ ok
 -- Simple fold over a vector
 module Test with
 letrec {
-  x3$runproc$process : [u1$k : Rate].Ref# Int# -> RateNat# u1$k -> Series# u1$k Int# -> Unit
-    = /\(u1$k : Rate).
-       \(x3$ref : Ref# Int#).\(_ : RateNat# u1$k).\(u1$s : Series# u1$k Int#).
-      let x3$ref$init : Int# = read# [Int#] x3$ref in
-      let x3$ref$acc : Ref# Int# = new# [Int#] x3$ref$init in
+  x3$runproc$process : [t1 : Rate].Ref# Int# -> RateNat# t1 -> Series# t1 Int# -> Unit
+    = /\(t1 : Rate).
+       \(x0 : Ref# Int#).\(_ : RateNat# t1).\(x2 : Series# t1 Int#).
+      let x0$init : Int# = read# [Int#] x0 in
+      let x0$acc : Ref# Int# = new# [Int#] x0$init in
       let _ : Unit
-            = loop# [u1$k]
-                  (\(x2 : Nat#).
-                   let u1$s$elem : Int# = next# [Int#] [u1$k] u1$s x2 in
-                   let x3$ref$val : Int# = read# [Int#] x3$ref$acc in
-                   let x5 : Int# = add# [Int#] x3$ref$val u1$s$elem in
-                   let _ : Unit = write# [Int#] x3$ref$acc x5 in
+            = loop# [t1]
+                  (\(x1 : Nat#).
+                   let x2$elem : Int# = next# [Int#] [t1] x2 x1 in
+                   let x0$val : Int# = read# [Int#] x0$acc in
+                   let x3 : Int# = add# [Int#] x0$val x2$elem in
+                   let _ : Unit = write# [Int#] x0$acc x3 in
                    ()) in
-      let x3$ref$res : Int# = read# [Int#] x3$ref$acc in
-      let _ : Unit = write# [Int#] x3$ref x3$ref$res in
+      let x0$res : Int# = read# [Int#] x0$acc in
+      let _ : Unit = write# [Int#] x0 x0$res in
       ();
   
   test : Vector# Int# -> Int#
-    = \(u1 : Vector# Int#).
-      let x3$ref : Ref# Int# = new# [Int#] 0i# in
-      let x6 : Bool#
-            = runKernel# [Int#] u1
-                  (/\(t2 : Rate).
-                    \(x3 : RateNat# t2).\(x4 : Series# t2 Int#). x3$runproc$process [t2] x3$ref x3 x4) in
-      let x3 : Int# = read# [Int#] x3$ref in
-      x3
+    = \(x8 : Vector# Int#).
+      let x9 : Ref# Int# = new# [Int#] 0i# in
+      let x14 : Bool#
+            = runKernel# [Int#] x8
+                  (/\(t10 : Rate).
+                    \(x11 : RateNat# t10).\(x12 : Series# t10 Int#). x3$runproc$process [t10] x9 x11 x12) in
+      let x16 : Int# = read# [Int#] x9 in
+      x16
 }
 
 
 -- Something like a normalise
 module Test with
 letrec {
-  x3$runproc$process : [x5$'$k : Rate].Ref# Int# -> RateNat# x5$'$k -> Series# x5$'$k Int# -> Unit
-    = /\(x5$'$k : Rate).
-       \(x3$ref : Ref# Int#).\(_ : RateNat# x5$'$k).\(us$s : Series# x5$'$k Int#).
-      let x3$ref$init : Int# = read# [Int#] x3$ref in
-      let x3$ref$acc : Ref# Int# = new# [Int#] x3$ref$init in
+  x3$runproc$process : [t1 : Rate].Ref# Int# -> RateNat# t1 -> Series# t1 Int# -> Unit
+    = /\(t1 : Rate).
+       \(x0 : Ref# Int#).\(_ : RateNat# t1).\(x2 : Series# t1 Int#).
+      let x0$init : Int# = read# [Int#] x0 in
+      let x0$acc : Ref# Int# = new# [Int#] x0$init in
       let _ : Unit
-            = loop# [x5$'$k]
-                  (\(x2 : Nat#).
-                   let us$s$elem : Int# = next# [Int#] [x5$'$k] us$s x2 in
-                   let x3$ref$val : Int# = read# [Int#] x3$ref$acc in
-                   let x8 : Int# = add# [Int#] x3$ref$val us$s$elem in
-                   let _ : Unit = write# [Int#] x3$ref$acc x8 in
+            = loop# [t1]
+                  (\(x1 : Nat#).
+                   let x2$elem : Int# = next# [Int#] [t1] x2 x1 in
+                   let x0$val : Int# = read# [Int#] x0$acc in
+                   let x6 : Int# = add# [Int#] x0$val x2$elem in
+                   let _ : Unit = write# [Int#] x0$acc x6 in
                    ()) in
-      let x3$ref$res : Int# = read# [Int#] x3$ref$acc in
-      let _ : Unit = write# [Int#] x3$ref x3$ref$res in
+      let x0$res : Int# = read# [Int#] x0$acc in
+      let _ : Unit = write# [Int#] x0 x0$res in
       ();
   
-  x5$runproc$process : [x5$'$k : Rate].Vector# Int# -> Int# -> RateNat# x5$'$k -> Series# x5$'$k Int# -> Unit
-    = /\(x5$'$k : Rate).
-       \(x5 : Vector# Int#).\(x3 : Int#).\(_ : RateNat# x5$'$k).\(us$s : Series# x5$'$k Int#).
+  x5$runproc$process : [t10 : Rate].Vector# Int# -> Int# -> RateNat# t10 -> Series# t10 Int# -> Unit
+    = /\(t10 : Rate).
+       \(x8 : Vector# Int#).\(x9 : Int#).\(_ : RateNat# t10).\(x11 : Series# t10 Int#).
       let _ : Unit
-            = loop# [x5$'$k]
-                  (\(x4 : Nat#).
-                   let us$s$elem : Int# = next# [Int#] [x5$'$k] us$s x4 in
-                   let x4$elem : Int# = div# [Int#] us$s$elem x3 in
-                   let _ : Unit = vwrite# [Int#] x5 x4 x4$elem in
+            = loop# [t10]
+                  (\(x5 : Nat#).
+                   let x11$elem : Int# = next# [Int#] [t10] x11 x5 in
+                   let x14$elem : Int# = div# [Int#] x11$elem x9 in
+                   let _ : Unit = vwrite# [Int#] x8 x5 x14$elem in
                    ()) in
       ();
   
   test : Vector# Int# -> Vector# Int#
-    = \(us : Vector# Int#).
-      let x3$ref : Ref# Int# = new# [Int#] 0i# in
-      let x9 : Bool#
-            = runKernel# [Int#] us
-                  (/\(t5 : Rate).
-                    \(x6 : RateNat# t5).\(x7 : Series# t5 Int#). x3$runproc$process [t5] x3$ref x6 x7) in
-      let x3 : Int# = read# [Int#] x3$ref in
-      let x10 : Nat# = vlength# [Int#] us in
-      let x11 : Vector# Int# = vnew# [Int#] x10 in
-      let x16 : Bool#
-            = runKernel# [Int#] us
-                  (/\(t12 : Rate).
-                    \(x13 : RateNat# t12).\(x14 : Series# t12 Int#). x5$runproc$process [t12] x11 x3 x13 x14) in
-      x11
+    = \(x17 : Vector# Int#).
+      let x18 : Ref# Int# = new# [Int#] 0i# in
+      let x23 : Bool#
+            = runKernel# [Int#] x17
+                  (/\(t19 : Rate).
+                    \(x20 : RateNat# t19).\(x21 : Series# t19 Int#). x3$runproc$process [t19] x18 x20 x21) in
+      let x25 : Int# = read# [Int#] x18 in
+      let x26 : Nat# = vlength# [Int#] x17 in
+      let x27 : Vector# Int# = vnew# [Int#] x26 in
+      let x33 : Bool#
+            = runKernel# [Int#] x17
+                  (/\(t29 : Rate).
+                    \(x30 : RateNat# t29).\(x31 : Series# t29 Int#). x5$runproc$process [t29] x27 x25 x30 x31) in
+      x27
 }
 
 
@@ -90,84 +90,84 @@ letrec {
 -- 3- map filtered
 module Test with
 letrec {
-  x10$runproc$process : [x13$'$k : Rate].Ref# Int# -> RateNat# x13$'$k -> Series# x13$'$k Int# -> Unit
-    = /\(x13$'$k : Rate).
-       \(x10$ref : Ref# Int#).\(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
-      let x10$ref$init : Int# = read# [Int#] x10$ref in
-      let x10$ref$acc : Ref# Int# = new# [Int#] x10$ref$init in
+  x10$runproc$process : [t1 : Rate].Ref# Int# -> RateNat# t1 -> Series# t1 Int# -> Unit
+    = /\(t1 : Rate).
+       \(x0 : Ref# Int#).\(_ : RateNat# t1).\(x2 : Series# t1 Int#).
+      let x0$init : Int# = read# [Int#] x0 in
+      let x0$acc : Ref# Int# = new# [Int#] x0$init in
       let _ : Unit
-            = loop# [x13$'$k]
+            = loop# [t1]
                   (\(x1 : Nat#).
-                   let orig$s$elem : Int# = next# [Int#] [x13$'$k] orig$s x1 in
-                   let x10$ref$val : Int# = read# [Int#] x10$ref$acc in
-                   let x14 : Int# = add# [Int#] x10$ref$val orig$s$elem in
-                   let _ : Unit = write# [Int#] x10$ref$acc x14 in
+                   let x2$elem : Int# = next# [Int#] [t1] x2 x1 in
+                   let x0$val : Int# = read# [Int#] x0$acc in
+                   let x13 : Int# = add# [Int#] x0$val x2$elem in
+                   let _ : Unit = write# [Int#] x0$acc x13 in
                    ()) in
-      let x10$ref$res : Int# = read# [Int#] x10$ref$acc in
-      let _ : Unit = write# [Int#] x10$ref x10$ref$res in
+      let x0$res : Int# = read# [Int#] x0$acc in
+      let _ : Unit = write# [Int#] x0 x0$res in
       ();
   
-  x2$runproc$process : [x13$'$k : Rate].Vector# Int# -> Ref# Int# -> Int# -> RateNat# x13$'$k -> Series# x13$'$k Int# -> Unit
-    = /\(x13$'$k : Rate).
-       \(x16 : Vector# Int#).\(x6$ref : Ref# Int#).\(x10 : Int#).\(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
-      let x2$'$k$count : Ref# Nat# = new# [Nat#] 0# in
-      let x6$ref$init : Int# = read# [Int#] x6$ref in
-      let x6$ref$acc : Ref# Int# = new# [Int#] x6$ref$init in
+  x2$runproc$process : [t11 : Rate].Vector# Int# -> Ref# Int# -> Int# -> RateNat# t11 -> Series# t11 Int# -> Unit
+    = /\(t11 : Rate).
+       \(x8 : Vector# Int#).\(x9 : Ref# Int#).\(x10 : Int#).\(_ : RateNat# t11).\(x12 : Series# t11 Int#).
+      let t17$count : Ref# Nat# = new# [Nat#] 0# in
+      let x9$init : Int# = read# [Int#] x9 in
+      let x9$acc : Ref# Int# = new# [Int#] x9$init in
       let _ : Unit
-            = loop# [x13$'$k]
-                  (\(x2 : Nat#).
-                   let orig$s$elem : Int# = next# [Int#] [x13$'$k] orig$s x2 in
-                   let x3$elem : Bool# = gt# [Int#] 1i# orig$s$elem in
+            = loop# [t11]
+                  (\(x5 : Nat#).
+                   let x12$elem : Int# = next# [Int#] [t11] x12 x5 in
+                   let x15$elem : Bool# = gt# [Int#] 1i# x12$elem in
                    let _ : Unit
-                         = guard# x2$'$k$count x3$elem
-                               (\(x3 : Nat#).
-                                let x6$ref$val : Int# = read# [Int#] x6$ref$acc in
-                                let x15 : Int# = add# [Int#] x6$ref$val orig$s$elem in
-                                let _ : Unit = write# [Int#] x6$ref$acc x15 in
-                                let x7$elem : Int# = add# [Int#] x10 orig$s$elem in
-                                let _ : Unit = vwrite# [Int#] x16 x3 x7$elem in
+                         = guard# t17$count x15$elem
+                               (\(x6 : Nat#).
+                                let x9$val : Int# = read# [Int#] x9$acc in
+                                let x14 : Int# = add# [Int#] x9$val x12$elem in
+                                let _ : Unit = write# [Int#] x9$acc x14 in
+                                let x27$elem : Int# = add# [Int#] x10 x12$elem in
+                                let _ : Unit = vwrite# [Int#] x8 x6 x27$elem in
                                 ()) in
                    ()) in
-      let x6$ref$res : Int# = read# [Int#] x6$ref$acc in
-      let _ : Unit = write# [Int#] x6$ref x6$ref$res in
-      let x9 : Nat# = read# [Nat#] x2$'$k$count in
-      let _ : Unit = vtrunc# [Int#] x9 x16 in
+      let x9$res : Int# = read# [Int#] x9$acc in
+      let _ : Unit = write# [Int#] x9 x9$res in
+      let x7 : Nat# = read# [Nat#] t17$count in
+      let _ : Unit = vtrunc# [Int#] x7 x8 in
       ();
   
-  x13$runproc$process : [x13$'$k : Rate].Vector# Int# -> Int# -> RateNat# x13$'$k -> Series# x13$'$k Int# -> Unit
-    = /\(x13$'$k : Rate).
-       \(x13 : Vector# Int#).\(x6 : Int#).\(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
+  x13$runproc$process : [t35 : Rate].Vector# Int# -> Int# -> RateNat# t35 -> Series# t35 Int# -> Unit
+    = /\(t35 : Rate).
+       \(x33 : Vector# Int#).\(x34 : Int#).\(_ : RateNat# t35).\(x36 : Series# t35 Int#).
       let _ : Unit
-            = loop# [x13$'$k]
-                  (\(x12 : Nat#).
-                   let orig$s$elem : Int# = next# [Int#] [x13$'$k] orig$s x12 in
-                   let x14$elem : Int# = add# [Int#] x6 orig$s$elem in
-                   let _ : Unit = vwrite# [Int#] x13 x12 x14$elem in
+            = loop# [t35]
+                  (\(x11 : Nat#).
+                   let x36$elem : Int# = next# [Int#] [t35] x36 x11 in
+                   let x39$elem : Int# = add# [Int#] x34 x36$elem in
+                   let _ : Unit = vwrite# [Int#] x33 x11 x39$elem in
                    ()) in
       ();
   
   test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(orig : Vector# Int#).
-      let x10$ref : Ref# Int# = new# [Int#] 0i# in
-      let x19 : Bool#
-            = runKernel# [Int#] orig
-                  (/\(t15 : Rate).
-                    \(x16 : RateNat# t15).\(x17 : Series# t15 Int#). x10$runproc$process [t15] x10$ref x16 x17) in
-      let x10 : Int# = read# [Int#] x10$ref in
-      let x6$ref : Ref# Int# = new# [Int#] 0i# in
-      let x20 : Nat# = vlength# [Int#] orig in
-      let x21 : Vector# Int# = vnew# [Int#] x20 in
-      let x26 : Bool#
-            = runKernel# [Int#] orig
-                  (/\(t22 : Rate).
-                    \(x23 : RateNat# t22).\(x24 : Series# t22 Int#). x2$runproc$process [t22] x21 x6$ref x10 x23 x24) in
-      let x6 : Int# = read# [Int#] x6$ref in
-      let x27 : Nat# = vlength# [Int#] orig in
-      let x28 : Vector# Int# = vnew# [Int#] x27 in
-      let x33 : Bool#
-            = runKernel# [Int#] orig
-                  (/\(t29 : Rate).
-                    \(x30 : RateNat# t29).\(x31 : Series# t29 Int#). x13$runproc$process [t29] x28 x6 x30 x31) in
-      T2# [Vector# Int#] [Vector# Int#] x28 x21
+    = \(x42 : Vector# Int#).
+      let x43 : Ref# Int# = new# [Int#] 0i# in
+      let x48 : Bool#
+            = runKernel# [Int#] x42
+                  (/\(t44 : Rate).
+                    \(x45 : RateNat# t44).\(x46 : Series# t44 Int#). x10$runproc$process [t44] x43 x45 x46) in
+      let x50 : Int# = read# [Int#] x43 in
+      let x51 : Ref# Int# = new# [Int#] 0i# in
+      let x52 : Nat# = vlength# [Int#] x42 in
+      let x53 : Vector# Int# = vnew# [Int#] x52 in
+      let x59 : Bool#
+            = runKernel# [Int#] x42
+                  (/\(t55 : Rate).
+                    \(x56 : RateNat# t55).\(x57 : Series# t55 Int#). x2$runproc$process [t55] x53 x51 x50 x56 x57) in
+      let x61 : Int# = read# [Int#] x51 in
+      let x62 : Nat# = vlength# [Int#] x42 in
+      let x63 : Vector# Int# = vnew# [Int#] x62 in
+      let x69 : Bool#
+            = runKernel# [Int#] x42
+                  (/\(t65 : Rate).
+                    \(x66 : RateNat# t65).\(x67 : Series# t65 Int#). x13$runproc$process [t65] x63 x61 x66 x67) in
+      T2# [Vector# Int#] [Vector# Int#] x63 x53
 }
 
