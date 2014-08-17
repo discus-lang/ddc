@@ -57,9 +57,10 @@ instance Monoid ForwardInfo where
 -------------------------------------------------------------------------------
 -- | Fine control over what should be floated.
 data FloatControl
-        = FloatAllow    -- ^ Allow binding to be floated, but don't require it.
-        | FloatDeny     -- ^ Prevent a binding being floated, at all times.
-        | FloatForce    -- ^ Force   a binding to be floated, at all times.
+        = FloatAllow            -- ^ Allow binding to be floated, but don't require it.
+        | FloatDeny             -- ^ Prevent a binding being floated, at all times.
+        | FloatForce            -- ^ Force   a binding to be floated, at all times.
+        | FloatForceUsedOnce    -- ^ Force   a binding to be floated if it's only used once.
         deriving (Eq, Show)
 
 data Config a n
@@ -208,6 +209,15 @@ instance Forward Exp where
                         FloatDeny       -> False
                         FloatForce      -> True
                         FloatAllow      -> isFun && isApplied
+
+                        FloatForceUsedOnce
+                         | Just usage   <- Map.lookup n um
+                         , length usage <= 1
+                         -> True
+                         | Nothing      <- Map.lookup n um
+                         -> True
+                         | otherwise
+                         -> False
 
                 if shouldFloat 
                  then do
