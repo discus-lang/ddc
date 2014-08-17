@@ -28,7 +28,7 @@ module DDC.Core.Compounds.Annot
 
           -- * Lets
         , xLets,               xLetsAnnot
-        , splitXLets 
+        , splitXLets,          splitXLetsAnnot
         , bindsOfLets
         , specBindsOfLets
         , valwitBindsOfLets
@@ -235,6 +235,16 @@ splitXLets xx
         XLet _ lts x 
          -> let (lts', x')      = splitXLets x
             in  (lts : lts', x')
+
+        _ -> ([], xx)
+
+-- | Split let-bindings from the front of an expression, with annotations.
+splitXLetsAnnot :: Exp a n -> ([(Lets a n, a)], Exp a n)
+splitXLetsAnnot xx
+ = case xx of
+        XLet a lts x 
+         -> let (lts', x')              = splitXLetsAnnot x
+            in  ((lts, a) : lts', x')
 
         _ -> ([], xx)
 
