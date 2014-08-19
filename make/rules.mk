@@ -62,7 +62,8 @@ packages/ddc-core-flow/%.o : packages/ddc-core-flow/%.hs
 		      -ipackages/ddc-core \
 		      -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-salt \
-		      -ipackages/ddc-core-flow
+		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-tetra
 
 packages/ddc-core-tetra/%.o : packages/ddc-core-tetra/%.hs
 	@echo "* Compiling $<"
