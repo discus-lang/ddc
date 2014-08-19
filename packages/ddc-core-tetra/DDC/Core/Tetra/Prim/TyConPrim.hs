@@ -6,7 +6,8 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , tBool
         , tNat
         , tInt
-        , tWord)
+        , tWord
+        , tPtr)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
@@ -34,21 +35,33 @@ kindPrimTyCon tc
 -- Compounds ------------------------------------------------------------------
 -- | Primitive `Bool` type.
 tBool   :: Type Name
-tBool   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
+tBool   = tConPrim PrimTyConBool
 
 
 -- | Primitive `Nat` type.
 tNat    ::  Type Name
-tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData) kData)
+tNat    = tConPrim PrimTyConNat
 
 
 -- | Primitive `Int` type.
 tInt    ::  Type Name
-tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
+tInt    = tConPrim PrimTyConInt
 
 
 -- | Primitive `WordN` type of the given width.
 tWord   :: Int -> Type Name
 tWord bits 
-        = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
+        = tConPrim (PrimTyConWord bits)
+
+
+-- | Primitive `Ptr` type with given region and data type
+tPtr   :: Type Name -> Type Name -> Type Name
+tPtr r a
+        = tConPrim PrimTyConPtr `TApp` r `TApp` a
+
+
+tConPrim :: PrimTyCon -> Type Name
+tConPrim tc
+ = let k = kindPrimTyCon tc
+   in      TCon (TyConBound (UPrim (NamePrimTyCon tc) k) k)
 
