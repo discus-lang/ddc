@@ -21,6 +21,7 @@ module DDC.Driver.Stage
         , stageFlowRate
         , stageFlowLower
         , stageFlowWind
+        , stageFlowToTetra
 
           -- * Lite stages
         , stageLiteLoad

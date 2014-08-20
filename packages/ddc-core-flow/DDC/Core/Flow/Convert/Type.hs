@@ -5,8 +5,11 @@ module DDC.Core.Flow.Convert.Type
         ( convertType
         , convertBind
         , convertBound
-        , convertName )
+        , convertName
+        , rTop )
 where
+
+import DDC.Base.Pretty (ppr)
 
 import DDC.Core.Flow.Convert.Base
 import DDC.Core.Compounds
@@ -136,7 +139,7 @@ convertName nn
     -> return $ T.NameLitWord l k
    
    _
-    -> throw  $ ErrorInvalidBinder nn
+    -> return $ T.NameVar $ show $ ppr $ nn -- throw  $ ErrorInvalidBinder nn
 
 
 convertTyCon :: TyCon F.Name -> ConvertM (TyCon T.Name)
@@ -171,3 +174,4 @@ removeForall b t
 -- TODO: this needs to be fixed. See DDC.Core.Salt.Runtime
 rTop :: Type T.Name
 rTop = TVar $ UName $ T.NameVar "rT"
+

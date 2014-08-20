@@ -29,6 +29,7 @@ import qualified DDC.Core.Flow.Transform.Forward        as Flow
 import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
+import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
@@ -117,13 +118,13 @@ data PipeCore a n where
         :: ![PipeLite]
         -> PipeCore (C.AnTEC () Lite.Name) Lite.Name
 
-  -- Treat a module as beloning to the Core Flow fragment from now on.
+  -- Treat a module as belonging to the Core Flow fragment from now on.
   PipeCoreAsFlow 
         :: Pretty a
         => ![PipeFlow a]
         -> PipeCore a Flow.Name
 
-  -- Treat a module as beloning to the Core Salt fragment from now on.
+  -- Treat a module as belonging to the Core Salt fragment from now on.
   PipeCoreAsSalt
         :: Pretty a 
         => ![PipeSalt a] 
@@ -390,6 +391,11 @@ data PipeFlow a where
         :: [PipeCore () Flow.Name]
         -> PipeFlow (C.AnTEC () Flow.Name)
 
+  -- Wind loop# primops into tail recursive loops.
+  PipeFlowToTetra
+        :: [PipeCore () Tetra.Name]
+        -> PipeFlow (C.AnTEC () Flow.Name)
+
 
 -- | Process a Core Flow module.
 pipeFlow :: C.Module a Flow.Name
@@ -496,6 +502,13 @@ pipeFlow !mm !pp
             let mm_stripped     = C.reannotate (const ()) mm
                 mm_wound        = Flow.windModule mm_stripped
             in  pipeCores mm_wound pipes
+
+        PipeFlowToTetra !pipes
+         -> {-# SCC "PipeFlowWind" #-}
+            case Flow.tetraOfFlowModule $ C.reannotate (const ()) mm
+             of  Left  err  -> return [ErrorFlowConvert err]
+                 Right mm'  -> pipeCores mm' pipes 
+
 
 
 -- | Process a Flow module with several different pipes.

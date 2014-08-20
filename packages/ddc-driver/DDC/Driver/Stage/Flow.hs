@@ -4,7 +4,8 @@ module DDC.Driver.Stage.Flow
         , stageFlowPrep
         , stageFlowRate
         , stageFlowLower
-        , stageFlowWind)
+        , stageFlowWind
+        , stageFlowToTetra)
 where
 import DDC.Driver.Dump
 import DDC.Driver.Config
@@ -14,6 +15,7 @@ import DDC.Base.Pretty
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Build.Language.Flow        as Flow
+import qualified DDC.Core.Tetra                 as Tetra
 
 
 ---------------------------------------------------------------------------------------------------
@@ -95,4 +97,19 @@ stageFlowWind config source pipesFlow
        ( PipeCoreOutput pprDefaultMode
                         (dump config source "dump.flow-wind.dcf")
        : pipesFlow ) ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Wind loop primops into tail recursive loops in a Core Flow module.
+stageFlowToTetra
+        :: Config -> Source
+        -> [PipeCore () Tetra.Name]
+        ->  PipeCore (C.AnTEC () Flow.Name) Flow.Name
+
+stageFlowToTetra config source pipesTetra
+ = PipeCoreAsFlow
+     [ PipeFlowToTetra
+       ( PipeCoreOutput pprDefaultMode
+                        (dump config source "dump.flow-out-tetra.dct")
+       : pipesTetra ) ]
 

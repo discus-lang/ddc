@@ -31,6 +31,7 @@ import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
+import DDC.Driver.Command.Flow.ToTetra
 
 import DDC.Type.Universe
 
@@ -87,6 +88,7 @@ data Command
         | CommandFlowMelt               -- ^ Melt compound data structures.
         | CommandFlowWind               -- ^ Wind loop primops into tail recursive loops.
         | CommandFlowThread             -- ^ Thread a world token through lowered code.
+        | CommandFlowToTetra Flow.Config-- ^ Convert to Disciple Tetra, which can then be converted to Salt
 
         -- Inline control
         | CommandWith                   -- ^ Add a module to the inliner table.
@@ -143,6 +145,7 @@ commands
         , (":flow-melt",         CommandFlowMelt)
         , (":flow-wind",         CommandFlowWind)
         , (":flow-thread",       CommandFlowThread)
+        , (":flow-tetra",        CommandFlowToTetra Flow.defaultConfigScalar)
 
         -- Make and Compile
         , (":compile",          CommandCompile)
@@ -337,6 +340,13 @@ handleCmd1 state cmd source line
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdFlowThread config source line
                 return state
+
+        CommandFlowToTetra configLower
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdFlowToTetraCoreFromString config configLower lang source line
+                return    state
+
+
 
         -- Make and Compile ---------------------
         CommandCompile
