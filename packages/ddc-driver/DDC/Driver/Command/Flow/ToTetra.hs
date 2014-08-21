@@ -22,6 +22,8 @@ import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Core.Check                 as C
 
+import DDC.Data.Canned
+import qualified DDC.Core.Flow.Transform.Concretize     as Concretize
 
 -------------------------------------------------------------------------------
 -- | Convert a module to Core Tetra.
@@ -104,16 +106,17 @@ cmdFlowToTetraCoreFromString config configLower language source str
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ stageFlowLoad    config source
-                -- [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
                 [ stageFlowRate    config source
-                [ PipeCoreCheck    Flow.fragment C.Recon SinkStdout
+                [ stageFlowPrep  config source
+                [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
                 [ stageFlowLower   config configLower source
-                [ PipeCoreCheck    Flow.fragment C.Recon SinkStdout
+                [ PipeCoreHacks (Canned $ \m -> return $ Concretize.concretizeModule m)
+                [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
                 [ stageFlowWind    config source
-                [ PipeCoreCheck    Flow.fragment C.Recon SinkStdout
+                [ PipeCoreOutput   pmode SinkStdout
+                , PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
                 [ stageFlowToTetra config source
-                -- [ PipeCoreCheck    Tetra.fragment C.Recon SinkStdout
-                [ PipeCoreOutput   pmode SinkStdout]]]]]]]] -- ]] 
+                [ PipeCoreOutput   pmode SinkStdout]]]]]]]]]]
 
                 -- Unrecognised fragment name or file extension.
                 | otherwise
