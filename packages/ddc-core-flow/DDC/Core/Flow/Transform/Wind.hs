@@ -32,8 +32,9 @@ import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds
+import DDC.Core.Transform.TransformModX
 import DDC.Core.Flow.Compounds  
-        (tNat, dcNat, dcTupleN, dcBool, tTupleN)
+        (tNat, dcNat, dcTupleN, dcBool, tTupleN, kRate)
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
@@ -206,31 +207,20 @@ xSubInt a x1 x2
 
 -------------------------------------------------------------------------------
 -- | Apply the wind transform to a single module.
+-- Only apply wind to top-level let binds with Forall (k : Rate)...,
+-- as that seems like a good indication that something is a lowered series.
 windModule :: Module () Name -> Module () Name
 windModule m
- = let  body'   = windModuleBodyX (moduleBody m)
-   in   m { moduleBody = body' }
+ = transformModLet check m
+ where
+  check b x
+   | t             <- typeOfBind   b
+   , Just (bs, _)  <- takeTForalls t
+   , elem kRate $ map typeOfBind bs
+   = windBodyX refMapZero [] x
 
-
--- | Do winding in the body of a module.
-windModuleBodyX :: Exp () Name -> Exp () Name
-windModuleBodyX xx
- = case xx of
-        XLet a (LLet b x1) x2
-         -> let x1'     = windBodyX refMapZero [] x1
-                x2'     = windModuleBodyX x2
-            in  XLet a (LLet b x1') x2'
-
-        XLet a (LRec bxs) x2
-         -> let bxs'    = [(b, windBodyX refMapZero [] x) | (b, x) <- bxs]
-                x2'     = windModuleBodyX x2
-            in  XLet a (LRec bxs') x2'
-
-        XLet a lts x2
-         -> let x2'     = windModuleBodyX x2
-            in  XLet a lts x2'
-
-        _ -> xx
+   | otherwise
+   = x
 
 
 -------------------------------------------------------------------------------
