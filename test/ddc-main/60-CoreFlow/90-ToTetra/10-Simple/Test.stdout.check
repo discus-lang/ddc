@@ -1,0 +1,42 @@
+ok
+ok
+
+-- Simple fold over a vector
+module Test with
+letrec {
+  x3$runproc$process : Ref# rT Int# -> Nat# -> Ptr# rT Int# -> Unit
+    = \(x0 : Ref# rT Int#).\(x2 : Nat#).\(x3 : Ptr# rT Int#).
+      let x0$init : Int# = readRef# [rT] [Int#] x0 in
+      let x0$acc$0 : Int# = x0$init in
+      let loop$length : Nat# = x2 in
+      letrec {
+        loop : Nat# -> Int# -> Int#
+          = \(x1 : Nat#).\(x0$acc$1 : Int#).
+            case sub# [Nat#] loop$length x1 of {
+              0#  
+               -> x0$acc$1;
+              _ 
+               -> let x3$elem : Int# = readPtr# [rT] [Int#] x3 x1 in
+                  let x0$val : Int# = x0$acc$1 in
+                  let x4 : Int# = add# [Int#] x0$val x3$elem in
+                  let x0$acc$2 : Int# = x4 in
+                  loop (add# [Nat#] x1 1#) x0$acc$2
+            }
+      } in
+      let x0$acc$2 : Int# = loop 0# x0$acc$0 in
+      let x0$res : Int# = x0$acc$2 in
+      let _ : Unit = writeRef# [rT] [Int#] x0 x0$res in
+      ();
+  
+  test : Tuple2# (Ptr# rT Int#) (Ref# rT Nat#) -> Int#
+    = \(x9 : Tuple2# (Ptr# rT Int#) (Ref# rT Nat#)).
+      let x10 : Ref# rT Int# = allocRef# [rT] [Int#] 0i# in
+      let x15 : Bool#
+            = (\(x12 : Nat#).\(x13 : Ptr# rT Int#). x3$runproc$process [t11] x10 x12 x13)
+                  (readRef# [rT] [Nat#]
+                       (proj2_2# [Ptr# rT Int#] [Ref# rT Nat#] x9))
+                  (proj2_1# [Ptr# rT Int#] [Ref# rT Nat#] x9) in
+      let x17 : Int# = readRef# [rT] [Int#] x10 in
+      x17
+}
+

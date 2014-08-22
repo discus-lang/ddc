@@ -1,0 +1,14 @@
+:set Synth
+:set lang Flow
+
+-- Simple fold over a vector
+:flow-tetra..
+module Test with 
+letrec
+
+test    (u1 : Vector# Int#)
+        : Int#
+ =      vreduce# add# 0i# u1
+
+;;
+
