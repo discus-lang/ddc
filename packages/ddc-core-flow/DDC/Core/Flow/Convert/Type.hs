@@ -45,6 +45,11 @@ convertType tt
  , typeOfBind b == F.kRate
  = removeForall b <$> convertType t
 
+ -- Convert @Vector a@ to just @Tuple2# (Ptr# a) (Ref# Nat#)@
+ | Just (F.NameTyConFlow F.TyConFlowVector, [tA])   <- takePrimTyConApps tt
+ = do   tA' <- convertType tA
+        return $ T.tTupleN [T.tPtr rTop tA', T.tRef rTop T.tNat]
+
  -- Convert @Series k a@ to just @Ptr# a@
  | Just (F.NameTyConFlow F.TyConFlowSeries, [_K, tA])   <- takePrimTyConApps tt
  = T.tPtr rTop <$> convertType tA
@@ -110,10 +115,8 @@ convertName nn
     -> case tf of
         F.TyConFlowTuple n
          -> return $ T.NameTyConTetra $ T.TyConTetraTuple n
-        F.TyConFlowVector
-         -> return $ T.NamePrimTyCon  $ T.PrimTyConPtr
 
-        -- Series, RateNat and Ref are handled elsewhere as arguments must be changed
+        -- Vector, Series, RateNat and Ref are handled elsewhere as arguments must be changed
         _
          -> throw $ ErrorPartialPrimitive nn
 
@@ -135,11 +138,16 @@ convertName nn
     -> return $ T.NameLitBool l
    F.NameLitNat l
     -> return $ T.NameLitNat  l
+   F.NameLitInt l
+    -> return $ T.NameLitInt l
    F.NameLitWord l k
     -> return $ T.NameLitWord l k
-   
+
    _
-    -> return $ T.NameVar $ show $ ppr $ nn -- throw  $ ErrorInvalidBinder nn
+    -> return $ T.NameExt (T.NameVar $ show $ ppr $ nn) "UNHANDLED"
+    -- This should be a throw:
+    -- > throw  $ ErrorInvalidBinder nn
+    -- but for debugging, just splatting it out is easier
 
 
 convertTyCon :: TyCon F.Name -> ConvertM (TyCon T.Name)

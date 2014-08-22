@@ -9,28 +9,76 @@ import DDC.Core.Flow.Convert.Base
 import DDC.Core.Flow.Convert.Type
 import DDC.Core.Compounds
 import DDC.Core.Exp
+import DDC.Control.Monad.Check                  (throw)
 import DDC.Type.Transform.LiftT
 
 import qualified DDC.Core.Flow.Prim             as F
 import qualified DDC.Core.Flow.Compounds        as F
 
 import qualified DDC.Core.Tetra.Prim            as T
+import qualified DDC.Core.Tetra.Prim.TyConPrim  as T
+import qualified DDC.Core.Tetra.Prim.TyConTetra as T
 
 import Control.Applicative
 
+-- | These operators must just have a region inserted as the first argument
+opsToAddRegion :: [(F.Name, T.Name)]
+opsToAddRegion
+ = [(F.NameOpStore F.OpStoreNew,        T.NameOpStore T.OpStoreAllocRef)
+   ,(F.NameOpStore F.OpStoreRead,       T.NameOpStore T.OpStoreReadRef)
+   ,(F.NameOpStore F.OpStoreWrite,      T.NameOpStore T.OpStoreWriteRef)]
+
 convertX :: Exp a F.Name -> ConvertM (Exp a T.Name)
 convertX xx
+ -- Remove any /\(k : Rate). They are not needed any more.
  | XLAM _ b x <- xx
  , typeOfBind b == F.kRate
  = removeXLAM b <$> convertX x 
 
- | Just (F.NameOpStore F.OpStoreNew, [xT, xA])  <- takeXPrimApps xx
- = do   xT' <- convertX xT
-        xA' <- convertX xA
-        return $ mk (T.NameOpStore T.OpStoreAllocRef)
-                [xTop anno, xT', xA']
+ -- Operators that just need a region added as first argument
+ | Just (op, xs) <- takeXPrimApps xx
+ , Just  op'     <- lookup op opsToAddRegion
+ = do   xs'   <- mapM convertX xs
+        return $ mk op' (xRTop anno : xs')
 
- -- TODO other store etc
+ -- natOfRateNat becomes a noop, as RateNats become Nats.
+ | Just (op, [_r, n])   <- takeXPrimApps xx
+ , F.NameOpConcrete F.OpConcreteNatOfRateNat
+                        <- op
+ = convertX n
+
+ -- runKernelN# [ty1]...[tyN] v1...vN proc
+ -- becomes
+ -- proc (length v1) (ptrOfVec v1) ... (ptrOfVec vN)
+ | Just (op, xs)        <- takeXPrimApps xx
+ , F.NameOpConcrete (F.OpConcreteRunKernel n)
+                        <- op
+ , (xts, xs')           <- splitAt n xs
+ , Just ts              <- mapM takeXType xts
+ , (vs, [proc])         <- splitAt n xs'
+ = do   vs'   <- mapM convertX    vs
+        ts'   <- mapM convertType ts
+        proc' <-      convertX    proc
+
+        case (vs',ts') of
+         ((v':_), (t':_))
+          -> return
+           $ xApps anno proc'
+            (xVecLen t' v' : zipWith xVecPtr ts' vs')
+         (_, _)
+          -> throw $ ErrorNotSupported op
+
+ -- next# [t] [r] series nat
+ -- becomes a pointer lookup
+ | Just (op, [t, _r, v, i])
+                        <- takeXPrimApps xx
+ , F.NameOpConcrete (F.OpConcreteNext 1)
+                        <- op
+ = do   v'      <- convertX v
+        i'      <- convertX i
+        t'      <- convertX t
+        return $ mk (T.NameOpStore T.OpStoreReadPtr)
+               [ xRTop anno, t', v', i' ]
 
  -- otherwise just boilerplate recursion
  | otherwise
@@ -157,6 +205,31 @@ removeXLAM b t
     ->          t
 
 
-xTop :: a -> Exp a T.Name
-xTop a = XType a rTop
+-- TODO these are temporary
+xRTop :: a -> Exp a T.Name
+xRTop a = XType a rTop
+
+-- | Get the Nat# of length from a Vector
+xVecLen :: Type T.Name -> Exp a T.Name -> Exp a T.Name
+xVecLen t x
+ = xApps anno (XVar anno $ UPrim (T.NameOpStore T.OpStoreReadRef) (T.typeOpStore T.OpStoreReadRef))
+ [ xRTop anno
+ , XType anno T.tNat
+ , xApps anno (XVar anno $ UName $ T.NameOpStore $ T.OpStoreProj 2 2)
+   [ XType anno (T.tPtr rTop t)
+   , XType anno (T.tRef rTop T.tNat)
+   , x ]
+ ]
+ where
+  anno = annotOfExp x
+
+-- | Get the pointer to the data from a Vector
+xVecPtr :: Type T.Name -> Exp a T.Name -> Exp a T.Name
+xVecPtr t x
+ = xApps anno (XVar anno $ UName $ T.NameOpStore $ T.OpStoreProj 2 1)
+ [ XType anno (T.tPtr rTop t)
+ , XType anno (T.tRef rTop T.tNat)
+ , x ]
+ where
+  anno = annotOfExp x
 
