@@ -6,7 +6,7 @@ module Test with
 let x5$runproc$process : Ref# Int# -> Vector# Int# -> [x5$'$k : Rate].RateNat# x5$'$k -> Series# x5$'$k Int# -> Process#
       = \(x9$ref : Ref# Int#).\(x5 : Vector# Int#).
         /\(x5$'$k : Rate).
-         \(_ : RateNat# x5$'$k).\(vs$s : Series# x5$'$k Int#).
+         \(x5$'$k$r : RateNat# x5$'$k).\(vs$s : Series# x5$'$k Int#).
         let x5$s : Series# x5$'$k Int#
               = smap# [x5$'$k] [Int#] [Int#]
                     (\(x3 : Int#). add# [Int#] 2i# x3) vs$s in
@@ -18,7 +18,7 @@ let x5$runproc$process : Ref# Int# -> Vector# Int# -> [x5$'$k : Rate].RateNat# x
 let x2$runproc$process : Vector# Int# -> [x2$'$k : Rate].RateNat# x2$'$k -> Series# x2$'$k Int# -> Process#
       = \(x2 : Vector# Int#).
         /\(x2$'$k : Rate).
-         \(_ : RateNat# x2$'$k).\(us$s : Series# x2$'$k Int#).
+         \(x2$'$k$r : RateNat# x2$'$k).\(us$s : Series# x2$'$k Int#).
         let x2$s : Series# x2$'$k Int#
               = smap# [x2$'$k] [Int#] [Int#]
                     (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
@@ -46,7 +46,7 @@ module Test with
 let x9$runproc$process : Ref# Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Series# x19$'$k Int# -> Process#
       = \(x13$ref : Ref# Int#).
         /\(x19$'$k : Rate).
-         \(_ : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
+         \(x19$'$k$r : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
         let x9$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x7 : Int#). add# [Int#] 2i# x7) vs$s in
@@ -57,7 +57,7 @@ let x9$runproc$process : Ref# Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Serie
 let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].RateNat# x16$'$k -> Series# x16$'$k Int# -> Process#
       = \(x16 : Vector# Int#).\(x6$ref : Ref# Int#).\(x13 : Int#).
         /\(x16$'$k : Rate).
-         \(_ : RateNat# x16$'$k).\(us$s : Series# x16$'$k Int#).
+         \(x16$'$k$r : RateNat# x16$'$k).\(us$s : Series# x16$'$k Int#).
         let x2$s : Series# x16$'$k Int#
               = smap# [x16$'$k] [Int#] [Int#]
                     (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
@@ -72,7 +72,7 @@ let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].R
 let x19$runproc$process : Vector# Int# -> Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Series# x19$'$k Int# -> Process#
       = \(x19 : Vector# Int#).\(x6 : Int#).
         /\(x19$'$k : Rate).
-         \(_ : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
+         \(x19$'$k$r : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
         let x19$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x17 : Int#). add# [Int#] x6 x17) vs$s in
@@ -104,7 +104,7 @@ module Test with
 let x9$runproc$process : Ref# Int# -> Vector# Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Series# x19$'$k Int# -> Process#
       = \(x13$ref : Ref# Int#).\(x9 : Vector# Int#).
         /\(x19$'$k : Rate).
-         \(_ : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
+         \(x19$'$k$r : RateNat# x19$'$k).\(vs$s : Series# x19$'$k Int#).
         let x9$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x7 : Int#). add# [Int#] 2i# x7) vs$s in
@@ -116,7 +116,7 @@ let x9$runproc$process : Ref# Int# -> Vector# Int# -> [x19$'$k : Rate].RateNat# 
 let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].RateNat# x16$'$k -> Series# x16$'$k Int# -> Process#
       = \(x16 : Vector# Int#).\(x6$ref : Ref# Int#).\(x13 : Int#).
         /\(x16$'$k : Rate).
-         \(_ : RateNat# x16$'$k).\(us$s : Series# x16$'$k Int#).
+         \(x16$'$k$r : RateNat# x16$'$k).\(us$s : Series# x16$'$k Int#).
         let x2$s : Series# x16$'$k Int#
               = smap# [x16$'$k] [Int#] [Int#]
                     (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
@@ -131,7 +131,7 @@ let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x16$'$k : Rate].R
 let x19$runproc$process : Vector# Int# -> Int# -> [x19$'$k : Rate].RateNat# x19$'$k -> Series# x19$'$k Int# -> Process#
       = \(x19 : Vector# Int#).\(x6 : Int#).
         /\(x19$'$k : Rate).
-         \(_ : RateNat# x19$'$k).\(x9$s : Series# x19$'$k Int#).
+         \(x19$'$k$r : RateNat# x19$'$k).\(x9$s : Series# x19$'$k Int#).
         let x19$s : Series# x19$'$k Int#
               = smap# [x19$'$k] [Int#] [Int#]
                     (\(x17 : Int#). add# [Int#] x6 x17) x9$s in

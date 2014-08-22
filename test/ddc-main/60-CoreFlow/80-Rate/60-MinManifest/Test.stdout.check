@@ -6,7 +6,7 @@ module Test with
 let x6$runproc$process : Ref# Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
       = \(x6$ref : Ref# Int#).
         /\(x9$'$k : Rate).
-         \(_ : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).
+         \(x9$'$k$r : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).
         let x6$proc : Process#
               = sreduce# [x9$'$k] [Int#] x6$ref
                     (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# us$s in
@@ -14,7 +14,7 @@ let x6$runproc$process : Ref# Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series#
 let x2$runproc$process : Vector# Int# -> Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
       = \(x9 : Vector# Int#).\(x6 : Int#).
         /\(x9$'$k : Rate).
-         \(_ : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).
+         \(x9$'$k$r : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).
         let x2$s : Series# x9$'$k Int#
               = smap# [x9$'$k] [Int#] [Int#]
                     (\(x0 : Int#). add# [Int#] 1i# x0) us$s in

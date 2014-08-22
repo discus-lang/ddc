@@ -6,7 +6,7 @@ module Test with
 let x3$runproc$process : Ref# Int# -> [x5$'$k : Rate].RateNat# x5$'$k -> Series# x5$'$k Int# -> Process#
       = \(x3$ref : Ref# Int#).
         /\(x5$'$k : Rate).
-         \(_ : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
+         \(x5$'$k$r : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
         let x3$proc : Process#
               = sreduce# [x5$'$k] [Int#] x3$ref
                     (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
@@ -14,7 +14,7 @@ let x3$runproc$process : Ref# Int# -> [x5$'$k : Rate].RateNat# x5$'$k -> Series#
 let x5$runproc$process : Vector# Int# -> Int# -> [x5$'$k : Rate].RateNat# x5$'$k -> Series# x5$'$k Int# -> Process#
       = \(x5 : Vector# Int#).\(x3 : Int#).
         /\(x5$'$k : Rate).
-         \(_ : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
+         \(x5$'$k$r : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
         let x5$s : Series# x5$'$k Int#
               = smap# [x5$'$k] [Int#] [Int#]
                     (\(x : Int#). div# [Int#] x x3) u1$s in
@@ -40,7 +40,7 @@ module Test with
 let x3$runproc$process : Ref# Int# -> Ref# Int# -> [x5$'$k : Rate].RateNat# x5$'$k -> Series# x5$'$k Int# -> Process#
       = \(x9$ref x3$ref : Ref# Int#).
         /\(x5$'$k : Rate).
-         \(_ : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
+         \(x5$'$k$r : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
         let x3$proc : Process#
               = sreduce# [x5$'$k] [Int#] x3$ref
                     (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
@@ -51,7 +51,7 @@ let x3$runproc$process : Ref# Int# -> Ref# Int# -> [x5$'$k : Rate].RateNat# x5$'
 let x5$runproc$process : Vector# Int# -> Int# -> [x5$'$k : Rate].RateNat# x5$'$k -> Series# x5$'$k Int# -> Process#
       = \(x5 : Vector# Int#).\(x3 : Int#).
         /\(x5$'$k : Rate).
-         \(_ : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
+         \(x5$'$k$r : RateNat# x5$'$k).\(u1$s : Series# x5$'$k Int#).
         let x5$s : Series# x5$'$k Int#
               = smap# [x5$'$k] [Int#] [Int#]
                     (\(x : Int#). div# [Int#] x x3) u1$s in

@@ -6,7 +6,7 @@ module Test with
 let x3$runproc$process : Vector# Int# -> [x3$'$k : Rate].RateNat# x3$'$k -> Series# x3$'$k Int# -> Series# x3$'$k Int# -> Process#
       = \(x3 : Vector# Int#).
         /\(x3$'$k : Rate).
-         \(_ : RateNat# x3$'$k).\(u1$s u2$s : Series# x3$'$k Int#).
+         \(x3$'$k$r : RateNat# x3$'$k).\(u1$s u2$s : Series# x3$'$k Int#).
         let x3$s : Series# x3$'$k Int#
               = smap2# [x3$'$k] [Int#] [Int#] [Int#]
                     (\(x0 x1 : Int#). add# [Int#] x0 x1) u1$s u2$s in
@@ -28,7 +28,7 @@ module Test with
 let x1$runproc$process : Vector# Float32# -> [x1$'$k : Rate].RateNat# x1$'$k -> Series# x1$'$k Int# -> Series# x1$'$k Float32# -> Process#
       = \(x1 : Vector# Float32#).
         /\(x1$'$k : Rate).
-         \(_ : RateNat# x1$'$k).\(us$s : Series# x1$'$k Int#).\(vs$s : Series# x1$'$k Float32#).
+         \(x1$'$k$r : RateNat# x1$'$k).\(us$s : Series# x1$'$k Int#).\(vs$s : Series# x1$'$k Float32#).
         let x1$s : Series# x1$'$k Float32#
               = smap2# [x1$'$k] [Int#] [Float32#] [Float32#]
                     (\(u : Int#).\(v : Float32#). v) us$s vs$s in
@@ -50,7 +50,7 @@ module Test with
 let x1$runproc$process : Ref# Float32# -> Vector# Float32# -> Float32# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Series# x9$'$k Float32# -> Process#
       = \(x7$ref : Ref# Float32#).\(x3 : Vector# Float32#).\(z : Float32#).
         /\(x9$'$k : Rate).
-         \(_ : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).\(vs$s : Series# x9$'$k Float32#).
+         \(x9$'$k$r : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).\(vs$s : Series# x9$'$k Float32#).
         let x1$s : Series# x9$'$k Int#
               = smap# [x9$'$k] [Int#] [Int#]
                     (\(u : Int#). u) us$s in
@@ -65,7 +65,7 @@ let x1$runproc$process : Ref# Float32# -> Vector# Float32# -> Float32# -> [x9$'$
 let x9$runproc$process : Vector# Float32# -> Float32# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Series# x9$'$k Float32# -> Series# x9$'$k Float32# -> Process#
       = \(x9 : Vector# Float32#).\(x7 : Float32#).
         /\(x9$'$k : Rate).
-         \(_ : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).\(vs$s x3$s : Series# x9$'$k Float32#).
+         \(x9$'$k$r : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).\(vs$s x3$s : Series# x9$'$k Float32#).
         let x9$s : Series# x9$'$k Float32#
               = smap3# [x9$'$k] [Int#] [Float32#] [Float32#] [Float32#]
                     (\(u : Int#).\(v ff : Float32#). add# [Float32#] ff x7) us$s vs$s x3$s in

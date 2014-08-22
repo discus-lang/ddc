@@ -23,7 +23,7 @@ module Test with
 let x2$runproc$process : Vector# Int# -> [us$k : Rate].RateNat# us$k -> Series# us$k Int# -> Process#
       = \(x2 : Vector# Int#).
         /\(us$k : Rate).
-         \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+         \(us$k$r : RateNat# us$k).\(us$s : Series# us$k Int#).
         let x2$flags : Series# us$k Bool#
               = smap# [us$k] [Int#] [Bool#]
                     (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
@@ -49,7 +49,7 @@ module Test with
 let x2$runproc$process : Vector# Int# -> [us$k : Rate].RateNat# us$k -> Series# us$k Int# -> Process#
       = \(x5 : Vector# Int#).
         /\(us$k : Rate).
-         \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+         \(us$k$r : RateNat# us$k).\(us$s : Series# us$k Int#).
         let x2$flags : Series# us$k Bool#
               = smap# [us$k] [Int#] [Bool#]
                     (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
@@ -78,7 +78,7 @@ module Test with
 let x2$runproc$process : Vector# Int# -> Vector# Int# -> [us$k : Rate].RateNat# us$k -> Series# us$k Int# -> Process#
       = \(x5 x2 : Vector# Int#).
         /\(us$k : Rate).
-         \(_ : RateNat# us$k).\(us$s : Series# us$k Int#).
+         \(us$k$r : RateNat# us$k).\(us$s : Series# us$k Int#).
         let x2$flags : Series# us$k Bool#
               = smap# [us$k] [Int#] [Bool#]
                     (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
@@ -117,7 +117,7 @@ module Test with
 let x2$runproc$process : Ref# Int# -> Vector# Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
       = \(x6$ref : Ref# Int#).\(x2 : Vector# Int#).
         /\(x9$'$k : Rate).
-         \(_ : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
+         \(x9$'$k$r : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
         let x2$flags : Series# x9$'$k Bool#
               = smap# [x9$'$k] [Int#] [Bool#]
                     (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
@@ -133,7 +133,7 @@ let x2$runproc$process : Ref# Int# -> Vector# Int# -> [x9$'$k : Rate].RateNat# x
 let x9$runproc$process : Vector# Int# -> Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
       = \(x9 : Vector# Int#).\(x6 : Int#).
         /\(x9$'$k : Rate).
-         \(_ : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
+         \(x9$'$k$r : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
         let x9$s : Series# x9$'$k Int#
               = smap# [x9$'$k] [Int#] [Int#]
                     (\(x7 : Int#). add# [Int#] x6 x7) orig$s in
@@ -142,7 +142,7 @@ let x9$runproc$process : Vector# Int# -> Int# -> [x9$'$k : Rate].RateNat# x9$'$k
 let x12$runproc$process : Vector# Int# -> Int# -> [x2$'$k : Rate].RateNat# x2$'$k -> Series# x2$'$k Int# -> Process#
       = \(x12 : Vector# Int#).\(x6 : Int#).
         /\(x2$'$k : Rate).
-         \(_ : RateNat# x2$'$k).\(x2$s : Series# x2$'$k Int#).
+         \(x2$'$k$r : RateNat# x2$'$k).\(x2$s : Series# x2$'$k Int#).
         let x12$s : Series# x2$'$k Int#
               = smap# [x2$'$k] [Int#] [Int#]
                     (\(x10 : Int#). add# [Int#] x6 x10) x2$s in
@@ -178,7 +178,7 @@ module Test with
 let x10$runproc$process : Ref# Int# -> [x13$'$k : Rate].RateNat# x13$'$k -> Series# x13$'$k Int# -> Process#
       = \(x10$ref : Ref# Int#).
         /\(x13$'$k : Rate).
-         \(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
+         \(x13$'$k$r : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
         let x10$proc : Process#
               = sreduce# [x13$'$k] [Int#] x10$ref
                     (\(x7 x8 : Int#). add# [Int#] x7 x8) 0i# orig$s in
@@ -186,7 +186,7 @@ let x10$runproc$process : Ref# Int# -> [x13$'$k : Rate].RateNat# x13$'$k -> Seri
 let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x13$'$k : Rate].RateNat# x13$'$k -> Series# x13$'$k Int# -> Process#
       = \(x16 : Vector# Int#).\(x6$ref : Ref# Int#).\(x10 : Int#).
         /\(x13$'$k : Rate).
-         \(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
+         \(x13$'$k$r : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
         let x2$flags : Series# x13$'$k Bool#
               = smap# [x13$'$k] [Int#] [Bool#]
                     (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
@@ -205,7 +205,7 @@ let x2$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [x13$'$k : Rate].R
 let x13$runproc$process : Vector# Int# -> Int# -> [x13$'$k : Rate].RateNat# x13$'$k -> Series# x13$'$k Int# -> Process#
       = \(x13 : Vector# Int#).\(x6 : Int#).
         /\(x13$'$k : Rate).
-         \(_ : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
+         \(x13$'$k$r : RateNat# x13$'$k).\(orig$s : Series# x13$'$k Int#).
         let x13$s : Series# x13$'$k Int#
               = smap# [x13$'$k] [Int#] [Int#]
                     (\(x11 : Int#). add# [Int#] x6 x11) orig$s in
