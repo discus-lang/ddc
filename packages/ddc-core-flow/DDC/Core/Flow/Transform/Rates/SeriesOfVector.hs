@@ -240,7 +240,7 @@ process types env arrIns bs
 
   runProcs body
    = let kFlags = [ (True,  BName klok kRate)
-                  , (False, BNone $ tRateNat $ TVar $ UName klok) ]
+                  , (False, BName (NameVarMod klok "r") $ tRateNat $ TVar $ UName klok) ]
          vFlags = map (\n -> (False, BName (NameVarMod n "s") (tSeries (klokT n) (sctyOf n)))) arrIns
      in  xApps (xVarOpSeries (OpSeriesRunProcess $ length arrIns))
                (  map xsctyOf arrIns
