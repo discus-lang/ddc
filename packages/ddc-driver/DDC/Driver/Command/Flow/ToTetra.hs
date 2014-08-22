@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wwarn #-}
 
 module DDC.Driver.Command.Flow.ToTetra
         ( cmdFlowToTetraFromFile
@@ -17,7 +16,7 @@ import System.Directory
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
-import qualified DDC.Build.Language.Tetra       as Tetra
+-- import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Core.Check                 as C
@@ -113,8 +112,7 @@ cmdFlowToTetraCoreFromString config configLower language source str
                 [ PipeCoreHacks (Canned $ \m -> return $ Concretize.concretizeModule m)
                 [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
                 [ stageFlowWind    config source
-                [ PipeCoreOutput   pmode SinkStdout
-                , PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
+                [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
                 [ stageFlowToTetra config source
                 [ PipeCoreOutput   pmode SinkStdout]]]]]]]]]]
 
