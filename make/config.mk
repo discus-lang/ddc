@@ -19,6 +19,9 @@ THREADS		= 1
 # GHC binary to use when building.
 GHC		= ghc
 GHCI		= ghci
+# with a cabal sandbox
+# GHC    = cabal exec ghc --
+# GHCI    = cabal exec ghci --
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 GHC_VERSION_FLAGS = -rtsopts
 
