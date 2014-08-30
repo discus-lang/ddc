@@ -143,6 +143,7 @@ getDriverConfigOfState state
                 = Runtime.Config
                 { Runtime.configHeapSize  = 65536 }
 
+         , D.configRuntimeLinkStrategy    = D.LinkDefault
          , D.configModuleBaseDirectories  = []
          , D.configOutputFile             = stateOutputFile state
          , D.configOutputDir              = stateOutputDir  state
@@ -176,7 +177,8 @@ getDefaultBuilderConfig
  = do   baseLibraryPath <- locateBaseLibrary
         return $ BuilderConfig
           { builderConfigBaseSrcDir     = baseLibraryPath
-          , builderConfigBaseLibDir     = baseLibraryPath </> "build" }
+          , builderConfigBaseLibDir     = baseLibraryPath </> "build"
+          , builderConfigLibFile        = \_static dynamic -> dynamic }
 
 
 -- | Get the active builder.

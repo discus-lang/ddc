@@ -9,6 +9,7 @@
 module DDC.Driver.Stage
         ( Config        (..)
         , ViaBackend    (..)
+        , RuntimeLinkStrategy (..)
 
           -- * Tetra stages
         , stageSourceTetraLoad

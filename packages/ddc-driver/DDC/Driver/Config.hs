@@ -6,7 +6,8 @@ module DDC.Driver.Config
         , defaultConfigPretty
         , prettyModeOfConfig
         
-        , ViaBackend    (..))
+        , ViaBackend    (..)
+        , RuntimeLinkStrategy (..))
 where
 import DDC.Build.Builder                        
 import DDC.Core.Simplifier              (Simplifier)
@@ -39,6 +40,9 @@ data Config
 
           -- | Runtime system configuration
         , configRuntime                 :: Salt.Config
+
+          -- | Linking strategy for the runtime.
+        , configRuntimeLinkStrategy     :: RuntimeLinkStrategy
 
           -- | The builder to use for the target architecture
         , configBuilder                 :: Builder
@@ -142,3 +146,12 @@ data ViaBackend
         | ViaLLVM
         deriving Show
 
+
+
+data RuntimeLinkStrategy
+        -- | Use the platform's default strategy.
+        = LinkDefault
+
+        -- | Link the runtime statically.
+        | LinkStatic
+        deriving (Show, Eq)

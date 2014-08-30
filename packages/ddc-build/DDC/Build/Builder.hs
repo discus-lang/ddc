@@ -24,7 +24,10 @@ data BuilderConfig
 
           -- | Directory that holds the shared objects for the runtime
           --   system and base library.
-        , builderConfigBaseLibDir       :: FilePath }
+        , builderConfigBaseLibDir       :: FilePath
+
+          -- | Runtime library link with.
+        , builderConfigLibFile          :: FilePath -> FilePath -> FilePath }
 
 
 -- | Actions to use to invoke external compilation tools.
@@ -207,7 +210,7 @@ builder_X8632_Darwin config
                 [ "gcc -m32" 
                 , "-o", binFile
                 , intercalate " " oFiles
-                , builderConfigBaseLibDir config </> "libddc-runtime.dylib" ]
+                , builderConfigBaseLibDir config </> builderConfigLibFile config "libddc-runtime.a" "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -262,7 +265,7 @@ builder_X8664_Darwin config
                 [ "gcc -m64" 
                 , "-o", binFile
                 , intercalate " " oFiles
-                , builderConfigBaseLibDir config </> "libddc-runtime.dylib" ]
+                , builderConfigBaseLibDir config </> builderConfigLibFile config "libddc-runtime.a" "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -317,7 +320,7 @@ builder_X8632_Linux config
                 [ "gcc -m32" 
                 , "-o", binFile
                 , intercalate " " oFiles
-                , builderConfigBaseLibDir config </> "libddc-runtime.so" ]
+                , builderConfigBaseLibDir config </> builderConfigLibFile config "libddc-runtime.a" "libddc-runtime.so" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -371,7 +374,7 @@ builder_X8664_Linux config
                 [ "gcc -m64"
                 , "-o", binFile
                 , intercalate " " oFiles
-                , builderConfigBaseLibDir config </> "libddc-runtime.so" ]
+                , builderConfigBaseLibDir config </> builderConfigLibFile config "libddc-runtime.a" "libddc-runtime.so" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -424,7 +427,7 @@ builder_PPC32_Linux config
                 [ "gcc -m32" 
                 , "-o", binFile
                 , intercalate " " $ map normalise oFiles
-                , builderConfigBaseLibDir config </> "libddc-runtime.so" ]
+                , builderConfigBaseLibDir config </> builderConfigLibFile config "libddc-runtime.a" "libddc-runtime.so" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -479,7 +482,7 @@ builder_X8632_Cygwin config
                 [ "gcc-4 -m32" 
                 , "-o", normalise binFile
                 , intercalate " " $ map normalise oFiles
-                , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ]
+                , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ] -- configRuntimeLinkStrategy is ignored
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -532,7 +535,7 @@ builder_X8632_Mingw config
                 [ "gcc -m32" 
                 , "-o", normalise binFile
                 , intercalate " " $ map normalise oFiles
-                , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ]
+                , normalise $ builderConfigBaseLibDir config </> "libddc-runtime.a" ] -- configRuntimeLinkStrategy is ignored
 
         , buildLdLibStatic
                 = \oFiles libFile

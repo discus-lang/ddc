@@ -219,7 +219,7 @@ getDriverConfig config filePath
  = do   Just builder    <- determineDefaultBuilder (defaultBuilderConfig config)
         let runtimeConfig
              = Runtime.Config
-             { Runtime.configHeapSize = configRuntimeHeapSize config }
+             { Runtime.configHeapSize             = configRuntimeHeapSize config }
 
         let dconfig
              = Driver.Config
@@ -239,7 +239,8 @@ getDriverConfig config filePath
              , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config
              , Driver.configKeepSeaFiles          = configKeepSeaFiles  config
              , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
-             , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config }
+             , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config
+             , Driver.configRuntimeLinkStrategy   = configRuntimeLinkStrategy config }
 
         simplLite <- getSimplLiteOfConfig config 
                         dconfig 
