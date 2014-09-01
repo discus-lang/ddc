@@ -24,9 +24,12 @@ import Control.Applicative
 -- | These operators must just have a region inserted as the first argument
 opsToAddRegion :: [(F.Name, T.Name)]
 opsToAddRegion
- = [(F.NameOpStore F.OpStoreNew,        T.NameOpStore T.OpStoreAllocRef)
-   ,(F.NameOpStore F.OpStoreRead,       T.NameOpStore T.OpStoreReadRef)
-   ,(F.NameOpStore F.OpStoreWrite,      T.NameOpStore T.OpStoreWriteRef)]
+ = [(F.NameOpStore F.OpStoreNew,                T.NameOpStore T.OpStoreAllocRef)
+   ,(F.NameOpStore F.OpStoreRead,               T.NameOpStore T.OpStoreReadRef)
+   ,(F.NameOpStore F.OpStoreWrite,              T.NameOpStore T.OpStoreWriteRef)
+   ]
+   -- ,(F.NameOpStore(F.OpStoreWriteVector 1),     T.NameOpStore T.OpStoreWritePtr)
+   -- ,(F.NameOpStore(F.OpStoreReadVector  1),     T.NameOpStore T.OpStoreReadPtr)]
 
 convertX :: Exp a F.Name -> ConvertM (Exp a T.Name)
 convertX xx
@@ -56,14 +59,22 @@ convertX xx
  , (xts, xs')           <- splitAt n xs
  , Just ts              <- mapM takeXType xts
  , (vs, [proc])         <- splitAt n xs'
+
  = do   vs'   <- mapM convertX    vs
         ts'   <- mapM convertType ts
-        proc' <-      convertX    proc
+
+        -- smash out any kind lambdas, because they can only be rates
+        let proc'
+             = case takeXLAMs proc of
+               Nothing    -> proc
+               Just (_,x) -> x
+
+        proc''<-      convertX    proc'
 
         case (vs',ts') of
          ((v':_), (t':_))
           -> return
-           $ xApps anno proc'
+           $ xApps anno proc''
             (xVecLen t' v' : zipWith xVecPtr ts' vs')
          (_, _)
           -> throw $ ErrorNotSupported op
@@ -79,6 +90,18 @@ convertX xx
         t'      <- convertX t
         return $ mk (T.NameOpStore T.OpStoreReadPtr)
                [ xRTop anno, t', v', i' ]
+
+ -- vlength# [t] vec
+ -- becomes a projection
+ | Just (op, [xt, v])   <- takeXPrimApps xx
+ , F.NameOpVector F.OpVectorLength
+                        <- op
+ , Just t               <- takeXType xt
+ = do   t'      <- convertType t
+        v'      <- convertX    v
+        return $ xVecLen t' v'
+
+
 
  -- otherwise just boilerplate recursion
  | otherwise
