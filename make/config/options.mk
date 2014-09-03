@@ -78,7 +78,8 @@ DDC_PACKAGES	:= \
         -package haskeline \
         -package directory \
         -package containers \
-        -package glpk-hs \
+        -package limp \
+        -package limp-cbc \
         -package transformers \
         -package text \
         -package parsec \

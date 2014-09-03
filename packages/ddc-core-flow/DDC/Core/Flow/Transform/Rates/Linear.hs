@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module DDC.Core.Flow.Transform.Rates.Linear
     (solve_linear, TransducerMap)
  where
@@ -6,18 +7,29 @@ import DDC.Core.Flow.Transform.Rates.Graph
 
 import qualified Data.Map  as Map
 import           Data.Map    (Map)
+import Data.Monoid
 
-import Control.Monad.LPMonad
-import Data.LinearProgram
---import Data.LinearProgram.GLPK
-
-import System.IO.Unsafe (unsafePerformIO)
+import Numeric.Limp.Program.ResultKind
+import Numeric.Limp.Program
+import Numeric.Limp.Rep
+import Numeric.Limp.Solvers.Cbc
 
 -- | Get parent transducers of two nodes, if exists.
 type TransducerMap n = n -> n -> Maybe (n,n)
 
 
+-- | Integer-valued variable type for linear program
 --
+-- SameCluster i j  - {0,1} 0 if i and j are fused together
+--
+-- C n - 0 if node is fused with all its users. Minimising this is good for array contraction.
+--
+data ZVar n
+ = SameCluster n n
+ | C n
+ deriving (Eq, Show, Ord)
+
+
 -- | Variable type for linear program
 -- Pi i             - {0..} used to show the resulting partition is acyclic:
 --
@@ -26,57 +38,52 @@ type TransducerMap n = n -> n -> Maybe (n,n)
 --      such that \forall (i,j) \in Edge
 --          pi(j) > pi(i)
 --
--- SameCluster i j  - {0,1} 0 if i and j are fused together
---
--- C n - 0 if node is fused with all its users. Minimising this is good for array contraction.
-data GVar n
+data RVar n
  = Pi n
- | SameCluster n n
- | C n
  deriving (Eq, Show, Ord)
 
 -- | Canonical form of SameCluster variables.
 -- Since we only want to generate one SameCluster variable for each pair, we generate the
 -- variable with min variable then max.
-mkSameCluster :: Ord n => n -> n -> GVar n
+mkSameCluster :: Ord n => n -> n -> ZVar n
 mkSameCluster m n
  = SameCluster (min m n) (max m n)
 
 -- | Minimise objective:
 -- \Sigma_i,j Weight(i,j) * SameCluster(i,j)
-gobjective :: Ord n => [n] -> [(Int,n,n)] -> LinFunc (GVar n) Int
+gobjective :: Ord n => [n] -> [(Int,n,n)] -> Linear (ZVar n) (RVar n) IntDouble KZ
 gobjective ns ws
- =  linCombination
- (  map (\(w,i,j) -> (w, mkSameCluster i j)) ws
- ++ map (\n -> (length ns, C n)) ns)
+ =  foldl (.+.) c0
+ (  map (\(w,i,j) -> z (mkSameCluster i j) (Z w)) ws
+ ++ map (\n -> z (C n) (Z $ length ns)) ns)
 
 
--- | Set variable types - Pi are floating points, SameCluster and C are "bools" (0 or 1)
-setKinds :: Ord n => [n] -> [(Int,n,n)] -> LPM (GVar n) Int ()
-setKinds ns ws
- = do   mapM_ setP ns
-        mapM_ setW ws
+-- | Get variable bounds - Pi are unbounded, SameCluster and C are "bools" (0 or 1)
+getBounds :: Ord n => [n] -> [(Int,n,n)] -> [Bounds (ZVar n) (RVar n) IntDouble]
+getBounds ns ws
+ =  map boundC  ns
+ ++ map boundSC ws
  where
-  setP n
-   = do varGeq     (Pi n) 0
-        setVarKind (Pi n) ContVar
-        setVarKind (C  n) BinVar
-  setW (_,i,j)
-   = do -- varGeq     (SameCluster i j) 0
-        setVarKind (mkSameCluster i j) BinVar
+  boundC n
+   = binary (C n)
+  boundSC (_,i,j)
+   = binary (mkSameCluster i j)
 
 
 -- | Create constraints for edges and weights
-addConstraints :: (Ord n, Eq t, Show n)
+getConstraints :: (Ord n, Eq t, Show n)
                => Int -> Graph n t
                -> [((n,n),Bool)]
                -> [(Int,n,n)]
                -> TransducerMap n
-               -> LPM (GVar n) Int ()
-addConstraints bigN g arcs ws trans
- = do   mapM_ addP arcs
-        mapM_ addW ws
+               -> Constraint (ZVar n) (RVar n) IntDouble
+getConstraints bigN g arcs ws trans
+ = mconcat $  map edgeConstraint arcs
+           ++ map weightConstraint ws
  where
+  piDiff u v = r1 (Pi v) .-. r1 (Pi u)
+  sc     u v = z1 (mkSameCluster u v)
+
   -- Edge constraints:
   --
   -- For nonfusible edges (u,v), add a constraint
@@ -95,23 +102,18 @@ addConstraints bigN g arcs ws trans
   --
   --
   -- Note that arcs are reversed in graph, so (v,u) below is actually an edge from u to v.
-  addP ((v,u), fusible)
+  edgeConstraint ((v,u), fusible)
    -- Fusible: edge must be fusible, and they must be same type or have common type transducers
    | fusible && typeComparable g trans u v
-   = do let pis = var (Pi v) ^-^ var (Pi u)
-        let x   = var (mkSameCluster u v)
-        -- x(u,v)         <= pi(v) - pi(u)
-        leq x    pis
-        -- pi(v) - pi(u)  <= n * x(u,v)
-        leq pis (bigN *^ x)
-        leq x (var $ C u) 
+   = let x = sc u v
+     in  Between x (piDiff u v) (Z bigN *. x)
+     :&& x :<= z1 (C u)
 
    -- Non-fusible edge, or nodes are different types
    | otherwise
         -- pi(v) - pi(u) >= 1
-   = do geqTo (var (Pi v) ^-^ var (Pi u)) 1
-        geqTo (var $ C u) 1
-        leqTo (var $ C u) 1
+   =   piDiff u v :>= c1
+   :&& z1 (C u)   :== c1
 
 
   -- Weights between other nodes:
@@ -128,15 +130,14 @@ addConstraints bigN g arcs ws trans
   -- Otherwise, pi(v) - pi(u) has a large enough range to be practically unbounded.
   -- 
   -- This constraint is not necessary if there is a fusible edge between the two,
-  -- as a more restrictive constraint will be added by addP, but it does not
+  -- as a more restrictive constraint will be added by edgeConstraint, but it does not
   -- conflict so it can be added anyway.
   --
-  addW (_,u,v)
-   = do let pis = var (Pi v) ^-^ var (Pi u)
-        let x   = var (mkSameCluster u v)
-        leq ((-bigN) *^ x) pis
-        leq pis  (bigN *^ x)
-        checkTypes u v
+  weightConstraint (_,u,v)
+   = let x = sc u v
+     in  Between (Z (-bigN) *. x) (piDiff u v) (Z bigN *. x) 
+     :&& checkTypes u v
+
 
   -- If two nodes have different types, but parent transducers with same type,
   -- we may still fuse them together if their parent transducers are fused together
@@ -145,11 +146,12 @@ addConstraints bigN g arcs ws trans
    , Just vT <- nodeType g v
    , uT /= vT
    , Just (u',v') <- trans u v
-   = do leq' ("Type:" ++ show u ++ ":" ++ show v ++ ":" ++ show u') (var $ mkSameCluster v' v) (var $ mkSameCluster u v)
-        leq' ("Type:" ++ show u ++ ":" ++ show v ++ ":" ++ show v') (var $ mkSameCluster u' u) (var $ mkSameCluster u v)
-        leq' ("Type:" ++ show u ++ ":" ++ show v) (var $ mkSameCluster u' v') (var $ mkSameCluster u v)
+   =   sc v' v  :<= sc u v
+   :&& sc u' u  :<= sc u v
+   :&& sc u' v' :<= sc u v
+
    | otherwise
-   = return ()
+   = CTrue
 
 
 
@@ -225,13 +227,11 @@ clusterings arcs ns bigN g trans
 
 
 -- | Create linear program for graph, and put all the pieces together.
-lp :: (Ord n, Eq t, Show n) => Graph n t -> TransducerMap n -> LP (GVar n) Int
+lp :: (Ord n, Eq t, Show n) => Graph n t -> TransducerMap n -> Program (ZVar n) (RVar n) IntDouble
 lp g trans
- = execLPM
- $ do   setDirection Min
-        setObjective $ gobjective names weights
-        addConstraints nNodes g arcs weights trans
-        setKinds names weights
+ = minimise (gobjective names weights)
+            (getConstraints nNodes g arcs weights trans)
+            (getBounds names weights)
  where
    g'    = listOfGraph g
    names = map fst $ fst g'
@@ -248,34 +248,14 @@ lp g trans
 --  (Pi, Type number) -> list of nodes
 solve_linear :: (Ord n, Eq t, Show n) => Graph n t -> TransducerMap n -> Map (Int,Int) [n]
 solve_linear g trans
- -- GLPK has a fit if we give it a problem with no constraints.
- -- However, if there are no constraints, it means there are no nodes, or no opportunities for fusion.
- -- Generate a no-fusion clustering.
- | null $ constraints lp'
- = Map.fromList
-   [ ((0,n), [k])
-   | ((k,_ty),n) <- (fst $ listOfGraph g) `zip` [0..]]
-
- | otherwise
- = let opts'= mipDefaults { msgLev = MsgOff, brTech = DrTom, btTech = LocBound, cuts = [Cov] }
-       res  = unsafePerformIO $ do
-                -- let pre = "lps/lp-" ++ (show $ length $ constraints lp') ++ "-"
-                -- writeLP (pre ++ "unopt.lp") lp'unopt
-                -- writeLP (pre ++ "simp.lp") lp'simp
-                -- writeFile (pre ++ "prog.p") (prettyProgram p)
-                glpSolveVars opts' $ {-trace (pprLP lp')-} lp'
-   in  case res of
-        (Success, Just (_, m))
-         -> fixMap m -- (trace (show m) m)
-        _
-         -> error (show res)
+ = case solve lp' of
+   Left  e   -> error (show e)
+   Right ass -> fixMap ass
  where
-  lp'simp  = lp g trans
-  -- lp'unopt  = lp p g trans False
-  lp' = lp'simp
+  lp'  = lp g trans
 
-  fixMap m
-   = reorder m $ snd $ fill $ Map.foldWithKey go (0, Map.empty) m
+  fixMap ass@(Assignment mz _r)
+   = reorder ass $ snd $ fill $ Map.foldWithKey go (0, Map.empty) mz
 
   go k v (n, m)
    -- SameCluster i j = 0 --> i and j must be fused together
@@ -309,16 +289,14 @@ solve_linear g trans
      , Map.insert k n m)
 
 
-  reorder mOrig m
+  reorder ass m
    = Map.fromList
-   $ map (reorder' mOrig)
+   $ map (reorder' ass)
    $ Map.toList $ invertMap m
 
-  reorder' mOrig (k,v:vs)
-   | Just k' <- Map.lookup (Pi v) mOrig
-   = ((truncate k', k), v:vs)
-   | otherwise
-   = error "ddc-core-flow:DDC.Core.Flow.Transform.Rates.Linear: impossible, no Pi value for node"
+  reorder' ass (k,v:vs)
+   = let k' = rOf ass (Pi v)
+     in  ((truncate k', k), v:vs)
   reorder' _ (_, [])
    = error "ddc-core-flow:DDC.Core.Flow.Transform.Rates.Linear: impossible, empty list in inverted map"
 
