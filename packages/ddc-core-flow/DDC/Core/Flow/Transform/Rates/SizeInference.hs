@@ -433,7 +433,15 @@ parents bs e a b
  | otherwise
  = let pas = trans bs a >>= \a'' -> parents bs e a'' b
        pbs = trans bs b >>= \b'' -> parents bs e a   b''
-   in  listToMaybe $ catMaybes [pas, pbs]
+       ps  = catMaybes [pas, pbs]
+       -- If @b@ is a child of @a@, we want to find the parents @(a,a)@.
+       -- There may be other parents, but @(a,a)@ is the "most specific".
+       -- There is actually an error in the paper - nodes may have multiple parents
+       -- if one node is the parent/transducer of the other.
+       same= filter (\(a',b') -> a' `elem` [a,b] || b' `elem` [a,b]) ps
+   in  case same of
+        (s:_) -> Just s
+        []    -> listToMaybe ps
 
  where
   itsz = iter bs e
