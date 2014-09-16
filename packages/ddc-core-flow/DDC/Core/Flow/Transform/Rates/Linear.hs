@@ -3,6 +3,7 @@ module DDC.Core.Flow.Transform.Rates.Linear
     (solve_linear, TransducerMap)
  where
 
+import DDC.Base.Pretty
 import DDC.Core.Flow.Transform.Rates.Graph
 
 import qualified Data.Map  as Map
@@ -12,7 +13,11 @@ import Data.Monoid
 import Numeric.Limp.Program.ResultKind
 import Numeric.Limp.Program
 import Numeric.Limp.Rep
-import Numeric.Limp.Solvers.Cbc
+import Numeric.Limp.Solvers.Cbc.Solve
+
+import qualified Numeric.Limp.Canon.Convert as Conv
+import qualified Numeric.Limp.Canon.Simplify as CSimp
+
 
 -- | Get parent transducers of two nodes, if exists.
 type TransducerMap n = n -> n -> Maybe (n,n)
@@ -29,6 +34,10 @@ data ZVar n
  | C n
  deriving (Eq, Show, Ord)
 
+instance Pretty n => Pretty (ZVar n) where
+ ppr (SameCluster a b) = text "SC" <+> ppr a <+> ppr b
+ ppr (C a)             = text "C"  <+> ppr a
+
 
 -- | Variable type for linear program
 -- Pi i             - {0..} used to show the resulting partition is acyclic:
@@ -41,6 +50,9 @@ data ZVar n
 data RVar n
  = Pi n
  deriving (Eq, Show, Ord)
+
+instance Pretty n => Pretty (RVar n) where
+ ppr (Pi a) = text "O" <+> ppr a
 
 -- | Canonical form of SameCluster variables.
 -- Since we only want to generate one SameCluster variable for each pair, we generate the
@@ -104,7 +116,7 @@ getConstraints bigN g arcs ws trans
   -- Note that arcs are reversed in graph, so (v,u) below is actually an edge from u to v.
   edgeConstraint ((v,u), fusible)
    -- Fusible: edge must be fusible, and they must be same type or have common type transducers
-   | fusible && typeComparable g trans u v
+   | fusible && typeComparable g trans u v && noFusionPreventingPath arcs u v
    = let x = sc u v
      in  Between x (piDiff u v) (Z bigN *. x)
      :&& x :<= z1 (C u)
@@ -146,12 +158,34 @@ getConstraints bigN g arcs ws trans
    , Just vT <- nodeType g v
    , uT /= vT
    , Just (u',v') <- trans u v
-   =   sc v' v  :<= sc u v
-   :&& sc u' u  :<= sc u v
-   :&& sc u' v' :<= sc u v
+   =   filtConstraint v' v  u v
+   :&& filtConstraint u' u  u v
+   :&& filtConstraint u' v' u v
 
    | otherwise
    = CTrue
+
+  -- c and d can only be fused if a and b are fused
+  filtConstraint a b c d
+   -- If a and b are the same node, they're already fused!
+   | a == b
+   = CTrue
+
+   -- Check if it's even possible for a and b to be fused.
+   -- There might be a fusion-preventing edge between them.
+   | checkFusible a b
+   -- If it's possible, constrain (SC a b) <= (SC c d).
+   -- This means that if (SC a b) is 1 (unfused), it forces (SC c d) = 1 too.
+   = sc a b :<= sc c d
+
+   -- There's a fusion-preventing path between a and b, so they can't possibly be fused.
+   -- So c and d won't be fused - let's just set it to 1.
+   | otherwise
+   = sc c d :== c1
+
+  checkFusible a b
+   = any (\(_, i,j) -> (i,j) == (a,b) || (i,j) == (b,a)) ws
+
 
 
 
@@ -181,7 +215,7 @@ clusterings arcs ns bigN g trans
    go (u:rest)
     =  [ (w,u,v)
        | v <- rest
-       , noFusionPreventingPath u v
+       , noFusionPreventingPath arcs u v
        , cmp u v
        , let w = weight u v
        , w > 0]
@@ -191,19 +225,6 @@ clusterings arcs ns bigN g trans
 
    cmp = typeComparable g trans
 
-   -- \forall paths p from u to v, fusion preventing \not\in p
-   noFusionPreventingPath u v
-    -- for all paths, for all nodes in path, is fusible
-    = all (all snd) (paths u v)
-
-   -- list of all paths from u to v
-   paths u v
-    | u == v
-    = [[]]
-    | otherwise
-    = let outs = filter (\((i,_j),_f) -> i == u) arcs
-      in  concatMap (\((u',j),f) -> map (((u',j),f):) (paths j v)) outs
-   
    -- Simple trick:
    -- if there is an edge between the two,
    --   there will be some cache locality benefit from merging
@@ -223,6 +244,22 @@ clusterings arcs ns bigN g trans
     = bigN * bigN
     | otherwise
     = 1
+
+
+-- \forall paths p from u to v, fusion preventing \not\in p
+noFusionPreventingPath :: (Ord n) => [((n,n),Bool)] -> n -> n -> Bool
+noFusionPreventingPath arcs u v
+ -- for all paths, for all nodes in path, is fusible
+ =  all (all snd) (paths u v)
+ && all (all snd) (paths v u)
+ where
+  -- list of all paths from w to x
+  paths w x
+    | w == x
+    = [[]]
+    | otherwise
+    = let outs = filter (\((i,_j),_f) -> i == w) arcs
+      in  concatMap (\((w',j),f) -> map (((w',j),f):) (paths j x)) outs
    
 
 
@@ -246,16 +283,20 @@ lp g trans
 -- | Find a good clustering for some graph.
 -- The output is:
 --  (Pi, Type number) -> list of nodes
-solve_linear :: (Ord n, Eq t, Show n) => Graph n t -> TransducerMap n -> Map (Int,Int) [n]
+solve_linear :: (Ord n, Eq t, Show n, Pretty n) => Graph n t -> TransducerMap n -> Map (Int,Int) [n]
 solve_linear g trans
- = case solve lp' of
+ = case  (solve lp's) of
    Left  e   -> error (show e)
-   Right ass -> fixMap ass
+   Right ass -> fixMap (sub `mappend` ass)
  where
   lp'  = lp g trans
+  {- show_lp = CPr.ppr (show.ppr) (show.ppr) -}
+
+  lp'c        = Conv.program lp'
+  (sub, lp's) = CSimp.simplify lp'c
 
   fixMap ass@(Assignment mz _r)
-   = reorder ass $ snd $ fill $ Map.foldWithKey go (0, Map.empty) mz
+   = reorder ass $ snd $ fillMap $ Map.foldWithKey go (0, Map.empty) mz
 
   go k v (n, m)
    -- SameCluster i j = 0 --> i and j must be fused together
@@ -278,7 +319,7 @@ solve_linear g trans
    | otherwise
    = (n, m)
 
-  fill (n, m)
+  fillMap (n, m)
    = foldr goFill (n, m) (fst $ listOfGraph g)
 
   goFill (k,_ty) (n, m)
