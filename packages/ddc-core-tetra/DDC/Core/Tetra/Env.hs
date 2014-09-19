@@ -92,6 +92,7 @@ kindOfPrimName nn
  = case nn of
         NameTyConTetra tc       -> Just $ kindTyConTetra tc
         NamePrimTyCon tc        -> Just $ kindPrimTyCon tc
+        NameVar "rT"            -> Just $ kRegion
         _                       -> Nothing
 
 

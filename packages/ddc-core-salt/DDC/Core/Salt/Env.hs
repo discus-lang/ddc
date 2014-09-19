@@ -76,6 +76,7 @@ kindOfName nn
  = case nn of
         NameObjTyCon      -> Just $ kData
         NamePrimTyCon tc  -> Just $ kindOfPrimTyCon tc
+        NameVar "rT"      -> Just $ kRegion
         _                 -> Nothing
 
 
