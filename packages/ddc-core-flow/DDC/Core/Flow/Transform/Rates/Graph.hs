@@ -27,10 +27,10 @@ import qualified Data.Set               as Set
 --
 
 type Edge  n   = (n, Bool)
-data Graph n t = Graph (Map.Map n (t, [Edge n]))
+data Graph n t = Graph (Map.Map n (Maybe t, [Edge n]))
 
 
-graphOfBinds :: (Ord s, Ord a) => Program s a -> Env a -> Graph (CName s a) (Maybe (Type a))
+graphOfBinds :: (Ord s, Ord a) => Program s a -> Env a -> Graph (CName s a) (Type a)
 graphOfBinds prog env
  = Graph $ graph
  where
@@ -126,12 +126,12 @@ mergeWeights g@(Graph graph) weights
   merge node k m
    | Just (_ty,edges) <- Map.lookup node graph
    = let edges' = nub $ map (\(n,f) -> (name n, f)) edges
-     in  Map.insertWith ins k ((),edges') m
+     in  Map.insertWith ins k (Nothing,edges') m
    | otherwise
    = m
 
   ins (_, e1) (_, e2)
-   = ((), nub $ e1 ++ e2)
+   = (Nothing, nub $ e1 ++ e2)
 
   weights' = invertMap weights
 
@@ -187,9 +187,12 @@ nodeInEdges (Graph gmap) k
  = []
 
 
+-- | Find type, or iteration size, of node, if it has one.
+-- An external can't be represented as a loop, so it will be Nothing.
+-- Similarly with input nodes.
 nodeType :: Ord n => Graph n t -> n -> Maybe t
 nodeType (Graph gmap) k
- | Just (na,_) <- Map.lookup k gmap
+ | Just (Just na,_) <- Map.lookup k gmap
  = Just na
  | otherwise
  = Nothing
@@ -197,7 +200,7 @@ nodeType (Graph gmap) k
 -- TODO nodeOutputs, nodeOutEdges
 
 -- | Convert @Graph@ to a lists of nodes and a list of edges
-listOfGraph :: Ord n => Graph n t -> ([(n,t)], [((n,n),Bool)])
+listOfGraph :: Ord n => Graph n t -> ([(n,Maybe t)], [((n,n),Bool)])
 listOfGraph (Graph g)
  = (nodes, edges)
  where
@@ -208,7 +211,7 @@ listOfGraph (Graph g)
 
 
 -- | Convert lists of nodes and list of edges to a @Graph@
-graphOfList :: Ord n => ([(n,t)], [((n,n),Bool)]) -> Graph n t
+graphOfList :: Ord n => ([(n,Maybe t)], [((n,n),Bool)]) -> Graph n t
 graphOfList (nodes, edges)
  = Graph
  $ addEdges nodeMap
