@@ -20,6 +20,7 @@ import qualified DDC.Core.Tetra.Prim.TyConPrim  as T
 import qualified DDC.Core.Tetra.Prim.TyConTetra as T
 
 import Control.Applicative
+import Control.Monad
 
 -- | These operators must just have a region inserted as the first argument
 opsToAddRegion :: [(F.Name, T.Name)]
@@ -36,13 +37,18 @@ convertX xx
  -- Remove any /\(k : Rate). They are not needed any more.
  | XLAM _ b x <- xx
  , typeOfBind b == F.kRate
- = removeXLAM b <$> convertX x 
+ = withRateXLAM b $ removeXLAM b <$> convertX x
+
+ | Just (bs,x) <- takeXLams xx
+ = do   bs' <- mapM convertBind bs
+        x'  <- convertX x
+        return $ xLams anno bs' $ XCast anno CastBox x'
 
  -- Operators that just need a region added as first argument
  | Just (op, xs) <- takeXPrimApps xx
  , Just  op'     <- lookup op opsToAddRegion
  = do   xs'   <- mapM convertX xs
-        return $ mk op' (xRTop anno : xs')
+        return $ run $ mk op' (xRTop anno : xs')
 
  -- natOfRateNat becomes a noop, as RateNats become Nats.
  | Just (op, [_r, n])   <- takeXPrimApps xx
@@ -74,8 +80,11 @@ convertX xx
         case (vs',ts') of
          ((v':_), (t':_))
           -> return
-           $ xApps anno proc''
-            (xVecLen t' v' : zipWith xVecPtr ts' vs')
+           $ XLet anno (LLet (BNone F.tUnit)
+                       ( run
+                       $ xApps anno proc''
+                         (xVecLen t' v' : zipWith xVecPtr ts' vs')))
+             true
          (_, _)
           -> throw $ ErrorNotSupported op
 
@@ -88,7 +97,7 @@ convertX xx
  = do   v'      <- convertX v
         i'      <- convertX i
         t'      <- convertX t
-        return $ mk (T.NameOpStore T.OpStoreReadPtr)
+        return $ run $ mk (T.NameOpStore T.OpStoreReadPtr)
                [ xRTop anno, t', v', i' ]
 
  -- vlength# [t] vec
@@ -102,6 +111,27 @@ convertX xx
         return $ xVecLen t' v'
 
 
+ | Just (f, args@(_:_)) <- takeXApps xx
+ = do   f'      <- convertX f
+        -- filter out any type args that reference deleted XLAMs
+        let checkT arg
+             | XType _ (TVar (UName n)) <- arg
+             = isRateXLAM n
+             | otherwise
+             = return True
+        args'   <-  filterM checkT args
+                >>= mapM convertX
+
+        let checkF
+             | XVar _ (UName n) <- f
+             = isSuspFn n
+             | otherwise
+             = return False
+
+        isSusp <- checkF
+        if   isSusp
+        then return $ run $ xApps anno f' args'
+        else return $       xApps anno f' args'
 
  -- otherwise just boilerplate recursion
  | otherwise
@@ -117,7 +147,8 @@ convertX xx
    XApp a p q
     -> XApp a <$> convertX     p <*> convertX q
    XLet a ls x
-    -> XLet a <$> convertLets ls <*> convertX x
+    -> let bs = valwitBindsOfLets ls
+       in  withSuspFns bs $ XLet a <$> convertLets ls <*> convertX x
    XCase a x as
     -> XCase a<$> convertX     x <*> mapM convertAlt as
    XCast a c x
@@ -129,11 +160,15 @@ convertX xx
  where
   anno = annotOfExp xx
 
+  run  = XCast anno CastRun
+
   mk n args
    | Just t <- T.takeTypeOfPrimOpName n
    = xApps anno (XVar anno (UPrim n t)) args
    | otherwise
    = error "Impossible"
+
+  true = XVar anno $ UName $ T.NameLitBool True
 
 convertDaCon :: DaCon F.Name -> ConvertM (DaCon T.Name)
 convertDaCon dd
@@ -235,7 +270,8 @@ xRTop a = XType a rTop
 -- | Get the Nat# of length from a Vector
 xVecLen :: Type T.Name -> Exp a T.Name -> Exp a T.Name
 xVecLen t x
- = xApps anno (XVar anno $ UPrim (T.NameOpStore T.OpStoreReadRef) (T.typeOpStore T.OpStoreReadRef))
+ = XCast anno CastRun
+ $ xApps anno (XVar anno $ UPrim (T.NameOpStore T.OpStoreReadRef) (T.typeOpStore T.OpStoreReadRef))
  [ xRTop anno
  , XType anno T.tNat
  , xApps anno (XVar anno $ UName $ T.NameOpStore $ T.OpStoreProj 2 2)

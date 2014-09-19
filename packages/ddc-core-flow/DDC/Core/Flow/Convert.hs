@@ -14,10 +14,12 @@ import DDC.Control.Monad.Check
 import qualified DDC.Core.Flow.Prim      as F
 import qualified DDC.Core.Tetra.Prim     as T
 
+import qualified Data.Set                as S
+
 
 tetraOfFlowModule :: Module a F.Name -> Either Error (Module a T.Name)
 tetraOfFlowModule mm
- = evalCheck ()
+ = evalCheck (S.empty, S.empty)
  $ convertM  mm
 
 convertM :: Module a F.Name -> ConvertM (Module a T.Name)

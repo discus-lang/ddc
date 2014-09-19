@@ -37,6 +37,7 @@ import Control.Applicative
 -- * @Series k a@ becomes @Ptr# rTop a@
 -- * @RateNat  k@ becomes @Nat#@
 -- * @Ref a@      becomes @Ref# rTop a@
+-- * @a->b->c@    becomes @a -> b -> S (Read rT + Write rT + Alloc rT) c@
 --
 convertType :: Type F.Name -> ConvertM (Type T.Name)
 convertType tt
@@ -61,6 +62,16 @@ convertType tt
  -- Convert Refs
  | Just (F.NameTyConFlow F.TyConFlowRef, [tA])          <- takePrimTyConApps tt
  = T.tRef rTop <$> convertType tA
+
+ -- Add effects to the last part of an arrow
+ | (args@(_:_), res)                                    <- takeTFunArgResult tt
+ = do   args'   <- mapM convertType args
+        res'    <-      convertType res
+
+        let eff  = tSum kEffect [tRead rTop, tWrite rTop, tAlloc rTop]
+
+        return   $ foldr tFun (tSusp eff res') args'
+        
 
  -- For other primitives, convertName will handle convert them
  | otherwise
