@@ -115,8 +115,12 @@ getConstraints bigN g arcs ws trans
   --
   -- Note that arcs are reversed in graph, so (v,u) below is actually an edge from u to v.
   edgeConstraint ((v,u), fusible)
-   -- Fusible: edge must be fusible, and they must be same type or have common type transducers
+   -- The edge must be fusible, the two nodes must have a similar size,
+   -- and there can be no other paths between u and v that aren't fusible.
    | fusible && typeComparable g trans u v && noFusionPreventingPath arcs u v
+   -- We may want to remove the 'typeComparable' restriction later, and just check that they have
+   -- *some* iteration size, but not necessarily similar.
+   -- This would allow fusing @a@ into @c@ in @a = map...; c = cross a b@.
    = let x = sc u v
      in  Between x (piDiff u v) (Z bigN *. x)
      :&& x :<= z1 (C u)
@@ -142,13 +146,17 @@ getConstraints bigN g arcs ws trans
   -- Otherwise, pi(v) - pi(u) has a large enough range to be practically unbounded.
   -- 
   -- This constraint is not necessary if there is a fusible edge between the two,
-  -- as a more restrictive constraint will be added by edgeConstraint, but it does not
-  -- conflict so it can be added anyway.
+  -- as a more restrictive constraint will be added by edgeConstraint.
   --
   weightConstraint (_,u,v)
+   -- If there's an edge between the two, don't bother adding this constraint
+   | not $ any (\((i,j),_) -> (u,v) == (i,j) || (v,u) == (i,j)) arcs
    = let x = sc u v
      in  Between (Z (-bigN) *. x) (piDiff u v) (Z bigN *. x) 
      :&& checkTypes u v
+
+   | otherwise
+   = CTrue
 
 
   -- If two nodes have different types, but parent transducers with same type,
