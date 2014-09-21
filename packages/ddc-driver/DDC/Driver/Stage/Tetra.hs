@@ -72,20 +72,22 @@ stageTetraToSalt config source pipesSalt
  where
         pipe_norm
          = PipeCoreSimplify     BE.fragment 0 normalize
-           [ pipe_curry ]
+           [ pipe_boxing ]
 
         normalize
          = C.anormalize
                 (C.makeNamifier CE.freshT)      
                 (C.makeNamifier CE.freshX)
 
+{-
         pipe_curry
-         = PipeCoreAsTetra
+         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
+           [ PipeCoreAsTetra
            [ PipeTetraCurry
            [ PipeCoreOutput     pprDefaultMode
                                 (dump config source "dump.tetra-curry.dct")
-           , pipe_boxing ]]
-
+           , pipe_boxing ]]]
+-}
         pipe_boxing
          = PipeCoreAsTetra
            [ PipeTetraBoxing

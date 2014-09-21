@@ -4,6 +4,7 @@ module DDC.Driver.Command.Tetra.Curry
 where
 import DDC.Driver.Stage
 import DDC.Driver.Config
+import DDC.Driver.Dump
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Except
@@ -38,8 +39,9 @@ cmdTetraCurry config source sourceText
          $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard
          [ PipeCoreAsTetra
          [ PipeTetraCurry
-         [ PipeCoreCheck    Tetra.fragment C.Recon SinkDiscard
-         [ PipeCoreOutput   pmode SinkStdout ]]]]
+         [ PipeCoreOutput   pmode (dump config source "dump.tetra-curry.dct")
+         , PipeCoreCheck    Tetra.fragment C.Recon SinkDiscard
+           [ PipeCoreOutput   pmode SinkStdout ]]]]
 
    in do
         errs    <- liftIO pipeCurry

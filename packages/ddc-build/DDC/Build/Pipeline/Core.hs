@@ -262,8 +262,8 @@ data PipeTetra a where
         -- Manage currying of functions.
         PipeTetraCurry
          :: (NFData a, Show a)
-         => ![PipeCore a Tetra.Name]
-         -> PipeTetra a
+         => ![PipeCore (C.AnTEC a Tetra.Name) Tetra.Name]
+         -> PipeTetra  (C.AnTEC a Tetra.Name)
 
         -- Manage boxing of numeric values.
         PipeTetraBoxing
