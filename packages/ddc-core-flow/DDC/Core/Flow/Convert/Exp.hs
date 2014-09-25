@@ -111,6 +111,44 @@ convertX xx
         return $ xVecLen t' v'
 
 
+ -- vwrite# [t] vec ix val
+ | Just (op, [xt, vec, ix, val])   <- takeXPrimApps xx
+ , F.NameOpStore (F.OpStoreWriteVector 1)
+                        <- op
+ , Just t               <- takeXType xt
+ = do   t'      <- convertType t
+        vec'    <- convertX    vec
+        ix'     <- convertX    ix
+        val'    <- convertX    val
+
+        return $ run 
+               $   mk (T.NameOpStore T.OpStoreWritePtr)
+                 [ XType anno rTop
+                 , XType anno t'
+                 , xVecPtr t' vec'
+                 , ix'
+                 , val' ]
+
+
+ -- vnew# [t] len
+ | Just (op, [xt, sz])   <- takeXPrimApps xx
+ , F.NameOpStore F.OpStoreNewVector
+                        <- op
+ , Just t               <- takeXType xt
+ = do   t'      <- convertType t
+        sz'     <- convertX    sz
+
+        let args o = [XType anno rTop, XType anno o, sz']
+        let buf  = run $ mk (T.NameOpStore T.OpStoreAllocPtr) (args t')
+        let sref = run $ mk (T.NameOpStore T.OpStoreAllocRef) (args T.tNat)
+
+        return $ xApps anno (XCon anno T.dcTuple2)
+                 [ XType anno $ T.tPtr rTop t'
+                 , XType anno $ T.tRef rTop T.tNat
+                 , buf
+                 , sref ]
+
+
  | Just (f, args@(_:_)) <- takeXApps xx
  = do   f'      <- convertX f
         -- filter out any type args that reference deleted XLAMs

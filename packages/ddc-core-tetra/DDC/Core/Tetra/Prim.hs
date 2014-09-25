@@ -17,6 +17,9 @@ module DDC.Core.Tetra.Prim
         , DaConTetra     (..)
         , readDaConTetra
         , typeDaConTetra
+        , xTuple2
+        , dcTuple2
+        , dcTupleN 
 
           -- * Baked-in function operators.
         , OpFun         (..)
