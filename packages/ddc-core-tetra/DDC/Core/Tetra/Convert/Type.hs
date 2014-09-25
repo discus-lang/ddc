@@ -374,15 +374,16 @@ convertTypeU    :: Bound E.Name -> ConvertM a (Bound A.Name)
 convertTypeU uu
  = case uu of
         UIx i                   
-          -> return $ UIx i
+         -> return $ UIx i
 
         UName (E.NameVar str)   
-          -> return $ UName (A.NameVar str)
+         -> return $ UName (A.NameVar str)
 
-        -- There are no primitive type variables,
-        -- so we don't need to handle the UPrim case.
+        UPrim (E.NameVar str) k
+         -> do  k'      <- convertK k
+                return $ UPrim (A.NameVar str) k'
+
         _ -> throw $ ErrorInvalidBound uu
-
 
 -- | Convert a value bound.
 --   These refer to function arguments or let-bound values, 

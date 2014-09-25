@@ -75,21 +75,22 @@ typeOpStore op
          $  \[tR, tA] -> tRef tR tA `tFun` tA
                         `tFun` tSusp (tWrite tR) tUnit
 
-
         OpStoreAllocPtr
          -> tForalls [kRegion, kData] 
           $ \[tR, tA] -> tNat
                         `tFun` tSusp (tAlloc tR) (tPtr tR tA)
 
         OpStoreReadPtr   
-         -> tForalls [kRegion, kData]
-          $ \[tR, tA] -> tPtr tR tA `tFun` tNat
+         -> tForalls [kRegion, kData, kData]
+          $ \[tR, tA, tO] 
+          -> tPtr tR tA `tFun` tO
                         `tFun` tSusp (tRead tR) tA
 
         OpStoreWritePtr  
-         -> tForalls [kRegion, kData]
-         $  \[tR, tA] -> tPtr tR tA `tFun` tNat `tFun` tA
-                        `tFun` tSusp (tWrite tR) tUnit
+         -> tForalls [kRegion, kData, kData]
+         $  \[tR, tA, tO] 
+         -> tPtr tR tA `tFun` tO `tFun` tA
+                       `tFun` tSusp (tWrite tR) tUnit
 
         -- Tuple projections --------------------
         OpStoreProj a ix
