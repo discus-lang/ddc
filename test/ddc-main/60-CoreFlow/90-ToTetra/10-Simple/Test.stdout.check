@@ -20,7 +20,7 @@ letrec {
                -> x0$acc$1;
               _ 
                -> let x3$elem : Int#
-                        = run readPtr# [rT] [Int#] x3 x1 in
+                        = run readPtr# [rT] [Int#] [Nat#] x3 x1 in
                   let x0$val : Int# = x0$acc$1 in
                   let x4 : Int# = add# [Int#] x0$val x3$elem in
                   let x0$acc$2 : Int# = x4 in

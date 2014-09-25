@@ -98,7 +98,7 @@ convertX xx
         i'      <- convertX i
         t'      <- convertX t
         return $ run $ mk (T.NameOpStore T.OpStoreReadPtr)
-               [ xRTop anno, t', v', i' ]
+               [ xRTop anno, t', XType anno T.tNat, v', i' ]
 
  -- vlength# [t] vec
  -- becomes a projection
