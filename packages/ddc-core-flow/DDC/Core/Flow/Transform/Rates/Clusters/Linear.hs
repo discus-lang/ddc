@@ -1,13 +1,14 @@
-{-# LANGUAGE DataKinds #-}
-module DDC.Core.Flow.Transform.Rates.Linear
-    (solve_linear, TransducerMap)
+{-# LANGUAGE DataKinds, CPP #-}
+#if DDC_FLOW_HAVE_LINEAR_SOLVER
+module DDC.Core.Flow.Transform.Rates.Clusters.Linear
+    (solve_linear)
  where
 
 import DDC.Base.Pretty
 import DDC.Core.Flow.Transform.Rates.Graph
+import DDC.Core.Flow.Transform.Rates.Clusters.Base
 
 import qualified Data.Map  as Map
-import           Data.Map    (Map)
 import Data.Monoid
 
 import Numeric.Limp.Program.ResultKind
@@ -20,9 +21,6 @@ import qualified Numeric.Limp.Canon.Simplify as CSimp
 
 
 -- | Get parent transducers of two nodes, if exists.
-type TransducerMap n = n -> n -> Maybe (n,n)
-
-
 -- | Integer-valued variable type for linear program
 --
 -- SameCluster i j  - {0,1} 0 if i and j are fused together
@@ -197,22 +195,6 @@ getConstraints bigN g arcs ws trans
 
 
 
--- | Check if two nodes may be fused based on type.
--- If they have the same type, it's fine.
--- If they have a different type, we must look for any common type transducer parents.
-typeComparable :: (Ord n, Eq t) => Graph n t -> TransducerMap n -> n -> n -> Bool
-typeComparable g trans a b
- = case (nodeType g a, nodeType g b) of
-   (Just a', Just b')
-    -> if   a' == b'
-       then True
-       else case trans a b of
-                 Just _  -> True
-                 Nothing -> False
-   _
-    -> False
-
-
 -- | Get list of all nodes that might be clustered together,
 -- and the weighted benefit of doing so.
 clusterings :: (Ord n, Eq t) => [((n,n),Bool)] -> [n] -> Int -> Graph n t -> TransducerMap n -> [(Int, n,n)]
@@ -254,23 +236,6 @@ clusterings arcs ns bigN g trans
     = 1
 
 
--- \forall paths p from u to v, fusion preventing \not\in p
-noFusionPreventingPath :: (Ord n) => [((n,n),Bool)] -> n -> n -> Bool
-noFusionPreventingPath arcs u v
- -- for all paths, for all nodes in path, is fusible
- =  all (all snd) (paths u v)
- && all (all snd) (paths v u)
- where
-  -- list of all paths from w to x
-  paths w x
-    | w == x
-    = [[]]
-    | otherwise
-    = let outs = filter (\((i,_j),_f) -> i == w) arcs
-      in  concatMap (\((w',j),f) -> map (((w',j),f):) (paths j x)) outs
-   
-
-
 -- | Create linear program for graph, and put all the pieces together.
 lp :: (Ord n, Eq t, Show n) => Graph n t -> TransducerMap n -> Program (ZVar n) (RVar n) IntDouble
 lp g trans
@@ -291,11 +256,12 @@ lp g trans
 -- | Find a good clustering for some graph.
 -- The output is:
 --  (Pi, Type number) -> list of nodes
-solve_linear :: (Ord n, Eq t, Show n, Pretty n) => Graph n t -> TransducerMap n -> Map (Int,Int) [n]
+solve_linear :: (Ord n, Eq t, Show n, Pretty n) => Graph n t -> TransducerMap n -> [[n]]
 solve_linear g trans
- = case  (solve lp's) of
+ = case solve lp's of
    Left  e   -> error (show e)
-   Right ass -> fixMap (sub `mappend` ass)
+   Right ass -> Map.elems
+              $ fixMap (sub `mappend` ass)
  where
   lp'  = lp g trans
   {- show_lp = CPr.ppr (show.ppr) (show.ppr) -}
@@ -304,7 +270,7 @@ solve_linear g trans
   (sub, lp's) = CSimp.simplify lp'c
 
   fixMap ass@(Assignment mz _r)
-   = reorder ass $ snd $ fillMap $ Map.foldWithKey go (0, Map.empty) mz
+   = reorder ass $ snd $ fillMap $ Map.foldWithKey go (0 :: Int, Map.empty) mz
 
   go k v (n, m)
    -- SameCluster i j = 0 --> i and j must be fused together
@@ -345,7 +311,11 @@ solve_linear g trans
 
   reorder' ass (k,v:vs)
    = let k' = rOf ass (Pi v)
-     in  ((truncate k', k), v:vs)
+     in  ((truncate k' :: Int, k), v:vs)
   reorder' _ (_, [])
    = error "ddc-core-flow:DDC.Core.Flow.Transform.Rates.Linear: impossible, empty list in inverted map"
 
+#else
+module DDC.Core.Flow.Transform.Rates.Clusters.Linear
+ where
+#endif

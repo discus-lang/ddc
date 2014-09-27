@@ -25,6 +25,10 @@ GHCI		= ghci
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 GHC_VERSION_FLAGS = -rtsopts
 
+
+# Linear solver time
+DDC_FLOW_USE_LINEAR_SOLVER = 0
+
 # Override default config with local config.
 -include make/config-override.mk
 

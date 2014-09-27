@@ -32,3 +32,7 @@ GCC_FLAGS	:= -std=c99 -O3 -Wundef
 else 
 all : $(error "Unknown BuildFlavour '$(BuildFlavour)'. Set this in make/config.mk")
 endif
+
+ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
+GHC_FLAGS := $(GHC_FLAGS) -DDDC_FLOW_HAVE_LINEAR_SOLVER
+endif

@@ -13,7 +13,7 @@ import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Graph
 import qualified DDC.Core.Flow.Transform.Rates.SizeInference as SI
-import DDC.Core.Flow.Transform.Rates.Linear
+import DDC.Core.Flow.Transform.Rates.Clusters
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
@@ -77,8 +77,7 @@ seriesOfVectorFunction fun
            Just (env,s)
             -> let g          = graphOfBinds prog env
                    tmap a b   = SI.parents prog env a b
-                   clustering = solve_linear g tmap
-                   clusters   = map snd $ Map.toList clustering
+                   clusters   = cluster g tmap
                    (re, ls)   = reconstruct fun prog env clusters
                in  (re, ls, [])
 

@@ -78,11 +78,15 @@ DDC_PACKAGES	:= \
         -package haskeline \
         -package directory \
         -package containers \
-        -package limp \
-        -package limp-cbc \
         -package transformers \
         -package text \
         -package parsec \
         -package buildbox \
         -package wl-pprint \
+
+ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
+DDC_PACKAGES	:= $(DDC_PACKAGES) \
+        -package limp \
+        -package limp-cbc 
+endif
         
