@@ -113,61 +113,21 @@ letrec {
 -- 1- filter, fold
 -- 2- map original
 -- 3- map filtered
-module Test with
-let x2$runproc$process : Ref# Int# -> Vector# Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
-      = \(x6$ref : Ref# Int#).\(x2 : Vector# Int#).
-        /\(x9$'$k : Rate).
-         \(x9$'$k$r : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
-        let x2$flags : Series# x9$'$k Bool#
-              = smap# [x9$'$k] [Int#] [Bool#]
-                    (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
-        smkSel# [x9$'$k] x2$flags
-            (/\(x2$'$k : Rate).
-              \(x2$sel : Sel1# x9$'$k x2$'$k).
-             let x2$s : Series# x2$'$k Int# = spack# [x9$'$k] [x2$'$k] [Int#] x2$sel orig$s in
-             let x2$proc : Process# = sfill# [x2$'$k] [Int#] x2 x2$s in
-             let x6$proc : Process#
-                   = sreduce# [x2$'$k] [Int#] x6$ref
-                         (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# x2$s in
-             pjoin# x2$proc x6$proc)
-let x9$runproc$process : Vector# Int# -> Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
-      = \(x9 : Vector# Int#).\(x6 : Int#).
-        /\(x9$'$k : Rate).
-         \(x9$'$k$r : RateNat# x9$'$k).\(orig$s : Series# x9$'$k Int#).
-        let x9$s : Series# x9$'$k Int#
-              = smap# [x9$'$k] [Int#] [Int#]
-                    (\(x7 : Int#). add# [Int#] x6 x7) orig$s in
-        let x9$proc : Process# = sfill# [x9$'$k] [Int#] x9 x9$s in
-        x9$proc
-let x12$runproc$process : Vector# Int# -> Int# -> [x2$'$k : Rate].RateNat# x2$'$k -> Series# x2$'$k Int# -> Process#
-      = \(x12 : Vector# Int#).\(x6 : Int#).
-        /\(x2$'$k : Rate).
-         \(x2$'$k$r : RateNat# x2$'$k).\(x2$s : Series# x2$'$k Int#).
-        let x12$s : Series# x2$'$k Int#
-              = smap# [x2$'$k] [Int#] [Int#]
-                    (\(x10 : Int#). add# [Int#] x6 x10) x2$s in
-        let x12$proc : Process# = sfill# [x2$'$k] [Int#] x12 x12$s in
-        x12$proc
-letrec {
-  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(orig : Vector# Int#).
-      let x2 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let x6$ref : Ref# Int# = new# [Int#] 0i# in
-      let x2$runproc : Bool#
-            = runProcess# [Int#] orig (x2$runproc$process x6$ref x2) in
-      let x6 : Int# = read# [Int#] x6$ref in
-      let x9 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let x9$runproc : Bool#
-            = runProcess# [Int#] orig (x9$runproc$process x9 x6) in
-      let x12 : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] x2) in
-      let x12$runproc : Bool#
-            = runProcess# [Int#] x2 (x12$runproc$process x12 x6) in
-      T2# [Vector# Int#] [Vector# Int#] x9 x12
-}
-
+-- :flow-rate..
+-- module Test with letrec
+-- test    (orig : Vector# Int#) : Tuple2# (Vector# Int#) (Vector# Int#)
+--         -- Kernel 1
+--  = do   filt  = vfilter# (gt#  1i#) orig 
+--         fold  = vreduce#  add# 0i# filt
+-- 
+--         -- Kernel 2
+--         morig = vmap# (add# fold) orig
+-- 
+--         -- Kernel 3
+--         mfilt = vmap# (add# fold) filt
+--         T2# morig mfilt
+-- ;;
+-- 
 
 
 -- Filter and two folds, then use fold values in map over original and filtered. Three kernels:
