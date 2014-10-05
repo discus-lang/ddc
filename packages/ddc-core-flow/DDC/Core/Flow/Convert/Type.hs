@@ -6,7 +6,9 @@ module DDC.Core.Flow.Convert.Type
         , convertBind
         , convertBound
         , convertName
-        , rTop )
+        , rTop
+        , tVec
+        , tRef )
 where
 
 import DDC.Base.Pretty (ppr)
@@ -20,11 +22,16 @@ import DDC.Type.Transform.LiftT
 import qualified DDC.Core.Flow.Prim             as F
 import qualified DDC.Core.Flow.Compounds        as F
 
-import qualified DDC.Core.Tetra.Prim            as T
-import qualified DDC.Core.Tetra.Prim.TyConPrim  as T
-import qualified DDC.Core.Tetra.Prim.TyConTetra as T
+import qualified DDC.Core.Salt.Name            as T
+import qualified DDC.Core.Salt.Compounds       as T
 
 import Control.Applicative
+
+
+tRef   :: Type T.Name -> Type T.Name -> Type T.Name
+tRef = T.tPtr 
+
+tVec = T.tPtr rTop T.tObj
 
 
 -- | Convert types from Flow to Tetra.
@@ -48,8 +55,8 @@ convertType tt
 
  -- Convert @Vector a@ to just @Tuple2# (Ptr# a) (Ref# Nat#)@
  | Just (F.NameTyConFlow F.TyConFlowVector, [tA])   <- takePrimTyConApps tt
- = do   tA' <- convertType tA
-        return $ T.tTupleN [T.tPtr rTop tA', T.tRef rTop T.tNat]
+ = do   _tA' <- convertType tA
+        return $ tVec -- T.tTupleN [T.tPtr rTop tA', T.tRef rTop T.tNat]
 
  -- Convert @Series k a@ to just @Ptr# a@
  | Just (F.NameTyConFlow F.TyConFlowSeries, [_K, tA])   <- takePrimTyConApps tt
@@ -61,16 +68,14 @@ convertType tt
 
  -- Convert Refs
  | Just (F.NameTyConFlow F.TyConFlowRef, [tA])          <- takePrimTyConApps tt
- = T.tRef rTop <$> convertType tA
+ = tRef rTop <$> convertType tA
 
- -- Add effects to the last part of an arrow
+ -- Convert normal TFuns to TFunECs with pure and empty. why?
  | (args@(_:_), res)                                    <- takeTFunArgResult tt
  = do   args'   <- mapM convertType args
         res'    <-      convertType res
 
-        let eff  = tSum kEffect [tRead rTop, tWrite rTop, tAlloc rTop]
-
-        return   $ foldr tFun (tSusp eff res') args'
+        return   $ foldr tFunPE res' args'
         
 
  -- For other primitives, convertName will handle convert them
@@ -124,25 +129,25 @@ convertName nn
 
    F.NameTyConFlow tf
     -> case tf of
-        F.TyConFlowTuple n
-         -> return $ T.NameTyConTetra $ T.TyConTetraTuple n
+        -- F.TyConFlowTuple n
+        -- -> return $ T.NameTyConTetra $ T.TyConTetraTuple n
 
         -- Vector, Series, RateNat and Ref are handled elsewhere as arguments must be changed
         _
          -> throw $ ErrorPartialPrimitive nn
 
-   F.NameDaConFlow (F.DaConFlowTuple n)
-    -> return $ T.NameDaConTetra $ T.DaConTetraTuple n
+   -- F.NameDaConFlow (F.DaConFlowTuple n)
+   --  -> return $ T.NameDaConTetra $ T.DaConTetraTuple n
 
    -- Machine primitives ------------------
    F.NamePrimTyCon p
     -> return $ T.NamePrimTyCon p
 
    F.NamePrimArith p
-    -> return $ T.NamePrimArith p
+    -> return $ T.NamePrimOp $ T.PrimArith p
 
    F.NamePrimCast p
-    -> return $ T.NamePrimCast p
+    -> return $ T.NamePrimOp $ T.PrimCast p
 
    -- Literals -----------------------------
    F.NameLitBool l

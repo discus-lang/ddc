@@ -8,11 +8,13 @@ where
 import DDC.Core.Flow.Convert.Base
 import DDC.Core.Flow.Convert.Type
 import DDC.Core.Flow.Convert.Exp
+import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Control.Monad.Check
 
 import qualified DDC.Core.Flow.Prim      as F
-import qualified DDC.Core.Tetra.Prim     as T
+import qualified DDC.Core.Salt.Name      as T
+import qualified DDC.Core.Salt.Compounds       as T
 
 import qualified Data.Set                as S
 
@@ -31,6 +33,21 @@ convertM mm
 
         tsImportV' <- mapM convertImportM
                    $  moduleImportValues mm
+
+        let tsImportV'rest =
+              [ (T.NameVar       "getFieldOfBoxed"
+                ,ImportSourceSea "getFieldOfBoxed" 
+                 $ tForalls [kRegion, kData] $ \[r,d] -> T.tPtr r T.tObj `tFunPE` T.tNat `tFunPE` d)
+              , (T.NameVar       "setFieldOfBoxed"
+                ,ImportSourceSea "setFieldOfBoxed" 
+                 $ tForalls [kRegion, kData] $ \[r,d] -> T.tPtr r T.tObj `tFunPE` T.tNat `tFunPE` d `tFunPE` T.tVoid)
+              , (T.NameVar       "allocBoxed"
+                ,ImportSourceSea "allocBoxed"     
+                 $ tForalls [kRegion       ] $ \[r  ] -> T.tTag          `tFunPE` T.tNat `tFunPE` T.tPtr r T.tObj)
+              ]
+        -- getFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0;
+        -- setFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0 -> Void#;
+        -- allocBoxed : [^ : Region].Tag# -> Nat# -> Ptr# ^0 Obj;
 
         -- Convert signatures of exported functions.
         tsExportT' <- mapM convertExportM
@@ -52,7 +69,7 @@ convertM mm
                 , moduleExportValues   = tsExportV'
 
                 , moduleImportTypes    = tsImportT'
-                , moduleImportValues   = tsImportV'
+                , moduleImportValues   = tsImportV' ++ tsImportV'rest
 
                 -- TODO
                 , moduleImportDataDefs = []

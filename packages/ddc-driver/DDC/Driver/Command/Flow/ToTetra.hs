@@ -16,7 +16,7 @@ import System.Directory
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
-import qualified DDC.Build.Language.Tetra       as Tetra
+import qualified DDC.Build.Language.Salt        as Salt 
 import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Core.Check                 as C
@@ -114,14 +114,14 @@ cmdFlowToTetraCoreFromString config configLower language source str
                 [ stageFlowWind    config source
                 [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
                 [ stageFlowToTetra config source
-                [ PipeCoreCheck    Tetra.fragment C.Recon SinkDiscard
+                [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
                   []
                 , PipeCoreOutput   pmode SinkStdout]]]]]]]]]]
 
                 -- Unrecognised fragment name or file extension.
                 | otherwise
                 = throwE 
-                $ "Cannot convert '" ++ fragName ++ "' modules to Tetra."
+                $ "Cannot convert '" ++ fragName ++ "' modules to Salt."
 
         -- Throw any errors that arose during compilation
         errs <- compile

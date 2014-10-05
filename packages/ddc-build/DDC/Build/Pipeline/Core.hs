@@ -47,6 +47,8 @@ import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Eta                 as Eta
+import qualified DDC.Core.Transform.Beta                as Beta
+import qualified DDC.Core.Transform.Lambdas             as Lambdas
 import qualified DDC.Core.Transform.TransformModX       as TMod
 import qualified DDC.Core.Simplifier                    as C
 
@@ -393,7 +395,7 @@ data PipeFlow a where
 
   -- Wind loop# primops into tail recursive loops.
   PipeFlowToTetra
-        :: [PipeCore () Tetra.Name]
+        :: [PipeCore () Salt.Name]
         -> PipeFlow (C.AnTEC () Flow.Name)
 
 
@@ -504,9 +506,18 @@ pipeFlow !mm !pp
             in  pipeCores mm_wound pipes
 
         PipeFlowToTetra !pipes
-         -> {-# SCC "PipeFlowWind" #-}
-            case Flow.tetraOfFlowModule $ C.reannotate (const ()) mm
-             of  Left  err  -> return [ErrorFlowConvert err]
+         -> {-# SCC "PipeFlowToTetra" #-}
+            let 
+                -- Apply any lambdas we can
+                mm_beta         = C.result $ Beta.betaReduce Flow.profile
+                                        (Beta.configZero { Beta.configBindRedexes = True})
+                                        mm
+
+                -- Lift up any remaining lambdas
+                mm_lift         = Lambdas.lambdasModule Flow.profile mm_beta
+
+            in  case Flow.tetraOfFlowModule $ C.reannotate (const ()) mm_lift of
+                 Left  err  -> return [ErrorFlowConvert err]
                  Right mm'  -> pipeCores mm' pipes 
 
 

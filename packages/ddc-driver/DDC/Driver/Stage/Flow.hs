@@ -15,7 +15,7 @@ import DDC.Base.Pretty
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Build.Language.Flow        as Flow
-import qualified DDC.Core.Tetra                 as Tetra
+import qualified DDC.Core.Salt                  as Salt
 
 
 ---------------------------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ stageFlowWind config source pipesFlow
 -- | Wind loop primops into tail recursive loops in a Core Flow module.
 stageFlowToTetra
         :: Config -> Source
-        -> [PipeCore () Tetra.Name]
+        -> [PipeCore () Salt.Name]
         ->  PipeCore (C.AnTEC () Flow.Name) Flow.Name
 
 stageFlowToTetra config source pipesTetra
