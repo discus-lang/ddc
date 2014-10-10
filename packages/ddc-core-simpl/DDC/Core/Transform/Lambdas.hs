@@ -105,7 +105,7 @@ lambdasX p c xx
                                 $ support Env.empty Env.empty (XLAM a b x')
                           
                           (xCall, bLifted, xLifted)
-                                = liftLambda p c us' True a b x'
+                                = liftLambda p c us' a [(True, b)] x'
 
                       in  ( xCall
                           , Result True (bxs ++ [(bLifted, xLifted)]))
@@ -129,7 +129,7 @@ lambdasX p c xx
                                 $ support Env.empty Env.empty (XLam a b x')
 
                           (xCall, bLifted, xLifted)
-                                = liftLambda p c us' False a b x'
+                                = liftLambda p c us' a [(False, b)] x'
                       
                       in  ( xCall
                           , Result True (bxs ++ [(bLifted, xLifted)]))
@@ -144,7 +144,7 @@ lambdasX p c xx
         XLet a lts x
          -> let (lts', r1)      = lambdasLets  p c a x lts 
                 (x',   r2)      = enterLetBody c a lts x  (lambdasX p)
-            in  ( XLet a lts' x'
+            in  ( foldr (XLet a) x' lts'
                 , mappend r1 r2)
                 
         XCase a x alts
@@ -167,21 +167,33 @@ lambdasLets
         => Profile n -> Context a n
         -> a -> Exp a n
         -> Lets a n
-        -> (Lets a n, Result a n)
+        -> ([Lets a n], Result a n)
            
 lambdasLets p c a xBody lts
  = case lts of
  
         LLet b x
          -> let (x', r)   = enterLetLLet c a b x xBody (lambdasX p)
-            in  (LLet b x', r)
+            in  ([LLet b x'], r)
 
         LRec bxs
+         | isLiftyContext (contextCtx c)
+         -- Some fragments only allow letrecs to bind lambdas.
+         -- If all the bindings are lambdas, we can safely convert it to a
+         -- sequence of nonrecursive lets, as the recursion will be lifted to the
+         -- top level.
+         , Just _ <- sequence $ map (takeXLamFlags . snd) bxs
+         -> let (bxs', r) = lambdasLetRecLiftAll p c a bxs
+            in  (map (uncurry LLet) bxs', r)
+
+         -- If any bindings aren't lambdas, we know the fragment must
+         -- allow general recursion in letrecs anyway, and can leave it as a letrec.
+         | otherwise
          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
-            in  (LRec bxs', r)
+            in  ([LRec bxs'], r)
                 
-        LPrivate{}      -> (lts, mempty)
-        LWithRegion{}   -> (lts, mempty)
+        LPrivate{}      -> ([lts], mempty)
+        LWithRegion{}   -> ([lts], mempty)
 
 
 -- LetRec -----------------------------------------------------------------------------------------
@@ -206,12 +218,65 @@ lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
                         = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
                   Result p1 bxsLifted = r1
              in   ( bxsLifted ++ ((b, x') : bxs')
-                  , Result (p1 || p2) bxs2)
+                  , Result (p1 || p2) bxs2 )
 
          _
           -> let  (bxs', r2) = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
              in   ( (b, x') : bxs'
-                  , mappend r1 r2)
+                  , mappend r1 r2 )
+
+
+-- | When all the bindings in a letrec are lambdas, lift them all together.
+lambdasLetRecLiftAll
+        :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
+        => Profile n -> Context a n
+        -> a
+        -> [(Bind n, Exp a n)]
+        -> ([(Bind n, Exp a n)], Result a n)
+
+lambdasLetRecLiftAll p c a bxs
+ = let 
+       -- The union of free variables of all the mutually recursive bindings must be used,
+       -- as any lifted function may call the other lifted functions.
+       us   = Set.unions
+            $ map (supportEnvFlags . support Env.empty Env.empty)
+            $ map snd bxs
+       -- However, the functions we are lifting should not be treated as free variables
+       us'  = Set.filter (\(_,bo) -> not $ any (boundMatchesBind bo . fst) bxs)
+            $ us
+
+       -- Lift each function with a different context
+       lift _before [] = []
+
+       lift before ((b, x) : after)
+            = let Just (lams, xx) = takeXLamFlags x
+                  c'       = ctx before b x after
+                  l'       = liftLambda p c' us' a lams xx
+              in (b, l') : lift (before ++ [(b,x)]) after
+
+       ls   = lift [] bxs
+
+       -- The call to each lifted function
+       calls = map (\(b,(xC,_,_)) -> (b,xC)) ls
+
+       -- Substitute the original name of the recursive function with a call to its new name,
+       -- including passing along any free variables.
+       -- Here, we need to unwrap the newly-created lambdas for the free variables,
+       -- as capture-avoiding substitution would rename them - the opposite of what we want.
+       sub x = case takeXLamFlags x of
+                Just (lams, xx) -> makeXLamFlags a lams (substituteXXs calls xx)
+                Nothing         ->                       substituteXXs calls x
+
+       -- The result bindings to add at the top-level, with all the new names substituted in
+       res  = map (\(_, (_, bL, xL)) -> (bL, sub xL)) ls
+   in  (calls, Result True res)
+
+ where
+  -- Wrap the context in the letrec
+  ctx before b x after
+   = enterLetLRec c a before b x after x (\c' _ -> c')
+
+
 
 
 -- Alts -------------------------------------------------------------------------------------------
@@ -305,26 +370,22 @@ liftLambda
         => Profile n            -- ^ Language profile.
         -> Context a n          -- ^ Context of the original abstraction.
         -> Set (Bool, Bound n)  -- ^ Free variables in the body of the abstraction.
-        -> Bool                 -- ^ Whether this is a type-abstraction.
-        -> a -> Bind n -> Exp a n
+        -> a
+        -> [(Bool, Bind n)]     -- ^ The lambdas, and whether they are type or value
+        -> Exp a n
         -> (  Exp a n
             , Bind n, Exp a n)
 
-liftLambda p c fusFree isTypeLam a bParam xBody
+liftLambda p c fusFree a lams xBody
  = let  ctx     = contextCtx c
         kenv    = contextKindEnv c
         tenv    = contextTypeEnv c
 
         -- The complete abstraction that we're lifting out.
-        xLambda = if isTypeLam 
-                        then XLAM a bParam xBody
-                        else XLam a bParam xBody
+        xLambda = makeXLamFlags a lams xBody
 
         -- Name of the enclosing top-level binding.
         Just nTop   = takeTopNameOfCtx ctx
-
-        -- Bound corresponding to the parameter of the abstraction.
-        Just uParam = takeSubstBoundOfBind bParam
 
         -- Names of other supers bound at top-level.
         nsSuper     = takeTopLetEnvNamesOfCtx ctx
@@ -357,11 +418,12 @@ liftLambda p c fusFree isTypeLam a bParam xBody
 
         -- Decide whether we want to bind the given variable as a new parameter
         -- on the lifted super. We don't need to bind primitives, other supers,
-        -- or the variable bound by the abstraction itself.
-        keepVar fu@(f, u)
+        -- or any variable bound by the abstraction itself.
+        keepVar fu@(_, u)
          | (False, UName n) <- fu      = not $ Set.member n nsSuper
          | (_,     UPrim{}) <- fu      = False
-         | f == isTypeLam, u == uParam = False
+         | any (boundMatchesBind u . snd) lams
+                                       = False
          | otherwise                   = True
 
         fusFree_filtered

@@ -49,3 +49,47 @@ test (_ : Unit) : Nat#
 
         f2 a2
 ;;
+
+-- Single letrec
+:load..
+module Test with letrec
+test (_ : Unit) : Nat#
+ = let x = 5# in
+   letrec 
+        loop a = case a of
+            0# -> 0#
+            _  -> add# x (loop (sub# a 1#))
+   in
+   loop 10#
+;;
+
+-- Multiple letrecs, union of free vars required
+:load..
+module Test with letrec
+test (_ : Unit) : Nat#
+ = let x = 5# in
+   let y = 7# in
+   letrec 
+        loop1 a = case a of
+            0# -> 0#
+            _  -> add# x (loop2 (sub# a 1#))
+        loop2 a = case a of
+            0# -> 0#
+            _  -> add# y (loop1 (sub# a 1#))
+   in
+   loop1 10#
+;;
+
+-- Single letrec, multiple arguments
+:load..
+module Test with letrec
+test (_ : Unit) : Nat#
+ = let x = 5# in
+   letrec 
+        loop a b = case a of
+            0# -> 0#
+            _  -> add# x (loop (sub# a 1#) b)
+   in
+   loop 10# 2#
+;;
+
