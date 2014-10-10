@@ -50,12 +50,16 @@ import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Transform.Beta                as Beta
 import qualified DDC.Core.Transform.Lambdas             as Lambdas
 import qualified DDC.Core.Transform.TransformModX       as TMod
+import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Pretty                        as C
 import qualified DDC.Core.Module                        as C
+
+import qualified DDC.Core.Exp                           as C
+import qualified DDC.Core.Compounds                     as C
 
 import qualified DDC.Type.Env                           as Env
 
@@ -513,10 +517,34 @@ pipeFlow !mm !pp
                                         (Beta.configZero { Beta.configBindRedexes = True})
                                         mm
 
-                -- Lift up any remaining lambdas
-                mm_lift         = Lambdas.lambdasModule Flow.profile mm_beta
+                -- Eta-expand all the leftovers so they can be lifted
+                mm_eta          = C.result $ Eta.etaModule   Flow.profile
+                                        (Eta.configZero { Eta.configExpand = True})
+                                        mm_beta
 
-            in  case Flow.tetraOfFlowModule $ C.reannotate (const ()) mm_lift of
+
+                -- Lift up any remaining lambdas
+                mm_lift         = Lambdas.lambdasModule Flow.profile mm_eta
+
+                -- The floater needs bindings to be fully named.
+                namifierT       = C.makeNamifier Flow.freshT Env.empty
+                namifierX       = C.makeNamifier Flow.freshX Env.empty
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_lift) 0
+
+                floatControl l
+                 = case l of
+                   C.LLet b _
+                     | Just _ <- C.takeTFun $ C.typeOfBind b
+                     -> Forward.FloatForce
+                   _ -> Forward.FloatAllow
+
+                -- Forward everything
+                mm_float        = C.result
+                                $ Forward.forwardModule Flow.profile
+                                    (Forward.Config floatControl True)
+                                    $ C.reannotate (const ()) mm_namified
+
+            in  case Flow.tetraOfFlowModule mm_float of
                  Left  err  -> return [ErrorFlowConvert err]
                  Right mm'  -> pipeCores mm' pipes 
 

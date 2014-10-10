@@ -2,7 +2,7 @@
 module DDC.Core.Salt.Compounds
         ( tVoid
         , tBool, xBool
-        , tNat,  xNat
+        , tNat,  xNat, dcNat
         , tInt,  xInt
         , tWord, xWord
         , tTag,  xTag
@@ -55,7 +55,11 @@ xBool a b       = XCon a (DaConPrim (NameLitBool b) tBool)
 
 
 xNat  :: a -> Integer -> Exp a Name
-xNat a i        = XCon a (DaConPrim (NameLitNat i)  tNat)
+xNat a i        = XCon a (dcNat i)
+
+-- | A Literal @Nat#@ data constructor.
+dcNat   :: Integer -> DaCon Name
+dcNat i   = DaConPrim (NameLitNat i) tNat
 
 
 xInt  :: a -> Integer -> Exp a Name

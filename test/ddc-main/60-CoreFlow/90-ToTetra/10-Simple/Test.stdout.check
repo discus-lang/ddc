@@ -2,54 +2,56 @@ ok
 ok
 
 -- Simple fold over a vector
-module Test with
+module Test 
+import foreign c value
+        getFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0;
+import foreign c value
+        setFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0 -> Void#;
+import foreign c value
+        allocBoxed : [^ : Region].Tag# -> Nat# -> Ptr# ^0 Obj;
+with
 letrec {
-  x3$runproc$process : Ref# rT Int# -> Nat# -> Ptr# rT Int# -> S (Read rT + Write rT + Alloc rT) Unit
-    = \(x0 : Ref# rT Int#).\(x2 : Nat#).\(x3 : Ptr# rT Int#).
-      box
-      let x0$init : Int#
-            = run readRef# [rT] [Int#] x0 in
-      let x0$acc$0 : Int# = x0$init in
-      let loop$length : Nat# = x2 in
-      letrec {
-        loop : Nat# -> Int# -> S (Read rT + Write rT + Alloc rT) Int#
-          = \(x1 : Nat#).\(x0$acc$1 : Int#).
-            box
-            case sub# [Nat#] loop$length x1 of {
-              0#  
-               -> x0$acc$1;
-              _ 
-               -> let x3$elem : Int#
-                        = run readPtr# [rT] [Int#] [Nat#] x3 x1 in
-                  let x0$val : Int# = x0$acc$1 in
-                  let x4 : Int# = add# [Int#] x0$val x3$elem in
-                  let x0$acc$2 : Int# = x4 in
-                  run loop (add# [Nat#] x1 1#) x0$acc$2
-            }
-      } in
-      let x0$acc$2 : Int#
-            = run loop 0# x0$acc$0 in
-      let x0$res : Int# = x0$acc$2 in
-      let _ : Unit
-            = run writeRef# [rT] [Int#] x0 x0$res in
-      ();
+  x3$runproc$process$L0 : Ptr# rT Int# -> Nat# -> Nat# -> Int# -> Int#
+    = \(x3 : Ptr# rT Int#).\(loop$length x1 : Nat#).\(x0$acc$1 : Int#).
+      case sub# [Nat#] loop$length x1 of {
+        0#  
+         -> x0$acc$1;
+        _ 
+         -> let x3$elem : Int# = peek# [rT] [Int#] x3 x1 in
+            let x4 : Int# = add# [Int#] x0$acc$1 x3$elem in
+            x3$runproc$process$L0 x3 loop$length (add# [Nat#] x1 1#) x4
+      };
   
-  test : Tuple2# (Ptr# rT Int#) (Ref# rT Nat#) -> S (Read rT + Write rT + Alloc rT) Int#
-    = \(x9 : Tuple2# (Ptr# rT Int#) (Ref# rT Nat#)).
-      box
-      let x10 : Ref# rT Int#
-            = run allocRef# [rT] [Int#] 0i# in
-      let x15 : Bool#
-            = let _ : Unit
-                    = run (\(x12 : Nat#).\(x13 : Ptr# rT Int#).
-                       box
-                       run x3$runproc$process x10 x12 x13)
-                          (run readRef# [rT] [Nat#]
-                               (proj2_2# [Ptr# rT Int#] [Ref# rT Nat#] x9))
-                          (proj2_1# [Ptr# rT Int#] [Ref# rT Nat#] x9) in
-              True# in
-      let x17 : Int#
-            = run readRef# [rT] [Int#] x10 in
-      x17
+  x3$runproc$process : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Nat#
+    = \(x0 : Ptr# rT Int#).\(x2 : Nat#).\(x3 : Ptr# rT Int#).
+      let x0$init : Int# = peek# [rT] [Int#] x0 0# in
+      let loop$length : Nat# = x2 in
+      let x0$acc$2 : Int# = x3$runproc$process$L0 x3 loop$length 0# x0$init in
+      let _ : Nat#
+            = let _ : Void# = poke# [rT] [Int#] x0 0# x0$acc$2 in
+              0# in
+      0#;
+  
+  test$L0 : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Nat#
+    = \(x10 : Ptr# rT Int#).\(x12 : Nat#).\(x13 : Ptr# rT Int#). x3$runproc$process x10 x12 x13;
+  
+  test : Ptr# rT Obj -> Int#
+    = \(x9 : Ptr# rT Obj).
+      let x10 : Ptr# rT Int#
+            = let ^ : Ptr# rT Int#
+                    = makePtr# [rT] [Int#]
+                          (alloc# (size# [Int#])) in
+              let _ : Void# = poke# [rT] [Int#] ^0 0# 0i# in
+              ^0 in
+      let x15 : Nat#
+            = let _ : Nat#
+                    = test$L0 x10
+                          (peek# [rT] [Nat#]
+                               (castPtr# [rT] [Nat#] [Obj]
+                                    (getFieldOfBoxed [rT] [Ptr# rT Obj] x9 0#)) 0#)
+                          (castPtr# [rT] [Int#] [Obj]
+                               (getFieldOfBoxed [rT] [Ptr# rT Obj] x9 1#)) in
+              1# in
+      peek# [rT] [Int#] x10 0#
 }
 

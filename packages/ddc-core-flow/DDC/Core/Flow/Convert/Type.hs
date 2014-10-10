@@ -26,6 +26,7 @@ import qualified DDC.Core.Salt.Name            as T
 import qualified DDC.Core.Salt.Compounds       as T
 
 import Control.Applicative
+import Data.Maybe
 
 
 tRef   :: Type T.Name -> Type T.Name -> Type T.Name
@@ -140,6 +141,9 @@ convertName nn
    --  -> return $ T.NameDaConTetra $ T.DaConTetraTuple n
 
    -- Machine primitives ------------------
+   F.NamePrimTyCon T.PrimTyConBool
+    -> return $ T.NamePrimTyCon T.PrimTyConNat
+
    F.NamePrimTyCon p
     -> return $ T.NamePrimTyCon p
 
@@ -150,8 +154,8 @@ convertName nn
     -> return $ T.NamePrimOp $ T.PrimCast p
 
    -- Literals -----------------------------
-   F.NameLitBool l
-    -> return $ T.NameLitBool l
+   F.NameLitBool b
+    -> return $ T.NameLitNat (if b then 1 else 0)
    F.NameLitNat l
     -> return $ T.NameLitNat  l
    F.NameLitInt l
@@ -175,6 +179,8 @@ convertTyCon tc
     -> return $ TyConKind k
    TyConWitness w
     -> return $ TyConWitness w
+   TyConSpec TcConUnit
+    -> return $ fst $ fromJust $ takeTyConApps T.tNat
    TyConSpec s
     -> return $ TyConSpec s
    TyConBound b k
