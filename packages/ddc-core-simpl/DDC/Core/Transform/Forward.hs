@@ -212,7 +212,7 @@ instance Forward Exp where
 
                         FloatForceUsedOnce
                          | Just usage   <- Map.lookup n um
-                         , length usage <= 1
+                         , length usage == 1
                          -> True
                          | Nothing      <- Map.lookup n um
                          -> True

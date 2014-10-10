@@ -37,7 +37,9 @@ letrec {
             = vnew# [Int#] (vlength# [Int#] us) in
       let x2$runproc : Bool#
             = runProcess# [Int#] us (x2$runproc$process x2) in
-      T3# [Vector# Int#] [Vector# Int#] [Int#] x2 x5 x9
+      let x10 : Tuple3# (Vector# Int#) (Vector# Int#) Int#
+            = T3# [Vector# Int#] [Vector# Int#] [Int#] x2 x5 x9 in
+      x10
 }
 
 
@@ -95,7 +97,9 @@ letrec {
             = vnew# [Int#] (vlength# [Int#] vs) in
       let x19$runproc : Bool#
             = runProcess# [Int#] vs (x19$runproc$process x19 x6) in
-      T2# [Vector# Int#] [Vector# Int#] x16 x19
+      let x20 : Tuple2# (Vector# Int#) (Vector# Int#)
+            = T2# [Vector# Int#] [Vector# Int#] x16 x19 in
+      x20
 }
 
 
@@ -156,5 +160,7 @@ letrec {
             = vnew# [Int#] (vlength# [Int#] x9) in
       let x19$runproc : Bool#
             = runProcess# [Int#] x9 (x19$runproc$process x19 x6) in
-      T2# [Vector# Int#] [Vector# Int#] x16 x19
+      let x20 : Tuple2# (Vector# Int#) (Vector# Int#)
+            = T2# [Vector# Int#] [Vector# Int#] x16 x19 in
+      x20
 }

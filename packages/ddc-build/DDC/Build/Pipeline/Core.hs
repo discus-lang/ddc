@@ -467,7 +467,10 @@ pipeFlow !mm !pp
                 namifierX       = C.makeNamifier Flow.freshX Env.empty
                 mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
+
+                -- Forward all worker functions
                 mm_float        = Flow.forwardProcesses mm_namified
+
 
                 goRate
                  = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
@@ -538,7 +541,7 @@ pipeFlow !mm !pp
                      -> Forward.FloatForce
                    _ -> Forward.FloatAllow
 
-                -- Forward everything
+                -- Forward all functions
                 mm_float        = C.result
                                 $ Forward.forwardModule Flow.profile
                                     (Forward.Config floatControl True)

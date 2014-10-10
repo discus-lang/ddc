@@ -35,5 +35,7 @@ forwardX xx
              NameOpVector   _   -> Forward.FloatDeny
 
              _                  -> Forward.FloatForceUsedOnce
-        _ -> Forward.FloatForceUsedOnce
+          | Just _ <- takeXLamFlags x
+          -> Forward.FloatForceUsedOnce
+        _ -> Forward.FloatAllow
 

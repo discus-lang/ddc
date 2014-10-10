@@ -168,6 +168,8 @@ letrec {
             = runKernel# [Int#] x45
                   (/\(t68 : Rate).
                     \(x69 : RateNat# t68).\(x70 : Series# t68 Int#). x13$runproc$process [t68] x66 x64 x69 x70) in
-      T2# [Vector# Int#] [Vector# Int#] x66 x56
+      let x74 : Tuple2# (Vector# Int#) (Vector# Int#)
+            = T2# [Vector# Int#] [Vector# Int#] x66 x56 in
+      x74
 }
 
