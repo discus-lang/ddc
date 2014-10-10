@@ -17,7 +17,9 @@ letrec {
         0#  
          -> x0$acc$1;
         _ 
-         -> let x3$elem : Int# = peek# [rT] [Int#] x3 x1 in
+         -> let x3$elem : Int#
+                  = peek# [rT] [Int#] x3
+                        (mul# [Nat#] x1 (size# [Int#])) in
             let x4 : Int# = add# [Int#] x0$acc$1 x3$elem in
             x3$runproc$process$L0 x3 loop$length (add# [Nat#] x1 1#) x4
       };

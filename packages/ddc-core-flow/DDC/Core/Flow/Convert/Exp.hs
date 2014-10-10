@@ -95,7 +95,10 @@ convertX xx
             i'      <- convertX i
             t'      <- convertX t
             return $ mk (T.PrimStore T.PrimStorePeek)
-                     [ xRTop anno, t', v', i' ]
+                     [ xRTop anno, t', v'
+                     , mk (T.PrimArith T.PrimArithMul)
+                       [ XType anno T.tNat, i'
+                       , mk (T.PrimStore T.PrimStoreSize) [t'] ] ]
 
     -- vlength# [t] vec
     -- becomes a projection
@@ -122,7 +125,9 @@ convertX xx
                        [ xRTop anno
                        , XType anno t'
                        , xVecPtr t' vec'
-                       , ix'
+                       , mk (T.PrimArith T.PrimArithMul)
+                         [ XType anno T.tNat, ix'
+                         , mk (T.PrimStore T.PrimStoreSize) [XType anno t'] ]
                        , val' ])
                (XCon anno $ T.dcNat 0)
 
@@ -136,7 +141,7 @@ convertX xx
 
             let lenR = allocRef anno T.tNat sz'
                 datR = allocPtr anno t'     sz'
-                tup  = allocTuple2 anno (T.tPtr rTop T.tNat) (T.tPtr rTop t') lenR datR
+                tup  = allocTuple2 anno T.tNat t' lenR datR
             return tup
 
     _
@@ -367,11 +372,11 @@ allocTuple2 anno ta tb a b
        tup' = XVar anno $ UIx 0
     
        setA = xApps anno (XVar anno $ UName $ T.NameVar "setFieldOfBoxed")
-              [ xRTop anno, XType anno T.tObj, tup', T.xNat anno 0
+              [ xRTop anno, XType anno (T.tPtr rTop T.tObj), tup', T.xNat anno 0
               , castPtr anno T.tObj ta a ]
 
        setB = xApps anno (XVar anno $ UName $ T.NameVar "setFieldOfBoxed")
-              [ xRTop anno, XType anno T.tObj, tup', T.xNat anno 1
+              [ xRTop anno, XType anno (T.tPtr rTop T.tObj), tup', T.xNat anno 1
               , castPtr anno T.tObj tb b ]
                 
    in  XLet anno (LLet (BAnon $ T.tPtr rTop T.tObj) tup)
