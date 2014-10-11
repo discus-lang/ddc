@@ -2,7 +2,8 @@
 module DDC.Driver.Command.Flow.ToTetra
         ( cmdFlowToTetraFromFile
         , cmdFlowToTetraCoreFromFile
-        , cmdFlowToTetraCoreFromString)
+        , cmdFlowToTetraCoreFromString
+        , pipelineFlowToTetra)
 where
 import DDC.Driver.Stage
 import DDC.Driver.Config
@@ -17,6 +18,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 import qualified DDC.Build.Language.Salt        as Salt 
+import qualified DDC.Core.Salt                  as Salt 
 import qualified DDC.Build.Language.Flow        as Flow
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Core.Check                 as C
@@ -104,20 +106,10 @@ cmdFlowToTetraCoreFromString config configLower language source str
                 | fragName == "Flow"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageFlowLoad    config source
-                [ stageFlowRate    config source
-                [ stageFlowPrep  config source
-                [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
-                [ stageFlowLower   config configLower source
-                [ PipeCoreHacks (Canned $ \m -> return $ Concretize.concretizeModule m)
-                [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
-                [ stageFlowWind    config source
-                [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
-                [ stageFlowToTetra config source
+                $ pipelineFlowToTetra config configLower source
                 [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
                   []
-                , PipeCoreOutput   pmode SinkStdout]]]]]]]]]]
-
+                , PipeCoreOutput   pmode SinkStdout]
                 -- Unrecognised fragment name or file extension.
                 | otherwise
                 = throwE 
@@ -129,3 +121,17 @@ cmdFlowToTetraCoreFromString config configLower language source str
          []     -> return ()
          es     -> throwE $ renderIndent $ vcat $ map ppr es
 
+
+pipelineFlowToTetra :: Config -> Flow.Config -> Source -> [PipeCore () Salt.Name] -> PipeText Flow.Name Flow.Error
+pipelineFlowToTetra config configLower source pipesSalt
+ = stageFlowLoad    config source
+ [ stageFlowRate    config source
+ [ stageFlowPrep  config source
+ [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+ [ stageFlowLower   config configLower source
+ [ PipeCoreHacks (Canned $ \m -> return $ Concretize.concretizeModule m)
+ [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
+ [ stageFlowWind    config source
+ [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
+ [ stageFlowToTetra config source
+   pipesSalt]]]]]]]]]

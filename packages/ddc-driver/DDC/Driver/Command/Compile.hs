@@ -26,6 +26,9 @@ import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
 import qualified DDC.Version                    as Version
 
+import DDC.Driver.Command.Flow.ToTetra
+import qualified DDC.Core.Flow                  as Flow
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Recursively compile source modules into @.o@ files.
@@ -191,6 +194,12 @@ cmdCompile config buildExe interfaces filePath
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageSaltLoad     config source pipesSalt
+
+                -- Compile a Core Salt module.
+                | ext == ".dcf"
+                = liftIO 
+                $ pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ pipelineFlowToTetra config Flow.defaultConfigScalar source pipesSalt
 
                 -- Unrecognised.
                 | otherwise
