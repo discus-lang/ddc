@@ -214,8 +214,6 @@ instance Forward Exp where
                          | Just usage   <- Map.lookup n um
                          , length usage == 1
                          -> True
-                         | Nothing      <- Map.lookup n um
-                         -> True
                          | otherwise
                          -> False
 

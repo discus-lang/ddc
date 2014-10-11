@@ -44,6 +44,7 @@ letrec {
             = runProcess# [Int#] u1 (x3$runproc$process x8$ref x3$ref) in
       let x3 : Int# = read# [Int#] x3$ref in
       let x8 : Int# = read# [Int#] x8$ref in
-      add# [Int#] x3 x8
+      let x10 : Int# = add# [Int#] x3 x8 in
+      x10
 }
 

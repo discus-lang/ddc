@@ -468,8 +468,21 @@ pipeFlow !mm !pp
                 mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
 
-                -- Forward all worker functions
-                mm_float        = Flow.forwardProcesses mm_namified
+                floatControl l
+                 = case l of
+                   C.LLet _ x
+                     | Just _ <- C.takeXLamFlags x
+                     -> Forward.FloatForceUsedOnce
+                   _ -> Forward.FloatDeny
+
+                -- Force forward all worker functions.
+                -- Anything that's not a vector op will be treated as an external,
+                -- so that's fine.
+                mm_float        = C.result
+                                $ Forward.forwardModule Flow.profile
+                                    (Forward.Config floatControl False)
+                                    $ C.reannotate (const ()) mm_namified
+
 
 
                 goRate
