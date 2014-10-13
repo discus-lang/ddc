@@ -36,8 +36,9 @@ mconvAtom pp context kenv tenv xx
         -- Variables. Their names need to be sanitized before we write
         -- them to LLVM, as LLVM doesn't handle all the symbolic names
         -- that Disciple Core accepts.
-        C.XVar _ u@(C.UName (A.NameVar n))
-         |  Just t      <- Env.lookup u tenv
+        C.XVar _ u@(C.UName nm)
+         |  Just t     <- Env.lookup u tenv
+         ,  Just n     <- A.takeNameVar nm
          -> let n'      = A.sanitizeName n
                 t'      = convertType pp kenv t
 
@@ -89,8 +90,9 @@ takeLocalV
 
 takeLocalV pp kenv tenv xx
  = case xx of
-        C.XVar _ u@(C.UName (A.NameVar str))
+        C.XVar _ u@(C.UName nm)
           |  Just t       <- Env.lookup u tenv
+          ,  Just str     <- A.takeNameVar nm
           -> Just $ Var (NameLocal str) (convertType pp kenv t)
         _ -> Nothing
 

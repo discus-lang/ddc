@@ -116,7 +116,8 @@ convSuperM _ _ _ _
 nameOfParam :: Int -> C.Bind A.Name -> String
 nameOfParam i bb
  = case bb of
-        C.BName (A.NameVar n) _ 
+        C.BName nm _ 
+           | Just n <- A.takeNameVar nm
            -> A.sanitizeName n
 
         C.BNone _

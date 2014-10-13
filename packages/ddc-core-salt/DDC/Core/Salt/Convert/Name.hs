@@ -26,21 +26,24 @@ seaNameOfSuper
         -> Name                         -- ^ Name of the super.
         -> Maybe Doc
 
-seaNameOfSuper mImport mExport (NameVar str)
+seaNameOfSuper mImport mExport nm
 
         -- Super is defined in this module and not exported.
         | Nothing                               <- mImport
         , Nothing                               <- mExport
+        , Just str                              <- takeNameVar nm
         = Just $ text $ {- "_DDC_" ++ -} sanitizeName str
 
         -- Super is defined in this module and exported to C land.
         | Nothing                               <- mImport
         , Just _                                <- mExport
+        , Just str                              <- takeNameVar nm
         = Just $ text $ sanitizeName str
 
         -- Super is imported from another module and not exported.
         | Just (ImportSourceModule _ _ _)       <- mImport
         , Nothing                               <- mExport
+        , Just str                              <- takeNameVar nm
         = Just $ text $ {- "_DDC_" ++ -} sanitizeName str
         
         -- Super is imported from C-land and not exported.
@@ -54,18 +57,14 @@ seaNameOfSuper mImport mExport (NameVar str)
         -- produce a wrapper to conver the names.
         | otherwise
         = Nothing
-        
-
-seaNameOfSuper _ _ _
-        = Nothing
 
 
 -- | Convert the Salt name of a local variable to a name we can use in the
 --   body of a C function.
 seaNameOfLocal :: Name -> Maybe Doc
 seaNameOfLocal nn
- = case nn of
-        NameVar str     -> Just $ text $ "_" ++ sanitizeGlobal str
+ = case takeNameVar nn of
+        Just str        -> Just $ text $ "_" ++ sanitizeGlobal str
         _               -> Nothing
 
 

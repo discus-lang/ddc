@@ -39,6 +39,7 @@ module DDC.Core.Salt
 
           -- * Name parsing
         , readName
+        , takeNameVar
 
           -- * Program lexing
         , lexModuleString

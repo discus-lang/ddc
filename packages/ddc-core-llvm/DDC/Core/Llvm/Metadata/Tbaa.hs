@@ -115,8 +115,11 @@ bfBuild nTop tree parent sup node
 
 
 freshNodeName :: String -> Bound A.Name -> LlvmM String
-freshNodeName q (UName (A.NameVar n)) = return $ q ++ "_" ++ n
-freshNodeName q _                     = liftA (\i -> q ++ "_" ++ (show i)) newUnique
+freshNodeName q (UName nm)
+    | Just n <- A.takeNameVar nm
+    = return $ q ++ "_" ++ n
+freshNodeName q _
+    = liftA (\i -> q ++ "_" ++ (show i)) newUnique
 
 freshRootName :: String -> LlvmM String
 freshRootName qualify = liftA (\i -> qualify ++ "_ROOT_" ++ (show i)) newUnique

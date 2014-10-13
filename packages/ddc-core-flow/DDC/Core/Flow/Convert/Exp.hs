@@ -182,7 +182,7 @@ convertX xx
 
   mk = prim anno
 
-  true = XVar anno $ UName $ T.NameLitNat 1
+  true = T.xNat anno 1
 
 prim anno n args
  = let t = T.typeOfPrim n

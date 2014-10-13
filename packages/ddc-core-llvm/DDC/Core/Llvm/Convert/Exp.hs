@@ -160,9 +160,10 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                         (C.XLet a (C.LLet b x1) x2)
 
          -- Variable assigment from a case-expression.
-         C.XLet _ (C.LLet b@(C.BName (A.NameVar n) t) 
+         C.XLet _ (C.LLet b@(C.BName nm t) 
                             (C.XCase _ xScrut alts)) 
                   x2
+          | Just n <- A.takeNameVar nm
           -> do 
                 let t'    = convertType pp kenv t
 
@@ -185,7 +186,8 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                         x2
 
          -- Variable assignment from an non-case expression.
-         C.XLet _ (C.LLet b@(C.BName (A.NameVar n) t) x1) x2
+         C.XLet _ (C.LLet b@(C.BName nm t) x1) x2
+          | Just n       <- A.takeNameVar nm
           -> do let tenv' = Env.extend b tenv
                 let n'    = A.sanitizeName n
 
@@ -242,9 +244,10 @@ convExpM
 convExpM context pp kenv tenv mdsup xx
  = do   mm      <- gets llvmStateModule 
         case xx of
-         C.XVar _ u@(C.UName (A.NameVar n))
+         C.XVar _ u@(C.UName nm)
           | Just t               <- Env.lookup u tenv
           , ContextAssign _ vDst <- context
+          , Just n               <- A.takeNameVar nm
           -> do let n'  = A.sanitizeName n
                 let t'  = convertType pp kenv t
                 return  $ Seq.singleton $ annotNil

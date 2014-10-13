@@ -16,6 +16,9 @@ import qualified DDC.Core.Flow.Prim      as F
 import qualified DDC.Core.Salt.Name      as T
 import qualified DDC.Core.Salt.Compounds       as T
 
+import DDC.Core.Salt.Convert (initRuntime)
+import DDC.Core.Salt.Runtime (Config(..))
+
 import qualified Data.Set                as S
 
 
@@ -77,7 +80,12 @@ convertM mm
 
                 , moduleBody           = body' }
 
-        return $ mm_tetra
+        -- Initialise the salt heap. Hardcode this for now, because eventually this will target tetra.
+        mm_init <- case initRuntime (Config 10000)  mm_tetra of
+                        Nothing   -> return mm_tetra
+                        Just mm'  -> return mm'
+
+        return $ mm_init
 
 
 ---------------------------------------------------------------------------------------------------

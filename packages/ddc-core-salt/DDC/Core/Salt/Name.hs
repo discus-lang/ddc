@@ -52,7 +52,9 @@ module DDC.Core.Salt.Name
         , readLitPrimFloatOfBits
 
           -- * Name Parsing
-        , readName)
+        , readName
+        
+        , takeNameVar )
 where
 import DDC.Core.Salt.Name.PrimArith
 import DDC.Core.Salt.Name.PrimCall
@@ -223,6 +225,20 @@ readName str
 
         | otherwise
         = Nothing
+
+
+-- | Take the string of a non-primitive name. Supports extended names.
+takeNameVar :: Name -> Maybe String
+
+takeNameVar (NameVar n)
+    = Just n
+
+takeNameVar (NameExt n str)
+    | Just n' <- takeNameVar n
+    = Just (n' ++ "$" ++ str)
+
+takeNameVar _
+    = Nothing
 
 
 -- PrimOp ---------------------------------------------------------------------
