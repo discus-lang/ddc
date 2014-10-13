@@ -42,6 +42,8 @@ instance Pretty OpSeries where
 
         OpSeriesPack            -> text "spack"                 <> text "#"
 
+        OpSeriesGenerate        -> text "sgenerate"             <> text "#"
+
         OpSeriesReduce          -> text "sreduce"               <> text "#"
         OpSeriesFolds           -> text "sfolds"                <> text "#"
 
@@ -84,6 +86,7 @@ readOpSeries str
                 "smkSegd#"      -> Just $ OpSeriesMkSegd
                 "smap#"         -> Just $ OpSeriesMap   1
                 "spack#"        -> Just $ OpSeriesPack
+                "sgenerate#"    -> Just $ OpSeriesGenerate
                 "sreduce#"      -> Just $ OpSeriesReduce
                 "sfolds#"       -> Just $ OpSeriesFolds
                 "sfill#"        -> Just $ OpSeriesFill
@@ -216,6 +219,13 @@ takeTypeOpSeries op
          -> Just $ foldr TForall tBody
                          [ BAnon k | k <- replicate n kData ]
 
+
+        -- generate# :: [k : Rate]. [a : Data]
+        --        .  (Nat# -> a) -> Series k a
+        OpSeriesGenerate
+         -> Just $ tForalls [kRate, kData] $ \[tK, tA]
+                 ->     (tNat `tFun` tA)
+                 `tFun` tSeries tK tA
 
         -- Reductions -------------------------------
         -- reduce# :: [k : Rate]. [a : Data]

@@ -124,6 +124,17 @@ slurpOperator bResult xx
         , opElemType            = tElem }
 
 
+ -- Generate ------------------------------------
+ | Just ( NameOpSeries OpSeriesGenerate
+        , [ XType tK, XType _, xWorker ])
+                                <- takeXPrimApps xx
+ , Just ([bIx], xBody)          <- takeXLams xWorker
+ = Just $ OpGenerate
+        { opResultSeries        = bResult
+        , opOutputRate          = tK
+        , opWorkerParamIndex    = bIx
+        , opWorkerBody          = xBody }
+
  -- Reduce --------------------------------------
  | Just ( NameOpSeries OpSeriesReduce
         , [ XType tK, XType _

@@ -182,6 +182,22 @@ data Operator
         , opElemType            :: TypeF }
 
         -----------------------------------------
+        -- | Generate a new Series, with elements based on index
+        | OpGenerate
+        { -- Binder for result series.
+          opResultSeries        :: BindF
+
+          -- Rate of output series.
+        , opOutputRate          :: TypeF
+
+          -- Worker parameter for function index input.
+        , opWorkerParamIndex    :: BindF
+
+          -- Worker body.
+        , opWorkerBody          :: ExpF
+        }
+
+        -----------------------------------------
         -- | Reduce the elements of a series into a reference.
         | OpReduce
         { -- Binder for result value (a Unit)

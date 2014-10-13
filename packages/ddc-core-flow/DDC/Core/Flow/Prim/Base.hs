@@ -173,6 +173,9 @@ data OpSeries
         -- | Pack a series according to a flags vector.
         | OpSeriesPack
 
+        -- | Generate a new series with size based on klok/rate
+        | OpSeriesGenerate
+
         -- | Reduce a series with an associative operator,
         --   updating an existing accumulator.
         | OpSeriesReduce

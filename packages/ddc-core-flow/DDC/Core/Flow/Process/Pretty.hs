@@ -70,6 +70,11 @@ instance Pretty Operator where
         , text " rate:    "     <> ppr (opInputRate     op)
         , text " type:    "     <> ppr (opElemType      op) ]
 
+ ppr op@OpGenerate{}
+        = vcat
+        [ text "Generate"
+        , text " rate:    "     <> ppr (opOutputRate    op) ]
+
  ppr op@OpReduce{}
         = vcat
         [ text "Reduce"

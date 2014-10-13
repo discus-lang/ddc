@@ -4,7 +4,7 @@ module DDC.Core.Flow.Transform.Schedule.Base
         , elemBoundOfSeriesBound
         , elemTypeOfSeriesType
         , rateTypeOfSeriesType
-        , slurpRateOfParamTypes
+        , slurpRateOfParams
 
         , elemTypeOfVectorType)
 where
@@ -55,23 +55,30 @@ elemTypeOfSeriesType tSeries'
 --   of the rate, namely the @k@.
 rateTypeOfSeriesType :: TypeF -> Maybe TypeF
 rateTypeOfSeriesType tSeries'
-        | Just (_tcSeries, [tK, _tE]) <- takeTyConApps tSeries'
+        | isSeriesType tSeries'
+        , Just (_tcSeries, [tK, _tE]) <- takeTyConApps tSeries'
         = Just tK
 
         | otherwise
         = Nothing
 
 
--- | Given the type of the process parameters, 
+-- | Given the process parameters, 
 --   yield the rate of the overall process.
-slurpRateOfParamTypes :: [Type Name] -> Either Error (Type Name)
-slurpRateOfParamTypes tsParam
- = case mapMaybe rateTypeOfSeriesType tsParam of
-        []                      -> Left ErrorNoSeriesParameters
-        [tK]                    -> Right tK
-        (tK : ts)
-         | all (== tK) ts       -> Right tK
-         | otherwise            -> Left ErrorMultipleRates
+slurpRateOfParams :: [Bind Name] -> [Type Name] -> Either Error (Type Name)
+slurpRateOfParams bsTypeParams tsValueParams
+ = let tKs = filter ((==kRate) . typeOfBind) bsTypeParams
+   in  case tKs of
+        []   -> Left ErrorNoRateParameters
+
+        (BName k _:_)
+             -> let tK = TVar (UName k) in
+                if   all (==tK)
+                   $ mapMaybe rateTypeOfSeriesType tsValueParams
+                then Right tK
+                else Left  ErrorMultipleRates
+
+        (_:_) ->     Left  ErrorMultipleRates
 
 
 -- Vector ---------------------------------------------------------------------

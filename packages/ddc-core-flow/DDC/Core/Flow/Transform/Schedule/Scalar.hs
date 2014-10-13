@@ -23,17 +23,9 @@ scheduleScalar
                 , processContexts       = contexts})
   = do
         -- Check the parameter series all have the same rate.
-        tK      <- slurpRateOfParamTypes 
-                        $ filter isSeriesType 
-                        $ map typeOfBind bsParamValues
-
-        -- Check the primary rate variable matches the rates of the series.
-        (case bsParamTypes of
-          []            -> Left ErrorNoRateParameters
-          BName n k : _ 
-           | k == kRate
-           , TVar (UName n) == tK -> return ()
-          _             -> Left ErrorPrimaryRateMismatch)
+        tK      <- slurpRateOfParams
+                         bsParamTypes
+                        (map typeOfBind bsParamValues)
 
         -- Create the initial loop nest of the process rate.
         let bsSeries    = [ b   | b <- bsParamValues
@@ -268,6 +260,25 @@ scheduleOperator nest0 op
                 = insertBody nest0 (opOutputRate op)
                 $ [ BodyStmt    bResult
                                 (XVar uInput)]
+
+        return nest1
+
+ -- Generate -------------------------------------
+ | OpGenerate{} <- op
+ = do   let tK          = opOutputRate op
+
+        -- Bind for the result element.
+        let Just bResult = elemBindOfSeriesBind (opResultSeries op)
+
+        -- Apply loop index into the worker body.
+        let xBody
+                = XApp   ( XLam (opWorkerParamIndex op)
+                                (opWorkerBody       op))
+                         (XVar (UIx 0))          -- index
+
+        let Just nest1  
+                = insertBody nest0 tK
+                $ [ BodyStmt bResult xBody ]
 
         return nest1
 

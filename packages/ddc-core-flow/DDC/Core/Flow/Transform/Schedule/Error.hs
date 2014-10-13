@@ -15,10 +15,6 @@ data Error
         -- | Process has no rate parameters.
         = ErrorNoRateParameters
 
-        -- | Process has no series parameters, 
-        --   but there needs to be at least one.
-        | ErrorNoSeriesParameters
-
         -- | Process has series of different rates,
         --   but all series must have the same rate.
         | ErrorMultipleRates
@@ -47,9 +43,6 @@ instance Pretty Error where
   = case err of
         ErrorNoRateParameters
          -> vcat [ text "Series process has no rate parameters." ]
-
-        ErrorNoSeriesParameters
-         -> vcat [ text "Series process has no series parameters."]
 
         ErrorMultipleRates
          -> vcat [ text "Series process has multiple rate parameters."]

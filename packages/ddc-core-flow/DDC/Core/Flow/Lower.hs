@@ -133,10 +133,10 @@ lowerProcess config process
  | MethodScalar         <- configMethod config
  = do  
         -- Schedule process into scalar code.
-        let Right proc              = scheduleScalar process
+        proc                 <- scheduleScalar process
 
         -- Extract code for the kernel
-        let (bProc, xProc)          = extractProcedure proc
+        let (bProc, xProc)    = extractProcedure proc
 
         return (bProc, xProc)
 
