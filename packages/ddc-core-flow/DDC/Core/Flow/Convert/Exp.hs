@@ -67,6 +67,15 @@ convertX xx
      | [ _r, n ] <- xs
      -> convertX n
 
+    F.NameOpConcrete (F.OpConcreteRunKernel 0)
+     | [sz, proc]           <- xs
+     -> do  sz'     <- convertX sz
+            proc'   <- convertX proc
+            return
+               $ XLet anno (LLet (BNone T.tNat)
+                           ( xApps anno proc' [sz']))
+                 true
+
     -- runKernelN# [ty1]...[tyN] v1...vN proc
     -- becomes
     -- proc (length v1) (ptrOfVec v1) ... (ptrOfVec vN)

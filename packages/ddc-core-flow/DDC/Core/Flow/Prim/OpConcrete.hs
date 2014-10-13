@@ -149,6 +149,17 @@ typeOpConcrete op
          $  \[tK, tA] -> tRateNat (tTail n tK)
                         `tFun` tSeries tK tA `tFun` tSeries (tTail n tK) tA
 
+        -- runKernel0# :: 
+        --          .  Nat
+        --          -> ([k : Rate]. RateNat k -> Unit)
+        --          -> Bool
+        OpConcreteRunKernel 0
+         | tK         <- TVar (UIx 0)
+         , tWork      <- TForall (BAnon kRate)
+                       $ tRateNat tK `tFun` tUnit
+
+         -> tNat `tFun` tWork `tFun` tBool
+
         -- runKernelN# :: [a0..aN : Data]
         --          .  Vector    a0 .. Vector   aN 
         --          -> ([k : Rate]. RateNat k -> Series k a0 .. Series k aN -> Unit)

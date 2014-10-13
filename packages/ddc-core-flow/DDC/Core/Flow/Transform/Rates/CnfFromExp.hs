@@ -124,7 +124,6 @@ getBind (nm,(t,x)) env
    (OpVectorGenerate, [sz, worker])
     | Just fun       <- getFun worker
     , Just sz'       <- name   sz -- TODO this should handle constructors like reduce above 
-    , False -- XXX generate isn't handled by lower yet, so just treat it as external
     -> ABind nm (Generate sz' fun)
 
    _ | otherwise

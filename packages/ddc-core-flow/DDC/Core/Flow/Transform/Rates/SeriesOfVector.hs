@@ -139,8 +139,8 @@ extractProcs lets env
 
   go1 b nm x e
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries (OpSeriesRunProcess n)) _) <- op
-   , (xs, [lam])                                          <- splitAt (n*2) args
+   , XVar (UPrim (NameOpSeries (OpSeriesRunProcess _)) _) <- op
+   , (xs, [lam])                                          <- splitAt (length args - 1) args
 
    = let fs = freeX Env.empty lam
 
@@ -243,6 +243,9 @@ process types env arrIns bs
          vFlags = map (\n -> (False, BName (NameVarMod n "s") (tSeries (klokT n) (sctyOf n)))) arrIns
      in  xApps (xVarOpSeries (OpSeriesRunProcess $ length arrIns))
                (  map xsctyOf arrIns
+               ++ (if   null arrIns
+                   then [allocSize]
+                   else [])
                ++ map var    arrIns
                ++ [(makeXLamFlags (kFlags ++ vFlags) body)])
 
@@ -291,6 +294,12 @@ process types env arrIns bs
                           ( xApps (xVarOpSeries OpSeriesPack)
                                   [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"] )
                             go ]
+                            
+         Generate _sz (Fun xf _)
+          -> llet n's (tSeries (klokT n) $ sctyOf n)
+           ( xApps (xVarOpSeries OpSeriesGenerate)
+                   [ klokX n, xsctyOf n, xf ])
+             go
 
 
 

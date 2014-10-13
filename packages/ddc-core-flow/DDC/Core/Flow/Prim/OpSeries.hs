@@ -197,6 +197,17 @@ takeTypeOpSeries op
                 `tFun` tProcess
 
 
+        -- runProcess0# :: 
+        --          .  Nat
+        --          -> ([k : Rate]. RateNat k -> Process)
+        --          -> Bool
+        OpSeriesRunProcess 0
+         | tK         <- TVar (UIx 0)
+         , tWork      <- TForall (BAnon kRate)
+                       $ tRateNat tK `tFun` tProcess
+
+         -> Just $ tNat `tFun` tWork `tFun` tBool
+
         -- runProcessN# :: [a0..aN : Data]
         --          .  Vector    a0 .. Vector   aN 
         --          -> ([k : Rate]. RateNat k -> Series k a0 .. Series k aN -> Process)
@@ -218,6 +229,7 @@ takeTypeOpSeries op
 
          -> Just $ foldr TForall tBody
                          [ BAnon k | k <- replicate n kData ]
+
 
 
         -- generate# :: [k : Rate]. [a : Data]

@@ -41,7 +41,15 @@ scheduleKernel
                 , processOperators      = operators })
  = do   
         -- Check the parameter series all have the same rate.
-        tK      <- slurpRateOfParamTypes (map typeOfBind bsParamValues)
+        tK      <- slurpRateOfParams bsParamTypes (map typeOfBind bsParamValues)
+
+        -- Check the primary rate variable matches the rates of the series.
+        (case bsParamTypes of
+          []            -> Left ErrorNoRateParameters
+          BName n k : _ 
+           | k == kRate
+           , TVar (UName n) == tK -> return ()
+          _             -> Left ErrorPrimaryRateMismatch)
 
         -- Lower rates of series parameters.
         let bsParamValues_lowered
