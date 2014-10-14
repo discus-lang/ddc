@@ -55,10 +55,16 @@ convertType tt
  , typeOfBind b == F.kRate
  = removeForall b <$> convertType t
 
- -- Convert @Vector a@ to just @Tuple2# (Ptr# a) (Ref# Nat#)@
+ -- Convert @Vector a@ to @Tuple2# (Ptr# a) (Ref# Nat#)@
  | Just (F.NameTyConFlow F.TyConFlowVector, [tA])   <- takePrimTyConApps tt
  = do   _tA' <- convertType tA
         return $ tVec -- T.tTupleN [T.tPtr rTop tA', T.tRef rTop T.tNat]
+
+ -- Convert @TupleN#@ to @Ptr# rTop Obj@
+ | Just (F.NameTyConFlow (F.TyConFlowTuple _), ts)   <- takePrimTyConApps tt
+ = do   -- Might as well attempt to convert the types, just so we know they're valid
+        mapM_ convertType ts
+        return $ tVec
 
  -- Convert @Series k a@ to just @Ptr# a@
  | Just (F.NameTyConFlow F.TyConFlowSeries, [_K, tA])   <- takePrimTyConApps tt

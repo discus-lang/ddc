@@ -148,9 +148,9 @@ convertX xx
      -> do  t'      <- convertType t
             sz'     <- convertX    sz
 
-            let lenR = allocRef anno T.tNat sz'
-                datR = allocPtr anno t'     sz'
-                tup  = allocTuple2 anno T.tNat t' lenR datR
+            let lenR = allocRef    anno T.tNat sz'
+                datR = allocPtr    anno t'     sz'
+                tup  = allocTupleN anno [(tRef rTop T.tNat, lenR), (T.tPtr rTop t', datR)]
             return tup
 
     _
@@ -158,9 +158,32 @@ convertX xx
          Just (f,args) -> convertApp f args
          Nothing       -> error "Impossible"
 
+ | Just
+    (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _
+    , args)                                             <- takeXConApps xx
+ , length args == n * 2
+ , (xts, xs)            <- splitAt n args
+ , Just ts              <- mapM takeXType xts
+ = do   ts' <- mapM convertType ts
+        xs' <- mapM convertX    xs
+        return
+         $ allocTupleN anno (ts' `zip` xs')
 
  | Just (f, args@(_:_)) <- takeXApps xx
  = convertApp f args
+
+ | XCase _ x
+    [AAlt (PData (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _) bs) x1]
+                                                        <- xx
+ , length bs == n 
+ = do   x'  <- convertX x
+        bs' <- mapM convertBind bs
+        x1' <- convertX x1
+        return
+         $ xLets anno
+            [ LLet b (projTuple anno x' i $ typeOfBind b)
+             | (b,i) <- bs' `zip` [0..] ]
+           x1'
 
  -- otherwise just boilerplate recursion
  | otherwise
@@ -325,9 +348,7 @@ xVecLen :: Type T.Name -> Exp a T.Name -> Exp a T.Name
 xVecLen _t x
  = prim anno (T.PrimStore T.PrimStorePeek)
  [ xRTop anno, XType anno T.tNat
- , castPtr anno T.tNat T.tObj
- $ xApps anno (XVar anno $ UName $ T.NameVar "getFieldOfBoxed")
-   [ xRTop anno, XType anno $ T.tPtr rTop T.tObj, x, T.xNat anno 0 ]
+ , projTuple anno x 0 (T.tPtr rTop T.tNat)
  , T.xNat anno 0 ]
  where
   anno = annotOfExp x
@@ -335,9 +356,7 @@ xVecLen _t x
 -- | Get the pointer to the data from a Vector
 xVecPtr :: Type T.Name -> Exp a T.Name -> Exp a T.Name
 xVecPtr t x
- = castPtr anno t T.tObj
- $ xApps anno (XVar anno $ UName $ T.NameVar "getFieldOfBoxed")
-   [ xRTop anno, XType anno $ T.tPtr rTop T.tObj, x, T.xNat anno 1 ]
+ = projTuple anno x 1 (T.tPtr rTop t)
  where
   anno = annotOfExp x
 
@@ -373,24 +392,58 @@ allocPtr anno tY elts
                 
    in  ptr
 
-allocTuple2 :: a -> Type T.Name -> Type T.Name -> Exp a T.Name -> Exp a T.Name -> Exp a T.Name
-allocTuple2 anno ta tb a b
+
+unptr :: Type T.Name -> Type T.Name
+unptr t
+ | Just (_,t') <- T.takeTPtr t
+ = t'
+ | otherwise
+ = t
+
+trybox :: a -> Type T.Name -> Exp a T.Name -> Exp a T.Name
+trybox anno t x
+ -- Already a pointer, don't bother
+ | Just (_,_) <- T.takeTPtr t
+ = x
+ | otherwise
+ = allocRef anno t x
+
+tryunbox :: a -> Type T.Name -> Exp a T.Name -> Exp a T.Name
+tryunbox anno t x
+ -- Already a pointer, don't bother
+ | Just (_,_) <- T.takeTPtr t
+ = x
+ | otherwise
+ = prim anno (T.PrimStore T.PrimStorePeek)
+ [ xRTop anno, XType anno t
+ , x, T.xNat anno 0 ]
+
+projTuple :: a -> Exp a T.Name -> Integer -> Type T.Name -> Exp a T.Name
+projTuple anno x i t
+ = let t' = unptr t
+ in tryunbox anno t
+  $ castPtr  anno t' T.tObj
+  $ xApps    anno (XVar anno $ UName $ T.NameVar "getFieldOfBoxed")
+    [ xRTop anno, XType anno $ T.tPtr rTop T.tObj, x, T.xNat anno i ]
+
+
+allocTupleN :: a -> [(Type T.Name, Exp a T.Name)] -> Exp a T.Name
+allocTupleN anno txs
  = let tup  = xApps anno (XVar anno $ UName $ T.NameVar "allocBoxed")
-              [ xRTop anno, T.xTag anno 0, T.xNat anno 2 ]
+              [ xRTop anno, T.xTag anno 0, T.xNat anno (fromIntegral $ length txs) ]
 
        tup' = XVar anno $ UIx 0
     
-       setA = xApps anno (XVar anno $ UName $ T.NameVar "setFieldOfBoxed")
-              [ xRTop anno, XType anno (T.tPtr rTop T.tObj), tup', T.xNat anno 0
-              , castPtr anno T.tObj ta a ]
-
-       setB = xApps anno (XVar anno $ UName $ T.NameVar "setFieldOfBoxed")
-              [ xRTop anno, XType anno (T.tPtr rTop T.tObj), tup', T.xNat anno 1
-              , castPtr anno T.tObj tb b ]
+       set i t x
+        = let t' = unptr t
+              x' = trybox anno t x
+          in xApps anno (XVar anno $ UName $ T.NameVar "setFieldOfBoxed")
+              [ xRTop anno, XType anno (T.tPtr rTop T.tObj), tup', T.xNat anno i
+              , castPtr anno T.tObj t' x' ]
                 
    in  XLet anno (LLet (BAnon $ T.tPtr rTop T.tObj) tup)
-     $ XLet anno (LLet (BNone T.tVoid) setA)
-     $ XLet anno (LLet (BNone T.tVoid) setB)
+     $ xLets anno
+        [LLet (BNone T.tVoid) (set i t x) | ((t,x), i) <- txs `zip` [0..]]
        tup'
 
 
