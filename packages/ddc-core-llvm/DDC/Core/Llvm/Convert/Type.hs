@@ -163,7 +163,7 @@ convTyCon :: Platform -> C.TyCon Name -> Type
 convTyCon platform tycon
  = case tycon of
         C.TyConSpec  C.TcConUnit
-         -> tObj platform
+         -> TPointer (tObj platform)
 
         C.TyConBound (C.UPrim NameObjTyCon _) _
          -> tObj platform

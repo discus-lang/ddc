@@ -51,6 +51,9 @@ mconvAtom pp context kenv tenv xx
 
 
         -- Literals. 
+        C.XCon _ C.DaConUnit
+         -> Just $ XLit (LitNull (TPointer (tObj pp)))
+
         C.XCon _ dc
          | C.DaConPrim n t <- dc
          -> case n of

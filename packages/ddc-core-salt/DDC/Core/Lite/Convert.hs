@@ -489,9 +489,9 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
         , []                            <- xsArgs
         = return $ S.xWord a i bits
 
-        -- Handle the unit constructor.
+        -- Leave units alone
         | DaConUnit      <- dc
-        = do    return  $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
+        = do    return  $ xUnit a
 
         -- Construct algbraic data that has a finite number of data constructors.
         | Just nCtor     <- takeNameOfDaCon dc
@@ -574,8 +574,7 @@ convertAlt ctx pp defs kenv tenv a uScrut tScrut alt
         AAlt (PData dc []) x
          | DaConUnit    <- dc
          -> do  xBody           <- convertExpX ctx pp defs kenv tenv x
-                let dcTag       = DaConPrim (S.NameLitTag 0) S.tTag
-                return  $ AAlt (PData dcTag []) xBody
+                return  $ AAlt (PData DaConUnit []) xBody
 
         -- Match against algebraic data with a finite number
         -- of data constructors.
@@ -621,7 +620,7 @@ convertCtor
 
 convertCtor pp defs kenv tenv a dc
  | DaConUnit    <- dc
- =      return $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
+ = return $ xUnit a
 
  | Just n       <- takeNameOfDaCon dc
  = case n of

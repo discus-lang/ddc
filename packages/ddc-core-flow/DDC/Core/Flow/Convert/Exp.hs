@@ -59,7 +59,7 @@ convertX xx
                     (LLet (BNone T.tVoid)
                     $  mk (T.PrimStore T.PrimStorePoke)
                        [ xRTop anno, ty', ref', T.xNat anno 0, val' ])
-               (XCon anno $ T.dcNat 0)
+               (XCon anno $ DaConUnit)
 
 
     -- natOfRateNat becomes a noop, as RateNats become Nats.
@@ -72,7 +72,7 @@ convertX xx
      -> do  sz'     <- convertX sz
             proc'   <- convertX proc
             return
-               $ XLet anno (LLet (BNone T.tNat)
+               $ XLet anno (LLet (BNone tUnit)
                            ( xApps anno proc' [sz']))
                  true
 
@@ -91,7 +91,7 @@ convertX xx
             case (vs',ts') of
              ((v':_), (t':_))
               -> return
-               $ XLet anno (LLet (BNone T.tNat)
+               $ XLet anno (LLet (BNone tUnit)
                            ( xApps anno proc'
                              (xVecLen t' v' : zipWith xVecPtr ts' vs')))
                  true
@@ -138,7 +138,7 @@ convertX xx
                          [ XType anno T.tNat, ix'
                          , mk (T.PrimStore T.PrimStoreSize) [XType anno t'] ]
                        , val' ])
-               (XCon anno $ T.dcNat 0)
+               (XCon anno DaConUnit)
 
 
     -- vnew# [t] len
@@ -191,7 +191,7 @@ convertX xx
 
   mk = prim anno
 
-  true = T.xNat anno 1
+  true = T.xBool anno True -- T.xNat anno 1
 
 prim anno n args
  = let t = T.typeOfPrim n
@@ -227,7 +227,7 @@ convertDaCon :: DaCon F.Name -> ConvertM (DaCon T.Name)
 convertDaCon dd
  = case dd of
    DaConUnit
-    -> return $ T.dcNat 0
+    -> return DaConUnit
    DaConPrim n t
     -> DaConPrim  <$> convertName n <*> convertType t
    DaConBound n

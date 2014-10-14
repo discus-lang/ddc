@@ -252,7 +252,12 @@ convExpM context pp kenv tenv mdsup xx
                 let t'  = convertType pp kenv t
                 return  $ Seq.singleton $ annotNil
                         $ ISet vDst (XVar (Var (NameLocal n') t'))
-        
+
+         C.XCon _ C.DaConUnit
+          | ContextAssign _ vDst <- context
+          -> return $ Seq.singleton $ annotNil
+                    $ ISet vDst (XLit (LitNull (TPointer (tObj pp))))
+
          C.XCon _ dc
           | Just n               <- takeNameOfDaCon dc
           , ContextAssign _ vDst <- context
@@ -268,6 +273,11 @@ convExpM context pp kenv tenv mdsup xx
                 A.NameLitWord w bits
                  -> return $ Seq.singleton $ annotNil
                            $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
+
+                A.NameLitBool b
+                 | i <- if b then 1 else 0
+                 -> return $ Seq.singleton $ annotNil
+                           $ ISet vDst (XLit (LitInt (TInt 1) i))
 
                 _ -> die "Invalid literal"
 
@@ -458,6 +468,11 @@ convAltM context kenv tenv mdsup aa
         case aa of
          C.AAlt C.PDefault x
           -> do label   <- newUniqueLabel "default"
+                blocks  <- convBodyM context kenv tenv mdsup Seq.empty label Seq.empty x
+                return  $  AltDefault label blocks
+
+         C.AAlt (C.PData C.DaConUnit []) x
+          -> do label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM context kenv tenv mdsup Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 

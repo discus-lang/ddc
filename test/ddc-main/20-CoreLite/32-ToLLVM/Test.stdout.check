@@ -107,8 +107,7 @@ l4.entry:
         %_v6.addr2   = add i64 %_v5.addr1, 0
         %_v7.ptr     = inttoptr i64 %_v6.addr2 to i64*
         store i64 5, i64* %_v7.ptr,    !tbaa !3
-        %_v9         = call ccc %s.Obj* @allocBoxed (i32 0, i64 0) 
-        ret %s.Obj* %_v9
+        ret %s.Obj* null
 }
 
 

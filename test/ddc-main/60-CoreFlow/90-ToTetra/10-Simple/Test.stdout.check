@@ -24,17 +24,17 @@ letrec {
             x3$runproc$process$L0 x3 loop$length (add# [Nat#] x1 1#) x4
       };
   
-  x3$runproc$process : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Nat#
+  x3$runproc$process : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Unit
     = \(x0 : Ptr# rT Int#).\(x2 : Nat#).\(x3 : Ptr# rT Int#).
       let x0$init : Int# = peek# [rT] [Int#] x0 0# in
       let loop$length : Nat# = x2 in
       let x0$acc$2 : Int# = x3$runproc$process$L0 x3 loop$length 0# x0$init in
-      let _ : Nat#
+      let _ : Unit
             = let _ : Void# = poke# [rT] [Int#] x0 0# x0$acc$2 in
-              0# in
-      0#;
+              () in
+      ();
   
-  test$L0 : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Nat#
+  test$L0 : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Unit
     = \(x10 : Ptr# rT Int#).\(x12 : Nat#).\(x13 : Ptr# rT Int#). x3$runproc$process x10 x12 x13;
   
   test : Ptr# rT Obj -> Int#
@@ -45,15 +45,15 @@ letrec {
                           (alloc# (size# [Int#])) in
               let _ : Void# = poke# [rT] [Int#] ^0 0# 0i# in
               ^0 in
-      let x15 : Nat#
-            = let _ : Nat#
+      let x15 : Bool#
+            = let _ : Unit
                     = test$L0 x10
                           (peek# [rT] [Nat#]
                                (castPtr# [rT] [Nat#] [Obj]
                                     (getFieldOfBoxed [rT] [Ptr# rT Obj] x9 0#)) 0#)
                           (castPtr# [rT] [Int#] [Obj]
                                (getFieldOfBoxed [rT] [Ptr# rT Obj] x9 1#)) in
-              1# in
+              True# in
       peek# [rT] [Int#] x10 0#
 }
 

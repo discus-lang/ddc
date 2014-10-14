@@ -101,8 +101,8 @@ makeMainEntryX config a
  = XLam a  (BName (NameVar "argc")         tInt)
  $ XLam a  (BName (NameVar "argv")         (tPtr rTop tString))
  $ XLet a  (LLet  (BNone tVoid)            (xCreate a (configHeapSize config)))
- $ XLet a  (LLet  (BNone (tPtr rTop tObj)) 
+ $ XLet a  (LLet  (BNone (tBot kData)) 
                   (xApps a (XVar a (UName (NameVar "_main"))) 
-                           [xAllocBoxed a rTop 0 (xNat a 0)]))
+                           [xUnit a]))
            (xInt a 0)
 

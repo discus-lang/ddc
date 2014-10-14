@@ -29,8 +29,7 @@ declare external ccc void @setFieldOfThunk(%s.Obj* , i64 , i64 , i64 ) align 8
 define internal fastcc %s.Obj* @bar(%s.Obj*  %_arg0) align 8  
 {
 l6.entry:
-        %_v7         = call ccc %s.Obj* @allocBoxed (i32 0, i64 0) 
-        ret %s.Obj* %_v7
+        ret %s.Obj* null
 }
 
 
