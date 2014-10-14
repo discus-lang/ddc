@@ -23,7 +23,7 @@
 -- Associativity of effect sum.
 :tequiv..
 (Read  r0# + (Write r1# + Read r2#))
-((Write r1# + Read  r0#) + Read r2#));;
+((Write r1# + Read  r0#) + Read r2#);;
 
 
 -- Idempotence of effect sum.

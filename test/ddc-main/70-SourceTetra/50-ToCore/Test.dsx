@@ -72,7 +72,7 @@ mapS    [a b : Data] [e : Effect]
         (f : a -> S e b) (xx : List a) : S e (List b)
  = box case xx of
         Nil       -> Nil
-        Cons x xs -> Cons (run f x) (run mapS f xs))
+        Cons x xs -> Cons (run f x) (run mapS f xs)
 ;;
 
 

@@ -16,25 +16,25 @@ case () of { () -> () };;
 -- Check substituted effects are crushed under HeadRead.
 :check..
 \(f:[a:Data].a -(HeadRead a | DeepUse a)> a). 
-        f [Int r0#] (5 [r0#] ()));;
+        f [Int r0#] (5 [r0#] ());;
 
 
 -- Check substituted effects are crushed under DeepRead
 :check..
 \(f:[a:Data].a -(DeepRead a | DeepUse a)> a). 
-        f [Int r0#] (5 [r0#] ()));;
+        f [Int r0#] (5 [r0#] ());;
 
 
 -- Check substituted effects are crushed under DeepWrite
 :check..
 \(f:[a:Data].a -(DeepWrite a | DeepUse a)> a). 
-        f [Int r0#] (5 [r0#] ()));;
+        f [Int r0#] (5 [r0#] ());;
 
 
 -- Check substituted effects are crushed under DeepAlloc
 :check..
 \(f:[a:Data].a -(DeepAlloc a | DeepUse a)> a). 
-        f [Int r0#] (5 [r0#] ()));;
+        f [Int r0#] (5 [r0#] ());;
 
 
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc

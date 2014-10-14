@@ -34,7 +34,7 @@ data ParserState k
         , stateFileName         :: String }
 
 
--- | Run a generic parser.
+-- | Run a generic parser, making sure all input is consumed.
 runTokenParser
         :: Eq k
         => (k -> String)        -- ^ Show a token.
@@ -44,11 +44,18 @@ runTokenParser
         -> Either P.ParseError a
 
 runTokenParser tokenShow fileName parser 
- = P.runParser parser
+ = P.runParser eofParser
         ParseState 
         { stateTokenShow        = tokenShow
         , stateFileName         = fileName }
         fileName
+ where
+  eofParser
+   = do r <- parser
+        -- We can't use primitive Text.Parsec.eof because it requires @Show (Token k)@
+        (do
+                c <- pTokMaybe Just
+                unexpected (tokenShow c)) <|> return r
 
 
 -------------------------------------------------------------------------------
