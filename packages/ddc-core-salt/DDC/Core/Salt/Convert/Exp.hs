@@ -147,6 +147,17 @@ convBlockM config context kenv tenv xx
             in  convBlockM config context kenv' tenv' x
 
         -- Case-expression.
+        --   Prettier printing if it only one default case
+        XCase _ _x [AAlt PDefault x1]
+         -> do  convBlockM  config context kenv tenv x1
+
+        -- Case-expression.
+        --   Special case for units.
+        --   There may be other cases, but it can only be a dead default
+        XCase _ _x (AAlt (PData DaConUnit []) x1 : _)
+         -> do  convBlockM  config context kenv tenv x1
+
+        -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
         XCase _ x [ AAlt (PData dc []) x1
                   , AAlt PDefault     xFail]
@@ -299,6 +310,9 @@ convRValueM config kenv tenv xx
          -> return $ n'
 
         -- Literals
+        XCon _ DaConUnit
+         -> return $ integer 0
+
         XCon _ dc
          | DaConPrim n _        <- dc
          -> case n of

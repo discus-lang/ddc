@@ -326,6 +326,14 @@ convertExpX ctx pp defs kenv tenv xx
          -> throw $ ErrorNotNormalized "Unexpected let-expression."
 
 
+        -- Match against units
+        XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
+         | TCon (TyConSpec TcConUnit)           <- tScrut
+         -> do  xScrut' <- convertExpX ExpArg pp defs kenv tenv xScrut
+                alts'   <- mapM (convertAlt (min ctx ExpBody) pp defs kenv tenv a' uScrut tScrut) 
+                                alts
+                return  $  XCase a' xScrut' alts'
+
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts

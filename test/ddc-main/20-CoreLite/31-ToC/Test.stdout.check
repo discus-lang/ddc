@@ -84,18 +84,16 @@ Obj* addInt (Obj* _x, Obj* _y)
 Obj* singleton (Obj* _x)
 {
         Obj* _x1 = 0;
-        Obj* _x2 = 0;
         Obj* _x0 = 0;
-        Obj* _x3 = 0;
+        Obj* _x2 = 0;
 
         _x1          = allocBoxed(0, 1);
-        _x2          = allocBoxed(0, 0);
-        setFieldOfBoxed(_x1, 0, _x2);
+        setFieldOfBoxed(_x1, 0, 0);
         _x0          = _x1;
-        _x3          = allocBoxed(1, 2);
-        setFieldOfBoxed(_x3, 0, _x);
-        setFieldOfBoxed(_x3, 1, _x0);
-        return _x3;
+        _x2          = allocBoxed(1, 2);
+        setFieldOfBoxed(_x2, 0, _x);
+        setFieldOfBoxed(_x2, 1, _x0);
+        return _x2;
 }
 
 
@@ -103,25 +101,33 @@ Obj* singleton (Obj* _x)
 -- #285: Case matches on unit arguments.
 module Test with
 letrec {
-  foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
+  foo : [r1 : Region].Unit -> Unit
     = /\(r1 : Region).
-       \(x : Ptr# rT Obj).
-      case getTag [rT] x of {
+       \(x : Unit).
+      case x of {
         _ 
-         -> allocBoxed [rT] TAG0# 0#
+         -> ()
       }
 }
 
 module Test with
 letrec {
-  foo : [r1 : Region].Ptr# rT Obj -> Ptr# rT Obj
+  foo : [r1 : Region].Unit -> Unit
     = /\(r1 : Region).
-       \(x : Ptr# rT Obj).
-      case getTag [rT] x of {
-        TAG0#  
-         -> allocBoxed [rT] TAG0# 0#;
-        _ 
-         -> fail# [Ptr# rT Obj]
+       \(x : Unit).
+      case x of {
+        ()  
+         -> ()
       }
 }
+
+// Code for locally defined supers. -----------------------------------
+Obj* foo (Obj* _x)
+{
+        
+
+        return 0;
+}
+
+
 

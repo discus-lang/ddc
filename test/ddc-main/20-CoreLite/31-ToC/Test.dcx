@@ -52,3 +52,11 @@ module Test with letrec
 foo [r1 : Region] (x : Unit) : Unit
  = case x of { () -> () };;
 
+:to-c..
+module Test with letrec
+foo [r1 : Region] (x : Unit) : Unit
+ = case x of {
+              () -> ();
+               _ -> ()};;
+
+

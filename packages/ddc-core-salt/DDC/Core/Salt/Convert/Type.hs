@@ -36,6 +36,10 @@ convTypeM kenv tt
               -> throw $ ErrorTypeInvalid tt
 
         TCon{}
+         | TCon (TyConSpec TcConUnit)                       <- tt
+         -> return  $ text "Obj*"
+
+
          | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _) <- tt
          , Just doc     <- convPrimTyCon tc
          -> return doc
