@@ -96,7 +96,8 @@ takeLocalV pp kenv tenv xx
         C.XVar _ u@(C.UName nm)
           |  Just t       <- Env.lookup u tenv
           ,  Just str     <- A.takeNameVar nm
-          -> Just $ Var (NameLocal str) (convertType pp kenv t)
+          ,  str'         <- A.sanitizeName str
+          -> Just $ Var (NameLocal str') (convertType pp kenv t)
         _ -> Nothing
 
 
