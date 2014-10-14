@@ -153,6 +153,25 @@ convertX xx
                 tup  = allocTupleN anno [(tRef rTop T.tNat, lenR), (T.tPtr rTop t', datR)]
             return tup
 
+    -- vtrunc# [t] len vec
+    F.NameOpStore F.OpStoreTruncVector
+     | [xt, sz, v]  <- xs
+     , Just t       <- takeXType xt
+     -> do  _t'     <- convertType t
+            sz'     <- convertX    sz
+            v'      <- convertX    v
+
+            return
+             $ XLet anno
+                (LLet (BNone T.tVoid)
+                    $  mk (T.PrimStore T.PrimStorePoke)
+                       [ xRTop anno
+                       , XType anno T.tNat
+                       , projTuple anno v' 0 (T.tPtr rTop T.tNat)
+                       , T.xNat anno 0
+                       , sz' ])
+               (XCon anno $ DaConUnit)
+
     _
      -> case takeXApps xx of
          Just (f,args) -> convertApp f args
