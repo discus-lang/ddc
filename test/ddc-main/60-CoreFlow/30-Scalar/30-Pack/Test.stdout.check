@@ -5,23 +5,23 @@ ok
 -- Pack with an existing series of flags.
 module Test with
 letrec {
-  packMe : [t0 : Rate].[t1 : Data].Series# t0 t1 -> Vector# t1 -> Series# t0 Bool# -> Unit
-    = /\(t0 : Rate)./\(t1 : Data).
-       \(x2 : Series# t0 t1).\(x3 : Vector# t1).\(x4 : Series# t0 Bool#).
-      let t5$count = new# [Nat#] 0# in
+  packMe : [k0 : Rate].[a : Data].Series# k0 a -> Vector# a -> Series# k0 Bool# -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(s : Series# k0 a).\(v : Vector# a).\(flags : Series# k0 Bool#).
+      let k1$count = new# [Nat#] 0# in
       let _
-            = loop# [t0]
+            = loop# [k0]
                   (\(x0 : Nat#).
-                   let x2$elem = next# [t1] [t0] x2 x0 in
-                   let x4$elem = next# [Bool#] [t0] x4 x0 in
+                   let s$elem = next# [a] [k0] s x0 in
+                   let flags$elem = next# [Bool#] [k0] flags x0 in
                    let _
-                         = guard# t5$count x4$elem
+                         = guard# k1$count flags$elem
                                (\(x1 : Nat#).
-                                let _ = vwrite# [t1] x3 x1 x2$elem in
+                                let _ = vwrite# [a] v x1 s$elem in
                                 ()) in
                    ()) in
-      let x5 = read# [Nat#] t5$count in
-      let _ = vtrunc# [t1] x5 x3 in
+      let x2 = read# [Nat#] k1$count in
+      let _ = vtrunc# [a] x2 v in
       ()
 }
 
@@ -29,23 +29,23 @@ letrec {
 -- Filter, producing our own flags.
 module Test with
 letrec {
-  filter : [t0 : Rate].[t1 : Data].(t1 -> Bool#) -> Vector# t1 -> Series# t0 t1 -> Unit
-    = /\(t0 : Rate)./\(t1 : Data).
-       \(x2 : t1 -> Bool#).\(x3 : Vector# t1).\(x4 : Series# t0 t1).
-      let t9$count = new# [Nat#] 0# in
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(v : Vector# a).\(s : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
       let _
-            = loop# [t0]
-                  (\(x0 : Nat#).
-                   let x4$elem = next# [t1] [t0] x4 x0 in
-                   let x7$elem = x2 x4$elem in
+            = loop# [k0]
+                  (\(x1 : Nat#).
+                   let s$elem = next# [a] [k0] s x1 in
+                   let flags$elem = f s$elem in
                    let _
-                         = guard# t9$count x7$elem
-                               (\(x1 : Nat#).
-                                let _ = vwrite# [t1] x3 x1 x4$elem in
+                         = guard# k1$count flags$elem
+                               (\(x2 : Nat#).
+                                let _ = vwrite# [a] v x2 s$elem in
                                 ()) in
                    ()) in
-      let x6 = read# [Nat#] t9$count in
-      let _ = vtrunc# [t1] x6 x3 in
+      let x3 = read# [Nat#] k1$count in
+      let _ = vtrunc# [a] x3 v in
       ()
 }
 
@@ -53,24 +53,24 @@ letrec {
 -- Filter, and also materialize the input in a new selector context.
 module Test with
 letrec {
-  filter : [t0 : Rate].[t1 : Data].(t1 -> Bool#) -> Vector# t1 -> Vector# t1 -> Series# t0 t1 -> Unit
-    = /\(t0 : Rate)./\(t1 : Data).
-       \(x2 : t1 -> Bool#).\(x3 x4 : Vector# t1).\(x5 : Series# t0 t1).
-      let t11$count = new# [Nat#] 0# in
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(v1 v2 : Vector# a).\(s : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
       let _
-            = loop# [t0]
-                  (\(x0 : Nat#).
-                   let x5$elem = next# [t1] [t0] x5 x0 in
-                   let x8$elem = x2 x5$elem in
-                   let _ = vwrite# [t1] x3 x0 x5$elem in
+            = loop# [k0]
+                  (\(x1 : Nat#).
+                   let s$elem = next# [a] [k0] s x1 in
+                   let flags$elem = f s$elem in
+                   let _ = vwrite# [a] v1 x1 s$elem in
                    let _
-                         = guard# t11$count x8$elem
-                               (\(x1 : Nat#).
-                                let _ = vwrite# [t1] x3 x1 x5$elem in
+                         = guard# k1$count flags$elem
+                               (\(x2 : Nat#).
+                                let _ = vwrite# [a] v1 x2 s$elem in
                                 ()) in
                    ()) in
-      let x7 = read# [Nat#] t11$count in
-      let _ = vtrunc# [t1] x7 x3 in
+      let x3 = read# [Nat#] k1$count in
+      let _ = vtrunc# [a] x3 v1 in
       ()
 }
 
@@ -79,29 +79,29 @@ letrec {
 -- Ensure we can handle nested selector contexts.
 module Test with
 letrec {
-  filter : [t0 : Rate].[t1 : Data].(t1 -> Bool#) -> (t1 -> Bool#) -> Vector# t1 -> Series# t0 t1 -> Unit
-    = /\(t0 : Rate)./\(t1 : Data).
-       \(x2 x3 : t1 -> Bool#).\(x4 : Vector# t1).\(x5 : Series# t0 t1).
-      let t10$count = new# [Nat#] 0# in
-      let t17$count = new# [Nat#] 0# in
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(v : Vector# a).\(s0 : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
+      let k2$count = new# [Nat#] 0# in
       let _
-            = loop# [t0]
+            = loop# [k0]
                   (\(x0 : Nat#).
-                   let x5$elem = next# [t1] [t0] x5 x0 in
-                   let x8$elem = x2 x5$elem in
+                   let s0$elem = next# [a] [k0] s0 x0 in
+                   let flags1$elem = f s0$elem in
                    let _
-                         = guard# t10$count x8$elem
-                               (\(x1 : Nat#).
-                                let x15$elem = x3 x5$elem in
+                         = guard# k1$count flags1$elem
+                               (\(x2 : Nat#).
+                                let flags2$elem = g s0$elem in
                                 let _
-                                      = guard# t17$count x15$elem
-                                            (\(x7 : Nat#).
-                                             let _ = vwrite# [t1] x4 x7 x5$elem in
+                                      = guard# k2$count flags2$elem
+                                            (\(x3 : Nat#).
+                                             let _ = vwrite# [a] v x3 s0$elem in
                                              ()) in
                                 ()) in
                    ()) in
-      let x8 = read# [Nat#] t17$count in
-      let _ = vtrunc# [t1] x8 x4 in
+      let x4 = read# [Nat#] k2$count in
+      let _ = vtrunc# [a] x4 v in
       ()
 }
 
@@ -110,32 +110,32 @@ letrec {
 -- Ensure we can handle two selector contexts on the same input.
 module Test with
 letrec {
-  filter : [t0 : Rate].[t1 : Data].(t1 -> Bool#) -> (t1 -> Bool#) -> Vector# t1 -> Vector# t1 -> Series# t0 t1 -> Unit
-    = /\(t0 : Rate)./\(t1 : Data).
-       \(x2 x3 : t1 -> Bool#).\(x4 x5 : Vector# t1).\(x6 : Series# t0 t1).
-      let t15$count = new# [Nat#] 0# in
-      let t22$count = new# [Nat#] 0# in
+  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Vector# a -> Series# k0 a -> Unit
+    = /\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(v1 v2 : Vector# a).\(s0 : Series# k0 a).
+      let k1$count = new# [Nat#] 0# in
+      let k2$count = new# [Nat#] 0# in
       let _
-            = loop# [t0]
-                  (\(x0 : Nat#).
-                   let x6$elem = next# [t1] [t0] x6 x0 in
-                   let x9$elem = x2 x6$elem in
-                   let x13$elem = x2 x6$elem in
+            = loop# [k0]
+                  (\(x1 : Nat#).
+                   let s0$elem = next# [a] [k0] s0 x1 in
+                   let flags1$elem = f s0$elem in
+                   let flags2$elem = f s0$elem in
                    let _
-                         = guard# t15$count x9$elem
-                               (\(x1 : Nat#).
-                                let _ = vwrite# [t1] x4 x1 x6$elem in
+                         = guard# k1$count flags1$elem
+                               (\(x3 : Nat#).
+                                let _ = vwrite# [a] v1 x3 s0$elem in
                                 ()) in
                    let _
-                         = guard# t22$count x13$elem
-                               (\(x8 : Nat#).
-                                let _ = vwrite# [t1] x5 x8 x6$elem in
+                         = guard# k2$count flags2$elem
+                               (\(x4 : Nat#).
+                                let _ = vwrite# [a] v2 x4 s0$elem in
                                 ()) in
                    ()) in
-      let x9 = read# [Nat#] t15$count in
-      let _ = vtrunc# [t1] x9 x4 in
-      let x10 = read# [Nat#] t22$count in
-      let _ = vtrunc# [t1] x10 x5 in
+      let x5 = read# [Nat#] k1$count in
+      let _ = vtrunc# [a] x5 v1 in
+      let x6 = read# [Nat#] k2$count in
+      let _ = vtrunc# [a] x6 v2 in
       ()
 }
 

@@ -213,8 +213,7 @@ letrec {
               let _ : Void#
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
               ^1 in
-      let x1 : Ptr# rT Obj = x0 in
-      id [rT] x1
+      id [rT] x0
 }
 
 

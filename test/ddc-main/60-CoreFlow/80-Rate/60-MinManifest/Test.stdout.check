@@ -3,38 +3,38 @@ ok
 
 -- Two possible schedules, but should be one with only one manifest array (ys)
 module Test with
-let x6$runproc$process : Ref# Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
-      = \(x6$ref : Ref# Int#).
-        /\(x9$'$k : Rate).
-         \(x9$'$k$r : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).
-        let x6$proc : Process#
-              = sreduce# [x9$'$k] [Int#] x6$ref
-                    (\(x3 x4 : Int#). add# [Int#] x3 x4) 0i# us$s in
-        x6$proc
-let x2$runproc$process : Vector# Int# -> Int# -> [x9$'$k : Rate].RateNat# x9$'$k -> Series# x9$'$k Int# -> Process#
-      = \(x9 : Vector# Int#).\(x6 : Int#).
-        /\(x9$'$k : Rate).
-         \(x9$'$k$r : RateNat# x9$'$k).\(us$s : Series# x9$'$k Int#).
-        let x2$s : Series# x9$'$k Int#
-              = smap# [x9$'$k] [Int#] [Int#]
+let y$runproc$process : Ref# Int# -> [ys$'$k : Rate].RateNat# ys$'$k -> Series# ys$'$k Int# -> Process#
+      = \(y$ref : Ref# Int#).
+        /\(ys$'$k : Rate).
+         \(ys$'$k$r : RateNat# ys$'$k).\(us$s : Series# ys$'$k Int#).
+        let y$proc : Process#
+              = sreduce# [ys$'$k] [Int#] y$ref
+                    (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# us$s in
+        y$proc
+let xs$runproc$process : Vector# Int# -> Int# -> [ys$'$k : Rate].RateNat# ys$'$k -> Series# ys$'$k Int# -> Process#
+      = \(ys : Vector# Int#).\(y : Int#).
+        /\(ys$'$k : Rate).
+         \(ys$'$k$r : RateNat# ys$'$k).\(us$s : Series# ys$'$k Int#).
+        let xs$s : Series# ys$'$k Int#
+              = smap# [ys$'$k] [Int#] [Int#]
                     (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
-        let x9$s : Series# x9$'$k Int#
-              = smap# [x9$'$k] [Int#] [Int#]
-                    (\(x7 : Int#). add# [Int#] x6 x7) x2$s in
-        let x9$proc : Process# = sfill# [x9$'$k] [Int#] x9 x9$s in
-        x9$proc
+        let ys$s : Series# ys$'$k Int#
+              = smap# [ys$'$k] [Int#] [Int#]
+                    (\(x5 : Int#). add# [Int#] y x5) xs$s in
+        let ys$proc : Process# = sfill# [ys$'$k] [Int#] ys ys$s in
+        ys$proc
 letrec {
   test : Vector# Int# -> Vector# Int#
     = \(us : Vector# Int#).
-      let x6$ref : Ref# Int# = new# [Int#] 0i# in
-      let x6$runproc : Bool#
-            = runProcess# [Int#] us (x6$runproc$process x6$ref) in
-      let x6 : Int# = read# [Int#] x6$ref in
-      let x9 : Vector# Int#
+      let y$ref : Ref# Int# = new# [Int#] 0i# in
+      let y$runproc : Bool#
+            = runProcess# [Int#] us (y$runproc$process y$ref) in
+      let y : Int# = read# [Int#] y$ref in
+      let ys : Vector# Int#
             = vnew# [Int#] (vlength# [Int#] us) in
-      let x2$runproc : Bool#
-            = runProcess# [Int#] us (x2$runproc$process x9 x6) in
-      x9
+      let xs$runproc : Bool#
+            = runProcess# [Int#] us (xs$runproc$process ys y) in
+      ys
 }
 
 
