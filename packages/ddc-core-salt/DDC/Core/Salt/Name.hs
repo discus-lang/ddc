@@ -64,6 +64,7 @@ import DDC.Core.Salt.Name.PrimStore
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Salt.Name.Lit
+import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Base.Pretty
 import DDC.Base.Name
 import Data.Typeable
@@ -220,7 +221,7 @@ readName str
 
         -- Variables.
         | c : _         <- str
-        , isLower c      
+        , isVarStart c  || c == '_'
         = Just $ NameVar str
 
         | otherwise

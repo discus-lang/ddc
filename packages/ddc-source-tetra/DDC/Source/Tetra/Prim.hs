@@ -24,6 +24,7 @@ import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpStore
 import DDC.Source.Tetra.Prim.OpArith
+import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
@@ -120,7 +121,7 @@ readName str
 
         -- Variables.
         | c : _         <- str
-        , isLower c      
+        , isVarStart c      
         = Just $ NameVar str
 
         | otherwise

@@ -58,6 +58,7 @@ import DDC.Core.Salt.Name
         ( readLitPrimNat
         , readLitPrimInt
         , readLitPrimWordOfBits)
+import DDC.Core.Lexer.Names             (isVarStart)
 
 import DDC.Type.Exp
 import DDC.Base.Pretty
@@ -181,7 +182,7 @@ readName str
 
         -- Variables.
         | c : _         <- str
-        , isLower c      
+        , isVarStart c      
         = Just $ NameVar str
 
         | otherwise

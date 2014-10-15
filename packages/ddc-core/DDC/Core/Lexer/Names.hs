@@ -180,6 +180,7 @@ isVarStart :: Char -> Bool
 isVarStart c
         =  isLower c
         || c == '?'
+        || c == '_'
         
 
 -- | Character can be part of a variable body.

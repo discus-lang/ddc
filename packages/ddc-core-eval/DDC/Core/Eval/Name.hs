@@ -263,7 +263,7 @@ readName str@(c:rest)
         = Just $ NameLoc (Loc (read ds) (tBot kData))
 
         -- primops and variables.
-        | isLower c    
+        | isVarStart c    
         = case (c:rest) of
                 "negInt"        -> Just $ NamePrimOp PrimOpNegInt
                 "addInt"        -> Just $ NamePrimOp PrimOpAddInt

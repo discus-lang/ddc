@@ -75,6 +75,8 @@ import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpVector
 import DDC.Core.Flow.Prim.OpPrim
 
+import DDC.Core.Lexer.Names             (isVarStart)
+
 import DDC.Core.Salt.Name
         ( readPrimTyCon
         
@@ -207,13 +209,13 @@ readName str
 
         -- Variables.
         | c : _                 <- str
-        , isLower c
+        , isVarStart c
         , Just (str1, strMod)   <- splitModString str
         , Just n                <- readName str1
         = Just $ NameVarMod n strMod
 
         | c : _         <- str
-        , isLower c      
+        , isVarStart c      
         = Just $ NameVar str
 
         -- Constructors.

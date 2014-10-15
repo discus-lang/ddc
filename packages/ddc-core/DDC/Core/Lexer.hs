@@ -154,7 +154,6 @@ lexString sourceName lineStart str
         '.'  : w'       -> tokA KDot             : lexMore 1 w'
         ','  : w'       -> tokA KComma           : lexMore 1 w'
         ';'  : w'       -> tokA KSemiColon       : lexMore 1 w'
-        '_'  : w'       -> tokA KUnderscore      : lexMore 1 w'
         '\\' : w'       -> tokA KBackSlash       : lexMore 1 w'
 
         -- Operator symbols.
@@ -211,6 +210,9 @@ lexString sourceName lineStart str
                                         '#' : rest'     -> (body ++ "#", rest')
                                         _               -> (body, rest)
          -> let readNamedVar s
+                 | "_"     <- s
+                 = tokA KUnderscore        : lexMore (length s) rest'
+
                  | Just t  <- lookup s keywords
                  = tok t                   : lexMore (length s) rest'
 
