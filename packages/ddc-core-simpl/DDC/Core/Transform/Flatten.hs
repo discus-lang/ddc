@@ -33,6 +33,23 @@ flatten1
         -> Exp a n
 
 -- Let ----------------------------------------------------
+-- Special case when nested let is (let b = x in b):
+-- @
+--      let b1 = (let ^ = def2 in ^0) in
+--      x1
+--
+--  ==> let b1 = def2 in 
+--      x1
+-- @
+-- 
+flatten1 (XLet a1 (LLet b1
+            (XLet _ (LLet (BAnon _) def2) (XVar _ (UIx 0))))
+               x1)
+ = flatten1
+        $ XLet a1 (LLet b1 def2)
+               x1
+
+-- Let ----------------------------------------------------
 -- Flatten Nested Lets.
 -- @
 --      let b1 = (let b2 = def2 in x2) in
