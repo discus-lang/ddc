@@ -41,7 +41,7 @@ import qualified DDC.Core.Salt.Platform                 as Salt
 import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
 
-import qualified DDC.Core.Transform.AnonymizeX          as C
+-- import qualified DDC.Core.Transform.AnonymizeX          as C
 import qualified DDC.Core.Transform.Reannotate          as C
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Snip                as Snip
@@ -49,7 +49,7 @@ import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Transform.Beta                as Beta
 import qualified DDC.Core.Transform.Lambdas             as Lambdas
-import qualified DDC.Core.Transform.TransformModX       as TMod
+-- import qualified DDC.Core.Transform.TransformModX       as TMod
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Simplifier                    as C
 
@@ -433,14 +433,10 @@ pipeFlow !mm !pp
                                         (Snip.configZero { Snip.configSnipLetBody = True })
                                         mm_eta
 
-                -- The floater needs bindings to be fully and uniquely named,
-                -- so we need to anonymize them before naming them.
-                -- Otherwise the namifier might end up reusing names, which confuses the usage checker.
-                mm_anon         = TMod.transformModX C.anonymizeX mm_snip
-
+                -- The floater needs bindings to be fully named.
                 namifierT       = C.makeNamifier Flow.freshT Env.empty
                 namifierX       = C.makeNamifier Flow.freshX Env.empty
-                mm_namified     = S.evalState (C.namify namifierT namifierX mm_anon) 0
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
                 -- Float worker functions and initializers into their use sites, 
                 -- leaving only flow operators at the top-level.

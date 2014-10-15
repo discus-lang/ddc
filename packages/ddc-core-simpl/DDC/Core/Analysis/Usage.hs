@@ -11,9 +11,11 @@ module DDC.Core.Analysis.Usage
 where
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import Data.List
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
+import Data.Maybe               (mapMaybe)
 
 
 -- Used -----------------------------------------------------------------------
@@ -69,6 +71,14 @@ sumUsedMap :: Ord n => [UsedMap n] -> UsedMap n
 sumUsedMap []   = UsedMap Map.empty
 sumUsedMap (m:ms)
         = foldl' plusUsedMap m ms
+
+
+-- | Remove some binds from a usage map
+removeUsedMap :: Ord n => UsedMap n -> [Bind n] -> UsedMap n
+removeUsedMap (UsedMap m) bs
+ = UsedMap
+ $ foldr Map.delete m
+ $ mapMaybe takeNameOfBind bs
 
 
 -- Module ---------------------------------------------------------------------
@@ -132,7 +142,8 @@ usageX' xx
          |  ( used2, x2')  <- usageX' x2
          ,  UsedMap us2    <- used2
          ,  used2'         <- UsedMap (Map.map (map UsedInLambda) us2)
-         -> ( used2'
+         ,  cleared        <- removeUsedMap used2' [b1]
+         -> ( cleared
             , XLAM (used2', a) b1 x2')
 
         -- Wrap usages from the body in UsedInLambda to signal that if we move
@@ -141,7 +152,8 @@ usageX' xx
          |  ( used2, x2')  <- usageX' x2
          ,  UsedMap us2    <- used2
          ,  used2'         <- UsedMap (Map.map (map UsedInLambda) us2)
-         -> ( used2'
+         ,  cleared        <- removeUsedMap used2' [b1]
+         -> ( cleared
             , XLam (used2', a) b1 x2')
 
         XApp a x1 x2
@@ -164,7 +176,9 @@ usageX' xx
          |  ( used1, lts')  <- usageLets lts
          ,  ( used2, x2')   <- usageX' x2
          ,  used'           <- used1 `plusUsedMap` used2
-         -> ( used'
+         ,  cleared         <- removeUsedMap  used'
+                             $ uncurry (++) (bindsOfLets lts)
+         -> ( cleared
             , XLet (used', a) lts' x2')
 
         -- Wrap usages in the Alts in UsedInAlt to signal that if we move
