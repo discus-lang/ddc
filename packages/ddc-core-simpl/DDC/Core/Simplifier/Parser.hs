@@ -203,6 +203,7 @@ readTransformAtomic kk
         "Prune"         -> Just Prune
         "Snip"          -> Just (Snip Snip.configZero)
         "SnipOver"      -> Just (Snip Snip.configZero { Snip.configSnipOverApplied = True })
+        "SnipBody"      -> Just (Snip Snip.configZero { Snip.configSnipLetBody     = True })
         _               -> Nothing
 
  | otherwise
