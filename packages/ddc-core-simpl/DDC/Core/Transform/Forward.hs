@@ -180,18 +180,29 @@ instance Forward Exp where
          ,  configFloatLetBody config
          -> down x1
 
-        -- Always float atomic bindings (variables, constructors)
-        XLet _ (LLet b x1) x2
+        -- A special case for atomic anonymous bindings.
+        -- Always float atomic bindings (variables, constructors),
+        -- but only if they're still atomic after forwarding them:
+        -- if x1 is a variable to be replaced with a function, then
+        -- substituting x1 into x2 could duplicate that.
+        XLet (_, a) (LLet b@(BAnon _) x1) x2
          | isAtomX x1
-         -> do 
-                -- Record that we've moved this binding.
-                tell mempty { infoInspected = 1
-                            , infoBindings  = 1 }
+         -> do
+                x1' <- down x1
+                if isAtomX x1'
+                 then do
+                    -- Record that we've moved this binding.
+                    tell mempty { infoInspected = 1
+                                , infoBindings  = 1 }
 
-                -- Slow, but handles anonymous binders and shadowing
-                down $ S.substituteXX b x1 x2
+                    -- Slower, but handles anonymous binders and shadowing
+                    down $ S.substituteXX b x1 x2
 
-        XLet (UsedMap um, a') lts@(LLet (BName n _) x1) x2
+                 else do
+                    tell mempty { infoInspected = 1}
+                    liftM (XLet a $ LLet b x1') (down x2)
+
+        XLet (UsedMap um, a') lts@(LLet (BName n t) x1) x2
          -> do  
                 let control    = configFloatControl config 
                                $ reannotate snd lts
@@ -217,19 +228,21 @@ instance Forward Exp where
                          | otherwise
                          -> False
 
-                if shouldFloat 
+                -- Always float atomic bindings (variables, constructors).
+                x1'           <- down x1
+
+                if shouldFloat || isAtomX x1'
                  then do
                         -- Record that we've moved this binding.
                         tell mempty { infoInspected = 1
                                     , infoBindings  = 1 }
 
-                        x1'             <- down x1
                         let bindings'   = Map.insert n x1' bindings
                         forwardWith profile config bindings' x2
 
                  else do        
                         tell mempty { infoInspected = 1}
-                        liftM2 (XLet a') (down lts) (down x2)
+                        liftM (XLet a' $ LLet (BName n t) x1') (down x2)
 
         XLet (_, a') lts x     
          ->     liftM2 (XLet a') (down lts) (down x)
