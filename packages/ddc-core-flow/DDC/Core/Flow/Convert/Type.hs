@@ -100,8 +100,8 @@ convertType tt
     TApp p q
      -> TApp    <$> convertType  p <*> convertType q
 
-    TSum _ts
-     -> throw    $ ErrorUnexpectedSum
+    TSum _t
+     -> return $ TSum $ TypeSumBot $ kData -- throw    $ ErrorUnexpectedSum
 
 
 convertBind :: Bind F.Name -> ConvertM (Bind T.Name)
