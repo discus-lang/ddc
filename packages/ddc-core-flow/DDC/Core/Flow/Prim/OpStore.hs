@@ -8,7 +8,8 @@ module DDC.Core.Flow.Prim.OpStore
         , xReadVector,  xReadVectorC
         , xWriteVector, xWriteVectorC
         , xTailVector
-        , xTruncVector)
+        , xTruncVector
+        , xBufOfVector)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -47,6 +48,7 @@ instance Pretty OpStore where
         OpStoreTailVector  n    -> text "vtail"   <> int n <> text "#"
 
         OpStoreTruncVector      -> text "vtrunc#"
+        OpStoreBufOfVector      -> text "vbuf#"
 
 
 -- | Read a store operator name.
@@ -86,6 +88,7 @@ readOpStore str
                 "vwrite#"       -> Just (OpStoreWriteVector 1)
                 "vtail#"        -> Just (OpStoreTailVector  1)
                 "vtrunc#"       -> Just OpStoreTruncVector
+                "vbuf#"         -> Just OpStoreBufOfVector
 
                 _               -> Nothing
 
@@ -126,22 +129,22 @@ typeOpStore op
         -- vread#  :: [a : Data]. Vector# a -> Nat# -> a
         OpStoreReadVector 1
          -> tForall kData 
-         $  \tA -> tVector tA `tFun` tNat `tFun` tA
+         $  \tA -> tBuffer tA `tFun` tNat `tFun` tA
 
         -- vreadN#  :: [a : Data]. Vector# a -> Nat# -> VecN# a
         OpStoreReadVector n
          -> tForall kData 
-         $  \tA -> tVector tA `tFun` tNat `tFun` tVec n tA
+         $  \tA -> tBuffer tA `tFun` tNat `tFun` tVec n tA
 
         -- vwrite# :: [a : Data]. Vector# a -> Nat# -> a -> Unit
         OpStoreWriteVector 1
          -> tForall kData 
-         $  \tA -> tVector tA `tFun` tNat `tFun` tA `tFun` tUnit
+         $  \tA -> tBuffer tA `tFun` tNat `tFun` tA `tFun` tUnit
 
         -- vwriteN# :: [a : Data]. Vector# a -> Nat# -> VecN# a -> Unit
         OpStoreWriteVector n
          -> tForall kData 
-         $  \tA -> tVector tA `tFun` tNat `tFun` tVec n tA `tFun` tUnit
+         $  \tA -> tBuffer tA `tFun` tNat `tFun` tVec n tA `tFun` tUnit
 
         -- vtail$N# :: [k : Rate]. [a : Data]. RateNat (TailN k) -> Vector# a -> Vector# a
         OpStoreTailVector n
@@ -152,6 +155,12 @@ typeOpStore op
         OpStoreTruncVector
          -> tForall kData 
          $  \tA -> tNat `tFun` tVector tA `tFun` tUnit
+
+        -- vbuf#   :: [a : Data]. Vector# a -> Buffer# a
+        OpStoreBufOfVector
+         -> tForall kData 
+         $  \tA -> tVector tA `tFun` tBuffer tA
+
 
 
 -- Compounds ------------------------------------------------------------------
@@ -225,6 +234,12 @@ xTruncVector :: Type Name -> Exp () Name -> Exp () Name -> Exp () Name
 xTruncVector tElem xLen xArr
  = xApps (xVarOpStore OpStoreTruncVector)
          [XType tElem, xLen, xArr]
+
+xBufOfVector :: Type Name -> Exp () Name -> Exp () Name
+xBufOfVector tElem xArr
+ = xApps (xVarOpStore OpStoreBufOfVector)
+         [XType tElem, xArr]
+
 
 
 -- Utils ----------------------------------------------------------------------

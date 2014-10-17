@@ -275,7 +275,7 @@ takeTypeOpSeries op
                  `tFun` tSeries tK tNat `tFun` tSeries tK tA
 
 
-        -- fill#    :: [k : Rate]. [a : Data]. Vector a -> Series k a -> Process
+        -- fill#    :: [k : Rate]. [a : Data]. Buffer a -> Series k a -> Process
         OpSeriesFill
          -> Just $ tForalls [kRate, kData] $ \[tK, tA] 
                 -> tVector tA `tFun` tSeries tK tA `tFun` tProcess

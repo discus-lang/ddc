@@ -12,7 +12,7 @@ module DDC.Core.Flow.Compounds
         , isRefType
         , isVectorType
         , tTuple1, tTuple2, tTupleN
-        , tVector, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
+        , tVector, tBuffer, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
         , tDown
         , tTail

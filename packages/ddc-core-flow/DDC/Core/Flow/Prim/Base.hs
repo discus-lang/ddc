@@ -102,8 +102,11 @@ data TyConFlow
         -- | @TupleN#@ constructor. Tuples.
         = TyConFlowTuple Int            
 
-        -- | @Vector#@ constructor. Vectors. 
+        -- | @Vector#@ constructor. Vector is a pair of mutable length and mutable data
         | TyConFlowVector
+
+        -- | @Buffer#@ constructor. Mutable Buffer with no associated length
+        | TyConFlowBuffer
 
         -- | @Series#@ constructor. Series types.
         | TyConFlowSeries
@@ -271,6 +274,9 @@ data OpStore
 
         -- | Truncate a vector to a smaller length.
         | OpStoreTruncVector
+
+        -- | Get a vector's data buffer
+        | OpStoreBufOfVector
         deriving (Eq, Ord, Show)
 
 

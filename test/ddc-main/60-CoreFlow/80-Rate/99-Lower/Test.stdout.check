@@ -57,12 +57,13 @@ letrec {
   x4$runproc$process : [x4$'$k : Rate].Vector# Int# -> Int# -> RateNat# x4$'$k -> Series# x4$'$k Int# -> Unit
     = /\(x4$'$k : Rate).
        \(x4 : Vector# Int#).\(n : Int#).\(x4$'$k$r : RateNat# x4$'$k).\(us$s : Series# x4$'$k Int#).
+      let x4$buf : Buffer# Int# = vbuf# [Int#] x4 in
       let _ : Unit
             = loop# [x4$'$k]
                   (\(x5 : Nat#).
                    let us$s$elem : Int# = next# [Int#] [x4$'$k] us$s x5 in
                    let x4$s$elem : Int# = div# [Int#] us$s$elem n in
-                   let _ : Unit = vwrite# [Int#] x4 x5 x4$s$elem in
+                   let _ : Unit = vwrite# [Int#] x4$buf x5 x4$s$elem in
                    ()) in
       ();
   
@@ -93,6 +94,7 @@ letrec {
   filt$runproc$process : [morig$'$k : Rate].Ref# Int# -> Vector# Int# -> RateNat# morig$'$k -> Series# morig$'$k Int# -> Unit
     = /\(morig$'$k : Rate).
        \(fold$ref : Ref# Int#).\(filt : Vector# Int#).\(morig$'$k$r : RateNat# morig$'$k).\(orig$s : Series# morig$'$k Int#).
+      let filt$buf : Buffer# Int# = vbuf# [Int#] filt in
       let filt$'$k$count : Ref# Nat# = new# [Nat#] 0# in
       let fold$ref$init : Int# = read# [Int#] fold$ref in
       let fold$ref$acc : Ref# Int# = new# [Int#] fold$ref$init in
@@ -104,7 +106,7 @@ letrec {
                    let _ : Unit
                          = guard# filt$'$k$count filt$flags$elem
                                (\(x4 : Nat#).
-                                let _ : Unit = vwrite# [Int#] filt x4 orig$s$elem in
+                                let _ : Unit = vwrite# [Int#] filt$buf x4 orig$s$elem in
                                 let fold$ref$val : Int# = read# [Int#] fold$ref$acc in
                                 let x18 : Int# = add# [Int#] fold$ref$val orig$s$elem in
                                 let _ : Unit = write# [Int#] fold$ref$acc x18 in
@@ -119,6 +121,7 @@ letrec {
   fold2$runproc$process : [morig$'$k : Rate].Vector# Int# -> Ref# Int# -> Int# -> RateNat# morig$'$k -> Series# morig$'$k Int# -> Unit
     = /\(morig$'$k : Rate).
        \(morig : Vector# Int#).\(fold2$ref : Ref# Int#).\(fold : Int#).\(morig$'$k$r : RateNat# morig$'$k).\(orig$s : Series# morig$'$k Int#).
+      let morig$buf : Buffer# Int# = vbuf# [Int#] morig in
       let fold2$ref$init : Int# = read# [Int#] fold2$ref in
       let fold2$ref$acc : Ref# Int# = new# [Int#] fold2$ref$init in
       let _ : Unit
@@ -129,7 +132,7 @@ letrec {
                    let x20 : Int# = add# [Int#] fold2$ref$val orig$s$elem in
                    let _ : Unit = write# [Int#] fold2$ref$acc x20 in
                    let morig$s$elem : Int# = add# [Int#] fold orig$s$elem in
-                   let _ : Unit = vwrite# [Int#] morig x13 morig$s$elem in
+                   let _ : Unit = vwrite# [Int#] morig$buf x13 morig$s$elem in
                    ()) in
       let fold2$ref$res : Int# = read# [Int#] fold2$ref$acc in
       let _ : Unit = write# [Int#] fold2$ref fold2$ref$res in
@@ -138,12 +141,13 @@ letrec {
   mfilt$runproc$process : [filt$'$k : Rate].Vector# Int# -> Int# -> RateNat# filt$'$k -> Series# filt$'$k Int# -> Unit
     = /\(filt$'$k : Rate).
        \(mfilt : Vector# Int#).\(fold2 : Int#).\(filt$'$k$r : RateNat# filt$'$k).\(filt$s : Series# filt$'$k Int#).
+      let mfilt$buf : Buffer# Int# = vbuf# [Int#] mfilt in
       let _ : Unit
             = loop# [filt$'$k]
                   (\(x15 : Nat#).
                    let filt$s$elem : Int# = next# [Int#] [filt$'$k] filt$s x15 in
                    let mfilt$s$elem : Int# = add# [Int#] fold2 filt$s$elem in
-                   let _ : Unit = vwrite# [Int#] mfilt x15 mfilt$s$elem in
+                   let _ : Unit = vwrite# [Int#] mfilt$buf x15 mfilt$s$elem in
                    ()) in
       ();
   

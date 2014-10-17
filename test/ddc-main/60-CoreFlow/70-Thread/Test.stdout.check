@@ -12,6 +12,7 @@ letrec {
       letcase T2# (^ : World#) (k2__count : Ref# Nat#)  = new# [Nat#] 0# ^0 in
       letcase T2# (^ : World#) (x4 : Vector# a) 
         = vnewN# [a] [k0] (rateOfSeries# [k0] [a] s0) ^0 in
+      let x4$buf : Buffer# a = vbuf# [a] x4 in
       letcase T1# (^ : World#) 
         = loopn# [k0] (rateOfSeries# [k0] [a] s0)
               (\(x0 : Nat#).\(^ : World#).
@@ -26,7 +27,7 @@ letrec {
                         letcase T1# (^ : World#) 
                           = guard# k2__count x3__elem
                                 (\(x2 : Nat#).\(^ : World#).
-                                 letcase T1# (^ : World#)  = vwrite# [a] x4 x2 s0__elem ^0 in
+                                 letcase T1# (^ : World#)  = vwrite# [a] x4$buf x2 s0__elem ^0 in
                                  ^0) ^0 in
                         ^0) ^0 in
                ^0) ^0 in
@@ -43,6 +44,7 @@ letrec {
        \(s_aub : Series# k Int#).\(^ : World#).
       letcase T2# (^ : World#) (x6 : Vector# Int#) 
         = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) ^0 in
+      let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
       letrec {
         loop_k : Nat# -> World# -> World#
           = \(x0 : Nat#).\(^ : World#).
@@ -53,7 +55,7 @@ letrec {
                -> letcase T2# (^ : World#) (s_aub__elem : Int#)  = next# [Int#] [k] s_aub x0 ^0 in
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
-                  letcase T1# (^ : World#)  = vwrite# [Int#] x6 x0 x4__elem ^0 in
+                  letcase T1# (^ : World#)  = vwrite# [Int#] x6$buf x0 x4__elem ^0 in
                   loop_k (add# [Nat#] x0 1#) ^0
             }
       } in

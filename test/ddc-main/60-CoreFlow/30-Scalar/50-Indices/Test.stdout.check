@@ -9,6 +9,7 @@ letrec {
   test : [k1 : Rate].Series# k1 Nat# -> Vector# Nat# -> Unit
     = /\(k1 : Rate).
        \(lens : Series# k1 Nat#).\(v : Vector# Nat#).
+      let v$buf = vbuf# [Nat#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
@@ -17,7 +18,7 @@ letrec {
                    let _
                          = segment# k2$count lens$elem
                                (\(x1 x2 : Nat#).
-                                let _ = vwrite# [Nat#] v x2 x1 in
+                                let _ = vwrite# [Nat#] v$buf x2 x1 in
                                 ()) in
                    ()) in
       ()
@@ -30,6 +31,7 @@ letrec {
   test : [k1 : Rate].Series# k1 Nat# -> Series# k1 Nat# -> Vector# Nat# -> Unit
     = /\(k1 : Rate).
        \(lens things : Series# k1 Nat#).\(v : Vector# Nat#).
+      let v$buf = vbuf# [Nat#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
@@ -40,7 +42,7 @@ letrec {
                          = segment# k2$count lens$elem
                                (\(x3 x4 : Nat#).
                                 let s4$elem = add# [Nat#] x3 things$elem in
-                                let _ = vwrite# [Nat#] v x4 s4$elem in
+                                let _ = vwrite# [Nat#] v$buf x4 s4$elem in
                                 ()) in
                    ()) in
       ()
@@ -57,20 +59,23 @@ letrec {
   test : [k1 : Rate].Series# k1 Nat# -> Series# k1 Nat# -> Vector# Float32# -> Vector# Float32# -> Vector# Float32# -> Unit
     = /\(k1 : Rate).
        \(lens base : Series# k1 Nat#).\(things out1 out2 : Vector# Float32#).
+      let things$buf = vbuf# [Float32#] things in
+      let out1$buf = vbuf# [Float32#] out1 in
+      let out2$buf = vbuf# [Float32#] out2 in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
                    let lens$elem = next# [Nat#] [k1] lens x2 in
                    let base$elem = next# [Nat#] [k1] base x2 in
-                   let firsts$elem = vread# [Float32#] things base$elem in
+                   let firsts$elem = vread# [Float32#] things$buf base$elem in
                    let _
                          = segment# k2$count lens$elem
                                (\(x3 x4 : Nat#).
                                 let ixs$elem = add# [Nat#] base$elem x3 in
-                                let results$elem = vread# [Float32#] things ixs$elem in
-                                let _ = vwrite# [Float32#] out1 x4 results$elem in
-                                let _ = vwrite# [Float32#] out2 x4 firsts$elem in
+                                let results$elem = vread# [Float32#] things$buf ixs$elem in
+                                let _ = vwrite# [Float32#] out1$buf x4 results$elem in
+                                let _ = vwrite# [Float32#] out2$buf x4 firsts$elem in
                                 ()) in
                    ()) in
       ()

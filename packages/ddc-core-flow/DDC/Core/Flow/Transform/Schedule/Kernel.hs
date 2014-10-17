@@ -152,7 +152,7 @@ scheduleOperator lifting envScalar nest op
                         $ [ BodyStmt (BNone tUnit)
                                      (xWriteVectorC c
                                         (opElemType op)
-                                        (XVar $ opTargetVector op)
+                                        (XVar $ bufOfVectorName $ opTargetVector op)
                                         (XVar $ UIx 0)
                                         (XVar $ uInput)) ]
 

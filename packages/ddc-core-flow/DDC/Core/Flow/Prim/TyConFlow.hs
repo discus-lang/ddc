@@ -9,12 +9,14 @@ module DDC.Core.Flow.Prim.TyConFlow
         , isSeriesType
         , isRefType
         , isVectorType
+        , isBufferType
 
           -- * Compounds
         , tTuple1
         , tTuple2
         , tTupleN
         , tVector
+        , tBuffer
         , tSeries
         , tSegd
         , tSel1
@@ -43,6 +45,7 @@ instance Pretty TyConFlow where
  ppr dc
   = case dc of
         TyConFlowTuple n        -> text "Tuple" <> int n <> text "#"
+        TyConFlowBuffer         -> text "Buffer#"
         TyConFlowVector         -> text "Vector#"
         TyConFlowSeries         -> text "Series#"
         TyConFlowSegd           -> text "Segd#"
@@ -78,6 +81,7 @@ readTyConFlow str
 
         | otherwise
         = case str of
+                "Buffer#"       -> Just $ TyConFlowBuffer
                 "Vector#"       -> Just $ TyConFlowVector
                 "Series#"       -> Just $ TyConFlowSeries
                 "Segd#"         -> Just $ TyConFlowSegd
@@ -95,6 +99,7 @@ kindTyConFlow :: TyConFlow -> Kind Name
 kindTyConFlow tc
  = case tc of
         TyConFlowTuple n        -> foldr kFun kData (replicate n kData)
+        TyConFlowBuffer         -> kData `kFun` kData
         TyConFlowVector         -> kData `kFun` kData
         TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
@@ -124,7 +129,7 @@ isSeriesType tt
         _                                            -> False
 
 
--- | Check is some type is a fully applied type of a Ref.
+-- | Check if some type is a fully applied type of a Ref.
 isRefType :: Type Name -> Bool
 isRefType tt
  = case takePrimTyConApps tt of
@@ -132,11 +137,18 @@ isRefType tt
         _                                            -> False
 
 
--- | Check is some type is a fully applied type of a Vector.
+-- | Check if some type is a fully applied type of a Vector.
 isVectorType :: Type Name -> Bool
 isVectorType tt
  = case takePrimTyConApps tt of
         Just (NameTyConFlow TyConFlowVector, [_])    -> True
+        _                                            -> False
+
+-- | Check if some type is a fully applied type of a Buffer.
+isBufferType :: Type Name -> Bool
+isBufferType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowBuffer, [_])    -> True
         _                                            -> False
 
 
@@ -151,6 +163,10 @@ tTuple2 tA tB   = tApps (tConTyConFlow (TyConFlowTuple 2)) [tA, tB]
 
 tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConFlow (TyConFlowTuple (length tys))) tys
+
+
+tBuffer :: Type Name -> Type Name
+tBuffer tA      = tApps (tConTyConFlow TyConFlowBuffer)    [tA]
 
 
 tVector :: Type Name -> Type Name

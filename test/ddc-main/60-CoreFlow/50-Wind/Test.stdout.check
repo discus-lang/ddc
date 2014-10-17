@@ -9,6 +9,7 @@ letrec {
        \(s_aub : Series# k_d Int#).
       let x6 : Vector# Int#
             = vnewN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+      let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
       let loop$length : Nat#
             = natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
       letrec {
@@ -21,7 +22,7 @@ letrec {
                -> let s_aub__elem : Int# = next# [Int#] [k_d] s_aub x0 in
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
-                  let _ : Unit = vwrite# [Int#] x6 x0 x4__elem in
+                  let _ : Unit = vwrite# [Int#] x6$buf x0 x4__elem in
                   loop (add# [Nat#] x0 1#)
             }
       } in
@@ -41,6 +42,7 @@ letrec {
       let k2__count$0 : Nat# = 0# in
       let x5 : Vector# Int#
             = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
+      let x5$buf : Buffer# Int# = vbuf# [Int#] x5 in
       let x9__acc$0 : Int# = 0i# in
       let loop$length : Nat#
             = natOfRateNat# [k] (rateOfSeries# [k] [Int#] s1) in
@@ -57,7 +59,7 @@ letrec {
                   case x3__elem of {
                     True#  
                      -> let x3 : Nat# = k2__count$1 in
-                        let _ : Unit = vwrite# [Int#] x5 x3 s1__elem in
+                        let _ : Unit = vwrite# [Int#] x5$buf x3 s1__elem in
                         let x6 : Int# = x9__acc$1 in
                         let x9__acc$2 : Int# = maxx x6 s1__elem in
                         loop (add# [Nat#] x2 1#) (add# [Nat#] k2__count$1 1#) x9__acc$2;

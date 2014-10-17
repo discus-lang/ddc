@@ -191,7 +191,7 @@ scheduleOperator nest0 op
                         $ [ BodyStmt bResult
                                 (xReadVector 
                                         (opElemType op)
-                                        (XVar $ opSourceVector op)
+                                        (XVar $ bufOfVectorName $ opSourceVector op)
                                         (XVar $ uIndex)) ]
 
         return nest1
@@ -212,7 +212,7 @@ scheduleOperator nest0 op
                         $ [ BodyStmt (BNone tUnit)
                                 (xWriteVector
                                         (opElemType op)
-                                        (XVar $ opTargetVector op)
+                                        (XVar $ bufOfVectorName $ opTargetVector op)
                                         (XVar $ uIndex) (XVar $ uElem)) ]
 
         -- Bind final unit value.

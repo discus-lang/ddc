@@ -9,13 +9,14 @@ lower_map_map_rq2 : [k_d : Rate].Series# k_d Int# -> Vector# Int#
        \(s_aub : Series# k_d Int#).
       let x6 : Vector# Int#
             = vnewN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+      let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
       let _ : Unit
             = loopn# [k_d] (rateOfSeries# [k_d] [Int#] s_aub)
                   (\(x0 : Nat#).
                    let s_aub__elem : Int# = next# [Int#] [k_d] s_aub x0 in
                    let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                    let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
-                   let _ : Unit = vwrite# [Int#] x6 x0 x4__elem in
+                   let _ : Unit = vwrite# [Int#] x6$buf x0 x4__elem in
                    ()) in
       x6;
 ;;
@@ -33,6 +34,7 @@ filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#
     \(s1 : Series# k Int#).
    let k2__count : Ref# Nat#     = new#   [Nat#] 0# in
    let x5        : Vector# Int#  = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
+   let x5$buf    : Buffer# Int#  = vbuf#  [Int#] x5 in
    let x9__acc   : Ref# Int#     = new# [Int#] 0i# in
    let _ : Unit
          = loopn# [k] (rateOfSeries# [k] [Int#] s1)
@@ -43,7 +45,7 @@ filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#
                 let _ : Unit
                       = guard# k2__count x3__elem
                             (\(x3 : Nat#).
-                             let _  : Unit = vwrite# [Int#] x5 x3 s1__elem in
+                             let _  : Unit = vwrite# [Int#] x5$buf x3 s1__elem in
                              let x6 : Int# = read#  [Int#] x9__acc in
                              let _  : Unit = write# [Int#] x9__acc (maxx x6 s1__elem) in
                              ()) in

@@ -143,13 +143,13 @@ threadType n _
         -- vread#  :: [a : Data]. Vector# a -> Nat# -> World# -> T2# World# a
         NameOpStore (OpStoreReadVector _)
          -> Just $ tForall kData
-                 $ \tA -> tA `tFun` tVector tA `tFun` tNat
+                 $ \tA -> tA `tFun` tBuffer tA `tFun` tNat
                         `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
         -- vwrite# :: [a : Data]. Vector# a -> Nat# -> a -> World# -> World#
         NameOpStore (OpStoreWriteVector _)
          -> Just $ tForall kData
-                 $ \tA -> tA `tFun` tVector tA `tFun` tNat `tFun` tA
+                 $ \tA -> tA `tFun` tBuffer tA `tFun` tNat `tFun` tA
                         `tFun` tWorld `tFun` tWorld
 
         -- vtrunc# :: [a : Data]. Nat# -> Vector# a -> World# -> World#

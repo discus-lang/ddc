@@ -6,6 +6,7 @@ where
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Exp
 import DDC.Core.Transform.Annotate
 import DDC.Core.Module
@@ -33,8 +34,20 @@ extractProcedure (Procedure n bsParam xsParam nest)
    in   ( BName n tQuant
         ,   xLAMs bsParam
           $ xLams xsParam
+          $ xLets (concatMap vecBuffers xsParam)
           $ extractNest nest xUnit )
 
+vecBuffers
+        :: BindF
+        -> [LetsF]
+vecBuffers (BName n t)
+ | isVectorType t
+ , Just (_, [t']) <- takePrimTyConApps t
+ = [ LLet (BName (NameVarMod n "buf") (tBuffer t'))
+          (xBufOfVector t' $ XVar $ UName n) ]
+
+vecBuffers _
+ = []
 
 -------------------------------------------------------------------------------
 -- | Extract code for a loop nest.
@@ -170,7 +183,7 @@ extractStmtBody sb
         -- Write to a vector.
         BodyVecWrite nVec tElem xIx xVal
          -> [ LLet (BNone tUnit)
-                   (xWriteVector tElem (XVar (UName nVec)) xIx xVal)]
+                   (xWriteVector tElem (XVar (UName $ NameVarMod nVec "buf")) xIx xVal)]
 
         -- Read from an accumulator.
         BodyAccRead  n t bVar

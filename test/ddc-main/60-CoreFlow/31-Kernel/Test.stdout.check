@@ -9,13 +9,14 @@ letrec {
   test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
     = /\(k : Rate).
        \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+      let v$buf = vbuf# [Float32#] v in
       let _
             = loop# [Down8# k]
                   (\(x2 : Nat#).
                    let s1$elem = next$8# [Float32#] [k] s1 x2 in
                    let s2$elem = next$8# [Float32#] [k] s2 x2 in
                    let x3$elem = vmul$8# [Float32#] s1$elem s2$elem in
-                   let _ = vwrite$8# [Float32#] v x2 x3$elem in
+                   let _ = vwrite$8# [Float32#] v$buf x2 x3$elem in
                    ()) in
       ()
 }
@@ -27,6 +28,7 @@ letrec {
   test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
     = /\(k : Rate).
        \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+      let v$buf = vbuf# [Float32#] v in
       let _
             = loop# [Down8# k]
                   (\(x2 : Nat#).
@@ -35,7 +37,7 @@ letrec {
                    let s2$elem = vmul$8# [Float32#] s1$elem s2$elem in
                    let x3 = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem = vadd$8# [Float32#] x3 s2$elem in
-                   let _ = vwrite$8# [Float32#] v x2 s3$elem in
+                   let _ = vwrite$8# [Float32#] v$buf x2 s3$elem in
                    ()) in
       ()
 }
@@ -47,6 +49,8 @@ letrec {
   test : [k : Rate].RateNat# k -> Vector# Float32# -> Vector# Float32# -> Series# (Down8# k) Nat# -> Unit
     = /\(k : Rate).
        \(n : RateNat# k).\(v1 v2 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).
+      let v1$buf = vbuf# [Float32#] v1 in
+      let v2$buf = vbuf# [Float32#] v2 in
       let _
             = loop# [Down8# k]
                   (\(x1 : Nat#).
@@ -54,7 +58,7 @@ letrec {
                    let s2$elem = vgather$8# [Float32#] v1 s1$elem in
                    let x2 = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem = vadd$8# [Float32#] x2 s2$elem in
-                   let _ = vwrite$8# [Float32#] v2 x1 s3$elem in
+                   let _ = vwrite$8# [Float32#] v2$buf x1 s3$elem in
                    ()) in
       ()
 }
@@ -66,6 +70,7 @@ letrec {
   test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down8# k) Nat# -> Series# (Down8# k) Float32# -> Unit
     = /\(k : Rate).
        \(n : RateNat# k).\(v1 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).\(s2 : Series# (Down8# k) Float32#).
+      let v1$buf = vbuf# [Float32#] v1 in
       let _
             = loop# [Down8# k]
                   (\(x1 : Nat#).
@@ -128,6 +133,7 @@ letrec {
   test : [k : Rate].RateNat# k -> Ref# Float32# -> Vector# Float32# -> Series# (Down8# k) Nat# -> Unit
     = /\(k : Rate).
        \(n : RateNat# k).\(x1 : Ref# Float32#).\(v1 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).
+      let v1$buf = vbuf# [Float32#] v1 in
       let x3 = vrep$8# [Float32#] 0.0f32# in
       let x1$vec
             = new# [Vec8# Float32#] x3 in

@@ -6,7 +6,8 @@ module DDC.Core.Flow.Transform.Schedule.Base
         , rateTypeOfSeriesType
         , slurpRateOfParams
 
-        , elemTypeOfVectorType)
+        , elemTypeOfVectorType
+        , bufOfVectorName)
 where
 import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Compounds
@@ -91,3 +92,10 @@ elemTypeOfVectorType tVector'
 
         | otherwise
         = Nothing
+
+-- | Given the name of a vector, find the name of the binding of its underlying buffer.
+-- This binding is produced by Extract.
+bufOfVectorName :: BoundF -> BoundF
+bufOfVectorName (UName n) = UName $ NameVarMod n "buf"
+bufOfVectorName b         = error (show b)
+
