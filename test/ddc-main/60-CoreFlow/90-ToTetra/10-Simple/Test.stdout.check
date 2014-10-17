@@ -13,7 +13,8 @@ with
 letrec {
   x3$runproc$process$L0 : Nat# -> Ptr# rT Int# -> Nat# -> Int# -> Int#
     = \(loop$length : Nat#).\(u1$s : Ptr# rT Int#).\(x4 : Nat#).\(x3$ref$acc$1 : Int#).
-      case sub# [Nat#] loop$length x4 of {
+      let x0 : Nat# = sub# [Nat#] loop$length x4 in
+      case x0 of {
         0#  
          -> x3$ref$acc$1;
         _ 
@@ -21,14 +22,14 @@ letrec {
                   = peek# [rT] [Int#] u1$s
                         (mul# [Nat#] x4 (size# [Int#])) in
             let x5 : Int# = add# [Int#] x3$ref$acc$1 u1$s$elem in
-            x3$runproc$process$L0 loop$length u1$s (add# [Nat#] x4 1#) x5
+            let x1 : Nat# = add# [Nat#] x4 1# in
+            x3$runproc$process$L0 loop$length u1$s x1 x5
       };
   
   x3$runproc$process : Ptr# rT Int# -> Nat# -> Ptr# rT Int# -> Unit
     = \(x3$ref : Ptr# rT Int#).\(u1$k$r : Nat#).\(u1$s : Ptr# rT Int#).
       let x3$ref$init : Int# = peek# [rT] [Int#] x3$ref 0# in
-      let loop$length : Nat# = u1$k$r in
-      let x3$ref$acc$2 : Int# = x3$runproc$process$L0 loop$length u1$s 0# x3$ref$init in
+      let x3$ref$acc$2 : Int# = x3$runproc$process$L0 u1$k$r u1$s 0# x3$ref$init in
       let _ : Unit
             = let _ : Void# = poke# [rT] [Int#] x3$ref 0# x3$ref$acc$2 in
               () in

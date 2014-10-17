@@ -538,27 +538,40 @@ pipeFlow !mm !pp
                 -- Lift up any remaining lambdas
                 mm_lift         = Lambdas.lambdasModule Flow.profile mm_eta
 
+                -- Snip program so arguments and case scrutinees are just variables
+                mm_snip         = Flatten.flatten 
+                                $ Snip.snip 
+                                        Snip.configZero
+                                        mm_lift
+
                 -- The floater needs bindings to be fully named.
                 namifierT       = C.makeNamifier Flow.freshT Env.empty
                 namifierX       = C.makeNamifier Flow.freshX Env.empty
-                mm_namified     = S.evalState (C.namify namifierT namifierX mm_lift) 0
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
-                floatControl l
-                 = case l of
-                   C.LLet b _
-                     | Just _ <- C.takeTFun $ C.typeOfBind b
-                     -> Forward.FloatForce
-                   _ -> Forward.FloatAllow
-
-                -- Forward all functions
-                mm_float        = C.result
-                                $ Forward.forwardModule Flow.profile
-                                    (Forward.Config floatControl True)
-                                    $ C.reannotate (const ()) mm_namified
-
-            in  case Flow.tetraOfFlowModule mm_float of
+            in  case Flow.tetraOfFlowModule mm_namified of
                  Left  err  -> return [ErrorFlowConvert err]
-                 Right mm'  -> pipeCores mm' pipes 
+                 Right mm'  ->
+                  case C.checkModule (C.configOfProfile Salt.profile) mm' C.Recon of
+                   (Left err, _ct)         
+                    -> return [ErrorCoreTransform err]
+                   (Right mm_check', _ct) 
+                    -> let mm_reannot' = C.reannotate (const ()) mm_check'
+
+                           floatControl l
+                             = case l of
+                               C.LLet b _
+                                 | Just _ <- C.takeTFun $ C.typeOfBind b
+                                 -> Forward.FloatForce
+                               _ -> Forward.FloatAllow
+
+                           -- Forward all functions
+                           mm_float        = C.result
+                                           $ Forward.forwardModule Salt.profile
+                                               (Forward.Config floatControl True)
+                                               $ C.reannotate (const ()) mm_reannot'
+
+                       in  pipeCores mm_float pipes
 
 
 
