@@ -1,0 +1,34 @@
+module Main
+export {
+    main : Unit -> Unit;
+}
+import type {
+    rT : Region;
+}
+import foreign c value {
+        showInt   : Int# -> Ptr# rT String#;
+        showNat   : Nat# -> Ptr# rT String#;
+        putStrLn  : Ptr# rT String# -> Unit;
+}
+with letrec
+
+external (vs : Vector# Nat#)
+ = vs
+
+test    (sz : Nat#)
+ = do   xs  = vgenerate# sz (add# 1#)
+        xs' = external xs
+        y   = vreduce# add# 0# xs' 
+        ys  = vfilter# (lt# 5#) xs'
+        z   = vreduce# add# y ys 
+        T2# z ys
+
+main (_ : Unit)
+ = do   res = test 10#
+        case res of
+            T2# i v
+             -> do putStrLn (showNat i)
+                   putStrLn (showNat (vlength# v))
+        ()
+
+
