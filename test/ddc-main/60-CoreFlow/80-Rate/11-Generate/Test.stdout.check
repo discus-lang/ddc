@@ -1,0 +1,24 @@
+ok
+
+
+-- Just a generate
+module Test with
+let x2$runproc$process : Vector# Nat# -> [x2$'$k : Rate].RateNat# x2$'$k -> Process#
+      = \(x2 : Vector# Nat#).
+        /\(x2$'$k : Rate).
+         \(x2$'$k$r : RateNat# x2$'$k).
+        let x2$s : Series# x2$'$k Nat#
+              = sgenerate# [x2$'$k] [Nat#]
+                    (\(x0 : Nat#). add# [Nat#] 1# x0) in
+        let x2$proc : Process# = sfill# [x2$'$k] [Nat#] x2 x2$s in
+        x2$proc
+letrec {
+  test : Nat# -> Vector# Nat#
+    = \(sz : Nat#).
+      let x2 : Vector# Nat# = vnew# [Nat#] sz in
+      let x2$runproc : Bool#
+            = runProcess0# sz (x2$runproc$process x2) in
+      x2
+}
+
+

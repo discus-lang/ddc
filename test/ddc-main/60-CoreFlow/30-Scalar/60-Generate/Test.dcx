@@ -1,0 +1,38 @@
+:set Synth
+:set SuppressLetTypes
+
+
+-- Single generate output
+:flow-lower..
+module Test with letrec
+gen   [k : Rate]
+      (v : Vector# Nat#)
+         : Process#
+ = let s : Series# k Nat# = sgenerate# (mul# 2#)
+   in  sfill# v s
+;;
+
+-- Generate, then map
+:flow-lower..
+module Test with letrec
+gen   [k : Rate]
+      (v : Vector# Nat#)
+         : Process#
+ = let s : Series# k Nat# = sgenerate# (mul# 2#)   in
+   let t                  = smap#      (add# 1#) s in
+       sfill# v t
+;;
+
+-- Generate in the presence of other Series
+:flow-lower..
+module Test with letrec
+gen   [k : Rate]
+      (s1: Series# k Nat#)
+      (v : Vector# Nat#)
+         : Process#
+ = let s2: Series# k Nat# = sgenerate# (mul# 2#)   in
+   let t                  = smap2#     (add#) s1 s2 in
+       sfill# v t
+;;
+
+

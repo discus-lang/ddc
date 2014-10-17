@@ -1,0 +1,12 @@
+:set Synth
+
+
+-- Just a generate
+:flow-rate..
+module Test with letrec
+test (sz: Nat#)
+        : Vector# Nat#
+ =      vgenerate# sz (add# 1#)
+;;
+
+

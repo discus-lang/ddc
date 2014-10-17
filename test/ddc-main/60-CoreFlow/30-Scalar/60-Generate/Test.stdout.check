@@ -1,0 +1,53 @@
+ok
+ok
+
+
+-- Single generate output
+module Test with
+letrec {
+  gen : [k : Rate].Vector# Nat# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Nat#).
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let s$elem = mul# [Nat#] 2# x1 in
+                   let _ = vwrite# [Nat#] v x1 s$elem in
+                   ()) in
+      ()
+}
+
+-- Generate, then map
+module Test with
+letrec {
+  gen : [k : Rate].Vector# Nat# -> Unit
+    = /\(k : Rate).
+       \(v : Vector# Nat#).
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let s$elem = mul# [Nat#] 2# x1 in
+                   let t$elem = add# [Nat#] 1# s$elem in
+                   let _ = vwrite# [Nat#] v x1 t$elem in
+                   ()) in
+      ()
+}
+
+-- Generate in the presence of other Series
+module Test with
+letrec {
+  gen : [k : Rate].Series# k Nat# -> Vector# Nat# -> Unit
+    = /\(k : Rate).
+       \(s1 : Series# k Nat#).\(v : Vector# Nat#).
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let s1$elem = next# [Nat#] [k] s1 x1 in
+                   let s2$elem = mul# [Nat#] 2# x1 in
+                   let t$elem = add# [Nat#] s1$elem s2$elem in
+                   let _ = vwrite# [Nat#] v x1 t$elem in
+                   ()) in
+      ()
+}
+
+
