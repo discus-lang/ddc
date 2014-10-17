@@ -242,7 +242,12 @@ instance Forward Exp where
 
                  else do        
                         tell mempty { infoInspected = 1}
-                        liftM (XLet a' $ LLet (BName n t) x1') (down x2)
+
+                        -- Note that @n@ has been shadowed
+                        let bindings'   = Map.delete n bindings
+                        x2' <- forwardWith profile config bindings' x2
+
+                        return $ XLet a' (LLet (BName n t) x1') x2'
 
         XLet (_, a') lts x     
          ->     liftM2 (XLet a') (down lts) (down x)
