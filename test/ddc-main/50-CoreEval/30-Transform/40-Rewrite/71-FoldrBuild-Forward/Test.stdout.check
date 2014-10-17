@@ -106,7 +106,7 @@ ok
         Namify: No information;
         Forward:
             Total bindings inspected:      13
-              Trivial substitutions made:  0
+              Trivial substitutions made:  4
               Bindings moved forward:      3;
         Beta reduction:
             Types:          0
@@ -125,7 +125,7 @@ ok
         Namify: No information;
         Forward:
             Total bindings inspected:      11
-              Trivial substitutions made:  2
+              Trivial substitutions made:  4
               Bindings moved forward:      3;
         Beta reduction:
             Types:          7
@@ -145,7 +145,7 @@ ok
         Namify: No information;
         Forward:
             Total bindings inspected:      10
-              Trivial substitutions made:  0
+              Trivial substitutions made:  3
               Bindings moved forward:      2;
         Beta reduction:
             Types:          0
@@ -163,7 +163,7 @@ ok
         Namify: No information;
         Forward:
             Total bindings inspected:      8
-              Trivial substitutions made:  3
+              Trivial substitutions made:  4
               Bindings moved forward:      2;
         Beta reduction:
             Types:          7
@@ -182,7 +182,7 @@ ok
         Namify: No information;
         Forward:
             Total bindings inspected:      7
-              Trivial substitutions made:  0
+              Trivial substitutions made:  2
               Bindings moved forward:      1;
         Beta reduction:
             Types:          0
