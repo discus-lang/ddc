@@ -118,12 +118,12 @@ convertX xx
             v'      <- convertX    v
             return $ xVecLen t' v'
 
-    -- vwrite# [t] vec ix val
+    -- vwrite# [t] buf ix val
     F.NameOpStore (F.OpStoreWriteVector 1)
-     | [xt, vec, ix, val] <- xs
+     | [xt, buf, ix, val] <- xs
      , Just t             <- takeXType xt
      -> do  t'      <- convertType t
-            vec'    <- convertX    vec
+            buf'    <- convertX    buf
             ix'     <- convertX    ix
             val'    <- convertX    val
 
@@ -133,12 +133,22 @@ convertX xx
                     $  mk (T.PrimStore T.PrimStorePoke)
                        [ xRTop anno
                        , XType anno t'
-                       , xVecPtr t' vec'
+                       , buf'
                        , mk (T.PrimArith T.PrimArithMul)
                          [ XType anno T.tNat, ix'
                          , mk (T.PrimStore T.PrimStoreSize) [XType anno t'] ]
                        , val' ])
                (XCon anno DaConUnit)
+
+    -- vbuf# [t] vec
+    F.NameOpStore F.OpStoreBufOfVector
+     | [xt, vec]          <- xs
+     , Just t             <- takeXType xt
+     -> do  t'      <- convertType t
+            vec'    <- convertX    vec
+
+            return
+             $ xVecPtr t' vec'
 
 
     -- vnew# [t] len

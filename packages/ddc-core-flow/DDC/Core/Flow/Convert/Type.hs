@@ -60,6 +60,11 @@ convertType tt
  = do   _tA' <- convertType tA
         return $ tVec -- T.tTupleN [T.tPtr rTop tA', T.tRef rTop T.tNat]
 
+ -- Convert @Buffer a@ to @Ptr# a@
+ | Just (F.NameTyConFlow F.TyConFlowBuffer, [tA])   <- takePrimTyConApps tt
+ = do   tA' <- convertType tA
+        return $ T.tPtr rTop tA'
+
  -- Convert @TupleN#@ to @Ptr# rTop Obj@
  | Just (F.NameTyConFlow (F.TyConFlowTuple _), ts)   <- takePrimTyConApps tt
  = do   -- Might as well attempt to convert the types, just so we know they're valid
