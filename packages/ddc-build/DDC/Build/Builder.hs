@@ -196,7 +196,7 @@ builder_X8632_Darwin config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "llvm-mc -filetype=obj"  
+                [ "llvm-mc -arch x86 -filetype=obj"  
                 , "-o", oFile
                 ,       sFile ]
 
@@ -250,7 +250,7 @@ builder_X8664_Darwin config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "llvm-mc -filetype=obj"  
+                [ "llvm-mc -arch x86-64 -filetype=obj"  
                 , "-o", oFile
                 ,       sFile ]
 
