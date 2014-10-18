@@ -1,6 +1,6 @@
 -- | Converting DDC expressions to and from Combinator Normal Form.
 module DDC.Core.Flow.Transform.Rates.Combinators
-        ( Fun(..), Bind(..), ABind(..), SBind(..), Seed(..)
+        ( Fun(..), Bind(..), ABind(..), SBind(..), Scalar(..)
         , Program(..)
         , CName(..)
         , lookupA, lookupS, lookupB
@@ -47,23 +47,24 @@ data ABind s a
  -- | filter    :: (a -> Bool)        -> Array a                 -> Array a
  | Filter     (Fun s a)  a
  -- | generate  ::  Nat               -> (Nat -> a)              -> Array a
- | Generate s (Fun s a) 
+ | Generate (Scalar s a) (Fun s a) 
  -- | gather    ::  Array a           -> Array Nat               -> Array a
  | Gather                a a
  -- | cross     ::  Array a           -> Array b                 -> Array (a, b)
  | Cross                 a a
    deriving Show
 
--- | Seed / initial value for a fold.
--- This can either be a literal such as "0", or a named scalar reference
-data Seed s a
- = Seed ExpF (Maybe s)
+-- | Scalars can either be a literal such as "0", or a named scalar reference.
+-- If it's not a named scalar reference, we need to keep the expression so we can reconstruct it later.
+-- (We do not have array literals, so this is only necessary for scalars)
+data Scalar s a
+ = Scalar ExpF (Maybe s)
    deriving Show
 
 -- | A scalar-valued binding
 data SBind s a
  -- | fold      :: (a -> a -> a) -> a -> Array a                 -> a
- = Fold       (Fun s a) (Seed s a) a
+ = Fold       (Fun s a) (Scalar s a) a
    deriving Show
 
 -- | An entire program/function to find a fusion clustering for
@@ -142,13 +143,13 @@ freeOfBind :: Bind s a -> [CName s a]
 freeOfBind b
  = case b of
    SBind _ (Fold fun i a)
-    -> ffun fun ++ fseed i ++ [fa a]
+    -> ffun fun ++ fscalar i ++ [fa a]
    ABind _ (MapN fun as)
     -> ffun fun ++ map fa as
    ABind _ (Filter fun a)
     -> ffun fun ++ [fa a]
    ABind _ (Generate s fun)
-    -> ffun fun ++ [fs s]
+    -> ffun fun ++ fscalar s
    ABind _ (Gather x y)
     -> [fa x, fa y]
    ABind _ (Cross x y)
@@ -157,8 +158,8 @@ freeOfBind b
     -> map fs inS ++ map fa inA
  where
   ffun  (Fun _ f)               = map fs f
-  fseed (Seed _ Nothing)        = []
-  fseed (Seed _ (Just s))       = [NameScalar s]
+  fscalar (Scalar _ Nothing)        = []
+  fscalar (Scalar _ (Just s))       = [NameScalar s]
   fs                            = NameScalar
   fa                            = NameArray
 
@@ -210,10 +211,10 @@ instance (Pretty s, Pretty a) => Pretty (Fun s a) where
   = encloseSep lbrace rbrace space
   $ map ppr ss
 
-instance (Pretty s, Pretty a) => Pretty (Seed s a) where
- ppr (Seed _ Nothing)
+instance (Pretty s, Pretty a) => Pretty (Scalar s a) where
+ ppr (Scalar _ Nothing)
   = text "-"
- ppr (Seed _ (Just s))
+ ppr (Scalar _ (Just s))
   = ppr s
 
 instance (Pretty s, Pretty a) => Pretty (Bind s a) where

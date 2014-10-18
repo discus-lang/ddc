@@ -217,7 +217,7 @@ process types env arrIns bs
  where
   getPre b
    -- There is no point of having a reduce that isn't returned.
-   | ((s, Left (Fold _ (Seed z _) _)), _)       <- b
+   | ((s, Left (Fold _ (Scalar z _) _)), _)       <- b
    = [LLet (BName (NameVarMod s "ref") $ tRef $ tyOf s) (xNew (tyOf s) z)]
 
    -- Returned vectors
@@ -230,7 +230,7 @@ process types env arrIns bs
 
 
   getPost b
-   | ((s, Left (Fold _ (Seed _ _) _)), _)       <- b
+   | ((s, Left (Fold _ (Scalar _ _) _)), _)       <- b
    = [ LLet (BName s $ sctyOf s) (xRead (tyOf s) (var $ NameVarMod s "ref")) ]
 
    -- Ignore anything else
@@ -251,7 +251,7 @@ process types env arrIns bs
 
 
   mkProcs (b:rs)
-   | ((s, Left (Fold (Fun xf _) (Seed xs _) ain)), _)   <- b
+   | ((s, Left (Fold (Fun xf _) (Scalar xs _) ain)), _)   <- b
    = let rest = mkProcs rs
      in  XLet (LLet   (BName (NameVarMod s "proc") $ tProcess)
               $ xApps (xVarOpSeries OpSeriesReduce)
@@ -327,8 +327,8 @@ process types env arrIns bs
    | (i:_) <- arrIns
    = xApps (xVarOpVector OpVectorLength) [xsctyOf i, var i]
    -- Or if it's a generate, find the size of the generate expression.
-   | (sz:_) <- concatMap findGenerateSize bs
-   = var sz
+   | (Scalar sz _:_) <- concatMap findGenerateSize bs
+   = sz
    -- XXX Otherwise it must be an external, and this won't be called...
    | otherwise
    = error ("ddc-core-flow: allocSize, but no size known" ++ show arrIns ++ "\n" ++ show bs)

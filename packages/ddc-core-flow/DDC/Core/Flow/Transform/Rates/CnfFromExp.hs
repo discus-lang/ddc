@@ -108,7 +108,7 @@ getBind (nm,(t,x)) env
     | Just fun     <- getFun worker
     , snm          <- name seed
     , Just a       <- name arr
-    -> SBind nm (Fold fun (Seed seed snm) a)
+    -> SBind nm (Fold fun (Scalar seed snm) a)
 
    (OpVectorMap n, worker : arrs)
     | Just fun       <- getFun worker
@@ -123,8 +123,8 @@ getBind (nm,(t,x)) env
 
    (OpVectorGenerate, [sz, worker])
     | Just fun       <- getFun worker
-    , Just sz'       <- name   sz -- TODO this should handle constructors like reduce above 
-    -> ABind nm (Generate sz' fun)
+    , snm            <- name   sz
+    -> ABind nm (Generate (Scalar sz snm) fun)
 
    _ | otherwise
     -> external
