@@ -179,8 +179,9 @@ builder_X8632_Darwin config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 -relocation-model=pic" 
-                ,       llFile 
+                [ "opt -O3"
+                , llFile
+                , "| llc -O3 -march=x86 -relocation-model=pic"
                 , "-o", sFile ]
 
         , buildCC
@@ -232,8 +233,9 @@ builder_X8664_Darwin config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86-64 -relocation-model=pic"
-                ,       llFile 
+                [ "opt -O3"
+                , llFile
+                , "| llc -O3 -march=x86-64 -relocation-model=pic"
                 , "-o", sFile ]
 
         , buildCC
