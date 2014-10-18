@@ -30,6 +30,8 @@ instance Pretty OpVector where
         OpVectorGenerate          -> text "vgenerate"             <> text "#"
         OpVectorLength            -> text "vlength"               <> text "#"
 
+        OpVectorGather            -> text "vgather"               <> text "#"
+
 
 -- | Read a data flow operator name.
 readOpVector :: String -> Maybe OpVector
@@ -47,6 +49,7 @@ readOpVector str
                 "vreduce#"      -> Just $ OpVectorReduce
                 "vgenerate#"    -> Just $ OpVectorGenerate
                 "vlength#"      -> Just $ OpVectorLength
+                "vgather#"      -> Just $ OpVectorGather
                 _               -> Nothing
 
 
@@ -120,6 +123,13 @@ takeTypeOpVector op
         OpVectorLength
          -> Just $ tForalls [kData] $ \[tA] 
                 -> tVector tA `tFun` tNat
+
+        -- gather   :: [a : Data]. Vector a -> Vector Nat# -> Vector a
+        OpVectorGather
+         -> Just $ tForalls [kData] $ \[tA] 
+                ->     tVector tA
+                `tFun` tVector tNat
+                `tFun` tVector tA
 
         _ -> Nothing
 

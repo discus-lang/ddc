@@ -1,0 +1,20 @@
+:set Synth
+:set lang Flow
+
+:flow-rate..
+module Test with letrec
+test    (orig : Vector# Int#) (ix : Vector# Nat#)
+ = do   flub  = vgather# orig ix
+        flub
+;;
+
+:flow-rate..
+module Test with letrec
+test    (orig : Vector# Int#) (ix : Vector# Nat#)
+ = do   len   = vlength# orig
+        ix'   = vfilter# (gt# len) ix
+        flub  = vgather# orig ix'
+        flub
+;;
+
+

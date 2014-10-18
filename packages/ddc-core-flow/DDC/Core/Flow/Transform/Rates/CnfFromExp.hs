@@ -126,6 +126,11 @@ getBind (nm,(t,x)) env
     , snm            <- name   sz
     -> ABind nm (Generate (Scalar sz snm) fun)
 
+   (OpVectorGather, [v, ix])
+    | Just v'        <- name   v
+    , Just ix'       <- name   ix
+    -> ABind nm (Gather v' ix')
+
    _ | otherwise
     -> external
 

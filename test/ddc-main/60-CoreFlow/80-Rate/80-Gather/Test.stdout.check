@@ -1,0 +1,48 @@
+ok
+ok
+
+module Test with
+let flub$runproc$process : Vector# Int# -> Vector# Int# -> [flub$'$k : Rate].RateNat# flub$'$k -> Series# flub$'$k Nat# -> Process#
+      = \(flub orig : Vector# Int#).
+        /\(flub$'$k : Rate).
+         \(flub$'$k$r : RateNat# flub$'$k).\(ix$s : Series# flub$'$k Nat#).
+        let flub$s : Series# flub$'$k Int# = sgather# [flub$'$k] [Int#] orig ix$s in
+        let flub$proc : Process# = sfill# [flub$'$k] [Int#] flub flub$s in
+        flub$proc
+letrec {
+  test : Vector# Int# -> Vector# Nat# -> Vector# Int#
+    = \(orig : Vector# Int#).\(ix : Vector# Nat#).
+      let flub : Vector# Int#
+            = vnew# [Int#] (vlength# [Nat#] ix) in
+      let flub$runproc : Bool#
+            = runProcess# [Nat#] ix (flub$runproc$process flub orig) in
+      flub
+}
+
+module Test with
+let ix'$runproc$process : Vector# Int# -> Nat# -> Vector# Int# -> [ix$k : Rate].RateNat# ix$k -> Series# ix$k Nat# -> Process#
+      = \(flub : Vector# Int#).\(len : Nat#).\(orig : Vector# Int#).
+        /\(ix$k : Rate).
+         \(ix$k$r : RateNat# ix$k).\(ix$s : Series# ix$k Nat#).
+        let ix'$flags : Series# ix$k Bool#
+              = smap# [ix$k] [Nat#] [Bool#]
+                    (\(x0 : Nat#). gt# [Nat#] len x0) ix$s in
+        smkSel# [ix$k] ix'$flags
+            (/\(ix'$'$k : Rate).
+              \(ix'$sel : Sel1# ix$k ix'$'$k).
+             let ix'$s : Series# ix'$'$k Nat# = spack# [ix$k] [ix'$'$k] [Nat#] ix'$sel ix$s in
+             let flub$s : Series# ix'$'$k Int# = sgather# [ix'$'$k] [Int#] orig ix'$s in
+             let flub$proc : Process# = sfill# [ix'$'$k] [Int#] flub flub$s in
+             flub$proc)
+letrec {
+  test : Vector# Int# -> Vector# Nat# -> Vector# Int#
+    = \(orig : Vector# Int#).\(ix : Vector# Nat#).
+      let len : Nat# = vlength# [Int#] orig in
+      let flub : Vector# Int#
+            = vnew# [Int#] (vlength# [Nat#] ix) in
+      let ix'$runproc : Bool#
+            = runProcess# [Nat#] ix (ix'$runproc$process flub len orig) in
+      flub
+}
+
+

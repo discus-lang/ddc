@@ -296,5 +296,11 @@ data OpVector
 
         -- | Get a vector's length.
         | OpVectorLength
+
+        -- | Gather  (read) elements from a vector:
+        --
+        -- > gather v ix = map (v!) ix
+        --
+        | OpVectorGather
         deriving (Eq, Ord, Show)
 

@@ -241,7 +241,7 @@ generateBind env b
    ABind z (Gather _ i)
     -> let u    = K' (KV z)
            env' = evar z : EUnify u : env
-           con  = CEqual z (TVar u) `CAnd` CEqual z (TVar $ KV i)
+           con  = CEqual z (TVar u) `CAnd` CEqual i (TVar u)
        in (env', con)
 
    ABind z (Cross x y)
@@ -378,7 +378,7 @@ iter program e nm
          MapN{}         -> get nm'
          Filter _ as    -> get as
          Generate _ _   -> get nm'
-         Gather is _d   -> get is
+         Gather _d is   -> get is
          Cross  as bs   -> TCross A.<$> get as A.<*> get bs
  -- Otherwise, it's external.
  | otherwise
@@ -411,7 +411,7 @@ trans bs nm
 
      Just (MapN _ ns)
       -> listToMaybe $ catMaybes $ map (trans' . NameArray) ns
-     Just (Gather i _d)
+     Just (Gather _d i)
       -> trans' (NameArray i)
 
      Just (Generate _ _)

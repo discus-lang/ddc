@@ -7,6 +7,7 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , envOfBind
         , freeOfBind, cnameOfBind
         , outputsOfCluster, inputsOfCluster
+        , seriesInputsOfCluster
         ) where
 import DDC.Base.Pretty
 import DDC.Core.Flow.Exp (ExpF)
@@ -163,6 +164,30 @@ freeOfBind b
   fs                            = NameScalar
   fa                            = NameArray
 
+-- | Get inputs that must be converted to series
+seriesInputOfBind :: Bind s a -> [a]
+seriesInputOfBind b
+ = case b of
+   SBind _ (Fold _fun _i a)
+    -> [a]
+   ABind _ (MapN _fun as)
+    -> as
+   ABind _ (Filter _fun a)
+    -> [a]
+   ABind _ (Generate _s _fun)
+    -> []
+   ABind _ (Gather _v ix)
+   -- Only the indices array is consumed series-wise.
+   -- The vector is random access.
+    -> [ix]
+   -- Cross product's first is consumed in series, but second is consumed multiple times
+   ABind _ (Cross x _y)
+    -> [x]
+   -- Externals do not require series inputs.
+   Ext _ _ (_inS,_inA)
+    -> []
+
+
 
 -- | For a given program and list of nodes that will be clustered together,
 -- find a list of the nodes that are used afterwards.
@@ -199,6 +224,21 @@ inputsOfCluster prog cluster
 
        -- Ignore the ones in the cluster
        found   = filter (not . flip elem cluster) frees
+   in  nub $ found
+
+-- | For a given program and list of nodes that will be clustered together,
+-- find a list of the inputs that need to be converted to series.
+-- If the cluster is correct, these should all be the same size.
+seriesInputsOfCluster :: (Eq s, Eq a) => Program s a -> [CName s a] -> [a]
+seriesInputsOfCluster prog cluster
+       -- Get bindings of clusters
+ = let binds   = catMaybes
+               $ map (lookupB prog) cluster
+       -- And find the free variables
+       frees   = concatMap seriesInputOfBind      binds
+
+       -- Ignore the ones in the cluster
+       found   = filter (not . flip elem cluster . NameArray) frees
    in  nub $ found
 
 

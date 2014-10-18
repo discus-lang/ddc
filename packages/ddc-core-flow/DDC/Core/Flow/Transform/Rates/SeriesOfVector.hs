@@ -3,7 +3,6 @@ module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
 where
-import DDC.Core.Pretty
 import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
@@ -22,10 +21,7 @@ import qualified DDC.Type.Env           as Env
 import qualified Data.Map as Map
 import           Data.Map   (Map)
 import qualified Data.Set as Set
-import           Data.Set   (Set)
-import Data.Maybe (catMaybes)
 import Data.Monoid (mappend)
-
 
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
@@ -74,7 +70,7 @@ seriesOfVectorFunction fun
     -> case SI.generate prog of
            Nothing
             -> (fun, [], [])
-           Just (env,s)
+           Just (env,_s)
             -> let g          = graphOfBinds prog env
                    tmap a b   = SI.parents prog env a b
                    clusters   = cluster g tmap
@@ -104,18 +100,15 @@ reconstruct fun prog env clusters
 
   convert c
    = let outputs = outputsOfCluster prog c
-         inputs  = inputsOfCluster prog c
 
-         justArray (NameArray a) = [a]
-         justArray _             = []
-
-         arrIns  = concatMap justArray inputs
+         arrIns  = seriesInputsOfCluster prog c
 
          -- Map over the list of all binds and find only those that we want.
          -- This way is better than mapping lookup over c, as we get them in program order.
          binds   = filter (flip elem c . cnameOfBind) (_binds prog)
          binds'  = map (\a -> (a, cnameOfBind a `elem` outputs)) binds
-     in  mkLets types env arrIns binds'
+         lets    = mkLets types env arrIns binds'
+      in lets
 
 
 -- | Extract processes out so they can be made into separate bindings
@@ -144,9 +137,9 @@ extractProcs lets env
 
    = let fs = freeX Env.empty lam
 
-         isMentioned b
-          | Just b' <- takeSubstBoundOfBind b
-          = Set.member b' fs
+         isMentioned bo
+          | Just bo' <- takeSubstBoundOfBind bo
+          = Set.member bo' fs
           | otherwise
           = False
 
@@ -201,9 +194,7 @@ mkLets types env arrIns bs
 -- No externals.
 --
 -- TODO: 
---  1. filter arrIns to only those that must be series; first args of gather, cross etc.
---  2. what about generate?  
---  3. lift/raise Processes to their own top-level binding
+--  1. filter arrIns to only those that must be series; second arg of gather, first of cross etc.
 process :: Map Name TypeF
         -> SI.Env Name
         -> [Name]
@@ -299,6 +290,12 @@ process types env arrIns bs
           -> llet n's (tSeries (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries OpSeriesGenerate)
                    [ klokX n, xsctyOf n, xf ])
+             go
+
+         Gather v ix
+          -> llet n's (tSeries (klokT n) $ sctyOf n)
+           ( xApps (xVarOpSeries OpSeriesGather)
+                   ([klokX n, xsctyOf v, var v, var $ NameVarMod ix "s"]) )
              go
 
 

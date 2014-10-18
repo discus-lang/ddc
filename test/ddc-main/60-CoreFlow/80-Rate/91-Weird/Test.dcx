@@ -1,0 +1,12 @@
+:set Synth
+
+-- I don't remember the details, but something strange with forwarding was going on here
+:flow-rate..
+module Test with
+letrec
+ foo (m : Vector# Nat#) (i : Nat#)
+  = let y = add# [Nat#] 1# (add# [Nat#] 2# 1#) in
+    let x = add# [Nat#] y y in
+    vmap# (add# x) (vgenerate# i (add# y))
+;;
+
