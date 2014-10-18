@@ -176,8 +176,6 @@ builder_X8632_Darwin config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
-        -- Use -disable-cfi to disable Call Frame Identification (CFI) directives
-        -- because the OSX system assembler doesn't support them.
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -188,7 +186,7 @@ builder_X8632_Darwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"           [(2, BuilderCanceled)]
-                [ "gcc -Werror -std=c99 -O3 -m32"
+                [ "cc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
                 , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
@@ -197,14 +195,14 @@ builder_X8632_Darwin config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "as -arch i386"  
+                [ "llvm-mc -filetype=obj"  
                 , "-o", oFile
                 ,       sFile ]
 
         , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m32" 
+                [ "cc -m32" 
                 , "-o", binFile
                 , intercalate " " oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.dylib" ]
@@ -217,7 +215,7 @@ builder_X8632_Darwin config
         , buildLdLibShared
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ [ "gcc -m32 -dynamiclib -undefined dynamic_lookup"
+                $ [ "cc -m32 -dynamiclib -undefined dynamic_lookup"
                   , "-o", libFile ] ++ oFiles
         }
 
@@ -231,8 +229,6 @@ builder_X8664_Darwin config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
-        -- Use -disable-cfi to disable Call Frame Identification (CFI) directives
-        -- because the OSX system assembler doesn't support them.
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -243,7 +239,7 @@ builder_X8664_Darwin config
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"           [(2, BuilderCanceled)]
-                [ "gcc -Werror -std=c99 -O3 -m64"
+                [ "cc -Werror -std=c99 -O3 -m64"
                 , "-c", cFile
                 , "-o", oFile
                 , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
@@ -252,14 +248,14 @@ builder_X8664_Darwin config
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "gcc -arch x86_64 -c"  
+                [ "llvm-mc -filetype=obj"  
                 , "-o", oFile
                 ,       sFile ]
 
         , buildLdExe  
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m64" 
+                [ "cc -m64" 
                 , "-o", binFile
                 , intercalate " " oFiles
                 , builderConfigBaseLibDir config </> "libddc-runtime.dylib" ]
@@ -272,7 +268,7 @@ builder_X8664_Darwin config
         , buildLdLibShared
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ [ "gcc -m64 -dynamiclib -undefined dynamic_lookup"
+                $ [ "cc -m64 -dynamiclib -undefined dynamic_lookup"
                   , "-o", libFile ] ++ oFiles
         }
 
