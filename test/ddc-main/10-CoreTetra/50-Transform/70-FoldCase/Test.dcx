@@ -1,0 +1,8 @@
+:set lang Flow
+:set trans Snip; Flatten; Namify; FoldCase
+
+-- Test simple case.
+:trans..
+let c = T2# [Nat#] [Nat#] (add# [Nat#] 2# 1#) 3# in
+case c of { T2# x y -> add# [Nat#] x y }
+;;
