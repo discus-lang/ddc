@@ -482,6 +482,7 @@ pipeFlow !mm !pp
 
 
                 goRate
+                 -- Rate inference uses the types
                  = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
                      (Left err, _)    
                       -> return [ErrorCoreTransform err]
@@ -490,8 +491,8 @@ pipeFlow !mm !pp
                       -> let mm_stripped = C.reannotate (const ()) mm'
                              mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
                            
-                             -- Check again to synthesise types
-                         in case C.checkModule (C.configOfProfile Flow.profile) mm_flow C.Recon of
+                            -- Synthesise the types of any newly created bindings.
+                         in case C.checkModule (C.configOfProfile Flow.profile) mm_flow C.Synth of
                              (Left err, _ct)         
                               -> return [ErrorCoreTransform err]
                             

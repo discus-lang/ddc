@@ -3,28 +3,30 @@ ok
 
 -- Use both separately - no reason they should have same rate. Thus, two processes.
 module Test with
-let vs'$runproc$process : Ref# Int# -> Vector# Int# -> [vs'$'$k : Rate].RateNat# vs'$'$k -> Series# vs'$'$k Int# -> Process#
-      = \(vr$ref : Ref# Int#).\(vs' : Vector# Int#).
-        /\(vs'$'$k : Rate).
-         \(vs'$'$k$r : RateNat# vs'$'$k).\(vs$s : Series# vs'$'$k Int#).
-        let vs'$s : Series# vs'$'$k Int#
-              = smap# [vs'$'$k] [Int#] [Int#]
-                    (\(x2 : Int#). add# [Int#] 2i# x2) vs$s in
-        let vs'$proc : Process# = sfill# [vs'$'$k] [Int#] vs' vs'$s in
-        let vr$proc : Process#
-              = sreduce# [vs'$'$k] [Int#] vr$ref
-                    (\(x4 x5 : Int#). add# [Int#] x4 x5) 0i# vs'$s in
-        pjoin# vs'$proc vr$proc
-let us'$runproc$process : Vector# Int# -> [us'$'$k : Rate].RateNat# us'$'$k -> Series# us'$'$k Int# -> Process#
-      = \(us' : Vector# Int#).
-        /\(us'$'$k : Rate).
-         \(us'$'$k$r : RateNat# us'$'$k).\(us$s : Series# us'$'$k Int#).
-        let us'$s : Series# us'$'$k Int#
-              = smap# [us'$'$k] [Int#] [Int#]
-                    (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
-        let us'$proc : Process# = sfill# [us'$'$k] [Int#] us' us'$s in
-        us'$proc
 letrec {
+  vs'$runproc$process : Ref# Int# -> Vector# Int# -> [vs'$'$k : Rate].RateNat# vs'$'$k -> Series# vs'$'$k Int# -> Process#
+    = \(vr$ref : Ref# Int#).\(vs' : Vector# Int#).
+      /\(vs'$'$k : Rate).
+       \(vs'$'$k$r : RateNat# vs'$'$k).\(vs$s : Series# vs'$'$k Int#).
+      let vs'$s : Series# vs'$'$k Int#
+            = smap# [vs'$'$k] [Int#] [Int#]
+                  (\(x2 : Int#). add# [Int#] 2i# x2) vs$s in
+      let vs'$proc : Process# = sfill# [vs'$'$k] [Int#] vs' vs'$s in
+      let vr$proc : Process#
+            = sreduce# [vs'$'$k] [Int#] vr$ref
+                  (\(x4 x5 : Int#). add# [Int#] x4 x5) 0i# vs'$s in
+      pjoin# vs'$proc vr$proc;
+  
+  us'$runproc$process : Vector# Int# -> [us'$'$k : Rate].RateNat# us'$'$k -> Series# us'$'$k Int# -> Process#
+    = \(us' : Vector# Int#).
+      /\(us'$'$k : Rate).
+       \(us'$'$k$r : RateNat# us'$'$k).\(us$s : Series# us'$'$k Int#).
+      let us'$s : Series# us'$'$k Int#
+            = smap# [us'$'$k] [Int#] [Int#]
+                  (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
+      let us'$proc : Process# = sfill# [us'$'$k] [Int#] us' us'$s in
+      us'$proc;
+  
   test : Vector# Int# -> Vector# Int# -> Tuple3# (Vector# Int#) (Vector# Int#) Int#
     = \(us vs : Vector# Int#).
       let vs' : Vector# Int#
@@ -45,42 +47,45 @@ letrec {
 
 -- Try the criss cross one
 module Test with
-let us'$runproc$process : Ref# Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
-      = \(ur$ref : Ref# Int#).
-        /\(us''$'$k : Rate).
-         \(us''$'$k$r : RateNat# us''$'$k).\(us$s : Series# us''$'$k Int#).
-        let us'$s : Series# us''$'$k Int#
-              = smap# [us''$'$k] [Int#] [Int#]
-                    (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
-        let ur$proc : Process#
-              = sreduce# [us''$'$k] [Int#] ur$ref
-                    (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# us'$s in
-        ur$proc
-let vs'$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [vs''$'$k : Rate].RateNat# vs''$'$k -> Series# vs''$'$k Int# -> Process#
-      = \(vs'' : Vector# Int#).\(vr$ref : Ref# Int#).\(ur : Int#).
-        /\(vs''$'$k : Rate).
-         \(vs''$'$k$r : RateNat# vs''$'$k).\(vs$s : Series# vs''$'$k Int#).
-        let vs'$s : Series# vs''$'$k Int#
-              = smap# [vs''$'$k] [Int#] [Int#]
-                    (\(x5 : Int#). add# [Int#] 2i# x5) vs$s in
-        let vr$proc : Process#
-              = sreduce# [vs''$'$k] [Int#] vr$ref
-                    (\(x7 x8 : Int#). add# [Int#] x7 x8) 0i# vs'$s in
-        let vs''$s : Series# vs''$'$k Int#
-              = smap# [vs''$'$k] [Int#] [Int#]
-                    (\(x12 : Int#). add# [Int#] ur x12) vs$s in
-        let vs''$proc : Process# = sfill# [vs''$'$k] [Int#] vs'' vs''$s in
-        pjoin# vr$proc vs''$proc
-let us''$runproc$process : Vector# Int# -> Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
-      = \(us'' : Vector# Int#).\(vr : Int#).
-        /\(us''$'$k : Rate).
-         \(us''$'$k$r : RateNat# us''$'$k).\(us$s : Series# us''$'$k Int#).
-        let us''$s : Series# us''$'$k Int#
-              = smap# [us''$'$k] [Int#] [Int#]
-                    (\(x10 : Int#). add# [Int#] vr x10) us$s in
-        let us''$proc : Process# = sfill# [us''$'$k] [Int#] us'' us''$s in
-        us''$proc
 letrec {
+  us'$runproc$process : Ref# Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
+    = \(ur$ref : Ref# Int#).
+      /\(us''$'$k : Rate).
+       \(us''$'$k$r : RateNat# us''$'$k).\(us$s : Series# us''$'$k Int#).
+      let us'$s : Series# us''$'$k Int#
+            = smap# [us''$'$k] [Int#] [Int#]
+                  (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
+      let ur$proc : Process#
+            = sreduce# [us''$'$k] [Int#] ur$ref
+                  (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# us'$s in
+      ur$proc;
+  
+  vs'$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [vs''$'$k : Rate].RateNat# vs''$'$k -> Series# vs''$'$k Int# -> Process#
+    = \(vs'' : Vector# Int#).\(vr$ref : Ref# Int#).\(ur : Int#).
+      /\(vs''$'$k : Rate).
+       \(vs''$'$k$r : RateNat# vs''$'$k).\(vs$s : Series# vs''$'$k Int#).
+      let vs'$s : Series# vs''$'$k Int#
+            = smap# [vs''$'$k] [Int#] [Int#]
+                  (\(x5 : Int#). add# [Int#] 2i# x5) vs$s in
+      let vr$proc : Process#
+            = sreduce# [vs''$'$k] [Int#] vr$ref
+                  (\(x7 x8 : Int#). add# [Int#] x7 x8) 0i# vs'$s in
+      let vs''$s : Series# vs''$'$k Int#
+            = smap# [vs''$'$k] [Int#] [Int#]
+                  (\(x12 : Int#). add# [Int#] ur x12) vs$s in
+      let vs''$proc : Process# = sfill# [vs''$'$k] [Int#] vs'' vs''$s in
+      pjoin# vr$proc vs''$proc;
+  
+  us''$runproc$process : Vector# Int# -> Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
+    = \(us'' : Vector# Int#).\(vr : Int#).
+      /\(us''$'$k : Rate).
+       \(us''$'$k$r : RateNat# us''$'$k).\(us$s : Series# us''$'$k Int#).
+      let us''$s : Series# us''$'$k Int#
+            = smap# [us''$'$k] [Int#] [Int#]
+                  (\(x10 : Int#). add# [Int#] vr x10) us$s in
+      let us''$proc : Process# = sfill# [us''$'$k] [Int#] us'' us''$s in
+      us''$proc;
+  
   test : Vector# Int# -> Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
     = \(us vs : Vector# Int#).
       let ur$ref : Ref# Int# = new# [Int#] 0i# in
@@ -105,43 +110,46 @@ letrec {
 
 -- Criss cross, but manifest two more vectors
 module Test with
-let us'$runproc$process : Ref# Int# -> Vector# Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
-      = \(ur$ref : Ref# Int#).\(us' : Vector# Int#).
-        /\(us''$'$k : Rate).
-         \(us''$'$k$r : RateNat# us''$'$k).\(us$s : Series# us''$'$k Int#).
-        let us'$s : Series# us''$'$k Int#
-              = smap# [us''$'$k] [Int#] [Int#]
-                    (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
-        let us'$proc : Process# = sfill# [us''$'$k] [Int#] us' us'$s in
-        let ur$proc : Process#
-              = sreduce# [us''$'$k] [Int#] ur$ref
-                    (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# us'$s in
-        pjoin# us'$proc ur$proc
-let vs'$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [vs''$'$k : Rate].RateNat# vs''$'$k -> Series# vs''$'$k Int# -> Process#
-      = \(vs'' : Vector# Int#).\(vr$ref : Ref# Int#).\(ur : Int#).
-        /\(vs''$'$k : Rate).
-         \(vs''$'$k$r : RateNat# vs''$'$k).\(vs$s : Series# vs''$'$k Int#).
-        let vs'$s : Series# vs''$'$k Int#
-              = smap# [vs''$'$k] [Int#] [Int#]
-                    (\(x5 : Int#). add# [Int#] 2i# x5) vs$s in
-        let vr$proc : Process#
-              = sreduce# [vs''$'$k] [Int#] vr$ref
-                    (\(x7 x8 : Int#). add# [Int#] x7 x8) 0i# vs'$s in
-        let vs''$s : Series# vs''$'$k Int#
-              = smap# [vs''$'$k] [Int#] [Int#]
-                    (\(x12 : Int#). add# [Int#] ur x12) vs'$s in
-        let vs''$proc : Process# = sfill# [vs''$'$k] [Int#] vs'' vs''$s in
-        pjoin# vr$proc vs''$proc
-let us''$runproc$process : Vector# Int# -> Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
-      = \(us'' : Vector# Int#).\(vr : Int#).
-        /\(us''$'$k : Rate).
-         \(us''$'$k$r : RateNat# us''$'$k).\(us'$s : Series# us''$'$k Int#).
-        let us''$s : Series# us''$'$k Int#
-              = smap# [us''$'$k] [Int#] [Int#]
-                    (\(x10 : Int#). add# [Int#] vr x10) us'$s in
-        let us''$proc : Process# = sfill# [us''$'$k] [Int#] us'' us''$s in
-        us''$proc
 letrec {
+  us'$runproc$process : Ref# Int# -> Vector# Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
+    = \(ur$ref : Ref# Int#).\(us' : Vector# Int#).
+      /\(us''$'$k : Rate).
+       \(us''$'$k$r : RateNat# us''$'$k).\(us$s : Series# us''$'$k Int#).
+      let us'$s : Series# us''$'$k Int#
+            = smap# [us''$'$k] [Int#] [Int#]
+                  (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
+      let us'$proc : Process# = sfill# [us''$'$k] [Int#] us' us'$s in
+      let ur$proc : Process#
+            = sreduce# [us''$'$k] [Int#] ur$ref
+                  (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# us'$s in
+      pjoin# us'$proc ur$proc;
+  
+  vs'$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [vs''$'$k : Rate].RateNat# vs''$'$k -> Series# vs''$'$k Int# -> Process#
+    = \(vs'' : Vector# Int#).\(vr$ref : Ref# Int#).\(ur : Int#).
+      /\(vs''$'$k : Rate).
+       \(vs''$'$k$r : RateNat# vs''$'$k).\(vs$s : Series# vs''$'$k Int#).
+      let vs'$s : Series# vs''$'$k Int#
+            = smap# [vs''$'$k] [Int#] [Int#]
+                  (\(x5 : Int#). add# [Int#] 2i# x5) vs$s in
+      let vr$proc : Process#
+            = sreduce# [vs''$'$k] [Int#] vr$ref
+                  (\(x7 x8 : Int#). add# [Int#] x7 x8) 0i# vs'$s in
+      let vs''$s : Series# vs''$'$k Int#
+            = smap# [vs''$'$k] [Int#] [Int#]
+                  (\(x12 : Int#). add# [Int#] ur x12) vs'$s in
+      let vs''$proc : Process# = sfill# [vs''$'$k] [Int#] vs'' vs''$s in
+      pjoin# vr$proc vs''$proc;
+  
+  us''$runproc$process : Vector# Int# -> Int# -> [us''$'$k : Rate].RateNat# us''$'$k -> Series# us''$'$k Int# -> Process#
+    = \(us'' : Vector# Int#).\(vr : Int#).
+      /\(us''$'$k : Rate).
+       \(us''$'$k$r : RateNat# us''$'$k).\(us'$s : Series# us''$'$k Int#).
+      let us''$s : Series# us''$'$k Int#
+            = smap# [us''$'$k] [Int#] [Int#]
+                  (\(x10 : Int#). add# [Int#] vr x10) us'$s in
+      let us''$proc : Process# = sfill# [us''$'$k] [Int#] us'' us''$s in
+      us''$proc;
+  
   test : Vector# Int# -> Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
     = \(us vs : Vector# Int#).
       let us' : Vector# Int#

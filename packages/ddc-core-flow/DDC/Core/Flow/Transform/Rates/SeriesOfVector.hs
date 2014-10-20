@@ -46,13 +46,13 @@ seriesOfVectorLets :: LetsF -> ([LetsF], [(Name,Fail)])
 seriesOfVectorLets ll
  | LLet b@(BName n _) x <- ll
  , (x',ls',errs)  <- seriesOfVectorFunction x
- = ( ls' ++ [LLet b x']
+ = ( map (uncurry LLet) ls' ++ [LLet b x']
    , map (\f -> (n,f)) errs)
 
  | LRec bxs             <- ll
  , (bs,xs)              <- unzip bxs
  , (xs',ls', _errs)          <- unzip3 $ map seriesOfVectorFunction xs
- = ( concat ls' ++ [LRec (bs `zip` xs')]
+ = ( [LRec (concat ls' ++ (bs `zip` xs'))]
    , []) 
         -- We still need to produce errors if this doesn't work.
 
@@ -61,7 +61,7 @@ seriesOfVectorLets ll
 
 
 -- | Takes a single function body. Function body must be in a-normal form.
-seriesOfVectorFunction :: ExpF -> (ExpF, [LetsF], [Fail])
+seriesOfVectorFunction :: ExpF -> (ExpF, [(BindF,ExpF)], [Fail])
 seriesOfVectorFunction fun
  = case cnfOfExp fun of
    Left err
@@ -83,7 +83,7 @@ reconstruct
         -> Program Name Name
         -> SI.Env Name
         -> [[CName Name Name]]
-        -> (ExpF, [LetsF])
+        -> (ExpF, [(BindF, ExpF)])
 reconstruct fun prog env clusters
  = (makeXLamFlags lams
    $ xLets lets' xx
@@ -112,7 +112,7 @@ reconstruct fun prog env clusters
 
 
 -- | Extract processes out so they can be made into separate bindings
-extractProcs :: [LetsF] -> [DDC.Bind Name] -> ([LetsF], [LetsF])
+extractProcs :: [LetsF] -> [DDC.Bind Name] -> ([LetsF], [(BindF,ExpF)])
 extractProcs lets env
  = go lets $ env
  where
@@ -150,7 +150,7 @@ extractProcs lets env
          x' = xApps op (xs ++ [xApps (XVar $ UName nm') (map XVar (takeSubstBoundsOfBinds os))])
 
          p' = makeXLamFlags (map (\o -> (False, o)) os) lam
-     in ([LLet b x'], [LLet (BName nm' (tBot kData)) p'])
+     in ([LLet b x'], [(BName nm' (tBot kData),  p')])
 
    | otherwise
    = ([LLet b x], [])

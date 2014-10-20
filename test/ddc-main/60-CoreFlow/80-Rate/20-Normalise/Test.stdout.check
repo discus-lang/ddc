@@ -3,24 +3,26 @@ ok
 
 -- Normalise - sum, then map. Requires two kernels
 module Test with
-let n$runproc$process : Ref# Int# -> [x4$'$k : Rate].RateNat# x4$'$k -> Series# x4$'$k Int# -> Process#
-      = \(n$ref : Ref# Int#).
-        /\(x4$'$k : Rate).
-         \(x4$'$k$r : RateNat# x4$'$k).\(u1$s : Series# x4$'$k Int#).
-        let n$proc : Process#
-              = sreduce# [x4$'$k] [Int#] n$ref
-                    (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
-        n$proc
-let x4$runproc$process : Vector# Int# -> Int# -> [x4$'$k : Rate].RateNat# x4$'$k -> Series# x4$'$k Int# -> Process#
-      = \(x4 : Vector# Int#).\(n : Int#).
-        /\(x4$'$k : Rate).
-         \(x4$'$k$r : RateNat# x4$'$k).\(u1$s : Series# x4$'$k Int#).
-        let x4$s : Series# x4$'$k Int#
-              = smap# [x4$'$k] [Int#] [Int#]
-                    (\(x : Int#). div# [Int#] x n) u1$s in
-        let x4$proc : Process# = sfill# [x4$'$k] [Int#] x4 x4$s in
-        x4$proc
 letrec {
+  n$runproc$process : Ref# Int# -> [x4$'$k : Rate].RateNat# x4$'$k -> Series# x4$'$k Int# -> Process#
+    = \(n$ref : Ref# Int#).
+      /\(x4$'$k : Rate).
+       \(x4$'$k$r : RateNat# x4$'$k).\(u1$s : Series# x4$'$k Int#).
+      let n$proc : Process#
+            = sreduce# [x4$'$k] [Int#] n$ref
+                  (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
+      n$proc;
+  
+  x4$runproc$process : Vector# Int# -> Int# -> [x4$'$k : Rate].RateNat# x4$'$k -> Series# x4$'$k Int# -> Process#
+    = \(x4 : Vector# Int#).\(n : Int#).
+      /\(x4$'$k : Rate).
+       \(x4$'$k$r : RateNat# x4$'$k).\(u1$s : Series# x4$'$k Int#).
+      let x4$s : Series# x4$'$k Int#
+            = smap# [x4$'$k] [Int#] [Int#]
+                  (\(x : Int#). div# [Int#] x n) u1$s in
+      let x4$proc : Process# = sfill# [x4$'$k] [Int#] x4 x4$s in
+      x4$proc;
+  
   test : Vector# Int# -> Vector# Int#
     = \(u1 : Vector# Int#).
       let n$ref : Ref# Int# = new# [Int#] 0i# in
@@ -37,27 +39,29 @@ letrec {
 
 -- Normalise with extra reduce
 module Test with
-let n$runproc$process : Ref# Int# -> [xs$'$k : Rate].RateNat# xs$'$k -> Series# xs$'$k Int# -> Process#
-      = \(n$ref : Ref# Int#).
-        /\(xs$'$k : Rate).
-         \(xs$'$k$r : RateNat# xs$'$k).\(u1$s : Series# xs$'$k Int#).
-        let n$proc : Process#
-              = sreduce# [xs$'$k] [Int#] n$ref
-                    (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
-        n$proc
-let xs$runproc$process : Ref# Int# -> Vector# Int# -> Int# -> [xs$'$k : Rate].RateNat# xs$'$k -> Series# xs$'$k Int# -> Process#
-      = \(y$ref : Ref# Int#).\(xs : Vector# Int#).\(n : Int#).
-        /\(xs$'$k : Rate).
-         \(xs$'$k$r : RateNat# xs$'$k).\(u1$s : Series# xs$'$k Int#).
-        let xs$s : Series# xs$'$k Int#
-              = smap# [xs$'$k] [Int#] [Int#]
-                    (\(x : Int#). div# [Int#] x n) u1$s in
-        let xs$proc : Process# = sfill# [xs$'$k] [Int#] xs xs$s in
-        let y$proc : Process#
-              = sreduce# [xs$'$k] [Int#] y$ref
-                    (\(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# u1$s in
-        pjoin# xs$proc y$proc
 letrec {
+  n$runproc$process : Ref# Int# -> [xs$'$k : Rate].RateNat# xs$'$k -> Series# xs$'$k Int# -> Process#
+    = \(n$ref : Ref# Int#).
+      /\(xs$'$k : Rate).
+       \(xs$'$k$r : RateNat# xs$'$k).\(u1$s : Series# xs$'$k Int#).
+      let n$proc : Process#
+            = sreduce# [xs$'$k] [Int#] n$ref
+                  (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
+      n$proc;
+  
+  xs$runproc$process : Ref# Int# -> Vector# Int# -> Int# -> [xs$'$k : Rate].RateNat# xs$'$k -> Series# xs$'$k Int# -> Process#
+    = \(y$ref : Ref# Int#).\(xs : Vector# Int#).\(n : Int#).
+      /\(xs$'$k : Rate).
+       \(xs$'$k$r : RateNat# xs$'$k).\(u1$s : Series# xs$'$k Int#).
+      let xs$s : Series# xs$'$k Int#
+            = smap# [xs$'$k] [Int#] [Int#]
+                  (\(x : Int#). div# [Int#] x n) u1$s in
+      let xs$proc : Process# = sfill# [xs$'$k] [Int#] xs xs$s in
+      let y$proc : Process#
+            = sreduce# [xs$'$k] [Int#] y$ref
+                  (\(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# u1$s in
+      pjoin# xs$proc y$proc;
+  
   test : Vector# Int# -> Tuple2# (Vector# Int#) Int#
     = \(u1 : Vector# Int#).
       let n$ref : Ref# Int# = new# [Int#] 0i# in
