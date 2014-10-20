@@ -40,7 +40,7 @@ foldCase :: (Ord n, TransformDownMX (FoldCase a n) c)
 
 foldCase config xx
  = {-# SCC foldCase #-}
-   trace "foldCase" $ evalState (transformDownMX (\_ _ -> foldCaseX config) Env.empty Env.empty xx) M.empty
+   evalState (transformDownMX (\_ _ -> foldCaseX config) Env.empty Env.empty xx) M.empty
 
 foldCaseX :: Ord n
         => Config
@@ -51,7 +51,7 @@ foldCaseX :: Ord n
 foldCaseX _
         x@(XLet _ (LLet (BName b _) ex) _)
  | Just (dc, args) <- takeXConApps ex
- = trace "inside collect" $ do
+ = do
         modify (M.insert b (dc, args))
         return x
 
@@ -79,7 +79,7 @@ foldCaseX config
            -> foldr (\(x', bnd) next -> XLet (annotOfExp x') (LLet bnd x') next)
                 rest (zip (filter (not . isXType) args') binds)
 
-          _ -> trace "bailing second case" x
+          _ -> x
 
 
 -- Default case.
