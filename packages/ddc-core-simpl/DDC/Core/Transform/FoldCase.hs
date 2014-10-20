@@ -12,7 +12,6 @@ import DDC.Core.Transform.TransformDownX
 import Control.Monad.State.Strict
 import qualified Data.Map.Strict as M
 import qualified DDC.Type.Env    as Env
-import Debug.Trace
 
 data Config
         = Config
