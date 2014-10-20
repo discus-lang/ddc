@@ -23,6 +23,7 @@ import DDC.Base.Pretty
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.Beta        as Beta
+import qualified DDC.Core.Transform.FoldCase    as FoldCase
 import Data.Monoid
 
 
@@ -87,6 +88,9 @@ data Transform s a n
         -- | Float single-use bindings forward into their use sites.
         | Forward
 
+        -- | Fold case expressions.
+        | FoldCase FoldCase.Config
+
         -- | Inline definitions into their use sites.
         | Inline
                 { -- | Get the unfolding for a named variable.
@@ -139,6 +143,7 @@ instance Pretty (Transform s a n) where
         Eta{}           -> text "Eta"
         Flatten         -> text "Flatten"
         Forward         -> text "Forward"
+        FoldCase{}      -> text "FoldCase"
         Inline{}        -> text "Inline"
         Lambdas{}       -> text "Lambdas"
         Namify{}        -> text "Namify"

@@ -24,6 +24,7 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Prune
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Snip          as Snip
+import DDC.Core.Transform.FoldCase      as FoldCase
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
@@ -147,6 +148,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
          -> let config  = Forward.Config (const FloatAllow) False
             in  return $ forwardModule profile config mm
 
+        FoldCase config  -> res    $ foldCase config mm
         Inline getDef    -> res    $ inline getDef Set.empty mm
         Lambdas          -> res    $ lambdasModule profile mm
         Namify namK namT -> namifyUnique namK namT mm >>= res
@@ -298,6 +300,8 @@ applyTransformX !profile !kenv !tenv !spec !xx
             in  return $ forwardX profile config xx
 
         Inline  getDef    -> res    $ inline getDef Set.empty xx
+
+        FoldCase config   -> res    $ foldCase config xx
 
         -- TODO: Make this work for single expressions.
         -- Attach the lifted bindings to an outer letrec.

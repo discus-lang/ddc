@@ -16,6 +16,7 @@ import Data.Set                                 (Set)
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Beta        as Beta
 import qualified DDC.Core.Transform.Eta         as Eta
+import qualified DDC.Core.Transform.FoldCase    as FoldCase
 import qualified DDC.Base.Parser                as P
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
@@ -199,6 +200,9 @@ readTransformAtomic kk
         "Eta"           -> Just (Eta  Eta.configZero  { Eta.configExpand = True })
         "Flatten"       -> Just Flatten
         "Forward"       -> Just Forward
+        "FoldCase"      -> Just (FoldCase FoldCase.configZero
+                                                      { FoldCase.configCaseOfConstructor = True
+                                                      , FoldCase.configCaseOfCase        = True })
         "Lambdas"       -> Just Lambdas
         "Prune"         -> Just Prune
         "Snip"          -> Just (Snip Snip.configZero)
