@@ -7,6 +7,7 @@ module DDC.Core.Simplifier.Recipe
         , snip
         , snipOver
         , flatten
+        , foldCase
         , beta
         , betaLets
         , prune
@@ -20,8 +21,9 @@ module DDC.Core.Simplifier.Recipe
 where
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
-import qualified DDC.Core.Transform.Snip  as Snip
-import qualified DDC.Core.Transform.Beta  as Beta
+import qualified DDC.Core.Transform.Snip     as Snip
+import qualified DDC.Core.Transform.Beta     as Beta
+import qualified DDC.Core.Transform.FoldCase as FoldCase
 import DDC.Type.Env
 import Data.Monoid
 
@@ -53,6 +55,11 @@ snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
 flatten   :: Simplifier s a n
 flatten   = Trans Flatten
 
+-- | Fold case expressions.
+foldCase  :: Simplifier s a n
+foldCase  = Trans (FoldCase (FoldCase.configZero
+                                        { FoldCase.configCaseOfConstructor = True
+                                        , FoldCase.configCaseOfCase        = True }))
 
 -- | Perform beta reduction
 beta    :: Simplifier s a n
