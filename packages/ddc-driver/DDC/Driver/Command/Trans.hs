@@ -1,5 +1,3 @@
-{-# OPTIONS -Werror #-}
-
 module DDC.Driver.Command.Trans
         ( cmdTransDetect
         , cmdTransModule

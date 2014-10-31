@@ -18,8 +18,8 @@ Library
         array           >= 0.4 && < 0.6,
         deepseq         == 1.3.*,
         containers      == 0.5.*,
-        transformers    == 0.3.*,
-        mtl             == 2.1.*,
+        transformers    == 0.4.*,
+        mtl             == 2.2.*,
         ddc-base        == 0.4.1.*,
         ddc-core        == 0.4.1.*
 

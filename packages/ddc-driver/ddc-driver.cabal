@@ -1,5 +1,5 @@
 Name:           ddc-driver
-Version:        0.4.1.1
+Version:        0.4.1.2
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -22,9 +22,9 @@ Library
         deepseq          == 1.3.*,
         containers       == 0.5.*,
         filepath         == 1.3.*,
-        mtl              == 2.1.*,
+        mtl              == 2.2.*,
         directory        == 1.2.*,
-        transformers     == 0.3.*,
+        transformers     == 0.4.*,
         ddc-base         == 0.4.1.*,
         ddc-core         == 0.4.1.*,
         ddc-core-eval    == 0.4.1.*,

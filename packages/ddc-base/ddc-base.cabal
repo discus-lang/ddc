@@ -1,5 +1,5 @@
 Name:           ddc-base
-Version:        0.4.1.1
+Version:        0.4.1.2
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -19,7 +19,7 @@ Library
   Build-Depends: 
         base            >= 4.6 && < 4.8,
         deepseq         == 1.3.*,
-        transformers    == 0.3.*,
+        transformers    == 0.4.*,
         containers      == 0.5.*,
         wl-pprint       == 1.1.*,
         parsec          == 3.1.*
