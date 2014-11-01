@@ -143,8 +143,6 @@ convertTyCon tc
         TyConSpec    TcConUnit   
          -> return $ O.tPtr O.rTop O.tObj
 
---        -> return $ TCon $ TyConSpec TcConUnit
-
         -- Convert primitive unboxed TyCons to Salt form.
         TyConBound   (UPrim n _)  _
          ->     convertTyConPrim n
