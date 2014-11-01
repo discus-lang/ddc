@@ -60,8 +60,6 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
   loop  buildExe interfaces filePath 
         modNamesPath
    = do
-        liftIO $ putStrLn $ "building " ++ filePath
-
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -73,8 +71,6 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
         -- Parse just the header of the module to determine what other modules
         -- it imports.
         modNamesNeeded  <- tasteNeeded filePath src
-
-        liftIO $ putStrLn $ "needed " ++ (show $ modNamesNeeded)
 
         -- Recursively compile modules until we have all the interfaces required
         -- for the current one.
