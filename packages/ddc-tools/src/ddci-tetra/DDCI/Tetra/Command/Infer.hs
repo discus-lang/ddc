@@ -30,7 +30,7 @@ cmdInfer _state source str
                         , contextFunctionalClosures     = False }
 
            in   case BP.runTokenParser C.describeTok (nameOfSource source)
-                        (pModule False context) tokens of
+                        (pModule context) tokens of
                  Left err        -> error $ show err
                  Right mm        -> goDesugar mm
 

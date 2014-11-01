@@ -30,11 +30,10 @@ import DDC.Core.Parser
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
 pModule :: (Ord n, Pretty n) 
-        => Bool         -- ^ Just parse the module header, not including the top-level bindings.
-        -> Context      -- ^ Parser context.
+        => Context      -- ^ Parser context.
         -> Parser n (Module P.SourcePos n)
 
-pModule justHeader c
+pModule c
  = do   
         _sp     <- pTokSP KModule
         name    <- pModuleName <?> "a module name"
@@ -56,20 +55,17 @@ pModule justHeader c
 
         -- top-level declarations.
         tops    
-         <- if justHeader 
-             then return []
-             else P.choice
-                [ do    
-                        pTok KWhere
-                        pTok KBraceBra
+         <- P.choice
+            [do pTok KWhere
+                pTok KBraceBra
 
-                        -- TOP;+
-                        tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
+                -- TOP;+
+                tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
 
-                        pTok KBraceKet
-                        return tops
+                pTok KBraceKet
+                return tops
 
-                , do    return [] ]
+            ,do return [] ]
 
 
         -- ISSUE #295: Check for duplicate exported names in module parser.

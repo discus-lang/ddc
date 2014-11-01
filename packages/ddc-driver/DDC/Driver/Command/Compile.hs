@@ -8,6 +8,7 @@ import DDC.Interface.Source
 import DDC.Data.Canned
 import DDC.Build.Pipeline
 import DDC.Build.Interface.Base
+import DDC.Data.Token
 import System.FilePath
 import System.Directory
 import Control.Monad
@@ -59,6 +60,8 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
   loop  buildExe interfaces filePath 
         modNamesPath
    = do
+        liftIO $ putStrLn $ "building " ++ filePath
+
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -70,6 +73,8 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
         -- Parse just the header of the module to determine what other modules
         -- it imports.
         modNamesNeeded  <- tasteNeeded filePath src
+
+        liftIO $ putStrLn $ "needed " ++ (show $ modNamesNeeded)
 
         -- Recursively compile modules until we have all the interfaces required
         -- for the current one.
@@ -276,7 +281,12 @@ tasteNeeded
 
 tasteNeeded filePath src 
         | takeExtension filePath == ".ds"
-        = do    let tokens      = SE.lexModuleString filePath 1 src
+        = do    
+                -- Lex the module, dropping all tokens after and including
+                -- the first 'where', because we only need the module header.
+                let tokens 
+                        = dropBody
+                        $ SE.lexModuleString filePath 1 src
 
                 let context 
                         = C.Context
@@ -286,10 +296,20 @@ tasteNeeded filePath src
                         , C.contextFunctionalClosures     = False }
 
                 case BP.runTokenParser C.describeTok filePath
-                        (SE.pModule True context) tokens of
+                        (SE.pModule context) tokens of
                  Left  err  -> throwE $ P.renderIndent $ P.ppr err
                  Right mm   -> return $ SE.moduleImportModules mm
 
         | otherwise
         = return []
+
+
+-- | Drop tokens after and including the first 'where' keyword.
+--   When parsing just the module header we can drop these tokens
+--   because they only represent the body of the module.
+dropBody :: [Token (C.Tok n)] -> [Token (C.Tok n)]
+dropBody toks = go toks
+ where  go []                                           = []
+        go (Token { tokenTok = C.KA C.KWhere} : _)      = []
+        go (t : moar)                                   = t : go moar
 

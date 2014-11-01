@@ -89,7 +89,7 @@ cmdParseSourceTetraFromFile config filePath
                     
         case BP.runTokenParser
                 C.describeTok filePath 
-                (ST.pModule False context) toks of
+                (ST.pModule context) toks of
          Left err 
           ->    throwE (renderIndent $ ppr err)
          

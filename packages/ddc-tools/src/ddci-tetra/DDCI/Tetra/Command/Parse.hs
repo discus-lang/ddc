@@ -29,7 +29,7 @@ cmdParse _state source str
            in   case BP.runTokenParser 
                         C.describeTok 
                         (nameOfSource source)
-                        (pModule False context)
+                        (pModule context)
                         tokens of
                  Left err        -> error $ show err
                  Right mm        
