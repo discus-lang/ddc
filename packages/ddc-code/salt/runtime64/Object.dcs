@@ -92,11 +92,11 @@ export value
   allocRawSmall     : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
   payloadOfRawSmall : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
-  eval0             : Addr# -> Addr#
-  eval1             : Addr# -> Addr# -> Addr#
-  eval2             : Addr# -> Addr# -> Addr# -> Addr#
-  eval3             : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
-  eval4             : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
+  apply0            : Addr# -> Addr#
+  apply1            : Addr# -> Addr# -> Addr#
+  apply2            : Addr# -> Addr# -> Addr# -> Addr#
+  apply3            : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
+  apply4            : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
 
 with letrec
 
@@ -474,23 +474,23 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 4#
 
 
--- Eval -----------------------------------------------------------------------
--- These evaluators work out how call the function in a thunk.
+-- Apply -----------------------------------------------------------------------
+-- The apply family of functions work out how call the function in a thunk.
 -- Some arguments come from in the thunk itself, while some can be provided
 -- directly to the evaluators.
 -- 
 -- The hard limits are:
 --   - The maximum arity for the function in a thunk is 12. 
---     See the comment on evalZ.
+--     See the comment on applyZ.
 --   - The maximum number of directly applied arguments is 4, 
---     because we only have eval0 - eval4.
+--     because we only have apply0 - apply4.
 --
 -- The choice of where to set the limit is a balance between being able to 
 -- enumerate all possible calling conventions, and polluting the instruction
 -- cache with code for too many evaluators.
 
--- | Evaluate a thunk, given no more arguments.
-eval0   (t : Addr#) : Addr#
+-- | Apply (evaluate) a thunk, given no more arguments.
+apply0   (t : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
         a       = arityOfThunkA t
@@ -507,19 +507,19 @@ eval0   (t : Addr#) : Addr#
          4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
                                    (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
 
-         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 4#))
+         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 4#))
                                    (fieldOfThunkA t (sub# a 3#))
                                    (fieldOfThunkA t (sub# a 2#))
                                    (fieldOfThunkA t (sub# a 1#))
 
 
--- | Evaluate a thunk, given one more argument.
-eval1   (t : Addr#) (arg0 : Addr#) : Addr#
+-- | Apply a thunk to one more argument.
+apply1   (t : Addr#) (arg0 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
         a       = arityOfThunkA t
         case a of
-         0#     -> eval1 (call0# f) arg0
+         0#     -> apply1 (call0# f) arg0
 
          1#     -> call1# f         arg0
 
@@ -532,21 +532,21 @@ eval1   (t : Addr#) (arg0 : Addr#) : Addr#
          4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
                                    (fieldOfThunkA t 2#)  arg0
 
-         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 3#))
+         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 3#))
                                    (fieldOfThunkA t (sub# a 2#))
                                    (fieldOfThunkA t (sub# a 1#))
                                     arg0
 
 
--- | Evaluate a thunk, given two more arguments.
-eval2   (t : Addr#) (arg0 arg1 : Addr#) : Addr#
+-- | Apply a thunk to two more arguments.
+apply2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
         a       = arityOfThunkA t
         case a of
-         0#     -> eval2 (call0# f) arg0  arg1
+         0#     -> apply2 (call0# f) arg0  arg1
 
-         1#     -> eval1 (call1# f  arg0) arg1
+         1#     -> apply1 (call1# f  arg0) arg1
 
          2#     -> call2# f         arg0  arg1
 
@@ -556,52 +556,52 @@ eval2   (t : Addr#) (arg0 arg1 : Addr#) : Addr#
          4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
                                     arg0  arg1
 
-         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 2#))
+         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 2#))
                                    (fieldOfThunkA t (sub# a 1#))
                                     arg0  arg1
 
 
--- | Evaluate a thunk, given three more arguments.
-eval3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
+-- | Apply a thunk to three more arguments.
+apply3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
         a       = arityOfThunkA t
         case a of
-         0#     -> eval3 (call0# f) arg0  arg1  arg2
+         0#     -> apply3 (call0# f) arg0  arg1  arg2
 
-         1#     -> eval2 (call1# f  arg0) arg1  arg2
+         1#     -> apply2 (call1# f  arg0) arg1  arg2
 
-         2#     -> eval1 (call2# f  arg0  arg1) arg2
+         2#     -> apply1 (call2# f  arg0  arg1) arg2
 
          3#     -> call3# f         arg0  arg1  arg2
 
          4#     -> call4# f        (fieldOfThunkA t 0#)
                                     arg0  arg1  arg2
 
-         _      -> evalZ  t f a    (fieldOfThunkA t (sub# a 1#))
+         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 1#))
                                     arg0  arg1  arg2
 
 
--- | Evaluate a thunk, given four more arguments.
-eval4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
+-- | Apply a thunk to four more arguments.
+apply4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
         a       = arityOfThunkA t
         case a of
-         0#     -> eval4 (call0# f) arg0  arg1  arg2  arg3
+         0#     -> apply4 (call0# f) arg0  arg1  arg2  arg3
 
-         1#     -> eval3 (call1# f  arg0) arg1  arg2  arg3
+         1#     -> apply3 (call1# f  arg0) arg1  arg2  arg3
 
-         2#     -> eval2 (call2# f  arg0  arg1) arg2  arg3
+         2#     -> apply2 (call2# f  arg0  arg1) arg2  arg3
 
-         3#     -> eval1 (call3# f  arg0  arg1  arg2) arg3
+         3#     -> apply1 (call3# f  arg0  arg1  arg2) arg3
 
-         4#     -> call4# f         arg0  arg1  arg2  arg3
+         4#     -> call4# f          arg0  arg1  arg2  arg3
 
-         _      -> evalZ  t f a     arg0  arg1  arg2  arg3
+         _      -> applyZ  t f a     arg0  arg1  arg2  arg3
 
 
--- Evaluate a thunk, given its last four arguments. 
+-- Apply a thunk to its last four arguments. 
 -- We read the first (n-4) arguments directly from the thunk.
 --
 -- In the object code, this function serves to enumerate the function calling
@@ -620,7 +620,7 @@ eval4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
 -- If the machine has 16 general purpose registers, then setting the maximum
 -- arity here to 12 is probably enough.
 --
-evalZ   [r : Region]
+applyZ  [r : Region]
         (t : Addr#) (fun : Addr#) (arity : Nat#)
         (argL3 argL2 argL1 argL0 : Addr#) 
         : Addr#
