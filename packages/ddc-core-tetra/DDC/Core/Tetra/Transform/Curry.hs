@@ -187,7 +187,7 @@ makeCallThunk
 makeCallThunk aF nF xsArgs
  = let  tsArgs          = map annotType $ map annotOfExp xsArgs
         (_, tResult)    = takeTFunArgResult $ annotType aF
-   in   xFunEval aF tsArgs tResult (XVar aF (UName nF)) xsArgs
+   in   xFunCEval aF tsArgs tResult (XVar aF (UName nF)) xsArgs
 
 -- error $ "call thunk " ++ show (nF, xsArgs, tsArgs, tResult)
 

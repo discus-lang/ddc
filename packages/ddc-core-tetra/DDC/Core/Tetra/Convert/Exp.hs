@@ -285,7 +285,7 @@ convertExpX penv kenv tenv ctx xx
         XApp (AnTEC _t _ _ a)  xa xb
          | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)  <- x1
-         , E.NameOpFun E.OpFunReify     <- nPrim
+         , E.NameOpFun E.OpFunCReify    <- nPrim
          , XVar _ uF                    <- xF
          -> do
                 xF'     <- downArgX xF
@@ -308,9 +308,9 @@ convertExpX penv kenv tenv ctx xx
 
          , Just nArgs   
             <- case nPrim of 
-                E.NameOpFun (E.OpFunCurry nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunApply nArgs) -> Just nArgs
-                _                                -> Nothing
+                E.NameOpFun (E.OpFunCCurry nArgs) -> Just nArgs
+                E.NameOpFun (E.OpFunCApply nArgs) -> Just nArgs
+                _                                 -> Nothing
 
          , tsArg              <- [tArg | XType _ tArg <- take nArgs xs]
          , (xThunk : xsArg)   <- drop (nArgs + 1) xs
@@ -349,7 +349,7 @@ convertExpX penv kenv tenv ctx xx
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, xs)                     <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)          <- x1
-         , E.NameOpFun (E.OpFunEval nArgs)      <- nPrim
+         , E.NameOpFun (E.OpFunCEval nArgs)      <- nPrim
          , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
          , XType _ tResult : _  <- drop  nArgs xs
          , xF : xsArgs          <- drop (nArgs + 1) xs

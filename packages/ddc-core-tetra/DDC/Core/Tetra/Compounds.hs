@@ -17,7 +17,7 @@ module DDC.Core.Tetra.Compounds
         , tCloValue
 
           -- * Expressions
-        , xFunEval
+        , xFunCEval
         , xCastConvert)
 where
 import DDC.Core.Tetra.Prim.TyConTetra
@@ -27,7 +27,7 @@ import DDC.Core.Compounds.Annot
 import DDC.Core.Exp
 
 
-xFunEval     
+xFunCEval     
         :: a 
         -> [Type Name]  -- Argument types.
         -> Type Name    -- Result type.
@@ -35,10 +35,10 @@ xFunEval
         -> [Exp a Name] -- Argument expressions.
         -> Exp a Name
 
-xFunEval a tsArg tResult xF xsArg
+xFunCEval a tsArg tResult xF xsArg
         = xApps a
-                (XVar a (UPrim  (NameOpFun (OpFunEval (length xsArg)))
-                                (typeOpFun (OpFunEval (length xsArg)))))
+                (XVar a (UPrim  (NameOpFun (OpFunCEval (length xsArg)))
+                                (typeOpFun (OpFunCEval (length xsArg)))))
                 (   (map (XType a) tsArg)
                  ++ [XType a tResult]
                  ++ [xF]

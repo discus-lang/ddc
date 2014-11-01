@@ -140,17 +140,17 @@ data OpStore
 -- | Operators for building function values and closures.
 data OpFun
         -- | Reify a function into a functional value.
-        = OpFunReify
+        = OpFunCReify
 
         -- | Attach arguments to a functional value, producing a closure.
-        | OpFunCurry Int
+        | OpFunCCurry Int
 
         -- | Apply more arguments to a closure.
-        | OpFunApply Int
+        | OpFunCApply Int
 
         -- | Provide the remaining arguments to a closure and evaluate
         --   the contained function. The result needs to be a non-functional
         --   value, otherwise you'll get a runtime error.
-        | OpFunEval  Int
+        | OpFunCEval  Int
         deriving (Eq, Ord, Show)
 
