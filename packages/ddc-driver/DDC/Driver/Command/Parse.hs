@@ -38,7 +38,7 @@ cmdParseFromFile
 cmdParseFromFile config filePath
  
  -- Parse a Disciple Source Tetra module.
- | ".dst"        <- takeExtension filePath
+ | ".ds"         <- takeExtension filePath
  =  cmdParseSourceTetraFromFile config filePath
 
  -- Parse a module in some fragment of Disciple Core.
