@@ -27,7 +27,7 @@ GHC_VERSION_FLAGS = -rtsopts
 
 
 # Linear solver time
-DDC_FLOW_USE_LINEAR_SOLVER = 0
+DDC_FLOW_USE_LINEAR_SOLVER = 1
 # If you modify this, you should make recompile affected files:
 # touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters.hs packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters/Linear.hs 
 
