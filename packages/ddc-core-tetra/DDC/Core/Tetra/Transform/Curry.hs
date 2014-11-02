@@ -3,10 +3,10 @@ module DDC.Core.Tetra.Transform.Curry
         (curryModule)
 where
 import DDC.Type.Env                             (KindEnv, TypeEnv)
-import DDC.Core.Transform.TransformDownX
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
 import DDC.Core.Tetra.Compounds
+import DDC.Core.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
 import Data.Maybe
@@ -19,6 +19,11 @@ import Debug.Trace
 -- TODO: handle supers names being shadowed by local bindings.
 -- TODO: ensure type lambdas are out the front of supers, supers in prenex form.
 -- TODO: build thunks for partially applied foreign functions.
+-- TODO: handle monomorphic functions being passed to contructors, etc.
+--       not an app but we need to build a closure.
+-- TOOD: also handle under/over applied data constructors, do a transform
+--       beforehand to saturate them.
+
 
 -- | Insert primitives to manage higher order functions in a module.
 curryModule 
@@ -137,43 +142,90 @@ curryX  :: Show a
         -> Exp (AnTEC a Name) Name 
         -> Exp (AnTEC a Name) Name
 
-curryX (funs, kenv, tenv) xx
- = transformDownX (curryX1 funs) kenv tenv xx
-                                
--- | Mangage higher-order functions in an expression.
-curryX1 topTypes _kenv _tenv xx 
+curryX ctx@(funs, _kenv, _tenv) xx
+ = let down    x   = curryX   ctx x
+   in  case xx of
+        XVar a u
+         | UName nF             <- u
+         -> makeCall xx a funs nF []
 
- -- Rewrite applications.
- | Just (xF, xsArgs)    <- takeXApps xx         -- TODO: split type args and combine into xF
- , XVar a (UName nF)    <- xF
- , length xsArgs  > 0
- = makeCall a topTypes nF xsArgs
+         | otherwise
+         -> xx
 
- | otherwise
- = xx
+        XCon{}          -> xx
+        XLam a b x      -> XLam a b (down x)
+        XLAM a b x      -> XLAM a b (down x)
+
+        XApp a x1 x2
+         | Just (xF, xsArgs)    <- takeXApps xx
+         , XVar a' (UName nF)   <- xF
+         , length xsArgs  > 0
+         -> let xsArgs' = map down xsArgs
+            in  makeCall xx a' funs nF xsArgs'
+
+         | otherwise
+         -> XApp a (down x1) (down x2)
+
+        XLet  a lts x   -> XLet  a   (curryLts ctx lts) (down x)
+        XCase a x alts  -> XCase a   (down x) (map (curryAlt ctx) alts)
+        XCast a c x     -> XCast a c (down x)
+        XType{}         -> xx
+        XWitness{}      -> xx
+
+
+-- | Manage function application in a let binding.
+curryLts :: Show a
+        => Context
+        -> Lets (AnTEC a Name) Name -> Lets (AnTEC a Name) Name
+
+curryLts ctx lts
+ = case lts of
+        LLet b x        -> LLet b (curryX ctx x)
+        LRec bxs        -> LRec [(b, curryX ctx x) | (b, x) <- bxs]
+        LPrivate{}      -> lts
+        LWithRegion{}   -> lts
+
+
+-- | Manage function application in a case alternative.
+curryAlt :: Show a
+        => Context
+        -> Alt (AnTEC a Name) Name  -> Alt (AnTEC a Name) Name
+
+curryAlt ctx alt
+ = case alt of
+        AAlt w x        -> AAlt w (curryX ctx x)
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Call a thing, depending on what it is.
+--   Decide how to call the functional thing, depending on 
+--   whether its a super, foreign imports, or thunk.
 makeCall
         :: Show a
-        => AnTEC a Name         -- ^ Annotation from functional part of application.
+        => Exp (AnTEC a Name) Name
+        -> AnTEC a Name         -- ^ Annotation from functional part of application.
         -> FunMap               -- ^ Types and arities of functions in the environment.
         -> Name                 -- ^ Name of function to call.
         -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to function.
         ->  Exp (AnTEC a Name) Name
 
-makeCall aF funMap nF xsArgs
- -- | Saturated call a top-level super in the local module.
+makeCall xx aF funMap nF xsArgs
+ -- | Call a top-level super in the local module.
  | Just (FunLocalSuper _ _ iArity) <- Map.lookup nF funMap
  = makeCallSuper aF nF iArity xsArgs
 
- -- | Saturated call of a foreign imported function.
+ -- | Call of a foreign imported function.
  | Just (FunForeignSea _ _ iArity) <- Map.lookup nF funMap
  = makeCallSuper aF nF iArity xsArgs
 
- | otherwise
+ -- | Apply a thunk to its arguments.
+ | length xsArgs > 0
  = makeCallThunk aF nF xsArgs
+
+ -- | This was an existing thunk applied to no arguments,
+ --   so we can just return it without doing anything.
+ | otherwise
+ = xx
 
 
 ---------------------------------------------------------------------------------------------------
@@ -188,12 +240,13 @@ makeCallSuper
         -> Exp  (AnTEC a Name) Name
 
 makeCallSuper a nF iArity xsArgs
- | iArity == length xsArgs
+ | xsArgValues  <- filter (not . isXType) xsArgs        -- TODO split run of type args and wrap
+ , iArity == length xsArgValues                         -- functional value.
  = xApps a (XVar a (UName nF)) xsArgs
 
- | otherwise
- = trace ("pap " ++ show (nF, iArity, length xsArgs))
- $ xApps a (XVar a (UName nF)) xsArgs
+ | xsArgValues  <- filter (not . isXType) xsArgs
+ = trace ("pap " ++ show (nF, iArity, length xsArgValues))
+    $ xApps a (XVar a (UName nF)) xsArgs
 
 
 ---------------------------------------------------------------------------------------------------
@@ -209,5 +262,4 @@ makeCallThunk aF nF xsArgs
  = let  tsArgs          = map annotType $ map annotOfExp xsArgs
         (_, tResult)    = takeTFunArgResult $ annotType aF
    in   xFunApply aF tsArgs tResult (XVar aF (UName nF)) xsArgs
-
 
