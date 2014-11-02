@@ -267,7 +267,10 @@ solve_linear g trans
   {- show_lp = CPr.ppr (show.ppr) (show.ppr) -}
 
   lp'c        = Conv.program lp'
-  (sub, lp's) = CSimp.simplify lp'c
+  -- Simplify can return a (Left InfeasibleError) if the program can't be solved,
+  -- but we luckily have a proof that the programs we generate will always be feasible.
+  Right (sub, lp's) = CSimp.simplify lp'c
+
 
   fixMap ass@(Assignment mz _r)
    = reorder ass $ snd $ fillMap $ Map.foldWithKey go (0 :: Int, Map.empty) mz
