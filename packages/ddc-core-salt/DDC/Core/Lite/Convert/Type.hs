@@ -19,6 +19,7 @@ import DDC.Control.Monad.Check           (throw)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
+import qualified DDC.Core.Salt.Runtime   as O
 import qualified DDC.Type.Env            as Env
 import Control.Monad
 
@@ -137,8 +138,10 @@ convertTyCon tc
 
         -- Handle baked-in unit and function constructors.
         TyConSpec    TcConFunEC  -> return $ TCon $ TyConSpec TcConFunEC
-        -- Leave units alone
-        TyConSpec    TcConUnit   -> return $ TCon $ TyConSpec TcConUnit
+
+        -- Units
+        TyConSpec    TcConUnit   
+         -> return $ O.tPtr O.rTop O.tObj
 
         -- Convert primitive unboxed TyCons to Salt form.
         TyConBound   (UPrim n _)  _
@@ -166,7 +169,7 @@ convertDC
 convertDC kenv dc
  = case dc of
         DaConUnit       
-         -> return DaConUnit
+         -> return $ DaConUnit
 
         DaConPrim n t
          -> do  n'      <- convertBoundNameM n

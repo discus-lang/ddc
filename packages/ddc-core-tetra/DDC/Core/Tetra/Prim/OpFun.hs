@@ -17,36 +17,39 @@ import Data.List
 instance NFData OpFun where
  rnf prim
   = case prim of
-        OpFunReify   -> ()
-        OpFunCurry n -> rnf n
-        OpFunApply n -> rnf n
-        OpFunEval  n -> rnf n
+        OpFunCReify   -> ()
+        OpFunCCurry n -> rnf n
+        OpFunCApply n -> rnf n
+        OpFunCEval  n -> rnf n
+        OpFunCurry  n -> rnf n
+        OpFunApply  n -> rnf n
  
 
 instance Pretty OpFun where
  ppr pf
   = case pf of
-        OpFunReify
-         -> text "reify#"
+        OpFunCurry  n
+         -> text "curry"  <> int n <> text "#"
 
-        OpFunCurry n
-         -> text "curry" <> int n <> text "#"
+        OpFunApply  n
+         -> text "apply"  <> int n <> text "#"
 
-        OpFunApply n
-         -> text "apply" <> int n <> text "#"
+        OpFunCReify
+         -> text "creify#"
 
-        OpFunEval  n
-         -> text "eval"  <> int n <> text "#"
+        OpFunCCurry n
+         -> text "ccurry" <> int n <> text "#"
+
+        OpFunCApply n
+         -> text "capply" <> int n <> text "#"
+
+        OpFunCEval  n
+         -> text "ceval"  <> int n <> text "#"
 
 
 -- | Read a primitive function operator.
 readOpFun :: String -> Maybe OpFun
 readOpFun str
-
-        -- reify#
-        | "reify#"      <- str
-        = Just $ OpFunReify
-
         -- curryN#
         | Just rest     <- stripPrefix "curry" str
         , (ds, "#")     <- span isDigit rest
@@ -63,13 +66,33 @@ readOpFun str
         , n >= 1
         = Just $ OpFunApply n
 
-        -- evalN#
-        | Just rest     <- stripPrefix "eval" str
+        -- creify#
+        | "creify#"      <- str
+        = Just $ OpFunCReify
+
+        -- ccurryN#
+        | Just rest     <- stripPrefix "ccurry" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , n >= 0
-        = Just $ OpFunEval n
+        = Just $ OpFunCCurry n
+
+        -- capplyN#
+        | Just rest     <- stripPrefix "capply" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpFunCApply n
+
+        -- cevalN#
+        | Just rest     <- stripPrefix "ceval" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 0
+        = Just $ OpFunCEval n
 
         | otherwise
         = Nothing
@@ -79,11 +102,25 @@ readOpFun str
 typeOpFun :: OpFun -> Type Name
 typeOpFun op
  = case op of
-        OpFunReify
+        OpFunCurry n
+         -> tForalls (replicate (n + 1) kData)
+         $  \ts -> 
+                let Just tF          = tFunOfList ts
+                    Just result      = tFunOfList (tF : ts)
+                in  result
+
+        OpFunApply n
+         -> tForalls (replicate (n + 1) kData)
+         $  \ts -> 
+                let Just tF          = tFunOfList ts
+                    Just result      = tFunOfList (tF : ts)
+                in  result
+
+        OpFunCReify
          -> tForalls [kData, kData]
          $  \[tA, tB]  -> (tA `tFun` tB) `tFun` tFunValue (tA `tFun` tB)
 
-        OpFunCurry n
+        OpFunCCurry n
          -> tForalls (replicate (n + 1) kData)
          $  \ts -> 
                 let tLast : tsFront' = reverse ts
@@ -95,7 +132,7 @@ typeOpFun op
                                 : tsFront ++ [tCloValue tLast])
                 in result
 
-        OpFunApply n
+        OpFunCApply n
          -> tForalls (replicate (n + 1) kData)
          $  \ts -> 
                 let tLast : tsFront' = reverse ts
@@ -107,7 +144,7 @@ typeOpFun op
                                 : tsFront ++ [tCloValue tLast])
                 in result
 
-        OpFunEval n
+        OpFunCEval n
          -> tForalls (replicate (n + 1) kData)
          $  \ts ->
                 let tLast : tsFront' = reverse ts

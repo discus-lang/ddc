@@ -628,7 +628,9 @@ convertCtor
 
 convertCtor pp defs kenv tenv a dc
  | DaConUnit    <- dc
- = return $ xUnit a
+ = return  $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
+
+--  xUnit a
 
  | Just n       <- takeNameOfDaCon dc
  = case n of

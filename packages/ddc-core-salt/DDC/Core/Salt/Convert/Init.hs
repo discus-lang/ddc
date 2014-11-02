@@ -103,6 +103,7 @@ makeMainEntryX config a
  $ XLet a  (LLet  (BNone tVoid)            (xCreate a (configHeapSize config)))
  $ XLet a  (LLet  (BNone (tBot kData)) 
                   (xApps a (XVar a (UName (NameVar "_main"))) 
-                           [xUnit a]))
+                           [xU]))
            (xInt a 0)
 
+ where xU       = xAllocBoxed a rTop 0 (xNat a 0)

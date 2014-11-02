@@ -22,7 +22,7 @@ module Test with
 let unit : Unit = ()
 
 module Test with
-let unit : Unit = ()
+let unit : Ptr# rT Obj = allocBoxed [rT] TAG0# 0#
 
 Fragment violation when converting Salt module to C code.
   Module does not have a top-level letrec.
