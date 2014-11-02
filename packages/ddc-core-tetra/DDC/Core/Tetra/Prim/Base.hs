@@ -138,19 +138,27 @@ data OpStore
 
 -- OpFun ----------------------------------------------------------------------
 -- | Operators for building function values and closures.
+--   The implicit versions work on functions of type (a -> b), 
+--   while the explicit versions use expliciy closure types like C# (a -> b).
 data OpFun
-        -- | Reify a function into a functional value.
-        = OpFunCReify
+        -- | Partially apply a supecombinator to some arguments, producing
+        --   an implicitly typed closure.
+        = OpFunCurry  Int
 
-        -- | Attach arguments to a functional value, producing a closure.
+        -- | Apply an implicitly typed closure to some more arguments.
+        | OpFunApply  Int
+
+        -- | Reify a function into an explicit functional value.
+        | OpFunCReify
+
+        -- | Apply an explicit functional value to some arguments,
+        --   producing an explicitly typed closure.
         | OpFunCCurry Int
 
-        -- | Apply more arguments to a closure.
+        -- | Apply an explicit closure to more arguments,.
         | OpFunCApply Int
 
-        -- | Provide the remaining arguments to a closure and evaluate
-        --   the contained function. The result needs to be a non-functional
-        --   value, otherwise you'll get a runtime error.
+        -- | Apply an explicit closure to its remaining arguments.
         | OpFunCEval  Int
         deriving (Eq, Ord, Show)
 

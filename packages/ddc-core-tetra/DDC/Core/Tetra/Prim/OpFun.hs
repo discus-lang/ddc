@@ -21,11 +21,19 @@ instance NFData OpFun where
         OpFunCCurry n -> rnf n
         OpFunCApply n -> rnf n
         OpFunCEval  n -> rnf n
+        OpFunCurry  n -> rnf n
+        OpFunApply  n -> rnf n
  
 
 instance Pretty OpFun where
  ppr pf
   = case pf of
+        OpFunCurry  n
+         -> text "curry"  <> int n <> text "#"
+
+        OpFunApply  n
+         -> text "apply"  <> int n <> text "#"
+
         OpFunCReify
          -> text "creify#"
 
@@ -42,6 +50,21 @@ instance Pretty OpFun where
 -- | Read a primitive function operator.
 readOpFun :: String -> Maybe OpFun
 readOpFun str
+        -- curryN#
+        | Just rest     <- stripPrefix "curry" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 0
+        = Just $ OpFunCurry n
+
+        -- applyN#
+        | Just rest     <- stripPrefix "apply" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpFunApply n
 
         -- creify#
         | "creify#"      <- str
@@ -79,6 +102,20 @@ readOpFun str
 typeOpFun :: OpFun -> Type Name
 typeOpFun op
  = case op of
+        OpFunCurry n
+         -> tForalls (replicate (n + 1) kData)
+         $  \ts -> 
+                let Just tF          = tFunOfList ts
+                    Just result      = tFunOfList (tF : ts)
+                in  result
+
+        OpFunApply n
+         -> tForalls (replicate (n + 1) kData)
+         $  \ts -> 
+                let Just tF          = tFunOfList ts
+                    Just result      = tFunOfList (tF : ts)
+                in  result
+
         OpFunCReify
          -> tForalls [kData, kData]
          $  \[tA, tB]  -> (tA `tFun` tB) `tFun` tFunValue (tA `tFun` tB)

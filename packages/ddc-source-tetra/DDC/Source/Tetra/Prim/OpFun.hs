@@ -12,6 +12,20 @@ import DDC.Type.Exp
 typeOpFun :: OpFun -> Type Name
 typeOpFun op
  = case op of
+        OpFunCurry n
+         -> tForalls (replicate (n + 1) kData)
+         $  \ts -> 
+                let Just tF          = tFunOfList ts
+                    Just result      = tFunOfList (tF : ts)
+                in  result
+
+        OpFunApply n
+         -> tForalls (replicate (n + 1) kData)
+         $  \ts -> 
+                let Just tF          = tFunOfList ts
+                    Just result      = tFunOfList (tF : ts)
+                in  result
+
         OpFunCReify
          -> tForalls [kData, kData]
          $  \[tA, tB]  -> (tA `tFun` tB) `tFun` tFunValue (tA `tFun` tB)

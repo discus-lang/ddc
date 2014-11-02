@@ -61,7 +61,13 @@
 :type bxor#
 
 
--- Operators that work on the primitive closure type.
+-- Store operators
+:type allocRef#
+:type readRef#
+:type writeRef#
+
+
+-- Application operators that work on the primitive closure type.
 :type creify#
 
 :type ccurry0#
@@ -79,8 +85,13 @@
 :type ceval5#
 
 
--- Store operators
-:type allocRef#
-:type readRef#
-:type writeRef#
+-- Application operators that work on implicit closures.
+:type curry0#
+:type curry1#
+:type curry2#
+:type curry5#
+
+:type apply1#
+:type apply2#
+:type apply5#
 
