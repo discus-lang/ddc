@@ -9,13 +9,16 @@ import DDC.Core.Tetra
 import DDC.Core.Tetra.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
+import Data.Maybe
 import Data.List                                (foldl')
 import Data.Map                                 (Map)
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
+import Debug.Trace
 
 -- TODO: handle supers names being shadowed by local bindings.
--- TODO: ensure type lambdas are out the front of supers
+-- TODO: ensure type lambdas are out the front of supers, supers in prenex form.
+-- TODO: build thunks for partially applied foreign functions.
 
 -- | Insert primitives to manage higher order functions in a module.
 curryModule 
@@ -71,10 +74,15 @@ data Fun
 
 
 -- | Add the type of this binding to the function map.
-funMapAddLocalSuper :: FunMap -> Bind Name -> FunMap
-funMapAddLocalSuper funs b
+funMapAddLocalSuper :: FunMap -> (Bind Name, Exp a Name) -> FunMap
+funMapAddLocalSuper funs (b, x)
         | BName n t             <- b
-        = Map.insert n (FunLocalSuper n t 0) funs
+        = let   -- Get the value arity of the super, that is, how many
+                -- values we need to saturate all the value lambdas.
+                (flags, _) = fromMaybe ([], x) (takeXLamFlags x)
+                arity      = length $ filter (== False) $ map fst flags
+
+          in    Map.insert n (FunLocalSuper n t arity) funs
 
         | otherwise
         = funs
@@ -107,7 +115,7 @@ curryBody (funs, kenv, tenv) xx
          -> let (bs, xs) = unzip bxs
 
                 -- Add types of supers to the function map.
-                funs'   = foldl funMapAddLocalSuper funs bs
+                funs'   = foldl funMapAddLocalSuper funs bxs
 
                 -- The new type environment.
                 tenv'   = Env.extends bs tenv
@@ -136,7 +144,7 @@ curryX (funs, kenv, tenv) xx
 curryX1 topTypes _kenv _tenv xx 
 
  -- Rewrite applications.
- | Just (xF, xsArgs)    <- takeXApps xx
+ | Just (xF, xsArgs)    <- takeXApps xx         -- TODO: split type args and combine into xF
  , XVar a (UName nF)    <- xF
  , length xsArgs  > 0
  = makeCall a topTypes nF xsArgs
@@ -156,17 +164,13 @@ makeCall
         ->  Exp (AnTEC a Name) Name
 
 makeCall aF funMap nF xsArgs
- -- | Call a top-level super in the local module.
- | Just (FunLocalSuper _ _ _) <- Map.lookup nF funMap
- = let  iArgs   = length xsArgs
-        iArity  = iArgs
-   in   makeCallSuper aF nF iArity xsArgs
+ -- | Saturated call a top-level super in the local module.
+ | Just (FunLocalSuper _ _ iArity) <- Map.lookup nF funMap
+ = makeCallSuper aF nF iArity xsArgs
 
- -- | Call a foreign imported function.
- | Just (FunForeignSea _ _ _) <- Map.lookup nF funMap
- = let  iArgs   = length xsArgs
-        iArity  = iArgs
-   in   makeCallSuper aF nF iArity xsArgs
+ -- | Saturated call of a foreign imported function.
+ | Just (FunForeignSea _ _ iArity) <- Map.lookup nF funMap
+ = makeCallSuper aF nF iArity xsArgs
 
  | otherwise
  = makeCallThunk aF nF xsArgs
@@ -176,16 +180,23 @@ makeCall aF funMap nF xsArgs
 -- | Call a top-level supercombinator,
 --   or foriegn function imported from Sea land.
 makeCallSuper 
-        :: AnTEC a Name                 -- ^ Annotation to use.
+        :: Show a 
+        => AnTEC a Name                 -- ^ Annotation to use.
         -> Name                         -- ^ Name of super to call.
         -> Int                          -- ^ Arity of super.
         -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to super.
         -> Exp  (AnTEC a Name) Name
 
-makeCallSuper a nF _iArity xsArgs
+makeCallSuper a nF iArity xsArgs
+ | iArity == length xsArgs
  = xApps a (XVar a (UName nF)) xsArgs
 
+ | otherwise
+ = trace ("pap " ++ show (nF, iArity, length xsArgs))
+ $ xApps a (XVar a (UName nF)) xsArgs
 
+
+---------------------------------------------------------------------------------------------------
 -- | Call a thunk.
 makeCallThunk
         :: Show a
