@@ -269,9 +269,9 @@ convertApp f args
              = return False
 
         isSusp <- checkF
-        if   isSusp
-        then return $ xApps anno f' args'
-        else return $ xApps anno f' args'
+        if    isSusp
+         then return $ xApps anno f' args'
+         else return $ xApps anno f' args'
  where
   anno = annotOfExp f
 

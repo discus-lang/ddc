@@ -41,7 +41,7 @@ Library
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*,
         ddc-core-salt   == 0.4.2.*,
-        ddc-core-simpl  == 0.4.2.*
+        ddc-core-simpl  == 0.4.2.*,
         ddc-core-tetra  == 0.4.2.*
 
   Exposed-modules:
@@ -53,7 +53,10 @@ Library
         DDC.Core.Flow.Transform.Rates.Combinators
         DDC.Core.Flow.Transform.Rates.Fail
         DDC.Core.Flow.Transform.Rates.Graph
-        DDC.Core.Flow.Transform.Rates.Linear
+        DDC.Core.Flow.Transform.Rates.Clusters
+        DDC.Core.Flow.Transform.Rates.Clusters.Base
+        DDC.Core.Flow.Transform.Rates.Clusters.Greedy
+        DDC.Core.Flow.Transform.Rates.Clusters.Linear
         DDC.Core.Flow.Transform.Rates.SeriesOfVector
         DDC.Core.Flow.Transform.Rates.SizeInference
 
@@ -65,6 +68,11 @@ Library
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Thread
         DDC.Core.Flow.Transform.Wind
+
+        DDC.Core.Flow.Convert
+        DDC.Core.Flow.Convert.Base
+        DDC.Core.Flow.Convert.Type
+        DDC.Core.Flow.Convert.Exp
 
         DDC.Core.Flow.Compounds
         DDC.Core.Flow.Context
