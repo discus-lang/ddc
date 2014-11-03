@@ -41,7 +41,7 @@ Library
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*,
         ddc-core-salt   == 0.4.2.*,
-        ddc-core-simpl  == 0.4.2.*
+        ddc-core-simpl  == 0.4.2.*,
         ddc-core-tetra  == 0.4.2.*
 
   Exposed-modules:
