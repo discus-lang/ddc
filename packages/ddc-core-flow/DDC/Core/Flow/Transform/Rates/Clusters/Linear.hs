@@ -1,5 +1,4 @@
-{-# LANGUAGE DataKinds, CPP #-}
-#if DDC_FLOW_HAVE_LINEAR_SOLVER
+{-# LANGUAGE DataKinds #-}
 module DDC.Core.Flow.Transform.Rates.Clusters.Linear
     (solve_linear)
  where
@@ -318,7 +317,3 @@ solve_linear g trans
   reorder' _ (_, [])
    = error "ddc-core-flow:DDC.Core.Flow.Transform.Rates.Linear: impossible, empty list in inverted map"
 
-#else
-module DDC.Core.Flow.Transform.Rates.Clusters.Linear
- where
-#endif
