@@ -44,6 +44,7 @@ Library
         DDC.Core.Transform.Elaborate
         DDC.Core.Transform.Eta
         DDC.Core.Transform.Flatten
+        DDC.Core.Transform.FoldCase
         DDC.Core.Transform.Forward
         DDC.Core.Transform.Inline
         DDC.Core.Transform.Lambdas
