@@ -110,7 +110,11 @@ parseArgs args config
         | "-run-heap" : bytes : rest    <- args
         , all isDigit bytes
         = parseArgs rest
-        $ config  { configRuntimeHeapSize = read bytes }
+        $ config { configRuntimeHeapSize = read bytes }
+
+        | "-run-link-static" : rest    <- args
+        = parseArgs rest
+        $ config { configRuntimeLinkStrategy = LinkStatic }
 
         -- Parsing ------------------------------
         | "-parse" : file : rest        <- args

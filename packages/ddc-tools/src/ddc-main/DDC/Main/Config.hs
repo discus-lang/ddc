@@ -2,10 +2,11 @@
 
 -- | Define the command line configuation arguments.
 module DDC.Main.Config
-        ( Mode         (..)
-        , OptLevel     (..)
-        , D.ViaBackend (..)
-        , Config       (..)
+        ( Mode                (..)
+        , OptLevel            (..)
+        , D.ViaBackend        (..)
+        , D.RuntimeLinkStrategy (..)
+        , Config              (..)
 
         , getDefaultConfig
         , defaultBuilderConfig)
@@ -143,6 +144,9 @@ data Config
           -- | Default size of heap for compiled program.
         , configRuntimeHeapSize :: Integer
 
+          -- | Strategy for linking the runtime.
+        , configRuntimeLinkStrategy :: D.RuntimeLinkStrategy
+
           -- Intermediates -------------
         , configKeepLlvmFiles   :: Bool
         , configKeepSeaFiles    :: Bool
@@ -192,6 +196,7 @@ getDefaultConfig
  
             -- Runtime ------------------
           , configRuntimeHeapSize = 65536
+          , configRuntimeLinkStrategy = D.LinkDefault
  
             -- Intermediates ------------
           , configKeepLlvmFiles   = False
@@ -214,5 +219,5 @@ defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
         { builderConfigBaseSrcDir = configBaseDir config 
-        , builderConfigBaseLibDir = configBaseDir config </> "build" }
-
+        , builderConfigBaseLibDir = configBaseDir config </> "build"
+        , builderConfigLibFile    = \static dynamic -> if configRuntimeLinkStrategy config == D.LinkStatic then static else dynamic }

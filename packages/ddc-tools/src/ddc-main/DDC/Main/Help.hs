@@ -56,6 +56,7 @@ help    = unlines
         , "     -print-basedir         Print directory holding the runtime and base libraries."
         , "     -print-builder         Print external builder info for this platform."
         , "     -run-heap   BYTES      Size of the fixed runtime heap.  (65536)"
+        , "     -run-link-static       Force the runtime to be linked statically."
         , ""
         , "Optimisation and Transformation"
         , "     -O0                    No optimisations.                (default)"
