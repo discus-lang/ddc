@@ -374,13 +374,13 @@ convertExpX penv kenv tenv ctx xx
                 -- Evaluate a thunk, returning the resulting Addr#, 
                 -- then cast it back to a pointer of the appropriate type
                 return  $ xMakePtr a tPrimeResult' A.tObj
-                        $ A.xEvalThunk a nArgs 
-                                $  [ xTakePtr a A.rTop A.tObj xF' ]
-                                ++ [ xTakePtr a tPrime A.tObj xArg'
-                                        | xArg'         <- xsArg'
-                                        | tArg'         <- tsArg'
-                                        , let tPrime    = fromMaybe A.rTop
-                                                        $ takePrimeRegion tArg' ]
+                        $ A.xApplyThunk a nArgs 
+                        $   [ xTakePtr a A.rTop A.tObj xF' ]
+                         ++ [ xTakePtr a tPrime A.tObj xArg'
+                                | xArg'         <- xsArg'
+                                | tArg'         <- tsArg'
+                                , let tPrime    = fromMaybe A.rTop
+                                                $ takePrimeRegion tArg' ]
 
         
         ---------------------------------------------------

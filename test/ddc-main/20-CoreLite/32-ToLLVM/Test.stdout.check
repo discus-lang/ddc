@@ -12,13 +12,13 @@ declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply0(i64 ) align 8
+declare external ccc i64 @apply1(i64 , i64 ) align 8
+declare external ccc i64 @apply2(i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply3(i64 , i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply4(i64 , i64 , i64 , i64 , i64 ) align 8
 declare external ccc i64 @availOfThunk(%s.Obj* ) align 8
 declare external ccc %s.Obj* @copyAvailOfThunk(%s.Obj* , %s.Obj* , i64 , i64 ) align 8
-declare external ccc i64 @eval0(i64 ) align 8
-declare external ccc i64 @eval1(i64 , i64 ) align 8
-declare external ccc i64 @eval2(i64 , i64 , i64 ) align 8
-declare external ccc i64 @eval3(i64 , i64 , i64 , i64 ) align 8
-declare external ccc i64 @eval4(i64 , i64 , i64 , i64 , i64 ) align 8
 declare external ccc %s.Obj* @extendThunk(%s.Obj* , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
@@ -83,13 +83,13 @@ declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply0(i64 ) align 8
+declare external ccc i64 @apply1(i64 , i64 ) align 8
+declare external ccc i64 @apply2(i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply3(i64 , i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply4(i64 , i64 , i64 , i64 , i64 ) align 8
 declare external ccc i64 @availOfThunk(%s.Obj* ) align 8
 declare external ccc %s.Obj* @copyAvailOfThunk(%s.Obj* , %s.Obj* , i64 , i64 ) align 8
-declare external ccc i64 @eval0(i64 ) align 8
-declare external ccc i64 @eval1(i64 , i64 ) align 8
-declare external ccc i64 @eval2(i64 , i64 , i64 ) align 8
-declare external ccc i64 @eval3(i64 , i64 , i64 , i64 ) align 8
-declare external ccc i64 @eval4(i64 , i64 , i64 , i64 , i64 ) align 8
 declare external ccc %s.Obj* @extendThunk(%s.Obj* , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
@@ -127,13 +127,13 @@ declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocThunk(i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply0(i64 ) align 8
+declare external ccc i64 @apply1(i64 , i64 ) align 8
+declare external ccc i64 @apply2(i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply3(i64 , i64 , i64 , i64 ) align 8
+declare external ccc i64 @apply4(i64 , i64 , i64 , i64 , i64 ) align 8
 declare external ccc i64 @availOfThunk(%s.Obj* ) align 8
 declare external ccc %s.Obj* @copyAvailOfThunk(%s.Obj* , %s.Obj* , i64 , i64 ) align 8
-declare external ccc i64 @eval0(i64 ) align 8
-declare external ccc i64 @eval1(i64 , i64 ) align 8
-declare external ccc i64 @eval2(i64 , i64 , i64 ) align 8
-declare external ccc i64 @eval3(i64 , i64 , i64 , i64 ) align 8
-declare external ccc i64 @eval4(i64 , i64 , i64 , i64 , i64 ) align 8
 declare external ccc %s.Obj* @extendThunk(%s.Obj* , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8

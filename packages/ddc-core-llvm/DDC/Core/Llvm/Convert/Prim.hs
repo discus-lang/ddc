@@ -53,7 +53,7 @@ convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
                  = IOp dst OpSub (XLit $ LitFloat t' 0) x1'
 
                  | otherwise
-                 = die $ "Invalid unary primop."
+                 = die $ "Invalid unary primop: " ++ show op
             in  return $ Seq.singleton (annotNil result)
 
         -- Binary operators -----------
@@ -72,7 +72,7 @@ convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
                  = IFCmp dst fcond' x1' x2'
 
                  | otherwise
-                 = die $ "Invalid binary primop."
+                 = die $ "Invalid binary primop: " ++ show op 
            in   return $ Seq.singleton (annotNil result)
 
         -- Cast primops ---------------
