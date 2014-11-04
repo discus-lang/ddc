@@ -14,7 +14,7 @@ import Data.List                                (foldl')
 import Data.Map                                 (Map)
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
-import Debug.Trace
+
 
 -- TODO: handle supers names being shadowed by local bindings.
 -- TODO: ensure type lambdas are out the front of supers, supers in prenex form.
@@ -97,7 +97,13 @@ funMapAddLocalSuper funs (b, x)
 funMapAddForeign :: FunMap -> (Name, ImportSource Name) -> FunMap
 funMapAddForeign funs (n, is)
         | ImportSourceSea _ t  <- is
-        = Map.insert n (FunForeignSea n t 0) funs
+        = let   (tsArgs, _tResult)
+                        = takeTFunArgResult
+                        $ eraseTForalls t
+
+                arity   = length tsArgs
+
+          in    Map.insert n (FunForeignSea n t arity) funs
 
         | otherwise
         = funs
@@ -210,22 +216,47 @@ makeCall
         ->  Exp (AnTEC a Name) Name
 
 makeCall xx aF funMap nF xsArgs
- -- | Call a top-level super in the local module.
- | Just (FunLocalSuper _ _ iArity) <- Map.lookup nF funMap
- = makeCallSuper aF nF iArity xsArgs
+        -- Call a top-level super in the local module.
+        | Just (tF, iArity) 
+            <- case Map.lookup nF funMap of
+                Just (FunLocalSuper _ tF iArity)        -> Just (tF, iArity)
+                Just (FunForeignSea _ tF iArity)        -> Just (tF, iArity)
+                _                                       -> Nothing
+        
+        -- split the quantifiers from the type of the super.
+        , (bsForall, tBody)                  <- fromMaybe ([], tF) $ takeTForalls tF
+        
+        -- split the body type into value parameters and result.
+        , (tsParam, tResult)                 <- takeTFunArgResult tBody
+        
+        -- split the value parameters into ones accepted by lambdas and ones that 
+        -- are accepted by the returned closure.
+        , (tsParamLam, tsParamClo)           <- splitAt iArity tsParam
+        
+        -- build the type of the returned closure.
+        , Just tResult'                      <- tFunOfList (tsParamClo ++ [tResult])
+        
+        -- split the arguments into the type arguments that satisfy the quantifiers,  
+        -- then the value arguments.
+        , Just (xsArgTypes, xsArgValues)     <- splitAppsValues xsArgs
+        
+        -- there must be types to satisfy all of the quantifiers
+        , length bsForall == length xsArgTypes
+ 
+        = makeCallSuper aF nF
+                (xApps aF (XVar aF (UName nF)) xsArgTypes)
+                tsParamLam 
+                tResult' 
+                xsArgValues
 
- -- | Call of a foreign imported function.
- | Just (FunForeignSea _ _ iArity) <- Map.lookup nF funMap
- = makeCallSuper aF nF iArity xsArgs
+        -- | Apply a thunk to its arguments.
+        | length xsArgs > 0
+        = makeCallThunk aF nF xsArgs
 
- -- | Apply a thunk to its arguments.
- | length xsArgs > 0
- = makeCallThunk aF nF xsArgs
-
- -- | This was an existing thunk applied to no arguments,
- --   so we can just return it without doing anything.
- | otherwise
- = xx
+        -- | This was an existing thunk applied to no arguments,
+        --   so we can just return it without doing anything.
+        | otherwise
+        = xx
 
 
 ---------------------------------------------------------------------------------------------------
@@ -235,22 +266,68 @@ makeCallSuper
         :: Show a 
         => AnTEC a Name                 -- ^ Annotation to use.
         -> Name                         -- ^ Name of super to call.
-        -> Int                          -- ^ Arity of super.
+        -> Exp  (AnTEC a Name) Name     -- ^ Expression of super to call.
+        -> [Type Name]                  -- ^ Parameter types of super
+        -> Type Name                    -- ^ Return type of super.
         -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to super.
         -> Exp  (AnTEC a Name) Name
 
-makeCallSuper a nF iArity xsArgs
- | xsArgValues  <- filter (not . isXType) xsArgs        -- TODO split run of type args and wrap
- , iArity == length xsArgValues                         -- functional value.
- = xApps a (XVar a (UName nF)) xsArgs
+makeCallSuper aF _nF xF tsParamLam tResultSuper xsArgs
+ -- Fully saturated call to a super of foreign function. 
+ -- We have arguments for each parameter, so can call it directly.
+ | length xsArgs == length tsParamLam
+-- = trace ("sat " ++ show (nF, length tsParamLam, length xsArgs))
+ = xApps aF xF xsArgs
 
- | xsArgValues  <- filter (not . isXType) xsArgs
- = trace ("pap " ++ show (nF, iArity, length xsArgValues))
-    $ xApps a (XVar a (UName nF)) xsArgs
+ -- Partially application of a super or foreign function.
+ -- We need to build a closure, then attach any arguments we have.
+ | length xsArgs   <  length tsParamLam
+ = let 
+        -- Types of the applied arguments.
+        tsArgs  = map annotType     
+                $ map annotOfExp xsArgs
+
+        -- Split types of the super parameters into the ones that can be
+        -- satisfied by this application, and the remaining parameters that
+        -- are still waiting for arguments.
+        (tsParamSat, tsParamRemain)     
+                = splitAt (length xsArgs) tsParamLam
+
+        -- The type of the result after performing this application.
+        -- If there are remaining, un-saturated parameters the result
+        -- type will still be a function.
+        Just tResultClo
+                = tFunOfList (tsParamRemain ++ [tResultSuper])
+
+   in  -- trace ("pap " ++ show (nF, length tsParamLam, length xsArgs)) $
+          if length tsArgs > 0 
+            then xFunApply aF tsParamSat tResultClo
+                   (xFunCurry aF tsParamLam tResultSuper xF)
+                    xsArgs
+            else    xFunCurry aF tsParamLam tResultSuper xF
+
+ -- TODO: handle over-applied super.
+ --       do direct call, then do an application.
+ --       the super must produce a closure, otherwise it won't be well typed.
+ | otherwise
+-- = trace ("ovr " ++ show (nF, length tsParamLam, length xsArgs))
+ = xApps aF xF xsArgs
+
+
+-- | Given a list of expressions, consisting of some XTypes then some
+--   non-XType expressoins, split it into the XTypes then the values.
+--   If there are any more trailing XTypes then Nothing.
+splitAppsValues :: [Exp a Name] -> Maybe ([Exp a Name], [Exp a Name])
+splitAppsValues xs
+ = let  (xsT, xsMore)   = span isXType xs
+        (xsV, xsMore2)  = span (not . isXType) xsMore
+   in   if null xsMore2 
+         then Just (xsT, xsV)
+         else Nothing
 
 
 ---------------------------------------------------------------------------------------------------
--- | Call a thunk.
+-- | Apply a thunk to some more arguments.
 makeCallThunk
         :: Show a
         => AnTEC a Name                 -- ^ Annotation from functional part of application.
