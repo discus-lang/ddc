@@ -308,6 +308,7 @@ convertExpX penv kenv tenv ctx xx
 
          , Just nArgs   
             <- case nPrim of 
+                E.NameOpFun (E.OpFunCurry   nArgs) -> Just nArgs
                 E.NameOpFun (E.OpFunCCurry  nArgs) -> Just nArgs
                 E.NameOpFun (E.OpFunCExtend nArgs) -> Just nArgs
                 _                                  -> Nothing
@@ -345,11 +346,16 @@ convertExpX penv kenv tenv ctx xx
 
 
         ---------------------------------------------------
-        -- Evaluate a thunk.
+        -- Apply a thunk.
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, xs)                           <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)        <- x1
-         , E.NameOpFun (E.OpFunCApply nArgs)  <- nPrim
+         , Just nArgs
+            <- case nPrim of
+                E.NameOpFun (E.OpFunApply  nArgs) -> Just nArgs
+                E.NameOpFun (E.OpFunCApply nArgs) -> Just nArgs
+                _                                 -> Nothing
+
          , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
          , XType _ tResult : _  <- drop  nArgs xs
          , xF : xsArgs          <- drop (nArgs + 1) xs
@@ -466,7 +472,7 @@ convertExpX penv kenv tenv ctx xx
                 -- Convert the arguments.
                 -- Effect type and witness arguments are discarded here.
                 xsArgs' <- liftM catMaybes 
-                        $  mapM (convertOrDiscardSuperArgX penv kenv tenv) xsArgs
+                        $  mapM (convertOrDiscardSuperArgX xx penv kenv tenv) xsArgs
                         
                 return  $ xApps a' x1' xsArgs'
 
@@ -788,13 +794,14 @@ convertCtorAppX _ _ _ _ _ _
 --   return Nothing which indicates it should be discarded.
 convertOrDiscardSuperArgX
         :: Show a                       
-        => TopEnv                       -- ^ Top-level environment.
+        => Exp (AnTEC a E.Name) E.Name  -- ^ Overall application expression, for debugging.
+        -> TopEnv                       -- ^ Top-level environment.
         -> KindEnv  E.Name              -- ^ Kind environment.
         -> TypeEnv  E.Name              -- ^ Type environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Maybe (Exp a A.Name))
 
-convertOrDiscardSuperArgX penv kenv tenv xx
+convertOrDiscardSuperArgX xxApp penv kenv tenv xx
 
         -- Region type arguments get passed through directly.
         | XType a t     <- xx
@@ -810,6 +817,11 @@ convertOrDiscardSuperArgX penv kenv tenv xx
         = do    t'      <- saltPrimeRegionOfDataType kenv t
                 return  $ Just (XType (annotTail a) t')
 
+        -- Drop effect arguments.
+        | XType a _     <- xx
+        , isEffectKind (annotType a)
+        =       return Nothing
+
         -- Some type that we don't know how to convert to Salt.
         -- We don't handle type args with higher kinds.
         -- See [Note: Salt conversion for higher kinded type arguments]
@@ -819,7 +831,9 @@ convertOrDiscardSuperArgX penv kenv tenv xx
                        , text "In particular, we don't yet handle higher kinded type arguments."
                        , empty
                        , text "See [Note: Salt conversion for higher kinded type arguments] in"
-                       , text "the implementation of the Tetra to Salt conversion." ]
+                       , text "the implementation of the Tetra to Salt conversion." 
+                       , empty
+                       , text "with application: " <+> ppr xxApp ]
 
         -- Witness arguments are discarded.
         | XWitness{}    <- xx

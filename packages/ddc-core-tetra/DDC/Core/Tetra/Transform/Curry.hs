@@ -276,17 +276,17 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper xsArgs
  -- Fully saturated call to a super of foreign function. 
  -- We have arguments for each parameter, so can call it directly.
  | length xsArgs == length tsParamLam
--- = trace ("sat " ++ show (nF, length tsParamLam, length xsArgs))
- = xApps aF xF xsArgs
+ = -- trace ("sat " ++ show (nF, length tsParamLam, length xsArgs)) $
+   xApps aF xF xsArgs
 
  -- Partially application of a super or foreign function.
  -- We need to build a closure, then attach any arguments we have.
  | length xsArgs   <  length tsParamLam
  = let 
         -- Types of the applied arguments.
-        tsArgs  = map annotType     
+{-        tsArgs  = map annotType     
                 $ map annotOfExp xsArgs
-
+-}
         -- Split types of the super parameters into the ones that can be
         -- satisfied by this application, and the remaining parameters that
         -- are still waiting for arguments.
@@ -303,18 +303,16 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper xsArgs
         Just tSuperResult               = tFunOfList (tsParamRest ++ [tResultSuper])
 
    in  -- trace ("pap " ++ show (nF, length tsParamLam, length xsArgs)) $
-          if length tsArgs > 0 
-            then xApps aF (xFunCurry aF tsParamSat tResultClo 
-                                (xFunCReify aF tParamFirst tSuperResult xF))
-                           xsArgs
-            else xF
+          xApps aF (xFunCurry aF tsParamSat tResultClo 
+                           (xFunCReify aF tParamFirst tSuperResult xF))
+                       xsArgs
 
  -- TODO: handle over-applied super.
  --       do direct call, then do an application.
  --       the super must produce a closure, otherwise it won't be well typed.
  | otherwise
--- = trace ("ovr " ++ show (nF, length tsParamLam, length xsArgs))
- = xApps aF xF xsArgs
+ = -- trace ("ovr " ++ show (nF, length tsParamLam, length xsArgs)) $
+   xApps aF xF xsArgs
 
 
 -- | Given a list of expressions, consisting of some XTypes then some
