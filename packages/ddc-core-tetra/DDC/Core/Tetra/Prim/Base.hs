@@ -143,22 +143,24 @@ data OpStore
 data OpFun
         -- | Partially apply a supecombinator to some arguments, producing
         --   an implicitly typed closure.
-        = OpFunCurry  Int
+        = OpFunCurry   Int
 
         -- | Apply an implicitly typed closure to some more arguments.
-        | OpFunApply  Int
+        | OpFunApply   Int
 
         -- | Reify a function into an explicit functional value.
         | OpFunCReify
 
         -- | Apply an explicit functional value to some arguments,
         --   producing an explicitly typed closure.
-        | OpFunCCurry Int
+        | OpFunCCurry  Int
 
-        -- | Apply an explicit closure to more arguments,.
-        | OpFunCApply Int
+        -- | Extend an explicitly typed closure with more arguments,
+        --   producing a new closure.
+        | OpFunCExtend Int
 
-        -- | Apply an explicit closure to its remaining arguments.
-        | OpFunCEval  Int
+        -- | Apply an explicitly typed closure to some arguments,
+        --   possibly evaluating the contained function.
+        | OpFunCApply   Int
         deriving (Eq, Ord, Show)
 

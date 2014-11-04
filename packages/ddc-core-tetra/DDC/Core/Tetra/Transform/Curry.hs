@@ -299,12 +299,15 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper xsArgs
         Just tResultClo
                 = tFunOfList (tsParamRemain ++ [tResultSuper])
 
+        tParamFirst : tsParamRest       = tsParamLam
+        Just tSuperResult               = tFunOfList (tsParamRest ++ [tResultSuper])
+
    in  -- trace ("pap " ++ show (nF, length tsParamLam, length xsArgs)) $
           if length tsArgs > 0 
-            then xFunApply aF tsParamSat tResultClo
-                   (xFunCurry aF tsParamLam tResultSuper xF)
-                    xsArgs
-            else    xFunCurry aF tsParamLam tResultSuper xF
+            then xApps aF (xFunCurry aF tsParamSat tResultClo 
+                                (xFunCReify aF tParamFirst tSuperResult xF))
+                           xsArgs
+            else xF
 
  -- TODO: handle over-applied super.
  --       do direct call, then do an application.

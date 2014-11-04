@@ -42,7 +42,7 @@ typeOpFun op
                                 : tsFront ++ [tCloValue tLast])
                 in result
 
-        OpFunCApply n
+        OpFunCExtend n
          -> tForalls (replicate (n + 1) kData)
          $  \ts -> 
                 let tLast : tsFront' = reverse ts
@@ -54,7 +54,7 @@ typeOpFun op
                                 : tsFront ++ [tCloValue tLast])
                 in result
 
-        OpFunCEval n
+        OpFunCApply n
          -> tForalls (replicate (n + 1) kData)
          $  \ts ->
                 let tLast : tsFront' = reverse ts

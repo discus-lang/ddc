@@ -17,34 +17,34 @@ import Data.List
 instance NFData OpFun where
  rnf prim
   = case prim of
-        OpFunCReify   -> ()
-        OpFunCCurry n -> rnf n
-        OpFunCApply n -> rnf n
-        OpFunCEval  n -> rnf n
-        OpFunCurry  n -> rnf n
-        OpFunApply  n -> rnf n
+        OpFunCurry   n  -> rnf n
+        OpFunApply   n  -> rnf n
+        OpFunCReify     -> ()
+        OpFunCCurry  n  -> rnf n
+        OpFunCExtend n  -> rnf n
+        OpFunCApply  n  -> rnf n
  
 
 instance Pretty OpFun where
  ppr pf
   = case pf of
         OpFunCurry  n
-         -> text "curry"  <> int n <> text "#"
+         -> text "curry"   <> int n <> text "#"
 
         OpFunApply  n
-         -> text "apply"  <> int n <> text "#"
+         -> text "apply"   <> int n <> text "#"
 
         OpFunCReify
          -> text "creify#"
 
         OpFunCCurry n
-         -> text "ccurry" <> int n <> text "#"
+         -> text "ccurry"  <> int n <> text "#"
 
-        OpFunCApply n
-         -> text "capply" <> int n <> text "#"
+        OpFunCExtend n
+         -> text "cextend" <> int n <> text "#"
 
-        OpFunCEval  n
-         -> text "ceval"  <> int n <> text "#"
+        OpFunCApply  n
+         -> text "capply"  <> int n <> text "#"
 
 
 -- | Read a primitive function operator.
@@ -78,21 +78,21 @@ readOpFun str
         , n >= 0
         = Just $ OpFunCCurry n
 
+        -- cextendN#
+        | Just rest     <- stripPrefix "cextend" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n >= 1
+        = Just $ OpFunCExtend n
+
         -- capplyN#
         | Just rest     <- stripPrefix "capply" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds
-        , n >= 1
-        = Just $ OpFunCApply n
-
-        -- cevalN#
-        | Just rest     <- stripPrefix "ceval" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
         , n >= 0
-        = Just $ OpFunCEval n
+        = Just $ OpFunCApply n
 
         | otherwise
         = Nothing
@@ -105,8 +105,13 @@ typeOpFun op
         OpFunCurry n
          -> tForalls (replicate (n + 1) kData)
          $  \ts -> 
-                let Just tF          = tFunOfList ts
-                    Just result      = tFunOfList (tF : ts)
+                let tLast : tsFront' = reverse ts
+                    tsFront          = reverse tsFront'
+                    Just tF          = tFunOfList ts
+                    Just result     
+                        = tFunOfList
+                                ( tFunValue tF
+                                : tsFront ++ [tLast])
                 in  result
 
         OpFunApply n
@@ -132,7 +137,7 @@ typeOpFun op
                                 : tsFront ++ [tCloValue tLast])
                 in result
 
-        OpFunCApply n
+        OpFunCExtend n
          -> tForalls (replicate (n + 1) kData)
          $  \ts -> 
                 let tLast : tsFront' = reverse ts
@@ -144,7 +149,7 @@ typeOpFun op
                                 : tsFront ++ [tCloValue tLast])
                 in result
 
-        OpFunCEval n
+        OpFunCApply n
          -> tForalls (replicate (n + 1) kData)
          $  \ts ->
                 let tLast : tsFront' = reverse ts

@@ -300,17 +300,17 @@ convertExpX penv kenv tenv ctx xx
 
         ---------------------------------------------------
         -- Curry arguments onto a reified function.
-        --   This works for both the 'curryN#' and 'applyN#' primops, as they 
-        --   differ only in the Tetra type.
+        --   This works for both the 'curryN#' and 'extendN#' primops,
+        --   as they differ only in the Tetra-level closure type.
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, xs)                     <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)  <- x1
 
          , Just nArgs   
             <- case nPrim of 
-                E.NameOpFun (E.OpFunCCurry nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCApply nArgs) -> Just nArgs
-                _                                 -> Nothing
+                E.NameOpFun (E.OpFunCCurry  nArgs) -> Just nArgs
+                E.NameOpFun (E.OpFunCExtend nArgs) -> Just nArgs
+                _                                  -> Nothing
 
          , tsArg              <- [tArg | XType _ tArg <- take nArgs xs]
          , (xThunk : xsArg)   <- drop (nArgs + 1) xs
@@ -347,9 +347,9 @@ convertExpX penv kenv tenv ctx xx
         ---------------------------------------------------
         -- Evaluate a thunk.
         XApp (AnTEC _t _ _ a) xa xb
-         | (x1, xs)                     <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)          <- x1
-         , E.NameOpFun (E.OpFunCEval nArgs)      <- nPrim
+         | (x1, xs)                           <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim _tPrim)        <- x1
+         , E.NameOpFun (E.OpFunCApply nArgs)  <- nPrim
          , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
          , XType _ tResult : _  <- drop  nArgs xs
          , xF : xsArgs          <- drop (nArgs + 1) xs
