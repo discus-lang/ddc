@@ -225,6 +225,8 @@ Fragment violation when converting Tetra module to Salt module.
     
     See [Note: Salt conversion for higher kinded type arguments] in
     the implementation of the Tetra to Salt conversion.
+    
+    with application:  nothin [List] [B# Nat#] x0
   
     with: [List]
 

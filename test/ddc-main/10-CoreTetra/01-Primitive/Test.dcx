@@ -79,10 +79,9 @@
 :type capply2#
 :type capply5#
 
-:type ceval0#
-:type ceval1#
-:type ceval2#
-:type ceval5#
+:type cextend1#
+:type cextend2#
+:type cextend5#
 
 
 -- Application operators that work on implicit closures.
