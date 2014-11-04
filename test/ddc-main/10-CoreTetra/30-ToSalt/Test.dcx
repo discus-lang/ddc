@@ -43,6 +43,26 @@ foo     (x : Bool#) : Bool#
        False#  -> True#;;
 
 
+-- Compile nested function via lambda lifting.
+:to-salt..
+module Test with letrec
+id [a : Data] (x : a) : a
+ = x
+
+foo (_ : Unit) : Unit
+ = do   id (\(x : Nat#). x)
+        ()
+;;
+
+
+-- Compile application of anonymous function.
+:to-salt..
+module Test with letrec
+app [a b : Data] (f : a -> b) (x : a) : b
+ = f x
+;;
+
+
 -------------------------------------------------------------------------------
 -- Trigger errors about unsupported features in the Tetra to Salt conversion.
 :set Synth
@@ -53,30 +73,6 @@ module Test with letrec
 id (^ : Nat#) : Nat#
  = ^0
  ;;
-
-
--- Error: cannot convert type abstraction in this context.
-:to-salt..
-module Test with letrec
-id [a : Data] (x : a) : a
- = x
-
-foo (_ : Unit) : Unit
- = do   id (/\a. \(x : a). x)
-        ()
-;;
-
-
--- Error: cannot convert function application in this context.
-:to-salt..
-module Test with letrec
-id [a : Data] (x : a) : a
- = x
-
-foo (_ : Unit) : Unit
- = do   id (\(x : Nat#). x)
-        ()
-;;
 
 
 -- Error: partial application of primitive data constructors is not supported.
@@ -106,14 +102,6 @@ thing (_ : Unit) : Nat# -> Nat#
 ;;
 
 
--- Error: higher order functions not yet supported.
-:to-salt..
-module Test with letrec
-app [a b : Data] (f : a -> b) (x : a) : b
- = f x
-;;
-
-
 -- OK: let expressions in nested contexts are normalized on the way in to
 -- the conversion.
 :to-salt..
@@ -137,19 +125,6 @@ nothin [a : Data ~> Data] [b : Data] (x : b) : b
 
 foo (_ : Unit) : Nat#
  = nothin [List] [Nat#] 5#
-;;
-
-
--- Error: higher order functions are not yet supported.
--- blerk is a higher order function, though it's a type function rather
--- than a value function.
-:to-salt..
-module Test
-data List (a : Data) where
-        Nil : a -> List a
-with letrec
-blerk (nil : [a : Data]. List a) : List Nat#
- = nil
 ;;
 
 

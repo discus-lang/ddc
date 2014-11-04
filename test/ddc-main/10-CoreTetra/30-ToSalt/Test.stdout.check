@@ -134,6 +134,28 @@ letrec {
 }
 
 
+-- Compile nested function via lambda lifting.
+Error loading module
+  When checking expression.
+    <batch>:53:12
+    Cannot apply non-function
+                  of type: [a : Data].a -> a
+    
+    with: id
+              (\(x : Nat#). x)
+
+
+-- Compile application of anonymous function.
+module Test with
+letrec {
+  app : [a$r b$r : Region].Ptr# rT Obj -> Ptr# a$r Obj -> Ptr# b$r Obj
+    = /\(a$r b$r : Region).
+       \(f : Ptr# rT Obj).\(x : Ptr# a$r Obj).
+      makePtr# [b$r] [Obj]
+          (apply1 (takePtr# [rT] [Obj] f) (takePtr# [a$r] [Obj] x))
+}
+
+
 -------------------------------------------------------------------------------
 -- Trigger errors about unsupported features in the Tetra to Salt conversion.
 ok
@@ -144,25 +166,6 @@ letrec {
   id : Ptr# rT Obj -> Ptr# rT Obj
     = \(x0 : Ptr# rT Obj). x0
 }
-
-
--- Error: cannot convert type abstraction in this context.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Cannot convert type abstraction in this context.
-    The program must be lambda-lifted before conversion.
-  
-    with: /\(a : Data).
-     \(x : a). x
-
-
--- Error: cannot convert function application in this context.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Cannot convert function abstraction in this context.
-    The program must be lambda-lifted before conversion.
-  
-    with: \(x : B# Nat#). x
 
 
 -- Error: partial application of primitive data constructors is not supported.
@@ -187,14 +190,6 @@ Fragment violation when converting Tetra module to Salt module.
     Partial application of primitive operators is not supported.
   
     with: add# [B# Nat#] x0
-
-
--- Error: higher order functions not yet supported.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Higher order functions are not yet supported.
-  
-    with: f x
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to
@@ -229,16 +224,6 @@ Fragment violation when converting Tetra module to Salt module.
     with application:  nothin [List] [B# Nat#] x0
   
     with: [List]
-
-
--- Error: higher order functions are not yet supported.
--- blerk is a higher order function, though it's a type function rather
--- than a value function.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Higher order functions are not yet supported.
-  
-    with: nil [B# Nat#]
 
 
 -------------------------------------------------------------------------------

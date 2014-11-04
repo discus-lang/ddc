@@ -389,8 +389,14 @@ convertDataB defs kenv bb
 convertBindNameM :: E.Name -> ConvertM a A.Name
 convertBindNameM nn
  = case nn of
-        E.NameVar str   -> return $ A.NameVar str
-        _               -> throw $ ErrorInvalidBinder nn
+        E.NameVar str 
+          -> return $ A.NameVar str
+
+        E.NameExt n str      
+          -> do  n'      <- convertBindNameM n
+                 return  $ A.NameExt n' str
+
+        _ -> throw $ ErrorInvalidBinder nn
 
 
 -- Bounds -----------------------------------------------------------------------------------------
@@ -420,8 +426,9 @@ convertDataU uu
         UIx i                   
          -> return $ UIx i
 
-        UName (E.NameVar str)   
-         -> return $ UName (A.NameVar str)
+        UName n
+         -> do  n'      <- convertBindNameM n
+                return $ UName n'
 
         -- When converting primops, use the type directly specified by the 
         -- Salt language instead of converting it from Tetra. The types from
@@ -438,7 +445,6 @@ convertDataU uu
 
                 _ -> throw $ ErrorInvalidBound uu
 
-        _ -> throw $ ErrorInvalidBound uu
 
 
 -- DaCon ------------------------------------------------------------------------------------------

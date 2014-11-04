@@ -68,9 +68,24 @@ stageTetraToSalt
         -> PipeCore  () CE.Name
 
 stageTetraToSalt config source pipesSalt
- = pipe_norm
+ = pipe_lambdas
  where
-        pipe_norm
+        pipe_lambdas
+         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
+           [ PipeCoreSimplify   BE.fragment (0 :: Int) C.lambdas 
+           [ PipeCoreOutput     pprDefaultMode
+                                (dump config source "dump.tetra-curry.dct")
+           , pipe_curry]]
+
+        pipe_curry
+         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
+           [ PipeCoreAsTetra
+           [ PipeTetraCurry
+           [ PipeCoreOutput     pprDefaultMode
+                                (dump config source "dump.tetra-curry.dct")
+           , pipe_prep ]]]
+
+        pipe_prep
          = PipeCoreSimplify     BE.fragment 0 normalize
            [ pipe_boxing ]
 
@@ -79,15 +94,6 @@ stageTetraToSalt config source pipesSalt
                 (C.makeNamifier CE.freshT)      
                 (C.makeNamifier CE.freshX)
 
-{-
-        pipe_curry
-         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
-           [ PipeCoreAsTetra
-           [ PipeTetraCurry
-           [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.tetra-curry.dct")
-           , pipe_boxing ]]]
--}
         pipe_boxing
          = PipeCoreAsTetra
            [ PipeTetraBoxing
@@ -97,6 +103,7 @@ stageTetraToSalt config source pipesSalt
                [ PipeCoreOutput pprDefaultMode
                                 (dump config source "dump.tetra-boxing-simp.dct")
                , pipe_toSalt]]]
+
 
         pipe_toSalt           
          = PipeCoreCheck        BE.fragment C.Recon SinkDiscard

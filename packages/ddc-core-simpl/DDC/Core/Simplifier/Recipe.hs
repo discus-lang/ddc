@@ -4,15 +4,16 @@ module DDC.Core.Simplifier.Recipe
         ( -- * Atomic recipies
           idsimp
         , anonymize
-        , snip
-        , snipOver
-        , flatten
         , beta
         , betaLets
-        , prune
-        , forward
         , bubble
         , elaborate
+        , flatten
+        , forward
+        , lambdas
+        , snip
+        , snipOver
+        , prune
 
           -- * Compound recipies
         , anormalize
@@ -39,21 +40,6 @@ anonymize :: Simplifier s a n
 anonymize = Trans Anonymize
 
 
--- | Introduce let-bindings for nested applications.
-snip      :: Simplifier s a n
-snip      = Trans (Snip Snip.configZero)
-
-
--- | Introduce let-bindings for nested applications.
-snipOver  :: Simplifier s a n
-snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
-
-
--- | Flatten nested let and case expressions.
-flatten   :: Simplifier s a n
-flatten   = Trans Flatten
-
-
 -- | Perform beta reduction
 beta    :: Simplifier s a n
 beta    = Trans (Beta Beta.configZero)
@@ -62,16 +48,6 @@ beta    = Trans (Beta Beta.configZero)
 -- | Perform beta reduction, introducing let-expressions for compound arguments.
 betaLets :: Simplifier s a n
 betaLets = Trans (Beta Beta.configZero { Beta.configBindRedexes = True })
-
-
--- | Remove unused, pure let bindings.
-prune  :: Simplifier s a n
-prune   = Trans Prune
-
-
--- | Float single-use bindings forward into their use sites.
-forward  :: Simplifier s a n
-forward  = Trans Forward
 
 
 -- | Float casts outwards.
@@ -83,6 +59,38 @@ bubble   = Trans Bubble
 --   otherwise in the program.
 elaborate :: Simplifier s a n
 elaborate = Trans Elaborate
+
+
+-- | Flatten nested let and case expressions.
+flatten   :: Simplifier s a n
+flatten   = Trans Flatten
+
+
+-- | Float single-use bindings forward into their use sites.
+forward  :: Simplifier s a n
+forward  = Trans Forward
+
+
+-- | Lift out nested lambda expressions to top-level.
+lambdas :: Simplifier s a n
+lambdas  = Trans Lambdas
+
+
+-- | Remove unused, pure let bindings.
+prune  :: Simplifier s a n
+prune    = Trans Prune
+
+
+-- | Introduce let-bindings for nested applications.
+snip      :: Simplifier s a n
+snip      = Trans (Snip Snip.configZero)
+
+
+-- | Introduce let-bindings for nested applications.
+snipOver  :: Simplifier s a n
+snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
+
+
 
 
 -- Compound -------------------------------------------------------------------

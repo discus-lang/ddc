@@ -1,11 +1,2 @@
 :set lang Tetra
 
--- Error: partial application at unboxed types.
---   We allow this in the Tetra language, and generate the Salt code for it, 
---   but this is not part of the Salt language.
-:to-salt..
-module Test with letrec
-foo2 (x : Nat#) (y : Nat#) : Nat#
- = let foo1     = foo2 2#
-   in  foo1 3#
-;;
