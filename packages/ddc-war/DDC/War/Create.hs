@@ -38,7 +38,6 @@ import Data.Maybe
 import Data.Set                                 (Set)
 import qualified DDC.War.Create.CreateMainSH    as CreateMainSH
 import qualified DDC.War.Create.CreateMainHS    as CreateMainHS
-import qualified DDC.War.Create.CreateMainDS    as CreateMainDS
 import qualified DDC.War.Create.CreateTestDS    as CreateTestDS
 import qualified DDC.War.Create.CreateDCX       as CreateDCX
 import qualified DDC.War.Create.CreateDSX       as CreateDSX
@@ -57,7 +56,6 @@ create way allFiles filePath
         | creat <- 
                 [ CreateMainSH.create
                 , CreateMainHS.create
-                , CreateMainDS.create
                 , CreateTestDS.create
                 , CreateDCX.create
                 , CreateDSX.create

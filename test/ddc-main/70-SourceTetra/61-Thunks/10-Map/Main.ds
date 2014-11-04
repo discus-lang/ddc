@@ -22,7 +22,7 @@ data List (a : Data) where
 map [a b : Data] (f : C# (a -> b)) (xx : List a) : List b
  = case xx of
         Nil             -> Nil
-        Cons x xs       -> Cons (eval1# f x) (map f xs)
+        Cons x xs       -> Cons (capply1# f x) (map f xs)
 
 
 sum (xx : List Nat#) : Nat#
@@ -35,7 +35,7 @@ main (_ : Unit) : S Console Unit
  = private r in
    box do
         
-        add1    = curry1# (reify# add) 1
+        add1    = ccurry1# (creify# add) 1
         result  = sum (map add1 (Cons 1 (Cons 2 (Cons 3 Nil))))
 
         run putStrLn (showNat [r] result)

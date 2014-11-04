@@ -19,6 +19,7 @@ create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
  |   takeFileName filePath == "Main.dcs"
   || takeFileName filePath == "Main.dcl"
+  || takeFileName filePath == "Main.ds"
  = let  
         sourceDir        = takeDirectory  filePath
         buildDir         = sourceDir </> "war-" ++ wayName way

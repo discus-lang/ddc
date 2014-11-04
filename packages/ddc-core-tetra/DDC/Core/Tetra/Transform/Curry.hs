@@ -163,12 +163,22 @@ curryX ctx@(funs, _kenv, _tenv) xx
         XLAM a b x      -> XLAM a b (down x)
 
         XApp a x1 x2
+         -- If this is an explicit use of the creify# op,
+         -- then don't reify the function again.
+         | Just (xF, [XType{}, XType{}, _]) <- takeXApps xx
+         , XVar _ (UPrim nF _)    <- xF
+         , NameOpFun OpFunCReify  <- nF
+         -> xx
+
+         -- Decode how to call this function.
          | Just (xF, xsArgs)    <- takeXApps xx
          , XVar a' (UName nF)   <- xF
          , length xsArgs  > 0
          -> let xsArgs' = map down xsArgs
             in  makeCall xx a' funs nF xsArgs'
 
+         -- If the functional value is not a named variable then 
+         -- just pass it though. 
          | otherwise
          -> XApp a (down x1) (down x2)
 
