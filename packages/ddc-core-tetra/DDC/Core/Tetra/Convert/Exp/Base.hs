@@ -2,6 +2,9 @@
 module DDC.Core.Tetra.Convert.Exp.Base
         ( Convert
         , Config        (..)
+
+        -- * Context
+        , Context       (..)
         , TopEnv        (..)
         , ExpContext    (..)
         , superDataArity
@@ -37,12 +40,33 @@ type Convert a c
 
 data Config a
         = Config
-        { configTopEnv          :: TopEnv
-        , configConvertExp      :: Convert a Exp
+        { configConvertExp      :: Convert a Exp
         , configConvertAlt      :: Convert a Alt
         , configConvertLets     :: Convert a Lets }
 
+
 ---------------------------------------------------------------------------------------------------
+data Context 
+        = Context
+        { contextTopEnv         :: TopEnv
+        , contextKindEnv        :: KindEnv E.Name
+        , contextTypeEnv        :: TypeEnv E.Name }
+
+
+-- | The context we're converting an expression in.
+--   We keep track of this during conversion to ensure we don't produce
+--   code outside the Salt language fragment. For example, in Salt a function
+--   can only be applied to a value variable, type or witness -- and not
+--   a general expression.
+data ExpContext
+        = ExpTop        -- ^ At the top-level of the module.
+        | ExpFun        -- ^ At the top-level of a function.
+        | ExpBody       -- ^ In the body of a function.
+        | ExpBind       -- ^ In the right of a let-binding.
+        | ExpArg        -- ^ In a function argument.
+        deriving (Show, Eq, Ord)
+
+
 -- | Information about the top-level environment.
 data TopEnv
         = TopEnv
@@ -71,20 +95,6 @@ superDataArity env tenv u
         | otherwise
         = Nothing
 
-
----------------------------------------------------------------------------------------------------
--- | The context we're converting the expression in.
---     We keep track of this during conversion to ensure we don't produce
---     code outside the Salt language fragment. For example, in Salt a function
---     can only be applied to a value variable, type or witness -- and not
---     a general expression.
-data ExpContext
-        = ExpTop        -- ^ At the top-level of the module.
-        | ExpFun        -- ^ At the top-level of a function.
-        | ExpBody       -- ^ In the body of a function.
-        | ExpBind       -- ^ In the right of a let-binding.
-        | ExpArg        -- ^ In a function argument.
-        deriving (Show, Eq, Ord)
 
 
 ---------------------------------------------------------------------------------------------------
