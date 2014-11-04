@@ -7,7 +7,9 @@ module DDC.Core.Tetra.Convert.Type
         , convertRegionT
         , convertIndexT
         , convertCapabilityT
+
         , convertDataT
+        , convertValueT
         , convertRepableT
 
           -- * Data constructor conversion.
@@ -17,10 +19,10 @@ module DDC.Core.Tetra.Convert.Type
         , convertTypeB
         , convertTypeU
 
+        , convertDataB
         , convertValueB
-        , convertRepableB
         , convertCapabilityB
-        , convertValueU
+        , convertDataU
 
           -- * Names
         , convertBindNameM
@@ -142,6 +144,25 @@ convertDataT defs kenv tt
         = convertRepableT defs kenv tt
 
 
+-- | Convert a value type from Core Tetra to Core Salt
+--
+--   Objects of value type can be bound to values and passed to and returned from
+--   functions. This is like `convertRepableT`, except functional values are
+--   represented as closures.
+--
+convertValueT
+        :: DataDefs E.Name -> KindEnv E.Name -> Type E.Name
+        -> ConvertM a (Type A.Name)
+
+convertValueT defs kenv tt
+        | TApp{}        <- tt
+        , Just _        <- takeTFun tt
+        = return $ A.tPtr A.rTop A.tObj
+
+        | otherwise
+        = convertDataT defs kenv tt                     -- BROKEN: fix Data vs Value vs Repable
+
+
 -- | Convert a representable type from Core Tetra to Core Salt.
 --
 --   Representable numeric types must be explicitly boxed (like B# Nat) or
@@ -216,7 +237,7 @@ convertRepableTyConApp
 convertRepableTyConApp defs kenv tt
         -- Convert Tetra function types to Salt function types.
         | Just (t1, t2)        <- takeTFun tt
-        = do   t1'     <- convertRepableT defs kenv t1
+        = do   t1'     <- convertValueT   defs kenv t1
                t2'     <- convertRepableT defs kenv t2
                return  $ tFunPE t1' t2'
 
@@ -238,6 +259,10 @@ convertRepableTyConApp defs kenv tt
         -- The String# type.
         | Just (E.NamePrimTyCon E.PrimTyConString, [])    <- takePrimTyConApps tt
         =      return A.tString
+
+        -- The Bool# type.
+        | Just (E.NamePrimTyCon E.PrimTyConBool, [])      <- takePrimTyConApps tt
+        =      return A.tBool
 
         -- The Ref# type.
         | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])    <- takePrimTyConApps tt
@@ -308,6 +333,7 @@ convertRepableTyConApp defs kenv tt
                        $  "Invalid type constructor application "
                        ++ (renderIndent $ ppr tt)
         
+
 -- Binds ------------------------------------------------------------------------------------------
 -- | Convert a type binder.
 --   These are formal type parameters.
@@ -322,15 +348,15 @@ convertTypeB bb
 -- | Convert a value binder with a representable type.
 --   This is used for the binders of function arguments, which must have
 --   representatable types to adhere to some calling convention. 
-convertRepableB 
+convertValueB 
         :: DataDefs E.Name -> KindEnv E.Name 
         -> Bind E.Name -> ConvertM a (Bind A.Name)
 
-convertRepableB defs kenv bb
+convertValueB defs kenv bb
   = case bb of
-        BNone t         -> liftM  BNone (convertRepableT defs kenv t)        
-        BAnon t         -> liftM  BAnon (convertRepableT defs kenv t)
-        BName n t       -> liftM2 BName (convertBindNameM n)     (convertRepableT defs kenv t)
+        BNone t         -> liftM  BNone (convertValueT defs kenv t)        
+        BAnon t         -> liftM  BAnon (convertValueT defs kenv t)
+        BName n t       -> liftM2 BName (convertBindNameM n)     (convertValueT defs kenv t)
 
 
 -- | Convert a witness binder.
@@ -347,11 +373,11 @@ convertCapabilityB kenv bb
 --   or non-representational types. The latter is used for let-binders which 
 --   don't need to be representational becaues the values only exist 
 --   internally to a function.
-convertValueB   
+convertDataB   
         :: DataDefs E.Name -> KindEnv E.Name 
         -> Bind E.Name -> ConvertM a (Bind A.Name)
 
-convertValueB defs kenv bb
+convertDataB defs kenv bb
  = case bb of
         BNone t         -> liftM  BNone (convertDataT defs kenv t)
         BAnon t         -> liftM  BAnon (convertDataT defs kenv t)
@@ -388,8 +414,8 @@ convertTypeU uu
 -- | Convert a value bound.
 --   These refer to function arguments or let-bound values, 
 --   and hence must have representable types.
-convertValueU :: Bound E.Name -> ConvertM a (Bound A.Name)
-convertValueU uu
+convertDataU :: Bound E.Name -> ConvertM a (Bound A.Name)
+convertDataU uu
   = case uu of
         UIx i                   
          -> return $ UIx i

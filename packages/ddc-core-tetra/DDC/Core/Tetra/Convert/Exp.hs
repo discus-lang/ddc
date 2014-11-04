@@ -106,7 +106,7 @@ convertExpX penv kenv tenv ctx xx
 
         XVar a u
          -> do  let a'  = annotTail a
-                u'      <- convertValueU u
+                u'      <- convertDataU u
                 return  $  XVar a' u'
 
         XCon a dc
@@ -172,13 +172,13 @@ convertExpX penv kenv tenv ctx xx
                 Just UniverseData
                  -> liftM3 XLam 
                         (return $ annotTail a) 
-                        (convertRepableB defs kenv b) 
+                        (convertValueB defs kenv b) 
                         (convertExpX penv kenv tenv' ctx x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
-                        (convertRepableB defs kenv b)
+                        (convertValueB defs kenv b)
                         (convertExpX penv kenv tenv' ctx x)
 
                 _  -> throw $ ErrorMalformed 
@@ -223,7 +223,7 @@ convertExpX penv kenv tenv ctx xx
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
                 tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertRepableT defs kenv tBx
+                tBx'    <- convertValueT defs kenv tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
@@ -268,7 +268,7 @@ convertExpX penv kenv tenv ctx xx
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
                 tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertRepableT defs kenv tBx
+                tBx'    <- convertValueT defs kenv tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
@@ -319,7 +319,7 @@ convertExpX penv kenv tenv ctx xx
          -> do  
                 xThunk'         <- downArgX xThunk
                 xsArg'          <- mapM downArgX xsArg
-                tsArg'          <- mapM (convertRepableT defs kenv) tsArg
+                tsArg'          <- mapM (convertValueT defs kenv) tsArg
                 let bObject     = BAnon (A.tPtr A.rTop A.tObj)
                 let bAvail      = BAnon A.tNat
 
@@ -365,10 +365,10 @@ convertExpX penv kenv tenv ctx xx
 
                 -- Arguments and theit ypes.
                 xsArg'          <- mapM downArgX xsArgs
-                tsArg'          <- mapM (convertRepableT defs kenv) tsArg
+                tsArg'          <- mapM (convertValueT defs kenv) tsArg
 
                 -- Result and its type.
-                tResult'        <- convertRepableT defs kenv tResult
+                tResult'        <- convertValueT defs kenv tResult
                 let tPrimeResult' = fromMaybe A.rTop $ takePrimeRegion tResult'
 
                 -- Evaluate a thunk, returning the resulting Addr#, 
@@ -539,10 +539,10 @@ convertExpX penv kenv tenv ctx xx
          , isSomeRepType tScrut
          -> do  
                 -- Convert scrutinee, and determine its prime region.
-                x'      <- convertExpX     penv kenv tenv ExpArg xScrut
-                tX'     <- convertRepableT defs kenv tX
+                x'      <- convertExpX   penv kenv tenv ExpArg xScrut
+                tX'     <- convertValueT defs kenv tX
 
-                tScrut' <- convertRepableT defs kenv tScrut
+                tScrut' <- convertValueT defs kenv tScrut
                 let tPrime = fromMaybe A.rTop
                            $ takePrimeRegion tScrut'
 
@@ -637,7 +637,10 @@ convertLetsX penv kenv tenv lts
         LRec bxs
          -> do  let tenv'    = Env.extends (map fst bxs) tenv
                 let (bs, xs) = unzip bxs
-                bs'          <- mapM (convertValueB defs kenv) bs
+
+                -- All the recursive bindings must be functional values, 
+                -- so we use convertDataB here instead of convertValueB.
+                bs'          <- mapM (convertDataB defs kenv) bs                
                 xs'          <- mapM (convertExpX penv kenv tenv' ExpFun) xs
                 return  $ LRec $ zip bs' xs'
 
@@ -702,14 +705,14 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
          , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 -- Convert the scrutinee.
-                uScrut'         <- convertValueU uScrut
+                uScrut'         <- convertDataU uScrut
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
                 let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertRepableB defs kenv) bsFields
+                bsFields'       <- mapM (convertValueB defs kenv) bsFields       
 
                 -- Convert the right of the alternative, 
                 -- with all all the pattern variables in scope.
@@ -861,7 +864,7 @@ convertPrimArgX penv kenv tenv ctx xx
  = let defs     = topEnvDataDefs penv
    in case xx of
         XType a t
-         -> do  t'      <- convertRepableT defs kenv t
+         -> do  t'      <- convertValueT defs kenv t
                 return  $ XType (annotTail a) t'
 
         XWitness{}
