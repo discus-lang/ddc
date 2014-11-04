@@ -3,7 +3,7 @@ module DDC.Core.Tetra.Convert.Data
         ( constructData
         , destructData)
 where
-import DDC.Core.Tetra.Convert.Base
+import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Tetra.Convert.Layout
 import DDC.Core.Salt.Platform
 import DDC.Core.Transform.LiftX

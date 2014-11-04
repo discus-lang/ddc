@@ -1,5 +1,5 @@
 
-module DDC.Core.Tetra.Convert.Base
+module DDC.Core.Tetra.Convert.Error
         (  ConvertM
         ,  Error (..))
 where

@@ -6,7 +6,7 @@ module DDC.Core.Tetra.Convert
 where
 import DDC.Core.Tetra.Convert.Exp
 import DDC.Core.Tetra.Convert.Type
-import DDC.Core.Tetra.Convert.Base
+import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Salt.Convert             (initRuntime)
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
@@ -100,7 +100,7 @@ convertM pp runConfig defs kenv tenv mm
                    , topEnvImportValues = Set.fromList $ map fst $ moduleImportValues mm }
 
         -- Conver the body of the module itself.
-        x1         <- convertExpX penv kenv tenv' ExpTop
+        x1         <- convertExpX ExpTop penv kenv tenv' 
                    $  moduleBody mm
 
         -- Converting the body will also expand out code to construct,

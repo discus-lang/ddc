@@ -32,7 +32,7 @@ module DDC.Core.Tetra.Convert.Type
         , saltDataTypeOfArgType)
 where
 import DDC.Core.Tetra.Convert.Boxing
-import DDC.Core.Tetra.Convert.Base
+import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Type.DataDef

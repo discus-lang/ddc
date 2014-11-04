@@ -7,8 +7,8 @@ where
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Data
 import DDC.Core.Tetra.Convert.Type
-import DDC.Core.Tetra.Convert.Base
-import DDC.Core.Salt.Platform
+import DDC.Core.Tetra.Convert.Error
+import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Transform.LiftX
 import DDC.Core.Compounds
 import DDC.Core.Predicates
@@ -17,7 +17,6 @@ import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
-import qualified DDC.Core.Salt.Env       as A
 import qualified DDC.Core.Salt.Compounds as A
 
 import DDC.Type.Universe
@@ -29,70 +28,24 @@ import Control.Monad
 import Data.Maybe
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check           (throw)
-import Data.Set                          (Set)
 import qualified Data.Map                as Map
 import qualified Data.Set                as Set
-
-
----------------------------------------------------------------------------------------------------
--- | Information about the top-level environment.
-data TopEnv
-        = TopEnv
-        { -- Platform we're converting to.
-          topEnvPlatform        :: Platform
-
-          -- Data type definitions.
-        , topEnvDataDefs        :: DataDefs E.Name
-
-          -- Names of top-level supercombinators that are directly callable.
-        , topEnvSupers          :: Set E.Name 
-
-          -- Names of imported values that can be refered to directly.
-        , topEnvImportValues    :: Set E.Name }
-
-
--- | Get the value arity of a supercombinator. 
---   This is how many data arguments it needs when we call it.
-superDataArity :: TopEnv -> TypeEnv E.Name -> Bound E.Name -> Maybe Int
-superDataArity env tenv u
-        | UName n  <- u
-        , Just  t  <- Env.lookup u tenv
-        , Set.member n (topEnvSupers env)
-        = Just $ dataArityOfType t
-
-        | otherwise
-        = Nothing
-
-
----------------------------------------------------------------------------------------------------
--- | The context we're converting the expression in.
---     We keep track of this during conversion to ensure we don't produce
---     code outside the Salt language fragment. For example, in Salt a function
---     can only be applied to a value variable, type or witness -- and not
---     a general expression.
-data ExpContext
-        = ExpTop        -- ^ At the top-level of the module.
-        | ExpFun        -- ^ At the top-level of a function.
-        | ExpBody       -- ^ In the body of a function.
-        | ExpBind       -- ^ In the right of a let-binding.
-        | ExpArg        -- ^ In a function argument.
-        deriving (Show, Eq, Ord)
 
 
 -- | Convert the body of a supercombinator to Salt.
 convertExpX 
         :: Show a 
-        => TopEnv                       -- ^ Top-level environment.
+        => ExpContext                   -- ^ What context we're converting in.
+        -> TopEnv                       -- ^ Top-level environment.
         -> KindEnv  E.Name              -- ^ Kind environment.
         -> TypeEnv  E.Name              -- ^ Type environment.
-        -> ExpContext                   -- ^ What context we're converting in.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a A.Name)
 
-convertExpX penv kenv tenv ctx xx
+convertExpX ctx penv kenv tenv xx
  = let pp           = topEnvPlatform  penv
        defs         = topEnvDataDefs  penv
-       downArgX     = convertExpX     penv kenv tenv ExpArg
+       downArgX     = convertExpX     ExpArg penv kenv tenv 
        downPrimArgX = convertPrimArgX penv kenv tenv ExpArg
        downCtorAppX = convertCtorAppX penv kenv tenv
 
@@ -125,7 +78,7 @@ convertExpX penv kenv tenv ctx xx
                 b'        <- convertTypeB b
 
                 let kenv' =  Env.extend b kenv
-                x'        <- convertExpX penv kenv' tenv ctx x
+                x'        <- convertExpX ctx penv kenv' tenv x
 
                 return $ XLAM a' b' x'
 
@@ -140,7 +93,7 @@ convertExpX penv kenv tenv ctx xx
          -> do  let a'  = annotTail a
                 
                 let kenv' = Env.extend b kenv
-                x'      <- convertExpX penv kenv' tenv ctx x
+                x'      <- convertExpX ctx penv kenv' tenv x
 
                 return $ XLAM a' b' x'
 
@@ -148,13 +101,13 @@ convertExpX penv kenv tenv ctx xx
          | ExpFun       <- ctx
          , isEffectKind $ typeOfBind b
          -> do  let kenv'       = Env.extend b kenv
-                convertExpX penv kenv' tenv ctx x
+                convertExpX ctx penv kenv' tenv  x
 
          -- Erase higher kinded type lambdas.
          | ExpFun       <- ctx
          , Just _       <- takeKFun $ typeOfBind b
          -> do  let kenv'       = Env.extend b kenv
-                convertExpX penv kenv' tenv ctx x
+                convertExpX ctx penv kenv' tenv  x
 
          -- A type abstraction that we can't convert to Salt.
          | otherwise
@@ -173,13 +126,13 @@ convertExpX penv kenv tenv ctx xx
                  -> liftM3 XLam 
                         (return $ annotTail a) 
                         (convertValueB defs kenv b) 
-                        (convertExpX penv kenv tenv' ctx x)
+                        (convertExpX ctx penv kenv tenv' x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
                         (convertValueB defs kenv b)
-                        (convertExpX penv kenv tenv' ctx x)
+                        (convertExpX ctx penv kenv tenv' x)
 
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
@@ -503,7 +456,7 @@ convertExpX penv kenv tenv ctx xx
                 let (bs1, bs0)  = bindsOfLets lts
                 let kenv'       = Env.extends bs1 kenv
                 let tenv'       = Env.extends bs0 tenv
-                x2'             <- convertExpX penv kenv' tenv' ExpBody x2
+                x2'             <- convertExpX ExpBody penv kenv' tenv' x2
 
                 return $ XLet (annotTail a) lts' x2'
 
@@ -521,7 +474,7 @@ convertExpX penv kenv tenv ctx xx
          , E.NamePrimTyCon _                    <- nType
          -> do  
                 -- Convert the scrutinee.
-                xScrut' <- convertExpX penv kenv tenv ExpArg xScrut
+                xScrut' <- convertExpX ExpArg penv kenv tenv xScrut
 
                 -- Convert the alternatives.
                 alts'   <- mapM (convertAlt penv kenv tenv (min ctx ExpBody)
@@ -539,7 +492,7 @@ convertExpX penv kenv tenv ctx xx
          , isSomeRepType tScrut
          -> do  
                 -- Convert scrutinee, and determine its prime region.
-                x'      <- convertExpX   penv kenv tenv ExpArg xScrut
+                x'      <- convertExpX   ExpArg penv kenv tenv xScrut
                 tX'     <- convertValueT defs kenv tX
 
                 tScrut' <- convertValueT defs kenv tScrut
@@ -581,7 +534,7 @@ convertExpX penv kenv tenv ctx xx
         ---------------------------------------------------
         -- Casts.
         XCast _ _ x
-         -> convertExpX penv kenv tenv (min ctx ExpBody) x
+         -> convertExpX (min ctx ExpBody) penv kenv tenv x
 
 
         -- We shouldn't find any naked types.
@@ -599,25 +552,6 @@ convertExpX penv kenv tenv ctx xx
                    $ text "Unrecognised expression form."
 
 
-xConvert :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
-xConvert a t1 t2 x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)
-                                  (A.typeOfPrimCast A.PrimCastConvert)))
-                  [ XType a t1, XType a t2, x1 ]
-
-
-xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
-xTakePtr a tR tA x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)
-                                  (A.typeOfPrimStore A.PrimStoreTakePtr)))
-                  [ XType a tR, XType a tA, x1 ]
-
-
-xMakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
-xMakePtr a tR tA x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)
-                                  (A.typeOfPrimStore A.PrimStoreMakePtr)))
-                  [ XType a tR, XType a tA, x1 ]
 
 
 
@@ -641,13 +575,13 @@ convertLetsX penv kenv tenv lts
                 -- All the recursive bindings must be functional values, 
                 -- so we use convertDataB here instead of convertValueB.
                 bs'          <- mapM (convertDataB defs kenv) bs                
-                xs'          <- mapM (convertExpX penv kenv tenv' ExpFun) xs
+                xs'          <- mapM (convertExpX ExpFun penv kenv tenv') xs
                 return  $ LRec $ zip bs' xs'
 
         LLet b x1
          -> do  let tenv'    = Env.extend b tenv
                 b'           <- convertValueB defs kenv b
-                x1'          <- convertExpX   penv kenv tenv' ExpBind x1
+                x1'          <- convertExpX ExpBind penv kenv tenv' x1
                 return  $ LLet b' x1'
 
         LPrivate b mt bs
@@ -687,7 +621,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
         --  so we need to handle it separately.
         AAlt (PData dc []) x
          | DaConUnit    <- dc
-         -> do  xBody           <- convertExpX penv kenv tenv ctx x
+         -> do  xBody           <- convertExpX ctx penv kenv tenv x
                 let dcTag       = DaConPrim (A.NameLitTag 0) A.tTag
                 return  $ AAlt (PData dcTag []) xBody
 
@@ -696,7 +630,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
          | Just nCtor           <- takeNameOfDaCon dc
          , E.isNameLit nCtor
          -> do  dc'             <- convertDaCon defs kenv dc
-                xBody1          <- convertExpX penv kenv tenv ctx x
+                xBody1          <- convertExpX ctx penv kenv tenv x
                 return  $ AAlt (PData dc' []) xBody1
 
         -- Match against user-defined algebraic data.
@@ -717,7 +651,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
                 -- Convert the right of the alternative, 
                 -- with all all the pattern variables in scope.
                 let tenv'       = Env.extends bsFields tenv 
-                xBody1          <- convertExpX penv kenv tenv' ctx x
+                xBody1          <- convertExpX ctx penv kenv tenv' x
 
                 -- Determine the prime region of the scrutinee.
                 -- This is the region the associated Salt object is in.
@@ -732,7 +666,7 @@ convertAlt penv kenv tenv ctx a uScrut tScrut alt
 
         -- Default alternative.
         AAlt PDefault x
-         -> do  x'      <- convertExpX penv kenv tenv ctx x 
+         -> do  x'      <- convertExpX ctx penv kenv tenv x 
                 return  $ AAlt PDefault x'
 
         AAlt{}          
@@ -773,7 +707,7 @@ convertCtorAppX penv kenv tenv (AnTEC tResult _ _ a) dc xsArgsAll
         let xsArgsValues = drop (length xsArgsTypes) xsArgsAll
 
         -- Convert all the constructor arguments to Salt.
-        xsArgsValues'    <- mapM (convertExpX penv kenv tenv ExpArg) 
+        xsArgsValues'    <- mapM (convertExpX ExpArg penv kenv tenv) 
                          $  xsArgsValues
 
         -- Determine the Salt type for each of the arguments.
@@ -844,7 +778,7 @@ convertOrDiscardSuperArgX xxApp penv kenv tenv xx
 
         -- Expression arguments.
         | otherwise
-        = do    x'      <- convertExpX penv kenv tenv ExpArg xx
+        = do    x'      <- convertExpX ExpArg penv kenv tenv xx
                 return  $ Just x'
 
 
@@ -871,7 +805,7 @@ convertPrimArgX penv kenv tenv ctx xx
          -> throw $ ErrorUnsupported xx
                   $ text "Witness expressions are not part of the Tetra language."
 
-        _ -> convertExpX penv kenv tenv ctx xx
+        _ -> convertExpX ctx penv kenv tenv xx
 
 
 ---------------------------------------------------------------------------------------------------
