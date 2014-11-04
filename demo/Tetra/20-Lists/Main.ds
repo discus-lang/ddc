@@ -64,7 +64,7 @@ forS (xx : List a) (f : a -> S e Unit) : S e Unit
          -> do  run f x
                 run forS xs f
 
-
+{- TODO: lambda lifting for letrecs doesn't work
 -- | Reduce a list to a single value.
 foldS (f : a -> b -> S e b) (z : b) (xx0 : List a) : S e b
  = letrec 
@@ -73,6 +73,13 @@ foldS (f : a -> b -> S e b) (z : b) (xx0 : List a) : S e b
                 Nil             -> acc
                 Cons x xs       -> run go (run f x acc) xs
    in   go z xx0    
+-}
+
+-- | Reduce a list to a single value.
+foldS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
+ = box case xx of
+        Nil             -> z
+        Cons x xs       -> run f x (run foldS f z xs)
 
 
 -- | Keep elements of a list that match the given predicate.
@@ -92,7 +99,7 @@ main (_ : Unit) : S Console Unit
         xx      = enumFromTo 0 100
 
         -- Select only the even elements
-        xx'     = run filterS (\(x : Nat#). box mod# x 2 == 0) xx
+        xx'     = run filterS (\(x : Nat#). box rem# x 2 == 0) xx
 
         -- Mutable reference to hold list length.
         ref     = run allocRef# [r] 0

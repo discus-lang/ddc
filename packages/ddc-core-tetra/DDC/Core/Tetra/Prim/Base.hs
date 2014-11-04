@@ -129,10 +129,6 @@ data OpStore
         = OpStoreAllocRef     -- ^ Allocate a reference.
         | OpStoreReadRef      -- ^ Read a reference.
         | OpStoreWriteRef     -- ^ Write to a reference.
-        | OpStoreAllocPtr     -- ^ Allocate a pointer.
-        | OpStoreReadPtr      -- ^ Read an offset pointer.
-        | OpStoreWritePtr     -- ^ Write to an offset pointer.
-        | OpStoreProj Int Int -- ^ A projection out of a tuple: size of tuple, then desired index
         deriving (Eq, Ord, Show)
 
 
