@@ -1,0 +1,99 @@
+
+module DDC.Core.Tetra.Convert.Exp.PrimArith
+        (convertPrimArith)
+where
+import DDC.Core.Tetra.Convert.Exp.Base
+import DDC.Core.Tetra.Convert.Type
+import DDC.Core.Tetra.Convert.Boxing
+import DDC.Core.Tetra.Convert.Error
+import DDC.Core.Compounds
+import DDC.Core.Predicates
+import DDC.Core.Pretty
+import DDC.Core.Exp
+import DDC.Core.Check                    (AnTEC(..))
+import DDC.Control.Monad.Check           (throw)
+import qualified DDC.Core.Tetra.Prim     as E
+import qualified DDC.Core.Salt.Name      as A
+
+
+-- | Convert a Tetra arithmetic or logic primop to Salt.
+convertPrimArith
+        :: Show a 
+        => ExpContext                   -- ^ The surrounding expression context.
+        -> Context                      -- ^ Types and values in the environment.
+        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
+        -> Maybe (ConvertM a (Exp a A.Name))
+
+convertPrimArith _ectx ctx xx
+ = let  downPrimArgX = convertPrimArgX    ctx ExpArg
+        downArgX     = convertX           ExpArg ctx 
+        convertX     = contextConvertExp  ctx
+   in case xx of
+
+        ---------------------------------------------------
+        -- Saturated application of a primitive operator.
+        XApp a xa xb
+         | (x1, xsArgs)               <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim tPrim) <- x1
+
+         -- All the value arguments have representatable types.
+         , all isSomeRepType
+                $  map (annotType . annotOfExp)
+                $  filter (not . isXType) xsArgs
+
+         -- The result is representable.
+         , isSomeRepType (annotType a)
+
+         -> Just $ if -- Check that the primop is saturated.
+             length xsArgs == arityOfType tPrim
+             then do
+                x1'     <- downArgX x1
+                xsArgs' <- mapM downPrimArgX xsArgs
+                
+                case nPrim of
+                 -- The Tetra type of these is also parameterised by the type of the
+                 -- boolean result, so that we can choose between value type and unboxed
+                 -- versions. In the Salt version we only need the first type parameter.
+                 E.NamePrimArith o
+                  |  elem o [ E.PrimArithEq, E.PrimArithNeq
+                            , E.PrimArithGt, E.PrimArithLt
+                            , E.PrimArithLe, E.PrimArithGe ]
+                  ,  [t1, _t2, z1, z2] <- xsArgs'
+                  ->  return $ xApps (annotTail a) x1' [t1, z1, z2]
+
+                 _ -> return $ xApps (annotTail a) x1' xsArgs'
+
+             else throw $ ErrorUnsupported xx
+                   $ text "Partial application of primitive operators is not supported."
+
+        ---------------------------------------------------
+        -- This isn't an arithmetic or logic primop.
+        _ -> Nothing
+
+
+-- | Although we ditch type arguments when applied to general functions,
+--   we need to convert the ones applied directly to primops, 
+--   as the primops are specified polytypically.
+convertPrimArgX 
+        :: Show a 
+        => Context
+        -> ExpContext                   -- ^ What context we're converting in.
+        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
+        -> ConvertM a (Exp a A.Name)
+
+convertPrimArgX ctx ectx xx
+ = let  defs     = contextDataDefs ctx
+        kenv     = contextKindEnv  ctx
+        convertX = contextConvertExp ctx
+   in case xx of
+        XType a t
+         -> do  t'      <- convertValueT defs kenv t
+                return  $ XType (annotTail a) t'
+
+        XWitness{}
+         -> throw $ ErrorUnsupported xx
+                  $ text "Witness expressions are not part of the Tetra language."
+
+        _ -> convertX ectx ctx xx
+
+

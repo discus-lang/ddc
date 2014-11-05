@@ -2,15 +2,14 @@
 module DDC.Core.Tetra.Convert.Exp
         (convertExp)
 where
+import DDC.Core.Tetra.Convert.Exp.Ctor
+import DDC.Core.Tetra.Convert.Exp.PrimCall
+import DDC.Core.Tetra.Convert.Exp.PrimArith
+import DDC.Core.Tetra.Convert.Exp.PrimBoxing
+import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Boxing
-import DDC.Core.Tetra.Convert.Data
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
-
-import DDC.Core.Tetra.Convert.Exp.Ctor
-import DDC.Core.Tetra.Convert.Exp.Base
-
-import DDC.Core.Transform.LiftX
 import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
@@ -18,11 +17,9 @@ import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
-import qualified DDC.Core.Salt.Compounds as A
 
 import DDC.Type.Universe
 import DDC.Type.DataDef
-
 import Control.Monad
 import Data.Maybe
 import DDC.Base.Pretty
@@ -40,35 +37,33 @@ convertExp
         -> ConvertM a (Exp a A.Name)
 
 convertExp ectx ctx xx
- = let pp           = contextPlatform    ctx
-       defs         = contextDataDefs    ctx
+ = let defs         = contextDataDefs    ctx
        kenv         = contextKindEnv     ctx
-       tenv         = contextTypeEnv     ctx
-
        convertX     = contextConvertExp  ctx
        convertA     = contextConvertAlt  ctx
        convertLts   = contextConvertLets ctx
-
        downArgX     = convertX           ExpArg ctx 
-       downPrimArgX = convertPrimArgX    ctx ExpArg
        downCtorApp  = convertCtorApp     ctx
-
    in case xx of
 
         ---------------------------------------------------
         XVar _ UIx{}
          -> throw $ ErrorUnsupported xx
-                  $ vcat [ text "Cannot convert program with anonymous value binders."
-                         , text "The program must be namified before conversion." ]
+          $ vcat [ text "Cannot convert program with anonymous value binders."
+                 , text "The program must be namified before conversion." ]
 
         XVar a u
          -> do  let a'  = annotTail a
                 u'      <- convertDataU u
                 return  $  XVar a' u'
 
+
+        ---------------------------------------------------
+        -- Unapplied data constructor.
         XCon a dc
          -> do  xx'     <- downCtorApp a dc []
                 return  xx'
+
 
         ---------------------------------------------------
         -- Type lambdas can only appear at the top-level of a function.
@@ -116,8 +111,8 @@ convertExp ectx ctx xx
          -- A type abstraction that we can't convert to Salt.
          | otherwise
          -> throw $ ErrorUnsupported xx
-                  $ vcat [ text "Cannot convert type abstraction in this context."
-                         , text "The program must be lambda-lifted before conversion." ]
+          $ vcat [ text "Cannot convert type abstraction in this context."
+                 , text "The program must be lambda-lifted before conversion." ]
 
 
         ---------------------------------------------------
@@ -127,290 +122,68 @@ convertExp ectx ctx xx
          -> let ctx'    = extendTypeEnv b ctx
             in case universeFromType1 kenv (typeOfBind b) of
                 Just UniverseData
-                 -> liftM3 XLam 
-                        (return $ annotTail a) 
-                        (convertValueB defs kenv b) 
-                        (convertX      ectx ctx' x)
+                 -> liftM3 XLam (return $ annotTail a) 
+                                (convertValueB defs kenv b) 
+                                (convertX      ectx ctx' x)
 
                 Just UniverseWitness 
-                 -> liftM3 XLam
-                        (return $ annotTail a)
-                        (convertValueB defs kenv b)
-                        (convertX      ectx ctx' x)
+                 -> liftM3 XLam (return $ annotTail a)
+                                (convertValueB defs kenv b)
+                                (convertX      ectx ctx' x)
 
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
          | otherwise
          -> throw $ ErrorUnsupported xx
-                  $ vcat [ text "Cannot convert function abstraction in this context."
-                         , text "The program must be lambda-lifted before conversion." ]
+          $ vcat [ text "Cannot convert function abstraction in this context."
+                 , text "The program must be lambda-lifted before conversion." ]
 
-
+       
         ---------------------------------------------------
-        -- Wrapping of pure values into boxed values.
-        --   We fake-up a data-type declaration so we can use the same data layout
-        --   code as for used-defined types.
-        XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
-                , [XType _ tBIx, XType _ tBx, XCon _ c]) <- takeXPrimApps xx
-         , isBoxableIndexType tBIx
-         , isBoxedRepType     tBx
-         , Just dt      <- makeDataTypeForBoxableIndexType tBIx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
-         -> do  
-                let a'  = annotTail a
-                xArg'   <- convertLitCtorX a' c
-                tBIx'   <- convertIndexT tBIx
-
-                constructData pp kenv tenv a'
-                        dt dc A.rTop [xArg'] [tBIx']
-
-
-        ---------------------------------------------------
-        -- Unwrapping of boxed values into pure values.
-        --   We fake-up a data-type declaration so we can use the same data layout
-        --   code as for used-defined types.
-        XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
-                , [XType _ tBx, XType _ tBIx, xArg])    <- takeXPrimApps xx
-         , isBoxedRepType     tBx
-         , isBoxableIndexType tBIx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
-         -> do  
-                let a'  = annotTail a
-                xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertValueT defs kenv tBx
-
-                x'      <- destructData pp a' dc
-                                (UIx 0) A.rTop 
-                                [BAnon tBIx'] (XVar a' (UIx 0))
-
-                return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
-                                  x'
-
-        ---------------------------------------------------
-        -- Boxing of unboxed values.
-        --   We fake-up a data-type declaration so we can use the same data layout
-        --   code as for user-defined types.
-        XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
-                , [XType _ tUx, XType _ tBx, xArg])     <- takeXPrimApps xx
-         , isUnboxedRepType tUx
-         , isBoxedRepType   tBx
-         , Just tBIx    <- takeIndexOfBoxedRepType tBx
-         , Just dt      <- makeDataTypeForBoxableIndexType tBIx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
-         -> do  
-                let a'  = annotTail a
-                xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT tBIx
-
-                constructData pp kenv tenv a'
-                        dt dc A.rTop [xArg'] [tBIx']
-
-
-        ---------------------------------------------------
-        -- Unboxing of boxed values.
-        --   We fake-up a data-type declaration so we can use the same data layout
-        --   code as for used-defined types.
-        XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
-                , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
-         , isBoxedRepType   tBx
-         , isUnboxedRepType tUx
-         , Just tBIx    <- takeIndexOfBoxedRepType tBx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
-         -> do
-                let a'  = annotTail a
-                xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertValueT defs kenv tBx
-
-                x'      <- destructData pp a' dc
-                                (UIx 0) A.rTop 
-                                [BAnon tBIx'] (XVar a' (UIx 0))
-
-                return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
-                                  x'
-
-
-        ---------------------------------------------------
-        -- Reify a top-level super.
-        --  TODO: Check that we're only reifying functions that will have
-        --        the standard calling convention.
-        XApp (AnTEC _t _ _ a)  xa xb
-         | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)  <- x1
-         , E.NameOpFun E.OpFunCReify    <- nPrim
-         , XVar _ uF                    <- xF
-         -> do
-                xF'     <- downArgX xF
-                tF'     <- convertRepableT defs kenv (tFun t1 t2)
-                let Just arity = superDataArity ctx uF
-
-                return  $ A.xAllocThunk a A.rTop 
-                                (xConvert a A.tAddr tF' xF')
-                                (A.xNat a $ fromIntegral arity)
-                                (A.xNat a 0)
-
-
-        ---------------------------------------------------
-        -- Curry arguments onto a reified function.
-        --   This works for both the 'curryN#' and 'extendN#' primops,
-        --   as they differ only in the Tetra-level closure type.
-        XApp (AnTEC _t _ _ a) xa xb
-         | (x1, xs)                     <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)  <- x1
-
-         , Just nArgs   
-            <- case nPrim of 
-                E.NameOpFun (E.OpFunCurry   nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCCurry  nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCExtend nArgs) -> Just nArgs
-                _                                  -> Nothing
-
-         , tsArg              <- [tArg | XType _ tArg <- take nArgs xs]
-         , (xThunk : xsArg)   <- drop (nArgs + 1) xs
-         , nArgs == length xsArg
-         -> do  
-                xThunk'         <- downArgX xThunk
-                xsArg'          <- mapM downArgX xsArg
-                tsArg'          <- mapM (convertValueT defs kenv) tsArg
-                let bObject     = BAnon (A.tPtr A.rTop A.tObj)
-                let bAvail      = BAnon A.tNat
-
-                return 
-                 $ XLet  a (LLet bObject 
-                                 (A.xExtendThunk     a A.rTop A.rTop xThunk' 
-                                        (A.xNat a $ fromIntegral nArgs)))
-                 $ XLet  a (LLet bAvail
-                                 (A.xAvailOfThunk    a A.rTop xThunk'))
-
-                 $ xLets a [LLet (BNone A.tVoid)
-                                 (A.xSetFieldOfThunk a A.rTop 
-                                        (XVar a (UIx 1))                 -- new thunk
-                                        (XVar a (UIx 0))                 -- base index
-                                        (A.xNat a ix)                    -- offset
-                                        (xTakePtr a tPrime A.tObj xArg)) -- value
-                                 | ix   <- [0..]
-                                 | xArg <- xsArg'
-                                 | tArg <- tsArg'
-                                 , let tPrime   = fromMaybe A.rTop
-                                                $ takePrimeRegion tArg ]
-
-                 $ XVar a (UIx 1)
-
-
-        ---------------------------------------------------
-        -- Apply a thunk.
-        XApp (AnTEC _t _ _ a) xa xb
-         | (x1, xs)                           <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)        <- x1
-         , Just nArgs
-            <- case nPrim of
-                E.NameOpFun (E.OpFunApply  nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCApply nArgs) -> Just nArgs
-                _                                 -> Nothing
-
-         , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
-         , XType _ tResult : _  <- drop  nArgs xs
-         , xF : xsArgs          <- drop (nArgs + 1) xs
-         -> do
-                -- Functional expression.
-                xF'             <- downArgX xF
-
-                -- Arguments and theit ypes.
-                xsArg'          <- mapM downArgX xsArgs
-                tsArg'          <- mapM (convertValueT defs kenv) tsArg
-
-                -- Result and its type.
-                tResult'        <- convertValueT defs kenv tResult
-                let tPrimeResult' = fromMaybe A.rTop $ takePrimeRegion tResult'
-
-                -- Evaluate a thunk, returning the resulting Addr#, 
-                -- then cast it back to a pointer of the appropriate type
-                return  $ xMakePtr a tPrimeResult' A.tObj
-                        $ A.xApplyThunk a nArgs 
-                        $   [ xTakePtr a A.rTop A.tObj xF' ]
-                         ++ [ xTakePtr a tPrime A.tObj xArg'
-                                | xArg'         <- xsArg'
-                                | tArg'         <- tsArg'
-                                , let tPrime    = fromMaybe A.rTop
-                                                $ takePrimeRegion tArg' ]
-
-        
-        ---------------------------------------------------
-        -- Saturated application of a primitive data constructor,
-        --   including the Unit data constructor.
-        --   The types of these are directly attached.
+        -- Fully applied primitive data constructor.
+        --  The type of the constructor is attached directly to this node of the AST.
+        --  The data constructor must be fully applied. Partial applications of data 
+        --  constructors that appear in the source language need to be eta-expanded
+        --  before Tetra -> Salt conversion.
         XApp a xa xb
          | (x1, xsArgs)         <- takeXApps1 xa xb
          , XCon _ dc            <- x1
          , Just tCon            <- takeTypeOfDaCon dc
-         -> if -- Check that the constructor is saturated.
-               length xsArgs == arityOfType tCon
+         -> if length xsArgs == arityOfType tCon
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
-                     $ text "Partial application of primitive data constructors is not supported."
+                     $ text "Cannot convert partially applied data constructor."
 
 
         -- Fully applied user-defined data constructor application.
-        --   The types of these are in the defs list.
+        --  The type of the constructor is retrieved in the data defs list.
+        --  The data constructor must be fully applied. Partial applications of data 
+        --  constructors that appear in the source language need to be eta-expanded
+        --  before Tetra -> Salt conversion.
         XApp a xa xb
          | (x1, xsArgs   )          <- takeXApps1 xa xb
          , XCon _ dc@(DaConBound n) <- x1
          , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
-         -> if -- Check that the constructor is saturated.
-               length xsArgs 
+         -> if length xsArgs 
                        == length (dataCtorTypeParams dataCtor)
                        +  length (dataCtorFieldTypes dataCtor)
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
-                     $ text "Partial application of user-defined data constructors is not supported."
+                     $ text "Cannot convert partially applied data constructor."
 
 
         ---------------------------------------------------
-        -- Saturated application of a primitive operator.
-        XApp a xa xb
-         | (x1, xsArgs)               <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim tPrim) <- x1
-
-         -- All the value arguments have representatable types.
-         , all isSomeRepType
-                $  map (annotType . annotOfExp)
-                $  filter (not . isXType) xsArgs
-
-         -- The result is representable.
-         , isSomeRepType (annotType a)
-
-         -> if -- Check that the primop is saturated.
-             length xsArgs == arityOfType tPrim
-             then do
-                x1'     <- downArgX x1
-                xsArgs' <- mapM downPrimArgX xsArgs
-                
-                case nPrim of
-                 -- The Tetra type of these is also parameterised by the type of the
-                 -- boolean result, so that we can choose between value type and unboxed
-                 -- versions. In the Salt version we only need the first type parameter.
-                 E.NamePrimArith o
-                  |  elem o [ E.PrimArithEq, E.PrimArithNeq
-                            , E.PrimArithGt, E.PrimArithLt
-                            , E.PrimArithLe, E.PrimArithGe ]
-                  ,  [t1, _t2, z1, z2] <- xsArgs'
-                  -> return $ xApps (annotTail a) x1' [t1, z1, z2]
-
-                 _ -> return $ xApps (annotTail a) x1' xsArgs'
-
-             else throw $ ErrorUnsupported xx
-                   $ text "Partial application of primitive operators is not supported."
+        -- Conversions for primitive operators are defined separately.
+        XApp{}
+         | Just makeX   <- convertPrimBoxing ectx ctx xx -> makeX
+         | Just makeX   <- convertPrimCall   ectx ctx xx -> makeX
+         | Just makeX   <- convertPrimArith  ectx ctx xx -> makeX
 
 
         ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.
-        --  This does not cover application of primops, the above case should
-        --  fire for those.
+        --  This does not cover application of primops, those are handled by one 
+        --  of the above cases.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          
@@ -433,21 +206,6 @@ convertExp ectx ctx xx
                         
                 return  $ xApps a' x1' xsArgs'
 
-
-        ---------------------------------------------------
-        -- Application of some function that is not a top-level supercombinator
-        -- or imported function. 
-        XApp _ xa xb
-         | (x1, _xsArgs) <- takeXApps1 xa xb
-
-         -- The thing being applied is a named function but is not defined
-         -- at top level, or imported directly.
-         , XVar _ (UName n) <- x1
-         , not $ Set.member n (contextSupers  ctx)
-         , not $ Set.member n (contextImports ctx)
-         -> throw $ ErrorUnsupported xx
-                  $ text "Higher order functions are not yet supported."
-
         
         ---------------------------------------------------
         -- let-expressions.
@@ -466,8 +224,8 @@ convertExp ectx ctx xx
 
         XLet{}
          -> throw $ ErrorUnsupported xx 
-                  $ vcat [ text "Cannot convert a let-expression in this context."
-                         , text "The program must be a-normalized before conversion." ]
+         $ vcat [ text "Cannot convert a let-expression in this context."
+                , text "The program must be a-normalized before conversion." ]
 
 
         ---------------------------------------------------
@@ -533,14 +291,16 @@ convertExp ectx ctx xx
         -- expressions need to be eliminated before conversion.
         XCase{} 
          -> throw $ ErrorUnsupported xx  
-                  $ text "Unsupported form of case expression" 
+         $ text "Unsupported case expression form." 
+
 
         ---------------------------------------------------
-        -- Casts.
+        -- Type casts
         XCast _ _ x
          -> convertX (min ectx ExpBody) ctx x
 
 
+        ---------------------------------------------------
         -- We shouldn't find any naked types.
         -- These are handled above in the XApp case.
         XType{}
@@ -551,9 +311,11 @@ convertExp ectx ctx xx
         XWitness{}
           -> throw $ ErrorMalformed "Found a naked witness."
 
+
         -- Expression can't be converted.
         _ -> throw $ ErrorUnsupported xx 
-                   $ text "Unrecognised expression form."
+           $ text "Unrecognised expression form."
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Given an argument to a function or data constructor, either convert
@@ -594,13 +356,13 @@ convertOrDiscardSuperArgX xxApp ctx xx
         -- See [Note: Salt conversion for higher kinded type arguments]
         | XType{}       <- xx
         = throw $ ErrorUnsupported xx
-                $ vcat [ text "Unsupported type argument to function or constructor."
-                       , text "In particular, we don't yet handle higher kinded type arguments."
-                       , empty
-                       , text "See [Note: Salt conversion for higher kinded type arguments] in"
-                       , text "the implementation of the Tetra to Salt conversion." 
-                       , empty
-                       , text "with application: " <+> ppr xxApp ]
+        $ vcat [ text "Unsupported type argument to function or constructor."
+               , text "In particular, we don't yet handle higher kinded type arguments."
+               , empty
+               , text "See [Note: Salt conversion for higher kinded type arguments] in"
+               , text "the implementation of the Tetra to Salt conversion." 
+               , empty
+               , text "with application: " <+> ppr xxApp ]
 
         -- Witness arguments are discarded.
         | XWitness{}    <- xx
@@ -610,53 +372,6 @@ convertOrDiscardSuperArgX xxApp ctx xx
         | otherwise
         = do    x'      <- contextConvertExp ctx ExpArg ctx xx
                 return  $ Just x'
-
-
--- | Although we ditch type arguments when applied to general functions,
---   we need to convert the ones applied directly to primops, 
---   as the primops are specified polytypically.
-convertPrimArgX 
-        :: Show a 
-        => Context
-        -> ExpContext                   -- ^ What context we're converting in.
-        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
-        -> ConvertM a (Exp a A.Name)
-
-convertPrimArgX ctx ectx xx
- = let  defs     = contextDataDefs ctx
-        kenv     = contextKindEnv  ctx
-        convertX = contextConvertExp ctx
-   in case xx of
-        XType a t
-         -> do  t'      <- convertValueT defs kenv t
-                return  $ XType (annotTail a) t'
-
-        XWitness{}
-         -> throw $ ErrorUnsupported xx
-                  $ text "Witness expressions are not part of the Tetra language."
-
-        _ -> convertX ectx ctx xx
-
-
----------------------------------------------------------------------------------------------------
--- | Convert a literal constructor to Salt.
---   These are values that have boxable index types like Bool# and Nat#.
-convertLitCtorX
-        :: a                            -- ^ Annot from deconstructed XCon node.
-        -> DaCon E.Name                 -- ^ Data constructor of literal.
-        -> ConvertM a (Exp a A.Name)
-
-convertLitCtorX a dc
- | Just n        <- takeNameOfDaCon dc
- = case n of
-        E.NameLitBool b         -> return $ A.xBool a b
-        E.NameLitNat  i         -> return $ A.xNat  a i
-        E.NameLitInt  i         -> return $ A.xInt  a i
-        E.NameLitWord i bits    -> return $ A.xWord a i bits
-        _                       -> throw $ ErrorMalformed "Invalid literal."
-
- | otherwise    
- = throw $ ErrorMalformed "Invalid literal."
 
 
 ---------------------------------------------------------------------------------------------------

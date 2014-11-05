@@ -179,7 +179,7 @@ Fragment violation when converting Tetra module to Salt module.
 -- Error: partial application if user defined data constructors is not supported.
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
-    Partial application of user-defined data constructors is not supported.
+    Cannot convert partially applied data constructor.
   
     with: Thing x0
 
