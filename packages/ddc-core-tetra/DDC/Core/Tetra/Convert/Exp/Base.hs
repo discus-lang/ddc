@@ -52,7 +52,23 @@ data Context
         , contextKindEnv        :: KindEnv  E.Name
 
           -- | Current type environment.
-        , contextTypeEnv        :: TypeEnv  E.Name }
+        , contextTypeEnv        :: TypeEnv  E.Name 
+
+          -- Functions to convert the various parts of the AST.
+          -- We tie the recursive knot though this Context type so that
+          -- we can split the implementation into separate non-recursive modules.
+        , contextConvertExp
+                :: forall a. Show a => ExpContext -> Convert a Exp 
+
+        , contextConvertLets    
+                :: forall a. Show a => Convert a Lets
+
+        , contextConvertAlt     
+                :: forall a. Show a 
+                => a
+                -> Bound E.Name -> Type E.Name
+                -> ExpContext   -> Convert a Alt  }
+
 
 
 extendKindEnv  ::  Bind E.Name  -> Context -> Context
@@ -75,8 +91,7 @@ extendsTypeEnv bs ctx
 
 ---------------------------------------------------------------------------------------------------
 type Convert a c
-        =  Config a 
-        -> Context
+        =  Context
         -> c (AnTEC a E.Name)   E.Name
         -> ConvertM a (c a A.Name)
 

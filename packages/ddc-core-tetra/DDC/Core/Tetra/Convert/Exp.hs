@@ -1,14 +1,15 @@
 -- | Conversion of Disciple Lite to Disciple Salt.
 module DDC.Core.Tetra.Convert.Exp
-        ( Context       (..)
-        , ExpContext    (..)
-        , convertExpX)
+        (convertExp)
 where
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Data
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
+
+import DDC.Core.Tetra.Convert.Exp.Ctor
 import DDC.Core.Tetra.Convert.Exp.Base
+
 import DDC.Core.Transform.LiftX
 import DDC.Core.Compounds
 import DDC.Core.Predicates
@@ -31,21 +32,26 @@ import qualified Data.Set                as Set
 
 
 -- | Convert the body of a supercombinator to Salt.
-convertExpX 
+convertExp 
         :: Show a 
-        => Context                      -- ^ Types and values in the environment.
-        -> ExpContext                   -- ^ The surrounding expression context.
+        => ExpContext                   -- ^ The surrounding expression context.
+        -> Context                      -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a A.Name)
 
-convertExpX ctx ectx xx
- = let pp           = contextPlatform ctx
-       defs         = contextDataDefs ctx
-       kenv         = contextKindEnv  ctx
-       tenv         = contextTypeEnv  ctx
-       downArgX     = convertExpX     ctx ExpArg
-       downPrimArgX = convertPrimArgX ctx ExpArg
-       downCtorAppX = convertCtorAppX ctx
+convertExp ectx ctx xx
+ = let pp           = contextPlatform    ctx
+       defs         = contextDataDefs    ctx
+       kenv         = contextKindEnv     ctx
+       tenv         = contextTypeEnv     ctx
+
+       convertX     = contextConvertExp  ctx
+       convertA     = contextConvertAlt  ctx
+       convertLts   = contextConvertLets ctx
+
+       downArgX     = convertX           ExpArg ctx 
+       downPrimArgX = convertPrimArgX    ctx ExpArg
+       downCtorApp  = convertCtorApp     ctx
 
    in case xx of
 
@@ -61,7 +67,7 @@ convertExpX ctx ectx xx
                 return  $  XVar a' u'
 
         XCon a dc
-         -> do  xx'     <- convertCtorAppX ctx a dc []
+         -> do  xx'     <- downCtorApp a dc []
                 return  xx'
 
         ---------------------------------------------------
@@ -76,7 +82,7 @@ convertExpX ctx ectx xx
                 b'        <- convertTypeB b
 
                 let ctx'  =  extendKindEnv b ctx
-                x'        <- convertExpX ctx' ectx x
+                x'        <- convertExp  ectx ctx' x
 
                 return $ XLAM a' b' x'
 
@@ -91,7 +97,7 @@ convertExpX ctx ectx xx
          -> do  let a'   = annotTail a
                 
                 let ctx' = extendKindEnv b ctx 
-                x'      <- convertExpX ctx' ectx x
+                x'      <- convertExp   ectx ctx' x
 
                 return $ XLAM a' b' x'
 
@@ -99,13 +105,13 @@ convertExpX ctx ectx xx
          | ExpFun       <- ectx
          , isEffectKind $ typeOfBind b
          -> do  let ctx' = extendKindEnv b ctx
-                convertExpX ctx' ectx x
+                convertX ectx ctx' x
 
          -- Erase higher kinded type lambdas.
          | ExpFun       <- ectx
          , Just _       <- takeKFun $ typeOfBind b
          -> do  let ctx' = extendKindEnv b ctx
-                convertExpX ctx' ectx x
+                convertX ectx ctx' x
 
          -- A type abstraction that we can't convert to Salt.
          | otherwise
@@ -124,13 +130,13 @@ convertExpX ctx ectx xx
                  -> liftM3 XLam 
                         (return $ annotTail a) 
                         (convertValueB defs kenv b) 
-                        (convertExpX   ctx' ectx x)
+                        (convertX      ectx ctx' x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam
                         (return $ annotTail a)
                         (convertValueB defs kenv b)
-                        (convertExpX   ctx' ectx x)
+                        (convertX      ectx ctx' x)
 
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
@@ -344,7 +350,7 @@ convertExpX ctx ectx xx
          , Just tCon            <- takeTypeOfDaCon dc
          -> if -- Check that the constructor is saturated.
                length xsArgs == arityOfType tCon
-               then downCtorAppX a dc xsArgs
+               then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
                      $ text "Partial application of primitive data constructors is not supported."
 
@@ -359,7 +365,7 @@ convertExpX ctx ectx xx
                length xsArgs 
                        == length (dataCtorTypeParams dataCtor)
                        +  length (dataCtorFieldTypes dataCtor)
-               then downCtorAppX a dc xsArgs
+               then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
                      $ text "Partial application of user-defined data constructors is not supported."
 
@@ -448,13 +454,13 @@ convertExpX ctx ectx xx
         XLet a lts x2
          | ectx <= ExpBind
          -> do  -- Convert the bindings.
-                lts'            <- convertLetsX ctx lts
+                lts'            <- convertLts ctx lts
 
                 -- Convert the body of the expression.
                 let (bs1, bs0)  = bindsOfLets lts
                 let ctx1        = extendsKindEnv bs1 ctx
                 let ctx2        = extendsTypeEnv bs0 ctx1
-                x2'             <- convertExpX ctx2 ExpBody x2
+                x2'             <- convertX ExpBody ctx2 x2
 
                 return $ XLet (annotTail a) lts' x2'
 
@@ -472,11 +478,11 @@ convertExpX ctx ectx xx
          , E.NamePrimTyCon _                    <- nType
          -> do  
                 -- Convert the scrutinee.
-                xScrut' <- convertExpX ctx ExpArg xScrut
+                xScrut' <- convertX ExpArg ctx xScrut
 
                 -- Convert the alternatives.
-                alts'   <- mapM (convertAlt ctx (min ectx ExpBody)
-                                            a' uScrut tScrut) 
+                alts'   <- mapM (convertA a' uScrut tScrut 
+                                          (min ectx ExpBody) ctx) 
                                 alts
 
                 return  $  XCase a' xScrut' alts'
@@ -490,7 +496,7 @@ convertExpX ctx ectx xx
          , isSomeRepType tScrut
          -> do  
                 -- Convert scrutinee, and determine its prime region.
-                x'      <- convertExpX   ctx ExpArg xScrut
+                x'      <- convertX      ExpArg ctx xScrut
                 tX'     <- convertValueT defs kenv tX
 
                 tScrut' <- convertValueT defs kenv tScrut
@@ -498,8 +504,8 @@ convertExpX ctx ectx xx
                            $ takePrimeRegion tScrut'
 
                 -- Convert alternatives.
-                alts'   <- mapM (convertAlt ctx (min ectx ExpBody)
-                                            a' uScrut tScrut) 
+                alts'   <- mapM (convertA a' uScrut tScrut 
+                                          (min ectx ExpBody) ctx)
                                 alts
 
                 -- If the Tetra program does not have a default alternative
@@ -532,7 +538,7 @@ convertExpX ctx ectx xx
         ---------------------------------------------------
         -- Casts.
         XCast _ _ x
-         -> convertExpX ctx (min ectx ExpBody) x
+         -> convertX (min ectx ExpBody) ctx x
 
 
         -- We shouldn't find any naked types.
@@ -548,180 +554,6 @@ convertExpX ctx ectx xx
         -- Expression can't be converted.
         _ -> throw $ ErrorUnsupported xx 
                    $ text "Unrecognised expression form."
-
-
-
-
-
----------------------------------------------------------------------------------------------------
--- | Convert a let-binding to Salt.
-convertLetsX 
-        :: Show a 
-        => Context
-        -> Lets (AnTEC a E.Name) E.Name -- ^ Expression to convert.
-        -> ConvertM a (Lets a A.Name)
-
-convertLetsX ctx lts
- = let  defs    = contextDataDefs ctx
-        kenv    = contextKindEnv  ctx
-   in case lts of
-        LRec bxs
-         -> do  let ctx'     = extendsTypeEnv (map fst bxs) ctx
-                let (bs, xs) = unzip bxs
-
-                -- All the recursive bindings must be functional values, 
-                -- so we use convertDataB here instead of convertValueB.
-                bs'          <- mapM (convertDataB defs kenv) bs                
-                xs'          <- mapM (convertExpX  ctx' ExpFun) xs
-                return  $ LRec $ zip bs' xs'
-
-        LLet b x1
-         -> do  let ctx'     = extendTypeEnv b ctx
-                b'           <- convertValueB defs kenv b
-                x1'          <- convertExpX ctx' ExpBind x1
-                return  $ LLet b' x1'
-
-        LPrivate b mt bs
-         -> do  
-                b'           <- mapM convertTypeB b
-                let ctx'     = extendsKindEnv b ctx
-                let kenv'    = contextKindEnv ctx'
-                
-                bs'          <- mapM (convertCapabilityB kenv') bs
-                mt'          <- case mt of
-                                 Nothing -> return Nothing
-                                 Just t  -> liftM Just $ convertRegionT kenv t
-                return  $ LPrivate b' mt' bs'
-  
-        LWithRegion{}
-         ->     throw $ ErrorMalformed "Cannot convert LWithRegion construct."
-
-
----------------------------------------------------------------------------------------------------
--- | Convert a Lite alternative to Salt.
-convertAlt 
-        :: Show a
-        => Context
-        -> ExpContext                   -- ^ Context of enclosing case-expression.
-        -> a                            -- ^ Annotation from case expression.
-        -> Bound E.Name                 -- ^ Bound of scrutinee.
-        -> Type  E.Name                 -- ^ Type  of scrutinee
-        -> Alt (AnTEC a E.Name) E.Name  -- ^ Alternative to convert.
-        -> ConvertM a (Alt a A.Name)
-
-convertAlt ctx ectx a uScrut tScrut alt
- = let  pp      = contextPlatform ctx
-        defs    = contextDataDefs ctx
-        kenv    = contextKindEnv  ctx
-   in case alt of
-        -- Match against the unit constructor.
-        --  This is baked into the langauge and doesn't have a real name,
-        --  so we need to handle it separately.
-        AAlt (PData dc []) x
-         | DaConUnit    <- dc
-         -> do  xBody           <- convertExpX ctx ectx x
-                let dcTag       = DaConPrim (A.NameLitTag 0) A.tTag
-                return  $ AAlt (PData dcTag []) xBody
-
-        -- Match against literal unboxed values.
-        AAlt (PData dc []) x
-         | Just nCtor           <- takeNameOfDaCon dc
-         , E.isNameLit nCtor
-         -> do  dc'             <- convertDaCon defs kenv dc
-                xBody1          <- convertExpX  ctx  ectx x
-                return  $ AAlt (PData dc' []) xBody1
-
-        -- Match against user-defined algebraic data.
-        AAlt (PData dc bsFields) x
-         | Just nCtor   <- takeNameOfDaCon dc
-         , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
-         -> do  
-                -- Convert the scrutinee.
-                uScrut'         <- convertDataU uScrut
-
-                -- Get the tag of this alternative.
-                let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
-                
-                -- Get the address of the payload.
-                bsFields'       <- mapM (convertValueB defs kenv) bsFields       
-
-                -- Convert the right of the alternative, 
-                -- with all all the pattern variables in scope.
-                let ctx'        = extendsTypeEnv bsFields ctx
-                xBody1          <- convertExpX ctx' ectx x
-
-                -- Determine the prime region of the scrutinee.
-                -- This is the region the associated Salt object is in.
-                trPrime         <- saltPrimeRegionOfDataType kenv tScrut
-
-                -- Wrap the body expression with let-bindings that bind
-                -- each of the fields of the data constructor.
-                xBody2          <- destructData pp a ctorDef uScrut' trPrime
-                                        bsFields' xBody1
-
-                return  $ AAlt (PData dcTag []) xBody2
-
-        -- Default alternative.
-        AAlt PDefault x
-         -> do  x'      <- convertExpX ctx ectx x 
-                return  $ AAlt PDefault x'
-
-        AAlt{}          
-         -> throw ErrorInvalidAlt
-
-
----------------------------------------------------------------------------------------------------
--- | Convert a data constructor application to Salt.
-convertCtorAppX 
-        :: Show a
-        => Context
-        -> AnTEC a  E.Name                -- ^ Annot from deconstructed app node.
-        -> DaCon    E.Name                -- ^ Data constructor being applied.
-        -> [Exp (AnTEC a E.Name) E.Name]  -- ^ Data constructor arguments.
-        -> ConvertM a (Exp a A.Name)
-
-convertCtorAppX ctx (AnTEC tResult _ _ a) dc xsArgsAll
- -- Handle the unit constructor.
- | DaConUnit     <- dc
- = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
-
- -- Construct algebraic data.
- | Just nCtor    <- takeNameOfDaCon dc
- , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors (contextDataDefs ctx)
- , Just dataDef  <- Map.lookup (dataCtorTypeName ctorDef) 
-                 $  dataDefsTypes (contextDataDefs ctx)
- = do   
-        let pp           = contextPlatform ctx
-        let kenv         = contextKindEnv  ctx
-        let tenv         = contextTypeEnv  ctx
-
-        -- Get the prime region variable.
-        -- The prime region holds the outermost constructor of the object.
-        trPrime          <- saltPrimeRegionOfDataType kenv tResult
-
-        -- Split the constructor arguments into the type and value args.
-        let xsArgsTypes  = [x | x@XType{} <- xsArgsAll]
-        let xsArgsValues = drop (length xsArgsTypes) xsArgsAll
-
-        -- Convert all the constructor arguments to Salt.
-        xsArgsValues'    <- mapM (convertExpX ctx ExpArg) 
-                         $  xsArgsValues
-
-        -- Determine the Salt type for each of the arguments.
-        tsArgsValues'    <- mapM (saltDataTypeOfArgType kenv) 
-                         $  map  (annotType . annotOfExp) xsArgsValues
-
-        constructData pp kenv tenv a
-                dataDef ctorDef
-                trPrime xsArgsValues' tsArgsValues'
-
-
--- If this fails then the provided constructor args list is probably malformed.
--- This shouldn't happen in type-checked code.
-convertCtorAppX _ _ _ _
-        = throw $ ErrorMalformed "Invalid constructor application."
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Given an argument to a function or data constructor, either convert
@@ -776,7 +608,7 @@ convertOrDiscardSuperArgX xxApp ctx xx
 
         -- Expression arguments.
         | otherwise
-        = do    x'      <- convertExpX ctx ExpArg xx
+        = do    x'      <- contextConvertExp ctx ExpArg ctx xx
                 return  $ Just x'
 
 
@@ -791,8 +623,9 @@ convertPrimArgX
         -> ConvertM a (Exp a A.Name)
 
 convertPrimArgX ctx ectx xx
- = let  defs    = contextDataDefs ctx
-        kenv    = contextKindEnv  ctx
+ = let  defs     = contextDataDefs ctx
+        kenv     = contextKindEnv  ctx
+        convertX = contextConvertExp ctx
    in case xx of
         XType a t
          -> do  t'      <- convertValueT defs kenv t
@@ -802,7 +635,7 @@ convertPrimArgX ctx ectx xx
          -> throw $ ErrorUnsupported xx
                   $ text "Witness expressions are not part of the Tetra language."
 
-        _ -> convertExpX ctx ectx xx
+        _ -> convertX ectx ctx xx
 
 
 ---------------------------------------------------------------------------------------------------

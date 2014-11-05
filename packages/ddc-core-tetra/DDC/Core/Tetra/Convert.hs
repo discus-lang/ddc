@@ -4,9 +4,13 @@ module DDC.Core.Tetra.Convert
         ( saltOfTetraModule
         , Error(..))
 where
+import DDC.Core.Tetra.Convert.Exp.Lets
+import DDC.Core.Tetra.Convert.Exp.Alt
+import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Exp
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
+
 import DDC.Core.Salt.Convert             (initRuntime)
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
@@ -100,10 +104,13 @@ convertM pp runConfig defs kenv tenv mm
                    , contextSupers      = moduleTopBinds mm
                    , contextImports     = Set.fromList $ map fst $ moduleImportValues mm 
                    , contextKindEnv     = kenv
-                   , contextTypeEnv     = tenv' }
+                   , contextTypeEnv     = tenv' 
+                   , contextConvertExp  = convertExp 
+                   , contextConvertLets = convertLets 
+                   , contextConvertAlt  = convertAlt }
 
         -- Conver the body of the module itself.
-        x1         <- convertExpX ctx ExpTop 
+        x1         <- convertExp ExpTop ctx 
                    $  moduleBody mm
 
         -- Converting the body will also expand out code to construct,
