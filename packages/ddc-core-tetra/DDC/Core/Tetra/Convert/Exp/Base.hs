@@ -5,7 +5,9 @@ module DDC.Core.Tetra.Convert.Exp.Base
 
         -- * Context
         , Context       (..)
-        , TopEnv        (..)
+        , extendKindEnv, extendsKindEnv
+        , extendTypeEnv, extendsTypeEnv
+
         , ExpContext    (..)
         , superDataArity
 
@@ -30,11 +32,51 @@ import qualified Data.Set                as Set
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Context of the conversion.
+data Context 
+        = Context
+        { -- | The platform that we're converting to, 
+          --   this sets the pointer width.
+          contextPlatform       :: Platform
+
+          -- | Data type definitions.
+        , contextDataDefs       :: DataDefs E.Name
+
+          -- | Types of imported values.
+        , contextImports        :: Set      E.Name
+
+          -- | Names of supers that are directly callable.
+        , contextSupers         :: Set      E.Name
+
+          -- | Current kind environment.
+        , contextKindEnv        :: KindEnv  E.Name
+
+          -- | Current type environment.
+        , contextTypeEnv        :: TypeEnv  E.Name }
+
+
+extendKindEnv  ::  Bind E.Name  -> Context -> Context
+extendKindEnv b ctx
+        = ctx { contextKindEnv = Env.extend b (contextKindEnv ctx) }
+
+extendsKindEnv :: [Bind E.Name] -> Context -> Context
+extendsKindEnv bs ctx
+        = ctx { contextKindEnv = Env.extends bs (contextKindEnv ctx) }
+
+
+extendTypeEnv  :: Bind E.Name   -> Context -> Context
+extendTypeEnv b ctx
+        = ctx { contextTypeEnv = Env.extend b (contextTypeEnv ctx) }
+
+extendsTypeEnv :: [Bind E.Name] -> Context -> Context
+extendsTypeEnv bs ctx
+        = ctx { contextTypeEnv = Env.extends bs (contextTypeEnv ctx) }
+
+
+---------------------------------------------------------------------------------------------------
 type Convert a c
         =  Config a 
-        -> TopEnv 
-        -> KindEnv  E.Name 
-        -> TypeEnv  E.Name 
+        -> Context
         -> c (AnTEC a E.Name)   E.Name
         -> ConvertM a (c a A.Name)
 
@@ -45,14 +87,8 @@ data Config a
         , configConvertLets     :: Convert a Lets }
 
 
+
 ---------------------------------------------------------------------------------------------------
-data Context 
-        = Context
-        { contextTopEnv         :: TopEnv
-        , contextKindEnv        :: KindEnv E.Name
-        , contextTypeEnv        :: TypeEnv E.Name }
-
-
 -- | The context we're converting an expression in.
 --   We keep track of this during conversion to ensure we don't produce
 --   code outside the Salt language fragment. For example, in Salt a function
@@ -67,34 +103,17 @@ data ExpContext
         deriving (Show, Eq, Ord)
 
 
--- | Information about the top-level environment.
-data TopEnv
-        = TopEnv
-        { -- Platform we're converting to.
-          topEnvPlatform        :: Platform
-
-          -- Data type definitions.
-        , topEnvDataDefs        :: DataDefs E.Name
-
-          -- Names of top-level supercombinators that are directly callable.
-        , topEnvSupers          :: Set E.Name 
-
-          -- Names of imported values that can be refered to directly.
-        , topEnvImportValues    :: Set E.Name }
-
-
 -- | Get the value arity of a supercombinator. 
 --   This is how many data arguments it needs when we call it.
-superDataArity :: TopEnv -> TypeEnv E.Name -> Bound E.Name -> Maybe Int
-superDataArity env tenv u
+superDataArity :: Context -> Bound E.Name -> Maybe Int
+superDataArity ctx u
         | UName n  <- u
-        , Just  t  <- Env.lookup u tenv
-        , Set.member n (topEnvSupers env)
+        , Just  t  <- Env.lookup u (contextTypeEnv ctx)
+        , Set.member n (contextSupers ctx)
         = Just $ dataArityOfType t
 
         | otherwise
         = Nothing
-
 
 
 ---------------------------------------------------------------------------------------------------

@@ -89,18 +89,21 @@ convertM pp runConfig defs kenv tenv mm
         let ntsImports  
                    = [BName n (typeOfImportSource src) 
                         | (n, src) <- moduleImportValues mm]
+
         let tenv'  = Env.extends ntsImports tenv
         
 
-        -- Top-level context for the conversion.
-        let penv   = TopEnv
-                   { topEnvPlatform     = pp
-                   , topEnvDataDefs     = defs'
-                   , topEnvSupers       = moduleTopBinds mm 
-                   , topEnvImportValues = Set.fromList $ map fst $ moduleImportValues mm }
+        -- Starting context for the conversion.
+        let ctx    = Context
+                   { contextPlatform    = pp
+                   , contextDataDefs    = defs'
+                   , contextSupers      = moduleTopBinds mm
+                   , contextImports     = Set.fromList $ map fst $ moduleImportValues mm 
+                   , contextKindEnv     = kenv
+                   , contextTypeEnv     = tenv' }
 
         -- Conver the body of the module itself.
-        x1         <- convertExpX ExpTop penv kenv tenv' 
+        x1         <- convertExpX ctx ExpTop 
                    $  moduleBody mm
 
         -- Converting the body will also expand out code to construct,
