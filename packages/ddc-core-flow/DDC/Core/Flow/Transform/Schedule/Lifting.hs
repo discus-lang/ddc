@@ -119,10 +119,10 @@ liftWorker lifting envScalar envLift xx
 --   to account for lifting of the code that consumes it.
 lowerSeriesRate :: Lifting -> TypeF -> Maybe TypeF 
 lowerSeriesRate lifting tt
- | Just (NameTyConFlow TyConFlowSeries, [tK, tA])
+ | Just (NameTyConFlow TyConFlowSeries, [tP, tK, tL, tA])
         <- takePrimTyConApps tt
  , c    <- liftingFactor lifting
- = Just (tSeries (tDown c tK) tA)
+ = Just (tSeries tP (tDown c tK) tL tA)
 
  | otherwise
  = Nothing

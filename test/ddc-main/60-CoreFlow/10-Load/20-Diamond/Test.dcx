@@ -30,13 +30,14 @@ det     (l1 : Tuple2# Float64# Float64#)
 
 -- Select points that are above the given line,
 --  and also return the maximum determinate.
-split   [k1      : Rate]
+split   [p       : Proc]
+        [k1      : Rate]
         (l1      : Tuple2# Float64# Float64#)
         (l2      : Tuple2# Float64# Float64#)
-        (points  : Series# k1 (Tuple2# Float64# Float64#))
+        (points  : Series# p k1 k1 (Tuple2# Float64# Float64#))
         (vec     : Vector# (Tuple2# Float64# Float64#))
         (mx      : Ref# Float64#)
-        : Process#
+        : Process# p k1
  = do
         -- Take the determinate between the line and each point.
         dets    = smap# (det l1 l2) points
@@ -47,7 +48,7 @@ split   [k1      : Rate]
         pjoin#  -- Filter the points, keeping those where the determinate was more
                 -- than zero.
                 (smkSel1# flags 
-                 (/\(k2 : Rate). \(sel : Sel1# k1 k2).
+                 (/\(k2 : Rate). \(sel : Sel1# p k1 k2).
                   let above   = spack# sel points 
                   in  sfill# vec above))
 

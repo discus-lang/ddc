@@ -4,16 +4,16 @@ ok
 -- Two folds over the same input series.
 module Test with
 letrec {
-  test : [k : Rate].Ref# Int# -> Ref# Int# -> Series# k Int# -> Process#
-    = /\(k : Rate).
-       \(u1 u2 : Ref# Int#).\(elems : Series# k Int#).
-      let x3 : Process#
-            = sreduce# [k] [Int#] u1
+  test : [p : Proc].[k : Rate].Ref# Int# -> Ref# Int# -> Series# p k k Int# -> Process# p k
+    = /\(p : Proc)./\(k : Rate).
+       \(u1 u2 : Ref# Int#).\(elems : Series# p k k Int#).
+      let x3 : Process# p k
+            = sreduce# [p] [k] [k] [Int#] u1
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# elems in
-      let x7 : Process#
-            = sreduce# [k] [Int#] u2
+      let x7 : Process# p k
+            = sreduce# [p] [k] [k] [Int#] u2
                   (\(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# elems in
-      let x8 : Process# = pjoin# x3 x7 in
+      let x8 : Process# p k = pjoin# [p] [k] x3 x7 in
       x8
 }
 

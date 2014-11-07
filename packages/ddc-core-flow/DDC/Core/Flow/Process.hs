@@ -1,7 +1,6 @@
 
 module DDC.Core.Flow.Process
         ( Process       (..)
-        , typeOfProcess
 
         , Operator      (..))
 where

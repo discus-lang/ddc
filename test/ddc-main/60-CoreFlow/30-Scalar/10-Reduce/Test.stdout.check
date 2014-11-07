@@ -5,15 +5,15 @@ ok
 -- Single reduction of input series.
 module Test with
 letrec {
-  fold : [k : Rate].Ref# Int# -> Series# k Int# -> Unit
-    = /\(k : Rate).
-       \(x : Ref# Int#).\(s : Series# k Int#).
+  fold : [p : Proc].[k : Rate].Ref# Int# -> Series# p k k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(x : Ref# Int#).\(s : Series# p k k Int#).
       let x$init = read# [Int#] x in
       let x$acc = new# [Int#] x$init in
       let _
             = loop# [k]
                   (\(x2 : Nat#).
-                   let s$elem = next# [Int#] [k] s x2 in
+                   let s$elem = next# [Int#] [p] [k] [k] s x2 in
                    let x$val = read# [Int#] x$acc in
                    let x3 = add# [Int#] x$val s$elem in
                    let _ = write# [Int#] x$acc x3 in
@@ -27,9 +27,9 @@ letrec {
 -- Two reductions over the same input series.
 module Test with
 letrec {
-  ffold : [k : Rate].Ref# Int# -> Ref# Int# -> Series# k Int# -> Unit
-    = /\(k : Rate).
-       \(x1 x2 : Ref# Int#).\(s : Series# k Int#).
+  ffold : [p : Proc].[k : Rate].Ref# Int# -> Ref# Int# -> Series# p k k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(x1 x2 : Ref# Int#).\(s : Series# p k k Int#).
       let x1$init = read# [Int#] x1 in
       let x1$acc = new# [Int#] x1$init in
       let x2$init = read# [Int#] x2 in
@@ -37,7 +37,7 @@ letrec {
       let _
             = loop# [k]
                   (\(x4 : Nat#).
-                   let s$elem = next# [Int#] [k] s x4 in
+                   let s$elem = next# [Int#] [p] [k] [k] s x4 in
                    let x1$val = read# [Int#] x1$acc in
                    let x5 = add# [Int#] x1$val s$elem in
                    let _ = write# [Int#] x1$acc x5 in
@@ -56,9 +56,9 @@ letrec {
 -- Three reductions over the same input series
 module Test with
 letrec {
-  fffold : [k : Rate].Ref# Int# -> Ref# Int# -> Ref# Int# -> Series# k Int# -> Unit
-    = /\(k : Rate).
-       \(x1 x2 x3 : Ref# Int#).\(s : Series# k Int#).
+  fffold : [p : Proc].[k : Rate].Ref# Int# -> Ref# Int# -> Ref# Int# -> Series# p k k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(x1 x2 x3 : Ref# Int#).\(s : Series# p k k Int#).
       let x1$init = read# [Int#] x1 in
       let x1$acc = new# [Int#] x1$init in
       let x2$init = read# [Int#] x2 in
@@ -68,7 +68,7 @@ letrec {
       let _
             = loop# [k]
                   (\(x5 : Nat#).
-                   let s$elem = next# [Int#] [k] s x5 in
+                   let s$elem = next# [Int#] [p] [k] [k] s x5 in
                    let x1$val = read# [Int#] x1$acc in
                    let x6 = add# [Int#] x1$val s$elem in
                    let _ = write# [Int#] x1$acc x6 in

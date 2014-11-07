@@ -6,11 +6,11 @@
 -- due to having some type args, but not all of them.
 :load..
 module Test with letrec
-test    [k : Rate] (n  : RateNat# k)
-        (v  : Vector# Float32#)
-        (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
-        : Process#
+test    [p : Proc] [k : Rate] (n  : RateNat# k)
+        (v : Vector# Float32#)
+        (s1 : Series# p k k Float32#) (s2 : Series# p k k Float32#) 
+        : Process# p k 
  = do   
         s2      = smap2# (mul# [Float32#]) s1 s2
-        sfill# [k] [Float32#] v s2
+        sfill# [p] [k] [k] [Float32#] v s2
 ;;

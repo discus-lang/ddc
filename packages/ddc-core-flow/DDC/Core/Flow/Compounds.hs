@@ -5,17 +5,21 @@ module DDC.Core.Flow.Compounds
 
           -- * Fragment specific kinds
         , kRate
+        , kProc
 
           -- * Fragment specific types
         , isRateNatType
         , isSeriesType
+        , isRateVecType
         , isRefType
         , isVectorType
+        , isProcessType
         , tTuple1, tTuple2, tTupleN
         , tVector, tBuffer, tSeries, tSegd, tSel1, tSel2, tRef, tWorld
         , tRateNat
         , tDown
         , tTail
+        , tRatePlus, tRateTimes
         , tProcess
 
           -- * Primtiive types

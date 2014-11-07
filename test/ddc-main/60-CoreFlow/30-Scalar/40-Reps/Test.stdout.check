@@ -6,14 +6,14 @@ ok
 -- Multiply a parameter series by one created with replication.
 module Test with
 letrec {
-  repsme : [k1 : Rate].Series# k1 Float32# -> Vector# Float32# -> Unit
-    = /\(k1 : Rate).
-       \(s : Series# k1 Float32#).\(v : Vector# Float32#).
+  repsme : [p : Proc].[k1 : Rate].Series# p k1 k1 Float32# -> Vector# Float32# -> Unit
+    = /\(p : Proc)./\(k1 : Rate).
+       \(s : Series# p k1 k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
-                   let s$elem = next# [Float32#] [k1] s x2 in
+                   let s$elem = next# [Float32#] [p] [k1] [k1] s x2 in
                    let x4$elem = mul# [Float32#] 23.0f32# s$elem in
                    let _ = vwrite# [Float32#] v$buf x2 x4$elem in
                    ()) in
@@ -24,16 +24,16 @@ letrec {
 -- Fill a vector with segmentedly replicated elements.
 module Test with
 letrec {
-  repsme : [k1 : Rate].Series# k1 Nat# -> Series# k1 Float32# -> Vector# Float32# -> Unit
-    = /\(k1 : Rate).
-       \(lens : Series# k1 Nat#).\(s1 : Series# k1 Float32#).\(v : Vector# Float32#).
+  repsme : [p : Proc].[k1 : Rate].Series# p k1 k1 Nat# -> Series# p k1 k1 Float32# -> Vector# Float32# -> Unit
+    = /\(p : Proc)./\(k1 : Rate).
+       \(lens : Series# p k1 k1 Nat#).\(s1 : Series# p k1 k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x1 : Nat#).
-                   let lens$elem = next# [Nat#] [k1] lens x1 in
-                   let s1$elem = next# [Float32#] [k1] s1 x1 in
+                   let lens$elem = next# [Nat#] [p] [k1] [k1] lens x1 in
+                   let s1$elem = next# [Float32#] [p] [k1] [k1] s1 x1 in
                    let _
                          = segment# k2$count lens$elem
                                (\(x2 x3 : Nat#).
@@ -49,17 +49,17 @@ letrec {
 -- In the lowered code the multiply ends up in the segment context.
 module Test with
 letrec {
-  repsme : [k1 : Rate].Series# k1 Nat# -> Series# k1 Float32# -> Series# k1 Float32# -> Vector# Float32# -> Unit
-    = /\(k1 : Rate).
-       \(lens : Series# k1 Nat#).\(s1 s2 : Series# k1 Float32#).\(v : Vector# Float32#).
+  repsme : [p : Proc].[k1 : Rate].Series# p k1 k1 Nat# -> Series# p k1 k1 Float32# -> Series# p k1 k1 Float32# -> Vector# Float32# -> Unit
+    = /\(p : Proc)./\(k1 : Rate).
+       \(lens : Series# p k1 k1 Nat#).\(s1 s2 : Series# p k1 k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
-                   let lens$elem = next# [Nat#] [k1] lens x2 in
-                   let s1$elem = next# [Float32#] [k1] s1 x2 in
-                   let s2$elem = next# [Float32#] [k1] s2 x2 in
+                   let lens$elem = next# [Nat#] [p] [k1] [k1] lens x2 in
+                   let s1$elem = next# [Float32#] [p] [k1] [k1] s1 x2 in
+                   let s2$elem = next# [Float32#] [p] [k1] [k1] s2 x2 in
                    let _
                          = segment# k2$count lens$elem
                                (\(x3 x4 : Nat#).
@@ -74,17 +74,17 @@ letrec {
 -- As above, but do the multiplication before replication.
 module Test with
 letrec {
-  repsme : [k1 : Rate].Series# k1 Nat# -> Series# k1 Float32# -> Series# k1 Float32# -> Vector# Float32# -> Unit
-    = /\(k1 : Rate).
-       \(lens : Series# k1 Nat#).\(s1 s2 : Series# k1 Float32#).\(v : Vector# Float32#).
+  repsme : [p : Proc].[k1 : Rate].Series# p k1 k1 Nat# -> Series# p k1 k1 Float32# -> Series# p k1 k1 Float32# -> Vector# Float32# -> Unit
+    = /\(p : Proc)./\(k1 : Rate).
+       \(lens : Series# p k1 k1 Nat#).\(s1 s2 : Series# p k1 k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
-                   let lens$elem = next# [Nat#] [k1] lens x2 in
-                   let s1$elem = next# [Float32#] [k1] s1 x2 in
-                   let s2$elem = next# [Float32#] [k1] s2 x2 in
+                   let lens$elem = next# [Nat#] [p] [k1] [k1] lens x2 in
+                   let s1$elem = next# [Float32#] [p] [k1] [k1] s1 x2 in
+                   let s2$elem = next# [Float32#] [p] [k1] [k1] s2 x2 in
                    let s3$elem = mul# [Float32#] s1$elem s2$elem in
                    let _
                          = segment# k2$count lens$elem

@@ -6,10 +6,10 @@
 -- Fill a vector with segment indices.
 :flow-lower..
 module Test with letrec
-test    [k1 : Rate]
-        (lens : Series# k1 Nat#)
+test    [p : Proc] [k1 : Rate]
+        (lens : Series# p k1 k1 Nat#)
         (v    : Vector# Nat#)
-        : Process#
+        : Process# p k1
  = smkSegd# lens
    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
     do  s2 = sindices# segd 
@@ -20,10 +20,10 @@ test    [k1 : Rate]
 -- Fuse reps with indices.
 :flow-lower..
 module Test with letrec
-test    [k1 : Rate]
-        (lens : Series# k1 Nat#) (things : Series# k1 Nat#)
+test    [p : Proc] [k1 : Rate]
+        (lens : Series# p k1 k1 Nat#) (things : Series# p k1 k1 Nat#)
         (v    : Vector# Nat#)
-        : Process#
+        : Process# p k1
  = smkSegd# lens
    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
     do  s2     = sindices# segd
@@ -40,18 +40,20 @@ test    [k1 : Rate]
 -- does not get read for each of the inner iterations.
 :flow-lower..
 module Test with letrec
-test    [k1 : Rate]
-        (lens      : Series# k1 Nat#)  (base      : Series# k1 Nat#)
-        (things    : Vector# Float32#) (out1 out2 : Vector# Float32#)
-        : Process#
- = smkSegd# lens
-   (/\(k2 : Rate). \(segd : Segd# k1 k2). 
-    do  bases   = sreps#    segd base
-        offsets = sindices# segd
-        ixs     = smap2#    add# bases offsets
-        results = sgather#  things ixs
-        firsts  = sgather#  things base
-        firstsr = sreps#    segd firsts 
-        pjoin#  (sfill# out1 results)
-                (sfill# out2 firstsr))
+test    [p : Proc] [k1 kThings : Rate]
+        (lens      : RateVec# k1 Nat#)           (base      : RateVec# k1 Nat#)
+        (things    : RateVec# kThings  Float32#) (out1 out2 : Vector# Float32#)
+        : Process# p k1
+ = do   lens' = series# lens
+        base' = series# base
+        smkSegd# lens'
+            (/\(k2 : Rate). \(segd : Segd# k1 k2). 
+            do  bases   = sreps#    segd base'
+                offsets = sindices# segd
+                ixs     = smap2#    add# bases offsets
+                results = sgather#  things ixs
+                firsts  = sgather#  things base'
+                firstsr = sreps#    segd firsts 
+                pjoin#  (sfill# out1 results)
+                        (sfill# out2 firstsr))
 ;;

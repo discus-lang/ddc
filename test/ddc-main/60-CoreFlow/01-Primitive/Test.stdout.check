@@ -1,5 +1,9 @@
 ok
 
+-- Primitve kinds
+Rate :: Prop
+Proc :: Prop
+
 -- Primitive type constructors
 Int# :: Data
 Nat# :: Data
@@ -24,14 +28,16 @@ vsub$4# :: [^ : Data].Vec4# ^0 -> Vec4# ^0 -> Vec4# ^0
 -- Flow type constructors
 Tuple2# :: Data ~> Data ~> Data
 Vector# :: Data ~> Data
-Series# :: Rate ~> Data ~> Data
+Series# :: Proc ~> Rate ~> Rate ~> Data ~> Data
 Segd# :: Rate ~> Rate ~> Data
-Sel1# :: Rate ~> Rate ~> Data
+Sel1# :: Proc ~> Rate ~> Rate ~> Data
 Ref# :: Data ~> Data
 World# :: Data
 RateNat# :: Rate ~> Data
 Down4# :: Rate ~> Rate
 Down8# :: Rate ~> Rate
+RatePlus# :: Rate ~> Rate ~> Rate
+RateTimes# :: Rate ~> Rate ~> Rate
 
 
 -- Primitive data constructors
@@ -39,29 +45,35 @@ T2# :: [^ ^ : Data].^1 -> ^0 -> Tuple2# ^1 ^0
 
 
 -- Flow operators
-srep# :: [^ : Rate].[^ : Data].^0 -> Series# ^1 ^0
-sreps# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
-sindices# :: [^ ^ : Rate].Segd# ^1 ^0 -> Series# ^0 Nat#
-sgather# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 Nat# -> Series# ^1 ^0
-smkSel# :: [^ : Rate].Series# ^0 Bool# -> ([^ : Rate].Sel1# ^1 ^0 -> Process#) -> Process#
-smkSegd# :: [^ : Rate].Series# ^0 Nat# -> ([^ : Rate].Segd# ^1 ^0 -> Process#) -> Process#
-smap# :: [^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^2 ^1 -> Series# ^2 ^0
-spack# :: [^ ^ : Rate].[^ : Data].Sel1# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
-runProcess# :: [^ : Data].Vector# ^0 -> ([^ : Rate].RateNat# ^0 -> Series# ^0 ^1 -> Process#) -> Bool#
-runProcess2# :: [^ ^ : Data].Vector# ^1 -> Vector# ^0 -> ([^ : Rate].RateNat# ^0 -> Series# ^0 ^2 -> Series# ^0 ^1 -> Process#) -> Bool#
-sreduce# :: [^ : Rate].[^ : Data].Ref# ^0 -> (^0 -> ^0 -> ^0) -> ^0 -> Series# ^1 ^0 -> Process#
-sfolds# :: [^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^2 ^0 -> Series# ^1 ^0
-sfill# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 ^0 -> Process#
-sscatter# :: [^ : Rate].[^ : Data].Vector# ^0 -> Series# ^1 Nat# -> Series# ^1 ^0 -> Process#
-pjoin# :: Process# -> Process# -> Process#
+srep# :: [^ : Proc].[^ : Rate].[^ : Data].^0 -> Series# ^2 ^1 ^1 ^0
+sreps# :: [^ : Proc].[^ ^ ^ : Rate].[^ : Data].Segd# ^3 ^2 -> Series# ^4 ^3 ^1 ^0 -> Series# ^4 ^2 ^1 ^0
+sindices# :: [^ : Proc].[^ ^ : Rate].Segd# ^1 ^0 -> Series# ^2 ^0 ^0 Nat#
+sgather# :: [^ : Proc].[^ ^ ^ : Rate].[^ : Data].RateVec# ^3 ^0 -> Series# ^4 ^2 ^1 Nat# -> Series# ^4 ^2 ^1 ^0
+smkSel# :: [^ : Proc].[^ ^ : Rate].Series# ^2 ^1 ^0 Bool# -> ([^ : Rate].Sel1# ^3 ^2 ^0 -> Process# ^3 ^1) -> Process# ^2 ^0
+smkSegd# :: [^ : Proc].[^ ^ : Rate].Series# ^2 ^1 ^0 Nat# -> ([^ : Rate].Segd# ^2 ^0 -> Process# ^3 ^1) -> Process# ^2 ^0
+smap# :: [^ : Proc].[^ ^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^4 ^3 ^2 ^1 -> Series# ^4 ^3 ^2 ^0
+spack# :: [^ : Proc].[^ ^ ^ : Rate].[^ : Data].Sel1# ^4 ^3 ^2 -> Series# ^4 ^3 ^1 ^0 -> Series# ^4 ^2 ^1 ^0
+runProcess# :: [^ : Rate].([^ : Proc].Unit -> Process# ^0 ^1) -> Unit
+sreduce# :: [^ : Proc].[^ ^ : Rate].[^ : Data].Ref# ^0 -> (^0 -> ^0 -> ^0) -> ^0 -> Series# ^3 ^2 ^1 ^0 -> Process# ^3 ^1
+sfolds# :: [^ : Proc].[^ ^ ^ : Rate].[^ : Data].Segd# ^3 ^2 -> Series# ^4 ^3 ^1 ^0 -> Series# ^4 ^2 ^1 ^0
+sfill# :: [^ : Proc].[^ ^ : Rate].[^ : Data].Vector# ^0 -> Series# ^3 ^2 ^1 ^0 -> Process# ^3 ^1
+sscatter# :: [^ : Proc].[^ ^ : Rate].[^ : Data].Vector# ^0 -> Series# ^3 ^2 ^1 Nat# -> Series# ^3 ^2 ^1 ^0 -> Process# ^3 ^1
+pjoin# :: [^ : Proc].[^ : Rate].Process# ^1 ^0 -> Process# ^1 ^0 -> Process# ^1 ^0
+ratify1# :: [^ ^ : Data].Vector# ^1 -> ([^ : Rate].RateNat# ^0 -> RateVec# ^0 ^1 -> ^1) -> ^0
+ratify2# :: [^ ^ ^ : Data].Vector# ^2 -> Vector# ^1 -> ([^ : Rate].RateNat# ^0 -> RateVec# ^0 ^2 -> RateVec# ^0 ^1 -> ^1) -> ^0
+series# :: [^ : Proc].[^ : Rate].[^ : Data].RateVec# ^1 ^0 -> Series# ^2 ^1 ^1 ^0
+sappend# :: [^ : Proc].[^ ^ ^ ^ : Rate].[^ : Data].Series# ^5 ^4 ^3 ^0 -> Series# ^5 ^2 ^1 ^0 -> Series# ^5 (RatePlus# ^4 ^2) (RatePlus# ^3 ^1) ^0
+scross# :: [^ : Proc].[^ ^ ^ : Rate].[^ ^ : Data].Series# ^5 ^4 ^3 ^1 -> RateVec# ^2 ^0 -> Series# ^5 (RateTimes# ^4 ^2) ^3 (Tuple2# ^1 ^0)
+sinjectL# :: [^ : Proc].[^ ^ ^ : Rate].[^ : Data].Series# ^4 ^3 ^2 ^0 -> Series# ^4 ^3 (RatePlus# ^1 ^2) ^0
+sinjectR# :: [^ : Proc].[^ ^ ^ : Rate].[^ : Data].Series# ^4 ^3 ^2 ^0 -> Series# ^4 ^3 (RatePlus# ^2 ^1) ^0
 
 
 -- Series operators
-rateOfSeries# :: [^ : Rate].[^ : Data].Series# ^1 ^0 -> RateNat# ^1
-next$4# :: [^ : Data].[^ : Rate].Series# (Down4# ^0) ^1 -> Nat# -> Vec4# ^1
-next$8# :: [^ : Data].[^ : Rate].Series# (Down8# ^0) ^1 -> Nat# -> Vec8# ^1
-down$8# :: [^ : Rate].[^ : Data].RateNat# (Down8# ^1) -> Series# ^1 ^0 -> Series# (Down8# ^1) ^0
-tail$8# :: [^ : Rate].[^ : Data].RateNat# (Tail8# ^1) -> Series# ^1 ^0 -> Series# (Tail8# ^1) ^0
+rateOfSeries# :: [^ : Proc].[^ ^ : Rate].[^ : Data].Series# ^3 ^2 ^1 ^0 -> RateNat# ^2
+next$4# :: [^ : Data].[^ : Proc].[^ ^ : Rate].Series# ^2 (Down4# ^1) ^0 ^3 -> Nat# -> Vec4# ^3
+next$8# :: [^ : Data].[^ : Proc].[^ ^ : Rate].Series# ^2 (Down8# ^1) ^0 ^3 -> Nat# -> Vec8# ^3
+down$8# :: [^ : Proc].[^ ^ : Rate].[^ : Data].RateNat# (Down8# ^2) -> Series# ^3 ^2 ^1 ^0 -> Series# ^3 (Down8# ^2) ^1 ^0
+tail$8# :: [^ : Proc].[^ ^ : Rate].[^ : Data].RateNat# (Tail8# ^2) -> Series# ^3 ^2 ^1 ^0 -> Series# ^3 (Tail8# ^2) ^1 ^0
 
 
 -- Control operators
@@ -70,8 +82,6 @@ loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
 segment# :: Ref# Nat# -> Nat# -> (Nat# -> Nat# -> Unit) -> Unit
 guard# :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
 split$8# :: [^ : Rate].RateNat# ^0 -> (RateNat# (Down8# ^0) -> Unit) -> (RateNat# (Tail8# ^0) -> Unit) -> Unit
-runKernel# :: [^ : Data].Vector# ^0 -> ([^ : Rate].RateNat# ^0 -> Series# ^0 ^1 -> Unit) -> Bool#
-runKernel2# :: [^ ^ : Data].Vector# ^1 -> Vector# ^0 -> ([^ : Rate].RateNat# ^0 -> Series# ^0 ^2 -> Series# ^0 ^1 -> Unit) -> Bool#
 
 
 -- Store operators
@@ -83,7 +93,7 @@ vnewR# :: [^ : Data].[^ : Rate].Vector# ^1
 vnewN# :: [^ : Data].[^ : Rate].RateNat# ^0 -> Vector# ^1
 vread# :: [^ : Data].Buffer# ^0 -> Nat# -> ^0
 vwrite# :: [^ : Data].Buffer# ^0 -> Nat# -> ^0 -> Unit
-next# :: [^ : Data].[^ : Rate].Series# ^0 ^1 -> Nat# -> ^1
+next# :: [^ : Data].[^ : Proc].[^ ^ : Rate].Series# ^2 ^1 ^0 ^3 -> Nat# -> ^3
 
 -- Vector operators
 vmap# :: [^ ^ : Data].(^1 -> ^0) -> Vector# ^1 -> Vector# ^0

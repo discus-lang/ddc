@@ -5,14 +5,14 @@
 -- Pack with an existing series of flags.
 :flow-lower..
 module Test with letrec
-packMe  [k0 : Rate] [a : Data]
-        (s  : Series# k0 a) 
+packMe  [p : Proc] [k0 : Rate] [a : Data]
+        (s  : Series# p k0 k0 a) 
         (v  : Vector# a)
-        (flags : Series# k0 Bool#)
-        : Process#
+        (flags : Series# p k0 k0 Bool#)
+        : Process# p k0
         
  =      smkSel1# flags
-         (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+         (/\(k1 : Rate). \(sel : Sel1# p k0 k1).
           do    s2       = spack# sel s
                 sfill# v s2)
 ;;
@@ -21,16 +21,16 @@ packMe  [k0 : Rate] [a : Data]
 -- Filter, producing our own flags.
 :flow-lower..
 module Test with letrec
-filter  [k0 : Rate] [a : Data]
+filter  [p : Proc] [k0 : Rate] [a : Data]
         (f  : a -> Bool#) 
         (v  : Vector# a)
-        (s  : Series# k0 a)
-        : Process#
+        (s  : Series# p k0 k0 a)
+        : Process# p k0
  = do   
         flags   = smap# f s
 
         smkSel1# flags
-         (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+         (/\(k1 : Rate). \(sel : Sel1# p k0 k1).
           do    s2      = spack# sel s
                 sfill# v s2)
 ;;
@@ -39,17 +39,17 @@ filter  [k0 : Rate] [a : Data]
 -- Filter, and also materialize the input in a new selector context.
 :flow-lower..
 module Test with letrec
-filter  [k0 : Rate] [a : Data]
+filter  [p : Proc] [k0 : Rate] [a : Data]
         (f  : a -> Bool#) 
         (v1 v2 : Vector# a)
-        (s : Series# k0 a)
-        : Process#
+        (s : Series# p k0 k0 a)
+        : Process# p k0
  = do   
         flags   = smap# f s
 
         pjoin#  (sfill# v1 s)
                 (smkSel1# flags
-                 (/\(k1 : Rate). \(sel : Sel1# k0 k1).
+                 (/\(k1 : Rate). \(sel : Sel1# p k0 k1).
                   do    s2  = spack# sel s
                         sfill# v1 s2))
 ;;
@@ -59,20 +59,20 @@ filter  [k0 : Rate] [a : Data]
 -- Ensure we can handle nested selector contexts.
 :flow-lower..
 module Test with letrec
-filter  [k0 : Rate] [a : Data]
+filter  [p : Proc] [k0 : Rate] [a : Data]
         (f  : a -> Bool#)  (g : a -> Bool#)
         (v  : Vector# a)
-        (s0 : Series# k0 a)
-        : Process#
+        (s0 : Series# p k0 k0 a)
+        : Process# p k0
  = do   
         flags1  = smap# (\(x : a). f x) s0
 
         smkSel1# flags1
-         (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
+         (/\(k1 : Rate). \(sel1 : Sel1# p k0 k1).
           do    s1      = spack# sel1 s0
                 flags2  = smap#  g s1 
                 smkSel1# flags2
-                 (/\(k2 : Rate). \(sel2 : Sel1# k1 k2).
+                 (/\(k2 : Rate). \(sel2 : Sel1# p k1 k2).
                   do    s2 = spack# sel2 s1
                         sfill# v s2 ))
 ;;
@@ -82,22 +82,22 @@ filter  [k0 : Rate] [a : Data]
 -- Ensure we can handle two selector contexts on the same input.
 :flow-lower..
 module Test with letrec
-filter  [k0 : Rate] [a : Data]
+filter  [p : Proc] [k0 : Rate] [a : Data]
         (f  : a -> Bool#)  (g : a -> Bool#)
         (v1 v2 : Vector# a) 
-        (s0 : Series# k0 a)
-        : Process#
+        (s0 : Series# p k0 k0 a)
+        : Process# p k0
  = do   
         flags1  = smap# f s0
         flags2  = smap# f s0
 
         pjoin#  (smkSel# flags1
-                 (/\(k1 : Rate). \(sel1 : Sel1# k0 k1).
+                 (/\(k1 : Rate). \(sel1 : Sel1# p k0 k1).
                   do    s1      = spack# sel1 s0 
                         sfill# v1 s1))
 
                 (smkSel# flags2
-                 (/\(k2 : Rate). \(sel2 : Sel1# k0 k2).
+                 (/\(k2 : Rate). \(sel2 : Sel1# p k0 k2).
                   do    s2      = spack# sel2 s0
                         sfill# v2 s2))
 ;;

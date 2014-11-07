@@ -1,10 +1,8 @@
 
 module DDC.Core.Flow.Process.Process
-        ( Process       (..)
-        , typeOfProcess)
+        ( Process       (..))
 where
 import DDC.Core.Flow.Process.Operator
-import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
@@ -18,6 +16,12 @@ data Process
           --   This is taken from the function name in the original
           --   source code.
           processName           :: Name
+
+          -- | Proc type
+        , processProcType       :: TypeF
+
+          -- | Rate of process loop
+        , processLoopRate       :: TypeF
 
           -- | Type parameters to process.
           --   These are the type parameters of the original function.
@@ -37,14 +41,3 @@ data Process
         , processOperators      :: [Operator] 
         }
 
-
--- | Take the functional type of a process.
-typeOfProcess :: Process -> TypeF
-typeOfProcess process
- = let  tBody   = foldr tFun tProcess
-                $ map typeOfBind (processParamValues process)
-
-        tQuant  = foldr TForall tBody
-                $ processParamTypes process
-
-   in   tQuant

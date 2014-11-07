@@ -17,16 +17,13 @@ import Control.Monad
 scheduleScalar :: Process -> Either Error Procedure
 scheduleScalar 
        (Process { processName           = name
+                , processProcType       = proc
+                , processLoopRate       = rate
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
                 , processOperators      = operators
                 , processContexts       = contexts})
   = do
-        -- Check the parameter series all have the same rate.
-        tK      <- slurpRateOfParams
-                         bsParamTypes
-                        (map typeOfBind bsParamValues)
-
         -- Create the initial loop nest of the process rate.
         let bsSeries    = [ b   | b <- bsParamValues
                                 , isSeriesType (typeOfBind b) ]
@@ -34,7 +31,7 @@ scheduleScalar
         -- Body expressions that take the next element from each input series.
         let ssBody      
                 = [ BodyStmt bElem
-                        (xNext tK tElem (XVar (UName nS)) (XVar uIndex))
+                        (xNext proc rate rate tElem (XVar (UName nS)) (XVar uIndex))
                         | bS@(BName nS tS)      <- bsSeries
                         , let Just tElem        = elemTypeOfSeriesType tS 
                         , let Just bElem        = elemBindOfSeriesBind bS
@@ -43,7 +40,7 @@ scheduleScalar
         -- The initial loop nest.
         let nest0       
                 = NestLoop 
-                { nestRate              = tK 
+                { nestRate              = rate 
                 , nestStart             = []
                 , nestBody              = ssBody
                 , nestInner             = NestEmpty

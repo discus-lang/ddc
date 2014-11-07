@@ -9,7 +9,9 @@ module DDC.Core.Flow.Prim.TyConFlow
         , isSeriesType
         , isRefType
         , isVectorType
+        , isRateVecType
         , isBufferType
+        , isProcessType
 
           -- * Compounds
         , tTuple1
@@ -17,6 +19,7 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tTupleN
         , tVector
         , tBuffer
+        , tRateVec
         , tSeries
         , tSegd
         , tSel1
@@ -24,6 +27,8 @@ module DDC.Core.Flow.Prim.TyConFlow
         , tRef
         , tWorld
         , tRateNat
+        , tRatePlus
+        , tRateTimes
         , tDown
         , tTail
         , tProcess)
@@ -44,17 +49,20 @@ instance NFData TyConFlow
 instance Pretty TyConFlow where
  ppr dc
   = case dc of
-        TyConFlowTuple n        -> text "Tuple" <> int n <> text "#"
+        TyConFlowTuple n        -> text "Tuple"   <> int n <> text "#"
         TyConFlowBuffer         -> text "Buffer#"
         TyConFlowVector         -> text "Vector#"
+        TyConFlowRateVec        -> text "RateVec#"
         TyConFlowSeries         -> text "Series#"
         TyConFlowSegd           -> text "Segd#"
-        TyConFlowSel n          -> text "Sel"   <> int n <> text "#"
+        TyConFlowSel n          -> text "Sel"     <> int n <> text "#"
         TyConFlowRef            -> text "Ref#"
         TyConFlowWorld          -> text "World#"
         TyConFlowRateNat        -> text "RateNat#"
-        TyConFlowDown n         -> text "Down"  <> int n <> text "#"
-        TyConFlowTail n         -> text "Tail"  <> int n <> text "#"
+        TyConFlowRateTimes      -> text "RateTimes#"
+        TyConFlowRatePlus       -> text "RatePlus#"
+        TyConFlowDown n         -> text "Down"    <> int n <> text "#"
+        TyConFlowTail n         -> text "Tail"    <> int n <> text "#"
         TyConFlowProcess        -> text "Process#"
 
 
@@ -83,12 +91,15 @@ readTyConFlow str
         = case str of
                 "Buffer#"       -> Just $ TyConFlowBuffer
                 "Vector#"       -> Just $ TyConFlowVector
+                "RateVec#"      -> Just $ TyConFlowRateVec
                 "Series#"       -> Just $ TyConFlowSeries
                 "Segd#"         -> Just $ TyConFlowSegd
                 "Sel1#"         -> Just $ TyConFlowSel 1
                 "Ref#"          -> Just $ TyConFlowRef
                 "World#"        -> Just $ TyConFlowWorld
                 "RateNat#"      -> Just $ TyConFlowRateNat
+                "RateTimes#"    -> Just $ TyConFlowRateTimes
+                "RatePlus#"     -> Just $ TyConFlowRatePlus
                 "Process#"      -> Just $ TyConFlowProcess
                 _               -> Nothing
 
@@ -100,16 +111,19 @@ kindTyConFlow tc
  = case tc of
         TyConFlowTuple n        -> foldr kFun kData (replicate n kData)
         TyConFlowBuffer         -> kData `kFun` kData
-        TyConFlowVector         -> kData `kFun` kData
-        TyConFlowSeries         -> kRate `kFun` kData `kFun` kData
+        TyConFlowVector         ->              kData `kFun` kData
+        TyConFlowRateVec        -> kRate `kFun` kData `kFun` kData
+        TyConFlowSeries         -> kProc `kFun` kRate `kFun` kRate `kFun` kData `kFun` kData
         TyConFlowSegd           -> kRate `kFun` kRate `kFun` kData
-        TyConFlowSel n          -> foldr kFun kData (replicate (n + 1) kRate)
+        TyConFlowSel n          -> kProc `kFun` foldr kFun kData (replicate (n + 1) kRate)
         TyConFlowRef            -> kData `kFun` kData
         TyConFlowWorld          -> kData
         TyConFlowRateNat        -> kRate `kFun` kData
+        TyConFlowRateTimes      -> kRate `kFun` kRate `kFun` kRate
+        TyConFlowRatePlus       -> kRate `kFun` kRate `kFun` kRate
         TyConFlowDown{}         -> kRate `kFun` kRate
         TyConFlowTail{}         -> kRate `kFun` kRate
-        TyConFlowProcess        -> kData
+        TyConFlowProcess        -> kProc `kFun` kRate `kFun` kData
 
 
 -- Predicates -----------------------------------------------------------------
@@ -125,8 +139,8 @@ isRateNatType tt
 isSeriesType :: Type Name -> Bool
 isSeriesType tt
  = case takePrimTyConApps tt of
-        Just (NameTyConFlow TyConFlowSeries, [_, _]) -> True
-        _                                            -> False
+        Just (NameTyConFlow TyConFlowSeries, [_, _, _, _]) -> True
+        _                                                  -> False
 
 
 -- | Check if some type is a fully applied type of a Ref.
@@ -144,12 +158,28 @@ isVectorType tt
         Just (NameTyConFlow TyConFlowVector, [_])    -> True
         _                                            -> False
 
+
 -- | Check if some type is a fully applied type of a Buffer.
 isBufferType :: Type Name -> Bool
 isBufferType tt
  = case takePrimTyConApps tt of
         Just (NameTyConFlow TyConFlowBuffer, [_])    -> True
         _                                            -> False
+
+-- | Check if some type is a fully applied type of a RateVec.
+isRateVecType :: Type Name -> Bool
+isRateVecType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowRateVec, [_, _])-> True
+        _                                            -> False
+
+-- | Check if some type is a fully applied Process.
+isProcessType :: Type Name -> Bool
+isProcessType tt
+ = case takePrimTyConApps tt of
+        Just (NameTyConFlow TyConFlowProcess, [_, _]) -> True
+        _                                             -> False
+
 
 
 -- Compounds ------------------------------------------------------------------
@@ -169,24 +199,27 @@ tBuffer :: Type Name -> Type Name
 tBuffer tA      = tApps (tConTyConFlow TyConFlowBuffer)    [tA]
 
 
-tVector :: Type Name -> Type Name
+tVector ::  Type Name -> Type Name
 tVector tA      = tApps (tConTyConFlow TyConFlowVector)    [tA]
 
+tRateVec :: Type Name -> Type Name -> Type Name
+tRateVec tK tA = tApps (tConTyConFlow TyConFlowRateVec)  [tK, tA]
 
-tSeries :: Type Name -> Type Name -> Type Name
-tSeries tK tA   = tApps (tConTyConFlow TyConFlowSeries)    [tK, tA]
+
+tSeries :: Type Name -> Type Name -> Type Name -> Type Name -> Type Name
+tSeries tP tKResult tKLoop tA   = tApps (tConTyConFlow TyConFlowSeries)    [tP, tKResult, tKLoop, tA]
 
 
 tSegd :: Type Name -> Type Name -> Type Name
 tSegd tK1 tK2   = tApps (tConTyConFlow TyConFlowSegd)      [tK1, tK2]
 
 
-tSel1 :: Type Name -> Type Name -> Type Name
-tSel1 tK1 tK2   = tApps (tConTyConFlow $ TyConFlowSel 1) [tK1, tK2]
+tSel1 :: Type Name -> Type Name -> Type Name -> Type Name
+tSel1 tP tK1 tK2   = tApps (tConTyConFlow $ TyConFlowSel 1) [tP, tK1, tK2]
 
 
-tSel2 :: Type Name -> Type Name -> Type Name -> Type Name
-tSel2 tK1 tK2 tK3 = tApps (tConTyConFlow $ TyConFlowSel 2) [tK1, tK2, tK3]
+tSel2 :: Type Name -> Type Name -> Type Name -> Type Name -> Type Name
+tSel2 tP tK1 tK2 tK3 = tApps (tConTyConFlow $ TyConFlowSel 2) [tP, tK1, tK2, tK3]
 
 
 tRef  :: Type Name -> Type Name
@@ -200,6 +233,13 @@ tWorld          = tConTyConFlow TyConFlowWorld
 tRateNat :: Type Name -> Type Name
 tRateNat tK     = tApp (tConTyConFlow TyConFlowRateNat)  tK
 
+tRateTimes :: Type Name -> Type Name -> Type Name
+tRateTimes tKa tKb = tConTyConFlow TyConFlowRateTimes `tApps` [tKa, tKb]
+
+tRatePlus :: Type Name -> Type Name -> Type Name
+tRatePlus  tKa tKb = tConTyConFlow TyConFlowRatePlus  `tApps` [tKa, tKb]
+
+
 
 tDown :: Int -> Type Name -> Type Name 
 tDown n tK      = tApp (tConTyConFlow $ TyConFlowDown n) tK
@@ -209,8 +249,10 @@ tTail :: Int -> Type Name -> Type Name
 tTail n tK      = tApp (tConTyConFlow $ TyConFlowTail n) tK
 
 
-tProcess :: Type Name 
-tProcess = tConTyConFlow $ TyConFlowProcess
+tProcess :: Type Name -> Type Name -> Type Name 
+tProcess tP tK = (tConTyConFlow TyConFlowProcess) `tApps` [tP, tK]
+
+
 
 
 -- Utils ----------------------------------------------------------------------

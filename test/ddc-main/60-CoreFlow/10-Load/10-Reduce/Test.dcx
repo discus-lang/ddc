@@ -5,8 +5,9 @@
 -- Single series being eaten by two consumers.
 :load..
 module Test with letrec
-test    [k : Rate] (u1 u2 : Ref# Int#) 
-        (elems : Series# k Int#) : Process#
+test    [p : Proc] [k : Rate]
+        (u1 u2 : Ref# Int#)
+        (elems : Series# p k k Int#) : Process# p k
  =      pjoin#  (sreduce# u1 add# 0i# elems)
                 (sreduce# u2 mul# 1i# elems)
 ;;

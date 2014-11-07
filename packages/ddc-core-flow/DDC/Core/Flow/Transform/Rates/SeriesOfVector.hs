@@ -74,10 +74,11 @@ seriesOfVectorFunction fun
             -> let g          = graphOfBinds prog env
                    tmap a b   = SI.parents prog env a b
                    clusters   = cluster g tmap
-                   (re, ls)   = reconstruct fun prog env clusters
+                   (re, ls)   = (fun, []) -- reconstruct fun prog env clusters
                in  (re, ls, [])
 
 
+{-
 reconstruct
         :: ExpF
         -> Program Name Name
@@ -132,7 +133,7 @@ extractProcs lets env
 
   go1 b nm x e
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries (OpSeriesRunProcess _)) _) <- op
+   , XVar (UPrim (NameOpSeries OpSeriesRunProcess ) _)    <- op
    , (xs, [lam])                                          <- splitAt (length args - 1) args
 
    = let fs = freeX Env.empty lam
@@ -232,7 +233,7 @@ process types env arrIns bs
    = let kFlags = [ (True,  BName klok kRate)
                   , (False, BName (NameVarMod klok "r") $ tRateNat $ TVar $ UName klok) ]
          vFlags = map (\n -> (False, BName (NameVarMod n "s") (tSeries (klokT n) (sctyOf n)))) arrIns
-     in  xApps (xVarOpSeries (OpSeriesRunProcess $ length arrIns))
+     in  xApps (xVarOpSeries OpSeriesRunProcess)
                (  map xsctyOf arrIns
                ++ (if   null arrIns
                    then [allocSize]
@@ -406,3 +407,4 @@ getKlok e n
    = NameVarMod (goKV kv) "'"
 
 
+-}

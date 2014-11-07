@@ -18,13 +18,10 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Prim.OpConcrete
 import DDC.Core.Flow.Exp
 import DDC.Core.Module
 
 import DDC.Core.Transform.Annotate
-import DDC.Core.Transform.Deannotate
-import DDC.Core.Transform.TransformUpX
 
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
@@ -121,8 +118,8 @@ lowerModule config mm
 lowerEither  :: Config -> [Name] -> (Either Process (Bind Name, Exp () Name)) -> Either Error (BindF, ExpF)
 lowerEither  config _ (Left process)
  = lowerProcess config process
-lowerEither _config procnames (Right (b,xx))
- = return (b, runProcessToRunKernel procnames xx)
+lowerEither _config _procnames (Right (b,xx))
+ = return (b, xx)
  
 
 -- | Lower a single series process into fused code.
@@ -159,6 +156,9 @@ lowerProcess config process
         -- The RateNat witness
         let xRN         = XVar (UName nRN)
 
+        let tProc       = processProcType process
+        let tLoopRate   = processLoopRate process
+
         -----------------------------------------
         -- Create the vector version of the kernel.
         --  Vector code processes several elements per loop iteration.
@@ -169,8 +169,8 @@ lowerProcess config process
         let bxsDownSeries       
                 = [ ( bS
                     , ( BName (NameVarMod n "down")
-                              (tSeries (tDown c tK) tE)
-                      , xDown c tK tE (XVar (UIx 0)) xS))
+                              (tSeries tProc (tDown c tK) tLoopRate tE)
+                      , xDown c tProc tK tLoopRate tE (XVar (UIx 0)) xS))
                   | bS@(BName n tS)  <- processParamValues process
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS
@@ -207,8 +207,8 @@ lowerProcess config process
 
         -- Window the input series to select the tails.
         let bxsTailSeries
-                = [ ( bS, ( BName (NameVarMod n "tail") (tSeries (tTail c tK) tE)
-                          , xTail c tK tE (XVar (UIx 0)) xS))
+                = [ ( bS, ( BName (NameVarMod n "tail") (tSeries tProc (tTail c tK) tLoopRate tE)
+                          , xTail c tProc tK tLoopRate tE (XVar (UIx 0)) xS))
                   | bS@(BName n tS)    <- processParamValues process
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS
@@ -283,34 +283,6 @@ lowerProcess config process
  | otherwise
  = error $  "ddc-core-flow.lowerProcess: invalid lowering method"
          
-
-runProcessToRunKernel :: [Name] -> ExpF -> ExpF
-runProcessToRunKernel procnames
- = deannotate (const Nothing)
- . transformUpX' (annotate () . go . deannotate (const Nothing))
- . annotate ()
- where
-  go xx
-   | Just (prim, args) <- takeXPrimApps xx
-   , NameOpSeries (OpSeriesRunProcess n) <- prim
-   = xApps (xRunKernel n) args
-
-  -- the lower transform subtly changes the type of processes,
-  -- by moving all type lambdas to the front.
-  -- if the Process was partially applied, we must modify it in the same way.
-   | Just (x, args)     <- takeXApps xx
-   , XVar (UName n)     <- x
-   , n `elem` procnames
-   = xApps x (filter isTy args ++ filter (not . isTy) args)
-
-   | otherwise
-   = xx
-
-  isTy xx
-   | XType _ <- xx
-   = True
-   | otherwise
-   = False
 
 
 -- Clean ----------------------------------------------------------------------

@@ -5,8 +5,8 @@
 -- Fuse map into fill.
 :flow-lower..
 module Test with letrec
-map     [k : Rate] (v : Vector# Int#)
-        (s : Series# k Int#) : Process#
+map     [p : Proc] [k : Rate] (v : Vector# Int#)
+        (s : Series# p k k Int#) : Process# p k
  = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) s)
 ;;
 
@@ -14,8 +14,8 @@ map     [k : Rate] (v : Vector# Int#)
 -- Fuse map into fold.
 :flow-lower..
 module Test with letrec
-foldMap [k : Rate] (x : Ref# Int#)
-        (s : Series# k Int#) : Process#
+foldMap [p : Proc] [k : Rate] (x : Ref# Int#)
+        (s : Series# p k k Int#) : Process# p k
  = sreduce# x 
         add# 0i#
         (smap# (\x. mul# x 2i#) s)
@@ -25,8 +25,8 @@ foldMap [k : Rate] (x : Ref# Int#)
 -- Map/Map fusion, filling a vector.
 :flow-lower..
 module Test with letrec
-map     [k : Rate] (v : Vector# Int#)
-        (s : Series# k Int#) : Process#
+map     [p : Proc] [k : Rate] (v : Vector# Int#)
+        (s : Series# p k k Int#) : Process# p k
  = sfill# v
         (smap# (mul# 2i#)
                (smap1# (add# 1i#) 
@@ -37,8 +37,8 @@ map     [k : Rate] (v : Vector# Int#)
 -- Map and Reduce the same series.
 :flow-lower..
 module Test with letrec
-foldMap [k : Rate] (v : Vector# Int#) (x : Ref# Int#)
-        (s : Series# k Int#) : Process#
+foldMap [p : Proc] [k : Rate] (v : Vector# Int#) (x : Ref# Int#)
+        (s : Series# p k k Int#) : Process# p k
  = do   s2      = smap# (mul# 2i#) s
         s3      = smap# (add# 1i#) s2
         pjoin#  (sreduce# x add# 0i# s)

@@ -1,5 +1,9 @@
 :set lang Flow
 
+-- Primitve kinds
+:sort Rate
+:sort Proc
+
 -- Primitive type constructors
 :kind Int#
 :kind Nat#
@@ -32,6 +36,8 @@
 :kind RateNat#
 :kind Down4#
 :kind Down8#
+:kind RatePlus#
+:kind RateTimes#
 
 
 -- Primitive data constructors
@@ -48,12 +54,18 @@
 :type smap#
 :type spack#
 :type runProcess#
-:type runProcess2#
 :type sreduce#
 :type sfolds#
 :type sfill#
 :type sscatter#
 :type pjoin#
+:type ratify1#
+:type ratify2#
+:type series#
+:type sappend#
+:type scross#
+:type sinjectL#
+:type sinjectR#
 
 
 -- Series operators
@@ -70,8 +82,6 @@
 :type segment#
 :type guard#
 :type split$8#
-:type runKernel#
-:type runKernel2#
 
 
 -- Store operators

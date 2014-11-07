@@ -94,6 +94,7 @@ data Name
 -- | Fragment specific kind constructors.
 data KiConFlow
         = KiConFlowRate
+        | KiConFlowProc
         deriving (Eq, Ord, Show)
 
 
@@ -107,6 +108,9 @@ data TyConFlow
 
         -- | @Buffer#@ constructor. Mutable Buffer with no associated length
         | TyConFlowBuffer
+
+        -- | @RateVec#@ constructor. Vector is a pair of mutable length and mutable data
+        | TyConFlowRateVec
 
         -- | @Series#@ constructor. Series types.
         | TyConFlowSeries
@@ -125,6 +129,11 @@ data TyConFlow
 
         -- | @RateNat#@ constructor. Naturals witnessing a type-level Rate.          
         | TyConFlowRateNat
+
+        -- | Multiply two @Rate@s together
+        | TyConFlowRateTimes
+        -- | Add two @Rate@s together
+        | TyConFlowRatePlus
 
         -- | @DownN#@ constructor.   Rate decimation. 
         | TyConFlowDown Int
@@ -186,8 +195,27 @@ data OpSeries
         -- | Segmented fold.
         | OpSeriesFolds
 
-        -- | Convert vector(s) into series, all with same length with runtime check.
-        | OpSeriesRunProcess Int
+        -- | Execute a process
+        | OpSeriesRunProcess
+
+        -- | Convert vector(s) into manifests, all with same length with runtime check.
+        | OpSeriesRateVecsOfVectors Int
+
+        -- | Convert manifest into series
+        | OpSeriesSeriesOfRateVec
+
+        -- | Append two series
+        | OpSeriesAppend
+
+        -- | Cross a series and a vector
+        | OpSeriesCross
+
+
+        -- | Inject a series into the left side of a loop
+        | OpSeriesInjectLeft
+        -- | Inject a series into the right side of a loop
+        | OpSeriesInjectRight
+
 
         -- | Join two series processes.
         | OpSeriesJoin
@@ -216,9 +244,6 @@ data OpConcrete
 
         -- | Take the tail rate of a decimated series.
         | OpConcreteTail Int
-
-        -- | Convert Vectors to Series, and execute a kernel
-        | OpConcreteRunKernel Int
         deriving (Eq, Ord, Show)
 
 

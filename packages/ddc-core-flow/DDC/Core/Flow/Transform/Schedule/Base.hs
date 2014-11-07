@@ -3,17 +3,18 @@ module DDC.Core.Flow.Transform.Schedule.Base
         ( elemBindOfSeriesBind
         , elemBoundOfSeriesBound
         , elemTypeOfSeriesType
-        , rateTypeOfSeriesType
-        , slurpRateOfParams
+        , resultRateTypeOfSeriesType
+        , loopRateTypeOfSeriesType
+        , procTypeOfSeriesType
+
+        , rateTypeOfRateVecType
 
         , elemTypeOfVectorType
         , bufOfVectorName)
 where
-import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
-import Data.Maybe
 
 
 -- | Given the bind of a series,  produce the bound that refers to the
@@ -45,41 +46,59 @@ elemBoundOfSeriesBound uSeries
 --   of a single element, namely the @e@.
 elemTypeOfSeriesType :: TypeF -> Maybe TypeF
 elemTypeOfSeriesType tSeries'
-        | Just (_tcSeries, [_tK, tE]) <- takeTyConApps tSeries'
+        | Just (_tcSeries, [_tP, _tK, _tL, tE]) <- takeTyConApps tSeries'
         = Just tE
 
         | otherwise
         = Nothing
 
 
--- | Given the type of a series like @Series k e@, produce the type
---   of the rate, namely the @k@.
-rateTypeOfSeriesType :: TypeF -> Maybe TypeF
-rateTypeOfSeriesType tSeries'
+-- | Given the type of a series like @Series p k l e@, produce the type
+--   of the result rate, namely the @k@.
+resultRateTypeOfSeriesType :: TypeF -> Maybe TypeF
+resultRateTypeOfSeriesType tSeries'
         | isSeriesType tSeries'
-        , Just (_tcSeries, [tK, _tE]) <- takeTyConApps tSeries'
+        , Just (_tcSeries, [_tP, tK, _tL, _tE]) <- takeTyConApps tSeries'
+        = Just tK
+
+        | otherwise
+        = Nothing
+
+-- | Given the type of a series like @Series p k l e@, produce the type
+--   of the loop rate, namely the @l@.
+loopRateTypeOfSeriesType :: TypeF -> Maybe TypeF
+loopRateTypeOfSeriesType tSeries'
+        | isSeriesType tSeries'
+        , Just (_tcSeries, [_tP, _tK, tL, _tE]) <- takeTyConApps tSeries'
+        = Just tL
+
+        | otherwise
+        = Nothing
+
+-- | Given the type of a series like @Series p k l e@, produce the type
+--   of the process, namely the @p@
+procTypeOfSeriesType :: TypeF -> Maybe TypeF
+procTypeOfSeriesType tSeries'
+        | isSeriesType tSeries'
+        , Just (_tcSeries, [tP, _tK, _tL, _tE]) <- takeTyConApps tSeries'
+        = Just tP
+
+        | otherwise
+        = Nothing
+
+
+-- | Given the type of a rate-annotated vector like @RateVec k e@, produce the type
+--   of the rate, namely the @k@.
+rateTypeOfRateVecType :: TypeF -> Maybe TypeF
+rateTypeOfRateVecType tV'
+        | isRateVecType tV'
+        , Just (_tcV, [tK, _tE]) <- takeTyConApps tV'
         = Just tK
 
         | otherwise
         = Nothing
 
 
--- | Given the process parameters, 
---   yield the rate of the overall process.
-slurpRateOfParams :: [Bind Name] -> [Type Name] -> Either Error (Type Name)
-slurpRateOfParams bsTypeParams tsValueParams
- = let tKs = filter ((==kRate) . typeOfBind) bsTypeParams
-   in  case tKs of
-        []   -> Left ErrorNoRateParameters
-
-        (BName k _:_)
-             -> let tK = TVar (UName k) in
-                if   all (==tK)
-                   $ mapMaybe rateTypeOfSeriesType tsValueParams
-                then Right tK
-                else Left  ErrorMultipleRates
-
-        (_:_) ->     Left  ErrorMultipleRates
 
 
 -- Vector ---------------------------------------------------------------------

@@ -112,6 +112,9 @@ data Operator
           -- Rate of input and output series.
         , opInputRate           :: TypeF
 
+          -- Rate of input vector series.
+        , opVectorRate          :: TypeF
+
           -- Type of gathered elements.
         , opElemType            :: TypeF 
         }

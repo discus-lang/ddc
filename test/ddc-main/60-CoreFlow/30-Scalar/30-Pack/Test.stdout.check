@@ -5,16 +5,16 @@ ok
 -- Pack with an existing series of flags.
 module Test with
 letrec {
-  packMe : [k0 : Rate].[a : Data].Series# k0 a -> Vector# a -> Series# k0 Bool# -> Unit
-    = /\(k0 : Rate)./\(a : Data).
-       \(s : Series# k0 a).\(v : Vector# a).\(flags : Series# k0 Bool#).
+  packMe : [p : Proc].[k0 : Rate].[a : Data].Series# p k0 k0 a -> Vector# a -> Series# p k0 k0 Bool# -> Unit
+    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+       \(s : Series# p k0 k0 a).\(v : Vector# a).\(flags : Series# p k0 k0 Bool#).
       let v$buf = vbuf# [a] v in
       let k1$count = new# [Nat#] 0# in
       let _
             = loop# [k0]
                   (\(x0 : Nat#).
-                   let s$elem = next# [a] [k0] s x0 in
-                   let flags$elem = next# [Bool#] [k0] flags x0 in
+                   let s$elem = next# [a] [p] [k0] [k0] s x0 in
+                   let flags$elem = next# [Bool#] [p] [k0] [k0] flags x0 in
                    let _
                          = guard# k1$count flags$elem
                                (\(x1 : Nat#).
@@ -30,15 +30,15 @@ letrec {
 -- Filter, producing our own flags.
 module Test with
 letrec {
-  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Series# k0 a -> Unit
-    = /\(k0 : Rate)./\(a : Data).
-       \(f : a -> Bool#).\(v : Vector# a).\(s : Series# k0 a).
+  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Series# p k0 k0 a -> Unit
+    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(v : Vector# a).\(s : Series# p k0 k0 a).
       let v$buf = vbuf# [a] v in
       let k1$count = new# [Nat#] 0# in
       let _
             = loop# [k0]
                   (\(x1 : Nat#).
-                   let s$elem = next# [a] [k0] s x1 in
+                   let s$elem = next# [a] [p] [k0] [k0] s x1 in
                    let flags$elem = f s$elem in
                    let _
                          = guard# k1$count flags$elem
@@ -55,16 +55,16 @@ letrec {
 -- Filter, and also materialize the input in a new selector context.
 module Test with
 letrec {
-  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Vector# a -> Series# k0 a -> Unit
-    = /\(k0 : Rate)./\(a : Data).
-       \(f : a -> Bool#).\(v1 v2 : Vector# a).\(s : Series# k0 a).
+  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> Vector# a -> Series# p k0 k0 a -> Unit
+    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+       \(f : a -> Bool#).\(v1 v2 : Vector# a).\(s : Series# p k0 k0 a).
       let v1$buf = vbuf# [a] v1 in
       let v2$buf = vbuf# [a] v2 in
       let k1$count = new# [Nat#] 0# in
       let _
             = loop# [k0]
                   (\(x1 : Nat#).
-                   let s$elem = next# [a] [k0] s x1 in
+                   let s$elem = next# [a] [p] [k0] [k0] s x1 in
                    let flags$elem = f s$elem in
                    let _ = vwrite# [a] v1$buf x1 s$elem in
                    let _
@@ -83,16 +83,16 @@ letrec {
 -- Ensure we can handle nested selector contexts.
 module Test with
 letrec {
-  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Series# k0 a -> Unit
-    = /\(k0 : Rate)./\(a : Data).
-       \(f g : a -> Bool#).\(v : Vector# a).\(s0 : Series# k0 a).
+  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Series# p k0 k0 a -> Unit
+    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(v : Vector# a).\(s0 : Series# p k0 k0 a).
       let v$buf = vbuf# [a] v in
       let k1$count = new# [Nat#] 0# in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k0]
                   (\(x0 : Nat#).
-                   let s0$elem = next# [a] [k0] s0 x0 in
+                   let s0$elem = next# [a] [p] [k0] [k0] s0 x0 in
                    let flags1$elem = f s0$elem in
                    let _
                          = guard# k1$count flags1$elem
@@ -115,9 +115,9 @@ letrec {
 -- Ensure we can handle two selector contexts on the same input.
 module Test with
 letrec {
-  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Vector# a -> Series# k0 a -> Unit
-    = /\(k0 : Rate)./\(a : Data).
-       \(f g : a -> Bool#).\(v1 v2 : Vector# a).\(s0 : Series# k0 a).
+  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Vector# a -> Series# p k0 k0 a -> Unit
+    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(v1 v2 : Vector# a).\(s0 : Series# p k0 k0 a).
       let v1$buf = vbuf# [a] v1 in
       let v2$buf = vbuf# [a] v2 in
       let k1$count = new# [Nat#] 0# in
@@ -125,7 +125,7 @@ letrec {
       let _
             = loop# [k0]
                   (\(x1 : Nat#).
-                   let s0$elem = next# [a] [k0] s0 x1 in
+                   let s0$elem = next# [a] [p] [k0] [k0] s0 x1 in
                    let flags1$elem = f s0$elem in
                    let flags2$elem = f s0$elem in
                    let _

@@ -4,7 +4,7 @@
 -- | Single map over input series, writing into existing vector.
 :flow-lower..
 module Test with letrec
-test    [k : Rate] (v : Vector# Int#) 
-        (s : Series# k Int#) : Process#
+test    [p : Proc] [k : Rate] (v : Vector# Int#) 
+        (s : Series# p k k Int#) : Process# p k
  = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) s)
 ;;

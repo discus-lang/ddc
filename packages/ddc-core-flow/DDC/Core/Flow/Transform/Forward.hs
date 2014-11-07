@@ -3,8 +3,8 @@ module DDC.Core.Flow.Transform.Forward
 where
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.KiConFlow
+import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Module
@@ -27,7 +27,7 @@ forwardBind b xx
  -- If the result type of a top-level binding is a Process,
  -- we must prepare it for the lowering transform.
  -- Forward everything we can, while leaving series operators at the top.
- | snd (takeTFunAllArgResult $ typeOfBind b) == tProcess
+ | isProcessType $ snd $ takeTFunAllArgResult $ typeOfBind b
  = C.result $ Forward.forwardX profile conf_process xx
 
  -- Otherwise do minimal forwarding, except for pushing any rate-valued functions

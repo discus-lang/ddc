@@ -63,7 +63,8 @@ slurpProcessLet
 slurpProcessLet (BName n t) xx
 
  -- We assume that all type params come before the value params.
- | (snd $ takeTFunAllArgResult t) == tProcess
+ | Just (NameTyConFlow TyConFlowProcess, [tProc, tLoopRate])
+        <- takePrimTyConApps $ snd $ takeTFunAllArgResult t
  , Just (fbs, xBody)    <- takeXLamFlags xx
  = let  
         -- Split binders into type and value binders.
@@ -89,6 +90,8 @@ slurpProcessLet (BName n t) xx
         return  $ Left
                 $ Process
                 { processName          = n
+                , processProcType      = tProc
+                , processLoopRate      = tLoopRate
                 , processParamTypes    = bts
                 , processParamValues   = bvs
 
@@ -127,8 +130,8 @@ slurpProcessX tenv xx
 
         -- If this binding defined a process then add it do the environment.
         let tenv'
-                | typeOfBind b == tProcess = Env.extend b tenv
-                | otherwise                = tenv
+                | isProcessType $ typeOfBind b  = Env.extend b tenv
+                | otherwise                     = tenv
 
         -- Slurp the rest of the process using the new environment.
         (ctxMore, opsMore)      <- slurpProcessX tenv' xMore
@@ -141,12 +144,12 @@ slurpProcessX tenv xx
  -- The process ends with a variable that has Process# type.
  | XVar u       <- xx
  , Just t       <- Env.lookup u tenv
- , t == tProcess
+ , isProcessType t
  = return ([], [])                
 
  -- The process ends by joining two existing processes.
  -- We assume that the overall expression is well typed.
- | Just (NameOpSeries OpSeriesJoin, [_, _])     
+ | Just (NameOpSeries OpSeriesJoin, [_, _, _, _])
                 <- takeXPrimApps xx
  = return ([], [])
 
@@ -178,8 +181,8 @@ slurpBindingX tenv b1 xx
 
         -- If this binding defined a process then add it to the environement.
         let tenv'
-                | typeOfBind b2 == tProcess = Env.extend b2 tenv
-                | otherwise                 = tenv
+                | isProcessType $ typeOfBind b2 = Env.extend b2 tenv
+                | otherwise                     = tenv
 
         -- Slurp the rest of the process using the new environment.
         (ctxMore, opsMore)      <- slurpBindingX tenv' b1 xMore
@@ -193,7 +196,9 @@ slurpBindingX tenv b1 xx
 slurpBindingX tenv b 
  (   takeXPrimApps 
   -> Just ( NameOpSeries (OpSeriesMkSel 1)
-          , [ XType tK1
+          , [ XType tProc
+            , XType tK1
+            , XType tKL
             , XVar uFlags
             , XLAM (BName nR kR) (XLam bSel xBody)]))
  | kR == kRate
@@ -209,7 +214,7 @@ slurpBindingX tenv b
         let UName nFlags = uFlags
         let nFlagsUse   = NameVarMod nFlags "use"
         let uFlagsUse   = UName nFlagsUse
-        let bFlagsUse   = BName nFlagsUse (tSeries tK1 tBool)
+        let bFlagsUse   = BName nFlagsUse (tSeries tProc tK1 tKL tBool)
 
         let opId        = OpId
                         { opResultSeries        = bFlagsUse
@@ -231,7 +236,9 @@ slurpBindingX tenv b
 slurpBindingX tenv b
  (   takeXPrimApps 
   -> Just ( NameOpSeries OpSeriesMkSegd
-          , [ XType tK1
+          , [ XType tProc
+            , XType tK1
+            , XType tKL
             , XVar  uLens
             , XLAM  (BName nK2 kR) (XLam bSegd xBody)]))
  | kR == kRate
@@ -242,7 +249,7 @@ slurpBindingX tenv b
         let UName nLens = uLens
         let nLensUse    = NameVarMod nLens "use"
         let uLensUse    = UName nLensUse
-        let bLensUse    = BName nLensUse (tSeries tK1 tNat)
+        let bLensUse    = BName nLensUse (tSeries tProc tK1 tKL tNat)
 
         let opId        = OpId
                         { opResultSeries        = bLensUse
@@ -269,12 +276,12 @@ slurpBindingX tenv _ xx
  -- The process ends with a variable that has Process# type.
  | XVar u       <- xx
  , Just t       <- Env.lookup u tenv
- , t == tProcess
+ , isProcessType t
  = return ([], [])                
 
  -- The process ends by joining two existing processes.
  -- We assume that the overall expression is well typed.
- | Just (NameOpSeries OpSeriesJoin, [_, _])     
+ | Just (NameOpSeries OpSeriesJoin, [_, _, _, _])
                 <- takeXPrimApps xx
  = return ([], [])
 

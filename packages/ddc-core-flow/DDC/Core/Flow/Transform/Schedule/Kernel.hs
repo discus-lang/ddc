@@ -36,21 +36,12 @@ scheduleKernel :: Lifting -> Process -> Either Error Procedure
 scheduleKernel 
        lifting
        (Process { processName           = name
+                , processProcType       = proc
+                , processLoopRate       = rate
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
                 , processOperators      = operators })
  = do   
-        -- Check the parameter series all have the same rate.
-        tK      <- slurpRateOfParams bsParamTypes (map typeOfBind bsParamValues)
-
-        -- Check the primary rate variable matches the rates of the series.
-        (case bsParamTypes of
-          []            -> Left ErrorNoRateParameters
-          BName n k : _ 
-           | k == kRate
-           , TVar (UName n) == tK -> return ()
-          _             -> Left ErrorPrimaryRateMismatch)
-
         -- Lower rates of series parameters.
         let bsParamValues_lowered
                 = map (\(BName n t) 
@@ -68,14 +59,14 @@ scheduleKernel
         let c           = liftingFactor lifting
         let ssBody      = [ BodyStmt 
                                 (BName (NameVarMod nS "elem") tElem_lifted)
-                                (xNextC c tK tElem (XVar (UName nS)) (XVar uIndex))
+                                (xNextC c proc rate rate tElem (XVar (UName nS)) (XVar uIndex))
                                 | BName nS tS     <- bsSeries
                                 , let Just tElem        = elemTypeOfSeriesType tS 
                                 , let uIndex            = UIx 0 
                                 , let Just tElem_lifted = liftType lifting tElem ]
 
         let nest0       = NestLoop 
-                        { nestRate      = tDown c tK 
+                        { nestRate      = tDown c rate 
                         , nestStart     = []
                         , nestBody      = ssBody
                         , nestInner     = NestEmpty

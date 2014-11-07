@@ -111,7 +111,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameKiConFlow KiConFlowRate     -> Just sProp
+        NameKiConFlow _                 -> Just sProp
         NameTyConFlow tc                -> Just $ kindTyConFlow tc
         NamePrimTyCon tc                -> Just $ kindPrimTyCon tc
         _                               -> Nothing

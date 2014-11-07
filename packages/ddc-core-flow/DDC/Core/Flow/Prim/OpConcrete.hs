@@ -11,8 +11,7 @@ module DDC.Core.Flow.Prim.OpConcrete
         , xNextC
 
         , xDown
-        , xTail
-        , xRunKernel)
+        , xTail )
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -44,9 +43,6 @@ instance Pretty OpConcrete where
 
         OpConcreteDown n          -> text "down$"         <> int n <> text "#"
         OpConcreteTail n          -> text "tail$"         <> int n <> text "#"
-
-        OpConcreteRunKernel 1     -> text "runKernel"              <> text "#"
-        OpConcreteRunKernel n     -> text "runKernel"     <> int n <> text "#"
 
 
 -- | Read a series operator name.
@@ -86,19 +82,11 @@ readOpConcrete str
         , n >= 1
         = Just $ OpConcreteTail n
 
-        | Just rest     <- stripPrefix "runKernel" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n >= 1
-        = Just $ OpConcreteRunKernel n
-
         | otherwise
         = case str of
                 "rateOfSeries#" -> Just $ OpConcreteRateOfSeries
                 "natOfRateNat#" -> Just $ OpConcreteNatOfRateNat
                 "next#"         -> Just $ OpConcreteNext 1
-                "runKernel#"    -> Just $ OpConcreteRunKernel 1
                 _               -> Nothing
 
 
@@ -113,11 +101,11 @@ typeOpConcrete op
                         (TVar (UIx (a - ix)))
 
 
-        -- rateOfSeries#   :: [k : Rate]. [a : Data]
-        --                 .  Series k a -> RateNat k
+        -- rateOfSeries#   :: [p : Proc]. [k l : Rate]. [a : Data]
+        --                 .  Series p k l a -> RateNat k
         OpConcreteRateOfSeries 
-         -> tForalls [kRate, kData] $ \[tK, tA]
-                -> tSeries tK tA `tFun` tRateNat tK
+         -> tForalls [kProc, kRate, kRate, kData] $ \[tP, tKR, tKL, tA]
+                -> tSeries tP tKR tKL tA `tFun` tRateNat tKR
 
         -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
         OpConcreteNatOfRateNat 
@@ -126,57 +114,29 @@ typeOpConcrete op
 
         -- next#   :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
         OpConcreteNext 1
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries tK tA `tFun` tNat `tFun` tA
+         -> tForalls [kData, kProc, kRate, kRate]
+         $  \[tA, tP, tK, tL] -> tSeries tP tK tL tA `tFun` tNat `tFun` tA
 
         -- next$N# :: [a : Data]. [k : Rate]
         --         .  Series# (DownN# k) a -> Nat# -> VecN# a
         OpConcreteNext n
-         -> tForalls [kData, kRate]
-         $  \[tA, tK] -> tSeries (tDown n tK) tA `tFun` tNat `tFun` tVec n tA
+         -> tForalls [kData, kProc, kRate, kRate]
+         $  \[tA, tP, tK, tL] -> tSeries tP (tDown n tK) tL tA `tFun` tNat `tFun` tVec n tA
 
         -- down$N# :: [k : Rate]. [a : Data].
         --         .  RateNat (DownN# k) -> Series# k a -> Series# (DownN# k) a
         OpConcreteDown n
-         -> tForalls [kRate, kData]
-         $  \[tK, tA] -> tRateNat (tDown n tK) 
-                        `tFun` tSeries tK tA `tFun` tSeries (tDown n tK) tA
+         -> tForalls [kProc, kRate, kRate, kData]
+         $  \[tP, tK, tL, tA] -> tRateNat (tDown n tK) 
+                        `tFun` tSeries tP tK tL tA `tFun` tSeries tP (tDown n tK) tL tA
 
         -- tail$N# :: [k : Rate]. [a : Data].
         --         .  RateNat (TailN# k) -> Series# k a -> Series# (TailN# k) a
         OpConcreteTail n
-         -> tForalls [kRate, kData]
-         $  \[tK, tA] -> tRateNat (tTail n tK)
-                        `tFun` tSeries tK tA `tFun` tSeries (tTail n tK) tA
+         -> tForalls [kProc, kRate, kRate, kData]
+         $  \[tP, tK, tL, tA] -> tRateNat (tTail n tK)
+                        `tFun` tSeries tP tK tL tA `tFun` tSeries tP (tTail n tK) tL tA
 
-        -- runKernel0# :: 
-        --          .  Nat
-        --          -> ([k : Rate]. RateNat k -> Unit)
-        --          -> Bool
-        OpConcreteRunKernel 0
-         | tK         <- TVar (UIx 0)
-         , tWork      <- TForall (BAnon kRate)
-                       $ tRateNat tK `tFun` tUnit
-
-         -> tNat `tFun` tWork `tFun` tBool
-
-        -- runKernelN# :: [a0..aN : Data]
-        --          .  Vector    a0 .. Vector   aN 
-        --          -> ([k : Rate]. RateNat k -> Series k a0 .. Series k aN -> Unit)
-        --          -> Bool
-        OpConcreteRunKernel n
-         -> let tK     = TVar (UIx 0)
-                tWork  = foldr tFun tUnit
-                       $ [ tRateNat tK ]
-                       ++[ tSeries tK (TVar (UIx i))
-                                | i <- reverse [1..n] ]
-
-                tWork' = TForall (BAnon kRate) tWork
-                
-                tBody  = foldr tFun tBool
-                       $ [ tVector (TVar (UIx i)) | i <- reverse [0..n-1] ]
-                       ++[ tWork' ]
-            in  foldr TForall tBody [ BAnon k | k <- replicate n kData ]
 
 
 -- Compounds ------------------------------------------------------------------
@@ -189,10 +149,10 @@ xProj ts ix  x
                   ([XType t | t <- ts] ++ [x])
 
 
-xRateOfSeries :: TypeF -> TypeF -> ExpF -> ExpF
-xRateOfSeries tK tA xS 
+xRateOfSeries :: TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF
+xRateOfSeries tP tK tL tA xS 
          = xApps  (xVarOpConcrete OpConcreteRateOfSeries) 
-                  [XType tK, XType tA, xS]
+                  [XType tP, XType tK, XType tL, XType tA, xS]
 
 
 xNatOfRateNat :: TypeF -> ExpF -> ExpF
@@ -201,33 +161,29 @@ xNatOfRateNat tK xR
                  [XType tK, xR]
 
 
-xNext  :: TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xNext tRate tElem xStream xIndex
+xNext  :: TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xNext tProc tRate tRateLoop tElem xStream xIndex
  = xApps (xVarOpConcrete (OpConcreteNext 1))
-         [XType tElem, XType tRate, xStream, xIndex]
+         [XType tElem, XType tProc, XType tRate, XType tRateLoop, xStream, xIndex]
 
 
-xNextC :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xNextC c tRate tElem xStream xIndex
+xNextC :: Int -> TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xNextC c tProc tRate tRateLoop tElem xStream xIndex
  = xApps (xVarOpConcrete (OpConcreteNext c))
-         [XType tElem, XType tRate, xStream, xIndex]
+         [XType tElem, XType tProc, XType tRate, XType tRateLoop, xStream, xIndex]
 
 
-xDown  :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xDown n tR tE xRN xS
+xDown  :: Int -> TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xDown n tP tK tL tE xRN xS
  = xApps (xVarOpConcrete (OpConcreteDown n))
-         [XType tR, XType tE, xRN, xS]
+         [XType tP, XType tK, XType tL, XType tE, xRN, xS]
 
 
-xTail  :: Int -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xTail n tR tE xRN xS
+xTail  :: Int -> TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xTail n tP tK tL tE xRN xS
  = xApps (xVarOpConcrete (OpConcreteTail n))
-         [XType tR, XType tE, xRN, xS]
+         [XType tP, XType tK, XType tL, XType tE, xRN, xS]
 
-
-xRunKernel  :: Int -> ExpF
-xRunKernel n
- = xVarOpConcrete (OpConcreteRunKernel n)
 
 
 -- Utils -----------------------------------------------------------------------

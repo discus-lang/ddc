@@ -4,11 +4,12 @@
 -- Two folds over the same input series.
 :flow-prep..
 module Test with letrec
-test    [k : Rate]
+test    [p : Proc] [k : Rate]
         (u1 u2 : Ref# Int#)
-        (elems : Series# k Int#)
-        : Process#
- =      pjoin#  (sreduce#  [k] [Int#] u1 (add# [Int#]) 0i# elems)
-                (sreduce#  [k] [Int#] u2 (mul# [Int#]) 1i# elems)
+        (elems : Series# p k k Int#)
+        : Process# p k
+ =      pjoin#  [p] [k]
+                (sreduce#  [p] [k] [k] [Int#] u1 (add# [Int#]) 0i# elems)
+                (sreduce#  [p] [k] [k] [Int#] u2 (mul# [Int#]) 1i# elems)
 ;;
 

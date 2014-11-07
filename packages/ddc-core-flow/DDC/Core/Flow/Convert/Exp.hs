@@ -9,7 +9,7 @@ import DDC.Core.Flow.Convert.Base
 import DDC.Core.Flow.Convert.Type
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Control.Monad.Check                  (throw)
+-- import DDC.Control.Monad.Check                  (throw)
 import DDC.Type.Transform.LiftT
 
 import qualified DDC.Core.Flow.Prim             as F
@@ -66,37 +66,6 @@ convertX xx
     F.NameOpConcrete F.OpConcreteNatOfRateNat
      | [ _r, n ] <- xs
      -> convertX n
-
-    F.NameOpConcrete (F.OpConcreteRunKernel 0)
-     | [sz, proc]           <- xs
-     -> do  sz'     <- convertX sz
-            proc'   <- convertX proc
-            return
-               $ XLet anno (LLet (BNone tUnit)
-                           ( xApps anno proc' [sz']))
-                 true
-
-    -- runKernelN# [ty1]...[tyN] v1...vN proc
-    -- becomes
-    -- proc (length v1) (ptrOfVec v1) ... (ptrOfVec vN)
-    F.NameOpConcrete (F.OpConcreteRunKernel n)
-     | (xts, xs')           <- splitAt n xs
-     , Just ts              <- mapM takeXType xts
-     , (vs, [proc])         <- splitAt n xs'
-     -> do  vs'   <- mapM convertX    vs
-            ts'   <- mapM convertType ts
-
-            proc' <-      convertX    proc
-
-            case (vs',ts') of
-             ((v':_), (t':_))
-              -> return
-               $ XLet anno (LLet (BNone tUnit)
-                           ( xApps anno proc'
-                             (xVecLen t' v' : zipWith xVecPtr ts' vs')))
-                 true
-             (_, _)
-              -> throw $ ErrorNotSupported op
 
     F.NameOpConcrete (F.OpConcreteNext 1)
      | [t, _r, v, i] <- xs
@@ -182,6 +151,36 @@ convertX xx
                        , sz' ])
                (XCon anno $ DaConUnit)
 
+    F.NameOpSeries F.OpSeriesRunProcess
+     | [proc]               <- xs
+     -> do  proc'   <- convertX proc
+            return
+               $ XApp anno proc' $ XCon anno $ DaConUnit
+
+{-
+    -- runKernelN# [ty1]...[tyN] v1...vN proc
+    -- becomes
+    -- proc (length v1) (ptrOfVec v1) ... (ptrOfVec vN)
+    F.NameOpConcrete (F.OpConcreteRunKernel n)
+     | (xts, xs')           <- splitAt n xs
+     , Just ts              <- mapM takeXType xts
+     , (vs, [proc])         <- splitAt n xs'
+     -> do  vs'   <- mapM convertX    vs
+            ts'   <- mapM convertType ts
+
+            proc' <-      convertX    proc
+
+            case (vs',ts') of
+             ((v':_), (t':_))
+              -> return
+               $ XLet anno (LLet (BNone tUnit)
+                           ( xApps anno proc'
+                             (xVecLen t' v' : zipWith xVecPtr ts' vs')))
+                 true
+             (_, _)
+              -> throw $ ErrorNotSupported op
+-}
+
     _
      -> case takeXApps xx of
          Just (f,args) -> convertApp f args
@@ -243,7 +242,7 @@ convertX xx
 
   mk = prim anno
 
-  true = T.xBool anno True -- T.xNat anno 1
+  -- true = T.xBool anno True -- T.xNat anno 1
 
 prim anno n args
  = let t = T.typeOfPrim n
