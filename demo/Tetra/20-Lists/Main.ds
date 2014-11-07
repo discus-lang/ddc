@@ -11,12 +11,17 @@ export main
 -- | We assign the Console effect to computations that affect stdin or stdout.
 import foreign abstract type
  Console  : Effect
+ Ref      : Region ~> Data ~> Data
 
 -- | Import basic functions from C land.
 import foreign c value
  putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
  putStr   : [r : Region]. Ptr# r String# -> S Console Void#
  showNat  : [r : Region]. Nat#           -> Ptr# r String#
+
+ allocRef : [r : Region]. [a : Data]. a  -> S (Alloc r) (Ref r a)
+ readRef  : [r : Region]. [a : Data]. Ref r a -> S (Read r) a
+ writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Void#
 
 where
 
@@ -102,16 +107,16 @@ main (_ : Unit) : S Console Unit
         xx'     = run filterS (\(x : Nat#). box rem# x 2 == 0) xx
 
         -- Mutable reference to hold list length.
-        ref     = run allocRef# [r] 0
+        ref     = run allocRef [r] [Nat#] 0
 
         -- Eat the list, updating the mutable counter while printing
         -- the elements to the console.
         run forS xx' (\(x : Nat#).
-         box do run writeRef# ref ((run readRef# ref) + 1)
+         box do run writeRef ref ((run readRef ref) + 1)
                 run putStrLn (showNat [r] x)
                 ())
         
         -- Print out the final list length.
-        run putStrLn (showNat [r] (run readRef# ref))
+        run putStrLn (showNat [r] (run readRef ref))
         ()
 

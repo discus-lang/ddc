@@ -116,7 +116,7 @@ convertPrimCall _ectx ctx xx
                 -- Functional expression.
                 xF'             <- downArgX xF
 
-                -- Arguments and theit ypes.
+                -- Arguments and their ypes.
                 xsArg'          <- mapM downArgX xsArgs
                 tsArg'          <- mapM (convertValueT defs kenv) tsArg
 

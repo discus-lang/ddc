@@ -98,6 +98,10 @@ export value
   apply3            : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
   apply4            : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
 
+  allocRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+  writeRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+  readRef           : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+
 with letrec
 
 -- | Get the constructor tag of an object.
@@ -273,7 +277,7 @@ copyAvailOfThunk
 --   {    uint32_t  tagFormat;    // Constructor tag and format field.
 --        uint32_t  arity;        // Arity of the data constructor.
 --                                //  (The number of pointers in the payload)
---        ObjData      payload[];    
+--        ObjData   payload[];    
 --   } DataBoxed;
 --    
 allocBoxed
@@ -665,4 +669,22 @@ applyZ  [r : Region]
                                 argL3 argL2 argL1 argL0
 
          _      -> fail#
+
+
+-- Ref ------------------------------------------------------------------------
+-- | Allocate a new mutable reference to some boxed value.
+allocRef [r1 r2 : Region] (val : Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   ref     = allocBoxed [r2] (truncate# 0#) 1#
+        setFieldOfBoxed ref 0# val
+        ref
+
+
+-- | Write a value into a mutable reference.
+writeRef [r1 r2 : Region] (ref : Ptr# r1 Obj) (val : Ptr# r2 Obj) : Void#
+ =      setFieldOfBoxed ref 0# val
+
+
+-- | Read the value from a mutable reference.
+readRef  [r1 r2 : Region] (ref : Ptr# r1 Obj) : Ptr# r2 Obj
+ =      getFieldOfBoxed ref 0#
 

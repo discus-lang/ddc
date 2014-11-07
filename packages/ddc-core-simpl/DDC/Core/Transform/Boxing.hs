@@ -1,11 +1,11 @@
 -- | Manage representation of numeric values in a module.
 --
 --   We use three seprate versions of each numeric type.
---      Nat#            Numeric index type.
---      B# Nat#         Boxed representation type.
+--      Nat#            Numeric value type.
+--      B# Nat#         Boxed   representation type.
 --      U# Nat#         Unboxed representation type.
 --
---   A numeric index type is the type of pure values like 23#, where "pure value"
+--   A numeric value type is type of pure values like 23#, where "pure value"
 --   means the mathematical value, free from any considerations about how that 
 --   might be represented at runtime in the physical machine.
 --
@@ -15,10 +15,7 @@
 --
 --   The boxing transform takes an input program using just pure values and
 --   numeric index types, and refines it to a program that commits to particular
---   representations of those values. In particular, we commit to a particular
---   representation for function arguments and results, which makes the program
---   adhere to a function calling convention that follow-on transformations
---   to lower level languages (like Core Salt) can deal with.
+--   representations of those values. 
 --
 --   This Boxing transform should do  just enough to make the code well-formed
 --   with respect to runtime representation. Demand-driven optimisations like
@@ -26,23 +23,6 @@
 --
 --   We make the following representation commitments, so that the default
 --   representation is boxed.
---
---   Literal values are wrapped into their boxed representation:
---        23# 
---     => convert# [B# Nat#] [Nat#] 23#
---
---   Use unboxed versions of primitive operators:
---        add# [Nat#] x y 
---     => convert# [B# Nat#] [U# Nat#] 
---                 (add# [U# Nat#] (convert# [U# Nat#] [B# Nat#] x)
---                                 (convert# [U# Nat#] [B# Nat#] y))
---
---   Case scrutinees are unwrapped when matching against literal patterns:
---        case x of { 0# -> ... }
---     => case convert [B# Nat#] [Nat#] x of { 0# -> ... }
---
---   After performing this transformation the program is said
---   to "use representational types", or be in "representational form".
 --
 --  [Note: Boxing and Partial Application]
 --  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,11 +69,11 @@ data Rep
 
 data Config a n
         = Config
-        { -- | Values of this type needs boxing to make the program
+        { -- | Values of this type need boxing to make the program
           --   representational. This will only be passed types of kind Data.
-          configIsValueIndexType        :: Type n -> Bool
+          configIsValueType             :: Type n -> Bool
 
-          -- | Check if this is a boxed representation type.
+          -- | Check if this is a  boxed representation type.
         , configIsBoxedType             :: Type n -> Bool
 
           -- | Check if this is an unboxed representation type.
@@ -101,17 +81,17 @@ data Config a n
 
           -- | Get the boxed version of some data type, if any.
           --   This will only be passed types where typeNeedsBoxing returns True.
-        , configBoxedOfIndexType        :: Type n -> Maybe (Type n) 
+        , configBoxedOfValueType        :: Type n -> Maybe (Type n) 
 
           -- | Get the unboxed version of some data type, if any.
           --   This will only be passed types where typeNeedsBoxing returns True.
-        , configUnboxedOfIndexType      :: Type n -> Maybe (Type n) 
+        , configUnboxedOfValueType      :: Type n -> Maybe (Type n) 
 
           -- | Take the index type from a boxed type, if it is one.
-        , configIndexTypeOfBoxed        :: Type n -> Maybe (Type n)
+        , configValueTypeOfBoxed        :: Type n -> Maybe (Type n)
 
           -- | Take the index type from an unboxed type, if it is one.
-        , configIndexTypeOfUnboxed      :: Type n -> Maybe (Type n)
+        , configValueTypeOfUnboxed      :: Type n -> Maybe (Type n)
 
           -- | Take the type of a literal name, if there is one.
         , configValueTypeOfLitName      :: n -> Maybe (Type n)
@@ -241,7 +221,7 @@ instance Boxing Exp where
         XCon a dc
          |  Just dcn    <- takeNameOfDaCon dc
          ,  Just tLit   <- configValueTypeOfLitName config dcn
-         ,  configIsValueIndexType config tLit
+         ,  configIsValueType config tLit
          ,  Just xx'    <- configBoxedOfValue  config a xx tLit
          -> xx'
 
@@ -259,7 +239,7 @@ instance Boxing Exp where
                 -- For each type argument, if we know how to create the unboxed version
                 -- then do so. If this is wrong then the type checker will catch it later.
                 getTypeUnboxed t
-                 | Just t'      <- configUnboxedOfIndexType config t  
+                 | Just t'      <- configUnboxedOfValueType config t  
                                 = t'                
                  | otherwise    = t 
 
@@ -296,7 +276,7 @@ instance Boxing Exp where
         XCase a xScrut alts
          | p : _        <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
          , Just tLit    <- configValueTypeOfLitName config (daConName p)
-         , configIsValueIndexType config tLit
+         , configIsValueType config tLit
          , Just xScrut' <- configValueOfBoxed  config a (down xScrut) tLit
          -> XCase a xScrut' (map down alts)
 
@@ -316,12 +296,12 @@ instance Boxing Exp where
 -- | Box an expression that produces a value.
 boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 boxExp config a t xx
-        | configIsValueIndexType config t
+        | configIsValueType config t
         , Just x'      <- configBoxedOfUnboxed config a xx t
         = x'
 
         | configIsUnboxedType config t
-        , Just tIdx    <- configIndexTypeOfUnboxed config t
+        , Just tIdx    <- configValueTypeOfUnboxed config t
         , Just x'      <- configBoxedOfUnboxed config a xx tIdx
         = x'
 
@@ -332,12 +312,12 @@ boxExp config a t xx
 -- | Unbox an expression that produces a boxed value.
 unboxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 unboxExp config a t xx
-        | configIsValueIndexType config t
+        | configIsValueType config t
         , Just x'      <- configUnboxedOfBoxed     config a xx t
         = x'
 
         | configIsUnboxedType config t
-        , Just tIdx    <- configIndexTypeOfUnboxed config t
+        , Just tIdx    <- configValueTypeOfUnboxed config t
         , Just x'      <- configUnboxedOfBoxed     config a xx tIdx
         = x'
 
@@ -415,8 +395,8 @@ boxingB config bb
 -- | Manage boxing in a Type.
 boxingT :: Config a n -> Type n -> Type n
 boxingT config tt
-  | configIsValueIndexType config tt
-  , Just tResult        <- configBoxedOfIndexType config tt
+  | configIsValueType config tt
+  , Just tResult        <- configBoxedOfValueType config tt
   = tResult
 
   | otherwise
@@ -432,8 +412,8 @@ boxingT config tt
 -- | Manage boxing in the type of a C value.
 boxingSeaT :: Config a n -> Type n -> Type n
 boxingSeaT config tt
-  | configIsValueIndexType config tt
-  , Just tResult        <- configUnboxedOfIndexType config tt
+  | configIsValueType config tt
+  , Just tResult        <- configUnboxedOfValueType config tt
   = tResult
 
   | otherwise
