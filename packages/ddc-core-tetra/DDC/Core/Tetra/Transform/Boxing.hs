@@ -20,14 +20,11 @@ config :: Config a Name
 config  = Config
         { configRepOfType               = repOfType
         , configConvertRepType          = convertRepType
+        , configConvertRepExp           = convertRepExp
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
         , configValueTypeOfLitName      = takeTypeOfLitName
         , configValueTypeOfPrimOpName   = takeTypeOfPrimOpName
-        , configValueTypeOfForeignName  = const Nothing
-        , configBoxedOfValue            = boxedOfValue
-        , configValueOfBoxed            = valueOfBoxed
-        , configBoxedOfUnboxed          = boxedOfUnboxed
-        , configUnboxedOfBoxed          = unboxedOfBoxed }
+        , configValueTypeOfForeignName  = const Nothing }
 
 
 -- | Get the representation of a given type.
@@ -78,7 +75,6 @@ repOfType tt
 
 -- | Get the type for a different representation of the given one.
 convertRepType :: Rep -> Type Name -> Maybe (Type Name)
-
 convertRepType RepValue tt
         -- Produce the value type from a boxed one.
         | Just (n, [t]) <- takePrimTyConApps tt
@@ -89,7 +85,6 @@ convertRepType RepValue tt
         | Just (n, [t]) <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraU    <- n
         = Just t
-
 
 convertRepType RepBoxed tt
         -- Produce the boxed version of a value type.
@@ -114,6 +109,16 @@ convertRepType _ _
         = Nothing
 
 
+-- | Convert an expression from one representation to another.
+convertRepExp :: Rep -> a -> Type Name -> Exp a Name -> Maybe (Exp a Name)
+convertRepExp rep a tSource xx
+        | Just tResult  <- convertRepType rep tSource
+        = Just $ xCastConvert a tSource tResult xx
+
+        | otherwise
+        = Nothing
+
+
 -- | Check if the primitive operator with this name takes unboxed values
 --   directly.
 isNameOfUnboxedOp :: Name -> Bool
@@ -122,42 +127,4 @@ isNameOfUnboxedOp nn
         NamePrimArith{} -> True
         NamePrimCast{}  -> True
         _               -> False
-
-
--- | Wrap a pure value into its boxed representation.
-boxedOfValue :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
-boxedOfValue a xx tt
-        | Just tBx      <- convertRepType RepBoxed tt
-        = Just $ xCastConvert a tt tBx xx
-
-        | otherwise     = Nothing
-
-
--- | Unwrap a boxed value.
-valueOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
-valueOfBoxed a xx tt
-        | Just tBx      <- convertRepType RepBoxed tt
-        = Just $ xCastConvert a tBx tt xx
-
-        | otherwise     = Nothing
-
-
--- | Box an expression of the given type.
-boxedOfUnboxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
-boxedOfUnboxed a xx tt
-        | Just tBx      <- convertRepType RepBoxed   tt
-        , Just tUx      <- convertRepType RepUnboxed tt
-        = Just $ xCastConvert a tUx tBx xx
-
-        | otherwise     = Nothing
-
-
--- | Unbox an expression of the given type.
-unboxedOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
-unboxedOfBoxed a xx tt
-        | Just tBx      <- convertRepType RepBoxed   tt 
-        , Just tUx      <- convertRepType RepUnboxed tt
-        = Just $ xCastConvert a tBx tUx xx
-
-        | otherwise     = Nothing
 
