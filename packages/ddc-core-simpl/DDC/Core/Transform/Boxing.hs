@@ -46,38 +46,30 @@ import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.Instantiate
-import DDC.Type.DataDef
-import Control.Monad
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Representation of the values of some type.
 data Rep
-        -- | Values of this type cannot be directly represented in the target
-        --   language. We need to use a boxed or unboxed representation instead.
+        -- | These types don't contain any values.
         = RepNone
 
-        -- | Type is represented in boxed form,
-        --   and thus can instantiate polymorphic types.
+        -- | Values of this type are uncomitted to a particular representation,
+        --   they just describe a set of logical values.
+        | RepValue
+
+        -- | Values of this type are represented in boxed form.
         | RepBoxed     
 
-        -- | Type is represented in unboxed form,
-        --   and thus cannot instantiate polymorphic types.
+        -- | Values of this type are represented in unboxed form.
         | RepUnboxed
         deriving (Eq, Ord, Show)
 
 
 data Config a n
         = Config
-        { -- | Values of this type need boxing to make the program
-          --   representational. This will only be passed types of kind Data.
-          configIsValueType             :: Type n -> Bool
-
-          -- | Check if this is a  boxed representation type.
-        , configIsBoxedType             :: Type n -> Bool
-
-          -- | Check if this is an unboxed representation type.
-        , configIsUnboxedType           :: Type n -> Bool
+        { -- | Get the representation of this type.
+          configRepOfType               :: Type n -> Maybe Rep
 
           -- | Get the boxed version of some data type, if any.
           --   This will only be passed types where typeNeedsBoxing returns True.
@@ -138,77 +130,7 @@ class Boxing (c :: * -> * -> *) where
 -- Module -----------------------------------------------------------------------------------------
 instance Boxing Module where
  boxing config mm
-  = let 
-        -- Handle boxing in the types of exported values.
-        exportValues'
-         = map (boxingExportValue config) $ moduleExportValues mm
-         
-        -- Handle boxing in the types of imported values.
-        importValues'
-         = map (boxingImportValue config) $ moduleImportValues mm
-
-        -- Add locally imported foreign functions to the foreign function detector.
-        --  We want the original type here, before it has been passed through
-        --  the boxing transform.
-        typeOfForeignName n
-         -- The provided config already says this is foreign.
-         | Just t       <- configValueTypeOfForeignName config n  
-         = Just t
-
-         -- This is a locally imported C function.
-         | Just (ImportSourceSea _ t)
-                        <- lookup n (moduleImportValues mm)  
-         = Just t
-
-         | otherwise
-         = Nothing
-
-        -- Use our new foreign function detector in the config.
-        config'
-         = config
-         { configValueTypeOfForeignName  = typeOfForeignName }
-
-        -- Do the boxing transform.
-    in  mm  { moduleBody            = boxing config' (moduleBody mm) 
-            , moduleExportValues    = exportValues'
-            , moduleImportValues    = importValues'
-            , moduleDataDefsLocal   = map (boxingDataDef config') (moduleDataDefsLocal mm) }
-
-
--- | Manage boxing in the type of an exported value.
-boxingExportValue
-        :: Config a n
-        -> (n, ExportSource n)
-        -> (n, ExportSource n)
-
-boxingExportValue config (n, esrc)
- = case esrc of
-        ExportSourceLocal n' t
-         -> (n, ExportSourceLocal n' (boxingT config t))
-
-        ExportSourceLocalNoType{}
-         -> (n, esrc)
-
-
--- | Manage boxing in the type of an imported value.
-boxingImportValue 
-        :: Config a n
-        -> (n, ImportSource n)
-        -> (n, ImportSource n)
-
-boxingImportValue config (n, isrc)
- = case isrc of
-        -- This shouldn't happen for values, but just pass it through.
-        ImportSourceAbstract _
-         -> (n, isrc)
-
-        -- Function imported from a DDC compiled module.
-        ImportSourceModule mn n' t
-         -> (n, ImportSourceModule mn n' (boxingT config t))
-
-        -- Value imported using the standard C calling convention.
-        ImportSourceSea str t
-         -> (n, ImportSourceSea str (boxingSeaT config t))
+  = mm  { moduleBody            = boxing config (moduleBody mm) }  
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -216,14 +138,6 @@ instance Boxing Exp where
  boxing config xx
   = let down = boxing config
     in case xx of
-
-        -- Convert literals to their boxed representations.
-        XCon a dc
-         |  Just dcn    <- takeNameOfDaCon dc
-         ,  Just tLit   <- configValueTypeOfLitName config dcn
-         ,  configIsValueType config tLit
-         ,  Just xx'    <- configBoxedOfValue  config a xx tLit
-         -> xx'
 
         -- When applying a primop that works on unboxed values, 
         -- unbox its arguments and then rebox the result.
@@ -272,37 +186,29 @@ instance Boxing Exp where
                                                         | a' <- asArgs]
                                                 ++ xsArgs')
 
-        -- Unrap scrutinees when matching against literal patterns.
-        XCase a xScrut alts
-         | p : _        <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
-         , Just tLit    <- configValueTypeOfLitName config (daConName p)
-         , configIsValueType config tLit
-         , Just xScrut' <- configValueOfBoxed  config a (down xScrut) tLit
-         -> XCase a xScrut' (map down alts)
-
         -- Boilerplate
         XVar{}          -> xx
         XCon{}          -> xx
         XLAM a b x      -> XLAM  a b (down x)
-        XLam a b x      -> XLam  a (boxingB config b) (down x)
-        XApp a x1 x2    -> XApp  a (down x1)  (down x2)
-        XLet a lts x    -> XLet  a (down lts) (down x)
-        XCase a x alts  -> XCase a (down x)   (map down alts)
+        XLam a b x      -> XLam  a b (down x)
+        XApp a x1 x2    -> XApp  a   (down x1)  (down x2)
+        XLet a lts x    -> XLet  a   (down lts) (down x)
+        XCase a x alts  -> XCase a   (down x)   (map down alts)
         XCast a c x     -> XCast a c (down x)
-        XType a t       -> XType a (boxingT config t)
+        XType a t       -> XType a t 
         XWitness{}      -> xx
 
 
 -- | Box an expression that produces a value.
 boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 boxExp config a t xx
-        | configIsValueType config t
-        , Just x'      <- configBoxedOfUnboxed config a xx t
+        | Just RepValue <- configRepOfType config t
+        , Just x'       <- configBoxedOfUnboxed config a xx t
         = x'
 
-        | configIsUnboxedType config t
-        , Just tIdx    <- configValueTypeOfUnboxed config t
-        , Just x'      <- configBoxedOfUnboxed config a xx tIdx
+        | Just RepUnboxed <- configRepOfType config t
+        , Just tIdx     <- configValueTypeOfUnboxed config t
+        , Just x'       <- configBoxedOfUnboxed config a xx tIdx
         = x'
 
         | otherwise
@@ -312,13 +218,13 @@ boxExp config a t xx
 -- | Unbox an expression that produces a boxed value.
 unboxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 unboxExp config a t xx
-        | configIsValueType config t
-        , Just x'      <- configUnboxedOfBoxed     config a xx t
+        | Just RepValue <- configRepOfType config t
+        , Just x'       <- configUnboxedOfBoxed     config a xx t
         = x'
 
-        | configIsUnboxedType config t
-        , Just tIdx    <- configValueTypeOfUnboxed config t
-        , Just x'      <- configUnboxedOfBoxed     config a xx tIdx
+        | Just RepBoxed <- configRepOfType config t
+        , Just tIdx     <- configValueTypeOfUnboxed config t
+        , Just x'       <- configUnboxedOfBoxed     config a xx tIdx
         = x'
 
         | otherwise
@@ -357,16 +263,8 @@ instance Boxing Lets where
  boxing config lts
   = let down    = boxing config
     in case lts of
-        LLet b x
-         -> let b'      = boxingB config b
-                x'      = down x
-            in  LLet b' x'
-
-        LRec bxs
-         -> let bxs'    = [(boxingB config b, down x) 
-                                | (b, x) <- bxs]
-            in  LRec bxs'
-
+        LLet b x        -> LLet b (down x)
+        LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
         LPrivate{}      -> lts
         LWithRegion{}   -> lts
 
@@ -379,61 +277,5 @@ instance Boxing Alt where
          -> AAlt PDefault (boxing config x)
 
         AAlt (PData dc bs) x
-         -> AAlt (PData dc (map (boxingB config) bs)) (boxing config x)
+         -> AAlt (PData dc bs) (boxing config x)
 
-
----------------------------------------------------------------------------------------------------
--- | Manage boxing in a Bind.
-boxingB :: Config a n -> Bind n -> Bind n
-boxingB config bb
- = case bb of
-        BAnon t         -> BAnon   (boxingT config t)
-        BName n t       -> BName n (boxingT config t)
-        BNone t         -> BNone   (boxingT config t)
-
-
--- | Manage boxing in a Type.
-boxingT :: Config a n -> Type n -> Type n
-boxingT config tt
-  | configIsValueType config tt
-  , Just tResult        <- configBoxedOfValueType config tt
-  = tResult
-
-  | otherwise
-  = let down = boxingT config
-    in case tt of
-        TVar{}          -> tt
-        TCon{}          -> tt
-        TForall b t     -> TForall b (down t)
-        TApp t1 t2      -> TApp (down t1) (down t2)
-        TSum{}          -> tt
-
-
--- | Manage boxing in the type of a C value.
-boxingSeaT :: Config a n -> Type n -> Type n
-boxingSeaT config tt
-  | configIsValueType config tt
-  , Just tResult        <- configUnboxedOfValueType config tt
-  = tResult
-
-  | otherwise
-  = let down = boxingSeaT config
-    in case tt of
-        TVar{}          -> tt
-        TCon{}          -> tt
-        TForall b t     -> TForall b (down t)
-        TApp t1 t2      -> TApp (down t1) (down t2)
-        TSum{}          -> tt
-
--- | Manage boxing in a data type definition.
-boxingDataDef :: Config a n -> DataDef n -> DataDef n
-boxingDataDef config def@DataDef{}
-        = def { dataDefCtors = liftM (map (boxingDataCtor config)) (dataDefCtors def) }
-
-
--- | Manage boxing in a data constructor definition.
-boxingDataCtor :: Config a n -> DataCtor n -> DataCtor n    
-boxingDataCtor config ctor@DataCtor{}
-        = ctor 
-        { dataCtorFieldTypes   = map (boxingT config) (dataCtorFieldTypes ctor)
-        , dataCtorResultType   = boxingT config (dataCtorResultType ctor) }

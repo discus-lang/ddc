@@ -18,9 +18,7 @@ boxingModule mm
 -- | Tetra-specific configuration for boxing transform.
 config :: Config a Name
 config  = Config
-        { configIsValueType             = isValueType
-        , configIsBoxedType             = isBoxedType
-        , configIsUnboxedType           = isUnboxedType
+        { configRepOfType               = repOfType
         , configBoxedOfValueType        = boxedOfValueType
         , configUnboxedOfValueType      = unboxedOfValueType
         , configValueTypeOfBoxed        = valueTypeOfBoxed
@@ -35,65 +33,50 @@ config  = Config
         , configUnboxedOfBoxed          = unboxedOfBoxed }
 
 
--- | Check whether a value of this type needs boxing to make the 
---   program representational.
-isValueType :: Type Name -> Bool
-isValueType tt
-        -- These types are listed out in full so anyone who adds more 
-        -- constructors to the PrimTyCon type is forced to say whether
-        -- those types refer to unboxed values or not.
-        --
+-- | Get the representation of a given type.
+repOfType :: Type Name -> Maybe Rep
+repOfType tt
+        -- These types are listed out in full so anyone who adds more
+        -- constructors to the PrimTyCon type is forced to specify what
+        -- the representation is.
         | Just (NamePrimTyCon n, _)     <- takePrimTyConApps tt
         = case n of
-                -- There should never be any value of type Void# being passed
-                -- around, but say they don't need boxing anyway so we don't 
-                -- complicate an already broken program.
-                PrimTyConVoid           -> False
+                PrimTyConVoid           -> Just RepNone
 
-                PrimTyConBool           -> True
-                PrimTyConNat            -> True
-                PrimTyConInt            -> True
-                PrimTyConWord{}         -> True
-                PrimTyConFloat{}        -> True
-                PrimTyConVec{}          -> True
-                PrimTyConAddr{}         -> True
-                PrimTyConPtr{}          -> True
-                PrimTyConTag{}          -> True
-                PrimTyConString{}       -> True
+                PrimTyConBool           -> Just RepValue
+                PrimTyConNat            -> Just RepValue
+                PrimTyConInt            -> Just RepValue
+                PrimTyConWord{}         -> Just RepValue
+                PrimTyConFloat{}        -> Just RepValue
+                PrimTyConVec{}          -> Just RepValue
+                PrimTyConAddr{}         -> Just RepValue
+                PrimTyConPtr{}          -> Just RepValue
+                PrimTyConTag{}          -> Just RepValue
+                PrimTyConString{}       -> Just RepValue
 
         -- These are all higher-kinded type constructors,
-        -- with don't have a value-level representation.
+        -- which don't have any associated values.
         | Just (NameTyConTetra n, _)    <- takePrimTyConApps tt
         = case n of
-                TyConTetraRef{}         -> False
-                TyConTetraTuple{}       -> False
-                TyConTetraB{}           -> False
-                TyConTetraU{}           -> False
-                TyConTetraF{}           -> False
-                TyConTetraC{}           -> False
+                TyConTetraRef{}         -> Just RepNone
+                TyConTetraTuple{}       -> Just RepNone
+                TyConTetraB{}           -> Just RepNone
+                TyConTetraU{}           -> Just RepNone
+                TyConTetraF{}           -> Just RepNone
+                TyConTetraC{}           -> Just RepNone
 
-        | otherwise
-        = False
-
-
--- | Check whether this is a boxed representation type.
-isBoxedType :: Type Name -> Bool
-isBoxedType tt
+        -- Explicitly boxed things.
         | Just (n, _)   <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraB    <- n
-        = True
+        = Just RepBoxed
 
-        | otherwise = False
-
-
--- | Check whether this is a boxed representation type.
-isUnboxedType :: Type Name -> Bool
-isUnboxedType tt
+        -- Explicitly unboxed things.
         | Just (n, _)   <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraU    <- n
-        = True
+        = Just RepUnboxed
 
-        | otherwise = False
+        | otherwise
+        = Nothing
 
 
 -- | Take the index type from a boxed type, if it is one.
