@@ -71,19 +71,8 @@ data Config a n
         { -- | Get the representation of this type.
           configRepOfType               :: Type n -> Maybe Rep
 
-          -- | Get the boxed version of some data type, if any.
-          --   This will only be passed types where typeNeedsBoxing returns True.
-        , configBoxedOfValueType        :: Type n -> Maybe (Type n) 
-
-          -- | Get the unboxed version of some data type, if any.
-          --   This will only be passed types where typeNeedsBoxing returns True.
-        , configUnboxedOfValueType      :: Type n -> Maybe (Type n) 
-
-          -- | Take the index type from a boxed type, if it is one.
-        , configValueTypeOfBoxed        :: Type n -> Maybe (Type n)
-
-          -- | Take the index type from an unboxed type, if it is one.
-        , configValueTypeOfUnboxed      :: Type n -> Maybe (Type n)
+          -- | Get the type for a different representation of the given one.
+        , configConvertRepType          :: Rep -> Type n -> Maybe (Type n)
 
           -- | Take the type of a literal name, if there is one.
         , configValueTypeOfLitName      :: n -> Maybe (Type n)
@@ -153,7 +142,7 @@ instance Boxing Exp where
                 -- For each type argument, if we know how to create the unboxed version
                 -- then do so. If this is wrong then the type checker will catch it later.
                 getTypeUnboxed t
-                 | Just t'      <- configUnboxedOfValueType config t  
+                 | Just t'      <- configConvertRepType config RepUnboxed t  
                                 = t'                
                  | otherwise    = t 
 
@@ -202,12 +191,12 @@ instance Boxing Exp where
 -- | Box an expression that produces a value.
 boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
 boxExp config a t xx
-        | Just RepValue <- configRepOfType config t
-        , Just x'       <- configBoxedOfUnboxed config a xx t
+        | Just RepValue <- configRepOfType    config t
+        , Just x'       <- configValueOfBoxed config a xx t
         = x'
 
         | Just RepUnboxed <- configRepOfType config t
-        , Just tIdx     <- configValueTypeOfUnboxed config t
+        , Just tIdx     <- configConvertRepType config RepValue t
         , Just x'       <- configBoxedOfUnboxed config a xx tIdx
         = x'
 
@@ -222,9 +211,9 @@ unboxExp config a t xx
         , Just x'       <- configUnboxedOfBoxed     config a xx t
         = x'
 
-        | Just RepBoxed <- configRepOfType config t
-        , Just tIdx     <- configValueTypeOfUnboxed config t
-        , Just x'       <- configUnboxedOfBoxed     config a xx tIdx
+        | Just RepBoxed <- configRepOfType      config t
+        , Just tIdx     <- configConvertRepType config RepValue t
+        , Just x'       <- configUnboxedOfBoxed config a xx tIdx
         = x'
 
         | otherwise

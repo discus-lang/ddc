@@ -19,10 +19,7 @@ boxingModule mm
 config :: Config a Name
 config  = Config
         { configRepOfType               = repOfType
-        , configBoxedOfValueType        = boxedOfValueType
-        , configUnboxedOfValueType      = unboxedOfValueType
-        , configValueTypeOfBoxed        = valueTypeOfBoxed
-        , configValueTypeOfUnboxed      = valueTypeOfUnboxed
+        , configConvertRepType          = convertRepType
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
         , configValueTypeOfLitName      = takeTypeOfLitName
         , configValueTypeOfPrimOpName   = takeTypeOfPrimOpName
@@ -79,31 +76,23 @@ repOfType tt
         = Nothing
 
 
--- | Take the index type from a boxed type, if it is one.
-valueTypeOfBoxed :: Type Name -> Maybe (Type Name)
-valueTypeOfBoxed tt
+-- | Get the type for a different representation of the given one.
+convertRepType :: Rep -> Type Name -> Maybe (Type Name)
+
+convertRepType RepValue tt
+        -- Produce the value type from a boxed one.
         | Just (n, [t]) <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraB    <- n
         = Just t
 
-        | otherwise
-        = Nothing
-
-
--- | Take the index type from an unboxed type, if it is one.
-valueTypeOfUnboxed :: Type Name -> Maybe (Type Name)
-valueTypeOfUnboxed tt
+        -- Produce the value type from an unboxed one.
         | Just (n, [t]) <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraU    <- n
         = Just t
 
-        | otherwise
-        = Nothing
 
-
--- | Get the boxed version of some type of kind Data.
-boxedOfValueType :: Type Name -> Maybe (Type Name)
-boxedOfValueType tt
+convertRepType RepBoxed tt
+        -- Produce the boxed version of a value type.
         | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tBoxed tBool
@@ -112,12 +101,7 @@ boxedOfValueType tt
                 PrimTyConWord  bits     -> Just $ tBoxed (tWord  bits)
                 _                       -> Nothing
 
-        | otherwise     = Nothing
-
-
--- | Get the unboxed version of some type of kind Data.
-unboxedOfValueType :: Type Name -> Maybe (Type Name)
-unboxedOfValueType tt
+        -- Produce the unbxed version of a value type.
         | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tUnboxed tBool
@@ -126,7 +110,8 @@ unboxedOfValueType tt
                 PrimTyConWord  bits     -> Just $ tUnboxed (tWord  bits)
                 _                       -> Nothing
 
-        | otherwise     = Nothing
+convertRepType _ _
+        = Nothing
 
 
 -- | Check if the primitive operator with this name takes unboxed values
@@ -142,7 +127,7 @@ isNameOfUnboxedOp nn
 -- | Wrap a pure value into its boxed representation.
 boxedOfValue :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 boxedOfValue a xx tt
-        | Just tBx      <- boxedOfValueType tt
+        | Just tBx      <- convertRepType RepBoxed tt
         = Just $ xCastConvert a tt tBx xx
 
         | otherwise     = Nothing
@@ -151,7 +136,7 @@ boxedOfValue a xx tt
 -- | Unwrap a boxed value.
 valueOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 valueOfBoxed a xx tt
-        | Just tBx      <- boxedOfValueType tt
+        | Just tBx      <- convertRepType RepBoxed tt
         = Just $ xCastConvert a tBx tt xx
 
         | otherwise     = Nothing
@@ -160,8 +145,8 @@ valueOfBoxed a xx tt
 -- | Box an expression of the given type.
 boxedOfUnboxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 boxedOfUnboxed a xx tt
-        | Just tBx      <- boxedOfValueType tt
-        , Just tUx      <- unboxedOfValueType tt
+        | Just tBx      <- convertRepType RepBoxed   tt
+        , Just tUx      <- convertRepType RepUnboxed tt
         = Just $ xCastConvert a tUx tBx xx
 
         | otherwise     = Nothing
@@ -170,8 +155,8 @@ boxedOfUnboxed a xx tt
 -- | Unbox an expression of the given type.
 unboxedOfBoxed :: a -> Exp a Name -> Type Name -> Maybe (Exp a Name)
 unboxedOfBoxed a xx tt
-        | Just tBx      <- boxedOfValueType tt
-        , Just tUx      <- unboxedOfValueType tt
+        | Just tBx      <- convertRepType RepBoxed   tt 
+        , Just tUx      <- convertRepType RepUnboxed tt
         = Just $ xCastConvert a tBx tUx xx
 
         | otherwise     = Nothing
