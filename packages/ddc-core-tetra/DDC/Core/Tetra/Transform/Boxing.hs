@@ -96,7 +96,8 @@ convertRepType RepBoxed tt
                 PrimTyConWord  bits     -> Just $ tBoxed (tWord  bits)
                 _                       -> Nothing
 
-        -- Produce the unbxed version of a value type.
+convertRepType RepUnboxed tt
+        -- Produce the unboxed version of a value type.
         | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tUnboxed tBool

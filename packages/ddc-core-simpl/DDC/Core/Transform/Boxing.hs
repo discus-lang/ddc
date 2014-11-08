@@ -46,7 +46,7 @@ import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.Instantiate
-
+import Data.Maybe
 
 ---------------------------------------------------------------------------------------------------
 -- | Representation of the values of some type.
@@ -119,50 +119,43 @@ instance Boxing Exp where
 
         -- When applying a primop that works on unboxed values, 
         -- unbox its arguments and then rebox the result.
-        XApp a x1 x2
+        XApp a _ _
          -- Split the application of a primop into its name and arguments.
          -- The arguments here include type arguments as well.
-         | Just (xFn, tPrim, xsArgsAll) 
-                <- splitUnboxedOpApp config xx
-         -> let 
-                -- Split off the type arguments.
-                (asArgs, tsArgs) = unzip $ [(a', t) | XType a' t <- xsArgsAll]
-                
-                -- For each type argument, if we know how to create the unboxed version
-                -- then do so. If this is wrong then the type checker will catch it later.
-                getTypeUnboxed t
-                 | Just t'      <- configConvertRepType config RepUnboxed t  
-                                = t'                
-                 | otherwise    = t 
+         | Just (xFn, tPrim, xsArgsAll) <- splitUnboxedOpApp config xx
 
-                tsArgsUnboxed   = map getTypeUnboxed tsArgs
-                
-                -- Instantiate the type to work out which arguments need to be unboxed,
-                -- and which we can leave as-is. 
-                Just tPrimInstUnboxed   = instantiateTs tPrim tsArgsUnboxed
-                (tsArgsInstUnboxed, tResultInstUnboxed)
-                                        = takeTFunArgResult tPrimInstUnboxed
+         -- Split off the type args.
+         , (asArgs, tsArgs) <- unzip [(a', t) | XType a' t <- xsArgsAll]
+         , xsArgs           <- drop (length tsArgs) xsArgsAll
 
-                -- Unboxing arguments to the function.
-                xsArgs  = drop (length tsArgs) xsArgsAll
+         -- Get the original types of the args and return value.
+         , Just tPrimInst   <- instantiateTs tPrim tsArgs
+         , (tsArgsInst, _tResultInst)   <- takeTFunArgResult tPrimInst
 
-            in if -- We must end up with a type of each argument.
-                  -- If not then the primop is partially applied or something else is wrong.
-                  -- The Tetra to Salt conversion will give a proper error message
-                  -- if the primop is indeed partially applied.
-                  not (length xsArgs == length tsArgsInstUnboxed)
-                   then XApp a (down x1) (down x2)
+         -- Get the unboxed version the args anr return value
+         , Just tsArgsU     <- sequence $ map (configConvertRepType config RepUnboxed) tsArgs
+         , Just tPrimInstU  <- instantiateTs tPrim tsArgsU
+         , (_tsArgsInstU, tResultInstU) <- takeTFunArgResult tPrimInstU
 
-                   -- We got a type for each argument, so the primop is fully applied
-                   -- and we can do the boxing/unboxing transform.
-                   else let xsArgs' 
-                             = [ unboxExp config a tArgInst (down xArg)
-                                  | xArg      <- xsArgs
-                                  | tArgInst  <- tsArgsInstUnboxed ]
-                        in  boxExp config a tResultInstUnboxed
-                                $ xApps a xFn  (  [XType a' t  | t  <- tsArgsUnboxed
-                                                        | a' <- asArgs]
-                                                ++ xsArgs')
+         -- We must end up with a type of each argument.
+         -- If not then the primop is partially applied or something else is wrong.
+         -- The Tetra to Salt conversion will give a proper error message
+         -- if the primop is indeed partially applied.
+         , length xsArgs == length tsArgsInst
+
+         -- We got a type for each argument, so the primop is fully applied
+         -- and we can do the boxing/unboxing transform.
+         -> let xsArgs'  = [ (let Just t = configConvertRepExp config RepUnboxed
+                                                       a tArgInst (down xArg) 
+                              in t)
+                           | xArg      <- xsArgs
+                           | tArgInst  <- tsArgsInst ]
+
+                xtsArgsU = [ XType a' t | t <- tsArgsU | a' <- asArgs ]
+                xResultU = xApps a xFn (xtsArgsU ++ xsArgs')
+                xResultV = fromMaybe xx
+                                 (configConvertRepExp config RepValue a tResultInstU xResultU)
+            in  xResultV
 
         -- Boilerplate
         XVar{}          -> xx
@@ -175,38 +168,6 @@ instance Boxing Exp where
         XCast a c x     -> XCast a c (down x)
         XType a t       -> XType a t 
         XWitness{}      -> xx
-
-
--- | Box an expression that produces a value.
-boxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
-boxExp config a t xx
-        | Just RepValue <- configRepOfType      config t
-        , Just x'       <- configConvertRepExp  config RepBoxed a t xx
-        = x'
-
-        | Just RepUnboxed <- configRepOfType config t
-        , Just tIdx     <- configConvertRepType config RepValue t
-        , Just x'       <- configConvertRepExp  config RepBoxed a tIdx xx
-        = x'
-
-        | otherwise
-        = xx
-
-
--- | Unbox an expression that produces a boxed value.
-unboxExp :: Config a n -> a -> Type n -> Exp a n -> Exp a n
-unboxExp config a t xx
-        | Just RepValue <- configRepOfType config t
-        , Just x'       <- configConvertRepExp  config RepUnboxed a t xx
-        = x'
-
-        | Just RepBoxed <- configRepOfType      config t
-        , Just tIdx     <- configConvertRepType config RepValue t
-        , Just x'       <- configConvertRepExp  config RepUnboxed a tIdx xx
-        = x'
-
-        | otherwise
-        = xx
 
 
 -- | If this is an application of some primitive operator or foreign function that 
