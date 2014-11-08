@@ -174,14 +174,18 @@ convertImportSourceM
 
 convertImportSourceM isrc
  = case isrc of
-        ImportSourceAbstract t
-         -> do  t'      <- convertT Env.empty t
-                return $ ImportSourceAbstract t'
-
         ImportSourceModule mn n t
          -> do  t'      <- convertT Env.empty t
                 n'      <- convertBindNameM n
                 return  $ ImportSourceModule mn n' t'
+
+        ImportSourceAbstract t
+         -> do  t'      <- convertT Env.empty t
+                return $ ImportSourceAbstract t'
+
+        ImportSourceBoxed t
+         -> do  t'      <- convertT Env.empty t
+                return $ ImportSourceBoxed t'
 
         ImportSourceSea str t
          -> do  t'      <- convertT Env.empty t

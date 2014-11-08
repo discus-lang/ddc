@@ -215,14 +215,18 @@ convertImportSourceM
 
 convertImportSourceM defs isrc
  = case isrc of
-        ImportSourceAbstract t
-         -> do  t'      <- convertRepableT defs Env.empty t
-                return $ ImportSourceAbstract t'
-
         ImportSourceModule mn n t
          -> do  n'      <- convertBindNameM n
                 t'      <- convertRepableT defs Env.empty t
                 return  $ ImportSourceModule mn n' t'
+
+        ImportSourceAbstract t
+         -> do  t'      <- convertRepableT defs Env.empty t
+                return $ ImportSourceAbstract t'
+
+        ImportSourceBoxed t
+         -> do  t'      <- convertRepableT defs Env.empty t
+                return $ ImportSourceBoxed t'
 
         ImportSourceSea str t
          -> do  t'      <- convertRepableT defs Env.empty t 

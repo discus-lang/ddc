@@ -11,6 +11,8 @@ export main
 -- | We assign the Console effect to computations that affect stdin or stdout.
 import foreign abstract type
  Console  : Effect
+
+import foreign boxed type
  Ref      : Region ~> Data ~> Data
 
 -- | Import basic functions from C land.

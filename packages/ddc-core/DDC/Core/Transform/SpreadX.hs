@@ -53,14 +53,17 @@ instance SpreadT ExportSource where
 instance SpreadX ImportSource where
  spreadX kenv _tenv isrc
   = case isrc of
-        ImportSourceAbstract t  
-         -> ImportSourceAbstract (spreadT kenv t)
-
         ImportSourceModule mn n t
          -> ImportSourceModule   mn n (spreadT kenv t)
 
+        ImportSourceAbstract t  
+         -> ImportSourceAbstract (spreadT kenv t)
+
+        ImportSourceBoxed t
+         -> ImportSourceBoxed    (spreadT kenv t)
+
         ImportSourceSea n t
-         -> ImportSourceSea n (spreadT kenv t)
+         -> ImportSourceSea n    (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------

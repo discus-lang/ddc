@@ -151,6 +151,12 @@ pImportType c src
                 k       <- pType c
                 return  (ImportType n (ImportSourceAbstract k))
 
+        | "boxed"        <- src
+        = do    n       <- pName
+                pTokSP (KOp ":")
+                k       <- pType c
+                return  (ImportType n (ImportSourceBoxed k))
+
         | otherwise
         = P.unexpected "import mode for foreign type"
 

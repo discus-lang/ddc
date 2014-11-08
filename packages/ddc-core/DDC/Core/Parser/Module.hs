@@ -189,11 +189,23 @@ pImportForeignType
         :: (Ord n, Pretty n) 
         => Context -> String -> Parser n (ImportSpec n)
 pImportForeignType c src
+
+        -- Abstract types are not associated with data values,
+        -- they can be used as phantom type parameters, 
+        -- or have a kind of something that is not Data.
         | "abstract"    <- src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
                 return  (ImportType n (ImportSourceAbstract k))
+
+        -- Boxed types are associate with values that follow the standard
+        -- heap object layout. They can be passed and return from functions.
+        | "boxed"       <- src
+        = do    n       <- pName
+                pTokSP (KOp ":")
+                k       <- pType c
+                return  (ImportType n (ImportSourceBoxed k))
 
         | otherwise
         = P.unexpected "import mode for foreign type."

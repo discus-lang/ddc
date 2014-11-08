@@ -142,6 +142,10 @@ pprImportType (n, isrc)
          -> text "import foreign abstract type" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
 
+        ImportSourceBoxed k
+         -> text "import foreign boxed type" <> line
+         <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
+
         ImportSourceSea _var k
          -> text "import foreign c type" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
@@ -156,6 +160,10 @@ pprImportValue (n, isrc)
 
         ImportSourceAbstract t
          -> text "import foreign abstract value" <> line
+         <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
+
+        ImportSourceBoxed t
+         -> text "import foreign boxed value" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
 
         ImportSourceSea _var t

@@ -147,17 +147,20 @@ convertImportSourceM
 
 convertImportSourceM isrc
  = case isrc of
-        ImportSourceAbstract t
-         -> do  t'      <- convertType t
-                return $ ImportSourceAbstract t'
-
         ImportSourceModule mn n t
          -> do  n'      <- convertName n
                 t'      <- convertType t
                 return  $ ImportSourceModule mn n' t'
 
+        ImportSourceAbstract t
+         -> do  t'      <- convertType t
+                return $ ImportSourceAbstract t'
+
+        ImportSourceBoxed t
+         -> do  t'      <- convertType t
+                return $ ImportSourceBoxed t'
+
         ImportSourceSea str t
          -> do  t'      <- convertType t 
                 return  $ ImportSourceSea str t'
-
 

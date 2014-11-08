@@ -100,14 +100,12 @@ bindOfTop _     = Nothing
 toCoreImportSource :: ImportSource S.Name -> ImportSource C.Name
 toCoreImportSource src
  = case src of
-        ImportSourceAbstract t    
-         -> ImportSourceAbstract (toCoreT t)
-
         ImportSourceModule mn n t 
          -> ImportSourceModule mn (toCoreN n) (toCoreT t)
 
-        ImportSourceSea v t      
-         -> ImportSourceSea v (toCoreT t)
+        ImportSourceAbstract t -> ImportSourceAbstract (toCoreT t)
+        ImportSourceBoxed t    -> ImportSourceBoxed (toCoreT t)
+        ImportSourceSea v t    -> ImportSourceSea v (toCoreT t)
 
 
 -- Type -----------------------------------------------------------------------

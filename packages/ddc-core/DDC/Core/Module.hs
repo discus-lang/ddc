@@ -288,10 +288,18 @@ mapTypeOfExportSource f esrc
 -- | Source of some imported thing.
 data ImportSource n
         -- | A type imported abstractly.
-        --   It may be defined in a foreign language, but the Disciple program
-        --   treats it abstractly.
+        --   Used for phantom types of kind Data, 
+        --   as well as any type that does not have kind Data.
         = ImportSourceAbstract
         { importSourceAbstractType      :: Type n }
+
+        -- | The type of some boxed data which is defined somewhere else.
+        --   The objects follow the standard heap object layout, but the code
+        --   that constructs and destructs them may have been written in a 
+        --   different language.
+        --   Used when importing data types defined in Salt modules.
+        | ImportSourceBoxed
+        { importSourceBoxed             :: Type n }
 
         -- | Something imported from a Disciple module that we compiled ourself.
         | ImportSourceModule
@@ -310,6 +318,7 @@ instance NFData n => NFData (ImportSource n) where
  rnf is
   = case is of
         ImportSourceAbstract t          -> rnf t
+        ImportSourceBoxed t             -> rnf t
         ImportSourceModule mn n t       -> rnf mn `seq` rnf n `seq` rnf t
         ImportSourceSea v t             -> rnf v  `seq` rnf t
 
@@ -319,6 +328,7 @@ typeOfImportSource :: ImportSource n -> Type n
 typeOfImportSource src
  = case src of
         ImportSourceAbstract   t        -> t
+        ImportSourceBoxed      t        -> t
         ImportSourceModule _ _ t        -> t
         ImportSourceSea      _ t        -> t
 
@@ -328,6 +338,7 @@ mapTypeOfImportSource :: (Type n -> Type n) -> ImportSource n -> ImportSource n
 mapTypeOfImportSource f isrc
  = case isrc of
         ImportSourceAbstract  t         -> ImportSourceAbstract (f t)
+        ImportSourceBoxed     t         -> ImportSourceBoxed    (f t)
         ImportSourceModule mn n t       -> ImportSourceModule mn n (f t)
         ImportSourceSea s t             -> ImportSourceSea s (f t)
 
