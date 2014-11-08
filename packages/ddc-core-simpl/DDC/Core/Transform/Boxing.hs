@@ -40,8 +40,9 @@
 module DDC.Core.Transform.Boxing
         ( Rep           (..)
         , Config        (..)
-        , Boxing        (..))
+        , boxingModule)
 where
+import DDC.Core.Transform.TransformDownX
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -96,26 +97,14 @@ data Config a n
         }
 
 
----------------------------------------------------------------------------------------------------
-class Boxing (c :: * -> * -> *) where
- -- | Rewrite a module to use explitit boxed and unboxed types.
- boxing :: (Show n, Show a, Ord n)
-        => Config a n
-        -> c a n
-        -> c a n
-
-
 -- Module -----------------------------------------------------------------------------------------
-instance Boxing Module where
- boxing config mm
-  = mm  { moduleBody            = boxing config (moduleBody mm) }  
+boxingModule :: Ord n => Config a n -> Module a n -> Module a n
+boxingModule config mm
+  = mm  { moduleBody = transformDownX' (boxingX config) (moduleBody mm) }  
 
-
--- Exp --------------------------------------------------------------------------------------------
-instance Boxing Exp where
- boxing config xx
-  = let down = boxing config
-    in case xx of
+boxingX config xx
+ = let down = boxingX config
+   in case xx of
 
         -- When applying a primop that works on unboxed values, 
         -- unbox its arguments and then rebox the result.
@@ -157,17 +146,7 @@ instance Boxing Exp where
                                  (configConvertRepExp config RepValue a tResultInstU xResultU)
             in  xResultV
 
-        -- Boilerplate
-        XVar{}          -> xx
-        XCon{}          -> xx
-        XLAM a b x      -> XLAM  a b (down x)
-        XLam a b x      -> XLam  a b (down x)
-        XApp a x1 x2    -> XApp  a   (down x1)  (down x2)
-        XLet a lts x    -> XLet  a   (down lts) (down x)
-        XCase a x alts  -> XCase a   (down x)   (map down alts)
-        XCast a c x     -> XCast a c (down x)
-        XType a t       -> XType a t 
-        XWitness{}      -> xx
+        _ -> xx
 
 
 -- | If this is an application of some primitive operator or foreign function that 
@@ -195,26 +174,4 @@ splitUnboxedOpApp config xx
          -> Just (xFn, tForeign, xsArgsAll)
 
         _ -> Nothing
-
-
--- Lets -------------------------------------------------------------------------------------------
-instance Boxing Lets where
- boxing config lts
-  = let down    = boxing config
-    in case lts of
-        LLet b x        -> LLet b (down x)
-        LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
-        LPrivate{}      -> lts
-        LWithRegion{}   -> lts
-
-
--- Alt --------------------------------------------------------------------------------------------
-instance Boxing Alt where
- boxing config alt
-  = case alt of
-        AAlt PDefault x 
-         -> AAlt PDefault (boxing config x)
-
-        AAlt (PData dc bs) x
-         -> AAlt (PData dc bs) (boxing config x)
 

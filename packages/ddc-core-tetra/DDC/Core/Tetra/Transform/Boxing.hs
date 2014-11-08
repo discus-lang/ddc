@@ -4,15 +4,16 @@ module DDC.Core.Tetra.Transform.Boxing
 where
 import DDC.Core.Tetra.Compounds
 import DDC.Core.Tetra.Prim
-import DDC.Core.Transform.Boxing
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Transform.Boxing           (Rep(..), Config(..))
+import qualified DDC.Core.Transform.Boxing as Boxing
 
 
 -- | Manage boxing of numeric values in a module.
 boxingModule :: Show a => Module a Name -> Module a Name
-boxingModule mm
-        = boxing config mm
+boxingModule mm 
+ = Boxing.boxingModule config mm
 
 
 -- | Tetra-specific configuration for boxing transform.
