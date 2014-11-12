@@ -101,11 +101,11 @@ typeOpConcrete op
                         (TVar (UIx (a - ix)))
 
 
-        -- rateOfSeries#   :: [p : Proc]. [k l : Rate]. [a : Data]
-        --                 .  Series p k l a -> RateNat k
+        -- rateOfSeries#   :: [p : Proc]. [k : Rate]. [a : Data]
+        --                 .  Series p k a -> RateNat k
         OpConcreteRateOfSeries 
-         -> tForalls [kProc, kRate, kRate, kData] $ \[tP, tKR, tKL, tA]
-                -> tSeries tP tKR tKL tA `tFun` tRateNat tKR
+         -> tForalls [kProc, kRate, kData] $ \[tP, tKR, tA]
+                -> tSeries tP tKR tA `tFun` tRateNat tKR
 
         -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
         OpConcreteNatOfRateNat 
@@ -114,28 +114,28 @@ typeOpConcrete op
 
         -- next#   :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
         OpConcreteNext 1
-         -> tForalls [kData, kProc, kRate, kRate]
-         $  \[tA, tP, tK, tL] -> tSeries tP tK tL tA `tFun` tNat `tFun` tA
+         -> tForalls [kData, kProc, kRate]
+         $  \[tA, tP, tK] -> tSeries tP tK tA `tFun` tNat `tFun` tA
 
         -- next$N# :: [a : Data]. [k : Rate]
         --         .  Series# (DownN# k) a -> Nat# -> VecN# a
         OpConcreteNext n
-         -> tForalls [kData, kProc, kRate, kRate]
-         $  \[tA, tP, tK, tL] -> tSeries tP (tDown n tK) tL tA `tFun` tNat `tFun` tVec n tA
+         -> tForalls [kData, kProc, kRate]
+         $  \[tA, tP, tK] -> tSeries tP (tDown n tK) tA `tFun` tNat `tFun` tVec n tA
 
         -- down$N# :: [k : Rate]. [a : Data].
         --         .  RateNat (DownN# k) -> Series# k a -> Series# (DownN# k) a
         OpConcreteDown n
-         -> tForalls [kProc, kRate, kRate, kData]
-         $  \[tP, tK, tL, tA] -> tRateNat (tDown n tK) 
-                        `tFun` tSeries tP tK tL tA `tFun` tSeries tP (tDown n tK) tL tA
+         -> tForalls [kProc, kRate, kData]
+         $  \[tP, tK, tA] -> tRateNat (tDown n tK) 
+                        `tFun` tSeries tP tK tA `tFun` tSeries tP (tDown n tK) tA
 
         -- tail$N# :: [k : Rate]. [a : Data].
         --         .  RateNat (TailN# k) -> Series# k a -> Series# (TailN# k) a
         OpConcreteTail n
-         -> tForalls [kProc, kRate, kRate, kData]
-         $  \[tP, tK, tL, tA] -> tRateNat (tTail n tK)
-                        `tFun` tSeries tP tK tL tA `tFun` tSeries tP (tTail n tK) tL tA
+         -> tForalls [kProc, kRate, kData]
+         $  \[tP, tK, tA] -> tRateNat (tTail n tK)
+                        `tFun` tSeries tP tK tA `tFun` tSeries tP (tTail n tK) tA
 
 
 
@@ -149,10 +149,10 @@ xProj ts ix  x
                   ([XType t | t <- ts] ++ [x])
 
 
-xRateOfSeries :: TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF
-xRateOfSeries tP tK tL tA xS 
+xRateOfSeries :: TypeF -> TypeF -> TypeF -> ExpF -> ExpF
+xRateOfSeries tP tK tA xS 
          = xApps  (xVarOpConcrete OpConcreteRateOfSeries) 
-                  [XType tP, XType tK, XType tL, XType tA, xS]
+                  [XType tP, XType tK, XType tA, xS]
 
 
 xNatOfRateNat :: TypeF -> ExpF -> ExpF
@@ -161,28 +161,28 @@ xNatOfRateNat tK xR
                  [XType tK, xR]
 
 
-xNext  :: TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xNext tProc tRate tRateLoop tElem xStream xIndex
+xNext  :: TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xNext tProc tRate tElem xStream xIndex
  = xApps (xVarOpConcrete (OpConcreteNext 1))
-         [XType tElem, XType tProc, XType tRate, XType tRateLoop, xStream, xIndex]
+         [XType tElem, XType tProc, XType tRate, xStream, xIndex]
 
 
-xNextC :: Int -> TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xNextC c tProc tRate tRateLoop tElem xStream xIndex
+xNextC :: Int -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xNextC c tProc tRate tElem xStream xIndex
  = xApps (xVarOpConcrete (OpConcreteNext c))
-         [XType tElem, XType tProc, XType tRate, XType tRateLoop, xStream, xIndex]
+         [XType tElem, XType tProc, XType tRate, xStream, xIndex]
 
 
-xDown  :: Int -> TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xDown n tP tK tL tE xRN xS
+xDown  :: Int -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xDown n tP tK tE xRN xS
  = xApps (xVarOpConcrete (OpConcreteDown n))
-         [XType tP, XType tK, XType tL, XType tE, xRN, xS]
+         [XType tP, XType tK, XType tE, xRN, xS]
 
 
-xTail  :: Int -> TypeF -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
-xTail n tP tK tL tE xRN xS
+xTail  :: Int -> TypeF -> TypeF -> TypeF -> ExpF -> ExpF -> ExpF
+xTail n tP tK tE xRN xS
  = xApps (xVarOpConcrete (OpConcreteTail n))
-         [XType tP, XType tK, XType tL, XType tE, xRN, xS]
+         [XType tP, XType tK, XType tE, xRN, xS]
 
 
 

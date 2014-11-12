@@ -19,8 +19,9 @@ module DDC.Core.Flow.Compounds
         , tRateNat
         , tDown
         , tTail
-        , tRatePlus, tRateTimes
+        , tRateAppend, tRateCross
         , tProcess
+        , tResize
 
           -- * Primtiive types
         , tVoid, tBool, tNat, tInt, tWord, tFloat, tVec

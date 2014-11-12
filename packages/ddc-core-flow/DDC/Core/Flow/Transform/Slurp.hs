@@ -198,7 +198,6 @@ slurpBindingX tenv b
   -> Just ( NameOpSeries (OpSeriesMkSel 1)
           , [ XType tProc
             , XType tK1
-            , XType tKL
             , XVar uFlags
             , XLAM (BName nR kR) (XLam bSel xBody)]))
  | kR == kRate
@@ -214,7 +213,7 @@ slurpBindingX tenv b
         let UName nFlags = uFlags
         let nFlagsUse   = NameVarMod nFlags "use"
         let uFlagsUse   = UName nFlagsUse
-        let bFlagsUse   = BName nFlagsUse (tSeries tProc tK1 tKL tBool)
+        let bFlagsUse   = BName nFlagsUse (tSeries tProc tK1 tBool)
 
         let opId        = OpId
                         { opResultSeries        = bFlagsUse
@@ -238,7 +237,6 @@ slurpBindingX tenv b
   -> Just ( NameOpSeries OpSeriesMkSegd
           , [ XType tProc
             , XType tK1
-            , XType tKL
             , XVar  uLens
             , XLAM  (BName nK2 kR) (XLam bSegd xBody)]))
  | kR == kRate
@@ -249,7 +247,7 @@ slurpBindingX tenv b
         let UName nLens = uLens
         let nLensUse    = NameVarMod nLens "use"
         let uLensUse    = UName nLensUse
-        let bLensUse    = BName nLensUse (tSeries tProc tK1 tKL tNat)
+        let bLensUse    = BName nLensUse (tSeries tProc tK1 tNat)
 
         let opId        = OpId
                         { opResultSeries        = bLensUse

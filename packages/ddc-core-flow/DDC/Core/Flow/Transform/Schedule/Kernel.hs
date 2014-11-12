@@ -59,7 +59,7 @@ scheduleKernel
         let c           = liftingFactor lifting
         let ssBody      = [ BodyStmt 
                                 (BName (NameVarMod nS "elem") tElem_lifted)
-                                (xNextC c proc rate rate tElem (XVar (UName nS)) (XVar uIndex))
+                                (xNextC c proc rate tElem (XVar (UName nS)) (XVar uIndex))
                                 | BName nS tS     <- bsSeries
                                 , let Just tElem        = elemTypeOfSeriesType tS 
                                 , let uIndex            = UIx 0 

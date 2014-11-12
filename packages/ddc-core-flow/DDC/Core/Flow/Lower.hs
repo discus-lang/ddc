@@ -157,7 +157,7 @@ lowerProcess config process
         let xRN         = XVar (UName nRN)
 
         let tProc       = processProcType process
-        let tLoopRate   = processLoopRate process
+        let _tLoopRate   = processLoopRate process
 
         -----------------------------------------
         -- Create the vector version of the kernel.
@@ -169,8 +169,8 @@ lowerProcess config process
         let bxsDownSeries       
                 = [ ( bS
                     , ( BName (NameVarMod n "down")
-                              (tSeries tProc (tDown c tK) tLoopRate tE)
-                      , xDown c tProc tK tLoopRate tE (XVar (UIx 0)) xS))
+                              (tSeries tProc (tDown c tK) tE)
+                      , xDown c tProc tK tE (XVar (UIx 0)) xS))
                   | bS@(BName n tS)  <- processParamValues process
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS
@@ -207,8 +207,8 @@ lowerProcess config process
 
         -- Window the input series to select the tails.
         let bxsTailSeries
-                = [ ( bS, ( BName (NameVarMod n "tail") (tSeries tProc (tTail c tK) tLoopRate tE)
-                          , xTail c tProc tK tLoopRate tE (XVar (UIx 0)) xS))
+                = [ ( bS, ( BName (NameVarMod n "tail") (tSeries tProc (tTail c tK) tE)
+                          , xTail c tProc tK tE (XVar (UIx 0)) xS))
                   | bS@(BName n tS)    <- processParamValues process
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS

@@ -38,23 +38,23 @@ concretizeX _kenv tenv xx
         -- using the length of a series to get the rate.
         | Just ( NameOpControl OpControlLoop
                , [XType tK, xF])   <- takeXPrimApps xx
-        , Just (nS, tP, _, tL, tA) <- findSeriesWithRate tenv tK
+        , Just (nS, tP, _, tA)     <- findSeriesWithRate tenv tK
         , xS                       <- XVar (UName nS)
         = Just 
         $ xLoopN 
-                tL                              -- type level rate
-                (xRateOfSeries tP tK tL tA xS)  -- 
+                tK                              -- type level rate
+                (xRateOfSeries tP tK tA xS)  -- 
                 xF                              -- loop body
 
         -- newVectorR# -> newVector#
         | Just ( NameOpStore OpStoreNewVectorR
                , [XType tA, XType tK])  <- takeXPrimApps xx
-        , Just (nS, tP, _, tL, tS)      <- findSeriesWithRate tenv tK
+        , Just (nS, tP, _, tS)          <- findSeriesWithRate tenv tK
         , xS                            <- XVar (UName nS)
         = Just
         $ xNewVector
                 tA
-                (xNatOfRateNat tK $ xRateOfSeries tP tK tL tS xS)
+                (xNatOfRateNat tK $ xRateOfSeries tP tK tS xS)
                 
         | otherwise
         = Nothing
@@ -97,15 +97,15 @@ isRateNatTypeOfRate tR tRN
 findSeriesWithRate 
         :: TypeEnvF             -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
-        -> Maybe (Name, Type Name, Type Name, Type Name, Type Name)
-        -- ^ Series name, process, result rate, loop rate, element type.
+        -> Maybe (Name, Type Name, Type Name, Type Name)
+        -- ^ Series name, process, result rate, element type.
 findSeriesWithRate tenv tK
  = go (Map.toList (Env.envMap tenv))
  where  go []           = Nothing
         go ((n, tS) : moar)
          = case isSeriesTypeOfRate tK tS of
                 Nothing              -> go moar
-                Just (tP, _, tL, tA) -> Just (n, tP, tK, tL, tA)
+                Just (tP, _, tA) -> Just (n, tP, tK, tA)
 
 
 -- | Given a rate type and a stream type, check whether the stream
@@ -113,13 +113,13 @@ findSeriesWithRate tenv tK
 --   loop rate and element types, otherwise `Nothing`.
 isSeriesTypeOfRate 
         :: Type Name -> Type Name 
-        -> Maybe (Type Name, Type Name, Type Name, Type Name)
+        -> Maybe (Type Name, Type Name, Type Name)
 
 isSeriesTypeOfRate tK tS
         | Just ( NameTyConFlow TyConFlowSeries
-               , [tP, tK', tL, tA])    <- takePrimTyConApps tS
+               , [tP, tK', tA])    <- takePrimTyConApps tS
         , tK == tK'
-        = Just (tP, tK, tL, tA)
+        = Just (tP, tK, tA)
 
         | otherwise
         = Nothing

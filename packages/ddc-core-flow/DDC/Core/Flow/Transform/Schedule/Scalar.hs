@@ -31,7 +31,7 @@ scheduleScalar
         -- Body expressions that take the next element from each input series.
         let ssBody      
                 = [ BodyStmt bElem
-                        (xNext proc rate rate tElem (XVar (UName nS)) (XVar uIndex))
+                        (xNext proc rate tElem (XVar (UName nS)) (XVar uIndex))
                         | bS@(BName nS tS)      <- bsSeries
                         , let Just tElem        = elemTypeOfSeriesType tS 
                         , let Just bElem        = elemBindOfSeriesBind bS

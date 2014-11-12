@@ -131,9 +131,9 @@ data TyConFlow
         | TyConFlowRateNat
 
         -- | Multiply two @Rate@s together
-        | TyConFlowRateTimes
+        | TyConFlowRateCross
         -- | Add two @Rate@s together
-        | TyConFlowRatePlus
+        | TyConFlowRateAppend
 
         -- | @DownN#@ constructor.   Rate decimation. 
         | TyConFlowDown Int
@@ -143,6 +143,9 @@ data TyConFlow
 
         -- | @Process@ constructor.
         | TyConFlowProcess
+
+        -- | @Resize p j k@ is a witness that @Process p j@ can be resized to @Process p k@
+        | TyConFlowResize
         deriving (Eq, Ord, Show)
 
 
@@ -211,10 +214,26 @@ data OpSeries
         | OpSeriesCross
 
 
-        -- | Inject a series into the left side of a loop
-        | OpSeriesInjectLeft
-        -- | Inject a series into the right side of a loop
-        | OpSeriesInjectRight
+        -- | Resize a process
+        | OpSeriesResizeProc
+
+        -- | Resize a process
+        | OpSeriesResizeId
+
+        -- | Inject a series into the left side of an append
+        | OpSeriesResizeAppL
+        -- | Inject a series into the right side of an append
+        | OpSeriesResizeAppR
+
+        -- | Map over the contents of an append
+        | OpSeriesResizeApp
+
+        -- | Move from filtered to filtee
+        | OpSeriesResizeSel1
+        -- | Move from segment data to segment lens
+        | OpSeriesResizeSegd
+        -- | Move from (cross a b) to a
+        | OpSeriesResizeCross
 
 
         -- | Join two series processes.

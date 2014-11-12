@@ -162,18 +162,18 @@ threadType n _
         -- next#  :: [k : Rate]. [a : Data]
         --        .  Series# k a -> Int# -> World# -> (World#, a)
         NameOpConcrete (OpConcreteNext 1)
-         -> Just $ tForalls [kProc, kRate, kRate, kData]
-                 $ \[tP, tK, tL, tA]
-                        ->     tSeries tP tK tL tA `tFun` tInt
+         -> Just $ tForalls [kProc, kRate, kData]
+                 $ \[tP, tK, tA]
+                        ->     tSeries tP tK tA `tFun` tInt
                         `tFun` tWorld `tFun` (tTuple2 tWorld tA)
 
         -- nextN# :: [k : Rate]. [a : Data]
         --        .  Series# k a -> Int# -> World# -> (World#, a)
         NameOpConcrete (OpConcreteNext c)
          | c >= 2
-         -> Just $ tForalls [kProc, kRate, kRate, kData]
-                 $ \[tP, tK, tL, tA]
-                        ->     tSeries tP (tDown c tK) tL tA `tFun` tInt 
+         -> Just $ tForalls [kProc, kRate, kData]
+                 $ \[tP, tK, tA]
+                        ->     tSeries tP (tDown c tK) tA `tFun` tInt 
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVec c tA))
 
         -- Control -----------------------------
