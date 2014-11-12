@@ -33,7 +33,7 @@ slurpOperator bResult xx
 
  -- Reps ----------------------------------------
  | Just ( NameOpSeries OpSeriesReps
-        , [ XType _P, XType tK1, XType tK2, XType _KL, XType tA, XVar uSegd, XVar uS ])
+        , [ XType _P, XType tK1, XType tK2, XType tA, XVar uSegd, XVar uS ])
                                 <- takeXPrimApps xx
  = Just $ OpReps
         { opResultSeries        = bResult
@@ -55,7 +55,7 @@ slurpOperator bResult xx
 
  -- Fill ----------------------------------------
  | Just ( NameOpSeries OpSeriesFill
-        , [ XType _P, XType tK, XType _KL, XType tA, XVar uV, XVar uS ])
+        , [ XType _P, XType tK, XType tA, XVar uV, XVar uS ])
                                 <- takeXPrimApps xx
  = Just $ OpFill
         { opResultBind          = bResult
@@ -67,7 +67,7 @@ slurpOperator bResult xx
 
  -- Gather --------------------------------------
  | Just ( NameOpSeries OpSeriesGather
-        , [ XType _P, XType tK1, XType tK2, XType _KL, XType tA, XVar uV, XVar uS ])
+        , [ XType _P, XType tK1, XType tK2, XType tA, XVar uV, XVar uS ])
                                 <- takeXPrimApps xx
  = Just $ OpGather
         { opResultBind          = bResult
@@ -80,7 +80,7 @@ slurpOperator bResult xx
 
  -- Scatter -------------------------------------
  | Just ( NameOpSeries OpSeriesScatter
-        , [ XType _P, XType tK, XType _KL, XType tA, XVar uV, XVar uIndices, XVar uElems ])
+        , [ XType _P, XType tK, XType tA, XVar uV, XVar uIndices, XVar uElems ])
                                 <- takeXPrimApps xx
  = Just $ OpScatter
         { opResultBind          = bResult
@@ -95,7 +95,7 @@ slurpOperator bResult xx
  | Just (NameOpSeries (OpSeriesMap n), xs) 
                                 <- takeXPrimApps xx
  , n >= 1
- , XType _P : XType tR : XType _KL : xsArgs2   <- xs
+ , XType _P : XType tR : xsArgs2   <- xs
  , (xsA, xsArgs3)       <- splitAt (n + 1) xsArgs2
  , tsA                  <- [ t | XType t <- xsA ]
  , length tsA      == n + 1
@@ -129,7 +129,7 @@ slurpOperator bResult xx
 
  -- Generate ------------------------------------
  | Just ( NameOpSeries OpSeriesGenerate
-        , [ XType _P, XType tK, XType _L, XType _, xWorker ])
+        , [ XType _P, XType tK, XType _, xWorker ])
                                 <- takeXPrimApps xx
  , Just ([bIx], xBody)          <- takeXLams xWorker
  = Just $ OpGenerate
@@ -140,7 +140,7 @@ slurpOperator bResult xx
 
  -- Reduce --------------------------------------
  | Just ( NameOpSeries OpSeriesReduce
-        , [ XType _P, XType tK, XType _L, XType _
+        , [ XType _P, XType tK, XType _
           , XVar uRef, xWorker, xZ, XVar uS ])
                                 <- takeXPrimApps xx
  , Just ([bAcc, bElem], xBody)  <- takeXLams xWorker

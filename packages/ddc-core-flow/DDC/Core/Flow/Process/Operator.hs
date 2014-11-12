@@ -227,5 +227,22 @@ data Operator
           -- Worker body.
         , opWorkerBody          :: ExpF
         }
+
+        -----------------------------------------
+        -- | Convert a series from a vector
+        | OpSeriesOfRateVec
+        { -- Binder for result series.
+          opResultSeries        :: BindF
+
+          -- Rate of the input series.
+        , opInputRate           :: TypeF
+
+          -- Bound of the input vector
+        , opInputRateVec        :: BoundF
+
+          -- Type of the elements.
+        , opElemType            :: TypeF
+        }
+
         deriving Show
 

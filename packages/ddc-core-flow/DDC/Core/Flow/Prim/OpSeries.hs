@@ -1,7 +1,10 @@
 
 module DDC.Core.Flow.Prim.OpSeries
         ( readOpSeries
-        , typeOpSeries)
+        , typeOpSeries
+        
+        -- Compounds
+        , xSeriesOfRateVec)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -182,7 +185,7 @@ takeTypeOpSeries op
                                 | i <- reverse [0..n] ])
 
          -> Just $ foldr TForall tBody
-                         [ BAnon k | k <- kProc : kRate : kRate : replicate (n + 1) kData ]
+                         [ BAnon k | k <- kProc : kRate : replicate (n + 1) kData ]
 
 
         -- Packs --------------------------------
@@ -438,3 +441,17 @@ takeTypeOpSeries op
 
 
         _ -> Nothing
+
+
+-- Compounds ------------------------------------------------------------------
+xSeriesOfRateVec :: Type Name -> Type Name -> Type Name -> Exp () Name -> Exp () Name
+xSeriesOfRateVec tP tK tA xV 
+         = xApps  (xVarOpSeries   OpSeriesSeriesOfRateVec) 
+                  [XType tP, XType tK, XType tA, xV]
+
+
+-- Utils -----------------------------------------------------------------------
+xVarOpSeries   :: OpSeries -> Exp () Name
+xVarOpSeries   op
+        = XVar  (UPrim (NameOpSeries   op) (typeOpSeries   op))
+

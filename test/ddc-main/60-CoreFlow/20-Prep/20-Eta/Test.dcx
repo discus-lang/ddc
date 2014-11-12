@@ -4,29 +4,12 @@
 :set trans Eta
 :load..
 module Test 
-imports f :: Int# -> Int# -> Int#
+import f : Int# -> Int# -> Int#
 with letrec
-ffold [k : Rate] (s : Series# k Int#) : Int#
- = sfold# [k] [Int#] [Int#] f 0i# s
+ffold [p : Proc] [k : Rate]
+    (o : Ref# Int#)
+    (s : Series#  p k Int#)
+       : Process# p k
+ = sreduce# [p] [k] [Int#] o f 0i# s
 ;;
 
-
--- Fold and fold with index.
-:load..
-module Test 
-imports { 
-        minIx  :: Int# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
-        addInt :: Int# -> Int# -> Int#
-}
-with letrec
-foldix [k : Rate] (s : Series# k Int#) 
-        : Tuple2# (Tuple2# Int# Int#) Int#
- = do   
-        mix     = sfoldIndex# [k] [Tuple2# Int# Int#] [Int#] 
-                        minIx 
-                        (T2# [Int#] [Int#] 0i# 0i#) s 
-
-        sum     = sfold# [k] [Int#] [Int#] addInt 0i# s
-   
-        T2# [Tuple2# Int# Int#] [Int#] mix sum
-;;

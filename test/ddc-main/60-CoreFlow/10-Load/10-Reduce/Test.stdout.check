@@ -5,10 +5,10 @@ ok
 -- Single series being eaten by two consumers.
 module Test with
 letrec {
-  test : [p : Proc].[k : Rate].Ref# Int# -> Ref# Int# -> Series# p k k Int# -> Process# p k
+  test : [p : Proc].[k : Rate].Ref# Int# -> Ref# Int# -> Series# p k Int# -> Process# p k
     = /\(p : Proc)./\(k : Rate).
-       \(u1 u2 : Ref# Int#).\(elems : Series# p k k Int#).
+       \(u1 u2 : Ref# Int#).\(elems : Series# p k Int#).
       pjoin# [p] [k]
-          (sreduce# [p] [k] [k] [Int#] u1 (add# [Int#]) 0i# elems)
-          (sreduce# [p] [k] [k] [Int#] u2 (mul# [Int#]) 1i# elems)
+          (sreduce# [p] [k] [Int#] u1 (add# [Int#]) 0i# elems)
+          (sreduce# [p] [k] [Int#] u2 (mul# [Int#]) 1i# elems)
 }

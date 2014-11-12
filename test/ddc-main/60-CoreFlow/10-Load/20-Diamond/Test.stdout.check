@@ -30,20 +30,22 @@ letrec {
           (mul# [Float64#] (sub# [Float64#] x1 x0) (sub# [Float64#] y2 y0))
           (mul# [Float64#] (sub# [Float64#] y1 y0) (sub# [Float64#] x2 x0));
   
-  split : [p : Proc].[k1 : Rate].Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Series# p k1 k1 (Tuple2# Float64# Float64#) -> Vector# (Tuple2# Float64# Float64#) -> Ref# Float64# -> Process# p k1
+  split : [p : Proc].[k1 : Rate].Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Series# p k1 (Tuple2# Float64# Float64#) -> Vector# (Tuple2# Float64# Float64#) -> Ref# Float64# -> Process# p k1
     = /\(p : Proc)./\(k1 : Rate).
-       \(l1 l2 : Tuple2# Float64# Float64#).\(points : Series# p k1 k1 (Tuple2# Float64# Float64#)).\(vec : Vector# (Tuple2# Float64# Float64#)).\(mx : Ref# Float64#).
-      let dets : Series# p k1 k1 Float64#
-            = smap# [p] [k1] [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
-      let flags : Series# p k1 k1 Bool#
-            = smap# [p] [k1] [k1] [Float64#] [Bool#]
+       \(l1 l2 : Tuple2# Float64# Float64#).\(points : Series# p k1 (Tuple2# Float64# Float64#)).\(vec : Vector# (Tuple2# Float64# Float64#)).\(mx : Ref# Float64#).
+      let dets : Series# p k1 Float64#
+            = smap# [p] [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
+      let flags : Series# p k1 Bool#
+            = smap# [p] [k1] [Float64#] [Bool#]
                   (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) dets in
       pjoin# [p] [k1]
-          (smkSel# [p] [k1] [k1] flags
+          (smkSel# [p] [k1] flags
                (/\(k2 : Rate).
                  \(sel : Sel1# p k1 k2).
-                let above : Series# p k2 k1 (Tuple2# Float64# Float64#)
-                      = spack# [p] [k1] [k2] [k1] [Tuple2# Float64# Float64#] sel points in
-                sfill# [p] [k2] [k1] [Tuple2# Float64# Float64#] vec above))
-          (sreduce# [p] [k1] [k1] [Float64#] mx max (promote# [Float64#] [Nat#] 0#) dets)
+                let above : Series# p k2 (Tuple2# Float64# Float64#)
+                      = spack# [p] [k1] [k2] [Tuple2# Float64# Float64#] sel points in
+                presize# [p] [k2] [k1]
+                    (rsel1# [p] [k2] [k1] [k2] sel (rid# [k2] [p]))
+                    (sfill# [p] [k2] [Tuple2# Float64# Float64#] vec above)))
+          (sreduce# [p] [k1] [Float64#] mx max (promote# [Float64#] [Nat#] 0#) dets)
 }

@@ -1,0 +1,15 @@
+
+-- Check eta expansion is working.
+ok
+ok
+module Test 
+import value f : Int# -> Int# -> Int#;
+with
+letrec {
+  ffold : [p : Proc].[k : Rate].Ref# Int# -> Series# p k Int# -> Process# p k
+    = /\(p : Proc)./\(k : Rate).
+       \(o : Ref# Int#).\(s : Series# p k Int#).
+      sreduce# [p] [k] [Int#] o
+          (\(^ ^ : Int#). f ^1 ^0) 0i# s
+}
+

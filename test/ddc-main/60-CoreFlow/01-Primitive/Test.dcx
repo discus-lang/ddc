@@ -36,8 +36,9 @@
 :kind RateNat#
 :kind Down4#
 :kind Down8#
-:kind RatePlus#
-:kind RateTimes#
+:kind RateAppend#
+:kind RateCross#
+:kind Resize#
 
 
 -- Primitive data constructors
@@ -52,6 +53,7 @@
 :type smkSel#
 :type smkSegd#
 :type smap#
+:type smap2#
 :type spack#
 :type runProcess#
 :type sreduce#
@@ -64,8 +66,17 @@
 :type series#
 :type sappend#
 :type scross#
-:type sinjectL#
-:type sinjectR#
+
+-- Size changing
+:type presize#
+:type rid#
+:type rappl#
+:type rappr#
+:type rapp#
+:type rsel1#
+:type rsegd#
+:type rcross#
+
 
 
 -- Series operators

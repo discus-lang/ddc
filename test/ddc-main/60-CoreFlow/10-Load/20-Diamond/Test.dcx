@@ -34,7 +34,7 @@ split   [p       : Proc]
         [k1      : Rate]
         (l1      : Tuple2# Float64# Float64#)
         (l2      : Tuple2# Float64# Float64#)
-        (points  : Series# p k1 k1 (Tuple2# Float64# Float64#))
+        (points  : Series# p k1 (Tuple2# Float64# Float64#))
         (vec     : Vector# (Tuple2# Float64# Float64#))
         (mx      : Ref# Float64#)
         : Process# p k1
@@ -50,7 +50,8 @@ split   [p       : Proc]
                 (smkSel1# flags 
                  (/\(k2 : Rate). \(sel : Sel1# p k1 k2).
                   let above   = spack# sel points 
-                  in  sfill# vec above))
+                  in  presize# (rsel1# sel rid#)
+                        (sfill# vec above)))
 
                 -- Also compute the maximum determinate.
                 (sreduce# mx max (promote# 0#) dets)

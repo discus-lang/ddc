@@ -4,7 +4,6 @@ module DDC.Core.Flow.Transform.Schedule.Base
         , elemBoundOfSeriesBound
         , elemTypeOfSeriesType
         , resultRateTypeOfSeriesType
-        , loopRateTypeOfSeriesType
         , procTypeOfSeriesType
 
         , rateTypeOfRateVecType
@@ -46,7 +45,7 @@ elemBoundOfSeriesBound uSeries
 --   of a single element, namely the @e@.
 elemTypeOfSeriesType :: TypeF -> Maybe TypeF
 elemTypeOfSeriesType tSeries'
-        | Just (_tcSeries, [_tP, _tK, _tL, tE]) <- takeTyConApps tSeries'
+        | Just (_tcSeries, [_tP, _tK, tE]) <- takeTyConApps tSeries'
         = Just tE
 
         | otherwise
@@ -58,19 +57,8 @@ elemTypeOfSeriesType tSeries'
 resultRateTypeOfSeriesType :: TypeF -> Maybe TypeF
 resultRateTypeOfSeriesType tSeries'
         | isSeriesType tSeries'
-        , Just (_tcSeries, [_tP, tK, _tL, _tE]) <- takeTyConApps tSeries'
+        , Just (_tcSeries, [_tP, tK, _tE]) <- takeTyConApps tSeries'
         = Just tK
-
-        | otherwise
-        = Nothing
-
--- | Given the type of a series like @Series p k l e@, produce the type
---   of the loop rate, namely the @l@.
-loopRateTypeOfSeriesType :: TypeF -> Maybe TypeF
-loopRateTypeOfSeriesType tSeries'
-        | isSeriesType tSeries'
-        , Just (_tcSeries, [_tP, _tK, tL, _tE]) <- takeTyConApps tSeries'
-        = Just tL
 
         | otherwise
         = Nothing
@@ -80,7 +68,7 @@ loopRateTypeOfSeriesType tSeries'
 procTypeOfSeriesType :: TypeF -> Maybe TypeF
 procTypeOfSeriesType tSeries'
         | isSeriesType tSeries'
-        , Just (_tcSeries, [tP, _tK, _tL, _tE]) <- takeTyConApps tSeries'
+        , Just (_tcSeries, [tP, _tK, _tE]) <- takeTyConApps tSeries'
         = Just tP
 
         | otherwise

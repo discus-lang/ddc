@@ -91,3 +91,11 @@ instance Pretty Operator where
         [ text "Pack"
         , text " input  rate: " <> ppr (opInputRate     op) 
         , text " output rate: " <> ppr (opOutputRate    op) ]
+
+ ppr op@OpSeriesOfRateVec{}
+        = vcat
+        [ text "SeriesOfRateVec"
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " input:   "     <> ppr (opInputRateVec  op)
+        , text " result:  "     <> ppr (opResultSeries  op) ]
+

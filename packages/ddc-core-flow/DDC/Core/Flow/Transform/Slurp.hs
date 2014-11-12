@@ -72,19 +72,13 @@ slurpProcessLet (BName n t) xx
 
         -- Type binders.
         bts             = map snd fbts
-        tsRate          = filter (\b -> typeOfBind b == kRate) bts
-
-        -- Create contexts for all the parameter rate variables.
-        ctxParam        = map (ContextRate . TVar . UName)
-                        $ map (\(BName nRate _) -> nRate)
-                        $ tsRate
 
         -- Value binders.
         bvs             = map snd fbvs
 
         -- Slurp the body of the process.
    in do
-        (ctxLocal, ops) 
+        (ctx, ops) 
                 <- slurpProcessX Env.empty xBody
 
         return  $ Left
@@ -95,10 +89,7 @@ slurpProcessLet (BName n t) xx
                 , processParamTypes    = bts
                 , processParamValues   = bvs
 
-                -- Note that the parameter contexts needs to come first
-                -- so they are scheduled before the local contexts, which
-                -- are inside 
-                , processContexts      = ctxParam ++ ctxLocal
+                , processContexts      = ctx
 
                 , processOperators     = ops }
 
@@ -189,6 +180,28 @@ slurpBindingX tenv b1 xx
 
         return  ( ctxHere ++ ctxMore
                 , opsHere ++ opsMore)
+
+
+-- Slurp a series#
+-- This creates a new context
+slurpBindingX _tenv b 
+ (   takeXPrimApps 
+  -> Just ( NameOpSeries OpSeriesSeriesOfRateVec
+          , [ XType _tProc
+            , XType tK
+            , XType tA
+            , XVar vec]))
+ = do
+        let op          = OpSeriesOfRateVec
+                        { opResultSeries        = b
+                        , opInputRate           = tK
+                        , opInputRateVec        = vec 
+                        , opElemType            = tA }
+
+        let context     = ContextRate
+                        { contextRate           = tK }
+
+        return ([context], [op])
 
 
 -- Slurp a mkSel1#

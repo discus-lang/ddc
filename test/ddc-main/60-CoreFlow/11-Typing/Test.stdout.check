@@ -6,10 +6,10 @@ ok
 -- due to having some type args, but not all of them.
 module Test with
 letrec {
-  test : [p : Proc].[k : Rate].RateNat# k -> Vector# Float32# -> Series# p k k Float32# -> Series# p k k Float32# -> Process# p k
+  test : [p : Proc].[k : Rate].RateNat# k -> Vector# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Process# p k
     = /\(p : Proc)./\(k : Rate).
-       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# p k k Float32#).
-      let s2 : Series# p k k Float32#
-            = smap2# [p] [k] [k] [Float32#] [Float32#] [Float32#] (mul# [Float32#]) s1 s2 in
-      sfill# [p] [k] [k] [Float32#] v s2
+       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# p k Float32#).
+      let s2 : Series# p k Float32#
+            = smap2# [p] [k] [Float32#] [Float32#] [Float32#] (mul# [Float32#]) s1 s2 in
+      sfill# [p] [k] [Float32#] v s2
 }

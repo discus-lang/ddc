@@ -8,9 +8,9 @@
 module Test with letrec
 test    [p : Proc] [k : Rate] (n  : RateNat# k)
         (v : Vector# Float32#)
-        (s1 : Series# p k k Float32#) (s2 : Series# p k k Float32#) 
+        (s1 : Series# p k Float32#) (s2 : Series# p k Float32#) 
         : Process# p k 
  = do   
         s2      = smap2# (mul# [Float32#]) s1 s2
-        sfill# [p] [k] [k] [Float32#] v s2
+        sfill# [p] [k] [Float32#] v s2
 ;;

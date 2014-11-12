@@ -7,8 +7,10 @@
 module Test with letrec
 fold    [p : Proc] [k : Rate] 
         (x : Ref# Int#)
-        (s : Series# p k k Int#) : Process# p k
- = sreduce# x add# 0i# s
+        (v : RateVec# k Int#)
+           : Process# p k
+ = let s = series# v
+   in  sreduce# x add# 0i# s
 ;;
 
 
@@ -17,9 +19,11 @@ fold    [p : Proc] [k : Rate]
 module Test with letrec
 ffold   [p : Proc] [k : Rate]
         (x1 x2 : Ref# Int#)
-        (s : Series# p k k Int#) : Process# p k
- = pjoin# (sreduce# x1 add# 0i# s)
-          (sreduce# x2 mul# 1i# s)
+        (v : RateVec# k Int#)
+           : Process# p k
+ = let s = series# v
+   in  pjoin# (sreduce# x1 add# 0i# s)
+              (sreduce# x2 mul# 1i# s)
 ;;
 
 
@@ -28,9 +32,10 @@ ffold   [p : Proc] [k : Rate]
 module Test with letrec
 fffold  [p : Proc] [k : Rate]
         (x1 x2 x3 : Ref# Int#)
-        (s : Series# p k k Int#) : Process# p k
- = pjoin# (sreduce# x1 add# 0i# s)
- ( pjoin# (sreduce# x2 mul# 1i# s)
-          (sreduce# x3 mul# 1i# s))
+        (v : RateVec# k Int#) : Process# p k
+ = let s = series# v
+   in  pjoin# (sreduce# x1 add# 0i# s)
+     ( pjoin# (sreduce# x2 mul# 1i# s)
+              (sreduce# x3 mul# 1i# s))
 ;;
 

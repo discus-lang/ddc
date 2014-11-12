@@ -83,6 +83,29 @@ scheduleOperator nest0 op
 
         return nest1
 
+ | OpSeriesOfRateVec{} <- op
+ = do   let tK           = opInputRate    op
+        let tA           = opElemType     op
+        let bS           = opResultSeries op
+        let uInput       = opInputRateVec op
+        let Just uS      = takeSubstBoundOfBind                   bS
+        let Just tP      = procTypeOfSeriesType   (typeOfBind     bS)
+        let Just bResult = elemBindOfSeriesBind                   bS
+
+        -- Convert the RateVec to a series
+        let Just nest1
+                = insertStarts nest0 tK
+                $ [ StartStmt bS
+                        (xSeriesOfRateVec tP tK tA (XVar uInput)) ]
+        -- Body expressions that take the next element from each input series.
+        let Just nest2
+                = insertBody nest1 tK
+                $ [ BodyStmt bResult
+                        (xNext tP tK tA (XVar uS) (XVar (UIx 0))) ]
+
+        return nest2
+
+
  -- Rep -----------------------------------------
  | OpRep{}      <- op
  = do   let tK          = opOutputRate op

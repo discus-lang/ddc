@@ -46,6 +46,7 @@ module DDC.Core.Flow.Compounds
         , xNext, xNextC
         , xDown
         , xTail
+        , xSeriesOfRateVec
 
           -- * Control operators
         , xLoopN
@@ -67,6 +68,7 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConPrim
 import DDC.Core.Flow.Prim.OpControl
 import DDC.Core.Flow.Prim.OpConcrete
+import DDC.Core.Flow.Prim.OpSeries
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpPrim
 import DDC.Core.Compounds.Simple
