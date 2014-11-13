@@ -65,7 +65,7 @@ extractNest nest xResult
 extractLoop      :: Nest -> [LetsF]
 
 -- Code in the top-level loop context.
-extractLoop (NestLoop tRate starts bodys inner ends _result)
+extractLoop (NestLoop tRate starts bodys inner ends)
  = let  
         -- Starting statements.
         lsStart = concatMap extractStmtStart starts

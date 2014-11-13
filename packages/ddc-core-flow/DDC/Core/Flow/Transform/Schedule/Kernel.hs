@@ -70,8 +70,7 @@ scheduleKernel
                         , nestStart     = []
                         , nestBody      = ssBody
                         , nestInner     = NestEmpty
-                        , nestEnd       = []
-                        , nestResult    = xUnit }
+                        , nestEnd       = [] }
 
         nest'   <- foldM (scheduleOperator lifting bsParamValues) 
                          nest0 operators

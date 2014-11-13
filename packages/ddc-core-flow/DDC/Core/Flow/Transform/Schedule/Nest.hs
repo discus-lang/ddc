@@ -208,8 +208,7 @@ nestOfContext context
           , nestStart           = []
           , nestBody            = []
           , nestInner           = NestEmpty
-          , nestEnd             = []
-          , nestResult          = xUnit }
+          , nestEnd             = [] }
 
         ContextSelect{}
          -> NestGuard

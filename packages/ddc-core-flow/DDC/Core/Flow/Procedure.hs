@@ -39,8 +39,7 @@ data Nest
         , nestStart             :: [StmtStart]
         , nestBody              :: [StmtBody]
         , nestInner             :: Nest
-        , nestEnd               :: [StmtEnd] 
-        , nestResult            :: Exp () Name }
+        , nestEnd               :: [StmtEnd] }
 
         -- Guarded context, 
         -- used when lowering pack-like operations.

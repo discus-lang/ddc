@@ -44,8 +44,7 @@ scheduleScalar
                 , nestStart             = []
                 , nestBody              = ssBody
                 , nestInner             = NestEmpty
-                , nestEnd               = []
-                , nestResult            = xUnit }
+                , nestEnd               = [] }
 
         -- Create the nested contexts
         let Just nest1  =  foldM insertContext nest0 contexts
