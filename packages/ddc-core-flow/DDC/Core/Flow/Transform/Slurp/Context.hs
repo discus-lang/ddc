@@ -1,17 +1,20 @@
 
 module DDC.Core.Flow.Transform.Slurp.Context
-    ( insertContext )
+    ( insertContext
+    , mergeContexts
+    , resizeContext )
 where
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Transform.Slurp.Error
+import DDC.Core.Flow.Transform.Slurp.Resize
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds.Simple
 import Control.Applicative
 
 
 -- "embed" is to be pushed inside "into"
--- "embed" must contain no inner contexts.
--- "embed" also cannot be an append
+-- only one of "embed" or "into" can contain inner contexts;
+-- otherwise, no promises are made about merging these
 insertContext
         :: Context
         -> Context
@@ -33,7 +36,7 @@ insertContext embed into
           -> descendorpush (contextRate into == contextOuterRate embed)
 
          ContextAppend{}
-          -> Left ErrorCannotMergeContext
+          -> app into embed
 
 
     ContextSelect{}
@@ -57,7 +60,7 @@ insertContext embed into
           -> descendorpush (contextInnerRate into == contextOuterRate embed)
 
          ContextAppend{}
-          -> Left ErrorCannotMergeContext
+          -> app into embed
 
 
     ContextSegment{}
@@ -81,26 +84,22 @@ insertContext embed into
           -> descendorpush (contextInnerRate into == contextOuterRate embed)
 
          ContextAppend{}
-          -> Left ErrorCannotMergeContext
+          -> app into embed
 
 
     ContextAppend{}
-     -> do      (ls, rs) <- splitContextIntoApps embed
-                ls'      <- insertContext (contextInner1 into) ls
-                rs'      <- insertContext (contextInner2 into) rs
-                return $ into
-                         { contextInner1 = ls'
-                         , contextInner2 = rs' }
+    -> app embed into
 
  where
   descend =
    case tryInserts embed (contextInner into) of
-    Nothing -> Left ErrorCannotMergeContext
+    Nothing -> Left (ErrorCannotMergeContext embed into)
     Just cs -> return into { contextInner = cs }
 
   dropops =
    return
-       into { contextOps   = contextOps   into ++ contextOps   embed }
+       into { contextOps   = contextOps   into ++ contextOps   embed
+            , contextInner = contextInner into ++ contextInner embed }
 
   pushinner =
    return
@@ -115,6 +114,15 @@ insertContext embed into
      -> pushinner
      | otherwise
      -> Left e
+
+  app splittee injectee
+   = do (ls, rs) <- splitContextIntoApps splittee
+        ls'      <- insertContext (contextInner1 injectee) ls
+        rs'      <- insertContext (contextInner2 injectee) rs
+        return $ injectee
+                 { contextInner1 = ls'
+                 , contextInner2 = rs' }
+
    
 
 tryInserts :: Context -> [Context] -> Maybe [Context]
@@ -158,10 +166,12 @@ splitContextIntoApps ctx
                        , ctx { contextOuterRate  = tr
                              , contextInner      = ris } )
 
+    ContextAppend{}
+     ->         return ( contextInner1 ctx
+                       , contextInner2 ctx )
 
     _
-     | otherwise
-     -> Left ErrorCannotSplitContext
+     -> Left (ErrorCannotSplitContext ctx)
 
 
  where
@@ -172,3 +182,77 @@ splitContextIntoApps ctx
    | otherwise
    = Nothing
 
+
+
+mergeContexts :: Context -> Context -> Either Error Context
+mergeContexts a b
+ = insertContext a b -- return a
+
+resizeContext :: Resize -> Context -> Either Error Context
+resizeContext r ctx
+ = case r of
+    Id _    
+     -> return ctx
+    AppL a b
+     -> return
+         ContextAppend
+         { contextRate1  = a
+         , contextInner1 = empty a
+         , contextRate2  = b
+         , contextInner2 = wrap b ctx
+         }
+    AppR a b
+     -> return
+         ContextAppend
+         { contextRate1  = a
+         , contextInner1 = wrap a ctx
+         , contextRate2  = b
+         , contextInner2 = wrap k ctx
+         }
+    App k k' l l' ls rs
+     | ContextAppend{} <- ctx
+     -> do  in1 <- resizeContext ls (contextInner1 ctx)
+            in2 <- resizeContext rs (contextInner2 ctx)
+            return
+             ContextAppend
+             { contextRate1  = k'
+             , contextInner1 = in1
+             , contextRate2  = l'
+             , contextInner2 = in2 }
+     | otherwise
+     -> Left (ErrorCannotResize ctx)
+    Sel1 _ k _ r
+     -> do  ctx' <- resizeContext r ctx
+            return $ wrap k ctx'
+    Segd _ k _ r
+     -> do  ctx' <- resizeContext r ctx
+            return $ wrap k ctx'
+    -- TODO doublecheck this after implementing slurp for OpSeriesCross
+    Cross _ k _ r
+     -> do  ctx' <- resizeContext r ctx
+            return $ wrap k ctx'
+            
+            
+
+
+empty :: Name -> Context
+empty k
+ = ContextRate
+ { contextRate  = (TVar (UName k))
+ , contextInner = []
+ , contextOps   = [] }
+
+wrap :: Name -> Context -> Context
+wrap k ctx
+ = case ctx of
+   ContextRate{}
+    | contextRate ctx == k'
+    -> ctx
+   _
+    | otherwise
+    -> ContextRate
+       { contextRate  = k'
+       , contextInner = [ctx]
+       , contextOps   = [] }
+ where
+  k' = TVar (UName k)) in

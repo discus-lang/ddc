@@ -2,6 +2,7 @@
 module DDC.Core.Flow.Process.Pretty where
 import DDC.Core.Flow.Process.Process
 import DDC.Core.Flow.Process.Operator
+import DDC.Core.Flow.Context
 import DDC.Base.Pretty
 import DDC.Core.Pretty          ()
 
@@ -10,8 +11,41 @@ instance Pretty Process where
  ppr p
   = vcat
   $     [ ppr (processName p)
-        , text "  parameters:    " <> ppr (processParamValues p) ]
-        ++ map (indent 2 . ppr) (processOperators p)
+        , text "  parameters:    " <> ppr (processParamValues p) 
+        , indent 2 $ ppr $ processContext p ]
+
+
+instance Pretty Context where
+ ppr cc
+  = case cc of
+    ContextRate{}
+       -> vcat
+        $ [ text "Rate " <> ppr (contextRate cc) ]
+          ++ ops
+          ++ inner
+    ContextSelect{}
+       -> vcat
+        $ [ text "Select " <> ppr (contextInnerRate cc) <> text " <= " <> ppr (contextOuterRate cc)
+          , text " flags: " <> ppr (contextFlags cc) 
+          , text " sel:   " <> ppr (contextSelector cc) ]
+          ++ ops
+          ++ inner
+    ContextSegment{}
+       -> vcat
+        $ [ text "Segment " <> ppr (contextInnerRate cc) <> text " <= " <> ppr (contextOuterRate cc)
+          , text " lens:  " <> ppr (contextLens cc) 
+          , text " segd:  " <> ppr (contextSegd cc) ]
+          ++ ops
+          ++ inner
+    ContextAppend{}
+       -> vcat
+        $ [ text "Append " <> ppr (contextRate1 cc) <> text " " <> ppr (contextRate2 cc)
+          , indent 2 $ ppr $ contextInner1 cc
+          , indent 2 $ ppr $ contextInner2 cc ]
+
+  where
+   ops = map (indent 2 . ppr) (contextOps cc)
+   inner = map (indent 2 . ppr) (contextInner cc)
 
 
 instance Pretty Operator where
@@ -98,4 +132,5 @@ instance Pretty Operator where
         , text " rate:    "     <> ppr (opInputRate     op)
         , text " input:   "     <> ppr (opInputRateVec  op)
         , text " result:  "     <> ppr (opResultSeries  op) ]
+
 

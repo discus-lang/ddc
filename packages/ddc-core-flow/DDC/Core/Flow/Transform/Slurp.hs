@@ -19,6 +19,7 @@ import qualified DDC.Type.Env           as Env
 import DDC.Type.Env                     (TypeEnv)
 import Data.List
 import qualified Data.Map               as Map
+import Control.Applicative
 
 
 -- | Slurp stream processes from the top level of a module.
@@ -137,14 +138,6 @@ slurpProcessX tenv ctxs rs xx
  , Just c       <- Map.lookup u' ctxs
  = return c
 
- -- The process ends by joining two existing processes.
- -- We assume that the overall expression is well typed.
- | Just (NameOpSeries OpSeriesJoin, [_, _, XVar (UName a), XVar (UName b)])
-                <- takeXPrimApps xx
- , Just a'      <- Map.lookup a ctxs
- , Just b'      <- Map.lookup b ctxs
- = return (merge a' b')
-
  -- Process finishes with some expression that doesn't look like it 
  -- actually defines a value of type Process#.
  | otherwise
@@ -179,7 +172,7 @@ slurpBindingX tenv ctxs rs b1 xx
                 | otherwise                     = tenv
 
         -- Slurp the rest of the process using the new environment.
-        slurpBindingX tenv' ctxs' rs' bs b1 xMore
+        slurpBindingX tenv' ctxs' rs' b1 xMore
 
 
 -- Slurp a series#
@@ -192,7 +185,7 @@ slurpBindingX _tenv ctxs rs b@(BName n _)
             , XType tA
             , XVar vec]))
  = do
-        let op          = OpSeriesOfRateVec
+        let op          = OpSeries
                         { opResultSeries        = b
                         , opInputRate           = tK
                         , opInputRateVec        = vec 
@@ -224,13 +217,12 @@ slurpBindingX tenv ctxs rs b@(BName n _)
  = do
         flagsContext   <- lookupOrDie nFlags ctxs
 
-        -- Introduce new series with name of selector,
-        -- as copy of flags series
-        let uSelCopy    = UName nSel
-        let bSelCopy    = BName nSel (tSeries tProc tK1 tBool)
+        let nFlagsUse   = NameVarMod nFlags "use"
+        let uFlagsUse   = UName nFlagsUse
+        let bFlagsUse   = BName bFlagsUse (tSeries tProc tK1 tBool)
 
         let opId        = OpId
-                        { opResultSeries        = bSelCopy
+                        { opResultSeries        = bFlagsUse
                         , opInputRate           = tK1
                         , opInputSeries         = uFlags
                         , opElemType            = tBool }
@@ -238,15 +230,17 @@ slurpBindingX tenv ctxs rs b@(BName n _)
         let context     = ContextSelect
                         { contextOuterRate      = tK1
                         , contextInnerRate      = TVar (UName nR)
-                        , contextFlags          = uFlags
+                        , contextFlags          = uFlagsUse
                         , contextSelector       = bSel
                         , contextOps            = [opId]
                         , contextInner          = [] }
 
         context'       <- insertContext context  flagsContext
-        let ctxs'       = Map.insert  n context' ctxs
+        let ctxsInner   = Map.insert nSel context' ctxs
+        selProc <- slurpProcessX tenv ctxsInner rs xBody
 
-        slurpBindingX tenv ctxs' rs b xBody
+        let ctxsOuter   = Map.insert n selProc ctxs
+        return (ctxsOuter, rs)
 
 
 -- Slurp a mkSel1#
@@ -267,11 +261,12 @@ slurpBindingX tenv ctxs rs b@(BName n _)
 
         -- Introduce new series with name of segd,
         -- as copy of lens series
-        let uSegdCopy   = UName nSegd
-        let bSegdCopy   = BName nSegd (tSeries tProc tK1 tNat)
+        let nLensUse    = NameVarMod nLens "use"
+        let uLensUse    = UName nLensUse
+        let bLensUse    = BName nLensUse (tSeries tProc tK1 tNat)
 
         let opId        = OpId
-                        { opResultSeries        = bSegdCopy
+                        { opResultSeries        = bLensUse
                         , opInputRate           = tK1
                         , opInputSeries         = uLens
                         , opElemType            = tNat }
@@ -279,15 +274,17 @@ slurpBindingX tenv ctxs rs b@(BName n _)
         let context     = ContextSelect
                         { contextOuterRate      = tK1
                         , contextInnerRate      = TVar (UName nR)
-                        , contextLens           = uLens
+                        , contextLens           = uLensUse
                         , contextSegd           = bSegd
                         , contextOps            = [opId]
                         , contextInner          = [] }
 
         context'       <- insertContext context  lensContext
-        let ctxs'       = Map.insert  n context' ctxs
+        let ctxsInner   = Map.insert nSegd context' ctxs
+        segProc <- slurpProcessX tenv ctxsInner rs xBody
 
-        slurpBindingX tenv ctxs' rs b xBody
+        let ctxsOuter   = Map.insert n segProc ctxs
+        return (ctxsOuter, rs)
 
 
 -- Slurp a series operator that doesn't introduce a new context.
@@ -301,7 +298,7 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
                         , contextInner          = [] }
 
         let go []     c = c
-            go (i:is) c = go ns <$> insertContext i c
+            go (i:is) c = go is <$> insertContext i c
 
         context'       <- go ins' ctx
         let ctxs'       = Map.insert n context' ctxs
@@ -333,22 +330,41 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
         return (ctxs, Map.insert n r rs)
 
 
--- Slurp a process ending.
-slurpBindingX tenv ctxs rs _ xx
- -- The process ends with a variable that has Process# type.
- | XVar u       <- xx
- , Just t       <- Env.lookup u tenv
- , isProcessType t
- = return ([], [])                
+-- Slurp a process join or resize
+slurpBindingX tenv ctxs rs (BName n _) xx
+ -- Just a plain variable, try to look it up in the environments
+ | XVar  u      <- xx
+ , UName var    <- u
+ , Just  t      <- Env.lookup u tenv
+ = case (Map.lookup var ctxs, Map.lookup var rs) of
+    (Just c', _) -> return (Map.insert n c' ctxs, rs)
+    (_, Just r') -> return (ctxs, Map.insert n r' rs)
+    (Nothing, Nothing)
+     -> Left (ErrorNotInContext var)
 
  -- The process ends by joining two existing processes.
  -- We assume that the overall expression is well typed.
- | Just (NameOpSeries OpSeriesJoin, [_, _, _, _])
+ | Just (NameOpSeries OpSeriesJoin, [_, _, XVar (UName a), XVar (UName b)])
                 <- takeXPrimApps xx
- = return ([], [])
+ = do   a' <- lookupOrDie a ctxs
+        b' <- lookupOrDie b ctxs
+        m' <- mergeContext a' b'
+        let ctxs' = Map.insert n m' ctxs
+        return (ctxs', rs)
+
+ -- The process ends by joining two existing processes.
+ -- We assume that the overall expression is well typed.
+ | Just (NameOpSeries OpSeriesResizeProc, [_, _, _, XVar (UName r), XVar (UName c)])
+                <- takeXPrimApps xx
+ = do   r' <- lookupOrDie r rs
+        c' <- lookupOrDie c ctxs
+        m' <- resizeContext r' c'
+        let ctxs' = Map.insert n m' ctxs
+        return (ctxs', rs)
+
 
  -- Process finishes with some expression that doesn't look like it 
  -- actually defines a value of type Process#.
- | otherwise
+slurpBindingX _ _ _ _ xx
  = Left (ErrorBadOperator xx)
 

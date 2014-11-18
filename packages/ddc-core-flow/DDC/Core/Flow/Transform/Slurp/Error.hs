@@ -6,6 +6,8 @@ import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Transform.Annotate
 import DDC.Core.Pretty
+import DDC.Core.Flow.Context
+import DDC.Core.Flow.Process.Pretty ()
 
 
 -- | Things that can go wrong when slurping a process spec from
@@ -23,11 +25,14 @@ data Error
 
         -- | Cannot merge contexts
         -- TODO more info
-        | ErrorCannotMergeContext
+        | ErrorCannotMergeContext Context Context
 
         -- | Cannot split contexts
         -- TODO more info
-        | ErrorCannotSplitContext
+        | ErrorCannotSplitContext Context
+
+        -- | Cannot resize a non-append
+        | ErrorCannotResizeContext Context
         deriving Show
 
 
@@ -50,9 +55,22 @@ instance Pretty Error where
                  , empty
                  , ppr n ]
 
-        ErrorCannotMergeContext
-         -> vcat [ text "Cannot merge contexts" ]
+        ErrorCannotMergeContext c1 c2
+         -> vcat [ text "Cannot merge contexts"
+                 , empty
+                 , text "Embed:"
+                 , ppr c1
+                 , empty
+                 , text "Into:"
+                 , ppr c2 ]
 
-        ErrorCannotSplitContext
-         -> vcat [ text "Cannot split context into its append parts" ]
+        ErrorCannotSplitContext c
+         -> vcat [ text "Cannot split context into its append parts"
+                 , empty
+                 , ppr c]
+
+        ErrorCannotResizeContext c
+         -> vcat [ text "Cannot resize append context, because it's not an append"
+                 , empty
+                 , ppr c]
 

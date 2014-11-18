@@ -2,7 +2,6 @@
 module DDC.Core.Flow.Process.Process
         ( Process       (..))
 where
-import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
@@ -31,13 +30,10 @@ data Process
           --   These are the value parameters of the original function.
         , processParamValues    :: [BindF]
 
-          -- | Flow contexts in this process.
+          -- | Flow context in this process.
           --   This contains a ContextRate entry for all the Rate variables
           --   in the parameters, along with an entry for all the nested
           --   contexts introduced by the process itself.
-        , processContexts       :: [Context]
-
-          -- | Flow operators in this process.
-        , processOperators      :: [Operator] 
+        , processContext        :: Context
         }
 
