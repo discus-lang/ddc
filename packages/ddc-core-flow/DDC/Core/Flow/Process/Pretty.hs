@@ -92,9 +92,9 @@ instance Pretty Operator where
         , text " input  rate: " <> ppr (opInputRate     op) 
         , text " output rate: " <> ppr (opOutputRate    op) ]
 
- ppr op@OpSeriesOfRateVec{}
+ ppr op@OpSeries{}
         = vcat
-        [ text "SeriesOfRateVec"
+        [ text "Series"
         , text " rate:    "     <> ppr (opInputRate     op)
         , text " input:   "     <> ppr (opInputRateVec  op)
         , text " result:  "     <> ppr (opResultSeries  op) ]

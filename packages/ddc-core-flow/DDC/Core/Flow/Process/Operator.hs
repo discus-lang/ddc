@@ -230,7 +230,7 @@ data Operator
 
         -----------------------------------------
         -- | Convert a series from a vector
-        | OpSeriesOfRateVec
+        | OpSeries
         { -- Binder for result series.
           opResultSeries        :: BindF
 
