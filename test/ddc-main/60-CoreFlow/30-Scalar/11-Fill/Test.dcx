@@ -5,6 +5,6 @@
 :flow-lower..
 module Test with letrec
 test    [p : Proc] [k : Rate] (v : Vector# Int#) 
-        (s : Series# p k k Int#) : Process# p k
- = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) s)
+        (s : RateVec# k Int#) : Process# p k
+ = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) (series# s))
 ;;

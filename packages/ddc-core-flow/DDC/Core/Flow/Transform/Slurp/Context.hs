@@ -8,9 +8,12 @@ import DDC.Core.Flow.Context
 import DDC.Core.Flow.Transform.Slurp.Error
 import DDC.Core.Flow.Transform.Slurp.Resize
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Process.Operator
 import DDC.Core.Compounds.Simple
+import DDC.Core.Exp.Simple
 import Control.Applicative
-
+import Data.Function (on)
+import Data.List     (nubBy)
 
 -- "embed" is to be pushed inside "into"
 -- only one of "embed" or "into" can contain inner contexts;
@@ -88,7 +91,7 @@ insertContext embed into
 
 
     ContextAppend{}
-    -> app embed into
+     -> app embed into
 
  where
   descend =
@@ -97,9 +100,10 @@ insertContext embed into
     Just cs -> return into { contextInner = cs }
 
   dropops =
-   return
-       into { contextOps   = contextOps   into ++ contextOps   embed
-            , contextInner = contextInner into ++ contextInner embed }
+   let ops' = contextOps   into ++ contextOps   embed
+   in  return
+         into { contextOps   = nubBy ((==) `on` bindOfOp) ops'
+              , contextInner = contextInner into ++ contextInner embed }
 
   pushinner =
    return
@@ -189,61 +193,61 @@ mergeContexts a b
  = insertContext a b -- return a
 
 resizeContext :: Resize -> Context -> Either Error Context
-resizeContext r ctx
- = case r of
+resizeContext resize ctx
+ = case resize of
     Id _    
      -> return ctx
     AppL a b
      -> return
          ContextAppend
-         { contextRate1  = a
-         , contextInner1 = empty a
-         , contextRate2  = b
-         , contextInner2 = wrap b ctx
+         { contextRate1  = TVar $ UName a
+         , contextInner1 = emptyCtx a
+         , contextRate2  = TVar $ UName b
+         , contextInner2 = wrapCtx b ctx
          }
     AppR a b
      -> return
          ContextAppend
-         { contextRate1  = a
-         , contextInner1 = wrap a ctx
-         , contextRate2  = b
-         , contextInner2 = wrap k ctx
+         { contextRate1  = TVar $ UName a
+         , contextInner1 = wrapCtx a ctx
+         , contextRate2  = TVar $ UName b
+         , contextInner2 = wrapCtx b ctx
          }
-    App k k' l l' ls rs
+    App _ k' _ l' ls rs
      | ContextAppend{} <- ctx
      -> do  in1 <- resizeContext ls (contextInner1 ctx)
             in2 <- resizeContext rs (contextInner2 ctx)
             return
              ContextAppend
-             { contextRate1  = k'
+             { contextRate1  = TVar $ UName k'
              , contextInner1 = in1
-             , contextRate2  = l'
+             , contextRate2  = TVar $ UName l'
              , contextInner2 = in2 }
      | otherwise
-     -> Left (ErrorCannotResize ctx)
+     -> Left (ErrorCannotResizeContext ctx)
     Sel1 _ k _ r
      -> do  ctx' <- resizeContext r ctx
-            return $ wrap k ctx'
+            return $ wrapCtx k ctx'
     Segd _ k _ r
      -> do  ctx' <- resizeContext r ctx
-            return $ wrap k ctx'
+            return $ wrapCtx k ctx'
     -- TODO doublecheck this after implementing slurp for OpSeriesCross
     Cross _ k _ r
      -> do  ctx' <- resizeContext r ctx
-            return $ wrap k ctx'
+            return $ wrapCtx k ctx'
             
             
 
 
-empty :: Name -> Context
-empty k
+emptyCtx :: Name -> Context
+emptyCtx k
  = ContextRate
  { contextRate  = (TVar (UName k))
  , contextInner = []
  , contextOps   = [] }
 
-wrap :: Name -> Context -> Context
-wrap k ctx
+wrapCtx :: Name -> Context -> Context
+wrapCtx k ctx
  = case ctx of
    ContextRate{}
     | contextRate ctx == k'
@@ -255,4 +259,5 @@ wrap k ctx
        , contextInner = [ctx]
        , contextOps   = [] }
  where
-  k' = TVar (UName k)) in
+  k' = TVar (UName k)
+

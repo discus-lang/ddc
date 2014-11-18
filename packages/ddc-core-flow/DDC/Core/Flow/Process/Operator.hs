@@ -1,6 +1,7 @@
 
 module DDC.Core.Flow.Process.Operator
-        (Operator (..))
+        ( Operator (..)
+        , bindOfOp)
 where
 import DDC.Core.Flow.Exp
 
@@ -246,3 +247,31 @@ data Operator
 
         deriving Show
 
+bindOfOp :: Operator -> BindF
+bindOfOp o
+ = case o of
+    OpId{}
+     -> opResultSeries o
+    OpRep{}
+     -> opResultSeries o
+    OpReps{}
+     -> opResultSeries o
+    OpIndices{}
+     -> opResultSeries o
+    OpMap{}
+     -> opResultSeries o
+    OpPack{}
+     -> opResultSeries o
+    OpGenerate{}
+     -> opResultSeries o
+    OpSeries{}
+     -> opResultSeries o
+
+    OpFill{}
+     -> opResultBind o
+    OpGather{}
+     -> opResultBind o
+    OpScatter{}
+     -> opResultBind o
+    OpReduce{}
+     -> opResultBind o

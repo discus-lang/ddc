@@ -10,79 +10,44 @@ import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
-import Control.Monad
 
 
 -- | Schedule a process into a procedure, producing scalar code.
 scheduleScalar :: Process -> Either Error Procedure
 scheduleScalar 
        (Process { processName           = name
-                , processProcType       = proc
-                , processLoopRate       = rate
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
-                , processOperators      = operators
-                , processContexts       = contexts})
+                , processContext        = context })
   = do
-        -- Create the initial loop nest of the process rate.
-        let bsSeries    = [ b   | b <- bsParamValues
-                                , isSeriesType (typeOfBind b) ]
-
-        -- Body expressions that take the next element from each input series.
-        let ssBody      
-                = [ BodyStmt bElem
-                        (xNext proc rate tElem (XVar (UName nS)) (XVar uIndex))
-                        | bS@(BName nS tS)      <- bsSeries
-                        , let Just tElem        = elemTypeOfSeriesType tS 
-                        , let Just bElem        = elemBindOfSeriesBind bS
-                        , let uIndex            = UIx 0 ]
-
-        -- The initial loop nest.
-        let nest0       
-                = NestLoop 
-                { nestRate              = rate 
-                , nestStart             = []
-                , nestBody              = ssBody
-                , nestInner             = NestEmpty
-                , nestEnd               = [] }
-
-        -- Create the nested contexts
-        let Just nest1  =  foldM insertContext nest0 contexts
-
-        -- Schedule the series operators into the nest.
-        nest2           <- foldM scheduleOperator nest1 operators
+        nest            <- scheduleContext scheduleOperator context
 
         return  $ Procedure
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
                 , procedureParamValues  = bsParamValues
-                , procedureNest         = nest2 }
+                , procedureNest         = nest }
 
 
 -------------------------------------------------------------------------------
 -- | Schedule a single series operator into a loop nest.
 scheduleOperator 
-        :: Nest         -- ^ The current loop nest.
-        -> Operator     -- ^ Operator to schedule.
-        -> Either Error Nest
+        :: Operator     -- ^ Operator to schedule.
+        -> Either Error ([StmtStart], [StmtBody], [StmtEnd])
 
-scheduleOperator nest0 op
+scheduleOperator op
 
  -- Id -------------------------------------------
  | OpId{}     <- op
- = do   let tK          = opInputRate op
-
-        -- Get binders for the input elements.
+ = do   -- Get binders for the input elements.
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
         let Just uInput  = elemBoundOfSeriesBound (opInputSeries  op)
 
-        let Just nest1   
-                = insertBody nest0 tK
-                $ [ BodyStmt bResult (XVar uInput) ]
+        return ( [] 
+               , [ BodyStmt bResult (XVar uInput) ]
+               , [] )
 
-        return nest1
-
- | OpSeriesOfRateVec{} <- op
+ | OpSeries{} <- op
  = do   let tK           = opInputRate    op
         let tA           = opElemType     op
         let bS           = opResultSeries op
@@ -92,24 +57,23 @@ scheduleOperator nest0 op
         let Just bResult = elemBindOfSeriesBind                   bS
 
         -- Convert the RateVec to a series
-        let Just nest1
-                = insertStarts nest0 tK
-                $ [ StartStmt bS
+        let starts
+                = [ StartStmt bS
                         (xSeriesOfRateVec tP tK tA (XVar uInput)) ]
+
         -- Body expressions that take the next element from each input series.
-        let Just nest2
-                = insertBody nest1 tK
-                $ [ BodyStmt bResult
+        let bodies
+                = [ BodyStmt bResult
                         (xNext tP tK tA (XVar uS) (XVar (UIx 0))) ]
 
-        return nest2
+        return ( starts
+               , bodies
+               , [] )
 
 
  -- Rep -----------------------------------------
  | OpRep{}      <- op
- = do   let tK          = opOutputRate op
-
-        -- Make a binder for the replicated element.
+ = do   -- Make a binder for the replicated element.
         let BName nResult _ = opResultSeries op
         let nVal        = NameVarMod nResult "val"
         let uVal        = UName nVal
@@ -120,16 +84,14 @@ scheduleOperator nest0 op
 
         -- Evaluate the expression to be replicated once, 
         -- before the main loop.
-        let Just nest1
-                = insertStarts nest0 tK
-                $ [ StartStmt bVal (opInputExp op) ]
+        let starts
+                = [ StartStmt bVal (opInputExp op) ]
 
         -- Use the expression for each iteration of the loop.
-        let Just nest2
-                = insertBody nest1 tK
-                $ [ BodyStmt bResult (XVar uVal) ]
+        let bodies
+                = [ BodyStmt bResult (XVar uVal) ]
 
-        return nest2
+        return (starts, bodies, [])
 
  -- Reps ----------------------------------------
  | OpReps{}     <- op
@@ -139,12 +101,11 @@ scheduleOperator nest0 op
         -- Set the result to point to the input element.
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
 
-        let Just nest1
-                = insertBody nest0 (opOutputRate op)
-                $ [ BodyStmt    bResult
+        let bodies
+                = [ BodyStmt    bResult
                                 (XVar uInput)]
 
-        return nest1
+        return ([], bodies, [])
 
  -- Indices --------------------------------------
  | OpIndices{}  <- op
@@ -153,12 +114,11 @@ scheduleOperator nest0 op
         -- the current segment.
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
 
-        let Just nest1
-                = insertBody nest0 (opOutputRate op)
-                $ [ BodyStmt    bResult
+        let bodies
+                = [ BodyStmt    bResult
                                 (XVar (UIx 1)) ]
 
-        return nest1
+        return ([], bodies, [])
 
  -- Fill -----------------------------------------
  | OpFill{} <- op
@@ -169,9 +129,8 @@ scheduleOperator nest0 op
 
         -- Write the current element to the vector.
         let UName nVec  = opTargetVector op
-        let Just nest1      
-                = insertBody nest0 tK 
-                $ [ BodyVecWrite 
+        let bodies
+                = [ BodyVecWrite 
                         nVec                    -- destination vector
                         (opElemType op)         -- series elem type
                         (XVar (UIx 0))          -- index
@@ -181,71 +140,59 @@ scheduleOperator nest0 op
         -- was constructed in a filter context. After the process completes, 
         -- we know how many elements were written so we can truncate the
         -- vector down to its final length.
-        let Just nest2
-                | nestContainsGuardedRate nest1 tK
-                = insertEnds nest1 tK
-                $ [ EndVecTrunc 
+        let ends
+                | False -- nestContainsGuardedRate nest1 tK
+                = [ EndVecTrunc 
                         nVec                    -- destination vector
                         (opElemType op)         -- series element type
                         tK ]                    -- rate of source series
 
                 | otherwise
-                = Just nest1
+                = []
 
-        return nest2
+        return ([], bodies, ends)
 
  -- Gather ---------------------------------------
  | OpGather{} <- op
- = do   
-        let tK          = opInputRate op
-
-        -- Bind for result element.
+ = do   -- Bind for result element.
         let Just bResult = elemBindOfSeriesBind (opResultBind op)
 
         -- Bound of source index.
         let Just uIndex  = elemBoundOfSeriesBound (opSourceIndices op)
 
         -- Read from the vector.
-        let Just nest1  = insertBody nest0 tK
-                        $ [ BodyStmt bResult
+        let bodies      = [ BodyStmt bResult
                                 (xReadVector 
                                         (opElemType op)
                                         (XVar $ bufOfVectorName $ opSourceVector op)
                                         (XVar $ uIndex)) ]
 
-        return nest1
+        return ([], bodies, [])
  
  -- Scatter --------------------------------------
  | OpScatter{} <- op
- = do   
-        let tK          = opInputRate op
-
-        -- Bound of source index.
+ = do   -- Bound of source index.
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
 
         -- Bound of source elements.
         let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
 
         -- Read from vector.
-        let Just nest1  = insertBody nest0 tK
-                        $ [ BodyStmt (BNone tUnit)
+        let bodies      = [ BodyStmt (BNone tUnit)
                                 (xWriteVector
                                         (opElemType op)
                                         (XVar $ bufOfVectorName $ opTargetVector op)
                                         (XVar $ uIndex) (XVar $ uElem)) ]
 
         -- Bind final unit value.
-        let Just nest2  = insertEnds nest1 tK
-                        $ [ EndStmt     (opResultBind op)
+        let ends        = [ EndStmt     (opResultBind op)
                                         xUnit ]
 
-        return nest2
+        return ([], bodies, ends)
 
  -- Maps -----------------------------------------
  | OpMap{} <- op
- = do   let tK          = opInputRate op
-
-        -- Bind for the result element.
+ = do   -- Bind for the result element.
         let Just bResult = elemBindOfSeriesBind (opResultSeries op)
 
         -- Binds for all the input elements.
@@ -261,11 +208,10 @@ scheduleOperator nest0 op
                                 | b <- opWorkerParams op
                                 | u <- usInput ]
 
-        let Just nest1  
-                = insertBody nest0 tK
-                $ [ BodyStmt bResult xBody ]
+        let bodies
+                = [ BodyStmt bResult xBody ]
 
-        return nest1
+        return ([], bodies, [])
 
  -- Pack ----------------------------------------
  | OpPack{}     <- op
@@ -275,18 +221,15 @@ scheduleOperator nest0 op
         -- Set the result to point to the input element
         let Just bResult = elemBindOfSeriesBind  (opResultSeries op)
 
-        let Just nest1
-                = insertBody nest0 (opOutputRate op)
-                $ [ BodyStmt    bResult
+        let bodies
+                = [ BodyStmt    bResult
                                 (XVar uInput)]
 
-        return nest1
+        return ([], bodies, [])
 
  -- Generate -------------------------------------
  | OpGenerate{} <- op
- = do   let tK          = opOutputRate op
-
-        -- Bind for the result element.
+ = do   -- Bind for the result element.
         let Just bResult = elemBindOfSeriesBind (opResultSeries op)
 
         -- Apply loop index into the worker body.
@@ -295,26 +238,22 @@ scheduleOperator nest0 op
                                 (opWorkerBody       op))
                          (XVar (UIx 0))          -- index
 
-        let Just nest1  
-                = insertBody nest0 tK
-                $ [ BodyStmt bResult xBody ]
+        let bodies
+                = [ BodyStmt bResult xBody ]
 
-        return nest1
+        return ([], bodies, [])
 
 -- Reduce --------------------------------------
  | OpReduce{} <- op
- = do   let tK          = opInputRate op
-
-        -- Initialize the accumulator.
+ = do   -- Initialize the accumulator.
         let UName nResult = opTargetRef op
         let nAcc          = NameVarMod nResult "acc"
         let tAcc          = typeOfBind (opWorkerParamAcc op)
 
         let nAccInit      = NameVarMod nResult "init"
 
-        let Just nest1
-                = insertStarts nest0 tK
-                $ [ StartStmt (BName nAccInit tAcc)
+        let starts
+                = [ StartStmt (BName nAccInit tAcc)
                               (xRead tAcc (XVar $ opTargetRef op))
                   , StartAcc   nAcc tAcc (XVar (UName nAccInit)) ]
 
@@ -335,9 +274,8 @@ scheduleOperator nest0 op
                         x2
                        
         -- Update the accumulator in the loop body.
-        let Just nest2
-                = insertBody nest1 tK
-                $ [ BodyAccRead  nAcc tAcc bAccVal
+        let bodies
+                = [ BodyAccRead  nAcc tAcc bAccVal
                   , BodyAccWrite nAcc tAcc 
                         (xBody  (XVar uAccVal) 
                                 (XVar uInput)) ]
@@ -345,14 +283,13 @@ scheduleOperator nest0 op
         -- Read back the final value after the loop has finished and
         -- write it to the destination.
         let nAccRes     = NameVarMod nResult "res"
-        let Just nest3      
-                = insertEnds nest2 tK
-                $ [ EndAcc   nAccRes tAcc nAcc 
+        let ends
+                = [ EndAcc   nAccRes tAcc nAcc 
                   , EndStmt  (BNone tUnit)
                              (xWrite tAcc (XVar $ opTargetRef op)
                                           (XVar $ UName nAccRes)) ]
 
-        return nest3
+        return (starts, bodies, ends)
 
  -- Unsupported ----------------------------------
  | otherwise

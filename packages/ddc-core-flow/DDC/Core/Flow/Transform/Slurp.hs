@@ -19,7 +19,6 @@ import qualified DDC.Type.Env           as Env
 import DDC.Type.Env                     (TypeEnv)
 import Data.List
 import qualified Data.Map               as Map
-import Control.Applicative
 
 
 -- | Slurp stream processes from the top level of a module.
@@ -129,7 +128,7 @@ slurpProcessX tenv ctxs rs xx
         slurpProcessX tenv' ctxs' rs' xMore
 
 -- Slurp a process ending.
-slurpProcessX tenv ctxs rs xx
+slurpProcessX tenv ctxs _rs xx
  -- The process ends with a variable that has Process# type.
  | XVar u       <- xx
  , Just t       <- Env.lookup u tenv
@@ -203,7 +202,7 @@ slurpBindingX _tenv ctxs rs b@(BName n _)
 
 -- Slurp a mkSel1#
 -- This creates a nested selector context.
-slurpBindingX tenv ctxs rs b@(BName n _)
+slurpBindingX tenv ctxs rs (BName n _)
  (   takeXPrimApps 
   -> Just ( NameOpSeries (OpSeriesMkSel 1)
           , [ XType tProc
@@ -219,7 +218,7 @@ slurpBindingX tenv ctxs rs b@(BName n _)
 
         let nFlagsUse   = NameVarMod nFlags "use"
         let uFlagsUse   = UName nFlagsUse
-        let bFlagsUse   = BName bFlagsUse (tSeries tProc tK1 tBool)
+        let bFlagsUse   = BName nFlagsUse (tSeries tProc tK1 tBool)
 
         let opId        = OpId
                         { opResultSeries        = bFlagsUse
@@ -245,7 +244,7 @@ slurpBindingX tenv ctxs rs b@(BName n _)
 
 -- Slurp a mkSel1#
 -- This creates a nested selector context.
-slurpBindingX tenv ctxs rs b@(BName n _)
+slurpBindingX tenv ctxs rs (BName n _)
  (   takeXPrimApps 
   -> Just ( NameOpSeries OpSeriesMkSegd
           , [ XType tProc
@@ -271,7 +270,7 @@ slurpBindingX tenv ctxs rs b@(BName n _)
                         , opInputSeries         = uLens
                         , opElemType            = tNat }
 
-        let context     = ContextSelect
+        let context     = ContextSegment
                         { contextOuterRate      = tK1
                         , contextInnerRate      = TVar (UName nR)
                         , contextLens           = uLensUse
@@ -297,17 +296,17 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
                         , contextOps            = [op]
                         , contextInner          = [] }
 
-        let go []     c = c
-            go (i:is) c = go is <$> insertContext i c
+        let go []     c = return c
+            go (i:is) c = insertContext c i >>= go is
 
         context'       <- go ins' ctx
         let ctxs'       = Map.insert n context' ctxs
         return (ctxs', rs)
 
 -- Slurp an append operator
-slurpBindingX _ ctxs rs b@(BName n _) xx
+slurpBindingX _ ctxs rs (BName n _) xx
  | Just (NameOpSeries OpSeriesAppend
-        , [ XType _P, XType tK1, XType tK2, XType tA
+        , [ XType _P, XType tK1, XType tK2, XType _tA
           , XVar (UName nIn1), XVar (UName nIn2) ] ) 
                                 <- takeXPrimApps xx
  = do   in1'           <- lookupOrDie nIn1 ctxs
@@ -324,18 +323,17 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
 
 
 -- Slurp a Resize
-slurpBindingX _ ctxs rs b@(BName n _) xx
- | Just rr <- seqEitherMaybe $ slurpResize ctxs xx
+slurpBindingX _ ctxs rs (BName n _) xx
+ | Just rr <- seqEitherMaybe $ slurpResize rs xx
  = do   r  <- rr
         return (ctxs, Map.insert n r rs)
 
 
 -- Slurp a process join or resize
-slurpBindingX tenv ctxs rs (BName n _) xx
+slurpBindingX _tenv ctxs rs (BName n _) xx
  -- Just a plain variable, try to look it up in the environments
  | XVar  u      <- xx
  , UName var    <- u
- , Just  t      <- Env.lookup u tenv
  = case (Map.lookup var ctxs, Map.lookup var rs) of
     (Just c', _) -> return (Map.insert n c' ctxs, rs)
     (_, Just r') -> return (ctxs, Map.insert n r' rs)
@@ -348,7 +346,7 @@ slurpBindingX tenv ctxs rs (BName n _) xx
                 <- takeXPrimApps xx
  = do   a' <- lookupOrDie a ctxs
         b' <- lookupOrDie b ctxs
-        m' <- mergeContext a' b'
+        m' <- mergeContexts a' b'
         let ctxs' = Map.insert n m' ctxs
         return (ctxs', rs)
 

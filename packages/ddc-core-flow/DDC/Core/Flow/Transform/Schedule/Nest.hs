@@ -1,154 +1,128 @@
 
 module DDC.Core.Flow.Transform.Schedule.Nest
         ( -- * Insertion into a loop nest
-          insertContext
-        , insertStarts
-        , insertBody
-        , insertEnds
+          scheduleContext
 
           -- * Rate predicates
         , nestContainsRate
         , nestContainsGuardedRate)
 where
 import DDC.Core.Flow.Procedure
-import DDC.Core.Flow.Compounds
-import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Process
 import DDC.Core.Flow.Exp
-import Data.Monoid
+import DDC.Core.Flow.Transform.Schedule.Error
+
+scheduleContext
+    :: (Operator -> Either Error ([StmtStart], [StmtBody], [StmtEnd]))
+    -> Context
+    -> Either Error Nest
+
+scheduleContext fop topctx
+ = do   (starts, nest, ends) <- go topctx
+        return $ insertStarts starts (insertEnds ends nest)
+ where
+  go ctx
+   = case ctx of
+      ContextRate{}
+       -> do (s1,bodies,e1) <- ops   ctx
+             (s2,i2,    e2) <- inner ctx
+
+             let nest = NestLoop
+                      { nestRate  = contextRate ctx
+                      , nestStart = []
+                      , nestBody  = bodies
+                      , nestInner = i2
+                      , nestEnd   = [] }
+
+             return ( s1 ++ s2
+                    , nest
+                    , e1 ++ e2)
+
+      ContextSelect{}
+       -> do (s1,bodies,e1) <- ops   ctx
+             (s2,i2, e2) <- inner ctx
+
+             let nest = NestGuard
+                      { nestOuterRate  = contextOuterRate ctx
+                      , nestInnerRate  = contextInnerRate ctx
+                      , nestFlags      = contextFlags     ctx
+                      , nestBody  = bodies
+                      , nestInner = i2 }
+
+             return ( s1 ++ s2
+                    , nest
+                    , e1 ++ e2)
 
 
--------------------------------------------------------------------------------
--- | Insert a skeleton context into a nest.
---    The new context doesn't contain any statements, it just provides
---    the infrastructure to execute statements at the new rate.
---
-insertContext :: Nest -> Context -> Maybe Nest
+      ContextSegment{}
+       -> do (s1,bodies,e1) <- ops   ctx
+             (s2,i2,    e2) <- inner ctx
 
--- Context already exists, don't bother.
-insertContext nest            context@ContextRate{}
- | nestContainsRate nest (contextRate context)
- = Just nest
+             let nest = NestSegment
+                      { nestOuterRate  = contextOuterRate ctx
+                      , nestInnerRate  = contextInnerRate ctx
+                      , nestLength     = contextLens      ctx
+                      , nestBody  = bodies
+                      , nestInner = i2 }
 
--- Loop context at top level.
-insertContext  NestEmpty      context@ContextRate{}
- = Just $ nestOfContext context
+             return ( s1 ++ s2
+                    , nest
+                    , e1 ++ e2)
 
+      ContextAppend{}
+       -> do (s1,i1,e1)     <- go (contextInner1 ctx)
+             (s2,i2,e2)     <- go (contextInner2 ctx)
 
--- Drop Selector Context ------------------------
--- Selector context goes at this level in the loop nest.
-insertContext nest@NestLoop{} context@ContextSelect{}
- | nestRate nest == contextOuterRate context
- , Just starts  <- startsForContext context
- = Just $ nest 
-        { nestInner = nestInner nest <> nestOfContext context 
-        , nestStart = nestStart nest ++ starts }
+             let nest = NestList
+                      [ i1, i2 ]
 
--- Selector context need to be inserted deeper in the nest.
-insertContext nest@NestLoop{} context@ContextSelect{}
- | nestContainsRate nest (contextOuterRate context)
- , Just inner'  <- insertContext (nestInner nest) context
- , Just starts  <- startsForContext context
- = Just $ nest 
-        { nestInner = inner' 
-        , nestStart = nestStart nest ++ starts }
-
--- Selector context inserted inside an existing selector context.
-insertContext nest@NestGuard{}   context@ContextSelect{}
- | nestInnerRate nest == contextOuterRate context
- = Just $ nest { nestInner = nestInner nest <> nestOfContext context }
+             return ( s1 ++ s2
+                    , nest
+                    , e1 ++ e2)
 
 
--- Drop Segment Context -------------------------
--- Selector context goes at this level in the loop nest.
-insertContext nest@NestLoop{} context@ContextSegment{}
- | nestRate nest == contextOuterRate context
- , Just starts  <- startsForContext context
- = Just $ nest
-        { nestInner = nestInner nest <> nestOfContext context
-        , nestStart = nestStart nest ++ starts }
 
-insertContext _nest _context
- = Nothing
+  ops ctx
+   = do outs <- mapM fop (contextOps ctx)
+        let (ss,bs,es) = unzip3 outs
+        return (concat ss, concat bs, concat es)
 
+  inner ctx
+   = do outs <- mapM go  (contextInner ctx)
+        let (ss,ins,es) = unzip3 outs
+        return (concat ss, listNest ins, concat es)
+
+  listNest []
+   = NestEmpty
+  listNest [n]
+   = n
+  listNest ns
+   = NestList ns
 
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
-insertStarts :: Nest -> TypeF -> [StmtStart] -> Maybe Nest
-insertStarts nest tRate starts'
+insertStarts :: [StmtStart] -> Nest -> Nest
+insertStarts starts' nest
  = case nest of
-        NestLoop{}
-         -- Desired context is right here.
-         |  tRate == nestRate nest
-         -> Just $ nest { nestStart = nestStart nest ++ starts' }
-
-         -- Desired context is deeper in the nest.
-         -- The starting statements run before all interations of it.
-         |  nestContainsRate nest tRate
-         -> Just $ nest { nestStart = nestStart nest ++ starts' }
-
-        _ -> Nothing
-
+    NestList (n:ns)
+     -> NestList (insertStarts starts' n : ns) 
+    NestLoop{}
+     -> nest { nestStart = nestStart nest ++ starts' }
+    _
+     -> nest
 
 -------------------------------------------------------------------------------
--- | Insert starting statements in the given context.
-insertBody :: Nest -> TypeF -> [StmtBody] -> Maybe Nest
-insertBody nest tRate body'
+-- | Insert ends statements in the given context.
+insertEnds :: [StmtEnd] -> Nest -> Nest
+insertEnds ends' nest
  = case nest of
-        NestLoop{}
-         -- Desired context is right here.
-         |  tRate == nestRate nest
-         -> Just $ nest { nestBody = nestBody nest ++ body' }
-
-         -- Desired context is deeper in the nest.
-         |  Just inner' <- insertBody (nestInner nest) tRate body'
-         -> Just $ nest { nestInner = inner' }
-
-        NestGuard{}
-         -- Desired context is right here.
-         |  tRate == nestInnerRate nest
-         -> Just $ nest { nestBody = nestBody nest ++ body' }
-
-         -- Desired context is deeper in the nest.
-         |  Just inner' <- insertBody (nestInner nest) tRate body'
-         -> Just $ nest { nestInner = inner' }
-
-        NestSegment{}
-         -- Desired context is right here.
-         |  tRate == nestInnerRate nest
-         -> Just $ nest { nestBody = nestBody nest ++ body' }
-
-         -- Desired context is deeper in the nest.
-         |  Just inner' <- insertBody (nestInner nest) tRate body'
-         -> Just $ nest { nestInner = inner' }
-
-        NestList (n : ns)
-         |  Just n'             <- insertBody n tRate body'
-         -> Just $ NestList (n':ns)
-
-         |  Just (NestList ns') <- insertBody (NestList ns) tRate body'
-         -> Just $ NestList (n:ns')
-
-
-        _ -> Nothing
-
-
--------------------------------------------------------------------------------
--- | Insert ending statements in the given context.
-insertEnds :: Nest -> TypeF -> [StmtEnd] -> Maybe Nest
-insertEnds nest tRate ends'
- = case nest of
-        NestLoop{}
-         -- Desired context is right here.
-         |  tRate == nestRate nest
-         -> Just $ nest { nestEnd = nestEnd nest ++ ends' }
-
-         -- Desired context is deeper in the nest.
-         -- The ending statements run before all iterations of it.
-         |  nestContainsRate nest tRate
-         -> Just $ nest { nestEnd = nestEnd nest ++ ends' }
- 
-        _ -> Nothing
-
+    NestList ns
+     | (r:rs) <- reverse ns
+     -> NestList (reverse rs ++ [insertEnds ends' r])
+    NestLoop{}
+     -> nest { nestEnd = nestEnd nest ++ ends' }
+    _
+     -> nest
 
 -- Rate Predicates ------------------------------------------------------------
 -- | Check whether the top-level of this nest contains the given rate.
@@ -196,57 +170,4 @@ nestContainsGuardedRate nest tRate
         NestSegment{}
          -> nestContainsGuardedRate (nestInner nest) tRate
 
-
--- Skeleton nests -------------------------------------------------------------
--- | Yield a skeleton nest for a given context.
-nestOfContext :: Context -> Nest
-nestOfContext context
- = case context of
-        ContextRate tRate
-         -> NestLoop
-          { nestRate            = tRate
-          , nestStart           = []
-          , nestBody            = []
-          , nestInner           = NestEmpty
-          , nestEnd             = [] }
-
-        ContextSelect{}
-         -> NestGuard
-          { nestOuterRate       = contextOuterRate context
-          , nestInnerRate       = contextInnerRate context
-          , nestFlags           = contextFlags     context
-          , nestBody            = [] 
-          , nestInner           = NestEmpty }
-
-        ContextSegment{}
-         -> NestSegment
-          { nestOuterRate       = contextOuterRate context
-          , nestInnerRate       = contextInnerRate context
-          , nestLength          = contextLens      context
-          , nestBody            = []
-          , nestInner           = NestEmpty }
-
-
--- | For selector and segment contexts, make statements that initialize a 
---   counter for how many times the context has been entered.
-startsForContext :: Context -> Maybe [StmtStart]
-startsForContext context
- = case context of
-        ContextSelect{}
-         -> let TVar (UName nK) = contextInnerRate context
-                nCounter        = NameVarMod nK "count"
-            in  Just [ StartAcc 
-                        { startAccName = nCounter
-                        , startAccType = tNat
-                        , startAccExp  = xNat 0 }]
-
-        ContextSegment{}
-         -> let TVar (UName nK) = contextInnerRate context
-                nCounter        = NameVarMod nK "count"
-            in  Just [ StartAcc 
-                        { startAccName = nCounter
-                        , startAccType = tNat
-                        , startAccExp  = xNat 0 }]
-
-        _  -> Nothing
 
