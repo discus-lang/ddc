@@ -6,22 +6,26 @@
 -- Multiply two series.
 :flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] (n  : RateNat# k)
+test    [p : Proc] [k : Rate] (n  : RateNat# k)
         (v  : Vector# Float32#)
-        (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
-        : Process#
- = sfill# v (smap2# mul# s1 s2)
+        (v1 : RateVec# k Float32#) (v2 : RateVec# k Float32#) 
+        : Process# p k
+ = do   s1 = series# v1
+        s2 = series# v2
+        sfill# v (smap2# mul# s1 s2)
 ;;
 
 
 -- Multiply by constant, lifting replicates constant.
 :flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] (n : RateNat# k)
+test    [p : Proc] [k : Rate] (n : RateNat# k)
         (v  : Vector# Float32#)
-        (s1 : Series# k Float32#) (s2 : Series# k Float32#) 
-        : Process#
+        (v1 : RateVec# k Float32#) (v2 : RateVec# k Float32#) 
+        : Process# p k
  = do   
+        s1      = series# v1
+        s2      = series# v2
         s2      = smap2# mul# s1 s2
         s3      = smap# (add# 2.0f32#) s2
         sfill# v s3
@@ -31,11 +35,12 @@ test    [k : Rate] (n : RateNat# k)
 -- Gather from vector.
 :flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] (n : RateNat# k)
-        (v1 : Vector# Float32#)   (v2 : Vector# Float32#)
-        (s1 : Series# k Nat#)
-        : Process#
+test    [p : Proc] [k k2 : Rate] (n : RateNat# k)
+        (v1 : RateVec# k2 Float32#)   (v2 : Vector# Float32#)
+        (vv : RateVec# k Nat#)
+        : Process# p k
  = do   
+        s1      = series# vv
         s2      = sgather# v1 s1
         s3      = smap# (add# 2.0f32#) s2
         sfill# v2 s3
@@ -45,11 +50,13 @@ test    [k : Rate] (n : RateNat# k)
 -- Scatter into vector.
 :flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] (n : RateNat# k)
+test    [p : Proc] [k : Rate] (n : RateNat# k)
         (v1 : Vector# Float32#)
-        (s1 : Series# k Nat#)   (s2 : Series# k Float32#)
-        : Process#
+        (r1 : RateVec# k Nat#)   (r2 : RateVec# k Float32#)
+        : Process# p k
  = do   
+        s1      = series# r1
+        s2      = series# r2
         s3      = smap# (add# 2.0f32#) s2
         sscatter# v1 s1 s3
 ;;
@@ -58,21 +65,22 @@ test    [k : Rate] (n : RateNat# k)
 -- Sum the elements of a vector.
 :flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] (n : RateNat# k)
-        (x1 : Ref# Float32#) (s1 : Series# k Float32#)
-        : Process#
- =      sreduce# x1 add# 0.0f32# s1
+test    [p : Proc] [k : Rate] (n : RateNat# k)
+        (x1 : Ref# Float32#) (r1 : RateVec# k Float32#)
+        : Process# p k
+ =      sreduce# x1 add# 0.0f32# (series# r1)
 ;;
 
 
 -- Fuse gather, map and reduce in one.
 :flow-lower-kernel..
 module Test with letrec
-test    [k : Rate] (n : RateNat# k) 
-        (x1 : Ref# Float32#) (v1 : Vector# Float32#)
-        (s1 : Series# k Nat#)
-        : Process#
+test    [p : Proc] [k k2 : Rate] (n : RateNat# k) 
+        (x1 : Ref# Float32#) (v1 : RateVec# k2 Float32#)
+        (r1 : RateVec# k Nat#)
+        : Process# p k
  = do   
+        s1      = series# r1
         s2      = sgather# v1 s1
         s3      = smap# (mul# 2.0f32#) s2
         sreduce# x1 add# 0.0f32# s3
@@ -82,11 +90,13 @@ test    [k : Rate] (n : RateNat# k)
 -- Dot product.
 :flow-lower-kernel..
 module Test with letrec
-test    [k  : Rate] (n : RateNat# k) 
+test    [p : Proc] [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)
-        (s1 : Series# k Float32#) (s2 : Series# k Float32#)
-        : Process#
+        (r1 : RateVec# k Float32#) (r2 : RateVec# k Float32#)
+        : Process# p k
  = do   
+        s1      = series# r1
+        s2      = series# r2
         s3      = smap2# mul# s1 s2
         sreduce# x1 add# 0.0f32# s3
 ;;
@@ -95,11 +105,12 @@ test    [k  : Rate] (n : RateNat# k)
 -- Fuse sum and product.
 :flow-lower-kernel..
 module Test with letrec
-test    [k  : Rate] (n : RateNat# k) 
+test    [p : Proc] [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
-        (s1 : Series# k Float32#)
-        : Process#
+        (r1 : RateVec# k Float32#)
+        : Process# p k
  = do
+        s1      = series# r1
         pjoin#  (sreduce# x1 add# 0.0f32# s1)
                 (sreduce# x2 mul# 1.0f32# s1)
 ;;
@@ -108,11 +119,13 @@ test    [k  : Rate] (n : RateNat# k)
 -- Fuse sum and dot product.
 :flow-lower-kernel..
 module Test with letrec
-test    [k  : Rate] (n : RateNat# k) 
+test    [p : Proc] [k  : Rate] (n : RateNat# k) 
         (x1 : Ref# Float32#)      (x2 : Ref# Float32#)
-        (s1 : Series# k Float32#) (s2 : Series# k Float32#)
-        : Process#
+        (r1 : RateVec# k Float32#) (r2 : RateVec# k Float32#)
+        : Process# p k
  = do   
+        s1      = series# r1
+        s2      = series# r2
         s3      = smap2# mul# s1 s2
         pjoin#  (sreduce# x1 add# 0.0f32# s3)
                 (sreduce# x2 add# 0.0f32# s1)

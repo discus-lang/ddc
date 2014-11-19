@@ -12,6 +12,7 @@ module DDC.Core.Flow.Prim.OpPrim
 where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
+import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Compounds.Simple
 import DDC.Core.Exp.Simple
@@ -87,8 +88,8 @@ typePrimVec op
          $  \t -> tVec n t `tFun` t
 
         PrimVecGather n
-         -> tForall kData
-         $  \t -> tVector t `tFun` tVec n tNat `tFun` tVec n t
+         -> tForalls [kRate, kData]
+         $  \[k, t] -> tRateVec k t `tFun` tVec n tNat `tFun` tVec n t
 
         PrimVecScatter n
          -> tForall kData
@@ -106,10 +107,10 @@ xvProj n i tA xV
  = xApps (xVarPrimVec (PrimVecProj n i))
          [XType tA, xV]
 
-xvGather  :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
-xvGather c tA xVec xIxs
+xvGather  :: Int -> Type Name -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name
+xvGather c tK tA xVec xIxs
  = xApps (xVarPrimVec (PrimVecGather c))
-         [XType tA, xVec, xIxs]
+         [XType tK, XType tA, xVec, xIxs]
 
 
 xvScatter :: Int -> Type Name -> Exp () Name -> Exp () Name -> Exp () Name -> Exp () Name

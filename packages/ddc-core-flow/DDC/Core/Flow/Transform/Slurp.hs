@@ -217,7 +217,6 @@ slurpBindingX tenv ctxs rs (BName n _)
         flagsContext   <- lookupOrDie nFlags ctxs
 
         let nFlagsUse   = NameVarMod nFlags "use"
-        let uFlagsUse   = UName nFlagsUse
         let bFlagsUse   = BName nFlagsUse (tSeries tProc tK1 tBool)
 
         let opId        = OpId
@@ -229,7 +228,7 @@ slurpBindingX tenv ctxs rs (BName n _)
         let context     = ContextSelect
                         { contextOuterRate      = tK1
                         , contextInnerRate      = TVar (UName nR)
-                        , contextFlags          = uFlagsUse
+                        , contextFlags          = uFlags
                         , contextSelector       = bSel
                         , contextOps            = [opId]
                         , contextInner          = [] }
@@ -261,7 +260,6 @@ slurpBindingX tenv ctxs rs (BName n _)
         -- Introduce new series with name of segd,
         -- as copy of lens series
         let nLensUse    = NameVarMod nLens "use"
-        let uLensUse    = UName nLensUse
         let bLensUse    = BName nLensUse (tSeries tProc tK1 tNat)
 
         let opId        = OpId
@@ -273,7 +271,7 @@ slurpBindingX tenv ctxs rs (BName n _)
         let context     = ContextSegment
                         { contextOuterRate      = tK1
                         , contextInnerRate      = TVar (UName nR)
-                        , contextLens           = uLensUse
+                        , contextLens           = uLens
                         , contextSegd           = bSegd
                         , contextOps            = [opId]
                         , contextInner          = [] }
@@ -304,19 +302,33 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
         return (ctxs', rs)
 
 -- Slurp an append operator
-slurpBindingX _ ctxs rs (BName n _) xx
+slurpBindingX _ ctxs rs b@(BName n _) xx
  | Just (NameOpSeries OpSeriesAppend
-        , [ XType _P, XType tK1, XType tK2, XType _tA
+        , [ XType _P, XType tK1, XType tK2, XType tA
           , XVar (UName nIn1), XVar (UName nIn2) ] ) 
                                 <- takeXPrimApps xx
- = do   in1'           <- lookupOrDie nIn1 ctxs
-        in2'           <- lookupOrDie nIn2 ctxs
+ = do   in1            <- lookupOrDie nIn1 ctxs
+        in2            <- lookupOrDie nIn2 ctxs
+
+        let opId iN iK  = OpId
+                        { opResultSeries        = b
+                        , opInputRate           = iK
+                        , opInputSeries         = UName iN
+                        , opElemType            = tA }
+        let idCtx iN iK  = ContextRate
+                        { contextRate           = iK
+                        , contextOps            = [opId iN iK]
+                        , contextInner          = [] }
+
+        in1'           <- insertContext (idCtx nIn1 tK1) in1
+        in2'           <- insertContext (idCtx nIn2 tK2) in2
 
         let ctx         = ContextAppend
                         { contextRate1          = tK1
                         , contextInner1         = in1'
                         , contextRate2          = tK2
                         , contextInner2         = in2' }
+
 
         let ctxs'       = Map.insert n ctx ctxs
         return (ctxs', rs)

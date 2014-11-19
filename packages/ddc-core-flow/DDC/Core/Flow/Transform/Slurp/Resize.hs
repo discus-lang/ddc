@@ -12,14 +12,16 @@ import DDC.Core.Exp.Simple
 import Control.Applicative
 import qualified Data.Map               as Map
 
+type Ty = Type Name
 data Resize
- = Id    Name
- | AppL  Name Name
- | AppR  Name Name
- | App   Name Name Name Name Resize Resize 
- | Sel1  Name Name Name      Resize
- | Segd  Name Name Name      Resize
- | Cross Name Name Name      Resize
+ = Id    Ty
+ | AppL  Ty Ty
+ | AppR  Ty Ty
+ | App   Ty Ty Ty Ty Resize Resize 
+ | Sel1  Ty Ty Ty      Resize
+ | Segd  Ty Ty Ty      Resize
+ | Cross Ty Ty Ty      Resize
+ deriving Show
 
 slurpResize
     :: Map.Map Name Resize
@@ -91,10 +93,10 @@ slurpResize rs xx
  = return Nothing
 
 
-nameOfType :: Exp () Name -> Maybe Name
+nameOfType :: Exp () Name -> Maybe (Type Name)
 
-nameOfType (XType (TVar (UName n)))
- = Just n
+nameOfType (XType t)
+ = Just t
 
 nameOfType _
  = Nothing

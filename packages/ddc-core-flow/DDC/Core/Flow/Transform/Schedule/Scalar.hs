@@ -2,6 +2,7 @@
 module DDC.Core.Flow.Transform.Schedule.Scalar
         (scheduleScalar)
 where
+import DDC.Core.Flow.Transform.Slurp.Context
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Transform.Schedule.Base
@@ -20,7 +21,8 @@ scheduleScalar
                 , processParamValues    = bsParamValues
                 , processContext        = context })
   = do
-        nest            <- scheduleContext scheduleOperator context
+        nest            <- scheduleContext (\r _ -> return r)
+                                           (scheduleOperator context) context
 
         return  $ Procedure
                 { procedureName         = name
@@ -32,10 +34,11 @@ scheduleScalar
 -------------------------------------------------------------------------------
 -- | Schedule a single series operator into a loop nest.
 scheduleOperator 
-        :: Operator     -- ^ Operator to schedule.
+        :: Context      -- ^ Context of all operators
+        -> Operator     -- ^ Operator to schedule.
         -> Either Error ([StmtStart], [StmtBody], [StmtEnd])
 
-scheduleOperator op
+scheduleOperator ctx op
 
  -- Id -------------------------------------------
  | OpId{}     <- op
@@ -141,7 +144,7 @@ scheduleOperator op
         -- we know how many elements were written so we can truncate the
         -- vector down to its final length.
         let ends
-                | False -- nestContainsGuardedRate nest1 tK
+                | contextContainsSelect ctx tK
                 = [ EndVecTrunc 
                         nVec                    -- destination vector
                         (opElemType op)         -- series element type

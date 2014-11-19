@@ -135,7 +135,7 @@ slurpOperator bResult xx
           , XType tRateInput, XType tRateOutput
           , XType tElem
           , XVar (UName nSel), XVar uSeries@(UName nSeries) ])    <- takeXPrimApps xx
- = Just ( [nSeries, nSel]
+ = Just ( [nSel, nSeries]
         , tRateOutput
         , OpPack
         { opResultSeries        = bResult

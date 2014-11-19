@@ -146,12 +146,8 @@ lowerProcess config process
  | MethodVector lifting <- configMethod config
  , [nRN]  <- [ nRN | BName nRN tRN <- processParamValues process
                    , isRateNatType tRN ]
- , bK : _ <- processParamTypes process
+ , tK <- processLoopRate process
  = do   let c           = liftingFactor lifting
-
-        -- Get the primary rate variable.
-        let Just uK     = takeSubstBoundOfBind bK
-        let tK          = TVar uK
 
         -- The RateNat witness
         let xRN         = XVar (UName nRN)
@@ -190,12 +186,12 @@ lowerProcess config process
                 $ map getDownValArg (processParamValues process)
 
         let bRateDown
-                = BAnon (tRateNat (tDown c (TVar uK)))
+                = BAnon (tRateNat (tDown c tK))
 
         let xProcVec'       
                 = XLam bRateDown
                 $ xLets [LLet b x | (_, (b, x)) <- bxsDownSeries]
-                $ xApps (XApp xProcVec (XType (TVar uK)))
+                $ xApps (XApp xProcVec (XType tK))
                 $ xsVecValArgs
 
 
@@ -241,13 +237,13 @@ lowerProcess config process
                 $ map getTailValArg (procedureParamValues procTail)
 
         let bRateTail
-                = BAnon (tRateNat (tTail c (TVar uK)))
+                = BAnon (tRateNat (tTail c tK))
 
         let xProcTail'
                 = XLam bRateTail
                 $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
                 $ xLets [LLet b x | (_, (b, x)) <- bxsTailVector]
-                $ xApps (XApp xProcTail (XType (tTail c (TVar uK))))
+                $ xApps (XApp xProcTail (XType (tTail c tK)))
                 $ xsTailValArgs
 
         ------------------------------------------
@@ -259,7 +255,7 @@ lowerProcess config process
 
             xBody
                 = XLet (LLet   (BNone tUnit) 
-                               (xSplit c (TVar uK) xRN xProcVec' xProcTail'))
+                               (xSplit c tK xRN xProcVec' xProcTail'))
                        xUnit
                 
         -- Reconstruct a binder for the whole procedure / process.

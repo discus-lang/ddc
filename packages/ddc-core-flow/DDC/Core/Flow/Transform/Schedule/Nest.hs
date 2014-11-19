@@ -11,13 +11,16 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Transform.Schedule.Error
+import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Compounds
 
 scheduleContext
-    :: (Operator -> Either Error ([StmtStart], [StmtBody], [StmtEnd]))
+    :: (Type Name -> Context  -> Either Error (Type Name))
+    -> (Operator -> Either Error ([StmtStart], [StmtBody], [StmtEnd]))
     -> Context
     -> Either Error Nest
 
-scheduleContext fop topctx
+scheduleContext frate fop topctx
  = do   (starts, nest, ends) <- go topctx
         return $ insertStarts starts (insertEnds ends nest)
  where
@@ -26,9 +29,10 @@ scheduleContext fop topctx
       ContextRate{}
        -> do (s1,bodies,e1) <- ops   ctx
              (s2,i2,    e2) <- inner ctx
+             rate'          <- frate (contextRate ctx) ctx
 
              let nest = NestLoop
-                      { nestRate  = contextRate ctx
+                      { nestRate  = rate'
                       , nestStart = []
                       , nestBody  = bodies
                       , nestInner = i2
@@ -42,14 +46,23 @@ scheduleContext fop topctx
        -> do (s1,bodies,e1) <- ops   ctx
              (s2,i2, e2) <- inner ctx
 
+             rateOuter      <- frate (contextOuterRate ctx) ctx
+             rateInner      <- frate (contextInnerRate ctx) ctx
+
+             let TVar (UName n) = contextInnerRate ctx
+             let sacc = StartAcc
+                      { startAccName = NameVarMod n "count"
+                      , startAccType = tNat
+                      , startAccExp  = xNat 0 }
+
              let nest = NestGuard
-                      { nestOuterRate  = contextOuterRate ctx
-                      , nestInnerRate  = contextInnerRate ctx
+                      { nestOuterRate  = rateOuter
+                      , nestInnerRate  = rateInner
                       , nestFlags      = contextFlags     ctx
                       , nestBody  = bodies
                       , nestInner = i2 }
 
-             return ( s1 ++ s2
+             return ( s1 ++ [sacc] ++ s2
                     , nest
                     , e1 ++ e2)
 
@@ -58,14 +71,24 @@ scheduleContext fop topctx
        -> do (s1,bodies,e1) <- ops   ctx
              (s2,i2,    e2) <- inner ctx
 
+             rateOuter      <- frate (contextOuterRate ctx) ctx
+             rateInner      <- frate (contextInnerRate ctx) ctx
+
+
+             let TVar (UName n) = contextInnerRate ctx
+             let sacc = StartAcc
+                      { startAccName = NameVarMod n "count"
+                      , startAccType = tNat
+                      , startAccExp  = xNat 0 }
+
              let nest = NestSegment
-                      { nestOuterRate  = contextOuterRate ctx
-                      , nestInnerRate  = contextInnerRate ctx
+                      { nestOuterRate  = rateOuter
+                      , nestInnerRate  = rateInner
                       , nestLength     = contextLens      ctx
                       , nestBody  = bodies
                       , nestInner = i2 }
 
-             return ( s1 ++ s2
+             return ( s1 ++ [sacc] ++ s2
                     , nest
                     , e1 ++ e2)
 

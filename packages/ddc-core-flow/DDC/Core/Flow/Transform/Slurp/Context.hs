@@ -2,7 +2,8 @@
 module DDC.Core.Flow.Transform.Slurp.Context
     ( insertContext
     , mergeContexts
-    , resizeContext )
+    , resizeContext
+    , contextContainsSelect )
 where
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Transform.Slurp.Error
@@ -45,7 +46,7 @@ insertContext embed into
     ContextSelect{}
      -> case embed of
          ContextRate{}
-          | contextOuterRate into == contextRate embed
+          | contextInnerRate into == contextRate embed
           -> dropops
           | otherwise
           -> descend
@@ -69,7 +70,7 @@ insertContext embed into
     ContextSegment{}
      -> case embed of
          ContextRate{}
-          | contextOuterRate into == contextRate embed
+          | contextInnerRate into == contextRate embed
           -> dropops
           | otherwise
           -> descend
@@ -121,8 +122,8 @@ insertContext embed into
 
   app splittee injectee
    = do (ls, rs) <- splitContextIntoApps splittee
-        ls'      <- insertContext (contextInner1 injectee) ls
-        rs'      <- insertContext (contextInner2 injectee) rs
+        ls'      <- insertContext ls (contextInner1 injectee)
+        rs'      <- insertContext rs (contextInner2 injectee)
         return $ injectee
                  { contextInner1 = ls'
                  , contextInner2 = rs' }
@@ -175,22 +176,16 @@ splitContextIntoApps ctx
                        , contextInner2 ctx )
 
     _
-     -> Left (ErrorCannotSplitContext ctx)
+     -> -- Left (ErrorCannotSplitContext ctx) 
+        return (ctx, ctx)
 
 
  where
-  takeAppend ty
-   | Just (NameTyConFlow TyConFlowRateAppend, [tK, tL])
-            <- takePrimTyConApps ty
-   = Just (tK, tL)
-   | otherwise
-   = Nothing
-
 
 
 mergeContexts :: Context -> Context -> Either Error Context
 mergeContexts a b
- = insertContext a b -- return a
+ = insertContext a b
 
 resizeContext :: Resize -> Context -> Either Error Context
 resizeContext resize ctx
@@ -200,17 +195,17 @@ resizeContext resize ctx
     AppL a b
      -> return
          ContextAppend
-         { contextRate1  = TVar $ UName a
-         , contextInner1 = emptyCtx a
-         , contextRate2  = TVar $ UName b
-         , contextInner2 = wrapCtx b ctx
+         { contextRate1  = a
+         , contextInner1 = wrapCtx b ctx
+         , contextRate2  = b
+         , contextInner2 = emptyCtx a
          }
     AppR a b
      -> return
          ContextAppend
-         { contextRate1  = TVar $ UName a
-         , contextInner1 = wrapCtx a ctx
-         , contextRate2  = TVar $ UName b
+         { contextRate1  = a
+         , contextInner1 = emptyCtx a
+         , contextRate2  = b
          , contextInner2 = wrapCtx b ctx
          }
     App _ k' _ l' ls rs
@@ -219,9 +214,9 @@ resizeContext resize ctx
             in2 <- resizeContext rs (contextInner2 ctx)
             return
              ContextAppend
-             { contextRate1  = TVar $ UName k'
+             { contextRate1  = k'
              , contextInner1 = in1
-             , contextRate2  = TVar $ UName l'
+             , contextRate2  = l'
              , contextInner2 = in2 }
      | otherwise
      -> Left (ErrorCannotResizeContext ctx)
@@ -239,25 +234,54 @@ resizeContext resize ctx
             
 
 
-emptyCtx :: Name -> Context
+emptyCtx :: Type Name -> Context
 emptyCtx k
  = ContextRate
- { contextRate  = (TVar (UName k))
+ { contextRate  = k
  , contextInner = []
  , contextOps   = [] }
 
-wrapCtx :: Name -> Context -> Context
+wrapCtx :: Type Name -> Context -> Context
 wrapCtx k ctx
  = case ctx of
    ContextRate{}
-    | contextRate ctx == k'
+    | contextRate ctx == k
     -> ctx
+
+   ContextAppend{}
+    | Just (l,r) <- takeAppend k
+    , contextRate1 ctx == l
+    , contextRate2 ctx == r
+    -> ctx
+    
    _
     | otherwise
     -> ContextRate
-       { contextRate  = k'
+       { contextRate  = k
        , contextInner = [ctx]
        , contextOps   = [] }
+
+takeAppend ty
+ | Just (NameTyConFlow TyConFlowRateAppend, [tK, tL])
+          <- takePrimTyConApps ty
+ = Just (tK, tL)
+ | otherwise
+ = Nothing
+
+
+contextContainsSelect :: Context -> Type Name -> Bool
+contextContainsSelect ctx k
+ = case ctx of
+    ContextRate{}
+     -> inners
+    ContextSelect{}
+     -> contextInnerRate ctx == k
+     || inners
+    ContextSegment{}
+     -> inners
+    ContextAppend{}
+     -> contextContainsSelect (contextInner1 ctx) k
+     || contextContainsSelect (contextInner2 ctx) k
  where
-  k' = TVar (UName k)
+  inners = any (flip contextContainsSelect k) (contextInner ctx)
 

@@ -5,11 +5,13 @@
 
 :flow-lower-vector..
 module Test with letrec
-test    [k  : Rate] (n  : RateNat# k)
+test    [p : Proc] [k  : Rate] (n  : RateNat# k)
         (x1 : Ref# Float32#)
-        (s1 : Series# k Float32#) (s2 : Series# k Float32#)
-        : Process#
+        (v1 : RateVec# k Float32#) (v2 : RateVec# k Float32#)
+        : Process# p k
  = do   
+        s1      = series# v1
+        s2      = series# v2
         s3      = smap2# mul# s1 s2
         sreduce# x1 add# 0.0f32# s3
 ;;
@@ -18,13 +20,14 @@ test    [k  : Rate] (n  : RateNat# k)
 :flow-lower-vector..
 module Flow with letrec
 eatPoints 
-        [k : Rate]
+        [p : Proc] [k : Rate]
         (ox oy  : Float32#)
         (v0     : Vector# Float32#) (r0 : Ref# Float32#)
         (dsr    : RateNat# k) 
-        (s1 s2  : Series# k Float32#)
-        : Process#
- = do   
+        (v1 v2  : RateVec# k Float32#)
+        : Process# p k
+ = do   s1    = series# v1
+        s2    = series# v2
         s     = smap2#  (\(x y : Float32#).
                          add#   (mul# (sub# x ox) (sub# x ox))
                                 (mul# (sub# y oy) (sub# y oy))) 

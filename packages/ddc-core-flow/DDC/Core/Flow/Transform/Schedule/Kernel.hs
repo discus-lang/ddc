@@ -13,8 +13,6 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
-import Control.Monad
-import Data.Maybe
 
 
 -- | Schedule a process kernel into a procedure.
@@ -36,50 +34,34 @@ scheduleKernel :: Lifting -> Process -> Either Error Procedure
 scheduleKernel 
        lifting
        (Process { processName           = name
-                , processProcType       = proc
-                , processLoopRate       = rate
                 , processParamTypes     = bsParamTypes
                 , processParamValues    = bsParamValues
-                , processOperators      = operators })
+                , processContext        = context })
  = do   
-        -- Lower rates of series parameters.
+        -- Lower rates of RateVec parameters.
+        -- We also keep a copy of the original RateVec,
+        -- in case it is used by a cross or a gather.
         let bsParamValues_lowered
-                = map (\(BName n t) 
-                        -> let t' = fromMaybe t $ lowerSeriesRate lifting t
-                           in  BName n t')
+                = concatMap (\(BName n t) 
+                        -> case lowerSeriesRate lifting t of
+                            Just t'
+                             -> [ BName (NameVarMod n "down") t', BName n t ]
+                            Nothing
+                             -> [ BName n t ])
                 $ bsParamValues
 
-        -- Create the initial loop nest of the process rate.
-        let bsSeries    = [ b   | b <- bsParamValues
-                                , isSeriesType (typeOfBind b) ]
-
-        -- Body expressions that take the next vec of elements from each
-        -- input series. If the type can't be lifted this will just throw
-        -- a pattern match error.
         let c           = liftingFactor lifting
-        let ssBody      = [ BodyStmt 
-                                (BName (NameVarMod nS "elem") tElem_lifted)
-                                (xNextC c proc rate tElem (XVar (UName nS)) (XVar uIndex))
-                                | BName nS tS     <- bsSeries
-                                , let Just tElem        = elemTypeOfSeriesType tS 
-                                , let uIndex            = UIx 0 
-                                , let Just tElem_lifted = liftType lifting tElem ]
 
-        let nest0       = NestLoop 
-                        { nestRate      = tDown c rate 
-                        , nestStart     = []
-                        , nestBody      = ssBody
-                        , nestInner     = NestEmpty
-                        , nestEnd       = [] }
+        let frate r _   = return $ tDown c r
+        let fop   o     = scheduleOperator lifting bsParamValues o
 
-        nest'   <- foldM (scheduleOperator lifting bsParamValues) 
-                         nest0 operators
+        nest <- scheduleContext frate fop context
 
         return  $ Procedure
                 { procedureName         = name
                 , procedureParamTypes   = bsParamTypes
                 , procedureParamValues  = bsParamValues_lowered
-                , procedureNest         = nest' }
+                , procedureNest         = nest }
 
 
 -------------------------------------------------------------------------------
@@ -87,18 +69,52 @@ scheduleKernel
 scheduleOperator 
         :: Lifting
         -> ScalarEnv
-        -> Nest         -- ^ The current loop nest.
         -> Operator     -- ^ The operator to schedule.
-        -> Either Error Nest
+        -> Either Error ([StmtStart], [StmtBody], [StmtEnd])
 
-scheduleOperator lifting envScalar nest op
+scheduleOperator lifting envScalar op
+ -- Id -------------------------------------------
+ | OpId{}     <- op
+ = do   -- Get binders for the input elements.
+        let Just bResult =   elemBindOfSeriesBind   (opResultSeries op)
+                         >>= liftTypeOfBind lifting
+        let Just uInput  = elemBoundOfSeriesBound (opInputSeries  op)
+
+        return ( [] 
+               , [ BodyStmt bResult (XVar uInput) ]
+               , [] )
+
+ | OpSeries{} <- op
+ = do   let c            = liftingFactor lifting
+        let tK           = opInputRate    op
+        let tKD          = tDown c tK
+        let tA           = opElemType     op
+        let BName n t    = opResultSeries op
+        let Just t'      = lowerSeriesRate lifting t
+        let bS           = BName n t'
+        let UName nInput = opInputRateVec op
+        let Just uS      = takeSubstBoundOfBind                   bS
+        let Just tP      = procTypeOfSeriesType   (typeOfBind     bS)
+        let Just bResult =   elemBindOfSeriesBind                   bS
+                         >>= liftTypeOfBind lifting
+
+        -- Convert the RateVec to a series
+        let starts
+                = [ StartStmt bS
+                        (xSeriesOfRateVec tP tKD tA $ XVar $ UName $ NameVarMod nInput "down")]
+
+        -- Body expressions that take the next element from each input series.
+        let bodies
+                = [ BodyStmt bResult
+                        (xNextC c tP tK tA (XVar uS) (XVar (UIx 0))) ]
+
+        return ( starts
+               , bodies
+               , [] )
+
  -- Map -----------------------------------------
  | OpMap{}      <- op
- = do   let c           = liftingFactor lifting
-        let tK          = opInputRate op
-        let tK_down     = tDown c tK
-
-        -- Bind for the result element.
+ = do   -- Bind for the result element.
         let Just bResultE =   elemBindOfSeriesBind (opResultSeries op)
                           >>= liftTypeOfBind lifting
 
@@ -122,24 +138,20 @@ scheduleOperator lifting envScalar nest op
                                         | b <- bsParam_lifted
                                         | u <- usInput ]
 
-        let Just nest2  = insertBody nest tK_down
-                        $ [ BodyStmt bResultE xBody ]
+        let bodies      = [ BodyStmt bResultE xBody ]
 
-        return nest2
+        return ([], bodies, [])
 
  -- Fill ----------------------------------------
  | OpFill{}     <- op
  = do   let c           = liftingFactor lifting
-        let tK          = opInputRate op
-        let tK_down     = tDown c tK
 
         -- Bound for input element.
         let Just uInput = elemBoundOfSeriesBound 
                         $ opInputSeries op
 
         -- Write to target vector.
-        let Just nest2  = insertBody nest tK_down
-                        $ [ BodyStmt (BNone tUnit)
+        let bodies      = [ BodyStmt (BNone tUnit)
                                      (xWriteVectorC c
                                         (opElemType op)
                                         (XVar $ bufOfVectorName $ opTargetVector op)
@@ -147,17 +159,14 @@ scheduleOperator lifting envScalar nest op
                                         (XVar $ uInput)) ]
 
         -- Bind final unit value.
-        let Just nest3  = insertEnds nest2 tK_down
-                        $ [ EndStmt  (opResultBind op)
+        let ends        = [ EndStmt  (opResultBind op)
                                      xUnit ]
 
-        return nest3
+        return ([], bodies, ends)
 
  -- Reduce --------------------------------------
  | OpReduce{}   <- op
  = do   let c           = liftingFactor lifting
-        let tK          = opInputRate op
-        let tK_down     = tDown c tK
         let tA          = typeOfBind $ opWorkerParamElem op
 
         -- Evaluate the zero value and initialize the vector accumulator.
@@ -169,9 +178,8 @@ scheduleOperator lifting envScalar nest op
         let nAccVec     = NameVarMod nRef "vec"
         let uAccVec     = UName nAccVec
 
-        let Just nest2  
-                = insertStarts nest tK_down
-                $ [ StartStmt   bAccZero    (opZero op)
+        let starts
+                = [ StartStmt   bAccZero    (opZero op)
                   , StartAcc    nAccVec
                                 (tVec c tA)
                                 (xvRep c tA (XVar uAccZero)) ]
@@ -201,9 +209,8 @@ scheduleOperator lifting envScalar nest op
                              x1)
                         x2
 
-        let Just nest3  
-                = insertBody nest2 tK_down
-                $ [ BodyAccRead  nAccVec (tVec c tA) bAccVal
+        let bodies
+                = [ BodyAccRead  nAccVec (tVec c tA) bAccVal
                   , BodyAccWrite nAccVec (tVec c tA) 
                                  (xBody_lifted (XVar uAccVal) (XVar uInput)) ]
 
@@ -223,9 +230,8 @@ scheduleOperator lifting envScalar nest op
                              x1)
                         x2
 
-        let Just nest4  
-                =  insertEnds nest3 tK_down
-                $  [ EndStmt    bAccResult
+        let ends
+                =  [ EndStmt    bAccResult
                                 (xRead (tVec c tA) (XVar uAccVec))
 
                    , EndStmt    (BName nAccInit tA)
@@ -239,28 +245,22 @@ scheduleOperator lifting envScalar nest op
                                 (xBody  (XVar (uPart (i - 1)))
                                         (xvProj c i tA (XVar uAccResult)))
                                 | i <- [1.. c - 1]]
-
         -- Write final value to destination.
-        let Just nest5  = insertEnds nest4 tK_down
-                        $ [ EndStmt    (BNone tUnit)
-                                       (xWrite tA (XVar $ opTargetRef op)
-                                                  (XVar $ uPart (c - 1))) ]
+                ++ [ EndStmt    (BNone tUnit)
+                                (xWrite tA (XVar $ opTargetRef op)
+                                           (XVar $ uPart (c - 1))) ]
         -- Bind final unit value.
-        let Just nest6  
-                = insertEnds nest5 tK_down
-                $ [ EndStmt     (opResultBind op)
-                                xUnit ]
+                ++ [ EndStmt    (opResultBind op)
+                                 xUnit ]
 
 
-        return $ nest6
+        return (starts, bodies, ends)
 
 
  -- Gather --------------------------------------
  | OpGather{}   <- op
  = do   
         let c           = liftingFactor lifting
-        let tK          = opInputRate op
-        let tK_down     = tDown c tK
 
         -- Bind for result element.
         let Just bResultE =   elemBindOfSeriesBind (opResultBind op)
@@ -270,21 +270,19 @@ scheduleOperator lifting envScalar nest op
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
 
         -- Read from vector.
-        let Just nest2  = insertBody nest tK_down
-                        $ [ BodyStmt bResultE
+        let bodies      = [ BodyStmt bResultE
                                 (xvGather c 
+                                        (opVectorRate    op)
                                         (opElemType      op)
                                         (XVar $ opSourceVector  op)
                                         (XVar $ uIndex)) ]
 
-        return nest2
+        return ([], bodies, [])
 
  -- Scatter -------------------------------------
  | OpScatter{}  <- op
  = do   
         let c           = liftingFactor lifting
-        let tK          = opInputRate op
-        let tK_down     = tDown c tK
 
         -- Bound of source index.
         let Just uIndex = elemBoundOfSeriesBound (opSourceIndices op)
@@ -293,19 +291,17 @@ scheduleOperator lifting envScalar nest op
         let Just uElem  = elemBoundOfSeriesBound (opSourceElems op)
 
         -- Read from vector.
-        let Just nest2  = insertBody nest tK_down
-                        $ [ BodyStmt (BNone tUnit)
+        let bodies      = [ BodyStmt (BNone tUnit)
                                 (xvScatter c
                                         (opElemType op)
                                         (XVar $ opTargetVector op)
                                         (XVar $ uIndex) (XVar $ uElem)) ]
 
         -- Bind final unit value.
-        let Just nest3  = insertEnds nest2 tK_down
-                        $ [ EndStmt     (opResultBind op)
+        let ends        = [ EndStmt     (opResultBind op)
                                         xUnit ]
 
-        return nest3
+        return ([], bodies, ends)
 
  -- Unsupported ---------------------------------
  | otherwise
