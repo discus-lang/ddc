@@ -6,15 +6,15 @@ ok
 -- Fill a vector with segment indices.
 module Test with
 letrec {
-  test : [k1 : Rate].Series# k1 Nat# -> Vector# Nat# -> Unit
-    = /\(k1 : Rate).
-       \(lens : Series# k1 Nat#).\(v : Vector# Nat#).
+  test : [p : Proc].[k1 : Rate].Series# p k1 Nat# -> Vector# Nat# -> Unit
+    = /\(p : Proc)./\(k1 : Rate).
+       \(lens : Series# p k1 Nat#).\(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x0 : Nat#).
-                   let lens$elem = next# [Nat#] [k1] lens x0 in
+                   let lens$elem = next# [Nat#] [p] [k1] lens x0 in
                    let _
                          = segment# k2$count lens$elem
                                (\(x1 x2 : Nat#).
@@ -28,16 +28,16 @@ letrec {
 -- Fuse reps with indices.
 module Test with
 letrec {
-  test : [k1 : Rate].Series# k1 Nat# -> Series# k1 Nat# -> Vector# Nat# -> Unit
-    = /\(k1 : Rate).
-       \(lens things : Series# k1 Nat#).\(v : Vector# Nat#).
+  test : [p : Proc].[k1 : Rate].Series# p k1 Nat# -> Series# p k1 Nat# -> Vector# Nat# -> Unit
+    = /\(p : Proc)./\(k1 : Rate).
+       \(lens things : Series# p k1 Nat#).\(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
-                   let lens$elem = next# [Nat#] [k1] lens x2 in
-                   let things$elem = next# [Nat#] [k1] things x2 in
+                   let lens$elem = next# [Nat#] [p] [k1] lens x2 in
+                   let things$elem = next# [Nat#] [p] [k1] things x2 in
                    let _
                          = segment# k2$count lens$elem
                                (\(x3 x4 : Nat#).
@@ -56,26 +56,29 @@ letrec {
 -- does not get read for each of the inner iterations.
 module Test with
 letrec {
-  test : [k1 : Rate].Series# k1 Nat# -> Series# k1 Nat# -> Vector# Float32# -> Vector# Float32# -> Vector# Float32# -> Unit
-    = /\(k1 : Rate).
-       \(lens base : Series# k1 Nat#).\(things out1 out2 : Vector# Float32#).
-      let things$buf = vbuf# [Float32#] things in
+  test : [p : Proc].[k1 kThings : Rate].RateVec# k1 Nat# -> RateVec# k1 Nat# -> RateVec# kThings Float32# -> Vector# Float32# -> Vector# Float32# -> Unit
+    = /\(p : Proc)./\(k1 kThings : Rate).
+       \(lens base : RateVec# k1 Nat#).\(things : RateVec# kThings Float32#).\(out1 out2 : Vector# Float32#).
       let out1$buf = vbuf# [Float32#] out1 in
       let out2$buf = vbuf# [Float32#] out2 in
+      let lens' = series# [p] [k1] [Nat#] lens in
+      let base' = series# [p] [k1] [Nat#] base in
       let k2$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
-                   let lens$elem = next# [Nat#] [k1] lens x2 in
-                   let base$elem = next# [Nat#] [k1] base x2 in
-                   let firsts$elem = vread# [Float32#] things$buf base$elem in
+                   let lens'$elem = next# [Nat#] [p] [k1] lens' x2 in
+                   let base'$elem = next# [Nat#] [p] [k1] base' x2 in
+                   let x5 = vbufofratevec# [kThings] [Float32#] things in
+                   let firsts$elem = vread# [Float32#] x5 base'$elem in
                    let _
-                         = segment# k2$count lens$elem
+                         = segment# k2$count lens'$elem
                                (\(x3 x4 : Nat#).
-                                let ixs$elem = add# [Nat#] base$elem x3 in
-                                let results$elem = vread# [Float32#] things$buf ixs$elem in
-                                let _ = vwrite# [Float32#] out1$buf x4 results$elem in
                                 let _ = vwrite# [Float32#] out2$buf x4 firsts$elem in
+                                let ixs$elem = add# [Nat#] base'$elem x3 in
+                                let x6 = vbufofratevec# [kThings] [Float32#] things in
+                                let results$elem = vread# [Float32#] x6 ixs$elem in
+                                let _ = vwrite# [Float32#] out1$buf x4 results$elem in
                                 ()) in
                    ()) in
       ()

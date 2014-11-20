@@ -1,17 +1,18 @@
 ok
+ok
 
 
 -- Simple loop with no scalar results.
 module Main with
 letrec {
-  lower_map_map_rq2 : [k_d : Rate].Series# k_d Int# -> Vector# Int#
-    = /\(k_d : Rate).
-       \(s_aub : Series# k_d Int#).
+  lower_map_map_rq2 : [p : Proc].[k_d : Rate].Series# p k_d Int# -> Vector# Int#
+    = /\(p : Proc)./\(k_d : Rate).
+       \(s_aub : Series# p k_d Int#).
       let x6 : Vector# Int#
-            = vnewN# [Int#] [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+            = vnewN# [Int#] [k_d] (rateOfSeries# [p] [k_d] [Int#] s_aub) in
       let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
       let loop$length : Nat#
-            = natOfRateNat# [k_d] (rateOfSeries# [k_d] [Int#] s_aub) in
+            = natOfRateNat# [k_d] (rateOfSeries# [p] [k_d] [Int#] s_aub) in
       letrec {
         loop : Nat# -> Unit
           = \(x0 : Nat#).
@@ -19,7 +20,7 @@ letrec {
               0#  
                -> ();
               _ 
-               -> let s_aub__elem : Int# = next# [Int#] [k_d] s_aub x0 in
+               -> let s_aub__elem : Int# = next# [Int#] [p] [k_d] s_aub x0 in
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
                   let _ : Unit = vwrite# [Int#] x6$buf x0 x4__elem in
@@ -36,16 +37,16 @@ module Main
 import value maxx : Int# -> Int# -> Int#;
 with
 letrec {
-  filterMax : [k : Rate].Series# k Int# -> Tuple2# (Vector# Int#) Int#
-    = /\(k : Rate).
-       \(s1 : Series# k Int#).
+  filterMax : [p : Proc].[k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) Int#
+    = /\(p : Proc)./\(k : Rate).
+       \(s1 : Series# p k Int#).
       let k2__count$0 : Nat# = 0# in
       let x5 : Vector# Int#
-            = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s1) in
+            = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s1) in
       let x5$buf : Buffer# Int# = vbuf# [Int#] x5 in
       let x9__acc$0 : Int# = 0i# in
       let loop$length : Nat#
-            = natOfRateNat# [k] (rateOfSeries# [k] [Int#] s1) in
+            = natOfRateNat# [k] (rateOfSeries# [p] [k] [Int#] s1) in
       letrec {
         loop : Nat# -> Nat# -> Int# -> Tuple2# Nat# Int#
           = \(x2 k2__count$1 : Nat#).\(x9__acc$1 : Int#).
@@ -53,7 +54,7 @@ letrec {
               0#  
                -> T2# [Nat#] [Int#] k2__count$1 x9__acc$1;
               _ 
-               -> let s1__elem : Int# = next# [Int#] [k] s1 x2 in
+               -> let s1__elem : Int# = next# [Int#] [p] [k] s1 x2 in
                   let x0 : Int# = mod# [Int#] s1__elem 2i# in
                   let x3__elem : Bool# = eq# [Int#] x0 0i# in
                   case x3__elem of {
@@ -79,13 +80,13 @@ letrec {
 -- Split loop from the vector scheduler.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# k Float32# -> Series# k Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 s2 : Series# k Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 s2 : Series# p k Float32#).
       split$4# [k] n
           (\(x4 : RateNat# (Down4# k)).
-           let s1$down : Series# (Down4# k) Float32# = down$4# [k] [Float32#] x4 s1 in
-           let s2$down : Series# (Down4# k) Float32# = down$4# [k] [Float32#] x4 s2 in
+           let s1$down : Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s1 in
+           let s2$down : Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s2 in
            let x13 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
            let x1$vec$0 : Vec4# Float32# = x13 in
            let x14 : Vec4# Float32# = vrep$4# [Float32#] 1.0f32# in
@@ -99,8 +100,8 @@ letrec {
                    0#  
                     -> T2# [Vec4# Float32#] [Vec4# Float32#] x1$vec$1 x2$vec$1;
                    _ 
-                    -> let s1$elem : Vec4# Float32# = next$4# [Float32#] [k] s1$down x5 in
-                       let s2$elem : Vec4# Float32# = next$4# [Float32#] [k] s2$down x5 in
+                    -> let s1$elem : Vec4# Float32# = next$4# [Float32#] [p] [k] s1$down x5 in
+                       let s2$elem : Vec4# Float32# = next$4# [Float32#] [p] [k] s2$down x5 in
                        let x5$elem : Vec4# Float32# = vmul$4# [Float32#] s1$elem s2$elem in
                        let x1$val : Vec4# Float32# = x1$vec$1 in
                        let x15 : Vec4# Float32# = vadd$4# [Float32#] x1$val x5$elem in
@@ -136,8 +137,8 @@ letrec {
            let _ : Unit = write# [Float32#] x2 x2$res$3 in
            ())
           (\(x8 : RateNat# (Tail4# k)).
-           let s1$tail : Series# (Tail4# k) Float32# = tail$4# [k] [Float32#] x8 s1 in
-           let s2$tail : Series# (Tail4# k) Float32# = tail$4# [k] [Float32#] x8 s2 in
+           let s1$tail : Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s1 in
+           let s2$tail : Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s2 in
            let x1$init : Float32# = read# [Float32#] x1 in
            let x1$acc$0 : Float32# = x1$init in
            let x2$init : Float32# = read# [Float32#] x2 in
@@ -152,9 +153,9 @@ letrec {
                     -> T2# [Float32#] [Float32#] x1$acc$1 x2$acc$1;
                    _ 
                     -> let s1$elem : Float32#
-                             = next# [Float32#] [Tail4# k] s1$tail x12 in
+                             = next# [Float32#] [p] [Tail4# k] s1$tail x12 in
                        let s2$elem : Float32#
-                             = next# [Float32#] [Tail4# k] s2$tail x12 in
+                             = next# [Float32#] [p] [Tail4# k] s2$tail x12 in
                        let x5$elem : Float32# = mul# [Float32#] s1$elem s2$elem in
                        let x1$val : Float32# = x1$acc$1 in
                        let x33 : Float32# = add# [Float32#] x1$val x5$elem in

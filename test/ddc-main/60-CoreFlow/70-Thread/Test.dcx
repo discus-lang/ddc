@@ -5,18 +5,18 @@
 -- This is before the wind-transform that eliminates these combinators.
 :flow-thread..
 module Test with letrec
-filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> Vector# a
-  = /\(k0 : Rate)./\(a : Data).
-     \(f g : a -> Bool#).\(s0 : Series# k0 a).
+filter : [p : Proc]. [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# p k0 a -> Vector# a
+  = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+     \(f g : a -> Bool#).\(s0 : Series# p k0 a).
     let k1__count : Ref# Nat# = new# [Nat#] 0# in
     let k2__count : Ref# Nat# = new# [Nat#] 0# in
     let x4 : Vector# a
-          = vnewN# [a] [k0] (rateOfSeries# [k0] [a] s0) in
+          = vnewN# [a] [k0] (rateOfSeries# [p] [k0] [a] s0) in
     let x4$buf : Buffer# a = vbuf# [a] x4 in
     let _ : Unit
-          = loopn# [k0] (rateOfSeries# [k0] [a] s0)
+          = loopn# [k0] (rateOfSeries# [p] [k0] [a] s0)
                 (\(x0 : Nat#).
-                 let s0__elem : a = next# [a] [k0] s0 x0 in
+                 let s0__elem : a = next# [a] [p] [k0] s0 x0 in
                  let x1__elem : Bool#
                        = (\(x : a). f x) s0__elem in
                  let _ : Unit
@@ -39,18 +39,18 @@ filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> 
 -- Where we have explicit tail-recursive loops.
 :flow-thread..
 module Test with letrec
-map_map : [k : Rate].Series# k Int# -> Vector# Int#
-  = /\(k : Rate).
-     \(s_aub : Series# k Int#).
+map_map : [p : Proc]. [k : Rate].Series# p k Int# -> Vector# Int#
+  = /\(p : Proc). /\(k : Rate).
+     \(s_aub : Series# p k Int#).
     let x6 : Vector# Int#
-          = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) in
+          = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s_aub) in
     let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
     letrec {
       loop_k : Nat# -> Unit
         = \(x0 : Nat#).
           case x0 of {
             0#  -> ();
-            _   -> let s_aub__elem : Int# = next# [Int#] [k] s_aub x0 in
+            _   -> let s_aub__elem : Int# = next# [Int#] [p] [k] s_aub x0 in
                    let x2__elem : Int#    = add#  [Int#] s_aub__elem 1i# in
                    let x4__elem : Int#    = mul#  [Int#] x2__elem 2i# in
                    let _        : Unit    = vwrite# [Int#] x6$buf x0 x4__elem in
@@ -59,7 +59,7 @@ map_map : [k : Rate].Series# k Int# -> Vector# Int#
     } in
     let _ : Unit
           = loop_k
-                (natOfRateNat# [k] (rateOfSeries# [k] [Int#] s_aub)) in
+                (natOfRateNat# [k] (rateOfSeries# [p] [k] [Int#] s_aub)) in
     x6;
 ;;
 
@@ -67,13 +67,13 @@ map_map : [k : Rate].Series# k Int# -> Vector# Int#
 -- Double fold fusion
 :flow-thread..
 module Test with letrec
-lower_ffold_rqB : [k_c : Rate].Series# k_c Int# -> Int#
-  = /\(k_c : Rate).
-     \(s_au5 : Series# k_c Int#).
+lower_ffold_rqB : [p : Proc]. [k_c : Rate].Series# p k_c Int# -> Int#
+  = /\(p : Proc). /\(k_c : Rate).
+     \(s_au5 : Series# p k_c Int#).
     let x3__acc_0 : Int# = 0i# in
     let x8__acc_0 : Int# = 1i# in
     let k_c_length : Nat#
-          = natOfRateNat# [k_c] (rateOfSeries# [k_c] [Int#] s_au5) in
+          = natOfRateNat# [k_c] (rateOfSeries# [p] [k_c] [Int#] s_au5) in
     letrec {
       loop_k_c : Nat# -> Int# -> Int# -> Tuple2# Int# Int#
         = \(x1 : Nat#). \(x3__acc_1 x8__acc_1 : Int#).
@@ -81,7 +81,7 @@ lower_ffold_rqB : [k_c : Rate].Series# k_c Int# -> Int#
             0#  
              -> T2# [Int#] [Int#] x3__acc_1 x8__acc_1;
             _ 
-             -> let s_au5__elem : Int# = next# [Int#] [k_c] s_au5 x1 in
+             -> let s_au5__elem : Int# = next# [Int#] [p] [k_c] s_au5 x1 in
                 let x0 : Int# = x3__acc_1 in
                 let x3__acc_2 : Int# = add# [Int#] x0 s_au5__elem in
                 let x5 : Int# = x8__acc_1 in

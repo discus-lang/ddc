@@ -5,8 +5,8 @@ ok
 -- Single generate output
 module Test with
 letrec {
-  gen : [k : Rate].Vector# Nat# -> Unit
-    = /\(k : Rate).
+  gen : [p : Proc].[k : Rate].Vector# Nat# -> Unit
+    = /\(p : Proc)./\(k : Rate).
        \(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let _
@@ -21,8 +21,8 @@ letrec {
 -- Generate, then map
 module Test with
 letrec {
-  gen : [k : Rate].Vector# Nat# -> Unit
-    = /\(k : Rate).
+  gen : [p : Proc].[k : Rate].Vector# Nat# -> Unit
+    = /\(p : Proc)./\(k : Rate).
        \(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let _
@@ -38,14 +38,14 @@ letrec {
 -- Generate in the presence of other Series
 module Test with
 letrec {
-  gen : [k : Rate].Series# k Nat# -> Vector# Nat# -> Unit
-    = /\(k : Rate).
-       \(s1 : Series# k Nat#).\(v : Vector# Nat#).
+  gen : [p : Proc].[k : Rate].Series# p k Nat# -> Vector# Nat# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(s1 : Series# p k Nat#).\(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let _
             = loop# [k]
                   (\(x1 : Nat#).
-                   let s1$elem = next# [Nat#] [k] s1 x1 in
+                   let s1$elem = next# [Nat#] [p] [k] s1 x1 in
                    let s2$elem = mul# [Nat#] 2# x1 in
                    let t$elem = add# [Nat#] s1$elem s2$elem in
                    let _ = vwrite# [Nat#] v$buf x1 t$elem in

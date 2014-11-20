@@ -24,9 +24,9 @@ slurpOperator bResult xx
  
  -- Rep -----------------------------------------
  | Just ( NameOpSeries OpSeriesRep
-        , [ XType _P, XType tK1, XType tA, xVal@(XVar (UName nVal))])
+        , [ XType _P, XType tK1, XType tA, xVal])
                                 <- takeXPrimApps xx
- = Just ( [nVal]
+ = Just ( []
         , tK1
         , OpRep
         { opResultSeries        = bResult
@@ -38,7 +38,7 @@ slurpOperator bResult xx
  | Just ( NameOpSeries OpSeriesReps
         , [ XType _P, XType tK1, XType tK2, XType tA, XVar uSegd@(UName nSegd), XVar uS@(UName nS) ])
                                 <- takeXPrimApps xx
- = Just ( [nS, nSegd]
+ = Just ( [nSegd, nS]
         , tK2
         , OpReps
         { opResultSeries        = bResult

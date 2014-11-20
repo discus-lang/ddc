@@ -321,6 +321,9 @@ data OpStore
 
         -- | Get a vector's data buffer
         | OpStoreBufOfVector
+
+        -- | Get a vector's data buffer
+        | OpStoreBufOfRateVec
         deriving (Eq, Ord, Show)
 
 

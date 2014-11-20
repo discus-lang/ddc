@@ -5,17 +5,18 @@ ok
 -- Fuse map into fill.
 module Test with
 letrec {
-  map : [p : Proc].[k : Rate].Vector# Int# -> Series# p k k Int# -> Unit
+  map : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
     = /\(p : Proc)./\(k : Rate).
-       \(v : Vector# Int#).\(s : Series# p k k Int#).
+       \(v : Vector# Int#).\(ins : RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
+      let x3 = series# [p] [k] [Int#] ins in
       let _
             = loop# [k]
                   (\(x0 : Nat#).
-                   let s$elem = next# [Int#] [p] [k] [k] s x0 in
-                   let x1 = mul# [Int#] s$elem 2i# in
-                   let x3$elem = add# [Int#] x1 1i# in
-                   let _ = vwrite# [Int#] v$buf x0 x3$elem in
+                   let x3$elem = next# [Int#] [p] [k] x3 x0 in
+                   let x1 = mul# [Int#] x3$elem 2i# in
+                   let x4$elem = add# [Int#] x1 1i# in
+                   let _ = vwrite# [Int#] v$buf x0 x4$elem in
                    ()) in
       ()
 }
@@ -24,18 +25,19 @@ letrec {
 -- Fuse map into fold.
 module Test with
 letrec {
-  foldMap : [p : Proc].[k : Rate].Ref# Int# -> Series# p k k Int# -> Unit
+  foldMap : [p : Proc].[k : Rate].Ref# Int# -> RateVec# k Int# -> Unit
     = /\(p : Proc)./\(k : Rate).
-       \(x : Ref# Int#).\(s : Series# p k k Int#).
+       \(x : Ref# Int#).\(ins : RateVec# k Int#).
+      let x4 = series# [p] [k] [Int#] ins in
       let x$init = read# [Int#] x in
       let x$acc = new# [Int#] x$init in
       let _
             = loop# [k]
                   (\(x2 : Nat#).
-                   let s$elem = next# [Int#] [p] [k] [k] s x2 in
-                   let x4$elem = mul# [Int#] s$elem 2i# in
+                   let x4$elem = next# [Int#] [p] [k] x4 x2 in
+                   let x5$elem = mul# [Int#] x4$elem 2i# in
                    let x$val = read# [Int#] x$acc in
-                   let x3 = add# [Int#] x$val x4$elem in
+                   let x3 = add# [Int#] x$val x5$elem in
                    let _ = write# [Int#] x$acc x3 in
                    ()) in
       let x$res = read# [Int#] x$acc in
@@ -47,17 +49,18 @@ letrec {
 -- Map/Map fusion, filling a vector.
 module Test with
 letrec {
-  map : [p : Proc].[k : Rate].Vector# Int# -> Series# p k k Int# -> Unit
+  map : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
     = /\(p : Proc)./\(k : Rate).
-       \(v : Vector# Int#).\(s : Series# p k k Int#).
+       \(v : Vector# Int#).\(ins : RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
+      let x4 = series# [p] [k] [Int#] ins in
       let _
             = loop# [k]
                   (\(x1 : Nat#).
-                   let s$elem = next# [Int#] [p] [k] [k] s x1 in
-                   let x4$elem = add# [Int#] 1i# s$elem in
-                   let x5$elem = mul# [Int#] 2i# x4$elem in
-                   let _ = vwrite# [Int#] v$buf x1 x5$elem in
+                   let x4$elem = next# [Int#] [p] [k] x4 x1 in
+                   let x5$elem = add# [Int#] 1i# x4$elem in
+                   let x6$elem = mul# [Int#] 2i# x5$elem in
+                   let _ = vwrite# [Int#] v$buf x1 x6$elem in
                    ()) in
       ()
 }
@@ -66,21 +69,22 @@ letrec {
 -- Map and Reduce the same series.
 module Test with
 letrec {
-  foldMap : [p : Proc].[k : Rate].Vector# Int# -> Ref# Int# -> Series# p k k Int# -> Unit
+  foldMap : [p : Proc].[k : Rate].Vector# Int# -> Ref# Int# -> RateVec# k Int# -> Unit
     = /\(p : Proc)./\(k : Rate).
-       \(v : Vector# Int#).\(x : Ref# Int#).\(s : Series# p k k Int#).
+       \(v : Vector# Int#).\(x : Ref# Int#).\(ins : RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
+      let s = series# [p] [k] [Int#] ins in
       let x$init = read# [Int#] x in
       let x$acc = new# [Int#] x$init in
       let _
             = loop# [k]
                   (\(x1 : Nat#).
-                   let s$elem = next# [Int#] [p] [k] [k] s x1 in
-                   let s2$elem = mul# [Int#] 2i# s$elem in
-                   let s3$elem = add# [Int#] 1i# s2$elem in
+                   let s$elem = next# [Int#] [p] [k] s x1 in
                    let x$val = read# [Int#] x$acc in
                    let x2 = add# [Int#] x$val s$elem in
                    let _ = write# [Int#] x$acc x2 in
+                   let s2$elem = mul# [Int#] 2i# s$elem in
+                   let s3$elem = add# [Int#] 1i# s2$elem in
                    let _ = vwrite# [Int#] v$buf x1 s3$elem in
                    ()) in
       let x$res = read# [Int#] x$acc in

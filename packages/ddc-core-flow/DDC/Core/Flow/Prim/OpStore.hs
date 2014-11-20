@@ -9,7 +9,7 @@ module DDC.Core.Flow.Prim.OpStore
         , xWriteVector, xWriteVectorC
         , xTailVector
         , xTruncVector
-        , xBufOfVector)
+        , xBufOfVector, xBufOfRateVec)
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
@@ -49,6 +49,7 @@ instance Pretty OpStore where
 
         OpStoreTruncVector      -> text "vtrunc#"
         OpStoreBufOfVector      -> text "vbuf#"
+        OpStoreBufOfRateVec     -> text "vbufofratevec#"
 
 
 -- | Read a store operator name.
@@ -89,6 +90,7 @@ readOpStore str
                 "vtail#"        -> Just (OpStoreTailVector  1)
                 "vtrunc#"       -> Just OpStoreTruncVector
                 "vbuf#"         -> Just OpStoreBufOfVector
+                "vbufofratevec#"-> Just OpStoreBufOfRateVec
 
                 _               -> Nothing
 
@@ -160,6 +162,11 @@ typeOpStore op
         OpStoreBufOfVector
          -> tForall kData 
          $  \tA -> tVector tA `tFun` tBuffer tA
+
+        -- vbufofratevec#   :: [k : Rate]. [a : Data]. RateVec# k a -> Buffer# a
+        OpStoreBufOfRateVec
+         -> tForalls [kRate, kData]
+         $  \[tK, tA] -> tRateVec tK tA `tFun` tBuffer tA
 
 
 
@@ -239,6 +246,12 @@ xBufOfVector :: Type Name -> Exp () Name -> Exp () Name
 xBufOfVector tElem xArr
  = xApps (xVarOpStore OpStoreBufOfVector)
          [XType tElem, xArr]
+
+xBufOfRateVec :: Type Name -> Type Name -> Exp () Name -> Exp () Name
+xBufOfRateVec tRate tElem xArr
+ = xApps (xVarOpStore OpStoreBufOfRateVec)
+         [XType tRate, XType tElem, xArr]
+
 
 
 

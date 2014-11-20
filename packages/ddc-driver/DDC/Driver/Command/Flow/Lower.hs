@@ -35,7 +35,9 @@ cmdFlowLower
          $  stageFlowLoad  configDriver source 
          [  stageFlowPrep  configDriver source
          [  PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
-         [  stageFlowLower configDriver configLower source [ pipeFinal ]]]]
+         [  stageFlowLower configDriver configLower source
+         -- [ PipeCoreOutput pmode SinkStdout , pipeFinal ]]]]
+         [ pipeFinal ]]]]
 
         pipeFinal
          | configTaintAvoidTypeChecks configDriver

@@ -7,13 +7,14 @@
 :flow-lower..
 module Test with letrec
 test    [p : Proc] [k1 : Rate]
-        (lens : Series# p k1 k1 Nat#)
+        (lens : Series# p k1 Nat#)
         (v    : Vector# Nat#)
         : Process# p k1
  = smkSegd# lens
    (/\(k2 : Rate). \(segd : Segd# k1 k2). 
     do  s2 = sindices# segd 
-        sfill# v s2)
+        presize# (rsegd# segd (rid# [p])) 
+                 (sfill# v s2))
 ;;
 
 
@@ -21,7 +22,7 @@ test    [p : Proc] [k1 : Rate]
 :flow-lower..
 module Test with letrec
 test    [p : Proc] [k1 : Rate]
-        (lens : Series# p k1 k1 Nat#) (things : Series# p k1 k1 Nat#)
+        (lens : Series# p k1 Nat#) (things : Series# p k1 Nat#)
         (v    : Vector# Nat#)
         : Process# p k1
  = smkSegd# lens
@@ -29,7 +30,8 @@ test    [p : Proc] [k1 : Rate]
     do  s2     = sindices# segd
         s3     = sreps# segd things
         s4     = smap2# add# s2 s3
-        sfill# v s4)
+        presize# (rsegd# segd (rid# [p])) 
+                 (sfill# v s4))
 ;;
 
 
@@ -54,6 +56,7 @@ test    [p : Proc] [k1 kThings : Rate]
                 results = sgather#  things ixs
                 firsts  = sgather#  things base'
                 firstsr = sreps#    segd firsts 
-                pjoin#  (sfill# out1 results)
-                        (sfill# out2 firstsr))
+                presize# (rsegd# segd (rid# [p])) 
+                         (pjoin#  (sfill# out1 results)
+                                  (sfill# out2 firstsr)))
 ;;

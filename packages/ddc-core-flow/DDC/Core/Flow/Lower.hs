@@ -191,8 +191,8 @@ lowerProcess config process
         let xProcVec'       
                 = XLam bRateDown
                 $ xLets [LLet b x | (_, (b, x)) <- bxsDownSeries]
-                $ xApps (XApp xProcVec (XType tK))
-                $ xsVecValArgs
+                $ xApps xProcVec
+                $ [XType tProc, XType tK] ++ xsVecValArgs
 
 
         -----------------------------------------
@@ -243,8 +243,8 @@ lowerProcess config process
                 = XLam bRateTail
                 $ xLets [LLet b x | (_, (b, x)) <- bxsTailSeries]
                 $ xLets [LLet b x | (_, (b, x)) <- bxsTailVector]
-                $ xApps (XApp xProcTail (XType (tTail c tK)))
-                $ xsTailValArgs
+                $ xApps xProcTail
+                $ [XType tProc, XType (tTail c tK)] ++ xsTailValArgs
 
         ------------------------------------------
         -- Stich the vector and scalar versions together.

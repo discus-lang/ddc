@@ -81,7 +81,8 @@ slurpProcessLet (BName n t) xx
 
         -- Slurp the body of the process.
    in do
-        ctx     <- slurpProcessX Env.empty Map.empty Map.empty xBody
+        let series = slurpSeriesArguments bvs Map.empty
+        ctx       <- slurpProcessX Env.empty series Map.empty xBody
 
         return  $ Left
                 $ Process
@@ -95,6 +96,28 @@ slurpProcessLet (BName n t) xx
 
 slurpProcessLet b xx
  = return $ Right (b, xx)
+
+
+slurpSeriesArguments :: [BindF] -> Map.Map Name Context -> Map.Map Name Context
+slurpSeriesArguments [] e
+   = e
+slurpSeriesArguments (b:bs) e
+ | BName n t <- b
+ , Just (NameTyConFlow TyConFlowSeries
+        , [_P, tK, tA] )
+       <- takePrimTyConApps t
+ = let op          = OpSeriesOfArgument
+                   { opResultSeries        = b
+                   , opInputRate           = tK
+                   , opElemType            = tA }
+
+       context     = ContextRate
+                   { contextRate           = tK
+                   , contextOps            = [op]
+                   , contextInner          = [] }
+    in slurpSeriesArguments bs (Map.insert n context e)
+ | otherwise
+ =      slurpSeriesArguments bs e
 
 
 -------------------------------------------------------------------------------
@@ -184,7 +207,7 @@ slurpBindingX _tenv ctxs rs b@(BName n _)
             , XType tA
             , XVar vec]))
  = do
-        let op          = OpSeries
+        let op          = OpSeriesOfRateVec
                         { opResultSeries        = b
                         , opInputRate           = tK
                         , opInputRateVec        = vec 
@@ -294,10 +317,13 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
                         , contextOps            = [op]
                         , contextInner          = [] }
 
-        let go []     c = return c
+        let go []     c = insertContext ctx c
             go (i:is) c = insertContext c i >>= go is
 
-        context'       <- go ins' ctx
+        context'       <- case reverse ins' of
+                           (i:is) -> go is i
+                           []     -> return ctx
+
         let ctxs'       = Map.insert n context' ctxs
         return (ctxs', rs)
 

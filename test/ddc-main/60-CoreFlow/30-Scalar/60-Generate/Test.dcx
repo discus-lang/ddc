@@ -5,20 +5,20 @@
 -- Single generate output
 :flow-lower..
 module Test with letrec
-gen   [k : Rate]
+gen   [p : Proc] [k : Rate]
       (v : Vector# Nat#)
-         : Process#
- = let s : Series# k Nat# = sgenerate# (mul# 2#)
+         : Process# p k
+ = let s : Series# p k Nat# = sgenerate# (mul# 2#)
    in  sfill# v s
 ;;
 
 -- Generate, then map
 :flow-lower..
 module Test with letrec
-gen   [k : Rate]
+gen   [p : Proc] [k : Rate]
       (v : Vector# Nat#)
-         : Process#
- = let s : Series# k Nat# = sgenerate# (mul# 2#)   in
+         : Process# p k
+ = let s : Series# p k Nat# = sgenerate# (mul# 2#)   in
    let t                  = smap#      (add# 1#) s in
        sfill# v t
 ;;
@@ -26,11 +26,11 @@ gen   [k : Rate]
 -- Generate in the presence of other Series
 :flow-lower..
 module Test with letrec
-gen   [k : Rate]
-      (s1: Series# k Nat#)
+gen   [p : Proc] [k : Rate]
+      (s1: Series# p k Nat#)
       (v : Vector# Nat#)
-         : Process#
- = let s2: Series# k Nat# = sgenerate# (mul# 2#)   in
+         : Process# p k
+ = let s2: Series# p k Nat# = sgenerate# (mul# 2#)   in
    let t                  = smap2#     (add#) s1 s2 in
        sfill# v t
 ;;

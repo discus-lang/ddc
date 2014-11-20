@@ -7,7 +7,7 @@
 :flow-lower..
 module Test with letrec
 repsme  [p : Proc] [k1 : Rate]
-        (s  : Series# p k1 k1 Float32#)
+        (s  : Series# p k1 Float32#)
         (v  : Vector# Float32#)
         : Process# p k1
  = sfill# v 
@@ -19,14 +19,14 @@ repsme  [p : Proc] [k1 : Rate]
 :flow-lower..
 module Test with letrec
 repsme  [p : Proc] [k1 : Rate]
-        (lens : Series# p k1 k1 Nat#)  (s1   : Series# p k1 k1 Float32#)
+        (lens : Series# p k1 Nat#)  (s1   : Series# p k1 Float32#)
         (v    : Vector# Float32#)
         : Process# p k1
  = smkSegd# lens
     (/\(k2 : Rate). \(segd : Segd# k1 k2). 
      do s2 = sreps# segd s1
         s3 = smap#  (mul# 2.0f32#) s2 
-        sfill# v s3)
+        presize# (rsegd# segd (rid# [p])) (sfill# v s3))
 ;;
 
 
@@ -35,7 +35,7 @@ repsme  [p : Proc] [k1 : Rate]
 :flow-lower..
 module Test with letrec
 repsme  [p : Proc] [k1 : Rate]
-        (lens : Series# p k1 k1 Nat#) (s1 s2 : Series# p k1 k1 Float32#)
+        (lens : Series# p k1 Nat#) (s1 s2 : Series# p k1 Float32#)
         (v    : Vector# Float32#)
         : Process# p k1
  = smkSegd# lens
@@ -43,7 +43,7 @@ repsme  [p : Proc] [k1 : Rate]
      do s1r = sreps# segd s1
         s2r = sreps# segd s2
         s3  = smap2# mul# s1r s2r
-        sfill# v s3)
+        presize# (rsegd# segd (rid# [p])) (sfill# v s3))
 ;;
 
 
@@ -51,12 +51,12 @@ repsme  [p : Proc] [k1 : Rate]
 :flow-lower..
 module Test with letrec
 repsme  [p : Proc] [k1 : Rate]
-        (lens : Series# p k1 k1 Nat#) (s1 s2 : Series# p k1 k1 Float32#)
+        (lens : Series# p k1 Nat#) (s1 s2 : Series# p k1 Float32#)
         (v    : Vector# Float32#)
         : Process# p k1
  = smkSegd# lens
     (/\(k2 : Rate). \(segd : Segd# k1 k2).
      do s3  = smap2# mul# s1 s2
         s3r = sreps# segd s3
-        sfill# v s3r)
+        presize# (rsegd# segd (rid# [p])) (sfill# v s3r))
 ;;

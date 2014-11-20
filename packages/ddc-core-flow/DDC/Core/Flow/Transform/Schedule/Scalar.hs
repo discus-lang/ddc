@@ -10,6 +10,7 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Exp
 
 
@@ -50,7 +51,7 @@ scheduleOperator ctx op
                , [ BodyStmt bResult (XVar uInput) ]
                , [] )
 
- | OpSeries{} <- op
+ | OpSeriesOfRateVec{} <- op
  = do   let tK           = opInputRate    op
         let tA           = opElemType     op
         let bS           = opResultSeries op
@@ -70,6 +71,25 @@ scheduleOperator ctx op
                         (xNext tP tK tA (XVar uS) (XVar (UIx 0))) ]
 
         return ( starts
+               , bodies
+               , [] )
+
+
+ | OpSeriesOfArgument{} <- op
+ = do   let tK           = opInputRate    op
+        let tA           = opElemType     op
+        let bS           = opResultSeries op
+        let Just uS      = takeSubstBoundOfBind                   bS
+        let Just tP      = procTypeOfSeriesType   (typeOfBind     bS)
+        let Just bResult = elemBindOfSeriesBind                   bS
+
+        -- Body expressions that take the next element from each input series.
+        -- Could be different to RateVec above, since could be from other source?
+        let bodies
+                = [ BodyStmt bResult
+                        (xNext tP tK tA (XVar uS) (XVar (UIx 0))) ]
+
+        return ( []
                , bodies
                , [] )
 
@@ -162,12 +182,14 @@ scheduleOperator ctx op
 
         -- Bound of source index.
         let Just uIndex  = elemBoundOfSeriesBound (opSourceIndices op)
+        let buf          = xBufOfRateVec (opVectorRate op) (opElemType op)
+                                         (XVar $ opSourceVector op)
 
         -- Read from the vector.
         let bodies      = [ BodyStmt bResult
                                 (xReadVector 
                                         (opElemType op)
-                                        (XVar $ bufOfVectorName $ opSourceVector op)
+                                        buf
                                         (XVar $ uIndex)) ]
 
         return ([], bodies, [])

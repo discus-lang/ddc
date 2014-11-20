@@ -9,12 +9,11 @@ import DDC.Core.Flow.Context
 import DDC.Core.Flow.Transform.Slurp.Error
 import DDC.Core.Flow.Transform.Slurp.Resize
 import DDC.Core.Flow.Prim
-import DDC.Core.Flow.Process.Operator
 import DDC.Core.Compounds.Simple
 import DDC.Core.Exp.Simple
 import Control.Applicative
-import Data.Function (on)
-import Data.List     (nubBy)
+import Data.List     (nub)
+
 
 -- "embed" is to be pushed inside "into"
 -- only one of "embed" or "into" can contain inner contexts;
@@ -103,12 +102,12 @@ insertContext embed into
   dropops =
    let ops' = contextOps   into ++ contextOps   embed
    in  return
-         into { contextOps   = nubBy ((==) `on` bindOfOp) ops'
-              , contextInner = contextInner into ++ contextInner embed }
+         into { contextOps   = nub ops'
+              , contextInner = mergeLists (contextInner into) (contextInner embed) }
 
   pushinner =
    return
-       into { contextInner = contextInner into ++ [embed] }
+       into { contextInner = mergeLists (contextInner into) [embed] }
 
   descendorpush p =
    case descend of
@@ -128,7 +127,22 @@ insertContext embed into
                  { contextInner1 = ls'
                  , contextInner2 = rs' }
 
-   
+mergeLists :: [Context] -> [Context] -> [Context]
+mergeLists lefts []
+ = lefts
+mergeLists lefts (right:rest)
+ = case mergeAny [] lefts right of
+    Nothing  -> mergeLists (lefts ++ [right]) rest
+    Just ls' -> mergeLists ls' rest
+ where
+  mergeAny _ [] _
+   = Nothing
+  mergeAny pres (l:ls) r
+   = case insertContext l r of
+      Right l' -> Just (pres ++ [l'] ++ ls)
+      Left _   -> mergeAny (pres ++ [l]) ls r 
+
+
 
 tryInserts :: Context -> [Context] -> Maybe [Context]
 tryInserts embed intos
@@ -185,7 +199,7 @@ splitContextIntoApps ctx
 
 mergeContexts :: Context -> Context -> Either Error Context
 mergeContexts a b
- = insertContext a b
+ = insertContext b a
 
 resizeContext :: Resize -> Context -> Either Error Context
 resizeContext resize ctx
@@ -220,12 +234,14 @@ resizeContext resize ctx
              , contextInner2 = in2 }
      | otherwise
      -> Left (ErrorCannotResizeContext ctx)
-    Sel1 _ k _ r
+    Sel1 _ _k _ r
      -> do  ctx' <- resizeContext r ctx
-            return $ wrapCtx k ctx'
-    Segd _ k _ r
+            return $ ctx'
+            -- return $ wrapCtx k ctx'
+    Segd _ _k _ r
      -> do  ctx' <- resizeContext r ctx
-            return $ wrapCtx k ctx'
+            return $ ctx'
+            -- return $ wrapCtx k ctx'
     -- TODO doublecheck this after implementing slurp for OpSeriesCross
     Cross _ k _ r
      -> do  ctx' <- resizeContext r ctx

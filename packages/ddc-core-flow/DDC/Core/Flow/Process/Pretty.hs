@@ -118,7 +118,8 @@ instance Pretty Operator where
  ppr op@OpMap{}
         = vcat
         [ text "Map"
-        , text " rate:    "     <> ppr (opInputRate     op) ]
+        , text " rate:    "     <> ppr (opInputRate     op)
+        , text " result:  "     <> ppr (opResultSeries  op) ]
 
  ppr op@OpPack{}
         = vcat
@@ -126,11 +127,17 @@ instance Pretty Operator where
         , text " input  rate: " <> ppr (opInputRate     op) 
         , text " output rate: " <> ppr (opOutputRate    op) ]
 
- ppr op@OpSeries{}
+ ppr op@OpSeriesOfRateVec{}
         = vcat
-        [ text "Series"
+        [ text "SeriesOfRateVec"
         , text " rate:    "     <> ppr (opInputRate     op)
         , text " input:   "     <> ppr (opInputRateVec  op)
+        , text " result:  "     <> ppr (opResultSeries  op) ]
+
+ ppr op@OpSeriesOfArgument{}
+        = vcat
+        [ text "SeriesOfArgument"
+        , text " rate:    "     <> ppr (opInputRate     op)
         , text " result:  "     <> ppr (opResultSeries  op) ]
 
 

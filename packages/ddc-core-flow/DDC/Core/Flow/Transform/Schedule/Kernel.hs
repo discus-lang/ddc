@@ -42,12 +42,12 @@ scheduleKernel
         -- We also keep a copy of the original RateVec,
         -- in case it is used by a cross or a gather.
         let bsParamValues_lowered
-                = concatMap (\(BName n t) 
+                = map (\(BName n t) 
                         -> case lowerSeriesRate lifting t of
                             Just t'
-                             -> [ BName (NameVarMod n "down") t', BName n t ]
+                             -> BName n t'
                             Nothing
-                             -> [ BName n t ])
+                             -> BName n t)
                 $ bsParamValues
 
         let c           = liftingFactor lifting
@@ -84,31 +84,24 @@ scheduleOperator lifting envScalar op
                , [ BodyStmt bResult (XVar uInput) ]
                , [] )
 
- | OpSeries{} <- op
+ | OpSeriesOfArgument{} <- op
  = do   let c            = liftingFactor lifting
         let tK           = opInputRate    op
-        let tKD          = tDown c tK
         let tA           = opElemType     op
         let BName n t    = opResultSeries op
         let Just t'      = lowerSeriesRate lifting t
         let bS           = BName n t'
-        let UName nInput = opInputRateVec op
         let Just uS      = takeSubstBoundOfBind                   bS
         let Just tP      = procTypeOfSeriesType   (typeOfBind     bS)
         let Just bResult =   elemBindOfSeriesBind                   bS
                          >>= liftTypeOfBind lifting
-
-        -- Convert the RateVec to a series
-        let starts
-                = [ StartStmt bS
-                        (xSeriesOfRateVec tP tKD tA $ XVar $ UName $ NameVarMod nInput "down")]
 
         -- Body expressions that take the next element from each input series.
         let bodies
                 = [ BodyStmt bResult
                         (xNextC c tP tK tA (XVar uS) (XVar (UIx 0))) ]
 
-        return ( starts
+        return ( []
                , bodies
                , [] )
 

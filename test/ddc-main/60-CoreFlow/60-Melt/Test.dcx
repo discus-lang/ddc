@@ -6,9 +6,10 @@ import {
         minIx  : Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
 } with
 letrec {
-  foldix : [k : Rate].Series# k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
-    = /\(k : Rate).
-       \(s : Series# k Int#).
+  foldix : [p : Proc]. [k : Rate].Series# p k Int# -> Tuple2# (Tuple2# Int# Int#) Int#
+    = /\(p : Proc).
+      /\(k : Rate).
+       \(s : Series# p k Int#).
       let x4 : Tuple2# Int# Int# = T2# [Int#] [Int#] 0i# 0i# in
       let x5$acc : Ref# (Tuple2# Int# Int#)
             = new# [Tuple2# Int# Int#] x4 in
@@ -16,7 +17,7 @@ letrec {
       let _ : Unit
             = loop# [k]
                   (\(^ : Nat#).
-                   let s$elem : Int# = next# [Int#] [k] s ^0 in
+                   let s$elem : Int# = next# [Int#] [p] [k] s ^0 in
                    let x1 : Tuple2# Int# Int#
                          = read# [Tuple2# Int# Int#] x5$acc in
                    let ^ : Tuple2# Int# Int# = minIx ^0 x1 s$elem in

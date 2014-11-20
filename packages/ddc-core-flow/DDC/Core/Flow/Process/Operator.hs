@@ -231,7 +231,7 @@ data Operator
 
         -----------------------------------------
         -- | Convert a series from a vector
-        | OpSeries
+        | OpSeriesOfRateVec
         { -- Binder for result series.
           opResultSeries        :: BindF
 
@@ -245,7 +245,21 @@ data Operator
         , opElemType            :: TypeF
         }
 
-        deriving Show
+        -----------------------------------------
+        -- | Use an existing series passed in as argument
+        | OpSeriesOfArgument
+        { -- Binder for result series.
+          opResultSeries        :: BindF
+
+          -- Rate of the input series.
+        , opInputRate           :: TypeF
+
+          -- Type of the elements.
+        , opElemType            :: TypeF
+        }
+
+
+        deriving (Show, Eq)
 
 bindOfOp :: Operator -> BindF
 bindOfOp o
@@ -264,7 +278,9 @@ bindOfOp o
      -> opResultSeries o
     OpGenerate{}
      -> opResultSeries o
-    OpSeries{}
+    OpSeriesOfRateVec{}
+     -> opResultSeries o
+    OpSeriesOfArgument{}
      -> opResultSeries o
 
     OpFill{}

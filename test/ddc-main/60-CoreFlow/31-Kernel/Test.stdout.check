@@ -6,15 +6,15 @@ ok
 -- Multiply two series.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Vector# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# p (Down8# k) Float32#).
       let v$buf = vbuf# [Float32#] v in
       let _
             = loop# [Down8# k]
                   (\(x2 : Nat#).
-                   let s1$elem = next$8# [Float32#] [k] s1 x2 in
-                   let s2$elem = next$8# [Float32#] [k] s2 x2 in
+                   let s1$elem = next$8# [Float32#] [p] [k] s1 x2 in
+                   let s2$elem = next$8# [Float32#] [p] [k] s2 x2 in
                    let x3$elem = vmul$8# [Float32#] s1$elem s2$elem in
                    let _ = vwrite$8# [Float32#] v$buf x2 x3$elem in
                    ()) in
@@ -25,15 +25,15 @@ letrec {
 -- Multiply by constant, lifting replicates constant.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Vector# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(v : Vector# Float32#).\(s1 s2 : Series# p (Down8# k) Float32#).
       let v$buf = vbuf# [Float32#] v in
       let _
             = loop# [Down8# k]
                   (\(x2 : Nat#).
-                   let s1$elem = next$8# [Float32#] [k] s1 x2 in
-                   let s2$elem = next$8# [Float32#] [k] s2 x2 in
+                   let s1$elem = next$8# [Float32#] [p] [k] s1 x2 in
+                   let s2$elem = next$8# [Float32#] [p] [k] s2 x2 in
                    let s2$elem = vmul$8# [Float32#] s1$elem s2$elem in
                    let x3 = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem = vadd$8# [Float32#] x3 s2$elem in
@@ -46,16 +46,15 @@ letrec {
 -- Gather from vector.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Vector# Float32# -> Vector# Float32# -> Series# (Down8# k) Nat# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(v1 v2 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).
-      let v1$buf = vbuf# [Float32#] v1 in
+  test : [p : Proc].[k k2 : Rate].RateNat# k -> RateVec# k2 Float32# -> Vector# Float32# -> Series# p (Down8# k) Nat# -> Unit
+    = /\(p : Proc)./\(k k2 : Rate).
+       \(n : RateNat# k).\(v1 : RateVec# k2 Float32#).\(v2 : Vector# Float32#).\(s1 : Series# p (Down8# k) Nat#).
       let v2$buf = vbuf# [Float32#] v2 in
       let _
             = loop# [Down8# k]
                   (\(x1 : Nat#).
-                   let s1$elem = next$8# [Nat#] [k] s1 x1 in
-                   let s2$elem = vgather$8# [Float32#] v1 s1$elem in
+                   let s1$elem = next$8# [Nat#] [p] [k] s1 x1 in
+                   let s2$elem = vgather$8# [k2] [Float32#] v1 s1$elem in
                    let x2 = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem = vadd$8# [Float32#] x2 s2$elem in
                    let _ = vwrite$8# [Float32#] v2$buf x1 s3$elem in
@@ -67,15 +66,15 @@ letrec {
 -- Scatter into vector.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Vector# Float32# -> Series# (Down8# k) Nat# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(v1 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).\(s2 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Vector# Float32# -> Series# p (Down8# k) Nat# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(v1 : Vector# Float32#).\(s1 : Series# p (Down8# k) Nat#).\(s2 : Series# p (Down8# k) Float32#).
       let v1$buf = vbuf# [Float32#] v1 in
       let _
             = loop# [Down8# k]
                   (\(x1 : Nat#).
-                   let s1$elem = next$8# [Nat#] [k] s1 x1 in
-                   let s2$elem = next$8# [Float32#] [k] s2 x1 in
+                   let s1$elem = next$8# [Nat#] [p] [k] s1 x1 in
+                   let s2$elem = next$8# [Float32#] [p] [k] s2 x1 in
                    let x2 = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem = vadd$8# [Float32#] x2 s2$elem in
                    let _ = vscatter$8# [Float32#] v1 s1$elem s3$elem in
@@ -87,16 +86,16 @@ letrec {
 -- Sum the elements of a vector.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 : Series# p (Down8# k) Float32#).
       let x4 = vrep$8# [Float32#] 0.0f32# in
       let x1$vec
             = new# [Vec8# Float32#] x4 in
       let _
             = loop# [Down8# k]
                   (\(x3 : Nat#).
-                   let s1$elem = next$8# [Float32#] [k] s1 x3 in
+                   let s1$elem = next$8# [Float32#] [p] [k] s1 x3 in
                    let x1$val
                          = read# [Vec8# Float32#] x1$vec in
                    let x5 = vadd$8# [Float32#] x1$val s1$elem in
@@ -130,18 +129,17 @@ letrec {
 -- Fuse gather, map and reduce in one.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Vector# Float32# -> Series# (Down8# k) Nat# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 : Ref# Float32#).\(v1 : Vector# Float32#).\(s1 : Series# (Down8# k) Nat#).
-      let v1$buf = vbuf# [Float32#] v1 in
+  test : [p : Proc].[k k2 : Rate].RateNat# k -> Ref# Float32# -> RateVec# k2 Float32# -> Series# p (Down8# k) Nat# -> Unit
+    = /\(p : Proc)./\(k k2 : Rate).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(v1 : RateVec# k2 Float32#).\(s1 : Series# p (Down8# k) Nat#).
       let x3 = vrep$8# [Float32#] 0.0f32# in
       let x1$vec
             = new# [Vec8# Float32#] x3 in
       let _
             = loop# [Down8# k]
                   (\(x2 : Nat#).
-                   let s1$elem = next$8# [Nat#] [k] s1 x2 in
-                   let s2$elem = vgather$8# [Float32#] v1 s1$elem in
+                   let s1$elem = next$8# [Nat#] [p] [k] s1 x2 in
+                   let s2$elem = vgather$8# [k2] [Float32#] v1 s1$elem in
                    let x5 = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem = vmul$8# [Float32#] x5 s2$elem in
                    let x1$val
@@ -177,17 +175,17 @@ letrec {
 -- Dot product.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 s2 : Series# p (Down8# k) Float32#).
       let x4 = vrep$8# [Float32#] 0.0f32# in
       let x1$vec
             = new# [Vec8# Float32#] x4 in
       let _
             = loop# [Down8# k]
                   (\(x3 : Nat#).
-                   let s1$elem = next$8# [Float32#] [k] s1 x3 in
-                   let s2$elem = next$8# [Float32#] [k] s2 x3 in
+                   let s1$elem = next$8# [Float32#] [p] [k] s1 x3 in
+                   let s2$elem = next$8# [Float32#] [p] [k] s2 x3 in
                    let s3$elem = vmul$8# [Float32#] s1$elem s2$elem in
                    let x1$val
                          = read# [Vec8# Float32#] x1$vec in
@@ -222,9 +220,9 @@ letrec {
 -- Fuse sum and product.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 : Series# p (Down8# k) Float32#).
       let x5 = vrep$8# [Float32#] 0.0f32# in
       let x1$vec
             = new# [Vec8# Float32#] x5 in
@@ -234,7 +232,7 @@ letrec {
       let _
             = loop# [Down8# k]
                   (\(x4 : Nat#).
-                   let s1$elem = next$8# [Float32#] [k] s1 x4 in
+                   let s1$elem = next$8# [Float32#] [p] [k] s1 x4 in
                    let x1$val
                          = read# [Vec8# Float32#] x1$vec in
                    let x8 = vadd$8# [Float32#] x1$val s1$elem in
@@ -293,9 +291,9 @@ letrec {
 -- Fuse sum and dot product.
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# (Down8# k) Float32# -> Series# (Down8# k) Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 s2 : Series# (Down8# k) Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 s2 : Series# p (Down8# k) Float32#).
       let x5 = vrep$8# [Float32#] 0.0f32# in
       let x1$vec
             = new# [Vec8# Float32#] x5 in
@@ -305,8 +303,8 @@ letrec {
       let _
             = loop# [Down8# k]
                   (\(x4 : Nat#).
-                   let s1$elem = next$8# [Float32#] [k] s1 x4 in
-                   let s2$elem = next$8# [Float32#] [k] s2 x4 in
+                   let s1$elem = next$8# [Float32#] [p] [k] s1 x4 in
+                   let s2$elem = next$8# [Float32#] [p] [k] s2 x4 in
                    let s3$elem = vmul$8# [Float32#] s1$elem s2$elem in
                    let x1$val
                          = read# [Vec8# Float32#] x1$vec in

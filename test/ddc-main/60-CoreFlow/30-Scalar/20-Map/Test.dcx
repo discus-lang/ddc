@@ -6,8 +6,8 @@
 :flow-lower..
 module Test with letrec
 map     [p : Proc] [k : Rate] (v : Vector# Int#)
-        (s : Series# p k k Int#) : Process# p k
- = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) s)
+        (ins : RateVec# k Int#) : Process# p k
+ = sfill# v (smap# (\x. add# (mul# x 2i#) 1i#) (series# ins))
 ;;
 
 
@@ -15,10 +15,10 @@ map     [p : Proc] [k : Rate] (v : Vector# Int#)
 :flow-lower..
 module Test with letrec
 foldMap [p : Proc] [k : Rate] (x : Ref# Int#)
-        (s : Series# p k k Int#) : Process# p k
+        (ins : RateVec# k Int#) : Process# p k
  = sreduce# x 
         add# 0i#
-        (smap# (\x. mul# x 2i#) s)
+        (smap# (\x. mul# x 2i#) (series# ins))
 ;;
 
 
@@ -26,11 +26,11 @@ foldMap [p : Proc] [k : Rate] (x : Ref# Int#)
 :flow-lower..
 module Test with letrec
 map     [p : Proc] [k : Rate] (v : Vector# Int#)
-        (s : Series# p k k Int#) : Process# p k
+        (ins : RateVec# k Int#) : Process# p k
  = sfill# v
         (smap# (mul# 2i#)
                (smap1# (add# 1i#) 
-                       s))
+                       (series# ins)))
 ;;
 
 
@@ -38,8 +38,9 @@ map     [p : Proc] [k : Rate] (v : Vector# Int#)
 :flow-lower..
 module Test with letrec
 foldMap [p : Proc] [k : Rate] (v : Vector# Int#) (x : Ref# Int#)
-        (s : Series# p k k Int#) : Process# p k
- = do   s2      = smap# (mul# 2i#) s
+        (ins : RateVec# k Int#) : Process# p k
+ = do   s       = series# ins
+        s2      = smap# (mul# 2i#) s
         s3      = smap# (add# 1i#) s2
         pjoin#  (sreduce# x add# 0i# s)
                 (sfill#   v s3)

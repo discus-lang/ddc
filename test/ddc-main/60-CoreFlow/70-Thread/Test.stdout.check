@@ -5,18 +5,18 @@ ok
 -- This is before the wind-transform that eliminates these combinators.
 module Test with
 letrec {
-  filter : [k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# k0 a -> World# -> Tuple2# World# (Vector# a)
-    = /\(k0 : Rate)./\(a : Data).
-       \(f g : a -> Bool#).\(s0 : Series# k0 a).\(^ : World#).
+  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# p k0 a -> World# -> Tuple2# World# (Vector# a)
+    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
+       \(f g : a -> Bool#).\(s0 : Series# p k0 a).\(^ : World#).
       letcase T2# (^ : World#) (k1__count : Ref# Nat#)  = new# [Nat#] 0# ^0 in
       letcase T2# (^ : World#) (k2__count : Ref# Nat#)  = new# [Nat#] 0# ^0 in
       letcase T2# (^ : World#) (x4 : Vector# a) 
-        = vnewN# [a] [k0] (rateOfSeries# [k0] [a] s0) ^0 in
+        = vnewN# [a] [k0] (rateOfSeries# [p] [k0] [a] s0) ^0 in
       let x4$buf : Buffer# a = vbuf# [a] x4 in
       letcase T1# (^ : World#) 
-        = loopn# [k0] (rateOfSeries# [k0] [a] s0)
+        = loopn# [k0] (rateOfSeries# [p] [k0] [a] s0)
               (\(x0 : Nat#).\(^ : World#).
-               letcase T2# (^ : World#) (s0__elem : a)  = next# [a] [k0] s0 x0 ^0 in
+               letcase T2# (^ : World#) (s0__elem : a)  = next# [a] [p] [k0] s0 x0 ^0 in
                let x1__elem : Bool#
                      = (\(x : a). f x) s0__elem in
                letcase T1# (^ : World#) 
@@ -39,11 +39,11 @@ letrec {
 -- Where we have explicit tail-recursive loops.
 module Test with
 letrec {
-  map_map : [k : Rate].Series# k Int# -> World# -> Tuple2# World# (Vector# Int#)
-    = /\(k : Rate).
-       \(s_aub : Series# k Int#).\(^ : World#).
+  map_map : [p : Proc].[k : Rate].Series# p k Int# -> World# -> Tuple2# World# (Vector# Int#)
+    = /\(p : Proc)./\(k : Rate).
+       \(s_aub : Series# p k Int#).\(^ : World#).
       letcase T2# (^ : World#) (x6 : Vector# Int#) 
-        = vnewN# [Int#] [k] (rateOfSeries# [k] [Int#] s_aub) ^0 in
+        = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s_aub) ^0 in
       let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
       letrec {
         loop_k : Nat# -> World# -> World#
@@ -52,7 +52,7 @@ letrec {
               0#  
                -> ^0;
               _ 
-               -> letcase T2# (^ : World#) (s_aub__elem : Int#)  = next# [Int#] [k] s_aub x0 ^0 in
+               -> letcase T2# (^ : World#) (s_aub__elem : Int#)  = next# [Int#] [p] [k] s_aub x0 ^0 in
                   let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
                   let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
                   letcase T1# (^ : World#)  = vwrite# [Int#] x6$buf x0 x4__elem ^0 in
@@ -61,7 +61,7 @@ letrec {
       } in
       letcase T1# (^ : World#) 
         = loop_k
-              (natOfRateNat# [k] (rateOfSeries# [k] [Int#] s_aub)) ^0 in
+              (natOfRateNat# [k] (rateOfSeries# [p] [k] [Int#] s_aub)) ^0 in
       T2# [World#] [Vector# Int#] ^0 x6
 }
 
@@ -69,13 +69,13 @@ letrec {
 -- Double fold fusion
 module Test with
 letrec {
-  lower_ffold_rqB : [k_c : Rate].Series# k_c Int# -> World# -> Tuple2# World# Int#
-    = /\(k_c : Rate).
-       \(s_au5 : Series# k_c Int#).\(^ : World#).
+  lower_ffold_rqB : [p : Proc].[k_c : Rate].Series# p k_c Int# -> World# -> Tuple2# World# Int#
+    = /\(p : Proc)./\(k_c : Rate).
+       \(s_au5 : Series# p k_c Int#).\(^ : World#).
       let x3__acc_0 : Int# = 0i# in
       let x8__acc_0 : Int# = 1i# in
       let k_c_length : Nat#
-            = natOfRateNat# [k_c] (rateOfSeries# [k_c] [Int#] s_au5) in
+            = natOfRateNat# [k_c] (rateOfSeries# [p] [k_c] [Int#] s_au5) in
       letrec {
         loop_k_c : Nat# -> Int# -> Int# -> World# -> Tuple3# World# Int# Int#
           = \(x1 : Nat#).\(x3__acc_1 x8__acc_1 : Int#).\(^ : World#).
@@ -83,7 +83,7 @@ letrec {
               0#  
                -> T3# [World#] [Int#] [Int#] ^0 x3__acc_1 x8__acc_1;
               _ 
-               -> letcase T2# (^ : World#) (s_au5__elem : Int#)  = next# [Int#] [k_c] s_au5 x1 ^0 in
+               -> letcase T2# (^ : World#) (s_au5__elem : Int#)  = next# [Int#] [p] [k_c] s_au5 x1 ^0 in
                   let x0 : Int# = x3__acc_1 in
                   let x3__acc_2 : Int# = add# [Int#] x0 s_au5__elem in
                   let x5 : Int# = x8__acc_1 in

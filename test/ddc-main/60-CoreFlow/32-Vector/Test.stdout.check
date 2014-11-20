@@ -5,22 +5,22 @@ ok
 
 module Test with
 letrec {
-  test : [k : Rate].RateNat# k -> Ref# Float32# -> Series# k Float32# -> Series# k Float32# -> Unit
-    = /\(k : Rate).
-       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 s2 : Series# k Float32#).
+  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 s2 : Series# p k Float32#).
       let _
             = split$8# [k] n
                   (\(x3 : RateNat# (Down8# k)).
-                   let s1$down = down$8# [k] [Float32#] x3 s1 in
-                   let s2$down = down$8# [k] [Float32#] x3 s2 in
+                   let s1$down = down$8# [p] [k] [Float32#] x3 s1 in
+                   let s2$down = down$8# [p] [k] [Float32#] x3 s2 in
                    let x10 = vrep$8# [Float32#] 0.0f32# in
                    let x1$vec
                          = new# [Vec8# Float32#] x10 in
                    let _
                          = loop# [Down8# k]
                                (\(x6 : Nat#).
-                                let s1$elem = next$8# [Float32#] [k] s1$down x6 in
-                                let s2$elem = next$8# [Float32#] [k] s2$down x6 in
+                                let s1$elem = next$8# [Float32#] [p] [k] s1$down x6 in
+                                let s2$elem = next$8# [Float32#] [p] [k] s2$down x6 in
                                 let s3$elem = vmul$8# [Float32#] s1$elem s2$elem in
                                 let x1$val
                                       = read# [Vec8# Float32#] x1$vec in
@@ -50,17 +50,17 @@ letrec {
                    let _ = write# [Float32#] x1 x1$res$7 in
                    ())
                   (\(x8 : RateNat# (Tail8# k)).
-                   let s1$tail = tail$8# [k] [Float32#] x8 s1 in
-                   let s2$tail = tail$8# [k] [Float32#] x8 s2 in
+                   let s1$tail = tail$8# [p] [k] [Float32#] x8 s1 in
+                   let s2$tail = tail$8# [p] [k] [Float32#] x8 s2 in
                    let x1$init = read# [Float32#] x1 in
                    let x1$acc = new# [Float32#] x1$init in
                    let _
                          = loop# [Tail8# k]
                                (\(x9 : Nat#).
                                 let s1$elem
-                                      = next# [Float32#] [Tail8# k] s1$tail x9 in
+                                      = next# [Float32#] [p] [Tail8# k] s1$tail x9 in
                                 let s2$elem
-                                      = next# [Float32#] [Tail8# k] s2$tail x9 in
+                                      = next# [Float32#] [p] [Tail8# k] s2$tail x9 in
                                 let s3$elem = mul# [Float32#] s1$elem s2$elem in
                                 let x1$val = read# [Float32#] x1$acc in
                                 let x28 = add# [Float32#] x1$val s3$elem in
@@ -75,14 +75,14 @@ letrec {
 
 module Flow with
 letrec {
-  eatPoints : [k : Rate].Float32# -> Float32# -> Vector# Float32# -> Ref# Float32# -> RateNat# k -> Series# k Float32# -> Series# k Float32# -> Unit
-    = /\(k : Rate).
-       \(ox oy : Float32#).\(v0 : Vector# Float32#).\(r0 : Ref# Float32#).\(dsr : RateNat# k).\(s1 s2 : Series# k Float32#).
+  eatPoints : [p : Proc].[k : Rate].Float32# -> Float32# -> Vector# Float32# -> Ref# Float32# -> RateNat# k -> Series# p k Float32# -> Series# p k Float32# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(ox oy : Float32#).\(v0 : Vector# Float32#).\(r0 : Ref# Float32#).\(dsr : RateNat# k).\(s1 s2 : Series# p k Float32#).
       let _
             = split$8# [k] dsr
                   (\(x0 : RateNat# (Down8# k)).
-                   let s1$down = down$8# [k] [Float32#] x0 s1 in
-                   let s2$down = down$8# [k] [Float32#] x0 s2 in
+                   let s1$down = down$8# [p] [k] [Float32#] x0 s1 in
+                   let s2$down = down$8# [p] [k] [Float32#] x0 s2 in
                    let v0$buf = vbuf# [Float32#] v0 in
                    let x4 = vrep$8# [Float32#] 0.0f32# in
                    let r0$vec
@@ -90,8 +90,8 @@ letrec {
                    let _
                          = loop# [Down8# k]
                                (\(x1 : Nat#).
-                                let s1$elem = next$8# [Float32#] [k] s1$down x1 in
-                                let s2$elem = next$8# [Float32#] [k] s2$down x1 in
+                                let s1$elem = next$8# [Float32#] [p] [k] s1$down x1 in
+                                let s2$elem = next$8# [Float32#] [p] [k] s2$down x1 in
                                 let x5 = vrep$8# [Float32#] ox in
                                 let x6 = vsub$8# [Float32#] s1$elem x5 in
                                 let x7 = vrep$8# [Float32#] ox in
@@ -132,8 +132,8 @@ letrec {
                    let _ = write# [Float32#] r0 r0$res$7 in
                    ())
                   (\(x2 : RateNat# (Tail8# k)).
-                   let s1$tail = tail$8# [k] [Float32#] x2 s1 in
-                   let s2$tail = tail$8# [k] [Float32#] x2 s2 in
+                   let s1$tail = tail$8# [p] [k] [Float32#] x2 s1 in
+                   let s2$tail = tail$8# [p] [k] [Float32#] x2 s2 in
                    let v0$tail = vtail8# [k] [Float32#] x2 v0 in
                    let v0$buf = vbuf# [Float32#] v0$tail in
                    let r0$init = read# [Float32#] r0 in
@@ -142,9 +142,9 @@ letrec {
                          = loop# [Tail8# k]
                                (\(x3 : Nat#).
                                 let s1$elem
-                                      = next# [Float32#] [Tail8# k] s1$tail x3 in
+                                      = next# [Float32#] [p] [Tail8# k] s1$tail x3 in
                                 let s2$elem
-                                      = next# [Float32#] [Tail8# k] s2$tail x3 in
+                                      = next# [Float32#] [p] [Tail8# k] s2$tail x3 in
                                 let x33 = sub# [Float32#] s1$elem ox in
                                 let x34 = sub# [Float32#] s1$elem ox in
                                 let x35 = mul# [Float32#] x33 x34 in
