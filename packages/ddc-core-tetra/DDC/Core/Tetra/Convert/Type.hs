@@ -5,23 +5,23 @@ module DDC.Core.Tetra.Convert.Type
         
           -- * Type conversion.
         , convertRegionT
-        , convertCapabilityT
         , convertNumericT
 
-        , convertSuperT
-        , convertValueT
+        , convertCapabilityT
+        , convertCapabilityB
 
-          -- * Data constructor conversion.
-        , convertDaCon
-
-          -- * Bind and Bound conversion.
         , convertTypeB
         , convertTypeU
 
+        , convertSuperT
+        , convertSuperB
+
+        , convertValueT
         , convertValueB
         , convertValueU
 
-        , convertCapabilityB
+          -- * Data constructor conversion.
+        , convertDaCon
 
           -- * Names
         , convertBindNameM
@@ -125,8 +125,8 @@ convertSuperT ctx tt
         TForall b t     
          | isRegionKind (typeOfBind b)
          -> do  let ctx' = extendKindEnv b ctx
-                b'      <- convertTypeB    b
-                t'      <- convertValueT ctx' t
+                b'      <- convertTypeB  b
+                t'      <- convertSuperT ctx' t
                 return  $ TForall b' t'
 
          | isDataKind   (typeOfBind b)
@@ -135,12 +135,12 @@ convertSuperT ctx tt
          , b'           <- BName (A.NameVar str') kRegion
          -> do
                 let ctx' = extendKindEnv b ctx
-                t'      <- convertValueT ctx' t
+                t'      <- convertSuperT ctx' t
                 return  $ TForall b' t'
 
          |  otherwise
          -> do  let ctx' = extendKindEnv b ctx
-                convertValueT ctx' t
+                convertSuperT ctx' t
 
         TApp{}
          -- Convert Tetra function types to Salt function types.
@@ -157,8 +157,8 @@ convertSuperT ctx tt
 -- | Convert a value type from Core Tetra to Core Salt.
 --
 --   Value types have kind Data and can be passed to, and returned from
---   functions. We shouldn't find any function types here, as they should
---   have been converted to closures by the Curry transform.
+--   functions. Functional types themselves are converted to generic
+--   boxed form (Ptr# rTop Obj#)
 --
 convertValueT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
 convertValueT ctx tt
@@ -167,9 +167,9 @@ convertValueT ctx tt
         TVar u
          -> case Env.lookup u (contextKindEnv ctx) of
              Just k
-              -- Parametric data types are represented as generic objects,   -- TODO: use saltPrimREgion
+              -- Parametric data types are represented as generic objects,   
               -- where the region those objects are in is named after the
-              -- original type name.
+              -- original type name.                                    -- TODO: use saltPrimREgion
               | isDataKind k
               , UName (E.NameVar str)  <- u
               , str'    <- str ++ "$r"
@@ -224,6 +224,18 @@ convertValueAppT ctx tt
         =      return A.tString
 
 
+        -- Numeric TyCons -----------------------
+        -- These are represented in boxed form.
+        | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
+        , True <- case n of
+                        E.PrimTyConBool         -> True
+                        E.PrimTyConNat          -> True
+                        E.PrimTyConInt          -> True
+                        E.PrimTyConWord _       -> True
+                        _                       -> False
+        =       return $ A.tPtr A.rTop A.tObj
+
+
         -- Tetra TyCons -------------------------
         -- Explicitly unboxed numeric types.
         -- In Salt, unboxed numeric values are represented directly as 
@@ -244,6 +256,17 @@ convertValueAppT ctx tt
         | Just  ( E.NameTyConTetra E.TyConTetraC
                 , [_])          <- takePrimTyConApps tt
         =       return  $ A.tPtr A.rTop A.tObj
+
+
+        -- The Ref# type                                -- TODO: import via FFI
+        | Just  ( E.NameTyConTetra E.TyConTetraRef
+                , [_, _])       <- takePrimTyConApps tt
+        =       return  $ A.tPtr A.rTop A.tObj
+
+
+        -- Boxed functions ----------------------
+        | Just _        <- takeTFun tt
+        =       return $ A.tPtr A.rTop A.tObj
 
 
         -- User defined TyCons ------------------
@@ -289,6 +312,15 @@ convertCapabilityB ctx bb
         BName n t       -> liftM2 BName (convertBindNameM n) (convertCapabilityT ctx t)
 
 
+-- | Convert a super binder to Salt
+convertSuperB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertSuperB ctx bb
+  = case bb of
+        BNone t         -> liftM  BNone (convertSuperT ctx t)        
+        BAnon t         -> liftM  BAnon (convertSuperT ctx t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertSuperT ctx t)
+
+
 -- | Convert a value binder with a representable type.
 --   This is used for the binders of function arguments, which must have
 --   representatable types to adhere to some calling convention. 
@@ -298,6 +330,7 @@ convertValueB ctx bb
         BNone t         -> liftM  BNone (convertValueT ctx t)        
         BAnon t         -> liftM  BAnon (convertValueT ctx t)
         BName n t       -> liftM2 BName (convertBindNameM n) (convertValueT ctx t)
+
 
 
 -- | Convert the name of a Bind.

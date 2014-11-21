@@ -29,7 +29,8 @@ convertLets ctx lts
 
                 -- All the recursive bindings must be functional values, 
                 -- so we use convertDataB here instead of convertValueB.
-                bs'          <- mapM (convertValueB (typeContext ctx)) bs                
+                bs'          <- mapM (convertSuperB (typeContext ctx)) bs       
+                                            -- TODO: don't assume all letrecs bind supers supers
                 xs'          <- mapM (convertX      ExpFun ctx') xs
                 return  $ LRec $ zip bs' xs'
 

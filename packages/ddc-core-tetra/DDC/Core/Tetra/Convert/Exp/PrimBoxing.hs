@@ -2,7 +2,7 @@
 module DDC.Core.Tetra.Convert.Exp.PrimBoxing
         (convertPrimBoxing)
 where
-import DDC.Core.Tetra.Convert.Exp.Lit
+-- import DDC.Core.Tetra.Convert.Exp.Lit
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Data
@@ -37,49 +37,6 @@ convertPrimBoxing _ectx ctx xx
    in case xx of
 
         ---------------------------------------------------
-        -- Wrapping of pure values into boxed values.
-        --   We fake-up a data-type declaration so we can use the same data layout
-        --   code as for used-defined types.
-        XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
-                , [XType _ tBIx, XType _ tBx, XCon _ c]) <- takeXPrimApps xx
-         , isNumericType tBIx
-         , isBoxedRepType     tBx
-         , Just dt      <- makeDataTypeForBoxableIndexType tBIx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
-         -> Just $ do  
-                let a'  = annotTail a
-                xArg'   <- convertLitCtor a' c
-                tBIx'   <- convertNumericT tBIx
-
-                constructData pp kenv tenv a'
-                        dt dc A.rTop [xArg'] [tBIx']
-
-
-        ---------------------------------------------------
-        -- Unwrapping of boxed values into pure values.
-        --   We fake-up a data-type declaration so we can use the same data layout
-        --   code as for used-defined types.
-        XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
-                , [XType _ tBx, XType _ tBIx, xArg])    <- takeXPrimApps xx
-         , isBoxedRepType     tBx
-         , isNumericType tBIx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
-         -> Just $ do  
-                let a'  = annotTail a
-                xArg'   <- downArgX xArg
-                tBIx'   <- convertNumericT tBIx
-                tBx'    <- convertValueT (typeContext ctx) tBx
-
-                x'      <- destructData pp a' dc
-                                (UIx 0) A.rTop 
-                                [BAnon tBIx'] (XVar a' (UIx 0))
-
-                return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
-                                  x'
-
-        ---------------------------------------------------
         -- Boxing of unboxed values.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for user-defined types.
@@ -87,17 +44,16 @@ convertPrimBoxing _ectx ctx xx
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tUx, XType _ tBx, xArg])     <- takeXPrimApps xx
          , isUnboxedRepType tUx
-         , isBoxedRepType   tBx
-         , Just tBIx    <- takeIndexOfBoxedRepType tBx
-         , Just dt      <- makeDataTypeForBoxableIndexType tBIx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
+         , isNumericType    tBx
+         , Just dt      <- makeDataTypeForBoxableIndexType tBx
+         , Just dc      <- makeDataCtorForBoxableIndexType tBx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertNumericT tBIx
+                tUx'    <- convertNumericT tBx
 
                 constructData pp kenv tenv a'
-                        dt dc A.rTop [xArg'] [tBIx']
+                        dt dc A.rTop [xArg'] [tUx']
 
 
         ---------------------------------------------------
@@ -107,19 +63,18 @@ convertPrimBoxing _ectx ctx xx
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
-         , isBoxedRepType   tBx
+         , isNumericType    tBx
          , isUnboxedRepType tUx
-         , Just tBIx    <- takeIndexOfBoxedRepType tBx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBIx
+         , Just dc      <- makeDataCtorForBoxableIndexType tBx
          -> Just $ do
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertNumericT   tBIx
                 tBx'    <- convertValueT (typeContext ctx) tBx
+                tUx'    <- convertNumericT tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
-                                [BAnon tBIx'] (XVar a' (UIx 0))
+                                [BAnon tUx'] (XVar a' (UIx 0))
 
                 return  $ XLet a' (LLet (BAnon tBx') (liftX 1 xArg'))
                                   x'
