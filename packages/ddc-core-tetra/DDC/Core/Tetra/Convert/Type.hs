@@ -223,6 +223,13 @@ convertValueAppT ctx tt
         | Just (E.NamePrimTyCon E.PrimTyConString, [])  <- takePrimTyConApps tt
         =      return A.tString
 
+        -- The Ptr# type.
+        | Just  ( E.NamePrimTyCon E.PrimTyConPtr
+                , [tR, tA])       <- takePrimTyConApps tt
+        = do    tR'     <- convertRegionT ctx tR       
+                tA'     <- convertValueT  ctx tA
+                return  $ A.tPtr tR' tA'
+
 
         -- Numeric TyCons -----------------------
         -- These are represented in boxed form.
