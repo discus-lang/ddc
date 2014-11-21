@@ -63,10 +63,10 @@ convertK kk
 
 -- Region Types -----------------------------------------------------------------------------------
 -- | Convert a region type to Salt.
-convertRegionT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
-convertRegionT defs tt
+convertRegionT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertRegionT ctx tt
         | TVar u        <- tt
-        , Just k        <- Env.lookup u (defsKindEnv defs)
+        , Just k        <- Env.lookup u (contextKindEnv ctx)
         , isRegionKind k
         = liftM TVar $ convertTypeU u
 
@@ -101,10 +101,10 @@ convertIndexT tt
 
 -- Capability Types -------------------------------------------------------------------------------
 -- | Convert a capability / coeffect type to Salt.
-convertCapabilityT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
-convertCapabilityT defs tt
+convertCapabilityT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertCapabilityT ctx tt
  | Just (TyConSpec tc, [tR])    <- takeTyConApps tt
- = do    tR'     <- convertRegionT defs tR
+ = do    tR'     <- convertRegionT ctx tR
          case tc of
                 TcConRead       -> return $ tRead  tR'
                 TcConWrite      -> return $ tWrite tR'
@@ -125,8 +125,8 @@ convertCapabilityT defs tt
 --   be representational, but we may have let-bindings that bind pure values
 --   of non-representational type.
 --
-convertDataT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
-convertDataT defs tt
+convertDataT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertDataT ctx tt
         | Just (E.NamePrimTyCon n, [])    <- takePrimTyConApps tt
         = case n of
                 E.PrimTyConVoid         -> return $ A.tVoid
@@ -138,7 +138,7 @@ convertDataT defs tt
                 _                       -> throw  $ ErrorMalformed "Cannot convert data type."
 
         | otherwise
-        = convertRepableT defs tt
+        = convertRepableT ctx tt
 
 
 -- | Convert a value type from Core Tetra to Core Salt
@@ -147,14 +147,15 @@ convertDataT defs tt
 --   functions. This is like `convertRepableT`, except functional values are
 --   represented as closures.
 --
-convertValueT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
-convertValueT defs tt
+convertValueT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertValueT ctx tt
         | TApp{}        <- tt
         , Just _        <- takeTFun tt
         = return $ A.tPtr A.rTop A.tObj
 
         | otherwise
-        = convertDataT defs tt                     -- BROKEN: fix Data vs Value vs Repable
+        = convertDataT ctx tt                     
+                                                -- BROKEN: fix Data vs Value vs Repable
 
 
 -- | Convert a representable type from Core Tetra to Core Salt.
@@ -165,12 +166,12 @@ convertValueT defs tt
 --   Function paramters and arguments cannot have non-representational
 --   types because this doesn't tell us what calling convention to use.
 --
-convertRepableT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
-convertRepableT tt
+convertRepableT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertRepableT ctx tt
  = case tt of
         -- Convert type variables and constructors.
         TVar u
-         -> case Env.lookup u kenv of
+         -> case Env.lookup u (contextKindEnv ctx) of
              Just k
               -- Parametric data types are represented as generic objects,
               -- where the region those objects are in is named after the
@@ -192,9 +193,9 @@ convertRepableT tt
         -- their top-level region.s
         TForall b t     
          | isRegionKind (typeOfBind b)
-         -> do  let kenv' = Env.extend b kenv
+         -> do  let ctx' = extendKindEnv b ctx
                 b'      <- convertTypeB    b
-                t'      <- convertRepableT defs kenv' t
+                t'      <- convertRepableT ctx' t
                 return  $ TForall b' t'
 
          | isDataKind   (typeOfBind b)
@@ -202,19 +203,19 @@ convertRepableT tt
          , str'         <- str ++ "$r"
          , b'           <- BName (A.NameVar str') kRegion
          -> do
-                let kenv' = Env.extend b kenv
-                t'      <- convertRepableT defs kenv' t
+                let ctx' = extendKindEnv b ctx
+                t'      <- convertRepableT ctx' t
                 return  $ TForall b' t'
 
          |  otherwise
-         -> do  let kenv' = Env.extend b kenv
-                convertRepableT defs kenv' t
+         -> do  let ctx' = extendKindEnv b ctx
+                convertRepableT ctx' t
 
         -- Convert unapplied type constructors.
-        TCon{}  -> convertRepableTyConApp defs kenv tt
+        TCon{}  -> convertRepableTyConApp ctx tt
 
         -- Convert type constructor applications.
-        TApp{}  -> convertRepableTyConApp defs kenv tt
+        TApp{}  -> convertRepableTyConApp ctx tt
 
         -- Resentable types always have kind Data, but type sums cannot.
         TSum{}  -> throw $ ErrorUnexpectedSum
@@ -223,49 +224,45 @@ convertRepableT tt
 -- | Convert the application of a type constructor for some representable
 --   data to Salt form. Representable data is something that has a runtime,
 --   value, but may be either boxed or unboxed.
-convertRepableTyConApp 
-        :: DataDefs E.Name 
-        -> KindEnv E.Name 
-        -> Type E.Name -> ConvertM a (Type A.Name)
-
-convertRepableTyConApp defs kenv tt
+convertRepableTyConApp :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertRepableTyConApp ctx tt
         -- Convert Tetra function types to Salt function types.
-        | Just (t1, t2)        <- takeTFun tt
-        = do   t1'     <- convertValueT   defs kenv t1
-               t2'     <- convertRepableT defs kenv t2
-               return  $ tFunPE t1' t2'
+        | Just (t1, t2)  <- takeTFun tt
+        = do   t1'       <- convertValueT   ctx t1
+               t2'       <- convertRepableT ctx t2
+               return    $ tFunPE t1' t2'
 
         -- Ambient TyCons -----------------------
         -- The Unit type.
-        | Just (TyConSpec TcConUnit, [])                  <- takeTyConApps tt
+        | Just (TyConSpec TcConUnit, [])                <- takeTyConApps tt
         =       return $ A.tPtr A.rTop A.tObj
 
         -- The Suspended Computation type.
-        | Just (TyConSpec TcConSusp, [_tEff, tResult])    <- takeTyConApps tt
-        = do   convertRepableT defs kenv tResult
+        | Just (TyConSpec TcConSusp, [_tEff, tResult])  <- takeTyConApps tt
+        = do   convertRepableT ctx tResult
         
 
         -- Primitive TyCons ---------------------
         -- The Void# type.
-        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])    <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])  <- takePrimTyConApps tt
         =      return A.tVoid
 
         -- The String# type.
-        | Just (E.NamePrimTyCon E.PrimTyConString, [])    <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon E.PrimTyConString, [])  <- takePrimTyConApps tt
         =      return A.tString
 
         -- The Bool# type.
-        | Just (E.NamePrimTyCon E.PrimTyConBool, [])      <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon E.PrimTyConBool,   [])  <- takePrimTyConApps tt
         =      return A.tBool
 
         -- The Ref# type.
-        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])    <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])  <- takePrimTyConApps tt
         =      return A.tVoid
 
         -- The Ptr# types.
         | Just (E.NamePrimTyCon E.PrimTyConPtr, [tR, tX]) <- takePrimTyConApps tt
-        = do    tR'     <- convertRegionT kenv tR
-                tX'     <- convertDataT   defs kenv tX
+        = do    tR'     <- convertRegionT ctx tR
+                tX'     <- convertDataT   ctx tX
                 return  $ A.tPtr tR' tX'
 
 
@@ -274,7 +271,7 @@ convertRepableTyConApp defs kenv tt
         | Just  ( E.NameTyConTetra E.TyConTetraRef
                 , [tR, _tX])    <- takePrimTyConApps tt
         = do
-                tR'     <- convertRegionT kenv tR
+                tR'     <- convertRegionT ctx tR
                 return  $ A.tPtr tR' A.tObj
         
         -- Explicitly Boxed numeric types.
@@ -310,16 +307,16 @@ convertRepableTyConApp defs kenv tt
         --   These are converted to generic boxed objects in the same region.
         | Just (TyConBound (UName n) _, tR : _args) <- takeTyConApps tt
         , TVar u       <- tR
-        , Just k       <- Env.lookup u kenv
+        , Just k       <- Env.lookup u (contextKindEnv ctx)
         , isRegionKind k
-        , Map.member n (dataDefsTypes defs)
-        = do   tR'     <- convertRegionT kenv tR
+        , Map.member n (dataDefsTypes $ contextDefs ctx)
+        = do   tR'     <- convertRegionT ctx tR
                return  $ A.tPtr tR' A.tObj
 
         -- A user-defined data type without a primary region.
         --   These are converted to generic boxed objects in the top-level region.
         | Just (TyConBound (UName n) _, _)          <- takeTyConApps tt
-        , Map.member n (dataDefsTypes defs)
+        , Map.member n (dataDefsTypes $ contextDefs ctx)
         = do   return  $ A.tPtr A.rTop A.tObj
 
         | otherwise
@@ -342,24 +339,21 @@ convertTypeB bb
 -- | Convert a value binder with a representable type.
 --   This is used for the binders of function arguments, which must have
 --   representatable types to adhere to some calling convention. 
-convertValueB 
-        :: DataDefs E.Name -> KindEnv E.Name 
-        -> Bind E.Name -> ConvertM a (Bind A.Name)
-
-convertValueB defs kenv bb
+convertValueB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertValueB ctx bb
   = case bb of
-        BNone t         -> liftM  BNone (convertValueT defs kenv t)        
-        BAnon t         -> liftM  BAnon (convertValueT defs kenv t)
-        BName n t       -> liftM2 BName (convertBindNameM n)     (convertValueT defs kenv t)
+        BNone t         -> liftM  BNone (convertValueT ctx t)        
+        BAnon t         -> liftM  BAnon (convertValueT ctx t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertValueT ctx t)
 
 
 -- | Convert a witness binder.
-convertCapabilityB :: KindEnv E.Name -> Bind E.Name -> ConvertM a (Bind A.Name)
-convertCapabilityB kenv bb
+convertCapabilityB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertCapabilityB ctx bb
  = case bb of
-        BNone t         -> liftM  BNone (convertCapabilityT kenv t)
-        BAnon t         -> liftM  BAnon (convertCapabilityT kenv t)
-        BName n t       -> liftM2 BName (convertBindNameM n)     (convertCapabilityT kenv t)
+        BNone t         -> liftM  BNone (convertCapabilityT ctx t)
+        BAnon t         -> liftM  BAnon (convertCapabilityT ctx t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertCapabilityT ctx t)
 
 
 -- | Convert a value binder.
@@ -367,16 +361,12 @@ convertCapabilityB kenv bb
 --   or non-representational types. The latter is used for let-binders which 
 --   don't need to be representational becaues the values only exist 
 --   internally to a function.
-convertDataB   
-        :: DataDefs E.Name -> KindEnv E.Name 
-        -> Bind E.Name -> ConvertM a (Bind A.Name)
-
-convertDataB defs kenv bb
+convertDataB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertDataB ctx bb
  = case bb of
-        BNone t         -> liftM  BNone (convertDataT defs kenv t)
-        BAnon t         -> liftM  BAnon (convertDataT defs kenv t)
-        BName n t       -> liftM2 BName (convertBindNameM n)  (convertDataT defs kenv t)
-
+        BNone t         -> liftM  BNone (convertDataT ctx t)
+        BAnon t         -> liftM  BAnon (convertDataT ctx t)
+        BName n t       -> liftM2 BName (convertBindNameM n)  (convertDataT ctx t)
 
 
 -- | Convert the name of a Bind.
@@ -440,21 +430,17 @@ convertDataU uu
                 _ -> throw $ ErrorInvalidBound uu
 
 
-
 -- DaCon ------------------------------------------------------------------------------------------
 -- | Convert a data constructor definition.
-convertDaCon 
-        :: DataDefs E.Name -> KindEnv E.Name -> DaCon E.Name 
-        -> ConvertM a (DaCon A.Name)
-
-convertDaCon defs kenv dc
+convertDaCon :: Context -> DaCon E.Name -> ConvertM a (DaCon A.Name)
+convertDaCon ctx dc
  = case dc of
         DaConUnit       
          -> return DaConUnit
 
         DaConPrim n t
          -> do  n'      <- convertDaConNameM dc n
-                t'      <- convertDataT defs kenv t
+                t'      <- convertDataT ctx t
                 return  $ DaConPrim
                         { daConName             = n'
                         , daConType             = t' }

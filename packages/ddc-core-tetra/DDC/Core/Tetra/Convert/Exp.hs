@@ -123,12 +123,12 @@ convertExp ectx ctx xx
             in case universeFromType1 kenv (typeOfBind b) of
                 Just UniverseData
                  -> liftM3 XLam (return $ annotTail a) 
-                                (convertValueB defs kenv b) 
+                                (convertValueB (typeContext ctx) b) 
                                 (convertX      ectx ctx' x)
 
                 Just UniverseWitness 
                  -> liftM3 XLam (return $ annotTail a)
-                                (convertValueB defs kenv b)
+                                (convertValueB (typeContext ctx) b)
                                 (convertX      ectx ctx' x)
 
                 _  -> throw $ ErrorMalformed 
@@ -255,9 +255,9 @@ convertExp ectx ctx xx
          -> do  
                 -- Convert scrutinee, and determine its prime region.
                 x'      <- convertX      ExpArg ctx xScrut
-                tX'     <- convertValueT defs kenv tX
+                tX'     <- convertValueT (typeContext ctx) tX
 
-                tScrut' <- convertValueT defs kenv tScrut
+                tScrut' <- convertValueT (typeContext ctx) tScrut
                 let tPrime = fromMaybe A.rTop
                            $ takePrimeRegion tScrut'
 
@@ -333,8 +333,7 @@ convertOrDiscardSuperArgX xxApp ctx xx
         -- Region type arguments get passed through directly.
         | XType a t     <- xx
         , isRegionKind (annotType a)
-        = do    let kenv =  contextKindEnv ctx
-                t'       <- convertRegionT kenv t
+        = do    t'       <- convertRegionT (typeContext ctx) t
                 return   $ Just (XType (annotTail a) t')
 
         -- If we have a data type argument where the type is boxed, then we pass

@@ -21,9 +21,7 @@ convertLets
         -> ConvertM a (Lets a A.Name)
 
 convertLets ctx lts
- = let  defs     = contextDataDefs   ctx
-        kenv     = contextKindEnv    ctx
-        convertX = contextConvertExp ctx
+ = let  convertX = contextConvertExp ctx
    in case lts of
         LRec bxs
          -> do  let ctx'     = extendsTypeEnv (map fst bxs) ctx
@@ -31,13 +29,13 @@ convertLets ctx lts
 
                 -- All the recursive bindings must be functional values, 
                 -- so we use convertDataB here instead of convertValueB.
-                bs'          <- mapM (convertDataB defs   kenv) bs                
+                bs'          <- mapM (convertDataB (typeContext ctx)) bs                
                 xs'          <- mapM (convertX     ExpFun ctx') xs
                 return  $ LRec $ zip bs' xs'
 
         LLet b x1
-         -> do  let ctx'     = extendTypeEnv b ctx
-                b'           <- convertValueB defs kenv b
+         -> do  b'           <- convertValueB (typeContext ctx) b
+                let ctx'     = extendTypeEnv b ctx
                 x1'          <- convertX      ExpBind ctx' x1
                 return  $ LLet b' x1'
 
@@ -45,12 +43,11 @@ convertLets ctx lts
          -> do  
                 b'           <- mapM convertTypeB b
                 let ctx'     = extendsKindEnv b ctx
-                let kenv'    = contextKindEnv ctx'
                 
-                bs'          <- mapM (convertCapabilityB kenv') bs
-                mt'          <- case mt of
-                                 Nothing -> return Nothing
-                                 Just t  -> liftM Just $ convertRegionT kenv t
+                bs' <- mapM (convertCapabilityB (typeContext ctx')) bs
+                mt' <- case mt of
+                        Nothing -> return Nothing
+                        Just t  -> liftM Just $ convertRegionT (typeContext ctx) t
                 return  $ LPrivate b' mt' bs'
   
         LWithRegion{}

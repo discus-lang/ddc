@@ -33,6 +33,7 @@ convertAlt a uScrut tScrut ectx ctx alt
         defs     = contextDataDefs   ctx
         kenv     = contextKindEnv    ctx
         convertX = contextConvertExp ctx
+        tctx     = typeContext       ctx
    in case alt of
         -- Match against the unit constructor.
         --  This is baked into the langauge and doesn't have a real name,
@@ -47,7 +48,7 @@ convertAlt a uScrut tScrut ectx ctx alt
         AAlt (PData dc []) x
          | Just nCtor           <- takeNameOfDaCon dc
          , E.isNameLit nCtor
-         -> do  dc'             <- convertDaCon defs kenv dc
+         -> do  dc'             <- convertDaCon tctx dc
                 xBody1          <- convertX     ectx ctx  x
                 return  $ AAlt (PData dc' []) xBody1
 
@@ -64,7 +65,7 @@ convertAlt a uScrut tScrut ectx ctx alt
                 let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertValueB defs kenv) bsFields       
+                bsFields'       <- mapM (convertValueB tctx) bsFields       
 
                 -- Convert the right of the alternative, 
                 -- with all all the pattern variables in scope.

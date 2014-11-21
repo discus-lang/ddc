@@ -24,9 +24,7 @@ convertPrimCall
         -> Maybe (ConvertM a (Exp a A.Name))
 
 convertPrimCall _ectx ctx xx
- = let  defs      = contextDataDefs    ctx
-        kenv      = contextKindEnv     ctx
-        convertX  = contextConvertExp  ctx
+ = let  convertX  = contextConvertExp  ctx
         downArgX  = convertX           ExpArg ctx 
 
    in case xx of
@@ -42,7 +40,7 @@ convertPrimCall _ectx ctx xx
          , XVar _ uF                    <- xF
          -> Just $ do
                 xF'     <- downArgX xF
-                tF'     <- convertRepableT defs kenv (tFun t1 t2)
+                tF'     <- convertRepableT (typeContext ctx) (tFun t1 t2)
                 let Just arity = superDataArity ctx uF
 
                 return  $ A.xAllocThunk a A.rTop 
@@ -72,7 +70,7 @@ convertPrimCall _ectx ctx xx
          -> Just $ do  
                 xThunk'         <- downArgX xThunk
                 xsArg'          <- mapM downArgX xsArg
-                tsArg'          <- mapM (convertValueT defs kenv) tsArg
+                tsArg'          <- mapM (convertValueT (typeContext ctx)) tsArg
                 let bObject     = BAnon (A.tPtr A.rTop A.tObj)
                 let bAvail      = BAnon A.tNat
 
@@ -118,10 +116,10 @@ convertPrimCall _ectx ctx xx
 
                 -- Arguments and their ypes.
                 xsArg'          <- mapM downArgX xsArgs
-                tsArg'          <- mapM (convertValueT defs kenv) tsArg
+                tsArg'          <- mapM (convertValueT (typeContext ctx)) tsArg
 
                 -- Result and its type.
-                tResult'        <- convertValueT defs kenv tResult
+                tResult'        <- convertValueT (typeContext ctx) tResult
                 let tPrimeResult' = fromMaybe A.rTop $ takePrimeRegion tResult'
 
                 -- Evaluate a thunk, returning the resulting Addr#, 

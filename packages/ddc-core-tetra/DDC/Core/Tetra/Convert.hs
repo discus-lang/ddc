@@ -10,24 +10,26 @@ import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Exp
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
+import qualified DDC.Core.Tetra.Convert.Type.Base       as T
 
-import DDC.Core.Salt.Convert             (initRuntime)
+
+import DDC.Core.Salt.Convert                            (initRuntime)
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Core.Check                    (AnTEC(..))
-import qualified DDC.Core.Tetra.Prim     as E
-import qualified DDC.Core.Salt.Runtime   as A
-import qualified DDC.Core.Salt.Name      as A
+import DDC.Core.Check                                   (AnTEC(..))
+import qualified DDC.Core.Tetra.Prim                    as E
+import qualified DDC.Core.Salt.Runtime                  as A
+import qualified DDC.Core.Salt.Name                     as A
 
 import DDC.Type.DataDef
-import DDC.Type.Env                      (KindEnv, TypeEnv)
-import qualified DDC.Type.Env            as Env
+import DDC.Type.Env                                     (KindEnv, TypeEnv)
+import qualified DDC.Type.Env                           as Env
 
-import DDC.Control.Monad.Check           (throw, evalCheck)
-import qualified Data.Map                as Map
-import qualified Data.Set                as Set
+import DDC.Control.Monad.Check                          (throw, evalCheck)
+import qualified Data.Map                               as Map
+import qualified Data.Set                               as Set
 
 
 ---------------------------------------------------------------------------------------------------
@@ -81,12 +83,17 @@ convertM pp runConfig defs kenv tenv mm
                    $ fromListDataDefs 
                    $ moduleDataDefsLocal mm ++ (map fst $ moduleImportDataDefs mm)
 
+        let tctx'  = T.Context
+                   { T.contextDefs      = defs'
+                   , T.contextKindEnv   = Env.empty }
+
         -- Convert signatures of imported functions.
-        tsImports' <- mapM (convertImportM defs') 
+        tsImports' <- mapM (convertImportM tctx') 
                    $ moduleImportValues mm
 
         -- Convert signatures of exported functions.
-        tsExports' <- mapM (convertExportM defs') $ moduleExportValues mm
+        tsExports' <- mapM (convertExportM tctx') 
+                   $ moduleExportValues mm
 
 
         -- Convert the body of the module to Salt.
@@ -155,27 +162,27 @@ convertM pp runConfig defs kenv tenv mm
 ---------------------------------------------------------------------------------------------------
 -- | Convert an export spec.
 convertExportM
-        :: DataDefs E.Name
+        :: T.Context
         -> (E.Name, ExportSource E.Name)                
         -> ConvertM a (A.Name, ExportSource A.Name)
 
-convertExportM defs (n, esrc)
+convertExportM tctx (n, esrc)
  = do   n'      <- convertBindNameM n
-        esrc'   <- convertExportSourceM defs esrc
+        esrc'   <- convertExportSourceM tctx esrc
         return  (n', esrc')
 
 
 -- Convert an export source.
 convertExportSourceM 
-        :: DataDefs E.Name
+        :: T.Context
         -> ExportSource E.Name
         -> ConvertM a (ExportSource A.Name)
 
-convertExportSourceM defs esrc
+convertExportSourceM tctx esrc
  = case esrc of
         ExportSourceLocal n t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertRepableT defs Env.empty t
+                t'      <- convertRepableT  tctx t
                 return  $ ExportSourceLocal n' t'
 
         ExportSourceLocalNoType n
@@ -186,13 +193,13 @@ convertExportSourceM defs esrc
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertImportM
-        :: DataDefs E.Name
+        :: T.Context
         -> (E.Name, ImportSource E.Name)
         -> ConvertM a (A.Name, ImportSource A.Name)
 
-convertImportM defs (n, isrc)
+convertImportM tctx (n, isrc)
  = do   n'      <- convertImportNameM n
-        isrc'   <- convertImportSourceM defs isrc
+        isrc'   <- convertImportSourceM tctx isrc
         return  (n', isrc')
 
 
@@ -209,27 +216,27 @@ convertImportNameM n
 
 -- | Convert an import source.
 convertImportSourceM 
-        :: DataDefs E.Name
+        :: T.Context
         -> ImportSource E.Name
         -> ConvertM a (ImportSource A.Name)
 
-convertImportSourceM defs isrc
+convertImportSourceM tctx isrc
  = case isrc of
         ImportSourceModule mn n t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertRepableT defs Env.empty t
+                t'      <- convertRepableT tctx t
                 return  $ ImportSourceModule mn n' t'
 
         ImportSourceAbstract t
-         -> do  t'      <- convertRepableT defs Env.empty t
+         -> do  t'      <- convertRepableT tctx t
                 return $ ImportSourceAbstract t'
 
         ImportSourceBoxed t
-         -> do  t'      <- convertRepableT defs Env.empty t
+         -> do  t'      <- convertRepableT tctx t
                 return $ ImportSourceBoxed t'
 
         ImportSourceSea str t
-         -> do  t'      <- convertRepableT defs Env.empty t 
+         -> do  t'      <- convertRepableT tctx t 
                 return  $ ImportSourceSea str t'
 
 

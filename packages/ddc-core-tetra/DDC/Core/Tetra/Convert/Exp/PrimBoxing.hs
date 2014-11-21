@@ -28,7 +28,6 @@ convertPrimBoxing
 
 convertPrimBoxing _ectx ctx xx
  = let  pp        = contextPlatform ctx
-        defs      = contextDataDefs ctx
         kenv      = contextKindEnv  ctx
         tenv      = contextTypeEnv  ctx
  
@@ -70,8 +69,8 @@ convertPrimBoxing _ectx ctx xx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertValueT defs kenv tBx
+                tBIx'   <- convertIndexT tBIx
+                tBx'    <- convertValueT (typeContext ctx) tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 
@@ -116,7 +115,7 @@ convertPrimBoxing _ectx ctx xx
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
                 tBIx'   <- convertIndexT   tBIx
-                tBx'    <- convertValueT defs kenv tBx
+                tBx'    <- convertValueT (typeContext ctx) tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 

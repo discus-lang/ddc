@@ -82,12 +82,10 @@ convertPrimArgX
         -> ConvertM a (Exp a A.Name)
 
 convertPrimArgX ctx ectx xx
- = let  defs     = contextDataDefs ctx
-        kenv     = contextKindEnv  ctx
-        convertX = contextConvertExp ctx
+ = let  convertX = contextConvertExp ctx
    in case xx of
         XType a t
-         -> do  t'      <- convertValueT defs kenv t
+         -> do  t'      <- convertValueT (typeContext ctx) t
                 return  $ XType (annotTail a) t'
 
         XWitness{}
