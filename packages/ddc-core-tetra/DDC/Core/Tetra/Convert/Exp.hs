@@ -340,7 +340,6 @@ convertOrDiscardSuperArgX xxApp ctx xx
         -- the region the corresponding Salt object is in.
         | XType a t     <- xx
         , isDataKind   (annotType a)
-        , isBoxedRepType t
         = do    let kenv =  contextKindEnv ctx
                 t'       <- saltPrimeRegionOfDataType kenv t
                 return   $ Just (XType (annotTail a) t')

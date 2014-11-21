@@ -193,7 +193,7 @@ boxingX config xx
          , Just tLitU    <- configConvertRepType config RepUnboxed tLit
          , Just nU       <- configUnboxLitName   config n
          , Just xLit     <- configConvertRepExp  config RepValue a tLitU 
-                         $  XVar a (UPrim nU tLitU)
+                         $  XCon a (DaConPrim nU tLitU)
          -> xLit
 
         _ -> xx

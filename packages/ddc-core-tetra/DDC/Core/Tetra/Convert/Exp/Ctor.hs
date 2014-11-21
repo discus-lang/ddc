@@ -6,7 +6,9 @@ import DDC.Core.Tetra.Convert.Data
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Tetra.Convert.Exp.Base
+import DDC.Core.Tetra.Convert.Exp.Lit
 import DDC.Core.Compounds
+import DDC.Core.Pretty
 import DDC.Core.Exp
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
@@ -33,6 +35,11 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
  -- Handle the unit constructor.
  | DaConUnit     <- dc
  = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
+
+ -- Literal values
+ | DaConPrim n _  <- dc
+ , E.isNameLitUnboxed n
+ =      convertLitCtor a dc
 
  -- Construct algebraic data.
  | Just nCtor    <- takeNameOfDaCon dc
@@ -69,5 +76,6 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
 
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
-convertCtorApp _ _ _ _
-        = throw $ ErrorMalformed "Invalid constructor application."
+convertCtorApp _ _ dc xsArgsAll
+        = throw $ ErrorMalformed 
+                $ "Invalid constructor application " ++ (renderIndent $ ppr (dc, xsArgsAll))

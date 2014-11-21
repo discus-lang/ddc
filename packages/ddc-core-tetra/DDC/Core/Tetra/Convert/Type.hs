@@ -479,14 +479,12 @@ saltPrimeRegionOfDataType kenv tt
         | TCon _ : TVar u : _   <- takeTApps tt
         , Just k                <- Env.lookup u kenv
         , isRegionKind k
-        , isBoxedRepType tt
         = do    u'      <- convertTypeU u
                 return  $ TVar u'
 
         -- Boxed data types without an attached primary region variable.
         -- This also covers the function case.
         | TCon _ : _           <- takeTApps tt
-        , isBoxedRepType tt
         = do    return  A.rTop
 
         -- Quantified types.
