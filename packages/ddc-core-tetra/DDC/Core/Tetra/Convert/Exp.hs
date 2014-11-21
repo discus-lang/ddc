@@ -232,8 +232,7 @@ convertExp ectx ctx xx
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
-         | TCon (TyConBound (UPrim nType _) _)  <- tScrut
-         , E.NamePrimTyCon _                    <- nType
+         | isUnboxedRepType tScrut
          -> do  
                 -- Convert the scrutinee.
                 xScrut' <- convertX ExpArg ctx xScrut
