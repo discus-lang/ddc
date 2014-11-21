@@ -420,11 +420,19 @@ convertDaCon ctx dc
 convertDaConNameM :: DaCon E.Name -> E.Name -> ConvertM a A.Name
 convertDaConNameM dc nn
  = case nn of
-        E.NameLitBool val       -> return $ A.NameLitBool val
-        E.NameLitNat  val       -> return $ A.NameLitNat  val
-        E.NameLitInt  val       -> return $ A.NameLitInt  val
-        E.NameLitWord val bits  -> return $ A.NameLitWord val bits
-        _                       -> throw $ ErrorInvalidDaCon dc
+        E.NameLitUnboxed (E.NameLitBool val)       
+          -> return $ A.NameLitBool val
+
+        E.NameLitUnboxed (E.NameLitNat  val)
+          -> return $ A.NameLitNat  val
+
+        E.NameLitUnboxed (E.NameLitInt  val)
+          -> return $ A.NameLitInt  val
+
+        E.NameLitUnboxed (E.NameLitWord val bits)
+          -> return $ A.NameLitWord val bits
+
+        _ -> throw $ ErrorInvalidDaCon dc
 
 
 -- Prime Region -----------------------------------------------------------------------------------
