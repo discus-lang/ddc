@@ -25,7 +25,8 @@ config  = Config
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
         , configValueTypeOfLitName      = takeTypeOfLitName
         , configValueTypeOfPrimOpName   = takeTypeOfPrimOpName
-        , configValueTypeOfForeignName  = const Nothing }
+        , configValueTypeOfForeignName  = const Nothing 
+        , configUnboxLitName            = unboxLitName }
 
 
 -- | Get the representation of a given type.
@@ -130,3 +131,12 @@ isNameOfUnboxedOp nn
         NamePrimCast{}  -> True
         _               -> False
 
+
+-- | If this is the name of an literal, then produce the unboxed version.
+unboxLitName :: Name -> Maybe Name
+unboxLitName n
+        | isNameLit n && not (isNameLitUnboxed n)
+        = Just $ NameLitUnboxed n
+
+        | otherwise
+        = Nothing

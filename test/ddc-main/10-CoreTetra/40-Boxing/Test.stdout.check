@@ -4,26 +4,26 @@ ok
 -- Simple addition of literal.
 module Test with
 letrec {
-  f : B# Nat# -> B# Nat#
-    = \(x : B# Nat#).
-      convert# [U# Nat#] [B# Nat#]
+  f : Nat# -> Nat#
+    = \(x : Nat#).
+      convert# [U# Nat#] [Nat#]
           (add# [U# Nat#]
-               (convert# [B# Nat#] [U# Nat#] x)
-               (convert# [B# Nat#] [U# Nat#]
-                    (convert# [Nat#] [B# Nat#] 1#)))
+               (convert# [Nat#] [U# Nat#] x)
+               (convert# [Nat#] [U# Nat#]
+                    (convert# [U# Nat#] [Nat#] 1##)))
 }
 
 
 -- Match against literal Bool#, scrutinee needes to be unboxed.
 module Test with
 letrec {
-  neg : B# Bool# -> B# Bool#
-    = \(x : B# Bool#).
-      case convert# [B# Bool#] [Bool#] x of {
-        True#  
-         -> convert# [Bool#] [B# Bool#] False#;
-        False#  
-         -> convert# [Bool#] [B# Bool#] True#
+  neg : Bool# -> Bool#
+    = \(x : Bool#).
+      case convert# [Bool#] [U# Bool#] x of {
+        True##  
+         -> convert# [U# Bool#] [Bool#] False##;
+        _ 
+         -> convert# [U# Bool#] [Bool#] True##
       }
 }
 
@@ -31,15 +31,15 @@ letrec {
 -- Match against literal Word32#, with a default pattern.
 module Test with
 letrec {
-  foo : B# Word32# -> B# Word32#
-    = \(x : B# Word32#).
-      case convert# [B# Word32#] [Word32#] x of {
-        5w32#  
-         -> convert# [Word32#] [B# Word32#] 6w32#;
-        7w32#  
-         -> convert# [Word32#] [B# Word32#] 8w32#;
+  foo : Word32# -> Word32#
+    = \(x : Word32#).
+      case convert# [Word32#] [U# Word32#] x of {
+        5w32##  
+         -> convert# [U# Word32#] [Word32#] 6w32##;
+        7w32##  
+         -> convert# [U# Word32#] [Word32#] 8w32##;
         _ 
-         -> convert# [Word32#] [B# Word32#] 0w32#
+         -> convert# [U# Word32#] [Word32#] 0w32##
       }
 }
 
@@ -47,17 +47,17 @@ letrec {
 -- Nested case-expressions.
 module Test with
 letrec {
-  f : B# Nat# -> B# Nat# -> B# Nat#
-    = \(x y : B# Nat#).
-      case convert# [B# Nat#] [Nat#] x of {
-        0#  
-         -> case convert# [B# Nat#] [Nat#] y of {
-              0#  
-               -> convert# [Nat#] [B# Nat#] 1#;
+  f : Nat# -> Nat# -> Nat#
+    = \(x y : Nat#).
+      case convert# [Nat#] [U# Nat#] x of {
+        0##  
+         -> case convert# [Nat#] [U# Nat#] y of {
+              0##  
+               -> convert# [U# Nat#] [Nat#] 1##;
               _ 
-               -> convert# [Nat#] [B# Nat#] 0#
+               -> convert# [U# Nat#] [Nat#] 0##
             };
         _ 
-         -> convert# [Nat#] [B# Nat#] 0#
+         -> convert# [U# Nat#] [Nat#] 0##
       }
 }

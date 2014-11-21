@@ -244,9 +244,11 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
         -- doesn't instantiate then it won't have enough foralls on the front, 
         -- which should have been checked by the def checker.
         tCtor_inst      
-         <- case instantiateTs tCtor tsArgs of
-                Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
-                Just t  -> return t
+         <- if equivT tCtor tDiscrim
+             then return tCtor
+             else case instantiateTs tCtor tsArgs of
+                   Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
+                   Just t  -> return t
         
         -- Split the constructor type into the field and result types.
         let (tsFields_ctor, tResult) 

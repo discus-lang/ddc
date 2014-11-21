@@ -49,6 +49,7 @@ import DDC.Core.Exp
 import DDC.Type.Transform.Instantiate
 import Data.Maybe
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Representation of the values of some type.
 data Rep
@@ -94,6 +95,8 @@ data Config a n
           --   to take boxed values for every argument.
         , configNameIsUnboxedOp         :: n -> Bool 
 
+          -- | Convert a literal name to its unboxed version.
+        , configUnboxLitName            :: n -> Maybe n
         }
 
 
@@ -121,8 +124,9 @@ boxingX config xx
          , Just tPrimInst   <- instantiateTs tPrim tsArgs
          , (tsArgsInst, _tResultInst)   <- takeTFunArgResult tPrimInst
 
-         -- Get the unboxed version the args anr return value
-         , Just tsArgsU     <- sequence $ map (configConvertRepType config RepUnboxed) tsArgs
+         -- Get the unboxed version of the args and return value
+         , Just tsArgsU     <- sequence 
+                            $  map (configConvertRepType config RepUnboxed) tsArgs
          , Just tPrimInstU  <- instantiateTs tPrim tsArgsU
          , (_tsArgsInstU, tResultInstU) <- takeTFunArgResult tPrimInstU
 
@@ -145,6 +149,52 @@ boxingX config xx
                 xResultV = fromMaybe xx
                                  (configConvertRepExp config RepValue a tResultInstU xResultU)
             in  xResultV
+
+
+        -- For case expressions that match against literals, like
+        --
+        --   case e1 of 
+        --   { 5# -> e2; _ -> e3 }
+        --
+        -- Unbox the scrutinee and convert the alternatives to match against
+        -- unboxed literals.
+        -- 
+        --   case convert# [Nat] [Nat#] e1 of
+        --   { 5## -> e2; _ -> e3 }
+        --
+        XCase a xScrut alts
+         | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
+         , Just tLit1    <- configValueTypeOfLitName config (daConName p)
+         , Just RepValue <- configRepOfType config tLit1
+
+         , Just alts_unboxed
+            <- sequence 
+            $  map (\alt -> case alt of
+                             AAlt (PData (DaConPrim n tLit) []) x
+                              | Just RepValue <- configRepOfType config tLit
+                              , Just nU       <- configUnboxLitName config n
+                              , Just tLitU    <- configConvertRepType config RepUnboxed tLit
+                              -> Just (AAlt (PData (DaConPrim nU tLitU) []) x)
+
+                             AAlt PDefault _
+                              -> Just alt
+
+                             _ -> Nothing)
+            $ alts
+
+         , Just xScrut' <- configConvertRepExp config RepUnboxed a tLit1 xScrut
+         , alts_default <- ensureDefault alts_unboxed
+         -> XCase a xScrut' $ alts_default
+
+
+        -- Convert literals to their unboxed form, followed by a boxing conversion.
+        XCon a (DaConPrim n tLit)
+         | Just RepValue <- configRepOfType config tLit
+         , Just tLitU    <- configConvertRepType config RepUnboxed tLit
+         , Just nU       <- configUnboxLitName   config n
+         , Just xLit     <- configConvertRepExp  config RepValue a tLitU 
+                         $  XVar a (UPrim nU tLitU)
+         -> xLit
 
         _ -> xx
 
@@ -175,3 +225,19 @@ splitUnboxedOpApp config xx
 
         _ -> Nothing
 
+
+-- | Ensure that there is a default alternative in this list, 
+--   if not then make the last one the default.
+--   We need do this to handle the case when the unboxed type does not have
+--   all its constructors listed in the data defs. If it doesn't then the 
+--   case exhaustiveness checker will compilain when checking the result code.
+ensureDefault :: [Alt a n] -> [Alt a n]
+ensureDefault alts
+        | _ : _ <- [alt | alt@(AAlt PDefault _) <- alts]
+        = alts
+
+        | AAlt (PData _ []) x : rest <- reverse alts
+        = reverse rest ++ [AAlt PDefault x]
+
+        | otherwise
+        = alts

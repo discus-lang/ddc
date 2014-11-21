@@ -3,6 +3,7 @@ module DDC.Core.Tetra.Prim.Base
         ( Name          (..)
         , isNameHole
         , isNameLit
+        , isNameLitUnboxed
         
         , TyConTetra    (..)
         , DaConTetra    (..)
@@ -65,6 +66,9 @@ data Name
         -- | A word literal.
         | NameLitWord           Integer Int
 
+        -- | Wrapper to indicate an explicitly unboxed literal.
+        | NameLitUnboxed        Name
+
         -- Inference ----------------------------
         -- | Hole used during type inference.
         | NameHole 
@@ -75,19 +79,28 @@ data Name
 isNameHole :: Name -> Bool
 isNameHole nn
  = case nn of
-        NameHole        -> True
-        _               -> False
+        NameHole         -> True
+        _                -> False
 
 
 -- | Check whether a name represents some literal value.
 isNameLit :: Name -> Bool
 isNameLit nn
  = case nn of
-        NameLitBool{}   -> True
-        NameLitNat{}    -> True
-        NameLitInt{}    -> True
-        NameLitWord{}   -> True
-        _               -> False
+        NameLitBool{}    -> True
+        NameLitNat{}     -> True
+        NameLitInt{}     -> True
+        NameLitWord{}    -> True
+        NameLitUnboxed n -> isNameLit n
+        _                -> False
+
+
+-- | Check whether a name is an unboxed literal.
+isNameLitUnboxed :: Name -> Bool
+isNameLitUnboxed nn
+ = case nn of
+        NameLitUnboxed n -> isNameLit n
+        _                -> False
 
 
 -- TyConTetra ----------------------------------------------------------------

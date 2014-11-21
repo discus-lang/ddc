@@ -4,6 +4,7 @@ module DDC.Core.Tetra.Prim
           Name          (..)
         , isNameHole
         , isNameLit
+        , isNameLitUnboxed
         , readName
         , takeTypeOfLitName
         , takeTypeOfPrimOpName
@@ -65,6 +66,7 @@ import DDC.Base.Pretty
 import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
+import Data.List
 
 
 instance NFData Name where
@@ -88,6 +90,7 @@ instance NFData Name where
         NameLitNat  n           -> rnf n
         NameLitInt  i           -> rnf i
         NameLitWord i bits      -> rnf i `seq` rnf bits
+        NameLitUnboxed n        -> rnf n
 
         NameHole                -> ()
 
@@ -114,6 +117,7 @@ instance Pretty Name where
         NameLitNat  i           -> integer i <> text "#"
         NameLitInt  i           -> integer i <> text "i" <> text "#"
         NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+        NameLitUnboxed n        -> ppr n <> text "#"
 
         NameHole                -> text "?"
 
@@ -170,6 +174,16 @@ readName str
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
+
+        -- Unboxed literals.
+        | Just base        <- stripPrefix "##" (reverse str)
+        , Just n           <- readName (reverse base ++ "#")
+        = case n of
+                NameLitBool{}   -> Just n
+                NameLitNat{}    -> Just n
+                NameLitInt{}    -> Just n
+                NameLitWord{}   -> Just n
+                _               -> Nothing
 
         -- Holes
         | str == "?"
