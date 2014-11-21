@@ -5,12 +5,11 @@ module DDC.Core.Tetra.Convert.Type
         
           -- * Type conversion.
         , convertRegionT
-        , convertIndexT
         , convertCapabilityT
+        , convertNumericT
 
-        , convertDataT
+        , convertSuperT
         , convertValueT
-        , convertRepableT
 
           -- * Data constructor conversion.
         , convertDaCon
@@ -19,17 +18,16 @@ module DDC.Core.Tetra.Convert.Type
         , convertTypeB
         , convertTypeU
 
-        , convertDataB
         , convertValueB
+        , convertValueU
+
         , convertCapabilityB
-        , convertDataU
 
           -- * Names
         , convertBindNameM
 
           -- * Prime regions
-        , saltPrimeRegionOfDataType
-        , saltDataTypeOfArgType)
+        , saltPrimeRegionOfDataType)
 where
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Boxing
@@ -48,17 +46,19 @@ import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 import Control.Monad
-
 import DDC.Base.Pretty
+
 
 -- Kind -------------------------------------------------------------------------------------------
 -- | Convert a kind from Core Tetra to Core Salt.
 convertK :: Kind E.Name -> ConvertM a (Kind A.Name)
 convertK kk
- = case kk of
-        TCon (TyConKind kc)
-          -> return $ TCon (TyConKind kc)
-        _ -> throw $ ErrorMalformed "Invalid kind."
+        | TCon (TyConKind kc) <- kk
+        = return $ TCon (TyConKind kc)
+
+        | otherwise
+        = throw $ ErrorMalformed 
+                $ "Invalid kind " ++ (renderIndent $ ppr kk)
 
 
 -- Region Types -----------------------------------------------------------------------------------
@@ -71,109 +71,103 @@ convertRegionT ctx tt
         = liftM TVar $ convertTypeU u
 
         | otherwise
-        = throw $ ErrorMalformed $ "Invalid region type " ++ (renderIndent $ ppr tt)
+        = throw $ ErrorMalformed 
+                $ "Invalid region type " ++ (renderIndent $ ppr tt)
 
 
--- Index Types ------------------------------------------------------------------------------------
--- | Convert a numeric index type to Salt.
---   
---   In Tetra numeric index types like Nat# are used as type indices when
---   specifying a boxed representation (B# Nat#) 
---           or unboxed representation (U# Nat#)
---   for a particular numeric value.
---
---   Note that we do not convert Void# because it's not a numeric type.
---
-convertIndexT :: Type E.Name -> ConvertM a (Type A.Name)
-convertIndexT tt
+-- Capability Types -------------------------------------------------------------------------------
+-- | Convert a capability / coeffect type to Salt.
+--   Works for Read#, Write#, Alloc#
+convertCapabilityT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertCapabilityT ctx tt
+         | Just (TyConSpec tc, [tR])    <- takeTyConApps tt
+         = do   tR'     <- convertRegionT ctx tR
+                case tc of
+                 TcConRead       -> return $ tRead  tR'
+                 TcConWrite      -> return $ tWrite tR'
+                 TcConAlloc      -> return $ tAlloc tR'
+                 _ -> throw $ ErrorMalformed 
+                            $ "Malformed capability type " ++ (renderIndent $ ppr tt)
+
+        | otherwise
+        = throw $ ErrorMalformed 
+                $ "Malformed capability type " ++ (renderIndent $ ppr tt)
+
+
+-- Numeric Types ----------------------------------------------------------------------------------
+-- | Convert a numeric type directly to its Salt form.
+--   Works for Bool#, Nat#, Int#, WordN# and Float#
+convertNumericT :: Type E.Name -> ConvertM a (Type A.Name)
+convertNumericT tt
         | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
         = case n of
                 E.PrimTyConBool         -> return $ A.tBool
                 E.PrimTyConNat          -> return $ A.tNat
                 E.PrimTyConInt          -> return $ A.tInt
                 E.PrimTyConWord  bits   -> return $ A.tWord bits
-                E.PrimTyConFloat bits   -> return $ A.tWord bits
-                _ -> throw $ ErrorMalformed "Invalid numeric index type."
+                _ -> throw $ ErrorMalformed 
+                           $ "Invalid machine type " ++ (renderIndent $ ppr tt)
 
         | otherwise
-        = throw $ ErrorMalformed "Invalid numeric index type."
+        = throw $ ErrorMalformed 
+                $ "Invalid machine type " ++ (renderIndent $ ppr tt)
 
 
--- Capability Types -------------------------------------------------------------------------------
--- | Convert a capability / coeffect type to Salt.
-convertCapabilityT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
-convertCapabilityT ctx tt
- | Just (TyConSpec tc, [tR])    <- takeTyConApps tt
- = do    tR'     <- convertRegionT ctx tR
-         case tc of
-                TcConRead       -> return $ tRead  tR'
-                TcConWrite      -> return $ tWrite tR'
-                TcConAlloc      -> return $ tAlloc tR'
-                _               -> throw $ ErrorMalformed $ "Malformed capability type."
+-- Super Types ------------------------------------------------------------------------------------
+-- | Types of supercombinators and constructors.
+--      
+convertSuperT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertSuperT ctx tt
+ = case tt of
+        -- We pass exising quantifiers of Region variables to the Salt language,
+        -- and convert quantifiers of data types to the punned name of
+        -- their top-level region.s
+        TForall b t     
+         | isRegionKind (typeOfBind b)
+         -> do  let ctx' = extendKindEnv b ctx
+                b'      <- convertTypeB    b
+                t'      <- convertValueT ctx' t
+                return  $ TForall b' t'
 
- | otherwise
- = throw $ ErrorMalformed $ "Malformed capability type."
+         | isDataKind   (typeOfBind b)
+         , BName (E.NameVar str) _   <- b
+         , str'         <- str ++ "$r"
+         , b'           <- BName (A.NameVar str') kRegion
+         -> do
+                let ctx' = extendKindEnv b ctx
+                t'      <- convertValueT ctx' t
+                return  $ TForall b' t'
+
+         |  otherwise
+         -> do  let ctx' = extendKindEnv b ctx
+                convertValueT ctx' t
+
+        TApp{}
+         -- Convert Tetra function types to Salt function types.
+         | Just (t1, t2)  <- takeTFun tt
+         -> do  t1'       <- convertValueT ctx t1
+                t2'       <- convertSuperT ctx t2
+                return    $ tFunPE t1' t2'
+
+        -- Other types are just the values.
+        _ -> convertValueT ctx tt
 
 
 -- Data Types -------------------------------------------------------------------------------------
--- | Convert a data type from Core Tetra to Core Salt.
+-- | Convert a value type from Core Tetra to Core Salt.
 --
---   This version can be used to convert both representational and
---   non-representational types.
---
---   In the input program, all function parameters and arguments must 
---   be representational, but we may have let-bindings that bind pure values
---   of non-representational type.
---
-convertDataT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
-convertDataT ctx tt
-        | Just (E.NamePrimTyCon n, [])    <- takePrimTyConApps tt
-        = case n of
-                E.PrimTyConVoid         -> return $ A.tVoid
-                E.PrimTyConBool         -> return $ A.tBool
-                E.PrimTyConNat          -> return $ A.tNat
-                E.PrimTyConInt          -> return $ A.tInt
-                E.PrimTyConWord  bits   -> return $ A.tWord bits
-                E.PrimTyConString       -> return $ A.tString
-                _                       -> throw  $ ErrorMalformed "Cannot convert data type."
-
-        | otherwise
-        = convertRepableT ctx tt
-
-
--- | Convert a value type from Core Tetra to Core Salt
---
---   Objects of value type can be bound to values and passed to and returned from
---   functions. This is like `convertRepableT`, except functional values are
---   represented as closures.
+--   Value types have kind Data and can be passed to, and returned from
+--   functions. We shouldn't find any function types here, as they should
+--   have been converted to closures by the Curry transform.
 --
 convertValueT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
 convertValueT ctx tt
-        | TApp{}        <- tt
-        , Just _        <- takeTFun tt
-        = return $ A.tPtr A.rTop A.tObj
-
-        | otherwise
-        = convertDataT ctx tt                     
-                                                -- BROKEN: fix Data vs Value vs Repable
-
-
--- | Convert a representable type from Core Tetra to Core Salt.
---
---   Representable numeric types must be explicitly boxed (like B# Nat) or
---   unboxed (U# Nat#), and not plain Nat#.
---
---   Function paramters and arguments cannot have non-representational
---   types because this doesn't tell us what calling convention to use.
---
-convertRepableT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
-convertRepableT ctx tt
  = case tt of
-        -- Convert type variables and constructors.
+        -- Convert value type variables and constructors.
         TVar u
          -> case Env.lookup u (contextKindEnv ctx) of
              Just k
-              -- Parametric data types are represented as generic objects,
+              -- Parametric data types are represented as generic objects,   -- TODO: use saltPrimREgion
               -- where the region those objects are in is named after the
               -- original type name.
               | isDataKind k
@@ -183,54 +177,29 @@ convertRepableT ctx tt
               -> return $ A.tPtr (TVar u') A.tObj
 
               | otherwise    
-              -> throw $ ErrorMalformed "Repable var type has invalid kind or bound."
+              -> throw $ ErrorMalformed 
+                       $ "Invalid value type " ++ (renderIndent $ ppr tt)
 
              Nothing 
               -> throw $ ErrorInvalidBound u
 
-        -- We pass exising quantifiers of Region variables to the Salt language,
-        -- and convert quantifiers of data types to the punned name of
-        -- their top-level region.s
-        TForall b t     
-         | isRegionKind (typeOfBind b)
-         -> do  let ctx' = extendKindEnv b ctx
-                b'      <- convertTypeB    b
-                t'      <- convertRepableT ctx' t
-                return  $ TForall b' t'
-
-         | isDataKind   (typeOfBind b)
-         , BName (E.NameVar str) _   <- b
-         , str'         <- str ++ "$r"
-         , b'           <- BName (A.NameVar str') kRegion
-         -> do
-                let ctx' = extendKindEnv b ctx
-                t'      <- convertRepableT ctx' t
-                return  $ TForall b' t'
-
-         |  otherwise
-         -> do  let ctx' = extendKindEnv b ctx
-                convertRepableT ctx' t
+        -- We should not find any polymorphic values.
+        TForall{} -> throw $ ErrorMalformed
+                           $ "Invalid polymorphic value type."
 
         -- Convert unapplied type constructors.
-        TCon{}  -> convertRepableTyConApp ctx tt
+        TCon{}    -> convertValueAppT ctx tt
 
         -- Convert type constructor applications.
-        TApp{}  -> convertRepableTyConApp ctx tt
+        TApp{}    -> convertValueAppT ctx tt
 
         -- Resentable types always have kind Data, but type sums cannot.
-        TSum{}  -> throw $ ErrorUnexpectedSum
+        TSum{}    -> throw $ ErrorUnexpectedSum
 
 
--- | Convert the application of a type constructor for some representable
---   data to Salt form. Representable data is something that has a runtime,
---   value, but may be either boxed or unboxed.
-convertRepableTyConApp :: Context -> Type E.Name -> ConvertM a (Type A.Name)
-convertRepableTyConApp ctx tt
-        -- Convert Tetra function types to Salt function types.
-        | Just (t1, t2)  <- takeTFun tt
-        = do   t1'       <- convertValueT   ctx t1
-               t2'       <- convertRepableT ctx t2
-               return    $ tFunPE t1' t2'
+-- | Convert some value type from Core Tetra to Core Salt.
+convertValueAppT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertValueAppT ctx tt
 
         -- Ambient TyCons -----------------------
         -- The Unit type.
@@ -239,10 +208,13 @@ convertRepableTyConApp ctx tt
 
         -- The Suspended Computation type.
         | Just (TyConSpec TcConSusp, [_tEff, tResult])  <- takeTyConApps tt
-        = do   convertRepableT ctx tResult
+        = do   convertValueT ctx tResult
         
 
         -- Primitive TyCons ---------------------
+        -- We don't handle the numeric types here, because they should have
+        -- been converted to explicitly unboxed form by the boxing transform.
+
         -- The Void# type.
         | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])  <- takePrimTyConApps tt
         =      return A.tVoid
@@ -251,45 +223,17 @@ convertRepableTyConApp ctx tt
         | Just (E.NamePrimTyCon E.PrimTyConString, [])  <- takePrimTyConApps tt
         =      return A.tString
 
-        -- The Bool# type.
-        | Just (E.NamePrimTyCon E.PrimTyConBool,   [])  <- takePrimTyConApps tt
-        =      return A.tBool
-
-        -- The Ref# type.
-        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])  <- takePrimTyConApps tt
-        =      return A.tVoid
-
-        -- The Ptr# types.
-        | Just (E.NamePrimTyCon E.PrimTyConPtr, [tR, tX]) <- takePrimTyConApps tt
-        = do    tR'     <- convertRegionT ctx tR
-                tX'     <- convertDataT   ctx tX
-                return  $ A.tPtr tR' tX'
-
 
         -- Tetra TyCons -------------------------
-        -- The mutable reference type.
-        | Just  ( E.NameTyConTetra E.TyConTetraRef
-                , [tR, _tX])    <- takePrimTyConApps tt
-        = do
-                tR'     <- convertRegionT ctx tR
-                return  $ A.tPtr tR' A.tObj
-        
-        -- Explicitly Boxed numeric types.
-        --   In Salt, boxed numeric values are represented in generic form,
-        --   as pointers to objects in the top-level region.
-        | Just  ( E.NameTyConTetra E.TyConTetraB 
-                , [tBIx])       <- takePrimTyConApps tt
-        , isBoxableIndexType tBIx
-        =      return  $ A.tPtr A.rTop A.tObj       
+        -- Explicitly unboxed numeric types.
+        -- In Salt, unboxed numeric values are represented directly as 
+        -- values of the corresponding machine type.
 
-        -- Explicitly Unboxed numeric types.
-        --   In Salt, unboxed numeric values are represented directly as 
-        --   values of the corresponding machine type.
         | Just  ( E.NameTyConTetra E.TyConTetraU
-                , [tBIx])       <- takePrimTyConApps tt
-        , isBoxableIndexType tBIx
-        = do   tBIx'   <- convertIndexT tBIx
-               return tBIx'
+                , [tNum])       <- takePrimTyConApps tt
+        , isNumericType tNum
+        = do   tNum'   <- convertNumericT tNum
+               return tNum'
 
         -- The F# type (reified function)
         | Just  ( E.NameTyConTetra E.TyConTetraF
@@ -323,7 +267,7 @@ convertRepableTyConApp ctx tt
         =      throw   $ ErrorMalformed 
                        $  "Invalid type constructor application "
                        ++ (renderIndent $ ppr tt)
-        
+
 
 -- Binds ------------------------------------------------------------------------------------------
 -- | Convert a type binder.
@@ -336,17 +280,6 @@ convertTypeB bb
         BName n k       -> liftM2 BName (convertBindNameM n) (convertK k)
 
 
--- | Convert a value binder with a representable type.
---   This is used for the binders of function arguments, which must have
---   representatable types to adhere to some calling convention. 
-convertValueB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
-convertValueB ctx bb
-  = case bb of
-        BNone t         -> liftM  BNone (convertValueT ctx t)        
-        BAnon t         -> liftM  BAnon (convertValueT ctx t)
-        BName n t       -> liftM2 BName (convertBindNameM n) (convertValueT ctx t)
-
-
 -- | Convert a witness binder.
 convertCapabilityB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
 convertCapabilityB ctx bb
@@ -356,17 +289,15 @@ convertCapabilityB ctx bb
         BName n t       -> liftM2 BName (convertBindNameM n) (convertCapabilityT ctx t)
 
 
--- | Convert a value binder.
---   This uses `convertDataT` on the attached type, so works for representational
---   or non-representational types. The latter is used for let-binders which 
---   don't need to be representational becaues the values only exist 
---   internally to a function.
-convertDataB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
-convertDataB ctx bb
- = case bb of
-        BNone t         -> liftM  BNone (convertDataT ctx t)
-        BAnon t         -> liftM  BAnon (convertDataT ctx t)
-        BName n t       -> liftM2 BName (convertBindNameM n)  (convertDataT ctx t)
+-- | Convert a value binder with a representable type.
+--   This is used for the binders of function arguments, which must have
+--   representatable types to adhere to some calling convention. 
+convertValueB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertValueB ctx bb
+  = case bb of
+        BNone t         -> liftM  BNone (convertValueT ctx t)        
+        BAnon t         -> liftM  BAnon (convertValueT ctx t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertValueT ctx t)
 
 
 -- | Convert the name of a Bind.
@@ -401,11 +332,12 @@ convertTypeU uu
 
         _ -> throw $ ErrorInvalidBound uu
 
+
 -- | Convert a value bound.
 --   These refer to function arguments or let-bound values, 
 --   and hence must have representable types.
-convertDataU :: Bound E.Name -> ConvertM a (Bound A.Name)
-convertDataU uu
+convertValueU :: Bound E.Name -> ConvertM a (Bound A.Name)
+convertValueU uu
   = case uu of
         UIx i                   
          -> return $ UIx i
@@ -440,7 +372,7 @@ convertDaCon ctx dc
 
         DaConPrim n t
          -> do  n'      <- convertDaConNameM dc n
-                t'      <- convertDataT ctx t
+                t'      <- convertSuperT ctx t
                 return  $ DaConPrim
                         { daConName             = n'
                         , daConType             = t' }
@@ -496,7 +428,7 @@ convertDaConNameM dc nn
 --     Nat#       => ** NOTHING **
 --     U# Nat#    => ** NOTHING **
 --
-saltPrimeRegionOfDataType
+saltPrimeRegionOfDataType                                                       -- TODO: is this used?
         :: KindEnv E.Name 
         -> Type E.Name 
         -> ConvertM a (Type A.Name)
@@ -532,33 +464,4 @@ saltPrimeRegionOfDataType kenv tt
         | otherwise
         = throw $ ErrorMalformed       
                 $ "Cannot take prime region from " ++ (renderIndent $ ppr tt)
-
-
--- | Given the type of some function parameters or return value, produce the
---   Salt type used to represent it. The supplied type must have kind data, 
---   and a boxed or unboxed representation. As this is used for function
---   parameters and return values, functions and quantified typesare represented
----  as generic boxed objects. 
-saltDataTypeOfArgType
-        :: KindEnv E.Name
-        -> Type E.Name
-        -> ConvertM a (Type A.Name)
-
-saltDataTypeOfArgType kenv tt
-        -- Boxed values are represented as pointers to generic objects.
-        | isBoxedRepType tt
-        = do    trPrime <- saltPrimeRegionOfDataType kenv tt
-                return  $ A.tPtr trPrime A.tObj
-
-        -- Explicitly unboxed types.
-        | isUnboxedRepType tt
-        , Just ( E.NameTyConTetra E.TyConTetraU
-               , [tBIx])             <- takePrimTyConApps tt
-        , isBoxableIndexType tBIx
-        = do    tBIx'   <- convertIndexT tBIx
-                return tBIx'
-
-        | otherwise
-        = throw $ ErrorMalformed
-                $ "Cannot convert argument type " ++ (renderIndent $ ppr tt)
 

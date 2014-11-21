@@ -54,7 +54,7 @@ convertExp ectx ctx xx
 
         XVar a u
          -> do  let a'  = annotTail a
-                u'      <- convertDataU u
+                u'      <- convertValueU u
                 return  $  XVar a' u'
 
 

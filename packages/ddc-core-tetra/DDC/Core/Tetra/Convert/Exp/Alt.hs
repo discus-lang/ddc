@@ -58,7 +58,7 @@ convertAlt a uScrut tScrut ectx ctx alt
          , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 -- Convert the scrutinee.
-                uScrut'         <- convertDataU uScrut
+                uScrut'         <- convertValueU uScrut
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef

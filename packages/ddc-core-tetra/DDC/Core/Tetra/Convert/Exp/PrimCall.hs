@@ -40,7 +40,7 @@ convertPrimCall _ectx ctx xx
          , XVar _ uF                    <- xF
          -> Just $ do
                 xF'     <- downArgX xF
-                tF'     <- convertRepableT (typeContext ctx) (tFun t1 t2)
+                tF'     <- convertValueT (typeContext ctx) (tFun t1 t2)
                 let Just arity = superDataArity ctx uF
 
                 return  $ A.xAllocThunk a A.rTop 

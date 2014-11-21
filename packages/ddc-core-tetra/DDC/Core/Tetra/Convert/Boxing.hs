@@ -17,7 +17,7 @@ module DDC.Core.Tetra.Convert.Boxing
         ( isSomeRepType
         , isBoxedRepType
         , isUnboxedRepType
-        , isBoxableIndexType
+        , isNumericType
         , takeIndexOfBoxedRepType
         , makeDataTypeForBoxableIndexType
         , makeDataCtorForBoxableIndexType)
@@ -69,7 +69,7 @@ isBoxedRepType tt
         -- Boxed numeric types
         | Just  ( NameTyConTetra TyConTetraB
                 , [ti])                         <- takePrimTyConApps tt
-        , isBoxableIndexType ti
+        , isNumericType ti
         = True
 
         | otherwise
@@ -90,14 +90,14 @@ isUnboxedRepType tt
         -- Unboxed numeric types.
         | Just ( NameTyConTetra TyConTetraU
                , [ti])                  <- takePrimTyConApps tt
-        , isBoxableIndexType ti
+        , isNumericType ti
         = True
 
         | otherwise
         = False
 
 
--- | Check if some type is a boxable index type.
+-- | Check if some type is a numeric type.
 --
 --   These are:
 --      Nat#, Int#, WordN# and so on.
@@ -108,19 +108,19 @@ isUnboxedRepType tt
 --   We write (B# Nat#) and (U# Nat#) to distinguish between the boxed and
 --   unboxed versions.
 --
-isBoxableIndexType :: Type Name -> Bool
-isBoxableIndexType tt
- | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
- = case n of
-        PrimTyConBool           -> True
-        PrimTyConNat            -> True
-        PrimTyConInt            -> True
-        PrimTyConWord  _        -> True
-        PrimTyConFloat _        -> True
-        _                       -> False
+isNumericType :: Type Name -> Bool
+isNumericType tt
+        | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
+        = case n of
+                PrimTyConBool           -> True
+                PrimTyConNat            -> True
+                PrimTyConInt            -> True
+                PrimTyConWord  _        -> True
+                PrimTyConFloat _        -> True
+                _                       -> False
 
- | otherwise
- = False
+        | otherwise
+        = False
 
 
 -- Conversions ----------------------------------------------------------------
@@ -131,7 +131,7 @@ takeIndexOfBoxedRepType :: Type Name -> Maybe (Type Name)
 takeIndexOfBoxedRepType tt
         | Just  ( NameTyConTetra TyConTetraB
                 , [ti])                 <- takePrimTyConApps tt
-        , isBoxableIndexType ti
+        , isNumericType ti
         = Just ti
 
         | otherwise

@@ -29,8 +29,8 @@ convertLets ctx lts
 
                 -- All the recursive bindings must be functional values, 
                 -- so we use convertDataB here instead of convertValueB.
-                bs'          <- mapM (convertDataB (typeContext ctx)) bs                
-                xs'          <- mapM (convertX     ExpFun ctx') xs
+                bs'          <- mapM (convertValueB (typeContext ctx)) bs                
+                xs'          <- mapM (convertX      ExpFun ctx') xs
                 return  $ LRec $ zip bs' xs'
 
         LLet b x1

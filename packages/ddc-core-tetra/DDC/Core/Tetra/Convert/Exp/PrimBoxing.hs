@@ -43,14 +43,14 @@ convertPrimBoxing _ectx ctx xx
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tBIx, XType _ tBx, XCon _ c]) <- takeXPrimApps xx
-         , isBoxableIndexType tBIx
+         , isNumericType tBIx
          , isBoxedRepType     tBx
          , Just dt      <- makeDataTypeForBoxableIndexType tBIx
          , Just dc      <- makeDataCtorForBoxableIndexType tBIx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- convertLitCtor a' c
-                tBIx'   <- convertIndexT tBIx
+                tBIx'   <- convertNumericT tBIx
 
                 constructData pp kenv tenv a'
                         dt dc A.rTop [xArg'] [tBIx']
@@ -64,12 +64,12 @@ convertPrimBoxing _ectx ctx xx
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tBx, XType _ tBIx, xArg])    <- takeXPrimApps xx
          , isBoxedRepType     tBx
-         , isBoxableIndexType tBIx
+         , isNumericType tBIx
          , Just dc      <- makeDataCtorForBoxableIndexType tBIx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT tBIx
+                tBIx'   <- convertNumericT tBIx
                 tBx'    <- convertValueT (typeContext ctx) tBx
 
                 x'      <- destructData pp a' dc
@@ -94,7 +94,7 @@ convertPrimBoxing _ectx ctx xx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT tBIx
+                tBIx'   <- convertNumericT tBIx
 
                 constructData pp kenv tenv a'
                         dt dc A.rTop [xArg'] [tBIx']
@@ -114,7 +114,7 @@ convertPrimBoxing _ectx ctx xx
          -> Just $ do
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBIx'   <- convertIndexT   tBIx
+                tBIx'   <- convertNumericT   tBIx
                 tBx'    <- convertValueT (typeContext ctx) tBx
 
                 x'      <- destructData pp a' dc

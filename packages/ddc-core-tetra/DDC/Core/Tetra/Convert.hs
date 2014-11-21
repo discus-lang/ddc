@@ -182,7 +182,7 @@ convertExportSourceM tctx esrc
  = case esrc of
         ExportSourceLocal n t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertRepableT  tctx t
+                t'      <- convertSuperT  tctx t
                 return  $ ExportSourceLocal n' t'
 
         ExportSourceLocalNoType n
@@ -224,19 +224,19 @@ convertImportSourceM tctx isrc
  = case isrc of
         ImportSourceModule mn n t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertRepableT tctx t
+                t'      <- convertSuperT tctx t
                 return  $ ImportSourceModule mn n' t'
 
         ImportSourceAbstract t
-         -> do  t'      <- convertRepableT tctx t
-                return $ ImportSourceAbstract t'
+         -> do  t'      <- convertSuperT tctx t
+                return  $ ImportSourceAbstract t'
 
         ImportSourceBoxed t
-         -> do  t'      <- convertRepableT tctx t
-                return $ ImportSourceBoxed t'
+         -> do  t'      <- convertSuperT tctx t
+                return  $ ImportSourceBoxed t'
 
         ImportSourceSea str t
-         -> do  t'      <- convertRepableT tctx t 
+         -> do  t'      <- convertSuperT tctx t 
                 return  $ ImportSourceSea str t'
 
 

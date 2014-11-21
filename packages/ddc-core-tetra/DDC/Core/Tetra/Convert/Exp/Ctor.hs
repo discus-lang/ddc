@@ -44,6 +44,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
         let kenv         = contextKindEnv  ctx
         let tenv         = contextTypeEnv  ctx
         let convertX     = contextConvertExp ctx
+        let tctx         = typeContext ctx
 
         -- Get the prime region variable.
         -- The prime region holds the outermost constructor of the object.
@@ -58,7 +59,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
                          $  xsArgsValues
 
         -- Determine the Salt type for each of the arguments.
-        tsArgsValues'    <- mapM (saltDataTypeOfArgType kenv) 
+        tsArgsValues'    <- mapM (convertValueT tctx) 
                          $  map  (annotType . annotOfExp) xsArgsValues
 
         constructData pp kenv tenv a
