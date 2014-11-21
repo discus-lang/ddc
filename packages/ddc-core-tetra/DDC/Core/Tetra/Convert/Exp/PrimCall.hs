@@ -6,6 +6,7 @@ import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Compounds
+import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
@@ -34,12 +35,20 @@ convertPrimCall _ectx ctx xx
         --  TODO: Check that we're only reifying functions that will have
         --        the standard calling convention.
         XApp (AnTEC _t _ _ a)  xa xb
-         | (x1, [XType _ t1, XType _ t2, xF]) <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)  <- x1
-         , E.NameOpFun E.OpFunCReify    <- nPrim
-         , XVar _ uF                    <- xF
+         | (xR, [XType _ t1, XType _ t2, xF])   <- takeXApps1 xa xb
+         , XVar _ (UPrim nR _tPrim)  <- xR
+         , E.NameOpFun E.OpFunCReify    <- nR
+
+         , Just (aF, uF)   
+                <- case xF of
+                     XVar aF uF           -> Just (aF, uF)
+                     XApp{}
+                       | Just (XVar aF uF, xsArgs) <- takeXApps xF
+                       , all isXType xsArgs       -> Just (aF, uF)
+                     _ -> Nothing
+
          -> Just $ do
-                xF'     <- downArgX xF
+                xF'     <- downArgX (XVar aF uF)
                 tF'     <- convertValueT (typeContext ctx) (tFun t1 t2)
                 let Just arity = superDataArity ctx uF
 
