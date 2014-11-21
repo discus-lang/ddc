@@ -31,6 +31,7 @@ module DDC.Core.Tetra.Convert.Type
         , saltPrimeRegionOfDataType
         , saltDataTypeOfArgType)
 where
+import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Exp
@@ -50,7 +51,6 @@ import Control.Monad
 
 import DDC.Base.Pretty
 
-
 -- Kind -------------------------------------------------------------------------------------------
 -- | Convert a kind from Core Tetra to Core Salt.
 convertK :: Kind E.Name -> ConvertM a (Kind A.Name)
@@ -63,10 +63,10 @@ convertK kk
 
 -- Region Types -----------------------------------------------------------------------------------
 -- | Convert a region type to Salt.
-convertRegionT :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
-convertRegionT kenv tt
+convertRegionT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
+convertRegionT defs tt
         | TVar u        <- tt
-        , Just k        <- Env.lookup u kenv
+        , Just k        <- Env.lookup u (defsKindEnv defs)
         , isRegionKind k
         = liftM TVar $ convertTypeU u
 
@@ -101,10 +101,10 @@ convertIndexT tt
 
 -- Capability Types -------------------------------------------------------------------------------
 -- | Convert a capability / coeffect type to Salt.
-convertCapabilityT :: KindEnv E.Name -> Type E.Name -> ConvertM a (Type A.Name)
-convertCapabilityT kenv tt
+convertCapabilityT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
+convertCapabilityT defs tt
  | Just (TyConSpec tc, [tR])    <- takeTyConApps tt
- = do    tR'     <- convertRegionT kenv tR
+ = do    tR'     <- convertRegionT defs tR
          case tc of
                 TcConRead       -> return $ tRead  tR'
                 TcConWrite      -> return $ tWrite tR'
@@ -125,11 +125,8 @@ convertCapabilityT kenv tt
 --   be representational, but we may have let-bindings that bind pure values
 --   of non-representational type.
 --
-convertDataT 
-        :: DataDefs E.Name -> KindEnv E.Name -> Type E.Name 
-        -> ConvertM a (Type A.Name)
-
-convertDataT defs kenv tt
+convertDataT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
+convertDataT defs tt
         | Just (E.NamePrimTyCon n, [])    <- takePrimTyConApps tt
         = case n of
                 E.PrimTyConVoid         -> return $ A.tVoid
@@ -141,7 +138,7 @@ convertDataT defs kenv tt
                 _                       -> throw  $ ErrorMalformed "Cannot convert data type."
 
         | otherwise
-        = convertRepableT defs kenv tt
+        = convertRepableT defs tt
 
 
 -- | Convert a value type from Core Tetra to Core Salt
@@ -150,17 +147,14 @@ convertDataT defs kenv tt
 --   functions. This is like `convertRepableT`, except functional values are
 --   represented as closures.
 --
-convertValueT
-        :: DataDefs E.Name -> KindEnv E.Name -> Type E.Name
-        -> ConvertM a (Type A.Name)
-
-convertValueT defs kenv tt
+convertValueT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
+convertValueT defs tt
         | TApp{}        <- tt
         , Just _        <- takeTFun tt
         = return $ A.tPtr A.rTop A.tObj
 
         | otherwise
-        = convertDataT defs kenv tt                     -- BROKEN: fix Data vs Value vs Repable
+        = convertDataT defs tt                     -- BROKEN: fix Data vs Value vs Repable
 
 
 -- | Convert a representable type from Core Tetra to Core Salt.
@@ -171,11 +165,8 @@ convertValueT defs kenv tt
 --   Function paramters and arguments cannot have non-representational
 --   types because this doesn't tell us what calling convention to use.
 --
-convertRepableT 
-        :: DataDefs E.Name -> KindEnv E.Name -> Type E.Name
-        -> ConvertM a (Type A.Name)
-
-convertRepableT defs kenv tt
+convertRepableT :: Defs -> Type E.Name -> ConvertM a (Type A.Name)
+convertRepableT tt
  = case tt of
         -- Convert type variables and constructors.
         TVar u
@@ -229,9 +220,12 @@ convertRepableT defs kenv tt
         TSum{}  -> throw $ ErrorUnexpectedSum
 
 
--- | Convert the application of a type constructor to Salt form.
+-- | Convert the application of a type constructor for some representable
+--   data to Salt form. Representable data is something that has a runtime,
+--   value, but may be either boxed or unboxed.
 convertRepableTyConApp 
-        :: DataDefs E.Name -> KindEnv E.Name 
+        :: DataDefs E.Name 
+        -> KindEnv E.Name 
         -> Type E.Name -> ConvertM a (Type A.Name)
 
 convertRepableTyConApp defs kenv tt

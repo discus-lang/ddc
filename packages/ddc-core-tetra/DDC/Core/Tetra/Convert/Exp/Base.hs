@@ -32,7 +32,7 @@ import qualified Data.Set                as Set
 
 
 ---------------------------------------------------------------------------------------------------
--- | Context of the conversion.
+-- | Context of an Exp conversion.
 data Context 
         = Context
         { -- | The platform that we're converting to, 
