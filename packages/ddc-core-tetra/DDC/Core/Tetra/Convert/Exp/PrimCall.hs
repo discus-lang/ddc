@@ -35,7 +35,7 @@ convertPrimCall _ectx ctx xx
         --  TODO: Check that we're only reifying functions that will have
         --        the standard calling convention.
         XApp (AnTEC _t _ _ a)  xa xb
-         | (xR, [XType _ t1, XType _ t2, xF])   <- takeXApps1 xa xb
+         | (xR, [XType _ _, XType _ _, xF])   <- takeXApps1 xa xb
          , XVar _ (UPrim nR _tPrim)  <- xR
          , E.NameOpFun E.OpFunCReify    <- nR
 
@@ -49,7 +49,7 @@ convertPrimCall _ectx ctx xx
 
          -> Just $ do
                 xF'     <- downArgX (XVar aF uF)
-                tF'     <- convertValueT (typeContext ctx) (tFun t1 t2)
+                tF'     <- convertSuperT (typeContext ctx) (annotType aF)
                 let Just arity = superDataArity ctx uF
 
                 return  $ A.xAllocThunk a A.rTop 

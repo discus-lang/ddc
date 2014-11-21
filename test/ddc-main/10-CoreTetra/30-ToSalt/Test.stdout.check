@@ -124,7 +124,7 @@ letrec {
             let _ : Void#
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
             ^1;
-        False#  
+        _ 
          -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
             let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
             let _ : Void#
@@ -173,7 +173,7 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Partial application of primitive operators is not supported.
   
-    with: add# [B# Nat#] x0
+    with: add# [Nat#] x0
 
 
 -- Error: partial application if user defined data constructors is not supported.
@@ -189,7 +189,7 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Partial application of primitive operators is not supported.
   
-    with: add# [B# Nat#] x0
+    with: add# [Nat#] x0
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to
@@ -221,7 +221,7 @@ Fragment violation when converting Tetra module to Salt module.
     See [Note: Salt conversion for higher kinded type arguments] in
     the implementation of the Tetra to Salt conversion.
     
-    with application:  nothin [List] [B# Nat#] x0
+    with application:  nothin [List] [Nat#] x0
   
     with: [List]
 
@@ -247,5 +247,5 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Unrecognised expression form.
   
-    with: allocRef# [r] [B# Nat#] x0
+    with: allocRef# [r] [Nat#] x0
 

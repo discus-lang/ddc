@@ -33,7 +33,9 @@ features = zeroFeatures
         , featuresFunctionalClosures    = True
         , featuresDebruijnBinders       = True
         , featuresUnusedBindings        = True 
-        , featuresEffectCapabilities    = True }
+        , featuresEffectCapabilities    = True
+        , featuresPartialApplication    = True                  -- TODO: hacked on for function reify
+        }
 
 
 -- | Lex a string to tokens, using primitive names.

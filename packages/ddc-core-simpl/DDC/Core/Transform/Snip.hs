@@ -341,7 +341,7 @@ isAtom xx
         XWitness{}      -> True
 
         -- Keep applications of variables to their types together.
-        XApp _ x1 XType{} -> isAtom x1
+--        XApp _ x1 XType{} -> isAtom x1
 
         -- Casts are ignored by code generator, so we can leave them in if
         -- their subexpression is normal

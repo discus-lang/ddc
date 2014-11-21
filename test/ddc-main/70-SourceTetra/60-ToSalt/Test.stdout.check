@@ -77,7 +77,7 @@ letrec {
             let _
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
             ^1;
-        False#  
+        _ 
          -> let ^ = allocRawSmall [rT] TAG0# 8# in
             let ^ = payloadOfRawSmall [rT] ^0 in
             let _

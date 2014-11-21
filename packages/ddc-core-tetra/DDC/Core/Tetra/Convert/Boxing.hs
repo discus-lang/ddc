@@ -67,9 +67,7 @@ isBoxedRepType tt
         = True
 
         -- Boxed numeric types
-        | Just  ( NameTyConTetra TyConTetraB
-                , [ti])                         <- takePrimTyConApps tt
-        , isNumericType ti
+        | isNumericType tt
         = True
 
         | otherwise
