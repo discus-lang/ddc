@@ -7,19 +7,13 @@
 --
 module Main 
 export main 
-
--- | We assign the Console effect to computations that affect stdin or stdout.
-import foreign abstract type
- Console  : Effect
+import Data.Numeric.Nat
+import Data.List
+import Data.Maybe
+import IO.Console
 
 import foreign boxed type
  Ref      : Region ~> Data ~> Data
-
--- | Import basic functions from C land.
-import foreign c value
- putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
- putStr   : [r : Region]. Ptr# r String# -> S Console Void#
- showNat  : [r : Region]. Nat#           -> Ptr# r String#
 
 import foreign c value
  allocRef : [r : Region]. [a : Data]. a  -> S (Alloc r) (Ref r a)
@@ -27,77 +21,6 @@ import foreign c value
  writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Void#
 
 where
-
--- Define configurable syntax.
-add x y = add# [Nat#] x y       -- used for (+)
-sub x y = sub# [Nat#] x y       -- used for (-)
-eq  x y = eq#  [Nat#] x y       -- used for (==)
-ge  x y = ge#  [Nat#] x y       -- used for (>=)
-
-
--------------------------------------------------------------------------------
--- | Cons lists.
-data List (a : Data) where
-        Nil     : List a
-        Cons    : a -> List a -> List a
-
-
--- | Construct a list containing a single element.
-singleton (x : a) : List a
- = Cons x Nil
-
-
--- | Construct a range of values.
-enumFromTo (start : Nat#) (end : Nat#)
- = case start >= end of
-        True#           -> singleton start
-        False#          -> Cons start (enumFromTo (start + 1) end)
-
-
--- | Apply a worker function to all elements of a list, 
---   yielding a new list.
-mapS (f : a -> S e b) (xx : List a) : S e (List b)
- = box case xx of
-        Nil             -> Nil
-        Cons x xs       -> Cons (run f x) (run mapS f xs)
-
-
--- | Apply a function to all elements of a list, 
---   yielding nothing.
-forS (xx : List a) (f : a -> S e Unit) : S e Unit
- = box case xx of
-        Nil     -> ()
-
-        Cons x xs       
-         -> do  run f x
-                run forS xs f
-
-{- TODO: lambda lifting for letrecs doesn't work
--- | Reduce a list to a single value.
-foldS (f : a -> b -> S e b) (z : b) (xx0 : List a) : S e b
- = letrec 
-        go (acc : b) (xx : List a) : S e b
-         = box case xx of
-                Nil             -> acc
-                Cons x xs       -> run go (run f x acc) xs
-   in   go z xx0    
--}
-
--- | Reduce a list to a single value.
-foldS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
- = box case xx of
-        Nil             -> z
-        Cons x xs       -> run f x (run foldS f z xs)
-
-
--- | Keep elements of a list that match the given predicate.
-filterS (f : a -> S e Bool#) (xx : List a) : S e (List a)
- = box case xx of
-        Nil             -> Nil
-        Cons x xs       
-         -> case run f x of
-                True#   -> Cons x (run filterS f xs)
-                False#  -> run filterS f xs
 
 
 main (_ : Unit) : S Console Unit

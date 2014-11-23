@@ -6,9 +6,15 @@ export  { singleton;    replicate
         ; append
         ; length
         ; head;         tail;           last
-        ; reverse }
+        ; reverse 
+        ; map;    mapS
+        ; forS
+        ; foldl;  foldlS
+               ;  foldrS
+        ; filter; filterS }
 
 import  Data.Numeric.Nat
+import  Data.Maybe
 where
 
 -- | Standard Cons-lists.
@@ -87,7 +93,6 @@ reverse (xx : List a) : List a
 
 
 -- Combinators ----------------------------------------------------------------
-{-
 -- | Apply a worker function to every element of a list, yielding a new list.
 map (f : a -> b) (xx : List a) : List b
  = case xx of
@@ -104,6 +109,16 @@ mapS (f : a -> S e b) (xx : List a) : S e (List b)
         Cons x xs       -> Cons (run f x) (run mapS f xs)
 
 
+-- | Apply a function to all elements of a list, yielding nothing.
+forS (xx : List a) (f : a -> S e Unit) : S e Unit
+ = box case xx of
+        Nil     -> ()
+
+        Cons x xs       
+         -> do  run f x
+                run forS xs f
+
+
 -- | Reduce a list with a binary function and zero value, 
 --   from left to right.
 foldl (f : b -> a -> b) (z : b) (xx : List a) : b
@@ -118,14 +133,6 @@ foldlS (f : b -> a -> S e b) (z : b) (xx : List a) : S e b
  = box case xx of
         Nil             -> z
         Cons x xs       -> run foldlS f (run f z x) xs
-
-
--- | Reduce a list with a binary function and zero value, 
---   from right to left.
-foldr (f : a -> b -> b) (z : b) (xx : List a) : b
- = case xx of
-        Nil             -> z
-        Cons x xs       -> f x (foldr f z xs)
 
 
 -- | Reduce a list with a stateful binary function and zero value, 
@@ -155,4 +162,4 @@ filterS (p : a -> S e Bool#) (xx : List a) : S e (List a)
          -> case run p x of
                 True#   -> Cons x (run filterS p xs)
                 False#  -> run filterS p xs
--}
+

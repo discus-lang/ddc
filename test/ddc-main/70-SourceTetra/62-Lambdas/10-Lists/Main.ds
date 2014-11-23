@@ -1,23 +1,8 @@
 module Main 
 export main 
-
--- | We assign the Console effect to computations that affect stdin or stdout.
-import foreign abstract type
- Console  : Effect
-
--- | Import basic functions from C land.
-import foreign c value
- putStrLn : [r : Region]. Ptr# r String# -> S Console Void#
- putStr   : [r : Region]. Ptr# r String# -> S Console Void#
- showNat  : [r : Region]. Nat#           -> Ptr# r String#
-
+import Data.Numeric.Nat
+import IO.Console
 where
-
--- Define configurable syntax.
-add x y = add# [Nat#] x y       -- used for (+)
-sub x y = sub# [Nat#] x y       -- used for (-)
-eq  x y = eq#  [Nat#] x y       -- used for (==)
-ge  x y = ge#  [Nat#] x y       -- used for (>=)
 
 
 -------------------------------------------------------------------------------
