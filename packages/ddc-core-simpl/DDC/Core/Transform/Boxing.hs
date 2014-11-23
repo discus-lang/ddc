@@ -101,6 +101,8 @@ data Config a n
 
 
 -- Module -----------------------------------------------------------------------------------------
+-- TODO: throw real errors instead of just returning original, 
+--       want this when handling foreign functions anyway.
 boxingModule 
         :: (Show a, Show n, Pretty n, Ord n) 
         => Config a n -> Module a n -> Module a n
@@ -133,12 +135,13 @@ boxingX config xx
             in  boxingPrimitive config a xx xFn tPrim xsArgsAll'
 
         -- Foreign calls
-{-        XApp{}
+        XApp a _ _
          | Just (xFn@(XVar _ (UName n)), xsArgsAll)
                                 <- takeXApps xx
          , Just tForeign        <- configValueTypeOfForeignName config n
-         -> Just (xFn, tForeign, xsArgsAll)
--}
+         -> let xsArgsAll'      = map (boxingX config) xsArgsAll
+            in  boxingForeignSea config a xx xFn tForeign xsArgsAll'
+
 
         XCase a xScrut alts
          | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
@@ -175,13 +178,16 @@ boxingAlt config alt
 --   If something goes wrong then just return the original expression and leave it to
 --   follow on transforms to report the error. The code generator won't be able to
 --   convert the original expression.
+--
+--   TODO: Assumes that the type of the primitive is prenex.
+
 boxingPrimitive
         :: (Ord n, Pretty n)
-        => Config a n 
-        -> a -> Exp a n
-        -> Exp a n 
-        -> Type n
-        -> [Exp a n]
+        => Config a n -> a
+        -> Exp a n      -- ^ Whole primitive application, for debugging.
+        -> Exp a n      -- ^ Functional expression.
+        -> Type n       -- ^ Type of the primitive.
+        -> [Exp a n]    -- ^ Arguments to the primitive.
         -> Exp a n
 
 boxingPrimitive config a xx xFn tPrim xsArgsAll
@@ -224,6 +230,60 @@ boxingPrimitive config a xx xFn tPrim xsArgsAll
         let xResultU = xApps a xFn (xtsArgsU ++ xsArgs')
         xResultV     <- configConvertRepExp config RepValue a tResultInstU xResultU
         return xResultV
+
+
+---------------------------------------------------------------------------------------------------
+-- Marshall arguments and return values of foreign imported functions.
+-- 
+--  TODO: assumes that the type of the import is prenex.
+--
+boxingForeignSea
+        :: (Ord n, Pretty n)
+        => Config a n -> a 
+        -> Exp a n      -- ^ Whole function application, for debugging.
+        -> Exp a n      -- ^ Functional expression.
+        -> Type n       -- ^ Type of the foreign function.
+        -> [Exp a n]    -- ^ Arguments to the foreign function.
+        -> Exp a n
+
+boxingForeignSea config a xx xFn tF xsArg
+ = trace ("boxingForeignSea " ++ (renderIndent $ ppr xx))
+ $ fromMaybe xx go
+ where go = do
+        -- Split off the type args.
+        let (_asArg, tsArgType) = unzip [(a', t) | XType a' t <- xsArg]
+        let xsArgVal    = drop (length tsArgType) xsArg
+
+        -- Get the argument and return types of the function.
+        -- Unlike primitives, foreign functions are not polytypic, so we can
+        -- just erase any outer foralls to reveal the types of the args.
+        let (tsArgVal, tResult) 
+                        = takeTFunArgResult
+                        $ eraseTForalls tF
+
+        -- We must end up with a type for each argument.
+        -- TODO: throw an error if this doesn't happen, foreign function is
+        --       either under or over applied. This should have been fixed by
+        --       eta-expansion, in the curry transform.
+        (if not (length xsArgVal == length tsArgVal)
+           then Nothing
+           else Just ())
+
+        -- For each argument, if it has an unboxed representation then unbox it.
+        let unboxArg xArg tArg 
+             = fromMaybe xArg
+             $ configConvertRepExp config RepUnboxed a tArg xArg
+
+        let xsArgValU = zipWith unboxArg xsArgVal tsArgVal
+        let xExpU     = xApps a xFn ([XType a t | t <- tsArgType] ++ xsArgValU)
+
+        -- If the result has a boxed representation then box it.
+        let boxResult tRes xRes
+             = fromMaybe xRes
+             $ do tResU      <- configConvertRepType config RepUnboxed tRes
+                  configConvertRepExp config RepValue a tResU xExpU
+
+        return $ boxResult tResult xExpU
 
 
 ---------------------------------------------------------------------------------------------------
