@@ -45,6 +45,7 @@ import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 import Control.Monad
 import DDC.Base.Pretty
 
@@ -201,7 +202,7 @@ convertValueT ctx tt
 convertValueAppT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
 convertValueAppT ctx tt
 
-        -- Ambient TyCons -----------------------
+        -- Ambient TyCons ---------------------------------
         -- The Unit type.
         | Just (TyConSpec TcConUnit, [])                <- takeTyConApps tt
         =       return $ A.tPtr A.rTop A.tObj
@@ -211,7 +212,7 @@ convertValueAppT ctx tt
         = do   convertValueT ctx tResult
         
 
-        -- Primitive TyCons ---------------------
+        -- Primitive TyCons -------------------------------
         -- We don't handle the numeric types here, because they should have
         -- been converted to explicitly unboxed form by the boxing transform.
 
@@ -228,10 +229,10 @@ convertValueAppT ctx tt
                 , [tR, tA])       <- takePrimTyConApps tt
         = do    tR'     <- convertRegionT ctx tR       
                 tA'     <- convertValueT  ctx tA
-                return  $ A.tPtr tR' tA'
+                return  $ A.tPtr tR' tA'                -- TODO: wrong, need boxed version.
 
 
-        -- Numeric TyCons -----------------------
+        -- Numeric TyCons ---------------------------------
         -- These are represented in boxed form.
         | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
         , True <- case n of
@@ -243,7 +244,7 @@ convertValueAppT ctx tt
         =       return $ A.tPtr A.rTop A.tObj
 
 
-        -- Tetra TyCons -------------------------
+        -- Tetra TyCons -----------------------------------
         -- Explicitly unboxed numeric types.
         -- In Salt, unboxed numeric values are represented directly as 
         -- values of the corresponding machine type.
@@ -271,26 +272,42 @@ convertValueAppT ctx tt
         =       return  $ A.tPtr A.rTop A.tObj
 
 
-        -- Boxed functions ----------------------
+        -- Boxed functions --------------------------------
         | Just _        <- takeTFun tt
         =       return $ A.tPtr A.rTop A.tObj
 
 
-        -- User defined TyCons ------------------
+        -- Foreign boxed data types -----------------------
+        --   If these have a primary region then we use that, 
+        --   otherwise they are represnted in generic boxed form.
+        | Just (TyConBound (UName n) _, args) <- takeTyConApps tt
+        , Set.member n (contextForeignBoxedTypeCtors ctx)
+        = case args of
+                tR : _
+                 | TVar u       <- tR
+                 , Just k       <- Env.lookup u (contextKindEnv ctx)
+                 , isRegionKind k
+                 -> do  tR'     <- convertRegionT ctx tR
+                        return  $ A.tPtr tR' A.tObj
+
+                _ ->    return  $ A.tPtr A.rTop A.tObj
+
+
+        -- User defined TyCons ----------------------------
         -- A user-defined data type with a primary region.
         --   These are converted to generic boxed objects in the same region.
         | Just (TyConBound (UName n) _, tR : _args) <- takeTyConApps tt
+        , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         , TVar u       <- tR
         , Just k       <- Env.lookup u (contextKindEnv ctx)
         , isRegionKind k
-        , Map.member n (dataDefsTypes $ contextDefs ctx)
         = do   tR'     <- convertRegionT ctx tR
                return  $ A.tPtr tR' A.tObj
 
         -- A user-defined data type without a primary region.
         --   These are converted to generic boxed objects in the top-level region.
         | Just (TyConBound (UName n) _, _)          <- takeTyConApps tt
-        , Map.member n (dataDefsTypes $ contextDefs ctx)
+        , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         = do   return  $ A.tPtr A.rTop A.tObj
 
         | otherwise

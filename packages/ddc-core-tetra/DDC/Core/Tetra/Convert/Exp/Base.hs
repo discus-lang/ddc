@@ -42,12 +42,25 @@ data Context
           contextPlatform       :: Platform
 
           -- | Data type definitions.
+          --   These are all the visible data type definitions, from both
+          --   the current module and imported ones.
         , contextDataDefs       :: DataDefs E.Name
 
-          -- | Types of imported values.
+          -- | Names of foreign boxed data type contructors.
+          --   These are names like 'Ref' and 'Array' that are defined in the
+          --   runtime system rather than as an algebraic data type with a 
+          --   Tetra-level data type definition. Although there is no data
+          --   type definition, we still represent the values of these types
+          --   in generic boxed form.
+        , contextForeignBoxedTypeCtors 
+                                :: Set      E.Name
+
+          -- | Names of imported supers that are defined in external modules.
+          --   They are directly callable in the object code.
         , contextImports        :: Set      E.Name
 
-          -- | Names of supers that are directly callable.
+          -- | Names of local supers that are defined in the current module.
+          --   They are directly callable in the object code.
         , contextSupers         :: Set      E.Name
 
           -- | Current kind environment.
@@ -76,9 +89,11 @@ data Context
 typeContext :: Context -> T.Context
 typeContext ctx
         = T.Context
-        { T.contextDefs         = contextDataDefs ctx
+        { T.contextDataDefs     = contextDataDefs ctx
+        , T.contextForeignBoxedTypeCtors 
+                                = contextForeignBoxedTypeCtors ctx
         , T.contextKindEnv      = contextKindEnv  ctx }
-        
+
 
 -- | Extend the kind environment of a context with a new binding.
 extendKindEnv  ::  Bind E.Name  -> Context -> Context

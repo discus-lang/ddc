@@ -78,15 +78,22 @@ convertM
 
 convertM pp runConfig defs kenv tenv mm
   = do  
+        -- Data Type definitions --------------------------
         -- All the data type definitions visible in the module.
         let defs'  = unionDataDefs defs
                    $ fromListDataDefs 
                    $ moduleDataDefsLocal mm ++ (map fst $ moduleImportDataDefs mm)
 
+        let nsForeignBoxedTypes
+                   = [n | (n, ImportSourceBoxed _) <- moduleImportTypes mm ]
+
         let tctx'  = T.Context
-                   { T.contextDefs      = defs'
+                   { T.contextDataDefs  = defs'
+                   , T.contextForeignBoxedTypeCtors     
+                        = Set.fromList nsForeignBoxedTypes
                    , T.contextKindEnv   = Env.empty }
 
+        -- Imports and Exports ----------------------------
         -- Convert signatures of imported functions.
         tsImports' <- mapM (convertImportM tctx') 
                    $ moduleImportValues mm
@@ -95,19 +102,19 @@ convertM pp runConfig defs kenv tenv mm
         tsExports' <- mapM (convertExportM tctx') 
                    $ moduleExportValues mm
 
+        -- Module body ------------------------------------
 
-        -- Convert the body of the module to Salt.
         let ntsImports  
                    = [BName n (typeOfImportSource src) 
-                        | (n, src) <- moduleImportValues mm]
+                     | (n, src) <- moduleImportValues mm]
 
         let tenv'  = Env.extends ntsImports tenv
         
-
         -- Starting context for the conversion.
         let ctx    = Context
                    { contextPlatform    = pp
                    , contextDataDefs    = defs'
+                   , contextForeignBoxedTypeCtors = Set.fromList $ nsForeignBoxedTypes
                    , contextSupers      = moduleTopBinds mm
                    , contextImports     = Set.fromList $ map fst $ moduleImportValues mm 
                    , contextKindEnv     = kenv
@@ -116,13 +123,14 @@ convertM pp runConfig defs kenv tenv mm
                    , contextConvertLets = convertLets 
                    , contextConvertAlt  = convertAlt }
 
-        -- Conver the body of the module itself.
+        -- Convert the body of the module itself.
         x1         <- convertExp ExpTop ctx 
                    $  moduleBody mm
 
-        -- Converting the body will also expand out code to construct,
-        -- the place-holder '()' inside the top-level lets.
-        -- We don't want that, so just replace that code with a fresh unit.
+        -- Running the Tetra -> Salt converted on the module body will also
+        -- expand out code to construct the place holder expression '()' 
+        -- that is the body of the top-level letrec. We don't want that,
+        -- so just replace it with a fresh unit.
         let a           = annotOfExp x1
         let (lts', _)   = splitXLets x1
         let x2          = xLets a lts' (xUnit a)
@@ -143,7 +151,7 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleImportDataDefs = []
 
                   -- Data constructors and pattern matches should have been
-                  -- flattenedinto primops, so we don't need the data type
+                  -- flattened into primops, so we don't need the data type
                   -- definitions.
                 , moduleDataDefsLocal  = []
 

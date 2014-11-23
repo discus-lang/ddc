@@ -299,7 +299,7 @@ data ImportSource n
         --   different language.
         --   Used when importing data types defined in Salt modules.
         | ImportSourceBoxed
-        { importSourceBoxed             :: Type n }
+        { importSourceBoxed             :: Kind n }
 
         -- | Something imported from a Disciple module that we compiled ourself.
         | ImportSourceModule
