@@ -48,7 +48,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Type.Transform.Instantiate
 import Data.Maybe
-import Debug.Trace
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Representation of the values of some type.
@@ -103,12 +103,23 @@ data Config a n
 -- Module -----------------------------------------------------------------------------------------
 -- TODO: throw real errors instead of just returning original, 
 --       want this when handling foreign functions anyway.
+-- TODO: only do boxing for foreign functions, not foreign values.
 boxingModule 
         :: (Show a, Show n, Pretty n, Ord n) 
         => Config a n -> Module a n -> Module a n
 
 boxingModule config mm
-  = mm  { moduleBody = boxingX config (moduleBody mm) }  
+ = let  
+        -- Convert types of foreign functions to use unboxed versions.
+        boxingImport imp
+         = case imp of
+                ImportSourceSea v t
+                  -> ImportSourceSea v $ boxingForeignSeaType config t
+                _ -> imp
+
+   in   mm { moduleBody         = boxingX config (moduleBody mm)
+           , moduleImportValues = [(n, boxingImport imp) 
+                                        | (n, imp) <- moduleImportValues mm ] }
 
 
 boxingX config xx
@@ -191,8 +202,7 @@ boxingPrimitive
         -> Exp a n
 
 boxingPrimitive config a xx xFn tPrim xsArgsAll
- = trace ("boxingPrimitive " ++ (renderIndent $ ppr xx))
- $ fromMaybe xx go
+ = fromMaybe xx go
  where
   go = do  
         -- Split off the type args.
@@ -247,8 +257,7 @@ boxingForeignSea
         -> Exp a n
 
 boxingForeignSea config a xx xFn tF xsArg
- = trace ("boxingForeignSea " ++ (renderIndent $ ppr xx))
- $ fromMaybe xx go
+ = fromMaybe xx go
  where go = do
         -- Split off the type args.
         let (_asArg, tsArgType) = unzip [(a', t) | XType a' t <- xsArg]
@@ -284,6 +293,36 @@ boxingForeignSea config a xx xFn tF xsArg
                   configConvertRepExp config RepValue a tResU xExpU
 
         return $ boxResult tResult xExpU
+
+
+-- | 
+boxingForeignSeaType
+        :: Config a n -> Type n -> Type n
+
+boxingForeignSeaType config tForeign
+ = let  
+        -- Split the type into quantifiers, parameter and result types.
+        (bsForall, tBody) 
+                 = fromMaybe ([], tForeign)
+                 $ takeTForalls tForeign
+
+        (tsParam, tResult) 
+                 = takeTFunArgResult tBody
+
+        -- If there is an unboxed representation of each parameter and result
+        -- type, then use that.
+        unboxType tThing
+                 = fromMaybe tThing
+                 $ configConvertRepType config RepUnboxed tThing
+
+        tsParamU    = map unboxType tsParam
+        tResultU    = unboxType tResult
+
+        -- Build the converted type back out of its parts.
+        Just tBodyU = tFunOfList (tsParamU ++ [tResultU])
+        tForeignU   = foldr TForall tBodyU (reverse bsForall)
+
+   in   tForeignU
 
 
 ---------------------------------------------------------------------------------------------------
