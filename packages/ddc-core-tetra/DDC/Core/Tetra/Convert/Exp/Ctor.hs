@@ -25,7 +25,7 @@ import qualified Data.Map                as Map
 -- | Convert a data constructor application to Salt.
 convertCtorApp
         :: Show a
-        => Context
+        => Context a
         -> AnTEC a  E.Name                -- ^ Annot from deconstructed app node.
         -> DaCon    E.Name                -- ^ Data constructor being applied.
         -> [Exp (AnTEC a E.Name) E.Name]  -- ^ Data constructor arguments.

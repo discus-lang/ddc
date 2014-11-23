@@ -20,7 +20,7 @@ import qualified DDC.Core.Salt.Name      as A
 convertPrimArith
         :: Show a 
         => ExpContext                   -- ^ The surrounding expression context.
-        -> Context                      -- ^ Types and values in the environment.
+        -> Context a                    -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
 
@@ -76,7 +76,7 @@ convertPrimArith _ectx ctx xx
 --   as the primops are specified polytypically.
 convertPrimArgX 
         :: Show a 
-        => Context
+        => Context a
         -> ExpContext                   -- ^ What context we're converting in.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a A.Name)

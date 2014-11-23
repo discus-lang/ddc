@@ -24,7 +24,7 @@ convertAlt
         -> Bound E.Name                 -- ^ Bound of scrutinee.
         -> Type  E.Name                 -- ^ Type  of scrutinee
         -> ExpContext                   -- ^ Context of enclosing case-expression.
-        -> Context
+        -> Context a
         -> Alt (AnTEC a E.Name) E.Name  -- ^ Alternative to convert.
         -> ConvertM a (Alt a A.Name)
 

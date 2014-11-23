@@ -119,6 +119,7 @@ convertM pp runConfig defs kenv tenv mm
                    , contextImports     = Set.fromList $ map fst $ moduleImportValues mm 
                    , contextKindEnv     = kenv
                    , contextTypeEnv     = tenv' 
+                   , contextSuperBinds  = Map.empty
                    , contextConvertExp  = convertExp 
                    , contextConvertLets = convertLets 
                    , contextConvertAlt  = convertAlt }

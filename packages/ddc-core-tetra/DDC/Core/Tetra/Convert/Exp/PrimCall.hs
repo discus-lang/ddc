@@ -2,25 +2,26 @@
 module DDC.Core.Tetra.Convert.Exp.PrimCall
         (convertPrimCall)
 where
+import DDC.Core.Tetra.Convert.Exp.Arg
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Compounds
-import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Core.Check                    (AnTEC(..))
+import qualified Data.Map                as Map
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A
 import Data.Maybe
-
+-- import Debug.Trace
 
 -- | Convert a Tetra function call primitive to Salt.
 convertPrimCall
         :: Show a 
         => ExpContext                   -- ^ The surrounding expression context.
-        -> Context                      -- ^ Types and values in the environment.
+        -> Context a                    -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
 
@@ -35,23 +36,36 @@ convertPrimCall _ectx ctx xx
         --  TODO: Check that we're only reifying functions that will have
         --        the standard calling convention.
         XApp (AnTEC _t _ _ a)  xa xb
-         | (xR, [XType _ _, XType _ _, xF])   <- takeXApps1 xa xb
-         , XVar _ (UPrim nR _tPrim)  <- xR
+         | (xR,   [XType _ _, XType _ _, xF])   <- takeXApps1 xa xb
+         , XVar _ (UPrim nR _tPrim)     <- xR
          , E.NameOpFun E.OpFunCReify    <- nR
 
-         , Just (aF, uF)   
-                <- case xF of
-                     XVar aF uF           -> Just (aF, uF)
-                     XApp{}
-                       | Just (XVar aF uF, xsArgs) <- takeXApps xF
-                       , all isXType xsArgs       -> Just (aF, uF)
-                     _ -> Nothing
+         , Just (aF, xF_super, arity, atsArg)
+            <- case xF of
+                XVar aF uF@(UName nF)
+                 -- This variable is a let-bound super name.
+                 -- See [Note: Binding top-level supers]
+                 |  Just (nSuper, atsArgs)  <- Map.lookup nF (contextSuperBinds ctx) 
+                 -> let Just arity      = superDataArity ctx (UName nSuper)
+                        xF'             = XVar aF (UName nSuper)
+                    in  Just (aF, xF', arity, atsArgs)
+
+                 -- A real super name.
+                 | otherwise
+                 -> let Just arity      = superDataArity ctx uF
+                    in  Just (aF, xF, arity, [])
+
+                _ -> Nothing
 
          -> Just $ do
-                xF'     <- downArgX (XVar aF uF)
-                tF'     <- convertSuperT (typeContext ctx) (annotType aF)
-                let Just arity = superDataArity ctx uF
+                xF_super' <- downArgX xF_super
+                mxsArgs'  <- mapM (convertOrDiscardSuperArgX xx ctx) 
+                          $  [XType aArg tArg | (aArg, tArg) <- atsArg]
 
+                let xsArgs' = catMaybes mxsArgs'
+                let xF'     = xApps a xF_super' xsArgs'
+
+                tF'     <- convertSuperT (typeContext ctx) (annotType aF)
                 return  $ A.xAllocThunk a A.rTop 
                                 (xConvert a A.tAddr tF' xF')
                                 (A.xNat a $ fromIntegral arity)
