@@ -158,7 +158,8 @@ boxingX config xx
          | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
          , Just tLit1    <- configValueTypeOfLitName config (daConName p)
          , Just RepValue <- configRepOfType config tLit1
-         -> boxingCase config a tLit1 xScrut alts
+         -> let alts'    = map (boxingAlt config) alts
+            in  boxingCase config a tLit1 xScrut alts'
 
         -- Boilerplate.
         XVar{}          -> xx

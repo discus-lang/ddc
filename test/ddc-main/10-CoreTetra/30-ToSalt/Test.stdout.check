@@ -173,7 +173,7 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Partial application of primitive operators is not supported.
   
-    with: add# [Nat#] x0
+    with: add# [Nat#] 5#
 
 
 -- Error: partial application if user defined data constructors is not supported.
@@ -189,7 +189,7 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Partial application of primitive operators is not supported.
   
-    with: add# [Nat#] x0
+    with: add# [Nat#] 5#
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to
