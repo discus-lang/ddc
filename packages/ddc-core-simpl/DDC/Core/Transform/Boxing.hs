@@ -321,7 +321,7 @@ boxingForeignSeaType config tForeign
 
         -- Build the converted type back out of its parts.
         Just tBodyU = tFunOfList (tsParamU ++ [tResultU])
-        tForeignU   = foldr TForall tBodyU (reverse bsForall)
+        tForeignU   = foldr TForall tBodyU bsForall
 
    in   tForeignU
 
