@@ -72,6 +72,9 @@ data TyConTetra
 
         -- | @C#@.      Reified function closures.
         | TyConTetraC
+
+        -- | @U#@.      Explicitly unboxed values.
+        | TyConTetraU
         deriving (Eq, Ord, Show)
 
 

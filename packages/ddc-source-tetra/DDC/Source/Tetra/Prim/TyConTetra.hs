@@ -23,6 +23,7 @@ instance Pretty TyConTetra where
         TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
+        TyConTetraU             -> text "U#"
 
 
 
@@ -40,6 +41,7 @@ readTyConTetra str
                 "Ref#"          -> Just TyConTetraRef
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
+                "U#"            -> Just TyConTetraU
                 _               -> Nothing
 
 
@@ -51,6 +53,7 @@ kindTyConTetra tc
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
         TyConTetraF       -> kData `kFun` kData
         TyConTetraC       -> kData `kFun` kData
+        TyConTetraU       -> kData `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------

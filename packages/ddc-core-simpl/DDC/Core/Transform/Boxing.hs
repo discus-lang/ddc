@@ -42,13 +42,13 @@ module DDC.Core.Transform.Boxing
         , Config        (..)
         , boxingModule)
 where
-import DDC.Core.Transform.TransformDownX
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Pretty
 import DDC.Type.Transform.Instantiate
 import Data.Maybe
-
+import Debug.Trace
 
 ---------------------------------------------------------------------------------------------------
 -- | Representation of the values of some type.
@@ -101,129 +101,168 @@ data Config a n
 
 
 -- Module -----------------------------------------------------------------------------------------
-boxingModule :: Ord n => Config a n -> Module a n -> Module a n
+boxingModule 
+        :: (Show a, Show n, Pretty n, Ord n) 
+        => Config a n -> Module a n -> Module a n
+
 boxingModule config mm
-  = mm  { moduleBody = transformDownX' (boxingX config) (moduleBody mm) }  
+  = mm  { moduleBody = boxingX config (moduleBody mm) }  
+
 
 boxingX config xx
- = let down = boxingX config
-   in case xx of
-
-        -- When applying a primop that works on unboxed values, 
-        -- unbox its arguments and then rebox the result.
-        XApp a _ _
-         -- Split the application of a primop into its name and arguments.
-         -- The arguments here include type arguments as well.
-         | Just (xFn, tPrim, xsArgsAll) <- splitUnboxedOpApp config xx
-
-         -- Split off the type args.
-         , (asArgs, tsArgs) <- unzip [(a', t) | XType a' t <- xsArgsAll]
-         , xsArgs           <- drop (length tsArgs) xsArgsAll
-
-         -- Get the original types of the args and return value.
-         , Just tPrimInst   <- instantiateTs tPrim tsArgs
-         , (tsArgsInst, _tResultInst)   <- takeTFunArgResult tPrimInst
-
-         -- Get the unboxed version of the args and return value
-         , Just tsArgsU     <- sequence 
-                            $  map (configConvertRepType config RepUnboxed) tsArgs
-         , Just tPrimInstU  <- instantiateTs tPrim tsArgsU
-         , (_tsArgsInstU, tResultInstU) <- takeTFunArgResult tPrimInstU
-
-         -- We must end up with a type of each argument.
-         -- If not then the primop is partially applied or something else is wrong.
-         -- The Tetra to Salt conversion will give a proper error message
-         -- if the primop is indeed partially applied.
-         , length xsArgs == length tsArgsInst
-
-         -- We got a type for each argument, so the primop is fully applied
-         -- and we can do the boxing/unboxing transform.
-         -> let xsArgs'  = [ (let Just t = configConvertRepExp config RepUnboxed
-                                                       a tArgInst (down xArg) 
-                              in t)
-                           | xArg      <- xsArgs
-                           | tArgInst  <- tsArgsInst ]
-
-                xtsArgsU = [ XType a' t | t <- tsArgsU | a' <- asArgs ]
-                xResultU = xApps a xFn (xtsArgsU ++ xsArgs')
-                xResultV = fromMaybe xx
-                                 (configConvertRepExp config RepValue a tResultInstU xResultU)
-            in  xResultV
-
-
-        -- For case expressions that match against literals, like
-        --
-        --   case e1 of 
-        --   { 5# -> e2; _ -> e3 }
-        --
-        -- Unbox the scrutinee and convert the alternatives to match against
-        -- unboxed literals.
-        -- 
-        --   case convert# [Nat] [Nat#] e1 of
-        --   { 5## -> e2; _ -> e3 }
-        --
-        XCase a xScrut alts
-         | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
-         , Just tLit1    <- configValueTypeOfLitName config (daConName p)
-         , Just RepValue <- configRepOfType config tLit1
-
-         , Just alts_unboxed
-            <- sequence 
-            $  map (\alt -> case alt of
-                             AAlt (PData (DaConPrim n tLit) []) x
-                              | Just RepValue <- configRepOfType config tLit
-                              , Just nU       <- configUnboxLitName config n
-                              , Just tLitU    <- configConvertRepType config RepUnboxed tLit
-                              -> Just (AAlt (PData (DaConPrim nU tLitU) []) x)
-
-                             AAlt PDefault _
-                              -> Just alt
-
-                             _ -> Nothing)
-            $ alts
-
-         , Just xScrut' <- configConvertRepExp config RepUnboxed a tLit1 xScrut
-         , alts_default <- ensureDefault alts_unboxed
-         -> XCase a xScrut' $ alts_default
-
+ = case xx of
 
         -- Convert literals to their unboxed form, followed by a boxing conversion.
         XCon a (DaConPrim n tLit)
-         | Just RepValue <- configRepOfType config tLit
-         , Just tLitU    <- configConvertRepType config RepUnboxed tLit
-         , Just nU       <- configUnboxLitName   config n
-         , Just xLit     <- configConvertRepExp  config RepValue a tLitU 
-                         $  XCon a (DaConPrim nU tLitU)
-         -> xLit
+         | Just RepValue        <- configRepOfType config tLit
+         -> let Just tLitU      = configConvertRepType config RepUnboxed tLit
+                Just nU         = configUnboxLitName   config n
 
-        _ -> xx
+                Just xLit       = configConvertRepExp  config RepValue a tLitU 
+                                $ XCon a (DaConPrim nU tLitU)
+           in   xLit
 
+        -- Use unboxed versions of primops by unboxing their arguments then 
+        -- reboxing their results.
+        XApp a _ _
+         |  Just (n, xsArgsAll)  <- takeXPrimApps xx
+         ,  configNameIsUnboxedOp config n
+         -> let Just tPrim      = configValueTypeOfPrimOpName config n
+                Just (xFn, _)   = takeXApps     xx
+                xsArgsAll'      = map (boxingX config) xsArgsAll
+            in  boxingPrimitive config a xx xFn tPrim xsArgsAll'
 
--- | If this is an application of some primitive operator or foreign function that 
---   works on unboxed values then split it into the function and arguments.
---
---   The arguments returned include type arguments as well.
-splitUnboxedOpApp
-        :: Config a n
-        -> Exp a n 
-        -> Maybe (Exp a n, Type n, [Exp a n])
-
-splitUnboxedOpApp config xx
- = case xx of
-        XApp{}
-         | Just (n, xsArgsAll)  <- takeXPrimApps xx
-         , Just (xFn, _)        <- takeXApps     xx
-         , configNameIsUnboxedOp config n
-         , Just tPrim           <- configValueTypeOfPrimOpName config n
-         -> Just (xFn, tPrim, xsArgsAll)
-
-        XApp{}
+        -- Foreign calls
+{-        XApp{}
          | Just (xFn@(XVar _ (UName n)), xsArgsAll)
                                 <- takeXApps xx
          , Just tForeign        <- configValueTypeOfForeignName config n
          -> Just (xFn, tForeign, xsArgsAll)
+-}
 
-        _ -> Nothing
+        XCase a xScrut alts
+         | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
+         , Just tLit1    <- configValueTypeOfLitName config (daConName p)
+         , Just RepValue <- configRepOfType config tLit1
+         -> boxingCase config a tLit1 xScrut alts
+
+        -- Boilerplate.
+        XVar{}          -> xx
+        XCon{}          -> xx
+        XLAM a b x      -> XLAM a b (boxingX   config x)
+        XLam a b x      -> XLam a b (boxingX   config x)
+        XApp a x1 x2    -> XApp a   (boxingX   config x1)  (boxingX config x2)
+        XLet a lts x    -> XLet a   (boxingLts config lts) (boxingX config x)
+        XCase a x alts  -> XCase a  (boxingX   config x)   (map (boxingAlt config) alts)
+        XCast a c x     -> XCast a  c (boxingX config x)
+        XType{}         -> xx
+        XWitness{}      -> xx
+
+boxingLts config lts
+ = case lts of
+        LLet b x        -> LLet b (boxingX config x)
+        LRec bxs        -> LRec [(b, boxingX config x) | (b, x) <- bxs]
+        LPrivate{}      -> lts
+        LWithRegion{}   -> lts
+
+boxingAlt config alt
+ = case alt of
+        AAlt p x        -> AAlt p (boxingX config x)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Marshall arguments and return values of primitive operations.
+--   If something goes wrong then just return the original expression and leave it to
+--   follow on transforms to report the error. The code generator won't be able to
+--   convert the original expression.
+boxingPrimitive
+        :: (Ord n, Pretty n)
+        => Config a n 
+        -> a -> Exp a n
+        -> Exp a n 
+        -> Type n
+        -> [Exp a n]
+        -> Exp a n
+
+boxingPrimitive config a xx xFn tPrim xsArgsAll
+ = trace ("boxingPrimitive " ++ (renderIndent $ ppr xx))
+ $ fromMaybe xx go
+ where
+  go = do  
+        -- Split off the type args.
+        let (asArgs, tsArgs) = unzip [(a', t) | XType a' t <- xsArgsAll]
+        let xsArgs      = drop (length tsArgs) xsArgsAll
+
+        -- Get the original types of the args and return value.
+        tPrimInst       <- instantiateTs tPrim tsArgs
+        let (tsArgsInst, _tResultInst) = takeTFunArgResult tPrimInst
+
+        -- Get the unboxed version of the args and return value
+        tsArgsU         <- sequence 
+                        $  map (configConvertRepType config RepUnboxed) tsArgs
+
+        tPrimInstU      <- instantiateTs tPrim tsArgsU
+        let (_tsArgsInstU, tResultInstU) = takeTFunArgResult tPrimInstU
+
+        -- We must end up with a type of each argument.
+        -- If not then the primop is partially applied or something else is wrong.
+        -- The Tetra to Salt conversion will give a proper error message
+        -- if the primop is indeed partially applied.
+        (if not (length xsArgs == length tsArgsInst)
+           then Nothing
+           else Just ())
+
+        -- We got a type for each argument, so the primop is fully applied
+        -- and we can do the boxing/unboxing transform.
+        let xsArgs' = [ (let Just t = configConvertRepExp config RepUnboxed
+                                                 a tArgInst xArg 
+                                 in t)
+                      | xArg      <- xsArgs
+                      | tArgInst  <- tsArgsInst ]
+
+        let xtsArgsU = [ XType a' t | t <- tsArgsU | a' <- asArgs ]
+        let xResultU = xApps a xFn (xtsArgsU ++ xsArgs')
+        xResultV     <- configConvertRepExp config RepValue a tResultInstU xResultU
+        return xResultV
+
+
+---------------------------------------------------------------------------------------------------
+-- For case expressions that match against literals, like
+--
+--   case e1 of 
+--   { 5# -> e2; _ -> e3 }
+--
+-- Unbox the scrutinee and convert the alternatives to match against
+-- unboxed literals.
+-- 
+--   case convert# [Nat] [Nat#] e1 of
+--   { 5## -> e2; _ -> e3 }
+--
+boxingCase 
+        :: Config a n
+        -> a -> Type n
+        -> Exp a n
+        -> [Alt a n]
+        -> Exp a n
+
+boxingCase config a tLit1 xScrut alts
+ = let
+        unboxAlt (AAlt (PData (DaConPrim n tLit) []) x)
+         | Just RepValue <- configRepOfType config tLit
+         , Just nU       <- configUnboxLitName config n
+         , Just tLitU    <- configConvertRepType config RepUnboxed tLit
+         = Just (AAlt (PData (DaConPrim nU tLitU) []) x)
+
+        unboxAlt alt@(AAlt PDefault _) = Just alt
+        unboxAlt _                     = Nothing
+
+        Just alts_unboxed
+         = sequence $ map unboxAlt alts
+
+        Just xScrut'    = configConvertRepExp config RepUnboxed a tLit1 xScrut
+        alts_default    = ensureDefault alts_unboxed
+
+  in    XCase a xScrut' $ alts_default
 
 
 -- | Ensure that there is a default alternative in this list, 

@@ -13,19 +13,25 @@ import qualified DDC.Core.Transform.Boxing as Boxing
 -- | Manage boxing of numeric values in a module.
 boxingModule :: Show a => Module a Name -> Module a Name
 boxingModule mm 
- = Boxing.boxingModule config mm
+ = let
+        tsForeignSea    
+         = [ (n, t)      
+           | (n, ImportSourceSea _ t) <- moduleImportValues mm]
+
+   in   Boxing.boxingModule (config tsForeignSea) mm
 
 
 -- | Tetra-specific configuration for boxing transform.
-config :: Config a Name
-config  = Config
+config :: [(Name, Type Name)] -> Config a Name
+config ntsForeignSea  
+        = Config
         { configRepOfType               = repOfType
         , configConvertRepType          = convertRepType
         , configConvertRepExp           = convertRepExp
         , configNameIsUnboxedOp         = isNameOfUnboxedOp 
         , configValueTypeOfLitName      = takeTypeOfLitName
         , configValueTypeOfPrimOpName   = takeTypeOfPrimOpName
-        , configValueTypeOfForeignName  = const Nothing 
+        , configValueTypeOfForeignName  = \n -> lookup n ntsForeignSea
         , configUnboxLitName            = unboxLitName }
 
 

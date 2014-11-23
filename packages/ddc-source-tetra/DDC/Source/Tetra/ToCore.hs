@@ -315,4 +315,5 @@ toCoreTyConTetra tc
         S.TyConTetraTuple n  -> C.TyConTetraTuple n
         S.TyConTetraF        -> C.TyConTetraF
         S.TyConTetraC        -> C.TyConTetraC
+        S.TyConTetraU        -> C.TyConTetraU
         
