@@ -96,6 +96,19 @@ funMapAddLocalSuper funs (b, x)
 -- | Add the type of a foreign import to the function map.
 funMapAddForeign :: FunMap -> (Name, ImportSource Name) -> FunMap
 funMapAddForeign funs (n, is)
+
+        -- Import from a different DDC compiled module.
+        | ImportSourceModule _m _n t <- is
+        = let   (tsArgs, _tResult)                      -- TODO: get real arity of function.
+                        = takeTFunArgResult
+                        $ eraseTForalls t
+
+                arity   = length tsArgs
+
+          in    Map.insert n (FunExternSuper n t arity) funs
+
+
+        -- Import from a Sea land.
         | ImportSourceSea _ t  <- is
         = let   (tsArgs, _tResult)
                         = takeTFunArgResult
@@ -104,6 +117,7 @@ funMapAddForeign funs (n, is)
                 arity   = length tsArgs
 
           in    Map.insert n (FunForeignSea n t arity) funs
+
 
         | otherwise
         = funs
@@ -229,8 +243,9 @@ makeCall xx aF funMap nF xsArgs
         -- Call a top-level super in the local module.
         | Just (tF, iArity) 
             <- case Map.lookup nF funMap of
-                Just (FunLocalSuper _ tF iArity)        -> Just (tF, iArity)
-                Just (FunForeignSea _ tF iArity)        -> Just (tF, iArity)
+                Just (FunLocalSuper  _ tF iArity)       -> Just (tF, iArity)
+                Just (FunExternSuper _ tF iArity)       -> Just (tF, iArity)
+                Just (FunForeignSea  _ tF iArity)       -> Just (tF, iArity)
                 _                                       -> Nothing
         
         -- split the quantifiers from the type of the super.
@@ -243,7 +258,7 @@ makeCall xx aF funMap nF xsArgs
         -- are accepted by the returned closure.
         , (tsParamLam, tsParamClo)           <- splitAt iArity tsParam
         
-        -- build the type of the returned closure.
+        -- build the type of the returned value.
         , Just tResult'                      <- tFunOfList (tsParamClo ++ [tResult])
         
         -- split the arguments into the type arguments that satisfy the quantifiers,  
