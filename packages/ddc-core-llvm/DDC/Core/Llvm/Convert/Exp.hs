@@ -3,7 +3,9 @@ module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
         , convBodyM)
 where
-import DDC.Core.Llvm.Convert.Exp.Prim
+import DDC.Core.Llvm.Convert.Exp.PrimArith
+import DDC.Core.Llvm.Convert.Exp.PrimCast
+import DDC.Core.Llvm.Convert.Exp.PrimCall
 import DDC.Core.Llvm.Convert.Exp.Atom
 import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Type
@@ -295,11 +297,20 @@ convExpM ctx ectx xx
                         , ICall mv  CallTypeStd Nothing
                                     (tAddr pp) nFun xsArgs' []]
 
-          -- Call to other primop.
-          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args)
-                        <- takeXApps xx
-          -> convPrimCallM ctx (takeNonVoidVarOfContext ectx)
-                         p tPrim args
+          -- Call to primop.
+          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
+          , Just go     <- convPrimArith ctx (takeNonVoidVarOfContext ectx) p tPrim args
+          -> go
+
+          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
+          , Just go     <- convPrimCast ctx  (takeNonVoidVarOfContext ectx) p tPrim args
+          -> go
+
+          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
+          , Just go     <- convPrimCall  ctx (takeNonVoidVarOfContext ectx) p tPrim args
+          -> go
+
+
 
           -- Call to top-level super.
           | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
@@ -338,12 +349,12 @@ tFunction tsArgs tResult
 
 -- Case -------------------------------------------------------------------------------------------
 convCaseM 
-        :: Context
-        -> ExpContext
-        -> Label                -- label of current block
-        -> Seq AnnotInstr       -- intrs to prepend to initial block.
-        -> C.Exp () A.Name
-        -> [C.Alt () A.Name]
+        :: Context              -- ^ Context of the conversion.
+        -> ExpContext           -- ^ Expression context.
+        -> Label                -- ^ Label of current block
+        -> Seq AnnotInstr       -- ^ Instructions to prepend to initial block.
+        -> C.Exp () A.Name      -- ^ Scrutinee of case expression.
+        -> [C.Alt () A.Name]    -- ^ Alternatives of case expression.
         -> LlvmM (Seq Block)
 
 convCaseM ctx ectx label instrs xScrut alts 
