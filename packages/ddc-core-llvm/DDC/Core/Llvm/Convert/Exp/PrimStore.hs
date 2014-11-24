@@ -1,6 +1,6 @@
 
-module DDC.Core.Llvm.Convert.Exp.PrimCall
-        (convPrimCall)
+module DDC.Core.Llvm.Convert.Exp.PrimStore
+        (convPrimStore)
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Exp.Atom
@@ -16,8 +16,8 @@ import qualified DDC.Core.Salt  as A
 import qualified Data.Sequence  as Seq
 
 
--- | Convert a primitive call to LLVM.
-convPrimCall
+-- | Convert a primitive store operation to LLVM.
+convPrimStore
         :: Show a
         => Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
@@ -26,7 +26,7 @@ convPrimCall
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> Maybe (LlvmM (Seq AnnotInstr))
 
-convPrimCall ctx mdst p _tPrim xs
+convPrimStore ctx mdst p _tPrim xs
  = let  pp      = contextPlatform ctx
         mdsup   = contextMDSuper  ctx
         kenv    = contextKindEnv  ctx

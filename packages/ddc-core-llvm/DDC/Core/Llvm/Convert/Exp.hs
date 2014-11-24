@@ -6,7 +6,7 @@ module DDC.Core.Llvm.Convert.Exp
 where
 import DDC.Core.Llvm.Convert.Exp.PrimArith
 import DDC.Core.Llvm.Convert.Exp.PrimCast
-import DDC.Core.Llvm.Convert.Exp.PrimCall
+import DDC.Core.Llvm.Convert.Exp.PrimStore
 import DDC.Core.Llvm.Convert.Exp.Atom
 import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Type
@@ -273,7 +273,7 @@ convertExp ctx ectx xx
           -> go
 
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
-          , Just go     <- convPrimCall  ctx (takeNonVoidVarOfContext ectx) p tPrim args
+          , Just go     <- convPrimStore ctx (takeNonVoidVarOfContext ectx) p tPrim args
           -> go
 
 
