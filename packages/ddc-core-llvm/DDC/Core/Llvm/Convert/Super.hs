@@ -36,8 +36,8 @@ convSuperM ctx (C.BName nSuper tSuper) x
         let pp          = contextPlatform ctx
         let mm          = contextModule   ctx
         let kenv        = contextKindEnv  ctx
-        let tenv        = contextTypeEnv  ctx
 
+        -- Names of exported values.
         let nsExports   = Set.fromList $ map fst $ C.moduleExportValues mm
 
         -- Sanitise the super name so we can use it as a symbol
@@ -53,14 +53,9 @@ convSuperM ctx (C.BName nSuper tSuper) x
         let bsParamValue = [b | (False, b) <- bfsParam']
 
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
-        let ctx'  = Context
-                  { contextPlatform     = pp
-                  , contextModule       = mm
-                  , contextKindEnvTop   = kenv
-                  , contextTypeEnvTop   = tenv
-                  , contextKindEnv      = Env.extends bsParamType  $ contextKindEnv ctx
-                  , contextTypeEnv      = Env.extends bsParamValue $ contextTypeEnv ctx
-                  , contextMDSuper      = mdsup }
+        let ctx'  = ctx
+                  { contextKindEnv      = Env.extends bsParamType  $ contextKindEnv ctx
+                  , contextTypeEnv      = Env.extends bsParamValue $ contextTypeEnv ctx }
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"
@@ -68,10 +63,10 @@ convSuperM ctx (C.BName nSuper tSuper) x
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
-                        = convertSuperType pp kenv tSuper
+                  = convertSuperType pp kenv tSuper
   
         -- Make parameter binders.
-        let align       = AlignBytes (platformAlignBytes pp)
+        let align = AlignBytes (platformAlignBytes pp)
 
         -- Declaration of the super.
         let decl 
@@ -103,16 +98,15 @@ convSuperM ctx (C.BName nSuper tSuper) x
 
 
         -- Build the function.
-        return  $ ( Function
-                    { funDecl     = decl
-                    , funParams   = [nameOfParam i b 
-                                        | i <- [0..]
-                                        | b <- bsParamValue]
-                    , funAttrs    = [] 
-                    , funSection  = SectionAuto
-                    , funBlocks   = Seq.toList blocks }
-                  , Tbaa.decls mdsup )
-                  
+        return  ( Function
+                  { funDecl     = decl
+                  , funParams   = [nameOfParam i b 
+                                      | i <- [0..]
+                                      | b <- bsParamValue]
+                  , funAttrs    = [] 
+                  , funSection  = SectionAuto
+                  , funBlocks   = Seq.toList blocks }
+                , Tbaa.decls mdsup ) 
 
 convSuperM _ _ _
         = die "Invalid super"
