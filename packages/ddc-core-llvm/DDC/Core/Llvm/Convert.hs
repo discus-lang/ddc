@@ -7,7 +7,8 @@ where
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.Convert.Super
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Exp.Base
+import DDC.Core.Llvm.Convert.Exp.Case
+import DDC.Core.Llvm.Convert.Exp
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
@@ -24,6 +25,7 @@ import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Simplifier            as Simp
 import qualified Data.Map                       as Map
 import qualified Data.List                      as List
+
 
 -- | Convert a Salt module to LLVM.
 -- 
@@ -48,7 +50,7 @@ convertModule platform mm@(C.ModuleCore{})
         -- Convert to LLVM.
         --  The result contains ISet and INop meta instructions that need to be 
         --  cleaned out. We also need to fixup the labels in IPhi instructions.
-        mmRaw    = evalState (convModuleM platform mmElab) state
+        mmRaw    = evalState (convertModuleM platform mmElab) state
 
         -- Inline the ISet meta instructions and drop INops.
         --  This gives us code that the LLVM compiler will accept directly.
@@ -62,12 +64,12 @@ convertModule platform mm@(C.ModuleCore{})
    in   mmPhi
 
 
-convModuleM 
+convertModuleM 
         :: Platform
         -> C.Module () A.Name 
         -> LlvmM Module
 
-convModuleM pp mm@(C.ModuleCore{})
+convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   
         -- Globals for the runtime --------------
@@ -114,12 +116,15 @@ convModuleM pp mm@(C.ModuleCore{})
                 , contextTypeEnvTop     = tenv
                 , contextKindEnv        = kenv
                 , contextTypeEnv        = tenv
-                , contextMDSuper        = MDSuper Map.empty [] }
+                , contextMDSuper        = MDSuper Map.empty [] 
+                , contextConvertBody    = convertBody
+                , contextConvertExp     = convertExp
+                , contextConvertCase    = convertCase }
 
 
         (functions, mdecls)
                 <- liftM unzip 
-                $ mapM (uncurry (convSuperM ctx)) bxs
+                $ mapM (uncurry (convertSuper ctx)) bxs
         
 
         -- Paste everything together ------------

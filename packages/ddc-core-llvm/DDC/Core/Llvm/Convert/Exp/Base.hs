@@ -5,16 +5,20 @@ module DDC.Core.Llvm.Convert.Exp.Base
         , extendTypeEnv, extendsTypeEnv
 
         , ExpContext    (..)
+        , AltResult     (..)
         , takeVarOfContext
         , takeNonVoidVarOfContext)
 where
 import DDC.Core.Salt.Platform
 import DDC.Core.Llvm.Metadata.Tbaa
+import DDC.Core.Llvm.LlvmM
 import DDC.Type.Exp
 import DDC.Llvm.Syntax
 import DDC.Type.Env                     (KindEnv, TypeEnv)
+import Data.Sequence                    (Seq)
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Module        as C
+import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
 
 
@@ -42,7 +46,38 @@ data Context
         , contextTypeEnv        :: TypeEnv  A.Name 
 
           -- | Super meta data
-        , contextMDSuper        :: MDSuper }
+        , contextMDSuper        :: MDSuper 
+
+
+          -- Functions to convert the various parts of the AST.
+          -- We tie the recursive knot though this Context type so that
+          -- we can split the implementation into separate non-recursive modules.
+        , contextConvertBody 
+                :: Context   -> ExpContext
+                -> Seq Block -> Label
+                -> Seq AnnotInstr
+                -> C.Exp () A.Name
+                -> LlvmM (Seq Block)
+
+        , contextConvertExp      
+                :: Context  -> ExpContext
+                -> C.Exp () A.Name
+                -> LlvmM (Seq AnnotInstr)
+
+        , contextConvertCase
+                :: Context  -> ExpContext
+                -> Label
+                -> Seq AnnotInstr
+                -> C.Exp () A.Name
+                -> [C.Alt () A.Name]
+                -> LlvmM (Seq Block)
+        }
+
+
+-- | Holds the result of converting an alternative.
+data AltResult
+        = AltDefault  Label (Seq Block)
+        | AltCase Lit Label (Seq Block)
 
 
 -- | Extend the kind environment of a context with a new binding.

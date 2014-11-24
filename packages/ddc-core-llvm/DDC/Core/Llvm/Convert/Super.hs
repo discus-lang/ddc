@@ -1,6 +1,6 @@
 
 module DDC.Core.Llvm.Convert.Super
-        (convSuperM)
+        (convertSuper)
 where
 import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.Convert.Type
@@ -24,13 +24,13 @@ import qualified Data.Foldable                  as Seq
 
 -- | Convert a top-level supercombinator to a LLVM function.
 --   Region variables are completely stripped out.
-convSuperM 
+convertSuper
         :: Context
         -> C.Bind   A.Name      -- ^ Bind of the top-level super.
         -> C.Exp () A.Name      -- ^ Super body.
         -> LlvmM (Function, [MDecl])
 
-convSuperM ctx (C.BName nSuper tSuper) x
+convertSuper ctx (C.BName nSuper tSuper) x
  | Just (bfsParam, xBody)  <- takeXLamFlags x
  = do   
         let pp          = contextPlatform ctx
@@ -60,7 +60,7 @@ convSuperM ctx (C.BName nSuper tSuper) x
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"
-        blocks    <- convBodyM ctx' ExpTop Seq.empty label Seq.empty xBody
+        blocks    <- convertBody ctx' ExpTop Seq.empty label Seq.empty xBody
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
@@ -109,7 +109,7 @@ convSuperM ctx (C.BName nSuper tSuper) x
                   , funBlocks   = Seq.toList blocks }
                 , Tbaa.decls mdsup ) 
 
-convSuperM _ _ _
+convertSuper _ _ _
         = die "Invalid super"
 
 
