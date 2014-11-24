@@ -1,13 +1,13 @@
 
-module DDC.Core.Llvm.Convert.Atom
+module DDC.Core.Llvm.Convert.Exp.Atom
         ( mconvAtom
         , mconvAtoms
         , takeLocalV
         , takeGlobalV)
 where
 import DDC.Llvm.Syntax
+import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Base.Pretty
 import Control.Monad

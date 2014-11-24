@@ -3,11 +3,11 @@ module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
         , convBodyM)
 where
-import DDC.Core.Llvm.Convert.Prim
+import DDC.Core.Llvm.Convert.Exp.Prim
+import DDC.Core.Llvm.Convert.Exp.Atom
+import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
-import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform

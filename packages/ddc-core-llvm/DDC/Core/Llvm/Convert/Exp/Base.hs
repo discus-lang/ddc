@@ -1,5 +1,5 @@
 
-module DDC.Core.Llvm.Convert.Base
+module DDC.Core.Llvm.Convert.Exp.Base
         ( Context       (..)
         , extendKindEnv, extendsKindEnv
         , extendTypeEnv, extendsTypeEnv
