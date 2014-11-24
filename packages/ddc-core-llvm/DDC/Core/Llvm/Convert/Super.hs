@@ -2,9 +2,10 @@
 module DDC.Core.Llvm.Convert.Super
         (convSuperM)
 where
-import DDC.Core.Llvm.Convert.Exp
-import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Erase
+import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Exp
+import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
@@ -52,9 +53,23 @@ convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
         let bsParamType  = [b | (True,  b) <- bfsParam']
         let bsParamValue = [b | (False, b) <- bfsParam']
 
-        let kenv'       =  Env.extends bsParamType  kenv
-        let tenv'       =  Env.extends (bSuper : bsParamValue) tenv
-        mdsup           <- Tbaa.deriveMD (renderPlain nSuper') x
+        let kenv' = Env.extends bsParamType  kenv
+        let tenv' = Env.extends (bSuper : bsParamValue) tenv
+        mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
+
+        let ctx   = Context
+                  { contextPlatform     = platform
+                  , contextModule       = mm
+                  , contextKindEnvTop   = kenv
+                  , contextTypeEnvTop   = tenv
+                  , contextKindEnv      = kenv'
+                  , contextTypeEnv      = tenv' 
+                  , contextMDSuper      = mdsup }
+
+        -- Convert function body to basic blocks.
+        label     <- newUniqueLabel "entry"
+        blocks    <- convBodyM ctx ExpTop
+                        Seq.empty label Seq.empty xBody
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
@@ -91,10 +106,6 @@ convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
                 , declParams             = [Param t [] | t <- tsParam]
                 , declAlign              = align }
 
-        -- Convert function body to basic blocks.
-        label   <- newUniqueLabel "entry"
-        blocks  <- convBodyM (ContextTop mm kenv tenv) kenv' tenv' mdsup 
-                        Seq.empty label Seq.empty xBody
 
         -- Build the function.
         return  $ ( Function

@@ -7,7 +7,7 @@ module DDC.Core.Llvm.Convert.Atom
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Context
+import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Base.Pretty
 import Control.Monad
@@ -20,68 +20,59 @@ import qualified DDC.Core.Exp                   as C
 
 
 -- Atoms ----------------------------------------------------------------------
--- | Take a variable or literal from an expression.
---   These can be used directly in instructions.
+-- | Convert a variable or literal value to LLVM. 
+--   These values can be used directly as arguments to LLVM instructions.
 mconvAtom 
-        :: Platform
-        -> Context
-        -> KindEnv A.Name
-        -> TypeEnv A.Name
+        :: Context
         -> C.Exp a A.Name
         -> Maybe Exp
 
-mconvAtom pp context kenv tenv xx
- = case xx of
+mconvAtom ctx xx
+ = let  pp      = contextPlatform ctx
+        kenv    = contextKindEnv  ctx
+        tenv    = contextTypeEnv  ctx
+   in case xx of
 
-        -- Variables. Their names need to be sanitized before we write
-        -- them to LLVM, as LLVM doesn't handle all the symbolic names
-        -- that Disciple Core accepts.
+        -- Variable names must be sanitized before we write them to LLVM,
+        -- as LLVM doesn't handle all the symbolic names that Disciple Core
+        -- accepts.
         C.XVar _ u@(C.UName nm)
          |  Just t     <- Env.lookup u tenv
          ,  Just n     <- A.takeNameVar nm
          -> let n'      = A.sanitizeName n
                 t'      = convertType pp kenv t
 
-                mm      = coreModuleOfContext context
-                (kenvTop, tenvTop) = topEnvOfContext context
-
-            in  case takeGlobalV pp mm kenvTop tenvTop xx of
+            in  case takeGlobalV ctx xx of
                  Just var       -> Just $ XVar var
                  _              -> Just $ XVar (Var (NameLocal n') t')
 
-
-        -- Literals. 
+        -- Literal unit values are represented as a null pointer.
         C.XCon _ C.DaConUnit
          -> Just $ XLit (LitNull (TPointer (tObj pp)))
 
+        -- Primitive unboxed literals.
         C.XCon _ dc
          | C.DaConPrim n t <- dc
-         -> case n of
-                A.NameLitBool b
-                 -> let i | b           = 1
-                          | otherwise   = 0
-                    in Just $ XLit (LitInt (convertType pp kenv t) i)
+         -> let t'      = convertType pp kenv t
+            in  case n of
+                 A.NameLitBool b
+                  -> let i | b           = 1
+                           | otherwise   = 0
+                    in Just $ XLit (LitInt t' i)
 
-                A.NameLitNat  nat   -> Just $ XLit (LitInt (convertType pp kenv t) nat)
-                A.NameLitInt  val   -> Just $ XLit (LitInt (convertType pp kenv t) val)
-                A.NameLitWord val _ -> Just $ XLit (LitInt (convertType pp kenv t) val)
-                A.NameLitTag  tag   -> Just $ XLit (LitInt (convertType pp kenv t) tag)
-                _                   -> Nothing
+                 A.NameLitNat  nat   -> Just $ XLit (LitInt t' nat)
+                 A.NameLitInt  val   -> Just $ XLit (LitInt t' val)
+                 A.NameLitWord val _ -> Just $ XLit (LitInt t' val)
+                 A.NameLitTag  tag   -> Just $ XLit (LitInt t' tag)
+                 _                   -> Nothing
 
         _ -> Nothing
 
 
 -- | Convert several atoms to core.
-mconvAtoms 
-        :: Platform
-        -> Context
-        -> KindEnv A.Name
-        -> TypeEnv A.Name
-        -> [C.Exp a A.Name]
-        -> Maybe [Exp]
-
-mconvAtoms pp context kenv tenv xs
-        = sequence $ map (mconvAtom pp context kenv tenv) xs
+mconvAtoms :: Context -> [C.Exp a A.Name] -> Maybe [Exp]
+mconvAtoms ctx xs
+        = sequence $ map (mconvAtom ctx) xs
 
 
 -- Utils ----------------------------------------------------------------------
@@ -101,22 +92,25 @@ takeLocalV pp kenv tenv xx
         _ -> Nothing
 
 
--- | Take a variable from an expression as a local var, if any.
+-- | Take a variable from an expression as a global var, if any.
 takeGlobalV  
-        :: Platform        -> C.Module () A.Name
-        -> KindEnv A.Name  -> TypeEnv A.Name
+        :: Context
         -> C.Exp a A.Name  -> Maybe Var
 
-takeGlobalV pp mm kenv tenv xx
- | C.XVar _ u@(C.UName nSuper)   <- xx
- , Just t   <- Env.lookup u tenv
- = let  
-        mImport  = lookup nSuper (C.moduleImportValues mm)
-        mExport  = lookup nSuper (C.moduleExportValues mm)
-        Just str = liftM renderPlain $ A.seaNameOfSuper mImport mExport nSuper
+takeGlobalV ctx xx
+ = let  pp      = contextPlatform    ctx
+        mm      = contextModule      ctx
+        kenv    = contextKindEnvTop  ctx
+        tenv    = contextTypeEnvTop  ctx
+   in case xx of
+        C.XVar _ u@(C.UName nSuper)
+         | Just t   <- Env.lookup u tenv
+         -> let  
+                mImport  = lookup nSuper (C.moduleImportValues mm)
+                mExport  = lookup nSuper (C.moduleExportValues mm)
+                Just str = liftM renderPlain $ A.seaNameOfSuper mImport mExport nSuper
 
-   in   Just $ Var (NameGlobal str) (convertType pp kenv t)
-        
- | otherwise
- = Nothing
+            in  Just $ Var (NameGlobal str) (convertType pp kenv t)
+
+        _ -> Nothing        
 

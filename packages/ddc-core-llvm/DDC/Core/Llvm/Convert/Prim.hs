@@ -5,13 +5,13 @@ where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Context
+import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Base.Pretty
-import DDC.Type.Env             (KindEnv, TypeEnv)
+import DDC.Type.Env             (KindEnv)
 import Data.Sequence            (Seq)
 import qualified DDC.Core.Exp   as C
 import qualified DDC.Core.Salt  as A
@@ -22,20 +22,21 @@ import qualified Data.Sequence  as Seq
 -- | Convert a primitive call to LLVM.
 convPrimCallM
         :: Show a
-        => Platform
-        -> Context
-        -> KindEnv A.Name
-        -> TypeEnv A.Name
-        -> MDSuper              -- ^ Metadata for the enclosing super
+        => Context
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq AnnotInstr)
 
-convPrimCallM pp context kenv tenv mdsup mdst p _tPrim xs
- = let  atom    = mconvAtom  pp context kenv tenv
-        atoms   = mconvAtoms pp context kenv tenv 
+convPrimCallM ctx mdst p _tPrim xs
+ = let  pp      = contextPlatform ctx
+        mdsup   = contextMDSuper  ctx
+        kenv    = contextKindEnv  ctx
+
+        atom    = mconvAtom       ctx
+        atoms   = mconvAtoms      ctx
+
    in case p of
         -- Unary operators ------------
         A.PrimArith op
