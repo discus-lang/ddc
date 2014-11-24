@@ -1,10 +1,7 @@
 
 module DDC.Core.Tetra.Convert.Exp.Base
-        ( Convert
-        , Config        (..)
-
-        -- * Context
-        , Context       (..)
+        ( -- * Context
+          Context       (..)
         , typeContext
         , extendKindEnv, extendsKindEnv
         , extendTypeEnv, extendsTypeEnv
@@ -82,7 +79,9 @@ data Context a
           -- We tie the recursive knot though this Context type so that
           -- we can split the implementation into separate non-recursive modules.
         , contextConvertExp
-                :: ExpContext -> Convert a Exp 
+                :: ExpContext   -> Context a
+                -> Exp  (AnTEC a E.Name) E.Name
+                -> ConvertM a (Exp a A.Name)
 
         , contextConvertLets    
                 :: Context a
@@ -92,7 +91,10 @@ data Context a
         , contextConvertAlt     
                 :: a
                 -> Bound E.Name -> Type E.Name
-                -> ExpContext   -> Convert a Alt  }
+                -> ExpContext   -> Context a
+                -> Alt  (AnTEC a E.Name) E.Name
+                -> ConvertM a (Alt a A.Name)  
+        }
 
 
 -- | Create a type context from an expression context.
@@ -127,19 +129,6 @@ extendTypeEnv b ctx
 extendsTypeEnv :: [Bind E.Name] -> Context a -> Context a
 extendsTypeEnv bs ctx
         = ctx { contextTypeEnv = Env.extends bs (contextTypeEnv ctx) }
-
-
----------------------------------------------------------------------------------------------------
-type Convert a c
-        =  Context a
-        -> c (AnTEC a E.Name)   E.Name
-        -> ConvertM a (c a A.Name)
-
-data Config a
-        = Config
-        { configConvertExp      :: Convert a Exp
-        , configConvertAlt      :: Convert a Alt
-        , configConvertLets     :: Convert a Lets }
 
 
 ---------------------------------------------------------------------------------------------------

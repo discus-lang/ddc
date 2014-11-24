@@ -134,25 +134,25 @@ convBodyM ctx ectx blocks label instrs xx
 
 
          -- Assignment ------------------------------------
-         -- A statement of type void does not produce a value.
+         -- A let-bound expression without a name, of the void type.
          C.XLet _ (C.LLet (C.BNone t) x1) x2
           | isVoidT t
           -> do instrs' <- convExpM ctx ectx x1
                 convBodyM ctx ectx blocks label
                         (instrs >< instrs') x2
 
-         -- A non-void let-expression.
+         -- A let-bound expression without a name, of some non-void type.
          --   In C we can just drop a computed value on the floor, 
          --   but the LLVM compiler needs an explicit name for it.
          --   Add the required name then call ourselves again.
          C.XLet a (C.LLet (C.BNone t) x1) x2
           | not $ isVoidT t
-          -> do 
-                n       <- newUnique
+          -> do n       <- newUnique
                 let b   = C.BName (A.NameVar ("_dummy" ++ show n)) t
 
                 convBodyM ctx ectx blocks label instrs 
                         (C.XLet a (C.LLet b x1) x2)
+
 
          -- Variable assigment from a case-expression.
          C.XLet _ (C.LLet b@(C.BName nm t) 
