@@ -55,7 +55,8 @@ convSuperM ctx (C.BName nSuper tSuper) x
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
         let ctx'  = ctx
                   { contextKindEnv      = Env.extends bsParamType  $ contextKindEnv ctx
-                  , contextTypeEnv      = Env.extends bsParamValue $ contextTypeEnv ctx }
+                  , contextTypeEnv      = Env.extends bsParamValue $ contextTypeEnv ctx 
+                  , contextMDSuper      = mdsup }
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"
