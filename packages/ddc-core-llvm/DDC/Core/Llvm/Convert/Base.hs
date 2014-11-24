@@ -19,7 +19,7 @@ import qualified DDC.Type.Env           as Env
 
 
 ---------------------------------------------------------------------------------------------------
--- | Context of an Exp conversion.
+-- | Context of an Salt to LLVM conversion.
 data Context 
         = Context
         { -- | The platform that we're converting to, 
@@ -70,7 +70,7 @@ extendsTypeEnv bs ctx
 
 
 ---------------------------------------------------------------------------------------------------
--- | What context we're doing this conversion in.
+-- | What expression context we're doing this conversion in.
 data ExpContext
         -- | Conversion at the top-level of a function.
         --   The expresison being converted must eventually pass control.

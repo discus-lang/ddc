@@ -11,14 +11,12 @@ import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Base.Pretty                          hiding (align)
-import DDC.Type.Env                             (KindEnv, TypeEnv)
-import Control.Monad.State.Strict               (gets)
+import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
-import qualified DDC.Type.Env                   as Env
 import qualified Data.Set                       as Set
 import qualified Data.Sequence                  as Seq
 import qualified Data.Foldable                  as Seq
@@ -27,19 +25,20 @@ import qualified Data.Foldable                  as Seq
 -- | Convert a top-level supercombinator to a LLVM function.
 --   Region variables are completely stripped out.
 convSuperM 
-        :: KindEnv A.Name
-        -> TypeEnv A.Name
-        -> C.Bind  A.Name       -- ^ Bind of the top-level super.
+        :: Context
+        -> C.Bind   A.Name      -- ^ Bind of the top-level super.
         -> C.Exp () A.Name      -- ^ Super body.
         -> LlvmM (Function, [MDecl])
 
-convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
+convSuperM ctx (C.BName nSuper tSuper) x
  | Just (bfsParam, xBody)  <- takeXLamFlags x
  = do   
-        platform        <- gets llvmStatePlatform
-        mm              <- gets llvmStateModule
+        let pp          = contextPlatform ctx
+        let mm          = contextModule   ctx
+        let kenv        = contextKindEnv  ctx
+        let tenv        = contextTypeEnv  ctx
 
-        let nsExports    = Set.fromList $ map fst $ C.moduleExportValues mm
+        let nsExports   = Set.fromList $ map fst $ C.moduleExportValues mm
 
         -- Sanitise the super name so we can use it as a symbol
         -- in the object code.
@@ -53,30 +52,26 @@ convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
         let bsParamType  = [b | (True,  b) <- bfsParam']
         let bsParamValue = [b | (False, b) <- bfsParam']
 
-        let kenv' = Env.extends bsParamType  kenv
-        let tenv' = Env.extends (bSuper : bsParamValue) tenv
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
-
-        let ctx   = Context
-                  { contextPlatform     = platform
+        let ctx'  = Context
+                  { contextPlatform     = pp
                   , contextModule       = mm
                   , contextKindEnvTop   = kenv
                   , contextTypeEnvTop   = tenv
-                  , contextKindEnv      = kenv'
-                  , contextTypeEnv      = tenv' 
+                  , contextKindEnv      = Env.extends bsParamType  $ contextKindEnv ctx
+                  , contextTypeEnv      = Env.extends bsParamValue $ contextTypeEnv ctx
                   , contextMDSuper      = mdsup }
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"
-        blocks    <- convBodyM ctx ExpTop
-                        Seq.empty label Seq.empty xBody
+        blocks    <- convBodyM ctx' ExpTop Seq.empty label Seq.empty xBody
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
-                        = convertSuperType platform kenv tSuper
+                        = convertSuperType pp kenv tSuper
   
         -- Make parameter binders.
-        let align       = AlignBytes (platformAlignBytes platform)
+        let align       = AlignBytes (platformAlignBytes pp)
 
         -- Declaration of the super.
         let decl 
@@ -119,7 +114,7 @@ convSuperM kenv tenv bSuper@(C.BName nSuper tSuper) x
                   , Tbaa.decls mdsup )
                   
 
-convSuperM _ _ _ _
+convSuperM _ _ _
         = die "Invalid super"
 
 

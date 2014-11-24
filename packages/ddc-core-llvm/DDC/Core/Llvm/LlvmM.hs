@@ -14,13 +14,11 @@ module DDC.Core.Llvm.LlvmM
 
           -- * Platform Specific
         , getPrimDeclM
-        , getBytesOfTypeM)
+        , getBytesOfType)
 where
 import DDC.Core.Salt.Platform
 import DDC.Llvm.Syntax
 import Data.Map                         (Map)
-import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Module        as C
 import qualified Data.Map               as Map
 import Control.Monad.State.Strict
 import DDC.Base.Pretty
@@ -47,28 +45,18 @@ data LlvmState
         { -- Unique name generator.
           llvmStateUnique       :: Int 
 
-          -- The current platform.
-        , llvmStatePlatform     :: Platform 
-
-          -- The module being converted.
-        , llvmStateModule       :: C.Module () A.Name
-
           -- Primitives in the global environment.
         , llvmStatePrimDecls    :: Map String FunctionDecl }
 
 
 -- | Initial LLVM state.
 llvmStateInit 
-        :: Platform 
-        -> C.Module () A.Name
-        -> Map String FunctionDecl 
+        :: Map String FunctionDecl 
         -> LlvmState
 
-llvmStateInit platform mm prims
+llvmStateInit prims
         = LlvmState
         { llvmStateUnique       = 1 
-        , llvmStatePlatform     = platform
-        , llvmStateModule       = mm
         , llvmStatePrimDecls    = prims }
 
 
@@ -103,7 +91,6 @@ newUniqueLabel name
         return $ Label ("l" ++ show u ++ "." ++ name)
 
 
-
 -- Platform Specific ----------------------------------------------------------
 -- | Get the declaration of a primitive function
 getPrimDeclM :: String -> LlvmM (Maybe FunctionDecl)
@@ -113,9 +100,7 @@ getPrimDeclM name
 
 
 -- | Get the size of a type on this platform, in bytes.
-getBytesOfTypeM :: Type -> LlvmM Integer
-getBytesOfTypeM tt
- = do   platform        <- gets llvmStatePlatform
-        let Just bytes  = takeBytesOfType (platformAddrBytes platform) tt
-        return bytes
+getBytesOfType :: Platform -> Type -> Maybe Integer
+getBytesOfType pp tt
+        = takeBytesOfType (platformAddrBytes pp) tt
 

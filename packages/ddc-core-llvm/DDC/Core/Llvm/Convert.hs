@@ -4,14 +4,15 @@ module DDC.Core.Llvm.Convert
         , convertType
         , convertSuperType)
 where
+import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.Convert.Super
 import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import Control.Monad.State.Strict               (evalState)
-import Control.Monad.State.Strict               (gets)
 import Control.Monad
 import Data.Map                                 (Map)
 import qualified DDC.Llvm.Transform.Clean       as Llvm
@@ -22,7 +23,7 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Simplifier            as Simp
 import qualified Data.Map                       as Map
-
+import qualified Data.List                      as List
 
 -- | Convert a Salt module to LLVM.
 -- 
@@ -34,7 +35,7 @@ convertModule platform mm@(C.ModuleCore{})
  = {-# SCC convertModule #-}
    let  
         prims   = primDeclsMap platform
-        state   = llvmStateInit platform mm prims
+        state   = llvmStateInit prims
 
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metat data.
@@ -44,12 +45,10 @@ convertModule platform mm@(C.ModuleCore{})
                                 (Simp.Trans Simp.Elaborate) mm)
                         state
 
-        stateElab = state { llvmStateModule = mmElab }
-
         -- Convert to LLVM.
         --  The result contains ISet and INop meta instructions that need to be 
         --  cleaned out. We also need to fixup the labels in IPhi instructions.
-        mmRaw    = evalState (convModuleM mmElab) stateElab
+        mmRaw    = evalState (convModuleM platform mmElab) state
 
         -- Inline the ISet meta instructions and drop INops.
         --  This gives us code that the LLVM compiler will accept directly.
@@ -63,27 +62,30 @@ convertModule platform mm@(C.ModuleCore{})
    in   mmPhi
 
 
-convModuleM :: C.Module () A.Name -> LlvmM Module
-convModuleM mm@(C.ModuleCore{})
- | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
- = do   platform        <- gets llvmStatePlatform
+convModuleM 
+        :: Platform
+        -> C.Module () A.Name 
+        -> LlvmM Module
 
+convModuleM pp mm@(C.ModuleCore{})
+ | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
+ = do   
         -- Globals for the runtime --------------
         --   If this is the main module then we define the globals
         --   for the runtime system at top-level.
 
         -- Holds the pointer to the current top of the heap.
         --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop    = Var (NameGlobal "_DDC__heapTop") (tAddr platform)
+        let vHeapTop    = Var (NameGlobal "_DDC__heapTop") (tAddr pp)
 
         -- Holds the pointer to the maximum heap.
         --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax    = Var (NameGlobal "_DDC__heapMax") (tAddr platform)
+        let vHeapMax    = Var (NameGlobal "_DDC__heapMax") (tAddr pp)
 
         let globalsRts
                 | C.moduleName mm == C.ModuleName ["Main"]
-                = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr platform) 0))
-                  , GlobalStatic   vHeapMax (StaticLit (LitInt (tAddr platform) 0)) ]
+                = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapMax (StaticLit (LitInt (tAddr pp) 0)) ]
 
                 | otherwise
                 = [ GlobalExternal vHeapTop 
@@ -95,9 +97,9 @@ convModuleM mm@(C.ModuleCore{})
 
         let Just importDecls 
                 = sequence
-                $ [ importedFunctionDeclOfType platform kenv 
+                $ [ importedFunctionDeclOfType pp kenv 
                         isrc
-                        (lookup n (C.moduleExportValues mm))
+                        (List.lookup n (C.moduleExportValues mm))
                         n
                         (C.typeOfImportSource isrc)
                   | (n, isrc)    <- C.moduleImportValues mm ]
@@ -105,17 +107,27 @@ convModuleM mm@(C.ModuleCore{})
 
         -- Super-combinator definitions ---------
         --   This is the code for locally defined functions.
+        let ctx = Context
+                { contextPlatform       = pp
+                , contextModule         = mm
+                , contextKindEnvTop     = kenv
+                , contextTypeEnvTop     = tenv
+                , contextKindEnv        = kenv
+                , contextTypeEnv        = tenv
+                , contextMDSuper        = MDSuper Map.empty [] }
+
+
         (functions, mdecls)
                 <- liftM unzip 
-                $ mapM (uncurry (convSuperM kenv tenv)) bxs
+                $ mapM (uncurry (convSuperM ctx)) bxs
         
 
         -- Paste everything together ------------
         return  $ Module 
                 { modComments   = []
-                , modAliases    = [aObj platform]
+                , modAliases    = [aObj pp]
                 , modGlobals    = globalsRts
-                , modFwdDecls   = primDecls platform ++ importDecls 
+                , modFwdDecls   = primDecls pp ++ importDecls 
                 , modFuncs      = functions 
                 , modMDecls     = concat mdecls }
 

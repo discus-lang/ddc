@@ -14,7 +14,6 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Base.Pretty                          hiding (align)
 import DDC.Data.ListUtils
-import Control.Monad.State.Strict               (gets)
 import Control.Monad
 import Data.Maybe
 import Data.Sequence                            (Seq, (<|), (|>), (><))
@@ -37,8 +36,8 @@ convBodyM
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
 convBodyM ctx ectx blocks label instrs xx
- = do   pp       <- gets llvmStatePlatform
-        let kenv =  contextKindEnv ctx
+ = do   let pp   = contextPlatform ctx 
+        let kenv = contextKindEnv  ctx
         case xx of
 
          -- Control transfer instructions -----------------
