@@ -4,6 +4,7 @@ module DDC.Core.Llvm.Convert.Exp
         , convertBody
         , convertExp)
 where
+import DDC.Core.Llvm.Convert.Exp.PrimCall
 import DDC.Core.Llvm.Convert.Exp.PrimArith
 import DDC.Core.Llvm.Convert.Exp.PrimCast
 import DDC.Core.Llvm.Convert.Exp.PrimStore
@@ -14,8 +15,9 @@ import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Compounds
-import DDC.Base.Pretty                          hiding (align)
+import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
+import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Exp                   as C
@@ -88,13 +90,14 @@ convertBody ctx ectx blocks label instrs xx
           |  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail    <- p
           ,  [C.XType _ _tResult]               <- xs
-          -> let iFail  = ICall Nothing CallTypeStd Nothing 
-                                TVoid (NameGlobal "abort") [] []
-
+          -> let 
                  iSet   = case ectx of
                            ExpTop{}           -> INop
                            ExpNest _ vDst _   -> ISet vDst (XUndef (typeOfVar vDst))
                            ExpAssign _ vDst   -> ISet vDst (XUndef (typeOfVar vDst))
+
+                 iFail  = ICall Nothing CallTypeStd Nothing 
+                                TVoid (NameGlobal "abort") [] []
 
                  block  = Block label
                         $ instrs |> annotNil iSet
@@ -215,9 +218,9 @@ convertBody ctx ectx blocks label instrs xx
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
           |  otherwise
-          -> die $   renderIndent
-                 $   text "Invalid body statement " 
-                 <$> ppr xx
+          -> die $     P.renderIndent
+                 $     P.text "Invalid body statement " 
+                 P.<$> P.ppr xx
  
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -245,37 +248,17 @@ convertExp ctx ectx xx
            -> return    $ Seq.singleton $ annotNil 
                         $ ISet vDst x'
 
-         -- Applications
+
+         -- Primitive operators.
          C.XApp{}
-          -- Call to unknown function.
-          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) _tPrim), xsArgs) 
-                                        <- takeXApps xx
-          , A.PrimCall (A.PrimCallStd arity) <- p
-          , Just (xFun' : xsArgs')      <- sequence $ map (mconvAtom ctx) xsArgs
-          -> do let mv  = takeNonVoidVarOfContext ectx
-
-                vFun@(Var nFun _) 
-                        <- newUniqueNamedVar "fun" 
-                        $  TPointer $ tFunction (replicate arity (tAddr pp)) (tAddr pp)
-
-                return  $ Seq.fromList $ map annotNil
-                        [ IConv vFun (ConvInttoptr) xFun'
-                        , ICall mv  CallTypeStd Nothing
-                                    (tAddr pp) nFun xsArgs' []]
-
-          -- Call to primop.
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
-          , Just go     <- convPrimArith ctx (takeNonVoidVarOfContext ectx) p tPrim args
+          , mDst        <- takeNonVoidVarOfContext ectx
+          , Just go     <- foldl (<|>) empty
+                                [ convPrimCall  ctx mDst p tPrim args
+                                , convPrimArith ctx mDst p tPrim args
+                                , convPrimCast  ctx mDst p tPrim args
+                                , convPrimStore ctx mDst p tPrim args ]
           -> go
-
-          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
-          , Just go     <- convPrimCast ctx  (takeNonVoidVarOfContext ectx) p tPrim args
-          -> go
-
-          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
-          , Just go     <- convPrimStore ctx (takeNonVoidVarOfContext ectx) p tPrim args
-          -> go
-
 
 
           -- Call to top-level super.
@@ -301,15 +284,3 @@ convertExp ctx ectx xx
 
          _ -> die $ "Invalid expression " ++ show xx
 
-
-tFunction :: [Type] -> Type -> Type
-tFunction tsArgs tResult
-        = TFunction
-        $ FunctionDecl
-        { declName              = "anon"
-        , declLinkage           = External
-        , declCallConv          = CC_Ccc
-        , declReturnType        = tResult
-        , declParamListType     = FixedArgs
-        , declParams            = [ Param t [] | t <- tsArgs ]
-        , declAlign             = AlignNone }
