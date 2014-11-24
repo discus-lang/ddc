@@ -226,7 +226,7 @@ convertBody ctx ectx blocks label instrs xx
 --   This only works for variables, literals, and full applications of
 --   primitive operators. The client should ensure the program is in this form 
 --   before converting it. The result is just a sequence of instructions,
---  so there are no new labels to jump to.
+--   so there are no new labels to jump to.
 --
 convertExp
         :: Context -> ExpContext
@@ -239,46 +239,13 @@ convertExp ctx ectx xx
         kenv    = contextKindEnv  ctx
    in do   
         case xx of
-         -- Local variable.
-         C.XVar _ u@(C.UName nm)
-          | Just t              <- Env.lookup u tenv
-          , ExpAssign _ vDst    <- ectx
-          , Just n              <- A.takeNameVar nm
-          -> do let n'  = A.sanitizeName n
-                let t'  = convertType pp kenv t
-                return  $ Seq.singleton $ annotNil
-                        $ ISet vDst (XVar (Var (NameLocal n') t'))
+         -- Atoms
+         _ | ExpAssign _ vDst   <- ectx
+           , Just x'            <- mconvAtom ctx xx
+           -> return    $ Seq.singleton $ annotNil 
+                        $ ISet vDst x'
 
-         -- Unit data constructors are represented as null pointers.
-         C.XCon _ C.DaConUnit
-          |  ExpAssign _ vDst   <- ectx
-          -> return $ Seq.singleton $ annotNil
-                    $ ISet vDst (XLit (LitNull (TPointer (tObj pp))))
-
-         -- Literal value.
-         C.XCon _ dc
-          |  Just n             <- takeNameOfDaCon dc
-          ,  ExpAssign _ vDst   <- ectx
-          -> case n of
-                A.NameLitNat i
-                 -> return $ Seq.singleton $ annotNil
-                           $ ISet vDst (XLit (LitInt (tNat pp) i))
-
-                A.NameLitInt  i
-                 -> return $ Seq.singleton $ annotNil
-                           $ ISet vDst (XLit (LitInt (tInt pp) i))
-
-                A.NameLitWord w bits
-                 -> return $ Seq.singleton $ annotNil
-                           $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
-
-                A.NameLitBool b
-                 | i <- if b then 1 else 0
-                 -> return $ Seq.singleton $ annotNil
-                           $ ISet vDst (XLit (LitInt (TInt 1) i))
-
-                _ -> die "Invalid literal"
-
+         -- Applications
          C.XApp{}
           -- Call to unknown function.
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) _tPrim), xsArgs) 
@@ -327,8 +294,10 @@ convertExp ctx ectx xx
                         $ ICall  mv CallTypeStd Nothing
                                  tResult nFun xsArgs_value' []
 
+         -- Casts
          C.XCast _ _ x
           -> convertExp ctx ectx x
+
 
          _ -> die $ "Invalid expression " ++ show xx
 
