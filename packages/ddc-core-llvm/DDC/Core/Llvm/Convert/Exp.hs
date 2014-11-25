@@ -23,7 +23,8 @@ import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
-
+import qualified Data.Set                       as Set
+import qualified Data.Map                       as Map
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a function body to LLVM blocks.
@@ -145,6 +146,7 @@ convertBody ctx ectx blocks label instrs xx
                 convertBody ctx ectx blocks label
                         (instrs >< instrs') x2
 
+
          -- A let-bound expression without a name, of some non-void type.
          --   In C we can just drop a computed value on the floor, 
          --   but the LLVM compiler needs an explicit name for it.
@@ -183,7 +185,26 @@ convertBody ctx ectx blocks label instrs xx
                         x2
 
 
-         -- Variable assignment from an non-case expression.
+         -- Variable assignment from an instantiated super name.
+         -- We can't generate LLVM code for these bindings directly, so they are
+         -- stashed in the context until we find a conversion that needs them.
+         -- See [Note: Binding top-level supers]
+         C.XLet _ (C.LLet (C.BName nBind _) x1) x2
+          | Just (xF, xsArgs)         <- takeXApps x1
+          , C.XVar _ (C.UName nSuper) <- xF
+          , atsArgs     <- [(a, t) | C.XType a t <- xsArgs]
+          , tsArgs      <- map snd atsArgs
+          , length tsArgs > 0
+          , length xsArgs == length tsArgs
+          ,   Set.member nSuper (contextSupers  ctx)
+           || Set.member nSuper (contextImports ctx)
+          -> do let ctx'   = ctx { contextSuperBinds 
+                                    = Map.insert nBind (nSuper, tsArgs)
+                                        (contextSuperBinds ctx) }
+                convertBody ctx' ectx blocks label instrs x2 
+
+
+         -- Variable assignment from some other expression.
          C.XLet _ (C.LLet b@(C.BName nm t) x1) x2
           | Just n       <- A.takeNameVar nm
           -> do let n'    = A.sanitizeName n

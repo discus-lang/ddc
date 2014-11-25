@@ -15,6 +15,7 @@ import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
 import qualified Data.Sequence          as Seq
+import qualified Data.Map               as Map
 
 
 -- | Convert a primitive call to LLVM.
@@ -35,9 +36,8 @@ convPrimCast ctx mdst p _tPrim xs
    in case p of
         A.PrimCast A.PrimCastConvert
          | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
-         , Just xSrc'           <- atom xSrc
          , Just vDst            <- mdst
-         , minstr               <- convPrimConvert pp kenv tDst vDst tSrc xSrc'
+         , minstr               <- convPrimConvert ctx tDst vDst tSrc xSrc
          -> Just
           $ case minstr of
                 Just instr      -> return $ Seq.singleton (annotNil instr)
@@ -78,23 +78,34 @@ convPrimCast ctx mdst p _tPrim xs
 -- | Convert a primitive conversion operator to LLVM,
 --   or `Nothing` for an invalid conversion.
 convPrimConvert
-        :: Platform
-        -> KindEnv A.Name
+        :: Context
         -> C.Type A.Name -> Var
-        -> C.Type A.Name -> Exp
+        -> C.Type A.Name -> C.Exp a A.Name
         -> Maybe Instr
 
-convPrimConvert pp kenv tDst vDst tSrc xSrc
+convPrimConvert ctx tDst vDst tSrc xSrc
+ = let  pp      = contextPlatform ctx
+        kenv    = contextKindEnv  ctx
+        tSrc'   = convertType pp kenv tSrc
+        tDst'   = convertType pp kenv tDst
+   in   case tSrc' of
 
- -- Take the instruction address of a function.
- | tSrc'        <- convertType pp kenv tSrc
- , TPointer TFunction{}  <- tSrc'
- , tDst'        <- convertType pp kenv tDst
- , tDst'        == TInt (8 * platformAddrBytes pp)
- = Just $ IConv vDst ConvPtrtoint xSrc
+         -- Produce the code pointer for a top-level super.
+         TPointer TFunction{}
+          -- Argument is the name of the super itself.
+          | tDst'      == TInt (8 * platformAddrBytes pp)
+          , Just xSrc' <- mconvAtom ctx xSrc
+          -> Just $ IConv vDst ConvPtrtoint xSrc'
 
- | otherwise
- = Nothing
+          -- Argument is a variable that has been bound to an application of
+          -- a super variable to some type arguments.
+          | tDst'      == TInt (8 * platformAddrBytes pp)
+          , C.XVar a (C.UName nVar) <- xSrc
+          , Just (nSuper, _tsArgs)  <- Map.lookup nVar (contextSuperBinds ctx)
+          , Just xSrc' <- mconvAtom ctx (C.XVar a (C.UName nSuper))
+          -> Just $ IConv vDst ConvPtrtoint xSrc'
+
+         _ -> Nothing
 
 
 -- | Convert a primitive promotion operator to LLVM,
@@ -120,27 +131,23 @@ convPrimPromote pp kenv tDst vDst tSrc xSrc
          -> Just $ ISet vDst xSrc
 
          -- Both Unsigned
-         | isUnsignedT tSrc
-         , isUnsignedT tDst
+         | isUnsignedT tSrc, isUnsignedT tDst
          , bitsDst > bitsSrc
          -> Just $ IConv vDst ConvZext xSrc
 
          -- Both Signed
-         | isSignedT tSrc
-         , isSignedT tDst
+         | isSignedT tSrc,   isSignedT tDst
          , bitsDst > bitsSrc
          -> Just $ IConv vDst ConvSext xSrc
 
          -- Unsigned to Signed
-         | isUnsignedT tSrc
-         , isSignedT   tDst
+         | isUnsignedT tSrc, isSignedT   tDst
          , bitsDst > bitsSrc
          -> Just $ IConv vDst ConvZext xSrc
 
         _ -> Nothing
 
- | otherwise
- = Nothing
+ | otherwise = Nothing
 
 
 -- | Convert a primitive truncation to LLVM,
@@ -171,13 +178,11 @@ convPrimTruncate pp kenv tDst vDst tSrc xSrc
          -- Unsigned to Signed,
          --  destination is larger
          | bitsDst > bitsSrc
-         , isUnsignedT tSrc
-         , isSignedT   tDst
+         , isUnsignedT tSrc,   isSignedT tDst
          -> Just $ IConv vDst ConvZext xSrc
 
         _ -> Nothing
 
- | otherwise
- = Nothing
+ | otherwise = Nothing
 
 

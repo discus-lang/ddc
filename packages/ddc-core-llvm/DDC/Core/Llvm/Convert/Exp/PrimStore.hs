@@ -50,7 +50,7 @@ convPrimStore ctx mdst p _tPrim xs
 
                 -- Bool# is only 1 bit long.
                 -- Don't return a result for types that don't divide into 8 bits evenly.
-                sorry           = dieDoc $ vcat
+                sorry   = dieDoc $ vcat
                                 [ text "  Invalid type applied to size#."]
 
             in return   $ Seq.singleton
@@ -74,7 +74,7 @@ convPrimStore ctx mdst p _tPrim xs
 
                 -- Bool# is only 1 bit long.
                 -- Don't return a result for types that don't divide into 8 bits evenly.
-                sorry           = dieDoc $ vcat
+                sorry   = dieDoc $ vcat
                                 [ text "  Invalid type applied to size2#."]
 
             in  return  $ Seq.singleton
@@ -116,8 +116,7 @@ convPrimStore ctx mdst p _tPrim xs
                 let vMax    = Var (bumpName nDst "max") (tAddr pp)
                 let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
                 let vMaxPtr = Var (NameGlobal "_DDC__heapMax") (TPointer (tAddr pp))
-                return  $ Seq.fromList
-                        $ map annotNil
+                return  $ Seq.fromList $ map annotNil
                         [ ILoad vTop (XVar vTopPtr)
                         , IOp   vMin OpAdd (XVar vTop) xBytes'
                         , ILoad vMax (XVar vMaxPtr)
@@ -131,8 +130,7 @@ convPrimStore ctx mdst p _tPrim xs
          -> Just
           $ do  let vBump   = Var (bumpName nDst "bump") (tAddr pp)
                 let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
-                return  $ Seq.fromList
-                        $ map annotNil
+                return  $ Seq.fromList $ map annotNil
                         [ ILoad  vDst  (XVar vTopPtr)
                         , IOp    vBump OpAdd (XVar vDst) xBytes'
                         , IStore (XVar vTopPtr) (XVar vBump)]
@@ -146,8 +144,7 @@ convPrimStore ctx mdst p _tPrim xs
          -> Just
           $ let vOff    = Var (bumpName nDst "off") (tAddr pp)
                 vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
-            in  return  $ Seq.fromList
-                        $ map annotNil
+            in  return  $ Seq.fromList $ map annotNil
                         [ IOp   vOff OpAdd xAddr' xOffset'
                         , IConv vPtr ConvInttoptr (XVar vOff)
                         , ILoad vDst (XVar vPtr) ]
@@ -160,8 +157,7 @@ convPrimStore ctx mdst p _tPrim xs
          -> Just
           $ do  vOff    <- newUniqueNamedVar "off" (tAddr pp)
                 vPtr    <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
-                return  $ Seq.fromList
-                        $ map annotNil
+                return  $ Seq.fromList $ map annotNil
                         [ IOp    vOff OpAdd xAddr' xOffset'
                         , IConv  vPtr ConvInttoptr (XVar vOff)
                         , IStore (XVar vPtr) xVal' ]
@@ -180,8 +176,8 @@ convPrimStore ctx mdst p _tPrim xs
         A.PrimStore A.PrimStoreMinusAddr
          | Just [xAddr', xOffset']      <- atoms xs
          , Just vDst                    <- mdst
-         -> Just        $ return
-                        $ Seq.singleton $ annotNil
+         -> Just        
+          $ return      $ Seq.singleton $ annotNil
                         $ IOp vDst OpSub xAddr' xOffset'
 
 
@@ -230,8 +226,7 @@ convPrimStore ctx mdst p _tPrim xs
          -> Just
           $ do  vAddr   <- newUniqueNamedVar "addr"   (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2"  (tAddr pp)
-                return  $ Seq.fromList
-                        $ map annotNil
+                return  $ Seq.fromList $ map annotNil
                         [ IConv vAddr  ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr) xOffset'
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
@@ -245,8 +240,7 @@ convPrimStore ctx mdst p _tPrim xs
          -> Just
           $ do  vAddr   <- newUniqueNamedVar "addr"   (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2"  (tAddr pp)
-                return  $ Seq.fromList
-                        $ map annotNil
+                return  $ Seq.fromList $ map annotNil
                         [ IConv vAddr  ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpSub (XVar vAddr) xOffset'
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
@@ -258,7 +252,7 @@ convPrimStore ctx mdst p _tPrim xs
          , Just xAddr'  <- atom xAddr
          , Just vDst    <- mdst
          -> Just
-          $     return  $ Seq.singleton $ annotNil
+          $ return      $ Seq.singleton $ annotNil
                         $ IConv vDst ConvInttoptr xAddr'
 
 

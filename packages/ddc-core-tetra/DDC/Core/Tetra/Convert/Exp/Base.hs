@@ -70,7 +70,7 @@ data Context a
           -- | Re-bindings of top-level supers.
           --   This is used to handle let-expressions like 'f = g [t]' where
           --   'g' is a top-level super. See [Note: Binding top-level supers]
-          --   Maps the right hand variable to the left hand one, eg g -> f,
+          --   Maps the left hand variable to the right hand one, eg f -> g,
           --   along with its (unpacked) type arguments.
         , contextSuperBinds     
                 :: Map E.Name (E.Name, [(AnTEC a E.Name, Type E.Name)])

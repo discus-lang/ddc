@@ -46,6 +46,7 @@ convertLets ctx lts
          | (xF, xsArgs) <- takeXApps1 xa xb
          , atsArgs      <- [(a, t) | XType a t <- xsArgs]
          , tsArgs       <- map snd atsArgs
+         , length tsArgs > 0
          , length xsArgs == length tsArgs
          , XVar _ (UName nSuper)     <- xF
          ,   Set.member nSuper (contextSupers  ctx)

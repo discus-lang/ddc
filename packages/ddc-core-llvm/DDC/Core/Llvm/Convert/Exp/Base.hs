@@ -16,11 +16,12 @@ import DDC.Type.Exp
 import DDC.Llvm.Syntax
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import Data.Sequence                    (Seq)
+import Data.Set                         (Set)
+import Data.Map                         (Map)
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Context of an Salt to LLVM conversion.
@@ -39,6 +40,14 @@ data Context
           -- | The top-level type environment.
         , contextTypeEnvTop     :: TypeEnv  A.Name
 
+          -- | Names of imported supers that are defined in external modules.
+          --   These are directly callable in the object code.
+        , contextImports        :: Set      A.Name
+
+          -- | Names of local supers that are defined in the current module.
+          --   These are directly callable in the object code.
+        , contextSupers         :: Set      A.Name
+
           -- | Current kind environment.
         , contextKindEnv        :: KindEnv  A.Name
 
@@ -48,6 +57,13 @@ data Context
           -- | Super meta data
         , contextMDSuper        :: MDSuper 
 
+          -- | Re-bindings of top-level supers.
+          --   This is used to handle let-expressions like 'f = g [t]' where
+          --   'g' is a top-level super. See [Note: Binding top-level supers]
+          --   Maps the right hand variable to the left hand one, eg g -> f,
+          --   along with its type arguments.
+        , contextSuperBinds
+                :: Map A.Name (A.Name, [C.Type A.Name])
 
           -- Functions to convert the various parts of the AST.
           -- We tie the recursive knot though this Context type so that

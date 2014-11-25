@@ -24,6 +24,7 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Simplifier            as Simp
 import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 import qualified Data.List                      as List
 
 
@@ -114,9 +115,12 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextModule         = mm
                 , contextKindEnvTop     = kenv
                 , contextTypeEnvTop     = tenv
+                , contextSupers         = C.moduleTopBinds mm
+                , contextImports        = Set.fromList $ map fst $ C.moduleImportValues mm
                 , contextKindEnv        = kenv
                 , contextTypeEnv        = tenv
                 , contextMDSuper        = MDSuper Map.empty [] 
+                , contextSuperBinds     = Map.empty
                 , contextConvertBody    = convertBody
                 , contextConvertExp     = convertExp
                 , contextConvertCase    = convertCase }
