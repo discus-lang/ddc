@@ -10,7 +10,6 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Base.Pretty
-import DDC.Type.Env                     (KindEnv)
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
@@ -29,10 +28,7 @@ convPrimCast
         -> Maybe (LlvmM (Seq AnnotInstr))
 
 convPrimCast ctx mdst p _tPrim xs
- = let  pp      = contextPlatform ctx
-        kenv    = contextKindEnv  ctx
-        atom    = mconvAtom       ctx
-
+ = let  atom    = mconvAtom       ctx
    in case p of
         A.PrimCast A.PrimCastConvert
          | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
@@ -50,7 +46,7 @@ convPrimCast ctx mdst p _tPrim xs
          | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
          , Just xSrc'           <- atom xSrc
          , Just vDst            <- mdst
-         , minstr               <- convPrimPromote pp kenv tDst vDst tSrc xSrc'
+         , minstr               <- convPrimPromote ctx tDst vDst tSrc xSrc'
          -> Just 
           $ case minstr of
                 Just instr      -> return $ Seq.singleton (annotNil instr)
@@ -63,7 +59,7 @@ convPrimCast ctx mdst p _tPrim xs
          | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
          , Just xSrc'           <- atom xSrc
          , Just vDst            <- mdst
-         , minstr               <- convPrimTruncate pp kenv tDst vDst tSrc xSrc'
+         , minstr               <- convPrimTruncate ctx tDst vDst tSrc xSrc'
          -> Just 
           $ case minstr of
                 Just instr      -> return $ Seq.singleton (annotNil instr)
@@ -88,38 +84,39 @@ convPrimConvert ctx tDst vDst tSrc xSrc
         kenv    = contextKindEnv  ctx
         tSrc'   = convertType pp kenv tSrc
         tDst'   = convertType pp kenv tDst
-   in   case tSrc' of
+   in case tSrc' of
 
-         -- Produce the code pointer for a top-level super.
-         TPointer TFunction{}
-          -- Argument is the name of the super itself.
-          | tDst'      == TInt (8 * platformAddrBytes pp)
-          , Just xSrc' <- mconvAtom ctx xSrc
-          -> Just $ IConv vDst ConvPtrtoint xSrc'
+        -- Produce the code pointer for a top-level super.
+        TPointer TFunction{}
+         -- Argument is the name of the super itself.
+         | tDst'      == TInt (8 * platformAddrBytes pp)
+         , Just xSrc' <- mconvAtom ctx xSrc
+         -> Just $ IConv vDst ConvPtrtoint xSrc'
 
-          -- Argument is a variable that has been bound to an application of
-          -- a super variable to some type arguments.
-          | tDst'      == TInt (8 * platformAddrBytes pp)
-          , C.XVar a (C.UName nVar) <- xSrc
-          , Just (nSuper, _tsArgs)  <- Map.lookup nVar (contextSuperBinds ctx)
-          , Just xSrc' <- mconvAtom ctx (C.XVar a (C.UName nSuper))
-          -> Just $ IConv vDst ConvPtrtoint xSrc'
+         -- Argument is a variable that has been bound to an application of
+         -- a super variable to some type arguments.
+         | tDst'      == TInt (8 * platformAddrBytes pp)
+         , C.XVar a (C.UName nVar) <- xSrc
+         , Just (nSuper, _tsArgs)  <- Map.lookup nVar (contextSuperBinds ctx)
+         , Just xSrc' <- mconvAtom ctx (C.XVar a (C.UName nSuper))
+         -> Just $ IConv vDst ConvPtrtoint xSrc'
 
-         _ -> Nothing
+        _ -> Nothing
 
 
 -- | Convert a primitive promotion operator to LLVM,
 --   or `Nothing` for an invalid promotion.
 convPrimPromote
-        :: Platform
-        -> KindEnv A.Name
+        :: Context
         -> C.Type A.Name -> Var
         -> C.Type A.Name -> Exp
         -> Maybe Instr
 
-convPrimPromote pp kenv tDst vDst tSrc xSrc
- | tSrc'        <- convertType pp kenv tSrc
- , tDst'        <- convertType pp kenv tDst
+convPrimPromote ctx tDst vDst tSrc xSrc
+ | pp    <- contextPlatform ctx
+ , kenv  <- contextKindEnv  ctx
+ , tSrc' <- convertType pp kenv tSrc
+ , tDst' <- convertType pp kenv tDst
  , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
  , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
  , A.primCastPromoteIsValid pp tcSrc tcDst
@@ -153,15 +150,16 @@ convPrimPromote pp kenv tDst vDst tSrc xSrc
 -- | Convert a primitive truncation to LLVM,
 --   or `Nothing` for an invalid truncation.
 convPrimTruncate
-        :: Platform
-        -> KindEnv A.Name
+        :: Context
         -> C.Type  A.Name -> Var
         -> C.Type  A.Name -> Exp
         -> Maybe Instr
 
-convPrimTruncate pp kenv tDst vDst tSrc xSrc
- | tSrc'        <- convertType pp kenv tSrc
- , tDst'        <- convertType pp kenv tDst
+convPrimTruncate ctx tDst vDst tSrc xSrc
+ | pp    <- contextPlatform ctx
+ , kenv  <- contextKindEnv  ctx
+ , tSrc' <- convertType pp kenv tSrc
+ , tDst' <- convertType pp kenv tDst
  , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
  , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
  , A.primCastTruncateIsValid pp tcSrc tcDst
