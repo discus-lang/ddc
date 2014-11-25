@@ -10,16 +10,9 @@ module DDC.Core.Llvm.LlvmM
         , newUnique
         , newUniqueVar
         , newUniqueNamedVar
-        , newUniqueLabel
-
-          -- * Platform Specific
-        , getPrimDeclM
-        , getBytesOfType)
+        , newUniqueLabel)
 where
-import DDC.Core.Salt.Platform
 import DDC.Llvm.Syntax
-import Data.Map                         (Map)
-import qualified Data.Map               as Map
 import Control.Monad.State.Strict
 import DDC.Base.Pretty
 
@@ -43,21 +36,14 @@ dieDoc msg
 data LlvmState
         = LlvmState
         { -- Unique name generator.
-          llvmStateUnique       :: Int 
-
-          -- Primitives in the global environment.
-        , llvmStatePrimDecls    :: Map String FunctionDecl }
+          llvmStateUnique       :: Int }
 
 
 -- | Initial LLVM state.
+llvmStateInit :: LlvmState
 llvmStateInit 
-        :: Map String FunctionDecl 
-        -> LlvmState
-
-llvmStateInit prims
         = LlvmState
-        { llvmStateUnique       = 1 
-        , llvmStatePrimDecls    = prims }
+        { llvmStateUnique       = 1  }
 
 
 -- Unique ---------------------------------------------------------------------
@@ -89,18 +75,4 @@ newUniqueLabel :: String -> LlvmM Label
 newUniqueLabel name
  = do   u <- newUnique
         return $ Label ("l" ++ show u ++ "." ++ name)
-
-
--- Platform Specific ----------------------------------------------------------
--- | Get the declaration of a primitive function
-getPrimDeclM :: String -> LlvmM (Maybe FunctionDecl)
-getPrimDeclM name
- = do   prims   <- gets llvmStatePrimDecls
-        return  $ Map.lookup name prims 
-
-
--- | Get the size of a type on this platform, in bytes.
-getBytesOfType :: Platform -> Type -> Maybe Integer
-getBytesOfType pp tt
-        = takeBytesOfType (platformAddrBytes pp) tt
 

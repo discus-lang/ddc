@@ -37,8 +37,7 @@ convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
  = {-# SCC convertModule #-}
    let  
-        prims   = primDeclsMap platform
-        state   = llvmStateInit prims
+        state   = llvmStateInit 
 
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metat data.
@@ -121,6 +120,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextTypeEnv        = tenv
                 , contextMDSuper        = MDSuper Map.empty [] 
                 , contextSuperBinds     = Map.empty
+                , contextPrimDecls      = primDeclsMap pp
                 , contextConvertBody    = convertBody
                 , contextConvertExp     = convertExp
                 , contextConvertCase    = convertCase }

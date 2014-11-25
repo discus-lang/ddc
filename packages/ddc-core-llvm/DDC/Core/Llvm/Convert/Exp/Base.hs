@@ -57,6 +57,10 @@ data Context
           -- | Super meta data
         , contextMDSuper        :: MDSuper 
 
+          -- | C library functions that are used directly by the generated code without
+          --   having an import declaration in the header of the converted module.
+        , contextPrimDecls      :: Map String FunctionDecl
+
           -- | Re-bindings of top-level supers.
           --   This is used to handle let-expressions like 'f = g [t]' where
           --   'g' is a top-level super. See [Note: Binding top-level supers]
