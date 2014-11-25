@@ -4,8 +4,8 @@ module DDC.Core.Llvm.Convert.Exp.PrimStore
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Exp.Atom
-import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform

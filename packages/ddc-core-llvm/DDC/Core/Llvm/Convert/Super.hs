@@ -2,10 +2,10 @@
 module DDC.Core.Llvm.Convert.Super
         (convertSuper)
 where
-import DDC.Core.Llvm.Convert.Erase
-import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Exp
+import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Erase
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform

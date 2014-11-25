@@ -4,8 +4,8 @@ module DDC.Core.Llvm.Convert.Exp.PrimCast
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Exp.Atom
-import DDC.Core.Llvm.Convert.Exp.Base
 import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds

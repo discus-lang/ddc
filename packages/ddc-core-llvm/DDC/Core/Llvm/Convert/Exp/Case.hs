@@ -3,7 +3,7 @@ module DDC.Core.Llvm.Convert.Exp.Case
         (convertCase)
 where
 import DDC.Core.Llvm.Convert.Exp.Atom
-import DDC.Core.Llvm.Convert.Exp.Base
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.LlvmM
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform

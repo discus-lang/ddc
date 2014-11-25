@@ -9,7 +9,7 @@ import DDC.Core.Llvm.Convert.Exp.PrimArith
 import DDC.Core.Llvm.Convert.Exp.PrimCast
 import DDC.Core.Llvm.Convert.Exp.PrimStore
 import DDC.Core.Llvm.Convert.Exp.Atom
-import DDC.Core.Llvm.Convert.Exp.Base
+import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.LlvmM
