@@ -6,7 +6,7 @@ import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Exp.Atom
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.LlvmM
+import DDC.Core.Llvm.Convert.Base
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A

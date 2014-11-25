@@ -5,11 +5,11 @@ module DDC.Core.Llvm.Convert
         , convertSuperType)
 where
 import DDC.Core.Llvm.Metadata.Tbaa
-import DDC.Core.Llvm.Convert.Super
-import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Exp.Case
 import DDC.Core.Llvm.Convert.Exp
-import DDC.Core.Llvm.LlvmM
+import DDC.Core.Llvm.Convert.Super
+import DDC.Core.Llvm.Convert.Type
+import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds

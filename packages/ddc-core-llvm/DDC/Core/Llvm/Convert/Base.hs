@@ -1,5 +1,5 @@
 
-module DDC.Core.Llvm.LlvmM
+module DDC.Core.Llvm.Convert.Base
         ( LlvmM
         , LlvmState(..)
         , llvmStateInit 

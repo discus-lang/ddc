@@ -4,7 +4,7 @@ module DDC.Core.Llvm.Convert.Exp.Case
 where
 import DDC.Core.Llvm.Convert.Exp.Atom
 import DDC.Core.Llvm.Convert.Context
-import DDC.Core.Llvm.LlvmM
+import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds

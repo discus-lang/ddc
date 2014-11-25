@@ -11,7 +11,7 @@ module DDC.Core.Llvm.Convert.Context
 where
 import DDC.Core.Salt.Platform
 import DDC.Core.Llvm.Metadata.Tbaa
-import DDC.Core.Llvm.LlvmM
+import DDC.Core.Llvm.Convert.Base
 import DDC.Type.Exp
 import DDC.Llvm.Syntax
 import DDC.Type.Env                     (KindEnv, TypeEnv)

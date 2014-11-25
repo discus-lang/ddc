@@ -20,11 +20,11 @@ module DDC.Core.Llvm.Convert.Type
         , isIntegralT
         , isFloatingT)
 where
+import DDC.Core.Llvm.Convert.Erase
+import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Syntax.Attr
-import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
-import DDC.Core.Llvm.Convert.Erase
 import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates

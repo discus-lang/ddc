@@ -13,7 +13,7 @@ import DDC.Type.Collect
 import DDC.Type.Env                     (KindEnv)
 import DDC.Core.Exp
 import DDC.Core.Llvm.Metadata.Graph
-import DDC.Core.Llvm.LlvmM
+import DDC.Core.Llvm.Convert.Base
 import DDC.Base.Pretty                  hiding (empty)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
