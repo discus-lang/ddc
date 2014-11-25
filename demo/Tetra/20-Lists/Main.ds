@@ -3,9 +3,7 @@
 module Main 
 export main 
 import Data.Numeric.Nat
-import Data.Ref
-import Data.List
-import Data.Maybe
+import Data.Ref; Data.List; Data.Maybe
 import IO.Console
 where
 
