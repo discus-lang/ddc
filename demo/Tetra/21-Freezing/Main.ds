@@ -45,4 +45,3 @@ main (_ : Unit) : S Console Unit
         -- Print out the final list length.
         run putStrLn (showNat [r] (run readRef ref))
         ()
-

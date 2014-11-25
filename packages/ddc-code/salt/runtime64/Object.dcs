@@ -672,19 +672,55 @@ applyZ  [r : Region]
 
 
 -- Ref ------------------------------------------------------------------------
--- | Allocate a new mutable reference to some boxed value.
+-- | Allocate a new reference to some boxed value.
 allocRef [r1 r2 : Region] (val : Ptr# r1 Obj) : Ptr# r2 Obj
  = do   ref     = allocBoxed [r2] (truncate# 0#) 1#
         setFieldOfBoxed ref 0# val
         ref
 
 
--- | Write a value into a mutable reference.
+-- | Write a value into reference.
 writeRef [r1 r2 : Region] (ref : Ptr# r1 Obj) (val : Ptr# r2 Obj) : Void#
  =      setFieldOfBoxed ref 0# val
 
 
--- | Read the value from a mutable reference.
+-- | Read the value from a reference.
 readRef  [r1 r2 : Region] (ref : Ptr# r1 Obj) : Ptr# r2 Obj
  =      getFieldOfBoxed ref 0#
+
+
+-- Array ----------------------------------------------------------------------
+-- | Allocate an array of boxed values, consisting of the same element
+--   for all positions.
+allocArray 
+        [r1 r2 : Region] [a : Data]
+        (len : Nat#) (val : Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   arr     = allocBoxed [r2] (truncate# 0#) len
+        fillArray arr 0# len val
+        arr
+
+
+-- | Fill all elements of an array with the same value.
+fillArray
+        [r1 r2 : Region] [a : Data]
+        (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
+ = case ge# start end of
+        True#   -> return# arr
+        False#  -> do
+                setFieldOfBoxed arr start val
+                fillArray arr (add# start 1#) end val
+
+
+-- | Write an element into an array.
+writeArray 
+        [r1 r2 : Region] 
+        (arr : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Void#
+ =      setFieldOfBoxed arr ix val
+
+
+-- | Read an element from an array.
+readArray 
+        [r1 r2 : Region]
+        (arr : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
+ =      getFieldOfBoxed arr ix
 
