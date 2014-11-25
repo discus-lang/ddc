@@ -11,6 +11,7 @@ library
  
  tetra-modules:
         Data.Numeric.Nat
+        Data.Ref
         Data.Maybe
         Data.List
         IO.Console

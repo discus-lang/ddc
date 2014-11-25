@@ -1,27 +1,13 @@
 
 -- Demonstration of list combinators and combining commutable effects.
--- 
--- This module can be type-checked with "ddc -check" and "ddc -load"
--- but will not compile to object code yet because back-end support for
--- higher order functions is not complete.
---
 module Main 
 export main 
 import Data.Numeric.Nat
+import Data.Ref
 import Data.List
 import Data.Maybe
 import IO.Console
-
-import foreign boxed type
- Ref      : Region ~> Data ~> Data
-
-import foreign c value
- allocRef : [r : Region]. [a : Data]. a  -> S (Alloc r) (Ref r a)
- readRef  : [r : Region]. [a : Data]. Ref r a -> S (Read r) a
- writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Void#
-
 where
-
 
 main (_ : Unit) : S Console Unit
  = box private r with { Alloc r; Read r; Write r } in 

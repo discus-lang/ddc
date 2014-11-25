@@ -11,6 +11,8 @@ import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
+-- TODO: handle re-exports of foreign types and values.
+--       Saying "export type foo" should work even if "foo" was a foreign type.
 
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
@@ -31,21 +33,20 @@ resolveNamesInModule kenv tenv deps mm
                 =  moduleImportTypes  mm 
                 ++ importsForTyCons deps (Set.toList $ supportTyCon sp)
 
-           , moduleImportValues  
-                =  moduleImportValues mm 
-                ++ importsForDaVars deps (Set.toList $ supportDaVar sp)
-
            , moduleImportDataDefs
                 =  moduleImportDataDefs mm 
                 ++ [(def, moduleName m) | m   <- Map.elems deps
-                                        , def <- moduleDataDefsLocal m ] }
+                                        , def <- moduleDataDefsLocal m ] 
+           , moduleImportValues  
+                =  moduleImportValues mm 
+                ++ importsForDaVars deps (Set.toList $ supportDaVar sp) }
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build import statements for the given list of unbound type constructors.
 --
 --   We look in the dependency modules for a matching export,
---   and produce the correspondig import statement to use it.
+--   and produce the corresponding import statement to use it.
 --
 importsForTyCons
         :: Ord n
@@ -53,27 +54,23 @@ importsForTyCons
         -> [Bound n]                    -- ^ Unbound type constructors to find imports for.
         -> [(n, ImportSource n)]
 
-importsForTyCons deps tyCons
- = let
-        -- Type constructors defined locally by each module and exported.
-        tyConsLocal
-         = Map.unions $ map exportedTyConsLocal $ Map.elems deps
+-- TODO: we're just re-importing everything imported by the dependencies.
+--       The support set doesn't seem to include tycons just mentioned in 
+--       types of imported values, so they're incomplete.
+importsForTyCons deps _tyCons
+ = concat
+        [ [(n, ImportSourceAbstract k)
+                | (n, k)        <- Map.toList $ Map.unions 
+                                $  map importedTyConsAbs   $ Map.elems deps]
 
-        -- Type constructors imported abstractly by each module and exported.
-        tyConsAbs
-         = Map.unions $ map importedTyConsAbs   $ Map.elems deps
+        , [(n, ImportSourceAbstract k)
+                | (n, (_, k))   <- Map.toList $ Map.unions 
+                                $  map exportedTyConsLocal $ Map.elems deps]
 
-        findImport n
-         | Just (_, k)      <- Map.lookup n tyConsLocal
-         = Just (n, ImportSourceAbstract k)
-
-         | Just k           <- Map.lookup n tyConsAbs
-         = Just (n, ImportSourceAbstract k)
-
-         | otherwise
-         = Nothing
-
-   in   catMaybes [ findImport n | UName n <- tyCons ]
+        , [(n, ImportSourceBoxed k) 
+                | (n, k)        <- Map.toList $ Map.unions 
+                                $  map importedTyConsBoxed $ Map.elems deps]
+        ]
 
 
 ---------------------------------------------------------------------------------------------------
@@ -118,7 +115,7 @@ exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
 exportedTyConsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t)) 
-                | (n, ExportSourceLocal _ t) <- moduleExportTypes mm ]
+                        | (n, ExportSourceLocal _ t) <- moduleExportTypes mm ]
 
 
 -- | Get the data variable names that are locally defined, then exported by a module.
@@ -126,21 +123,26 @@ exportedDaVarsLocal :: Ord n => Module b n -> Map n (ModuleName, Type n)
 exportedDaVarsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t)) 
-                | (n, ExportSourceLocal _ t) <- moduleExportValues mm ]
+                        | (n, ExportSourceLocal _ t) <- moduleExportValues mm ]
 
 
 -- | Get the type constructors that are imported abstractly by a module.
-importedTyConsAbs  :: Ord n => Module b n -> Map n (Type n)
+importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)
 importedTyConsAbs mm
         = Map.fromList
-        $ [ (n, k)
-                | (n, ImportSourceAbstract k)  <- moduleImportTypes mm ]
+        $ [ (n, k)      | (n, ImportSourceAbstract k)  <- moduleImportTypes mm ]
+
+
+-- | Get the type constructors that are imported as boxed foreign types.
+importedTyConsBoxed :: Ord n => Module b n -> Map n (Kind n)
+importedTyConsBoxed mm
+        = Map.fromList
+        $ [ (n, k)      | (n, ImportSourceBoxed k)      <- moduleImportTypes mm ]
 
 
 -- | Get the data variables that are imported from C land by a module.
 importedDaVarsSea  :: Ord n => Module b n -> Map n (String, Type n)
 importedDaVarsSea mm
         = Map.fromList
-        $ [ (n, (s, t))
-                | (n, ImportSourceSea s t)     <- moduleImportValues mm ]
+        $ [ (n, (s, t)) | (n, ImportSourceSea s t)     <- moduleImportValues mm ]
 
