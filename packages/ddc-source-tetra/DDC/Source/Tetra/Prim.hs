@@ -4,9 +4,6 @@ module DDC.Source.Tetra.Prim
         , TyConTetra    (..)
         , kindTyConTetra
 
-        , OpStore       (..)
-        , typeOpStore
-
         , PrimTyCon     (..)
         , kindPrimTyCon
         , tBool
@@ -22,7 +19,6 @@ import DDC.Source.Tetra.Lexer.Lit
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
-import DDC.Source.Tetra.Prim.OpStore
 import DDC.Source.Tetra.Prim.OpArith
 import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Base.Pretty
@@ -32,8 +28,7 @@ import Data.Char
 import DDC.Core.Tetra   
         ( readPrimTyCon
         , readPrimArith
-        , readOpFun
-        , readOpStore)
+        , readOpFun)
 
 
 instance NFData Name where
@@ -44,7 +39,6 @@ instance NFData Name where
 
         NameTyConTetra p        -> rnf p
         NameOpFun      p        -> rnf p
-        NameOpStore    p        -> rnf p
         NamePrimTyCon  p        -> rnf p
         NamePrimArith  p        -> rnf p
 
@@ -64,7 +58,6 @@ instance Pretty Name where
 
         NameTyConTetra p        -> ppr p
         NameOpFun     p         -> ppr p
-        NameOpStore   p         -> ppr p
         NamePrimTyCon p         -> ppr p
         NamePrimArith p         -> ppr p
 
@@ -86,9 +79,6 @@ readName str
 
         | Just p <- readOpFun     str
         = Just $ NameOpFun     p
-
-        | Just p <- readOpStore   str  
-        = Just $ NameOpStore   p
 
         -- Primitive names.
         | Just p <- readPrimTyCon   str  

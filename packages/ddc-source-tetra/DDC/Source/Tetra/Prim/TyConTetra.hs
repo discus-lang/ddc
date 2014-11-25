@@ -2,7 +2,6 @@
 module DDC.Source.Tetra.Prim.TyConTetra
         ( kindTyConTetra
         , readTyConTetra
-        , tRef
         , tFunValue
         , tCloValue)
 where
@@ -19,7 +18,6 @@ instance NFData TyConTetra
 instance Pretty TyConTetra where
  ppr tc
   = case tc of
-        TyConTetraRef           -> text "Ref#"
         TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
@@ -38,7 +36,6 @@ readTyConTetra str
 
         | otherwise
         = case str of
-                "Ref#"          -> Just TyConTetraRef
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
                 "U#"            -> Just TyConTetraU
@@ -49,7 +46,6 @@ readTyConTetra str
 kindTyConTetra :: TyConTetra -> Type Name
 kindTyConTetra tc
  = case tc of
-        TyConTetraRef     -> kRegion `kFun` kData `kFun` kData
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
         TyConTetraF       -> kData `kFun` kData
         TyConTetraC       -> kData `kFun` kData
@@ -57,14 +53,6 @@ kindTyConTetra tc
 
 
 -- Compounds ------------------------------------------------------------------
--- | Primitive `Ref` type.
-tRef    :: Region Name -> Type Name -> Type Name
-tRef tR tA   
- = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraRef) k) k))
-                [tR, tA]
- where k = kRegion `kFun` kData `kFun` kData
-
-
 tFunValue :: Type Name -> Type Name
 tFunValue tA
  = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraF) k) k)) [tA]

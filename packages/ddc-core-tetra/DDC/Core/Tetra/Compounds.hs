@@ -4,8 +4,6 @@ module DDC.Core.Tetra.Compounds
 
           -- * Types
         , tBool, tNat, tInt, tWord, tPtr
-
-        , tRef
         , tTupleN
         , tBoxed,       tUnboxed
         , tFunValue,    tCloValue

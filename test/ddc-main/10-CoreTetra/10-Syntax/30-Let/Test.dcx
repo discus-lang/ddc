@@ -45,13 +45,6 @@ let ^ : Unit = () in
 let ^ : Unit = ^0 in ^0;;
 
  
--- Simple private.
-:check..
-private r with {Alloc r; Read r} in
-let x : Ref# r Nat# = run allocRef# [r] [Nat#] 4# 
-in  run readRef# [r] [Nat#] x;;
-
-
 -- Letregion with explicitly empty witness set.
 :check..
 private r with {} in

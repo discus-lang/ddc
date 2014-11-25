@@ -266,12 +266,6 @@ convertValueAppT ctx tt
         =       return  $ A.tPtr A.rTop A.tObj
 
 
-        -- The Ref# type                                -- TODO: import via FFI
-        | Just  ( E.NameTyConTetra E.TyConTetraRef
-                , [_, _])       <- takePrimTyConApps tt
-        =       return  $ A.tPtr A.rTop A.tObj
-
-
         -- Boxed functions --------------------------------
         | Just _        <- takeTFun tt
         =       return $ A.tPtr A.rTop A.tObj

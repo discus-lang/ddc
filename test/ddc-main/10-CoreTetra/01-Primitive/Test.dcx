@@ -61,12 +61,6 @@
 :type bxor#
 
 
--- Store operators
-:type allocRef#
-:type readRef#
-:type writeRef#
-
-
 -- Application operators that work on the primitive closure type.
 :type creify#
 

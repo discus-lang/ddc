@@ -7,7 +7,6 @@ module DDC.Core.Tetra.Prim.Base
         
         , TyConTetra    (..)
         , DaConTetra    (..)
-        , OpStore       (..)
         , OpFun         (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
@@ -39,9 +38,6 @@ data Name
 
         -- | Baked-in function operators.
         | NameOpFun             OpFun
-
-        -- | Baked-in store operators.
-        | NameOpStore           OpStore
 
         -- Machine primitives ------------------
         -- | A primitive type constructor.
@@ -106,11 +102,8 @@ isNameLitUnboxed nn
 -- TyConTetra ----------------------------------------------------------------
 -- | Baked-in type constructors.
 data TyConTetra
-        -- | @Ref#@.    Mutable reference.
-        = TyConTetraRef
-
         -- | @TupleN#@. Tuples.
-        | TyConTetraTuple Int
+        = TyConTetraTuple Int
 
         -- | @B#@.      Boxing type constructor. 
         --   Used to represent boxed numeric values.
@@ -133,15 +126,6 @@ data TyConTetra
 data DaConTetra
         -- | @TN#@. Tuple data constructors.
         = DaConTetraTuple Int
-        deriving (Eq, Ord, Show)
-
-
--- OpStore -------------------------------------------------------------------
--- | Mutable References.
-data OpStore
-        = OpStoreAllocRef     -- ^ Allocate a reference.
-        | OpStoreReadRef      -- ^ Read a reference.
-        | OpStoreWriteRef     -- ^ Write to a reference.
         deriving (Eq, Ord, Show)
 
 

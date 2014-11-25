@@ -3,13 +3,11 @@ module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
         , TyConTetra    (..)
         , OpFun         (..)
-        , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
 where
 import DDC.Core.Tetra    
         ( OpFun         (..)
-        , OpStore       (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
 
@@ -28,9 +26,6 @@ data Name
 
         -- | Baked in functional operators.
         | NameOpFun             OpFun
-
-        -- | Baked in store operators.
-        | NameOpStore           OpStore
 
         -- Machine primitives -------------------
         -- | Primitive type cosntructors.
@@ -61,11 +56,8 @@ data Name
 -- TyConTetra ----------------------------------------------------------------
 -- | Baked-in type constructors.
 data TyConTetra
-        -- | @Ref#@.    Mutable reference.
-        = TyConTetraRef
-
         -- | @TupleN#@. Tuples.
-        | TyConTetraTuple Int
+        = TyConTetraTuple Int
         
         -- | @F#@.      Reified function values.
         | TyConTetraF

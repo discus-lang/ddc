@@ -60,7 +60,6 @@ repOfType tt
         -- which don't have any associated values.
         | Just (NameTyConTetra n, _)    <- takePrimTyConApps tt
         = case n of
-                TyConTetraRef{}         -> Just RepNone
                 TyConTetraTuple{}       -> Just RepNone
                 TyConTetraB{}           -> Just RepNone
                 TyConTetraU{}           -> Just RepNone

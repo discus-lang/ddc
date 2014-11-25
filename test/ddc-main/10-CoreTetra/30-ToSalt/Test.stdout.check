@@ -242,10 +242,3 @@ letrec {
 }
 
 
--- Error: the mutable ref primops aren't implement yet.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Unrecognised expression form.
-  
-    with: allocRef# [r] [Nat#] x0
-

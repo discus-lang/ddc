@@ -40,19 +40,6 @@
 :synth /\(a : Data). \(x : a). \y. x
 
 
--- Abstract type being used as type argument.
--- Synthesizes annotation on lambda.
-:synth /\(r : Region). /\(a : Data). \x. readRef# [r] [a] x
-
-
--- Insert two missing type arguments.
-:synth \x. readRef# x
-
-
--- Insert one missing type argument.
-:synth /\(r : Region). \x. readRef# [r] x
-
-
 -- Check existentials can be solved against a constructor type,
 :synth (\x. \y. add# x y) 5#
 
@@ -127,16 +114,6 @@ case T2# 2# 3# of
 case T2# 2# 3# of
 { T2# a b -> a;
   _       -> 5#; }
-;;
-
-
--- Kind of type parameter is an explicit hole.
-:synth /\(r : ?). \(x : Ref# r Int#). x
-
-
--- Kind of type parameter is constrained by type application.
-:synth..
-/\r. \(x : Ref# r Nat#). x
 ;;
 
 

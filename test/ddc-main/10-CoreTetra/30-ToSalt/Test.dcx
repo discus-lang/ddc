@@ -139,13 +139,3 @@ blerk (_ : Unit) : Nat#
 ;;
 
 
--- Error: the mutable ref primops aren't implement yet.
-:to-salt..
-module Test with letrec
-blerk (_ : Unit) : Nat#
- = private r with { Alloc r; Read r; Write r } in
-   do   ref     = run allocRef# [r] 5#
-        run writeRef# ref 6#
-        run readRef#  ref
-;;
-

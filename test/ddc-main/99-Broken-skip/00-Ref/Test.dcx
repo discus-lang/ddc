@@ -1,0 +1,40 @@
+
+
+-- TODO: refs aren't primitive any more
+-- we need to be able to load new modules in the repl, 
+-- and have :synth use types defined in that module
+
+-- Abstract type being used as type argument.
+-- Synthesizes annotation on lambda.
+:synth /\(r : Region). /\(a : Data). \x. readRef# [r] [a] x
+
+
+-- Insert two missing type arguments.
+:synth \x. readRef# x
+
+
+-- Insert one missing type argument.
+:synth /\(r : Region). \x. readRef# [r] x
+
+
+-- Kind of type parameter is an explicit hole.
+:synth /\(r : ?). \(x : Ref# r Int#). x
+
+
+-- Kind of type parameter is constrained by type application.
+:synth..
+/\r. \(x : Ref# r Nat#). x
+;;
+
+
+
+-- Error: the mutable ref primops aren't implement yet.
+:to-salt..
+module Test with letrec
+blerk (_ : Unit) : Nat#
+ = private r with { Alloc r; Read r; Write r } in
+   do   ref     = run allocRef# [r] 5#
+        run writeRef# ref 6#
+        run readRef#  ref
+;;
+

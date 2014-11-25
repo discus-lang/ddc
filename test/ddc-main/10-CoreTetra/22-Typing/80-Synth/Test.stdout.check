@@ -66,27 +66,6 @@ f g (g x)
 :!: Pure
 
 
--- Abstract type being used as type argument.
--- Synthesizes annotation on lambda.
-/\(r : Region)./\(a : Data).
- \(x : Ref# r a). readRef# [r] [a] x
-:*: [r : Region].[a : Data].Ref# r a -> S (Read r) a
-:!: Pure
-
-
--- Insert two missing type arguments.
-\(x : Ref# ?2 ?3). readRef# [?2] [?3] x
-:*: Ref# ?2 ?3 -> S (Read ?2) ?3
-:!: Pure
-
-
--- Insert one missing type argument.
-/\(r : Region).
- \(x : Ref# r ?2). readRef# [r] [?2] x
-:*: [r : Region].Ref# r ?2 -> S (Read r) ?2
-:!: Pure
-
-
 -- Check existentials can be solved against a constructor type,
 (\(x y : Nat#). add# [Nat#] x y) 5#
 :*: Nat# -> Nat#
@@ -200,20 +179,6 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 :!: Pure
 
 
--- Kind of type parameter is an explicit hole.
-/\(r : Region).
- \(x : Ref# r Int#). x
-:*: [r : Region].Ref# r Int# -> Ref# r Int#
-:!: Pure
-
-
--- Kind of type parameter is constrained by type application.
-/\(r : Region).
- \(x : Ref# r Nat#). x
-:*: [r : Region].Ref# r Nat# -> Ref# r Nat#
-:!: Pure
-
-
 -- Kind of 'a' variable is constrained by its use as the type
 -- of the body of a data abstraction.
 /\(a : Data).
@@ -236,7 +201,7 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 -- represent a delayed substitution of the type argument into the body
 -- of the type for 'f'.
 When checking expression.
-  <batch>:162:7
+  <batch>:139:7
   Cannot infer the type of a polymorphic expression.
     Please supply type annotations to constrain the functional
     part to have a quantified type.

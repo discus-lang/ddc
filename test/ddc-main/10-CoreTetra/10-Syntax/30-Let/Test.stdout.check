@@ -63,15 +63,6 @@ let ^ : Unit = ^0 in
 :*: Unit
 :!: Pure
 
--- Simple private.
-private r with {Alloc r; Read r} in
-let x : Ref# r Nat#
-      = run allocRef# [r] [Nat#] 4# in
-run readRef# [r] [Nat#] x
-:*: Nat#
-:!: Pure
-
-
 -- Letregion with explicitly empty witness set.
 private r in
 ()
