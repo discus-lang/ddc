@@ -2,7 +2,6 @@
 module DDC.Core.Flow.Transform.Schedule.Scalar
         (scheduleScalar)
 where
-import DDC.Core.Flow.Transform.Slurp.Context
 import DDC.Core.Flow.Transform.Schedule.Nest
 import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Transform.Schedule.Base
@@ -12,6 +11,7 @@ import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Exp
+import DDC.Core.Flow.Context
 
 
 -- | Schedule a process into a procedure, producing scalar code.
@@ -36,10 +36,11 @@ scheduleScalar
 -- | Schedule a single series operator into a loop nest.
 scheduleOperator 
         :: Context      -- ^ Context of all operators
+        -> FillMap      -- ^ Map of which operators use which write-to accs
         -> Operator     -- ^ Operator to schedule.
         -> Either Error ([StmtStart], [StmtBody], [StmtEnd])
 
-scheduleOperator ctx op
+scheduleOperator _ctx fills op
 
  -- Id -------------------------------------------
  | OpId{}     <- op
@@ -133,47 +134,49 @@ scheduleOperator ctx op
  -- Indices --------------------------------------
  | OpIndices{}  <- op
  = do   
-        -- In a segment context the variable ^1 is the index into
+        -- In a segment context the variable ^0 is the index into
         -- the current segment.
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
 
         let bodies
                 = [ BodyStmt    bResult
-                                (XVar (UIx 1)) ]
+                                (XVar (UIx 0)) ]
 
         return ([], bodies, [])
 
  -- Fill -----------------------------------------
  | OpFill{} <- op
- = do   let tK          = opInputRate op
-
-        -- Get bound of the input element.
+ = do   -- Get bound of the input element.
         let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
 
         -- Write the current element to the vector.
         let UName nVec  = opTargetVector op
+
+        let index
+                | Just n <- getAcc fills nVec 
+                = xRead tNat 
+                $ XVar $ UName $ NameVarMod n "count"
+                | otherwise
+                = XVar $ UIx 0
+
         let bodies
                 = [ BodyVecWrite 
                         nVec                    -- destination vector
                         (opElemType op)         -- series elem type
-                        (XVar (UIx 0))          -- index
+                        index                   -- index
                         (XVar uInput) ]         -- value
 
-        -- If the length of the vector corresponds to a guarded rate then it
-        -- was constructed in a filter context. After the process completes, 
-        -- we know how many elements were written so we can truncate the
-        -- vector down to its final length.
-        let ends
-                | contextContainsSelect ctx tK
-                = [ EndVecTrunc 
-                        nVec                    -- destination vector
-                        (opElemType op)         -- series element type
-                        tK ]                    -- rate of source series
-
+        let inc
+                | Just n <- getAcc fills nVec 
+                , n == nVec
+                = [ BodyAccWrite
+                        (NameVarMod n "count")
+                        tNat
+                        (xIncrement index) ]
                 | otherwise
                 = []
 
-        return ([], bodies, ends)
+        return ([], bodies ++ inc, [])
 
  -- Gather ---------------------------------------
  | OpGather{} <- op
@@ -319,4 +322,11 @@ scheduleOperator ctx op
  -- Unsupported ----------------------------------
  | otherwise
  = Left $ ErrorUnsupported op
+
+-- | Build an expression that increments a natural.
+xIncrement :: Exp a Name -> Exp a Name
+xIncrement xx
+        = xApps (XVar (UPrim (NamePrimArith PrimArithAdd) 
+                             (typePrimArith PrimArithAdd)))
+                  [ XType tNat, xx, XCon (dcNat 1) ]
 

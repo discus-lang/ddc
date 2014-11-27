@@ -61,9 +61,10 @@ letrec {
                     True#  
                      -> let x3 : Nat# = k2__count$1 in
                         let _ : Unit = vwrite# [Int#] x5$buf x3 s1__elem in
+                        let k2__count$2 : Nat# = add# [Nat#] x3 1# in
                         let x6 : Int# = x9__acc$1 in
                         let x9__acc$2 : Int# = maxx x6 s1__elem in
-                        loop (add# [Nat#] x2 1#) (add# [Nat#] k2__count$1 1#) x9__acc$2;
+                        loop (add# [Nat#] x2 1#) k2__count$2 x9__acc$2;
                     _ 
                      -> loop (add# [Nat#] x2 1#) k2__count$1 x9__acc$1
                   }

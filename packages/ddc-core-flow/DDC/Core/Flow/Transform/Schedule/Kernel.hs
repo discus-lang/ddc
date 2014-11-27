@@ -13,6 +13,7 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
+import DDC.Core.Flow.Context
 
 
 -- | Schedule a process kernel into a procedure.
@@ -53,7 +54,7 @@ scheduleKernel
         let c           = liftingFactor lifting
 
         let frate r _   = return $ tDown c r
-        let fop   o     = scheduleOperator lifting bsParamValues o
+        let fop         = scheduleOperator lifting bsParamValues 
 
         nest <- scheduleContext frate fop context
 
@@ -69,10 +70,11 @@ scheduleKernel
 scheduleOperator 
         :: Lifting
         -> ScalarEnv
+        -> FillMap      -- ^ Map of which operators use which write-to accs
         -> Operator     -- ^ The operator to schedule.
         -> Either Error ([StmtStart], [StmtBody], [StmtEnd])
 
-scheduleOperator lifting envScalar op
+scheduleOperator lifting envScalar fills op
  -- Id -------------------------------------------
  | OpId{}     <- op
  = do   -- Get binders for the input elements.
@@ -143,19 +145,23 @@ scheduleOperator lifting envScalar op
         let Just uInput = elemBoundOfSeriesBound 
                         $ opInputSeries op
 
+        let UName nVec  = opTargetVector op
+        let index
+                | Just n <- getAcc fills nVec 
+                = xRead tNat 
+                $ XVar $ UName $ NameVarMod n "count"
+                | otherwise
+                = XVar $ UIx 0
+
         -- Write to target vector.
         let bodies      = [ BodyStmt (BNone tUnit)
                                      (xWriteVectorC c
                                         (opElemType op)
                                         (XVar $ bufOfVectorName $ opTargetVector op)
-                                        (XVar $ UIx 0)
+                                        index
                                         (XVar $ uInput)) ]
 
-        -- Bind final unit value.
-        let ends        = [ EndStmt  (opResultBind op)
-                                     xUnit ]
-
-        return ([], bodies, ends)
+        return ([], bodies, [])
 
  -- Reduce --------------------------------------
  | OpReduce{}   <- op

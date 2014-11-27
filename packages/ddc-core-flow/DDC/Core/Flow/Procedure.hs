@@ -167,5 +167,5 @@ data StmtEnd
         | EndVecTrunc
         { endVecName            :: Name
         , endVecType            :: Type Name
-        , endVecRate            :: Type Name }
+        , endVecAcc             :: Bound Name }
         deriving Show

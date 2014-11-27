@@ -32,6 +32,9 @@ data Error
         -- | Current scheduler does not support this operator.
         | ErrorUnsupported Operator
 
+        -- | Multiple fills to the same output, in "interfering contexts" (eg same branch of an append)
+        | ErrorMultipleFills
+
         -- | Cannot slurp process description from one of the top-level
         --   declarations.
         | ErrorSlurpError Slurp.Error
@@ -62,6 +65,9 @@ instance Pretty Error where
 
         ErrorUnsupported _
          -> vcat [ text "Cannot lower series operator with this method."]
+
+        ErrorMultipleFills
+         -> vcat [ text "Multiple fills to the same output, in 'interfering contexts' (eg same branch of an append)" ]
 
         ErrorSlurpError errSlurp
          -> vcat [ text "Error slurping series process."

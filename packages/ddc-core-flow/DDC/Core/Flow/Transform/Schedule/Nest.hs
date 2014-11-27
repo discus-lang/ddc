@@ -2,10 +2,7 @@
 module DDC.Core.Flow.Transform.Schedule.Nest
         ( -- * Insertion into a loop nest
           scheduleContext
-
-          -- * Rate predicates
-        , nestContainsRate
-        , nestContainsGuardedRate)
+        )
 where
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Process
@@ -13,17 +10,35 @@ import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Transform.Schedule.Error
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
+import DDC.Core.Flow.Context
+
+import Control.Arrow
+import qualified Data.Map as Map
 
 scheduleContext
     :: (Type Name -> Context  -> Either Error (Type Name))
-    -> (Operator -> Either Error ([StmtStart], [StmtBody], [StmtEnd]))
+    -> (FillMap -> Operator -> Either Error ([StmtStart], [StmtBody], [StmtEnd]))
     -> Context
     -> Either Error Nest
 
 scheduleContext frate fop topctx
- = do   (starts, nest, ends) <- go topctx
-        return $ insertStarts starts (insertEnds ends nest)
+ = do   fills <- maybe (Left ErrorMultipleFills) Right
+               $ pathsOfFills topctx
+
+        let (starts', ends')  = allocAndTrunc fills
+
+        (starts, nest, ends) <- go topctx
+         
+        return $ insertStarts (starts' ++ starts)
+               $ insertEnds   (ends'   ++ ends)
+               $ nest
  where
+  fop' op
+   = do fills <- maybe (Left ErrorMultipleFills) Right
+               $ pathsOfFills topctx
+        fop fills op
+
+
   go ctx
    = case ctx of
       ContextRate{}
@@ -49,12 +64,6 @@ scheduleContext frate fop topctx
              rateOuter      <- frate (contextOuterRate ctx) ctx
              rateInner      <- frate (contextInnerRate ctx) ctx
 
-             let TVar (UName n) = contextInnerRate ctx
-             let sacc = StartAcc
-                      { startAccName = NameVarMod n "count"
-                      , startAccType = tNat
-                      , startAccExp  = xNat 0 }
-
              let nest = NestGuard
                       { nestOuterRate  = rateOuter
                       , nestInnerRate  = rateInner
@@ -62,7 +71,7 @@ scheduleContext frate fop topctx
                       , nestBody  = bodies
                       , nestInner = i2 }
 
-             return ( s1 ++ [sacc] ++ s2
+             return ( s1 ++ s2
                     , nest
                     , e1 ++ e2)
 
@@ -75,12 +84,6 @@ scheduleContext frate fop topctx
              rateInner      <- frate (contextInnerRate ctx) ctx
 
 
-             let TVar (UName n) = contextInnerRate ctx
-             let sacc = StartAcc
-                      { startAccName = NameVarMod n "count"
-                      , startAccType = tNat
-                      , startAccExp  = xNat 0 }
-
              let nest = NestSegment
                       { nestOuterRate  = rateOuter
                       , nestInnerRate  = rateInner
@@ -88,7 +91,7 @@ scheduleContext frate fop topctx
                       , nestBody  = bodies
                       , nestInner = i2 }
 
-             return ( s1 ++ [sacc] ++ s2
+             return ( s1 ++ s2
                     , nest
                     , e1 ++ e2)
 
@@ -106,7 +109,7 @@ scheduleContext frate fop topctx
 
 
   ops ctx
-   = do outs <- mapM fop (contextOps ctx)
+   = do outs <- mapM fop' (contextOps ctx)
         let (ss,bs,es) = unzip3 outs
         return (concat ss, concat bs, concat es)
 
@@ -121,6 +124,37 @@ scheduleContext frate fop topctx
    = n
   listNest ns
    = NestList ns
+
+
+allocAndTrunc :: FillMap -> ([StmtStart], [StmtEnd])
+allocAndTrunc fills
+ = concat *** concat
+ $ unzip
+ $ map go 
+ $ Map.toList fills
+ where
+  go (k,(f,t))
+   | isSimple f || isNone f
+   = ([], [])
+   | otherwise
+   = let k' = getAccForPath fills f
+         kk = maybe k id k'
+         co = NameVarMod kk "count"
+
+         s  | k == kk
+            = [StartAcc
+              { startAccName = co
+              , startAccType = tNat
+              , startAccExp  = xNat 0 } ]
+            | otherwise
+            = []
+
+         e  = [EndVecTrunc
+                k t
+                (UName co) ]
+
+     in  (s, e)
+
 
 -------------------------------------------------------------------------------
 -- | Insert starting statements in the given context.
@@ -146,51 +180,4 @@ insertEnds ends' nest
      -> nest { nestEnd = nestEnd nest ++ ends' }
     _
      -> nest
-
--- Rate Predicates ------------------------------------------------------------
--- | Check whether the top-level of this nest contains the given rate.
---   It might be in a nested context.
-nestContainsRate :: Nest -> TypeF -> Bool
-nestContainsRate nest tRate
- = case nest of
-        NestEmpty       
-         -> False
-
-        NestList ns     
-         -> any (flip nestContainsRate tRate) ns
-
-        NestLoop{}
-         ->  nestRate nest == tRate
-          || nestContainsRate (nestInner nest) tRate
-
-        NestGuard{}
-         ->  nestInnerRate nest == tRate
-          || nestContainsRate (nestInner nest) tRate
-
-        NestSegment{}
-         ->  nestInnerRate nest == tRate
-          || nestContainsRate (nestInner nest) tRate
-
-
--- | Check whether the given rate is the inner rate of some 
---  `NestGuard` constructor.
-nestContainsGuardedRate :: Nest -> TypeF -> Bool
-nestContainsGuardedRate nest tRate
- = case nest of
-        NestEmpty
-         -> False
-
-        NestList ns
-         -> any (flip nestContainsRate tRate) ns
-
-        NestLoop{}
-         -> nestContainsGuardedRate (nestInner nest) tRate
-
-        NestGuard{}
-         -> nestInnerRate nest == tRate
-         || nestContainsGuardedRate (nestInner nest) tRate
-
-        NestSegment{}
-         -> nestContainsGuardedRate (nestInner nest) tRate
-
 

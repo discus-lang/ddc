@@ -94,19 +94,15 @@ extractLoop (NestLoop tRate starts bodys inner ends)
    in   lsStart ++ [lLoop] ++ lsEnd
 
 -- Code in a guard context.
-extractLoop (NestGuard _tRateOuter tRateInner uFlags stmtsBody nested)
+extractLoop (NestGuard _tRateOuter _tRateInner uFlags stmtsBody nested)
  = let
         -- Get the name of a single flag from the series of flags.
         UName nFlags    = uFlags
         nFlag           = NameVarMod nFlags "elem"
         xFlag           = XVar (UName nFlag)
 
-        -- Get the name of the entry counter.
-        TVar (UName nK) = tRateInner
-        uCounter        = UName (NameVarMod nK "count")
-
-        xBody           = xGuard (XVar uCounter) xFlag 
-                          (  XLam (BAnon tNat)
+        xBody           = xGuard xFlag 
+                          (  XLam (BNone tUnit)
                           $ xLets (lsBody ++ lsNested) xUnit)
 
         -- Statements in the guard context.
@@ -118,20 +114,15 @@ extractLoop (NestGuard _tRateOuter tRateInner uFlags stmtsBody nested)
   in    [LLet (BNone tUnit) xBody]
 
 -- Code in a segment context.
-extractLoop (NestSegment _tRateOuter tRateInner uLengths stmtsBody nested)
+extractLoop (NestSegment _tRateOuter _tRateInner uLengths stmtsBody nested)
  = let
         -- Get the name of a single segment length from the series of lengths.
         UName nLengths  = uLengths
         nLength         = NameVarMod nLengths "elem"
         xLength         = XVar (UName nLength)
 
-        -- Get the name of the entry counter.
-        TVar (UName nK) = tRateInner
-        uCounter        = UName (NameVarMod nK "count")
-
-        xBody           = xSegment (XVar uCounter) xLength 
+        xBody           = xSegment xLength 
                         (  XLam (BAnon tNat)    -- Index into current segment.
-                        $  XLam (BAnon tNat)    -- Index into overall result series.
                         $ xLets (lsBody ++ lsNested) xUnit)
 
         -- Statements in the segment context.
@@ -211,11 +202,9 @@ extractStmtEnd se
                   (xRead t (XVar (UName nAcc))) ]
 
         -- Truncate a vector down to its final size.
-        EndVecTrunc nVec tElem tRate 
+        EndVecTrunc nVec tElem uCounter 
          -> let 
                 -- Get the name of the counter.
-                TVar (UName nK) = tRate
-                uCounter        = UName (NameVarMod nK "count")
                 xCounter        = xRead tNat (XVar uCounter)
                 xVec            = XVar (UName nVec)
 

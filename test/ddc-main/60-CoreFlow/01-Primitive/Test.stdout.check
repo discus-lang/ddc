@@ -90,8 +90,8 @@ tail$8# :: [^ : Proc].[^ : Rate].[^ : Data].RateNat# (Tail8# ^1) -> Series# ^2 ^
 -- Control operators
 loop# :: [^ : Rate].(Nat# -> Unit) -> Unit
 loopn# :: [^ : Rate].RateNat# ^0 -> (Nat# -> Unit) -> Unit
-segment# :: Ref# Nat# -> Nat# -> (Nat# -> Nat# -> Unit) -> Unit
-guard# :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
+segment# :: Nat# -> (Nat# -> Unit) -> Unit
+guard# :: Bool# -> (Unit -> Unit) -> Unit
 split$8# :: [^ : Rate].RateNat# ^0 -> (RateNat# (Down8# ^0) -> Unit) -> (RateNat# (Tail8# ^0) -> Unit) -> Unit
 
 

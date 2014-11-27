@@ -46,9 +46,11 @@ filterMax : [p : Proc]. [k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) In
                 let x0       : Int#  = mod# s1__elem 2i# in
                 let x3__elem : Bool# = eq# x0 0i# in
                 let _ : Unit
-                      = guard# k2__count x3__elem
-                            (\(x3 : Nat#).
+                      = guard# x3__elem
+                            (\(_ : Unit).
+                             let x3 : Nat# = read# k2__count in
                              let _  : Unit = vwrite# x5$buf x3 s1__elem in
+                             let _  : Unit = write# k2__count (add# x3 1#) in
                              let x6 : Int# = read#  x9__acc in
                              let _  : Unit = write# x9__acc (maxx x6 s1__elem) in
                              ()) in

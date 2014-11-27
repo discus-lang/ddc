@@ -28,19 +28,25 @@ letrec {
     = /\(p : Proc)./\(k1 : Rate).
        \(lens : Series# p k1 Nat#).\(s1 : Series# p k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
-      let k2$count = new# [Nat#] 0# in
+      let v$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x1 : Nat#).
                    let lens$elem = next# [Nat#] [p] [k1] lens x1 in
                    let s1$elem = next# [Float32#] [p] [k1] s1 x1 in
                    let _
-                         = segment# k2$count lens$elem
-                               (\(x2 x3 : Nat#).
+                         = segment# lens$elem
+                               (\(x2 : Nat#).
                                 let s3$elem = mul# [Float32#] 2.0f32# s1$elem in
-                                let _ = vwrite# [Float32#] v$buf x3 s3$elem in
+                                let x4 = read# [Nat#] v$count in
+                                let _ = vwrite# [Float32#] v$buf x4 s3$elem in
+                                let x5 = read# [Nat#] v$count in
+                                let x6 = add# [Nat#] x5 1# in
+                                let _ = write# [Nat#] v$count x6 in
                                 ()) in
                    ()) in
+      let x3 = read# [Nat#] v$count in
+      let _ = vtrunc# [Float32#] x3 v in
       ()
 }
 
@@ -53,7 +59,7 @@ letrec {
     = /\(p : Proc)./\(k1 : Rate).
        \(lens : Series# p k1 Nat#).\(s1 s2 : Series# p k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
-      let k2$count = new# [Nat#] 0# in
+      let v$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
@@ -61,12 +67,18 @@ letrec {
                    let s1$elem = next# [Float32#] [p] [k1] s1 x2 in
                    let s2$elem = next# [Float32#] [p] [k1] s2 x2 in
                    let _
-                         = segment# k2$count lens$elem
-                               (\(x3 x4 : Nat#).
+                         = segment# lens$elem
+                               (\(x3 : Nat#).
                                 let s3$elem = mul# [Float32#] s1$elem s2$elem in
-                                let _ = vwrite# [Float32#] v$buf x4 s3$elem in
+                                let x5 = read# [Nat#] v$count in
+                                let _ = vwrite# [Float32#] v$buf x5 s3$elem in
+                                let x6 = read# [Nat#] v$count in
+                                let x7 = add# [Nat#] x6 1# in
+                                let _ = write# [Nat#] v$count x7 in
                                 ()) in
                    ()) in
+      let x4 = read# [Nat#] v$count in
+      let _ = vtrunc# [Float32#] x4 v in
       ()
 }
 
@@ -78,7 +90,7 @@ letrec {
     = /\(p : Proc)./\(k1 : Rate).
        \(lens : Series# p k1 Nat#).\(s1 s2 : Series# p k1 Float32#).\(v : Vector# Float32#).
       let v$buf = vbuf# [Float32#] v in
-      let k2$count = new# [Nat#] 0# in
+      let v$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
                   (\(x2 : Nat#).
@@ -87,10 +99,16 @@ letrec {
                    let s2$elem = next# [Float32#] [p] [k1] s2 x2 in
                    let s3$elem = mul# [Float32#] s1$elem s2$elem in
                    let _
-                         = segment# k2$count lens$elem
-                               (\(x3 x4 : Nat#).
-                                let _ = vwrite# [Float32#] v$buf x4 s3$elem in
+                         = segment# lens$elem
+                               (\(x3 : Nat#).
+                                let x5 = read# [Nat#] v$count in
+                                let _ = vwrite# [Float32#] v$buf x5 s3$elem in
+                                let x6 = read# [Nat#] v$count in
+                                let x7 = add# [Nat#] x6 1# in
+                                let _ = write# [Nat#] v$count x7 in
                                 ()) in
                    ()) in
+      let x4 = read# [Nat#] v$count in
+      let _ = vtrunc# [Float32#] x4 v in
       ()
 }

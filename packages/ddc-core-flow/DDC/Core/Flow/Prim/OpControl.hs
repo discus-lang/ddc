@@ -68,9 +68,8 @@ typeOpControl op
 
         -- guard#   :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
         OpControlGuard 
-         -> tRef tNat
-                `tFun` tBool
-                `tFun` (tNat `tFun` tUnit)
+         ->            tBool
+                `tFun` (tUnit `tFun` tUnit)
                 `tFun` tUnit
 
         -- segment# :: Ref Nat# -> Nat#  -> (Nat# -> Nat# -> Unit) -> Unit
@@ -78,9 +77,8 @@ typeOpControl op
         --   element in the segment, and the second is the index into the 
         --   overall series.
         OpControlSegment
-         -> tRef tNat
-                `tFun` tNat
-                `tFun` (tNat `tFun` tNat `tFun` tUnit)
+         ->            tNat
+                `tFun` (tNat `tFun` tUnit)
                 `tFun` tUnit
 
         -- split#  :: [k : Rate]. RateNat# k
@@ -106,16 +104,16 @@ xLoopN tR xRN xF
                 [XType tR, xRN, xF]
 
 
-xGuard   :: ExpF -> ExpF -> ExpF -> ExpF
-xGuard xCount xFlag xFun
+xGuard   :: ExpF -> ExpF -> ExpF
+xGuard xFlag xFun
         = xApps (xVarOpControl OpControlGuard) 
-                [xCount, xFlag, xFun]
+                [xFlag, xFun]
 
 
-xSegment :: ExpF -> ExpF -> ExpF -> ExpF
-xSegment xCount xIters xFun
+xSegment :: ExpF -> ExpF -> ExpF
+xSegment xIters xFun
         = xApps (xVarOpControl OpControlSegment)
-                [xCount, xIters, xFun]
+                [xIters, xFun]
 
 
 xSplit  :: Int  -> TypeF -> ExpF

@@ -105,12 +105,8 @@ data Context
 
         -- | We're currently in the body of a guard.
         | ContextGuard
-        { -- | Name of the entry counter,
-          --   the number of times this guard has matched.
-          contextGuardCounter   :: Name
-
-          -- | Whether we're in the matching or non-matching branch.
-        , contextGuardFlag      :: Bool }
+        { -- | Whether we're in the matching or non-matching branch.
+          contextGuardFlag      :: Bool }
         deriving Show
 
 
@@ -168,17 +164,7 @@ slurpArgUpdates a refMap [] (ContextLoop _ nCounter nAccs : more)
 
 -- If we're inside the true branch of a guard then update
 -- the associated entry counter for the guard.
-slurpArgUpdates a refMap args (ContextGuard nCounter flag : more)
- | flag == True
- = let  
-        update []               = []
-        update ((n, x) : args')
-         | n == nCounter        = (n, xIncrement a x) : update args'
-         | otherwise            = (n, x)              : update args'
-
-   in   slurpArgUpdates a refMap (update args) more
-
- | otherwise
+slurpArgUpdates a refMap args (ContextGuard _flag : more)
  =      slurpArgUpdates a refMap args more
 
 slurpArgUpdates _ _ _   (ContextLoop{} : _)
@@ -385,21 +371,15 @@ windBodyX refMap context xx
         -- Detect guard combinator.
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlGuard
-                , [ XVar _ (UName nCountRef)
-                  , xFlag
-                  , XLam _ bCount xBody ])       <- takeXPrimApps x
+                , [ xFlag
+                  , XLam _ _unit xBody ])       <- takeXPrimApps x
          -> let 
-                Just infoCount  = lookupRefInfo refMap nCountRef
-
-                Just nCount     = nameOfRefInfo infoCount
-
                 context' = context
                          ++ [ ContextGuard
-                                { contextGuardCounter = nCountRef
-                                , contextGuardFlag    = True }  ]
+                                { contextGuardFlag    = True }  ]
 
-                xBody'  = XLet a (LLet bCount (XVar a (UName nCount)))
-                        $ windBodyX refMap context' xBody
+                xBody'  = -- XLet a (LLet bCount (XVar a (UName nCount)))
+                          windBodyX refMap context' xBody
 
             in  XCase a xFlag 
                         [ AAlt (PData (dcBool True) []) xBody'

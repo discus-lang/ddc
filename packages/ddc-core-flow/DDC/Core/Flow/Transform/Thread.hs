@@ -188,9 +188,8 @@ threadType n _
 
         -- guard#
         NameOpControl OpControlGuard
-         -> Just $ tRef tNat
-                        `tFun` tBool
-                        `tFun` (tNat  `tFun` tWorld `tFun` tWorld)
+         -> Just $             tBool
+                        `tFun` (tUnit  `tFun` tWorld `tFun` tWorld)
                         `tFun` tWorld `tFun` tWorld
 
         -- split#  :: [k : Rate]. RateNat# k

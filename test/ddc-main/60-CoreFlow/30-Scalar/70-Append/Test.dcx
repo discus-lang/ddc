@@ -1,0 +1,86 @@
+:set Synth
+:set SuppressLetTypes
+
+:flow-lower..
+module Test with letrec
+mm [p : Proc] [k : Rate] (out1 : Vector# Int#)
+   (ins : RateVec# k Int#) : Process# p (RateAppend# k k)
+ = do   ins1 = series# ins
+        ins2 = series# ins
+        ap   = sappend# ins1 ins2
+        sfill# out1 ap
+;;
+
+
+:flow-lower..
+module Test with letrec
+mm [p : Proc] [k : Rate] (out2 : Vector# Int#)
+   (ins : RateVec# k Int#) : Process# p (RateAppend# k k)
+ = do   ins' = series# ins
+        ap   = sappend# ins' ins'
+        ap2  = smap# (add# 1i#) ap
+
+        lts  = smap# (gt# 1i#) ap2
+
+        smkSel1# lts (/\(kk : Rate). \(sel : Sel1# p (RateAppend# k k) kk).
+            do  pack = spack# sel ap2
+                pout2= sfill# out2 pack
+
+                ri     = rid# [p] [kk]
+                rs     = rsel1# sel ri
+                pout2' = presize# rs pout2
+                pout2')
+;;
+
+
+:flow-lower..
+module Test with letrec
+mm [p : Proc] [k : Rate] (out1 out2 : Vector# Int#)
+   (ins : RateVec# k Int#) : Process# p (RateAppend# k k)
+ = do   ins' = series# ins
+        ap   = sappend# ins' ins'
+        ap2  = smap# (add# 1i#) ap
+
+        lts  = smap# (gt# 1i#) ap2
+
+        smkSel1# lts (/\(kk : Rate). \(sel : Sel1# p (RateAppend# k k) kk).
+            do  pack = spack# sel ap2
+                pout = sfill# out1 ap
+                pout2= sfill# out2 pack
+
+                ri     = rid# [p] [kk]
+                rs     = rsel1# sel ri
+                pout2' = presize# rs pout2
+                pjoin# pout pout2')
+;;
+
+:flow-lower..
+module Test with letrec
+mm [p : Proc] [k : Rate] (out1 out2 out3 : Vector# Int#)
+   (ins1 : Series# p k Int#)
+   (ins2 : Series# p k Int#)
+         : Process# p (RateAppend# k k)
+ = do   ap   = sappend# ins1 ins2
+        ap2  = smap# (add# 1i#) ap
+
+        lts  = smap# (gt# 1i#) ap2
+
+        xs  = smap# (gt# 1i#) ins1
+        pleft = smkSel1# xs (/\(kk : Rate). \(sel : Sel1# p k kk).
+                    do  pack = spack# sel ins1
+                        pl   = sfill# out3 pack
+                        pl'  = presize# (rsel1# sel (rid# [p] [kk])) pl
+                        pl')
+
+        smkSel1# lts (/\(kk : Rate). \(sel : Sel1# p (RateAppend# k k) kk).
+            do  popop  = smap# (add# 2i#) ap2
+                pack   = spack# sel popop
+                pout   = sfill# out1 ap
+                pout2  = sfill# out2 pack
+
+                ri     = rid# [p] [kk]
+                rs     = rsel1# sel ri
+                pout2' = presize# rs pout2
+                pleft' = presize# (rappl# [p] [k]) pleft
+                pjoin# pout (pjoin# pout2' pleft'))
+;;

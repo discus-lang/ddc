@@ -1,0 +1,218 @@
+ok
+ok
+
+module Test with
+letrec {
+  mm : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(out1 : Vector# Int#).\(ins : RateVec# k Int#).
+      let out1$buf = vbuf# [Int#] out1 in
+      let out1$count = new# [Nat#] 0# in
+      let ins1 = series# [p] [k] [Int#] ins in
+      let ins2 = series# [p] [k] [Int#] ins in
+      let _
+            = loop# [k]
+                  (\(x0 : Nat#).
+                   let ins1$elem = next# [Int#] [p] [k] ins1 x0 in
+                   let ^ = read# [Nat#] out1$count in
+                   let _ = vwrite# [Int#] out1$buf ^0 ins1$elem in
+                   let ^ = read# [Nat#] out1$count in
+                   let ^ = add# [Nat#] ^0 1# in
+                   let _ = write# [Nat#] out1$count ^0 in
+                   ()) in
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let ins2$elem = next# [Int#] [p] [k] ins2 x1 in
+                   let ^ = read# [Nat#] out1$count in
+                   let _ = vwrite# [Int#] out1$buf ^0 ins2$elem in
+                   let ^ = read# [Nat#] out1$count in
+                   let ^ = add# [Nat#] ^0 1# in
+                   let _ = write# [Nat#] out1$count ^0 in
+                   ()) in
+      let x2 = read# [Nat#] out1$count in
+      let _ = vtrunc# [Int#] x2 out1 in
+      ()
+}
+
+
+module Test with
+letrec {
+  mm : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(out2 : Vector# Int#).\(ins : RateVec# k Int#).
+      let out2$buf = vbuf# [Int#] out2 in
+      let out2$count = new# [Nat#] 0# in
+      let ins' = series# [p] [k] [Int#] ins in
+      let ins' = series# [p] [k] [Int#] ins in
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let ins'$elem = next# [Int#] [p] [k] ins' x1 in
+                   let ap2$elem = add# [Int#] 1i# ins'$elem in
+                   let lts$elem = gt# [Int#] 1i# ap2$elem in
+                   let _
+                         = guard# lts$elem
+                               (\(_ : Unit).
+                                let x5 = read# [Nat#] out2$count in
+                                let _ = vwrite# [Int#] out2$buf x5 ap2$elem in
+                                let x6 = read# [Nat#] out2$count in
+                                let x7 = add# [Nat#] x6 1# in
+                                let _ = write# [Nat#] out2$count x7 in
+                                ()) in
+                   ()) in
+      let _
+            = loop# [k]
+                  (\(x3 : Nat#).
+                   let ins'$elem = next# [Int#] [p] [k] ins' x3 in
+                   let ap2$elem = add# [Int#] 1i# ins'$elem in
+                   let lts$elem = gt# [Int#] 1i# ap2$elem in
+                   let _
+                         = guard# lts$elem
+                               (\(_ : Unit).
+                                let x8 = read# [Nat#] out2$count in
+                                let _ = vwrite# [Int#] out2$buf x8 ap2$elem in
+                                let x9 = read# [Nat#] out2$count in
+                                let x10 = add# [Nat#] x9 1# in
+                                let _ = write# [Nat#] out2$count x10 in
+                                ()) in
+                   ()) in
+      let x4 = read# [Nat#] out2$count in
+      let _ = vtrunc# [Int#] x4 out2 in
+      ()
+}
+
+
+module Test with
+letrec {
+  mm : [p : Proc].[k : Rate].Vector# Int# -> Vector# Int# -> RateVec# k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(out1 out2 : Vector# Int#).\(ins : RateVec# k Int#).
+      let out1$buf = vbuf# [Int#] out1 in
+      let out2$buf = vbuf# [Int#] out2 in
+      let out1$count = new# [Nat#] 0# in
+      let out2$count = new# [Nat#] 0# in
+      let ins' = series# [p] [k] [Int#] ins in
+      let ins' = series# [p] [k] [Int#] ins in
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let ins'$elem = next# [Int#] [p] [k] ins' x1 in
+                   let x6 = read# [Nat#] out1$count in
+                   let _ = vwrite# [Int#] out1$buf x6 ins'$elem in
+                   let x7 = read# [Nat#] out1$count in
+                   let x8 = add# [Nat#] x7 1# in
+                   let _ = write# [Nat#] out1$count x8 in
+                   let ap2$elem = add# [Int#] 1i# ins'$elem in
+                   let lts$elem = gt# [Int#] 1i# ap2$elem in
+                   let _
+                         = guard# lts$elem
+                               (\(_ : Unit).
+                                let x9 = read# [Nat#] out2$count in
+                                let _ = vwrite# [Int#] out2$buf x9 ap2$elem in
+                                let x10 = read# [Nat#] out2$count in
+                                let x11 = add# [Nat#] x10 1# in
+                                let _ = write# [Nat#] out2$count x11 in
+                                ()) in
+                   ()) in
+      let _
+            = loop# [k]
+                  (\(x3 : Nat#).
+                   let ins'$elem = next# [Int#] [p] [k] ins' x3 in
+                   let x12 = read# [Nat#] out1$count in
+                   let _ = vwrite# [Int#] out1$buf x12 ins'$elem in
+                   let x13 = read# [Nat#] out1$count in
+                   let x14 = add# [Nat#] x13 1# in
+                   let _ = write# [Nat#] out1$count x14 in
+                   let ap2$elem = add# [Int#] 1i# ins'$elem in
+                   let lts$elem = gt# [Int#] 1i# ap2$elem in
+                   let _
+                         = guard# lts$elem
+                               (\(_ : Unit).
+                                let x15 = read# [Nat#] out2$count in
+                                let _ = vwrite# [Int#] out2$buf x15 ap2$elem in
+                                let x16 = read# [Nat#] out2$count in
+                                let x17 = add# [Nat#] x16 1# in
+                                let _ = write# [Nat#] out2$count x17 in
+                                ()) in
+                   ()) in
+      let x4 = read# [Nat#] out1$count in
+      let _ = vtrunc# [Int#] x4 out1 in
+      let x5 = read# [Nat#] out2$count in
+      let _ = vtrunc# [Int#] x5 out2 in
+      ()
+}
+
+module Test with
+letrec {
+  mm : [p : Proc].[k : Rate].Vector# Int# -> Vector# Int# -> Vector# Int# -> Series# p k Int# -> Series# p k Int# -> Unit
+    = /\(p : Proc)./\(k : Rate).
+       \(out1 out2 out3 : Vector# Int#).\(ins1 ins2 : Series# p k Int#).
+      let out1$buf = vbuf# [Int#] out1 in
+      let out2$buf = vbuf# [Int#] out2 in
+      let out3$buf = vbuf# [Int#] out3 in
+      let out1$count = new# [Nat#] 0# in
+      let out2$count = new# [Nat#] 0# in
+      let out3$count = new# [Nat#] 0# in
+      let _
+            = loop# [k]
+                  (\(x1 : Nat#).
+                   let ins1$elem = next# [Int#] [p] [k] ins1 x1 in
+                   let x8 = read# [Nat#] out1$count in
+                   let _ = vwrite# [Int#] out1$buf x8 ins1$elem in
+                   let x9 = read# [Nat#] out1$count in
+                   let x10 = add# [Nat#] x9 1# in
+                   let _ = write# [Nat#] out1$count x10 in
+                   let ap2$elem = add# [Int#] 1i# ins1$elem in
+                   let lts$elem = gt# [Int#] 1i# ap2$elem in
+                   let popop$elem = add# [Int#] 2i# ap2$elem in
+                   let xs$elem = gt# [Int#] 1i# ins1$elem in
+                   let _
+                         = guard# lts$elem
+                               (\(_ : Unit).
+                                let x11 = read# [Nat#] out2$count in
+                                let _ = vwrite# [Int#] out2$buf x11 popop$elem in
+                                let x12 = read# [Nat#] out2$count in
+                                let x13 = add# [Nat#] x12 1# in
+                                let _ = write# [Nat#] out2$count x13 in
+                                ()) in
+                   let _
+                         = guard# xs$elem
+                               (\(_ : Unit).
+                                let x14 = read# [Nat#] out3$count in
+                                let _ = vwrite# [Int#] out3$buf x14 ins1$elem in
+                                let x15 = read# [Nat#] out3$count in
+                                let x16 = add# [Nat#] x15 1# in
+                                let _ = write# [Nat#] out3$count x16 in
+                                ()) in
+                   ()) in
+      let _
+            = loop# [k]
+                  (\(x3 : Nat#).
+                   let ins2$elem = next# [Int#] [p] [k] ins2 x3 in
+                   let x17 = read# [Nat#] out1$count in
+                   let _ = vwrite# [Int#] out1$buf x17 ins2$elem in
+                   let x18 = read# [Nat#] out1$count in
+                   let x19 = add# [Nat#] x18 1# in
+                   let _ = write# [Nat#] out1$count x19 in
+                   let ap2$elem = add# [Int#] 1i# ins2$elem in
+                   let lts$elem = gt# [Int#] 1i# ap2$elem in
+                   let popop$elem = add# [Int#] 2i# ap2$elem in
+                   let _
+                         = guard# lts$elem
+                               (\(_ : Unit).
+                                let x20 = read# [Nat#] out2$count in
+                                let _ = vwrite# [Int#] out2$buf x20 popop$elem in
+                                let x21 = read# [Nat#] out2$count in
+                                let x22 = add# [Nat#] x21 1# in
+                                let _ = write# [Nat#] out2$count x22 in
+                                ()) in
+                   ()) in
+      let x5 = read# [Nat#] out1$count in
+      let _ = vtrunc# [Int#] x5 out1 in
+      let x6 = read# [Nat#] out2$count in
+      let _ = vtrunc# [Int#] x6 out2 in
+      let x7 = read# [Nat#] out3$count in
+      let _ = vtrunc# [Int#] x7 out3 in
+      ()
+}

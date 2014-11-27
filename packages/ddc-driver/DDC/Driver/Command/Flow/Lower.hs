@@ -36,8 +36,8 @@ cmdFlowLower
          [  stageFlowPrep  configDriver source
          [  PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
          [  stageFlowLower configDriver configLower source
-         -- [ PipeCoreOutput pmode SinkStdout , pipeFinal ]]]]
-         [ pipeFinal ]]]]
+         [ PipeCoreOutput pmode SinkStdout , pipeFinal ]]]]
+         -- [ pipeFinal ]]]]
 
         pipeFinal
          | configTaintAvoidTypeChecks configDriver
@@ -45,7 +45,7 @@ cmdFlowLower
 
          | otherwise
          = PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
-         [ PipeCoreOutput   pmode SinkStdout ]
+         [] -- [ PipeCoreOutput   pmode SinkStdout ]
 
    in do        
         errs    <- liftIO pipeLower

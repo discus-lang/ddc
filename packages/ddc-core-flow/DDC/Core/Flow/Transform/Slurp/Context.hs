@@ -2,8 +2,7 @@
 module DDC.Core.Flow.Transform.Slurp.Context
     ( insertContext
     , mergeContexts
-    , resizeContext
-    , contextContainsSelect )
+    , resizeContext )
 where
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Transform.Slurp.Error
@@ -284,20 +283,4 @@ takeAppend ty
  | otherwise
  = Nothing
 
-
-contextContainsSelect :: Context -> Type Name -> Bool
-contextContainsSelect ctx k
- = case ctx of
-    ContextRate{}
-     -> inners
-    ContextSelect{}
-     -> contextInnerRate ctx == k
-     || inners
-    ContextSegment{}
-     -> inners
-    ContextAppend{}
-     -> contextContainsSelect (contextInner1 ctx) k
-     || contextContainsSelect (contextInner2 ctx) k
- where
-  inners = any (flip contextContainsSelect k) (contextInner ctx)
 
