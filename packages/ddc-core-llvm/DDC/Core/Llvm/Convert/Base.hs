@@ -13,10 +13,10 @@ module DDC.Core.Llvm.Convert.Base
         , newUniqueLabel)
 where
 import DDC.Llvm.Syntax
-import Control.Monad.State.Strict
 import DDC.Base.Pretty
+import DDC.Control.Monad.Check
 
-type LlvmM = State LlvmState
+type LlvmM = CheckM LlvmState String
 
 
 -- | Called when we find a thing that cannot be converted to Llvm.
@@ -28,7 +28,6 @@ dieDoc msg
         = error $ renderIndent
         $    text "DDC.Core.Llvm.Convert LLVM conversion failed"
         <$$> msg
-
 
 
 -- LlvmState ------------------------------------------------------------------

@@ -10,10 +10,11 @@ import DDC.Core.Llvm.Convert.Exp
 import DDC.Core.Llvm.Convert.Super
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Base
-import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
-import Control.Monad.State.Strict               (evalState)
+import DDC.Llvm.Syntax
+import DDC.Control.Monad.Check
+import qualified Control.Monad.State.Strict     as State
 import Control.Monad
 import Data.Map                                 (Map)
 import qualified DDC.Llvm.Transform.Clean       as Llvm
@@ -33,36 +34,41 @@ import qualified Data.List                      as List
 --   If anything goes wrong in the convertion then this function will
 --   just call `error`.
 --
-convertModule :: Platform -> C.Module () A.Name -> Module
+convertModule 
+        :: Platform 
+        -> C.Module () A.Name 
+        -> Either String Module
+
 convertModule platform mm@(C.ModuleCore{})
- = {-# SCC convertModule #-}
-   let  
+ = let  
         state   = llvmStateInit 
 
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metat data.
-        mmElab  = Simp.result 
-                $ evalState (Simp.applySimplifier 
+        mmElab  = Simp.result
+                $ fst
+                $ State.runState 
+                        (Simp.applySimplifier 
                                 A.profile Env.empty Env.empty 
                                 (Simp.Trans Simp.Elaborate) mm)
                         state
-
+                        
         -- Convert to LLVM.
         --  The result contains ISet and INop meta instructions that need to be 
         --  cleaned out. We also need to fixup the labels in IPhi instructions.
-        mmRaw    = evalState (convertModuleM platform mmElab) state
+   in   case evalCheck state (convertModuleM platform mmElab) of
+         Left err       -> Left err
+         Right mmRaw
+          -> let 
+                 -- Inline the ISet meta instructions and drop INops.
+                 --  This gives us code that the LLVM compiler will accept directly.
+                 mmClean  = Llvm.clean   mmRaw
 
-        -- Inline the ISet meta instructions and drop INops.
-        --  This gives us code that the LLVM compiler will accept directly.
-        mmClean  = Llvm.clean   mmRaw
-
-        -- Fixup the source labels in IPhi instructions.
-        --  The converter itself sets these to 'undef', so we need to find the 
-        --  real block label of each merged variable.
-        mmPhi    = Llvm.linkPhi mmClean
-
-   in   mmPhi
-
+                 -- Fixup the source labels in IPhi instructions.
+                 --  The converter itself sets these to 'undef', so we need to find the 
+                 --  real block label of each merged variable.
+                 mmPhi    = Llvm.linkPhi mmClean
+             in  Right mmPhi
 
 convertModuleM 
         :: Platform

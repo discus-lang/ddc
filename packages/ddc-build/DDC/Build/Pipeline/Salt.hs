@@ -101,9 +101,11 @@ pipeSalt !mm !pp
         PipeSaltToLlvm !platform !more
          -> {-# SCC "PipeSaltToLlvm" #-}
             do  let !mm_cut  = C.reannotate (const ()) mm
-                let !mm'     = Llvm.convertModule platform mm_cut 
-                results <- mapM (pipeLlvm mm') more
-                return  $ concat results
+                case Llvm.convertModule platform mm_cut of
+                 Left err       -> return [ErrorSaltConvert err]
+                 Right mm'      
+                  -> do results <- mapM (pipeLlvm mm') more
+                        return $ concat results
 
         PipeSaltCompile 
                 !platform !builder !cPath !oPath !mExePath
