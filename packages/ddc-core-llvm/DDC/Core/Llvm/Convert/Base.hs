@@ -1,10 +1,9 @@
 
 module DDC.Core.Llvm.Convert.Base
-        ( LlvmM
+        ( ConvertM
         , LlvmState(..)
         , llvmStateInit 
-        , die
-        , dieDoc
+        , throw
 
           -- * Uniques
         , newUnique
@@ -13,21 +12,10 @@ module DDC.Core.Llvm.Convert.Base
         , newUniqueLabel)
 where
 import DDC.Llvm.Syntax
-import DDC.Base.Pretty
 import DDC.Control.Monad.Check
 
-type LlvmM = CheckM LlvmState String
 
-
--- | Called when we find a thing that cannot be converted to Llvm.
-die :: String -> a
-die msg = dieDoc (text msg)
-
-dieDoc :: Doc -> a
-dieDoc msg 
-        = error $ renderIndent
-        $    text "DDC.Core.Llvm.Convert LLVM conversion failed"
-        <$$> msg
+type ConvertM = CheckM LlvmState String
 
 
 -- LlvmState ------------------------------------------------------------------
@@ -47,7 +35,7 @@ llvmStateInit
 
 -- Unique ---------------------------------------------------------------------
 -- | Unique name generation.
-newUnique :: LlvmM Int
+newUnique :: ConvertM Int
 newUnique 
  = do   s       <- get
         let u   = llvmStateUnique s
@@ -56,21 +44,21 @@ newUnique
 
 
 -- | Generate a new unique register variable with the specified `LlvmType`.
-newUniqueVar :: Type -> LlvmM Var
+newUniqueVar :: Type -> ConvertM Var
 newUniqueVar t
  = do   u <- newUnique
         return $ Var (NameLocal ("_v" ++ show u)) t
 
 
 -- | Generate a new unique named register variable with the specified `LlvmType`.
-newUniqueNamedVar :: String -> Type -> LlvmM Var
+newUniqueNamedVar :: String -> Type -> ConvertM Var
 newUniqueNamedVar name t
  = do   u <- newUnique 
         return $ Var (NameLocal ("_v" ++ show u ++ "." ++ name)) t
 
 
 -- | Generate a new unique label.
-newUniqueLabel :: String -> LlvmM Label
+newUniqueLabel :: String -> ConvertM Label
 newUniqueLabel name
  = do   u <- newUnique
         return $ Label ("l" ++ show u ++ "." ++ name)

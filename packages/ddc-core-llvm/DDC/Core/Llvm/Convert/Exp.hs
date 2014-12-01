@@ -35,7 +35,7 @@ convertBody
         -> Label                -- ^ Id of current block.
         -> Seq AnnotInstr       -- ^ Instrs in current block.
         -> C.Exp () A.Name      -- ^ Expression being converted.
-        -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
+        -> ConvertM (Seq Block)    -- ^ Final blocks of function body.
 
 convertBody ctx ectx blocks label instrs xx
  = let  pp           = contextPlatform    ctx 
@@ -78,7 +78,7 @@ convertBody ctx ectx blocks label instrs xx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _ t, x]                   <- xs
-          -> do let t'  =  convertType pp kenv t
+          -> do t'      <- convertType pp kenv t
                 vDst    <- newUniqueVar t'
                 is      <- convertExp ctx (ExpAssign ectx vDst) x
                 return  $   blocks 
@@ -118,24 +118,29 @@ convertBody ctx ectx blocks label instrs xx
           ,  _tsArgs                              <- take arity args
           ,  C.XType _ tResult : xFunTys : xsArgs <- drop arity args
           ,  Just (xFun, _xsTys)                  <- takeXApps xFunTys
-          ,  Just (Var nFun _)                    <- takeGlobalV ctx xFun
-          ,  Just xsArgs'                         <- sequence $ map (mconvAtom ctx) xsArgs
-          -> if isVoidT tResult
-              -- Tail called function returns void.
-              then do return $ blocks
-                        |> (Block label $ instrs
-                           |> (annotNil $ ICall Nothing CallTypeTail Nothing
-                                               (convertType pp kenv tResult) nFun xsArgs' [])
-                           |> (annotNil $ IReturn Nothing))
+          ,  Just mFun                            <- takeGlobalV ctx xFun
+          ,  Just msArgs                          <- sequence $ map (mconvAtom ctx) xsArgs
+          -> do 
+                Var nFun _      <- mFun
+                xsArgs'         <- sequence msArgs
+                tResult'        <- convertType pp kenv tResult
+                if isVoidT tResult
+                  -- Tail called function returns void.
+                  then do
+                        return $ blocks
+                         |> (Block label $ instrs
+                            |> (annotNil $ ICall Nothing CallTypeTail Nothing
+                                                tResult' nFun xsArgs' [])
+                            |> (annotNil $ IReturn Nothing))
 
-              -- Tail called function returns an actual value.
-              else do let tResult'    = convertType pp kenv tResult
-                      vDst            <- newUniqueVar tResult'
-                      return  $ blocks
-                       |> (Block label $ instrs
-                          |> (annotNil $ ICall (Just vDst) CallTypeTail Nothing
-                                   (convertType pp kenv tResult) nFun xsArgs' [])
-                          |> (annotNil $ IReturn (Just (XVar vDst))))
+                  -- Tail called function returns an actual value.
+                  else do 
+                        vDst      <- newUniqueVar tResult'
+                        return  $ blocks
+                         |> (Block label $ instrs
+                            |> (annotNil $ ICall (Just vDst) CallTypeTail Nothing
+                                                tResult' nFun xsArgs' [])
+                            |> (annotNil $ IReturn (Just (XVar vDst))))
 
 
          -- Assignment ------------------------------------
@@ -166,7 +171,7 @@ convertBody ctx ectx blocks label instrs xx
                   x2
           | Just n <- A.takeNameVar nm
           -> do 
-                let t'      = convertType pp kenv t
+                t'          <- convertType pp kenv t
 
                 -- Assign result of case to this variable.
                 let n'      = A.sanitizeName n
@@ -207,12 +212,12 @@ convertBody ctx ectx blocks label instrs xx
          -- Variable assignment from some other expression.
          C.XLet _ (C.LLet b@(C.BName nm t) x1) x2
           | Just n       <- A.takeNameVar nm
-          -> do let n'    = A.sanitizeName n
-                let t'    = convertType pp kenv t
-                let dst   = Var (NameLocal n') t'
-                instrs'   <- convertExp ctx (ExpAssign ectx dst) x1
+          -> do let n'   = A.sanitizeName n
+                t'       <- convertType pp kenv t
+                let dst  = Var (NameLocal n') t'
+                instrs'  <- convertExp ctx (ExpAssign ectx dst) x1
                 
-                let ctx'  = extendTypeEnv b ctx
+                let ctx' = extendTypeEnv b ctx
                 convertBody ctx' ectx blocks label (instrs >< instrs') x2
 
 
@@ -239,9 +244,10 @@ convertBody ctx ectx blocks label instrs xx
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
           |  otherwise
-          -> die $     P.renderIndent
-                 $     P.text "Invalid body statement " 
-                 P.<$> P.ppr xx
+          -> throw 
+                $     P.renderIndent
+                $     P.text "Invalid body statement " 
+                P.<$> P.ppr xx
  
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -255,7 +261,7 @@ convertBody ctx ectx blocks label instrs xx
 convertExp
         :: Context -> ExpContext
         -> C.Exp () A.Name
-        -> LlvmM (Seq AnnotInstr)
+        -> ConvertM (Seq AnnotInstr)
 
 convertExp ctx ectx xx
  = let  pp      = contextPlatform ctx
@@ -265,8 +271,9 @@ convertExp ctx ectx xx
         case xx of
          -- Atoms
          _ | ExpAssign _ vDst   <- ectx
-           , Just x'            <- mconvAtom ctx xx
-           -> return    $ Seq.singleton $ annotNil 
+           , Just mx            <- mconvAtom ctx xx
+           -> do x' <- mx
+                 return $ Seq.singleton $ annotNil 
                         $ ISet vDst x'
 
 
@@ -284,17 +291,18 @@ convertExp ctx ectx xx
 
           -- Call to top-level super.
           | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
-          , Just (Var nFun _)     <- takeGlobalV ctx xFun
-          , Just xsArgs_value'    <- sequence $ map (mconvAtom ctx) 
-                                  $  eraseTypeWitArgs xsArgs
-          , Just tSuper           <- Env.lookup u tenv
-          -> let (_, tResult)   = convertSuperType pp kenv tSuper
-
-                 mv             = case tResult of
+          , Just tSuper         <- Env.lookup u tenv
+          , Just msArgs_value   <- sequence $ map (mconvAtom ctx) $ eraseTypeWitArgs xsArgs
+          , Just mFun           <- takeGlobalV ctx xFun
+          -> do 
+                Var nFun _      <- mFun
+                xsArgs_value'   <- sequence $ msArgs_value
+                (_, tResult)    <- convertSuperType pp kenv tSuper
+                let mv          = case tResult of
                                         TVoid   -> Nothing
                                         _       -> takeNonVoidVarOfContext ectx
 
-             in  return $ Seq.singleton $ annotNil
+                return  $ Seq.singleton $ annotNil
                         $ ICall  mv CallTypeStd Nothing
                                  tResult nFun xsArgs_value' []
 
@@ -303,5 +311,5 @@ convertExp ctx ectx xx
           -> convertExp ctx ectx x
 
 
-         _ -> die $ "Invalid expression " ++ show xx
+         _ -> throw $ "Invalid expression " ++ show xx
 

@@ -13,7 +13,8 @@ import qualified DDC.Core.Salt          as A
 import qualified Data.Sequence          as Seq
 
 
--- | Convert a primitive call to LLVM.
+-- | Convert a primitive call to LLVM,
+--   or Nothing if this doesn't look like such an operation.
 convPrimArith
         :: Show a
         => Context              -- ^ Context of the conversion.
@@ -21,55 +22,59 @@ convPrimArith
         -> A.PrimOp             -- ^ Primitive to call.
         -> C.Type A.Name        -- ^ Type of the primitive.
         -> [C.Exp a A.Name]     -- ^ Arguments to primitive.
-        -> Maybe (LlvmM (Seq AnnotInstr))
+        -> Maybe (ConvertM (Seq AnnotInstr))
 
 convPrimArith ctx mdst p _tPrim xs
  = let  pp      = contextPlatform ctx
         kenv    = contextKindEnv  ctx
-        atoms   = mconvAtoms      ctx
 
    in case p of
         -- Unary operators ------------
         A.PrimArith op
          | C.XType _ t : args   <- xs
-         , Just [x1']           <- atoms args
          , Just dst             <- mdst
-         -> Just
-         $  let t'      = convertType pp kenv t
-                result
-                 | A.PrimArithNeg <- op
-                 , isIntegralT t
-                 = IOp dst OpSub (XLit $ LitInt t' 0) x1'
+         , Just [mx1]           <- sequence $ map (mconvAtom ctx) args
+         -> Just $ do
+                x1'     <- mx1
+                t'      <- convertType pp kenv t
+                let result
+                     | A.PrimArithNeg <- op
+                     , isIntegralT t
+                     = return $ IOp dst OpSub (XLit $ LitInt t' 0) x1'
 
-                 | A.PrimArithNeg <- op
-                 , isFloatingT t
-                 = IOp dst OpSub (XLit $ LitFloat t' 0) x1'
+                     | A.PrimArithNeg <- op
+                     , isFloatingT t
+                     = return $ IOp dst OpSub (XLit $ LitFloat t' 0) x1'
 
-                 | otherwise
-                 = die $ "Invalid unary primop: " ++ show op
+                     | otherwise
+                     = throw  $ "Invalid unary primop: " ++ show op
 
-            in  return $ Seq.singleton (annotNil result)
+                instr  <- result
+                return $ Seq.singleton (annotNil instr)
 
         -- Binary operators -----------
         A.PrimArith op
          | C.XType _ t : args   <- xs
-         , Just [x1', x2']      <- atoms args
          , Just dst             <- mdst
-         -> Just
-          $ let result
-                 | Just op'     <- convPrimArith2 op t
-                 = IOp dst op' x1' x2'
+         , Just [mx1, mx2]      <- sequence $ map (mconvAtom ctx) args
+         -> Just $ do
+                x1'     <- mx1
+                x2'     <- mx2
+                let result
+                     | Just op'     <- convPrimArith2 op t
+                     = return $ IOp dst op' x1' x2'
 
-                 | Just icond'  <- convPrimICond op t
-                 = IICmp dst icond' x1' x2'
+                     | Just icond'  <- convPrimICond op t
+                     = return $ IICmp dst icond' x1' x2'
 
-                 | Just fcond'  <- convPrimFCond op t
-                 = IFCmp dst fcond' x1' x2'
+                     | Just fcond'  <- convPrimFCond op t
+                     = return $ IFCmp dst fcond' x1' x2'
 
-                 | otherwise
-                 = die $ "Invalid binary primop: " ++ show op 
+                     | otherwise
+                     = throw  $ "Invalid binary primop: " ++ show op 
 
-           in   return $ Seq.singleton (annotNil result)
+                instr  <- result
+                return $ Seq.singleton (annotNil instr)
 
         _ -> Nothing
 

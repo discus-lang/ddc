@@ -40,7 +40,7 @@ import Control.Monad
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to an LlvmType.
-convertType :: Platform -> KindEnv Name -> C.Type Name -> Type
+convertType :: Platform -> KindEnv Name -> C.Type Name -> ConvertM Type
 convertType pp kenv tt
  = case tt of
         -- A polymorphic type,
@@ -48,11 +48,11 @@ convertType pp kenv tt
         C.TVar u
          -> case Env.lookup u kenv of
              Nothing            
-              -> die $ "Type variable not in kind environment." ++ show u
+              -> throw $ "Type variable not in kind environment." ++ show u
 
              Just k
-              | isDataKind k    -> TPointer (tObj pp)
-              | otherwise       -> die "Invalid type variable."
+              | isDataKind k    -> return $ TPointer (tObj pp)
+              | otherwise       -> throw "Invalid type variable."
 
         -- A primitive type.
         C.TCon tc
@@ -62,26 +62,28 @@ convertType pp kenv tt
         C.TApp{}
          | Just (NamePrimTyCon PrimTyConPtr, [_r, t2]) 
                 <- takePrimTyConApps tt
-         -> TPointer (convertType pp kenv t2)
+         -> do  t2'     <- convertType pp kenv t2
+                return  $ TPointer t2'
 
         -- Function types become pointers to functions.
         C.TApp{}
-         |  (tsArgs, tResult)    <- convertSuperType pp kenv tt
-         -> TPointer $ TFunction 
-         $  FunctionDecl
-             { declName          = "dummy.function.name"
-             , declLinkage       = Internal
-             , declCallConv      = CC_Ccc
-             , declReturnType    = tResult
-             , declParamListType = FixedArgs
-             , declParams        = [Param t [] | t <- tsArgs]
-             , declAlign         = AlignBytes (platformAlignBytes pp) }
+         -> do  (tsArgs, tResult)    <- convertSuperType pp kenv tt
+                return  
+                  $ TPointer $ TFunction 
+                  $ FunctionDecl
+                  { declName          = "dummy.function.name"
+                  , declLinkage       = Internal
+                  , declCallConv      = CC_Ccc
+                  , declReturnType    = tResult
+                  , declParamListType = FixedArgs
+                  , declParams        = [Param t [] | t <- tsArgs]
+                  , declAlign         = AlignBytes (platformAlignBytes pp) }
         
         C.TForall b t
          -> let kenv'   = Env.extend b kenv
             in  convertType pp kenv' t
           
-        _ -> die ("Invalid Type " ++ show tt)
+        _ -> throw $ ("Invalid Type " ++ show tt)
         
 
 -- Super Type -----------------------------------------------------------------
@@ -94,23 +96,23 @@ convertSuperType
         :: Platform
         -> KindEnv Name
         -> C.Type  Name
-        -> ([Type], Type)
+        -> ConvertM ([Type], Type)
 
 convertSuperType pp kenv tt
  = let tt' = eraseWitTApps tt
    in  case tt' of
-            C.TApp{}
-             |  (tsArgs, tResult)    <- takeTFunArgResult tt'
-             ,  not $ null tsArgs
-             -> let tsArgs'  = map (convertType pp kenv) tsArgs
-                    tResult' = convertType pp kenv tResult
-                in  (tsArgs', tResult')
+        C.TApp{}
+         |  (tsArgs, tResult)    <- takeTFunArgResult tt'
+         ,  not $ null tsArgs
+         -> do  tsArgs'  <- mapM (convertType pp kenv) tsArgs
+                tResult' <- convertType pp kenv tResult
+                return (tsArgs', tResult')
 
-            C.TForall b t
-             -> let kenv' = Env.extend b kenv
-                in  convertSuperType pp kenv' t
+        C.TForall b t
+         -> let kenv' = Env.extend b kenv
+            in  convertSuperType pp kenv' t
 
-            _ -> die ("Invalid super type" ++ show tt')
+        _ -> throw $ "Invalid super type" ++ show tt'
 
 
 -- Imports --------------------------------------------------------------------
@@ -122,36 +124,39 @@ importedFunctionDeclOfType
         -> Maybe (C.ExportSource Name)
         -> Name
         -> C.Type Name 
-        -> Maybe FunctionDecl
+        -> Maybe (ConvertM FunctionDecl)
 
 importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
  
  | C.ImportSourceModule{} <- isrc
- = let  Just strName = liftM renderPlain 
-                     $ seaNameOfSuper (Just isrc) mesrc nSuper
+ = Just $ do
+        let Just strName 
+                = liftM renderPlain 
+                $ seaNameOfSuper (Just isrc) mesrc nSuper
         
-        (tsArgs, tResult)         = convertSuperType pp kenv tt
-        mkParam t                 = Param t []
-   in   Just $ FunctionDecl
-             { declName           = A.sanitizeName strName
-             , declLinkage        = External
-             , declCallConv       = CC_Ccc
-             , declReturnType     = tResult
-             , declParamListType  = FixedArgs
-             , declParams         = map mkParam tsArgs
-             , declAlign          = AlignBytes (platformAlignBytes pp) }
+        (tsArgs, tResult)       <- convertSuperType pp kenv tt
+        let mkParam t           = Param t []
+        return  $ FunctionDecl
+                { declName           = A.sanitizeName strName
+                , declLinkage        = External
+                , declCallConv       = CC_Ccc
+                , declReturnType     = tResult
+                , declParamListType  = FixedArgs
+                , declParams         = map mkParam tsArgs
+                , declAlign          = AlignBytes (platformAlignBytes pp) }
 
- | C.ImportSourceSea strName _ <- isrc
- = let  (tsArgs, tResult)         = convertSuperType pp kenv tt
-        mkParam t                 = Param t []
-   in   Just $ FunctionDecl
-             { declName           = A.sanitizeName strName
-             , declLinkage        = External
-             , declCallConv       = CC_Ccc
-             , declReturnType     = tResult
-             , declParamListType  = FixedArgs
-             , declParams         = map mkParam tsArgs
-             , declAlign          = AlignBytes (platformAlignBytes pp) }
+ | C.ImportSourceSea strName _  <- isrc
+ = Just $ do
+        (tsArgs, tResult)       <- convertSuperType pp kenv tt
+        let mkParam t           = Param t []
+        return  $ FunctionDecl
+                { declName           = A.sanitizeName strName
+                , declLinkage        = External
+                , declCallConv       = CC_Ccc
+                , declReturnType     = tResult
+                , declParamListType  = FixedArgs
+                , declParams         = map mkParam tsArgs
+                , declAlign          = AlignBytes (platformAlignBytes pp) }
 
 importedFunctionDeclOfType _ _ _ _ _ _
         = Nothing
@@ -159,37 +164,37 @@ importedFunctionDeclOfType _ _ _ _ _ _
 
 -- TyCon ----------------------------------------------------------------------
 -- | Convert a Sea TyCon to a LlvmType.
-convTyCon :: Platform -> C.TyCon Name -> Type
+convTyCon :: Platform -> C.TyCon Name -> ConvertM Type
 convTyCon platform tycon
  = case tycon of
         C.TyConSpec  C.TcConUnit
-         -> TPointer (tObj platform)
+         -> return $ TPointer (tObj platform)
 
         C.TyConBound (C.UPrim NameObjTyCon _) _
-         -> tObj platform
+         -> return $ tObj platform
 
         C.TyConBound (C.UPrim (NamePrimTyCon tc) _) _
          -> case tc of
-                PrimTyConVoid           -> TVoid
-                PrimTyConBool           -> TInt 1
-                PrimTyConNat            -> TInt (8 * platformAddrBytes platform)
-                PrimTyConInt            -> TInt (8 * platformAddrBytes platform)
-                PrimTyConWord bits      -> TInt (fromIntegral bits)
-                PrimTyConTag            -> TInt (8 * platformTagBytes  platform)
-                PrimTyConAddr           -> TInt (8 * platformAddrBytes platform)
-                PrimTyConString         -> TPointer (TInt 8)
+             PrimTyConVoid      -> return $ TVoid
+             PrimTyConBool      -> return $ TInt 1
+             PrimTyConNat       -> return $ TInt (8 * platformAddrBytes platform)
+             PrimTyConInt       -> return $ TInt (8 * platformAddrBytes platform)
+             PrimTyConWord bits -> return $ TInt (fromIntegral bits)
+             PrimTyConTag       -> return $ TInt (8 * platformTagBytes  platform)
+             PrimTyConAddr      -> return $ TInt (8 * platformAddrBytes platform)
+             PrimTyConString    -> return $ TPointer (TInt 8)
 
-                PrimTyConFloat bits
-                 -> case bits of
-                        32      -> TFloat
-                        64      -> TDouble
-                        80      -> TFloat80
-                        128     -> TFloat128
-                        _       -> die "Invalid width for float type constructor."
+             PrimTyConFloat bits
+              -> case bits of
+                        32      -> return TFloat
+                        64      -> return TDouble
+                        80      -> return TFloat80
+                        128     -> return TFloat128
+                        _       -> throw "Invalid width for float type constructor."
 
-                _               -> die "Invalid primitive type constructor."
+             _                  -> throw "Invalid primitive type constructor."
 
-        _ -> die $ "Invalid type constructor '" ++ show tycon ++ "'"
+        _ -> throw $ "Invalid type constructor '" ++ show tycon ++ "'"
 
 
 -- | Type of Heap objects.

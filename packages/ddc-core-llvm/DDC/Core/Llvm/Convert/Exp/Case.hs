@@ -25,15 +25,16 @@ convertCase
         -> Seq AnnotInstr       -- ^ Instructions to prepend to initial block.
         -> C.Exp () A.Name      -- ^ Scrutinee of case expression.
         -> [C.Alt () A.Name]    -- ^ Alternatives of case expression.
-        -> LlvmM (Seq Block)
+        -> ConvertM (Seq Block)
 
 convertCase ctx ectx label instrs xScrut alts 
- = let  pp              = contextPlatform ctx
-        kenv            = contextKindEnv  ctx
-        tenv            = contextTypeEnv  ctx
-   in 
-    case takeLocalV pp kenv tenv xScrut of
-     Just vScrut'@Var{} -> do
+ | pp           <- contextPlatform ctx
+ , kenv         <- contextKindEnv  ctx
+ , tenv         <- contextTypeEnv  ctx
+ , Just mVar    <- takeLocalV pp kenv tenv xScrut
+ = do
+        vScrut' <- mVar
+
         -- Convert all the alternatives.
         -- If we're in a nested context we'll also get a block to join the 
         -- results of each alternative.
@@ -61,22 +62,20 @@ convertCase ctx ectx label instrs xScrut alts
         return  $  switchBlock 
                 <| (blocksTable >< blocksDefault >< blocksJoin)
 
-     Nothing 
-      -> die "Invalid case expression"
+ | otherwise = throw "invalid case expression"
 
 
 -- Alts -------------------------------------------------------------------------------------------
 convertAlts
         :: Context -> ExpContext
         -> [C.Alt () A.Name]
-        -> LlvmM ([AltResult], Seq Block)
+        -> ConvertM ([AltResult], Seq Block)
 
 -- Alternatives are at top level.
 convertAlts ctx ectx@ExpTop{} alts
  = do   
         alts'   <- mapM (convertAlt ctx ectx) alts
         return  (alts', Seq.empty)
-
 
 -- If we're doing a branch inside a let-binding we need to add a join
 -- point to collect the results from each altenative before continuing
@@ -113,7 +112,7 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
         return (alts', Seq.singleton blockJoin)
 
 convertAlts _ ExpAssign{} _
- = die "Cannot convert alts in this context."
+ = throw "Cannot convert alts in this context."
 
 
 -- Alt --------------------------------------------------------------------------------------------
@@ -125,11 +124,12 @@ convertAlt
         :: Context
         -> ExpContext           -- ^ Context we're converting in.
         -> C.Alt () A.Name      -- ^ Alternative to convert.
-        -> LlvmM AltResult
+        -> ConvertM AltResult
 
 convertAlt ctx ectx aa
  = let  pp              = contextPlatform ctx
         convBodyM       = contextConvertBody ctx
+
    in case aa of
         C.AAlt C.PDefault x
          -> do  label   <- newUniqueLabel "default"
@@ -148,7 +148,7 @@ convertAlt ctx ectx aa
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
-        _ -> die "Invalid alternative"
+        _ -> throw "Invalid alternative"
 
 
 -- | Convert a constructor name from a pattern to a LLVM literal.
@@ -159,20 +159,20 @@ convertAlt ctx ectx aa
 convPatName :: Platform -> A.Name -> Maybe Lit
 convPatName pp name
  = case name of
-        A.NameLitBool True   -> Just $ LitInt (TInt 1) 1
-        A.NameLitBool False  -> Just $ LitInt (TInt 1) 0
+        A.NameLitBool True      -> Just $ LitInt (TInt 1) 1
+        A.NameLitBool False     -> Just $ LitInt (TInt 1) 0
 
-        A.NameLitNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameLitNat  i         -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
 
-        A.NameLitInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameLitInt  i         -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
 
         A.NameLitWord i bits 
          | elem bits [8, 16, 32, 64]
          -> Just $ LitInt (TInt $ fromIntegral bits) i
 
-        A.NameLitTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+        A.NameLitTag  i         -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
 
-        _                    -> Nothing
+        _                       -> Nothing
 
 
 -- | Take the blocks from an `AltResult`.

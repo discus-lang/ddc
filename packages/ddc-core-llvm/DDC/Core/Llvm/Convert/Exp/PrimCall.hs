@@ -21,15 +21,18 @@ convPrimCall
         -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
-        -> Maybe (LlvmM (Seq AnnotInstr))
+        -> Maybe (ConvertM (Seq AnnotInstr))
 
 convPrimCall ctx mDst p _tPrim xs
  = let  pp      = contextPlatform ctx
    in case p of
         A.PrimCall (A.PrimCallStd arity)
-         | Just (xFun' : xsArgs')        <- mconvAtoms ctx xs
-         -> Just 
-          $ do  vFun@(Var nFun _) 
+         | Just (mFun : msArgs) <- sequence $ map (mconvAtom ctx) xs
+         -> Just $ do
+                xFun'   <- mFun
+                xsArgs' <- sequence msArgs
+
+                vFun@(Var nFun _) 
                         <- newUniqueNamedVar "fun" 
                         $  TPointer $ tFunction (replicate arity (tAddr pp)) (tAddr pp)
 

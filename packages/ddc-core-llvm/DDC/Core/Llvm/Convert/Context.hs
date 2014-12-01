@@ -77,12 +77,12 @@ data Context
                 -> Seq Block -> Label
                 -> Seq AnnotInstr
                 -> C.Exp () A.Name
-                -> LlvmM (Seq Block)
+                -> ConvertM (Seq Block)
 
         , contextConvertExp      
                 :: Context  -> ExpContext
                 -> C.Exp () A.Name
-                -> LlvmM (Seq AnnotInstr)
+                -> ConvertM (Seq AnnotInstr)
 
         , contextConvertCase
                 :: Context  -> ExpContext
@@ -90,7 +90,7 @@ data Context
                 -> Seq AnnotInstr
                 -> C.Exp () A.Name
                 -> [C.Alt () A.Name]
-                -> LlvmM (Seq Block)
+                -> ConvertM (Seq Block)
         }
 
 

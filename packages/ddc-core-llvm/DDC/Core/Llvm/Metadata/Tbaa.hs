@@ -73,9 +73,9 @@ lookups us mdsup = map (flip lookup mdsup) us
 -- | Generate tbaa metadata for a top-level Salt supercombinator.
 deriveMD
       :: (BindStruct (Exp ()))
-      => String                       -- ^ Sanitized name of super
-      -> Exp () A.Name                -- ^ Super to derive from
-      -> LlvmM (MDSuper)              -- ^ Metadata encoding witness information            
+      => String                 -- ^ Sanitized name of super
+      -> Exp () A.Name          -- ^ Super to derive from
+      -> ConvertM MDSuper       -- ^ Metadata encoding witness information            
 
 deriveMD nTop xx
   = let 
@@ -88,13 +88,13 @@ deriveMD nTop xx
     in  foldM (buildMDTree nTop) (MDSuper emptyDict []) mdTrees
 
 
-buildMDTree :: String -> MDSuper -> Tree ANode ->  LlvmM MDSuper
+buildMDTree :: String -> MDSuper -> Tree ANode -> ConvertM MDSuper
 buildMDTree nTop sup tree
  = let tree' = anchor ARoot tree
    in  bfBuild nTop tree' Nothing sup ARoot
 
 
-bfBuild :: String -> Tree ANode -> Maybe MRef -> MDSuper -> ANode -> LlvmM MDSuper
+bfBuild :: String -> Tree ANode -> Maybe MRef -> MDSuper -> ANode -> ConvertM MDSuper
 bfBuild nTop tree parent sup node
  = case parent of
         Nothing        -> do name <- freshRootName nTop
@@ -114,14 +114,14 @@ bfBuild nTop tree parent sup node
                                        , decls   = decl:(decls s) }
 
 
-freshNodeName :: String -> Bound A.Name -> LlvmM String
+freshNodeName :: String -> Bound A.Name -> ConvertM String
 freshNodeName q (UName nm)
     | Just n <- A.takeNameVar nm
     = return $ q ++ "_" ++ n
 freshNodeName q _
     = liftA (\i -> q ++ "_" ++ (show i)) newUnique
 
-freshRootName :: String -> LlvmM String
+freshRootName :: String -> ConvertM String
 freshRootName qualify = liftA (\i -> qualify ++ "_ROOT_" ++ (show i)) newUnique
 
 

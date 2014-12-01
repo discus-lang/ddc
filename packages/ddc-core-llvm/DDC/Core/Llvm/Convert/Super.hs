@@ -28,7 +28,7 @@ convertSuper
         :: Context
         -> C.Bind   A.Name      -- ^ Bind of the top-level super.
         -> C.Exp () A.Name      -- ^ Super body.
-        -> LlvmM (Function, [MDecl])
+        -> ConvertM (Function, [MDecl])
 
 convertSuper ctx (C.BName nSuper tSuper) x
  | Just (bfsParam, xBody)  <- takeXLamFlags x
@@ -63,8 +63,8 @@ convertSuper ctx (C.BName nSuper tSuper) x
         blocks    <- convertBody ctx' ExpTop Seq.empty label Seq.empty xBody
 
         -- Split off the argument and result types of the super.
-        let (tsParam, tResult)   
-                  = convertSuperType pp kenv tSuper
+        (tsParam, tResult)   
+                  <- convertSuperType pp kenv tSuper
   
         -- Make parameter binders.
         let align = AlignBytes (platformAlignBytes pp)
@@ -99,31 +99,34 @@ convertSuper ctx (C.BName nSuper tSuper) x
 
 
         -- Build the function.
+        nsParams <- sequence   
+                        [ nameOfParam i b 
+                                | i <- [0..]
+                                | b <- bsParamValue]
+
         return  ( Function
                   { funDecl     = decl
-                  , funParams   = [nameOfParam i b 
-                                      | i <- [0..]
-                                      | b <- bsParamValue]
+                  , funParams   = nsParams
                   , funAttrs    = [] 
                   , funSection  = SectionAuto
                   , funBlocks   = Seq.toList blocks }
                 , Tbaa.decls mdsup ) 
 
 convertSuper _ _ _
-        = die "Invalid super"
+        = throw "Invalid super"
 
 
 -- | Take the string name to use for a function parameter.
-nameOfParam :: Int -> C.Bind A.Name -> String
+nameOfParam :: Int -> C.Bind A.Name -> ConvertM String
 nameOfParam i bb
  = case bb of
         C.BName nm _ 
            | Just n <- A.takeNameVar nm
-           -> A.sanitizeName n
+           -> return $ A.sanitizeName n
 
         C.BNone _
-           -> "_arg" ++ show i
+           -> return $ "_arg" ++ show i
 
-        _  -> die $ "Invalid parameter name: " ++ show bb
+        _  -> throw $ "Invalid parameter name: " ++ show bb
 
 

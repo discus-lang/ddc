@@ -73,7 +73,7 @@ convertModule platform mm@(C.ModuleCore{})
 convertModuleM 
         :: Platform
         -> C.Module () A.Name 
-        -> LlvmM Module
+        -> ConvertM Module
 
 convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
@@ -103,7 +103,7 @@ convertModuleM pp mm@(C.ModuleCore{})
         let kenv        = C.moduleKindEnv mm
         let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
 
-        let Just importDecls 
+        let Just msImportDecls 
                 = sequence
                 $ [ importedFunctionDeclOfType pp kenv 
                         isrc
@@ -112,6 +112,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                         (C.typeOfImportSource isrc)
                   | (n, isrc)    <- C.moduleImportValues mm ]
 
+        importDecls <- sequence msImportDecls
 
         -- Super-combinator definitions ---------
         --   This is the code for locally defined functions.
@@ -131,22 +132,20 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextConvertExp     = convertExp
                 , contextConvertCase    = convertCase }
 
-
         (functions, mdecls)
                 <- liftM unzip 
-                $ mapM (uncurry (convertSuper ctx)) bxs
-        
+                $  mapM (uncurry (convertSuper ctx)) bxs
 
         -- Paste everything together ------------
         return  $ Module 
-                { modComments   = []
-                , modAliases    = [aObj pp]
-                , modGlobals    = globalsRts
-                , modFwdDecls   = primDecls pp ++ importDecls 
-                , modFuncs      = functions 
-                , modMDecls     = concat mdecls }
+                { modComments           = []
+                , modAliases            = [aObj pp]
+                , modGlobals            = globalsRts
+                , modFwdDecls           = primDecls pp ++ importDecls 
+                , modFuncs              = functions 
+                , modMDecls             = concat mdecls }
 
- | otherwise    = die "Invalid module"
+ | otherwise    = throw "Invalid module"
 
 
 -- | C library functions that are used directly by the generated code without

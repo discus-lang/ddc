@@ -9,14 +9,14 @@ import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Salt.Platform
-import DDC.Base.Pretty
 import Data.Sequence            (Seq)
 import qualified DDC.Core.Exp   as C
 import qualified DDC.Core.Salt  as A
 import qualified Data.Sequence  as Seq
 
 
--- | Convert a primitive store operation to LLVM.
+-- | Convert a primitive store operation to LLVM, 
+--   or Nothing if this does not look like such an operation.
 convPrimStore
         :: Show a
         => Context              -- ^ Context of the conversion.
@@ -24,15 +24,14 @@ convPrimStore
         -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
-        -> Maybe (LlvmM (Seq AnnotInstr))
+        -> Maybe (ConvertM (Seq AnnotInstr))
 
 convPrimStore ctx mdst p _tPrim xs
  = let  pp      = contextPlatform ctx
         mdsup   = contextMDSuper  ctx
         kenv    = contextKindEnv  ctx
-
         atom    = mconvAtom       ctx
-        atoms   = mconvAtoms      ctx
+        atoms a = sequence $ map (mconvAtom ctx) a
 
    in case p of
 
@@ -40,20 +39,19 @@ convPrimStore ctx mdst p _tPrim xs
         A.PrimStore A.PrimStoreSize
          | [C.XType _ t]        <- xs
          , Just vDst            <- mdst
-         -> Just 
-          $ let t'      = convertType pp kenv t
-                size    = case t' of
-                            TPointer _           -> platformAddrBytes pp
-                            TInt bits
-                             | bits `rem` 8 == 0 -> bits `div` 8
-                            _                    -> sorry
+         -> Just $ do
+                t'      <- convertType pp kenv t
 
                 -- Bool# is only 1 bit long.
                 -- Don't return a result for types that don't divide into 8 bits evenly.
-                sorry   = dieDoc $ vcat
-                                [ text "  Invalid type applied to size#."]
+                size    
+                 <- case t' of
+                        TPointer _           -> return $ platformAddrBytes pp
+                        TInt bits
+                         | bits `rem` 8 == 0 -> return $ bits `div` 8
+                        _ -> throw "invalid type applied to size#"
 
-            in return   $ Seq.singleton
+                return  $ Seq.singleton
                         $ annotNil
                         $ ISet vDst (XLit (LitInt (tNat pp) size))
 
@@ -62,22 +60,23 @@ convPrimStore ctx mdst p _tPrim xs
         A.PrimStore A.PrimStoreSize2
          | [C.XType _ t]        <- xs
          , Just vDst            <- mdst
-         -> Just
-          $ let t'      = convertType pp kenv t
-                size    = case t' of
-                            TPointer _           -> platformAddrBytes pp
-                            TInt bits
-                             | bits `rem` 8 == 0 -> bits `div` 8
-                            _                    -> sorry
-
-                size2   = truncate $ (log (fromIntegral size) / log 2 :: Double)
+         -> Just $ do
+                t'      <- convertType pp kenv t
 
                 -- Bool# is only 1 bit long.
                 -- Don't return a result for types that don't divide into 8 bits evenly.
-                sorry   = dieDoc $ vcat
-                                [ text "  Invalid type applied to size2#."]
+                size    
+                 <- case t' of
+                        TPointer _              -> return $ platformAddrBytes pp
+                        TInt bits
+                          |  bits `rem` 8 == 0  -> return $ bits `div` 8
 
-            in  return  $ Seq.singleton
+                        _ -> throw "invalid type applied to size2#"
+
+                let size2   
+                        = truncate $ (log (fromIntegral size) / log 2 :: Double)
+
+                return  $ Seq.singleton
                         $ annotNil
                         $ ISet vDst (XLit (LitInt (tNat pp) size2))
 
@@ -85,9 +84,10 @@ convPrimStore ctx mdst p _tPrim xs
         -- Create the initial heap.
         -- This is called once when the program starts.
         A.PrimStore A.PrimStoreCreate
-         | Just [xBytes']         <- atoms xs
-         -> Just 
-          $ do  vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
+         | Just [mBytes]                <- atoms xs
+         -> Just $ do
+                xBytes' <- mBytes
+                vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
                 vMax    <- newUniqueNamedVar "max"  (tAddr pp)
                 let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
                 let vMaxPtr = Var (NameGlobal "_DDC__heapMax") (TPointer (tAddr pp))
@@ -108,10 +108,11 @@ convPrimStore ctx mdst p _tPrim xs
         -- Check that there is enough space to allocate a new heap object
         -- of the given number of bytes in length.
         A.PrimStore A.PrimStoreCheck
-         | Just [xBytes']         <- atoms xs
-         , Just vDst@(Var nDst _) <- mdst
-         -> Just
-          $ do  let vTop    = Var (bumpName nDst "top") (tAddr pp)
+         | Just vDst@(Var nDst _)       <- mdst
+         , Just [mBytes]                <- atoms xs
+         -> Just $ do
+                xBytes'     <- mBytes
+                let vTop    = Var (bumpName nDst "top") (tAddr pp)
                 let vMin    = Var (bumpName nDst "min") (tAddr pp)
                 let vMax    = Var (bumpName nDst "max") (tAddr pp)
                 let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
@@ -126,9 +127,10 @@ convPrimStore ctx mdst p _tPrim xs
         -- Allocate a new heap object with the given number of bytes in length.
         A.PrimStore A.PrimStoreAlloc
          | Just vDst@(Var nDst _)       <- mdst
-         , Just [xBytes']               <- atoms xs
-         -> Just
-          $ do  let vBump   = Var (bumpName nDst "bump") (tAddr pp)
+         , Just [mBytes]                <- atoms xs
+         -> Just $ do
+                xBytes'     <- mBytes
+                let vBump   = Var (bumpName nDst "bump") (tAddr pp)
                 let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
                 return  $ Seq.fromList $ map annotNil
                         [ ILoad  vDst  (XVar vTopPtr)
@@ -139,12 +141,14 @@ convPrimStore ctx mdst p _tPrim xs
         -- Read a value via a pointer.
         A.PrimStore A.PrimStoreRead
          | C.XType{} : args             <- xs
-         , Just [xAddr', xOffset']      <- atoms args
          , Just vDst@(Var nDst tDst)    <- mdst
-         -> Just
-          $ let vOff    = Var (bumpName nDst "off") (tAddr pp)
-                vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
-            in  return  $ Seq.fromList $ map annotNil
+         , Just [mAddr, mOffset]        <- atoms args
+         -> Just $ do
+                xAddr'      <- mAddr
+                xOffset'    <- mOffset
+                let vOff    = Var (bumpName nDst "off") (tAddr pp)
+                let vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
+                return  $ Seq.fromList $ map annotNil
                         [ IOp   vOff OpAdd xAddr' xOffset'
                         , IConv vPtr ConvInttoptr (XVar vOff)
                         , ILoad vDst (XVar vPtr) ]
@@ -152,11 +156,14 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Write a value via a pointer.
         A.PrimStore A.PrimStoreWrite
-         | C.XType{} : args              <- xs
-         , Just [xAddr', xOffset', xVal'] <- atoms args
-         -> Just
-          $ do  vOff    <- newUniqueNamedVar "off" (tAddr pp)
-                vPtr    <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
+         | C.XType{} : args             <- xs
+         , Just [mAddr, mOffset, mVal]  <- atoms args
+         -> Just $ do
+                xAddr'   <- mAddr
+                xOffset' <- mOffset
+                xVal'    <- mVal
+                vOff     <- newUniqueNamedVar "off" (tAddr pp)
+                vPtr     <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
                 return  $ Seq.fromList $ map annotNil
                         [ IOp    vOff OpAdd xAddr' xOffset'
                         , IConv  vPtr ConvInttoptr (XVar vOff)
@@ -165,33 +172,39 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Add an offset in bytes to a pointer.
         A.PrimStore A.PrimStorePlusAddr
-         | Just [xAddr', xOffset']      <- atoms xs
-         , Just vDst                    <- mdst
-         -> Just
-          $ return      $ Seq.singleton $ annotNil
+         | Just vDst                    <- mdst
+         , Just [mAddr, mOffset]        <- atoms xs
+         -> Just $ do
+                xAddr'   <- mAddr
+                xOffset' <- mOffset
+                return  $ Seq.singleton $ annotNil
                         $ IOp vDst OpAdd xAddr' xOffset'
 
 
         -- Subtract an offset in bytes from a pointer.
         A.PrimStore A.PrimStoreMinusAddr
-         | Just [xAddr', xOffset']      <- atoms xs
-         , Just vDst                    <- mdst
-         -> Just        
-          $ return      $ Seq.singleton $ annotNil
+         | Just vDst                    <- mdst
+         , Just [mAddr, mOffset]        <- atoms xs
+         -> Just $ do
+                xAddr'       <- mAddr
+                xOffset'     <- mOffset
+                return  $ Seq.singleton $ annotNil
                         $ IOp vDst OpSub xAddr' xOffset'
 
 
         -- Read from a raw address.
         A.PrimStore A.PrimStorePeek
          | C.XType{} : C.XType _ tDst : args     <- xs
-         , Just [xPtr', xOffset']       <- atoms args
          , Just vDst@(Var nDst _)       <- mdst
-         , tDst'                        <- convertType   pp kenv tDst
-         -> let vAddr1   = Var (bumpName nDst "addr1") (tAddr pp)
-                vAddr2   = Var (bumpName nDst "addr2") (tAddr pp)
-                vPtr     = Var (bumpName nDst "ptr")   (tPtr tDst')
-            in  Just    $ return 
-                        $ Seq.fromList
+         , Just [mPtr, mOffset]         <- atoms args
+         -> Just $ do
+                tDst'        <- convertType   pp kenv tDst
+                xPtr'        <- mPtr
+                xOffset'     <- mOffset
+                let vAddr1   = Var (bumpName nDst "addr1") (tAddr pp)
+                let vAddr2   = Var (bumpName nDst "addr2") (tAddr pp)
+                let vPtr     = Var (bumpName nDst "ptr")   (tPtr tDst')
+                return  $ Seq.fromList
                         $ (map annotNil
                         [ IConv vAddr1 ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
@@ -202,13 +215,16 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Write to a raw address.
         A.PrimStore A.PrimStorePoke
-         | C.XType{} : C.XType _ tDst : args     <- xs
-         , Just [xPtr', xOffset', xVal'] <- atoms args
-         , tDst'                         <- convertType   pp kenv tDst
-         -> Just
-          $ do  vAddr1  <- newUniqueNamedVar "addr1" (tAddr pp)
-                vAddr2  <- newUniqueNamedVar "addr2" (tAddr pp)
-                vPtr    <- newUniqueNamedVar "ptr"   (tPtr tDst')
+         | C.XType{} : C.XType _ tDst : args    <- xs
+         , Just [mPtr, mOffset, mVal]           <- atoms args
+         -> Just $ do
+                tDst'    <- convertType pp kenv tDst
+                xPtr'    <- mPtr
+                xOffset' <- mOffset
+                xVal'    <- mVal
+                vAddr1   <- newUniqueNamedVar "addr1" (tAddr pp)
+                vAddr2   <- newUniqueNamedVar "addr2" (tAddr pp)
+                vPtr     <- newUniqueNamedVar "ptr"   (tPtr tDst')
                 return  $ Seq.fromList
                         $ (map annotNil
                         [ IConv vAddr1 ConvPtrtoint xPtr'
@@ -221,11 +237,13 @@ convPrimStore ctx mdst p _tPrim xs
         -- Add an offset to a raw address.
         A.PrimStore A.PrimStorePlusPtr
          | _xRgn : _xType : args        <- xs
-         , Just [xPtr', xOffset']       <- atoms args
          , Just vDst                    <- mdst
-         -> Just
-          $ do  vAddr   <- newUniqueNamedVar "addr"   (tAddr pp)
-                vAddr2  <- newUniqueNamedVar "addr2"  (tAddr pp)
+         , Just [mPtr, mOffset]         <- atoms args
+         -> Just $ do
+                xPtr'    <- mPtr
+                xOffset' <- mOffset
+                vAddr    <- newUniqueNamedVar "addr"   (tAddr pp)
+                vAddr2   <- newUniqueNamedVar "addr2"  (tAddr pp)
                 return  $ Seq.fromList $ map annotNil
                         [ IConv vAddr  ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr) xOffset'
@@ -235,11 +253,13 @@ convPrimStore ctx mdst p _tPrim xs
         -- Subtrace an offset from a raw address.
         A.PrimStore A.PrimStoreMinusPtr
          | _xRgn : _xType : args        <- xs
-         , Just [xPtr', xOffset']       <- atoms args
          , Just vDst                    <- mdst
-         -> Just
-          $ do  vAddr   <- newUniqueNamedVar "addr"   (tAddr pp)
-                vAddr2  <- newUniqueNamedVar "addr2"  (tAddr pp)
+         , Just [mPtr, mOffset]         <- atoms args
+         -> Just $ do
+                xPtr'    <- mPtr
+                xOffset' <- mOffset
+                vAddr    <- newUniqueNamedVar "addr"   (tAddr pp)
+                vAddr2   <- newUniqueNamedVar "addr2"  (tAddr pp)
                 return  $ Seq.fromList $ map annotNil
                         [ IConv vAddr  ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpSub (XVar vAddr) xOffset'
@@ -249,30 +269,33 @@ convPrimStore ctx mdst p _tPrim xs
         -- Construct a pointer from an address.
         A.PrimStore A.PrimStoreMakePtr
          | [C.XType{}, C.XType{}, xAddr] <- xs
-         , Just xAddr'  <- atom xAddr
          , Just vDst    <- mdst
-         -> Just
-          $ return      $ Seq.singleton $ annotNil
+         , Just mAddr   <- atom xAddr
+         -> Just $ do
+                xAddr'  <- mAddr
+                return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvInttoptr xAddr'
 
 
         -- Take an address from a pointer.
         A.PrimStore A.PrimStoreTakePtr
          | [C.XType{}, C.XType{}, xPtr] <- xs
-         , Just xPtr'   <- atom xPtr
          , Just vDst    <- mdst
-         -> Just 
-          $ return      $ Seq.singleton $ annotNil
+         , Just mPtr    <- atom xPtr
+         -> Just $ do
+                xPtr'   <- mPtr
+                return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint xPtr'
 
 
         -- Case a pointer from one type to another.
         A.PrimStore A.PrimStoreCastPtr
          | [C.XType{}, C.XType{}, C.XType{}, xPtr] <- xs
-         , Just xPtr'   <- atom xPtr
          , Just vDst    <- mdst
-         -> Just
-          $ return      $ Seq.singleton $ annotNil
+         , Just mPtr    <- atom xPtr
+         -> Just $ do  
+                xPtr'   <- mPtr
+                return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvBitcast xPtr'
 
         _ -> Nothing
