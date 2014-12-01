@@ -54,9 +54,9 @@ convertSuper ctx (C.BName nSuper tSuper) x
 
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
         let ctx'  = ctx
-                  { contextKindEnv      = Env.extends bsParamType  $ contextKindEnv ctx
-                  , contextTypeEnv      = Env.extends bsParamValue $ contextTypeEnv ctx 
-                  , contextMDSuper      = mdsup }
+                  { contextKindEnv = Env.extends bsParamType  $ contextKindEnv ctx
+                  , contextTypeEnv = Env.extends bsParamValue $ contextTypeEnv ctx 
+                  , contextMDSuper = mdsup }
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"
@@ -92,10 +92,10 @@ convertSuper ctx (C.BName nSuper tSuper) x
                                                 then CC_Ccc
                                                 else CC_Fastcc
 
-                , declReturnType         = tResult
-                , declParamListType      = FixedArgs
-                , declParams             = [Param t [] | t <- tsParam]
-                , declAlign              = align }
+                , declReturnType        = tResult
+                , declParamListType     = FixedArgs
+                , declParams            = [Param t [] | t <- tsParam]
+                , declAlign             = align }
 
 
         -- Build the function.
@@ -112,8 +112,9 @@ convertSuper ctx (C.BName nSuper tSuper) x
                   , funBlocks   = Seq.toList blocks }
                 , Tbaa.decls mdsup ) 
 
-convertSuper _ _ _
-        = throw "Invalid super"
+convertSuper _ b x
+        = throw $ ErrorInvalidSuper b x
+
 
 
 -- | Take the string name to use for a function parameter.
@@ -127,6 +128,6 @@ nameOfParam i bb
         C.BNone _
            -> return $ "_arg" ++ show i
 
-        _  -> throw $ "Invalid parameter name: " ++ show bb
-
+        _  -> throw $ ErrorInvalidBind bb
+                    $ Just "Cannot use this as a super parameter."
 

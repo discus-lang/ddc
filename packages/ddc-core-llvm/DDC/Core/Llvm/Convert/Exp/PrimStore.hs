@@ -49,7 +49,7 @@ convPrimStore ctx mdst p _tPrim xs
                         TPointer _           -> return $ platformAddrBytes pp
                         TInt bits
                          | bits `rem` 8 == 0 -> return $ bits `div` 8
-                        _ -> throw "invalid type applied to size#"
+                        _ -> throw $ ErrorInvalidSizeType t
 
                 return  $ Seq.singleton
                         $ annotNil
@@ -71,7 +71,7 @@ convPrimStore ctx mdst p _tPrim xs
                         TInt bits
                           |  bits `rem` 8 == 0  -> return $ bits `div` 8
 
-                        _ -> throw "invalid type applied to size2#"
+                        _ -> throw $ ErrorInvalidSize2Type t
 
                 let size2   
                         = truncate $ (log (fromIntegral size) / log 2 :: Double)

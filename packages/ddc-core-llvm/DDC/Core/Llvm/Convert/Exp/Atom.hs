@@ -144,5 +144,3 @@ takeGlobalV ctx xx
 
         _ ->    Nothing
 
-
-

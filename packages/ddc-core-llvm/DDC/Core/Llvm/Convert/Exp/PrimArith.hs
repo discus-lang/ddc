@@ -46,8 +46,9 @@ convPrimArith ctx mdst p _tPrim xs
                      , isFloatingT t
                      = return $ IOp dst OpSub (XLit $ LitFloat t' 0) x1'
 
+                     -- Cannot use primop at this type.
                      | otherwise
-                     = throw  $ "Invalid unary primop: " ++ show op
+                     = throw  $ ErrorInvalidArith op t
 
                 instr  <- result
                 return $ Seq.singleton (annotNil instr)
@@ -70,12 +71,14 @@ convPrimArith ctx mdst p _tPrim xs
                      | Just fcond'  <- convPrimFCond op t
                      = return $ IFCmp dst fcond' x1' x2'
 
+                     -- Cannot use primop at this type.
                      | otherwise
-                     = throw  $ "Invalid binary primop: " ++ show op 
+                     = throw  $ ErrorInvalidArith op t
 
                 instr  <- result
                 return $ Seq.singleton (annotNil instr)
 
+        -- This doesn't look like an arithmetic primop.
         _ -> Nothing
 
 

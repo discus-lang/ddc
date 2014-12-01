@@ -17,7 +17,6 @@ import DDC.Llvm.Syntax
 import DDC.Core.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
-import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Exp                   as C
@@ -244,11 +243,9 @@ convertBody ctx ectx blocks label instrs xx
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
           |  otherwise
-          -> throw 
-                $     P.renderIndent
-                $     P.text "Invalid body statement " 
-                P.<$> P.ppr xx
- 
+          -> throw $ ErrorInvalidExp xx
+                   $ Just "Cannot use this as the body of a super."
+
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Convert a simple Core expression to LLVM instructions.
@@ -305,11 +302,11 @@ convertExp ctx ectx xx
                 return  $ Seq.singleton $ annotNil
                         $ ICall  mv CallTypeStd Nothing
                                  tResult nFun xsArgs_value' []
-
          -- Casts
          C.XCast _ _ x
-          -> convertExp ctx ectx x
+           -> convertExp ctx ectx x
 
+         _ -> throw $ ErrorInvalidExp xx
+                    $ Just "Was expecting a variable, primitive, or super application."
 
-         _ -> throw $ "Invalid expression " ++ show xx
 

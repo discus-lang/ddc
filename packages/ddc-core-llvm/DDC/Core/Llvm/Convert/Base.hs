@@ -3,6 +3,9 @@ module DDC.Core.Llvm.Convert.Base
         ( ConvertM
         , LlvmState(..)
         , llvmStateInit 
+
+          -- * Errors
+        , Error (..)
         , throw
 
           -- * Uniques
@@ -11,11 +14,13 @@ module DDC.Core.Llvm.Convert.Base
         , newUniqueNamedVar
         , newUniqueLabel)
 where
+import DDC.Core.Llvm.Convert.Error
 import DDC.Llvm.Syntax
 import DDC.Control.Monad.Check
 
-
-type ConvertM = CheckM LlvmState String
+-- ConvertM -------------------------------------------------------------------
+-- | The toLLVM conversion monad.
+type ConvertM = CheckM LlvmState Error
 
 
 -- LlvmState ------------------------------------------------------------------

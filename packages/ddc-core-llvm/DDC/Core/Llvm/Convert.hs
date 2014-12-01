@@ -37,7 +37,7 @@ import qualified Data.List                      as List
 convertModule 
         :: Platform 
         -> C.Module () A.Name 
-        -> Either String Module
+        -> Either Error Module
 
 convertModule platform mm@(C.ModuleCore{})
  = let  
@@ -145,7 +145,8 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , modFuncs              = functions 
                 , modMDecls             = concat mdecls }
 
- | otherwise    = throw "Invalid module"
+ | otherwise    
+ = throw $ ErrorInvalidModule mm
 
 
 -- | C library functions that are used directly by the generated code without

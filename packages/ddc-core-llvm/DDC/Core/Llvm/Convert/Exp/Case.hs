@@ -11,10 +11,10 @@ import DDC.Core.Compounds
 import DDC.Data.ListUtils
 import Control.Monad
 import Data.Maybe
-import Data.Sequence                            (Seq, (<|), (|>), (><))
-import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Exp                   as C
-import qualified Data.Sequence                  as Seq
+import Data.Sequence                    (Seq, (<|), (|>), (><))
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Exp           as C
+import qualified Data.Sequence          as Seq
 
 
 -- Case -------------------------------------------------------------------------------------------
@@ -62,7 +62,8 @@ convertCase ctx ectx label instrs xScrut alts
         return  $  switchBlock 
                 <| (blocksTable >< blocksDefault >< blocksJoin)
 
- | otherwise = throw "invalid case expression"
+ | otherwise 
+ = throw $ ErrorInvalidExp (C.XCase () xScrut alts) Nothing
 
 
 -- Alts -------------------------------------------------------------------------------------------
@@ -111,8 +112,10 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
 
         return (alts', Seq.singleton blockJoin)
 
-convertAlts _ ExpAssign{} _
- = throw "Cannot convert alts in this context."
+-- cannot convert alternative in this context.
+convertAlts _ ExpAssign{} alts
+ = throw $ ErrorInvalidAlt alts
+         $ Just "Cannot convert alternative in this context."
 
 
 -- Alt --------------------------------------------------------------------------------------------
@@ -121,9 +124,8 @@ convertAlts _ ExpAssign{} _
 --   This only works for zero-arity constructors.
 --   The client should extrac the fields of algebraic data objects manually.
 convertAlt
-        :: Context
-        -> ExpContext           -- ^ Context we're converting in.
-        -> C.Alt () A.Name      -- ^ Alternative to convert.
+        :: Context -> ExpContext
+        -> C.Alt () A.Name
         -> ConvertM AltResult
 
 convertAlt ctx ectx aa
@@ -148,7 +150,7 @@ convertAlt ctx ectx aa
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
-        _ -> throw "Invalid alternative"
+        _ -> throw $ ErrorInvalidAlt [aa] Nothing
 
 
 -- | Convert a constructor name from a pattern to a LLVM literal.

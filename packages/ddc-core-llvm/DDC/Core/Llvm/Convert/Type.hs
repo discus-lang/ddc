@@ -48,11 +48,16 @@ convertType pp kenv tt
         C.TVar u
          -> case Env.lookup u kenv of
              Nothing            
-              -> throw $ "Type variable not in kind environment." ++ show u
+              -> throw $ ErrorInvalidBound u
+                       $ Just "Type variable not in kind environment."
 
              Just k
-              | isDataKind k    -> return $ TPointer (tObj pp)
-              | otherwise       -> throw "Invalid type variable."
+              | isDataKind k    
+              -> return $ TPointer (tObj pp)
+
+              | otherwise       
+              -> throw $ ErrorInvalidBound u
+                       $ Just "Bound type variable does not have kind Data."
 
         -- A primitive type.
         C.TCon tc
@@ -83,8 +88,9 @@ convertType pp kenv tt
          -> let kenv'   = Env.extend b kenv
             in  convertType pp kenv' t
           
-        _ -> throw $ ("Invalid Type " ++ show tt)
-        
+        _ -> throw $ ErrorInvalidType tt
+                   $ Just "Cannot convert type."
+
 
 -- Super Type -----------------------------------------------------------------
 -- | Split the parameter and result types from a supercombinator type and
@@ -112,7 +118,8 @@ convertSuperType pp kenv tt
          -> let kenv' = Env.extend b kenv
             in  convertSuperType pp kenv' t
 
-        _ -> throw $ "Invalid super type" ++ show tt'
+        _ -> throw $ ErrorInvalidType tt'
+                   $ Just "Cannot use this as the type of a super."
 
 
 -- Imports --------------------------------------------------------------------
@@ -190,11 +197,15 @@ convTyCon platform tycon
                         64      -> return TDouble
                         80      -> return TFloat80
                         128     -> return TFloat128
-                        _       -> throw "Invalid width for float type constructor."
 
-             _                  -> throw "Invalid primitive type constructor."
+                        _ -> throw $ ErrorInvalidTyCon tycon
+                                   $ Just "Float has a non-standard width."
 
-        _ -> throw $ "Invalid type constructor '" ++ show tycon ++ "'"
+             _            -> throw $ ErrorInvalidTyCon tycon
+                                   $ Just "Not a primitive type constructor."
+
+        _ -> throw $ ErrorInvalidTyCon tycon
+                   $ Just "Cannot convert type constructor."
 
 
 -- | Type of Heap objects.

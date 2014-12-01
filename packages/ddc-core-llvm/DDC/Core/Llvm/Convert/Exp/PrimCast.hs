@@ -16,6 +16,7 @@ import qualified Data.Sequence          as Seq
 import qualified Data.Map               as Map
 
 
+-------------------------------------------------------------------------------
 -- | Convert a primitive call to LLVM,
 --   or Nothing if this doesn't look like such an operation.
 convPrimCast
@@ -57,6 +58,7 @@ convPrimCast ctx mdst p _tPrim xs
         _ -> Nothing
 
 
+-------------------------------------------------------------------------------
 -- | Convert a primitive conversion operator to LLVM,
 --   or `Nothing` for an invalid conversion.
 convPrimConvert
@@ -92,9 +94,11 @@ convPrimConvert ctx tDst vDst tSrc xSrc
           -> do xSrc' <- mSrc
                 return $ IConv vDst ConvPtrtoint xSrc'
 
-         _ -> throw $ "invalid conversion"
+         -- Conversion is not valid on this platform.
+         _ -> throw $ ErrorInvalidConversion tSrc tDst
 
 
+-------------------------------------------------------------------------------
 -- | Convert a primitive promotion operator to LLVM,
 --   or `Nothing` for an invalid promotion.
 convPrimPromote
@@ -135,13 +139,16 @@ convPrimPromote ctx tDst vDst tSrc xSrc
           , bitsDst > bitsSrc
           -> return $ IConv vDst ConvZext xSrc
 
-         -- This was supposed to be a valid promotion
+         -- This was supposed to be a valid promotion.
+         --  If this happens then the above cases do not cover all the
+         --  cases that A.primCasePromoteIsValid accepts.
          _ -> error "ddc-core-llvm.convertPrimPromote: cannot convert"
 
- | otherwise 
- = throw "invalid promotion"
+ -- Promotion is not valid on this platform.
+ | otherwise = throw $ ErrorInvalidPromotion tSrc tDst
 
 
+-------------------------------------------------------------------------------
 -- | Convert a primitive truncation to LLVM,
 --   or `Nothing` for an invalid truncation.
 convPrimTruncate
@@ -174,11 +181,13 @@ convPrimTruncate ctx tDst vDst tSrc xSrc
           --  destination is larger
           | bitsDst > bitsSrc
           , isUnsignedT tSrc,   isSignedT tDst
-          -> return$ IConv vDst ConvZext xSrc
+          -> return $ IConv vDst ConvZext xSrc
 
          -- This was supposed to be a valid truncation.
+         --  If this happens then the above cases do not cover all the
+         --  cases that A.primCaseTruncateIsValid accepts.
          _ -> error "ddc-core-llvm.convPrimTruncate: cannot convert"
 
- | otherwise 
- = throw "invalid truncation"
+ -- Truncation is not valid on this platform.
+ | otherwise = throw $ ErrorInvalidTruncation tSrc tDst
 
