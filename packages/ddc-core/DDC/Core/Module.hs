@@ -74,7 +74,7 @@ data Module a n
         , moduleImportValues            :: ![(n, ImportSource n)]
 
           -- | Data defs imported from other modules.
-        , moduleImportDataDefs          :: ![(DataDef n, ModuleName)]
+        , moduleImportDataDefs          :: ![DataDef n]
 
           -- Local defs ---------------
           -- | Data types defined in this module.
@@ -112,7 +112,7 @@ isMainModule mm
 moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
         = fromListDataDefs 
-        $ (moduleDataDefsLocal mm ++ map fst (moduleImportDataDefs mm))
+        $ (moduleImportDataDefs mm ++ moduleDataDefsLocal mm)
 
 
 -- | Get the top-level kind environment of a module,

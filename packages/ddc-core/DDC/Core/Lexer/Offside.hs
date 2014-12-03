@@ -64,7 +64,7 @@ applyOffside ps [] ls
         | LexemeToken t1 
                 : (LexemeStartBlock n) : ls' <- ls
         ,   isToken t1 (KA KExport)
-         || isToken t1 (KA KImport)
+         || isToken t1 (KA KImport) 
          || isToken t1 (KA KLetRec)
          || isToken t1 (KA KWhere)
         = t1 : newCBra ls' 
@@ -317,6 +317,10 @@ splitBlockStart toks
 
  -- import value
  |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KValue }   : ts
+ <- toks = Just ([t1, t2], ts)
+
+ -- import data
+ |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KData }    : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import foreign X type

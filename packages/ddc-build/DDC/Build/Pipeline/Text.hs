@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 module DDC.Build.Pipeline.Text
-        ( InterfaceAA
-        , PipeText (..)
+        ( -- InterfaceAA
+          PipeText (..)
         , pipeText)
 where
 import DDC.Build.Pipeline.Error
@@ -9,6 +9,7 @@ import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
 import DDC.Build.Interface.Base
+import DDC.Build.Interface.Load            (InterfaceAA)
 import DDC.Base.Pretty
 import Data.Maybe
 
@@ -35,8 +36,8 @@ import qualified DDC.Data.SourcePos                as SP
 import qualified Data.Map                          as Map
 import Control.DeepSeq
 
-type InterfaceAA        
-        = Interface (C.AnTEC BP.SourcePos CE.Name) ()
+-- type InterfaceAA        
+--        = Interface (C.AnTEC BP.SourcePos CE.Name) ()
 
 -- | Process program text.
 data PipeText n (err :: * -> *) where

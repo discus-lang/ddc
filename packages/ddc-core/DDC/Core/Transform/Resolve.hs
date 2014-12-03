@@ -5,11 +5,14 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Collect.Support
+import DDC.Type.DataDef
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Maybe
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import qualified Data.Set       as Set
+import Data.List
+import Data.Function
 
 -- TODO: handle re-exports of foreign types and values.
 --       Saying "export type foo" should work even if "foo" was a foreign type.
@@ -34,9 +37,12 @@ resolveNamesInModule kenv tenv deps mm
                 ++ importsForTyCons deps (Set.toList $ supportTyCon sp)
 
            , moduleImportDataDefs
-                =  moduleImportDataDefs mm 
-                ++ [(def, moduleName m) | m   <- Map.elems deps
-                                        , def <- moduleDataDefsLocal m ] 
+                =  nubBy ((==) `on` dataDefTypeName)          
+                        -- TODO: put in a map, nub too slo
+                $  moduleImportDataDefs mm 
+                ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
+                        -- TODO: get data types imported from other modules.
+
            , moduleImportValues  
                 =  moduleImportValues mm 
                 ++ importsForDaVars deps (Set.toList $ supportDaVar sp) }
@@ -71,6 +77,23 @@ importsForTyCons deps _tyCons
                 | (n, k)        <- Map.toList $ Map.unions 
                                 $  map importedTyConsBoxed $ Map.elems deps]
         ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Build import statements for the given list of unbound data type declarations.
+--
+--   TODO: we're just importing all data types defined by the imported modules.
+--
+importsForDaTyCons
+        :: Ord n
+        => Map ModuleName (Module b n)
+        -> [Bound n]
+        -> [DataDef n]
+
+importsForDaTyCons deps _tycons
+        = concat
+        $ [ moduleImportDataDefs m ++ moduleDataDefsLocal m
+                | m <- Map.elems deps ]
 
 
 ---------------------------------------------------------------------------------------------------

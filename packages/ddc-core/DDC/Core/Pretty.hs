@@ -88,7 +88,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         docsDataImport
          | null importData = empty
          | otherwise
-         = line <> vsep  (map (\i -> text "import" <+> (ppr $ fst i)) $ importData)
+         = line <> vsep  (map (\i -> text "import" <+> (ppr i)) $ importData)
 
         docsDataLocal
          | null localData = empty

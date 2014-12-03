@@ -4,6 +4,7 @@ module DDC.Driver.Command.Compile
         , cmdCompileRecursive )
 where
 import DDC.Driver.Stage
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Data.Canned
 import DDC.Build.Pipeline
@@ -15,8 +16,10 @@ import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.IORef
+import DDC.Build.Interface.Load                 (InterfaceAA)
 import qualified DDC.Driver.Build.Locate        as Locate
 import qualified DDC.Build.Builder              as Builder
+import qualified DDC.Build.Interface.Load       as Interface
 import qualified DDC.Source.Tetra.Module        as SE
 import qualified DDC.Source.Tetra.Lexer         as SE
 import qualified DDC.Source.Tetra.Parser        as SE
@@ -115,7 +118,55 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
 
         -- At this point we should have all the interfaces needed
         -- for the current module.
-        cmdCompile config buildExe interfaces' filePath
+        cmdCompileOrLoadInterface config buildExe interfaces' filePath
+
+
+---------------------------------------------------------------------------------------------------
+-- | Given a source module,
+--     if there is a current interface file then load that, 
+--     otherwise compile the module from source. 
+-- 
+--     The interface files are assumed to be in the same directory as the source files.
+cmdCompileOrLoadInterface
+        :: Config               -- ^ Build driver config.
+        -> Bool                 -- ^ Build and executable.
+        -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
+        -> FilePath             -- ^ Path to file to compile.
+        -> ExceptT String IO [InterfaceAA]
+
+cmdCompileOrLoadInterface config buildExe interfaces filePath
+ = do
+        let ext         = takeExtension filePath
+
+        let make
+                | ext == ".ds"
+                = do    let filePathO   = objectPathOfConfig config filePath
+                        let filePathDI  = replaceExtension filePathO ".di"
+
+                        timeDS    <- liftIO $ getModificationTime filePath
+                        existsO   <- liftIO $ doesFileExist filePathO
+                        existsDI  <- liftIO $ doesFileExist filePathDI
+                        
+                        reload    
+                         <- if existsO && existsDI 
+                                then do timeO   <- liftIO $ getModificationTime filePathO
+                                        timeDI  <- liftIO $ getModificationTime filePathDI
+                                        return $ timeDS <= timeO && timeDS <= timeDI
+                                else    return False
+
+                        if reload
+                         then do
+                                str     <- liftIO $ readFile filePathDI
+                                case Interface.loadInterface filePathDI str of
+                                 Left  err -> throwE $ P.renderIndent $ P.ppr err
+                                 Right int -> return (interfaces ++ [int])
+
+                         else cmdCompile config buildExe interfaces filePath 
+
+                | otherwise
+                = cmdCompile config buildExe interfaces filePath
+
+        make
 
 
 ---------------------------------------------------------------------------------------------------
@@ -246,15 +297,16 @@ cmdCompile config buildExe interfaces filePath
                         , liftM C.moduleName modSalt ]
           -> do
                 -- write out the interface file.
-                let pathInterface   = replaceExtension filePath "di"
+                let pathO       = objectPathOfConfig config filePath
+                let pathDI      = replaceExtension pathO ".di"
                 let int = Interface
                         { interfaceVersion      = Version.version
-                        , interfaceFilePath     = pathInterface
+                        , interfaceFilePath     = pathDI
                         , interfaceModuleName   = mn
                         , interfaceTetraModule  = modTetra 
                         , interfaceSaltModule   = modSalt }
 
-                liftIO  $ writeFile pathInterface 
+                liftIO  $ writeFile pathDI
                         $ P.renderIndent $ P.ppr int
 
                 return (interfaces ++ [int])

@@ -2,12 +2,15 @@
 -- | Loader for DDC interface files.
 module DDC.Build.Interface.Load
         ( loadInterface
-        , Error (..))
+        , Error (..)
+        , InterfaceAA)
 where
 import DDC.Build.Interface.Base
 import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Module
 import DDC.Base.Pretty
+import DDC.Core.Transform.Reannotate
+import Control.Monad
 import qualified DDC.Core.Load                  as Load
 import qualified DDC.Core.Tetra                 as Tetra
 import qualified DDC.Build.Language.Tetra       as Tetra
@@ -30,9 +33,16 @@ data Error
         -- | Duplicate module information.
         | ErrorDuplicate
 
+        -- | Bad magic numbers / header information in alleged interface file.
+        --   This probably isn't an interface file.
+        | ErrorBadMagic
+        { errorFilePath :: FilePath 
+        , errorLine     :: Int }
+
         -- | Parse error in Interface file.
         | ErrorParse
-        { errorLine     :: Int}
+        { errorFilePath :: FilePath
+        , errorLine     :: Int}
 
         -- | Parser error at end of input.
         | ErrorParseEnd
@@ -54,8 +64,13 @@ instance Pretty Error where
  ppr ErrorDuplicate
   = vcat [ text "Duplicate section in interface file." ]
 
- ppr (ErrorParse _)
-  = vcat [ text "Parse error in interface file." ]
+ ppr (ErrorBadMagic path l)
+  = vcat [ text path <> text ":" <> int l
+         , text "Bad header in interface file." ]
+
+ ppr (ErrorParse path l)
+  = vcat [ text path <> text ":" <> int l
+         , text "Parse error in interface file." ]
 
  ppr ErrorParseEnd
   = vcat [ text "Parse error at end of interface file." ]
@@ -79,9 +94,10 @@ type Parser a
         -> Either Error a
 
 -- | Type of annotated interface.
+--   As don't store full Salt code in interface files,
+--   we just set the annotation for it to ()
 type InterfaceAA 
-        = Interface (AnTEC BP.SourcePos Tetra.Name) 
-                    (AnTEC BP.SourcePos Salt.Name)
+        = Interface (AnTEC BP.SourcePos Tetra.Name) ()
 
 
 ---------------------------------------------------------------------------------------------------
@@ -89,9 +105,7 @@ type InterfaceAA
 loadInterface 
         :: FilePath     -- ^ File path of interface file, for error messages.
         -> String       -- ^ Interface file source.
-        -> Either Error 
-                  (Interface (AnTEC BP.SourcePos Tetra.Name) 
-                             (AnTEC BP.SourcePos Salt.Name))
+        -> Either Error InterfaceAA
 
 loadInterface pathInterface str
  = let  -- Attach line numbers to ach line
@@ -102,17 +116,17 @@ loadInterface pathInterface str
 
 -- | Parse an interface file.
 pInterface :: FilePath -> Parser InterfaceAA
-pInterface _pathInterface []
+pInterface _pathInt []
         = Left ErrorEmpty
 
-pInterface pathInterface ((n, str) : rest)
+pInterface pathInt ((n, str) : rest)
         -- Skip over blank lines
         | all (\c -> Char.isSpace c || c == '\n') str
-        = pInterface pathInterface rest
+        = pInterface pathInt rest
 
         -- The interface needs to start with the magic words and version number.
         | ["ddc", "interface", version] <- words str
-        = do    cs              <- pComponents pathInterface rest
+        = do    cs              <- pComponents pathInt rest
 
                 -- We need exactly one module meta-data component.
                 modName <- case [m | m@ComponentMeta{} <- cs] of
@@ -133,13 +147,13 @@ pInterface pathInterface ((n, str) : rest)
 
                 return  $ Interface
                         { interfaceVersion      = version
-                        , interfaceFilePath     = pathInterface
+                        , interfaceFilePath     = pathInt
                         , interfaceModuleName   = modName
                         , interfaceTetraModule  = mTetra
-                        , interfaceSaltModule   = mSalt }
+                        , interfaceSaltModule   = liftM (reannotate (const ())) mSalt }
 
         | otherwise
-        = Left $ ErrorParse n
+        = Left $ ErrorBadMagic pathInt n
 
 
 ---------------------------------------------------------------------------------------------------
@@ -176,7 +190,7 @@ pComponents pathInterface (l : ls)
                return  $ c : cs
 
         | otherwise
-        = Left $ ErrorParse (fst l)
+        = Left $ ErrorParse pathInterface (fst l)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -185,41 +199,41 @@ pComponent :: FilePath -> Parser Component
 pComponent _ []   
  = Left $ ErrorParseEnd
 
-pComponent pathInterface ((n, l) : rest)
+pComponent pathInt ((n, l) : rest)
         -- skip blank lines
         | all Char.isSpace l
-        = pComponent pathInterface rest
+        = pComponent pathInt rest
 
         -- load a module meta-data section.
         | Just "Meta"  <- takeInterfaceTearLine l
-        = pComponentMeta rest
+        = pComponentMeta pathInt rest
 
         -- load a Tetra core module section.
         | Just "Tetra" <- takeInterfaceTearLine l
-        = case Load.loadModuleFromString Tetra.fragment pathInterface n 
+        = case Load.loadModuleFromString Tetra.fragment pathInt (n + 1)
                        Load.Recon (unlines $ map snd rest) of
                 (Left err, _)   -> Left $ ErrorLoadTetra  err
                 (Right m,  _)   -> return $ ComponentTetraModule m
 
         -- load a Salt core module section.
         | Just "Salt"  <- takeInterfaceTearLine l
-        = case Load.loadModuleFromString Salt.fragment pathInterface n
+        = case Load.loadModuleFromString Salt.fragment pathInt (n + 1)
                        Load.Recon (unlines $ map snd rest) of
                (Left err, _)   -> Left $ ErrorLoadSalt err 
                (Right m,  _)   -> return $ ComponentSaltModule  m
 
         -- this thing didn't parse.
         | otherwise
-        = Left $ ErrorParse n
+        = Left $ ErrorParse pathInt n
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse module meta data from an interface file.
-pComponentMeta :: Parser Component
-pComponentMeta [] 
+pComponentMeta :: FilePath -> Parser Component
+pComponentMeta _pathInt [] 
         = Left ErrorParseEnd
 
-pComponentMeta nls@((n, _) : _)
+pComponentMeta pathInt nls@((n, _) : _)
         | "module-meta" : "{" : "name:" : strModName : "}" : []
                 <- tokenize $ concatMap snd nls
         , Just modName     <- moduleNameOfString strModName
@@ -227,7 +241,7 @@ pComponentMeta nls@((n, _) : _)
                  { componentModuleName   = modName }
 
         | otherwise
-        = Left   $ ErrorParse n
+        = Left   $ ErrorParse pathInt n
 
 
 ---------------------------------------------------------------------------------------------------

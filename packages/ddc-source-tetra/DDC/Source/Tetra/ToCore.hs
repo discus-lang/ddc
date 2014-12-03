@@ -66,13 +66,13 @@ toCoreModule a mm
         , C.moduleImportValues  
                 = [ (toCoreN n, toCoreImportSource isrc)
                         | (n, isrc) <- S.moduleImportValues mm ]
+
+        , C.moduleImportDataDefs
+                = []
         
         , C.moduleDataDefsLocal 
                 = [ toCoreDataDef def
                         | S.TopData _ def <- S.moduleTops mm ]
-
-        , C.moduleImportDataDefs
-                = []
 
         , C.moduleBody          
                 = C.XLet  a (letsOfTops (S.moduleTops mm))

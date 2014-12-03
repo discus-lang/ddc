@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fno-warn-unused-binds #-}
 module DDC.Core.Parser.Module
         (pModule)
 where
@@ -31,7 +31,7 @@ pModule c
         -- Import definitions.
         tImports        <- liftM concat $ P.many (pImportSpecs c)
 
-        -- Data definitions.
+        -- Data definitions defined in the current module.
         dataDefsLocal   <- P.many (pDataDef c)
 
         -- Function definitions.
@@ -57,7 +57,7 @@ pModule c
                 , moduleExportValues    = [(n, s) | ExportValue n s <- tExports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s <- tImports]
                 , moduleImportValues    = [(n, s) | ImportValue n s <- tImports]
-                , moduleImportDataDefs  = []
+                , moduleImportDataDefs  = [def    | ImportData  def <- tImports]
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleBody            = body }
 
@@ -129,13 +129,15 @@ pExportForeignValue c dst
 data ImportSpec n
         = ImportType    n (ImportSource n)
         | ImportValue   n (ImportSource n)
+        | ImportData    (DataDef n)
         
 
 -- | Parse some import specs.
 pImportSpecs    :: (Ord n, Pretty n)
                 => Context -> Parser n [ImportSpec n]
 pImportSpecs c
- = do   pTok KImport
+ = do   
+        pTok KImport
 
         P.choice
          [      -- import type  { (NAME :: TYPE)+ }
@@ -144,6 +146,9 @@ pImportSpecs c
                 specs   <- P.sepEndBy1 (pImportType c) (pTok KSemiColon)
                 pTok KBraceKet
                 return specs
+
+         , do   def     <- pDataDef c
+                return  [ ImportData def ]
 
                 -- import value { (NAME :: TYPE)+ }
          , do   P.choice [ pTok KValue, return () ]
@@ -171,6 +176,7 @@ pImportSpecs c
                         return sigs
                  ]
          ]
+         P.<?> "something to import"
 
 
 -- | Parse a type import spec.
@@ -270,6 +276,7 @@ pDataDef c
                         , dataDefParams         = bsParam
                         , dataDefCtors          = Just []
                         , dataDefIsAlgebraic    = True }
+
          ]
 
 

@@ -7,6 +7,7 @@ where
 import DDC.Driver.Dump
 import DDC.Driver.Config
 import DDC.Interface.Source
+import DDC.Build.Interface.Load                 (InterfaceAA)
 import DDC.Build.Pipeline
 import DDC.Base.Pretty
 import qualified DDC.Build.Language.Tetra       as BE

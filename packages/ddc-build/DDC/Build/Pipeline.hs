@@ -12,7 +12,6 @@ module DDC.Build.Pipeline
           -- * Source code
         , PipeText        (..)
         , pipeText
-        , InterfaceAA
 
           -- * Generic Core modules
         , PipeCore        (..)

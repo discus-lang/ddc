@@ -82,7 +82,7 @@ convertM pp runConfig defs kenv tenv mm
         -- All the data type definitions visible in the module.
         let defs'  = unionDataDefs defs
                    $ fromListDataDefs 
-                   $ moduleDataDefsLocal mm ++ (map fst $ moduleImportDataDefs mm)
+                   $ moduleImportDataDefs mm ++ moduleDataDefsLocal mm
 
         let nsForeignBoxedTypes
                    = [n | (n, ImportSourceBoxed _) <- moduleImportTypes mm ]

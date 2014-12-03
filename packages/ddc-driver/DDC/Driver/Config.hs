@@ -5,6 +5,8 @@ module DDC.Driver.Config
         , ConfigPretty  (..)
         , defaultConfigPretty
         , prettyModeOfConfig
+        , objectPathOfConfig
+        , exePathOfConfig
         
         , ViaBackend    (..)
         , RuntimeLinkStrategy (..))
@@ -13,6 +15,8 @@ import DDC.Build.Builder
 import DDC.Core.Simplifier              (Simplifier)
 import DDC.Core.Pretty
 import DDC.Core.Module
+import System.FilePath
+import Data.Maybe
 import qualified DDC.Core.Salt.Runtime  as Salt
 import qualified DDC.Core.Salt          as Salt
 import qualified DDC.Core.Lite          as Lite
@@ -135,7 +139,25 @@ prettyModeOfConfig config
         modeAlt
          = PrettyModeAlt
          { modeAltExp                   = modeExp }
-        
+
+
+-- | Given the name of a source file, 
+--   determine the name of the associated object file.
+objectPathOfConfig :: Config -> FilePath -> FilePath
+objectPathOfConfig config path
+ = let  outputDir       = fromMaybe (takeDirectory path) (configOutputDir config)
+        outputDirBase   = dropExtension (replaceDirectory path outputDir)
+   in   outputDirBase ++ ".o"
+
+
+-- | Given the name of a source file,
+--   determine the name of an associated executable file.
+exePathOfConfig :: Config -> FilePath -> FilePath
+exePathOfConfig config path
+ = let  oPath           = objectPathOfConfig config path
+        exePathDefault  = dropExtension oPath
+   in   fromMaybe exePathDefault (configOutputFile config)
+
 
 ---------------------------------------------------------------------------------------------------
 data ViaBackend

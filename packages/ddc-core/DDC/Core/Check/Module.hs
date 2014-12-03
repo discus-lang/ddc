@@ -72,7 +72,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
 
         -- Check imported data type defs ------------------
-        let defsImported = map fst $ moduleImportDataDefs mm
+        let defsImported = moduleImportDataDefs mm
         defsImported'    
                 <- case checkDataDefs config defsImported of
                         (err : _, _)      -> throw $ ErrorData err
