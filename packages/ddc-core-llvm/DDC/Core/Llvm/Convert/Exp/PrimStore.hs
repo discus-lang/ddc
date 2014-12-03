@@ -8,6 +8,7 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Metadata.Tbaa
+import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
 import Data.Sequence            (Seq)
 import qualified DDC.Core.Exp   as C
@@ -86,15 +87,15 @@ convPrimStore ctx mdst p _tPrim xs
         A.PrimStore A.PrimStoreCreate
          | Just [mBytes]                <- atoms xs
          -> Just $ do
-                xBytes' <- mBytes
-                vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
-                vMax    <- newUniqueNamedVar "max"  (tAddr pp)
-                let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
-                let vMaxPtr = Var (NameGlobal "_DDC__heapMax") (TPointer (tAddr pp))
+                xBytes'     <- mBytes
+                vAddr       <- newUniqueNamedVar "addr" (tAddr pp)
+                vMax        <- newUniqueNamedVar "max"  (tAddr pp)
+                let vTopPtr =  varGlobalHeapTop pp
+                let vMaxPtr =  varGlobalHeapMax pp
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ICall (Just vAddr) CallTypeStd Nothing
-                                (tAddr pp) (NameGlobal "malloc")
+                                (tAddr pp) nameGlobalMalloc
                                 [xBytes'] []
 
                         -- Store the top-of-heap pointer
@@ -115,8 +116,8 @@ convPrimStore ctx mdst p _tPrim xs
                 let vTop    = Var (bumpName nDst "top") (tAddr pp)
                 let vMin    = Var (bumpName nDst "min") (tAddr pp)
                 let vMax    = Var (bumpName nDst "max") (tAddr pp)
-                let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
-                let vMaxPtr = Var (NameGlobal "_DDC__heapMax") (TPointer (tAddr pp))
+                let vTopPtr = varGlobalHeapTop pp
+                let vMaxPtr = varGlobalHeapMax pp
                 return  $ Seq.fromList $ map annotNil
                         [ ILoad vTop (XVar vTopPtr)
                         , IOp   vMin OpAdd (XVar vTop) xBytes'
@@ -131,7 +132,7 @@ convPrimStore ctx mdst p _tPrim xs
          -> Just $ do
                 xBytes'     <- mBytes
                 let vBump   = Var (bumpName nDst "bump") (tAddr pp)
-                let vTopPtr = Var (NameGlobal "_DDC__heapTop") (TPointer (tAddr pp))
+                let vTopPtr = varGlobalHeapTop pp
                 return  $ Seq.fromList $ map annotNil
                         [ ILoad  vDst  (XVar vTopPtr)
                         , IOp    vBump OpAdd (XVar vDst) xBytes'

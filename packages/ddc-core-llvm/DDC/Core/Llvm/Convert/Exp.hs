@@ -273,7 +273,6 @@ convertExp ctx ectx xx
                  return $ Seq.singleton $ annotNil 
                         $ ISet vDst x'
 
-
          -- Primitive operators.
          C.XApp{}
           | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
@@ -284,7 +283,6 @@ convertExp ctx ectx xx
                                 , convPrimCast  ctx mDst p tPrim args
                                 , convPrimStore ctx mDst p tPrim args ]
           -> go
-
 
           -- Call to top-level super.
           | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx

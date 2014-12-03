@@ -89,7 +89,8 @@ nonSingleton [_] = False
 nonSingleton _   = True
 
                       
--- | Use lexicographic breadth-first search on an undirected graph to produce an ordering of the vertices
+-- | Use lexicographic breadth-first search on an undirected graph to produce an ordering
+--   of the vertices
 --              
 lexBFS :: (Show a, Ord a) => UG a -> Class a
 lexBFS (UG (vertices, f)) = refine [] [vertices]
@@ -112,14 +113,14 @@ lexBFS (UG (vertices, f)) = refine [] [vertices]
 
 -- | Transitively orient an undireted graph
 --
---      Using the algorithm from
---      "Lex-BFS and partition refinement, with applications to transitive orientation, interval 
---      graph recognition and consecutive ones testing", R. McConnell et al 2000
+--   Using the algorithm from
+--   "Lex-BFS and partition refinement, with applications to transitive orientation, interval 
+--   graph recognition and consecutive ones testing", R. McConnell et al 2000
 --
---      In the case where the transitive orientation does not exist, it simply gives some orientation
+--   In the case where the transitive orientation does not exist, it simply gives some orientation
 --
---      note: gave up on modular decomposition, this approach has very slightly worse time
---            complexity but much simpler
+--   note: gave up on modular decomposition, this approach has very slightly worse time
+--         complexity but much simpler
 --   
 transOrient :: (Show a, Ord a) => UG a -> DG a
 transOrient g@(UG (vertices, f))
@@ -145,8 +146,10 @@ transOrient g@(UG (vertices, f))
           , all (not . null) [neighbours, nonneighbours]
           = let lastused = snd cl
             in  if   isBefore 
-                then (nonneighbours, lastused) : (neighbours,    lastused) : (split isBefore classes vertex)
-                else (neighbours,    lastused) : (nonneighbours, lastused) : (split isBefore classes vertex)
+                then (nonneighbours, lastused) : (neighbours,    lastused) 
+                        : (split isBefore classes vertex)
+                else (neighbours,    lastused) : (nonneighbours, lastused) 
+                        : (split isBefore classes vertex)
           | otherwise = cl:classes
 
         -- Split the largest class by the last vertex in the class found by lexBFS

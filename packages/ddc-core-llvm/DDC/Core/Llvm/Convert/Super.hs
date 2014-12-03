@@ -115,8 +115,6 @@ convertSuper ctx (C.BName nSuper tSuper) x
 convertSuper _ b x
         = throw $ ErrorInvalidSuper b x
 
-
-
 -- | Take the string name to use for a function parameter.
 nameOfParam :: Int -> C.Bind A.Name -> ConvertM String
 nameOfParam i bb

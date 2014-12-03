@@ -10,6 +10,7 @@ import DDC.Core.Llvm.Convert.Exp
 import DDC.Core.Llvm.Convert.Super
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Base
+import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Llvm.Syntax
@@ -44,9 +45,8 @@ convertModule platform mm@(C.ModuleCore{})
         state   = llvmStateInit 
 
         -- Add extra Const and Distinct witnesses where possible.
-        --  This helps us produce better LLVM metat data.
-        mmElab  = Simp.result
-                $ fst
+        --  This helps us produce better LLVM metadata.
+        mmElab  = Simp.result $ fst
                 $ State.runState 
                         (Simp.applySimplifier 
                                 A.profile Env.empty Env.empty 
@@ -68,8 +68,15 @@ convertModule platform mm@(C.ModuleCore{})
                  --  The converter itself sets these to 'undef', so we need to find the 
                  --  real block label of each merged variable.
                  mmPhi    = Llvm.linkPhi mmClean
+
              in  Right mmPhi
 
+
+-- | Convert a Salt module to sugared LLVM.
+--   The result contains ISet and INop meta-instructions that LLVM will not accept
+--   directly. It also annotates IPhi nodes with undef, and these need to be given
+--   real block labels before the LLVM compiler will accept them.
+--
 convertModuleM 
         :: Platform
         -> C.Module () A.Name 
@@ -79,16 +86,16 @@ convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   
         -- Globals for the runtime --------------
-        --   If this is the main module then we define the globals
-        --   for the runtime system at top-level.
+        --   If this is the main module then we define the globals for the
+        --   runtime system, otherwise tread them as external symbols.
 
         -- Holds the pointer to the current top of the heap.
         --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop    = Var (NameGlobal "_DDC__heapTop") (tAddr pp)
+        let vHeapTop    = Var nameGlobalHeapTop (tAddr pp)
 
         -- Holds the pointer to the maximum heap.
         --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax    = Var (NameGlobal "_DDC__heapMax") (tAddr pp)
+        let vHeapMax    = Var nameGlobalHeapMax (tAddr pp)
 
         let globalsRts
                 | C.moduleName mm == C.ModuleName ["Main"]
@@ -114,7 +121,7 @@ convertModuleM pp mm@(C.ModuleCore{})
 
         importDecls <- sequence msImportDecls
 
-        -- Super-combinator definitions ---------
+        -- Convert super definitions ---------
         --   This is the code for locally defined functions.
         let ctx = Context
                 { contextPlatform       = pp
@@ -136,7 +143,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                 <- liftM unzip 
                 $  mapM (uncurry (convertSuper ctx)) bxs
 
-        -- Paste everything together ------------
+        -- Stitch everything together -----------
         return  $ Module 
                 { modComments           = []
                 , modAliases            = [aObj pp]
