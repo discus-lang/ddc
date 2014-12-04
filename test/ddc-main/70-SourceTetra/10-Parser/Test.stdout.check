@@ -49,7 +49,7 @@ foo : Unit -> Unit
     let i1 = 1i in
     let i2 = 2i in
     let i100 = 100i in
-    let in1 = 1i in
-    let in2 = 2i in
-    let in100 = 100i in
+    let in1 = -1i in
+    let in2 = -2i in
+    let in100 = -100i in
     ()

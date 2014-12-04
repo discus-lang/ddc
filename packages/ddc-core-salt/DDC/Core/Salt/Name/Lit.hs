@@ -44,7 +44,7 @@ readLitInt str1
         | '-' : str2    <- str1
         , (ds, "i")     <- span isDigit str2
         , not  $ null ds
-        = Just $ read ds
+        = Just $ negate $ read ds
 
         | (ds, "i")     <- span isDigit str1
         , not  $ null ds
