@@ -108,8 +108,8 @@ export value
   fillArray         : [r1 r2 : Region]. [a : Data]
                     . Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
-  allocChunk        : [r : Region]. [a : Data]. Nat# -> Ptr# r Obj
-  payloadOfChunk    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+  allocBlock        : [r : Region]. [a : Data]. Nat# -> Ptr# r Obj
+  payloadOfBlock    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
 with letrec
 
@@ -734,16 +734,16 @@ fillArray
                 fillArray arr (add# start 1#) end val
 
 
--- Chunk ----------------------------------------------------------------------
--- | Allocate an chunk of memory on the heap.
+-- Block ----------------------------------------------------------------------
+-- | Allocate a block of memory on the heap.
 --   The object has a header word, but the payload is uninitialized.
-allocChunk 
+allocBlock
         [r : Region] [a : Data] 
         (len : Nat#) : Ptr# r Obj
  =      allocRaw [r] (truncate# 0#) len
 
 
-payloadOfChunk 
+payloadOfBlock
         [r : Region]
         (chunk : Ptr# r Obj) : Ptr# r Word8#
  =      payloadOfRaw chunk
