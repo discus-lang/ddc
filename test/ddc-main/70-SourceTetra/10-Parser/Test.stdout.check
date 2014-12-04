@@ -52,4 +52,10 @@ foo : Unit -> Unit
     let in1 = -1i in
     let in2 = -2i in
     let in100 = -100i in
+    let f1 = 1.0f32 in
+    let f2 = 2.0f32 in
+    let f100 = 100.0f32 in
+    let f010 = 0.1f32 in
+    let s1234 = 1234s in
+    let w32 = 4660w32 in
     ()

@@ -24,7 +24,6 @@ import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
-import qualified Data.Vector            as V
 import qualified Data.ByteString        as BS
 
 import DDC.Core.Tetra   
@@ -50,7 +49,6 @@ instance NFData Name where
         NameLitSize    s        -> rnf s
         NameLitWord    i bits   -> rnf i `seq` rnf bits
         NameLitFloat   d bits   -> rnf d `seq` rnf bits
-        NameLitArray   vec      -> rnf vec
         NameLitString  bs       -> rnf bs       
 
         NameHole                -> ()
@@ -74,14 +72,7 @@ instance Pretty Name where
         NameLitSize    s        -> integer s <> text "s"
         NameLitWord    i bits   -> integer i <> text "w" <> int bits
         NameLitFloat   f bits   -> double  f <> text "f" <> int bits
-
-        NameLitArray   vec      
-         -> text "[#" 
-         <> hcat (punctuate (text ",") (map ppr $ V.toList vec)) 
-         <> text "#]"
-
-        NameLitString  bs       
-         -> text (show $ BS.unpack bs)
+        NameLitString  bs       -> text (show $ BS.unpack bs)
 
         NameHole                -> text "?"
 
@@ -115,10 +106,19 @@ readName str
         | Just val <- readLitInt str
         = Just $ NameLitInt  val
 
+        -- Literal Sizes
+        | Just val <- readLitSize str
+        = Just $ NameLitSize val
+
         -- Literal Words
         | Just (val, bits) <- readLitWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
+
+        -- Literal Floats
+        | Just (val, bits) <- readLitFloatOfBits str
+        , elem bits [32, 64]
+        = Just $ NameLitFloat val bits
 
         -- Constructors.
         | c : _         <- str

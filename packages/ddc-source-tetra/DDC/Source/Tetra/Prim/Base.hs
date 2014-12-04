@@ -11,8 +11,7 @@ import DDC.Core.Tetra
         , PrimTyCon     (..)
         , PrimArith     (..))
 
-import Data.Vector              (Vector)
-import Data.ByteString          (ByteString)
+import Data.ByteString  (ByteString)
 
 
 -- | Names of things used in Disciple Source Tetra.
@@ -60,11 +59,6 @@ data Name
         -- | A floating point literal,
         --   with the given number of bits precision.
         | NameLitFloat          Double Int
-
-        -- | An array literal.
-        --   These contain numeric atomic literals only, 
-        --   and can be allocated into a contiguous slab of memory.
-        | NameLitArray          (Vector Name)
 
         -- | A UTF-8 string literal.
         --   Although these are represented as array literals at runtime,

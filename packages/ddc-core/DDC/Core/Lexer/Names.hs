@@ -303,7 +303,7 @@ isLitBody :: Char -> Bool
 isLitBody c
         =  isDigit c
         || c == 'b' || c == 'o' || c == 'x'
-        || c == 'w' || c == 'f' || c == 'i' 
+        || c == 'w' || c == 'f' || c == 'i' || c == 's'
         || c == '.'
         || c == '#'
         || c == '\''

@@ -4,6 +4,7 @@ module DDC.Core.Salt.Name.Lit
         ( readLitInteger
         , readLitNat
         , readLitInt
+        , readLitSize
         , readLitWordOfBits
         , readLitFloatOfBits)
 
@@ -47,6 +48,22 @@ readLitInt str1
         = Just $ negate $ read ds
 
         | (ds, "i")     <- span isDigit str1
+        , not  $ null ds
+        = Just $ read ds
+
+        | otherwise
+        = Nothing
+
+
+-- | Read an size literal with an explicit format specifier like @1234s@.
+readLitSize :: String -> Maybe Integer
+readLitSize str1
+        | '-' : str2    <- str1
+        , (ds, "s")     <- span isDigit str2
+        , not  $ null ds
+        = Just $ negate $ read ds
+
+        | (ds, "s")     <- span isDigit str1
         , not  $ null ds
         = Just $ read ds
 

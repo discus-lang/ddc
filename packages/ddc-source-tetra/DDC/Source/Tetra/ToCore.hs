@@ -14,7 +14,6 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.DataDef               as C
 
 import qualified DDC.Type.Sum                   as Sum
-import qualified Data.Vector                    as V
 import Data.Maybe
 
 -- Things shared between both Source and Core languages.
@@ -307,7 +306,6 @@ toCoreN nn
         S.NameLitSize    s   -> C.NameLitSize    s
         S.NameLitWord    w b -> C.NameLitWord    w b
         S.NameLitFloat   d b -> C.NameLitFloat   d b
-        S.NameLitArray   vec -> C.NameLitArray   (V.map toCoreN vec)
         S.NameLitString  bs  -> C.NameLitString  bs
         S.NameHole           -> C.NameHole
 

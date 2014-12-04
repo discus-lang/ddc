@@ -735,8 +735,8 @@ fillArray
 
 
 -- Chunk ----------------------------------------------------------------------
--- | Allocate an array of unboxed values on the heap.
---   The space is uninitialized.
+-- | Allocate an chunk of memory on the heap.
+--   The object has a header word, but the payload is uninitialized.
 allocChunk 
         [r : Region] [a : Data] 
         (len : Nat#) : Ptr# r Obj
