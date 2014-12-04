@@ -15,15 +15,17 @@ module DDC.Source.Tetra.Prim
         , typePrimArith
         , readName)
 where
-import DDC.Source.Tetra.Lexer.Lit
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpArith
 import DDC.Core.Lexer.Names             (isVarStart)
+import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
+import qualified Data.Vector            as V
+import qualified Data.ByteString        as BS
 
 import DDC.Core.Tetra   
         ( readPrimTyCon
@@ -42,10 +44,14 @@ instance NFData Name where
         NamePrimTyCon  p        -> rnf p
         NamePrimArith  p        -> rnf p
 
-        NameLitBool b           -> rnf b
-        NameLitNat  n           -> rnf n
-        NameLitInt  i           -> rnf i
-        NameLitWord i bits      -> rnf i `seq` rnf bits
+        NameLitBool    b        -> rnf b
+        NameLitNat     n        -> rnf n
+        NameLitInt     i        -> rnf i
+        NameLitSize    s        -> rnf s
+        NameLitWord    i bits   -> rnf i `seq` rnf bits
+        NameLitFloat   d bits   -> rnf d `seq` rnf bits
+        NameLitArray   vec      -> rnf vec
+        NameLitString  bs       -> rnf bs       
 
         NameHole                -> ()
 
@@ -57,15 +63,25 @@ instance Pretty Name where
         NameCon  c              -> text c
 
         NameTyConTetra p        -> ppr p
-        NameOpFun     p         -> ppr p
-        NamePrimTyCon p         -> ppr p
-        NamePrimArith p         -> ppr p
+        NameOpFun      p        -> ppr p
+        NamePrimTyCon  p        -> ppr p
+        NamePrimArith  p        -> ppr p
 
-        NameLitBool True        -> text "True#"
-        NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i
-        NameLitInt  i           -> integer i <> text "i"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits
+        NameLitBool    True     -> text "True#"
+        NameLitBool    False    -> text "False#"
+        NameLitNat     i        -> integer i
+        NameLitInt     i        -> integer i <> text "i"
+        NameLitSize    s        -> integer s <> text "s"
+        NameLitWord    i bits   -> integer i <> text "w" <> int bits
+        NameLitFloat   f bits   -> double  f <> text "f" <> int bits
+
+        NameLitArray   vec      
+         -> text "[#" 
+         <> hcat (punctuate (text ",") (map ppr $ V.toList vec)) 
+         <> text "#]"
+
+        NameLitString  bs       
+         -> text (show $ BS.unpack bs)
 
         NameHole                -> text "?"
 

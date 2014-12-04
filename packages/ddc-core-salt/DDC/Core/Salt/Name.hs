@@ -46,10 +46,10 @@ module DDC.Core.Salt.Name
     
           -- * Primitive Literals
         , readLitInteger
-        , readLitPrimNat
-        , readLitPrimInt
-        , readLitPrimWordOfBits
-        , readLitPrimFloatOfBits
+        , readLitNat
+        , readLitInt
+        , readLitWordOfBits
+        , readLitFloatOfBits
 
           -- * Name Parsing
         , readName
@@ -65,6 +65,7 @@ import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Salt.Name.Lit
 import DDC.Core.Lexer.Names             (isVarStart)
+import DDC.Data.ListUtils
 import DDC.Base.Pretty
 import DDC.Base.Name
 import Data.Typeable
@@ -193,11 +194,13 @@ readName str
         = Just $ NameLitVoid
 
         -- Literal Nats
-        | Just val <- readLitPrimNat str
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitNat str'
         = Just $ NameLitNat  val
 
         -- Literal Ints
-        | Just val <- readLitPrimInt str
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitInt str'
         = Just $ NameLitInt  val
 
         -- Literal Tags
@@ -210,7 +213,8 @@ readName str
         | str == "False#" = Just $ NameLitBool False
 
         -- Literal Words
-        | Just (val, bits) <- readLitPrimWordOfBits str
+        | Just str'        <- stripSuffix "#" str
+        , Just (val, bits) <- readLitWordOfBits str'
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 

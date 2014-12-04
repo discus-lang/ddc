@@ -2,10 +2,10 @@
 -- | Reading literal values.
 module DDC.Core.Salt.Name.Lit
         ( readLitInteger
-        , readLitPrimNat
-        , readLitPrimInt
-        , readLitPrimWordOfBits
-        , readLitPrimFloatOfBits)
+        , readLitNat
+        , readLitInt
+        , readLitWordOfBits
+        , readLitFloatOfBits)
 
 where
 import Data.List
@@ -16,39 +16,38 @@ import Data.Char
 readLitInteger :: String -> Maybe Integer
 readLitInteger []       = Nothing
 readLitInteger str@(c:cs)
-        | '-'   <- c
+        | '-'           <- c
         , all isDigit cs
         = Just $ read str
 
-        | all isDigit str
+        | all isDigit cs
         = Just $ read str
         
         | otherwise
         = Nothing
         
 
--- | Read an integer with an explicit format specifier like @1234i#@.
-readLitPrimNat :: String -> Maybe Integer
-readLitPrimNat str1
-        | (ds, str2)    <- span isDigit str1
-        , not $ null ds
-        , Just ""       <- stripPrefix "#" str2
+-- | Read an integer with an explicit format specifier like @1234i@.
+readLitNat :: String -> Maybe Integer
+readLitNat str1
+        | (ds, "")      <- span isDigit str1
+        , not  $ null ds
         = Just $ read ds
 
         | otherwise
         = Nothing
 
 
--- | Read an integer literal with an explicit format specifier like @1234i#@.
-readLitPrimInt :: String -> Maybe Integer
-readLitPrimInt str1
+-- | Read an integer literal with an explicit format specifier like @1234i@.
+readLitInt :: String -> Maybe Integer
+readLitInt str1
         | '-' : str2    <- str1
-        , (ds, "i#")    <- span isDigit str2
-        , not $ null ds
+        , (ds, "i")     <- span isDigit str2
+        , not  $ null ds
         = Just $ read ds
 
-        | (ds, "i#")    <- span isDigit str1
-        , not $ null ds
+        | (ds, "i")     <- span isDigit str1
+        , not  $ null ds
         = Just $ read ds
 
         | otherwise
@@ -56,37 +55,37 @@ readLitPrimInt str1
 
 
 -- | Read a word with an explicit format speficier.
-readLitPrimWordOfBits :: String -> Maybe (Integer, Int)
-readLitPrimWordOfBits str1
-        -- binary like 0b01001w32#
+readLitWordOfBits :: String -> Maybe (Integer, Int)
+readLitWordOfBits str1
+        -- binary like 0b01001w32
         | Just str2     <- stripPrefix "0b" str1
         , (ds, str3)    <- span (\c -> c == '0' || c == '1') str2
         , not $ null ds
         , Just str4     <- stripPrefix "w" str3
-        , (bs, "#")     <- span isDigit str4
+        , (bs, "")      <- span isDigit str4
         , not $ null bs
         , bits          <- read bs
         , length ds     <= bits
         = Just (readBinary ds, bits)
 
-        -- hex like 0x0ffw32#
+        -- hex like 0x0ffw32
         | Just str2     <- stripPrefix "0x" str1
         , (ds, str3)    <- span (\c -> elem c ['0' .. '9']
                                     || elem c ['A' .. 'F']
                                     || elem c ['a' .. 'f']) str2
         , not $ null ds
         , Just str4     <- stripPrefix "w" str3
-        , (bs, "#")     <- span isDigit str4
+        , (bs, "")      <- span isDigit str4
         , not $ null bs
         , bits          <- read bs
         , length ds     <= bits
         = Just (readHex ds, bits)
 
-        -- decimal like 1234w32#
+        -- decimal like 1234w32
         | (ds, str2)    <- span isDigit str1
         , not $ null ds
         , Just str3     <- stripPrefix "w" str2
-        , (bs, "#")     <- span isDigit str3
+        , (bs, "")      <- span isDigit str3
         , not $ null bs
         = Just (read ds, read bs)
 
@@ -95,10 +94,10 @@ readLitPrimWordOfBits str1
 
 
 -- | Read a float literal with an explicit format specifier like @123.00f32#@.
-readLitPrimFloatOfBits :: String -> Maybe (Double, Int)
-readLitPrimFloatOfBits str1
+readLitFloatOfBits :: String -> Maybe (Double, Int)
+readLitFloatOfBits str1
         | '-' : str2    <- str1
-        , Just (d, bs)  <- readLitPrimFloatOfBits str2
+        , Just (d, bs)  <- readLitFloatOfBits str2
         = Just (negate d, bs)
 
         | (ds1, str2)   <- span isDigit str1
@@ -107,7 +106,7 @@ readLitPrimFloatOfBits str1
         , (ds2, str4)   <- span isDigit str3
         , not $ null ds2
         , Just str5     <- stripPrefix "f" str4
-        , (bs, "#")     <- span isDigit str5
+        , (bs, "")      <- span isDigit str5
         , not $ null bs
         = Just (read (ds1 ++ "." ++ ds2), read bs)
 

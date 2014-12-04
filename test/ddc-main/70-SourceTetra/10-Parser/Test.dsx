@@ -10,7 +10,8 @@ module Test where;;
 :parse..
 module Test where
 x : Nat = 5
-y : Nat = add# x x;;
+y : Nat = add# x x
+;;
 
 
 -- Factorial with primops.
@@ -19,7 +20,8 @@ module Test where
 fac (x : Nat) : Nat
  = case x of
         0       -> 1
-        _       -> mul# x (fac (sub# x 1));;
+        _       -> mul# x (fac (sub# x 1))
+;;
 
 
 -- Factorial with infix operators.
@@ -28,4 +30,28 @@ module Test where
 fac (x : Nat) : Nat
  = case x of
         0       -> 1
-        _       -> x * (fac (x - 1));;
+        _       -> x * (fac (x - 1))
+;;
+
+
+-- All the literals
+:parse..
+module Test where
+foo (_ : Unit) : Unit
+ = do   
+        b1      = True#
+        b2      = False#
+
+        n1      = 1
+        n2      = 2
+        n100    = 100
+
+        i1      = 1i
+        i2      = 2i
+        i100    = 100i
+        in1     = -1i
+        in2     = -2i
+        in100   = -100i
+
+        ()
+;;

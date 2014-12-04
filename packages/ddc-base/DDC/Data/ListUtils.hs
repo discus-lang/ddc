@@ -8,8 +8,10 @@ module DDC.Data.ListUtils
         , takeInit
         , takeMaximum
         , index
-        , findDuplicates)
+        , findDuplicates
+        , stripSuffix)
 where
+import Data.List
 import qualified Data.Set as Set
 
 
@@ -62,3 +64,12 @@ findDuplicates xx
         go ss (x : xs)
          | Set.member x ss  =     go (Set.delete x ss) xs
          | otherwise        = x : go ss xs
+
+
+-- | Drops the given suffix from a list.
+stripSuffix :: Eq a => [a] -> [a] -> Maybe [a]
+stripSuffix suff xx
+ = case stripPrefix (reverse suff) (reverse xx) of
+        Nothing -> Nothing
+        Just xs -> Just $ reverse xs
+

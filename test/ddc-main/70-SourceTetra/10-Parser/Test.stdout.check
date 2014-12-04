@@ -35,3 +35,21 @@ fac : Nat -> Nat
       _ 
        -> DEFIX x (INFIXOP "*") (DEFIX fac (DEFIX x (INFIXOP "-") 1))
     }
+
+
+-- All the literals
+module Test where
+foo : Unit -> Unit
+  = \(_ : Unit).
+    let b1 = True# in
+    let b2 = False# in
+    let n1 = 1 in
+    let n2 = 2 in
+    let n100 = 100 in
+    let i1 = 1i in
+    let i2 = 2i in
+    let i100 = 100i in
+    let in1 = 1i in
+    let in2 = 2i in
+    let in100 = 100i in
+    ()

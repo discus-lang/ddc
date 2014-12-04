@@ -13,6 +13,8 @@ module DDC.Core.Tetra.Prim.Base
         , PrimCast      (..))
 where
 import Data.Typeable
+import Data.ByteString          (ByteString)
+import Data.Vector              (Vector)
 import DDC.Core.Salt.Name
         ( PrimTyCon     (..)
         , PrimArith     (..)
@@ -53,15 +55,38 @@ data Name
         -- | A boolean literal.
         | NameLitBool           Bool
 
-        -- | A natural literal.
+        -- | A natural literal,
+        --   with enough precision to count every heap object.
         | NameLitNat            Integer
 
-        -- | An integer literal.
+        -- | An integer literal,
+        --   with enough precision to count every heap object.
         | NameLitInt            Integer
 
-        -- | A word literal.
+        -- | An unsigned size literal,
+        --   with enough precision to count every addressable byte of memory.
+        | NameLitSize           Integer
+
+        -- | A word literal,
+        --   with the given number of bits precision.
         | NameLitWord           Integer Int
 
+        -- | A floating point literal,
+        --   with the given number of bits precision.
+        | NameLitFloat          Double  Int
+
+        -- | An array literal.
+        --   These contain numeric atomic literals only,
+        --   and can be allocated into a contiguous slab of memory.
+        | NameLitArray          (Vector Name)
+
+        -- | A UTF-8 string literal.
+        --   Although these are represented as array literals at runtime,
+        --   they have a special syntax which we want to preserve during
+        --   program transformation.
+        | NameLitString         ByteString
+
+        -- Wrappers -----------------------------
         -- | Wrapper to indicate an explicitly unboxed literal.
         | NameLitUnboxed        Name
 

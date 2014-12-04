@@ -102,6 +102,15 @@ export value
   writeRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
   readRef           : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
+  allocArray        : [r1 r2 : Region]. [a : Data]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
+  writeArray        : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
+  readArray         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+  fillArray         : [r1 r2 : Region]. [a : Data]
+                    . Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
+
+  allocChunk        : [r : Region]. [a : Data]. Nat# -> Ptr# r Obj
+  payloadOfChunk    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+
 with letrec
 
 -- | Get the constructor tag of an object.
@@ -700,17 +709,6 @@ allocArray
         arr
 
 
--- | Fill all elements of an array with the same value.
-fillArray
-        [r1 r2 : Region] [a : Data]
-        (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
- = case ge# start end of
-        True#   -> arr
-        False#  -> do
-                setFieldOfBoxed arr start val
-                fillArray arr (add# start 1#) end val
-
-
 -- | Write an element into an array.
 writeArray 
         [r1 r2 : Region] 
@@ -723,4 +721,30 @@ readArray
         [r1 r2 : Region]
         (arr : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
  =      getFieldOfBoxed arr ix
+
+
+-- | Fill all elements of an array with the same value.
+fillArray
+        [r1 r2 : Region] [a : Data]
+        (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
+ = case ge# start end of
+        True#   -> arr
+        False#  -> do
+                setFieldOfBoxed arr start val
+                fillArray arr (add# start 1#) end val
+
+
+-- Chunk ----------------------------------------------------------------------
+-- | Allocate an array of unboxed values on the heap.
+--   The space is uninitialized.
+allocChunk 
+        [r : Region] [a : Data] 
+        (len : Nat#) : Ptr# r Obj
+ =      allocRaw [r] (truncate# 0#) len
+
+
+payloadOfChunk 
+        [r : Region]
+        (chunk : Ptr# r Obj) : Ptr# r Word8#
+ =      payloadOfRaw chunk
 

@@ -25,6 +25,7 @@ import DDC.Core.Salt.Name.PrimCast
 import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import DDC.Base.Name
+import DDC.Data.ListUtils
 import Control.DeepSeq
 import Data.Typeable
 import Data.Char
@@ -152,15 +153,18 @@ readName str
         | str == "False#" = Just $ NameLitBool False
 
         -- Literal Nat
-        | Just val <- readLitPrimNat str
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitNat  str'
         = Just $ NameLitNat  val
 
         -- Literal Ints
-        | Just val <- readLitPrimInt str
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitInt  str'
         = Just $ NameLitInt  val
 
         -- Literal Words
-        | Just (val, bits) <- readLitPrimWordOfBits str
+        | Just str'     <- stripSuffix "#" str
+        , Just (val, bits) <- readLitWordOfBits str'
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 

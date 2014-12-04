@@ -49,19 +49,21 @@ import DDC.Core.Tetra.Prim.DaConTetra
 import DDC.Core.Tetra.Prim.OpArith
 import DDC.Core.Tetra.Prim.OpCast
 import DDC.Core.Tetra.Prim.OpFun
-import DDC.Core.Salt.Name 
-        ( readLitPrimNat
-        , readLitPrimInt
-        , readLitPrimWordOfBits)
-import DDC.Core.Lexer.Names             (isVarStart)
-
+import DDC.Data.ListUtils
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
 import Data.List
+import qualified Data.ByteString        as BS
+import qualified Data.Vector            as V
 
+import DDC.Core.Lexer.Names             (isVarStart)
+import DDC.Core.Salt.Name 
+        ( readLitNat
+        , readLitInt
+        , readLitWordOfBits)
 
 instance NFData Name where
  rnf nn
@@ -82,7 +84,12 @@ instance NFData Name where
         NameLitBool b           -> rnf b
         NameLitNat  n           -> rnf n
         NameLitInt  i           -> rnf i
+        NameLitSize    s        -> rnf s
         NameLitWord i bits      -> rnf i `seq` rnf bits
+        NameLitFloat   d bits   -> rnf d `seq` rnf bits
+        NameLitArray   vec      -> rnf vec
+        NameLitString  bs       -> rnf bs       
+
         NameLitUnboxed n        -> rnf n
 
         NameHole                -> ()
@@ -108,7 +115,18 @@ instance Pretty Name where
         NameLitBool False       -> text "False#"
         NameLitNat  i           -> integer i <> text "#"
         NameLitInt  i           -> integer i <> text "i" <> text "#"
+        NameLitSize    s        -> integer s <> text "s"
         NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+        NameLitFloat   f bits   -> double  f <> text "f" <> int bits
+
+        NameLitArray   vec      
+         -> text "[#" 
+         <> hcat (punctuate (text ",") (map ppr $ V.toList vec)) 
+         <> text "#]"
+
+        NameLitString  bs       
+         -> text (show $ BS.unpack bs)
+
         NameLitUnboxed n        -> ppr n <> text "#"
 
         NameHole                -> text "?"
@@ -152,15 +170,18 @@ readName str
         | str == "False#" = Just $ NameLitBool False
 
         -- Literal Nat
-        | Just val <- readLitPrimNat str
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitNat str'
         = Just $ NameLitNat  val
 
         -- Literal Ints
-        | Just val <- readLitPrimInt str
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitInt str'
         = Just $ NameLitInt  val
 
         -- Literal Words
-        | Just (val, bits) <- readLitPrimWordOfBits str
+        | Just str'     <- stripSuffix "#" str
+        , Just (val, bits) <- readLitWordOfBits str'
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 
