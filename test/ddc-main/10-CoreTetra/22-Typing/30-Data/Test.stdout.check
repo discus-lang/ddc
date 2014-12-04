@@ -3,7 +3,7 @@ ok
 
 -- Hot or not.
 module Test 
-data Hotness  where {
+data Hotness where {
         Hot : Hotness;
         Cold : Hotness;
 }
@@ -37,9 +37,9 @@ letrec {
        \(xx : List a).
       case xx of {
         Nil  
-         -> 0#;
+         -> 0;
         Cons (x : a) (xs : List a) 
-         -> add [Nat#] 1# (length [a] xs)
+         -> add [Nat#] 1 (length [a] xs)
       }
 }
 
@@ -48,7 +48,7 @@ letrec {
 --   The data constructor has a rank-2 type.
 ok
 module Test 
-data Box  where {
+data Box where {
         Box : ([a : Data].a -> a) -> Box;
 }
 with
@@ -57,7 +57,7 @@ letrec {
     = \(b : Box).
       case b of {
         Box (f : [a : Data].a -> a) 
-         -> f [Nat#] 5#
+         -> f [Nat#] 5
       }
 }
 
@@ -78,10 +78,10 @@ with
 letrec {
   thing : Unit -> Nest Nat#
     = \(_ : Unit).
-      ConsN [Nat#] 7#
-          (ConsN [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 1# 2#)
+      ConsN [Nat#] 7
+          (ConsN [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 1 2)
                (ConsN [Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)]
-                    (T2 [Tuple2 Nat# Nat#] [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 6# 7#) (T2 [Nat#] [Nat#] 7# 4#))
+                    (T2 [Tuple2 Nat# Nat#] [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 6 7) (T2 [Nat#] [Nat#] 7 4))
                     (NilN [Tuple2 (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)) (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#))])))
 }
 
@@ -102,15 +102,15 @@ with
 letrec {
   thing : Unit -> Bush Nat#
     = \(_ : Unit).
-      ConsB [Nat#] 4#
+      ConsB [Nat#] 4
           (ConsB [Bush Nat#]
-               (ConsB [Nat#] 8#
+               (ConsB [Nat#] 8
                     (ConsB [Bush Nat#]
-                         (ConsB [Nat#] 5#
+                         (ConsB [Nat#] 5
                               (NilB [Bush Nat#]))
                          (ConsB [Bush (Bush Nat#)]
                               (ConsB [Bush Nat#]
-                                   (ConsB [Nat#] 3#
+                                   (ConsB [Nat#] 3
                                         (NilB [Bush Nat#]))
                                    (NilB [Bush (Bush Nat#)]))
                               (NilB [Bush (Bush (Bush Nat#))]))))

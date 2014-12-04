@@ -7,7 +7,7 @@ export value double : Nat# -> Nat#;
 import value two : Unit -> Nat#;
 with
 private rt with {w1 : Const rt; w2 : Lazy rt}
-let one : Nat# = 1#
+let one : Nat# = 1
 letrec {
   main : Unit -> S Pure Unit
     = \(_ : Unit).
@@ -32,7 +32,7 @@ export value double : Nat# -> Nat#;
 import value two : Unit -> Nat#;
 with
 private rt with {w1 : Const rt; w2 : Lazy rt}
-let one : Nat# = 1#
+let one : Nat# = 1
 letrec {
   main : Unit -> S Pure Unit
     = \(_ : Unit).

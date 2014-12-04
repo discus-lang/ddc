@@ -55,7 +55,6 @@ import DDC.Base.Pretty
 import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
-import Data.List
 import qualified Data.ByteString        as BS
 import qualified Data.Vector            as V
 
@@ -113,10 +112,10 @@ instance Pretty Name where
 
         NameLitBool True        -> text "True#"
         NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i <> text "#"
-        NameLitInt  i           -> integer i <> text "i" <> text "#"
+        NameLitNat  i           -> integer i
+        NameLitInt  i           -> integer i <> text "i"
         NameLitSize    s        -> integer s <> text "s"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+        NameLitWord i bits      -> integer i <> text "w" <> int bits
         NameLitFloat   f bits   -> double  f <> text "f" <> int bits
 
         NameLitArray   vec      
@@ -166,28 +165,25 @@ readName str
         = Just $ NamePrimCast  p
 
         -- Literal Bools
-        | str == "True#"  = Just $ NameLitBool True
-        | str == "False#" = Just $ NameLitBool False
+        | str == "True"  = Just $ NameLitBool True
+        | str == "False" = Just $ NameLitBool False
 
         -- Literal Nat
-        | Just str'     <- stripSuffix "#" str
-        , Just val      <- readLitNat str'
+        | Just val      <- readLitNat str
         = Just $ NameLitNat  val
 
         -- Literal Ints
-        | Just str'     <- stripSuffix "#" str
-        , Just val      <- readLitInt str'
+        | Just val      <- readLitInt str
         = Just $ NameLitInt  val
 
         -- Literal Words
-        | Just str'     <- stripSuffix "#" str
-        , Just (val, bits) <- readLitWordOfBits str'
+        | Just (val, bits) <- readLitWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 
         -- Unboxed literals.
-        | Just base        <- stripPrefix "##" (reverse str)
-        , Just n           <- readName (reverse base ++ "#")
+        | Just base        <- stripSuffix "#" str
+        , Just n           <- readName base
         = case n of
                 NameLitBool{}   -> Just n
                 NameLitNat{}    -> Just n

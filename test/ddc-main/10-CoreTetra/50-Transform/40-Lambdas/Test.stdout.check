@@ -7,13 +7,13 @@ ok
 module Test with
 letrec {
   test$L0 : Nat# -> Nat# -> Nat#
-    = \(a x : Nat#). add# [Nat#] a 1#;
+    = \(a x : Nat#). add# [Nat#] a 1;
   
   test : Unit -> Nat#
     = \(_ : Unit).
-      let a : Nat# = 23# in
+      let a : Nat# = 23 in
       let f : Nat# -> Nat# = test$L0 a in
-      f 5#
+      f 5
 }
 
 
@@ -22,16 +22,16 @@ module Test with
 letrec {
   test$L0 : Nat# -> Nat# -> Nat# -> Nat#
     = \(a1 a2 x : Nat#).
-      let b1 : Nat# = 21# in
-      let b2 : Nat# = 32# in
+      let b1 : Nat# = 21 in
+      let b2 : Nat# = 32 in
       add# [Nat#] a1
           (add# [Nat#] a2
                (add# [Nat#] b1 (add# [Nat#] x b2)));
   
   test : Unit -> Nat#
     = \(_ : Unit).
-      let a1 : Nat# = 10# in
-      let a2 : Nat# = 11# in
+      let a1 : Nat# = 10 in
+      let a2 : Nat# = 11 in
       let f2 : Nat# -> Nat# = test$L0 a1 a2 in
       f2 a2
 }
@@ -42,20 +42,20 @@ module Test with
 letrec {
   test$L0 : Nat# -> Nat# -> Nat#
     = \(x y : Nat#).
-      let c1 : Nat# = 42# in
+      let c1 : Nat# = 42 in
       add# [Nat#] c1 x;
   
   test$L1 : Nat# -> Nat#
     = \(x : Nat#).
-      let b1 : Nat# = 21# in
-      let b2 : Nat# = 32# in
+      let b1 : Nat# = 21 in
+      let b2 : Nat# = 32 in
       let f3 : Nat# -> Nat# = test$L0 x in
       add# [Nat#] (f3 b1) (add# [Nat#] b2 x);
   
   test : Unit -> Nat#
     = \(_ : Unit).
-      let a1 : Nat# = 10# in
-      let a2 : Nat# = 11# in
+      let a1 : Nat# = 10 in
+      let a2 : Nat# = 11 in
       let f2 : Nat# -> Nat# = test$L1 in
       f2 a2
 }
@@ -66,18 +66,18 @@ letrec {
   test$L0 : Nat# -> Nat# -> Nat#
     = \(x a : Nat#).
       case a of {
-        0#  
-         -> 0#;
+        0  
+         -> 0;
         _ 
          -> add# [Nat#] x
-                (test$L0 x (sub# [Nat#] a 1#))
+                (test$L0 x (sub# [Nat#] a 1))
       };
   
   test : Unit -> Nat#
     = \(_ : Unit).
-      let x : Nat# = 5# in
+      let x : Nat# = 5 in
       let loop : Nat# -> Nat# = test$L0 x in
-      loop 10#
+      loop 10
 }
 
 -- Multiple letrecs, union of free vars required
@@ -86,30 +86,30 @@ letrec {
   test$L0 : Nat# -> Nat# -> Nat# -> Nat#
     = \(x y a : Nat#).
       case a of {
-        0#  
-         -> 0#;
+        0  
+         -> 0;
         _ 
          -> add# [Nat#] x
-                (test$L1 x y (sub# [Nat#] a 1#))
+                (test$L1 x y (sub# [Nat#] a 1))
       };
   
   test$L1 : Nat# -> Nat# -> Nat# -> Nat#
     = \(x y a : Nat#).
       case a of {
-        0#  
-         -> 0#;
+        0  
+         -> 0;
         _ 
          -> add# [Nat#] y
-                (test$L0 x y (sub# [Nat#] a 1#))
+                (test$L0 x y (sub# [Nat#] a 1))
       };
   
   test : Unit -> Nat#
     = \(_ : Unit).
-      let x : Nat# = 5# in
-      let y : Nat# = 7# in
+      let x : Nat# = 5 in
+      let y : Nat# = 7 in
       let loop1 : Nat# -> Nat# = test$L0 x y in
       let loop2 : Nat# -> Nat# = test$L1 x y in
-      loop1 10#
+      loop1 10
 }
 
 -- Single letrec, multiple arguments
@@ -118,17 +118,17 @@ letrec {
   test$L0 : Nat# -> Nat# -> Nat# -> Nat#
     = \(x a b : Nat#).
       case a of {
-        0#  
-         -> 0#;
+        0  
+         -> 0;
         _ 
          -> add# [Nat#] x
-                (test$L0 x (sub# [Nat#] a 1#) b)
+                (test$L0 x (sub# [Nat#] a 1) b)
       };
   
   test : Unit -> Nat#
     = \(_ : Unit).
-      let x : Nat# = 5# in
+      let x : Nat# = 5 in
       let loop : Nat# -> Nat# -> Nat# = test$L0 x in
-      loop 10# 2#
+      loop 10 2
 }
 

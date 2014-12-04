@@ -7,9 +7,9 @@
 :load..
 module Test with letrec
 test (_ : Unit) : Nat#
- = do   a       = 23#
-        f       = \(x : Nat#). add# a 1#
-        f 5#
+ = do   a       = 23
+        f       = \(x : Nat#). add# a 1
+        f 5
 ;;
 
 
@@ -17,12 +17,12 @@ test (_ : Unit) : Nat#
 :load..
 module Test with letrec
 test (_ : Unit) : Nat#
- = do   a1      = 10#
-        a2      = 11#
+ = do   a1      = 10
+        a2      = 11
 
         f2      = \(x : Nat#).
-                  do    b1      = 21#
-                        b2      = 32#
+                  do    b1      = 21
+                        b2      = 32
 
                         add# a1 (add# a2 (add# b1 (add# x b2)))
 
@@ -34,15 +34,15 @@ test (_ : Unit) : Nat#
 :load..
 module Test with letrec
 test (_ : Unit) : Nat#
- = do   a1      = 10#
-        a2      = 11#
+ = do   a1      = 10
+        a2      = 11
 
         f2      = \(x : Nat#).
-                  do    b1      = 21#
-                        b2      = 32#
+                  do    b1      = 21
+                        b2      = 32
 
                         f3      = \(y : Nat#).
-                                  do    c1      = 42#
+                                  do    c1      = 42
                                         add# c1 x
 
                         add# (f3 b1) (add# b2 x)
@@ -54,42 +54,42 @@ test (_ : Unit) : Nat#
 :load..
 module Test with letrec
 test (_ : Unit) : Nat#
- = let x = 5# in
+ = let x = 5 in
    letrec 
         loop a = case a of
-            0# -> 0#
-            _  -> add# x (loop (sub# a 1#))
+            0  -> 0
+            _  -> add# x (loop (sub# a 1))
    in
-   loop 10#
+   loop 10
 ;;
 
 -- Multiple letrecs, union of free vars required
 :load..
 module Test with letrec
 test (_ : Unit) : Nat#
- = let x = 5# in
-   let y = 7# in
+ = let x = 5 in
+   let y = 7 in
    letrec 
         loop1 a = case a of
-            0# -> 0#
-            _  -> add# x (loop2 (sub# a 1#))
+            0  -> 0
+            _  -> add# x (loop2 (sub# a 1))
         loop2 a = case a of
-            0# -> 0#
-            _  -> add# y (loop1 (sub# a 1#))
+            0  -> 0
+            _  -> add# y (loop1 (sub# a 1))
    in
-   loop1 10#
+   loop1 10
 ;;
 
 -- Single letrec, multiple arguments
 :load..
 module Test with letrec
 test (_ : Unit) : Nat#
- = let x = 5# in
+ = let x = 5 in
    letrec 
         loop a b = case a of
-            0# -> 0#
-            _  -> add# x (loop (sub# a 1#) b)
+            0  -> 0
+            _  -> add# x (loop (sub# a 1) b)
    in
-   loop 10# 2#
+   loop 10 2
 ;;
 

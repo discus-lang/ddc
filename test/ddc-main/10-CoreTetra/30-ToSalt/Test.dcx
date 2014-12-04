@@ -11,27 +11,27 @@
 module Test with letrec
 foo     (x : Word16#) : Word16#
  = case x of
-        5w16#   -> 6w16#
-        7w16#   -> 8w16#
-        _       -> 0w16#;;
+        5w16    -> 6w16
+        7w16    -> 8w16
+        _       -> 0w16;;
 
 
 :to-salt..
 module Test with letrec
 foo     (x : Word32#) : Word32#
  = case x of
-        5w32#   -> 6w32#
-        7w32#   -> 8w32#
-        _       -> 0w32#;;
+        5w32    -> 6w32
+        7w32    -> 8w32
+        _       -> 0w32;;
 
 
 :to-salt..
 module Test with letrec
 foo     (x : Word64#) : Word64#
  = case x of
-        5w64#   -> 6w64#
-        7w64#   -> 8w64#
-        _       -> 0w64#;;
+        5w64    -> 6w64
+        7w64    -> 8w64
+        _       -> 0w64;;
 
 
 -- Unboxed Bool pattern.
@@ -39,8 +39,8 @@ foo     (x : Word64#) : Word64#
 module Test with letrec
 foo     (x : Bool#) : Bool#
  = case x of
-       True#   -> False#
-       False#  -> True#;;
+       True     -> False
+       False    -> True;;
 
 
 -- Compile nested function via lambda lifting.

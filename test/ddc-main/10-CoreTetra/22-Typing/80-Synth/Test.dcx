@@ -41,27 +41,27 @@
 
 
 -- Check existentials can be solved against a constructor type,
-:synth (\x. \y. add# x y) 5#
+:synth (\x. \y. add# x y) 5
 
 
 -- Same thing without the eta expansion.
-:synth add# 5#
+:synth add# 5
 
 
 -- Let bindings.
-:synth let x = 5# in add# x
+:synth let x = 5 in add# x
 
 
 -- Functional let binding.
-:synth let f = \x. add# x 2# in f 3#
+:synth let f = \x. add# x 2 in f 3
 
 
 -- Multiple let bindings.
 :synth..
 let f = \x. x in
 let g = \f. \z. f z in
-let h = \x. add# x 2# in
-h (g f 5#)
+let h = \x. add# x 2 in
+h (g f 5)
 ;;
 
 
@@ -69,8 +69,8 @@ h (g f 5#)
 :synth..
 let f x   = x in
 let g f z = f z in
-let h x   = add# x 2# in
-h (g f 5#)
+let h x   = add# x 2 in
+h (g f 5)
 ;;
 
 
@@ -78,14 +78,14 @@ h (g f 5#)
 -- full type annotation.
 :synth..
 let f (x : Nat#) : Nat# = (\z. z) x
-in  f 5#
+in  f 5
 ;;
 
 
 -- Synthesis in the right of a letrec with a full annotation.
 :synth..
 letrec f (x : Nat#) : Nat# = (\z. z) x
-in  f 5#
+in  f 5
 ;;
 
 
@@ -103,7 +103,7 @@ case () of { () -> () }
 
 -- Needs synthesis in discrim to add type args.
 :synth..
-case T2# 2# 3# of 
+case T2# 2 3 of 
 { T2# a b -> ();
   _       -> () }
 ;;
@@ -111,9 +111,9 @@ case T2# 2# 3# of
 
 -- Unify types of alternatives.
 :synth..
-case T2# 2# 3# of
+case T2# 2 3 of
 { T2# a b -> a;
-  _       -> 5#; }
+  _       -> 5; }
 ;;
 
 
@@ -270,12 +270,12 @@ case T2# 2# 3# of
 
 -- Combo 2.
 :synth..
-/\f. /\a. \(x : [w : ?]. f a). \g. let y = g (x [Nat#]) in y 5#
+/\f. /\a. \(x : [w : ?]. f a). \g. let y = g (x [Nat#]) in y 5
 ;;
 
 
 -- Combo 3.
 :synth..
-/\f. /\a. \(x : [w : Region]. a). \g. let y = g (x [f a]) in y 5#
+/\f. /\a. \(x : [w : Region]. a). \g. let y = g (x [f a]) in y 5
 ;;
 

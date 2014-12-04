@@ -73,7 +73,7 @@ private r in
 private r in
 letrec {
   f : Unit -> Nat#
-    = \(x : Unit). 5#
+    = \(x : Unit). 5
 } in
 f ()
 :*: Nat#
@@ -84,7 +84,7 @@ f ()
 private r in
 letrec {
   f : Unit -> Nat#
-    = \(u : Unit). 5#
+    = \(u : Unit). 5
 } in
 add# [Nat#] (f ()) (f ())
 :*: Nat#
@@ -95,7 +95,7 @@ add# [Nat#] (f ()) (f ())
 private r in
 letrec {
   f : Unit -> Nat#
-    = \(u : Unit). 5#
+    = \(u : Unit). 5
 } in
 add# [Nat#] (f ()) (f ())
 :*: Nat#
@@ -104,16 +104,16 @@ add# [Nat#] (f ()) (f ())
 
 -- Multiple lets and private. 
 private r1 r2 in
-let x1 : Nat# = 2# in
-let x2 : Nat# = 3# in
+let x1 : Nat# = 2 in
+let x2 : Nat# = 3 in
 add# [Nat#] x1 x2
 :*: Nat#
 :!: Pure
 
 -- As above, but no annots on binders.
 private r1 r2 in
-let x1 : Nat# = 2# in
-let x2 : Nat# = 3# in
+let x1 : Nat# = 2 in
+let x2 : Nat# = 3 in
 add# [Nat#] x1 x2
 :*: Nat#
 :!: Pure

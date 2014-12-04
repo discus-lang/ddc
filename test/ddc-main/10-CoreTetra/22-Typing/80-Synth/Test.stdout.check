@@ -67,19 +67,19 @@ f g (g x)
 
 
 -- Check existentials can be solved against a constructor type,
-(\(x y : Nat#). add# [Nat#] x y) 5#
+(\(x y : Nat#). add# [Nat#] x y) 5
 :*: Nat# -> Nat#
 :!: Pure
 
 
 -- Same thing without the eta expansion.
-add# [Nat#] 5#
+add# [Nat#] 5
 :*: Nat# -> Nat#
 :!: Pure
 
 
 -- Let bindings.
-let x : Nat# = 5# in
+let x : Nat# = 5 in
 add# [Nat#] x
 :*: Nat# -> Nat#
 :!: Pure
@@ -87,8 +87,8 @@ add# [Nat#] x
 
 -- Functional let binding.
 let f : Nat# -> Nat#
-      = \(x : Nat#). add# [Nat#] x 2# in
-f 3#
+      = \(x : Nat#). add# [Nat#] x 2 in
+f 3
 :*: Nat#
 :!: Pure
 
@@ -99,8 +99,8 @@ let f : Nat# -> Nat#
 let g : (Nat# -> Nat#) -> Nat# -> Nat#
       = \(f : Nat# -> Nat#).\(z : Nat#). f z in
 let h : Nat# -> Nat#
-      = \(x : Nat#). add# [Nat#] x 2# in
-h (g f 5#)
+      = \(x : Nat#). add# [Nat#] x 2 in
+h (g f 5)
 :*: Nat#
 :!: Pure
 
@@ -111,8 +111,8 @@ let f : Nat# -> Nat#
 let g : (Nat# -> Nat#) -> Nat# -> Nat#
       = \(f : Nat# -> Nat#).\(z : Nat#). f z in
 let h : Nat# -> Nat#
-      = \(x : Nat#). add# [Nat#] x 2# in
-h (g f 5#)
+      = \(x : Nat#). add# [Nat#] x 2 in
+h (g f 5)
 :*: Nat#
 :!: Pure
 
@@ -122,7 +122,7 @@ h (g f 5#)
 let f : Nat# -> Nat#
       = \(x : Nat#).
         (\(z : Nat#). z) x in
-f 5#
+f 5
 :*: Nat#
 :!: Pure
 
@@ -133,7 +133,7 @@ letrec {
     = \(x : Nat#).
       (\(z : Nat#). z) x
 } in
-f 5#
+f 5
 :*: Nat#
 :!: Pure
 
@@ -158,7 +158,7 @@ case x of {
 
 
 -- Needs synthesis in discrim to add type args.
-case T2# [Nat#] [Nat#] 2# 3# of {
+case T2# [Nat#] [Nat#] 2 3 of {
   T2# (a : Nat#) (b : Nat#) 
    -> ();
   _ 
@@ -169,11 +169,11 @@ case T2# [Nat#] [Nat#] 2# 3# of {
 
 
 -- Unify types of alternatives.
-case T2# [Nat#] [Nat#] 2# 3# of {
+case T2# [Nat#] [Nat#] 2 3 of {
   T2# (a : Nat#) (b : Nat#) 
    -> a;
   _ 
-   -> 5#
+   -> 5
 }
 :*: Nat#
 :!: Pure
@@ -394,7 +394,7 @@ f x
  \(x : [w : Data].f a).\(g : f a -> Nat# -> ?11).
 let y : Nat# -> ?11
       = g (x [Nat#]) in
-y 5#
+y 5
 :*: [f : ?3 ~> Data].[a : ?3].([w : Data].f a) -> (f a -> Nat# -> ?11) -> ?11
 :!: Pure
 
@@ -405,7 +405,7 @@ y 5#
 let y : Nat# -> ?10
       = g
             (x [f a]) in
-y 5#
+y 5
 :*: [f : Data ~> Region].[a : Data].([w : Region].a) -> (a -> Nat# -> ?10) -> ?10
 :!: Pure
 
