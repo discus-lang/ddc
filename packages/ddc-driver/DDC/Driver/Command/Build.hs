@@ -43,7 +43,7 @@ cmdBuild config filePath
  -- If we were told to build a source file then just compile it instead.
  -- This is probably the least surprising behaviour.
  | ".ds"        <- FilePath.takeExtension filePath
- = do   cmdCompileRecursive config False [] filePath
+ = do   cmdCompileRecursive config False [] filePath []
         return ()
 
  -- Don't know how to build from this file.

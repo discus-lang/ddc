@@ -15,6 +15,7 @@ import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
+import Data.Time.Clock
 import Data.IORef
 import DDC.Build.Interface.Load                 (InterfaceAA)
 import qualified DDC.Driver.Build.Locate        as Locate
@@ -46,23 +47,36 @@ import qualified DDC.Core.Flow                  as Flow
 --   or loaded when compiling this module.
 --
 cmdCompileRecursive
-        :: Config                               -- ^ Build driver config.
-        -> Bool                                 -- ^ Build an exectable.
-        -> [InterfaceAA]                        -- ^ Currently loaded interfaces.
-        -> FilePath                             -- ^ Path to file to compile
-        -> ExceptT String IO [InterfaceAA]       -- ^ All loaded interfaces files.
+        :: Config               -- ^ Build driver config.
+        -> Bool                 -- ^ Build an exectable.
+        -> [InterfaceAA]        -- ^ Currently loaded interfaces.
+        -> FilePath             -- ^ Path to file to compile
+        -> [C.ModuleName]       -- ^ Names of modules currently being build on this
+                                --   branch in the dependency tree.
+        -> ExceptT String IO [InterfaceAA]       
+                                -- ^ All loaded interfaces files.
 
-cmdCompileRecursive config buildExe0 interfaces0 filePath0
- | takeExtension filePath0 == ".ds"
- = loop buildExe0 interfaces0 filePath0 []
+cmdCompileRecursive config buildExe interfaces filePath modsEntered
+ | takeExtension filePath == ".ds"
+ = cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
 
  | otherwise
- = cmdCompile config buildExe0 interfaces0 filePath0
+ = cmdCompile            config buildExe interfaces filePath
 
- where 
-  loop  buildExe interfaces filePath 
-        modNamesPath
-   = do
+
+-- | Recursively build the given Source Tetra file.
+cmdCompileRecursiveDS 
+        :: Config               -- ^ Build driver config.
+        -> Bool                 -- ^ Build an executable.
+        -> [InterfaceAA]        -- ^ Currently loaded interfaces.
+        -> FilePath             -- ^ Path to file to compile
+        -> [C.ModuleName]       -- ^ Names of modules currently being built on this
+                                --   branch in the dependency tree. 
+        -> ExceptT String IO [InterfaceAA]
+                                -- ^ All loaded interface files.
+
+cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
+ = do   
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -70,6 +84,7 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
 
         -- Read in the source file.
         src             <- liftIO $ readFile filePath
+        Just timeDS     <- liftIO $ getModificationTimeIfExists filePath
 
         -- Parse just the header of the module to determine what other modules
         -- it imports.
@@ -77,14 +92,14 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
 
         -- Recursively compile modules until we have all the interfaces required
         -- for the current one.
-        let chase intsHave = do
+        let loop intsHave = do
+
                 -- Names of all the modules that we have interfaces for.
-                let modsNamesHave   
-                        = map interfaceModuleName intsHave
+                let modsNamesHave = map interfaceModuleName intsHave
 
                 -- Names of modules that we are missing interfaces for.
-                let missing     = filter (\m -> not $ elem m modsNamesHave) 
-                                $ modNamesNeeded
+                let missing       = filter (\m -> not $ elem m modsNamesHave) 
+                                  $ modNamesNeeded
 
                 case missing of
                  -- If there are no missing interfaces then we're good to go.
@@ -103,70 +118,74 @@ cmdCompileRecursive config buildExe0 interfaces0 filePath0
 
                         -- Check that we haven't tried to compile this module before
                         -- on a recursive path. This detects module import loops.
-                        when (elem m modNamesPath)
+                        when (elem m modsEntered)
                          $ throwE $ unlines
                          $  [ "! Cannot build recursive modules:" ]
-                         ++ [ "    " ++ (P.renderIndent $ P.ppr mm) | mm <- modNamesPath ]
+                         ++ [ "    " ++ (P.renderIndent $ P.ppr mm) | mm <- modsEntered ]
 
                         -- Compile the first of the dependencies.
-                        interfaces' <- loop False intsHave mfilePath (modNamesPath ++ [m])
+                        intsHave' <- cmdCompileRecursiveDS config False intsHave 
+                                        mfilePath (modsEntered ++ [m])
 
                         -- See if we've got them all.
-                        chase interfaces'
+                        loop intsHave'
 
-        interfaces'     <- chase interfaces
+        intsHave'       <- loop interfaces
 
-        -- At this point we should have all the interfaces needed
-        -- for the current module.
-        cmdCompileOrLoadInterface config buildExe interfaces' filePath
+        -- At this point we should have all the interfaces needed for the current module,
+        -- and need to decide whether we can reload an existing interface file for the
+        -- current module, or need to rebuild.
+        --  
+        -- It's safe to reload if:
+        --      1. There is an existing interface which is fresher than the source.
+        --      2. There is an existing object    which is fresher than the source.
+        --      3. There is an existing interface which is fresher than the 
+        --         interfaces of all dependencies.
+        --
+        -- Additionally, we force rebuild for the top level module, because that's what
+        -- was mentioned on the command line. We're trying to follow the principle of
+        -- least surprise in this regard.
+        --
+        let filePathO   =  objectPathOfConfig config filePath
+        let filePathDI  =  replaceExtension filePathO ".di"
+        mTimeO          <- liftIO $ getModificationTimeIfExists filePathO
+        mTimeDI         <- liftIO $ getModificationTimeIfExists filePathDI
 
+        let loadOrCompile
+                -- object and interface are fresher than source.
+                | Just timeO    <- mTimeO,      timeDS < timeO
+                , Just timeDI   <- mTimeDI,     timeDS < timeDI
 
----------------------------------------------------------------------------------------------------
--- | Given a source module,
---     if there is a current interface file then load that, 
---     otherwise compile the module from source. 
--- 
---     The interface files are assumed to be in the same directory as the source files.
-cmdCompileOrLoadInterface
-        :: Config               -- ^ Build driver config.
-        -> Bool                 -- ^ Build and executable.
-        -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
-        -> FilePath             -- ^ Path to file to compile.
-        -> ExceptT String IO [InterfaceAA]
+                  -- interface is fresher than all dependencies.
+                , and   [ interfaceTimeStamp i < timeDI 
+                        | i <- intsHave'
+                        , elem (interfaceModuleName i) modNamesNeeded ]
 
-cmdCompileOrLoadInterface config buildExe interfaces filePath
- = do
-        let ext         = takeExtension filePath
-
-        let make
-                | ext == ".ds"
-                = do    let filePathO   = objectPathOfConfig config filePath
-                        let filePathDI  = replaceExtension filePathO ".di"
-
-                        timeDS    <- liftIO $ getModificationTime filePath
-                        existsO   <- liftIO $ doesFileExist filePathO
-                        existsDI  <- liftIO $ doesFileExist filePathDI
-                        
-                        reload    
-                         <- if existsO && existsDI 
-                                then do timeO   <- liftIO $ getModificationTime filePathO
-                                        timeDI  <- liftIO $ getModificationTime filePathDI
-                                        return $ timeDS <= timeO && timeDS <= timeDI
-                                else    return False
-
-                        if reload
-                         then do
-                                str     <- liftIO $ readFile filePathDI
-                                case Interface.loadInterface filePathDI str of
-                                 Left  err -> throwE $ P.renderIndent $ P.ppr err
-                                 Right int -> return (interfaces ++ [int])
-
-                         else cmdCompile config buildExe interfaces filePath 
+                  -- this is not the top-level module.
+                , not $ null modsEntered       
+                = do
+                        str     <- liftIO $ readFile filePathDI
+                        case Interface.loadInterface filePathDI timeDI str of
+                         Left  err -> throwE $ P.renderIndent $ P.ppr err
+                         Right int -> return (intsHave' ++ [int])
 
                 | otherwise
-                = cmdCompile config buildExe interfaces filePath
+                = cmdCompile config buildExe intsHave' filePath
 
-        make
+        loadOrCompile
+
+
+-- | If the given file exists then get its modification time,
+--   otherwise Nothing.
+getModificationTimeIfExists :: FilePath -> IO (Maybe UTCTime)
+getModificationTimeIfExists path
+ = do   exists  <- doesFileExist path
+        if exists 
+         then do
+                timeStamp <- getModificationTime path
+                return $ Just timeStamp
+
+         else   return Nothing
 
 
 ---------------------------------------------------------------------------------------------------
@@ -299,12 +318,16 @@ cmdCompile config buildExe interfaces filePath
                 -- write out the interface file.
                 let pathO       = objectPathOfConfig config filePath
                 let pathDI      = replaceExtension pathO ".di"
+
+
+                timeDI  <- liftIO $ getCurrentTime 
                 let int = Interface
                         { interfaceVersion      = Version.version
                         , interfaceFilePath     = pathDI
+                        , interfaceTimeStamp    = timeDI
                         , interfaceModuleName   = mn
                         , interfaceTetraModule  = modTetra 
-                        , interfaceSaltModule   = modSalt }
+                        , interfaceSaltModule   = modSalt  }
 
                 liftIO  $ writeFile pathDI
                         $ P.renderIndent $ P.ppr int

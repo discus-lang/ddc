@@ -101,12 +101,12 @@ run config
         -- Compile a module to object code.
         ModeCompile filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompileRecursive dconfig False [] filePath
+                runError $ cmdCompileRecursive dconfig False [] filePath []
 
         -- Compile a module into an executable.
         ModeMake filePath
          -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompileRecursive dconfig True  [] filePath
+                runError $ cmdCompileRecursive dconfig True  [] filePath []
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath

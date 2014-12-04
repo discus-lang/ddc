@@ -9,6 +9,7 @@ import DDC.Core.Module
 import DDC.Core.Pretty
 import DDC.Core.Compounds
 import Data.Maybe
+import Data.Time.Clock
 import qualified Data.Char              as Char
 import qualified DDC.Core.Tetra         as Tetra
 import qualified DDC.Core.Salt          as Salt
@@ -18,12 +19,17 @@ import qualified DDC.Core.Salt          as Salt
 -- | Module interface.
 data Interface ta sa
         = Interface
-        { interfaceFilePath     :: FilePath
+        { -- | Path that the interface was loaded from.
+          interfaceFilePath     :: FilePath
+
+          -- | Last modification time of the interface file,
+          --   used to determine when the source needs to be rebuilt.
+        , interfaceTimeStamp    :: UTCTime
+
         , interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
         , interfaceTetraModule  :: Maybe (Module ta Tetra.Name)
         , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
-        deriving Show
 
 
 ---------------------------------------------------------------------------------------------------

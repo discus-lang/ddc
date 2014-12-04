@@ -83,6 +83,7 @@ DDC_PACKAGES	:= \
         -package parsec \
         -package buildbox \
         -package wl-pprint \
+        -package time
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \

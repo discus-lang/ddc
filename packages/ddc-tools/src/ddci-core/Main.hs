@@ -37,7 +37,7 @@ main
          ["--make",  filePath]
           -> do let state       = initState (InputInterfaceBatch filePath)
                 config          <- getDriverConfigOfState state
-                runError $ cmdCompileRecursive config True [] filePath
+                runError $ cmdCompileRecursive config True [] filePath []
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]

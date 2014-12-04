@@ -66,7 +66,8 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  | ".di"        <- takeExtension filePath
  = do
         str     <- liftIO $ readFile filePath
-        case Interface.loadInterface filePath str of
+        timeDI  <- liftIO $ getModificationTime filePath
+        case Interface.loadInterface filePath timeDI str of
          Left err        -> throwE $ renderIndent $ ppr err
          Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
 

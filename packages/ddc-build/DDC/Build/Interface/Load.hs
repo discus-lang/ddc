@@ -10,6 +10,7 @@ import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Module
 import DDC.Base.Pretty
 import DDC.Core.Transform.Reannotate
+import Data.Time.Clock
 import Control.Monad
 import qualified DDC.Core.Load                  as Load
 import qualified DDC.Core.Tetra                 as Tetra
@@ -104,25 +105,30 @@ type InterfaceAA
 -- | Load an interface file.
 loadInterface 
         :: FilePath     -- ^ File path of interface file, for error messages.
+        -> UTCTime      -- ^ TimeStamp of interface file.
         -> String       -- ^ Interface file source.
         -> Either Error InterfaceAA
 
-loadInterface pathInterface str
+loadInterface pathInterface timeStamp str
  = let  -- Attach line numbers to ach line
         ls      = lines str
         lsNum   = zip [1..] ls
-   in   pInterface pathInterface lsNum
+   in   pInterface pathInterface timeStamp lsNum
 
 
 -- | Parse an interface file.
-pInterface :: FilePath -> Parser InterfaceAA
-pInterface _pathInt []
+pInterface 
+        :: FilePath             -- ^ Path of interface file.
+        -> UTCTime              -- ^ TimeStamp of interface file.
+        -> Parser InterfaceAA
+
+pInterface _pathInt _timeStamp []
         = Left ErrorEmpty
 
-pInterface pathInt ((n, str) : rest)
+pInterface pathInt timeStamp ((n, str) : rest)
         -- Skip over blank lines
         | all (\c -> Char.isSpace c || c == '\n') str
-        = pInterface pathInt rest
+        = pInterface pathInt timeStamp rest
 
         -- The interface needs to start with the magic words and version number.
         | ["ddc", "interface", version] <- words str
@@ -146,8 +152,9 @@ pInterface pathInt ((n, str) : rest)
                                 _       -> Left ErrorDuplicate
 
                 return  $ Interface
-                        { interfaceVersion      = version
-                        , interfaceFilePath     = pathInt
+                        { interfaceFilePath     = pathInt
+                        , interfaceTimeStamp    = timeStamp
+                        , interfaceVersion      = version
                         , interfaceModuleName   = modName
                         , interfaceTetraModule  = mTetra
                         , interfaceSaltModule   = liftM (reannotate (const ())) mSalt }
