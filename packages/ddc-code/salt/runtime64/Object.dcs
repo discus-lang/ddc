@@ -98,7 +98,7 @@ export value
   apply3            : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
   apply4            : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
 
-  allocRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+  allocRef          : [r1 r2 : Region]. Ptr# r2 Obj -> Ptr# r1 Obj
   writeRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
   readRef           : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
@@ -673,8 +673,8 @@ applyZ  [r : Region]
 
 -- Ref ------------------------------------------------------------------------
 -- | Allocate a new reference to some boxed value.
-allocRef [r1 r2 : Region] (val : Ptr# r1 Obj) : Ptr# r2 Obj
- = do   ref     = allocBoxed [r2] (truncate# 0#) 1#
+allocRef [r1 r2 : Region] (val : Ptr# r2 Obj) : Ptr# r1 Obj
+ = do   ref     = allocBoxed [r1] (truncate# 0#) 1#
         setFieldOfBoxed ref 0# val
         ref
 
