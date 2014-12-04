@@ -186,7 +186,7 @@ opt1_salt config dconfig builder runtimeConfig filePath
                   , InlineSpecAll (ModuleName ["Object"]) 
                      $ Set.fromList 
                      $ map Salt.NameVar
-                        [ "eval0", "eval1", "eval2", "eval3", "eval4", "evalZ"
+                        [ "apply0", "apply1", "apply2", "apply4", "apply4", "applyZ"
                         , "copyAvailOfThunk"])]
 
         -- Optionally load the rewrite rules for each 'with' module
