@@ -54,7 +54,7 @@ instance Pretty Error where
                  , indent 2 (ppr err') ]
 
         ErrorSaltConvert err'
-         -> vcat [ text "Fragment violation when converting Salt module to C code."
+         -> vcat [ text "Fragment violation when converting Salt module to target code."
                  , indent 2 (ppr err') ]
 
         ErrorTetraConvert err'

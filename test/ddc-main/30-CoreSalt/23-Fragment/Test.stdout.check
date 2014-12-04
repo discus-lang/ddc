@@ -11,7 +11,7 @@ When checking expression.
 
 
 -- Error: Module does not have a top-level letrec.
-Fragment violation when converting Salt module to C code.
+Fragment violation when converting Salt module to target code.
   Module does not have a top-level letrec.
 
 
@@ -105,7 +105,7 @@ Error loading module
 
 
 -- Error: partial application not supported in Salt.
-Fragment violation when converting Salt module to C code.
+Fragment violation when converting Salt module to target code.
   Invalid type for local variable.
   
   with: Nat# -> Nat#

@@ -705,7 +705,7 @@ fillArray
         [r1 r2 : Region] [a : Data]
         (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
  = case ge# start end of
-        True#   -> return# arr
+        True#   -> arr
         False#  -> do
                 setFieldOfBoxed arr start val
                 fillArray arr (add# start 1#) end val
