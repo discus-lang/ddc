@@ -55,7 +55,7 @@ import DDC.Base.Pretty
 import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
-import qualified Data.ByteString        as BS
+import qualified Data.ByteString.Char8  as BS
 import qualified Data.Vector            as V
 
 import DDC.Core.Lexer.Names             (isVarStart)

@@ -24,7 +24,7 @@ import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
-import qualified Data.ByteString.Char8  as BS
+import qualified Data.ByteString        as BS
 
 import DDC.Core.Tetra   
         ( readPrimTyCon

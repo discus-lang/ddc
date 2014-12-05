@@ -13,7 +13,7 @@ module DDC.Core.Tetra.Prim.Base
         , PrimCast      (..))
 where
 import Data.Typeable
-import Data.ByteString          (ByteString)
+import Data.ByteString.Char8    (ByteString)
 import Data.Vector              (Vector)
 import DDC.Core.Salt.Name
         ( PrimTyCon     (..)

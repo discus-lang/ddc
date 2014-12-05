@@ -24,7 +24,6 @@ import qualified DDC.Build.Language.Tetra          as CE
 import qualified DDC.Core.Tetra                    as CE
 import qualified DDC.Core.Tetra.Env                as CE
 
-import qualified DDC.Core.Parser                   as C
 import qualified DDC.Core.Transform.Resolve        as C
 import qualified DDC.Core.Transform.SpreadX        as C
 import qualified DDC.Core.Check                    as C
@@ -100,16 +99,8 @@ pipeText !srcName !srcLine !str !pp
 
                         pipeSink (unlines $ map show $ tokens) sinkTokens
 
-                        -- Parse the source tokens.
-                        let context = C.Context
-                                { C.contextTrackedEffects         = True
-                                , C.contextTrackedClosures        = True
-                                , C.contextFunctionalEffects      = False
-                                , C.contextFunctionalClosures     = False 
-                                , C.contextMakeStringName         = \_ _ -> Nothing }
-
                         case BP.runTokenParser C.describeTok srcName
-                                (SE.pModule context) tokens of
+                                (SE.pModule SE.context) tokens of
                          Left err -> return [ErrorLoad err]
                          Right mm -> goDesugar mm
 
