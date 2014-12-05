@@ -16,4 +16,4 @@ lexModuleString sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
-                Nothing -> Token (KJunk "lexical error") sp
+                Nothing -> Token (KErrorJunk "lexical error") sp

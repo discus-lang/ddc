@@ -18,14 +18,14 @@ import Control.Monad
 -- | Parse a witness expression.
 pWitness 
         :: Ord n  
-        => Context -> Parser n (Witness SourcePos n)
+        => Context n -> Parser n (Witness SourcePos n)
 pWitness c = pWitnessJoin c
 
 
 -- | Parse a witness join.
 pWitnessJoin 
         :: Ord n 
-        => Context -> Parser n (Witness SourcePos n)
+        => Context n -> Parser n (Witness SourcePos n)
 pWitnessJoin c
    -- WITNESS  or  WITNESS & WITNESS
  = do   w1      <- pWitnessApp c
@@ -40,7 +40,7 @@ pWitnessJoin c
 -- | Parse a witness application.
 pWitnessApp 
         :: Ord n 
-        => Context -> Parser n (Witness SourcePos n)
+        => Context n -> Parser n (Witness SourcePos n)
 
 pWitnessApp c
   = do  (x:xs)  <- P.many1 (pWitnessArgSP c)
@@ -55,7 +55,7 @@ pWitnessApp c
 -- | Parse a witness argument.
 pWitnessArgSP 
         :: Ord n 
-        => Context -> Parser n (Witness SourcePos n, SourcePos)
+        => Context n -> Parser n (Witness SourcePos n, SourcePos)
 
 pWitnessArgSP c
  = P.choice
@@ -73,7 +73,7 @@ pWitnessArgSP c
 -- | Parse a variable, constructor or parenthesised witness.
 pWitnessAtom   
         :: Ord n 
-        => Context -> Parser n (Witness SourcePos n)
+        => Context n -> Parser n (Witness SourcePos n)
 
 pWitnessAtom c   
         = liftM fst (pWitnessAtomSP c)
@@ -83,7 +83,7 @@ pWitnessAtom c
 --   also returning source position.
 pWitnessAtomSP 
         :: Ord n 
-        => Context -> Parser n (Witness SourcePos n, SourcePos)
+        => Context n -> Parser n (Witness SourcePos n, SourcePos)
 
 pWitnessAtomSP c
  = P.choice

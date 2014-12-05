@@ -36,8 +36,6 @@ import qualified DDC.Data.SourcePos                as SP
 import qualified Data.Map                          as Map
 import Control.DeepSeq
 
--- type InterfaceAA        
---        = Interface (C.AnTEC BP.SourcePos CE.Name) ()
 
 -- | Process program text.
 data PipeText n (err :: * -> *) where
@@ -107,7 +105,8 @@ pipeText !srcName !srcLine !str !pp
                                 { C.contextTrackedEffects         = True
                                 , C.contextTrackedClosures        = True
                                 , C.contextFunctionalEffects      = False
-                                , C.contextFunctionalClosures     = False }
+                                , C.contextFunctionalClosures     = False 
+                                , C.contextMakeStringName         = \_ _ -> Nothing }
 
                         case BP.runTokenParser C.describeTok srcName
                                 (SE.pModule context) tokens of

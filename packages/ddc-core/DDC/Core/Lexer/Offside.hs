@@ -382,7 +382,7 @@ newOffsideClosingBrace ts
 
 takeTok :: [Lexeme n] -> Token (Tok n)
 takeTok []      
- = Token (KJunk "") (SourcePos "" 0 0)
+ = Token (KErrorJunk "") (SourcePos "" 0 0)
 
 takeTok (l : ls)
  = case l of

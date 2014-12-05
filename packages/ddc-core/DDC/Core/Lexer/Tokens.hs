@@ -20,6 +20,7 @@ where
 import DDC.Core.Pretty
 import DDC.Core.Exp
 import Control.Monad
+import Data.ByteString          (ByteString)
 
 
 -- TokenFamily ----------------------------------------------------------------
@@ -32,6 +33,7 @@ data TokenFamily
         | Keyword
         | Constructor
         | Index
+        | Literal
 
 
 -- | Describe a token family, for parser error messages.
@@ -42,13 +44,17 @@ describeTokenFamily tf
         Keyword         -> "keyword"
         Constructor     -> "constructor"
         Index           -> "index"
+        Literal         -> "literal"
 
 
 -- Tok ------------------------------------------------------------------------
 -- | Tokens accepted by the core language parser.
 data Tok n
         -- | Some junk symbol that isn't part of the language.
-        = KJunk String
+        = KErrorJunk String
+
+        -- | The first part of an unterminated string.
+        | KErrorUnterm String
 
         -- | Meta tokens contain out-of-band information that is eliminated
         --   before parsing proper.
@@ -73,7 +79,12 @@ renameTok
 
 renameTok f kk
  = case kk of
-        KJunk s -> Just $ KJunk s
+        KErrorJunk s 
+         -> Just $ KErrorJunk s
+
+        KErrorUnterm s
+          -> Just $ KErrorUnterm s
+
         KM t    -> Just $ KM t
         KA t    -> Just $ KA t
         KN t    -> liftM KN $ renameTokNamed f t
@@ -83,7 +94,8 @@ renameTok f kk
 describeTok :: Pretty n => Tok n -> String
 describeTok kk
  = case kk of
-        KJunk c         -> "character " ++ show c
+        KErrorJunk c    -> "character " ++ show c
+        KErrorUnterm _  -> "unterminated string"
         KM tm           -> describeTokMeta  tm
         KA ta           -> describeTokAtom  ta
         KN tn           -> describeTokNamed tn
@@ -223,6 +235,9 @@ data TokAtom
         -- debruijn indices
         | KIndex Int
 
+        -- literal strings
+        | KString ByteString
+
         -----------------------------------------
         -- builtin names 
         --   sort constructors.
@@ -327,6 +342,8 @@ describeTokAtom' ta
 
         -- debruijn indices
         KIndex i                -> (Index,   "^" ++ show i)
+
+        KString s               -> (Literal,     show s)
 
         -- builtin names
         KSoConBuiltin so        -> (Constructor, renderPlain $ ppr so)

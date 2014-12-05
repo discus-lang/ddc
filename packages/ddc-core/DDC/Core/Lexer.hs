@@ -22,6 +22,7 @@ import DDC.Data.SourcePos
 import DDC.Data.Token
 import Data.Char
 import Data.List
+import qualified Data.ByteString.Char8  as BS
 
 
 -- Module ---------------------------------------------------------------------
@@ -87,30 +88,39 @@ lexString sourceName lineStart str
         ' '  : w'        -> lexMore 1 w'
         '\t' : w'        -> lexMore 8 w'
 
-        -- Literal values
+        -- Literal numeric values
         -- This needs to come before the rule for '-'
         c : cs
          | isDigit c
          , (body, rest)         <- span isLitBody cs
-         -> tokN (KLit (c:body))        : lexMore (length (c:body)) rest
+         -> tokN (KLit (c:body))     : lexMore (length (c:body)) rest
 
         '-' : c : cs
          | isDigit c
          , (body, rest)         <- span isLitBody cs
-         -> tokN (KLit ('-':c:body))    : lexMore (length (c:body)) rest
+         -> tokN (KLit ('-':c:body)) : lexMore (length (c:body)) rest
+
+        -- Literal strings
+        '\"' : cc
+         -> let eat _ _   []                 = [tok $ KErrorUnterm w]
+                eat n acc ('\\' : '"' : cs)  = eat (n + 2) ('"' : acc) cs
+                eat n acc ('"' : cs)         = tokA (KString (BS.pack (reverse acc))) 
+                                                  : lexWord line (column + n) cs
+                eat n acc (c : cs)           = eat (n + 1) (c : acc) cs
+             in eat 0 [] cc
 
         -- Meta tokens
         '{'  : '-' : w'
-         -> tokM KCommentBlockStart : lexMore 2 (lexUpto "-}" w')
+         -> tokM KCommentBlockStart  : lexMore 2 (lexUpto "-}" w')
 
         '-'  : '}' : w'
-         -> tokM KCommentBlockEnd   : lexMore 2 w'
+         -> tokM KCommentBlockEnd    : lexMore 2 w'
 
         '-'  : '-' : w'  
          -> let  (_junk, w'') = span (/= '\n') w'
             in   tokM KCommentLineStart  : lexMore 2 w''
 
-        '\n' : w'        -> tokM KNewLine           : lexWord (line + 1) 1 w'
+        '\n' : w'        -> tokM KNewLine        : lexWord (line + 1) 1 w'
 
         -- Wrapper operator symbols.
         '(' : c : cs 
@@ -198,7 +208,7 @@ lexString sourceName lineStart str
                  = tokN (KCon con)               : lexMore (length s) rest'
                
                  | otherwise    
-                 = [tok (KJunk [c])]
+                 = [tok (KErrorJunk [c])]
                  
             in  readNamedCon (c : body')
 
@@ -223,11 +233,11 @@ lexString sourceName lineStart str
                  = tokN (KVar v)           : lexMore (length s) rest'
 
                  | otherwise
-                 = [tok (KJunk [c])]
+                 = [tok (KErrorJunk [c])]
 
             in  readNamedVar (c : body')
 
         -- Some unrecognised character.
         -- We still need to keep lexing as this may be in a comment.
-        c : cs   -> (tok $ KJunk [c]) : lexMore 1 cs
+        c : cs   -> (tok $ KErrorJunk [c]) : lexMore 1 cs
 

@@ -19,7 +19,7 @@ import qualified DDC.Base.Parser        as P
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a core module.
 pModule :: (Ord n, Pretty n) 
-        => Context
+        => Context n
         -> Parser n (Module P.SourcePos n)
 pModule c
  = do   sp      <- pTokSP KModule
@@ -70,7 +70,7 @@ data ExportSpec n
 -- | Parse some export specs.
 pExportSpecs
         :: (Ord n, Pretty n)
-        => Context -> Parser n [ExportSpec n]
+        => Context n -> Parser n [ExportSpec n]
 
 pExportSpecs c
  = do   pTok KExport
@@ -97,7 +97,7 @@ pExportSpecs c
 -- | Parse an export spec.
 pExportValue
         :: (Ord n, Pretty n)
-        => Context -> Parser n (ExportSpec n)
+        => Context n -> Parser n (ExportSpec n)
 pExportValue c 
  = do   
         n       <- pName
@@ -109,7 +109,7 @@ pExportValue c
 -- | Parse a foreign value export spec.
 pExportForeignValue    
         :: (Ord n, Pretty n)
-        => Context -> String -> Parser n (ExportSpec n)
+        => Context n -> String -> Parser n (ExportSpec n)
 pExportForeignValue c dst
         | "c"           <- dst
         = do    n       <- pName
@@ -134,7 +134,7 @@ data ImportSpec n
 
 -- | Parse some import specs.
 pImportSpecs    :: (Ord n, Pretty n)
-                => Context -> Parser n [ImportSpec n]
+                => Context n -> Parser n [ImportSpec n]
 pImportSpecs c
  = do   
         pTok KImport
@@ -182,7 +182,7 @@ pImportSpecs c
 -- | Parse a type import spec.
 pImportType
         :: (Ord n, Pretty n)
-        => Context -> Parser n (ImportSpec n)
+        => Context n -> Parser n (ImportSpec n)
 pImportType c
  = do   n       <- pName
         pTokSP (KOp ":")
@@ -193,7 +193,7 @@ pImportType c
 -- | Parse a foreign type import spec.
 pImportForeignType
         :: (Ord n, Pretty n) 
-        => Context -> String -> Parser n (ImportSpec n)
+        => Context n -> String -> Parser n (ImportSpec n)
 pImportForeignType c src
 
         -- Abstract types are not associated with data values,
@@ -220,7 +220,7 @@ pImportForeignType c src
 -- | Parse a value import spec.
 pImportValue
         :: (Ord n, Pretty n)
-        => Context -> Parser n (ImportSpec n)
+        => Context n -> Parser n (ImportSpec n)
 pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
@@ -231,7 +231,7 @@ pImportValue c
 -- | Parse a foreign value import spec.
 pImportForeignValue    
         :: (Ord n, Pretty n)
-        => Context -> String -> Parser n (ImportSpec n)
+        => Context n -> String -> Parser n (ImportSpec n)
 pImportForeignValue c src
         | "c"           <- src
         = do    n       <- pName
@@ -249,7 +249,7 @@ pImportForeignValue c src
 
 
 -- DataDef ----------------------------------------------------------------------------------------
-pDataDef :: Ord n => Context -> Parser n (DataDef n)
+pDataDef :: Ord n => Context n -> Parser n (DataDef n)
 pDataDef c
  = do   pTokSP KData
         nData   <- pName 
@@ -281,7 +281,7 @@ pDataDef c
 
 
 -- | Parse a type parameter to a data type.
-pDataParam :: Ord n => Context -> Parser n [Bind n]
+pDataParam :: Ord n => Context n -> Parser n [Bind n]
 pDataParam c 
  = do   pTok KRoundBra
         ns      <- P.many1 pName
@@ -294,7 +294,7 @@ pDataParam c
 -- | Parse a data constructor declaration.
 pDataCtor 
         :: Ord n 
-        => Context 
+        => Context n
         -> n                    -- ^ Name of data type constructor.
         -> [Bind n]             -- ^ Type parameters of data type constructor.
         -> Parser n (DataCtor n)

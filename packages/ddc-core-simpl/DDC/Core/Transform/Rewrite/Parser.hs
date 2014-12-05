@@ -20,7 +20,7 @@ import qualified DDC.Core.Transform.Rewrite.Rule as R
 -}
 -- | Parse a rewrite rule.
 pRule   :: Ord n 
-        => Context -> Parser n (R.RewriteRule P.SourcePos n)
+        => Context n -> Parser n (R.RewriteRule P.SourcePos n)
 pRule c
  = do   bs       <- pRuleBinders c
         (cs,lhs) <- pRuleCsLhs c
@@ -44,7 +44,7 @@ add_zero_l
 -- | Parse many rewrite rules.
 pRuleMany       
         :: Ord n 
-        => Context -> Parser n [(n,R.RewriteRule P.SourcePos n)]
+        => Context n -> Parser n [(n,R.RewriteRule P.SourcePos n)]
 pRuleMany c
  = P.many (do
         n <- pName
@@ -55,7 +55,7 @@ pRuleMany c
 
 pRuleBinders 
         :: Ord n 
-        => Context -> Parser n [(R.BindMode,Bind n)]
+        => Context n -> Parser n [(R.BindMode,Bind n)]
 
 pRuleBinders c
  = P.choice
@@ -68,7 +68,7 @@ pRuleBinders c
 
 pRuleCsLhs 
         :: Ord n 
-        => Context -> Parser n ([Type n], Exp P.SourcePos n)
+        => Context n -> Parser n ([Type n], Exp P.SourcePos n)
 pRuleCsLhs c
  = P.choice
  [ do   cs <- P.many1 $ P.try (do
@@ -84,7 +84,7 @@ pRuleCsLhs c
 
 pRuleHole 
         :: Ord n 
-        => Context -> Parser n (Maybe (Exp P.SourcePos n))
+        => Context n -> Parser n (Maybe (Exp P.SourcePos n))
 pRuleHole c
  = P.optionMaybe
  $ do   pTok KUnderscore
@@ -103,7 +103,7 @@ pRuleHole c
 --
 pBinders 
         :: Ord n 
-        => Context -> Parser n [(R.BindMode, Bind n)]
+        => Context n -> Parser n [(R.BindMode, Bind n)]
 pBinders c
  = P.choice
  [ pBindersBetween c R.BMSpec      (pTok KSquareBra) (pTok KSquareKet)
@@ -113,7 +113,7 @@ pBinders c
 
 pBindersBetween 
         :: Ord n 
-        => Context
+        => Context n
         -> R.BindMode 
         -> Parser n () 
         -> Parser n () 

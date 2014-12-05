@@ -20,13 +20,7 @@ cmdParse _state source str
            in   goParse tokens
 
         goParse tokens
-         = let  context = Context
-                        { contextTrackedEffects         = True
-                        , contextTrackedClosures        = True
-                        , contextFunctionalEffects      = False
-                        , contextFunctionalClosures     = False }
-
-           in   case BP.runTokenParser 
+         = case BP.runTokenParser 
                         C.describeTok 
                         (nameOfSource source)
                         (pModule context)

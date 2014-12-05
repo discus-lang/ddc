@@ -60,7 +60,7 @@ lexModuleString sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
-                Nothing -> Token (KJunk "lexical error") sp
+                Nothing -> Token (KErrorJunk "lexical error") sp
 
 
 -- | Lex a string to tokens, using primitive names.
@@ -72,7 +72,7 @@ lexExpString sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
-                Nothing -> Token (KJunk "lexical error") sp
+                Nothing -> Token (KErrorJunk "lexical error") sp
 
 
 -- | Create a new type variable name that is not in the given environment.

@@ -25,7 +25,7 @@ import Control.Monad.Except
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Parse a core language expression.
-pExp    :: Ord n => Context -> Parser n (Exp SourcePos n)
+pExp    :: Ord n => Context n -> Parser n (Exp SourcePos n)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
@@ -152,7 +152,7 @@ pExp c
 
 
 -- | Parse a function application.
-pExpApp :: Ord n => Context -> Parser n (Exp SourcePos n)
+pExpApp :: Ord n => Context n -> Parser n (Exp SourcePos n)
 pExpApp c
   = do  (x1, _)        <- pExpAtomSP c
         
@@ -166,7 +166,7 @@ pExpApp c
 
 
 -- Comp, Witness or Spec arguments.
-pArgSPs :: Ord n => Context -> Parser n [(Exp SourcePos n, SourcePos)]
+pArgSPs :: Ord n => Context n -> Parser n [(Exp SourcePos n, SourcePos)]
 pArgSPs c
  = P.choice
         -- [TYPE]
@@ -201,7 +201,7 @@ pArgSPs c
 
 
 -- | Parse a variable, constructor or parenthesised expression.
-pExpAtom   :: Ord n => Context -> Parser n (Exp SourcePos n)
+pExpAtom   :: Ord n => Context n -> Parser n (Exp SourcePos n)
 pExpAtom c
  = do   (x, _) <- pExpAtomSP c
         return x
@@ -211,7 +211,7 @@ pExpAtom c
 --   also returning source position.
 pExpAtomSP 
         :: Ord n 
-        => Context 
+        => Context n 
         -> Parser n (Exp SourcePos n, SourcePos)
 
 pExpAtomSP c
@@ -250,7 +250,7 @@ pExpAtomSP c
 
 -- Alt --------------------------------------------------------------------------------------------
 -- Case alternatives.
-pAlt    :: Ord n => Context -> Parser n (Alt SourcePos n)
+pAlt    :: Ord n => Context n -> Parser n (Alt SourcePos n)
 pAlt c
  = do   p       <- pPat c
         pTok KArrowDash
@@ -260,7 +260,7 @@ pAlt c
 
 -- Patterns.
 pPat    :: Ord n 
-        => Context -> Parser n (Pat n)
+        => Context n -> Parser n (Pat n)
 pPat c
  = P.choice
  [      -- Wildcard
@@ -287,7 +287,7 @@ pPat c
 -- or can have an annotation if the whole thing is in parens.
 pBinds
         :: Ord n 
-        => Context -> Parser n [Bind n]
+        => Context n -> Parser n [Bind n]
 pBinds c
  = P.choice
         -- Plain binder.
@@ -308,7 +308,7 @@ pBinds c
 -- | Parse some `Lets`, also returning the source position where they
 --   started.
 pLetsSP :: Ord n 
-        => Context -> Parser n (Lets SourcePos n, SourcePos)
+        => Context n -> Parser n (Lets SourcePos n, SourcePos)
 pLetsSP c
  = P.choice
     [ -- non-recursive let.
@@ -366,7 +366,7 @@ pLetsSP c
     
     
 pLetWits :: Ord n 
-        => Context 
+        => Context n
         -> [Bind n] -> Maybe (Type n) 
         -> Parser n (Lets SourcePos n)
 
@@ -395,7 +395,7 @@ pLetWits c bs mParent
 -- | A binding for let expression.
 pLetBinding 
         :: Ord n 
-        => Context
+        => Context n
         -> Parser n ( Bind n
                     , Exp SourcePos n)
 pLetBinding c
@@ -462,7 +462,7 @@ data Stmt n
 
 
 -- | Parse a single statement.
-pStmt :: Ord n => Context -> Parser n (Stmt n)
+pStmt :: Ord n => Context n -> Parser n (Stmt n)
 pStmt c
  = P.choice
  [ -- BINDER = EXP ;
@@ -496,7 +496,7 @@ pStmt c
 
 
 -- | Parse some statements.
-pStmts :: Ord n => Context -> Parser n (Exp SourcePos n)
+pStmts :: Ord n => Context n -> Parser n (Exp SourcePos n)
 pStmts c
  = do   stmts   <- P.sepEndBy1 (pStmt c) (pTok KSemiColon)
         case makeStmts stmts of

@@ -7,6 +7,7 @@ module DDC.Core.Parser.Base
         , pWbCon,       pWbConSP
         , pCon,         pConSP
         , pLit,         pLitSP
+        , pString,      pStringSP
         , pIndex,       pIndexSP
         , pVar,         pVarSP
         , pTok,         pTokSP
@@ -19,8 +20,8 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
+import Data.ByteString                  (ByteString)
 import qualified DDC.Base.Parser        as P
-
 
 -- | A parser of core language tokens.
 type Parser n a
@@ -100,11 +101,25 @@ pLit    = P.pTokMaybe f
         f _             = Nothing
 
 
--- | Parse a literal, with source position.
+-- | Parse a numeric literal, with source position.
 pLitSP :: Parser n (n, SourcePos)
 pLitSP  = P.pTokMaybeSP f
- where  f (KN (KLit n)) = Just n
-        f _             = Nothing
+ where  f (KN (KLit n))    = Just n
+        f _                = Nothing
+
+
+-- | Parse a literal.
+pString :: Parser n ByteString
+pString    = P.pTokMaybe f
+ where  f (KA (KString bs)) = Just bs
+        f _                 = Nothing
+
+
+-- | Parse a literal string, with source position.
+pStringSP :: Parser n (ByteString, SourcePos)
+pStringSP  = P.pTokMaybeSP f
+ where  f (KA (KString bs)) = Just bs
+        f _                 = Nothing
 
 
 -- | Parse a variable.

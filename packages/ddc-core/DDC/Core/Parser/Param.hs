@@ -48,7 +48,7 @@ expOfParams a (p:ps) xBody
 -- | Build the type of a function from specifications of its parameters,
 --   and the type of the body.
 funTypeOfParams 
-        :: Context
+        :: Context n
         -> [ParamSpec n]        -- ^ Spec of parameters.
         -> Type n               -- ^ Type of body.
         -> Type n               -- ^ Type of whole function.
@@ -81,7 +81,7 @@ funTypeOfParams c (p:ps) tBody
 --   with an optional type (or kind) annotation.
 pBindParamSpec
         :: Ord n
-        => Context -> Parser n [ParamSpec n]
+        => Context n -> Parser n [ParamSpec n]
 
 pBindParamSpec c
  = P.choice
@@ -104,7 +104,7 @@ pBindParamSpec c
 --
 pBindParamSpecAnnot 
         :: Ord n 
-        => Context -> Parser n [ParamSpec n]
+        => Context n -> Parser n [ParamSpec n]
 
 pBindParamSpecAnnot c
  = P.choice

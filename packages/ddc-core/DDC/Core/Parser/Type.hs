@@ -21,7 +21,7 @@ import qualified DDC.Type.Sum           as TS
 
 -- | Parse a type.
 pType   :: Ord n 
-        => Context -> Parser n (Type n)
+        => Context n -> Parser n (Type n)
 
 pType c  
  =      pTypeSum c
@@ -31,7 +31,7 @@ pType c
 --  | Parse a type sum.
 pTypeSum 
         :: Ord n 
-        => Context -> Parser n (Type n)
+        => Context n -> Parser n (Type n)
 pTypeSum c
  = do   t1      <- pTypeForall c
         P.choice 
@@ -66,7 +66,7 @@ pBinder
 -- | Parse a quantified type.
 pTypeForall 
         :: Ord n 
-        => Context -> Parser n (Type n)
+        => Context n -> Parser n (Type n)
 pTypeForall c
  = P.choice
          [ -- Universal quantification.
@@ -91,7 +91,7 @@ pTypeForall c
 -- | Parse a function type.
 pTypeFun 
         :: Ord n 
-        => Context -> Parser n (Type n)
+        => Context n -> Parser n (Type n)
 
 pTypeFun c
  = do   t1      <- pTypeApp c
@@ -134,7 +134,7 @@ pTypeFun c
 -- | Parse a type application.
 pTypeApp 
         :: Ord n 
-        => Context -> Parser n (Type n)
+        => Context n -> Parser n (Type n)
 pTypeApp c
  = do   (t:ts)  <- P.many1 (pTypeAtom c)
         return  $  foldl TApp t ts
@@ -144,7 +144,7 @@ pTypeApp c
 -- | Parse a variable, constructor or parenthesised type.
 pTypeAtom 
         :: Ord n 
-        => Context -> Parser n (Type n)
+        => Context n -> Parser n (Type n)
 pTypeAtom c
  = P.choice
         -- (~>) and (=>) and (->) and (TYPE2)

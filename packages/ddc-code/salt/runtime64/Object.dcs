@@ -98,16 +98,19 @@ export value
   apply3            : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
   apply4            : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
 
+  -- Mutable references.
   allocRef          : [r1 r2 : Region]. Ptr# r2 Obj -> Ptr# r1 Obj
   writeRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
   readRef           : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
+  -- Arrays of pointers to boxed values.
   allocArray        : [r1 r2 : Region]. [a : Data]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
   writeArray        : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
   readArray         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
   fillArray         : [r1 r2 : Region]. [a : Data]
                     . Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
+  -- Blocks of memory with a header word but uninterpreted payload.
   allocBlock        : [r : Region]. [a : Data]. Nat# -> Ptr# r Obj
   payloadOfBlock    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 

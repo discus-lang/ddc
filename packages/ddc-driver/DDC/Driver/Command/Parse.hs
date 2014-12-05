@@ -80,12 +80,6 @@ cmdParseSourceTetraFromFile config filePath
         when (configDump config)
          $ liftIO $ writeFile "dump.tetra-parse.tokens" 
                   $ unlines $ map show $ map Token.tokenTok toks
-
-        let context = ST.Context
-                    { ST.contextTrackedEffects          = True
-                    , ST.contextTrackedClosures         = True
-                    , ST.contextFunctionalEffects       = False
-                    , ST.contextFunctionalClosures      = False }
                     
         case BP.runTokenParser
                 C.describeTok filePath 

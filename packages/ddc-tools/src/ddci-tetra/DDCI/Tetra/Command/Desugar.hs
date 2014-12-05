@@ -21,13 +21,7 @@ cmdDesugar _state source str
            in   goParse tokens
 
         goParse tokens
-         = let  context = Context
-                        { contextTrackedEffects         = True
-                        , contextTrackedClosures        = True
-                        , contextFunctionalEffects      = False
-                        , contextFunctionalClosures     = False }
-
-           in   case BP.runTokenParser C.describeTok (nameOfSource source)
+         = case BP.runTokenParser C.describeTok (nameOfSource source)
                         (pModule context) tokens of
                  Left err        -> error $ show err
                  Right mm        -> goDesugar mm

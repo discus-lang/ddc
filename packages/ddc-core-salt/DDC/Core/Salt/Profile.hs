@@ -34,7 +34,7 @@ features = zeroFeatures
         , featuresDebruijnBinders       = True
         , featuresUnusedBindings        = True 
         , featuresEffectCapabilities    = True
-        , featuresPartialApplication    = True                  -- TODO: hacked on for function reify
+        , featuresPartialApplication    = True     -- TODO: hacked on for function reify
         }
 
 
@@ -49,7 +49,7 @@ lexModuleString sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
-                Nothing -> Token (KJunk "lexical error") sp
+                Nothing -> Token (KErrorJunk "lexical error") sp
 
 
 -- | Lex a string to tokens, using primitive names.
@@ -63,4 +63,4 @@ lexExpString sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
-                Nothing -> Token (KJunk "lexical error") sp
+                Nothing -> Token (KErrorJunk "lexical error") sp

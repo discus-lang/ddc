@@ -2,6 +2,7 @@
 module DDC.Source.Tetra.Parser
         ( Parser
         , Context       (..)
+        , context
 
         -- * Modules
         , pModule

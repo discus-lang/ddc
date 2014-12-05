@@ -44,4 +44,3 @@ fragment
         , fragmentLexExp        = E.lexExpString
         , fragmentCheckModule   = E.checkModule
         , fragmentCheckExp      = const Nothing }
-

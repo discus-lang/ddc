@@ -30,7 +30,7 @@ import DDC.Core.Parser
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
 pModule :: (Ord n, Pretty n) 
-        => Context      -- ^ Parser context.
+        => Context n     -- ^ Parser context.
         -> Parser n (Module P.SourcePos n)
 
 pModule c
@@ -84,7 +84,7 @@ pModule c
 -- | Parse a type signature.
 pTypeSig 
         :: Ord n 
-        => Context -> Parser n (n, Type n)        
+        => Context n -> Parser n (n, Type n)        
 
 pTypeSig c
  = do   var     <- pVar
@@ -104,7 +104,7 @@ data ImportSpec n
 -- | Parse some import specs.
 pImportSpecs
         :: (Ord n, Pretty n)
-        => Context -> Parser n [ImportSpec n]
+        => Context n -> Parser n [ImportSpec n]
 
 pImportSpecs c
  = do   pTok KImport
@@ -143,7 +143,7 @@ pImportSpecs c
 -- | Parse a type import spec.
 pImportType
         :: (Ord n, Pretty n)
-        => Context -> String -> Parser n (ImportSpec n)
+        => Context n -> String -> Parser n (ImportSpec n)
 pImportType c src
         | "abstract"    <- src
         = do    n       <- pName
@@ -164,7 +164,7 @@ pImportType c src
 -- | Parse a value import spec.
 pImportValue 
         :: (Ord n, Pretty n)
-        => Context -> String -> Parser n (ImportSpec n)
+        => Context n -> String -> Parser n (ImportSpec n)
 pImportValue c src
         | "c"           <- src
         = do    n       <- pName
@@ -183,7 +183,7 @@ pImportValue c src
 
 -- Top Level --------------------------------------------------------------------------------------
 pTop    :: Ord n 
-        => Context -> Parser n (Top P.SourcePos n)
+        => Context n -> Parser n (Top P.SourcePos n)
 pTop c
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
@@ -199,8 +199,7 @@ pTop c
 -- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
 pData   :: Ord n
-        => Context -> Parser n (Top P.SourcePos n)
-
+        => Context n -> Parser n (Top P.SourcePos n)
 pData c
  = do   sp      <- pTokSP KData
         n       <- pName
@@ -220,7 +219,7 @@ pData c
 
 
 -- | Parse a type parameter to a data type.
-pDataParam :: Ord n => Context -> Parser n [Bind n]
+pDataParam :: Ord n => Context n -> Parser n [Bind n]
 pDataParam c 
  = do   pTok KRoundBra
         ns      <- P.many1 pName
@@ -231,7 +230,7 @@ pDataParam c
 
 
 -- | Parse a data constructor declaration.
-pDataCtor :: Ord n => Context -> Parser n (DataCtor n)
+pDataCtor :: Ord n => Context n -> Parser n (DataCtor n)
 pDataCtor c
  = do   n       <- pName
         pTokSP (KOp ":")

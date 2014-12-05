@@ -31,8 +31,9 @@ module DDC.Core.Parser
         , pWitnessAtom
 
           -- * Constructors
-        , pCon, pConSP
-        , pLit, pLitSP
+        , pCon,         pConSP
+        , pLit,         pLitSP
+        , pString,      pStringSP
 
           -- * Variables
         , pIndex,       pIndexSP

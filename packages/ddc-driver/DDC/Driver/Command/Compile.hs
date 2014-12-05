@@ -364,7 +364,8 @@ tasteNeeded filePath src
                         { C.contextTrackedEffects         = True
                         , C.contextTrackedClosures        = True
                         , C.contextFunctionalEffects      = False
-                        , C.contextFunctionalClosures     = False }
+                        , C.contextFunctionalClosures     = False 
+                        , C.contextMakeStringName         = \_ _ -> Nothing }
 
                 case BP.runTokenParser C.describeTok filePath
                         (SE.pModule context) tokens of
