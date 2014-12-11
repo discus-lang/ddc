@@ -75,9 +75,9 @@ data Name
         | NameLitFloat          Double  Int
 
         -- | A UTF-8 string literal.
-        --   Although these are represented as array literals at runtime,
-        --   they have a special syntax which we want to preserve during
-        --   program transformation.
+        --   Although these are represented as arrays of bytes at runtime, 
+        --   they are baked into the language because we want to use a special 
+        --   syntax when pretty printing the literals.
         | NameLitString         ByteString
 
         -- Wrappers -----------------------------

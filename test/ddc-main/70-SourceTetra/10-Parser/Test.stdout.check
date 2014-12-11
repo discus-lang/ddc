@@ -58,5 +58,5 @@ foo : Unit -> Unit
     let f010 = 0.1f32 in
     let s1234 = 1234s in
     let w32 = 4660w32 in
-    let r = [115,116,114,117,110,103] in
+    let r = "strung" in
     ()

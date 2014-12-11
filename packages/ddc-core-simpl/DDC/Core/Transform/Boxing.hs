@@ -1,29 +1,5 @@
 -- | Manage representation of numeric values in a module.
 --
---   We use three seprate versions of each numeric type.
---      Nat#            Numeric value type.
---      B# Nat#         Boxed   representation type.
---      U# Nat#         Unboxed representation type.
---
---   A numeric value type is type of pure values like 23#, where "pure value"
---   means the mathematical value, free from any considerations about how that 
---   might be represented at runtime in the physical machine.
---
---   The Boxed and Unboxed representation types commit to a specific runtime
---   representation, and have implications for runtime performance and space 
---   usage of the compiled program.
---
---   The boxing transform takes an input program using just pure values and
---   numeric index types, and refines it to a program that commits to particular
---   representations of those values. 
---
---   This Boxing transform should do  just enough to make the code well-formed
---   with respect to runtime representation. Demand-driven optimisations like
---   local unboxing should be done in follow-on transformations.
---
---   We make the following representation commitments, so that the default
---   representation is boxed.
---
 --  [Note: Boxing and Partial Application]
 --  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --  Unlike in Haskell, we do not allow explictly unboxed types in the source
@@ -58,7 +34,7 @@ data Rep
 
         -- | Values of this type are uncomitted to a particular representation,
         --   they just describe a set of logical values.
-        | RepValue
+        | RepBoxed
 
         -- | Values of this type are represented in unboxed form.
         | RepUnboxed
@@ -124,11 +100,11 @@ boxingX config xx
 
         -- Convert literals to their unboxed form, followed by a boxing conversion.
         XCon a (DaConPrim n tLit)
-         | Just RepValue        <- configRepOfType config tLit
+         | Just RepBoxed        <- configRepOfType config tLit
          -> let Just tLitU      = configConvertRepType config RepUnboxed tLit
                 Just nU         = configUnboxLitName   config n
 
-                Just xLit       = configConvertRepExp  config RepValue a tLitU 
+                Just xLit       = configConvertRepExp  config RepBoxed a tLitU 
                                 $ XCon a (DaConPrim nU tLitU)
            in   xLit
 
@@ -154,7 +130,7 @@ boxingX config xx
         XCase a xScrut alts
          | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
          , Just tLit1    <- configValueTypeOfLitName config (daConName p)
-         , Just RepValue <- configRepOfType config tLit1
+         , Just RepBoxed <- configRepOfType config tLit1
          -> let alts'    = map (boxingAlt config) alts
             in  boxingCase config a tLit1 xScrut alts'
 
@@ -236,7 +212,7 @@ boxingPrimitive config a xx xFn tPrim xsArgsAll
 
         let xtsArgsU = [ XType a' t | t <- tsArgsU | a' <- asArgs ]
         let xResultU = xApps a xFn (xtsArgsU ++ xsArgs')
-        xResultV     <- configConvertRepExp config RepValue a tResultInstU xResultU
+        xResultV     <- configConvertRepExp config RepBoxed a tResultInstU xResultU
         return xResultV
 
 
@@ -288,7 +264,7 @@ boxingForeignSea config a xx xFn tF xsArg
         let boxResult tRes xRes
              = fromMaybe xRes
              $ do tResU      <- configConvertRepType config RepUnboxed tRes
-                  configConvertRepExp config RepValue a tResU xExpU
+                  configConvertRepExp config RepBoxed a tResU xExpU
 
         return $ boxResult tResult xExpU
 
@@ -345,7 +321,7 @@ boxingCase
 boxingCase config a tLit1 xScrut alts
  = let
         unboxAlt (AAlt (PData (DaConPrim n tLit) []) x)
-         | Just RepValue <- configRepOfType config tLit
+         | Just RepBoxed <- configRepOfType config tLit
          , Just nU       <- configUnboxLitName config n
          , Just tLitU    <- configConvertRepType config RepUnboxed tLit
          = Just (AAlt (PData (DaConPrim nU tLitU) []) x)

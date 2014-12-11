@@ -18,6 +18,7 @@ module DDC.Core.Tetra.Convert.Boxing
         , isBoxedRepType
         , isUnboxedRepType
         , isNumericType
+        , isStringType
         , makeNumericDataType
         , makeNumericDataCtor)
 where
@@ -46,7 +47,6 @@ isSomeRepType tt
 --      1) 'a'          -- polymorphic types.
 --      2) 'forall ...' -- abstract types.
 --      3) 'Unit'       -- the unit data type.
---      4) 'B# T'       -- boxed numeric types, where T is a boxable type.
 --      5) User defined data types.
 --
 isBoxedRepType :: Type Name -> Bool
@@ -95,15 +95,8 @@ isUnboxedRepType tt
 
 
 -- | Check if some type is a numeric type.
---
 --   These are:
 --      Nat#, Int#, WordN# and so on.
---
---   In the representational view of Core Tetra these are neither boxed or
---   unboxed, but can appear in both forms.
---
---   We write (B# Nat#) and (U# Nat#) to distinguish between the boxed and
---   unboxed versions.
 --
 isNumericType :: Type Name -> Bool
 isNumericType tt
@@ -116,9 +109,18 @@ isNumericType tt
                 PrimTyConFloat _        -> True
                 _                       -> False
 
-        | otherwise
-        = False
+        | otherwise                     = False
 
+
+-- | Check if this is the string type.
+isStringType :: Type Name -> Bool
+isStringType tt
+        | Just (NamePrimTyCon n, [])    <- takePrimTyConApps tt
+        = case n of
+                PrimTyConString         -> True
+                _                       -> False
+
+        | otherwise                     = False
 
 
 -- Punned Defs ----------------------------------------------------------------

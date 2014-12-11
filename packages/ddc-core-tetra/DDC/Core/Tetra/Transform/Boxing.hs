@@ -45,16 +45,21 @@ repOfType tt
         = case n of
                 PrimTyConVoid           -> Just RepNone
 
-                PrimTyConBool           -> Just RepValue
-                PrimTyConNat            -> Just RepValue
-                PrimTyConInt            -> Just RepValue
-                PrimTyConWord{}         -> Just RepValue
-                PrimTyConFloat{}        -> Just RepValue
-                PrimTyConVec{}          -> Just RepValue
-                PrimTyConAddr{}         -> Just RepValue
-                PrimTyConPtr{}          -> Just RepValue
-                PrimTyConTag{}          -> Just RepValue
-                PrimTyConString{}       -> Just RepValue
+                PrimTyConBool           -> Just RepBoxed
+                PrimTyConNat            -> Just RepBoxed
+                PrimTyConInt            -> Just RepBoxed
+                PrimTyConWord{}         -> Just RepBoxed
+                PrimTyConFloat{}        -> Just RepBoxed
+                PrimTyConVec{}          -> Just RepBoxed
+                PrimTyConAddr{}         -> Just RepBoxed
+                PrimTyConPtr{}          -> Just RepBoxed
+                PrimTyConTag{}          -> Just RepBoxed
+                PrimTyConString{}       -> Just RepBoxed
+
+        -- Explicitly unboxed things.
+        | Just (n, _)   <- takePrimTyConApps tt
+        , NameTyConTetra TyConTetraU    <- n
+        = Just RepUnboxed
 
         -- These are all higher-kinded type constructors,
         -- which don't have any associated values.
@@ -65,18 +70,13 @@ repOfType tt
                 TyConTetraF{}           -> Just RepNone
                 TyConTetraC{}           -> Just RepNone
 
-        -- Explicitly unboxed things.
-        | Just (n, _)   <- takePrimTyConApps tt
-        , NameTyConTetra TyConTetraU    <- n
-        = Just RepUnboxed
-
         | otherwise
         = Nothing
 
 
 -- | Get the type for a different representation of the given one.
 convertRepType :: Rep -> Type Name -> Maybe (Type Name)
-convertRepType RepValue tt
+convertRepType RepBoxed tt
         -- Produce the value type from an unboxed one.
         | Just (n, [t]) <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraU    <- n
