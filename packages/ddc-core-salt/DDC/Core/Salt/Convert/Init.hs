@@ -37,7 +37,7 @@ initRuntime config mm@ModuleCore{}
 -- | Type of the POSIX main function.
 posixMainType :: Type Name
 posixMainType
-        = tFunPE tInt (tFunPE (tPtr rTop tString) tInt)
+        = tFunPE tInt (tFunPE (tPtr rTop (tWord 8)) tInt)
 
 
 -- | Patch the list of export definitions to export our wrapper instead
@@ -99,7 +99,7 @@ isMainBind bb
 makeMainEntryX :: Config -> a -> Exp a Name
 makeMainEntryX config a
  = XLam a  (BName (NameVar "argc")         tInt)
- $ XLam a  (BName (NameVar "argv")         (tPtr rTop tString))
+ $ XLam a  (BName (NameVar "argv")         (tPtr rTop (tWord 8)))
  $ XLet a  (LLet  (BNone tVoid)            (xCreate a (configHeapSize config)))
  $ XLet a  (LLet  (BNone (tBot kData)) 
                   (xApps a (XVar a (UName (NameVar "_main"))) 

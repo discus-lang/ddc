@@ -30,10 +30,12 @@ import qualified DDC.Type.Env                   as Env
 -- >  Bool#               True# False#
 -- >  Nat#                0# 1# 2# ...
 -- >  Int#                ... -2i# -1i# 0i# 1i# 2i# ...
--- >  Tag#                (none, convert from Nat#)
+-- >  Size#               0s# 1s# 2s# ...
 -- >  Word{8,16,32,64}#   42w8# 123w64# ...
 -- >  Float{32,64}#       (none, convert from Int#)
--- 
+-- >  Tag#                (none, convert from Nat#)
+-- >  String#             "foo"#
+--
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
@@ -49,8 +51,8 @@ primDataDefs
         -- Int
         , makeDataDefAlg (NamePrimTyCon PrimTyConInt) [] Nothing
 
-        -- Tag
-        , makeDataDefAlg (NamePrimTyCon PrimTyConTag) [] Nothing
+        -- Size
+        , makeDataDefAlg (NamePrimTyCon PrimTyConSize) [] Nothing
 
         -- Word 8, 16, 32, 64
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
@@ -61,6 +63,9 @@ primDataDefs
         -- Float 32, 64
         , makeDataDefAbs (NamePrimTyCon (PrimTyConFloat 32)) []
         , makeDataDefAbs (NamePrimTyCon (PrimTyConFloat 64)) []
+
+        -- Tag
+        , makeDataDefAlg (NamePrimTyCon PrimTyConTag) [] Nothing
         ]
 
 
@@ -92,12 +97,12 @@ kindOfPrimTyCon tc
         PrimTyConBool    -> kData
         PrimTyConNat     -> kData
         PrimTyConInt     -> kData
+        PrimTyConSize    -> kData
         PrimTyConWord  _ -> kData
         PrimTyConFloat _ -> kData
         PrimTyConAddr    -> kData
         PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag     -> kData
-        PrimTyConString  -> kData
         PrimTyConVec   _ -> kData `kFun` kData
 
 

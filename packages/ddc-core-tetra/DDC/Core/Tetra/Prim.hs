@@ -13,6 +13,7 @@ module DDC.Core.Tetra.Prim
         , TyConTetra     (..)
         , readTyConTetra
         , kindTyConTetra
+        , tTupleN, tUnboxed, tFunValue, tCloValue, tString
 
           -- * Baked-in data constructors.
         , DaConTetra     (..)

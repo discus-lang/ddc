@@ -86,6 +86,9 @@ data TyConTetra
 
         -- | @U#@.      Explicitly unboxed values.
         | TyConTetraU
+
+        -- | @String#@. Strings
+        | TyConTetraString   
         deriving (Eq, Ord, Show)
 
 

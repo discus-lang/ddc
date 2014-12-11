@@ -2,9 +2,6 @@
 
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
-salt-runtime_dcl = \
-        $(shell find packages/ddc-code/lite/base               -name "*.dcl")
-
 salt-runtime_dcs = \
 	$(shell find packages/ddc-code/salt/runtime${BITS}     -name "*.dcs")
 
@@ -12,7 +9,6 @@ salt-runtime_c   = \
         $(shell find packages/ddc-code/sea/primitive           -name "*.c")
 
 salt-runtime_o   = \
-        $(patsubst %.dcl,%.o,$(salt-runtime_dcl)) \
         $(patsubst %.dcs,%.o,$(salt-runtime_dcs)) \
         $(patsubst %.c,%.o,$(salt-runtime_c))
 

@@ -4,9 +4,8 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , readPrimTyCon
         , kindPrimTyCon
         , tBool
-        , tNat, tInt, tWord, tFloat
-        , tPtr
-        , tString)
+        , tNat, tInt, tSize, tWord, tFloat
+        , tPtr)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
@@ -22,13 +21,13 @@ kindPrimTyCon tc
         PrimTyConBool     -> kData
         PrimTyConNat      -> kData
         PrimTyConInt      -> kData
+        PrimTyConSize     -> kData
         PrimTyConWord{}   -> kData
         PrimTyConFloat{}  -> kData
         PrimTyConVec{}    -> kData   `kFun` kData
         PrimTyConAddr{}   -> kData
         PrimTyConPtr{}    -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag{}    -> kData
-        PrimTyConString{} -> kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -38,18 +37,23 @@ tBool   = tConPrim PrimTyConBool
 
 
 -- | Primitive `Nat` type.
-tNat    ::  Type Name
+tNat    :: Type Name
 tNat    = tConPrim PrimTyConNat
 
 
 -- | Primitive `Int` type.
-tInt    ::  Type Name
+tInt    :: Type Name
 tInt    = tConPrim PrimTyConInt
 
 
 -- | Primitive `WordN` type of the given width.
 tWord   :: Int -> Type Name
 tWord bits = tConPrim (PrimTyConWord bits)
+
+
+-- | Primitive `Size` type.
+tSize   :: Type Name
+tSize   = tConPrim PrimTyConSize
 
 
 -- | Primitive `FloatN` type of the given width.
@@ -68,7 +72,3 @@ tConPrim tc
  = let k = kindPrimTyCon tc
    in      TCon (TyConBound (UPrim (NamePrimTyCon tc) k) k)
 
-
--- | Primitive `String` type.
-tString :: Type Name 
-tString = tConPrim PrimTyConString

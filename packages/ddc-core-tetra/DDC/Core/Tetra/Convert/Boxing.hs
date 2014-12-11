@@ -19,8 +19,10 @@ module DDC.Core.Tetra.Convert.Boxing
         , isUnboxedRepType
         , isNumericType
         , isStringType
-        , makeNumericDataType
-        , makeNumericDataCtor)
+        , makeBoxedPrimDataType
+        , makeBoxedPrimDataCtor
+        , makeBoxedStringDataType
+        , makeBoxedStringDataCtor)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
@@ -84,10 +86,9 @@ isBoxedRepType tt
 --
 isUnboxedRepType :: Type Name -> Bool
 isUnboxedRepType tt
-        -- Unboxed numeric types.
         | Just ( NameTyConTetra TyConTetraU
                , [ti])                  <- takePrimTyConApps tt
-        , isNumericType ti
+        , isNumericType ti || isStringType ti
         = True
 
         | otherwise
@@ -115,9 +116,9 @@ isNumericType tt
 -- | Check if this is the string type.
 isStringType :: Type Name -> Bool
 isStringType tt
-        | Just (NamePrimTyCon n, [])    <- takePrimTyConApps tt
+        | Just (NameTyConTetra n, [])   <- takePrimTyConApps tt
         = case n of
-                PrimTyConString         -> True
+                TyConTetraString        -> True
                 _                       -> False
 
         | otherwise                     = False
@@ -125,8 +126,8 @@ isStringType tt
 
 -- Punned Defs ----------------------------------------------------------------
 -- | Generic data type definition for a primitive numeric type.
-makeNumericDataType :: Type Name -> Maybe (DataType Name)
-makeNumericDataType tt
+makeBoxedPrimDataType :: Type Name -> Maybe (DataType Name)
+makeBoxedPrimDataType tt
         | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataType 
         { dataTypeName          = n
@@ -139,8 +140,8 @@ makeNumericDataType tt
 
 
 -- | Generic data constructor definition for a primtive numeric type.
-makeNumericDataCtor :: Type Name -> Maybe (DataCtor Name)
-makeNumericDataCtor tt
+makeBoxedPrimDataCtor :: Type Name -> Maybe (DataCtor Name)
+makeBoxedPrimDataCtor tt
         | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataCtor
         { dataCtorName          = n
@@ -152,4 +153,24 @@ makeNumericDataCtor tt
 
         | otherwise
         = Nothing
+
+
+makeBoxedStringDataType :: DataType Name
+makeBoxedStringDataType 
+        = DataType 
+        { dataTypeName          = NameTyConTetra TyConTetraString
+        , dataTypeParams        = []
+        , dataTypeMode          = DataModeLarge
+        , dataTypeIsAlgebraic   = False }
+
+
+makeBoxedStringDataCtor :: DataCtor Name
+makeBoxedStringDataCtor 
+        = DataCtor
+        { dataCtorName          = NameTyConTetra TyConTetraString
+        , dataCtorTag           = 0
+        , dataCtorFieldTypes    = [tUnboxed tString]
+        , dataCtorResultType    = tString
+        , dataCtorTypeName      = NameTyConTetra TyConTetraString
+        , dataCtorTypeParams    = [] }
 

@@ -105,7 +105,9 @@ convertNumericT tt
                 E.PrimTyConBool         -> return $ A.tBool
                 E.PrimTyConNat          -> return $ A.tNat
                 E.PrimTyConInt          -> return $ A.tInt
+                E.PrimTyConSize         -> return $ A.tSize
                 E.PrimTyConWord  bits   -> return $ A.tWord bits
+                E.PrimTyConFloat bits   -> return $ A.tFloat bits
                 _ -> throw $ ErrorMalformed 
                            $ "Invalid machine type " ++ (renderIndent $ ppr tt)
 
@@ -217,12 +219,8 @@ convertValueAppT ctx tt
         -- been converted to explicitly unboxed form by the boxing transform.
 
         -- The Void# type.
-        | Just (E.NamePrimTyCon E.PrimTyConVoid,   [])  <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon E.PrimTyConVoid,     [])  <- takePrimTyConApps tt
         =      return A.tVoid
-
-        -- The String# type.
-        | Just (E.NamePrimTyCon E.PrimTyConString, [])  <- takePrimTyConApps tt
-        =      return A.tString
 
         -- The Ptr# type.
         | Just  ( E.NamePrimTyCon E.PrimTyConPtr
@@ -245,15 +243,22 @@ convertValueAppT ctx tt
 
 
         -- Tetra TyCons -----------------------------------
+
         -- Explicitly unboxed numeric types.
         -- In Salt, unboxed numeric values are represented directly as 
         -- values of the corresponding machine type.
-
         | Just  ( E.NameTyConTetra E.TyConTetraU
                 , [tNum])       <- takePrimTyConApps tt
         , isNumericType tNum
         = do   tNum'   <- convertNumericT tNum
                return tNum'
+
+        -- Explicitly unboxed strings.
+        -- These are represented as pointers to immutable, anchored memory.
+        | Just  ( E.NameTyConTetra E.TyConTetraU
+                , [tStr])       <- takePrimTyConApps tt
+        , isStringType tStr
+        = do    return $ A.tPtr A.rTop (A.tWord 8)
 
         -- The F# type (reified function)
         | Just  ( E.NameTyConTetra E.TyConTetraF
@@ -264,6 +269,10 @@ convertValueAppT ctx tt
         | Just  ( E.NameTyConTetra E.TyConTetraC
                 , [_])          <- takePrimTyConApps tt
         =       return  $ A.tPtr A.rTop A.tObj
+
+        -- Boxed strings.
+        | Just (E.NameTyConTetra E.TyConTetraString, [])  <- takePrimTyConApps tt
+        =      return   $ A.tPtr A.rTop A.tObj
 
 
         -- Boxed functions --------------------------------

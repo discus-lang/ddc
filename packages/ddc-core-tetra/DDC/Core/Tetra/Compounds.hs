@@ -2,12 +2,15 @@
 module DDC.Core.Tetra.Compounds
         ( module DDC.Core.Compounds.Annot
 
-          -- * Types
-        , tBool, tNat, tInt, tWord, tFloat
-        , tString, tPtr
+          -- * Primitive
+        , tBool, tNat, tInt, tSize, tWord, tFloat
+        , tPtr
+
+          -- * Tetra types.
         , tTupleN
         , tUnboxed
         , tFunValue,    tCloValue
+        , tString
 
           -- * Expressions
         , xFunCReify,   xFunCCurry,    xFunApply, xFunCurry

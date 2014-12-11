@@ -123,14 +123,15 @@ fieldSizeOfPrimTyCon platform tc
         -- but I can't think of reason to have them in data type definitions.
         PrimTyConVoid        -> Nothing
 
+        PrimTyConBool        -> Just $ 1
+        PrimTyConNat         -> Just $ platformNatBytes platform
+        PrimTyConInt         -> Just $ platformNatBytes platform
+        PrimTyConSize        -> Just $ platformNatBytes platform
+
         -- Pointer tycon shouldn't appear by itself.
         PrimTyConPtr         -> Nothing
-
         PrimTyConAddr        -> Just $ platformAddrBytes platform
-        PrimTyConNat         -> Just $ platformNatBytes  platform
-        PrimTyConInt         -> Just $ platformNatBytes  platform
-        PrimTyConTag         -> Just $ platformTagBytes  platform
-        PrimTyConBool        -> Just $ 1
+
 
         PrimTyConWord bits
          | bits `rem` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
@@ -143,6 +144,5 @@ fieldSizeOfPrimTyCon platform tc
         -- Vectors don't appear as raw fields.
         PrimTyConVec{}       -> Nothing
 
-        -- Strings shouldn't appear as raw fields, only pointers to them.
-        PrimTyConString      -> Nothing
+        PrimTyConTag         -> Just $ platformTagBytes  platform
 

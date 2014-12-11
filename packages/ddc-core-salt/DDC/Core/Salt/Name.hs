@@ -72,6 +72,9 @@ import Data.Typeable
 import Data.Char
 import Data.List
 import Control.DeepSeq
+import Data.ByteString.Char8            (ByteString)
+import qualified Data.ByteString.Char8  as BS
+
 
 -- | Names of things used in Disciple Core Salt.
 data Name
@@ -105,11 +108,20 @@ data Name
         -- | An integer number literal.
         | NameLitInt    Integer
 
+        -- | A size literal.
+        | NameLitSize   Integer
+
+        -- | A word literal, of the given width.
+        | NameLitWord   Integer Int
+
+        -- | A floating point literal, of the given width.
+        | NameLitFloat  Double  Int
+
+        -- | A string literal.
+        | NameLitString ByteString
+
         -- | A constructor tag literal.
         | NameLitTag    Integer
-
-        -- | A @WordN#@ literal, of the given width.
-        | NameLitWord   Integer Int
         deriving (Eq, Ord, Show, Typeable)
 
 
@@ -126,8 +138,11 @@ instance NFData Name where
         NameLitBool   b         -> rnf b
         NameLitNat    i         -> rnf i
         NameLitInt    i         -> rnf i
-        NameLitTag    i         -> rnf i
+        NameLitSize   i         -> rnf i
         NameLitWord   i bits    -> rnf i `seq` rnf bits
+        NameLitFloat  f bits    -> rnf f `seq` rnf bits
+        NameLitString bs        -> rnf bs
+        NameLitTag    i         -> rnf i
 
 
 instance Pretty Name where
@@ -142,10 +157,13 @@ instance Pretty Name where
         NameLitVoid             -> text "V#"
         NameLitBool True        -> text "True#"
         NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i  <> text "#"
-        NameLitInt  i           -> integer i  <> text "i#"
-        NameLitTag  i           -> text "TAG" <> integer i <> text "#"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits <> text "#"
+        NameLitNat   i          -> integer i <> text "#"
+        NameLitInt   i          -> integer i <> text "i#"
+        NameLitSize  i          -> integer i <> text "s#"
+        NameLitWord  i bits     -> integer i <> text "w" <> int bits <> text "#"
+        NameLitFloat f bits     -> double  f <> text "f" <> int bits <> text "#"
+        NameLitString bs        -> (text $ show $ BS.unpack bs) <> text "#"
+        NameLitTag   i          -> text "TAG" <> integer i <> text "#"
 
 
 instance CompoundName Name where
@@ -193,6 +211,10 @@ readName str
         | str == "V#" 
         = Just $ NameLitVoid
 
+        -- Literal Bools
+        | str == "True#"  = Just $ NameLitBool True
+        | str == "False#" = Just $ NameLitBool False
+
         -- Literal Nats
         | Just str'     <- stripSuffix "#" str
         , Just val      <- readLitNat str'
@@ -203,20 +225,27 @@ readName str
         , Just val      <- readLitInt str'
         = Just $ NameLitInt  val
 
-        -- Literal Tags
-        | Just rest     <- stripPrefix "TAG" str
-        , (ds, "#")     <- span isDigit rest
-        = Just $ NameLitTag (read ds)
-
-        -- Literal Bools
-        | str == "True#"  = Just $ NameLitBool True
-        | str == "False#" = Just $ NameLitBool False
+        -- Literal Sizes
+        | Just str'     <- stripSuffix "s#" str
+        , Just val      <- readLitSize str'
+        = Just $ NameLitSize val
 
         -- Literal Words
         | Just str'        <- stripSuffix "#" str
         , Just (val, bits) <- readLitWordOfBits str'
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
+
+        -- Literal Floats
+        | Just str'        <- stripSuffix "#" str
+        , Just (val, bits) <- readLitFloatOfBits str'
+        , elem bits [32, 64]
+        = Just $ NameLitFloat val bits
+
+        -- Literal Tags
+        | Just rest     <- stripPrefix "TAG" str
+        , (ds, "#")     <- span isDigit rest
+        = Just $ NameLitTag (read ds)
 
         -- Constructors.
         | c : _         <- str

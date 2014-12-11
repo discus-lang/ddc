@@ -189,7 +189,6 @@ convTyCon platform tycon
              PrimTyConWord bits -> return $ TInt (fromIntegral bits)
              PrimTyConTag       -> return $ TInt (8 * platformTagBytes  platform)
              PrimTyConAddr      -> return $ TInt (8 * platformAddrBytes platform)
-             PrimTyConString    -> return $ TPointer (TInt 8)
 
              PrimTyConFloat bits
               -> case bits of

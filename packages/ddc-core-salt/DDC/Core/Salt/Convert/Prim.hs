@@ -21,7 +21,6 @@ convPrimTyCon tc
         PrimTyConFloat bits     -> Just $ text "float"   <> int bits <> text "_t"
         PrimTyConAddr           -> Just $ text "addr_t"
         PrimTyConTag            -> Just $ text "tag_t"
-        PrimTyConString         -> Just $ text "string_t"
         _                       -> Nothing
 
 

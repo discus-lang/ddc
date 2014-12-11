@@ -46,10 +46,10 @@ primDataDefs
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)   [] Nothing
 
         -- Int#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)   [] Nothing
 
         -- WordN#
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
@@ -119,11 +119,11 @@ kindOfPrimTyCon tc
         PrimTyConBool    -> kData
         PrimTyConNat     -> kData
         PrimTyConInt     -> kData
+        PrimTyConSize    -> kData
         PrimTyConWord  _ -> kData
         PrimTyConFloat _ -> kData
-        PrimTyConTag     -> kData
-        PrimTyConString  -> kData
         PrimTyConVec   _ -> kData `kFun` kData
+        PrimTyConTag     -> kData
 
 
 -- | Take the kind of a primitive name.

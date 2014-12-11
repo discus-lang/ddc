@@ -50,10 +50,11 @@ primDataDefs
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
 
         -- String#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConString)    [] Nothing
+        , makeDataDefAlg (NameTyConTetra TyConTetraString)  [] Nothing
 
         -- U#
-        , makeDataDefAlg (NameTyConTetra (TyConTetraU))     [] Nothing
+        -- We need this data def when matching against literals with case expressions.
+        , makeDataDefAlg (NameTyConTetra TyConTetraU)       [] Nothing
         ]
 
         -- Tuple

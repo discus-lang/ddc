@@ -1,9 +1,8 @@
 
 module DDC.Source.Tetra.Prim
         ( Name          (..)
-        , TyConTetra    (..)
-        , kindTyConTetra
 
+        -- * Primitive names.
         , PrimTyCon     (..)
         , kindPrimTyCon
         , tBool
@@ -11,9 +10,14 @@ module DDC.Source.Tetra.Prim
         , tInt
         , tWord
 
+        -- * Arithmetic operators.
         , PrimArith     (..)
         , typePrimArith
-        , readName)
+        , readName
+
+        -- * Tetra names.
+        , TyConTetra    (..)
+        , kindTyConTetra)
 where
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim

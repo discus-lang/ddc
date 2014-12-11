@@ -44,12 +44,19 @@ heapObjectOfDataCtor pp ctor
         , all isBoxedRepType tsFields
         = Just HeapObjectBoxed
 
-        -- All of the fixed size primitive types will fit in a RawSmall object.
+        -- All of the primitive numeric types will fit in a RawSmall object.
         --   Each field needs to be non-abstract, and have a real width.
         | [t1]                                    <- dataCtorFieldTypes ctor
         , Just (NameTyConTetra TyConTetraU, [tp]) <- takePrimTyConApps t1
         , Just (NamePrimTyCon  ptc,         [])   <- takePrimTyConApps tp
         , isJust $ A.primTyConWidth pp ptc
+        = Just HeapObjectRawSmall
+
+        -- Unboxed strings are represented as pointers to immutable, foreign anchored memory.
+        -- The pointer will fit in a RawSmall object.
+        | [t1]                                       <- dataCtorFieldTypes ctor
+        , Just (NameTyConTetra TyConTetraU, [tp])    <- takePrimTyConApps t1
+        , Just (NameTyConTetra TyConTetraString, []) <- takePrimTyConApps tp
         = Just HeapObjectRawSmall
 
         | otherwise
@@ -127,14 +134,10 @@ fieldSizeOfPrimTyCon platform tc
         -- but I can't think of reason to have them in data type definitions.
         PrimTyConVoid           -> Nothing
 
-        -- Pointer tycon shouldn't appear by itself.
-        PrimTyConPtr            -> Nothing
-
-        PrimTyConAddr           -> Just $ platformAddrBytes platform
+        PrimTyConBool           -> Just $ 1
         PrimTyConNat            -> Just $ platformNatBytes  platform
         PrimTyConInt            -> Just $ platformNatBytes  platform
-        PrimTyConTag            -> Just $ platformTagBytes  platform
-        PrimTyConBool           -> Just $ 1
+        PrimTyConSize           -> Just $ platformNatBytes  platform        
 
         PrimTyConWord bits
          | bits `rem` 8 == 0    -> Just $ fromIntegral $ bits `div` 8
@@ -147,6 +150,9 @@ fieldSizeOfPrimTyCon platform tc
         -- Vectors don't appear as raw fields.
         PrimTyConVec{}          -> Nothing
 
-        -- Strings shouldn't appear as raw fields, only pointers to them.
-        PrimTyConString         -> Nothing
+        -- Pointer tycon shouldn't appear by itself.
+        PrimTyConPtr            -> Nothing
+        PrimTyConAddr           -> Just $ platformAddrBytes platform
+
+        PrimTyConTag            -> Just $ platformTagBytes  platform
 

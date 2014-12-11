@@ -48,27 +48,29 @@ repOfType tt
                 PrimTyConBool           -> Just RepBoxed
                 PrimTyConNat            -> Just RepBoxed
                 PrimTyConInt            -> Just RepBoxed
+                PrimTyConSize           -> Just RepBoxed
                 PrimTyConWord{}         -> Just RepBoxed
                 PrimTyConFloat{}        -> Just RepBoxed
                 PrimTyConVec{}          -> Just RepBoxed
                 PrimTyConAddr{}         -> Just RepBoxed
                 PrimTyConPtr{}          -> Just RepBoxed
                 PrimTyConTag{}          -> Just RepBoxed
-                PrimTyConString{}       -> Just RepBoxed
 
         -- Explicitly unboxed things.
         | Just (n, _)   <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraU    <- n
         = Just RepUnboxed
 
-        -- These are all higher-kinded type constructors,
-        -- which don't have any associated values.
         | Just (NameTyConTetra n, _)    <- takePrimTyConApps tt
         = case n of
+                -- These are all higher-kinded type constructors,
+                -- which don't have any associated values.
                 TyConTetraTuple{}       -> Just RepNone
                 TyConTetraU{}           -> Just RepNone
                 TyConTetraF{}           -> Just RepNone
                 TyConTetraC{}           -> Just RepNone
+
+                TyConTetraString{}      -> Just RepBoxed
 
         | otherwise
         = Nothing
@@ -83,13 +85,19 @@ convertRepType RepBoxed tt
         = Just t
 
 convertRepType RepUnboxed tt
-        -- Produce the unboxed version of a value type.
         | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tUnboxed tBool
                 PrimTyConNat            -> Just $ tUnboxed tNat
                 PrimTyConInt            -> Just $ tUnboxed tInt
+                PrimTyConSize           -> Just $ tUnboxed tSize
                 PrimTyConWord  bits     -> Just $ tUnboxed (tWord  bits)
+                PrimTyConFloat bits     -> Just $ tUnboxed (tFloat bits) 
+                _                       -> Nothing
+
+        | Just (NameTyConTetra tc, [])   <- takePrimTyConApps tt
+        = case tc of
+                TyConTetraString        -> Just $ tUnboxed tString
                 _                       -> Nothing
 
 convertRepType _ _

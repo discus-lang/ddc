@@ -26,15 +26,19 @@ data PrimTyCon
 
         -- | @Nat#@ natural numbers.
         --   Enough precision to count every object in the heap,
-        --   but NOT enough precision to count every byte of memory.
+        --   but NOT necessearily enough precision to count every byte of memory.
         | PrimTyConNat
 
         -- | @Int#@ signed integers.
         --   Enough precision to count every object in the heap,
-        --   but NOT enough precision to count every byte of memory.
+        --   but NOT necessearily enough precision to count every byte of memory.
         --   If N is the total number of objects that can exist in the heap,
         --   then the range of @Int#@ is at least (-N .. +N) inclusive.
         | PrimTyConInt
+
+        -- | @Size#@ unsigned sizes.
+        --   Enough precision to count every addressable bytes of memory.
+        | PrimTyConSize
 
         -- | @WordN#@ machine words of the given width.
         | PrimTyConWord   Int
@@ -53,19 +57,15 @@ data PrimTyCon
         --   memory owned by the current process.
         | PrimTyConAddr
 
-        -- | @Ptr#@ should point to a well-formed object owned by the
-        --   current process.
+        -- | @Ptr#@ like @Addr#@, but with a region and element type annotation.
+        --   In particular, a value of a type like (Ptr# r Word32#) must be at least
+        --   4-byte aligned and point to memory owned by the current process.
         | PrimTyConPtr
 
         -- | @Tag#@ data constructor tags.
         --   Enough precision to count every possible alternative of an 
         --   enumerated type.
         | PrimTyConTag
-
-        -- | @String#@ of UTF8 characters.
-        -- 
-        --   These are primitive until we can define our own unboxed types.
-        | PrimTyConString 
         deriving (Eq, Ord, Show)
 
 
@@ -84,13 +84,13 @@ instance Pretty PrimTyCon where
         PrimTyConBool           -> text "Bool#"
         PrimTyConNat            -> text "Nat#"
         PrimTyConInt            -> text "Int#"
+        PrimTyConSize           -> text "Size#"
         PrimTyConWord   bits    -> text "Word"  <> int bits  <> text "#"
         PrimTyConFloat  bits    -> text "Float" <> int bits  <> text "#"
         PrimTyConVec    arity   -> text "Vec"   <> int arity <> text "#"
         PrimTyConTag            -> text "Tag#"
         PrimTyConAddr           -> text "Addr#"
         PrimTyConPtr            -> text "Ptr#"
-        PrimTyConString         -> text "String#"
 
 
 -- | Read a primitive type constructor.
@@ -104,10 +104,10 @@ readPrimTyCon str
         | str == "Bool#"   = Just $ PrimTyConBool
         | str == "Nat#"    = Just $ PrimTyConNat
         | str == "Int#"    = Just $ PrimTyConInt
+        | str == "Size#"   = Just $ PrimTyConSize
         | str == "Tag#"    = Just $ PrimTyConTag
         | str == "Addr#"   = Just $ PrimTyConAddr
         | str == "Ptr#"    = Just $ PrimTyConPtr
-        | str == "String#" = Just $ PrimTyConString
 
         -- WordN#
         | Just rest     <- stripPrefix "Word" str
@@ -140,7 +140,7 @@ readPrimTyCon str
 -- | Integral constructors are the ones that we can reasonably
 --   convert from integers of the same size. 
 --  
---   These are @Bool#@ @Nat#@ @Int#@ @WordN#@ and @Tag#@.
+--   These are @Bool#@, @Nat#@, @Int#@, @Size@, @WordN#@ and @Tag#@.
 --
 primTyConIsIntegral :: PrimTyCon -> Bool
 primTyConIsIntegral tc
@@ -148,14 +148,15 @@ primTyConIsIntegral tc
         PrimTyConBool           -> True
         PrimTyConNat            -> True
         PrimTyConInt            -> True
+        PrimTyConSize           -> True
         PrimTyConWord{}         -> True
         PrimTyConTag            -> True
         _                       -> False
 
 
--- | Floating point constructors.
+-- | Floating point types.
 -- 
---   These are @FloatN@.
+--   These are @FloatN#@.
 primTyConIsFloating :: PrimTyCon -> Bool
 primTyConIsFloating tc
  = case tc of
@@ -163,14 +164,15 @@ primTyConIsFloating tc
         _                       -> False
 
 
--- | Unsigned integral constructors.
+-- | Unsigned types.
 --
---   These are @Bool@ @Nat@ @WordN@ @Tag@.
+--   These are @Bool#@ @Nat#@ @Size#@ @WordN@ @Tag@.
 primTyConIsUnsigned :: PrimTyCon -> Bool
 primTyConIsUnsigned tc
  = case tc of
         PrimTyConBool           -> True
         PrimTyConNat            -> True
+        PrimTyConSize           -> True
         PrimTyConWord{}         -> True
         PrimTyConTag            -> True
         _                       -> False
@@ -198,14 +200,14 @@ primTyConWidth :: Platform -> PrimTyCon -> Maybe Integer
 primTyConWidth pp tc
  = case tc of
         PrimTyConVoid           -> Nothing
-        PrimTyConBool           -> Just $ 8 * platformNatBytes pp 
+        PrimTyConBool           -> Just $ 8 * platformNatBytes  pp 
         PrimTyConNat            -> Just $ 8 * platformNatBytes  pp
         PrimTyConInt            -> Just $ 8 * platformNatBytes  pp
+        PrimTyConSize           -> Just $ 8 * platformNatBytes  pp
         PrimTyConWord  bits     -> Just $ fromIntegral bits
         PrimTyConFloat bits     -> Just $ fromIntegral bits
         PrimTyConTag            -> Just $ 8 * platformTagBytes  pp
         PrimTyConAddr           -> Just $ 8 * platformAddrBytes pp
         PrimTyConPtr            -> Just $ 8 * platformAddrBytes pp
         PrimTyConVec   _        -> Nothing
-        PrimTyConString         -> Nothing
 

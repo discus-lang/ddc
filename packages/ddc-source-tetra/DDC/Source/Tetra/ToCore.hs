@@ -317,4 +317,8 @@ toCoreTyConTetra tc
         S.TyConTetraF        -> C.TyConTetraF
         S.TyConTetraC        -> C.TyConTetraC
         S.TyConTetraU        -> C.TyConTetraU
+        S.TyConTetraString   -> C.TyConTetraString
+
+
+
         

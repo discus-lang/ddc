@@ -136,6 +136,10 @@ data TyConTetra
 
         -- | @C#@.      Reified function closure.
         | TyConTetraC
+
+        -- | @String#@  String type.
+        --   In Tetra, strings are represented abstractly.
+        | TyConTetraString
         deriving (Eq, Ord, Show)
 
 

@@ -5,7 +5,8 @@ module DDC.Core.Tetra.Prim.TyConTetra
         , tTupleN
         , tUnboxed
         , tFunValue
-        , tCloValue)
+        , tCloValue
+        , tString)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
@@ -25,6 +26,7 @@ instance Pretty TyConTetra where
         TyConTetraU             -> text "U#"
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
+        TyConTetraString        -> text "String#"
 
 
 -- | Read the name of a baked-in type constructor.
@@ -41,6 +43,7 @@ readTyConTetra str
                 "U#"            -> Just TyConTetraU
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
+                "String#"       -> Just TyConTetraString
                 _               -> Nothing
 
 
@@ -52,6 +55,7 @@ kindTyConTetra tc
         TyConTetraU       -> kData   `kFun` kData
         TyConTetraF       -> kData   `kFun` kData
         TyConTetraC       -> kData   `kFun` kData
+        TyConTetraString  -> kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -73,6 +77,10 @@ tFunValue t     = tApp (tConTyConTetra TyConTetraF) t
 -- | Construct a reified closure type.
 tCloValue :: Type Name -> Type Name
 tCloValue t     = tApp (tConTyConTetra TyConTetraC) t
+
+-- | The string type.
+tString :: Type Name
+tString = tConTyConTetra TyConTetraString
 
 
 -- Utils ----------------------------------------------------------------------
