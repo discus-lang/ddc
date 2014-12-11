@@ -45,10 +45,10 @@ getSimplLiteOfConfig
         -> Maybe FilePath -- ^ path of current module
         -> IO (Simplifier Int () Lite.Name)
 
-getSimplLiteOfConfig config dconfig builder filePath
+getSimplLiteOfConfig config _dconfig _builder _filePath
  = case configOptLevelLite config of
         OptLevel0       -> opt0_lite config 
-        OptLevel1       -> opt1_lite config dconfig builder filePath
+        OptLevel1       -> opt0_lite config
 
 
 -- | Get the simplifier for Salt code from the config.
@@ -83,65 +83,6 @@ opt0_salt _
 
 -- Level 1 --------------------------------------------------------------------
 -- Do full optimsiations.
-
--- | Level 1 optimiser for Core Lite code.
-opt1_lite 
-        :: Config -> D.Config
-        -> Builder
-        -> Maybe FilePath -- ^ path of current module
-        -> IO (Simplifier Int () Lite.Name)
-
-opt1_lite config dconfig _builder filePath
- = do
-        -- Auto-inline basic numeric code.
-        let inlineModulePaths
-                =  [ configBaseDir config </> "lite/base/Data/Numeric/Int.dcl"
-                   , configBaseDir config </> "lite/base/Data/Numeric/Nat.dcl" ]
-                ++ (configWithLite config)
-
-        -- Load all the modules that we're using for inliner templates.
-        --  If any of these don't load then the 'cmdReadModule' function 
-        --  will display the errors.
-        minlineModules
-                <- liftM sequence
-                $  mapM (cmdReadModule dconfig Lite.fragment)
-                        inlineModulePaths
-
-        let inlineModules
-                = map (reannotate (const ()))
-                $ fromMaybe (error "Imported modules do not parse.")
-                            minlineModules
-
-        let inlineSpec
-                = Map.fromList
-                [ (ModuleName ["Int"], InlineSpecAll (ModuleName ["Int"]) Set.empty)
-                , (ModuleName ["Nat"], InlineSpecAll (ModuleName ["Nat"]) Set.empty) ]
-
-        -- Optionally load the rewrite rules for each 'with' module
-        rules <- mapM (\(m,file) -> cmdTryReadRules Lite.fragment (file ++ ".rules") m)
-              $  inlineModules `zip` inlineModulePaths
-
-        -- Load rules for target module as well
-        modrules <- loadLiteRules dconfig filePath
-
-        let rules' = concat rules ++ modrules
-
-        -- Simplifier to convert to a-normal form.
-        let normalizeLite
-                = S.anormalize
-                        (makeNamifier Lite.freshT)      
-                        (makeNamifier Lite.freshX)
-
-
-        -- Perform rewrites before inlining
-        return  $  (S.Trans $ S.Rewrite rules')
-                <> (S.Trans $ S.Inline
-                            $ lookupTemplateFromModules inlineSpec inlineModules)
-                <> S.Fix 5 (S.beta 
-                                <> S.bubble      <> S.flatten 
-                                <> normalizeLite <> S.forward
-                                <> (S.Trans $ S.Rewrite rules'))
-
 
 -- | Level 1 optimiser for Core Salt code.
 opt1_salt 
@@ -213,25 +154,6 @@ opt1_salt config dconfig builder runtimeConfig filePath
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeSalt <> S.forward
                                 <> (S.Trans $ S.Rewrite rules'))
-
-
--- | Load rules for main module
-loadLiteRules
-    :: D.Config
-    -> Maybe FilePath
-    -> IO (S.NamedRewriteRules () Lite.Name)
-
-loadLiteRules dconfig (Just filePath)
- | isSuffixOf ".dcl" filePath
- = do -- Parse module to get exported fn types
-      modu     <- cmdReadModule' False dconfig Lite.fragment filePath
-      case modu of
-       Just mod' -> cmdTryReadRules Lite.fragment (filePath ++ ".rules")
-                                    (reannotate (const ()) mod')
-       Nothing   -> return []
-
-loadLiteRules _ _
- = return []
 
 
 -- | Load rules for main module

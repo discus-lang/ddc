@@ -1,11 +1,11 @@
 
 module Main
 export {
-         main     : [r1 : Region]. Nat# -> Ptr# r1 String# -> Int#;
+         main     : [r1 : Region]. Nat# -> Ptr# r1 (Ptr# r1 Word8#) -> Int#;
 }
 import foreign c value {
-        showInt   : [r : Region]. Int# -> Ptr# r String#;
-        putStrLn  : [r : Region]. Ptr# r String# -> Void#;
+        showInt   : [r : Region]. Int# -> Ptr# r (Ptr# r Word8#);
+        putStrLn  : [r : Region]. Ptr# r (Ptr# r Word8#) -> Void#;
 }
 with letrec {
 
@@ -62,7 +62,7 @@ fac [r : Region] (x: Ptr# r Obj) : Ptr# r Obj
       };
 
 
-main [r : Region] (argc : Nat#) (argv : Ptr# r String#) : Int#
+main [r : Region] (argc : Nat#) (argv : Ptr# r (Ptr# r Word8#)) : Int#
  = do { create# 1000#;
         x       = boxWord32 [r] 10w32#;
         str     = showInt [r] (truncate# [Int#] [Word32#] (unboxWord32 [r] (fac [r] x)));
