@@ -3,7 +3,8 @@ module DDC.Core.Tetra.Compounds
         ( module DDC.Core.Compounds.Annot
 
           -- * Types
-        , tBool, tNat, tInt, tWord, tPtr
+        , tBool, tNat, tInt, tWord, tFloat
+        , tString, tPtr
         , tTupleN
         , tBoxed,       tUnboxed
         , tFunValue,    tCloValue

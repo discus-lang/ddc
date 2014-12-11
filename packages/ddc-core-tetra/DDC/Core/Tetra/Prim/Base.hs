@@ -14,7 +14,6 @@ module DDC.Core.Tetra.Prim.Base
 where
 import Data.Typeable
 import Data.ByteString.Char8    (ByteString)
-import Data.Vector              (Vector)
 import DDC.Core.Salt.Name
         ( PrimTyCon     (..)
         , PrimArith     (..)
@@ -75,11 +74,6 @@ data Name
         --   with the given number of bits precision.
         | NameLitFloat          Double  Int
 
-        -- | An array literal.
-        --   These contain numeric atomic literals only,
-        --   and can be allocated into a contiguous slab of memory.
-        | NameLitArray          (Vector Name)
-
         -- | A UTF-8 string literal.
         --   Although these are represented as array literals at runtime,
         --   they have a special syntax which we want to preserve during
@@ -111,7 +105,10 @@ isNameLit nn
         NameLitBool{}    -> True
         NameLitNat{}     -> True
         NameLitInt{}     -> True
+        NameLitSize{}    -> True
         NameLitWord{}    -> True
+        NameLitFloat{}   -> True
+        NameLitString{}  -> True
         NameLitUnboxed n -> isNameLit n
         _                -> False
 

@@ -45,6 +45,13 @@ primDataDefs
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
 
+        -- FloatN#
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+
+        -- String#
+        , makeDataDefAlg (NamePrimTyCon PrimTyConString)    [] Nothing
+
         -- U#
         , makeDataDefAlg (NameTyConTetra (TyConTetraU))     [] Nothing
         ]
@@ -116,11 +123,14 @@ typeOfPrimName dc
         NameLitNat  _           -> Just $ tNat
         NameLitInt  _           -> Just $ tInt
         NameLitWord _ bits      -> Just $ tWord bits
+        NameLitFloat _ bits     -> Just $ tFloat bits
+        NameLitString _         -> Just $ tString
 
-        NameLitUnboxed NameLitBool{}    -> Just $ tUnboxed tBool
-        NameLitUnboxed NameLitNat{}     -> Just $ tUnboxed tNat
-        NameLitUnboxed NameLitInt{}     -> Just $ tUnboxed tInt
-        NameLitUnboxed (NameLitWord _ bits) -> Just $ tUnboxed (tWord bits)
+        NameLitUnboxed NameLitBool{}         -> Just $ tUnboxed tBool
+        NameLitUnboxed NameLitNat{}          -> Just $ tUnboxed tNat
+        NameLitUnboxed NameLitInt{}          -> Just $ tUnboxed tInt
+        NameLitUnboxed (NameLitWord  _ bits) -> Just $ tUnboxed (tWord bits)
+        NameLitUnboxed (NameLitFloat _ bits) -> Just $ tUnboxed (tFloat bits)
 
         _                       -> Nothing
 

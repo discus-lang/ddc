@@ -56,7 +56,6 @@ import DDC.Base.Name
 import Control.DeepSeq
 import Data.Char        
 import qualified Data.ByteString.Char8  as BS
-import qualified Data.Vector            as V
 
 import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Core.Salt.Name 
@@ -86,7 +85,6 @@ instance NFData Name where
         NameLitSize    s        -> rnf s
         NameLitWord i bits      -> rnf i `seq` rnf bits
         NameLitFloat   d bits   -> rnf d `seq` rnf bits
-        NameLitArray   vec      -> rnf vec
         NameLitString  bs       -> rnf bs       
 
         NameLitUnboxed n        -> rnf n
@@ -117,14 +115,7 @@ instance Pretty Name where
         NameLitSize    s        -> integer s <> text "s"
         NameLitWord i bits      -> integer i <> text "w" <> int bits
         NameLitFloat   f bits   -> double  f <> text "f" <> int bits
-
-        NameLitArray   vec      
-         -> text "[#" 
-         <> hcat (punctuate (text ",") (map ppr $ V.toList vec)) 
-         <> text "#]"
-
-        NameLitString  bs       
-         -> text (show $ BS.unpack bs)
+        NameLitString  bs       -> text (show $ BS.unpack bs)
 
         NameLitUnboxed n        -> ppr n <> text "#"
 
@@ -216,7 +207,9 @@ takeTypeOfLitName nn
         NameLitBool{}           -> Just tBool
         NameLitNat{}            -> Just tNat
         NameLitInt{}            -> Just tInt
-        NameLitWord _ bits      -> Just (tWord bits)
+        NameLitWord _ bits      -> Just (tWord  bits)
+        NameLitFloat _ bits     -> Just (tFloat bits)
+        NameLitString _         -> Just tString
         _                       -> Nothing
 
 
