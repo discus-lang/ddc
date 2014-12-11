@@ -3,7 +3,6 @@ module DDC.Core.Tetra.Prim.TyConTetra
         ( kindTyConTetra
         , readTyConTetra
         , tTupleN
-        , tBoxed
         , tUnboxed
         , tFunValue
         , tCloValue)
@@ -23,7 +22,6 @@ instance Pretty TyConTetra where
  ppr tc
   = case tc of
         TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
-        TyConTetraB             -> text "B#"
         TyConTetraU             -> text "U#"
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
@@ -40,7 +38,6 @@ readTyConTetra str
 
         | otherwise
         = case str of
-                "B#"            -> Just TyConTetraB
                 "U#"            -> Just TyConTetraU
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
@@ -52,7 +49,6 @@ kindTyConTetra :: TyConTetra -> Type Name
 kindTyConTetra tc
  = case tc of
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
-        TyConTetraB       -> kData   `kFun` kData
         TyConTetraU       -> kData   `kFun` kData
         TyConTetraF       -> kData   `kFun` kData
         TyConTetraC       -> kData   `kFun` kData
@@ -62,11 +58,6 @@ kindTyConTetra tc
 -- | Construct a tuple type.
 tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConTetra (TyConTetraTuple (length tys))) tys
-
-
--- | Construct a boxed representation type.
-tBoxed  :: Type Name -> Type Name
-tBoxed t        = tApp (tConTyConTetra TyConTetraB) t
 
 
 -- | Construct an unboxed representation type.

@@ -60,9 +60,6 @@ data Rep
         --   they just describe a set of logical values.
         | RepValue
 
-        -- | Values of this type are represented in boxed form.
-        | RepBoxed     
-
         -- | Values of this type are represented in unboxed form.
         | RepUnboxed
         deriving (Eq, Ord, Show)

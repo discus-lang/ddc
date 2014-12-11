@@ -61,15 +61,9 @@ repOfType tt
         | Just (NameTyConTetra n, _)    <- takePrimTyConApps tt
         = case n of
                 TyConTetraTuple{}       -> Just RepNone
-                TyConTetraB{}           -> Just RepNone
                 TyConTetraU{}           -> Just RepNone
                 TyConTetraF{}           -> Just RepNone
                 TyConTetraC{}           -> Just RepNone
-
-        -- Explicitly boxed things.
-        | Just (n, _)   <- takePrimTyConApps tt
-        , NameTyConTetra TyConTetraB    <- n
-        = Just RepBoxed
 
         -- Explicitly unboxed things.
         | Just (n, _)   <- takePrimTyConApps tt
@@ -83,25 +77,10 @@ repOfType tt
 -- | Get the type for a different representation of the given one.
 convertRepType :: Rep -> Type Name -> Maybe (Type Name)
 convertRepType RepValue tt
-        -- Produce the value type from a boxed one.
-        | Just (n, [t]) <- takePrimTyConApps tt
-        , NameTyConTetra TyConTetraB    <- n
-        = Just t
-
         -- Produce the value type from an unboxed one.
         | Just (n, [t]) <- takePrimTyConApps tt
         , NameTyConTetra TyConTetraU    <- n
         = Just t
-
-convertRepType RepBoxed tt
-        -- Produce the boxed version of a value type.
-        | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
-        = case tc of
-                PrimTyConBool           -> Just $ tBoxed tBool
-                PrimTyConNat            -> Just $ tBoxed tNat
-                PrimTyConInt            -> Just $ tBoxed tInt
-                PrimTyConWord  bits     -> Just $ tBoxed (tWord  bits)
-                _                       -> Nothing
 
 convertRepType RepUnboxed tt
         -- Produce the unboxed version of a value type.

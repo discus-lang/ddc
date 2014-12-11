@@ -18,9 +18,8 @@ module DDC.Core.Tetra.Convert.Boxing
         , isBoxedRepType
         , isUnboxedRepType
         , isNumericType
-        , takeIndexOfBoxedRepType
-        , makeDataTypeForBoxableIndexType
-        , makeDataCtorForBoxableIndexType)
+        , makeNumericDataType
+        , makeNumericDataCtor)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
@@ -121,26 +120,12 @@ isNumericType tt
         = False
 
 
--- Conversions ----------------------------------------------------------------
--- | Given a boxed representation like '(B# T)', 
---   where 'T' is a boxable index type, yield the 'T' part, otherwise Nothing.
---
-takeIndexOfBoxedRepType :: Type Name -> Maybe (Type Name)
-takeIndexOfBoxedRepType tt
-        | Just  ( NameTyConTetra TyConTetraB
-                , [ti])                 <- takePrimTyConApps tt
-        , isNumericType ti
-        = Just ti
-
-        | otherwise
-        = Nothing
-
 
 -- Punned Defs ----------------------------------------------------------------
 -- | Generic data type definition for a primitive numeric type.
-makeDataTypeForBoxableIndexType :: Type Name -> Maybe (DataType Name)
-makeDataTypeForBoxableIndexType tt
-        | Just (n@NamePrimTyCon{}, [])          <- takePrimTyConApps tt
+makeNumericDataType :: Type Name -> Maybe (DataType Name)
+makeNumericDataType tt
+        | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataType 
         { dataTypeName          = n
         , dataTypeParams        = []
@@ -152,14 +137,14 @@ makeDataTypeForBoxableIndexType tt
 
 
 -- | Generic data constructor definition for a primtive numeric type.
-makeDataCtorForBoxableIndexType :: Type Name -> Maybe (DataCtor Name)
-makeDataCtorForBoxableIndexType tt
-        | Just (n@NamePrimTyCon{}, [])          <- takePrimTyConApps tt
+makeNumericDataCtor :: Type Name -> Maybe (DataCtor Name)
+makeNumericDataCtor tt
+        | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataCtor
         { dataCtorName          = n
         , dataCtorTag           = 0
         , dataCtorFieldTypes    = [tUnboxed tt]
-        , dataCtorResultType    = tBoxed tt
+        , dataCtorResultType    = tt
         , dataCtorTypeName      = n
         , dataCtorTypeParams    = [] }
 

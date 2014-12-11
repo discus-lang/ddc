@@ -1,0 +1,16 @@
+
+module Main 
+export  main
+import  Data.List
+import  IO.Console
+where
+
+main (_ : Unit) : S Console Unit
+ = box private r with { Alloc r; Read r } in
+   do
+        run putStrLn (showNat [r] 5)
+        ()
+
+
+
+

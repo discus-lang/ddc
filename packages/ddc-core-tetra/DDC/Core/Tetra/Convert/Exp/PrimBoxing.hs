@@ -37,7 +37,8 @@ convertPrimBoxing _ectx ctx xx
    in case xx of
 
         ---------------------------------------------------
-        -- Boxing of unboxed values.
+        -- Boxing of unboxed numeric values.
+        --   The unboxed representation of a numeric value is the machine value.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for user-defined types.
         XApp a _ _
@@ -45,8 +46,8 @@ convertPrimBoxing _ectx ctx xx
                 , [XType _ tUx, XType _ tBx, xArg])     <- takeXPrimApps xx
          , isUnboxedRepType tUx
          , isNumericType    tBx
-         , Just dt      <- makeDataTypeForBoxableIndexType tBx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBx
+         , Just dt      <- makeNumericDataType tBx
+         , Just dc      <- makeNumericDataCtor tBx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
@@ -58,6 +59,7 @@ convertPrimBoxing _ectx ctx xx
 
         ---------------------------------------------------
         -- Unboxing of boxed values.
+        --   The unboxed representation of a numeric value is the machine value.
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for used-defined types.
         XApp a _ _
@@ -65,7 +67,7 @@ convertPrimBoxing _ectx ctx xx
                 , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
          , isNumericType    tBx
          , isUnboxedRepType tUx
-         , Just dc      <- makeDataCtorForBoxableIndexType tBx
+         , Just dc      <- makeNumericDataCtor tBx
          -> Just $ do
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg

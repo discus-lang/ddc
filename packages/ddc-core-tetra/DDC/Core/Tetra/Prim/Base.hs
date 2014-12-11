@@ -127,10 +127,6 @@ data TyConTetra
         -- | @TupleN#@. Tuples.
         = TyConTetraTuple Int
 
-        -- | @B#@.      Boxing type constructor. 
-        --   Used to represent boxed numeric values.
-        | TyConTetraB
-
         -- | @U#@.      Unboxed type constructor.
         --   Used to represent unboxed numeric values.
         | TyConTetraU

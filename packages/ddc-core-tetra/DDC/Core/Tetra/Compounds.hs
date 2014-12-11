@@ -6,7 +6,7 @@ module DDC.Core.Tetra.Compounds
         , tBool, tNat, tInt, tWord, tFloat
         , tString, tPtr
         , tTupleN
-        , tBoxed,       tUnboxed
+        , tUnboxed
         , tFunValue,    tCloValue
 
           -- * Expressions
