@@ -1,6 +1,7 @@
 
 module DDC.Core.Salt.Compounds
-        ( tVoid
+        ( rTop,   ukTop
+        , tVoid
         , tBool,  xBool
         , tNat,   xNat, dcNat
         , tInt,   xInt
@@ -10,11 +11,25 @@ module DDC.Core.Salt.Compounds
         , tTag,   xTag
         , tObj
         , tAddr
-        , tPtr,   takeTPtr)
+        , tPtr,   takeTPtr
+        , xString)
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Exp
 import DDC.Core.Compounds
+import Data.ByteString          (ByteString)
+
+-- Regions --------------------------------------------------------------------
+-- | The top-level region.
+--   This region lives for the whole program, and is used to store objects whose 
+--   types don't have region annotations (like function closures and Unit values).
+rTop    :: Type Name
+rTop   = TVar (fst ukTop)
+
+ukTop :: (Bound Name, Kind Name)
+ukTop
+ =      ( UName (NameVar "rT")
+        , kRegion)
 
 
 -- Types ----------------------------------------------------------------------
@@ -86,3 +101,10 @@ xTag a i        = XCon a (DaConPrim (NameLitTag i)  tTag)
 -- | A Literal @Nat#@ data constructor.
 dcNat   :: Integer -> DaCon Name
 dcNat i   = DaConPrim (NameLitNat i) tNat
+
+
+-- | String literal.
+xString :: a -> ByteString -> Exp a Name
+xString a bs    = XCon a (DaConPrim (NameLitString bs) (tPtr rTop (tWord 8)))
+
+

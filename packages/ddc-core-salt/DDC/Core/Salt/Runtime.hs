@@ -90,19 +90,6 @@ runtimeImportTypes
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 
--- Regions --------------------------------------------------------------------
--- | The top-level region.
---   This region lives for the whole program, and is used to store objects whose 
---   types don't have region annotations (like function closures and Unit values).
-rTop    :: Type Name
-rTop   = TVar (fst ukTop)
-
-ukTop :: (Bound Name, Kind Name)
-ukTop
- =      ( UName (NameVar "rT")
-        , kRegion)
-
-
 -- Tags -----------------------------------------------------------------------
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name

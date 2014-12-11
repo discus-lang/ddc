@@ -19,7 +19,6 @@ import DDC.Control.Monad.Check           (throw)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
-import qualified DDC.Core.Salt.Runtime   as O
 import qualified DDC.Type.Env            as Env
 import Control.Monad
 

@@ -21,10 +21,13 @@ convertLitCtor
 convertLitCtor a dc
  | Just (E.NameLitUnboxed n)    <- takeNameOfDaCon dc
  = case n of
-        E.NameLitBool b         -> return $ A.xBool a b
-        E.NameLitNat  i         -> return $ A.xNat  a i
-        E.NameLitInt  i         -> return $ A.xInt  a i
-        E.NameLitWord i bits    -> return $ A.xWord a i bits
+        E.NameLitBool b         -> return $ A.xBool   a b
+        E.NameLitNat  i         -> return $ A.xNat    a i
+        E.NameLitInt  i         -> return $ A.xInt    a i
+        E.NameLitSize i         -> return $ A.xSize   a i
+        E.NameLitWord i bits    -> return $ A.xWord   a i bits
+        E.NameLitFloat f bits   -> return $ A.xFloat  a f bits
+        E.NameLitString bs      -> return $ A.xString a bs
         _                       -> throw $ ErrorMalformed "Invalid literal."
 
  | otherwise    

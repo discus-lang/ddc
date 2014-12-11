@@ -34,7 +34,6 @@ import qualified DDC.Type.Env                   as Env
 -- >  Word{8,16,32,64}#   42w8# 123w64# ...
 -- >  Float{32,64}#       (none, convert from Int#)
 -- >  Tag#                (none, convert from Nat#)
--- >  String#             "foo"#
 --
 primDataDefs :: DataDefs Name
 primDataDefs
@@ -46,13 +45,13 @@ primDataDefs
                 (Just   [ (NameLitBool True,  [])
                         , (NameLitBool False, []) ])
         -- Nat
-        , makeDataDefAlg (NamePrimTyCon PrimTyConNat) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int
-        , makeDataDefAlg (NamePrimTyCon PrimTyConInt) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- Size
-        , makeDataDefAlg (NamePrimTyCon PrimTyConSize) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConSize)       [] Nothing
 
         -- Word 8, 16, 32, 64
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
@@ -61,11 +60,14 @@ primDataDefs
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
 
         -- Float 32, 64
-        , makeDataDefAbs (NamePrimTyCon (PrimTyConFloat 32)) []
-        , makeDataDefAbs (NamePrimTyCon (PrimTyConFloat 64)) []
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
         -- Tag
-        , makeDataDefAlg (NamePrimTyCon PrimTyConTag) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConTag)        [] Nothing
+
+        -- Ptr#
+        , makeDataDefAlg (NamePrimTyCon PrimTyConPtr)        [] Nothing
         ]
 
 
@@ -117,14 +119,17 @@ primTypeEnv = Env.setPrimFun typeOfName Env.empty
 typeOfName :: Name -> Maybe (Type Name)
 typeOfName nn
  = case nn of
-        NamePrimOp p       -> Just $ typeOfPrim p
-        NameLitVoid        -> Just $ tVoid
-        NameLitBool _      -> Just $ tBool
-        NameLitNat  _      -> Just $ tNat
-        NameLitInt  _      -> Just $ tInt
-        NameLitWord _ bits -> Just $ tWord bits
-        NameLitTag  _      -> Just $ tTag
-        _                  -> Nothing
+        NamePrimOp p        -> Just $ typeOfPrim p
+        NameLitVoid         -> Just $ tVoid
+        NameLitBool  _      -> Just $ tBool
+        NameLitNat   _      -> Just $ tNat
+        NameLitInt   _      -> Just $ tInt
+        NameLitSize  _      -> Just $ tSize
+        NameLitWord  _ bits -> Just $ tWord  bits
+        NameLitFloat _ bits -> Just $ tFloat bits
+        NameLitString _     -> Just $ tPtr rTop (tWord 8)
+        NameLitTag   _      -> Just $ tTag
+        _                   -> Nothing
 
 
 -- | Take the type of a primitive.
