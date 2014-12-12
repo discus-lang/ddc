@@ -127,14 +127,14 @@ convModuleM withPrelude pp mm@(ModuleCore{})
         --   This is the code for locally defined functions.
         
         -- Build the top-level kind environment.
-        let kenv        = Env.fromList
-                        $ [ BName n (typeOfImportSource isrc) 
-                                | (n, isrc) <- moduleImportTypes mm ]
+        let kenv = Env.fromList
+                  $ [ BName n (typeOfImportSource isrc) 
+                        | (n, isrc) <- moduleImportTypes mm ]
 
         -- Build the top-level type environment.
-        let tenv        = Env.fromList 
-                        $ [ BName n (typeOfImportSource isrc)
-                                | (n, isrc) <- moduleImportValues mm ]
+        let tenv = Env.fromList 
+                 $ [ BName n (typeOfImportSource isrc)
+                        | (n, isrc) <- moduleImportValues mm ]
 
         -- Convert all the super definitions to C code.
         let convSuperM' (BName n t) x

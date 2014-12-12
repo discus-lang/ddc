@@ -12,33 +12,44 @@ module DDC.Core.Llvm.Convert.Base
         , newUnique
         , newUniqueVar
         , newUniqueNamedVar
-        , newUniqueLabel)
+        , newUniqueLabel
+
+          -- * Constants
+        , addConstant)
 where
 import DDC.Core.Llvm.Convert.Error
 import DDC.Llvm.Syntax
 import DDC.Control.Monad.Check
+import Data.Map                 (Map)
+import qualified Data.Map       as Map
 
--- ConvertM -------------------------------------------------------------------
+
+-- ConvertM ---------------------------------------------------------------------------------------
 -- | The toLLVM conversion monad.
 type ConvertM = CheckM LlvmState Error
 
 
--- LlvmState ------------------------------------------------------------------
+-- LlvmState --------------------------------------------------------------------------------------
 -- | State for the LLVM conversion.
 data LlvmState
         = LlvmState
         { -- Unique name generator.
-          llvmStateUnique       :: Int }
+          llvmStateUnique       :: Int 
+
+          -- String and array constants collected from the code during conversion.
+          -- These get stored in statically allocated memory.
+        , llvmConstants         :: Map Var Lit }
 
 
 -- | Initial LLVM state.
 llvmStateInit :: LlvmState
 llvmStateInit 
         = LlvmState
-        { llvmStateUnique       = 1  }
+        { llvmStateUnique       = 1  
+        , llvmConstants         = Map.empty }
 
 
--- Unique ---------------------------------------------------------------------
+-- Unique -----------------------------------------------------------------------------------------
 -- | Unique name generation.
 newUnique :: ConvertM Int
 newUnique 
@@ -67,4 +78,15 @@ newUniqueLabel :: String -> ConvertM Label
 newUniqueLabel name
  = do   u <- newUnique
         return $ Label ("l" ++ show u ++ "." ++ name)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Add a static constant to the map, 
+--   assigning a new variable to refer to it.
+addConstant :: Lit -> ConvertM Var
+addConstant lit
+ = do   v       <- newUniqueVar (typeOfLit lit)
+        s       <- get
+        put     $ s { llvmConstants = Map.insert v lit (llvmConstants s)}
+        return v
 

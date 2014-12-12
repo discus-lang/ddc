@@ -8,7 +8,6 @@ import DDC.Llvm.Pretty.Type     ()
 import DDC.Base.Pretty
 
 
--- Exp ------------------------------------------------------------------------
 instance Pretty Exp where
  ppr xx
   = case xx of
@@ -26,23 +25,23 @@ pprPlainX xx
         XUndef _ -> text "undef"
 
 
--- Var ------------------------------------------------------------------------
 instance Pretty Var where
  ppr (Var n t)  = ppr t <+> ppr n
 
 
--- Name -----------------------------------------------------------------------
 instance Pretty Name where
  ppr (NameGlobal str)   = text "@" <> text str
  ppr (NameLocal  str)   = text "%" <> text str
 
 
--- Lit ------------------------------------------------------------------------
 instance Pretty Lit where
  ppr ll
   = case ll of
         LitInt   t i    -> ppr t <+> integer i
         LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
+        LitString bs    -> text "c" <> text (show bs)
+                                        -- TODO: pretty print special chars for strings,
+                                        -- LLVM uses hex escapes eg \00
         LitNull  t      -> ppr t <+> text "null"
         LitUndef _      -> text "undef"
 
@@ -53,6 +52,7 @@ pprPlainL ll
  = case ll of
         LitInt _ i      -> integer i
         LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
+        LitString bs    -> text "c" <> text (show bs)
         LitNull  _      -> text "null"
         LitUndef _      -> text "undef"
 

@@ -63,32 +63,52 @@ mconvAtom ctx xx
         -- Primitive unboxed literals.
         C.XCon _ dc
          | C.DaConPrim n t <- dc
-         -> case n of
+         -> do case n of
                 A.NameLitBool b
                  -> let i | b           = 1
                           | otherwise   = 0
-                    in Just $ do 
-                        t'      <- convertType pp kenv t
+                    in Just $ do
+                        t' <- convertType pp kenv t
                         return $ XLit (LitInt t' i)
 
-                A.NameLitNat  nat   
+                A.NameLitNat nat   
                  -> Just $ do
-                        t'      <- convertType pp kenv t
+                        t' <- convertType pp kenv t
                         return $ XLit (LitInt t' nat)
 
                 A.NameLitInt  val
                  -> Just $ do
-                        t'      <- convertType pp kenv t
+                        t' <- convertType pp kenv t
+                        return $ XLit (LitInt t' val)
+
+                A.NameLitSize val
+                 -> Just $ do
+                        t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
                 A.NameLitWord val _
                  -> Just $ do
-                        t'      <- convertType pp kenv t
+                        t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
+
+                A.NameLitFloat val _
+                 -> Just $ do
+                        t' <- convertType pp kenv t
+                        return $ XLit (LitFloat t' val)
+
+                A.NameLitString bs
+                 -> Just $ do
+                        -- Add string constant to the constants map.
+                        -- These will be allocated in static memory, and given
+                        -- the returned name.
+                        var     <- addConstant (LitString bs)
+                        
+                        return  $ XVar var
+
 
                 A.NameLitTag  tag   
                  -> Just $ do
-                        t'      <- convertType pp kenv t
+                        t' <- convertType pp kenv t
                         return $ XLit (LitInt t' tag)
 
                 _ -> Nothing

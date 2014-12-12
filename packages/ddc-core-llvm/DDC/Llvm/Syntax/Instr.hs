@@ -123,7 +123,6 @@ data Instr
         --   First expression gives the destination pointer.
         | IStore        Exp     Exp
 
-
         -- Other Operations -------------------------------
         -- | Integer comparison.
         | IICmp         Var     ICond   Exp     Exp
