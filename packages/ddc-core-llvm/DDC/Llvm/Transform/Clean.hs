@@ -1,78 +1,86 @@
 
--- | Inline `ISet` meta-instructions, drop `INop` meta-instructions,
---   and propagate calling conventions from declarations to call sites.
---   This should all be part of the LLVM language itself, but it isn't.
+-- | Put our extended LLVM AST in the form that the LLVM compiler will accept directly.
+--
+--   * inline `ISet` meta-instructions
+--   * drop `INop` meta-instructions
+--   * propagate calling conventions from declarations to call sites.
+--   * Flatten out `XConv` and `XGet` expressions into separate instructinos.
+--
 module DDC.Llvm.Transform.Clean
         (clean)
 where
 import DDC.Llvm.Syntax
+import DDC.Control.Monad.Check
 import Data.Map                 (Map)
+import Data.Sequence            (Seq, (|>))
 import qualified Data.Map       as Map
 import qualified Data.Foldable  as Seq
 import qualified Data.Sequence  as Seq
-
 
 -- | Clean a module.
 clean :: Module -> Module
 clean mm
  = let  binds           = Map.empty
-   in   mm { modFuncs   = map (cleanFunction mm binds) 
-                        $ modFuncs mm }
+        Right funcs'    = evalCheck 0 (mapM (cleanFunction mm binds) $ modFuncs mm) 
+   in   mm { modFuncs   = funcs' }
 
 
 -- | Clean a function.
 cleanFunction
-        :: Module
+        :: Module               -- ^ Module being cleaned.
         -> Map Var Exp          -- ^ Map of variables to their values.
-        -> Function -> Function
+        -> Function -> CleanM Function
 
 cleanFunction mm binds fun
- = fun { funBlocks      = cleanBlocks mm binds Map.empty [] 
-                        $ funBlocks fun }
+ = do   
+        blocks' <- cleanBlocks mm binds Map.empty []
+                $  funBlocks fun
+
+        return  $ fun { funBlocks = blocks' }
 
 
 -- | Clean set instructions in some blocks.
 cleanBlocks 
-        :: Module
+        :: Module               -- ^ Module being cleaned.
         -> Map Var Exp          -- ^ Map of variables to their values.
         -> Map Var Label        -- ^ Map of variables to the label 
                                 --    of the block they were defined in.
-        -> [Block] 
-        -> [Block] 
-        -> [Block]
+        -> [Block]              -- ^ Accumulated blocks.
+        -> [Block]              -- ^ Blocks still to clean.
+        -> CleanM [Block]
 
 cleanBlocks _mm _binds _defs acc []
-        = reverse acc
+        = return $ reverse acc
 
 cleanBlocks mm binds defs acc (Block label instrs : bs) 
- = let  (binds', defs', instrs2) 
-                = cleanInstrs mm label binds defs [] 
-                $ Seq.toList instrs
+ = do   (binds', defs', instrs2) 
+                <- cleanInstrs mm label binds defs Seq.empty
+                $  Seq.toList instrs
 
-        instrs' = Seq.fromList instrs2
-        block'  = Block label instrs'
+        let instrs' = Seq.fromList instrs2
+        let block'  = Block label instrs'
 
-   in   cleanBlocks mm binds' defs' (block' : acc) bs
+        cleanBlocks mm binds' defs' (block' : acc) bs
 
 
 -- | Clean set instructions in some instructions.
 cleanInstrs 
-        :: Module
+        :: Module               -- ^ Module being cleaned.
         -> Label                -- ^ Label of the current block.
         -> Map Var Exp          -- ^ Map of variables to their values.
         -> Map Var Label        -- ^ Map of variables to the label
                                 --    of the block they were defined in.
-        -> [AnnotInstr]
-        -> [AnnotInstr] 
-        -> (Map Var Exp, Map Var Label, [AnnotInstr])
+        -> Seq AnnotInstr       -- ^ Accumulated instructions.
+        -> [AnnotInstr]         -- ^ Instructions still to clean.
+        -> CleanM (Map Var Exp, Map Var Label, [AnnotInstr])
 
 cleanInstrs _mm _label binds defs acc []
-        = (binds, defs, reverse acc)
+        = return (binds, defs, Seq.toList acc)
 
 cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
   = let next binds' defs' acc' 
-                = cleanInstrs mm label binds' defs' acc' instrs
-        
+                   = cleanInstrs mm label binds' defs' acc' instrs
+
         reAnnot i' = annotWith i' annots
 
         sub xx  
@@ -84,7 +92,8 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
 
     in case i of
         IComment{}              
-         -> next binds defs (ins : acc)        
+         -> next binds defs 
+         $  acc |> ins
 
         -- The LLVM compiler doesn't support ISet instructions,
         --  so we inline them into their use sites.
@@ -111,65 +120,76 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
                                         , keepPair (sub x) ]
 
                 defs'   = Map.insert v label defs
-            in  next binds defs' $ (reAnnot i') : acc
-
+            in  next binds defs' $ acc |> reAnnot i'
 
         IReturn Nothing
-         -> next binds defs $ ins                                        : acc
+         -> next binds defs 
+         $  acc |> ins
 
         IReturn (Just x)
-         -> next binds defs $ (reAnnot $ IReturn (Just (sub x)))         : acc
+         -> next binds defs 
+         $  acc |> (reAnnot $ IReturn (Just (sub x)))
 
         IBranch{}
-         -> next binds defs $ ins                                        : acc
+         -> next binds defs
+         $  acc |> ins
 
         IBranchIf x l1 l2
-         -> next binds defs $ (reAnnot $ IBranchIf (sub x) l1 l2)        : acc
+         -> next binds defs
+         $  acc |> (reAnnot $ IBranchIf (sub x) l1 l2)
 
         ISwitch x def alts
-         -> next binds defs $ (reAnnot $ ISwitch   (sub x) def alts)     : acc
+         -> next binds defs
+         $  acc |> (reAnnot $ ISwitch   (sub x) def alts)
 
         IUnreachable
-         -> next binds defs $ ins                                        : acc
+         -> next binds defs
+         $  acc |> ins
 
         IOp    v op x1 x2
          |  defs'        <- Map.insert v label defs
-         -> next binds defs' $ (reAnnot $ IOp   v op (sub x1) (sub x2))  : acc
+         -> next binds defs'
+         $  acc |> (reAnnot $ IOp   v op (sub x1) (sub x2))
 
         IConv  v c x
          |  defs'        <- Map.insert v label defs
-         -> next binds defs' $ (reAnnot $ IConv v c (sub x))             : acc
+         -> next binds defs'
+         $  acc |> (reAnnot $ IConv v c (sub x))
 
         ILoad  v x
          |  defs'        <- Map.insert v label defs
-         -> next binds defs' $ (reAnnot $ ILoad v   (sub x))             : acc
+         -> next binds defs'
+         $  acc |> (reAnnot $ ILoad v   (sub x))
 
         IStore x1 x2
-         -> next binds defs  $ (reAnnot $ IStore    (sub x1) (sub x2))   : acc
+         -> next binds defs
+         $  acc |> (reAnnot $ IStore    (sub x1) (sub x2))
 
         IICmp  v c x1 x2
          |  defs'        <- Map.insert v label defs
-         -> next binds defs' $ (reAnnot $ IICmp v c (sub x1) (sub x2))   : acc
+         -> next binds defs'
+         $  acc |> (reAnnot $ IICmp v c (sub x1) (sub x2))
 
         IFCmp  v c x1 x2
          |  defs'        <- Map.insert v label defs
-         -> next binds defs' $ (reAnnot $ IFCmp v c (sub x1) (sub x2))   : acc
+         -> next binds defs'
+         $  acc |> (reAnnot $ IFCmp v c (sub x1) (sub x2))
 
         ICall  (Just v) ct mcc t n xs ats
          |  defs'        <- Map.insert v label defs
          -> let Just cc2 = callConvOfName mm n
                 cc'      = mergeCallConvs mcc cc2
-            in  next binds defs' 
-                        $ (reAnnot $ ICall (Just v) ct (Just cc') t n (map sub xs) ats) 
-                        : acc
+            in  next binds defs'
+                 $ acc |> (reAnnot $ ICall (Just v) ct (Just cc') t n (map sub xs) ats) 
 
         ICall  Nothing ct mcc t n xs ats
          -> let Just cc2 = callConvOfName mm n
                 cc'      = mergeCallConvs mcc cc2
-            in  next binds defs 
-                        $ (reAnnot $ ICall Nothing  ct (Just cc') t n (map sub xs) ats) 
-                        : acc
+            in  next binds defs
+                 $ acc |> (reAnnot $ ICall Nothing  ct (Just cc') t n (map sub xs) ats) 
 
+
+-- | Lookup the calling convention for the given name.
 callConvOfName :: Module -> Name -> Maybe CallConv
 callConvOfName mm name
         -- Functions defined at top level can have different calling
@@ -199,3 +219,23 @@ mergeCallConvs mc cc
                   [ "DDC.LLVM.Transform.Clean"
                   , "  Not overriding exising calling convention." ]
 
+
+-- Monads -----------------------------------------------------------------------------------------
+type CleanM a = CheckM Int String a
+
+
+{-
+-- | Unique name generation.
+newUnique :: CleanM Int
+newUnique 
+ = do   s       <- get
+        put     $ s + 1
+        return  $ s
+
+
+-- | Generate a new unique register variable with the specified `LlvmType`.
+newUniqueVar :: Type -> CleanM Var
+newUniqueVar t
+ = do   u <- newUnique
+        return $ Var (NameLocal ("_c" ++ show u)) t
+-}
