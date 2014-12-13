@@ -11,18 +11,28 @@ import DDC.Base.Pretty
 instance Pretty Exp where
  ppr xx
   = case xx of
-        XVar v   -> ppr v
-        XLit l   -> ppr l
-        XUndef _ -> text "undef"
+        XVar v          -> ppr v
+        XLit l          -> ppr l
+        XUndef _        -> text "undef"
+        XConv _ c x     -> parens $ ppr c <> ppr x
+
+        XGet  _ x is    
+         ->  parens $ text "getelementptr" 
+         <+> hcat (punctuate (text ", ") (ppr x : map (text . show) is))
 
 
 -- | Pretty print an expression without its type.
 pprPlainX :: Exp -> Doc
 pprPlainX xx
  = case xx of
-        XVar v   -> ppr $ nameOfVar v
-        XLit l   -> pprPlainL l
-        XUndef _ -> text "undef"
+        XVar v          -> ppr $ nameOfVar v
+        XLit l          -> pprPlainL l
+        XUndef _        -> text "undef"
+        XConv _ c x     -> parens $ ppr c <> ppr x
+
+        XGet  _ x is    
+         ->  parens $ text "getelementptr"
+         <+> hcat (punctuate (text ", ") (ppr x : map (text . show) is))
 
 
 instance Pretty Var where

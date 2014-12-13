@@ -29,7 +29,6 @@ import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 import qualified Data.List                      as List
 
-
 -- | Convert a Salt module to LLVM.
 -- 
 --   If anything goes wrong in the convertion then this function will
@@ -47,11 +46,11 @@ convertModule platform mm@(C.ModuleCore{})
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metadata.
         mmElab  = Simp.result $ fst
-                $ State.runState 
-                        (Simp.applySimplifier 
-                                A.profile Env.empty Env.empty 
-                                (Simp.Trans Simp.Elaborate) mm)
-                        state
+                $ flip State.runState state
+                $ Simp.applySimplifier 
+                        A.profile Env.empty Env.empty 
+                        (Simp.Trans Simp.Elaborate)
+                        mm
                         
         -- Convert to LLVM.
         --  The result contains ISet and INop meta instructions that need to be 

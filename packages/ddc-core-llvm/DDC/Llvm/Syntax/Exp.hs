@@ -17,11 +17,20 @@ module DDC.Llvm.Syntax.Exp
         , typeOfLit)
 where
 import DDC.Llvm.Syntax.Type
+import DDC.Llvm.Syntax.Prim
+import DDC.Llvm.Pretty.Prim             ()
 import Data.ByteString                  (ByteString)
 import qualified Data.ByteString        as BS
 
 
 -- Exp ------------------------------------------------------------------------
+-- | Expressions can be used directly as arguments to instructions.
+--
+--   The expressions marked (synthetic) are safe conversions that do not
+--   branch or access memory. In the real LLVM syntax we cannot represent
+--   them as expressions, but they are flattened out to instructions by the
+--   Clean transform.
+--
 data Exp 
         -- | Use of a variable.
         = XVar   Var
@@ -31,6 +40,12 @@ data Exp
 
         -- | An undefined value.
         | XUndef Type
+
+        -- | (synthetic) Cast an expression to the given type.
+        | XConv  Type Conv Exp
+
+        -- | (synthetic) Get a pointer to an element of the expression.
+        | XGet   Type Exp [Integer]
         deriving (Eq, Show)  
 
 
@@ -41,6 +56,9 @@ typeOfExp xx
         XVar   var      -> typeOfVar var
         XLit   lit      -> typeOfLit lit
         XUndef t        -> t
+
+        XConv  t _ _    -> t
+        XGet   t _ _    -> t
 
 
 -- Var ------------------------------------------------------------------------

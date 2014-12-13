@@ -103,7 +103,8 @@ mconvAtom ctx xx
                         -- the returned name.
                         var     <- addConstant (LitString bs)
                         
-                        return  $ XVar var
+                        return  $ XGet (TPointer (TInt 8))
+                                       (XVar var) [0, 0]
 
 
                 A.NameLitTag  tag   

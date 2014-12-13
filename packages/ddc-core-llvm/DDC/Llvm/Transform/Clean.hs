@@ -115,22 +115,22 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
 
 
         IReturn Nothing
-         -> next binds defs $ ins                                       : acc
+         -> next binds defs $ ins                                        : acc
 
         IReturn (Just x)
-         -> next binds defs $ (reAnnot $ IReturn (Just (sub x)))        : acc
+         -> next binds defs $ (reAnnot $ IReturn (Just (sub x)))         : acc
 
         IBranch{}
-         -> next binds defs $ ins                                       : acc
+         -> next binds defs $ ins                                        : acc
 
         IBranchIf x l1 l2
-         -> next binds defs $ (reAnnot $ IBranchIf (sub x) l1 l2)       : acc
+         -> next binds defs $ (reAnnot $ IBranchIf (sub x) l1 l2)        : acc
 
         ISwitch x def alts
-         -> next binds defs $ (reAnnot $ ISwitch   (sub x) def alts)    : acc
+         -> next binds defs $ (reAnnot $ ISwitch   (sub x) def alts)     : acc
 
         IUnreachable
-         -> next binds defs $ ins                                       : acc
+         -> next binds defs $ ins                                        : acc
 
         IOp    v op x1 x2
          |  defs'        <- Map.insert v label defs

@@ -85,8 +85,21 @@ newUniqueLabel name
 --   assigning a new variable to refer to it.
 addConstant :: Lit -> ConvertM Var
 addConstant lit
- = do   v       <- newUniqueVar (typeOfLit lit)
-        s       <- get
-        put     $ s { llvmConstants = Map.insert v lit (llvmConstants s)}
-        return v
+ = do   
+        -- Make a new variable to name the literal constant.
+        vLit@(Var nLit tLit) <- newUniqueVar (typeOfLit lit)
+        s        <- get
+        put     $ s { llvmConstants = Map.insert vLit lit (llvmConstants s)}
+
+        -- Although the constant itself has type tLit, when we refer
+        -- to a global name in the body of the code the reference is 
+        -- has pointer type.
+        let vRef = Var nLit (TPointer tLit)
+        return vRef
+
+
+
+
+
+
 

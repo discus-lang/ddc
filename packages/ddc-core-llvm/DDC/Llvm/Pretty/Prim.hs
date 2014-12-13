@@ -78,8 +78,3 @@ instance Pretty Conv where
         ConvInttoptr    -> text "inttoptr"
         ConvBitcast     -> text "bitcast"
 
-
-
-
-
-
