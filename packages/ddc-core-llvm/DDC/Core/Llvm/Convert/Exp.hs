@@ -158,7 +158,7 @@ convertBody ctx ectx blocks label instrs xx
          C.XLet a (C.LLet (C.BNone t) x1) x2
           | not $ isVoidT t
           -> do n       <- newUnique
-                let b   = C.BName (A.NameVar ("_dummy" ++ show n)) t
+                let b   = C.BName (A.NameVar ("_d" ++ show n)) t
 
                 convertBody ctx ectx blocks label instrs 
                         (C.XLet a (C.LLet b x1) x2)

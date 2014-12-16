@@ -81,10 +81,8 @@ data Instr
         --   INop instructions are erased by the 'Clean' transform.
         | INop
 
-
         -- Phi nodes --------------------------------------
         | IPhi          Var     [(Exp, Label)]
-
 
         -- Terminator Instructions ------------------------
         -- | Return a result.
@@ -104,16 +102,16 @@ data Instr
         -- | Informs the optimizer that instructions after this point are unreachable.
         | IUnreachable
 
-
         -- Binary Operations ------------------------------
         | IOp           Var     Op      Exp     Exp
-
 
         -- Conversion Operations --------------------------
         -- | Cast the variable from to the to type. This is an abstraction of three
         --   cast operators in Llvm, inttoptr, prttoint and bitcast.
         | IConv         Var     Conv    Exp
 
+        -- | Get element pointer.
+        | IGet          Var     Exp     [Exp]
 
         -- Memory Access and Addressing -------------------
         -- | Load a value from memory.
@@ -169,6 +167,7 @@ defVarOfInstr instr
         IUnreachable{}  -> Nothing
         IOp var _ _ _   -> Just var
         IConv var _ _   -> Just var
+        IGet  var _ _   -> Just var
         ILoad var _     -> Just var
         IStore{}        -> Nothing
         IICmp var _ _ _ -> Just var

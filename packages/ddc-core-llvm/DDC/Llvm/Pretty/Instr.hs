@@ -124,6 +124,13 @@ instance Pretty Instr where
                 <+> text "to"
                 <+> ppr (typeOfVar vDst)
 
+        IGet vDst xSrc os
+         -> padVar vDst
+                <+> equals
+                <+> text "getelementptr"
+                <+> (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
+
+
         -- Other operations -------------------------------
         IICmp vDst icond x1 x2
          -> padVar vDst

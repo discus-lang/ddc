@@ -45,7 +45,7 @@ data Exp
         | XConv  Type Conv Exp
 
         -- | (synthetic) Get a pointer to an element of the expression.
-        | XGet   Type Exp [Integer]
+        | XGet   Type Exp [Exp]
         deriving (Eq, Show)  
 
 

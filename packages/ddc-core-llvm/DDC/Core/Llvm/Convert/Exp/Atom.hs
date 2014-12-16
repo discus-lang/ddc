@@ -102,10 +102,12 @@ mconvAtom ctx xx
                         -- These will be allocated in static memory, and given
                         -- the returned name.
                         var     <- addConstant (LitString bs)
+                        let w   = 8 * platformAddrBytes pp
                         
                         return  $ XGet (TPointer (TInt 8))
-                                       (XVar var) [0, 0]
-
+                                       (XVar var) 
+                                       [ XLit (LitInt (TInt w) 0)
+                                       , XLit (LitInt (TInt w) 0) ]
 
                 A.NameLitTag  tag   
                  -> Just $ do
