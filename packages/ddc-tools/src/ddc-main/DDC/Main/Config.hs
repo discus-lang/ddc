@@ -195,7 +195,7 @@ getDefaultConfig
           , configWithSalt        = []
  
             -- Runtime ------------------
-          , configRuntimeHeapSize = 65536
+          , configRuntimeHeapSize = 64 * 1024 * 1024
           , configRuntimeLinkStrategy = D.LinkDefault
  
             -- Intermediates ------------
