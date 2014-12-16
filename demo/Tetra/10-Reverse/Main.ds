@@ -1,5 +1,4 @@
 module Main 
-export main
 import Data.Maybe; Data.List; Data.Numeric.Nat
 import IO.Console
 where
@@ -19,7 +18,7 @@ dumpListNat (xx : List Nat#) : S Console Unit
    box case xx of
         Nil             -> ()
         Cons x xs       
-         -> do  run putStrLn [r] (showNat x)
+         -> do  run putStrLn (showNat [r] x)
                 run dumpListNat xs
 
 

@@ -1,7 +1,6 @@
 
 -- Demonstration of list combinators and combining commutable effects.
 module Main 
-export main 
 import Data.Numeric.Nat
 import Data.Ref; Data.List; Data.Maybe
 import IO.Console

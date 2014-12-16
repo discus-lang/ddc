@@ -52,30 +52,36 @@ toCoreModule a mm
         , C.moduleIsHeader      = False
 
         , C.moduleExportTypes   
-                = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))
-                        | n <- S.moduleExportTypes mm ]
+           = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))
+                | n <- S.moduleExportTypes mm ]
 
         , C.moduleExportValues
-                = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))
-                        | n <- S.moduleExportValues mm ]
+           = [ (toCoreN n, ExportSourceLocalNoType (toCoreN n))
+                | n <- S.moduleExportValues mm ]
+
+           ++ (if C.isMainModuleName (S.moduleName mm)
+                && (not $ elem (S.NameVar "main") $ S.moduleExportValues mm)
+                then [ ( C.NameVar "main"
+                     , ExportSourceLocalNoType (C.NameVar "main"))]
+                else [])
 
         , C.moduleImportTypes   
-                = [ (toCoreN n, toCoreImportSource isrc)
-                        | (n, isrc) <- S.moduleImportTypes mm ]
+           = [ (toCoreN n, toCoreImportSource isrc)
+                | (n, isrc) <- S.moduleImportTypes mm ]
 
         , C.moduleImportValues  
-                = [ (toCoreN n, toCoreImportSource isrc)
-                        | (n, isrc) <- S.moduleImportValues mm ]
+           = [ (toCoreN n, toCoreImportSource isrc)
+                | (n, isrc) <- S.moduleImportValues mm ]
 
         , C.moduleImportDataDefs
-                = []
+           = []
         
         , C.moduleDataDefsLocal 
-                = [ toCoreDataDef def
-                        | S.TopData _ def <- S.moduleTops mm ]
+           = [ toCoreDataDef def
+                | S.TopData _ def <- S.moduleTops mm ]
 
         , C.moduleBody          
-                = C.XLet  a (letsOfTops (S.moduleTops mm))
+           = C.XLet  a (letsOfTops (S.moduleTops mm))
                                         (C.xUnit a) }
 
 
