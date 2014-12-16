@@ -5,8 +5,7 @@ module DDC.Core.Parser.Context
 where
 import DDC.Core.Fragment
 import DDC.Data.SourcePos
-import Data.ByteString.Char8            (ByteString)
-
+import Data.Text                        (Text)
 
 -- | Configuration and information from the context. 
 --   Used for context sensitive parsing.
@@ -17,7 +16,7 @@ data Context n
         , contextFunctionalEffects      :: Bool
         , contextFunctionalClosures     :: Bool 
 
-        , contextMakeStringName         :: SourcePos -> ByteString -> Maybe n }
+        , contextMakeStringName         :: SourcePos -> Text -> Maybe n }
 
 
 -- | Slurp an initital `Context` from a language `Profile`.

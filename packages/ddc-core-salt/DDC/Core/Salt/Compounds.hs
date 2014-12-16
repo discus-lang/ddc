@@ -17,7 +17,7 @@ where
 import DDC.Core.Salt.Name
 import DDC.Core.Exp
 import DDC.Core.Compounds
-import Data.ByteString          (ByteString)
+import Data.Text                (Text)
 
 -- Regions --------------------------------------------------------------------
 -- | The top-level region.
@@ -104,7 +104,7 @@ dcNat i   = DaConPrim (NameLitNat i) tNat
 
 
 -- | String literal.
-xString :: a -> ByteString -> Exp a Name
-xString a bs    = XCon a (DaConPrim (NameLitString bs) (tPtr rTop (tWord 8)))
+xString :: a -> Text -> Exp a Name
+xString a tx    = XCon a (DaConPrim (NameLitString tx) (tPtr rTop (tWord 8)))
 
 

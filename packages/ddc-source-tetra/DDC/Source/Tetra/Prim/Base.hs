@@ -11,7 +11,7 @@ import DDC.Core.Tetra
         , PrimTyCon     (..)
         , PrimArith     (..))
 
-import Data.ByteString  (ByteString)
+import Data.Text        (Text)
 
 
 -- | Names of things used in Disciple Source Tetra.
@@ -64,7 +64,7 @@ data Name
         --   Although these are represented as array literals at runtime,
         --   they have a special syntax which we want to preserve during
         --   program transformation.
-        | NameLitString         ByteString
+        | NameLitString         Text
 
         -- Inference ----------------------------
         -- | A hole used during type inference.

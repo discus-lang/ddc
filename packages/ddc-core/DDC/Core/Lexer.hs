@@ -21,11 +21,12 @@ import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
 import DDC.Data.Token
 import Data.Char
-import Data.List
-import qualified Data.ByteString.Char8  as BS
+import Data.Text                        (Text)
+import qualified Data.Text              as T
+import Data.Monoid
 
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 -- | Lex a module and apply the offside rule.
 --
 --   Automatically drop comments from the token stream along the way.
@@ -41,10 +42,11 @@ lexModuleWithOffside sourceName lineStart str
         applyOffside [] []
         $ addStarts
         $ dropComments 
-        $ lexString sourceName lineStart str
+        $ lexText sourceName lineStart 
+        $ T.pack str
 
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 -- | Lex a string into tokens.
 --
 --   Automatically drop comments from the token stream along the way.
@@ -58,140 +60,187 @@ lexExp sourceName lineStart str
  = {-# SCC lexExp #-}
         dropNewLines
         $ dropComments
-        $ lexString sourceName lineStart str
+        $ lexText sourceName lineStart 
+        $ T.pack str
 
 
--- Generic --------------------------------------------------------------------
-lexString :: String -> Int -> String -> [Token (Tok String)]
-lexString sourceName lineStart str
-        = lexWord lineStart 1 str
+-- Generic ----------------------------------------------------------------------------------------
+-- Tokenize some input text.
+--
+-- NOTE: Although the main interface for the lexer uses standard Haskell strings,
+--       we're using Text internally to get proper unicode tokenization.
+--       Eventually, we should refactor the API to only pass around Text, rather
+--       than Strings.
+--
+lexText :: String       -- ^ Name of source file, which is attached to the tokens.
+        -> Int          -- ^ Starting line number.
+        -> Text         -- ^ Text to tokenize.
+        -> [Token (Tok String)]
+
+lexText sourceName lineStart xx
+ = lexWord lineStart 1 xx
  where 
-  lexWord :: Int -> Int -> String -> [Token (Tok String)]
+
+  lexWord :: Int -> Int -> Text -> [Token (Tok String)]
   lexWord line column w
-   = let  tok t = Token t (SourcePos sourceName line column)
-          tokM  = tok . KM
-          tokA  = tok . KA
-          tokN  = tok . KN
+   = match w
+   where
+        tok t = Token t (SourcePos sourceName line column)
+        tokM  = tok . KM
+        tokA  = tok . KA
+        tokN  = tok . KN
 
-          lexUpto pat rest
-           = case dropWhile (not . isPrefixOf pat) (tails rest) of
-                (x:_)   -> x
-                _       -> []
+        lexMore n rest
+         = lexWord line (column + n) rest
 
-          lexMore n rest
-           = lexWord line (column + n) rest
+        lexUpto pat rest
+         = case dropWhile (not . T.isPrefixOf pat) (T.tails rest) of
+                x : _   -> x
+                _       -> T.empty
 
-     in case w of
-        []               -> []        
+        txt           = T.pack 
+        prefix str    = T.stripPrefix (T.pack str)
 
-        -- Whitespace
-        ' '  : w'        -> lexMore 1 w'
-        '\t' : w'        -> lexMore 8 w'
+        match cs
+         | T.null cs
+         = []
 
-        -- Literal numeric values
-        -- This needs to come before the rule for '-'
-        c : cs
-         | isDigit c
-         , (body, rest)         <- span isLitBody cs
-         -> tokN (KLit (c:body))     : lexMore (length (c:body)) rest
+         -- Whitespace
+         | Just (' ', rest)     <- T.uncons cs
+         = lexMore 1 rest
 
-        '-' : c : cs
-         | isDigit c
-         , (body, rest)         <- span isLitBody cs
-         -> tokN (KLit ('-':c:body)) : lexMore (length (c:body)) rest
+         | Just ('\t', rest)    <- T.uncons cs
+         = lexMore 8 rest
 
-        -- Literal strings
-        '\"' : cc
-         -> let eat _ _   []                 = [tok $ KErrorUnterm w]
-                eat n acc ('\\' : '"' : cs)  = eat (n + 2) ('"' : acc) cs
-                eat n acc ('"' : cs)         = tokA (KString (BS.pack (reverse acc))) 
-                                                  : lexWord line (column + n) cs
-                eat n acc (c : cs)           = eat (n + 1) (c : acc) cs
-             in eat 0 [] cc
+         -- Meta tokens
+         | Just rest            <- T.stripPrefix (txt "{-") cs
+         = tokM KCommentBlockStart      : lexMore 2 (lexUpto (txt "-}") rest)
 
-        -- Meta tokens
-        '{'  : '-' : w'
-         -> tokM KCommentBlockStart  : lexMore 2 (lexUpto "-}" w')
+         | Just rest            <- T.stripPrefix (txt "-}") cs
+         = tokM KCommentBlockEnd        : lexMore 2 rest
 
-        '-'  : '}' : w'
-         -> tokM KCommentBlockEnd    : lexMore 2 w'
+         | Just cs1             <- T.stripPrefix (txt "--") cs
+         , (_junk, rest)        <- T.span (/= '\n') cs1
+         = tokM KCommentLineStart       : lexMore 2 rest
 
-        '-'  : '-' : w'  
-         -> let  (_junk, w'') = span (/= '\n') w'
-            in   tokM KCommentLineStart  : lexMore 2 w''
+         | Just ('\n', rest)    <- T.uncons cs
+         = tokM KNewLine                : lexWord (line + 1) 1 rest
 
-        '\n' : w'        -> tokM KNewLine        : lexWord (line + 1) 1 w'
+         -- Double character symbols.
+         | not (T.compareLength cs 2 == LT)
+         , (cs1, rest)          <- T.splitAt 2 cs
+         , Just t      
+            <- case T.unpack cs1 of
+                "[:"            -> Just KSquareColonBra
+                ":]"            -> Just KSquareColonKet
+                "{:"            -> Just KBraceColonBra
+                ":}"            -> Just KBraceColonKet
+                "~>"            -> Just KArrowTilde
+                "->"            -> Just KArrowDash
+                "<-"            -> Just KArrowDashLeft
+                "=>"            -> Just KArrowEquals
+                "/\\"           -> Just KBigLambda
+                "()"            -> Just KDaConUnit
+                _               -> Nothing
+         = tokA t : lexMore 2 rest
 
-        -- Wrapper operator symbols.
-        '(' : c : cs 
-         | isOpStart c
-         , (body, ')' : w')     <- span isOpBody cs
-         -> tokA (KOpVar (c : body))             : lexMore (2 + length (c : body)) w'
 
-        -- The unit data constructor
-        '(' : ')' : w'   -> tokA KDaConUnit      : lexMore 2 w'
+         -- Wrapped operator symbols.
+         -- This needs to come before lexing single character symbols.
+         | Just ('(', cs1)      <- T.uncons cs
+         , Just (c,   cs2)      <- T.uncons cs1
+         , isOpStart c
+         , (body, cs3)          <- T.span isOpBody cs2
+         , Just (')', rest)     <- T.uncons cs3
+         = tokA (KOpVar (T.unpack (T.cons c body))) 
+                                                : lexMore (2 + T.length (T.cons c body)) rest
 
-        -- Compound Parens
-        '['  : ':' : w'  -> tokA KSquareColonBra : lexMore 2 w'
-        ':'  : ']' : w'  -> tokA KSquareColonKet : lexMore 2 w'
-        '{'  : ':' : w'  -> tokA KBraceColonBra  : lexMore 2 w'
-        ':'  : '}' : w'  -> tokA KBraceColonKet  : lexMore 2 w'
+         -- Single character symbols.
+         | Just (c, rest)       <- T.uncons cs
+         , Just t
+            <- case c of
+                '('             -> Just KRoundBra
+                ')'             -> Just KRoundKet
+                '['             -> Just KSquareBra
+                ']'             -> Just KSquareKet
+                '{'             -> Just KBraceBra
+                '}'             -> Just KBraceKet
+                '.'             -> Just KDot
+                ','             -> Just KComma
+                ';'             -> Just KSemiColon
+                '\\'            -> Just KBackSlash
+                _               -> Nothing
+         = tokA t : lexMore 1 rest
 
-        -- Function Constructors
-        '~'  : '>'  : w' -> tokA KArrowTilde     : lexMore 2 w'
-        '-'  : '>'  : w' -> tokA KArrowDash      : lexMore 2 w'
-        '<'  : '-'  : w' -> tokA KArrowDashLeft  : lexMore 2 w'
-        '='  : '>'  : w' -> tokA KArrowEquals    : lexMore 2 w'
+         -- Literal numeric values
+         -- This needs to come before the rule for '-'
+         | Just (c, cs1)        <- T.uncons cs
+         , isDigit c
+         , (body, rest)         <- T.span isLitBody cs1
+         = let  str             =  T.unpack (T.cons c body)
+           in   tokN (KLit str) : lexMore (length str) rest
 
-        -- Compound symbols
-        '/'  : '\\' : w' -> tokA KBigLambda      : lexMore 2 w'
+         | Just ('-', cs1)      <- T.uncons cs
+         , Just (c,   _)        <- T.uncons cs1
+         , isDigit c
+         = let  (body, rest)   = T.span isLitBody cs1
+                str            = T.unpack (T.cons '-' body)
+           in   tokN (KLit str) : lexMore (length str) rest
 
-        -- Debruijn indices
-        '^'  : cs
-         |  (ds, rest)   <- span isDigit cs
-         ,  length ds >= 1
-         -> tokA (KIndex (read ds))              : lexMore (1 + length ds) rest         
+         -- Literal strings.
+         -- We force these to be null terminated so the representation is compatable
+         -- with C string functions.
+         | Just ('\"', cc)      <- T.uncons cs
+         = let 
+                eat n acc xs
+                 | Just ('\\', xs1)     <- T.uncons xs
+                 , Just ('"',  xs2)     <- T.uncons xs1
+                 = eat (n + 2) ('"' : acc) xs2
 
-        -- Parens
-        '('  : w'       -> tokA KRoundBra        : lexMore 1 w'
-        ')'  : w'       -> tokA KRoundKet        : lexMore 1 w'
-        '['  : w'       -> tokA KSquareBra       : lexMore 1 w'
-        ']'  : w'       -> tokA KSquareKet       : lexMore 1 w'
-        '{'  : w'       -> tokA KBraceBra        : lexMore 1 w'
-        '}'  : w'       -> tokA KBraceKet        : lexMore 1 w'
+                 | Just ('"',  xs1)     <- T.uncons xs
+                 = tokA (KString (T.pack (reverse acc ++ [chr 0])))
+                 : lexWord line (column + n) xs1
+
+                 | Just (c,    xs1)     <- T.uncons xs
+                 = eat (n + 1) (c : acc) xs1
+
+                 | otherwise
+                 = [tok $ KErrorUnterm (T.unpack cs)]
+
+           in eat 0 [] cc
+
+         -- Debruijn indices
+         | Just ('^', cs1)      <- T.uncons cs
+         , (ds, rest)           <- T.span isDigit cs1
+         , T.length ds >= 1
+         = tokA (KIndex (read (T.unpack ds)))   : lexMore (1 + T.length ds) rest         
+
+         -- Operator symbols.
+         | Just (c, cs1)        <- T.uncons cs
+         , isOpStart c
+         , (body, rest)         <- T.span isOpBody cs1
+         = tokA (KOp (T.unpack (T.cons c body))) : lexMore (1 + T.length body) rest
         
-        -- Punctuation Symbols
-        '.'  : w'       -> tokA KDot             : lexMore 1 w'
-        ','  : w'       -> tokA KComma           : lexMore 1 w'
-        ';'  : w'       -> tokA KSemiColon       : lexMore 1 w'
-        '\\' : w'       -> tokA KBackSlash       : lexMore 1 w'
+         -- Operator body symbols.
+         | Just ('^', rest)     <- T.uncons cs
+         = tokA KHat                            : lexMore 1 rest
 
-        -- Operator symbols.
-        c : cs
-         |  isOpStart c
-         ,  (body, rest)         <- span isOpBody cs
-         -> tokA (KOp (c : body))                : lexMore (length (c : body)) rest
-        
-        -- Operator body symbols.
-        '^'  : w'       -> tokA KHat             : lexMore 1 w'
+         -- Bottoms
+         | Just rest            <- prefix "Pure" cs
+         = tokA KBotEffect                      : lexMore 4 rest
 
-        -- Bottoms
-        name
-         |  Just w'     <- stripPrefix "Pure"  name 
-         -> tokA KBotEffect   : lexMore 2 w'
-         
-         |  Just w'     <- stripPrefix "Empty" name 
-         -> tokA KBotClosure  : lexMore 2 w'
+         | Just rest            <- prefix "Empty" cs
+         = tokA KBotClosure                     : lexMore 5 rest
 
-        -- Named Constructors
-        c : cs
-         | isConStart c
-         , (body,  rest)        <- span isConBody cs
-         , (body', rest')       <- case rest of
-                                        '\'' : rest'    -> (body ++ "'", rest')
-                                        '#'  : rest'    -> (body ++ "#", rest')
-                                        _               -> (body, rest)
-         -> let readNamedCon s
+         -- Named Constructors
+         | Just (c, cs1)        <- T.uncons cs
+         , isConStart c
+         , (body,  rest)        <- T.span isConBody cs1
+         , (body', rest')       <- case T.uncons rest of
+                                        Just ('\'', rest') -> (body <> T.pack "'", rest')
+                                        Just ('#',  rest') -> (body <> T.pack "#", rest')
+                                        _                  -> (body, rest)
+         = let readNamedCon s
                  | Just socon   <- readSoConBuiltin s
                  = tokA (KSoConBuiltin socon)    : lexMore (length s) rest'
 
@@ -210,34 +259,34 @@ lexString sourceName lineStart str
                  | otherwise    
                  = [tok (KErrorJunk [c])]
                  
-            in  readNamedCon (c : body')
+            in  readNamedCon (T.unpack (T.cons c body'))
 
-        -- Keywords, Named Variables and Witness constructors
-        c : cs
-         | isVarStart c
-         , (body,  rest)        <- span isVarBody cs
-         , (body', rest')       <- case rest of
-                                        '#' : rest'     -> (body ++ "#", rest')
-                                        _               -> (body, rest)
-         -> let readNamedVar s
-                 | "_"     <- s
+         -- Keywords, Named Variables and Witness constructors
+         | Just (c, cs1)         <- T.uncons cs
+         , isVarStart c
+         , (body,  rest)         <- T.span isVarBody cs1
+         , (body', rest')        <- case T.uncons rest of
+                                        Just ('#', rest') -> (body <> T.pack "#", rest')
+                                        _                 -> (body, rest)
+         = let readNamedVar s
+                 | "_"          <- s
                  = tokA KUnderscore        : lexMore (length s) rest'
 
-                 | Just t  <- lookup s keywords
+                 | Just t       <- lookup s keywords
                  = tok t                   : lexMore (length s) rest'
 
-                 | Just wc <- readWbConBuiltin s
+                 | Just wc      <- readWbConBuiltin s
                  = tokA (KWbConBuiltin wc) : lexMore (length s) rest'
          
-                 | Just v  <- readVar s
+                 | Just v       <- readVar s
                  = tokN (KVar v)           : lexMore (length s) rest'
 
                  | otherwise
                  = [tok (KErrorJunk [c])]
 
-            in  readNamedVar (c : body')
+            in  readNamedVar (T.unpack (T.cons c body'))
 
-        -- Some unrecognised character.
-        -- We still need to keep lexing as this may be in a comment.
-        c : cs   -> (tok $ KErrorJunk [c]) : lexMore 1 cs
+         -- Some unrecognised character.
+         | otherwise
+         = [tok $ KErrorJunk (T.unpack cs)]
 

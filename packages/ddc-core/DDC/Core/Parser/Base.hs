@@ -20,7 +20,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
-import Data.ByteString                  (ByteString)
+import Data.Text                        (Text)
 import qualified DDC.Base.Parser        as P
 
 -- | A parser of core language tokens.
@@ -109,16 +109,16 @@ pLitSP  = P.pTokMaybeSP f
 
 
 -- | Parse a literal.
-pString :: Parser n ByteString
+pString :: Parser n Text
 pString    = P.pTokMaybe f
- where  f (KA (KString bs)) = Just bs
+ where  f (KA (KString tx)) = Just tx
         f _                 = Nothing
 
 
 -- | Parse a literal string, with source position.
-pStringSP :: Parser n (ByteString, SourcePos)
+pStringSP :: Parser n (Text, SourcePos)
 pStringSP  = P.pTokMaybeSP f
- where  f (KA (KString bs)) = Just bs
+ where  f (KA (KString tx)) = Just tx
         f _                 = Nothing
 
 

@@ -13,7 +13,7 @@ module DDC.Core.Tetra.Prim.Base
         , PrimCast      (..))
 where
 import Data.Typeable
-import Data.ByteString.Char8    (ByteString)
+import Data.Text        (Text)
 import DDC.Core.Salt.Name
         ( PrimTyCon     (..)
         , PrimArith     (..)
@@ -78,7 +78,7 @@ data Name
         --   Although these are represented as arrays of bytes at runtime, 
         --   they are baked into the language because we want to use a special 
         --   syntax when pretty printing the literals.
-        | NameLitString         ByteString
+        | NameLitString         Text
 
         -- Wrappers -----------------------------
         -- | Wrapper to indicate an explicitly unboxed literal.

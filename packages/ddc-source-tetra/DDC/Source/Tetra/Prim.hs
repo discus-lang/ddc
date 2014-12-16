@@ -28,7 +28,7 @@ import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
-import qualified Data.ByteString.Char8  as BS
+import qualified Data.Text              as T
 
 import DDC.Core.Tetra   
         ( readPrimTyCon
@@ -76,7 +76,7 @@ instance Pretty Name where
         NameLitSize    s        -> integer s <> text "s"
         NameLitWord    i bits   -> integer i <> text "w" <> int bits
         NameLitFloat   f bits   -> double  f <> text "f" <> int bits
-        NameLitString  bs       -> text (show $ BS.unpack bs)
+        NameLitString  tx       -> text (show $ T.unpack tx)
 
         NameHole                -> text "?"
 

@@ -20,7 +20,7 @@ where
 import DDC.Core.Pretty
 import DDC.Core.Exp
 import Control.Monad
-import Data.ByteString          (ByteString)
+import Data.Text                (Text)
 
 
 -- TokenFamily ----------------------------------------------------------------
@@ -236,7 +236,7 @@ data TokAtom
         | KIndex Int
 
         -- literal strings
-        | KString ByteString
+        | KString Text
 
         -----------------------------------------
         -- builtin names 

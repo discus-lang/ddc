@@ -72,8 +72,8 @@ import Data.Typeable
 import Data.Char
 import Data.List
 import Control.DeepSeq
-import Data.ByteString.Char8            (ByteString)
-import qualified Data.ByteString.Char8  as BS
+import Data.Text                        (Text)
+import qualified Data.Text              as T
 
 
 -- | Names of things used in Disciple Core Salt.
@@ -118,7 +118,7 @@ data Name
         | NameLitFloat  Double  Int
 
         -- | A string literal.
-        | NameLitString ByteString
+        | NameLitString Text
 
         -- | A constructor tag literal.
         | NameLitTag    Integer
@@ -162,7 +162,7 @@ instance Pretty Name where
         NameLitSize  i          -> integer i <> text "s#"
         NameLitWord  i bits     -> integer i <> text "w" <> int bits <> text "#"
         NameLitFloat f bits     -> double  f <> text "f" <> int bits <> text "#"
-        NameLitString bs        -> (text $ show $ BS.unpack bs) <> text "#"
+        NameLitString tx        -> (text $ show $ T.unpack tx) <> text "#"
         NameLitTag   i          -> text "TAG" <> integer i <> text "#"
 
 

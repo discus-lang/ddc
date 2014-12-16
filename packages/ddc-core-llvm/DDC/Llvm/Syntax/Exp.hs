@@ -19,8 +19,8 @@ where
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Syntax.Prim
 import DDC.Llvm.Pretty.Prim             ()
-import Data.ByteString                  (ByteString)
-import qualified Data.ByteString        as BS
+import Data.Text                        (Text)
+import qualified Data.Text              as T
 
 
 -- Exp ------------------------------------------------------------------------
@@ -103,7 +103,7 @@ data Lit
         -- | A string literal.
         --   In LLVM these have the same type as array literals, but have a
         --   special syntax.
-        | LitString     ByteString
+        | LitString     Text
 
         -- | A null pointer literal.
         --   Only applicable to pointer types
@@ -120,7 +120,7 @@ typeOfLit ll
  = case ll of
         LitInt    t _   -> t
         LitFloat  t _   -> t
-        LitString bs    -> TArray (fromIntegral $ BS.length bs) (TInt 8)
+        LitString bs    -> TArray (fromIntegral $ T.length bs) (TInt 8)
         LitNull   t     -> t
         LitUndef  t     -> t
 
