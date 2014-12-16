@@ -1,0 +1,17 @@
+
+module Main 
+import Data.Stream
+import System.IO.Console
+where
+
+thing (x : Nat#) : Nat# = add x 1
+plus  (x y : Nat#) : Nat# = add x y
+
+main (_ : Unit) : S Console Unit
+ = do   
+
+        xx1     = enumFromTo 0 100
+        ss1     = streamOfList xx1
+        ss2     = stake 10 (smap thing ss1)
+        xx2     = listOfStream ss2
+        putStrLn (showNat (foldl plus 0 xx2))
