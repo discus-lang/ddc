@@ -5,7 +5,7 @@ export {
 }
 import foreign c value {
         showInt   : [r : Region].Int# -> Ptr# r Word8#;
-        putStrLn  : [r : Region].Ptr# r Word8# -> Void#;
+        putStr_v  : [r : Region].Ptr# r Word8# -> Void#;
 }
 with letrec {
 
@@ -99,7 +99,7 @@ main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 (Ptr# r1 Word8#)) : Int#
         x2      = fac [r1] [r2] x;
         x2u     = unboxWord32 [r2] x2;
         str     = showInt [r2] (truncate# [Int#] [Word32#] x2u);
-        putStrLn [r2] str;
+        putStr_v [r2] str;
 
         return# [Int#] 0i#;
       };

@@ -2,7 +2,10 @@
 module Data.Numeric.Nat
 
 export  { neg; add; sub; mul; div
-        ; eq;  neq; lt;  le;  gt;  ge } 
+        ; eq;  neq; lt;  le;  gt;  ge }
+
+import foreign c value
+ showNat   : Nat# -> String#
 
 where
 

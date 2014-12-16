@@ -15,8 +15,7 @@ data Context n
         , contextTrackedClosures        :: Bool
         , contextFunctionalEffects      :: Bool
         , contextFunctionalClosures     :: Bool 
-
-        , contextMakeStringName         :: SourcePos -> Text -> Maybe n }
+        , contextMakeStringName         :: Maybe (SourcePos -> Text -> n) }
 
 
 -- | Slurp an initital `Context` from a language `Profile`.
@@ -35,5 +34,5 @@ contextOfProfile profile
         , contextFunctionalClosures     = featuresFunctionalClosures
                                         $ profileFeatures profile
 
-        , contextMakeStringName         = \_ _ -> Nothing
+        , contextMakeStringName         = profileMakeStringName profile
         }

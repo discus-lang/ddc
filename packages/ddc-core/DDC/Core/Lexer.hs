@@ -197,8 +197,12 @@ lexText sourceName lineStart xx
                  , Just ('"',  xs2)     <- T.uncons xs1
                  = eat (n + 2) ('"' : acc) xs2
 
+                 | Just ('\\', xs1)     <- T.uncons xs
+                 , Just ('n',  xs2)     <- T.uncons xs1
+                 = eat (n + 2) ('\n' : acc) xs2
+
                  | Just ('"',  xs1)     <- T.uncons xs
-                 = tokA (KString (T.pack (reverse acc ++ [chr 0])))
+                 = tokA (KString (T.pack (reverse acc)))
                  : lexWord line (column + n) xs1
 
                  | Just (c,    xs1)     <- T.uncons xs

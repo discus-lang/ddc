@@ -141,7 +141,7 @@ typeOfLit ll
 -- | Make a literal string from some text.
 makeLitString :: Text -> Lit
 makeLitString tx
- = let  (txEnc, nEncLen) = encodeText tx
+ = let  (txEnc, nEncLen) = encodeText (tx `T.append` (T.pack [chr 0]))
    in   LitString tx txEnc nEncLen
 
 

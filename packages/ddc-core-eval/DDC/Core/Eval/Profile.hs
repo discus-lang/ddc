@@ -18,7 +18,8 @@ evalProfile
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv 
         , profileTypeIsUnboxed          = const False 
-        , profileNameIsHole             = Nothing }
+        , profileNameIsHole             = Nothing 
+        , profileMakeStringName         = Nothing }
 
 
 -- | Language features used by the eval fragment.

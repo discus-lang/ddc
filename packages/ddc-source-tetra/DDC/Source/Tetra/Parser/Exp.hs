@@ -47,7 +47,7 @@ context = Context
         , contextTrackedClosures        = True
         , contextFunctionalEffects      = False
         , contextFunctionalClosures     = False 
-        , contextMakeStringName         = \_ bs -> Just (NameLitString bs) }
+        , contextMakeStringName         = Just (\_ tx -> NameLitString tx) }
 
 
 
@@ -253,8 +253,9 @@ pExpAtomSP c
  , do   (lit, sp)       <- pLitSP
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
- , do   (bs, sp)        <- pStringSP
-        let Just lit    =  contextMakeStringName c sp bs
+ , do   (tx, sp)        <- pStringSP
+        let Just mkString = contextMakeStringName c 
+        let lit           = mkString sp tx
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
         -- Debruijn indices

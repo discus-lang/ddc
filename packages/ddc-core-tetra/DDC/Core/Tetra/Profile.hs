@@ -27,7 +27,8 @@ profile
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
         , profileTypeIsUnboxed          = const False 
-        , profileNameIsHole             = Just isNameHole }
+        , profileNameIsHole             = Just isNameHole 
+        , profileMakeStringName         = Just (\_ t -> NameLitString t) }
 
 
 features :: Features

@@ -1,12 +1,26 @@
 
 module System.IO.Console 
-
+export putStrLn
 
 import foreign abstract type
  Console  : Effect
 
 import foreign c value
- putStrLn : String# -> S Console Void#
- showNat  : [r : Region]. Nat# -> String#
+ putStr_v  : String# -> S Console Void#
 
+where
+
+-- | Print a string to stdout.
+putStr (s : String#) : S Console Unit
+ = box do
+        run putStr_v s
+        ()
+
+
+-- | Print a string with a trailing newline to stdout.
+putStrLn (s : String#) : S Console Unit
+ = box do
+        run putStr_v s
+        run putStr_v "\n"
+        ()
 

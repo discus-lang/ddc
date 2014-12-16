@@ -24,14 +24,7 @@ string_t* showNat (nat_t i)
 
 
 // Print a string to stdout.
-void putStr (string_t* str)
+void putStr_v (string_t* str)
 {       fputs(str, stdout);
-}
-
-
-// Print a string to stdout, with a newline.
-void putStrLn (string_t* str)
-{       fputs(str,  stdout);
-        fputs("\n", stdout);
 }
 

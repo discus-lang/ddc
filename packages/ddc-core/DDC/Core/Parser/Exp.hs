@@ -236,6 +236,11 @@ pExpAtomSP c
  , do   (lit, sp)       <- pLitSP
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
+ , do   (tx, sp)        <- pStringSP
+        let Just mkString = contextMakeStringName c
+        let lit           = mkString sp tx
+        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
+
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
         return  (XVar sp (UIx   i), sp)

@@ -113,8 +113,7 @@ bool_t  _CHECK (nat_t bytes)
 
 // Other primitives -----------------------------------------------------------
 // These are defined in C land and linked into the runtime library.
-extern string_t* showInt  (int   i);
-extern string_t* showNat  (nat_t i);
-extern void      putStr   (string_t* str);
-extern void      putStrLn (string_t* str);
+extern string_t* showInt    (int   i);
+extern string_t* showNat    (nat_t i);
+extern void      putStr_v   (string_t* str);
 

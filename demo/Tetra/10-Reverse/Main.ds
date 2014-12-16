@@ -14,11 +14,10 @@ reverseAcc2 (acc xx : List a) : List a
 
 
 dumpListNat (xx : List Nat#) : S Console Unit
- = private r in
-   box case xx of
+ = box case xx of
         Nil             -> ()
         Cons x xs       
-         -> do  run putStrLn (showNat [r] x)
+         -> do  run putStrLn (showNat x)
                 run dumpListNat xs
 
 

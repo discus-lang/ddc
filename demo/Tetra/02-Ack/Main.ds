@@ -13,8 +13,5 @@ ack (m : Nat#) (n : Nat#) : Nat#
 
 
 main (_ : Unit) : S Console Unit
- = private r in
-   box do
-        run putStrLn (showNat [r] (ack 3 2))
-        ()
+ = putStrLn (showNat (ack 3 2))
 

@@ -74,5 +74,5 @@ main (_ : Unit) : S Console Unit
         xx'     = run filterS (\(x : Nat#). box rem# x 2 == 0) xx
 
         -- Print out the final list length.
-        run putStrLn (showNat [r] (length xx'))
+        run putStrLn (showNat (length xx'))
         ()

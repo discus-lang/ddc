@@ -12,8 +12,5 @@ fac (acc : Nat#) (n : Nat#) : Nat#
 
 
 main (_ : Unit) : S Console Unit
- = private r in
-   box do
-        run putStrLn (showNat [r] (fac 1 10))
-        ()
+ = putStrLn (showNat (fac 1 10))
         

@@ -22,10 +22,10 @@ main (_ : Unit) : S Console Unit
         -- the elements to the console.
         run forS xx' (\(x : Nat#).
          box do run writeRef ref ((run readRef ref) + 1)
-                run putStrLn (showNat [r] x)
+                run putStrLn (showNat x)
                 ())
         
         -- Print out the final list length.
-        run putStrLn (showNat [r] (run readRef ref))
+        run putStrLn (showNat (run readRef ref))
         ()
 

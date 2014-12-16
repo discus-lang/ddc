@@ -1,13 +1,14 @@
 
 module Main 
 import Data.List
+import Data.Numeric.Nat
 import System.IO.Console
 where
 
 main (_ : Unit) : S Console Unit
  = box private r with { Alloc r; Read r } in
    do
-        run putStrLn (showNat [r] 5)
+        run putStrLn (showNat 5)
         ()
 
 

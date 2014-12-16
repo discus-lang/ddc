@@ -12,7 +12,9 @@ import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Type.Env                     (KindEnv, TypeEnv)
+import DDC.Data.SourcePos
 import qualified DDC.Type.Env           as Env
+import Data.Text                        (Text)
 
 
 -- | The fragment profile describes the language features and 
@@ -40,7 +42,10 @@ data Profile n
 
           -- | Check whether some name represents a hole that needs
           --   to be filled in by the type checker.
-        , profileNameIsHole             :: !(Maybe (n -> Bool)) }
+        , profileNameIsHole             :: !(Maybe (n -> Bool)) 
+
+          -- | Embed a literal string in a name.
+        , profileMakeStringName         :: Maybe (SourcePos -> Text -> n) }
 
 
 -- | A language profile with no features or primitive operators.
@@ -55,7 +60,8 @@ zeroProfile
         , profilePrimKinds              = Env.empty
         , profilePrimTypes              = Env.empty
         , profileTypeIsUnboxed          = const False 
-        , profileNameIsHole             = Nothing }
+        , profileNameIsHole             = Nothing 
+        , profileMakeStringName         = Nothing }
 
 
 -- | A flattened set of features, for easy lookup.
