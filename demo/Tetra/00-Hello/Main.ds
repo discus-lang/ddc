@@ -1,0 +1,10 @@
+
+module Main 
+export main
+import IO.Console
+where
+
+main (_ : Unit) : S Console Unit
+ = box do
+        run putStrLn "hello"
+        ()
