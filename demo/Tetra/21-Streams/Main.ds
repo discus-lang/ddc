@@ -4,6 +4,8 @@ import Data.Stream
 import System.IO.Console
 where
 
+-- BROKEN: can't partially apply the add fn directly,
+-- as cannot get arity of fn compiled in other module.
 thing (x : Nat#) : Nat# = add x 1
 plus  (x y : Nat#) : Nat# = add x y
 
