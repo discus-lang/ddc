@@ -70,6 +70,7 @@ module DDC.Llvm.Syntax
           -- * Literals
         , Lit           (..)
         , typeOfLit
+        , makeLitString
 
           -- * Primitive operators
         , Op            (..)

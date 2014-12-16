@@ -96,12 +96,12 @@ mconvAtom ctx xx
                         t' <- convertType pp kenv t
                         return $ XLit (LitFloat t' val)
 
-                A.NameLitString bs
+                A.NameLitString tx
                  -> Just $ do
                         -- Add string constant to the constants map.
                         -- These will be allocated in static memory, and given
                         -- the returned name.
-                        var     <- addConstant (LitString bs)
+                        var     <- addConstant $ makeLitString tx
                         let w   = 8 * platformAddrBytes pp
                         
                         return  $ XGet (TPointer (TInt 8))

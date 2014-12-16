@@ -6,8 +6,7 @@ where
 import DDC.Llvm.Syntax.Exp
 import DDC.Llvm.Pretty.Type             ()
 import DDC.Base.Pretty
-import Data.Char
-import Numeric
+import Data.Text                        (Text)
 import qualified Data.Text              as T
 
 
@@ -52,12 +51,12 @@ instance Pretty Lit where
   = case ll of
         LitInt   t i    -> ppr t <+> integer i
         LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
-
-        LitString bs    ->  ppr (typeOfLit ll)
-                        <+> text "c" <> text (encodeString $ T.unpack bs)
-
         LitNull  t      -> ppr t <+> text "null"
         LitUndef _      -> text "undef"
+
+        LitString _ txEnc _   
+         ->  ppr (typeOfLit ll)
+         <+> text "c" <> pprString txEnc
 
 
 
@@ -67,29 +66,17 @@ pprPlainL ll
  = case ll of
         LitInt _ i      -> integer i
         LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
-        LitString bs    -> text "c" <> text (show bs)
         LitNull  _      -> text "null"
         LitUndef _      -> text "undef"
 
+        LitString _ txEnc _  
+         -> text "c" <> pprString txEnc
 
--- | Hex encode non-printable characters in this string.
-encodeString :: String -> String
-encodeString xx
- = "\"" ++ (go [] xx) ++ "\""
- where  go acc []       = reverse acc
-        go acc (x : xs)
-         |   x == ' '
-          || (isAscii x && isAlphaNum x)
-          || (isAscii x && isPunctuation x && x /= '"')
-         = go (x : acc) xs
 
-         | otherwise
-         = go (reverse (encode x) ++ acc) xs
+pprString :: Text -> Doc
+pprString tx
+ = text "\"" <> text (T.unpack tx) <> text "\""
 
-        encode c
-         = "\\" ++ (padL $ showHex (ord c) "")
 
-        padL x
-         | length x == 0  = "00"
-         | length x == 1  = "0"  ++ x
-         | otherwise      = x
+
+

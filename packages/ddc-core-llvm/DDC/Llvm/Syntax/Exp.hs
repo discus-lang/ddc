@@ -14,13 +14,18 @@ module DDC.Llvm.Syntax.Exp
 
           -- * Literals
         , Lit   (..)
-        , typeOfLit)
+        , typeOfLit
+        , makeLitString)
 where
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Syntax.Prim
 import DDC.Llvm.Pretty.Prim             ()
 import Data.Text                        (Text)
+import Data.Char
+import Numeric
 import qualified Data.Text              as T
+import qualified Data.Text.Encoding     as TE
+import qualified Data.ByteString        as BS
 
 
 -- Exp ------------------------------------------------------------------------
@@ -102,8 +107,13 @@ data Lit
 
         -- | A string literal.
         --   In LLVM these have the same type as array literals, but have a
-        --   special syntax.
-        | LitString     Text
+        --   special syntax. The first component is the literal source text, 
+        --   while the second its the pretty printed hex encoding that 
+        --   the LLVM frontend accepts.
+        | LitString     
+        { litSource             :: Text   
+        , litHexEncoded         :: Text
+        , litEncodingLength     :: Int }
 
         -- | A null pointer literal.
         --   Only applicable to pointer types
@@ -120,7 +130,52 @@ typeOfLit ll
  = case ll of
         LitInt    t _   -> t
         LitFloat  t _   -> t
-        LitString bs    -> TArray (fromIntegral $ T.length bs) (TInt 8)
         LitNull   t     -> t
         LitUndef  t     -> t
+
+        LitString _ _ encLen 
+         -> TArray (fromIntegral encLen) (TInt 8)
+
+
+
+-- | Make a literal string from some text.
+makeLitString :: Text -> Lit
+makeLitString tx
+ = let  (txEnc, nEncLen) = encodeText tx
+   in   LitString tx txEnc nEncLen
+
+
+-- | Hex encode non-printable characters in this string.
+--   The LLVM frontend doesn't appear to be unicode-clean, so only unoffensive
+--   ASCII characters are printed verbatim. Everything is hex-encoded as UTF-8.
+encodeText :: Text -> (Text, Int)
+encodeText tx
+ = go [] 0 tx
+ where  
+        go accStr accLen xx
+         = case T.uncons xx of
+             Nothing      
+              -> (T.concat $ reverse accStr, accLen)
+
+             Just (x, xs) 
+              -> let (str, len) = encodeChar x
+                 in  go (str : accStr) (accLen + len) xs
+
+        encodeChar c
+         | c == ' '
+          || (isAscii c && isAlphaNum c)
+          || (isAscii c && isPunctuation c && c /= '"')
+         = (T.pack [c], 1)
+
+         | otherwise
+         = let  bs      = TE.encodeUtf8 $ T.pack [c]
+                len     = BS.length bs
+           in   ( T.pack $ concatMap (\b -> "\\" ++ (padL $ showHex b "")) 
+                         $ BS.unpack bs
+                , len)
+
+        padL x
+         | length x == 0  = "00"
+         | length x == 1  = "0"  ++ x
+         | otherwise      = x
 
