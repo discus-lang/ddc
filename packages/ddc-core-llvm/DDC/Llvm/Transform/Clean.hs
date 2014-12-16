@@ -17,6 +17,7 @@ import qualified Data.Map       as Map
 import qualified Data.Foldable  as Seq
 import qualified Data.Sequence  as Seq
 
+
 -- | Clean a module.
 clean :: Module -> Module
 clean mm
@@ -147,37 +148,37 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
          $  acc |> ins
 
         IOp    v op x1 x2
-         |  defs'        <- Map.insert v label defs
-         -> next binds defs'
-         $  acc |> (reAnnot $ IOp   v op (sub x1) (sub x2))
+         -> let defs'   = Map.insert v label defs
+            in  next binds defs'
+                 $ acc |> (reAnnot $ IOp   v op (sub x1) (sub x2))
 
         IConv  v c x
-         |  defs'        <- Map.insert v label defs
-         -> next binds defs'
-         $  acc |> (reAnnot $ IConv v c (sub x))
+         -> let defs'   = Map.insert v label defs
+            in  next binds defs'
+                 $ acc |> (reAnnot $ IConv v c (sub x))
 
         ILoad  v x
-         |  defs'        <- Map.insert v label defs
-         -> next binds defs'
-         $  acc |> (reAnnot $ ILoad v   (sub x))
+         -> let defs'   = Map.insert v label defs
+            in  next binds defs'
+                 $ acc |> (reAnnot $ ILoad v   (sub x))
 
         IStore x1 x2
          -> next binds defs
          $  acc |> (reAnnot $ IStore    (sub x1) (sub x2))
 
         IICmp  v c x1 x2
-         |  defs'        <- Map.insert v label defs
-         -> next binds defs'
-         $  acc |> (reAnnot $ IICmp v c (sub x1) (sub x2))
+         -> let defs'   = Map.insert v label defs
+            in  next binds defs'
+                 $ acc |> (reAnnot $ IICmp v c (sub x1) (sub x2))
 
         IFCmp  v c x1 x2
-         |  defs'        <- Map.insert v label defs
-         -> next binds defs'
-         $  acc |> (reAnnot $ IFCmp v c (sub x1) (sub x2))
+         -> let defs'   = Map.insert v label defs
+            in  next binds defs'
+                 $ acc |> (reAnnot $ IFCmp v c (sub x1) (sub x2))
 
         ICall  (Just v) ct mcc t n xs ats
-         |  defs'        <- Map.insert v label defs
-         -> let Just cc2 = callConvOfName mm n
+         -> let defs'   =  Map.insert v label defs
+                Just cc2 = callConvOfName mm n
                 cc'      = mergeCallConvs mcc cc2
             in  next binds defs'
                  $ acc |> (reAnnot $ ICall (Just v) ct (Just cc') t n (map sub xs) ats) 
@@ -189,6 +190,7 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
                  $ acc |> (reAnnot $ ICall Nothing  ct (Just cc') t n (map sub xs) ats) 
 
 
+---------------------------------------------------------------------------------------------------
 -- | Lookup the calling convention for the given name.
 callConvOfName :: Module -> Name -> Maybe CallConv
 callConvOfName mm name
