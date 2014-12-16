@@ -1,6 +1,6 @@
 module Main 
 import Data.Maybe; Data.List; Data.Numeric.Nat
-import IO.Console
+import System.IO.Console
 where
 
 -- Reverse the elements of a list, using an accumulator.

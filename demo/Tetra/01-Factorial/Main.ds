@@ -1,6 +1,6 @@
 module Main 
 import Data.Numeric.Nat
-import IO.Console
+import System.IO.Console
 where
 
 -- Compute the factorial of some number.

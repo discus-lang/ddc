@@ -14,4 +14,4 @@ library
         Data.Ref
         Data.Maybe
         Data.List
-        IO.Console
+        System.IO.Console

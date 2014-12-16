@@ -1,8 +1,7 @@
 
 module Main 
-export  main
-import  Data.List
-import  IO.Console
+import Data.List
+import System.IO.Console
 where
 
 main (_ : Unit) : S Console Unit

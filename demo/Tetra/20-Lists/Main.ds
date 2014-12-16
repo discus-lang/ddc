@@ -3,7 +3,7 @@
 module Main 
 import Data.Numeric.Nat
 import Data.Ref; Data.List; Data.Maybe
-import IO.Console
+import System.IO.Console
 where
 
 main (_ : Unit) : S Console Unit
