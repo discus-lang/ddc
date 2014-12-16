@@ -87,7 +87,11 @@ addConstant :: Lit -> ConvertM Var
 addConstant lit
  = do   
         -- Make a new variable to name the literal constant.
-        vLit@(Var nLit tLit) <- newUniqueVar (typeOfLit lit)
+        (Var (NameLocal sLit) tLit) <- newUniqueVar (typeOfLit lit)
+
+        let nLit =  NameGlobal sLit
+        let vLit =  Var nLit tLit
+
         s        <- get
         put     $ s { llvmConstants = Map.insert vLit lit (llvmConstants s)}
 
@@ -96,10 +100,4 @@ addConstant lit
         -- has pointer type.
         let vRef = Var nLit (TPointer tLit)
         return vRef
-
-
-
-
-
-
 

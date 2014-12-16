@@ -53,15 +53,21 @@ convertModule platform mm@(C.ModuleCore{})
                         mm
                         
         -- Convert to LLVM.
-        --  The result contains ISet and INop meta instructions that need to be 
-        --  cleaned out. We also need to fixup the labels in IPhi instructions.
-   in   case evalCheck state (convertModuleM platform mmElab) of
-         Left err       -> Left err
-         Right mmRaw
+   in   case runCheck state (convertModuleM platform mmElab) of
+         (_state', Left  err)
+          -> Left err
+
+         (state', Right mmRaw)
           -> let 
+                 gsLit    = [ GlobalStatic var (StaticLit lit) 
+                            | (var, lit) <- Map.toList $ llvmConstants state' ]
+
+                 mmConst  = mmRaw
+                          { modGlobals = modGlobals mmRaw ++ gsLit }
+
                  -- Inline the ISet meta instructions and drop INops.
                  --  This gives us code that the LLVM compiler will accept directly.
-                 mmClean  = Llvm.clean   mmRaw
+                 mmClean  = Llvm.clean   mmConst
 
                  -- Fixup the source labels in IPhi instructions.
                  --  The converter itself sets these to 'undef', so we need to find the 

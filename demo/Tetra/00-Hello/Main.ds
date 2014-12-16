@@ -6,5 +6,5 @@ where
 
 main (_ : Unit) : S Console Unit
  = box do
-        run putStrLn "hello"
+        run putStrLn "hello world"
         ()

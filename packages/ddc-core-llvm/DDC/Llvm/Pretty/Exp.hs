@@ -49,11 +49,13 @@ instance Pretty Lit where
   = case ll of
         LitInt   t i    -> ppr t <+> integer i
         LitFloat{}      -> error "ddc-core-llvm.ppr[Lit]: floats aren't handled yet"
-        LitString bs    -> text "c" <> text (show bs)
+        LitString bs    ->  ppr (typeOfLit ll)
+                        <+> text "c" <> text (show bs)
                                         -- TODO: pretty print special chars for strings,
                                         -- LLVM uses hex escapes eg \00
         LitNull  t      -> ppr t <+> text "null"
         LitUndef _      -> text "undef"
+
 
 
 -- | Pretty print a literal without its type.
