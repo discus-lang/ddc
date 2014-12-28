@@ -25,6 +25,7 @@ import Control.Monad.IO.Class
 import Control.DeepSeq
 import System.FilePath
 import System.Directory
+import DDC.Build.Interface.Store                (Store)
 import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Tetra       as Tetra
@@ -47,12 +48,13 @@ import qualified DDC.Core.Tetra                 as Tetra
 --
 cmdLoadFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> Maybe String         -- ^ Simplifier specification.
         -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
         -> ExceptT String IO ()
 
-cmdLoadFromFile config mStrSimpl fsTemplates filePath
+cmdLoadFromFile config store mStrSimpl fsTemplates filePath
 
  -- Load build file.
  | ".build"     <- takeExtension filePath
@@ -75,12 +77,12 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
  | ".ds"        <- takeExtension filePath
  = case mStrSimpl of
         Nothing
-         ->     cmdLoadSourceTetraFromFile config Tetra.bundle filePath
+         ->     cmdLoadSourceTetraFromFile config store Tetra.bundle filePath
 
         Just strSimpl
          -> do  bundle' <- cmdLoadSimplifierIntoBundle config 
                                 Tetra.bundle strSimpl fsTemplates
-                cmdLoadSourceTetraFromFile config bundle' filePath
+                cmdLoadSourceTetraFromFile config store bundle' filePath
 
  -- Load a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
@@ -104,11 +106,12 @@ cmdLoadFromFile config mStrSimpl fsTemplates filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdLoadSourceTetraFromFile
         :: Config                               -- ^ Driver config.
-        -> Bundle Int Tetra.Name Tetra.Error     -- ^ Tetra language bundle.
+        -> Store                                -- ^ Interface store.
+        -> Bundle Int Tetra.Name Tetra.Error    -- ^ Tetra language bundle.
         -> FilePath                             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdLoadSourceTetraFromFile config bundle filePath
+cmdLoadSourceTetraFromFile config store bundle filePath
  = do   
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -118,7 +121,8 @@ cmdLoadSourceTetraFromFile config bundle filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdLoadSourceTetraFromString config bundle (SourceFile filePath) src
+        cmdLoadSourceTetraFromString config store bundle 
+                (SourceFile filePath) src
 
 
 ---------------------------------------------------------------------------------------------------
@@ -127,18 +131,19 @@ cmdLoadSourceTetraFromFile config bundle filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdLoadSourceTetraFromString
         :: Config                               -- ^ Driver config.
-        -> Bundle Int Tetra.Name Tetra.Error     -- ^ Tetra language bundle.
+        -> Store                                -- ^ Interface store.
+        -> Bundle Int Tetra.Name Tetra.Error    -- ^ Tetra language bundle.
         -> Source                               -- ^ Source of the code.
         -> String                               -- ^ Program module text.
         -> ExceptT String IO ()
 
-cmdLoadSourceTetraFromString config bundle source str
+cmdLoadSourceTetraFromString config store bundle source str
  = let
         pmode   = prettyModeOfConfig $ configPretty config
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source []
+         $ stageSourceTetraLoad config source store
          [ PipeCoreReannotate (\a -> a { annotTail = () })
          [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
                                                 (bundleSimplifier bundle)

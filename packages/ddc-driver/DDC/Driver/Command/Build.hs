@@ -6,6 +6,7 @@ import DDC.Driver.Config
 import DDC.Driver.Build.Main
 import DDC.Driver.Command.Compile
 import DDC.Base.Pretty
+import DDC.Build.Interface.Store        (Store)
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified System.FilePath        as FilePath
@@ -15,8 +16,8 @@ import qualified Data.List              as List
 
 
 -- Perform a build following a build specification.
-cmdBuild :: Config -> FilePath -> ExceptT String IO ()
-cmdBuild config filePath
+cmdBuild :: Config -> Store -> FilePath -> ExceptT String IO ()
+cmdBuild config store filePath
 
  -- Build from a build spec file
  | ".build"      <- FilePath.takeExtension filePath
@@ -37,13 +38,13 @@ cmdBuild config filePath
         str     <- liftIO $ readFile filePath
         case Spec.parseBuildSpec filePath str of
          Left err       -> throwE $ renderIndent $ ppr err
-         Right spec     -> buildSpec config' spec
+         Right spec     -> buildSpec config' store spec
 
 
  -- If we were told to build a source file then just compile it instead.
  -- This is probably the least surprising behaviour.
  | ".ds"        <- FilePath.takeExtension filePath
- = do   cmdCompileRecursive config False [] filePath []
+ = do   cmdCompileRecursive config False store filePath []
         return ()
 
  -- Don't know how to build from this file.

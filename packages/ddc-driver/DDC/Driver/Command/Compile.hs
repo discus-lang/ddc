@@ -17,10 +17,8 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.Time.Clock
 import Data.IORef
-import DDC.Build.Interface.Load                 (InterfaceAA)
 import qualified DDC.Driver.Build.Locate        as Locate
 import qualified DDC.Build.Builder              as Builder
-import qualified DDC.Build.Interface.Load       as Interface
 import qualified DDC.Source.Tetra.Module        as SE
 import qualified DDC.Source.Tetra.Lexer         as SE
 import qualified DDC.Source.Tetra.Parser        as SE
@@ -34,6 +32,9 @@ import qualified DDC.Version                    as Version
 import DDC.Driver.Command.Flow.ToTetra
 import qualified DDC.Core.Flow                  as Flow
 
+import DDC.Build.Interface.Store                (Store)
+import qualified DDC.Build.Interface.Store      as Store
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Recursively compile source modules into @.o@ files.
@@ -43,39 +44,34 @@ import qualified DDC.Core.Flow                  as Flow
 --   make process can be constructed by looking up the file the corresponds
 --   to the module, and calling cmdCompileRecursive again -- tying the knot.
 --
---   Returns the interfaces that were provided, plus any that were constructed
---   or loaded when compiling this module.
---
 cmdCompileRecursive
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an exectable.
-        -> [InterfaceAA]        -- ^ Currently loaded interfaces.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Path to file to compile
         -> [C.ModuleName]       -- ^ Names of modules currently being build on this
                                 --   branch in the dependency tree.
-        -> ExceptT String IO [InterfaceAA]       
-                                -- ^ All loaded interfaces files.
+        -> ExceptT String IO ()
 
-cmdCompileRecursive config buildExe interfaces filePath modsEntered
+cmdCompileRecursive config buildExe store filePath modsEntered
  | takeExtension filePath == ".ds"
- = cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
+ = cmdCompileRecursiveDS config buildExe store filePath modsEntered
 
  | otherwise
- = cmdCompile            config buildExe interfaces filePath
+ = cmdCompile            config buildExe store filePath
 
 
 -- | Recursively build the given Source Tetra file.
 cmdCompileRecursiveDS 
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
-        -> [InterfaceAA]        -- ^ Currently loaded interfaces.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Path to file to compile
         -> [C.ModuleName]       -- ^ Names of modules currently being built on this
                                 --   branch in the dependency tree. 
-        -> ExceptT String IO [InterfaceAA]
-                                -- ^ All loaded interface files.
+        -> ExceptT String IO ()
 
-cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
+cmdCompileRecursiveDS config buildExe store filePath modsEntered
  = do   
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -92,10 +88,10 @@ cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
 
         -- Recursively compile modules until we have all the interfaces required
         -- for the current one.
-        let loop intsHave = do
+        let loop = do
 
                 -- Names of all the modules that we have interfaces for.
-                let modsNamesHave = map interfaceModuleName intsHave
+                modsNamesHave    <- liftIO $ Store.getModuleNames store
 
                 -- Names of modules that we are missing interfaces for.
                 let missing       = filter (\m -> not $ elem m modsNamesHave) 
@@ -103,7 +99,7 @@ cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
 
                 case missing of
                  -- If there are no missing interfaces then we're good to go.
-                 []     -> return intsHave
+                 []     -> return ()
 
                  -- Otherwise compile the first of the missing modules and try again.
                  m : _  -> do
@@ -123,14 +119,14 @@ cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
                          $  [ "! Cannot build recursive modules:" ]
                          ++ [ "    " ++ (P.renderIndent $ P.ppr mm) | mm <- modsEntered ]
 
-                        -- Compile the first of the dependencies.
-                        intsHave' <- cmdCompileRecursiveDS config False intsHave 
-                                        mfilePath (modsEntered ++ [m])
+                        -- Compile the first of the dependencies,
+                        --   adding the new interface files to the store.
+                        cmdCompileRecursiveDS config False store 
+                                mfilePath (modsEntered ++ [m])
 
                         -- See if we've got them all.
-                        loop intsHave'
-
-        intsHave'       <- loop interfaces
+                        loop
+        loop 
 
         -- At this point we should have all the interfaces needed for the current module,
         -- and need to decide whether we can reload an existing interface file for the
@@ -150,6 +146,7 @@ cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
         let filePathDI  =  replaceExtension filePathO ".di"
         mTimeO          <- liftIO $ getModificationTimeIfExists filePathO
         mTimeDI         <- liftIO $ getModificationTimeIfExists filePathDI
+        meta'           <- liftIO $ Store.getMeta store
 
         let loadOrCompile
                 -- object and interface are fresher than source.
@@ -157,20 +154,20 @@ cmdCompileRecursiveDS config buildExe interfaces filePath modsEntered
                 , Just timeDI   <- mTimeDI,     timeDS < timeDI
 
                   -- interface is fresher than all dependencies.
-                , and   [ interfaceTimeStamp i < timeDI 
-                        | i <- intsHave'
-                        , elem (interfaceModuleName i) modNamesNeeded ]
+                , and   [ Store.metaTimeStamp m < timeDI 
+                                | m <- meta'
+                                , elem (Store.metaModuleName m) modNamesNeeded ]
 
                   -- this is not the top-level module.
                 , not $ null modsEntered       
                 = do
-                        str     <- liftIO $ readFile filePathDI
-                        case Interface.loadInterface filePathDI timeDI str of
-                         Left  err -> throwE $ P.renderIndent $ P.ppr err
-                         Right int -> return (intsHave' ++ [int])
+                        result  <- liftIO $ Store.load store filePathDI
+                        case result of
+                         Just  err -> throwE $ P.renderIndent $ P.ppr err
+                         Nothing   -> return ()
 
                 | otherwise
-                = cmdCompile config buildExe intsHave' filePath
+                = cmdCompile config buildExe store filePath
 
         loadOrCompile
 
@@ -194,16 +191,14 @@ getModificationTimeIfExists path
 --   This produces an @.o@ file next to the source file, and may also produce
 --   a @.di@ interface, depending on what sort of source file we're compiling.
 -- 
---   Returns the same interfaces files provides, plus the new one for this module.
---
 cmdCompile
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
-        -> [InterfaceAA]        -- ^ Interfaces of modules we've already loaded.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Path to file to compile
-        -> ExceptT String IO [InterfaceAA]
+        -> ExceptT String IO ()
 
-cmdCompile config buildExe interfaces filePath
+cmdCompile config buildExe store filePath
  = do   
         if buildExe 
          then liftIO $ putStrLn $ "* Compiling " ++ filePath ++ " as executable"
@@ -221,12 +216,11 @@ cmdCompile config buildExe interfaces filePath
 
         -- If we're building an executable, then get paths to the other object
         -- files that we need to link with.
+        metas           <- liftIO $ Store.getMeta store
+        let pathsDI     = map Store.metaFilePath metas
         let otherObjs
-                | buildExe
-                = Just $ map (\i -> replaceExtension (interfaceFilePath i) "o") interfaces
-
-                | otherwise
-                = Nothing
+                | buildExe  = Just $ map (\path -> replaceExtension path "o") pathsDI
+                | otherwise = Nothing
 
         -- During complation of this module the intermediate code will be
         -- stashed in these refs. We will use the intermediate code to build
@@ -240,7 +234,7 @@ cmdCompile config buildExe interfaces filePath
                 | ext == ".ds"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSourceTetraLoad config source interfaces
+                $ stageSourceTetraLoad config source store
                 [ PipeCoreHacks      (Canned $ \m -> writeIORef refTetra (Just m) >> return m)
                 [ PipeCoreReannotate (const ())
                 [ stageTetraToSalt    config source pipesSalt ]]]
@@ -319,7 +313,6 @@ cmdCompile config buildExe interfaces filePath
                 let pathO       = objectPathOfConfig config filePath
                 let pathDI      = replaceExtension pathO ".di"
 
-
                 timeDI  <- liftIO $ getCurrentTime 
                 let int = Interface
                         { interfaceVersion      = Version.version
@@ -332,12 +325,13 @@ cmdCompile config buildExe interfaces filePath
                 liftIO  $ writeFile pathDI
                         $ P.renderIndent $ P.ppr int
 
-                return (interfaces ++ [int])
+                -- Add the new interface to the store.
+                liftIO $ Store.wrap store int
 
           -- Compilation was successful,
           --  but we didn't get enough build products to produce an interface file.
           | otherwise
-          -> return []
+          -> return ()
 
 
 ---------------------------------------------------------------------------------------------------

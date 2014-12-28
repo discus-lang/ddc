@@ -2,13 +2,21 @@
 module DDC.Build.Interface.Store
         ( Store
         , new, wrap, load
-        , Super (..), findSuper)
+
+        , Meta  (..)
+        , getMeta
+        , getModuleNames
+        , getInterfaces
+
+        , Super (..)
+        , findSuper)
 where
-import DDC.Build.Interface.Base
+import DDC.Build.Interface.Base         
 import DDC.Build.Interface.Load
 import DDC.Core.Module
 import DDC.Type.Exp
 import System.Directory
+import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
 import Data.Map                         (Map)
@@ -24,12 +32,28 @@ import qualified Data.Map               as Map
 --   tree. Keeping it in IO means that callers must also be in IO.
 data Store
         = Store
-        { -- | Lookup the definition of the given top-level super, 
+        { -- | Metadata for interface files currently in the store.
+          storeMeta     :: IORef [Meta]
+
+          -- | Lookup the definition of the given top-level super, 
           --   from one or more of the provided modules.
-          storeSupers   :: IORef (Map ModuleName (Map E.Name Super)) }
+        , storeSupers   :: IORef (Map ModuleName (Map E.Name Super)) 
+
+
+          -- | The complete interfaces.
+          --   TODO: remove this. Make consumers use more specific functions.
+        , storeInterfaces :: IORef [InterfaceAA] }
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Metadata for interfaces currently loaded into the store.
+data Meta
+        = Meta
+        { metaFilePath     :: FilePath
+        , metaTimeStamp    :: UTCTime
+        , metaModuleName   :: ModuleName }
+
+
 -- | Interface for some top-level super.
 data Super
         = Super
@@ -50,18 +74,28 @@ data Super
 -- | An empty interface store.
 new :: IO Store
 new
- = do   refSupers       <- newIORef Map.empty
-        return  $ Store { storeSupers = refSupers }
+ = do   refMeta         <- newIORef []
+        refSupers       <- newIORef Map.empty
+        refInterfaces   <- newIORef []
+        return  $ Store 
+                { storeMeta             = refMeta
+                , storeSupers           = refSupers 
+                , storeInterfaces       = refInterfaces }
 
 
 -- | Add a pre-loaded interface file to the store.
 wrap    :: Store -> InterfaceAA -> IO ()
 wrap store int
- = do   supers  <- readIORef (storeSupers store)
-        writeIORef (storeSupers store) 
-                $ Map.insert (interfaceModuleName int)
-                             (supersOfInterface   int)
-                             supers
+ = do   modifyIORef (storeMeta store)
+         $ \meta   -> meta ++ [metaOfInterface int] 
+
+        modifyIORef (storeSupers store)
+         $ \supers -> Map.insert (interfaceModuleName int)
+                                 (supersOfInterface   int)
+                                 supers
+
+        modifyIORef (storeInterfaces store)
+         $ \ints   -> ints ++ [int]
 
 
 -- | Load a new interface into the store.
@@ -69,6 +103,7 @@ load    :: Store -> FilePath -> IO (Maybe Error)
 load store filePath
  = do   timeStamp  <- getModificationTime filePath
         str        <- readFile filePath
+
         case loadInterface filePath timeStamp str of
          Left err  
           ->    return $ Just err
@@ -76,6 +111,60 @@ load store filePath
          Right int 
           -> do wrap store int
                 return Nothing
+
+
+-- | Get metadata of interfaces currently in the store.
+getMeta :: Store -> IO [Meta]
+getMeta store
+ = do   mm      <- readIORef (storeMeta store)
+        return  $ mm
+
+
+-- | Get names of the modules currently in the store.
+getModuleNames :: Store -> IO [ModuleName]
+getModuleNames store
+ = do   supers  <- readIORef (storeSupers store)
+        return  $ Map.keys supers
+
+
+-- | Get the fully loaded interfaces.
+--   TODO: remove this, make consumers use more specific functions.
+getInterfaces :: Store -> IO [InterfaceAA]
+getInterfaces store
+ = do   ints    <- readIORef (storeInterfaces store)
+        return ints
+
+
+-- | See if a super is defined in any of the given modules, and if so
+--   return the module name and super type.
+--
+--   NOTE: This function returns an IO [Super] in preparation for the case
+--   where we load data from interface files on demand. We want to ensure
+--   that the caller is also in IO, to make the refactoring easier later.
+--
+findSuper
+        :: Store
+        -> E.Name               -- ^ Name of desired super.
+        -> [ModuleName]         -- ^ Names of modules to search.
+        -> IO [Super]
+
+findSuper store n modNames 
+ = do   supers  <- readIORef (storeSupers store)
+        return $ mapMaybe
+                (\modName -> do
+                        nSupers <- Map.lookup modName supers
+                        Map.lookup n nSupers)
+                modNames
+
+
+---------------------------------------------------------------------------------------------------
+-- | Extract metadata from an interface.
+metaOfInterface   :: InterfaceAA -> Meta
+metaOfInterface int
+        = Meta
+        { metaFilePath   = interfaceFilePath   int
+        , metaTimeStamp  = interfaceTimeStamp  int
+        , metaModuleName = interfaceModuleName int }
 
 
 -- | Extract a map of super interfaces from the given module interface.
@@ -111,27 +200,4 @@ supersOfInterface int
 
  | otherwise
  = Map.empty
-
-
----------------------------------------------------------------------------------------------------
--- | See if a super is defined in any of the given modules, and if so
---   return the module name and super type.
---
---   NOTE: This function returns an IO [Super] in preparation for the case
---   where we load data from interface files on demand. We want to ensure
---   that the caller is also in IO, to make the refactoring easier later.
---
-findSuper
-        :: Store
-        -> E.Name               -- ^ Name of desired super.
-        -> [ModuleName]         -- ^ Names of modules to search.
-        -> IO [Super]
-
-findSuper store n modNames 
- = do   supers  <- readIORef (storeSupers store)
-        return $ mapMaybe
-                (\modName -> do
-                        nSupers <- Map.lookup modName supers
-                        Map.lookup n nSupers)
-                modNames
 

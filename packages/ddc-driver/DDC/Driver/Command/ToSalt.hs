@@ -18,6 +18,7 @@ import System.Directory
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
+import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 
@@ -29,14 +30,15 @@ import qualified DDC.Core.Check                 as C
 --
 cmdToSaltFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdToSaltFromFile config filePath
+cmdToSaltFromFile config store filePath
 
  -- Convert a Disciple Source Tetra module.
  | ".ds"         <- takeExtension filePath
- =      cmdToSaltSourceTetraFromFile config filePath
+ =      cmdToSaltSourceTetraFromFile config store filePath
  
  -- Convert a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
@@ -54,10 +56,11 @@ cmdToSaltFromFile config filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltSourceTetraFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdToSaltSourceTetraFromFile config filePath
+cmdToSaltSourceTetraFromFile config store filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -67,7 +70,7 @@ cmdToSaltSourceTetraFromFile config filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdToSaltSourceTetraFromString config (SourceFile filePath) src
+        cmdToSaltSourceTetraFromString config store (SourceFile filePath) src
 
 
 -------------------------------------------------------------------------------
@@ -76,18 +79,19 @@ cmdToSaltSourceTetraFromFile config filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltSourceTetraFromString
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
 
-cmdToSaltSourceTetraFromString config source str
+cmdToSaltSourceTetraFromString config store source str
  = let  
         pmode   = prettyModeOfConfig $ configPretty config
 
         pipeLoad
          = pipeText (nameOfSource source)
                     (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source []
+         $ stageSourceTetraLoad config source store
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
          [ stageSaltOpt         config source

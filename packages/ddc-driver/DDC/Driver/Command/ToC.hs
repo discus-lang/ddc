@@ -16,8 +16,8 @@ import System.FilePath
 import System.Directory
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-
 import Control.Monad
+import DDC.Build.Interface.Store        (Store)
 
 
 -------------------------------------------------------------------------------
@@ -27,14 +27,15 @@ import Control.Monad
 --
 cmdToSeaFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Core language definition.
         -> ExceptT String IO ()
 
-cmdToSeaFromFile config filePath
+cmdToSeaFromFile config store filePath
  
  -- Convert a Disciple Source Tetra module.
  | ".ds"          <- takeExtension filePath
- =      cmdToSeaSourceTetraFromFile config filePath
+ =      cmdToSeaSourceTetraFromFile config store filePath
 
  -- Convert a module in some fragment of Disciple Core.
  | Just language  <- languageOfExtension (takeExtension filePath)
@@ -52,10 +53,11 @@ cmdToSeaFromFile config filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSeaSourceTetraFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdToSeaSourceTetraFromFile config filePath
+cmdToSeaSourceTetraFromFile config store filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -65,7 +67,7 @@ cmdToSeaSourceTetraFromFile config filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdToSeaSourceTetraFromString config (SourceFile filePath) src
+        cmdToSeaSourceTetraFromString config store (SourceFile filePath) src
 
 
 -------------------------------------------------------------------------------
@@ -74,15 +76,16 @@ cmdToSeaSourceTetraFromFile config filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSeaSourceTetraFromString
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
 
-cmdToSeaSourceTetraFromString config source str
+cmdToSeaSourceTetraFromString config store source str
  = let  
         pipeLoad
          = pipeText (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source []
+         $ stageSourceTetraLoad config source store
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt   config source 
          [ stageSaltOpt       config source

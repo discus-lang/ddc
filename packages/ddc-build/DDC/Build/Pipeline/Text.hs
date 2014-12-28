@@ -8,10 +8,10 @@ import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
-import DDC.Build.Interface.Base
-import DDC.Build.Interface.Load            (InterfaceAA)
+import DDC.Build.Interface.Store                (Store)
 import DDC.Base.Pretty
-import Data.Maybe
+
+import qualified DDC.Build.Transform.Resolve       as B
 
 import qualified DDC.Source.Tetra.ToCore           as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
@@ -24,7 +24,6 @@ import qualified DDC.Build.Language.Tetra          as CE
 import qualified DDC.Core.Tetra                    as CE
 import qualified DDC.Core.Tetra.Env                as CE
 
-import qualified DDC.Core.Transform.Resolve        as C
 import qualified DDC.Core.Transform.SpreadX        as C
 import qualified DDC.Core.Check                    as C
 import qualified DDC.Core.Load                     as C
@@ -32,7 +31,6 @@ import qualified DDC.Core.Lexer                    as C
 import qualified DDC.Base.Parser                   as BP
 import qualified DDC.Data.SourcePos                as SP
 
-import qualified Data.Map                          as Map
 import Control.DeepSeq
 
 
@@ -51,10 +49,10 @@ data PipeText n (err :: * -> *) where
         -> PipeText n err
 
   PipeTextLoadSourceTetra
-        :: !Sink                -- Sink for source tokens.
-        -> !Sink                -- Sink for core code before final type checking.
-        -> !Sink                -- Sink for type checker trace.
-        -> ![InterfaceAA]       -- Interfaces for modules upon which this one depends.
+        :: !Sink        -- Sink for source tokens.
+        -> !Sink        -- Sink for core code before final type checking.
+        -> !Sink        -- Sink for type checker trace.
+        -> !Store       -- Interface store.
         -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText n err
 
@@ -90,22 +88,25 @@ pipeText !srcName !srcLine !str !pp
 
         PipeTextLoadSourceTetra 
                 sinkTokens sinkPreCheck sinkCheckerTrace 
-                interfaces
-                pipes
+                store pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
-            let goParse
+            let 
+                goParse
                  = do   -- Lex the input text into source tokens.
                         let tokens  = SE.lexModuleString srcName srcLine str
 
+                        -- Dump tokens to file.
                         pipeSink (unlines $ map show $ tokens) sinkTokens
 
+                        -- Lex the tokens into a Source Tetra module.
                         case BP.runTokenParser C.describeTok srcName
                                 (SE.pModule SE.context) tokens of
                          Left err -> return [ErrorLoad err]
                          Right mm -> goDesugar mm
 
                 goDesugar mm
-                 = case SE.defix SE.defaultFixTable mm of
+                 =      -- Resolve fixity of infix operators.
+                   case SE.defix SE.defaultFixTable mm of
                         Left err  -> return [ErrorLoad err]
                         Right mm' -> goToCore mm'
 
@@ -115,33 +116,26 @@ pipeText !srcName !srcLine !str !pp
                                             SE.primKindEnv SE.primTypeEnv mm
 
                         -- Convert Source Tetra to Core Tetra.
-                        -- This source position is used to annotate the let expression
-                        -- that holds all the top-level bindings.
-                        let sp        = SP.SourcePos "<top level>" 1 1
-                        let mm_core   = SE.toCoreModule sp mm_expand
+                        -- This source position is used to annotate the 
+                        -- let-expression that holds all the top-level bindings.
+                        let sp          = SP.SourcePos "<top level>" 1 1
+                        let mm_core     = SE.toCoreModule sp mm_expand
 
-                        -- Resolve references to imported types and bindings.
-                        let deps      = Map.fromList
-                                      $ catMaybes
-                                      $ [ case interfaceTetraModule i of
-                                                Nothing -> Nothing
-                                                Just tm -> Just (interfaceModuleName i, tm)
-                                        | i <- interfaces ]
-                        let mm_resolve 
-                                = C.resolveNamesInModule 
-                                        CE.primKindEnv CE.primTypeEnv
-                                        deps mm_core
+                        -- Discover which module imported names are from, and
+                        -- attach the meta-data which will be needed by follow-on
+                        -- compilation, such as the arity of each super.
+                        mm_resolve      <- B.resolveNamesInModule 
+                                                    CE.primKindEnv CE.primTypeEnv
+                                                    store mm_core
 
                         -- Spread types of data constructors into uses.
-                        let mm_spread  
-                                = C.spreadX
-                                        CE.primKindEnv CE.primTypeEnv
-                                        mm_resolve
+                        let mm_spread   = C.spreadX CE.primKindEnv CE.primTypeEnv
+                                                    mm_resolve
 
-                        -- Dump code before checking for debugging purposes.
+                        -- Dump loaded code before type checking.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck
 
-                        -- Use the existing checker pipeline to Synthesise
+                        -- Use the existing checker pipeline to Synthesize
                         -- missing type annotations.
                         pipeCore mm_spread
                           $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes

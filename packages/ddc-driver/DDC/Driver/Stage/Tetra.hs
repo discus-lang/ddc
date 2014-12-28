@@ -7,7 +7,7 @@ where
 import DDC.Driver.Dump
 import DDC.Driver.Config
 import DDC.Interface.Source
-import DDC.Build.Interface.Load                 (InterfaceAA)
+import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Pipeline
 import DDC.Base.Pretty
 import qualified DDC.Build.Language.Tetra       as BE
@@ -24,16 +24,16 @@ import qualified DDC.Base.Parser                as BP
 -- | Load and type check a Source Tetra module.
 stageSourceTetraLoad
         :: Config -> Source
-        -> [InterfaceAA]
+        -> Store
         -> [PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
         -> PipeText CE.Name CE.Error
 
-stageSourceTetraLoad config source interfaces pipesTetra
+stageSourceTetraLoad config source store pipesTetra
  = PipeTextLoadSourceTetra
                     (dump config source "dump.tetra-load-tokens.txt")
                     (dump config source "dump.tetra-load-raw.dct")
                     (dump config source "dump.tetra-load-trace.txt")
-                    interfaces
+                    store
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.tetra-load.dct")
    : pipesTetra ) 

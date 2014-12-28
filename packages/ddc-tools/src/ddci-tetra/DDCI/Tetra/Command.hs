@@ -17,6 +17,7 @@ import DDC.Driver.Command.ToSalt
 import Control.Monad.Trans.Except
 import Data.List
 import System.IO
+import qualified DDC.Build.Interface.Store      as Store
 
 
 -- | Commands accepted by ddci-tetra.
@@ -104,12 +105,14 @@ handleCommand1 state cmd source line
 
         CommandToCore
          -> do  config  <- getDriverConfigOfState state
-                cmdToCore state config source line
+                store   <- Store.new
+                cmdToCore state config store source line
                 return state
 
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToSaltSourceTetraFromString config source line
+                store   <- Store.new
+                runError $ cmdToSaltSourceTetraFromString config store source line
                 return state
 
 

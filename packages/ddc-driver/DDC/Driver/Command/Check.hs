@@ -40,12 +40,13 @@ import DDC.Type.Universe
 import DDC.Type.Equiv
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-import qualified DDC.Base.Parser        as BP
-import qualified DDC.Type.Check         as T
-import qualified DDC.Core.Check         as C
 import Control.Monad
 import System.FilePath
 import System.Directory
+import DDC.Build.Interface.Store        (Store)
+import qualified DDC.Base.Parser        as BP
+import qualified DDC.Type.Check         as T
+import qualified DDC.Core.Check         as C
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -58,14 +59,15 @@ import System.Directory
 --
 cmdCheckFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdCheckFromFile config filePath
+cmdCheckFromFile config store filePath
  
  -- Check a Disciple Source Tetra module.
  | ".ds"       <- takeExtension filePath
- =      cmdCheckSourceTetraFromFile config filePath
+ =      cmdCheckSourceTetraFromFile config store filePath
 
  -- Check a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
@@ -81,10 +83,11 @@ cmdCheckFromFile config filePath
 -- | Check a Disciple Source Tetra module from a file.
 cmdCheckSourceTetraFromFile
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdCheckSourceTetraFromFile config filePath
+cmdCheckSourceTetraFromFile config store filePath
  = do
         -- Check that the file exists.
         exists <- liftIO $ doesFileExist filePath
@@ -94,7 +97,7 @@ cmdCheckSourceTetraFromFile config filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdCheckSourceTetraFromString config (SourceFile filePath) src
+        cmdCheckSourceTetraFromString config store (SourceFile filePath) src
 
 
 ---------------------------------------------------------------------------------------------------
@@ -102,17 +105,18 @@ cmdCheckSourceTetraFromFile config filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdCheckSourceTetraFromString
         :: Config               -- ^ Driver config.
+        -> Store                -- ^ Interface store
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
 
-cmdCheckSourceTetraFromString config source str
+cmdCheckSourceTetraFromString config store source str
  = let
         pmode   = prettyModeOfConfig $ configPretty config
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source []
+         $ stageSourceTetraLoad config source store
          [ PipeCoreOutput pmode SinkDiscard ]
    in do
         errs    <- liftIO pipeLoad

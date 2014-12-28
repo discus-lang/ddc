@@ -1,18 +1,23 @@
 
-module DDC.Core.Transform.Resolve
+module DDC.Build.Transform.Resolve
         ( resolveNamesInModule )
 where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Collect.Support
 import DDC.Type.DataDef
-import DDC.Type.Env             (KindEnv, TypeEnv)
+import DDC.Type.Env                             (KindEnv, TypeEnv)
 import Data.Maybe
-import Data.Map                 (Map)
-import qualified Data.Map       as Map
-import qualified Data.Set       as Set
+import Data.Map                                 (Map)
+import DDC.Build.Interface.Store                (Store)
+import DDC.Build.Interface.Base                 (Interface (..))
+import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
+import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Tetra                 as E
 import Data.List
 import Data.Function
+
 
 -- TODO: handle re-exports of foreign types and values.
 --       Saying "export type foo" should work even if "foo" was a foreign type.
@@ -21,18 +26,23 @@ import Data.Function
 --   corresponding export in one of the modules in the given map,
 --   then add the appropriate import definition.
 resolveNamesInModule 
-        :: Ord n
-        => KindEnv n
-        -> TypeEnv n
-        -> Map ModuleName (Module b n)
-        -> Module a n
-        -> Module a n
+        :: KindEnv E.Name       -- ^ Kinds of primitive types.
+        -> TypeEnv E.Name       -- ^ Types of primitive values.
+        -> Store                -- ^ Interface store.
+        -> Module a E.Name      -- ^ Module to resolve names in.
+        -> IO (Module a E.Name)
 
-resolveNamesInModule kenv tenv deps mm
- = let
-        sp      = support kenv tenv mm
+resolveNamesInModule kenv tenv store mm
+ = do
+        let sp  = support kenv tenv mm
+        ints    <- Store.getInterfaces store
+        let deps    = Map.fromList 
+                        [ ( interfaceModuleName int
+                          , let Just m = interfaceTetraModule int in m)
+                          | int <- ints ]
 
-   in   mm { moduleImportTypes   
+        return $ mm 
+           { moduleImportTypes   
                 =  moduleImportTypes  mm 
                 ++ importsForTyCons deps (Set.toList $ supportTyCon sp)
 

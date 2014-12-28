@@ -17,13 +17,10 @@ import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Trans
 import DDC.Driver.Command.Compile
-
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
-
 import DDC.Driver.Command.Tetra.Boxing
-
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Rate
 import DDC.Driver.Command.Flow.Lower
@@ -32,8 +29,9 @@ import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.Flow.ToTetra
-
 import DDC.Type.Universe
+
+import qualified DDC.Build.Interface.Store      as Store
 
 import qualified DDC.Core.Flow                  as Flow
 import qualified Data.Set                       as Set
@@ -80,18 +78,29 @@ data Command
         | CommandTetraBoxing            -- ^ Manage boxing of numeric types.
 
         -- Core Flow specific passes 
-        | CommandFlowRate               -- ^ Perform rate inference
-        | CommandFlowRateLower Flow.Config -- ^ Perform rate inference, followed by lowering
-        | CommandFlowPrep               -- ^ Prepare a Core Flow module for lowering.
-        | CommandFlowLower Flow.Config  -- ^ Prepare and Lower a Core Flow module.
-        | CommandFlowConcretize         -- ^ Convert operations on type level rates to concrete ones.
-        | CommandFlowMelt               -- ^ Melt compound data structures.
-        | CommandFlowWind               -- ^ Wind loop primops into tail recursive loops.
-        | CommandFlowThread             -- ^ Thread a world token through lowered code.
-        | CommandFlowToTetra Flow.Config-- ^ Convert to Disciple Tetra, which can then be converted to Salt
+        | CommandFlowRate       -- ^ Perform rate inference
+
+        | CommandFlowRateLower Flow.Config 
+                                -- ^ Perform rate inference, followed by lowering
+
+        | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
+
+        | CommandFlowLower Flow.Config  
+                                -- ^ Prepare and Lower a Core Flow module.
+
+        | CommandFlowConcretize -- ^ Convert operations on type level rates to concrete ones.
+
+        | CommandFlowMelt       -- ^ Melt compound data structures.
+
+        | CommandFlowWind       -- ^ Wind loop primops into tail recursive loops.
+
+        | CommandFlowThread     -- ^ Thread a world token through lowered code.
+
+        | CommandFlowToTetra Flow.Config
+                                -- ^ Convert to Disciple Tetra, which can then be converted to Salt
 
         -- Inline control
-        | CommandWith                   -- ^ Add a module to the inliner table.
+        | CommandWith           -- ^ Add a module to the inliner table.
 	| CommandWithLite
 	| CommandWithSalt
         deriving (Eq, Show)
@@ -346,17 +355,17 @@ handleCmd1 state cmd source line
                 runError $ cmdFlowToTetraCoreFromString config configLower lang source line
                 return    state
 
-
-
         -- Make and Compile ---------------------
         CommandCompile
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdCompile config False [] line
+                store   <- Store.new
+                runError $ cmdCompile config False store line
                 return state
 
         CommandMake
          -> do  config  <- getDriverConfigOfState state
-                runError $ cmdCompile config True [] line
+                store   <- Store.new
+                runError $ cmdCompile config True store line
                 return state
 
 

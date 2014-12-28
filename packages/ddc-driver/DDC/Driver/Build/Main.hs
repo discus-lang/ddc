@@ -8,29 +8,23 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Build.Locate
 import DDC.Driver.Config
 import DDC.Build.Spec
-import DDC.Build.Interface.Base
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-import qualified DDC.Core.Check         as C
+import DDC.Build.Interface.Store        (Store)
 import qualified DDC.Core.Module        as C
-import qualified DDC.Core.Tetra         as Tetra
-import qualified DDC.Data.SourcePos     as BP
-
--- | Annotated interface type.
-type InterfaceAA
-        = Interface (C.AnTEC BP.SourcePos Tetra.Name) ()
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build all the components defined by a build spec.
 buildSpec  
         :: Config               -- ^ Build config.
+        -> Store                -- ^ Interface store.
         -> Spec                 -- ^ Build spec.
         -> ExceptT String IO ()
 
-buildSpec config spec
- = do   mapM_   (buildComponent config) 
+buildSpec config store spec
+ = do   mapM_   (buildComponent config store) 
                 (specComponents spec)
 
 
@@ -38,25 +32,26 @@ buildSpec config spec
 -- | Build a single component of a build spec.
 buildComponent 
         :: Config               -- ^ Build config.
+        -> Store                -- ^ Interface store.
         -> Component            -- ^ Component to build.
         -> ExceptT String IO ()
 
-buildComponent config component@SpecLibrary{}
+buildComponent config store component@SpecLibrary{}
  = do
         when (configLogBuild config)
          $ liftIO $ putStrLn $ "* Building library " ++ specLibraryName component
 
-        buildLibrary config []
+        buildLibrary config store
          $ specLibraryTetraModules component
 
         return ()
 
-buildComponent config component@SpecExecutable{}
+buildComponent config store component@SpecExecutable{}
  = do   
         when (configLogBuild config)
          $ liftIO $ putStrLn $ "* Building executable " ++ specExecutableName component
 
-        buildExecutable config [] 
+        buildExecutable config store
                 (specExecutableTetraMain  component)
                 (specExecutableTetraOther component)
 
@@ -67,57 +62,54 @@ buildComponent config component@SpecExecutable{}
 -- | Build a library consisting of several modules.
 buildLibrary 
         :: Config               -- ^ Build config
-        -> [InterfaceAA]        -- ^ Interfaces that we've already loaded.
+        -> Store                -- ^ Interface store.
         -> [C.ModuleName]       -- ^ Names of modules still to build
         -> ExceptT String IO ()
 
-buildLibrary config interfaces0 ms0
- = go interfaces0 ms0
+buildLibrary config store ms0
+ = go ms0
  where
-        go _interfaces []
+        go []
          = return ()
 
-        go interfaces (m : more)
-         = do   interfaces'     <- buildModule config interfaces m
-                go  interfaces' more
+        go (m : more)
+         = do   buildModule config store m
+                go more
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build an executable consisting of several modules.
 buildExecutable
         :: Config               -- ^ Build config.
-        -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
+        -> Store                -- ^ Interface store.
         -> C.ModuleName         -- ^ Name  of main module.
         -> [C.ModuleName]       -- ^ Names of dependency modules
-        -> ExceptT String IO [InterfaceAA]
+        -> ExceptT String IO ()
 
-buildExecutable config interfaces0 mMain msOther0
- = go interfaces0 msOther0
+buildExecutable config store mMain msOther0
+ = go msOther0
  where  
-        go interfaces [] 
-         = do   
-                let dirs        = configModuleBaseDirectories config
+        go [] 
+         = do   let dirs        = configModuleBaseDirectories config
                 path            <- locateModuleFromPaths dirs mMain "ds"
-                cmdCompile config True interfaces path
+                cmdCompile config True store path
 
-        go interfaces (m : more)
-         = do   interfaces'     <- buildModule config interfaces m
-                go  interfaces' more
+        go (m : more)
+         = do   buildModule config store m
+                go more
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build a single module.
 buildModule
         :: Config               -- ^ Build config.
-        -> [InterfaceAA]        -- ^ Interfaces of modules that we've already loaded.
+        -> Store                -- ^ Interface store.
         -> C.ModuleName         -- ^ Module name.
-        -> ExceptT String IO [InterfaceAA]
+        -> ExceptT String IO ()
 
-buildModule config interfaces name
- = do   
-        let dirs = configModuleBaseDirectories config
+buildModule config store name
+ = do   let dirs = configModuleBaseDirectories config
         path     <- locateModuleFromPaths dirs name "ds"
-
-        cmdCompile config False interfaces path
+        cmdCompile config False store path
 
 

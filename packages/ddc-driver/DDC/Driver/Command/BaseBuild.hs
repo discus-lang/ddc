@@ -11,6 +11,7 @@ import System.Directory
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
+import DDC.Build.Interface.Store        (Store)
 
 
 baseLiteFiles :: Builder -> [FilePath]
@@ -33,8 +34,8 @@ baseSeaFiles _builder
 
 
 -- Buid the base libraries and runtime system.
-cmdBaseBuild :: Config  -> ExceptT String IO ()
-cmdBaseBuild config
+cmdBaseBuild :: Config  -> Store -> ExceptT String IO ()
+cmdBaseBuild config store
  = do   let builder     = configBuilder config
         let target      = buildTarget builder
         
@@ -46,13 +47,13 @@ cmdBaseBuild config
         -- Build all the .dcl files.
         let srcLiteFiles = map (buildBaseSrcDir builder </>) (baseLiteFiles builder)
         let objLiteFiles = map (flip replaceExtension "o")   srcLiteFiles
-        mapM_ (cmdCompile config False []) srcLiteFiles
+        mapM_ (cmdCompile config False store) srcLiteFiles
 
         -- Build all the .dcs files.
         let config'      = config { configInferTypes = True }
         let srcSaltFiles = map (buildBaseSrcDir builder </>) (baseSaltFiles builder)
         let objSaltFiles = map (flip replaceExtension "o")   srcSaltFiles
-        mapM_ (cmdCompile config' False []) srcSaltFiles
+        mapM_ (cmdCompile config' False store) srcSaltFiles
 
         -- Build all the .c files.
         let srcSeaFiles  = map (buildBaseSrcDir builder </>) (baseSeaFiles builder)

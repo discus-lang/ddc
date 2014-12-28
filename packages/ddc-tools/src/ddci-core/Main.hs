@@ -14,7 +14,7 @@ import System.Environment
 import System.IO
 import Control.Monad.Trans.Except
 import Data.List
-
+import qualified DDC.Build.Interface.Store      as Store
 
 main :: IO ()
 main 
@@ -36,8 +36,9 @@ main
          -- so we behave more like GHC.
          ["--make",  filePath]
           -> do let state       = initState (InputInterfaceBatch filePath)
-                config          <- getDriverConfigOfState state
-                runError $ cmdCompileRecursive config True [] filePath []
+                dconfig         <- getDriverConfigOfState state
+                store           <- Store.new
+                runError $ cmdCompileRecursive dconfig True store filePath []
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]

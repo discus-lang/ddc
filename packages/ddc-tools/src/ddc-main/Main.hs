@@ -40,6 +40,7 @@ import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Simplifier.Recipe     as Simplifier
 import qualified DDC.Version                    as Version
+import qualified DDC.Build.Interface.Store      as Store
 
 main :: IO ()
 main
@@ -81,7 +82,8 @@ run config
         -- Parse and type check a module.
         ModeCheck filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                result  <- runExceptT $  cmdCheckFromFile dconfig filePath
+                store   <- Store.new
+                result  <- runExceptT $  cmdCheckFromFile dconfig store filePath
                 
                 case result of
                  Left err        
@@ -93,119 +95,125 @@ run config
 
         -- Parse, type check and transform a module.
         ModeLoad filePath
-         -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdLoadFromFile dconfig
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdLoadFromFile dconfig store
                                 (configTrans config) (configWith config) 
                                 filePath
 
         -- Compile a module to object code.
         ModeCompile filePath
-         -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompileRecursive dconfig False [] filePath []
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdCompileRecursive dconfig False store filePath []
 
         -- Compile a module into an executable.
         ModeMake filePath
-         -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdCompileRecursive dconfig True  [] filePath []
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdCompileRecursive dconfig True store filePath []
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath
-         -> do  dconfig  <- getDriverConfig config (Just filePath)
-                runError $ cmdBuild   dconfig filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdBuild dconfig store filePath
 
         -- Convert a module to Salt.
         ModeToSalt filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                runError $ cmdToSaltFromFile dconfig filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdToSaltFromFile dconfig store filePath
 
         -- Convert a module to C
         ModeToC filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                runError $ cmdToSeaFromFile  dconfig filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdToSeaFromFile  dconfig store filePath
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                runError $ cmdToLlvmFromFile dconfig filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdToLlvmFromFile dconfig store filePath
 
         -- Tetra specific -----------------------------------------------------
         ModeTetraCurry filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdTetraCurry dconfig (SourceFile filePath) str
 
         ModeTetraBoxing filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdTetraBoxing dconfig (SourceFile filePath) str
 
         -- Flow specific ------------------------------------------------------
         -- Prepare a Disciple Core Flow program for lowering.
         ModeFlowPrep filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdFlowPrep dconfig (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLower filePath
-         -> do  configDriver    <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError 
-                 $ cmdFlowLower
-                        configDriver Flow.defaultConfigScalar
+                 $ cmdFlowLower dconfig Flow.defaultConfigScalar
                         (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerKernel filePath
-         -> do  configDriver    <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError 
-                 $ cmdFlowLower
-                        configDriver Flow.defaultConfigKernel
+                 $ cmdFlowLower dconfig Flow.defaultConfigKernel
                         (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerVector filePath
-         -> do  configDriver    <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError 
-                 $ cmdFlowLower configDriver Flow.defaultConfigVector 
+                 $ cmdFlowLower dconfig Flow.defaultConfigVector 
                         (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
         ModeFlowConcretize filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdFlowConcretize dconfig (SourceFile filePath) str
 
         -- Melt compound data structures.
         ModeFlowMelt filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdFlowMelt dconfig (SourceFile filePath) str
 
         -- Wind loop primops into tail recursive loops.
         ModeFlowWind filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdFlowWind dconfig (SourceFile filePath) str
 
         -- Thread the world token through a Disciple Core Flow program.
         ModeFlowThread filePath
-         -> do  dconfig         <- getDriverConfig config (Just filePath)
-                str             <- readFile filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
                 runError $ cmdFlowThread dconfig (SourceFile filePath) str
 
         -- Build --------------------------------------------------------------
         -- Build the runtime and base libraries.
         ModeBaseBuild
-         -> do  dconfig         <- getDriverConfig config Nothing
-                runError $ cmdBaseBuild dconfig
+         -> do  dconfig <- getDriverConfig config Nothing
+                store   <- Store.new
+                runError $ cmdBaseBuild dconfig store
 
         -- Print --------------------------------------------------------------
         -- Print the external builder info for this platform.
         ModePrintBuilder
-         -> do  dconfig         <- getDriverConfig config Nothing
+         -> do  dconfig <- getDriverConfig config Nothing
                 putStrLn $ renderIndent $ ppr (Driver.configBuilder dconfig)
 
         -- Print where the runtime and base libraries are installed.
