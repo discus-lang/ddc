@@ -26,7 +26,6 @@ import Data.Maybe
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check           (throw)
 import qualified Data.Map                as Map
-import qualified Data.Set                as Set
 
 
 -- | Convert the body of a supercombinator to Salt.
@@ -152,8 +151,9 @@ convertExp ectx ctx xx
          , length xsArgs == length tsArgs
          , XVar _ (UName n)     <- xF
          , not $ Map.member n (contextSupers  ctx)
-         , not $ Set.member n (contextImports ctx)      -- TODO: can bind vals wit arity == 0
-                                                        --       but not others.
+         , not $ Map.member n (contextImports ctx)      
+                                                -- TODO: can bind vals with arity == 0
+                                                --       but not others.
          -> convertX ExpBody ctx xF
 
         ---------------------------------------------------
@@ -209,7 +209,7 @@ convertExp ectx ctx xx
          -- at top-level, or imported directly.
          , XVar _ (UName n) <- x1
          ,   Map.member n (contextSupers  ctx)
-          || Set.member n (contextImports ctx)
+          || Map.member n (contextImports ctx)
 
          -- The function is saturated.
          , length xsArgs == arityOfType (annotType $ annotOfExp x1)

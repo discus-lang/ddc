@@ -11,7 +11,6 @@ import DDC.Core.Check                   (AnTEC(..))
 import DDC.Control.Monad.Check          (throw)
 import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Name     as A
-import qualified Data.Set               as Set
 import qualified Data.Map               as Map
 import Control.Monad
 
@@ -50,7 +49,7 @@ convertLets ctx lts
          , length xsArgs == length tsArgs
          , XVar _ (UName nSuper)     <- xF
          ,   Map.member nSuper (contextSupers  ctx)
-          || Set.member nSuper (contextImports ctx)
+          || Map.member nSuper (contextImports ctx)
          ->     return  ( Nothing
                         , ctx { contextSuperBinds
                                  = Map.insert nBind (nSuper, atsArgs) (contextSuperBinds ctx) })

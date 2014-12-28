@@ -53,36 +53,45 @@ data Context a
         , contextForeignBoxedTypeCtors 
                                 :: Set      E.Name
 
-          -- | Names of imported supers that are defined in external modules.
-          --   They are directly callable in the object code.
+          -- | Map of names of imported supers, to the number of type and value
+          --   parameters. These supers are all directly callable in the object
+          --   code.
           --
-        , contextImports        :: Set      E.Name
+          --   We check the supers are all in prenex form during conversion,
+          --   so they take all their type arguments before their value
+          --   arguments. We get the arities by looking at the associated Salt
+          --   type signature in the interface files for the modules that define
+          --   each import.
+        , contextImports        :: Map      E.Name (Int, Int)   
 
           -- | Map of names of supers defined in the current module, to the 
           --   number of type and value parameters. The supers are all directly
           --   callable in the object code.
           --
-          --   INVARIANT: The type schemes for these supers are in prenex form,
-          --   meaning all the type parameters come before the value parameters.
-          --
+          --   We check the supers are all in prenex form during conversion,
+          --   so they take all their type arguments before their value
+          --   arguments. We get the arities by looking at the super definition
+          --   in the current module being converted.
         , contextSupers         :: Map      E.Name (Int, Int)
 
           -- | Current kind environment.
+          --   This is updated as we decend into the AST during conversion.
         , contextKindEnv        :: KindEnv  E.Name
 
           -- | Current type environment.
+          --   This is updated as we decend into the AST during conversion.
         , contextTypeEnv        :: TypeEnv  E.Name 
 
           -- | Re-bindings of top-level supers.
           --   This is used to handle let-expressions like 'f = g [t]' where
           --   'g' is a top-level super. See [Note: Binding top-level supers]
           --   Maps the left hand variable to the right hand one, eg f -> g,
-          --   along with its (unpacked) type arguments.
+          --   along with its unpacked type arguments.
         , contextSuperBinds     
                 :: Map E.Name (E.Name, [(AnTEC a E.Name, Type E.Name)])
 
           -- Functions to convert the various parts of the AST.
-          -- We tie the recursive knot though this Context type so that
+          -- We tie the recursive knot though this `Context` type so that
           -- we can split the implementation into separate non-recursive modules.
         , contextConvertExp
                 :: ExpContext   -> Context a
@@ -187,3 +196,5 @@ xMakePtr a tR tA x1
         = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)
                                   (A.typeOfPrimStore A.PrimStoreMakePtr)))
                   [ XType a tR, XType a tA, x1 ]
+
+

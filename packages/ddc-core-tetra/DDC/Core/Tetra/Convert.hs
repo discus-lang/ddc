@@ -104,7 +104,6 @@ convertM pp runConfig defs kenv tenv mm
                    $ moduleExportValues mm
 
         -- Module body ------------------------------------
-
         let ntsImports  
                    = [BName n (typeOfImportSource src) 
                      | (n, src) <- moduleImportValues mm]
@@ -113,15 +112,16 @@ convertM pp runConfig defs kenv tenv mm
 
         -- Check that all the supers are fully named, and are in prenex form.
         -- Also build a map of super names to their type and value arities.
-        superArities <- takePrenexAritiesOfTopBinds mm
+        aritiesSuper  <- takePrenexAritiesOfTopBinds mm
+        aritiesImport <- takePrenexAritiesOfImports  mm
 
         -- Starting context for the conversion.
         let ctx    = Context
                    { contextPlatform    = pp
                    , contextDataDefs    = defs'
                    , contextForeignBoxedTypeCtors = Set.fromList $ nsForeignBoxedTypes
-                   , contextSupers      = superArities
-                   , contextImports     = Set.fromList $ map fst $ moduleImportValues mm 
+                   , contextSupers      = aritiesSuper
+                   , contextImports     = aritiesImport
                    , contextKindEnv     = kenv
                    , contextTypeEnv     = tenv' 
                    , contextSuperBinds  = Map.empty
@@ -251,6 +251,7 @@ convertImportSourceM tctx isrc
          -> do  t'      <- convertSuperT tctx t 
                 return  $ ImportSourceSea str t'
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Check that all the supers in this module have real names, 
 --   and are in prenex form -- meaning that they bind all their type parameters
@@ -275,4 +276,15 @@ takePrenexAritiesOfTopBinds mm
 
         return $ Map.fromList nsArities
 
+
+-- | Check that all the imported supers in the module have real names,
+--   and are in prenex form.
+--
+takePrenexAritiesOfImports
+        :: Module a E.Name -> ConvertM b (Map E.Name (Int, Int))
+
+takePrenexAritiesOfImports mm
+ = do   return  $ Map.fromList 
+                  [(n, (0, 0)) | n <- map fst $ moduleImportValues mm ]
+                -- TODO: bogus
 

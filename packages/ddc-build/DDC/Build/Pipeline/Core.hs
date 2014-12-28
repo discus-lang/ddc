@@ -41,7 +41,6 @@ import qualified DDC.Core.Salt.Platform                 as Salt
 import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
 
--- import qualified DDC.Core.Transform.AnonymizeX          as C
 import qualified DDC.Core.Transform.Reannotate          as C
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Snip                as Snip
@@ -49,7 +48,6 @@ import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Transform.Beta                as Beta
 import qualified DDC.Core.Transform.Lambdas             as Lambdas
--- import qualified DDC.Core.Transform.TransformModX       as TMod
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Simplifier                    as C
 
