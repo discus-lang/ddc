@@ -151,7 +151,7 @@ convertExp ectx ctx xx
          , tsArgs       <- [t | XType _ t <- xsArgs]
          , length xsArgs == length tsArgs
          , XVar _ (UName n)     <- xF
-         , not $ Set.member n (contextSupers  ctx)
+         , not $ Map.member n (contextSupers  ctx)
          , not $ Set.member n (contextImports ctx)      -- TODO: can bind vals wit arity == 0
                                                         --       but not others.
          -> convertX ExpBody ctx xF
@@ -208,7 +208,7 @@ convertExp ectx ctx xx
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
          , XVar _ (UName n) <- x1
-         ,   Set.member n (contextSupers  ctx)
+         ,   Map.member n (contextSupers  ctx)
           || Set.member n (contextImports ctx)
 
          -- The function is saturated.

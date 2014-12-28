@@ -25,6 +25,7 @@ Library
         parsec          == 3.1.*
         
   Exposed-modules:
+        DDC.Base.Panic
         DDC.Base.Parser
         DDC.Base.Pretty
         DDC.Base.Name

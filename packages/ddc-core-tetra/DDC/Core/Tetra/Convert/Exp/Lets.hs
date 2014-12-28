@@ -49,7 +49,7 @@ convertLets ctx lts
          , length tsArgs > 0
          , length xsArgs == length tsArgs
          , XVar _ (UName nSuper)     <- xF
-         ,   Set.member nSuper (contextSupers  ctx)
+         ,   Map.member nSuper (contextSupers  ctx)
           || Set.member nSuper (contextImports ctx)
          ->     return  ( Nothing
                         , ctx { contextSuperBinds

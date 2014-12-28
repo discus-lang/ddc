@@ -8,6 +8,7 @@ module DDC.Core.Module
         , moduleTypeEnv
         , moduleTopBinds
         , moduleTopBindTypes
+        , mapTopBinds
 
 	  -- * Module maps
 	, ModuleMap
@@ -32,9 +33,9 @@ module DDC.Core.Module
         , typeOfImportSource
         , mapTypeOfImportSource)
 where
+import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.DataDef                 
-import DDC.Type.Compounds
 import Data.Typeable
 import Data.Map.Strict                  (Map)
 import Data.Set                         (Set)
@@ -163,9 +164,28 @@ moduleTopBindTypes mm
                   -> go acc x2
 
                 XLet _ (LRec bxs) x2
-                  -> go (Map.union acc (Map.fromList [(n, t) | BName n t <- map fst bxs])) x2
+                  -> let nts    = Map.fromList [(n, t) | BName n t <- map fst bxs]
+                     in  go (Map.union acc nts) x2
                  
                 _ -> acc
+
+
+-- | Apply a function to all the top-level bindings in a module,
+--   producing a list of the results.
+mapTopBinds :: (Bind n -> Exp a n -> b) -> Module a n -> [b]
+mapTopBinds f mm
+ = go [] (moduleBody mm)
+ where 
+        go acc xx
+         = case xx of
+                XLet _ (LLet b1 x1) x2
+                 -> go (f b1 x1 : acc) x2
+
+                XLet _ (LRec bxs)   x2
+                 -> let rs      = reverse $ map (uncurry f) bxs
+                    in  go (rs ++ acc)  x2
+
+                _ -> reverse acc
 
 
 -- ModuleMap --------------------------------------------------------------------------------------

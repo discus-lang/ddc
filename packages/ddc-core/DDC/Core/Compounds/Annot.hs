@@ -15,6 +15,8 @@ module DDC.Core.Compounds.Annot
         , takeXLAMs
         , takeXLams
         , takeXLamFlags
+        , takeCallPattern
+        , takePrenexCallPattern
 
           -- * Applications
         , xApps
@@ -136,6 +138,38 @@ takeXLamFlags xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- | Take the call pattern from this expression.
+--
+--   In the result list we get a value for each type or value lambda,
+--   with types indicated by `True`, and values indicated by `False`.
+takeCallPattern :: Exp a n -> [(Bool, Type n)]
+takeCallPattern xx
+ = case takeXLamFlags xx of
+        Nothing         -> []
+        Just (fbs, _)   -> [ (f, typeOfBind b) | (f, b) <- fbs ]
+
+
+-- | Take a prenex call pattern from this expression, 
+--   meaning     the kinds of the type parameters, 
+--   followed by the types of the value parameters, 
+--   or `Nothing` if this expression is not in prenex form.
+takePrenexCallPattern :: Exp a n -> Maybe ([Kind n], [Type n])
+takePrenexCallPattern xx
+ = goType [] (takeCallPattern xx)
+ where
+        goType ks pats
+         = case pats of
+                []              -> Just (reverse ks, [])
+                (True,  k) : ps -> goType  (k : ks) ps
+                (False, _) : _  -> goValue ks []    pats
+
+        goValue ks ts pats
+         = case pats of
+                []              -> Just (reverse ks, reverse ts)
+                (True,  _) : _  -> Nothing
+                (False, t) : ps -> goValue ks (t : ts) ps
 
 
 -- Applications ---------------------------------------------------------------

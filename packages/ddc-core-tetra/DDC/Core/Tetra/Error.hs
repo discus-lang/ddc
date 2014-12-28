@@ -31,3 +31,4 @@ instance Pretty (Error a) where
   = vcat [ text "Invalid type of main function in Main module."
          , text "  Type of main function: "  <> ppr t
          , text "  is not an instance of: [e : Effect]. Unit -> S e Unit" ]
+

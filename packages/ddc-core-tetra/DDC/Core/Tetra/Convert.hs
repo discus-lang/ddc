@@ -12,7 +12,6 @@ import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import qualified DDC.Core.Tetra.Convert.Type.Base       as T
 
-
 import DDC.Core.Salt.Convert                            (initRuntime)
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
@@ -28,6 +27,7 @@ import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                           as Env
 
 import DDC.Control.Monad.Check                          (throw, evalCheck)
+import Data.Map                                         (Map)
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 
@@ -42,7 +42,8 @@ import qualified Data.Set                               as Set
 --      have type annotations on every bound variable and constructor,
 --      be a-normalised,
 --      have saturated function applications,
---      not have over-applied function applications.
+--      not have over-applied function applications,
+--      have all supers in prenex form, with type parameters before value parameters.
 --      If not then `Error`.
 --
 --   The output code contains:
@@ -109,13 +110,17 @@ convertM pp runConfig defs kenv tenv mm
                      | (n, src) <- moduleImportValues mm]
 
         let tenv'  = Env.extends ntsImports tenv
-        
+
+        -- Check that all the supers are fully named, and are in prenex form.
+        -- Also build a map of super names to their type and value arities.
+        superArities <- takePrenexAritiesOfTopBinds mm
+
         -- Starting context for the conversion.
         let ctx    = Context
                    { contextPlatform    = pp
                    , contextDataDefs    = defs'
                    , contextForeignBoxedTypeCtors = Set.fromList $ nsForeignBoxedTypes
-                   , contextSupers      = moduleTopBinds mm
+                   , contextSupers      = superArities
                    , contextImports     = Set.fromList $ map fst $ moduleImportValues mm 
                    , contextKindEnv     = kenv
                    , contextTypeEnv     = tenv' 
@@ -202,8 +207,7 @@ convertExportSourceM tctx esrc
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertImportM
-        :: T.Context
-        -> (E.Name, ImportSource E.Name)
+        :: T.Context -> (E.Name, ImportSource E.Name)
         -> ConvertM a (A.Name, ImportSource A.Name)
 
 convertImportM tctx (n, isrc)
@@ -225,8 +229,7 @@ convertImportNameM n
 
 -- | Convert an import source.
 convertImportSourceM 
-        :: T.Context
-        -> ImportSource E.Name
+        :: T.Context -> ImportSource E.Name
         -> ConvertM a (ImportSource A.Name)
 
 convertImportSourceM tctx isrc
@@ -247,5 +250,29 @@ convertImportSourceM tctx isrc
         ImportSourceSea str t
          -> do  t'      <- convertSuperT tctx t 
                 return  $ ImportSourceSea str t'
+
+---------------------------------------------------------------------------------------------------
+-- | Check that all the supers in this module have real names, 
+--   and are in prenex form -- meaning that they bind all their type parameters
+--   before their value parameters.
+--
+--   If we find any supers where this is not the case then throw an error in 
+--   the `ConvertM` monad.
+--
+takePrenexAritiesOfTopBinds 
+        :: Module a E.Name -> ConvertM b (Map E.Name (Int, Int))
+
+takePrenexAritiesOfTopBinds mm
+ = do   
+        let check (BName n _) (Just (ks, ts)) 
+                = return (n, (length ks, length ts))
+
+            check b Nothing     = throw $ ErrorSuperNotPrenex b
+            check b  _          = throw $ ErrorSuperUnnamed   b
+            
+        nsArities       <- mapM (uncurry check)
+                        $  mapTopBinds (\b x -> (b, takePrenexCallPattern x)) mm
+
+        return $ Map.fromList nsArities
 
 

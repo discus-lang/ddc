@@ -28,7 +28,7 @@ import qualified DDC.Core.Tetra.Prim                    as E
 import qualified DDC.Type.Env                           as Env
 import qualified DDC.Core.Salt.Name                     as A
 import qualified DDC.Core.Salt.Env                      as A
-import qualified Data.Set                               as Set
+import qualified Data.Map                               as Map
 
 
 ---------------------------------------------------------------------------------------------------
@@ -55,11 +55,17 @@ data Context a
 
           -- | Names of imported supers that are defined in external modules.
           --   They are directly callable in the object code.
+          --
         , contextImports        :: Set      E.Name
 
-          -- | Names of local supers that are defined in the current module.
-          --   They are directly callable in the object code.
-        , contextSupers         :: Set      E.Name
+          -- | Map of names of supers defined in the current module, to the 
+          --   number of type and value parameters. The supers are all directly
+          --   callable in the object code.
+          --
+          --   INVARIANT: The type schemes for these supers are in prenex form,
+          --   meaning all the type parameters come before the value parameters.
+          --
+        , contextSupers         :: Map      E.Name (Int, Int)
 
           -- | Current kind environment.
         , contextKindEnv        :: KindEnv  E.Name
@@ -150,10 +156,12 @@ data ExpContext
 --   This is how many data arguments it needs when we call it.
 superDataArity :: Context a -> Bound E.Name -> Maybe Int
 superDataArity ctx u
+
+        -- For supers defined in the current module,
+        -- the type and value arity is stored in the context.
         | UName n  <- u
-        , Just  t  <- Env.lookup u (contextTypeEnv ctx)
-        , Set.member n (contextSupers ctx)
-        = Just $ dataArityOfType t
+        , Just (_aType, aValue)  <- Map.lookup n (contextSupers ctx)
+        = Just $ aValue
 
         | otherwise
         = Nothing

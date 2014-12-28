@@ -8,6 +8,8 @@ import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Compounds
 import DDC.Core.Exp
+import DDC.Base.Pretty
+import DDC.Base.Panic
 import DDC.Core.Check                    (AnTEC(..))
 import qualified Data.Map                as Map
 import qualified DDC.Core.Tetra.Prim     as E
@@ -15,13 +17,13 @@ import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A
 import Data.Maybe
--- import Debug.Trace
+
 
 -- | Convert a Tetra function call primitive to Salt.
 convertPrimCall
         :: Show a 
-        => ExpContext                   -- ^ The surrounding expression context.
-        -> Context a                    -- ^ Types and values in the environment.
+        => ExpContext           -- ^ The surrounding expression context.
+        -> Context a            -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
 
@@ -40,19 +42,40 @@ convertPrimCall _ectx ctx xx
          , XVar _ (UPrim nR _tPrim)     <- xR
          , E.NameOpFun E.OpFunCReify    <- nR
 
+           -- Given the expression defining the super, retrieve its
+           -- value arity and any extra type arguments we need to apply.
          , Just (aF, xF_super, arity, atsArg)
             <- case xF of
                 XVar aF uF@(UName nF)
-                 -- This variable is a let-bound super name.
-                 -- See [Note: Binding top-level supers]
-                 |  Just (nSuper, atsArgs)  <- Map.lookup nF (contextSuperBinds ctx) 
-                 -> let Just arity      = superDataArity ctx (UName nSuper)
-                        xF'             = XVar aF (UName nSuper)
+                 -- This variable was let-bound to the application of a super
+                 -- name to some type arguments, like f = g [t1] [t2]. 
+                 -- The value arity and extra type arguments are stashed in the
+                 -- ConvertM state monad. See [Note: Binding top-level supers]
+                 --
+                 -- TODO: check this works with repeated bindings,
+                 --       like f  = g1 [t1] [t2]
+                 --            g1 = g2 [t3] [t4] [t5]
+                 |  Just (nSuper, atsArgs) 
+                        <- Map.lookup nF (contextSuperBinds ctx) 
+                 -> let 
+                        -- If this fails then the super name is in-scope, but
+                        -- we can't see its definition in this module, or
+                        -- salt-level import to get the arity.
+                        arity   = fromMaybe (panicNoArity (UName nSuper) xx)
+                                $ superDataArity ctx (UName nSuper)
+
+                        xF'     = XVar aF (UName nSuper)
                     in  Just (aF, xF', arity, atsArgs)
 
-                 -- A real super name.
+                 -- The name is that of an existing top-level super.
                  | otherwise
-                 -> let Just arity      = superDataArity ctx uF
+                 -> let 
+                        -- If this fails then the super name is in-scope, but
+                        -- we can't see its definition in this module, or
+                        -- salt-level import to get the arity.
+                        arity   = fromMaybe (panicNoArity uF xx) 
+                                $ superDataArity ctx uF
+
                     in  Just (aF, xF, arity, [])
 
                 _ -> Nothing
@@ -156,7 +179,17 @@ convertPrimCall _ectx ctx xx
                                 , let tPrime    = fromMaybe A.rTop
                                                 $ takePrimeRegion tArg' ]
 
-
         ---------------------------------------------------
         -- This isn't a call primitive.
         _ -> Nothing
+
+
+-- | Couldn't find the arity of an in-scope super.
+panicNoArity :: Show a => Bound E.Name -> Exp (AnTEC a E.Name) E.Name -> b
+panicNoArity uF xx
+        = panic "ddc-core-tetra" "convertPrimCall" $ vcat
+        [ text "Cannot find arity for application of super " <> (squotes $ ppr uF)
+        , text " in expression: " <> ppr xx 
+        , empty
+        , text "The super is allegedly in-scope, but we can't see its definition"
+        , text "in this module, nor can we get the arity from an import." ]

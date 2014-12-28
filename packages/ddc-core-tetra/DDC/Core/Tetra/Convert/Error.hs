@@ -46,6 +46,12 @@ data Error a
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
 
+        -- | Super is not fully named.
+        | ErrorSuperUnnamed   (Bind Name)
+
+        -- | Super is not in prenex form.
+        | ErrorSuperNotPrenex (Bind Name)
+
 
 instance Show a => Pretty (Error a) where
  ppr err
@@ -85,3 +91,11 @@ instance Show a => Pretty (Error a) where
         ErrorMainHasNoMain
          -> vcat [ text "Main module has no 'main' function." ]
 
+
+        ErrorSuperUnnamed b
+         -> vcat [ text "Super with binder " 
+                        <> (squotes $ ppr b) <> text " lacks a name." ]
+
+        ErrorSuperNotPrenex b
+         -> vcat [ text "Super " 
+                        <> (squotes $ ppr b) <> text " is not in prenex form." ]
