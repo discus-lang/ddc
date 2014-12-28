@@ -1,14 +1,15 @@
 
-module DDC.Build.Interface.DB
-        ( InterfaceDB   (..)
-        , Super         (..)
-        , wrapInterfaceDB)
-
+module DDC.Build.Interface.Store
+        ( Store
+        , new, wrap, load
+        , Super (..), findSuper)
 where
 import DDC.Build.Interface.Base
 import DDC.Build.Interface.Load
 import DDC.Core.Module
 import DDC.Type.Exp
+import System.Directory
+import Data.IORef
 import Data.Maybe
 import Data.Map                         (Map)
 import qualified DDC.Core.Tetra         as E
@@ -16,14 +17,19 @@ import qualified DDC.Core.Salt          as A
 import qualified Data.Map               as Map
 
 
--- | Abstract API to a collection of module intefaces.
-data InterfaceDB
-        = InterfaceDB
+-- | Abstract API to a collection of module interfaces.
+--
+--   This lives in IO land because in future we want to demand-load the
+--   inferface files as needed, rather than loading the full dependency
+--   tree. Keeping it in IO means that callers must also be in IO.
+data Store
+        = Store
         { -- | Lookup the definition of the given top-level super, 
           --   from one or more of the provided modules.
-          interfaceFindSuper    :: E.Name -> [ModuleName] -> IO [Super] }
+          storeSupers   :: IORef (Map ModuleName (Map E.Name Super)) }
 
 
+---------------------------------------------------------------------------------------------------
 -- | Interface for some top-level super.
 data Super
         = Super
@@ -40,8 +46,38 @@ data Super
         , superSaltType         :: Type A.Name }
 
 
-
 ---------------------------------------------------------------------------------------------------
+-- | An empty interface store.
+new :: IO Store
+new
+ = do   refSupers       <- newIORef Map.empty
+        return  $ Store { storeSupers = refSupers }
+
+
+-- | Add a pre-loaded interface file to the store.
+wrap    :: Store -> InterfaceAA -> IO ()
+wrap store int
+ = do   supers  <- readIORef (storeSupers store)
+        writeIORef (storeSupers store) 
+                $ Map.insert (interfaceModuleName int)
+                             (supersOfInterface   int)
+                             supers
+
+
+-- | Load a new interface into the store.
+load    :: Store -> FilePath -> IO (Maybe Error)
+load store filePath
+ = do   timeStamp  <- getModificationTime filePath
+        str        <- readFile filePath
+        case loadInterface filePath timeStamp str of
+         Left err  
+          ->    return $ Just err
+
+         Right int 
+          -> do wrap store int
+                return Nothing
+
+
 -- | Extract a map of super interfaces from the given module interface.
 supersOfInterface :: InterfaceAA -> Map E.Name Super
 supersOfInterface int
@@ -63,10 +99,10 @@ supersOfInterface int
          = case n of
             E.NameVar s 
                 -> Just $ Super
-                { superName             = n
-                , superModuleName       = moduleName mmTetra
-                , superTetraType        = tTetra
-                , superSaltType         = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t }
+                { superName       = n
+                , superModuleName = moduleName mmTetra
+                , superTetraType  = tTetra
+                , superSaltType   = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t }
             _   -> Nothing
 
    in   Map.fromList   
@@ -78,17 +114,6 @@ supersOfInterface int
 
 
 ---------------------------------------------------------------------------------------------------
--- | Wrap a DB front-end around some fully loaded interface files.
-wrapInterfaceDB :: [InterfaceAA] -> InterfaceDB 
-wrapInterfaceDB ints 
- = let  mts     = Map.fromList
-                [ (interfaceModuleName int, supersOfInterface int)
-                        | int <- ints ]
-
-   in   InterfaceDB
-                { interfaceFindSuper    = findSuper mts }
-
-
 -- | See if a super is defined in any of the given modules, and if so
 --   return the module name and super type.
 --
@@ -97,17 +122,16 @@ wrapInterfaceDB ints
 --   that the caller is also in IO, to make the refactoring easier later.
 --
 findSuper
-        :: Map ModuleName (Map E.Name Super)
+        :: Store
         -> E.Name               -- ^ Name of desired super.
         -> [ModuleName]         -- ^ Names of modules to search.
         -> IO [Super]
 
-findSuper mms n modNames 
- = return $ mapMaybe
+findSuper store n modNames 
+ = do   supers  <- readIORef (storeSupers store)
+        return $ mapMaybe
                 (\modName -> do
-                        nSupers <- Map.lookup modName mms
+                        nSupers <- Map.lookup modName supers
                         Map.lookup n nSupers)
                 modNames
-
-
 
