@@ -275,15 +275,15 @@ takePrenexAritiesOfTopBinds mm
 --   and are in prenex form.
 --
 takePrenexAritiesOfImports
-        :: Module a E.Name -> ConvertM b (Map E.Name (Int, Int))
+        :: Module a E.Name -> ConvertM b (Map E.Name (Maybe (Int, Int)))
 
 takePrenexAritiesOfImports mm
  = do   
         let check n (ImportValueModule _ _ _ (Just (aType, aValue)))
-                = return $ Just (n, (aType, aValue))
+                = return $ Just (n, Just (aType, aValue))
 
-            check n (ImportValueSea    _ _)
-                = return $ Just (n, (0, 0))            -- TODO: bogus
+            check n (ImportValueSea _ _)
+                = return $ Just (n, Nothing)
 
             check _ _
                 = return $ Nothing

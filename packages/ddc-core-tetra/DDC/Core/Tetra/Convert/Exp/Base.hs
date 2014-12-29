@@ -62,7 +62,10 @@ data Context a
           --   arguments. We get the arities by looking at the associated Salt
           --   type signature in the interface files for the modules that define
           --   each import.
-        , contextImports        :: Map      E.Name (Int, Int)   
+          --
+          --   Foreign functions can't be partially applied yet, so they
+          --   dont have any associated arity information.
+        , contextImports        :: Map      E.Name (Maybe (Int, Int))
 
           -- | Map of names of supers defined in the current module, to the 
           --   number of type and value parameters. The supers are all directly
@@ -167,12 +170,12 @@ superDataArity :: Context a -> Bound E.Name -> Maybe Int
 superDataArity ctx u
         -- Get the arity of a locally defined super.
         | UName n  <- u
-        , Just (_aType, aValue)  <- Map.lookup n (contextSupers ctx)
+        , Just (_aType, aValue)         <- Map.lookup n (contextSupers ctx)
         = Just aValue
 
         -- Get the arity of an imported super.
         | UName n  <- u
-        , Just (_aType, aValue) <- Map.lookup n (contextImports ctx)
+        , Just (Just (_aType, aValue))  <- Map.lookup n (contextImports ctx)
         = Just aValue
 
         | otherwise     = Nothing
