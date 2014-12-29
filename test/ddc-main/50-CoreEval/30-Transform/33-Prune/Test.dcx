@@ -50,7 +50,7 @@ let y = updateInt [:r r:] {w} x (2 [r] ())	in
 copyInt [:r r0#:] x
 ;;
 
--- TODO Doesn't cascade, because of the weakclo produced...
+-- Doesn't cascade, because of the weakclo produced.
 :trans..
 let x = 5 [r0#] ()			in
 let y = addInt [:r0# r0# r0#:] x x	in

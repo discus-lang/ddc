@@ -27,7 +27,6 @@ import qualified DDC.Core.Check                 as C
 -- | Convert a module to Core Salt.
 --   The output is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
---
 cmdToSaltFromFile
         :: Config               -- ^ Driver config.
         -> Store                -- ^ Interface store.
@@ -110,7 +109,6 @@ cmdToSaltSourceTetraFromString config store source str
 --   Works for the 'Lite' and 'Tetra' fragments.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
---
 cmdToSaltCoreFromFile
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
@@ -135,13 +133,12 @@ cmdToSaltCoreFromFile config language filePath
 --   Works for the 'Lite' and 'Tetra' fragments.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
---
 cmdToSaltCoreFromString
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Language definition.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ExceptT String IO ()               -- TODO: drop dump files even when there is an error.
+        -> ExceptT String IO ()               
 
 cmdToSaltCoreFromString config language source str
  | Language bundle      <- language

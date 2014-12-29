@@ -26,7 +26,6 @@ foldrAndBuild :
 	(a -(ek1|ck1)> b -(ek2|ck2)> b)
     -(Pure | Use r)>	(Unit -(ez|cz)> b)
 
--- TODO very strange issue here: if use names 'ec1' instead of 'ec1FB' they parse as anonymous & then references get mixed up
     -(Pure | Use r + ck1)>  ([bFB : Data]. [ec1FB ec2FB enFB : Effect]. [cc1FB cc2FB cnFB : Closure].
 	     (a -(ec1FB|cc1FB)> bFB -(ec2FB|cc2FB)> bFB)
 	    -(eg1|cg1)>
@@ -83,7 +82,6 @@ even :
     -(Alloc r0# + Read r0# | Use r0# )>
     Int r0#;
 
--- TODO double
 }
 with letrec
 

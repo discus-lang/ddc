@@ -29,7 +29,7 @@ ok, added foldrBuild_fuse
 -- ;;
 -- 
 
--- TODO: the Fix simplifier isn't pushing this though,
+-- NOTE: The Fix simplifier isn't pushing this though,
 --       So I've written the transform out explicitly.
 -- Here we would inline map, sum, filter, etc. But output is cleaner with them
 -- Try to fuse anything we can, even fusing interfering foldr/builds into foldrAndBuild.

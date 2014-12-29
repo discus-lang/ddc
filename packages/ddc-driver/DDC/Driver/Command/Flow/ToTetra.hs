@@ -87,7 +87,7 @@ cmdFlowToTetraCoreFromString
         -> Language             -- ^ Language definition.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ExceptT String IO ()               -- TODO: drop dump files even when there is an error.
+        -> ExceptT String IO ()
 
 cmdFlowToTetraCoreFromString config configLower language source str
  | Language bundle      <- language
@@ -110,10 +110,10 @@ cmdFlowToTetraCoreFromString config configLower language source str
                 [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
                   []
                 , PipeCoreOutput   pmode SinkStdout]
+
                 -- Unrecognised fragment name or file extension.
                 | otherwise
-                = throwE 
-                $ "Cannot convert '" ++ fragName ++ "' modules to Salt."
+                = throwE $ "Cannot convert '" ++ fragName ++ "' modules to Salt."
 
         -- Throw any errors that arose during compilation
         errs <- compile
@@ -122,7 +122,13 @@ cmdFlowToTetraCoreFromString config configLower language source str
          es     -> throwE $ renderIndent $ vcat $ map ppr es
 
 
-pipelineFlowToTetra :: Config -> Flow.Config -> Source -> [PipeCore () Salt.Name] -> PipeText Flow.Name Flow.Error
+pipelineFlowToTetra 
+        :: Config 
+        -> Flow.Config 
+        -> Source 
+        -> [PipeCore () Salt.Name] 
+        -> PipeText Flow.Name Flow.Error
+
 pipelineFlowToTetra config configLower source pipesSalt
  = stageFlowLoad    config source
  [ stageFlowRate    config source
