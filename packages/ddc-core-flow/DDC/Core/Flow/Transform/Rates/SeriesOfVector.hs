@@ -1,27 +1,17 @@
-{-# OPTIONS_GHC -Wwarn #-}
+
 module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
 where
-import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp                           as DDC
-import DDC.Core.Flow.Transform.Rates.Combinators   as Com
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
-import DDC.Core.Flow.Transform.Rates.Graph
 import qualified DDC.Core.Flow.Transform.Rates.SizeInference as SI
-import DDC.Core.Flow.Transform.Rates.Clusters
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
-import qualified DDC.Type.Env           as Env
-
-import qualified Data.Map as Map
-import           Data.Map   (Map)
-import qualified Data.Set as Set
-import Data.Monoid (mappend)
 
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
@@ -70,10 +60,11 @@ seriesOfVectorFunction fun
     -> case SI.generate prog of
            Nothing
             -> (fun, [], [])
-           Just (env,_s)
-            -> let g          = graphOfBinds prog env
-                   tmap a b   = SI.parents prog env a b
-                   clusters   = cluster g tmap
+
+           Just (_env,_s)
+            -> let -- g          = graphOfBinds prog env
+                   -- tmap a b   = SI.parents prog env a b
+                   -- clusters   = cluster g tmap
                    (re, ls)   = (fun, []) -- reconstruct fun prog env clusters
                in  (re, ls, [])
 
