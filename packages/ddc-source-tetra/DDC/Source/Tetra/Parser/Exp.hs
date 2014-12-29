@@ -113,32 +113,13 @@ pExp c
         pTok KBraceKet
         return  $ XCase sp x alts
 
-
         -- match { | EXP = EXP | EXP = EXP ... }
         --  Sugar for cascaded case expressions case-expression.
  , do   _       <- pTok KMatch
         pTok KBraceBra
-        gg      <- pGuards c
+        (_, x)  <- pMatchGuardsAsCase c
         pTok KBraceKet
-
-        let makeMatch ((_, Nothing, x1) : [])
-                = x1
-
-            makeMatch ((spg, Just g1, x1) : (_, Nothing, x2) : [])
-                = XCase spg g1
-                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x1
-                        , AAlt PDefault x2 ]
-
-            makeMatch ((spg, Just g, x) : gss)
-                = XCase spg g 
-                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x
-                        , AAlt PDefault (makeMatch gss) ]
-
-            makeMatch _ = error "ddc-source-tetra: bad alts"    
-                                -- TODO: panicify
-
-        return  $ makeMatch gg
-
+        return x
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
@@ -347,44 +328,71 @@ pBindPat c
 
 
 -- Guards -----------------------------------------------------------------------------------------
-pGuards :: Context Name
-        -> Parser Name [ (SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name) ]
+-- | Parse some guards and auto-desugar them to a case-expression.
+pBindGuardsAsCase
+        :: Context Name
+        -> Parser Name (SourcePos, Exp SourcePos Name)
 
-pGuards c
- = do   gs      <- P.endBy1 (P.try $ pGuardedExp c) (pTok KSemiColon)
-        go      <- pOtherwiseExp c
-        P.optional (pTok KSemiColon)
-        return  $ gs ++ [go]
+pBindGuardsAsCase c
+ = do   gg      <- P.many (pGuardedExp c)
+        let ((sp, _, _) : _) = gg
+        return  (sp, xCaseOfGuards gg)
+
+
+pMatchGuardsAsCase
+        :: Context Name
+        -> Parser Name (SourcePos, Exp SourcePos Name)
+
+pMatchGuardsAsCase c
+ = do   gg      <- P.sepEndBy1 (pGuardedExp c) (pTok KSemiColon)
+        let ((sp, _, _) : _) = gg
+        return  (sp, xCaseOfGuards gg)
 
 
 -- | An guarded expression,
 --   like | EXP1 = EXP2.
 pGuardedExp 
         :: Context Name 
-        -> Parser  Name ( SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)
+        -> Parser  Name (SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)
 
 pGuardedExp c
- = do   sp      <- pTokSP (KOp "|")
-        g       <- pExp c
-        pTok KEquals
-        x       <- pExp c
-        return  (sp, Just g, x)
+ = do   sp      <- pTokSP KBar
+
+        P.choice
+         [ do   pTok KOtherwise
+                pTok KEquals
+                x       <- pExp c
+                return  (sp, Nothing, x)
+
+         , do   g       <- pExp c
+                pTok KEquals
+                x       <- pExp c
+                return  (sp, Just g, x) ]
 
 
--- | An expression guarded with otherwise,
---   like | otherwise = EXP
-pOtherwiseExp
-        :: Context Name
-        -> Parser  Name ( SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)
+-- | Deguar some guards to a case-expression.
+xCaseOfGuards
+        :: [(SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)]
+        -> Exp SourcePos Name
+xCaseOfGuards gs 
+ = go gs
+ where
+        go ((_, Nothing, x1) : [])
+         = x1
 
-pOtherwiseExp c
- = do   sp      <- pTokSP (KOp "|")
-        pTok KOtherwise
-        pTok KEquals
-        x       <- pExp c
-        return  (sp, Nothing, x)
+        go ((spg, Just g1, x1) : (_, Nothing, x2) : [])
+         = XCase spg g1
+                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x1
+                , AAlt PDefault x2 ]
 
+        go ((spg, Just g, x) : gss)
+         = XCase spg g 
+                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x
+                , AAlt PDefault (go gss) ]
 
+        go _ = error "ddc-source-tetra: bad alts"    
+                        -- TODO: panicify
+        
 
 -- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Context Name -> Parser Name (Lets SourcePos Name, SourcePos)
@@ -479,8 +487,10 @@ pLetBinding c
                 --  Binder : Type = Exp
                 pTok (KOp ":")
                 t       <- pType c
-                pTok KEquals
-                xBody   <- pExp c
+
+                xBody   <- P.choice 
+                                [ pTok KEquals >> pExp c
+                                , liftM snd $ pBindGuardsAsCase c ]
 
                 return  $ (T.makeBindFromBinder b t, xBody) 
 
@@ -505,8 +515,13 @@ pLetBinding c
                         --   Binder Param1 Param2 .. ParamN : Type = Exp
                         pTok (KOp ":")
                         tBody   <- pType c
-                        sp      <- pTokSP KEquals
-                        xBody   <- pExp c
+
+                        (sp, xBody)
+                                <- P.choice
+                                [ do    sp <- pTokSP KEquals 
+                                        x  <- pExp c
+                                        return (sp, x)
+                                , do    pBindGuardsAsCase c ]
 
                         let x   = expOfParams sp ps xBody
                         let t   = funTypeOfParams c ps tBody
@@ -517,8 +532,12 @@ pLetBinding c
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --   Binder Param1 Param2 .. ParamN = Exp
-                 , do   sp      <- pTokSP KEquals
-                        xBody   <- pExp c
+                 , do   (sp, xBody) 
+                                <- P.choice
+                                [ do    sp <- pTokSP KEquals
+                                        x  <- pExp c
+                                        return (sp, x)
+                                , do    pBindGuardsAsCase c ]
 
                         let x   = expOfParams sp ps xBody
                         let t   = T.tBot T.kData

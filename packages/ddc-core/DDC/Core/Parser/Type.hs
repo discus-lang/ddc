@@ -118,7 +118,7 @@ pTypeFun c
          , do   pTok (KOp "-")
                 pTok KRoundBra
                 eff     <- pTypeSum c
-                pTok (KOp "|")
+                pTok KBar
                 clo     <- pTypeSum c
                 pTok KRoundKet
                 pTok (KOp ">")

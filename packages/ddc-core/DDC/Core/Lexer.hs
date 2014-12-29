@@ -162,32 +162,6 @@ lexText sourceName lineStart xx
          = tokA (KOpVar (T.unpack (T.cons c body))) 
                                                 : lexMore (2 + T.length (T.cons c body)) rest
 
-         -- Operator symbols.
-         | Just (c, cs1)        <- T.uncons cs
-         , isOpStart c
-         , (body, rest)         <- T.span isOpBody cs1
-         , sym                  <- T.cons c body
-         , sym /= T.pack "="
-         = tokA (KOp (T.unpack sym)) : lexMore (1 + T.length body) rest
-
-         -- Single character symbols.
-         | Just (c, rest)       <- T.uncons cs
-         , Just t
-            <- case c of
-                '('             -> Just KRoundBra
-                ')'             -> Just KRoundKet
-                '['             -> Just KSquareBra
-                ']'             -> Just KSquareKet
-                '{'             -> Just KBraceBra
-                '}'             -> Just KBraceKet
-                '.'             -> Just KDot
-                ','             -> Just KComma
-                ';'             -> Just KSemiColon
-                '\\'            -> Just KBackSlash
-                '='             -> Just KEquals
-                _               -> Nothing
-         = tokA t : lexMore 1 rest
-
          -- Literal numeric values
          -- This needs to come before the rule for '-'
          | Just (c, cs1)        <- T.uncons cs
@@ -228,6 +202,34 @@ lexText sourceName lineStart xx
                  = [tok $ KErrorUnterm (T.unpack cs)]
 
            in eat 0 [] cc
+
+         -- Operator symbols.
+         | Just (c, cs1)        <- T.uncons cs
+         , isOpStart c
+         , (body, rest)         <- T.span isOpBody cs1
+         , sym                  <- T.cons c body
+         , sym /= T.pack "="
+         , sym /= T.pack "|"
+         = tokA (KOp (T.unpack sym)) : lexMore (1 + T.length body) rest
+
+         -- Single character symbols.
+         | Just (c, rest)       <- T.uncons cs
+         , Just t
+            <- case c of
+                '('             -> Just KRoundBra
+                ')'             -> Just KRoundKet
+                '['             -> Just KSquareBra
+                ']'             -> Just KSquareKet
+                '{'             -> Just KBraceBra
+                '}'             -> Just KBraceKet
+                '.'             -> Just KDot
+                ','             -> Just KComma
+                ';'             -> Just KSemiColon
+                '\\'            -> Just KBackSlash
+                '='             -> Just KEquals
+                '|'             -> Just KBar
+                _               -> Nothing
+         = tokA t : lexMore 1 rest
 
          -- Debruijn indices
          | Just ('^', cs1)      <- T.uncons cs
@@ -302,5 +304,7 @@ lexText sourceName lineStart xx
 
          -- Some unrecognised character.
          | otherwise
-         = [tok $ KErrorJunk (T.unpack cs)]
+         = case T.unpack cs of
+                (c : _) -> [tok $ KErrorJunk [c]]
+                _       -> [tok $ KErrorJunk []]
 

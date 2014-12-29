@@ -25,7 +25,7 @@ pRule c
  = do   bs       <- pRuleBinders c
         (cs,lhs) <- pRuleCsLhs c
         hole     <- pRuleHole c
-        pTok (KOp "=")
+        pTok KEquals
         rhs      <- pExp c
 
         return $ R.mkRewriteRule bs cs lhs hole rhs

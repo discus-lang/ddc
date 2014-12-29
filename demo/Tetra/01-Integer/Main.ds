@@ -18,26 +18,23 @@ fac  (n : Nat) : Nat
  = fac' 1 n
 
 fac' (acc : Nat) (n : Nat) : Nat
- = match 
-        | n == 0        = acc
-        | n == 1        = acc
-        | otherwise     = fac' (acc * n) (n - 1)
+ | n == 0       = acc
+ | n == 1       = acc
+ | otherwise    = fac' (acc * n) (n - 1)
 
 
 -- Ackermann's function.
 ack (m : Nat) (n : Nat) : Nat 
- = match
-        | m == 0       = n + 1
-        | n == 0       = ack (m - 1) 1
-        | otherwise    = ack (m - 1) (ack m (n - 1))
+ | m == 0       = n + 1
+ | n == 0       = ack (m - 1) 1
+ | otherwise    = ack (m - 1) (ack m (n - 1)) 
 
 
 -- Greatest Common Divisor.
 gcd (x y : Nat) : Nat 
- = match
-        | x == 0       = y
-        | y == 0       = x
-        | x > y        = gcd y (rem x y)
-        | otherwise    = gcd x (rem y x)
+ | x == 0       = y
+ | y == 0       = x
+ | x > y        = gcd y (rem x y)
+ | otherwise    = gcd x (rem y x) 
 
 

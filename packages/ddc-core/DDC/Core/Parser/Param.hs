@@ -140,7 +140,7 @@ pBindParamSpecAnnot c
          <- P.choice
                 [ do    pTok KBraceBra
                         eff'    <- pType c
-                        pTok (KOp "|")
+                        pTok KBar
                         clo'    <- pType c
                         pTok KBraceKet
                         return  (eff', clo')

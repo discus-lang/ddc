@@ -183,6 +183,7 @@ data TokAtom
         | KUnderscore
         | KBackSlash
         | KEquals
+        | KBar
         
         -----------------------------------------
         -- Compound symbols.
@@ -307,6 +308,7 @@ describeTokAtom' ta
         KBackSlash              -> (Symbol, "\\")
         KBigLambda              -> (Symbol, "/\\")
         KEquals                 -> (Symbol, "=")
+        KBar                    -> (Symbol, "|")
 
         -- symbolic constructors
         KArrowTilde             -> (Constructor, "~>")
