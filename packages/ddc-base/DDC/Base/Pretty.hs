@@ -8,6 +8,7 @@ module DDC.Base.Pretty
         ( module Text.PrettyPrint.Leijen
         , Pretty(..)
         , pprParen
+        , padL
 
         -- * Rendering
         , RenderMode (..)
@@ -71,6 +72,15 @@ instance Pretty a => Pretty (Set a) where
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
  ppr (a, b) = parens $ ppr a <> comma <> ppr b
+
+
+padL :: Int -> Doc -> Doc
+padL n d
+ = let  len     = length $ renderPlain d
+        pad     = n - len
+   in   if pad > 0
+         then  d <> text (replicate pad ' ')
+         else  d
 
 
 -- Rendering ------------------------------------------------------------------

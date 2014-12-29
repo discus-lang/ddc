@@ -147,10 +147,10 @@ convertImportSourceM
 
 convertImportSourceM isrc
  = case isrc of
-        ImportSourceModule mn n t
+        ImportSourceModule mn n t _
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ ImportSourceModule mn n' t'
+                return  $ ImportSourceModule mn n' t' Nothing
 
         ImportSourceAbstract t
          -> do  t'      <- convertType t

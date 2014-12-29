@@ -41,7 +41,7 @@ seaNameOfSuper mImport mExport nm
         = Just $ text $ sanitizeName str
 
         -- Super is imported from another module and not exported.
-        | Just (ImportSourceModule _ _ _)       <- mImport
+        | Just ImportSourceModule{}             <- mImport
         , Nothing                               <- mExport
         , Just str                              <- takeNameVar nm
         = Just $ text $ {- "_DDC_" ++ -} sanitizeName str

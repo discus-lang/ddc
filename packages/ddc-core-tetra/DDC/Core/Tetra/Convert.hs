@@ -1,5 +1,5 @@
--- | Conversion of Disciple Lite to Disciple Salt.
---
+
+-- | Conversion of Disciple Core Tetra to Disciple Core Salt.
 module DDC.Core.Tetra.Convert
         ( saltOfTetraModule
         , Error(..))
@@ -234,10 +234,10 @@ convertImportSourceM
 
 convertImportSourceM tctx isrc
  = case isrc of
-        ImportSourceModule mn n t
+        ImportSourceModule mn n t _
          -> do  n'      <- convertBindNameM n
                 t'      <- convertSuperT tctx t
-                return  $ ImportSourceModule mn n' t'
+                return  $ ImportSourceModule mn n' t' Nothing
 
         ImportSourceAbstract t
          -> do  t'      <- convertSuperT tctx t

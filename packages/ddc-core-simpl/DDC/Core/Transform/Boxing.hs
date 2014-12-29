@@ -83,16 +83,30 @@ boxingModule
 
 boxingModule config mm
  = let  
-        -- Convert types of foreign functions to use unboxed versions.
+        -- Use explicitly unboxed types when importing foreign sea functions.
         boxingImport imp
          = case imp of
                 ImportSourceSea v t
-                  -> ImportSourceSea v $ boxingForeignSeaType config t
+                  -> ImportSourceSea v  $ boxingForeignSeaType config t
                 _ -> imp
 
-   in   mm { moduleBody         = boxingX config (moduleBody mm)
-           , moduleImportValues = [(n, boxingImport imp) 
-                                        | (n, imp) <- moduleImportValues mm ] }
+        -- Use explicitly unboxed types when exporting foreign sea functions.
+        nsImportSea   = [ n | (n, ImportSourceSea _ _) <- moduleImportValues mm]
+        boxingExport expt
+         = case expt of
+                ExportSourceLocal n t
+                  |  elem n nsImportSea
+                  -> ExportSourceLocal n $ boxingForeignSeaType config t
+                _ -> expt
+
+   in   mm { moduleBody         
+              = boxingX config (moduleBody mm)
+
+           , moduleExportValues 
+              = [(n, boxingExport expt) | (n, expt) <- moduleExportValues mm ]
+
+           , moduleImportValues 
+              = [(n, boxingImport impt) | (n, impt) <- moduleImportValues mm ] }
 
 
 boxingX config xx

@@ -61,7 +61,7 @@ runtimeImportKinds :: Map Name (ImportSource Name)
 runtimeImportKinds
  = Map.fromList
    [ rn ukTop ]
- where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t)
+ where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t Nothing)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 

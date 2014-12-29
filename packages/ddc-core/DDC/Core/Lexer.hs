@@ -113,6 +113,13 @@ lexText sourceName lineStart xx
          = lexMore 8 rest
 
          -- Meta tokens
+         | Just rest            <- T.stripPrefix (txt "{-#") cs
+         , (prag, rest')        <- T.breakOn     (txt "#-}") rest
+         , rest''               <- T.drop 3 rest'
+         , len                  <- 3 + T.length prag + 3
+         = tokA (KPragma prag)          : lexMore len rest''
+
+
          | Just rest            <- T.stripPrefix (txt "{-") cs
          = tokM KCommentBlockStart      : lexMore 2 (lexUpto (txt "-}") rest)
 

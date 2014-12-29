@@ -1,7 +1,8 @@
 
 module Data.Numeric.Nat
 
-export  { neg; add; sub; mul; div
+export  { showNat
+        ; neg; add; sub; mul; div
         ; eq;  neq; lt;  le;  gt;  ge }
 
 import foreign c value

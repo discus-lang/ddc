@@ -1,4 +1,7 @@
 
+-- | Gather up the set of free names and try to find matching export statements
+--   in the imported modules. Add explicit imports that refer to the module where
+--   each name is bound.
 module DDC.Build.Transform.Resolve
         ( resolveNamesInModule )
 where
@@ -7,7 +10,7 @@ import DDC.Core.Exp
 import DDC.Core.Collect.Support
 import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv, TypeEnv)
-import Data.Maybe
+import DDC.Base.Pretty
 import Data.Map                                 (Map)
 import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Interface.Base                 (Interface (..))
@@ -37,9 +40,19 @@ resolveNamesInModule kenv tenv store mm
         let sp  = support kenv tenv mm
         ints    <- Store.getInterfaces store
         let deps    = Map.fromList 
-                        [ ( interfaceModuleName int
-                          , let Just m = interfaceTetraModule int in m)
-                          | int <- ints ]
+                        [ ( interfaceModuleName i
+                          , let Just m = interfaceTetraModule i in m)
+                          | i <- ints ]
+        modNames       <- Store.getModuleNames store
+
+        let getDaVarImport (UName n) = do
+                eImport <- findImportSourceForDaVar store modNames n
+                case eImport of
+                 Left err       -> error $ renderIndent (ppr err)
+                 Right isrc     -> return (n, isrc)
+            getDaVarImport _    =  error "fark err"
+
+        importsDaVar    <- mapM getDaVarImport $ Set.toList $ supportDaVar sp
 
         return $ mm 
            { moduleImportTypes   
@@ -55,7 +68,7 @@ resolveNamesInModule kenv tenv store mm
 
            , moduleImportValues  
                 =  moduleImportValues mm 
-                ++ importsForDaVars deps (Set.toList $ supportDaVar sp) }
+                ++ importsDaVar }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -112,10 +125,24 @@ importsForDaTyCons deps _tycons
 --   We look in dependency modules for a matching export, 
 --   and produce the corresponding import statement to use it.
 --
+findImportSourceForDaVar
+        :: Store                -- ^ Interface store.
+        -> [ModuleName]         -- ^ Modules to search for matching exports.
+        -> E.Name               -- ^ Name of value.
+        -> IO (Either Error (ImportSource E.Name))
+
+findImportSourceForDaVar store modNames nSuper
+ = do   result  <- Store.findSuper store nSuper modNames
+        case result of
+         []      -> return $ Left  $ ErrorNotFound nSuper
+         [super] -> return $ Right $ Store.superImportSource super
+         supers  -> return $ Left  $ ErrorMultiple nSuper (map Store.superModuleName supers)
+
+{-}
 importsForDaVars 
-        :: Ord n
-        => Map ModuleName (Module b n)  -- ^ Modules which this one depends on.
-        -> [Bound n]                    -- ^ Unbound type constructors to find imports for.
+        :: Store
+        => [ModuleName]         -- ^ Modules to search for matching exports.
+        -> [Bound n]            -- ^ Unbound type constructors to find imports for.
         -> [(n, ImportSource n)]
 
 importsForDaVars deps daVars
@@ -131,7 +158,7 @@ importsForDaVars deps daVars
 
         findImport n
          | Just (modName, t) <- Map.lookup n daVarsLocal
-         = Just (n, ImportSourceModule modName n t)
+         = Just (n, ImportSourceModule modName n t Nothing)
 
          | Just (s, t)       <- Map.lookup n daVarsForeign
          = Just (n, ImportSourceSea    s t)
@@ -140,6 +167,7 @@ importsForDaVars deps daVars
          = Nothing
 
    in   catMaybes [ findImport n | UName n <- daVars ]
+-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -150,14 +178,14 @@ exportedTyConsLocal mm
         $ [ (n, (moduleName mm, t)) 
                         | (n, ExportSourceLocal _ t) <- moduleExportTypes mm ]
 
-
+{-
 -- | Get the data variable names that are locally defined, then exported by a module.
 exportedDaVarsLocal :: Ord n => Module b n -> Map n (ModuleName, Type n)
 exportedDaVarsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t)) 
                         | (n, ExportSourceLocal _ t) <- moduleExportValues mm ]
-
+-}
 
 -- | Get the type constructors that are imported abstractly by a module.
 importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)
@@ -173,9 +201,27 @@ importedTyConsBoxed mm
         $ [ (n, k)      | (n, ImportSourceBoxed k)      <- moduleImportTypes mm ]
 
 
+{-
 -- | Get the data variables that are imported from C land by a module.
 importedDaVarsSea  :: Ord n => Module b n -> Map n (String, Type n)
 importedDaVarsSea mm
         = Map.fromList
         $ [ (n, (s, t)) | (n, ImportSourceSea s t)     <- moduleImportValues mm ]
+-}
 
+
+---------------------------------------------------------------------------------------------------
+data Error
+        = ErrorNotFound E.Name
+        | ErrorMultiple E.Name [ModuleName]
+
+instance Pretty Error where
+ ppr err
+  = case err of
+        ErrorNotFound n
+         -> vcat [ text "Not in scope: " <> squotes (ppr n) ]
+
+        ErrorMultiple n ms
+         -> vcat $  [ text "Variable" <+> squotes (ppr n) <+> text "defined in multiple modules:" ]
+                 ++ (map ppr ms)
+         

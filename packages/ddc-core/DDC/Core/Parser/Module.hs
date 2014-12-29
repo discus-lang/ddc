@@ -187,7 +187,7 @@ pImportType c
  = do   n       <- pName
         pTokSP (KOp ":")
         k       <- pType c
-        return  $ ImportType n (ImportSourceModule (ModuleName []) n k)
+        return  $ ImportType n (ImportSourceModule (ModuleName []) n k Nothing)
 
 
 -- | Parse a foreign type import spec.
@@ -225,7 +225,7 @@ pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-        return  (ImportValue n (ImportSourceModule (ModuleName []) n t))
+        return  (ImportValue n (ImportSourceModule (ModuleName []) n t Nothing))
 
 
 -- | Parse a foreign value import spec.

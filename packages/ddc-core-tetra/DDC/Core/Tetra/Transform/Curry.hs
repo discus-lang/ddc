@@ -98,7 +98,7 @@ funMapAddForeign :: FunMap -> (Name, ImportSource Name) -> FunMap
 funMapAddForeign funs (n, is)
 
         -- Import from a different DDC compiled module.
-        | ImportSourceModule _m _n t <- is
+        | ImportSourceModule _m _n t _ <- is
         = let   (tsArgs, _tResult)                      -- TODO: get real arity of function.
                         = takeTFunArgResult
                         $ eraseTForalls t

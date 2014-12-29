@@ -113,10 +113,10 @@ pprExportType :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
 pprExportType (n, esrc)
  = case esrc of
         ExportSourceLocal _n k
-         -> text "export type" <+> ppr n  <+> text ":" <+> ppr k <> semi
+         -> text "export type" <+> padL 10 (ppr n) <+> text ":" <+> ppr k <> semi
 
         ExportSourceLocalNoType _n 
-         -> text "export type" <+> ppr n  <> semi
+         -> text "export type" <+> padL 10 (ppr n) <> semi
 
 
 -- | Pretty print an exported value definition.
@@ -124,10 +124,10 @@ pprExportValue :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
 pprExportValue (n, esrc)
  = case esrc of
         ExportSourceLocal _n t
-         -> text "export value" <+> ppr n  <+> text ":" <+> ppr t <> semi
+         -> text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
 
         ExportSourceLocalNoType _n
-         -> text "export value" <+> ppr n  <> semi
+         -> text "export value" <+> padL 10 (ppr n) <> semi
 
 
 -- Imports ----------------------------------------------------------------------------------------
@@ -135,8 +135,8 @@ pprExportValue (n, esrc)
 pprImportType :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportType (n, isrc)
  = case isrc of
-        ImportSourceModule _mn _nSrc k
-         -> text "import type" <+> ppr n <+> text ":" <+> ppr k <> semi
+        ImportSourceModule _mn _nSrc k _
+         -> text "import type" <+> padL 11 (ppr n) <+> text ":" <+> ppr k <> semi
 
         ImportSourceAbstract k
          -> text "import foreign abstract type" <> line
@@ -155,20 +155,29 @@ pprImportType (n, isrc)
 pprImportValue :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
-        ImportSourceModule _mn _nSrc t
-         -> text "import value" <+> ppr n <+> text ":" <+> ppr t <> semi
+        ImportSourceModule _mn _nSrc t Nothing
+         ->        text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+
+        ImportSourceModule _mn _nSrc t (Just (arityType, arityValue))
+         -> vcat [ text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+                 , text "{-# ARITY   " <+> padL 10 (ppr n) <+> ppr arityType <+> ppr arityValue 
+                                       <+> text "#-}"
+                 , empty ]
 
         ImportSourceAbstract t
          -> text "import foreign abstract value" <> line
-         <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
+         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
+         <> line
 
         ImportSourceBoxed t
          -> text "import foreign boxed value" <> line
-         <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
+         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
+         <> line
 
         ImportSourceSea _var t
          -> text "import foreign c value" <> line
-         <> indent 8 (ppr n <+> text ":" <+> ppr t <> semi)
+         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
+         <> line
 
 
 -- DataDef ----------------------------------------------------------------------------------------

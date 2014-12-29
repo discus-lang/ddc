@@ -13,6 +13,7 @@ module DDC.Build.Interface.Store
 where
 import DDC.Build.Interface.Base         
 import DDC.Build.Interface.Load
+import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Type.Exp
 import System.Directory
@@ -60,14 +61,23 @@ data Super
         { -- | Name of the super.
           superName             :: E.Name
 
-          -- | Where this super is defined.
+          -- | Where the super was imported from.
+          --
+          --   This is the module that the name was resolved from. If that
+          --   module re-exported an imported name then this may not be the
+          --   module the super was actually defined in.
         , superModuleName       :: ModuleName
 
           -- | Tetra type for the super.
         , superTetraType        :: Type E.Name
 
           -- | Salt type for the super.
-        , superSaltType         :: Type A.Name }
+        , superSaltType         :: Type A.Name 
+
+          -- | Import source for the super.
+          --
+          --   This can be used to refer to the super from a client module.
+        , superImportSource     :: ImportSource E.Name }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -168,36 +178,91 @@ metaOfInterface int
 
 
 -- | Extract a map of super interfaces from the given module interface.
+--
+--   This contains all the information needed to import a super into
+--   a client module.
+--
 supersOfInterface :: InterfaceAA -> Map E.Name Super
 supersOfInterface int
  | Just mmTetra <- interfaceTetraModule int
  , Just mmSalt  <- interfaceSaltModule  int
  = let  
-        -- Names and Tetra types of all supers exported by the module.
+        -- The current module name.
+        modName = interfaceModuleName int
+
+        -- Collect Tetra types for all supers exported by the module.
         ntsTetra    
-         = [ (n, t)     | (n, esrc)     <- moduleExportValues mmTetra
+         = Map.fromList
+           [ (n, t)     | (n, esrc)     <- moduleExportValues mmTetra
                         , let Just t    =  takeTypeOfExportSource esrc ]
 
-        -- Names and Salt  types of all supers exported by the module.
+        -- Collect Salt  types of all supers exported by the module.
         ntsSalt 
          = Map.fromList
            [ (n, t)     | (n, esrc)     <- moduleExportValues mmSalt
                         , let Just t    =  takeTypeOfExportSource esrc ]
 
+        -- Build call patterns for all locally defined supers.
+        --  The call pattern is the number of type parameters then value parameters
+        --  for the super. We assume all supers are in prenex form, so they take
+        --  all their type arguments before their value arguments.
+        makeLocalArity b mtks
+         | BName n _            <- b
+         , Just (ks, ts)        <- mtks
+         = (n, (length ks, length ts))
+         | otherwise            = error "supersOfInterface: not prenex"
+
+        nsLocalArities :: Map E.Name (Int, Int)
+                =  Map.fromList
+                $  map (uncurry makeLocalArity)
+                $  mapTopBinds (\b x -> (b, takePrenexCallPattern x))
+                $  mmTetra
+
+        -- Build an ImportSource for the given super name. A client module
+        -- can use this to import the super into itself.
+        makeImportSource n
+
+         -- Super was defined as a top-level binding in the current module.
+         | Just (aType, aValue) <- Map.lookup n nsLocalArities
+         , Just tTetra          <- Map.lookup n ntsTetra
+         = ImportSourceModule modName n tTetra (Just (aType, aValue))
+
+         -- Super was imported into the current module from somewhere else.
+         -- Pass along the same import declaration to the client.
+         | Just impt            <- lookup n (moduleImportValues mmTetra)
+         = impt
+
+         | otherwise            = error $ "supersOfInterface: no source" ++ (show n)
+
         makeSuper n tTetra
-         = case n of
-            E.NameVar s 
-                -> Just $ Super
-                { superName       = n
-                , superModuleName = moduleName mmTetra
-                , superTetraType  = tTetra
-                , superSaltType   = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t }
-            _   -> Nothing
+         | E.NameVar s  <- n
+         = Just $ Super
+                { superName         = n
+                , superModuleName   = moduleName mmTetra
+                , superTetraType    = tTetra
+                , superSaltType     = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t 
+                , superImportSource = makeImportSource n }
+         | otherwise    = Nothing
+
 
    in   Map.fromList   
-          [ (n, super)  | (n, tTetra)    <- ntsTetra 
+          [ (n, super)  | (n, tTetra)    <- Map.toList ntsTetra 
                         , let Just super = makeSuper n tTetra ]
 
  | otherwise
  = Map.empty
 
+{-
+-- | Construct the `ImportSource` from the super meta-data in an interface file.
+importSourceOfSuper :: Store.Super -> ImportSource E.Name
+importSourceOfSuper s
+        = ImportSourceModule
+        { importSourceModuleName        = superModuleName s
+        , importSourceModuleVar         = superName       s
+        , importSourceModuleType        = superTetraType  s
+        , importSourceModulePragmaArity 
+           = let t         = Store.superSaltType s
+                 a         = arityOfType t
+                 aValue    = dataArityOfType t
+             in  Just (a - aValue, aValue) }
+-}

@@ -21,6 +21,7 @@ import DDC.Core.Pretty
 import DDC.Core.Exp
 import Control.Monad
 import Data.Text                (Text)
+import qualified Data.Text      as T
 
 
 -- TokenFamily ----------------------------------------------------------------
@@ -34,6 +35,7 @@ data TokenFamily
         | Constructor
         | Index
         | Literal
+        | Pragma
 
 
 -- | Describe a token family, for parser error messages.
@@ -45,6 +47,7 @@ describeTokenFamily tf
         Constructor     -> "constructor"
         Index           -> "index"
         Literal         -> "literal"
+        Pragma          -> "pragma"
 
 
 -- Tok ------------------------------------------------------------------------
@@ -138,20 +141,19 @@ describeTokMeta tm
 --   language fragment.
 data TokAtom
         -----------------------------------------
-        -- Parens
-        = KRoundBra
-        | KRoundKet
-        | KSquareBra
-        | KSquareKet
-        | KBraceBra
-        | KBraceKet
+        -- Single char parenthesis
+        = KRoundBra             -- ^ Like '('
+        | KRoundKet             -- ^ Like ')'
+        | KSquareBra            -- ^ Like '['
+        | KSquareKet            -- ^ Like ']'
+        | KBraceBra             -- ^ Like '{'
+        | KBraceKet             -- ^ Like '}'
 
-        -----------------------------------------
-        -- Compound parens
-        | KSquareColonBra
-        | KSquareColonKet
-        | KBraceColonBra
-        | KBraceColonKet
+        -- Compound parenthesis
+        | KSquareColonBra       -- ^ Like '[:'
+        | KSquareColonKet       -- ^ Like ':]'
+        | KBraceColonBra        -- ^ Like '{:'
+        | KBraceColonKet        -- ^ Like ':}'
 
         -----------------------------------------
         -- Operator symbols
@@ -237,6 +239,9 @@ data TokAtom
 
         -- literal strings
         | KString Text
+
+        -- pragmas
+        | KPragma Text
 
         -----------------------------------------
         -- builtin names 
@@ -341,9 +346,9 @@ describeTokAtom' ta
         KElse                   -> (Keyword, "else")
 
         -- debruijn indices
-        KIndex i                -> (Index,   "^" ++ show i)
-
-        KString s               -> (Literal,     show s)
+        KIndex  i               -> (Index,   "^" ++ show i)
+        KString s               -> (Literal, show s)
+        KPragma p               -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")
 
         -- builtin names
         KSoConBuiltin so        -> (Constructor, renderPlain $ ppr so)

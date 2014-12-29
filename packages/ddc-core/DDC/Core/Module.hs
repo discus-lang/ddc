@@ -311,7 +311,7 @@ data ImportSource n
         --   Used for phantom types of kind Data, 
         --   as well as any type that does not have kind Data.
         = ImportSourceAbstract
-        { importSourceAbstractType      :: Type n }
+        { importSourceAbstractType      :: !(Type n) }
 
         -- | The type of some boxed data which is defined somewhere else.
         --   The objects follow the standard heap object layout, but the code
@@ -319,28 +319,37 @@ data ImportSource n
         --   different language.
         --   Used when importing data types defined in Salt modules.
         | ImportSourceBoxed
-        { importSourceBoxed             :: Kind n }
+        { importSourceBoxed             :: !(Kind n) }
 
-        -- | Something imported from a Disciple module that we compiled ourself.
+
+        -- | Value imported from a Disciple module that we compiled ourself.
         | ImportSourceModule
-        { importSourceModuleName        :: ModuleName 
-        , importSourceModuleVar         :: n 
-        , importSourceModuleType        :: Type n }
+        { importSourceModuleName        :: !ModuleName 
+        , importSourceModuleVar         :: !n 
+        , importSourceModuleType        :: !(Type n)
+
+          -- | Number of type and value arguments for a top-level super.
+        , importSourceModuleArity       :: !(Maybe (Int, Int)) }
+
 
         -- | Something imported via the C calling convention.
         | ImportSourceSea
-        { importSourceSeaVar            :: String 
-        , importSourceSeaType           :: Type n }
+        { importSourceSeaVar            :: !String 
+        , importSourceSeaType           :: !(Type n) }
         deriving (Show, Eq)
 
 
 instance NFData n => NFData (ImportSource n) where
  rnf is
   = case is of
-        ImportSourceAbstract t          -> rnf t
-        ImportSourceBoxed t             -> rnf t
-        ImportSourceModule mn n t       -> rnf mn `seq` rnf n `seq` rnf t
-        ImportSourceSea v t             -> rnf v  `seq` rnf t
+        ImportSourceAbstract t             -> rnf t
+
+        ImportSourceBoxed t                -> rnf t
+
+        ImportSourceModule mn n t mAV 
+         -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
+
+        ImportSourceSea v t                -> rnf v  `seq` rnf t
 
 
 -- | Take the type of an imported thing.
@@ -349,7 +358,7 @@ typeOfImportSource src
  = case src of
         ImportSourceAbstract   t        -> t
         ImportSourceBoxed      t        -> t
-        ImportSourceModule _ _ t        -> t
+        ImportSourceModule _ _ t _      -> t
         ImportSourceSea      _ t        -> t
 
 
@@ -359,7 +368,7 @@ mapTypeOfImportSource f isrc
  = case isrc of
         ImportSourceAbstract  t         -> ImportSourceAbstract (f t)
         ImportSourceBoxed     t         -> ImportSourceBoxed    (f t)
-        ImportSourceModule mn n t       -> ImportSourceModule mn n (f t)
+        ImportSourceModule mn n t a     -> ImportSourceModule mn n (f t) a
         ImportSourceSea s t             -> ImportSourceSea s (f t)
 
 
