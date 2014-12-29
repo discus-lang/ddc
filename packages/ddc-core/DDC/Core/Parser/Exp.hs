@@ -83,23 +83,11 @@ pExp c
  , do   --  Sugar for a single-alternative case expression.
         sp      <- pTokSP KLetCase
         p       <- pPat c
-        pTok (KOp "=")
+        pTok KEquals
         x1      <- pExp c
         pTok KIn
         x2      <- pExp c
         return  $ XCase sp x1 [AAlt p x2]
-
-        -- match PAT <- EXP else EXP in EXP
-        --  Sugar for a case-expression.
- , do   sp      <- pTokSP KMatch
-        p       <- pPat c
-        pTok KArrowDashLeft
-        x1      <- pExp c
-        pTok KElse
-        x2      <- pExp c
-        pTok KIn
-        x3      <- pExp c
-        return  $ XCase sp x1 [AAlt p x3, AAlt PDefault x2]
 
         -- weakeff [TYPE] in EXP
  , do   sp      <- pTokSP KWeakEff
@@ -411,7 +399,7 @@ pLetBinding c
                 --  BINDER : TYPE = EXP
                 pTok (KOp ":")
                 t       <- pType c
-                pTok (KOp "=")
+                pTok KEquals
                 xBody   <- pExp c
 
                 return  $ (T.makeBindFromBinder b t, xBody) 
@@ -421,7 +409,7 @@ pLetBinding c
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
                 --  BINDER = EXP
-                pTok (KOp "=")
+                pTok KEquals
                 xBody   <- pExp c
                 let t   = T.tBot T.kData
                 return  $ (T.makeBindFromBinder b t, xBody)
@@ -438,7 +426,7 @@ pLetBinding c
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
                         pTok (KOp ":")
                         tBody   <- pType c
-                        sp      <- pTokSP (KOp "=")
+                        sp      <- pTokSP KEquals
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -450,7 +438,7 @@ pLetBinding c
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
-                 , do   sp      <- pTokSP (KOp "=")
+                 , do   sp      <- pTokSP KEquals
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -476,7 +464,7 @@ pStmt c
    --  
    P.try $ 
     do  br      <- pBinder
-        sp      <- pTokSP (KOp "=")
+        sp      <- pTokSP KEquals
         x1      <- pExp c
         let t   = T.tBot T.kData
         let b   = T.makeBindFromBinder br t

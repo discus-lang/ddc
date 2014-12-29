@@ -182,6 +182,7 @@ data TokAtom
         | KSemiColon
         | KUnderscore
         | KBackSlash
+        | KEquals
         
         -----------------------------------------
         -- Compound symbols.
@@ -234,6 +235,7 @@ data TokAtom
         | KIf
         | KThen
         | KElse
+        | KOtherwise
 
         -----------------------------------------
         -- debruijn indices
@@ -304,6 +306,7 @@ describeTokAtom' ta
         KUnderscore             -> (Symbol, "_")
         KBackSlash              -> (Symbol, "\\")
         KBigLambda              -> (Symbol, "/\\")
+        KEquals                 -> (Symbol, "=")
 
         -- symbolic constructors
         KArrowTilde             -> (Constructor, "~>")
@@ -348,6 +351,7 @@ describeTokAtom' ta
         KIf                     -> (Keyword, "if")
         KThen                   -> (Keyword, "then")
         KElse                   -> (Keyword, "else")
+        KOtherwise              -> (Keyword, "otherwise")
 
         -- debruijn indices
         KIndex  i               -> (Index,   "^" ++ show i)

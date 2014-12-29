@@ -71,7 +71,8 @@ keywords
         , ("match",      KA KMatch)
         , ("if",         KA KIf)
         , ("then",       KA KThen)
-        , ("else",       KA KElse) ]
+        , ("else",       KA KElse)
+        , ("otherwise",  KA KOtherwise) ]
 
 
 -- | Read a named sort constructor.

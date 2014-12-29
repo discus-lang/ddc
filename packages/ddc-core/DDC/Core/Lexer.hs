@@ -162,6 +162,14 @@ lexText sourceName lineStart xx
          = tokA (KOpVar (T.unpack (T.cons c body))) 
                                                 : lexMore (2 + T.length (T.cons c body)) rest
 
+         -- Operator symbols.
+         | Just (c, cs1)        <- T.uncons cs
+         , isOpStart c
+         , (body, rest)         <- T.span isOpBody cs1
+         , sym                  <- T.cons c body
+         , sym /= T.pack "="
+         = tokA (KOp (T.unpack sym)) : lexMore (1 + T.length body) rest
+
          -- Single character symbols.
          | Just (c, rest)       <- T.uncons cs
          , Just t
@@ -176,6 +184,7 @@ lexText sourceName lineStart xx
                 ','             -> Just KComma
                 ';'             -> Just KSemiColon
                 '\\'            -> Just KBackSlash
+                '='             -> Just KEquals
                 _               -> Nothing
          = tokA t : lexMore 1 rest
 
@@ -225,12 +234,6 @@ lexText sourceName lineStart xx
          , (ds, rest)           <- T.span isDigit cs1
          , T.length ds >= 1
          = tokA (KIndex (read (T.unpack ds)))   : lexMore (1 + T.length ds) rest         
-
-         -- Operator symbols.
-         | Just (c, cs1)        <- T.uncons cs
-         , isOpStart c
-         , (body, rest)         <- T.span isOpBody cs1
-         = tokA (KOp (T.unpack (T.cons c body))) : lexMore (1 + T.length body) rest
         
          -- Operator body symbols.
          | Just ('^', rest)     <- T.uncons cs

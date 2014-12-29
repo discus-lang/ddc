@@ -113,17 +113,32 @@ pExp c
         pTok KBraceKet
         return  $ XCase sp x alts
 
-        -- match Pat <- Exp else Exp in Exp
-        --  Sugar for a case-expression.
- , do   sp      <- pTokSP KMatch
-        p       <- pPat c
-        pTok KArrowDashLeft
-        x1      <- pExp c
-        pTok KElse
-        x2      <- pExp c
-        pTok KIn
-        x3      <- pExp c
-        return  $ XCase sp x1 [AAlt p x3, AAlt PDefault x2]
+
+        -- match { | EXP = EXP | EXP = EXP ... }
+        --  Sugar for cascaded case expressions case-expression.
+ , do   _       <- pTok KMatch
+        pTok KBraceBra
+        gg      <- pGuards c
+        pTok KBraceKet
+
+        let makeMatch ((_, Nothing, x1) : [])
+                = x1
+
+            makeMatch ((spg, Just g1, x1) : (_, Nothing, x2) : [])
+                = XCase spg g1
+                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x1
+                        , AAlt PDefault x2 ]
+
+            makeMatch ((spg, Just g, x) : gss)
+                = XCase spg g 
+                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x
+                        , AAlt PDefault (makeMatch gss) ]
+
+            makeMatch _ = error "ddc-source-tetra: bad alts"    
+                                -- TODO: panicify
+
+        return  $ makeMatch gg
+
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
@@ -331,6 +346,46 @@ pBindPat c
  ]
 
 
+-- Guards -----------------------------------------------------------------------------------------
+pGuards :: Context Name
+        -> Parser Name [ (SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name) ]
+
+pGuards c
+ = do   gs      <- P.endBy1 (P.try $ pGuardedExp c) (pTok KSemiColon)
+        go      <- pOtherwiseExp c
+        P.optional (pTok KSemiColon)
+        return  $ gs ++ [go]
+
+
+-- | An guarded expression,
+--   like | EXP1 = EXP2.
+pGuardedExp 
+        :: Context Name 
+        -> Parser  Name ( SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)
+
+pGuardedExp c
+ = do   sp      <- pTokSP (KOp "|")
+        g       <- pExp c
+        pTok KEquals
+        x       <- pExp c
+        return  (sp, Just g, x)
+
+
+-- | An expression guarded with otherwise,
+--   like | otherwise = EXP
+pOtherwiseExp
+        :: Context Name
+        -> Parser  Name ( SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)
+
+pOtherwiseExp c
+ = do   sp      <- pTokSP (KOp "|")
+        pTok KOtherwise
+        pTok KEquals
+        x       <- pExp c
+        return  (sp, Nothing, x)
+
+
+
 -- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Context Name -> Parser Name (Lets SourcePos Name, SourcePos)
 pLetsSP c
@@ -424,7 +479,7 @@ pLetBinding c
                 --  Binder : Type = Exp
                 pTok (KOp ":")
                 t       <- pType c
-                pTok (KOp "=")
+                pTok KEquals
                 xBody   <- pExp c
 
                 return  $ (T.makeBindFromBinder b t, xBody) 
@@ -434,7 +489,7 @@ pLetBinding c
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
                 --   Binder = Exp
-                pTok (KOp "=")
+                pTok KEquals
                 xBody   <- pExp c
                 let t   = T.tBot T.kData
                 return  $ (T.makeBindFromBinder b t, xBody)
@@ -450,7 +505,7 @@ pLetBinding c
                         --   Binder Param1 Param2 .. ParamN : Type = Exp
                         pTok (KOp ":")
                         tBody   <- pType c
-                        sp      <- pTokSP (KOp "=")
+                        sp      <- pTokSP KEquals
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -462,7 +517,7 @@ pLetBinding c
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --   Binder Param1 Param2 .. ParamN = Exp
-                 , do   sp      <- pTokSP (KOp "=")
+                 , do   sp      <- pTokSP KEquals
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -488,7 +543,7 @@ pStmt c
    --  
    P.try $ 
     do  br      <- pBinder
-        sp      <- pTokSP (KOp "=")
+        sp      <- pTokSP KEquals
         x1      <- pExp c
         let t   = T.tBot T.kData
         let b   = T.makeBindFromBinder br t

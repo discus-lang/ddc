@@ -30,7 +30,7 @@ import qualified DDC.Core.Load                     as C
 import qualified DDC.Core.Lexer                    as C
 import qualified DDC.Base.Parser                   as BP
 import qualified DDC.Data.SourcePos                as SP
-
+import qualified DDC.Data.Token                    as Token
 import Control.DeepSeq
 
 
@@ -96,9 +96,10 @@ pipeText !srcName !srcLine !str !pp
                         let tokens  = SE.lexModuleString srcName srcLine str
 
                         -- Dump tokens to file.
-                        pipeSink (unlines $ map show $ tokens) sinkTokens
+                        pipeSink (unlines $ map (show . Token.tokenTok) $ tokens) 
+                                sinkTokens
 
-                        -- Lex the tokens into a Source Tetra module.
+                        -- Parse the tokens into a Source Tetra module.
                         case BP.runTokenParser C.describeTok srcName
                                 (SE.pModule SE.context) tokens of
                          Left err -> return [ErrorLoad err]
