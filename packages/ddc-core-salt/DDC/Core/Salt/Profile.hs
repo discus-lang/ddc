@@ -35,8 +35,14 @@ features = zeroFeatures
         , featuresDebruijnBinders       = True
         , featuresUnusedBindings        = True 
         , featuresEffectCapabilities    = True
-        , featuresPartialApplication    = True     -- TODO: hacked on for function reify
-        }
+
+          -- ISSUE #340: Check for partial application of supers in Salt
+          -- fragment check. This is enabled to support the reify# primitive,
+          -- which takes the address of a top-level super. However, the Salt
+          -- language itself doesn't support general partial application.
+          -- The fragment compliance checker should distinguish between these
+          -- two cases.
+        , featuresPartialApplication    = True }
 
 
 -- | Lex a string to tokens, using primitive names.
