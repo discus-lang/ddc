@@ -27,6 +27,6 @@ ge  x y = ge#  [Nat] [Bool] x y
 
 -- | Absolute value.
 abs (x : Nat) : Nat
- = case x < 0 of
-        True    -> neg x
-        False   -> x
+ | x < 0        = neg x
+ | otherwise    = x
+

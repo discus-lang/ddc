@@ -7,19 +7,23 @@ where
 
 -- | Convert a Bool to a String.
 showBool (x : Bool) : String
- = if x then "True" else "False"
+ = if x then "True" 
+        else "False"
 
 
 -- | Boolean NOT.
 not (x : Bool)   : Bool
- = if x then False else True
+ = if x then False  
+        else True
 
 
 -- | Boolean AND.
 and (x y : Bool) : Bool
- = if x then y else False
+ = if x then y 
+        else False
 
 
 -- | Boolean OR.
 or (x y : Bool) : Bool
- = if x then True else y
+ = if x then True 
+        else y

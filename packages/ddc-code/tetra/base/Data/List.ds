@@ -31,16 +31,14 @@ singleton (x : a) : List a
 -- | Construct a list of the given length where all elements are'
 --   the same value.
 replicate (n : Nat) (x : a) : List a
- = if n == 0
-        then Nil
-        else Cons x (replicate (n - 1) x)
+ | n == 0       = Nil
+ | otherwise    = Cons x (replicate (n - 1) x)
 
 
 -- | Construct a range of values.
-enumFromTo (start : Nat) (end : Nat)
- = if start >= end
-        then singleton start
-        else Cons start (enumFromTo (start + 1) end)
+enumFromTo (start : Nat) (end : Nat) : List Nat
+ | start >= end = singleton start
+ | otherwise    = Cons start (enumFromTo (start + 1) end)
 
 
 -- | Append two lists.

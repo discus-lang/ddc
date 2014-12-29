@@ -37,4 +37,3 @@ gcd (x y : Nat) : Nat
  | x > y        = gcd y (rem x y)
  | otherwise    = gcd x (rem y x) 
 
-

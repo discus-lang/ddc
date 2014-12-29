@@ -494,7 +494,6 @@ pLetBinding c
 
                 return  $ (T.makeBindFromBinder b t, xBody) 
 
-
          , do   -- Non-function binding with no type signature.
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
