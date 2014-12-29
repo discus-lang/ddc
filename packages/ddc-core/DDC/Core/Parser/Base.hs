@@ -13,7 +13,8 @@ module DDC.Core.Parser.Base
         , pTok,         pTokSP
         , pTokAs,       pTokAsSP
         , pOpSP
-        , pOpVarSP)
+        , pOpVarSP
+        , pPragmaSP)
 where
 import DDC.Base.Pretty
 import DDC.Core.Module
@@ -166,6 +167,13 @@ pOpVarSP :: Parser n (String, SourcePos)
 pOpVarSP = P.pTokMaybeSP f
  where  f (KA (KOpVar str))  = Just str
         f _                  = Nothing
+
+
+-- | Parse a pragma.
+pPragmaSP :: Parser n (Text, SourcePos)
+pPragmaSP = P.pTokMaybeSP f
+ where  f (KA (KPragma txt))  = Just txt
+        f _                   = Nothing
 
 
 -- | Parse an atomic token.

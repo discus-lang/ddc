@@ -13,7 +13,9 @@ import DDC.Core.Module
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Compounds
 import DDC.Base.Pretty
+import Data.Char
 import qualified DDC.Base.Parser        as P
+import qualified Data.Text              as T
 
 
 -- | Parse a core module.
@@ -24,7 +26,7 @@ pModule c
  = do   sp      <- pTokSP KModule
         name    <- pModuleName
 
-        -- Head Declarations
+        -- Header declarations
         heads           <- P.many (pHeadDecl c)
         let importSpecs = concat $ [specs | HeadImportSpecs specs <- heads ]
         let exportSpecs = concat $ [specs | HeadExportSpecs specs <- heads ]
@@ -33,14 +35,15 @@ pModule c
         -- Function definitions.
         --  If there is a 'with' keyword then this is a standard module with bindings.
         --  If not, then it is a module header, which doesn't need bindings.
-        (lts, isHeader) <- P.choice
-                        [ do  pTok KWith
+        (lts, isHeader) 
+         <- P.choice
+                [ do    pTok KWith
 
-                              -- LET;+
-                              lts  <- P.sepBy1 (pLetsSP c) (pTok KIn)
-                              return (lts, False)
+                        -- LET;+
+                        lts  <- P.sepBy1 (pLetsSP c) (pTok KIn)
+                        return (lts, False)
 
-                        , do  return ([],  True) ]
+                , do    return ([],  True) ]
 
         -- The body of the module consists of the top-level bindings wrapped
         -- around a unit constructor place-holder.
@@ -58,10 +61,14 @@ pModule c
                 , moduleBody            = body }
 
 
+-- | Wrapper for a declaration that can appear in the module header.
 data HeadDecl n
         = HeadImportSpecs  [ImportSpec  n]
         | HeadExportSpecs  [ExportSpec  n]
         | HeadDataDef      (DataDef     n)
+
+        -- | Number of type and value parameters for some super.
+        | HeadPragmaArity  n Int Int
 
 
 -- | Parse one of the declarations that can appear in a module header.
@@ -76,5 +83,25 @@ pHeadDecl ctx
                 return  $ HeadImportSpecs imports
 
         , do    exports <- pExportSpecs ctx
-                return  $ HeadExportSpecs exports ]
+                return  $ HeadExportSpecs exports 
+
+        , do    pHeadPragma ctx ]
+
+
+-- | Parse one of the pragmas that can appear in the module header.
+pHeadPragma :: Context n -> Parser n (HeadDecl n)
+pHeadPragma ctx
+ = do   (txt, sp)      <- pPragmaSP
+        case words $ T.unpack txt of
+
+         -- The type and value arity of a super.
+         ["ARITY", name, strTypes, strValues]
+          |  all isDigit strTypes
+          ,  all isDigit strValues
+          , Just makeStringName <- contextMakeStringName ctx
+          -> return $ HeadPragmaArity
+                (makeStringName sp (T.pack name))
+                (read strTypes) (read strValues)
+
+         _ -> P.unexpected $ "pragma " ++ "{-# " ++ T.unpack txt ++ "#-}"
 
