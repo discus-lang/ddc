@@ -15,17 +15,17 @@ data Maybe (a : Data) where
 
 
 -- | Check if the given value is a `Nothing`.
-isNothing (m : Maybe a) : Bool#
+isNothing (m : Maybe a) : Bool
  = case m of
-        Nothing -> True#
-        Just x  -> False#
+        Nothing -> True
+        Just x  -> False
 
 
 -- | Check if the given value is a `Just`.
-isJust (m : Maybe a) : Bool#
+isJust (m : Maybe a) : Bool
  = case m of
-        Nothing -> False#
-        Just x  -> True#
+        Nothing -> False
+        Just x  -> True
 
 
 -- | Take the value from a `Just`, or return a default value.

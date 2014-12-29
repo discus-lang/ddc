@@ -31,7 +31,8 @@ import Data.Char
 import qualified Data.Text              as T
 
 import DDC.Core.Tetra   
-        ( readPrimTyCon
+        ( pprPrimTyConStem
+        , readPrimTyConStem
         , readPrimArith
         , readOpFun)
 
@@ -66,11 +67,11 @@ instance Pretty Name where
 
         NameTyConTetra p        -> ppr p
         NameOpFun      p        -> ppr p
-        NamePrimTyCon  p        -> ppr p
+        NamePrimTyCon  p        -> pprPrimTyConStem p
         NamePrimArith  p        -> ppr p
 
-        NameLitBool    True     -> text "True#"
-        NameLitBool    False    -> text "False#"
+        NameLitBool    True     -> text "True"
+        NameLitBool    False    -> text "False"
         NameLitNat     i        -> integer i
         NameLitInt     i        -> integer i <> text "i"
         NameLitSize    s        -> integer s <> text "s"
@@ -92,15 +93,15 @@ readName str
         = Just $ NameOpFun     p
 
         -- Primitive names.
-        | Just p <- readPrimTyCon   str  
+        | Just p <- readPrimTyConStem   str  
         = Just $ NamePrimTyCon p
 
         | Just p <- readPrimArith str  
         = Just $ NamePrimArith p
 
         -- Literal Bools
-        | str == "True#"  = Just $ NameLitBool True
-        | str == "False#" = Just $ NameLitBool False
+        | str == "True"        = Just $ NameLitBool True
+        | str == "False"       = Just $ NameLitBool False
 
         -- Literal Nat
         | Just val <- readLitNat str

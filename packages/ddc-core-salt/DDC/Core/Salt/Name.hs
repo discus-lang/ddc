@@ -5,7 +5,8 @@ module DDC.Core.Salt.Name
 
           -- * Primitive Type Constructors
         , PrimTyCon     (..)
-        , readPrimTyCon
+        , pprPrimTyConStem
+        , readPrimTyCon,        readPrimTyConStem
         , primTyConIsIntegral
         , primTyConIsFloating
         , primTyConIsUnsigned

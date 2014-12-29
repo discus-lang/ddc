@@ -30,7 +30,8 @@ module DDC.Core.Tetra.Prim
 
           -- * Primitive type constructors.
         , PrimTyCon     (..)
-        , readPrimTyCon
+        , pprPrimTyConStem
+        , readPrimTyCon,        readPrimTyConStem
         , kindPrimTyCon
 
           -- * Primitive arithmetic operators.

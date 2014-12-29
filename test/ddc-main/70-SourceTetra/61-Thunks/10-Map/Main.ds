@@ -6,12 +6,12 @@ import foreign abstract type
  Console  : Effect
 
 import foreign c value
- putStr_v : String# -> S Console Void#
- showNat  : Nat#    -> String#
+ putStr_v : String -> S Console Void
+ showNat  : Nat    -> String
 
 where
 
-add x y = add# [Nat#] x y
+add x y = add# [Nat] x y
 
 
 data List (a : Data) where
@@ -25,7 +25,7 @@ map [a b : Data] (f : C# (a -> b)) (xx : List a) : List b
         Cons x xs       -> Cons (capply1# f x) (map f xs)
 
 
-sum (xx : List Nat#) : Nat#
+sum (xx : List Nat) : Nat
  = case xx of
         Nil             -> 0
         Cons x xs       -> x + sum xs

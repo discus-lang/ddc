@@ -1,18 +1,21 @@
 
 module DDC.Core.Salt.Name.PrimTyCon
         ( PrimTyCon     (..)
+        , pprPrimTyConStem
         , readPrimTyCon
+        , readPrimTyConStem
         , primTyConIsIntegral
         , primTyConIsFloating
         , primTyConIsUnsigned
         , primTyConIsSigned
         , primTyConWidth)
 where
-import DDC.Base.Pretty
 import DDC.Core.Salt.Platform
+import DDC.Data.ListUtils
+import DDC.Base.Pretty
+import Control.DeepSeq
 import Data.Char
 import Data.List
-import Control.DeepSeq
 
 
 -- PrimTyCon -----------------------------------------------------------------
@@ -78,19 +81,25 @@ instance NFData PrimTyCon where
 
 
 instance Pretty PrimTyCon where
- ppr tc
-  = case tc of
-        PrimTyConVoid           -> text "Void#"
-        PrimTyConBool           -> text "Bool#"
-        PrimTyConNat            -> text "Nat#"
-        PrimTyConInt            -> text "Int#"
-        PrimTyConSize           -> text "Size#"
-        PrimTyConWord   bits    -> text "Word"  <> int bits  <> text "#"
-        PrimTyConFloat  bits    -> text "Float" <> int bits  <> text "#"
-        PrimTyConVec    arity   -> text "Vec"   <> int arity <> text "#"
-        PrimTyConTag            -> text "Tag#"
-        PrimTyConAddr           -> text "Addr#"
-        PrimTyConPtr            -> text "Ptr#"
+ ppr tc = pprPrimTyConStem tc <> text "#"
+
+
+-- | Pretty print a primitive type constructor, 
+--   without the '#' suffix.
+pprPrimTyConStem :: PrimTyCon -> Doc
+pprPrimTyConStem tc
+ = case tc of
+        PrimTyConVoid           -> text "Void"
+        PrimTyConBool           -> text "Bool"
+        PrimTyConNat            -> text "Nat"
+        PrimTyConInt            -> text "Int"
+        PrimTyConSize           -> text "Size"
+        PrimTyConWord   bits    -> text "Word"  <> int bits
+        PrimTyConFloat  bits    -> text "Float" <> int bits
+        PrimTyConVec    arity   -> text "Vec"   <> int arity
+        PrimTyConTag            -> text "Tag"
+        PrimTyConAddr           -> text "Addr"
+        PrimTyConPtr            -> text "Ptr"
 
 
 -- | Read a primitive type constructor.
@@ -100,18 +109,28 @@ instance Pretty PrimTyCon where
 --   Floats are limited to 32 or 64 bits.
 readPrimTyCon :: String -> Maybe PrimTyCon
 readPrimTyCon str
-        | str == "Void#"   = Just $ PrimTyConVoid
-        | str == "Bool#"   = Just $ PrimTyConBool
-        | str == "Nat#"    = Just $ PrimTyConNat
-        | str == "Int#"    = Just $ PrimTyConInt
-        | str == "Size#"   = Just $ PrimTyConSize
-        | str == "Tag#"    = Just $ PrimTyConTag
-        | str == "Addr#"   = Just $ PrimTyConAddr
-        | str == "Ptr#"    = Just $ PrimTyConPtr
+        | Just stem  <- stripSuffix "#" str
+        = readPrimTyConStem stem
+
+        | otherwise
+        = Nothing
+
+
+-- | Read a primitive type constructor, without the '#' suffix.
+readPrimTyConStem :: String -> Maybe PrimTyCon
+readPrimTyConStem str
+        | str == "Void" = Just $ PrimTyConVoid
+        | str == "Bool" = Just $ PrimTyConBool
+        | str == "Nat"  = Just $ PrimTyConNat
+        | str == "Int"  = Just $ PrimTyConInt
+        | str == "Size" = Just $ PrimTyConSize
+        | str == "Tag"  = Just $ PrimTyConTag
+        | str == "Addr" = Just $ PrimTyConAddr
+        | str == "Ptr"  = Just $ PrimTyConPtr
 
         -- WordN#
         | Just rest     <- stripPrefix "Word" str
-        , (ds, "#")     <- span isDigit rest
+        , (ds, "")      <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , elem n [8, 16, 32, 64]
@@ -119,7 +138,7 @@ readPrimTyCon str
 
         -- FloatN#
         | Just rest     <- stripPrefix "Float" str
-        , (ds, "#")     <- span isDigit rest
+        , (ds, "")      <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , elem n [32, 64]
@@ -127,7 +146,7 @@ readPrimTyCon str
 
         -- VecN#
         | Just rest     <- stripPrefix "Vec" str
-        , (ds, "#")     <- span isDigit rest
+        , (ds, "")      <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , elem n [2, 4, 8, 16]        

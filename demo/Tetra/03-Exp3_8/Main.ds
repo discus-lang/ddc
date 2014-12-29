@@ -7,34 +7,34 @@ where
 -- Evaluate 3^6 using church encoding of natural numbers.
 -- Adapted from the nofib benchmark.
 -- NOTE: nofib uses a larger exponent, but we need GC for that.
-data Nat where
-        Zero : Nat
-        Succ : Nat -> Nat
+data Natural where
+        Zero : Natural
+        Succ : Natural -> Natural
 
-cAdd (x y : Nat) : Nat
+cAdd (x y : Natural) : Natural
  = case x of
         Zero    -> y
         Succ x2 -> Succ (cAdd x2 y)
 
-cMul (x y : Nat) : Nat
+cMul (x y : Natural) : Natural
  = case y of
         Zero    -> Zero
         Succ y2 -> cAdd (cMul x y2) x
 
-cExp (x y : Nat) : Nat
+cExp (x y : Natural) : Natural
  = case y of
         Zero    -> Succ Zero
         Succ y2 -> cMul x (cExp x y2)
 
-natToInt (x : Nat) : Nat#
+natToInt (x : Natural) : Nat
  = case x of
         Zero    -> 0
         Succ x2 -> 1 + natToInt x2
 
-intToNat (x : Nat#) : Nat
+intToNat (x : Nat) : Natural
  = case x < 1 of
-        True#   -> Zero
-        False#  -> Succ (intToNat (x - 1))
+        True    -> Zero
+        False   -> Succ (intToNat (x - 1))
         
 main (_ : Unit) : S Console Unit
  = putStrLn (showNat (natToInt (cExp (intToNat 3) (intToNat 6))))

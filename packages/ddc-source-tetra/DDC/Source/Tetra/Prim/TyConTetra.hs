@@ -18,18 +18,18 @@ instance NFData TyConTetra
 instance Pretty TyConTetra where
  ppr tc
   = case tc of
-        TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
+        TyConTetraTuple n       -> text "Tuple" <> int n
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
         TyConTetraU             -> text "U#"
-        TyConTetraString        -> text "String#"
+        TyConTetraString        -> text "String"
 
 
 -- | Read the name of a baked-in type constructor.
 readTyConTetra :: String -> Maybe TyConTetra
 readTyConTetra str
         | Just rest     <- stripPrefix "Tuple" str
-        , (ds, "#")     <- span isDigit rest
+        , (ds, "")      <- span isDigit rest
         , not $ null ds
         , arity         <- read ds
         = Just $ TyConTetraTuple arity
@@ -39,7 +39,7 @@ readTyConTetra str
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
                 "U#"            -> Just TyConTetraU
-                "String#"       -> Just TyConTetraString
+                "String"        -> Just TyConTetraString
                 _               -> Nothing
 
 

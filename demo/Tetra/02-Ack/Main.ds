@@ -4,7 +4,7 @@ import System.IO.Console
 where
 
 -- Ackermann's function.
-ack (m : Nat#) (n : Nat#) : Nat#
+ack (m : Nat) (n : Nat) : Nat
  = case m of
         0       -> n + 1
         _       -> case n of

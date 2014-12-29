@@ -1,7 +1,8 @@
 
 module DDC.Core.Tetra.Prim.TyConPrim
         ( PrimTyCon     (..)
-        , readPrimTyCon
+        , pprPrimTyConStem
+        , readPrimTyCon,        readPrimTyConStem
         , kindPrimTyCon
         , tBool
         , tNat, tInt, tSize, tWord, tFloat
@@ -10,7 +11,9 @@ where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds.Annot
 import DDC.Core.Exp.Simple
-import DDC.Core.Salt.Name       (readPrimTyCon)
+import DDC.Core.Salt.Name
+        ( pprPrimTyConStem
+        , readPrimTyCon, readPrimTyConStem)
 
 
 -- | Yield the kind of a type constructor.

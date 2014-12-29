@@ -83,12 +83,12 @@ foo (x : Blerk) : Blerk
 :to-salt..
 module Test where
 
-data Bool where
-        True#  : Bool
-        False# : Bool
+data Blerk where
+        True   : Blerk
+        False  : Blerk
 
-neg (x : Bool) : Bool
+neg (x : Blerk) : Blerk
  = case x of
-        True#    -> False#
-        False#   -> True#
+        True     -> False
+        False    -> True
 ;;

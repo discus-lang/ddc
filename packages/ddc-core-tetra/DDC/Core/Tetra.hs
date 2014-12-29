@@ -18,7 +18,7 @@ module DDC.Core.Tetra
         , TyConTetra    (..)
         , DaConTetra    (..)
         , OpFun         (..)
-        , PrimTyCon     (..)
+        , PrimTyCon     (..),   pprPrimTyConStem
         , PrimArith     (..)
 
           -- * Name Parsing
@@ -26,7 +26,7 @@ module DDC.Core.Tetra
         , readTyConTetra
         , readDaConTetra
         , readOpFun
-        , readPrimTyCon
+        , readPrimTyCon,        readPrimTyConStem
         , readPrimArith
 
         -- * Name Generation
