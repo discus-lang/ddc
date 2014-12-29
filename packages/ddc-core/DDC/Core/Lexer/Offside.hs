@@ -339,6 +339,7 @@ splitBlockStart toks
  |  t1@Token { tokenTok = KA KWhere }   : ts    <- toks = Just ([t1], ts)
  |  t1@Token { tokenTok = KA KExport }  : ts    <- toks = Just ([t1], ts)
  |  t1@Token { tokenTok = KA KImport }  : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA KMatch }   : ts    <- toks = Just ([t1], ts)
 
  | otherwise                                             
  = Nothing
