@@ -81,22 +81,22 @@ importsForTyCons
         :: Ord n
         => Map ModuleName (Module b n)  -- ^ Modules which this one depends on.
         -> [Bound n]                    -- ^ Unbound type constructors to find imports for.
-        -> [(n, ImportSource n)]
+        -> [(n, ImportType n)]
 
 -- TODO: we're just re-importing everything imported by the dependencies.
 --       The support set doesn't seem to include tycons just mentioned in 
 --       types of imported values, so they're incomplete.
 importsForTyCons deps _tyCons
  = concat
-        [ [(n, ImportSourceAbstract k)
+        [ [(n, ImportTypeAbstract k)
                 | (n, k)        <- Map.toList $ Map.unions 
                                 $  map importedTyConsAbs   $ Map.elems deps]
 
-        , [(n, ImportSourceAbstract k)
+        , [(n, ImportTypeAbstract k)
                 | (n, (_, k))   <- Map.toList $ Map.unions 
                                 $  map exportedTyConsLocal $ Map.elems deps]
 
-        , [(n, ImportSourceBoxed k) 
+        , [(n, ImportTypeBoxed k) 
                 | (n, k)        <- Map.toList $ Map.unions 
                                 $  map importedTyConsBoxed $ Map.elems deps]
         ]
@@ -129,13 +129,13 @@ findImportSourceForDaVar
         :: Store                -- ^ Interface store.
         -> [ModuleName]         -- ^ Modules to search for matching exports.
         -> E.Name               -- ^ Name of value.
-        -> IO (Either Error (ImportSource E.Name))
+        -> IO (Either Error (ImportValue E.Name))
 
 findImportSourceForDaVar store modNames nSuper
  = do   result  <- Store.findSuper store nSuper modNames
         case result of
          []      -> return $ Left  $ ErrorNotFound nSuper
-         [super] -> return $ Right $ Store.superImportSource super
+         [super] -> return $ Right $ Store.superImportValue super
          supers  -> return $ Left  $ ErrorMultiple nSuper (map Store.superModuleName supers)
 
 {-}
@@ -191,14 +191,14 @@ exportedDaVarsLocal mm
 importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)
 importedTyConsAbs mm
         = Map.fromList
-        $ [ (n, k)      | (n, ImportSourceAbstract k)  <- moduleImportTypes mm ]
+        $ [ (n, k)      | (n, ImportTypeAbstract k)  <- moduleImportTypes mm ]
 
 
 -- | Get the type constructors that are imported as boxed foreign types.
 importedTyConsBoxed :: Ord n => Module b n -> Map n (Kind n)
 importedTyConsBoxed mm
         = Map.fromList
-        $ [ (n, k)      | (n, ImportSourceBoxed k)      <- moduleImportTypes mm ]
+        $ [ (n, k)      | (n, ImportTypeBoxed k)      <- moduleImportTypes mm ]
 
 
 {-

@@ -83,8 +83,9 @@ convertM pp runConfig defs kenv tenv mm
         tsImports'      <- mapM convertImportM $ moduleImportValues mm
                 
         -- Convert the body of the module to Salt.
-        let ntsImports  = [BName n (typeOfImportSource isrc) 
-                                | (n, isrc) <- moduleImportTypes mm]
+        let ntsImports  = [BName n (typeOfImportValue isrc) 
+                          | (n, isrc) <- moduleImportValues mm]
+ 
         let tenv'       = Env.extends ntsImports tenv
         x1              <- convertExpX ExpTop pp defs kenv tenv' $ moduleBody mm
 
@@ -158,38 +159,30 @@ convertExportSourceM isrc
 -- Imports ----------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertImportM
-        :: (L.Name, ImportSource L.Name)
-        -> ConvertM a (S.Name, ImportSource S.Name)
+        :: (L.Name, ImportValue L.Name)
+        -> ConvertM a (S.Name, ImportValue S.Name)
 
 convertImportM (n, isrc)
  = do   n'      <- convertBindNameM n
-        isrc'   <- convertImportSourceM isrc
+        isrc'   <- convertImportValueM isrc
         return  (n', isrc')
 
 
 -- | Convert an import source specifier.
-convertImportSourceM
-        :: ImportSource L.Name 
-        -> ConvertM a (ImportSource S.Name)
+convertImportValueM
+        :: ImportValue L.Name 
+        -> ConvertM a (ImportValue S.Name)
 
-convertImportSourceM isrc
+convertImportValueM isrc
  = case isrc of
-        ImportSourceModule mn n t _
+        ImportValueModule mn n t _
          -> do  t'      <- convertT Env.empty t
                 n'      <- convertBindNameM n
-                return  $ ImportSourceModule mn n' t' Nothing
+                return  $ ImportValueModule mn n' t' Nothing
 
-        ImportSourceAbstract t
+        ImportValueSea str t
          -> do  t'      <- convertT Env.empty t
-                return $ ImportSourceAbstract t'
-
-        ImportSourceBoxed t
-         -> do  t'      <- convertT Env.empty t
-                return $ ImportSourceBoxed t'
-
-        ImportSourceSea str t
-         -> do  t'      <- convertT Env.empty t
-                return $ ImportSourceSea str t'
+                return $ ImportValueSea str t'
 
 
 -- Exp --------------------------------------------------------------------------------------------

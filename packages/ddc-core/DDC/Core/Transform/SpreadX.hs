@@ -42,7 +42,7 @@ instance SpreadX (Module a) where
 instance SpreadT ExportSource where
  spreadT kenv esrc
   = case esrc of
-        ExportSourceLocal n t
+        ExportSourceLocal n t   
          -> ExportSourceLocal n (spreadT kenv t)
 
         ExportSourceLocalNoType n
@@ -50,20 +50,25 @@ instance SpreadT ExportSource where
 
 
 ---------------------------------------------------------------------------------------------------
-instance SpreadX ImportSource where
+instance SpreadX ImportType where
  spreadX kenv _tenv isrc
   = case isrc of
-        ImportSourceModule mn n t mArity
-         -> ImportSourceModule   mn n (spreadT kenv t) mArity
+        ImportTypeAbstract t
+         -> ImportTypeAbstract (spreadT kenv t)
 
-        ImportSourceAbstract t  
-         -> ImportSourceAbstract (spreadT kenv t)
+        ImportTypeBoxed t
+         -> ImportTypeBoxed    (spreadT kenv t)
 
-        ImportSourceBoxed t
-         -> ImportSourceBoxed    (spreadT kenv t)
 
-        ImportSourceSea n t
-         -> ImportSourceSea n    (spreadT kenv t)
+---------------------------------------------------------------------------------------------------
+instance SpreadX ImportValue where
+ spreadX kenv _tenv isrc
+  = case isrc of
+        ImportValueModule mn n t mArity
+         -> ImportValueModule   mn n (spreadT kenv t) mArity
+
+        ImportValueSea n t
+         -> ImportValueSea n    (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------

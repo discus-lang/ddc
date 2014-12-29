@@ -127,7 +127,7 @@ convertSuperType pp kenv tt
 importedFunctionDeclOfType 
         :: Platform
         -> KindEnv Name
-        -> C.ImportSource Name
+        -> C.ImportValue Name
         -> Maybe (C.ExportSource Name)
         -> Name
         -> C.Type Name 
@@ -135,7 +135,7 @@ importedFunctionDeclOfType
 
 importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
  
- | C.ImportSourceModule{} <- isrc
+ | C.ImportValueModule{} <- isrc
  = Just $ do
         let Just strName 
                 = liftM renderPlain 
@@ -152,7 +152,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
                 , declParams         = map mkParam tsArgs
                 , declAlign          = AlignBytes (platformAlignBytes pp) }
 
- | C.ImportSourceSea strName _  <- isrc
+ | C.ImportValueSea strName _  <- isrc
  = Just $ do
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []

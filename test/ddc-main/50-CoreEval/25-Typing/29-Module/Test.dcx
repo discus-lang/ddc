@@ -5,7 +5,7 @@
 :load..
 module Foo 
 export foo    : Int r -(Read r | Empty)> Int r
-import type r : Region
+import foreign abstract type r : Region
 with letrec
 foo (x : Int r) : Int r
  = x;;
@@ -15,7 +15,7 @@ foo (x : Int r) : Int r
 :load..
 module Foo
 export foo     : Int r -(Read r | Empty)> Int r
-import type r  : Region
+import foreign abstract type r  : Region
 with letrec
 bar (x : Int r) : Int r
  = x;;

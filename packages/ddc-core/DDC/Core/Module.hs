@@ -28,10 +28,15 @@ module DDC.Core.Module
         , takeTypeOfExportSource
         , mapTypeOfExportSource
 
-         -- * Import Sources
-        , ImportSource  (..)
-        , typeOfImportSource
-        , mapTypeOfImportSource)
+         -- * Import Types
+        , ImportType    (..)
+        , kindOfImportType
+        , mapKindOfImportType
+
+         -- * Import Types
+        , ImportValue  (..)
+        , typeOfImportValue
+        , mapTypeOfImportValue)
 where
 import DDC.Core.Compounds
 import DDC.Core.Exp
@@ -66,13 +71,11 @@ data Module a n
         , moduleExportValues            :: ![(n, ExportSource n)]
 
           -- Imports ------------------
-          -- | Kinds of imported types,  along with the name of the module they are from.
-          --   These imports come from a Disciple module, that we've compiled ourself.
-        , moduleImportTypes             :: ![(n, ImportSource n)]
+          -- | Information about types  imported from somewhere else.
+        , moduleImportTypes             :: ![(n, ImportType  n)]
 
-          -- | Types of imported values, along with the name of the module they are from.
-          --   These imports come from a Disciple module, that we've compiled ourself.
-        , moduleImportValues            :: ![(n, ImportSource n)]
+          -- | Information about values imported from somewhere else.
+        , moduleImportValues            :: ![(n, ImportValue n)]
 
           -- | Data defs imported from other modules.
         , moduleImportDataDefs          :: ![DataDef n]
@@ -121,7 +124,7 @@ moduleDataDefs mm
 moduleKindEnv :: Ord n => Module a n -> KindEnv n
 moduleKindEnv mm
         = Env.fromList 
-        $ [BName n (typeOfImportSource isrc) | (n, isrc) <- moduleImportTypes mm]
+        $ [BName n (kindOfImportType isrc) | (n, isrc) <- moduleImportTypes mm]
 
 
 -- | Get the top-level type environment of a module,
@@ -129,7 +132,7 @@ moduleKindEnv mm
 moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
         = Env.fromList 
-        $ [BName n (typeOfImportSource isrc) | (n, isrc) <- moduleImportValues mm]
+        $ [BName n (typeOfImportValue isrc) | (n, isrc) <- moduleImportValues mm]
 
 
 -- | Get the set of top-level value bindings in a module.
@@ -304,71 +307,90 @@ mapTypeOfExportSource f esrc
         ExportSourceLocalNoType n       -> ExportSourceLocalNoType n
 
 
--- ImportSource -----------------------------------------------------------------------------------
--- | Source of some imported thing.
-data ImportSource n
+-- ImportType -------------------------------------------------------------------------------------
+-- | Source of some imported type.
+data ImportType n
         -- | A type imported abstractly.
         --   Used for phantom types of kind Data, 
         --   as well as any type that does not have kind Data.
-        = ImportSourceAbstract
-        { importSourceAbstractType      :: !(Type n) }
+        = ImportTypeAbstract
+        { importTypeAbstractType      :: !(Kind n) }
 
         -- | The type of some boxed data which is defined somewhere else.
         --   The objects follow the standard heap object layout, but the code
         --   that constructs and destructs them may have been written in a 
         --   different language.
         --   Used when importing data types defined in Salt modules.
-        | ImportSourceBoxed
-        { importSourceBoxed             :: !(Kind n) }
+        | ImportTypeBoxed
+        { importTypeBoxed             :: !(Kind n) }
+        deriving Show
 
 
-        -- | Value imported from a Disciple module that we compiled ourself.
-        | ImportSourceModule
-        { importSourceModuleName        :: !ModuleName 
-        , importSourceModuleVar         :: !n 
-        , importSourceModuleType        :: !(Type n)
-
-          -- | Number of type and value arguments for a top-level super.
-        , importSourceModuleArity       :: !(Maybe (Int, Int)) }
-
-
-        -- | Something imported via the C calling convention.
-        | ImportSourceSea
-        { importSourceSeaVar            :: !String 
-        , importSourceSeaType           :: !(Type n) }
-        deriving (Show, Eq)
-
-
-instance NFData n => NFData (ImportSource n) where
+instance NFData n => NFData (ImportType n) where
  rnf is
   = case is of
-        ImportSourceAbstract t             -> rnf t
-
-        ImportSourceBoxed t                -> rnf t
-
-        ImportSourceModule mn n t mAV 
-         -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
-
-        ImportSourceSea v t                -> rnf v  `seq` rnf t
+        ImportTypeAbstract k            -> rnf k
+        ImportTypeBoxed    k            -> rnf k
 
 
 -- | Take the type of an imported thing.
-typeOfImportSource :: ImportSource n -> Type n
-typeOfImportSource src
+kindOfImportType :: ImportType n -> Kind n
+kindOfImportType src
  = case src of
-        ImportSourceAbstract   t        -> t
-        ImportSourceBoxed      t        -> t
-        ImportSourceModule _ _ t _      -> t
-        ImportSourceSea      _ t        -> t
+        ImportTypeAbstract k            -> k
+        ImportTypeBoxed    k            -> k
 
 
--- | Apply a function to the type in an ImportSource.
-mapTypeOfImportSource :: (Type n -> Type n) -> ImportSource n -> ImportSource n
-mapTypeOfImportSource f isrc
+-- | Apply a function to the kind in an ImportType.
+mapKindOfImportType :: (Kind n -> Kind n) -> ImportType n -> ImportType n
+mapKindOfImportType f isrc
  = case isrc of
-        ImportSourceAbstract  t         -> ImportSourceAbstract (f t)
-        ImportSourceBoxed     t         -> ImportSourceBoxed    (f t)
-        ImportSourceModule mn n t a     -> ImportSourceModule mn n (f t) a
-        ImportSourceSea s t             -> ImportSourceSea s (f t)
+        ImportTypeAbstract k            -> ImportTypeAbstract (f k)
+        ImportTypeBoxed    k            -> ImportTypeBoxed    (f k)
 
+
+-- ImportValue ------------------------------------------------------------------------------------
+-- | Source of some imported value.
+data ImportValue n
+        -- | Value imported from a Disciple module that we compiled ourself.
+        = ImportValueModule
+        { importValueModuleName        :: !ModuleName 
+        , importValueModuleVar         :: !n 
+        , importValueModuleType        :: !(Type n)
+
+          -- | Number of type and value arguments for a top-level super.
+        , importValueModuleArity       :: !(Maybe (Int, Int)) }
+
+
+        -- | Something imported via the C calling convention.
+        | ImportValueSea
+        { importValueSeaVar            :: !String 
+        , importValueSeaType           :: !(Type n) }
+        deriving Show
+
+
+instance NFData n => NFData (ImportValue n) where
+ rnf is
+  = case is of
+        ImportValueModule mn n t mAV 
+         -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
+
+        ImportValueSea v t
+         -> rnf v  `seq` rnf t
+
+
+-- | Take the type of an imported thing.
+typeOfImportValue :: ImportValue n -> Type n
+typeOfImportValue src
+ = case src of
+        ImportValueModule _ _ t _       -> t
+        ImportValueSea      _ t         -> t
+
+
+-- | Apply a function to the type in an ImportValue.
+mapTypeOfImportValue :: (Type n -> Type n) -> ImportValue n -> ImportValue n
+mapTypeOfImportValue f isrc
+ = case isrc of
+        ImportValueModule mn n t a      -> ImportValueModule mn n (f t) a
+        ImportValueSea s t              -> ImportValueSea s (f t)
 

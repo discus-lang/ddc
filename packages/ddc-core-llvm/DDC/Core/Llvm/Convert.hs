@@ -121,7 +121,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                         isrc
                         (List.lookup n (C.moduleExportValues mm))
                         n
-                        (C.typeOfImportSource isrc)
+                        (C.typeOfImportValue isrc)
                   | (n, isrc)    <- C.moduleImportValues mm ]
 
         importDecls <- sequence msImportDecls

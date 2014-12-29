@@ -97,8 +97,8 @@ pTypeSig c
 -- | An imported foreign type or foreign value.
 data ImportSpec n
         = ImportModule  ModuleName
-        | ImportType    n (ImportSource n)
-        | ImportValue   n (ImportSource n)
+        | ImportType    n (ImportType  n)
+        | ImportValue   n (ImportValue n)
         
 
 -- | Parse some import specs.
@@ -149,13 +149,13 @@ pImportType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  (ImportType n (ImportSourceAbstract k))
+                return  (ImportType n (ImportTypeAbstract k))
 
         | "boxed"        <- src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  (ImportType n (ImportSourceBoxed k))
+                return  (ImportType n (ImportTypeBoxed k))
 
         | otherwise
         = P.unexpected "import mode for foreign type"
@@ -175,7 +175,7 @@ pImportValue c src
                 --             with foreign C imports and exports.
                 let symbol = renderIndent (ppr n)
 
-                return  (ImportValue n (ImportSourceSea symbol k))
+                return  (ImportValue n (ImportValueSea symbol k))
 
         | otherwise
         = P.unexpected "import mode for foreign value"

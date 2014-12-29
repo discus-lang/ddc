@@ -16,8 +16,8 @@ import qualified DDC.Base.Parser        as P
 
 -- | An imported foreign type or foreign value.
 data ImportSpec n
-        = ImportType    n (ImportSource n)
-        | ImportValue   n (ImportSource n)
+        = ImportType    n (ImportType  n)
+        | ImportValue   n (ImportValue n)
         | ImportData    (DataDef n)
         
 
@@ -29,14 +29,8 @@ pImportSpecs c
         pTok KImport
 
         P.choice
-         [      -- import type  { (NAME :: TYPE)+ }
-           do   pTok KType
-                pTok KBraceBra
-                specs   <- P.sepEndBy1 (pImportType c) (pTok KSemiColon)
-                pTok KBraceKet
-                return specs
-
-         , do   def     <- pDataDef c
+         [      -- data ...
+           do   def     <- pDataDef c
                 return  [ ImportData def ]
 
                 -- import value { (NAME :: TYPE)+ }
@@ -68,21 +62,12 @@ pImportSpecs c
          P.<?> "something to import"
 
 
--- | Parse a type import spec.
-pImportType
-        :: (Ord n, Pretty n)
-        => Context n -> Parser n (ImportSpec n)
-pImportType c
- = do   n       <- pName
-        pTokSP (KOp ":")
-        k       <- pType c
-        return  $ ImportType n (ImportSourceModule (ModuleName []) n k Nothing)
-
-
+---------------------------------------------------------------------------------------------------
 -- | Parse a foreign type import spec.
 pImportForeignType
         :: (Ord n, Pretty n) 
         => Context n -> String -> Parser n (ImportSpec n)
+
 pImportForeignType c src
 
         -- Abstract types are not associated with data values,
@@ -92,7 +77,7 @@ pImportForeignType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  (ImportType n (ImportSourceAbstract k))
+                return  (ImportType n (ImportTypeAbstract k))
 
         -- Boxed types are associate with values that follow the standard
         -- heap object layout. They can be passed and return from functions.
@@ -100,12 +85,13 @@ pImportForeignType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  (ImportType n (ImportSourceBoxed k))
+                return  (ImportType n (ImportTypeBoxed k))
 
         | otherwise
         = P.unexpected "import mode for foreign type."
 
 
+---------------------------------------------------------------------------------------------------
 -- | Parse a value import spec.
 pImportValue
         :: (Ord n, Pretty n)
@@ -114,7 +100,7 @@ pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-        return  (ImportValue n (ImportSourceModule (ModuleName []) n t Nothing))
+        return  (ImportValue n (ImportValueModule (ModuleName []) n t Nothing))
 
 
 -- | Parse a foreign value import spec.
@@ -131,7 +117,8 @@ pImportForeignValue c src
                 --             with foreign C imports and exports.
                 let symbol = renderIndent (ppr n)
 
-                return  (ImportValue n (ImportSourceSea symbol k))
+                return  (ImportValue n (ImportValueSea symbol k))
 
         | otherwise
         = P.unexpected "import mode for foreign value."
+

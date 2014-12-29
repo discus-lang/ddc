@@ -86,7 +86,7 @@ convertM pp runConfig defs kenv tenv mm
                    $ moduleImportDataDefs mm ++ moduleDataDefsLocal mm
 
         let nsForeignBoxedTypes
-                   = [n | (n, ImportSourceBoxed _) <- moduleImportTypes mm ]
+                   = [n | (n, ImportTypeBoxed _) <- moduleImportTypes mm ]
 
         let tctx'  = T.Context
                    { T.contextDataDefs  = defs'
@@ -96,7 +96,7 @@ convertM pp runConfig defs kenv tenv mm
 
         -- Imports and Exports ----------------------------
         -- Convert signatures of imported functions.
-        tsImports' <- mapM (convertImportM tctx') 
+        tsImports' <- mapM (convertNameImportValueM tctx') 
                    $ moduleImportValues mm
 
         -- Convert signatures of exported functions.
@@ -105,7 +105,7 @@ convertM pp runConfig defs kenv tenv mm
 
         -- Module body ------------------------------------
         let ntsImports  
-                   = [BName n (typeOfImportSource src) 
+                   = [BName n (typeOfImportValue src) 
                      | (n, src) <- moduleImportValues mm]
 
         let tenv'  = Env.extends ntsImports tenv
@@ -206,13 +206,13 @@ convertExportSourceM tctx esrc
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
-convertImportM
-        :: T.Context -> (E.Name, ImportSource E.Name)
-        -> ConvertM a (A.Name, ImportSource A.Name)
+convertNameImportValueM
+        :: T.Context -> (E.Name, ImportValue E.Name)
+        -> ConvertM a (A.Name, ImportValue A.Name)
 
-convertImportM tctx (n, isrc)
+convertNameImportValueM tctx (n, isrc)
  = do   n'      <- convertImportNameM n
-        isrc'   <- convertImportSourceM tctx isrc
+        isrc'   <- convertImportValueM tctx isrc
         return  (n', isrc')
 
 
@@ -228,28 +228,20 @@ convertImportNameM n
 
 
 -- | Convert an import source.
-convertImportSourceM 
-        :: T.Context -> ImportSource E.Name
-        -> ConvertM a (ImportSource A.Name)
+convertImportValueM 
+        :: T.Context -> ImportValue E.Name
+        -> ConvertM a (ImportValue A.Name)
 
-convertImportSourceM tctx isrc
+convertImportValueM tctx isrc
  = case isrc of
-        ImportSourceModule mn n t _
+        ImportValueModule mn n t _
          -> do  n'      <- convertBindNameM n
                 t'      <- convertSuperT tctx t
-                return  $ ImportSourceModule mn n' t' Nothing
+                return  $ ImportValueModule mn n' t' Nothing
 
-        ImportSourceAbstract t
-         -> do  t'      <- convertSuperT tctx t
-                return  $ ImportSourceAbstract t'
-
-        ImportSourceBoxed t
-         -> do  t'      <- convertSuperT tctx t
-                return  $ ImportSourceBoxed t'
-
-        ImportSourceSea str t
+        ImportValueSea str t
          -> do  t'      <- convertSuperT tctx t 
-                return  $ ImportSourceSea str t'
+                return  $ ImportValueSea str t'
 
 
 ---------------------------------------------------------------------------------------------------

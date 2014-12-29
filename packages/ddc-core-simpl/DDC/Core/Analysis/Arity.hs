@@ -78,10 +78,10 @@ aritiesOfModule mm
 
         aritiesImports  
          = catMaybes
-         $ [ case arityFromType (typeOfImportSource isrc) of
-                Just a  -> Just (BName n (typeOfImportSource isrc), a)
+         $ [ case arityFromType (typeOfImportValue isrc) of
+                Just a  -> Just (BName n (typeOfImportValue isrc), a)
                 Nothing -> Nothing
-           | (n, isrc) <- moduleImportTypes mm ]
+           | (n, isrc) <- moduleImportValues mm ]
 
     in  emptyArities
         `extendsArities` aritiesImports

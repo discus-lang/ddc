@@ -29,7 +29,8 @@ import DDC.Core.Exp
 
 import DDC.Core.Module 
         ( ExportSource  (..)
-        , ImportSource  (..))
+        , ImportType    (..)
+        , ImportValue   (..))
 
 
 -- Module ---------------------------------------------------------------------
@@ -66,11 +67,11 @@ toCoreModule a mm
                 else [])
 
         , C.moduleImportTypes   
-           = [ (toCoreN n, toCoreImportSource isrc)
+           = [ (toCoreN n, toCoreImportType  isrc)
                 | (n, isrc) <- S.moduleImportTypes mm ]
 
         , C.moduleImportValues  
-           = [ (toCoreN n, toCoreImportSource isrc)
+           = [ (toCoreN n, toCoreImportValue isrc)
                 | (n, isrc) <- S.moduleImportValues mm ]
 
         , C.moduleImportDataDefs
@@ -102,16 +103,22 @@ bindOfTop (S.TopBind _ b x)
 bindOfTop _     = Nothing
 
 
--- ImportSource ---------------------------------------------------------------
-toCoreImportSource :: ImportSource S.Name -> ImportSource C.Name
-toCoreImportSource src
+-- ImportType -----------------------------------------------------------------
+toCoreImportType :: ImportType S.Name -> ImportType C.Name
+toCoreImportType src
  = case src of
-        ImportSourceModule mn n t mA
-         -> ImportSourceModule mn (toCoreN n) (toCoreT t) mA
+        ImportTypeAbstract t    -> ImportTypeAbstract (toCoreT t)
+        ImportTypeBoxed t       -> ImportTypeBoxed (toCoreT t)
 
-        ImportSourceAbstract t -> ImportSourceAbstract (toCoreT t)
-        ImportSourceBoxed t    -> ImportSourceBoxed (toCoreT t)
-        ImportSourceSea v t    -> ImportSourceSea v (toCoreT t)
+
+-- ImportValue ----------------------------------------------------------------
+toCoreImportValue :: ImportValue S.Name -> ImportValue C.Name
+toCoreImportValue src
+ = case src of
+        ImportValueModule mn n t mA
+         -> ImportValueModule mn (toCoreN n) (toCoreT t) mA
+
+        ImportValueSea v t    -> ImportValueSea v (toCoreT t)
 
 
 -- Type -----------------------------------------------------------------------

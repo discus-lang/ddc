@@ -77,7 +77,7 @@ data Super
           -- | Import source for the super.
           --
           --   This can be used to refer to the super from a client module.
-        , superImportSource     :: ImportSource E.Name }
+        , superImportValue      :: ImportValue E.Name }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -220,12 +220,12 @@ supersOfInterface int
 
         -- Build an ImportSource for the given super name. A client module
         -- can use this to import the super into itself.
-        makeImportSource n
+        makeImportValue n
 
          -- Super was defined as a top-level binding in the current module.
          | Just (aType, aValue) <- Map.lookup n nsLocalArities
          , Just tTetra          <- Map.lookup n ntsTetra
-         = ImportSourceModule modName n tTetra (Just (aType, aValue))
+         = ImportValueModule modName n tTetra (Just (aType, aValue))
 
          -- Super was imported into the current module from somewhere else.
          -- Pass along the same import declaration to the client.
@@ -241,7 +241,7 @@ supersOfInterface int
                 , superModuleName   = moduleName mmTetra
                 , superTetraType    = tTetra
                 , superSaltType     = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t 
-                , superImportSource = makeImportSource n }
+                , superImportValue  = makeImportValue n }
          | otherwise    = Nothing
 
 
@@ -252,17 +252,3 @@ supersOfInterface int
  | otherwise
  = Map.empty
 
-{-
--- | Construct the `ImportSource` from the super meta-data in an interface file.
-importSourceOfSuper :: Store.Super -> ImportSource E.Name
-importSourceOfSuper s
-        = ImportSourceModule
-        { importSourceModuleName        = superModuleName s
-        , importSourceModuleVar         = superName       s
-        , importSourceModuleType        = superTetraType  s
-        , importSourceModulePragmaArity 
-           = let t         = Store.superSaltType s
-                 a         = arityOfType t
-                 aValue    = dataArityOfType t
-             in  Just (a - aValue, aValue) }
--}

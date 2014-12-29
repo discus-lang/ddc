@@ -57,16 +57,16 @@ data Config
 
 
 -- | Kind signatures for runtime types that we use when converting to Salt.
-runtimeImportKinds :: Map Name (ImportSource Name)
+runtimeImportKinds :: Map Name (ImportType Name)
 runtimeImportKinds
  = Map.fromList
    [ rn ukTop ]
- where   rn (UName n, t)  = (n, ImportSourceModule (ModuleName ["Runtime"]) n t Nothing)
+ where   rn (UName n, t)  = (n, ImportTypeAbstract t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 
 -- | Type signatures for runtime funtions that we use when converting to Salt.
-runtimeImportTypes :: Map Name (ImportSource Name)
+runtimeImportTypes :: Map Name (ImportValue Name)
 runtimeImportTypes
  = Map.fromList 
    [ rn utGetTag
@@ -86,7 +86,7 @@ runtimeImportTypes
    , rn (utApplyThunk 3)
    , rn (utApplyThunk 4) ]
 
- where   rn (UName n, t)  = (n, ImportSourceSea (renderPlain $ ppr n) t)
+ where   rn (UName n, t)  = (n, ImportValueSea (renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 

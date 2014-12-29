@@ -94,11 +94,11 @@ funMapAddLocalSuper funs (b, x)
 
 
 -- | Add the type of a foreign import to the function map.
-funMapAddForeign :: FunMap -> (Name, ImportSource Name) -> FunMap
+funMapAddForeign :: FunMap -> (Name, ImportValue Name) -> FunMap
 funMapAddForeign funs (n, is)
 
         -- Import from a different DDC compiled module.
-        | ImportSourceModule _m _n t _ <- is
+        | ImportValueModule _m _n t _ <- is
         = let   (tsArgs, _tResult)                      -- TODO: get real arity of function.
                         = takeTFunArgResult
                         $ eraseTForalls t
@@ -109,7 +109,7 @@ funMapAddForeign funs (n, is)
 
 
         -- Import from a Sea land.
-        | ImportSourceSea _ t  <- is
+        | ImportValueSea _ t  <- is
         = let   (tsArgs, _tResult)
                         = takeTFunArgResult
                         $ eraseTForalls t

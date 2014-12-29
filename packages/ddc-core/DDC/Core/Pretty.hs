@@ -132,49 +132,31 @@ pprExportValue (n, esrc)
 
 -- Imports ----------------------------------------------------------------------------------------
 -- | Pretty print an imported type definition.                
-pprImportType :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
+pprImportType :: (Pretty n, Eq n) => (n, ImportType n) -> Doc
 pprImportType (n, isrc)
  = case isrc of
-        ImportSourceModule _mn _nSrc k _
-         -> text "import type" <+> padL 11 (ppr n) <+> text ":" <+> ppr k <> semi
-
-        ImportSourceAbstract k
+        ImportTypeAbstract k
          -> text "import foreign abstract type" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
 
-        ImportSourceBoxed k
+        ImportTypeBoxed k
          -> text "import foreign boxed type" <> line
-         <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
-
-        ImportSourceSea _var k
-         -> text "import foreign c type" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
 
 
 -- | Pretty print an imported value definition.
-pprImportValue :: (Pretty n, Eq n) => (n, ImportSource n) -> Doc
+pprImportValue :: (Pretty n, Eq n) => (n, ImportValue n) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
-        ImportSourceModule _mn _nSrc t Nothing
+        ImportValueModule _mn _nSrc t Nothing
          ->        text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
 
-        ImportSourceModule _mn _nSrc t (Just (arityType, arityValue))
+        ImportValueModule _mn _nSrc t (Just (arityType, arityValue))
          -> vcat [ text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
                  , text "{-# ARITY   " <+> padL 10 (ppr n) <+> ppr arityType <+> ppr arityValue 
                                        <+> text "#-}"
                  , empty ]
-
-        ImportSourceAbstract t
-         -> text "import foreign abstract value" <> line
-         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
-         <> line
-
-        ImportSourceBoxed t
-         -> text "import foreign boxed value" <> line
-         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
-         <> line
-
-        ImportSourceSea _var t
+        ImportValueSea _var t
          -> text "import foreign c value" <> line
          <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
          <> line

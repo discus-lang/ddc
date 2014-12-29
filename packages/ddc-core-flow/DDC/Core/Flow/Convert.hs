@@ -31,21 +31,18 @@ convertM :: Module a F.Name -> ConvertM (Module a T.Name)
 convertM mm
   = do  
         -- Convert signatures of imported functions.
-        tsImportT' <- mapM convertImportM
-                   $  moduleImportTypes  mm
-
-        tsImportV' <- mapM convertImportM
-                   $  moduleImportValues mm
+        tsImportT' <- mapM convertImportNameTypeM  $ moduleImportTypes  mm
+        tsImportV' <- mapM convertImportNameValueM $ moduleImportValues mm
 
         let tsImportV'rest =
               [ (T.NameVar       "getFieldOfBoxed"
-                ,ImportSourceSea "getFieldOfBoxed" 
+                ,ImportValueSea  "getFieldOfBoxed" 
                  $ tForalls [kRegion, kData] $ \[r,d] -> T.tPtr r T.tObj `tFunPE` T.tNat `tFunPE` d)
               , (T.NameVar       "setFieldOfBoxed"
-                ,ImportSourceSea "setFieldOfBoxed" 
+                ,ImportValueSea  "setFieldOfBoxed" 
                  $ tForalls [kRegion, kData] $ \[r,d] -> T.tPtr r T.tObj `tFunPE` T.tNat `tFunPE` d `tFunPE` T.tVoid)
               , (T.NameVar       "allocBoxed"
-                ,ImportSourceSea "allocBoxed"     
+                ,ImportValueSea  "allocBoxed"     
                  $ tForalls [kRegion       ] $ \[r  ] -> T.tTag          `tFunPE` T.tNat `tFunPE` T.tPtr r T.tObj)
               ]
         -- getFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0;
@@ -119,13 +116,24 @@ convertExportSourceM esrc
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
-convertImportM
-        :: (F.Name, ImportSource F.Name)
-        -> ConvertM (T.Name, ImportSource T.Name)
+convertImportNameTypeM
+        :: (F.Name, ImportType F.Name)
+        -> ConvertM (T.Name, ImportType T.Name)
 
-convertImportM (n, isrc)
+convertImportNameTypeM (n, isrc)
  = do   n'      <- convertImportNameM n
-        isrc'   <- convertImportSourceM isrc
+        isrc'   <- convertImportTypeM isrc
+        return  (n', isrc')
+
+
+-- | Convert an import spec.
+convertImportNameValueM
+        :: (F.Name, ImportValue F.Name)
+        -> ConvertM (T.Name, ImportValue T.Name)
+
+convertImportNameValueM (n, isrc)
+ = do   n'      <- convertImportNameM n
+        isrc'   <- convertImportValueM isrc
         return  (n', isrc')
 
 
@@ -141,26 +149,34 @@ convertImportNameM n
 
 
 -- | Convert an import source.
-convertImportSourceM 
-        :: ImportSource F.Name
-        -> ConvertM (ImportSource T.Name)
+convertImportTypeM 
+        :: ImportType F.Name
+        -> ConvertM (ImportType T.Name)
 
-convertImportSourceM isrc
+convertImportTypeM isrc
  = case isrc of
-        ImportSourceModule mn n t _
+        ImportTypeAbstract t
+         -> do  t'      <- convertType t
+                return $ ImportTypeAbstract t'
+
+        ImportTypeBoxed t
+         -> do  t'      <- convertType t
+                return $ ImportTypeBoxed t'
+
+
+-- | Convert an import value spec.
+convertImportValueM 
+        :: ImportValue F.Name
+        -> ConvertM (ImportValue T.Name)
+
+convertImportValueM isrc
+ = case isrc of
+        ImportValueModule mn n t _
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ ImportSourceModule mn n' t' Nothing
+                return  $ ImportValueModule mn n' t' Nothing
 
-        ImportSourceAbstract t
-         -> do  t'      <- convertType t
-                return $ ImportSourceAbstract t'
-
-        ImportSourceBoxed t
-         -> do  t'      <- convertType t
-                return $ ImportSourceBoxed t'
-
-        ImportSourceSea str t
+        ImportValueSea str t
          -> do  t'      <- convertType t 
-                return  $ ImportSourceSea str t'
+                return  $ ImportValueSea str t'
 

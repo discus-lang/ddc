@@ -91,7 +91,7 @@ convModuleM withPrelude pp mm@(ModuleCore{})
                         -> convSuperTypeM Env.empty misrc Nothing nSuper tSuper)
                  [ (Just isrc, nSuper, tSuper)
                         | (nSuper, isrc) <- C.moduleImportValues mm
-                        , let tSuper     =  typeOfImportSource isrc ]
+                        , let tSuper     =  typeOfImportValue isrc ]
 
         let cExterns
                 | not withPrelude       = empty
@@ -128,13 +128,13 @@ convModuleM withPrelude pp mm@(ModuleCore{})
         
         -- Build the top-level kind environment.
         let kenv = Env.fromList
-                  $ [ BName n (typeOfImportSource isrc) 
-                        | (n, isrc) <- moduleImportTypes mm ]
+                  $ [ BName n (kindOfImportType isrc) 
+                    | (n, isrc) <- moduleImportTypes mm ]
 
         -- Build the top-level type environment.
         let tenv = Env.fromList 
-                 $ [ BName n (typeOfImportSource isrc)
-                        | (n, isrc) <- moduleImportValues mm ]
+                 $ [ BName n (typeOfImportValue isrc)
+                   | (n, isrc) <- moduleImportValues mm ]
 
         -- Convert all the super definitions to C code.
         let convSuperM' (BName n t) x

@@ -4,7 +4,8 @@ module DDC.Source.Tetra.Module
           Module        (..)
         , isMainModule
         , ExportSource  (..)
-        , ImportSource  (..)
+        , ImportType    (..)
+        , ImportValue   (..)
 
           -- * Module Names
         , QualName      (..)
@@ -26,7 +27,8 @@ import DDC.Core.Module
         , ModuleName    (..)
         , isMainModuleName
         , ExportSource  (..)
-        , ImportSource  (..))
+        , ImportType    (..)
+        , ImportValue   (..))
         
 
 -- Module ---------------------------------------------------------------------
@@ -47,10 +49,10 @@ data Module a n
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     :: [(n, ImportSource n)]
+        , moduleImportTypes     :: [(n, ImportType   n)]
 
           -- | Types of imported foreign values.
-        , moduleImportValues    :: [(n, ImportSource n)]
+        , moduleImportValues    :: [(n, ImportValue  n)]
 
           -- Local ------------------------------
           -- | Top-level things

@@ -81,7 +81,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                         { configDataDefs = unionDataDefs (configDataDefs config)
                                                          (fromListDataDefs defsImported') }
         let kenv_import = Env.union kenv
-                        $ Env.fromList  [ BName n (typeOfImportSource isrc)
+                        $ Env.fromList  [ BName n (kindOfImportType isrc)
                                         | (n, isrc) <- nksImported' ]
 
 
@@ -107,7 +107,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let kenv_top    = kenv_import
 
         let tenv_top    = Env.union tenv 
-                        $ Env.fromList  [ BName n (typeOfImportSource isrc)
+                        $ Env.fromList  [ BName n (typeOfImportValue isrc)
                                         | (n, isrc) <- ntsImported' ]
 
 
@@ -242,8 +242,8 @@ checkExportValues config kenv nesrcs
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n -> Mode n
-        -> [(n, ImportSource n)]
-        -> CheckM a n [(n, ImportSource n)]
+        -> [(n, ImportType n)]
+        -> CheckM a n [(n, ImportType n)]
 
 checkImportTypes config mode nisrcs
  = let  
@@ -254,10 +254,10 @@ checkImportTypes config mode nisrcs
                 _       -> Synth
 
         check (n, isrc)
-         = do   let k           =  typeOfImportSource isrc
+         = do   let k           =  kindOfImportType isrc
                 (k', _, _)      <- checkTypeM config Env.empty emptyContext UniverseKind
                                         k modeCheckImportTypes
-                return  (n, mapTypeOfImportSource (const k') isrc)
+                return  (n, mapKindOfImportType (const k') isrc)
    in do
         -- Check for duplicate imports.
         let dups = findDuplicates $ map fst nisrcs
@@ -273,8 +273,8 @@ checkImportTypes config mode nisrcs
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n -> KindEnv n -> Mode n
-        -> [(n, ImportSource n)]
-        -> CheckM a n [(n, ImportSource n)]
+        -> [(n, ImportValue n)]
+        -> CheckM a n [(n, ImportValue n)]
 
 checkImportValues config kenv mode nisrcs
  = let
@@ -285,9 +285,9 @@ checkImportValues config kenv mode nisrcs
                 _       -> Check kData
 
         check (n, isrc)
-         = do   let t           = typeOfImportSource isrc
-                (t', k, _)      <- checkTypeM config kenv emptyContext UniverseSpec
-                                        t modeCheckImportTypes
+         = do   let t      = typeOfImportValue isrc
+                (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
+                                         t modeCheckImportTypes
 
                 -- In Recon mode we need to post-check that the imported
                 -- value really has kind data. In inference mode the expected
@@ -295,7 +295,7 @@ checkImportValues config kenv mode nisrcs
                 when (not $ isDataKind k)
                  $ throw $ ErrorImportValueNotData n
 
-                return  (n, mapTypeOfImportSource (const t') isrc)
+                return  (n, mapTypeOfImportValue (const t') isrc)
    in do
         -- Check for duplicate imports.
         let dups = findDuplicates $ map fst nisrcs

@@ -21,7 +21,7 @@ sanitizeGlobal = sanitizeName
 -- | Convert the Salt name of a supercombinator to a name we can use when
 --   defining the C function.
 seaNameOfSuper 
-        :: Maybe (ImportSource Name)    -- ^ How the super is imported
+        :: Maybe (ImportValue Name)     -- ^ How the super is imported
         -> Maybe (ExportSource Name)    -- ^ How the super is exported
         -> Name                         -- ^ Name of the super.
         -> Maybe Doc
@@ -29,26 +29,26 @@ seaNameOfSuper
 seaNameOfSuper mImport mExport nm
 
         -- Super is defined in this module and not exported.
-        | Nothing                               <- mImport
-        , Nothing                               <- mExport
-        , Just str                              <- takeNameVar nm
-        = Just $ text $ {- "_DDC_" ++ -} sanitizeName str
+        | Nothing                       <- mImport
+        , Nothing                       <- mExport
+        , Just str                      <- takeNameVar nm
+        = Just $ text $ sanitizeName str
 
         -- Super is defined in this module and exported to C land.
-        | Nothing                               <- mImport
-        , Just _                                <- mExport
-        , Just str                              <- takeNameVar nm
+        | Nothing                       <- mImport
+        , Just _                        <- mExport
+        , Just str                      <- takeNameVar nm
         = Just $ text $ sanitizeName str
 
         -- Super is imported from another module and not exported.
-        | Just ImportSourceModule{}             <- mImport
-        , Nothing                               <- mExport
-        , Just str                              <- takeNameVar nm
-        = Just $ text $ {- "_DDC_" ++ -} sanitizeName str
+        | Just ImportValueModule{}      <- mImport
+        , Nothing                       <- mExport
+        , Just str                      <- takeNameVar nm
+        = Just $ text $ sanitizeName str
         
         -- Super is imported from C-land and not exported.
-        | Just (ImportSourceSea strSea _)       <- mImport
-        , Nothing                               <- mExport
+        | Just (ImportValueSea strSea _) <- mImport
+        , Nothing                       <- mExport
         = Just $ text strSea
 
         -- ISSUE #320: Handle all the import/export combinations.
