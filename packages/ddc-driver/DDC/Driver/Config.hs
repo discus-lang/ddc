@@ -19,7 +19,6 @@ import System.FilePath
 import Data.Maybe
 import qualified DDC.Core.Salt.Runtime  as Salt
 import qualified DDC.Core.Salt          as Salt
-import qualified DDC.Core.Lite          as Lite
 
 
 ---------------------------------------------------------------------------------------------------
@@ -36,7 +35,6 @@ data Config
         , configInferTypes              :: Bool
 
           -- | Simplifiers to apply to intermediate code
-        , configSimplLite               :: Simplifier Int () Lite.Name
         , configSimplSalt               :: Simplifier Int () Salt.Name
 
           -- | Backend code generator to use

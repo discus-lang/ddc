@@ -106,7 +106,7 @@ cmdToSaltSourceTetraFromString config store source str
 
 -------------------------------------------------------------------------------
 -- | Convert some fragment of Disciple Core to Core Salt.
---   Works for the 'Lite' and 'Tetra' fragments.
+--   Works for the 'Tetra' fragment.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltCoreFromFile
@@ -130,7 +130,7 @@ cmdToSaltCoreFromFile config language filePath
 
 -------------------------------------------------------------------------------
 -- | Convert some fragment of Disciple Core to Core Salt.
---   Works for the 'Lite' and 'Tetra' fragments.
+--   Works for the 'Tetra' fragment.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltCoreFromString
@@ -163,17 +163,6 @@ cmdToSaltCoreFromString config language source str
                 [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreOutput   pmode SinkStdout]]]]
                 
-                -- Convert a Core Lite module to Salt.
-                | fragName == "Lite" 
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageLiteLoad    config source
-                [ stageLiteOpt     config source
-                [ stageLiteToSalt  config source
-                [ stageSaltOpt     config source
-                [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
-                [ PipeCoreOutput   pmode SinkStdout]]]]]
-
                 -- Unrecognised fragment name or file extension.
                 | otherwise
                 = throwE 

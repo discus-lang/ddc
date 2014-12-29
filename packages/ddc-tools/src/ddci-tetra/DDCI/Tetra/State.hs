@@ -81,7 +81,6 @@ getDriverConfigOfState state
          , D.configModuleBaseDirectories        = []
          , D.configOutputFile                   = Nothing
          , D.configOutputDir                    = Nothing
-         , D.configSimplLite                    = S.Trans S.Id
          , D.configSimplSalt                    = S.Trans S.Id
          , D.configBuilder                      = builder
          , D.configPretty                       = configPretty

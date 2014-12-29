@@ -52,8 +52,7 @@ data Spec
 
 -- | Language fragments that we can compile.
 data Fragment
-        = FragmentSalt          -- File.dce
-        | FragmentLite          -- File.dcl
+        = FragmentSalt          -- File.dct
         deriving Show
 
 

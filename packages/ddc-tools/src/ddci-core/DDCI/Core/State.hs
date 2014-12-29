@@ -36,7 +36,6 @@ import Data.Set                                 (Set)
 import DDC.Core.Check                           (AnTEC(..))
 import qualified DDC.Build.Language.Eval        as Eval
 import qualified DDC.Core.Salt                  as Salt
-import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Driver.Stage               as D
@@ -59,11 +58,9 @@ data State
         , stateLanguage         :: Language
 
           -- | Maps of modules we can use as inliner templates.
-        , stateWithLite         :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
         , stateWithSalt         :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
 
           -- | Simplifier to apply to core program.
-        , stateSimplLite        :: Simplifier Int () Lite.Name
         , stateSimplSalt        :: Simplifier Int () Salt.Name
 
           -- | Force the builder to this one, this sets the address width etc.
@@ -116,9 +113,7 @@ initState interface
         { stateInterface        = interface
         , stateModes            = Set.empty 
         , stateLanguage         = Eval.language
-        , stateWithLite         = Map.empty
         , stateWithSalt         = Map.empty
-        , stateSimplLite        = S.Trans S.Id
         , stateSimplSalt        = S.Trans S.Id
         , stateBuilder          = Nothing  
         , stateOutputFile       = Nothing
@@ -147,7 +142,6 @@ getDriverConfigOfState state
          , D.configModuleBaseDirectories  = []
          , D.configOutputFile             = stateOutputFile state
          , D.configOutputDir              = stateOutputDir  state
-         , D.configSimplLite              = stateSimplLite  state
          , D.configSimplSalt              = stateSimplSalt  state
          , D.configBuilder                = builder
          , D.configPretty                 = configPretty

@@ -7,9 +7,6 @@ module DDC.Build.Pipeline.Core
         , PipeTetra (..)
         , pipeTetra
 
-        , PipeLite (..)
-        , pipeLite
-
         , PipeFlow (..)
         , pipeFlow)
 where
@@ -34,8 +31,6 @@ import qualified DDC.Core.Flow.Convert                  as Flow
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
 import qualified DDC.Core.Tetra                         as Tetra
-
-import qualified DDC.Core.Lite                          as Lite
 
 import qualified DDC.Core.Salt.Platform                 as Salt
 import qualified DDC.Core.Salt.Runtime                  as Salt
@@ -116,11 +111,6 @@ data PipeCore a n where
   PipeCoreAsTetra
         :: ![PipeTetra a]
         -> PipeCore a Tetra.Name
-
-  -- Treat a module as belonging to the Core Lite fragment from now on.
-  PipeCoreAsLite
-        :: ![PipeLite]
-        -> PipeCore (C.AnTEC () Lite.Name) Lite.Name
 
   -- Treat a module as belonging to the Core Flow fragment from now on.
   PipeCoreAsFlow 
@@ -224,10 +214,6 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreAsTetra" #-}
             liftM concat $ mapM (pipeTetra mm) pipes
 
-        PipeCoreAsLite !pipes
-         -> {-# SCC "PipeCoreAsLite" #-}
-            liftM concat $ mapM (pipeLite mm) pipes
-
         PipeCoreAsFlow !pipes
          -> {-# SCC "PipeCoreAsFlow" #-}
             liftM concat $ mapM (pipeFlow mm) pipes
@@ -312,41 +298,6 @@ pipeTetra !mm !pp
                         (C.profilePrimTypes    Tetra.profile)
                         mm 
              of  Left  err  -> return [ErrorTetraConvert err]
-                 Right mm'  -> pipeCores mm' pipes 
-
-
-
--- PipeLite -------------------------------------------------------------------
--- | Process a Core Lite module.
-data PipeLite
-        -- | Output the module in core language syntax.
-        = PipeLiteOutput !Sink
-
-        -- | Convert the module to the Core Salt Fragment.
-        | PipeLiteToSalt !Salt.Platform 
-                         !Salt.Config
-                         ![PipeCore () Salt.Name]
-
-
--- | Process a Core Lite module.
-pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name
-         -> PipeLite
-         -> IO [Error]
-
-pipeLite !mm !pp
- = case pp of
-        PipeLiteOutput !sink
-         -> {-# SCC "PipeLiteOutput" #-}
-            pipeSink (renderIndent $ ppr mm) sink
-
-        PipeLiteToSalt !platform !runConfig !pipes
-         -> {-# SCC "PipeLiteToSalt" #-}
-            case Lite.saltOfLiteModule platform runConfig 
-                        (C.profilePrimDataDefs Lite.profile) 
-                        (C.profilePrimKinds    Lite.profile)
-                        (C.profilePrimTypes    Lite.profile)
-                        mm 
-             of  Left  err  -> return [ErrorLiteConvert err]
                  Right mm'  -> pipeCores mm' pipes 
 
 

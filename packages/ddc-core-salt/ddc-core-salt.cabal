@@ -34,11 +34,6 @@ Library
         DDC.Core.Salt.Transfer
         DDC.Core.Salt
 
-        DDC.Core.Lite.Compounds
-        DDC.Core.Lite.Layout
-        DDC.Core.Lite.Env
-        DDC.Core.Lite
-
   Other-modules:
         DDC.Core.Salt.Convert.Exp
         DDC.Core.Salt.Convert.Init
@@ -56,13 +51,6 @@ Library
         DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Name.PrimVec
         
-        DDC.Core.Lite.Convert.Base
-        DDC.Core.Lite.Convert.Data
-        DDC.Core.Lite.Convert.Type
-        DDC.Core.Lite.Convert
-        DDC.Core.Lite.Name
-        DDC.Core.Lite.Profile
-
         DDC.Core.Salt.Convert.Base
         
 

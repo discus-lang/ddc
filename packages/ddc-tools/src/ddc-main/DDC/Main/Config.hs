@@ -133,11 +133,9 @@ data Config
 
           -- Optimisation -------------
           -- | What optimisation levels to use
-        , configOptLevelLite    :: OptLevel
         , configOptLevelSalt    :: OptLevel
 
           -- | Paths to modules to use as inliner templates.
-        , configWithLite        :: [FilePath]
         , configWithSalt        :: [FilePath]
 
           -- Runtime -------------------
@@ -189,9 +187,7 @@ getDefaultConfig
           , configViaBackend      = D.ViaLLVM
  
             -- Optimisation -------------
-          , configOptLevelLite    = OptLevel0
           , configOptLevelSalt    = OptLevel0
-          , configWithLite        = []
           , configWithSalt        = []
  
             -- Runtime ------------------
@@ -220,4 +216,6 @@ defaultBuilderConfig config
         = BuilderConfig
         { builderConfigBaseSrcDir = configBaseDir config 
         , builderConfigBaseLibDir = configBaseDir config </> "build"
-        , builderConfigLibFile    = \static dynamic -> if configRuntimeLinkStrategy config == D.LinkStatic then static else dynamic }
+        , builderConfigLibFile    
+           = \static dynamic -> if configRuntimeLinkStrategy config == D.LinkStatic 
+                                  then static else dynamic }

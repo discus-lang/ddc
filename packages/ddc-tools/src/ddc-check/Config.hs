@@ -1,9 +1,9 @@
 
 module Config where
 import DDC.Build.Language
-import qualified DDC.Build.Language.Lite        as Lite
 import System.FilePath
 import System.Exit
+import qualified DDC.Build.Language.Tetra       as Tetra
 
 
 -- | DDC type checker command line interface config.
@@ -24,7 +24,7 @@ defaultConfig :: Config
 defaultConfig
         = Config
         { configSourceFile      = Nothing
-        , configLanguage        = Language Lite.bundle
+        , configLanguage        = Language Tetra.bundle
         , configQuiet           = False }
 
 
@@ -81,7 +81,7 @@ usage
         , " Flags:"
         , "  -help                       Display this help."
         , "  -quiet                      Don't print checked module to stdout."
-        , "  -language <fragment>        Set the language fragment.  (default Lite)"
+        , "  -language <fragment>        Set the language fragment.  (default Tetra)"
         , "     fragment one of " ++ (show $ map fst languages)
         , "" ]
 

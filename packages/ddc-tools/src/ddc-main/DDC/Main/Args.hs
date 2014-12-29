@@ -81,14 +81,12 @@ parseArgs args config
         -- Optimisation -------------------------
         | "-O0" : rest          <- args
         = parseArgs rest
-        $ config { configOptLevelLite   = OptLevel0 
-                 , configOptLevelSalt   = OptLevel0 }
+        $ config { configOptLevelSalt   = OptLevel0 }
 
         | flag : rest          <- args
         , elem flag     [ "-O", "-O1" ]
         = parseArgs rest
-        $ config { configOptLevelLite   = OptLevel1
-                 , configOptLevelSalt   = OptLevel1 }
+        $ config { configOptLevelSalt   = OptLevel1 }
 
         -- Intermediates ------------------------
         | flag : rest   <- args

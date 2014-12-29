@@ -314,7 +314,7 @@ lambdasCast p c a cc x
         -- ISSUE #331: Lambda lifter doesn't work with closure typing.
         -- The closure typing system is a mess, and doing this
         -- properly would be be hard work, so we just don't bother.
-        -- Lambda lifting won't work with the Eval or Lite fragments.
+        -- Lambda lifting won't work with the Eval fragment.
         CastWeakenClosure{}
          ->    error "ddc-core-simpl.lambdas: closures not handled."
 

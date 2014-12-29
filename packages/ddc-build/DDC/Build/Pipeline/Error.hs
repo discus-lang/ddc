@@ -30,9 +30,6 @@ data Error
         -- | Error converting the module from Tetra to Salt.
         | forall err. Pretty err => ErrorFlowConvert  !err
 
-        -- | Error converting the module from Lite to Salt.
-        | forall err. Pretty err => ErrorLiteConvert !err
-
         -- | Error when transforming core program.
         | forall err. Pretty err => ErrorCoreTransform !err
 
@@ -63,10 +60,6 @@ instance Pretty Error where
 
         ErrorFlowConvert err'
          -> vcat [ text "Fragment violation when converting Flow module to Tetra module."
-                 , indent 2 (ppr err') ]
-
-        ErrorLiteConvert err'
-         -> vcat [ text "Fragment violation when converting Lite module to Salt module."
                  , indent 2 (ppr err') ]
 
         ErrorCoreTransform err'

@@ -194,15 +194,10 @@ cmdLoadCoreFromString config language source str
  = let  
         pmode           = prettyModeOfConfig $ configPretty config
 
-        -- The type inferencer doesn't work with the Lite fragment.
-        config'         = if fragmentExtension fragment == "dcl"
-                                then config { configInferTypes = False}
-                                else config
-
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
          $ PipeTextLoadCore  fragment 
-                        (if configInferTypes config' then C.Synth else C.Recon) 
+                        (if configInferTypes config then C.Synth else C.Recon) 
                         SinkDiscard
          [ PipeCoreReannotate (\a -> a { annotTail = () })
          [ PipeCoreSimplify  fragment (bundleStateInit bundle)

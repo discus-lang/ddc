@@ -50,7 +50,6 @@ create way allFiles filePath
 
         fragment
          | takeExtension filePath == "dcs"  = CompileDC.FragmentSalt
-         | takeExtension filePath == "dcl"  = CompileDC.FragmentLite
          | otherwise            = error "ddc-war.create: bad fragment"
 
         -- compile the .ds into a .bin

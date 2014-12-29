@@ -101,7 +101,7 @@ cmdToLlvmSourceTetraFromString config store source str
 
 -------------------------------------------------------------------------------
 -- | Parse, check and convert a Core module to LLVM.
---   Works for the 'Tetra', 'Lite' and 'Salt' fragments.
+--   Works for the 'Tetra', and 'Salt' fragments.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 --
@@ -126,7 +126,7 @@ cmdToLlvmCoreFromFile config language filePath
 
 -------------------------------------------------------------------------------
 -- | Parse, check and convert a Core module to LLVM.
---   Works for the 'Tetra', 'Lite' and 'Salt' fragments.
+--   Works for the 'Tetra', and 'Salt' fragments.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 --
@@ -156,17 +156,6 @@ cmdToLlvmCoreFromString config language source str
                 [ stageSaltOpt       config source
                 [ stageSaltToLLVM    config source
                 [ PipeLlvmPrint      SinkStdout]]]]
-
-                -- Convert a Core Lite module to LLVM.
-                | fragName == "Lite"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageLiteLoad      config source
-                [ stageLiteOpt       config source
-                [ stageLiteToSalt    config source
-                [ stageSaltOpt       config source
-                [ stageSaltToLLVM    config source 
-                [ PipeLlvmPrint SinkStdout]]]]]
 
                 -- Convert a Core Salt module to LLVM.
                 | fragName == "Salt"

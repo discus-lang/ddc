@@ -64,7 +64,6 @@ Library
         DDC.Driver.Command.Trans
 
         DDC.Driver.Stage.Flow
-        DDC.Driver.Stage.Lite
         DDC.Driver.Stage.Salt
         DDC.Driver.Stage.Tetra
 

@@ -41,11 +41,6 @@ cmdReadModule'
 
 cmdReadModule' printErrors config fragment filePath
  = do
-        -- The inferencer doesn't work with the Lite fragment.
-        let config'     = if fragmentExtension fragment == "dcl"
-                                then config { configInferTypes = False }
-                                else config
-
         -- Read in the source file.
         exists  <- doesFileExist filePath
         when (not exists)
@@ -54,7 +49,7 @@ cmdReadModule' printErrors config fragment filePath
         src     <- readFile filePath
         let source   = SourceFile filePath
 
-        cmdReadModule_parse printErrors config' filePath fragment source src
+        cmdReadModule_parse printErrors config filePath fragment source src
 
 
 cmdReadModule_parse printErrors config filePath fragment source src

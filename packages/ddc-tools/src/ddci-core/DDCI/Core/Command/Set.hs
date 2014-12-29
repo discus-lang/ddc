@@ -39,7 +39,6 @@ cmdSet state []
                  , text "Simplifier: " <> ppr  simpl
                  , text "Builder:    " <> text (show $ liftM builderName $ stateBuilder state) ]
          <$> vcat (text "With:       " : map ppr (Map.keys modules))
-         <$> vcat (text "With Lite:  " : map ppr (Map.keys (stateWithLite state)))
          <$> vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state)))
 
         return state

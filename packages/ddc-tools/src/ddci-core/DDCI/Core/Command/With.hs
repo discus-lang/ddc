@@ -1,6 +1,6 @@
 
 module DDCI.Core.Command.With
-        (cmdWith, cmdWithLite, cmdWithSalt)
+        (cmdWith, cmdWithSalt)
 where
 import DDCI.Core.State
 import DDC.Interface.Source
@@ -14,7 +14,6 @@ import Control.Monad
 import Data.IORef
 import Data.Char
 import qualified DDC.Core.Check                 as C
-import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified Data.Map                       as Map
 
@@ -34,16 +33,6 @@ cmdWith state _source str
                 let bundle'  = bundle { bundleModules = modules' }
 		return $ state { stateLanguage = Language bundle' }
 
-
-cmdWithLite :: State -> Source -> String -> IO State
-cmdWithLite state _source str
- = do   res <- cmdWith_load Lite.fragment str
-	case res of
-	  Nothing  -> return state
-	  Just mdl 
-           -> return $ state
-		     { stateWithLite = Map.insert (moduleName mdl) mdl 
-                                                  (stateWithLite state) }
 
 cmdWithSalt :: State -> Source -> String -> IO State
 cmdWithSalt state _source str

@@ -2,16 +2,6 @@
 :set builder x86_64-darwin
 
 
--- Include elaborated witnesses in metadata tree
-:set lang Lite
-:to-llvm..
-module Test with letrec
-
-bar (_ : Unit) : Unit
- = private r1 in
-   private r2 r3 with { w1 : Distinct r1 r2 } in ();;
-
-
 -- Observable optimisations: GVN
 -- Feed the output of this test to `opt -S -tbaa -basicaa -gvn -o - <test.ll>`
 --

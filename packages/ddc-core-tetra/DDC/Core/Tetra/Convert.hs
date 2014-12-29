@@ -60,7 +60,7 @@ saltOfTetraModule
         -> DataDefs E.Name                      -- ^ Data type definitions.
         -> KindEnv  E.Name                      -- ^ Kind environment.
         -> TypeEnv  E.Name                      -- ^ Type environment.
-        -> Module (AnTEC a E.Name) E.Name       -- ^ Lite module to convert.
+        -> Module (AnTEC a E.Name) E.Name       -- ^ Tetra module to convert.
         -> Either (Error a) (Module a A.Name)   -- ^ Salt module.
 
 saltOfTetraModule platform runConfig defs kenv tenv mm
@@ -149,7 +149,7 @@ convertM pp runConfig defs kenv tenv mm
                 { moduleName           = moduleName mm
                 , moduleIsHeader       = moduleIsHeader mm
 
-                  -- None of the types imported by Lite modules are relevant
+                  -- None of the types imported by Tetra modules are relevant
                   -- to the Salt language.
                 , moduleExportTypes    = []
                 , moduleExportValues   = tsExports'

@@ -26,6 +26,7 @@ import qualified DDC.Core.Check                 as C
 import DDC.Data.Canned
 import qualified DDC.Core.Flow.Transform.Concretize     as Concretize
 
+
 -------------------------------------------------------------------------------
 -- | Convert a module to Core Tetra.
 --   The output is printed to @stdout@.
@@ -77,7 +78,7 @@ cmdFlowToTetraCoreFromFile config configLower language filePath
 
 -------------------------------------------------------------------------------
 -- | Convert some fragment of Disciple Core to Core Tetra.
---   Works for the 'Lite' and 'Tetra' fragments.
+--   Works for the 'Tetra' fragment.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 --

@@ -1,8 +1,7 @@
 
 -- | Define the default optimisation levels.
 module DDC.Main.OptLevels 
-        ( getSimplLiteOfConfig
-        , getSimplSaltOfConfig)
+        ( getSimplSaltOfConfig)
 where
 import DDC.Main.Config
 import DDC.Driver.Command.Read
@@ -20,35 +19,13 @@ import Data.List
 import Data.Monoid
 import Data.Maybe
 import qualified DDC.Driver.Config              as D
-import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
-import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Build.Language.Salt        as Salt
-import qualified DDC.Build.Language.Lite        as Lite
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
-
-
--- | Get the simplifier for Lite code from the config.
---   This also reads up all the modules we use for inliner templates.
---
---   We don't want to delay this until all arguments are parsed, 
---   because the simplifier spec also contains the list of modules used
---   as inliner templates, so we need to wait until they're all specified.
---
-getSimplLiteOfConfig 
-        :: Config -> D.Config
-        -> Builder 
-        -> Maybe FilePath -- ^ path of current module
-        -> IO (Simplifier Int () Lite.Name)
-
-getSimplLiteOfConfig config _dconfig _builder _filePath
- = case configOptLevelLite config of
-        OptLevel0       -> opt0_lite config 
-        OptLevel1       -> opt0_lite config
 
 
 -- | Get the simplifier for Salt code from the config.
@@ -68,12 +45,6 @@ getSimplSaltOfConfig config dconfig builder runtimeConfig filePath
 
 -- Level 0 --------------------------------------------------------------------
 -- This just passes the code through unharmed.
-
--- | Level 0 optimiser for Core Lite code.
-opt0_lite :: Config -> IO (Simplifier Int () Lite.Name)
-opt0_lite _
-        = return $ S.Trans S.Id
-
 
 -- | Level 0 optimiser for Core Salt code.
 opt0_salt :: Config -> IO (Simplifier Int () Salt.Name)
@@ -164,25 +135,7 @@ loadSaltRules
     -> Maybe FilePath
     -> IO (S.NamedRewriteRules () Salt.Name)
 
-loadSaltRules dconfig builder runtimeConfig (Just filePath)
- -- If the main module is a lite module, we need to load the lite then convert it to salt
- | isSuffixOf ".dcl" filePath
- = do modu     <- cmdReadModule' False dconfig Lite.fragment filePath
-      let path' = (reverse $ drop 3 $ reverse filePath) ++ "dcs.rules"
-      case modu of
-       Just mod' ->
-        case Lite.saltOfLiteModule (buildSpec builder) 
-                    runtimeConfig
-                    (C.profilePrimDataDefs Lite.profile) 
-                    (C.profilePrimKinds    Lite.profile)
-                    (C.profilePrimTypes    Lite.profile)
-                    mod' 
-         of  Left  _    -> return []
-             Right mm'  -> cmdTryReadRules Salt.fragment path'
-                                           (reannotate (const ()) mm')
-
-       Nothing   -> return []
-
+loadSaltRules dconfig _builder _runtimeConfig (Just filePath)
  | isSuffixOf ".dcs" filePath
  = do modu      <- cmdReadModule' False dconfig Salt.fragment filePath
       case modu of

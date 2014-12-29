@@ -37,7 +37,6 @@ Library
 
         DDC.Build.Language.Eval
         DDC.Build.Language.Flow
-        DDC.Build.Language.Lite
         DDC.Build.Language.Salt
         DDC.Build.Language.Tetra
         DDC.Build.Language.Zero

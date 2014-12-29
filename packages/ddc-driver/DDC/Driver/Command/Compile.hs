@@ -246,14 +246,6 @@ cmdCompile config buildExe store filePath
                 $ stageTetraLoad    config source
                 [ stageTetraToSalt  config source pipesSalt ]
 
-                -- Compile a Core Lite module.
-                | ext == ".dcl"
-                = liftIO 
-                $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageLiteLoad     config source
-                [ stageLiteOpt      config source  
-                [ stageLiteToSalt   config source pipesSalt ]]
-
                 -- Compile a Core Salt module.
                 | ext == ".dcs"
                 = liftIO 

@@ -234,7 +234,6 @@ getDriverConfig config filePath
              { Driver.configLogBuild              = True
              , Driver.configDump                  = configDump config
              , Driver.configInferTypes            = configInferTypes config
-             , Driver.configSimplLite             = Simplifier.idsimp
              , Driver.configSimplSalt             = Simplifier.idsimp
              , Driver.configViaBackend            = configViaBackend config
              , Driver.configRuntime               = runtimeConfig
@@ -249,10 +248,6 @@ getDriverConfig config filePath
              , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
              , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config
              , Driver.configRuntimeLinkStrategy   = configRuntimeLinkStrategy config }
-
-        simplLite <- getSimplLiteOfConfig config 
-                        dconfig 
-                        builder               filePath
         
         -- We need to force -infer on because the inliner templates may not
         -- have full type annotations.
@@ -261,8 +256,7 @@ getDriverConfig config filePath
                         builder runtimeConfig filePath
 
         return  $ dconfig        
-                { Driver.configSimplLite        = simplLite
-                , Driver.configSimplSalt        = simplSalt }
+                { Driver.configSimplSalt        = simplSalt }
 
 
 -- | Print errors to stderr and set the exit code.

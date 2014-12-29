@@ -1,16 +1,2 @@
 
 
--- Error: Exported signature does not match type of definition.
-ok
-Error loading module
-  When checking expression.
-    Type of exported name does not match type of definition.
-                 with binding: foo
-               type of export: Int r -(Read r | Empty)> Int r
-           type of definition: Int r -> Int r
-
-
--- Error: Exported signature has no binding.
-Error loading module
-  When checking expression.
-    Exported name 'foo' is undefined.

@@ -101,7 +101,6 @@ data Command
 
         -- Inline control
         | CommandWith           -- ^ Add a module to the inliner table.
-	| CommandWithLite
 	| CommandWithSalt
         deriving (Eq, Show)
 
@@ -161,7 +160,6 @@ commands
         , (":make",             CommandMake)
 
         -- Inliner control
-        , (":with-lite",        CommandWithLite)
         , (":with-salt",        CommandWithSalt) 
         , (":with",             CommandWith) ]
 
@@ -372,9 +370,6 @@ handleCmd1 state cmd source line
         -- Inliner Control ----------------------
         CommandWith
          ->     cmdWith state source line
-
-        CommandWithLite
-         ->     cmdWithLite state source line
 
         CommandWithSalt
          ->     cmdWithSalt state source line

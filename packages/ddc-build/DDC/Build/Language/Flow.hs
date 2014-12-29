@@ -18,15 +18,14 @@ import DDC.Base.Pretty
 import qualified Data.Map               as Map
 
 
--- | Language definition for Disciple Core Lite.
+-- | Language definition for Disciple Core Flow.
 language    :: Language
 language    = Language bundle
 
 
--- | Language bundle for Disciple Core Lite.
+-- | Language bundle for Disciple Core Flow.
 bundle  :: Bundle Int Name Error
-bundle
-        = Bundle
+bundle  = Bundle
         { bundleFragment        = fragment
         , bundleModules         = Map.empty
         , bundleStateInit       = 0 :: Int
@@ -36,7 +35,7 @@ bundle
         , bundleRewriteRules    = Map.empty }
 
 
--- | Fragement definition for Disciple Core Lite.
+-- | Fragement definition for Disciple Core Flow.
 fragment :: Fragment Name Error
 fragment
         = Fragment

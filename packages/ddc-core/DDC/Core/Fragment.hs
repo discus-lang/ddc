@@ -2,7 +2,7 @@
 -- | The ambient Disciple Core language is specialised to concrete languages
 --   by adding primitive operations and optionally restricting the set of 
 --   available language features. This specialisation results in user-facing
---   language fragments such as @Disciple Core Lite@ and @Disciple Core Salt@.
+--   language fragments such as @Disciple Core Tetra@ and @Disciple Core Salt@.
 module DDC.Core.Fragment
         ( -- * Langauge fragments
           Fragment      (..)
