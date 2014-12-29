@@ -51,16 +51,47 @@ id [a : Data] (x : a) : a
 
 foo (_ : Unit) : Unit
  = do   id (\(x : Nat#). x)
-        ()
-;;
+        ();;
 
 
 -- Compile application of anonymous function.
 :to-salt..
 module Test with letrec
 app [a b : Data] (f : a -> b) (x : a) : b
- = f x
-;;
+ = f x;;
+
+
+-- Construct a lists of units.
+-- The head field of the Cons cells has no primary region.
+:to-salt..
+module Test 
+data List (a : Data) where
+ Nil  : List a
+ Cons : a -> List a -> List a
+with letrec
+singleton (x : Unit) : List Unit
+ = Cons [Unit] x (Nil [Unit]);;
+
+
+-- Destruct a list of units.
+-- The head field of the Cons cell has no primary region.
+:to-salt..
+module Test 
+data List (a : Data) where
+ Nil  : List a
+ Cons : a -> List a -> List a
+with letrec
+headUnit (xx : List Unit) : Unit
+ = case xx of
+        Cons x _        -> x
+        Nil             -> ();;
+
+
+-- Keep witnesses arguments
+:to-salt..
+module Test with letrec
+foo [r : Region] {w : Mutable r} (x : Unit) : Word64# 
+ = 42w64#;;
 
 
 -------------------------------------------------------------------------------

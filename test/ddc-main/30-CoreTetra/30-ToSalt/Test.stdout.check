@@ -156,6 +156,49 @@ letrec {
 }
 
 
+-- Construct a lists of units.
+-- The head field of the Cons cells has no primary region.
+module Test with
+letrec {
+  singleton : Ptr# rT Obj -> Ptr# rT Obj
+    = \(x : Ptr# rT Obj).
+      let x0 : Ptr# rT Obj
+            = let ^ : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
+              ^0 in
+      let ^ : Ptr# rT Obj = allocBoxed [rT] TAG1# 2# in
+      let _ : Void#
+            = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 0# x in
+      let _ : Void#
+            = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 1# x0 in
+      ^0
+}
+
+
+-- Destruct a list of units.
+-- The head field of the Cons cell has no primary region.
+module Test with
+letrec {
+  headUnit : Ptr# rT Obj -> Ptr# rT Obj
+    = \(xx : Ptr# rT Obj).
+      case getTag [rT] xx of {
+        TAG1#  
+         -> let x : Ptr# rT Obj
+                  = getFieldOfBoxed [rT] [Ptr# rT Obj] xx 0# in
+            x;
+        TAG0#  
+         -> allocBoxed [rT] TAG0# 0#;
+        _ 
+         -> fail# [Ptr# rT Obj]
+      }
+}
+
+
+-- Keep witnesses arguments
+Fragment violation when converting Tetra module to Salt module.
+  Module is malformed.
+  Invalid type constructor application Mutable r => Unit -> Word64#
+
+
 -------------------------------------------------------------------------------
 -- Trigger errors about unsupported features in the Tetra to Salt conversion.
 ok

@@ -1,6 +1,6 @@
 :set Indent
 :set lang Lite
-:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
+:with test/ddc-main/10-CoreEval/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
 
 
 -- now with a Const contraint and regions

@@ -1,5 +1,5 @@
-:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/71-FoldrBuild-Forward/FoldBuild.dcs
-:with test/ddc-main/50-CoreEval/30-Transform/40-Rewrite/71-FoldrBuild-Forward/List.dcs
+:with test/ddc-main/10-CoreEval/30-Transform/40-Rewrite/71-FoldrBuild-Forward/FoldBuild.dcs
+:with test/ddc-main/10-CoreEval/30-Transform/40-Rewrite/71-FoldrBuild-Forward/List.dcs
 
 :set Indent
 :set TraceTrans
