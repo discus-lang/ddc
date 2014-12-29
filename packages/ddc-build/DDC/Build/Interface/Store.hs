@@ -26,6 +26,7 @@ import qualified DDC.Core.Salt          as A
 import qualified Data.Map               as Map
 
 
+---------------------------------------------------------------------------------------------------
 -- | Abstract API to a collection of module interfaces.
 --
 --   This lives in IO land because in future we want to demand-load the
@@ -40,9 +41,9 @@ data Store
           --   from one or more of the provided modules.
         , storeSupers   :: IORef (Map ModuleName (Map E.Name Super)) 
 
-
-          -- | The complete interfaces.
-          --   TODO: remove this. Make consumers use more specific functions.
+          -- | Fully loaded interface files.
+          --   In future we want to load parts of interface files on demand, 
+          --   and not the whole lot.q
         , storeInterfaces :: IORef [InterfaceAA] }
 
 
@@ -138,7 +139,6 @@ getModuleNames store
 
 
 -- | Get the fully loaded interfaces.
---   TODO: remove this, make consumers use more specific functions.
 getInterfaces :: Store -> IO [InterfaceAA]
 getInterfaces store
  = do   ints    <- readIORef (storeInterfaces store)

@@ -124,13 +124,19 @@ pipeText !srcName !srcLine !str !pp
                         -- Discover which module imported names are from, and
                         -- attach the meta-data which will be needed by follow-on
                         -- compilation, such as the arity of each super.
-                        mm_resolve      <- B.resolveNamesInModule 
+                        result          <- B.resolveNamesInModule 
                                                     CE.primKindEnv CE.primTypeEnv
                                                     store mm_core
 
+                        case result of 
+                         Left err          -> return [ErrorLoad err]
+                         Right mm_resolved -> goSpread mm_resolved
+
+                goSpread mm
+                 = do
                         -- Spread types of data constructors into uses.
                         let mm_spread   = C.spreadX CE.primKindEnv CE.primTypeEnv
-                                                    mm_resolve
+                                                    mm
 
                         -- Dump loaded code before type checking.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck
