@@ -69,4 +69,3 @@ stake (n : Nat#) (ss : Stream s a) : Stream (Tuple2 s Nat#) a
                                                 Skip sA3    -> Skip  (T2 sA3 ix)
                                                 Done        -> Done
         in   MkStream stepB (T2 sA0 0)
-
