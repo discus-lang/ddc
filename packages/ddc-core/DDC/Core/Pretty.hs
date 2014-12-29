@@ -138,10 +138,12 @@ pprImportType (n, isrc)
         ImportTypeAbstract k
          -> text "import foreign abstract type" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
+         <> line
 
         ImportTypeBoxed k
          -> text "import foreign boxed type" <> line
          <> indent 8 (ppr n <+> text ":" <+> ppr k <> semi)
+         <> line
 
 
 -- | Pretty print an imported value definition.

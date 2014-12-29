@@ -67,7 +67,8 @@ convertPrimCall _ectx ctx xx
                         xF'     = XVar aF (UName nSuper)
                     in  Just (aF, xF', arity, atsArgs)
 
-                 -- The name is that of an existing top-level super.
+                 -- The name is that of an existing top-level super, either
+                 -- defined in this module or imported from somewhere else.
                  | otherwise
                  -> let 
                         -- If this fails then the super name is in-scope, but
@@ -193,3 +194,5 @@ panicNoArity uF xx
         , empty
         , text "The super is allegedly in-scope, but we can't see its definition"
         , text "in this module, nor can we get the arity from an import." ]
+
+

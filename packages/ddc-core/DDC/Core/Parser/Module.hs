@@ -32,6 +32,8 @@ pModule c
         let exportSpecs = concat $ [specs | HeadExportSpecs specs <- heads ]
         let defsLocal   =          [def   | HeadDataDef     def   <- heads ]
 
+        -- TODO: attach arities to import specs.
+
         -- Function definitions.
         --  If there is a 'with' keyword then this is a standard module with bindings.
         --  If not, then it is a module header, which doesn't need bindings.

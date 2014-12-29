@@ -27,6 +27,8 @@ import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                           as Env
 
 import DDC.Control.Monad.Check                          (throw, evalCheck)
+import Data.Maybe
+import Control.Monad
 import Data.Map                                         (Map)
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
@@ -276,7 +278,19 @@ takePrenexAritiesOfImports
         :: Module a E.Name -> ConvertM b (Map E.Name (Int, Int))
 
 takePrenexAritiesOfImports mm
- = do   return  $ Map.fromList 
-                  [(n, (0, 0)) | n <- map fst $ moduleImportValues mm ]
-                -- TODO: bogus
+ = do   
+        let check n (ImportValueModule _ _ _ (Just (aType, aValue)))
+                = return $ Just (n, (aType, aValue))
+
+            check n (ImportValueSea    _ _)
+                = return $ Just (n, (0, 0))            -- TODO: bogus
+
+            check _ _
+                = return $ Nothing
+
+        nsArities       <- liftM catMaybes
+                        $  mapM (uncurry check)
+                        $  moduleImportValues mm
+
+        return $ Map.fromList nsArities
 

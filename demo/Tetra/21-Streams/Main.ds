@@ -4,14 +4,8 @@ import Data.Stream
 import System.IO.Console
 where
 
--- BROKEN: can't partially apply the add fn directly,
--- as cannot get arity of fn compiled in other module.
--- thing (x : Nat#) : Nat# = add x 1
--- plus  (x y : Nat#) : Nat# = add x y
-
 main (_ : Unit) : S Console Unit
  = do   
-
         xx1     = enumFromTo 0 100
         ss1     = streamOfList xx1
         ss2     = stake 10 (smap (add 1) ss1)

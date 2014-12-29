@@ -165,15 +165,17 @@ data ExpContext
 --   This is how many data arguments it needs when we call it.
 superDataArity :: Context a -> Bound E.Name -> Maybe Int
 superDataArity ctx u
-
-        -- For supers defined in the current module,
-        -- the type and value arity is stored in the context.
+        -- Get the arity of a locally defined super.
         | UName n  <- u
         , Just (_aType, aValue)  <- Map.lookup n (contextSupers ctx)
-        = Just $ aValue
+        = Just aValue
 
-        | otherwise
-        = Nothing
+        -- Get the arity of an imported super.
+        | UName n  <- u
+        , Just (_aType, aValue) <- Map.lookup n (contextImports ctx)
+        = Just aValue
+
+        | otherwise     = Nothing
 
 
 ---------------------------------------------------------------------------------------------------
