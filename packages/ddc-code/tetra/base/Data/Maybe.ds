@@ -1,10 +1,6 @@
 
 module Data.Maybe
-
-export  isNothing
-        isJust
-        fromMaybe
-
+export  { isNothing; isJust; fromMaybe }
 where
 
 
@@ -34,10 +30,9 @@ fromMaybe (def : a) (m : Maybe a) : a
         Nothing -> def
         Just x  -> x
 
-{-
+
 -- | Apply a function to the value in a `Just`, or return a default value.
-maybe (def : b) (f : C# (a -> b)) (m : Maybe a) : b
+maybe (def : b) (f : a -> b) (m : Maybe a) : b
  = case m of
         Nothing -> def
-        Just x  -> eval1# f x
--}
+        Just x  -> f x

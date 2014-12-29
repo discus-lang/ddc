@@ -3,7 +3,9 @@ module DDC.Core.Tetra.Env
         ( primDataDefs
         , primSortEnv
         , primKindEnv
-        , primTypeEnv)
+        , primTypeEnv
+
+        , dataDefBool)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
@@ -27,11 +29,7 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Primitive -----------------------------------------------
-        -- Bool#
-  $     [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
-                [] 
-                (Just   [ (NameLitBool True,  []) 
-                        , (NameLitBool False, []) ])
+  $     [ dataDefBool
 
         -- Nat#
         , makeDataDefAlg (NamePrimTyCon PrimTyConNat)       [] Nothing
@@ -62,7 +60,16 @@ primDataDefs
         -- We don't have a way of avoiding the upper bound.
  ++     [ makeTupleDataDef arity
                 | arity <- [2..32] ]
- 
+
+
+-- | Data type definition for `Bool`.
+dataDefBool :: DataDef Name
+dataDefBool
+ = makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
+        [] 
+        (Just   [ (NameLitBool True,  []) 
+                , (NameLitBool False, []) ])
+
 
 -- | Make a tuple data def for the given tuple arity.
 makeTupleDataDef :: Int -> DataDef Name

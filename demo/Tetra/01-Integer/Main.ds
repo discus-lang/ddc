@@ -1,0 +1,45 @@
+-- | Various functions on integers.
+module Main 
+import Data.Numeric.Nat
+import Data.Numeric.Bool
+import System.IO.Console
+where
+
+
+main (_ : Unit) : S Console Unit
+ = box do
+        run putStrLn (showNat (fac 10))
+        run putStrLn (showNat (ack 3   2))
+        run putStrLn (showNat (gcd 100 28))
+
+
+-- Factorial.
+fac  (n : Nat) : Nat
+ = fac' 1 n
+
+fac' (acc : Nat) (n : Nat) : Nat
+ = case n of
+        0       -> acc
+        1       -> acc
+        _       -> fac' (acc * n) (n - 1)
+
+
+-- Ackermann's function.
+ack (m : Nat) (n : Nat) : Nat
+ = case m of
+        0       -> n + 1
+        _       -> case n of
+                        0       -> ack (m - 1) 1
+                        _       -> ack (m - 1) (ack m (n - 1))
+
+
+-- Greatest Common Divisor.
+gcd (x y : Nat) : Nat
+ = if and (x == 0) (y == 0)
+        then 0
+        else gcd' (abs x) (abs y)
+
+gcd' (x y : Nat) : Nat
+ = if y == 0
+        then x
+        else gcd' y (rem x y)

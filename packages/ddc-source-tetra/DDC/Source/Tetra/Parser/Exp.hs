@@ -52,8 +52,8 @@ context = Context
 
 
 -- Exp --------------------------------------------------------------------------------------------
--- | Parse a core language expression.
-pExp    :: Ord n => Context n -> Parser n (Exp SourcePos n)
+-- | Parse a Tetra Source language expression.
+pExp    :: Context Name -> Parser Name (Exp SourcePos Name)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
@@ -125,6 +125,18 @@ pExp c
         x3      <- pExp c
         return  $ XCase sp x1 [AAlt p x3, AAlt PDefault x2]
 
+ , do   -- if-then-else
+        --  Sugar for a case-expression.
+        sp      <- pTokSP KIf
+        x1      <- pExp c
+        pTok KThen
+        x2      <- pExp c
+        pTok KElse
+        x3      <- pExp c
+        return  $ XCase sp x1 
+                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x2
+                        , AAlt PDefault x3 ]
+
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
         pTok KSquareBra
@@ -159,7 +171,7 @@ pExp c
 
 
 -- Applications.
-pExpApp :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pExpApp :: Context Name -> Parser Name (Exp SourcePos Name)
 pExpApp c
   = do  xps     <- liftM concat $ P.many1 (pArgSPs c)
         let (xs, sps)   = unzip xps
@@ -173,7 +185,7 @@ pExpApp c
 
 
 -- Comp, Witness or Spec arguments.
-pArgSPs :: Ord n => Context n -> Parser n [(Exp SourcePos n, SourcePos)]
+pArgSPs :: Context Name -> Parser Name [(Exp SourcePos Name, SourcePos)]
 pArgSPs c
  = P.choice
         -- [Type]
@@ -208,7 +220,7 @@ pArgSPs c
 
 
 -- | Parse a variable, constructor or parenthesised expression.
-pExpAtom   :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pExpAtom   :: Context Name -> Parser Name (Exp SourcePos Name)
 pExpAtom c
  = do   (x, _) <- pExpAtomSP c
         return x
@@ -216,11 +228,7 @@ pExpAtom c
 
 -- | Parse a variable, constructor or parenthesised expression,
 --   also returning source position.
-pExpAtomSP 
-        :: Ord n 
-        => Context n
-        -> Parser n (Exp SourcePos n, SourcePos)
-
+pExpAtomSP :: Context Name -> Parser Name (Exp SourcePos Name, SourcePos)
 pExpAtomSP c
  = P.choice
  [      -- ( Exp2 )
@@ -272,7 +280,7 @@ pExpAtomSP c
 
 -- Alternatives -----------------------------------------------------------------------------------
 -- Case alternatives.
-pAlt    :: Ord n => Context n -> Parser n (Alt SourcePos n)
+pAlt    :: Context Name -> Parser Name (Alt SourcePos Name)
 pAlt c
  = do   p       <- pPat c
         pTok KArrowDash
@@ -281,8 +289,7 @@ pAlt c
 
 
 -- Patterns.
-pPat    :: Ord n 
-        => Context n -> Parser n (Pat n)
+pPat    :: Context Name -> Parser Name (Pat Name)
 pPat c
  = P.choice
  [      -- Wildcard
@@ -325,8 +332,7 @@ pBindPat c
 
 
 -- Bindings ---------------------------------------------------------------------------------------
-pLetsSP :: Ord n 
-        => Context n -> Parser n (Lets SourcePos n, SourcePos)
+pLetsSP :: Context Name -> Parser Name (Lets SourcePos Name, SourcePos)
 pLetsSP c
  = P.choice
     [ -- non-recursive let
@@ -407,10 +413,9 @@ pLetWits c bs mParent
 
 -- | A binding for let expression.
 pLetBinding 
-        :: Ord n 
-        => Context n
-        -> Parser n ( Bind n
-                    , Exp SourcePos n)
+        :: Context Name
+        -> Parser Name ( Bind Name
+                       , Exp SourcePos Name )
 pLetBinding c
  = do   b       <- pBinder
 
@@ -474,7 +479,7 @@ data Stmt n
 
 
 -- | Parse a single statement.
-pStmt :: Ord n => Context n -> Parser n (Stmt n)
+pStmt :: Context Name -> Parser Name (Stmt Name)
 pStmt c
  = P.choice
  [ -- Binder = Exp ;
@@ -513,7 +518,7 @@ pStmt c
 
 
 -- | Parse some statements.
-pStmts :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pStmts :: Context Name -> Parser Name (Exp SourcePos Name)
 pStmts c
  = do   stmts   <- P.sepEndBy1 (pStmt c) (pTok KSemiColon)
         case makeStmts stmts of

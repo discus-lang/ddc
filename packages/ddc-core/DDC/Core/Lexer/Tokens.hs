@@ -231,6 +231,8 @@ data TokAtom
         -- sugar keywords
         | KDo
         | KMatch
+        | KIf
+        | KThen
         | KElse
 
         -----------------------------------------
@@ -343,6 +345,8 @@ describeTokAtom' ta
         -- sugar keywords
         KDo                     -> (Keyword, "do")
         KMatch                  -> (Keyword, "match")
+        KIf                     -> (Keyword, "if")
+        KThen                   -> (Keyword, "then")
         KElse                   -> (Keyword, "else")
 
         -- debruijn indices

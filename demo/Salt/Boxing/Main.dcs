@@ -4,11 +4,11 @@
 -- function that uses boxed arithmetic.
 --
 module Main 
-export main       : [r1 r2 : Region]. Nat# -> Ptr# r1 String# -> Int#
+export main       : [r1 r2 : Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 import foreign c value 
-        showInt   : [r : Region].Int# -> Ptr# r String#
-        putStrLn  : [r : Region].Ptr# r String# -> Void#
+        showInt   : [r : Region]. Int# -> Ptr# r Word8#
+        putStr_v  : [r : Region]. Ptr# r Word8# -> Void#
 
 with letrec 
 
@@ -93,7 +93,7 @@ fac [r1 r2 : Region] (x: Ptr# r1 Obj) : Ptr# r2 Obj
                 return# n5
 
 
-main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
+main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 Word8#) : Int#
  = do   
         -- Create an initial heap of size 4k.
         create# 4096#
@@ -104,7 +104,7 @@ main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
         -- Print out the result.
         x2u     = unboxWord32 x2
         str     = showInt (truncate# [Int#] [Word32#] x2u)
-        putStrLn str
+        putStr_v str
 
         return# 0i#
       

@@ -1,10 +1,12 @@
 
 module DDC.Source.Tetra.Env
         ( primKindEnv
-        , primTypeEnv )
+        , primTypeEnv 
+        , dataDefBool)
 where
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
+import DDC.Type.DataDef
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
@@ -45,3 +47,12 @@ typeOfPrimName dc
         NameLitWord     _ bits  -> Just $ tWord bits
 
         _                       -> Nothing
+
+
+-- | Data type definition for `Bool`.
+dataDefBool :: DataDef Name
+dataDefBool
+ = makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
+        [] 
+        (Just   [ (NameLitBool True,  []) 
+                , (NameLitBool False, []) ])

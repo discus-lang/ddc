@@ -1,6 +1,5 @@
 
 module Data.List 
-
 export  { singleton;    replicate
         ; enumFromTo
         ; append
@@ -32,16 +31,16 @@ singleton (x : a) : List a
 -- | Construct a list of the given length where all elements are'
 --   the same value.
 replicate (n : Nat) (x : a) : List a
- = case n of
-        0               -> Nil
-        _               -> Cons x (replicate (n - 1) x)
+ = if n == 0
+        then Nil
+        else Cons x (replicate (n - 1) x)
 
 
 -- | Construct a range of values.
 enumFromTo (start : Nat) (end : Nat)
- = case start >= end of
-        True            -> singleton start
-        False           -> Cons start (enumFromTo (start + 1) end)
+ = if start >= end
+        then singleton start
+        else Cons start (enumFromTo (start + 1) end)
 
 
 -- | Append two lists.
@@ -148,9 +147,9 @@ filter (p : a -> Bool) (xx : List a) : List a
  = case xx of
         Nil             -> Nil
         Cons x xs  
-         -> case p x of
-                True    -> Cons x (filter p xs)
-                False   -> filter p xs
+         -> if p x 
+                then Cons x (filter p xs)
+                else filter p xs
 
 
 -- | Keep only those elements that match the given stateful predicate.
@@ -159,7 +158,7 @@ filterS (p : a -> S e Bool) (xx : List a) : S e (List a)
  = box case xx of
         Nil             -> Nil
         Cons x xs  
-         -> case run p x of
-                True    -> Cons x (run filterS p xs)
-                False   -> run filterS p xs
+         -> if run p x 
+                then Cons x (run filterS p xs)
+                else run filterS p xs
 

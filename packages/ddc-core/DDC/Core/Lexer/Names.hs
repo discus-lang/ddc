@@ -69,6 +69,8 @@ keywords
         , ("where",      KA KWhere) 
         , ("do",         KA KDo)
         , ("match",      KA KMatch)
+        , ("if",         KA KIf)
+        , ("then",       KA KThen)
         , ("else",       KA KElse) ]
 
 

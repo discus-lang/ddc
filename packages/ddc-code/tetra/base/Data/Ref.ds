@@ -1,6 +1,5 @@
 
 module Data.Ref
-
 export { allocRef; readRef; writeRef }
 
 import foreign boxed type

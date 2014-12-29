@@ -11,6 +11,7 @@ import DDC.Source.Tetra.Parser.Exp
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
+import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Pretty
@@ -29,10 +30,7 @@ import DDC.Core.Parser
 
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
-pModule :: (Ord n, Pretty n) 
-        => Context n     -- ^ Parser context.
-        -> Parser n (Module P.SourcePos n)
-
+pModule :: Context Name -> Parser Name (Module P.SourcePos Name)
 pModule c
  = do   
         _sp     <- pTokSP KModule
@@ -182,8 +180,7 @@ pImportValue c src
 
 
 -- Top Level --------------------------------------------------------------------------------------
-pTop    :: Ord n 
-        => Context n -> Parser n (Top P.SourcePos n)
+pTop    :: Context Name -> Parser Name (Top P.SourcePos Name)
 pTop c
  = P.choice
  [ do   -- A top-level, possibly recursive binding.

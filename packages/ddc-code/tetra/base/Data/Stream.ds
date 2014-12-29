@@ -62,10 +62,11 @@ stake (n : Nat) (ss : Stream s a) : Stream (Tup2 s Nat) a
  = case ss of 
     MkStream fA sA0 
      -> let stepB q = case q of
-                       T2 sA ix -> case ix >= n of
-                                    True   -> Done
-                                    False  -> case fA sA of
-                                                Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
-                                                Skip sA3    -> Skip  (T2 sA3 ix)
-                                                Done        -> Done
+                       T2 sA ix 
+                        -> if ix >= n
+                                then Done
+                                else case fA sA of
+                                        Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
+                                        Skip sA3    -> Skip  (T2 sA3 ix)
+                                        Done        -> Done
         in   MkStream stepB (T2 sA0 0)
