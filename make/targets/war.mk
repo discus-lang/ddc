@@ -27,7 +27,7 @@ bin/war : $(war_obj)
 .PHONY 	: war
 war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/war test/ddc-main \
+	@bin/war demo test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
@@ -45,7 +45,7 @@ test    : war
 .PHONY 	: llvmwar
 llvmwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/war test \
+	@bin/war demo test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
@@ -57,7 +57,7 @@ llvmwar : allWithConfig
 .PHONY  : totalwar
 totalwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/war test \
+	@bin/war demo test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results  \
                 -results-failed war.failed   \
@@ -73,7 +73,7 @@ totalwar : allWithConfig
 .PHONY  : batchwar
 batchwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/war test \
+	@bin/war demo test/ddc-main \
                 -batch \
                 -j $(THREADS) \
                 -results        war.results  \
