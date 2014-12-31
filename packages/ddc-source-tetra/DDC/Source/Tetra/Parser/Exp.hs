@@ -10,6 +10,7 @@ module DDC.Source.Tetra.Parser.Exp
         , pTypeApp
         , pTypeAtom)
 where
+import DDC.Source.Tetra.Transform.Guards
 import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Prim
@@ -281,9 +282,11 @@ pAlt    :: Context Name -> Parser Name (Alt SourcePos Name)
 pAlt c
  = do   p       <- pPat c
         P.choice
-         [ do   gxs     <- liftM (map snd)
-                        $  P.many1 (pGuardedExpSP c (pTokSP KArrowDash))
-                return  $ AAlt p gxs
+         [ do   -- TODO: desugar guards in toCore transform instead.
+                spgxs     <- P.many1 (pGuardedExpSP c (pTokSP KArrowDash))
+                let ((sp, _) : _) = spgxs
+                let gxs  = map snd spgxs
+                return  $ AAlt p [GExp $ xCaseOfGuards sp gxs]
 
          , do   pTok KArrowDash
                 x       <- pExp c
@@ -387,33 +390,6 @@ pGuardSP c
          , do   pTok KOtherwise
                 return  (sp, GDefault) ]
 
-
-
--- | Deguar some guards to a case-expression.
-xCaseOfGuards
-        :: SourcePos
-        -> [GuardedExp SourcePos Name]
-        -> Exp SourcePos Name
-
-xCaseOfGuards sp gs 
- = go gs
- where
-        go [GExp x1]
-         = x1
-
-        go (GGuard (GPred g1) (GExp x1) : ggs)
-         = XCase sp g1
-                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [GExp x1]
-                , AAlt PDefault                                        [GExp (go ggs)]]
-
-        go (GGuard GDefault   (GExp x1)  : _)
-         = x1
-
-
-        go _    = error $ "ddc-source-tetra: bad alts" 
-                        ++ show gs
-                        -- TODO: panicify
-        
 
 -- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Context Name -> Parser Name (Lets SourcePos Name, SourcePos)
