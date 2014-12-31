@@ -286,7 +286,7 @@ pAlt c
                 spgxs     <- P.many1 (pGuardedExpSP c (pTokSP KArrowDash))
                 let ((sp, _) : _) = spgxs
                 let gxs  = map snd spgxs
-                return  $ AAlt p [GExp $ xCaseOfGuards sp gxs]
+                return  $ AAlt p [GExp $ desugarGuards sp gxs (error "pAlt fail")]
 
          , do   pTok KArrowDash
                 x       <- pExp c
@@ -345,7 +345,8 @@ pBindGuardsAsCaseSP
 pBindGuardsAsCaseSP c
  = do   (sp, g) : spgs  
                 <- P.many1 (pGuardedExpSP c (pTokSP KEquals))
-        return  (sp, xCaseOfGuards sp (g : map snd spgs))
+        return  (sp, desugarGuards sp (g : map snd spgs) 
+                        (error "pBindGuardsAsCaseSP fail"))
 
 
 pMatchGuardsAsCase
@@ -356,7 +357,7 @@ pMatchGuardsAsCase sp c
  = do   gg      <- liftM (map snd)
                 $  P.sepEndBy1  (pGuardedExpSP c (pTokSP KEquals)) 
                                 (pTok KSemiColon)
-        return  (xCaseOfGuards sp gg)
+        return  (desugarGuards sp gg (error "pMatchGuardsAsCase fail"))
 
 
 -- | An guarded expression,
@@ -368,27 +369,33 @@ pGuardedExpSP
         -> Parser  Name (SourcePos, GuardedExp SourcePos Name)
 
 pGuardedExpSP c pTermSP
- = P.choice
- [ do   (sp, g) <- pGuardSP c
-        gx      <- pGuardedExpSP c pTermSP
-        return  (sp, GGuard g $ snd gx)
+ = pGuardExp (pTokSP KBar)
 
- , do   sp      <- pTermSP
-        x       <- pExp c
-        return  (sp, GExp x) ]
+ where  pGuardExp pSepSP
+         = P.choice
+         [ do   sp      <- pSepSP
+                g       <- pGuard
+                gx      <- liftM snd $ pGuardExp (pTokSP KComma)
+                return  (sp, GGuard g gx)
 
+         , do   sp      <- pTermSP
+                x       <- pExp c
+                return  (sp, GExp x) ]
 
--- | A single guard.
-pGuardSP :: Context Name 
-         -> Parser  Name (SP, Guard SP Name)
-pGuardSP c 
- = do   sp      <- pTokSP KBar
-        P.choice
-         [ do   g       <- pExp c
-                return  (sp, GPred g)
+        pGuard
+         = P.choice 
+         [ P.try $
+           do   p       <- pPat c
+                pTok KArrowDashLeft
+                x       <- pExp c
+                return $ GPat p x
+
+         , do   g       <- pExp c
+                return $ GPred g
+
 
          , do   pTok KOtherwise
-                return  (sp, GDefault) ]
+                return GDefault ]
 
 
 -- Bindings ---------------------------------------------------------------------------------------

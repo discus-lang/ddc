@@ -1,33 +1,69 @@
 
 module DDC.Source.Tetra.Transform.Guards
-        ( xCaseOfGuards )
+        ( desugarGuards )
 where
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim
+import DDC.Type.Compounds
 
--- | Deguar some guards to a case-expression.
-xCaseOfGuards
+
+-- | Desugar some guards to a case-expression.
+--   At runtime, if none of the guards match then run the provided fail action.
+desugarGuards
         :: Show a
-        => a 
-        -> [GuardedExp a Name]
+        => a                    -- ^ Annotation.
+        -> [GuardedExp a Name]  -- ^ Guarded expressions to desugar.
+        -> Exp a Name           -- ^ Failure action.
         -> Exp a Name
 
-xCaseOfGuards a gs 
- = go gs
+desugarGuards a gs0 fail0
+ = go gs0 fail0
  where
-        go [GExp x1]
+        -- Desugar list of guarded expressions.
+        go [] cont
+         = cont
+
+        go [g]   cont
+         = go1 g cont
+
+        go (g : gs) cont
+         = go1 g (go gs cont)
+
+        -- Desugar single guarded expression.
+        go1 (GExp x1) _
          = x1
 
-        go (GGuard (GPred g1) (GExp x1) : ggs)
+        go1 (GGuard GDefault   gs) cont
+         = go1 gs cont
+
+        -- Simple cases where we can avoid introducing the continuation.
+        go1 (GGuard (GPred g1)   (GExp x1)) cont
          = XCase a g1
-                [ AAlt pTrue    [GExp x1]
-                , AAlt PDefault [GExp (go ggs)]]
+                [ AAlt pTrue     [GExp x1]
+                , AAlt PDefault  [GExp cont] ]
 
-        go (GGuard GDefault   (GExp x1)  : _)
-         = x1
+        go1 (GGuard (GPat p1 g1) (GExp x1)) cont
+         = XCase a g1
+                [ AAlt p1        [GExp x1]
+                , AAlt PDefault  [GExp cont]]
 
-        go _    = error $ "ddc-source-tetra: bad alts" 
-                        ++ show gs
+        -- Cases that use a continuation function as a join point.
+        -- We need this when desugaring general pattern alternatives,
+        -- as each group of guards can be reached from multiple places.
+        go1 (GGuard (GPred g1) gs) cont
+         = XLet a (LLet (BAnon (tBot kData)) (xBox a cont))     -- TODO: need to lift body.
+         $ XCase a g1
+                [ AAlt pTrue     [GExp (go1 gs (xRun a (XVar a (UIx 0))))]
+                , AAlt PDefault  [GExp         (xRun a (XVar a (UIx 0))) ]]
+
+        go1 (GGuard (GPat p1 g1) gs) cont
+         = XLet a (LLet (BAnon (tBot kData)) (xBox a cont))     -- TODO: need to lift body.
+         $ XCase a g1
+                [ AAlt p1        [GExp (go1 gs (xRun a (XVar a (UIx 0))))]
+                , AAlt PDefault  [GExp         (xRun a (XVar a (UIx 0))) ]]
         
 
-pTrue = (PData (DaConPrim (NameLitBool True) tBool) [])
+pTrue    = (PData (DaConPrim (NameLitBool True) tBool) [])
+xBox a x = XCast a CastBox x    -- TODO: runtime doesn't really suspend the boxed exp yet.
+xRun a x = XCast a CastRun x
+
