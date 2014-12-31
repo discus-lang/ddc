@@ -160,13 +160,21 @@ instance Expand Exp where
 instance Expand Alt where
  expand config kenv tenv alt
   = case alt of
-        AAlt p gs x2
+        AAlt p gsx
          -> let tenv'   = extendPat p tenv
-                gs'     = map (expand config kenv tenv') gs
+                gsx'    = map (expand config kenv tenv') gsx
+            in  AAlt p gsx'
 
-                tenv''  = extendGuards gs tenv
-                x2'     = expand config tenv tenv'' x2
-            in  AAlt p gs' x2'
+
+instance Expand GuardedExp where
+ expand config kenv tenv (GGuard g x)
+  = let g'      = expand config kenv tenv g
+        tenv'   = extendGuard g' tenv
+    in  GGuard g' (expand config kenv tenv' x)
+
+ expand config kenv tenv (GExp x)
+  = let x'      = expand config kenv tenv x
+    in  GExp x'
 
 
 instance Expand Guard where
@@ -200,11 +208,6 @@ extendGuard gg tenv
  = case gg of
         GPat w _        -> extendPat w tenv
         _               -> tenv
-
--- | Extend a type environment with the variables bound by the given guards.
-extendGuards :: Ord n => [Guard a n] -> TypeEnv n -> TypeEnv n
-extendGuards gs tenv
- = foldr extendGuard tenv gs
 
 
 -------------------------------------------------------------------------------

@@ -85,7 +85,16 @@ instance Defix Alt where
  defix table aa
   = let down = defix table
     in case aa of
-        AAlt p gg x     -> liftM2 (AAlt p) (mapM down gg) (down x)
+        AAlt p x        -> liftM (AAlt p) (mapM down x)
+
+
+instance Defix GuardedExp where
+ defix table gg
+  = let down = defix table
+    in case gg of
+        GGuard g x      -> liftM2 GGuard (down g) (down x)
+        GExp x          -> liftM  GExp (down x)
+
 
 
 instance Defix Guard where

@@ -238,7 +238,8 @@ toCoreC cc
 toCoreA  :: S.Alt a S.Name -> C.Alt a C.Name
 toCoreA aa
  = case aa of
-        S.AAlt w _  x   -> C.AAlt (toCoreP w) (toCoreX x)
+        S.AAlt w [S.GExp x]     -> C.AAlt (toCoreP w) (toCoreX x)
+        _                       -> error "source-tetra.toCoreA: not desugared"
 
 
 -- Pat ------------------------------------------------------------------------

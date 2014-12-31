@@ -135,8 +135,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XWitness _ w    -> text "<" <> ppr w <> text ">"
 
         XDefix _ xs
-         -> pprParen' (d > 2)
-         $  text "DEFIX" <+> hsep (map (pprPrec 11) xs)
+         -> text "[" <> text "DEFIX|" <+> hsep (map (pprPrec 11) xs) <+> text "]"
 
         XInfixOp _ str
          -> parens $ text "INFIXOP"  <+> text "\"" <> text str <> text "\""
@@ -147,11 +146,17 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
 -- Alt --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
- ppr (AAlt p [] x)
-  =  ppr p  <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
+ ppr (AAlt p gxs)
+  =  ppr p <> nest 2 (line <> vcat (map ppr gxs))
 
- ppr (AAlt p gs x)
-  =  ppr p  <+> nest 1 ( (vcat $ map ppr gs) <> line <> nest 3 (text "->" <+> ppr x))
+
+-- GuardedExp -------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (GuardedExp a n) where
+ ppr (GExp x)
+  =  text "->" <+> ppr x
+
+ ppr (GGuard g x)
+  =  ppr g     <> line <> ppr x
 
 
 -- Guard ------------------------------------------------------------------------------------------

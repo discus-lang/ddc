@@ -50,6 +50,7 @@ context = Context
         , contextMakeStringName         = Just (\_ tx -> NameLitString tx) }
 
 
+type SP = SourcePos
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Parse a Tetra Source language expression.
@@ -115,9 +116,9 @@ pExp c
 
         -- match { | EXP = EXP | EXP = EXP ... }
         --  Sugar for cascaded case expressions case-expression.
- , do   _       <- pTok KMatch
+ , do   sp      <- pTokSP KMatch
         pTok KBraceBra
-        (_, x)  <- pMatchGuardsAsCase c
+        x       <- pMatchGuardsAsCase sp c
         pTok KBraceKet
         return x
 
@@ -130,8 +131,8 @@ pExp c
         pTok KElse
         x3      <- pExp c
         return  $ XCase sp x1 
-                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [] x2
-                        , AAlt PDefault [] x3 ]
+                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [GExp x2]
+                        , AAlt PDefault                                        [GExp x3]]
 
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
@@ -279,9 +280,14 @@ pExpAtomSP c
 pAlt    :: Context Name -> Parser Name (Alt SourcePos Name)
 pAlt c
  = do   p       <- pPat c
-        pTok KArrowDash
-        x       <- pExp c
-        return  $ AAlt p [] x
+        P.choice
+         [ do   gxs     <- liftM (map snd)
+                        $  P.many1 (pGuardedExpSP c (pTokSP KArrowDash))
+                return  $ AAlt p gxs
+
+         , do   pTok KArrowDash
+                x       <- pExp c
+                return  $ AAlt p [GExp x] ]
 
 
 -- Patterns.
@@ -329,68 +335,83 @@ pBindPat c
 
 -- Guards -----------------------------------------------------------------------------------------
 -- | Parse some guards and auto-desugar them to a case-expression.
-pBindGuardsAsCase
+pBindGuardsAsCaseSP
         :: Context Name
-        -> Parser Name (SourcePos, Exp SourcePos Name)
+        -> Parser Name (SP, Exp SourcePos Name)
 
-pBindGuardsAsCase c
- = do   gg      <- P.many (pGuardedExp c)
-        let ((sp, _, _) : _) = gg
-        return  (sp, xCaseOfGuards gg)
+pBindGuardsAsCaseSP c
+ = do   (sp, g) : spgs  
+                <- P.many1 (pGuardedExpSP c (pTokSP KEquals))
+        return  (sp, xCaseOfGuards sp (g : map snd spgs))
 
 
 pMatchGuardsAsCase
-        :: Context Name
-        -> Parser Name (SourcePos, Exp SourcePos Name)
+        :: SourcePos -> Context Name
+        -> Parser Name (Exp SourcePos Name)
 
-pMatchGuardsAsCase c
- = do   gg      <- P.sepEndBy1 (pGuardedExp c) (pTok KSemiColon)
-        let ((sp, _, _) : _) = gg
-        return  (sp, xCaseOfGuards gg)
+pMatchGuardsAsCase sp c
+ = do   gg      <- liftM (map snd)
+                $  P.sepEndBy1  (pGuardedExpSP c (pTokSP KEquals)) 
+                                (pTok KSemiColon)
+        return  (xCaseOfGuards sp gg)
 
 
 -- | An guarded expression,
 --   like | EXP1 = EXP2.
-pGuardedExp 
-        :: Context Name 
-        -> Parser  Name (SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)
+pGuardedExpSP 
+        :: Context Name                 -- ^ Parser context.
+        -> Parser  Name SourcePos       -- ^ Parser for char between and of guards and exp.
+                                        --   usually -> or =
+        -> Parser  Name (SourcePos, GuardedExp SourcePos Name)
 
-pGuardedExp c
+pGuardedExpSP c pTermSP
+ = P.choice
+ [ do   (sp, g) <- pGuardSP c
+        gx      <- pGuardedExpSP c pTermSP
+        return  (sp, GGuard g $ snd gx)
+
+ , do   sp      <- pTermSP
+        x       <- pExp c
+        return  (sp, GExp x) ]
+
+
+-- | A single guard.
+pGuardSP :: Context Name 
+         -> Parser  Name (SP, Guard SP Name)
+pGuardSP c 
  = do   sp      <- pTokSP KBar
-
         P.choice
-         [ do   pTok KOtherwise
-                pTok KEquals
-                x       <- pExp c
-                return  (sp, Nothing, x)
+         [ do   g       <- pExp c
+                return  (sp, GPred g)
 
-         , do   g       <- pExp c
-                pTok KEquals
-                x       <- pExp c
-                return  (sp, Just g, x) ]
+         , do   pTok KOtherwise
+                return  (sp, GDefault) ]
+
 
 
 -- | Deguar some guards to a case-expression.
 xCaseOfGuards
-        :: [(SourcePos, Maybe (Exp SourcePos Name), Exp SourcePos Name)]
+        :: SourcePos
+        -> [GuardedExp SourcePos Name]
         -> Exp SourcePos Name
-xCaseOfGuards gs 
+
+xCaseOfGuards sp gs 
  = go gs
  where
-        go ((_, Nothing, x1) : [])
+        go [GExp x1]
          = x1
 
-        go ((spg, Just g1, x1) : (_, Nothing, x2) : [])
-         = XCase spg g1
-                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [] x1
-                , AAlt PDefault [] x2 ]
+        go (GGuard (GPred g1) (GExp x1) : ggs)
+         = XCase sp g1
+                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [GExp x1]
+                , AAlt PDefault                                        [GExp (go ggs)]]
 
-        go ((spg, Just g, x) : gss)
-         = XCase spg g 
-                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [] x
-                , AAlt PDefault [] (go gss) ]
+        go (GGuard GDefault   (GExp x1)  : _)
+         = x1
 
-        go _ = error "ddc-source-tetra: bad alts"    
+
+        go _    = error $ "ddc-source-tetra: bad alts" 
+                        ++ show gs
                         -- TODO: panicify
         
 
@@ -485,14 +506,10 @@ pLetBinding c
         P.choice
          [ do   -- Binding with full type signature.
                 --  Binder : Type = Exp
-                pTok (KOp ":")
-                t       <- pType c
-
-                xBody   <- P.choice 
-                                [ pTok KEquals >> pExp c
-                                , liftM snd $ pBindGuardsAsCase c ]
-
-                return  $ (T.makeBindFromBinder b t, xBody) 
+                pTokSP (KOp ":")
+                t          <- pType c
+                (_, xBody) <- pBindGuardsAsCaseSP c
+                return  (T.makeBindFromBinder b t, xBody) 
 
          , do   -- Non-function binding with no type signature.
                 -- This form can't be used with letrec as we can't use it
@@ -501,7 +518,7 @@ pLetBinding c
                 pTok KEquals
                 xBody   <- pExp c
                 let t   = T.tBot T.kData
-                return  $ (T.makeBindFromBinder b t, xBody)
+                return  (T.makeBindFromBinder b t, xBody)
 
 
          , do   -- Binding using function syntax.
@@ -513,14 +530,8 @@ pLetBinding c
                         -- We can make the full type sig for the let-bound variable.
                         --   Binder Param1 Param2 .. ParamN : Type = Exp
                         pTok (KOp ":")
-                        tBody   <- pType c
-
-                        (sp, xBody)
-                                <- P.choice
-                                [ do    sp <- pTokSP KEquals 
-                                        x  <- pExp c
-                                        return (sp, x)
-                                , do    pBindGuardsAsCase c ]
+                        tBody       <- pType c
+                        (sp, xBody) <- pBindGuardsAsCaseSP c
 
                         let x   = expOfParams sp ps xBody
                         let t   = funTypeOfParams c ps tBody
@@ -531,12 +542,7 @@ pLetBinding c
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --   Binder Param1 Param2 .. ParamN = Exp
-                 , do   (sp, xBody) 
-                                <- P.choice
-                                [ do    sp <- pTokSP KEquals
-                                        x  <- pExp c
-                                        return (sp, x)
-                                , do    pBindGuardsAsCase c ]
+                 , do   (sp, xBody) <- pBindGuardsAsCaseSP c
 
                         let x   = expOfParams sp ps xBody
                         let t   = T.tBot T.kData
@@ -617,8 +623,8 @@ makeStmts ss
         StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest
          -> Just $ XCase sp x1 
-                 [ AAlt p        [] x3
-                 , AAlt PDefault [] x2]
+                 [ AAlt p        [GExp x3]
+                 , AAlt PDefault [GExp x2] ]
 
         _ -> Nothing
 
