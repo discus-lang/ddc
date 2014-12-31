@@ -1,6 +1,6 @@
 
-module DDC.Source.Tetra.ToCore
-        (toCoreModule)
+module DDC.Source.Tetra.Convert
+        (coreOfSourceModule)
 where
 import qualified DDC.Source.Tetra.Module        as S
 import qualified DDC.Source.Tetra.DataDef       as S
@@ -42,12 +42,12 @@ import DDC.Core.Module
 --   We use the map of core headers to add imports for all the names that this
 --   module uses from its environment.
 -- 
-toCoreModule 
+coreOfSourceModule
         :: a 
         -> S.Module a S.Name 
         -> C.Module a C.Name
 
-toCoreModule a mm
+coreOfSourceModule a mm
         = C.ModuleCore
         { C.moduleName          = S.moduleName mm
         , C.moduleIsHeader      = False

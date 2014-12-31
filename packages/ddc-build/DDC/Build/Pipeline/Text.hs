@@ -13,7 +13,7 @@ import DDC.Base.Pretty
 
 import qualified DDC.Build.Transform.Resolve       as B
 
-import qualified DDC.Source.Tetra.ToCore           as SE
+import qualified DDC.Source.Tetra.Convert          as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
 import qualified DDC.Source.Tetra.Transform.Expand as SE
 import qualified DDC.Source.Tetra.Parser           as SE
@@ -120,7 +120,7 @@ pipeText !srcName !srcLine !str !pp
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
                         let sp          = SP.SourcePos "<top level>" 1 1
-                        let mm_core     = SE.toCoreModule sp mm_expand
+                        let mm_core     = SE.coreOfSourceModule sp mm_expand
 
                         -- Discover which module imported names are from, and
                         -- attach the meta-data which will be needed by follow-on
