@@ -7,6 +7,7 @@ module DDC.Source.Tetra.Exp
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
+        , Guard         (..)
         , Cast          (..)
 
         -- * Witnesses

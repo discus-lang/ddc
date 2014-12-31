@@ -111,14 +111,6 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $   ppr lts <+> text "in"
          <$> ppr x
 
-        XCase _ x1 [AAlt p x2]
-         ->  pprParen' (d > 2)
-         $   text "caselet" <+> ppr p 
-                <+> nest 2 (breakWhen (not $ isSimpleX x1)
-                            <> text "=" <+> align (ppr x1))
-                <+> text "in"
-         <$> ppr x2
-
         XCase _ x alts
          -> pprParen' (d > 2) 
          $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
@@ -155,8 +147,23 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
 -- Alt --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
- ppr (AAlt p x)
-  = ppr p <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
+ ppr (AAlt p [] x)
+  =  ppr p  <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
+
+ ppr (AAlt p gs x)
+  =  ppr p  <+> nest 1 ( (vcat $ map ppr gs) <> line <> nest 3 (text "->" <+> ppr x))
+
+
+-- Guard ------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Guard a n) where
+ ppr (GPat p x)
+  = text "|" <+> ppr p  <+> text "<-" <+> ppr x
+
+ ppr (GPred x)
+  = text "|" <+> ppr x
+
+ ppr  GDefault
+  = text "| otherwise"
 
 
 -- Cast -------------------------------------------------------------------------------------------

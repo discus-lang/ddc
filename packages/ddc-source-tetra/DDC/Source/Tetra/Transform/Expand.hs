@@ -160,14 +160,51 @@ instance Expand Exp where
 instance Expand Alt where
  expand config kenv tenv alt
   = case alt of
-        AAlt PDefault x2
-         -> let x2'     = expand config kenv tenv x2
-            in  AAlt PDefault x2'
+        AAlt p gs x2
+         -> let tenv'   = extendPat p tenv
+                gs'     = map (expand config kenv tenv') gs
 
-        AAlt (PData dc bs) x2
-         -> let tenv'   = Env.extends bs tenv
-                x2'     = expand config kenv tenv' x2
-            in  AAlt (PData dc bs) x2'
+                tenv''  = extendGuards gs tenv
+                x2'     = expand config tenv tenv'' x2
+            in  AAlt p gs' x2'
+
+
+instance Expand Guard where
+ expand config kenv tenv gg
+  = case gg of
+        GPat p x
+         -> let tenv'   = extendPat p tenv
+                x'      = expand config kenv tenv' x
+            in  GPat  p x'
+
+        GPred x
+         -> let x'      = expand config kenv tenv x
+            in  GPred x'
+
+        GDefault
+         -> GDefault 
+
+
+-------------------------------------------------------------------------------
+-- | Extend a type environment with the variables bound by the given pattern.
+extendPat :: Ord n => Pat n -> TypeEnv n -> TypeEnv n
+extendPat ww tenv
+ = case ww of
+        PDefault        -> tenv
+        PData _  bs     -> Env.extends bs tenv
+
+
+-- | Extend a type environment with the variables bound by the given guard.
+extendGuard :: Ord n => Guard a n -> TypeEnv n -> TypeEnv n
+extendGuard gg tenv
+ = case gg of
+        GPat w _        -> extendPat w tenv
+        _               -> tenv
+
+-- | Extend a type environment with the variables bound by the given guards.
+extendGuards :: Ord n => [Guard a n] -> TypeEnv n -> TypeEnv n
+extendGuards gs tenv
+ = foldr extendGuard tenv gs
 
 
 -------------------------------------------------------------------------------

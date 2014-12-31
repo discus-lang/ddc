@@ -85,8 +85,16 @@ instance Defix Alt where
  defix table aa
   = let down = defix table
     in case aa of
-        AAlt p x        -> liftM (AAlt p) (down x)
+        AAlt p gg x     -> liftM2 (AAlt p) (mapM down gg) (down x)
 
+
+instance Defix Guard where
+ defix table gg
+  = let down = defix table
+    in case gg of
+        GPat p x        -> liftM  (GPat p) (down x)
+        GPred x         -> liftM  GPred (down x)
+        GDefault        -> return GDefault
 
 -------------------------------------------------------------------------------
 -- | Preprocess the body of an XDefix node to insert applications.

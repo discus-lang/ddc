@@ -238,7 +238,7 @@ toCoreC cc
 toCoreA  :: S.Alt a S.Name -> C.Alt a C.Name
 toCoreA aa
  = case aa of
-        S.AAlt w x      -> C.AAlt (toCoreP w) (toCoreX x)
+        S.AAlt w _  x   -> C.AAlt (toCoreP w) (toCoreX x)
 
 
 -- Pat ------------------------------------------------------------------------

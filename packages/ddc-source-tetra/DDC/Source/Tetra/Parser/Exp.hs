@@ -130,8 +130,8 @@ pExp c
         pTok KElse
         x3      <- pExp c
         return  $ XCase sp x1 
-                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x2
-                        , AAlt PDefault x3 ]
+                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [] x2
+                        , AAlt PDefault [] x3 ]
 
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
@@ -281,7 +281,7 @@ pAlt c
  = do   p       <- pPat c
         pTok KArrowDash
         x       <- pExp c
-        return  $ AAlt p x
+        return  $ AAlt p [] x
 
 
 -- Patterns.
@@ -382,13 +382,13 @@ xCaseOfGuards gs
 
         go ((spg, Just g1, x1) : (_, Nothing, x2) : [])
          = XCase spg g1
-                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x1
-                , AAlt PDefault x2 ]
+                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [] x1
+                , AAlt PDefault [] x2 ]
 
         go ((spg, Just g, x) : gss)
          = XCase spg g 
-                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) x
-                , AAlt PDefault (go gss) ]
+                [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [] x
+                , AAlt PDefault [] (go gss) ]
 
         go _ = error "ddc-source-tetra: bad alts"    
                         -- TODO: panicify
@@ -617,8 +617,8 @@ makeStmts ss
         StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest
          -> Just $ XCase sp x1 
-                 [ AAlt p x3
-                 , AAlt PDefault x2]
+                 [ AAlt p        [] x3
+                 , AAlt PDefault [] x2]
 
         _ -> Nothing
 

@@ -7,6 +7,7 @@ module DDC.Source.Tetra.Exp.Base
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
+        , Guard         (..)
         , Cast          (..)
 
         -- * Witnesses
@@ -102,7 +103,15 @@ data Lets a n
 
 -- | Case alternatives.
 data Alt a n
-        = AAlt !(Pat n) !(Exp a n)
+        = AAlt !(Pat n) ![Guard a n] !(Exp a n)
+        deriving (Show, Eq)
+
+
+-- | Expression guards.
+data Guard a n
+        = GPat  !(Pat n)   !(Exp a n)
+        | GPred !(Exp a n)
+        | GDefault
         deriving (Show, Eq)
 
 
@@ -165,4 +174,13 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
 instance (NFData a, NFData n) => NFData (Alt a n) where
  rnf aa
   = case aa of
-        AAlt w x                -> rnf w `seq` rnf x
+        AAlt w gs x             -> rnf w `seq` rnf gs `seq` rnf x
+
+
+instance (NFData a, NFData n) => NFData (Guard a n) where
+ rnf gg
+  = case gg of
+        GPred x                 -> rnf x
+        GPat  p x               -> rnf p `seq` rnf x
+        GDefault                -> ()
+
