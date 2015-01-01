@@ -1,4 +1,5 @@
 
+-- | Things that can go wrong when resolving infix expressions.
 module DDC.Source.Tetra.Transform.Defix.Error
         (Error (..))
 where
@@ -34,31 +35,32 @@ data Error a n
         deriving Show
 
 
--- Pretty ---------------------------------------------------------------------
-instance (Pretty n) 
-       => Pretty (Error BP.SourcePos n) where
+instance Pretty n => Pretty (Error BP.SourcePos n) where
  ppr err
   = case err of
         ErrorNoInfixDef{}
          -> vcat [ ppr $ errorAnnot err
-                 , text "No infix definition for symbol: " <> ppr (errorSymbol err) ]
+                 , text "No infix definition for symbol: "
+                        <> ppr (errorSymbol err) ]
 
         ErrorDefixNonAssoc{}
          -> vcat [ ppr $ errorAnnot1 err
                  , text "Ambiguous infix expression."
-                 , text " Operator  '"  <> text (errorOp1 err) 
-                                        <> text "' at " <> ppr (errorAnnot1 err)
-                                        <+> text "is non associative,"
+                 , text " Operator  '"  
+                        <> text (errorOp1 err) 
+                        <> text "' at " <> ppr (errorAnnot1 err)
+                        <+> text "is non associative,"
                  , text " but the same precedence as"
-                 , text "  operator '"  <> text (errorOp2 err)
-                                        <> text "' at " <> ppr (errorAnnot2 err) 
-                                        <> text "."]
+                 , text "  operator '"  
+                        <> text (errorOp2 err)
+                        <> text "' at " <> ppr (errorAnnot2 err) 
+                        <> text "."]
 
         ErrorDefixMixedAssoc{}
          -> vcat [ ppr $ errorAnnot err
                  , text "Ambiguous infix expression."
                  , text " operators "   <> hsep (map ppr (errorOps err))
-                        <> text "have different associativities but same precedence." ]
+                    <> text "have different associativities but same precedence." ]
 
         ErrorMalformed{}
          -> vcat [ ppr $ errorAnnot err

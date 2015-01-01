@@ -1,4 +1,5 @@
 
+-- | Abstract syntax for Tetra Source expressions.
 module DDC.Source.Tetra.Exp.Base
         ( module DDC.Type.Exp
 
@@ -7,6 +8,7 @@ module DDC.Source.Tetra.Exp.Base
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
+        , Clause        (..)
         , GuardedExp    (..)
         , Guard         (..)
         , Cast          (..)
@@ -54,7 +56,7 @@ data Exp a n
         -- | Application.
         | XApp      !a !(Exp a n)  !(Exp a n)
 
-        -- | Possibly recursive bindings.
+        -- | A non-recursive let-binding.
         | XLet      !a !(Lets a n) !(Exp a n)
 
         -- | Case branching.
@@ -89,16 +91,36 @@ data Exp a n
 
 
 -- | Possibly recursive bindings.
+--   Whether these are taken as recursive depends on whether they appear
+--   in an XLet or XLetrec group.
 data Lets a n
-        -- | Non-recursive let-binding.
+        ---------------------------------------------------
+        -- Core Language Constructs
+        -- | Non-recursive expression binding.
         = LLet     !(Bind n) !(Exp a n)
 
-        -- | Recursive let bindings.
+        -- | Recursive binding of lambda abstractions.
         | LRec     ![(Bind n, Exp a n)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
         | LPrivate ![Bind n] !(Maybe (Type n)) ![Bind n]
+
+        ---------------------------------------------------
+        -- Sugar Constructs
+        -- | A possibly recursive group of binding clauses. Multiple clauses
+        --   bindings may define the same function via pattern matching.
+        | LGroup   ![Clause a n]
+        deriving (Show, Eq)
+
+
+-- | Binding clause
+data Clause a n
+        -- | A separate type signature.
+        = SSig  !(Bind n) !(Type n)
+
+        -- | A function binding using pattern matching and guards.
+        | SLet  !(Bind n) ![Pat n]  ![GuardedExp a n]
         deriving (Show, Eq)
 
 
@@ -147,19 +169,26 @@ data Cast a n
 instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
-        XVar      a u      -> rnf a `seq` rnf u
-        XCon      a dc     -> rnf a `seq` rnf dc
-        XLAM      a b x    -> rnf a `seq` rnf b   `seq` rnf x
-        XLam      a b x    -> rnf a `seq` rnf b   `seq` rnf x
-        XApp      a x1 x2  -> rnf a `seq` rnf x1  `seq` rnf x2
-        XLet      a lts x  -> rnf a `seq` rnf lts `seq` rnf x
-        XCase     a x alts -> rnf a `seq` rnf x   `seq` rnf alts
-        XCast     a c x    -> rnf a `seq` rnf c   `seq` rnf x
-        XType     a t      -> rnf a `seq` rnf t
-        XWitness  a w      -> rnf a `seq` rnf w
-        XDefix    a xs     -> rnf a `seq` rnf xs
-        XInfixOp  a s      -> rnf a `seq` rnf s
-        XInfixVar a s      -> rnf a `seq` rnf s
+        XVar      a u           -> rnf a `seq` rnf u
+        XCon      a dc          -> rnf a `seq` rnf dc
+        XLAM      a b x         -> rnf a `seq` rnf b   `seq` rnf x
+        XLam      a b x         -> rnf a `seq` rnf b   `seq` rnf x
+        XApp      a x1 x2       -> rnf a `seq` rnf x1  `seq` rnf x2
+        XLet      a lts x       -> rnf a `seq` rnf lts `seq` rnf x
+        XCase     a x alts      -> rnf a `seq` rnf x   `seq` rnf alts
+        XCast     a c x         -> rnf a `seq` rnf c   `seq` rnf x
+        XType     a t           -> rnf a `seq` rnf t
+        XWitness  a w           -> rnf a `seq` rnf w
+        XDefix    a xs          -> rnf a `seq` rnf xs
+        XInfixOp  a s           -> rnf a `seq` rnf s
+        XInfixVar a s           -> rnf a `seq` rnf s
+
+
+instance (NFData a, NFData n) => NFData (Clause a n) where
+ rnf cc
+  = case cc of
+        SSig b t                -> rnf b `seq` rnf t
+        SLet b ps gxs           -> rnf b `seq` rnf ps `seq` rnf gxs
 
 
 instance (NFData a, NFData n) => NFData (Cast a n) where
@@ -177,6 +206,7 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
         LPrivate bs1 mR bs2     -> rnf bs1  `seq` rnf mR `seq` rnf bs2
+        LGroup cs               -> rnf cs
 
 
 instance (NFData a, NFData n) => NFData (Alt a n) where

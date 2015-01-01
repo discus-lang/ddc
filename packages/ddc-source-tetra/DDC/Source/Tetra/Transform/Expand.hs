@@ -1,4 +1,24 @@
 
+-- | Look at type signatures and add quantifiers to bind any free type
+--   variables. Also add holes for missing type arguments.
+--   
+--   Given
+-- @
+--    mapS (f : a -> S e b) (xx : List a) : S e (List b)
+--     = box case xx of
+--        Nil             -> Nil
+--        Cons x xs       -> Cons (run f x) (run mapS f xs)
+-- @
+--
+--  We get:
+-- @
+--    mapS [a e b : ?] (f : a -> S e b) (xx : List a) : S e (List b)
+--     = /\(a e b : ?). box case xx of
+--        Nil             -> Nil
+--        Cons x xs       -> Cons (run f x) (run mapS [?] [?] [?] f xs)
+-- @
+
+
 module DDC.Source.Tetra.Transform.Expand
         ( Config        (..)
         , configDefault
@@ -130,6 +150,11 @@ instance Expand Exp where
                 x2'     = expand config kenv tenv' x2
             in  XLet a (LRec (zip bs_quant xs')) x2'
 
+        -- LGroups need to be desugared first because any quantifiers
+        -- we add to the front of a function binding need to scope over
+        -- all the clauses related to that binding.
+        XLet _ (LGroup{}) _
+         -> error "ddc-source-tetra.expand: can't expand LGroup."
 
         -- Boilerplate ----------------
         XLAM a b x

@@ -1,4 +1,8 @@
 
+-- | Defines the table that tracks what precedence and associativity
+--   infix operators have. The config for common operators is currently
+--   hard-coded, rather than being configurable in the source language.
+--
 module DDC.Source.Tetra.Transform.Defix.FixTable
         ( FixTable      (..)
         , FixDef        (..)
@@ -113,3 +117,4 @@ defaultFixTable
         , FixDefInfix  ">"  (\sp -> XVar sp (UName (NameVar "gt" ))) InfixNone  5
         , FixDefInfix  ">=" (\sp -> XVar sp (UName (NameVar "ge" ))) InfixNone  5
         , FixDefInfix  "$"  (\sp -> XVar sp (UName (NameVar "app"))) InfixRight 1 ]
+

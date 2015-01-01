@@ -144,54 +144,6 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> parens $ text "INFIXVAR" <+> text "\"" <> text str <> text "\""
 
 
--- Alt --------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Alt a n) where
- ppr (AAlt p gxs)
-  =  ppr p <> nest 2 (line <> vcat (map ppr gxs))
-
-
--- GuardedExp -------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (GuardedExp a n) where
- ppr gx 
-  = pprGs "|" gx
-  where
-        pprGs _c (GExp x)
-         = text "->" <+> ppr x
-
-        pprGs c (GGuard g gs)
-         = pprG c g <> line <> pprGs "," gs
-
-        pprG  c (GPat p x)
-         = text c <+> ppr p  <+> text "<-" <+> ppr x
-
-        pprG  c (GPred x)
-         = text c <+> ppr x
-
-        pprG  c GDefault
-         = text c <+> text "otherwise"
-        
-
--- Guard ------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Guard a n) where
-
-
--- Cast -------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Cast a n) where
- ppr cc
-  = case cc of
-        CastWeakenEffect  eff   
-         -> text "weakeff" <+> brackets (ppr eff)
-
-        CastPurify w
-         -> text "purify"  <+> angles   (ppr w)
-
-        CastBox
-         -> text "box"
-
-        CastRun
-         -> text "run"
-
-
 -- Lets -------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
@@ -242,6 +194,67 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
+
+        LGroup cs
+         -> vcat $ map ppr cs
+
+
+-- Clause -----------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Clause a n) where
+ ppr (SSig b t)
+  = ppr b <+> text ":" <+> ppr t
+
+ ppr (SLet b ps gxs)
+  = ppr b <+> hsep (map ppr ps) 
+          <>  nest 2 (line <> vcat (map ppr gxs))
+
+
+-- Alt --------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Alt a n) where
+ ppr (AAlt p gxs)
+  =  ppr p <> nest 2 (line <> vcat (map ppr gxs))
+
+
+-- GuardedExp -------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (GuardedExp a n) where
+ ppr gx 
+  = pprGs "|" gx
+  where
+        pprGs _c (GExp x)
+         = text "->" <+> ppr x
+
+        pprGs c (GGuard g gs)
+         = pprG c g <> line <> pprGs "," gs
+
+        pprG  c (GPat p x)
+         = text c <+> ppr p  <+> text "<-" <+> ppr x
+
+        pprG  c (GPred x)
+         = text c <+> ppr x
+
+        pprG  c GDefault
+         = text c <+> text "otherwise"
+        
+
+-- Guard ------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Guard a n) where
+
+
+-- Cast -------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Cast a n) where
+ ppr cc
+  = case cc of
+        CastWeakenEffect  eff   
+         -> text "weakeff" <+> brackets (ppr eff)
+
+        CastPurify w
+         -> text "purify"  <+> angles   (ppr w)
+
+        CastBox
+         -> text "box"
+
+        CastRun
+         -> text "run"
 
 
 -- Binder -----------------------------------------------------------------------------------------

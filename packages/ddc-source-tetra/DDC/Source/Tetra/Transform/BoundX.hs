@@ -48,6 +48,14 @@ instance MapBoundX (Cast a) n where
         CastRun         -> CastRun
 
 
+instance MapBoundX (Clause a) n where
+ mapBoundAtDepthX f d cc
+  = let down    = mapBoundAtDepthX f d
+    in case cc of
+        SSig{}          -> cc
+        SLet b p gs     -> SLet b p (map down gs)
+
+
 instance MapBoundX (Alt a) n where
  mapBoundAtDepthX f d (AAlt p gxs)
   = case p of
@@ -99,18 +107,32 @@ mapBoundAtDepthXLets f d lts
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX f (d + inc) e)) bs
             in  (LRec bs', inc)
 
-        LPrivate _b _ bs -> (lts, countBAnons bs)
+        LPrivate _b _ bs 
+         -> (lts, countBAnons bs)
+
+        LGroup cs
+         -> let inc = sum (map countBAnonsC cs)
+                cs' = map (mapBoundAtDepthX f (d + inc)) cs
+            in  (LGroup cs', inc)
 
 
 countBAnons = length . filter isAnon
  where  isAnon (BAnon _) = True
         isAnon _         = False
 
+
+countBAnonsC c
+ = case c of
+        SSig b _    -> countBAnons [b]
+        SLet b _ _  -> countBAnons [b]
+
+
 countBAnonsG g
  = case g of
         GPat p _    -> countBAnonsP p 
         GPred _     -> 0
         GDefault    -> 0
+
 
 countBAnonsP p
  = case p of

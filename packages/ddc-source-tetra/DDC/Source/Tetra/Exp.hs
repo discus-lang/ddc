@@ -7,6 +7,7 @@ module DDC.Source.Tetra.Exp
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
+        , Clause        (..)
         , GuardedExp    (..)
         , Guard         (..)
         , Cast          (..)

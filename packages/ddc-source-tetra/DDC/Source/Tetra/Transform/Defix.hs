@@ -1,4 +1,21 @@
 
+-- | Convert infix expressions to prefix form.
+--
+--   The parser packs up sequences of expressions and operators into an 
+--   XDefix node, but does not convert them to standard prefix applications.
+--   That is the job of this module.
+--
+--   The parsed code will contain XDefix, XInfixOp and XInfixVar nodes, 
+--   which are pretty-printed like this:
+--
+-- @ [DEFIX| Cons start [DEFIX| enumFromTo [DEFIX| start (INFIXOP "+") 1 ] end ]
+-- @
+--
+--   After applying the transform in this module, all function applications
+--   will be in prefix form:
+--
+-- @ Cons start (enumFromTo ((+) start 1) end)@
+--
 module DDC.Source.Tetra.Transform.Defix
         ( FixTable      (..)
         , FixDef        (..)
@@ -80,6 +97,16 @@ instance Defix Lets where
 
         LPrivate{}      -> return lts
 
+        LGroup cs       -> liftM LGroup (mapM down cs)
+
+
+instance Defix Clause where
+ defix table cc
+  = let down = defix table
+    in case cc of
+        SSig{}          -> return cc
+        SLet b ps gs    -> liftM (SLet b ps) (mapM down gs)
+
 
 instance Defix Alt where
  defix table aa
@@ -96,7 +123,6 @@ instance Defix GuardedExp where
         GExp x          -> liftM  GExp (down x)
 
 
-
 instance Defix Guard where
  defix table gg
   = let down = defix table
@@ -104,6 +130,7 @@ instance Defix Guard where
         GPat p x        -> liftM  (GPat p) (down x)
         GPred x         -> liftM  GPred (down x)
         GDefault        -> return GDefault
+
 
 -------------------------------------------------------------------------------
 -- | Preprocess the body of an XDefix node to insert applications.
@@ -231,6 +258,9 @@ defixInfix_ops sp table xs spOpStrs
         defsHigh <- mapM (getInfixDefOfSymbol sp table) opsHigh
         let assocsHigh  = map fixDefAssoc defsHigh
 
+        -- All operators at the current precedence level must have the
+        -- same associativity, otherwise the implied order-of-operations is
+        -- ambiguous.
         case nub assocsHigh of
          [InfixLeft]    
           -> do xs'     <- defixInfixLeft  sp table precHigh xs

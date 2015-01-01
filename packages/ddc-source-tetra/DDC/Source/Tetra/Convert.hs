@@ -223,6 +223,8 @@ toCoreLts lts
          -> C.LPrivate  (map toCoreB bks) 
                         (Just $ toCoreT tParent) (map toCoreB bts)
 
+        S.LGroup{}
+         -> error "source-tetra.toCoreLts: found LGroup"
 
 
 -- Cast -----------------------------------------------------------------------
