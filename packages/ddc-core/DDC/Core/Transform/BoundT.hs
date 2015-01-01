@@ -1,10 +1,14 @@
 
-module DDC.Core.Transform.LiftT
+-- | Lifting and lowering level-1 deBruijn indices in code things.
+--
+--   Level-1 indices are used for type variables.
+--
+module DDC.Core.Transform.BoundT
         ( liftT,         liftAtDepthT
         , MapBoundT(..))
 where
 import DDC.Core.Exp
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 
 
 instance Ord n => MapBoundT (Exp a) n where

@@ -13,7 +13,7 @@ module DDC.Core.Transform.SubstituteXX
 where
 import DDC.Core.Exp
 import DDC.Core.Collect
-import DDC.Core.Transform.LiftX
+import DDC.Core.Transform.BoundX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteTX

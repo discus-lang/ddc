@@ -6,7 +6,7 @@ where
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Tetra.Convert.Layout
 import DDC.Core.Salt.Platform
-import DDC.Core.Transform.LiftX
+import DDC.Core.Transform.BoundX
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Type.Compounds

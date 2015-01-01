@@ -40,7 +40,7 @@ module DDC.Type.Check.Context
 where
 import DDC.Type.Exp
 import DDC.Type.Pretty
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 import DDC.Type.Compounds
 import DDC.Base.Pretty                  ()
 import Data.Maybe

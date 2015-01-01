@@ -42,7 +42,7 @@ module DDC.Type.Env
         , lift)
 where
 import DDC.Type.Exp
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 import Data.Maybe
 import Data.Map                         (Map)
 import Prelude                          hiding (lookup)

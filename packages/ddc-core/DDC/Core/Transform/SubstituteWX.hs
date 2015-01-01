@@ -12,7 +12,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.Rename
-import DDC.Core.Transform.LiftX
+import DDC.Core.Transform.BoundX
 import DDC.Type.Compounds
 import Data.Maybe
 import qualified DDC.Type.Env   as Env

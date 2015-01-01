@@ -2,14 +2,13 @@
 module DDC.Core.Tetra.Convert.Exp.PrimBoxing
         (convertPrimBoxing)
 where
--- import DDC.Core.Tetra.Convert.Exp.Lit
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Data
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 
-import DDC.Core.Transform.LiftX
+import DDC.Core.Transform.BoundX
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Check                    (AnTEC(..))

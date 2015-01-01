@@ -9,8 +9,7 @@ import DDC.Core.Flow.Convert.Base
 import DDC.Core.Flow.Convert.Type
 import DDC.Core.Compounds
 import DDC.Core.Exp
--- import DDC.Control.Monad.Check                  (throw)
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 
 import qualified DDC.Core.Flow.Prim             as F
 import qualified DDC.Core.Flow.Compounds        as F

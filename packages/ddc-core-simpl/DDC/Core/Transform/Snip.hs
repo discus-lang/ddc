@@ -10,7 +10,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Predicates
-import qualified DDC.Core.Transform.LiftX       as L
+import qualified DDC.Core.Transform.BoundX      as L
 import qualified DDC.Type.Compounds             as T
 
 

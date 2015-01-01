@@ -10,7 +10,7 @@ import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Transform.LiftT
+import DDC.Core.Transform.BoundT
 import DDC.Core.Compounds.Simple
 import DDC.Core.Exp.Simple
 import DDC.Base.Pretty

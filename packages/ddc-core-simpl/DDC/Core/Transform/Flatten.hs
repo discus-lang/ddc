@@ -3,10 +3,10 @@
 module DDC.Core.Transform.Flatten
         (flatten)
 where
-import DDC.Core.Transform.LiftT
 import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.AnonymizeX
-import DDC.Core.Transform.LiftX
+import DDC.Core.Transform.BoundX
+import DDC.Core.Transform.BoundT
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Predicates
@@ -171,3 +171,4 @@ liftAcrossT bsDepth bsLevels x
 -- | Erase the type of a data binder.
 zapX :: Bind n -> Bind n
 zapX b = replaceTypeOfBind (tBot kData) b
+

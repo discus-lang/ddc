@@ -13,7 +13,7 @@ module DDC.Type.Transform.SubstituteT
 where
 import DDC.Type.Collect
 import DDC.Type.Compounds
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Rename
@@ -25,7 +25,7 @@ import qualified Data.Set       as Set
 import Data.Set                 (Set)
 
 
--- | Substitute a `Type` for the `Bound` corresponding to some `Bind` in a thing.
+-- | Substitute a `Type` for the `Bound` corresponding to a `Bind` in a thing.
 substituteT :: (SubstituteT c, Ord n) => Bind n -> Type n -> c n -> c n
 substituteT b t x
  = case takeSubstBoundOfBind b of
@@ -58,15 +58,15 @@ substituteBoundT u t x
 class SubstituteT (c :: * -> *) where
 
  -- | Substitute a type into some thing.
- --   In the target, if we find a named binder that would capture a free variable
- --   in the type to substitute, then we rewrite that binder to anonymous form,
- --   avoiding the capture.
+ --   In the target, if we find a named binder that would capture a free
+ --   variable in the type to substitute, then we rewrite that binder to
+ --   anonymous form, avoiding the capture.
  substituteWithT
         :: forall n. Ord n
-        => Bound n       -- ^ Bound variable that we're subsituting into.
-        -> Type n        -- ^ Type to substitute.
-        -> Set  n        -- ^ Names of free varaibles in the type to substitute.
-        -> BindStack n   -- ^ Bind stack.
+        => Bound n     -- ^ Bound variable that we're subsituting into.
+        -> Type n      -- ^ Type to substitute.
+        -> Set  n      -- ^ Names of free varaibles in the type to substitute.
+        -> BindStack n -- ^ Bind stack.
         -> c n -> c n
 
 
@@ -114,7 +114,8 @@ instance SubstituteT Type where
           -> let -- Substitute into the annotation on the binder.
                  bSub            = down b
 
-                 -- Push bind onto stack, and anonymise to avoid capture if needed
+                 -- Push bind onto stack, and anonymise to avoid capture
+                 -- if needed
                  (stack', b')    = pushBind fns stack bSub
                 
                  -- Substitute into body.

@@ -9,7 +9,7 @@ module DDC.Core.Transform.Bubble
         , bubbleX)
 where
 import DDC.Core.Collect
-import DDC.Core.Transform.LiftX
+import DDC.Core.Transform.BoundX
 import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Module

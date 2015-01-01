@@ -1,6 +1,6 @@
 
--- | Lifting of deBruijn indices in a type.
-module DDC.Type.Transform.LiftT
+-- | Lifting and lowering of deBruijn indices in types.
+module DDC.Type.Transform.BoundT
         ( liftT,        liftAtDepthT
         , lowerT,       lowerAtDepthT
         , MapBoundT(..))
@@ -92,9 +92,10 @@ instance Ord n => MapBoundT Type n where
     in case tt of
         TVar u          -> TVar    (f d u)
         TCon{}          -> tt
-        TForall b t     -> TForall b (mapBoundAtDepthT f (d + countBAnons [b]) t)
         TApp t1 t2      -> TApp    (down t1) (down t2)
         TSum ss         -> TSum    (down ss)
+        TForall b t     
+         -> TForall b (mapBoundAtDepthT f (d + countBAnons [b]) t)
 
 
 instance Ord n => MapBoundT TypeSum n where

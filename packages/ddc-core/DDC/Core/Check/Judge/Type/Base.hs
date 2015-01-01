@@ -18,7 +18,7 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Type.Transform.SubstituteT
         , module DDC.Type.Transform.Instantiate
         , module DDC.Type.Transform.Crush
-        , module DDC.Type.Transform.LiftT
+        , module DDC.Type.Transform.BoundT
         , module DDC.Type.Transform.Trim)
 where
 import DDC.Core.Check.Base
@@ -35,7 +35,7 @@ import DDC.Core.Annot.AnTEC
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.Crush
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 import DDC.Type.Transform.Trim
 
 

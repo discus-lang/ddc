@@ -12,7 +12,7 @@ module DDC.Core.Check.TaggedClosure
         , cutTaggedClosureT)
 where
 import DDC.Type.Check.Context
-import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.BoundT
 import DDC.Type.Transform.Trim
 import DDC.Type.Compounds
 import DDC.Type.Predicates
