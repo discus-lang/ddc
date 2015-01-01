@@ -2,6 +2,7 @@
 -- | Lifting and lowering level-0 deBruijn indices in core things.
 -- 
 --   Level-0 indices are used for both value and witness variables.
+--
 module DDC.Core.Transform.BoundX
         ( liftX,        liftAtDepthX
         , lowerX,       lowerAtDepthX

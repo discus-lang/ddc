@@ -21,6 +21,10 @@ module DDC.Source.Tetra.Compounds
         , takeXConApps
         , takeXPrimApps
 
+          -- * Casts
+        , xBox
+        , xRun
+
           -- * Data Constructors
         , dcUnit
         , takeNameOfDaCon
@@ -28,6 +32,8 @@ module DDC.Source.Tetra.Compounds
 
           -- * Patterns
         , bindsOfPat
+        , pTrue
+        , pFalse
 
           -- * Witnesses
         , wApp
@@ -37,6 +43,7 @@ module DDC.Source.Tetra.Compounds
         , takePrimWiConApps)
 where
 import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Prim
 import DDC.Type.Compounds
 import DDC.Core.Compounds
         ( dcUnit
@@ -206,3 +213,15 @@ takeXConApps xx
  = case takeXAppsAsList xx of
         XCon _ dc : xs  -> Just (dc, xs)
         _               -> Nothing
+
+
+-- Casts ----------------------------------------------------------------------
+xBox a x = XCast a CastBox x
+xRun a x = XCast a CastRun x
+
+
+-- Patterns -------------------------------------------------------------------
+pTrue    = PData (DaConPrim (NameLitBool True)  tBool) []
+pFalse   = PData (DaConPrim (NameLitBool False) tBool) []
+
+
