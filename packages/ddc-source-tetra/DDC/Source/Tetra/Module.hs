@@ -1,4 +1,5 @@
 
+-- | Definition of Source Tetra modules.
 module DDC.Source.Tetra.Module
         ( -- * Modules
           Module        (..)

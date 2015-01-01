@@ -1,4 +1,5 @@
 
+-- | Parser for the Source Tetra language.
 module DDC.Source.Tetra.Parser
         ( Parser
         , Context       (..)

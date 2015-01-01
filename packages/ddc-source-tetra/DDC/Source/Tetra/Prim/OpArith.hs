@@ -1,4 +1,5 @@
 
+-- | Definitions of primitive operators in Source Tetra language.
 module DDC.Source.Tetra.Prim.OpArith
         (typePrimArith)
 where

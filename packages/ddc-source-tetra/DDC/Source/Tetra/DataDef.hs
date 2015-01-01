@@ -1,4 +1,5 @@
 
+-- | Source Tetra data type definitions.
 module DDC.Source.Tetra.DataDef
         ( -- * Data Type Definition.
           DataDef  (..)

@@ -1,4 +1,5 @@
 
+-- | Parser for Source Tetra modules.
 module DDC.Source.Tetra.Parser.Module
         ( -- * Modules
           pModule

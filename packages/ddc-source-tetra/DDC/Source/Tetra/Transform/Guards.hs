@@ -1,4 +1,5 @@
 
+-- | Desugaring Source Tetra guards to simple case-expressions.
 module DDC.Source.Tetra.Transform.Guards
         ( desugarGuards )
 where

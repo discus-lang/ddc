@@ -1,4 +1,5 @@
 
+-- | Desugaring of function parameter syntax in Source Tetra.
 module DDC.Source.Tetra.Parser.Param
         ( ParamSpec     (..)
         , funTypeOfParams

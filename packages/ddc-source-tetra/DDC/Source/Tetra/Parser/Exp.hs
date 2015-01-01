@@ -1,5 +1,5 @@
 
--- | Core language parser.
+-- | Parser for Source Tetra expressions.
 module DDC.Source.Tetra.Parser.Exp
         ( context
         , pExp

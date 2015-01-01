@@ -1,4 +1,5 @@
 
+-- | Definitions of primitive types for Source Tetra language.
 module DDC.Source.Tetra.Prim.TyConPrim
         ( kindPrimTyCon
         , tBool, tNat, tInt, tWord)

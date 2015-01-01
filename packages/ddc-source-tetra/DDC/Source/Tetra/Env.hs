@@ -1,4 +1,5 @@
 
+-- | Source Tetra primitive type and kind environments.
 module DDC.Source.Tetra.Env
         ( primKindEnv
         , primTypeEnv 

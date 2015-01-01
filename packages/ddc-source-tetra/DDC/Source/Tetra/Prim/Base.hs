@@ -1,4 +1,5 @@
 
+-- | Definition of names used in Source Tetra language.
 module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
         , TyConTetra    (..)

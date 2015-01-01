@@ -1,4 +1,6 @@
 
+-- | Definitions of primitive operators for working with higher order
+--   functions in the Source Tetra language.
 module DDC.Source.Tetra.Prim.OpFun
         (typeOpFun)
 where

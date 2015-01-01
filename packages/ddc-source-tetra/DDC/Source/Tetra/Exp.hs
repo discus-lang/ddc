@@ -1,4 +1,5 @@
 
+-- | Definition of Source Tetra Expressions.
 module DDC.Source.Tetra.Exp
         ( module DDC.Type.Exp
 

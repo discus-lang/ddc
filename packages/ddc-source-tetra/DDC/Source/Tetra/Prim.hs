@@ -1,4 +1,5 @@
 
+-- | Definitions of Source Tetra primitive names and operators.
 module DDC.Source.Tetra.Prim
         ( Name          (..)
 

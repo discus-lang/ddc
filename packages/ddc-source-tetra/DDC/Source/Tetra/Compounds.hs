@@ -1,4 +1,5 @@
 
+-- | Utilities for constructing and destructing Source Tetra expressions.
 module DDC.Source.Tetra.Compounds
         ( module DDC.Type.Compounds
         , takeAnnotOfExp

@@ -1,4 +1,5 @@
 
+-- | Definitions of primitive type constructors for Source Tetra language.
 module DDC.Source.Tetra.Prim.TyConTetra
         ( kindTyConTetra
         , readTyConTetra

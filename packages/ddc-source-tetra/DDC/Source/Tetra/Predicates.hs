@@ -1,4 +1,5 @@
 
+-- | Simple predicates on Source Tetra things.
 module DDC.Source.Tetra.Predicates
         ( module DDC.Type.Predicates
 

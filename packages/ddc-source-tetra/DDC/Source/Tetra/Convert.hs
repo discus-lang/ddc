@@ -1,4 +1,5 @@
 
+-- | Source Tetra conversion to Disciple Core Tetra language.
 module DDC.Source.Tetra.Convert
         (coreOfSourceModule)
 where
