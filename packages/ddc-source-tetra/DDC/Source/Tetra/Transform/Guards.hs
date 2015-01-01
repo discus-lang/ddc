@@ -11,8 +11,7 @@ import DDC.Source.Tetra.Exp
 -- | Desugar some guards to a case-expression.
 --   At runtime, if none of the guards match then run the provided fail action.
 desugarGuards
-        :: Show a
-        => a                    -- ^ Annotation.
+        :: a                    -- ^ Annotation.
         -> [GuardedExp a Name]  -- ^ Guarded expressions to desugar.
         -> Exp a Name           -- ^ Failure action.
         -> Exp a Name

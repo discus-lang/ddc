@@ -284,10 +284,9 @@ pAlt c
         P.choice
          [ do   -- TODO: desugar guards in toCore transform instead.
                 spgxs     <- P.many1 (pGuardedExpSP c (pTokSP KArrowDash))
-                let ((sp, _) : _) = spgxs
                 let gxs  = map snd spgxs
-                return  $ AAlt p [GExp $ desugarGuards sp gxs (error "pAlt fail")]
-
+                return  $ AAlt p gxs 
+                
          , do   pTok KArrowDash
                 x       <- pExp c
                 return  $ AAlt p [GExp x] ]

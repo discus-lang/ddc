@@ -152,23 +152,27 @@ instance (Pretty n, Eq n) => Pretty (Alt a n) where
 
 -- GuardedExp -------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (GuardedExp a n) where
- ppr (GExp x)
-  =  text "->" <+> ppr x
+ ppr gx 
+  = pprGs "|" gx
+  where
+        pprGs _c (GExp x)
+         = text "->" <+> ppr x
 
- ppr (GGuard g x)
-  =  ppr g     <> line <> ppr x
+        pprGs c (GGuard g gs)
+         = pprG c g <> line <> pprGs "," gs
 
+        pprG  c (GPat p x)
+         = text c <+> ppr p  <+> text "<-" <+> ppr x
+
+        pprG  c (GPred x)
+         = text c <+> ppr x
+
+        pprG  c GDefault
+         = text c <+> text "otherwise"
+        
 
 -- Guard ------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Guard a n) where
- ppr (GPat p x)
-  = text "|" <+> ppr p  <+> text "<-" <+> ppr x
-
- ppr (GPred x)
-  = text "|" <+> ppr x
-
- ppr  GDefault
-  = text "| otherwise"
 
 
 -- Cast -------------------------------------------------------------------------------------------

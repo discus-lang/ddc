@@ -2,18 +2,19 @@
 module DDC.Source.Tetra.Convert
         (coreOfSourceModule)
 where
-import qualified DDC.Source.Tetra.Module        as S
-import qualified DDC.Source.Tetra.DataDef       as S
-import qualified DDC.Source.Tetra.Exp           as S
-import qualified DDC.Source.Tetra.Prim          as S
+import qualified DDC.Source.Tetra.Transform.Guards      as S
+import qualified DDC.Source.Tetra.Module                as S
+import qualified DDC.Source.Tetra.DataDef               as S
+import qualified DDC.Source.Tetra.Exp                   as S
+import qualified DDC.Source.Tetra.Prim                  as S
 
-import qualified DDC.Core.Tetra.Prim            as C
-import qualified DDC.Core.Compounds             as C
-import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Exp                   as C
-import qualified DDC.Type.DataDef               as C
+import qualified DDC.Core.Tetra.Prim                    as C
+import qualified DDC.Core.Compounds                     as C
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Exp                           as C
+import qualified DDC.Type.DataDef                       as C
 
-import qualified DDC.Type.Sum                   as Sum
+import qualified DDC.Type.Sum                           as Sum
 import Data.Maybe
 
 -- Things shared between both Source and Core languages.
@@ -194,7 +195,7 @@ toCoreX xx
         S.XLam     a b x    -> C.XLam     a (toCoreB b)  (toCoreX x)
         S.XApp     a x1 x2  -> C.XApp     a (toCoreX x1) (toCoreX x2)
         S.XLet     a lts x  -> C.XLet     a (toCoreLts lts) (toCoreX x)
-        S.XCase    a x alts -> C.XCase    a (toCoreX x)  (map toCoreA alts)
+        S.XCase    a x alts -> C.XCase    a (toCoreX x)  (map (toCoreA a) alts)
         S.XCast    a c x    -> C.XCast    a (toCoreC c)  (toCoreX x)
         S.XType    a t      -> C.XType    a (toCoreT t)
         S.XWitness a w      -> C.XWitness a (toCoreW w)
@@ -235,11 +236,11 @@ toCoreC cc
 
 
 -- Alt ------------------------------------------------------------------------
-toCoreA  :: S.Alt a S.Name -> C.Alt a C.Name
-toCoreA aa
- = case aa of
-        S.AAlt w [S.GExp x]     -> C.AAlt (toCoreP w) (toCoreX x)
-        _                       -> error "source-tetra.toCoreA: not desugared"
+toCoreA  :: a -> S.Alt a S.Name -> C.Alt a C.Name
+toCoreA a (S.AAlt w gxs)
+ = C.AAlt (toCoreP w) 
+          (toCoreX (S.desugarGuards a gxs (error "toCoreA alt fail")))
+                -- TODO: need pattern inexhaustiveness message.
 
 
 -- Pat ------------------------------------------------------------------------
