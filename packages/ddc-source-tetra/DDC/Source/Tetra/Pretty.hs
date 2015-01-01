@@ -48,13 +48,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
 -- Top --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Top a n) where
- ppr (TopBind _ b x)
-  = let dBind = if isBot (typeOfBind b)
-                          then ppr (binderOfBind b)
-                          else ppr b
-    in  align (  dBind
-                <> nest 2 ( breakWhen (not $ isSimpleX x)
-                          <> text "=" <+> align (ppr x)))
+ ppr (TopClause _ c) = ppr c
 
  ppr (TopData _ (DataDef name params ctors))
   = (text "data"
@@ -72,6 +66,7 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
                         | ctor       <- ctors ])
   <> line
   <> rbrace
+
 
 -- Exp --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
@@ -201,27 +196,40 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
 
 -- Clause -----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Clause a n) where
- ppr (SSig b t)
+ ppr (SSig _ b t)
   = ppr b <+> text ":" <+> ppr t
 
- ppr (SLet b ps gxs)
-  = ppr b <+> hsep (map ppr ps) 
-          <>  nest 2 (line <> vcat (map ppr gxs))
+ ppr (SLet _ b ps [GExp x])
+  = let dBind   = if isBot (typeOfBind b)
+                        then ppr (binderOfBind b)
+                        else ppr b
+
+    in  dBind   <+> hsep (map ppr ps) 
+                <>  nest 2 ( breakWhen (not $ isSimpleX x)
+                           <> text "=" <+> align (ppr x))
+
+ ppr (SLet _ b ps gxs)
+  = let dBind   = if isBot (typeOfBind b)
+                        then ppr (binderOfBind b)
+                        else ppr b
+
+    in  dBind   <+> hsep (map ppr ps) 
+                <>  nest 2 (line <> vcat (map (pprGuardedExp "=") gxs))
 
 
 -- Alt --------------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
  ppr (AAlt p gxs)
-  =  ppr p <> nest 2 (line <> vcat (map ppr gxs))
+  =  ppr p <> nest 2 (line <> vcat (map (pprGuardedExp "->") gxs))
 
 
 -- GuardedExp -------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (GuardedExp a n) where
- ppr gx 
+pprGuardedExp :: (Pretty n, Eq n) => String -> GuardedExp a n -> Doc
+pprGuardedExp sTerm gx
   = pprGs "|" gx
   where
         pprGs _c (GExp x)
-         = text "->" <+> ppr x
+         = text sTerm <+> ppr x
 
         pprGs c (GGuard g gs)
          = pprG c g <> line <> pprGs "," gs
@@ -244,17 +252,10 @@ instance (Pretty n, Eq n) => Pretty (Guard a n) where
 instance (Pretty n, Eq n) => Pretty (Cast a n) where
  ppr cc
   = case cc of
-        CastWeakenEffect  eff   
-         -> text "weakeff" <+> brackets (ppr eff)
-
-        CastPurify w
-         -> text "purify"  <+> angles   (ppr w)
-
-        CastBox
-         -> text "box"
-
-        CastRun
-         -> text "run"
+        CastWeakenEffect  eff -> text "weakeff" <+> brackets (ppr eff)
+        CastPurify w    -> text "purify"  <+> angles   (ppr w)
+        CastBox         -> text "box"
+        CastRun         -> text "run"
 
 
 -- Binder -----------------------------------------------------------------------------------------

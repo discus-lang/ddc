@@ -52,7 +52,7 @@ instance Defix Module where
 instance Defix Top where
  defix table tt
   = case tt of
-        TopBind a b x   -> liftM (TopBind a b) (defix table x)
+        TopClause a c   -> liftM (TopClause a) (defix table c)
         _               -> return tt
 
 
@@ -105,7 +105,7 @@ instance Defix Clause where
   = let down = defix table
     in case cc of
         SSig{}          -> return cc
-        SLet b ps gs    -> liftM (SLet b ps) (mapM down gs)
+        SLet a b ps gs  -> liftM (SLet a b ps) (mapM down gs)
 
 
 instance Defix Alt where

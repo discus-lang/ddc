@@ -5,7 +5,7 @@ module DDC.Source.Tetra.Parser.Exp
         , pExp
         , pExpApp
         , pExpAtom,     pExpAtomSP
-        , pLetsSP,      pLetBinding
+        , pLetsSP,      pClauseSP
         , pType
         , pTypeApp
         , pTypeAtom)
@@ -400,15 +400,16 @@ pLetsSP c
  = P.choice
     [ -- non-recursive let
       do sp       <- pTokSP KLet
-         (b1, x1) <- pLetBinding c
-         return (LLet b1 x1, sp)
+         l        <- liftM fst $ pClauseSP c
+         return (LGroup [l], sp)
 
       -- recursive let
     , do sp       <- pTokSP KLetRec
          pTok KBraceBra
-         lets     <- P.sepEndBy1 (pLetBinding c) (pTok KSemiColon)
+         ls       <- liftM (map fst)
+                  $  P.sepEndBy1 (pClauseSP c) (pTok KSemiColon)
          pTok KBraceKet
-         return (LRec lets, sp)
+         return (LGroup ls, sp)
 
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
@@ -473,28 +474,26 @@ pLetWits c bs mParent
 
 
 -- | A binding for let expression.
-pLetBinding :: Context Name
-            -> Parser  Name (Bind Name, Exp SP Name)
-pLetBinding c
+pClauseSP :: Context Name
+        -> Parser  Name (Clause SP Name, SP)
+
+pClauseSP c
  = do   b       <- pBinder
 
         P.choice
          [ do   -- Binding with full type signature.
-                --  Binder : Type = Exp
-                pTokSP (KOp ":")
+                sp         <- pTokSP (KOp ":")
                 t          <- pType c
                 (_, xBody) <- pBindGuardsAsCaseSP c
-                return  (T.makeBindFromBinder b t, xBody) 
+                return  ( SLet sp (T.makeBindFromBinder b t) [] [GExp xBody]
+                        , sp)
 
          , do   -- Non-function binding with no type signature.
-                -- This form can't be used with letrec as we can't use it
-                -- to build the full type sig for the let-bound variable.
-                --   Binder = Exp
-                pTok KEquals
+                sp      <- pTokSP KEquals
                 xBody   <- pExp c
                 let t   = T.tBot T.kData
-                return  (T.makeBindFromBinder b t, xBody)
-
+                return  ( SLet sp (T.makeBindFromBinder b t) [] [GExp xBody]
+                        , sp)
 
          , do   -- Binding using function syntax.
                 ps      <- liftM concat 
@@ -510,7 +509,8 @@ pLetBinding c
 
                         let x   = expOfParams sp ps xBody
                         let t   = funTypeOfParams c ps tBody
-                        return  (T.makeBindFromBinder b t, x)
+                        return  ( SLet sp (T.makeBindFromBinder b t) [] [GExp x]
+                                , sp)
 
                         -- Function syntax with no return type.
                         -- We can't make the type sig for the let-bound variable,
@@ -521,7 +521,9 @@ pLetBinding c
 
                         let x   = expOfParams sp ps xBody
                         let t   = T.tBot T.kData
-                        return  (T.makeBindFromBinder b t, x) ]
+                        return  ( SLet sp (T.makeBindFromBinder b t) [] [GExp x]
+                                , sp)
+                 ]
          ]
 
 

@@ -71,12 +71,15 @@ instance Expand Module where
         --   thing is in-scope of all the others.
         preTop p
          = case p of
-                TopBind a b x
+                TopClause a (SLet _ b [] [GExp x])
                  -> let (b', x') = expandQuant a config kenv (b, x)
-                    in  (TopBind a b' x', Env.singleton b')
+                    in  ( TopClause a (SLet a b' [] [GExp x'])
+                        , Env.singleton b')
 
                 TopData _ def
                  -> (p, typeEnvOfDataDef def)
+
+                _ -> error "source-tetra.expand: found TopClause"
 
         (tops_quant, tenvs)
                 = unzip $ map preTop $ moduleTops mm
@@ -94,13 +97,13 @@ instance Expand Module where
 instance Expand Top where
  expand config kenv tenv top
   = case top of
-        TopBind a b x   
+        TopClause a1 (SLet a2 b [] [GExp x])
          -> let tenv'   = Env.extend b tenv
                 x'      = expand config kenv tenv' x
-            in  TopBind a b x'
+            in  TopClause a1 (SLet a2 b [] [GExp x'])
 
-        TopData{}
-         -> top
+        TopData{} -> top
+        _         -> error "source-tetra.expand: found TopClause"
 
 
 instance Expand Exp where
@@ -153,8 +156,12 @@ instance Expand Exp where
         -- LGroups need to be desugared first because any quantifiers
         -- we add to the front of a function binding need to scope over
         -- all the clauses related to that binding.
+        XLet a (LGroup [SLet _ b [] [GExp x1]]) x2
+         -> expand config kenv tenv (XLet a (LLet b x1) x2)
+
         XLet _ (LGroup{}) _
-         -> error "ddc-source-tetra.expand: can't expand LGroup."
+         -> error $ "ddc-source-tetra.expand: can't expand LGroup."
+
 
         -- Boilerplate ----------------
         XLAM a b x

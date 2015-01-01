@@ -53,7 +53,7 @@ instance MapBoundX (Clause a) n where
   = let down    = mapBoundAtDepthX f d
     in case cc of
         SSig{}          -> cc
-        SLet b p gs     -> SLet b p (map down gs)
+        SLet a b p gs   -> SLet a b p (map down gs)
 
 
 instance MapBoundX (Alt a) n where
@@ -123,8 +123,8 @@ countBAnons = length . filter isAnon
 
 countBAnonsC c
  = case c of
-        SSig b _    -> countBAnons [b]
-        SLet b _ _  -> countBAnons [b]
+        SSig _ b _   -> countBAnons [b]
+        SLet _ b _ _ -> countBAnons [b]
 
 
 countBAnonsG g

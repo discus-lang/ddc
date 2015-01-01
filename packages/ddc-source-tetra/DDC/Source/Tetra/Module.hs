@@ -75,14 +75,15 @@ instance (NFData a, NFData n) => NFData (Module a n) where
 -- | Check if this is the `Main` module.
 isMainModule :: Module a n -> Bool
 isMainModule mm
-        = isMainModuleName
-        $ moduleName mm
+        = isMainModuleName $ moduleName mm
 
 
 -- Top Level Thing ------------------------------------------------------------
 data Top a n
-        -- | Top-level, possibly recursive binding.
-        = TopBind a (Bind n) (Exp a n)
+        -- | Some top-level, possibly recursive clauses.
+        = TopClause  
+        { topAnnot      :: a
+        , topClause     :: Clause a n }
 
         -- | Data type definition.
         | TopData 
@@ -94,9 +95,6 @@ data Top a n
 instance (NFData a, NFData n) => NFData (Top a n) where
  rnf !top
   = case top of
-        TopBind a b x   
-         -> rnf a `seq` rnf b  `seq` rnf x
-                 
-        TopData a def
-         -> rnf a `seq` rnf def 
+        TopClause a c   -> rnf a `seq` rnf c
+        TopData   a def -> rnf a `seq` rnf def
 

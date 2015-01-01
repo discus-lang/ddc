@@ -117,10 +117,10 @@ data Lets a n
 -- | Binding clause
 data Clause a n
         -- | A separate type signature.
-        = SSig  !(Bind n) !(Type n)
+        = SSig  a !(Bind n) !(Type n)
 
         -- | A function binding using pattern matching and guards.
-        | SLet  !(Bind n) ![Pat n]  ![GuardedExp a n]
+        | SLet  a !(Bind n) ![Pat n]  ![GuardedExp a n]
         deriving (Show, Eq)
 
 
@@ -187,8 +187,8 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
 instance (NFData a, NFData n) => NFData (Clause a n) where
  rnf cc
   = case cc of
-        SSig b t                -> rnf b `seq` rnf t
-        SLet b ps gxs           -> rnf b `seq` rnf ps `seq` rnf gxs
+        SSig a b t              -> rnf a `seq` rnf b `seq` rnf t
+        SLet a b ps gxs         -> rnf a `seq` rnf b `seq` rnf ps `seq` rnf gxs
 
 
 instance (NFData a, NFData n) => NFData (Cast a n) where

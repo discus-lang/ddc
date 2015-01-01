@@ -185,9 +185,8 @@ pTop    :: Context Name -> Parser Name (Top P.SourcePos Name)
 pTop c
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
-        (b, x)          <- pLetBinding c
-        let Just sp     = takeAnnotOfExp x
-        return  $ TopBind sp b x
+        (l, sp)         <- pClauseSP c
+        return  $ TopClause sp l
  
         -- A data type declaration
  , do   pData c

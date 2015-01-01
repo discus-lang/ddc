@@ -100,7 +100,7 @@ bindOfTop
         :: S.Top a S.Name 
         -> Maybe (Bind C.Name, C.Exp a C.Name)
 
-bindOfTop (S.TopBind _ b x) 
+bindOfTop (S.TopClause _ (S.SLet _ b [] [S.GExp x]))
                 = Just (toCoreB b, toCoreX x)
 bindOfTop _     = Nothing
 
