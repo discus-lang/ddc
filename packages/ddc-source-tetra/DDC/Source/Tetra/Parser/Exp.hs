@@ -15,7 +15,6 @@ import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
-
 import DDC.Core.Parser
         ( Parser
         , pBinder
@@ -33,7 +32,6 @@ import DDC.Core.Parser
         , pTok
         , pTokSP)
 
-
 import DDC.Core.Parser.Context
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
@@ -41,7 +39,10 @@ import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import Control.Monad.Except
 
+type SP = SourcePos
 
+-- | Starting context for the parser.
+--   Holds flags about what language features we should accept.
 context :: Context Name
 context = Context
         { contextTrackedEffects         = True
@@ -51,11 +52,9 @@ context = Context
         , contextMakeStringName         = Just (\_ tx -> NameLitString tx) }
 
 
-type SP = SourcePos
-
 -- Exp --------------------------------------------------------------------------------------------
 -- | Parse a Tetra Source language expression.
-pExp    :: Context Name -> Parser Name (Exp SourcePos Name)
+pExp    :: Context Name -> Parser Name (Exp SP Name)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
@@ -132,8 +131,8 @@ pExp c
         pTok KElse
         x3      <- pExp c
         return  $ XCase sp x1 
-                        [ AAlt (PData (DaConPrim (NameLitBool True) tBool) []) [GExp x2]
-                        , AAlt PDefault                                        [GExp x3]]
+                        [ AAlt pTrue    [GExp x2]
+                        , AAlt PDefault [GExp x3]]
 
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
@@ -169,7 +168,7 @@ pExp c
 
 
 -- Applications.
-pExpApp :: Context Name -> Parser Name (Exp SourcePos Name)
+pExpApp :: Context Name -> Parser Name (Exp SP Name)
 pExpApp c
   = do  xps     <- liftM concat $ P.many1 (pArgSPs c)
         let (xs, sps)   = unzip xps
@@ -183,7 +182,7 @@ pExpApp c
 
 
 -- Comp, Witness or Spec arguments.
-pArgSPs :: Context Name -> Parser Name [(Exp SourcePos Name, SourcePos)]
+pArgSPs :: Context Name -> Parser Name [(Exp SP Name, SP)]
 pArgSPs c
  = P.choice
         -- [Type]
@@ -218,7 +217,7 @@ pArgSPs c
 
 
 -- | Parse a variable, constructor or parenthesised expression.
-pExpAtom   :: Context Name -> Parser Name (Exp SourcePos Name)
+pExpAtom   :: Context Name -> Parser Name (Exp SP Name)
 pExpAtom c
  = do   (x, _) <- pExpAtomSP c
         return x
@@ -226,7 +225,7 @@ pExpAtom c
 
 -- | Parse a variable, constructor or parenthesised expression,
 --   also returning source position.
-pExpAtomSP :: Context Name -> Parser Name (Exp SourcePos Name, SourcePos)
+pExpAtomSP :: Context Name -> Parser Name (Exp SP Name, SP)
 pExpAtomSP c
  = P.choice
  [      -- ( Exp2 )
@@ -278,7 +277,7 @@ pExpAtomSP c
 
 -- Alternatives -----------------------------------------------------------------------------------
 -- Case alternatives.
-pAlt    :: Context Name -> Parser Name (Alt SourcePos Name)
+pAlt    :: Context Name -> Parser Name (Alt SP Name)
 pAlt c
  = do   p       <- pPat c
         P.choice
@@ -316,9 +315,7 @@ pPat c
 
 -- Binds in patterns can have no type annotation,
 -- or can have an annotation if the whole thing is in parens.
-pBindPat 
-        :: Ord n 
-        => Context n -> Parser n (Bind n)
+pBindPat :: Context Name -> Parser Name (Bind Name)
 pBindPat c
  = P.choice
         -- Plain binder.
@@ -339,7 +336,7 @@ pBindPat c
 -- | Parse some guards and auto-desugar them to a case-expression.
 pBindGuardsAsCaseSP
         :: Context Name
-        -> Parser Name (SP, Exp SourcePos Name)
+        -> Parser Name (SP, Exp SP Name)
 
 pBindGuardsAsCaseSP c
  = do   (sp, g) : spgs  
@@ -349,8 +346,8 @@ pBindGuardsAsCaseSP c
 
 
 pMatchGuardsAsCase
-        :: SourcePos -> Context Name
-        -> Parser Name (Exp SourcePos Name)
+        :: SP -> Context Name
+        -> Parser Name (Exp SP Name)
 
 pMatchGuardsAsCase sp c
  = do   gg      <- liftM (map snd)
@@ -362,10 +359,10 @@ pMatchGuardsAsCase sp c
 -- | An guarded expression,
 --   like | EXP1 = EXP2.
 pGuardedExpSP 
-        :: Context Name                 -- ^ Parser context.
-        -> Parser  Name SourcePos       -- ^ Parser for char between and of guards and exp.
-                                        --   usually -> or =
-        -> Parser  Name (SourcePos, GuardedExp SourcePos Name)
+        :: Context Name         -- ^ Parser context.
+        -> Parser  Name SP      -- ^ Parser for char between and of guards and exp.
+                                --   usually -> or =
+        -> Parser  Name (SP, GuardedExp SP Name)
 
 pGuardedExpSP c pTermSP
  = pGuardExp (pTokSP KBar)
@@ -398,7 +395,7 @@ pGuardedExpSP c pTermSP
 
 
 -- Bindings ---------------------------------------------------------------------------------------
-pLetsSP :: Context Name -> Parser Name (Lets SourcePos Name, SourcePos)
+pLetsSP :: Context Name -> Parser Name (Lets SP Name, SP)
 pLetsSP c
  = P.choice
     [ -- non-recursive let
@@ -448,11 +445,9 @@ pLetsSP c
     ]
     
     
-pLetWits 
-        :: Ord n 
-        => Context n
-        -> [Bind n] -> Maybe (Type n)
-        -> Parser n (Lets SourcePos n)
+pLetWits :: Context Name
+         -> [Bind Name] -> Maybe (Type Name)
+         -> Parser Name (Lets SP Name)
 
 pLetWits c bs mParent
  = P.choice 
@@ -478,10 +473,8 @@ pLetWits c bs mParent
 
 
 -- | A binding for let expression.
-pLetBinding 
-        :: Context Name
-        -> Parser Name ( Bind Name
-                       , Exp SourcePos Name )
+pLetBinding :: Context Name
+            -> Parser  Name (Bind Name, Exp SP Name)
 pLetBinding c
  = do   b       <- pBinder
 
@@ -588,7 +581,7 @@ pStmts c
 
 
 -- | Make an expression from some statements.
-makeStmts :: [Stmt n] -> Maybe (Exp SourcePos n)
+makeStmts :: [Stmt Name] -> Maybe (Exp SourcePos Name)
 makeStmts ss
  = case ss of
         [StmtNone _ x]    
