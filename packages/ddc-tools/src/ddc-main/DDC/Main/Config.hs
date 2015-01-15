@@ -55,6 +55,9 @@ data Mode
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
 
+        -- | Convert a module to PHP.
+        | ModeToPHP     FilePath
+
         -- Disciple Core Tetra specific ---------
         -- | Manage higher order functions in a module.
         | ModeTetraCurry  FilePath

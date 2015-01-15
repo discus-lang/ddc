@@ -28,6 +28,7 @@ import qualified DDC.Core.Flow          as Flow
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
+import DDC.Driver.Command.ToPHP
 import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Base.Pretty
@@ -136,6 +137,13 @@ run config
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdToLlvmFromFile dconfig store filePath
+
+        -- Convert a module to C
+        ModeToPHP filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                store   <- Store.new
+                runError $ cmdToPHPFromFile  dconfig store filePath
+
 
         -- Tetra specific -----------------------------------------------------
         ModeTetraCurry filePath

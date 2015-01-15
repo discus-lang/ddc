@@ -32,6 +32,8 @@ import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
 import qualified DDC.Core.Tetra                         as Tetra
 
+import qualified DDC.Core.Babel.PHP                     as PHP
+
 import qualified DDC.Core.Salt.Platform                 as Salt
 import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
@@ -269,6 +271,13 @@ data PipeTetra a where
          -> ![PipeCore a Salt.Name]
          -> PipeTetra  (C.AnTEC a Tetra.Name)
 
+        -- Print as PHP code
+        PipeTetraToPHP
+         :: (NFData a, Show a)
+         => !Sink
+         -> PipeTetra a
+
+
 
 -- | Process a Core Tetra module.
 pipeTetra 
@@ -299,6 +308,11 @@ pipeTetra !mm !pp
                         mm 
              of  Left  err  -> return [ErrorTetraConvert err]
                  Right mm'  -> pipeCores mm' pipes 
+
+        PipeTetraToPHP !sink
+         -> {-# SCC "PipeTetraToPHP" #-}
+            let doc = PHP.phpOfModule mm
+            in  pipeSink (renderIndent doc) sink
 
 
 -- PipeFlow -------------------------------------------------------------------

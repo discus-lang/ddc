@@ -192,6 +192,10 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeToLLVM file
 
+        | "-to-php"  : file : rest  <- args
+        = parseArgs rest
+        $ setMode config $ ModeToPHP file
+
         -- Debugging ----------------------------
         | "-dump"   : rest        <- args
         = parseArgs rest
@@ -266,6 +270,7 @@ flagOfMode mode
         ModeToSalt{}                    -> Just "-to-salt"
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
+        ModeToPHP{}                     -> Just "-to-php"
         ModeTetraCurry{}                -> Just "-tetra-curry"
         ModeTetraBoxing{}               -> Just "-tetra-boxing"
         ModeFlowPrep{}                  -> Just "-flow-prep"
