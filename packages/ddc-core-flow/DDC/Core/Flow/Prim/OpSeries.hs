@@ -53,6 +53,7 @@ instance Pretty OpSeries where
         OpSeriesJoin            -> text "pjoin"                 <> text "#"
 
         OpSeriesRunProcess      -> text "runProcess"            <> text "#"
+        OpSeriesRunProcessUnit  -> text "runProcessUnit"        <> text "#"
 
         OpSeriesRateVecsOfVectors n -> text "ratify"   <> int n <> text "#"
 
@@ -110,6 +111,7 @@ readOpSeries str
                 "sscatter#"     -> Just $ OpSeriesScatter
                 "pjoin#"        -> Just $ OpSeriesJoin
                 "runProcess#"   -> Just $ OpSeriesRunProcess
+                "runProcessUnit#"->Just $ OpSeriesRunProcessUnit
                 "series#"       -> Just $ OpSeriesSeriesOfRateVec
                 "sappend#"      -> Just $ OpSeriesAppend
                 "scross#"       -> Just $ OpSeriesCross
@@ -245,6 +247,17 @@ takeTypeOpSeries op
                 -> (tForall kProc $ \tP
                         -> tUnit `tFun` tProcess tP (liftT 1 tK))
                    `tFun` tUnit
+
+        -- runProcessUnit# :: [k : Rate]
+        --          .  
+        --             ([p : Proc]. Unit -> Unit)
+        --          ->  Unit
+        OpSeriesRunProcessUnit
+         -> Just $ tForalls [kRate] $ \[_]
+                -> (tForall kProc $ \_
+                        -> tUnit `tFun` tUnit)
+                   `tFun` tUnit
+
 
         -- ratify0# :: [z : Data]
         --          .  Nat

@@ -201,6 +201,11 @@ data OpSeries
         -- | Execute a process
         | OpSeriesRunProcess
 
+        -- | Introduce a Proc type, but argument returns unit instead of process
+        -- Has exact same type as RunProcess except for that,
+        -- so that they can easily be swapped during lowering
+        | OpSeriesRunProcessUnit
+
         -- | Convert vector(s) into manifests, all with same length with runtime check.
         | OpSeriesRateVecsOfVectors Int
 

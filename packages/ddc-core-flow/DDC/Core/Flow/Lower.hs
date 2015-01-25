@@ -21,7 +21,9 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Module
 
+import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.Annotate
+import DDC.Core.Transform.Deannotate
 
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C
@@ -118,8 +120,53 @@ lowerModule config mm
 lowerEither  :: Config -> [Name] -> (Either Process (Bind Name, Exp () Name)) -> Either Error (BindF, ExpF)
 lowerEither  config _ (Left process)
  = lowerProcess config process
+
 lowerEither _config _procnames (Right (b,xx))
- = return (b, xx)
+ = let xx' = deannotate (const Nothing)
+           $ transformSimpleUpX' replaceRunProc
+           $ annotate () xx
+   in  return (b, xx')
+ where
+
+  -- Replace all calls to runProcess# with runProcessUnit#
+  replaceRunProc (XVar (UPrim (NameOpSeries OpSeriesRunProcess) _))
+   = Just
+   $ XVar
+   $ UPrim (NameOpSeries OpSeriesRunProcessUnit)
+           (typeOpSeries OpSeriesRunProcessUnit)
+  -- Also replace any Process# types with Units
+  replaceRunProc (XType t)
+   = Just
+   $ XType (replaceProcTy t)
+  replaceRunProc (XLet (LLet bind x) e)
+   = Just
+   $ XLet (LLet (replaceProcTyB bind) x) e
+  replaceRunProc (XLet (LRec bxs) e)
+   | (bs,xs) <- unzip bxs
+   , bs'     <- map replaceProcTyB bs
+   = Just
+   $ XLet (LRec (zip bs' xs)) e
+
+  replaceRunProc _
+   = Nothing
+
+  replaceProcTyB (BName n t) = BName n $ replaceProcTy t
+  replaceProcTyB (BAnon   t) = BAnon   $ replaceProcTy t
+  replaceProcTyB (BNone   t) = BNone   $ replaceProcTy t
+
+  -- Replace Process# a b with Unit
+  replaceProcTy tt
+   = case tt of
+      TVar{} -> tt
+      TCon{} -> tt
+      TForall bind tt' -> TForall bind (replaceProcTy tt')
+      TApp l r
+       | Just (NameTyConFlow TyConFlowProcess, [_,_]) <- takePrimTyConApps tt
+       -> tUnit
+       | otherwise
+       -> TApp (replaceProcTy l) (replaceProcTy r)
+      TSum ts
+       -> TSum ts
  
 
 -- | Lower a single series process into fused code.
