@@ -3,17 +3,18 @@ ok
 -- I don't remember the details, but something strange with forwarding was going on here
 module Test with
 letrec {
-  x5$runproc$process : Vector# Nat# -> Nat# -> Nat# -> [x5$'$k : Rate].RateNat# x5$'$k -> Process#
-    = \(x6 : Vector# Nat#).\(x y : Nat#).
-      /\(x5$'$k : Rate).
-       \(x5$'$k$r : RateNat# x5$'$k).
-      let x5$s : Series# x5$'$k Nat#
-            = sgenerate# [x5$'$k] [Nat#]
+  x5$runproc$process : [x5$'$k : Rate].Vector# Nat# -> Nat# -> Nat# -> [x5$'$k$PROC : Proc].Unit -> Process# x5$'$k$PROC x5$'$k
+    = /\(x5$'$k : Rate).
+       \(x6 : Vector# Nat#).\(x y : Nat#).
+      /\(x5$'$k$PROC : Proc).
+       \(_ : Unit).
+      let x5$s : Series# x5$'$k$PROC x5$'$k Nat#
+            = sgenerate# [x5$'$k$PROC] [x5$'$k] [Nat#]
                   (\(x3 : Nat#). add# [Nat#] y x3) in
-      let x6$s : Series# x5$'$k Nat#
-            = smap# [x5$'$k] [Nat#] [Nat#]
+      let x6$s : Series# x5$'$k$PROC x5$'$k Nat#
+            = smap# [x5$'$k$PROC] [x5$'$k] [Nat#] [Nat#]
                   (\(x1 : Nat#). add# [Nat#] x x1) x5$s in
-      let x6$proc : Process# = sfill# [x5$'$k] [Nat#] x6 x6$s in
+      let x6$proc : Process# x5$'$k$PROC x5$'$k = sfill# [x5$'$k$PROC] [x5$'$k] [Nat#] x6 x6$s in
       x6$proc;
   
   foo : Vector# Nat# -> Nat# -> Vector# Nat#
@@ -22,8 +23,10 @@ letrec {
       let y : Nat# = add# [Nat#] 1# x0 in
       let x : Nat# = add# [Nat#] y y in
       let x6 : Vector# Nat# = vnew# [Nat#] i in
-      let x5$runproc : Bool#
-            = runProcess0# i (x5$runproc$process x6 x y) in
+      let x5$runproc : Unit
+            = ratify0# [Unit] i
+                  (/\(x5$'$k : Rate).
+                   runProcess# [x5$'$k] (x5$runproc$process [x5$'$k] x6 x y)) in
       x6
 }
 

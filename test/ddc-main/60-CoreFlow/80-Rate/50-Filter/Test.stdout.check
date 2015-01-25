@@ -19,99 +19,30 @@ letrec {
 
 
 -- Simple filter - return filtered
-module Test with
-letrec {
-  us'$runproc$process : Vector# Int# -> [us$k : Rate].RateNat# us$k -> Series# us$k Int# -> Process#
-    = \(us' : Vector# Int#).
-      /\(us$k : Rate).
-       \(us$k$r : RateNat# us$k).\(us$s : Series# us$k Int#).
-      let us'$flags : Series# us$k Bool#
-            = smap# [us$k] [Int#] [Bool#]
-                  (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
-      smkSel# [us$k] us'$flags
-          (/\(us'$'$k : Rate).
-            \(us'$sel : Sel1# us$k us'$'$k).
-           let us'$s : Series# us'$'$k Int# = spack# [us$k] [us'$'$k] [Int#] us'$sel us$s in
-           let us'$proc : Process# = sfill# [us'$'$k] [Int#] us' us'$s in
-           us'$proc);
+Error transforming core program.
+  Kind mismatch.
+                  Expected kind: Proc
+   does not match inferred kind: Rate
   
-  test : Vector# Int# -> Vector# Int#
-    = \(us : Vector# Int#).
-      let us' : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let us'$runproc : Bool#
-            = runProcess# [Int#] us (us'$runproc$process us') in
-      us'
-}
+  with: us$k
 
 
 -- Map over a filter
-module Test with
-letrec {
-  us'$runproc$process : Vector# Int# -> [us$k : Rate].RateNat# us$k -> Series# us$k Int# -> Process#
-    = \(us'' : Vector# Int#).
-      /\(us$k : Rate).
-       \(us$k$r : RateNat# us$k).\(us$s : Series# us$k Int#).
-      let us'$flags : Series# us$k Bool#
-            = smap# [us$k] [Int#] [Bool#]
-                  (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
-      smkSel# [us$k] us'$flags
-          (/\(us'$'$k : Rate).
-            \(us'$sel : Sel1# us$k us'$'$k).
-           let us'$s : Series# us'$'$k Int# = spack# [us$k] [us'$'$k] [Int#] us'$sel us$s in
-           let us''$s : Series# us'$'$k Int#
-                 = smap# [us'$'$k] [Int#] [Int#]
-                       (\(x2 : Int#). add# [Int#] 2i# x2) us'$s in
-           let us''$proc : Process# = sfill# [us'$'$k] [Int#] us'' us''$s in
-           us''$proc);
+Error transforming core program.
+  Kind mismatch.
+                  Expected kind: Proc
+   does not match inferred kind: Rate
   
-  test : Vector# Int# -> Vector# Int#
-    = \(us : Vector# Int#).
-      let us'' : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let us'$runproc : Bool#
-            = runProcess# [Int#] us (us'$runproc$process us'') in
-      us''
-}
+  with: us$k
 
 
 -- Filter of a filtered, return both. Should be single kernel
-module Test with
-letrec {
-  us'$runproc$process : Vector# Int# -> Vector# Int# -> [us$k : Rate].RateNat# us$k -> Series# us$k Int# -> Process#
-    = \(us'' us' : Vector# Int#).
-      /\(us$k : Rate).
-       \(us$k$r : RateNat# us$k).\(us$s : Series# us$k Int#).
-      let us'$flags : Series# us$k Bool#
-            = smap# [us$k] [Int#] [Bool#]
-                  (\(x0 : Int#). gt# [Int#] 1i# x0) us$s in
-      smkSel# [us$k] us'$flags
-          (/\(us'$'$k : Rate).
-            \(us'$sel : Sel1# us$k us'$'$k).
-           let us'$s : Series# us'$'$k Int# = spack# [us$k] [us'$'$k] [Int#] us'$sel us$s in
-           let us'$proc : Process# = sfill# [us'$'$k] [Int#] us' us'$s in
-           let us''$flags : Series# us'$'$k Bool#
-                 = smap# [us'$'$k] [Int#] [Bool#]
-                       (\(x2 : Int#). gt# [Int#] 2i# x2) us'$s in
-           smkSel# [us'$'$k] us''$flags
-               (/\(us''$'$k : Rate).
-                 \(us''$sel : Sel1# us'$'$k us''$'$k).
-                let us''$s : Series# us''$'$k Int# = spack# [us'$'$k] [us''$'$k] [Int#] us''$sel us'$s in
-                let us''$proc : Process# = sfill# [us''$'$k] [Int#] us'' us''$s in
-                pjoin# us'$proc us''$proc));
+Error transforming core program.
+  Kind mismatch.
+                  Expected kind: Proc
+   does not match inferred kind: Rate
   
-  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(us : Vector# Int#).
-      let us' : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let us'' : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] us) in
-      let us'$runproc : Bool#
-            = runProcess# [Int#] us (us'$runproc$process us'' us') in
-      let x4 : Tuple2# (Vector# Int#) (Vector# Int#)
-            = T2# [Vector# Int#] [Vector# Int#] us' us'' in
-      x4
-}
+  with: us$k
 
 
 -- Filter and fold, then use fold value in map over original and filtered. Three kernels:
@@ -139,66 +70,11 @@ letrec {
 -- 1- filter, fold, fold
 -- 2- map original
 -- 3- map filtered
-module Test with
-letrec {
-  fold2$runproc$process : Ref# Int# -> [morig$'$k : Rate].RateNat# morig$'$k -> Series# morig$'$k Int# -> Process#
-    = \(fold2$ref : Ref# Int#).
-      /\(morig$'$k : Rate).
-       \(morig$'$k$r : RateNat# morig$'$k).\(orig$s : Series# morig$'$k Int#).
-      let fold2$proc : Process#
-            = sreduce# [morig$'$k] [Int#] fold2$ref
-                  (\(x5 x6 : Int#). add# [Int#] x5 x6) 0i# orig$s in
-      fold2$proc;
+Error transforming core program.
+  Kind mismatch.
+                  Expected kind: Proc
+   does not match inferred kind: Rate
   
-  filt$runproc$process : Vector# Int# -> Ref# Int# -> Int# -> [morig$'$k : Rate].RateNat# morig$'$k -> Series# morig$'$k Int# -> Process#
-    = \(mfilt : Vector# Int#).\(fold$ref : Ref# Int#).\(fold2 : Int#).
-      /\(morig$'$k : Rate).
-       \(morig$'$k$r : RateNat# morig$'$k).\(orig$s : Series# morig$'$k Int#).
-      let filt$flags : Series# morig$'$k Bool#
-            = smap# [morig$'$k] [Int#] [Bool#]
-                  (\(x0 : Int#). gt# [Int#] 1i# x0) orig$s in
-      smkSel# [morig$'$k] filt$flags
-          (/\(filt$'$k : Rate).
-            \(filt$sel : Sel1# morig$'$k filt$'$k).
-           let filt$s : Series# filt$'$k Int# = spack# [morig$'$k] [filt$'$k] [Int#] filt$sel orig$s in
-           let fold$proc : Process#
-                 = sreduce# [filt$'$k] [Int#] fold$ref
-                       (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# filt$s in
-           let mfilt$s : Series# filt$'$k Int#
-                 = smap# [filt$'$k] [Int#] [Int#]
-                       (\(x10 : Int#). add# [Int#] fold2 x10) filt$s in
-           let mfilt$proc : Process# = sfill# [filt$'$k] [Int#] mfilt mfilt$s in
-           pjoin# fold$proc mfilt$proc);
-  
-  morig$runproc$process : Vector# Int# -> Int# -> [morig$'$k : Rate].RateNat# morig$'$k -> Series# morig$'$k Int# -> Process#
-    = \(morig : Vector# Int#).\(fold : Int#).
-      /\(morig$'$k : Rate).
-       \(morig$'$k$r : RateNat# morig$'$k).\(orig$s : Series# morig$'$k Int#).
-      let morig$s : Series# morig$'$k Int#
-            = smap# [morig$'$k] [Int#] [Int#]
-                  (\(x8 : Int#). add# [Int#] fold x8) orig$s in
-      let morig$proc : Process# = sfill# [morig$'$k] [Int#] morig morig$s in
-      morig$proc;
-  
-  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = \(orig : Vector# Int#).
-      let fold2$ref : Ref# Int# = new# [Int#] 0i# in
-      let fold2$runproc : Bool#
-            = runProcess# [Int#] orig (fold2$runproc$process fold2$ref) in
-      let fold2 : Int# = read# [Int#] fold2$ref in
-      let fold$ref : Ref# Int# = new# [Int#] 0i# in
-      let mfilt : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let filt$runproc : Bool#
-            = runProcess# [Int#] orig (filt$runproc$process mfilt fold$ref fold2) in
-      let fold : Int# = read# [Int#] fold$ref in
-      let morig : Vector# Int#
-            = vnew# [Int#] (vlength# [Int#] orig) in
-      let morig$runproc : Bool#
-            = runProcess# [Int#] orig (morig$runproc$process morig fold) in
-      let x12 : Tuple2# (Vector# Int#) (Vector# Int#)
-            = T2# [Vector# Int#] [Vector# Int#] morig mfilt in
-      x12
-}
+  with: morig$'$k
 
 

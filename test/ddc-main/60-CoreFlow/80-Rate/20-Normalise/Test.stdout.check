@@ -4,35 +4,45 @@ ok
 -- Normalise - sum, then map. Requires two kernels
 module Test with
 letrec {
-  n$runproc$process : Ref# Int# -> [x4$'$k : Rate].RateNat# x4$'$k -> Series# x4$'$k Int# -> Process#
-    = \(n$ref : Ref# Int#).
-      /\(x4$'$k : Rate).
-       \(x4$'$k$r : RateNat# x4$'$k).\(u1$s : Series# x4$'$k Int#).
-      let n$proc : Process#
-            = sreduce# [x4$'$k] [Int#] n$ref
+  n$runproc$process : [x4$'$k : Rate].RateVec# x4$'$k Int# -> Ref# Int# -> [x4$'$k$PROC : Proc].Unit -> Process# x4$'$k$PROC x4$'$k
+    = /\(x4$'$k : Rate).
+       \(u1$rv : RateVec# x4$'$k Int#).\(n$ref : Ref# Int#).
+      /\(x4$'$k$PROC : Proc).
+       \(_ : Unit).
+      let u1$s : Series# x4$'$k$PROC x4$'$k Int# = series# [x4$'$k$PROC] [x4$'$k] [Int#] u1$rv in
+      let n$proc : Process# x4$'$k$PROC x4$'$k
+            = sreduce# [x4$'$k$PROC] [x4$'$k] [Int#] n$ref
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
       n$proc;
   
-  x4$runproc$process : Vector# Int# -> Int# -> [x4$'$k : Rate].RateNat# x4$'$k -> Series# x4$'$k Int# -> Process#
-    = \(x4 : Vector# Int#).\(n : Int#).
-      /\(x4$'$k : Rate).
-       \(x4$'$k$r : RateNat# x4$'$k).\(u1$s : Series# x4$'$k Int#).
-      let x4$s : Series# x4$'$k Int#
-            = smap# [x4$'$k] [Int#] [Int#]
+  x4$runproc$process : [x4$'$k : Rate].RateVec# x4$'$k Int# -> Vector# Int# -> Int# -> [x4$'$k$PROC : Proc].Unit -> Process# x4$'$k$PROC x4$'$k
+    = /\(x4$'$k : Rate).
+       \(u1$rv : RateVec# x4$'$k Int#).\(x4 : Vector# Int#).\(n : Int#).
+      /\(x4$'$k$PROC : Proc).
+       \(_ : Unit).
+      let u1$s : Series# x4$'$k$PROC x4$'$k Int# = series# [x4$'$k$PROC] [x4$'$k] [Int#] u1$rv in
+      let x4$s : Series# x4$'$k$PROC x4$'$k Int#
+            = smap# [x4$'$k$PROC] [x4$'$k] [Int#] [Int#]
                   (\(x : Int#). div# [Int#] x n) u1$s in
-      let x4$proc : Process# = sfill# [x4$'$k] [Int#] x4 x4$s in
+      let x4$proc : Process# x4$'$k$PROC x4$'$k = sfill# [x4$'$k$PROC] [x4$'$k] [Int#] x4 x4$s in
       x4$proc;
   
   test : Vector# Int# -> Vector# Int#
     = \(u1 : Vector# Int#).
       let n$ref : Ref# Int# = new# [Int#] 0i# in
-      let n$runproc : Bool#
-            = runProcess# [Int#] u1 (n$runproc$process n$ref) in
+      let n$runproc : Unit
+            = ratify1# [Int#] [Unit] u1
+                  (/\(x4$'$k : Rate).
+                    \(u1$rv : RateVec# x4$'$k Int#).
+                   runProcess# [x4$'$k] (n$runproc$process [x4$'$k] u1$rv n$ref)) in
       let n : Int# = read# [Int#] n$ref in
       let x4 : Vector# Int#
             = vnew# [Int#] (vlength# [Int#] u1) in
-      let x4$runproc : Bool#
-            = runProcess# [Int#] u1 (x4$runproc$process x4 n) in
+      let x4$runproc : Unit
+            = ratify1# [Int#] [Unit] u1
+                  (/\(x4$'$k : Rate).
+                    \(u1$rv : RateVec# x4$'$k Int#).
+                   runProcess# [x4$'$k] (x4$runproc$process [x4$'$k] u1$rv x4 n)) in
       x4
 }
 
@@ -40,39 +50,49 @@ letrec {
 -- Normalise with extra reduce
 module Test with
 letrec {
-  n$runproc$process : Ref# Int# -> [xs$'$k : Rate].RateNat# xs$'$k -> Series# xs$'$k Int# -> Process#
-    = \(n$ref : Ref# Int#).
-      /\(xs$'$k : Rate).
-       \(xs$'$k$r : RateNat# xs$'$k).\(u1$s : Series# xs$'$k Int#).
-      let n$proc : Process#
-            = sreduce# [xs$'$k] [Int#] n$ref
+  n$runproc$process : [xs$'$k : Rate].RateVec# xs$'$k Int# -> Ref# Int# -> [xs$'$k$PROC : Proc].Unit -> Process# xs$'$k$PROC xs$'$k
+    = /\(xs$'$k : Rate).
+       \(u1$rv : RateVec# xs$'$k Int#).\(n$ref : Ref# Int#).
+      /\(xs$'$k$PROC : Proc).
+       \(_ : Unit).
+      let u1$s : Series# xs$'$k$PROC xs$'$k Int# = series# [xs$'$k$PROC] [xs$'$k] [Int#] u1$rv in
+      let n$proc : Process# xs$'$k$PROC xs$'$k
+            = sreduce# [xs$'$k$PROC] [xs$'$k] [Int#] n$ref
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
       n$proc;
   
-  xs$runproc$process : Ref# Int# -> Vector# Int# -> Int# -> [xs$'$k : Rate].RateNat# xs$'$k -> Series# xs$'$k Int# -> Process#
-    = \(y$ref : Ref# Int#).\(xs : Vector# Int#).\(n : Int#).
-      /\(xs$'$k : Rate).
-       \(xs$'$k$r : RateNat# xs$'$k).\(u1$s : Series# xs$'$k Int#).
-      let xs$s : Series# xs$'$k Int#
-            = smap# [xs$'$k] [Int#] [Int#]
+  xs$runproc$process : [xs$'$k : Rate].RateVec# xs$'$k Int# -> Ref# Int# -> Vector# Int# -> Int# -> [xs$'$k$PROC : Proc].Unit -> Process# xs$'$k$PROC xs$'$k
+    = /\(xs$'$k : Rate).
+       \(u1$rv : RateVec# xs$'$k Int#).\(y$ref : Ref# Int#).\(xs : Vector# Int#).\(n : Int#).
+      /\(xs$'$k$PROC : Proc).
+       \(_ : Unit).
+      let u1$s : Series# xs$'$k$PROC xs$'$k Int# = series# [xs$'$k$PROC] [xs$'$k] [Int#] u1$rv in
+      let xs$s : Series# xs$'$k$PROC xs$'$k Int#
+            = smap# [xs$'$k$PROC] [xs$'$k] [Int#] [Int#]
                   (\(x : Int#). div# [Int#] x n) u1$s in
-      let xs$proc : Process# = sfill# [xs$'$k] [Int#] xs xs$s in
-      let y$proc : Process#
-            = sreduce# [xs$'$k] [Int#] y$ref
+      let xs$proc : Process# xs$'$k$PROC xs$'$k = sfill# [xs$'$k$PROC] [xs$'$k] [Int#] xs xs$s in
+      let y$proc : Process# xs$'$k$PROC xs$'$k
+            = sreduce# [xs$'$k$PROC] [xs$'$k] [Int#] y$ref
                   (\(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# u1$s in
-      pjoin# xs$proc y$proc;
+      pjoin# [xs$'$k$PROC] [xs$'$k] xs$proc y$proc;
   
   test : Vector# Int# -> Tuple2# (Vector# Int#) Int#
     = \(u1 : Vector# Int#).
       let n$ref : Ref# Int# = new# [Int#] 0i# in
-      let n$runproc : Bool#
-            = runProcess# [Int#] u1 (n$runproc$process n$ref) in
+      let n$runproc : Unit
+            = ratify1# [Int#] [Unit] u1
+                  (/\(xs$'$k : Rate).
+                    \(u1$rv : RateVec# xs$'$k Int#).
+                   runProcess# [xs$'$k] (n$runproc$process [xs$'$k] u1$rv n$ref)) in
       let n : Int# = read# [Int#] n$ref in
       let xs : Vector# Int#
             = vnew# [Int#] (vlength# [Int#] u1) in
       let y$ref : Ref# Int# = new# [Int#] 1i# in
-      let xs$runproc : Bool#
-            = runProcess# [Int#] u1 (xs$runproc$process y$ref xs n) in
+      let xs$runproc : Unit
+            = ratify1# [Int#] [Unit] u1
+                  (/\(xs$'$k : Rate).
+                    \(u1$rv : RateVec# xs$'$k Int#).
+                   runProcess# [xs$'$k] (xs$runproc$process [xs$'$k] u1$rv y$ref xs n)) in
       let y : Int# = read# [Int#] y$ref in
       let x7 : Tuple2# (Vector# Int#) Int#
             = T2# [Vector# Int#] [Int#] xs y in
