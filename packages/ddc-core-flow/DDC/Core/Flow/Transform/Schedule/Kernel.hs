@@ -43,7 +43,7 @@ scheduleKernel
         -- in case it is used by a cross or a gather.
         let bsParams_lowered
                 = map (\(flag, BName n t) 
-                        -> if flag
+                        -> if   not flag
                            then case lowerSeriesRate lifting t of
                                 Just t'
                                  -> (flag, BName n t')
