@@ -35,21 +35,27 @@ scheduleKernel :: Lifting -> Process -> Either Error Procedure
 scheduleKernel 
        lifting
        (Process { processName           = name
-                , processParamTypes     = bsParamTypes
-                , processParamValues    = bsParamValues
+                , processParamFlags     = bsParams
                 , processContext        = context })
  = do   
         -- Lower rates of RateVec parameters.
         -- We also keep a copy of the original RateVec,
         -- in case it is used by a cross or a gather.
-        let bsParamValues_lowered
-                = map (\(BName n t) 
-                        -> case lowerSeriesRate lifting t of
-                            Just t'
-                             -> BName n t'
-                            Nothing
-                             -> BName n t)
-                $ bsParamValues
+        let bsParams_lowered
+                = map (\(flag, BName n t) 
+                        -> if flag
+                           then case lowerSeriesRate lifting t of
+                                Just t'
+                                 -> (flag, BName n t')
+                                Nothing
+                                 -> (flag, BName n t)
+                           else (flag, BName n t))
+                $ bsParams
+
+        let bsParamValues
+                = map snd
+                $ filter (not.fst)
+                $ bsParams
 
         let c           = liftingFactor lifting
 
@@ -60,8 +66,7 @@ scheduleKernel
 
         return  $ Procedure
                 { procedureName         = name
-                , procedureParamTypes   = bsParamTypes
-                , procedureParamValues  = bsParamValues_lowered
+                , procedureParamFlags   = bsParams_lowered
                 , procedureNest         = nest }
 
 

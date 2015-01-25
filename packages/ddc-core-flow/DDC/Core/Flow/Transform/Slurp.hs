@@ -17,7 +17,6 @@ import DDC.Core.Transform.Deannotate
 import DDC.Core.Module
 import qualified DDC.Type.Env           as Env
 import DDC.Type.Env                     (TypeEnv)
-import Data.List
 import qualified Data.Map               as Map
 
 
@@ -70,14 +69,10 @@ slurpProcessLet (BName n t) xx
         <- takePrimTyConApps $ snd $ takeTFunAllArgResult t
  , Just (fbs, xBody)    <- takeXLamFlags xx
  = let  
-        -- Split binders into type and value binders.
-        (fbts, fbvs)    = partition fst fbs
-
-        -- Type binders.
-        bts             = map snd fbts
-
         -- Value binders.
-        bvs             = map snd fbvs
+        bvs             = map snd
+                        $ filter (not.fst)
+                        $ fbs
 
         -- Slurp the body of the process.
    in do
@@ -89,8 +84,7 @@ slurpProcessLet (BName n t) xx
                 { processName          = n
                 , processProcType      = tProc
                 , processLoopRate      = tLoopRate
-                , processParamTypes    = bts
-                , processParamValues   = bvs
+                , processParamFlags    = fbs
 
                 , processContext       = ctx }
 

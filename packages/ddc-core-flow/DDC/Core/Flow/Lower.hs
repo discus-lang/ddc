@@ -144,7 +144,8 @@ lowerProcess config process
  --  the rate variable (k), as well as a (RateNat k) witness.
  --
  | MethodVector lifting <- configMethod config
- , [nRN]  <- [ nRN | BName nRN tRN <- processParamValues process
+ , [nRN]  <- [ nRN | (flag, BName nRN tRN) <- processParamFlags process
+                   , not flag
                    , isRateNatType tRN ]
  , tK <- processLoopRate process
  = do   let c           = liftingFactor lifting
@@ -167,7 +168,8 @@ lowerProcess config process
                     , ( BName (NameVarMod n "down")
                               (tSeries tProc (tDown c tK) tE)
                       , xDown c tProc tK tE (XVar (UIx 0)) xS))
-                  | bS@(BName n tS)  <- processParamValues process
+                  | (flag, bS@(BName n tS)) <- processParamFlags process
+                  , not flag
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS
                   , let xS      = XVar uS
@@ -183,7 +185,10 @@ lowerProcess config process
 
         let Just xsVecValArgs    
                 = sequence 
-                $ map getDownValArg (processParamValues process)
+                $ map getDownValArg 
+                $ map snd
+                $ filter (not.fst)
+                $ processParamFlags process
 
         let bRateDown
                 = BAnon (tRateNat (tDown c tK))
@@ -205,7 +210,8 @@ lowerProcess config process
         let bxsTailSeries
                 = [ ( bS, ( BName (NameVarMod n "tail") (tSeries tProc (tTail c tK) tE)
                           , xTail c tProc tK tE (XVar (UIx 0)) xS))
-                  | bS@(BName n tS)    <- processParamValues process
+                  | (flag, bS@(BName n tS)) <- processParamFlags process
+                  , not flag
                   , let Just tE = elemTypeOfSeriesType tS
                   , let Just uS = takeSubstBoundOfBind bS
                   , let xS      = XVar uS
@@ -215,7 +221,8 @@ lowerProcess config process
         let bxsTailVector
                 = [ ( bV, ( BName (NameVarMod n "tail") (tVector tE)
                           , xTailVector c tK tE (XVar (UIx 0)) xV))
-                  | bV@(BName n tV)     <- processParamValues process
+                  | (flag, bV@(BName n tV)) <- processParamFlags process
+                  , not flag
                   , let Just tE = elemTypeOfVectorType tV
                   , let Just uV = takeSubstBoundOfBind bV
                   , let xV      = XVar uV
@@ -234,7 +241,7 @@ lowerProcess config process
 
         let Just xsTailValArgs
                 = sequence 
-                $ map getTailValArg (procedureParamValues procTail)
+                $ map getTailValArg (map snd $ filter (not.fst) $ procedureParamFlags procTail)
 
         let bRateTail
                 = BAnon (tRateNat (tTail c tK))
@@ -249,9 +256,8 @@ lowerProcess config process
         ------------------------------------------
         -- Stich the vector and scalar versions together.
         let xProc
-                = foldr XLAM 
-                       (foldr XLam xBody (processParamValues process))
-                       (processParamTypes process)
+                = makeXLamFlags (processParamFlags process)
+                                xBody
 
             xBody
                 = XLet (LLet   (BNone tUnit) 

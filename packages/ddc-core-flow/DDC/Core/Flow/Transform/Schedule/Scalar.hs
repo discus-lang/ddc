@@ -18,8 +18,7 @@ import DDC.Core.Flow.Context
 scheduleScalar :: Process -> Either Error Procedure
 scheduleScalar 
        (Process { processName           = name
-                , processParamTypes     = bsParamTypes
-                , processParamValues    = bsParamValues
+                , processParamFlags     = bsParams
                 , processContext        = context })
   = do
         nest            <- scheduleContext (\r _ -> return r)
@@ -27,8 +26,7 @@ scheduleScalar
 
         return  $ Procedure
                 { procedureName         = name
-                , procedureParamTypes   = bsParamTypes
-                , procedureParamValues  = bsParamValues
+                , procedureParamFlags   = bsParams
                 , procedureNest         = nest }
 
 

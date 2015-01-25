@@ -22,13 +22,9 @@ data Process
           -- | Rate of process loop
         , processLoopRate       :: TypeF
 
-          -- | Type parameters to process.
-          --   These are the type parameters of the original function.
-        , processParamTypes     :: [BindF]
-
-          -- | Value parameters to process.
-          --   These are the value parameters of the original function.
-        , processParamValues    :: [BindF]
+          -- | Parameters to process.
+          --   These are the parameters of the original function, with flag being true for types.
+        , processParamFlags     :: [(Bool, BindF)]
 
           -- | Flow context in this process.
           --   This contains a ContextRate entry for all the Rate variables

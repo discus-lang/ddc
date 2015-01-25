@@ -11,7 +11,7 @@ instance Pretty Process where
  ppr p
   = vcat
   $     [ ppr (processName p)
-        , text "  parameters:    " <> ppr (processParamValues p) 
+        , text "  parameters:    " <> ppr (processParamFlags p) 
         , indent 2 $ ppr $ processContext p ]
 
 

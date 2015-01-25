@@ -22,8 +22,7 @@ import Data.Monoid
 data Procedure
         = Procedure
         { procedureName         :: Name
-        , procedureParamTypes   :: [BindF]
-        , procedureParamValues  :: [BindF]
+        , procedureParamFlags   :: [(Bool,BindF)]
         , procedureNest         :: Nest }
 
 -- | A loop nest.

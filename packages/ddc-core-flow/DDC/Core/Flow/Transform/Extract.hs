@@ -28,13 +28,17 @@ extractTop procs
 
 -- | Extract code for a whole procedure.
 extractProcedure  :: Procedure -> (Bind Name, ExpF)
-extractProcedure (Procedure n bsParam xsParam nest)
- = let  tBody   = foldr tFun    tUnit $ map typeOfBind xsParam
-        tQuant  = foldr TForall tBody $ bsParam
-   in   ( BName n tQuant
-        ,   xLAMs bsParam
-          $ xLams xsParam
-          $ xLets (concatMap vecBuffers xsParam)
+extractProcedure (Procedure n params nest)
+ = let  
+        tyOfFlags (True,  b) rest
+            = TForall b rest
+        tyOfFlags (False, b) rest
+            = tFun    (typeOfBind b) rest
+
+        tBody   = foldr tyOfFlags tUnit $ params
+   in   ( BName n tBody
+        ,   makeXLamFlags params
+          $ xLets (concatMap vecBuffers $ map snd $ filter (not.fst) params)
           $ extractNest nest xUnit )
 
 vecBuffers
