@@ -3,15 +3,27 @@ module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
 where
+import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp                           as DDC
+import DDC.Core.Flow.Transform.Rates.Combinators   as Com
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
+import DDC.Core.Flow.Transform.Rates.Graph
 import qualified DDC.Core.Flow.Transform.Rates.SizeInference as SI
+import DDC.Core.Flow.Transform.Rates.Clusters
 import DDC.Core.Module
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
+import qualified DDC.Type.Env           as Env
+
+import qualified Data.Map as Map
+import           Data.Map   (Map)
+import qualified Data.Set as Set
+import Data.List   (partition)
+import Data.Monoid (mappend)
+
 
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])
 seriesOfVectorModule mm
@@ -61,15 +73,14 @@ seriesOfVectorFunction fun
            Nothing
             -> (fun, [], [])
 
-           Just (_env,_s)
-            -> let -- g          = graphOfBinds prog env
-                   -- tmap a b   = SI.parents prog env a b
-                   -- clusters   = cluster g tmap
-                   (re, ls)   = (fun, []) -- reconstruct fun prog env clusters
+           Just (env,_s)
+            -> let g          = graphOfBinds prog env
+                   tmap a b   = SI.parents prog env a b
+                   clusters   = cluster g tmap
+                   (re, ls)   = reconstruct fun prog env clusters
                in  (re, ls, [])
 
 
-{-
 reconstruct
         :: ExpF
         -> Program Name Name
@@ -88,7 +99,7 @@ reconstruct fun prog env clusters
   types          = takeTypes          (concatMap valwitBindsOfLets olds ++ map snd lams)
 
   lets           = concatMap convert clusters
-  (lets', procs) = extractProcs lets (map snd lams)
+  (lets', procs) = extractProcs lets lams
 
   convert c
    = let outputs = outputsOfCluster prog c
@@ -99,12 +110,11 @@ reconstruct fun prog env clusters
          -- This way is better than mapping lookup over c, as we get them in program order.
          binds   = filter (flip elem c . cnameOfBind) (_binds prog)
          binds'  = map (\a -> (a, cnameOfBind a `elem` outputs)) binds
-         lets    = mkLets types env arrIns binds'
-      in lets
+      in mkLets types env arrIns binds'
 
 
 -- | Extract processes out so they can be made into separate bindings
-extractProcs :: [LetsF] -> [DDC.Bind Name] -> ([LetsF], [(BindF,ExpF)])
+extractProcs :: [LetsF] -> [(Bool, DDC.Bind Name)] -> ([LetsF], [(BindF,ExpF)])
 extractProcs lets env
  = go lets $ env
  where
@@ -116,7 +126,7 @@ extractProcs lets env
    | LLet b x <- l
    , BName nm _ <- b
    = let this = go1 b nm x e
-         rest = go ls (b : e)
+         rest = go ls ((False,b) : e)
      in this `mappend` rest
 
    | otherwise
@@ -124,24 +134,44 @@ extractProcs lets env
 
   go1 b nm x e
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries OpSeriesRunProcess ) _)    <- op
-   , (xs, [lam])                                          <- splitAt (length args - 1) args
+   , XVar (UPrim (NameOpSeries (OpSeriesRateVecsOfVectors n)) _)    <- op
+   , (xs, [lam])                                        <- splitAt (length args - 1) args
+   , (lams,body)                                        <- takeXLamFlags_safe lam
+   , ([LLet n' x'], binds)                              <- go1 b nm body (lams ++ e)
+   = ([LLet n'
+        (xApps (xVarOpSeries (OpSeriesRateVecsOfVectors n))
+            (xs ++ [makeXLamFlags lams x']))]
+     , binds)
 
-   = let fs = freeX Env.empty lam
+   | Just (op, args)                                      <- takeXApps x
+   , XVar (UPrim (NameOpSeries OpSeriesRunProcess) _)    <- op
+   , (xs, [lam])                                         <- splitAt (length args - 1) args
 
-         isMentioned bo
+   = let fsX = freeX Env.empty lam
+         fsT = freeT Env.empty lam
+
+         isMentioned (ty,bo)
           | Just bo' <- takeSubstBoundOfBind bo
-          = Set.member bo' fs
+          = if   ty
+            then Set.member bo' fsT
+            else Set.member bo' fsX
           | otherwise
           = False
 
          os = filter isMentioned e
 
+         ss  = takeSubstBoundsOfBinds . map snd
+         osT = filter     (fst) os
+         osX = filter (not.fst) os
+
          nm' = NameVarMod nm "process"
 
-         x' = xApps op (xs ++ [xApps (XVar $ UName nm') (map XVar (takeSubstBoundsOfBinds os))])
+         x' = xApps op (xs ++
+                [xApps (XVar $ UName nm')
+                  (  map (XType . TVar) (ss osT)
+                  ++ map  XVar          (ss osX))])
 
-         p' = makeXLamFlags (map (\o -> (False, o)) os) lam
+         p' = makeXLamFlags (osT ++ osX) lam
      in ([LLet b x'], [(BName nm' (tBot kData),  p')])
 
    | otherwise
@@ -194,9 +224,13 @@ process :: Map Name TypeF
         -> [LetsF]
 process types env arrIns bs
  = let pres  = concatMap  getPre  bs
-       mid   = runProcs   (mkProcs bs)
+       mid   = getRateVecs arrIns
+             $ getGenerates bs
+             $ runProcs   
+             $ xLets (map getInSeries arrIns)
+             $ mkProcs bs
        posts = concatMap  getPost bs
-   in pres ++ [LLet (BName (NameVarMod outname "runproc") tBool) mid] ++ posts
+   in pres ++ [LLet (BName (NameVarMod outname "runproc") tUnit) mid] ++ posts
  where
   getPre b
    -- There is no point of having a reduce that isn't returned.
@@ -212,6 +246,50 @@ process types env arrIns bs
    = []
 
 
+  getGenerates [] innerX
+   = innerX
+  getGenerates (b:rest) innerX
+   | ((n, Right (Generate (Scalar sz _) _)), _) <- b
+   , rest' <- getGenerates rest innerX
+   = xApps (xVarOpSeries (OpSeriesRateVecsOfVectors 0))
+           [ XType tUnit
+           , sz
+           , XLAM (BName (klokV n) kRate) rest' ]
+   | otherwise
+   = getGenerates rest innerX
+
+  getRateVecs [] innerX
+   = innerX
+
+  getRateVecs (a:as) innerX
+   | Just t        <- SI.lookupV env a
+   , (same,others) <- partition ((==Just t) . SI.lookupV env) as
+   , rest'         <- getRateVecs others innerX
+
+   , these         <- (a : same)
+   , nums          <- length these
+
+   , op            <- OpSeriesRateVecsOfVectors nums
+
+   , flags         <- map (\n -> (False, BName (NameVarMod n "rv") (tRateVec (klokT a) (sctyOf n)))) these
+   = xApps (xVarOpSeries op)
+       (   map xsctyOf these ++ [XType tUnit]
+       ++  map var     these
+       ++[ makeXLamFlags ((True, BName (klokV a) kRate) : flags)
+            rest' ]
+       )
+
+   -- Input array doesn't have a type..
+   | otherwise
+   = getRateVecs as innerX
+
+  getInSeries n
+   = LLet (BName (NameVarMod n "s") (tSeries procT (klokT n) (sctyOf n)))
+          (xApps (xVarOpSeries OpSeriesSeriesOfRateVec)
+            [ procX, klokX n, xsctyOf n, var $ NameVarMod n "rv" ] )
+
+
+
   getPost b
    | ((s, Left (Fold _ (Scalar _ _) _)), _)       <- b
    = [ LLet (BName s $ sctyOf s) (xRead (tyOf s) (var $ NameVarMod s "ref")) ]
@@ -221,24 +299,19 @@ process types env arrIns bs
    = []
 
   runProcs body
-   = let kFlags = [ (True,  BName klok kRate)
-                  , (False, BName (NameVarMod klok "r") $ tRateNat $ TVar $ UName klok) ]
-         vFlags = map (\n -> (False, BName (NameVarMod n "s") (tSeries (klokT n) (sctyOf n)))) arrIns
+   = let flags = [ (True,  BName procName kProc)
+                 , (False, BNone tUnit) ]
      in  xApps (xVarOpSeries OpSeriesRunProcess)
-               (  map xsctyOf arrIns
-               ++ (if   null arrIns
-                   then [allocSize]
-                   else [])
-               ++ map var    arrIns
-               ++ [(makeXLamFlags (kFlags ++ vFlags) body)])
+               (  [ XType $ TVar $ UName klok ]
+               ++ [makeXLamFlags flags body])
 
 
   mkProcs (b:rs)
    | ((s, Left (Fold (Fun xf _) (Scalar xs _) ain)), _)   <- b
    = let rest = mkProcs rs
-     in  XLet (LLet   (BName (NameVarMod s "proc") $ tProcess)
+     in  XLet (LLet   (BName (NameVarMod s "proc") $ tProcess procT $ klokT ain)
               $ xApps (xVarOpSeries OpSeriesReduce)
-                      [klokX ain, xtyOf s, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
+                      [procX, klokX ain, xtyOf s, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
          rest
 
    | ((n, Right abind), out)                            <- b
@@ -252,44 +325,47 @@ process types env arrIns bs
                 = XLet (LLet (BName nm t) x1)
 
          go     | out
-                = llet n'proc tProcess
-                ( xApps (xVarOpSeries OpSeriesFill) [klokX n, xsctyOf n, var $ n, var $ n's] )
+                = llet n'proc (tProcess procT $ klokT n)
+                ( xApps (xVarOpSeries OpSeriesFill) [procX, klokX n, xsctyOf n, var $ n, var $ n's] )
                   rest
                 | otherwise
                 = rest
 
      in  case abind of
          MapN (Fun xf _) ains
-          -> llet n's (tSeries (klokT n) $ sctyOf n)
+          -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries (OpSeriesMap (length ains)))
-                   ([klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains) )
+                   ([procX, klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains) )
              go
 
          Filter (Fun xf _) ain
-          -> llet n'flag (tSeries (klokT ain) tBool)
+          -> llet n'flag (tSeries procT (klokT ain) tBool)
            ( xApps (xVarOpSeries (OpSeriesMap 1))
-                   [ klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"] )
+                   [ procX, klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"] )
            $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
-                   [ klokX ain, var n'flag
+                   [ procX, klokX ain, var n'flag
                    ,        XLAM (BName (klokV n) kRate)
-                          $ XLam (BName n'sel (tSel1 (klokT ain) (klokT n)))
-                          $ llet n's (tSeries (klokT n) $ sctyOf n)
+                          $ XLam (BName n'sel (tSel1 procT (klokT ain) (klokT n)))
+                          $ llet n's (tSeries procT (klokT n) $ sctyOf n)
                           ( xApps (xVarOpSeries OpSeriesPack)
                                   [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"] )
                             go ]
                             
          Generate _sz (Fun xf _)
-          -> llet n's (tSeries (klokT n) $ sctyOf n)
+          -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries OpSeriesGenerate)
-                   [ klokX n, xsctyOf n, xf ])
+                   [ procX, klokX n, xsctyOf n, xf ])
              go
 
          Gather v ix
-          -> llet n's (tSeries (klokT n) $ sctyOf n)
+          -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries OpSeriesGather)
-                   ([klokX n, xsctyOf v, var v, var $ NameVarMod ix "s"]) )
+                   ([ procX, klokX v, klokX ix, xsctyOf v, var $ NameVarMod v "rv", var $ NameVarMod ix "s"]) )
              go
-
+         Cross _a _b
+          -> error "todo: cross"
+   | otherwise
+   = error "Impossible"
 
 
 
@@ -333,6 +409,10 @@ process types env arrIns bs
    = klokV n
    | otherwise
    = error "empty cluster!"
+
+  procName = NameVarMod klok "PROC"
+  procT    = TVar  $ UName $ procName
+  procX    = XType $ procT
 
   klokV = getKlok env
   klokT = TVar . UName . klokV
@@ -398,4 +478,3 @@ getKlok e n
    = NameVarMod (goKV kv) "'"
 
 
--}

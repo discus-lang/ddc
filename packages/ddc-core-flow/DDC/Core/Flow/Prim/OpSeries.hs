@@ -236,10 +236,10 @@ takeTypeOpSeries op
                 `tFun` tProcess tP tK1
 
 
-        -- runProcess# :: [k : Rate] [a : Data]
+        -- runProcess# :: [k : Rate]
         --          .  
-        --             ([p : Proc]. Unit -> Process p k a)
-        --          ->  a
+        --             ([p : Proc]. Unit -> Process p k)
+        --          ->  Unit
         OpSeriesRunProcess
          -> Just $ tForalls [kRate] $ \[tK]
                 -> (tForall kProc $ \tP

@@ -176,13 +176,13 @@ seriesInputOfBind b
     -> [a]
    ABind _ (Generate _s _fun)
     -> []
-   ABind _ (Gather _v ix)
+   ABind _ (Gather v ix)
    -- Only the indices array is consumed series-wise.
    -- The vector is random access.
-    -> [ix]
+    -> [v, ix]
    -- Cross product's first is consumed in series, but second is consumed multiple times
-   ABind _ (Cross x _y)
-    -> [x]
+   ABind _ (Cross x y)
+    -> [x, y]
    -- Externals do not require series inputs.
    Ext _ _ (_inS,_inA)
     -> []
