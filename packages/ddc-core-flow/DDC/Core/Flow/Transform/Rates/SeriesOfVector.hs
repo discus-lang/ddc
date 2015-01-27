@@ -342,14 +342,15 @@ process types env arrIns bs
            ( xApps (xVarOpSeries (OpSeriesMap 1))
                    [ procX, klokX ain, xsctyOf n, XType tBool, xf, var $ NameVarMod ain "s"] )
            $ xApps (xVarOpSeries $ OpSeriesMkSel 1)
-                   [ procX, klokX ain, var n'flag
+                   [ procX, klokX ain, XType processRate, var n'flag
                    ,        XLAM (BName (klokV n) kRate)
                           $ XLam (BName n'sel (tSel1 procT (klokT ain) (klokT n)))
                           $ llet n's (tSeries procT (klokT n) $ sctyOf n)
                           ( xApps (xVarOpSeries OpSeriesPack)
-                                  [klokX ain, klokX n, xsctyOf n, var n'sel, var $ NameVarMod ain "s"] )
+                                  [ procX, klokX ain, klokX n, xsctyOf n
+                                  , var n'sel, var $ NameVarMod ain "s"] )
                             go ]
-                            
+
          Generate _sz (Fun xf _)
           -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries OpSeriesGenerate)
@@ -378,12 +379,52 @@ process types env arrIns bs
   mkJoin p q
    = xApps (xVarOpSeries OpSeriesJoin) [p, q]
 
-  getProc ((s, Left _), _)
-   = [var $ NameVarMod s "proc"]
-  getProc ((a, _), True)
-   = [var $ NameVarMod a "proc"]
+  getProc b@((s, Left _), _)
+   = [resizeProc b $ var $ NameVarMod s "proc"]
+  getProc b@((a, _), True)
+   = [resizeProc b $ var $ NameVarMod a "proc"]
   getProc _
    = []
+
+  resizeProc b v
+   = goResize (fst $ fst b) v (reverse bs)
+
+  goResize _ v []
+   = v
+  goResize n v (((n',b),_):rest)
+   | n == n'
+   = case b of
+      Left (Fold _ _ ain)
+       -> goResize ain v rest
+      Right (MapN _ (i:_))
+       -> goResize i   v rest
+      Right (MapN _ [])
+       -> error "SeriesOfVector: Map with no inputs: impossible"
+
+      Right (Filter _ ain)
+       -> goResize ain
+        ( xApps (xVarOpSeries OpSeriesResizeProc)
+          [ procX, klokX n, klokX ain
+          , xApps (xVarOpSeries OpSeriesResizeSel1)
+                [ procX, klokX n, klokX ain, klokX n
+                , var $ NameVarMod n "sel"
+                , xApps (xVarOpSeries OpSeriesResizeId)
+                        [ procX, klokX n ]
+                ]
+         , v ]) rest
+
+      Right (Generate _ _)
+       -> v
+
+      Right (Gather _ ain)
+       -> goResize ain v rest
+
+      Right (Cross a _b)
+       -- TODO
+       -> goResize a v rest
+
+   | otherwise
+   = goResize n v rest
 
      
   allocSize

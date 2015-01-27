@@ -39,7 +39,7 @@ letrec {
             = smap# [p] [k1] [Float64#] [Bool#]
                   (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) dets in
       pjoin# [p] [k1]
-          (smkSel# [p] [k1] flags
+          (smkSel# [p] [k1] [k1] flags
                (/\(k2 : Rate).
                  \(sel : Sel1# p k1 k2).
                 let above : Series# p k2 (Tuple2# Float64# Float64#)

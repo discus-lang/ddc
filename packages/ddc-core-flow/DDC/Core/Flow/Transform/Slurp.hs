@@ -224,6 +224,7 @@ slurpBindingX tenv ctxs rs (BName n _)
   -> Just ( NameOpSeries (OpSeriesMkSel 1)
           , [ XType tProc
             , XType tK1
+            , XType _
             , XVar  uFlags@(UName nFlags)
 
             , XLAM         (BName nR kR)

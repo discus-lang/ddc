@@ -113,10 +113,118 @@ letrec {
 -- 1- filter, fold, fold
 -- 2- map original
 -- 3- map filtered
-Error transforming core program.
-  Kind mismatch.
-                  Expected kind: Proc
-   does not match inferred kind: Rate
+module Test with
+letrec {
+  fold2$runproc$process : [morig$'$k : Rate].RateVec# morig$'$k Int# -> Ref# Int# -> [fold2$PROC : Proc].Unit -> Unit
+    = /\(morig$'$k : Rate).
+       \(orig$rv : RateVec# morig$'$k Int#).\(fold2$ref : Ref# Int#).
+      /\(fold2$PROC : Proc).
+       \(_ : Unit).
+      let orig$s : Series# fold2$PROC morig$'$k Int# = series# [fold2$PROC] [morig$'$k] [Int#] orig$rv in
+      let fold2$ref$init : Int# = read# [Int#] fold2$ref in
+      let fold2$ref$acc : Ref# Int# = new# [Int#] fold2$ref$init in
+      let _ : Unit
+            = loop# [morig$'$k]
+                  (\(x1 : Nat#).
+                   let orig$s$elem : Int# = next# [Int#] [fold2$PROC] [morig$'$k] orig$s x1 in
+                   let fold2$ref$val : Int# = read# [Int#] fold2$ref$acc in
+                   let x10 : Int# = add# [Int#] fold2$ref$val orig$s$elem in
+                   let _ : Unit = write# [Int#] fold2$ref$acc x10 in
+                   ()) in
+      let fold2$ref$res : Int# = read# [Int#] fold2$ref$acc in
+      let _ : Unit = write# [Int#] fold2$ref fold2$ref$res in
+      ();
   
-  with: morig$'$k
+  filt$runproc$process : [morig$'$k : Rate].RateVec# morig$'$k Int# -> Vector# Int# -> Ref# Int# -> Int# -> [filt$PROC : Proc].Unit -> Unit
+    = /\(morig$'$k : Rate).
+       \(orig$rv : RateVec# morig$'$k Int#).\(mfilt : Vector# Int#).\(fold$ref : Ref# Int#).\(fold2 : Int#).
+      /\(filt$PROC : Proc).
+       \(_ : Unit).
+      let mfilt$buf : Buffer# Int# = vbuf# [Int#] mfilt in
+      let mfilt$count : Ref# Nat# = new# [Nat#] 0# in
+      let orig$s : Series# filt$PROC morig$'$k Int# = series# [filt$PROC] [morig$'$k] [Int#] orig$rv in
+      let fold$ref$init : Int# = read# [Int#] fold$ref in
+      let fold$ref$acc : Ref# Int# = new# [Int#] fold$ref$init in
+      let _ : Unit
+            = loop# [morig$'$k]
+                  (\(x4 : Nat#).
+                   let orig$s$elem : Int# = next# [Int#] [filt$PROC] [morig$'$k] orig$s x4 in
+                   let filt$flags$elem : Bool# = gt# [Int#] 1i# orig$s$elem in
+                   let _ : Unit
+                         = guard# filt$flags$elem
+                               (\(_ : Unit).
+                                let mfilt$s$elem : Int# = add# [Int#] fold2 orig$s$elem in
+                                let x11 : Nat# = read# [Nat#] mfilt$count in
+                                let _ : Unit = vwrite# [Int#] mfilt$buf x11 mfilt$s$elem in
+                                let x13 : Nat# = read# [Nat#] mfilt$count in
+                                let x14 : Nat# = add# [Nat#] x13 1# in
+                                let _ : Unit = write# [Nat#] mfilt$count x14 in
+                                let fold$ref$val : Int# = read# [Int#] fold$ref$acc in
+                                let x18 : Int# = add# [Int#] fold$ref$val orig$s$elem in
+                                let _ : Unit = write# [Int#] fold$ref$acc x18 in
+                                ()) in
+                   ()) in
+      let x7 : Nat# = read# [Nat#] mfilt$count in
+      let _ : Unit = vtrunc# [Int#] x7 mfilt in
+      let fold$ref$res : Int# = read# [Int#] fold$ref$acc in
+      let _ : Unit = write# [Int#] fold$ref fold$ref$res in
+      ();
+  
+  morig$runproc$process : [morig$'$k : Rate].RateVec# morig$'$k Int# -> Vector# Int# -> Int# -> [morig$PROC : Proc].Unit -> Unit
+    = /\(morig$'$k : Rate).
+       \(orig$rv : RateVec# morig$'$k Int#).\(morig : Vector# Int#).\(fold : Int#).
+      /\(morig$PROC : Proc).
+       \(_ : Unit).
+      let morig$buf : Buffer# Int# = vbuf# [Int#] morig in
+      let orig$s : Series# morig$PROC morig$'$k Int# = series# [morig$PROC] [morig$'$k] [Int#] orig$rv in
+      let _ : Unit
+            = loop# [morig$'$k]
+                  (\(x9 : Nat#).
+                   let orig$s$elem : Int# = next# [Int#] [morig$PROC] [morig$'$k] orig$s x9 in
+                   let morig$s$elem : Int# = add# [Int#] fold orig$s$elem in
+                   let _ : Unit = vwrite# [Int#] morig$buf x9 morig$s$elem in
+                   ()) in
+      ();
+  
+  test : Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
+    = \(orig : Vector# Int#).
+      let fold2$ref : Ref# Int# = new# [Int#] 0i# in
+      let fold2$runproc : Unit
+            = ratify1# [Int#] [Unit] orig
+                  (/\(morig$'$k : Rate).
+                    \(orig$rv : RateVec# morig$'$k Int#).
+                   let x16 : [t14 : Proc].Unit -> Unit
+                         = /\(t14 : Proc).
+                            \(x15 : Unit). fold2$runproc$process [morig$'$k] orig$rv fold2$ref [t14] x15 in
+                   let x17 : Unit = runProcessUnit# [morig$'$k] x16 in
+                   x17) in
+      let fold2 : Int# = read# [Int#] fold2$ref in
+      let fold$ref : Ref# Int# = new# [Int#] 0i# in
+      let x19 : Nat# = vlength# [Int#] orig in
+      let mfilt : Vector# Int# = vnew# [Int#] x19 in
+      let filt$runproc : Unit
+            = ratify1# [Int#] [Unit] orig
+                  (/\(morig$'$k : Rate).
+                    \(orig$rv : RateVec# morig$'$k Int#).
+                   let x22 : [t20 : Proc].Unit -> Unit
+                         = /\(t20 : Proc).
+                            \(x21 : Unit). filt$runproc$process [morig$'$k] orig$rv mfilt fold$ref fold2 [t20] x21 in
+                   let x23 : Unit = runProcessUnit# [morig$'$k] x22 in
+                   x23) in
+      let fold : Int# = read# [Int#] fold$ref in
+      let x25 : Nat# = vlength# [Int#] orig in
+      let morig : Vector# Int# = vnew# [Int#] x25 in
+      let morig$runproc : Unit
+            = ratify1# [Int#] [Unit] orig
+                  (/\(morig$'$k : Rate).
+                    \(orig$rv : RateVec# morig$'$k Int#).
+                   let x28 : [t26 : Proc].Unit -> Unit
+                         = /\(t26 : Proc).
+                            \(x27 : Unit). morig$runproc$process [morig$'$k] orig$rv morig fold [t26] x27 in
+                   let x29 : Unit = runProcessUnit# [morig$'$k] x28 in
+                   x29) in
+      let x12 : Tuple2# (Vector# Int#) (Vector# Int#)
+            = T2# [Vector# Int#] [Vector# Int#] morig mfilt in
+      x12
+}
 

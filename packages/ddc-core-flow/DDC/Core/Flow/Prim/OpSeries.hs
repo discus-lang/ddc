@@ -219,11 +219,11 @@ takeTypeOpSeries op
         --          -> ([k2 : Rate]. Sel1 p k1 k2 -> Process# p kL)
         --          -> Process# p kL
         OpSeriesMkSel 1
-         -> Just $ tForalls [kProc, kRate] $ \[tP, tK1]
+         -> Just $ tForalls [kProc, kRate, kRate] $ \[tP, tK1, tKL]
                 ->       tSeries tP tK1 tBool
                 `tFun` (tForall kRate $ \tK2 
-                                -> tSel1 (liftT 1 tP) (liftT 1 tK1) tK2 `tFun` tProcess (liftT 1 tP) (liftT 1 tK1))
-                `tFun` tProcess tP tK1
+                                -> tSel1 (liftT 1 tP) (liftT 1 tK1) tK2 `tFun` tProcess (liftT 1 tP) (liftT 1 tKL))
+                `tFun` tProcess tP tKL
 
 
         -- mkSegd#  :: [p : Proc]. [k1 kL : Rate]

@@ -50,7 +50,7 @@ srep# :: [^ : Proc].[^ : Rate].[^ : Data].^0 -> Series# ^2 ^1 ^0
 sreps# :: [^ : Proc].[^ ^ : Rate].[^ : Data].Segd# ^2 ^1 -> Series# ^3 ^2 ^0 -> Series# ^3 ^1 ^0
 sindices# :: [^ : Proc].[^ ^ : Rate].Segd# ^1 ^0 -> Series# ^2 ^0 Nat#
 sgather# :: [^ : Proc].[^ ^ : Rate].[^ : Data].RateVec# ^2 ^0 -> Series# ^3 ^1 Nat# -> Series# ^3 ^1 ^0
-smkSel# :: [^ : Proc].[^ : Rate].Series# ^1 ^0 Bool# -> ([^ : Rate].Sel1# ^2 ^1 ^0 -> Process# ^2 ^1) -> Process# ^1 ^0
+smkSel# :: [^ : Proc].[^ ^ : Rate].Series# ^2 ^1 Bool# -> ([^ : Rate].Sel1# ^3 ^2 ^0 -> Process# ^3 ^1) -> Process# ^2 ^0
 smkSegd# :: [^ : Proc].[^ : Rate].Series# ^1 ^0 Nat# -> ([^ : Rate].Segd# ^1 ^0 -> Process# ^2 ^1) -> Process# ^1 ^0
 smap# :: [^ : Proc].[^ : Rate].[^ ^ : Data].(^1 -> ^0) -> Series# ^3 ^2 ^1 -> Series# ^3 ^2 ^0
 smap2# :: [^ : Proc].[^ : Rate].[^ ^ ^ : Data].(^2 -> ^1 -> ^0) -> Series# ^4 ^3 ^2 -> Series# ^4 ^3 ^1 -> Series# ^4 ^3 ^0
