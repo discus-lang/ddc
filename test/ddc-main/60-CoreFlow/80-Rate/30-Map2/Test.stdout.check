@@ -4,17 +4,17 @@ ok
 -- Simple map2
 module Test with
 letrec {
-  x3$runproc$process : [x3$'$k : Rate].RateVec# x3$'$k Int# -> RateVec# x3$'$k Int# -> Vector# Int# -> [x3$'$k$PROC : Proc].Unit -> Process# x3$'$k$PROC x3$'$k
+  x3$runproc$process : [x3$'$k : Rate].RateVec# x3$'$k Int# -> RateVec# x3$'$k Int# -> Vector# Int# -> [x3$PROC : Proc].Unit -> Process# x3$PROC x3$'$k
     = /\(x3$'$k : Rate).
        \(u1$rv u2$rv : RateVec# x3$'$k Int#).\(x3 : Vector# Int#).
-      /\(x3$'$k$PROC : Proc).
+      /\(x3$PROC : Proc).
        \(_ : Unit).
-      let u1$s : Series# x3$'$k$PROC x3$'$k Int# = series# [x3$'$k$PROC] [x3$'$k] [Int#] u1$rv in
-      let u2$s : Series# x3$'$k$PROC x3$'$k Int# = series# [x3$'$k$PROC] [x3$'$k] [Int#] u2$rv in
-      let x3$s : Series# x3$'$k$PROC x3$'$k Int#
-            = smap2# [x3$'$k$PROC] [x3$'$k] [Int#] [Int#] [Int#]
+      let u1$s : Series# x3$PROC x3$'$k Int# = series# [x3$PROC] [x3$'$k] [Int#] u1$rv in
+      let u2$s : Series# x3$PROC x3$'$k Int# = series# [x3$PROC] [x3$'$k] [Int#] u2$rv in
+      let x3$s : Series# x3$PROC x3$'$k Int#
+            = smap2# [x3$PROC] [x3$'$k] [Int#] [Int#] [Int#]
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) u1$s u2$s in
-      let x3$proc : Process# x3$'$k$PROC x3$'$k = sfill# [x3$'$k$PROC] [x3$'$k] [Int#] x3 x3$s in
+      let x3$proc : Process# x3$PROC x3$'$k = sfill# [x3$PROC] [x3$'$k] [Int#] x3 x3$s in
       x3$proc;
   
   test : Vector# Int# -> Vector# Int# -> Vector# Int#
@@ -33,17 +33,17 @@ letrec {
 -- Different vector types
 module Test with
 letrec {
-  x1$runproc$process : [x1$'$k : Rate].RateVec# x1$'$k Int# -> RateVec# x1$'$k Float32# -> Vector# Float32# -> [x1$'$k$PROC : Proc].Unit -> Process# x1$'$k$PROC x1$'$k
+  x1$runproc$process : [x1$'$k : Rate].RateVec# x1$'$k Int# -> RateVec# x1$'$k Float32# -> Vector# Float32# -> [x1$PROC : Proc].Unit -> Process# x1$PROC x1$'$k
     = /\(x1$'$k : Rate).
        \(us$rv : RateVec# x1$'$k Int#).\(vs$rv : RateVec# x1$'$k Float32#).\(x1 : Vector# Float32#).
-      /\(x1$'$k$PROC : Proc).
+      /\(x1$PROC : Proc).
        \(_ : Unit).
-      let us$s : Series# x1$'$k$PROC x1$'$k Int# = series# [x1$'$k$PROC] [x1$'$k] [Int#] us$rv in
-      let vs$s : Series# x1$'$k$PROC x1$'$k Float32# = series# [x1$'$k$PROC] [x1$'$k] [Float32#] vs$rv in
-      let x1$s : Series# x1$'$k$PROC x1$'$k Float32#
-            = smap2# [x1$'$k$PROC] [x1$'$k] [Int#] [Float32#] [Float32#]
+      let us$s : Series# x1$PROC x1$'$k Int# = series# [x1$PROC] [x1$'$k] [Int#] us$rv in
+      let vs$s : Series# x1$PROC x1$'$k Float32# = series# [x1$PROC] [x1$'$k] [Float32#] vs$rv in
+      let x1$s : Series# x1$PROC x1$'$k Float32#
+            = smap2# [x1$PROC] [x1$'$k] [Int#] [Float32#] [Float32#]
                   (\(u : Int#).\(v : Float32#). v) us$s vs$s in
-      let x1$proc : Process# x1$'$k$PROC x1$'$k = sfill# [x1$'$k$PROC] [x1$'$k] [Float32#] x1 x1$s in
+      let x1$proc : Process# x1$PROC x1$'$k = sfill# [x1$PROC] [x1$'$k] [Float32#] x1 x1$s in
       x1$proc;
   
   test : Vector# Int# -> Vector# Float32# -> Vector# Float32#
@@ -62,37 +62,37 @@ letrec {
 -- Some other ops thrown in. Two processes, 'fs' and 'zs' are manifest
 module Test with
 letrec {
-  us'$runproc$process : [zs$'$k : Rate].RateVec# zs$'$k Float32# -> RateVec# zs$'$k Int# -> Ref# Float32# -> Vector# Float32# -> Float32# -> [zs$'$k$PROC : Proc].Unit -> Process# zs$'$k$PROC zs$'$k
+  us'$runproc$process : [zs$'$k : Rate].RateVec# zs$'$k Float32# -> RateVec# zs$'$k Int# -> Ref# Float32# -> Vector# Float32# -> Float32# -> [us'$PROC : Proc].Unit -> Process# us'$PROC zs$'$k
     = /\(zs$'$k : Rate).
        \(vs$rv : RateVec# zs$'$k Float32#).\(us$rv : RateVec# zs$'$k Int#).\(f$ref : Ref# Float32#).\(fs : Vector# Float32#).\(z : Float32#).
-      /\(zs$'$k$PROC : Proc).
+      /\(us'$PROC : Proc).
        \(_ : Unit).
-      let vs$s : Series# zs$'$k$PROC zs$'$k Float32# = series# [zs$'$k$PROC] [zs$'$k] [Float32#] vs$rv in
-      let us$s : Series# zs$'$k$PROC zs$'$k Int# = series# [zs$'$k$PROC] [zs$'$k] [Int#] us$rv in
-      let us'$s : Series# zs$'$k$PROC zs$'$k Int#
-            = smap# [zs$'$k$PROC] [zs$'$k] [Int#] [Int#]
+      let vs$s : Series# us'$PROC zs$'$k Float32# = series# [us'$PROC] [zs$'$k] [Float32#] vs$rv in
+      let us$s : Series# us'$PROC zs$'$k Int# = series# [us'$PROC] [zs$'$k] [Int#] us$rv in
+      let us'$s : Series# us'$PROC zs$'$k Int#
+            = smap# [us'$PROC] [zs$'$k] [Int#] [Int#]
                   (\(u : Int#). u) us$s in
-      let fs$s : Series# zs$'$k$PROC zs$'$k Float32#
-            = smap2# [zs$'$k$PROC] [zs$'$k] [Int#] [Float32#] [Float32#]
+      let fs$s : Series# us'$PROC zs$'$k Float32#
+            = smap2# [us'$PROC] [zs$'$k] [Int#] [Float32#] [Float32#]
                   (\(u : Int#).\(v : Float32#). v) us'$s vs$s in
-      let fs$proc : Process# zs$'$k$PROC zs$'$k = sfill# [zs$'$k$PROC] [zs$'$k] [Float32#] fs fs$s in
-      let f$proc : Process# zs$'$k$PROC zs$'$k
-            = sreduce# [zs$'$k$PROC] [zs$'$k] [Float32#] f$ref
+      let fs$proc : Process# us'$PROC zs$'$k = sfill# [us'$PROC] [zs$'$k] [Float32#] fs fs$s in
+      let f$proc : Process# us'$PROC zs$'$k
+            = sreduce# [us'$PROC] [zs$'$k] [Float32#] f$ref
                   (\(x2 x3 : Float32#). add# [Float32#] x2 x3) z fs$s in
-      pjoin# [zs$'$k$PROC] [zs$'$k] fs$proc f$proc;
+      pjoin# [us'$PROC] [zs$'$k] fs$proc f$proc;
   
-  zs$runproc$process : [zs$'$k : Rate].RateVec# zs$'$k Int# -> RateVec# zs$'$k Float32# -> RateVec# zs$'$k Float32# -> Vector# Float32# -> Float32# -> [zs$'$k$PROC : Proc].Unit -> Process# zs$'$k$PROC zs$'$k
+  zs$runproc$process : [zs$'$k : Rate].RateVec# zs$'$k Int# -> RateVec# zs$'$k Float32# -> RateVec# zs$'$k Float32# -> Vector# Float32# -> Float32# -> [zs$PROC : Proc].Unit -> Process# zs$PROC zs$'$k
     = /\(zs$'$k : Rate).
        \(us$rv : RateVec# zs$'$k Int#).\(vs$rv fs$rv : RateVec# zs$'$k Float32#).\(zs : Vector# Float32#).\(f : Float32#).
-      /\(zs$'$k$PROC : Proc).
+      /\(zs$PROC : Proc).
        \(_ : Unit).
-      let us$s : Series# zs$'$k$PROC zs$'$k Int# = series# [zs$'$k$PROC] [zs$'$k] [Int#] us$rv in
-      let vs$s : Series# zs$'$k$PROC zs$'$k Float32# = series# [zs$'$k$PROC] [zs$'$k] [Float32#] vs$rv in
-      let fs$s : Series# zs$'$k$PROC zs$'$k Float32# = series# [zs$'$k$PROC] [zs$'$k] [Float32#] fs$rv in
-      let zs$s : Series# zs$'$k$PROC zs$'$k Float32#
-            = smap3# [zs$'$k$PROC] [zs$'$k] [Int#] [Float32#] [Float32#] [Float32#]
+      let us$s : Series# zs$PROC zs$'$k Int# = series# [zs$PROC] [zs$'$k] [Int#] us$rv in
+      let vs$s : Series# zs$PROC zs$'$k Float32# = series# [zs$PROC] [zs$'$k] [Float32#] vs$rv in
+      let fs$s : Series# zs$PROC zs$'$k Float32# = series# [zs$PROC] [zs$'$k] [Float32#] fs$rv in
+      let zs$s : Series# zs$PROC zs$'$k Float32#
+            = smap3# [zs$PROC] [zs$'$k] [Int#] [Float32#] [Float32#] [Float32#]
                   (\(u : Int#).\(v ff : Float32#). add# [Float32#] ff f) us$s vs$s fs$s in
-      let zs$proc : Process# zs$'$k$PROC zs$'$k = sfill# [zs$'$k$PROC] [zs$'$k] [Float32#] zs zs$s in
+      let zs$proc : Process# zs$PROC zs$'$k = sfill# [zs$PROC] [zs$'$k] [Float32#] zs zs$s in
       zs$proc;
   
   test : Vector# Int# -> Vector# Float32# -> Float32# -> Vector# Float32#

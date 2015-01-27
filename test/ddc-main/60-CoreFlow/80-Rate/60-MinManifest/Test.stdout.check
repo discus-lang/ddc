@@ -4,30 +4,30 @@ ok
 -- Two possible schedules, but should be one with only one manifest array (ys)
 module Test with
 letrec {
-  y$runproc$process : [ys$'$k : Rate].RateVec# ys$'$k Int# -> Ref# Int# -> [ys$'$k$PROC : Proc].Unit -> Process# ys$'$k$PROC ys$'$k
+  y$runproc$process : [ys$'$k : Rate].RateVec# ys$'$k Int# -> Ref# Int# -> [y$PROC : Proc].Unit -> Process# y$PROC ys$'$k
     = /\(ys$'$k : Rate).
        \(us$rv : RateVec# ys$'$k Int#).\(y$ref : Ref# Int#).
-      /\(ys$'$k$PROC : Proc).
+      /\(y$PROC : Proc).
        \(_ : Unit).
-      let us$s : Series# ys$'$k$PROC ys$'$k Int# = series# [ys$'$k$PROC] [ys$'$k] [Int#] us$rv in
-      let y$proc : Process# ys$'$k$PROC ys$'$k
-            = sreduce# [ys$'$k$PROC] [ys$'$k] [Int#] y$ref
+      let us$s : Series# y$PROC ys$'$k Int# = series# [y$PROC] [ys$'$k] [Int#] us$rv in
+      let y$proc : Process# y$PROC ys$'$k
+            = sreduce# [y$PROC] [ys$'$k] [Int#] y$ref
                   (\(x2 x3 : Int#). add# [Int#] x2 x3) 0i# us$s in
       y$proc;
   
-  xs$runproc$process : [ys$'$k : Rate].RateVec# ys$'$k Int# -> Vector# Int# -> Int# -> [ys$'$k$PROC : Proc].Unit -> Process# ys$'$k$PROC ys$'$k
+  xs$runproc$process : [ys$'$k : Rate].RateVec# ys$'$k Int# -> Vector# Int# -> Int# -> [xs$PROC : Proc].Unit -> Process# xs$PROC ys$'$k
     = /\(ys$'$k : Rate).
        \(us$rv : RateVec# ys$'$k Int#).\(ys : Vector# Int#).\(y : Int#).
-      /\(ys$'$k$PROC : Proc).
+      /\(xs$PROC : Proc).
        \(_ : Unit).
-      let us$s : Series# ys$'$k$PROC ys$'$k Int# = series# [ys$'$k$PROC] [ys$'$k] [Int#] us$rv in
-      let xs$s : Series# ys$'$k$PROC ys$'$k Int#
-            = smap# [ys$'$k$PROC] [ys$'$k] [Int#] [Int#]
+      let us$s : Series# xs$PROC ys$'$k Int# = series# [xs$PROC] [ys$'$k] [Int#] us$rv in
+      let xs$s : Series# xs$PROC ys$'$k Int#
+            = smap# [xs$PROC] [ys$'$k] [Int#] [Int#]
                   (\(x0 : Int#). add# [Int#] 1i# x0) us$s in
-      let ys$s : Series# ys$'$k$PROC ys$'$k Int#
-            = smap# [ys$'$k$PROC] [ys$'$k] [Int#] [Int#]
+      let ys$s : Series# xs$PROC ys$'$k Int#
+            = smap# [xs$PROC] [ys$'$k] [Int#] [Int#]
                   (\(x5 : Int#). add# [Int#] y x5) xs$s in
-      let ys$proc : Process# ys$'$k$PROC ys$'$k = sfill# [ys$'$k$PROC] [ys$'$k] [Int#] ys ys$s in
+      let ys$proc : Process# xs$PROC ys$'$k = sfill# [xs$PROC] [ys$'$k] [Int#] ys ys$s in
       ys$proc;
   
   test : Vector# Int# -> Vector# Int#

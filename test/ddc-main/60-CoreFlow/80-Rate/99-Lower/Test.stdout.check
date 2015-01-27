@@ -5,18 +5,18 @@ ok
 -- Simple fold over a vector
 module Test with
 letrec {
-  x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> [u1$k$PROC : Proc].Unit -> Unit
+  x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> [x3$PROC : Proc].Unit -> Unit
     = /\(u1$k : Rate).
        \(u1$rv : RateVec# u1$k Int#).\(x3$ref : Ref# Int#).
-      /\(u1$k$PROC : Proc).
+      /\(x3$PROC : Proc).
        \(_ : Unit).
-      let u1$s : Series# u1$k$PROC u1$k Int# = series# [u1$k$PROC] [u1$k] [Int#] u1$rv in
+      let u1$s : Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
       let x3$ref$init : Int# = read# [Int#] x3$ref in
       let x3$ref$acc : Ref# Int# = new# [Int#] x3$ref$init in
       let _ : Unit
             = loop# [u1$k]
                   (\(x5 : Nat#).
-                   let u1$s$elem : Int# = next# [Int#] [u1$k$PROC] [u1$k] u1$s x5 in
+                   let u1$s$elem : Int# = next# [Int#] [x3$PROC] [u1$k] u1$s x5 in
                    let x3$ref$val : Int# = read# [Int#] x3$ref$acc in
                    let x6 : Int# = add# [Int#] x3$ref$val u1$s$elem in
                    let _ : Unit = write# [Int#] x3$ref$acc x6 in
@@ -45,18 +45,18 @@ letrec {
 -- Something like a normalise
 module Test with
 letrec {
-  n$runproc$process : [x4$'$k : Rate].RateVec# x4$'$k Int# -> Ref# Int# -> [x4$'$k$PROC : Proc].Unit -> Unit
+  n$runproc$process : [x4$'$k : Rate].RateVec# x4$'$k Int# -> Ref# Int# -> [n$PROC : Proc].Unit -> Unit
     = /\(x4$'$k : Rate).
        \(us$rv : RateVec# x4$'$k Int#).\(n$ref : Ref# Int#).
-      /\(x4$'$k$PROC : Proc).
+      /\(n$PROC : Proc).
        \(_ : Unit).
-      let us$s : Series# x4$'$k$PROC x4$'$k Int# = series# [x4$'$k$PROC] [x4$'$k] [Int#] us$rv in
+      let us$s : Series# n$PROC x4$'$k Int# = series# [n$PROC] [x4$'$k] [Int#] us$rv in
       let n$ref$init : Int# = read# [Int#] n$ref in
       let n$ref$acc : Ref# Int# = new# [Int#] n$ref$init in
       let _ : Unit
             = loop# [x4$'$k]
                   (\(x2 : Nat#).
-                   let us$s$elem : Int# = next# [Int#] [x4$'$k$PROC] [x4$'$k] us$s x2 in
+                   let us$s$elem : Int# = next# [Int#] [n$PROC] [x4$'$k] us$s x2 in
                    let n$ref$val : Int# = read# [Int#] n$ref$acc in
                    let x8 : Int# = add# [Int#] n$ref$val us$s$elem in
                    let _ : Unit = write# [Int#] n$ref$acc x8 in
@@ -65,17 +65,17 @@ letrec {
       let _ : Unit = write# [Int#] n$ref n$ref$res in
       ();
   
-  x4$runproc$process : [x4$'$k : Rate].RateVec# x4$'$k Int# -> Vector# Int# -> Int# -> [x4$'$k$PROC : Proc].Unit -> Unit
+  x4$runproc$process : [x4$'$k : Rate].RateVec# x4$'$k Int# -> Vector# Int# -> Int# -> [x4$PROC : Proc].Unit -> Unit
     = /\(x4$'$k : Rate).
        \(us$rv : RateVec# x4$'$k Int#).\(x4 : Vector# Int#).\(n : Int#).
-      /\(x4$'$k$PROC : Proc).
+      /\(x4$PROC : Proc).
        \(_ : Unit).
       let x4$buf : Buffer# Int# = vbuf# [Int#] x4 in
-      let us$s : Series# x4$'$k$PROC x4$'$k Int# = series# [x4$'$k$PROC] [x4$'$k] [Int#] us$rv in
+      let us$s : Series# x4$PROC x4$'$k Int# = series# [x4$PROC] [x4$'$k] [Int#] us$rv in
       let _ : Unit
             = loop# [x4$'$k]
                   (\(x6 : Nat#).
-                   let us$s$elem : Int# = next# [Int#] [x4$'$k$PROC] [x4$'$k] us$s x6 in
+                   let us$s$elem : Int# = next# [Int#] [x4$PROC] [x4$'$k] us$s x6 in
                    let x4$s$elem : Int# = div# [Int#] us$s$elem n in
                    let _ : Unit = vwrite# [Int#] x4$buf x6 x4$s$elem in
                    ()) in

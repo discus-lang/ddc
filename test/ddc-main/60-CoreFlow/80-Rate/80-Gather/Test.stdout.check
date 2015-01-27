@@ -1,13 +1,33 @@
 ok
 ok
 
-Error transforming core program.
-  ()
-  Type mismatch.
-    inferred type: [orig$k$PROC : Proc].Unit -> Process# orig$k$PROC flub$'$k
-    expected type: [^ : Proc].Unit -> Process# ^0 orig$k
+module Test with
+letrec {
+  flub$runproc$process : [flub$'$k orig$k : Rate].RateVec# flub$'$k Nat# -> RateVec# orig$k Int# -> Vector# Int# -> [flub$PROC : Proc].Unit -> Process# flub$PROC flub$'$k
+    = /\(flub$'$k orig$k : Rate).
+       \(ix$rv : RateVec# flub$'$k Nat#).\(orig$rv : RateVec# orig$k Int#).\(flub : Vector# Int#).
+      /\(flub$PROC : Proc).
+       \(_ : Unit).
+      let orig$s : Series# flub$PROC orig$k Int# = series# [flub$PROC] [orig$k] [Int#] orig$rv in
+      let ix$s : Series# flub$PROC flub$'$k Nat# = series# [flub$PROC] [flub$'$k] [Nat#] ix$rv in
+      let flub$s : Series# flub$PROC flub$'$k Int# = sgather# [flub$PROC] [orig$k] [flub$'$k] [Int#] orig$rv ix$s in
+      let flub$proc : Process# flub$PROC flub$'$k = sfill# [flub$PROC] [flub$'$k] [Int#] flub flub$s in
+      flub$proc;
   
-  with: flub$runproc$process [flub$'$k] [orig$k] ix$rv orig$rv flub
+  test : Vector# Int# -> Vector# Nat# -> Vector# Int#
+    = \(orig : Vector# Int#).\(ix : Vector# Nat#).
+      let flub : Vector# Int#
+            = vnew# [Int#] (vlength# [Int#] orig) in
+      let flub$runproc : Unit
+            = ratify1# [Int#] [Unit] orig
+                  (/\(orig$k : Rate).
+                    \(orig$rv : RateVec# orig$k Int#).
+                   ratify1# [Nat#] [Unit] ix
+                       (/\(flub$'$k : Rate).
+                         \(ix$rv : RateVec# flub$'$k Nat#).
+                        runProcess# [flub$'$k] (flub$runproc$process [flub$'$k] [orig$k] ix$rv orig$rv flub))) in
+      flub
+}
 
 Error transforming core program.
   Kind mismatch.

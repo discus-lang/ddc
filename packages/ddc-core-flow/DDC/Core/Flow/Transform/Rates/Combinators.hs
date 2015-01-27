@@ -164,7 +164,7 @@ freeOfBind b
   fs                            = NameScalar
   fa                            = NameArray
 
--- | Get inputs that must be converted to series
+-- | Get inputs that must be converted to series or rate vectors
 seriesInputOfBind :: Bind s a -> [a]
 seriesInputOfBind b
  = case b of

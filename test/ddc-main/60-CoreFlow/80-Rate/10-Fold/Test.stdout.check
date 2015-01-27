@@ -4,14 +4,14 @@ ok
 -- Simple fold over a vector
 module Test with
 letrec {
-  x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> [u1$k$PROC : Proc].Unit -> Process# u1$k$PROC u1$k
+  x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> [x3$PROC : Proc].Unit -> Process# x3$PROC u1$k
     = /\(u1$k : Rate).
        \(u1$rv : RateVec# u1$k Int#).\(x3$ref : Ref# Int#).
-      /\(u1$k$PROC : Proc).
+      /\(x3$PROC : Proc).
        \(_ : Unit).
-      let u1$s : Series# u1$k$PROC u1$k Int# = series# [u1$k$PROC] [u1$k] [Int#] u1$rv in
-      let x3$proc : Process# u1$k$PROC u1$k
-            = sreduce# [u1$k$PROC] [u1$k] [Int#] x3$ref
+      let u1$s : Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
+      let x3$proc : Process# x3$PROC u1$k
+            = sreduce# [x3$PROC] [u1$k] [Int#] x3$ref
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
       x3$proc;
   
@@ -31,19 +31,19 @@ letrec {
 -- Two folds over same vector
 module Test with
 letrec {
-  x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> Ref# Int# -> [u1$k$PROC : Proc].Unit -> Process# u1$k$PROC u1$k
+  x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> Ref# Int# -> [x3$PROC : Proc].Unit -> Process# x3$PROC u1$k
     = /\(u1$k : Rate).
        \(u1$rv : RateVec# u1$k Int#).\(x7$ref x3$ref : Ref# Int#).
-      /\(u1$k$PROC : Proc).
+      /\(x3$PROC : Proc).
        \(_ : Unit).
-      let u1$s : Series# u1$k$PROC u1$k Int# = series# [u1$k$PROC] [u1$k] [Int#] u1$rv in
-      let x3$proc : Process# u1$k$PROC u1$k
-            = sreduce# [u1$k$PROC] [u1$k] [Int#] x3$ref
+      let u1$s : Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
+      let x3$proc : Process# x3$PROC u1$k
+            = sreduce# [x3$PROC] [u1$k] [Int#] x3$ref
                   (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
-      let x7$proc : Process# u1$k$PROC u1$k
-            = sreduce# [u1$k$PROC] [u1$k] [Int#] x7$ref
+      let x7$proc : Process# x3$PROC u1$k
+            = sreduce# [x3$PROC] [u1$k] [Int#] x7$ref
                   (\(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# u1$s in
-      pjoin# [u1$k$PROC] [u1$k] x3$proc x7$proc;
+      pjoin# [x3$PROC] [u1$k] x3$proc x7$proc;
   
   test : Vector# Int# -> Int#
     = \(u1 : Vector# Int#).

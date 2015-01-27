@@ -302,8 +302,7 @@ process types env arrIns bs
    = let flags = [ (True,  BName procName kProc)
                  , (False, BNone tUnit) ]
      in  xApps (xVarOpSeries OpSeriesRunProcess)
-               (  [ XType $ TVar $ UName klok ]
-               ++ [makeXLamFlags flags body])
+               ([XType processRate, makeXLamFlags flags body])
 
 
   mkProcs (b:rs)
@@ -398,19 +397,29 @@ process types env arrIns bs
    | otherwise
    = error ("ddc-core-flow: allocSize, but no size known" ++ show arrIns ++ "\n" ++ show bs)
 
+  -- Find the loop rate of the process.
+  -- Since we don't have appends, it's just the rate of the first binding
+  processRate
+   = bindRate (head bs)
 
-  -- | Find the *original* klok of the first input.
-  klok
-   -- If there are any inputs, use the size of one of those. They should all be the same?
-   | (i:_) <- arrIns
-   = klokV i
-   -- Otherwise, just choose one
-   | (((n, _), _) :_) <- bs
-   = klokV n
-   | otherwise
-   = error "empty cluster!"
+  bindRate b
+   = let k = klokT (fst $ fst b)
+     in case snd $ fst b of
+        Left (Fold _ _ ain)
+         -> klokT ain
+        Right (MapN _ _)
+         -> k
+        Right (Filter _ ain)
+         -> klokT ain
+        Right (Generate _ _)
+         -> k
+        Right (Gather _ _)
+         -> k
+        Right (Cross ain _)
+         -> klokT ain
 
-  procName = NameVarMod klok "PROC"
+  -- We just need a name for the Proc type
+  procName = NameVarMod outname "PROC"
   procT    = TVar  $ UName $ procName
   procX    = XType $ procT
 
@@ -425,6 +434,7 @@ process types env arrIns bs
 
 
   -- We just need to find the name of any binding
+  -- This head is safe because @mkLets@ will not call @process@ with an empty cluster.
   outname
    = fst $ fst $ head bs
 
