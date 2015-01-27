@@ -214,9 +214,7 @@ mkLets types env arrIns bs
 
 -- | Create a process for a cluster of array and scalar bindings.
 -- No externals.
---
--- TODO: 
---  1. filter arrIns to only those that must be series; second arg of gather, first of cross etc.
+-- List of bindings cannot be empty
 process :: Map Name TypeF
         -> SI.Env Name
         -> [Name]
@@ -363,7 +361,9 @@ process types env arrIns bs
                    ([ procX, klokX v, klokX ix, xsctyOf v, var $ NameVarMod v "rv", var $ NameVarMod ix "s"]) )
              go
          Cross _a _b
-          -> error "todo: cross"
+          -> error "DDC.Core.Flow.Transform.Rates.SeriesOfVector: Cross combinator not implemented yet"
+
+   -- All cases are handled above
    | otherwise
    = error "Impossible"
 
@@ -420,7 +420,7 @@ process types env arrIns bs
        -> goResize ain v rest
 
       Right (Cross a _b)
-       -- TODO
+       -- TODO: resize cross
        -> goResize a v rest
 
    | otherwise
