@@ -1,11 +1,14 @@
 -- | Convert Disciple Core to PHP code
 module DDC.Core.Babel.PHP where
 import DDC.Core.Compounds
+import DDC.Core.Collect
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Pretty
 import DDC.Type.DataDef                 
 import qualified DDC.Core.Tetra.Prim as T
+import qualified DDC.Type.Env as Env
+import qualified Data.Set as Set
 
 import Data.Maybe (isNothing)
 
@@ -15,7 +18,7 @@ phpOfModule
         -> Doc
 phpOfModule mm
  = let ds = phpOfDataDefs $ moduleDataDefsLocal mm
-       xs = phpOfExp      $ moduleBody          mm
+       xs = phpOfExp       (moduleBody          mm) CTop
    in vcat [ text "<?php"
            , ds
            , xs
@@ -46,71 +49,94 @@ phpOfDataDefs ds
         , text "}"
         ]
       , text "}"
-      , text "$" <> bare_name name <> text "_new" <+> text " = DDC::curry(function" <> parenss (map var_name_t args) <+> text "{ return new " <+> bare_name name <> parenss (map var_name_t args) <> text "; }, " <> text (show (length args)) <> text ");"
+      -- , text "$" <> bare_name name <> text "_new" <+> text " = DDC::curry(function" <> parenss (map var_name_t args) <+> text "{ return new " <+> bare_name name <> parenss (map var_name_t args) <> text "; }, " <> text (show (length args)) <> text ");"
       ]
+
+data Context
+ = CLet (Bind T.Name)
+ | CRet
+ | CTop
+ | CExp
 
 phpOfExp
         :: (Show a)
         => Exp a T.Name
+        -> Context
         -> Doc
-phpOfExp xx
+phpOfExp xx ctx
  = case xx of
     XVar _ v
-     -> var_name_u v
+     -> wrap $ var_name_u v
 
     XCon _ DaConUnit
-     -> text "1"
+     -> wrap $ text "1"
     XCon _ (DaConPrim n _t)
-     -> sanitise_prim n
+     -> wrap $ sanitise_prim n
+    -- constructors must be fully applied
     XCon _ (DaConBound n)
-     -> text "$" <> bare_name n <> text "_new"
+     -> wrap $ text "new " <> bare_name n
 
     XLAM _ _ x
-     -> phpOfExp x
-    XLam a b x
-     -> text "DDC::curry(function(" <> var_name_b b <> text ")/* Lam " <+> text (show a) <+> text "*/ {" <+> phpOfExp x <+> text "; }, 1)"
+     -> phpOfExp x ctx
+    XLam a _ _
+     | Just (bs, f) <- takeXLamFlags xx
+     , bs' <- filter (not.fst) bs
+     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a) <+> text "*/" <+> makeFunction Nothing bs f <> text ", " <> text (show (length bs')) <> text ")"
+     
+     -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a) <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
 
     XApp _ f x
      | (f',xs) <- takeXApps1 f x
      , xs'     <- noTypes xs
-     -> phpOfExp f' <> parenss (map phpOfExp xs')
+     -> wrap $ phpOfExp f' CExp <> parenss (map (flip phpOfExp CExp) xs')
 
     XLet a lets x
      -> vcat
          [ text "/* Let " <> text (show a) <> text " */"
-         , phpOfLets lets
-         , (case x of XLet _ _ _ -> text ""
-                      _          -> text "return ")
-           <> phpOfExp x
+         , phpOfLets lets ctx
+         , phpOfExp x ctx
          ]
 
     XCase a x alts
      -> vcat
          -- TODO
          [ text "/* Case " <> text (show a) <> text " */"
-         , text "$SCRUT = " <> phpOfExp x <> text ";"
-         , phpOfAlts "SCRUT" alts
+         , text "$SCRUT = " <> phpOfExp x CExp <> text ";"
+         , phpOfAlts "SCRUT" alts ctx
          ]
+    XCast _ _ x
+     -> phpOfExp x ctx
     _
-     -> error "No can do"
+     -> error ("No can do: " ++ show (ppr xx))
+ where
+  wrap d
+   = case ctx of
+     -- throw away top-level expressions (the unit at the end)
+     CTop       -> text ""
+     CExp       -> d
+     CLet (BNone _) -> d <> text ";"
+     CLet b     -> var_name_b b <> text " = " <> d <> text ";"
+     CRet       -> text "return " <> d <> text ";"
 
 phpOfLets
         :: (Show a)
         => Lets a T.Name
+        -> Context
         -> Doc
-phpOfLets lets
+phpOfLets lets ctx
  = case lets of
     LLet b x
      | Just (bs, f) <- takeXLamFlags x
      , bs' <- filter (not.fst) bs
+     , CTop <- ctx
      -> vcat
          [ makeFunction (Just b) bs f
          , var_name_b b <> text " = DDC::curry(" <> bare_name_b b <> text ", " <> text (show (length bs')) <> text ");" ]
      | otherwise
-     -> var_name_b b <> text " = " <> phpOfExp x <> text ";" <> line
+     -> phpOfExp x (CLet b) <> line
 
     LRec ((b,x):bxs)
-     -> phpOfLets (LLet b x) <> line <> phpOfLets (LRec bxs)
+     -> phpOfLets (LLet b x) ctx <> line <> phpOfLets (LRec bxs) ctx
     LRec []
      -> text ""
     
@@ -121,8 +147,9 @@ phpOfAlts
         :: (Show a)
         => String
         -> [Alt a T.Name]
+        -> Context
         -> Doc
-phpOfAlts scrut alts
+phpOfAlts scrut alts ctx
  = go alts
  where
   go []
@@ -131,7 +158,7 @@ phpOfAlts scrut alts
    = vcat
       [ text "if (" <> cond dc <> text ") {"
       , indent 4 (grabfields bs)
-      , indent 4 (phpOfExp x) <> text ";"
+      , indent 4 (phpOfExp x ctx)
       , text " }"
       , case as of []    -> text ""
                    (_:_) -> text "else" <> go as
@@ -140,7 +167,7 @@ phpOfAlts scrut alts
   go (AAlt PDefault x : _)
    = vcat
       [ text "{"
-      , indent 4 (phpOfExp x) <> text ";"
+      , indent 4 (phpOfExp x ctx)
       , text "}" ]
 
   cond DaConUnit
@@ -165,11 +192,33 @@ makeFunction nm bs x
  = text "function " 
  <> maybe (text "") bare_name_b nm
  <> parenss (map (var_name_b.snd) $ filter (not.fst) bs)
+ <> use_
  <> text " { "
  <> line
- <> indent 4 (phpOfExp x)
+ <> globals_
+ <> indent 4 (phpOfExp x CRet)
  <> line
  <> text " }"
+ where
+  fx = map var_name_u
+     $ filter (\vu -> case vu of UName _ -> True ; _ -> False)
+     $ Set.toList
+     $ freeX Env.empty
+     $ makeXLamFlags (annotOfExp x) bs x
+  use_
+   = case nm of
+      Nothing
+       | not $ null fx
+       -> text " use " <> parenss fx
+      _ 
+       -> text ""
+  globals_
+   = case nm of
+      Just _ 
+       | not $ null fx
+       -> text " global " <> encloseSep empty empty (comma <> space) fx <> text ";" <> line
+      _
+       -> text ""
 
 noTypes :: [Exp a T.Name] -> [Exp a T.Name]
 noTypes xs
@@ -209,10 +258,26 @@ sanitise_prim n
  = text "true"
  | T.NameLitBool False <- n
  = text "false"
- | T.NameLitUnboxed nn <- n
- = sanitise_prim nn
  | T.NameLitNat i <- n
  = text (show i)
+ | T.NameLitInt i <- n
+ = text (show i)
+ | T.NameLitSize i <- n
+ = text (show i)
+ | T.NameLitWord i _ <- n
+ = text (show i)
+ | T.NameLitFloat i _ <- n
+ = text (show i)
+ | T.NameLitString t <- n
+ = text (show t)
+
+ | T.NamePrimArith p <- n
+ = text ("DDC::" ++ show p)
+ -- = text ("DDC::curry(DDC::" ++ show p ++ ", DDC::" ++ show p ++ "_arity)")
+
+ | T.NameLitUnboxed nn <- n
+ = sanitise_prim nn
+
  | otherwise
  = ppr n
 
