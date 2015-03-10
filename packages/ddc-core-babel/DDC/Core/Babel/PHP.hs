@@ -5,12 +5,13 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Pretty
 import DDC.Type.DataDef                 
+import qualified DDC.Core.Tetra.Prim as T
 
 import Data.Maybe (isNothing)
 
 phpOfModule
-        :: (Show a, Pretty n, Eq n)
-        => Module a n
+        :: (Show a)
+        => Module a T.Name
         -> Doc
 phpOfModule mm
  = let ds = phpOfDataDefs $ moduleDataDefsLocal mm
@@ -22,8 +23,7 @@ phpOfModule mm
 
 
 phpOfDataDefs
-        :: (Pretty n, Eq n)
-        => [DataDef n]
+        :: [DataDef T.Name]
         -> Doc
 phpOfDataDefs ds
  = vcat $ concatMap def ds
@@ -46,11 +46,12 @@ phpOfDataDefs ds
         , text "}"
         ]
       , text "}"
+      , text "$" <> bare_name name <> text "_new" <+> text " = DDC::curry(function" <> parenss (map var_name_t args) <+> text "{ return new " <+> bare_name name <> parenss (map var_name_t args) <> text "; }, " <> text (show (length args)) <> text ");"
       ]
 
 phpOfExp
-        :: (Show a, Pretty n, Eq n)
-        => Exp a n
+        :: (Show a)
+        => Exp a T.Name
         -> Doc
 phpOfExp xx
  = case xx of
@@ -62,12 +63,12 @@ phpOfExp xx
     XCon _ (DaConPrim n _t)
      -> sanitise_prim n
     XCon _ (DaConBound n)
-     -> text "new" <+> bare_name n
+     -> text "$" <> bare_name n <> text "_new"
 
     XLAM _ _ x
      -> phpOfExp x
     XLam a b x
-     -> text "function(" <> var_name_b b <> text ")/* Lam " <+> text (show a) <+> text "*/ {" <+> phpOfExp x <+> text "; }"
+     -> text "DDC::curry(function(" <> var_name_b b <> text ")/* Lam " <+> text (show a) <+> text "*/ {" <+> phpOfExp x <+> text "; }, 1)"
 
     XApp _ f x
      | (f',xs) <- takeXApps1 f x
@@ -94,16 +95,17 @@ phpOfExp xx
      -> error "No can do"
 
 phpOfLets
-        :: (Show a, Pretty n, Eq n)
-        => Lets a n
+        :: (Show a)
+        => Lets a T.Name
         -> Doc
 phpOfLets lets
  = case lets of
     LLet b x
      | Just (bs, f) <- takeXLamFlags x
+     , bs' <- filter (not.fst) bs
      -> vcat
          [ makeFunction (Just b) bs f
-         , var_name_b b <> text " = " <> bare_name_b b <> text ";" ]
+         , var_name_b b <> text " = DDC::curry(" <> bare_name_b b <> text ", " <> text (show (length bs')) <> text ");" ]
      | otherwise
      -> var_name_b b <> text " = " <> phpOfExp x <> text ";" <> line
 
@@ -116,9 +118,9 @@ phpOfLets lets
      -> error "phpOfLets: no private or withregion"
 
 phpOfAlts
-        :: (Show a, Pretty n, Eq n)
+        :: (Show a)
         => String
-        -> [Alt a n]
+        -> [Alt a T.Name]
         -> Doc
 phpOfAlts scrut alts
  = go alts
@@ -154,10 +156,10 @@ phpOfAlts scrut alts
    = var_name_b b <> text " = " <> obj_field_tt scrut ("_" ++ show i) <> text ";"
 
 makeFunction
-        :: (Show a, Pretty n, Eq n)
-        => Maybe (Bind n)
-        -> [(Bool, Bind n)]
-        -> Exp a n
+        :: (Show a)
+        => Maybe (Bind T.Name)
+        -> [(Bool, Bind T.Name)]
+        -> Exp a T.Name
         -> Doc
 makeFunction nm bs x
  = text "function " 
@@ -169,26 +171,28 @@ makeFunction nm bs x
  <> line
  <> text " }"
 
-noTypes :: [Exp a n] -> [Exp a n]
+noTypes :: [Exp a T.Name] -> [Exp a T.Name]
 noTypes xs
   = filter (isNothing.takeXWitness)
   $ filter (isNothing.takeXType) xs
 
 
 -- todo strip out
-bare_name :: Pretty n => n -> Doc
+bare_name :: T.Name -> Doc
 bare_name = ppr
 
-bare_name_b :: Pretty n => Bind n -> Doc
+bare_name_b :: Bind T.Name -> Doc
 bare_name_b (BName n _) = bare_name n
 bare_name_b (BNone   _) = text "__NONE__"
 bare_name_b _ = error "Only named vars allowed"
 
-var_name_b :: Pretty n => Bind n -> Doc
+var_name_b :: Bind T.Name -> Doc
 var_name_b b = text "$" <> bare_name_b b
 
-var_name_u :: Pretty n => n -> Doc
-var_name_u n = text "$" <> bare_name n
+var_name_u :: Bound T.Name -> Doc
+var_name_u (UName n) = text "$" <> bare_name n
+var_name_u (UIx _) = error "Only named vars allowed"
+var_name_u (UPrim n _) = sanitise_prim n
 
 var_name_t :: String -> Doc
 var_name_t n = text "$" <> text n
@@ -199,18 +203,20 @@ obj_field n m = text "$" <> n <> text "->" <> m
 obj_field_tt :: String -> String -> Doc
 obj_field_tt n m = obj_field (text n) (text m)
 
-sanitise_prim :: Pretty n => n -> Doc
+sanitise_prim :: T.Name -> Doc
 sanitise_prim n
- | n' == "True#"
+ | T.NameLitBool True <- n
  = text "true"
- | n' == "False#"
+ | T.NameLitBool False <- n
  = text "false"
+ | T.NameLitUnboxed nn <- n
+ = sanitise_prim nn
+ | T.NameLitNat i <- n
+ = text (show i)
  | otherwise
- = text n'
- where
-  n' = show (ppr n)
+ = ppr n
 
-string_of :: Pretty n => n -> Doc
+string_of :: T.Name -> Doc
 -- TODO
 string_of n = text $ show $ show $ ppr n
 

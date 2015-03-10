@@ -71,6 +71,7 @@ packages/ddc-core-babel/%.o : packages/ddc-core-babel/%.hs
 		-c $< -ipackages/ddc-base \
 		      -ipackages/ddc-core \
 		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt  \
 		      -ipackages/ddc-core-tetra
 
 packages/ddc-core-tetra/%.o : packages/ddc-core-tetra/%.hs
