@@ -8,7 +8,9 @@ import DDC.Type.Pretty
 import DDC.Type.DataDef                 
 import qualified DDC.Core.Tetra.Prim as T
 import qualified DDC.Type.Env as Env
+
 import qualified Data.Set as Set
+import qualified Data.Map as Map
 
 import Data.Maybe (isNothing)
 
@@ -18,7 +20,7 @@ phpOfModule
         -> Doc
 phpOfModule mm
  = let ds = phpOfDataDefs $ moduleDataDefsLocal mm
-       xs = phpOfExp       (moduleBody          mm) CTop
+       xs = phpOfExp       (moduleBody          mm) CTop Map.empty
    in vcat [ text "<?php"
            , ds
            , xs
@@ -62,10 +64,17 @@ phpOfExp
         :: (Show a)
         => Exp a T.Name
         -> Context
+        -> Map.Map T.Name Int -- ^ arities
         -> Doc
-phpOfExp xx ctx
+phpOfExp xx ctx m
  = case xx of
     XVar _ v
+     | UName n <- v
+     , Just  arity <- Map.lookup n m
+     -> wrap $ text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity) <> text ")"
+     | UPrim p _ <- v
+     -> wrap $ phpOfPrimOp p []
+     | otherwise
      -> wrap $ var_name_u v
 
     XCon _ DaConUnit
@@ -77,35 +86,52 @@ phpOfExp xx ctx
      -> wrap $ text "new " <> bare_name n
 
     XLAM _ _ x
-     -> phpOfExp x ctx
+     -> phpOfExp x ctx m
     XLam a _ _
      | Just (bs, f) <- takeXLamFlags xx
      , bs' <- filter (not.fst) bs
-     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a) <+> text "*/" <+> makeFunction Nothing bs f <> text ", " <> text (show (length bs')) <> text ")"
+     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a) <+> text "*/" <+> makeFunction Nothing bs f m <> text ", " <> text (show (length bs')) <> text ")"
      
      -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a) <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
 
     XApp _ f x
      | (f',xs) <- takeXApps1 f x
      , xs'     <- noTypes xs
-     -> wrap $ phpOfExp f' CExp <> parenss (map (flip phpOfExp CExp) xs')
+     , XVar _ (UName n)
+               <- f'
+     , Just arity <- Map.lookup n m
+     -> if arity == length xs'
+        then wrap $ bare_name n <> parenss (map (\arg -> phpOfExp arg CExp m) xs')
+        -- todo also curry in phpOfLet (xvar)
+        else wrap $ text "DDC::apply" <> parenss ((text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity) <> text ")") : map (\arg -> phpOfExp arg CExp m) xs')
+
+     | (f',xs) <- takeXApps1 f x
+     , xs'     <- noTypes xs
+     , XVar _ (UPrim p _)
+               <- f'
+     -> wrap $ phpOfPrimOp p (map (\arg -> phpOfExp arg CExp m) xs')
+
+     | (f',xs) <- takeXApps1 f x
+     , xs'     <- noTypes xs
+     -> wrap $ phpOfExp f' CExp m <> parenss (map (\arg -> phpOfExp arg CExp m) xs')
 
     XLet a lets x
+     | (ldocs, m') <- phpOfLets lets ctx m
      -> vcat
          [ text "/* Let " <> text (show a) <> text " */"
-         , phpOfLets lets ctx
-         , phpOfExp x ctx
+         , ldocs
+         , phpOfExp x ctx m'
          ]
 
     XCase a x alts
      -> vcat
          -- TODO
          [ text "/* Case " <> text (show a) <> text " */"
-         , text "$SCRUT = " <> phpOfExp x CExp <> text ";"
-         , phpOfAlts "SCRUT" alts ctx
+         , text "$SCRUT = " <> phpOfExp x CExp m <> text ";"
+         , phpOfAlts "SCRUT" alts ctx m
          ]
     XCast _ _ x
-     -> phpOfExp x ctx
+     -> phpOfExp x ctx m
     _
      -> error ("No can do: " ++ show (ppr xx))
  where
@@ -122,34 +148,43 @@ phpOfLets
         :: (Show a)
         => Lets a T.Name
         -> Context
-        -> Doc
-phpOfLets lets ctx
+        -> Map.Map T.Name Int
+        -> (Doc, Map.Map T.Name Int)
+phpOfLets lets ctx m
  = case lets of
     LLet b x
      | Just (bs, f) <- takeXLamFlags x
-     , bs' <- filter (not.fst) bs
      , CTop <- ctx
-     -> vcat
-         [ makeFunction (Just b) bs f
-         , var_name_b b <> text " = DDC::curry(" <> bare_name_b b <> text ", " <> text (show (length bs')) <> text ");" ]
+     -> (makeFunction (Just b) bs f m, insertArity (b,x) m)
+         -- , var_name_b b <> text " = DDC::curry(" <> bare_name_b b <> text ", " <> text (show (length bs')) <> text ");" ]
      | otherwise
-     -> phpOfExp x (CLet b) <> line
+     -> (phpOfExp x (CLet b) m <> line, m)
 
-    LRec ((b,x):bxs)
-     -> phpOfLets (LLet b x) ctx <> line <> phpOfLets (LRec bxs) ctx
-    LRec []
-     -> text ""
+    LRec bxs
+     | m' <- foldr insertArity m bxs
+     -> ( foldl (<>) empty $ map (\(b,x) -> fst $ phpOfLets (LLet b x) ctx m') bxs
+        , m')
     
     _
      -> error "phpOfLets: no private or withregion"
+ where
+  insertArity (b,x) mm
+     | Just (bs, _) <- takeXLamFlags x
+     , BName n _<- b
+     , bs' <- filter (not.fst) bs
+     , CTop <- ctx
+     = Map.insert n (length bs') mm
+     | otherwise
+     = mm
 
 phpOfAlts
         :: (Show a)
         => String
         -> [Alt a T.Name]
         -> Context
+        -> Map.Map T.Name Int
         -> Doc
-phpOfAlts scrut alts ctx
+phpOfAlts scrut alts ctx m
  = go alts
  where
   go []
@@ -158,7 +193,7 @@ phpOfAlts scrut alts ctx
    = vcat
       [ text "if (" <> cond dc <> text ") {"
       , indent 4 (grabfields bs)
-      , indent 4 (phpOfExp x ctx)
+      , indent 4 (phpOfExp x ctx m)
       , text " }"
       , case as of []    -> text ""
                    (_:_) -> text "else" <> go as
@@ -167,7 +202,7 @@ phpOfAlts scrut alts ctx
   go (AAlt PDefault x : _)
    = vcat
       [ text "{"
-      , indent 4 (phpOfExp x ctx)
+      , indent 4 (phpOfExp x ctx m)
       , text "}" ]
 
   cond DaConUnit
@@ -187,16 +222,16 @@ makeFunction
         => Maybe (Bind T.Name)
         -> [(Bool, Bind T.Name)]
         -> Exp a T.Name
+        -> Map.Map T.Name Int
         -> Doc
-makeFunction nm bs x
+makeFunction nm bs x m
  = text "function " 
  <> maybe (text "") bare_name_b nm
  <> parenss (map (var_name_b.snd) $ filter (not.fst) bs)
  <> use_
  <> text " { "
  <> line
- <> globals_
- <> indent 4 (phpOfExp x CRet)
+ <> indent 4 (phpOfExp x CRet m)
  <> line
  <> text " }"
  where
@@ -211,13 +246,6 @@ makeFunction nm bs x
        | not $ null fx
        -> text " use " <> parenss fx
       _ 
-       -> text ""
-  globals_
-   = case nm of
-      Just _ 
-       | not $ null fx
-       -> text " global " <> encloseSep empty empty (comma <> space) fx <> text ";" <> line
-      _
        -> text ""
 
 noTypes :: [Exp a T.Name] -> [Exp a T.Name]
@@ -287,3 +315,60 @@ string_of n = text $ show $ show $ ppr n
 
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs
+
+phpOfPrimOp :: T.Name -> [Doc] -> Doc
+phpOfPrimOp op args
+ | Just (ty, s) <- getOp
+ = case (ty, args) of
+    (Infix, [l,r])
+     -> text "(" <> l <+> text s <+> r <> text ")"
+    (Prefix, [r])
+     -> text "(" <> text s <+> r <> text ")"
+    (Suffix, [l])
+     -> text "(" <> l <+> text s <> text ")"
+    _
+     -> fallback
+
+ | otherwise
+ = fallback
+ where
+  fallback
+   = text "DDC::apply"
+       <> parenss ((text "DDC::curry(" <> sanitise_prim op <> text ", " <> sanitise_prim op <> text "_arity)")
+                  : args)
+  getOp
+   = go operators
+  go []
+   = Nothing
+  go ((o,t,s):os)
+   | o == op
+   = Just (t,s)
+   | otherwise
+   = go os
+
+data OpType
+ = Infix
+ | Prefix
+ | Suffix
+operators :: [(T.Name,OpType,String)]
+operators
+ = lmap T.NamePrimArith ariths
+ where
+  lmap f = map (\(n,o,s) -> (f n, o, s))
+  ariths
+   = [(T.PrimArithNeg,  Prefix, "-")
+     ,(T.PrimArithAdd,  Infix,  "+")
+     ,(T.PrimArithSub,  Infix,  "-")
+     ,(T.PrimArithMul,  Infix,  "*")
+     ,(T.PrimArithDiv,  Infix,  "/")
+     ,(T.PrimArithMod,  Infix,  "%")
+     ,(T.PrimArithRem,  Infix,  "%")
+     ,(T.PrimArithEq,   Infix,  "==")
+     ,(T.PrimArithNeq,  Infix,  "!=")
+     ,(T.PrimArithGt,   Infix,  ">")
+     ,(T.PrimArithGe,   Infix,  ">=")
+     ,(T.PrimArithLt,   Infix,  "<")
+     ,(T.PrimArithLe,   Infix,  "<=")
+     ,(T.PrimArithAnd,  Infix,  "&&")
+     ,(T.PrimArithOr,   Infix,  "||")
+     ]
