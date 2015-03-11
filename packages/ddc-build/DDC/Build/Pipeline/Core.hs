@@ -311,7 +311,19 @@ pipeTetra !mm !pp
 
         PipeTetraToPHP !sink
          -> {-# SCC "PipeTetraToPHP" #-}
-            let doc = PHP.phpOfModule mm
+            let -- TODO: eta just the top-level definitions
+                -- Snip program to expose intermediate bindings.
+                mm_snip         = Flatten.flatten 
+                                $ Snip.snip 
+                                        (Snip.configZero)
+                                        mm
+
+                -- The floater needs bindings to be fully named.
+                namifierT       = C.makeNamifier Tetra.freshT Env.empty
+                namifierX       = C.makeNamifier Tetra.freshX Env.empty
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
+
+                doc  = PHP.phpOfModule mm_namified
             in  pipeSink (renderIndent doc) sink
 
 

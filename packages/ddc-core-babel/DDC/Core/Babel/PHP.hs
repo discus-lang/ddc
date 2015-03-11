@@ -20,11 +20,25 @@ phpOfModule
         -> Doc
 phpOfModule mm
  = let ds = phpOfDataDefs $ moduleDataDefsLocal mm
-       xs = phpOfExp       (moduleBody          mm) CTop Map.empty
+       m  = Map.fromList
+          $ map arityOfImport $ moduleImportValues mm
+       xs = phpOfExp       (moduleBody          mm) CTop m
    in vcat [ text "<?php"
            , ds
            , xs
            , text "?>" ]
+ where
+  arityOfImport (n,i)
+   = case i of
+     ImportValueModule{}
+      | Just (_,a) <- importValueModuleArity i
+      -> (n, a)
+      | otherwise
+      -> (n, arityOfType' (importValueModuleType i))
+     ImportValueSea{}
+      -> (n, arityOfType' (importValueSeaType i))
+
+  arityOfType' = arityOfType . eraseTForalls
 
 
 phpOfDataDefs
