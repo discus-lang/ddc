@@ -54,7 +54,7 @@ kindOfTwCon tc
         TwConLazy       -> kRegion   `kFun`  kWitness
         TwConHeadLazy   -> kData     `kFun`  kWitness
         TwConManifest   -> kRegion   `kFun`  kWitness
-        TwConDisjoint	-> kEffect   `kFun`  kEffect  `kFun`  kWitness
+        TwConDisjoint   -> kEffect   `kFun`  kEffect  `kFun`  kWitness
         TwConDistinct n -> (replicate n kRegion)      `kFuns` kWitness        
 
 

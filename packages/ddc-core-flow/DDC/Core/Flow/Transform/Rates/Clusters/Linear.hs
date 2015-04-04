@@ -8,7 +8,6 @@ import DDC.Core.Flow.Transform.Rates.Graph
 import DDC.Core.Flow.Transform.Rates.Clusters.Base
 
 import qualified Data.Map  as Map
-import Data.Monoid
 
 import Numeric.Limp.Program.ResultKind
 import Numeric.Limp.Program

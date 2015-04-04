@@ -75,8 +75,19 @@ instance NFData n => NFData (TyCon n) where
         TyConExists  n   k      -> rnf n   `seq` rnf k
 
 
-instance NFData SoCon
-instance NFData KiCon
-instance NFData TwCon
-instance NFData TcCon
+instance NFData SoCon where
+ rnf !_ = ()
+
+
+instance NFData KiCon where
+ rnf !_ = ()
+
+
+instance NFData TwCon where
+ rnf !_ = ()
+
+
+instance NFData TcCon where
+ rnf !_ = ()
+
 

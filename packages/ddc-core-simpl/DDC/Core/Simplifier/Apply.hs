@@ -31,6 +31,7 @@ import Control.Monad.State.Strict
 import DDC.Base.Name
 import qualified DDC.Base.Pretty        as P
 import qualified Data.Set               as Set
+import Prelude                          hiding ((<$>))
 
 
 -- Modules --------------------------------------------------------------------

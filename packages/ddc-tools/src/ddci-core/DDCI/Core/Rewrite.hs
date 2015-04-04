@@ -2,8 +2,8 @@
 module DDCI.Core.Rewrite
         ( SetRuleCommand(..)
         , parseFirstWord
-	, parseRewrite
-	, showRule )
+        , parseRewrite
+        , showRule )
 where
 import DDC.Base.Pretty
 import DDC.Build.Language
@@ -31,7 +31,7 @@ data SetRuleCommand a n
         | SetRemove 
                 { setRuleName   :: String }
 
-	| SetList
+        | SetList
         deriving (Eq, Show)
 
 type Error = String
@@ -48,27 +48,27 @@ parseFirstWord s = break isSpace $ dropWhile isSpace s
 parseRewrite 
         :: (Ord n, Show n, Pretty n)
         => Fragment n err 
-	-> Map ModuleName (Module (C.AnTEC () n) n)
+        -> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
         -> Either Error (SetRuleCommand (C.AnTEC BP.SourcePos n) n)
 
 parseRewrite fragment modules str
  = case dropWhile isSpace str of
-	[]		-> Right SetList
-	('+':rest)	-> parseAdd fragment modules rest
+        []              -> Right SetList
+        ('+':rest)      -> parseAdd fragment modules rest
 
-	('-':rest)	
+        ('-':rest)      
          -> let (name,_) = parseFirstWord rest 
             in Right $ SetRemove name
 
-	rest            -> parseAdd fragment modules rest
+        rest            -> parseAdd fragment modules rest
 
 
 -- | Parse add rule
 parseAdd
         :: (Ord n, Show n, Pretty n)
         => Fragment n err
-	-> Map ModuleName (Module (C.AnTEC () n) n)
+        -> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
         -> Either Error (SetRuleCommand (C.AnTEC BP.SourcePos n) n)
 
@@ -84,11 +84,11 @@ parseAdd fragment modules str
                     Right rule' -> Right $ SetAdd name rule'
  where
         config   = C.configOfProfile (fragmentProfile fragment)
-	kinds	 = profilePrimKinds  (fragmentProfile fragment)
-	types	 = profilePrimTypes  (fragmentProfile fragment)
+        kinds    = profilePrimKinds  (fragmentProfile fragment)
+        types    = profilePrimTypes  (fragmentProfile fragment)
 
-	kinds'	 = modulesExportTypes  modules kinds
-	types'	 = modulesExportValues modules types
+        kinds'   = modulesExportTypes  modules kinds
+        types'   = modulesExportValues modules types
 
 
 -- | Display rule
@@ -96,7 +96,7 @@ showRule :: (Eq n, Pretty n)
          => State -> Int -> String -> RewriteRule a n -> IO ()
 
 showRule state indentBy name rule
- = do	putStr $ (take indentBy $ repeat '\t') ++ name ++ " "
-	outDocLn state
-	 $  ppr rule
+ = do   putStr $ (take indentBy $ repeat '\t') ++ name ++ " "
+        outDocLn state
+         $  ppr rule
 

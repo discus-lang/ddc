@@ -62,7 +62,8 @@ data PrimVec
         deriving (Eq, Ord, Show)
 
 
-instance NFData PrimVec
+instance NFData PrimVec where
+ rnf !_ = ()
 
 
 instance Pretty PrimVec where

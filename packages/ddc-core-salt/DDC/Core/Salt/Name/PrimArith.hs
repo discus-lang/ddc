@@ -44,7 +44,10 @@ data PrimArith
         | PrimArithBXOr -- ^ Bit-wise eXclusive Or
         deriving (Eq, Ord, Show)
 
-instance NFData PrimArith
+
+instance NFData PrimArith where
+ rnf !_ = ()
+
 
 instance Pretty PrimArith where
  ppr op

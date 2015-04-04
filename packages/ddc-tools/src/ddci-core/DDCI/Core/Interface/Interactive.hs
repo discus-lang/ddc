@@ -42,8 +42,8 @@ loopInteractive
          = do   -- If this isn't the first line then print the prompt.
                 let prompt = if isJust (inputCommand inputState)
                              then ""
-			     else if isJust (stateTransInteract state)
-			     then "trans> "
+                             else if isJust (stateTransInteract state)
+                             then "trans> "
                              else "> "
          
                 -- Read a line from the user and echo it back.

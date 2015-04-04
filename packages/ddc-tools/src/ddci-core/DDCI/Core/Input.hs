@@ -20,7 +20,7 @@ eatLine :: State
 eatLine state inputState chunk
  | Just _ <- stateTransInteract state
  = do   state' <- cmdTransInteractLoop state chunk
-	return ( state'
+        return ( state'
                , inputState
                         { inputLineNumber = inputLineNumber inputState + 1 })
  | otherwise 

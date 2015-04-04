@@ -20,7 +20,6 @@ import DDC.Type.Universe
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
-import Data.Monoid
 import DDC.Data.ListUtils
 import Control.Monad
 import qualified DDC.Type.Env   as Env

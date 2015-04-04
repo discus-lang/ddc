@@ -18,7 +18,6 @@ import qualified DDC.Core.Salt.Name            as T
 import qualified DDC.Core.Salt.Compounds       as T
 import qualified DDC.Core.Salt.Env             as T
 
-import Control.Applicative
 import Control.Monad
 
 

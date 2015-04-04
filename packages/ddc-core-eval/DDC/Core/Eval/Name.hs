@@ -203,7 +203,10 @@ data PrimCon
         | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
 
-instance NFData PrimCon
+
+instance NFData PrimCon where
+ rnf !_ = ()
+
 
 instance Pretty PrimCon where
  ppr con
@@ -230,7 +233,10 @@ data PrimOp
         | PrimOpCopyInt
         deriving (Show, Eq, Ord)
 
-instance NFData PrimOp
+
+instance NFData PrimOp where
+ rnf !_ = ()
+
 
 instance Pretty PrimOp where
  ppr op
@@ -242,7 +248,7 @@ instance Pretty PrimOp where
         PrimOpDivInt    -> text "divInt"
         PrimOpEqInt     -> text "eqInt"
         PrimOpUpdateInt -> text "updateInt"
-        PrimOpCopyInt	-> text "copyInt"
+        PrimOpCopyInt   -> text "copyInt"
 
 
 -- Parsing --------------------------------------------------------------------
@@ -272,7 +278,7 @@ readName str@(c:rest)
                 "divInt"        -> Just $ NamePrimOp PrimOpDivInt
                 "eqInt"         -> Just $ NamePrimOp PrimOpEqInt
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
-                "copyInt"	-> Just $ NamePrimOp PrimOpCopyInt
+                "copyInt"       -> Just $ NamePrimOp PrimOpCopyInt
                 _               -> Just $ NameVar str
 
         -- integers

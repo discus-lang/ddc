@@ -5,7 +5,7 @@ module DDC.Driver.Command.Trans
         , cmdTransModule
         , cmdTransExp
         , cmdTransExpCont
-	, transExp)
+        , transExp)
 where
 import DDC.Driver.Config
 import DDC.Driver.Output
@@ -31,6 +31,7 @@ import Control.Monad.IO.Class
 import DDC.Type.Env                             as Env
 import qualified DDC.Core.Check                 as C
 import qualified Control.Monad.State.Strict     as S
+import Prelude                                  hiding ((<$>))
 
 
 -- Detect -----------------------------------------------------------------------------------------
@@ -143,10 +144,10 @@ cmdTransExpCont _config traceTrans language eatExp source str
 
                 tr      <- transExp traceTrans profile kenv tenv zero simpl 
                         $  reannotate (\a -> a { annotTail = ()}) x
-		
+                
                 case tr of
-		  Nothing -> return ()
-		  Just x' 
+                  Nothing -> return ()
+                  Just x' 
                    -> do outDocLn $ ppr x'
                          eatExp x'
 

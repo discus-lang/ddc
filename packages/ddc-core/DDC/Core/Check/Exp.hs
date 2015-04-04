@@ -48,7 +48,6 @@ import DDC.Core.Check.Judge.Type.Cast
 import DDC.Core.Check.Judge.Type.Witness
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Core.Transform.MapT
-import Data.Monoid                      hiding ((<>))
 import qualified DDC.Type.Env           as Env
 
 

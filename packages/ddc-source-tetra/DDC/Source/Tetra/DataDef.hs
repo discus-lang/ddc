@@ -30,7 +30,9 @@ data DataDef n
         , dataDefCtors          :: [DataCtor n] }
         deriving Show
 
-instance NFData (DataDef n)
+
+instance NFData (DataDef n) where
+ rnf !_ = ()
 
 
 -- | Take the types of data constructors from a data type definition.
@@ -57,7 +59,8 @@ data DataCtor n
         deriving Show
 
 
-instance NFData (DataCtor n)
+instance NFData (DataCtor n) where
+ rnf !_ = ()
 
 
 -- | Get the type of a data constructor.

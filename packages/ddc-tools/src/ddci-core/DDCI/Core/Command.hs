@@ -101,7 +101,7 @@ data Command
 
         -- Inline control
         | CommandWith           -- ^ Add a module to the inliner table.
-	| CommandWithSalt
+        | CommandWithSalt
         deriving (Eq, Show)
 
 

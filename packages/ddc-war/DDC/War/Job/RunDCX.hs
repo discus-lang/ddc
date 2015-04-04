@@ -1,6 +1,6 @@
 
 module DDC.War.Job.RunDCX
-	( Spec    (..)
+        ( Spec    (..)
         , Result  (..)
         , resultSuccess
         , build)
@@ -55,25 +55,25 @@ instance Pretty Result where
 -- | Compile a Haskell Source File
 build :: Spec -> Build Result
 build (Spec     srcDCX
-		buildDir testRunStdout testRunStderr)
+                buildDir testRunStdout testRunStderr)
 
- = do	let ddciExe = "bin/ddci-core" <.> exe
+ = do   let ddciExe = "bin/ddci-core" <.> exe
 
         needs srcDCX
         needs ddciExe
 
-	-- ensure the output directory exists
-	ensureDir buildDir
+        -- ensure the output directory exists
+        ensureDir buildDir
 
-	ddciBin' <- io $ canonicalizePath ddciExe
+        ddciBin' <- io $ canonicalizePath ddciExe
 
-	(time, (code, strOut, strErr))
-	  <- timeBuild
-	  $  systemTee False
-		(ddciBin' ++ " --batch " ++ srcDCX)
-		""
-	atomicWriteFile testRunStdout strOut
-	atomicWriteFile testRunStderr strErr
+        (time, (code, strOut, strErr))
+          <- timeBuild
+          $  systemTee False
+                (ddciBin' ++ " --batch " ++ srcDCX)
+                ""
+        atomicWriteFile testRunStdout strOut
+        atomicWriteFile testRunStderr strErr
 
         case code of
          ExitSuccess    -> return $ ResultSuccess time

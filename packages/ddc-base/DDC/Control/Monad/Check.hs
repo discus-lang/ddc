@@ -8,7 +8,6 @@ module DDC.Control.Monad.Check
         , get
         , put)
 where
-import Control.Applicative
 import Control.Monad
 
 

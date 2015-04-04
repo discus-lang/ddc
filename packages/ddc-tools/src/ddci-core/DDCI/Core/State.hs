@@ -6,7 +6,7 @@ module DDCI.Core.State
         , Mode          (..)
         , adjustMode
 
-        , TransHistory	(..)
+        , TransHistory  (..)
 
         , Source        (..)
 
@@ -73,20 +73,20 @@ data State
           -- | Output dir for @compile@ and @make@ commands
         , stateOutputDir        :: Maybe FilePath
 
-	  -- | Interactive transform mode
-	, stateTransInteract	:: Maybe TransHistory}
+          -- | Interactive transform mode
+        , stateTransInteract    :: Maybe TransHistory}
 
 
 
 data TransHistory
-	= forall s n err
+        = forall s n err
         .  (Typeable n, Ord n, Show n, Pretty n, CompoundName n)
-	=> TransHistory
-	{ -- | Original expression and its types
-	  historyExp		:: (Exp (AnTEC () n) n, Type n, Effect n, Closure n) 
+        => TransHistory
+        { -- | Original expression and its types
+          historyExp            :: (Exp (AnTEC () n) n, Type n, Effect n, Closure n) 
 
-	  -- | Keep history of steps so we can go back and construct final sequence
-	, historySteps		:: [(Exp (AnTEC () n) n, Simplifier s (AnTEC () n) n)]
+          -- | Keep history of steps so we can go back and construct final sequence
+        , historySteps          :: [(Exp (AnTEC () n) n, Simplifier s (AnTEC () n) n)]
 
           -- | Bundle for the language that we're transforming.
         , historyBundle         :: Bundle s n err }
@@ -118,7 +118,7 @@ initState interface
         , stateBuilder          = Nothing  
         , stateOutputFile       = Nothing
         , stateOutputDir        = Nothing
-	, stateTransInteract	= Nothing }
+        , stateTransInteract    = Nothing }
 
 
 -- | Slurp out the relevant parts of the DDCI stage into a driver config.

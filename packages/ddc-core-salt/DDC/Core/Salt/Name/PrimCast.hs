@@ -31,7 +31,9 @@ data PrimCast
         deriving (Eq, Ord, Show)
 
 
-instance NFData PrimCast
+instance NFData PrimCast where
+ rnf !_ = ()
+ 
 
 instance Pretty PrimCast where
  ppr c

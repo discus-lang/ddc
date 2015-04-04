@@ -18,12 +18,12 @@ import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Simplifier.Result
 import Control.Monad.Writer             (Writer, runWriter, tell)
-import Data.Monoid                      (Monoid, mempty, mappend)
 import Data.Typeable                    (Typeable)
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Compounds
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
+import Prelude                          hiding ((<$>))
 
 
 -------------------------------------------------------------------------------

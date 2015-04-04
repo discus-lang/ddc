@@ -25,7 +25,6 @@ import qualified DDC.Core.Flow.Compounds        as F
 import qualified DDC.Core.Salt.Name            as T
 import qualified DDC.Core.Salt.Compounds       as T
 
-import Control.Applicative
 
 
 tRef   :: Type T.Name -> Type T.Name -> Type T.Name

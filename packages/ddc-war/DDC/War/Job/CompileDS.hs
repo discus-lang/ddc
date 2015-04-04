@@ -1,6 +1,6 @@
 
 module DDC.War.Job.CompileDS
-	( Spec         (..)
+        ( Spec         (..)
         , Result       (..)
         , resultSuccess
         , build)
@@ -71,60 +71,60 @@ instance Pretty Result where
 -- | Compile a Disciple source file.
 build :: Spec -> Build Result
 build (Spec     srcDS optionsDDC optionsRTS
-		buildDir mainCompOut mainCompErr
-		mMainBin shouldSucceed)
+                buildDir mainCompOut mainCompErr
+                mMainBin shouldSucceed)
 
- = do	let ddcaExe = "bin/ddc-alpha" <.> exe
+ = do   let ddcaExe = "bin/ddc-alpha" <.> exe
 
         needs srcDS
         needs ddcaExe
-	
-	-- The directory holding the Main.ds file.
-	let (srcDir, _srcFile)	= splitFileName srcDS
-		
-	-- Touch the .ds files to the build directory to ensure they're built.
-	sources	<- io
-		$  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
-		$  lsFilesIn srcDir
+        
+        -- The directory holding the Main.ds file.
+        let (srcDir, _srcFile)  = splitFileName srcDS
+                
+        -- Touch the .ds files to the build directory to ensure they're built.
+        sources <- io
+                $  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
+                $  lsFilesIn srcDir
 
-	ssystemq $ "touch " ++ (intercalate " " sources)
+        ssystemq $ "touch " ++ (intercalate " " sources)
 
-	-- ensure the output directory exists
-	ensureDir buildDir
+        -- ensure the output directory exists
+        ensureDir buildDir
 
-	-- Do the compile.
-	let compile
-		| Just mainBin	<- mMainBin
-		= do	
-			-- If there is an existing binary then remove it.
-			ssystemq $ "rm -f " ++ mainBin
+        -- Do the compile.
+        let compile
+                | Just mainBin  <- mMainBin
+                = do    
+                        -- If there is an existing binary then remove it.
+                        ssystemq $ "rm -f " ++ mainBin
 
-			-- Build the program.
-	 		timeBuild 
-	 		 $ systemTee False 
-				(ddcaExe
-				++ " -v -make "	  ++ srcDS
-				++ " -o "	  ++ mainBin
-				++ " -outputdir " ++ buildDir
-				++ " " 		  ++ intercalate " " optionsDDC
-				++ " +RTS "	  ++ intercalate " " optionsRTS)
-				""
+                        -- Build the program.
+                        timeBuild 
+                         $ systemTee False 
+                                (ddcaExe
+                                ++ " -v -make "   ++ srcDS
+                                ++ " -o "         ++ mainBin
+                                ++ " -outputdir " ++ buildDir
+                                ++ " "            ++ intercalate " " optionsDDC
+                                ++ " +RTS "       ++ intercalate " " optionsRTS)
+                                ""
 
 
-		-- Compile the program.
-		| otherwise
-		= do	timeBuild
-	 		 $ systemTee False
-				(ddcaExe
-				++ " -c "	  ++ srcDS
-				++ " -outputdir " ++ buildDir
-				++ " " 		  ++ intercalate " " optionsDDC
-				++ " +RTS "	  ++ intercalate " " optionsRTS)
-				""
+                -- Compile the program.
+                | otherwise
+                = do    timeBuild
+                         $ systemTee False
+                                (ddcaExe
+                                ++ " -c "         ++ srcDS
+                                ++ " -outputdir " ++ buildDir
+                                ++ " "            ++ intercalate " " optionsDDC
+                                ++ " +RTS "       ++ intercalate " " optionsRTS)
+                                ""
 
-	(time, (code, strOut, strErr))
-		<- compile
-	
+        (time, (code, strOut, strErr))
+                <- compile
+        
         atomicWriteFile mainCompOut strOut
         atomicWriteFile mainCompErr strErr
 

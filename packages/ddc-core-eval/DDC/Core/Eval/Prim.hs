@@ -225,8 +225,8 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store
         -- the destination region must exist
         , Store.hasRgn store r2
 
-	-- calculate
-	, i2           <- fOp i1
+        -- calculate
+        , i2           <- fOp i1
 
         -- write the result to a new location in the store
         , (store1, l2)  <- Store.allocBind r2 (tInt tR2) (SObj (dcInt i2) []) store

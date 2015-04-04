@@ -18,6 +18,7 @@ import DDC.Type.DataDef
 import DDC.Type.Pretty
 import DDC.Base.Pretty
 import Data.List
+import Prelude          hiding ((<$>))
 
 
 -- ModuleName -------------------------------------------------------------------------------------

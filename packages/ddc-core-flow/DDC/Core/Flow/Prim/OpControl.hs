@@ -20,7 +20,8 @@ import Data.Char
 import Data.List
 
 
-instance NFData OpControl
+instance NFData OpControl where
+ rnf !_ = ()
 
 
 instance Pretty OpControl where

@@ -24,7 +24,6 @@ import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.Beta        as Beta
 import qualified DDC.Core.Transform.FoldCase    as FoldCase
-import Data.Monoid
 
 
 -- Simplifier -----------------------------------------------------------------

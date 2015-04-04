@@ -24,7 +24,7 @@ ddc-check_src_hs_all = \
 make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)
 	@echo "* Building dependencies (ddc-check)"
 	@$(GHC) $(patsubst %,-i%,$(ddc-check_packages)) \
-		-M $^ -dep-makefile -optdepmake/deps/Makefile-ddc-check.deps \
+		-M $^ -dep-makefile make/deps/Makefile-ddc-check.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-ddc-check.deps.bak
 	@cp make/deps/Makefile-ddc-check.deps make/deps/Makefile-ddc-check.deps.inc

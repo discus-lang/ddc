@@ -9,10 +9,10 @@ import DDC.Core.Flow.Transform.Slurp.Error
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds.Simple
 import DDC.Core.Exp.Simple
-import Control.Applicative
 import qualified Data.Map               as Map
 
 type Ty = Type Name
+
 data Resize
  = Id    Ty
  | AppL  Ty Ty

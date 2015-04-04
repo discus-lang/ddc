@@ -12,9 +12,8 @@ import Data.Set                 (Set)
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
-import Data.Monoid
 import Data.Maybe
-
+import Data.Monoid              ((<>))
 
 ---------------------------------------------------------------------------------------------------
 data Support n

@@ -7,6 +7,7 @@ import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Pretty.Attr             ()
 import DDC.Llvm.Pretty.Instr            ()
 import DDC.Base.Pretty
+import Prelude                          hiding ((<$>))
 
 
 instance Pretty Function where

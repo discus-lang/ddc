@@ -312,15 +312,15 @@ instance Eq n => Eq (TypeSum n) where
         -- kind. This allows us to use (tBot sComp) as the typeSumKind field
         -- when we want to compute the real kind based on the elements. 
         | TypeSumSet{} <- ts1
-	, TypeSumSet{} <- ts2
+        , TypeSumSet{} <- ts2
         =  typeSumElems ts1      == typeSumElems ts2
         && typeSumBoundNamed ts1 == typeSumBoundNamed ts2
         && typeSumBoundAnon  ts1 == typeSumBoundAnon ts2
         && typeSumSpill      ts1 == typeSumSpill ts2
 
-	-- One is a set and one is bottom, so they are not equal.
-	| otherwise
-	= False
+        -- One is a set and one is bottom, so they are not equal.
+        | otherwise
+        = False
 
   where normalise ts
          | []   <- toList ts    = empty (typeSumKind ts)

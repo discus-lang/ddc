@@ -72,4 +72,8 @@ instance NFData n => NFData (WiCon n) where
         WiConBuiltin wb         -> rnf wb
         WiConBound   u t        -> rnf u `seq` rnf t
 
-instance NFData WbCon
+
+instance NFData WbCon where
+ rnf !_        = ()
+
+

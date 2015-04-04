@@ -16,7 +16,9 @@ import Data.Char
 import Data.List
 
 
-instance NFData DaConTetra
+instance NFData DaConTetra where
+ rnf !_ = ()
+ 
 
 instance Pretty DaConTetra where
  ppr dc

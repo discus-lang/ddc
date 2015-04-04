@@ -11,9 +11,10 @@ import DDC.Build.Platform
 import DDC.Base.Pretty                          hiding ((</>))
 import Data.List
 import System.FilePath                         
-import System.Exit
+import System.Exit                              hiding (die)
 import System.Process
 import qualified DDC.Core.Salt.Platform         as Llvm
+
 
 -- | Configuration information for a builder that is not platform specific.
 data BuilderConfig

@@ -41,12 +41,12 @@ equivWithBindsT stack1 stack2 t1 t2
    in case (t1', t2') of
         (TVar u1,         TVar u2)
          -- Free variables are name-equivalent, bound variables aren't:
-	 -- (forall a. a) != (forall b. a)
+         -- (forall a. a) != (forall b. a)
          | Nothing      <- getBindType stack1 u1
          , Nothing      <- getBindType stack2 u2
          , u1 == u2     -> checkBounds u1 u2 True
 
-	 -- Both variables are bound in foralls, so check the stack
+         -- Both variables are bound in foralls, so check the stack
          -- to see if they would be equivalent if we named them.
          | Just (ix1, t1a)   <- getBindType stack1 u1
          , Just (ix2, t2a)   <- getBindType stack2 u2
@@ -123,8 +123,8 @@ checkBounds u1 u2 x
 -- | Unpack single element sums into plain types.
 unpackSumT :: Type n -> Type n
 unpackSumT (TSum ts)
-	| [t]   <- Sum.toList ts = t
-unpackSumT tt			 = tt
+        | [t]   <- Sum.toList ts = t
+unpackSumT tt                    = tt
 
 
 -- TyCon ----------------------------------------------------------------------

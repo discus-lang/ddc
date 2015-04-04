@@ -25,28 +25,28 @@ cmdWith state _source str
  , modules              <- bundleModules  bundle
  , fragment             <- bundleFragment bundle
  = do   res <- cmdWith_load fragment str
-	case res of
-	  Nothing  -> return state
-	  Just mdl 
+        case res of
+          Nothing  -> return state
+          Just mdl 
            -> do
-		let modules' = Map.insert (moduleName mdl) mdl modules 
+                let modules' = Map.insert (moduleName mdl) mdl modules 
                 let bundle'  = bundle { bundleModules = modules' }
-		return $ state { stateLanguage = Language bundle' }
+                return $ state { stateLanguage = Language bundle' }
 
 
 cmdWithSalt :: State -> Source -> String -> IO State
 cmdWithSalt state _source str
  = do   res <- cmdWith_load Salt.fragment str
-	case res of
-	  Nothing  -> return state
-	  Just mdl 
+        case res of
+          Nothing  -> return state
+          Just mdl 
            -> return $ state
-		     { stateWithSalt = Map.insert (moduleName mdl) mdl 
+                     { stateWithSalt = Map.insert (moduleName mdl) mdl 
                                                   (stateWithSalt state) }
 
 
 cmdWith_load frag str
- = do	-- Always treat the string as a filename
+ = do   -- Always treat the string as a filename
         let source   = SourceFile str
 
         -- Read in the source file.
@@ -57,7 +57,7 @@ cmdWith_load frag str
 
         src     <- readFile filePath
 
-	cmdWith_parse frag source src
+        cmdWith_parse frag source src
 
 
 cmdWith_parse frag source src

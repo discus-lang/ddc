@@ -60,6 +60,7 @@ import Data.Maybe
 import Data.Set                                 (Set)
 import qualified DDC.Type.Check                 as T
 import qualified DDC.Control.Monad.Check        as G
+import Prelude                                  hiding ((<$>))
 
 
 -- | Type checker monad. 

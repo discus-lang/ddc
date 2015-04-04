@@ -17,9 +17,10 @@ import Control.Monad
 import Data.Char
 import Data.List
 import qualified DDC.Core.Check                 as Check
-import qualified DDCI.Core.Rewrite		as R
-import qualified Data.Map			as Map
+import qualified DDCI.Core.Rewrite              as R
+import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
+import Prelude                                  hiding ((<$>))
 
 
 cmdSet ::  State -> String -> IO State
@@ -86,27 +87,27 @@ cmdSet state cmd
  , modules              <- bundleModules       bundle
  , rules                <- bundleRewriteRules  bundle 
  = case R.parseRewrite fragment modules rest of
-	Right (R.SetAdd name rule)
-	 -> do	chatStrLn state $ "ok, added " ++ name
+        Right (R.SetAdd name rule)
+         -> do  chatStrLn state $ "ok, added " ++ name
                 let rule'   = reannotate (\a -> a { Check.annotTail = ()}) rule
                 let rules'  = Map.insert name rule' rules
                 let bundle' = bundle { bundleRewriteRules = rules' }
-		return $ state { stateLanguage = Language bundle' }
+                return $ state { stateLanguage = Language bundle' }
 
-	Right (R.SetRemove name)
-	 -> do	chatStrLn state $ "ok, removed " ++ name
-		let rules'  = Map.delete name rules
+        Right (R.SetRemove name)
+         -> do  chatStrLn state $ "ok, removed " ++ name
+                let rules'  = Map.delete name rules
                 let bundle' = bundle { bundleRewriteRules = rules' }
                 return $ state { stateLanguage = Language bundle' }
 
-	Right R.SetList
-	 -> do	let rules' = Map.toList rules
-		mapM_ (uncurry $ R.showRule state 0) rules'
-		return state
-	
-	Left e
-	 -> do	chatStrLn state e
-		return state
+        Right R.SetList
+         -> do  let rules' = Map.toList rules
+                mapM_ (uncurry $ R.showRule state 0) rules'
+                return state
+        
+        Left e
+         -> do  chatStrLn state e
+                return state
 
  | "builder" : name : []     <- words cmd
  = do   config  <- getDefaultBuilderConfig

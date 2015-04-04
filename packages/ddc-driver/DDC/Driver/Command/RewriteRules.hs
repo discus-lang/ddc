@@ -88,8 +88,8 @@ parse fragment modu source str
     liftSnd f (x, y) = (x, f y)
 
     -- Final kind and type environments
-    kinds'	= kinds `Env.union` kindsImp `Env.union` kindsExp
-    types'	= types `Env.union` typesImp `Env.union` typesExp
+    kinds'      = kinds `Env.union` kindsImp `Env.union` kindsExp
+    types'      = types `Env.union` typesImp `Env.union` typesExp
 
     source'  = nameOfSource source
 

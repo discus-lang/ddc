@@ -11,10 +11,10 @@ import qualified DDC.War.Task.Test              as T
 
 main :: IO ()
 main 
- = do	-- Parse command line options, and exit if they're no good.
-	args    <- getArgs
-	config  <- parseOptions args defaultConfig
-	
+ = do   -- Parse command line options, and exit if they're no good.
+        args    <- getArgs
+        config  <- parseOptions args defaultConfig
+        
         case configNightly config of
          Nothing 
           -> let Just spec = configTest config

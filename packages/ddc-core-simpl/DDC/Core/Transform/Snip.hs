@@ -171,8 +171,8 @@ enterX config arities xx
 buildNormalisedApp 
         :: Ord n
         => Config          -- ^ Snipper config.
-        -> Arities n	   -- ^ environment, arities of bound variables
-        -> Exp a n	   -- ^ function
+        -> Arities n       -- ^ environment, arities of bound variables
+        -> Exp a n         -- ^ function
         -> [(Exp a n,a)]   -- ^ arguments being applied to current expression
         -> Exp a n
 

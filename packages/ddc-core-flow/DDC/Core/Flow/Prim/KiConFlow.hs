@@ -11,7 +11,8 @@ import DDC.Base.Pretty
 import Control.DeepSeq
 
 
-instance NFData KiConFlow
+instance NFData KiConFlow where
+ rnf !_ = ()
 
 
 instance Pretty KiConFlow where

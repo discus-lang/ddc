@@ -101,7 +101,7 @@ instance MapBoundX (Exp a) n where
         XCase a x alts  -> XCase a (down x)  (map down alts)
         XCast a cc x    -> XCast a (down cc) (down x)
         XType{}         -> xx
-        XWitness a w	-> XWitness a (down w)
+        XWitness a w    -> XWitness a (down w)
 
 
 instance MapBoundX (Witness a) n where
@@ -109,10 +109,10 @@ instance MapBoundX (Witness a) n where
   = let down = mapBoundAtDepthX f d
     in case ww of
         WVar  a u       -> WVar  a (down u)
-	WCon  _ _       -> ww
-	WApp  a w1 w2   -> WApp  a (down w1) (down w2)
-	WJoin a w1 w2   -> WJoin a (down w1) (down w2)
-	WType _ _       -> ww
+        WCon  _ _       -> ww
+        WApp  a w1 w2   -> WApp  a (down w1) (down w2)
+        WJoin a w1 w2   -> WJoin a (down w1) (down w2)
+        WType _ _       -> ww
 
 
 instance MapBoundX (Cast a) n where
@@ -133,12 +133,12 @@ instance MapBoundX (Cast a) n where
 instance MapBoundX (Alt a) n where
  mapBoundAtDepthX f d (AAlt p x)
   = case p of
-	PDefault 
+        PDefault 
          -> AAlt PDefault (mapBoundAtDepthX f d x)
 
-	PData _ bs 
+        PData _ bs 
          -> let d' = d + countBAnons bs
-	    in  AAlt p (mapBoundAtDepthX f d' x)
+            in  AAlt p (mapBoundAtDepthX f d' x)
         
 
 mapBoundAtDepthXLets
@@ -153,7 +153,7 @@ mapBoundAtDepthXLets f d lts
         LLet b x
          -> let inc = countBAnons [b]
                 
-		-- non-recursive binding: do not increase x's depth
+                -- non-recursive binding: do not increase x's depth
                 x'  = mapBoundAtDepthX f d x
             in  (LLet b x', inc)
 
@@ -167,7 +167,7 @@ mapBoundAtDepthXLets f d lts
 
 
 countBAnons = length . filter isAnon
- where	isAnon (BAnon _) = True
-	isAnon _	 = False
+ where  isAnon (BAnon _) = True
+        isAnon _         = False
 
 

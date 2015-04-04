@@ -156,9 +156,9 @@ isAlgDataType tt
 isWitnessType :: Eq n => Type n -> Bool
 isWitnessType tt
  = case takeTyConApps tt of
-	Just (TyConWitness _, _) -> True
-	_			 -> False
-	
+        Just (TyConWitness _, _) -> True
+        _                        -> False
+        
 
 -- | Check whether this is the type of a @Const@ witness.
 isConstWitType :: Eq n => Type n -> Bool
@@ -182,7 +182,7 @@ isDistinctWitType tt
  = case takeTyConApps tt of
         Just (TyConWitness (TwConDistinct _), _) -> True
         _                                        -> False
-	
+        
 
 -- Effects --------------------------------------------------------------------
 -- | Check whether this is an atomic read effect.

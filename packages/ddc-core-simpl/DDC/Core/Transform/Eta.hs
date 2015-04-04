@@ -24,9 +24,9 @@ import DDC.Core.Pretty
 import DDC.Type.Env             (TypeEnv, KindEnv)
 import DDC.Type.Transform.AnonymizeT
 import Control.Monad.Writer     (Writer, tell, runWriter)
-import Data.Monoid              (Monoid, mempty, mappend)
-import qualified DDC.Type.Env   as Env
 import Data.Typeable
+import qualified DDC.Type.Env   as Env
+import Prelude                  hiding ((<$>))
 
 
 -------------------------------------------------------------------------------

@@ -44,7 +44,8 @@ import Data.Char
 import Data.List
 
 
-instance NFData TyConFlow
+instance NFData TyConFlow where
+ rnf !_ = ()
 
 
 instance Pretty TyConFlow where

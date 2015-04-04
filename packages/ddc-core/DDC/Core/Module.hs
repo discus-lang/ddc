@@ -4,16 +4,16 @@ module DDC.Core.Module
           Module        (..)
         , isMainModule
         , moduleDataDefs
-	, moduleKindEnv
+        , moduleKindEnv
         , moduleTypeEnv
         , moduleTopBinds
         , moduleTopBindTypes
         , mapTopBinds
 
-	  -- * Module maps
-	, ModuleMap
-	, modulesExportTypes
-	, modulesExportValues
+          -- * Module maps
+        , ModuleMap
+        , modulesExportTypes
+        , modulesExportValues
 
          -- * Module Names
         , ModuleName    (..)

@@ -14,7 +14,8 @@ import Data.List
 import Data.Char        
 
 
-instance NFData OpVector
+instance NFData OpVector where
+ rnf !_ = ()
 
 
 instance Pretty OpVector where

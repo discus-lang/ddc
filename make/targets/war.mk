@@ -6,7 +6,7 @@ war_src_hs_all  = $(shell find packages/ddc-war -name "*.hs" -follow)
 # -- Dependencies ---------------------------------------------------------------------------------
 make/deps/Makefile-war.deps : $(war_src_hs_all)
 	@echo "* Building dependencies (war)"
-	@$(GHC) -M $^ -dep-makefile -optdepmake/deps/Makefile-war.deps \
+	@$(GHC) -M $^ -dep-makefile make/deps/Makefile-war.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-war.deps.bak
 	@cp make/deps/Makefile-war.deps make/deps/Makefile-war.deps.inc

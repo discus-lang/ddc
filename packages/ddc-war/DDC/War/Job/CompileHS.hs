@@ -1,6 +1,6 @@
 
 module DDC.War.Job.CompileHS
-	( Spec         (..)
+        ( Spec         (..)
         , Result       (..)
         , resultSuccess
         , build)
@@ -64,57 +64,57 @@ instance Pretty Result where
 -- | Compile a Haskell Source File
 build :: Spec -> Build Result
 build  (Spec    srcHS _optionsGHC
-		buildDir mainCompOut mainCompErr
-		mainBin)
+                buildDir mainCompOut mainCompErr
+                mainBin)
 
- = do	needs srcHS
-	
-	-- The directory holding the Main.hs file.
-	let (srcDir, srcFile)	= splitFileName srcHS
-		
-	-- Copy the .hs files to the build directory.
-	-- This freshens them and ensures we won't conflict with other make jobs
-	-- running on the same source files, but in different ways.
-	ensureDir buildDir
-	sources	<- io
-		$  liftM (filter (\f -> isSuffixOf ".hs" f))
-		$  lsFilesIn srcDir
+ = do   needs srcHS
+        
+        -- The directory holding the Main.hs file.
+        let (srcDir, srcFile)   = splitFileName srcHS
+                
+        -- Copy the .hs files to the build directory.
+        -- This freshens them and ensures we won't conflict with other make jobs
+        -- running on the same source files, but in different ways.
+        ensureDir buildDir
+        sources <- io
+                $  liftM (filter (\f -> isSuffixOf ".hs" f))
+                $  lsFilesIn srcDir
 
-	_ <- ssystemq $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
+        _ <- ssystemq $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
 
-	-- The copied version of the root source file.
-	let srcCopyHS	= buildDir ++ "/" ++ srcFile
-	let buildMk	= buildDir ++ "/build.mk"
-	
-	-- We're doing this via a makefile so we get the ghc flags and options
-	-- from the DDC build system. The paths in the make file need to be in
-	-- posix form with '/' as the separators.
-	currentDir	<- io $ getCurrentDirectory
-	let hacks f	= map (\z -> if z == '\\' then '/' else z) f
-	let mainBin'	= hacks $ makeRelative currentDir mainBin
-	let srcCopyHS'	= hacks $ makeRelative currentDir srcCopyHS
-	
-	genBuildMk buildMk mainBin' srcCopyHS'
-	
-	(time, (code, strOut, strErr))
-	  <- timeBuild
-	  $  systemTee False
-		("make -f " ++ buildMk)
-		""
-	atomicWriteFile mainCompOut strOut
-	atomicWriteFile mainCompErr strErr
+        -- The copied version of the root source file.
+        let srcCopyHS   = buildDir ++ "/" ++ srcFile
+        let buildMk     = buildDir ++ "/build.mk"
+        
+        -- We're doing this via a makefile so we get the ghc flags and options
+        -- from the DDC build system. The paths in the make file need to be in
+        -- posix form with '/' as the separators.
+        currentDir      <- io $ getCurrentDirectory
+        let hacks f     = map (\z -> if z == '\\' then '/' else z) f
+        let mainBin'    = hacks $ makeRelative currentDir mainBin
+        let srcCopyHS'  = hacks $ makeRelative currentDir srcCopyHS
+        
+        genBuildMk buildMk mainBin' srcCopyHS'
+        
+        (time, (code, strOut, strErr))
+          <- timeBuild
+          $  systemTee False
+                ("make -f " ++ buildMk)
+                ""
+        atomicWriteFile mainCompOut strOut
+        atomicWriteFile mainCompErr strErr
 
         case code of
          ExitSuccess    -> return $ ResultSuccess time
          ExitFailure _  -> return ResultFailure
-		
+                
 
 genBuildMk :: FilePath -> String -> String -> Build ()
 genBuildMk outfile mainBin mainHs
- = do	let str	= "# Generated Makefile\n\n"
- 		++ "include make/build.mk\n\n"
+ = do   let str = "# Generated Makefile\n\n"
+                ++ "include make/build.mk\n\n"
                 ++ mainBin ++ " : " ++ mainHs ++ "\n"
                 ++ "\t$(GHC) $(GHC_LANGUAGE) $(DDC_PACKAGES)"
                 ++ " -ipackages/ddc-alpha/src -ipackages/ddc-core-llvm --make $^ -o $@\n\n"
-	io $ writeFile outfile str
+        io $ writeFile outfile str
 

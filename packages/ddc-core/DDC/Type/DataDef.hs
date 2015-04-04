@@ -27,7 +27,6 @@ module DDC.Type.DataDef
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
-import Data.Monoid
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
 import Data.Maybe

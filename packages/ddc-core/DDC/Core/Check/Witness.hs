@@ -11,7 +11,6 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()
 import DDC.Core.Check.Base
 import DDC.Type.Transform.SubstituteT
-import Data.Monoid                              hiding ((<>))
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
 

@@ -1,6 +1,6 @@
 
 module DDC.War.Job.RunExe
-	( Spec         (..)
+        ( Spec         (..)
         , Result       (..)
         , resultSuccess
         , build)
@@ -61,21 +61,21 @@ instance Pretty Result where
 -- | Run a binary
 build :: Spec -> Build Result
 build (Spec     _fileName
-		mainBin args 
+                mainBin args 
                 mainRunOut mainRunErr
                 shouldSucceed)
- = do	
+ = do   
         needs mainBin
  
-	-- Run the binary.
-	(time, (code, strOut, strErr))
-	 <- timeBuild
-	 $  systemTee False (mainBin ++ " " ++ intercalate " " args) ""
+        -- Run the binary.
+        (time, (code, strOut, strErr))
+         <- timeBuild
+         $  systemTee False (mainBin ++ " " ++ intercalate " " args) ""
 
-	-- Write its output to files.
-	atomicWriteFile mainRunOut strOut
-	atomicWriteFile mainRunErr strErr
-	
+        -- Write its output to files.
+        atomicWriteFile mainRunOut strOut
+        atomicWriteFile mainRunErr strErr
+        
         case code of
          ExitFailure _
           | shouldSucceed       -> return ResultUnexpectedFailure

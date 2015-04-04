@@ -55,7 +55,7 @@ data Mode
 
         -- | Dump all intermediate versions of the code during compilation.
         |  Dump
-	
+        
         -- | Avoid type checking if possible.
         --   Helpful when debugging program transformations to see invalid
         --   code instead of an error message.

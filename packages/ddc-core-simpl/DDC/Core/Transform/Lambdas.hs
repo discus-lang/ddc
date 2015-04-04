@@ -21,7 +21,6 @@ import qualified DDC.Core.Check         as Check
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 import qualified Data.Map               as Map
-import Data.Monoid
 import Data.Maybe
 
 

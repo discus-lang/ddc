@@ -22,7 +22,6 @@ import DDC.Type.Env
 import DDC.Base.Pretty
 import Data.Typeable
 import Control.Monad.Writer                     (Writer, runWriter, tell)
-import Data.Monoid                              (Monoid, mempty, mappend)
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 import qualified DDC.Type.Env                           as Env
@@ -32,6 +31,7 @@ import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Type.Compounds                     as T
 import qualified DDC.Type.Sum                           as TS
 import qualified DDC.Type.Transform.Crush               as T
+import Prelude                                          hiding ((<$>))
 
 
 -------------------------------------------------------------------------------

@@ -8,12 +8,13 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , freeOfBind, cnameOfBind
         , outputsOfCluster, inputsOfCluster
         , seriesInputsOfCluster
-        ) where
+        ) 
+where
 import DDC.Base.Pretty
 import DDC.Core.Flow.Exp (ExpF)
-
 import Data.Maybe (catMaybes)
 import Data.List  (nub)
+import Prelude                  hiding ((<$>))
 
 -----------------------------------
 -- = Combinator normal form.

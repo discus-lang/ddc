@@ -15,7 +15,6 @@ where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
-import Data.Monoid
 
 
 -- | An imperative procedure made up of some loops.

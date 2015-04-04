@@ -1,6 +1,6 @@
 module DDCI.Core.Command.TransInteract
         ( cmdTransInteract
-	, cmdTransInteractLoop)
+        , cmdTransInteractLoop)
 where
 import DDCI.Core.Output
 import DDCI.Core.State
@@ -38,11 +38,11 @@ cmdTransInteract state source str
                 let clo1        = annotClosure annot
 
                 let hist   = TransHistory
-			     { historyExp	    = (xx', t1, eff1, clo1)
-			     , historySteps	    = []
+                             { historyExp           = (xx', t1, eff1, clo1)
+                             , historySteps         = []
                              , historyBundle        = bundle }
 
-		return state { stateTransInteract = Just hist }
+                return state { stateTransInteract = Just hist }
 
         -- Expression had a parse or type error.
         goStore _ _
@@ -57,46 +57,46 @@ cmdTransInteractLoop state str
  , profile      <- fragmentProfile fragment
  = case str of
     ":back" -> do
-	let steps' = case steps of
-		      []     -> []
-		      (_:ss) -> ss
+        let steps' = case steps of
+                      []     -> []
+                      (_:ss) -> ss
 
-	putStrLn "Going back: "
-	let x' = case steps' of
-		   []    -> x
-		   ((xz,_):_) -> xz
-	outDocLn state $ ppr x'
+        putStrLn "Going back: "
+        let x' = case steps' of
+                   []    -> x
+                   ((xz,_):_) -> xz
+        outDocLn state $ ppr x'
 
-	let hist'      = TransHistory (x,t,e,c) steps' bundle
-	return state { stateTransInteract = Just hist' }
+        let hist'      = TransHistory (x,t,e,c) steps' bundle
+        return state { stateTransInteract = Just hist' }
 
     ":done" -> do
-	let simps = reverse $ map (indent 4 . ppr . snd) steps
-	outStrLn state "* TRANSFORM SEQUENCE:"
-	mapM_ (outDocLn state) simps
-	return state { stateTransInteract = Nothing }
+        let simps = reverse $ map (indent 4 . ppr . snd) steps
+        outStrLn state "* TRANSFORM SEQUENCE:"
+        mapM_ (outDocLn state) simps
+        return state { stateTransInteract = Nothing }
 
-    _	    -> do
+    _       -> do
 
- 	let tr = parseSimplifier 
+        let tr = parseSimplifier 
                     (fragmentReadName fragment)
-		    (SimplifierDetails
+                    (SimplifierDetails
                         (bundleMakeNamifierT bundle) 
                         (bundleMakeNamifierX bundle)
-        		(Map.assocs $ bundleRewriteRules bundle) 
+                        (Map.assocs $ bundleRewriteRules bundle) 
                         (Map.elems  $ bundleModules      bundle))
-		    str
+                    str
 
-	let x' = case steps of
-		[]    -> x
-		((xz,_):_) -> xz
+        let x' = case steps of
+                []    -> x
+                ((xz,_):_) -> xz
 
-	case tr of
+        case tr of
             Left _err -> do
                 putStrLn "Error parsing simplifier"
                 return state
 
-	    Right tr' -> do
+            Right tr' -> do
                 let kenv    = modulesExportTypes
                                 (bundleModules bundle) 
                                 (profilePrimKinds profile)
@@ -105,17 +105,17 @@ cmdTransInteractLoop state str
                                 (bundleModules bundle) 
                                 (profilePrimTypes profile)
 
-		x_trans  <- transExp
+                x_trans  <- transExp
                                 (Set.member TraceTrans $ stateModes state)
                                 profile kenv tenv
-			        (bundleStateInit bundle) tr' x'
+                                (bundleStateInit bundle) tr' x'
 
-		case x_trans of
-		    Nothing -> return state
-		    Just x_trans' -> do
-			outDocLn state $ ppr x_trans'
-			let steps' = (x_trans', tr') : steps
-		        let hist'  = TransHistory (x,t,e,c) steps' bundle
-			return state { stateTransInteract = Just hist' }
+                case x_trans of
+                    Nothing -> return state
+                    Just x_trans' -> do
+                        outDocLn state $ ppr x_trans'
+                        let steps' = (x_trans', tr') : steps
+                        let hist'  = TransHistory (x,t,e,c) steps' bundle
+                        return state { stateTransInteract = Just hist' }
 
  | otherwise = error "No transformation history!"

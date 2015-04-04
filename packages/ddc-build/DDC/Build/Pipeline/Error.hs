@@ -67,5 +67,6 @@ instance Pretty Error where
                  , indent 2 (ppr err') ]
 
 
-instance NFData Error
+instance NFData Error where
+ rnf !_ = ()
 

@@ -1,7 +1,7 @@
 
 module DDC.Core.Fragment.Compliance
         ( complies
-	, compliesWithEnvs
+        , compliesWithEnvs
         , Complies)
 where
 import DDC.Core.Fragment.Feature
@@ -12,7 +12,6 @@ import DDC.Core.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
 import Control.Monad
-import Control.Applicative
 import Data.Maybe
 import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
@@ -40,10 +39,10 @@ compliesWithEnvs
         :: (Ord n, Show n, Complies c)
         => Profile n            -- ^ Fragment profile giving the supported
                                 --   language features and primitive operators.
-	-> Env.KindEnv n        -- ^ Starting kind environment.
-	-> Env.TypeEnv n        -- ^ Starting type environment.
-	-> c a n                -- ^ The thing to check.
-	-> Maybe (Error a n)
+        -> Env.KindEnv n        -- ^ Starting kind environment.
+        -> Env.TypeEnv n        -- ^ Starting type environment.
+        -> c a n                -- ^ The thing to check.
+        -> Maybe (Error a n)
 
 compliesWithEnvs profile kenv tenv thing
  = let  merr    = result 

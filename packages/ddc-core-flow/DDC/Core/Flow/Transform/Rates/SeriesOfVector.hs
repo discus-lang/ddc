@@ -22,7 +22,6 @@ import qualified Data.Map as Map
 import           Data.Map   (Map)
 import qualified Data.Set as Set
 import Data.List   (partition)
-import Data.Monoid (mappend)
 
 
 seriesOfVectorModule :: ModuleF -> (ModuleF, [(Name,Fail)])

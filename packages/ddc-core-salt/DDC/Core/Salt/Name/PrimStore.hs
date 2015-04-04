@@ -70,7 +70,8 @@ data PrimStore
         deriving (Eq, Ord, Show)
 
 
-instance NFData PrimStore
+instance NFData PrimStore where
+ rnf !_ = ()
 
 
 instance Pretty PrimStore where

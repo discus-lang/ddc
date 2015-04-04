@@ -10,7 +10,6 @@ import DDC.Core.Flow.Transform.Slurp.Resize
 import DDC.Core.Flow.Prim
 import DDC.Core.Compounds.Simple
 import DDC.Core.Exp.Simple
-import Control.Applicative
 import Data.List     (nub)
 
 

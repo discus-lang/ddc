@@ -19,10 +19,11 @@ import DDC.Core.Compounds
 import Data.Map                 (Map)
 import Control.Monad
 import Control.Monad.Writer     (Writer, runWriter, tell)
-import Data.Monoid              (Monoid, mempty, mappend)
 import Data.Typeable
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
+import Prelude                                          hiding ((<$>))
+
 
 -------------------------------------------------------------------------------
 -- | Summary of number of bindings floated.

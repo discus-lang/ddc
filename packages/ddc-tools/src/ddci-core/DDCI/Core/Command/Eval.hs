@@ -27,7 +27,7 @@ import DDC.Core.Eval.Store                      (Store)
 import qualified DDC.Core.Eval.Store            as Store
 import qualified Data.Set                       as Set
 import qualified DDC.Build.Language.Eval        as Eval
-import qualified Data.Map		     as Map
+import qualified Data.Map                    as Map
 import Data.Typeable
 import DDC.Core.Module (ModuleMap)
 import Data.Maybe (fromMaybe)
@@ -45,8 +45,8 @@ cmdStep state source str
 cmdStep_eval state source bundle str
  | modules0             <- bundleModules bundle
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
-			<- gcast modules0
- , modules'		<- fromMaybe Map.empty modules
+                        <- gcast modules0
+ , modules'             <- fromMaybe Map.empty modules
  =   cmdParseCheckExp Eval.fragment modules' Recon False False source str 
  >>= goStore 
  where
@@ -81,14 +81,14 @@ cmdEval state source str
 cmdEval_eval state source bundle str
  | modules0             <- bundleModules bundle
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
-			<- gcast modules0
- , modules'		<- fromMaybe Map.empty modules
+                        <- gcast modules0
+ , modules'             <- fromMaybe Map.empty modules
  =   cmdParseCheckExp Eval.fragment modules' Recon False False source str 
  >>= goEval
  where
     -- Expression is well-typed.
     goEval (Just expr, _)
-     =	evalExp state 
+     =  evalExp state 
      $  reannotate (\a -> a { annotTail = ()} ) expr
 
     -- Expression had a parse or type error.
@@ -140,27 +140,27 @@ evalExp state x0
         let x0_zapped   = reannotate (\a -> a { annotTail = ()}) x0
 
         -- Create the initial store.
-	let store = startingStoreForExp x0_stripped
+        let store = startingStoreForExp x0_stripped
 
-	-- Print starting expression.
-	when (Set.member TraceEval  $ stateModes state)
-	 $ outDocLn state (text "* STEP: " <> ppr x0_stripped)
+        -- Print starting expression.
+        when (Set.member TraceEval  $ stateModes state)
+         $ outDocLn state (text "* STEP: " <> ppr x0_stripped)
 
-	-- Print starting store.
-	when (Set.member TraceStore $ stateModes state)
-	 $ do   putStrLn $ renderIndent $ ppr store
-		outStr   state "\n"
+        -- Print starting store.
+        when (Set.member TraceStore $ stateModes state)
+         $ do   putStrLn $ renderIndent $ ppr store
+                outStr   state "\n"
 
-	goStep store x0_zapped
+        goStep store x0_zapped
 
     where
-	goStep store x
-	 = do mResult <- forcePrint state store x
-	      case mResult of
-	       Nothing            
+        goStep store x
+         = do mResult <- forcePrint state store x
+              case mResult of
+               Nothing            
                 -> return ()
 
-	       Just (store', x') 
+               Just (store', x') 
                 -> goStep store' x'
  
 

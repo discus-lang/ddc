@@ -20,7 +20,8 @@ data PrimControl
         deriving (Eq, Ord, Show)
 
 
-instance NFData PrimControl
+instance NFData PrimControl where
+ rnf !_ = ()
 
 
 instance Pretty PrimControl where

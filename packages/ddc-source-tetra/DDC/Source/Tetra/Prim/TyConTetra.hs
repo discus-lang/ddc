@@ -14,7 +14,10 @@ import Data.Char
 import Data.List
 import Control.DeepSeq
 
-instance NFData TyConTetra
+
+instance NFData TyConTetra where
+ rnf !_ = ()
+
 
 instance Pretty TyConTetra where
  ppr tc

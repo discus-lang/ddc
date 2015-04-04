@@ -105,6 +105,6 @@ instance Ord n => MapBoundT TypeSum n where
         $ Sum.toList ss
 
 countBAnons = length . filter isAnon
- where	isAnon (BAnon _) = True
-	isAnon _	 = False
+ where  isAnon (BAnon _) = True
+        isAnon _         = False
 

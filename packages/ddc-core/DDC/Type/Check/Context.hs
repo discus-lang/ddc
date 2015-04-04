@@ -47,6 +47,7 @@ import Data.Maybe
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.IntMap.Strict     as IntMap
 import Data.IntMap.Strict               (IntMap)
+import Prelude                          hiding ((<$>))
 
 
 -- Mode -----------------------------------------------------------------------

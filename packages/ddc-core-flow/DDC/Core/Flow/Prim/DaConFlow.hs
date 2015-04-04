@@ -13,7 +13,9 @@ import Data.Char
 import Control.DeepSeq
 
 
-instance NFData DaConFlow
+instance NFData DaConFlow where
+ rnf !_ = ()
+ 
 
 instance Pretty DaConFlow where
  ppr dc

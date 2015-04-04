@@ -22,7 +22,8 @@ import Control.DeepSeq
 import Data.List
 import Data.Char
 
-instance NFData OpStore
+instance NFData OpStore where
+ rnf !_ = ()
 
 
 instance Pretty OpStore where

@@ -25,7 +25,8 @@ import Data.List
 import Data.Char
 
 
-instance NFData OpConcrete
+instance NFData OpConcrete where
+ rnf !_ = ()
 
 
 instance Pretty OpConcrete where

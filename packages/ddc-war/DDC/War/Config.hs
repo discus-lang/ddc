@@ -1,6 +1,6 @@
 
 module DDC.War.Config
-	( Config       (..)
+        ( Config       (..)
         , defaultConfig
         , defaultTestSpec
         , defaultNightlySpec)
@@ -12,16 +12,16 @@ import qualified BuildBox.Command.Mail  as B
 
 -- | Configuration information read from command line arguments.
 data Config
-	= Config 
+        = Config 
         { -- | Whether to emit debugging info for war.
-	  configDebug		        :: Bool
+          configDebug                   :: Bool
 
           -- | Config for test mode.
         , configTest                    :: Maybe T.Spec
 
           -- | Config for nightly build mode.
         , configNightly                 :: Maybe N.Spec }
-	deriving Show
+        deriving Show
 
 
 -- | Default configuration.

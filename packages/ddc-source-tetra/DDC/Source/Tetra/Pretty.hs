@@ -11,6 +11,7 @@ import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Core.Pretty
 import DDC.Base.Pretty
+import Prelude                  hiding ((<$>))
 
 
 -- Module -----------------------------------------------------------------------------------------

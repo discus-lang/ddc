@@ -19,7 +19,8 @@ import Data.List
 import Data.Char        
 
 
-instance NFData OpSeries
+instance NFData OpSeries where
+ rnf !_ = ()
 
 
 instance Pretty OpSeries where

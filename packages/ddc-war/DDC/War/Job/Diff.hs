@@ -1,6 +1,6 @@
 
 module DDC.War.Job.Diff
-	( Spec         (..)
+        ( Spec         (..)
         , Result       (..)
         , resultSuccess 
         , build)
@@ -53,20 +53,20 @@ instance Pretty Result where
 build :: Spec -> Build Result
 build (Spec fileRef fileOut fileDiff)
  = do   needs fileRef
-	needs fileOut
-	
-	let diffExe	= "diff"
-	
-	-- Run the binary.
-	(_code, strOut, _strErr)
-	 <- systemTee False 
-	 	(diffExe ++ " --ignore-space-change " ++ fileRef ++ " " ++ fileOut)
-		""
-	
-	-- Write its output to file.
-	atomicWriteFile fileDiff strOut
+        needs fileOut
+        
+        let diffExe     = "diff"
+        
+        -- Run the binary.
+        (_code, strOut, _strErr)
+         <- systemTee False 
+                (diffExe ++ " --ignore-space-change " ++ fileRef ++ " " ++ fileOut)
+                ""
+        
+        -- Write its output to file.
+        atomicWriteFile fileDiff strOut
 
-	if strOut == ""
-	 then return $ ResultSame
-	 else return $ ResultDiff fileRef fileOut fileDiff
+        if strOut == ""
+         then return $ ResultSame
+         else return $ ResultDiff fileRef fileOut fileDiff
 

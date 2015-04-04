@@ -1,9 +1,9 @@
 
 -- | Retrieving inliner templates from a list of modules.
 module DDC.Core.Transform.Inline.Templates
-	( InlineSpec(..)
+        ( InlineSpec(..)
         , lookupTemplateFromModules
-	, lookupTemplateFromModule )
+        , lookupTemplateFromModule )
 where
 import DDC.Core.Exp
 import DDC.Core.Module
@@ -71,7 +71,7 @@ lookupTemplateFromModule
 lookupTemplateFromModule spec mm n
         | shouldInline spec n
         , XLet _ (LRec bxs) _  <- moduleBody mm
-        , Just (_,x)	       <- find (\(BName n' _, _) -> n == n') bxs
+        , Just (_,x)           <- find (\(BName n' _, _) -> n == n') bxs
         = Just $ anonymizeX x
 
         | otherwise

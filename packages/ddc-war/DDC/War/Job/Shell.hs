@@ -1,6 +1,6 @@
 
 module DDC.War.Job.Shell
-	( Spec     (..)
+        ( Spec     (..)
         , Result   (..)
         , resultSuccess
         , build)
@@ -61,23 +61,23 @@ instance Pretty Result where
 -- | Run a binary
 build :: Spec -> Build Result
 build   (Spec   mainSH sourceDir scratchDir
-		mainRunOut mainRunErr
-		shouldSucceed)
- = do	
+                mainRunOut mainRunErr
+                shouldSucceed)
+ = do   
         needs mainSH
-	ensureDir scratchDir
-	
-	-- Run the binary.
-	(time, (code, strOut, strErr))
-	 <- timeBuild
-	 $  systemTee False 
-		("sh " ++ mainSH ++ " " ++ sourceDir ++ " " ++ scratchDir) 
-		""
-		
-	-- Write its output to files.
-	atomicWriteFile mainRunOut strOut
-	atomicWriteFile mainRunErr strErr
-		
+        ensureDir scratchDir
+        
+        -- Run the binary.
+        (time, (code, strOut, strErr))
+         <- timeBuild
+         $  systemTee False 
+                ("sh " ++ mainSH ++ " " ++ sourceDir ++ " " ++ scratchDir) 
+                ""
+                
+        -- Write its output to files.
+        atomicWriteFile mainRunOut strOut
+        atomicWriteFile mainRunErr strErr
+                
         case code of
          ExitSuccess
           | shouldSucceed       -> return $ ResultSuccess time

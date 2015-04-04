@@ -17,7 +17,9 @@ import Data.List
 import Data.Char
 
 
-instance NFData TyConTetra
+instance NFData TyConTetra where
+ rnf !_ = ()
+ 
 
 instance Pretty TyConTetra where
  ppr tc

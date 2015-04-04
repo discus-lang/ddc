@@ -28,6 +28,7 @@ import Control.Monad
 import Control.Monad.Writer (tell, runWriter)
 import Data.List
 import Data.Typeable
+import Prelude                                          hiding ((<$>))
 
 
 -- Log ------------------------------------------------------------------------
