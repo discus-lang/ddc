@@ -1,12 +1,28 @@
 
-module DDC.Type.Exp.Base where
+module DDC.Type.Exp.Base 
+        ( Binder        (..)
+        , Bind          (..)
+        , Bound         (..)
+        , Type          (..)
+        , Sort
+        , Kind
+        , Region
+        , Effect
+        , Closure
+        , TypeSum       (..)
+        , TyConHash     (..)
+        , TypeSumVarCon (..)
+        , TyCon         (..)
+        , SoCon         (..)
+        , KiCon         (..)
+        , TwCon         (..)
+        , TcCon         (..))
+where
 import Data.Array
 import Data.Map.Strict  (Map)
 import Data.Set         (Set)
 
 
--- Bind -----------------------------------------------------------------------
--- | A variable binder.
 data Binder n
         = RNone
         | RAnon
@@ -14,6 +30,7 @@ data Binder n
         deriving Show
 
 
+-- Bind -----------------------------------------------------------------------
 -- | A variable binder with its type.
 data Bind n
         -- | A variable with no uses in the body doesn't need a name.
