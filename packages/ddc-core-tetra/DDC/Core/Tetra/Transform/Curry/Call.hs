@@ -31,15 +31,19 @@ makeCall
                                 -- ^ Arguments to eliminators.
         ->  Exp (AnTEC a Name) Name
 
-makeCall xx xF aF funMap nF esArgs
+makeCall xx _xF aF funMap nF esArgs
 
 
         ---------------------------------------------------
         -- Direct call of top-level super in the current module
         | Just (FunLocalSuper _ _ _ csSuper) <- Map.lookup nF funMap
-        , Just xResult  <- makeCallSuperSaturated xF csSuper esArgs
+        , Just xResult  <- makeCallSuperSaturated aF nF csSuper esArgs
         = xResult
 
+        -- Under-application of a top-level super in the curent module
+        | Just (FunLocalSuper _ tF _ csSuper) <- Map.lookup nF funMap
+        , Just xResult  <- makeCallSuperUnder aF  nF tF csSuper esArgs
+        = xResult
 
         ---------------------------------------------------
         -- Direct call of a top-level super, 
