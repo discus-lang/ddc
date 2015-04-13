@@ -19,7 +19,8 @@ transformDownX
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformDownMX Identity c)
         => (KindEnv n -> TypeEnv n -> Exp a n -> Exp a n)       
-                        -- ^ The worker function is given the current kind and type environments.
+                        -- ^ The worker function is given the current
+                        --   kind and type environments.
         -> KindEnv n    -- ^ Initial kind environment.
         -> TypeEnv n    -- ^ Initial type environment.
         -> c a n        -- ^ Transform this thing.

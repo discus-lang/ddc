@@ -74,6 +74,7 @@ lambdasLoopX p c xx
    in   if progress then lambdasLoopX p c xx1
                     else xx1
 
+
 -- | Perform a single pass of lambda lifting in an expression.
 lambdasX :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
          => Profile n           -- ^ Language profile.
@@ -87,6 +88,7 @@ lambdasX p c xx
         XVar{}  -> (xx, mempty)
         XCon{}  -> (xx, mempty)
          
+        -- Lift type lambdas to top-level.
         XLAM a b x0
          -> enterLAM c a b x0 $ \c' x
          -> let (x', r)      = lambdasX p c' x
@@ -94,14 +96,14 @@ lambdasX p c xx
                 Result _ bxs = r
                 
                 -- Decide whether to lift this lambda to top-level.
-                -- We lifted nexted lambdas in multiple passes, 
-                --  doing it all at once would take more work.
-                liftMe       =  isLiftyContext (contextCtx c) 
-                             && null bxs
+                -- If there are multiple nested lambdas then we want to lift
+                -- the whole group at once, rather than lifting each one 
+                -- individually.
+                liftMe       =  isLiftyContext (contextCtx c)   && null bxs
                 
             in if liftMe
                 then  let us'   = supportEnvFlags
-                                $ support Env.empty Env.empty (XLAM a b x')
+                                $ support Env.empty Env.empty xx'
                           
                           (xCall, bLifted, xLifted)
                                 = liftLambda p c us' a [(True, b)] x'
@@ -111,6 +113,8 @@ lambdasX p c xx
 
                 else (xx', r)
 
+
+        -- Lift value lambdas to top-level.
         XLam a b x0
          -> enterLam c a b x0 $ \c' x
          -> let (x', r)      = lambdasX p c' x
@@ -118,14 +122,11 @@ lambdasX p c xx
                 Result _ bxs = r
                 
                 -- Decide whether to lift this lambda to top-level.
-                -- We lifted nexted lambdas in multiple passes, 
-                --  doing it all at once would take more work.
-                liftMe       =  isLiftyContext (contextCtx c)
-                             && null bxs
+                liftMe       =  isLiftyContext (contextCtx c)  && null bxs
 
             in if liftMe
                 then  let us'   = supportEnvFlags
-                                $ support Env.empty Env.empty (XLam a b x')
+                                $ support Env.empty Env.empty xx'
 
                           (xCall, bLifted, xLifted)
                                 = liftLambda p c us' a [(False, b)] x'
@@ -134,6 +135,33 @@ lambdasX p c xx
                           , Result True (bxs ++ [(bLifted, xLifted)]))
                 else (xx', r)
 
+
+        -- Lift suspensions to top-level.
+        --   These behave like zero-arity lambda expressions,
+        --   they suspspend evaluation but do not abstract over a value.
+        XCast a cc@CastBox x0
+         -> enterCastBody c a cc x0 $ \c' x
+         -> let (x', r)      = lambdasX p c' x
+                xx'          = XCast a CastBox x'
+                Result _ bxs = r
+
+                -- Decide whether to lift this box to top-level.
+                liftMe       =  isLiftyContext (contextCtx c)  && null bxs
+
+            in if liftMe 
+                then let us' = supportEnvFlags
+                             $ support Env.empty Env.empty xx'
+
+                         (xCall, bLifted, xLifted)
+                             = liftLambda p c us' a [] (XCast a CastBox x')
+
+                     in  ( xCall
+                         , Result True (bxs ++ [(bLifted, xLifted)]))
+
+                else (xx', r)
+
+
+        -- Boilerplate.
         XApp a x1 x2
          -> let (x1', r1)       = enterAppLeft  c a x1 x2 (lambdasX p)
                 (x2', r2)       = enterAppRight c a x1 x2 (lambdasX p)
@@ -276,8 +304,6 @@ lambdasLetRecLiftAll p c a bxs
    = enterLetLRec c a before b x after x (\c' _ -> c')
 
 
-
-
 -- Alts -------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in the right of a single alternative.
 lambdasAlts 
@@ -381,17 +407,17 @@ liftLambda p c fusFree a lams xBody
         tenv    = contextTypeEnv c
 
         -- The complete abstraction that we're lifting out.
-        xLambda = makeXLamFlags a lams xBody
+        xLambda         = makeXLamFlags a lams xBody
 
         -- Name of the enclosing top-level binding.
-        Just nTop   = takeTopNameOfCtx ctx
+        Just nTop       = takeTopNameOfCtx ctx
 
         -- Names of other supers bound at top-level.
-        nsSuper     = takeTopLetEnvNamesOfCtx ctx
+        nsSuper         = takeTopLetEnvNamesOfCtx ctx
 
         -- Name of the new lifted binding.
-        nLifted     = extendName nTop ("Lift_" ++ encodeCtx ctx)
-        uLifted     = UName nLifted
+        nLifted         = extendName nTop ("Lift_" ++ encodeCtx ctx)
+        uLifted         = UName nLifted
 
 
         -- Build the type checker configuration for this context.
