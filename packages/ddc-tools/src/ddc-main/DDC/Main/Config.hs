@@ -58,37 +58,43 @@ data Mode
         -- | Convert a module to PHP.
         | ModeToPHP     FilePath
 
-        -- Disciple Core Tetra specific ---------
-        -- | Manage higher order functions in a module.
-        | ModeTetraCurry  FilePath
 
-        -- | Manage boxing in a module.
-        | ModeTetraBoxing FilePath
+        -- Disciple Core Tetra specific ---------
+        -- | Eta-expand suspended expressions.
+        | ModeTetraSuspend      FilePath        
+
+        -- | Manage higher order functions.
+        | ModeTetraCurry        FilePath
+
+        -- | Manage boxing.
+        | ModeTetraBoxing       FilePath
+
 
         -- Disciple Core Flow specific ----------
         -- | Prepare a Flow program for lowering.
-        | ModeFlowPrep  FilePath
+        | ModeFlowPrep          FilePath
 
         -- | Lower a Flow program.
-        | ModeFlowLower FilePath
+        | ModeFlowLower         FilePath
 
         -- | Lower a Flow program, producing a vector kernel.
-        | ModeFlowLowerKernel FilePath
+        | ModeFlowLowerKernel   FilePath
 
         -- | Lower a Flow program using vector instructions.
-        | ModeFlowLowerVector FilePath
+        | ModeFlowLowerVector   FilePath
 
         -- | Wind loop primops into tail recursive loops.
-        | ModeFlowWind  FilePath
+        | ModeFlowWind          FilePath
 
         -- | Concretize rate type variables in a Flow program.
-        | ModeFlowConcretize FilePath
+        | ModeFlowConcretize    FilePath
 
         -- | Melt compound data types in a Flow program.
-        | ModeFlowMelt  FilePath
+        | ModeFlowMelt          FilePath
 
         -- | Thread the World token through a Flow program.
-        | ModeFlowThread FilePath
+        | ModeFlowThread        FilePath
+
 
         -- Builder ------------------------------
         -- | Build the base libraries and runtime.

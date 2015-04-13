@@ -30,6 +30,7 @@ import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
+import qualified DDC.Core.Tetra.Transform.Suspend       as Tetra
 import qualified DDC.Core.Tetra                         as Tetra
 
 import qualified DDC.Core.Babel.PHP                     as PHP
@@ -63,6 +64,7 @@ import Control.Monad
 import Control.DeepSeq
 
 
+---------------------------------------------------------------------------------------------------
 -- | Process a core module.
 data PipeCore a n where
   -- Plumb the module on without transforming it.
@@ -243,13 +245,19 @@ pipeCores !mm !pipes
                 go (errs ++ err) rest
 
 
--- PipeTetra ------------------------------------------------------------------
+-- PipeTetra --------------------------------------------------------------------------------------
 -- | Process a Core Tetra module.
 data PipeTetra a where
         -- Output the module in core language syntax.
         PipeTetraOutput 
          :: !Sink
          -> PipeTetra a
+
+        -- Suspend computations.
+        PipeTetraSuspend
+         :: (NFData a, Show a)
+         => ![PipeCore (C.AnTEC a Tetra.Name) Tetra.Name]
+         -> PipeTetra  (C.AnTEC a Tetra.Name)
 
         -- Manage currying of functions.
         PipeTetraCurry
@@ -291,13 +299,17 @@ pipeTetra !mm !pp
          -> {-# SCC "PipeTetraOutput" #-}
             pipeSink (renderIndent $ ppr mm)  sink
 
-        PipeTetraBoxing !pipes
-         -> {-# SCC "PipeTetraBoxing" #-}
-            pipeCores (Tetra.boxingModule mm) pipes
+        PipeTetraSuspend !pipes
+         -> {-# SCC "PipeTetraSuspend" #-}
+            pipeCores (Tetra.suspendModule mm) pipes
 
         PipeTetraCurry  !pipes
          -> {-# SCC "PipeTetraCurry"  #-}
             pipeCores (Tetra.curryModule mm)  pipes
+
+        PipeTetraBoxing !pipes
+         -> {-# SCC "PipeTetraBoxing" #-}
+            pipeCores (Tetra.boxingModule mm) pipes
 
         PipeTetraToSalt !platform !runConfig !pipes
          -> {-# SCC "PipeTetraToSalt" #-}
@@ -327,7 +339,7 @@ pipeTetra !mm !pp
             in  pipeSink (renderIndent doc) sink
 
 
--- PipeFlow -------------------------------------------------------------------
+-- PipeFlow ---------------------------------------------------------------------------------------
 -- | Process a Core Flow module.
 data PipeFlow a where
   -- Output the module in core language syntax.

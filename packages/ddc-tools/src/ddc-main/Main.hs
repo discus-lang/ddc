@@ -7,6 +7,7 @@ import DDC.Main.Config
 import DDC.Main.Help
 import DDC.Main.Args
 import DDC.Main.OptLevels
+
 import DDC.Driver.Command.Parse
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
@@ -14,6 +15,7 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Build
 import DDC.Driver.Command.BaseBuild
 
+import DDC.Driver.Command.Tetra.Suspend
 import DDC.Driver.Command.Tetra.Curry
 import DDC.Driver.Command.Tetra.Boxing
 
@@ -29,6 +31,7 @@ import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.ToPHP
+
 import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Base.Pretty
@@ -42,6 +45,7 @@ import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Simplifier.Recipe     as Simplifier
 import qualified DDC.Version                    as Version
 import qualified DDC.Build.Interface.Store      as Store
+
 
 main :: IO ()
 main
@@ -146,6 +150,11 @@ run config
 
 
         -- Tetra specific -----------------------------------------------------
+        ModeTetraSuspend filePath
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                str     <- readFile filePath
+                runError $ cmdTetraSuspend dconfig (SourceFile filePath) str
+
         ModeTetraCurry filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
