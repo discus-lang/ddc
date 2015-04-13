@@ -6,8 +6,8 @@ import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
 import DDC.Core.Tetra.Compounds
-import DDC.Core.Predicates
 import DDC.Core.Module
+import qualified DDC.Core.Call                  as Call
 import DDC.Core.Exp
 import Data.Maybe
 import Data.List                                (foldl')
@@ -100,7 +100,7 @@ funMapAddForeign funs (n, is)
 
         -- Import from a different DDC compiled module.
         | ImportValueModule _m _n t _ <- is
-        = let   (tsArgs, _tResult)                      -- TODO: get real arity of function.
+        = let   (tsArgs, _tResult)                      -- TODO: get real call pattern.
                         = takeTFunArgResult
                         $ eraseTForalls t
 
@@ -164,44 +164,55 @@ curryX  :: Show a
         -> Exp (AnTEC a Name) Name
 
 curryX ctx@(funs, _kenv, _tenv) xx
- = let down    x   = curryX   ctx x
-   in  case xx of
+ = case xx of
         XVar a u
-         | UName nF             <- u
-         -> makeCall xx a funs nF []
+         -> case u of 
+                UName nF -> makeCall xx a funs nF []
+                _        -> xx
 
-         | otherwise
-         -> xx
+        XApp  a x1 x2
+         -> case curryX_call xx of
+                Just xx' -> xx'
+                Nothing  -> XApp a (down x1) (down x2)
 
+        XCast a CastRun x1
+         -> case curryX_call xx of
+                Just xx' -> xx'
+                Nothing  -> XCast a CastRun x1
+
+        -- Boilerplate.
         XCon{}          -> xx
-        XLam a b x      -> XLam a b (down x)
-        XLAM a b x      -> XLAM a b (down x)
-
-        XApp a x1 x2
-         -- If this is an explicit use of the creify# op,
-         -- then don't reify the function again.
-         | Just (xF, [XType{}, XType{}, _]) <- takeXApps xx
-         , XVar _ (UPrim nF _)    <- xF
-         , NameOpFun OpFunCReify  <- nF
-         -> xx
-
-         -- Decode how to call this function.
-         | Just (xF, xsArgs)    <- takeXApps xx
-         , XVar a' (UName nF)   <- xF
-         , length xsArgs  > 0
-         -> let xsArgs' = map down xsArgs
-            in  makeCall xx a' funs nF xsArgs'
-
-         -- If the functional value is not a named variable then 
-         -- just pass it though. 
-         | otherwise
-         -> XApp a (down x1) (down x2)
-
+        XLam  a b x     -> XLam  a b (down x)
+        XLAM  a b x     -> XLAM  a b (down x)
         XLet  a lts x   -> XLet  a   (curryLts ctx lts) (down x)
         XCase a x alts  -> XCase a   (down x) (map (curryAlt ctx) alts)
         XCast a c x     -> XCast a c (down x)
         XType{}         -> xx
         XWitness{}      -> xx
+
+ where          
+
+        curryX_call x
+         -- If this is a call of a named function then split it 
+         -- into the functional part and arguments, then work out
+         -- how to call it
+         | (xF, esArgs)         <- Call.takeCallElim x
+         , XVar aF (UName nF)   <- xF
+         , length esArgs  > 0
+         = let esArgs' = map downElim esArgs
+           in  Just $ makeCall x aF funs nF esArgs'
+
+         | otherwise
+         = Nothing
+
+        down x
+         = curryX ctx x
+
+        downElim ee
+         = case ee of
+                Call.ElimType{}         -> ee
+                Call.ElimValue a x      -> Call.ElimValue a (down x)
+                Call.ElimRun{}          -> ee
 
 
 -- | Manage function application in a let binding.
@@ -234,14 +245,22 @@ curryAlt ctx alt
 makeCall
         :: Show a
         => Exp (AnTEC a Name) Name
-        -> AnTEC a Name         -- ^ Annotation from functional part of application.
+        -> AnTEC a Name         -- ^ Annotation that contains the type of the function
+                                --   that we're applying.
         -> FunMap               -- ^ Types and arities of functions in the environment.
         -> Name                 -- ^ Name of function to call.
-        -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to function.
+        -> [Call.Elim (AnTEC a Name) Name]    
+                                -- ^ Arguments to eliminators.
         ->  Exp (AnTEC a Name) Name
 
-makeCall xx aF funMap nF xsArgs
-        -- Call a top-level super in the local module.
+makeCall xx aF funMap nF esArgs
+
+        ---------------------------------------------------
+        -- Direct call of a top-level super, 
+        --  either defined in the local module, 
+        --  an external module,
+        --  or impoted via the foreign function interface.
+        --
         | Just (tF, iArity) 
             <- case Map.lookup nF funMap of
                 Just (FunLocalSuper  _ tF iArity)       -> Just (tF, iArity)
@@ -250,22 +269,24 @@ makeCall xx aF funMap nF xsArgs
                 _                                       -> Nothing
         
         -- split the quantifiers from the type of the super.
-        , (bsForall, tBody)                  <- fromMaybe ([], tF) $ takeTForalls tF
+        , (bsForall, tBody)             <- fromMaybe ([], tF) $ takeTForalls tF
         
         -- split the body type into value parameters and result.
-        , (tsParam, tResult)                 <- takeTFunArgResult tBody
+        , (tsParam, tResult)            <- takeTFunArgResult tBody
         
         -- split the value parameters into ones accepted by lambdas and ones that 
         -- are accepted by the returned closure.
-        , (tsParamLam, tsParamClo)           <- splitAt iArity tsParam
+        , (tsParamLam, tsParamClo)      <- splitAt iArity tsParam
         
         -- build the type of the returned value.
-        , Just tResult'                      <- tFunOfList (tsParamClo ++ [tResult])
+        , Just tResult'                 <- tFunOfList (tsParamClo ++ [tResult])
         
         -- split the arguments into the type arguments that satisfy the quantifiers,  
         -- then the value arguments.
-        , Just (xsArgTypes, xsArgValues)     <- splitAppsValues xsArgs
-        
+        , Just (esTypes, esValues, bRun) <- splitStdCall esArgs
+        , xsArgTypes    <- [XType a t   | Call.ElimType  a t <- esTypes]
+        , esArgValues   <- filter Call.isElimValue esValues
+
         -- there must be types to satisfy all of the quantifiers
         , length bsForall == length xsArgTypes
  
@@ -273,12 +294,19 @@ makeCall xx aF funMap nF xsArgs
                 (xApps aF (XVar aF (UName nF)) xsArgTypes)
                 tsParamLam 
                 tResult' 
-                xsArgValues
+                esArgValues
+                bRun
 
+        ---------------------------------------------------
         -- | Apply a thunk to its arguments.
-        | length xsArgs > 0
-        = makeCallThunk aF nF xsArgs
+        --   The functional part is a variable bound to a thunk object.
+        | length esArgs > 0
+        , Just (esTypes, esValues, bRun) <- splitStdCall esArgs
+        , xsArgTypes    <- [XType a  t  | Call.ElimType  a t <- esTypes]
+        , xsArgValues   <- [x           | Call.ElimValue _ x <- esValues]
+        = makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
 
+        ---------------------------------------------------
         -- | This was an existing thunk applied to no arguments,
         --   so we can just return it without doing anything.
         | otherwise
@@ -290,67 +318,81 @@ makeCall xx aF funMap nF xsArgs
 --   or foriegn function imported from Sea land.
 makeCallSuper 
         :: Show a 
-        => AnTEC a Name                 -- ^ Annotation to use.
-        -> Name                         -- ^ Name of super to call.
-        -> Exp  (AnTEC a Name) Name     -- ^ Expression of super to call.
-        -> [Type Name]                  -- ^ Parameter types of super
-        -> Type Name                    -- ^ Return type of super.
-        -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to super.
+        => AnTEC a Name                         -- ^ Annotation to use.
+        -> Name                                 -- ^ Name of super to call.
+        -> Exp  (AnTEC a Name) Name             -- ^ Expression of super to call.
+        -> [Type Name]                          -- ^ Parameter types of super
+        -> Type Name                            -- ^ Return type of super.
+        -> [Call.Elim (AnTEC a Name) Name]      -- ^ Value arguments for super.
+        -> Bool                                 -- ^ Whether the result was run.
         -> Exp  (AnTEC a Name) Name
 
-makeCallSuper aF _nF xF tsParamLam tResultSuper xsArgs
+makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
+
  -- Fully saturated call to a super of foreign function. 
  -- We have arguments for each parameter, so can call it directly.
- | length xsArgs == length tsParamLam
- = -- trace ("sat " ++ show (nF, length tsParamLam, length xsArgs)) $
-   xApps aF xF xsArgs
+ | length esArgValue == length tsParamLam
+ , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
+ = makeRun aF bRun $ xApps aF xF xsArgValue
 
  -- Partially application of a super or foreign function.
  -- We need to build a closure, then attach any arguments we have.
- | length xsArgs   <  length tsParamLam
+ | length esArgValue <  length tsParamLam
+ , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
  = let 
-        -- Types of the applied arguments.
-{-        tsArgs  = map annotType     
-                $ map annotOfExp xsArgs
--}
         -- Split types of the super parameters into the ones that can be
         -- satisfied by this application, and the remaining parameters that
         -- are still waiting for arguments.
         (tsParamSat, tsParamRemain)     
-                = splitAt (length xsArgs) tsParamLam
+                = splitAt (length esArgValue) tsParamLam
 
         -- The type of the result after performing this application.
         -- If there are remaining, un-saturated parameters the result
         -- type will still be a function.
-        Just tResultClo
-                = tFunOfList (tsParamRemain ++ [tResultSuper])
+        Just tResultClo           = tFunOfList (tsParamRemain ++ [tResultSuper])
 
-        tParamFirst : tsParamRest       = tsParamLam
-        Just tSuperResult               = tFunOfList (tsParamRest ++ [tResultSuper])
+        tParamFirst : tsParamRest = tsParamLam
+        Just tSuperResult         = tFunOfList (tsParamRest ++   [tResultSuper])
 
-   in  -- trace ("pap " ++ show (nF, length tsParamLam, length xsArgs)) $
-          xApps aF (xFunCurry aF tsParamSat tResultClo 
+   in   makeRun aF bRun 
+         $ xApps aF (xFunCurry aF tsParamSat tResultClo 
                            (xFunCReify aF tParamFirst tSuperResult xF))
-                       xsArgs
+                       xsArgValue
 
  -- TODO: handle over-applied super.
  --       do direct call, then do an application.
  --       the super must produce a closure, otherwise it won't be well typed.
  | otherwise
- = -- trace ("ovr " ++ show (nF, length tsParamLam, length xsArgs)) $
-   xApps aF xF xsArgs
+ , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
+ = makeRun aF bRun $ xApps aF xF xsArgValue
 
 
--- | Given a list of expressions, consisting of some XTypes then some
---   non-XType expressoins, split it into the XTypes then the values.
---   If there are any more trailing XTypes then Nothing.
-splitAppsValues :: [Exp a Name] -> Maybe ([Exp a Name], [Exp a Name])
-splitAppsValues xs
- = let  (xsT, xsMore)   = span isXType xs
-        (xsV, xsMore2)  = span (not . isXType) xsMore
-   in   if null xsMore2 
-         then Just (xsT, xsV)
-         else Nothing
+
+-- | Check if these eliminators follow the standard super-call pattern.
+--
+--   The standard pattern is a list of type arguments, followed by some
+--   value arguments, and optionally running the result suspension. 
+--
+--   @run f [T1] [T2] x1 x2@
+--
+--   If 'f' is a super, and this is a saturating call then the super header
+--   will look like the following:
+--
+--   @f = (/\t1. /\t2. \v1. \v2. box. body)@
+--
+splitStdCall
+        :: [Call.Elim a Name] 
+        -> Maybe ([Call.Elim a Name], [Call.Elim a Name], Bool)
+
+splitStdCall es
+        | (esT, esMore)   <- span Call.isElimType   es
+        , (esX, esMore2)  <- span Call.isElimValue  esMore
+        , (esR, [])       <- span Call.isElimRun    esMore2
+        ,  length esR <= 1
+        = Just (esT, esX, length esR > 0)
+
+        | otherwise
+        = Nothing   
 
 
 ---------------------------------------------------------------------------------------------------
@@ -360,10 +402,23 @@ makeCallThunk
         => AnTEC a Name                 -- ^ Annotation from functional part of application.
         -> Name                         -- ^ Name of thunk.
         -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to thunk.
+        -> Bool                         -- ^ Whether the result was run
         ->  Exp (AnTEC a Name) Name
 
-makeCallThunk aF nF xsArgs
- = let  tsArgs          = map annotType $ map annotOfExp xsArgs
-        (_, tResult)    = takeTFunArgResult $ annotType aF
-   in   xFunApply aF tsArgs tResult (XVar aF (UName nF)) xsArgs
+makeCallThunk aF nF xsArgs bRun
+ = let  -- tsArgs          = map annotType $ map annotOfExp xsArgs
+        (tsArgs, tResult)    = takeTFunArgResult $ annotType aF
+   in   makeRun aF bRun
+         $ xFunApply aF tsArgs tResult (XVar aF (UName nF)) xsArgs
+
+
+---------------------------------------------------------------------------------------------------
+makeRun :: a
+        -> Bool 
+        -> Exp a Name 
+        -> Exp a Name
+
+makeRun a b x
+ = if b then XCast a CastRun x
+        else x
 

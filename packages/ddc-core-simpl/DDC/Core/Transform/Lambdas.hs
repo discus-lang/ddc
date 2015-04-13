@@ -268,6 +268,7 @@ lambdasLetRecLiftAll p c a bxs
        us   = Set.unions
             $ map (supportEnvFlags . support Env.empty Env.empty)
             $ map snd bxs
+
        -- However, the functions we are lifting should not be treated as free variables
        us'  = Set.filter (\(_,bo) -> not $ any (boundMatchesBind bo . fst) bxs)
             $ us
@@ -345,17 +346,16 @@ lambdasCast p c a cc x
 
         CastPurify{}
          -> let (x', r) = enterCastBody c a cc x  (lambdasX p)
-            in  ( XCast a cc x', r)
+            in  (XCast a cc x',  r)
 
         CastForget{}
          -> let (x', r) = enterCastBody  c a cc x (lambdasX p)
-            in  ( XCast a cc x', r)
+            in  (XCast a cc x',  r)
 
         CastBox 
          -> let (x', r) = enterCastBody  c a cc x (lambdasX p)
             in  (XCast a cc x',  r)
-        
-
+       
         CastRun 
          -> let (x', r)  = enterCastBody c a cc x (lambdasX p)
             in  (XCast a cc x',  r)

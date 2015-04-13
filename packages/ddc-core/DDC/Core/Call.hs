@@ -15,7 +15,17 @@
 --   TODO: if we changed case to \case we could also have.
 --    C     (algebraic data)       \case (case match)
 
-module DDC.Core.Call where
+module DDC.Core.Call 
+        ( Cons (..)
+
+        , Elim (..)
+        , isElimType
+        , isElimValue
+        , isElimRun
+
+        , takeCallCons
+        , takeCallElim)
+where
 import DDC.Core.Exp
 import DDC.Core.Compounds
 
@@ -42,14 +52,38 @@ data Cons n
 -- | One component of a super call.
 data Elim a n
         = -- | Give a type to a type lambda.
-          ElimType    (Type n)
+          ElimType    a (Type n)
 
           -- | Give a value to a value lambda.
-        | ElimValue   (Exp a n)
+        | ElimValue   a (Exp a n)
 
           -- | Run a suspended computation.
-        | ElimRun
+        | ElimRun     a
         deriving (Show)
+
+
+-- | Check if this is an `ElimType`.
+isElimType :: Elim a n -> Bool
+isElimType ee
+ = case ee of
+        ElimType{}      -> True
+        _               -> False
+
+
+-- | Check if this is an `ElimType`.
+isElimValue :: Elim a n -> Bool
+isElimValue ee
+ = case ee of
+        ElimValue{}     -> True
+        _               -> False
+
+
+-- | Check if this is an `ElimType`.
+isElimRun :: Elim a n -> Bool
+isElimRun ee
+ = case ee of
+        ElimRun{}       -> True
+        _               -> False
 
 
 -- | Get the call pattern of an object.
@@ -67,17 +101,17 @@ takeCallCons xx
 takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
 takeCallElim xx
  = case xx of
-        XApp _ x1 (XType _ t2)
+        XApp a x1 (XType _ t2)
          -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimType t2])
+            in  (xF, xArgs ++ [ElimType a t2])
 
-        XApp _ x1 x2            
+        XApp a x1 x2            
          -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimValue x2])
+            in  (xF, xArgs ++ [ElimValue a x2])
 
-        XCast _ CastBox x1
+        XCast a CastRun x1
          -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimRun])
+            in  (xF, xArgs ++ [ElimRun a])
 
         _ -> (xx, [])
 
