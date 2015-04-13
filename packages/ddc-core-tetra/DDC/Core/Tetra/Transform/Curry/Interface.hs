@@ -14,6 +14,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import Data.Maybe
 import Data.Map                                 (Map)
+import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
 
 
@@ -33,8 +34,8 @@ data Fun
         = FunLocalSuper
         { _funName      :: Name
         , _funType      :: Type Name 
-        , _funArity     :: Int }
-
+        , _funArity     :: Int 
+        , _funCons      :: [Call.Cons Name] }
 
         -- | An externally defined super.
         --   These are like local supers, except they were compiled
@@ -64,7 +65,10 @@ funMapAddLocalSuper funs (b, x)
                 (flags, _) = fromMaybe ([], x) (takeXLamFlags x)
                 arity      = length $ filter (== False) $ map fst flags
 
-          in    Map.insert n (FunLocalSuper n t arity) funs
+                -- How the super is constructed.
+                cons       = Call.takeCallCons x
+
+          in    Map.insert n (FunLocalSuper n t arity cons) funs
 
         | otherwise
         = funs

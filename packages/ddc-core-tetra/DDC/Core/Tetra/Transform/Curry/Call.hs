@@ -22,6 +22,7 @@ import qualified Data.Map                       as Map
 makeCall
         :: Show a
         => Exp (AnTEC a Name) Name
+        -> Exp (AnTEC a Name) Name      -- ^ Functional expression being called.
         -> AnTEC a Name         -- ^ Annotation that contains the type of the function
                                 --   that we're applying.
         -> FunMap               -- ^ Types and arities of functions in the environment.
@@ -30,7 +31,15 @@ makeCall
                                 -- ^ Arguments to eliminators.
         ->  Exp (AnTEC a Name) Name
 
-makeCall xx aF funMap nF esArgs
+makeCall xx xF aF funMap nF esArgs
+
+
+        ---------------------------------------------------
+        -- Direct call of top-level super in the current module
+        | Just (FunLocalSuper _ _ _ csSuper) <- Map.lookup nF funMap
+        , Just xResult  <- makeCallSuperSaturated xF csSuper esArgs
+        = xResult
+
 
         ---------------------------------------------------
         -- Direct call of a top-level super, 
@@ -40,7 +49,7 @@ makeCall xx aF funMap nF esArgs
         --
         | Just (tF, iArity) 
             <- case Map.lookup nF funMap of
-                Just (FunLocalSuper  _ tF iArity)       -> Just (tF, iArity)
+                Just (FunLocalSuper  _ tF iArity _)     -> Just (tF, iArity)
                 Just (FunExternSuper _ tF iArity)       -> Just (tF, iArity)
                 Just (FunForeignSea  _ tF iArity)       -> Just (tF, iArity)
                 _                                       -> Nothing
@@ -61,7 +70,7 @@ makeCall xx aF funMap nF esArgs
         -- split the arguments into the type arguments that satisfy the quantifiers,  
         -- then the value arguments.
         , Just (esTypes, esValues, bRun) <- splitStdCall esArgs
-        , xsArgTypes    <- [XType a t   | Call.ElimType  a t <- esTypes]
+        , xsArgTypes    <- [XType a t   | Call.ElimType  a _ t <- esTypes]
         , esArgValues   <- filter Call.isElimValue esValues
 
         -- there must be types to satisfy all of the quantifiers
@@ -79,7 +88,7 @@ makeCall xx aF funMap nF esArgs
         --   The functional part is a variable bound to a thunk object.
         | length esArgs > 0
         , Just (esTypes, esValues, bRun) <- splitStdCall esArgs
-        , xsArgTypes    <- [XType a  t  | Call.ElimType  a t <- esTypes]
+        , xsArgTypes    <- [XType a  t  | Call.ElimType  a _ t <- esTypes]
         , xsArgValues   <- [x           | Call.ElimValue _ x <- esValues]
         = makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
 

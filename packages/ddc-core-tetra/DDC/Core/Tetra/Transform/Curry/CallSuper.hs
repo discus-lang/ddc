@@ -1,6 +1,7 @@
 
 module DDC.Core.Tetra.Transform.Curry.CallSuper
         ( makeCallSuper
+        , makeCallSuperSaturated
         , splitStdCall)
 where
 import DDC.Core.Tetra.Transform.Curry.Interface
@@ -19,8 +20,10 @@ makeCallSuper
         => AnTEC a Name                         -- ^ Annotation to use.
         -> Name                                 -- ^ Name of super to call.
         -> Exp  (AnTEC a Name) Name             -- ^ Expression of super to call.
+
         -> [Type Name]                          -- ^ Parameter types of super
         -> Type Name                            -- ^ Return type of super.
+
         -> [Call.Elim (AnTEC a Name) Name]      -- ^ Value arguments for super.
         -> Bool                                 -- ^ Whether the result was run.
         -> Exp  (AnTEC a Name) Name
@@ -65,7 +68,29 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
  = makeRun aF bRun $ xApps aF xF xsArgValue
 
 
+----------------
+-- | Fully saturated application.
+--
+--   When the eliminators at the call site exactly match the way the super
+--   is constructed then we can call the super directoy.
+--
+makeCallSuperSaturated
+        :: Show a
+        => Exp a n              -- ^ Functional expression to call.
+        -> [Call.Cons n]        -- ^ How the super is constructed.
+        -> [Call.Elim a n]      -- ^ Arguments to eliminators at call site.
+        -> Maybe (Exp a n)
 
+makeCallSuperSaturated xF cs es
+        | length cs == length es
+        , and  $ zipWith Call.elimForCons es cs
+        = Just $ foldl Call.applyElim xF es
+
+        | otherwise
+        = Nothing
+
+
+---------------------------------------------------------------------------------------------------
 -- | Check if these eliminators follow the standard super-call pattern.
 --
 --   The standard pattern is a list of type arguments, followed by some

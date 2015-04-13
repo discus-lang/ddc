@@ -90,7 +90,7 @@ curryX ctx@(funs, _kenv, _tenv) xx
  = case xx of
         XVar a u
          -> case u of 
-                UName nF -> makeCall xx a funs nF []
+                UName nF -> makeCall xx xx a funs nF []
                 _        -> xx
 
         XApp  a x1 x2
@@ -123,7 +123,7 @@ curryX ctx@(funs, _kenv, _tenv) xx
          , XVar aF (UName nF)   <- xF
          , length esArgs  > 0
          = let esArgs' = map downElim esArgs
-           in  Just $ makeCall x aF funs nF esArgs'
+           in  Just $ makeCall x xF aF funs nF esArgs'
 
          | otherwise
          = Nothing

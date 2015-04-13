@@ -24,7 +24,10 @@ module DDC.Core.Call
         , isElimRun
 
         , takeCallCons
-        , takeCallElim)
+        , takeCallElim
+
+        , elimForCons
+        , applyElim)
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
@@ -52,7 +55,7 @@ data Cons n
 -- | One component of a super call.
 data Elim a n
         = -- | Give a type to a type lambda.
-          ElimType    a (Type n)
+          ElimType    a a (Type n)
 
           -- | Give a value to a value lambda.
         | ElimValue   a (Exp a n)
@@ -60,6 +63,7 @@ data Elim a n
           -- | Run a suspended computation.
         | ElimRun     a
         deriving (Show)
+
 
 
 -- | Check if this is an `ElimType`.
@@ -101,9 +105,9 @@ takeCallCons xx
 takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
 takeCallElim xx
  = case xx of
-        XApp a x1 (XType _ t2)
+        XApp a x1 (XType at t2)
          -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimType a t2])
+            in  (xF, xArgs ++ [ElimType a at t2])
 
         XApp a x1 x2            
          -> let (xF, xArgs)     = takeCallElim x1
@@ -115,5 +119,24 @@ takeCallElim xx
 
         _ -> (xx, [])
 
+
+-- | Check if this an eliminator for the given constructor.
+--   This only checks the general form of the eliminator 
+--   and constructor, not the exact types or kinds.
+elimForCons :: Elim a n -> Cons n -> Bool
+elimForCons e c
+ = case (e, c) of
+        (ElimType{},  ConsType{})       -> True
+        (ElimValue{}, ConsValue{})      -> True
+        (ElimRun{},   ConsBox{})        -> True
+        _                               -> False
+
+
+applyElim :: Exp a n -> Elim a n -> Exp a n
+applyElim xx e
+ = case e of
+        ElimType  a at t -> XApp a xx (XType at t)
+        ElimValue a x    -> XApp a xx x
+        ElimRun   a      -> XCast a CastRun xx
 
 
