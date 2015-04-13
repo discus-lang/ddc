@@ -1,4 +1,6 @@
 
+-- | Generic environment that handles both named and anonymous
+--   de-bruijn binders.
 module DDC.Base.Env
         ( -- * Types
           Bind   (..)
@@ -18,7 +20,8 @@ module DDC.Base.Env
 
           -- * Lookup
         , member
-        , lookup,       lookupName
+        , lookup
+        , lookupName,   lookupIx
         , depth)
 where
 import Data.Maybe
@@ -31,7 +34,7 @@ import Prelude                          hiding (lookup)
 -------------------------------------------------------------------------------
 -- | A binding occurrence of a variable.
 data Bind n
-        -- | No bindinding, or alternatively, bind a fresh name that has
+        -- | No binding, or alternatively, bind a fresh name that has
         --   no bound uses.
         = BNone
 
@@ -45,7 +48,7 @@ data Bind n
 
 -- | A bound occurrence of a variable.
 data Bound n
-        -- | Debruijn variable.
+        -- | Index an anonymous binder.
         = UIx   !Int
 
         -- | Named variable.
@@ -54,18 +57,15 @@ data Bound n
 
 
 -- | Generic environment that maps a variable to a thing of type @a@. 
---
---   We support named binders, debruijn indices and primitive names.
---   The environemnt manages all three representations.
 data Env n a
         = Env
-        { -- | Types of named binders.
+        { -- | Named things.
           envMap         :: !(Map n a)
 
-          -- | Types of anonymous deBruijn binders.
+          -- | Anonymous things.
         , envStack       :: ![a] 
         
-          -- | The length of the above stack.
+          -- | Length of the stack.
         , envStackLength :: !Int }
 
 
@@ -98,7 +98,7 @@ empty   = Env
         , envStackLength = 0 }
 
 
--- | Construct a singleton type environment.
+-- | Construct a singleton environment.
 singleton :: Ord n => Bind n -> a -> Env n a
 singleton b x
         = extend b x empty
@@ -162,7 +162,13 @@ lookupName n env
         = Map.lookup n (envMap env)
 
 
--- | Yield the total depth of the deBruijn stack.
+-- | Lookup a value from the environment based on its index.
+lookupIx :: Ord n => Int -> Env n a -> Maybe a
+lookupIx ix env
+        = P.lookup ix (zip [0..] (envStack env))
+
+
+-- | Yield the total depth of the anonymous stack.
 depth :: Env n a -> Int
 depth env       = envStackLength env
 
